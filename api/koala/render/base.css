@@ -1,0 +1,38 @@
+/* Koala Docs — base.css (A4 vertical, self-contained; inlinado pelo Renderer) */
+@page { size: A4 portrait; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: Inter, Manrope, 'Segoe UI', Arial, sans-serif;
+  color: #101114; background: #eceef1; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.koala-page {
+  width: 210mm; min-height: 297mm; padding: 18mm 16mm;
+  margin: 8mm auto; background: #fff; position: relative; overflow: hidden;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08); page-break-after: always;
+}
+.koala-section { margin-bottom: 16px; }
+.koala-title { font-size: 32px; font-weight: 700; text-align: center; letter-spacing: -0.5px; margin: 24px 0; }
+.koala-text { font-size: 14px; margin: 6px 0; }
+.koala-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+.koala-table th, .koala-table td { border: 1px solid #e2e5ea; padding: 8px 10px; text-align: left; }
+.koala-table th { background: #f6f7f9; font-weight: 600; }
+.koala-table td.num, .koala-table th.num { text-align: right; }
+.koala-total { text-align: right; font-weight: 700; font-size: 15px; margin-top: 10px; }
+.koala-watermark {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-32deg);
+  font-size: 120px; font-weight: 800; letter-spacing: 10px;
+  color: rgba(200, 0, 0, 0.10); pointer-events: none; user-select: none; z-index: 9999;
+  white-space: nowrap;
+}
+@media print { body { background: #fff; } .koala-page { margin: 0; box-shadow: none; } }
+
+/* ── Fragmento de biblioteca (preview de UMA seção): largura A4, ALTURA AUTO, sem página inteira ── */
+.koala-fragment-body { background: #fff; }
+.koala-fragment {
+  width: 210mm; max-width: 100%; min-height: 0; padding: 12mm 16mm;
+  margin: 0 auto; background: #fff; position: relative; overflow: hidden;
+}
+.koala-fragment .koala-section:last-child { margin-bottom: 0; }

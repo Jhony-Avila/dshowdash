@@ -1,0 +1,18 @@
+{
+  "name": "koala-docs-app",
+  "private": true,
+  "version": "0.1.0-F1",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "vite": "^5.4.21"
+  }
+}

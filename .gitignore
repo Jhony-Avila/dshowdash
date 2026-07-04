@@ -1,0 +1,50 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Repositório KOALA-ONLY. O .git vive em /var/www/dshowdash (FORA do web root
+# /var/www/dshowdash/public), mas este repo rastreia APENAS os arquivos do módulo
+# Koala Docs, espalhados por api/koala, public/koala/src, sql/koala, scripts/koala-*.
+# Estratégia: ignora TUDO por padrão e re-inclui só os caminhos do Koala.
+# .env / node_modules / dist / storage / backups nunca entram (por construção).
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Ignora tudo na raiz por padrão
+/*
+
+# ...mas mantém o próprio .gitignore
+!/.gitignore
+
+# api/koala/
+!/api/
+/api/*
+!/api/koala/
+
+# public/koala/ — só o código-fonte + configs de build (NÃO dist, NÃO node_modules)
+!/public/
+/public/*
+!/public/koala/
+/public/koala/*
+!/public/koala/src/
+!/public/koala/index.html
+!/public/koala/package.json
+!/public/koala/tsconfig.json
+!/public/koala/vite.config.js
+
+# sql/koala/
+!/sql/
+/sql/*
+!/sql/koala/
+
+# scripts do Koala
+!/scripts/
+/scripts/*
+!/scripts/koala-build.sh
+!/scripts/koala-smoke-all.sh
+!/scripts/koala-smoke-all.php
+
+# Salvaguardas (mesmo se algo acima re-incluir demais)
+node_modules/
+dist/
+.env
+.env.*
+*.log
+*.tmp
+.DS_Store
