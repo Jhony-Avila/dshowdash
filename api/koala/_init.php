@@ -29,6 +29,7 @@ require_once __DIR__ . '/repositories/ClientSnapshotRepository.php';
 require_once __DIR__ . '/repositories/ClientSnapshotContactRepository.php';
 require_once __DIR__ . '/repositories/ProposalPaymentTermRepository.php';
 require_once __DIR__ . '/repositories/SectionRepository.php';
+require_once __DIR__ . '/repositories/ProposalVersionRepository.php';
 require_once __DIR__ . '/repositories/SectionImageRepository.php';
 
 // Serviços
@@ -50,6 +51,11 @@ require_once __DIR__ . '/services/ProposalPaymentTermService.php';
 require_once __DIR__ . '/services/ClientIntegrationService.php';
 require_once __DIR__ . '/services/SnapshotService.php';
 require_once __DIR__ . '/services/ProposalRenderService.php';
+require_once __DIR__ . '/services/LogService.php';
+require_once __DIR__ . '/services/VersioningService.php';
+require_once __DIR__ . '/services/PdfGenerationService.php';
+require_once __DIR__ . '/services/PublicationService.php';
+require_once __DIR__ . '/services/ExpirationService.php';
 require_once __DIR__ . '/services/SectionService.php';
 require_once __DIR__ . '/services/SectionRenderService.php';
 require_once __DIR__ . '/services/SectionImageService.php';

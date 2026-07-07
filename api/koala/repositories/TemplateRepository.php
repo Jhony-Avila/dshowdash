@@ -28,6 +28,38 @@ class TemplateRepository
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    /** Id do template default publicado (Generico). Base do default explícito da proposta. */
+    public function defaultPublishedId(): ?int
+    {
+        $id = $this->pdo->query(
+            "SELECT id FROM koala_templates WHERE is_default = 1 AND status = 'published' AND deleted_at IS NULL ORDER BY id LIMIT 1"
+        )->fetchColumn();
+        return $id ? (int) $id : null;
+    }
+
+    /** Lista p/ o SELETOR: templates publicados (escolhíveis) + nº de páginas da versão publicada. */
+    public function pickerList(): array
+    {
+        $rows = $this->pdo->query(
+            "SELECT t.id, t.name, t.description, t.is_default, v.structure_json
+             FROM koala_templates t
+             JOIN koala_template_versions v ON v.id = t.current_version_id
+             WHERE t.status = 'published' AND t.deleted_at IS NULL
+             ORDER BY t.is_default DESC, t.name"
+        )->fetchAll(\PDO::FETCH_ASSOC);
+        return array_map(static function ($r) {
+            $s = json_decode((string) $r['structure_json'], true);
+            $pages = (is_array($s) && isset($s['pages']) && is_array($s['pages'])) ? count($s['pages']) : 0;
+            return [
+                'id' => (int) $r['id'],
+                'name' => $r['name'],
+                'description' => $r['description'],
+                'is_default' => (int) $r['is_default'] === 1,
+                'pages' => $pages,
+            ];
+        }, $rows);
+    }
+
     /** Versão corrente (structure_json) do template. */
     public function getCurrentVersion(int $templateId): ?array
     {

@@ -9,7 +9,8 @@ class ProposalRepository
     public function __construct(\PDO $pdo) { $this->pdo = $pdo; }
 
     private const COLS = 'id, proposal_number, budget_number, template_id, template_version_id,
-        current_version_id, seller_user_id, seller_name, seller_email, seller_phone, client_snapshot_id,
+        current_version_id, published_version_id, published_at, public_revoked_at,
+        seller_user_id, seller_name, seller_email, seller_phone, client_snapshot_id,
         title, project_name, objective, need_context, executive_summary, project_scope, commercial_notes,
         currency, status, proposal_date, valid_until, approval_deadline, public_slug, public_url, pdf_path,
         total_gross, total_discount, total_addition, proposal_discount_value, proposal_discount_percent,
@@ -27,14 +28,15 @@ class ProposalRepository
         $stmt = $this->pdo->prepare(
             'INSERT INTO koala_proposals
               (proposal_number, seller_user_id, seller_name, seller_email, seller_phone, currency, status,
-               title, project_name, proposal_date, valid_until, created_by)
-             VALUES (:num, :seller, :sname, :semail, :sphone, :cur, :st, :title, :proj, :pdate, :valid, :cby)'
+               title, project_name, template_id, proposal_date, valid_until, created_by)
+             VALUES (:num, :seller, :sname, :semail, :sphone, :cur, :st, :title, :proj, :tpl, :pdate, :valid, :cby)'
         );
         $stmt->execute([
             ':num' => $d['proposal_number'], ':seller' => $d['seller_user_id'],
             ':sname' => $d['seller_name'] ?? null, ':semail' => $d['seller_email'] ?? null, ':sphone' => $d['seller_phone'] ?? null,
             ':cur' => $d['currency'] ?? 'BRL', ':st' => $d['status'] ?? 'draft',
             ':title' => $d['title'] ?? null, ':proj' => $d['project_name'] ?? null,
+            ':tpl' => $d['template_id'] ?? null,
             ':pdate' => $d['proposal_date'] ?? null, ':valid' => $d['valid_until'] ?? null,
             ':cby' => $d['created_by'] ?? null,
         ]);
@@ -51,7 +53,12 @@ class ProposalRepository
     /** Lista por papel: gestor/admin veem todas; vendedor só as dele e não excluídas por ele. */
     public function listByRole(bool $seeAll, int $sellerUserId, ?string $status): array
     {
-        $sql = 'SELECT ' . self::COLS . ' FROM koala_proposals WHERE deleted_at IS NULL';
+        // client_display: nome do cliente do snapshot p/ a coluna Cliente da lista (subquery evita
+        // JOIN ambíguo com COLS bare). Aditivo — não altera os campos existentes.
+        $sql = 'SELECT ' . self::COLS . ',
+                (SELECT COALESCE(NULLIF(cs.legal_name, \'\'), NULLIF(cs.trade_name, \'\'), NULLIF(cs.client_name, \'\'))
+                   FROM koala_client_snapshots cs WHERE cs.id = koala_proposals.client_snapshot_id) AS client_display
+             FROM koala_proposals WHERE deleted_at IS NULL';
         $params = [];
         if (!$seeAll) {
             $sql .= ' AND seller_user_id = ? AND deleted_by_seller = 0';

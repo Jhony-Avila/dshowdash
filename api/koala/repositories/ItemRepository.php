@@ -13,7 +13,10 @@ class ItemRepository
 
     public function listAll(bool $activeOnly = true, ?int $categoryId = null): array
     {
-        $sql = 'SELECT ' . self::COLS . ' FROM koala_items_catalog WHERE deleted_at IS NULL';
+        // +category_name (subquery evita JOIN ambíguo com COLS bare). Aditivo p/ a coluna Categoria da lista.
+        $sql = 'SELECT ' . self::COLS . ',
+                (SELECT name FROM koala_item_categories c WHERE c.id = koala_items_catalog.category_id) AS category_name
+             FROM koala_items_catalog WHERE deleted_at IS NULL';
         $params = [];
         if ($activeOnly) { $sql .= ' AND is_active = 1'; }
         if ($categoryId !== null) { $sql .= ' AND category_id = ?'; $params[] = $categoryId; }

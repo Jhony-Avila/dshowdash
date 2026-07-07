@@ -14,6 +14,10 @@ class TemplateController
 
         // ── Leitura aberta (qualquer usuário Koala ativo) ──
 
+        // GET /templates?for=picker — SELETOR: só publicados/escolhíveis + nº de páginas (qualquer usuário Koala)
+        if ($method === 'GET' && $sub === null && ($_GET['for'] ?? '') === 'picker') {
+            ApiResponse::success((new TemplateRepository($pdo))->pickerList());
+        }
         // GET /templates — lista de GESTÃO (id, nome, status, versão publicada, rascunho pendente, updated_at)
         if ($method === 'GET' && $sub === null) {
             ApiResponse::success($mgr->list());

@@ -73,6 +73,61 @@ class ProposalController
             exit;
         }
 
+        // F3 — geração de PDF (renderizador único; marca d'água segue o status). Escrita => CSRF.
+        if ($method === 'POST' && $sub === 'generate-pdf') {
+            AuthHelpers::requireCsrf();
+            ApiResponse::success((new PdfGenerationService($pdo))->generate($koala, $id));
+        }
+        // F3 — download/stream do PDF (autenticado; gera on-demand se ainda não existir).
+        if ($method === 'GET' && $sub === 'pdf') {
+            (new PdfGenerationService($pdo))->stream($koala, $id);
+        }
+
+        // F5 — versões (histórico / visualizar congelada / restaurar).
+        if ($sub === 'versions') {
+            $vsvc = new VersioningService($pdo);
+            $vid  = (isset($seg[3]) && ctype_digit((string) $seg[3])) ? (int) $seg[3] : null;
+            if ($vid === null) {
+                if ($method === 'GET') { ApiResponse::success($vsvc->listVersions($koala, $id)); }
+                ApiResponse::error(ApiResponse::ERR_METHOD_NOT_ALLOWED, 405);
+            }
+            $vsub = $seg[4] ?? null;
+            if ($method === 'GET' && $vsub === 'preview') {
+                $html = $vsvc->renderVersion($koala, $id, $vid, null);
+                header('Content-Type: text/html; charset=utf-8');
+                header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+                echo $html;
+                exit;
+            }
+            if ($method === 'POST' && $vsub === 'restore') {
+                AuthHelpers::requireCsrf();
+                ApiResponse::success($vsvc->restore($koala, $id, $vid)); // gate gestor/admin no service
+            }
+            ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['hint' => 'acao de versao desconhecida']);
+        }
+
+        // F5 — atividade (timeline de logs da proposta, readonly).
+        if ($method === 'GET' && $sub === 'activity') {
+            $svc->get($koala, $id); // auth
+            ApiResponse::success((new LogService($pdo))->timeline($id, (int) ($_GET['limit'] ?? 50)));
+        }
+
+        // F4 — publicação / link público (ações autenticadas do editor).
+        if ($method === 'POST' && $sub === 'publish') {
+            AuthHelpers::requireCsrf();
+            ApiResponse::success((new PublicationService($pdo))->publish($koala, $id));
+        }
+        if ($method === 'POST' && $sub === 'revoke') {
+            AuthHelpers::requireCsrf();
+            ApiResponse::success((new PublicationService($pdo))->revoke($koala, $id));
+        }
+        if ($method === 'GET' && $sub === 'public-state') {
+            ApiResponse::success((new PublicationService($pdo))->publicState($koala, $id));
+        }
+        if ($method === 'GET' && $sub === 'views') {
+            ApiResponse::success((new PublicationService($pdo))->views($koala, $id, (int) ($_GET['limit'] ?? 100)));
+        }
+
         // Sub-recurso de E2 (items).
         if ($sub === 'items') {
             ProposalItemController::route($method, $seg, $koala, $pdo);

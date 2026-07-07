@@ -41,10 +41,13 @@ class ProposalService
         }
         $owns = !$this->pdo->inTransaction();
         if ($owns) { $this->pdo->beginTransaction(); }
+        // Default EXPLÍCITo: toda proposta nasce com o template default publicado (Generico).
+        $defaultTemplateId = (new TemplateRepository($this->pdo))->defaultPublishedId();
         try {
             $number = NumberingService::next($this->pdo);
             $id = $this->repo->insert([
                 'proposal_number' => $number,
+                'template_id'     => $defaultTemplateId,
                 'seller_user_id'  => (int) $koala['id'],
                 // Snapshot do vendedor: default do usuário logado, editável na proposta depois.
                 'seller_name'     => $koala['name'] ?? null,
@@ -64,6 +67,10 @@ class ProposalService
             error_log('[koala] proposal create: ' . $e->getMessage());
             ApiResponse::error(ApiResponse::ERR_DATABASE_ERROR, 500);
         }
+        (new LogService($this->pdo))->log($koala, [
+            'proposal_id' => $id, 'action' => 'proposal_created', 'entity_type' => 'proposal', 'entity_id' => $id,
+            'metadata' => ['proposal_number' => $number],
+        ]);
         return $this->repo->findById($id) ?? [];
     }
 
@@ -91,7 +98,26 @@ class ProposalService
                 ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['field' => 'currency']);
             }
         }
-        $this->repo->updateFields($id, $data);
+        // Troca de template: só aceita template ATIVO (published) e COM versão publicada. Versões
+        // congeladas NÃO mudam (a troca só afeta o rascunho corrente; o render segue a publicada).
+        if (isset($data['template_id'])) {
+            $tid = (int) $data['template_id'];
+            $t = (new TemplateRepository($this->pdo))->findById($tid);
+            if (!$t || (string) $t['status'] !== 'published' || empty($t['current_version_id'])) {
+                ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, [
+                    'field' => 'template_id',
+                    'message' => 'Template indisponível: precisa estar ativo e ter versão publicada.',
+                ]);
+            }
+            $data['template_id'] = $tid;
+        }
+        $this->repo->updateFields($id, $data); // log old/new de template_id já sai no loop field_updated (é EDITABLE)
+        // Log campo a campo (old/new) — "toda alteração gera log" (só campos editáveis que mudaram).
+        $log = new LogService($this->pdo);
+        foreach ($data as $field => $newVal) {
+            if (!in_array($field, ProposalRepository::EDITABLE, true)) { continue; }
+            $log->field($koala, $id, $field, $p[$field] ?? null, $newVal);
+        }
         // Campos que afetam o total_final -> recalcula (frete/instal/desloc legados + desconto da proposta).
         $recomputeKeys = ['freight_value', 'installation_value', 'displacement_value',
             'proposal_discount_value', 'proposal_discount_percent'];
@@ -110,6 +136,10 @@ class ProposalService
         if ($p === null) { ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['id' => $id]); }
         $this->assertAccess($koala, $p);
         $this->repo->setStatus($id, $status);
+        (new LogService($this->pdo))->log($koala, [
+            'proposal_id' => $id, 'action' => 'status_changed', 'entity_type' => 'proposal', 'entity_id' => $id,
+            'field_name' => 'status', 'old_value' => $p['status'] ?? null, 'new_value' => $status,
+        ]);
         return $this->repo->findById($id) ?? [];
     }
 
@@ -119,5 +149,8 @@ class ProposalService
         if ($p === null) { ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['id' => $id]); }
         $this->assertAccess($koala, $p);
         $this->repo->markDeletedForSeller($id);
+        (new LogService($this->pdo))->log($koala, [
+            'proposal_id' => $id, 'action' => 'proposal_deleted', 'entity_type' => 'proposal', 'entity_id' => $id,
+        ]);
     }
 }

@@ -68,6 +68,17 @@ class TemplateRenderService
                 'ValorTotal'     => 'R$ 45.000,00',
                 'DataProposta'   => '03/07/2026',
                 'NomeVendedor'   => 'Jhony',
+                // Placeholders da estrutura enriquecida (expansão do cadastro) — dados de exemplo p/ o preview do template
+                'EmailVendedor'  => 'jhony@dshow.com.br',
+                'TelefoneVendedor' => '(11) 90000-0000',
+                'Documento'      => '12.345.678/0001-90',
+                'Contatos'       => 'Maria Souza (E-mail) maria@exemplo.com',
+                'FormasPagamento' => 'PIX à vista · Boleto 30/60/90',
+                'Objetivo'       => 'Objetivo de exemplo da proposta.',
+                'Contexto'       => 'Contexto de exemplo da necessidade do cliente.',
+                'ResumoExecutivo' => 'Resumo executivo de exemplo.',
+                'EscopoProjeto'  => 'Escopo de exemplo: fornecimento, instalação e operação.',
+                'ObservacoesComerciais' => 'Observações comerciais de exemplo.',
             ],
         ];
     }

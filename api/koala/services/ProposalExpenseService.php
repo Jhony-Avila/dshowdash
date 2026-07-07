@@ -47,7 +47,10 @@ class ProposalExpenseService
         $this->loadProposal($koala, $proposalId);
         $d['quantity']   = (float) ($d['quantity'] ?? 1);
         $d['unit_price'] = (float) ($d['unit_price'] ?? 0);
-        return $this->insertComputed($proposalId, $d);
+        $r = $this->insertComputed($proposalId, $d);
+        (new LogService($this->pdo))->log($koala, ['proposal_id' => $proposalId, 'action' => 'expense_added',
+            'entity_type' => 'expense', 'entity_id' => (int) ($r['expense']['id'] ?? 0), 'new_value' => $d['description'] ?? '']);
+        return $r;
     }
 
     private function insertComputed(int $proposalId, array $data): array
@@ -76,11 +79,14 @@ class ProposalExpenseService
         $c = PricingCalculationService::computeItem($merged);
         $merged['subtotal'] = $c['subtotal'];
         // A4: update + recompute de totais atômicos.
-        return KoalaTx::run($this->pdo, function () use ($proposalId, $expenseId, $merged) {
+        $r = KoalaTx::run($this->pdo, function () use ($proposalId, $expenseId, $merged) {
             $this->expenses->update($expenseId, $merged);
             $totals = $this->recompute($proposalId);
             return ['expense' => PricingCalculationService::withLineTotals($this->expenses->findById($expenseId)), 'totals' => $totals];
         });
+        (new LogService($this->pdo))->log($koala, ['proposal_id' => $proposalId, 'action' => 'expense_updated',
+            'entity_type' => 'expense', 'entity_id' => $expenseId, 'new_value' => $merged['description'] ?? '']);
+        return $r;
     }
 
     public function remove(array $koala, int $proposalId, int $expenseId): array
@@ -91,10 +97,13 @@ class ProposalExpenseService
             ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['expense_id' => $expenseId]);
         }
         // A4: delete + recompute de totais atômicos.
-        return KoalaTx::run($this->pdo, function () use ($expenseId, $proposalId) {
+        $r = KoalaTx::run($this->pdo, function () use ($expenseId, $proposalId) {
             $this->expenses->delete($expenseId);
             return ['removed' => $expenseId, 'totals' => $this->recompute($proposalId)];
         });
+        (new LogService($this->pdo))->log($koala, ['proposal_id' => $proposalId, 'action' => 'expense_removed',
+            'entity_type' => 'expense', 'entity_id' => $expenseId, 'old_value' => $exp['description'] ?? '']);
+        return $r;
     }
 
     public function reorder(array $koala, int $proposalId, array $orderedIds): array

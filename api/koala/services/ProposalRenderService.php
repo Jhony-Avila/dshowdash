@@ -1,7 +1,10 @@
 <?php
 // /api/koala/services/ProposalRenderService.php
 // Renderiza a PROPOSTA REAL (snapshot do cliente + line items + totais) pelo RENDERIZADOR ÚNICO.
-// Mesma saída de preview, link público e PDF. Marca d'água em draft. @module koala.service.proposal_render @version 1.0.0-F2
+// Mesma saída de preview, link público e PDF. Marca d'água em draft.
+// F5: buildLiveData() separa a MONTAGEM dos dados do render (freeze reusa; renderFromSnapshot() renderiza
+//     a versão CONGELADA byte-idêntica, sem query viva). renderProposal() mantém comportamento original.
+// @module koala.service.proposal_render @version 1.1.0-F5
 declare(strict_types=1);
 
 require_once __DIR__ . '/../render/Renderer.php';
@@ -24,7 +27,12 @@ class ProposalRenderService
         return $ts ? date('d/m/Y', $ts) : (string) $d;
     }
 
-    public function renderProposal(array $koala, int $proposalId, string $mode = 'draft'): string
+    /**
+     * Monta { structure, data, template_version_id, template_id, business } da proposta VIVA.
+     * É a fonte única do render — o freeze (F5) guarda este objeto em snapshot_json e depois
+     * renderFromSnapshot() reproduz o documento idêntico sem tocar o banco.
+     */
+    public function buildLiveData(array $koala, int $proposalId): array
     {
         $p = (new ProposalService($this->pdo))->get($koala, $proposalId);   // 404/403
         $cur = strtoupper((string) $p['currency']);
@@ -188,6 +196,45 @@ class ProposalRenderService
         $data['client']['client_name'] = $dash($clientName);
         $data['client']['legal_name']  = $dash($legalName);
 
+        return [
+            'structure'           => $structure,
+            'data'                => $data,
+            'template_id'         => (int) ($ver['template_id'] ?? ($p['template_id'] ?? 0)),
+            'template_version_id' => (int) ($ver['id'] ?? 0),
+            // resumo de negócio p/ histórico (não usado no render; leitura humana).
+            'business' => [
+                'currency'        => $cur,
+                'status'          => (string) $p['status'],
+                'proposal_number' => (string) $p['proposal_number'],
+                'title'           => (string) ($p['title'] ?? ''),
+                'proposal_date'   => $p['proposal_date'] ?? null,
+                'valid_until'     => $p['valid_until'] ?? null,
+                'total_net'       => (float) ($p['total_net'] ?? 0),
+                'total_expenses'  => (float) ($p['total_expenses'] ?? 0),
+                'total_final'     => (float) ($p['total_final'] ?? 0),
+            ],
+        ];
+    }
+
+    /** Preview/PDF da proposta VIVA (rascunho corrente). Comportamento original preservado. */
+    public function renderProposal(array $koala, int $proposalId, string $mode = 'draft'): string
+    {
+        $b = $this->buildLiveData($koala, $proposalId);
+        return Renderer::render($b['structure'], $b['data'], $mode);
+    }
+
+    /**
+     * Renderiza a partir de um snapshot CONGELADO (versão imutável) — reproduz o documento
+     * exatamente como estava no freeze, sem tocar o banco. Usado por: visualizar versão, PDF de
+     * versão e link público. $snapshot = objeto salvo por buildLiveData().
+     */
+    public function renderFromSnapshot(array $snapshot, string $mode = 'final'): string
+    {
+        $structure = $snapshot['structure'] ?? null;
+        $data      = $snapshot['data'] ?? null;
+        if (!is_array($structure) || !is_array($data)) {
+            ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'snapshot de versao invalido']);
+        }
         return Renderer::render($structure, $data, $mode);
     }
 }

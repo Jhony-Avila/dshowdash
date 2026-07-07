@@ -121,7 +121,10 @@ class ProposalItemService
             'addition_percent'=> $ov['addition_percent'] ?? null,
             'observation'     => $ov['observation'] ?? null,
         ];
-        return $this->insertComputed($proposalId, $data);
+        $r = $this->insertComputed($proposalId, $data);
+        (new LogService($this->pdo))->log($koala, ['proposal_id' => $proposalId, 'action' => 'item_added',
+            'entity_type' => 'item', 'entity_id' => (int) ($r['item']['id'] ?? 0), 'new_value' => $data['description'] ?? '']);
+        return $r;
     }
 
     public function addManual(array $koala, int $proposalId, array $d): array
@@ -133,7 +136,10 @@ class ProposalItemService
         self::requirePositiveQty($d['quantity'] ?? 1);
         $d['quantity'] = (float) ($d['quantity'] ?? 1);
         $d['unit_price'] = (float) ($d['unit_price'] ?? 0);
-        return $this->insertComputed($proposalId, $d);
+        $r = $this->insertComputed($proposalId, $d);
+        (new LogService($this->pdo))->log($koala, ['proposal_id' => $proposalId, 'action' => 'item_added',
+            'entity_type' => 'item', 'entity_id' => (int) ($r['item']['id'] ?? 0), 'new_value' => $d['description'] ?? '']);
+        return $r;
     }
 
     private function insertComputed(int $proposalId, array $data): array
@@ -162,11 +168,14 @@ class ProposalItemService
         $c = PricingCalculationService::computeItem($merged);
         $merged['subtotal'] = $c['subtotal'];
         // A4: update + recompute de totais atômicos.
-        return KoalaTx::run($this->pdo, function () use ($proposalId, $itemId, $merged) {
+        $r = KoalaTx::run($this->pdo, function () use ($proposalId, $itemId, $merged) {
             $this->items->update($itemId, $merged);
             $totals = $this->recompute($proposalId);
             return ['item' => PricingCalculationService::withLineTotals($this->items->findById($itemId)), 'totals' => $totals];
         });
+        (new LogService($this->pdo))->log($koala, ['proposal_id' => $proposalId, 'action' => 'item_updated',
+            'entity_type' => 'item', 'entity_id' => $itemId, 'new_value' => $merged['description'] ?? '']);
+        return $r;
     }
 
     public function remove(array $koala, int $proposalId, int $itemId): array
@@ -177,10 +186,13 @@ class ProposalItemService
             ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['item_id' => $itemId]);
         }
         // A4: delete + recompute de totais atômicos.
-        return KoalaTx::run($this->pdo, function () use ($itemId, $proposalId) {
+        $r = KoalaTx::run($this->pdo, function () use ($itemId, $proposalId) {
             $this->items->delete($itemId);
             return ['removed' => $itemId, 'totals' => $this->recompute($proposalId)];
         });
+        (new LogService($this->pdo))->log($koala, ['proposal_id' => $proposalId, 'action' => 'item_removed',
+            'entity_type' => 'item', 'entity_id' => $itemId, 'old_value' => $item['description'] ?? '']);
+        return $r;
     }
 
     public function reorder(array $koala, int $proposalId, array $orderedIds): array
