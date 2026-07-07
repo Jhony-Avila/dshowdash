@@ -72,6 +72,49 @@ try {
     ok($pdo->inTransaction(), "KoalaTx participou da tx externa (nunca commitou)");
 } finally { $pdo->rollBack(); }
 
+// ───────────── BLOCO 2b: F5 FREEZE-NO-PDF (versão congelada, isolamento do rascunho) ─────────────
+// Trava o contrato oficial F5: o PDF sai de uma VERSÃO CONGELADA, nunca do rascunho vivo.
+// Testa no nível VersioningService (determinístico, sem Chromium); a fidelidade HTML->PDF é
+// coberta por F3. Tudo em transação + rollback (não polui o baseline R6).
+head('F5 freeze-no-PDF (versão congelada, dirty-detection, isolamento do rascunho)');
+$pdo->beginTransaction();
+try {
+    $prop = (new ProposalService($pdo))->create($koala, ['title' => '[SMOKE-F5] apagar', 'currency' => 'BRL']);
+    $pid  = (int) $prop['id'];
+    (new ProposalItemService($pdo))->addManual($koala, $pid, ['description' => 'Item A', 'quantity' => 2, 'unit_price' => 100]);
+
+    $ver = new VersioningService($pdo);
+    // 1) freeze com trigger 'pdf' -> cria a versão v1 (primeira, não reusa).
+    $f1 = $ver->freeze($koala, $pid, 'pdf', 'draft');
+    ok($f1['reused'] === false && $f1['version_number'] === 1 && $f1['trigger'] === 'pdf',
+        "1º freeze(pdf) cria v1 (reused=false, trigger=pdf)");
+    $v1 = (int) $f1['version_id'];
+    $html1a = $ver->renderVersion($koala, $pid, $v1);
+
+    // 2) dirty-detection: re-freeze SEM mudança -> reusa a mesma versão (não duplica).
+    $f2 = $ver->freeze($koala, $pid, 'pdf', 'draft');
+    ok($f2['reused'] === true && (int) $f2['version_id'] === $v1,
+        "re-freeze sem mudança REUSA v1 (dirty-detection)");
+
+    // 3) edita o rascunho vivo -> próximo freeze cria versão nova.
+    (new ProposalItemService($pdo))->addManual($koala, $pid, ['description' => 'ItemBravo', 'quantity' => 1, 'unit_price' => 999]);
+    $f3 = $ver->freeze($koala, $pid, 'pdf', 'draft');
+    ok($f3['reused'] === false && $f3['version_number'] === 2 && (int) $f3['version_id'] !== $v1,
+        "após editar rascunho, freeze cria v2 (reused=false)");
+    $v2 = (int) $f3['version_id'];
+
+    // 4) ISOLAMENTO: v1 segue renderizando o estado congelado (imune à edição do rascunho)...
+    $html1b = $ver->renderVersion($koala, $pid, $v1);
+    ok($html1a === $html1b, "v1 congelada byte-idêntica após editar o rascunho (não vaza rascunho vivo)");
+    // ...e v2 reflete a edição (difere de v1 e contém o item novo).
+    $html2 = $ver->renderVersion($koala, $pid, $v2);
+    ok($html2 !== $html1a, "v2 difere de v1 (reflete a edição)");
+    ok(strpos($html2, 'ItemBravo') !== false && strpos($html1a, 'ItemBravo') === false,
+        "v2 contém o item novo; v1 (anterior à edição) NÃO");
+
+    ok($pdo->inTransaction(), "freeze compõe na tx externa (rollback limpa tudo)");
+} finally { $pdo->rollBack(); }
+
 // ─────────────────── BLOCO 3: ADMIN LOCKOUT (allow path) ───────────────────
 head('admin-lockout (allow path; block path no wrapper .sh)');
 $svc = new UserAdminService($pdo);
