@@ -1,5 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiGet, apiSend } from '../api/client';
+import { SplitPane } from './proposals/SplitPane';
+import { PreviewFrame } from './proposals/PreviewFrame';
+import { PreviewFilmstrip } from './proposals/PreviewFilmstrip';
+import { Filmstrip, type SlideThumb } from './proposals/Filmstrip';
+import { Section } from './proposals/Section';
+import { SECTION_ICONS } from './proposals/sectionIcons';
 import { dateTimeBr } from '../format';
 
 // ── Helpers de apresentação ──
@@ -27,6 +33,16 @@ function friendlyStructure(struct: any): any[] {
       components: (s.components || []).map((c: any) => COMP_LABELS[c.component_type] || c.component_key || c.component_type),
     })),
   }));
+}
+
+// Deriva o "tipo" de cada página do structure_json p/ a miniatura estilizada do R1 (Filmstrip).
+function pageKind(pg: any, i: number): SlideThumb['kind'] {
+  const k = String(pg?.key || pg?.section_key || '').toLowerCase();
+  const types = (pg?.sections || []).flatMap((s: any) => (s.components || []).map((c: any) => String(c.component_type || '')));
+  if (i === 0 || k.includes('cover') || k.includes('capa')) return 'cover';
+  if (types.includes('price_table') || k.includes('item') || k.includes('financ')) return 'table';
+  if (k.includes('clos') || k.includes('encerr')) return 'closing';
+  return 'text';
 }
 
 // ── Modal "Novo Template" ──
@@ -107,6 +123,8 @@ function TemplateEditor({ id, onBack, onSaved }: { id: number; onBack: () => voi
   const [msg, setMsg] = useState('');
   const [msgErr, setMsgErr] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [tick, setTick] = useState(0); // cache-bust do preview (recarrega ao salvar/publicar)
+  const previewRef = useRef<HTMLIFrameElement>(null); // exposto ao filmstrip de páginas (R2)
 
   async function load() {
     const d = await apiGet('/templates/' + id);
@@ -119,14 +137,14 @@ function TemplateEditor({ id, onBack, onSaved }: { id: number; onBack: () => voi
   function flash(m: string, err = false) { setMsg(m); setMsgErr(err); }
 
   async function saveMeta() {
-    try { await apiSend('PUT', '/templates/' + id, { name, description }); await load(); onSaved(); flash('Metadados salvos.'); }
+    try { await apiSend('PUT', '/templates/' + id, { name, description }); await load(); setTick((t) => t + 1); onSaved(); flash('Metadados salvos.'); }
     catch (e: any) { flash('Erro: ' + backendMsg(e), true); }
   }
   async function publish() {
     const vnum = detail?.draft_version?.version_number ?? '?';
     if (!detail?.draft_version) { flash('Nada a publicar: não há rascunho pendente.', true); return; }
     if (!window.confirm(`Publicar congela o rascunho como v${vnum}. Confirmar?`)) return;
-    try { await apiSend('POST', '/templates/' + id + '/publish'); await load(); onSaved(); flash(`Publicado como v${vnum}.`); }
+    try { await apiSend('POST', '/templates/' + id + '/publish'); await load(); setTick((t) => t + 1); onSaved(); flash(`Publicado como v${vnum}.`); }
     catch (e: any) { flash('Erro ao publicar: ' + backendMsg(e), true); }
   }
 
@@ -134,10 +152,12 @@ function TemplateEditor({ id, onBack, onSaved }: { id: number; onBack: () => voi
 
   // A estrutura mostrada é a do rascunho pendente (o que será publicado) ou a publicada corrente.
   const struct = detail.draft_version?.structure_json ?? detail.current_version?.structure_json ?? {};
-  const pages = friendlyStructure(struct);
+  const friendly = friendlyStructure(struct);
+  const tPages: SlideThumb[] = (struct?.pages || []).map((pg: any, i: number) => ({ n: i + 1, kind: pageKind(pg, i) }));
+  const previewVersion = detail.draft_version ? 'draft' : 'published'; // mostra o rascunho corrente por default
 
   return (
-    <div>
+    <div className="k-editor-shell">
       <div className="k-editor-top">
         <button className="k-btn k-btn-ghost" onClick={onBack}>← Templates</button>
         <div className="k-editor-title">
@@ -157,54 +177,79 @@ function TemplateEditor({ id, onBack, onSaved }: { id: number; onBack: () => voi
         <button className="k-btn k-btn-soon" disabled title="Em breve — edição visual drag & drop">Builder Visual</button>
       </div>
 
-      {showHistory && (
-        <div className="k-card k-history">
-          <h3>Histórico de versões</h3>
-          <table className="k-table">
-            <thead><tr><th>Versão</th><th>Status</th><th>Autor</th><th>Data</th></tr></thead>
-            <tbody>
-              {(detail.versions || []).map((v: any) => (
-                <tr key={v.id}>
-                  <td>v{v.version_number}</td>
-                  <td><span className={'k-badge ' + (v.status === 'published' ? 'k-badge-ok' : 'k-badge-draft')}>{v.status === 'published' ? 'Publicada' : 'Rascunho'}</span></td>
-                  <td>{v.author_name || '—'}</td>
-                  <td>{fmtDate(v.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="k-muted k-sm">Somente leitura no MVP. Restauração de versão chega numa fase futura.</p>
-        </div>
-      )}
+      <div className="k-editor-workspace">
+        <SplitPane
+          storageKey="koala.template"
+          leftFooter={<Filmstrip pages={tPages} label="Ordem das páginas do template" />}
+          rightFooter={<PreviewFilmstrip iframeRef={previewRef} tick={tick} />}
+          left={
+          <div className="k-editor-form">
+            <Section icon={SECTION_ICONS.proposal} title="Dados do template">
+              <div className="k-field">
+                <label className="k-label">Nome do template</label>
+                <input className="k-input k-w-full" value={name} onChange={(e) => setName(e.target.value)} onBlur={saveMeta} />
+              </div>
+              <div className="k-field">
+                <label className="k-label">Descrição</label>
+                <input className="k-input k-w-full" value={description} onChange={(e) => setDescription(e.target.value)} onBlur={saveMeta} />
+              </div>
+            </Section>
 
-      <div className="k-card">
-        <div className="k-field">
-          <label className="k-label">Nome do template</label>
-          <input className="k-input k-w-full" value={name} onChange={(e) => setName(e.target.value)} onBlur={saveMeta} />
-        </div>
-        <div className="k-field">
-          <label className="k-label">Descrição</label>
-          <input className="k-input k-w-full" value={description} onChange={(e) => setDescription(e.target.value)} onBlur={saveMeta} />
-        </div>
+            <Section icon={SECTION_ICONS.items} title="Estrutura do template">
+              <p className="k-muted k-sm">Composição das páginas e seções (somente leitura). A edição visual chega no Builder.</p>
+              <div className="k-struct-list">
+                {friendly.map((pg: any, i: number) => (
+                  <div className="k-struct-page" key={i}>
+                    <div className="k-struct-page-title">📄 Página {pg.label}</div>
+                    {pg.sections.map((s: any, si: number) => (
+                      <div className="k-struct-sec" key={si}>
+                        <span className="k-struct-sec-name">{s.label}</span>
+                        <span className="k-struct-comps">
+                          {s.components.map((c: string, ci: number) => <span className="k-chip" key={ci}>{c}</span>)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+                {friendly.length === 0 && <p className="k-muted">Estrutura vazia.</p>}
+              </div>
+            </Section>
 
-        <h3>Estrutura do template</h3>
-        <p className="k-muted k-sm">Composição das páginas e seções (somente leitura). A edição visual chega no Builder.</p>
-        <div className="k-struct-list">
-          {pages.map((pg: any, i: number) => (
-            <div className="k-struct-page" key={i}>
-              <div className="k-struct-page-title">📄 Página {pg.label}</div>
-              {pg.sections.map((s: any, si: number) => (
-                <div className="k-struct-sec" key={si}>
-                  <span className="k-struct-sec-name">{s.label}</span>
-                  <span className="k-struct-comps">
-                    {s.components.map((c: string, ci: number) => <span className="k-chip" key={ci}>{c}</span>)}
-                  </span>
-                </div>
-              ))}
+            {showHistory && (
+              <Section icon={SECTION_ICONS.versions} title="Histórico de versões">
+                <table className="k-table">
+                  <thead><tr><th>Versão</th><th>Status</th><th>Autor</th><th>Data</th></tr></thead>
+                  <tbody>
+                    {(detail.versions || []).map((v: any) => (
+                      <tr key={v.id}>
+                        <td>v{v.version_number}</td>
+                        <td><span className={'k-badge ' + (v.status === 'published' ? 'k-badge-ok' : 'k-badge-draft')}>{v.status === 'published' ? 'Publicada' : 'Rascunho'}</span></td>
+                        <td>{v.author_name || '—'}</td>
+                        <td>{fmtDate(v.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="k-muted k-sm">Somente leitura no MVP. Restauração de versão chega numa fase futura.</p>
+              </Section>
+            )}
+          </div>
+          }
+          right={
+          <div className="k-editor-preview">
+            <div className="k-tpl-preview-bar">
+              <span className="k-badge k-badge-sample">● Dados de exemplo</span>
+              <span className="k-muted k-sm">pré-visualização do template (não é uma proposta real)</span>
             </div>
-          ))}
-          {pages.length === 0 && <p className="k-muted">Estrutura vazia.</p>}
-        </div>
+            <PreviewFrame
+              src={`/api/koala/templates/${id}/preview?version=${previewVersion}&mode=draft&_t=${tick}`}
+              tick={tick}
+              iframeRef={previewRef}
+              title="Preview do template (dados de exemplo)"
+            />
+          </div>
+          }
+        />
       </div>
     </div>
   );

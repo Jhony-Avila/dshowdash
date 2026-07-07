@@ -1,10 +1,23 @@
+import { useEffect, useState } from 'react';
+import { apiGet } from '../../api/client';
 import { STATUS_LABELS, STATUS_ORDER } from './status';
 
-// Grupo DADOS DA PROPOSTA: identificação + textos comerciais + moeda + desconto da proposta.
+// Grupo DADOS DA PROPOSTA: identificação + textos comerciais + moeda + desconto + TEMPLATE.
 export function ProposalFields(
   { p, onField, onStatus }:
   { p: any; onField: (f: string, v: any) => void; onStatus: (s: string) => void }
 ) {
+  const [templates, setTemplates] = useState<any[]>([]);
+  useEffect(() => { apiGet('/templates?for=picker').then(setTemplates).catch(() => { /* lista vazia = campo mostra indisponível */ }); }, []);
+  const currentTpl = templates.find((t) => t.id === Number(p.template_id));
+  const tplUnavailable = !!p.template_id && templates.length > 0 && !currentTpl;
+
+  function changeTemplate(id: number) {
+    if (!id || id === Number(p.template_id)) return;
+    if (!window.confirm('Trocar o template re-renderiza o preview com o novo layout. O conteúdo preenchido permanece. Continuar?')) return;
+    onField('template_id', id);
+  }
+
   return (
     <div>
       <div className="k-row">
@@ -15,6 +28,27 @@ export function ProposalFields(
         <div className="k-field k-f-half">
           <label className="k-label">Nome do projeto</label>
           <input className="k-input k-w-full" defaultValue={p.project_name ?? ''} onBlur={(e) => onField('project_name', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="k-row">
+        <div className="k-field k-f-half">
+          <label className="k-label">Template</label>
+          <select
+            className="k-input k-w-full"
+            value={currentTpl ? String(currentTpl.id) : ''}
+            onChange={(e) => changeTemplate(Number(e.target.value))}
+          >
+            {!currentTpl && <option value="" disabled>{tplUnavailable ? 'Template indisponível — escolha outro' : 'Selecione…'}</option>}
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}{t.pages ? ` · ${t.pages} pág` : ''}{t.is_default ? ' (padrão)' : ''}
+              </option>
+            ))}
+          </select>
+          {tplUnavailable
+            ? <div className="k-msg k-msg-err k-sm" style={{ marginTop: 6 }}>O template desta proposta ficou indisponível. Escolha um da lista para re-renderizar o preview.</div>
+            : currentTpl?.description && <div className="k-muted k-sm" style={{ marginTop: 4 }}>{currentTpl.description}</div>}
         </div>
       </div>
 

@@ -1,5 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiGet, apiSend, apiUpload } from '../api/client';
+import { SectionAccordion } from './SectionAccordion';
+import { useGridSort, sortRows, DataGridHeader, type GridCol } from './dataGrid';
+
+// Datagrid de Seções: colunas + comparadores (ascendente; direção aplicada por sortRows)
+const SECTION_COLS: GridCol[] = [
+  {}, { key: 'order', label: '#' }, { key: 'name', label: 'Seção' },
+  { key: 'key', label: 'Chave' }, { key: 'images', label: 'Imagens' }, { key: 'status', label: 'Status' }, {},
+];
+const SECTION_CMP: Record<string, (a: any, b: any) => number> = {
+  order: (a, b) => (a.display_order || 0) - (b.display_order || 0),
+  name: (a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'),
+  key: (a, b) => (a.section_key || '').localeCompare(b.section_key || '', 'pt-BR'),
+  images: (a, b) => ((a.image_count || 0) - (b.image_count || 0)) || ((a.display_order || 0) - (b.display_order || 0)),
+  status: (a, b) => (Number(b.is_active) - Number(a.is_active)) || ((a.display_order || 0) - (b.display_order || 0)),
+};
 
 function backendMsg(e: any): string {
   return e?.meta?.message || e?.message || 'Erro';
@@ -63,7 +78,7 @@ function NewSectionModal({ onClose, onCreated }: { onClose: () => void; onCreate
 }
 
 // ── Detalhe da seção: metadados + galeria + upload ──
-function SectionDetail({ id, onBack, onChanged }: { id: number; onBack: () => void; onChanged: () => void }) {
+function SectionEditPanel({ id, onChanged }: { id: number; onChanged: () => void }) {
   const [sec, setSec] = useState<any>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -130,14 +145,10 @@ function SectionDetail({ id, onBack, onChanged }: { id: number; onBack: () => vo
     catch (e: any) { flash('Erro: ' + backendMsg(e), true); }
   }
 
-  if (!sec) return <div className="k-center">Carregando seção…</div>;
+  if (!sec) return <div className="k-center k-acc-loading">Carregando seção…</div>;
 
   return (
-    <div>
-      <div className="k-editor-top">
-        <button className="k-btn k-btn-ghost" onClick={onBack}>← Seções</button>
-        <div className="k-editor-title">{sec.name} <span className="k-badge">{sec.section_key}</span></div>
-      </div>
+    <div className="k-sec-edit">
       {msg && <div className={'k-msg' + (msgErr ? ' k-msg-err' : '')}>{msg}</div>}
 
       <div className="k-card">
@@ -202,9 +213,9 @@ function SectionDetail({ id, onBack, onChanged }: { id: number; onBack: () => vo
 export function SectionsManager() {
   const [rows, setRows] = useState<any[]>([]);
   const [msg, setMsg] = useState('');
-  const [openId, setOpenId] = useState<number | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [q, setQ] = useState('');
+  const { sort, cycle } = useGridSort('koala.sections.sort', { key: 'order', dir: 'asc' });
 
   async function load() {
     try { setRows(await apiGet('/sections')); setMsg(''); }
@@ -223,14 +234,12 @@ export function SectionsManager() {
     catch (e: any) { setMsg('Erro: ' + backendMsg(e)); }
   }
 
-  if (openId !== null) {
-    return <SectionDetail id={openId} onBack={() => { setOpenId(null); load(); }} onChanged={load} />;
-  }
-
   const needle = q.trim().toLowerCase();
   const filtered = needle
     ? rows.filter((s) => (s.name || '').toLowerCase().includes(needle) || (s.section_key || '').toLowerCase().includes(needle))
     : rows;
+  // ordenação client-side (reusa o datagrid): ordena o RESULTADO filtrado
+  const sorted = sortRows(filtered, sort, SECTION_CMP);
 
   return (
     <div className="k-card">
@@ -250,28 +259,24 @@ export function SectionsManager() {
       </div>
       {msg && <div className="k-msg k-msg-err">{msg}</div>}
 
-      <table className="k-table">
-        <thead><tr><th className="k-num">#</th><th>Seção</th><th>Chave</th><th className="k-num">Imagens</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-          {filtered.map((s) => (
-            <tr key={s.id}>
-              <td className="k-num k-muted">{s.display_order}</td>
-              <td>{s.name}{s.description && <div className="k-muted k-sm">{s.description}</div>}</td>
-              <td><span className="k-badge">{s.section_key}</span></td>
-              <td className="k-num">{s.image_count}</td>
-              <td><span className={'k-badge ' + (Number(s.is_active) === 1 ? 'k-badge-ok' : 'k-badge-off')}>{Number(s.is_active) === 1 ? 'Ativa' : 'Inativa'}</span></td>
-              <td className="k-tpl-actions">
-                <button className="k-btn k-btn-sm" onClick={() => setOpenId(s.id)}>Editar</button>
-                <button className="k-btn k-btn-sm k-btn-ghost" onClick={() => toggleActive(s)}>{Number(s.is_active) === 1 ? 'Desativar' : 'Ativar'}</button>
-                <button className="k-btn k-btn-sm k-btn-danger" onClick={() => remove(s)}>Excluir</button>
-              </td>
-            </tr>
+      <div className="k-sec-grid">
+        <DataGridHeader cols={SECTION_COLS} sort={sort} onSort={cycle} />
+        <div className="k-acc-list">
+          {sorted.map((s) => (
+            <SectionAccordion
+              key={s.id + '::' + sort.key + sort.dir}
+              section={s}
+              onToggleActive={() => toggleActive(s)}
+              onRemove={() => remove(s)}
+            >
+              <SectionEditPanel id={s.id} onChanged={load} />
+            </SectionAccordion>
           ))}
-          {filtered.length === 0 && <tr><td colSpan={6} className="k-muted">{rows.length === 0 ? 'Nenhuma seção ainda.' : 'Nenhuma seção corresponde à busca.'}</td></tr>}
-        </tbody>
-      </table>
+          {sorted.length === 0 && <p className="k-muted k-acc-empty">{rows.length === 0 ? 'Nenhuma seção ainda.' : 'Nenhuma seção corresponde à busca.'}</p>}
+        </div>
+      </div>
 
-      {showNew && <NewSectionModal onClose={() => setShowNew(false)} onCreated={(id) => { setShowNew(false); setOpenId(id); }} />}
+      {showNew && <NewSectionModal onClose={() => setShowNew(false)} onCreated={() => { setShowNew(false); load(); }} />}
     </div>
   );
 }

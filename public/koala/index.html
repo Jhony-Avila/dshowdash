@@ -4,6 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Koala Docs</title>
+    <script>
+      /* Anti-FOUC: aplica o tema ANTES do primeiro paint. koala.theme = light|dark (explícito) ou ausente=auto (SO). */
+      (function () {
+        try {
+          var t = localStorage.getItem('koala.theme');
+          if (t !== 'light' && t !== 'dark') { t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+      })();
+    </script>
   </head>
   <body>
     <div id="koala-root"></div>

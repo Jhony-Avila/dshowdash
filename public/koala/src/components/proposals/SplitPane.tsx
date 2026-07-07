@@ -2,38 +2,41 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Divisor vertical redimensionável + colapso rápido entre dois painéis.
 // Implementação própria (pointer events), sem lib externa.
-const SPLIT_KEY = 'koala.editor.split'; // fração da largura útil ocupada pelo form (0..1)
-const COLLAPSE_KEY = 'koala.editor.collapse'; // 'none' | 'form' | 'preview'
+const DEFAULT_STORAGE = 'koala.editor'; // base das chaves localStorage (proposta); Templates usa 'koala.template'
 const DEFAULT_FRACTION = 0.5; // layout atual ≈ 50/50
-const FORM_MIN = 360; // px
-const PREVIEW_MIN = 380; // px
+const FORM_MIN = 680; // px — tabela de itens (9 colunas) respira
+const PREVIEW_MIN = 800; // px — folha A4 (~794px @1:1) inteira, sem cortar o título
 const HANDLE = 7; // largura do divisor (px)
 const STEP = 24; // passo do teclado (px)
-const STACK_BELOW = 900; // abaixo desta largura útil, empilha e desabilita o splitter
+// Empilhamento DESATIVADO: com min-width no workspace, telas estreitas rolam na horizontal
+// (a prancheta) em vez de empilhar/encolher. Mantido 0 para o ResizeObserver nunca disparar stack.
+const STACK_BELOW = 0;
 
 type Collapse = 'none' | 'form' | 'preview';
 
-function readFraction(): number {
+function readFraction(key: string): number {
   try {
-    const v = parseFloat(localStorage.getItem(SPLIT_KEY) || '');
+    const v = parseFloat(localStorage.getItem(key) || '');
     return v > 0 && v < 1 ? v : DEFAULT_FRACTION;
   } catch {
     return DEFAULT_FRACTION;
   }
 }
-function readCollapse(): Collapse {
+function readCollapse(key: string): Collapse {
   try {
-    const v = localStorage.getItem(COLLAPSE_KEY);
+    const v = localStorage.getItem(key);
     return v === 'form' || v === 'preview' ? (v as Collapse) : 'none';
   } catch {
     return 'none';
   }
 }
 
-export function SplitPane({ left, right }: { left: any; right: any }) {
+export function SplitPane({ left, right, leftFooter, rightFooter, storageKey = DEFAULT_STORAGE }: { left: any; right: any; leftFooter?: any; rightFooter?: any; storageKey?: string }) {
+  const splitKey = storageKey + '.split';
+  const collapseKey = storageKey + '.collapse';
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [fraction, setFraction] = useState<number>(readFraction);
-  const [collapse, setCollapse] = useState<Collapse>(readCollapse);
+  const [fraction, setFraction] = useState<number>(() => readFraction(splitKey));
+  const [collapse, setCollapse] = useState<Collapse>(() => readCollapse(collapseKey));
   const [dragging, setDragging] = useState(false);
   const [stacked, setStacked] = useState(false);
 
@@ -51,11 +54,11 @@ export function SplitPane({ left, right }: { left: any; right: any }) {
 
   // persistência
   useEffect(() => {
-    try { localStorage.setItem(SPLIT_KEY, String(fraction)); } catch { /* noop */ }
-  }, [fraction]);
+    try { localStorage.setItem(splitKey, String(fraction)); } catch { /* noop */ }
+  }, [fraction, splitKey]);
   useEffect(() => {
-    try { localStorage.setItem(COLLAPSE_KEY, collapse); } catch { /* noop */ }
-  }, [collapse]);
+    try { localStorage.setItem(collapseKey, collapse); } catch { /* noop */ }
+  }, [collapse, collapseKey]);
 
   const growable = useCallback(() => {
     const el = wrapRef.current;
@@ -141,6 +144,7 @@ export function SplitPane({ left, right }: { left: any; right: any }) {
     >
       <div className="k-split-pane k-split-pane-form" style={{ flexGrow: leftGrow }}>
         <div className="k-split-inner k-split-inner-form">{left}</div>
+        {leftFooter && <div className="k-pane-footer k-pane-footer-form">{leftFooter}</div>}
       </div>
 
       <div
@@ -192,6 +196,7 @@ export function SplitPane({ left, right }: { left: any; right: any }) {
 
       <div className="k-split-pane k-split-pane-preview" style={{ flexGrow: rightGrow }}>
         <div className="k-split-inner k-split-inner-preview">{right}</div>
+        {rightFooter && <div className="k-pane-footer k-pane-footer-preview">{rightFooter}</div>}
       </div>
     </div>
   );

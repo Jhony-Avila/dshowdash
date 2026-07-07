@@ -12,6 +12,13 @@ import { ExpensesEditor } from './ExpensesEditor';
 import { PricingPanel } from './PricingPanel';
 import { PaymentTermsEditor } from './PaymentTermsEditor';
 import { PreviewFrame } from './PreviewFrame';
+import { PdfActions } from './PdfActions';
+import { PublishPanel } from './PublishPanel';
+import { VersionsPanel } from './VersionsPanel';
+import { ActivityPanel } from './ActivityPanel';
+import { SECTION_ICONS } from './sectionIcons';
+import { Filmstrip } from './Filmstrip';
+import { PreviewFilmstrip } from './PreviewFilmstrip';
 import { SplitPane } from './SplitPane';
 import { STATUS_LABELS } from './status';
 import type { Proposal } from '../../types';
@@ -25,6 +32,7 @@ export function EditorShell({ proposalId, onBack }: { proposalId: number; onBack
   const [saveMsg, setSaveMsg] = useState('');
   const timer = useRef<any>(null);
   const pending = useRef<Record<string, any>>({});
+  const previewRef = useRef<HTMLIFrameElement>(null); // exposto ao navegador de páginas (R2)
 
   async function reload() {
     const d = await apiGet('/proposals/' + proposalId);
@@ -102,7 +110,7 @@ export function EditorShell({ proposalId, onBack }: { proposalId: number; onBack
   if (!p) return <div className="k-center">Carregando proposta…</div>;
 
   return (
-    <div>
+    <div className="k-editor-shell">
       <div className="k-editor-top">
         <button className="k-btn k-btn-ghost" onClick={handleBack}>← Propostas</button>
         <div className="k-editor-title">{p.proposal_number} <span className="k-badge">{STATUS_LABELS[p.status] || p.status}</span></div>
@@ -115,53 +123,70 @@ export function EditorShell({ proposalId, onBack }: { proposalId: number; onBack
       </div>
       {saveState === 'error' && saveMsg && <div className="k-msg k-msg-err">{saveMsg}</div>}
 
+      <div className="k-editor-workspace">
       <SplitPane
+        leftFooter={<Filmstrip />}
+        rightFooter={<PreviewFilmstrip iframeRef={previewRef} tick={tick} />}
         left={
         <div className="k-editor-form">
-          <Section title="Dados da proposta">
+          <Section icon={SECTION_ICONS.proposal} title="Dados da proposta">
             <ProposalFields p={p} onField={onField} onStatus={onStatus} />
           </Section>
 
-          <Section title="Cliente">
+          <Section icon={SECTION_ICONS.client} title="Cliente">
             <ClientIdentity proposalId={proposalId} onChange={afterChange} />
             <OrcamentoImport proposalId={proposalId} externalClientId={externalClientId} onImported={afterChange} />
           </Section>
 
-          <Section title="Contatos do cliente" defaultOpen={false}>
+          <Section icon={SECTION_ICONS.contacts} title="Contatos do cliente" defaultOpen={false}>
             <ContactsEditor proposalId={proposalId} />
           </Section>
 
-          <Section title="Endereço do cliente" defaultOpen={false}>
+          <Section icon={SECTION_ICONS.address} title="Endereço do cliente" defaultOpen={false}>
             <AddressForm proposalId={proposalId} />
           </Section>
 
-          <Section title="Vendedor" defaultOpen={false}>
+          <Section icon={SECTION_ICONS.seller} title="Vendedor" defaultOpen={false}>
             <SellerForm p={p} onField={onField} />
           </Section>
 
-          <Section title="Itens da proposta">
+          <Section icon={SECTION_ICONS.items} title="Itens da proposta">
             <LineItemsEditor proposalId={proposalId} currency={p.currency} onChange={afterChange} />
           </Section>
 
-          <Section title="Despesas operacionais">
+          <Section icon={SECTION_ICONS.expenses} title="Despesas operacionais">
             <ExpensesEditor proposalId={proposalId} currency={p.currency} onChange={afterChange} />
           </Section>
 
-          <Section title="Totais">
+          <Section icon={SECTION_ICONS.totals} title="Totais">
             <PricingPanel p={p} onField={onField} />
           </Section>
 
-          <Section title="Formas de pagamento" defaultOpen={false}>
+          <Section icon={SECTION_ICONS.payments} title="Formas de pagamento" defaultOpen={false}>
             <PaymentTermsEditor proposalId={proposalId} currency={p.currency} />
+          </Section>
+
+          <Section icon={SECTION_ICONS.publish} title="Publicação e link público" defaultOpen={false}>
+            <PublishPanel proposalId={proposalId} onChange={afterChange} />
+          </Section>
+
+          <Section icon={SECTION_ICONS.versions} title="Versões" defaultOpen={false}>
+            <VersionsPanel proposalId={proposalId} onRestored={afterChange} />
+          </Section>
+
+          <Section icon={SECTION_ICONS.activity} title="Atividade" defaultOpen={false}>
+            <ActivityPanel proposalId={proposalId} />
           </Section>
         </div>
         }
         right={
         <div className="k-editor-preview">
-          <PreviewFrame proposalId={proposalId} tick={tick} />
+          <PdfActions proposalId={proposalId} status={p.status} />
+          <PreviewFrame src={`/api/koala/proposals/${proposalId}/preview?mode=draft&_t=${tick}`} tick={tick} iframeRef={previewRef} title="Preview A4 da proposta" />
         </div>
         }
       />
+      </div>
     </div>
   );
 }

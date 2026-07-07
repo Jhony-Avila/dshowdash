@@ -6,6 +6,8 @@ import { AdminPaymentMethods } from './AdminPaymentMethods';
 import { TemplatePreview } from './TemplatePreview';
 import { TemplatesManager } from './TemplatesManager';
 import { SectionsManager } from './SectionsManager';
+import { FooterGlobal } from './FooterGlobal';
+import { ThemeToggle } from './ThemeToggle';
 
 // Ícones inline (SVG próprios, currentColor) — sem dependência nova de biblioteca.
 function navIcon(paths: any) {
@@ -96,6 +98,7 @@ const COLLAPSE_KEY = 'koala.sidebar.collapsed';
 
 export function Shell({ me }: { me: any }) {
   const [view, setView] = useState('proposals');
+  const [scrolled, setScrolled] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem(COLLAPSE_KEY) === '1';
@@ -167,22 +170,31 @@ export function Shell({ me }: { me: any }) {
       </aside>
 
       <div className="k-main">
-        <header className="k-topbar">
+        <header className={'k-topbar' + (scrolled ? ' is-scrolled' : '')}>
           <div className="k-topbar-title">{current ? current.label : ''}</div>
-          <div className="k-user">
-            {me.name || me.email} · <span className="k-role">{me.role}</span>
+          <div className="k-topbar-right">
+            <ThemeToggle />
+            <div className="k-user">
+              {me.name || me.email} · <span className="k-role">{me.role}</span>
+            </div>
           </div>
         </header>
-        <main className="k-content k-content-wide">
-          {view === 'proposals' && <ProposalsApp />}
-          {view === 'items' && <AdminItemCatalog canWrite={isAdmin} />}
-          {view === 'terms' && <AdminCommercialTerms canWrite={isAdmin} />}
-          {view === 'payments' && <AdminPaymentMethods canWrite={isAdmin} />}
-          {view === 'templates' && isAdmin && <TemplatesManager />}
-          {view === 'sections' && isAdmin && <SectionsManager />}
-          {view === 'preview' && <TemplatePreview />}
-        </main>
+        <div className="k-scroll" onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 4)}>
+          <main className="k-content k-content-wide">
+            {view === 'proposals' && <ProposalsApp />}
+            {view === 'items' && <AdminItemCatalog canWrite={isAdmin} />}
+            {view === 'terms' && <AdminCommercialTerms canWrite={isAdmin} />}
+            {view === 'payments' && <AdminPaymentMethods canWrite={isAdmin} />}
+            {view === 'templates' && isAdmin && <TemplatesManager />}
+            {view === 'sections' && isAdmin && <SectionsManager />}
+            {view === 'preview' && <TemplatePreview />}
+          </main>
+        </div>
       </div>
+
+      <footer className="k-footer">
+        <FooterGlobal />
+      </footer>
     </div>
   );
 }
