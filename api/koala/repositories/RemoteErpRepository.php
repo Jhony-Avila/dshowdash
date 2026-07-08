@@ -72,7 +72,7 @@ class RemoteErpRepository
      * Queries DIRECIONADAS por tipo de termo (cada uma com LIMIT) — evita JOIN explosivo
      * + EXISTS correlacionado (que estourava o max_statement_time). Merge por cliente_id.
      */
-    public function searchClients(string $q): array
+    public function searchClients(string $q, ?string $vendor = null): array
     {
         $q = trim($q);
         if ($q === '') { return []; }
@@ -84,6 +84,12 @@ class RemoteErpRepository
         $isEmail = strpos($q, '@') !== false;
         $lim = self::MAX_RESULTS;
         $found = [];
+
+        // Escopo por vendedor (BOLA): vendedor só vê clientes que ELE orçou (Orcamento.Nome_Vendedor).
+        // null = gestor/admin (irrestrito). O EXISTS roda sobre o resultado já estreitado por cada branch
+        // (id/doc/email/nome, todos indexados) — barato, diferente do EXISTS global que estourava timeout.
+        $ven = $vendor !== null ? ' AND EXISTS (SELECT 1 FROM Orcamento ov WHERE ov.id_cliente = c.id AND ov.Nome_Vendedor = :ven)' : '';
+        $venP = $vendor !== null ? [':ven' => $vendor] : [];
 
         $add = function (array $rows) use (&$found) {
             foreach ($rows as $r) { $found[(int) $r['cliente_id']] = $r; }
@@ -103,7 +109,9 @@ class RemoteErpRepository
                            FROM ent_cliente c JOIN ent_entidade e ON e.id = c.id_entidade
                            LEFT JOIN ent_pessoa p ON p.id_entidade = c.id_entidade
                            LEFT JOIN ent_organizacao o ON o.id_entidade = c.id_entidade
-                           WHERE c.id = :qn AND (c.deleted = 0 OR c.deleted IS NULL) LIMIT 5", [':qn' => (int) $q]));
+                           WHERE c.id = :qn AND (c.deleted = 0 OR c.deleted IS NULL)$ven LIMIT 5", [':qn' => (int) $q] + $venP));
+                // busca por id_orcamento: filtra direto pelo dono do orçamento (não pelo EXISTS de cliente).
+                $venOrc = $vendor !== null ? ' AND orc.Nome_Vendedor = :ven' : '';
                 $add($run("SELECT c.id AS cliente_id, e.tipo,
                              COALESCE(o.razao_social, p.nome) AS nome, o.nome_fantasia AS fantasia,
                              COALESCE(o.cnpj, p.cpf) AS documento
@@ -112,17 +120,17 @@ class RemoteErpRepository
                            JOIN ent_entidade e ON e.id = c.id_entidade
                            LEFT JOIN ent_pessoa p ON p.id_entidade = c.id_entidade
                            LEFT JOIN ent_organizacao o ON o.id_entidade = c.id_entidade
-                           WHERE orc.Id_Orc = :qn LIMIT 5", [':qn' => (int) $q]));
+                           WHERE orc.Id_Orc = :qn$venOrc LIMIT 5", [':qn' => (int) $q] + $venP));
             }
             // (2) documento CNPJ/CPF (>= 4 dígitos)
             if (strlen($digits) >= 4) {
                 $dig = '%' . $digits . '%';
                 $add($run("SELECT c.id AS cliente_id, 'PJ' AS tipo, o.razao_social AS nome, o.nome_fantasia AS fantasia, o.cnpj AS documento
                            FROM ent_organizacao o JOIN ent_cliente c ON c.id_entidade = o.id_entidade
-                           WHERE o.cnpj LIKE :dig AND (c.deleted = 0 OR c.deleted IS NULL) LIMIT $lim", [':dig' => $dig]));
+                           WHERE o.cnpj LIKE :dig AND (c.deleted = 0 OR c.deleted IS NULL)$ven LIMIT $lim", [':dig' => $dig] + $venP));
                 $add($run("SELECT c.id AS cliente_id, 'PF' AS tipo, p.nome AS nome, NULL AS fantasia, p.cpf AS documento
                            FROM ent_pessoa p JOIN ent_cliente c ON c.id_entidade = p.id_entidade
-                           WHERE p.cpf LIKE :dig AND (c.deleted = 0 OR c.deleted IS NULL) LIMIT $lim", [':dig' => $dig]));
+                           WHERE p.cpf LIKE :dig AND (c.deleted = 0 OR c.deleted IS NULL)$ven LIMIT $lim", [':dig' => $dig] + $venP));
             }
             // (3) email (só se parecer email)
             if ($isEmail) {
@@ -134,17 +142,17 @@ class RemoteErpRepository
                            LEFT JOIN ent_organizacao o ON o.id = ce.Id_Organizacao
                            JOIN ent_cliente c ON c.id_entidade = COALESCE(p.id_entidade, o.id_entidade)
                            JOIN ent_entidade e ON e.id = c.id_entidade
-                           WHERE ce.Email LIKE :like AND (c.deleted = 0 OR c.deleted IS NULL) LIMIT $lim", [':like' => $like]));
+                           WHERE ce.Email LIKE :like AND (c.deleted = 0 OR c.deleted IS NULL)$ven LIMIT $lim", [':like' => $like] + $venP));
             }
             // (4) nome (pessoa e organização, separados) — exige >=3 chars: freia enumeração ampla
             //     da base do ERP por termos curtos (id numérico e documento têm seus próprios branches).
             if (!$isNum && mb_strlen($q) >= 3) {
                 $add($run("SELECT c.id AS cliente_id, 'PF' AS tipo, p.nome AS nome, NULL AS fantasia, p.cpf AS documento
                            FROM ent_pessoa p JOIN ent_cliente c ON c.id_entidade = p.id_entidade
-                           WHERE p.nome LIKE :like AND (c.deleted = 0 OR c.deleted IS NULL) LIMIT $lim", [':like' => $like]));
+                           WHERE p.nome LIKE :like AND (c.deleted = 0 OR c.deleted IS NULL)$ven LIMIT $lim", [':like' => $like] + $venP));
                 $add($run("SELECT c.id AS cliente_id, 'PJ' AS tipo, o.razao_social AS nome, o.nome_fantasia AS fantasia, o.cnpj AS documento
                            FROM ent_organizacao o JOIN ent_cliente c ON c.id_entidade = o.id_entidade
-                           WHERE (o.razao_social LIKE :like OR o.nome_fantasia LIKE :like) AND (c.deleted = 0 OR c.deleted IS NULL) LIMIT $lim", [':like' => $like]));
+                           WHERE (o.razao_social LIKE :like OR o.nome_fantasia LIKE :like) AND (c.deleted = 0 OR c.deleted IS NULL)$ven LIMIT $lim", [':like' => $like] + $venP));
             }
         } catch (RemoteUnavailableException $e) {
             throw $e;
@@ -156,9 +164,11 @@ class RemoteErpRepository
         return array_slice(array_values($found), 0, self::MAX_RESULTS);
     }
 
-    /** Detalhe completo do cliente (para o snapshot). */
-    public function getClientDetail(int $clientId): ?array
+    /** Detalhe completo do cliente (para o snapshot). $vendor!=null exige que o vendedor tenha orçado o cliente. */
+    public function getClientDetail(int $clientId, ?string $vendor = null): ?array
     {
+        $venSql = $vendor !== null ? ' AND EXISTS (SELECT 1 FROM Orcamento ov WHERE ov.id_cliente = c.id AND ov.Nome_Vendedor = ?)' : '';
+        $params = $vendor !== null ? [$clientId, $vendor] : [$clientId];
         $sql = 'SELECT c.id AS cliente_id, e.tipo,
                        p.cpf, p.nome AS pessoa_nome, p.primeiro_nome, p.sobrenome,
                        o.cnpj, o.razao_social, o.nome_fantasia, o.inscricao_estadual, o.situacao_cadastral
@@ -166,10 +176,10 @@ class RemoteErpRepository
                 JOIN ent_entidade e ON e.id = c.id_entidade
                 LEFT JOIN ent_pessoa p ON p.id_entidade = c.id_entidade
                 LEFT JOIN ent_organizacao o ON o.id_entidade = c.id_entidade
-                WHERE c.id = ? AND (c.deleted = 0 OR c.deleted IS NULL) LIMIT 1';
+                WHERE c.id = ? AND (c.deleted = 0 OR c.deleted IS NULL)' . $venSql . ' LIMIT 1';
         try {
             $stmt = $this->conn()->prepare($sql);
-            $stmt->execute([$clientId]);
+            $stmt->execute($params);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (!$row) { return null; }
             // e-mail principal (best-effort)
@@ -192,14 +202,16 @@ class RemoteErpRepository
         }
     }
 
-    /** Orçamentos do cliente (cabeçalho). Sempre LIMIT. */
-    public function getClientOrcamentos(int $clientId): array
+    /** Orçamentos do cliente (cabeçalho). Sempre LIMIT. $vendor!=null restringe ao dono (BOLA). */
+    public function getClientOrcamentos(int $clientId, ?string $vendor = null): array
     {
+        $venSql = $vendor !== null ? ' AND Nome_Vendedor = ?' : '';
+        $params = $vendor !== null ? [$clientId, $vendor] : [$clientId];
         $sql = 'SELECT Id_Orc, id_cliente, Nome_Cliente, Valor_Final, Subtotal, Id_Status, Nome_Vendedor, Data_Criacao
-                FROM Orcamento WHERE id_cliente = ? ORDER BY Data_Criacao DESC LIMIT ' . self::MAX_RESULTS;
+                FROM Orcamento WHERE id_cliente = ?' . $venSql . ' ORDER BY Data_Criacao DESC LIMIT ' . self::MAX_RESULTS;
         try {
             $stmt = $this->conn()->prepare($sql);
-            $stmt->execute([$clientId]);
+            $stmt->execute($params);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (RemoteUnavailableException $e) {
             throw $e;
@@ -209,14 +221,23 @@ class RemoteErpRepository
         }
     }
 
-    /** Itens de um orçamento (para importar como line items). */
-    public function getOrcamentoItems(int $orcId): array
+    /** Itens de um orçamento (para importar). $vendor!=null exige que o orçamento seja do vendedor (BOLA:
+     *  senão qualquer vendedor lia preços/itens de orçamentos alheios enumerando Id_Orc). */
+    public function getOrcamentoItems(int $orcId, ?string $vendor = null): array
     {
-        $sql = 'SELECT Id, Id_Orc, Id_Produto, Descricao, Qtd, Valor_Uni, Subtotal, Categoria, categoria_item, Observacao
-                FROM Orcamento_Item WHERE Id_Orc = ? ORDER BY Id LIMIT 500';
+        if ($vendor !== null) {
+            $sql = 'SELECT oi.Id, oi.Id_Orc, oi.Id_Produto, oi.Descricao, oi.Qtd, oi.Valor_Uni, oi.Subtotal, oi.Categoria, oi.categoria_item, oi.Observacao
+                    FROM Orcamento_Item oi JOIN Orcamento o ON o.Id_Orc = oi.Id_Orc
+                    WHERE oi.Id_Orc = ? AND o.Nome_Vendedor = ? ORDER BY oi.Id LIMIT 500';
+            $params = [$orcId, $vendor];
+        } else {
+            $sql = 'SELECT Id, Id_Orc, Id_Produto, Descricao, Qtd, Valor_Uni, Subtotal, Categoria, categoria_item, Observacao
+                    FROM Orcamento_Item WHERE Id_Orc = ? ORDER BY Id LIMIT 500';
+            $params = [$orcId];
+        }
         try {
             $stmt = $this->conn()->prepare($sql);
-            $stmt->execute([$orcId]);
+            $stmt->execute($params);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (RemoteUnavailableException $e) {
             throw $e;

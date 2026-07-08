@@ -41,6 +41,18 @@ class PermissionService
     }
 
     /**
+     * Escopo do ERP por vendedor: dados de cliente/orçamento do ERP têm dono via Orcamento.Nome_Vendedor.
+     * Gestor/admin => null (irrestrito, mesma semântica de canSeeAllProposals). Vendedor => o próprio
+     * nome (identidade no ERP = koala_users.name). Vendedor sem nome => '' (fail-closed: não casa nada).
+     * IMPORTANTE: assume que koala_users.name === Orcamento.Nome_Vendedor (validar com vendedor real).
+     */
+    public static function erpVendorScope(array $koalaUser): ?string
+    {
+        if (self::canSeeAllProposals($koalaUser)) { return null; }
+        return trim((string) ($koalaUser['name'] ?? ''));
+    }
+
+    /**
      * Exige que o usuário Koala tenha um dos papéis dados; senão responde 403 e encerra.
      * (ApiResponse::error faz exit.)
      */

@@ -144,7 +144,8 @@ class SnapshotService
     public function importClient(array $koala, int $proposalId, int $externalClientId): array
     {
         (new ProposalService($this->pdo))->get($koala, $proposalId);   // 404/403
-        $d = $this->graceful(fn() => $this->erp->getClientDetail($externalClientId));
+        $ven = PermissionService::erpVendorScope($koala);               // vendedor só importa cliente que orçou
+        $d = $this->graceful(fn() => $this->erp->getClientDetail($externalClientId, $ven));
         if ($d === null) {
             ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['message' => 'Cliente remoto nao encontrado', 'id' => $externalClientId]);
         }
@@ -187,7 +188,8 @@ class SnapshotService
     public function importOrcamento(array $koala, int $proposalId, int $orcId): array
     {
         $proposal = (new ProposalService($this->pdo))->get($koala, $proposalId);   // 404/403
-        $rows = $this->graceful(fn() => $this->erp->getOrcamentoItems($orcId));
+        $ven = PermissionService::erpVendorScope($koala);              // vendedor só importa orçamento que é dele
+        $rows = $this->graceful(fn() => $this->erp->getOrcamentoItems($orcId, $ven));
 
         $itemsRepo = new ProposalItemRepository($this->pdo);
 

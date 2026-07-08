@@ -24,13 +24,13 @@ class ClientIntegrationService
         }
     }
 
-    public function search(string $q): array
+    public function search(string $q, ?string $vendor = null): array
     {
-        return $this->graceful(fn() => $this->erp->searchClients($q));
+        return $this->graceful(fn() => $this->erp->searchClients($q, $vendor));
     }
 
-    public function orcamentos(int $clientId): array
+    public function orcamentos(int $clientId, ?string $vendor = null): array
     {
-        return $this->graceful(fn() => $this->erp->getClientOrcamentos($clientId));
+        return $this->graceful(fn() => $this->erp->getClientOrcamentos($clientId, $vendor));
     }
 }
