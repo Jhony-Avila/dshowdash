@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../../api/client';
+import { dateTimeBr } from '../../format';
 
 // F5 — Timeline de atividade (auditoria readonly, últimas 50).
 type LogEntry = {
@@ -48,7 +49,7 @@ export function ActivityPanel({ proposalId }: { proposalId: number }) {
     <ul className="k-timeline">
       {logs.map((e) => (
         <li key={e.id}>
-          <span className="k-tl-when">{new Date(e.created_at.replace(' ', 'T')).toLocaleString('pt-BR')}</span>
+          <span className="k-tl-when">{dateTimeBr(e.created_at)}</span>
           <span className="k-tl-who">{e.author || 'sistema'}</span>
           <span className="k-tl-what">{describe(e)}</span>
         </li>

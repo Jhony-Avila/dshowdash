@@ -15,7 +15,7 @@ export function PaymentTermsEditor({ proposalId, currency = 'BRL' }: { proposalI
   }
   useEffect(() => {
     load();
-    apiGet('/payment-methods').then(setMethods).catch(() => {});
+    apiGet('/payment-methods').then(setMethods).catch(() => setMsg('Falha ao carregar as formas de pagamento.'));
   }, [proposalId]);
 
   async function add() {

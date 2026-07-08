@@ -9,7 +9,7 @@ export function LineItemsEditor({ proposalId, currency, onChange }: { proposalId
   const [sig, setSig] = useState(0);
   const [msg, setMsg] = useState('');
 
-  useEffect(() => { apiGet('/items').then(setCatalog).catch(() => {}); }, [proposalId]);
+  useEffect(() => { apiGet('/items').then(setCatalog).catch(() => setMsg('Falha ao carregar o catálogo de itens.')); }, [proposalId]);
 
   async function addCat() {
     if (!sel) return;

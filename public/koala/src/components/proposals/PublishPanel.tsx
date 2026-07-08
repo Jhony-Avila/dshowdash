@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiSend } from '../../api/client';
+import { dateTimeBr } from '../../format';
 
 // F4 — Publicação: publicar/revogar/republicar + link público copiável + histórico de visualizações.
 type PublicState = {
@@ -91,7 +92,7 @@ export function PublishPanel({ proposalId, onChange }: { proposalId: number; onC
               <ul className="k-viewlist">
                 {views.slice(0, 20).map((v, i) => (
                   <li key={i} className="k-sm">
-                    <span>{new Date(v.viewed_at.replace(' ', 'T')).toLocaleString('pt-BR')}</span>
+                    <span>{dateTimeBr(v.viewed_at)}</span>
                     <span className="k-muted"> · {v.ip} · {v.ua}</span>
                   </li>
                 ))}

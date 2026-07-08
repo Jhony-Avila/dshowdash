@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiSend } from '../../api/client';
+import { dateTimeBr } from '../../format';
 
 // F5 — Histórico de versões congeladas: visualizar (readonly) e restaurar (gestor/admin).
 const TRIGGER_LABEL: Record<string, string> = {
@@ -59,7 +60,7 @@ export function VersionsPanel({ proposalId, onRestored }: { proposalId: number; 
               <td>v{v.version_number}</td>
               <td>{TRIGGER_LABEL[v.trigger_event || ''] || v.trigger_event || '—'}
                 {v.restored_from ? <span className="k-sm k-muted"> (de v{v.restored_from})</span> : null}</td>
-              <td className="k-sm">{new Date(v.created_at.replace(' ', 'T')).toLocaleString('pt-BR')}</td>
+              <td className="k-sm">{dateTimeBr(v.created_at)}</td>
               <td>{money(v.total_final, v.currency)}</td>
               <td className="k-vactions">
                 <button className="k-btn k-btn-ghost k-btn-sm" onClick={() => view(v.id)}>Visualizar</button>
