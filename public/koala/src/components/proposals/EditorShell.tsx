@@ -49,6 +49,9 @@ export function EditorShell({ proposalId, onBack }: { proposalId: number; onBack
     return d;
   }
   useEffect(() => { reload(); }, [proposalId]);
+  // Limpa o timer de autosave no unmount (evita flush()->setState em componente desmontado
+  // ao sair do editor pela sidebar sem passar por handleBack). O PUT em andamento não se perde.
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   function bump() { setTick((t) => t + 1); }
 

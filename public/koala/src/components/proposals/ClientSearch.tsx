@@ -12,12 +12,16 @@ export function ClientSearch({ proposalId, onImported }: { proposalId: number; o
   useEffect(() => {
     if (t.current) clearTimeout(t.current);
     if (q.trim().length < 2) { setRes([]); return; }
+    // 'alive' faz a busca ANTERIOR ser ignorada quando q muda (última requisição vence) e evita
+    // setState após unmount — cleanup zera a flag e limpa o timer pendente.
+    let alive = true;
     t.current = setTimeout(async () => {
       setBusy(true);
-      try { setRes(await apiGet('/clients/search?q=' + encodeURIComponent(q))); setMsg(''); }
-      catch (e: any) { setMsg(e.message === 'REMOTE_UNAVAILABLE' ? 'ERP indisponível, tente de novo.' : 'Erro: ' + e.message); }
-      finally { setBusy(false); }
+      try { const r = await apiGet('/clients/search?q=' + encodeURIComponent(q)); if (alive) { setRes(r); setMsg(''); } }
+      catch (e: any) { if (alive) setMsg(e.message === 'REMOTE_UNAVAILABLE' ? 'ERP indisponível, tente de novo.' : 'Erro: ' + e.message); }
+      finally { if (alive) setBusy(false); }
     }, 500);
+    return () => { alive = false; if (t.current) clearTimeout(t.current); };
   }, [q]);
 
   async function pick(c: any) {
