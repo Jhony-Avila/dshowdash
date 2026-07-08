@@ -113,7 +113,7 @@ class ProposalExpenseService
         return KoalaTx::run($this->pdo, function () use ($orderedIds, $proposalId) {
             $order = 1;
             foreach ($orderedIds as $eid) {
-                if (ctype_digit((string) $eid)) { $this->expenses->setOrder((int) $eid, $order++); }
+                if (ctype_digit((string) $eid)) { $this->expenses->setOrder((int) $eid, $order++, $proposalId); }
             }
             return $this->expenses->listDraft($proposalId);
         });

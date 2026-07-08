@@ -77,9 +77,10 @@ class ProposalExpenseRepository
         return $stmt->execute([$id]);
     }
 
-    public function setOrder(int $id, int $order): bool
+    public function setOrder(int $id, int $order, int $proposalId): bool
     {
-        $stmt = $this->pdo->prepare('UPDATE koala_proposal_expenses SET display_order = ? WHERE id = ? AND proposal_version_id IS NULL');
-        return $stmt->execute([$order, $id]);
+        // proposal_id no WHERE: evita IDOR de escrita no /reorder (ver ProposalItemRepository::setOrder).
+        $stmt = $this->pdo->prepare('UPDATE koala_proposal_expenses SET display_order = ? WHERE id = ? AND proposal_id = ? AND proposal_version_id IS NULL');
+        return $stmt->execute([$order, $id, $proposalId]);
     }
 }

@@ -57,6 +57,15 @@ class ProposalItemService
                 ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['field' => 'discount_percent', 'message' => 'Desconto (%) deve estar entre 0 e 100']);
             }
         }
+        if (isset($d['addition_value']) && $d['addition_value'] !== null && $d['addition_value'] !== '' && (float) $d['addition_value'] < 0) {
+            ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['field' => 'addition_value', 'message' => 'Acréscimo (valor) não pode ser negativo']);
+        }
+        if (isset($d['addition_percent']) && $d['addition_percent'] !== null && $d['addition_percent'] !== '') {
+            $ap = (float) $d['addition_percent'];
+            if ($ap < 0 || $ap > 1000) {
+                ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['field' => 'addition_percent', 'message' => 'Acréscimo (%) deve estar entre 0 e 1000']);
+            }
+        }
         if (isset($d['observation']) && $d['observation'] !== null && mb_strlen((string) $d['observation']) > 2000) {
             ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['field' => 'observation', 'message' => 'Observação excede 2000 caracteres']);
         }
@@ -202,7 +211,7 @@ class ProposalItemService
         return KoalaTx::run($this->pdo, function () use ($orderedIds, $proposalId) {
             $order = 1;
             foreach ($orderedIds as $iid) {
-                if (ctype_digit((string) $iid)) { $this->items->setOrder((int) $iid, $order++); }
+                if (ctype_digit((string) $iid)) { $this->items->setOrder((int) $iid, $order++, $proposalId); }
             }
             return $this->items->listDraft($proposalId);
         });

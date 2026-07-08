@@ -108,7 +108,12 @@ class ProposalRepository
 
     public function markDeletedForSeller(int $id): bool
     {
-        $stmt = $this->pdo->prepare('UPDATE koala_proposals SET deleted_by_seller = 1, status = \'user_deleted\' WHERE id = ?');
+        // Revoga o link público junto: sem public_revoked_at, /p/{slug} de uma proposta "excluída"
+        // pelo vendedor continuava servindo o documento congelado ao público (só deleted_at/revoked
+        // barram resolvePublic). NOW() é idempotente e inócuo se nunca foi publicada.
+        $stmt = $this->pdo->prepare(
+            "UPDATE koala_proposals SET deleted_by_seller = 1, status = 'user_deleted', public_revoked_at = NOW() WHERE id = ?"
+        );
         return $stmt->execute([$id]);
     }
 

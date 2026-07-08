@@ -75,9 +75,11 @@ class ProposalItemRepository
         return $stmt->execute([$itemId]);
     }
 
-    public function setOrder(int $itemId, int $order): bool
+    public function setOrder(int $itemId, int $order, int $proposalId): bool
     {
-        $stmt = $this->pdo->prepare('UPDATE koala_proposal_items SET display_order = ? WHERE id = ? AND proposal_version_id IS NULL');
-        return $stmt->execute([$order, $itemId]);
+        // proposal_id no WHERE: sem ele, um vendedor reordenaria itens de rascunho de OUTRA proposta
+        // passando ids arbitrários no /reorder (IDOR de escrita). O escopo garante que só mexe nos seus.
+        $stmt = $this->pdo->prepare('UPDATE koala_proposal_items SET display_order = ? WHERE id = ? AND proposal_id = ? AND proposal_version_id IS NULL');
+        return $stmt->execute([$order, $itemId, $proposalId]);
     }
 }
