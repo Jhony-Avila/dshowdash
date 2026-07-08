@@ -39,6 +39,7 @@
 !/scripts/koala-build.sh
 !/scripts/koala-smoke-all.sh
 !/scripts/koala-smoke-all.php
+!/scripts/koala-expire-proposals.php
 
 # Salvaguardas (mesmo se algo acima re-incluir demais)
 node_modules/
