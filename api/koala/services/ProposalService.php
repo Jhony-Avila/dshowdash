@@ -111,19 +111,24 @@ class ProposalService
             }
             $data['template_id'] = $tid;
         }
-        $this->repo->updateFields($id, $data); // log old/new de template_id já sai no loop field_updated (é EDITABLE)
-        // Log campo a campo (old/new) — "toda alteração gera log" (só campos editáveis que mudaram).
-        $log = new LogService($this->pdo);
-        foreach ($data as $field => $newVal) {
-            if (!in_array($field, ProposalRepository::EDITABLE, true)) { continue; }
-            $log->field($koala, $id, $field, $p[$field] ?? null, $newVal);
-        }
-        // Campos que afetam o total_final -> recalcula (frete/instal/desloc legados + desconto da proposta).
-        $recomputeKeys = ['freight_value', 'installation_value', 'displacement_value',
-            'proposal_discount_value', 'proposal_discount_percent'];
-        if (array_intersect(array_keys($data), $recomputeKeys)) {
-            (new ProposalItemService($this->pdo))->recompute($id);
-        }
+        // Atômico: updateFields + logs + recompute numa transação — senão, se o recompute falhasse
+        // após updateFields, o campo (ex.: frete) persistiria com total_final desatualizado (divergência
+        // tela≠dado). KoalaTx::run compõe com transação externa se já houver uma.
+        KoalaTx::run($this->pdo, function () use ($id, $data, $koala, $p) {
+            $this->repo->updateFields($id, $data); // template_id já loga via loop field abaixo (é EDITABLE)
+            // Log campo a campo (old/new) — "toda alteração gera log" (só campos editáveis que mudaram).
+            $log = new LogService($this->pdo);
+            foreach ($data as $field => $newVal) {
+                if (!in_array($field, ProposalRepository::EDITABLE, true)) { continue; }
+                $log->field($koala, $id, $field, $p[$field] ?? null, $newVal);
+            }
+            // Campos que afetam o total_final -> recalcula (frete/instal/desloc legados + desconto da proposta).
+            $recomputeKeys = ['freight_value', 'installation_value', 'displacement_value',
+                'proposal_discount_value', 'proposal_discount_percent'];
+            if (array_intersect(array_keys($data), $recomputeKeys)) {
+                (new ProposalItemService($this->pdo))->recompute($id);
+            }
+        });
         return $this->repo->findById($id) ?? [];
     }
 

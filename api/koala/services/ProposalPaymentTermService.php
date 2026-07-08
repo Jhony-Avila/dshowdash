@@ -34,6 +34,16 @@ class ProposalPaymentTermService
         if (!$ok->fetchColumn()) {
             ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['field' => 'payment_method_id', 'message' => 'Forma de pagamento inválida']);
         }
+        // Validação numérica (antes ia crua ao INSERT: "-3x" ou entrada negativa persistiam).
+        if (isset($d['installments_quantity']) && $d['installments_quantity'] !== null && $d['installments_quantity'] !== ''
+            && (!ctype_digit((string) $d['installments_quantity']) || (int) $d['installments_quantity'] < 1)) {
+            ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['field' => 'installments_quantity', 'message' => 'Parcelas deve ser inteiro >= 1']);
+        }
+        foreach (['down_payment_value', 'installment_value'] as $mf) {
+            if (isset($d[$mf]) && $d[$mf] !== null && $d[$mf] !== '' && (float) $d[$mf] < 0) {
+                ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['field' => $mf, 'message' => 'Valor não pode ser negativo']);
+            }
+        }
         $id = $this->repo->insert($proposalId, $d);
         return ['term' => $this->repo->findById($id), 'terms' => $this->repo->listByProposal($proposalId)];
     }

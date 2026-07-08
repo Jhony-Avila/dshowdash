@@ -76,7 +76,9 @@ class RemoteErpRepository
     {
         $q = trim($q);
         if ($q === '') { return []; }
-        $like = '%' . $q . '%';
+        // Escapa curingas LIKE (%, _) e a barra — senão q="%" vira LIKE '%%%' e casa TODA a base do ERP
+        // (dump de PII). MySQL usa '\' como escape default no LIKE, então basta o addcslashes.
+        $like = '%' . addcslashes($q, '\\%_') . '%';
         $digits = preg_replace('/\D/', '', $q) ?? '';
         $isNum = ctype_digit($q);
         $isEmail = strpos($q, '@') !== false;
@@ -134,8 +136,9 @@ class RemoteErpRepository
                            JOIN ent_entidade e ON e.id = c.id_entidade
                            WHERE ce.Email LIKE :like AND (c.deleted = 0 OR c.deleted IS NULL) LIMIT $lim", [':like' => $like]));
             }
-            // (4) nome (pessoa e organização, separados)
-            if (!$isNum) {
+            // (4) nome (pessoa e organização, separados) — exige >=3 chars: freia enumeração ampla
+            //     da base do ERP por termos curtos (id numérico e documento têm seus próprios branches).
+            if (!$isNum && mb_strlen($q) >= 3) {
                 $add($run("SELECT c.id AS cliente_id, 'PF' AS tipo, p.nome AS nome, NULL AS fantasia, p.cpf AS documento
                            FROM ent_pessoa p JOIN ent_cliente c ON c.id_entidade = p.id_entidade
                            WHERE p.nome LIKE :like AND (c.deleted = 0 OR c.deleted IS NULL) LIMIT $lim", [':like' => $like]));

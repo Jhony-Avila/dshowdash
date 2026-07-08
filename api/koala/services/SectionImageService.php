@@ -126,8 +126,9 @@ class SectionImageService
         }
         $full = self::MEDIA_ROOT . '/' . $img['file_path'];
         $real = realpath($full);
-        // defesa: caminho tem de ficar dentro de MEDIA_ROOT
-        if ($real === false || strpos($real, realpath(self::MEDIA_ROOT)) !== 0 || !is_file($real)) {
+        // defesa: caminho tem de ficar dentro de MEDIA_ROOT (com separador final: senão um dir irmão
+        // ".../media-x" passaria pelo prefixo ".../media").
+        if ($real === false || strpos($real, realpath(self::MEDIA_ROOT) . DIRECTORY_SEPARATOR) !== 0 || !is_file($real)) {
             ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['image_id' => $imageId]);
         }
         header('Content-Type: ' . $img['mime_type']);

@@ -168,6 +168,7 @@ class PublicationService
         $v = (new ProposalVersionRepository($this->pdo))->findById((int) $p['published_version_id']);
         if ($v === null) { throw new \RuntimeException('versao publicada ausente'); }
         $snap = json_decode((string) $v['snapshot_json'], true);
+        if (!is_array($snap)) { throw new \RuntimeException('snapshot publicado invalido'); }
         $renderData = ['structure' => $snap['render']['structure'] ?? null, 'data' => $snap['render']['data'] ?? null];
         return (new ProposalRenderService($this->pdo))->renderFromSnapshot($renderData, 'final');
     }
