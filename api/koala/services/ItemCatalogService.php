@@ -46,9 +46,20 @@ class ItemCatalogService
 
     public function searchItems(string $q, ?int $categoryId): array { return $this->items->search($q, $categoryId); }
 
+    /** Preços do catálogo têm de ser numéricos e não-negativos (antes iam crus ao INSERT/UPDATE). */
+    private static function requirePrices(array $d): void
+    {
+        foreach (['default_unit_price_brl', 'default_unit_price_usd'] as $f) {
+            if (isset($d[$f]) && $d[$f] !== null && $d[$f] !== '' && (!is_numeric($d[$f]) || (float) $d[$f] < 0)) {
+                ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['field' => $f, 'message' => 'Preço deve ser numérico e >= 0']);
+            }
+        }
+    }
+
     public function createItem(array $d, ?int $createdBy): array
     {
         self::requireName($d);
+        self::requirePrices($d);
         $id = $this->items->create($d, $createdBy);
         return $this->items->findById($id) ?? [];
     }
@@ -59,6 +70,7 @@ class ItemCatalogService
             ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['id' => $id]);
         }
         self::requireName($d);
+        self::requirePrices($d);
         $this->items->update($id, $d);
         return $this->items->findById($id) ?? [];
     }
