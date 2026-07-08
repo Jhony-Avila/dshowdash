@@ -116,7 +116,11 @@ class PublicationService
 
     public function isExpired(array $p): bool
     {
-        return !empty($p['valid_until']) && strtotime((string) $p['valid_until'] . ' 23:59:59') < time();
+        if (empty($p['valid_until'])) { return false; }
+        // Usa só a parte YYYY-MM-DD: se a coluna vier DATE ou DATETIME, o resultado é idêntico e
+        // strtotime não falha (concatenar ' 23:59:59' num DATETIME cru daria false = tratado como não-expirado).
+        $ts = strtotime(substr((string) $p['valid_until'], 0, 10) . ' 23:59:59');
+        return $ts !== false && $ts < time();
     }
 
     /** Registra a abertura + transiciona sent->viewed na 1ª vez. Sem auth. */
