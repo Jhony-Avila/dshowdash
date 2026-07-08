@@ -146,9 +146,18 @@ class PdfGenerationService
         if (!is_dir(self::TMP_DIR) || !is_dir(dirname($pdfAbs))) { throw new \RuntimeException('PDF_STORAGE_UNAVAILABLE'); }
         $tmpHtml = self::TMP_DIR . '/htmlpdf-' . bin2hex(random_bytes(8)) . '.html';
         if (file_put_contents($tmpHtml, $html) === false) { throw new \RuntimeException('PDF_TMP_WRITE_FAILED'); }
-        try { $res = $this->runConverter($tmpHtml, $pdfAbs); } finally { @unlink($tmpHtml); }
-        if (!$res['ok'] || !is_file($pdfAbs)) {
+        // Escreve num PDF temporário no MESMO diretório e renomeia ATOMICAMENTE. Assim dois downloads
+        // simultâneos do mesmo PDF ainda-inexistente nunca leem um arquivo meio-escrito (cada um gera o
+        // seu tmp; o rename é atômico no mesmo filesystem; "último a renomear vence", ambos válidos).
+        $tmpPdf = $pdfAbs . '.tmp-' . bin2hex(random_bytes(8));
+        try { $res = $this->runConverter($tmpHtml, $tmpPdf); } finally { @unlink($tmpHtml); }
+        if (!$res['ok'] || !is_file($tmpPdf)) {
+            @unlink($tmpPdf);
             throw new \RuntimeException('PDF_GENERATION_FAILED', 0, new \RuntimeException((string) ($res['err'] ?? 'unknown')));
+        }
+        if (!@rename($tmpPdf, $pdfAbs)) {
+            @unlink($tmpPdf);
+            throw new \RuntimeException('PDF_GENERATION_FAILED', 0, new \RuntimeException('rename atômico falhou'));
         }
         return ['bytes' => (int) filesize($pdfAbs)];
     }
