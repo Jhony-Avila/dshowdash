@@ -9,14 +9,27 @@ error_reporting(E_ALL);
 
 require __DIR__ . '/_init.php'; // carrega classes + getConnection (NÃO autentica)
 
-// ── helpers de saída (HTML mínimo, sem vazar dados) ──
-function pub_page(int $code, string $title, string $body): void
+// CSP p/ documentos SELF-CONTAINED (CSS inline + data-URI + fontes base64): nega tudo por default,
+// libera só o que o render usa. Sem 'script-src' => scripts proibidos. frame-ancestors 'none' = anti-clickjacking.
+const PUB_CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; "
+              . "base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+
+// ── headers de segurança comuns a toda resposta HTML da porta pública ──
+function pub_sec_headers(): void
 {
-    http_response_code($code);
     header('Content-Type: text/html; charset=utf-8');
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: no-referrer');
+    header('X-Frame-Options: DENY');           // anti-clickjacking (navegadores antigos)
+    header('Content-Security-Policy: ' . PUB_CSP);
+}
+
+// ── helpers de saída (HTML mínimo, sem vazar dados) ──
+function pub_page(int $code, string $title, string $body): void
+{
+    http_response_code($code);
+    pub_sec_headers();
     $t = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
     echo "<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\">"
        . "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>$t</title>"
@@ -91,10 +104,7 @@ try {
         ? str_ireplace('</body>', $btn . '</body>', $html)
         : $html . $btn;
 
-    header('Content-Type: text/html; charset=utf-8');
-    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-    header('X-Content-Type-Options: nosniff');
-    header('Referrer-Policy: no-referrer');
+    pub_sec_headers();
     echo $html;
     exit;
 } catch (\Throwable $e) {
