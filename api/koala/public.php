@@ -64,6 +64,10 @@ try {
         try {
             $pdfAbs = $svc->publishedPdfPath($p);
         } catch (\Throwable $e) {
+            error_log('[koala public] pdf: ' . $e->getMessage());
+            pub_page(500, 'Indisponível', '<p>Não foi possível gerar o PDF agora.</p>');
+        }
+        if (!is_file($pdfAbs)) { // TOCTOU: arquivo sumiu entre gerar e servir.
             pub_page(500, 'Indisponível', '<p>Não foi possível gerar o PDF agora.</p>');
         }
         $svc->registerView($p, $slug);

@@ -123,14 +123,33 @@ class PdfGenerationService
         return ['pdf_path' => $pdfRel, 'file' => $pdfName, 'abs' => $pdfAbs, 'bytes' => (int) filesize($pdfAbs), 'version' => $vn];
     }
 
-    /** Converte um HTML self-contained em PDF (reuso p/ versão/público). Lança ApiResponse::error em falha. */
+    /** Converte um HTML self-contained em PDF (caminho AUTENTICADO). Encerra com ApiResponse::error (JSON) em falha. */
     public function htmlToPdf(string $html, string $pdfAbs): array
     {
-        if (!is_dir(self::TMP_DIR) || !is_dir(dirname($pdfAbs))) { ApiResponse::error('PDF_STORAGE_UNAVAILABLE', 500); }
+        try {
+            return $this->htmlToPdfOrThrow($html, $pdfAbs);
+        } catch (\RuntimeException $e) {
+            // preserva o comportamento de API (JSON + exit) e o detalhe do conversor p/ o editor autenticado.
+            ApiResponse::error($e->getMessage(), 500, ['detail' => $e->getPrevious()?->getMessage() ?? 'unknown']);
+        }
+        return ['bytes' => 0]; // inalcançável (ApiResponse::error faz exit); satisfaz o type-hint.
+    }
+
+    /**
+     * Igual a htmlToPdf, mas LANÇA RuntimeException em falha — NUNCA emite JSON de API nem faz exit.
+     * Usado pela PORTA PÚBLICA (public.php), onde um erro deve virar página HTML limpa (pub_page),
+     * sem vazar código de erro/stderr do conversor. O código de falha vai na mensagem; o stderr
+     * do conversor (paths/stack) fica só no getPrevious() — nunca chega ao cliente público.
+     */
+    public function htmlToPdfOrThrow(string $html, string $pdfAbs): array
+    {
+        if (!is_dir(self::TMP_DIR) || !is_dir(dirname($pdfAbs))) { throw new \RuntimeException('PDF_STORAGE_UNAVAILABLE'); }
         $tmpHtml = self::TMP_DIR . '/htmlpdf-' . bin2hex(random_bytes(8)) . '.html';
-        if (file_put_contents($tmpHtml, $html) === false) { ApiResponse::error('PDF_TMP_WRITE_FAILED', 500); }
+        if (file_put_contents($tmpHtml, $html) === false) { throw new \RuntimeException('PDF_TMP_WRITE_FAILED'); }
         try { $res = $this->runConverter($tmpHtml, $pdfAbs); } finally { @unlink($tmpHtml); }
-        if (!$res['ok'] || !is_file($pdfAbs)) { ApiResponse::error('PDF_GENERATION_FAILED', 500, ['detail' => $res['err'] ?? 'unknown']); }
+        if (!$res['ok'] || !is_file($pdfAbs)) {
+            throw new \RuntimeException('PDF_GENERATION_FAILED', 0, new \RuntimeException((string) ($res['err'] ?? 'unknown')));
+        }
         return ['bytes' => (int) filesize($pdfAbs)];
     }
 

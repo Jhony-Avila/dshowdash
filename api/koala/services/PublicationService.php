@@ -179,7 +179,9 @@ class PublicationService
         $pdfAbs = self::PDF_DIR . '/proposta-' . ($safeNum !== '' ? $safeNum : (string) $p['id']) . "-v{$vn}.pdf";
         if (!is_file($pdfAbs)) {
             $html = $this->renderPublished($p);
-            (new PdfGenerationService($this->pdo))->htmlToPdf($html, $pdfAbs);
+            // Porta pública: usa a variante que LANÇA (nunca ApiResponse::error/JSON). public.php trata e
+            // mostra pub_page limpa, sem vazar código de erro nem stderr do conversor.
+            (new PdfGenerationService($this->pdo))->htmlToPdfOrThrow($html, $pdfAbs);
             (new ProposalVersionRepository($this->pdo))->setPdfPath($versionId, 'koala/pdf/' . basename($pdfAbs));
         }
         return $pdfAbs;
