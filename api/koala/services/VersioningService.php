@@ -216,7 +216,10 @@ class VersioningService
             $this->pdo->commit();
         } catch (\Throwable $e) {
             $this->pdo->rollBack();
-            ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'falha ao restaurar: ' . $e->getMessage()]);
+            // NÃO ecoar $e->getMessage() ao cliente: uma PDOException traria SQLSTATE/tabela/coluna
+            // (mapa do schema). Detalhe só no log server-side; resposta genérica.
+            error_log('[koala] restore proposta ' . $proposalId . ' falhou: ' . $e->getMessage());
+            ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Falha ao restaurar a versão.']);
         }
 
         (new LogService($this->pdo))->log($koala, [

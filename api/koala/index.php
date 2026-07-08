@@ -8,6 +8,9 @@
 
 declare(strict_types=1);
 
+@ini_set('display_errors', '0'); // defesa-em-profundidade: nunca vazar stack/paths, mesmo se o php.ini mudar
+error_reporting(E_ALL);
+
 require_once __DIR__ . '/_init.php';
 
 // Consolidação 2026-07-04: handler global — qualquer exceção não capturada (ex.: PDOException

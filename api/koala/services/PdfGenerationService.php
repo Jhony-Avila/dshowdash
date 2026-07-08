@@ -69,7 +69,9 @@ class PdfGenerationService
             @unlink($tmpHtml);
         }
         if (!$res['ok'] || !is_file($pdfAbs)) {
-            ApiResponse::error('PDF_GENERATION_FAILED', 500, ['detail' => $res['err'] ?? 'unknown']);
+            // stderr do conversor (paths absolutos + stack do node/Chromium) só no log; não ao cliente.
+            error_log('[koala] PDF proposta ' . $proposalId . ' falhou: ' . ($res['err'] ?? 'unknown'));
+            ApiResponse::error('PDF_GENERATION_FAILED', 500);
         }
         $bytes = (int) filesize($pdfAbs);
 
@@ -129,8 +131,10 @@ class PdfGenerationService
         try {
             return $this->htmlToPdfOrThrow($html, $pdfAbs);
         } catch (\RuntimeException $e) {
-            // preserva o comportamento de API (JSON + exit) e o detalhe do conversor p/ o editor autenticado.
-            ApiResponse::error($e->getMessage(), 500, ['detail' => $e->getPrevious()?->getMessage() ?? 'unknown']);
+            // Código de falha (ex.: PDF_GENERATION_FAILED) pode ir ao cliente; o stderr do conversor
+            // (getPrevious = paths/stack) fica só no log — não vaza infra ao editor autenticado.
+            error_log('[koala] htmlToPdf falhou: ' . ($e->getPrevious()?->getMessage() ?? $e->getMessage()));
+            ApiResponse::error($e->getMessage(), 500);
         }
         return ['bytes' => 0]; // inalcançável (ApiResponse::error faz exit); satisfaz o type-hint.
     }
