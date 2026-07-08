@@ -7,9 +7,10 @@ declare(strict_types=1);
 class ExpirationService
 {
     private \PDO $pdo;
+    private const VIEWS_RETENTION_DAYS = 180; // retenção das visualizações públicas (observabilidade)
     public function __construct(\PDO $pdo) { $this->pdo = $pdo; }
 
-    /** Marca vencidas como expired + loga a transição. Retorna [count, ids]. Idempotente. */
+    /** Marca vencidas como expired + poda views antigas + loga. Retorna [count, ids, views_pruned]. Idempotente. */
     public function run(): array
     {
         $stmt = $this->pdo->query(
@@ -32,6 +33,19 @@ class ExpirationService
                 ]);
             }
         }
-        return ['count' => count($ids), 'ids' => $ids];
+        return ['count' => count($ids), 'ids' => $ids, 'views_pruned' => $this->pruneViews()];
+    }
+
+    /**
+     * Retenção: apaga visualizações públicas mais antigas que N dias — a tabela recebe INSERT na porta
+     * pública (registerView) e não tinha teto. O corte é calculado em PHP (evita placeholder dentro de
+     * INTERVAL) e comparado a viewed_at. Idempotente; retorna quantas linhas foram apagadas.
+     */
+    public function pruneViews(int $days = self::VIEWS_RETENTION_DAYS): int
+    {
+        $cutoff = date('Y-m-d H:i:s', time() - max(1, $days) * 86400);
+        $stmt = $this->pdo->prepare('DELETE FROM koala_public_views WHERE viewed_at < ?');
+        $stmt->execute([$cutoff]);
+        return $stmt->rowCount();
     }
 }
