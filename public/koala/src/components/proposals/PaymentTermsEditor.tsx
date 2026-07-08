@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiSend } from '../../api/client';
-import { money, dateBr } from '../../format';
+import { money, dateBr, parseNum } from '../../format';
 
 // Grupo FORMAS DE PAGAMENTO: vincula formas do catálogo (koala_payment_methods) à proposta.
 export function PaymentTermsEditor({ proposalId, currency = 'BRL' }: { proposalId: number; currency?: string }) {
@@ -23,8 +23,8 @@ export function PaymentTermsEditor({ proposalId, currency = 'BRL' }: { proposalI
     try {
       const r = await apiSend('POST', `/proposals/${proposalId}/payment-terms`, {
         payment_method_id: Number(nw.payment_method_id),
-        installments_quantity: nw.installments_quantity ? Number(nw.installments_quantity) : null,
-        down_payment_value: nw.down_payment_value ? Number(nw.down_payment_value) : null,
+        installments_quantity: nw.installments_quantity ? (parseNum(nw.installments_quantity) ?? null) : null,
+        down_payment_value: nw.down_payment_value ? (parseNum(nw.down_payment_value) ?? null) : null,
         first_due_date: nw.first_due_date || null,
         free_observations: nw.free_observations || null,
       });

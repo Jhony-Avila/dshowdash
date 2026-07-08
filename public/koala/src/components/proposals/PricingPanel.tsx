@@ -1,7 +1,7 @@
 // Totais ao vivo: itens (líquido) + despesas operacionais − desconto da proposta.
 // Frete/instalação/deslocamento são LEGADOS (generalizados pelas Despesas Operacionais):
 // exibidos só como nota read-only quando a proposta antiga tiver algum valor.
-import { money } from '../../format';
+import { money, parseNum } from '../../format';
 const fmt = money;   // F6: formatação de dinheiro unificada
 
 export function PricingPanel({ p, onField }: { p: any; onField: (f: string, v: any) => void }) {
@@ -19,7 +19,7 @@ export function PricingPanel({ p, onField }: { p: any; onField: (f: string, v: a
       )}
       <div className="k-price-in k-price-disc"><span>Desconto da proposta</span>
         <input className="k-input k-mini" defaultValue={p.proposal_discount_value ?? ''} placeholder="valor"
-          onBlur={(e) => onField('proposal_discount_value', e.target.value === '' ? null : Number(e.target.value) || 0)} />
+          onBlur={(e) => onField('proposal_discount_value', e.target.value.trim() === '' ? null : (parseNum(e.target.value) ?? 0))} />
       </div>
       <div className="k-price-final"><span>VALOR TOTAL</span><b>{fmt(p.total_final, cur)}</b></div>
     </div>

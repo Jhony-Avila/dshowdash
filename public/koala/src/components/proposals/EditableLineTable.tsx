@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { apiGet, apiSend } from '../../api/client';
-import { money } from '../../format';   // F6: formatação de dinheiro unificada (era duplicada aqui)
+import { money, parseNum } from '../../format';   // F6: formatação de dinheiro unificada (era duplicada aqui)
 
 // Entrada de desconto com toggle %/R$. Reporta {discount_value, discount_percent} (um é null).
 function DiscountInput(
@@ -20,7 +20,7 @@ function DiscountInput(
   function commit() {
     const raw = ref.current?.value ?? '';
     if (raw === '') { onCommit({ discount_value: null, discount_percent: null }); return; }
-    const n = Number(raw) || 0;
+    const n = parseNum(raw) ?? 0;
     if (mode === 'percent') onCommit({ discount_value: null, discount_percent: n });
     else onCommit({ discount_value: n, discount_percent: null });
   }
@@ -69,8 +69,8 @@ export function EditableLineTable({ proposalId, resource, currency, onChange, ad
     if (!nw.description.trim()) { descRef.current?.focus(); return; }
     try {
       await apiSend('POST', base, {
-        description: nw.description, quantity: Number(nw.quantity) || 1,
-        unit_measure: nw.unit_measure || null, unit_price: Number(nw.unit_price) || 0,
+        description: nw.description, quantity: parseNum(nw.quantity) ?? 1,
+        unit_measure: nw.unit_measure || null, unit_price: parseNum(nw.unit_price) ?? 0,
         discount_value: ndv.discount_value, discount_percent: ndv.discount_percent,
         observation: nw.observation || null,
       });
@@ -131,11 +131,11 @@ export function EditableLineTable({ proposalId, resource, currency, onChange, ad
                 <td><input className="k-input k-mini k-w-full" defaultValue={r.description} key={'d' + r.id + resetTick}
                   onBlur={(e) => e.target.value !== r.description && patch(r, { description: e.target.value })} /></td>
                 <td className="k-num"><input className="k-input k-mini k-qty" defaultValue={r.quantity} key={'q' + r.id + resetTick}
-                  onBlur={(e) => Number(e.target.value) !== Number(r.quantity) && patch(r, { quantity: Number(e.target.value) || 1 })} /></td>
+                  onBlur={(e) => { const q = parseNum(e.target.value) ?? 1; if (q !== Number(r.quantity)) patch(r, { quantity: q }); }} /></td>
                 <td><input className="k-input k-mini k-un" defaultValue={r.unit_measure ?? ''} key={'u' + r.id + resetTick}
                   onBlur={(e) => e.target.value !== (r.unit_measure ?? '') && patch(r, { unit_measure: e.target.value })} /></td>
                 <td className="k-num"><input className="k-input k-mini k-val" defaultValue={r.unit_price} key={'p' + r.id + resetTick}
-                  onBlur={(e) => Number(e.target.value) !== Number(r.unit_price) && patch(r, { unit_price: Number(e.target.value) || 0 })} /></td>
+                  onBlur={(e) => { const v = parseNum(e.target.value) ?? 0; if (v !== Number(r.unit_price)) patch(r, { unit_price: v }); }} /></td>
                 <td><DiscountInput row={r} autoFocusReset={resetTick} onCommit={(pt) => patch(r, pt)} /></td>
                 <td className="k-num k-cell-sub">{money(r.line_subtotal ?? r.subtotal, currency)}</td>
                 <td className="k-num k-col-total"><b>{money(r.line_total ?? r.subtotal, currency)}</b></td>
