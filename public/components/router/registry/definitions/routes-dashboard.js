@@ -30,6 +30,9 @@ const dashboardRoutes = Object.freeze({
   // panel-ads: registrado para o extractPanelId resolver a URL em SEGMENTOS
   // (#/panel-ads/<area>) pelo primeiro segmento. Modulo Google Ads (Ads Intelligence).
   "/panel-ads": createPanelRoute("panel-ads", "Ads Intelligence", { aliases: ["#/panel-ads", "#/ads", "#/google-ads", "#/adwords"], tags: ["ads", "google-ads", "marketing"], description: "Gestao, analise e otimizacao de midia paga (Google Ads)" }),
+  // panel-anuncios: Consultor de Google Ads (Decision Engine — metodologia Dshow).
+  // Painel de perguntas/respostas; backend via proxy /api/anuncios/ask.php.
+  "/panel-anuncios": createPanelRoute("panel-anuncios", "An\xFAncios — Consultor", { aliases: ["#/panel-anuncios", "#/anuncios"], tags: ["anuncios", "google-ads", "ia", "decision-engine"], description: "Consultor de Google Ads fundamentado na metodologia Dshow (Decision Engine)" }),
   "/panel-09": createPanelRoute("panel-09", "Painel 09", { aliases: ["#/panel-09"] }),
   "/panel-10": createPanelRoute("panel-10", "Painel 10", { aliases: ["#/panel-10"] }),
   "/panel-11": createPanelRoute("panel-11", "Painel 11", { aliases: ["#/panel-11"] }),
