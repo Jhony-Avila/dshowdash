@@ -11,6 +11,8 @@
   --k-danger: #b3261e; --k-danger-bg: #fdeeee; --k-danger-border: #f2caca;
   --k-warn: #9a6700; --k-warn-bg: #fff4e0; --k-warn-border: #f2d999;
   --k-badge-bg: #eef0f4; --k-badge-ink: #475569;
+  --k-info: #1d4ed8; --k-info-bg: #e7effd;
+  --k-zebra: #f3f4f7; --k-row-hover: #e9ebf0; --k-row-sel: #efeafe;
   --k-focus: var(--k-brand); --k-overlay: rgba(16,17,21,.44); --k-chip-bg: rgba(255,255,255,.85);
   --k-shadow: 0 1px 2px rgba(16,17,21,.04), 0 8px 24px rgba(16,17,21,.06);
   --k-shadow-topbar: 0 2px 10px rgba(16,17,21,.08);
@@ -31,6 +33,8 @@
   --k-danger: #f2766b; --k-danger-bg: rgba(242,118,107,.15); --k-danger-border: rgba(242,118,107,.4);
   --k-warn: #e0a53a; --k-warn-bg: rgba(224,165,58,.15); --k-warn-border: rgba(224,165,58,.4);
   --k-badge-bg: #242a33; --k-badge-ink: #9aa1ae;
+  --k-info: #6ea8fe; --k-info-bg: rgba(110,168,254,.18);
+  --k-zebra: #1b1e26; --k-row-hover: #232732; --k-row-sel: #241f33;
   --k-overlay: rgba(0,0,0,.6); --k-chip-bg: rgba(0,0,0,.5);
   --k-shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.45);
   --k-shadow-topbar: 0 2px 10px rgba(0,0,0,.5);
@@ -469,9 +473,128 @@ body { background: var(--k-bg); color: var(--k-ink); -webkit-font-smoothing: ant
 .k-dg-num { justify-content: flex-end; text-align: right; }   /* header (inline-flex) + célula numérica à direita */
 .k-dg-body { display: flex; flex-direction: column; }
 .k-dg-row { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 8px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--k-line); background: transparent; cursor: pointer; padding: 11px 12px 11px 0; font-size: 14px; color: var(--k-ink); transition: background .15s ease; }
-.k-dg-row:hover { background: var(--k-hover-2); }
+.k-dg-row:hover { background: var(--k-hover-2); }   /* base (Itens estático mantém este) */
 .k-dg-row:focus-visible { outline: 2px solid var(--k-brand); outline-offset: -2px; }
 .k-dg-cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Zebra + header sticky + seleção — ESCOPADO a .k-prop-grid (não afeta Itens/Seções, que
+   compartilham .k-dg-*). Hover vence a zebra (mesma especificidade, vem depois); a linha
+   selecionada vence ambos (classe extra .is-selected). Header sólido não deixa a zebra vazar. */
+.k-prop-grid .k-dg-head, .k-prop-grid .k-dg-body .k-dg-row { gap: 0; padding-left: 0; padding-right: 0; }
+.k-prop-grid .k-dg-th-wrap, .k-prop-grid .k-dg-cell { padding-left: 6px; padding-right: 6px; }
+.k-prop-grid .k-dg-head { position: sticky; top: 0; z-index: 2; background: var(--k-surface); }
+/* --row-bg (opaco) é a cor da linha; reusada pelas células fixas p/ cobrir o que rola por baixo. */
+.k-prop-grid .k-dg-body .k-dg-row { --row-bg: var(--k-surface); background: var(--row-bg); }
+.k-prop-grid .k-dg-body .k-dg-row:nth-child(even) { --row-bg: var(--k-zebra); }
+.k-prop-grid .k-dg-body .k-dg-row:hover { --row-bg: var(--k-row-hover); }
+.k-prop-grid .k-dg-body .k-dg-row.is-selected,
+.k-prop-grid .k-dg-body .k-dg-row.is-selected:hover { --row-bg: var(--k-row-sel); }
+
+/* Colunas fixas: Seleção/Número à esquerda, Ações à direita (scroll horizontal) */
+.k-cell-sticky { position: sticky; z-index: 1; }
+.k-prop-grid .k-dg-body .k-cell-sticky { background: var(--row-bg); }
+/* position:sticky com especificidade > `.k-dg-head > .k-dg-th-wrap{position:relative}` (senão o
+   header vira relative e o `left` desloca a coluna, cobrindo a vizinha). */
+.k-prop-grid .k-dg-head .k-cell-sticky { position: sticky; background: var(--k-surface); z-index: 5; }
+.k-sticky-l { box-shadow: 6px 0 8px -9px rgba(0,0,0,.35); }
+.k-sticky-r { box-shadow: -6px 0 8px -9px rgba(0,0,0,.35); }
+.k-dg-check { display: flex; align-items: center; justify-content: center; cursor: default; }
+.k-dg-actions, .k-dg-actions-h { display: flex; align-items: center; justify-content: flex-end; gap: 4px; cursor: default; }
+.k-danger-ink { color: var(--k-danger); }
+.k-danger-ink:hover:not(:disabled) { color: var(--k-danger); border-color: var(--k-danger-border); }
+
+/* Barra de ações em massa (invisível com 0 selecionadas) */
+.k-bulkbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--k-brand-border); border-radius: var(--k-radius); background: var(--k-brand-tint); }
+.k-bulk-count { font-weight: 600; color: var(--k-brand); }
+
+/* Estados: skeleton de carregamento + bloco de erro com retry */
+.k-skel-wrap { display: flex; flex-direction: column; }
+.k-skel-row { padding: 12px 6px; border-bottom: 1px solid var(--k-line); }
+.k-skel { display: block; height: 14px; border-radius: 6px; background: linear-gradient(90deg, var(--k-surface-3) 25%, var(--k-hover) 37%, var(--k-surface-3) 63%); background-size: 400% 100%; animation: k-shimmer 1.4s ease infinite; }
+@keyframes k-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .k-skel { animation: none; } }
+.k-state-err { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 24px 6px; }
+.k-state-err > p { margin: 0; }
+
+/* Linha não-clicável (grids de Itens/Seções onde o clique não navega) */
+.k-dg-row-noclick { cursor: default; }
+
+/* Linha em EDIÇÃO inline (Itens): ocupa a largura toda, form em flex */
+.k-prop-grid .k-dg-body .k-dg-editrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 6px; background: var(--k-surface-2); cursor: default; }
+.k-grow { flex: 1 1 auto; }
+
+/* Drawer lateral (edição de Seção: metadados + galeria + preview) */
+.k-drawer-overlay { position: fixed; inset: 0; background: var(--k-overlay); display: flex; justify-content: flex-end; z-index: 60; animation: k-fade .15s ease; }
+.k-drawer { width: min(760px, 94vw); height: 100%; background: var(--k-bg); box-shadow: var(--k-shadow-modal); display: flex; flex-direction: column; animation: k-slidein .2s cubic-bezier(.4, 0, .2, 1); }
+.k-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--k-line); background: var(--k-surface); flex: 0 0 auto; }
+.k-drawer-head h3 { margin: 0; }
+.k-drawer-body { overflow-y: auto; padding: 16px 18px; flex: 1 1 auto; }
+@keyframes k-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes k-slidein { from { transform: translateX(24px); opacity: .6; } to { transform: translateX(0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .k-drawer, .k-drawer-overlay { animation: none; } }
+
+/* Paginação */
+.k-pager { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; }
+.k-pager-size { display: inline-flex; align-items: center; gap: 6px; }
+.k-pager-size .k-input { max-width: 74px; }
+.k-pager-nav { display: inline-flex; gap: 4px; }
+
+/* Badges de status (cores por tokens de tema; .k-badge-ok já existe = verde) */
+.k-badge-info { background: var(--k-info-bg); color: var(--k-info); }
+.k-badge-brand { background: var(--k-brand-tint); color: var(--k-brand); }
+.k-badge-amber { background: var(--k-warn-bg); color: var(--k-warn); }
+.k-badge-danger { background: var(--k-danger-bg); color: var(--k-danger); }
+.k-badge-neutral { background: var(--k-badge-bg); color: var(--k-badge-ink); }
+
+/* Cabeçalho não-ordenável + seta/índice de ordenação múltipla */
+.k-dg-th-static { color: var(--k-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; padding: 6px 2px; white-space: nowrap; }
+.k-dg-arrow { margin-left: 3px; }
+.k-sort-idx { margin-left: 2px; font-size: 9px; font-weight: 700; color: var(--k-brand); vertical-align: super; }
+.k-sort-hint { margin-top: 8px; }
+
+/* Realce do termo de busca */
+.k-hl { background: var(--k-warn-bg); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+/* Botão "Filtros" (toolbar) e painel de filtros por coluna */
+.k-filter-toggle { padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.k-filter-toggle.is-on { border-color: var(--k-brand-border); color: var(--k-brand); background: var(--k-brand-tint); }
+.k-filter-bar { display: flex; flex-wrap: wrap; gap: 12px 16px; padding: 12px; margin-top: 10px; border: 1px solid var(--k-line); border-radius: var(--k-radius); background: var(--k-surface-2); }
+.k-filter-field { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--k-muted); text-transform: uppercase; letter-spacing: .4px; }
+.k-filter-field .k-input { text-transform: none; letter-spacing: 0; }
+.k-filter-range { display: flex; gap: 6px; align-items: center; }
+.k-filter-range .k-input { max-width: 140px; }
+
+/* Chips de filtros ativos (removíveis) */
+.k-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.k-chip-rm { display: inline-flex; align-items: center; gap: 6px; padding-right: 4px; background: var(--k-brand-tint); color: var(--k-brand); }
+.k-chip-x { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px; border-radius: 50%; }
+.k-chip-x:hover { background: var(--k-brand-tint-2); }
+.k-chip-x:focus-visible { outline: 2px solid var(--k-brand); outline-offset: 1px; }
+
+/* Scroll horizontal do grid (colunas largas rolam dentro do próprio container) */
+.k-prop-grid-scroll { overflow-x: auto; overflow-y: visible; }
+
+/* Cabeçalho: wrapper por coluna = célula do grid; abriga botão de ordenar + alça de resize + drag */
+.k-dg-head > .k-dg-th-wrap { position: relative; min-width: 0; display: flex; align-items: center; cursor: grab; }
+.k-dg-th-wrap.k-dg-num { justify-content: flex-end; }
+.k-dg-th-wrap .k-dg-th { flex: 0 1 auto; min-width: 0; }
+.k-dg-th-wrap.is-drag-over { box-shadow: inset 2px 0 0 var(--k-brand); }
+.k-col-resizer { position: absolute; right: -4px; top: 0; height: 100%; width: 9px; cursor: col-resize; z-index: 3; }
+.k-col-resizer::after { content: ''; position: absolute; right: 4px; top: 18%; height: 64%; width: 2px; background: transparent; border-radius: 2px; transition: background .12s ease; }
+.k-col-resizer:hover::after { background: var(--k-brand); }
+
+/* Painel do seletor de colunas */
+.k-col-panel { margin-top: 10px; padding: 12px; border: 1px solid var(--k-line); border-radius: var(--k-radius); background: var(--k-surface-2); max-width: 440px; }
+.k-col-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.k-col-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow: auto; }
+.k-col-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px; border-radius: 6px; }
+.k-col-item:hover { background: var(--k-hover); }
+.k-col-check { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--k-ink); }
+.k-col-check input:disabled { cursor: default; }
+.k-col-move { display: flex; gap: 4px; }
+.k-icon-btn { border: 1px solid var(--k-line); background: var(--k-surface); color: var(--k-muted); border-radius: 6px; width: 26px; height: 26px; cursor: pointer; line-height: 1; }
+.k-icon-btn:hover:not(:disabled) { color: var(--k-ink); border-color: var(--k-line-strong); }
+.k-icon-btn:disabled { opacity: .4; cursor: default; }
 
 /* Datagrid de Itens (catálogo): linhas estáticas com ações + edição inline */
 .k-item-grid { --cols: minmax(160px, 1.6fr) minmax(120px, 1fr) 82px 112px 112px 84px auto; margin-top: 12px; }

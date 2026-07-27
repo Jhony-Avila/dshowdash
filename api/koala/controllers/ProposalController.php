@@ -46,6 +46,11 @@ class ProposalController
             $body = koala_body();
             ApiResponse::success($svc->setStatus($koala, $id, (string) ($body['status'] ?? '')));
         }
+        // Duplicar: cria um rascunho novo copiando conteúdo + itens/despesas/pagamentos da origem.
+        if ($method === 'POST' && $sub === 'duplicate') {
+            AuthHelpers::requireCsrf();
+            ApiResponse::success($svc->duplicate($koala, $id), null, 201);
+        }
 
         // E4 — import/snapshot
         if ($method === 'POST' && $sub === 'import-client') {

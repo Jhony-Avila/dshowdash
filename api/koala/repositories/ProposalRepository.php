@@ -68,7 +68,9 @@ class ProposalRepository
             $sql .= ' AND status = ?';
             $params[] = $status;
         }
-        $sql .= ' ORDER BY created_at DESC LIMIT 200';
+        // Client-side: front pagina/ordena/filtra em memória. Teto alto (não é paginação server-side,
+        // que fica como evolução quando o volume passar deste teto). @see ProposalsList paginação.
+        $sql .= ' ORDER BY created_at DESC LIMIT 2000';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -121,5 +123,65 @@ class ProposalRepository
     {
         $stmt = $this->pdo->prepare('UPDATE koala_proposals SET client_snapshot_id = ?, budget_number = COALESCE(?, budget_number) WHERE id = ? AND deleted_at IS NULL');
         return $stmt->execute([$snapshotId, $budgetNumber, $id]);
+    }
+
+    /**
+     * Duplica a linha da proposta (conteúdo + totais + snapshot de cliente/vendedor), como RASCUNHO novo.
+     * NÃO copia artefatos de publicação/versão (slug/url/pdf/versões/published_*) — a cópia nasce limpa.
+     * Título recebe sufixo " (cópia)". Datas são renovadas (hoje / +30 dias). Retorna o novo id.
+     */
+    public function duplicate(int $srcId, string $number, int $createdBy): int
+    {
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO koala_proposals
+              (proposal_number, budget_number, template_id, template_version_id,
+               seller_user_id, seller_name, seller_email, seller_phone, client_snapshot_id,
+               title, project_name, objective, need_context, executive_summary, project_scope, commercial_notes,
+               currency, status, proposal_date, valid_until, approval_deadline,
+               total_gross, total_discount, total_addition, proposal_discount_value, proposal_discount_percent,
+               freight_value, installation_value, displacement_value, total_expenses, total_net, total_final,
+               created_by)
+             SELECT :num, budget_number, template_id, template_version_id,
+               seller_user_id, seller_name, seller_email, seller_phone, client_snapshot_id,
+               CONCAT(COALESCE(NULLIF(title, ''), 'Proposta'), ' (cópia)'), project_name, objective, need_context, executive_summary, project_scope, commercial_notes,
+               currency, 'draft', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), approval_deadline,
+               total_gross, total_discount, total_addition, proposal_discount_value, proposal_discount_percent,
+               freight_value, installation_value, displacement_value, total_expenses, total_net, total_final,
+               :cby
+             FROM koala_proposals WHERE id = :src AND deleted_at IS NULL"
+        );
+        $stmt->execute([':num' => $number, ':cby' => $createdBy, ':src' => $srcId]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /** Copia itens, despesas e condições de pagamento da origem para a proposta nova (version_id zerado). */
+    public function copyChildren(int $srcId, int $newId): void
+    {
+        $this->pdo->prepare(
+            'INSERT INTO koala_proposal_items
+              (proposal_id, proposal_version_id, catalog_item_id, description, category_name, quantity, unit_measure,
+               unit_price, discount_value, discount_percent, addition_value, addition_percent, subtotal, observation, display_order)
+             SELECT ?, NULL, catalog_item_id, description, category_name, quantity, unit_measure,
+               unit_price, discount_value, discount_percent, addition_value, addition_percent, subtotal, observation, display_order
+             FROM koala_proposal_items WHERE proposal_id = ? AND deleted_at IS NULL'
+        )->execute([$newId, $srcId]);
+
+        $this->pdo->prepare(
+            'INSERT INTO koala_proposal_expenses
+              (proposal_id, proposal_version_id, description, category_name, quantity, unit_measure,
+               unit_price, discount_value, discount_percent, addition_value, addition_percent, subtotal, observation, display_order)
+             SELECT ?, NULL, description, category_name, quantity, unit_measure,
+               unit_price, discount_value, discount_percent, addition_value, addition_percent, subtotal, observation, display_order
+             FROM koala_proposal_expenses WHERE proposal_id = ? AND deleted_at IS NULL'
+        )->execute([$newId, $srcId]);
+
+        $this->pdo->prepare(
+            'INSERT INTO koala_proposal_payment_terms
+              (proposal_id, payment_method_id, commercial_term_id, down_payment_value, installments_quantity,
+               installment_value, first_due_date, free_observations)
+             SELECT ?, payment_method_id, commercial_term_id, down_payment_value, installments_quantity,
+               installment_value, first_due_date, free_observations
+             FROM koala_proposal_payment_terms WHERE proposal_id = ?'
+        )->execute([$newId, $srcId]);
     }
 }

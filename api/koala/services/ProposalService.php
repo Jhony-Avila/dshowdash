@@ -148,6 +148,34 @@ class ProposalService
         return $this->repo->findById($id) ?? [];
     }
 
+    /** Duplica uma proposta (conteúdo + itens/despesas/pagamentos) como rascunho novo do usuário atual. */
+    public function duplicate(array $koala, int $id): array
+    {
+        $p = $this->repo->findById($id);
+        if ($p === null) { ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['id' => $id]); }
+        $this->assertAccess($koala, $p);
+
+        $owns = !$this->pdo->inTransaction();
+        if ($owns) { $this->pdo->beginTransaction(); }
+        try {
+            $number = NumberingService::next($this->pdo);
+            $newId  = $this->repo->duplicate($id, $number, (int) $koala['id']);
+            $this->repo->copyChildren($id, $newId);
+            (new ProposalItemService($this->pdo))->recompute($newId); // consolida totais a partir dos itens/despesas copiados
+            if ($owns) { $this->pdo->commit(); }
+        } catch (\Throwable $e) {
+            if ($owns && $this->pdo->inTransaction()) { $this->pdo->rollBack(); }
+            error_log('[koala] proposal duplicate: ' . $e->getMessage());
+            ApiResponse::error(ApiResponse::ERR_DATABASE_ERROR, 500);
+        }
+
+        (new LogService($this->pdo))->log($koala, [
+            'proposal_id' => $newId, 'action' => 'proposal_duplicated', 'entity_type' => 'proposal', 'entity_id' => $newId,
+            'metadata' => ['source_proposal_id' => $id, 'source_number' => $p['proposal_number'] ?? null, 'proposal_number' => $number],
+        ]);
+        return $this->repo->findById($newId) ?? [];
+    }
+
     public function deleteForUser(array $koala, int $id): void
     {
         $p = $this->repo->findById($id);
