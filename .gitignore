@@ -1,9 +1,13 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Repositório KOALA-ONLY. O .git vive em /var/www/dshowdash (FORA do web root
-# /var/www/dshowdash/public), mas este repo rastreia APENAS os arquivos do módulo
-# Koala Docs, espalhados por api/koala, public/koala/src, sql/koala, scripts/koala-*.
-# Estratégia: ignora TUDO por padrão e re-inclui só os caminhos do Koala.
-# .env / node_modules / dist / storage / backups nunca entram (por construção).
+# Repositório do dshowdash. O .git vive em /var/www/dshowdash (FORA do web root
+# /var/www/dshowdash/public).
+# Estratégia: ignora TUDO por padrão e re-inclui só código-fonte.
+# Histórico: nasceu KOALA-ONLY (api/koala, public/koala/src, sql/koala,
+# scripts/koala-*); em 2026-07 passou a rastrear também a aplicação principal
+# (app/, public/components/, configs de build da raiz) para desenvolvimento
+# do painel Anuncios (Google Ads Decision Engine).
+# .env / node_modules / dist / storage / logs / backups nunca entram
+# (por construção — ver salvaguardas no final).
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Ignora tudo na raiz por padrão
@@ -40,6 +44,28 @@
 !/scripts/koala-smoke-all.sh
 !/scripts/koala-smoke-all.php
 !/scripts/koala-expire-proposals.php
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Aplicação principal (adicionado em 2026-07 — painel Anuncios)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Código-fonte da nova arquitetura (migração)
+!/app/
+
+# Configs de build e docs da raiz
+!/package.json
+!/package-lock.json
+!/tsconfig.json
+!/vite.config.ts
+!/MIGRATION_STATUS.md
+
+# Componentes do painel (fonte; dist/ e node_modules/ ficam fora
+# pelas salvaguardas globais abaixo)
+!/public/components/
+!/public/index.html
+
+# NUNCA incluir (senhas/segredos): config/, storage/, logs/, sessões
+# (já cobertos pelo "/*" padrão — listados aqui como documentação)
 
 # Salvaguardas (mesmo se algo acima re-incluir demais)
 node_modules/
