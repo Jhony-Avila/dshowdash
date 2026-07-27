@@ -1,0 +1,49 @@
+/* Panel-02 Footer - Enterprise Premium AAA */
+/* @version 4.0.0-ENTERPRISE-AAA */
+/* Gradiente + blur */
+
+.p02-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(to top, var(--p02-layer-from), var(--p02-layer-to));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--p02-layer-border);
+}
+
+.p02-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.p02-footer-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  color: var(--p02-text-muted);
+}
+
+.p02-footer-stat svg {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.p02-footer-stat strong {
+  color: var(--p02-text-primary);
+  font-weight: 600;
+  font-family: var(--p02-font-mono);
+}
+
+.p02-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.p02-footer-info {
+  font-size: 0.625rem;
+  color: var(--p02-text-muted);
+}

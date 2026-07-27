@@ -1,0 +1,68 @@
+/* ═══════════════════════════════════════════════════════════════
+   PNA BASE - INPUTS & SELECTS
+   @version 2.0.0-P01-ALIGNMENT
+   Briefing 3.3: improved contrast, placeholder opacity,
+   consistent height, focus states.
+   ═══════════════════════════════════════════════════════════════ */
+
+.pna-input,
+.pna-select {
+  height: 2.25rem;
+  padding: 0 var(--pna-space-md);
+  font-size: 0.8125rem;
+  color: var(--pna-text);
+  background: rgba(15, 18, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--pna-radius-md);
+  transition: border-color var(--pna-transition),
+              box-shadow var(--pna-transition),
+              background var(--pna-transition);
+}
+
+.pna-input::placeholder {
+  color: rgba(var(--pna-ink,255,255,255), 0.3);
+  font-style: normal;
+}
+
+.pna-input:hover,
+.pna-select:hover {
+  border-color: rgba(var(--pna-ink,255,255,255), 0.15);
+  background: rgba(15, 18, 30, 0.75);
+}
+
+.pna-input:focus,
+.pna-select:focus {
+  outline: none;
+  border-color: var(--pna-primary);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+  background: rgba(15, 18, 30, 0.85);
+}
+
+.pna-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23606070' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+/* ── Input with icon prefix ── */
+.pna-input-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pna-input-icon-wrapper svg {
+  position: absolute;
+  left: 0.625rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: rgba(var(--pna-ink,255,255,255), 0.35);
+  pointer-events: none;
+}
+
+.pna-input-icon-wrapper .pna-input {
+  padding-left: 2rem;
+}

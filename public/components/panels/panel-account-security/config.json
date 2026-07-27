@@ -1,0 +1,17 @@
+{
+  "id": "panel-account-security",
+  "name": "Segurança da Conta",
+  "description": "Gerenciamento de credenciais e políticas de segurança",
+  "category": "user",
+  "refreshInterval": 0,
+  "enabled": true,
+  "version": "1.0.0-ENTERPRISE",
+  "architecture": "autocontained",
+  "author": "DShow Dashboard",
+  "created": "2025-12-16",
+  "updated": "2025-12-16",
+  "dependencies": [],
+  "permissions": ["read", "write"],
+  "features": ["autocontained", "idempotent", "resilient", "observable"],
+  "telemetry": { "enabled": true, "events": ["panel:open", "panel:view", "password:change_attempt", "password:change_success"] }
+}

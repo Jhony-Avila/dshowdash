@@ -1,0 +1,27 @@
+.raiz { display: flex; flex-direction: column; gap: var(--dt-space-4); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--dt-space-3); }
+.avisoBox { display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-radius: var(--dt-radius-sm); background: color-mix(in srgb, var(--dt-success) 12%, var(--dt-bg-surface)); color: var(--dt-success); font-size: 12.5px; }
+.filtros { display: flex; flex-wrap: wrap; gap: 7px; }
+.bloco { display: flex; flex-direction: column; gap: var(--dt-space-2); border: 1px solid var(--dt-border); border-radius: var(--dt-radius-md); background: var(--dt-bg-surface); padding: 14px 16px; }
+.blocoTopo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.blocoTitulo { margin: 0; font-size: 13.5px; font-weight: 650; }
+.blocoSub { font-size: 11.5px; color: var(--dt-text-muted); }
+.chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border: 1px solid var(--dt-border); border-radius: 999px; background: var(--dt-bg-surface); color: var(--dt-text-secondary); font: inherit; font-size: 12.5px; cursor: pointer; }
+.chip:hover { border-color: var(--dt-primary); }
+.chipAtivo { background: var(--dt-primary); border-color: var(--dt-primary); color: #fff; }
+.chipNum { font-variant-numeric: tabular-nums; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: color-mix(in srgb, currentColor 18%, transparent); font-size: 11px; }
+.tituloCel { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.titulo { font-size: 12.5px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tipo { font-size: 11px; color: var(--dt-text-muted); font-family: var(--dt-font-mono); }
+.discreto { color: var(--dt-text-muted); font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+.acoes { display: inline-flex; gap: 6px; justify-content: flex-end; }
+.btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border: 1px solid var(--dt-border); border-radius: var(--dt-radius-sm); background: var(--dt-bg-canvas); color: var(--dt-text-secondary); font: inherit; font-size: 11.5px; cursor: pointer; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--dt-primary); color: var(--dt-primary); }
+.btnOk:hover:not(:disabled) { border-color: var(--dt-success); color: var(--dt-success); }
+.btn:disabled { opacity: .5; cursor: default; }
+.detalhe { display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: var(--dt-text-secondary); }
+.detalhe p { margin: 0; }
+.detalhe dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; }
+.detalhe dt { color: var(--dt-text-muted); }
+.detalhe dd { margin: 0; }

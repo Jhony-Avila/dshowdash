@@ -1,0 +1,56 @@
+/* ═══════════════════════════════════════════════════════════════
+   PANEL NAV ADMIN - BASE ENTERPRISE STYLES
+   @version 1.0.0-ENTERPRISE-MODULAR
+   Master file - 15 partials base
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Design Tokens */
+@import url('./_pna-base-tokens.css?v=pna2');
+
+/* Header */
+@import url('./_pna-base-header.css?v=pna2');
+
+/* Buttons */
+@import url('./_pna-base-buttons.css?v=pna2');
+
+/* Toolbar & Filters */
+@import url('./_pna-base-toolbar.css?v=pna2');
+
+/* Inputs & Selects */
+@import url('./_pna-base-inputs.css?v=pna2');
+
+/* Tabs */
+@import url('./_pna-base-tabs.css?v=pna2');
+
+/* List & Items */
+@import url('./_pna-base-list.css?v=pna2');
+
+/* Badges */
+@import url('./_pna-base-badges.css?v=pna2');
+
+/* Sections Grid */
+@import url('./_pna-base-sections.css?v=pna2');
+
+/* Modal & Forms */
+@import url('./_pna-base-modal.css?v=pna2');
+
+/* Loading & Skeleton */
+@import url('./_pna-base-loading.css?v=pna2');
+
+/* States (Empty, Error, Toast) */
+@import url('./_pna-base-states.css?v=pna2');
+
+/* KPIs */
+@import url('./_pna-base-kpis.css?v=pna2');
+
+/* Diagnostic */
+@import url('./_pna-base-diagnostic.css?v=pna2');
+
+/* Responsive */
+@import url('./_pna-base-responsive.css?v=pna2');
+
+/* Custom Checkbox */
+@import url('./_pna-custom-checkbox.css?v=pna2');
+
+/* Custom Select */
+@import url('./_pna-custom-select.css?v=pna2');

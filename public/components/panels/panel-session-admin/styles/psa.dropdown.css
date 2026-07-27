@@ -1,0 +1,135 @@
+/* Panel Session Admin - Dropdown Enterprise AAA */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+/* Dropdown Container */
+.psa__dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Dropdown Button */
+.psa__dropdown > .psa__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--psa-spacing-xs);
+}
+
+.psa__dropdown > .psa__btn svg:last-child {
+  margin-left: var(--psa-spacing-xs);
+  transition: transform var(--psa-transition-fast);
+}
+
+.psa__dropdown.psa__dropdown--open > .psa__btn svg:last-child {
+  transform: rotate(180deg);
+}
+
+/* Export Menu */
+.psa__export-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  background: var(--psa-bg-secondary);
+  border: 1px solid var(--psa-border);
+  border-radius: var(--psa-radius-md);
+  box-shadow: var(--psa-shadow-lg);
+  z-index: var(--psa-z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.95);
+  transform-origin: top right;
+  transition: all var(--psa-transition-fast);
+}
+
+.psa__export-menu--open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+/* Menu Items */
+.psa__export-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--psa-spacing-sm);
+  width: 100%;
+  padding: var(--psa-spacing-sm) var(--psa-spacing-md);
+  background: transparent;
+  border: none;
+  color: var(--psa-text-primary);
+  font-size: var(--psa-font-size-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--psa-transition-fast);
+}
+
+.psa__export-menu-item:hover {
+  background: var(--psa-bg-hover);
+}
+
+.psa__export-menu-item:focus-visible {
+  background: var(--psa-bg-hover);
+  outline: none;
+}
+
+.psa__export-menu-item:first-child {
+  border-radius: var(--psa-radius-md) var(--psa-radius-md) 0 0;
+}
+
+.psa__export-menu-item:last-child {
+  border-radius: 0 0 var(--psa-radius-md) var(--psa-radius-md);
+}
+
+.psa__export-menu-item svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* Menu Divider */
+.psa__export-menu-divider {
+  height: 1px;
+  background: var(--psa-border);
+  margin: var(--psa-spacing-xs) 0;
+}
+
+/* Menu Header (optional) */
+.psa__export-menu-header {
+  padding: var(--psa-spacing-xs) var(--psa-spacing-md);
+  font-size: var(--psa-font-size-xs);
+  font-weight: var(--psa-font-weight-semibold);
+  color: var(--psa-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Icon-only button */
+.psa__btn--icon-only {
+  width: 44px;
+  padding: 0;
+  justify-content: center;
+}
+
+.psa__btn--icon-only svg {
+  margin: 0;
+}
+
+/* Ghost button */
+.psa__btn--ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--psa-text-secondary);
+}
+
+.psa__btn--ghost:hover {
+  background: var(--psa-bg-hover);
+  border-color: var(--psa-border);
+}
+
+/* Small button */
+.psa__btn--sm {
+  min-height: 36px;
+  padding: var(--psa-spacing-xs) var(--psa-spacing-sm);
+  font-size: var(--psa-font-size-xs);
+}

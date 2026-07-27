@@ -1,0 +1,172 @@
+/**
+ * Footer - Status Bar Unified
+ * @version 10.0.0-ENTERPRISE-UNIFIED
+ * @description Barra unica fluida de status
+ */
+
+/* ══════════════════════════════════════════════════════════════
+   STATUS BAR - Container principal
+   ══════════════════════════════════════════════════════════════ */
+.dsd-footer__status-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHIP - Elemento base
+   ══════════════════════════════════════════════════════════════ */
+.dsd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(203, 213, 225, 0.85);
+  transition: background 0.12s ease;
+  white-space: nowrap;
+}
+
+.dsd-chip:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dsd-chip__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.dsd-chip__icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.dsd-chip__value {
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHIP DOT - Indicador de status
+   ══════════════════════════════════════════════════════════════ */
+.dsd-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dsd-chip__dot--online {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+}
+
+.dsd-chip__dot--offline {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+
+.dsd-chip__dot--warning {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHIP METRIC - CPU, Disk, Memory
+   ══════════════════════════════════════════════════════════════ */
+.dsd-chip--metric .dsd-chip__icon {
+  color: #4ade80;
+}
+
+.dsd-chip--metric .dsd-chip__value {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.dsd-chip--metric-warning .dsd-chip__icon,
+.dsd-chip--metric-warning .dsd-chip__value {
+  color: #fbbf24;
+}
+
+.dsd-chip--metric-critical .dsd-chip__icon,
+.dsd-chip--metric-critical .dsd-chip__value {
+  color: #f87171;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SEPARATOR
+   ══════════════════════════════════════════════════════════════ */
+.dsd-chip__sep {
+  width: 1px;
+  height: 16px;
+  background: rgba(71, 85, 105, 0.4);
+  margin: 0 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MIGRATED COMPONENTS INSIDE CHIPS - Reset total
+   ══════════════════════════════════════════════════════════════ */
+.dsd-chip .system-mode-indicator-component,
+.dsd-chip .webcam-mic-status-component,
+.dsd-chip .language-selector-component,
+.dsd-chip .geo-location-component {
+  display: contents;
+}
+
+.dsd-chip .mode-display,
+.dsd-chip .device-display,
+.dsd-chip .lang-display,
+.dsd-chip .geo-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dsd-chip .mode-icon,
+.dsd-chip .device-icon,
+.dsd-chip .lang-icon,
+.dsd-chip .geo-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.dsd-chip .mode-label,
+.dsd-chip .lang-code,
+.dsd-chip .geo-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+/* Mode especifico - verde */
+.dsd-chip .mode-icon,
+.dsd-chip .mode-label {
+  color: #4ade80;
+}
+
+/* Devices - ajuste opacidade */
+.dsd-chip .device-icon {
+  opacity: 0.5;
+}
+
+.dsd-chip .device-icon[data-active="true"],
+.dsd-chip .device-icon.active {
+  opacity: 1;
+  color: #4ade80;
+}

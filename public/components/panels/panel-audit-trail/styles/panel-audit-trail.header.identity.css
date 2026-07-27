@@ -1,0 +1,6 @@
+/* panel-audit-trail Header Identity - @version 1.0.0-ENTERPRISE */
+.pat-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: linear-gradient(to bottom, var(--pat-layer-from, rgba(15,15,18,0.95)), var(--pat-layer-to, rgba(15,15,18,0.75))); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--pat-layer-border, rgba(255,255,255,0.06)); flex-shrink: 0; min-height: 56px; }
+.pat-identity { display: flex; align-items: center; gap: 12px; }
+.pat-identity-icon { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 6px; background: var(--pat-accent-soft, rgba(124,58,237,0.15)); color: var(--pat-accent, #7C3AED); flex-shrink: 0; }
+.pat-identity-icon svg { width: 20px; height: 20px; }
+.pat-title { font-size: 16px; font-weight: 600; color: var(--pat-text-primary, rgba(255,255,255,0.92)); margin: 0; white-space: nowrap; }

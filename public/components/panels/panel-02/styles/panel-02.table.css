@@ -1,0 +1,13 @@
+/* Panel-02 Table - Master Import */
+/* @version 3.0.0-ENTERPRISE-AAA (Modularizado) */
+/* Este arquivo agora apenas importa os módulos */
+
+@import url('./panel-02.table.base.css');
+@import url('./panel-02.table.columns.css');
+@import url('./panel-02.table.sorting.css');
+@import url('./panel-02.table.selection.css');
+@import url('./panel-02.table.actions.css');
+@import url('./panel-02.table.expansion.css');
+@import url('./panel-02.table.pagination.css');
+@import url('./panel-02.table.grouping.css');
+@import url('./panel-02.table.a11y.css');

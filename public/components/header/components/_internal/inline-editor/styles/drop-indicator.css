@@ -1,0 +1,17 @@
+/* Inline Editor - Drop Indicator - @version 1.0.0-ENTERPRISE */
+.hie-drop-indicator {
+  position: fixed;
+  width: 4px;
+  height: 36px;
+  background: linear-gradient(180deg, #3b82f6 0%, #8b5cf6 100%);
+  border-radius: 2px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease, left 0.1s ease, top 0.1s ease;
+  z-index: 10000;
+}
+
+.hie-drop-indicator.hie-visible {
+  opacity: 1;
+  animation: hie-indicator-pulse 0.8s ease-in-out infinite;
+}

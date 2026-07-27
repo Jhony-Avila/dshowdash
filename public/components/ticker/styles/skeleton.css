@@ -1,0 +1,61 @@
+/* Ticker Skeleton Loading
+ * @version 1.0.0-ENTERPRISE
+ */
+
+.ticker-skeleton {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  overflow: hidden;
+  align-items: center;
+  height: 100%;
+}
+
+.ticker-skeleton-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ticker-skeleton-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+  background-size: 200% 100%;
+  animation: ticker-skeleton-shimmer 1.5s infinite ease-in-out;
+}
+
+.ticker-skeleton-text {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+  background-size: 200% 100%;
+  animation: ticker-skeleton-shimmer 1.5s infinite ease-in-out;
+}
+
+.ticker-skeleton-text--short { width: 50px; }
+.ticker-skeleton-text--medium { width: 120px; }
+.ticker-skeleton-text--long { width: 200px; }
+.ticker-skeleton-text--xl { width: 280px; }
+
+.ticker-skeleton-tag {
+  width: 45px;
+  height: 18px;
+  border-radius: 9px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+  background-size: 200% 100%;
+  animation: ticker-skeleton-shimmer 1.5s infinite ease-in-out;
+}
+
+@keyframes ticker-skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.ticker-skeleton--paused .ticker-skeleton-icon,
+.ticker-skeleton--paused .ticker-skeleton-text,
+.ticker-skeleton--paused .ticker-skeleton-tag {
+  animation-play-state: paused;
+}

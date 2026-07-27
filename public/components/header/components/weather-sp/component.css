@@ -1,0 +1,43 @@
+/* Weather SP - Enterprise Premium v8.0.0-REDESIGN */
+.weather-sp-component {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #13131A 0%, #0F0F14 100%);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 4px 12px rgba(0,0,0,0.45), 0 0 32px rgba(0,0,0,0.25);
+  cursor: pointer;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
+}
+.weather-sp-component:hover {
+  transform: scale(1.02);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 6px 16px rgba(0,0,0,0.5), 0 0 40px rgba(250,204,21,0.1);
+  border-color: rgba(250,204,21,0.15);
+}
+.weather-sp-component .weather-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+.weather-sp-component .weather-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: #FACC15;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+.weather-sp-component:hover .weather-icon svg { opacity: 1; }
+.weather-sp-component[data-condition="cloudy"] .weather-icon svg { stroke: #94A3B8; }
+.weather-sp-component[data-condition="rainy"] .weather-icon svg { stroke: #60A5FA; }
+.weather-sp-component .weather-temp {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.95);
+  letter-spacing: -0.01em;
+}

@@ -1,0 +1,200 @@
+/* Panel Header Admin - Preview */
+/* @version 1.0.0-AAA-MODULAR */
+/* Seção de preview do header */
+
+.pha-preview-section {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  border-radius: var(--pha-radius-xl);
+  margin-bottom: 24px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.pha-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pha-preview-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pha-preview-header h3 svg {
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
+}
+
+.pha-preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pha-preview-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.pha-preview-controls .pha-btn--sm {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.pha-preview-controls .pha-btn--sm:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.pha-preview-controls .pha-btn--sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pha-preview-frame {
+  padding: 20px;
+}
+
+.pha-preview-header-mock {
+  display: flex;
+  align-items: stretch;
+  background: #1f2937;
+  border-radius: var(--pha-radius-md);
+  min-height: 60px;
+  overflow: hidden;
+}
+
+.pha-preview-section-left,
+.pha-preview-section-center,
+.pha-preview-section-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.pha-preview-section-left {
+  flex: 0 0 auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pha-preview-section-center {
+  flex: 1;
+  justify-content: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pha-preview-section-right {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.pha-preview-section-label {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.pha-preview-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  transition: all var(--pha-transition);
+  cursor: default;
+}
+
+.pha-preview-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.pha-preview-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pha-preview-item-icon svg {
+  width: 16px;
+  height: 16px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.pha-preview-empty {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+.pha-preview-info {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.pha-preview-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: var(--pha-radius-lg);
+  font-weight: 500;
+}
+
+.pha-preview-badge--left {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.pha-preview-badge--center {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fde047;
+}
+
+.pha-preview-badge--right {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+/* Preview Expanded */
+.pha-preview-section--expanded .pha-preview-frame {
+  padding: 30px;
+}
+
+.pha-preview-section--expanded .pha-preview-header-mock {
+  min-height: 80px;
+}
+
+.pha-preview-section--expanded .pha-preview-item {
+  width: 44px;
+  height: 44px;
+}
+
+.pha-preview-section--expanded .pha-preview-item-icon svg {
+  width: 22px;
+  height: 22px;
+}

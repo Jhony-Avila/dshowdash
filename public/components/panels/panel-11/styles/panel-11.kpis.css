@@ -1,0 +1,182 @@
+/* Panel-11 KPIs - Enterprise Premium AAA */
+/* @version 4.0.0-ENTERPRISE-AAA */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* KPI GRID */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* KPI CARD */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-kpi {
+  position: relative;
+  padding: 16px;
+  background: var(--p11-card-bg);
+  border: 1px solid var(--p11-card-border);
+  border-radius: var(--p11-radius-lg);
+  border-left: 3px solid var(--p11-kpi-accent, var(--p11-accent));
+  transition: all var(--p11-transition-normal);
+}
+
+.p11-kpi:hover {
+  border-color: var(--p11-card-hover);
+  box-shadow: var(--p11-shadow-md);
+}
+
+/* KPI Header */
+.p11-kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.p11-kpi-label {
+  font-size: 10px;
+  color: var(--p11-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.p11-kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--p11-kpi-accent, var(--p11-accent));
+}
+
+.p11-kpi-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* KPI Value */
+.p11-kpi-body {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.p11-kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--p11-text-primary);
+  line-height: 1;
+  font-family: var(--p11-font-mono);
+  font-feature-settings: "tnum";
+}
+
+.p11-kpi-subtitle {
+  font-size: 12px;
+  color: var(--p11-kpi-accent, var(--p11-text-muted));
+  font-weight: 500;
+}
+
+/* KPI Footer */
+.p11-kpi-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.p11-kpi-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border-radius: var(--p11-radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.p11-kpi-change--up {
+  background: var(--p11-ok-bg);
+  color: var(--p11-ok);
+}
+
+.p11-kpi-change--down {
+  background: var(--p11-error-bg);
+  color: var(--p11-error);
+}
+
+.p11-kpi-change svg {
+  width: 10px;
+  height: 10px;
+}
+
+.p11-kpi-period {
+  font-size: 10px;
+  color: var(--p11-text-disabled);
+}
+
+/* KPI SLA Section */
+.p11-kpi-sla {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--p11-card-border);
+}
+
+.p11-kpi-sla-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+}
+
+.p11-kpi-sla-label {
+  color: var(--p11-text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* KPI VARIANTS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-kpi--success {
+  --p11-kpi-accent: var(--p11-ok);
+}
+
+.p11-kpi--warning {
+  --p11-kpi-accent: var(--p11-warning);
+}
+
+.p11-kpi--error {
+  --p11-kpi-accent: var(--p11-error);
+}
+
+.p11-kpi--info {
+  --p11-kpi-accent: var(--p11-info);
+}
+
+.p11-kpi--neutral {
+  --p11-kpi-accent: var(--p11-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* RESPONSIVE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1200px) {
+  .p11-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .p11-kpis {
+    grid-template-columns: 1fr;
+  }
+  
+  .p11-kpi-value {
+    font-size: 24px;
+  }
+}

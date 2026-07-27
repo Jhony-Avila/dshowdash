@@ -1,0 +1,26 @@
+/* Row Expansion
+ * @version 7.4.0
+ */
+
+.p05-tr-expandable {
+    cursor: pointer;
+}
+
+.p05-td-expand {
+    width: 32px;
+    text-align: center;
+    padding: 0 !important;
+}
+
+.p05-expand-btn {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.p05-expand-btn.p05-expanded svg {
+    transform: rotate(90deg);
+}

@@ -1,0 +1,11 @@
+/* Panel Audit Trail - Features Master
+ * @version 3.0.0-MODULAR
+ * Modularizado em 6 partials
+ */
+
+@import 'pat.features.health.css';
+@import 'pat.features.refresh.css';
+@import 'pat.features.density.css';
+@import 'pat.features.grouping.css';
+@import 'pat.features.toast.css';
+@import 'pat.features.footer.css';

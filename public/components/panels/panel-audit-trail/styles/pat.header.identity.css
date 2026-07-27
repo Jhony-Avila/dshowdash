@@ -1,0 +1,53 @@
+/* Panel Audit Trail - Header Identity
+ * @version 3.0.0-MODULAR
+ * Base + Identity
+ */
+
+.pat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(to bottom, #0c0c10, #0a0a0f);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Identidade */
+.pat-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.pat-identity-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(124, 58, 237, 0.05));
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.pat-identity-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+}
+
+.pat-identity-icon svg {
+  width: 20px;
+  height: 20px;
+  color: #A78BFA;
+}
+
+.pat-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin: 0;
+}

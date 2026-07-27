@@ -1,0 +1,13 @@
+/* Panel Enterprise - Estilos Base
+   @version 1.0.0-ENTERPRISE
+   Estilos compartilhados para painéis de administração
+   Modular CSS Architecture */
+
+@import url('./panel-enterprise/styles/base.css');
+@import url('./panel-enterprise/styles/tabs.css');
+@import url('./panel-enterprise/styles/tables.css');
+@import url('./panel-enterprise/styles/badges.css');
+@import url('./panel-enterprise/styles/buttons.css');
+@import url('./panel-enterprise/styles/forms.css');
+@import url('./panel-enterprise/styles/cards.css');
+@import url('./panel-enterprise/styles/utilities.css');

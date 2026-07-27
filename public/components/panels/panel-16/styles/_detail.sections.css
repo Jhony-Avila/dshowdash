@@ -1,0 +1,217 @@
+/* Panel-16 Detail - Sections
+ * @version 6.2.0-ENTERPRISE
+ * Sections + Highlight + Risco + Gov (padrão Panel-02)
+ */
+
+.p16-section {
+  padding-bottom: var(--p16-space-md);
+  border-bottom: 1px solid var(--p16-border-subtle);
+  animation: p16-fadeIn 0.3s ease backwards;
+}
+
+.p16-section:nth-child(1) { animation-delay: 0.05s; }
+.p16-section:nth-child(2) { animation-delay: 0.1s; }
+.p16-section:nth-child(3) { animation-delay: 0.15s; }
+.p16-section:nth-child(4) { animation-delay: 0.2s; }
+.p16-section:nth-child(5) { animation-delay: 0.25s; }
+.p16-section:nth-child(6) { animation-delay: 0.3s; }
+.p16-section:nth-child(7) { animation-delay: 0.35s; }
+.p16-section:last-child { border-bottom: none; padding-bottom: 0; }
+
+.p16-section-title {
+  font-size: var(--p16-font-xs);
+  font-weight: 600;
+  color: var(--p16-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--p16-space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--p16-space-sm);
+}
+
+.p16-section-title svg { 
+  width: 14px; 
+  height: 14px; 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SECTION HIGHLIGHT (FINANCEIRO) */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-section-highlight {
+  background: linear-gradient(135deg, var(--p16-success-bg) 0%, transparent 100%);
+  margin: 0 calc(var(--p16-space-lg) * -1);
+  padding: var(--p16-space-lg);
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid var(--p16-success-border);
+  border-bottom: 1px solid var(--p16-success-border);
+  position: relative;
+}
+
+.p16-section-highlight::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--p16-success);
+  box-shadow: 0 0 8px var(--p16-success-glow);
+}
+
+.p16-section-highlight .p16-section-title { 
+  color: var(--p16-success); 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SECTION RISCO */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-section-risco {
+  background: linear-gradient(135deg, var(--p16-error-bg) 0%, transparent 100%);
+  margin: 0 calc(var(--p16-space-lg) * -1);
+  padding: var(--p16-space-lg);
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid var(--p16-error-border);
+  border-bottom: 1px solid var(--p16-error-border);
+  position: relative;
+}
+
+.p16-section-risco::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--p16-error);
+  box-shadow: 0 0 8px var(--p16-error-glow);
+}
+
+.p16-section-risco .p16-section-title { 
+  color: var(--p16-error); 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SECTION WARNING */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-section-warning {
+  background: linear-gradient(135deg, var(--p16-warning-bg) 0%, transparent 100%);
+  margin: 0 calc(var(--p16-space-lg) * -1);
+  padding: var(--p16-space-lg);
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid var(--p16-warning-border);
+  border-bottom: 1px solid var(--p16-warning-border);
+  position: relative;
+}
+
+.p16-section-warning::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--p16-warning);
+  box-shadow: 0 0 8px var(--p16-warning-glow);
+}
+
+.p16-section-warning .p16-section-title { 
+  color: var(--p16-warning); 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* GOVERNANÇA */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-section-gov { 
+  opacity: 0.85; 
+}
+
+.p16-gov-info { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: var(--p16-space-md); 
+}
+
+.p16-gov-item { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 2px; 
+}
+
+.p16-gov-item label { 
+  font-size: var(--p16-font-2xs); 
+  color: var(--p16-text-dim); 
+  text-transform: uppercase; 
+  letter-spacing: 0.03em; 
+}
+
+.p16-gov-item span { 
+  font-size: var(--p16-font-xs); 
+  color: var(--p16-text-muted);
+  font-family: var(--p16-font-mono);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FIELDS GRID */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-fields { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: var(--p16-space-md); 
+}
+
+.p16-field { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+}
+
+.p16-field-full { 
+  grid-column: 1 / -1; 
+}
+
+.p16-field label { 
+  font-size: var(--p16-font-2xs); 
+  color: var(--p16-text-dim); 
+  text-transform: uppercase; 
+  letter-spacing: 0.04em; 
+  font-weight: 500; 
+}
+
+.p16-field span { 
+  font-size: var(--p16-font-sm); 
+  color: var(--p16-text-primary); 
+  word-break: break-word; 
+}
+
+.p16-field .p16-badge { 
+  width: fit-content; 
+}
+
+.p16-mono { 
+  font-family: var(--p16-font-mono); 
+  font-size: var(--p16-font-xs); 
+  letter-spacing: 0.02em; 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* RESPONSIVE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 480px) {
+  .p16-fields { 
+    grid-template-columns: 1fr; 
+  }
+  
+  .p16-gov-info { 
+    grid-template-columns: 1fr; 
+  }
+}

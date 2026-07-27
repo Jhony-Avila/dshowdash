@@ -1,0 +1,132 @@
+/* Panel-16 Table - Header
+ * @version 6.2.0-ENTERPRISE
+ * Header com gradiente + blur (padrão Panel-02)
+ */
+
+.p16-table-container {
+  flex: 1;
+  width: 100%;
+  max-height: calc(100vh - 320px);
+  overflow-x: auto;
+  overflow-y: auto;
+  background: var(--p16-bg-base);
+  border-radius: var(--p16-radius-lg);
+  animation: p16-fadeIn 0.2s ease;
+}
+
+.p16-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--p16-font-md);
+  table-layout: fixed;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* HEADER - BARRA FLUTUANTE (GRADIENTE + BLUR) */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-table thead {
+  position: sticky;
+  top: 0;
+  z-index: var(--p16-z-sticky);
+}
+
+.p16-table th {
+  position: relative;
+  padding: var(--p16-space-lg) var(--p16-space-lg);
+  text-align: left;
+  font-size: var(--p16-font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p16-text-secondary);
+  background: linear-gradient(to bottom, var(--p16-layer-from), var(--p16-layer-to));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--p16-layer-border);
+  white-space: nowrap;
+  user-select: none;
+  transition: color var(--p16-transition-fast);
+}
+
+.p16-table th:first-child { 
+  padding-left: var(--p16-space-xl); 
+  border-radius: var(--p16-radius-lg) 0 0 0;
+}
+
+.p16-table th:last-child { 
+  padding-right: var(--p16-space-xl); 
+  border-radius: 0 var(--p16-radius-lg) 0 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SORTABLE HEADERS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-th-sortable { 
+  cursor: pointer; 
+  position: relative; 
+}
+
+.p16-th-sortable:hover { 
+  color: var(--p16-text-primary); 
+}
+
+.p16-th-sortable::after {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 6px;
+  vertical-align: middle;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: 0.3;
+  transition: opacity var(--p16-transition-fast), transform var(--p16-transition-fast);
+}
+
+.p16-th-sortable:hover::after { 
+  opacity: 0.6; 
+}
+
+.p16-th-sortable.p16-sort-asc::after { 
+  opacity: 1; 
+  transform: rotate(180deg); 
+  color: var(--p16-accent-light);
+}
+
+.p16-th-sortable.p16-sort-desc::after { 
+  opacity: 1; 
+  transform: rotate(0deg); 
+  color: var(--p16-accent-light);
+}
+
+.p16-th-right { text-align: right; }
+.p16-th-center { text-align: center; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CHECKBOX */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-th-checkbox, 
+.p16-cell-checkbox { 
+  width: 44px; 
+  text-align: center; 
+}
+
+.p16-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--p16-accent);
+  cursor: pointer;
+  transition: transform var(--p16-transition-fast);
+}
+
+.p16-checkbox:hover { 
+  transform: scale(1.1); 
+}
+
+.p16-checkbox:checked { 
+  animation: p16-scaleIn 0.15s ease; 
+}

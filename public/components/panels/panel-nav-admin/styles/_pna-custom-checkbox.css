@@ -1,0 +1,166 @@
+/* ═══════════════════════════════════════════════════════════════
+   PNA CUSTOM CHECKBOX — Checkbox animado com check SVG e ripple
+   @version 1.0.0
+   ═══════════════════════════════════════════════════════════════ */
+
+.pna-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pna-space-sm);
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Esconder o input nativo (acessivel via SR) */
+.pna-checkbox__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ─── Box visual ─── */
+.pna-checkbox__box {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: background var(--pna-transition),
+              border-color var(--pna-transition),
+              box-shadow var(--pna-transition);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hover */
+.pna-checkbox:hover .pna-checkbox__box {
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* Focus */
+.pna-checkbox__input:focus-visible ~ .pna-checkbox__box {
+  border-color: var(--pna-primary);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+/* ─── Checked State ─── */
+.pna-checkbox__input:checked ~ .pna-checkbox__box {
+  background: var(--pna-primary);
+  border-color: var(--pna-primary);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+}
+
+.pna-checkbox__input:checked ~ .pna-checkbox__box .pna-checkbox__check {
+  opacity: 1;
+}
+
+/* ─── Check SVG Animation ─── */
+.pna-checkbox__check {
+  width: 14px;
+  height: 14px;
+  color: rgba(var(--pna-ink,255,255,255),1);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.pna-checkbox__path {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  transition: stroke-dashoffset 0.25s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.pna-checkbox__input:checked ~ .pna-checkbox__box .pna-checkbox__path {
+  stroke-dashoffset: 0;
+}
+
+/* ─── Indeterminate State ─── */
+.pna-checkbox__dash {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  color: rgba(var(--pna-ink,255,255,255),1);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.pna-checkbox__input:indeterminate ~ .pna-checkbox__box {
+  background: rgba(139, 92, 246, 0.6);
+  border-color: var(--pna-primary);
+}
+
+.pna-checkbox__input:indeterminate ~ .pna-checkbox__box .pna-checkbox__dash {
+  opacity: 1;
+}
+
+.pna-checkbox__input:indeterminate ~ .pna-checkbox__box .pna-checkbox__check {
+  opacity: 0;
+}
+
+/* ─── Ripple Effect ─── */
+.pna-checkbox__ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.pna-checkbox__input:active ~ .pna-checkbox__box .pna-checkbox__ripple {
+  animation: pna-checkbox-ripple 0.4s ease-out;
+}
+
+@keyframes pna-checkbox-ripple {
+  from {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  to {
+    width: 40px;
+    height: 40px;
+    opacity: 0;
+  }
+}
+
+/* ─── Label ─── */
+.pna-checkbox__label {
+  font-size: 0.8125rem;
+  color: var(--pna-text-secondary);
+  transition: color var(--pna-transition);
+}
+
+.pna-checkbox:hover .pna-checkbox__label {
+  color: var(--pna-text);
+}
+
+/* ─── Bulk Checkbox (tabela — sem label, compacto) ─── */
+.pna-checkbox--bulk {
+  gap: 0;
+}
+
+.pna-checkbox--bulk .pna-checkbox__box {
+  width: 16px;
+  height: 16px;
+}
+
+.pna-checkbox--bulk .pna-checkbox__check,
+.pna-checkbox--bulk .pna-checkbox__dash {
+  width: 12px;
+  height: 12px;
+}

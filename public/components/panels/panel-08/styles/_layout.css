@@ -1,0 +1,68 @@
+/* Panel-08 - Layout
+ * @version 6.0.0-MODULAR
+ * Layout + Header + Content + Footer
+ */
+
+.p08 {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--p08-bg-primary);
+  border-radius: var(--p08-radius-lg);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.p08__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--p08-spacing-md) var(--p08-spacing-lg);
+  background: var(--p08-bg-secondary);
+  border-bottom: 1px solid var(--p08-border);
+  min-height: 48px;
+  gap: var(--p08-spacing-md);
+}
+
+.p08__title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--p08-spacing-sm);
+}
+
+.p08__icon {
+  color: var(--p08-warning);
+  flex-shrink: 0;
+}
+
+.p08__title {
+  font-size: var(--p08-font-lg);
+  font-weight: 600;
+  color: var(--p08-text-primary);
+  margin: 0;
+}
+
+.p08__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--p08-spacing-sm);
+}
+
+.p08__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--p08-spacing-lg);
+}
+
+.p08__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--p08-spacing-sm) var(--p08-spacing-lg);
+  border-top: 1px solid var(--p08-border);
+  background: var(--p08-bg-secondary);
+}
+
+.p08__timestamp {
+  font-size: var(--p08-font-xs);
+  color: var(--p08-text-muted);
+}

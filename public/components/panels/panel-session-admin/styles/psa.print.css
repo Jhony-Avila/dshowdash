@@ -1,0 +1,127 @@
+/* Panel Session Admin - Print Styles Enterprise AAA */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+@media print {
+  /* Reset page */
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+  
+  /* Hide non-printable elements */
+  .psa__toolbar,
+  .psa__filters,
+  .psa__btn,
+  .psa__btn-icon,
+  .psa__cell--actions,
+  .psa__live-region,
+  .psa__current-badge,
+  .psa__spinner,
+  .psa__loading {
+    display: none !important;
+  }
+  
+  /* Reset colors for print */
+  .psa {
+    background: white !important;
+    color: black !important;
+    font-size: 10pt;
+  }
+  
+  .psa__header {
+    border-bottom: 2px solid #333;
+    padding-bottom: 0.5cm;
+    margin-bottom: 0.5cm;
+  }
+  
+  .psa__title {
+    color: black !important;
+    font-size: 14pt;
+  }
+  
+  .psa__title svg {
+    display: none;
+  }
+  
+  /* Table print styles */
+  .psa__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+  
+  .psa__table th,
+  .psa__table td {
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    text-align: left;
+    color: black !important;
+    background: white !important;
+  }
+  
+  .psa__table th {
+    background: #f0f0f0 !important;
+    font-weight: bold;
+  }
+  
+  .psa__table-wrapper {
+    overflow: visible !important;
+  }
+  
+  /* Badges print */
+  .psa__badge {
+    border: 1px solid #333;
+    padding: 2px 6px;
+    font-size: 8pt;
+    background: transparent !important;
+    color: black !important;
+  }
+  
+  .psa__badge--success { border-color: #22C55E; }
+  .psa__badge--info { border-color: #3B82F6; }
+  .psa__badge--muted { border-color: #64748B; }
+  
+  /* Footer print */
+  .psa__footer {
+    border-top: 1px solid #333;
+    padding-top: 0.5cm;
+    margin-top: 0.5cm;
+    font-size: 9pt;
+  }
+  
+  .psa__summary-item strong {
+    font-weight: bold;
+  }
+  
+  /* Row highlight for current */
+  .psa__row--current {
+    background: #f5f5f5 !important;
+  }
+  
+  /* Print header/footer */
+  .psa::before {
+    content: "Relatório de Sessões - " attr(data-print-date);
+    display: block;
+    text-align: right;
+    font-size: 8pt;
+    color: #666;
+    margin-bottom: 0.5cm;
+  }
+  
+  /* Page breaks */
+  .psa__table tr {
+    page-break-inside: avoid;
+  }
+}
+
+/* Print preview mode */
+.psa--print-preview {
+  background: white;
+  color: black;
+}
+
+.psa--print-preview .psa__toolbar,
+.psa--print-preview .psa__filters,
+.psa--print-preview .psa__cell--actions {
+  opacity: 0.3;
+}

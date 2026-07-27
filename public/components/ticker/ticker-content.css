@@ -1,0 +1,111 @@
+/* Ticker Component - Content Elements */
+/* @version 1.0.0-MODULAR */
+/* Source icon, horário, título, tag */
+
+/* ========================================
+   SOURCE ICON (LOGO DO PORTAL)
+   ======================================== */
+.ticker-source-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color var(--ticker-transition);
+}
+
+.ticker-source-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ticker-item:hover .ticker-source-icon {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ========================================
+   HORÁRIO (PROTAGONISTA)
+   ======================================== */
+.ticker-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ticker-text-secondary);
+  flex-shrink: 0;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================
+   TÍTULO
+   ======================================== */
+.ticker-title {
+  color: var(--ticker-text-primary);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all var(--ticker-transition);
+  flex-shrink: 0;
+  max-width: 600px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid transparent;
+}
+
+.ticker-title:hover,
+.ticker-item:hover .ticker-title {
+  color: var(--ticker-text-hover);
+  border-bottom-color: rgba(96, 165, 250, 0.4);
+}
+
+/* ========================================
+   TAG (CATEGORIA - SECUNDÁRIA)
+   ======================================== */
+.ticker-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ticker-text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--ticker-transition);
+}
+
+/* Tags por categoria */
+.ticker-item--categoria-breaking .ticker-tag {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.ticker-item--categoria-economia .ticker-tag {
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.ticker-item--categoria-politica .ticker-tag {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.ticker-item--categoria-tecnologia .ticker-tag {
+  background: rgba(139, 92, 246, 0.12);
+  color: #c4b5fd;
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.ticker-item:hover .ticker-tag {
+  transform: scale(1.02);
+}

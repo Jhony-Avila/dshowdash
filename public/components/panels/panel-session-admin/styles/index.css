@@ -1,0 +1,36 @@
+/* Panel Session Admin - Master Styles Enterprise AAA Ultimate */
+/* @version 3.0.0-ENTERPRISE-AAA */
+/* Agregador de estilos modulares - 22 arquivos */
+
+/* Design Tokens */
+@import url('./tokens.css');
+
+/* Base Layout */
+@import url('./_variables.css');
+@import url('./_layout.css');
+
+/* Components */
+@import url('./psa.header.css');
+@import url('./_table.css');
+@import url('./_forms.css');
+@import url('./_states.css');
+@import url('./_modal.css');
+@import url('./psa.dropdown.css');
+
+/* Features */
+@import url('./psa.features.css');
+@import url('./psa.selection.css');
+@import url('./psa.export.css');
+@import url('./psa.tooltip.css');
+@import url('./psa.skeleton.css');
+
+/* Advanced Features */
+@import url('./psa.inline-filters.css');
+@import url('./psa.columns.css');
+@import url('./psa.expansion.css');
+@import url('./psa.details-modal.css');
+
+/* Accessibility & Responsive */
+@import url('./psa.accessibility.css');
+@import url('./psa.responsive.css');
+@import url('./psa.print.css');

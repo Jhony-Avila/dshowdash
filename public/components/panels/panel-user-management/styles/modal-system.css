@@ -1,0 +1,96 @@
+/* Panel User Management - Modal System Info */
+/* @version 1.0.0-MODULAR */
+/* System readonly section, info cards */
+
+/* ========== SYSTEM READONLY SECTION ========== */
+.panel-user-management .form-section-readonly {
+  background: rgba(0,0,0,0.15);
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
+  padding: 1rem 1.5rem;
+  border-bottom: none;
+  border-top: 1px solid var(--pum-border-subtle);
+}
+
+.panel-user-management .readonly-badge {
+  font-size: 0.5625rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+  color: var(--pum-text-disabled);
+  margin-left: auto;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.panel-user-management .system-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem 1rem;
+}
+
+.panel-user-management .system-info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.panel-user-management .system-label {
+  font-size: 0.5625rem;
+  color: var(--pum-text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.panel-user-management .system-value {
+  font-size: 0.75rem;
+  color: var(--pum-text-secondary);
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+/* ========== SYSTEM INFO CARDS - ENTERPRISE AAA ========== */
+.panel-user-management .system-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.625rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--pum-border-subtle);
+  border-radius: 6px;
+}
+
+.panel-user-management .system-info-card .system-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--pum-text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.panel-user-management .system-info-card .system-label svg {
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.panel-user-management .system-info-card .system-value {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--pum-text-secondary);
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+/* ========== RESPONSIVE SYSTEM ========== */
+@media (max-width: 600px) {
+  .panel-user-management .system-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .panel-user-management .form-section-readonly {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding: 1rem;
+  }
+}

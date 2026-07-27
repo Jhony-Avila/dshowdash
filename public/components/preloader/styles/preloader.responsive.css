@@ -1,0 +1,131 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * PRELOADER RESPONSIVE v3.0.0-ENTERPRISE
+ * Media queries unificadas (AAA + Premium)
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * TABLET (max-width: 768px)
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .preloader-logo-container::before,
+  [data-preloader-logo]::before {
+    width: 200px;
+    height: 200px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .preloader-logo,
+  [data-preloader-logo] img {
+    width: 140px;
+    filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.4));
+  }
+
+  .preloader-text,
+  [data-preloader-text] {
+    font-size: 22px;
+    margin-bottom: 24px;
+  }
+
+  .preloader-progress {
+    height: 14px;
+  }
+
+  .preloader-progress-bar,
+  [data-preloader-progress-bar] {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+  }
+
+  .preloader-progress-wrapper .preloader-percentage,
+  [data-preloader-progress-wrapper] [data-preloader-percentage] {
+    font-size: 22px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MOBILE (max-width: 480px)
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .preloader-logo-container::before,
+  [data-preloader-logo]::before {
+    width: 160px;
+    height: 160px;
+  }
+
+  .preloader-logo,
+  [data-preloader-logo] img {
+    width: 100px;
+  }
+
+  .preloader-text,
+  [data-preloader-text] {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  .preloader-progress {
+    height: 12px;
+  }
+
+  .preloader-progress-wrapper .preloader-percentage,
+  [data-preloader-progress-wrapper] [data-preloader-percentage] {
+    font-size: 18px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * LANDSCAPE MOBILE
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .preloader-logo-container,
+  [data-preloader-logo] {
+    margin-bottom: 20px;
+  }
+
+  .preloader-logo-container::before,
+  [data-preloader-logo]::before {
+    width: 140px;
+    height: 140px;
+  }
+
+  .preloader-logo,
+  [data-preloader-logo] img {
+    width: 100px;
+  }
+
+  .preloader-text,
+  [data-preloader-text] {
+    display: none;
+  }
+
+  .preloader-progress {
+    height: 12px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * HIGH DPI SCREENS
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .preloader-progress {
+    height: 14px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * ACESSIBILIDADE - prefers-reduced-motion
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .preloader-logo,
+  [data-preloader-logo] img,
+  .preloader-progress-bar,
+  [data-preloader-progress-bar] {
+    animation: none;
+  }
+
+  .preloader-root,
+  [data-preloader-root],
+  .preloader-root.hidden,
+  .preloader-root.loaded {
+    transition: none;
+  }
+}

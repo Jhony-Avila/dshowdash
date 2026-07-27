@@ -1,0 +1,62 @@
+/* Panel UI - Index (Aggregator)
+ * @version 4.0.0-MODULAR
+ * @description Manifesto da estrutura modular CSS (25 módulos)
+ * @note Este arquivo NÃO é carregado diretamente pelo browser.
+ *       O sistema usa concatenação dos módulos em _panel-ui.css
+ *       debug-panel.js e command-palette.js carregam _panel-ui.css
+ *
+ * @build Rebuild command (executar de dentro de styles/):
+ *   cat panel-ui/_tokens.css panel-ui/_overlay.css panel-ui/_panel.css \
+ *       panel-ui/_header.css panel-ui/_tabs.css panel-ui/_content.css \
+ *       panel-ui/_inheritance.css panel-ui/_grid.css panel-ui/_cards.css \
+ *       panel-ui/_list.css panel-ui/_tags.css panel-ui/_buttons.css \
+ *       panel-ui/_forms.css panel-ui/_log.css panel-ui/_presets.css \
+ *       panel-ui/_memory-bar.css panel-ui/_region-metrics.css \
+ *       panel-ui/_snapshots.css panel-ui/_command-palette.css \
+ *       panel-ui/_status.css panel-ui/_tooltips.css panel-ui/_icons.css \
+ *       panel-ui/_animations.css panel-ui/_polish.css \
+ *       panel-ui/_interactions.css panel-ui/_features.css \
+ *       > _panel-ui.css
+ *
+ * Módulos (25 - ordem de concatenação):
+ *
+ *   TOKENS
+ *     1. _tokens.css            — Custom properties (dark forçado)
+ *
+ *   ESTRUTURA BASE
+ *     2. _overlay.css           — Overlay / Backdrop
+ *     3. _panel.css             — Panel container + variantes debug/command
+ *     4. _header.css            — Header: título, versão, ações
+ *     5. _tabs.css              — Tabs de navegação
+ *     6. _content.css           — Área de conteúdo + sections
+ *     7. _inheritance.css       — Box-sizing, font inherit, bg overrides
+ *
+ *   COMPONENTES
+ *     8. _grid.css              — Grid 2col + 4col
+ *     9. _cards.css             — Cards: base, label, value
+ *    10. _list.css              — List + list-item
+ *    11. _tags.css              — Tags container + tag
+ *    12. _buttons.css           — Botões todas variantes
+ *    13. _forms.css             — Toolbar, Input, Empty, Kbd
+ *
+ *   WIDGETS
+ *    14. _log.css               — Log + JSON viewer
+ *    15. _presets.css           — Presets grid + preset-btn
+ *    16. _memory-bar.css        — Memory bar + fill + labels
+ *    17. _region-metrics.css    — Region metric cards
+ *    18. _snapshots.css         — Snapshot items
+ *    19. _command-palette.css   — Command Palette completo
+ *
+ *   ESTADOS E APARÊNCIA
+ *    20. _status.css            — Status colors, badges, card borders, hover
+ *    21. _tooltips.css          — Tooltips tabs + buttons
+ *    22. _icons.css             — Icon colors + tab indicator
+ *
+ *   MOVIMENTO E INTERAÇÃO
+ *    23. _animations.css        — slideUp, fadeIn keyframes
+ *    24. _polish.css            — Gradients, tags, SVG hover, log colors, scrollbar
+ *    25. _interactions.css      — Efeito ripple
+ *
+ *   FEATURES AVANÇADAS
+ *    26. _features.css          — Badge, compact, search, dots, flash, pin, timestamp
+ */

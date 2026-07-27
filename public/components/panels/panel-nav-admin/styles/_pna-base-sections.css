@@ -1,0 +1,260 @@
+/* ═══════════════════════════════════════════════════════════════
+   PNA BASE - SECTIONS GRID
+   @version 1.4.0-AAA
+   Layout de referência: icone 48x48 com bg colorido, flex row,
+   badge contexto absolute top-right, editar absolute bottom-right
+   ═══════════════════════════════════════════════════════════════ */
+
+.pna-sections-list {
+  padding: var(--pna-space-md);
+}
+
+.pna-sections-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--pna-space-lg);
+}
+
+.pna-sections-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* ── GRID RESPONSIVO ────────────────────────────────────────── */
+/* mobile < 768px: 2 colunas */
+.pna-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+/* tablet 768–1200px: 3 colunas */
+@media (min-width: 768px) {
+  .pna-sections-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* desktop > 1200px: 5 colunas */
+@media (min-width: 1200px) {
+  .pna-sections-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* ── ANIMACAO DE ENTRADA ────────────────────────────────────── */
+@keyframes pna-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── CARD BASE ───────────────────────────────────────── */
+.pna-section-card {
+  background: var(--pna-bg-secondary);
+  border: 1px solid var(--pna-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  position: relative;
+  min-height: 120px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  animation: pna-card-in 0.3s ease both;
+}
+
+.pna-section-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* ── CARD PLACEHOLDER (preenche lacunas no grid) ─────── */
+.pna-section-card--placeholder {
+  visibility: hidden;
+  pointer-events: none;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  animation: none;
+}
+
+.pna-section-card--placeholder:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── CARD VAZIO ─────────────────────────────────────── */
+.pna-section-card--empty {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.pna-section-card--empty .pna-section-count {
+  color: rgba(var(--pna-ink,255,255,255), 0.25) !important;
+}
+
+/* ── BADGE DE CONTEXTO (absolute top-right) ─────────── */
+.pna-section-ctx-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-size: 0.65rem !important;
+  font-weight: 600;
+  padding: 3px 8px !important;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Cores corretas por contexto */
+.pna-ctx-sidebar  { background: rgba(124, 58, 237, 0.15); color: #a78bfa; border: 1px solid rgba(124, 58, 237, 0.4); }
+.pna-ctx-navrail  { background: rgba(37, 99, 235, 0.15);  color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.4); }
+.pna-ctx-header   { background: rgba(217, 119, 6, 0.15);  color: #fbbf24; border: 1px solid rgba(217, 119, 6, 0.4); }
+.pna-ctx-footer   { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+/* ── BODY DO CARD: flex row ─────────────────────────── */
+.pna-section-body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  /* espaço para o badge absoluto no top-right */
+  padding-right: 5rem;
+  min-height: 68px;
+}
+
+/* ── ICONE 48x48 com fundo colorido por contexto ─────── */
+.pna-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Garante que o SVG herde a cor via currentColor */
+.pna-section-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Fundo, cor e borda do icone por contexto — PROBLEMA 1 CORRIGIDO */
+.pna-section-icon--sidebar  {
+  background: rgba(124, 58, 237, 0.2);
+  color: #a78bfa;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+.pna-section-icon--navrail  {
+  background: rgba(37, 99, 235, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+.pna-section-icon--header   {
+  background: rgba(217, 119, 6, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+.pna-section-icon--footer   {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Icone vazio com opacidade reduzida */
+.pna-section-icon--empty {
+  opacity: 0.5;
+}
+
+/* ── INFO: nome + stats ──────────────────────────────── */
+.pna-section-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pna-section-name {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* KEY: removida da exibicao visual — mantida apenas em data-key no HTML */
+.pna-section-key {
+  display: none;
+}
+
+/* ── STATS: CONTAGEM PROEMINENTE ────────────────────── */
+.pna-section-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.pna-section-count {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* Contagem colorida por volume */
+.pna-count--zero { color: rgba(var(--pna-ink,255,255,255), 0.25); }
+.pna-count--low  { color: #94a3b8; }
+.pna-count--mid  { color: #a78bfa; }
+.pna-count--high { color: #c4b5fd; font-weight: 800; }
+
+.pna-section-count-label {
+  font-size: 0.75rem;
+  color: var(--pna-text-secondary);
+  font-weight: 400;
+}
+
+/* "Grupo vazio" abaixo da contagem */
+.pna-section-empty-label {
+  display: block;
+  width: 100%;
+  font-size: 0.7rem;
+  color: rgba(var(--pna-ink,255,255,255), 0.4);
+  margin-top: 0.1rem;
+  opacity: 0.4;
+}
+
+/* ── ACTIONS: absolute bottom-right ─────────────────── */
+.pna-section-actions {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+}
+
+/* ── DIVISOR DE CONTEXTO ────────────────────────────── */
+.pna-context-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0.25rem;
+  color: rgba(var(--pna-ink,255,255,255), 0.25);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pna-context-divider::before,
+.pna-context-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pna-context-divider__label {
+  white-space: nowrap;
+}

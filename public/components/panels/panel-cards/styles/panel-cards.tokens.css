@@ -1,0 +1,28 @@
+/**
+ * Panel Cards - Tokens
+ * @version 4.2.0
+ * @description Variáveis específicas do painel
+ */
+
+:root {
+  /* Clean Glass Effect */
+  --painel-glass-bg: rgba(15, 23, 42, 0.6);
+  --painel-glass-bg-hover: rgba(15, 23, 42, 0.75);
+  --painel-glass-border: rgba(148, 163, 184, 0.15);
+  --painel-glass-border-hover: rgba(148, 163, 184, 0.25);
+  --painel-glass-highlight: rgba(255, 255, 255, 0.05);
+  --painel-glass-shadow: rgba(0, 0, 0, 0.3);
+
+  /* Accent Colors (reduzidas) */
+  --aurora-1: rgba(102, 126, 234, 0.3);
+  --aurora-2: rgba(139, 92, 246, 0.3);
+  --aurora-3: rgba(236, 72, 153, 0.3);
+  --aurora-4: rgba(59, 130, 246, 0.3);
+
+  /* Glow Effects (reduzidos) */
+  --painel-accent-glow: rgba(102, 126, 234, 0.15);
+  --painel-accent-glow-strong: rgba(102, 126, 234, 0.25);
+
+  /* Grid - Default 3 colunas */
+  --painel-grid-columns: 3;
+}

@@ -1,0 +1,106 @@
+'use strict';
+// =============================================================
+// weather-fx / forecast / forecast-band — FAIXA de previsão 7 dias
+// (overlay DOM, camada weather-fx — NÃO toca o bundle congelado).
+// Vive dentro de .ph-content, LOGO ABAIXO da saudação. Fundo
+// semitransparente escuro + blur (legível sobre sol claro E noite).
+// Consome o forecast[] que já vem no payload do weather-source (ZERO
+// fetch novo) via update(). Ícones coesos com os efeitos (codeToState).
+// ANTI-LEAK: nenhum event listener; destroy() remove faixa + <style>.
+// =============================================================
+import { codeToState } from '../weather/state-map.js';
+import type { ForecastDay } from '../weather/weather-source.js';
+import { iconFor } from './forecast-icons.js';
+export const MODULE_ID = 'panel-home.weather-fx.forecast.forecast-band';
+export const VERSION = '0.1.0-ETAPA6';
+
+const STYLE_ID = 'phf-band-style';
+const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+// CSS ESCOPADO: todas as classes com prefixo phf- (não vaza pro resto).
+const CSS = `
+.phf-band{display:flex;gap:6px;justify-content:center;flex-wrap:nowrap;margin-top:1rem;padding:8px 10px;max-width:100%;
+  background:rgba(10,14,22,0.28);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:14px;
+  border:1px solid rgba(255,255,255,0.06);pointer-events:none;user-select:none;box-sizing:border-box;}
+.phf-day{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:44px;padding:2px 4px;}
+.phf-dow{font-size:.72rem;font-weight:600;color:rgba(255,255,255,0.92);text-shadow:0 1px 2px rgba(0,0,0,.55);white-space:nowrap;}
+.phf-ic{line-height:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));}
+.phf-t{display:flex;gap:4px;font-size:.72rem;line-height:1;}
+.phf-t b{font-weight:700;color:rgba(255,255,255,0.95);text-shadow:0 1px 2px rgba(0,0,0,.55);}
+.phf-t i{font-style:normal;color:rgba(255,255,255,0.58);text-shadow:0 1px 2px rgba(0,0,0,.55);}
+@media (max-width:520px){.phf-day{min-width:38px;}.phf-dow,.phf-t{font-size:.66rem;}.phf-band{gap:3px;padding:6px;}}
+`;
+
+export class ForecastBand {
+  private el: HTMLElement | null = null;
+  private mounted = false;
+
+  mount(wrapper: HTMLElement): void {
+    if (this.mounted || !wrapper) return;
+    this._injectStyle();
+    const content = (wrapper.querySelector('.ph-content') as HTMLElement | null) || wrapper;
+    // dedupe (re-mount defensivo)
+    content.querySelectorAll('.phf-band').forEach((e) => e.remove());
+    const band = document.createElement('div');
+    band.className = 'phf-band';
+    band.setAttribute('data-weather-fx-forecast', '1');
+    // insere DEPOIS da área de mensagem = abaixo do "Boa tarde"
+    const msg = content.querySelector('#panel-home-message-area') || content.querySelector('.ph-message-area');
+    if (msg && msg.parentElement === content) content.insertBefore(band, msg.nextSibling);
+    else content.appendChild(band);
+    this.el = band;
+    this.mounted = true;
+  }
+
+  // Alimentada pelo controller (mesmo payload do clima; sem fetch novo).
+  update(forecast: ForecastDay[] | null): void {
+    if (!this.el || !Array.isArray(forecast) || !forecast.length) return;
+    const days = forecast.slice(0, 7);
+    this.el.innerHTML = days.map((d, i) => this._cell(d, i)).join('');
+  }
+
+  private _cell(d: ForecastDay, i: number): string {
+    const label = i === 0 ? 'Hoje' : this._dayLabel(d.date);
+    const state = codeToState(Number(d.weather_code), true).id;      // SEMPRE dia
+    const max = (d.temp_max == null) ? '–' : Math.round(d.temp_max) + '°';
+    const min = (d.temp_min == null) ? '–' : Math.round(d.temp_min) + '°';
+    return '<div class="phf-day">'
+      + '<span class="phf-dow">' + this._esc(label) + '</span>'
+      + '<span class="phf-ic">' + iconFor(state) + '</span>'
+      + '<span class="phf-t"><b>' + max + '</b><i>' + min + '</i></span>'
+      + '</div>';
+  }
+
+  // FUSO: dia numérico vem do SPLIT da ISO (direto). O nome do dia usa
+  // new Date(y, mo-1, da) — data LOCAL por PARTES, NUNCA new Date(iso)
+  // (que parseia como UTC-meia-noite -> off-by-one em UTC-3).
+  private _dayLabel(iso: string): string {
+    const p = String(iso).split('-');
+    const y = Number(p[0]), mo = Number(p[1]), da = Number(p[2]);
+    if (!y || !mo || !da) return '';
+    const dow = WEEKDAYS[new Date(y, mo - 1, da).getDay()];
+    return dow + ' ' + da;
+  }
+
+  private _esc(s: string): string {
+    return String(s).replace(/[&<>"]/g, (c) => (({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string));
+  }
+
+  private _injectStyle(): void {
+    if (document.getElementById(STYLE_ID)) return;
+    const st = document.createElement('style');
+    st.id = STYLE_ID;
+    st.textContent = CSS;
+    document.head.appendChild(st);
+  }
+
+  // ANTI-LEAK: remove a faixa E o <style> injetado. Idempotente.
+  destroy(): void {
+    if (this.el && this.el.parentNode) this.el.parentNode.removeChild(this.el);
+    this.el = null;
+    this.mounted = false;
+    const st = document.getElementById(STYLE_ID);
+    if (st && st.parentNode) st.parentNode.removeChild(st);
+  }
+}
+export default ForecastBand;

@@ -1,0 +1,81 @@
+/* Panel-15 Print Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .p15-wrapper,
+  .p15-wrapper * {
+    visibility: visible;
+  }
+
+  .p15-wrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .p15-header,
+  .p15-toolbar,
+  .p15-filters,
+  .p15-footer,
+  .p15-pagination,
+  .p15-bulk-bar,
+  .p15-inline-actions,
+  .p15-expand-btn,
+  .p15-row-checkbox,
+  .p15-select-all,
+  .p15-auto-refresh,
+  .p15-refresh-btn,
+  .p15-export-btn,
+  [data-action],
+  .p15-col-resizer {
+    display: none !important;
+  }
+
+  .p15-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+
+  .p15-table th,
+  .p15-table td {
+    border: 1px solid #333;
+    padding: 6px 8px;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .p15-table thead th {
+    background: #eee !important;
+    font-weight: bold;
+  }
+
+  .p15-table-wrapper {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .p15-status-indicator,
+  .p15-job-type,
+  .p15-success-rate {
+    background: transparent !important;
+    border: 1px solid #666;
+    color: #000 !important;
+  }
+
+  .p15-status-dot {
+    display: none;
+  }
+
+  @page {
+    margin: 1cm;
+    size: landscape;
+  }
+}

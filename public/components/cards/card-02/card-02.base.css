@@ -1,0 +1,58 @@
+/**
+ * Card-02 - Base
+ * @version 6.0.0
+ * @description Variáveis específicas + container base + border top
+ */
+
+#card-02.card-container {
+  --card-accent: var(--card-green, #10b981);
+  --card-accent-dark: var(--card-green-dark, #059669);
+  --card-accent-glow: rgba(16, 185, 129, 0.3);
+}
+
+#card-02.card-container {
+  display: flex;
+  flex-direction: column;
+  padding: var(--card-padding);
+  min-height: var(--card-height);
+  max-height: var(--card-height);
+  position: relative;
+  overflow: hidden;
+  perspective: none;
+  transform-style: flat;
+  background: transparent;
+  border: var(--card-border-width) solid var(--card-border);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  transition: var(--card-transition-premium);
+  contain: layout style paint;
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
+}
+
+#card-02.card-container:hover {
+  border-color: var(--card-border-hover);
+  background: transparent;
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+#card-02.card-container:focus-visible,
+#card-02.card-container:focus-within {
+  outline: 2px solid var(--card-accent);
+  outline-offset: 2px;
+  border-color: var(--card-accent);
+}
+
+#card-02.card-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--card-border-top-height, 3px);
+  background: linear-gradient(135deg, var(--card-accent) 0%, var(--card-accent-dark) 100%);
+  z-index: 1;
+}
+
+#card-02.card-container::after { display: none; }

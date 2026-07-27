@@ -1,0 +1,50 @@
+/* Panel Audit Trail - Header Utils
+ * @version 3.0.0-MODULAR
+ * Timestamp + Fullscreen
+ */
+
+.pat-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--pat-font-mono);
+  font-size: 0.625rem;
+  color: rgba(255,255,255,0.5);
+  padding: 0.3125rem 0.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+}
+
+.pat-timestamp svg {
+  width: 12px;
+  height: 12px;
+  color: #64748B;
+}
+
+/* Fullscreen Button */
+.pat-fullscreen-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pat-fullscreen-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: #94A3B8;
+  transform: scale(1.08);
+}
+
+.pat-fullscreen-btn svg {
+  width: 16px;
+  height: 16px;
+}

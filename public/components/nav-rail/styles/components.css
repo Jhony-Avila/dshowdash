@@ -1,0 +1,214 @@
+/* NavRail Enterprise v2.0.0-P3-AAA - Component Button Styles */
+/* Estilos para botões-componentes (navrail-btn) */
+
+/* Host container */
+.nav-rail__item-host {
+    display: contents;
+}
+
+/* Base button - herda visual do nav-rail__item */
+.navrail-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin: 4px auto;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.06) 0%, transparent 55%);
+    color: var(--nav-rail-item-color, rgba(226, 232, 240, 0.85));
+    cursor: pointer;
+    transition: transform 0.16s ease-out, background 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out, color 0.18s ease-out;
+    outline: none;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* Hover ROXO - padrão para todos os botões */
+.navrail-btn:hover {
+    border: 1px solid rgba(123, 110, 246, 0.6);
+    box-shadow: 0 0 8px rgba(123, 110, 246, 0.5), 0 0 20px rgba(123, 110, 246, 0.3), inset 0 0 10px rgba(123, 110, 246, 0.1);
+    background: var(--nav-rail-item-hover-bg, linear-gradient(135deg, rgba(123, 110, 246, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%));
+    color: var(--nav-rail-item-hover-color, #f1f5f9);
+    transform: translateY(-1px);
+}
+
+.navrail-btn:focus-visible {
+    box-shadow: var(--nav-rail-focus-ring, 0 0 0 2px rgba(139, 92, 246, 0.5));
+    outline: none;
+}
+
+.navrail-btn:active {
+    transform: scale(0.96) translateY(0);
+}
+
+/* Active state */
+.navrail-btn.is-active,
+.navrail-btn[aria-pressed="true"] {
+    background: var(--nav-rail-item-active-bg, linear-gradient(135deg, rgba(123, 110, 246, 0.35) 0%, rgba(139, 92, 246, 0.25) 100%));
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--nav-rail-item-active-color, #fff);
+    box-shadow: var(--nav-rail-item-active-shadow, 0 0 12px rgba(123, 110, 246, 0.4));
+    transform: translateY(-1px);
+}
+
+.navrail-btn.is-active:hover,
+.navrail-btn[aria-pressed="true"]:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--nav-rail-item-active-shadow), 0 0 16px rgba(123, 110, 246, 0.3);
+}
+
+/* Icon container */
+.navrail-btn__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+}
+
+.navrail-btn__icon svg,
+.navrail-btn__icon i {
+    width: 100%;
+    height: 100%;
+    stroke-width: 1.75;
+}
+
+/* Label - hidden by default on desktop */
+.navrail-btn__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Tooltip on hover (opcional) */
+.navrail-btn[data-tooltip]::after {
+    content: attr(aria-label);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 6px 10px;
+    background: rgba(30, 30, 46, 0.95);
+    color: #f1f5f9;
+    font-size: 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+}
+
+.navrail-btn[data-tooltip]:hover::after {
+    opacity: 1;
+}
+
+/* Mobile styles */
+@media (max-width: 500px) {
+    .navrail-btn {
+        width: 44px;
+        height: 44px;
+        margin: 0;
+        border-radius: 8px;
+    }
+    
+    .navrail-btn__icon {
+        width: 22px;
+        height: 22px;
+    }
+    
+    .navrail-btn__label {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+        font-size: 10px;
+        margin-top: 2px;
+    }
+    
+    .navrail-btn {
+        flex-direction: column;
+        gap: 2px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AMBER BUTTONS - Bell, Toggle-Sidebar, Docs
+   ═══════════════════════════════════════════════════════════════ */
+
+.navrail-btn--bell,
+.navrail-btn--toggle-sidebar,
+.navrail-btn--docs {
+  color: #f59e0b;
+  position: relative;
+}
+
+.navrail-btn--bell::before,
+.navrail-btn--toggle-sidebar::before,
+.navrail-btn--docs::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* Hover ÂMBAR - sobrescreve o hover roxo para esses 3 botões */
+.navrail-btn--bell:hover,
+.navrail-btn--toggle-sidebar:hover,
+.navrail-btn--docs:hover {
+  color: #fbbf24;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.18) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.35), inset 0 0 10px rgba(245, 158, 11, 0.12);
+  transform: scale(1.08);
+}
+
+.navrail-btn--bell:hover::before,
+.navrail-btn--toggle-sidebar:hover::before,
+.navrail-btn--docs:hover::before {
+  opacity: 1;
+}
+
+.navrail-btn--bell:focus-visible,
+.navrail-btn--toggle-sidebar:focus-visible,
+.navrail-btn--docs:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25);
+}
+
+.navrail-btn--bell[aria-pressed="true"],
+.navrail-btn--bell.is-active,
+.navrail-btn--toggle-sidebar[aria-pressed="true"],
+.navrail-btn--toggle-sidebar.is-active,
+.navrail-btn--docs[aria-pressed="true"],
+.navrail-btn--docs.is-active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(217, 119, 6, 0.22) 100%);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.45);
+}
+
+.navrail-btn--bell:active,
+.navrail-btn--toggle-sidebar:active,
+.navrail-btn--docs:active {
+  transform: scale(0.95);
+}

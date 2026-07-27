@@ -1,0 +1,47 @@
+/* Panel User Management - Responsive */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+@media (max-width: 992px) {
+  .panel-user-management .panel-toolbar {
+    flex-direction: column;
+  }
+
+  .panel-user-management .search-group {
+    min-width: 100%;
+  }
+
+  .panel-user-management .filter-group {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .panel-user-management .panel-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .panel-user-management .users-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-user-management .user-card {
+    padding: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-user-management .panel-content {
+    padding: 1rem;
+  }
+
+  .panel-user-management .panel-toolbar {
+    padding: 0.75rem 1rem;
+  }
+
+  .panel-user-management .filter-select {
+    min-width: 100%;
+  }
+}

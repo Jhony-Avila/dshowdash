@@ -1,0 +1,29 @@
+/* Panel-05 Interactions - Print
+ * @version 7.0.0-MODULAR
+ * Print Styles
+ */
+
+@media print {
+    .p05-panel {
+        background: white;
+        color: black;
+    }
+    
+    .p05-btn,
+    .p05-export-btn,
+    .p05-view-toggle,
+    .p05-kbd-hint,
+    .p05-tooltip,
+    .p05-toast {
+        display: none !important;
+    }
+    
+    .p05-table-row:hover {
+        background: transparent;
+    }
+    
+    .p05-badge {
+        border: 1px solid currentColor;
+        background: transparent;
+    }
+}

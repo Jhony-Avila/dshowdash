@@ -1,0 +1,115 @@
+/* Panel-14 Toast Notifications */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+.p14-toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.p14-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  background: var(--p14-bg-elevated, #1a1d24);
+  border: 1px solid var(--p14-border-muted, rgba(255,255,255,0.1));
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  color: var(--p14-text-primary, #fff);
+  font-size: 0.8125rem;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  max-width: 360px;
+}
+
+.p14-toast--visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.p14-toast--hiding {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.p14-toast-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.p14-toast-message {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.p14-toast-close {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--p14-text-muted, rgba(255,255,255,0.5));
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.p14-toast-close:hover {
+  opacity: 1;
+}
+
+.p14-toast--success {
+  border-left: 3px solid var(--p14-ok, #22C55E);
+}
+
+.p14-toast--success .p14-toast-icon {
+  color: var(--p14-ok, #22C55E);
+}
+
+.p14-toast--warning {
+  border-left: 3px solid var(--p14-warning, #F59E0B);
+}
+
+.p14-toast--warning .p14-toast-icon {
+  color: var(--p14-warning, #F59E0B);
+}
+
+.p14-toast--error {
+  border-left: 3px solid var(--p14-error, #EF4444);
+}
+
+.p14-toast--error .p14-toast-icon {
+  color: var(--p14-error, #EF4444);
+}
+
+.p14-toast--info {
+  border-left: 3px solid var(--p14-accent, #7C6AE6);
+}
+
+.p14-toast--info .p14-toast-icon {
+  color: var(--p14-accent, #7C6AE6);
+}
+
+@media (max-width: 480px) {
+  .p14-toast-container {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  .p14-toast {
+    max-width: none;
+  }
+}

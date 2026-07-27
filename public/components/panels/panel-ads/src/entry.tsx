@@ -1,0 +1,47 @@
+// entry.tsx — ponto de entrada do painel React (Ads Intelligence).
+// @version 1.0.0  @created 2026-07-21
+//
+// Contrato com o app-shell (via adaptador index.js):
+//   await panelModule.mount(contentEl, config)  -> mountReact
+//   await panelModule.unmount()                 -> unmountReact
+// Montamos no MESMO documento do shell: tokens e data-theme valem sem ponte.
+import { StrictMode } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { App } from './app/App';
+import type { ShellConfig } from './shell/types';
+
+let _root: Root | null = null;
+let _host: HTMLElement | null = null;
+
+export async function mountReact(contentEl: HTMLElement, config: ShellConfig = {}): Promise<void> {
+  if (_root) {
+    await unmountReact();
+  }
+  _host = document.createElement('div');
+  _host.setAttribute('data-ads-react-root', '');
+  _host.style.height = '100%';
+  contentEl.appendChild(_host);
+
+  _root = createRoot(_host);
+  _root.render(
+    <StrictMode>
+      <App config={config} />
+    </StrictMode>
+  );
+}
+
+export function unmountReact(): Promise<void> {
+  if (_root) {
+    _root.unmount();
+    _root = null;
+  }
+  if (_host) {
+    _host.remove();
+    _host = null;
+  }
+  return Promise.resolve();
+}
+
+export function reactInfo() {
+  return { mounted: _root !== null, hasHost: _host !== null };
+}

@@ -1,0 +1,66 @@
+/* Panel-05 - Cliente 360 Orcamentos */
+/* @version 7.0.0-MODULAR */
+/* Orcamentos Stats + Mini Table */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ORÇAMENTOS STATS */
+/* ═══════════════════════════════════════════════════════════════ */
+.p05-orcs-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--p05-space-md);
+    margin-bottom: var(--p05-space-lg);
+}
+
+.p05-orc-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--p05-space-md);
+    background: var(--p05-bg-app);
+    border-radius: var(--p05-radius-sm);
+    border: 1px solid var(--p05-border-subtle);
+}
+
+.p05-orc-stat-value {
+    font: var(--p05-font-kpi-value-sm);
+    color: var(--p05-text-primary);
+}
+
+.p05-orc-stat-label {
+    font: var(--p05-font-meta);
+    color: var(--p05-text-muted);
+}
+
+.p05-stat-ganhos .p05-orc-stat-value { color: var(--p05-success); }
+.p05-stat-perdidos .p05-orc-stat-value { color: var(--p05-danger); }
+.p05-stat-andamento .p05-orc-stat-value { color: var(--p05-warning); }
+.p05-stat-valor .p05-orc-stat-value { color: var(--p05-info); }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* MINI TABLE */
+/* ═══════════════════════════════════════════════════════════════ */
+.p05-mini-table-wrapper {
+    overflow-x: auto;
+}
+
+.p05-mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font: var(--p05-font-body-sm);
+}
+
+.p05-mini-table th {
+    padding: var(--p05-space-sm) var(--p05-space-md);
+    text-align: left;
+    font: var(--p05-font-meta);
+    color: var(--p05-text-muted);
+    border-bottom: 1px solid var(--p05-border-default);
+    white-space: nowrap;
+}
+
+.p05-mini-table td {
+    padding: var(--p05-space-sm) var(--p05-space-md);
+    border-bottom: 1px solid var(--p05-border-subtle);
+    color: var(--p05-text-secondary);
+}

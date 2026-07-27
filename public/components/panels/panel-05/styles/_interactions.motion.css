@@ -1,0 +1,22 @@
+/* Panel-05 Interactions - Motion
+ * @version 7.0.0-MODULAR
+ * Motion Preferences
+ */
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .p05-panel *,
+    .p05-panel *::before,
+    .p05-panel *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .p05-skeleton::after,
+    .p05-skeleton-text::after,
+    .p05-skeleton-icon::after {
+        animation: none;
+        background: var(--p05-bg-surface-hover);
+    }
+}

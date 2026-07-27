@@ -1,0 +1,152 @@
+/* Panel-04 Components - Cards, Buttons, Auto-Refresh
+ * @version 1.0.0-ENTERPRISE
+ */
+
+/* AUTO-REFRESH TOGGLE */
+.p04-auto-refresh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--p04-bg-secondary);
+  border: 1px solid var(--p04-border);
+  border-radius: var(--p04-radius-sm);
+}
+
+.p04-auto-toggle {
+  width: 32px;
+  height: 18px;
+  background: var(--p04-border);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  position: relative;
+  transition: var(--p04-transition);
+}
+
+.p04-auto-toggle.active { background: var(--p04-low); }
+
+.p04-auto-toggle span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.2s ease;
+}
+
+.p04-auto-toggle.active span { left: 16px; }
+
+.p04-countdown {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--p04-text-muted);
+  min-width: 24px;
+  text-align: center;
+  transition: var(--p04-transition);
+}
+
+.p04-countdown.active { color: var(--p04-low); }
+
+/* CARDS */
+.p04-cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+
+.p04-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: var(--p04-bg-card);
+  border: 1px solid var(--p04-border);
+  border-radius: var(--p04-radius);
+  cursor: pointer;
+  transition: var(--p04-transition);
+}
+
+.p04-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+.p04-card[data-filter-btn].active,
+.p04-card[data-filter-btn]:focus {
+  box-shadow: 0 0 0 2px var(--p04-info);
+  transform: scale(1.02);
+}
+
+/* BUTTONS */
+.p04-btn {
+  padding: 6px 12px;
+  background: var(--p04-bg-secondary);
+  border: 1px solid var(--p04-border);
+  border-radius: var(--p04-radius-sm);
+  color: var(--p04-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: var(--p04-transition);
+}
+
+.p04-btn:hover { background: var(--p04-border); color: var(--p04-text-primary); }
+
+.p04-btn-icon {
+  padding: 6px 10px;
+  background: var(--p04-bg-secondary);
+  border: 1px solid var(--p04-border);
+  border-radius: var(--p04-radius-sm);
+  color: var(--p04-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: var(--p04-transition);
+}
+
+.p04-btn-icon:hover { color: var(--p04-text-primary); }
+
+/* PERIOD SELECTOR */
+.p04-period-selector, .p04-view-selector {
+  display: flex;
+  background: var(--p04-bg-secondary);
+  border-radius: var(--p04-radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--p04-border);
+}
+
+.p04-period-btn, .p04-view-btn {
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  color: var(--p04-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: var(--p04-transition);
+}
+
+.p04-period-btn:hover, .p04-view-btn:hover { background: var(--p04-border); }
+.p04-period-btn.p04-period-active, .p04-view-btn.p04-view-active { background: var(--p04-info); color: #fff; }
+
+/* ICONS */
+.p04-icon { display: inline-flex; align-items: center; justify-content: center; }
+.p04-icon svg { width: 14px; height: 14px; }
+.p04-severity-icon svg { width: 12px; height: 12px; }
+
+/* TOOLBAR */
+.p04-toolbar { display: flex; align-items: center; gap: 12px; }
+
+.p04-toolbar input[type="text"] {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  background: var(--p04-bg-secondary);
+  border: 1px solid var(--p04-border);
+  border-radius: var(--p04-radius-sm);
+  color: var(--p04-text-primary);
+  font-size: 12px;
+  outline: none;
+  transition: var(--p04-transition);
+}
+
+.p04-toolbar input[type="text"]:focus {
+  border-color: var(--p04-info);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}

@@ -1,0 +1,127 @@
+/* App Shell - Regions
+ * @version 4.0.0-FADE-TRANSITIONS
+ * @changelog v4.0.0-FADE-TRANSITIONS: Added base opacity for fade-in transitions
+ * @changelog v3.0.0-MODULAR: Initial modular version
+ * Header, Ticker, Nav, Sidebar, Main, Footer
+ */
+
+/* ============================================
+   HEADER REGION
+   ============================================ */
+.dsd-shell__region--header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--shell-header-height);
+  z-index: var(--shell-z-header);
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+.dsd-shell__region--header * {
+  scroll-behavior: auto;
+}
+
+/* ============================================
+   TICKER REGION
+   ============================================ */
+.dsd-shell__region--ticker {
+  position: fixed;
+  top: var(--shell-header-height);
+  left: 0;
+  right: 0;
+  height: var(--shell-ticker-height);
+  z-index: var(--shell-z-ticker);
+  overflow: hidden;
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   NAV-RAIL REGION
+   ============================================ */
+.dsd-shell__region--nav-rail {
+  position: fixed;
+  left: 0;
+  top: var(--shell-top-offset);
+  bottom: var(--shell-footer-height);
+  width: var(--shell-nav-rail-width);
+  z-index: var(--shell-z-nav-rail);
+  overflow: hidden;
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   SIDEBAR REGION
+   ============================================ */
+.dsd-shell__region--sidebar {
+  position: fixed;
+  left: var(--shell-nav-rail-width);
+  top: var(--shell-top-offset);
+  bottom: var(--shell-footer-height);
+  width: var(--shell-sidebar-width);
+  z-index: var(--shell-z-sidebar);
+  overflow: hidden;
+  transition: width var(--shell-transition);
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+body.sidebar-collapsed .dsd-shell__region--sidebar {
+  width: var(--shell-sidebar-width-collapsed);
+}
+
+/* ============================================
+   MAIN REGION
+   ============================================ */
+.dsd-shell__region--main {
+  position: fixed;
+  top: var(--shell-top-offset);
+  left: calc(var(--shell-nav-rail-width) + var(--shell-sidebar-width));
+  right: 0;
+  bottom: var(--shell-footer-height);
+  z-index: var(--shell-z-base);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  transition: left var(--shell-transition);
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+body.sidebar-collapsed .dsd-shell__region--main {
+  left: calc(var(--shell-nav-rail-width) + var(--shell-sidebar-width-collapsed));
+}
+
+.dsd-shell__region--main > * {
+  height: auto !important;
+  min-height: 100%;
+}
+
+/* ============================================
+   FOOTER REGION
+   ============================================ */
+.dsd-shell__region--footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--shell-footer-height);
+  z-index: var(--shell-z-footer);
+  overflow: hidden;
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}

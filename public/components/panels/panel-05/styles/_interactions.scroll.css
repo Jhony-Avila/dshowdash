@@ -1,0 +1,56 @@
+/* Panel-05 Interactions - Scroll
+ * @version 7.0.0-MODULAR
+ * Scroll Behaviors
+ */
+
+/* Smooth scroll */
+.p05-panel {
+    scroll-behavior: smooth;
+}
+
+/* Scroll snap for charts */
+.p05-charts-section {
+    scroll-snap-type: x proximity;
+}
+
+.p05-chart-container {
+    scroll-snap-align: start;
+}
+
+/* Scroll shadows */
+.p05-scroll-shadow {
+    position: relative;
+}
+
+.p05-scroll-shadow::before,
+.p05-scroll-shadow::after {
+    content: '';
+    position: sticky;
+    left: 0;
+    right: 0;
+    height: 24px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.p05-scroll-shadow::before {
+    top: 0;
+    background: linear-gradient(to bottom, var(--p05-bg-surface) 0%, transparent 100%);
+}
+
+.p05-scroll-shadow::after {
+    bottom: 0;
+    background: linear-gradient(to top, var(--p05-bg-surface) 0%, transparent 100%);
+}
+
+/* Scrollbar hide on mobile */
+@media (max-width: 768px) {
+    .p05-hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+    .p05-hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+}

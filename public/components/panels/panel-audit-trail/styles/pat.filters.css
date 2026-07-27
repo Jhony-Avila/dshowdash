@@ -1,0 +1,10 @@
+/* Panel Audit Trail - Filters Master
+ * @version 3.0.0-MODULAR
+ * Modularizado em 5 partials
+ */
+
+@import 'pat.filters.container.css';
+@import 'pat.filters.chips.css';
+@import 'pat.filters.search.css';
+@import 'pat.filters.actions.css';
+@import 'pat.filters.responsive.css';

@@ -1,0 +1,46 @@
+/* Panel-13 Dashboard Enterprise - Accessibility */
+/* @version 2.0.0-ENTERPRISE-AAA */
+
+.p13-wrapper:focus-within {
+  outline: 2px solid var(--p13-accent);
+  outline-offset: -2px;
+}
+
+.p13-refresh-btn:focus-visible,
+.p13-retry-btn:focus-visible {
+  outline: 2px solid var(--p13-accent);
+  outline-offset: 2px;
+}
+
+.p13-tbody tr:focus-within {
+  background: var(--p13-bg-hover);
+  outline: 1px solid var(--p13-accent);
+  outline-offset: -1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p13-skeleton-cell,
+  .p13-status-dot,
+  .p13-refresh-icon {
+    animation: none !important;
+  }
+
+  .p13-tbody tr,
+  .p13-refresh-btn {
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .p13-wrapper {
+    border-width: 2px;
+  }
+
+  .p13-table th {
+    border-bottom-width: 2px;
+  }
+
+  .p13-tbody tr {
+    border-bottom-width: 2px;
+  }
+}

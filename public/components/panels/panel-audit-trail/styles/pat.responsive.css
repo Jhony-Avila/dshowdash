@@ -1,0 +1,322 @@
+/* Panel Audit Trail - Responsive Enterprise AAA */
+/* @version 2.0.0-ENTERPRISE-AAA */
+/* Mobile-first, touch-friendly */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* LARGE DESKTOP (1400px+) */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1400px) {
+  .pat-table {
+    font-size: 0.875rem;
+  }
+  
+  .pat-col-message {
+    max-width: 400px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DESKTOP (1200px) */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1200px) {
+  .pat-filters {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .pat-search {
+    order: 10;
+    max-width: 100%;
+    flex: 1 1 200px;
+  }
+  
+  .pat-filter-spacer {
+    display: none;
+  }
+  
+  .pat-health-summary {
+    order: 5;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* TABLET (1024px) */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .pat-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .pat-tabs {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .pat-table th:nth-child(n+6),
+  .pat-table td:nth-child(n+6) {
+    display: none;
+  }
+  
+  .pat-col-message {
+    max-width: 200px;
+  }
+  
+  .pat-expanded-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .pat-modal {
+    max-width: 90%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SMALL TABLET (768px) */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .pat-header {
+    padding: 0.75rem;
+  }
+
+  .pat-title { 
+    font-size: 0.875rem; 
+  }
+  
+  .pat-identity-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .pat-identity-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .pat-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .pat-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pat-table th:nth-child(n+5),
+  .pat-table td:nth-child(n+5) {
+    display: none;
+  }
+
+  .pat-time-presets {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .pat-time-presets::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pat-footer {
+    flex-direction: column;
+    gap: 0.625rem;
+    align-items: stretch;
+  }
+
+  .pat-pagination {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .pat-footer-left {
+    justify-content: center;
+  }
+  
+  .pat-bulk-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .pat-bulk-separator {
+    display: none;
+  }
+  
+  .pat-expanded-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .pat-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .pat-modal-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .pat-health-summary {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* MOBILE (480px) */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 480px) {
+  .pat-header {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .pat-identity {
+    gap: 0.5rem;
+  }
+  
+  .pat-title {
+    font-size: 0.8125rem;
+  }
+
+  .pat-table th:nth-child(n+4),
+  .pat-table td:nth-child(n+4) {
+    display: none;
+  }
+  
+  .pat-table {
+    font-size: 0.75rem;
+  }
+  
+  .pat-table th,
+  .pat-table td {
+    padding: 0.375rem 0.5rem;
+  }
+  
+  .pat-col-date {
+    font-size: 0.5625rem;
+  }
+  
+  .pat-badge {
+    font-size: 0.5625rem;
+    padding: 0.1875rem 0.375rem;
+  }
+  
+  .pat-filter-chips {
+    display: none;
+  }
+  
+  .pat-actions-cluster {
+    gap: 2px;
+    padding: 3px;
+  }
+  
+  .pat-action-btn {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .pat-action-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .pat-filters {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .pat-preset-btn {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.5625rem;
+  }
+  
+  .pat-btn-sm {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 0.5rem;
+  }
+  
+  .pat-modal {
+    border-radius: 12px;
+  }
+  
+  .pat-modal-header {
+    padding: 0.875rem 1rem;
+  }
+  
+  .pat-modal-body {
+    padding: 1rem;
+  }
+  
+  .pat-toast {
+    max-width: 300px;
+    right: 0.75rem;
+    bottom: 0.75rem;
+  }
+  
+  .pat-export-progress {
+    left: 0.75rem;
+    right: 0.75rem;
+    transform: none;
+    padding: 0.875rem 1rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* TOUCH DEVICES */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (hover: none) and (pointer: coarse) {
+  .pat-action-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .pat-btn-sm {
+    min-height: 44px;
+  }
+  
+  .pat-preset-btn {
+    min-height: 40px;
+    padding: 0.5rem 0.625rem;
+  }
+  
+  .pat-tab {
+    min-height: 40px;
+    padding: 0.5rem 0.875rem;
+  }
+  
+  .pat-row-checkbox {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .pat-expand-trigger {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .pat-columns-menu-item,
+  .pat-export-item {
+    min-height: 44px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* LANDSCAPE PHONE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (max-height: 480px) and (orientation: landscape) {
+  .pat-modal {
+    max-height: 95vh;
+  }
+  
+  .pat-modal-body {
+    max-height: 60vh;
+  }
+}

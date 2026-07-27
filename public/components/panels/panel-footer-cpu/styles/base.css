@@ -1,0 +1,4 @@
+/* Footer  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-footer-cpu { box-sizing: border-box; }
+.panel-footer-cpu *, .panel-footer-cpu *::before, .panel-footer-cpu *::after { box-sizing: inherit; }

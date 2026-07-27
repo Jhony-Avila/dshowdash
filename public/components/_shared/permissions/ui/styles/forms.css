@@ -1,0 +1,40 @@
+/* Permissions Governance Panel - Forms Module v1.0.0 */
+/* Filter Bar, Search, Select */
+
+.pgp-filter-bar {
+  display: flex;
+  gap: 12px;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pgp-search {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-primary, #fff);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.pgp-search:focus {
+  border-color: var(--accent-primary, #8b5cf6);
+}
+
+.pgp-search--wide {
+  flex: 1;
+}
+
+.pgp-select {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-primary, #fff);
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+}

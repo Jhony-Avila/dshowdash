@@ -1,0 +1,10 @@
+{
+  "id": "logout",
+  "area": "footer",
+  "label": "Sair",
+  "icon": "logout",
+  "kind": "control",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

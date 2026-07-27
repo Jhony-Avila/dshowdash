@@ -1,0 +1,113 @@
+/* Panel Header Admin - Cards */
+/* @version 1.0.0-AAA-MODULAR */
+/* Cards de componentes */
+
+.pha-card {
+  background: var(--pha-bg-primary);
+  border: 1px solid var(--pha-border);
+  border-radius: 10px;
+  padding: 16px;
+  transition: all var(--pha-transition);
+}
+
+.pha-card:hover {
+  border-color: var(--pha-primary);
+  box-shadow: var(--pha-shadow-md);
+}
+
+.pha-card--inactive {
+  opacity: 0.6;
+  background: var(--pha-bg-secondary);
+}
+
+.pha-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pha-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pha-card__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pha-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pha-card__name {
+  display: block;
+  font-weight: 600;
+  color: var(--pha-text-primary);
+  margin-bottom: 2px;
+}
+
+.pha-card__key {
+  display: block;
+  font-size: 12px;
+  color: var(--pha-text-light);
+  font-family: var(--pha-font-mono);
+}
+
+.pha-card__meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pha-card__type,
+.pha-card__level,
+.pha-card__polling {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--pha-radius-sm);
+}
+
+.pha-card__level {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.pha-card__polling {
+  background: var(--pha-primary-light);
+  color: var(--pha-primary-dark);
+}
+
+.pha-card__order {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--pha-bg-tertiary);
+  color: var(--pha-text-muted);
+  border-radius: var(--pha-radius-sm);
+  font-weight: 600;
+}
+
+.pha-card__visibility {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.pha-card__visibility span {
+  opacity: 0.6;
+}
+
+.pha-card__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

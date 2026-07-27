@@ -1,0 +1,38 @@
+/* Panel NavRail Admin - Filters */
+/* @version 1.0.0-AAA-MODULAR */
+
+.pna-filters {
+    display: flex;
+    gap: 12px;
+    padding: 12px 24px;
+    background: var(--pna-bg);
+    border-bottom: 1px solid var(--pna-border);
+    flex-shrink: 0;
+}
+
+.pna-filter-group {
+    flex: 1;
+    max-width: 250px;
+}
+
+.pna-input,
+.pna-select {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--pna-bg-elevated);
+    border: 1px solid var(--pna-border);
+    border-radius: var(--pna-radius-sm);
+    color: var(--pna-text);
+    font-size: 0.875rem;
+    transition: border-color var(--pna-transition);
+}
+
+.pna-input:focus,
+.pna-select:focus {
+    outline: none;
+    border-color: var(--pna-primary);
+}
+
+.pna-input::placeholder {
+    color: var(--pna-text-dim);
+}

@@ -1,0 +1,9 @@
+/* Panel-05 Filters - Master
+ * @version 7.0.0-MODULAR
+ * Modularizado em 4 partials
+ */
+
+@import '_filters.container.css';
+@import '_filters.search.css';
+@import '_filters.advanced.css';
+@import '_filters.chips.css';

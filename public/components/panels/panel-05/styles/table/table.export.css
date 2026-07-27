@@ -1,0 +1,19 @@
+/* Table Export Dropdown
+ * @version 7.3.0
+ */
+
+.p05-export-dropdown {
+    position: relative;
+}
+
+.p05-export-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 140px;
+    background: var(--p05-bg-elevated);
+    border: 1px solid var(--p05-border-default);
+    border-radius: var(--p05-radius-md);
+    box-shadow: var(--p05-shadow-lg);
+    z-index: 100;
+}

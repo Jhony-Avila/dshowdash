@@ -1,0 +1,220 @@
+/* Panel Audit Trail - Skeleton Enterprise AAA */
+/* @version 2.0.0-ENTERPRISE-AAA */
+/* Loading skeletons para tabela */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SHIMMER ANIMATION */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@keyframes pat-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SKELETON ROWS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-skeleton-row {
+  background: var(--pat-row-base);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  pointer-events: none;
+}
+
+.pat-skeleton-row:nth-child(even) {
+  background: var(--pat-row-zebra);
+}
+
+.pat-skeleton-row td,
+.pat-skeleton-cell {
+  padding: 0.625rem 0.75rem;
+  vertical-align: middle;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SKELETON BAR BASE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-skeleton,
+.pat-skeleton-bar {
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.04) 20%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 80%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--pat-radius-sm);
+  animation: pat-shimmer 1.8s ease-in-out infinite;
+}
+
+.pat-skeleton {
+  height: 14px;
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SKELETON VARIANTS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-skeleton--date,
+.pat-skeleton-bar--date {
+  height: 12px;
+  width: 110px;
+}
+
+.pat-skeleton--time {
+  height: 10px;
+  width: 50px;
+  margin-top: 4px;
+  opacity: 0.6;
+}
+
+.pat-skeleton--user,
+.pat-skeleton-bar--user {
+  height: 14px;
+  width: 90px;
+}
+
+.pat-skeleton--badge,
+.pat-skeleton-bar--badge {
+  height: 22px;
+  width: 65px;
+  border-radius: var(--pat-radius-sm);
+}
+
+.pat-skeleton--resource,
+.pat-skeleton-bar--resource {
+  height: 14px;
+  width: 140px;
+}
+
+.pat-skeleton--module,
+.pat-skeleton-bar--module {
+  height: 14px;
+  width: 70px;
+}
+
+.pat-skeleton--message {
+  height: 14px;
+  width: 180px;
+}
+
+.pat-skeleton--ip {
+  height: 12px;
+  width: 100px;
+}
+
+.pat-skeleton--action,
+.pat-skeleton-bar--action {
+  height: 28px;
+  width: 28px;
+  border-radius: var(--pat-radius-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SKELETON GROUP */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-skeleton-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pat-skeleton-group .pat-skeleton:nth-child(2) {
+  width: 60%;
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SKELETON CIRCLE (para avatar) */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-skeleton--circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* TABLE BUSY STATE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-table[aria-busy="true"] tbody {
+  pointer-events: none;
+}
+
+.pat-table[aria-busy="true"] tbody tr:not(.pat-skeleton-row) {
+  opacity: 0.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FADE IN DATA */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-table[aria-busy="false"] tbody tr {
+  animation: pat-skeleton-fade-in 0.25s ease-out;
+}
+
+@keyframes pat-skeleton-fade-in {
+  from { 
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger animation */
+.pat-table[aria-busy="false"] tbody tr:nth-child(1) { animation-delay: 0ms; }
+.pat-table[aria-busy="false"] tbody tr:nth-child(2) { animation-delay: 20ms; }
+.pat-table[aria-busy="false"] tbody tr:nth-child(3) { animation-delay: 40ms; }
+.pat-table[aria-busy="false"] tbody tr:nth-child(4) { animation-delay: 60ms; }
+.pat-table[aria-busy="false"] tbody tr:nth-child(5) { animation-delay: 80ms; }
+.pat-table[aria-busy="false"] tbody tr:nth-child(n+6) { animation-delay: 100ms; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FULL PAGE SKELETON */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-skeleton-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.pat-skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--pat-bg-surface);
+  border-radius: var(--pat-radius-lg);
+}
+
+.pat-skeleton-filters {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* REDUCED MOTION */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .pat-skeleton,
+  .pat-skeleton-bar {
+    animation: none;
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .pat-table[aria-busy="false"] tbody tr {
+    animation: none;
+  }
+}

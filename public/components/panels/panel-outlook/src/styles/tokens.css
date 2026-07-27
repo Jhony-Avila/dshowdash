@@ -1,0 +1,453 @@
+/* tokens.css — tokens e layout do painel Integração Outlook.
+   @version 1.0.0  @created 2026-07-21
+   TUDO escopado a [data-ol-react-root]: quando o painel fecha, o root some e
+   estas regras ficam inertes (nunca vazam para o shell). Tema segue data-theme
+   do shell (dark default; light via :root[data-theme="light"]). */
+
+[data-ol-react-root] {
+  --ol-bg:        #14141f;
+  --ol-surface:   #1c1c2b;
+  --ol-surface-2: #23233472;
+  --ol-surface-3: #2a2a3d;
+  --ol-border:    #2e2e44;
+  --ol-text:      #e8e8f0;
+  --ol-text-dim:  #a2a2b8;
+  --ol-primary:   #2f6fed;
+  --ol-primary-h: #3f7bf5;
+  --ol-primary-ct:#ffffff;
+  --ol-ok:        #34d399;
+  --ol-warn:      #fbbf24;
+  --ol-danger:    #f87171;
+  --ol-purple:    #a78bfa;
+
+  height: 100%;
+  color: var(--ol-text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+}
+[data-ol-react-root] *, [data-ol-react-root] *::before, [data-ol-react-root] *::after { box-sizing: border-box; }
+
+:root[data-theme="light"] [data-ol-react-root] {
+  --ol-bg:        #f5f6fa;
+  --ol-surface:   #ffffff;
+  --ol-surface-2: #eef1f7;
+  --ol-surface-3: #e5e9f2;
+  --ol-border:    #dfe3ec;
+  --ol-text:      #1b1f2a;
+  --ol-text-dim:  #5b6373;
+  --ol-primary:   #2f6fed;
+  --ol-primary-ct:#ffffff;
+}
+
+/* ── Shell (abas à esquerda) ──────────────────────────────── */
+[data-ol-react-root] .ol-shell { display: flex; height: 100%; min-height: 520px; background: var(--ol-bg); }
+[data-ol-react-root] .ol-nav {
+  flex: 0 0 208px; padding: 16px 12px; border-right: 1px solid var(--ol-border);
+  background: var(--ol-surface); display: flex; flex-direction: column; gap: 3px;
+}
+[data-ol-react-root] .ol-brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px 16px; font-weight: 700; font-size: 15px; }
+[data-ol-react-root] .ol-brand-mark { font-size: 17px; }
+[data-ol-react-root] .ol-navitem {
+  text-align: left; border: 0; background: transparent; color: var(--ol-text-dim);
+  padding: 9px 11px; border-radius: 9px; font-size: 13.5px; cursor: pointer;
+  display: flex; align-items: center; gap: 9px; transition: background .12s, color .12s;
+}
+[data-ol-react-root] .ol-navitem:hover { background: var(--ol-surface-2); color: var(--ol-text); }
+[data-ol-react-root] .ol-navitem.is-active { background: var(--ol-primary); color: var(--ol-primary-ct); font-weight: 600; }
+[data-ol-react-root] .ol-nav-badge { margin-left: auto; background: var(--ol-warn); color: #1b1f2a; font-size: 11px; font-weight: 700; border-radius: 9px; padding: 1px 7px; }
+[data-ol-react-root] .ol-test-pill { display: block; margin: -4px 6px 10px; padding: 4px 8px; border-radius: 7px; font-size: 11px; font-weight: 700; text-align: center; color: var(--ol-warn); background: color-mix(in srgb, var(--ol-warn) 15%, transparent); border: 1px solid color-mix(in srgb, var(--ol-warn) 38%, transparent); white-space: nowrap; overflow: hidden; }
+[data-ol-react-root] .ol-navitem-icon { width: 18px; text-align: center; flex-shrink: 0; }
+[data-ol-react-root] .ol-navitem-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Botão recolher/expandir */
+[data-ol-react-root] .ol-nav-toggle { margin-left: auto; border: 1px solid var(--ol-border); background: var(--ol-surface-2); color: var(--ol-text-dim); width: 22px; height: 22px; border-radius: 6px; cursor: pointer; font-size: 13px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .12s, color .12s; }
+[data-ol-react-root] .ol-nav-toggle:hover { color: var(--ol-text); background: var(--ol-surface-3); }
+/* Estado recolhido (ícone-só) */
+[data-ol-react-root] .ol-nav.is-collapsed { flex-basis: 58px; padding-left: 8px; padding-right: 8px; }
+[data-ol-react-root] .ol-nav.is-collapsed .ol-brand { justify-content: center; gap: 0; padding: 4px 0 14px; }
+[data-ol-react-root] .ol-nav.is-collapsed .ol-brand-mark,
+[data-ol-react-root] .ol-nav.is-collapsed .ol-brand-text,
+[data-ol-react-root] .ol-nav.is-collapsed .ol-navitem-label,
+[data-ol-react-root] .ol-nav.is-collapsed .ol-test-txt,
+[data-ol-react-root] .ol-nav.is-collapsed .ol-nav-foot-txt { display: none; }
+[data-ol-react-root] .ol-nav.is-collapsed .ol-nav-toggle { margin-left: 0; }
+[data-ol-react-root] .ol-nav.is-collapsed .ol-navitem { justify-content: center; padding: 10px 0; position: relative; }
+[data-ol-react-root] .ol-nav.is-collapsed .ol-test-pill { margin: -2px 0 10px; padding: 5px 0; }
+[data-ol-react-root] .ol-nav.is-collapsed .ol-nav-foot { justify-content: center; }
+[data-ol-react-root] .ol-nav.is-collapsed .ol-nav-badge { position: absolute; top: 3px; right: 7px; margin: 0; min-width: 15px; padding: 1px 4px; }
+[data-ol-react-root] .ol-nav-foot { margin-top: auto; padding: 10px 10px 4px; font-size: 12px; color: var(--ol-text-dim); display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--ol-border); }
+[data-ol-react-root] .ol-conn-dot { width: 8px; height: 8px; border-radius: 50%; }
+[data-ol-react-root] .ol-conn-dot.is-on { background: var(--ol-ok); }
+[data-ol-react-root] .ol-conn-dot.is-off { background: var(--ol-text-dim); }
+[data-ol-react-root] .ol-main { flex: 1 1 auto; overflow: auto; display: flex; flex-direction: column; min-width: 0; }
+
+[data-ol-react-root] .ol-setup-banner { margin: 14px 18px 0; padding: 11px 15px; border-radius: 10px; background: color-mix(in srgb, var(--ol-warn) 16%, transparent); border: 1px solid color-mix(in srgb, var(--ol-warn) 40%, transparent); font-size: 13px; }
+
+/* ── Páginas simples (Contas, EmBreve) ────────────────────── */
+[data-ol-react-root] .ol-page { padding: 24px 28px; overflow: auto; }
+[data-ol-react-root] .ol-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+[data-ol-react-root] .ol-h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+[data-ol-react-root] .ol-sub { color: var(--ol-text-dim); font-size: 13px; margin: 0; max-width: 620px; }
+
+/* ── Botões ───────────────────────────────────────────────── */
+[data-ol-react-root] .ol-btn { border: 1px solid var(--ol-border); background: var(--ol-surface-2); color: var(--ol-text); padding: 8px 15px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; transition: filter .12s, background .12s; white-space: nowrap; }
+[data-ol-react-root] .ol-btn:hover:not(:disabled) { filter: brightness(1.12); }
+[data-ol-react-root] .ol-btn:disabled { opacity: .5; cursor: not-allowed; }
+[data-ol-react-root] .ol-btn-primary { background: var(--ol-primary); border-color: var(--ol-primary); color: var(--ol-primary-ct); }
+[data-ol-react-root] .ol-btn-primary:hover:not(:disabled) { background: var(--ol-primary-h); }
+[data-ol-react-root] .ol-btn-ghost { background: transparent; }
+[data-ol-react-root] .ol-btn-warn { background: var(--ol-warn); border-color: var(--ol-warn); color: #1b1f2a; }
+[data-ol-react-root] .ol-btn-danger { color: var(--ol-danger); }
+[data-ol-react-root] .ol-icon-btn { border: 1px solid transparent; background: transparent; color: var(--ol-text-dim); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
+[data-ol-react-root] .ol-icon-btn:hover:not(:disabled) { background: var(--ol-surface-3); color: var(--ol-text); }
+[data-ol-react-root] .ol-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+[data-ol-react-root] .ol-icon-danger:hover:not(:disabled) { color: var(--ol-danger); }
+[data-ol-react-root] .ol-linkbtn { border: 0; background: transparent; color: var(--ol-primary); cursor: pointer; font-size: 12.5px; padding: 4px 2px; }
+
+/* ── Alertas / pills / tags ───────────────────────────────── */
+[data-ol-react-root] .ol-alert { padding: 10px 14px; border-radius: 9px; font-size: 13px; margin-bottom: 14px; border: 1px solid transparent; }
+[data-ol-react-root] .ol-alert-ok { background: color-mix(in srgb, var(--ol-ok) 15%, transparent); border-color: color-mix(in srgb, var(--ol-ok) 40%, transparent); }
+[data-ol-react-root] .ol-alert-danger { background: color-mix(in srgb, var(--ol-danger) 15%, transparent); border-color: color-mix(in srgb, var(--ol-danger) 40%, transparent); }
+[data-ol-react-root] .ol-alert-info { background: var(--ol-surface-2); border-color: var(--ol-border); color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-pill { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+[data-ol-react-root] .ol-pill-ok { background: color-mix(in srgb, var(--ol-ok) 20%, transparent); color: var(--ol-ok); }
+[data-ol-react-root] .ol-pill-warn { background: color-mix(in srgb, var(--ol-warn) 20%, transparent); color: var(--ol-warn); }
+[data-ol-react-root] .ol-pill-danger { background: color-mix(in srgb, var(--ol-danger) 20%, transparent); color: var(--ol-danger); }
+[data-ol-react-root] .ol-pill-dim { background: var(--ol-surface-3); color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-tag { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: .3px; }
+[data-ol-react-root] .ol-tag-default { background: color-mix(in srgb, var(--ol-primary) 22%, transparent); color: var(--ol-primary); }
+
+/* ── Contas ───────────────────────────────────────────────── */
+[data-ol-react-root] .ol-acc-list { display: flex; flex-direction: column; gap: 12px; }
+[data-ol-react-root] .ol-acc-card { display: flex; align-items: center; gap: 14px; padding: 15px 18px; background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 13px; }
+[data-ol-react-root] .ol-acc-card.is-off { opacity: .6; }
+[data-ol-react-root] .ol-acc-avatar, [data-ol-react-root] .ol-msg-avatar { flex: 0 0 auto; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+[data-ol-react-root] .ol-acc-avatar { width: 42px; height: 42px; font-size: 15px; }
+[data-ol-react-root] .ol-acc-body { flex: 1 1 auto; min-width: 0; }
+[data-ol-react-root] .ol-acc-line1 { display: flex; align-items: center; gap: 9px; }
+[data-ol-react-root] .ol-acc-name { font-weight: 650; font-size: 14.5px; }
+[data-ol-react-root] .ol-acc-line2 { color: var(--ol-text-dim); font-size: 12.5px; margin-top: 3px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+[data-ol-react-root] .ol-dot-sep { opacity: .5; }
+[data-ol-react-root] .ol-acc-err { margin-top: 6px; font-size: 12px; color: var(--ol-danger); }
+[data-ol-react-root] .ol-acc-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ── Central de E-mails (3 colunas) ───────────────────────── */
+[data-ol-react-root] .ol-central { display: grid; grid-template-columns: 210px 1fr; height: 100%; min-height: 520px; position: relative; }
+[data-ol-react-root] .ol-conteudo { display: grid; min-width: 0; overflow: hidden; position: relative; }
+[data-ol-react-root] .ol-central.layout-right .ol-conteudo { grid-template-columns: minmax(280px, 1fr) minmax(360px, 1.4fr); }
+[data-ol-react-root] .ol-central.layout-bottom .ol-conteudo { grid-template-rows: minmax(0, 48%) 1fr; }
+[data-ol-react-root] .ol-central.layout-bottom .ol-col-lista { border-right: 0; border-bottom: 1px solid var(--ol-border); }
+[data-ol-react-root] .ol-central.layout-off .ol-conteudo { grid-template-columns: 1fr; }
+[data-ol-react-root] .ol-central.layout-off .ol-col-lista { border-right: 0; }
+[data-ol-react-root] .ol-central.layout-off .ol-col-leitura { position: absolute; inset: 0; z-index: 8; border-left: 1px solid var(--ol-border); }
+/* Densidade compacta */
+[data-ol-react-root] .ol-central.dense .ol-msg { padding: 7px 14px; }
+[data-ol-react-root] .ol-central.dense .ol-msg-prev { display: none; }
+[data-ol-react-root] .ol-central.dense .ol-msg-avatar { width: 30px; height: 30px; }
+/* Opções de visualização */
+[data-ol-react-root] .ol-viewopt { position: relative; }
+[data-ol-react-root] .ol-viewopt-btn { width: 100%; text-align: left; border: 1px solid var(--ol-border); background: var(--ol-surface-2); color: var(--ol-text-dim); padding: 7px 11px; border-radius: 9px; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+[data-ol-react-root] .ol-viewopt-btn:hover { color: var(--ol-text); }
+[data-ol-react-root] .ol-viewopt-menu { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 25; background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.3); padding: 5px; }
+[data-ol-react-root] .ol-viewopt-grp { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--ol-text-dim); padding: 7px 9px 3px; }
+[data-ol-react-root] .ol-viewopt-item { width: 100%; text-align: left; border: 0; background: transparent; color: var(--ol-text); padding: 7px 9px; border-radius: 7px; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+[data-ol-react-root] .ol-viewopt-item:hover { background: var(--ol-surface-2); }
+[data-ol-react-root] .ol-viewopt-item.is-on { background: var(--ol-surface-3); font-weight: 600; }
+[data-ol-react-root] .ol-viewopt-ic { width: 14px; text-align: center; opacity: .7; }
+[data-ol-react-root] .ol-col-pastas { border-right: 1px solid var(--ol-border); background: var(--ol-surface); padding: 14px 10px; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+[data-ol-react-root] .ol-novo { width: 100%; }
+[data-ol-react-root] .ol-conta-sel { width: 100%; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--ol-border); background: var(--ol-bg); color: var(--ol-text); font-size: 12.5px; }
+[data-ol-react-root] .ol-pastas { display: flex; flex-direction: column; gap: 2px; }
+[data-ol-react-root] .ol-pasta { text-align: left; border: 0; background: transparent; color: var(--ol-text-dim); padding: 8px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 9px; }
+[data-ol-react-root] .ol-pasta:hover { background: var(--ol-surface-2); color: var(--ol-text); }
+[data-ol-react-root] .ol-pasta.is-active { background: var(--ol-surface-3); color: var(--ol-text); font-weight: 600; }
+
+[data-ol-react-root] .ol-col-lista { border-right: 1px solid var(--ol-border); background: var(--ol-bg); overflow: auto; min-width: 0; }
+
+/* Barra de busca + chips / barra de seleção */
+[data-ol-react-root] .ol-lista-topo { position: sticky; top: 0; z-index: 2; background: var(--ol-surface); border-bottom: 1px solid var(--ol-border); padding: 9px 12px; display: flex; flex-direction: column; gap: 8px; }
+[data-ol-react-root] .ol-busca { display: flex; align-items: center; gap: 7px; background: var(--ol-bg); border: 1px solid var(--ol-border); border-radius: 9px; padding: 4px 9px; }
+[data-ol-react-root] .ol-busca:focus-within { outline: 2px solid var(--ol-primary); outline-offset: 0; }
+[data-ol-react-root] .ol-busca-ic { font-size: 12px; opacity: .7; }
+[data-ol-react-root] .ol-busca-inp { flex: 1 1 auto; border: 0; background: transparent; color: var(--ol-text); font-size: 13px; padding: 4px 0; outline: none; min-width: 0; }
+[data-ol-react-root] .ol-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+[data-ol-react-root] .ol-chip { border: 1px solid var(--ol-border); background: var(--ol-surface-2); color: var(--ol-text-dim); font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; cursor: pointer; transition: background .12s, color .12s; }
+[data-ol-react-root] .ol-chip:hover { color: var(--ol-text); }
+[data-ol-react-root] .ol-chip.is-on { background: var(--ol-primary); border-color: var(--ol-primary); color: var(--ol-primary-ct); }
+[data-ol-react-root] .ol-selbar { flex-direction: row; align-items: center; gap: 10px; }
+[data-ol-react-root] .ol-sel-count { font-size: 13px; font-weight: 700; white-space: nowrap; }
+[data-ol-react-root] .ol-sel-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+[data-ol-react-root] .ol-sel-actions .ol-btn { padding: 5px 10px; font-size: 12px; }
+
+/* Checkbox de seleção por item */
+[data-ol-react-root] .ol-msg-check { width: 0; overflow: hidden; opacity: 0; display: flex; align-items: center; flex-shrink: 0; transition: width .1s ease, opacity .1s ease; }
+[data-ol-react-root] .ol-msg:hover .ol-msg-check,
+[data-ol-react-root] .ol-msg.is-selected .ol-msg-check,
+[data-ol-react-root] .ol-msg.sel-mode .ol-msg-check { width: 20px; opacity: 1; }
+[data-ol-react-root] .ol-msg-check input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--ol-primary); }
+[data-ol-react-root] .ol-msg.is-selected { background: color-mix(in srgb, var(--ol-primary) 14%, transparent); }
+[data-ol-react-root] .ol-msglist { list-style: none; margin: 0; padding: 0; }
+[data-ol-react-root] .ol-msg { display: flex; gap: 11px; padding: 11px 14px; border-bottom: 1px solid var(--ol-border); cursor: pointer; position: relative; }
+[data-ol-react-root] .ol-msg:hover { background: var(--ol-surface-2); }
+[data-ol-react-root] .ol-msg.is-active { background: var(--ol-surface-3); }
+[data-ol-react-root] .ol-msg.is-unread .ol-msg-de, [data-ol-react-root] .ol-msg.is-unread .ol-msg-assunto { font-weight: 700; }
+[data-ol-react-root] .ol-msg.is-unread::before { content: ''; position: absolute; left: 5px; top: 50%; width: 4px; height: 4px; border-radius: 50%; background: var(--ol-primary); transform: translateY(-50%); }
+[data-ol-react-root] .ol-msg-avatar { width: 36px; height: 36px; }
+[data-ol-react-root] .ol-msg-main { flex: 1 1 auto; min-width: 0; }
+[data-ol-react-root] .ol-msg-l1 { display: flex; justify-content: space-between; gap: 8px; }
+[data-ol-react-root] .ol-msg-de { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-ol-react-root] .ol-msg-data { font-size: 11.5px; color: var(--ol-text-dim); white-space: nowrap; flex-shrink: 0; }
+[data-ol-react-root] .ol-msg-l2 { display: flex; justify-content: space-between; gap: 8px; margin: 2px 0; }
+[data-ol-react-root] .ol-msg-assunto { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-ol-react-root] .ol-msg-icons { display: flex; gap: 4px; font-size: 11px; flex-shrink: 0; }
+[data-ol-react-root] .ol-msg-prev { font-size: 12px; color: var(--ol-text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-ol-react-root] .ol-msg-quick { display: none; position: absolute; right: 10px; top: 8px; gap: 2px; background: var(--ol-surface-3); border-radius: 8px; padding: 2px; }
+[data-ol-react-root] .ol-msg:hover .ol-msg-quick { display: flex; }
+[data-ol-react-root] .ol-carregar { margin: 12px auto; display: block; }
+
+[data-ol-react-root] .ol-col-leitura { background: var(--ol-surface); overflow: auto; display: flex; flex-direction: column; min-width: 0; }
+[data-ol-react-root] .ol-leitura-vazia { align-items: center; justify-content: center; }
+[data-ol-react-root] .ol-leitura-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--ol-border); position: sticky; top: 0; background: var(--ol-surface); z-index: 1; }
+[data-ol-react-root] .ol-leitura-acoes { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+[data-ol-react-root] .ol-sep-v { width: 1px; height: 20px; background: var(--ol-border); margin: 0 4px; }
+[data-ol-react-root] .ol-leitura-meta { padding: 16px 20px 12px; border-bottom: 1px solid var(--ol-border); }
+[data-ol-react-root] .ol-leitura-assunto { font-size: 18px; font-weight: 700; margin: 0 0 12px; }
+[data-ol-react-root] .ol-leitura-de { display: flex; gap: 11px; align-items: center; }
+[data-ol-react-root] .ol-dim { color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-small { font-size: 12px; margin-top: 2px; }
+[data-ol-react-root] .ol-leitura-corpo { flex: 1 1 auto; width: 100%; border: 0; background: #fff; min-height: 320px; }
+
+/* ── Compositor (modal) ───────────────────────────────────── */
+[data-ol-react-root] .ol-composer-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: flex-end; padding: 24px; z-index: 20; }
+[data-ol-react-root] .ol-composer { width: min(620px, 100%); max-height: 100%; background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 14px; display: flex; flex-direction: column; box-shadow: 0 18px 50px rgba(0,0,0,.4); overflow: hidden; }
+[data-ol-react-root] .ol-composer-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; background: var(--ol-primary); color: #fff; font-weight: 650; font-size: 14px; }
+[data-ol-react-root] .ol-composer-head .ol-icon-btn { color: #fff; }
+[data-ol-react-root] .ol-composer-body { padding: 14px 18px; overflow: auto; flex: 1 1 auto; }
+[data-ol-react-root] .ol-field { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--ol-border); padding: 6px 0; }
+[data-ol-react-root] .ol-field-lbl { flex: 0 0 52px; font-size: 12.5px; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-inp { flex: 1 1 auto; border: 0; background: transparent; color: var(--ol-text); font-size: 13.5px; padding: 5px 0; outline: none; min-width: 0; }
+[data-ol-react-root] .ol-composer-editor { margin-top: 12px; min-height: 200px; font-size: 14px; line-height: 1.5; outline: none; }
+[data-ol-react-root] .ol-composer-editor:empty::before { content: attr(data-placeholder); color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-quote-note { margin-top: 10px; font-size: 12px; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-composer-foot { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--ol-border); }
+[data-ol-react-root] .ol-composer-hint { margin-left: auto; font-size: 11.5px; color: var(--ol-text-dim); }
+
+/* ── Estados (vazio / skeleton / indisponível) ────────────── */
+[data-ol-react-root] .ol-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 24px; gap: 8px; min-height: 320px; }
+[data-ol-react-root] .ol-empty-sm { min-height: 220px; padding: 32px 18px; }
+[data-ol-react-root] .ol-empty-icon { font-size: 40px; opacity: .85; }
+[data-ol-react-root] .ol-empty-title { font-size: 16px; font-weight: 700; margin: 4px 0 0; }
+[data-ol-react-root] .ol-empty-desc { color: var(--ol-text-dim); font-size: 13px; margin: 0; max-width: 380px; }
+[data-ol-react-root] .ol-badge-fase { margin-top: 8px; font-size: 11px; font-weight: 700; color: var(--ol-purple); background: color-mix(in srgb, var(--ol-purple) 16%, transparent); padding: 3px 10px; border-radius: 20px; }
+[data-ol-react-root] .ol-indisp { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 24px; gap: 8px; }
+[data-ol-react-root] .ol-skel-page { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--ol-text-dim); font-size: 13px; }
+[data-ol-react-root] .ol-spinner { width: 18px; height: 18px; border: 2px solid var(--ol-border); border-top-color: var(--ol-primary); border-radius: 50%; animation: ol-spin .7s linear infinite; }
+@keyframes ol-spin { to { transform: rotate(360deg); } }
+[data-ol-react-root] .ol-msg-skel { cursor: default; }
+[data-ol-react-root] .ol-skel-circle { width: 36px; height: 36px; border-radius: 50%; background: var(--ol-surface-3); flex-shrink: 0; }
+[data-ol-react-root] .ol-skel-bar { height: 9px; border-radius: 5px; background: var(--ol-surface-3); margin: 5px 0; }
+[data-ol-react-root] .ol-msg-skel, [data-ol-react-root] .ol-skel-circle, [data-ol-react-root] .ol-skel-bar { animation: ol-pulse 1.3s ease-in-out infinite; }
+@keyframes ol-pulse { 50% { opacity: .55; } }
+
+/* ── Dashboard (§24) ─────────────────────────────────────── */
+[data-ol-react-root] .ol-dash { max-width: 1120px; }
+[data-ol-react-root] .ol-periodos { display: flex; gap: 6px; }
+[data-ol-react-root] .ol-bignum-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; margin-bottom: 18px; }
+[data-ol-react-root] .ol-bignum { background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 12px; padding: 13px 15px; }
+[data-ol-react-root] .ol-bignum-ic { font-size: 16px; opacity: .9; }
+[data-ol-react-root] .ol-bignum-val { font-size: 25px; font-weight: 800; line-height: 1.1; margin: 5px 0 2px; }
+[data-ol-react-root] .ol-bignum-lbl { font-size: 12px; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+[data-ol-react-root] .ol-dash-card { background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 14px; padding: 16px 18px; min-width: 0; }
+[data-ol-react-root] .ol-dash-card-tit { margin: 0 0 14px; font-size: 13.5px; font-weight: 650; }
+[data-ol-react-root] .ol-svg { width: 100%; height: 132px; display: block; }
+[data-ol-react-root] .ol-grid { stroke: var(--ol-border); stroke-width: 0.4; opacity: .55; }
+[data-ol-react-root] .ol-bar-a { fill: var(--ol-primary); }
+[data-ol-react-root] .ol-bar-b { fill: var(--ol-ok); }
+[data-ol-react-root] .ol-chart-axis { display: flex; margin-top: 5px; }
+[data-ol-react-root] .ol-chart-axis span { flex: 1 1 0; text-align: center; font-size: 10.5px; color: var(--ol-text-dim); overflow: hidden; white-space: nowrap; }
+[data-ol-react-root] .ol-legenda { display: flex; gap: 16px; margin-top: 10px; }
+[data-ol-react-root] .ol-legenda-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-legenda-dot { width: 9px; height: 9px; border-radius: 3px; }
+[data-ol-react-root] .ol-topc { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+[data-ol-react-root] .ol-topc-item { display: flex; align-items: center; gap: 10px; }
+[data-ol-react-root] .ol-topc-av { width: 30px; height: 30px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+[data-ol-react-root] .ol-topc-body { flex: 1 1 auto; min-width: 0; }
+[data-ol-react-root] .ol-topc-l1 { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+[data-ol-react-root] .ol-topc-nome { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-ol-react-root] .ol-topc-num { font-size: 12px; font-weight: 700; color: var(--ol-text-dim); flex-shrink: 0; }
+[data-ol-react-root] .ol-topc-track { height: 5px; background: var(--ol-surface-3); border-radius: 4px; overflow: hidden; }
+[data-ol-react-root] .ol-topc-fill { height: 100%; background: var(--ol-primary); border-radius: 4px; }
+[data-ol-react-root] .ol-statusbars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+[data-ol-react-root] .ol-statusbar { display: flex; align-items: center; gap: 10px; }
+[data-ol-react-root] .ol-statusbar-lbl { flex: 0 0 86px; font-size: 12.5px; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-statusbar-track { flex: 1 1 auto; height: 8px; background: var(--ol-surface-3); border-radius: 5px; overflow: hidden; }
+[data-ol-react-root] .ol-statusbar-fill { display: block; height: 100%; border-radius: 5px; }
+[data-ol-react-root] .ol-statusbar-num { flex: 0 0 auto; font-size: 12.5px; font-weight: 700; min-width: 24px; text-align: right; }
+[data-ol-react-root] .ol-dash-vazio { color: var(--ol-text-dim); font-size: 12.5px; padding: 20px 0; text-align: center; }
+@media (max-width: 900px) { [data-ol-react-root] .ol-dash-grid { grid-template-columns: 1fr; } }
+
+/* ── Modelos (§22) ───────────────────────────────────────── */
+[data-ol-react-root] .ol-btn-sm { padding: 5px 10px; font-size: 12px; }
+[data-ol-react-root] .ol-mod-filtros { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; max-width: 560px; }
+[data-ol-react-root] .ol-mod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 13px; }
+[data-ol-react-root] .ol-mod-card { background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 13px; padding: 15px 16px; display: flex; flex-direction: column; }
+[data-ol-react-root] .ol-mod-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+[data-ol-react-root] .ol-mod-cat { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--ol-primary); background: color-mix(in srgb, var(--ol-primary) 14%, transparent); padding: 2px 8px; border-radius: 6px; }
+[data-ol-react-root] .ol-star { border: 0; background: transparent; color: var(--ol-text-dim); font-size: 17px; line-height: 1; cursor: pointer; padding: 0; }
+[data-ol-react-root] .ol-star.is-on { color: var(--ol-warn); }
+[data-ol-react-root] .ol-mod-nome { margin: 0 0 5px; font-size: 14.5px; font-weight: 650; }
+[data-ol-react-root] .ol-mod-assunto { font-size: 12.5px; color: var(--ol-text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-ol-react-root] .ol-mod-prev { font-size: 12px; color: var(--ol-text-dim); line-height: 1.4; margin-bottom: 12px; min-height: 33px; }
+[data-ol-react-root] .ol-mod-acoes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
+
+/* Editor de modelo (campos dinâmicos) */
+[data-ol-react-root] .ol-editor-modelo { width: min(680px, 100%); }
+[data-ol-react-root] .ol-campos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 6px; }
+[data-ol-react-root] .ol-campos-lbl { font-size: 12px; color: var(--ol-text-dim); margin-right: 2px; }
+[data-ol-react-root] .ol-campo-chip { border: 1px solid var(--ol-border); background: var(--ol-surface-2); color: var(--ol-primary); font-family: ui-monospace, monospace; font-size: 11px; padding: 3px 7px; border-radius: 6px; cursor: pointer; }
+[data-ol-react-root] .ol-campo-chip:hover { background: var(--ol-surface-3); }
+
+/* Seletor de modelos no compositor */
+[data-ol-react-root] .ol-modelos-wrap { position: relative; }
+[data-ol-react-root] .ol-picker { position: absolute; bottom: calc(100% + 6px); left: 0; width: 290px; background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 11px; box-shadow: 0 12px 34px rgba(0,0,0,.35); z-index: 30; overflow: hidden; }
+[data-ol-react-root] .ol-picker-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--ol-border); }
+[data-ol-react-root] .ol-picker-head .ol-inp { border: 1px solid var(--ol-border); border-radius: 7px; padding: 5px 8px; background: var(--ol-bg); }
+[data-ol-react-root] .ol-picker-list { list-style: none; margin: 0; padding: 4px; max-height: 260px; overflow: auto; }
+[data-ol-react-root] .ol-picker-item { width: 100%; text-align: left; border: 0; background: transparent; color: var(--ol-text); padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+[data-ol-react-root] .ol-picker-item:hover { background: var(--ol-surface-2); }
+[data-ol-react-root] .ol-picker-nome { font-size: 13px; font-weight: 600; }
+[data-ol-react-root] .ol-picker-cat { font-size: 11px; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-picker-empty { padding: 18px 12px; text-align: center; font-size: 12.5px; color: var(--ol-text-dim); }
+
+/* ── Categorias (§15) ────────────────────────────────────── */
+[data-ol-react-root] .ol-cat-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+[data-ol-react-root] .ol-cat-chip { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
+[data-ol-react-root] .ol-cat-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+[data-ol-react-root] .ol-leitura-cats { margin: 0 0 12px; }
+[data-ol-react-root] .ol-catsec { border-top: 1px solid var(--ol-border); padding-top: 10px; margin-top: 4px; display: flex; flex-direction: column; gap: 2px; }
+[data-ol-react-root] .ol-catsec-head { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--ol-text-dim); padding: 2px 6px 6px 10px; }
+[data-ol-react-root] .ol-catfilter { display: flex; align-items: center; gap: 9px; text-align: left; border: 0; background: transparent; color: var(--ol-text-dim); padding: 6px 10px; border-radius: 8px; font-size: 12.5px; cursor: pointer; }
+[data-ol-react-root] .ol-catfilter:hover { background: var(--ol-surface-2); color: var(--ol-text); }
+[data-ol-react-root] .ol-catfilter.is-on { background: var(--ol-surface-3); color: var(--ol-text); font-weight: 600; }
+[data-ol-react-root] .ol-catbtn-wrap { position: relative; display: inline-flex; }
+[data-ol-react-root] .ol-catmenu { position: absolute; top: calc(100% + 6px); right: 0; width: 220px; background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 11px; box-shadow: 0 12px 34px rgba(0,0,0,.35); z-index: 30; overflow: hidden; }
+[data-ol-react-root] .ol-catmenu-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; font-size: 12px; font-weight: 700; border-bottom: 1px solid var(--ol-border); }
+[data-ol-react-root] .ol-catmenu-list { list-style: none; margin: 0; padding: 4px; max-height: 260px; overflow: auto; }
+[data-ol-react-root] .ol-catmenu-item { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+[data-ol-react-root] .ol-catmenu-item:hover { background: var(--ol-surface-2); }
+[data-ol-react-root] .ol-catmenu-item input { accent-color: var(--ol-primary); }
+[data-ol-react-root] .ol-catmodal { width: min(600px, 100%); }
+[data-ol-react-root] .ol-catadmin { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+[data-ol-react-root] .ol-catadmin-item { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+[data-ol-react-root] .ol-catadmin-nome { flex: 1 1 120px; font-size: 13.5px; font-weight: 600; }
+[data-ol-react-root] .ol-catadmin-inp { flex: 1 1 140px; padding: 6px 9px; }
+[data-ol-react-root] .ol-catadmin-paleta { display: flex; gap: 3px; }
+[data-ol-react-root] .ol-swatch { width: 17px; height: 17px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+[data-ol-react-root] .ol-swatch.is-on { border-color: var(--ol-text); }
+[data-ol-react-root] .ol-catadmin-novo { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; border-top: 1px solid var(--ol-border); padding-top: 12px; }
+
+/* ── Agendamento (§13) ───────────────────────────────────── */
+[data-ol-react-root] .ol-btn.is-on { background: var(--ol-surface-3); color: var(--ol-text); }
+[data-ol-react-root] .ol-sched { border-top: 1px solid var(--ol-border); background: var(--ol-surface-2); padding: 12px 18px; display: flex; flex-direction: column; gap: 9px; }
+[data-ol-react-root] .ol-sched-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+[data-ol-react-root] .ol-sched-ic { font-size: 15px; }
+[data-ol-react-root] .ol-sched-inp { width: auto; flex: 0 0 auto; padding: 6px 9px; border: 1px solid var(--ol-border); border-radius: 8px; background: var(--ol-bg); color: var(--ol-text); font-size: 13px; }
+[data-ol-react-root] .ol-sched-sug { display: flex; gap: 6px; flex-wrap: wrap; }
+[data-ol-react-root] .ol-msg-sched { font-size: 11.5px; color: var(--ol-warn); margin-top: 4px; font-weight: 600; }
+
+/* ── Regras (§16) ────────────────────────────────────────── */
+[data-ol-react-root] .ol-page-head-acts { display: flex; gap: 8px; }
+[data-ol-react-root] .ol-regras { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+[data-ol-react-root] .ol-regra { display: flex; align-items: center; gap: 14px; background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 12px; padding: 13px 16px; }
+[data-ol-react-root] .ol-regra.is-off { opacity: .62; }
+[data-ol-react-root] .ol-regra-body { flex: 1 1 auto; min-width: 0; }
+[data-ol-react-root] .ol-regra-nome { font-weight: 650; font-size: 14px; }
+[data-ol-react-root] .ol-regra-desc { font-size: 12.5px; color: var(--ol-text-dim); margin-top: 3px; }
+[data-ol-react-root] .ol-regra-desc strong { color: var(--ol-text); font-weight: 600; }
+[data-ol-react-root] .ol-regra-teste { font-size: 12px; color: var(--ol-primary); margin-top: 5px; }
+[data-ol-react-root] .ol-regra-acoes { display: flex; align-items: center; gap: 5px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+[data-ol-react-root] .ol-switch { position: relative; display: inline-flex; cursor: pointer; flex-shrink: 0; }
+[data-ol-react-root] .ol-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+[data-ol-react-root] .ol-switch-track { width: 36px; height: 20px; border-radius: 20px; background: var(--ol-surface-3); transition: background .15s; display: inline-block; }
+[data-ol-react-root] .ol-switch-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+[data-ol-react-root] .ol-switch input:checked + .ol-switch-track { background: var(--ol-ok); }
+[data-ol-react-root] .ol-switch input:checked + .ol-switch-track .ol-switch-thumb { transform: translateX(16px); }
+[data-ol-react-root] .ol-regra-modal { width: min(620px, 100%); }
+[data-ol-react-root] .ol-regra-sec { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--ol-text-dim); margin: 16px 0 8px; }
+[data-ol-react-root] .ol-regra-grid { display: grid; grid-template-columns: 130px 1fr; gap: 8px 12px; align-items: center; }
+[data-ol-react-root] .ol-rg-lbl { font-size: 12.5px; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-regra-checks { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 13px; }
+[data-ol-react-root] .ol-regra-checks label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+[data-ol-react-root] .ol-regra-checks input { accent-color: var(--ol-primary); }
+
+/* ── Configurações (§6/§28.7) ────────────────────────────── */
+[data-ol-react-root] .ol-config { max-width: 640px; }
+[data-ol-react-root] .ol-cfg-card { background: var(--ol-surface); border: 1px solid var(--ol-border); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
+[data-ol-react-root] .ol-cfg-tit { margin: 0 0 3px; font-size: 15px; font-weight: 700; }
+[data-ol-react-root] .ol-cfg-desc { margin: 0 0 14px; font-size: 12.5px; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-cfg-sig { min-height: 90px; border: 1px solid var(--ol-border); border-radius: 10px; padding: 11px 13px; font-size: 13.5px; line-height: 1.5; background: var(--ol-bg); outline: none; }
+[data-ol-react-root] .ol-cfg-sig:empty::before { content: attr(data-placeholder); color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-cfg-sig:focus { outline: 2px solid var(--ol-primary); outline-offset: 0; }
+[data-ol-react-root] .ol-cfg-check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 12px 0; cursor: pointer; }
+[data-ol-react-root] .ol-cfg-check input { accent-color: var(--ol-primary); }
+[data-ol-react-root] .ol-cfg-acts { display: flex; align-items: center; gap: 12px; }
+[data-ol-react-root] .ol-cfg-salvo { color: var(--ol-ok); font-size: 13px; font-weight: 600; }
+[data-ol-react-root] .ol-cfg-grp-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--ol-text-dim); margin: 4px 0 8px; }
+[data-ol-react-root] .ol-cfg-opts { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 16px; }
+[data-ol-react-root] .ol-cfg-opt { flex: 1 1 150px; text-align: left; border: 1px solid var(--ol-border); background: var(--ol-bg); border-radius: 10px; padding: 10px 13px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; transition: border-color .12s, background .12s; }
+[data-ol-react-root] .ol-cfg-opt:hover { border-color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-cfg-opt.is-on { border-color: var(--ol-primary); background: color-mix(in srgb, var(--ol-primary) 10%, transparent); }
+[data-ol-react-root] .ol-cfg-opt-lbl { font-size: 13.5px; font-weight: 600; color: var(--ol-text); }
+[data-ol-react-root] .ol-cfg-opt-hint { font-size: 11.5px; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-cfg-nota { font-size: 12px; color: var(--ol-text-dim); max-width: 640px; }
+
+/* ── Anexos (§20) ────────────────────────────────────────── */
+[data-ol-react-root] .ol-composer-body.is-dragover { outline: 2px dashed var(--ol-primary); outline-offset: -6px; background: color-mix(in srgb, var(--ol-primary) 6%, transparent); }
+[data-ol-react-root] .ol-anexos { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+[data-ol-react-root] .ol-anexo { display: flex; align-items: center; gap: 9px; background: var(--ol-surface-2); border: 1px solid var(--ol-border); border-radius: 9px; padding: 7px 11px; font-size: 12.5px; }
+[data-ol-react-root] .ol-anexo-ic { font-size: 14px; }
+[data-ol-react-root] .ol-anexo-nome { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-ol-react-root] .ol-anexo-tam { color: var(--ol-text-dim); font-size: 11.5px; flex-shrink: 0; }
+[data-ol-react-root] .ol-leitura-anexos { padding: 12px 20px; border-bottom: 1px solid var(--ol-border); }
+[data-ol-react-root] .ol-anexos-tit { font-size: 12px; font-weight: 700; color: var(--ol-text-dim); margin-bottom: 9px; }
+[data-ol-react-root] .ol-anexo-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+[data-ol-react-root] .ol-anexo-card { width: 150px; border: 1px solid var(--ol-border); border-radius: 10px; padding: 10px; background: var(--ol-surface); text-decoration: none; color: var(--ol-text); display: flex; flex-direction: column; gap: 5px; align-items: flex-start; transition: border-color .12s; }
+[data-ol-react-root] .ol-anexo-card:hover { border-color: var(--ol-primary); }
+[data-ol-react-root] .ol-anexo-thumb { width: 100%; height: 74px; object-fit: cover; border-radius: 6px; background: var(--ol-surface-3); }
+[data-ol-react-root] .ol-anexo-card-ic { font-size: 30px; }
+[data-ol-react-root] .ol-anexo-card-nome { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+[data-ol-react-root] .ol-anexo-card-tam { font-size: 11px; color: var(--ol-text-dim); }
+
+/* ── Envio em massa (§23) ────────────────────────────────── */
+[data-ol-react-root] .ol-massbtn { width: 100%; font-size: 12.5px; }
+[data-ol-react-root] .ol-mass { width: min(600px, 100%); }
+[data-ol-react-root] .ol-mass-lbl { display: block; margin-bottom: 6px; }
+[data-ol-react-root] .ol-mass-dests { width: 100%; resize: vertical; border: 1px solid var(--ol-border); border-radius: 10px; padding: 10px 12px; background: var(--ol-bg); color: var(--ol-text); font-size: 13px; font-family: inherit; }
+[data-ol-react-root] .ol-mass-dests:focus { outline: 2px solid var(--ol-primary); outline-offset: 0; }
+[data-ol-react-root] .ol-mass-cont { font-size: 12px; margin: 6px 0 14px; }
+[data-ol-react-root] .ol-mass-ok { color: var(--ol-ok); font-weight: 600; }
+[data-ol-react-root] .ol-mass-bad { color: var(--ol-danger); font-weight: 600; }
+[data-ol-react-root] .ol-mass-progresso { margin: 8px 0 14px; }
+[data-ol-react-root] .ol-mass-bar { height: 12px; background: var(--ol-surface-3); border-radius: 7px; overflow: hidden; }
+[data-ol-react-root] .ol-mass-fill { height: 100%; background: var(--ol-primary); border-radius: 7px; transition: width .4s ease; }
+[data-ol-react-root] .ol-mass-nums { display: flex; align-items: center; gap: 14px; margin-top: 9px; font-size: 13px; font-weight: 600; }
+[data-ol-react-root] .ol-mass-pct { margin-left: auto; color: var(--ol-text-dim); }
+[data-ol-react-root] .ol-mass-falhas { list-style: none; margin: 8px 0 0; padding: 10px 12px; background: color-mix(in srgb, var(--ol-danger) 8%, transparent); border-radius: 9px; font-size: 12px; color: var(--ol-danger); display: flex; flex-direction: column; gap: 3px; }
+
+/* ── Responsivo (tablet: 2 colunas; celular: 1) ───────────── */
+@media (max-width: 1100px) {
+  [data-ol-react-root] .ol-central { grid-template-columns: 190px 1fr; }
+  [data-ol-react-root] .ol-central .ol-conteudo { grid-template-columns: 1fr !important; grid-template-rows: none !important; }
+  [data-ol-react-root] .ol-col-lista { border-right: 0; }
+  [data-ol-react-root] .ol-col-leitura { position: absolute; inset: 0; border-left: 1px solid var(--ol-border); z-index: 8; }
+  [data-ol-react-root] .ol-leitura-vazia { display: none; }
+}
+@media (max-width: 720px) {
+  [data-ol-react-root] .ol-nav { flex-basis: 60px; }
+  [data-ol-react-root] .ol-brand-text, [data-ol-react-root] .ol-navitem-label, [data-ol-react-root] .ol-nav-foot { display: none; }
+  [data-ol-react-root] .ol-central { grid-template-columns: 1fr; }
+  [data-ol-react-root] .ol-col-pastas { position: absolute; inset: 0; z-index: 6; }
+  [data-ol-react-root] .ol-col-leitura { inset: 0; }
+  [data-ol-react-root] .ol-composer-overlay { padding: 0; }
+  [data-ol-react-root] .ol-composer { border-radius: 0; height: 100%; width: 100%; }
+}

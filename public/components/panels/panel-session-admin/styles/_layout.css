@@ -1,0 +1,128 @@
+/* Panel Session Admin - Layout v2.2.0
+   @version 2.2.0-ENTERPRISE
+   Header, Filters, Content, Footer */
+
+/* Header */
+.psa__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--psa-bg-secondary);
+  border-bottom: 1px solid var(--psa-border);
+}
+
+.psa__title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.psa__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--psa-text-primary);
+}
+
+.psa__title svg { color: var(--psa-accent); }
+
+.psa__subtitle-badge {
+  padding: 0.25rem 0.6rem;
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--psa-accent);
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+.psa__toolbar {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Filters */
+.psa__filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--psa-border);
+}
+
+.psa__filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.psa__filter-group--search { flex: 1; max-width: 300px; }
+
+.psa__filter-label {
+  font-size: 0.8rem;
+  color: var(--psa-text-muted);
+}
+
+.psa__select,
+.psa__input {
+  padding: 0.5rem 0.75rem;
+  background: var(--psa-bg-input);
+  border: 1px solid var(--psa-border);
+  border-radius: var(--psa-radius-sm);
+  color: var(--psa-text-primary);
+  font-size: 0.85rem;
+  transition: var(--psa-transition);
+}
+
+.psa__select:focus,
+.psa__input:focus {
+  outline: none;
+  border-color: var(--psa-border-focus);
+  box-shadow: 0 0 0 3px var(--psa-accent-glow);
+}
+
+.psa__input { width: 100%; }
+
+/* Content */
+.psa__content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* Footer */
+.psa__footer {
+  padding: 0.75rem 1.5rem;
+  background: var(--psa-bg-secondary);
+  border-top: 1px solid var(--psa-border);
+}
+
+.psa__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--psa-text-muted);
+}
+
+.psa__summary-item strong {
+  color: var(--psa-text-primary);
+}
+
+.psa__summary-item--active strong {
+  color: var(--psa-success);
+}
+
+.psa__summary-item--filtered {
+  font-style: italic;
+}
+
+.psa__summary-divider {
+  color: var(--psa-border);
+}

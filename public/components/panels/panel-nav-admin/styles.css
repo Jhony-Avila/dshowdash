@@ -1,0 +1,11 @@
+/* ═══════════════════════════════════════════════════════════════
+   PANEL NAV ADMIN - STYLES
+   @version 2.0.0-ENTERPRISE-MODULAR
+   Base + Premium Styles via Modular Imports
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Base Styles (15 partials) */
+@import url('./styles/main-base.css?v=pna2');
+
+/* Premium Styles (12 partials) */
+@import url('./styles-premium.css?v=pna2');

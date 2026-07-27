@@ -1,0 +1,9 @@
+/* Panel-05 Table - Status Indicators & Action Buttons
+ * @version 2.0.0-ENTERPRISE-MODULAR
+ * @changelog 2.0.0 - Modularizado em 5 arquivos
+ */
+@import './table-status/indicators.css';
+@import './table-status/badges.css';
+@import './table-status/action-buttons.css';
+@import './table-status/star-button.css';
+@import './table-status/row-actions.css';

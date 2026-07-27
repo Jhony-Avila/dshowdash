@@ -1,0 +1,4 @@
+/* Status  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-status-weather-sp { box-sizing: border-box; }
+.panel-status-weather-sp *, .panel-status-weather-sp *::before, .panel-status-weather-sp *::after { box-sizing: inherit; }

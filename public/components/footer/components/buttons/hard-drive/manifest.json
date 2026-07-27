@@ -1,0 +1,10 @@
+{
+  "id": "hard-drive",
+  "area": "footer",
+  "label": "Storage",
+  "icon": "hard-drive",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

@@ -1,0 +1,55 @@
+/* Panel UI - Forms
+ * @module _forms.css
+ * @version 1.0.0
+ * @description Toolbar, Input, Empty state, Keyboard shortcuts
+ * @dependencies _tokens.css
+ */
+
+/* Toolbar */
+.dsd-ui-toolbar {
+  display: flex;
+  gap: var(--ui-space-sm);
+  margin-bottom: var(--ui-space-md);
+  flex-wrap: wrap;
+}
+
+/* Input */
+.dsd-ui-input {
+  width: 100%;
+  background: var(--ui-bg-input);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-sm) var(--ui-space-md);
+  color: var(--ui-text-primary);
+  font-family: var(--ui-font);
+  font-size: var(--ui-text-sm);
+  outline: none;
+  transition: border-color var(--ui-transition-fast);
+}
+
+.dsd-ui-input::placeholder {
+  color: var(--ui-text-muted);
+}
+
+.dsd-ui-input:focus {
+  border-color: var(--ui-accent);
+}
+
+/* Empty State */
+.dsd-ui-empty {
+  color: var(--ui-text-muted);
+  padding: var(--ui-space-lg);
+  text-align: center;
+  font-style: italic;
+}
+
+/* Keyboard Shortcuts */
+.dsd-ui-kbd {
+  background: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--ui-font-mono);
+  font-size: 10px;
+  color: var(--ui-text-muted);
+}

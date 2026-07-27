@@ -1,0 +1,18 @@
+/* Panel Audit Trail - Table Base
+ * @version 3.0.0-MODULAR
+ * Wrapper + Table base
+ */
+
+.pat-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  background: var(--pat-bg-base);
+}
+
+.pat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  table-layout: fixed;
+}

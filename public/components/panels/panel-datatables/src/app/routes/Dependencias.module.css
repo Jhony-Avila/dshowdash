@@ -1,0 +1,31 @@
+.raiz { display: flex; flex-direction: column; gap: var(--dt-space-5); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--dt-space-3); }
+.nota {
+  display: flex; align-items: center; gap: 8px; padding: 9px 13px;
+  border-left: 3px solid var(--dt-warning); border-radius: 0 var(--dt-radius-sm) var(--dt-radius-sm) 0;
+  background: var(--dt-bg-surface); color: var(--dt-text-secondary); font-size: 12.5px;
+}
+.bloco { display: flex; flex-direction: column; gap: var(--dt-space-2); }
+.blocoTopo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.blocoTitulo { margin: 0; font-size: 13.5px; font-weight: 650; }
+.blocoSub { font-size: 11.5px; color: var(--dt-text-muted); }
+.mono { font-family: var(--dt-font-mono); font-size: 12px; }
+.discreto { color: var(--dt-text-muted); font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+.refCel { display: flex; flex-direction: column; gap: 3px; }
+.tamanho { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+
+/* ── Mapa de dependências (grafo D3) ── */
+.seletorBanco {
+  margin-left: auto; padding: 6px 10px; font: inherit; font-size: 12.5px;
+  border: 1px solid var(--dt-border); border-radius: var(--dt-radius-sm);
+  background: var(--dt-bg-surface); color: var(--dt-text-primary); cursor: pointer;
+}
+.seletorBanco:focus-visible { outline: 2px solid var(--dt-primary); outline-offset: 2px; }
+.grafoAviso {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 180px; color: var(--dt-text-muted); font-size: 13px;
+  border: 1px dashed var(--dt-border); border-radius: var(--dt-radius-md);
+}
+.girando { animation: girar 1s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }

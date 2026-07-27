@@ -1,0 +1,11 @@
+/* Panel-05 KPIs - Container */
+/* @version 1.0.0-MODULAR */
+
+.p05-kpis {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--p05-bn-card-gap, 16px);
+    padding: var(--p05-bn-card-padding-y, 20px) var(--p05-bn-card-padding-x, 24px);
+    background: var(--p05-bg-surface);
+    border-bottom: 1px solid var(--p05-border-default);
+}

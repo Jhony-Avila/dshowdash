@@ -1,0 +1,4 @@
+/* Código - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-code { box-sizing: border-box; }
+.panel-code *, .panel-code *::before, .panel-code *::after { box-sizing: inherit; }

@@ -1,0 +1,10 @@
+{
+  "id": "security",
+  "area": "footer",
+  "label": "Segurança",
+  "icon": "security",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

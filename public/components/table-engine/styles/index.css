@@ -1,0 +1,11 @@
+/* Table Engine - Enterprise Styles
+ * @version 2.0.0-ENTERPRISE-MODULAR
+ * @changelog 2.0.0 - Modularizado em 7 arquivos
+ */
+@import './modules/tokens.css';
+@import './modules/layout.css';
+@import './modules/rows.css';
+@import './modules/cells.css';
+@import './modules/states.css';
+@import './modules/toolbar.css';
+@import './modules/pagination.css';

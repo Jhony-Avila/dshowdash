@@ -1,0 +1,47 @@
+/* App Shell - Overlays
+ * @version 3.0.0-MODULAR
+ * Preloader, Login, Toast
+ */
+
+.dsd-shell__region--preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--shell-z-preloader);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dsd-shell__region--login {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--shell-z-login);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dsd-shell__region--login.login-active {
+  pointer-events: auto;
+}
+
+.dsd-shell__region--toast {
+  position: fixed;
+  top: calc(var(--shell-top-offset) + 20px);
+  right: 20px;
+  width: auto;
+  height: auto;
+  z-index: var(--shell-z-toast);
+  pointer-events: none;
+  overflow: visible;
+}
+
+.dsd-shell__region--toast > * {
+  position: relative !important;
+  width: auto !important;
+  height: auto !important;
+}

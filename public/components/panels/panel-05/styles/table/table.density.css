@@ -1,0 +1,22 @@
+/* Table Density
+ * @version 7.2.0
+ */
+
+.p05-table.p05-density-compact th,
+.p05-table.p05-density-compact td {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.p05-table.p05-density-comfortable th,
+.p05-table.p05-density-comfortable td {
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
+.p05-table.p05-density-expanded th,
+.p05-table.p05-density-expanded td {
+    padding: 16px 14px;
+    font-size: 14px;
+    line-height: 1.6;
+}

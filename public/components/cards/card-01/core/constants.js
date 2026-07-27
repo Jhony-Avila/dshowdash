@@ -1,0 +1,42 @@
+import { CARD_INTENTS, CARD_EVENTS } from "/core/runtime/events/catalog/card.events.js";
+const VERSION = "9.1.0-P2-ENTERPRISE";
+const MODULE_ID = "components.cards.card-01.core.constants";
+const CARD_ID = "card-01";
+const CARD_NAME = "Taxa Di\xE1ria";
+const CONFIG = Object.freeze({
+  API_ENDPOINT: "/api/modules/cards/card-01/api.php",
+  REFRESH_INTERVAL: 6e4,
+  API_TIMEOUT: 1e4,
+  API_RETRIES: 2
+});
+const STATES = Object.freeze({
+  IDLE: "IDLE",
+  LOADING: "LOADING",
+  SUCCESS: "SUCCESS",
+  ERROR: "ERROR",
+  PAUSED: "PAUSED"
+});
+const EVENTS = Object.freeze({
+  REFRESH: CARD_INTENTS.REFRESH_ALL,
+  DATA_LOADED: CARD_EVENTS.LOADED,
+  ERROR: CARD_EVENTS.ERROR
+});
+function info() {
+  return { moduleId: MODULE_ID, version: VERSION, cardId: CARD_ID, cardName: CARD_NAME, timestamp: Date.now() };
+}
+function healthCheck() {
+  return { status: "HEALTHY", moduleId: MODULE_ID, version: VERSION, checks: { constantsReady: true }, timestamp: Date.now() };
+}
+var constants_default = { VERSION, MODULE_ID, CARD_ID, CARD_NAME, CONFIG, STATES, EVENTS, info, healthCheck };
+export {
+  CARD_ID,
+  CARD_NAME,
+  CONFIG,
+  EVENTS,
+  MODULE_ID,
+  STATES,
+  VERSION,
+  constants_default as default,
+  healthCheck,
+  info
+};

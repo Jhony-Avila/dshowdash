@@ -1,0 +1,9 @@
+.panel-stub-dev{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;padding:3rem;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;color:#e2e8f0;text-align:center}
+.panel-stub-dev__icon{width:80px;height:80px;margin-bottom:1.5rem;opacity:.6;animation:stub-pulse 2s ease-in-out infinite}
+.panel-stub-dev__title{font-size:1.5rem;font-weight:600;color:#f1f5f9;margin-bottom:.5rem}
+.panel-stub-dev__subtitle{font-size:.95rem;color:#94a3b8;margin-bottom:1.5rem;max-width:400px;line-height:1.5}
+.panel-stub-dev__badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;font-size:.8rem;font-weight:500}
+.panel-stub-dev__badge-dot{width:6px;height:6px;border-radius:50%;background:#60a5fa;animation:stub-blink 1.5s ease-in-out infinite}
+.panel-stub-dev__meta{margin-top:2rem;font-size:.75rem;color:#475569}
+@keyframes stub-pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.05);opacity:.8}}
+@keyframes stub-blink{0%,100%{opacity:1}50%{opacity:.3}}

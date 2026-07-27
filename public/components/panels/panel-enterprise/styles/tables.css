@@ -1,0 +1,62 @@
+/* Panel Enterprise - Tables Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+.audit-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.audit-filters input,
+.audit-filters select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border, rgba(255,255,255,0.2));
+  border-radius: 4px;
+  background: var(--color-bg, #121218);
+  color: var(--color-text, #fff);
+  font-size: 14px;
+}
+
+.audit-filters input:focus,
+.audit-filters select:focus {
+  outline: none;
+  border-color: var(--color-primary, #3b82f6);
+}
+
+.users-table,
+.sessions-table,
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.users-table th,
+.sessions-table th,
+.audit-table th {
+  text-align: left;
+  padding: 12px;
+  background: rgba(255,255,255,0.05);
+  color: var(--color-text-muted, rgba(255,255,255,0.7));
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-border, rgba(255,255,255,0.1));
+}
+
+.users-table td,
+.sessions-table td,
+.audit-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border, rgba(255,255,255,0.05));
+  color: var(--color-text, #fff);
+}
+
+.users-table tr:hover,
+.sessions-table tr:hover,
+.audit-table tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.current-session {
+  background: rgba(59,130,246,0.1) !important;
+}

@@ -1,0 +1,10 @@
+{
+  "id": "activity",
+  "area": "footer",
+  "label": "Atividade",
+  "icon": "activity",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

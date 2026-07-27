@@ -1,0 +1,50 @@
+/* Panel User Preferences - Buttons v4.0.0
+   @version 4.0.0-ENTERPRISE
+   Button variants */
+
+.pup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 11px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.pup-btn:focus-visible { outline: none; box-shadow: var(--pup-focus-ring); }
+
+.pup-btn.primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(124,58,237,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.pup-btn.primary:hover { box-shadow: 0 4px 14px rgba(124,58,237,0.35), inset 0 1px 0 rgba(255,255,255,0.1); transform: translateY(-1px); }
+
+.pup-btn.secondary {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--pup-text-sec);
+}
+
+.pup-btn.secondary:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.1); transform: translateY(-1px); }
+
+.pup-btn.ghost {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.05);
+  color: var(--pup-text-mut);
+}
+
+.pup-btn.ghost:hover { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); color: var(--pup-text-sec); }
+
+.pup-btn.danger {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.12);
+  color: var(--pup-error);
+}
+
+.pup-btn.danger:hover { background: rgba(239,68,68,0.12); transform: translateY(-1px); }

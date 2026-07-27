@@ -1,0 +1,210 @@
+// ═══════════════════════════════════════════════════════════════
+// DEPENDENCY CONTRACT (1.0.0-ENTERPRISE-AAA)
+// ═══════════════════════════════════════════════════════════════
+// MODULE: container-virtual-scroller
+// PURPOSE: Container-Main Virtual Scroller
+// ───────────────────────────────────────────────────────────────
+// IMPORTS:
+//   (none)
+//
+// PROVIDES:
+//   VERSION — module constant
+//   MODULE_ID — module constant
+//   createVirtualScroller() — exported function
+//   info() — exported function
+//   healthCheck() — exported function
+//
+// RECEIVES (via init/options): (see init function if present)
+// EMITS (eventos):
+//   (none)
+// LISTENS (eventos):
+//   'scroll'
+// WINDOW ACCESS:
+//   (none)
+// ═══════════════════════════════════════════════════════════════
+'use strict';
+
+export const VERSION = '1.0.0-ENTERPRISE';
+export const MODULE_ID = 'container-virtual-scroller';
+
+export function createVirtualScroller(container: HTMLElement, options: Record<string, any> = {}) {
+  const {
+    itemHeight = 40,
+    bufferSize = 5,
+    onRenderItem,
+    getItemCount = () => 0,
+    getItemData = (index: number): unknown => null
+  } = options;
+  
+  let _initialized = false;
+  let _scrollTop = 0;
+  let _containerHeight = 0;
+  let _itemCount = 0;
+  let _renderedItems = new Map();
+  let _scrollHandler: unknown = null;
+  let _resizeObserver: Record<string, unknown> | null = null;
+  let _viewport: HTMLElement | null = null;
+  let _content: HTMLElement | null = null;
+  
+  function _createStructure() {
+    _viewport = document.createElement('div');
+    _viewport.className = 'virtual-scroller__viewport';
+    _viewport.style.cssText = 'overflow-y:auto;height:100%;position:relative;';
+    
+    _content = document.createElement('div');
+    _content.className = 'virtual-scroller__content';
+    _content.style.cssText = 'position:relative;';
+    
+    _viewport.appendChild(_content);
+    container.appendChild(_viewport);
+  }
+  
+  function _getVisibleRange() {
+    const startIndex = Math.max(0, Math.floor(_scrollTop / itemHeight) - bufferSize);
+    const visibleCount = Math.ceil(_containerHeight / itemHeight) + bufferSize * 2;
+    const endIndex = Math.min(_itemCount - 1, startIndex + visibleCount);
+    return { startIndex, endIndex };
+  }
+  
+  function _render() {
+    if (!_initialized || !onRenderItem) return;
+    
+    const { startIndex, endIndex } = _getVisibleRange();
+    const totalHeight = _itemCount * itemHeight;
+    _content!.style.height = `${totalHeight}px`;
+    
+    // Remove items outside visible range
+    _renderedItems.forEach((el, index) => {
+      if (index < startIndex || index > endIndex) {
+        el.remove();
+        _renderedItems.delete(index);
+      }
+    });
+    
+    // Add items in visible range
+    for (let i = startIndex; i <= endIndex; i++) {
+      if (!_renderedItems.has(i)) {
+        const itemData = getItemData(i);
+        const itemEl = onRenderItem(itemData, i);
+        if (itemEl) {
+          itemEl.style.position = 'absolute';
+          itemEl.style.top = `${i * itemHeight}px`;
+          itemEl.style.left = '0';
+          itemEl.style.right = '0';
+          itemEl.style.height = `${itemHeight}px`;
+          _content!.appendChild(itemEl);
+          _renderedItems.set(i, itemEl);
+        }
+      }
+    }
+  }
+  
+  function _onScroll() {
+    _scrollTop = _viewport!.scrollTop;
+    requestAnimationFrame(_render);
+  }
+  
+  function _onResize() {
+    _containerHeight = _viewport!.clientHeight;
+    _render();
+  }
+  
+  const scroller = {
+    init() {
+      if (_initialized) return this;
+      _createStructure();
+      _containerHeight = _viewport!.clientHeight;
+      _itemCount = getItemCount();
+      
+      _scrollHandler = _onScroll;
+      // @ts-expect-error TS migration - TS2769
+      _viewport.addEventListener('scroll', _scrollHandler, { passive: true });
+      
+      // @ts-expect-error TS migration - TS2352
+      _resizeObserver = new ResizeObserver(_onResize) as Record<string, unknown>;
+      (_resizeObserver.observe as (...args: unknown[]) => unknown)(_viewport);
+      
+      _initialized = true;
+      _render();
+      return this;
+    },
+    
+    refresh() {
+      _itemCount = getItemCount();
+      _render();
+      return this;
+    },
+    
+    setItemCount(count: number) {
+      _itemCount = count;
+      _render();
+      return this;
+    },
+    
+    scrollToIndex(index: number, behavior = 'auto') {
+      const top = index * itemHeight;
+      // @ts-expect-error TS migration - TS2322
+      _viewport.scrollTo({ top, behavior });
+      return this;
+    },
+    
+    scrollToTop(behavior = 'auto') {
+      return this.scrollToIndex(0, behavior);
+    },
+    
+    scrollToBottom(behavior = 'auto') {
+      return this.scrollToIndex(_itemCount - 1, behavior);
+    },
+    
+    getVisibleRange() {
+      return _getVisibleRange();
+    },
+    
+    getScrollTop() {
+      return _scrollTop;
+    },
+    
+    getRenderedCount() {
+      return _renderedItems.size;
+    },
+    
+    isInitialized() {
+      return _initialized;
+    },
+    
+    destroy() {
+      // @ts-expect-error TS migration - TS2769
+      if (_scrollHandler) _viewport?.removeEventListener('scroll', _scrollHandler);
+      // @ts-expect-error TS migration - TS2349, TS2304
+      _resizeObserver?.(disconnect as (...args: unknown[]) => unknown)();
+      _renderedItems.clear();
+      _viewport?.remove();
+      _viewport = null;
+      _content = null;
+      _initialized = false;
+    },
+    
+    healthCheck() {
+      return {
+        status: _initialized ? 'HEALTHY' : 'NOT_INITIALIZED',
+        version: VERSION,
+        moduleId: MODULE_ID,
+        itemCount: _itemCount,
+        renderedCount: _renderedItems.size,
+        containerHeight: _containerHeight
+      };
+    }
+  };
+  
+  return scroller;
+}
+
+export function info() {
+  return { moduleId: MODULE_ID, version: VERSION };
+}
+
+export function healthCheck() {
+  return { status: 'HEALTHY', version: VERSION, moduleId: MODULE_ID };
+}
+
+export default { createVirtualScroller, info, healthCheck, VERSION, MODULE_ID };

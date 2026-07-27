@@ -1,0 +1,66 @@
+/* Panel-02 Monitoramento de Jobs - Responsive */
+/* @version 2.0.0-ENTERPRISE-AAA */
+
+@media (max-width: 1024px) {
+  .p02-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .p02-status-badges {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .p02-table th:nth-child(7),
+  .p02-table td:nth-child(7) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .p02-header {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .p02-title { font-size: 0.875rem; }
+  .p02-subtitle { display: none; }
+
+  .p02-table th:nth-child(4),
+  .p02-table td:nth-child(4),
+  .p02-table th:nth-child(5),
+  .p02-table td:nth-child(5) {
+    display: none;
+  }
+
+  .p02-job-name {
+    max-width: 150px;
+  }
+
+  .p02-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .p02-footer-left {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .p02-table th:nth-child(2),
+  .p02-table td:nth-child(2) {
+    display: none;
+  }
+
+  .p02-job-name {
+    max-width: 120px;
+  }
+
+  .p02-badge-count {
+    display: none;
+  }
+}

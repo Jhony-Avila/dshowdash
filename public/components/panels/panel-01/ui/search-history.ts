@@ -1,0 +1,202 @@
+// ═══════════════════════════════════════════════════════════════
+// DEPENDENCY CONTRACT (8.4.0-P17WI-AAA)
+// ═══════════════════════════════════════════════════════════════
+// MODULE: panel-01/ui/search-history
+// PURPOSE: Panel-01 - Search History
+// ───────────────────────────────────────────────────────────────
+// IMPORTS:
+//   (none)
+//
+// PROVIDES:
+//   VERSION — module constant
+//   MODULE_ID — module constant
+//   SearchHistory() — exported function
+//   info() — exported function
+//   healthCheck() — exported function
+//
+// RECEIVES (via init/options): (see init function if present)
+// EMITS (eventos):
+//   (none)
+// LISTENS (eventos):
+//   'click'
+// WINDOW ACCESS:
+//   (none)
+// ═══════════════════════════════════════════════════════════════
+'use strict';
+
+export const VERSION = '9.3.0-P2-ENTERPRISE';
+export const MODULE_ID = 'panel-01/ui/search-history';
+
+export function SearchHistory(this: any, options: Record<string, unknown> = {}) {
+  this.storageKey = options.storageKey || 'p01_search_history';
+  this.maxItems = options.maxItems || 10;
+  this.onSelect = options.onSelect || (() => {});
+  this._history = [];
+  this._dropdown = null;
+  this._visible = false;
+  this._loadHistory();
+}
+
+SearchHistory.prototype._loadHistory = function() {
+  try {
+    const saved = localStorage.getItem(this.storageKey);
+    if (saved) this._history = JSON.parse(saved);
+  } catch (e) {
+    this._history = [];
+  }
+};
+
+SearchHistory.prototype._saveHistory = function() {
+  try {
+    localStorage.setItem(this.storageKey, JSON.stringify(this._history));
+  } catch (e) {}
+};
+
+SearchHistory.prototype.add = function(query: string, resultCount: number) {
+  if (!query || query.trim().length < 2) return;
+  
+  const normalized = query.trim();
+  this._history = this._history.filter((item: Record<string, unknown>) => (item.query as string).toLowerCase() !== normalized.toLowerCase());
+  
+  this._history.unshift({
+    query: normalized,
+    timestamp: Date.now(),
+    resultCount: resultCount || 0
+  });
+  
+  if (this._history.length > this.maxItems) {
+    this._history = this._history.slice(0, this.maxItems);
+  }
+  
+  this._saveHistory();
+};
+
+SearchHistory.prototype.remove = function(query: string) {
+  this._history = this._history.filter((item: Record<string, unknown>) => item.query !== query);
+  this._saveHistory();
+};
+
+SearchHistory.prototype.clear = function() {
+  this._history = [];
+  this._saveHistory();
+};
+
+SearchHistory.prototype.getHistory = function() {
+  return this._history.slice();
+};
+
+SearchHistory.prototype.init = function(container: HTMLElement) {
+  this._container = container;
+  this._createDropdown();
+};
+
+SearchHistory.prototype._createDropdown = function() {
+  this._dropdown = document.createElement('div');
+  this._dropdown.className = 'p01-search-history';
+  this._dropdown.style.display = 'none';
+  
+  if (this._container) {
+    this._container.style.position = 'relative';
+    this._container.appendChild(this._dropdown);
+  }
+};
+
+SearchHistory.prototype.show = function() {
+  if (this._history.length === 0) return;
+  this._render();
+  this._dropdown.style.display = 'block';
+  this._visible = true;
+};
+
+SearchHistory.prototype.hide = function() {
+  this._dropdown.style.display = 'none';
+  this._visible = false;
+};
+
+SearchHistory.prototype.toggle = function() {
+  if (this._visible) {
+    this.hide();
+  } else {
+    this.show();
+  }
+};
+
+SearchHistory.prototype._render = function() {
+  const self = this;
+  
+  if (this._history.length === 0) {
+    this._dropdown.innerHTML = '<div class="p01-history-empty">Nenhuma busca recente</div>';
+    return;
+  }
+  
+  let html = '<div class="p01-history-header"><span>Buscas recentes</span><button class="p01-history-clear" data-action="clear">Limpar</button></div>';
+  html += '<div class="p01-history-items">';
+  
+  html += this._history.map((item: Record<string, unknown>) => {
+    const timeAgo = self._formatTimeAgo(item.timestamp);
+    return `<div class="p01-history-item" data-query="${self._escapeHtml(item.query)}"><span class="p01-history-icon">🕒</span><span class="p01-history-query">${self._escapeHtml(item.query)}</span><span class="p01-history-meta">${item.resultCount || 0} resultados · ${timeAgo}</span><button class="p01-history-remove" data-action="remove" data-query="${self._escapeHtml(item.query)}">&times;</button></div>`;
+  }).join('');
+  
+  html += '</div>';
+  this._dropdown.innerHTML = html;
+  this._bindEvents();
+};
+
+SearchHistory.prototype._bindEvents = function() {
+  const self = this;
+  
+  this._dropdown.querySelectorAll('.p01-history-item').forEach((item: Element) => {
+    item.addEventListener('click', (e: Event) => {
+      if ((e.target as Element).closest('[data-action="remove"]')) return;
+      self.onSelect((item as HTMLElement).dataset.query);
+      self.hide();
+    });
+  });
+
+  this._dropdown.querySelectorAll('[data-action="remove"]').forEach((btn: Element) => {
+    btn.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      self.remove((btn as HTMLElement).dataset.query as string);
+      self._render();
+      if (self._history.length === 0) self.hide();
+    });
+  });
+  
+  const clearBtn = this._dropdown.querySelector('[data-action="clear"]');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      self.clear();
+      self.hide();
+    });
+  }
+};
+
+SearchHistory.prototype._formatTimeAgo = (timestamp: number) => {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return 'agora';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(timestamp).toLocaleDateString('pt-BR');
+};
+
+SearchHistory.prototype._escapeHtml = (str: string) => {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+};
+
+SearchHistory.prototype.destroy = function() {
+  if (this._dropdown && this._dropdown.parentNode) {
+    this._dropdown.parentNode.removeChild(this._dropdown);
+  }
+  this._dropdown = null;
+  this._visible = false;
+};
+
+export function info() { return { moduleId: MODULE_ID, version: VERSION }; }
+export function healthCheck() { return { status: 'HEALTHY', moduleId: MODULE_ID, version: VERSION }; }
+export default { SearchHistory, info, healthCheck };

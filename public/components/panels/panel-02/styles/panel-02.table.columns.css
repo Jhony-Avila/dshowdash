@@ -1,0 +1,112 @@
+/* Panel-02 Table Columns - Estilos de colunas */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+/* Job Name */
+.p02-job-name {
+  font-family: var(--p02-font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--p02-text-primary);
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Job Type Badge */
+.p02-job-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--p02-radius-sm);
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--p02-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.p02-job-type svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.p02-job-type.type-api { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+.p02-job-type.type-api svg { color: var(--p02-type-api, #3B82F6); }
+
+.p02-job-type.type-python { background: rgba(234, 179, 8, 0.15); color: #FBBF24; }
+.p02-job-type.type-python svg { color: var(--p02-type-python, #F59E0B); }
+
+.p02-job-type.type-shell { background: rgba(34, 197, 94, 0.15); color: #4ADE80; }
+.p02-job-type.type-shell svg { color: var(--p02-type-shell, #10B981); }
+
+.p02-job-type.type-php { background: rgba(139, 92, 246, 0.15); color: #A78BFA; }
+.p02-job-type.type-php svg { color: var(--p02-type-php, #8B5CF6); }
+
+/* Status Indicator */
+.p02-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--p02-radius-sm);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.p02-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.p02-status-indicator.status-active { background: var(--p02-ok-bg); color: var(--p02-ok); }
+.p02-status-indicator.status-active .p02-status-dot { background: var(--p02-ok); box-shadow: 0 0 4px var(--p02-ok); }
+
+.p02-status-indicator.status-running { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+.p02-status-indicator.status-running .p02-status-dot { background: #60A5FA; animation: p02-pulse 1.5s ease-in-out infinite; }
+
+.p02-status-indicator.status-inactive { background: var(--p02-inactive-bg); color: var(--p02-inactive); }
+.p02-status-indicator.status-inactive .p02-status-dot { background: var(--p02-inactive); }
+
+.p02-status-indicator.status-error { background: var(--p02-error-bg); color: var(--p02-error); }
+.p02-status-indicator.status-error .p02-status-dot { background: var(--p02-error); animation: p02-pulse 2s ease-in-out infinite; }
+
+.p02-status-indicator.status-warning { background: var(--p02-warning-bg); color: var(--p02-warning); }
+.p02-status-indicator.status-warning .p02-status-dot { background: var(--p02-warning); }
+
+/* DateTime */
+.p02-datetime { font-size: 0.6875rem; color: var(--p02-text-muted); white-space: nowrap; }
+
+/* Numeric Columns */
+.p02-executions {
+  font-family: var(--p02-font-mono);
+  font-size: 0.75rem;
+  font-feature-settings: "tnum";
+  color: var(--p02-text-secondary);
+}
+
+/* Success Rate */
+.p02-success-rate {
+  font-family: var(--p02-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-feature-settings: "tnum";
+}
+.p02-success-rate.high { color: var(--p02-ok); }
+.p02-success-rate.medium { color: var(--p02-warning); }
+.p02-success-rate.low { color: var(--p02-error); }
+
+/* Avg Time */
+.p02-avg-time {
+  font-family: var(--p02-font-mono);
+  font-size: 0.6875rem;
+  color: var(--p02-text-muted);
+}
+
+/* Errors */
+.p02-errors { font-family: var(--p02-font-mono); font-size: 0.75rem; font-feature-settings: "tnum"; }
+.p02-errors.no-errors { color: var(--p02-text-muted); }
+.p02-errors.has-errors { color: var(--p02-error); font-weight: 600; }

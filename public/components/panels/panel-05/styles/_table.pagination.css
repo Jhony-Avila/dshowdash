@@ -1,0 +1,105 @@
+/* Panel-05 Table - Pagination
+ * @version 7.0.0-MODULAR
+ * Pagination + Skeleton + Empty + Responsive
+ */
+
+.p05-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--p05-space-lg) var(--p05-space-section);
+    background: var(--p05-bg-surface);
+    border-top: 1px solid var(--p05-border-default);
+    margin: 0 var(--p05-space-section) var(--p05-space-section);
+    border-radius: 0 0 var(--p05-radius-md) var(--p05-radius-md);
+}
+
+.p05-pagination-info {
+    font: var(--p05-font-body-sm);
+    color: var(--p05-text-muted);
+}
+
+.p05-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--p05-space-sm);
+}
+
+.p05-pagination-current {
+    font: var(--p05-font-body-sm);
+    color: var(--p05-text-secondary);
+    padding: 0 var(--p05-space-md);
+}
+
+.p05-btn-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--p05-bg-app);
+    border: 1px solid var(--p05-border-default);
+    border-radius: var(--p05-radius-sm);
+    color: var(--p05-text-secondary);
+    cursor: pointer;
+    transition: all var(--p05-motion-fast);
+}
+
+.p05-btn-page svg {
+    width: 16px;
+    height: 16px;
+}
+
+.p05-btn-page:hover:not(:disabled) {
+    background: var(--p05-bg-surface-hover);
+    border-color: var(--p05-border-hover);
+    color: var(--p05-text-primary);
+}
+
+.p05-btn-page:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Skeleton */
+.p05-skeleton-row td {
+    padding: var(--p05-space-lg);
+}
+
+.p05-skeleton-row .p05-skeleton-text {
+    height: 16px;
+    width: 85%;
+}
+
+/* Empty */
+.p05-table .p05-empty {
+    text-align: center;
+    padding: var(--p05-space-xxl);
+    color: var(--p05-text-muted);
+    font: var(--p05-font-body);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .p05-table th,
+    .p05-table td {
+        padding: var(--p05-space-sm) var(--p05-space-md);
+    }
+}
+
+@media (max-width: 768px) {
+    .p05-table-wrapper {
+        margin: var(--p05-space-md);
+        border-radius: var(--p05-radius-sm);
+    }
+    
+    .p05-table {
+        font-size: 12px;
+    }
+    
+    .p05-pagination {
+        flex-direction: column;
+        gap: var(--p05-space-md);
+        margin: 0 var(--p05-space-md) var(--p05-space-md);
+    }
+}

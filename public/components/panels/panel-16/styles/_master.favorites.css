@@ -1,0 +1,141 @@
+/* Panel-16 Master - Favorites
+ * @version 6.2.0-ENTERPRISE
+ * Favorites + Pinned Rows (padrão Panel-02)
+ */
+
+.p16-favorite-btn {
+  padding: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--p16-text-dim);
+  transition: all var(--p16-transition-fast);
+  border-radius: var(--p16-radius-sm);
+}
+
+.p16-favorite-btn:hover { 
+  color: var(--p16-warning); 
+  background: var(--p16-warning-bg);
+  transform: scale(1.1);
+}
+
+.p16-favorite-btn-active { 
+  color: var(--p16-warning);
+  animation: p16-pulse 2s infinite;
+}
+
+.p16-favorite-btn-active svg { 
+  fill: var(--p16-warning);
+  filter: drop-shadow(0 0 4px var(--p16-warning-glow));
+}
+
+.p16-favorite-btn-active:hover {
+  transform: scale(1.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* PINNED ROWS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-row-pinned {
+  background: linear-gradient(90deg, var(--p16-warning-bg) 0%, transparent 100%) !important;
+  border-left: 3px solid var(--p16-warning) !important;
+  position: relative;
+}
+
+.p16-row-pinned::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--p16-warning);
+  box-shadow: 0 0 8px var(--p16-warning-glow);
+}
+
+.p16-row-pinned:hover {
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.12) 0%, var(--p16-row-hover) 100%) !important;
+}
+
+.p16-pinned-section { 
+  border-bottom: 2px solid var(--p16-warning-border); 
+  margin-bottom: var(--p16-space-sm); 
+}
+
+.p16-pinned-label {
+  display: flex;
+  align-items: center;
+  gap: var(--p16-space-xs);
+  padding: var(--p16-space-xs) var(--p16-space-lg);
+  background: linear-gradient(90deg, var(--p16-warning-bg) 0%, transparent 100%);
+  font-size: var(--p16-font-2xs);
+  font-weight: 600;
+  color: var(--p16-warning);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-left: 3px solid var(--p16-warning);
+}
+
+.p16-pinned-label svg { 
+  width: 12px; 
+  height: 12px;
+  filter: drop-shadow(0 0 4px var(--p16-warning-glow));
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FAVORITE COUNT BADGE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-favorites-count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--p16-space-xs);
+  padding: 2px 8px;
+  background: var(--p16-warning-bg);
+  border: 1px solid var(--p16-warning-border);
+  border-radius: var(--p16-radius-full);
+  font-size: var(--p16-font-2xs);
+  font-weight: 600;
+  color: var(--p16-warning);
+}
+
+.p16-favorites-count svg {
+  width: 10px;
+  height: 10px;
+}
+
+.p16-favorites-count:hover {
+  background: rgba(234, 179, 8, 0.15);
+  box-shadow: 0 0 8px var(--p16-warning-glow);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* BULK FAVORITE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-bulk-favorite-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--p16-space-xs);
+  padding: var(--p16-space-xs) var(--p16-space-sm);
+  background: var(--p16-warning-bg);
+  border: 1px solid var(--p16-warning-border);
+  border-radius: var(--p16-radius-md);
+  font-size: var(--p16-font-xs);
+  font-weight: 500;
+  color: var(--p16-warning);
+  cursor: pointer;
+  transition: all var(--p16-transition-fast);
+}
+
+.p16-bulk-favorite-btn:hover {
+  background: var(--p16-warning);
+  color: var(--p16-text-on-light);
+  box-shadow: 0 0 12px var(--p16-warning-glow);
+}
+
+.p16-bulk-favorite-btn svg {
+  width: 14px;
+  height: 14px;
+}

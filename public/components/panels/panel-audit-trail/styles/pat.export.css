@@ -1,0 +1,264 @@
+/* Panel Audit Trail - Export Menu Enterprise AAA */
+/* @version 2.0.0-ENTERPRISE-AAA */
+/* Progress bar melhorada, hover effects */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EXPORT DROPDOWN */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-export-dropdown {
+  position: relative;
+}
+
+.pat-export-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  min-width: 200px;
+  background: linear-gradient(to bottom, #18181c, #121215);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.95);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.pat-export-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.pat-export-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pat-text-muted);
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pat-export-menu-header svg {
+  width: 14px;
+  height: 14px;
+  color: var(--pat-accent);
+}
+
+.pat-export-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--pat-text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.pat-export-item:hover {
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--pat-text-primary);
+  padding-left: 1.25rem;
+}
+
+.pat-export-item:last-child {
+  border-radius: 0 0 12px 12px;
+}
+
+.pat-export-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.pat-export-item:hover svg {
+  transform: scale(1.1);
+}
+
+.pat-export-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.pat-export-item-label {
+  font-weight: 500;
+}
+
+.pat-export-item-desc {
+  font-size: 0.625rem;
+  color: var(--pat-text-muted);
+}
+
+/* Export format colors */
+.pat-export-item--csv svg { color: #22C55E; }
+.pat-export-item--csv:hover { background: rgba(34, 197, 94, 0.1); }
+
+.pat-export-item--json svg { color: #F59E0B; }
+.pat-export-item--json:hover { background: rgba(245, 158, 11, 0.1); }
+
+.pat-export-item--clipboard svg { color: #3B82F6; }
+.pat-export-item--clipboard:hover { background: rgba(59, 130, 246, 0.1); }
+
+.pat-export-item--pdf svg { color: #EF4444; }
+.pat-export-item--pdf:hover { background: rgba(239, 68, 68, 0.1); }
+
+.pat-export-item--xlsx svg { color: #10B981; }
+.pat-export-item--xlsx:hover { background: rgba(16, 185, 129, 0.1); }
+
+/* Separator */
+.pat-export-separator {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.08), transparent);
+  margin: 0.375rem 0.75rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EXPORT PROGRESS - MELHORADO */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-export-progress {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(to bottom, #1e1e24, #18181c);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 16px;
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 40px rgba(124, 58, 237, 0.15);
+  z-index: 10001;
+  animation: pat-progress-in 0.3s ease;
+}
+
+@keyframes pat-progress-in {
+  from { 
+    opacity: 0; 
+    transform: translateX(-50%) translateY(20px) scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(-50%) translateY(0) scale(1); 
+  }
+}
+
+.pat-export-progress-spinner {
+  position: relative;
+  width: 32px;
+  height: 32px;
+}
+
+.pat-export-progress-spinner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(124, 58, 237, 0.2);
+  border-radius: 50%;
+}
+
+.pat-export-progress-spinner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid transparent;
+  border-top-color: var(--pat-accent);
+  border-radius: 50%;
+  animation: pat-spin 0.8s linear infinite;
+}
+
+@keyframes pat-spin {
+  to { transform: rotate(360deg); }
+}
+
+.pat-export-progress-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.pat-export-progress-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pat-text-primary);
+}
+
+.pat-export-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pat-export-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--pat-accent), #A78BFA);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+}
+
+.pat-export-progress-percent {
+  font-family: var(--pat-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pat-accent);
+}
+
+/* Success state */
+.pat-export-progress.success {
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(34, 197, 94, 0.2);
+}
+
+.pat-export-progress.success .pat-export-progress-fill {
+  background: linear-gradient(90deg, #22C55E, #4ADE80);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+.pat-export-progress.success .pat-export-progress-spinner::after {
+  border-top-color: #22C55E;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EXPORT BUTTON STATES */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-action-btn--export {
+  color: #22C55E;
+}
+
+.pat-action-btn--export:hover {
+  color: #4ADE80;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
+}
+
+.pat-action-btn--export.active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ADE80;
+}

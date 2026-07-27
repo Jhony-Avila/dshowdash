@@ -1,0 +1,46 @@
+/* Inline Editor - Confirm Dialog - @version 1.0.0-ENTERPRISE */
+.hie-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10002;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.hie-confirm-overlay.hie-visible { opacity: 1; pointer-events: auto; }
+
+.hie-confirm-dialog {
+  background: #1e293b;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.hie-confirm-title { font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 8px; }
+.hie-confirm-text { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+.hie-confirm-buttons { display: flex; gap: 10px; justify-content: center; }
+
+.hie-confirm-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.hie-confirm-btn.hie-primary { background: #3b82f6; color: #fff; }
+.hie-confirm-btn.hie-primary:hover { background: #2563eb; }
+.hie-confirm-btn.hie-secondary { background: rgba(255,255,255,0.1); color: #94a3b8; }
+.hie-confirm-btn.hie-secondary:hover { background: rgba(255,255,255,0.15); }
+.hie-confirm-btn.hie-danger { background: #ef4444; color: #fff; }
+.hie-confirm-btn.hie-danger:hover { background: #dc2626; }

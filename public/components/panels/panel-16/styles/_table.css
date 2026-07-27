@@ -1,0 +1,8 @@
+/* Panel-16 Table - Master
+ * @version 6.2.0-ENTERPRISE
+ * Modularizado em 3 partials
+ */
+
+@import '_table.header.css';
+@import '_table.rows.css';
+@import '_table.cells.css';

@@ -1,0 +1,66 @@
+/* UARPS Admin - Minimap
+ * @version 1.2.0-ENTERPRISE-UARPS
+ */
+
+.uarps-minimap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.uarps-minimap__area {
+  background: var(--uarps-bg-card);
+  border: 1px solid var(--uarps-border);
+  border-radius: var(--uarps-radius-md);
+  padding: 1rem;
+}
+
+.uarps-minimap__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--uarps-text-primary);
+}
+
+.uarps-minimap__header svg { width: 16px; height: 16px; color: var(--uarps-accent-cyan); }
+
+.uarps-minimap__pct {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--uarps-accent-green);
+}
+
+.uarps-minimap__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.uarps-minimap__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform var(--uarps-transition);
+}
+
+.uarps-minimap__dot:hover { transform: scale(1.5); }
+.uarps-minimap__dot--granted { background: var(--uarps-accent-green); box-shadow: 0 0 4px var(--uarps-accent-green); }
+.uarps-minimap__dot--denied { background: var(--uarps-bg-tertiary); }
+
+.uarps-minimap__bar {
+  height: 4px;
+  background: var(--uarps-bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.uarps-minimap__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--uarps-accent-cyan), var(--uarps-accent-green));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}

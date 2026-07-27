@@ -1,0 +1,219 @@
+/* Overlay Layer - Styles v1.0.0-ALFA */
+/* Sistema de overlays global */
+
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+:root {
+    --overlay-backdrop-color: rgba(0, 0, 0, 0.5);
+    --overlay-backdrop-blur: 4px;
+    --overlay-z-base: 1000;
+    --overlay-transition-duration: 0.3s;
+    --overlay-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   ROOT CONTAINER
+   ============================================ */
+.dsd-overlay-root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: var(--overlay-z-base);
+}
+
+.dsd-overlay-root[aria-hidden="false"] {
+    pointer-events: auto;
+}
+
+/* ============================================
+   BACKDROP
+   ============================================ */
+.dsd-overlay-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--overlay-backdrop-color);
+    opacity: 0;
+    visibility: hidden;
+    transition: 
+        opacity var(--overlay-transition-duration) var(--overlay-transition-easing),
+        visibility var(--overlay-transition-duration) var(--overlay-transition-easing);
+    z-index: var(--overlay-z-base);
+    pointer-events: none;
+}
+
+.dsd-overlay-backdrop.visible {
+    opacity: var(--backdrop-opacity, 0.5);
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.dsd-overlay-backdrop.blur {
+    backdrop-filter: blur(var(--overlay-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--overlay-backdrop-blur));
+}
+
+/* ============================================
+   STACK CONTAINER
+   ============================================ */
+.dsd-overlay-stack {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: calc(var(--overlay-z-base) + 1);
+}
+
+/* ============================================
+   OVERLAY BASE
+   ============================================ */
+.dsd-overlay {
+    position: fixed;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: 
+        opacity var(--overlay-transition-duration) var(--overlay-transition-easing),
+        transform var(--overlay-transition-duration) var(--overlay-transition-easing),
+        visibility var(--overlay-transition-duration) var(--overlay-transition-easing);
+}
+
+.dsd-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.dsd-overlay.closing {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.dsd-overlay.hidden {
+    display: none;
+}
+
+/* ============================================
+   OVERLAY TYPES
+   ============================================ */
+
+/* Modal - Centro da tela */
+.dsd-overlay--modal {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.dsd-overlay--modal.visible {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Dialog - Mais leve */
+.dsd-overlay--dialog {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    max-width: 500px;
+    max-height: 80vh;
+}
+
+.dsd-overlay--dialog.visible {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Drawer - Lateral */
+.dsd-overlay--drawer {
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 320px;
+    max-width: 90vw;
+    transform: translateX(100%);
+}
+
+.dsd-overlay--drawer.visible {
+    transform: translateX(0);
+}
+
+/* Loading Screen - Tela cheia */
+.dsd-overlay--loading-screen {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+/* Toast Layer - Canto superior direito */
+.dsd-overlay--toast-layer {
+    top: 20px;
+    right: 20px;
+    width: auto;
+    max-width: 400px;
+}
+
+/* Tooltip Layer */
+.dsd-overlay--tooltip-layer {
+    pointer-events: none;
+}
+
+/* Context Menu */
+.dsd-overlay--context-menu {
+    width: auto;
+    min-width: 150px;
+    max-width: 300px;
+}
+
+/* Backdrop Only */
+.dsd-overlay--backdrop-only {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
+/* ============================================
+   BLOCKING OVERLAY
+   ============================================ */
+.dsd-overlay--blocking {
+    pointer-events: auto !important;
+}
+
+/* ============================================
+   SCOPE VARIANTS
+   ============================================ */
+.dsd-overlay--scope-main {
+    /* Dentro do main */
+}
+
+.dsd-overlay--scope-sidebar {
+    /* Dentro do sidebar */
+}
+
+.dsd-overlay--scope-header {
+    /* Dentro do header */
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    .dsd-overlay-backdrop,
+    .dsd-overlay {
+        transition-duration: 0.001ms !important;
+    }
+}

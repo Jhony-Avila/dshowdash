@@ -1,0 +1,24 @@
+/* Footer - Purple Glow Effects
+ * @version 13.0.0-MODULAR
+ * Hover glow effects
+ */
+
+.dsd-footer__icon-btn {
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dsd-footer__icon-btn:hover {
+  border: 1px solid rgba(123, 110, 246, 0.6);
+  box-shadow: 0 0 8px rgba(123, 110, 246, 0.5), 0 0 20px rgba(123, 110, 246, 0.3), inset 0 0 10px rgba(123, 110, 246, 0.1);
+}
+
+.dsd-footer__control-btn {
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dsd-footer__control-btn:hover {
+  border: 1px solid rgba(123, 110, 246, 0.6);
+  box-shadow: 0 0 8px rgba(123, 110, 246, 0.5), 0 0 20px rgba(123, 110, 246, 0.3), inset 0 0 10px rgba(123, 110, 246, 0.1);
+}

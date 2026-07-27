@@ -1,0 +1,46 @@
+.cartao {
+  display: flex; flex-direction: column; gap: 9px;
+  padding: 15px 16px 14px; text-align: left; width: 100%;
+  border: 1px solid var(--dt-border); border-radius: var(--dt-radius-md);
+  background: var(--dt-bg-surface); color: inherit; font: inherit;
+  position: relative; overflow: hidden;
+  transition: transform .16s cubic-bezier(.2,.8,.3,1), box-shadow .16s, border-color .16s;
+}
+/* faixa de acento à esquerda por estado */
+.cartao::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--dt-neutral); opacity: .5;
+}
+.ok::before      { background: var(--dt-success); opacity: .85; }
+.atencao::before { background: var(--dt-warning); opacity: .85; }
+.alerta::before  { background: var(--dt-danger);  opacity: .9; }
+.info::before    { background: var(--dt-info);    opacity: .85; }
+
+.clicavel { cursor: pointer; }
+.clicavel:hover { transform: translateY(-2px); box-shadow: var(--dt-shadow-md); border-color: color-mix(in srgb, var(--dt-primary) 40%, var(--dt-border)); }
+.clicavel:focus-visible { outline: 2px solid var(--dt-primary); outline-offset: 2px; }
+
+.topo { display: flex; align-items: center; gap: 9px; }
+.icone {
+  display: grid; place-items: center; width: 30px; height: 30px; flex: none;
+  border-radius: var(--dt-radius-sm); color: var(--dt-primary);
+  background: var(--dt-grad-primary);
+}
+.ok .icone      { color: var(--dt-success); background: var(--dt-grad-ok); }
+.atencao .icone { color: var(--dt-warning); background: var(--dt-grad-warn); }
+.alerta .icone  { color: var(--dt-danger);  background: var(--dt-grad-alert); }
+.info .icone    { color: var(--dt-info); }
+.rotulo { font-size: 12px; font-weight: 600; color: var(--dt-text-secondary); text-transform: uppercase; letter-spacing: .03em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ir { color: var(--dt-text-muted); opacity: 0; transform: translateX(-3px); transition: opacity .15s, transform .15s; flex: none; }
+.clicavel:hover .ir { opacity: 1; transform: none; }
+
+.corpo { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.valor { font-size: 30px; font-weight: 750; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.spark { width: 76px; height: 26px; color: var(--dt-primary); opacity: .7; flex: none; }
+.ok .spark { color: var(--dt-success); } .atencao .spark { color: var(--dt-warning); } .alerta .spark { color: var(--dt-danger); }
+
+.baixo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.contexto { font-size: 11.5px; color: var(--dt-text-muted); }
+.tend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--dt-text-muted); }
+.tendBom { color: var(--dt-success); } .tendRuim { color: var(--dt-danger); }
+.rodape { margin-top: 2px; padding-top: 9px; border-top: 1px solid var(--dt-border); }

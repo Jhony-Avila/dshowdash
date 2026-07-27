@@ -1,0 +1,13 @@
+/* panel-15 Alerts Bar - @version 1.0.0-ENTERPRISE */
+.p15-alerts-bar { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: var(--p15-radius-md); font-size: 14px; }
+.p15-alerts-bar--ok { background: var(--p15-ok-bg); border: 1px solid rgba(34, 197, 94, 0.3); color: var(--p15-ok); }
+.p15-alerts-bar--warning { background: var(--p15-warning-bg); border: 1px solid rgba(234, 179, 8, 0.3); color: var(--p15-warning); }
+.p15-alerts-bar--critical { background: var(--p15-error-bg); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--p15-error); }
+.p15-alert-icon { display: flex; align-items: center; }
+.p15-alert-icon svg { width: 20px; height: 20px; }
+.p15-alert-content { display: flex; align-items: center; gap: 12px; }
+.p15-alert-total { font-weight: 600; }
+.p15-alert-breakdown { display: flex; gap: 12px; font-size: 13px; opacity: 0.9; }
+.p15-alert-critical { color: var(--p15-error); }
+.p15-alert-warning { color: var(--p15-warning); }
+.p15-alert-text { font-weight: 500; }

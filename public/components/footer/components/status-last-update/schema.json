@@ -1,0 +1,42 @@
+{
+  "name": "footer-status-last-update",
+  "version": "1.0.0",
+  "description": "Componente autocontido do Footer responsável por exibir timestamp da última atualização",
+  "lifecycle": {
+    "mount": true,
+    "update": true,
+    "destroy": true
+  },
+  "inputs": {
+    "props": {
+      "required": ["timestamp"],
+      "optional": ["locale", "i18n"]
+    },
+    "dependencies": {
+      "globalState": false,
+      "eventBus": true,
+      "orchestrator": false,
+      "telemetry": true,
+      "store": true
+    }
+  },
+  "outputs": {
+    "events": [],
+    "telemetry": {
+      "namespace": "footer.status-last-update",
+      "events": ["mounted", "refresh-triggered", "destroyed"]
+    }
+  },
+  "ui": {
+    "providesMarkup": true,
+    "providesStyles": true,
+    "rootClass": "footer-status-last-update",
+    "accessible": true
+  },
+  "behavior": {
+    "idempotent": true,
+    "reentrant": true,
+    "faultTolerant": true,
+    "asyncSafe": true
+  }
+}

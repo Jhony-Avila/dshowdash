@@ -1,0 +1,97 @@
+/* Panel Health Dashboard - Modal
+ * @version 2.0.0-MODULAR
+ * Modal + Module Details
+ */
+
+.phd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.phd-modal {
+  background: var(--phd-bg-card);
+  border-radius: var(--phd-radius);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.phd-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--phd-border);
+}
+
+.phd-modal-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.phd-modal-close {
+  background: none;
+  border: none;
+  color: var(--phd-text);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.phd-modal-body {
+  padding: 1rem;
+}
+
+/* Module details */
+.phd-module-details h3 {
+  margin: 0 0 1rem;
+  font-family: monospace;
+}
+
+.phd-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--phd-border);
+}
+
+.phd-label {
+  color: var(--phd-text-muted);
+}
+
+.phd-detail-section {
+  margin-top: 1rem;
+}
+
+.phd-detail-section h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: var(--phd-text-muted);
+}
+
+.phd-checks-list,
+.phd-issues-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.phd-checks-list li {
+  padding: 0.25rem 0;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.phd-checks-list li.passed { color: var(--phd-healthy); }
+.phd-checks-list li.failed { color: var(--phd-unhealthy); }
+
+.phd-issues-list li {
+  padding: 0.25rem 0;
+  color: var(--phd-unhealthy);
+}

@@ -1,0 +1,11 @@
+/* Panel NavRail Admin - Empty State */
+/* @version 1.0.0-AAA-MODULAR */
+
+.pna-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    color: var(--pna-text-dim);
+    font-size: 0.875rem;
+}

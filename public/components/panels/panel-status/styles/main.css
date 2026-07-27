@@ -1,0 +1,29 @@
+/* Panel Status - Styles */
+/* @version 10.2.0-P14-TAGGED */
+
+.panel-status { padding: 1.5rem; }
+.status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+.status-card { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s ease; }
+.status-card:hover { background: rgba(255,255,255,0.05); border-color: var(--status-color, rgba(255,255,255,0.15)); }
+.status-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(var(--status-color), 0.1); border-radius: 8px; color: var(--status-color); }
+.status-content { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+.status-label { font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.5px; }
+.status-value { font-size: 1.25rem; font-weight: 600; color: rgba(255,255,255,0.9); }
+.status-indicator { width: 8px; height: 8px; border-radius: 50%; }
+.status-indicator--ok { background: #10B981; box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+.status-indicator--warning { background: #F59E0B; box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+.status-indicator--error { background: #EF4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); animation: pulse 1.5s infinite; }
+.status-indicator--unknown { background: #6c757d; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.overall-status { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.5rem; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 1.5rem; }
+.overall-status--ok { border-left: 3px solid #10B981; }
+.overall-status--warning { border-left: 3px solid #F59E0B; }
+.overall-status--error { border-left: 3px solid #EF4444; }
+.overall-label { font-size: 1rem; font-weight: 500; color: rgba(255,255,255,0.9); }
+.status-card--skeleton { background: rgba(255,255,255,0.02); }
+.skeleton-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 8px; }
+.skeleton-line { height: 12px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-bottom: 0.5rem; }
+.skeleton-line:last-child { width: 60%; margin-bottom: 0; }
+.status-error { padding: 1rem; background: rgba(239,68,68,0.1); border-radius: 8px; color: #EF4444; display: flex; align-items: center; gap: 0.5rem; }
+.loading-dots { animation: blink 1s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }

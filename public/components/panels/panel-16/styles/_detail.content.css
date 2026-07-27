@@ -1,0 +1,355 @@
+/* Panel-16 Detail - Content
+ * @version 6.2.0-ENTERPRISE
+ * Contact + Address + Financeiro + Contas + Alertas + Quick Actions + Empty (padrão Panel-02)
+ */
+
+.p16-contact-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: var(--p16-space-sm); 
+}
+
+.p16-contact-item {
+  display: flex;
+  align-items: center;
+  gap: var(--p16-space-sm);
+  font-size: var(--p16-font-sm);
+  color: var(--p16-text-primary);
+  padding: var(--p16-space-sm) var(--p16-space-md);
+  background: var(--p16-bg-elevated);
+  border-radius: var(--p16-radius-md);
+  transition: all var(--p16-transition-fast);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.p16-contact-item:hover { 
+  background: var(--p16-row-hover); 
+  transform: translateX(4px);
+  border-color: var(--p16-border-accent);
+}
+
+.p16-contact-item svg { 
+  width: 14px; 
+  height: 14px; 
+  color: var(--p16-accent); 
+  flex-shrink: 0; 
+}
+
+.p16-contact-item a { 
+  color: inherit; 
+  text-decoration: none; 
+}
+
+.p16-contact-item a:hover { 
+  color: var(--p16-accent); 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ADDRESS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-address {
+  font-size: var(--p16-font-sm);
+  color: var(--p16-text-primary);
+  line-height: 1.6;
+  padding: var(--p16-space-md);
+  background: var(--p16-bg-elevated);
+  border-radius: var(--p16-radius-md);
+  border-left: 3px solid var(--p16-accent);
+  transition: all var(--p16-transition-fast);
+}
+
+.p16-address:hover {
+  border-left-color: var(--p16-accent-light);
+  box-shadow: 0 0 12px var(--p16-accent-glow);
+}
+
+.p16-address p { 
+  margin: 0; 
+}
+
+.p16-address-map {
+  display: flex;
+  align-items: center;
+  gap: var(--p16-space-xs);
+  margin-top: var(--p16-space-sm);
+  font-size: var(--p16-font-xs);
+  color: var(--p16-accent);
+  cursor: pointer;
+  transition: color var(--p16-transition-fast);
+}
+
+.p16-address-map:hover { 
+  color: var(--p16-accent-light);
+  text-decoration: underline; 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FINANCEIRO GRID */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-fin-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: var(--p16-space-md); 
+}
+
+.p16-fin-card {
+  text-align: center;
+  padding: var(--p16-space-lg);
+  background: var(--p16-bg-surface);
+  border-radius: var(--p16-radius-md);
+  border: 1px solid var(--p16-border-subtle);
+  transition: all var(--p16-transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.p16-fin-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background var(--p16-transition-fast);
+}
+
+.p16-fin-card:hover { 
+  border-color: var(--p16-success-border); 
+  transform: translateY(-2px);
+  box-shadow: 0 0 16px var(--p16-success-glow);
+}
+
+.p16-fin-card:hover::before {
+  background: var(--p16-success);
+}
+
+.p16-fin-value { 
+  display: block; 
+  font-size: var(--p16-font-2xl); 
+  font-weight: 700; 
+  color: var(--p16-success); 
+  font-variant-numeric: tabular-nums; 
+  line-height: 1.2; 
+}
+
+.p16-fin-card:nth-child(2) .p16-fin-value { 
+  color: var(--p16-info); 
+}
+
+.p16-fin-card:nth-child(2):hover { 
+  border-color: var(--p16-info-border); 
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.15);
+}
+
+.p16-fin-card:nth-child(2):hover::before {
+  background: var(--p16-info);
+}
+
+.p16-fin-label { 
+  display: block; 
+  font-size: var(--p16-font-xs); 
+  color: var(--p16-text-muted); 
+  text-transform: uppercase; 
+  margin-top: var(--p16-space-xs); 
+  letter-spacing: 0.03em; 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CONTAS BANCÁRIAS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-contas-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: var(--p16-space-sm); 
+}
+
+.p16-conta-card {
+  padding: var(--p16-space-md);
+  background: var(--p16-bg-elevated);
+  border-radius: var(--p16-radius-md);
+  border-left: 3px solid var(--p16-accent);
+  transition: all var(--p16-transition-fast);
+}
+
+.p16-conta-card:hover { 
+  background: var(--p16-row-hover); 
+  transform: translateX(4px);
+  border-left-color: var(--p16-accent-light);
+}
+
+.p16-conta-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: var(--p16-space-xs); 
+}
+
+.p16-conta-titular { 
+  font-size: var(--p16-font-sm); 
+  font-weight: 600; 
+  color: var(--p16-text-primary); 
+}
+
+.p16-conta-info { 
+  font-size: var(--p16-font-xs); 
+  color: var(--p16-text-muted); 
+  font-family: var(--p16-font-mono); 
+}
+
+.p16-conta-pix {
+  font-size: var(--p16-font-xs);
+  color: var(--p16-pix);
+  margin-top: var(--p16-space-xs);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--p16-space-xs) var(--p16-space-sm);
+  background: var(--p16-pix-bg);
+  border-radius: var(--p16-radius-sm);
+  width: fit-content;
+  transition: all var(--p16-transition-fast);
+}
+
+.p16-conta-pix:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 8px var(--p16-pix-glow);
+}
+
+.p16-conta-pix svg { 
+  width: 12px; 
+  height: 12px; 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ALERTAS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-alertas-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: var(--p16-space-xs); 
+}
+
+.p16-alerta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--p16-space-sm);
+  font-size: var(--p16-font-sm);
+  color: var(--p16-error);
+  padding: var(--p16-space-sm) var(--p16-space-md);
+  background: var(--p16-error-bg);
+  border-radius: var(--p16-radius-md);
+  border: 1px solid var(--p16-error-border);
+  line-height: 1.4;
+  animation: p16-fadeIn 0.2s ease;
+}
+
+.p16-alerta-item svg { 
+  flex-shrink: 0; 
+  width: 14px; 
+  height: 14px; 
+  margin-top: 2px; 
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* QUICK ACTIONS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-detail-quick-actions {
+  display: flex;
+  gap: var(--p16-space-sm);
+  padding: var(--p16-space-md) var(--p16-space-lg);
+  background: linear-gradient(to top, var(--p16-layer-from), var(--p16-layer-to));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--p16-layer-border);
+  margin-top: auto;
+}
+
+.p16-quick-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--p16-space-xs);
+  padding: var(--p16-space-sm) var(--p16-space-md);
+  background: var(--p16-bg-surface);
+  border: 1px solid var(--p16-border-default);
+  border-radius: var(--p16-radius-md);
+  color: var(--p16-text-secondary);
+  font-size: var(--p16-font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--p16-transition-fast);
+}
+
+.p16-quick-btn:hover { 
+  border-color: var(--p16-accent); 
+  color: var(--p16-accent); 
+  background: rgba(124, 58, 237, 0.06);
+  box-shadow: 0 0 12px var(--p16-accent-glow);
+}
+
+.p16-quick-btn svg { 
+  width: 14px; 
+  height: 14px; 
+}
+
+.p16-quick-btn-primary { 
+  background: var(--p16-accent); 
+  border-color: var(--p16-accent); 
+  color: white; 
+}
+
+.p16-quick-btn-primary:hover { 
+  background: var(--p16-accent-light); 
+  color: white;
+  box-shadow: 0 0 16px var(--p16-accent-glow);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EMPTY */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p16-detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--p16-space-2xl);
+  color: var(--p16-text-dim);
+  text-align: center;
+}
+
+.p16-detail-empty svg { 
+  width: 40px; 
+  height: 40px; 
+  margin-bottom: var(--p16-space-md); 
+  opacity: 0.5;
+  color: var(--p16-accent-light);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* RESPONSIVE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+  .p16-detail-quick-actions { 
+    flex-wrap: wrap; 
+  }
+  
+  .p16-quick-btn { 
+    flex: 1 1 calc(50% - var(--p16-space-xs)); 
+  }
+}
+
+@media (max-width: 480px) {
+  .p16-fin-grid { 
+    grid-template-columns: 1fr; 
+  }
+}

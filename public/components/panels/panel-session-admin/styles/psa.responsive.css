@@ -1,0 +1,146 @@
+/* Panel Session Admin - Responsive Enterprise AAA */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+/* Mobile First Approach */
+
+/* Extra Small (< 480px) */
+@media (max-width: 479px) {
+  .psa__header {
+    flex-direction: column;
+    gap: var(--psa-spacing-md);
+  }
+  
+  .psa__toolbar {
+    width: 100%;
+    justify-content: stretch;
+  }
+  
+  .psa__toolbar .psa__btn {
+    flex: 1;
+  }
+  
+  .psa__filters {
+    flex-direction: column;
+  }
+  
+  .psa__filter-group {
+    width: 100%;
+  }
+  
+  .psa__table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .psa__table {
+    min-width: 600px;
+  }
+  
+  .psa__cell--browser,
+  .psa__cell--os {
+    display: none;
+  }
+  
+  .psa__footer {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .psa__summary {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+/* Small (480px - 767px) */
+@media (min-width: 480px) and (max-width: 767px) {
+  .psa__header {
+    flex-wrap: wrap;
+  }
+  
+  .psa__filters {
+    flex-wrap: wrap;
+  }
+  
+  .psa__cell--os {
+    display: none;
+  }
+}
+
+/* Medium (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .psa__header {
+    gap: var(--psa-spacing-md);
+  }
+}
+
+/* Large (1024px - 1279px) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  /* Default styles apply */
+}
+
+/* Extra Large (>= 1280px) */
+@media (min-width: 1280px) {
+  .psa {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .psa__table {
+    font-size: var(--psa-font-size-md);
+  }
+}
+
+/* Fullscreen Mode */
+.psa--fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--psa-z-fullscreen);
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  overflow: auto;
+}
+
+.psa--fullscreen .psa__content {
+  max-height: calc(100vh - 200px);
+}
+
+/* Landscape Mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .psa__header {
+    padding: var(--psa-spacing-sm);
+  }
+  
+  .psa__content {
+    max-height: calc(100vh - 120px);
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .psa__btn-icon {
+    min-width: 48px;
+    min-height: 48px;
+  }
+  
+  .psa__row {
+    min-height: 56px;
+  }
+  
+  .psa__row:active {
+    background: var(--psa-bg-active);
+  }
+}
+
+/* Print hidden elements */
+@media print {
+  .psa__toolbar,
+  .psa__filters,
+  .psa__btn-icon--danger {
+    display: none !important;
+  }
+}

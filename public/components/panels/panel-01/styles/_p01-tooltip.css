@@ -1,0 +1,71 @@
+/* Panel-01 - Tooltips AAA */
+/* @version 2.0.0-ENTERPRISE */
+
+.p01-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.p01-tooltip-content {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary, #0f0f1a);
+  color: var(--text-primary, #e4e4e7);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: var(--z-tooltip, 200);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.p01-tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--bg-primary, #0f0f1a);
+}
+
+.p01-tooltip:hover .p01-tooltip-content { opacity: 1; visibility: visible; }
+
+/* Positions */
+.p01-tooltip--top .p01-tooltip-content { bottom: calc(100% + 8px); top: auto; }
+.p01-tooltip--bottom .p01-tooltip-content { top: calc(100% + 8px); bottom: auto; }
+.p01-tooltip--bottom .p01-tooltip-content::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--bg-primary); }
+
+.p01-tooltip--left .p01-tooltip-content { right: calc(100% + 8px); left: auto; top: 50%; bottom: auto; transform: translateY(-50%); }
+.p01-tooltip--left .p01-tooltip-content::after { left: 100%; top: 50%; transform: translateY(-50%); border-top-color: transparent; border-left-color: var(--bg-primary); }
+
+.p01-tooltip--right .p01-tooltip-content { left: calc(100% + 8px); right: auto; top: 50%; bottom: auto; transform: translateY(-50%); }
+.p01-tooltip--right .p01-tooltip-content::after { right: 100%; left: auto; top: 50%; transform: translateY(-50%); border-top-color: transparent; border-right-color: var(--bg-primary); }
+
+/* Data attribute tooltip */
+[data-tooltip] { position: relative; }
+[data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s;
+  pointer-events: none;
+}
+[data-tooltip]:hover::before { opacity: 1; visibility: visible; }

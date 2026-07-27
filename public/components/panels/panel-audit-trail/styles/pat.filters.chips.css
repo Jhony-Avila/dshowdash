@@ -1,0 +1,89 @@
+/* Panel Audit Trail - Filter Chips
+ * @version 3.0.0-MODULAR
+ */
+
+.pat-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.pat-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  background: var(--pat-bg-base);
+  border: 1px solid var(--pat-border-muted);
+  border-radius: var(--pat-radius-lg);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  transition: var(--pat-transition-base);
+}
+
+.pat-filter-chip:hover {
+  border-color: rgba(124, 58, 237, 0.4);
+  background: var(--pat-accent-muted);
+}
+
+.pat-filter-chip:focus-within {
+  border-color: var(--pat-accent);
+  box-shadow: 0 0 0 2px var(--pat-accent-soft);
+}
+
+.pat-filter-chip svg.pat-chip-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transition: var(--pat-transition-fast);
+}
+
+/* Cores por tipo de filtro */
+.pat-filter-chip[data-filter-chip="actionType"] svg.pat-chip-icon { color: var(--pat-info); }
+.pat-filter-chip[data-filter-chip="severity"] svg.pat-chip-icon { color: var(--pat-warning); }
+.pat-filter-chip[data-filter-chip="module"] svg.pat-chip-icon { color: var(--pat-ok); }
+.pat-filter-chip[data-filter-chip="eventType"] svg.pat-chip-icon { color: var(--pat-security); }
+
+.pat-filter-chip[data-filter-chip="actionType"]:hover svg.pat-chip-icon { color: var(--pat-info-hover); }
+.pat-filter-chip[data-filter-chip="severity"]:hover svg.pat-chip-icon { color: var(--pat-warning-hover); }
+.pat-filter-chip[data-filter-chip="module"]:hover svg.pat-chip-icon { color: var(--pat-ok-hover); }
+
+.pat-filter-chip select {
+  background: transparent;
+  border: none;
+  color: var(--pat-text-secondary);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  padding-right: 0.125rem;
+  appearance: none;
+  max-width: 100px;
+}
+
+.pat-filter-chip select:focus {
+  outline: none;
+  color: var(--pat-text-primary);
+}
+
+.pat-filter-chip .pat-chip-arrow {
+  width: 10px;
+  height: 10px;
+  color: var(--pat-text-muted);
+  flex-shrink: 0;
+  transition: transform var(--pat-transition-fast);
+}
+
+.pat-filter-chip:hover .pat-chip-arrow {
+  transform: translateY(1px);
+}
+
+/* Active chip */
+.pat-filter-chip.has-value {
+  border-color: rgba(124, 58, 237, 0.5);
+  background: var(--pat-accent-soft);
+}
+
+.pat-filter-chip.has-value select {
+  color: var(--pat-text-primary);
+  font-weight: 500;
+}

@@ -1,0 +1,20 @@
+/* Table Rows
+ * @version 7.2.0
+ */
+
+.p05-table tbody tr {
+    transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.p05-table tbody tr:hover {
+    background: var(--p05-bg-surface-hover);
+}
+
+.p05-table tbody tr.p05-selected {
+    background: var(--p05-info-bg, rgba(59, 130, 246, 0.1)) !important;
+}
+
+.p05-table tbody tr.p05-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}

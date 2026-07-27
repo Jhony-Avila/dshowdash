@@ -1,0 +1,60 @@
+/* Panel-10 - Layout
+ * @version 4.0.0-MODULAR
+ * Wrapper + Header
+ */
+
+.panel-10-wrapper,
+.painel-10-wrapper {
+  padding: 0.875rem;
+  background: var(--p10-bg);
+  border-radius: var(--p10-radius);
+  border: 1px solid var(--p10-border);
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-10-header,
+.painel-10-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--p10-border);
+}
+
+.panel-10-header-title,
+.painel-10-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--p10-text);
+}
+
+.panel-10-icon,
+.painel-10-icon {
+  flex-shrink: 0;
+  color: var(--p10-accent);
+  width: 20px;
+  height: 20px;
+}
+
+.panel-10-header-info,
+.painel-10-header-info {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.6875rem;
+  color: var(--p10-text-muted);
+}
+
+.panel-10-content,
+.painel-10-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 280px;
+  position: relative;
+}

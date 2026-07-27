@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "panel-google-drive",
+  "version": "8.1.0-ENTERPRISE",
+  "title": "Google Drive Component",
+  "description": "Header trigger component for Google Drive integration panel",
+  "type": "header-trigger",
+  "category": "integration",
+  "enterprise": true,
+  "capabilities": {
+    "reorderable": true,
+    "hideable": true,
+    "critical": false,
+    "refreshable": false,
+    "configurable": true
+  },
+  "config": {
+    "icon": "/assets/icons/system/header/google-drive.svg",
+    "label": "Google Drive",
+    "panelId": "google-drive-panel",
+    "event": "panel:google-drive:open"
+  },
+  "state": {
+    "type": "object",
+    "properties": {
+      "isActive": { "type": "boolean", "default": false },
+      "lastClick": { "type": ["number", "null"], "default": null }
+    }
+  },
+  "events": {
+    "emits": ["component:mounted", "component:unmounted", "component:error", "ui:action"],
+    "listens": []
+  },
+  "dependencies": [],
+  "telemetry": {
+    "trackMounts": true,
+    "trackClicks": true,
+    "trackErrors": true
+  }
+}

@@ -1,0 +1,82 @@
+/* Panel-05 Filters - Search
+ * @version 7.0.0-MODULAR
+ * Search Box
+ */
+
+.p05-search-box {
+    position: relative;
+    flex: 1;
+    min-width: 280px;
+    max-width: 400px;
+}
+
+.p05-search-icon {
+    position: absolute;
+    left: var(--p05-space-md);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--p05-text-dim);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.p05-search-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.p05-search-input {
+    width: 100%;
+    height: var(--p05-height-input);
+    padding: 0 var(--p05-space-xl) 0 42px;
+    background: var(--p05-bg-app);
+    border: 1px solid var(--p05-border-default);
+    border-radius: var(--p05-radius-md);
+    font: var(--p05-font-body);
+    color: var(--p05-text-primary);
+    transition: all var(--p05-motion-fast);
+}
+
+.p05-search-input::placeholder {
+    color: var(--p05-text-dim);
+}
+
+.p05-search-input:hover {
+    border-color: var(--p05-border-hover);
+}
+
+.p05-search-input:focus {
+    outline: none;
+    border-color: var(--p05-border-focus);
+    box-shadow: var(--p05-shadow-focus);
+}
+
+.p05-search-clear {
+    position: absolute;
+    right: var(--p05-space-sm);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: var(--p05-radius-xs);
+    color: var(--p05-text-dim);
+    cursor: pointer;
+    transition: all var(--p05-motion-fast);
+}
+
+.p05-search-clear svg {
+    width: 16px;
+    height: 16px;
+}
+
+.p05-search-clear:hover {
+    background: var(--p05-bg-surface-hover);
+    color: var(--p05-text-secondary);
+}

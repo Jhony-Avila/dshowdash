@@ -1,0 +1,29 @@
+{
+  "id": "panel-navrail-admin",
+  "version": "1.0.0-ENTERPRISE-AAA",
+  "title": "NavRail Admin",
+  "description": "Gerenciamento de itens da NavRail",
+  "icon": "navigation",
+  "category": "admin",
+  "minLevel": 100,
+  "features": {
+    "crud": true,
+    "dragDrop": true,
+    "preview": true,
+    "sync": true,
+    "badges": true
+  },
+  "api": {
+    "base": "/api/ui/navrail/",
+    "endpoints": {
+      "manifest": "?action=manifest",
+      "groups": "?action=groups",
+      "items": "?action=items&include_inactive=1",
+      "create": "?action=item",
+      "update": "?action=item&id=",
+      "delete": "?action=item&id=",
+      "toggle": "?action=toggle&id=",
+      "reorder": "?action=reorder"
+    }
+  }
+}

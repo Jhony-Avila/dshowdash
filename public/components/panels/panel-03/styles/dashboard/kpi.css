@@ -1,0 +1,57 @@
+/* panel-03 KPI Cards
+ * @version 1.0.0-ENTERPRISE
+ */
+
+.p03-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1200px) { .p03-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .p03-kpi-grid { grid-template-columns: 1fr; } }
+
+.p03-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--p03-bg-elevated);
+  border: 1px solid var(--p03-border-muted);
+  border-radius: var(--p03-radius-lg);
+  transition: all 0.2s ease;
+}
+
+.p03-kpi-card:hover {
+  border-color: var(--p03-accent-soft);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.p03-kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--p03-radius-md);
+  flex-shrink: 0;
+}
+
+.p03-kpi-icon svg { width: 24px; height: 24px; }
+.p03-kpi-icon--primary { background: var(--p03-accent-soft); color: var(--p03-accent); }
+.p03-kpi-icon--success { background: var(--p03-ok-bg); color: var(--p03-ok); }
+.p03-kpi-icon--warning { background: var(--p03-warning-bg); color: var(--p03-warning); }
+.p03-kpi-icon--info { background: rgba(59, 130, 246, 0.15); color: #3B82F6; }
+
+.p03-kpi-content { display: flex; flex-direction: column; gap: 4px; }
+
+.p03-kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--p03-text-primary);
+  line-height: 1.2;
+  font-family: var(--p03-font-mono);
+}
+
+.p03-kpi-label { font-size: 13px; color: var(--p03-text-muted); font-weight: 500; }

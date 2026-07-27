@@ -1,0 +1,33 @@
+/* Panel-13 KPIs Taxa de Sucesso - States */
+/* @version 5.0.0-ENTERPRISE */
+
+/* === LOADING === */
+.p13-loading { position: relative; pointer-events: none; }
+.p13-loading::after { content: ''; position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border: 3px solid var(--p13-border-muted, #333); border-top-color: var(--p13-accent, #10b981); border-radius: 50%; animation: p13-spin 0.8s linear infinite; z-index: 10; }
+@keyframes p13-spin { to { transform: rotate(360deg); } }
+
+/* === SKELETON === */
+.p13-skeleton { background: var(--p13-bg-card, #1f1f1f); border-radius: var(--p13-radius-lg, 12px); padding: 1.5rem; }
+.p13-skeleton-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
+.p13-skeleton-card { background: var(--p13-bg-elevated, #2a2a2a); border-radius: var(--p13-radius-md, 8px); padding: 1.5rem; height: 140px; }
+.p13-skeleton-bar { height: 48px; background: var(--p13-bg-elevated, #2a2a2a); border-radius: var(--p13-radius-md, 8px); margin-bottom: 1.5rem; }
+.p13-skeleton-table { background: var(--p13-bg-elevated, #2a2a2a); border-radius: var(--p13-radius-md, 8px); height: 200px; }
+.p13-skeleton-line { height: 14px; background: linear-gradient(90deg, var(--p13-bg-elevated, #2a2a2a) 25%, var(--p13-bg-card, #333) 50%, var(--p13-bg-elevated, #2a2a2a) 75%); background-size: 200% 100%; border-radius: 4px; animation: p13-shimmer 1.5s infinite; margin-bottom: 0.75rem; }
+.p13-skeleton-line:nth-child(1) { width: 60%; }
+.p13-skeleton-line:nth-child(2) { width: 80%; }
+.p13-skeleton-line:nth-child(3) { width: 40%; }
+@keyframes p13-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* === EMPTY === */
+.p13-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; text-align: center; color: var(--p13-text-muted, #6b7280); }
+.p13-empty-icon { width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.5; }
+.p13-empty-title { font-size: 1.1rem; font-weight: 600; color: var(--p13-text-secondary, #9ca3af); margin-bottom: 0.5rem; }
+.p13-empty-message { font-size: 0.9rem; max-width: 300px; }
+
+/* === ERROR === */
+.p13-error { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--p13-radius-lg, 12px); }
+.p13-error-icon { width: 48px; height: 48px; color: var(--p13-error, #ef4444); margin-bottom: 1rem; }
+.p13-error-title { font-size: 1.1rem; font-weight: 600; color: var(--p13-error, #ef4444); margin-bottom: 0.5rem; }
+.p13-error-message { font-size: 0.9rem; color: var(--p13-text-muted, #6b7280); max-width: 400px; margin-bottom: 1rem; }
+.p13-error-retry { padding: 0.5rem 1rem; background: var(--p13-error, #ef4444); color: white; border: none; border-radius: var(--p13-radius-sm, 6px); cursor: pointer; font-weight: 500; transition: opacity 0.2s; }
+.p13-error-retry:hover { opacity: 0.9; }

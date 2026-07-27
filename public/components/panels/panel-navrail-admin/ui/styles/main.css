@@ -1,0 +1,21 @@
+/* Panel NavRail Admin - Master File */
+/* @version 2.0.0-AAA-MODULAR */
+/* Modularizado em 16 partials */
+/* Original: styles.css (775 linhas) */
+
+@import url('./_pna-tokens.css');
+@import url('./_pna-layout.css');
+@import url('./_pna-header.css');
+@import url('./_pna-stats.css');
+@import url('./_pna-filters.css');
+@import url('./_pna-content.css');
+@import url('./_pna-groups.css');
+@import url('./_pna-preview.css');
+@import url('./_pna-buttons.css');
+@import url('./_pna-modal.css');
+@import url('./_pna-form.css');
+@import url('./_pna-toast.css');
+@import url('./_pna-loading.css');
+@import url('./_pna-empty.css');
+@import url('./_pna-utils.css');
+@import url('./_pna-responsive.css');

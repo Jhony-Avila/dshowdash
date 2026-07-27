@@ -1,0 +1,13 @@
+/* panel-13 SLA e Disponibilidade - Master Styles */
+/* @version 5.0.0-ENTERPRISE-DASHBOARD */
+
+@import url('./tokens.css');
+@import url('./panel-13.base.css');
+@import url('./panel-13.dashboard.css');
+@import url('./panel-13.header.css');
+@import url('./panel-13.states.css');
+@import url('./panel-13.drawer.css');
+@import url('./panel-13.toast.css');
+@import url('./panel-13.responsive.css');
+@import url('./panel-13.accessibility.css');
+@import url('./panel-13.print.css');

@@ -1,0 +1,12 @@
+{
+  "id": "privacidade",
+  "area": "footer",
+  "label": "Privacidade",
+  "href": "/privacidade",
+  "kind": "link",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {
+    "href": "/privacidade"
+  }
+}

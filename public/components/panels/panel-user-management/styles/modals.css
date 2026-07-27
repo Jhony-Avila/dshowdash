@@ -1,0 +1,9 @@
+/* Panel User Management - Modals */
+/* @version 5.0.0-ENTERPRISE-AAA-MODULAR */
+/* Orquestrador: importa todos os módulos do modal */
+
+@import url('./modal-overlay.css');
+@import url('./modal-identity.css');
+@import url('./modal-form.css');
+@import url('./modal-actions.css');
+@import url('./modal-system.css');

@@ -1,0 +1,9 @@
+/* Panel-04 Styles Enterprise AAA */
+/* @version 7.0.0-ENTERPRISE-MODULAR */
+/* @changelog 7.0.0 - Modularizado em 5 arquivos especializados */
+
+@import './modules/tokens.css';
+@import './modules/layout.css';
+@import './modules/components.css';
+@import './modules/table.css';
+@import './modules/states.css';

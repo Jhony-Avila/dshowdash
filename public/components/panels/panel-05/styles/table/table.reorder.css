@@ -1,0 +1,25 @@
+/* Column Reorder
+ * @version 7.4.0
+ */
+
+.p05-th-grip {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.p05-th-reorderable:hover .p05-th-grip {
+    opacity: 0.6;
+}
+
+.p05-th-grip:active {
+    cursor: grabbing;
+}
+
+th.p05-dragging {
+    opacity: 0.5;
+}

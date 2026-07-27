@@ -1,0 +1,8 @@
+/* Panel Audit Trail - Base Master
+ * @version 3.0.0-MODULAR
+ * Modularizado em 3 partials
+ */
+
+@import 'pat.base.container.css';
+@import 'pat.base.modal.css';
+@import 'pat.base.toast.css';

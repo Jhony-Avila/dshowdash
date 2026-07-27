@@ -1,0 +1,59 @@
+/* SW Controller Styles v1.0.0 */
+/* Componente de infraestrutura - sem estilos visuais */
+
+.sw-update-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-info, #3B82F6);
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 99998;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.sw-update-banner.visible {
+  transform: translateY(0);
+}
+
+.sw-update-banner-text {
+  font-size: 14px;
+}
+
+.sw-update-banner-button {
+  background: white;
+  color: var(--color-info, #3B82F6);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sw-update-banner-button:hover {
+  opacity: 0.9;
+}
+
+.sw-controller-debug {
+  position: fixed;
+  bottom: 90px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #00ff00;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 11px;
+  border-radius: 4px;
+  z-index: 99999;
+  max-width: 300px;
+  display: none;
+}
+
+.sw-controller-debug.visible {
+  display: block;
+}

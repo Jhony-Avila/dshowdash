@@ -1,0 +1,28 @@
+{
+  "module": "icon-registry",
+  "version": "1.0.0-ENTERPRISE",
+  "responsibility": "Centralized SVG icon registry for all panels",
+  "publicAPI": [
+    "get",
+    "has",
+    "list",
+    "register",
+    "healthCheck",
+    "info"
+  ],
+  "rules": [
+    "No SVG inline outside registry",
+    "Namespaced icons only (namespace:icon-name)",
+    "Pure SVG strings without logic",
+    "No window dependency",
+    "No CSS embedded",
+    "No DOM manipulation"
+  ],
+  "namespaces": [
+    "ui",
+    "charts",
+    "table",
+    "system",
+    "business"
+  ]
+}

@@ -1,0 +1,30 @@
+/* Feature Flags Admin - Header */
+/* @version 1.0.0-AAA-MODULAR */
+
+.panel-feature-flags-admin .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.panel-feature-flags-admin .panel-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.panel-feature-flags-admin .header-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.panel-feature-flags-admin .header-stats .stat {
+    background: var(--ff-card);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.panel-feature-flags-admin .header-stats .stat.active {
+    color: var(--ff-success);
+}

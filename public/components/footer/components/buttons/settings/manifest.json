@@ -1,0 +1,10 @@
+{
+  "id": "settings",
+  "area": "footer",
+  "label": "Configurações",
+  "icon": "settings",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

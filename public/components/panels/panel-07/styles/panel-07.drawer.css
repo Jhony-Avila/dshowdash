@@ -1,0 +1,8 @@
+/* Panel-07 Drawer - Master
+ * @version 5.0.0-MODULAR
+ * Modularizado em 3 partials
+ */
+
+@import 'panel-07.drawer.container.css';
+@import 'panel-07.drawer.content.css';
+@import 'panel-07.drawer.footer.css';

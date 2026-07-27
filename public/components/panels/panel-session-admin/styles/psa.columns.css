@@ -1,0 +1,113 @@
+/* Panel Session Admin - Column Toggle Enterprise AAA */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+/* Column Toggle Button */
+.psa__columns-btn {
+  position: relative;
+}
+
+/* Column Menu */
+.psa__columns-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--psa-bg-secondary);
+  border: 1px solid var(--psa-border);
+  border-radius: var(--psa-radius-md);
+  box-shadow: var(--psa-shadow-lg);
+  z-index: var(--psa-z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all var(--psa-transition-fast);
+}
+
+.psa__columns-menu--open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.psa__columns-header {
+  padding: var(--psa-spacing-sm) var(--psa-spacing-md);
+  font-size: var(--psa-font-size-xs);
+  font-weight: var(--psa-font-weight-semibold);
+  color: var(--psa-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--psa-border);
+}
+
+.psa__columns-item {
+  display: flex;
+  align-items: center;
+  gap: var(--psa-spacing-sm);
+  padding: var(--psa-spacing-sm) var(--psa-spacing-md);
+  cursor: pointer;
+  transition: background var(--psa-transition-fast);
+}
+
+.psa__columns-item:hover {
+  background: var(--psa-bg-hover);
+}
+
+.psa__columns-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.psa__columns-item label {
+  flex: 1;
+  font-size: var(--psa-font-size-sm);
+  color: var(--psa-text-primary);
+  cursor: pointer;
+}
+
+.psa__columns-item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.psa__columns-item--disabled input,
+.psa__columns-item--disabled label {
+  cursor: not-allowed;
+}
+
+/* Column Actions */
+.psa__columns-actions {
+  display: flex;
+  gap: var(--psa-spacing-xs);
+  padding: var(--psa-spacing-sm) var(--psa-spacing-md);
+  border-top: 1px solid var(--psa-border);
+}
+
+.psa__columns-actions button {
+  flex: 1;
+  padding: var(--psa-spacing-xs);
+  font-size: var(--psa-font-size-xs);
+  border-radius: var(--psa-radius-sm);
+  cursor: pointer;
+  transition: all var(--psa-transition-fast);
+}
+
+.psa__columns-show-all {
+  background: var(--psa-primary-light);
+  color: var(--psa-primary);
+  border: 1px solid var(--psa-primary);
+}
+
+.psa__columns-reset {
+  background: transparent;
+  color: var(--psa-text-secondary);
+  border: 1px solid var(--psa-border);
+}
+
+/* Hidden Column */
+.psa__cell--hidden,
+.psa__th--hidden {
+  display: none !important;
+}

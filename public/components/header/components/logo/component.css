@@ -1,0 +1,44 @@
+/* Logo Component - Enterprise Premium */
+/* @version 1.0.0-ENTERPRISE */
+
+.logo-component {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+
+.logo-component:hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+}
+
+.logo-component:active {
+  transform: scale(0.98);
+}
+
+.logo-component .logo-image {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.logo-component[data-theme="dark"] .logo-image {
+  filter: brightness(1.1);
+}
+
+@media (max-width: 768px) {
+  .logo-component .logo-image {
+    height: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-component .logo-image {
+    height: 24px;
+  }
+}

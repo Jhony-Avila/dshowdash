@@ -1,0 +1,23 @@
+/* Feature Flags Admin - Toolbar */
+/* @version 1.0.0-AAA-MODULAR */
+
+.panel-feature-flags-admin .panel-toolbar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.panel-feature-flags-admin .search-box {
+    flex: 1;
+    min-width: 200px;
+}
+
+.panel-feature-flags-admin .search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--ff-card);
+    border: 1px solid var(--ff-border);
+    border-radius: 6px;
+    color: var(--ff-text);
+}

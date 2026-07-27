@@ -1,0 +1,17 @@
+{
+  "id": "panel-user-sessions",
+  "name": "Sessões Ativas",
+  "description": "Visualização e gerenciamento de sessões ativas do usuário",
+  "category": "user",
+  "refreshInterval": 60000,
+  "enabled": true,
+  "version": "1.0.0-ENTERPRISE",
+  "architecture": "autocontained",
+  "author": "DShow Dashboard",
+  "created": "2025-12-16",
+  "updated": "2025-12-16",
+  "dependencies": [],
+  "permissions": ["read", "write"],
+  "features": ["autocontained", "idempotent", "resilient", "observable"],
+  "telemetry": { "enabled": true, "events": ["panel:open", "panel:view", "session:terminated"] }
+}

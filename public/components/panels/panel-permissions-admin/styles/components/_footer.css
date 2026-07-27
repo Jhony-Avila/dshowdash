@@ -1,0 +1,109 @@
+/* UARPS Admin - Footer
+ * @version 1.2.0-ENTERPRISE-UARPS
+ */
+
+.uarps-footer {
+  padding: 0.75rem 1.5rem;
+  background: var(--uarps-bg-secondary);
+  border-top: 1px solid var(--uarps-border);
+}
+
+.uarps-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.uarps-stats__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--uarps-text-muted);
+}
+
+.uarps-stats__item svg { width: 14px; height: 14px; opacity: 0.6; }
+
+.uarps-stats__value {
+  font-weight: 600;
+  color: var(--uarps-text-primary);
+}
+
+.uarps-stats__item--highlight .uarps-stats__value { font-size: 1rem; }
+
+.uarps-stats__divider {
+  width: 1px;
+  height: 20px;
+  background: var(--uarps-border);
+}
+
+.uarps-cache-indicator {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--uarps-text-muted);
+}
+
+/* Stats Expandidos */
+.uarps-stats--expanded {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.uarps-stats__group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--uarps-radius-md);
+}
+
+.uarps-stats__group-title {
+  font-size: 0.65rem;
+  color: var(--uarps-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Progress Bar */
+.uarps-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 120px;
+}
+
+.uarps-progress__bar {
+  flex: 1;
+  height: 6px;
+  background: var(--uarps-bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.uarps-progress__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--uarps-accent-cyan), var(--uarps-accent-green));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.uarps-progress__text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--uarps-accent-green);
+  min-width: 35px;
+  text-align: right;
+}
+
+/* Keyboard Hint */
+.uarps-kbd {
+  display: inline-flex;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+  font-family: monospace;
+  background: var(--uarps-bg-tertiary);
+  border: 1px solid var(--uarps-border);
+  border-radius: 4px;
+  color: var(--uarps-text-muted);
+}

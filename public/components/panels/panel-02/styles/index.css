@@ -1,0 +1,17 @@
+/* Panel-02 Monitoramento de Jobs - Master Styles */
+/* @version 5.0.0-ENTERPRISE */
+
+@import url('./tokens.css');
+@import url('./panel-02.base.css');
+@import url('./panel-02.header.css');
+@import url('./panel-02.filters.css');
+@import url('./panel-02.toolbar.css');
+@import url('./panel-02.table.css');
+@import url('./panel-02.states.css');
+@import url('./panel-02.drawer.css');
+@import url('./panel-02.toast.css');
+@import url('./panel-02.kpis.css');
+@import url('./panel-02.footer.css');
+@import url('./panel-02.responsive.css');
+@import url('./panel-02.accessibility.css');
+@import url('./panel-02.print.css');

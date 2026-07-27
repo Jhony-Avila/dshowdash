@@ -1,0 +1,239 @@
+/* Accessibility Manager - Styles v1.0.0-ENTERPRISE */
+/* Estilos globais de acessibilidade WCAG 2.1+ */
+
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+:root {
+    --a11y-font-scale: 1;
+    --a11y-focus-color: #005fcc;
+    --a11y-focus-width: 3px;
+    --a11y-focus-offset: 2px;
+    --a11y-high-contrast-bg: #000000;
+    --a11y-high-contrast-text: #ffffff;
+    --a11y-high-contrast-link: #ffff00;
+    --a11y-high-contrast-border: #ffffff;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+.a11y-reduced-motion,
+.a11y-reduced-motion * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+.a11y-high-contrast {
+    background-color: var(--a11y-high-contrast-bg) !important;
+    color: var(--a11y-high-contrast-text) !important;
+}
+
+.a11y-high-contrast a {
+    color: var(--a11y-high-contrast-link) !important;
+    text-decoration: underline !important;
+}
+
+.a11y-high-contrast button,
+.a11y-high-contrast input,
+.a11y-high-contrast select,
+.a11y-high-contrast textarea {
+    border: 2px solid var(--a11y-high-contrast-border) !important;
+    background-color: var(--a11y-high-contrast-bg) !important;
+    color: var(--a11y-high-contrast-text) !important;
+}
+
+.a11y-high-contrast img {
+    filter: contrast(1.2) !important;
+}
+
+/* ============================================
+   FONT SCALE (1-5)
+   ============================================ */
+.a11y-font-scale-2 {
+    --a11y-font-scale: 1.15;
+}
+
+.a11y-font-scale-3 {
+    --a11y-font-scale: 1.30;
+}
+
+.a11y-font-scale-4 {
+    --a11y-font-scale: 1.45;
+}
+
+.a11y-font-scale-5 {
+    --a11y-font-scale: 1.60;
+}
+
+.a11y-font-scale-2 body,
+.a11y-font-scale-3 body,
+.a11y-font-scale-4 body,
+.a11y-font-scale-5 body {
+    font-size: calc(1rem * var(--a11y-font-scale));
+}
+
+/* ============================================
+   DYSLEXIA FONT
+   ============================================ */
+.a11y-dyslexia-font,
+.a11y-dyslexia-font * {
+    font-family: 'OpenDyslexic', 'Comic Sans MS', 'Arial', sans-serif !important;
+    letter-spacing: 0.05em !important;
+    word-spacing: 0.1em !important;
+    line-height: 1.8 !important;
+}
+
+/* ============================================
+   LARGE CURSOR
+   ============================================ */
+.a11y-large-cursor,
+.a11y-large-cursor * {
+    cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="%23000" stroke="%23fff" stroke-width="1" d="M8 2L8 28L14 22L18 30L22 28L18 20L26 20Z"/></svg>') 8 2, auto !important;
+}
+
+/* ============================================
+   FOCUS RING ALWAYS VISIBLE
+   ============================================ */
+.a11y-focus-visible :focus {
+    outline: var(--a11y-focus-width) solid var(--a11y-focus-color) !important;
+    outline-offset: var(--a11y-focus-offset) !important;
+}
+
+/* Keyboard user detection */
+.a11y-keyboard-user :focus {
+    outline: var(--a11y-focus-width) solid var(--a11y-focus-color) !important;
+    outline-offset: var(--a11y-focus-offset) !important;
+}
+
+/* ============================================
+   KEYBOARD NAVIGATION MODE
+   ============================================ */
+.a11y-keyboard-nav [tabindex]:focus,
+.a11y-keyboard-nav a:focus,
+.a11y-keyboard-nav button:focus,
+.a11y-keyboard-nav input:focus,
+.a11y-keyboard-nav select:focus,
+.a11y-keyboard-nav textarea:focus {
+    outline: var(--a11y-focus-width) solid var(--a11y-focus-color) !important;
+    outline-offset: var(--a11y-focus-offset) !important;
+    box-shadow: 0 0 0 4px rgba(0, 95, 204, 0.3) !important;
+}
+
+/* ============================================
+   HIGHLIGHT INTERACTIVE ELEMENTS
+   ============================================ */
+.a11y-highlight-interactive a,
+.a11y-highlight-interactive button,
+.a11y-highlight-interactive [role="button"],
+.a11y-highlight-interactive [tabindex="0"],
+.a11y-highlight-interactive input,
+.a11y-highlight-interactive select,
+.a11y-highlight-interactive textarea {
+    outline: 2px dashed #0066cc !important;
+    outline-offset: 2px !important;
+}
+
+/* ============================================
+   COLOR BLIND MODES
+   ============================================ */
+.a11y-color-blind-protanopia {
+    filter: url('#protanopia-filter');
+}
+
+.a11y-color-blind-deuteranopia {
+    filter: url('#deuteranopia-filter');
+}
+
+.a11y-color-blind-tritanopia {
+    filter: url('#tritanopia-filter');
+}
+
+/* ============================================
+   SCREEN READER OPTIMIZED
+   ============================================ */
+.a11y-sr-optimized .sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Skip link */
+.a11y-skip-link {
+    position: absolute;
+    top: -100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--a11y-focus-color);
+    color: #fff;
+    padding: 8px 16px;
+    z-index: 10000;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
+.a11y-skip-link:focus {
+    top: 10px;
+}
+
+/* ============================================
+   UNIVERSAL FOCUS STYLES (DEFAULT)
+   ============================================ */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+:focus-visible {
+    outline: var(--a11y-focus-width) solid var(--a11y-focus-color);
+    outline-offset: var(--a11y-focus-offset);
+}
+
+/* ============================================
+   ANNOUNCER (SCREEN READER)
+   ============================================ */
+#a11y-announcer {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* ============================================
+   PREFERS REDUCED MOTION (SYSTEM)
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ============================================
+   PREFERS HIGH CONTRAST (SYSTEM)
+   ============================================ */
+@media (prefers-contrast: more) {
+    :root {
+        --a11y-focus-width: 4px;
+    }
+    
+    * {
+        border-color: currentColor !important;
+    }
+}

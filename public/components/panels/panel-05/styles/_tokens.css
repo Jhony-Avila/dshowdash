@@ -1,0 +1,275 @@
+/* Panel-05 - Design Tokens Enterprise Premium AAA */
+/* @version 7.1.0-ENTERPRISE-AAA */
+/* Design Contract v2.1.0 - Clientes 360° */
+/* Paleta charcoal puro + Acento roxo (padrão Panel-02) */
+
+.p05-panel {
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* SPACING SYSTEM (8pt Base) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-space-2xs: 4px;
+    --p05-space-xs: 8px;
+    --p05-space-sm: 12px;
+    --p05-space-md: 16px;
+    --p05-space-lg: 24px;
+    --p05-space-xl: 32px;
+    --p05-space-2xl: 40px;
+    --p05-space-3xl: 48px;
+    --p05-space-section: 20px 24px;
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* BORDER RADIUS */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-radius-xs: 4px;
+    --p05-radius-sm: 6px;
+    --p05-radius-md: 8px;
+    --p05-radius-lg: 12px;
+    --p05-radius-xl: 16px;
+    --p05-radius-pill: 999px;
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* BACKGROUND TOKENS - CHARCOAL PURO (SEM AZUL) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-bg-app: #0a0a0c;
+    --p05-bg-base: #0a0a0c;
+    --p05-bg-surface: #0d0d0f;
+    --p05-bg-surface-alt: #121214;
+    --p05-bg-surface-hover: #18181b;
+    --p05-bg-elevated: #1a1a1d;
+    --p05-bg-overlay: rgba(0,0,0,0.55);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TABELA - ZEBRA POR OPACIDADE (Padrão Panel-02) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-row-base: transparent;
+    --p05-row-zebra: rgba(255, 255, 255, 0.015);
+    --p05-row-hover: rgba(124, 58, 237, 0.06);
+    --p05-row-active: rgba(124, 58, 237, 0.10);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* HEADER/FOOTER - GRADIENTE + BLUR (Padrão Panel-02) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-layer-from: rgba(15, 15, 18, 0.95);
+    --p05-layer-to: rgba(15, 15, 18, 0.75);
+    --p05-layer-border: rgba(255, 255, 255, 0.06);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* BORDER TOKENS */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-border-default: rgba(255, 255, 255, 0.08);
+    --p05-border-muted: rgba(255, 255, 255, 0.08);
+    --p05-border-subtle: rgba(255, 255, 255, 0.04);
+    --p05-border-strong: rgba(255, 255, 255, 0.12);
+    --p05-border-focus: #7C3AED;
+    --p05-border-hover: rgba(255, 255, 255, 0.12);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TEXT TOKENS */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-text-primary: rgba(255, 255, 255, 0.92);
+    --p05-text-secondary: rgba(255, 255, 255, 0.70);
+    --p05-text-muted: rgba(255, 255, 255, 0.45);
+    --p05-text-dim: rgba(255, 255, 255, 0.30);
+    --p05-text-inverse: #0a0a0c;
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* ACENTO PRINCIPAL - ROXO (Padrão Panel-02) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-accent: #7C3AED;
+    --p05-accent-hover: #8B5CF6;
+    --p05-accent-soft: rgba(124, 58, 237, 0.15);
+    --p05-accent-bg: rgba(124, 58, 237, 0.12);
+    --p05-accent-border: rgba(124, 58, 237, 0.25);
+    --p05-accent-glow: rgba(124, 58, 237, 0.20);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* PRIMARY (Alias para Accent) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-primary: #7C3AED;
+    --p05-primary-hover: #8B5CF6;
+    --p05-primary-bg: rgba(124, 58, 237, 0.12);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* SEMANTIC - SUCCESS (OK) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-success: #22C55E;
+    --p05-success-hover: #16A34A;
+    --p05-success-bg: rgba(34, 197, 94, 0.12);
+    --p05-success-border: rgba(34, 197, 94, 0.25);
+    --p05-success-glow: rgba(34, 197, 94, 0.15);
+    --p05-ok: #22C55E;
+    --p05-ok-bg: rgba(34, 197, 94, 0.12);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* SEMANTIC - WARNING */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-warning: #EAB308;
+    --p05-warning-hover: #CA8A04;
+    --p05-warning-bg: rgba(234, 179, 8, 0.12);
+    --p05-warning-border: rgba(234, 179, 8, 0.25);
+    --p05-warning-glow: rgba(234, 179, 8, 0.15);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* SEMANTIC - DANGER (ERROR) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-danger: #EF4444;
+    --p05-danger-hover: #DC2626;
+    --p05-danger-bg: rgba(239, 68, 68, 0.12);
+    --p05-danger-border: rgba(239, 68, 68, 0.25);
+    --p05-danger-glow: rgba(239, 68, 68, 0.15);
+    --p05-error: #EF4444;
+    --p05-error-bg: rgba(239, 68, 68, 0.12);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* SEMANTIC - CRITICAL */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-critical: #DC2626;
+    --p05-critical-hover: #B91C1C;
+    --p05-critical-bg: rgba(220, 38, 38, 0.15);
+    --p05-critical-border: rgba(220, 38, 38, 0.3);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* SEMANTIC - INFO (Azul para informacional) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-info: #3B82F6;
+    --p05-info-hover: #2563EB;
+    --p05-info-bg: rgba(59, 130, 246, 0.12);
+    --p05-info-border: rgba(59, 130, 246, 0.25);
+    --p05-info-glow: rgba(59, 130, 246, 0.15);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* SEMANTIC - NEUTRAL (INACTIVE) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-neutral: #64748B;
+    --p05-neutral-hover: #475569;
+    --p05-neutral-bg: rgba(100, 116, 139, 0.12);
+    --p05-neutral-border: rgba(100, 116, 139, 0.25);
+    --p05-inactive: #64748B;
+    --p05-inactive-bg: rgba(100, 116, 139, 0.12);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TIPOS ESPECIAIS - ROXO/PURPLE */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-purple: #8B5CF6;
+    --p05-purple-hover: #7C3AED;
+    --p05-purple-bg: rgba(139, 92, 246, 0.12);
+    --p05-purple-border: rgba(139, 92, 246, 0.25);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TIPOS ESPECIAIS - CYAN */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-cyan: #06B6D4;
+    --p05-cyan-hover: #0891B2;
+    --p05-cyan-bg: rgba(6, 182, 212, 0.12);
+    --p05-cyan-border: rgba(6, 182, 212, 0.25);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TIPOS ESPECIAIS - TEAL (Financial) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-teal: #14B8A6;
+    --p05-teal-hover: #0D9488;
+    --p05-teal-bg: rgba(20, 184, 166, 0.12);
+    --p05-teal-border: rgba(20, 184, 166, 0.25);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TIPOS DE JOB/ENTIDADE (Padrão Panel-02) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-type-api: #3B82F6;
+    --p05-type-python: #F59E0B;
+    --p05-type-php: #8B5CF6;
+    --p05-type-shell: #10B981;
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TYPOGRAPHY - Font Families */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --p05-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --p05-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TYPOGRAPHY - Big Number Enterprise AAA */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-bn-value-size: 32px;
+    --p05-bn-value-weight: 600;
+    --p05-bn-value-line-height: 1.15;
+    --p05-bn-value-letter-spacing: -0.01em;
+    --p05-bn-label-size: 13px;
+    --p05-bn-label-weight: 500;
+    --p05-bn-label-opacity: 0.85;
+    --p05-bn-meta-size: 12px;
+    --p05-bn-meta-weight: 400;
+    --p05-bn-meta-opacity: 0.65;
+    --p05-bn-badge-size: 11px;
+    --p05-bn-badge-weight: 600;
+    --p05-bn-badge-letter-spacing: 0.04em;
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* BIG NUMBER - Spacing */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-bn-card-padding-y: 20px;
+    --p05-bn-card-padding-x: 24px;
+    --p05-bn-card-radius: 12px;
+    --p05-bn-card-gap: 16px;
+    --p05-bn-gap-label-to-number: 6px;
+    --p05-bn-gap-number-to-meta: 8px;
+    --p05-bn-gap-icon-to-content: 14px;
+    --p05-bn-gap-badge-to-content: 8px;
+    --p05-bn-icon-size: 20px;
+    --p05-bn-icon-stroke: 1.5;
+    --p05-bn-icon-container-size: 44px;
+    --p05-bn-badge-padding-y: 4px;
+    --p05-bn-badge-padding-x: 10px;
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TYPOGRAPHY - Font Shortcuts (Titles) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-font-title-xl: 600 22px/1.3 var(--p05-font-family);
+    --p05-font-title-lg: 600 18px/1.3 var(--p05-font-family);
+    --p05-font-title-md: 600 16px/1.4 var(--p05-font-family);
+    --p05-font-title-sm: 600 14px/1.4 var(--p05-font-family);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* TYPOGRAPHY - Font Shortcuts (Body) */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-font-body: 500 13px/1.5 var(--p05-font-family);
+    --p05-font-body-sm: 400 12px/1.5 var(--p05-font-family);
+    --p05-font-label: 500 13px/1.4 var(--p05-font-family);
+    --p05-font-meta: 400 12px/1.4 var(--p05-font-family);
+    --p05-font-caption: 400 11px/1.4 var(--p05-font-family);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* SHADOWS */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-shadow-sm: 0 1px 2px rgba(0,0,0,0.25);
+    --p05-shadow-md: 0 4px 12px rgba(0,0,0,0.35);
+    --p05-shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+    --p05-shadow-xl: 0 12px 40px rgba(0,0,0,0.5);
+    --p05-shadow-glow-accent: 0 0 20px var(--p05-accent-glow);
+    --p05-shadow-glow-success: 0 0 20px var(--p05-success-glow);
+    --p05-shadow-glow-warning: 0 0 20px var(--p05-warning-glow);
+    --p05-shadow-glow-danger: 0 0 20px var(--p05-danger-glow);
+    --p05-shadow-glow-info: 0 0 20px var(--p05-info-glow);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* MOTION / TRANSITIONS */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-motion-instant: 100ms;
+    --p05-motion-fast: 150ms;
+    --p05-motion-normal: 200ms;
+    --p05-motion-slow: 300ms;
+    --p05-motion-slower: 400ms;
+    --p05-transition: all 0.15s ease;
+    --p05-easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --p05-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --p05-easing-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* Z-INDEX LAYERS */
+    /* ═══════════════════════════════════════════════════════════════ */
+    --p05-z-base: 1;
+    --p05-z-dropdown: 100;
+    --p05-z-sticky: 200;
+    --p05-z-modal: 300;
+    --p05-z-toast: 400;
+    --p05-z-tooltip: 500;
+}

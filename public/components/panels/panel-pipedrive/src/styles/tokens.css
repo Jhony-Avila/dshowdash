@@ -1,0 +1,803 @@
+/* tokens.css — tokens e layout do painel Pipedrive Analytics.
+   @version 1.12.0  @created 2026-07-21  (v1.1: sparkline; v1.2: forecast; v1.3: gráfico/segmented/distribuição; v1.4: filtros avançados/visões; v1.5: sidebar colapsável+agrupada + tokens DS; v1.6: cabeçalho padrão de página; v1.7: toolbar única + chips + densidade + tela cheia + estados/skeleton; v1.8: grid Fase 2 — fixar colunas/zebra/seleção/master-detail/totalizadores/tooltip; v1.9: cards-resumo por entidade + avatares; v1.10: abas dos drawers + KPIs do drawer; v1.11: agenda FullCalendar; v1.12: Fase 4 — grid 12 col, ChartCard/ECharts, big-numbers ricos, filtros rápidos, etapas do funil)
+   TUDO escopado a [data-pp-react-root]: quando o painel fecha, o root some e
+   estas regras ficam inertes (nunca vazam para o shell). Tema segue data-theme
+   do shell (dark default; light via :root[data-theme="light"]). */
+
+[data-pp-react-root] {
+  --pp-bg:        #14141f;
+  --pp-surface:   #1c1c2b;
+  --pp-surface-2: #23233472;
+  --pp-border:    #2e2e44;
+  --pp-text:      #e8e8f0;
+  --pp-text-dim:  #a2a2b8;
+  --pp-primary:   #5b8def;
+  --pp-primary-ct:#ffffff;
+  --pp-ok:        #34d399;
+  --pp-warn:      #fbbf24;
+  --pp-danger:    #f87171;
+  --pp-sync:      #60a5fa;
+  --pp-info:      #60a5fa;
+  --pp-neutral:   #8b8ba3;
+  /* Categóricas (séries múltiplas dos gráficos — Fase 4) */
+  --pp-purple:    #a78bfa;
+  --pp-cyan:      #22d3ee;
+  --pp-pink:      #f472b6;
+  /* Linhas do grid — OPACOS de propósito: colunas fixas (sticky) precisam tapar o que passa por baixo */
+  --pp-row:       var(--pp-surface);
+  --pp-row-zebra: color-mix(in srgb, var(--pp-text) 4%, var(--pp-surface));
+  --pp-row-hover: color-mix(in srgb, var(--pp-primary) 10%, var(--pp-surface));
+  --pp-row-sel:   color-mix(in srgb, var(--pp-primary) 17%, var(--pp-surface));
+
+  /* Espaçamento / raios (Design System §5.1) */
+  --pp-space-1: 4px;  --pp-space-2: 8px;  --pp-space-3: 12px;
+  --pp-space-4: 16px; --pp-space-5: 20px; --pp-space-6: 24px;
+  --pp-radius-sm: 7px; --pp-radius-md: 10px; --pp-radius-lg: 14px;
+
+  /* Sidebar colapsável (§6) */
+  --pp-sidebar-expanded: 236px;
+  --pp-sidebar-collapsed: 68px;
+
+  height: 100%;
+  color: var(--pp-text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+}
+[data-pp-react-root] *, [data-pp-react-root] *::before, [data-pp-react-root] *::after { box-sizing: border-box; }
+
+:root[data-theme="light"] [data-pp-react-root] {
+  --pp-bg:        #f5f6fa;
+  --pp-surface:   #ffffff;
+  --pp-surface-2: #eef1f7;
+  --pp-border:    #dfe3ec;
+  --pp-text:      #1b1f2a;
+  --pp-text-dim:  #5b6373;
+  --pp-primary:   #2f6fed;
+  --pp-primary-ct:#ffffff;
+  /* Categóricas mais saturadas no claro (as do dark somem sobre branco).
+     NÃO redefinimos ok/warn/danger aqui: são semânticas já aceitas nas 16 telas. */
+  --pp-purple:    #7c5cf0;
+  --pp-cyan:      #0891b2;
+  --pp-pink:      #db2777;
+}
+
+/* ── Layout ───────────────────────────────────────────── */
+[data-pp-react-root] .pp-shell {
+  display: flex; height: 100%; min-height: 480px;
+  background: var(--pp-bg);
+  position: relative; /* ancora o drawer (position:absolute) dentro do painel */
+}
+
+/* ── Drawer de detalhe (overlay OPACO, escopado ao painel) ─────── */
+[data-pp-react-root] .pp-drawer-overlay {
+  position: absolute; inset: 0; z-index: 50;
+  background: rgba(0, 0, 0, .45);
+  display: flex; justify-content: flex-end;
+}
+[data-pp-react-root] .pp-drawer {
+  width: min(580px, 94%); height: 100%; overflow-y: auto;
+  background: var(--pp-surface); border-left: 1px solid var(--pp-border);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, .35);
+  padding: 20px 24px 40px;
+  animation: pp-slide-in .16s ease-out;
+}
+@keyframes pp-slide-in { from { transform: translateX(24px); opacity: .4; } to { transform: none; opacity: 1; } }
+[data-pp-react-root] .pp-drawer-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+[data-pp-react-root] .pp-drawer-x {
+  border: 1px solid var(--pp-border); background: var(--pp-surface-2); color: var(--pp-text);
+  width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 15px; line-height: 1; flex: 0 0 auto;
+}
+[data-pp-react-root] .pp-drawer-x:hover { filter: brightness(1.15); }
+[data-pp-react-root] .pp-drawer h2 { font-size: 16px; font-weight: 700; margin: 0 0 2px; line-height: 1.3; }
+[data-pp-react-root] .pp-drawer h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--pp-text-dim); margin: 20px 0 8px; }
+[data-pp-react-root] .pp-drawer-sub2 { display: block; font-size: 12.5px; color: var(--pp-text-dim); margin-top: 2px; }
+[data-pp-react-root] .pp-table tbody tr.pp-clik { cursor: pointer; }
+
+/* ── Kanban (read-only) ───────────────────────────────────── */
+[data-pp-react-root] .pp-kanban { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 12px; align-items: flex-start; }
+[data-pp-react-root] .pp-kan-col {
+  flex: 0 0 264px; background: var(--pp-surface); border: 1px solid var(--pp-border);
+  border-radius: 12px; display: flex; flex-direction: column; max-height: 66vh;
+}
+[data-pp-react-root] .pp-kan-head { padding: 12px 14px; border-bottom: 1px solid var(--pp-border); }
+[data-pp-react-root] .pp-kan-head .t { font-weight: 650; font-size: 13.5px; }
+[data-pp-react-root] .pp-kan-head .m { font-size: 11.5px; color: var(--pp-text-dim); margin-top: 3px; }
+[data-pp-react-root] .pp-kan-body { overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+[data-pp-react-root] .pp-kan-card {
+  background: var(--pp-bg); border: 1px solid var(--pp-border); border-radius: 9px;
+  padding: 10px 11px; cursor: pointer; transition: border-color .12s;
+}
+[data-pp-react-root] .pp-kan-card:hover { border-color: var(--pp-primary); }
+[data-pp-react-root] .pp-kan-card .ct { font-size: 12.5px; font-weight: 550; line-height: 1.35; word-break: break-word; }
+[data-pp-react-root] .pp-kan-card .cv { font-size: 12px; color: var(--pp-ok); font-weight: 600; margin-top: 4px; }
+[data-pp-react-root] .pp-kan-card .co { font-size: 11px; color: var(--pp-text-dim); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-pp-react-root] .pp-kan-empty { font-size: 12px; color: var(--pp-text-dim); padding: 10px; text-align: center; }
+[data-pp-react-root] .pp-kan-more { font-size: 11px; color: var(--pp-text-dim); text-align: center; padding: 4px; }
+
+/* ── Alertas comerciais ───────────────────────────────────── */
+[data-pp-react-root] .pp-alert { border-left-width: 4px; border-left-style: solid; }
+[data-pp-react-root] .pp-alert-head { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+[data-pp-react-root] .pp-alert-head .lbl { font-weight: 650; font-size: 14px; }
+[data-pp-react-root] .pp-alert-head .cnt { margin-left: auto; font-size: 13px; color: var(--pp-text-dim); white-space: nowrap; }
+[data-pp-react-root] .pp-alert-desc { font-size: 12.5px; color: var(--pp-text-dim); margin: 6px 0 0; }
+[data-pp-react-root] .pp-alert-deals { margin-top: 12px; border-top: 1px solid var(--pp-border); }
+[data-pp-react-root] .pp-alert-deal { display: flex; justify-content: space-between; gap: 12px; padding: 9px 2px; border-bottom: 1px dashed var(--pp-border); cursor: pointer; font-size: 13px; }
+[data-pp-react-root] .pp-alert-deal:hover { background: var(--pp-surface-2); }
+[data-pp-react-root] .pp-alert-deal:last-child { border-bottom: 0; }
+[data-pp-react-root] .pp-alert-deal .dt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 550; }
+[data-pp-react-root] .pp-alert-deal .dm { font-size: 11.5px; color: var(--pp-text-dim); margin-top: 2px; }
+[data-pp-react-root] .pp-alert-deal .dv { font-weight: 600; white-space: nowrap; text-align: right; }
+
+/* Timeline */
+[data-pp-react-root] .pp-tl { display: flex; flex-direction: column; gap: 0; }
+[data-pp-react-root] .pp-tl-item { display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--pp-border); }
+[data-pp-react-root] .pp-tl-item:last-child { border-bottom: 0; }
+[data-pp-react-root] .pp-tl-ic { font-size: 13px; line-height: 1.5; }
+[data-pp-react-root] .pp-tl-body { min-width: 0; }
+[data-pp-react-root] .pp-tl-title { font-size: 13px; font-weight: 500; word-break: break-word; }
+[data-pp-react-root] .pp-tl-meta { font-size: 11.5px; color: var(--pp-text-dim); margin-top: 2px; }
+/* ── Sidebar colapsável + agrupada (§6) ───────────────────── */
+[data-pp-react-root] .pp-nav {
+  flex: 0 0 var(--pp-sidebar-expanded); width: var(--pp-sidebar-expanded);
+  border-right: 1px solid var(--pp-border); background: var(--pp-surface);
+  display: flex; flex-direction: column; min-height: 0;
+  transition: flex-basis .24s ease, width .24s ease;
+}
+[data-pp-react-root] .pp-nav.compacta { flex-basis: var(--pp-sidebar-collapsed); width: var(--pp-sidebar-collapsed); }
+
+[data-pp-react-root] .pp-brand {
+  display: flex; align-items: center; gap: var(--pp-space-2); padding: 14px 12px;
+  font-weight: 700; font-size: 15px; letter-spacing: .2px; border-bottom: 1px solid var(--pp-border);
+}
+[data-pp-react-root] .pp-brand .pp-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+[data-pp-react-root] .pp-brand-logo { display: inline-flex; color: var(--pp-primary); flex: 0 0 auto; }
+[data-pp-react-root] .pp-brand-txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-pp-react-root] .pp-nav-toggle {
+  margin-left: auto; border: 1px solid var(--pp-border); background: var(--pp-surface-2); color: var(--pp-text-dim);
+  width: 26px; height: 26px; border-radius: var(--pp-radius-sm); cursor: pointer; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; transition: color .12s, background .12s;
+}
+[data-pp-react-root] .pp-nav-toggle:hover { color: var(--pp-text); background: var(--pp-border); }
+[data-pp-react-root] .pp-nav.compacta .pp-brand { justify-content: center; padding: 14px 0; }
+[data-pp-react-root] .pp-nav.compacta .pp-nav-toggle { margin: 0; }
+
+[data-pp-react-root] .pp-nav-scroll { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 10px 10px 4px; display: flex; flex-direction: column; gap: 2px; }
+[data-pp-react-root] .pp-nav-group { display: flex; flex-direction: column; gap: 2px; }
+[data-pp-react-root] .pp-nav-group + .pp-nav-group { margin-top: 8px; }
+[data-pp-react-root] .pp-nav.compacta .pp-nav-group + .pp-nav-group { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--pp-border); }
+[data-pp-react-root] .pp-nav-group-h {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  border: 0; background: transparent; color: var(--pp-text-dim); cursor: pointer;
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+  padding: 8px 10px 4px; width: 100%;
+}
+[data-pp-react-root] .pp-nav-group-h:hover { color: var(--pp-text); }
+[data-pp-react-root] .pp-nav-group-h .chev { transition: transform .15s; opacity: .7; }
+
+[data-pp-react-root] .pp-navitem {
+  position: relative; text-align: left; border: 0; background: transparent; color: var(--pp-text-dim);
+  padding: 9px 11px; border-radius: var(--pp-radius-md); font-size: 13.5px; cursor: pointer;
+  display: flex; align-items: center; gap: 11px; width: 100%; transition: background .12s, color .12s;
+}
+[data-pp-react-root] .pp-navitem .pp-navitem-ic { flex: 0 0 auto; }
+[data-pp-react-root] .pp-navitem-txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-pp-react-root] .pp-navitem:hover { background: var(--pp-surface-2); color: var(--pp-text); }
+[data-pp-react-root] .pp-navitem.is-active { background: color-mix(in srgb, var(--pp-primary) 16%, transparent); color: var(--pp-primary); font-weight: 600; }
+[data-pp-react-root] .pp-navitem.is-active::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px; border-radius: 0 3px 3px 0; background: var(--pp-primary);
+}
+[data-pp-react-root] .pp-nav.compacta .pp-navitem { justify-content: center; padding: 10px 0; }
+
+/* Tooltip nativo estilizado no modo compacto (via title) — reforço visual com badge */
+[data-pp-react-root] .pp-navitem-badge {
+  margin-left: auto; background: var(--pp-primary); color: var(--pp-primary-ct);
+  font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 1px 7px; min-width: 18px; text-align: center;
+}
+[data-pp-react-root] .pp-nav.compacta .pp-navitem-badge {
+  position: absolute; top: 3px; right: 6px; margin: 0; padding: 0 4px; min-width: 14px; font-size: 9px; line-height: 14px;
+}
+
+[data-pp-react-root] .pp-nav-footer {
+  border-top: 1px solid var(--pp-border); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
+}
+[data-pp-react-root] .pp-conn { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--pp-text-dim); }
+[data-pp-react-root] .pp-nav-meta { font-size: 10.5px; color: var(--pp-text-dim); opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-pp-react-root] .pp-nav.compacta .pp-nav-footer { align-items: center; padding: 10px 0; }
+
+[data-pp-react-root] .pp-main { flex: 1 1 auto; min-width: 0; overflow: auto; padding: 26px 30px; }
+
+[data-pp-react-root] .pp-h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+[data-pp-react-root] .pp-sub { color: var(--pp-text-dim); font-size: 13px; margin: 0 0 22px; }
+
+/* ── Cabeçalho padrão de página (§7) ──────────────────────── */
+[data-pp-react-root] .pp-pagehead {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: var(--pp-space-4);
+  margin: 0 0 20px; flex-wrap: wrap;
+}
+[data-pp-react-root] .pp-pagehead-l { display: flex; align-items: center; gap: var(--pp-space-3); min-width: 0; }
+[data-pp-react-root] .pp-pagehead-ic {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 40px; height: 40px; border-radius: var(--pp-radius-md);
+  background: color-mix(in srgb, var(--pp-primary) 14%, transparent); color: var(--pp-primary);
+}
+[data-pp-react-root] .pp-pagehead-txt { min-width: 0; }
+[data-pp-react-root] .pp-pagehead-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+[data-pp-react-root] .pp-pagehead-title .pp-h1 { margin: 0; }
+[data-pp-react-root] .pp-pagehead-count {
+  background: var(--pp-surface-2); color: var(--pp-text-dim); font-size: 12px; font-weight: 700;
+  border-radius: 999px; padding: 2px 10px; border: 1px solid var(--pp-border);
+}
+[data-pp-react-root] .pp-pagehead-live { font-size: 11.5px; color: var(--pp-sync); font-weight: 600; }
+[data-pp-react-root] .pp-pagehead-r { display: flex; align-items: center; gap: var(--pp-space-2); flex-wrap: wrap; }
+
+[data-pp-react-root] .pp-card {
+  background: var(--pp-surface); border: 1px solid var(--pp-border); border-radius: 14px;
+  padding: 20px 22px; margin-bottom: 18px; max-width: 640px;
+}
+[data-pp-react-root] .pp-card h3 { margin: 0 0 14px; font-size: 14.5px; font-weight: 650; }
+
+[data-pp-react-root] .pp-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 13.5px; border-bottom: 1px dashed var(--pp-border); }
+[data-pp-react-root] .pp-row:last-child { border-bottom: 0; }
+[data-pp-react-root] .pp-row .pp-k { color: var(--pp-text-dim); }
+[data-pp-react-root] .pp-row .pp-v { font-weight: 600; }
+
+[data-pp-react-root] .pp-label { display: block; font-size: 12.5px; color: var(--pp-text-dim); margin: 0 0 6px; }
+[data-pp-react-root] .pp-input {
+  width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--pp-border);
+  background: var(--pp-bg); color: var(--pp-text); font-size: 13.5px; font-family: ui-monospace, monospace;
+}
+[data-pp-react-root] .pp-input:focus { outline: 2px solid var(--pp-primary); outline-offset: 1px; }
+
+[data-pp-react-root] .pp-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+[data-pp-react-root] .pp-btn {
+  border: 1px solid var(--pp-border); background: var(--pp-surface-2); color: var(--pp-text);
+  padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: filter .12s, background .12s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+[data-pp-react-root] .pp-btn:hover:not(:disabled) { filter: brightness(1.12); }
+[data-pp-react-root] .pp-btn:disabled { opacity: .5; cursor: not-allowed; }
+[data-pp-react-root] .pp-btn.pp-primary { background: var(--pp-primary); border-color: var(--pp-primary); color: var(--pp-primary-ct); }
+
+[data-pp-react-root] .pp-badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+}
+[data-pp-react-root] .pp-badge .pp-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+[data-pp-react-root] .pp-note {
+  font-size: 12.5px; color: var(--pp-text-dim); background: var(--pp-surface-2);
+  border-left: 3px solid var(--pp-warn); border-radius: 8px; padding: 10px 12px; margin-top: 8px; line-height: 1.5;
+}
+[data-pp-react-root] .pp-msg { margin-top: 12px; font-size: 13px; padding: 10px 12px; border-radius: 9px; }
+[data-pp-react-root] .pp-msg.ok  { background: color-mix(in srgb, var(--pp-ok) 16%, transparent); color: var(--pp-ok); }
+[data-pp-react-root] .pp-msg.err { background: color-mix(in srgb, var(--pp-danger) 16%, transparent); color: var(--pp-danger); }
+[data-pp-react-root] .pp-placeholder { color: var(--pp-text-dim); font-size: 13.5px; max-width: 560px; line-height: 1.6; }
+
+/* ── Dashboard: Big Numbers + funil ───────────────────────── */
+[data-pp-react-root] .pp-tiles {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px; margin-bottom: 18px; max-width: 900px;
+}
+[data-pp-react-root] .pp-tile {
+  background: var(--pp-surface); border: 1px solid var(--pp-border); border-radius: 12px;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
+}
+[data-pp-react-root] .pp-tile-n { font-size: 22px; font-weight: 750; line-height: 1.1; }
+[data-pp-react-root] .pp-tile-l { font-size: 11.5px; color: var(--pp-text-dim); text-transform: uppercase; letter-spacing: .4px; }
+
+[data-pp-react-root] .pp-funil { display: flex; flex-direction: column; gap: 8px; }
+[data-pp-react-root] .pp-funil-row { display: grid; grid-template-columns: 160px 1fr auto; align-items: center; gap: 12px; font-size: 13px; }
+[data-pp-react-root] .pp-funil-lbl { color: var(--pp-text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-pp-react-root] .pp-funil-bar { background: var(--pp-surface-2); border-radius: 999px; height: 10px; overflow: hidden; }
+[data-pp-react-root] .pp-funil-bar > span { display: block; height: 100%; background: var(--pp-primary); border-radius: 999px; }
+[data-pp-react-root] .pp-funil-val { font-weight: 600; white-space: nowrap; }
+
+/* ── Forecast (previsao): barra ponderado sobre total ─────── */
+[data-pp-react-root] .pp-fc-bar { position: relative; background: var(--pp-surface-2); border-radius: 999px; height: 12px; overflow: hidden; }
+[data-pp-react-root] .pp-fc-bar > .t { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; background: color-mix(in srgb, var(--pp-primary) 28%, transparent); }
+[data-pp-react-root] .pp-fc-bar > .p { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; background: var(--pp-ok); }
+
+/* ── Gráficos SVG (série temporal) ────────────────────────── */
+[data-pp-react-root] .pp-chart-wrap { margin: 4px 0 2px; }
+[data-pp-react-root] .pp-chart { width: 100%; height: 150px; display: block; }
+[data-pp-react-root] .pp-chart-x { display: flex; justify-content: space-between; font-size: 11px; color: var(--pp-text-dim); margin-top: 3px; }
+[data-pp-react-root] .pp-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+
+/* Segmented toggle (dia/semana/mês) */
+[data-pp-react-root] .pp-seg { display: inline-flex; border: 1px solid var(--pp-border); border-radius: 9px; overflow: hidden; }
+[data-pp-react-root] .pp-seg-b { border: 0; background: transparent; color: var(--pp-text-dim); padding: 6px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: background .12s, color .12s; }
+[data-pp-react-root] .pp-seg-b:hover { background: var(--pp-surface-2); color: var(--pp-text); }
+[data-pp-react-root] .pp-seg-b.is-active { background: var(--pp-primary); color: var(--pp-primary-ct); }
+[data-pp-react-root] .pp-seg-b + .pp-seg-b { border-left: 1px solid var(--pp-border); }
+
+/* Distribuição categórica horizontal */
+[data-pp-react-root] .pp-dist { display: flex; flex-direction: column; gap: 7px; }
+[data-pp-react-root] .pp-dist-row { display: grid; grid-template-columns: 100px 1fr auto; align-items: center; gap: 12px; font-size: 13px; }
+[data-pp-react-root] .pp-dist-lbl { color: var(--pp-text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-pp-react-root] .pp-dist-bar { background: var(--pp-surface-2); border-radius: 999px; height: 10px; overflow: hidden; }
+[data-pp-react-root] .pp-dist-bar > span { display: block; height: 100%; border-radius: 999px; }
+[data-pp-react-root] .pp-dist-val { font-weight: 600; white-space: nowrap; }
+
+/* ── Filtros avançados (#8) + Visões salvas (#9) ──────────── */
+[data-pp-react-root] .pp-colmenu.pp-colmenu-esq { left: 0; right: auto; }
+[data-pp-react-root] .pp-adv { display: flex; gap: 18px; flex-wrap: wrap; margin: -2px 0 16px; padding: 14px 16px; background: var(--pp-surface); border: 1px solid var(--pp-border); border-radius: 12px; }
+[data-pp-react-root] .pp-adv-item { display: flex; flex-direction: column; gap: 6px; }
+[data-pp-react-root] .pp-range { display: flex; align-items: center; gap: 8px; }
+[data-pp-react-root] .pp-range .pp-input { width: 138px; font-family: inherit; padding: 8px 10px; }
+[data-pp-react-root] .pp-range span { color: var(--pp-text-dim); }
+[data-pp-react-root] .pp-view-apply { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; color: var(--pp-text); cursor: pointer; font-size: 13px; padding: 3px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-pp-react-root] .pp-view-apply:hover { color: var(--pp-primary); }
+[data-pp-react-root] .pp-view-del { border: 0; background: transparent; color: var(--pp-text-dim); cursor: pointer; font-size: 12px; padding: 0 4px; }
+[data-pp-react-root] .pp-view-del:hover { color: var(--pp-danger); }
+
+/* ── Filtros + DataGrid ───────────────────────────────────── */
+[data-pp-react-root] .pp-filtros { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+[data-pp-react-root] .pp-select {
+  padding: 9px 11px; border-radius: 10px; border: 1px solid var(--pp-border);
+  background: var(--pp-bg); color: var(--pp-text); font-size: 13px; cursor: pointer;
+}
+[data-pp-react-root] .pp-select:focus { outline: 2px solid var(--pp-primary); outline-offset: 1px; }
+
+/* ── Seletor de colunas (popover) ─────────────────────────── */
+[data-pp-react-root] .pp-colmenu-bg { position: fixed; inset: 0; z-index: 40; }
+[data-pp-react-root] .pp-colmenu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 41; width: 250px;
+  background: var(--pp-surface); border: 1px solid var(--pp-border); border-radius: 10px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, .3); padding: 10px; max-height: 60vh; overflow-y: auto;
+}
+[data-pp-react-root] .pp-colmenu-h { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--pp-text-dim); margin: 2px 4px 8px; }
+[data-pp-react-root] .pp-colmenu-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 4px; border-radius: 7px; }
+[data-pp-react-root] .pp-colmenu-item:hover { background: var(--pp-surface-2); }
+[data-pp-react-root] .pp-colmenu-item label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; flex: 1; min-width: 0; }
+[data-pp-react-root] .pp-colmenu-item label.fixa { color: var(--pp-text-dim); cursor: default; }
+[data-pp-react-root] .pp-colmenu-item input[type="checkbox"] { accent-color: var(--pp-primary); }
+[data-pp-react-root] .pp-colmenu-mv { display: flex; gap: 2px; flex: 0 0 auto; }
+[data-pp-react-root] .pp-colmenu-mv button {
+  border: 1px solid var(--pp-border); background: var(--pp-surface-2); color: var(--pp-text);
+  width: 22px; height: 22px; border-radius: 5px; cursor: pointer; font-size: 9px; line-height: 1; padding: 0;
+}
+[data-pp-react-root] .pp-colmenu-mv button:disabled { opacity: .35; cursor: not-allowed; }
+
+[data-pp-react-root] .pp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+[data-pp-react-root] .pp-table thead th {
+  text-align: left; padding: 11px 14px; color: var(--pp-text-dim); font-weight: 600;
+  border-bottom: 1px solid var(--pp-border); white-space: nowrap; background: var(--pp-surface);
+  position: sticky; top: 0; user-select: none;
+}
+[data-pp-react-root] .pp-table thead th.ta-r, [data-pp-react-root] .pp-table td.ta-r { text-align: right; }
+[data-pp-react-root] .pp-table tbody td { padding: 10px 14px; border-bottom: 1px solid var(--pp-border); vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-pp-react-root] .pp-table thead th.pp-th { position: relative; overflow: hidden; }
+[data-pp-react-root] .pp-th-resize { position: absolute; top: 0; right: 0; width: 7px; height: 100%; cursor: col-resize; }
+[data-pp-react-root] .pp-th-resize:hover { background: var(--pp-primary); opacity: .5; }
+[data-pp-react-root] .pp-table tbody tr:hover td { background: var(--pp-surface-2); }
+[data-pp-react-root] .pp-table tbody tr:last-child td { border-bottom: 0; }
+[data-pp-react-root] .pp-td-title { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+[data-pp-react-root] .pp-td-sub { font-size: 11px; color: var(--pp-text-dim); font-weight: 400; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+[data-pp-react-root] .pp-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--pp-surface-2); }
+[data-pp-react-root] .pp-num { font-variant-numeric: tabular-nums; }
+[data-pp-react-root] .pp-td-empty { padding: 28px; text-align: center; color: var(--pp-text-dim); }
+
+[data-pp-react-root] .pp-pager { display: flex; align-items: center; gap: 14px; margin-top: 14px; justify-content: flex-end; }
+[data-pp-react-root] .pp-pager-info { font-size: 12.5px; color: var(--pp-text-dim); }
+
+/* ── Mini-gráfico de barras (sparkline) ───────────────────── */
+[data-pp-react-root] .pp-spark { display: flex; align-items: flex-end; gap: 2px; height: 96px; padding: 6px 0; overflow-x: auto; }
+[data-pp-react-root] .pp-spark-bar { flex: 1 0 4px; min-width: 3px; background: var(--pp-primary); border-radius: 2px 2px 0 0; opacity: .85; transition: opacity .12s; }
+[data-pp-react-root] .pp-spark-bar:hover { opacity: 1; }
+[data-pp-react-root] .pp-spark-bar.is-err { background: var(--pp-danger); }
+[data-pp-react-root] .pp-spark-lbls { display: flex; justify-content: space-between; font-size: 11px; color: var(--pp-text-dim); margin-top: 4px; }
+[data-pp-react-root] .pp-metric-h { font-size: 12px; color: var(--pp-text-dim); margin: 0 0 4px; display: flex; justify-content: space-between; }
+
+/* ── Toolbar única dos grids (Elevação visual — Fase 1 fatia 3) ── */
+[data-pp-react-root] .pp-toolbar {
+  display: flex; align-items: center; gap: var(--pp-space-3);
+  flex-wrap: wrap; margin-bottom: var(--pp-space-3);
+}
+[data-pp-react-root] .pp-toolbar-l { display: flex; align-items: center; gap: var(--pp-space-2); flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
+/* margin-left:auto mantém as ações coladas à direita mesmo quando a linha quebra */
+[data-pp-react-root] .pp-toolbar-r { display: flex; align-items: center; gap: var(--pp-space-1); flex: 0 0 auto; margin-left: auto; }
+[data-pp-react-root] .pp-toolbar-sep { width: 1px; height: 20px; background: var(--pp-border); margin: 0 var(--pp-space-1); }
+
+[data-pp-react-root] .pp-iconbtn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0; border-radius: var(--pp-radius-sm);
+  border: 1px solid var(--pp-border); background: var(--pp-surface-2); color: var(--pp-text);
+  cursor: pointer; transition: filter .12s, border-color .12s, color .12s;
+}
+[data-pp-react-root] .pp-iconbtn:hover:not(:disabled) { border-color: var(--pp-primary); color: var(--pp-primary); }
+[data-pp-react-root] .pp-iconbtn:disabled { opacity: .45; cursor: not-allowed; }
+[data-pp-react-root] .pp-iconbtn:focus-visible { outline: 2px solid var(--pp-primary); outline-offset: 1px; }
+[data-pp-react-root] .pp-iconbtn-n {
+  position: absolute; top: -5px; right: -5px; min-width: 15px; height: 15px; padding: 0 3px;
+  border-radius: 999px; background: var(--pp-primary); color: var(--pp-primary-ct);
+  font-size: 9.5px; font-weight: 700; line-height: 15px; text-align: center;
+}
+@keyframes pp-spin { to { transform: rotate(360deg); } }
+[data-pp-react-root] .pp-spin { animation: pp-spin .9s linear infinite; }
+
+/* Chips do filtro ativo */
+[data-pp-react-root] .pp-fchips { display: flex; align-items: center; gap: var(--pp-space-2); flex-wrap: wrap; margin: -2px 0 var(--pp-space-3); }
+[data-pp-react-root] .pp-fchip {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 320px;
+  padding: 4px 6px 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: color-mix(in srgb, var(--pp-primary) 14%, transparent);
+  color: var(--pp-text); border: 1px solid color-mix(in srgb, var(--pp-primary) 32%, transparent);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+[data-pp-react-root] .pp-fchip button {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 17px; height: 17px; padding: 0; border: 0; border-radius: 999px;
+  background: transparent; color: var(--pp-text-dim); cursor: pointer;
+}
+[data-pp-react-root] .pp-fchip button:hover { background: var(--pp-surface-2); color: var(--pp-danger); }
+[data-pp-react-root] .pp-fchip-limpar {
+  border: 0; background: transparent; color: var(--pp-text-dim); cursor: pointer;
+  font-size: 12px; font-weight: 600; text-decoration: underline; padding: 2px 4px;
+}
+[data-pp-react-root] .pp-fchip-limpar:hover { color: var(--pp-primary); }
+
+/* Densidade das linhas */
+[data-pp-react-root] .pp-table.pp-dens-compacta tbody td { padding: 5px 10px; }
+[data-pp-react-root] .pp-table.pp-dens-compacta thead th { padding: 7px 10px; }
+[data-pp-react-root] .pp-table.pp-dens-compacta { font-size: 12.5px; }
+[data-pp-react-root] .pp-table.pp-dens-confortavel tbody td { padding: 15px 16px; }
+[data-pp-react-root] .pp-table.pp-dens-confortavel thead th { padding: 14px 16px; }
+
+/* Tela cheia do grid (ancorada em .pp-shell, igual ao drawer — nunca cobre o shell do app) */
+[data-pp-react-root] .pp-gridwrap.is-fs {
+  position: absolute; inset: 0; z-index: 46;
+  background: var(--pp-bg); padding: var(--pp-space-5) var(--pp-space-6);
+  overflow: auto; display: flex; flex-direction: column;
+}
+[data-pp-react-root] .pp-gridwrap.is-fs .pp-gridcard { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+[data-pp-react-root] .pp-gridwrap.is-fs .pp-gridcard > div { flex: 1 1 auto; min-height: 0; overflow: auto; }
+
+/* ── Estados padronizados: skeleton / vazio / erro ────────── */
+@keyframes pp-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+[data-pp-react-root] .pp-skel {
+  display: block; height: 11px; border-radius: 6px;
+  background: linear-gradient(90deg,
+    var(--pp-surface-2) 0%,
+    color-mix(in srgb, var(--pp-text-dim) 22%, var(--pp-surface-2)) 50%,
+    var(--pp-surface-2) 100%);
+  background-size: 200% 100%; animation: pp-shimmer 1.3s ease-in-out infinite;
+}
+[data-pp-react-root] .pp-skel-tr td { padding-top: 12px; padding-bottom: 12px; }
+[data-pp-react-root] .pp-skel-tr:hover td { background: transparent; }
+[data-pp-react-root] .pp-skel-bloco { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+
+[data-pp-react-root] .pp-estado {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: var(--pp-space-2); padding: 40px 24px; color: var(--pp-text-dim);
+}
+[data-pp-react-root] .pp-estado-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: var(--pp-radius-lg); margin-bottom: 2px;
+  background: color-mix(in srgb, var(--pp-primary) 12%, transparent); color: var(--pp-primary);
+}
+[data-pp-react-root] .pp-estado-ic.is-err { background: color-mix(in srgb, var(--pp-danger) 14%, transparent); color: var(--pp-danger); }
+[data-pp-react-root] .pp-estado-t { font-size: 14px; font-weight: 650; color: var(--pp-text); }
+[data-pp-react-root] .pp-estado-d { font-size: 13px; max-width: 420px; line-height: 1.55; }
+[data-pp-react-root] .pp-estado-a { margin-top: var(--pp-space-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-pp-react-root] .pp-spin { animation: none; }
+  [data-pp-react-root] .pp-skel { animation: none; }
+}
+
+/* ── Grid Fase 2: zebra, seleção, colunas fixas, master-detail, totais ── */
+/* Fundo OPACO em toda célula: sem isto a coluna fixa deixa ver o conteúdo rolando por baixo. */
+[data-pp-react-root] .pp-table tbody td, [data-pp-react-root] .pp-table tfoot td { background: var(--pp-row); }
+[data-pp-react-root] .pp-table.pp-zebra tbody tr.is-par td { background: var(--pp-row-zebra); }
+[data-pp-react-root] .pp-table tbody tr:hover td { background: var(--pp-row-hover); }
+[data-pp-react-root] .pp-table tbody tr.is-sel td { background: var(--pp-row-sel); }
+[data-pp-react-root] .pp-table tbody tr.pp-skel-tr:hover td { background: var(--pp-row); }
+
+/* Colunas fixas (sticky).
+   ⚠️ Os 3 seletores longos são NECESSÁRIOS: `.pp-table thead th.pp-th` (alça de resize) declara
+   position:relative com especificidade maior que `.pp-table .pp-stk`. Sem empatar a especificidade,
+   o cabeçalho vira `relative` e o `left` da coluna fixa desloca o TH em vez de grudá-lo. */
+[data-pp-react-root] .pp-table .pp-stk,
+[data-pp-react-root] .pp-table thead th.pp-stk,
+[data-pp-react-root] .pp-table tbody td.pp-stk,
+[data-pp-react-root] .pp-table tfoot td.pp-stk { position: sticky; z-index: 2; }
+[data-pp-react-root] .pp-table thead th.pp-stk { z-index: 4; }        /* cabeçalho fixo vence a linha */
+[data-pp-react-root] .pp-table tfoot td.pp-stk { z-index: 3; }
+[data-pp-react-root] .pp-table .pp-stk-esq.is-edge { box-shadow: 6px 0 8px -6px rgba(0, 0, 0, .45); }
+[data-pp-react-root] .pp-table .pp-stk-dir.is-edge { box-shadow: -6px 0 8px -6px rgba(0, 0, 0, .45); }
+
+/* Coluna de seleção + expansor */
+[data-pp-react-root] .pp-table .pp-td-sel, [data-pp-react-root] .pp-table .pp-th-sel,
+[data-pp-react-root] .pp-table .pp-td-exp { text-align: center; padding-left: 0; padding-right: 0; overflow: visible; }
+[data-pp-react-root] .pp-table input[type="checkbox"] { accent-color: var(--pp-primary); cursor: pointer; }
+[data-pp-react-root] .pp-expbtn {
+  display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+  padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--pp-text-dim); cursor: pointer;
+}
+[data-pp-react-root] .pp-expbtn:hover { background: var(--pp-surface-2); color: var(--pp-primary); }
+
+/* Barra de seleção */
+[data-pp-react-root] .pp-selbar {
+  display: flex; align-items: center; gap: var(--pp-space-3); flex-wrap: wrap;
+  margin: -2px 0 var(--pp-space-3); padding: 9px 14px; border-radius: var(--pp-radius-md);
+  background: color-mix(in srgb, var(--pp-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pp-primary) 30%, transparent); font-size: 13px;
+}
+[data-pp-react-root] .pp-selbar .pp-btn { padding: 6px 12px; }
+
+/* Linha expansível (master-detail) */
+[data-pp-react-root] .pp-table tbody tr.pp-det-tr td { background: var(--pp-bg); padding: 0; }
+[data-pp-react-root] .pp-det {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--pp-space-3) var(--pp-space-5); padding: var(--pp-space-4) var(--pp-space-5);
+  border-left: 3px solid var(--pp-primary);
+}
+[data-pp-react-root] .pp-det-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+[data-pp-react-root] .pp-det-k { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--pp-text-dim); }
+[data-pp-react-root] .pp-det-v { font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+
+/* Totalizadores (rodapé fixo no fim da rolagem vertical) */
+[data-pp-react-root] .pp-table tfoot td {
+  position: sticky; bottom: 0; border-top: 1px solid var(--pp-border);
+  padding: 9px 14px; font-size: 12.5px; white-space: nowrap;
+}
+[data-pp-react-root] .pp-tot { font-weight: 700; font-variant-numeric: tabular-nums; }
+[data-pp-react-root] .pp-tot-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--pp-text-dim); }
+
+/* Tooltip de conteúdo truncado (Floating UI) */
+[data-pp-react-root] .pp-tip {
+  z-index: 60; max-width: 380px; padding: 7px 10px; border-radius: var(--pp-radius-sm);
+  background: var(--pp-surface); color: var(--pp-text); border: 1px solid var(--pp-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35); font-size: 12.5px; line-height: 1.45;
+  pointer-events: none; word-break: break-word;
+}
+
+/* ── Cards-resumo por entidade + avatares (Fase 3) ────────── */
+[data-pp-react-root] .pp-kpistrip {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: var(--pp-space-3); margin-bottom: var(--pp-space-4);
+}
+[data-pp-react-root] .pp-kpistrip.is-load { display: block; }
+[data-pp-react-root] .pp-kpi {
+  background: var(--pp-surface); border: 1px solid var(--pp-border);
+  border-radius: var(--pp-radius-md); padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 3px; min-width: 0;
+}
+[data-pp-react-root] .pp-kpi-n { font-size: 20px; font-weight: 750; line-height: 1.15; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+[data-pp-react-root] .pp-kpi-l { font-size: 11px; color: var(--pp-text-dim); text-transform: uppercase; letter-spacing: .4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+[data-pp-react-root] .pp-avatar {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  border-radius: 999px; color: #fff; font-weight: 700; letter-spacing: .3px; user-select: none;
+}
+[data-pp-react-root] .pp-celav { display: flex; align-items: center; gap: 9px; min-width: 0; }
+[data-pp-react-root] .pp-celav-txt { min-width: 0; }
+
+/* ── Abas dos drawers (Fase 3) ────────────────────────────── */
+[data-pp-react-root] .pp-abas {
+  display: flex; gap: 2px; flex-wrap: wrap; margin: 14px 0 4px;
+  border-bottom: 1px solid var(--pp-border); padding-bottom: 0;
+}
+[data-pp-react-root] .pp-aba {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 11px; border: 0; border-bottom: 2px solid transparent; background: transparent;
+  color: var(--pp-text-dim); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: color .12s, border-color .12s;
+}
+[data-pp-react-root] .pp-aba:hover { color: var(--pp-text); }
+[data-pp-react-root] .pp-aba.is-on { color: var(--pp-primary); border-bottom-color: var(--pp-primary); }
+[data-pp-react-root] .pp-aba:focus-visible { outline: 2px solid var(--pp-primary); outline-offset: -2px; border-radius: var(--pp-radius-sm); }
+[data-pp-react-root] .pp-aba-n {
+  min-width: 17px; padding: 0 5px; border-radius: 999px; background: var(--pp-surface-2);
+  font-size: 10.5px; font-weight: 700; line-height: 16px; text-align: center;
+}
+[data-pp-react-root] .pp-aba.is-on .pp-aba-n { background: color-mix(in srgb, var(--pp-primary) 22%, transparent); color: var(--pp-primary); }
+[data-pp-react-root] .pp-aba-painel { padding-top: 10px; }
+[data-pp-react-root] .pp-aba-painel > h4:first-child { margin-top: 6px; }
+
+/* KPIs do topo do drawer */
+[data-pp-react-root] .pp-drawer-kpis {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--pp-space-2); margin-bottom: var(--pp-space-4);
+}
+[data-pp-react-root] .pp-dkpi {
+  background: var(--pp-bg); border: 1px solid var(--pp-border); border-radius: var(--pp-radius-md);
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+[data-pp-react-root] .pp-dkpi-n { font-size: 17px; font-weight: 750; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-pp-react-root] .pp-dkpi-l { font-size: 10.5px; color: var(--pp-text-dim); text-transform: uppercase; letter-spacing: .4px; }
+
+/* ── Agenda (FullCalendar) — Fase 3 ───────────────────────── */
+[data-pp-react-root] .pp-seg-b { display: inline-flex; align-items: center; gap: 6px; }
+[data-pp-react-root] .pp-agenda { padding: 16px 18px; }
+[data-pp-react-root] .pp-agenda-legenda {
+  display: flex; align-items: center; gap: var(--pp-space-4); flex-wrap: wrap;
+  font-size: 12px; color: var(--pp-text-dim); margin-bottom: var(--pp-space-3);
+}
+[data-pp-react-root] .pp-agenda-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+[data-pp-react-root] .pp-agenda-meta { margin-left: auto; }
+[data-pp-react-root] .pp-ev-dot { width: 9px; height: 9px; border-radius: 999px; display: inline-block; }
+[data-pp-react-root] .pp-ev-dot.is-open { background: var(--pp-sync); }
+[data-pp-react-root] .pp-ev-dot.is-late { background: var(--pp-danger); }
+[data-pp-react-root] .pp-ev-dot.is-ok   { background: var(--pp-ok); }
+
+/* Tema do calendario pelos tokens do painel (o FullCalendar le variaveis --fc-*) */
+[data-pp-react-root] .pp-agenda .fc {
+  --fc-border-color: var(--pp-border);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: var(--pp-surface-2);
+  --fc-today-bg-color: color-mix(in srgb, var(--pp-primary) 12%, transparent);
+  --fc-now-indicator-color: var(--pp-danger);
+  --fc-button-bg-color: var(--pp-surface-2);
+  --fc-button-border-color: var(--pp-border);
+  --fc-button-text-color: var(--pp-text);
+  --fc-button-hover-bg-color: var(--pp-surface-2);
+  --fc-button-hover-border-color: var(--pp-primary);
+  --fc-button-active-bg-color: var(--pp-primary);
+  --fc-button-active-border-color: var(--pp-primary);
+  font-size: 13px; color: var(--pp-text);
+}
+/* pt-BR devolve "julho de 2026": capitalize deixaria "Julho De 2026" — só a 1ª letra sobe. */
+[data-pp-react-root] .pp-agenda .fc .fc-toolbar-title { font-size: 15px; font-weight: 700; display: inline-block; }
+[data-pp-react-root] .pp-agenda .fc .fc-toolbar-title::first-letter { text-transform: uppercase; }
+[data-pp-react-root] .pp-agenda .fc .fc-button { font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: var(--pp-radius-sm); box-shadow: none; }
+[data-pp-react-root] .pp-agenda .fc .fc-button:focus-visible { outline: 2px solid var(--pp-primary); outline-offset: 1px; }
+[data-pp-react-root] .pp-agenda .fc .fc-col-header-cell-cushion,
+[data-pp-react-root] .pp-agenda .fc .fc-daygrid-day-number { color: var(--pp-text-dim); text-decoration: none; font-size: 12px; }
+[data-pp-react-root] .pp-agenda .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { color: var(--pp-primary); font-weight: 700; }
+[data-pp-react-root] .pp-agenda .fc .fc-event { border: 0; padding: 1px 5px; border-radius: 5px; font-size: 11.5px; cursor: pointer; }
+[data-pp-react-root] .pp-agenda .fc .fc-event .fc-event-time { font-weight: 700; }
+[data-pp-react-root] .pp-agenda .fc-event.pp-ev-open { background: color-mix(in srgb, var(--pp-sync) 82%, transparent); color: #08121f; }
+[data-pp-react-root] .pp-agenda .fc-event.pp-ev-late { background: color-mix(in srgb, var(--pp-danger) 85%, transparent); color: #200608; }
+[data-pp-react-root] .pp-agenda .fc-event.pp-ev-ok   { background: color-mix(in srgb, var(--pp-ok) 78%, transparent); color: #04170f; }
+[data-pp-react-root] .pp-agenda .fc .fc-more-link { color: var(--pp-primary); font-size: 11px; font-weight: 600; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   FASE 4 — Visuais gerenciais (grid 12 col, molduras de gráfico ECharts,
+   big-numbers com variação/sparkline, filtros rápidos e agrupamento)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Grade de 12 colunas ──────────────────────────────────────
+   Telas gerenciais deixam de ser uma pilha de cartões de 640px e passam a
+   ocupar a largura toda (critério §12/§23). Cada filho declara quantas
+   colunas ocupa via .pp-c-N; abaixo de 1100px tudo vira 6 col e, no celular,
+   12 — sem media query por componente. */
+[data-pp-react-root] .pp-g12 {
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--pp-space-4); align-items: stretch; margin-bottom: var(--pp-space-4);
+}
+[data-pp-react-root] .pp-c-2  { grid-column: span 2; }
+[data-pp-react-root] .pp-c-3  { grid-column: span 3; }
+[data-pp-react-root] .pp-c-4  { grid-column: span 4; }
+[data-pp-react-root] .pp-c-5  { grid-column: span 5; }
+[data-pp-react-root] .pp-c-6  { grid-column: span 6; }
+[data-pp-react-root] .pp-c-7  { grid-column: span 7; }
+[data-pp-react-root] .pp-c-8  { grid-column: span 8; }
+[data-pp-react-root] .pp-c-12 { grid-column: span 12; }
+@media (max-width: 1100px) {
+  [data-pp-react-root] .pp-g12 > [class*="pp-c-"] { grid-column: span 6; }
+}
+@media (max-width: 720px) {
+  [data-pp-react-root] .pp-g12 > [class*="pp-c-"] { grid-column: span 12; }
+}
+/* Cartão dentro da grade não pode ficar preso ao max-width de 640px do .pp-card */
+[data-pp-react-root] .pp-g12 > .pp-card { max-width: none; margin-bottom: 0; height: 100%; }
+
+/* ── Moldura de gráfico (ChartCard) ───────────────────────────
+   ⚠️ TRAP: .pp-cc-body É `flex: 1 1 auto`. Com `flex: 1` (basis 0%) a altura
+   inline é sobreposta e o gráfico COLAPSA fora de um grid que estica. */
+[data-pp-react-root] .pp-cc {
+  display: flex; flex-direction: column; min-width: 0; height: 100%;
+  background: var(--pp-surface); border: 1px solid var(--pp-border);
+  border-radius: var(--pp-radius-lg); padding: 16px 18px 14px;
+}
+[data-pp-react-root] .pp-cc-head { display: flex; align-items: flex-start; gap: var(--pp-space-3); margin-bottom: 10px; }
+[data-pp-react-root] .pp-cc-tit { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+[data-pp-react-root] .pp-cc-tit-txt { font-size: 14px; font-weight: 650; line-height: 1.25; }
+[data-pp-react-root] .pp-cc-sub { font-size: 11.5px; color: var(--pp-text-dim); }
+[data-pp-react-root] .pp-cc-tools { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+[data-pp-react-root] .pp-cc-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: var(--pp-radius-sm);
+  border: 1px solid var(--pp-border); background: transparent; color: var(--pp-text-dim); cursor: pointer;
+  transition: color .12s, background .12s, border-color .12s;
+}
+[data-pp-react-root] .pp-cc-btn:hover { color: var(--pp-text); background: var(--pp-surface-2); border-color: var(--pp-primary); }
+[data-pp-react-root] .pp-cc-btn:focus-visible { outline: 2px solid var(--pp-primary); outline-offset: 1px; }
+[data-pp-react-root] .pp-cc-body { position: relative; flex: 1 1 auto; min-height: 0; min-width: 0; }
+[data-pp-react-root] .pp-cc-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--pp-surface) 78%, transparent); border-radius: var(--pp-radius-md);
+}
+[data-pp-react-root] .pp-cc-load, [data-pp-react-root] .pp-cc-vazio { font-size: 12.5px; color: var(--pp-text-dim); text-align: center; padding: 0 16px; }
+[data-pp-react-root] .pp-cc-rodape { margin: 10px 0 0; font-size: 11.5px; color: var(--pp-text-dim); line-height: 1.5; }
+/* Tela cheia: ancorada no .pp-shell (não no viewport) para respeitar o app-shell */
+[data-pp-react-root] .pp-cc.is-fs {
+  position: absolute; inset: 12px; z-index: 60; height: auto;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .42);
+}
+[data-pp-react-root] .pp-ec-wrap { width: 100%; height: 100%; min-height: 0; }
+[data-pp-react-root] .pp-ec-canvas { width: 100%; height: 100%; min-height: 0; }
+
+/* ── Big number rico (variação + sparkline + drill-down) ──────── */
+[data-pp-react-root] .pp-bn {
+  display: flex; flex-direction: column; gap: 6px; height: 100%; text-align: left;
+  background: var(--pp-surface); border: 1px solid var(--pp-border);
+  border-radius: var(--pp-radius-lg); padding: 14px 16px; color: inherit; font: inherit;
+}
+[data-pp-react-root] button.pp-bn { cursor: pointer; transition: border-color .12s, background .12s; }
+[data-pp-react-root] button.pp-bn:hover { border-color: var(--pp-primary); background: var(--pp-row-hover); }
+[data-pp-react-root] button.pp-bn:focus-visible { outline: 2px solid var(--pp-primary); outline-offset: 1px; }
+[data-pp-react-root] .pp-bn-l { font-size: 11px; color: var(--pp-text-dim); text-transform: uppercase; letter-spacing: .4px; display: flex; align-items: center; gap: 5px; }
+[data-pp-react-root] .pp-bn-n { font-size: 23px; font-weight: 750; line-height: 1.1; letter-spacing: -.4px; }
+[data-pp-react-root] .pp-bn-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: auto; }
+[data-pp-react-root] .pp-bn-spark { flex: 1 1 auto; height: 28px; min-width: 0; display: block; }
+[data-pp-react-root] .pp-delta {
+  display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto;
+  font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+}
+[data-pp-react-root] .pp-delta.sobe  { color: var(--pp-ok);      background: color-mix(in srgb, var(--pp-ok) 15%, transparent); }
+[data-pp-react-root] .pp-delta.desce { color: var(--pp-danger);  background: color-mix(in srgb, var(--pp-danger) 15%, transparent); }
+[data-pp-react-root] .pp-delta.igual { color: var(--pp-text-dim); background: var(--pp-surface-2); }
+[data-pp-react-root] .pp-bn-nota { font-size: 11px; color: var(--pp-text-dim); }
+
+/* ── Filtros rápidos (chips clicáveis) ────────────────────────── */
+[data-pp-react-root] .pp-quick { display: flex; flex-wrap: wrap; gap: var(--pp-space-2); align-items: center; }
+[data-pp-react-root] .pp-quick-b {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px;
+  border: 1px solid var(--pp-border); background: var(--pp-surface-2); color: var(--pp-text-dim);
+  font-size: 12.5px; font-weight: 600; cursor: pointer; transition: color .12s, background .12s, border-color .12s;
+}
+[data-pp-react-root] .pp-quick-b:hover { color: var(--pp-text); border-color: var(--pp-primary); }
+[data-pp-react-root] .pp-quick-b:focus-visible { outline: 2px solid var(--pp-primary); outline-offset: 1px; }
+[data-pp-react-root] .pp-quick-b.is-active { background: var(--pp-primary); border-color: var(--pp-primary); color: var(--pp-primary-ct); }
+[data-pp-react-root] .pp-quick-b .n { font-variant-numeric: tabular-nums; opacity: .82; }
+[data-pp-react-root] .pp-quick-b .pp-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+
+/* ── Lista agrupada (por dono / funil / etapa) ────────────────── */
+[data-pp-react-root] .pp-grp { display: flex; flex-direction: column; gap: 9px; }
+[data-pp-react-root] .pp-grp-row { display: grid; grid-template-columns: minmax(90px, 190px) 1fr auto; align-items: center; gap: 12px; font-size: 13px; }
+[data-pp-react-root] .pp-grp-lbl { color: var(--pp-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-pp-react-root] .pp-grp-bar { background: var(--pp-surface-2); border-radius: 999px; height: 9px; overflow: hidden; }
+[data-pp-react-root] .pp-grp-bar > span { display: block; height: 100%; border-radius: 999px; background: var(--pp-primary); }
+[data-pp-react-root] .pp-grp-val { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--pp-text-dim); }
+
+/* ── Etapas do funil: conversão e gargalo ─────────────────────── */
+[data-pp-react-root] .pp-etapas { display: flex; flex-direction: column; gap: 2px; }
+[data-pp-react-root] .pp-etapa {
+  display: grid; grid-template-columns: minmax(110px, 1fr) 116px 88px 100px; gap: 10px;
+  align-items: center; padding: 9px 10px; border-radius: var(--pp-radius-sm); font-size: 13px;
+}
+[data-pp-react-root] .pp-etapa.cab { font-size: 11px; color: var(--pp-text-dim); text-transform: uppercase; letter-spacing: .4px; padding-bottom: 4px; }
+[data-pp-react-root] .pp-etapa:not(.cab):nth-child(even) { background: var(--pp-row-zebra); }
+[data-pp-react-root] .pp-etapa.is-gargalo { background: color-mix(in srgb, var(--pp-danger) 12%, transparent); box-shadow: inset 3px 0 0 var(--pp-danger); }
+[data-pp-react-root] .pp-etapa .nm { display: flex; align-items: center; gap: 7px; min-width: 0; }
+[data-pp-react-root] .pp-etapa .nm > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-pp-react-root] .pp-etapa .num { text-align: right; font-variant-numeric: tabular-nums; }
+[data-pp-react-root] .pp-etapa .tag {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700;
+  padding: 1px 7px; border-radius: 999px; flex: 0 0 auto;
+  color: var(--pp-danger); background: color-mix(in srgb, var(--pp-danger) 16%, transparent);
+}
+[data-pp-react-root] .pp-etapa .ord {
+  flex: 0 0 auto; width: 19px; height: 19px; border-radius: 50%; display: inline-flex;
+  align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700;
+  background: var(--pp-surface-2); color: var(--pp-text-dim);
+}
+
+/* Respeita quem pediu menos movimento (§19/§20 do briefing) */
+@media (prefers-reduced-motion: reduce) {
+  [data-pp-react-root] .pp-cc-btn, [data-pp-react-root] .pp-quick-b,
+  [data-pp-react-root] button.pp-bn { transition: none; }
+}
+
+/* Tabela dentro de cartão estreito da grade de 12 col: rola só ela, nunca a página. */
+[data-pp-react-root] .pp-tabela-rolavel { overflow-x: auto; margin: 0 -2px; }
+[data-pp-react-root] .pp-tabela-rolavel > .pp-table { min-width: 380px; }
+/* `table-layout: auto` deixa a 1ª coluna crescer com o texto de apoio e empurra as
+   colunas numéricas para fora do cartão. Com `fixed`, as larguras declaradas mandam e
+   o texto longo trunca (o .pp-td-sub já tem ellipsis). */
+[data-pp-react-root] .pp-table.pp-fixa { table-layout: fixed; }
+[data-pp-react-root] .pp-table.pp-fixa th.pp-col-num { width: 86px; }

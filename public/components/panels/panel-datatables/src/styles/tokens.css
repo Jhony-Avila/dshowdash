@@ -1,0 +1,121 @@
+/* tokens.css — camada semântica do DataTables sobre os tokens do app-shell.
+   @version 2.0.0  @updated 2026-07-20 (Elevação visual: mais cor, elevação,
+   gradientes, linhas de grid — sem tema paralelo; tudo ancorado no shell.)
+
+   REGRA: o DataTables NÃO define cor própria de superfície/texto. Cada token
+   aponta para o do shell, com fallback. O tema claro/escuro do Dshow Dash
+   governa o painel. As cores SEMÂNTICAS de status são próprias (domínio). */
+
+[data-dt-react-root] {
+  /* ── superfície e texto: do shell ── */
+  --dt-bg-page:          var(--bg-primary, transparent);
+  --dt-bg-surface:       var(--bg-card, rgba(255, 255, 255, .025));
+  --dt-bg-surface-hover: var(--bg-card-hover, rgba(255, 255, 255, .05));
+  --dt-bg-elevated:      var(--bg-secondary, rgba(255, 255, 255, .04));
+  --dt-bg-canvas:        var(--bg-primary, rgba(255, 255, 255, .015));
+  /* superfície OPACA p/ overlays fixos (drawer/modal): --bg-card é translúcido
+     e vaza o fundo num position:fixed; --bg-secondary é sólido nos 2 temas. */
+  --dt-bg-overlay:       var(--bg-secondary, #111113);
+  --dt-border:           var(--border-color, rgba(255, 255, 255, .09));
+  --dt-border-strong:    var(--border-color-strong, rgba(255, 255, 255, .18));
+  --dt-text-primary:     var(--text-primary, rgba(255, 255, 255, .92));
+  --dt-text-secondary:   var(--text-secondary, rgba(255, 255, 255, .68));
+  --dt-text-muted:       var(--text-muted, rgba(255, 255, 255, .45));
+  --dt-primary:          var(--accent-primary, #7c3aed);
+  --dt-primary-hover:    var(--accent-primary-hover, #8b5cf6);
+
+  /* ── status: semântica do domínio ── */
+  --dt-success:  #22c55e;  --dt-success-bg:  rgba(34, 197, 94, .12);
+  --dt-warning:  #eab308;  --dt-warning-bg:  rgba(234, 179, 8, .12);
+  --dt-danger:   #ef4444;  --dt-danger-bg:   rgba(239, 68, 68, .12);
+                            --dt-danger-border: rgba(239, 68, 68, .35);
+  --dt-info:     #3b82f6;  --dt-info-bg:     rgba(59, 130, 246, .12);
+  --dt-neutral:  #6b7280;  --dt-neutral-bg:  rgba(107, 114, 128, .12);
+  --dt-slow:     #f97316;  --dt-slow-bg:     rgba(249, 115, 22, .12);
+  --dt-cred:     #ec4899;  --dt-cred-bg:     rgba(236, 72, 153, .12);
+
+  /* ── elevação / superfícies de grid (Elevação visual) ── */
+  --dt-row-zebra:    rgba(255, 255, 255, .022);   /* linha par: cinza muito suave */
+  --dt-row-hover:    rgba(124, 58, 237, .09);     /* hover com tom do primário */
+  --dt-row-selected: rgba(124, 58, 237, .16);     /* linha selecionada */
+  --dt-head-bg:      var(--bg-secondary, rgba(255, 255, 255, .035));
+  --dt-glass:        rgba(255, 255, 255, .04);
+
+  /* ── gradientes de acento (cards ricos, header, ícones) ── */
+  --dt-grad-primary: linear-gradient(135deg, color-mix(in srgb, var(--dt-primary) 22%, transparent), color-mix(in srgb, var(--dt-info) 12%, transparent));
+  --dt-grad-ok:      linear-gradient(135deg, color-mix(in srgb, var(--dt-success) 24%, transparent), transparent);
+  --dt-grad-warn:    linear-gradient(135deg, color-mix(in srgb, var(--dt-warning) 26%, transparent), transparent);
+  --dt-grad-alert:   linear-gradient(135deg, color-mix(in srgb, var(--dt-danger) 24%, transparent), transparent);
+
+  /* ── geometria ── */
+  --dt-radius-sm: 6px;  --dt-radius-md: 10px;  --dt-radius-lg: 14px;  --dt-radius-xl: 20px;
+  --dt-space-1: 4px;  --dt-space-2: 8px;   --dt-space-3: 12px;
+  --dt-space-4: 16px; --dt-space-5: 24px;  --dt-space-6: 32px;  --dt-space-7: 48px;
+
+  /* ── elevação: 3 níveis + glow do primário ── */
+  --dt-shadow-sm:   0 1px 2px rgba(0, 0, 0, .16);
+  --dt-shadow-md:   0 4px 14px rgba(0, 0, 0, .22);
+  --dt-shadow-lg:   0 12px 34px rgba(0, 0, 0, .30);
+  --dt-shadow-glow: 0 0 0 1px color-mix(in srgb, var(--dt-primary) 30%, transparent), 0 8px 26px color-mix(in srgb, var(--dt-primary) 18%, transparent);
+
+  /* ── tipografia: mono para DADOS técnicos ── */
+  --dt-font: inherit;
+  --dt-font-mono: ui-monospace, "JetBrains Mono", "IBM Plex Mono", "Fira Code", monospace;
+
+  /* --dt-z-sticky: header interno FIXO ao rolar. Fica ACIMA do conteúdo e
+     ABAIXO de drawer/modal/command-palette (que usam z 9000/9500). */
+  --dt-z-sticky: 30;
+  --dt-z-drawer: 40; --dt-z-modal: 50; --dt-z-tooltip: 60;
+}
+
+/* Tema claro: só o que precisa inverter. */
+:root[data-theme="light"] [data-dt-react-root] {
+  --dt-bg-surface:       var(--bg-card, #ffffff);
+  --dt-bg-surface-hover: var(--bg-card-hover, #f1f3f7);
+  --dt-bg-elevated:      var(--bg-secondary, #f6f7f9);
+  --dt-bg-canvas:        var(--bg-primary, #fbfbfd);
+  --dt-bg-overlay:       var(--bg-secondary, #f4f4f5);
+  --dt-border:           var(--border-color, rgba(0, 0, 0, .10));
+  --dt-border-strong:    var(--border-color-strong, rgba(0, 0, 0, .20));
+
+  --dt-success-bg: rgba(34, 197, 94, .13);
+  --dt-warning-bg: rgba(234, 179, 8, .16);
+  --dt-danger-bg:  rgba(239, 68, 68, .11);
+  --dt-info-bg:    rgba(59, 130, 246, .11);
+  --dt-neutral-bg: rgba(107, 114, 128, .11);
+  --dt-slow-bg:    rgba(249, 115, 22, .13);
+  --dt-cred-bg:    rgba(236, 72, 153, .11);
+
+  --dt-row-zebra:    rgba(15, 23, 42, .028);
+  --dt-row-hover:    rgba(124, 58, 237, .07);
+  --dt-row-selected: rgba(124, 58, 237, .12);
+  --dt-head-bg:      var(--bg-secondary, #f4f6fa);
+  --dt-glass:        rgba(255, 255, 255, .55);
+
+  --dt-shadow-sm:   0 1px 2px rgba(15, 23, 42, .06);
+  --dt-shadow-md:   0 4px 14px rgba(15, 23, 42, .10);
+  --dt-shadow-lg:   0 14px 34px rgba(15, 23, 42, .14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-dt-react-root] * {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ── HEADER STICKY: liberar o caminho até o scroller real ──────────────────
+   O container-main do shell rola no <main.dsd-shell__region--main>, mas os
+   wrappers .dsd-container (overflow:hidden) e .dsd-container__body (overflow:
+   auto) ficam ENTRE o header e esse <main> SEM rolar (a altura não é limitada
+   ali — o conteúdo cresce e o scroll "cai" para o <main>). Um overflow != visible
+   que não rola APRISIONA o position:sticky (ele gruda no ancestral rolável mais
+   próximo, que é inerte → nunca fixa). Enquanto o painel DataTables está montado,
+   neutralizamos esse clip SÓ nesses dois wrappers, via :has([data-dt-react-root]),
+   deixando o sticky do .topoFixo alcançar o <main> (o scroller de verdade).
+   ESCOPADO: quando o painel desmonta, o [data-dt-react-root] some, o seletor
+   deixa de casar e o container-main volta 100% ao comportamento original — nenhum
+   outro painel é afetado. Degrada com elegância: browser sem :has() apenas não
+   fixa (comportamento atual), sem quebrar nada. */
+.dsd-container:has([data-dt-react-root]) { overflow: visible; }
+.dsd-container:has([data-dt-react-root]) > .dsd-container__body { overflow: visible; }

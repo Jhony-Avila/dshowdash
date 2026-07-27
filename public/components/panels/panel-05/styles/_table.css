@@ -1,0 +1,10 @@
+/* Panel-05 Table - Master
+ * @version 7.1.0-MODULAR
+ * Modularizado em 5 partials
+ */
+
+@import 'table/table.index.css';
+@import '_table.body.css';
+@import '_table.cells.css';
+@import '_table.status.css';
+@import '_table.pagination.css';

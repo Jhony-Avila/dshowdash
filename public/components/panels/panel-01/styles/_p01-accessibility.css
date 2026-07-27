@@ -1,0 +1,11 @@
+/* Panel-01 Accessibility */
+.p01-row:focus { outline: 2px solid var(--accent-color, #6366f1); outline-offset: -2px; }
+.p01-btn:focus-visible, .p01-action-btn:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+.p01-search-input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .p01-toast, .p01-drawer, .p01-context-menu { transition: none !important; }
+  .p01-skeleton::after { animation: none !important; }
+}
+
+.p01-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }

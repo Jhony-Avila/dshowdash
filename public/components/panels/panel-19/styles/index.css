@@ -1,0 +1,13 @@
+/* panel-19 Gráfico Taxa de Sucesso - Master Styles */
+/* @version 5.0.0-ENTERPRISE-DASHBOARD */
+
+@import url('./tokens.css');
+@import url('./panel-19.base.css');
+@import url('./panel-19.dashboard.css');
+@import url('./panel-19.header.css');
+@import url('./panel-19.states.css');
+@import url('./panel-19.drawer.css');
+@import url('./panel-19.toast.css');
+@import url('./panel-19.responsive.css');
+@import url('./panel-19.accessibility.css');
+@import url('./panel-19.print.css');

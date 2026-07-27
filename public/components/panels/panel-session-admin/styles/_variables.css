@@ -1,0 +1,42 @@
+/* Panel Session Admin - Variables v2.2.0
+   @version 2.2.0-ENTERPRISE
+   Design tokens e variáveis base */
+
+.psa {
+  --psa-bg-primary: #0f0f1a;
+  --psa-bg-secondary: #1a1a2e;
+  --psa-bg-card: rgba(26, 26, 46, 0.8);
+  --psa-bg-hover: rgba(255, 255, 255, 0.05);
+  --psa-bg-input: rgba(0, 0, 0, 0.3);
+  
+  --psa-border: rgba(255, 255, 255, 0.08);
+  --psa-border-hover: rgba(255, 255, 255, 0.15);
+  --psa-border-focus: #667eea;
+  
+  --psa-text-primary: #ffffff;
+  --psa-text-secondary: #a0aec0;
+  --psa-text-muted: #64748b;
+  
+  --psa-accent: #667eea;
+  --psa-accent-hover: #5a67d8;
+  --psa-accent-glow: rgba(102, 126, 234, 0.3);
+  
+  --psa-success: #10b981;
+  --psa-warning: #f59e0b;
+  --psa-danger: #ef4444;
+  --psa-info: #06b6d4;
+  
+  --psa-radius-sm: 6px;
+  --psa-radius-md: 10px;
+  --psa-radius-lg: 14px;
+  
+  --psa-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--psa-bg-primary);
+  color: var(--psa-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}

@@ -1,0 +1,17 @@
+{
+  "id": "panel-15",
+  "name": "Overview Métricas",
+  "description": "Visão geral com métricas principais do sistema",
+  "category": "monitoring",
+  "refreshInterval": 60000,
+  "enabled": true,
+  "version": "8.1.0-ENTERPRISE",
+  "architecture": "autocontained-modular",
+  "author": "DShow Dashboard",
+  "created": "2025-11-08",
+  "updated": "2025-12-25",
+  "dependencies": [],
+  "permissions": ["read"],
+  "features": ["autocontained", "idempotent", "resilient", "observable", "scalable", "self-healing", "keyboard-nav", "export-csv", "url-state"],
+  "telemetry": { "enabled": true, "events": ["lifecycle:mounted", "lifecycle:unmounted", "data:loaded", "data:error", "mode:degraded"] }
+}

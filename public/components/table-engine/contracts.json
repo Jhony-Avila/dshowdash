@@ -1,0 +1,37 @@
+{
+  "name": "table-engine",
+  "version": "1.0.0-ENTERPRISE",
+  "description": "Enterprise Table Engine - Autocontido, Desacoplado, Reutilizável",
+  "exports": {
+    "TableEngine": "Classe principal",
+    "create": "Factory function",
+    "VERSION": "Versão do módulo",
+    "MODULE_ID": "Identificador único"
+  },
+  "events": {
+    "emits": [
+      "table-engine:ready",
+      "table-engine:data-changed",
+      "table-engine:selection-changed",
+      "table-engine:row-expanded",
+      "table-engine:row-collapsed",
+      "table-engine:sorted",
+      "table-engine:filtered",
+      "table-engine:exported",
+      "table-engine:error"
+    ],
+    "listens": []
+  },
+  "dependencies": {
+    "required": [],
+    "optional": ["EventBus", "Logger"]
+  },
+  "options": {
+    "cssPrefix": "string (default: 'tbl-')",
+    "columns": "array of column definitions",
+    "data": "array of row objects",
+    "formatters": "object with formatter functions",
+    "events": "EventBus instance",
+    "telemetry": "boolean (default: true)"
+  }
+}

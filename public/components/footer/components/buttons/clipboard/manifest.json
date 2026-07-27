@@ -1,0 +1,10 @@
+{
+  "id": "clipboard",
+  "area": "footer",
+  "label": "Relatórios",
+  "icon": "clipboard",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

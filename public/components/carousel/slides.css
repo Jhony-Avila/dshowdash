@@ -1,0 +1,11 @@
+/**
+ * Carousel - Slide Styles
+ * @version 2.3.0-MODULAR
+ * @description Agregador modular
+ */
+
+@import url('./slides.slide-01.css');
+@import url('./slides.slide-02.css');
+@import url('./slides.slide-03.css');
+@import url('./slides.slide-04.css');
+@import url('./slides.animations.css');

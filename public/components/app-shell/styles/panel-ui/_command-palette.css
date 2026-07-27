@@ -1,0 +1,65 @@
+/* Panel UI - Command Palette
+ * @module _command-palette.css
+ * @version 1.0.0
+ * @description Estilos específicos do Command Palette
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-command-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.dsd-ui-command-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-md);
+  padding: var(--ui-space-md);
+  cursor: pointer;
+  transition: background var(--ui-transition-fast);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.dsd-ui-command-item:last-child {
+  border-bottom: none;
+}
+
+.dsd-ui-command-item:hover,
+.dsd-ui-command-item.selected {
+  background: var(--ui-bg-hover);
+}
+
+.dsd-ui-command-item__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--ui-text-muted);
+  flex-shrink: 0;
+}
+
+.dsd-ui-command-item__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dsd-ui-command-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dsd-ui-command-item__title {
+  color: var(--ui-text-primary);
+  font-size: var(--ui-text-sm);
+}
+
+.dsd-ui-command-item__desc {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-text-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dsd-ui-command-item__shortcut {
+  display: flex;
+  gap: 4px;
+}

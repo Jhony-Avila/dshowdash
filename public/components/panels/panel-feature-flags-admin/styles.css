@@ -1,0 +1,5 @@
+/* panel-feature-flags-admin/styles.css */
+/* @version 2.0.0-AAA-MODULAR */
+/* Agora importa os partials modulares */
+
+@import url('./styles/main.css');

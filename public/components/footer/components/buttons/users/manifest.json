@@ -1,0 +1,10 @@
+{
+  "id": "users",
+  "area": "footer",
+  "label": "Usuários",
+  "icon": "users",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

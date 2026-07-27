@@ -1,0 +1,23 @@
+.raiz { display: flex; align-items: center; gap: var(--dt-space-2); flex-wrap: wrap; }
+
+.buscaForm { position: relative; display: inline-flex; align-items: center; }
+.lupa { position: absolute; left: 10px; color: var(--dt-text-muted); pointer-events: none; }
+.busca {
+  width: 240px; max-width: 100%; padding: 8px 11px 8px 32px;
+  border: 1px solid var(--dt-border); border-radius: var(--dt-radius-sm);
+  background: var(--dt-bg-surface); color: var(--dt-text-primary); font: inherit; font-size: 12.5px;
+  transition: border-color .14s, box-shadow .14s, width .18s;
+}
+.busca:focus { outline: none; border-color: var(--dt-primary); width: 280px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--dt-primary) 18%, transparent); }
+
+.chip, .chipAtivo {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px;
+  border: 1px solid var(--dt-border); border-radius: 999px;
+  background: var(--dt-bg-surface); color: var(--dt-text-secondary);
+  font: inherit; font-size: 12.5px; cursor: pointer; transition: all .14s;
+}
+.chip:hover { border-color: var(--dt-primary); color: var(--dt-text-primary); }
+.chipAtivo { background: var(--dt-primary); border-color: var(--dt-primary); color: #fff; box-shadow: var(--dt-shadow-sm); }
+
+.limpar { display: inline-flex; align-items: center; gap: 5px; padding: 7px 11px; border: 0; background: transparent; color: var(--dt-text-muted); font: inherit; font-size: 12px; cursor: pointer; }
+.limpar:hover { color: var(--dt-danger); }

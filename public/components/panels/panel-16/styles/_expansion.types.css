@@ -1,0 +1,71 @@
+/* Panel-16 Expansion - Column Types & Responsive */
+/* @version 6.2.1-ENTERPRISE */
+
+/* Column Type Badges */
+.p16-column-type-badge {
+  font-size: 0.5rem;
+  padding: 1px 4px;
+  background: var(--p16-bg-surface);
+  border: 1px solid var(--p16-border-subtle);
+  border-radius: var(--p16-radius-xs);
+  color: var(--p16-text-dim);
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+.p16-th-type-currency,
+.p16-cell-type-currency {
+  font-variant-numeric: tabular-nums;
+}
+
+.p16-th-type-document .p16-column-type-badge,
+.p16-cell-type-document {
+  font-family: var(--p16-font-mono);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .p16-expansion-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .p16-scroll-mode-toggle {
+    display: none;
+  }
+  
+  .p16-filter-chips {
+    padding: var(--p16-space-xs) var(--p16-space-sm);
+  }
+}
+
+@media (max-width: 600px) {
+  .p16-expansion-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .p16-expansion-content {
+    padding: var(--p16-space-md);
+  }
+  
+  .p16-expansion-actions {
+    flex-wrap: wrap;
+  }
+  
+  .p16-btn-sm {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .p16-sticky-wrapper,
+  .p16-infinite-scroll {
+    max-height: calc(100vh - 300px);
+  }
+  
+  .p16-filter-chips {
+    gap: var(--p16-space-xs);
+  }
+  
+  .p16-chip {
+    font-size: var(--p16-font-2xs);
+  }
+}

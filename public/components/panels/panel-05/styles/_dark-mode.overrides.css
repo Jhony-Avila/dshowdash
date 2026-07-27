@@ -1,0 +1,154 @@
+/* Panel-05 Dark Mode - Overrides
+ * @version 7.0.0-MODULAR
+ * Component Overrides
+ */
+
+[data-theme="dark"] .p05-panel {
+    background: var(--p05-bg-primary);
+    color: var(--p05-text-primary);
+}
+
+[data-theme="dark"] .p05-header {
+    background: var(--p05-bg-surface);
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-card {
+    background: var(--p05-bg-surface);
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-card:hover {
+    background: var(--p05-bg-elevated);
+    border-color: var(--p05-border-strong);
+}
+
+[data-theme="dark"] .p05-kpi-card {
+    background: var(--p05-bg-surface);
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-table {
+    background: var(--p05-bg-surface);
+}
+
+[data-theme="dark"] .p05-table-header {
+    background: var(--p05-bg-surface-alt);
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-table-row {
+    border-color: var(--p05-border-subtle);
+}
+
+[data-theme="dark"] .p05-table-row:hover {
+    background: var(--p05-bg-hover);
+}
+
+[data-theme="dark"] .p05-table-row[aria-selected="true"] {
+    background: var(--p05-bg-active);
+}
+
+[data-theme="dark"] .p05-sidebar,
+[data-theme="dark"] .p05-filters {
+    background: var(--p05-bg-surface);
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-input,
+[data-theme="dark"] .p05-select {
+    background: var(--p05-bg-surface-alt);
+    border-color: var(--p05-border-default);
+    color: var(--p05-text-primary);
+}
+
+[data-theme="dark"] .p05-input:focus,
+[data-theme="dark"] .p05-select:focus {
+    border-color: var(--p05-primary);
+    background: var(--p05-bg-surface);
+}
+
+[data-theme="dark"] .p05-input::placeholder {
+    color: var(--p05-text-muted);
+}
+
+[data-theme="dark"] .p05-btn {
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-btn-ghost {
+    color: var(--p05-text-secondary);
+}
+
+[data-theme="dark"] .p05-btn-ghost:hover {
+    background: var(--p05-bg-hover);
+    color: var(--p05-text-primary);
+}
+
+[data-theme="dark"] .p05-dropdown-menu {
+    background: var(--p05-bg-surface);
+    border-color: var(--p05-border-default);
+    box-shadow: var(--p05-shadow-lg);
+}
+
+[data-theme="dark"] .p05-dropdown-item:hover {
+    background: var(--p05-bg-hover);
+}
+
+[data-theme="dark"] .p05-dropdown-header {
+    color: var(--p05-text-muted);
+    border-color: var(--p05-border-subtle);
+}
+
+[data-theme="dark"] .p05-modal-content {
+    background: var(--p05-bg-surface);
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-modal-header {
+    border-color: var(--p05-border-subtle);
+}
+
+[data-theme="dark"] .p05-modal-footer {
+    background: var(--p05-bg-surface-alt);
+    border-color: var(--p05-border-subtle);
+}
+
+[data-theme="dark"] .p05-badge {
+    background: var(--p05-bg-surface-alt);
+}
+
+[data-theme="dark"] .p05-tooltip {
+    background: var(--p05-bg-elevated);
+    color: var(--p05-text-primary);
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-toast {
+    background: var(--p05-bg-surface);
+    border-color: var(--p05-border-default);
+    box-shadow: var(--p05-shadow-lg);
+}
+
+[data-theme="dark"] .p05-chart-container {
+    background: var(--p05-bg-surface);
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-insight-card {
+    background: var(--p05-bg-surface);
+    border-color: var(--p05-border-default);
+}
+
+[data-theme="dark"] .p05-empty-state,
+[data-theme="dark"] .p05-error-state {
+    background: var(--p05-bg-surface);
+}
+
+[data-theme="dark"] .p05-skeleton {
+    background: var(--p05-skeleton-base);
+}
+
+[data-theme="dark"] .p05-skeleton::after {
+    background: linear-gradient(90deg, transparent, var(--p05-skeleton-shine), transparent);
+}

@@ -1,0 +1,10 @@
+/* Panel-05 Modals - Master
+ * @version 7.0.0-MODULAR
+ * Modularizado em 5 partials
+ */
+
+@import '_modals.base.css';
+@import '_modals.keyboard.css';
+@import '_modals.settings.css';
+@import '_modals.datepicker.css';
+@import '_modals.responsive.css';

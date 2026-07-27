@@ -1,0 +1,4 @@
+/* Integração  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-integration-bling { box-sizing: border-box; }
+.panel-integration-bling *, .panel-integration-bling *::before, .panel-integration-bling *::after { box-sizing: inherit; }

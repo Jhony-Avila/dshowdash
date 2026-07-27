@@ -1,0 +1,198 @@
+/* UARPS Admin - User Focus Panel
+ * @version 1.2.0-ENTERPRISE-UARPS
+ */
+
+.uarps-main {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  flex: 1;
+  gap: 1px;
+  background: var(--uarps-border);
+}
+
+.uarps-focus {
+  padding: 1.5rem;
+  background: var(--uarps-bg-secondary);
+}
+
+.uarps-focus__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem;
+  background: var(--uarps-bg-card);
+  border: 1px solid var(--uarps-border);
+  border-radius: var(--uarps-radius-lg);
+}
+
+.uarps-focus__avatar {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--uarps-radius-full);
+  background: linear-gradient(135deg, var(--uarps-accent-cyan), var(--uarps-accent-purple));
+  margin-bottom: 1rem;
+}
+
+.uarps-focus__avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--uarps-radius-full);
+  object-fit: cover;
+}
+
+.uarps-focus__initials { font-size: 1.5rem; font-weight: 700; color: white; }
+
+.uarps-focus__glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: var(--uarps-radius-full);
+  background: linear-gradient(135deg, var(--uarps-accent-cyan), var(--uarps-accent-purple));
+  opacity: 0.4;
+  filter: blur(12px);
+  z-index: -1;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.uarps-focus__ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--uarps-radius-full);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  animation: rotate-ring 8s linear infinite;
+}
+
+.uarps-focus__name { margin: 0 0 0.25rem; font-size: 1.125rem; font-weight: 600; color: var(--uarps-text-primary); }
+.uarps-focus__email { margin: 0 0 1rem; font-size: 0.75rem; color: var(--uarps-text-muted); }
+
+.uarps-focus__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.uarps-focus__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.uarps-focus__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--uarps-radius-md);
+}
+
+.uarps-focus__stat-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.uarps-focus__stat-label { font-size: 0.7rem; color: var(--uarps-text-muted); margin-top: 0.25rem; }
+
+.uarps-focus__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.uarps-focus__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--uarps-text-muted);
+}
+
+.uarps-focus__empty-icon { width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.3; }
+.uarps-focus__empty-icon svg { width: 100%; height: 100%; }
+
+/* Activity Timeline */
+.uarps-focus__activity {
+  width: 100%;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--uarps-border);
+}
+
+.uarps-focus__activity-title {
+  font-size: 0.7rem;
+  color: var(--uarps-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.uarps-focus__activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.uarps-focus__activity-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--uarps-radius-sm);
+  font-size: 0.7rem;
+}
+
+.uarps-focus__activity-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.uarps-focus__activity-icon--grant svg { color: var(--uarps-accent-green); }
+.uarps-focus__activity-icon--revoke svg { color: var(--uarps-accent-red); }
+
+.uarps-focus__activity-text {
+  flex: 1;
+  color: var(--uarps-text-secondary);
+}
+
+.uarps-focus__activity-time {
+  font-size: 0.6rem;
+  color: var(--uarps-text-muted);
+}
+
+/* Permission Coverage */
+.uarps-focus__coverage {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.uarps-focus__coverage-bar {
+  height: 8px;
+  background: var(--uarps-bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.uarps-focus__coverage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--uarps-accent-cyan), var(--uarps-accent-purple));
+  transition: width 0.5s ease;
+}
+
+.uarps-focus__coverage-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--uarps-text-muted);
+}

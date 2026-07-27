@@ -1,0 +1,97 @@
+/* Panel Audit Trail - Filters Actions
+ * @version 3.0.0-MODULAR
+ * Action Buttons + Utilities
+ */
+
+.pat-filter-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  background: transparent;
+  border: 1px solid var(--pat-error-border);
+  border-radius: var(--pat-radius-md);
+  color: #F87171;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--pat-transition-base);
+}
+
+.pat-filter-clear svg {
+  width: 12px;
+  height: 12px;
+}
+
+.pat-filter-clear:hover {
+  background: var(--pat-error-bg);
+  border-color: var(--pat-error);
+  color: var(--pat-error);
+}
+
+.pat-filter-clear:focus-visible {
+  outline: 2px solid var(--pat-error);
+  outline-offset: 1px;
+}
+
+.pat-filter-apply {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, var(--pat-accent), var(--pat-accent-active));
+  border: none;
+  border-radius: var(--pat-radius-md);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--pat-transition-base);
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);
+}
+
+.pat-filter-apply:hover {
+  background: linear-gradient(135deg, var(--pat-accent-hover), var(--pat-accent));
+  box-shadow: 0 4px 8px rgba(124, 58, 237, 0.3);
+  transform: translateY(-1px);
+}
+
+.pat-filter-apply:active {
+  transform: translateY(0);
+}
+
+.pat-filter-apply:focus-visible {
+  outline: 2px solid var(--pat-accent);
+  outline-offset: 2px;
+}
+
+/* Utilities */
+.pat-filter-spacer {
+  flex: 1;
+  min-width: 0.5rem;
+}
+
+.pat-filter-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--pat-border-muted);
+  margin: 0 0.25rem;
+}
+
+.pat-filter-counter {
+  font-size: 0.6875rem;
+  color: var(--pat-text-muted);
+  padding: 0.3125rem 0.625rem;
+  background: var(--pat-bg-base);
+  border: 1px solid var(--pat-border-subtle);
+  border-radius: var(--pat-radius-md);
+}
+
+.pat-filter-counter strong {
+  color: var(--pat-text-primary);
+  font-weight: 600;
+}
+
+.pat-filter-counter .highlight {
+  color: var(--pat-accent);
+}

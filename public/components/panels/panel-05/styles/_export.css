@@ -1,0 +1,8 @@
+/* Panel-05 Export - Master
+ * @version 7.0.0-MODULAR
+ * Modularizado em 3 partials
+ */
+
+@import '_export.button.css';
+@import '_export.modal.css';
+@import '_export.utils.css';

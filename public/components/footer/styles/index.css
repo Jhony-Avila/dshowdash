@@ -1,0 +1,12 @@
+/**
+ * Footer Styles - Index (Bundled)
+ * @version 9.4.0-NAVFX
+ * @description Single bundle import for all footer styles.
+ *   v9.4.0-NAVFX: importa o padrão COMPARTILHADO de efeitos de interação
+ *   (/components/_shared/nav-fx/nav-button-fx.css) DEPOIS do bundle, para que os
+ *   botões do footer (.footer-icon-host) adotem o mesmo hover/halo/pressed/foco/
+ *   transição da navrail. Import posterior => vence o hover fraco do bundle por
+ *   ordem de cascata (mesma especificidade), sem !important. Navrail intocada.
+ */
+@import url('./dist/footer-styles.bundle.css');
+@import url('/components/_shared/nav-fx/nav-button-fx.css');

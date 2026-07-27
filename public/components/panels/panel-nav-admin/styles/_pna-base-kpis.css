@@ -1,0 +1,195 @@
+/* ─── KPIs Compactos Inline (integrado na toolbar) ─── */
+.pna-kpis {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  grid-template-columns: unset !important;
+}
+
+.pna-kpi {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 1rem;
+  background: transparent !important;
+  border: none !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  overflow: visible !important;
+}
+
+.pna-kpi::before { display: none !important; }
+.pna-kpi:hover { transform: none !important; box-shadow: none !important; background: transparent !important; border-radius: 0.375rem !important; }
+.pna-kpi:last-child { border-right: none !important; }
+
+.pna-kpi-icon {
+  width: 2rem !important;
+  height: 2rem !important;
+  border-radius: 0.375rem !important;
+}
+
+.pna-kpi-icon svg {
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+.pna-kpi-content {
+  flex-direction: row !important;
+  align-items: baseline !important;
+  gap: 0.375rem !important;
+}
+
+.pna-kpi-value {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+.pna-kpi-label {
+  font-size: 0.7rem !important;
+  opacity: 0.6 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PNA BASE - KPIs SECTION
+   @version 2.0.0-P01-ALIGNMENT
+   Aligned with panel-01 visual language: deeper cards, vibrant
+   icon colors, bolder values, subtle gradient borders.
+   ═══════════════════════════════════════════════════════════════ */
+
+.pna-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.pna-kpi {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  background: rgba(15, 18, 30, 0.65);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pna-kpi::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+.pna-kpi:hover {
+  background: rgba(15, 18, 30, 0.85);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ── KPI Icon ── */
+.pna-kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.625rem;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.pna-kpi:hover .pna-kpi-icon {
+  transform: scale(1.08);
+}
+
+.pna-kpi-icon svg {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+/* ── KPI Colors (panel-01 palette) ── */
+
+/* Primary — Purple (like panel-01 Total Requisições) */
+.pna-kpi-primary .pna-kpi-icon {
+  background: rgba(124, 58, 237, 0.2);
+  color: #A78BFA;
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.15);
+}
+
+/* Secondary — Amber/Gold (like panel-01 Valor Total) */
+.pna-kpi-secondary .pna-kpi-icon {
+  background: rgba(217, 119, 6, 0.2);
+  color: #FCD34D;
+  box-shadow: 0 0 12px rgba(217, 119, 6, 0.15);
+}
+
+/* Tertiary — Emerald (like panel-01 Pagas) */
+.pna-kpi-tertiary .pna-kpi-icon {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34D399;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+}
+
+/* Info — Rose/Orange (like panel-01 Admin badge) */
+.pna-kpi-info .pna-kpi-icon {
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.12);
+}
+
+/* ── KPI Content ── */
+.pna-kpi-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.pna-kpi-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: rgba(var(--pna-ink,255,255,255), 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.pna-kpi-value {
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: rgba(var(--pna-ink,255,255,255),1);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Responsive KPIs ── */
+@media (max-width: 1200px) {
+  .pna-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .pna-kpis { grid-template-columns: 1fr; padding: 0.5rem 1rem; }
+  .pna-kpi { padding: 0.75rem 1rem; }
+  .pna-kpi-value { font-size: 1.25rem; }
+  .pna-kpi-icon { width: 2.25rem; height: 2.25rem; }
+  .pna-kpi-icon svg { width: 1.125rem; height: 1.125rem; }
+}

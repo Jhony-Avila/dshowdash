@@ -1,0 +1,104 @@
+/* Panel-05 Insights - Recentes
+ * @version 7.0.0-MODULAR
+ * Recentes + Responsive
+ */
+
+.p05-recentes {
+    padding: var(--p05-space-lg) var(--p05-space-section);
+    background: var(--p05-bg-surface);
+    border-bottom: 1px solid var(--p05-border-default);
+}
+
+.p05-recentes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--p05-space-md);
+}
+
+.p05-recentes-header h5 {
+    display: flex;
+    align-items: center;
+    gap: var(--p05-space-sm);
+    margin: 0;
+    font: var(--p05-font-label);
+    color: var(--p05-text-muted);
+}
+
+.p05-recentes-header h5 svg {
+    width: 14px;
+    height: 14px;
+}
+
+.p05-recentes-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--p05-space-sm);
+}
+
+.p05-recente-item {
+    display: flex;
+    align-items: center;
+    gap: var(--p05-space-sm);
+    padding: var(--p05-space-xs) var(--p05-space-md);
+    background: var(--p05-bg-app);
+    border: 1px solid var(--p05-border-subtle);
+    border-radius: var(--p05-radius-pill);
+    font: var(--p05-font-body-sm);
+    color: var(--p05-text-secondary);
+    cursor: pointer;
+    transition: all var(--p05-motion-fast);
+}
+
+.p05-recente-item:hover {
+    border-color: var(--p05-info-border);
+    background: var(--p05-info-bg);
+    color: var(--p05-info);
+}
+
+.p05-recente-nome {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.p05-recente-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--p05-text-dim);
+    cursor: pointer;
+    transition: all var(--p05-motion-fast);
+}
+
+.p05-recente-remove svg {
+    width: 12px;
+    height: 12px;
+}
+
+.p05-recente-remove:hover {
+    background: var(--p05-danger-bg);
+    color: var(--p05-danger);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .p05-insights-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .p05-comparativo-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .p05-comparativo-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

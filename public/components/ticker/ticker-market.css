@@ -1,0 +1,133 @@
+/* Ticker Component - Market Elements */
+/* @version 1.0.0-MODULAR */
+/* FX, stocks, change, separadores */
+
+/* ========================================
+   FX ITEMS (MOEDAS)
+   ======================================== */
+.ticker-item--fx {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.15);
+  gap: 6px;
+}
+
+.ticker-item--fx .ticker-market-icon {
+  color: #60a5fa;
+}
+
+.ticker-item--fx .ticker-symbol {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.5px;
+}
+
+.ticker-item--fx .ticker-price {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ticker-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================
+   STOCK ITEMS (AÇÕES)
+   ======================================== */
+.ticker-item--stock {
+  background: rgba(139, 92, 246, 0.06);
+  border-color: rgba(139, 92, 246, 0.15);
+  gap: 6px;
+}
+
+.ticker-item--stock .ticker-symbol {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.3px;
+}
+
+.ticker-item--stock .ticker-price {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ticker-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================
+   MARKET ICON
+   ======================================== */
+.ticker-market-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.ticker-market-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ========================================
+   CHANGE (VARIAÇÃO %)
+   ======================================== */
+.ticker-change {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticker-change--positive {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+}
+
+.ticker-change--negative {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.ticker-change--neutral {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+}
+
+/* Ícone de mercado por estado */
+.ticker-item--positive .ticker-market-icon { color: var(--ticker-positive); }
+.ticker-item--negative .ticker-market-icon { color: var(--ticker-negative); }
+.ticker-item--neutral .ticker-market-icon { color: var(--ticker-neutral); }
+
+/* ========================================
+   SEPARADORES
+   ======================================== */
+.ticker-separator {
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+.ticker-separator--bullet {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 6px;
+}
+
+.ticker-separator--bar {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 1px;
+}
+
+.ticker-separator--chevron {
+  color: rgba(139, 92, 246, 0.6);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ticker-separator--minimal {
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+}

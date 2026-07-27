@@ -1,0 +1,9 @@
+/* Panel-16 Master - Master
+ * @version 6.2.0-ENTERPRISE
+ * Modularizado em 4 partials
+ */
+
+@import '_master.columns.css';
+@import '_master.grouping.css';
+@import '_master.favorites.css';
+@import '_master.modals.css';

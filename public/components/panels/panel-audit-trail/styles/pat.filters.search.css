@@ -1,0 +1,102 @@
+/* Panel Audit Trail - Filters Search
+ * @version 3.0.0-MODULAR
+ */
+
+.pat-search {
+  position: relative;
+  flex: 1;
+  max-width: 280px;
+  min-width: 180px;
+}
+
+.pat-search-icon {
+  position: absolute;
+  left: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--pat-accent);
+  pointer-events: none;
+  transition: var(--pat-transition-base);
+}
+
+.pat-search:focus-within .pat-search-icon {
+  color: var(--pat-accent-hover);
+}
+
+.pat-search-input {
+  width: 100%;
+  padding: 0.4375rem 2.5rem 0.4375rem 2rem;
+  background: var(--pat-bg-base);
+  border: 1px solid var(--pat-border-muted);
+  border-radius: var(--pat-radius-lg);
+  color: var(--pat-text-primary);
+  font-size: 0.75rem;
+  transition: var(--pat-transition-base);
+}
+
+.pat-search-input::placeholder {
+  color: var(--pat-text-muted);
+}
+
+.pat-search-input:hover {
+  border-color: rgba(124, 58, 237, 0.3);
+}
+
+.pat-search-input:focus {
+  outline: none;
+  border-color: var(--pat-accent);
+  box-shadow: 0 0 0 3px var(--pat-accent-soft);
+  background: var(--pat-bg-elevated);
+}
+
+.pat-search-input:not(:placeholder-shown) {
+  border-color: rgba(124, 58, 237, 0.4);
+  padding-right: 4.5rem;
+}
+
+.pat-search-shortcut {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.125rem 0.375rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--pat-radius-sm);
+  font-size: 0.5625rem;
+  font-family: var(--pat-font-mono);
+  color: var(--pat-text-muted);
+  transition: var(--pat-transition-base);
+}
+
+.pat-search:focus-within .pat-search-shortcut {
+  opacity: 0;
+}
+
+.pat-search-clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: var(--pat-text-muted);
+  cursor: pointer;
+  transition: var(--pat-transition-base);
+}
+
+.pat-search-input:not(:placeholder-shown) ~ .pat-search-clear {
+  display: flex;
+}
+
+.pat-search-clear:hover {
+  background: var(--pat-error-bg);
+  color: var(--pat-error);
+}

@@ -1,0 +1,266 @@
+/* Panel Audit Trail - Modal
+ * @version 3.0.0-MODULAR
+ * Modal de detalhes completo
+ */
+
+.pat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+}
+
+.pat-modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.pat-modal {
+  width: 90%;
+  max-width: 700px;
+  max-height: 85vh;
+  background: linear-gradient(to bottom, #141418, #0e0e12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.2s ease;
+}
+
+.pat-modal-overlay.open .pat-modal {
+  transform: scale(1) translateY(0);
+}
+
+.pat-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(to bottom, rgba(124, 58, 237, 0.1), transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pat-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.pat-modal-title svg {
+  width: 20px;
+  height: 20px;
+  color: var(--pat-accent);
+}
+
+.pat-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--pat-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pat-modal-close:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--pat-error);
+}
+
+.pat-modal-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pat-modal-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pat-modal-tab {
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--pat-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pat-modal-tab:hover {
+  color: var(--pat-text-secondary);
+}
+
+.pat-modal-tab.active {
+  color: var(--pat-accent);
+  border-bottom-color: var(--pat-accent);
+}
+
+.pat-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+.pat-modal-section {
+  margin-bottom: 1.5rem;
+}
+
+.pat-modal-section:last-child {
+  margin-bottom: 0;
+}
+
+.pat-modal-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pat-text-muted);
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pat-modal-section-title svg {
+  width: 14px;
+  height: 14px;
+  color: var(--pat-accent);
+}
+
+.pat-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.pat-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pat-modal-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.pat-modal-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--pat-text-muted);
+}
+
+.pat-modal-value {
+  font-size: 0.8125rem;
+  color: var(--pat-text-primary);
+  word-break: break-word;
+}
+
+.pat-modal-value--mono {
+  font-family: var(--pat-font-mono);
+  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+}
+
+.pat-modal-value--json {
+  font-family: var(--pat-font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  color: #94A3B8;
+}
+
+.pat-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pat-modal-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pat-modal-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pat-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--pat-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pat-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.pat-modal-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pat-modal-btn--primary {
+  background: var(--pat-accent);
+  border-color: var(--pat-accent);
+  color: #fff;
+}
+
+.pat-modal-btn--primary:hover {
+  background: #8B5CF6;
+  border-color: #8B5CF6;
+}

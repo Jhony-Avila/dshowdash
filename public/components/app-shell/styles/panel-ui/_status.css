@@ -1,0 +1,89 @@
+/* Panel UI - Status & States
+ * @module _status.css
+ * @version 1.0.0
+ * @description Status colors, badges, card borders coloridas, hover states
+ * @dependencies _tokens.css, _cards.css, _list.css, _tags.css
+ */
+
+/* Status Colors */
+.dsd-ui-status--healthy { color: var(--ui-success); }
+.dsd-ui-status--degraded { color: var(--ui-warning); }
+.dsd-ui-status--unhealthy { color: var(--ui-error); }
+.dsd-ui-status--accent { color: var(--ui-accent); }
+
+/* Badges de Status com dot */
+.dsd-ui-status--healthy::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-success);
+  margin-right: 6px;
+  box-shadow: 0 0 6px var(--ui-success);
+}
+
+.dsd-ui-status--degraded::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-warning);
+  margin-right: 6px;
+  box-shadow: 0 0 6px var(--ui-warning);
+}
+
+.dsd-ui-status--unhealthy::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-error);
+  margin-right: 6px;
+  box-shadow: 0 0 6px var(--ui-error);
+}
+
+/* Cards com borda lateral colorida */
+.dsd-ui-card:has(.dsd-ui-status--healthy) {
+  border-left: 3px solid var(--ui-success);
+}
+
+.dsd-ui-card:has(.dsd-ui-status--degraded) {
+  border-left: 3px solid var(--ui-warning);
+}
+
+.dsd-ui-card:has(.dsd-ui-status--unhealthy) {
+  border-left: 3px solid var(--ui-error);
+}
+
+/* Fallback para browsers sem :has() */
+.dsd-ui-card--healthy {
+  border-left: 3px solid var(--ui-success);
+}
+
+.dsd-ui-card--degraded {
+  border-left: 3px solid var(--ui-warning);
+}
+
+.dsd-ui-card--unhealthy {
+  border-left: 3px solid var(--ui-error);
+}
+
+/* Hover States Melhorados */
+.dsd-ui-card:hover {
+  background: var(--ui-bg-hover);
+  border-color: var(--ui-accent);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.2);
+}
+
+.dsd-ui-list-item:hover {
+  background: var(--ui-bg-hover);
+}
+
+.dsd-ui-tag:hover {
+  background: var(--ui-bg-active);
+  border-color: var(--ui-border-hover);
+  cursor: default;
+}

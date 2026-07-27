@@ -1,0 +1,95 @@
+/* Panel Session Admin - Skeleton Loading Enterprise AAA */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+/* Skeleton Base */
+.psa__skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--psa-bg-secondary) 25%,
+    var(--psa-bg-tertiary) 50%,
+    var(--psa-bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: psa-skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--psa-radius-sm);
+}
+
+@keyframes psa-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Skeleton Row */
+.psa__skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: var(--psa-spacing-md);
+  padding: var(--psa-spacing-md);
+  border-bottom: 1px solid var(--psa-border);
+}
+
+.psa__skeleton-cell {
+  height: 16px;
+  border-radius: var(--psa-radius-sm);
+}
+
+.psa__skeleton-cell--sm { width: 60px; }
+.psa__skeleton-cell--md { width: 100px; }
+.psa__skeleton-cell--lg { width: 150px; }
+.psa__skeleton-cell--xl { width: 200px; }
+
+/* Skeleton Table */
+.psa__skeleton-table {
+  width: 100%;
+}
+
+.psa__skeleton-header {
+  display: flex;
+  gap: var(--psa-spacing-md);
+  padding: var(--psa-spacing-md);
+  background: var(--psa-bg-secondary);
+  border-bottom: 1px solid var(--psa-border);
+}
+
+.psa__skeleton-header-cell {
+  height: 14px;
+  opacity: 0.5;
+}
+
+/* Loading Spinner */
+.psa__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--psa-spacing-xl);
+  gap: var(--psa-spacing-md);
+  color: var(--psa-text-muted);
+}
+
+.psa__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--psa-border);
+  border-top-color: var(--psa-primary);
+  border-radius: 50%;
+  animation: psa-spin 0.8s linear infinite;
+}
+
+@keyframes psa-spin {
+  to { transform: rotate(360deg); }
+}
+
+.psa__spin {
+  animation: psa-spin 1s linear infinite;
+}
+
+/* Pulse Animation for Status */
+.psa__pulse {
+  animation: psa-pulse 2s ease-in-out infinite;
+}
+
+@keyframes psa-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

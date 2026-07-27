@@ -1,0 +1,59 @@
+/* Panel-06 Settings - States Styles */
+/* @version 3.0.0-ENTERPRISE */
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: var(--text-muted, #888);
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color, #3a3a5a);
+  border-top-color: var(--primary, #3b82f6);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.saving-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  z-index: 10;
+}
+
+.error-message {
+  padding: 1rem;
+  margin: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger, #ef4444);
+  border-radius: 6px;
+  color: var(--danger, #ef4444);
+}
+
+.settings-empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted, #888);
+}
+
+.panel-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--warning, #f59e0b);
+}

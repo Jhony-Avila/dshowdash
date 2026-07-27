@@ -1,0 +1,13 @@
+/* Panel-15 Overview Métricas - Master Styles */
+/* @version 5.0.0-ENTERPRISE-DASHBOARD */
+
+@import url('./tokens.css');
+@import url('./panel-15.base.css');
+@import url('./panel-15.dashboard.css');
+@import url('./panel-15.header.css');
+@import url('./panel-15.states.css');
+@import url('./panel-15.drawer.css');
+@import url('./panel-15.toast.css');
+@import url('./panel-15.responsive.css');
+@import url('./panel-15.accessibility.css');
+@import url('./panel-15.print.css');

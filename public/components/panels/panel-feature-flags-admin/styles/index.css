@@ -1,0 +1,10 @@
+/* Panel Feature Flags Admin - Styles Enterprise
+ * @version 6.0.0-ENTERPRISE-MODULAR
+ * @changelog 6.0.0 - Modularizado em 5 arquivos especializados
+ */
+
+@import './modules/layout.css';
+@import './modules/header.css';
+@import './modules/toolbar.css';
+@import './modules/cards.css';
+@import './modules/states.css';

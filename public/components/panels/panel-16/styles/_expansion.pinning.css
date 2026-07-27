@@ -1,0 +1,106 @@
+/* Panel-16 Expansion - Column Pinning & Sticky */
+/* @version 6.2.1-ENTERPRISE */
+
+/* Column Pinning */
+.p16-th-pinned-left,
+.p16-cell-pinned-left {
+  position: sticky;
+  z-index: var(--p16-z-sticky);
+  background: var(--p16-bg-surface);
+}
+
+.p16-th-pinned-left {
+  background: linear-gradient(to bottom, var(--p16-layer-from), var(--p16-layer-to));
+}
+
+.p16-th-pinned-right,
+.p16-cell-pinned-right {
+  position: sticky;
+  z-index: var(--p16-z-sticky);
+  background: var(--p16-bg-surface);
+}
+
+.p16-th-pinned-right {
+  background: linear-gradient(to bottom, var(--p16-layer-from), var(--p16-layer-to));
+}
+
+.p16-cell-sticky-left {
+  position: sticky;
+  left: 0;
+  z-index: var(--p16-z-sticky);
+  background: inherit;
+}
+
+.p16-th-sticky-left {
+  position: sticky;
+  left: 0;
+  z-index: calc(var(--p16-z-sticky) + 1);
+  background: linear-gradient(to bottom, var(--p16-layer-from), var(--p16-layer-to));
+}
+
+.p16-pin-indicator {
+  margin-left: var(--p16-space-xs);
+  font-size: 0.6rem;
+  opacity: 0.7;
+}
+
+.p16-pin-btn {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--p16-border-subtle);
+  border-radius: var(--p16-radius-xs);
+  color: var(--p16-text-dim);
+  font-size: 0.6rem;
+  cursor: pointer;
+  transition: all var(--p16-transition-fast);
+}
+
+.p16-pin-btn:hover {
+  border-color: var(--p16-accent);
+  color: var(--p16-accent);
+}
+
+.p16-pin-btn-active {
+  background: var(--p16-accent);
+  border-color: var(--p16-accent);
+  color: white;
+}
+
+.p16-column-pin-controls {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.p16-column-item-wrapper {
+  display: flex;
+  align-items: center;
+  padding: var(--p16-space-xs) var(--p16-space-sm);
+  border-radius: var(--p16-radius-sm);
+  transition: background var(--p16-transition-fast);
+}
+
+.p16-column-item-wrapper:hover {
+  background: var(--p16-bg-elevated);
+}
+
+/* Sticky Header */
+.p16-sticky-wrapper {
+  position: relative;
+  max-height: calc(100vh - 400px);
+  overflow: auto;
+}
+
+.p16-thead-sticky {
+  position: sticky;
+  top: 0;
+  z-index: var(--p16-z-sticky);
+}
+
+.p16-table-sticky thead {
+  position: sticky;
+  top: 0;
+  z-index: var(--p16-z-sticky);
+}

@@ -1,0 +1,94 @@
+/* Modal Manager Global - Wrapper Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+/* Modal Wrapper */
+.modal-wrapper {
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--modal-transition-duration) var(--modal-transition-easing),
+                transform var(--modal-transition-duration) var(--modal-transition-easing),
+                visibility var(--modal-transition-duration) var(--modal-transition-easing);
+}
+
+.modal-wrapper.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.modal-wrapper.closing {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Modal Types */
+.modal--dialog,
+.modal--confirm,
+.modal--alert,
+.modal--prompt {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: scale(0.95);
+}
+
+.modal--dialog.visible,
+.modal--confirm.visible,
+.modal--alert.visible,
+.modal--prompt.visible {
+    transform: scale(1);
+}
+
+/* Drawer */
+.modal--drawer {
+    top: 0;
+    height: 100%;
+}
+
+.modal--drawer.modal--position-right {
+    right: 0;
+    transform: translateX(100%);
+}
+
+.modal--drawer.modal--position-left {
+    left: 0;
+    transform: translateX(-100%);
+}
+
+.modal--drawer.visible {
+    transform: translateX(0);
+}
+
+/* Sheet */
+.modal--sheet {
+    left: 0;
+    width: 100%;
+}
+
+.modal--sheet.modal--position-bottom {
+    bottom: 0;
+    transform: translateY(100%);
+}
+
+.modal--sheet.modal--position-top {
+    top: 0;
+    transform: translateY(-100%);
+}
+
+.modal--sheet.visible {
+    transform: translateY(0);
+}
+
+/* Full Screen */
+.modal--full-screen {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}

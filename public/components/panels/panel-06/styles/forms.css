@@ -1,0 +1,101 @@
+/* Panel-06 Settings - Forms Styles */
+/* @version 5.0.0-ENTERPRISE-AAA */
+/* Inputs como campos de sistema - sem glow */
+
+.setting-input {
+  margin: 0.625rem 0;
+}
+
+.setting-input input[type="text"],
+.setting-input input[type="number"],
+.setting-input select,
+.setting-input textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+  transition: border-color 0.2s ease;
+}
+
+.setting-input input:focus,
+.setting-input select:focus,
+.setting-input textarea:focus {
+  outline: none;
+  border-color: var(--input-focus);
+}
+
+.setting-input input:disabled,
+.setting-input select:disabled,
+.setting-input textarea:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: var(--bg-app);
+}
+
+.setting-input textarea {
+  resize: vertical;
+  min-height: 56px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Input com alteração pendente */
+.setting-input.has-changes input,
+.setting-input.has-changes select,
+.setting-input.has-changes textarea {
+  border-color: var(--accent-primary);
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  width: 36px;
+  height: 20px;
+  background: var(--border-strong);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.toggle input:checked + .toggle-slider {
+  background: var(--accent-primary);
+}
+
+.toggle input:checked + .toggle-slider::after {
+  transform: translateX(16px);
+  background: #fff;
+}
+
+.toggle input:disabled + .toggle-slider {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

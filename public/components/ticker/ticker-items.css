@@ -1,0 +1,71 @@
+/* Ticker Component - Items & Variants */
+/* @version 1.0.0-MODULAR */
+/* Item base, variantes visuais, breaking news */
+
+/* ========================================
+   ITEM BASE
+   ======================================== */
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ticker-gap-internal);
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all var(--ticker-transition);
+}
+
+.ticker-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ========================================
+   VARIANTES (RITMO VISUAL)
+   ======================================== */
+.ticker-item--variant-1 {
+  border-left: 2px solid rgba(139, 92, 246, 0.5);
+}
+
+.ticker-item--variant-2 {
+  border-left: 2px solid rgba(59, 130, 246, 0.5);
+}
+
+.ticker-item--variant-3 {
+  border-left: 2px solid rgba(34, 197, 94, 0.5);
+}
+
+.ticker-item--variant-1:hover { border-left-color: rgba(139, 92, 246, 0.8); }
+.ticker-item--variant-2:hover { border-left-color: rgba(59, 130, 246, 0.8); }
+.ticker-item--variant-3:hover { border-left-color: rgba(34, 197, 94, 0.8); }
+
+/* ========================================
+   BREAKING NEWS
+   ======================================== */
+.ticker-item--breaking {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.ticker-item--breaking::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 7px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  opacity: 0;
+  animation: ticker-pulse 2.5s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes ticker-pulse {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.02); }
+}
+
+.news-ticker-component.reduced-motion .ticker-item--breaking::after {
+  animation: none;
+  opacity: 0.4;
+}

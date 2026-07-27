@@ -1,0 +1,87 @@
+/**
+ * Login Modal - Accessibility
+ * @version 3.0.0-MODULAR
+ * Screen readers, a11y enhancements
+ */
+
+.dsd-sr-live,
+.lm-sr-live {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+[inert],
+[inert] * {
+  pointer-events: none;
+  user-select: none;
+}
+
+.visually-hidden,
+.lm-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@media (prefers-contrast: more) {
+  .lm-input,
+  .lm-button {
+    border-width: 3px;
+  }
+  .lm-button {
+    box-shadow: 0 0 0 2px #000 inset;
+  }
+  .lm-input:focus,
+  .lm-button:focus,
+  .lm-toggle-password:focus {
+    outline-width: 3px;
+  }
+}
+
+@media (forced-colors: active) {
+  .lm-input,
+  .lm-button {
+    border: 2px solid ButtonText;
+  }
+  .lm-input:focus,
+  .lm-button:focus {
+    outline: 2px solid Highlight;
+  }
+  .lm-error {
+    border: 2px solid CanvasText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-root,
+  .lm-root *,
+  .lm-container,
+  .lm-logo,
+  #login-modal,
+  #login-modal * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .lm-container,
+  .login-container {
+    animation: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  .lm-logo,
+  .login-logo {
+    animation: none;
+    transform: none;
+  }
+}

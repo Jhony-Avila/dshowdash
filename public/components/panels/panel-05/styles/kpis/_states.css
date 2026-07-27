@@ -1,0 +1,102 @@
+/* Panel-05 KPIs - States (Loading, Empty, Error) */
+/* @version 1.0.0-MODULAR */
+
+/* Loading (Skeleton) */
+.p05-bn.p05-bn-loading {
+    pointer-events: none;
+}
+
+.p05-bn-skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--p05-bg-surface-alt, #151823) 25%,
+        var(--p05-bg-elevated, #1E2230) 50%,
+        var(--p05-bg-surface-alt, #151823) 75%
+    );
+    background-size: 200% 100%;
+    animation: p05-bn-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--p05-radius-sm, 6px);
+}
+
+.p05-bn-skeleton-icon {
+    width: var(--p05-bn-icon-container-size, 44px);
+    height: var(--p05-bn-icon-container-size, 44px);
+    border-radius: var(--p05-radius-lg, 12px);
+}
+
+.p05-bn-skeleton-label {
+    height: 14px;
+    width: 70px;
+}
+
+.p05-bn-skeleton-value {
+    height: 32px;
+    width: 90px;
+    margin: 4px 0;
+}
+
+.p05-bn-skeleton-meta {
+    height: 12px;
+    width: 60px;
+}
+
+@keyframes p05-bn-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Empty State */
+.p05-bn.p05-bn-empty .p05-bn-value {
+    color: var(--p05-text-muted);
+}
+
+.p05-bn.p05-bn-empty .p05-bn-icon {
+    opacity: 0.5;
+}
+
+/* Error State */
+.p05-bn.p05-bn-error {
+    --p05-bn-accent: var(--p05-danger);
+    border-color: var(--p05-danger-border);
+}
+
+.p05-bn.p05-bn-error .p05-bn-value {
+    color: var(--p05-text-muted);
+}
+
+.p05-bn.p05-bn-error .p05-bn-icon {
+    --p05-bn-icon-bg: var(--p05-danger-bg);
+    --p05-bn-icon-color: var(--p05-danger);
+}
+
+/* Tooltip */
+.p05-bn[data-tooltip] {
+    cursor: help;
+}
+
+.p05-bn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 8px 12px;
+    background: var(--p05-bg-elevated, #1E2230);
+    border: 1px solid var(--p05-border-strong, #2A2F3D);
+    border-radius: var(--p05-radius-md, 8px);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--p05-text-primary);
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--p05-motion-fast, 150ms), transform var(--p05-motion-fast, 150ms);
+    z-index: var(--p05-z-tooltip, 500);
+    box-shadow: var(--p05-shadow-lg, 0 8px 24px rgba(0,0,0,0.4));
+}
+
+.p05-bn[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}

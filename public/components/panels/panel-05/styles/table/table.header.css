@@ -1,0 +1,28 @@
+/* Table Header
+ * @version 7.0.1
+ */
+
+.p05-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.p05-table thead tr {
+    background: linear-gradient(to bottom, var(--p05-layer-from), var(--p05-layer-to));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--p05-border-default);
+}
+
+.p05-table th {
+    height: var(--p05-height-header-row);
+    padding: 0 var(--p05-space-lg);
+    text-align: left;
+    font: var(--p05-font-label);
+    color: var(--p05-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--p05-border-default);
+}

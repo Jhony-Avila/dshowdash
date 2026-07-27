@@ -1,0 +1,109 @@
+/* Modal Manager Global - Confirm API Styles */
+/* @version 1.0.0-ENTERPRISE */
+/* Estilos para modais de confirmação via ModalManager.confirm() */
+
+.modal-confirm-content,
+.modal-alert-content {
+  background: var(--surface-elevated, #1e1e2e);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  max-width: 420px;
+  width: 90vw;
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.modal-confirm-danger .modal-confirm-header {
+  border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.modal-confirm-header,
+.modal-alert-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.1));
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-confirm-title,
+.modal-alert-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.modal-danger-icon {
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.modal-confirm-body,
+.modal-alert-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-confirm-message,
+.modal-alert-message {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-secondary, rgba(255,255,255,0.8));
+}
+
+.modal-confirm-footer,
+.modal-alert-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.1));
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.modal-btn {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  outline: none;
+}
+
+.modal-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--surface-elevated, #1e1e2e), 0 0 0 4px var(--accent-primary, #3b82f6);
+}
+
+.modal-btn-primary {
+  background: var(--accent-primary, #3b82f6);
+  color: #fff;
+}
+
+.modal-btn-primary:hover {
+  background: var(--accent-primary-hover, #2563eb);
+}
+
+.modal-btn-secondary {
+  background: var(--surface-secondary, rgba(255,255,255,0.1));
+  color: var(--text-primary, #fff);
+}
+
+.modal-btn-secondary:hover {
+  background: var(--surface-secondary-hover, rgba(255,255,255,0.15));
+}
+
+.modal-btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.modal-btn-danger:hover {
+  background: #dc2626;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}

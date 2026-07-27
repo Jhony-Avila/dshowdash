@@ -1,0 +1,4 @@
+/* Status  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-status-wechat-integration { box-sizing: border-box; }
+.panel-status-wechat-integration *, .panel-status-wechat-integration *::before, .panel-status-wechat-integration *::after { box-sizing: inherit; }

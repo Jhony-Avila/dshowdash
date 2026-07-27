@@ -1,0 +1,13 @@
+/* panel-17 Top 10 Jobs - Master Styles */
+/* @version 5.0.0-ENTERPRISE-DASHBOARD */
+
+@import url('./tokens.css');
+@import url('./panel-17.base.css');
+@import url('./panel-17.dashboard.css');
+@import url('./panel-17.header.css');
+@import url('./panel-17.states.css');
+@import url('./panel-17.drawer.css');
+@import url('./panel-17.toast.css');
+@import url('./panel-17.responsive.css');
+@import url('./panel-17.accessibility.css');
+@import url('./panel-17.print.css');

@@ -1,0 +1,65 @@
+/* Panel NavRail Admin - Buttons */
+/* @version 1.0.0-AAA-MODULAR */
+
+.pna-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--pna-bg-elevated);
+    border: 1px solid var(--pna-border);
+    border-radius: var(--pna-radius-sm);
+    color: var(--pna-text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--pna-transition);
+}
+
+.pna-btn:hover {
+    background: var(--pna-bg-hover);
+    border-color: var(--pna-border-light);
+}
+
+.pna-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.pna-btn--primary {
+    background: var(--pna-primary);
+    border-color: var(--pna-primary);
+    color: white;
+}
+
+.pna-btn--primary:hover {
+    background: var(--pna-primary-hover);
+    border-color: var(--pna-primary-hover);
+}
+
+.pna-btn--danger {
+    color: var(--pna-danger);
+}
+
+.pna-btn--danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--pna-danger);
+}
+
+.pna-btn--icon {
+    padding: 8px;
+    width: 36px;
+    height: 36px;
+}
+
+.pna-btn--small {
+    padding: 4px;
+    width: 28px;
+    height: 28px;
+}
+
+.pna-btn--small svg {
+    width: 14px;
+    height: 14px;
+}

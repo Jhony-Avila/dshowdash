@@ -1,0 +1,12 @@
+{
+  "name": "ticker",
+  "version": "7.0.0-ENTERPRISE",
+  "type": "news-ticker",
+  "description": "News ticker with continuous scroll - Standalone Enterprise Component",
+  "dependencies": [],
+  "config": {
+    "pollInterval": 300000,
+    "scrollSpeed": 30,
+    "apiEndpoint": "/api/news/get_ticker_data.php"
+  }
+}

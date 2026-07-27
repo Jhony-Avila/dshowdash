@@ -1,0 +1,67 @@
+/* Accordion - Styles */
+/* @version 2.0.0-SIDEBAR-CLASSES */
+/* @description Estilos mínimos - Visual herdado de sidebar/styles/ */
+/* @architecture Single Source of Truth - CSS da Sidebar */
+/* @note Classes .dsd-sidebar__* são usadas, estilos vêm de sidebar-nav.css e sidebar-admin.css */
+
+/* ═══════════════════════════════════════════════════════════════
+   ACCORDION CONTAINER ESPECÍFICO
+   Apenas estilos de container, não de items/sections
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Container quando usado standalone (fora da sidebar) */
+.dsd-accordion-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ESTADOS DE LOADING/ERROR
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-accordion-container--loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.dsd-accordion-container--error {
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMAÇÕES DE ENTRADA (Stagger)
+   Complementa as animações já existentes no sidebar
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item {
+  animation: accordionItemFadeIn 0.2s ease forwards;
+  opacity: 0;
+}
+
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(1) { animation-delay: 0.02s; }
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(2) { animation-delay: 0.04s; }
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(3) { animation-delay: 0.06s; }
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(4) { animation-delay: 0.08s; }
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(5) { animation-delay: 0.10s; }
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(6) { animation-delay: 0.12s; }
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(7) { animation-delay: 0.14s; }
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(8) { animation-delay: 0.16s; }
+.dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(n+9) { animation-delay: 0.18s; }
+
+@keyframes accordionItemFadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY - REDUCED MOTION
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .dsd-accordion-container .dsd-sidebar__section--expanded .dsd-sidebar__item {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}

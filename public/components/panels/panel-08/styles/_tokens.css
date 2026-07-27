@@ -1,0 +1,38 @@
+/* Panel-08 - Design Tokens
+ * @version 6.0.0-MODULAR
+ */
+
+:root {
+  --p08-bg-primary: #0a0a0f;
+  --p08-bg-secondary: #12121a;
+  --p08-bg-tertiary: #1a1a24;
+  --p08-bg-card: #16161f;
+  --p08-border: #2a2a3a;
+  --p08-border-hover: #3a3a4a;
+  --p08-text-primary: #f0f0f5;
+  --p08-text-secondary: #a0a0b0;
+  --p08-text-muted: #606070;
+  --p08-primary: #6366f1;
+  --p08-primary-light: rgba(99, 102, 241, 0.15);
+  --p08-success: #22c55e;
+  --p08-success-light: rgba(34, 197, 94, 0.15);
+  --p08-warning: #f59e0b;
+  --p08-warning-light: rgba(245, 158, 11, 0.15);
+  --p08-error: #ef4444;
+  --p08-error-light: rgba(239, 68, 68, 0.15);
+  --p08-info: #3b82f6;
+  --p08-info-light: rgba(59, 130, 246, 0.15);
+  --p08-radius-sm: 4px;
+  --p08-radius-md: 8px;
+  --p08-radius-lg: 12px;
+  --p08-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --p08-transition: 0.2s ease;
+  --p08-font-xs: 11px;
+  --p08-font-sm: 12px;
+  --p08-font-md: 13px;
+  --p08-font-lg: 14px;
+  --p08-spacing-xs: 4px;
+  --p08-spacing-sm: 8px;
+  --p08-spacing-md: 12px;
+  --p08-spacing-lg: 16px;
+}

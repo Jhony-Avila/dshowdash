@@ -1,0 +1,4 @@
+/* Integração  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-integration-mercado-livre { box-sizing: border-box; }
+.panel-integration-mercado-livre *, .panel-integration-mercado-livre *::before, .panel-integration-mercado-livre *::after { box-sizing: inherit; }

@@ -1,0 +1,61 @@
+.raiz { display: flex; flex-direction: column; gap: var(--dt-space-4); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--dt-space-3); }
+
+.nota {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 9px 12px; font-size: 12px; color: var(--dt-text-secondary);
+  border-left: 3px solid var(--dt-primary); background: var(--dt-bg-surface);
+  border-radius: var(--dt-radius-sm);
+}
+
+.arvore {
+  border: 1px solid var(--dt-border); border-radius: var(--dt-radius-md);
+  background: var(--dt-bg-surface); overflow: hidden; box-shadow: var(--dt-shadow-sm);
+  padding: 4px 0;
+}
+.vazio { padding: 20px; text-align: center; color: var(--dt-text-muted); font-size: 13px; }
+
+.linha {
+  display: flex; align-items: center; gap: 8px; min-height: 34px; padding-right: 12px;
+  cursor: pointer; user-select: none; font-size: 13px; color: var(--dt-text-primary);
+  border-bottom: 1px solid color-mix(in srgb, var(--dt-border) 45%, transparent);
+  transition: background .12s ease;
+}
+.linha:hover { background: var(--dt-row-hover); }
+.linha:focus-visible { outline: 2px solid var(--dt-primary); outline-offset: -2px; }
+
+.chevron { width: 16px; display: inline-flex; justify-content: center; color: var(--dt-text-muted); flex: none; }
+.chevronAberto { transform: rotate(90deg); transition: transform .15s ease; }
+.semChevron { width: 13px; height: 13px; display: inline-block; }
+
+.icone { display: inline-flex; color: var(--dt-primary); flex: none; }
+.nome { font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nomeBtn {
+  font: inherit; font-weight: 550; color: var(--dt-text-primary); background: none; border: 0;
+  padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: transparent;
+  transition: text-decoration-color .12s ease; white-space: nowrap;
+}
+.nomeBtn:hover { text-decoration-color: var(--dt-primary); color: var(--dt-primary); }
+
+.meta { font-size: 11.5px; color: var(--dt-text-muted); font-family: var(--dt-font-mono); white-space: nowrap; }
+.contagem { font-size: 11.5px; color: var(--dt-text-muted); white-space: nowrap; }
+.tags { display: inline-flex; gap: 5px; align-items: center; }
+
+.env {
+  font-size: 10.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; white-space: nowrap;
+  color: var(--env); background: color-mix(in srgb, var(--env) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--env) 40%, transparent);
+}
+
+/* nível campo (folha) */
+.campo {
+  display: flex; align-items: center; gap: 8px; min-height: 30px; padding-right: 12px;
+  font-size: 12.5px; color: var(--dt-text-secondary);
+  border-bottom: 1px solid color-mix(in srgb, var(--dt-border) 30%, transparent);
+}
+.nomeCampo { font-family: var(--dt-font-mono); font-size: 12px; color: var(--dt-text-primary); }
+.tipo { font-size: 11px; color: var(--dt-text-muted); font-family: var(--dt-font-mono); }
+
+.carregando { display: flex; align-items: center; gap: 6px; min-height: 30px; font-size: 12px; color: var(--dt-text-muted); }
+.girando { animation: girar 1s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }

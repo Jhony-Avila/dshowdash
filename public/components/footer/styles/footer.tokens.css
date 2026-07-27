@@ -1,0 +1,108 @@
+/**
+ * Footer - Design Tokens
+ * @version 9.4.0-ENTERPRISE
+ * @description Tokens centralizados para Footer Enterprise 2.0 - Premium Glass UI
+ */
+
+:root {
+  --footer-height-top: 56px;
+  --footer-height-bottom: 32px;
+  --footer-height-total: 88px;
+  --footer-height-mobile: auto;
+  --footer-max-width: 1600px;
+  --footer-padding-x: 20px;
+  --footer-padding-x-mobile: 12px;
+
+  --footer-bg-top: linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(15, 23, 42, 0.88) 100%);
+  --footer-bg-top-solid: rgba(15, 23, 42, 0.95);
+  --footer-bg-bottom: rgba(7, 9, 15, 0.95);
+  --footer-bg-glass: rgba(30, 41, 59, 0.4);
+  --footer-border-top: rgba(139, 92, 246, 0.3);
+  --footer-border-divider: rgba(148, 163, 184, 0.12);
+  --footer-glow-accent: rgba(139, 92, 246, 0.08);
+
+  --footer-text-primary: rgba(255, 255, 255, 0.95);
+  --footer-text-secondary: rgba(203, 213, 225, 0.9);
+  --footer-text-muted: rgba(148, 163, 184, 0.7);
+  --footer-text-brand: #A78BFA;
+
+  --icon-size-xs: 12px;
+  --icon-size-sm: 14px;
+  --icon-size-md: 16px;
+  --icon-size-lg: 20px;
+  --icon-size-xl: 24px;
+  --icon-color-primary: rgba(255, 255, 255, 0.95);
+  --icon-color-secondary: rgba(203, 213, 225, 0.85);
+  --icon-color-muted: rgba(148, 163, 184, 0.65);
+  --icon-color-brand: #A78BFA;
+  --icon-color-success: #22c55e;
+  --icon-color-warning: #f59e0b;
+  --icon-color-danger: #ef4444;
+  --icon-stroke-width: 1.75;
+
+  --status-online: #22c55e;
+  --status-offline: #ef4444;
+  --status-warning: #f59e0b;
+  --status-info: #3b82f6;
+  --status-neutral: #64748b;
+
+  --chip-height: 28px;
+  --chip-padding-x: 10px;
+  --chip-font-size: 11px;
+  --chip-border-radius: 6px;
+  --chip-bg: rgba(255, 255, 255, 0.04);
+  --chip-bg-hover: rgba(139, 92, 246, 0.1);
+  --chip-border: rgba(148, 163, 184, 0.12);
+  --chip-border-hover: rgba(139, 92, 246, 0.3);
+
+  --chip-primary-bg: rgba(139, 92, 246, 0.12);
+  --chip-primary-border: rgba(139, 92, 246, 0.35);
+  --chip-primary-glow: 0 0 12px rgba(139, 92, 246, 0.2);
+
+  --chip-metric-bg: rgba(34, 197, 94, 0.1);
+  --chip-metric-border: rgba(34, 197, 94, 0.3);
+  --chip-metric-glow: 0 0 10px rgba(34, 197, 94, 0.15);
+
+  --chip-context-bg: rgba(148, 163, 184, 0.06);
+  --chip-context-border: rgba(148, 163, 184, 0.18);
+
+  --pill-height: 20px;
+  --pill-padding-x: 8px;
+  --pill-font-size: 9px;
+  --pill-border-radius: 10px;
+  --pill-bg-production: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.1) 100%);
+  --pill-bg-enterprise: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(99, 102, 241, 0.1) 100%);
+  --pill-bg-neutral: rgba(100, 116, 139, 0.15);
+  --pill-glow-production: 0 0 10px rgba(34, 197, 94, 0.3);
+  --pill-glow-enterprise: 0 0 10px rgba(139, 92, 246, 0.3);
+
+  --footer-transition-fast: 0.12s ease;
+  --footer-transition-normal: 0.2s ease;
+  --footer-transition-slow: 0.3s ease;
+
+  --lottie-size: 28px;
+  --lottie-size-mobile: 24px;
+
+  --badge-height: 20px;
+  --badge-padding-x: 8px;
+  --badge-font-size: 11px;
+  --badge-border-radius: 4px;
+  --badge-bg-success: rgba(16, 185, 129, 0.2);
+  --badge-bg-warning: rgba(245, 158, 11, 0.2);
+  --badge-bg-danger: rgba(239, 68, 68, 0.2);
+  --badge-bg-info: rgba(59, 130, 246, 0.2);
+  --badge-bg-neutral: rgba(100, 116, 139, 0.2);
+  --badge-border-success: rgba(16, 185, 129, 0.45);
+  --badge-border-warning: rgba(245, 158, 11, 0.45);
+  --badge-border-danger: rgba(239, 68, 68, 0.45);
+  --badge-border-info: rgba(59, 130, 246, 0.45);
+  --badge-border-neutral: rgba(100, 116, 139, 0.45);
+
+  --dock-item-size: 40px;
+  --dock-item-bg: rgba(255, 255, 255, 0.05);
+  --dock-item-bg-hover: rgba(139, 92, 246, 0.18);
+  --dock-item-border: rgba(148, 163, 184, 0.12);
+  --dock-item-border-hover: rgba(139, 92, 246, 0.4);
+  --dock-item-glow: 0 0 20px rgba(139, 92, 246, 0.25);
+  --dock-gap: 8px;
+}

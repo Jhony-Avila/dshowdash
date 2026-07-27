@@ -1,0 +1,31 @@
+{
+  "id": "card-10",
+  "name": "Performance Score",
+  "description": "Score de performance do sistema",
+  "version": "4.0.0-ERROR-HANDLER",
+  "author": "DSHOW",
+  "category": "metrics",
+  "icon": "zap",
+  "apiEndpoint": "/api/modules/cards/card-10/api.php",
+  "refreshInterval": 3600000,
+  "dependencies": [],
+  "features": {
+    "errorHandling": true,
+    "retryLogic": true,
+    "toastNotifications": true,
+    "caching": true,
+    "animation": true
+  },
+  "settings": {
+    "showLabel": true,
+    "showFooter": true,
+    "showTrend": true,
+    "showStatus": true,
+    "enableAutoRefresh": true
+  },
+  "display": {
+    "minWidth": 200,
+    "minHeight": 180,
+    "defaultPosition": 10
+  }
+}

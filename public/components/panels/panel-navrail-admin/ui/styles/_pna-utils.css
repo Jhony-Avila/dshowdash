@@ -1,0 +1,7 @@
+/* Panel NavRail Admin - Utilities */
+/* @version 1.0.0-AAA-MODULAR */
+
+.pna-text--muted {
+    color: var(--pna-text-muted);
+    font-size: 0.875rem;
+}

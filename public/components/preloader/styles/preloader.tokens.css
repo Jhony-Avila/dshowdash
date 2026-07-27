@@ -1,0 +1,101 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * PRELOADER DESIGN TOKENS v1.0.0-AAA
+ * Tokens centralizados para todo o Preloader
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * COLORS
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-bg: #0a0a0a;
+  --preloader-bg-overlay: rgba(0, 0, 0, 0.7);
+  --preloader-text-primary: #ffffff;
+  --preloader-text-secondary: rgba(255, 255, 255, 0.8);
+  --preloader-text-muted: rgba(255, 255, 255, 0.6);
+  
+  /* Progress bar */
+  --preloader-progress-bg: rgba(255, 255, 255, 0.1);
+  --preloader-progress-fill: linear-gradient(90deg, #3b82f6, #60a5fa);
+  --preloader-progress-glow: rgba(59, 130, 246, 0.5);
+  
+  /* Degraded mode */
+  --preloader-degraded-bg: rgba(251, 191, 36, 0.1);
+  --preloader-degraded-border: rgba(251, 191, 36, 0.3);
+  --preloader-degraded-text: #fbbf24;
+  
+  /* Error state */
+  --preloader-error-bg: rgba(239, 68, 68, 0.1);
+  --preloader-error-border: rgba(239, 68, 68, 0.3);
+  --preloader-error-text: #ef4444;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * SIZING
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-logo-width: 180px;
+  --preloader-logo-height: 168px;
+  --preloader-logo-width-mobile: 120px;
+  --preloader-logo-height-mobile: 112px;
+  
+  --preloader-progress-width: 300px;
+  --preloader-progress-width-mobile: 200px;
+  --preloader-progress-height: 4px;
+  --preloader-progress-radius: 2px;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * TYPOGRAPHY
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --preloader-font-size-text: 1.125rem;
+  --preloader-font-size-text-mobile: 0.875rem;
+  --preloader-font-size-percentage: 0.875rem;
+  --preloader-font-weight-normal: 400;
+  --preloader-font-weight-medium: 500;
+  --preloader-letter-spacing: 0.05em;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * SPACING
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-gap-sm: 0.5rem;
+  --preloader-gap-md: 1rem;
+  --preloader-gap-lg: 1.5rem;
+  --preloader-gap-xl: 2rem;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * ANIMATION
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-transition-fast: 150ms ease-out;
+  --preloader-transition-normal: 300ms ease-out;
+  --preloader-transition-slow: 500ms ease-out;
+  --preloader-fade-duration: 300ms;
+  --preloader-pulse-duration: 2s;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * Z-INDEX
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-z-base: 9999;
+  --preloader-z-video: 1;
+  --preloader-z-content: 10;
+  --preloader-z-overlay: 5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * REDUCED MOTION OVERRIDES
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --preloader-transition-fast: 0ms;
+    --preloader-transition-normal: 0ms;
+    --preloader-transition-slow: 0ms;
+    --preloader-fade-duration: 0ms;
+    --preloader-pulse-duration: 0ms;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * DARK/LIGHT MODE (future-proof)
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Light mode overrides se necessário */
+  }
+}

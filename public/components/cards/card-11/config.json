@@ -1,0 +1,30 @@
+{
+  "id": "card-11",
+  "name": "Média de Tempo",
+  "description": "Exibe o tempo médio de execução dos scripts",
+  "version": "4.0.0-ERROR-HANDLER",
+  "author": "DSHOW",
+  "category": "metrics",
+  "icon": "clock",
+  "apiEndpoint": "/api/modules/cards/card-11/api.php",
+  "refreshInterval": 3600000,
+  "dependencies": [],
+  "features": {
+    "errorHandling": true,
+    "retryLogic": true,
+    "toastNotifications": true,
+    "caching": true,
+    "timeFormatting": true
+  },
+  "settings": {
+    "showLabel": true,
+    "showStatus": true,
+    "enableAutoRefresh": true,
+    "formatTime": true
+  },
+  "display": {
+    "minWidth": 200,
+    "minHeight": 180,
+    "defaultPosition": 11
+  }
+}

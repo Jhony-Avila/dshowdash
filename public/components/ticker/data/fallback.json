@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "data": [
+    { "id": "fallback-1", "type": "news", "title": "Sistema em modo offline - dados em cache", "source": "sistema", "category": "geral", "published_at": "2025-01-01T00:00:00Z", "url": "#" },
+    { "id": "fallback-2", "type": "fx", "symbol": "USD/BRL", "price": 5.00, "change_pct": 0, "updated_at": "2025-01-01T00:00:00Z" },
+    { "id": "fallback-3", "type": "stock", "symbol": "IBOV", "price": 120000, "change_pct": 0, "updated_at": "2025-01-01T00:00:00Z" }
+  ],
+  "meta": { "fallback": true, "generated_at": "2025-01-01T00:00:00Z" }
+}

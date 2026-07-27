@@ -1,0 +1,50 @@
+/* Panel Enterprise - Utilities Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--color-text-muted, rgba(255,255,255,0.6));
+}
+
+.error {
+  padding: 16px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 4px;
+  color: #ef4444;
+  margin-bottom: 16px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border, rgba(255,255,255,0.1));
+  color: var(--color-text-muted, rgba(255,255,255,0.6));
+  font-size: 14px;
+}
+
+.export-actions,
+.import-actions {
+  margin: 16px 0;
+}
+
+.help-text {
+  color: var(--color-text-muted, rgba(255,255,255,0.5));
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+.sessions-summary {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}

@@ -1,0 +1,57 @@
+/* Panel Orchestrator Manager - Layout */
+/* @version 2.0.0-ENTERPRISE */
+
+.pom-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--pom-bg-primary);
+  color: var(--pom-text-primary);
+  font-family: var(--pom-font-family);
+}
+
+.pom-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--pom-bg-secondary);
+  border-bottom: 1px solid var(--pom-border-color);
+}
+
+.pom-header__title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pom-header__title h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.pom-header__icon {
+  font-size: 1.5rem;
+}
+
+.pom-header__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pom-content {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 1.5rem;
+}
+
+.pom-content--loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.pom-content--fullheight {
+  flex: 1;
+  min-height: 400px;
+}

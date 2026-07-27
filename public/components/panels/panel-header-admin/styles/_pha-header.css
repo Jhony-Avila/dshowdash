@@ -1,0 +1,44 @@
+/* Panel Header Admin - Header */
+/* @version 1.0.0-AAA-MODULAR */
+/* Header do painel */
+
+.pha-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--pha-border);
+}
+
+.pha-header__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pha-header__title h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--pha-text-primary);
+}
+
+.pha-header__icon {
+  width: 32px;
+  height: 32px;
+  color: var(--pha-primary);
+}
+
+.pha-header__version {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: var(--pha-primary-light);
+  color: var(--pha-primary-dark);
+  border-radius: var(--pha-radius-lg);
+}
+
+.pha-header__actions {
+  display: flex;
+  gap: 12px;
+}

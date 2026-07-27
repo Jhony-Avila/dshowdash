@@ -1,0 +1,59 @@
+/* Panel NavRail Admin - Form */
+/* @version 1.0.0-AAA-MODULAR */
+
+.pna-form {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.pna-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.pna-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pna-form__field label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--pna-text-muted);
+    text-transform: uppercase;
+}
+
+.pna-form__checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--pna-bg);
+    border-radius: var(--pna-radius-sm);
+}
+
+.pna-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.pna-checkbox input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--pna-primary);
+}
+
+.pna-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--pna-border);
+}

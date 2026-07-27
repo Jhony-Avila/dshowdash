@@ -1,0 +1,39 @@
+.resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--dt-space-2); }
+.resumoItem { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border: 1px solid var(--dt-border); border-radius: var(--dt-radius-md); background: var(--dt-bg-canvas); }
+.resumoIcone { color: var(--dt-primary); }
+.resumoValor { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.resumoRotulo { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--dt-text-muted); }
+.tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.alterada { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--dt-text-muted); margin-left: auto; }
+.comentario { margin: 0; padding: 10px 12px; border-left: 3px solid var(--dt-info); border-radius: 0 var(--dt-radius-sm) var(--dt-radius-sm) 0; background: var(--dt-bg-canvas); font-size: 12.5px; color: var(--dt-text-secondary); }
+
+.lista { display: flex; flex-direction: column; border: 1px solid var(--dt-border); border-radius: var(--dt-radius-md); overflow: hidden; }
+.campo, .linha, .issue { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+.campo + .campo, .linha + .linha, .issue + .issue { border-top: 1px solid var(--dt-border); }
+.campo:hover, .linha:hover, .issue:hover { background: var(--dt-row-hover); }
+.campoNome { font-family: var(--dt-font-mono); font-size: 12.5px; font-weight: 600; min-width: 120px; }
+.campoTipo { font-family: var(--dt-font-mono); font-size: 11.5px; color: var(--dt-text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.campoBadges { display: inline-flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.mono { font-family: var(--dt-font-mono); font-size: 12px; }
+.cols { font-family: var(--dt-font-mono); font-size: 11px; color: var(--dt-text-muted); flex: 1; }
+.discreto { font-size: 11.5px; color: var(--dt-text-muted); }
+.issueRegra { flex: 1; font-size: 12.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.refChip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: var(--dt-bg-canvas); border: 1px solid var(--dt-border); font-family: var(--dt-font-mono); font-size: 11.5px; }
+.vazio { margin: 0; font-size: 12.5px; color: var(--dt-text-muted); }
+
+/* Evidências da Descoberta (DescobertaDrawer) */
+.evGrupos { display: flex; flex-direction: column; gap: 12px; }
+.evGrupo { display: flex; flex-direction: column; gap: 6px; }
+.evTitulo { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 11.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .03em; color: var(--dt-text-secondary); }
+.evItem { display: flex; flex-direction: column; gap: 4px; padding: 8px 11px; border: 1px solid var(--dt-border); border-radius: var(--dt-radius-sm); background: var(--dt-bg-canvas); }
+.evDetalhe { font-size: 12.5px; color: var(--dt-text-primary); line-height: 1.4; }
+.evMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+/* Botão de ação no corpo do drawer (ex.: "Comparar esquema" no BancoDrawer). */
+.acaoBtn {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  padding: 7px 13px; border: 1px solid var(--dt-border); border-radius: var(--dt-radius-md);
+  background: var(--dt-bg-canvas); color: var(--dt-text-secondary); font: inherit; font-size: 12.5px; cursor: pointer;
+}
+.acaoBtn:hover { border-color: var(--dt-primary); color: var(--dt-primary); }

@@ -1,0 +1,41 @@
+{
+  "name": "footer-status-orchestrator",
+  "version": "1.0.0",
+  "description": "Componente autocontido do Footer responsável por exibir preset e saúde do Orchestrator",
+  "lifecycle": {
+    "mount": true,
+    "update": true,
+    "destroy": true
+  },
+  "inputs": {
+    "props": {
+      "required": ["preset", "status"],
+      "optional": []
+    },
+    "dependencies": {
+      "globalState": false,
+      "eventBus": true,
+      "orchestrator": true,
+      "telemetry": true
+    }
+  },
+  "outputs": {
+    "events": [],
+    "telemetry": {
+      "namespace": "footer.status-orchestrator",
+      "events": ["mounted", "display-updated", "destroyed"]
+    }
+  },
+  "ui": {
+    "providesMarkup": true,
+    "providesStyles": true,
+    "rootClass": "footer-status-orchestrator",
+    "accessible": true
+  },
+  "behavior": {
+    "idempotent": true,
+    "reentrant": true,
+    "faultTolerant": true,
+    "asyncSafe": true
+  }
+}

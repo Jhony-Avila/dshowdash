@@ -1,0 +1,38 @@
+/* Icon Bookmark - Enterprise v1.0.0 */
+.icon-bookmark-component {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+.icon-bookmark-component:hover { background: rgba(255,255,255,0.1); }
+.icon-bookmark-component svg { width: 18px; height: 18px; opacity: 0.7; transition: opacity 0.2s; }
+.icon-bookmark-component:hover svg { opacity: 1; }
+.icon-bookmark-component[title]::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  padding: 6px 10px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease-out;
+  pointer-events: none;
+  z-index: 100;
+}
+.icon-bookmark-component[title]:hover::after { opacity: 1; visibility: visible; transform: translateX(-50%) scale(1); }

@@ -1,0 +1,4 @@
+/* Arquivos - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-files { box-sizing: border-box; }
+.panel-files *, .panel-files *::before, .panel-files *::after { box-sizing: inherit; }

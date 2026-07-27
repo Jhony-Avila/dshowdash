@@ -1,0 +1,46 @@
+/* Panel-19 Dashboard Enterprise - Accessibility */
+/* @version 2.0.0-ENTERPRISE-AAA */
+
+.p19-wrapper:focus-within {
+  outline: 2px solid var(--p19-accent);
+  outline-offset: -2px;
+}
+
+.p19-refresh-btn:focus-visible,
+.p19-retry-btn:focus-visible {
+  outline: 2px solid var(--p19-accent);
+  outline-offset: 2px;
+}
+
+.p19-tbody tr:focus-within {
+  background: var(--p19-bg-hover);
+  outline: 1px solid var(--p19-accent);
+  outline-offset: -1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p19-skeleton-cell,
+  .p19-status-dot,
+  .p19-refresh-icon {
+    animation: none !important;
+  }
+
+  .p19-tbody tr,
+  .p19-refresh-btn {
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .p19-wrapper {
+    border-width: 2px;
+  }
+
+  .p19-table th {
+    border-bottom-width: 2px;
+  }
+
+  .p19-tbody tr {
+    border-bottom-width: 2px;
+  }
+}

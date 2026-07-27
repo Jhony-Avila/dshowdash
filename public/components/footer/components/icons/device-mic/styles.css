@@ -1,0 +1,11 @@
+.dsd-icon--device-mic { --icon-size-xs: 12px; --icon-size-sm: 14px; --icon-size-md: 16px; --icon-size-lg: 20px; --icon-size-xl: 24px; }
+.dsd-icon--device-mic { display: inline-flex; align-items: center; justify-content: center; line-height: 1; transition: all 0.2s ease; }
+.dsd-icon--device-mic.dsd-icon--clickable { cursor: pointer; }
+.dsd-icon--device-mic.dsd-icon--mode-normal { color: var(--color-success, #22c55e); }
+.dsd-icon--device-mic.dsd-icon--mode-maintenance { color: var(--color-warning, #f59e0b); }
+.dsd-icon--device-mic.dsd-icon--mode-p0 { color: var(--color-danger, #ef4444); }
+.dsd-icon--device-mic.dsd-icon--mode-incident { color: var(--color-danger, #ef4444); }
+.dsd-icon--device-mic.dsd-icon--mode-degraded { color: var(--color-warning, #f59e0b); }
+.dsd-icon--device-mic.dsd-icon--mode-on { color: var(--color-success, #22c55e); }
+.dsd-icon--device-mic.dsd-icon--mode-off { color: var(--color-muted, #6b7280); }
+@media (max-width: 640px) { .dsd-icon--device-mic.dsd-icon--size-xl { width: var(--icon-size-lg); height: var(--icon-size-lg); } }

@@ -1,0 +1,139 @@
+/* Panel-05 Dark Mode - Controls
+ * @version 7.0.0-MODULAR
+ * Toggle + Switch + Selector + Scrollbar + Charts + Focus
+ */
+
+/* Theme Toggle Button */
+.p05-theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: var(--p05-radius-md);
+    transition: all var(--p05-motion-fast) var(--p05-easing-default);
+}
+
+.p05-theme-toggle .p05-theme-icon {
+    width: 18px;
+    height: 18px;
+    transition: transform var(--p05-motion-normal) var(--p05-easing-bounce);
+}
+
+.p05-theme-toggle:hover .p05-theme-icon {
+    transform: rotate(15deg);
+}
+
+[data-theme="dark"] .p05-theme-toggle:hover .p05-theme-icon {
+    transform: rotate(-15deg);
+}
+
+/* Theme Switch (iOS-style) */
+.p05-theme-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.p05-theme-switch-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--p05-text-muted);
+    transition: color var(--p05-motion-fast) var(--p05-easing-default);
+}
+
+.p05-theme-switch-icon.p05-active {
+    color: var(--p05-primary);
+}
+
+.p05-theme-switch-track {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    background: var(--p05-bg-surface-alt);
+    border-radius: 10px;
+    transition: background var(--p05-motion-fast) var(--p05-easing-default);
+}
+
+[data-theme="dark"] .p05-theme-switch-track {
+    background: var(--p05-primary);
+}
+
+.p05-theme-switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: var(--p05-shadow-sm);
+    transition: transform var(--p05-motion-normal) var(--p05-easing-bounce);
+}
+
+/* Theme Selector Dropdown */
+.p05-theme-selector {
+    min-width: 160px;
+}
+
+.p05-theme-selector .p05-dropdown-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Scrollbar Dark Mode */
+[data-theme="dark"] .p05-panel::-webkit-scrollbar-track,
+[data-theme="dark"] .p05-panel *::-webkit-scrollbar-track {
+    background: var(--p05-bg-surface);
+}
+
+[data-theme="dark"] .p05-panel::-webkit-scrollbar-thumb,
+[data-theme="dark"] .p05-panel *::-webkit-scrollbar-thumb {
+    background: var(--p05-border-strong);
+}
+
+[data-theme="dark"] .p05-panel::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .p05-panel *::-webkit-scrollbar-thumb:hover {
+    background: var(--p05-text-muted);
+}
+
+/* Sparkline Dark Mode */
+[data-theme="dark"] .p05-sparkline {
+    opacity: 0.9;
+}
+
+[data-theme="dark"] .p05-sparkline-up {
+    stroke: var(--p05-success);
+}
+
+[data-theme="dark"] .p05-sparkline-down {
+    stroke: var(--p05-danger);
+}
+
+[data-theme="dark"] .p05-sparkline-neutral {
+    stroke: var(--p05-text-muted);
+}
+
+/* Charts Dark Mode */
+[data-theme="dark"] .p05-donut-center {
+    fill: var(--p05-bg-surface);
+}
+
+[data-theme="dark"] .p05-chart-legend-item {
+    color: var(--p05-text-secondary);
+}
+
+[data-theme="dark"] .p05-progress-track {
+    background: var(--p05-bg-surface-alt);
+}
+
+/* Focus States Dark Mode */
+[data-theme="dark"] .p05-panel :focus-visible {
+    outline-color: var(--p05-primary);
+    outline-offset: 2px;
+}
+
+[data-theme="dark"] .p05-panel .p05-focus-ring:focus {
+    box-shadow: 0 0 0 2px var(--p05-bg-primary), 0 0 0 4px var(--p05-primary);
+}

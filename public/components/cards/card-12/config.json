@@ -1,0 +1,30 @@
+{
+  "id": "card-12",
+  "name": "Taxa de Cache",
+  "description": "Monitora a eficiência do Redis (Hit/Miss Ratio)",
+  "version": "4.0.0-ERROR-HANDLER",
+  "author": "DSHOW",
+  "category": "performance",
+  "icon": "zap",
+  "apiEndpoint": "/api/modules/cards/card-12/api.php",
+  "refreshInterval": 3600000,
+  "dependencies": [],
+  "features": {
+    "errorHandling": true,
+    "retryLogic": true,
+    "toastNotifications": true,
+    "caching": false,
+    "animation": true,
+    "redisMonitoring": true
+  },
+  "settings": {
+    "showStats": true,
+    "showRedisStatus": true,
+    "enableAutoRefresh": true
+  },
+  "display": {
+    "minWidth": 200,
+    "minHeight": 200,
+    "defaultPosition": 12
+  }
+}

@@ -1,0 +1,21 @@
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .01em;
+  border: 1px solid var(--b); color: var(--c); background: var(--f);
+  --c: var(--dt-text-secondary); --f: var(--dt-bg-surface-hover); --b: var(--dt-border);
+}
+.ok      { --c: var(--dt-success); --f: var(--dt-success-bg); --b: color-mix(in srgb, var(--dt-success) 28%, transparent); }
+.atencao { --c: var(--dt-warning); --f: var(--dt-warning-bg); --b: color-mix(in srgb, var(--dt-warning) 30%, transparent); }
+.alerta  { --c: var(--dt-danger);  --f: var(--dt-danger-bg);  --b: var(--dt-danger-border); }
+.info    { --c: var(--dt-info);    --f: var(--dt-info-bg);    --b: color-mix(in srgb, var(--dt-info) 28%, transparent); }
+.fraco   { opacity: .68; font-style: italic; }
+
+.barraWrap {
+  display: block; width: 100%; max-width: 84px; height: 5px;
+  border-radius: 999px; background: var(--dt-bg-surface-hover); overflow: hidden;
+}
+.barra { display: block; height: 100%; border-radius: 999px; background: var(--dt-primary); }
+
+.anel { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.anelTexto { position: absolute; font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }

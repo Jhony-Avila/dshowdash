@@ -1,0 +1,82 @@
+/* Panel-02 States - Feedback
+ * @version 5.0.0-MODULAR
+ * Empty State + Error State + Degraded + Loading Overlay
+ */
+
+/* Empty State */
+.p02-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.p02-empty-icon { width: 48px; height: 48px; color: var(--p02-text-disabled); margin-bottom: 1rem; }
+.p02-empty-title { font-size: 0.9375rem; font-weight: 600; color: var(--p02-text-secondary); margin: 0 0 0.5rem 0; }
+.p02-empty-description { font-size: 0.8125rem; color: var(--p02-text-muted); margin: 0; }
+
+/* Error State */
+.p02-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.p02-error-icon { width: 40px; height: 40px; color: var(--p02-error); margin-bottom: 1rem; }
+.p02-error-message { font-size: 0.875rem; color: var(--p02-text-secondary); margin: 0 0 1rem 0; }
+
+.p02-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  background: var(--p02-accent);
+  border: none;
+  border-radius: var(--p02-radius-sm);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--p02-transition);
+}
+
+.p02-retry-btn:hover { background: var(--p02-accent-hover); }
+
+/* Degraded Mode */
+.p02-degraded-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--p02-warning-bg);
+  border-bottom: 1px solid var(--p02-warning);
+  font-size: 0.75rem;
+  color: var(--p02-warning);
+}
+
+.p02-degraded-banner svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* Loading Overlay */
+.p02-table-wrapper.is-refreshing { position: relative; }
+
+.p02-table-wrapper.is-refreshing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  animation: p02-pulse 1s ease-in-out infinite;
+}
+
+@keyframes p02-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}

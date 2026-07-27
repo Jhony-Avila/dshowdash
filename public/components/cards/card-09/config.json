@@ -1,0 +1,28 @@
+{
+  "id": "card-09",
+  "name": "Volume Total",
+  "description": "Total processado",
+  "version": "4.0.0-ERROR-HANDLER",
+  "author": "DSHOW",
+  "category": "metrics",
+  "icon": "bar-chart",
+  "apiEndpoint": "/api/modules/cards/card-09/api.php",
+  "refreshInterval": 3600000,
+  "dependencies": [],
+  "features": {
+    "errorHandling": true,
+    "retryLogic": true,
+    "toastNotifications": true,
+    "caching": true
+  },
+  "settings": {
+    "showLabel": true,
+    "showStatus": true,
+    "enableAutoRefresh": true
+  },
+  "display": {
+    "minWidth": 200,
+    "minHeight": 180,
+    "defaultPosition": 9
+  }
+}

@@ -1,0 +1,59 @@
+// ═══════════════════════════════════════════════════════════════
+// DEPENDENCY CONTRACT (9.2.0-P2-ENTERPRISE)
+// ═══════════════════════════════════════════════════════════════
+// MODULE: components.cards.card-03.telemetry.tracker
+// PURPOSE: Telemetry tracking for Card 03 with metrics collection
+// ───────────────────────────────────────────────────────────────
+// @contract TRACK - track(event, data) emits telemetry via CustomEvent
+// @contract METRICS - trackLoad/trackError/trackRefresh update counters
+// @contract LIFECYCLE - init() and destroy() for tracker lifecycle
+// @contract HEALTH - healthCheck() and info() for observability
+// ───────────────────────────────────────────────────────────────
+// IMPORTS: CARD_EVENTS from /core/runtime/events/index.js
+// PROVIDES: CardTelemetryTracker, createTracker, VERSION, MODULE_ID, healthCheck(), info()
+// @changelog v9.2.0-P2-ENTERPRISE: Standardized DEPENDENCY CONTRACT header
+// @changelog v9.1.0-ENTERPRISE: ES6 class conversion
+// ═══════════════════════════════════════════════════════════════
+'use strict';
+
+import { CARD_EVENTS } from '/core/runtime/events/catalog/card.events.js';
+
+export const VERSION = '9.2.0-P2-ENTERPRISE';
+export const MODULE_ID = 'components.cards.card-03.telemetry.tracker';
+const NAMESPACE = 'card';
+
+export class CardTelemetryTracker {
+  cardId: string;
+  config: Record<string, unknown>;
+  initialized: boolean;
+  metrics: Record<string, number>;
+  sessionStart: number;
+
+  constructor(cardId: string, config: Record<string, unknown> = {}) {
+    this.cardId = cardId;
+    this.config = config;
+    this.initialized = false;
+    this.metrics = { loads: 0, errors: 0, refreshes: 0 };
+    this.sessionStart = Date.now();
+  }
+
+  init() { if (this.initialized) return this; this.initialized = true; return this; }
+
+  track(event: string, data?: Record<string, unknown>) {
+    if (!this.initialized) this.init();
+    const payload = { event: `${NAMESPACE}:${this.cardId}:${event}`, cardId: this.cardId, timestamp: Date.now(), ...data };
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(CARD_EVENTS.TELEMETRY, { detail: payload }));
+    return payload;
+  }
+
+  trackLoad(duration: number, success: boolean) { this.metrics.loads++; if (!success) this.metrics.errors++; return this.track('load', { duration, success, unit: 'ms' }); }
+  trackError(error: Error | { message?: string }, context: string) { this.metrics.errors++; return this.track('error', { context, message: error?.message ?? String(error) }); }
+  trackRefresh(source: string, success: boolean) { this.metrics.refreshes++; return this.track('refresh', { source, success }); }
+  getMetrics() { return { ...this.metrics, sessionDuration: Date.now() - this.sessionStart }; }
+  destroy() { this.initialized = false; }
+}
+
+export const createTracker = (cardId: string, config?: Record<string, unknown>) => new CardTelemetryTracker(cardId, config);
+export const healthCheck = () => ({ status: 'HEALTHY', moduleId: MODULE_ID, version: VERSION, timestamp: Date.now() });
+export const info = () => ({ moduleId: MODULE_ID, version: VERSION, exports: ['CardTelemetryTracker', 'createTracker'], timestamp: Date.now() });
+export default CardTelemetryTracker;

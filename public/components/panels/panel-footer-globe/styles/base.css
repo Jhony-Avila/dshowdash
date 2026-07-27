@@ -1,0 +1,4 @@
+/* Footer  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-footer-globe { box-sizing: border-box; }
+.panel-footer-globe *, .panel-footer-globe *::before, .panel-footer-globe *::after { box-sizing: inherit; }

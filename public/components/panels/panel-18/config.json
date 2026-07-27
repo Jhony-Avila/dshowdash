@@ -1,0 +1,22 @@
+{
+  "id": "panel-18",
+  "name": "KPIs Taxa de Sucesso",
+  "description": "Dashboard com grid 2x2 de KPIs grandes, barra de resumo e tabela de performance",
+  "category": "monitoring",
+  "refreshInterval": 60000,
+  "enabled": true,
+  "version": "8.1.0-ENTERPRISE",
+  "architecture": "autocontained",
+  "author": "DShow Dashboard",
+  "created": "2025-11-08",
+  "updated": "2025-12-26",
+  "dependencies": [],
+  "permissions": ["read"],
+  "features": ["autocontained", "idempotent", "resilient", "observable", "scalable", "self-healing", "kpi-grid-2x2", "summary-bar", "export-csv"],
+  "telemetry": { "enabled": true, "events": ["lifecycle:mounted", "lifecycle:unmounted", "data:loaded", "data:error", "mode:degraded", "export:csv"] },
+  "layout": {
+    "type": "kpi-grid",
+    "columns": 2,
+    "sections": ["kpis", "summary", "table"]
+  }
+}

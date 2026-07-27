@@ -1,0 +1,175 @@
+/* UARPS Admin - Matrix Grid (Collapsible)
+ * @version 2.0.0-ENTERPRISE-UARPS
+ */
+
+.uarps-matrix__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.uarps-matrix__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--uarps-bg-tertiary);
+  border-radius: var(--uarps-radius-md);
+  margin-bottom: 0.5rem;
+}
+
+.uarps-matrix__toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--uarps-border);
+  margin: 0 0.5rem;
+}
+
+.uarps-matrix__toolbar-info {
+  font-size: 0.75rem;
+  color: var(--uarps-text-muted);
+  margin-left: auto;
+}
+
+/* Group */
+.uarps-matrix__group {
+  background: var(--uarps-bg-secondary);
+  border: 1px solid var(--uarps-border);
+  border-radius: var(--uarps-radius-lg);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.uarps-matrix__group:hover {
+  border-color: var(--uarps-border-accent);
+}
+
+/* Group Header */
+.uarps-matrix__group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(to right, var(--uarps-layer-from), var(--uarps-layer-to));
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.uarps-matrix__group-header:hover {
+  background: var(--uarps-bg-tertiary);
+}
+
+/* Toggle Button */
+.uarps-matrix__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  color: var(--uarps-text-muted);
+  cursor: pointer;
+  border-radius: var(--uarps-radius-sm);
+  transition: all 0.2s ease;
+}
+
+.uarps-matrix__toggle:hover {
+  background: var(--uarps-accent-soft);
+  color: var(--uarps-accent);
+}
+
+.uarps-matrix__toggle svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+/* Area Icon (SVG from server) */
+.uarps-matrix__group-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--uarps-accent-soft);
+  border-radius: var(--uarps-radius-md);
+  padding: 6px;
+}
+
+.uarps-matrix__group-icon .uarps-svg-icon {
+  width: 100%;
+  height: 100%;
+  filter: brightness(0) saturate(100%) invert(40%) sepia(90%) saturate(1500%) hue-rotate(230deg);
+}
+
+/* Group Title */
+.uarps-matrix__group-title {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--uarps-text-primary);
+}
+
+/* Group Stats */
+.uarps-matrix__group-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-family: var(--uarps-font-mono);
+  padding: 0.25rem 0.5rem;
+  background: var(--uarps-bg-tertiary);
+  border-radius: var(--uarps-radius-full);
+}
+
+.uarps-matrix__group-granted {
+  color: var(--uarps-accent-green);
+  font-weight: 600;
+}
+
+.uarps-matrix__group-separator {
+  color: var(--uarps-text-muted);
+}
+
+.uarps-matrix__group-total {
+  color: var(--uarps-text-secondary);
+}
+
+/* Group Items */
+.uarps-matrix__group-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--uarps-bg-primary);
+  transition: all 0.3s ease;
+}
+
+/* Collapsed State */
+.uarps-matrix__group--collapsed .uarps-matrix__group-items {
+  display: none;
+}
+
+.uarps-matrix__group--collapsed .uarps-matrix__toggle svg {
+  transform: rotate(-90deg);
+}
+
+/* Empty State */
+.uarps-matrix__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  color: var(--uarps-text-muted);
+  text-align: center;
+}
+
+.uarps-matrix__empty svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+}

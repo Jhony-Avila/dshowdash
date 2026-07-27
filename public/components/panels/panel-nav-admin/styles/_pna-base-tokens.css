@@ -1,0 +1,71 @@
+/* ═══════════════════════════════════════════════════════════════
+   PNA BASE - DESIGN TOKENS
+   @version 2.0.0-P01-ALIGNMENT
+   Refined spacing scale, transition curves, and color tokens
+   aligned with panel-01 visual language.
+   ═══════════════════════════════════════════════════════════════ */
+
+.pna-panel {
+  /* ── Backgrounds ── */
+  --pna-bg: #0a0a0f;
+  --pna-bg-secondary: #111118;
+  --pna-bg-tertiary: #1a1a24;
+  --pna-surface: rgba(255, 255, 255, 0.04);
+  --pna-surface-darker: rgba(0, 0, 0, 0.15);
+
+  /* ── Text ── */
+  --pna-text: rgba(255, 255, 255, 0.95);
+  --pna-text-secondary: rgba(255, 255, 255, 0.6);
+  --pna-text-muted: rgba(255, 255, 255, 0.4);
+
+  /* ── Borders ── */
+  --pna-border: rgba(255, 255, 255, 0.08);
+  --pna-border-light: rgba(255, 255, 255, 0.12);
+  --pna-border-color: rgba(var(--pna-ink,255,255,255), 0.06);
+
+  /* ── Primary (Purple) ── */
+  --pna-primary: #8b5cf6;
+  --pna-primary-light: #a78bfa;
+  --pna-primary-dark: #7c3aed;
+  --pna-primary-bg: rgba(139, 92, 246, 0.1);
+  --pna-gradient-primary: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+
+  /* ── Semantic ── */
+  --pna-success: #10b981;
+  --pna-success-bg: rgba(16, 185, 129, 0.1);
+  --pna-warning: #f59e0b;
+  --pna-warning-bg: rgba(245, 158, 11, 0.1);
+  --pna-danger: #ef4444;
+  --pna-danger-bg: rgba(239, 68, 68, 0.1);
+  --pna-info: #06b6d4;
+  --pna-info-bg: rgba(6, 182, 212, 0.1);
+
+  /* ── Spacing (consistent scale) ── */
+  --pna-space-xs: 4px;
+  --pna-space-sm: 8px;
+  --pna-space-md: 12px;
+  --pna-space-lg: 16px;
+  --pna-space-xl: 24px;
+  --pna-space-2xl: 32px;
+
+  /* ── Radii ── */
+  --pna-radius-sm: 6px;
+  --pna-radius-md: 8px;
+  --pna-radius-lg: 12px;
+
+  /* ── Transitions ── */
+  --pna-transition: 150ms ease-out;
+  --pna-transition-fast: 100ms ease-out;
+  --pna-transition-normal: 200ms ease-out;
+  --pna-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Layout ── */
+  position: relative;
+  min-height: 100%;
+  padding: var(--pna-space-xl);
+  background: var(--pna-bg);
+  color: var(--pna-text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

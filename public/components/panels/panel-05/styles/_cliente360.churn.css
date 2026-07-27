@@ -1,0 +1,128 @@
+/* Panel-05 - Cliente 360 Churn */
+/* @version 7.0.0-MODULAR */
+/* Churn Risk */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CHURN RISK */
+/* ═══════════════════════════════════════════════════════════════ */
+.p05-churn-container {
+    background: var(--p05-bg-surface);
+    border: 1px solid var(--p05-border-default);
+    border-radius: var(--p05-radius-md);
+    padding: var(--p05-space-lg);
+    margin: 0 var(--p05-space-section) var(--p05-space-lg);
+}
+
+.p05-churn-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--p05-space-md);
+    margin-bottom: var(--p05-space-lg);
+}
+
+.p05-churn-header h4 {
+    margin: 0;
+    font: var(--p05-font-title-sm);
+    color: var(--p05-text-primary);
+}
+
+.p05-churn-stats {
+    display: flex;
+    gap: var(--p05-space-sm);
+}
+
+.p05-churn-stat {
+    padding: var(--p05-space-xs) var(--p05-space-md);
+    border-radius: var(--p05-radius-pill);
+    font: var(--p05-font-badge);
+}
+
+.p05-stat-critico { background: var(--p05-critical-bg); color: var(--p05-critical); }
+.p05-stat-alto { background: var(--p05-danger-bg); color: var(--p05-danger); }
+.p05-stat-medio { background: var(--p05-warning-bg); color: var(--p05-warning); }
+.p05-stat-receita { background: var(--p05-info-bg); color: var(--p05-info); }
+
+.p05-churn-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--p05-space-sm);
+}
+
+.p05-churn-item {
+    padding: var(--p05-space-md);
+    background: var(--p05-bg-app);
+    border: 1px solid var(--p05-border-subtle);
+    border-left: 3px solid;
+    border-radius: var(--p05-radius-sm);
+    cursor: pointer;
+    transition: all var(--p05-motion-fast);
+}
+
+.p05-churn-item:hover {
+    background: var(--p05-bg-surface-hover);
+    border-color: var(--p05-border-hover);
+}
+
+.p05-churn-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--p05-space-md);
+    margin-bottom: var(--p05-space-sm);
+}
+
+.p05-churn-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.p05-churn-nome {
+    font: var(--p05-font-body);
+    color: var(--p05-text-primary);
+}
+
+.p05-churn-local {
+    font: var(--p05-font-meta);
+    color: var(--p05-text-dim);
+}
+
+.p05-churn-score {
+    display: flex;
+    align-items: center;
+    gap: var(--p05-space-sm);
+}
+
+.p05-score-bar {
+    width: 60px;
+    height: 6px;
+    background: var(--p05-bg-surface-alt);
+    border-radius: 3px;
+}
+
+.p05-score-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+.p05-score-value {
+    font: var(--p05-font-badge);
+    min-width: 36px;
+    text-align: right;
+}
+
+.p05-churn-fatores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--p05-space-xs);
+}
+
+.p05-fator-tag {
+    padding: 2px 8px;
+    background: var(--p05-bg-surface-alt);
+    border-radius: var(--p05-radius-xs);
+    font: var(--p05-font-meta);
+    color: var(--p05-text-muted);
+}

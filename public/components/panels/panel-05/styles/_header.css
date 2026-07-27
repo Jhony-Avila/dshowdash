@@ -1,0 +1,8 @@
+/* Panel-05 Header - Master
+ * @version 7.0.0-MODULAR
+ * Modularizado em 3 partials
+ */
+
+@import '_header.container.css';
+@import '_header.actions.css';
+@import '_header.buttons.css';

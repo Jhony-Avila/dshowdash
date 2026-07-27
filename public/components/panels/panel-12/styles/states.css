@@ -1,0 +1,195 @@
+/* Panel-12 Gerenciamento de Jobs - States */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+/* SKELETON LOADING */
+#painel-12 .painel-12-skeleton {
+  padding: 20px;
+}
+
+#painel-12 .painel-12-skeleton-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+#painel-12 .painel-12-skeleton-cell {
+  height: 16px;
+  background: linear-gradient(90deg, 
+    rgba(255,255,255,0.03) 25%, 
+    rgba(255,255,255,0.08) 50%, 
+    rgba(255,255,255,0.03) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+#painel-12 .painel-12-skeleton-cell:nth-child(1) { width: 25%; }
+#painel-12 .painel-12-skeleton-cell:nth-child(2) { width: 15%; }
+#painel-12 .painel-12-skeleton-cell:nth-child(3) { width: 20%; }
+#painel-12 .painel-12-skeleton-cell:nth-child(4) { width: 15%; }
+#painel-12 .painel-12-skeleton-cell:nth-child(5) { width: 10%; }
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* EMPTY STATE */
+#painel-12 .painel-12-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+#painel-12 .painel-12-empty-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: var(--p12-text-disabled);
+  opacity: 0.5;
+}
+
+#painel-12 .painel-12-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--p12-text-secondary);
+  margin-bottom: 8px;
+}
+
+#painel-12 .painel-12-empty-description {
+  font-size: 13px;
+  color: var(--p12-text-muted);
+  max-width: 300px;
+}
+
+/* TOASTS */
+#painel-12 .painel-12-toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+}
+
+#painel-12 .painel-12-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--p12-bg-header);
+  border: 1px solid var(--p12-border-color);
+  border-radius: var(--p12-btn-radius);
+  box-shadow: var(--p12-shadow-lg);
+  min-width: 280px;
+  max-width: 400px;
+  animation: toast-slide-in 0.3s ease;
+}
+
+#painel-12 .painel-12-toast.toast-success {
+  border-left: 3px solid var(--p12-success);
+}
+
+#painel-12 .painel-12-toast.toast-error {
+  border-left: 3px solid var(--p12-error);
+}
+
+#painel-12 .painel-12-toast.toast-warning {
+  border-left: 3px solid var(--p12-warning);
+}
+
+#painel-12 .painel-12-toast.toast-info {
+  border-left: 3px solid var(--p12-info);
+}
+
+#painel-12 .painel-12-toast-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+#painel-12 .painel-12-toast.toast-success .painel-12-toast-icon { color: var(--p12-success); }
+#painel-12 .painel-12-toast.toast-error .painel-12-toast-icon { color: var(--p12-error); }
+#painel-12 .painel-12-toast.toast-warning .painel-12-toast-icon { color: var(--p12-warning); }
+#painel-12 .painel-12-toast.toast-info .painel-12-toast-icon { color: var(--p12-info); }
+
+#painel-12 .painel-12-toast-message {
+  flex: 1;
+  font-size: 13px;
+  color: var(--p12-text-primary);
+}
+
+#painel-12 .painel-12-toast-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  color: var(--p12-text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+#painel-12 .painel-12-toast-close:hover {
+  color: var(--p12-text-primary);
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ERROR STATE */
+#painel-12 .painel-12-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+#painel-12 .painel-12-error-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  color: var(--p12-error);
+}
+
+#painel-12 .painel-12-error-message {
+  font-size: 14px;
+  color: var(--p12-text-secondary);
+  margin-bottom: 16px;
+}
+
+#painel-12 .painel-12-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--p12-accent);
+  border: none;
+  border-radius: var(--p12-btn-radius);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--p12-transition);
+}
+
+#painel-12 .painel-12-retry-btn:hover {
+  background: var(--p12-accent-hover);
+}

@@ -1,0 +1,8 @@
+/* Panel-15 Header - Master
+ * @version 5.0.0-MODULAR
+ * Modularizado em 3 partials
+ */
+
+@import 'panel-15.header.identity.css';
+@import 'panel-15.header.health.css';
+@import 'panel-15.header.actions.css';

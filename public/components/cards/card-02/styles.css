@@ -1,0 +1,10 @@
+/**
+ * Card 02 - Taxa de Sucesso Global
+ * @version 6.1.0-MODULAR
+ * @description Agregador modular
+ */
+
+@import url('./card-02.base.css');
+@import url('./card-02.sections.css');
+@import url('./card-02.states.css');
+@import url('./card-02.responsive.css');

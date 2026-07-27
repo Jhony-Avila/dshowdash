@@ -1,0 +1,10 @@
+{
+  "id": "monitor",
+  "area": "footer",
+  "label": "Monitor",
+  "icon": "monitor",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

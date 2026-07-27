@@ -1,0 +1,36 @@
+/* Panel-16 Header - Period Selector */
+/* @version 6.2.1-ENTERPRISE */
+
+.p16-period-selector {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--p16-bg-tertiary);
+  padding: 3px;
+  border-radius: var(--p16-radius-md);
+  border: 1px solid var(--p16-border);
+}
+
+.p16-period-btn {
+  padding: var(--p16-space-xs) var(--p16-space-sm);
+  font-size: var(--p16-text-xs);
+  font-weight: 500;
+  color: var(--p16-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--p16-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.p16-period-btn:hover {
+  color: var(--p16-text-primary);
+  background: var(--p16-surface);
+}
+
+.p16-period-btn-active {
+  color: white;
+  background: var(--p16-primary);
+  box-shadow: 0 1px 3px rgba(var(--p16-primary-rgb), 0.3);
+}

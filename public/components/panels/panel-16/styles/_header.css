@@ -1,0 +1,10 @@
+/* Panel-16 Header Integrado */
+/* @version 6.2.1-ENTERPRISE-MODULAR */
+/* Modularizado em 7 arquivos por responsabilidade */
+
+@import '_header.base.css';
+@import '_header.period.css';
+@import '_header.views.css';
+@import '_header.columns.css';
+@import '_header.controls.css';
+@import '_header.responsive.css';

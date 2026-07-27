@@ -1,0 +1,4 @@
+/* Status  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-status-instagram-messenger { box-sizing: border-box; }
+.panel-status-instagram-messenger *, .panel-status-instagram-messenger *::before, .panel-status-instagram-messenger *::after { box-sizing: inherit; }

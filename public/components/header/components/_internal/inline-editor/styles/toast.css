@@ -1,0 +1,28 @@
+/* Inline Editor - Toast - @version 1.0.0-ENTERPRISE */
+.hie-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 12px 18px;
+  background: rgba(30, 41, 59, 0.98);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 10px;
+  font-size: 13px;
+  color: #f1f5f9;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hie-toast.hie-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.hie-toast.hie-toast-error { border-color: rgba(239, 68, 68, 0.5); }
+.hie-toast.hie-toast-info { border-color: rgba(251, 191, 36, 0.5); }
+.hie-toast-icon { width: 18px; height: 18px; }
+.hie-toast-icon.hie-success { color: #22c55e; }
+.hie-toast-icon.hie-error { color: #ef4444; }
+.hie-toast-icon.hie-info { color: #fbbf24; }

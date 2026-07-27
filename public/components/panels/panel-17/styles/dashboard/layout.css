@@ -1,0 +1,10 @@
+/* panel-17 Dashboard Layout - @version 1.0.0-ENTERPRISE */
+.p17-dashboard { display: flex; flex-direction: column; gap: 24px; padding: 20px; min-height: 100%; }
+.p17-tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 1024px) { .p17-tables-grid { grid-template-columns: 1fr; } }
+.p17-section { background: var(--p17-bg-elevated); border: 1px solid var(--p17-border-muted); border-radius: var(--p17-radius-lg); overflow: hidden; }
+.p17-section-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--p17-border-subtle); background: var(--p17-bg-surface); }
+.p17-section-title { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: var(--p17-text-primary); margin: 0; }
+.p17-section-title svg { width: 18px; height: 18px; color: var(--p17-text-muted); }
+.p17-section-actions { display: flex; gap: 8px; }
+.p17-section-body { padding: 0; max-height: 400px; overflow-y: auto; }

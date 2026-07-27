@@ -1,0 +1,173 @@
+/* Panel-16 Responsive - Tablet
+ * @version 6.2.0-ENTERPRISE
+ * 900px + 768px Breakpoints (padrão Panel-02)
+ */
+
+@media (max-width: 900px) {
+  .p16-title { 
+    font-size: var(--p16-font-lg); 
+  }
+  
+  .p16-title svg { 
+    display: none; 
+  }
+  
+  .p16-kpis { 
+    grid-template-columns: 1fr 1fr; 
+  }
+  
+  .p16-kpi-value { 
+    font-size: var(--p16-font-lg); 
+  }
+  
+  .p16-distributions { 
+    display: none; 
+  }
+  
+  .p16-toolbar { 
+    padding: var(--p16-space-sm); 
+  }
+  
+  .p16-search-input { 
+    font-size: 16px; 
+  }
+  
+  .p16-filter-select { 
+    width: 100%; 
+  }
+  
+  .p16-table-container { 
+    border-radius: var(--p16-radius-md); 
+  }
+  
+  .p16-cell-doc { 
+    font-size: 0.65rem; 
+  }
+  
+  .p16-detail-panel { 
+    position: fixed; 
+    inset: 0; 
+    max-width: 100%; 
+    max-height: 100%; 
+    border-radius: 0; 
+    z-index: var(--p16-z-modal); 
+  }
+  
+  .p16-detail-header { 
+    padding: var(--p16-space-md); 
+  }
+  
+  .p16-detail-content { 
+    padding: var(--p16-space-md); 
+  }
+}
+
+@media (max-width: 768px) {
+  .p16-container { 
+    padding: var(--p16-space-sm); 
+  }
+  
+  .p16-header { 
+    padding: var(--p16-space-sm) 0; 
+  }
+  
+  .p16-kpis { 
+    gap: var(--p16-space-xs); 
+  }
+  
+  .p16-kpi { 
+    padding: var(--p16-space-sm); 
+    gap: var(--p16-space-xs); 
+  }
+  
+  .p16-kpi-icon { 
+    width: 36px; 
+    height: 36px; 
+  }
+  
+  .p16-kpi-icon svg { 
+    width: 16px; 
+    height: 16px; 
+  }
+  
+  .p16-kpi-value { 
+    font-size: var(--p16-font-md); 
+  }
+  
+  .p16-kpi-label { 
+    font-size: 0.6rem; 
+  }
+  
+  .p16-toolbar { 
+    flex-direction: column; 
+    align-items: stretch; 
+  }
+  
+  .p16-search-wrapper { 
+    width: 100%; 
+  }
+  
+  .p16-filters-group { 
+    width: 100%; 
+    overflow-x: auto; 
+    padding-bottom: var(--p16-space-xs); 
+  }
+  
+  .p16-actions-group { 
+    justify-content: space-between; 
+    width: 100%; 
+  }
+  
+  .p16-table { 
+    font-size: var(--p16-font-xs); 
+  }
+  
+  .p16-table th:first-child, 
+  .p16-table td:first-child { 
+    padding-left: var(--p16-space-sm); 
+  }
+  
+  .p16-table th:last-child, 
+  .p16-table td:last-child { 
+    padding-right: var(--p16-space-sm); 
+  }
+  
+  .p16-th-checkbox, 
+  .p16-cell-checkbox { 
+    width: 32px; 
+  }
+  
+  .p16-checkbox { 
+    width: 14px; 
+    height: 14px; 
+  }
+  
+  .p16-cell-name { 
+    max-width: 140px; 
+  }
+  
+  .p16-fornecedor-nome { 
+    font-size: var(--p16-font-xs); 
+  }
+  
+  .p16-tipo-badge { 
+    font-size: 0.55rem; 
+    padding: 1px 4px; 
+  }
+  
+  .p16-badge { 
+    padding: 2px 6px; 
+    font-size: 0.6rem; 
+  }
+  
+  .p16-pagination { 
+    flex-wrap: wrap; 
+    gap: var(--p16-space-sm); 
+  }
+  
+  .p16-pagination-info { 
+    order: 2; 
+    width: 100%; 
+    text-align: center; 
+  }
+}

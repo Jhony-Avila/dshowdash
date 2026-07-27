@@ -1,0 +1,26 @@
+/* Panel-05 Table - Modular Index
+ * @version 7.5.0-MODULAR
+ */
+
+@import './table.base.css';
+@import './table.header.css';
+@import './table.rows.css';
+@import './table.density.css';
+@import './table.sort.css';
+
+@import './table.resize.css';
+@import './table.toggle.css';
+@import './table.pinning.css';
+@import './table.reorder.css';
+@import './table.selection.css';
+
+@import './table.toolbar.css';
+@import './table.error.css';
+@import './table.search.css';
+@import './table.export.css';
+@import './table.bulk-actions.css';
+
+@import './table.expansion.css';
+@import './table.virtual-scroll.css';
+@import './table.context-menu.css';
+@import './table.shortcuts.css';

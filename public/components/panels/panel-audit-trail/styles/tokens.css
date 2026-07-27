@@ -1,0 +1,279 @@
+/* Panel Audit Trail - Design Tokens Enterprise AAA Ultimate */
+/* @version 2.0.0-ENTERPRISE-AAA */
+/* Sistema completo de tokens para tema dark charcoal */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* BACKGROUNDS - CHARCOAL (SEM AZUL) */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-bg-base: #0a0a0c;
+  --pat-bg-surface: #0d0d0f;
+  --pat-bg-elevated: #121214;
+  --pat-bg-card: #141416;
+  --pat-bg-overlay: rgba(0, 0, 0, 0.75);
+  --pat-bg-backdrop: rgba(0, 0, 0, 0.5);
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* TABELA - ZEBRA E ESTADOS */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-row-base: transparent;
+  --pat-row-zebra: rgba(255, 255, 255, 0.015);
+  --pat-row-hover: rgba(124, 58, 237, 0.06);
+  --pat-row-active: rgba(124, 58, 237, 0.10);
+  --pat-row-selected: rgba(124, 58, 237, 0.15);
+  --pat-row-expanded: rgba(124, 58, 237, 0.05);
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* HEADER/FOOTER - GRADIENTES + BLUR */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-layer-from: rgba(15, 15, 18, 0.98);
+  --pat-layer-to: rgba(15, 15, 18, 0.85);
+  --pat-layer-border: rgba(255, 255, 255, 0.06);
+  --pat-layer-blur: 12px;
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* BORDAS */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-border-muted: rgba(255, 255, 255, 0.08);
+  --pat-border-subtle: rgba(255, 255, 255, 0.04);
+  --pat-border-strong: rgba(255, 255, 255, 0.12);
+  --pat-border-focus: rgba(124, 58, 237, 0.5);
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* TEXTOS */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-text-primary: rgba(255, 255, 255, 0.92);
+  --pat-text-secondary: rgba(255, 255, 255, 0.70);
+  --pat-text-muted: rgba(255, 255, 255, 0.45);
+  --pat-text-disabled: rgba(255, 255, 255, 0.25);
+  --pat-text-inverse: #0a0a0c;
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* ACENTO - VIOLET */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-accent: #7C3AED;
+  --pat-accent-hover: #8B5CF6;
+  --pat-accent-active: #6D28D9;
+  --pat-accent-soft: rgba(124, 58, 237, 0.15);
+  --pat-accent-muted: rgba(124, 58, 237, 0.08);
+  --pat-accent-glow: 0 0 20px rgba(124, 58, 237, 0.3);
+  
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* SEMÂNTICAS - STATUS */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-ok: #22C55E;
+  --pat-ok-hover: #16A34A;
+  --pat-ok-bg: rgba(34, 197, 94, 0.12);
+  --pat-ok-border: rgba(34, 197, 94, 0.3);
+  
+  --pat-warning: #EAB308;
+  --pat-warning-hover: #CA8A04;
+  --pat-warning-bg: rgba(234, 179, 8, 0.12);
+  --pat-warning-border: rgba(234, 179, 8, 0.3);
+  
+  --pat-error: #EF4444;
+  --pat-error-hover: #DC2626;
+  --pat-error-bg: rgba(239, 68, 68, 0.12);
+  --pat-error-border: rgba(239, 68, 68, 0.3);
+  
+  --pat-info: #3B82F6;
+  --pat-info-hover: #2563EB;
+  --pat-info-bg: rgba(59, 130, 246, 0.12);
+  --pat-info-border: rgba(59, 130, 246, 0.3);
+  
+  --pat-security: #D946EF;
+  --pat-security-hover: #C026D3;
+  --pat-security-bg: rgba(217, 70, 239, 0.12);
+  --pat-security-border: rgba(217, 70, 239, 0.3);
+
+  --pat-critical: #DC2626;
+  --pat-critical-bg: rgba(220, 38, 38, 0.15);
+  --pat-critical-border: rgba(220, 38, 38, 0.4);
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* TIPOS DE AÇÃO - CRUD */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-action-create: #22C55E;
+  --pat-action-create-bg: rgba(34, 197, 94, 0.12);
+  
+  --pat-action-read: #3B82F6;
+  --pat-action-read-bg: rgba(59, 130, 246, 0.12);
+  
+  --pat-action-update: #F59E0B;
+  --pat-action-update-bg: rgba(245, 158, 11, 0.12);
+  
+  --pat-action-delete: #EF4444;
+  --pat-action-delete-bg: rgba(239, 68, 68, 0.12);
+  
+  --pat-action-login: #06B6D4;
+  --pat-action-login-bg: rgba(6, 182, 212, 0.12);
+  
+  --pat-action-logout: #64748B;
+  --pat-action-logout-bg: rgba(100, 116, 139, 0.12);
+  
+  --pat-action-grant: #10B981;
+  --pat-action-grant-bg: rgba(16, 185, 129, 0.12);
+  
+  --pat-action-revoke: #F43F5E;
+  --pat-action-revoke-bg: rgba(244, 63, 94, 0.12);
+  
+  --pat-action-execute: #8B5CF6;
+  --pat-action-execute-bg: rgba(139, 92, 246, 0.12);
+  
+  --pat-action-export: #0EA5E9;
+  --pat-action-export-bg: rgba(14, 165, 233, 0.12);
+  
+  --pat-action-import: #14B8A6;
+  --pat-action-import-bg: rgba(20, 184, 166, 0.12);
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* TAB COLORS */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-tab-audit: #8B5CF6;
+  --pat-tab-permissions: #22C55E;
+  --pat-tab-frontend: #3B82F6;
+  --pat-tab-security: #EF4444;
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* SPACING */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-space-xs: 0.25rem;
+  --pat-space-sm: 0.5rem;
+  --pat-space-md: 0.75rem;
+  --pat-space-lg: 1rem;
+  --pat-space-xl: 1.5rem;
+  --pat-space-2xl: 2rem;
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* TYPOGRAPHY */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --pat-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  
+  --pat-text-xs: 0.6875rem;
+  --pat-text-sm: 0.75rem;
+  --pat-text-base: 0.8125rem;
+  --pat-text-lg: 0.875rem;
+  --pat-text-xl: 1rem;
+  --pat-text-2xl: 1.125rem;
+
+  --pat-leading-tight: 1.25;
+  --pat-leading-normal: 1.5;
+  --pat-leading-relaxed: 1.625;
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* RADIUS */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-radius-sm: 4px;
+  --pat-radius-md: 6px;
+  --pat-radius-lg: 8px;
+  --pat-radius-xl: 12px;
+  --pat-radius-full: 9999px;
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* SHADOWS */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --pat-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --pat-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --pat-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --pat-shadow-glow: 0 0 15px rgba(124, 58, 237, 0.25);
+  --pat-shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* TRANSITIONS */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-transition-fast: 0.1s ease;
+  --pat-transition-base: 0.15s ease;
+  --pat-transition-slow: 0.3s ease;
+  --pat-transition-bounce: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* Z-INDEX */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-z-base: 1;
+  --pat-z-dropdown: 10;
+  --pat-z-sticky: 20;
+  --pat-z-fixed: 30;
+  --pat-z-modal: 40;
+  --pat-z-popover: 50;
+  --pat-z-tooltip: 60;
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* COMPONENT SIZES */
+  /* ═══════════════════════════════════════════════════════════════ */
+  
+  --pat-header-height: 56px;
+  --pat-footer-height: 48px;
+  --pat-row-height-compact: 36px;
+  --pat-row-height-normal: 44px;
+  --pat-row-height-comfortable: 52px;
+  --pat-input-height: 32px;
+  --pat-button-height: 32px;
+  --pat-icon-size: 16px;
+  --pat-icon-size-lg: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DENSITY VARIANTS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.pat-container[data-density="compact"] {
+  --pat-row-height: var(--pat-row-height-compact);
+  --pat-text-base: 0.75rem;
+  --pat-space-md: 0.5rem;
+}
+
+.pat-container[data-density="normal"] {
+  --pat-row-height: var(--pat-row-height-normal);
+  --pat-text-base: 0.8125rem;
+  --pat-space-md: 0.75rem;
+}
+
+.pat-container[data-density="comfortable"] {
+  --pat-row-height: var(--pat-row-height-comfortable);
+  --pat-text-base: 0.875rem;
+  --pat-space-md: 1rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* PREFERS REDUCED MOTION */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pat-transition-fast: 0.01ms;
+    --pat-transition-base: 0.01ms;
+    --pat-transition-slow: 0.01ms;
+    --pat-transition-bounce: 0.01ms;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* HIGH CONTRAST MODE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-contrast: high) {
+  :root {
+    --pat-text-primary: #ffffff;
+    --pat-text-secondary: rgba(255, 255, 255, 0.85);
+    --pat-text-muted: rgba(255, 255, 255, 0.65);
+    --pat-border-muted: rgba(255, 255, 255, 0.25);
+    --pat-border-subtle: rgba(255, 255, 255, 0.15);
+  }
+}

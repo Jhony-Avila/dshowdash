@@ -1,0 +1,66 @@
+/* Panel-10 - VM Section
+ * @version 4.0.0-MODULAR
+ */
+
+.p10-vm-section {
+  background: var(--p10-surface);
+  border: 1px solid var(--p10-border);
+  border-radius: var(--p10-radius);
+  padding: 0.75rem;
+}
+
+.p10-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--p10-text);
+  margin-bottom: 0.625rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--p10-border);
+}
+
+.p10-section-title svg {
+  color: var(--p10-accent);
+}
+
+.p10-vm-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+@media (max-width: 700px) {
+  .p10-vm-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.p10-vm-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.p10-vm-label {
+  font-size: 0.625rem;
+  color: var(--p10-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.p10-vm-value {
+  font-size: 0.75rem;
+  color: var(--p10-text);
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.p10-vm-state-running {
+  color: var(--p10-success);
+}
+
+.p10-vm-state-stopped {
+  color: var(--p10-error);
+}

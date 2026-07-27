@@ -1,0 +1,61 @@
+/* Panel-02 Table Selection */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+/* Checkbox Column */
+.p02-checkbox-col { width: 40px; text-align: center; }
+
+.p02-row-checkbox, .p02-select-all {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--p02-accent);
+  cursor: pointer;
+}
+
+.p02-tbody tr.selected { background: var(--p02-accent-soft) !important; }
+.p02-tbody tr.selected td { border-color: var(--p02-accent); }
+
+/* Bulk Actions Bar */
+.p02-bulk-bar {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: var(--p02-accent-soft);
+  border-bottom: 1px solid var(--p02-accent);
+}
+
+.p02-bulk-bar.visible { display: flex; }
+
+.p02-bulk-count { font-size: 0.75rem; font-weight: 600; color: var(--p02-accent); }
+
+.p02-bulk-actions { display: flex; gap: 0.375rem; }
+
+.p02-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.625rem;
+  background: var(--p02-bg-surface);
+  border: 1px solid var(--p02-border-muted);
+  border-radius: var(--p02-radius-sm);
+  color: var(--p02-text-secondary);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.p02-bulk-btn:hover { background: var(--p02-bg-hover); border-color: var(--p02-accent); }
+.p02-bulk-btn.danger:hover { border-color: var(--p02-error); color: var(--p02-error); }
+.p02-bulk-btn svg { width: 12px; height: 12px; }
+
+.p02-bulk-clear {
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--p02-text-muted);
+  font-size: 0.6875rem;
+  cursor: pointer;
+}
+
+.p02-bulk-clear:hover { color: var(--p02-text-primary); }

@@ -1,0 +1,54 @@
+/* Panel Audit Trail - Table Body
+ * @version 3.0.0-MODULAR
+ * Body + Rows + Zebra + Hover
+ */
+
+.pat-table tbody tr {
+  background: var(--pat-row-base);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.025);
+  transition: all 0.2s ease;
+}
+
+.pat-table tbody tr:nth-child(even) {
+  background: var(--pat-row-zebra);
+}
+
+.pat-table tbody tr:hover {
+  background: var(--pat-row-hover);
+  transform: scale(1.001);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pat-table tbody tr.selected {
+  background: var(--pat-row-active);
+  border-left: 3px solid var(--pat-accent);
+}
+
+.pat-table tbody tr.expanded {
+  background: rgba(124, 58, 237, 0.08);
+  border-left: 3px solid var(--pat-accent);
+}
+
+.pat-table td {
+  padding: 0.5rem 0.75rem;
+  color: var(--pat-text-secondary);
+  vertical-align: middle;
+  transition: padding 0.15s ease;
+}
+
+.pat-table td.center { text-align: center; }
+.pat-table td.right { text-align: right; }
+
+/* Row clickable */
+.pat-row {
+  cursor: pointer;
+}
+
+.pat-row:focus {
+  outline: 2px solid var(--pat-accent);
+  outline-offset: -2px;
+}
+
+.pat-row-expandable {
+  cursor: pointer;
+}

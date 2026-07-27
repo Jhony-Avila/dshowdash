@@ -1,0 +1,32 @@
+/* Panel-05 KPIs - Badge */
+/* @version 1.0.0-MODULAR */
+
+.p05-bn-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--p05-bn-badge-padding-y, 4px) var(--p05-bn-badge-padding-x, 10px);
+    font-family: var(--p05-font-family);
+    font-size: var(--p05-bn-badge-size, 11px);
+    font-weight: var(--p05-bn-badge-weight, 600);
+    letter-spacing: var(--p05-bn-badge-letter-spacing, 0.04em);
+    text-transform: uppercase;
+    border-radius: var(--p05-radius-pill, 999px);
+    white-space: nowrap;
+}
+
+.p05-bn-badge svg {
+    width: 10px;
+    height: 10px;
+    stroke-width: 2;
+}
+
+/* Badge Variants */
+.p05-bn-badge-success { background: var(--p05-success-bg); color: var(--p05-success); }
+.p05-bn-badge-warning { background: var(--p05-warning-bg); color: var(--p05-warning); }
+.p05-bn-badge-danger { background: var(--p05-danger-bg); color: var(--p05-danger); }
+.p05-bn-badge-info { background: var(--p05-info-bg); color: var(--p05-info); }
+.p05-bn-badge-neutral { background: var(--p05-neutral-bg); color: var(--p05-neutral); }

@@ -1,0 +1,34 @@
+/* Panel Header Admin - Responsive */
+/* @version 1.0.0-AAA-MODULAR */
+/* Media queries */
+
+@media (max-width: 768px) {
+  .pha-container { 
+    padding: 16px; 
+  }
+  
+  .pha-header { 
+    flex-direction: column; 
+    gap: 16px; 
+  }
+  
+  .pha-filters { 
+    flex-direction: column; 
+  }
+  
+  .pha-stats { 
+    flex-wrap: wrap; 
+  }
+  
+  .pha-stats__item { 
+    min-width: calc(50% - 8px); 
+  }
+  
+  .pha-form__row { 
+    grid-template-columns: 1fr; 
+  }
+  
+  .pha-group__items { 
+    grid-template-columns: 1fr; 
+  }
+}

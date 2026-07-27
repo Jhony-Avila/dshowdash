@@ -1,0 +1,10 @@
+{
+  "id": "search",
+  "area": "footer",
+  "label": "Busca",
+  "icon": "search",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

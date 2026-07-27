@@ -1,0 +1,12 @@
+/**
+ * Footer Component Styles - Enterprise Grade
+ * @version 3.3.0-LOGO-GLOW
+ * @description Agregador modular com ícones componentizados + logo glow
+ */
+
+@import url('./footer.base.css');
+@import url('./footer.typography.css');
+@import url('./footer.nav.css');
+@import url('./footer.status.css');
+@import url('./footer.responsive.css');
+@import url('./footer.icons.css');

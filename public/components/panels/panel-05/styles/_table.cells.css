@@ -1,0 +1,91 @@
+/* Panel-05 Table - Cells
+ * @version 7.0.0-MODULAR
+ * Cliente + Location + Revenue + Orders + Conversion
+ */
+
+/* Cliente */
+.p05-cell-cliente {
+    max-width: 280px;
+}
+
+.p05-cliente-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.p05-cliente-nome {
+    font: var(--p05-font-body);
+    font-weight: 500;
+    color: var(--p05-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: color var(--p05-motion-fast);
+}
+
+.p05-table-row:hover .p05-cliente-nome {
+    color: var(--p05-info);
+}
+
+.p05-cliente-cnpj {
+    font: var(--p05-font-meta);
+    color: var(--p05-text-dim);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Location */
+.p05-location {
+    font: var(--p05-font-body-sm);
+    color: var(--p05-text-secondary);
+}
+
+/* Revenue */
+.p05-receita {
+    font: var(--p05-font-body);
+    font-weight: 600;
+    color: var(--p05-success);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Orders */
+.p05-orcs-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.p05-orcs-ganhos {
+    color: var(--p05-success);
+    font-weight: 600;
+}
+
+.p05-orcs-sep {
+    color: var(--p05-text-dim);
+}
+
+.p05-orcs-perdidos {
+    color: var(--p05-text-muted);
+}
+
+/* Conversion */
+.p05-conversao {
+    font: var(--p05-font-body-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.p05-conversao.p05-good { color: var(--p05-success); }
+.p05-conversao.p05-medium { color: var(--p05-warning); }
+.p05-conversao.p05-low { color: var(--p05-danger); }
+
+/* Actions */
+.p05-cell-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--p05-space-xs);
+}

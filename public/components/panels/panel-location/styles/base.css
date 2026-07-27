@@ -1,0 +1,4 @@
+/* Localização - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-location { box-sizing: border-box; }
+.panel-location *, .panel-location *::before, .panel-location *::after { box-sizing: inherit; }

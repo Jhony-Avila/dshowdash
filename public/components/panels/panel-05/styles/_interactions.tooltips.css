@@ -1,0 +1,160 @@
+/* Panel-05 Interactions - Tooltips
+ * @version 7.0.0-MODULAR
+ * Tooltips inteligentes
+ */
+
+/* Tooltip base */
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]::before,
+[data-tooltip]::after {
+    position: absolute;
+    z-index: var(--p05-z-tooltip, 500);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: 
+        opacity var(--p05-motion-normal) ease-out,
+        visibility var(--p05-motion-normal) ease-out,
+        transform var(--p05-motion-normal) ease-out;
+}
+
+/* Tooltip content */
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 6px 10px;
+    background: var(--p05-bg-surface);
+    color: var(--p05-text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+    border-radius: var(--p05-radius-sm);
+    border: 1px solid var(--p05-border-default);
+    box-shadow: var(--p05-shadow-lg);
+    max-width: 280px;
+    text-align: center;
+}
+
+/* Tooltip arrow */
+[data-tooltip]::before {
+    content: '';
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    border: 6px solid transparent;
+    border-top-color: var(--p05-border-default);
+}
+
+/* Tooltip visible on hover/focus */
+[data-tooltip]:hover::before,
+[data-tooltip]:hover::after,
+[data-tooltip]:focus::before,
+[data-tooltip]:focus::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Tooltip positions - Bottom */
+[data-tooltip-pos="bottom"]::after {
+    bottom: auto;
+    top: calc(100% + 8px);
+    transform: translateX(-50%) translateY(-4px);
+}
+
+[data-tooltip-pos="bottom"]::before {
+    bottom: auto;
+    top: calc(100% + 2px);
+    border-top-color: transparent;
+    border-bottom-color: var(--p05-border-default);
+    transform: translateX(-50%) translateY(-4px);
+}
+
+[data-tooltip-pos="bottom"]:hover::before,
+[data-tooltip-pos="bottom"]:hover::after,
+[data-tooltip-pos="bottom"]:focus::before,
+[data-tooltip-pos="bottom"]:focus::after {
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Tooltip positions - Left */
+[data-tooltip-pos="left"]::after {
+    bottom: auto;
+    left: auto;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+}
+
+[data-tooltip-pos="left"]::before {
+    bottom: auto;
+    left: auto;
+    right: calc(100% + 2px);
+    top: 50%;
+    border-top-color: transparent;
+    border-left-color: var(--p05-border-default);
+    transform: translateY(-50%) translateX(4px);
+}
+
+[data-tooltip-pos="left"]:hover::before,
+[data-tooltip-pos="left"]:hover::after,
+[data-tooltip-pos="left"]:focus::before,
+[data-tooltip-pos="left"]:focus::after {
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Tooltip positions - Right */
+[data-tooltip-pos="right"]::after {
+    bottom: auto;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-4px);
+}
+
+[data-tooltip-pos="right"]::before {
+    bottom: auto;
+    left: calc(100% + 2px);
+    top: 50%;
+    border-top-color: transparent;
+    border-right-color: var(--p05-border-default);
+    transform: translateY(-50%) translateX(-4px);
+}
+
+[data-tooltip-pos="right"]:hover::before,
+[data-tooltip-pos="right"]:hover::after,
+[data-tooltip-pos="right"]:focus::before,
+[data-tooltip-pos="right"]:focus::after {
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Tooltip multiline */
+[data-tooltip-wrap]::after {
+    white-space: normal;
+    text-align: left;
+}
+
+/* Tooltip variants */
+[data-tooltip-type="success"]::after {
+    background: var(--p05-success-bg);
+    border-color: var(--p05-success-border);
+    color: var(--p05-success);
+}
+
+[data-tooltip-type="warning"]::after {
+    background: var(--p05-warning-bg);
+    border-color: var(--p05-warning-border);
+    color: var(--p05-warning);
+}
+
+[data-tooltip-type="danger"]::after {
+    background: var(--p05-danger-bg);
+    border-color: var(--p05-danger-border);
+    color: var(--p05-danger);
+}

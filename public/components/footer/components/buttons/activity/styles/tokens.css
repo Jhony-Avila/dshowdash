@@ -1,0 +1,6 @@
+/* Footer Atividade Button - Design Tokens P3 AAA */
+/* @version 1.0.0-AAA */
+
+.footer-btn--activity {
+  --btn-transition: all 0.2s ease;
+}

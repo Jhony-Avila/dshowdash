@@ -1,0 +1,7 @@
+/* Data Hub - Responsive Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+@media (max-width: 768px) {
+  .panel-datahub { padding: 1rem; }
+  .panel-enterprise__header { padding: 1rem; }
+  .panel-enterprise__content { padding: 1rem; }
+}

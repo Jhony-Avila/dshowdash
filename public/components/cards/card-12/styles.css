@@ -1,0 +1,266 @@
+/**
+ * Card 12 - Redis Cache - CLEAN v6.0.0
+ * @description Usa APENAS variáveis do design-system
+ * Com status dinâmico (excellent/good/regular/low)
+ *
+ * REMOVIDO v6.0.0:
+ * - @keyframes valuePulse (já em design-system)
+ * - @keyframes shimmer (já em design-system)
+ * - @keyframes skeletonPulse (já em design-system)
+ * - @keyframes cardFadeInUp (já em design-system)
+ * - Variáveis --transition-premium e --transition-bounce (já em design-system)
+ */
+
+/* ========== VARIÁVEIS ESPECÍFICAS DO CARD - BASE LARANJA ========== */
+#card-12.card-container {
+  --card-accent: var(--card-orange, #f59e0b);
+  --card-accent-dark: var(--card-orange-dark, #d97706);
+  --card-accent-glow: rgba(245, 158, 11, 0.3);
+}
+
+/* ========== VARIÁVEIS DINÂMICAS POR STATUS ========== */
+#card-12.card-container.status-excellent {
+  --card-accent: var(--card-green, #10b981);
+  --card-accent-dark: var(--card-green-dark, #059669);
+  --card-accent-glow: rgba(16, 185, 129, 0.3);
+}
+
+#card-12.card-container.status-good {
+  --card-accent: var(--card-blue, #3b82f6);
+  --card-accent-dark: var(--card-blue-dark, #1d4ed8);
+  --card-accent-glow: rgba(59, 130, 246, 0.3);
+}
+
+#card-12.card-container.status-regular {
+  --card-accent: var(--card-orange, #f59e0b);
+  --card-accent-dark: var(--card-orange-dark, #d97706);
+  --card-accent-glow: rgba(245, 158, 11, 0.3);
+}
+
+#card-12.card-container.status-low {
+  --card-accent: var(--card-red, #ef4444);
+  --card-accent-dark: var(--card-red-dark, #dc2626);
+  --card-accent-glow: rgba(239, 68, 68, 0.3);
+}
+
+/* ========== BASE CARD ========== */
+#card-12.card-container {
+  display: flex;
+  flex-direction: column;
+  padding: var(--card-padding);
+  min-height: var(--card-height);
+  max-height: var(--card-height);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  perspective: none;
+  transform-style: flat;
+  background: transparent;
+  border: var(--card-border-width) solid var(--card-border);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  transition: var(--card-transition-premium);
+  contain: layout style paint;
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
+}
+
+#card-12.card-container:hover {
+  border-color: var(--card-border-hover);
+  background: transparent;
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+#card-12.card-container:focus-visible, #card-12.card-container:focus-within {
+  outline: 2px solid var(--card-accent);
+  outline-offset: 2px;
+  border-color: var(--card-accent);
+}
+
+/* ========== BORDER TOP DINÂMICO ========== */
+#card-12.card-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--card-border-top-height, 3px);
+  background: linear-gradient(135deg, var(--card-accent) 0%, var(--card-accent-dark) 100%);
+  z-index: 1;
+  transition: background var(--card-transition-slow, 600ms ease);
+}
+
+#card-12.card-container::after { display: none; }
+
+/* ========== CARD HEADER ========== */
+#card-12.card-container .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--card-space-sm);
+  margin-bottom: var(--card-header-margin-bottom);
+  height: var(--card-header-height);
+  font-weight: var(--card-header-font-weight);
+  font-size: var(--card-header-font-size);
+  color: var(--card-text-primary);
+  position: relative;
+}
+
+#card-12.card-container .card-header .icon {
+  width: var(--card-icon-size);
+  height: var(--card-icon-size);
+  stroke-width: var(--card-icon-stroke);
+  color: var(--card-accent);
+  opacity: var(--card-icon-opacity);
+  filter: drop-shadow(0 0 4px var(--card-accent-glow));
+  transition: var(--card-transition-premium);
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#card-12.card-container:hover .card-header .icon {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.05);
+  filter: drop-shadow(0 0 6px var(--card-accent-glow));
+}
+
+#card-12.card-container .card-title { transition: var(--card-transition-premium); }
+#card-12.card-container:hover .card-title { color: var(--card-accent); }
+
+/* ========== CARD BODY ========== */
+#card-12.card-container .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--card-body-gap, var(--card-space-sm));
+  min-height: var(--card-body-min-height, 100px);
+}
+
+/* ========== VALOR PRINCIPAL - DINÂMICO ========== */
+#card-12.card-container .card-value {
+  font-size: var(--card-value-font-size, var(--card-text-3xl));
+  font-weight: var(--card-value-font-weight, var(--card-font-bold));
+  line-height: var(--card-value-line-height, 1);
+  margin: 0;
+  text-align: center;
+  transition: var(--card-transition-premium);
+}
+
+#card-12.card-container .card-value .value-number {
+  color: var(--card-accent);
+  display: inline-block;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: var(--card-transition-premium);
+}
+
+/* Classes de status dinâmicas para compatibilidade com JS antigo */
+#card-12.card-container .card-value .value-number.status-excellent {
+  color: var(--card-green);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#card-12.card-container .card-value .value-number.status-good {
+  color: var(--card-blue);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#card-12.card-container .card-value .value-number.status-regular {
+  color: var(--card-orange);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#card-12.card-container .card-value .value-number.status-low {
+  color: var(--card-red);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#card-12.card-container .card-value.updating { animation: valuePulse 1s ease-in-out; }
+
+/* ========== LABEL SECUNDÁRIA ========== */
+#card-12.card-container .card-label {
+  font-size: var(--card-label-font-size, var(--card-text-sm));
+  font-weight: var(--card-font-medium);
+  color: var(--card-label-color, var(--card-text-secondary));
+  text-align: center;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: var(--card-transition-premium);
+}
+
+#card-12.card-container:hover .card-label { color: var(--card-text-primary); }
+
+/* ========== CARD FOOTER ========== */
+#card-12.card-container .card-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--card-footer-gap, var(--card-space-sm));
+  min-height: var(--card-footer-min-height, 30px);
+  margin-top: auto;
+  padding-top: var(--card-space-md);
+  border-top: var(--card-border-width) solid var(--card-border);
+}
+
+/* ========== CACHE STATUS DINÂMICO ========== */
+#card-12.card-container .cache-status {
+  font-weight: var(--card-font-semibold);
+  font-size: var(--card-text-sm);
+  text-align: center;
+  transition: color var(--card-transition-premium);
+}
+
+#card-12.card-container .cache-status.status-excellent { color: var(--card-success); }
+#card-12.card-container .cache-status.status-good { color: var(--card-blue); }
+#card-12.card-container .cache-status.status-regular { color: var(--card-warning); }
+#card-12.card-container .cache-status.status-low { color: var(--card-danger); }
+
+#card-12.card-container .card-update { color: var(--card-meta-color); font-size: var(--card-text-xs); text-align: center; }
+
+/* ========== SKELETON LOADING ========== */
+#card-12.card-container.is-loading { pointer-events: none; position: relative; overflow: hidden; }
+#card-12.card-container.is-loading::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%); animation: shimmer 2s infinite; z-index: 100; }
+
+.skeleton { background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 100%); background-size: 200% 100%; border-radius: 8px; animation: skeletonPulse 2s ease-in-out infinite; }
+
+#card-12.card-container.loading .card-value .value-number { background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 100%); background-size: 200% 100%; animation: skeletonPulse 1.5s infinite; color: transparent; text-shadow: none; border-radius: var(--card-space-xs); min-width: 60px; display: inline-block; }
+
+/* ========== ANIMAÇÕES ========== */
+#card-12.card-container.fade-in-up { animation: cardFadeInUp 0.4s ease-out; }
+
+/* ========== RESPONSIVIDADE ========== */
+@media (max-width: 768px) {
+  #card-12.card-container { padding: 14px; min-height: 180px; max-height: 180px; }
+  #card-12.card-container .card-value { font-size: var(--card-text-2xl); }
+  #card-12.card-container:hover { transform: translateY(-2px); }
+}
+
+@media (max-width: 480px) {
+  #card-12.card-container { padding: var(--card-space-md); min-height: 160px; max-height: 160px; }
+  #card-12.card-container .card-value { font-size: var(--card-text-xl); }
+  #card-12.card-container .card-header { font-size: var(--card-text-sm); }
+  #card-12.card-container .card-label { font-size: var(--card-text-xs); }
+}
+
+/* ========== ACESSIBILIDADE ========== */
+@media (prefers-reduced-motion: reduce) {
+  #card-12.card-container, #card-12.card-container .card-value, #card-12.card-container .card-value .value-number, #card-12.card-container .cache-status, #card-12.card-container .card-header .icon { animation: none !important; transition: none !important; }
+  #card-12.card-container:hover { transform: none; }
+}
+
+@media (prefers-contrast: high) {
+  #card-12.card-container { border-width: 2px; }
+  #card-12.card-container .card-value .value-number { text-shadow: none; }
+}
+
+@media print {
+  #card-12.card-container { background: white; border: 1px solid #000; backdrop-filter: none; box-shadow: none; transform: none !important; }
+  #card-12.card-container::before { display: none; }
+  #card-12.card-container .card-value .value-number { color: #000; text-shadow: none; }
+}

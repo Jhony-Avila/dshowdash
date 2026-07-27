@@ -1,0 +1,4 @@
+/* Data Hub - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-datahub { box-sizing: border-box; }
+.panel-datahub *, .panel-datahub *::before, .panel-datahub *::after { box-sizing: inherit; }

@@ -1,0 +1,71 @@
+/* Panel-07 Dashboard Comercial - Responsive */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+@media (max-width: 1200px) {
+  .overview-section {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-metrics {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .metric-card {
+    flex: 1;
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .panel-07__content {
+    padding: var(--spacing-md);
+  }
+
+  .kpis-row {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-card__value {
+    font-size: 1.75rem;
+  }
+
+  .kpi-card__value--large {
+    font-size: 2rem;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .tables-row {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-card__body {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-card__column:first-child {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-07__header {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .kpi-card {
+    padding: var(--spacing-md);
+  }
+
+  .kpi-card__change {
+    font-size: 1rem;
+  }
+
+  .data-table__row {
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
+}

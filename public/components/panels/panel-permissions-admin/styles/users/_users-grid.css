@@ -1,0 +1,81 @@
+/* UARPS Admin - Users Grid
+ * @version 2.0.0-ENTERPRISE-UARPS
+ */
+
+.uarps-users {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.uarps-users__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5rem;
+}
+
+.uarps-users__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--uarps-text-muted);
+}
+
+.uarps-users__count {
+  font-size: 0.7rem;
+  color: var(--uarps-text-muted);
+  padding: 0.15rem 0.5rem;
+  background: var(--uarps-bg-tertiary);
+  border-radius: var(--uarps-radius-full);
+}
+
+.uarps-users__filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.uarps-users__carousel {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.5rem;
+  margin: -0.5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.uarps-users__carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.uarps-users__carousel::-webkit-scrollbar-thumb {
+  background: var(--uarps-border);
+  border-radius: 3px;
+}
+
+.uarps-users__carousel > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Grid layout alternativo */
+.uarps-users__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  padding: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .uarps-users__carousel {
+    gap: 0.5rem;
+  }
+  
+  .uarps-user {
+    min-width: 120px;
+    max-width: 140px;
+  }
+}

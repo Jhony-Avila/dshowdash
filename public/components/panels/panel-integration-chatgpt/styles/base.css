@@ -1,0 +1,4 @@
+/* Integração  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-integration-chatgpt { box-sizing: border-box; }
+.panel-integration-chatgpt *, .panel-integration-chatgpt *::before, .panel-integration-chatgpt *::after { box-sizing: inherit; }

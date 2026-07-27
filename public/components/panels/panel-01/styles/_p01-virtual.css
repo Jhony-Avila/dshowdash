@@ -1,0 +1,7 @@
+/* Panel-01 - Virtual Scroll CSS */
+/* @version 2.0.0-ENTERPRISE */
+
+.p01-virtual-container { position: relative; overflow-y: auto; }
+.p01-virtual-spacer { position: absolute; top: 0; left: 0; right: 0; pointer-events: none; }
+.p01-virtual-content { position: relative; }
+.p01-virtual-row { position: absolute; left: 0; right: 0; }

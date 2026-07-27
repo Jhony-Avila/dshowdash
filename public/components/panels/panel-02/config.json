@@ -1,0 +1,17 @@
+{
+  "id": "panel-02",
+  "name": "Monitoramento de Jobs",
+  "description": "Lista completa de jobs com status, performance e taxa de sucesso",
+  "category": "monitoring",
+  "refreshInterval": 60000,
+  "enabled": true,
+  "version": "8.1.0-ENTERPRISE",
+  "architecture": "autocontained-modular",
+  "author": "DShow Dashboard",
+  "created": "2025-11-08",
+  "updated": "2025-12-18",
+  "dependencies": [],
+  "permissions": ["read"],
+  "features": ["autocontained", "idempotent", "resilient", "observable", "scalable", "self-healing", "keyboard-nav", "export-csv", "url-state"],
+  "telemetry": { "enabled": true, "events": ["lifecycle:mounted", "lifecycle:unmounted", "data:loaded", "data:error", "mode:degraded"] }
+}

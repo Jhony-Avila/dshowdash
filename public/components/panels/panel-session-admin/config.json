@@ -1,0 +1,118 @@
+{
+  "panelId": "panel-session-admin",
+  "version": "3.0.0-ENTERPRISE-AAA",
+  "title": "Gerenciamento de Sessões",
+  "description": "Painel enterprise para monitorar e administrar sessões de usuários com suporte completo a export, seleção em massa e auto-refresh.",
+  "permissions": {
+    "adminPermission": "sessions:admin",
+    "viewOwn": "sessions:view:own",
+    "viewAll": "sessions:view:all",
+    "terminateOwn": "sessions:terminate:own",
+    "terminateAll": "sessions:terminate:all"
+  },
+  "api": {
+    "baseUrl": "/api/sessions",
+    "endpoints": {
+      "list": "?action=list",
+      "listMine": "?action=list&scope=mine",
+      "listAll": "?action=list&scope=all",
+      "current": "?action=current",
+      "revoke": "?action=revoke",
+      "revokeAll": "?action=revoke-all",
+      "activity": "?action=activity"
+    },
+    "timeout": 15000,
+    "retryAttempts": 3,
+    "retryDelay": 1000
+  },
+  "telemetry": {
+    "namespace": "session-admin",
+    "channel": "panel_event",
+    "trackMounts": true,
+    "trackRefresh": true,
+    "trackTerminate": true,
+    "trackExport": true
+  },
+  "i18n": {
+    "title": "Gerenciamento de Sessões",
+    "subtitle": "Monitore e gerencie as sessões ativas.",
+    "noSessions": "Nenhuma sessão encontrada.",
+    "totalLabel": "Total de sessões",
+    "activeLabel": "Ativas",
+    "terminateThis": "Encerrar Sessão",
+    "terminateOthers": "Encerrar Outras",
+    "terminateSelected": "Encerrar Selecionadas",
+    "confirmTerminateTitle": "Confirmar Encerramento",
+    "confirmTerminateThis": "Deseja encerrar esta sessão? O usuário será desconectado.",
+    "confirmTerminateOthers": "Deseja encerrar todas as outras sessões? Apenas sua sessão atual permanecerá ativa.",
+    "confirmTerminateSelected": "Deseja encerrar as sessões selecionadas?",
+    "errorExpired": "Sessão expirada. Faça login novamente.",
+    "errorGeneric": "Erro ao carregar sessões.",
+    "errorTerminate": "Erro ao encerrar sessão.",
+    "successTerminate": "Sessão encerrada com sucesso.",
+    "successTerminateAll": "Outras sessões encerradas.",
+    "successTerminateSelected": "Sessões selecionadas encerradas.",
+    "badgeActive": "Ativa",
+    "badgeInactive": "Inativa",
+    "badgeCurrent": "Atual",
+    "authRequired": "Autenticação Necessária",
+    "authRequiredText": "Faça login para gerenciar suas sessões.",
+    "noPermission": "Sem Permissão",
+    "noPermissionText": "Você não tem permissão para administrar sessões de outros usuários.",
+    "refresh": "Atualizar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "exportCSV": "Exportar CSV",
+    "exportJSON": "Exportar JSON",
+    "copyClipboard": "Copiar para Clipboard",
+    "print": "Imprimir",
+    "fullscreen": "Tela Cheia",
+    "autoRefresh": "Auto-refresh",
+    "selectAll": "Selecionar Todas",
+    "deselectAll": "Limpar Seleção"
+  },
+  "featureFlags": {
+    "enableAdminView": true,
+    "enableFilters": true,
+    "enablePagination": false,
+    "enableImpersonation": false,
+    "enableExportCSV": true,
+    "enableExportJSON": true,
+    "enableClipboard": true,
+    "enablePrint": true,
+    "enableFullscreen": true,
+    "enableAutoRefresh": true,
+    "enableRowSelection": true,
+    "enableBulkActions": true,
+    "enableKeyboardShortcuts": true
+  },
+  "ui": {
+    "showUserColumn": true,
+    "showIpColumn": true,
+    "showDeviceInfo": true,
+    "highlightCurrentSession": true,
+    "maxVisibleSessions": 100,
+    "tableDensity": "normal",
+    "theme": "dark"
+  },
+  "autoRefresh": {
+    "enabled": false,
+    "intervalSeconds": 30,
+    "pauseOnBlur": true
+  },
+  "keyboard": {
+    "refresh": "r",
+    "autoRefresh": "a",
+    "fullscreen": "f",
+    "search": "/",
+    "escape": "Escape",
+    "print": "ctrl+p",
+    "export": "e"
+  },
+  "accessibility": {
+    "wcagLevel": "AAA",
+    "announceChanges": true,
+    "highContrast": true,
+    "reducedMotion": true
+  }
+}

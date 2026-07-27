@@ -1,0 +1,53 @@
+/* Feature Flags Styles v1.0.0 */
+/* Componente de infraestrutura - sem estilos visuais */
+
+.feature-flags-debug {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #00ff00;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 11px;
+  border-radius: 4px;
+  z-index: 99999;
+  max-width: 350px;
+  max-height: 400px;
+  overflow: auto;
+  display: none;
+}
+
+.feature-flags-debug.visible {
+  display: block;
+}
+
+.feature-flags-debug-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #ffff00;
+}
+
+.feature-flag-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-flag-name {
+  color: #00ffff;
+}
+
+.feature-flag-status {
+  font-weight: bold;
+}
+
+.feature-flag-status.enabled {
+  color: #00ff00;
+}
+
+.feature-flag-status.disabled {
+  color: #ff6666;
+}

@@ -1,0 +1,8 @@
+{
+  "name": "weather-sp",
+  "version": "1.0.0",
+  "type": "data-display",
+  "description": "Weather for São Paulo",
+  "dependencies": [],
+  "config": { "pollInterval": 300000, "location": "São Paulo, BR" }
+}

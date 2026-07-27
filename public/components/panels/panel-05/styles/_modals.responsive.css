@@ -1,0 +1,37 @@
+/* Panel-05 Modals - Responsive
+ * @version 7.0.0-MODULAR
+ */
+
+@media (max-width: 640px) {
+    .p05-modal-body-flex {
+        flex-direction: column;
+    }
+    
+    .p05-date-presets {
+        width: 100%;
+        padding-right: 0;
+        padding-bottom: 16px;
+        border-right: none;
+        border-bottom: 1px solid var(--p05-border-subtle);
+    }
+    
+    .p05-date-presets-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .p05-date-preset {
+        width: auto;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .p05-calendars-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .p05-kbd-grid {
+        grid-template-columns: 1fr;
+    }
+}

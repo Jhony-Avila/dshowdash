@@ -1,0 +1,8 @@
+{
+  "name": "notifications",
+  "version": "1.0.0",
+  "type": "notification-center",
+  "description": "System notifications center",
+  "dependencies": [],
+  "config": { "pollInterval": 30000, "maxDisplayCount": 99 }
+}

@@ -1,0 +1,233 @@
+/* UARPS Admin - Toolbar
+ * @version 1.2.0-ENTERPRISE-UARPS
+ */
+
+.uarps-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--uarps-bg-secondary);
+  border-bottom: 1px solid var(--uarps-border);
+  flex-wrap: wrap;
+}
+
+.uarps-filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.uarps-view-toggle {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--uarps-bg-tertiary);
+  border-radius: var(--uarps-radius-md);
+}
+
+.uarps-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  padding: 0.5rem 0.75rem;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: var(--uarps-radius-md);
+}
+
+.uarps-bulk-count {
+  font-size: 0.75rem;
+  color: var(--uarps-accent-cyan);
+  font-weight: 600;
+}
+
+/* === COMPARE MODE === */
+.uarps-compare-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--uarps-radius-md);
+  font-size: 0.75rem;
+  color: var(--uarps-accent-purple);
+  cursor: pointer;
+  transition: all var(--uarps-transition);
+}
+
+.uarps-compare-toggle:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--uarps-accent-purple);
+}
+
+.uarps-compare-toggle--active {
+  background: var(--uarps-accent-purple);
+  color: white;
+}
+
+.uarps-compare-toggle svg { width: 14px; height: 14px; }
+
+/* Compare Selection */
+.uarps-compare-users {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--uarps-radius-md);
+}
+
+.uarps-compare-users__label {
+  font-size: 0.7rem;
+  color: var(--uarps-text-muted);
+}
+
+.uarps-compare-users__list {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.uarps-compare-users__avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--uarps-radius-full);
+  background: linear-gradient(135deg, var(--uarps-accent-cyan), var(--uarps-accent-purple));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: white;
+  border: 2px solid var(--uarps-bg-secondary);
+}
+
+.uarps-compare-users__avatar:nth-child(2) {
+  margin-left: -8px;
+  background: linear-gradient(135deg, var(--uarps-accent-purple), var(--uarps-accent-pink));
+}
+
+/* === SAVED FILTERS === */
+.uarps-saved-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.uarps-saved-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: var(--uarps-radius-full);
+  font-size: 0.7rem;
+  color: var(--uarps-accent-cyan);
+  cursor: pointer;
+  transition: all var(--uarps-transition);
+}
+
+.uarps-saved-filter:hover {
+  background: rgba(6, 182, 212, 0.2);
+  border-color: var(--uarps-accent-cyan);
+}
+
+.uarps-saved-filter--active {
+  background: var(--uarps-accent-cyan);
+  color: var(--uarps-bg-primary);
+}
+
+.uarps-saved-filter__remove {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--uarps-radius-full);
+  opacity: 0;
+  transition: opacity var(--uarps-transition);
+}
+
+.uarps-saved-filter:hover .uarps-saved-filter__remove {
+  opacity: 1;
+}
+
+.uarps-saved-filter__remove svg {
+  width: 10px;
+  height: 10px;
+}
+
+.uarps-save-filter-btn {
+  padding: 0.25rem;
+  background: transparent;
+  border: 1px dashed var(--uarps-border);
+  border-radius: var(--uarps-radius-sm);
+  color: var(--uarps-text-muted);
+  cursor: pointer;
+  transition: all var(--uarps-transition);
+}
+
+.uarps-save-filter-btn:hover {
+  border-color: var(--uarps-accent-cyan);
+  color: var(--uarps-accent-cyan);
+}
+
+.uarps-save-filter-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* === REPORTS DROPDOWN === */
+.uarps-reports-menu {
+  position: relative;
+}
+
+.uarps-reports-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  min-width: 200px;
+  background: var(--uarps-bg-secondary);
+  border: 1px solid var(--uarps-border);
+  border-radius: var(--uarps-radius-md);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  display: none;
+}
+
+.uarps-reports-menu:hover .uarps-reports-dropdown,
+.uarps-reports-dropdown:hover {
+  display: block;
+}
+
+.uarps-reports-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--uarps-text-secondary);
+  cursor: pointer;
+  transition: all var(--uarps-transition);
+}
+
+.uarps-reports-dropdown__item:hover {
+  background: var(--uarps-bg-tertiary);
+  color: var(--uarps-text-primary);
+}
+
+.uarps-reports-dropdown__item svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+
+.uarps-reports-dropdown__divider {
+  height: 1px;
+  background: var(--uarps-border);
+  margin: 0.25rem 0;
+}

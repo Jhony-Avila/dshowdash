@@ -1,0 +1,27 @@
+/* Table Error / Empty State
+ * @version 7.2.0
+ */
+
+.p05-table-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    background: var(--p05-error-bg, rgba(239, 68, 68, 0.05));
+    border: 1px dashed var(--p05-error);
+    border-radius: var(--p05-radius-md);
+}
+
+.p05-table-error h4 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.p05-no-results {
+    padding: 48px 24px !important;
+    text-align: center;
+    color: var(--p05-text-tertiary);
+}

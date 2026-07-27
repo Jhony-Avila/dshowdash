@@ -1,0 +1,231 @@
+/* Panel NavRail Admin - Groups & Cards */
+/* @version 1.0.0-AAA-MODULAR */
+
+.pna-group {
+    margin-bottom: 24px;
+}
+
+.pna-group__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--pna-border);
+}
+
+.pna-group__header h3 {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--pna-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pna-group__count {
+    font-size: 0.75rem;
+    background: var(--pna-bg-elevated);
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: var(--pna-text-dim);
+}
+
+.pna-group__items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pna-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--pna-bg-card);
+    border: 1px solid var(--pna-border);
+    border-radius: var(--pna-radius);
+    transition: all var(--pna-transition);
+    cursor: grab;
+}
+
+.pna-card:hover {
+    background: var(--pna-bg-hover);
+    border-color: var(--pna-border-light);
+}
+
+.pna-card--inactive {
+    opacity: 0.5;
+}
+
+.pna-card--dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.pna-card--drag-over {
+    border-color: var(--pna-primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.pna-card__drag-handle {
+    width: 20px;
+    height: 20px;
+    color: var(--pna-text-dim);
+    cursor: grab;
+    flex-shrink: 0;
+}
+
+.pna-card__drag-handle svg {
+    width: 100%;
+    height: 100%;
+}
+
+.pna-card__icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--pna-bg);
+    border-radius: var(--pna-radius-sm);
+    color: var(--pna-primary);
+    flex-shrink: 0;
+}
+
+.pna-card__icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.pna-card__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pna-card__label {
+    display: block;
+    font-weight: 500;
+    color: var(--pna-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pna-card__id {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--pna-text-dim);
+}
+
+.pna-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.pna-card__order {
+    font-size: 0.75rem;
+    color: var(--pna-text-muted);
+    background: var(--pna-bg);
+    padding: 2px 6px;
+    border-radius: var(--pna-radius-sm);
+}
+
+.pna-card__badge-indicator {
+    color: var(--pna-warning);
+    font-size: 0.625rem;
+}
+
+.pna-card__actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity var(--pna-transition);
+}
+
+.pna-card:hover .pna-card__actions {
+    opacity: 1;
+}
+
+/* v11.4.0: Inline edit styles */
+.pnra-editable {
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.15s;
+}
+.pnra-editable:hover {
+    background: rgba(59, 130, 246, 0.1);
+    outline: 1px dashed rgba(59, 130, 246, 0.3);
+}
+.pnra-editing {
+    background: rgba(59, 130, 246, 0.08) !important;
+}
+.pnra-inline-input {
+    width: 100%;
+    background: var(--pna-bg, rgba(15, 23, 42, 0.9));
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    border-radius: 3px;
+    color: var(--pna-text, #fff);
+    padding: 2px 6px;
+    font-size: inherit;
+    font-family: inherit;
+    outline: none;
+}
+.pnra-inline-input:focus {
+    border-color: rgba(59, 130, 246, 0.7);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+.pnra-input-invalid {
+    border-color: rgba(239, 68, 68, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+}
+.pnra-inline-select {
+    background: var(--pna-bg, rgba(15, 23, 42, 0.9));
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    border-radius: 3px;
+    color: var(--pna-text, #fff);
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    outline: none;
+    max-width: 180px;
+}
+.pnra-inline-select:focus {
+    border-color: rgba(59, 130, 246, 0.7);
+}
+.pnra-icon-popover {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 100;
+    background: var(--pna-bg-card, rgba(30, 41, 59, 0.98));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    min-width: 200px;
+}
+.pnra-popover-content { display: flex; flex-direction: column; gap: 6px; }
+.pnra-popover-content label { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+.pnra-popover-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+.pna-card__route {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--pna-text-dim, rgba(255,255,255,0.4));
+    font-family: monospace;
+}
+.pna-card__group {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    background: rgba(59, 130, 246, 0.12);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.7);
+}
+.pna-card__level {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    background: rgba(139, 92, 246, 0.12);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.7);
+}

@@ -1,0 +1,4 @@
+/* Charts - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-charts { box-sizing: border-box; }
+.panel-charts *, .panel-charts *::before, .panel-charts *::after { box-sizing: inherit; }

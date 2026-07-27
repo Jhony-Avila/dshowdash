@@ -1,0 +1,135 @@
+/* Panel Audit Trail - Pagination Enterprise AAA */
+/* @version 2.0.0-ENTERPRISE-AAA */
+
+.pat-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(to top, rgba(15, 15, 18, 0.98), rgba(15, 15, 18, 0.85));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pat-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pat-pagination-text {
+  font-size: 0.75rem;
+  color: var(--pat-text-muted);
+}
+
+.pat-pagination-text strong {
+  color: var(--pat-text-primary);
+  font-family: var(--pat-font-mono);
+}
+
+.pat-page-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.pat-btn-sm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 0.625rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: var(--pat-text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pat-btn-sm:hover:not(:disabled) {
+  background: rgba(124, 58, 237, 0.15);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.pat-btn-sm:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pat-btn-sm:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pat-btn-sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pat-btn-sm--icon {
+  min-width: 32px;
+  padding: 0;
+}
+
+/* Per page selector */
+.pat-per-page {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pat-per-page-label {
+  font-size: 0.6875rem;
+  color: var(--pat-text-muted);
+}
+
+.pat-per-page-select {
+  padding: 0.3125rem 1.5rem 0.3125rem 0.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--pat-text-secondary);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.375rem center;
+  transition: all 0.15s ease;
+}
+
+.pat-per-page-select:hover {
+  border-color: rgba(124, 58, 237, 0.3);
+}
+
+.pat-per-page-select:focus {
+  outline: none;
+  border-color: var(--pat-accent);
+}
+
+.pat-footer-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.625rem;
+  color: var(--pat-text-muted);
+}
+
+.pat-footer-info svg {
+  width: 12px;
+  height: 12px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.pat-footer-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 0.5rem;
+}

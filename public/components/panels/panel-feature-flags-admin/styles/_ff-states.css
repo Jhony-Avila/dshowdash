@@ -1,0 +1,38 @@
+/* Feature Flags Admin - States */
+/* @version 1.0.0-AAA-MODULAR */
+
+.panel-feature-flags-admin .loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--ff-muted);
+}
+
+.panel-feature-flags-admin .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--ff-border);
+    border-top-color: var(--ff-info);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.panel-feature-flags-admin .error-message {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--ff-danger);
+    color: var(--ff-danger);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.panel-feature-flags-admin .empty {
+    text-align: center;
+    color: var(--ff-muted);
+    padding: 2rem;
+    grid-column: 1 / -1;
+}

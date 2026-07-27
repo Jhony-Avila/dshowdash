@@ -1,0 +1,70 @@
+/* Panel Header Admin - Form */
+/* @version 1.0.0-AAA-MODULAR */
+/* Formulários */
+
+.pha-form {
+  padding: 24px;
+}
+
+.pha-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.pha-form__field {
+  margin-bottom: 16px;
+}
+
+.pha-form__field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pha-text-secondary);
+  margin-bottom: 6px;
+}
+
+.pha-form__field input,
+.pha-form__field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--pha-border);
+  border-radius: var(--pha-radius-md);
+  font-size: 14px;
+}
+
+.pha-form__field input:focus,
+.pha-form__field select:focus {
+  outline: none;
+  border-color: var(--pha-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.pha-form__field input[readonly] {
+  background: var(--pha-bg-secondary);
+  color: var(--pha-text-muted);
+}
+
+.pha-form__checkboxes {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.pha-form__checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pha-form__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pha-border);
+}

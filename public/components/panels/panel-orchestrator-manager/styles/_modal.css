@@ -1,0 +1,54 @@
+/* Panel Orchestrator Manager - Modal */
+/* @version 2.0.0-ENTERPRISE */
+
+.pom-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.pom-modal {
+  width: 100%;
+  max-width: 500px;
+  background: var(--pom-bg-secondary);
+  border: 1px solid var(--pom-border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pom-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--pom-border-color);
+}
+
+.pom-modal__header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.pom-modal__close {
+  background: transparent;
+  border: none;
+  color: var(--pom-text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.pom-modal__body {
+  padding: 1.5rem;
+}
+
+.pom-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--pom-border-color);
+}

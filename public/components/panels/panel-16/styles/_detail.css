@@ -1,0 +1,8 @@
+/* Panel-16 Detail - Master
+ * @version 6.2.0-ENTERPRISE
+ * Modularizado em 3 partials
+ */
+
+@import '_detail.header.css';
+@import '_detail.sections.css';
+@import '_detail.content.css';

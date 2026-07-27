@@ -1,0 +1,18 @@
+/* Panel User Preferences - Master CSS v5.0.0
+   @version 5.0.0-ENTERPRISE-AAA
+   v5.0.0: Adicionado Avatar System styles
+   Central stylesheet with modular imports */
+
+@import url('./_tokens.css');
+@import url('./_base.css');
+@import url('./_header.css');
+@import url('./_identity.css');
+@import url('./_sections.css');
+@import url('./_theme.css');
+@import url('./_notifications.css');
+@import url('./_items.css');
+@import url('./_buttons.css');
+@import url('./_history.css');
+@import url('./_modals.css');
+@import url('./_avatar.css');
+@import url('./_responsive.css');

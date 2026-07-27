@@ -1,0 +1,42 @@
+{
+  "id": "panel-home",
+  "name": "Home",
+  "description": "Painel inicial com mensagens contextuais de acolhimento",
+  "category": "system",
+  "refreshInterval": 300000,
+  "enabled": true,
+  "version": "1.0.0",
+  "architecture": "contextual-messaging",
+  "author": "DShow Dashboard",
+  "created": "2026-01-27",
+  "updated": "2026-01-27",
+  "dependencies": [],
+  "permissions": ["read"],
+  "features": [
+    "contextual-messages",
+    "user-greeting",
+    "temporal-awareness",
+    "session-context",
+    "system-state-awareness",
+    "graceful-fallback"
+  ],
+  "telemetry": {
+    "enabled": true,
+    "events": [
+      "lifecycle:mounted",
+      "lifecycle:unmounted",
+      "message:displayed",
+      "message:none",
+      "context:resolved"
+    ]
+  },
+  "messageCategories": [
+    "temporal",
+    "acolhimento",
+    "acao",
+    "contexto",
+    "estado",
+    "inspiracional",
+    "idle"
+  ]
+}

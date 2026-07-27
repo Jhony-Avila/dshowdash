@@ -1,0 +1,13 @@
+/* panel-13 Alerts Bar - @version 1.0.0-ENTERPRISE */
+.p13-alerts-bar { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: var(--p13-radius-md); font-size: 14px; }
+.p13-alerts-bar--ok { background: var(--p13-ok-bg); border: 1px solid rgba(34, 197, 94, 0.3); color: var(--p13-ok); }
+.p13-alerts-bar--warning { background: var(--p13-warning-bg); border: 1px solid rgba(234, 179, 8, 0.3); color: var(--p13-warning); }
+.p13-alerts-bar--critical { background: var(--p13-error-bg); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--p13-error); }
+.p13-alert-icon { display: flex; align-items: center; }
+.p13-alert-icon svg { width: 20px; height: 20px; }
+.p13-alert-content { display: flex; align-items: center; gap: 12px; }
+.p13-alert-total { font-weight: 600; }
+.p13-alert-breakdown { display: flex; gap: 12px; font-size: 13px; opacity: 0.9; }
+.p13-alert-critical { color: var(--p13-error); }
+.p13-alert-warning { color: var(--p13-warning); }
+.p13-alert-text { font-weight: 500; }

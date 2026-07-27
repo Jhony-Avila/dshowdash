@@ -1,0 +1,56 @@
+/* Panel Audit Trail - Filters Container
+ * @version 3.0.0-MODULAR
+ * Container + Time Presets
+ */
+
+.pat-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(to bottom, rgba(8, 8, 12, 0.98), rgba(8, 8, 12, 0.92));
+  border-bottom: 1px solid var(--pat-border-muted);
+  flex-wrap: wrap;
+  min-height: 44px;
+}
+
+/* Time Presets */
+.pat-time-presets {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--pat-bg-base);
+  border: 1px solid var(--pat-border-muted);
+  border-radius: var(--pat-radius-lg);
+}
+
+.pat-preset-btn {
+  padding: 0.3125rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  border-radius: var(--pat-radius-md);
+  color: var(--pat-text-muted);
+  cursor: pointer;
+  transition: var(--pat-transition-base);
+  white-space: nowrap;
+}
+
+.pat-preset-btn:hover {
+  color: var(--pat-text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pat-preset-btn:focus-visible {
+  outline: 2px solid var(--pat-accent);
+  outline-offset: 1px;
+}
+
+.pat-preset-btn.pat-preset-active,
+.pat-preset-active {
+  background: linear-gradient(135deg, var(--pat-accent), var(--pat-accent-active));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}

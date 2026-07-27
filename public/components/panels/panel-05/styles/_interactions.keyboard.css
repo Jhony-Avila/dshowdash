@@ -1,0 +1,130 @@
+/* Panel-05 Interactions - Keyboard
+ * @version 7.0.0-MODULAR
+ * Keyboard Navigation & Focus States
+ */
+
+/* Focus visible global */
+.p05-panel *:focus {
+    outline: none;
+}
+
+.p05-panel *:focus-visible {
+    outline: 2px solid var(--p05-info);
+    outline-offset: 2px;
+    border-radius: var(--p05-radius-sm);
+}
+
+/* Focus ring custom */
+.p05-focus-ring:focus-visible {
+    box-shadow: 
+        0 0 0 2px var(--p05-bg-app),
+        0 0 0 4px var(--p05-info);
+    outline: none;
+}
+
+/* Skip link for accessibility */
+.p05-skip-link {
+    position: absolute;
+    top: -100%;
+    left: 16px;
+    z-index: 9999;
+    padding: 8px 16px;
+    background: var(--p05-info);
+    color: white;
+    font-weight: 600;
+    border-radius: var(--p05-radius-sm);
+    text-decoration: none;
+    transition: top var(--p05-motion-fast);
+}
+
+.p05-skip-link:focus {
+    top: 16px;
+}
+
+/* Keyboard hints */
+.p05-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: var(--p05-bg-surface-alt);
+    border: 1px solid var(--p05-border-subtle);
+    border-radius: var(--p05-radius-xs);
+    font-family: var(--p05-font-mono, 'SF Mono', Monaco, monospace);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--p05-text-muted);
+    box-shadow: 0 1px 0 var(--p05-border-subtle);
+}
+
+.p05-kbd-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    opacity: 0.6;
+    transition: opacity var(--p05-motion-fast);
+}
+
+.p05-kbd-hint:hover {
+    opacity: 1;
+}
+
+/* Focus within container */
+.p05-search-box:focus-within {
+    border-color: var(--p05-border-focus);
+    box-shadow: var(--p05-shadow-focus);
+}
+
+.p05-search-box:focus-within .p05-search-icon {
+    color: var(--p05-info);
+}
+
+/* Tab navigation indicator */
+.p05-tab-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--p05-info);
+    border-radius: var(--p05-radius-pill);
+    transition: 
+        left var(--p05-motion-normal) ease-out,
+        width var(--p05-motion-normal) ease-out;
+}
+
+/* Interactive row states */
+.p05-table-row:focus-visible {
+    background: var(--p05-bg-surface-hover);
+    outline: 2px solid var(--p05-info);
+    outline-offset: -2px;
+}
+
+.p05-table-row[aria-selected="true"] {
+    background: var(--p05-info-bg);
+    border-color: var(--p05-info-border);
+}
+
+/* Sortable column focus */
+.p05-sortable:focus-visible {
+    background: var(--p05-bg-surface-hover);
+}
+
+/* Autocomplete keyboard nav */
+.p05-autocomplete-item:focus-visible,
+.p05-autocomplete-item.p05-ac-selected {
+    background: var(--p05-bg-surface-hover);
+    outline: none;
+}
+
+.p05-autocomplete-item.p05-ac-selected::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--p05-info);
+}

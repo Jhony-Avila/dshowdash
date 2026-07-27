@@ -1,0 +1,51 @@
+/* Header Tokens - Enterprise Premium v8.0.0 */
+:root {
+  /* Card Backgrounds */
+  --card-bg: rgba(20, 20, 26, 0.85);
+  --card-bg-hover: rgba(25, 25, 32, 0.92);
+  --card-border: rgba(255, 255, 255, 0.06);
+  --card-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  --card-shadow-hover: 0 4px 10px rgba(0, 0, 0, 0.55);
+  --card-radius: 14px;
+  --card-height: 40px;
+  --card-padding: 10px 16px;
+  /* Icon */
+  --icon-color: rgba(255, 255, 255, 0.8);
+  --icon-size: 20px;
+  /* Typography */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-muted: rgba(255, 255, 255, 0.55);
+  --text-value: rgba(255, 255, 255, 0.92);
+  --font-weight-normal: 500;
+  --font-weight-bold: 600;
+  --font-size-label: 14px;
+  --font-size-value: 15px;
+  /* Status */
+  --status-success: #3DFF9C;
+  --status-warning: #F5D35C;
+  --status-error: #FF5F5F;
+  --status-info: #5EA1FF;
+  --status-accent: #7B6EF6;
+  /* Layout */
+  --header-height: 64px;
+  --header-gap: 12px;
+  --header-padding: 24px;
+}
+
+/* Tema Claro — override ADITIVO. Parte 2 theming 2026-07-05. */
+:root.theme-light, :root[data-theme="light"] {
+  --card-bg: rgba(0,0,0,0.03);
+  --card-bg-hover: rgba(0,0,0,0.05);
+  --card-border: rgba(0,0,0,0.08);
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(0,0,0,0.02);
+  --card-shadow-hover: 0 4px 10px rgba(0,0,0,0.14);
+  --icon-color: rgba(0,0,0,0.7);
+  --text-primary: rgba(0,0,0,0.92);
+  --text-muted: rgba(0,0,0,0.55);
+  --text-value: rgba(0,0,0,0.9);
+  --status-success: #047857;
+  --status-warning: #b45309;
+  --status-error: #dc2626;
+  --status-info: #2563eb;
+  --status-accent: #6d28d9;
+}

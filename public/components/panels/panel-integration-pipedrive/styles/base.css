@@ -1,0 +1,4 @@
+/* Integração  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-integration-pipedrive { box-sizing: border-box; }
+.panel-integration-pipedrive *, .panel-integration-pipedrive *::before, .panel-integration-pipedrive *::after { box-sizing: inherit; }

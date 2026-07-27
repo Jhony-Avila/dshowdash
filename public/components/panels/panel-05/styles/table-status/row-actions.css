@@ -1,0 +1,61 @@
+/* Panel-05 Row & Header Actions - @version 1.0.0-ENTERPRISE */
+.p05-td-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.p05-td-actions .p05-btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: var(--p05-radius-sm, 6px);
+    background: transparent;
+    color: var(--p05-text-muted, #64748B);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.p05-td-actions .p05-btn-icon svg { width: 16px; height: 16px; }
+.p05-td-actions .p05-btn-icon:hover { color: #06B6D4; background: rgba(6, 182, 212, 0.1); }
+
+.p05-header-actions .p05-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--p05-border-subtle, rgba(255, 255, 255, 0.06));
+    border-radius: var(--p05-radius-sm, 6px);
+    background: transparent;
+    color: var(--p05-text-secondary, #94A3B8);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.p05-header-actions .p05-btn-ghost svg { width: 18px; height: 18px; }
+
+.p05-header-actions .p05-btn-ghost:hover {
+    background: var(--p05-bg-surface-hover, rgba(255, 255, 255, 0.05));
+    color: var(--p05-text-primary, #F8FAFC);
+    border-color: var(--p05-border-default, rgba(255, 255, 255, 0.08));
+}
+
+.p05-header-actions .p05-btn-ghost[data-action="refresh"]:hover {
+    color: var(--p05-accent, #7C3AED);
+    border-color: var(--p05-accent, #7C3AED);
+    box-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
+}
+
+.p05-header-actions .p05-btn-ghost[data-action="toggle-export"]:hover {
+    color: var(--p05-ok, #22C55E);
+    border-color: var(--p05-ok, #22C55E);
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+}
+
+.p05-header-actions .p05-btn-ghost[data-action="openSettings"]:hover {
+    color: var(--p05-text-primary, #F8FAFC);
+}

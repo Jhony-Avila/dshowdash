@@ -1,0 +1,18 @@
+{
+  "id": "panel-header-admin",
+  "version": "1.0.0-ENTERPRISE-AAA",
+  "name": "Header Admin",
+  "description": "Gerenciamento de componentes do Header",
+  "author": "DshowDash Team",
+  "minAccessLevel": 100,
+  "features": {
+    "crud": true,
+    "dragDrop": true,
+    "bulkActions": true,
+    "preview": true
+  },
+  "api": {
+    "endpoint": "/api/ui/header/",
+    "timeout": 10000
+  }
+}

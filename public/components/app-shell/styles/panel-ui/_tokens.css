@@ -1,0 +1,65 @@
+/* Panel UI - Tokens
+ * @module _tokens.css
+ * @version 1.0.0
+ * @description Variáveis CSS para Debug Panel e Command Palette
+ * @note Cores dark FORÇADAS (não herdam do tema global)
+ * @dependencies nenhuma
+ */
+
+.dsd-ui-panel,
+.dsd-ui-overlay {
+  /* Backgrounds - DARK FORÇADO */
+  --ui-bg-overlay: rgba(0, 0, 0, 0.85);
+  --ui-bg-panel: #09090b;
+  --ui-bg-surface: #111113;
+  --ui-bg-elevated: #1a1a1d;
+  --ui-bg-card: rgba(255, 255, 255, 0.03);
+  --ui-bg-hover: rgba(255, 255, 255, 0.05);
+  --ui-bg-active: rgba(255, 255, 255, 0.08);
+  --ui-bg-input: rgba(255, 255, 255, 0.03);
+  
+  /* Textos - CLAROS FORÇADOS */
+  --ui-text-primary: rgba(255, 255, 255, 0.92);
+  --ui-text-secondary: rgba(255, 255, 255, 0.7);
+  --ui-text-muted: rgba(255, 255, 255, 0.4);
+  --ui-text-label: rgba(255, 255, 255, 0.5);
+  
+  /* Bordas - SUTIS */
+  --ui-border: rgba(255, 255, 255, 0.06);
+  --ui-border-hover: rgba(255, 255, 255, 0.1);
+  --ui-border-active: rgba(255, 255, 255, 0.15);
+  
+  /* Status */
+  --ui-success: #34d399;
+  --ui-warning: #fbbf24;
+  --ui-error: #f87171;
+  --ui-accent: #7c3aed;
+  
+  /* Tipografia */
+  --ui-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ui-font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  --ui-text-xs: 11px;
+  --ui-text-sm: 13px;
+  --ui-text-base: 14px;
+  --ui-text-lg: 16px;
+  
+  /* Espaçamento */
+  --ui-space-xs: 4px;
+  --ui-space-sm: 8px;
+  --ui-space-md: 12px;
+  --ui-space-lg: 16px;
+  --ui-space-xl: 24px;
+  
+  /* Bordas arredondadas */
+  --ui-radius-sm: 6px;
+  --ui-radius-md: 8px;
+  --ui-radius-lg: 10px;
+  
+  /* Transições */
+  --ui-transition-fast: 0.15s ease;
+  --ui-transition-normal: 0.2s ease;
+  
+  /* Sombras */
+  --ui-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --ui-shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.6);
+}

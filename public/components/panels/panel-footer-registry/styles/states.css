@@ -1,0 +1,4 @@
+/* Footer  - State Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-footer-registry[data-loading="true"] { opacity: 0.7; pointer-events: none; }
+.panel-footer-registry[data-error="true"] { border-color: var(--color-error, #dc2626); }

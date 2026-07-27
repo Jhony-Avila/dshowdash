@@ -1,0 +1,64 @@
+/* Panel-10 - Server Health
+ * @version 4.0.0-MODULAR
+ * Status Banner
+ */
+
+.p10-server-health {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.p10-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--p10-radius);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.p10-status-online {
+  background: var(--p10-success-soft);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.p10-status-offline {
+  background: var(--p10-error-soft);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.p10-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: p10-pulse 2s ease-in-out infinite;
+}
+
+.p10-status-online .p10-status-indicator {
+  background: var(--p10-success);
+  box-shadow: 0 0 8px var(--p10-success);
+}
+
+.p10-status-offline .p10-status-indicator {
+  background: var(--p10-error);
+  box-shadow: 0 0 8px var(--p10-error);
+  animation: none;
+}
+
+@keyframes p10-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.p10-status-label {
+  color: var(--p10-text);
+}
+
+.p10-status-host {
+  margin-left: auto;
+  color: var(--p10-text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+}

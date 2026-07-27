@@ -1,0 +1,24 @@
+/* Table Sort
+ * @version 7.3.0
+ */
+
+.p05-table th.p05-sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.p05-table th.p05-sortable:hover {
+    background: var(--p05-bg-surface-hover);
+    color: var(--p05-text-secondary);
+}
+
+.p05-sort-icon {
+    display: inline-flex;
+    margin-left: var(--p05-space-xs);
+    opacity: 0.7;
+}
+
+.p05-sort-icon svg {
+    width: 14px;
+    height: 14px;
+}

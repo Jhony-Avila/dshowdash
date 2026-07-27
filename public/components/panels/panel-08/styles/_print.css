@@ -1,0 +1,9 @@
+/* Panel-08 - Print
+ * @version 6.0.0-MODULAR
+ */
+
+@media print {
+  .p08 { background: white; }
+  .p08__btn, .p08__toolbar { display: none; }
+  .p08__alert { break-inside: avoid; border: 1px solid #ccc; }
+}

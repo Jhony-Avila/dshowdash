@@ -1,0 +1,13 @@
+/* panel-03 Execuções por Hora - Master Styles */
+/* @version 5.0.0-ENTERPRISE-DASHBOARD */
+
+@import url('./tokens.css');
+@import url('./panel-03.base.css');
+@import url('./panel-03.dashboard.css');
+@import url('./panel-03.header.css');
+@import url('./panel-03.states.css');
+@import url('./panel-03.drawer.css');
+@import url('./panel-03.toast.css');
+@import url('./panel-03.responsive.css');
+@import url('./panel-03.accessibility.css');
+@import url('./panel-03.print.css');

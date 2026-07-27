@@ -1,0 +1,67 @@
+/* Panel-05 Modals - Keyboard
+ * @version 7.0.0-MODULAR
+ * Keyboard Shortcuts Modal
+ */
+
+.p05-kbd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+}
+
+.p05-kbd-category-title {
+    margin: 0 0 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--p05-text-muted);
+}
+
+.p05-kbd-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.p05-kbd-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.p05-kbd-keys {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.p05-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    font-family: var(--p05-font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--p05-text-secondary);
+    background: var(--p05-bg-surface-alt);
+    border: 1px solid var(--p05-border-default);
+    border-radius: 4px;
+    box-shadow: 0 1px 0 var(--p05-border-strong);
+}
+
+.p05-kbd-plus {
+    font-size: 10px;
+    color: var(--p05-text-muted);
+}
+
+.p05-kbd-desc {
+    font-size: 13px;
+    color: var(--p05-text-secondary);
+    text-align: right;
+}

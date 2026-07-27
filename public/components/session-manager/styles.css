@@ -1,0 +1,49 @@
+/* Session Manager Styles v1.0.0 */
+/* Componente de infraestrutura - sem estilos visuais */
+
+.session-manager-debug {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #00ff00;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 11px;
+  border-radius: 4px;
+  z-index: 99999;
+  max-width: 350px;
+  display: none;
+}
+
+.session-manager-debug.visible {
+  display: block;
+}
+
+.session-manager-debug-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #ffff00;
+}
+
+.session-manager-debug-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.session-manager-debug-label {
+  color: #00ffff;
+}
+
+.session-manager-debug-value {
+  color: #ffffff;
+}
+
+.session-manager-debug-value.authenticated {
+  color: #00ff00;
+}
+
+.session-manager-debug-value.unauthenticated {
+  color: #ff6666;
+}

@@ -1,0 +1,41 @@
+/* Feature Flags Admin - Modal */
+/* @version 1.0.0-AAA-MODULAR */
+
+.panel-feature-flags-admin .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.panel-feature-flags-admin .modal {
+    background: var(--ff-bg);
+    border: 1px solid var(--ff-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.panel-feature-flags-admin .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.panel-feature-flags-admin .modal-header h3 {
+    margin: 0;
+}
+
+.panel-feature-flags-admin .modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}

@@ -1,0 +1,61 @@
+.skeleton { display: flex; flex-direction: column; gap: 9px; padding: 4px 0; }
+.barra {
+  border-radius: var(--dt-radius-sm);
+  background: linear-gradient(90deg,
+    var(--dt-bg-surface) 25%, var(--dt-bg-surface-hover) 50%, var(--dt-bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: brilho 1.3s linear infinite;
+}
+@keyframes brilho { to { background-position: -200% 0; } }
+
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--dt-space-3); }
+.cartaoSkel {
+  height: 92px; border-radius: var(--dt-radius-md);
+  border: 1px solid var(--dt-border);
+  background: linear-gradient(90deg,
+    var(--dt-bg-surface) 25%, var(--dt-bg-surface-hover) 50%, var(--dt-bg-surface) 75%);
+  background-size: 200% 100%; animation: brilho 1.3s linear infinite;
+}
+
+.vazio, .erro {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: var(--dt-space-7) var(--dt-space-5); text-align: center;
+  border: 1px dashed var(--dt-border); border-radius: var(--dt-radius-lg);
+  background:
+    radial-gradient(120% 90% at 50% 0%, var(--dt-glass), transparent 60%),
+    var(--dt-bg-surface);
+}
+.erro { border-style: solid; border-color: var(--dt-danger-border); background: var(--dt-danger-bg); }
+/* ilustração: ícone em disco com halo suave e anel de acento */
+.vazioIcone {
+  display: grid; place-items: center; width: 78px; height: 78px; margin-bottom: 2px;
+  border-radius: 50%; color: var(--dt-primary);
+  background: var(--dt-grad-primary);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--dt-primary) 22%, transparent),
+              0 0 0 10px color-mix(in srgb, var(--dt-primary) 6%, transparent);
+}
+.erroIcone {
+  display: grid; place-items: center; width: 66px; height: 66px;
+  border-radius: 50%; color: var(--dt-danger);
+  background: var(--dt-grad-alert);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--dt-danger) 7%, transparent);
+}
+.vazioTitulo { font-size: 14px; font-weight: 600; color: var(--dt-text-primary); }
+.vazioTexto { margin: 0; max-width: 46ch; font-size: 12.5px; color: var(--dt-text-secondary); line-height: 1.5; }
+.vazioAcao { margin-top: 6px; }
+
+.codigo {
+  font-family: var(--dt-font-mono); font-size: 11.5px;
+  padding: 5px 9px; border-radius: var(--dt-radius-sm);
+  background: var(--dt-bg-surface); color: var(--dt-text-muted);
+}
+.botao {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 4px;
+  padding: 7px 14px; font: inherit; font-size: 12.5px; cursor: pointer;
+  border-radius: var(--dt-radius-sm); border: 1px solid var(--dt-border);
+  background: var(--dt-bg-surface); color: var(--dt-text-primary);
+}
+.botao:hover { background: var(--dt-bg-surface-hover); border-color: var(--dt-primary); }
+.botao:focus-visible { outline: 2px solid var(--dt-primary); outline-offset: 2px; }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

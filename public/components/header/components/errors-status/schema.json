@@ -1,0 +1,8 @@
+{
+  "name": "errors-status",
+  "version": "1.0.0",
+  "type": "status-indicator",
+  "description": "System errors counter",
+  "dependencies": [],
+  "config": { "pollInterval": 30000 }
+}

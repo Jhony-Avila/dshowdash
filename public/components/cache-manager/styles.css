@@ -1,0 +1,4 @@
+/* Cache Manager Styles v1.0.0 */
+.cache-manager-debug { position: fixed; bottom: 50px; right: 10px; background: rgba(0,0,0,0.9); color: #0f0; padding: 12px; font-family: monospace; font-size: 11px; border-radius: 4px; z-index: 99999; max-width: 300px; display: none; }
+.cache-manager-debug.visible { display: block; }
+.cache-manager-debug-title { font-weight: bold; margin-bottom: 8px; color: #ff0; }

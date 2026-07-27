@@ -1,0 +1,62 @@
+/* Panel-01 - Loading States AAA */
+/* @version 1.0.0-ENTERPRISE */
+
+.p01-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 15, 26, 0.8);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+}
+
+.p01-loading-overlay.active { opacity: 1; visibility: visible; }
+
+.p01-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color, #2e2e3e);
+  border-top-color: var(--accent-color, #6366f1);
+  border-radius: 50%;
+  animation: p01-spin 0.8s linear infinite;
+}
+
+.p01-spinner--sm { width: 20px; height: 20px; border-width: 2px; }
+.p01-spinner--lg { width: 56px; height: 56px; border-width: 4px; }
+
+.p01-loading-text {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.p01-progress {
+  width: 200px;
+  height: 4px;
+  background: var(--bg-muted);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.p01-progress-bar {
+  height: 100%;
+  background: var(--accent-color);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.p01-progress--indeterminate .p01-progress-bar {
+  width: 30%;
+  animation: p01-progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes p01-progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}

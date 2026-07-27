@@ -1,0 +1,66 @@
+/* Panel-15 Overview Métricas - Responsive */
+/* @version 2.0.0-ENTERPRISE-AAA */
+
+@media (max-width: 1024px) {
+  .p15-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .p15-status-badges {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .p15-table th:nth-child(7),
+  .p15-table td:nth-child(7) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .p15-header {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .p15-title { font-size: 0.875rem; }
+  .p15-subtitle { display: none; }
+
+  .p15-table th:nth-child(4),
+  .p15-table td:nth-child(4),
+  .p15-table th:nth-child(5),
+  .p15-table td:nth-child(5) {
+    display: none;
+  }
+
+  .p15-job-name {
+    max-width: 150px;
+  }
+
+  .p15-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .p15-footer-left {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .p15-table th:nth-child(2),
+  .p15-table td:nth-child(2) {
+    display: none;
+  }
+
+  .p15-job-name {
+    max-width: 120px;
+  }
+
+  .p15-badge-count {
+    display: none;
+  }
+}

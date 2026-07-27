@@ -1,0 +1,9 @@
+/* Panel Audit Trail - Header Master
+ * @version 3.0.0-MODULAR
+ * Modularizado em 4 partials
+ */
+
+@import 'pat.header.identity.css';
+@import 'pat.header.health.css';
+@import 'pat.header.actions.css';
+@import 'pat.header.utils.css';

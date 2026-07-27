@@ -1,0 +1,134 @@
+/* Panel-05 Charts - Table
+ * @version 7.0.0-MODULAR
+ * Vendedores Table + Timeline + Responsive
+ */
+
+.p05-vendedores-table {
+    overflow-x: auto;
+}
+
+.p05-vendedores-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font: var(--p05-font-body-sm);
+}
+
+.p05-vendedores-table th {
+    padding: var(--p05-space-sm) var(--p05-space-md);
+    text-align: left;
+    font: var(--p05-font-meta);
+    color: var(--p05-text-muted);
+    border-bottom: 1px solid var(--p05-border-default);
+    white-space: nowrap;
+}
+
+.p05-vendedores-table td {
+    padding: var(--p05-space-sm) var(--p05-space-md);
+    border-bottom: 1px solid var(--p05-border-subtle);
+}
+
+.p05-vend-nome { color: var(--p05-text-primary); }
+.p05-vend-receita { color: var(--p05-success); font-weight: 600; text-align: right; }
+.p05-vend-ganhos { text-align: right; }
+.p05-vend-ticket { text-align: right; color: var(--p05-text-muted); }
+.p05-vend-clientes { text-align: right; }
+
+.p05-conv-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--p05-radius-pill);
+    font: var(--p05-font-badge);
+}
+
+.p05-conv-high { background: var(--p05-success-bg); color: var(--p05-success); }
+.p05-conv-med { background: var(--p05-warning-bg); color: var(--p05-warning); }
+.p05-conv-low { background: var(--p05-danger-bg); color: var(--p05-danger); }
+
+/* Timeline */
+.p05-timeline {
+    padding: var(--p05-space-lg);
+    background: var(--p05-bg-surface);
+    border-radius: var(--p05-radius-md);
+    border: 1px solid var(--p05-border-default);
+    margin: var(--p05-space-section);
+}
+
+.p05-timeline h4 {
+    margin: 0 0 var(--p05-space-lg) 0;
+    font: var(--p05-font-title-sm);
+    color: var(--p05-text-primary);
+}
+
+.p05-timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--p05-space-md);
+}
+
+.p05-timeline-item {
+    display: flex;
+    gap: var(--p05-space-md);
+}
+
+.p05-timeline-marker {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid;
+    flex-shrink: 0;
+    font-size: 14px;
+}
+
+.p05-timeline-content {
+    flex: 1;
+    padding-bottom: var(--p05-space-md);
+    border-bottom: 1px solid var(--p05-border-subtle);
+}
+
+.p05-timeline-item:last-child .p05-timeline-content {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.p05-timeline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--p05-space-xs);
+}
+
+.p05-timeline-title {
+    font: var(--p05-font-body);
+    color: var(--p05-text-primary);
+}
+
+.p05-timeline-date {
+    font: var(--p05-font-meta);
+    color: var(--p05-text-dim);
+}
+
+.p05-timeline-desc {
+    margin: 0;
+    font: var(--p05-font-body-sm);
+    color: var(--p05-text-muted);
+}
+
+.p05-timeline-vendedor {
+    font: var(--p05-font-meta);
+    color: var(--p05-text-dim);
+    margin-top: var(--p05-space-xs);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .p05-charts-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .p05-chart-container.p05-chart-wide {
+        grid-column: span 1;
+    }
+}

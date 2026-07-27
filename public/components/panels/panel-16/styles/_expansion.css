@@ -1,0 +1,11 @@
+/* Panel-16 Expansion & Advanced Features */
+/* @version 6.2.1-ENTERPRISE-MODULAR */
+/* Modularizado em 7 arquivos por responsabilidade */
+
+@import '_expansion.chips.css';
+@import '_expansion.rows.css';
+@import '_expansion.sort.css';
+@import '_expansion.pinning.css';
+@import '_expansion.export.css';
+@import '_expansion.scroll.css';
+@import '_expansion.types.css';

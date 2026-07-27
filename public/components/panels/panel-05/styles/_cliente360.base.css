@@ -1,0 +1,77 @@
+/* Panel-05 - Cliente 360 Base */
+/* @version 7.0.0-MODULAR */
+/* Container, Grid, Section, Fields */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CLIENTE 360 CONTAINER */
+/* ═══════════════════════════════════════════════════════════════ */
+.p05-cliente360 {
+    padding: var(--p05-space-section);
+    background: var(--p05-bg-app);
+    animation: p05-fadeIn var(--p05-motion-normal);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 360 GRID */
+/* ═══════════════════════════════════════════════════════════════ */
+.p05-360-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--p05-space-lg);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 360 SECTION */
+/* ═══════════════════════════════════════════════════════════════ */
+.p05-360-section {
+    background: var(--p05-bg-surface);
+    border: 1px solid var(--p05-border-default);
+    border-radius: var(--p05-radius-md);
+    padding: var(--p05-space-lg);
+}
+
+.p05-360-section.p05-section-wide {
+    grid-column: span 2;
+}
+
+.p05-360-section h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--p05-space-sm);
+    margin: 0 0 var(--p05-space-lg) 0;
+    font: var(--p05-font-title-sm);
+    color: var(--p05-text-primary);
+    padding-bottom: var(--p05-space-md);
+    border-bottom: 1px solid var(--p05-border-subtle);
+}
+
+.p05-360-section h4 svg {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FIELDS */
+/* ═══════════════════════════════════════════════════════════════ */
+.p05-360-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--p05-space-md);
+}
+
+.p05-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.p05-field label {
+    font: var(--p05-font-meta);
+    color: var(--p05-text-muted);
+}
+
+.p05-field span {
+    font: var(--p05-font-body);
+    color: var(--p05-text-primary);
+}

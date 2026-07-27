@@ -1,0 +1,9 @@
+/* Panel-05 Charts - Master
+ * @version 7.0.0-MODULAR
+ * Modularizado em 4 partials
+ */
+
+@import '_charts.container.css';
+@import '_charts.bar.css';
+@import '_charts.lists.css';
+@import '_charts.table.css';

@@ -1,0 +1,36 @@
+/* Panel NavRail Admin - Stats */
+/* @version 1.0.0-AAA-MODULAR */
+
+.pna-stats {
+    display: flex;
+    gap: 16px;
+    padding: 16px 24px;
+    background: var(--pna-bg-elevated);
+    border-bottom: 1px solid var(--pna-border);
+    flex-shrink: 0;
+}
+
+.pna-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 24px;
+    background: var(--pna-bg);
+    border-radius: var(--pna-radius);
+    min-width: 80px;
+}
+
+.pna-stat__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pna-text);
+}
+
+.pna-stat__label {
+    font-size: 0.75rem;
+    color: var(--pna-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pna-stat--success .pna-stat__value { color: var(--pna-success); }

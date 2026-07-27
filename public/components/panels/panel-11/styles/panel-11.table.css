@@ -1,0 +1,120 @@
+/* Panel-11 Table - Enterprise Premium AAA */
+/* @version 4.0.0-ENTERPRISE-AAA */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* TABLE CONTAINER */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-table-card {
+  padding: 16px;
+  background: var(--p11-bg-card);
+  border: 1px solid var(--p11-card-border);
+  border-radius: var(--p11-radius-lg);
+}
+
+.p11-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.p11-table-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.p11-table-title-icon {
+  color: var(--p11-error);
+}
+
+.p11-table-title-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.p11-table-title-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--p11-text-primary);
+}
+
+.p11-table-count {
+  font-size: 10px;
+  color: var(--p11-text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* TABLE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-table-wrapper {
+  overflow-x: auto;
+}
+
+.p11-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.p11-table th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--p11-text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--p11-card-border);
+  white-space: nowrap;
+}
+
+.p11-table th.right { text-align: right; }
+
+.p11-table td {
+  padding: 10px 12px;
+  color: var(--p11-text-secondary);
+  border-bottom: 1px solid var(--p11-bg-elevated);
+}
+
+.p11-table td.right { text-align: right; }
+
+/* Zebra */
+.p11-table tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Hover */
+.p11-table tr:hover td {
+  background: var(--p11-accent-soft);
+}
+
+/* Clickable */
+.p11-table tr[data-clickable] {
+  cursor: pointer;
+}
+
+/* Cell Variants */
+.p11-table-cell--error {
+  font-weight: 600;
+  color: var(--p11-error);
+}
+
+.p11-table-cell--truncate {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EMPTY STATE */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-table-empty {
+  text-align: center;
+  color: var(--p11-text-muted);
+  padding: 20px;
+  font-size: 11px;
+}

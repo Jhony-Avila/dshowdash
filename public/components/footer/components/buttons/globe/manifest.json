@@ -1,0 +1,10 @@
+{
+  "id": "globe",
+  "area": "footer",
+  "label": "Global",
+  "icon": "globe",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

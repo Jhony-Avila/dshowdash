@@ -1,0 +1,14 @@
+/* map-pin Icon - Tokens */
+.dsd-icon--map-pin { --icon-size-xs: 12px; --icon-size-sm: 14px; --icon-size-md: 16px; --icon-size-lg: 20px; --icon-size-xl: 24px; }
+/* map-pin Icon - Base */
+.dsd-icon--map-pin { display: inline-flex; align-items: center; justify-content: center; line-height: 1; transition: all 0.2s ease; }
+.dsd-icon--map-pin .dsd-icon__svg { display: block; flex-shrink: 0; }
+.dsd-icon--map-pin.dsd-icon--clickable { cursor: pointer; }
+.dsd-icon--map-pin.dsd-icon--clickable:hover { opacity: 0.8; }
+/* map-pin Icon - States */
+.dsd-icon--map-pin.dsd-icon--state-default { opacity: 1; }
+.dsd-icon--map-pin.dsd-icon--state-active { color: var(--color-success, #22c55e); }
+.dsd-icon--map-pin.dsd-icon--state-disabled { opacity: 0.4; pointer-events: none; }
+.dsd-icon--map-pin.dsd-icon--state-loading { animation: dsd-icon-pulse 1.5s ease-in-out infinite; }
+/* map-pin Icon - Responsive */
+@media (max-width: 640px) { .dsd-icon--map-pin.dsd-icon--size-xl { width: var(--icon-size-lg); height: var(--icon-size-lg); } }

@@ -1,0 +1,4 @@
+/* Status  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-status-currency-btc { box-sizing: border-box; }
+.panel-status-currency-btc *, .panel-status-currency-btc *::before, .panel-status-currency-btc *::after { box-sizing: inherit; }

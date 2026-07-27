@@ -1,0 +1,57 @@
+/* Column Toggle Menu
+ * @version 7.1.0
+ */
+
+.p05-column-toggle {
+    position: relative;
+    display: inline-flex;
+}
+
+.p05-column-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--p05-border-default);
+    border-radius: var(--p05-radius-sm);
+    background: var(--p05-bg-surface);
+    color: var(--p05-text-secondary);
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.p05-column-toggle-btn:hover {
+    background: var(--p05-bg-surface-hover);
+    color: var(--p05-text-primary);
+    border-color: var(--p05-border-strong);
+}
+
+.p05-column-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 180px;
+    margin-top: 4px;
+    padding: 8px 0;
+    background: var(--p05-bg-elevated);
+    border: 1px solid var(--p05-border-default);
+    border-radius: var(--p05-radius-md);
+    box-shadow: var(--p05-shadow-lg);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 150ms ease;
+}
+
+.p05-column-toggle.p05-open .p05-column-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.p05-table th.p05-col-hidden,
+.p05-table td.p05-col-hidden {
+    display: none;
+}

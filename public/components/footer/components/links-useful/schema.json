@@ -1,0 +1,41 @@
+{
+  "name": "footer-links-useful",
+  "version": "1.0.0",
+  "description": "Componente autocontido do Footer responsável por exibir links úteis",
+  "lifecycle": {
+    "mount": true,
+    "update": false,
+    "destroy": true
+  },
+  "inputs": {
+    "props": {
+      "required": ["links"],
+      "optional": ["i18n"]
+    },
+    "dependencies": {
+      "globalState": false,
+      "eventBus": false,
+      "orchestrator": false,
+      "telemetry": true
+    }
+  },
+  "outputs": {
+    "events": [],
+    "telemetry": {
+      "namespace": "footer.links-useful",
+      "events": ["mounted", "destroyed"]
+    }
+  },
+  "ui": {
+    "providesMarkup": true,
+    "providesStyles": true,
+    "rootClass": "footer-links-useful",
+    "accessible": true
+  },
+  "behavior": {
+    "idempotent": true,
+    "reentrant": true,
+    "faultTolerant": true,
+    "asyncSafe": true
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "footer-announce-live-region",
+  "version": "1.0.0",
+  "description": "Componente autocontido do Footer responsável por anúncios para screen readers",
+  "lifecycle": {
+    "mount": true,
+    "update": false,
+    "destroy": true
+  },
+  "inputs": {
+    "props": {
+      "required": [],
+      "optional": []
+    },
+    "dependencies": {
+      "globalState": false,
+      "eventBus": false,
+      "orchestrator": false,
+      "telemetry": true
+    }
+  },
+  "outputs": {
+    "events": [],
+    "telemetry": {
+      "namespace": "footer.announce",
+      "events": ["mounted", "message-announced", "destroyed"]
+    }
+  },
+  "ui": {
+    "providesMarkup": false,
+    "providesStyles": false,
+    "rootClass": "dsd-footer__announce",
+    "accessible": true
+  },
+  "behavior": {
+    "idempotent": true,
+    "reentrant": true,
+    "faultTolerant": true,
+    "asyncSafe": true
+  }
+}

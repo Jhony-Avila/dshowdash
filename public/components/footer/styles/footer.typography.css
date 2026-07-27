@@ -1,0 +1,189 @@
+/**
+ * Footer - Typography & Brand
+ * @version 9.0.0-ENTERPRISE
+ * @description Brand, Lottie animation, tipografia
+ */
+
+/* ══════════════════════════════════════════════════════════════
+   BRAND SECTION (Top Bar - Esquerda)
+   ══════════════════════════════════════════════════════════════ */
+.dsd-footer__brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dsd-footer__brand-lottie {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--lottie-size);
+  height: var(--lottie-size);
+  flex-shrink: 0;
+}
+
+.dsd-footer__brand-lottie svg,
+.dsd-footer__brand-lottie canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.dsd-footer__brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--icon-color-brand);
+  flex-shrink: 0;
+}
+
+.dsd-footer__brand-logo svg {
+  width: 100%;
+  height: 100%;
+  stroke-width: var(--icon-stroke-width);
+}
+
+.dsd-footer__brand-content {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.dsd-footer__brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--footer-text-primary);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.dsd-footer__brand-tagline {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--footer-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.dsd-footer__brand-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   COPYRIGHT (Bottom Bar - Esquerda)
+   ══════════════════════════════════════════════════════════════ */
+.dsd-footer__copyright {
+  font-size: 11px;
+  color: var(--footer-text-muted);
+  margin: 0;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dsd-footer__copyright-year {
+  font-weight: 600;
+  color: var(--footer-text-secondary);
+}
+
+.dsd-footer__copyright-company {
+  color: var(--footer-text-muted);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   VERSION & ENV CHIPS
+   ══════════════════════════════════════════════════════════════ */
+.dsd-footer__version-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--badge-bg-neutral);
+  border: 1px solid var(--badge-border-neutral);
+  color: var(--footer-text-secondary);
+  white-space: nowrap;
+}
+
+.dsd-footer__version-chip__icon {
+  display: flex;
+  width: 10px;
+  height: 10px;
+  opacity: 0.7;
+}
+
+.dsd-footer__version-chip__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LEGACY TYPOGRAPHY (compatibilidade)
+   ══════════════════════════════════════════════════════════════ */
+.dsd-footer__brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dsd-footer__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--icon-color-brand);
+  flex-shrink: 0;
+}
+
+.dsd-footer__logo svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dsd-footer__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--badge-bg-neutral);
+  border: 1px solid var(--badge-border-neutral);
+  white-space: nowrap;
+}
+
+.dsd-footer__chip-version {
+  color: var(--footer-text-secondary);
+}
+
+.dsd-footer__chip-env {
+  color: var(--status-online);
+}
+
+.dsd-footer__chip-env--development {
+  color: var(--status-warning);
+}
+
+.dsd-footer__chip-env--staging {
+  color: var(--status-info);
+}
+
+.dsd-footer__divider {
+  width: 1px;
+  height: 16px;
+  background: var(--footer-border-divider);
+  margin: 0 4px;
+}

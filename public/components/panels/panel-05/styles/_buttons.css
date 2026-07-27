@@ -1,0 +1,135 @@
+/* Panel-05 - Buttons */
+/* @version 5.1.0-ENTERPRISE-MODULAR */
+
+.p05-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    border-radius: var(--p05-radius);
+    background: var(--p05-primary);
+    color: #fff;
+    cursor: pointer;
+    transition: var(--p05-transition);
+}
+
+.p05-btn:hover { background: #2563eb; }
+.p05-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.p05-btn-outline {
+    background: transparent;
+    border: 1px solid var(--p05-border);
+    color: var(--p05-text-muted);
+}
+
+.p05-btn-outline:hover {
+    background: var(--p05-surface-hover);
+    border-color: var(--p05-text-muted);
+    color: var(--p05-text);
+}
+
+.p05-btn-icon {
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--p05-border);
+}
+
+.p05-btn-icon:hover { background: var(--p05-surface-hover); }
+
+.p05-btn svg, .p05-btn-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.p05-btn-icon-sm {
+    padding: 6px;
+    background: transparent;
+    border: none;
+    border-radius: var(--p05-radius-sm);
+    color: var(--p05-text-muted);
+    cursor: pointer;
+    transition: var(--p05-transition);
+}
+
+.p05-btn-icon-sm:hover {
+    background: var(--p05-surface-hover);
+    color: var(--p05-primary);
+}
+
+.p05-btn-icon-sm svg { width: 16px; height: 16px; }
+
+.p05-btn-back {
+    background: transparent;
+    border: 1px solid var(--p05-border);
+    color: var(--p05-text);
+}
+
+.p05-btn-back:hover { background: var(--p05-surface-hover); }
+
+.p05-btn-page {
+    padding: 6px 10px;
+    background: var(--p05-surface);
+    border: 1px solid var(--p05-border);
+    border-radius: var(--p05-radius-sm);
+    color: var(--p05-text);
+    cursor: pointer;
+    transition: var(--p05-transition);
+}
+
+.p05-btn-page:hover:not(:disabled) { background: var(--p05-surface-hover); }
+.p05-btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+.p05-btn-page svg { width: 16px; height: 16px; }
+
+/* View Toggle */
+.p05-view-toggle {
+    display: flex;
+    background: var(--p05-bg);
+    border: 1px solid var(--p05-border);
+    border-radius: var(--p05-radius);
+    padding: 2px;
+    margin-right: 8px;
+}
+
+.p05-btn-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--p05-text-muted);
+    cursor: pointer;
+    transition: var(--p05-transition);
+}
+
+.p05-btn-toggle:hover { color: var(--p05-text); }
+.p05-btn-toggle.active { background: var(--p05-primary); color: #fff; }
+.p05-btn-toggle svg { width: 16px; height: 16px; }
+
+/* Export Button */
+.p05-export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: var(--p05-surface);
+    border: 1px solid var(--p05-border);
+    border-radius: var(--p05-radius-sm);
+    color: var(--p05-text);
+    cursor: pointer;
+    transition: var(--p05-transition);
+}
+
+.p05-export-btn:hover {
+    background: var(--p05-surface-hover);
+    border-color: var(--p05-success);
+    color: var(--p05-success);
+}
+
+.p05-export-btn svg { width: 14px; height: 14px; }

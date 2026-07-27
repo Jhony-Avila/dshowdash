@@ -1,0 +1,93 @@
+/* Panel Feature Flags Admin - Flag Cards
+ * @version 1.0.0-ENTERPRISE
+ */
+
+.pfa-flags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.pfa-flag-card {
+  background: var(--surface-secondary, #16213e);
+  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.pfa-flag-card:hover { border-color: rgba(99, 102, 241, 0.3); }
+.pfa-flag-card--active { border-left: 3px solid #22c55e; }
+.pfa-flag-card--inactive { border-left: 3px solid #666; opacity: 0.7; }
+
+.pfa-flag-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem; }
+.pfa-flag-info { display: flex; flex-direction: column; gap: 0.25rem; }
+.pfa-flag-name { font-weight: 600; color: var(--text-primary, #fff); }
+
+.pfa-flag-key {
+  font-size: 0.75rem;
+  color: var(--text-muted, #666);
+  background: var(--surface-tertiary, #2a2a4a);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.pfa-flag-description {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #a0a0a0);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.pfa-flag-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+
+.pfa-badge {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background: var(--surface-tertiary, #2a2a4a);
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.pfa-badge--all { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+.pfa-badge--production { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.pfa-badge--staging { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.pfa-badge--development { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+
+.pfa-rollout, .pfa-date { font-size: 0.75rem; color: var(--text-muted, #666); }
+
+.pfa-flag-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color, rgba(255,255,255,0.05));
+}
+
+.pfa-toggle-switch { position: relative; width: 2.75rem; height: 1.5rem; flex-shrink: 0; }
+.pfa-toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+.pfa-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--surface-tertiary, #2a2a4a);
+  border-radius: 1rem;
+  transition: 0.2s;
+}
+
+.pfa-slider::before {
+  position: absolute;
+  content: '';
+  height: 1.125rem;
+  width: 1.125rem;
+  left: 0.1875rem;
+  bottom: 0.1875rem;
+  background: white;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.pfa-toggle-switch input:checked + .pfa-slider { background: #22c55e; }
+.pfa-toggle-switch input:checked + .pfa-slider::before { transform: translateX(1.25rem); }

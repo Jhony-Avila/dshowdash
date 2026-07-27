@@ -1,0 +1,32 @@
+/* Table Engine - Layout - @version 1.0.0-ENTERPRISE */
+.tbl-table-wrapper {
+  position: relative;
+  background: var(--tbl-bg);
+  border-radius: var(--tbl-radius);
+  box-shadow: var(--tbl-shadow);
+  overflow: hidden;
+}
+
+.tbl-table { width: 100%; border-collapse: collapse; font-size: 14px; color: var(--tbl-text); }
+
+.tbl-th, .tbl-td, .tbl-tf { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--tbl-border); }
+
+.tbl-thead { background: var(--tbl-header-bg); }
+
+.tbl-sticky-header .tbl-thead { position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+.tbl-th { font-weight: 600; color: var(--tbl-text); white-space: nowrap; user-select: none; }
+.tbl-th-content { display: flex; align-items: center; gap: 8px; }
+.tbl-th-grip { cursor: grab; opacity: 0.4; font-size: 10px; }
+.tbl-th-grip:hover { opacity: 1; }
+.tbl-th-label { flex: 1; }
+.tbl-sortable { cursor: pointer; }
+.tbl-sortable:hover { background: var(--tbl-bg-hover); }
+.tbl-th-sort-icon { font-size: 12px; color: var(--tbl-primary); }
+
+.tbl-th-resizer { position: absolute; right: 0; top: 0; bottom: 0; width: 4px; cursor: col-resize; background: transparent; }
+.tbl-th-resizer:hover, .tbl-resizing .tbl-th-resizer { background: var(--tbl-primary); }
+
+.tbl-tfoot { background: var(--tbl-footer-bg); font-weight: 600; }
+.tbl-sticky-footer .tbl-tfoot { position: sticky; bottom: 0; z-index: 10; box-shadow: 0 -2px 4px rgba(0,0,0,0.05); }
+.tbl-tf { border-top: 2px solid var(--tbl-border); border-bottom: none; }

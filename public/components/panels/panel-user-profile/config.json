@@ -1,0 +1,23 @@
+{
+  "name": "panel-user-profile",
+  "version": "3.2.0-ENTERPRISE",
+  "description": "Painel de perfil do usuário - Arquitetura modular enterprise",
+  "author": "DshowDash Team",
+  "dependencies": {
+    "core": ["EventBus", "CoreAuthAdapter", "LoggerGlobal"],
+    "internal": ["services/api", "state/store", "telemetry/tracker", "ui/renderer"]
+  },
+  "endpoints": {
+    "profile": "/api/users/profile.php",
+    "avatars": "/api/users/avatars.php"
+  },
+  "features": {
+    "avatarPicker": true,
+    "editableFields": ["fullName", "displayName"],
+    "systemInfo": true
+  },
+  "telemetry": {
+    "enabled": true,
+    "events": ["mounted", "unmounted", "save", "error", "avatar_changed"]
+  }
+}

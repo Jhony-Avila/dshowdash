@@ -1,0 +1,36 @@
+/* Panel UI - Snapshots
+ * @module _snapshots.css
+ * @version 1.0.0
+ * @description Snapshot items com info, label, time e actions
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-snapshot-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-sm) var(--ui-space-md);
+  margin-bottom: var(--ui-space-sm);
+}
+
+.dsd-ui-snapshot-item__info {
+  flex: 1;
+}
+
+.dsd-ui-snapshot-item__label {
+  font-weight: 500;
+  color: var(--ui-text-primary);
+}
+
+.dsd-ui-snapshot-item__time {
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-muted);
+}
+
+.dsd-ui-snapshot-item__actions {
+  display: flex;
+  gap: var(--ui-space-xs);
+}

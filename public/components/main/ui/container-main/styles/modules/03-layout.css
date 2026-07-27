@@ -1,0 +1,841 @@
+/* Container Header v6.1.0-TOOLBAR-FLEX */
+/* @changelog v6.1.0-TOOLBAR-FLEX - Fix header-left flex:1 consuming all space, toolbar now gets flex:1 */
+/* @changelog v6.0.0-VIOLET-GLASS - Violet gradient + glass effect (like sidebar button) */
+/* @changelog v5.0.0-LED-GRADIENT-VISIBLE - Enhanced LED visibility and gradient */
+/* @changelog v4.0.0-UX-ENHANCED - LED micro-animations, gradient integration, breadcrumb */
+
+/* ═══════════════════════════════════════════════════════════
+   HEADER BASE - VIOLET GLASS EFFECT
+   ═══════════════════════════════════════════════════════════ */
+
+.dsd-container__header {
+  display: flex;
+  align-items: center;
+  height: var(--cm-header-height, 36px);
+  min-height: var(--cm-header-height, 36px);
+  padding: 0 var(--cm-spacing-md);
+  
+  /* Violet background via token */
+  background: var(--cm-bg-header, rgba(139, 92, 246, 0.60));
+  
+  /* Glass effect */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  
+  /* Subtle violet border */
+  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+  
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  user-select: none;
+  transition: background 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+.dsd-container__header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--cm-spacing-sm, 8px);
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATUS LED (#3) - ENHANCED VISIBILITY
+   ═══════════════════════════════════════════════════════════ */
+
+.dsd-container__status {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.3s ease;
+  /* Default: ready state */
+  background: radial-gradient(circle at 30% 30%, #4ade80, #22c55e);
+  box-shadow: 
+    0 0 6px rgba(34, 197, 94, 0.6),
+    0 0 12px rgba(34, 197, 94, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Inner glow effect */
+.dsd-container__status::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* Ready - Green with breathing */
+.dsd-container__status[data-status="ready"] {
+  background: radial-gradient(circle at 30% 30%, #4ade80, #22c55e);
+  box-shadow: 
+    0 0 6px rgba(34, 197, 94, 0.6),
+    0 0 12px rgba(34, 197, 94, 0.3);
+  animation: statusBreathing 3s ease-in-out infinite;
+}
+
+/* Loading - Blue with pulse */
+.dsd-container__status[data-status="loading"] {
+  background: radial-gradient(circle at 30% 30%, #60a5fa, #3b82f6);
+  box-shadow: 
+    0 0 8px rgba(59, 130, 246, 0.7),
+    0 0 16px rgba(59, 130, 246, 0.4);
+  animation: statusPulse 1s ease-in-out infinite;
+}
+
+/* Error - Red with alert */
+.dsd-container__status[data-status="error"] {
+  background: radial-gradient(circle at 30% 30%, #f87171, #ef4444);
+  box-shadow: 
+    0 0 8px rgba(239, 68, 68, 0.7),
+    0 0 16px rgba(239, 68, 68, 0.4);
+  animation: statusAlert 0.5s ease-in-out infinite;
+}
+
+/* Success - Bright green */
+.dsd-container__status[data-status="success"] {
+  background: radial-gradient(circle at 30% 30%, #34d399, #10b981);
+  box-shadow: 
+    0 0 10px rgba(16, 185, 129, 0.8),
+    0 0 20px rgba(16, 185, 129, 0.4);
+  animation: statusPulse 1.5s ease-in-out 3;
+}
+
+/* Warning - Yellow/Orange */
+.dsd-container__status[data-status="warning"] {
+  background: radial-gradient(circle at 30% 30%, #fbbf24, #f59e0b);
+  box-shadow: 
+    0 0 8px rgba(245, 158, 11, 0.7),
+    0 0 16px rgba(245, 158, 11, 0.4);
+  animation: statusPulse 1.2s ease-in-out infinite;
+}
+
+/* Inactive - Gray dim */
+.dsd-container__status[data-status="inactive"] {
+  background: radial-gradient(circle at 30% 30%, #6b7280, #4b5563);
+  box-shadow: 0 0 4px rgba(107, 114, 128, 0.3);
+  animation: none;
+  opacity: 0.6;
+}
+
+/* LED Animations */
+@keyframes statusBreathing {
+  0%, 100% { 
+    opacity: 1; 
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.6), 0 0 12px rgba(34, 197, 94, 0.3);
+  }
+  50% { 
+    opacity: 0.85; 
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.8), 0 0 16px rgba(34, 197, 94, 0.4);
+  }
+}
+
+@keyframes statusPulse {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.15); 
+    opacity: 0.9;
+  }
+}
+
+@keyframes statusAlert {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.7), 0 0 16px rgba(239, 68, 68, 0.4);
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(0.9);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.9), 0 0 24px rgba(239, 68, 68, 0.5);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ICON
+   ═══════════════════════════════════════════════════════════ */
+
+.dsd-container__icon {
+  font-size: var(--cm-icon-size, 16px);
+  width: var(--cm-icon-size, 16px);
+  height: var(--cm-icon-size, 16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TITLE
+   ═══════════════════════════════════════════════════════════ */
+
+.dsd-container__title {
+  font-size: var(--cm-font-size-sm, 13px);
+  font-weight: var(--cm-font-weight-semibold, 600);
+  color: #f1f5f9;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BADGE
+   ═══════════════════════════════════════════════════════════ */
+
+.dsd-container__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: var(--cm-font-weight-bold, 700);
+  color: white;
+  background: var(--cm-accent-primary, #8b5cf6);
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+
+.dsd-container__badge:empty,
+.dsd-container__badge[data-count="0"] {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BREADCRUMB INTEGRATION (#16)
+   ═══════════════════════════════════════════════════════════ */
+
+.dsd-container__header .dsd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: var(--cm-spacing-md);
+  font-size: var(--cm-font-size-xs, 11px);
+  color: var(--cm-text-secondary);
+}
+
+.dsd-container__header .dsd-breadcrumb__separator {
+  opacity: 0.5;
+}
+
+.dsd-container__header .dsd-breadcrumb__item {
+  color: var(--cm-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.dsd-container__header .dsd-breadcrumb__item:hover {
+  color: var(--cm-text-primary);
+}
+
+.dsd-container__header .dsd-breadcrumb__item--current {
+  color: var(--cm-text-primary);
+  font-weight: var(--cm-font-weight-medium);
+}
+
+/* Header with breadcrumb - adjust spacing */
+.dsd-container__header--with-breadcrumb .dsd-container__header-left {
+  flex: 0 0 auto;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DRAGGABLE STATE
+   ═══════════════════════════════════════════════════════════ */
+
+.dsd-container__header[data-draggable="true"] {
+  cursor: grab;
+}
+
+.dsd-container__header[data-draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.dsd-container--dragging .dsd-container__header {
+  cursor: grabbing;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.2) 0%,
+    rgba(124, 58, 237, 0.15) 50%,
+    rgba(139, 92, 246, 0.12) 100%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   REDUCED MOTION
+   ═══════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .dsd-container__status {
+    animation: none !important;
+  }
+  
+  .dsd-container__header {
+    transition: none;
+  }
+}
+/* ═══════════════════════════════════════════════════════════════
+   CONTROLS CONTAINER
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  transition: opacity 0.2s ease;
+}
+
+/* Progressive Reveal (#4) - Controls fade in on header hover */
+.dsd-container__header:not(:hover):not(:focus-within) .dsd-container__controls {
+  opacity: 0.5;
+}
+
+.dsd-container__header:hover .dsd-container__controls,
+.dsd-container__header:focus-within .dsd-container__controls {
+  opacity: 1;
+}
+/* ═══════════════════════════════════════════════════════════════
+   CONTROL BUTTON BASE
+   v3.0.0-NAVRAIL-DESIGN - Autocontido, sem variáveis globais
+   Cores e efeitos herdados do features-toolbar styles.js
+   Base estrutural: dimensões, layout, cursor
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.04) 0%, transparent 55%);
+  color: #a78bfa;
+  cursor: pointer;
+  transition: transform 0.18s ease-out, background 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out, color 0.18s ease-out;
+  outline: none;
+  position: relative;
+}
+
+.dsd-container__control:hover {
+  color: #c4b5fd;
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.18) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border-color: rgba(167, 139, 250, 0.55);
+  box-shadow: 0 0 8px rgba(167, 139, 250, 0.5), 0 0 20px rgba(167, 139, 250, 0.25), inset 0 0 8px rgba(167, 139, 250, 0.08);
+  transform: translateY(-1px);
+}
+
+.dsd-container__control:active {
+  transform: scale(0.93) translateY(0);
+}
+
+.dsd-container__control:focus-visible {
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.6);
+  outline: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME-LIGHT OVERRIDE
+   ═══════════════════════════════════════════════════════════════ */
+
+:root.theme-light .dsd-container__control,
+:root[data-theme="light"] .dsd-container__control {
+  color: #7c3aed;
+}
+
+:root.theme-light .dsd-container__control:hover,
+:root[data-theme="light"] .dsd-container__control:hover {
+  color: #6d28d9;
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.4), 0 0 20px rgba(124, 58, 237, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REDUCED MOTION
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .dsd-container__control {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+/* ═══════════════════════════════════════════════════════════════
+   TOOLTIP WITH SHORTCUT (#14)
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__control::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 6px 10px;
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--cm-text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  border-radius: 6px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.15s ease;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Tooltip arrow */
+.dsd-container__control::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(15, 23, 42, 0.95);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+  z-index: 100;
+}
+
+.dsd-container__control:hover::before,
+.dsd-container__control:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.dsd-container__control:hover::after {
+  transform: translateX(-50%);
+}
+
+/* Shortcut badge in tooltip */
+.dsd-container__control[data-shortcut]::before {
+  content: attr(data-tooltip) " " attr(data-shortcut);
+}
+
+.dsd-container__control[data-shortcut]::before {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+/* ═══════════════════════════════════════════════════════════════
+   ICON CONTAINER
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__control-icon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.dsd-container__control-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+/* ═══════════════════════════════════════════════════════════════
+   MINIMIZE BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__control--minimize:hover {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+}
+
+.dsd-container__control--minimize:active {
+  background: rgba(245, 158, 11, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAXIMIZE/FULLSCREEN BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__control--maximize:hover {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+.dsd-container__control--maximize:active {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CLOSE BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__control--close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
+}
+
+.dsd-container__control--close:active {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MENU BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__control--menu:hover {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
+}
+/* ═══════════════════════════════════════════════════════════════
+   FULLSCREEN STATE
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container--fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  z-index: 9999 !important;
+  animation: containerFullscreenIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes containerFullscreenIn {
+  from {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dsd-container--fullscreen .dsd-container__header {
+  border-radius: 0;
+}
+
+.dsd-container--fullscreen .dsd-container__body {
+  border-radius: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINIMIZED STATE
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container--minimized {
+  height: var(--cm-header-height) !important;
+  min-height: var(--cm-header-height) !important;
+  overflow: hidden;
+}
+
+.dsd-container--minimized .dsd-container__body {
+  display: none;
+}
+
+.dsd-container--minimized .dsd-container__header {
+  border-radius: var(--cm-radius-lg);
+  border-bottom: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COLLAPSED (legacy support)
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container--collapsed {
+  height: var(--cm-header-height) !important;
+  min-height: var(--cm-header-height) !important;
+}
+
+.dsd-container--collapsed .dsd-container__body {
+  opacity: 0;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
+}
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATION OUT
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container--animate-out {
+  animation: containerOut 0.2s ease-out forwards;
+}
+
+@keyframes containerOut {
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATION IN
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container--animate-in {
+  animation: containerIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes containerIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* ═══════════════════════════════════════════════════════════════
+   FOCUS STATE
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container:focus-within {
+  box-shadow: 
+    var(--cm-shadow-default),
+    0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTIVE/FOCUSED CONTAINER
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container--active {
+  z-index: calc(var(--cm-z-base, 1) + 1);
+}
+
+.dsd-container--active .dsd-container__header {
+  background: linear-gradient(
+    180deg,
+    rgba(139, 92, 246, 0.08) 0%,
+    rgba(139, 92, 246, 0.02) 100%
+  );
+  border-bottom-color: rgba(139, 92, 246, 0.2);
+}
+/* ═══════════════════════════════════════════════════════════════
+   RESIZE HANDLES WITH VISUAL FEEDBACK (#2)
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 10;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dsd-container__resize-handle--e {
+  right: 0;
+  top: var(--cm-header-height);
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.dsd-container__resize-handle--s {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.dsd-container__resize-handle--se {
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+/* Resize handle hover feedback (#2) */
+.dsd-container__resize-handle:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+.dsd-container__resize-handle--e:hover,
+.dsd-container__resize-handle--s:hover {
+  box-shadow: inset 0 0 8px rgba(139, 92, 246, 0.3);
+}
+
+.dsd-container__resize-handle--se:hover {
+  background: linear-gradient(135deg, transparent 40%, rgba(139, 92, 246, 0.3) 100%);
+}
+
+/* Active resize state (#2) */
+.dsd-container--resizing .dsd-container__resize-handle {
+  background: rgba(139, 92, 246, 0.35);
+}
+
+.dsd-container--resizing {
+  user-select: none;
+}
+
+/* Resize preview guide (#2) */
+.dsd-container__resize-preview {
+  position: fixed;
+  border: 2px dashed var(--cm-accent-primary);
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: var(--cm-radius-lg);
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.dsd-container--resizing .dsd-container__resize-preview {
+  opacity: 1;
+}
+
+/* Resize dimension tooltip (#2) */
+.dsd-container__resize-dimensions {
+  position: fixed;
+  padding: 4px 8px;
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--cm-text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: monospace;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dsd-container--resizing .dsd-container__resize-dimensions {
+  opacity: 1;
+}
+/* ═══════════════════════════════════════════════════════════════
+   DRAG OVERLAY WITH HAPTIC FEEDBACK (#8)
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-container__drag-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(139, 92, 246, 0.08);
+  border: 2px dashed rgba(139, 92, 246, 0.4);
+  border-radius: var(--cm-radius-lg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.dsd-container--dragging .dsd-container__drag-overlay {
+  opacity: 1;
+  animation: dragHapticPulse 0.3s ease-out;
+}
+
+@keyframes dragHapticPulse {
+  0% {
+    transform: scale(1);
+    border-color: rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    transform: scale(1.005);
+    border-color: rgba(139, 92, 246, 0.7);
+    background: rgba(139, 92, 246, 0.12);
+  }
+  100% {
+    transform: scale(1);
+    border-color: rgba(139, 92, 246, 0.4);
+  }
+}
+
+/* Drag ripple effect (#8) */
+.dsd-container--dragging::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: calc(var(--cm-radius-lg) + 4px);
+  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+  animation: dragRipple 0.4s ease-out;
+  pointer-events: none;
+}
+
+@keyframes dragRipple {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+}
+
+/* Dragging state */
+.dsd-container--dragging {
+  cursor: grabbing;
+  z-index: 9998;
+  box-shadow: var(--cm-shadow-xl), 0 0 40px rgba(139, 92, 246, 0.2);
+}
+
+.dsd-container--dragging .dsd-container__header {
+  cursor: grabbing;
+}
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .dsd-container__control {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .dsd-container__controls {
+    gap: 4px;
+  }
+  
+  /* Hide tooltips on mobile */
+  .dsd-container__control::before,
+  .dsd-container__control::after {
+    display: none;
+  }
+  
+  /* Always show controls on mobile */
+  .dsd-container__header:not(:hover) .dsd-container__controls {
+    opacity: 1;
+  }
+}
+/* ═══════════════════════════════════════════════════════════════
+   REDUCED MOTION - ACCESSIBILITY
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .dsd-container--fullscreen,
+  .dsd-container--animate-in,
+  .dsd-container--animate-out,
+  .dsd-container__control,
+  .dsd-container--dragging .dsd-container__drag-overlay,
+  .dsd-container--dragging::before {
+    animation: none;
+    transition: none;
+  }
+}

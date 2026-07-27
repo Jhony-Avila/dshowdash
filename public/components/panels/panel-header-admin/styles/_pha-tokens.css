@@ -1,0 +1,64 @@
+/* Panel Header Admin - Design Tokens */
+/* @version 1.0.0-AAA-MODULAR */
+/* Cores e variáveis centralizadas */
+
+.pha-container {
+  /* Cores Primárias */
+  --pha-primary: #6366f1;
+  --pha-primary-hover: #4f46e5;
+  --pha-primary-light: #e0e7ff;
+  --pha-primary-dark: #4338ca;
+  
+  /* Cores de Estado */
+  --pha-success: #10b981;
+  --pha-success-hover: #059669;
+  --pha-success-bg: #ecfdf5;
+  --pha-success-text: #059669;
+  
+  --pha-warning: #f59e0b;
+  --pha-warning-hover: #d97706;
+  --pha-warning-bg: #fffbeb;
+  --pha-warning-text: #d97706;
+  
+  --pha-danger: #ef4444;
+  --pha-danger-hover: #dc2626;
+  --pha-danger-bg: #fef2f2;
+  --pha-danger-text: #dc2626;
+  
+  --pha-info: #3b82f6;
+  --pha-info-bg: #eff6ff;
+  --pha-info-text: #2563eb;
+  
+  /* Cores Neutras */
+  --pha-text-primary: #111827;
+  --pha-text-secondary: #374151;
+  --pha-text-muted: #6b7280;
+  --pha-text-light: #9ca3af;
+  
+  --pha-bg-primary: #ffffff;
+  --pha-bg-secondary: #f9fafb;
+  --pha-bg-tertiary: #f3f4f6;
+  
+  --pha-border: #e5e7eb;
+  --pha-border-light: #d1d5db;
+  
+  /* Sombras */
+  --pha-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --pha-shadow-md: 0 4px 12px rgba(99, 102, 241, 0.1);
+  --pha-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
+  --pha-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+  
+  /* Transições */
+  --pha-transition: 0.2s ease;
+  --pha-transition-fast: 0.15s ease;
+  
+  /* Bordas */
+  --pha-radius-sm: 4px;
+  --pha-radius-md: 8px;
+  --pha-radius-lg: 12px;
+  --pha-radius-xl: 16px;
+  
+  /* Tipografia */
+  --pha-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --pha-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', monospace;
+}

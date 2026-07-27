@@ -1,0 +1,80 @@
+/* Panel Audit Trail - Auto Refresh
+ * @version 3.0.0-MODULAR
+ */
+
+.pat-auto-refresh {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.pat-auto-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--pat-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pat-auto-toggle {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pat-auto-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pat-auto-toggle:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.pat-auto-toggle.active {
+  background: linear-gradient(135deg, #22C55E, #16A34A);
+}
+
+.pat-auto-toggle.active::after {
+  transform: translateX(16px);
+}
+
+.pat-countdown {
+  font-family: var(--pat-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 22px;
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.pat-countdown.active {
+  color: #22C55E;
+}
+
+.pat-countdown.warning {
+  color: #FACC15;
+  animation: pat-blink 0.5s ease-in-out;
+}
+
+@keyframes pat-blink {
+  50% { opacity: 0.5; }
+}

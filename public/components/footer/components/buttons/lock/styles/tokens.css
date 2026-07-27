@@ -1,0 +1,6 @@
+/* Footer Privacidade Button - Design Tokens P3 AAA */
+/* @version 1.0.0-AAA */
+
+.footer-btn--lock {
+  --btn-transition: all 0.2s ease;
+}

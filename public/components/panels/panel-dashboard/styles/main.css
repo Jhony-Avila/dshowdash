@@ -1,0 +1,35 @@
+/* Panel Dashboard - Styles */
+/* @version 8.3.0-P14-WINDOW-GOVERNANCE */
+
+.panel-dashboard { padding: 2rem; background: rgba(255,255,255,0.03); border-radius: 8px; }
+.dashboard-title { color: rgba(255,255,255,0.9); margin: 0 0 1rem 0; display: flex; align-items: center; gap: 8px; font-size: 1.5rem; }
+.dashboard-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.status-card { padding: 1rem; border-radius: 6px; text-align: center; }
+.card-icon { font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+.card-label { color: rgba(255,255,255,0.9); }
+.dashboard-props { margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 6px; border-left: 3px solid rgba(59,130,246,1); }
+.dashboard-props strong { color: rgba(255,255,255,0.9); display: block; margin-bottom: 0.5rem; }
+.dashboard-props pre { color: rgba(255,255,255,0.6); margin: 0; font-size: 0.85rem; overflow-x: auto; }
+.dashboard-widgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+.widget { padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
+.dashboard-skeleton { padding: 2rem; }
+.skeleton-header { height: 32px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 1rem; width: 200px; }
+.skeleton-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.skeleton-cards::before, .skeleton-cards::after { content: ''; height: 80px; background: rgba(255,255,255,0.05); border-radius: 6px; }
+.dashboard-error { padding: 1rem; background: rgba(220,53,69,0.1); border-radius: 6px; color: #dc3545; display: flex; align-items: center; gap: 0.5rem; }
+
+/* ══════════════════════════════════════════════════════════════
+   Tema Claro (A1) — override ADITIVO por-regra; as rules dark acima ficam INTOCADAS.
+   Seletor [data-theme="light"] (sempre setado no boot; cobre auto→claro). Parte 2 theming 2026-07-05.
+   ══════════════════════════════════════════════════════════════ */
+:root[data-theme="light"] .panel-dashboard { background: rgba(0,0,0,0.03); }
+:root[data-theme="light"] .dashboard-title,
+:root[data-theme="light"] .card-label,
+:root[data-theme="light"] .dashboard-props strong { color: rgba(0,0,0,0.9); }
+:root[data-theme="light"] .dashboard-props { background: rgba(0,0,0,0.02); border-left-color: #2563eb; }
+:root[data-theme="light"] .dashboard-props pre { color: rgba(0,0,0,0.6); }
+:root[data-theme="light"] .widget { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.10); }
+:root[data-theme="light"] .skeleton-header,
+:root[data-theme="light"] .skeleton-cards::before,
+:root[data-theme="light"] .skeleton-cards::after { background: rgba(0,0,0,0.08); }
+:root[data-theme="light"] .dashboard-error { background: rgba(220,38,38,0.10); color: #b91c1c; }

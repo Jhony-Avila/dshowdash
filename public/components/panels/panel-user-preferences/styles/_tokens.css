@@ -1,0 +1,20 @@
+/* Panel User Preferences - Design Tokens v4.0.0
+   @version 4.0.0-ENTERPRISE
+   CSS Variables centralizadas */
+
+:root {
+  --pup-bg: #09090b;
+  --pup-card: rgba(255,255,255,0.02);
+  --pup-card-hover: rgba(255,255,255,0.04);
+  --pup-border: rgba(255,255,255,0.05);
+  --pup-border-hover: rgba(255,255,255,0.1);
+  --pup-text: rgba(255,255,255,0.9);
+  --pup-text-sec: rgba(255,255,255,0.55);
+  --pup-text-mut: rgba(255,255,255,0.3);
+  --pup-accent: #7c3aed;
+  --pup-accent-soft: rgba(139,92,246,0.1);
+  --pup-success: #34d399;
+  --pup-warning: #fbbf24;
+  --pup-error: #f87171;
+  --pup-focus-ring: 0 0 0 2px rgba(139,92,246,0.4), 0 0 0 4px rgba(139,92,246,0.15);
+}

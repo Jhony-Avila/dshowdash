@@ -1,0 +1,60 @@
+/* Panel UI - Buttons
+ * @module _buttons.css
+ * @version 1.0.0
+ * @description Botões: base, hover, icon, primary, success, active
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-xs);
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text-secondary);
+  padding: var(--ui-space-xs) var(--ui-space-sm);
+  border-radius: var(--ui-radius-sm);
+  font-size: var(--ui-text-xs);
+  font-family: var(--ui-font);
+  cursor: pointer;
+  transition: all var(--ui-transition-fast);
+}
+
+.dsd-ui-btn:hover {
+  background: var(--ui-bg-hover);
+  border-color: var(--ui-border-hover);
+  color: var(--ui-text-primary);
+}
+
+.dsd-ui-btn--icon {
+  padding: var(--ui-space-xs);
+  position: relative;
+}
+
+.dsd-ui-btn--icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dsd-ui-btn--primary {
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+  color: #ffffff;
+}
+
+.dsd-ui-btn--primary:hover {
+  filter: brightness(1.1);
+}
+
+.dsd-ui-btn--success {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: var(--ui-success);
+  color: var(--ui-success);
+}
+
+.dsd-ui-btn.active {
+  background: var(--ui-bg-active);
+  border-color: var(--ui-border-active);
+  color: var(--ui-text-primary);
+}

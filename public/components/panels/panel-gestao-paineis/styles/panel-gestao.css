@@ -1,0 +1,11 @@
+/* ═══════════════════════════════════════════════════════════════
+ * panel-gestao-paineis — Main Stylesheet
+ * @version 1.0.0
+ * Aggregates all partial stylesheets
+ * ═══════════════════════════════════════════════════════════════ */
+
+@import url('./_panel-gestao.css');
+@import url('./_panel-grid.css');
+@import url('./_panel-card.css');
+@import url('./_panel-filters.css');
+@import url('./_panel-modal.css');

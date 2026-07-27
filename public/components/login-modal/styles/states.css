@@ -1,0 +1,170 @@
+/**
+ * Login Modal - Interactive States
+ * @version 4.0.0-ENTERPRISE-UX
+ * Hover, focus, active, disabled, invalid states
+ * NOVO: Animações entrada/saída, glow focus, shake erro
+ */
+
+/* ======================================== */
+/* ANIMAÇÕES ENTRADA/SAÍDA (#2, #3)         */
+/* ======================================== */
+
+@keyframes lm-fadeInScale {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes lm-fadeOutScale {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.95) translateY(10px); }
+}
+
+.lm-root:not([hidden]),
+#login-modal:not([hidden]) {
+  animation: lm-fadeInScale 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.lm-root.lm-closing,
+#login-modal.lm-closing {
+  animation: lm-fadeOutScale 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Container também anima */
+.lm-container,
+.login-container {
+  animation: lm-containerEntry 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+}
+
+@keyframes lm-containerEntry {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ======================================== */
+/* SHAKE ERRO (#14)                         */
+/* ======================================== */
+
+@keyframes lm-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
+@keyframes lm-checkPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.lm-input.lm-shake,
+.login-input.lm-shake {
+  animation: lm-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.lm-input.lm-success,
+.login-input.lm-success {
+  animation: lm-checkPulse 0.3s ease;
+  border-color: var(--lm-color-success) !important;
+}
+
+.lm-form.lm-shake,
+.login-form.lm-shake {
+  animation: lm-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* ======================================== */
+/* INPUT STATES                             */
+/* ======================================== */
+
+/* Focus state com GLOW (#9) */
+.login-input:focus,
+.lm-input:focus {
+  outline: none;
+  border-color: var(--lm-color-primary);
+  background: rgba(40, 40, 45, 0.95);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25), 0 0 20px rgba(102, 126, 234, 0.15);
+}
+
+/* Invalid state (erro de validação) */
+.login-input[aria-invalid="true"],
+.lm-input[aria-invalid="true"] {
+  border-color: var(--lm-color-error);
+  background: rgba(255, 107, 107, 0.05);
+}
+
+/* Invalid + Focus com glow vermelho */
+.login-input[aria-invalid="true"]:focus,
+.lm-input[aria-invalid="true"]:focus {
+  border-color: var(--lm-color-error);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 0 20px rgba(239, 68, 68, 0.15);
+}
+
+/* ======================================== */
+/* TOGGLE PASSWORD STATES                   */
+/* ======================================== */
+
+.toggle-password:hover,
+.lm-toggle-password:hover {
+  opacity: 0.7;
+}
+
+.toggle-password:focus,
+.lm-toggle-password:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.5);
+  border-radius: 4px;
+}
+
+.toggle-password[aria-pressed="true"] .eye-icon,
+.lm-toggle-password[aria-pressed="true"] .lm-eye-icon {
+  stroke: var(--lm-color-primary);
+}
+
+/* ======================================== */
+/* BUTTON STATES                            */
+/* ======================================== */
+
+.login-button:hover:not(:disabled),
+.lm-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px var(--lm-color-primary-glow, rgba(102, 126, 234, 0.5));
+}
+
+.login-button:focus,
+.lm-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4), 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+.login-button:active:not(:disabled),
+.lm-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-button:disabled,
+.lm-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ======================================== */
+/* ERROR MESSAGE STATES                     */
+/* ======================================== */
+
+.login-error:focus,
+.lm-error:focus {
+  outline: 2px solid var(--lm-color-error);
+  outline-offset: 2px;
+}
+
+/* Error slide-in animation */
+@keyframes lm-errorSlideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-error.show,
+.lm-error.show {
+  animation: lm-errorSlideIn 0.3s ease forwards;
+}

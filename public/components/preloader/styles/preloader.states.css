@@ -1,0 +1,115 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * PRELOADER STATES v2.0.0-AAA
+ * Estados visuais do preloader
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * VISIBILITY STATES
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-root.visible,
+[data-preloader-root].visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.preloader-root.hiding,
+[data-preloader-root].hiding {
+  opacity: 0;
+  transition: opacity var(--preloader-fade-duration, 300ms) ease-out;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MODE STATES
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* Minimal mode */
+.preloader-root.preloader--minimal [data-preloader-text],
+.preloader--minimal .preloader-text {
+  display: none;
+}
+
+.preloader-root.preloader--minimal [data-preloader-percentage],
+.preloader--minimal .preloader-percentage {
+  display: none;
+}
+
+/* Fast mode */
+.preloader-root.preloader--fast [data-preloader-logo],
+.preloader--fast .preloader-logo-container {
+  display: none;
+}
+
+.preloader-root.preloader--fast [data-preloader-text],
+.preloader--fast .preloader-text {
+  display: none;
+}
+
+/* Degraded mode */
+.preloader-root.preloader--degraded,
+[data-preloader-root].preloader--degraded {
+  --preloader-progress-fill: linear-gradient(90deg, #f59e0b, #fbbf24);
+  --preloader-progress-glow: rgba(251, 191, 36, 0.5);
+}
+
+/* Recovery mode */
+.preloader-root.preloader--recovery,
+.preloader--recovery {
+  --preloader-progress-fill: linear-gradient(90deg, #10b981, #34d399);
+  --preloader-progress-glow: rgba(16, 185, 129, 0.5);
+}
+
+/* Error state */
+.preloader-root.preloader--error,
+[data-preloader-root].preloader--error {
+  --preloader-progress-fill: linear-gradient(90deg, #ef4444, #f87171);
+  --preloader-progress-glow: rgba(239, 68, 68, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * PROGRESS BAR ANIMATIONS
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* Indeterminate progress (loading sem percentual) */
+.preloader-progress-bar--indeterminate,
+[data-preloader-progress-bar].indeterminate {
+  width: 30% !important;
+  animation: preloader-indeterminate var(--preloader-pulse-duration, 2s) ease-in-out infinite;
+}
+
+@keyframes preloader-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(200%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Pulse animation for logo */
+.preloader-logo--pulse,
+[data-preloader-logo].pulse img {
+  animation: preloader-pulse var(--preloader-pulse-duration, 2s) ease-in-out infinite;
+}
+
+@keyframes preloader-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * COMPLETE STATE
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-root.complete [data-preloader-progress-bar],
+.preloader-root.complete .preloader-progress-bar {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+}

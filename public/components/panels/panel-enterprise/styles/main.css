@@ -1,0 +1,29 @@
+/* Panel Enterprise - Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+.panel-enterprise { padding: 2rem; }
+.enterprise-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.enterprise-icon { color: rgba(139,92,246,0.9); }
+.enterprise-title h2 { margin: 0 0 0.25rem; color: rgba(255,255,255,0.95); font-size: 1.5rem; }
+.enterprise-title p { margin: 0; color: rgba(255,255,255,0.6); font-size: 0.875rem; }
+.enterprise-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.feature-card { display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); position: relative; transition: all 0.2s ease; cursor: pointer; }
+.feature-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(139,92,246,0.3); }
+.feature-card--active { border-color: rgba(16,185,129,0.4); }
+.feature-card--active .feature-status { color: #10B981; }
+.feature-card--coming-soon { opacity: 0.7; }
+.feature-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: rgba(139,92,246,0.1); border-radius: 10px; color: rgba(139,92,246,0.9); }
+.feature-content { flex: 1; }
+.feature-label { display: block; font-weight: 500; color: rgba(255,255,255,0.9); margin-bottom: 0.25rem; }
+.feature-status { font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; }
+.feature-lock { position: absolute; top: 0.75rem; right: 0.75rem; color: rgba(255,255,255,0.3); }
+.upgrade-card { display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem 2rem; background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.1)); border-radius: 12px; border: 1px solid rgba(139,92,246,0.3); }
+.upgrade-icon { color: #FBBF24; }
+.upgrade-content { flex: 1; }
+.upgrade-content h3 { margin: 0 0 0.25rem; color: rgba(255,255,255,0.95); font-size: 1.125rem; }
+.upgrade-content p { margin: 0; color: rgba(255,255,255,0.6); font-size: 0.875rem; }
+.upgrade-btn { padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #8B5CF6, #6366F1); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+.upgrade-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139,92,246,0.4); }
+.enterprise-skeleton .skeleton-header { height: 80px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 2rem; }
+.skeleton-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.skeleton-card { height: 80px; background: rgba(255,255,255,0.03); border-radius: 10px; }

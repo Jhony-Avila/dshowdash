@@ -1,0 +1,49 @@
+/* Router Global - Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+.router-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3B82F6, #8B5CF6, #3B82F6);
+  background-size: 200% 100%;
+  animation: router-loading-bar 1.5s ease-in-out infinite;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.router-loading.active {
+  opacity: 1;
+}
+
+@keyframes router-loading-bar {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.router-transition {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.router-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.router-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.router-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.router-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+}

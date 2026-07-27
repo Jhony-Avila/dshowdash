@@ -1,0 +1,46 @@
+/* Panel-01 - Expansion Rows AAA */
+/* @version 1.0.0-ENTERPRISE */
+
+.p01-row-expandable { cursor: pointer; }
+
+.p01-row-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+
+.p01-row-expand-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.p01-row-expand-btn svg { width: 14px; height: 14px; transition: transform 0.2s; }
+.p01-row.expanded .p01-row-expand-btn svg { transform: rotate(90deg); }
+
+.p01-expansion-content {
+  display: none;
+  padding: 16px 20px 16px 56px;
+  background: var(--bg-muted, #1a1a2e);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.p01-row.expanded + .p01-expansion-content { display: block; animation: p01-expand 0.2s ease; }
+
+@keyframes p01-expand {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.p01-expansion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.p01-expansion-item { display: flex; flex-direction: column; gap: 4px; }
+.p01-expansion-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.p01-expansion-value { font-size: 13px; color: var(--text-primary); }

@@ -1,0 +1,8 @@
+{
+  "name": "geo-location",
+  "version": "1.0.0",
+  "type": "data-display",
+  "description": "Geographic location display",
+  "dependencies": [],
+  "config": { "autoDetect": true }
+}

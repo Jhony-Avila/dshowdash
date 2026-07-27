@@ -1,0 +1,4 @@
+/* Código - State Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-code[data-loading="true"] { opacity: 0.7; pointer-events: none; }
+.panel-code[data-error="true"] { border-color: var(--color-error, #dc2626); }

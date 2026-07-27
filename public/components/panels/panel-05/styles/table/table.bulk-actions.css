@@ -1,0 +1,18 @@
+/* Bulk Actions Bar
+ * @version 7.3.0
+ */
+
+.p05-bulk-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    background: var(--p05-info-bg, rgba(59, 130, 246, 0.1));
+    border: 1px solid var(--p05-info);
+    border-radius: var(--p05-radius-md);
+}
+
+.p05-bulk-bar.p05-visible {
+    display: flex;
+}

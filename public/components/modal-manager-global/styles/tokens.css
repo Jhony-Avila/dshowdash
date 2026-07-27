@@ -1,0 +1,15 @@
+/* Modal Manager Global - Design Tokens */
+/* @version 1.0.0-ENTERPRISE */
+
+:root {
+    --modal-backdrop-color: rgba(0, 0, 0, 0.5);
+    --modal-backdrop-blur: 4px;
+    --modal-z-base: 2000;
+    --modal-transition-duration: 0.3s;
+    --modal-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+    --modal-border-radius: 8px;
+    --modal-bg-color: #1a1a2e;
+    --modal-text-color: #ffffff;
+    --modal-header-bg: rgba(0, 0, 0, 0.2);
+    --modal-border-color: rgba(255, 255, 255, 0.1);
+}

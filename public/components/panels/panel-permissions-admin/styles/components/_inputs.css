@@ -1,0 +1,63 @@
+/* UARPS Admin - Inputs
+ * @version 1.2.0-ENTERPRISE-UARPS
+ */
+
+.uarps-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  max-width: 300px;
+  padding: 0.5rem 0.75rem;
+  background: var(--uarps-bg-tertiary);
+  border: 1px solid var(--uarps-border);
+  border-radius: var(--uarps-radius-md);
+}
+
+.uarps-search svg { width: 16px; height: 16px; color: var(--uarps-text-muted); }
+
+.uarps-search__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--uarps-text-primary);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.uarps-search__input::placeholder { color: var(--uarps-text-muted); }
+
+.uarps-select {
+  padding: 0.5rem 0.75rem;
+  background: var(--uarps-bg-tertiary);
+  border: 1px solid var(--uarps-border);
+  border-radius: var(--uarps-radius-md);
+  color: var(--uarps-text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.uarps-select--sm {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.uarps-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--uarps-bg-tertiary);
+  border: 1px solid var(--uarps-border);
+  border-radius: var(--uarps-radius-md);
+  color: var(--uarps-text-primary);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.uarps-input:focus { border-color: var(--uarps-accent-cyan); }
+
+.uarps-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--uarps-accent-cyan);
+  cursor: pointer;
+}

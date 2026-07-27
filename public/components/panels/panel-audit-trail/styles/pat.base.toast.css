@@ -1,0 +1,109 @@
+/* Panel Audit Trail - Toast
+ * @version 3.0.0-MODULAR
+ * Toast Notifications
+ */
+
+.pat-toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 10001;
+  pointer-events: none;
+}
+
+.pat-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #1a1a1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 0.8125rem;
+  pointer-events: auto;
+  animation: pat-toast-in 0.3s ease;
+}
+
+@keyframes pat-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.pat-toast.removing {
+  animation: pat-toast-out 0.2s ease forwards;
+}
+
+@keyframes pat-toast-out {
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.pat-toast svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.pat-toast--success {
+  border-left: 3px solid var(--pat-ok);
+}
+
+.pat-toast--success svg {
+  color: var(--pat-ok);
+}
+
+.pat-toast--error {
+  border-left: 3px solid var(--pat-error);
+}
+
+.pat-toast--error svg {
+  color: var(--pat-error);
+}
+
+.pat-toast--warning {
+  border-left: 3px solid var(--pat-warning);
+}
+
+.pat-toast--warning svg {
+  color: var(--pat-warning);
+}
+
+.pat-toast--info {
+  border-left: 3px solid var(--pat-info);
+}
+
+.pat-toast--info svg {
+  color: var(--pat-info);
+}
+
+.pat-toast-close {
+  margin-left: auto;
+  padding: 0.25rem;
+  background: transparent;
+  border: none;
+  color: var(--pat-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.pat-toast-close:hover {
+  color: #fff;
+}
+
+.pat-toast-close svg {
+  width: 14px;
+  height: 14px;
+}

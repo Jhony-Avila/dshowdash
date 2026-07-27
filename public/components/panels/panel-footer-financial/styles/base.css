@@ -1,0 +1,4 @@
+/* Footer  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-footer-financial { box-sizing: border-box; }
+.panel-footer-financial *, .panel-footer-financial *::before, .panel-footer-financial *::after { box-sizing: inherit; }

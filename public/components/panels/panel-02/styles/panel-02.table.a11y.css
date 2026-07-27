@@ -1,0 +1,68 @@
+/* Panel-02 Table Accessibility */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+.p02-table[role="grid"] tbody tr { cursor: pointer; }
+
+.p02-table[role="grid"] tbody tr:focus {
+  outline: 2px solid var(--p02-accent);
+  outline-offset: -2px;
+}
+
+.p02-table[role="grid"] tbody tr:focus-visible {
+  outline: 2px solid var(--p02-accent);
+  outline-offset: -2px;
+  background: var(--p02-bg-active);
+}
+
+/* Keyboard Navigation */
+.p02-tbody tr.p02-row-selected {
+  background: var(--p02-bg-active) !important;
+  outline: 1px solid var(--p02-accent);
+  outline-offset: -1px;
+}
+
+.p02-content:focus { outline: none; }
+.p02-content:focus-visible {
+  outline: 2px solid var(--p02-accent);
+  outline-offset: -2px;
+}
+
+/* Screen Reader Only */
+.p02-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Live Region */
+.p02-live-region {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Focus Trap */
+.p02-focus-trap-active { box-shadow: inset 0 0 0 2px var(--p02-accent); }
+
+/* Skip Link */
+.p02-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  padding: 8px 16px;
+  background: var(--p02-accent);
+  color: #fff;
+  text-decoration: none;
+  z-index: 9999;
+  transition: top 0.2s;
+}
+
+.p02-skip-link:focus { top: 0; }

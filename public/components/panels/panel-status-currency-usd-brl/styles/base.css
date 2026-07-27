@@ -1,0 +1,4 @@
+/* Status  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-status-currency-usd-brl { box-sizing: border-box; }
+.panel-status-currency-usd-brl *, .panel-status-currency-usd-brl *::before, .panel-status-currency-usd-brl *::after { box-sizing: inherit; }

@@ -1,0 +1,157 @@
+/* App Shell - States
+ * @version 4.0.0-REGION-TRANSITIONS
+ * @changelog v4.0.0-REGION-TRANSITIONS: Added unified region fade-in transitions
+ * @changelog v3.0.0-MODULAR: Initial modular version
+ * Full-screen + Transitions + Region Visibility
+ */
+
+/* ============================================
+   LAYOUT FULL-SCREEN MODE
+   ============================================ */
+body.layout-full-screen .dsd-shell__region--header,
+body.layout-full-screen .dsd-shell__region--ticker,
+body.layout-full-screen .dsd-shell__region--nav-rail,
+body.layout-full-screen .dsd-shell__region--sidebar,
+body.layout-full-screen .dsd-shell__region--footer {
+  display: none !important;
+}
+
+body.layout-full-screen .dsd-shell__region--main {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+/* ============================================
+   SHELL TRANSITION STATES
+   ============================================ */
+.dsd-shell--booting {
+  opacity: 0;
+}
+
+.dsd-shell--booted {
+  opacity: 1;
+  transition: opacity 0.3s ease-out;
+}
+
+.dsd-shell--ready {
+  opacity: 1;
+}
+
+.dsd-shell--loading {
+  cursor: wait;
+}
+
+.dsd-shell--error {
+  border: 2px solid var(--dsd-color-error, #ff4444);
+}
+
+/* ============================================
+   PRELOADER FADE-OUT
+   ============================================ */
+.dsd-shell__preloader--fade-out {
+  opacity: 0;
+  transition: opacity 500ms ease-out;
+  pointer-events: none;
+}
+
+/* ============================================
+   REGION VISIBILITY TRANSITIONS (v4.0.0)
+   Unified fade-in for all shell regions
+   ============================================ */
+
+/* Base hidden state - regions start invisible */
+.dsd-shell__region--hidden,
+.dsd-shell__region[data-visibility="hidden"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Visible state with transition */
+.dsd-shell__region--visible,
+.dsd-shell__region[data-visibility="visible"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Transition timing for each region (cascade effect) */
+.dsd-shell__region--header {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s;
+  transition-delay: 0ms;
+}
+
+.dsd-shell__region--ticker {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s;
+  transition-delay: 50ms;
+}
+
+.dsd-shell__region--nav-rail {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s;
+  transition-delay: 100ms;
+}
+
+.dsd-shell__region--sidebar {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s, width var(--shell-transition);
+  transition-delay: 150ms;
+}
+
+.dsd-shell__region--main {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s, left var(--shell-transition);
+  transition-delay: 200ms;
+}
+
+.dsd-shell__region--footer {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s;
+  transition-delay: 250ms;
+}
+
+/* When becoming hidden, no delay and visibility hides immediately */
+.dsd-shell__region--hidden.dsd-shell__region--header,
+.dsd-shell__region--hidden.dsd-shell__region--ticker,
+.dsd-shell__region--hidden.dsd-shell__region--nav-rail,
+.dsd-shell__region--hidden.dsd-shell__region--sidebar,
+.dsd-shell__region--hidden.dsd-shell__region--main,
+.dsd-shell__region--hidden.dsd-shell__region--footer {
+  transition-delay: 0ms;
+  transition: opacity 200ms ease-out, visibility 0s linear 200ms;
+}
+
+/* ============================================
+   REDUCED MOTION SUPPORT
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .dsd-shell--booted,
+  .dsd-shell__preloader--fade-out,
+  .dsd-shell__region--header,
+  .dsd-shell__region--ticker,
+  .dsd-shell__region--nav-rail,
+  .dsd-shell__region--sidebar,
+  .dsd-shell__region--main,
+  .dsd-shell__region--footer {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+  
+  .dsd-shell__region--visible {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .dsd-shell__region--hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* ============================================
+   LEGACY COMPATIBILITY
+   Support for .hidden class (backward compat)
+   ============================================ */
+.dsd-shell__region.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}

@@ -1,0 +1,30 @@
+/**
+ * Carousel Bundle CSS
+ * @version 2.3.0 - Slides Modular
+ *
+ * CHANGELOG v2.3.0:
+ * - ✅ REFATORADO: slides.css dividido em 5 arquivos modulares
+ *
+ * IMPORTANTE - DEPENDÊNCIAS:
+ * - theme.css DEVE ser carregado ANTES (fornece keyframes globais)
+ * - carousel.js gerencia aria-hidden + tabindex (acessibilidade)
+ */
+
+/* Base: Container principal, slides, scrollbar */
+@import url('./base.css');
+
+/* Controls: Botões, indicadores, headers */
+@import url('./controls.css');
+
+/* States: Loading, empty, error states */
+@import url('./states.css');
+
+/* Slides modulares */
+@import url('./slides.slide-01.css');
+@import url('./slides.slide-02.css');
+@import url('./slides.slide-03.css');
+@import url('./slides.slide-04.css');
+@import url('./slides.animations.css');
+
+/* Responsive: Media queries, motion preferences */
+@import url('./responsive.css');

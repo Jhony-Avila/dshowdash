@@ -1,0 +1,10 @@
+{
+  "id": "language",
+  "area": "footer",
+  "label": "Idioma",
+  "icon": "language",
+  "kind": "control",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

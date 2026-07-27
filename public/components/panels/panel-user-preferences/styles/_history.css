@@ -1,0 +1,79 @@
+/* Panel User Preferences - History v4.0.0
+   @version 4.0.0-ENTERPRISE
+   History timeline */
+
+.pup-history-toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+
+.pup-history-search { flex: 1; min-width: 130px; position: relative; }
+.pup-history-search input {
+  width: 100%;
+  padding: 8px 10px 8px 28px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.85);
+  font-size: 10px;
+  transition: all 0.2s ease;
+}
+
+.pup-history-search input:focus { outline: none; border-color: rgba(139,92,246,0.4); box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
+.pup-history-search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.25); }
+
+.pup-history-filters { display: flex; gap: 4px; }
+
+.pup-filter-btn {
+  padding: 5px 9px;
+  border-radius: 5px;
+  font-size: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  background: rgba(0,0,0,0.15);
+  border: 1px solid rgba(255,255,255,0.04);
+  color: var(--pup-text-mut);
+  transition: all 0.2s ease;
+}
+
+.pup-filter-btn:hover { border-color: rgba(255,255,255,0.08); color: var(--pup-text-sec); }
+.pup-filter-btn:focus-visible { outline: none; box-shadow: var(--pup-focus-ring); }
+.pup-filter-btn.active { background: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.25); color: #a78bfa; }
+
+.pup-history { margin-top: 8px; position: relative; }
+.pup-history::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0.05) 100%);
+  border-radius: 1px;
+}
+
+.pup-history-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  margin-left: 0;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.pup-history-item:hover { background: rgba(255,255,255,0.02); border-radius: 6px; margin: 0 -6px; padding: 8px 6px; }
+
+.pup-history-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+  border: 2px solid var(--pup-bg);
+}
+
+.pup-history-content { flex: 1; min-width: 0; }
+.pup-history-text { font-size: 10px; color: var(--pup-text-sec); line-height: 1.4; }
+.pup-history-text strong { color: rgba(255,255,255,0.8); font-weight: 500; }
+.pup-history-time { font-size: 8px; color: rgba(255,255,255,0.25); margin-top: 2px; }
+.pup-history-empty { text-align: center; padding: 20px; color: var(--pup-text-mut); font-size: 10px; }

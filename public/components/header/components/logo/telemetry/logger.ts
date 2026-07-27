@@ -1,0 +1,48 @@
+// ═══════════════════════════════════════════════════════════════
+// DEPENDENCY CONTRACT (1.1.0-AAA)
+// ═══════════════════════════════════════════════════════════════
+// MODULE: header.logo.telemetry.logger
+// PURPOSE: Logo - Logger (Enterprise)
+// ───────────────────────────────────────────────────────────────
+// IMPORTS:
+//   createUiPorts from /core/runtime/ports-profiles.js
+//
+// PROVIDES:
+//   MODULE_ID — module constant
+//   VERSION — module constant
+//   injectPorts() — exported function
+//   getPorts() — exported function
+//   getMetrics() — exported function
+//   info() — exported function
+//   healthCheck() — exported function
+//   Logger() — exported function
+//
+// RECEIVES (via init/options): (see init function if present)
+// EMITS (eventos):
+//   (none)
+// LISTENS (eventos):
+//   (none)
+// WINDOW ACCESS:
+//   (none)
+// ═══════════════════════════════════════════════════════════════
+'use strict';
+import { createUiPorts } from '/core/runtime/ports-profiles.js';
+export const MODULE_ID = 'header.logo.telemetry.logger';
+export const VERSION = '1.1.0-ES6';
+const Ports = createUiPorts({ moduleId: MODULE_ID });
+function _initPorts() { Ports.init(); }
+function _getPort(name: string) { return Ports.get(name); }
+export function injectPorts(p: Record<string,unknown>) { return Ports.inject(p); }
+export function getPorts() { return Ports.snapshot(); }
+let _metrics = { logs: 0, warns: 0, errors: 0 };
+function Logger(this: any, options: Record<string,unknown>) { if (!options) options = {}; this.prefix = options.prefix || '[logo]'; this.debug = options.debug || false; }
+Logger.prototype.info = function(...args: unknown[]) { if (!this.debug) return; _metrics.logs++; const L = _getPort('logger'); if (L && L.info) L.info(...[this.prefix].concat(Array.prototype.slice.call(args))); else if (L && L.debug) L.debug(...[this.prefix].concat(Array.prototype.slice.call(args))); };
+Logger.prototype.warn = function(...args: unknown[]) { _metrics.warns++; const L = _getPort('logger'); if (L && L.warn) L.warn(...[this.prefix].concat(Array.prototype.slice.call(args))); };
+Logger.prototype.error = function(...args: unknown[]) { _metrics.errors++; const L = _getPort('logger'); if (L && L.error) L.error(...[this.prefix].concat(Array.prototype.slice.call(args))); };
+Logger.prototype.debug = function(...args: unknown[]) { if (!this.debug) return; _metrics.logs++; const L = _getPort('logger'); if (L && L.debug) L.debug(...[this.prefix].concat(Array.prototype.slice.call(args))); };
+Logger.prototype.getMetrics = () => Object.assign({}, _metrics);
+Logger.prototype.healthCheck = function() { return { status: Ports.isInitialized() ? 'HEALTHY' : 'DEGRADED', version: VERSION, moduleId: MODULE_ID, checks: { loggerReady: !!_getPort('logger'), portsInitialized: Ports.isInitialized() }, metrics: this.getMetrics(), portsInitialized: Ports.isInitialized() }; };
+export function getMetrics() { return Object.assign({}, _metrics); }
+export function info() { return { moduleId: MODULE_ID, version: VERSION, portsInitialized: Ports.isInitialized(), timestamp: Date.now() }; }
+export function healthCheck() { return { status: Ports.isInitialized() ? 'HEALTHY' : 'DEGRADED', version: VERSION, moduleId: MODULE_ID, checks: { loggerReady: !!_getPort('logger'), portsInitialized: Ports.isInitialized() }, portsInitialized: Ports.isInitialized(), timestamp: Date.now() }; }
+export { Logger };

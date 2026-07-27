@@ -1,0 +1,71 @@
+/* Panel-05 Interactions - Micro
+ * @version 7.0.0-MODULAR
+ * Micro-interações globais
+ */
+
+/* Transições base para todos elementos interativos */
+.p05-panel button,
+.p05-panel a,
+.p05-panel input,
+.p05-panel select,
+.p05-panel [role="button"],
+.p05-panel [tabindex="0"] {
+    transition: 
+        background-color var(--p05-motion-fast) ease-out,
+        border-color var(--p05-motion-fast) ease-out,
+        color var(--p05-motion-fast) ease-out,
+        box-shadow var(--p05-motion-fast) ease-out,
+        transform var(--p05-motion-fast) ease-out,
+        opacity var(--p05-motion-fast) ease-out;
+}
+
+/* Hover lift universal */
+.p05-panel .p05-kpi-card:hover,
+.p05-panel .p05-insight-card:hover,
+.p05-panel .p05-top-item:hover,
+.p05-panel .p05-ranking-item:hover,
+.p05-panel .p05-churn-item:hover,
+.p05-panel .p05-metrica-card:hover,
+.p05-panel .p05-metric-card:hover,
+.p05-panel .p05-heatmap-item:hover,
+.p05-panel .p05-recente-item:hover,
+.p05-panel .p05-contato-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--p05-shadow-hover);
+}
+
+/* Active/press state */
+.p05-panel button:active:not(:disabled),
+.p05-panel [role="button"]:active,
+.p05-panel .p05-table-row:active {
+    transform: scale(0.98);
+    transition-duration: 50ms;
+}
+
+/* Ripple effect container */
+.p05-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.p05-ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease-out, height 0.4s ease-out, opacity 0.4s ease-out;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.p05-ripple:active::after {
+    width: 200%;
+    height: 200%;
+    opacity: 1;
+    transition: 0s;
+}

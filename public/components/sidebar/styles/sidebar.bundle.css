@@ -1,0 +1,3482 @@
+/* Sidebar Styles Bundle — COMPILED (zero CSS imports, single request) */
+/* @version 7.1.0-MODULAR-BUILD */
+/* @description Modular build: 8 modules concatenated in numeric order */
+/* @build-timestamp: 2026-07-20T12:16:39-03:00 */
+/* @modules: 01-tokens, 02-base, 03-layout, 04-components, 05-states, 06-responsive, 07-animations, 08-overrides */
+
+/* Sidebar - Design Tokens */
+/* @version 2.3.1-CLEAN */
+/* @changelog v2.3.1: Removido alias desnecessário, mantido apenas --sidebar-width-collapsed */
+/* @changelog v2.2.0: z-index alinhado com sistema global (sidebar < footer < header) */
+/* CSS variables centralizados para sidebar */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════
+     SIZING
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-width: 280px;
+  --sidebar-width-collapsed: 72px;
+  --sidebar-header-height: 56px;
+  --sidebar-item-height: 44px;
+  --sidebar-icon-size: 20px;
+  --sidebar-badge-size: 20px;
+
+  /* ═══════════════════════════════════════════════════════════════
+     SPACING
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-spacing-xs: 4px;
+  --sidebar-spacing-sm: 8px;
+  --sidebar-spacing-md: 12px;
+  --sidebar-spacing-lg: 16px;
+  --sidebar-spacing-xl: 20px;
+  --sidebar-spacing-2xl: 24px;
+
+  /* ═══════════════════════════════════════════════════════════════
+     COLORS - Surfaces
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-bg: #0E0E12;
+  --sidebar-surface: #141419;
+  --sidebar-surface-hover: #1A1A20;
+  --sidebar-surface-active: rgba(139, 92, 246, 0.14);
+  --sidebar-surface-selected: rgba(139, 92, 246, 0.18);
+  --sidebar-overlay-bg: rgba(0, 0, 0, 0.5);
+
+  /* ═══════════════════════════════════════════════════════════════
+     COLORS - Borders
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-border-hover: rgba(255, 255, 255, 0.1);
+  --sidebar-border-active: rgba(139, 92, 246, 0.3);
+
+  /* ═══════════════════════════════════════════════════════════════
+     COLORS - Text
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-text-primary: rgba(255, 255, 255, 0.95);
+  --sidebar-text-secondary: rgba(229, 231, 235, 1);
+  --sidebar-text-muted: rgba(156, 163, 175, 1);
+  --sidebar-text-disabled: rgba(107, 114, 128, 0.6);
+
+  /* ═══════════════════════════════════════════════════════════════
+     COLORS - Icons
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-icon-default: rgba(255, 255, 255, 0.55);
+  --sidebar-icon-hover: rgba(255, 255, 255, 0.75);
+  --sidebar-icon-active: #8E82FA;
+
+  /* ═══════════════════════════════════════════════════════════════
+     COLORS - Accent
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-accent-primary: #7B6EF6;
+  --sidebar-accent-secondary: #8E82FA;
+  --sidebar-accent-glow: rgba(139, 92, 246, 0.4);
+
+  /* ═══════════════════════════════════════════════════════════════
+     COLORS - Status
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-status-success: #22C55E;
+  --sidebar-status-warning: #EAB308;
+  --sidebar-status-error: #EF4444;
+  --sidebar-status-info: #3B82F6;
+
+  /* ═══════════════════════════════════════════════════════════════
+     RADIUS
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-radius-sm: 4px;
+  --sidebar-radius-md: 8px;
+  --sidebar-radius-lg: 12px;
+  --sidebar-radius-full: 9999px;
+
+  /* ═══════════════════════════════════════════════════════════════
+     SHADOWS
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --sidebar-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --sidebar-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --sidebar-shadow-glow: 0 0 20px var(--sidebar-accent-glow);
+
+  /* ═══════════════════════════════════════════════════════════════
+     TRANSITIONS
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --sidebar-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --sidebar-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ═══════════════════════════════════════════════════════════════
+     Z-INDEX (alinhado: sidebar < footer < ticker < header)
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-z-base: 100;
+  --sidebar-z-header: 110;
+  --sidebar-z-overlay: 95;
+  --sidebar-z-tooltip: 150;
+
+  /* ═══════════════════════════════════════════════════════════════
+     TYPOGRAPHY
+     ═══════════════════════════════════════════════════════════════ */
+  --sidebar-font-size-xs: 0.6875rem;
+  --sidebar-font-size-sm: 0.8125rem;
+  --sidebar-font-size-base: 0.875rem;
+  --sidebar-font-size-lg: 1rem;
+  --sidebar-font-weight-normal: 400;
+  --sidebar-font-weight-medium: 500;
+  --sidebar-font-weight-semibold: 600;
+}
+
+/* Tema Claro — override ADITIVO. Parte 2 theming 2026-07-05. */
+/* @fix 2026-07-20 theme-classdrift: removido o ramo LEGADO por CLASSE `:root.theme-light`.
+   No boot, o <html> pode ficar com classe `theme-light` divergente do atributo
+   `data-theme` (a classe segue prefers-color-scheme do SO; o atributo segue a
+   preferência salva). O ramo por classe (esp. 0,2,0) vencia o `:root` dark (0,1,0)
+   e pintava a sidebar de branco no dark. Agora a sidebar consome SÓ o atributo
+   `[data-theme="light"]` — mesmo sinal canônico de theme.light-total.css e do toggle. */
+:root[data-theme="light"] {
+  --sidebar-bg: #ffffff;
+  --sidebar-surface: #f4f4f5;
+  --sidebar-surface-hover: #ebebed;
+  --sidebar-surface-active: rgba(124,58,237,0.10);
+  --sidebar-surface-selected: rgba(124,58,237,0.14);
+  --sidebar-overlay-bg: rgba(0,0,0,0.4);
+  --sidebar-border: rgba(0,0,0,0.08);
+  --sidebar-border-hover: rgba(0,0,0,0.12);
+  --sidebar-border-active: rgba(124,58,237,0.3);
+  --sidebar-text-primary: rgba(0,0,0,0.92);
+  --sidebar-text-secondary: rgba(0,0,0,0.72);
+  --sidebar-text-muted: rgba(0,0,0,0.5);
+  --sidebar-text-disabled: rgba(0,0,0,0.35);
+  --sidebar-icon-default: rgba(0,0,0,0.55);
+  --sidebar-icon-hover: rgba(0,0,0,0.75);
+  --sidebar-icon-active: #6d28d9;
+  --sidebar-accent-primary: #6d28d9;
+  --sidebar-accent-secondary: #7c3aed;
+  --sidebar-accent-glow: rgba(124,58,237,0.25);
+  --sidebar-status-success: #047857;
+  --sidebar-status-warning: #b45309;
+  --sidebar-status-error: #dc2626;
+  --sidebar-status-info: #2563eb;
+}
+/* Sidebar - Base Styles */
+/* @version 2.0.0-AAA-P2 */
+/* Container principal e estado collapsed */
+
+.dsd-sidebar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--sidebar-z-base);
+  transition: width var(--sidebar-transition-base);
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__brand-text,
+.dsd-sidebar--collapsed .dsd-sidebar__item-text,
+.dsd-sidebar--collapsed .dsd-sidebar__section-title,
+.dsd-sidebar--collapsed .dsd-sidebar__search {
+  display: none;
+}
+/* Sidebar - Header Styles */
+/* @version 2.0.0-AAA-P2 */
+/* Header, brand, toggle e search */
+
+/* Header Base */
+.dsd-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.dsd-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--sidebar-text-primary);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.dsd-sidebar__brand-icon {
+  color: var(--sidebar-accent-primary);
+}
+
+.dsd-sidebar__toggle {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--sidebar-text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--sidebar-radius-md);
+  transition: background var(--sidebar-transition-base);
+}
+
+.dsd-sidebar__toggle:hover {
+  background: var(--sidebar-surface-hover);
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__toggle svg {
+  transform: rotate(180deg);
+}
+
+/* Header minimalista */
+.dsd-sidebar__header--minimal {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+}
+
+.dsd-sidebar__header--minimal .dsd-sidebar__toggle {
+  margin: 0;
+}
+
+/* Header com Search */
+.dsd-sidebar__header--with-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 12px 16px;
+}
+
+.dsd-sidebar__header--with-search .dsd-sidebar__search {
+  flex: 1;
+  padding: 0;
+}
+
+.dsd-sidebar__header--with-search .dsd-sidebar__toggle {
+  flex-shrink: 0;
+}
+
+/* Search */
+.dsd-sidebar__search {
+  padding: 12px 16px;
+}
+
+.dsd-sidebar__search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dsd-sidebar__search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--sidebar-text-muted);
+  pointer-events: none;
+}
+
+.dsd-sidebar__search-input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  background: var(--sidebar-surface);
+  border: 1px solid transparent;
+  border-radius: var(--sidebar-radius-md);
+  color: var(--sidebar-text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--sidebar-transition-base);
+}
+
+.dsd-sidebar__search-input:focus {
+  border-color: var(--sidebar-accent-primary);
+}
+
+.dsd-sidebar__search-input::placeholder {
+  color: var(--sidebar-text-muted);
+}
+/* Sidebar - Navigation Styles */
+/* @version 2.0.0-AAA-P2 */
+/* Nav, sections, items - Hover ROXO / Active AZUL ELÉTRICO */
+
+/* Navigation Container */
+.dsd-sidebar__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.dsd-sidebar__section {
+  margin-bottom: 16px;
+}
+
+.dsd-sidebar__section-header {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dsd-sidebar__section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sidebar-text-muted);
+}
+
+.dsd-sidebar__section-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Items Base */
+.dsd-sidebar__item {
+  margin-bottom: 2px;
+}
+
+.dsd-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: var(--sidebar-text-secondary);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--sidebar-radius-md);
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dsd-sidebar__link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--sidebar-radius-md);
+  background: radial-gradient(circle at center, rgba(123, 110, 246, 0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.dsd-sidebar__item--disabled .dsd-sidebar__link {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.dsd-sidebar__item-icon {
+  flex-shrink: 0;
+  color: var(--sidebar-icon-default);
+  transition: color 0.3s ease, filter 0.3s ease, transform 0.3s ease;
+}
+
+.dsd-sidebar__item-text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* HOVER - ROXO (Purple Glow)                                      */
+/* ═══════════════════════════════════════════════════════════════ */
+.dsd-sidebar__link:hover {
+  border: 1px solid rgba(123, 110, 246, 0.6);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(123, 110, 246, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%);
+  box-shadow: 0 0 8px rgba(123, 110, 246, 0.5), 0 0 20px rgba(123, 110, 246, 0.3), inset 0 0 10px rgba(123, 110, 246, 0.1);
+  color: var(--sidebar-text-primary);
+  transform: translateX(2px);
+}
+
+.dsd-sidebar__link:hover::before {
+  opacity: 1;
+}
+
+.dsd-sidebar__link:hover .dsd-sidebar__item-icon {
+  color: #A78BFA;
+  filter: drop-shadow(0 0 6px rgba(123, 110, 246, 0.6));
+  transform: scale(1.08);
+}
+
+.dsd-sidebar__link:hover .dsd-sidebar__item-text {
+  color: #C4B5FD;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACTIVE - AZUL ELÉTRICO (Blue Glow)                              */
+/* ::before 18% | background 25%/18% | box-shadow 60%/35% | inset 15% */
+/* ═══════════════════════════════════════════════════════════════ */
+.dsd-sidebar__item--active .dsd-sidebar__link {
+  border: 1px solid rgba(59, 130, 246, 0.7);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.18) 100%);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6), 0 0 25px rgba(59, 130, 246, 0.35), inset 0 0 12px rgba(59, 130, 246, 0.15);
+  color: #93C5FD;
+  border-left: 3px solid #3B82F6;
+}
+
+.dsd-sidebar__item--active .dsd-sidebar__link::before {
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.18) 0%, transparent 70%);
+  opacity: 1;
+}
+
+.dsd-sidebar__item--active .dsd-sidebar__item-icon {
+  color: #60A5FA;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7));
+}
+
+.dsd-sidebar__item--active .dsd-sidebar__item-text {
+  color: #93C5FD;
+  font-weight: 600;
+}
+
+/* Active + Hover (mantém azul, intensifica) */
+.dsd-sidebar__item--active .dsd-sidebar__link:hover {
+  border: 1px solid rgba(59, 130, 246, 0.8);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(37, 99, 235, 0.22) 100%);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.7), 0 0 30px rgba(59, 130, 246, 0.4), inset 0 0 15px rgba(59, 130, 246, 0.2);
+  transform: none;
+}
+
+.dsd-sidebar__item--active .dsd-sidebar__link:hover .dsd-sidebar__item-icon {
+  color: #93C5FD;
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8));
+  transform: none;
+}
+
+.dsd-sidebar__item--active .dsd-sidebar__link:hover .dsd-sidebar__item-text {
+  color: #BFDBFE;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* BADGES                                                          */
+/* ═══════════════════════════════════════════════════════════════ */
+.dsd-sidebar__badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: var(--sidebar-accent-primary);
+  color: white;
+}
+
+.dsd-sidebar__badge--alert { background: #ef4444; }
+.dsd-sidebar__badge--success { background: #10b981; }
+.dsd-sidebar__badge--info { background: #3b82f6; }
+/* Sidebar - Admin Styles */
+/* @version 3.1.0-GRP-ADMIN-SPECIFICITY */
+/* @changelog v3.1.0 - Increased selector specificity with .dsd-sidebar prefix
+     to override _ve-states.css which loads after this file in index.css.
+   @changelog v3.0.0-GRP-ADMIN - Updated selectors to sidebar.grp-admin
+   @changelog v2.1.0-AAA-P2 - Removida border-top da seção admin */
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION CONTAINER
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-left: 2px solid rgba(245, 158, 11, 0.3);
+  border-radius: 0 0 0 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACCORDION HEADER (Group Button)
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button {
+  color: #f59e0b;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.05) 100%);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button:hover {
+  border-color: rgba(245, 158, 11, 0.6);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+/* Accordion header text */
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button .dsd-sidebar__group-title {
+  color: #f59e0b;
+}
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button:hover .dsd-sidebar__group-title {
+  color: #fcd34d;
+}
+
+/* Accordion header icon */
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button .dsd-sidebar__section-icon,
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button svg {
+  color: #f59e0b;
+  stroke: #f59e0b;
+}
+
+/* Chevron */
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button .dsd-sidebar__chevron,
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button .dsd-sidebar__chevron svg {
+  color: #f59e0b;
+  stroke: #f59e0b;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION TITLE (legacy)
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__section-title {
+  color: #f59e0b;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ITEM ICONS — AMBER
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__item-icon svg {
+  color: #f59e0b;
+  stroke: #f59e0b;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ITEM TEXT — AMBER
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__item-text {
+  color: #fbbf24;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LINK PSEUDO-ELEMENT (ambient glow)
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__link::before {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HOVER STATE — AMBER
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__link:hover {
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.15) 100%);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3), inset 0 0 10px rgba(245, 158, 11, 0.1);
+}
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__link:hover .dsd-sidebar__item-icon svg {
+  color: #fcd34d;
+  stroke: #fcd34d;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
+}
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__link:hover .dsd-sidebar__item-text {
+  color: #fde68a;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTIVE STATE — AMBER
+   ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__item--active .dsd-sidebar__link {
+  border: 1px solid rgba(245, 158, 11, 0.7);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.18) 100%);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 25px rgba(245, 158, 11, 0.35), inset 0 0 12px rgba(245, 158, 11, 0.15);
+  border-left: 3px solid #f59e0b;
+}
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__item--active .dsd-sidebar__link::before {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.18) 0%, transparent 70%);
+  box-shadow: none;
+}
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__item--active .dsd-sidebar__item-icon svg {
+  color: #fbbf24;
+  stroke: #fbbf24;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.7));
+}
+
+.dsd-sidebar [data-section-id="sidebar.grp-admin"] .dsd-sidebar__item--active .dsd-sidebar__item-text {
+  color: #fde68a;
+  font-weight: 500;
+}
+/* Sidebar - Responsive Styles */
+/* @version 2.0.0-AAA-P2 */
+/* Overlay mobile, media queries, utilities */
+
+/* Overlay (Mobile) */
+.dsd-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: calc(var(--sidebar-z-base) - 1);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--sidebar-transition-base), visibility var(--sidebar-transition-base);
+}
+
+.dsd-sidebar-overlay--visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Mobile 501-768px: Sidebar como overlay */
+@media (max-width: 768px) {
+  .dsd-sidebar {
+    position: fixed;
+    left: var(--nav-rail-width, 72px);
+    top: var(--header-ticker-total, 100px);
+    bottom: var(--footer-height-total, 116px);
+    width: var(--sidebar-width);
+    transform: translateX(-100%);
+  }
+  
+  .dsd-sidebar--mobile-open {
+    transform: translateX(0);
+  }
+  
+  body.sidebar-mobile-open {
+    overflow: hidden;
+  }
+}
+
+/* Mobile < 500px: Sidebar escondida */
+@media (max-width: 500px) {
+  .dsd-sidebar {
+    display: none !important;
+  }
+}
+
+/* Utilities */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* Sidebar - Accordion Styles */
+/* @version 3.3.0-TEAL-HEADERS */
+/* @description Headers com visual VERDE/TEAL diferenciado */
+/* @changelog v3.3.0 - Fixed ::before glow para seção admin (era verde, agora âmbar completo) */
+/* @changelog v3.2.0 - Items alinhados com mesma largura do header (sem indentação) */
+/* @changelog v3.1.0 - Removidas linhas verticais e horizontais dos items */
+/* Enterprise Pattern: Botão único e coeso [Ícone] [Título] [Chevron] */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SECTION BASE                                                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__section {
+  margin-bottom: 4px;
+}
+
+.dsd-sidebar__section--collapsible {
+  border-radius: var(--sidebar-radius-md, 8px);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* GROUP BUTTON - Header do Accordion                              */
+/* Visual VERDE/TEAL diferenciado                                  */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__group-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--sidebar-radius-md, 8px);
+  background: transparent;
+  color: var(--sidebar-text-secondary, #9CA3AF);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Pseudo-elemento para glow effect - TEAL padrão */
+.dsd-sidebar__group-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--sidebar-radius-md, 8px);
+  background: radial-gradient(circle at center, rgba(20, 184, 166, 0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* HOVER - TEAL/VERDE (Headers do Accordion)                       */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__group-button:hover {
+  border: 1px solid rgba(20, 184, 166, 0.6);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.2) 0%, rgba(13, 148, 136, 0.15) 100%);
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.5), 0 0 20px rgba(20, 184, 166, 0.3), inset 0 0 10px rgba(20, 184, 166, 0.1);
+  color: var(--sidebar-text-primary, #E5E7EB);
+  transform: translateX(2px);
+}
+
+.dsd-sidebar__group-button:hover::before {
+  opacity: 1;
+}
+
+.dsd-sidebar__group-button:hover .dsd-sidebar__group-icon {
+  color: #2DD4BF;
+  filter: drop-shadow(0 0 6px rgba(20, 184, 166, 0.6));
+  transform: scale(1.08);
+}
+
+.dsd-sidebar__group-button:hover .dsd-sidebar__group-title {
+  color: #5EEAD4;
+}
+
+.dsd-sidebar__group-button:hover .dsd-sidebar__group-chevron {
+  color: #2DD4BF;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EXPANDED - TEAL/VERDE ATIVO (Seção aberta)                      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__section--expanded .dsd-sidebar__group-button {
+  border: 1px solid rgba(20, 184, 166, 0.7);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.25) 0%, rgba(13, 148, 136, 0.18) 100%);
+  box-shadow: 0 0 10px rgba(20, 184, 166, 0.6), 0 0 25px rgba(20, 184, 166, 0.35), inset 0 0 12px rgba(20, 184, 166, 0.15);
+  color: #5EEAD4;
+  border-left: 3px solid #14B8A6;
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__group-button::before {
+  background: radial-gradient(circle at center, rgba(20, 184, 166, 0.18) 0%, transparent 70%);
+  opacity: 1;
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__group-icon {
+  color: #2DD4BF;
+  filter: drop-shadow(0 0 8px rgba(20, 184, 166, 0.7));
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__group-title {
+  color: #5EEAD4;
+  font-weight: 600;
+}
+
+/* Expanded + Hover (mantém teal, intensifica) */
+.dsd-sidebar__section--expanded .dsd-sidebar__group-button:hover {
+  border: 1px solid rgba(20, 184, 166, 0.8);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.3) 0%, rgba(13, 148, 136, 0.22) 100%);
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.7), 0 0 30px rgba(20, 184, 166, 0.4), inset 0 0 15px rgba(20, 184, 166, 0.2);
+  transform: none;
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__group-button:hover .dsd-sidebar__group-icon {
+  color: #5EEAD4;
+  filter: drop-shadow(0 0 10px rgba(20, 184, 166, 0.8));
+  transform: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FOCUS STATE                                                     */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__group-button:focus {
+  outline: none;
+}
+
+.dsd-sidebar__group-button:focus-visible {
+  outline: 2px solid rgba(20, 184, 166, 0.6);
+  outline-offset: -2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* GROUP ICON - Ícone da Seção                                     */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__group-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--sidebar-text-muted, #6B7280);
+  transition: color 0.3s ease, filter 0.3s ease, transform 0.3s ease;
+}
+
+.dsd-sidebar__group-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* GROUP TITLE - Título da Seção                                   */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__group-title {
+  flex: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* GROUP CHEVRON - Indicador de Expansão                           */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__group-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--sidebar-text-muted, #6B7280);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
+}
+
+.dsd-sidebar__group-chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Chevron rotacionado quando expandido */
+.dsd-sidebar__section--expanded .dsd-sidebar__group-chevron {
+  transform: rotate(180deg);
+  color: #2DD4BF;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SECTION ITEMS CONTAINER                                         */
+/* SEM indentação - mesma largura do header                        */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__section-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  will-change: height;
+  transform: translateZ(0);
+}
+
+/* Items dentro do grupo - SEM indentação, mesma largura do header */
+.dsd-sidebar__section--collapsible .dsd-sidebar__section-items {
+  padding-left: 0;
+  margin-left: 0;
+  border-left: none;
+}
+
+/* Estado colapsado */
+.dsd-sidebar__section--collapsible:not(.dsd-sidebar__section--expanded) .dsd-sidebar__section-items {
+  height: 0;
+  overflow: hidden;
+}
+
+/* Estado expandido */
+.dsd-sidebar__section--expanded .dsd-sidebar__section-items {
+  height: auto;
+  overflow: visible;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+/* Items SEM border-bottom */
+.dsd-sidebar__section-items .dsd-sidebar__item {
+  border-bottom: none;
+}
+
+.dsd-sidebar__section-items .dsd-sidebar__link {
+  border-bottom: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ANIMAÇÕES DE ITEMS AO EXPANDIR                                  */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__section--expanded .dsd-sidebar__item {
+  animation: sidebarItemFadeIn 0.2s ease forwards;
+  opacity: 0;
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(1) { animation-delay: 0.02s; }
+.dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(2) { animation-delay: 0.04s; }
+.dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(3) { animation-delay: 0.06s; }
+.dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(4) { animation-delay: 0.08s; }
+.dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(5) { animation-delay: 0.10s; }
+.dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(6) { animation-delay: 0.12s; }
+.dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(7) { animation-delay: 0.14s; }
+.dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(8) { animation-delay: 0.16s; }
+.dsd-sidebar__section--expanded .dsd-sidebar__item:nth-child(n+9) { animation-delay: 0.18s; }
+
+@keyframes sidebarItemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SEÇÃO ADMINISTRAÇÃO - Override completo para ÂMBAR              */
+/* Inclui ::before, hover, expanded e todos os estados             */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Estado normal - cores base ÂMBAR */
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button {
+  border-top: none;
+}
+
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-icon {
+  color: #f59e0b;
+}
+
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-title {
+  color: #fbbf24;
+}
+
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-chevron {
+  color: #f59e0b;
+}
+
+/* Pseudo-elemento ::before ÂMBAR (override do verde) */
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button::before {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+}
+
+/* Hover ÂMBAR completo */
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button:hover {
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.15) 100%);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3), inset 0 0 10px rgba(245, 158, 11, 0.1);
+}
+
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button:hover::before {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.18) 0%, transparent 70%);
+  opacity: 1;
+}
+
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button:hover .dsd-sidebar__group-icon {
+  color: #fcd34d;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
+}
+
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button:hover .dsd-sidebar__group-title {
+  color: #fde68a;
+}
+
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button:hover .dsd-sidebar__group-chevron {
+  color: #fcd34d;
+}
+
+/* Expanded ÂMBAR completo */
+[data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-button {
+  border: 1px solid rgba(245, 158, 11, 0.7);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.18) 100%);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 25px rgba(245, 158, 11, 0.35), inset 0 0 12px rgba(245, 158, 11, 0.15);
+  border-left: 3px solid #f59e0b;
+}
+
+[data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-button::before {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.18) 0%, transparent 70%);
+  opacity: 1;
+}
+
+[data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-icon {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.7));
+}
+
+[data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-title {
+  color: #fde68a;
+  font-weight: 600;
+}
+
+[data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-chevron {
+  color: #fbbf24;
+}
+
+/* Expanded + Hover ÂMBAR */
+[data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-button:hover {
+  border: 1px solid rgba(245, 158, 11, 0.8);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(217, 119, 6, 0.22) 100%);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.7), 0 0 30px rgba(245, 158, 11, 0.4), inset 0 0 15px rgba(245, 158, 11, 0.2);
+  transform: none;
+}
+
+[data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-button:hover::before {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.22) 0%, transparent 70%);
+}
+
+[data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-button:hover .dsd-sidebar__group-icon {
+  color: #fde68a;
+  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.8));
+  transform: none;
+}
+
+[data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-button:hover .dsd-sidebar__group-chevron {
+  color: #fde68a;
+}
+
+/* Focus ÂMBAR */
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__group-button:focus-visible {
+  outline: 2px solid rgba(245, 158, 11, 0.6);
+  outline-offset: -2px;
+}
+
+/* Border left da lista de items admin - REMOVIDO */
+[data-section-id="sidebar.grp-admin"] .dsd-sidebar__section-items {
+  border-left: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SIDEBAR COLLAPSED - Accordion desabilitado                      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar--collapsed .dsd-sidebar__group-button {
+  justify-content: center;
+  padding: 10px;
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__group-title,
+.dsd-sidebar--collapsed .dsd-sidebar__group-chevron {
+  display: none;
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__group-button--collapsible {
+  pointer-events: none;
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__section--collapsible .dsd-sidebar__section-items {
+  height: auto !important;
+  overflow: visible !important;
+  padding-left: 0;
+  margin-left: 0;
+  border-left: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACCESSIBILITY - REDUCED MOTION                                  */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .dsd-sidebar__group-button,
+  .dsd-sidebar__group-chevron,
+  .dsd-sidebar__section-items,
+  .dsd-sidebar__section--expanded .dsd-sidebar__item {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .dsd-sidebar__section--expanded .dsd-sidebar__item {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* HIGH CONTRAST MODE                                              */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-contrast: high) {
+  .dsd-sidebar__group-button:focus-visible {
+    outline-width: 3px;
+  }
+  
+  .dsd-sidebar__section--expanded .dsd-sidebar__group-button {
+    border: 2px solid #14B8A6;
+  }
+  
+  [data-section-id="sidebar.grp-admin"].dsd-sidebar__section--expanded .dsd-sidebar__group-button {
+    border: 2px solid #f59e0b;
+  }
+}
+/* Sidebar Transitions - Tokens - @version 1.0.0-ENTERPRISE */
+:root {
+  --sidebar-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --sidebar-ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+  --sidebar-ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --sidebar-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --sidebar-duration-width: 280ms;
+  --sidebar-duration-content: 200ms;
+  --sidebar-duration-icon: 150ms;
+  --sidebar-duration-stagger: 30ms;
+}
+/* Sidebar Transitions - Container - @version 1.0.0-ENTERPRISE */
+.dsd-sidebar {
+  transition: width var(--sidebar-duration-width) var(--sidebar-ease-out-expo), box-shadow var(--sidebar-duration-content) ease;
+  will-change: width;
+}
+
+.dsd-sidebar:not(.dsd-sidebar--collapsed) { box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1); }
+.dsd-sidebar--collapsed { box-shadow: none; }
+/* Sidebar Transitions - Content Elements - @version 1.0.0-ENTERPRISE */
+.dsd-sidebar__brand-text,
+.dsd-sidebar__item-text,
+.dsd-sidebar__section-title,
+.dsd-sidebar__search,
+.dsd-sidebar__group-title,
+.dsd-sidebar__group-chevron,
+.dsd-sidebar__badge-text {
+  transition: opacity var(--sidebar-duration-content) var(--sidebar-ease-out-expo), transform var(--sidebar-duration-content) var(--sidebar-ease-out-expo), visibility var(--sidebar-duration-content);
+  transform-origin: left center;
+}
+
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__brand-text,
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item-text,
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__section-title,
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__search,
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__group-title,
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__group-chevron {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  visibility: visible;
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__brand-text,
+.dsd-sidebar--collapsed .dsd-sidebar__item-text,
+.dsd-sidebar--collapsed .dsd-sidebar__section-title,
+.dsd-sidebar--collapsed .dsd-sidebar__search,
+.dsd-sidebar--collapsed .dsd-sidebar__group-title,
+.dsd-sidebar--collapsed .dsd-sidebar__group-chevron {
+  opacity: 0;
+  transform: translateX(-8px) scale(0.95);
+  visibility: hidden;
+  pointer-events: none;
+}
+/* Sidebar Transitions - Icons & Toggle - @version 1.0.0-ENTERPRISE */
+.dsd-sidebar__item-icon,
+.dsd-sidebar__brand-icon,
+.dsd-sidebar__group-icon {
+  transition: transform var(--sidebar-duration-icon) var(--sidebar-ease-out-expo), margin var(--sidebar-duration-content) var(--sidebar-ease-out-expo);
+  flex-shrink: 0;
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__item-icon { transform: scale(1.1); }
+
+.dsd-sidebar__toggle {
+  transition: background-color var(--sidebar-duration-icon) ease, transform var(--sidebar-duration-content) var(--sidebar-ease-out-back);
+}
+
+.dsd-sidebar__toggle svg,
+.dsd-sidebar__toggle i {
+  transition: transform var(--sidebar-duration-content) var(--sidebar-ease-spring);
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__toggle svg,
+.dsd-sidebar--collapsed .dsd-sidebar__toggle i { transform: rotate(180deg); }
+
+.dsd-sidebar__toggle:hover { transform: scale(1.05); }
+.dsd-sidebar__toggle:active { transform: scale(0.95); }
+/* Sidebar Transitions - Stagger Animation - @version 1.0.0-ENTERPRISE */
+.dsd-sidebar__item {
+  transition: opacity var(--sidebar-duration-content) var(--sidebar-ease-out-expo), transform var(--sidebar-duration-content) var(--sidebar-ease-out-expo);
+}
+
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item:nth-child(1) { transition-delay: calc(var(--sidebar-duration-stagger) * 1); }
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item:nth-child(2) { transition-delay: calc(var(--sidebar-duration-stagger) * 2); }
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item:nth-child(3) { transition-delay: calc(var(--sidebar-duration-stagger) * 3); }
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item:nth-child(4) { transition-delay: calc(var(--sidebar-duration-stagger) * 4); }
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item:nth-child(5) { transition-delay: calc(var(--sidebar-duration-stagger) * 5); }
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item:nth-child(6) { transition-delay: calc(var(--sidebar-duration-stagger) * 6); }
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item:nth-child(7) { transition-delay: calc(var(--sidebar-duration-stagger) * 7); }
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item:nth-child(8) { transition-delay: calc(var(--sidebar-duration-stagger) * 8); }
+.dsd-sidebar:not(.dsd-sidebar--collapsed) .dsd-sidebar__item:nth-child(n+9) { transition-delay: calc(var(--sidebar-duration-stagger) * 9); }
+
+.dsd-sidebar--collapsed .dsd-sidebar__item { transition-delay: 0ms; }
+/* Sidebar Transitions - Links & Header - @version 1.0.0-ENTERPRISE */
+.dsd-sidebar__link {
+  transition: background-color var(--sidebar-duration-icon) ease, color var(--sidebar-duration-icon) ease, padding var(--sidebar-duration-content) var(--sidebar-ease-out-expo);
+}
+
+.dsd-sidebar__link::after {
+  transition: transform var(--sidebar-duration-icon) var(--sidebar-ease-out-back), opacity var(--sidebar-duration-icon) ease;
+}
+
+.dsd-sidebar__header {
+  transition: padding var(--sidebar-duration-content) var(--sidebar-ease-out-expo), justify-content var(--sidebar-duration-content);
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__header { justify-content: center; }
+
+.dsd-sidebar__badge {
+  transition: transform var(--sidebar-duration-icon) var(--sidebar-ease-out-back), opacity var(--sidebar-duration-icon) ease;
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__badge { transform: scale(0.85); }
+
+.dsd-sidebar__nav { transition: scrollbar-color var(--sidebar-duration-content) ease; }
+.dsd-sidebar__nav::-webkit-scrollbar-thumb { transition: background-color var(--sidebar-duration-content) ease; }
+/* Sidebar Transitions - Mobile & Overlay - @version 1.0.0-ENTERPRISE */
+.dsd-sidebar__overlay {
+  transition: opacity var(--sidebar-duration-content) ease, visibility var(--sidebar-duration-content);
+}
+
+.dsd-sidebar__overlay--visible { opacity: 1; visibility: visible; }
+.dsd-sidebar__overlay--hidden { opacity: 0; visibility: hidden; }
+
+@media (max-width: 1024px) {
+  .dsd-sidebar {
+    transition: transform var(--sidebar-duration-width) var(--sidebar-ease-out-expo), opacity var(--sidebar-duration-content) ease, visibility var(--sidebar-duration-content);
+  }
+  
+  .dsd-sidebar--mobile-hidden { transform: translateX(-100%); opacity: 0; visibility: hidden; }
+  .dsd-sidebar--mobile-visible { transform: translateX(0); opacity: 1; visibility: visible; }
+}
+/* Sidebar Transitions - Accessibility & Performance - @version 1.0.0-ENTERPRISE */
+.dsd-sidebar,
+.dsd-sidebar__item,
+.dsd-sidebar__toggle,
+.dsd-sidebar__link::after,
+#shell-sidebar-region,
+#shell-main-region {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.dsd-sidebar.is-animating,
+.dsd-sidebar--transitioning {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  
+  .dsd-sidebar,
+  .dsd-sidebar__item,
+  .dsd-sidebar__toggle,
+  .dsd-sidebar__link,
+  .dsd-sidebar__brand-text,
+  .dsd-sidebar__item-text,
+  #shell-sidebar-region,
+  #shell-main-region {
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-data: reduce) {
+  .dsd-sidebar__item { transition-delay: 0ms !important; }
+}
+
+.dsd-sidebar[data-debug-transitions="true"] * { transition-duration: 2000ms !important; }
+/* Sidebar Visual Enhancements - Tokens */
+/* @version 1.0.0-AAA-MODULAR */
+/* Variáveis específicas para enhancements visuais */
+
+.dsd-sidebar {
+  --sidebar-hover-bg: rgba(123, 110, 246, 0.08);
+  --sidebar-hover-bg-strong: rgba(123, 110, 246, 0.12);
+  --sidebar-active-indicator: var(--sidebar-accent-primary, #7B6EF6);
+  --sidebar-active-bg: rgba(123, 110, 246, 0.15);
+  --sidebar-focus-ring: rgba(123, 110, 246, 0.5);
+  --sidebar-separator-color: rgba(255, 255, 255, 0.06);
+  --sidebar-tooltip-bg: #1F2937;
+  --sidebar-tooltip-text: #F9FAFB;
+  --sidebar-skeleton-bg: rgba(255, 255, 255, 0.05);
+  --sidebar-skeleton-shine: rgba(255, 255, 255, 0.1);
+  --sidebar-ripple-color: rgba(123, 110, 246, 0.3);
+  --sidebar-badge-bg: #EF4444;
+  --sidebar-badge-text: #FFFFFF;
+  --sidebar-search-highlight: rgba(251, 191, 36, 0.3);
+}
+/* Sidebar Visual Enhancements - States */
+/* @version 1.0.0-AAA-MODULAR */
+/* Hover, Active, Focus states e Separadores */
+
+/* Hover States */
+.dsd-sidebar__link {
+  position: relative;
+  transition: 
+    background-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.dsd-sidebar__link:hover {
+  background: var(--sidebar-hover-bg);
+  transform: translateX(2px);
+}
+
+.dsd-sidebar__link:hover .dsd-sidebar__item-icon {
+  transform: scale(1.1);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dsd-sidebar__link:hover .dsd-sidebar__item-text {
+  color: var(--sidebar-text-primary, #F3F4F6);
+}
+
+.dsd-sidebar__link:active {
+  background: var(--sidebar-hover-bg-strong);
+  transform: translateX(2px) scale(0.98);
+}
+
+/* Active State */
+.dsd-sidebar__item--active .dsd-sidebar__link {
+  background: var(--sidebar-active-bg);
+  position: relative;
+}
+
+/* [PNR 2026-07-08] REMOVIDO (comentado) — BLOCO A da barra ::before ROXA do item ativo.
+   Sintoma: "retângulo roxo" grudado no canto superior esquerdo do botão, sobrepondo o ícone.
+   Causa raiz: este bloco (top:50% + transform:translateY(-50%) + height:60%) se fundia no cascade
+   com a duplicata "GRADIENT BORDERS" (BLOCO B, mais abaixo, top:0/bottom:0) sobre o MESMO
+   pseudo-elemento .dsd-sidebar__item--active .dsd-sidebar__link::before → resultado mesclado
+   top:0 + translateY(-50%) puxava a barra para metade fora do topo (stub roxo + glow).
+   Indicador de "ativo" legítimo e mantido = border-left AZUL em 03-layout.css (linha ~117).
+   Esta barra roxa era legada/redundante e fora do tema azul do estado ativo.
+   PARA DESFAZER: descomente o bloco abaixo (e o BLOCO B + @keyframes gradientShift), rode
+   bash build-bundle.sh. Backup completo: /backup/sidebar-purple-active-bar-20260708-041751/
+.dsd-sidebar__item--active .dsd-sidebar__link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--sidebar-active-indicator);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 8px var(--sidebar-active-indicator);
+  animation: activeIndicatorPulse 2s ease-in-out infinite;
+}
+
+@keyframes activeIndicatorPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--sidebar-active-indicator); }
+  50% { opacity: 0.7; box-shadow: 0 0 12px var(--sidebar-active-indicator); }
+}
+*/
+
+.dsd-sidebar__item--active .dsd-sidebar__item-icon svg {
+  filter: drop-shadow(0 0 4px var(--sidebar-active-indicator));
+}
+
+.dsd-sidebar__item--active .dsd-sidebar__item-text {
+  color: var(--sidebar-text-primary, #F3F4F6);
+  font-weight: 500;
+}
+
+/* Separadores */
+.dsd-sidebar__section + .dsd-sidebar__section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--sidebar-separator-color);
+}
+
+[data-section-id="sidebar.grp-admin"] {
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.dsd-sidebar__separator {
+  height: 1px;
+  background: var(--sidebar-separator-color);
+  margin: 8px 12px;
+}
+
+/* Cores por Seção */
+[data-section-id="main"] .dsd-sidebar__item-icon svg {
+  color: var(--sidebar-accent-primary, #7B6EF6);
+  stroke: var(--sidebar-accent-primary, #7B6EF6);
+}
+
+[data-section-id="operacional"] .dsd-sidebar__item-icon svg {
+  color: var(--sidebar-accent-secondary, #A78BFA);
+  stroke: var(--sidebar-accent-secondary, #A78BFA);
+}
+
+[data-section-id="main"] .dsd-sidebar__group-icon svg {
+  color: var(--sidebar-accent-primary, #7B6EF6);
+  stroke: var(--sidebar-accent-primary, #7B6EF6);
+}
+
+[data-section-id="operacional"] .dsd-sidebar__group-icon svg {
+  color: var(--sidebar-accent-secondary, #A78BFA);
+  stroke: var(--sidebar-accent-secondary, #A78BFA);
+}
+
+/* Recently Visited Indicator */
+.dsd-sidebar__item--recent .dsd-sidebar__link::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: var(--sidebar-accent-primary);
+  border-radius: 50%;
+  opacity: 0.6;
+}
+/* Sidebar Visual Enhancements - Animations */
+/* @version 1.0.0-AAA-MODULAR */
+/* Micro-animações, Ripple, Entrada animada */
+
+/* Ripple Effect */
+.dsd-sidebar__link {
+  overflow: hidden;
+}
+
+.dsd-sidebar__ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--sidebar-ripple-color);
+  transform: scale(0);
+  animation: rippleEffect 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes rippleEffect {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Icon Bounce on Hover */
+.dsd-sidebar__item-icon {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dsd-sidebar__link:hover .dsd-sidebar__item-icon {
+  transform: scale(1.15);
+}
+
+/* Chevron Rotation */
+.dsd-sidebar__group-chevron {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__group-chevron {
+  transform: rotate(180deg);
+  color: #2DD4BF;
+}
+
+/* Section Animations */
+.dsd-sidebar__section {
+  transition: margin 0.2s ease, padding 0.2s ease;
+}
+
+.dsd-sidebar__section-items {
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.2s ease;
+}
+
+.dsd-sidebar__section:not(.dsd-sidebar__section--expanded) .dsd-sidebar__section-items {
+  opacity: 0;
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__section-items {
+  opacity: 1;
+}
+
+/* Entrada Animada */
+@keyframes sidebarSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes sidebarItemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dsd-sidebar--animate-in {
+  animation: sidebarSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.dsd-sidebar--animate-in .dsd-sidebar__section {
+  opacity: 0;
+  animation: sidebarItemFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.dsd-sidebar--animate-in .dsd-sidebar__section:nth-child(1) { animation-delay: 0.1s; }
+.dsd-sidebar--animate-in .dsd-sidebar__section:nth-child(2) { animation-delay: 0.15s; }
+.dsd-sidebar--animate-in .dsd-sidebar__section:nth-child(3) { animation-delay: 0.2s; }
+.dsd-sidebar--animate-in .dsd-sidebar__section:nth-child(4) { animation-delay: 0.25s; }
+.dsd-sidebar--animate-in .dsd-sidebar__section:nth-child(5) { animation-delay: 0.3s; }
+
+/* Confetti */
+.dsd-sidebar__confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 99999;
+  overflow: hidden;
+}
+
+.dsd-sidebar__confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  opacity: 0;
+  animation: confettiFall 3s ease-out forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translateY(-100%) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) rotate(720deg);
+  }
+}
+
+.dsd-sidebar__confetti--circle { border-radius: 50%; }
+.dsd-sidebar__confetti--square { border-radius: 2px; }
+.dsd-sidebar__confetti--triangle {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid currentColor;
+  background: transparent !important;
+}
+/* Sidebar Animated Transitions */
+/* @version 1.0.0-ENTERPRISE */
+
+/* ============================================
+   BASE ANIMATION SETUP
+   ============================================ */
+.dsd-sidebar__item {
+  will-change: transform, opacity;
+}
+
+/* ============================================
+   FADE ANIMATIONS
+   ============================================ */
+.dsd-anim--fade-in {
+  animation: sidebarFadeIn var(--anim-duration, 300ms) var(--anim-easing, ease-out) forwards;
+}
+
+.dsd-anim--fade-out {
+  animation: sidebarFadeOut var(--anim-duration, 300ms) var(--anim-easing, ease-out) forwards;
+}
+
+@keyframes sidebarFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sidebarFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ============================================
+   SLIDE ANIMATIONS
+   ============================================ */
+.dsd-anim--slide-in {
+  animation: sidebarSlideIn var(--anim-duration, 300ms) var(--anim-easing, ease-out) forwards;
+}
+
+.dsd-anim--slide-out {
+  animation: sidebarSlideOut var(--anim-duration, 200ms) var(--anim-easing, ease-in) forwards;
+}
+
+@keyframes sidebarSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes sidebarSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+}
+
+/* ============================================
+   SCALE ANIMATIONS
+   ============================================ */
+.dsd-anim--scale-in {
+  animation: sidebarScaleIn var(--anim-duration, 300ms) var(--anim-easing, ease-out) forwards;
+}
+
+.dsd-anim--scale-out {
+  animation: sidebarScaleOut var(--anim-duration, 200ms) var(--anim-easing, ease-in) forwards;
+}
+
+@keyframes sidebarScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sidebarScaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* ============================================
+   BOUNCE ANIMATION
+   ============================================ */
+.dsd-anim--bounce-in {
+  animation: sidebarBounceIn var(--anim-duration, 400ms) cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes sidebarBounceIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.8);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(5px) scale(1.02);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* ============================================
+   SEARCHING STATE
+   ============================================ */
+.dsd-anim--searching {
+  opacity: 0.5;
+  transform: scale(0.98);
+  transition: all 0.15s ease;
+}
+
+/* ============================================
+   SECTION COLLAPSE ANIMATION
+   ============================================ */
+.dsd-sidebar__section-content,
+.dsd-sidebar__group-items {
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease,
+              padding 0.35s ease;
+}
+
+.dsd-sidebar__section--collapsed .dsd-sidebar__section-content,
+.dsd-sidebar__section:not(.dsd-sidebar__section--expanded) .dsd-sidebar__group-items {
+  max-height: 0 !important;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__section-content,
+.dsd-sidebar__section--expanded .dsd-sidebar__group-items {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+/* Section header arrow rotation */
+.dsd-sidebar__group-button .dsd-sidebar__section-arrow,
+.dsd-sidebar__section-toggle .dsd-icon-chevron {
+  transition: transform 0.3s ease;
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__group-button .dsd-sidebar__section-arrow,
+.dsd-sidebar__section--expanded .dsd-sidebar__section-toggle .dsd-icon-chevron {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   GRADIENT BORDERS
+   ============================================ */
+.dsd-sidebar__item--active .dsd-sidebar__link {
+  position: relative;
+}
+
+/* [PNR 2026-07-08] REMOVIDO (comentado) — BLOCO B da barra ::before ROXA do item ativo.
+   Duplicata mais nova do mesmo pseudo-elemento (ver BLOCO A acima). Junto com o BLOCO A produzia
+   o "retângulo roxo" no canto superior do botão. Indicador de ativo legítimo = border-left AZUL
+   (03-layout.css ~117). A keyframe gradientShift só era usada aqui (também comentada).
+   PARA DESFAZER: descomente este bloco + o BLOCO A, rode bash build-bundle.sh.
+   Backup: /backup/sidebar-purple-active-bar-20260708-041751/
+.dsd-sidebar__item--active .dsd-sidebar__link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    var(--accent-primary, #7c3aed) 0%,
+    var(--accent-secondary, #a855f7) 50%,
+    var(--accent-tertiary, #c084fc) 100%
+  );
+  border-radius: 0 2px 2px 0;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 0% 100%;
+  }
+}
+*/
+
+/* Hover gradient effect */
+.dsd-sidebar__item:not(.dsd-sidebar__item--active) .dsd-sidebar__link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  bottom: 50%;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    var(--accent-primary, #7c3aed),
+    transparent
+  );
+  border-radius: 0 2px 2px 0;
+  opacity: 0;
+  transition: top 0.3s ease, bottom 0.3s ease, opacity 0.3s ease;
+}
+
+.dsd-sidebar__item:not(.dsd-sidebar__item--active) .dsd-sidebar__link:hover::before {
+  top: 0;
+  bottom: 0;
+  opacity: 0.5;
+}
+
+/* ============================================
+   NOTIFICATION DOTS
+   ============================================ */
+.dsd-notification-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid var(--surface-base, #1a1a2e);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.dsd-notification-dot--pulse {
+  animation: dotPulseGlow 1.5s ease-in-out infinite;
+}
+
+.dsd-notification-dot--count {
+  width: auto;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes dotAppear {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes dotDisappear {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes dotPulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .dsd-sidebar__item,
+  .dsd-sidebar__section-content,
+  .dsd-sidebar__group-items,
+  .dsd-notification-dot {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* Sidebar Visual Enhancements - Resize */
+/* @version 1.0.0-AAA-MODULAR */
+/* Resize handle, Mini mode, Compact mode */
+
+/* Resize Handle */
+.dsd-sidebar__resize-handle {
+  position: absolute;
+  right: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+
+.dsd-sidebar__resize-handle:hover,
+.dsd-sidebar__resize-handle--active {
+  background: var(--sidebar-accent-primary);
+}
+
+.dsd-sidebar--resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+
+/* Mini Mode (Icons Only) */
+.dsd-sidebar--mini {
+  width: 60px !important;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__item-text,
+.dsd-sidebar--mini .dsd-sidebar__group-title,
+.dsd-sidebar--mini .dsd-sidebar__search,
+.dsd-sidebar--mini .dsd-sidebar__group-chevron {
+  display: none;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__link {
+  justify-content: center;
+  padding: 12px;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__item-icon {
+  margin: 0;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__group-button {
+  justify-content: center;
+  padding: 10px;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__section-items {
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* Compact Mode */
+.dsd-sidebar--compact .dsd-sidebar__link {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.dsd-sidebar--compact .dsd-sidebar__item-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dsd-sidebar--compact .dsd-sidebar__group-button {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.dsd-sidebar--compact .dsd-sidebar__group-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dsd-sidebar--compact .dsd-sidebar__section {
+  margin-bottom: 4px;
+}
+
+.dsd-sidebar--compact .dsd-sidebar__header {
+  padding: 8px 12px;
+}
+
+.dsd-sidebar--compact .dsd-sidebar__search {
+  padding: 6px 10px;
+}
+
+.dsd-sidebar--compact .dsd-sidebar__search-input {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+/* Sidebar Visual Enhancements - Scroll */
+/* @version 1.0.0-AAA-MODULAR */
+/* Scrollbar customizada e Parallax */
+
+/* Scrollbar */
+.dsd-sidebar__nav {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(123, 110, 246, 0.3) transparent;
+}
+
+.dsd-sidebar__nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dsd-sidebar__nav::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+.dsd-sidebar__nav::-webkit-scrollbar-thumb {
+  background: rgba(123, 110, 246, 0.3);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.dsd-sidebar__nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(123, 110, 246, 0.5);
+}
+
+.dsd-sidebar__nav:not(:hover)::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+/* Parallax Scroll */
+.dsd-sidebar--parallax {
+  overflow: hidden;
+}
+
+.dsd-sidebar--parallax::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 300%;
+  background: linear-gradient(
+    180deg,
+    rgba(123, 110, 246, 0.1) 0%,
+    transparent 30%,
+    rgba(123, 110, 246, 0.05) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+  transform: translateY(var(--parallax-offset, 0));
+  transition: transform 0.1s ease-out;
+}
+
+.dsd-sidebar--parallax .dsd-sidebar__header {
+  position: relative;
+  z-index: 2;
+}
+/* Sidebar Visual Enhancements - Submenus */
+/* @version 1.0.0-AAA-MODULAR */
+/* Submenus e Progress indicator */
+
+/* Submenus */
+.dsd-sidebar__item--has-submenu .dsd-sidebar__link::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.2s ease;
+}
+
+.dsd-sidebar__item--has-submenu.dsd-sidebar__item--submenu-open .dsd-sidebar__link::after {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.dsd-sidebar__submenu {
+  overflow: hidden;
+  max-height: 0;
+  padding-left: 20px;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dsd-sidebar__item--submenu-open .dsd-sidebar__submenu {
+  max-height: 500px;
+}
+
+.dsd-sidebar__submenu-item {
+  position: relative;
+  padding: 6px 12px 6px 24px;
+}
+
+.dsd-sidebar__submenu-item::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--sidebar-text-muted);
+  border-radius: 50%;
+}
+
+.dsd-sidebar__submenu-link {
+  display: block;
+  color: var(--sidebar-text-secondary);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.dsd-sidebar__submenu-link:hover {
+  color: var(--sidebar-text-primary);
+}
+
+/* Progress Indicator */
+.dsd-sidebar__item-progress {
+  position: absolute;
+  bottom: 2px;
+  left: 44px;
+  right: 12px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dsd-sidebar__item-progress-bar {
+  height: 100%;
+  background: var(--sidebar-accent-primary, #7B6EF6);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.dsd-sidebar__item-progress--success .dsd-sidebar__item-progress-bar {
+  background: #10B981;
+}
+
+.dsd-sidebar__item-progress--warning .dsd-sidebar__item-progress-bar {
+  background: #F59E0B;
+}
+
+.dsd-sidebar__item-progress--error .dsd-sidebar__item-progress-bar {
+  background: #EF4444;
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__item-progress {
+  display: none;
+}
+/* Sidebar Visual Enhancements - Search */
+/* @version 1.0.0-AAA-MODULAR */
+/* Search highlight, filters, suggestions */
+
+/* Search Highlight */
+.dsd-sidebar__item-text mark,
+.dsd-sidebar__item-text .highlight {
+  background: var(--sidebar-search-highlight);
+  color: inherit;
+  padding: 1px 2px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.fuzzy-match {
+  background: rgba(123, 110, 246, 0.3);
+  color: var(--sidebar-text-primary);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* Search Active State */
+.dsd-sidebar--searching .dsd-sidebar__item:not(.dsd-sidebar__item--match) {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.dsd-sidebar--searching .dsd-sidebar__item--match {
+  opacity: 1;
+}
+
+/* No Results */
+.dsd-sidebar__search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--sidebar-text-muted);
+}
+
+.dsd-sidebar__search-empty-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.dsd-sidebar__search-empty-text {
+  font-size: 13px;
+}
+
+/* Search Filters */
+.dsd-sidebar__search-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--sidebar-separator-color);
+}
+
+.dsd-sidebar__search-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: var(--sidebar-text-muted);
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dsd-sidebar__search-filter:hover {
+  border-color: var(--sidebar-accent-primary);
+  color: var(--sidebar-text-primary);
+}
+
+.dsd-sidebar__search-filter--active {
+  background: var(--sidebar-accent-primary);
+  border-color: var(--sidebar-accent-primary);
+  color: #fff;
+}
+
+.dsd-sidebar__search-filter-icon {
+  font-size: 12px;
+}
+
+.dsd-sidebar__search-filter-label {
+  white-space: nowrap;
+}
+
+.dsd-sidebar--collapsed .dsd-sidebar__search-filters {
+  display: none;
+}
+
+/* Search Suggestions */
+.dsd-sidebar__search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1E1E2E;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-top: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: all 0.15s;
+}
+
+.dsd-sidebar__search-suggestions--visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dsd-sidebar__search-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dsd-sidebar__search-suggestion:hover {
+  background: rgba(123, 110, 246, 0.1);
+}
+
+.dsd-sidebar__search-suggestion-icon {
+  font-size: 14px;
+}
+
+.dsd-sidebar__search-suggestion-text {
+  flex: 1;
+  color: var(--sidebar-text-primary);
+  font-size: 13px;
+}
+
+.dsd-sidebar__search-suggestion-type {
+  font-size: 10px;
+  color: var(--sidebar-text-muted);
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SEARCH ENHANCEMENTS (migrado de sidebar-enhancements.css)       */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__search-clear {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--sidebar-text-muted, #6B7280);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dsd-sidebar__search-input:not(:placeholder-shown) ~ .dsd-sidebar__search-clear {
+  display: flex;
+}
+
+.dsd-sidebar__search-clear:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #EF4444;
+}
+
+.dsd-sidebar__item--search-match .dsd-sidebar__item-text {
+  background: linear-gradient(90deg, transparent 0%, rgba(123, 110, 246, 0.2) 50%, transparent 100%);
+  border-radius: 2px;
+}
+
+.dsd-sidebar__search-no-results {
+  padding: 16px;
+  text-align: center;
+  color: var(--sidebar-text-muted, #6B7280);
+  font-size: 13px;
+}
+/* Sidebar Visual Enhancements - Badges */
+/* @version 1.0.0-AAA-MODULAR */
+/* Sistema de badges e notificações */
+
+/* Badge Base */
+.dsd-sidebar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Badge Types */
+.dsd-sidebar__badge--count {
+  background: var(--sidebar-badge-bg);
+  color: var(--sidebar-badge-text);
+}
+
+.dsd-sidebar__badge--dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--sidebar-badge-bg);
+}
+
+.dsd-sidebar__badge--info {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60A5FA;
+}
+
+.dsd-sidebar__badge--success {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ADE80;
+}
+
+.dsd-sidebar__badge--warning {
+  background: rgba(251, 191, 36, 0.2);
+  color: #FBBF24;
+}
+
+.dsd-sidebar__badge--alert {
+  background: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+}
+
+/* Badge Pulse */
+.dsd-sidebar__badge--pulse {
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Badge Collapsed */
+.dsd-sidebar--collapsed .dsd-sidebar__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 8px;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  font-size: 0;
+}
+
+/* Section Notification Dot */
+.dsd-sidebar__section--has-notifications .dsd-sidebar__group-button::after {
+  content: '';
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--sidebar-badge-bg, #EF4444);
+  border-radius: 50%;
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* BADGE ANIMATIONS (migrado de sidebar-enhancements.css)          */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__badge--pulse {
+  position: relative;
+}
+
+.dsd-sidebar__badge--pulse::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: inherit;
+  opacity: 0;
+  animation: badgeRing 2s ease-out infinite;
+}
+
+@keyframes badgeRing {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.dsd-sidebar__badge--alert.dsd-sidebar__badge--pulse {
+  animation: badgePulseAlert 1.5s ease-in-out infinite;
+}
+
+@keyframes badgePulseAlert {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.4);
+  }
+}
+/* Sidebar Dynamic Badges */
+/* @version 1.0.0-ENTERPRISE */
+
+/* ============================================
+   BASE BADGE STYLES
+   ============================================ */
+.dsd-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  background: var(--accent-primary, #7c3aed);
+  border-radius: 9px;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+/* ============================================
+   BADGE TYPES
+   ============================================ */
+.dsd-badge--count {
+  background: var(--accent-primary, #7c3aed);
+}
+
+.dsd-badge--dot {
+  min-width: 8px;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  background: #ef4444;
+  border-radius: 50%;
+}
+
+.dsd-badge--new {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dsd-badge--hot {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dsd-badge--live {
+  background: #ef4444;
+  min-width: 14px;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  font-size: 0.5rem;
+  border-radius: 50%;
+}
+
+.dsd-badge--status {
+  background: var(--surface-elevated, #2a2a4a);
+  color: var(--text-secondary, #a0a0a0);
+  border: 1px solid var(--border-subtle, #3a3a5a);
+  font-size: 0.625rem;
+}
+
+.dsd-badge--percent {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  min-width: 32px;
+}
+
+.dsd-badge--time {
+  background: var(--surface-elevated, #2a2a4a);
+  color: var(--text-primary, #e0e0e0);
+  border: 1px solid var(--border-subtle, #3a3a5a);
+  font-family: monospace;
+  min-width: 40px;
+}
+
+/* ============================================
+   BADGE VARIANTS
+   ============================================ */
+.dsd-badge--success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.dsd-badge--warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.dsd-badge--danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.dsd-badge--info {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.dsd-badge--neutral {
+  background: var(--surface-elevated, #2a2a4a);
+  color: var(--text-secondary, #a0a0a0);
+  border: 1px solid var(--border-subtle, #3a3a5a);
+}
+
+/* ============================================
+   BADGE ANIMATIONS
+   ============================================ */
+.dsd-badge--animate {
+  animation: badgePop 0.3s ease;
+}
+
+.dsd-badge--pulse {
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+.dsd-badge--live.dsd-badge--pulse {
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes badgePop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+}
+
+/* ============================================
+   BADGE INTERACTIONS
+   ============================================ */
+.dsd-badge[style*="cursor: pointer"]:hover {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+}
+
+.dsd-badge[style*="cursor: pointer"]:active {
+  transform: scale(0.95);
+}
+
+/* ============================================
+   BADGE IN MINI MODE
+   ============================================ */
+.dsd-sidebar--mini .dsd-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  margin-left: 0;
+  transform: scale(0.85);
+}
+
+.dsd-sidebar--mini-hover .dsd-badge {
+  position: static;
+  margin-left: 0.5rem;
+  transform: scale(1);
+}
+
+/* ============================================
+   BADGE IN COMPACT MODE
+   ============================================ */
+.dsd-sidebar--compact .dsd-badge {
+  min-width: 16px;
+  height: 16px;
+  font-size: 0.625rem;
+  padding: 0 4px;
+}
+
+.dsd-sidebar--compact .dsd-badge--dot {
+  min-width: 6px;
+  width: 6px;
+  height: 6px;
+}
+/* Sidebar Visual Enhancements - Favorites & Pinned */
+/* @version 1.0.0-AAA-MODULAR */
+/* Extraído de _ve-features.css */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FAVORITOS                                                       */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__favorite-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--sidebar-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dsd-sidebar__item:hover .dsd-sidebar__favorite-btn,
+.dsd-sidebar__favorite-btn:focus {
+  opacity: 1;
+}
+
+.dsd-sidebar__favorite-btn:hover {
+  color: var(--sidebar-accent-primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.dsd-sidebar__favorite-btn--active {
+  opacity: 1;
+  color: #FBBF24;
+}
+
+.dsd-sidebar__favorite-btn--active svg {
+  fill: #FBBF24;
+}
+
+.dsd-sidebar__item--favorite .dsd-sidebar__link::before {
+  content: '⭐';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* PINNED ITEMS                                                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__pinned-section {
+  padding: 8px;
+  margin-bottom: 8px;
+  background: rgba(123, 110, 246, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(123, 110, 246, 0.1);
+}
+
+.dsd-sidebar__pinned-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--sidebar-accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dsd-sidebar__pinned-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dsd-sidebar__item--pinned .dsd-sidebar__link::after {
+  content: '📌';
+  position: absolute;
+  right: 8px;
+  font-size: 10px;
+}
+/* Sidebar Visual Enhancements - Command Palette */
+/* @version 1.0.0-AAA-MODULAR */
+/* Command palette e Quick switcher */
+
+/* Command Palette */
+.dsd-command-palette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99999;
+  display: none;
+}
+
+.dsd-command-palette--visible {
+  display: block;
+}
+
+.dsd-command-palette__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.dsd-command-palette__container {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 560px;
+  background: #1E1E2E;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.dsd-command-palette__search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dsd-command-palette__icon {
+  font-size: 18px;
+}
+
+.dsd-command-palette__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+}
+
+.dsd-command-palette__input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.dsd-command-palette__shortcut {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.dsd-command-palette__results {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.dsd-command-palette__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dsd-command-palette__item:hover,
+.dsd-command-palette__item--selected {
+  background: rgba(123, 110, 246, 0.2);
+}
+
+.dsd-command-palette__item-icon {
+  font-size: 16px;
+}
+
+.dsd-command-palette__item-label {
+  flex: 1;
+  color: #fff;
+}
+
+.dsd-command-palette__item-shortcut {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.dsd-command-palette__item-type {
+  font-size: 11px;
+  color: var(--sidebar-accent-primary);
+}
+
+.dsd-command-palette__empty {
+  padding: 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Quick Switcher */
+.dsd-quick-switcher {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 300px;
+  background: #1E1E2E;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  z-index: 99998;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+
+.dsd-quick-switcher--visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dsd-quick-switcher__title {
+  padding: 12px 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dsd-quick-switcher__list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.dsd-quick-switcher__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  transition: background 0.15s;
+}
+
+.dsd-quick-switcher__item--selected {
+  background: rgba(123, 110, 246, 0.2);
+}
+
+.dsd-quick-switcher__item-icon {
+  font-size: 14px;
+}
+
+.dsd-quick-switcher__item-label {
+  flex: 1;
+  color: #fff;
+  font-size: 14px;
+}
+
+.dsd-quick-switcher__item-current {
+  font-size: 10px;
+  color: var(--sidebar-accent-primary);
+  background: rgba(123, 110, 246, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.dsd-quick-switcher__hint {
+  padding: 8px 16px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+/* Sidebar Visual Enhancements - Context Menu */
+/* @version 1.0.0-AAA-MODULAR */
+/* Menu de contexto */
+
+.dsd-sidebar__context-menu {
+  position: fixed;
+  min-width: 180px;
+  background: var(--sidebar-bg, #1a1a2e);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 6px 0;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95) translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.dsd-sidebar__context-menu--visible {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1) translateY(0);
+}
+
+.dsd-sidebar__context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--sidebar-text-primary, #fff);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dsd-sidebar__context-menu-item:hover {
+  background: var(--sidebar-hover-bg, rgba(123, 110, 246, 0.1));
+}
+
+.dsd-sidebar__context-menu-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.dsd-sidebar__context-menu-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 6px 0;
+}
+/* Sidebar Accessibility Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+/* ============================================
+   SCREEN READER ONLY
+   ============================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only-focusable:focus,
+.sr-only-focusable:active {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ============================================
+   FOCUS STYLES
+   ============================================ */
+.dsd-sidebar *:focus-visible {
+  outline: 2px solid var(--accent-primary, #7c3aed);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.dsd-sidebar__link:focus-visible {
+  background: var(--surface-hover, rgba(124, 58, 237, 0.1));
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+.dsd-sidebar--high-contrast {
+  --surface-base: #000000;
+  --surface-elevated: #1a1a1a;
+  --surface-hover: #333333;
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-muted: #c0c0c0;
+  --accent-primary: #ffff00;
+  --accent-secondary: #00ffff;
+  --border-subtle: #ffffff;
+  --border-strong: #ffffff;
+}
+
+.dsd-sidebar--high-contrast .dsd-sidebar__link {
+  border: 1px solid transparent;
+}
+
+.dsd-sidebar--high-contrast .dsd-sidebar__link:hover,
+.dsd-sidebar--high-contrast .dsd-sidebar__link:focus {
+  border-color: var(--accent-primary);
+  background: #333333;
+}
+
+.dsd-sidebar--high-contrast .dsd-sidebar__item--active .dsd-sidebar__link {
+  border-color: var(--accent-primary);
+  background: #1a1a1a;
+  box-shadow: inset 4px 0 0 var(--accent-primary);
+}
+
+.dsd-sidebar--high-contrast .dsd-sidebar__badge {
+  background: var(--accent-primary);
+  color: #000000;
+  font-weight: 700;
+}
+
+/* ============================================
+   LARGE TEXT MODE
+   ============================================ */
+.dsd-sidebar--large-text {
+  --font-size-xs: 0.875rem;
+  --font-size-sm: 1rem;
+  --font-size-base: 1.125rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+}
+
+.dsd-sidebar--large-text .dsd-sidebar__item-text {
+  font-size: var(--font-size-base);
+}
+
+.dsd-sidebar--large-text .dsd-sidebar__group-title {
+  font-size: var(--font-size-lg);
+}
+
+.dsd-sidebar--large-text .dsd-sidebar__badge {
+  font-size: var(--font-size-sm);
+  min-width: 22px;
+  height: 22px;
+}
+
+.dsd-sidebar--large-text .dsd-sidebar__item {
+  min-height: 48px;
+}
+
+.dsd-sidebar--large-text .dsd-sidebar__link {
+  padding: 0.75rem 1rem;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .dsd-sidebar,
+  .dsd-sidebar * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   KEYBOARD SHORTCUTS MODAL
+   ============================================ */
+.dsd-shortcuts-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dsd-shortcuts-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.dsd-shortcuts-modal__content {
+  position: relative;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  background: var(--surface-base, #1a1a2e);
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle, #3a3a5a);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.dsd-shortcuts-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle, #3a3a5a);
+  background: var(--surface-elevated, #2a2a4a);
+}
+
+.dsd-shortcuts-modal__header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #e0e0e0);
+}
+
+.dsd-shortcuts-modal__close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 1.5rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.dsd-shortcuts-modal__close:hover {
+  background: var(--surface-hover, rgba(255,255,255,0.1));
+  color: var(--text-primary, #e0e0e0);
+}
+
+.dsd-shortcuts-modal__body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.dsd-shortcuts-modal__category h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-primary, #7c3aed);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dsd-shortcuts-modal__category dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dsd-shortcuts-modal__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dsd-shortcuts-modal__item dt {
+  flex-shrink: 0;
+}
+
+.dsd-shortcuts-modal__item dd {
+  margin: 0;
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 0.875rem;
+}
+
+.dsd-shortcuts-modal__item kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  background: var(--surface-elevated, #2a2a4a);
+  border: 1px solid var(--border-subtle, #3a3a5a);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-primary, #e0e0e0);
+  box-shadow: 0 2px 0 var(--border-subtle, #3a3a5a);
+}
+
+/* ============================================
+   SKIP LINK
+   ============================================ */
+.dsd-sidebar__skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-primary, #7c3aed);
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  z-index: 10001;
+  border-radius: 0 0 8px 0;
+  transition: top 0.2s ease;
+}
+
+.dsd-sidebar__skip-link:focus {
+  top: 0;
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+.dsd-sidebar[aria-busy="true"] {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.dsd-sidebar[aria-busy="true"]::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  border: 3px solid var(--border-subtle, #3a3a5a);
+  border-top-color: var(--accent-primary, #7c3aed);
+  border-radius: 50%;
+  animation: sidebarLoading 0.8s linear infinite;
+}
+
+@keyframes sidebarLoading {
+  to { transform: rotate(360deg); }
+}
+/* Sidebar Visual Enhancements - Skeleton Loading */
+/* @version 1.0.0-AAA-MODULAR */
+/* Estados de loading e skeleton */
+
+/* Skeleton Container */
+.dsd-sidebar__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.dsd-sidebar__skeleton-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--sidebar-skeleton-bg);
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+
+.dsd-sidebar__skeleton-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--sidebar-skeleton-shine);
+}
+
+.dsd-sidebar__skeleton-text {
+  flex: 1;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--sidebar-skeleton-shine);
+}
+
+.dsd-sidebar__skeleton-text--short {
+  width: 60%;
+}
+
+@keyframes skeletonShimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+/* Skeleton Group Header */
+.dsd-sidebar__skeleton-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-top: 16px;
+}
+
+.dsd-sidebar__skeleton-group .dsd-sidebar__skeleton-text {
+  width: 40%;
+}
+
+/* Global Loading State */
+.dsd-sidebar--loading .dsd-sidebar__nav-content {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.dsd-sidebar--loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 2px solid var(--sidebar-accent-primary);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: sidebarSpinner 0.8s linear infinite;
+}
+
+@keyframes sidebarSpinner {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* LOADING STATE (migrado de sidebar-enhancements.css)             */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dsd-sidebar__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  color: var(--sidebar-text-muted);
+}
+
+.dsd-sidebar__loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(123, 110, 246, 0.2);
+  border-top-color: var(--sidebar-accent-primary, #7B6EF6);
+  border-radius: 50%;
+  animation: sidebarSpinner 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+/* Sidebar Visual Enhancements - Mobile */
+/* @version 1.0.0-AAA-MODULAR */
+/* Overlay e Mobile sidebar */
+
+/* Mobile Overlay */
+.dsd-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 998;
+  pointer-events: none;
+  transition: background 0.3s ease;
+  -webkit-backdrop-filter: blur(0);
+  backdrop-filter: blur(0);
+}
+
+.dsd-sidebar-overlay--visible {
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+body.sidebar-mobile-open {
+  overflow: hidden;
+}
+
+/* Mobile Sidebar */
+.dsd-sidebar--mobile {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 999;
+  width: 280px;
+  max-width: 85vw;
+}
+
+.dsd-sidebar--mobile-open {
+  transform: translateX(0);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Swipe Indicator */
+.dsd-sidebar--mobile::before {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 40px;
+  background: var(--sidebar-accent-primary, #7B6EF6);
+  border-radius: 0 4px 4px 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dsd-sidebar--mobile:not(.dsd-sidebar--mobile-open)::before {
+  opacity: 0.5;
+}
+
+/* Offline Indicator */
+.dsd-sidebar__offline-indicator {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.3s;
+}
+
+.dsd-sidebar__offline-indicator--visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dsd-sidebar__offline-icon {
+  font-size: 14px;
+}
+
+.dsd-sidebar__offline-text {
+  font-size: 12px;
+  color: #EF4444;
+}

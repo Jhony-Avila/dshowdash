@@ -1,0 +1,37 @@
+/* Panel UI - Header
+ * @module _header.css
+ * @version 1.0.0
+ * @description Header do painel: título, versão, ações
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--ui-space-md) var(--ui-space-lg);
+  background: var(--ui-bg-surface);
+  border-bottom: 1px solid var(--ui-border);
+  flex-shrink: 0;
+}
+
+.dsd-ui-header__title {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-sm);
+  font-weight: 600;
+  font-size: var(--ui-text-sm);
+  color: var(--ui-text-primary);
+}
+
+.dsd-ui-header__version {
+  font-size: var(--ui-text-xs);
+  font-weight: 400;
+  color: var(--ui-text-muted);
+  font-family: var(--ui-font-mono);
+}
+
+.dsd-ui-header__actions {
+  display: flex;
+  gap: var(--ui-space-xs);
+}

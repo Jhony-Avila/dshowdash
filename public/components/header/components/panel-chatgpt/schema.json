@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "panel-chatgpt",
+  "version": "8.1.0-ENTERPRISE",
+  "title": "Chatgpt Component",
+  "description": "Header trigger component for Chatgpt integration panel",
+  "type": "header-trigger",
+  "category": "integration",
+  "enterprise": true,
+  "capabilities": {
+    "reorderable": true,
+    "hideable": true,
+    "critical": false,
+    "refreshable": false,
+    "configurable": true
+  },
+  "config": {
+    "icon": "/assets/icons/system/header/chatgpt.svg",
+    "label": "Chatgpt",
+    "panelId": "chatgpt-panel",
+    "event": "panel:chatgpt:open"
+  },
+  "state": {
+    "type": "object",
+    "properties": {
+      "isActive": { "type": "boolean", "default": false },
+      "lastClick": { "type": ["number", "null"], "default": null }
+    }
+  },
+  "events": {
+    "emits": ["component:mounted", "component:unmounted", "component:error", "ui:action"],
+    "listens": []
+  },
+  "dependencies": [],
+  "telemetry": {
+    "trackMounts": true,
+    "trackClicks": true,
+    "trackErrors": true
+  }
+}

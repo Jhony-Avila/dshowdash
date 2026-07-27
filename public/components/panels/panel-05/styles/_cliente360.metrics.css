@@ -1,0 +1,73 @@
+/* Panel-05 - Cliente 360 Metrics */
+/* @version 7.0.0-MODULAR */
+/* Metrics Advanced */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* METRICS ADVANCED */
+/* ═══════════════════════════════════════════════════════════════ */
+.p05-metrics-advanced {
+    background: var(--p05-bg-surface);
+    border: 1px solid var(--p05-border-default);
+    border-radius: var(--p05-radius-md);
+    padding: var(--p05-space-lg);
+    margin: 0 var(--p05-space-section) var(--p05-space-lg);
+}
+
+.p05-metrics-header h4 {
+    margin: 0 0 var(--p05-space-lg) 0;
+    font: var(--p05-font-title-sm);
+    color: var(--p05-text-primary);
+}
+
+.p05-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--p05-space-md);
+}
+
+.p05-metric-card {
+    display: flex;
+    gap: var(--p05-space-md);
+    padding: var(--p05-space-lg);
+    background: var(--p05-bg-app);
+    border: 1px solid var(--p05-border-subtle);
+    border-radius: var(--p05-radius-sm);
+}
+
+.p05-metric-card.p05-metric-highlight {
+    border-color: var(--p05-info-border);
+    background: var(--p05-info-bg);
+}
+
+.p05-metric-card.p05-metric-positive {
+    border-color: var(--p05-success-border);
+}
+
+.p05-metric-card.p05-metric-negative {
+    border-color: var(--p05-danger-border);
+}
+
+.p05-metric-icon {
+    font-size: 24px;
+}
+
+.p05-metric-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.p05-metric-value {
+    font: var(--p05-font-title-md);
+    color: var(--p05-text-primary);
+}
+
+.p05-metric-label {
+    font: var(--p05-font-label);
+    color: var(--p05-text-secondary);
+}
+
+.p05-metric-sublabel {
+    font: var(--p05-font-meta);
+    color: var(--p05-text-dim);
+}

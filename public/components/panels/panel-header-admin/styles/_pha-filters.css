@@ -1,0 +1,49 @@
+/* Panel Header Admin - Filters */
+/* @version 1.0.0-AAA-MODULAR */
+/* Search e filtros */
+
+.pha-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.pha-filters__search {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+
+.pha-filters__search svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--pha-text-light);
+}
+
+.pha-filters__search input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid var(--pha-border);
+  border-radius: var(--pha-radius-md);
+  font-size: 14px;
+}
+
+.pha-filters__search input:focus {
+  outline: none;
+  border-color: var(--pha-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.pha-filters__select {
+  padding: 10px 12px;
+  border: 1px solid var(--pha-border);
+  border-radius: var(--pha-radius-md);
+  font-size: 14px;
+  background: var(--pha-bg-primary);
+  min-width: 150px;
+}

@@ -1,0 +1,19 @@
+.raiz { display: flex; flex-direction: column; gap: var(--dt-space-4); }
+.avisoTopo { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-left: 3px solid var(--dt-warning); border-radius: 0 var(--dt-radius-sm) var(--dt-radius-sm) 0; background: var(--dt-bg-surface); color: var(--dt-text-secondary); font-size: 12.5px; line-height: 1.5; }
+.avisoTopo strong { color: var(--dt-text-primary); }
+.filtros { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border: 1px solid var(--dt-border); border-radius: 999px; background: var(--dt-bg-surface); color: var(--dt-text-secondary); font: inherit; font-size: 12.5px; cursor: pointer; text-transform: capitalize; }
+.chip:hover { border-color: var(--dt-primary); }
+.chipAtivo { background: var(--dt-primary); border-color: var(--dt-primary); color: #fff; }
+.chipNum { font-variant-numeric: tabular-nums; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: color-mix(in srgb, currentColor 18%, transparent); font-size: 11px; }
+.mono { font-family: var(--dt-font-mono); font-size: 12px; }
+.discreto { color: var(--dt-text-muted); font-size: 12px; }
+.tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; background: var(--dt-bg-canvas); border: 1px solid var(--dt-border); font-size: 11px; color: var(--dt-text-secondary); }
+
+/* Elevação visual */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--dt-space-3); }
+
+/* Elevação visual — gráfico */
+.grafBloco { display: flex; flex-direction: column; gap: 6px; max-width: 460px; padding: var(--dt-space-3); border: 1px solid var(--dt-border); border-radius: var(--dt-radius-lg); background: var(--dt-bg-surface); box-shadow: var(--dt-shadow-sm); }
+.grafTitulo { font-size: 12px; font-weight: 650; }

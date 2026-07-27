@@ -1,0 +1,89 @@
+/* Panel User Preferences - Items v4.0.0
+   @version 4.0.0-ENTERPRISE
+   Drag & drop items, layouts, views, inputs */
+
+/* Drag & Drop Items */
+.pup-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  cursor: grab;
+}
+
+.pup-item:last-child { margin-bottom: 0; }
+.pup-item:hover { border-color: rgba(255,255,255,0.05); background: rgba(0,0,0,0.25); transform: translateX(2px); }
+.pup-item.dragging { opacity: 0.5; transform: scale(0.98); cursor: grabbing; border-color: var(--pup-accent); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.pup-item.drag-over { border-color: var(--pup-success); background: rgba(52,211,153,0.05); }
+
+.pup-item-grip { color: var(--pup-text-mut); cursor: grab; opacity: 0.4; transition: opacity 0.15s ease; }
+.pup-item:hover .pup-item-grip { opacity: 0.8; }
+
+.pup-item-icon { width: 22px; height: 22px; border-radius: 5px; background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; color: var(--pup-text-mut); }
+
+.pup-item-info { flex: 1; min-width: 0; }
+.pup-item-name { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pup-item-meta { display: flex; gap: 4px; margin-top: 2px; }
+
+.pup-item-badge { font-size: 7px; font-weight: 600; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; }
+.pup-item-badge.default { background: linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(139,92,246,0.06) 100%); color: #a78bfa; }
+.pup-item-badge.active { background: rgba(16,185,129,0.08); color: var(--pup-success); }
+.pup-item-badge.recent { background: rgba(245,158,11,0.08); color: var(--pup-warning); }
+
+.pup-item-actions { display: flex; gap: 3px; opacity: 0; transition: opacity 0.15s ease; }
+.pup-item:hover .pup-item-actions { opacity: 1; }
+
+.pup-item-btn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--pup-text-mut);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.pup-item-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.75); }
+.pup-item-btn:focus-visible { outline: none; box-shadow: var(--pup-focus-ring); }
+.pup-item-btn.danger:hover { background: rgba(239,68,68,0.1); color: var(--pup-error); }
+
+/* Input Row */
+.pup-input-row { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.03); }
+
+.pup-input {
+  flex: 1;
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.85);
+  font-size: 10px;
+  transition: all 0.2s ease;
+}
+
+.pup-input:focus { outline: none; border-color: rgba(139,92,246,0.4); background: rgba(0,0,0,0.3); box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
+.pup-input::placeholder { color: rgba(255,255,255,0.2); }
+
+/* Backup */
+.pup-backup-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+
+.pup-backup-ring { width: 32px; height: 32px; position: relative; }
+.pup-backup-ring svg { transform: rotate(-90deg); }
+.pup-backup-ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 3; }
+.pup-backup-ring-progress { fill: none; stroke: var(--pup-success); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 82; stroke-dashoffset: 20; transition: stroke-dashoffset 0.5s ease; }
+.pup-backup-ring-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 600; color: var(--pup-success); }
+
+.pup-backup-info { flex: 1; }
+.pup-backup-title { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.8); margin: 0 0 2px; }
+.pup-backup-meta { font-size: 8px; color: var(--pup-text-mut); }
+.pup-backup-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pup-backup-version { font-size: 8px; color: rgba(255,255,255,0.2); margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.03); display: flex; align-items: center; gap: 4px; }

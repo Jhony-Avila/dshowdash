@@ -1,0 +1,54 @@
+/* Panel Header Admin - Stats */
+/* @version 1.0.0-AAA-MODULAR */
+/* Cards de estatísticas */
+
+.pha-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.pha-stats__item {
+  flex: 1;
+  padding: 16px;
+  background: var(--pha-bg-secondary);
+  border-radius: var(--pha-radius-lg);
+  text-align: center;
+}
+
+.pha-stats__value {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--pha-text-primary);
+}
+
+.pha-stats__label {
+  font-size: 13px;
+  color: var(--pha-text-muted);
+}
+
+/* Variantes */
+.pha-stats__item--success { 
+  background: var(--pha-success-bg); 
+}
+
+.pha-stats__item--success .pha-stats__value { 
+  color: var(--pha-success-text); 
+}
+
+.pha-stats__item--warning { 
+  background: var(--pha-warning-bg); 
+}
+
+.pha-stats__item--warning .pha-stats__value { 
+  color: var(--pha-warning-text); 
+}
+
+.pha-stats__item--info { 
+  background: var(--pha-info-bg); 
+}
+
+.pha-stats__item--info .pha-stats__value { 
+  color: var(--pha-info-text); 
+}

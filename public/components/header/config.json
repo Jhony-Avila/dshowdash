@@ -1,0 +1,116 @@
+{
+  "id": "header",
+  "version": "6.0.0-ENTERPRISE",
+  "name": "Header System",
+  "description": "Enterprise Header Component - Autocontido, resiliente, observável",
+  "author": "DshowDash Team",
+  "features": {
+    "routerIntegration": true,
+    "globalStateIntegration": true,
+    "eventBusIntegration": true,
+    "appShellIntegration": true,
+    "telemetryEnabled": true,
+    "circuitBreakerEnabled": true,
+    "pollingEnabled": true,
+    "accessibilityEnabled": true
+  },
+  "components": {
+    "env-chip": {
+      "enabled": true
+    },
+    "status-tray": {
+      "enabled": true
+    },
+    "refresh-action": {
+      "enabled": true
+    },
+    "fullscreen": {
+      "enabled": true
+    },
+    "notifications": {
+      "enabled": true
+    },
+    "currency-panel": {
+      "enabled": true
+    },
+    "weather-panel": {
+      "enabled": true
+    },
+    "health-panel": {
+      "enabled": true
+    },
+    "alerts-panel": {
+      "enabled": true
+    }
+  },
+  "api": {
+    "healthEndpoint": "/api/health/status.php",
+    "healthWithCredentials": false,
+    "alertsEndpoint": "/api/alerts/header-alerts.php",
+    "timeout": 6000,
+    "retries": 1
+  },
+  "polling": {
+    "healthInterval": 1800000,
+    "alertsInterval": 2000000,
+    "networkQualityInterval": 2000000,
+    "syncDebounceInterval": 2000000,
+    "backoffSequence": [
+      5000,
+      10000,
+      20000,
+      40000,
+      60000
+    ]
+  },
+  "network": {
+    "rttSamples": 3,
+    "rttThresholds": {
+      "online": 120,
+      "degraded": 350
+    },
+    "qualityThresholds": {
+      "excellent": {
+        "downlink": 10,
+        "jitter": 10
+      },
+      "good": {
+        "downlink": 5,
+        "jitter": 30
+      },
+      "regular": {
+        "downlink": 1,
+        "jitter": 60
+      }
+    },
+    "debounce": 200
+  },
+  "fallback": {
+    "debounce": 300
+  },
+  "refresh": {
+    "throttle": 5000,
+    "fallbackTimeout": 1200
+  },
+  "ui": {
+    "tooltipDelayShow": 250,
+    "tooltipDelayHide": 150,
+    "scrollThreshold": 50
+  },
+  "accessibility": {
+    "announceDebounce": 800,
+    "announceExpire": 300000,
+    "rovingTabindexEnabled": true,
+    "keyboardShortcutsEnabled": true
+  },
+  "telemetry": {
+    "enabled": true,
+    "sampleRate": 0.1
+  },
+  "defaults": {
+    "locale": "pt-BR",
+    "environment": "production",
+    "debug": false,
+    "containerSelector": "#header-container"
+  }
+}

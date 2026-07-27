@@ -1,0 +1,10 @@
+{
+  "id": "bell",
+  "area": "footer",
+  "label": "Notificações",
+  "icon": "bell",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

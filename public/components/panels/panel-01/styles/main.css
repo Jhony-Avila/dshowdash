@@ -1,0 +1,27 @@
+/* Panel-01 - Master File AAA */
+/* @version 2.0.0-ENTERPRISE */
+/* Modularizado em 24 partials */
+
+@import url('./_p01-tokens.css');
+@import url('./_p01-layout.css');
+@import url('./_p01-header.css');
+@import url('./_p01-health.css');
+@import url('./_p01-autorefresh.css');
+@import url('./_p01-buttons.css');
+@import url('./_p01-kpis.css');
+@import url('./_p01-filters.css');
+@import url('./_p01-table.css');
+@import url('./_p01-selection.css');
+@import url('./_p01-density.css');
+@import url('./_p01-badge.css');
+@import url('./_p01-pagination.css');
+@import url('./_p01-drawer.css');
+@import url('./_p01-toast.css');
+@import url('./_p01-context-menu.css');
+@import url('./_p01-states.css');
+@import url('./_p01-skeleton.css');
+@import url('./_p01-toolbar.css');
+@import url('./_p01-animations.css');
+@import url('./_p01-accessibility.css');
+@import url('./_p01-print.css');
+@import url('./_p01-responsive.css');

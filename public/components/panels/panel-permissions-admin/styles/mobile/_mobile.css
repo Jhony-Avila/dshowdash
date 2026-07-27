@@ -1,0 +1,99 @@
+/* UARPS Admin - Mobile Features
+ * @version 2.0.0-ENTERPRISE-UARPS
+ */
+
+.uarps-bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--uarps-bg-secondary);
+  border-top-left-radius: var(--uarps-radius-xl);
+  border-top-right-radius: var(--uarps-radius-xl);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+  z-index: var(--uarps-z-modal);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  max-height: 80vh;
+}
+
+.uarps-bottom-sheet--open { transform: translateY(0); }
+
+.uarps-bottom-sheet__handle {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.uarps-bottom-sheet__handle-bar {
+  width: 40px;
+  height: 4px;
+  background: var(--uarps-border);
+  border-radius: 2px;
+}
+
+.uarps-pull-refresh {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  background: var(--uarps-bg-secondary);
+  border: 1px solid var(--uarps-border);
+  border-radius: var(--uarps-radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uarps-pull-refresh--visible { top: 1rem; }
+
+.uarps-swipe-container { position: relative; overflow: hidden; }
+
+.uarps-swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+}
+
+.uarps-swipe-container--swiped .uarps-swipe-actions { transform: translateX(0); }
+
+.uarps-swipe-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  color: white;
+}
+
+.uarps-swipe-action--grant { background: var(--uarps-accent-green); }
+.uarps-swipe-action--revoke { background: var(--uarps-accent-red); }
+
+@media (orientation: portrait) and (max-width: 768px) {
+  .uarps-focus {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 50vh;
+    border-radius: var(--uarps-radius-xl) var(--uarps-radius-xl) 0 0;
+    transform: translateY(100%);
+    z-index: 50;
+  }
+  .uarps-focus--visible { transform: translateY(0); }
+  .uarps-matrix__grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .uarps-matrix__group-items { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .uarps-cell { padding: 0.75rem 0.5rem; min-height: 70px; }
+  .uarps-cell__label { font-size: 0.7rem; }
+  .uarps-cell__id { display: none; }
+  .uarps-users__carousel { flex-direction: row; overflow-x: auto; }
+  .uarps-user { min-width: 140px; flex-shrink: 0; }
+}

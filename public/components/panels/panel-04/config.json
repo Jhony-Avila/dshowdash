@@ -1,0 +1,50 @@
+{
+  "id": "panel-04",
+  "name": "Tabela de Incidentes",
+  "version": "8.1.0-ENTERPRISE",
+  "description": "Painel enterprise para monitoramento de incidentes e alertas do sistema",
+  "author": "DshowDash Team",
+  "category": "monitoring",
+  "tags": ["incidentes", "alertas", "monitoramento", "enterprise"],
+  "enabled": true,
+  "requiresAuth": true,
+  "permissions": ["view_incidents", "export_data"],
+  "settings": {
+    "refreshInterval": 60,
+    "defaultPeriod": "24h",
+    "periods": ["1h", "6h", "12h", "24h"],
+    "pageSize": 30,
+    "maxConsecutiveErrors": 3,
+    "circuitBreakerThreshold": 5,
+    "circuitBreakerTimeout": 30000,
+    "requestTimeout": 15000
+  },
+  "features": {
+    "countdown": true,
+    "autoRefreshToggle": true,
+    "soundAlerts": true,
+    "export": ["csv", "json"],
+    "viewModes": ["table", "grouped"],
+    "pagination": true,
+    "sparklines": true,
+    "timeline": true,
+    "topJobs": true,
+    "footer": true
+  },
+  "api": {
+    "endpoint": "/api/incidents",
+    "method": "GET",
+    "params": {
+      "period": "24h",
+      "limit": 100
+    }
+  },
+  "dependencies": {
+    "core": ["logger-global", "auth-adapter-enterprise"],
+    "shared": ["icons"]
+  },
+  "styles": {
+    "cssPath": "/components/panels/panel-04/styles/index.css",
+    "prefix": "p04"
+  }
+}

@@ -1,0 +1,125 @@
+/**
+ * Carousel - BASE STYLES
+ * @version 2.2.0
+ * @description Container principal, slides, scrollbar
+ */
+
+/* ==================== CONTAINER PRINCIPAL ==================== */
+#carousel-container {
+  position: relative;
+  width: 100%;
+
+  /* ALTURA FIXA - ESTRUTURAL */
+  height: 600px;
+  min-height: 600px;
+  max-height: 600px;
+
+  /* Box model */
+  box-sizing: border-box;
+  padding: 24px;
+  margin: 20px 0;
+
+  /* Layout */
+  display: block;
+  contain: layout size;
+  overflow: auto;
+
+  /* Visual */
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+  /* Transição */
+  transition: all 0.3s ease;
+}
+
+/* Sobrescreve .panel-featured especificamente */
+#carousel-container.panel-featured {
+  height: 600px;
+  min-height: 600px;
+  max-height: 600px;
+}
+
+/* ==================== SLIDES ==================== */
+.carousel-item {
+  /* Posicionamento */
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  right: 24px;
+  bottom: 70px;
+
+  /* Dimensões - NUNCA excede pai */
+  width: calc(100% - 48px);
+  height: calc(100% - 94px);
+  max-height: 100%;
+  box-sizing: border-box;
+
+  /* Scroll interno */
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* Visibilidade */
+  display: none;
+  opacity: 0;
+
+  /* Transição */
+  transition: opacity 0.5s ease-in-out;
+}
+
+.carousel-item.active {
+  display: block;
+  opacity: 1;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Scrollbar visível (consistente com theme.css) */
+.carousel-item::-webkit-scrollbar {
+  width: 6px;
+}
+
+.carousel-item::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.carousel-item::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 3px;
+}
+
+.carousel-item::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+/* Firefox */
+.carousel-item {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2a rgba(255, 255, 255, 0.05);
+}
+
+/* ==================== CONTAINERS DE GRÁFICOS ==================== */
+.carousel-chart-container {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  max-height: 380px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.carousel-chart-container-large {
+  height: 420px;
+  max-height: 420px;
+}
+
+.carousel-chart-container-small {
+  height: 240px;
+  max-height: 240px;
+}

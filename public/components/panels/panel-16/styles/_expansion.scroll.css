@@ -1,0 +1,70 @@
+/* Panel-16 Expansion - Infinite Scroll & Scroll Mode */
+/* @version 6.2.1-ENTERPRISE */
+
+/* Infinite Scroll */
+.p16-infinite-scroll {
+  max-height: calc(100vh - 350px);
+}
+
+.p16-infinite-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--p16-space-sm);
+  padding: var(--p16-space-lg);
+  color: var(--p16-text-muted);
+  font-size: var(--p16-font-sm);
+}
+
+.p16-infinite-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--p16-border-default);
+  border-top-color: var(--p16-accent);
+  border-radius: 50%;
+  animation: p16-spin 1s linear infinite;
+}
+
+.p16-infinite-end {
+  text-align: center;
+  padding: var(--p16-space-md);
+  color: var(--p16-text-dim);
+  font-size: var(--p16-font-xs);
+  border-top: 1px dashed var(--p16-border-subtle);
+}
+
+/* Scroll Mode Toggle */
+.p16-scroll-mode-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--p16-bg-elevated);
+  border: 1px solid var(--p16-border-subtle);
+  border-radius: var(--p16-radius-md);
+}
+
+.p16-scroll-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--p16-radius-xs);
+  color: var(--p16-text-muted);
+  font-size: var(--p16-font-sm);
+  cursor: pointer;
+  transition: all var(--p16-transition-fast);
+}
+
+.p16-scroll-mode-btn:hover {
+  color: var(--p16-text-primary);
+  background: var(--p16-bg-surface);
+}
+
+.p16-scroll-mode-btn-active {
+  background: var(--p16-accent);
+  color: white;
+}

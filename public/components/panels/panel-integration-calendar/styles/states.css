@@ -1,0 +1,4 @@
+/* Integração  - State Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-integration-calendar[data-loading="true"] { opacity: 0.7; pointer-events: none; }
+.panel-integration-calendar[data-error="true"] { border-color: var(--color-error, #dc2626); }

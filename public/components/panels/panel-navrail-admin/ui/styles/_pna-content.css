@@ -1,0 +1,14 @@
+/* Panel NavRail Admin - Content */
+/* @version 1.0.0-AAA-MODULAR */
+
+.pna-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.pna-cards-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}

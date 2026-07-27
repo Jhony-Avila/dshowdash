@@ -1,0 +1,6 @@
+/* Panel-01 - Column Resize CSS */
+/* @version 2.0.0-ENTERPRISE */
+
+.p01-resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 4px; cursor: col-resize; background: transparent; transition: background 0.15s; }
+.p01-resize-handle:hover { background: var(--accent-color); }
+.p01-resizing { background: var(--accent-color-10) !important; user-select: none; }

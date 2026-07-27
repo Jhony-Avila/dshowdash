@@ -1,0 +1,28 @@
+{
+  "id": "card-02",
+  "name": "Taxa de Sucesso Global",
+  "description": "Exibe a taxa de sucesso global de todos os jobs ativos",
+  "version": "4.0.0-ERROR-HANDLER",
+  "author": "DSHOW",
+  "category": "metrics",
+  "icon": "check-circle",
+  "apiEndpoint": "/api/modules/cards/card-02/api.php",
+  "refreshInterval": 60000,
+  "dependencies": [],
+  "features": {
+    "errorHandling": true,
+    "retryLogic": true,
+    "toastNotifications": true,
+    "caching": true
+  },
+  "settings": {
+    "showLabel": true,
+    "showStatus": true,
+    "enableAutoRefresh": true
+  },
+  "display": {
+    "minWidth": 200,
+    "minHeight": 180,
+    "defaultPosition": 2
+  }
+}

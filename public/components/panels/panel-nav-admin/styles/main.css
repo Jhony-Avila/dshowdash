@@ -1,0 +1,47 @@
+/* ═══════════════════════════════════════════════════════════════
+   PANEL NAV ADMIN - PREMIUM ENTERPRISE AAA STYLES
+   @version 4.0.0-AAA-MODULAR
+   Master file - 12 partials
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Design Tokens */
+@import url('./_pna-tokens.css');
+
+/* Header System (#1-#8) */
+@import url('./_pna-header.css');
+
+/* KPI System (#10-#15) */
+@import url('./_pna-kpis.css');
+
+/* List System (#17-#21) */
+@import url('./_pna-list.css');
+
+/* Drag & Drop (#22-#24) */
+@import url('./_pna-drag-drop.css');
+
+/* Inline Edit (#25-#26) */
+@import url('./_pna-inline-edit.css');
+
+/* Table Features (#27-#28) */
+@import url('./_pna-table.css');
+
+/* Card System (#29-#34) */
+@import url('./_pna-cards.css');
+
+/* Search System (#35-#36, #40) */
+@import url('./_pna-search.css');
+
+/* Filter System (#37-#39) */
+@import url('./_pna-filters.css');
+
+/* Feedback UI (#41-#46) */
+@import url('./_pna-feedback.css');
+
+/* Data Visualizations (#47-#50) */
+@import url('./_pna-visualizations.css');
+
+/* Custom Checkbox (#51) */
+@import url('./_pna-custom-checkbox.css');
+
+/* Custom Select (#52) */
+@import url('./_pna-custom-select.css');

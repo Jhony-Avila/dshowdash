@@ -1,0 +1,57 @@
+/* Panel-05 Charts - Container
+ * @version 7.0.0-MODULAR
+ * Section + Container + Header
+ */
+
+.p05-charts-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--p05-space-lg);
+    padding: var(--p05-space-section);
+    background: var(--p05-bg-app);
+}
+
+.p05-chart-container {
+    background: var(--p05-bg-surface);
+    border: 1px solid var(--p05-border-default);
+    border-radius: var(--p05-radius-md);
+    padding: var(--p05-space-lg);
+    transition: all var(--p05-motion-fast);
+}
+
+.p05-chart-container:hover {
+    border-color: var(--p05-border-hover);
+    box-shadow: var(--p05-shadow-md);
+}
+
+.p05-chart-container.p05-chart-wide {
+    grid-column: span 2;
+}
+
+.p05-chart-container.p05-chart-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: var(--p05-text-muted);
+    font: var(--p05-font-body);
+}
+
+/* Header */
+.p05-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--p05-space-lg);
+}
+
+.p05-chart-header h4 {
+    margin: 0;
+    font: var(--p05-font-title-sm);
+    color: var(--p05-text-primary);
+}
+
+.p05-chart-subtitle {
+    font: var(--p05-font-meta);
+    color: var(--p05-text-muted);
+}

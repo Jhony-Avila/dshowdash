@@ -1,0 +1,42 @@
+/* Panel-16 Header - Responsive */
+/* @version 6.2.1-ENTERPRISE */
+
+@media (max-width: 1200px) {
+  .p16-header {
+    padding: var(--p16-space-sm) var(--p16-space-md);
+  }
+  
+  .p16-header-controls {
+    gap: var(--p16-space-xs);
+  }
+  
+  .p16-group-label {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .p16-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .p16-header-controls {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: var(--p16-space-xs);
+  }
+  
+  .p16-views-dropdown,
+  .p16-columns-dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    border-radius: var(--p16-radius-lg) var(--p16-radius-lg) 0 0;
+    max-height: 60vh;
+  }
+}

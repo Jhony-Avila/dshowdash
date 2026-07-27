@@ -1,0 +1,16 @@
+/* Virtual & Infinite Scroll
+ * @version 7.4.0
+ */
+
+.p05-table-container.p05-virtual-scroll,
+.p05-table-container.p05-infinite-scroll {
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.p05-infinite-loader {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+}

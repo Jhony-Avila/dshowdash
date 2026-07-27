@@ -1,0 +1,79 @@
+/* panel-03 Table Premium
+ * @version 1.0.0-ENTERPRISE
+ */
+
+.p03-table-wrapper {
+  width: 100%;
+  max-height: calc(100vh - 280px);
+  overflow-x: auto;
+  overflow-y: auto;
+  background: var(--p03-bg-base);
+}
+
+.p03-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  table-layout: fixed;
+}
+
+.p03-table thead { position: sticky; top: 0; z-index: 10; }
+
+.p03-th, .p03-table th {
+  position: relative;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p03-text-secondary);
+  background: linear-gradient(to bottom, var(--p03-layer-from, var(--p03-bg-surface)), var(--p03-layer-to, var(--p03-bg-elevated)));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--p03-layer-border, var(--p03-border-muted));
+  white-space: nowrap;
+  user-select: none;
+}
+
+.p03-th.center, .p03-table th.center { text-align: center; }
+.p03-th.right, .p03-table th.right { text-align: right; }
+.p03-th--sortable, .p03-table th.sortable { cursor: pointer; transition: color 0.15s ease; }
+.p03-th--sortable:hover, .p03-table th.sortable:hover { color: var(--p03-accent); }
+
+.p03-tr, .p03-table tbody tr {
+  background: var(--p03-row-base, transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.025);
+  transition: background 0.15s ease;
+}
+
+.p03-tr:nth-child(even), .p03-table tbody tr:nth-child(even) { background: var(--p03-row-zebra, rgba(255, 255, 255, 0.02)); }
+.p03-tr:hover, .p03-table tbody tr:hover { background: var(--p03-row-hover, rgba(255, 255, 255, 0.05)); }
+.p03-tr:active, .p03-tr.selected, .p03-table tbody tr:active, .p03-table tbody tr.selected { background: var(--p03-row-active, rgba(124, 58, 237, 0.1)); }
+
+.p03-td, .p03-table td {
+  padding: 0.625rem 1rem;
+  color: var(--p03-text-primary);
+  border-bottom: 1px solid var(--p03-border-subtle);
+  vertical-align: middle;
+}
+
+.p03-td.center, .p03-table td.center { text-align: center; }
+.p03-td.right, .p03-table td.right { text-align: right; }
+
+.p03-td--status { width: 40px; text-align: center; }
+.p03-td--rank { width: 40px; text-align: center; font-weight: 600; color: var(--p03-text-muted); }
+.p03-td--name { font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p03-td--time, .p03-td--duration, .p03-td--executions, .p03-td--rate, .p03-td--avg-time { font-family: var(--p03-font-mono); font-size: 12px; }
+.p03-td--actions { width: 40px; text-align: center; }
+
+.p03-tr.row-warning, .p03-table tbody tr.row-warning { border-left: 3px solid var(--p03-warning); }
+.p03-tr.row-error, .p03-table tbody tr.row-error { border-left: 3px solid var(--p03-error); }
+.p03-tr.row-inactive, .p03-table tbody tr.row-inactive { opacity: 0.55; }
+
+.p03-tr[data-job-id], .p03-table tbody tr[data-job-id] { cursor: pointer; }
+.p03-tr[data-job-id]:focus, .p03-table tbody tr[data-job-id]:focus { outline: 2px solid var(--p03-accent); outline-offset: -2px; }
+
+.p03-table[data-density="compact"] td, .p03-table[data-density="compact"] th { padding: 0.375rem 0.5rem; font-size: 0.75rem; }
+.p03-table[data-density="normal"] td, .p03-table[data-density="normal"] th { padding: 0.5rem 0.75rem; font-size: 0.8125rem; }
+.p03-table[data-density="comfortable"] td, .p03-table[data-density="comfortable"] th { padding: 0.75rem 1rem; font-size: 0.875rem; }

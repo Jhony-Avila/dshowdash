@@ -1,0 +1,563 @@
+/* Ticker Component Enterprise CSS — Bundled */
+/* @version 7.1.0-BUNDLED — All imports resolved inline */
+/* No @import: all sub-modules concatenated for reliable loading */
+
+/* Ticker Component - Tokens & Container */
+/* @version 1.0.0-MODULAR */
+/* CSS variables, container principal, temas */
+
+/* ========================================
+   TOKENS E VARIÁVEIS
+   ======================================== */
+.news-ticker-component {
+  /* Cores por categoria */
+  --ticker-color-breaking: #ef4444;
+  --ticker-color-economia: #22c55e;
+  --ticker-color-politica: #3b82f6;
+  --ticker-color-tecnologia: #8b5cf6;
+  --ticker-color-geral: #9ca3af;
+  
+  /* Variantes de cor (ritmo visual) */
+  --ticker-variant-1: #8b5cf6;
+  --ticker-variant-2: #3b82f6;
+  --ticker-variant-3: #22c55e;
+  
+  /* Market colors */
+  --ticker-positive: #22c55e;
+  --ticker-negative: #ef4444;
+  --ticker-neutral: #9ca3af;
+  
+  /* Texto */
+  --ticker-text-primary: rgba(255, 255, 255, 0.92);
+  --ticker-text-secondary: rgba(255, 255, 255, 0.7);
+  --ticker-text-muted: rgba(255, 255, 255, 0.45);
+  --ticker-text-hover: #60a5fa;
+  
+  /* Espaçamento */
+  --ticker-gap-items: 8px;
+  --ticker-gap-internal: 8px;
+  
+  /* Transições */
+  --ticker-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   CONTAINER PRINCIPAL
+   ======================================== */
+.news-ticker-component {
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(
+    135deg, 
+    rgba(255, 255, 255, 0.06) 0%, 
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(0, 0, 0, 0.12) 100%
+  ), rgba(15, 15, 22, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* ========================================
+   TEMAS
+   ======================================== */
+.news-ticker-component[data-theme="darkB"] {
+  background: linear-gradient(
+    135deg, 
+    rgba(139, 92, 246, 0.12) 0%, 
+    rgba(59, 130, 246, 0.08) 40%,
+    rgba(10, 10, 18, 0.9) 100%
+  ), rgba(12, 12, 20, 0.8);
+  border-top: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.news-ticker-component[data-high-contrast="true"] {
+  background: #020617;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+/* ========================================
+   ALTURA E FONTE
+   ======================================== */
+.news-ticker-component.ticker--height-compact { height: 34px; }
+.news-ticker-component.ticker--height-default { height: 40px; }
+.news-ticker-component.ticker--height-tall { height: 48px; }
+
+.news-ticker-component.ticker--font-small .ticker-title { font-size: 11px; }
+.news-ticker-component.ticker--font-medium .ticker-title { font-size: 12px; }
+.news-ticker-component.ticker--font-large .ticker-title { font-size: 13px; }
+/* Ticker Component - Layout & Animation */
+/* @version 1.0.0-MODULAR */
+/* Wrapper, container, track, animação */
+
+/* ========================================
+   WRAPPER E CONTAINER
+   ======================================== */
+.ticker-wrapper {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  padding: 0;
+}
+
+.ticker-wrapper--full .ticker-content-container {
+  width: 100%;
+}
+
+.ticker-content-container {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Gradientes de fade */
+.ticker-content-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 80px;
+  background: linear-gradient(to right, rgba(15, 15, 22, 0.98), transparent);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.ticker-content-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 80px;
+  background: linear-gradient(to left, rgba(15, 15, 22, 0.98), transparent);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ========================================
+   TRACK E ANIMAÇÃO
+   ======================================== */
+.ticker-track {
+  display: flex;
+  align-items: center;
+  gap: var(--ticker-gap-items);
+  white-space: nowrap;
+  animation: ticker-scroll 35s linear infinite;
+  height: 100%;
+  padding: 0 40px;
+  will-change: transform;
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.news-ticker-component.paused .ticker-track { animation-play-state: paused; }
+.news-ticker-component.reduced-motion .ticker-track { animation: none; }
+.news-ticker-component[data-status="loading"] .ticker-track,
+.news-ticker-component[data-status="offline"] .ticker-track {
+  animation: none;
+  justify-content: center;
+}
+/* Ticker Component - Items & Variants */
+/* @version 1.0.0-MODULAR */
+/* Item base, variantes visuais, breaking news */
+
+/* ========================================
+   ITEM BASE
+   ======================================== */
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ticker-gap-internal);
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all var(--ticker-transition);
+}
+
+.ticker-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ========================================
+   VARIANTES (RITMO VISUAL)
+   ======================================== */
+.ticker-item--variant-1 {
+  border-left: 2px solid rgba(139, 92, 246, 0.5);
+}
+
+.ticker-item--variant-2 {
+  border-left: 2px solid rgba(59, 130, 246, 0.5);
+}
+
+.ticker-item--variant-3 {
+  border-left: 2px solid rgba(34, 197, 94, 0.5);
+}
+
+.ticker-item--variant-1:hover { border-left-color: rgba(139, 92, 246, 0.8); }
+.ticker-item--variant-2:hover { border-left-color: rgba(59, 130, 246, 0.8); }
+.ticker-item--variant-3:hover { border-left-color: rgba(34, 197, 94, 0.8); }
+
+/* ========================================
+   BREAKING NEWS
+   ======================================== */
+.ticker-item--breaking {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.ticker-item--breaking::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 7px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  opacity: 0;
+  animation: ticker-pulse 2.5s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes ticker-pulse {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.02); }
+}
+
+.news-ticker-component.reduced-motion .ticker-item--breaking::after {
+  animation: none;
+  opacity: 0.4;
+}
+/* Ticker Component - Content Elements */
+/* @version 1.0.0-MODULAR */
+/* Source icon, horário, título, tag */
+
+/* ========================================
+   SOURCE ICON (LOGO DO PORTAL)
+   ======================================== */
+.ticker-source-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color var(--ticker-transition);
+}
+
+.ticker-source-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ticker-item:hover .ticker-source-icon {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ========================================
+   HORÁRIO (PROTAGONISTA)
+   ======================================== */
+.ticker-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ticker-text-secondary);
+  flex-shrink: 0;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================
+   TÍTULO
+   ======================================== */
+.ticker-title {
+  color: var(--ticker-text-primary);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all var(--ticker-transition);
+  flex-shrink: 0;
+  max-width: 600px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid transparent;
+}
+
+.ticker-title:hover,
+.ticker-item:hover .ticker-title {
+  color: var(--ticker-text-hover);
+  border-bottom-color: rgba(96, 165, 250, 0.4);
+}
+
+/* ========================================
+   TAG (CATEGORIA - SECUNDÁRIA)
+   ======================================== */
+.ticker-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ticker-text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--ticker-transition);
+}
+
+/* Tags por categoria */
+.ticker-item--categoria-breaking .ticker-tag {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.ticker-item--categoria-economia .ticker-tag {
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.ticker-item--categoria-politica .ticker-tag {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.ticker-item--categoria-tecnologia .ticker-tag {
+  background: rgba(139, 92, 246, 0.12);
+  color: #c4b5fd;
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.ticker-item:hover .ticker-tag {
+  transform: scale(1.02);
+}
+/* Ticker Component - Market Elements */
+/* @version 1.0.0-MODULAR */
+/* FX, stocks, change, separadores */
+
+/* ========================================
+   FX ITEMS (MOEDAS)
+   ======================================== */
+.ticker-item--fx {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.15);
+  gap: 6px;
+}
+
+.ticker-item--fx .ticker-market-icon {
+  color: #60a5fa;
+}
+
+.ticker-item--fx .ticker-symbol {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.5px;
+}
+
+.ticker-item--fx .ticker-price {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ticker-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================
+   STOCK ITEMS (AÇÕES)
+   ======================================== */
+.ticker-item--stock {
+  background: rgba(139, 92, 246, 0.06);
+  border-color: rgba(139, 92, 246, 0.15);
+  gap: 6px;
+}
+
+.ticker-item--stock .ticker-symbol {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.3px;
+}
+
+.ticker-item--stock .ticker-price {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ticker-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================
+   MARKET ICON
+   ======================================== */
+.ticker-market-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.ticker-market-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ========================================
+   CHANGE (VARIAÇÃO %)
+   ======================================== */
+.ticker-change {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticker-change--positive {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+}
+
+.ticker-change--negative {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.ticker-change--neutral {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+}
+
+/* Ícone de mercado por estado */
+.ticker-item--positive .ticker-market-icon { color: var(--ticker-positive); }
+.ticker-item--negative .ticker-market-icon { color: var(--ticker-negative); }
+.ticker-item--neutral .ticker-market-icon { color: var(--ticker-neutral); }
+
+/* ========================================
+   SEPARADORES
+   ======================================== */
+.ticker-separator {
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+.ticker-separator--bullet {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 6px;
+}
+
+.ticker-separator--bar {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 1px;
+}
+
+.ticker-separator--chevron {
+  color: rgba(139, 92, 246, 0.6);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ticker-separator--minimal {
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+}
+/* Ticker Component - States & Responsive */
+/* @version 1.0.0-MODULAR */
+/* Loading, offline, responsivo */
+
+/* ========================================
+   LOADING E OFFLINE
+   ======================================== */
+.ticker-loading,
+.ticker-offline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ticker-text-secondary);
+  font-size: 12px;
+}
+
+.ticker-loading-spinner {
+  animation: ticker-spin 1s linear infinite;
+}
+
+@keyframes ticker-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.news-ticker-component.reduced-motion .ticker-loading-spinner {
+  animation: none;
+}
+
+/* ========================================
+   RESPONSIVO
+   ======================================== */
+@media (max-width: 1024px) {
+  .ticker-title { max-width: 260px; }
+  .ticker-content-container::before,
+  .ticker-content-container::after { width: 50px; }
+}
+
+@media (max-width: 768px) {
+  .news-ticker-component { height: 36px; }
+  .news-ticker-component.ticker--height-compact { height: 32px; }
+  .news-ticker-component.ticker--height-tall { height: 42px; }
+  
+  .ticker-item { padding: 4px 8px; gap: 6px; }
+  .ticker-tag { display: none; }
+  .ticker-title { font-size: 11px; max-width: 180px; }
+  .ticker-time { font-size: 10px; padding: 1px 4px; }
+  .ticker-source-icon { width: 16px; height: 16px; }
+  .ticker-source-icon svg { width: 14px; height: 14px; }
+  
+  .ticker-item--fx .ticker-symbol,
+  .ticker-item--stock .ticker-symbol { font-size: 9px; }
+  .ticker-item--fx .ticker-price,
+  .ticker-item--stock .ticker-price { font-size: 10px; }
+  .ticker-change { font-size: 9px; padding: 1px 4px; }
+  
+  .ticker-content-container::before,
+  .ticker-content-container::after { width: 30px; }
+}
+
+@media (max-width: 480px) {
+  .ticker-source-icon { display: none; }
+  .ticker-title { max-width: 150px; }
+  .ticker-item--fx .ticker-price,
+  .ticker-item--stock .ticker-price { display: none; }
+}
+/* Ticker Features CSS - Enterprise
+ * @version 2.0.0-ENTERPRISE
+ * @changelog 2.0.0 - Modularizado em 4 arquivos especializados
+ */
+
+@import './styles/skeleton.css';
+@import './styles/modal.css';
+@import './styles/components.css';
+@import './styles/accessibility.css';

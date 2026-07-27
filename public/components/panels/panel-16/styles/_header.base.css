@@ -1,0 +1,49 @@
+/* Panel-16 Header - Base Layout */
+/* @version 6.2.1-ENTERPRISE */
+
+.p16-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--p16-space-md);
+  padding: var(--p16-space-md) var(--p16-space-lg);
+  background: linear-gradient(135deg, var(--p16-surface) 0%, rgba(var(--p16-primary-rgb), 0.03) 100%);
+  border-bottom: 1px solid var(--p16-border);
+  border-radius: var(--p16-radius-lg) var(--p16-radius-lg) 0 0;
+  flex-wrap: wrap;
+}
+
+.p16-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--p16-space-sm);
+  flex-shrink: 0;
+}
+
+.p16-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--p16-primary) 0%, var(--p16-primary-dark, #1e40af) 100%);
+  border-radius: var(--p16-radius-md);
+  color: white;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(var(--p16-primary-rgb), 0.25);
+}
+
+.p16-header-title {
+  font-size: var(--p16-text-lg);
+  font-weight: 600;
+  color: var(--p16-text-primary);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.p16-header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--p16-space-sm);
+  flex-wrap: wrap;
+}

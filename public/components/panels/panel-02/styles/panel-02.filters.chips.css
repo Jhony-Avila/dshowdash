@@ -1,0 +1,85 @@
+/* Panel-02 Filters - Chips
+ * @version 6.0.0-MODULAR
+ * Base + Filter Chips
+ */
+
+.p02-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 1rem;
+  background: #08080c;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Filter Chips */
+.p02-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.p02-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  background: #000;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  font-size: 0.6875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.p02-filter-chip:hover {
+  border-color: rgba(124,58,237,0.4);
+}
+
+.p02-filter-chip.active {
+  border-color: rgba(124,58,237,0.6);
+}
+
+.p02-filter-chip.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 25%;
+  right: 25%;
+  height: 2px;
+  background: #7C3AED;
+  border-radius: 1px;
+}
+
+/* Ícones coloridos por tipo de filtro */
+.p02-filter-chip svg.p02-chip-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.p02-filter-chip[data-filter-chip="type"] svg.p02-chip-icon { color: #3B82F6; }
+.p02-filter-chip[data-filter-chip="status"] svg.p02-chip-icon { color: #22C55E; }
+.p02-filter-chip[data-filter-chip="rate"] svg.p02-chip-icon { color: #F59E0B; }
+
+.p02-filter-chip select {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  padding-right: 0.125rem;
+  appearance: none;
+}
+
+.p02-filter-chip select:focus {
+  outline: none;
+}
+
+.p02-filter-chip .p02-chip-arrow {
+  width: 10px;
+  height: 10px;
+  color: rgba(255,255,255,0.4);
+  flex-shrink: 0;
+}

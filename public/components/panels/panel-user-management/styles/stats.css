@@ -1,0 +1,27 @@
+/* Panel User Management - Stats */
+/* @version 2.0.0-ENTERPRISE-AAA */
+/* Metadados de contexto - peso visual mínimo */
+
+.panel-user-management .users-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.panel-user-management .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  color: var(--pum-text-disabled);
+}
+
+.panel-user-management .stat-item strong {
+  color: var(--pum-text-muted);
+  font-weight: 600;
+}
+
+.panel-user-management .stat-item .status-dot {
+  width: 6px;
+  height: 6px;
+}

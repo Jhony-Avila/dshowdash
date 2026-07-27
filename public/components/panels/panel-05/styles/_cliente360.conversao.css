@@ -1,0 +1,61 @@
+/* Panel-05 - Cliente 360 Conversao */
+/* @version 7.0.0-MODULAR */
+/* Tipo Conversao */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* TIPO CONVERSAO */
+/* ═══════════════════════════════════════════════════════════════ */
+.p05-tipo-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--p05-space-md);
+}
+
+.p05-tipo-item {
+    padding: var(--p05-space-md);
+    background: var(--p05-bg-app);
+    border-radius: var(--p05-radius-sm);
+}
+
+.p05-tipo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--p05-space-sm);
+}
+
+.p05-tipo-nome {
+    font: var(--p05-font-body-sm);
+    color: var(--p05-text-primary);
+}
+
+.p05-tipo-taxa {
+    font: var(--p05-font-badge);
+    padding: 2px 8px;
+    border-radius: var(--p05-radius-pill);
+}
+
+.p05-tipo-taxa.p05-high { background: var(--p05-success-bg); color: var(--p05-success); }
+.p05-tipo-taxa.p05-med { background: var(--p05-warning-bg); color: var(--p05-warning); }
+.p05-tipo-taxa.p05-low { background: var(--p05-danger-bg); color: var(--p05-danger); }
+
+.p05-tipo-bar-container {
+    display: flex;
+    height: 8px;
+    border-radius: var(--p05-radius-xs);
+    overflow: hidden;
+}
+
+.p05-tipo-bar { height: 100%; }
+.p05-bar-ganhos { background: var(--p05-success); }
+.p05-bar-perdidos { background: var(--p05-danger); opacity: 0.5; }
+
+.p05-tipo-numbers {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--p05-space-xs);
+    font: var(--p05-font-meta);
+}
+
+.p05-ganhos { color: var(--p05-success); }
+.p05-perdidos { color: var(--p05-text-dim); }

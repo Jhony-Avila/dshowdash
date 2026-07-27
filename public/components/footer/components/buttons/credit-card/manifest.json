@@ -1,0 +1,10 @@
+{
+  "id": "credit-card",
+  "area": "footer",
+  "label": "Financeiro",
+  "icon": "credit-card",
+  "kind": "decorative",
+  "version": "1.0.0-AAA",
+  "emits": ["ui:action"],
+  "meta": {}
+}

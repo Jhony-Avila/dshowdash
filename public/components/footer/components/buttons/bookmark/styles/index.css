@@ -1,0 +1,7 @@
+/* Footer Favoritos Button - Styles P3 AAA */
+/* @version 1.0.0-AAA */
+
+.footer-btn--bookmark:focus-visible {
+  outline: 2px solid var(--color-primary, #3b82f6);
+  outline-offset: 2px;
+}

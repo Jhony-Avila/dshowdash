@@ -1,0 +1,72 @@
+/* Panel-01 - Layout Enterprise Premium */
+/* @version 3.0.0-ENTERPRISE */
+/* Paleta charcoal (igual Panel-02) */
+
+.p01-wrapper,
+.p01-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--p01-bg-base, #0a0a0c);
+  color: var(--p01-text-primary, rgba(255, 255, 255, 0.92));
+  font-family: var(--p01-font-sans, 'Inter', -apple-system, sans-serif);
+}
+
+.p01-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--p01-bg-base, #0a0a0c);
+}
+
+.p01-content-inner {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.p01-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(to top, var(--p01-layer-from, rgba(15, 15, 18, 0.95)), var(--p01-layer-to, rgba(15, 15, 18, 0.75)));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--p01-layer-border, rgba(255, 255, 255, 0.06));
+  font-size: 0.75rem;
+  color: var(--p01-text-muted, rgba(255, 255, 255, 0.45));
+}
+
+.p01-footer-left,
+.p01-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Card container */
+.p01-card {
+  background: var(--p01-bg-elevated, #121214);
+  border: 1px solid var(--p01-border-muted, rgba(255, 255, 255, 0.08));
+  border-radius: var(--p01-radius-lg, 8px);
+  overflow: hidden;
+}
+
+.p01-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--p01-border-subtle, rgba(255, 255, 255, 0.04));
+}
+
+.p01-card-body {
+  padding: 1rem;
+}
+
+.p01-card-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--p01-border-subtle, rgba(255, 255, 255, 0.04));
+}

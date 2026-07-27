@@ -1,0 +1,75 @@
+/* UARPS Admin - Buttons
+ * @version 1.2.0-ENTERPRISE-UARPS
+ */
+
+.uarps-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid var(--uarps-border);
+  border-radius: var(--uarps-radius-md);
+  background: var(--uarps-bg-tertiary);
+  color: var(--uarps-text-primary);
+  cursor: pointer;
+  transition: all var(--uarps-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.uarps-btn svg { width: 16px; height: 16px; }
+
+.uarps-btn:hover {
+  background: var(--uarps-bg-hover);
+  border-color: var(--uarps-accent-cyan);
+  box-shadow: var(--uarps-glow-cyan);
+}
+
+.uarps-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.uarps-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.uarps-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--uarps-border);
+}
+
+.uarps-btn--sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.uarps-btn--active {
+  background: var(--uarps-accent-cyan);
+  color: var(--uarps-bg-primary);
+}
+
+.uarps-btn--success {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+
+.uarps-btn--success:hover {
+  background: rgba(16, 185, 129, 0.3);
+  box-shadow: var(--uarps-glow-green);
+}
+
+.uarps-btn--danger {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.uarps-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.3);
+  box-shadow: var(--uarps-glow-red);
+}

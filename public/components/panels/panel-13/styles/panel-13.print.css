@@ -1,0 +1,81 @@
+/* Panel-13 Print Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .p13-wrapper,
+  .p13-wrapper * {
+    visibility: visible;
+  }
+
+  .p13-wrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .p13-header,
+  .p13-toolbar,
+  .p13-filters,
+  .p13-footer,
+  .p13-pagination,
+  .p13-bulk-bar,
+  .p13-inline-actions,
+  .p13-expand-btn,
+  .p13-row-checkbox,
+  .p13-select-all,
+  .p13-auto-refresh,
+  .p13-refresh-btn,
+  .p13-export-btn,
+  [data-action],
+  .p13-col-resizer {
+    display: none !important;
+  }
+
+  .p13-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+
+  .p13-table th,
+  .p13-table td {
+    border: 1px solid #333;
+    padding: 6px 8px;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .p13-table thead th {
+    background: #eee !important;
+    font-weight: bold;
+  }
+
+  .p13-table-wrapper {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .p13-status-indicator,
+  .p13-job-type,
+  .p13-success-rate {
+    background: transparent !important;
+    border: 1px solid #666;
+    color: #000 !important;
+  }
+
+  .p13-status-dot {
+    display: none;
+  }
+
+  @page {
+    margin: 1cm;
+    size: landscape;
+  }
+}

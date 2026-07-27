@@ -1,0 +1,10 @@
+/* Panel Health Dashboard - Master
+ * @version 2.0.0-MODULAR
+ * Modularizado em 5 partials
+ */
+
+@import '_tokens.css';
+@import '_summary.css';
+@import '_categories.css';
+@import '_states.css';
+@import '_modal.css';

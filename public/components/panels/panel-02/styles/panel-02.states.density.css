@@ -1,0 +1,26 @@
+/* Panel-02 States - Density
+ * @version 5.0.0-MODULAR
+ * Density Variations + Transitions
+ */
+
+/* Compact Density */
+.p02-table[data-density="compact"] .p02-skeleton-cell-wrap { padding: 0.375rem 0.5rem; }
+.p02-table[data-density="compact"] .p02-skeleton-bar--name { height: 12px; }
+.p02-table[data-density="compact"] .p02-skeleton-badge { height: 18px; width: 60px; }
+.p02-table[data-density="compact"] .p02-skeleton-status { height: 18px; width: 70px; }
+
+/* Comfortable Density */
+.p02-table[data-density="comfortable"] .p02-skeleton-cell-wrap { padding: 0.75rem 1rem; }
+.p02-table[data-density="comfortable"] .p02-skeleton-bar--name { height: 16px; }
+.p02-table[data-density="comfortable"] .p02-skeleton-badge { height: 26px; width: 80px; }
+.p02-table[data-density="comfortable"] .p02-skeleton-status { height: 26px; width: 90px; }
+
+/* Transição Skeleton → Dados */
+.p02-tbody tr { transition: opacity 0.2s ease; }
+.p02-table[aria-busy="true"] .p02-tbody { pointer-events: none; }
+.p02-table[aria-busy="false"] .p02-tbody tr { animation: p02-fade-in 0.2s ease; }
+
+@keyframes p02-fade-in {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}

@@ -1,0 +1,70 @@
+/* Panel User Management - Header */
+/* @version 2.0.0-ENTERPRISE-AAA */
+/* v2.0.0: Layout compacto */
+
+.panel-user-management .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 1.25rem;
+  background: var(--pum-bg-elevated);
+  border-bottom: 1px solid var(--pum-border-subtle);
+}
+
+.panel-user-management .panel-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.panel-user-management .panel-title-group h2 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--pum-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel-user-management .panel-title-group h2 svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.panel-user-management .panel-subtitle {
+  font-size: 0.6875rem;
+  color: var(--pum-text-muted);
+  margin: 0;
+}
+
+.panel-user-management .panel-header-actions {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.panel-user-management .btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--pum-border-muted);
+  border-radius: var(--pum-radius);
+  color: var(--pum-text-muted);
+  cursor: pointer;
+  transition: var(--pum-transition);
+}
+
+.panel-user-management .btn-icon:hover {
+  background: var(--pum-bg-hover);
+  border-color: var(--pum-border-strong);
+  color: var(--pum-text-primary);
+}
+
+.panel-user-management .btn-icon svg {
+  width: 14px;
+  height: 14px;
+}

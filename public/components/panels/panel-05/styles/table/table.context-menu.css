@@ -1,0 +1,13 @@
+/* Context Menu
+ * @version 7.4.0
+ */
+
+.p05-context-menu {
+    position: absolute;
+    min-width: 180px;
+    background: var(--p05-bg-elevated);
+    border: 1px solid var(--p05-border-subtle);
+    border-radius: var(--p05-radius-md);
+    box-shadow: var(--p05-shadow-lg);
+    z-index: 1000;
+}

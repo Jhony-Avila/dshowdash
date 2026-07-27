@@ -1,0 +1,21 @@
+/* Panel UI - Tags
+ * @module _tags.css
+ * @version 1.0.0
+ * @description Tags container e tag individual
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-xs);
+}
+
+.dsd-ui-tag {
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  padding: 2px var(--ui-space-sm);
+  border-radius: var(--ui-radius-sm);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-secondary);
+}

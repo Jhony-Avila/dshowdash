@@ -1,0 +1,19 @@
+/* Panel Orchestrator Manager - Design Tokens */
+/* @version 2.0.0-ENTERPRISE */
+
+:root {
+  --pom-bg-primary: var(--bg-primary, #0d1117);
+  --pom-bg-secondary: var(--bg-secondary, #161b22);
+  --pom-bg-tertiary: var(--bg-tertiary, #0d1117);
+  --pom-bg-input: var(--bg-input, #0d1117);
+  --pom-text-primary: var(--text-primary, #e6edf3);
+  --pom-text-secondary: var(--text-secondary, #8b949e);
+  --pom-border-color: var(--border-color, #30363d);
+  --pom-accent-color: var(--accent-color, #58a6ff);
+  --pom-font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  --pom-success: #3fb950;
+  --pom-error: #f85149;
+  --pom-warning: #d29922;
+  --pom-purple: #a371f7;
+  --pom-cyan: #79c0ff;
+}

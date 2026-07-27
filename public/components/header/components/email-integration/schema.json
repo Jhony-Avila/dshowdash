@@ -1,0 +1,10 @@
+{
+  "name": "email-integration",
+  "version": "1.0.0",
+  "type": "integration",
+  "description": "Email notifications integration",
+  "dependencies": [],
+  "config": {
+    "pollInterval": 60000
+  }
+}

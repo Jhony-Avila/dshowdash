@@ -1,0 +1,4 @@
+/* Status  - Base Styles */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-status-currency-usd-cny { box-sizing: border-box; }
+.panel-status-currency-usd-cny *, .panel-status-currency-usd-cny *::before, .panel-status-currency-usd-cny *::after { box-sizing: inherit; }

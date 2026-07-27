@@ -1,0 +1,15 @@
+/* panel-19 KPI Cards - @version 1.0.0-ENTERPRISE */
+.p19-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 1200px) { .p19-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .p19-kpi-grid { grid-template-columns: 1fr; } }
+.p19-kpi-card { display: flex; align-items: center; gap: 16px; padding: 20px; background: var(--p19-bg-elevated); border: 1px solid var(--p19-border-muted); border-radius: var(--p19-radius-lg); transition: all 0.2s ease; }
+.p19-kpi-card:hover { border-color: var(--p19-accent-soft); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+.p19-kpi-icon { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: var(--p19-radius-md); flex-shrink: 0; }
+.p19-kpi-icon svg { width: 24px; height: 24px; }
+.p19-kpi-icon--primary { background: var(--p19-accent-soft); color: var(--p19-accent); }
+.p19-kpi-icon--success { background: var(--p19-ok-bg); color: var(--p19-ok); }
+.p19-kpi-icon--warning { background: var(--p19-warning-bg); color: var(--p19-warning); }
+.p19-kpi-icon--info { background: rgba(59, 130, 246, 0.15); color: #3B82F6; }
+.p19-kpi-content { display: flex; flex-direction: column; gap: 4px; }
+.p19-kpi-value { font-size: 28px; font-weight: 700; color: var(--p19-text-primary); line-height: 1.2; font-family: var(--p19-font-mono); }
+.p19-kpi-label { font-size: 13px; color: var(--p19-text-muted); font-weight: 500; }

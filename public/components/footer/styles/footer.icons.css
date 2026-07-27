@@ -1,0 +1,213 @@
+/* Footer Icons - CSS Agregador v3.2.0 */
+/* @version 3.2.0-BRAND-ICONS */
+/* @changelog v3.2.0-BRAND-ICONS - Borda roxo sutil + SVG roxo vivo (#A78BFA) no estado default */
+/* @changelog v3.1.0 - Removed wifi icon (now 51 icons total) */
+/* Importa CSS de todos os 51 ícones enterprise */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ORIGINAL 24 ICONS (wifi removed) */
+/* ═══════════════════════════════════════════════════════════════ */
+@import url('../components/icons/activity/styles.css');
+@import url('../components/icons/api/styles.css');
+@import url('../components/icons/check/styles.css');
+@import url('../components/icons/clock/styles.css');
+@import url('../components/icons/copyright/styles.css');
+@import url('../components/icons/cpu/styles.css');
+@import url('../components/icons/database/styles.css');
+@import url('../components/icons/device-mic/styles.css');
+@import url('../components/icons/device-webcam/styles.css');
+@import url('../components/icons/disk/styles.css');
+@import url('../components/icons/docs/styles.css');
+@import url('../components/icons/file/styles.css');
+@import url('../components/icons/financial/styles.css');
+@import url('../components/icons/globe/styles.css');
+@import url('../components/icons/logo/styles.css');
+@import url('../components/icons/map-pin/styles.css');
+@import url('../components/icons/memory/styles.css');
+@import url('../components/icons/pipedrive/styles.css');
+@import url('../components/icons/server/styles.css');
+@import url('../components/icons/settings/styles.css');
+@import url('../components/icons/shield/styles.css');
+@import url('../components/icons/status-mode/styles.css');
+@import url('../components/icons/status/styles.css');
+@import url('../components/icons/support/styles.css');
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* LOTE 1 - 7 ICONS */
+/* ═══════════════════════════════════════════════════════════════ */
+@import url('../components/icons/zap/styles.css');
+@import url('../components/icons/users/styles.css');
+@import url('../components/icons/user/styles.css');
+@import url('../components/icons/unlock/styles.css');
+@import url('../components/icons/trending-up/styles.css');
+@import url('../components/icons/terminal/styles.css');
+@import url('../components/icons/target/styles.css');
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* LOTE 2 - 7 ICONS */
+/* ═══════════════════════════════════════════════════════════════ */
+@import url('../components/icons/sun/styles.css');
+@import url('../components/icons/search/styles.css');
+@import url('../components/icons/pie-chart/styles.css');
+@import url('../components/icons/lock/styles.css');
+@import url('../components/icons/link/styles.css');
+@import url('../components/icons/layers/styles.css');
+@import url('../components/icons/inbox/styles.css');
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* LOTE 3A - 7 ICONS */
+/* ═══════════════════════════════════════════════════════════════ */
+@import url('../components/icons/at-sign/styles.css');
+@import url('../components/icons/bar-chart/styles.css');
+@import url('../components/icons/box/styles.css');
+@import url('../components/icons/briefcase/styles.css');
+@import url('../components/icons/calendar/styles.css');
+@import url('../components/icons/cloud/styles.css');
+@import url('../components/icons/copy/styles.css');
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* LOTE 3B - 6 ICONS */
+/* ═══════════════════════════════════════════════════════════════ */
+@import url('../components/icons/credit-card/styles.css');
+@import url('../components/icons/dollar-sign/styles.css');
+@import url('../components/icons/eye/styles.css');
+@import url('../components/icons/file-text/styles.css');
+@import url('../components/icons/grid/styles.css');
+@import url('../components/icons/hard-drive/styles.css');
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ICONS ORCHESTRATOR WRAPPER */
+/* ═══════════════════════════════════════════════════════════════ */
+.footer-icons-enterprise {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ICON HOST - Container para cada ícone */
+/* v3.2.0: Borda roxo sutil + SVG roxo vivo */
+/* ═══════════════════════════════════════════════════════════════ */
+.footer-icon-host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(15, 15, 22, 0.75);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.footer-icon-host:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(167, 139, 250, 0.55);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+}
+
+.footer-icon-host:active {
+  transform: scale(0.95);
+}
+
+.footer-icon-host svg,
+.footer-icon-host .dsd-icon__svg {
+  width: 16px;
+  height: 16px;
+  color: var(--icon-color-brand, #A78BFA);
+  transition: color 0.2s ease;
+}
+
+.footer-icon-host:hover svg,
+.footer-icon-host:hover .dsd-icon__svg {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* LEGACY SUPPORT - .footer-icon-slot */
+/* v3.2.0: Alinhado com footer-icon-host */
+/* ═══════════════════════════════════════════════════════════════ */
+.footer-icon-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(15, 15, 22, 0.75);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.footer-icon-slot:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(167, 139, 250, 0.55);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+}
+
+.footer-icon-slot svg {
+  width: 16px;
+  height: 16px;
+  color: var(--icon-color-brand, #A78BFA);
+  transition: color 0.2s ease;
+}
+
+.footer-icon-slot:hover svg {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACCESSIBILITY */
+/* ═══════════════════════════════════════════════════════════════ */
+.footer-icon-host:focus-visible,
+.footer-icon-slot:focus-visible {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* RESPONSIVE */
+/* ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .footer-icons-enterprise {
+    gap: 4px;
+    padding: 2px 4px;
+  }
+
+  .footer-icon-host,
+  .footer-icon-slot {
+    width: 32px;
+    height: 32px;
+  }
+
+  .footer-icon-host svg,
+  .footer-icon-host .dsd-icon__svg,
+  .footer-icon-slot svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-icon-host,
+  .footer-icon-slot {
+    width: 28px;
+    height: 28px;
+  }
+
+  .footer-icon-host svg,
+  .footer-icon-host .dsd-icon__svg,
+  .footer-icon-slot svg {
+    width: 12px;
+    height: 12px;
+  }
+}

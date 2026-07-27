@@ -1,0 +1,33 @@
+/* Column Resize
+ * @version 7.1.0
+ */
+
+.p05-table th {
+    position: relative;
+}
+
+.p05-th-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    background: transparent;
+    transition: background 150ms ease;
+    z-index: 5;
+}
+
+.p05-th-resizer:hover,
+.p05-th-resizer.p05-resizing {
+    background: var(--p05-info);
+}
+
+.p05-table.p05-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+.p05-table.p05-resizing * {
+    cursor: col-resize !important;
+}

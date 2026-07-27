@@ -1,0 +1,93 @@
+/* Header Layout - Enterprise Premium v8.2.0-REGION-AWARE */
+/* @changelog v8.2.0: Removido position:fixed do .site-header - posicionamento agora via região #header */
+/* @changelog v8.1.0: Adicionado .header-inner */
+
+.site-header {
+  position: relative;
+  width: 100%;
+  height: var(--header-height, 64px);
+  background: #0A0A0C;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  z-index: 1;
+}
+
+.site-header .header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 var(--header-padding, 24px);
+}
+
+.site-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--header-gap, 16px);
+  flex-shrink: 0;
+}
+
+.site-header .header-center {
+  display: none;
+}
+
+.site-header .header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--header-gap, 16px);
+  padding-right: 20px;
+}
+
+/* Logo */
+.site-header .header-logo {
+  display: block;
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Logo Glow Effect */
+.site-header .header-left {
+  position: relative;
+}
+
+.site-header .header-left::after {
+  content: "";
+  position: absolute;
+  inset: -6px -12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  filter: blur(18px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Live Region Hidden */
+.header-status-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Tema Claro — .site-header usa hex direto (não-token); override ADITIVO por seletor. Parte 2 theming 2026-07-05. */
+:root.theme-light .site-header, :root[data-theme="light"] .site-header {
+  background: #ffffff;
+  border-bottom-color: rgba(0,0,0,0.08);
+}

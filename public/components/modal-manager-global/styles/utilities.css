@@ -1,0 +1,28 @@
+/* Modal Manager Global - Utilities Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+/* Body scroll lock */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .modal-manager-backdrop,
+    .modal-wrapper {
+        transition-duration: 0.001ms !important;
+    }
+}
+
+/* Screen reader only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

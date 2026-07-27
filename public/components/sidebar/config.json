@@ -1,0 +1,78 @@
+{
+  "name": "sidebar-enterprise",
+  "version": "5.6.0-ENTERPRISE-SAFEMODE",
+  "moduleId": "sidebar",
+  "totalFeatures": 57,
+  "safeMode": false,
+  "featureTiers": {
+    "CORE": ["search", "collapse", "badges", "sections", "permissions", "submenuHandler"],
+    "POST_READY": ["fuzzySearch", "searchFilters", "searchSuggestions", "contextMenu", "resizeHandler", "themeHandler", "keyboardNavigation", "mobileHandler"],
+    "OPT_IN": ["serviceWorkerCache", "realtimeNotifications", "voiceCommands", "confetti", "parallax", "glassmorphism", "customCursors", "dragDrop"]
+  },
+  "header": {
+    "title": "DshowDash",
+    "showBrand": true
+  },
+  "search": {
+    "enabled": true,
+    "minLength": 2,
+    "placeholder": "Buscar...",
+    "fuzzySearch": true,
+    "suggestions": true,
+    "filters": true
+  },
+  "settings": {
+    "defaultCollapsed": false,
+    "persistState": true,
+    "storageKey": "dsd:sidebar:state",
+    "mobileBreakpoint": 768
+  },
+  "telemetry": {
+    "enabled": true,
+    "prefix": "sidebar:",
+    "logLevel": "info"
+  },
+  "features": {
+    "search": true,
+    "collapse": true,
+    "badges": true,
+    "sections": true,
+    "permissions": true,
+    "serviceWorkerCache": false,
+    "intersectionObserver": true,
+    "memoryOptimization": true,
+    "bundleSplitting": true,
+    "preloadCriticalCSS": true,
+    "submenuHandler": true,
+    "fuzzySearch": true,
+    "searchFilters": true,
+    "searchSuggestions": true,
+    "contextMenu": true,
+    "resizeHandler": true,
+    "themeHandler": true,
+    "autoTheme": true,
+    "compactMode": true,
+    "miniMode": true,
+    "dragDrop": false,
+    "progressHandler": true,
+    "quickActions": true,
+    "screenReader": true,
+    "realtimeNotifications": false,
+    "configManager": true,
+    "confetti": false,
+    "parallax": false,
+    "glassmorphism": false,
+    "customCursors": false
+  },
+  "visualEffects": {
+    "confetti": { "enabled": false, "trigger": "achievement" },
+    "parallax": { "enabled": false, "intensity": 0.5 },
+    "glassmorphism": { "enabled": false },
+    "customCursors": { "enabled": false }
+  },
+  "serviceWorkerCache": {
+    "enabled": false,
+    "invalidateOnVersionChange": true,
+    "killSwitch": true
+  }
+}

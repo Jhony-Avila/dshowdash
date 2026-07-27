@@ -1,0 +1,44 @@
+/* Panel Header Admin - Toast */
+/* @version 1.0.0-AAA-MODULAR */
+/* Notificações toast */
+
+.pha-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #1f2937;
+  color: white;
+  border-radius: 10px;
+  box-shadow: var(--pha-shadow-lg);
+  z-index: 1100;
+  animation: pha-slideIn 0.3s ease;
+}
+
+.pha-toast--success { 
+  background: var(--pha-success-text); 
+}
+
+.pha-toast--error { 
+  background: var(--pha-danger-hover); 
+}
+
+.pha-toast--warning { 
+  background: var(--pha-warning-hover); 
+}
+
+.pha-toast__close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.pha-toast__close:hover {
+  opacity: 1;
+}

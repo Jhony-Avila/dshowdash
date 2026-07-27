@@ -1,0 +1,205 @@
+/**
+ * Login Modal - Components
+ * @version 4.0.0-ENTERPRISE-UX
+ * Video, logo, title, subtitle, remember-me, forgot-password, capslock
+ */
+
+/* ======================================== */
+/* VIDEO BACKGROUND                         */
+/* ======================================== */
+
+#login-video,
+.lm-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  z-index: 1;
+  filter: none;
+  pointer-events: none;
+}
+
+/* ======================================== */
+/* LOGO                                     */
+/* ======================================== */
+
+.login-logo,
+.lm-logo {
+  width: 120px;
+  height: auto;
+  margin-bottom: var(--lm-space-md);
+  animation: lm-logoAnimation 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
+}
+
+@keyframes lm-logoAnimation {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 30px rgba(59, 130, 246, 1)); }
+}
+
+/* ======================================== */
+/* TYPOGRAPHY                               */
+/* ======================================== */
+
+.login-title,
+.lm-title {
+  font-size: var(--lm-font-size-title);
+  font-weight: 600;
+  color: var(--lm-color-text);
+  margin-bottom: var(--lm-space-xs);
+}
+
+.login-subtitle,
+.lm-subtitle {
+  font-size: var(--lm-font-size-subtitle);
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: var(--lm-space-lg);
+}
+
+/* ======================================== */
+/* FORM OPTIONS ROW (#16, #17)              */
+/* ======================================== */
+
+.lm-form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: var(--lm-space-xs) 0;
+  flex-wrap: wrap;
+  gap: var(--lm-space-xs);
+}
+
+/* ======================================== */
+/* REMEMBER ME CHECKBOX (#16)               */
+/* ======================================== */
+
+.lm-remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  user-select: none;
+}
+
+.lm-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.lm-checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(30, 30, 35, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--lm-transition-fast);
+  flex-shrink: 0;
+}
+
+.lm-checkbox-custom::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--lm-color-primary);
+  border-radius: 2px;
+  opacity: 0;
+  transform: scale(0);
+  transition: all var(--lm-transition-fast);
+}
+
+.lm-checkbox:checked + .lm-checkbox-custom {
+  border-color: var(--lm-color-primary);
+}
+
+.lm-checkbox:checked + .lm-checkbox-custom::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.lm-checkbox:focus + .lm-checkbox-custom {
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.4);
+}
+
+.lm-checkbox-label {
+  line-height: 1;
+}
+
+/* ======================================== */
+/* FORGOT PASSWORD LINK (#17)               */
+/* ======================================== */
+
+.lm-forgot-password {
+  font-size: 13px;
+  color: var(--lm-color-primary);
+  text-decoration: none;
+  transition: all var(--lm-transition-fast);
+  position: relative;
+}
+
+.lm-forgot-password::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--lm-color-primary);
+  transition: width var(--lm-transition-normal);
+}
+
+.lm-forgot-password:hover {
+  color: #8b9ff5;
+}
+
+.lm-forgot-password:hover::after {
+  width: 100%;
+}
+
+.lm-forgot-password:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.4);
+  border-radius: 2px;
+}
+
+/* ======================================== */
+/* CAPS LOCK WARNING (#27)                  */
+/* ======================================== */
+
+.lm-capslock-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #fbbf24;
+  animation: lm-capsWarn 0.3s ease;
+}
+
+.lm-capslock-warning[hidden] {
+  display: none;
+}
+
+.lm-caps-icon {
+  width: 16px;
+  height: 16px;
+  stroke: #fbbf24;
+  flex-shrink: 0;
+}
+
+@keyframes lm-capsWarn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

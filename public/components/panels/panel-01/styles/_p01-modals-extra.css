@@ -1,0 +1,80 @@
+/* Panel-01 - Extra Modals Styles */
+
+/* Highlighting Rules */
+.p01-highlight-form { margin-bottom: 20px; }
+.p01-highlight-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.p01-highlight-form-row .p01-input { flex: 1; min-width: 120px; }
+.p01-highlight-rules-list { display: flex; flex-direction: column; gap: 8px; }
+.p01-highlight-rule { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--p01-bg-secondary); border-radius: 8px; border-left: 4px solid var(--p01-border); }
+.p01-highlight-toggle input { width: 16px; height: 16px; }
+.p01-highlight-rule-text { flex: 1; font-size: 13px; }
+.p01-highlight-rule-color { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.p01-highlight-rule-delete { width: 24px; height: 24px; border: none; background: none; cursor: pointer; color: var(--p01-text-muted); font-size: 16px; }
+.p01-highlight-rule-delete:hover { color: #ef4444; }
+.p01-highlight-empty { text-align: center; padding: 20px; color: var(--p01-text-muted); }
+
+/* Timeline View */
+.p01-timeline-stats { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.p01-timeline-stat { background: var(--p01-bg-secondary); padding: 16px 24px; border-radius: 8px; text-align: center; flex: 1; min-width: 120px; }
+.p01-timeline-stat-value { display: block; font-size: 24px; font-weight: 700; color: var(--p01-primary); }
+.p01-timeline-stat-label { font-size: 12px; color: var(--p01-text-muted); text-transform: uppercase; }
+.p01-timeline { display: flex; flex-direction: column; gap: 0; }
+.p01-timeline-day { display: flex; gap: 16px; }
+.p01-timeline-date { width: 60px; text-align: center; flex-shrink: 0; }
+.p01-timeline-day-name { display: block; font-size: 11px; color: var(--p01-text-muted); text-transform: uppercase; }
+.p01-timeline-day-num { display: block; font-size: 24px; font-weight: 700; color: var(--p01-text); }
+.p01-timeline-month { display: block; font-size: 11px; color: var(--p01-text-muted); }
+.p01-timeline-connector { display: flex; flex-direction: column; align-items: center; width: 20px; }
+.p01-timeline-dot { width: 12px; height: 12px; background: var(--p01-primary); border-radius: 50%; flex-shrink: 0; }
+.p01-timeline-line { width: 2px; flex: 1; background: var(--p01-border); min-height: 20px; }
+.p01-timeline-content { flex: 1; padding-bottom: 24px; }
+.p01-timeline-summary { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.p01-timeline-count { font-size: 13px; color: var(--p01-text-muted); }
+.p01-timeline-total { font-weight: 600; color: var(--p01-primary); }
+.p01-timeline-items { display: flex; flex-direction: column; gap: 6px; }
+.p01-timeline-item { display: flex; gap: 12px; padding: 8px 12px; background: var(--p01-bg); border-radius: 6px; cursor: pointer; transition: background 0.15s; }
+.p01-timeline-item:hover { background: var(--p01-bg-secondary); }
+.p01-timeline-item-id { font-size: 12px; font-weight: 600; color: var(--p01-primary); min-width: 50px; }
+.p01-timeline-item-desc { flex: 1; font-size: 13px; color: var(--p01-text); }
+.p01-timeline-item-value { font-size: 13px; font-weight: 500; color: var(--p01-text); }
+.p01-timeline-more { font-size: 12px; color: var(--p01-text-muted); padding: 8px 12px; }
+
+/* Data Trends */
+.p01-trends-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.p01-trend-card { background: var(--p01-bg-secondary); padding: 16px; border-radius: 8px; text-align: center; }
+.p01-trend-label { font-size: 12px; color: var(--p01-text-muted); text-transform: uppercase; margin-bottom: 8px; }
+.p01-trend-value { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.p01-trend-change { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 14px; font-weight: 600; }
+.p01-trend--up { border-left: 4px solid #10b981; }
+.p01-trend--up .p01-trend-change { color: #10b981; }
+.p01-trend--down { border-left: 4px solid #ef4444; }
+.p01-trend--down .p01-trend-change { color: #ef4444; }
+.p01-trend--neutral { border-left: 4px solid #6b7280; }
+.p01-trend--neutral .p01-trend-change { color: #6b7280; }
+.p01-trend-previous { font-size: 11px; color: var(--p01-text-muted); margin-top: 8px; }
+.p01-trends-comparison { margin-top: 24px; }
+.p01-trends-comparison h3 { font-size: 14px; margin-bottom: 16px; }
+.p01-trends-bars { display: flex; flex-direction: column; gap: 12px; }
+.p01-trends-bar-item { display: flex; align-items: center; gap: 12px; }
+.p01-trends-bar-label { width: 120px; font-size: 13px; }
+.p01-trends-bar-track { flex: 1; height: 24px; background: var(--p01-bg-secondary); border-radius: 4px; overflow: hidden; }
+.p01-trends-bar-fill { height: 100%; background: linear-gradient(90deg, var(--p01-primary), #60a5fa); border-radius: 4px; transition: width 0.5s ease; }
+.p01-trends-bar-value { width: 120px; text-align: right; font-size: 13px; font-weight: 500; }
+
+/* Data Comparison */
+.p01-comparison-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.p01-comparison-card { background: var(--p01-bg-secondary); padding: 20px; border-radius: 8px; }
+.p01-comparison-label { font-size: 12px; color: var(--p01-text-muted); text-transform: uppercase; margin-bottom: 12px; }
+.p01-comparison-values { display: flex; align-items: center; gap: 16px; }
+.p01-comparison-value { flex: 1; text-align: center; }
+.p01-comparison-period { display: block; font-size: 11px; color: var(--p01-text-muted); margin-bottom: 4px; }
+.p01-comparison-num { font-size: 18px; font-weight: 600; }
+.p01-comparison-vs { font-size: 12px; color: var(--p01-text-muted); }
+.p01-comparison-diff { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 12px; font-size: 14px; font-weight: 600; }
+.p01-comparison--up .p01-comparison-diff { color: #10b981; }
+.p01-comparison--down .p01-comparison-diff { color: #ef4444; }
+.p01-comparison--neutral .p01-comparison-diff { color: #6b7280; }
+.p01-comparison-table { margin-top: 24px; }
+.p01-comparison-table h3 { font-size: 14px; margin-bottom: 12px; }
+.p01-diff-up { color: #10b981 !important; }
+.p01-diff-down { color: #ef4444 !important; }

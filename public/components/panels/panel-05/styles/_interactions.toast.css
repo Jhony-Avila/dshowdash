@@ -1,0 +1,83 @@
+/* Panel-05 Interactions - Toast
+ * @version 7.0.0-MODULAR
+ * Toast Notifications Refinados
+ */
+
+.p05-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    padding: 12px 20px;
+    background: var(--p05-bg-surface);
+    color: var(--p05-text-primary);
+    font-size: var(--p05-font-body);
+    font-weight: 500;
+    border-radius: var(--p05-radius-md);
+    border: 1px solid var(--p05-border-default);
+    box-shadow: var(--p05-shadow-xl);
+    z-index: var(--p05-z-toast);
+    display: flex;
+    align-items: center;
+    gap: var(--p05-space-sm);
+    animation: p05-toast-in 0.3s ease-out forwards;
+}
+
+@keyframes p05-toast-in {
+    to { transform: translateX(-50%) translateY(0); }
+}
+
+.p05-toast.p05-toast-out {
+    animation: p05-toast-out 0.2s ease-in forwards;
+}
+
+@keyframes p05-toast-out {
+    to { 
+        transform: translateX(-50%) translateY(100px); 
+        opacity: 0;
+    }
+}
+
+.p05-toast-success {
+    background: var(--p05-success-bg);
+    border-color: var(--p05-success-border);
+    color: var(--p05-success);
+}
+
+.p05-toast-success::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background: var(--p05-success);
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M22 11.08V12a10 10 0 1 1-5.93-9.14'/%3E%3Cpolyline points='22 4 12 14.01 9 11.01'/%3E%3C/svg%3E");
+    mask-size: contain;
+    mask-repeat: no-repeat;
+}
+
+.p05-toast-error {
+    background: var(--p05-danger-bg);
+    border-color: var(--p05-danger-border);
+    color: var(--p05-danger);
+}
+
+.p05-toast-error::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background: var(--p05-danger);
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='15' y1='9' x2='9' y2='15'/%3E%3Cline x1='9' y1='9' x2='15' y2='15'/%3E%3C/svg%3E");
+    mask-size: contain;
+    mask-repeat: no-repeat;
+}
+
+.p05-toast-warning {
+    background: var(--p05-warning-bg);
+    border-color: var(--p05-warning-border);
+    color: var(--p05-warning);
+}
+
+.p05-toast-info {
+    background: var(--p05-info-bg);
+    border-color: var(--p05-info-border);
+    color: var(--p05-info);
+}

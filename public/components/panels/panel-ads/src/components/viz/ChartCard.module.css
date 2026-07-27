@@ -1,0 +1,45 @@
+.card {
+  background: var(--ads-surface);
+  border: 1px solid var(--ads-border);
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+  display: flex; flex-direction: column;
+  min-width: 0;
+}
+
+.head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.tit { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.titTxt { font-weight: 650; font-size: 13.5px; color: var(--ads-text); }
+.sub { font-size: 11.5px; color: var(--ads-text-dim); }
+
+.tools { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid transparent; background: transparent;
+  color: var(--ads-text-dim); cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+}
+.btn:hover { background: var(--ads-surface-2s); color: var(--ads-text); border-color: var(--ads-border); }
+
+/* flex-basis: auto (via 1 1 auto) para que o `height` inline do corpo seja
+   respeitado em contexto de bloco; `flex: 1` (basis 0%) colapsaria o gráfico. */
+.body { position: relative; width: 100%; min-height: 80px; flex: 1 1 auto; }
+
+.overlay {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ads-surface) 62%, transparent);
+  border-radius: 10px; pointer-events: none;
+}
+.vazio { font-size: 12.5px; color: var(--ads-text-dim); }
+
+/* Tela cheia — overlay fixo cobrindo o painel. */
+.fullscreen {
+  position: fixed; inset: 24px; z-index: 60;
+  box-shadow: 0 24px 80px rgba(0,0,0,.5);
+  padding: 18px;
+}
+.backdrop {
+  position: fixed; inset: 0; z-index: 59;
+  background: color-mix(in srgb, #000 46%, transparent);
+  border: 0; cursor: zoom-out;
+}

@@ -1,0 +1,7 @@
+/* Panel-01 - Badge New CSS */
+/* @version 2.0.0-ENTERPRISE */
+
+.p01-new-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; background: var(--danger-color); color: white; font-size: 10px; font-weight: 700; border-radius: 9px; }
+.p01-new-indicator { display: inline-block; width: 8px; height: 8px; background: var(--accent-color); border-radius: 50%; animation: p01-pulse-dot 2s infinite; }
+@keyframes p01-pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
+.p01-row-new { background: linear-gradient(90deg, var(--accent-color-10) 0%, transparent 50%) !important; }

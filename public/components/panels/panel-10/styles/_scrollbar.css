@@ -1,0 +1,30 @@
+/* Panel-10 - Scrollbar
+ * @version 4.0.0-MODULAR
+ */
+
+.panel-10-content::-webkit-scrollbar,
+.painel-10-content::-webkit-scrollbar,
+.p10-activity-list::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.panel-10-content::-webkit-scrollbar-track,
+.painel-10-content::-webkit-scrollbar-track,
+.p10-activity-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 3px;
+}
+
+.panel-10-content::-webkit-scrollbar-thumb,
+.painel-10-content::-webkit-scrollbar-thumb,
+.p10-activity-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.panel-10-content::-webkit-scrollbar-thumb:hover,
+.painel-10-content::-webkit-scrollbar-thumb:hover,
+.p10-activity-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

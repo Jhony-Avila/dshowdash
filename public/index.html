@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DshowDash v3.0 - Enterprise Business Intelligence Dashboard">
+  <title>DshowDash v3.0 - Enterprise</title>
+
+  <!-- P0: HTTPS GUARD - DEVE SER O PRIMEIRO SCRIPT (antes de qualquer module import) -->
+  <!-- OWNER_OK_P14: OwnerHTTPS — https guard (reason=https-enforcement, emits=none, scope=navigation-only) -->
+  <script>
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+    }
+  </script>
+
+  <!-- P0: Theme/Density Early Init (evita flash) -->
+  <script>
+    (function() {
+      try {
+        var stored = JSON.parse(localStorage.getItem('dshowdash_theme_prefs') || '{}');
+        var theme = stored.theme || 'dark';
+        var density = stored.density || 'comfortable';
+        var effectiveTheme = theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme;
+        document.documentElement.classList.add('theme-' + theme, 'density-' + density);
+        document.documentElement.setAttribute('data-theme', effectiveTheme);
+        document.documentElement.setAttribute('data-density', density);
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- P0.1: Modulepreload — Critical path -->
+  <link rel="modulepreload" href="/bootstrap-v2/dist/bootstrap.bundle.js">
+  <link rel="modulepreload" href="/core/runtime/dist/runtime.bundle.js">
+  <link rel="modulepreload" href="/core/runtime/events/catalog/dist/events-catalog.bundle.js">
+  <link rel="modulepreload" href="/core/js/event-bus/dist/event-bus.bundle.js">
+  <link rel="modulepreload" href="/assets/js/core/logger-global/dist/logger-global.bundle.js">
+  <link rel="modulepreload" href="/assets/js/core/telemetry-core/dist/telemetry-core.bundle.js">
+  <link rel="modulepreload" href="/components/preloader/dist/preloader.bundle.js">
+  <link rel="modulepreload" href="/components/session-manager/dist/session-manager.bundle.js">
+  <link rel="modulepreload" href="/core/auth/dist/auth.bundle.js">
+  <!-- P0.1: Modulepreload — Shell components -->
+  <link rel="modulepreload" href="/components/error-boundary/dist/error-boundary.bundle.js">
+  <link rel="modulepreload" href="/assets/js/core/config-loader/dist/config-loader.bundle.js">
+  <link rel="modulepreload" href="/components/security/csrf-token-manager/dist/csrf-token-manager.bundle.js">
+  <link rel="modulepreload" href="/assets/js/core/environment-manager/dist/environment-manager.bundle.js">
+  <link rel="modulepreload" href="/modules/global-state/dist/global-state.bundle.js">
+  <link rel="modulepreload" href="/core/js/asset-loader/dist/asset-loader.bundle.js">
+  <link rel="modulepreload" href="/components/context-provider/dist/context-provider.bundle.js">
+  <link rel="modulepreload" href="/components/feature-flags/dist/feature-flags.bundle.js">
+  <link rel="modulepreload" href="/core/kernel/dist/kernel.bundle.js">
+  <link rel="modulepreload" href="/core/kernel/ui/dist/kernel-ui.bundle.js">
+  <link rel="modulepreload" href="/components/app-shell/dist/app-shell.bundle.js">
+  <link rel="modulepreload" href="/components/header/dist/header.bundle.js">
+  <link rel="modulepreload" href="/components/header/components/dist/header-components.bundle.js">
+  <link rel="modulepreload" href="/components/sidebar/dist/sidebar.bundle.js">
+  <link rel="modulepreload" href="/components/footer/dist/footer.bundle.js">
+  <link rel="modulepreload" href="/components/nav-rail/dist/nav-rail.bundle.js">
+  <link rel="modulepreload" href="/components/overlay-layer/dist/overlay-layer.bundle.js">
+  <link rel="modulepreload" href="/components/main/dist/main.bundle.js">
+  <!-- P0.1: Modulepreload — Feature bundles -->
+  <link rel="modulepreload" href="/app/router/dist/app-router.bundle.js">
+  <link rel="modulepreload" href="/components/layout-manager/dist/layout-manager.bundle.js">
+  <link rel="modulepreload" href="/components/login-modal/dist/login-modal.bundle.js">
+  <link rel="modulepreload" href="/components/panel-home/dist/panel-home.bundle.js">
+  <link rel="modulepreload" href="/components/ticker/dist/ticker.bundle.js">
+  <link rel="modulepreload" href="/components/toast/service/dist/toast-service.bundle.js">
+  <link rel="modulepreload" href="/core/ui-orchestrator/dist/ui-orchestrator.bundle.js">
+  <link rel="modulepreload" href="/core/js/enterprise-loader/dist/enterprise-loader.bundle.js">
+  <link rel="modulepreload" href="/platform/runtime/dist/platform-runtime.bundle.js">
+  <link rel="modulepreload" href="/platform/shell/dist/platform-shell.bundle.js">
+  <link rel="modulepreload" href="/components/_shared/permissions/dist/integration.bundle.js">
+  <link rel="modulepreload" href="/components/_shared/permissions/dist/ui-feedback.bundle.js">
+  <link rel="modulepreload" href="/assets/js/core/api-client/dist/api-client.bundle.js">
+  <link rel="modulepreload" href="/assets/js/core/theme-manager/dist/theme-manager.bundle.js">
+  <link rel="modulepreload" href="/assets/js/core/theme-tokens-loader/dist/theme-tokens-loader.bundle.js">
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="/core/css/reset.css">
+  <link rel="stylesheet" href="/core/css/variables.css">
+  <link rel="stylesheet" href="/assets/css/core/z-index.tokens.css">
+  <link rel="stylesheet" href="/assets/css/tokens/toast.tokens.css">
+  <link rel="stylesheet" href="/assets/css/tokens/edts.tokens.css">
+  <link rel="stylesheet" href="/core/css/utilities.css">
+
+  <!-- Global Layout CSS -->
+  <link rel="stylesheet" href="/assets/css/theme.css">
+  <link rel="stylesheet" href="/assets/css/global-theme.css">
+  <link rel="stylesheet" href="/assets/css/design-system/design-system.css">
+  <link rel="stylesheet" href="/assets/css/layout.css">
+  <link rel="stylesheet" href="/assets/css/panels-sane.css">
+
+  <!-- Preloader CSS (unified AAA+Premium v3.0.0-ENTERPRISE) -->
+  <link rel="stylesheet" href="/components/preloader/styles/index.css">
+
+  <!-- App Shell CSS -->
+  <!-- Sidebar V2 CSS (bundle P0 — single request, zero @import) -->
+  <link rel="stylesheet" href="/components/sidebar/styles/sidebar.bundle.css?v=20260720">
+  <link rel="stylesheet" href="/components/app-shell/styles/index.css">
+  <link rel="stylesheet" href="/components/modal-manager-global/styles.css">
+
+  <!-- Ticker CSS (bundled v7.1.0-ENTERPRISE — all imports resolved inline) -->
+  <link rel="stylesheet" href="/components/ticker/component-enterprise.css">
+
+  <!-- Panel Nav Admin CSS (shell-level — evita FOUC no carregamento dinâmico) -->
+  <link rel="stylesheet" href="/components/panels/panel-nav-admin/styles.css?v=pna2">
+  <link rel="stylesheet" href="/components/panels/panel-nav-admin/styles-premium.css?v=pna2">
+
+  <!-- Router Global CSS -->
+  <link rel="stylesheet" href="/components/router/styles.css">
+
+  <!-- Main Component CSS -->
+  <link rel="stylesheet" href="/components/main/main.tokens.css">
+  <link rel="stylesheet" href="/components/main/ui/container-main/container-main.bundle.css">
+  <!-- Features Toolbar CSS (shell-level — evita FOUC na inicialização dinâmica) -->
+  <link rel="stylesheet" id="features-toolbar-css" href="/components/main/ui/container-main/utils/features-toolbar/styles/toolbar.css">
+
+  <!-- LIGHT MODE incremental (light total) — aditivo, só age sob [data-theme=light]; dark intocado.
+       ?v BUMPA a cada deploy (index.html no-store) p/ furar cache immutable de /assets/css/. -->
+  <link rel="stylesheet" href="/assets/css/theme.light-total.css?v=39">
+
+  <!-- App Config (module) -->
+  <script type="module" src="/config/app.config.js"></script>
+
+  <!-- Global Services -->
+  <script type="module" src="/core/services/toast-service.js"></script>
+
+  <style id="layout-security-css">
+    .hidden { display: none !important; visibility: hidden !important; }
+    .layout-full-screen .dsd-sidebar,
+    .layout-full-screen .app-sidebar,
+    .layout-full-screen #sidebar,
+    .layout-full-screen [data-region="sidebar"],
+    .layout-full-screen .dsd-header,
+    .layout-full-screen .app-header,
+    .layout-full-screen #shell-header-region,
+    .layout-full-screen [data-region="header"] { display: none !important; }
+    .layout-full-screen .dsd-main,
+    .layout-full-screen .app-main,
+    .layout-full-screen [data-region="main"] { margin-left: 0 !important; width: 100% !important; max-width: 100% !important; }
+    .full-screen-mode { margin: 0 !important; padding: 0 !important; width: 100vw !important; height: 100vh !important; }
+  </style>
+</head>
+
+<body data-auth-ready="false" data-state="initializing">
+  <div id="app"></div>
+
+  <script src="/assets/js/core/header-scroll-guardian.js"></script>
+  <script type="module" src="/bootstrap-v2/dist/bootstrap.bundle.js"></script>
+  <!-- P0 FIX: Enhancements e NavigationFallback agora carregam via Bootstrap phase-5-ui.js -->
+  <!-- Toggle de tema (sol/lua) no header — v3: ADITIVO, só age APÓS window.load (não compete com o boot), sem observer global -->
+  <!-- Reativado 2026-07-05 após hardening de cache (nginx no-cache + sw.js 9.2.1 bustCore nos módulos core). v2/immutable não pina mais. -->
+  <script type="module" src="/assets/js/core/theme-toggle-header/index.js"></script>
+  <!-- Painel de cotação (Dólar/Yuan/Bitcoin) estilo Google Finance — módulo standalone, escuta o clique dos pills por delegação. 2026-07-08 -->
+  <script type="module" src="/components/header/components/currency-panel/index.js"></script>
+  <!-- World Clock Map — módulo standalone; abre mapa-múndi ao clicar no relógio do header (delegação, não toca no relógio). 2026-07-08 -->
+  <script type="module" src="/components/world-clock-map/index.js"></script>
+  <!-- Trânsito SP — indicador standalone no header (auto-injeção estilo theme-toggle); abre painel-transito-sp no main. 2026-07-20 -->
+  <script type="module" src="/components/traffic-monitor/header-indicator.js?v=20260720"></script>
+  <!-- DIAGNÓSTICO TEMPORÁRIO 2026-07-08: watcher READ-ONLY da "barra preta" no item ativo da sidebar.
+       Captura o elemento culpado (transitório) e envia p/ /api/diag/blackbar.php (logs/blackbar-diag.log).
+       REMOVER esta tag + public/diag/blackbar-watch.js + api/diag/blackbar.php após diagnosticar. -->
+  <script defer src="/diag/blackbar-watch.js?v=20260708-1"></script>
+
+</body>
+
+</html>

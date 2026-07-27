@@ -1,0 +1,185 @@
+/* Panel-11 Base - Enterprise Premium AAA */
+/* @version 4.0.0-ENTERPRISE-AAA */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* WRAPPER */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--p11-bg-base);
+  font-family: var(--p11-font-sans);
+  color: var(--p11-text-primary);
+}
+
+.p11-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ANIMATIONS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@keyframes p11-fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes p11-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes p11-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes p11-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.p11-animate {
+  animation: p11-fadeIn 0.4s ease-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CARDS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-card {
+  background: var(--p11-bg-card);
+  border: 1px solid var(--p11-card-border);
+  border-radius: var(--p11-radius-lg);
+  transition: all var(--p11-transition-normal);
+}
+
+.p11-card:hover {
+  border-color: var(--p11-card-hover);
+  box-shadow: var(--p11-shadow-md);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* BADGES */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--p11-radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.p11-badge--ok { background: var(--p11-ok-bg); color: var(--p11-ok); }
+.p11-badge--warning { background: var(--p11-warning-bg); color: var(--p11-warning); }
+.p11-badge--error { background: var(--p11-error-bg); color: var(--p11-error); }
+.p11-badge--info { background: var(--p11-info-bg); color: var(--p11-info); }
+.p11-badge--accent { background: var(--p11-accent-soft); color: var(--p11-accent-light); }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* BUTTONS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--p11-bg-elevated);
+  border: 1px solid var(--p11-border-muted);
+  border-radius: var(--p11-radius-md);
+  color: var(--p11-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--p11-transition-fast);
+}
+
+.p11-btn:hover {
+  background: var(--p11-bg-card);
+  border-color: var(--p11-border-strong);
+  color: var(--p11-text-primary);
+}
+
+.p11-btn:active {
+  transform: scale(0.97);
+}
+
+.p11-btn--primary {
+  background: var(--p11-accent);
+  border-color: var(--p11-accent);
+  color: #fff;
+}
+
+.p11-btn--primary:hover {
+  background: #5558e3;
+  border-color: #5558e3;
+}
+
+.p11-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.p11-btn--loading svg {
+  animation: p11-spin 0.8s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ICONS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.p11-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DIVIDER */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--p11-border-muted), transparent);
+  margin: 16px 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* SCROLLBAR */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.p11-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.p11-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.p11-content::-webkit-scrollbar-thumb {
+  background: var(--p11-border-muted);
+  border-radius: 3px;
+}
+
+.p11-content::-webkit-scrollbar-thumb:hover {
+  background: var(--p11-border-strong);
+}

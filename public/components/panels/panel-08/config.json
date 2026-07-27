@@ -1,0 +1,30 @@
+{
+  "id": "panel-08",
+  "name": "Alertas do Sistema",
+  "description": "Monitoramento de alertas e erros do sistema com arquitetura Enterprise AAA",
+  "category": "monitoring",
+  "version": "8.1.0-ENTERPRISE",
+  "architecture": "hexagonal",
+  "refreshInterval": 60000,
+  "enabled": true,
+  "permissions": ["read", "acknowledge"],
+  "features": {
+    "autoRefresh": true,
+    "expandDetails": true,
+    "acknowledgeAlerts": true,
+    "keyboardShortcuts": true,
+    "antiFlicker": true
+  },
+  "keyboard": {
+    "refresh": "r",
+    "autoRefresh": "a"
+  },
+  "api": {
+    "baseUrl": "/api/modules/panels/panel-08",
+    "timeout": 10000
+  },
+  "telemetry": {
+    "enabled": true,
+    "namespace": "panel-08"
+  }
+}

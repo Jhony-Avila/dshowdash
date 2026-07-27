@@ -1,0 +1,26 @@
+/* ═══════════════════════════════════════════════════════════════
+ * panel-gestao-paineis — Grid Layout
+ * @version 1.1.0
+ * FIX: minmax(300px, 1fr) para cards maiores, proporcao 16:9
+ * ═══════════════════════════════════════════════════════════════ */
+
+.pgp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  padding: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .pgp-grid {
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .pgp-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}

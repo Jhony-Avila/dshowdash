@@ -1,0 +1,109 @@
+/* Panel-05 Insights - Badges
+ * @version 7.0.0-MODULAR
+ * Badge System
+ */
+
+.p05-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: var(--p05-height-badge);
+    padding: 0 var(--p05-space-sm);
+    border-radius: var(--p05-radius-pill);
+    font: var(--p05-font-badge);
+    white-space: nowrap;
+    transition: all var(--p05-motion-fast);
+}
+
+.p05-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Badge Status */
+.p05-badge-active {
+    background: var(--p05-success-bg);
+    color: var(--p05-success);
+    border: 1px solid var(--p05-success-border);
+}
+
+.p05-badge-inactive {
+    background: var(--p05-neutral-bg);
+    color: var(--p05-neutral);
+    border: 1px solid var(--p05-neutral-border);
+}
+
+.p05-badge-pending {
+    background: var(--p05-warning-bg);
+    color: var(--p05-warning);
+    border: 1px solid var(--p05-warning-border);
+}
+
+.p05-badge-error {
+    background: var(--p05-danger-bg);
+    color: var(--p05-danger);
+    border: 1px solid var(--p05-danger-border);
+}
+
+/* Badge Severity */
+.p05-badge-low {
+    background: var(--p05-success-bg);
+    color: var(--p05-success);
+    border: 1px solid var(--p05-success-border);
+}
+
+.p05-badge-medium {
+    background: var(--p05-warning-bg);
+    color: var(--p05-warning);
+    border: 1px solid var(--p05-warning-border);
+}
+
+.p05-badge-high {
+    background: var(--p05-danger-bg);
+    color: var(--p05-danger);
+    border: 1px solid var(--p05-danger-border);
+}
+
+.p05-badge-critical {
+    background: var(--p05-critical-bg);
+    color: var(--p05-critical);
+    border: 1px solid var(--p05-critical-border);
+}
+
+/* Badge Temporal */
+.p05-badge-realtime {
+    background: var(--p05-info-bg);
+    color: var(--p05-info);
+    border: 1px solid var(--p05-info-border);
+}
+
+.p05-badge-delayed {
+    background: var(--p05-warning-bg);
+    color: var(--p05-warning);
+    border: 1px solid var(--p05-warning-border);
+}
+
+.p05-badge-stale {
+    background: var(--p05-neutral-bg);
+    color: var(--p05-neutral);
+    border: 1px solid var(--p05-neutral-border);
+}
+
+/* Badge with Dot */
+.p05-badge-dot {
+    position: relative;
+    padding-left: calc(var(--p05-space-sm) + 10px);
+}
+
+.p05-badge-dot::before {
+    content: '';
+    position: absolute;
+    left: var(--p05-space-sm);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}

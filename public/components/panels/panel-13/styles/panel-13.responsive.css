@@ -1,0 +1,66 @@
+/* Panel-13 Dashboard Enterprise - Responsive */
+/* @version 2.0.0-ENTERPRISE-AAA */
+
+@media (max-width: 1024px) {
+  .p13-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .p13-status-badges {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .p13-table th:nth-child(7),
+  .p13-table td:nth-child(7) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .p13-header {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .p13-title { font-size: 0.875rem; }
+  .p13-subtitle { display: none; }
+
+  .p13-table th:nth-child(4),
+  .p13-table td:nth-child(4),
+  .p13-table th:nth-child(5),
+  .p13-table td:nth-child(5) {
+    display: none;
+  }
+
+  .p13-job-name {
+    max-width: 150px;
+  }
+
+  .p13-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .p13-footer-left {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .p13-table th:nth-child(2),
+  .p13-table td:nth-child(2) {
+    display: none;
+  }
+
+  .p13-job-name {
+    max-width: 120px;
+  }
+
+  .p13-badge-count {
+    display: none;
+  }
+}

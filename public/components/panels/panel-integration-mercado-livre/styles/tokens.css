@@ -1,0 +1,7 @@
+/* Integração  - Design Tokens */
+/* @version 1.0.0-ENTERPRISE-AAA */
+.panel-integration-mercado-livre {
+  --component-spacing: 1rem;
+  --component-radius: 0.5rem;
+  --component-transition: 0.2s ease;
+}

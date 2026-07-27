@@ -1,0 +1,67 @@
+/* Panel UI - Interactions
+ * @module _interactions.css
+ * @version 1.0.0
+ * @description Efeito ripple em botões, preset buttons e tabs
+ * @dependencies _buttons.css, _presets.css, _tabs.css
+ */
+
+/* Ripple nos botões */
+.dsd-ui-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.dsd-ui-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dsd-ui-btn:active::after {
+  width: 200px;
+  height: 200px;
+  opacity: 1;
+  transition: width 0s, height 0s, opacity 0s;
+}
+
+/* Ripple nos preset buttons */
+.dsd-ui-preset-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.dsd-ui-preset-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(124, 58, 237, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dsd-ui-preset-btn:active::after {
+  width: 200px;
+  height: 200px;
+  opacity: 1;
+  transition: width 0s, height 0s, opacity 0s;
+}
+
+/* Ripple nas tabs */
+.dsd-ui-tab {
+  overflow: hidden;
+}
