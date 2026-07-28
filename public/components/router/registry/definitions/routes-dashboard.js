@@ -33,6 +33,9 @@ const dashboardRoutes = Object.freeze({
   // panel-anuncios: Consultor de Google Ads (Decision Engine — metodologia Dshow).
   // Painel de perguntas/respostas; backend via proxy /api/anuncios/ask.php.
   "/panel-anuncios": createPanelRoute("panel-anuncios", "An\xFAncios — Consultor", { aliases: ["#/panel-anuncios", "#/anuncios"], tags: ["anuncios", "google-ads", "ia", "decision-engine"], description: "Consultor de Google Ads fundamentado na metodologia Dshow (Decision Engine)" }),
+  // panel-mercadolivre: modulo Mercado Livre (Fase 1 — dados simulados).
+  // Navegacao interna por hash (#/panel-mercadolivre/<secao>).
+  "/panel-mercadolivre": createPanelRoute("panel-mercadolivre", "Mercado Livre", { aliases: ["#/panel-mercadolivre", "#/mercadolivre", "#/mercado-livre"], tags: ["mercadolivre", "marketplace", "canais-venda"], description: "Central de gestao do Mercado Livre (Fase 1 — dados simulados)" }),
   "/panel-09": createPanelRoute("panel-09", "Painel 09", { aliases: ["#/panel-09"] }),
   "/panel-10": createPanelRoute("panel-10", "Painel 10", { aliases: ["#/panel-10"] }),
   "/panel-11": createPanelRoute("panel-11", "Painel 11", { aliases: ["#/panel-11"] }),
