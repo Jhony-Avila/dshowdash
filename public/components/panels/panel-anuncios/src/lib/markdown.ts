@@ -14,7 +14,8 @@ export type Bloco =
   | { tipo: 'checklist'; itens: string[] }
   | { tipo: 'regra'; texto: string }
   | { tipo: 'quote'; texto: string }
-  | { tipo: 'tabela'; cabecalho: string[]; linhas: string[][] };
+  | { tipo: 'tabela'; cabecalho: string[]; linhas: string[][] }
+  | { tipo: 'fluxo'; etapas: string[] };
 
 export interface Secao {
   titulo: string; // '' para preâmbulo sem título
@@ -151,6 +152,15 @@ export function parseResposta(md: string): RespostaEstruturada {
       continue;
     }
     flushListas();
+
+    // Fluxo: linha isolada "A → B → C" (≥2 setas, etapas curtas) vira diagrama.
+    if ((semEspaco.match(/→/g) ?? []).length >= 2) {
+      const etapas = semEspaco.split('→').map((e) => e.trim()).filter(Boolean);
+      if (etapas.length >= 3 && etapas.every((e) => e.length <= 40)) {
+        atual.blocos.push({ tipo: 'fluxo', etapas });
+        continue;
+      }
+    }
     const anterior = atual.blocos[atual.blocos.length - 1];
     if (anterior && anterior.tipo === 'p') anterior.texto += '\n' + semEspaco;
     else atual.blocos.push({ tipo: 'p', texto: semEspaco });

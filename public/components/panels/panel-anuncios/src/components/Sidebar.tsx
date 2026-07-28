@@ -4,13 +4,21 @@
 // Seções: Modos de análise (perfis do engine), Conversas (busca, favoritas,
 // renomear inline, arquivar) e Biblioteca (Aprendizado; demais em breve).
 // Colapsável: vira um trilho de ícones.
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Archive, ArchiveRestore, BarChart3, BookOpen, HeartHandshake,
   MessageSquareText, PanelLeftClose, PanelLeftOpen, Pencil, Plus, Star,
 } from 'lucide-react';
 import { listarConversas, acaoConversa } from '../lib/api';
+import { FERRAMENTAS } from './Ferramentas';
 import type { Conversa, Perfil } from '../shell/types';
+
+/** Ícone pequeno por perfil, para a lista de conversas. */
+function iconePerfil(perfil: Perfil): ReactNode {
+  if (perfil === 'qualificacao') return <HeartHandshake size={11} aria-label="Qualificação" />;
+  const ferramenta = FERRAMENTAS.find((f) => f.perfil === perfil);
+  return ferramenta ? <span className="anx-side-conv-fico" title={ferramenta.curto}>{ferramenta.icone}</span> : null;
+}
 
 function fmtData(mysqlDt: string): string {
   const d = new Date(mysqlDt.replace(' ', 'T'));
@@ -21,7 +29,7 @@ function fmtData(mysqlDt: string): string {
 export function Sidebar({
   aberta, onToggle, perfilAtivo, onPerfil, conversaAtualId,
   onAbrirConversa, onNovaConversa, onAprendizado, aprendizadoAtivo,
-  ocupado, atualizacao,
+  onBiblioteca, bibliotecaAtiva, ocupado, atualizacao,
 }: {
   aberta: boolean;
   onToggle: () => void;
@@ -32,9 +40,12 @@ export function Sidebar({
   onNovaConversa: () => void;
   onAprendizado: () => void;
   aprendizadoAtivo: boolean;
+  onBiblioteca: () => void;
+  bibliotecaAtiva: boolean;
   ocupado: boolean;
   atualizacao: number;
 }) {
+  const emTela = aprendizadoAtivo || bibliotecaAtiva;
   const [lista, setLista] = useState<Conversa[]>([]);
   const [mostrarArquivadas, setMostrarArquivadas] = useState(false);
   const [busca, setBusca] = useState('');
@@ -71,13 +82,17 @@ export function Sidebar({
         <button className="anx-side-ic" onClick={onNovaConversa} disabled={ocupado} title="Nova conversa">
           <Plus size={16} />
         </button>
-        <button className={`anx-side-ic${perfilAtivo === 'consultor' && !aprendizadoAtivo ? ' is-on' : ''}`}
+        <button className={`anx-side-ic${perfilAtivo === 'consultor' && !emTela ? ' is-on' : ''}`}
           onClick={() => onPerfil('consultor')} title="Modo Consultoria">
           <MessageSquareText size={16} />
         </button>
-        <button className={`anx-side-ic${perfilAtivo === 'qualificacao' && !aprendizadoAtivo ? ' is-on' : ''}`}
+        <button className={`anx-side-ic${perfilAtivo === 'qualificacao' && !emTela ? ' is-on' : ''}`}
           onClick={() => onPerfil('qualificacao')} title="Modo Qualificação comercial">
           <HeartHandshake size={16} />
+        </button>
+        <button className={`anx-side-ic${bibliotecaAtiva ? ' is-on' : ''}`}
+          onClick={onBiblioteca} title="Metodologia Dshow (Biblioteca)">
+          <BookOpen size={16} />
         </button>
         <button className={`anx-side-ic${aprendizadoAtivo ? ' is-on' : ''}`}
           onClick={onAprendizado} title="Aprendizado contínuo">
@@ -98,15 +113,26 @@ export function Sidebar({
 
       <div className="anx-side-sec">
         <div className="anx-side-h">Modos de análise</div>
-        <button className={`anx-side-item${perfilAtivo === 'consultor' && !aprendizadoAtivo ? ' is-on' : ''}`}
+        <button className={`anx-side-item${perfilAtivo === 'consultor' && !emTela ? ' is-on' : ''}`}
           onClick={() => onPerfil('consultor')} disabled={ocupado}>
           <MessageSquareText size={15} aria-hidden /> Consultoria
         </button>
-        <button className={`anx-side-item${perfilAtivo === 'qualificacao' && !aprendizadoAtivo ? ' is-on' : ''}`}
+        <button className={`anx-side-item${perfilAtivo === 'qualificacao' && !emTela ? ' is-on' : ''}`}
           onClick={() => onPerfil('qualificacao')} disabled={ocupado}
           title="Roteiro de qualificação de leads pelas Fases 14/15 da metodologia">
           <HeartHandshake size={15} aria-hidden /> Qualificação comercial
         </button>
+      </div>
+
+      <div className="anx-side-sec">
+        <div className="anx-side-h">Ferramentas</div>
+        {FERRAMENTAS.map((f) => (
+          <button key={f.perfil}
+            className={`anx-side-item${perfilAtivo === f.perfil && !emTela ? ' is-on' : ''}`}
+            onClick={() => onPerfil(f.perfil)} disabled={ocupado} title={f.descricao}>
+            {f.icone} {f.curto}
+          </button>
+        ))}
       </div>
 
       <div className="anx-side-sec anx-side-sec-conversas">
@@ -140,7 +166,7 @@ export function Sidebar({
                     title={c.titulo}>
                     <span className="anx-side-conv-tit">
                       {c.is_favorita && <Star size={11} className="anx-star" aria-label="Favorita" />}
-                      {c.profile === 'qualificacao' && <HeartHandshake size={11} aria-label="Qualificação" />}
+                      {iconePerfil(c.profile)}
                       {c.titulo || `Conversa #${c.id}`}
                     </span>
                     <span className="anx-side-conv-meta">{fmtData(c.updated_at)} · {c.perguntas}p</span>
@@ -171,11 +197,12 @@ export function Sidebar({
 
       <div className="anx-side-sec">
         <div className="anx-side-h">Biblioteca</div>
+        <button className={`anx-side-item${bibliotecaAtiva ? ' is-on' : ''}`} onClick={onBiblioteca}
+          title="Navegue pelas ~1.500 regras da metodologia">
+          <BookOpen size={15} aria-hidden /> Metodologia Dshow
+        </button>
         <button className={`anx-side-item${aprendizadoAtivo ? ' is-on' : ''}`} onClick={onAprendizado}>
           <BarChart3 size={15} aria-hidden /> Aprendizado contínuo
-        </button>
-        <button className="anx-side-item" disabled title="Chega na Fase 3 do workspace">
-          <BookOpen size={15} aria-hidden /> Metodologia <span className="anx-side-soon">breve</span>
         </button>
       </div>
     </div>

@@ -102,6 +102,18 @@ function BlocoView({ bloco, unidades, onCitacao }: {
     case 'tabela':
       return <TabelaView cabecalho={bloco.cabecalho} linhas={bloco.linhas}
         unidades={unidades} onCitacao={onCitacao} />;
+    case 'fluxo':
+      return (
+        <div className="anx-fluxo" role="img"
+          aria-label={`Fluxo: ${bloco.etapas.join(', depois ')}`}>
+          {bloco.etapas.map((etapa, i) => (
+            <span key={i} className="anx-fluxo-par">
+              <span className="anx-fluxo-etapa">{etapa}</span>
+              {i < bloco.etapas.length - 1 && <span className="anx-fluxo-seta" aria-hidden>→</span>}
+            </span>
+          ))}
+        </div>
+      );
     case 'lista':
       if (bloco.ordenada) {
         return (

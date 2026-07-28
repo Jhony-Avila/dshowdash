@@ -31,7 +31,7 @@ $conversaId = isset($body['conversa_id']) && is_numeric($body['conversa_id'])
     ? (int) $body['conversa_id'] : 0;
 
 // Perfil: nova conversa lê do corpo; conversa existente usa o do banco.
-$perfil = (isset($body['profile']) && in_array($body['profile'], ['consultor', 'qualificacao'], true))
+$perfil = (isset($body['profile']) && in_array($body['profile'], ANUNCIOS_PERFIS, true))
     ? $body['profile'] : 'consultor';
 
 $history = [];

@@ -158,6 +158,29 @@ export async function listarSegmentos(signal?: AbortSignal): Promise<string[]> {
   return data.segmentos;
 }
 
+/** Página da Biblioteca (navegação da base de conhecimento). */
+export interface PaginaUnidades {
+  total: number;
+  offset: number;
+  limit: number;
+  units: Unidade[];
+}
+
+/** Navega a base de conhecimento (tela Metodologia Dshow). */
+export function listarUnidades(
+  params: { domain?: string; segment?: string; q?: string; offset?: number; limit?: number },
+  signal?: AbortSignal
+): Promise<PaginaUnidades> {
+  const query = new URLSearchParams();
+  if (params.domain) query.set('domain', params.domain);
+  if (params.segment) query.set('segment', params.segment);
+  if (params.q) query.set('q', params.q);
+  if (params.offset) query.set('offset', String(params.offset));
+  if (params.limit) query.set('limit', String(params.limit));
+  const sufixo = query.toString();
+  return get<PaginaUnidades>(`/api/anuncios/biblioteca.php${sufixo ? '?' + sufixo : ''}`, signal);
+}
+
 /** Agregados do painel de aprendizado (Fase 22). */
 export function carregarStats(signal?: AbortSignal): Promise<Stats> {
   return get<Stats>(STATS_URL, signal);
