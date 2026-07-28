@@ -1,5 +1,7 @@
 // screens/BigNumber.tsx — indicador executivo com variação, sparkline e drill-down.
-// @version 1.0.0  @created 2026-07-27  (Fase 4 — visuais gerenciais)
+// @version 1.0.1  @created 2026-07-27  (Fase 4 — visuais gerenciais)
+//
+// v1.0.1: percentual passa a usar vírgula decimal (pt-BR) — ver fmtPorFormato.
 //
 // Substitui o <Tile> mudo da Visão Geral. Três acréscimos, todos OPCIONAIS — um tile
 // sem série ou sem período anterior degrada para o visual antigo, nunca inventa número:
@@ -16,7 +18,9 @@ export type FormatoBN = 'brl' | 'num' | 'pct';
 export function fmtPorFormato(v: number | null | undefined, f: FormatoBN): string {
   if (v == null) return '—';
   if (f === 'brl') return fmtBRL(v);
-  if (f === 'pct') return `${Number.isInteger(v) ? v : v.toFixed(1)}%`;
+  // pt-BR: `toFixed(1)` devolvia ponto decimal ("63.6%") no meio de uma interface que
+  // usa vírgula em todo o resto (fmtBRL/fmtNum são pt-BR). Corrigido em 2026-07-27.
+  if (f === 'pct') return `${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
   return fmtNum(v);
 }
 
@@ -56,7 +60,7 @@ function Delta({ pct, anterior, formato, inverter }: { pct: number; anterior: nu
   return (
     <span className={`pp-delta ${classe}`} title={`Período anterior: ${fmtPorFormato(anterior, formato)}`}>
       <Icone size={12} strokeWidth={2.6} aria-hidden />
-      {quase ? '0%' : `${pct > 0 ? '+' : ''}${Math.abs(pct) >= 10 ? Math.round(pct) : pct.toFixed(1)}%`}
+      {quase ? '0%' : `${pct > 0 ? '+' : ''}${(Math.abs(pct) >= 10 ? Math.round(pct) : pct).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}
     </span>
   );
 }

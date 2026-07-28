@@ -29,7 +29,8 @@ export function Rankings({ status }: { status?: PipeStatus }) {
   if (!conectado) {
     return (
       <div>
-        <h1 className="pp-h1">Rankings</h1>
+        <PageHeader Icon={Trophy} titulo="Rankings"
+          descricao="Vendedores, produtos e organizações ordenados por valor ganho." />
         <div className="pp-card" style={{ maxWidth: 'none' }}><EstadoErro titulo="Integração não conectada" detalhe="Conecte o token do Pipedrive na tela de Configurações para ver estes dados." /></div>
       </div>
     );
@@ -68,7 +69,7 @@ export function Rankings({ status }: { status?: PipeStatus }) {
             {sellers.length === 0 ? (
               <p className="pp-placeholder">Sem dados de vendedores.</p>
             ) : (
-              <table className="pp-table">
+              <div className="pp-tabela-rolavel"><table className="pp-table">
                 <thead>
                   <tr>
                     <th style={{ width: 34 }}>#</th><th>Vendedor</th>
@@ -90,7 +91,7 @@ export function Rankings({ status }: { status?: PipeStatus }) {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
 
@@ -103,7 +104,7 @@ export function Rankings({ status }: { status?: PipeStatus }) {
                 negócios na aba <strong>Configurações</strong>.
               </p>
             ) : (
-              <table className="pp-table">
+              <div className="pp-tabela-rolavel"><table className="pp-table">
                 <thead>
                   <tr>
                     <th style={{ width: 34 }}>#</th><th>Produto</th>
@@ -125,7 +126,7 @@ export function Rankings({ status }: { status?: PipeStatus }) {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
 
@@ -135,7 +136,7 @@ export function Rankings({ status }: { status?: PipeStatus }) {
             {orgs.length === 0 ? (
               <p className="pp-placeholder">Sem dados de organizações.</p>
             ) : (
-              <table className="pp-table">
+              <div className="pp-tabela-rolavel"><table className="pp-table">
                 <thead>
                   <tr>
                     <th style={{ width: 34 }}>#</th><th>Organização</th>
@@ -155,7 +156,7 @@ export function Rankings({ status }: { status?: PipeStatus }) {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
         </>

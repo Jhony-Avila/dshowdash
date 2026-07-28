@@ -1,5 +1,9 @@
 // screens/Negocios.tsx — DataGrid de negocios sobre EntityGrid (colunas selecionaveis) + drawer.
-// @version 2.0.0  @created 2026-07-21
+// @version 2.1.0  @created 2026-07-21
+//
+// v2.1.0 (#30): coluna e filtro por MOTIVO DA PERDA — é o destino do drill-down da tela
+//   de Perdas (#/panel-pipedrive/negocios?status=lost&lost_reason=…). O motivo só existe
+//   em negócio perdido; nos demais a célula fica em travessão, não em branco.
 import { useState } from 'react';
 import { BriefcaseBusiness } from 'lucide-react';
 import { EntityGrid, type GridColuna } from './EntityGrid';
@@ -29,6 +33,9 @@ const COLS: GridColuna<PipeDealRow>[] = [
   { key: 'expected_close_date', label: 'Fechamento', sortavel: true, render: (d) => (d.expected_close_date ? fmtData(d.expected_close_date).slice(0, 10) : '—') },
   { key: 'add_time', label: 'Criado', sortavel: true, render: (d) => fmtData(d.add_time) },
   { key: 'owner', label: 'Dono', render: (d) => dashOr(d.owner) },
+  { key: 'lost_reason', label: 'Motivo da perda', width: 170,
+    render: (d) => (d.status === 'lost' ? dashOr(d.lost_reason) : '—'),
+    csv: (d) => (d.status === 'lost' ? (d.lost_reason ?? '') : '') },
   { key: 'status', label: 'Status', sortavel: true, render: (d) => (
     <span className="pp-badge" style={{ background: 'var(--pp-surface-2)' }}>
       <span className="pp-dot" style={{ background: corStatus(d.status) }} />
@@ -49,6 +56,7 @@ export function Negocios({ status, filtrosIniciais }: { status?: PipeStatus; fil
           { key: 'status', label: 'Status', tipo: 'multi', options: [{ value: 'open', label: 'Abertos' }, { value: 'won', label: 'Ganhos' }, { value: 'lost', label: 'Perdidos' }] },
           { key: 'stage_id', label: 'Etapas', tipo: 'multi', facetKey: 'stages' },
           { key: 'owner_id', label: 'Donos', tipo: 'multi', facetKey: 'owners' },
+          { key: 'lost_reason', label: 'Motivo da perda', tipo: 'multi', facetKey: 'lost_reasons' },
           { key: 'value', label: 'Faixa de valor (R$)', tipo: 'numRange' },
           { key: 'close', label: 'Fechamento previsto', tipo: 'dateRange' },
           { key: 'created', label: 'Data de criação', tipo: 'dateRange' },

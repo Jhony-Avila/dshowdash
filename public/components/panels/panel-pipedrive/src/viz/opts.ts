@@ -197,35 +197,6 @@ export function optDonut(
   };
 }
 
-/** Colunas + linha no eixo secundario (ex.: quantidade x valor). */
-export function optCombinado(
-  pal: Paleta,
-  labels: string[],
-  barras: { nome: string; dados: number[]; formato: Formato; cor?: string },
-  linha: { nome: string; dados: number[]; formato: Formato; cor?: string },
-): Opcao {
-  return {
-    ...base(pal),
-    grid: { left: 8, right: 8, top: 30, bottom: 6, containLabel: true },
-    legend: { top: 0, right: 0, textStyle: { color: pal.textDim, fontSize: 11 }, itemHeight: 8, itemWidth: 14 },
-    tooltip: {
-      ...(base(pal).tooltip as Opcao),
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      formatter: (ps: { axisValue: string; marker: string; seriesName: string; value: number; seriesIndex: number }[]) => {
-        const linhas = ps.map((p) => `${p.marker} ${p.seriesName}: <b>${fmtValor(p.value, p.seriesIndex === 0 ? barras.formato : linha.formato)}</b>`);
-        return `${ps[0]?.axisValue ?? ''}<br/>${linhas.join('<br/>')}`;
-      },
-    },
-    xAxis: eixoCategoria(pal, labels),
-    yAxis: [eixoValor(pal, barras.formato), { ...eixoValor(pal, linha.formato), splitLine: { show: false } }],
-    series: [
-      { name: barras.nome, type: 'bar', barMaxWidth: 30, yAxisIndex: 0, itemStyle: { borderRadius: [4, 4, 0, 0], color: barras.cor ?? pal.primary }, data: barras.dados },
-      { name: linha.nome, type: 'line', yAxisIndex: 1, smooth: 0.25, symbolSize: 5, lineStyle: { width: 2, color: linha.cor ?? pal.ok }, itemStyle: { color: linha.cor ?? pal.ok }, data: linha.dados },
-    ],
-  };
-}
-
 /**
  * Colunas empilhadas (composicao por categoria — ex.: desfecho por etapa).
  * `percentual` normaliza cada coluna para 100%: use quando as categorias tem ORDENS DE

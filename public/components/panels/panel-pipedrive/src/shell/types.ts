@@ -84,11 +84,14 @@ export interface PipeDealRow {
   status: string | null; stage: string | null; owner: string | null; pipeline: string | null;
   person: string | null; org: string | null; probability: number | null;
   expected_close_date: string | null; add_time: string | null; update_time: string | null;
+  /** Só vem preenchido em negócios perdidos (#30). */
+  lost_reason: string | null;
 }
-export interface PipeFacetOption { id: number; name: string | null; }
+/** `id` é string na faceta de motivos: a chave do motivo é o próprio texto. */
+export interface PipeFacetOption { id: number | string; name: string | null; }
 export interface PipeDealsPage {
   rows: PipeDealRow[]; total: number; page: number; per_page: number; pages: number;
-  facets: { stages: PipeFacetOption[]; owners: PipeFacetOption[] };
+  facets: { stages: PipeFacetOption[]; owners: PipeFacetOption[]; lost_reasons?: PipeFacetOption[] };
 }
 
 // Webhooks + fila (GET /webhooks, GET /queue) — rotinas administrativas (level 80).
@@ -188,18 +191,39 @@ export interface PipeFunilPipeline {
 }
 export interface PipeFunisData { pipelines: PipeFunilPipeline[]; }
 
-// Kanban (GET /kanban?pipeline_id=).
+// Kanban (GET /kanban?pipeline_id=) — v2, Fase 5.
+/** Sinais de atenção do cartão. Mesmas regras de `/alerts` (as telas têm de concordar). */
+export type PipeSinalKanban = 'ativ_atrasada' | 'fechamento_vencido' | 'sem_atividade' | 'parado' | 'sem_previsao';
 export interface PipeKanbanCard {
   id: number; title: string | null; value: number | null; currency: string | null;
-  owner: string | null; org: string | null;
+  owner: string | null; org: string | null; person: string | null;
+  probability: number | null;
+  expected_close_date: string | null;
+  add_time: string | null; update_time: string | null;
+  dias_na_etapa: number | null;
+  /** true = sem marco de entrada na etapa; o tempo está medido DA CRIAÇÃO do negócio. */
+  desde_criacao: boolean;
+  proxima_atividade: string | null;
+  atividades_atrasadas: number;
+  /** Ids das etiquetas; os rótulos vêm do dicionário `etiquetas` do quadro. */
+  labels: number[];
+  alertas: PipeSinalKanban[];
 }
 export interface PipeKanbanColumn {
-  stage_id: number; stage: string | null; count: number; valor: number; deals: PipeKanbanCard[];
+  stage_id: number; stage: string | null; order: number; probability: number | null;
+  /** Contagem e soma REAIS da etapa — não do que coube na página. */
+  count: number; valor: number;
+  /** Quantos cartões vieram nesta resposta (≤ `limite_por_etapa`). */
+  exibidos: number;
+  deals: PipeKanbanCard[];
 }
 export interface PipeKanbanBoard {
   pipeline_id: number | null; pipeline_name: string | null;
   pipelines: { id: number; name: string | null }[];
   columns: PipeKanbanColumn[];
+  etiquetas: { id: number; label: string }[];
+  limite_por_etapa: number;
+  totais: { count: number; valor: number };
 }
 
 // Alertas comerciais (GET /alerts).
@@ -456,5 +480,48 @@ export interface PipeFunnelComparacao extends PipeFunnelTotals {
 export interface PipeFunnelData {
   pipelines: PipeFunnelPipeline[];
   comparison: PipeFunnelComparacao[];
+  nota: string;
+}
+
+// ── Motivos de perda (GET /lost-reasons) — Backlog 06 #30 ────────────────────
+export interface PipeLostMotivo {
+  motivo: string;
+  n: number;
+  valor: number;
+  /** Participação sobre TODOS os perdidos, inclusive os sem motivo informado. */
+  share_qtd: number | null;
+  share_valor: number | null;
+  ticket_medio: number | null;
+  /** Da criação até a perda — não é tempo por etapa (não há histórico de transições). */
+  ciclo_medio_dias: number | null;
+  /** Peso do motivo sobre tudo que fechou na janela (ganho + perdido). */
+  taxa_perda_pct: number | null;
+}
+export interface PipeLostGrupo {
+  id: number | null;
+  nome: string;
+  contexto: string;
+  n: number;
+  valor: number;
+  principal_motivo: string | null;
+  principal_share: number | null;
+}
+/** `total` acompanha os itens: o recorte devolve no máximo 25 grupos. */
+export interface PipeLostRecorte { total: number; itens: PipeLostGrupo[] }
+export interface PipeLostData {
+  janela: { meses: number; de: string | null; ate: string };
+  totais: {
+    perdidos: number; com_motivo: number; sem_motivo: number; cobertura_pct: number | null;
+    valor_perdido: number; valor_com_motivo: number;
+    ganhos: number; valor_ganho: number; taxa_perda_pct: number | null;
+    motivos_distintos: number;
+  };
+  motivos: PipeLostMotivo[];
+  tendencia: { meses: string[]; series: { motivo: string; n: number[]; valor: number[] }[]; top: number };
+  por_etapa: PipeLostRecorte;
+  por_dono: PipeLostRecorte;
+  por_funil: PipeLostRecorte;
+  pipelines: { id: number; name: string | null }[];
+  pipeline_id: number | null;
   nota: string;
 }

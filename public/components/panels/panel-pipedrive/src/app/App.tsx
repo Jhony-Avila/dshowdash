@@ -5,6 +5,8 @@
 // v2.0.0 (Elevação visual §6): sidebar COLAPSÁVEL + AGRUPADA (Análise/Comercial/
 //   Cadastros/Administração), ícones Lucide (substituem emojis), rodapé com status/
 //   versão, persistência (compacta + grupos abertos) em localStorage.
+// v2.2.0 (#30): + tela PERDAS (motivos de perda) no grupo Análise; o drill-down dela
+//   leva a Negócios já filtrado por status=lost e motivo.
 // v2.1.0 (Fase 4): navegação passa a carregar FILTRO no hash
 //   (#/panel-pipedrive/negocios?status=won) para o drill-down da Visão Geral — o recorte
 //   fica compartilhável e o "voltar" do navegador o desfaz.
@@ -14,7 +16,7 @@ import {
   LayoutDashboard, BellRing, Trophy, TrendingUp, GitBranch,
   BriefcaseBusiness, Columns3, Target, CalendarCheck2,
   UsersRound, Building2, Package, NotebookPen,
-  UserRoundCog, Activity, Settings2, ChevronsLeft, ChevronsRight,
+  UserRoundCog, Activity, Settings2, ChevronsLeft, ChevronsRight, TrendingDown,
   type LucideIcon,
 } from 'lucide-react';
 import { queryClient, apiGet, chaves } from '../lib/api';
@@ -30,12 +32,13 @@ import { Alertas } from '../screens/Alertas';
 import { Rankings } from '../screens/Rankings';
 import { Previsao } from '../screens/Previsao';
 import { SaudeSync } from '../screens/SaudeSync';
+import { Perdas } from '../screens/Perdas';
 import '../styles/tokens.css';
 
 const HASH_BASE = '#/panel-pipedrive';
-const VERSAO = '2.1.0';
+const VERSAO = '2.2.0';
 
-type TelaId = 'geral' | 'alertas' | 'rankings' | 'previsao' | 'negocios' | 'kanban' | 'pessoas'
+type TelaId = 'geral' | 'alertas' | 'rankings' | 'previsao' | 'perdas' | 'negocios' | 'kanban' | 'pessoas'
   | 'organizacoes' | 'atividades' | 'leads' | 'produtos' | 'notas' | 'funis' | 'usuarios' | 'saude' | 'config';
 
 const TELAS: Record<TelaId, { label: string; Icon: LucideIcon }> = {
@@ -43,6 +46,7 @@ const TELAS: Record<TelaId, { label: string; Icon: LucideIcon }> = {
   alertas:      { label: 'Alertas',       Icon: BellRing },
   rankings:     { label: 'Rankings',      Icon: Trophy },
   previsao:     { label: 'Previsão',      Icon: TrendingUp },
+  perdas:       { label: 'Perdas',        Icon: TrendingDown },
   funis:        { label: 'Funis',         Icon: GitBranch },
   negocios:     { label: 'Negócios',      Icon: BriefcaseBusiness },
   kanban:       { label: 'Kanban',        Icon: Columns3 },
@@ -59,7 +63,7 @@ const TELAS: Record<TelaId, { label: string; Icon: LucideIcon }> = {
 
 // Agrupamento da navegação (§6.3).
 const GRUPOS: { id: string; label: string; itens: TelaId[] }[] = [
-  { id: 'analise',   label: 'Análise',        itens: ['geral', 'alertas', 'rankings', 'previsao', 'funis'] },
+  { id: 'analise',   label: 'Análise',        itens: ['geral', 'alertas', 'rankings', 'previsao', 'perdas', 'funis'] },
   { id: 'comercial', label: 'Comercial',      itens: ['negocios', 'kanban', 'leads', 'atividades'] },
   { id: 'cadastros', label: 'Cadastros',      itens: ['pessoas', 'organizacoes', 'produtos', 'notas'] },
   { id: 'admin',     label: 'Administração',  itens: ['usuarios', 'saude', 'config'] },
@@ -197,11 +201,12 @@ function Shell() {
       </nav>
 
       <main className="pp-main">
-        {tela === 'config' ? <Configuracoes />
+        {tela === 'config' ? <Configuracoes onSaude={() => irPara('saude')} />
           : tela === 'saude' ? <SaudeSync />
           : tela === 'alertas' ? <Alertas status={status} />
           : tela === 'rankings' ? <Rankings status={status} />
           : tela === 'previsao' ? <Previsao status={status} />
+          : tela === 'perdas' ? <Perdas status={status} onNegocios={(filtros) => irPara('negocios', filtros)} />
           : tela === 'negocios' ? <Negocios status={status} filtrosIniciais={filtroHash} />
           : tela === 'kanban' ? <Kanban status={status} />
           : tela === 'leads' ? <Leads status={status} />

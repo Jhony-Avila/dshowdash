@@ -35,7 +35,8 @@ export function Previsao({ status }: { status?: PipeStatus }) {
   if (!conectado) {
     return (
       <div>
-        <h1 className="pp-h1">Previsão</h1>
+        <PageHeader Icon={TrendingUp} titulo="Previsão de fechamento"
+          descricao="Valor total e ponderado pela probabilidade, por etapa e por mês." />
         <div className="pp-card" style={{ maxWidth: 'none' }}><EstadoErro titulo="Integração não conectada" detalhe="Conecte o token do Pipedrive na tela de Configurações para ver estes dados." /></div>
       </div>
     );

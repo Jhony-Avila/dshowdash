@@ -130,4 +130,5 @@ export const chaves = {
   health: ['pipe', 'health'] as const,
   summary: ['pipe', 'summary'] as const,
   funnel: ['pipe', 'funnel'] as const,
+  lostReasons: ['pipe', 'lost-reasons'] as const,
 };
