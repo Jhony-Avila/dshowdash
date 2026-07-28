@@ -36,7 +36,7 @@ const dashboardRoutes = Object.freeze({
   // panel-mercadolivre: modulo Mercado Livre (Fase 1 — dados simulados).
   // Navegacao interna por hash (#/panel-mercadolivre/<secao>).
   "/panel-mercadolivre": createPanelRoute("panel-mercadolivre", "Mercado Livre", { aliases: ["#/panel-mercadolivre", "#/mercadolivre", "#/mercado-livre"], tags: ["mercadolivre", "marketplace", "canais-venda"], description: "Central de gestao do Mercado Livre (Fase 1 — dados simulados)" }),
-  "/panel-09": createPanelRoute("panel-09", "Painel 09", { aliases: ["#/panel-09"] }),
+  "/panel-metaads": createPanelRoute("panel-metaads", "Meta Ads", { aliases: ["#/panel-metaads", "#/metaads", "#/meta-ads"], tags: ["metaads", "meta", "facebook", "instagram", "marketing"], description: "Central de gestao do Meta Ads (Fase 1 — dados simulados)" }), "/panel-09": createPanelRoute("panel-09", "Painel 09", { aliases: ["#/panel-09"] }),
   "/panel-10": createPanelRoute("panel-10", "Painel 10", { aliases: ["#/panel-10"] }),
   "/panel-11": createPanelRoute("panel-11", "Painel 11", { aliases: ["#/panel-11"] }),
   "/panel-12": createPanelRoute("panel-12", "Monitoramento de Jobs", { aliases: ["#/panel-12"], tags: ["monitoring"] }),
