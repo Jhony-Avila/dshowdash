@@ -1,5 +1,5 @@
 // screens/VisaoGeral.tsx — dashboard executivo da base local.
-// @version 3.0.0  @created 2026-07-21
+// @version 3.1.0  @created 2026-07-21
 //
 // Le GET /summary (KPIs da janela + janela anterior), /overview, /metrics, /conversion
 // e /funnel. Tudo ja sincronizado no PIPE_DSHOW — nao chama a API do Pipedrive.
@@ -8,13 +8,13 @@
 // v3.0.0 (Fase 4 — visuais gerenciais):
 //   • grade de 12 colunas ocupando a largura toda (criterio §12/§23);
 //   • big-numbers com VARIACAO vs. periodo anterior, sparkline e drill-down;
-//   • seletor de periodo (7/30/90/180 dias) que governa a faixa de indicadores;
+//   • seletor de periodo (janela deslizante + calendario) que governa a faixa;
 //   • graficos ECharts (area com zoom, rosca, barras, colunas) no lugar dos SVG.
 //
 // Duas classes de numero, sinalizadas na UI: os KPIs da FAIXA sao fatos de janela
 // (comparaveis); "em aberto agora" e foto do momento e por isso NAO tem variacao —
 // a base nao guarda snapshot historico e inventar um seria fabricar dado.
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LayoutDashboard, TriangleAlert } from 'lucide-react';
 import { apiGet, chaves, ApiError } from '../lib/api';
@@ -27,11 +27,33 @@ import { usePaleta } from '../viz/tema';
 import { optArea, optBarras, optColunas, optDonut, type PontoXY } from '../viz/opts';
 import type {
   PipeStatus, PipeOverview, PipeMetrics, PipeDailyMetric, PipeConversion,
-  PipeSummary, PipeSummaryKpi, PipeFunnelData,
+  PipeSummary, PipeSummaryKpi, PipeFunnelData, PipePeriodoId,
 } from '../shell/types';
 
-const PERIODOS = [7, 30, 90, 180] as const;
-type Periodo = (typeof PERIODOS)[number];
+// #3/#4 — janela deslizante E calendário. Os dois convivem porque respondem
+// perguntas diferentes: "como foram os últimos 30 dias" (tendência, sem borda de mês)
+// e "como está julho contra junho" (fechamento, que é como a área comercial cobra).
+const PERIODOS: { v: PipePeriodoId; label: string; grupo: 'janela' | 'calendario' }[] = [
+  { v: 'd7', label: '7 d', grupo: 'janela' },
+  { v: 'd30', label: '30 d', grupo: 'janela' },
+  { v: 'd90', label: '90 d', grupo: 'janela' },
+  { v: 'd180', label: '180 d', grupo: 'janela' },
+  { v: 'mes', label: 'Este mês', grupo: 'calendario' },
+  { v: 'mes_ant', label: 'Mês passado', grupo: 'calendario' },
+  { v: 'trim', label: 'Trimestre', grupo: 'calendario' },
+  { v: 'ano', label: 'Este ano', grupo: 'calendario' },
+];
+
+// #4 — a escolha sobrevive à navegação e ao reabrir a tela, como as demais
+// preferências locais que a aba Aparência já governa.
+const PERIODO_KEY = 'pp:periodo';
+function lerPeriodo(): PipePeriodoId {
+  try {
+    const s = localStorage.getItem(PERIODO_KEY);
+    if (s && PERIODOS.some((p) => p.v === s)) return s as PipePeriodoId;
+  } catch { /* ignora */ }
+  return 'd30';
+}
 
 export interface VisaoGeralProps {
   status?: PipeStatus;
@@ -44,7 +66,11 @@ export interface VisaoGeralProps {
 
 export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }: VisaoGeralProps) {
   const conectado = status?.status === 'connected';
-  const [dias, setDias] = useState<Periodo>(30);
+  const [periodo, setPeriodoEstado] = useState<PipePeriodoId>(lerPeriodo);
+  const trocarPeriodo = (p: PipePeriodoId) => {
+    setPeriodoEstado(p);
+    try { localStorage.setItem(PERIODO_KEY, p); } catch { /* ignora */ }
+  };
 
   const { data, isLoading, error, refetch } = useQuery<PipeOverview>({
     queryKey: chaves.overview,
@@ -63,9 +89,15 @@ export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }:
         descricao="Painel executivo do Pipedrive — indicadores da base sincronizada."
         acoes={conectado && !semDados ? (
           <div className="pp-seg" role="group" aria-label="Período dos indicadores">
-            {PERIODOS.map((p) => (
-              <button key={p} type="button" className={`pp-seg-b${dias === p ? ' is-active' : ''}`}
-                onClick={() => setDias(p)} aria-pressed={dias === p}>{p} d</button>
+            {PERIODOS.map((p, i) => (
+              <Fragment key={p.v}>
+                {/* Separador entre janela deslizante e calendário: são naturezas
+                    diferentes, e emendá-las faria "180 d" e "Este mês" parecerem
+                    a mesma escala. */}
+                {i > 0 && PERIODOS[i - 1].grupo !== p.grupo && <span className="pp-seg-sep" aria-hidden />}
+                <button type="button" className={`pp-seg-b${periodo === p.v ? ' is-active' : ''}`}
+                  onClick={() => trocarPeriodo(p.v)} aria-pressed={periodo === p.v}>{p.label}</button>
+              </Fragment>
             ))}
           </div>
         ) : undefined} />
@@ -102,7 +134,7 @@ export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }:
           </div>
         ) : (
           <>
-            <FaixaIndicadores dias={dias} onNegocios={onNegocios} />
+            <FaixaIndicadores periodo={periodo} onNegocios={onNegocios} />
 
             <BlocoTendencia />
 
@@ -154,10 +186,12 @@ const DRILL: Record<string, Record<string, string> | undefined> = {
   perdidos:    { status: 'lost' },
 };
 
-function FaixaIndicadores({ dias, onNegocios }: { dias: number; onNegocios?: (f?: Record<string, string>) => void }) {
+function FaixaIndicadores({ periodo, onNegocios }: {
+  periodo: PipePeriodoId; onNegocios?: (f?: Record<string, string>) => void;
+}) {
   const { data, isLoading } = useQuery<PipeSummary>({
-    queryKey: [...chaves.summary, dias],
-    queryFn: ({ signal }) => apiGet<PipeSummary>('/summary', { days: dias }, signal),
+    queryKey: [...chaves.summary, periodo],
+    queryFn: ({ signal }) => apiGet<PipeSummary>('/summary', { periodo }, signal),
     refetchInterval: 120_000,
   });
 
@@ -171,8 +205,26 @@ function FaixaIndicadores({ dias, onNegocios }: { dias: number; onNegocios?: (f?
   const formatoDe = (f: PipeSummaryKpi['formato']): FormatoBN => (f === 'dias' ? 'num' : f);
   const e = data.estado;
 
+  // #3 — o chip ▲/▼ compara com ALGO; qual algo muda conforme o período (janela
+  // anterior, mesmo trecho do mês passado, ano a ano). Sem esta linha o usuário teria
+  // de adivinhar, e a mesma seta significaria coisas diferentes em cada modo.
+  const per = data.periodo;
+  const tamanhosDiferem = per.dias_atual !== per.dias_anterior;
+
   return (
     <>
+      <div className="pp-periodo-nota">
+        <span><strong>{per.rotulo}</strong> · variação contra {per.comparacao}</span>
+        {/* Fevereiro tem 28 dias e janeiro 31: sem este aviso, 10% a menos em
+            fevereiro parece queda de desempenho quando é queda de calendário. */}
+        {tamanhosDiferem && (
+          <span className="pp-periodo-alerta" title="Períodos de tamanhos diferentes — a variação embute a diferença de dias.">
+            <TriangleAlert size={11} aria-hidden />
+            {per.dias_atual} d contra {per.dias_anterior} d
+          </span>
+        )}
+      </div>
+
       <div className="pp-g12">
         {data.kpis.map((k) => {
           const drill = DRILL[k.chave];

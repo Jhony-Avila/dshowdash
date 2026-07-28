@@ -46,15 +46,21 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 |---|---|---|---|---|
 | 1 | Gráfico de **série temporal de ganhos** (valor ganho por dia/semana/mês) com biblioteca de charts leve | ⭐⭐⭐ | M | ✅ |
 | 2 | **Funil visual** de conversão (taxa etapa→etapa, tempo médio por etapa) | ⭐⭐⭐ | M | ◑ |
-| 3 | **Comparação de períodos** (mês atual × anterior, ano a ano) | ⭐⭐ | M | ◑ |
+| 3 | **Comparação de períodos** (mês atual × anterior, ano a ano) | ⭐⭐ | M | ✅ |
 | 4 | **Seletor de período global** (7/30/90 dias, custom) afetando os tiles/gráficos | ⭐⭐ | M | ◑ |
 | 5 | KPIs adicionais: **ticket médio**, **ciclo de vendas médio** (add→won), **taxa de perda por motivo** | ⭐⭐ | P | ✅ |
 | 6 | **Metas × realizado** (se houver metas comerciais a importar) | ⭐⭐ | M | 💤 |
 | 7 | Gráfico de **ganhos por vendedor / por etapa / por origem** | ⭐⭐ | M | ◑ |
 
 - **#2** (F4, `Funis v2`): entregue o funil visual, a **conversão para a etapa seguinte**, a etapa-**gargalo** destacada e a idade média por etapa. Continua ◑ porque "alcance" é **estimativa** (assume avanço em ordem) e o tempo-por-etapa **real** depende de `pipe_deal_history` — hoje vazia. A tela diz isso no rodapé; não fabricar o que falta é a parte difícil que já está feita.
-- **#3** (F4): os big-numbers comparam a janela com **a mesma janela imediatamente anterior** (chip ▲/▼). Falta o recorte por **calendário** (mês atual × mês anterior, YoY), que é outra consulta — a janela deslizante não responde "como foi julho contra junho".
-- **#4** (F4): seletor 7/30/90/**180** dias, mas **na Visão Geral**, não global. Falta valer para as demais telas.
+- **#3** ✅ (2026-07-28, `VisaoGeral.tsx v3.1.0` + `GET /summary?periodo=`). Oito períodos, em dois grupos separados no seletor: **janela deslizante** (7/30/90/180 d) e **calendário** (este mês · mês passado · trimestre · este ano). As duas naturezas convivem porque respondem perguntas diferentes — tendência sem borda de mês *versus* "julho contra junho", que é como a área comercial cobra.
+  - ⚠️ **O ponto delicado é a BASE DE COMPARAÇÃO, não a janela.** Um mês corrente é **parcial**: comparar 01–28/07 com **junho inteiro** (30 dias) faz o mês atual parecer pior só porque ainda não acabou. Por isso períodos **em curso** (`mes`, `trim`, `ano`) comparam com o **mesmo trecho** do anterior — 01–28/06, não 01–30/06. Períodos **encerrados** (`mes_ant`) comparam com o anterior **completo**, aí sim justo.
+  - ⚠️ **Quando os tamanhos ainda assim diferem, a tela avisa.** Fevereiro tem 28 dias e janeiro 31: sem aviso, 10% a menos em fevereiro passa por queda de desempenho quando é queda de calendário. O backend devolve `dias_atual`/`dias_anterior` e a UI mostra um chip âmbar ("30 d contra 31 d").
+  - A tela **declara o período e a base com as datas exatas** ("Este mês (01/07–28/07) · variação contra mesmo trecho do mês anterior (01/06–28/06)"). O mesmo chip ▲/▼ significa coisas diferentes em cada modo; comparação que o usuário não consegue conferir é comparação em que ele não confia.
+  - Bordas provadas em sandbox **antes** de ir ao ar (`31/03` → fevereiro tem 28; `31/05` → abril tem 30; janeiro → dezembro do ano anterior; `29/02` bissexto): `min(dia, último dia do mês anterior)` evita o estouro clássico de 31/03 virar 03/03.
+  - `days=` continua aceito pelo backend (compatibilidade), mas a tela usa `periodo=`. Período desconhecido cai no padrão `d30` — **nunca em janela vazia**.
+  - Prova: `tools/screenshot/valida-pipedrive-periodos.mjs`, que confere as **datas** devolvidas, exige trecho equivalente nos períodos em curso, cobra o aviso quando os tamanhos diferem (e proíbe o aviso quando não diferem) e verifica que os KPIs mudam entre períodos — se o parâmetro não chegasse ao SQL, seriam idênticos.
+- **#4** ◑ (2026-07-28): a escolha agora **persiste** (`pp:periodo`) e sobrevive a sair e voltar da tela — a fatia que valia a pena. **Continua ◑ porque "global" é bloqueado pelas outras telas, não por esforço aqui**: `GET /rankings` é **all-time** (não aceita janela) e `GET /lost-reasons` recorta em **meses**, não em dias. Um seletor único exigiria dar janela ao Rankings e unificar as unidades — decisão de produto antes de código.
 - **#5** ✅: ciclo de vendas médio (F4, `GET /conversion`), ticket médio (F4, comparação entre funis) e **taxa de perda por motivo** (tela Perdas, #30) — os três existem.
 - **#7** (F4): por **vendedor** ✅ (barras) e por **etapa** ✅ (valor em aberto, clicável). Falta **origem** → é o item **#31**.
 
@@ -215,13 +221,15 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 | 60 | **Zona morta do app-shell (600–820 px)**: sidebar de 312 px fixos deixa 208–258 px úteis a QUALQUER painel | ⭐⭐⭐ | M | 💤 |
 | 61 | **Colunas mortas em `pipe_deals`**: popular no sync **ou** remover do schema (hoje são armadilha silenciosa) | ⭐⭐ | P | 💤 |
 | 62 | **Índices medidos** em `add_time`/`won_time`/`lost_time` (deals) e `done`/`due_date` (activities) — DDL em produção | ⭐⭐ | P | 💤 |
-| 63 | 🐛 **`POST /api/telemetry/collect.php`** — investigado 2026-07-28: **não é intermitente, a telemetria NUNCA persistiu**. Causa corrigida na fonte; publicar depende de decisão do dono (ver abaixo) | ⭐⭐⭐ | G | ◑ |
+| 63 | 🐛 **`POST /api/telemetry/collect.php`** — 2026-07-28: **não era intermitente, a telemetria NUNCA persistiu**. Corrigida e **NO AR** (CSRF + cadeia de build + contrato do backend). Resta a injeção do port `globalState` no boot | ⭐⭐⭐ | G | ✅ |
 | 64 | **Cor real das etiquetas**: `pipe_custom_field_options` guarda só id+rótulo (a cor vive em `dealFields`, não sincronizada) — hoje a cor é determinística pelo id | ⭐ | P | 🔜 |
 
 ⚠️ **#60 a #63 são decisões do dono/DBA, não trabalho de painel.** Estão aqui para não se perderem.
 
 - **#63** investigado em **2026-07-28**. O ticket dizia "403 intermitente"; a medição no access.log (rota ancorada) mostrou **15 dias, 1.755 POSTs e ZERO 200** — 921× 401, 833× 403. A telemetria **nunca persistiu um evento**. Causa: `transport/send.ts` não envia `X-CSRF-Token` e o endpoint exige `requireCsrf()` (o fallback `$_POST['csrf_token']` não vale — o corpo é JSON). Ficou 15 dias invisível porque o transporte devolvia **`success: true`** ao descartar o lote. Corrigido na fonte (**v5.3.0-CSRF**: header no `sendBatch`, `fetch(keepalive)` no lugar do `sendBeacon` — que não envia cabeçalho e por isso dava 403 estrutural —, métricas e check de saúde). Provas: `tools/screenshot/valida-telemetria-csrf.mjs` (sem CSRF → 403; com CSRF → 200, `inserted 1`).
-  🔴 **A correção NÃO está no ar.** Os 21 targets core têm cadeia de build circular (`_entry.ts` → `index.js` → o próprio `dist/*.bundle.js`), então rebuild re-empacota o bundle e ignora as fontes; e a fonte agregadora do `telemetry-core` (`Telemetry`, `createLegacyAdapter`) **foi perdida** — só existe no bundle minificado. Medido em `valida-telemetria-runtime.mjs`: fonte `5.3.0-CSRF`, no ar `5.1.1`, 4 envios, 0 com CSRF. **Decisão do dono**: reconstruir o agregador do telemetry-core ou consertar a cadeia de build dos bundles core — as duas mexem no boot do app e passam longe de "P".
+  ✅ **NO AR desde 2026-07-28.** Publicar exigiu consertar a cadeia de build: os targets core têm ciclo (`_entry.ts` → `index.js` → o próprio `dist/*.bundle.js`), então o rebuild re-empacotava o artefato e ignorava as fontes; e a fonte agregadora do `telemetry-core` (`Telemetry`, `createLegacyAdapter`) **estava perdida** — só existia no bundle minificado. Foi reconstruída como `_aggregator.ts` e o `_entry.ts` passou a apontar para ela (build 3 → **13 módulos**; API pública idêntica, 11 exports conferidos por diff). Somado a isso: **aquecimento do token CSRF no `initTelemetry`** (sem ele o flush de `visibilitychange` caía no `sendBeacon`, que não envia cabeçalho) e correção de **descasamento de contrato no backend** — `260 de 261` eventos gravavam `event_name='unknown'` porque o `normalizer` emite a chave `event` e o PHP lia `name`/`action`. Resultado medido: **48 de 48** eventos com nome real, rota preenchida, 0 erro de console no boot.
+  ⚠️ **Os outros 20 targets core continuam circulares** — corrigir fonte de `config-loader`/`api-client`/`theme-manager` etc. **não chega ao browser** sem a mesma receita.
+  ⚠️ **Sequela pendente do dono**: o flush timer periódico **nunca liga** — `_isAuthenticated()` do lifecycle responde `false` sempre (o port `globalState` nunca é injetado e o strict mode proíbe ler `window.*`), então a telemetria só sai nos flushes de `visibilitychange`/`pagehide`. Correção real = `injectPorts({ globalState })` no bootstrap (mexe no boot). Fallback e reavaliação periódica foram tentados e **revertidos**: sob strict seriam código morto.
 
 ---
 
@@ -245,5 +253,5 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 
 Depois disso, os estratégicos de maior porte: **Cruzamento ERP** (#34–#36) e **Mailbox** (#37–#38), quando houver decisão de escopo.
 
-> Total: **64 itens** catalogados — **24 ✅ · 8 ◑ · 1 ⚖️ · 20 🔜 · 11 💤** (contados no próprio arquivo, não estimados).
+> Total: **64 itens** catalogados — **26 ✅ · 6 ◑ · 1 ⚖️ · 20 🔜 · 11 💤** (contados no próprio arquivo, não estimados).
 > Priorize por Valor↑ / Esforço↓, mas leia antes o bloco "Bloqueios de DADO" da seção 0: três dos itens abertos não são questão de esforço.

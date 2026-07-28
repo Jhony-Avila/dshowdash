@@ -1,7 +1,7 @@
 // Valida a FASE 4 do Pipedrive (visuais gerenciais), dark + light:
 //  1. Visão Geral em grade de 12 colunas, com big-numbers (variação + sparkline)
 //     e gráficos ECharts renderando canvas de verdade (não cartão vazio).
-//  2. Seletor de período (7/30/90/180) refazendo GET /summary com o days certo.
+//  2. Seletor de período refazendo GET /summary com o período certo (`periodo=d90`).
 //  3. Drill-down: clique num big-number leva a Negócios JÁ filtrado (hash + chip).
 //  4. Funis: chips de funil, funil visual, tabela de etapas com gargalo destacado.
 //  5. Alertas: painel de risco, rosca de severidade, alternador dono/funil/etapa,
@@ -111,7 +111,10 @@ async function rodar(tema) {
   await page.waitForTimeout(2200);
   R[tema].periodo = {
     novasChamadas: chamadas.filter((c) => c.startsWith('summary')).length - antes,
-    pediu90: chamadas.some((c) => c.includes('days=90')),
+    // O parâmetro virou `periodo=d90` no backlog #3 (o /summary passou a aceitar
+    // calendário além da janela deslizante). `days=90` continua aceito pelo backend
+    // por compatibilidade, mas a tela não o usa mais.
+    pediu90: chamadas.some((c) => c.includes('periodo=d90') || c.includes('days=90')),
     ativo: await page.evaluate(() => document.querySelector('.pp-pagehead-r .pp-seg-b.is-active')?.textContent.trim()),
   };
 

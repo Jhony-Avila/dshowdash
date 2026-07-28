@@ -446,8 +446,21 @@ export interface PipeSummaryKpi {
   serie: number[];
   dica?: string;
 }
+/** Períodos do /summary (#3). `d*` = janela deslizante; os demais, calendário. */
+export type PipePeriodoId = 'd7' | 'd30' | 'd90' | 'd180' | 'mes' | 'mes_ant' | 'trim' | 'ano';
+
 export interface PipeSummary {
-  periodo: { dias: number; de: string; ate: string; de_anterior: string; ate_anterior: string };
+  periodo: {
+    dias: number; de: string; ate: string; de_anterior: string; ate_anterior: string;
+    /** #3 — o que a tela mostra para o chip de variação não ser adivinhação. */
+    id: PipePeriodoId;
+    rotulo: string;
+    /** Contra o que se compara, com as datas exatas. */
+    comparacao: string;
+    /** Quando diferem (mês de 31 dias contra fevereiro), a tela avisa. */
+    dias_atual: number;
+    dias_anterior: number;
+  };
   kpis: PipeSummaryKpi[];
   /** Foto do agora — sem período anterior de propósito (a base não guarda snapshot). */
   estado: {

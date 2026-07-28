@@ -340,14 +340,92 @@ final class PipeAnalyticsRepository
     //
     // Placeholders POSICIONAIS de proposito: a conexao usa EMULATE_PREPARES=false,
     // que rejeita placeholder NOMEADO repetido (bug ja pago nas buscas dos grids).
-    public function summary(int $days = 30): array
+    /** Periodos aceitos pelo /summary (#3/#4). 'd*' = janela deslizante; os demais, calendario. */
+    public const PERIODOS = ['d7', 'd30', 'd90', 'd180', 'mes', 'mes_ant', 'trim', 'ano'];
+
+    /**
+     * Resolve um periodo em [de, ate, deAnt, ateAnt, rotulo, rotuloComparacao] (#3).
+     *
+     * ⚠️ O PONTO DELICADO E A BASE DE COMPARACAO. Um mes CORRENTE e parcial: comparar
+     * 01–28/07 com o julho... quer dizer, com JUNHO INTEIRO (30 dias) faz o mes atual
+     * parecer pior so porque ainda nao acabou. Por isso os periodos de calendario em
+     * curso ('mes', 'trim', 'ano') comparam com o MESMO TRECHO do periodo anterior —
+     * 01–28/06, nao 01–30/06. O rotulo devolve as datas exatas para a tela mostrar:
+     * comparacao que o usuario nao consegue conferir e comparacao em que ele nao confia.
+     *
+     * Periodos ENCERRADOS ('mes_ant') comparam com o anterior inteiro, que ai e justo.
+     */
+    private function resolverPeriodo(string $periodo): array
+    {
+        $hoje = date('Y-m-d');
+        $fmt  = static fn(string $d) => date('d/m/Y', strtotime($d));
+        $par  = static fn(string $a, string $b) => $fmt($a) . '–' . $fmt($b);
+
+        // Janela deslizante (comportamento historico): compara com a janela imediatamente anterior.
+        if (preg_match('/^d(\d+)$/', $periodo, $m)) {
+            $days   = max(7, min((int)$m[1], 365));
+            $de     = date('Y-m-d', strtotime("-" . ($days - 1) . " days"));
+            $ateAnt = date('Y-m-d', strtotime($de . ' -1 day'));
+            $deAnt  = date('Y-m-d', strtotime($de . " -{$days} days"));
+            return [$de, $hoje, $deAnt, $ateAnt,
+                    "Últimos {$days} dias", 'mesma janela imediatamente anterior (' . $par($deAnt, $ateAnt) . ')'];
+        }
+
+        switch ($periodo) {
+            case 'mes': {
+                $de  = date('Y-m-01');
+                $dia = (int)date('j');
+                // Trecho equivalente do mes anterior. `min` porque 31/03 nao existe em
+                // fevereiro: cai no ultimo dia dele em vez de estourar para marco.
+                $iniAnt   = date('Y-m-01', strtotime('first day of last month'));
+                $ultDiaAnt = (int)date('t', strtotime($iniAnt));
+                $ateAnt   = date('Y-m-', strtotime($iniAnt)) . str_pad((string)min($dia, $ultDiaAnt), 2, '0', STR_PAD_LEFT);
+                return [$de, $hoje, $iniAnt, $ateAnt,
+                        'Este mês (' . $par($de, $hoje) . ')',
+                        'mesmo trecho do mês anterior (' . $par($iniAnt, $ateAnt) . ')'];
+            }
+            case 'mes_ant': {
+                // Mes ENCERRADO: comparar com o anterior inteiro e justo (ambos completos).
+                $de     = date('Y-m-01', strtotime('first day of last month'));
+                $ate    = date('Y-m-t', strtotime($de));
+                $deAnt  = date('Y-m-01', strtotime($de . ' -1 month'));
+                $ateAnt = date('Y-m-t', strtotime($deAnt));
+                return [$de, $ate, $deAnt, $ateAnt,
+                        'Mês passado (' . $par($de, $ate) . ')',
+                        'mês anterior completo (' . $par($deAnt, $ateAnt) . ')'];
+            }
+            case 'trim': {
+                $mes    = (int)date('n');
+                $iniMes = (int)(floor(($mes - 1) / 3) * 3) + 1;
+                $de     = date('Y-') . str_pad((string)$iniMes, 2, '0', STR_PAD_LEFT) . '-01';
+                $diasCorridos = (int)((strtotime($hoje) - strtotime($de)) / 86400);
+                $deAnt  = date('Y-m-01', strtotime($de . ' -3 months'));
+                $ateAnt = date('Y-m-d', strtotime($deAnt . " +{$diasCorridos} days"));
+                return [$de, $hoje, $deAnt, $ateAnt,
+                        'Este trimestre (' . $par($de, $hoje) . ')',
+                        'mesmo trecho do trimestre anterior (' . $par($deAnt, $ateAnt) . ')'];
+            }
+            case 'ano': {
+                $de = date('Y-01-01');
+                // Ano a ano: mesmo dia/mes do ano passado. Em 29/02 o strtotime cai em
+                // 01/03 do ano anterior (nao bissexto) — 1 dia a mais, e a tela mostra a data.
+                $deAnt  = date('Y-01-01', strtotime('-1 year'));
+                $ateAnt = date('Y-m-d', strtotime($hoje . ' -1 year'));
+                return [$de, $hoje, $deAnt, $ateAnt,
+                        'Este ano (' . $par($de, $hoje) . ')',
+                        'mesmo trecho do ano anterior (' . $par($deAnt, $ateAnt) . ')'];
+            }
+        }
+        // Desconhecido cai no padrao — nunca em janela vazia.
+        return $this->resolverPeriodo('d30');
+    }
+
+    public function summary(int $days = 30, ?string $periodo = null): array
     {
         $days = max(7, min($days, 365));
-
-        $ate    = date('Y-m-d');
-        $de     = date('Y-m-d', strtotime("-" . ($days - 1) . " days"));
-        $ateAnt = date('Y-m-d', strtotime($de . ' -1 day'));
-        $deAnt  = date('Y-m-d', strtotime($de . " -{$days} days"));
+        // `days` continua valendo para quem ja chamava assim; `periodo` tem precedencia.
+        [$de, $ate, $deAnt, $ateAnt, $rotulo, $rotuloComp] =
+            $this->resolverPeriodo($periodo ?? "d{$days}");
 
         // Um unico scan resolve as duas janelas para todas as metricas de negocio.
         $mAtual = $this->metricasJanela($de, $ate);
@@ -393,6 +471,15 @@ final class PipeAnalyticsRepository
             'periodo' => [
                 'dias' => $days, 'de' => $de, 'ate' => $ate,
                 'de_anterior' => $deAnt, 'ate_anterior' => $ateAnt,
+                // #3 — o que a tela precisa para NAO deixar o usuario adivinhar contra o
+                // que o chip de variacao esta comparando.
+                'id' => $periodo ?? "d{$days}",
+                'rotulo' => $rotulo,
+                'comparacao' => $rotuloComp,
+                // Dias corridos de cada janela. Quando diferem (mes de 31 contra fevereiro),
+                // a tela avisa em vez de deixar a diferenca passar por desempenho.
+                'dias_atual'    => (int)((strtotime($ate) - strtotime($de)) / 86400) + 1,
+                'dias_anterior' => (int)((strtotime($ateAnt) - strtotime($deAnt)) / 86400) + 1,
             ],
             'kpis'   => $kpis,
             'estado' => $this->estadoAgora(),

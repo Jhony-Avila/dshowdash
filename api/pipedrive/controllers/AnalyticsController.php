@@ -91,14 +91,22 @@ final class PipeAnalyticsController
         ApiResponse::success($lr, ['ts' => date('c')]);
     }
 
-    /** GET /summary?days=30 — KPIs da janela + MESMA janela anterior (Fase 4). */
+    /**
+     * GET /summary?days=30 | ?periodo=mes — KPIs do periodo + base de comparacao.
+     * `periodo` (#3) tem precedencia sobre `days` e aceita janela deslizante (d7/d30/
+     * d90/d180) ou calendario (mes / mes_ant / trim / ano).
+     */
     public static function summary(string $method, PDO $pdo): void
     {
         requireMethod(['GET']);
-        $q = pipe_query(['days']);
+        $q = pipe_query(['days', 'periodo']);
         $days = isset($q['days']) && is_numeric($q['days']) ? (int)$q['days'] : 30;
+        // #3 — periodo de calendario. Allow-list; desconhecido vira null e o repositorio
+        // cai na janela deslizante de `days` (nunca em periodo vazio).
+        $periodo = isset($q['periodo']) && in_array($q['periodo'], PipeAnalyticsRepository::PERIODOS, true)
+            ? (string)$q['periodo'] : null;
 
         $repo = new PipeAnalyticsRepository($pdo);
-        ApiResponse::success($repo->summary($days), ['ts' => date('c')]);
+        ApiResponse::success($repo->summary($days, $periodo), ['ts' => date('c')]);
     }
 }
