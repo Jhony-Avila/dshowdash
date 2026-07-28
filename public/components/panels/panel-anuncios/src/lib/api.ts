@@ -1,12 +1,17 @@
 // lib/api.ts — cliente do proxy same-origin /api/anuncios (Decision Engine).
-// @version 1.0.0  @created 2026-07-27
+// @version 1.1.0  @created 2026-07-27
 //
 // Envelope {ok,data,error,meta}: ok:false com HTTP 200 é possível, então checa os dois.
 // Escrita exige CSRF (mesmo padrão do panel-ads/lib/api.ts).
 // O token do Decision Engine fica NO SERVIDOR (ask.php) — nunca no navegador.
-import type { ApiEnvelope, AskResposta } from '../shell/types';
+// v1.1.0: conversas persistentes (conversa_id no ask; conversas.php; feedback.php).
+import type {
+  ApiEnvelope, AskResposta, Conversa, Feedback, MensagemPersistida,
+} from '../shell/types';
 
-const ASK_URL = '/api/anuncios/ask.php';
+const ASK_URL       = '/api/anuncios/ask.php';
+const CONVERSAS_URL = '/api/anuncios/conversas.php';
+const FEEDBACK_URL  = '/api/anuncios/feedback.php';
 
 export class ApiError extends Error {
   constructor(message: string, readonly code: string, readonly status: number) {
@@ -52,13 +57,9 @@ export interface PerguntaFiltros {
   k?: number;
 }
 
-/** Envia a pergunta ao Decision Engine via proxy PHP autenticado. */
-export async function perguntar(
-  question: string,
-  filtros: PerguntaFiltros = {},
-  signal?: AbortSignal
-): Promise<AskResposta> {
-  const res = await fetch(ASK_URL, {
+/** POST JSON autenticado (CSRF) com tratamento do envelope padrão. */
+async function post<T>(url: string, corpo: unknown, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, {
     method: 'POST',
     credentials: 'same-origin',
     headers: {
@@ -66,10 +67,10 @@ export async function perguntar(
       Accept: 'application/json',
       'X-CSRF-Token': await csrfToken(),
     },
-    body: JSON.stringify({ question, ...filtros }),
+    body: JSON.stringify(corpo),
     signal,
   });
-  let body: ApiEnvelope<AskResposta> | null = null;
+  let body: ApiEnvelope<T> | null = null;
   try { body = await res.json(); } catch { /* não-JSON */ }
 
   if (!res.ok || !body || body.ok === false || !body.data) {
@@ -81,4 +82,64 @@ export async function perguntar(
     throw new ApiError(msg, code, res.status);
   }
   return body.data;
+}
+
+/** GET JSON autenticado com tratamento do envelope padrão. */
+async function get<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+    signal,
+  });
+  let body: ApiEnvelope<T> | null = null;
+  try { body = await res.json(); } catch { /* não-JSON */ }
+  if (!res.ok || !body || body.ok === false || !body.data) {
+    throw new ApiError(
+      body?.meta?.message ?? 'Falha ao carregar o histórico.',
+      body?.error ?? `HTTP_${res.status}`,
+      res.status
+    );
+  }
+  return body.data;
+}
+
+/** Envia a pergunta (com memória, se conversaId) ao Decision Engine. */
+export function perguntar(
+  question: string,
+  conversaId: number | null,
+  filtros: PerguntaFiltros = {},
+  signal?: AbortSignal
+): Promise<AskResposta> {
+  return post<AskResposta>(
+    ASK_URL,
+    { question, ...(conversaId ? { conversa_id: conversaId } : {}), ...filtros },
+    signal
+  );
+}
+
+/** Lista as conversas recentes do usuário. */
+export async function listarConversas(signal?: AbortSignal): Promise<Conversa[]> {
+  const data = await get<{ conversas: Conversa[] }>(CONVERSAS_URL, signal);
+  return data.conversas;
+}
+
+/** Carrega as mensagens de uma conversa. */
+export function carregarConversa(
+  id: number,
+  signal?: AbortSignal
+): Promise<{ conversa: { id: number; titulo: string }; mensagens: MensagemPersistida[] }> {
+  return get(`${CONVERSAS_URL}?id=${id}`, signal);
+}
+
+/** Registra 👍/👎 (ou remove, com 0) numa resposta do consultor. */
+export function enviarFeedback(
+  messageId: number,
+  feedback: Feedback | 0,
+  comment?: string
+): Promise<{ message_id: number; feedback: Feedback }> {
+  return post(FEEDBACK_URL, {
+    message_id: messageId,
+    feedback: feedback ?? 0,
+    ...(comment ? { comment } : {}),
+  });
 }

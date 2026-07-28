@@ -52,8 +52,34 @@
 [data-anuncios-react-root] .anx-brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; white-space: nowrap; }
 [data-anuncios-react-root] .anx-brand-mark { width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(135deg, var(--anx-primary), var(--anx-purple)); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; }
 [data-anuncios-react-root] .anx-sub { font-size: 12px; color: var(--anx-text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-[data-anuncios-react-root] .anx-mode-pill { margin-left: auto; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--anx-cyan); background: color-mix(in srgb, var(--anx-cyan) 14%, transparent); border: 1px solid color-mix(in srgb, var(--anx-cyan) 36%, transparent); white-space: nowrap; }
+[data-anuncios-react-root] .anx-topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+[data-anuncios-react-root] .anx-mode-pill { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--anx-cyan); background: color-mix(in srgb, var(--anx-cyan) 14%, transparent); border: 1px solid color-mix(in srgb, var(--anx-cyan) 36%, transparent); white-space: nowrap; }
 [data-anuncios-react-root] .anx-mode-pill.is-ai { color: var(--anx-purple); background: color-mix(in srgb, var(--anx-purple) 14%, transparent); border-color: color-mix(in srgb, var(--anx-purple) 36%, transparent); }
+
+/* Botões do topo (Histórico / Nova conversa) */
+[data-anuncios-react-root] .anx-topbtn { border: 1px solid var(--anx-border); background: var(--anx-bg); color: var(--anx-text); padding: 6px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: border-color .15s, background .15s; }
+[data-anuncios-react-root] .anx-topbtn:hover:not(:disabled) { border-color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-topbtn:disabled { opacity: .5; cursor: default; }
+[data-anuncios-react-root] .anx-topbtn-primary { border-color: color-mix(in srgb, var(--anx-primary) 55%, transparent); color: var(--anx-primary-h); }
+[data-anuncios-react-root] .anx-topbtn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--anx-primary) 12%, transparent); border-color: var(--anx-primary); }
+
+/* Dropdown de histórico de conversas */
+[data-anuncios-react-root] .anx-histmenu { position: relative; }
+[data-anuncios-react-root] .anx-histmenu-drop { position: absolute; top: calc(100% + 6px); right: 0; width: 340px; max-height: 380px; overflow-y: auto; background: var(--anx-surface); border: 1px solid var(--anx-border); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.35); z-index: 40; padding: 6px; }
+[data-anuncios-react-root] .anx-histmenu-note { display: flex; align-items: center; gap: 8px; padding: 14px 12px; font-size: 12.5px; color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-histmenu-item { width: 100%; display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border: 0; background: transparent; color: var(--anx-text); border-radius: 9px; cursor: pointer; text-align: left; }
+[data-anuncios-react-root] .anx-histmenu-item:hover { background: var(--anx-surface-2); }
+[data-anuncios-react-root] .anx-histmenu-title { font-size: 12.5px; font-weight: 600; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+[data-anuncios-react-root] .anx-histmenu-meta { font-size: 11px; color: var(--anx-text-dim); }
+
+/* Feedback 👍/👎 (Fase 22 — aprendizado contínuo) */
+[data-anuncios-react-root] .anx-fbrow { display: flex; align-items: center; gap: 7px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--anx-border); }
+[data-anuncios-react-root] .anx-fb-label { font-size: 12px; color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-fb { border: 1px solid var(--anx-border); background: var(--anx-bg); border-radius: 9px; padding: 4px 10px; font-size: 14px; cursor: pointer; line-height: 1; transition: border-color .15s, background .15s; }
+[data-anuncios-react-root] .anx-fb:hover { border-color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-fb.is-on { background: color-mix(in srgb, var(--anx-ok) 16%, transparent); border-color: color-mix(in srgb, var(--anx-ok) 55%, transparent); }
+[data-anuncios-react-root] .anx-fb-neg.is-on { background: color-mix(in srgb, var(--anx-danger) 14%, transparent); border-color: color-mix(in srgb, var(--anx-danger) 50%, transparent); }
+[data-anuncios-react-root] .anx-fb-thanks { font-size: 11.5px; color: var(--anx-text-dim); }
 
 [data-anuncios-react-root] .anx-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 [data-anuncios-react-root] .anx-col { max-width: 860px; margin: 0 auto; padding: 22px 18px 12px; display: flex; flex-direction: column; gap: 18px; }

@@ -43,19 +43,44 @@ export interface Unidade {
   source: UnidadeSource;
 }
 
-/** Resposta do POST /ask do Decision Engine (repassada pelo proxy PHP). */
+/** Resposta do POST ask.php (engine + persistência). */
 export interface AskResposta {
+  conversa_id: number;
+  message_id: number;
   mode: 'consultant' | 'retrieval_only';
   answer: string | null;
   units: Unidade[];
   query: string;
 }
 
-/** Um turno da conversa (pergunta + resposta) mantido em memória. */
+/** Valor de feedback de uma resposta: 1=👍, -1=👎, null=sem avaliação. */
+export type Feedback = 1 | -1 | null;
+
+/** Um turno da conversa (pergunta + resposta) exibido na tela. */
 export interface Turno {
   id: number;
   pergunta: string;
   estado: 'carregando' | 'ok' | 'erro';
   resposta?: AskResposta;
   erro?: string;
+  feedback?: Feedback;
+}
+
+/** Item da lista de conversas (histórico do usuário). */
+export interface Conversa {
+  id: number;
+  titulo: string;
+  updated_at: string;
+  perguntas: number;
+}
+
+/** Mensagem persistida retornada por conversas.php?id=N. */
+export interface MensagemPersistida {
+  id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  mode: string | null;
+  units: Unidade[];
+  feedback: Feedback;
+  created_at: string;
 }

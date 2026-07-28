@@ -41,6 +41,9 @@
 /sql/*
 !/sql/koala/
 
+# sql/anuncios/ — DDL do histórico de conversas do painel Anúncios
+!/sql/anuncios/
+
 # scripts do Koala
 !/scripts/
 /scripts/*

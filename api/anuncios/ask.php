@@ -1,71 +1,36 @@
 <?php
 // /api/anuncios/ask.php
-// Proxy autenticado do Google Ads Decision Engine (painel Anúncios).
+// Pergunta ao Decision Engine com memória de conversa + persistência.
 // @module  anuncios.ask
-// @version 1.0.0
+// @version 2.0.0  (1.0.0 = proxy stateless; 2.0.0 = conversas persistentes)
 // @created 2026-07-27
 //
-// Papel: o navegador NUNCA fala direto com o Decision Engine (porta interna) e
-// NUNCA vê o token X-API-Key. Este endpoint:
-//   1. valida a sessão do dshowdash (SessionGate + AuthHelpers, igual ao Koala);
-//   2. valida a pergunta (3–2000 chars) e os filtros opcionais;
-//   3. repassa para {base_url}/ask com o token lido de config/decision_engine.php;
-//   4. devolve o envelope padrão {ok,data,error,meta}.
+// Fluxo:
+//   1. valida sessão/CSRF (via _lib.php) e a pergunta;
+//   2. se veio conversa_id, verifica posse e monta o histórico (server-side —
+//      o cliente NUNCA fornece o histórico, evitando adulteração);
+//   3. repassa ao engine (que segue stateless);
+//   4. persiste o turno (pergunta + resposta) SÓ em caso de sucesso;
+//   5. devolve {conversa_id, message_id, mode, answer, units, query}.
 //
-// Config (FORA do git — criar no servidor):
-//   /var/www/dshowdash/config/decision_engine.php
-//   ver config.example.php nesta pasta.
+// Config: /var/www/dshowdash/config/decision_engine.php (fora do git).
 
 declare(strict_types=1);
 
-@ini_set('display_errors', '0'); // nunca vazar stack/paths
-error_reporting(E_ALL);
-
-require_once __DIR__ . '/../_helpers/ApiResponse.php';
-require_once __DIR__ . '/../_helpers/AuthHelpers.php';
-require_once __DIR__ . '/../core/CorsPolicy.php';
-require_once __DIR__ . '/../core/SessionGate.php';
-
-set_exception_handler(static function (\Throwable $e): void {
-    error_log('[anuncios] uncaught ' . get_class($e) . ': ' . $e->getMessage()
-        . ' @ ' . $e->getFile() . ':' . $e->getLine());
-    if (class_exists('ApiResponse')) {
-        ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Erro interno ao processar a solicitacao.']);
-    } else {
-        http_response_code(500);
-        echo json_encode(['ok' => false, 'data' => null, 'error' => 'INTERNAL_ERROR']);
-    }
-});
-
-CorsPolicy::apply();
-SessionGate::start();
-AuthHelpers::requireAuth();
-AuthHelpers::requireCsrfForWrite();
+require_once __DIR__ . '/_lib.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     ApiResponse::error(ApiResponse::ERR_METHOD_NOT_ALLOWED, 405, ['message' => 'Use POST.']);
 }
 
-// ── Config do Decision Engine (fora do git) ─────────────────────────────────
-$configPath = __DIR__ . '/../../config/decision_engine.php';
-if (!is_file($configPath)) {
-    error_log('[anuncios] config ausente: ' . $configPath);
-    ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, [
-        'message' => 'Decision Engine nao configurado no servidor (config/decision_engine.php).',
-    ]);
-}
-$cfg = require $configPath;
-$baseUrl   = rtrim((string) ($cfg['base_url'] ?? 'http://127.0.0.1:8100'), '/');
-$authToken = (string) ($cfg['auth_token'] ?? '');
-$timeoutS  = (int) ($cfg['timeout_seconds'] ?? 90);
+// Quantos turnos anteriores vão ao engine (o engine tem caps próprios).
+const ANUNCIOS_HISTORICO_MAX = 8;
 
-// ── Corpo: question obrigatoria; domain/segment/k opcionais ────────────────
-$raw  = file_get_contents('php://input');
-$body = ($raw === '' || $raw === false) ? [] : json_decode($raw, true);
-if (!is_array($body)) {
-    ApiResponse::error(ApiResponse::ERR_INVALID_JSON, 400);
-}
+$userId = anuncios_user_id();
+$pdo    = anuncios_pdo();
+$body   = anuncios_body();
 
+// ── Validação da pergunta ───────────────────────────────────────────────────
 $question = trim((string) ($body['question'] ?? ''));
 $len = function_exists('mb_strlen') ? mb_strlen($question) : strlen($question);
 if ($len < 3 || $len > 2000) {
@@ -74,6 +39,25 @@ if ($len < 3 || $len > 2000) {
     ]);
 }
 
+// ── Conversa existente? Verifica posse e monta histórico (server-side) ─────
+$conversaId = isset($body['conversa_id']) && is_numeric($body['conversa_id'])
+    ? (int) $body['conversa_id'] : 0;
+$history = [];
+if ($conversaId > 0) {
+    anuncios_conversa_do_usuario($pdo, $conversaId, $userId);
+    $st = $pdo->prepare(
+        'SELECT role, content FROM anuncios_mensagens
+         WHERE conversa_id = ? AND content <> ""
+         ORDER BY id DESC LIMIT ' . ANUNCIOS_HISTORICO_MAX
+    );
+    $st->execute([$conversaId]);
+    // DESC no SQL (pega os mais recentes) → reverte para ordem cronológica.
+    foreach (array_reverse($st->fetchAll(PDO::FETCH_ASSOC)) as $m) {
+        $history[] = ['role' => $m['role'], 'content' => $m['content']];
+    }
+}
+
+// ── Chamada ao engine ───────────────────────────────────────────────────────
 $payload = ['question' => $question];
 foreach (['domain', 'segment'] as $campo) {
     if (isset($body[$campo]) && is_string($body[$campo]) && $body[$campo] !== '') {
@@ -82,54 +66,59 @@ foreach (['domain', 'segment'] as $campo) {
 }
 if (isset($body['k']) && is_numeric($body['k'])) {
     $k = (int) $body['k'];
-    if ($k >= 1 && $k <= 20) {
-        $payload['k'] = $k;
+    if ($k >= 1 && $k <= 20) { $payload['k'] = $k; }
+}
+if ($history) {
+    $payload['history'] = $history;
+}
+
+$resposta = anuncios_engine_ask($payload);
+
+// ── Persistência (só após sucesso — falha do engine não suja o histórico) ──
+$pdo->beginTransaction();
+try {
+    if ($conversaId === 0) {
+        $titulo = function_exists('mb_substr') ? mb_substr($question, 0, 200) : substr($question, 0, 200);
+        $st = $pdo->prepare(
+            'INSERT INTO anuncios_conversas (user_id, titulo, created_at, updated_at)
+             VALUES (?, ?, NOW(), NOW())'
+        );
+        $st->execute([$userId, $titulo]);
+        $conversaId = (int) $pdo->lastInsertId();
+    } else {
+        $pdo->prepare('UPDATE anuncios_conversas SET updated_at = NOW() WHERE id = ?')
+            ->execute([$conversaId]);
     }
-}
 
-// ── Repasse ao Decision Engine ──────────────────────────────────────────────
-$ch = curl_init($baseUrl . '/ask');
-$headers = ['Content-Type: application/json', 'Accept: application/json'];
-if ($authToken !== '') {
-    $headers[] = 'X-API-Key: ' . $authToken;
-}
-curl_setopt_array($ch, [
-    CURLOPT_POST           => true,
-    CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
-    CURLOPT_HTTPHEADER     => $headers,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_CONNECTTIMEOUT => 5,
-    CURLOPT_TIMEOUT        => max(10, $timeoutS), // modo consultor (IA) pode demorar
-]);
-$resposta = curl_exec($ch);
-$status   = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-$curlErr  = curl_error($ch);
-curl_close($ch);
-
-if ($resposta === false || $status === 0) {
-    error_log('[anuncios] engine inacessivel: ' . $curlErr);
-    ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 502, [
-        'message' => 'O Decision Engine nao respondeu. Verifique se o servico esta no ar.',
-    ]);
-}
-
-$decoded = json_decode((string) $resposta, true);
-if (!is_array($decoded)) {
-    error_log('[anuncios] resposta nao-JSON do engine (HTTP ' . $status . ')');
-    ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 502, [
-        'message' => 'Resposta invalida do Decision Engine.',
-    ]);
-}
-
-if ($status >= 400) {
-    // FastAPI devolve {"detail": ...} em erros — repassa a mensagem sem vazar internals.
-    $detalhe = is_string($decoded['detail'] ?? null) ? $decoded['detail'] : 'Falha no Decision Engine.';
-    error_log('[anuncios] engine HTTP ' . $status . ': ' . $detalhe);
-    ApiResponse::error(
-        $status === 422 ? ApiResponse::ERR_VALIDATION_ERROR : ApiResponse::ERR_INTERNAL_ERROR,
-        $status >= 500 ? 502 : $status,
-        ['message' => $detalhe]
+    $st = $pdo->prepare(
+        'INSERT INTO anuncios_mensagens (conversa_id, role, content, created_at)
+         VALUES (?, "user", ?, NOW())'
     );
+    $st->execute([$conversaId, $question]);
+
+    $st = $pdo->prepare(
+        'INSERT INTO anuncios_mensagens (conversa_id, role, content, mode, units_json, created_at)
+         VALUES (?, "assistant", ?, ?, ?, NOW())'
+    );
+    $st->execute([
+        $conversaId,
+        (string) ($resposta['answer'] ?? ''),
+        (string) ($resposta['mode'] ?? ''),
+        json_encode($resposta['units'] ?? [], JSON_UNESCAPED_UNICODE),
+    ]);
+    $messageId = (int) $pdo->lastInsertId();
+
+    $pdo->commit();
+} catch (\Throwable $e) {
+    $pdo->rollBack();
+    throw $e; // handler global devolve 500 padronizado
 }
 
-ApiResponse::success($decoded);
+ApiResponse::success([
+    'conversa_id' => $conversaId,
+    'message_id'  => $messageId,
+    'mode'        => $resposta['mode'] ?? null,
+    'answer'      => $resposta['answer'] ?? null,
+    'units'       => $resposta['units'] ?? [],
+    'query'       => $resposta['query'] ?? $question,
+]);
