@@ -250,18 +250,24 @@ function FeedbackRow({ feedback, onFeedback, onMotivo }: {
 
 // ── Bloco principal da resposta ─────────────────────────────────────
 
-export function BlocoResposta({ resposta, feedback, onFeedback, onMotivo }: {
+export function BlocoResposta({ resposta, feedback, onFeedback, onMotivo, onAbrirFonte }: {
   resposta: AskResposta;
   feedback: Feedback;
   onFeedback: (valor: 1 | -1) => void;
   onMotivo: (motivo: string) => void;
+  /** Quando presente, citações abrem a fonte no drawer lateral. */
+  onAbrirFonte?: (unidade: Unidade) => void;
 }) {
   const [mostrarFontes, setMostrarFontes] = useState(resposta.mode === 'retrieval_only');
   const raizRef = useRef<HTMLDivElement>(null);
 
   const abrirFonte = (idCitado: string) => {
+    const unidade = resposta.units.find(
+      (x) => x.id === idCitado || idCitado.includes(x.id) || x.id.includes(idCitado)
+    );
+    if (unidade && onAbrirFonte) { onAbrirFonte(unidade); return; }
+    // Fallback: rola até o cartão na lista de fontes.
     setMostrarFontes(true);
-    // Aguarda o render das fontes e rola até o cartão citado.
     window.setTimeout(() => {
       const alvo = raizRef.current?.querySelector(`[data-unit-id="${CSS.escape(idCitado)}"]`);
       alvo?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -270,8 +276,16 @@ export function BlocoResposta({ resposta, feedback, onFeedback, onMotivo }: {
     }, 60);
   };
 
+  const rolarParaSecao = (idx: number) => {
+    raizRef.current?.querySelector(`[data-sec-idx="${idx}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const estruturada = resposta.answer ? parseResposta(resposta.answer) : null;
   const unidades = resposta.units;
+  const titulosSecoes = estruturada
+    ? estruturada.secoes.map((s, i) => ({ titulo: s.titulo, idx: i })).filter((s) => s.titulo !== '')
+    : [];
 
   return (
     <div className="anx-answer" ref={raizRef}>
@@ -292,20 +306,33 @@ export function BlocoResposta({ resposta, feedback, onFeedback, onMotivo }: {
 
       {resposta.mode === 'consultant' && estruturada ? (
         <div className="anx-r-body">
+          {titulosSecoes.length >= 3 && (
+            <nav className="anx-toc" aria-label="Índice da resposta">
+              {titulosSecoes.map((s) => (
+                <button key={s.idx} className="anx-toc-chip" onClick={() => rolarParaSecao(s.idx)}>
+                  {s.titulo}
+                </button>
+              ))}
+            </nav>
+          )}
           {estruturada.secoes.map((sec, i) => {
             const conteudo = sec.blocos.map((b, j) => (
               <BlocoView key={j} bloco={b} unidades={unidades} onCitacao={abrirFonte} />
             ));
-            if (sec.titulo === '') return <div key={i}>{conteudo}</div>;
+            if (sec.titulo === '') return <div key={i} data-sec-idx={i}>{conteudo}</div>;
             if (sec.titulo.toLowerCase() === 'resumo executivo') {
               return (
-                <div key={i} className="anx-resumo">
+                <div key={i} className="anx-resumo" data-sec-idx={i}>
                   <div className="anx-resumo-titulo"><Lightbulb size={15} aria-hidden /> Resumo executivo</div>
                   {conteudo}
                 </div>
               );
             }
-            return <SecaoAccordion key={i} titulo={sec.titulo}>{conteudo}</SecaoAccordion>;
+            return (
+              <div key={i} data-sec-idx={i}>
+                <SecaoAccordion titulo={sec.titulo}>{conteudo}</SecaoAccordion>
+              </div>
+            );
           })}
         </div>
       ) : (

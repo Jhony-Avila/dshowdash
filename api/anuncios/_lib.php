@@ -140,7 +140,10 @@ function anuncios_engine_ask(array $payload): array
  */
 function anuncios_conversa_do_usuario(PDO $pdo, int $conversaId, int $userId): array
 {
-    $st = $pdo->prepare('SELECT id, user_id, titulo FROM anuncios_conversas WHERE id = ? AND user_id = ?');
+    $st = $pdo->prepare(
+        'SELECT id, user_id, titulo, profile, is_favorita, arquivada
+         FROM anuncios_conversas WHERE id = ? AND user_id = ?'
+    );
     $st->execute([$conversaId, $userId]);
     $conversa = $st->fetch(PDO::FETCH_ASSOC);
     if (!$conversa) {
@@ -198,6 +201,9 @@ function anuncios_payload_engine(string $question, array $body, array $history):
     if (isset($body['style']) && in_array($body['style'], ['rapida', 'executiva', 'completa'], true)) {
         $payload['style'] = $body['style'];
     }
+    if (isset($body['profile']) && in_array($body['profile'], ['consultor', 'qualificacao'], true)) {
+        $payload['profile'] = $body['profile'];
+    }
     if (isset($body['k']) && is_numeric($body['k'])) {
         $k = (int) $body['k'];
         if ($k >= 1 && $k <= 20) { $payload['k'] = $k; }
@@ -217,17 +223,18 @@ function anuncios_persistir_turno(
     string $question,
     string $mode,
     string $answer,
-    array $units
+    array $units,
+    string $profile = 'consultor'
 ): array {
     $pdo->beginTransaction();
     try {
         if ($conversaId === 0) {
             $titulo = function_exists('mb_substr') ? mb_substr($question, 0, 200) : substr($question, 0, 200);
             $st = $pdo->prepare(
-                'INSERT INTO anuncios_conversas (user_id, titulo, created_at, updated_at)
-                 VALUES (?, ?, NOW(), NOW())'
+                'INSERT INTO anuncios_conversas (user_id, titulo, profile, created_at, updated_at)
+                 VALUES (?, ?, ?, NOW(), NOW())'
             );
-            $st->execute([$userId, $titulo]);
+            $st->execute([$userId, $titulo, $profile]);
             $conversaId = (int) $pdo->lastInsertId();
         } else {
             $pdo->prepare('UPDATE anuncios_conversas SET updated_at = NOW() WHERE id = ?')

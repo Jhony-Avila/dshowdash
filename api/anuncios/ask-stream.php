@@ -29,11 +29,18 @@ $question = anuncios_validar_pergunta($body);
 
 $conversaId = isset($body['conversa_id']) && is_numeric($body['conversa_id'])
     ? (int) $body['conversa_id'] : 0;
+
+// Perfil: nova conversa lê do corpo; conversa existente usa o do banco.
+$perfil = (isset($body['profile']) && in_array($body['profile'], ['consultor', 'qualificacao'], true))
+    ? $body['profile'] : 'consultor';
+
 $history = [];
 if ($conversaId > 0) {
-    anuncios_conversa_do_usuario($pdo, $conversaId, $userId);
-    $history = anuncios_montar_historico($pdo, $conversaId);
+    $conversa = anuncios_conversa_do_usuario($pdo, $conversaId, $userId);
+    $perfil   = (string) ($conversa['profile'] ?? 'consultor');
+    $history  = anuncios_montar_historico($pdo, $conversaId);
 }
+$body['profile'] = $perfil;
 
 // ── Prepara o modo streaming (a partir daqui a resposta é SSE, não JSON) ───
 set_time_limit(180);
@@ -118,9 +125,9 @@ if ($temErro || !$temDone) {
 
 try {
     [$conversaId, $messageId] = anuncios_persistir_turno(
-        $pdo, $userId, $conversaId, $question, $mode, (string) ($answer ?? ''), $units
+        $pdo, $userId, $conversaId, $question, $mode, (string) ($answer ?? ''), $units, $perfil
     );
-    anuncios_sse('saved', ['conversa_id' => $conversaId, 'message_id' => $messageId]);
+    anuncios_sse('saved', ['conversa_id' => $conversaId, 'message_id' => $messageId, 'profile' => $perfil]);
 } catch (\Throwable $e) {
     error_log('[anuncios] persistencia pos-stream falhou: ' . $e->getMessage());
     anuncios_sse('error', ['message' => 'Resposta gerada, mas nao foi possivel salvar no historico.']);

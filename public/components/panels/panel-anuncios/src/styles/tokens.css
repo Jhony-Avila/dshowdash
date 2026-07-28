@@ -266,6 +266,98 @@
 [data-anuncios-react-root] .anx-send-stop { background: var(--anx-danger); }
 [data-anuncios-react-root] .anx-send-stop:hover { background: color-mix(in srgb, var(--anx-danger) 85%, #000); }
 
+/* ── Workspace Fase 2: layout com sidebar ────────────────────── */
+[data-anuncios-react-root] .anx-shell { position: relative; }
+[data-anuncios-react-root] .anx-body-row { display: flex; flex: 1 1 auto; min-height: 0; }
+[data-anuncios-react-root] .anx-content { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; min-height: 0; }
+[data-anuncios-react-root] .anx-kbd { border: 1px solid var(--anx-border); border-radius: 4px; padding: 0 5px; font-size: 10.5px; font-family: inherit; background: var(--anx-surface-2); }
+
+/* Sidebar */
+[data-anuncios-react-root] .anx-side { width: 250px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; border-right: 1px solid var(--anx-border); background: var(--anx-surface); padding: 12px 10px; overflow-y: auto; }
+[data-anuncios-react-root] .anx-side-mini { width: 46px; align-items: center; gap: 8px; padding: 12px 6px; }
+[data-anuncios-react-root] .anx-side-top { display: flex; align-items: center; justify-content: space-between; }
+[data-anuncios-react-root] .anx-side-titulo { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-side-ic { border: 0; background: transparent; color: var(--anx-text-dim); border-radius: 7px; padding: 5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+[data-anuncios-react-root] .anx-side-ic:hover:not(:disabled) { background: var(--anx-surface-2); color: var(--anx-text); }
+[data-anuncios-react-root] .anx-side-ic.is-on { color: var(--anx-primary-h); background: color-mix(in srgb, var(--anx-primary) 14%, transparent); }
+[data-anuncios-react-root] .anx-side-sec { display: flex; flex-direction: column; gap: 3px; }
+[data-anuncios-react-root] .anx-side-sec-conversas { flex: 1 1 auto; min-height: 0; }
+[data-anuncios-react-root] .anx-side-h { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--anx-text-dim); padding: 0 6px 4px; }
+[data-anuncios-react-root] .anx-side-h-row { display: flex; align-items: center; justify-content: space-between; }
+[data-anuncios-react-root] .anx-side-item { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; color: var(--anx-text); padding: 7px 9px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; text-align: left; }
+[data-anuncios-react-root] .anx-side-item:hover:not(:disabled) { background: var(--anx-surface-2); }
+[data-anuncios-react-root] .anx-side-item.is-on { background: color-mix(in srgb, var(--anx-primary) 14%, transparent); color: var(--anx-primary-h); }
+[data-anuncios-react-root] .anx-side-item:disabled { opacity: .45; cursor: default; }
+[data-anuncios-react-root] .anx-side-soon { margin-left: auto; font-size: 9.5px; font-weight: 700; color: var(--anx-text-dim); background: var(--anx-surface-2); border-radius: 6px; padding: 1px 6px; }
+[data-anuncios-react-root] .anx-side-busca { width: 100%; border: 1px solid var(--anx-border); background: var(--anx-bg); color: var(--anx-text); border-radius: 8px; padding: 6px 9px; font-size: 12px; outline: none; margin-bottom: 5px; }
+[data-anuncios-react-root] .anx-side-busca:focus { border-color: var(--anx-primary); }
+[data-anuncios-react-root] .anx-side-lista { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+[data-anuncios-react-root] .anx-side-vazio { font-size: 11.5px; color: var(--anx-text-dim); padding: 8px 6px; }
+[data-anuncios-react-root] .anx-side-conv { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+[data-anuncios-react-root] .anx-side-conv.is-on { background: color-mix(in srgb, var(--anx-primary) 12%, transparent); }
+[data-anuncios-react-root] .anx-side-conv:hover { background: var(--anx-surface-2); }
+[data-anuncios-react-root] .anx-side-conv-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; border: 0; background: transparent; color: var(--anx-text); padding: 6px 8px; cursor: pointer; text-align: left; border-radius: 8px; }
+[data-anuncios-react-root] .anx-side-conv-tit { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-anuncios-react-root] .anx-side-conv-tit svg { flex-shrink: 0; color: var(--anx-warn); }
+[data-anuncios-react-root] .anx-side-conv-meta { font-size: 10.5px; color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-side-conv-acoes { display: none; align-items: center; }
+[data-anuncios-react-root] .anx-side-conv:hover .anx-side-conv-acoes { display: inline-flex; }
+[data-anuncios-react-root] .anx-star { color: var(--anx-warn); }
+[data-anuncios-react-root] .anx-side-link { border: 0; background: transparent; color: var(--anx-text-dim); font-size: 11.5px; cursor: pointer; padding: 6px; text-align: left; }
+[data-anuncios-react-root] .anx-side-link:hover { color: var(--anx-text); }
+
+/* Formulário de qualificação */
+[data-anuncios-react-root] .anx-qual { max-width: 640px; margin: 24px auto 0; display: flex; flex-direction: column; gap: 16px; }
+[data-anuncios-react-root] .anx-qual-head { display: flex; gap: 12px; align-items: flex-start; }
+[data-anuncios-react-root] .anx-qual-ic { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, var(--anx-primary), var(--anx-purple)); color: #fff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+[data-anuncios-react-root] .anx-qual-head h2 { margin: 0 0 4px; font-size: 17px; }
+[data-anuncios-react-root] .anx-qual-head p { margin: 0; font-size: 13px; color: var(--anx-text-dim); line-height: 1.55; }
+[data-anuncios-react-root] .anx-qual-form { background: var(--anx-surface); border: 1px solid var(--anx-border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+[data-anuncios-react-root] .anx-qual-campo { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 600; }
+[data-anuncios-react-root] .anx-qual-campo em { font-weight: 400; color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-qual-campo select,
+[data-anuncios-react-root] .anx-qual-campo input,
+[data-anuncios-react-root] .anx-qual-campo textarea { border: 1px solid var(--anx-border); background: var(--anx-bg); color: var(--anx-text); border-radius: 10px; padding: 9px 12px; font-size: 13px; font-family: inherit; outline: none; resize: vertical; }
+[data-anuncios-react-root] .anx-qual-campo select:focus,
+[data-anuncios-react-root] .anx-qual-campo input:focus,
+[data-anuncios-react-root] .anx-qual-campo textarea:focus { border-color: var(--anx-primary); }
+[data-anuncios-react-root] .anx-qual-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: var(--anx-primary); color: var(--anx-primary-ct); border-radius: 10px; padding: 10px 16px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+[data-anuncios-react-root] .anx-qual-btn:hover:not(:disabled) { background: var(--anx-primary-h); }
+[data-anuncios-react-root] .anx-qual-btn:disabled { opacity: .5; cursor: default; }
+[data-anuncios-react-root] .anx-qual-hint { margin: 0; font-size: 11.5px; color: var(--anx-text-dim); text-align: center; }
+
+/* Índice da resposta */
+[data-anuncios-react-root] .anx-toc { display: flex; flex-wrap: wrap; gap: 6px; }
+[data-anuncios-react-root] .anx-toc-chip { border: 1px solid var(--anx-border); background: var(--anx-bg); color: var(--anx-text-dim); border-radius: 20px; padding: 3px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; }
+[data-anuncios-react-root] .anx-toc-chip:hover { border-color: var(--anx-primary); color: var(--anx-text); }
+
+/* Overlay + drawer de fontes */
+[data-anuncios-react-root] .anx-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.42); z-index: 60; }
+[data-anuncios-react-root] .anx-drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(440px, 92%); background: var(--anx-surface); border-left: 1px solid var(--anx-border); z-index: 61; display: flex; flex-direction: column; box-shadow: -18px 0 48px rgba(0,0,0,.35); }
+[data-anuncios-react-root] .anx-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--anx-border); flex-shrink: 0; }
+[data-anuncios-react-root] .anx-drawer-titulo { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; }
+[data-anuncios-react-root] .anx-drawer-body { padding: 14px 16px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+[data-anuncios-react-root] .anx-drawer-badges { display: flex; flex-wrap: wrap; gap: 5px; }
+[data-anuncios-react-root] .anx-drawer-q { margin: 0; font-size: 14.5px; line-height: 1.45; }
+[data-anuncios-react-root] .anx-drawer-a { margin: 0; font-size: 13px; line-height: 1.62; white-space: pre-wrap; }
+
+/* Command palette */
+[data-anuncios-react-root] .anx-palette { position: absolute; top: 72px; left: 50%; transform: translateX(-50%); width: min(560px, 92%); background: var(--anx-surface); border: 1px solid var(--anx-border); border-radius: 14px; z-index: 62; box-shadow: 0 24px 70px rgba(0,0,0,.45); overflow: hidden; }
+[data-anuncios-react-root] .anx-palette-input { display: flex; align-items: center; gap: 9px; padding: 12px 14px; border-bottom: 1px solid var(--anx-border); color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-palette-input input { flex: 1; border: 0; background: transparent; color: var(--anx-text); font-size: 14px; outline: none; font-family: inherit; }
+[data-anuncios-react-root] .anx-palette-input kbd { border: 1px solid var(--anx-border); border-radius: 5px; padding: 1px 6px; font-size: 10.5px; }
+[data-anuncios-react-root] .anx-palette-lista { max-height: 320px; overflow-y: auto; padding: 6px; }
+[data-anuncios-react-root] .anx-palette-item { width: 100%; display: flex; align-items: center; gap: 9px; border: 0; background: transparent; color: var(--anx-text); padding: 9px 10px; border-radius: 9px; cursor: pointer; text-align: left; font-size: 13px; }
+[data-anuncios-react-root] .anx-palette-item:hover { background: var(--anx-surface-2); }
+[data-anuncios-react-root] .anx-palette-rotulo { font-weight: 600; }
+[data-anuncios-react-root] .anx-palette-dica { margin-left: auto; font-size: 11px; color: var(--anx-text-dim); }
+
+/* Responsivo: sidebar recolhe sozinha em telas estreitas */
+@media (max-width: 900px) {
+  [data-anuncios-react-root] .anx-side { position: absolute; left: 0; top: 0; bottom: 0; z-index: 50; box-shadow: 12px 0 40px rgba(0,0,0,.35); }
+  [data-anuncios-react-root] .anx-side-mini { position: static; box-shadow: none; }
+}
+
 /* Acessibilidade: reduz movimento quando o usuário preferir */
 @media (prefers-reduced-motion: reduce) {
   [data-anuncios-react-root] * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }

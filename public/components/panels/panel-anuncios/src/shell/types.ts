@@ -34,6 +34,7 @@ export interface Unidade {
   question: string;
   answer: string;
   operational_rule: string | null;
+  final_rule?: string | null;
   knowledge_type: string;
   domain: string;
   segment: string | null;
@@ -43,10 +44,14 @@ export interface Unidade {
   source: UnidadeSource;
 }
 
+/** Perfil de consulta do engine (especializa o fluxo). */
+export type Perfil = 'consultor' | 'qualificacao';
+
 /** Resposta do POST ask.php (engine + persistência). */
 export interface AskResposta {
   conversa_id: number;
   message_id: number;
+  profile?: Perfil;
   mode: 'consultant' | 'retrieval_only';
   answer: string | null;
   units: Unidade[];
@@ -70,9 +75,23 @@ export interface Turno {
 export interface Conversa {
   id: number;
   titulo: string;
+  profile: Perfil;
+  is_favorita: boolean;
   updated_at: string;
   perguntas: number;
 }
+
+/** Detalhe da conversa retornado por conversas.php?id=N. */
+export interface ConversaDetalhe {
+  id: number;
+  titulo: string;
+  profile: Perfil;
+  is_favorita: boolean;
+  arquivada: boolean;
+}
+
+/** Ações de escrita sobre uma conversa. */
+export type AcaoConversa = 'renomear' | 'favoritar' | 'desfavoritar' | 'arquivar' | 'desarquivar';
 
 /** Mensagem persistida retornada por conversas.php?id=N. */
 export interface MensagemPersistida {

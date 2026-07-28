@@ -30,11 +30,19 @@ $question = anuncios_validar_pergunta($body);
 
 $conversaId = isset($body['conversa_id']) && is_numeric($body['conversa_id'])
     ? (int) $body['conversa_id'] : 0;
+
+// Perfil: em conversa NOVA vem do corpo; em conversa existente a fonte da
+// verdade é o banco (o cliente não troca o perfil no meio da conversa).
+$perfil = (isset($body['profile']) && in_array($body['profile'], ['consultor', 'qualificacao'], true))
+    ? $body['profile'] : 'consultor';
+
 $history = [];
 if ($conversaId > 0) {
-    anuncios_conversa_do_usuario($pdo, $conversaId, $userId);
-    $history = anuncios_montar_historico($pdo, $conversaId);
+    $conversa = anuncios_conversa_do_usuario($pdo, $conversaId, $userId);
+    $perfil   = (string) ($conversa['profile'] ?? 'consultor');
+    $history  = anuncios_montar_historico($pdo, $conversaId);
 }
+$body['profile'] = $perfil;
 
 $resposta = anuncios_engine_ask(anuncios_payload_engine($question, $body, $history));
 
@@ -45,12 +53,14 @@ $resposta = anuncios_engine_ask(anuncios_payload_engine($question, $body, $histo
     $question,
     (string) ($resposta['mode'] ?? ''),
     (string) ($resposta['answer'] ?? ''),
-    is_array($resposta['units'] ?? null) ? $resposta['units'] : []
+    is_array($resposta['units'] ?? null) ? $resposta['units'] : [],
+    $perfil
 );
 
 ApiResponse::success([
     'conversa_id' => $conversaId,
     'message_id'  => $messageId,
+    'profile'     => $perfil,
     'mode'        => $resposta['mode'] ?? null,
     'answer'      => $resposta['answer'] ?? null,
     'units'       => $resposta['units'] ?? [],

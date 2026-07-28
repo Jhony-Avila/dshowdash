@@ -6,7 +6,8 @@
 // O token do Decision Engine fica NO SERVIDOR (ask.php) — nunca no navegador.
 // v1.1.0: conversas persistentes (conversa_id no ask; conversas.php; feedback.php).
 import type {
-  ApiEnvelope, AskResposta, Conversa, Feedback, MensagemPersistida, Stats, Unidade,
+  AcaoConversa, ApiEnvelope, AskResposta, Conversa, ConversaDetalhe,
+  Feedback, MensagemPersistida, Stats, Unidade,
 } from '../shell/types';
 
 const ASK_URL       = '/api/anuncios/ask.php';
@@ -14,6 +15,7 @@ const STREAM_URL    = '/api/anuncios/ask-stream.php';
 const CONVERSAS_URL = '/api/anuncios/conversas.php';
 const FEEDBACK_URL  = '/api/anuncios/feedback.php';
 const STATS_URL     = '/api/anuncios/stats.php';
+const SEGMENTOS_URL = '/api/anuncios/segmentos.php';
 
 export class ApiError extends Error {
   constructor(message: string, readonly code: string, readonly status: number) {
@@ -59,6 +61,8 @@ export interface PerguntaFiltros {
   k?: number;
   /** Modo de resposta do consultor: rapida | executiva | completa. */
   style?: string;
+  /** Perfil de consulta: consultor | qualificacao. */
+  profile?: string;
 }
 
 /** POST JSON autenticado (CSRF) com tratamento do envelope padrão. */
@@ -121,9 +125,13 @@ export function perguntar(
   );
 }
 
-/** Lista as conversas recentes do usuário. */
-export async function listarConversas(signal?: AbortSignal): Promise<Conversa[]> {
-  const data = await get<{ conversas: Conversa[] }>(CONVERSAS_URL, signal);
+/** Lista as conversas do usuário (favoritas primeiro; arquivadas à parte). */
+export async function listarConversas(
+  arquivadas = false,
+  signal?: AbortSignal
+): Promise<Conversa[]> {
+  const url = arquivadas ? `${CONVERSAS_URL}?arquivadas=1` : CONVERSAS_URL;
+  const data = await get<{ conversas: Conversa[] }>(url, signal);
   return data.conversas;
 }
 
@@ -131,8 +139,23 @@ export async function listarConversas(signal?: AbortSignal): Promise<Conversa[]>
 export function carregarConversa(
   id: number,
   signal?: AbortSignal
-): Promise<{ conversa: { id: number; titulo: string }; mensagens: MensagemPersistida[] }> {
+): Promise<{ conversa: ConversaDetalhe; mensagens: MensagemPersistida[] }> {
   return get(`${CONVERSAS_URL}?id=${id}`, signal);
+}
+
+/** Executa uma ação sobre a conversa (renomear/favoritar/arquivar...). */
+export function acaoConversa(
+  id: number,
+  action: AcaoConversa,
+  titulo?: string
+): Promise<unknown> {
+  return post(CONVERSAS_URL, { id, action, ...(titulo ? { titulo } : {}) });
+}
+
+/** Segmentos da base de conhecimento (formulário de qualificação). */
+export async function listarSegmentos(signal?: AbortSignal): Promise<string[]> {
+  const data = await get<{ segmentos: string[] }>(SEGMENTOS_URL, signal);
+  return data.segmentos;
 }
 
 /** Agregados do painel de aprendizado (Fase 22). */
