@@ -25,6 +25,11 @@
 # O config real fica em config/decision_engine.php (NUNCA versionado).
 !/api/anuncios/
 
+# api/pipedrive/ — backend do painel Pipedrive Analytics.
+# Sem segredo embutido: o token do CRM vive cifrado no banco e a chave vem de
+# getenv('PIPEDRIVE_CRYPTO_KEY') — nada de credencial nestes 22 arquivos.
+!/api/pipedrive/
+
 # public/koala/ — só o código-fonte + configs de build (NÃO dist, NÃO node_modules)
 !/public/
 /public/*
@@ -58,6 +63,23 @@
 
 # Código-fonte da nova arquitetura (migração)
 !/app/
+
+# docs/PIPEDRIVE/ — arquitetura, plano de fases, backlog e elevação visual do
+# painel Pipedrive. Só esta pasta: o resto de docs/ segue ignorado.
+!/docs/
+/docs/*
+!/docs/PIPEDRIVE/
+
+# tools/screenshot/ — provas E2E (Playwright) do painel Pipedrive + o mínimo de
+# infra para elas rodarem. auth.mjs/config.mjs NÃO trazem credencial: usuário e
+# senha do bot vêm de process.env.SCREENSHOT_SERVICE_*.
+!/tools/
+/tools/*
+!/tools/screenshot/
+/tools/screenshot/*
+!/tools/screenshot/valida-pipedrive-*.mjs
+!/tools/screenshot/auth.mjs
+!/tools/screenshot/config.mjs
 
 # Configs de build e docs da raiz
 !/package.json
