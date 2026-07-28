@@ -9,13 +9,17 @@ import { HeartHandshake, Sparkles } from 'lucide-react';
 import { listarSegmentos } from '../lib/api';
 
 const ROTULO_SEGMENTO: Record<string, string> = {
-  igrejas: 'Igrejas', varejo: 'Varejo', eventos: 'Eventos',
-  outdoor: 'Outdoor / DOOH', indoor: 'Indoor', esportes: 'Esportes',
-  educacao: 'Educação', industria: 'Indústria', governo: 'Governo',
+  igrejas: 'Igrejas', varejo: 'Varejo', corporativo: 'Corporativo',
+  hospitais: 'Hospitais', shopping_centers: 'Shopping Centers',
+  fachadas_externas: 'Fachadas Externas', centros_de_controle: 'Centros de Controle',
+  eventos: 'Eventos', outdoor: 'Outdoor / DOOH', indoor: 'Indoor',
 };
 
 function rotuloSegmento(s: string): string {
-  return ROTULO_SEGMENTO[s] ?? s.charAt(0).toUpperCase() + s.slice(1);
+  const conhecido = ROTULO_SEGMENTO[s];
+  if (conhecido) return conhecido;
+  // Fallback: "novo_segmento" → "Novo Segmento" (a base pode crescer).
+  return s.split('_').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
 }
 
 export function Qualificacao({ onIniciar, ocupado }: {
