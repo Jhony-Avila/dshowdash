@@ -157,6 +157,12 @@ function anuncios_conversa_do_usuario(PDO $pdo, int $conversaId, int $userId): a
 /** Quantos turnos anteriores vão ao engine (o engine tem caps próprios). */
 const ANUNCIOS_HISTORICO_MAX = 8;
 
+/** Perfis de consulta aceitos (espelha o Literal do engine). */
+const ANUNCIOS_PERFIS = [
+    'consultor', 'qualificacao', 'gerador_anuncios',
+    'gerador_palavras', 'gerador_negativas', 'analise_lp',
+];
+
 /** Valida e retorna a pergunta do corpo (3–2000 chars). 422 se inválida. */
 function anuncios_validar_pergunta(array $body): string
 {
@@ -201,7 +207,7 @@ function anuncios_payload_engine(string $question, array $body, array $history):
     if (isset($body['style']) && in_array($body['style'], ['rapida', 'executiva', 'completa'], true)) {
         $payload['style'] = $body['style'];
     }
-    if (isset($body['profile']) && in_array($body['profile'], ['consultor', 'qualificacao'], true)) {
+    if (isset($body['profile']) && in_array($body['profile'], ANUNCIOS_PERFIS, true)) {
         $payload['profile'] = $body['profile'];
     }
     if (isset($body['k']) && is_numeric($body['k'])) {

@@ -15,7 +15,7 @@ const ROTULO_SEGMENTO: Record<string, string> = {
   eventos: 'Eventos', outdoor: 'Outdoor / DOOH', indoor: 'Indoor',
 };
 
-function rotuloSegmento(s: string): string {
+export function rotuloSegmento(s: string): string {
   const conhecido = ROTULO_SEGMENTO[s];
   if (conhecido) return conhecido;
   // Fallback: "novo_segmento" → "Novo Segmento" (a base pode crescer).

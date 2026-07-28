@@ -16,6 +16,8 @@ import { AtividadeChart } from '../components/AtividadeChart';
 import { Inicio } from '../components/Inicio';
 import { Sidebar } from '../components/Sidebar';
 import { Qualificacao } from '../components/Qualificacao';
+import { Biblioteca } from '../components/Biblioteca';
+import { FerramentaForm, ferramentaPorPerfil, FERRAMENTAS } from '../components/Ferramentas';
 import { CommandPalette, FonteDrawer, type AcaoPalette } from '../components/Overlays';
 import type {
   ShellConfig, Turno, AskResposta, Feedback, Perfil, Unidade,
@@ -30,6 +32,30 @@ const ESTILOS: { id: Estilo; rotulo: string; dica: string }[] = [
   { id: 'executiva', rotulo: 'Executiva', dica: 'Foco em decisão: resumo, recomendações priorizadas e próximos passos.' },
   { id: 'completa', rotulo: 'Completa', dica: 'Análise completa: diagnóstico, recomendações, plano e fontes.' },
 ];
+
+/** Etapas exibidas enquanto a recuperação/geração inicia (seção 20.1). */
+const ETAPAS_LOADING = [
+  'Consultando a metodologia…',
+  'Identificando regras aplicáveis…',
+  'Cruzando com o contexto da conversa…',
+  'Estruturando a resposta…',
+];
+
+function EtapasLoading() {
+  const [etapa, setEtapa] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(
+      () => setEtapa((e) => Math.min(e + 1, ETAPAS_LOADING.length - 1)),
+      1400
+    );
+    return () => window.clearInterval(t);
+  }, []);
+  return (
+    <div className="anx-loading">
+      <span className="anx-spinner" /> {ETAPAS_LOADING[etapa]}
+    </div>
+  );
+}
 
 /** Converte mensagens persistidas (conversas.php?id=N) em turnos da tela. */
 function mensagensParaTurnos(mensagens: MensagemPersistida[]): Turno[] {
@@ -175,7 +201,7 @@ function Shell({ config }: { config: ShellConfig }) {
   const [ocupado, setOcupado] = useState(false);
   const [modo, setModo] = useState<string | null>(null);
   const [conversaId, setConversaId] = useState<number | null>(null);
-  const [tela, setTela] = useState<'chat' | 'aprendizado'>('chat');
+  const [tela, setTela] = useState<'chat' | 'aprendizado' | 'biblioteca'>('chat');
   const [estilo, setEstilo] = useState<Estilo>('completa');
   const [perfilAtivo, setPerfilAtivo] = useState<Perfil>('consultor');
   const [sidebarAberta, setSidebarAberta] = useState(true);
@@ -369,10 +395,37 @@ function Shell({ config }: { config: ShellConfig }) {
     { id: 'nova', rotulo: 'Nova conversa', dica: 'começa do zero no modo atual', executar: () => novaConversa() },
     { id: 'consultoria', rotulo: 'Modo Consultoria', dica: 'perguntas gerais de Google Ads', executar: () => trocarPerfil('consultor') },
     { id: 'qualificacao', rotulo: 'Modo Qualificação comercial', dica: 'roteiro de qualificação de leads (Fases 14/15)', executar: () => trocarPerfil('qualificacao') },
+    ...FERRAMENTAS.map((f) => ({
+      id: f.perfil,
+      rotulo: f.titulo,
+      dica: 'ferramenta',
+      icone: f.icone,
+      executar: () => trocarPerfil(f.perfil),
+    })),
+    { id: 'biblioteca', rotulo: 'Abrir Metodologia Dshow', dica: 'navegar pelas ~1.500 regras', executar: () => setTela('biblioteca') },
     { id: 'aprendizado', rotulo: 'Abrir Aprendizado contínuo', dica: 'uso, avaliações e lacunas', executar: () => setTela('aprendizado') },
     { id: 'focar', rotulo: 'Focar campo de pergunta', dica: 'atalho: /', executar: () => areaRef.current?.focus() },
     { id: 'sidebar', rotulo: sidebarAberta ? 'Recolher painel lateral' : 'Expandir painel lateral', executar: () => setSidebarAberta((v) => !v) },
   ];
+
+  // Comandos rápidos: "/algo" no começo do composer abre o menu (seção 8.4).
+  const COMANDOS: { cmd: string; desc: string; executar: () => void }[] = [
+    { cmd: '/consultoria', desc: 'modo Consultoria', executar: () => trocarPerfil('consultor') },
+    { cmd: '/qualificar', desc: 'modo Qualificação comercial', executar: () => trocarPerfil('qualificacao') },
+    { cmd: '/anuncios', desc: 'Gerador de anúncios (RSA)', executar: () => trocarPerfil('gerador_anuncios') },
+    { cmd: '/palavras', desc: 'Gerador de palavras-chave', executar: () => trocarPerfil('gerador_palavras') },
+    { cmd: '/negativas', desc: 'Gerador de negativas', executar: () => trocarPerfil('gerador_negativas') },
+    { cmd: '/landing', desc: 'Analisador de landing page', executar: () => trocarPerfil('analise_lp') },
+    { cmd: '/biblioteca', desc: 'Metodologia Dshow', executar: () => setTela('biblioteca') },
+    { cmd: '/aprendizado', desc: 'Aprendizado contínuo', executar: () => setTela('aprendizado') },
+  ];
+  const comandosVisiveis = texto.startsWith('/') && !texto.includes(' ') && !texto.includes('\n')
+    ? COMANDOS.filter((c) => c.cmd.startsWith(texto.toLowerCase()))
+    : [];
+  const executarComando = (c: { executar: () => void }) => {
+    setTexto('');
+    c.executar();
+  };
 
   return (
     <div className="anx-shell">
@@ -418,6 +471,8 @@ function Shell({ config }: { config: ShellConfig }) {
           onNovaConversa={() => novaConversa()}
           onAprendizado={() => setTela((v) => (v === 'aprendizado' ? 'chat' : 'aprendizado'))}
           aprendizadoAtivo={tela === 'aprendizado'}
+          onBiblioteca={() => setTela((v) => (v === 'biblioteca' ? 'chat' : 'biblioteca'))}
+          bibliotecaAtiva={tela === 'biblioteca'}
           ocupado={ocupado}
           atualizacao={atualizacao}
         />
@@ -426,12 +481,22 @@ function Shell({ config }: { config: ShellConfig }) {
           {tela === 'aprendizado' && (
             <div className="anx-scroll"><AprendizadoScreen /></div>
           )}
+          {tela === 'biblioteca' && (
+            <div className="anx-scroll"><Biblioteca onAbrirUnidade={(u) => setFonteAberta(u)} /></div>
+          )}
           {tela === 'chat' && (<>
           <div className="anx-scroll">
             <div className="anx-col">
               {turnos.length === 0 && perfilAtivo === 'qualificacao' && (
                 <Qualificacao ocupado={ocupado}
                   onIniciar={(q, seg) => void enviar(q, { segment: seg })} />
+              )}
+              {turnos.length === 0 && ferramentaPorPerfil(perfilAtivo) && (
+                <FerramentaForm
+                  ferramenta={ferramentaPorPerfil(perfilAtivo)!}
+                  ocupado={ocupado}
+                  onIniciar={(q, seg) => void enviar(q, { segment: seg })}
+                />
               )}
               {turnos.length === 0 && perfilAtivo === 'consultor' && (
                 <Inicio
@@ -443,9 +508,7 @@ function Shell({ config }: { config: ShellConfig }) {
               {turnos.map((t) => (
                 <div key={t.id} className="anx-turn">
                   <div className="anx-question"><span className="anx-q-ic" aria-hidden>Você</span>{t.pergunta}</div>
-                  {t.estado === 'carregando' && (
-                    <div className="anx-loading"><span className="anx-spinner" /> Consultando a metodologia…</div>
-                  )}
+                  {t.estado === 'carregando' && <EtapasLoading />}
                   {t.estado === 'erro' && <div className="anx-error">⚠️ {t.erro}</div>}
                   {t.estado === 'ok' && t.resposta && (
                     <BlocoResposta
@@ -476,18 +539,33 @@ function Shell({ config }: { config: ShellConfig }) {
               <span className="anx-composer-count">{texto.length > 0 ? `${texto.length}/2000` : ''}</span>
             </div>
             <div className="anx-composer-inner">
+              {comandosVisiveis.length > 0 && (
+                <div className="anx-cmds" role="listbox" aria-label="Comandos rápidos">
+                  {comandosVisiveis.map((c) => (
+                    <button key={c.cmd} className="anx-cmds-item" role="option" aria-selected={false}
+                      onClick={() => executarComando(c)}>
+                      <code>{c.cmd}</code> <span>{c.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <textarea
                 ref={areaRef}
                 className="anx-input"
                 placeholder={perfilAtivo === 'qualificacao'
-                  ? 'Conte o que o lead respondeu e peça o próximo passo…  (Enter envia)'
-                  : 'Pergunte sobre campanhas, palavras-chave, landing pages, lances…  (Enter envia · Shift+Enter quebra linha · / foca)'}
+                  ? 'Conte o que o lead respondeu e peça o próximo passo…  (Enter envia · / comandos)'
+                  : 'Pergunte sobre campanhas, palavras-chave, landing pages, lances…  (Enter envia · Shift+Enter quebra linha · / comandos)'}
                 value={texto}
                 rows={2}
                 maxLength={2000}
                 onChange={(e) => setTexto(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar(texto); }
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (comandosVisiveis.length > 0) { executarComando(comandosVisiveis[0]); return; }
+                    void enviar(texto);
+                  }
+                  if (e.key === 'Escape' && comandosVisiveis.length > 0) setTexto('');
                 }}
                 disabled={ocupado}
               />

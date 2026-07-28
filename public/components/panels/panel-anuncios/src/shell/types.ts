@@ -45,7 +45,13 @@ export interface Unidade {
 }
 
 /** Perfil de consulta do engine (especializa o fluxo). */
-export type Perfil = 'consultor' | 'qualificacao';
+export type Perfil =
+  | 'consultor'
+  | 'qualificacao'
+  | 'gerador_anuncios'
+  | 'gerador_palavras'
+  | 'gerador_negativas'
+  | 'analise_lp';
 
 /** Resposta do POST ask.php (engine + persistência). */
 export interface AskResposta {

@@ -393,6 +393,36 @@
 [data-anuncios-react-root] .anx-act { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--anx-border); background: var(--anx-bg); color: var(--anx-text-dim); border-radius: 9px; padding: 5px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: border-color .15s, color .15s; }
 [data-anuncios-react-root] .anx-act:hover { border-color: var(--anx-text-dim); color: var(--anx-text); }
 
+/* ── Rodada Ferramentas + Biblioteca ─────────────────────────── */
+/* Fluxo A → B → C */
+[data-anuncios-react-root] .anx-fluxo { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 4px 0; }
+[data-anuncios-react-root] .anx-fluxo-par { display: inline-flex; align-items: center; gap: 4px; }
+[data-anuncios-react-root] .anx-fluxo-etapa { border: 1px solid color-mix(in srgb, var(--anx-primary) 40%, var(--anx-border)); background: color-mix(in srgb, var(--anx-primary) 8%, var(--anx-surface)); color: var(--anx-text); border-radius: 9px; padding: 4px 11px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+[data-anuncios-react-root] .anx-fluxo-seta { color: var(--anx-text-dim); font-size: 13px; }
+
+/* Menu de comandos rápidos no composer */
+[data-anuncios-react-root] .anx-composer-inner { position: relative; }
+[data-anuncios-react-root] .anx-cmds { position: absolute; bottom: calc(100% + 8px); left: 0; width: min(380px, 100%); background: var(--anx-surface); border: 1px solid var(--anx-border); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.35); padding: 5px; z-index: 45; }
+[data-anuncios-react-root] .anx-cmds-item { width: 100%; display: flex; align-items: center; gap: 9px; border: 0; background: transparent; color: var(--anx-text); padding: 8px 10px; border-radius: 8px; cursor: pointer; text-align: left; font-size: 12.5px; }
+[data-anuncios-react-root] .anx-cmds-item:hover, [data-anuncios-react-root] .anx-cmds-item:first-child { background: var(--anx-surface-2); }
+[data-anuncios-react-root] .anx-cmds-item code { color: var(--anx-primary-h); font-weight: 700; font-size: 12px; }
+[data-anuncios-react-root] .anx-cmds-item span { color: var(--anx-text-dim); }
+
+/* Biblioteca (Metodologia navegável) */
+[data-anuncios-react-root] .anx-bib-filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+[data-anuncios-react-root] .anx-bib-filtros select { border: 1px solid var(--anx-border); background: var(--anx-surface); color: var(--anx-text); border-radius: 10px; padding: 8px 11px; font-size: 12.5px; font-family: inherit; outline: none; }
+[data-anuncios-react-root] .anx-bib-filtros select:focus { border-color: var(--anx-primary); }
+[data-anuncios-react-root] .anx-bib-busca { flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--anx-border); background: var(--anx-surface); border-radius: 10px; padding: 0 12px; color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-bib-busca input { flex: 1; border: 0; background: transparent; color: var(--anx-text); font-size: 12.5px; padding: 9px 0; outline: none; font-family: inherit; }
+[data-anuncios-react-root] .anx-bib-limpar { border: 0; background: transparent; color: var(--anx-primary-h); font-size: 11.5px; font-weight: 600; cursor: pointer; }
+[data-anuncios-react-root] .anx-bib-meta { font-size: 12px; color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-bib-lista { display: flex; flex-direction: column; gap: 6px; }
+[data-anuncios-react-root] .anx-bib-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--anx-border); background: var(--anx-surface); color: var(--anx-text); border-radius: 10px; padding: 10px 13px; cursor: pointer; transition: border-color .15s, background .15s; }
+[data-anuncios-react-root] .anx-bib-item:hover { border-color: var(--anx-primary); background: var(--anx-surface-2); }
+[data-anuncios-react-root] .anx-bib-q { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+[data-anuncios-react-root] .anx-side-conv-fico { display: inline-flex; color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-side-conv-fico svg { width: 11px; height: 11px; }
+
 /* Responsivo: sidebar recolhe sozinha em telas estreitas */
 @media (max-width: 900px) {
   [data-anuncios-react-root] .anx-side { position: absolute; left: 0; top: 0; bottom: 0; z-index: 50; box-shadow: 12px 0 40px rgba(0,0,0,.35); }
