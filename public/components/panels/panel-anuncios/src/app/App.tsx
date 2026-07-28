@@ -9,7 +9,8 @@
 // (Fase 22 — aprendizado contínuo).
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  perguntar, listarConversas, carregarConversa, enviarFeedback, carregarStats, ApiError,
+  perguntar, perguntarStream, listarConversas, carregarConversa,
+  enviarFeedback, carregarStats, ApiError,
 } from '../lib/api';
 import type {
   ShellConfig, Turno, Unidade, AskResposta, Conversa, Feedback,
@@ -364,18 +365,63 @@ function Shell({ config }: { config: ShellConfig }) {
     setTurnos((t) => [...t, { id, pergunta: q, estado: 'carregando' }]);
     setTexto('');
     setOcupado(true);
-    try {
-      const resposta = await perguntar(q, conversaId);
+
+    const concluir = (resposta: AskResposta) => {
       setModo(resposta.mode);
       setConversaId(resposta.conversa_id);
       setTurnos((t) => t.map((x) => (
         x.id === id ? { ...x, estado: 'ok', resposta, feedback: null } : x
       )));
-    } catch (e) {
+    };
+    const falhar = (e: unknown) => {
       const msg = e instanceof ApiError
         ? (e.ehAuth ? 'Sessão expirada — recarregue a página e entre novamente.' : e.message)
         : 'Erro inesperado ao consultar o Decision Engine.';
       setTurnos((t) => t.map((x) => (x.id === id ? { ...x, estado: 'erro', erro: msg } : x)));
+    };
+
+    let metaRecebida = false;
+    try {
+      // Caminho preferido: streaming (resposta aparece enquanto é gerada).
+      const resposta = await perguntarStream(q, conversaId, {
+        onMeta: (m) => {
+          metaRecebida = true;
+          setModo(m.mode);
+          setTurnos((t) => t.map((x) => (
+            x.id === id
+              ? {
+                  ...x,
+                  estado: 'ok',
+                  feedback: null,
+                  resposta: {
+                    conversa_id: conversaId ?? 0,
+                    message_id: 0, // feedback habilita no evento saved
+                    mode: m.mode,
+                    answer: m.mode === 'consultant' ? '' : null,
+                    units: m.units,
+                    query: m.query,
+                  },
+                }
+              : x
+          )));
+        },
+        onDelta: (texto) => {
+          setTurnos((t) => t.map((x) => (
+            x.id === id && x.resposta
+              ? { ...x, resposta: { ...x.resposta, answer: (x.resposta.answer ?? '') + texto } }
+              : x
+          )));
+        },
+      });
+      concluir(resposta);
+    } catch (e) {
+      if (!metaRecebida) {
+        // Streaming indisponível (buffer no caminho, proxy antigo etc.):
+        // cai no fluxo tradicional de forma transparente.
+        try { concluir(await perguntar(q, conversaId)); } catch (e2) { falhar(e2); }
+      } else {
+        falhar(e);
+      }
     } finally {
       setOcupado(false);
       areaRef.current?.focus();

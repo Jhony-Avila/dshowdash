@@ -148,3 +148,111 @@ function anuncios_conversa_do_usuario(PDO $pdo, int $conversaId, int $userId): a
     }
     return $conversa;
 }
+
+// ── Fluxo de pergunta (compartilhado por ask.php e ask-stream.php) ──────────
+
+/** Quantos turnos anteriores vão ao engine (o engine tem caps próprios). */
+const ANUNCIOS_HISTORICO_MAX = 8;
+
+/** Valida e retorna a pergunta do corpo (3–2000 chars). 422 se inválida. */
+function anuncios_validar_pergunta(array $body): string
+{
+    $question = trim((string) ($body['question'] ?? ''));
+    $len = function_exists('mb_strlen') ? mb_strlen($question) : strlen($question);
+    if ($len < 3 || $len > 2000) {
+        ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, [
+            'message' => 'A pergunta deve ter entre 3 e 2000 caracteres.',
+        ]);
+    }
+    return $question;
+}
+
+/**
+ * Monta o histórico (server-side — o cliente nunca fornece) de uma conversa
+ * já verificada como do usuário. Ordem cronológica, só conteúdo não-vazio.
+ */
+function anuncios_montar_historico(PDO $pdo, int $conversaId): array
+{
+    $st = $pdo->prepare(
+        'SELECT role, content FROM anuncios_mensagens
+         WHERE conversa_id = ? AND content <> ""
+         ORDER BY id DESC LIMIT ' . ANUNCIOS_HISTORICO_MAX
+    );
+    $st->execute([$conversaId]);
+    $history = [];
+    foreach (array_reverse($st->fetchAll(PDO::FETCH_ASSOC)) as $m) {
+        $history[] = ['role' => $m['role'], 'content' => $m['content']];
+    }
+    return $history;
+}
+
+/** Monta o payload do engine a partir do corpo validado + histórico. */
+function anuncios_payload_engine(string $question, array $body, array $history): array
+{
+    $payload = ['question' => $question];
+    foreach (['domain', 'segment'] as $campo) {
+        if (isset($body[$campo]) && is_string($body[$campo]) && $body[$campo] !== '') {
+            $payload[$campo] = $body[$campo];
+        }
+    }
+    if (isset($body['k']) && is_numeric($body['k'])) {
+        $k = (int) $body['k'];
+        if ($k >= 1 && $k <= 20) { $payload['k'] = $k; }
+    }
+    if ($history) { $payload['history'] = $history; }
+    return $payload;
+}
+
+/**
+ * Persiste um turno (pergunta + resposta) numa transação.
+ * Cria a conversa se $conversaId = 0. Retorna [conversaId, messageId].
+ */
+function anuncios_persistir_turno(
+    PDO $pdo,
+    int $userId,
+    int $conversaId,
+    string $question,
+    string $mode,
+    string $answer,
+    array $units
+): array {
+    $pdo->beginTransaction();
+    try {
+        if ($conversaId === 0) {
+            $titulo = function_exists('mb_substr') ? mb_substr($question, 0, 200) : substr($question, 0, 200);
+            $st = $pdo->prepare(
+                'INSERT INTO anuncios_conversas (user_id, titulo, created_at, updated_at)
+                 VALUES (?, ?, NOW(), NOW())'
+            );
+            $st->execute([$userId, $titulo]);
+            $conversaId = (int) $pdo->lastInsertId();
+        } else {
+            $pdo->prepare('UPDATE anuncios_conversas SET updated_at = NOW() WHERE id = ?')
+                ->execute([$conversaId]);
+        }
+
+        $st = $pdo->prepare(
+            'INSERT INTO anuncios_mensagens (conversa_id, role, content, created_at)
+             VALUES (?, "user", ?, NOW())'
+        );
+        $st->execute([$conversaId, $question]);
+
+        $st = $pdo->prepare(
+            'INSERT INTO anuncios_mensagens (conversa_id, role, content, mode, units_json, created_at)
+             VALUES (?, "assistant", ?, ?, ?, NOW())'
+        );
+        $st->execute([
+            $conversaId,
+            $answer,
+            $mode,
+            json_encode($units, JSON_UNESCAPED_UNICODE),
+        ]);
+        $messageId = (int) $pdo->lastInsertId();
+
+        $pdo->commit();
+        return [$conversaId, $messageId];
+    } catch (\Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
+}

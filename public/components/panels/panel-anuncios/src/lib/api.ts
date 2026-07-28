@@ -6,10 +6,11 @@
 // O token do Decision Engine fica NO SERVIDOR (ask.php) — nunca no navegador.
 // v1.1.0: conversas persistentes (conversa_id no ask; conversas.php; feedback.php).
 import type {
-  ApiEnvelope, AskResposta, Conversa, Feedback, MensagemPersistida, Stats,
+  ApiEnvelope, AskResposta, Conversa, Feedback, MensagemPersistida, Stats, Unidade,
 } from '../shell/types';
 
 const ASK_URL       = '/api/anuncios/ask.php';
+const STREAM_URL    = '/api/anuncios/ask-stream.php';
 const CONVERSAS_URL = '/api/anuncios/conversas.php';
 const FEEDBACK_URL  = '/api/anuncios/feedback.php';
 const STATS_URL     = '/api/anuncios/stats.php';
@@ -135,6 +136,118 @@ export function carregarConversa(
 /** Agregados do painel de aprendizado (Fase 22). */
 export function carregarStats(signal?: AbortSignal): Promise<Stats> {
   return get<Stats>(STATS_URL, signal);
+}
+
+// ── Streaming (SSE via ask-stream.php) ─────────────────────────────
+
+export interface StreamHandlers {
+  /** Recuperação concluída: modo + fontes chegam antes do texto. */
+  onMeta?: (meta: { mode: AskResposta['mode']; units: Unidade[]; query: string }) => void;
+  /** Pedaço de texto da resposta do consultor. */
+  onDelta?: (texto: string) => void;
+}
+
+/**
+ * Pergunta em tempo real. Resolve com a resposta completa (incl. message_id
+ * para o feedback). Lança ApiError se o streaming não estiver disponível —
+ * o chamador decide o fallback para perguntar().
+ */
+export async function perguntarStream(
+  question: string,
+  conversaId: number | null,
+  handlers: StreamHandlers = {},
+  filtros: PerguntaFiltros = {},
+  signal?: AbortSignal
+): Promise<AskResposta> {
+  const res = await fetch(STREAM_URL, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      'X-CSRF-Token': await csrfToken(),
+    },
+    body: JSON.stringify({ question, ...(conversaId ? { conversa_id: conversaId } : {}), ...filtros }),
+    signal,
+  });
+
+  const ct = res.headers.get('content-type') ?? '';
+  if (!res.ok || !ct.includes('text/event-stream') || !res.body) {
+    // Erro de validação/sessão (JSON) ou streaming indisponível no caminho.
+    let body: ApiEnvelope<unknown> | null = null;
+    try { body = await res.json(); } catch { /* não-JSON */ }
+    throw new ApiError(
+      body?.meta?.message ?? 'Streaming indisponível.',
+      body?.error ?? `HTTP_${res.status}`,
+      res.status
+    );
+  }
+
+  let meta: { mode: AskResposta['mode']; units: Unidade[]; query: string } | null = null;
+  let saved: { conversa_id: number; message_id: number } | null = null;
+  let answer: string | null = null;
+  let partes = '';
+  let erro: string | null = null;
+
+  const processar = (bloco: string) => {
+    let evento = ''; let dados: unknown = null;
+    for (const linha of bloco.split('\n')) {
+      if (linha.startsWith('event: ')) evento = linha.slice(7).trim();
+      else if (linha.startsWith('data: ')) {
+        try { dados = JSON.parse(linha.slice(6)); } catch { dados = null; }
+      }
+    }
+    const d = dados as Record<string, unknown> | null;
+    if (evento === 'meta' && d) {
+      meta = {
+        mode: d.mode === 'consultant' ? 'consultant' : 'retrieval_only',
+        units: Array.isArray(d.units) ? (d.units as Unidade[]) : [],
+        query: typeof d.query === 'string' ? d.query : question,
+      };
+      handlers.onMeta?.(meta);
+    } else if (evento === 'delta' && d && typeof d.t === 'string') {
+      partes += d.t;
+      handlers.onDelta?.(d.t);
+    } else if (evento === 'done' && d) {
+      answer = typeof d.answer === 'string' ? d.answer : null;
+    } else if (evento === 'saved' && d) {
+      saved = {
+        conversa_id: Number(d.conversa_id) || 0,
+        message_id: Number(d.message_id) || 0,
+      };
+    } else if (evento === 'error' && d) {
+      erro = typeof d.message === 'string' ? d.message : 'Falha no streaming.';
+    }
+  };
+
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let idx: number;
+    while ((idx = buf.indexOf('\n\n')) >= 0) {
+      processar(buf.slice(0, idx));
+      buf = buf.slice(idx + 2);
+    }
+  }
+  if (buf.trim()) processar(buf);
+
+  if (erro) throw new ApiError(erro, 'STREAM_ERROR', 502);
+  if (!meta || !saved) throw new ApiError('Fluxo de streaming incompleto.', 'STREAM_INCOMPLETE', 502);
+
+  const m = meta as { mode: AskResposta['mode']; units: Unidade[]; query: string };
+  const s = saved as { conversa_id: number; message_id: number };
+  return {
+    conversa_id: s.conversa_id,
+    message_id: s.message_id,
+    mode: m.mode,
+    answer: answer ?? (partes || null),
+    units: m.units,
+    query: m.query,
+  };
 }
 
 /** Registra 👍/👎 (ou remove, com 0) numa resposta do consultor. */
