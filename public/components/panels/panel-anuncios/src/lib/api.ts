@@ -6,12 +6,13 @@
 // O token do Decision Engine fica NO SERVIDOR (ask.php) — nunca no navegador.
 // v1.1.0: conversas persistentes (conversa_id no ask; conversas.php; feedback.php).
 import type {
-  ApiEnvelope, AskResposta, Conversa, Feedback, MensagemPersistida,
+  ApiEnvelope, AskResposta, Conversa, Feedback, MensagemPersistida, Stats,
 } from '../shell/types';
 
 const ASK_URL       = '/api/anuncios/ask.php';
 const CONVERSAS_URL = '/api/anuncios/conversas.php';
 const FEEDBACK_URL  = '/api/anuncios/feedback.php';
+const STATS_URL     = '/api/anuncios/stats.php';
 
 export class ApiError extends Error {
   constructor(message: string, readonly code: string, readonly status: number) {
@@ -129,6 +130,11 @@ export function carregarConversa(
   signal?: AbortSignal
 ): Promise<{ conversa: { id: number; titulo: string }; mensagens: MensagemPersistida[] }> {
   return get(`${CONVERSAS_URL}?id=${id}`, signal);
+}
+
+/** Agregados do painel de aprendizado (Fase 22). */
+export function carregarStats(signal?: AbortSignal): Promise<Stats> {
+  return get<Stats>(STATS_URL, signal);
 }
 
 /** Registra 👍/👎 (ou remove, com 0) numa resposta do consultor. */

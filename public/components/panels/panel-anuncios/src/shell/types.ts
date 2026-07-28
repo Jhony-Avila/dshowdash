@@ -84,3 +84,31 @@ export interface MensagemPersistida {
   feedback: Feedback;
   created_at: string;
 }
+
+/** Linha de pergunta+resposta nos agregados do aprendizado (stats.php). */
+export interface StatsLinha {
+  message_id: number;
+  conversa_id: number;
+  pergunta: string;
+  resposta: string;
+  mode: string | null;
+  feedback: Feedback;
+  comment: string | null;
+  created_at: string;
+}
+
+/** Agregados do painel de aprendizado (Fase 22). */
+export interface Stats {
+  totais: {
+    conversas: number;
+    perguntas: number;
+    positivas: number;
+    negativas: number;
+    sem_cobertura: number;
+  };
+  por_modo: Record<string, number>;
+  dominios: { dominio: string; citacoes: number }[];
+  negativas: StatsLinha[];
+  sem_cobertura: StatsLinha[];
+  recentes: StatsLinha[];
+}

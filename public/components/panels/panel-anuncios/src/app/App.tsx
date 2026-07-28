@@ -9,10 +9,11 @@
 // (Fase 22 — aprendizado contínuo).
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  perguntar, listarConversas, carregarConversa, enviarFeedback, ApiError,
+  perguntar, listarConversas, carregarConversa, enviarFeedback, carregarStats, ApiError,
 } from '../lib/api';
 import type {
-  ShellConfig, Turno, Unidade, AskResposta, Conversa, Feedback, MensagemPersistida,
+  ShellConfig, Turno, Unidade, AskResposta, Conversa, Feedback,
+  MensagemPersistida, Stats, StatsLinha,
 } from '../shell/types';
 import '../styles/tokens.css';
 
@@ -244,6 +245,102 @@ function HistoricoMenu({ onAbrir, ocupado }: {
   );
 }
 
+/** Linha de pergunta+resposta nas listas do aprendizado. */
+function LinhaAprendizado({ linha, mostrarFeedback }: { linha: StatsLinha; mostrarFeedback?: boolean }) {
+  return (
+    <div className="anx-learn-row">
+      <div className="anx-learn-row-q">
+        {mostrarFeedback && linha.feedback !== null && (
+          <span aria-hidden>{linha.feedback === 1 ? '👍' : '👎'} </span>
+        )}
+        {linha.pergunta || '(pergunta não localizada)'}
+      </div>
+      {linha.resposta && <div className="anx-learn-row-a">{linha.resposta}{linha.resposta.length >= 300 ? '…' : ''}</div>}
+      {linha.comment && <div className="anx-learn-row-c">💬 {linha.comment}</div>}
+      <div className="anx-learn-row-meta">
+        {fmtData(linha.created_at)}
+        {linha.mode ? ` · ${linha.mode === 'consultant' ? 'Consultor IA' : 'Recuperação'}` : ''}
+      </div>
+    </div>
+  );
+}
+
+function AprendizadoScreen() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [erro, setErro] = useState(false);
+
+  const carregar = async () => {
+    setErro(false); setStats(null);
+    try { setStats(await carregarStats()); } catch { setErro(true); }
+  };
+  useEffect(() => { void carregar(); }, []);
+
+  if (erro) return <div className="anx-error" style={{ margin: 24 }}>⚠️ Não foi possível carregar os dados de aprendizado.</div>;
+  if (!stats) return <div className="anx-loading" style={{ padding: 24 }}><span className="anx-spinner" /> Carregando…</div>;
+
+  const t = stats.totais;
+  const avaliadas = t.positivas + t.negativas;
+  const maxCit = Math.max(1, ...stats.dominios.map((d) => d.citacoes));
+
+  return (
+    <div className="anx-learn">
+      <div className="anx-learn-head">
+        <h2>Aprendizado contínuo</h2>
+        <p>O que a equipe pergunta, onde a metodologia responde bem e onde há lacunas (Fase 22).</p>
+      </div>
+
+      <div className="anx-tiles">
+        <div className="anx-tile"><span className="anx-tile-n">{t.perguntas}</span><span className="anx-tile-l">Perguntas</span></div>
+        <div className="anx-tile"><span className="anx-tile-n">{t.conversas}</span><span className="anx-tile-l">Conversas</span></div>
+        <div className="anx-tile"><span className="anx-tile-n">👍 {t.positivas}</span><span className="anx-tile-l">Úteis</span></div>
+        <div className="anx-tile"><span className="anx-tile-n">👎 {t.negativas}</span><span className="anx-tile-l">A melhorar</span></div>
+        <div className="anx-tile"><span className="anx-tile-n">{t.sem_cobertura}</span><span className="anx-tile-l">Sem cobertura</span></div>
+        <div className="anx-tile"><span className="anx-tile-n">{avaliadas > 0 ? Math.round((t.positivas / avaliadas) * 100) + '%' : '—'}</span><span className="anx-tile-l">Aprovação</span></div>
+      </div>
+
+      {stats.dominios.length > 0 && (
+        <section className="anx-learn-sec">
+          <h3>Domínios mais consultados <span className="anx-learn-sub">citações nas últimas respostas</span></h3>
+          <div className="anx-bars">
+            {stats.dominios.map((d) => (
+              <div key={d.dominio} className="anx-bar-row">
+                <span className="anx-bar-label">{rotuloDominio(d.dominio)}</span>
+                <span className="anx-bar-track" aria-hidden>
+                  <span className="anx-bar-fill" style={{ width: `${Math.max(2, Math.round((d.citacoes / maxCit) * 100))}%` }} />
+                </span>
+                <span className="anx-bar-value">{d.citacoes}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="anx-learn-sec">
+        <h3>Respostas marcadas com 👎 <span className="anx-learn-sub">lacunas confirmadas — candidatas a novas regras</span></h3>
+        {stats.negativas.length === 0
+          ? <p className="anx-learn-empty">Nenhuma até agora. 🎉</p>
+          : stats.negativas.map((l) => <LinhaAprendizado key={l.message_id} linha={l} />)}
+      </section>
+
+      <section className="anx-learn-sec">
+        <h3>Perguntas sem cobertura <span className="anx-learn-sub">a busca não encontrou nenhuma unidade</span></h3>
+        {stats.sem_cobertura.length === 0
+          ? <p className="anx-learn-empty">Nenhuma — a base cobriu tudo que foi perguntado.</p>
+          : stats.sem_cobertura.map((l) => <LinhaAprendizado key={l.message_id} linha={l} />)}
+      </section>
+
+      <section className="anx-learn-sec">
+        <h3>Últimas perguntas</h3>
+        {stats.recentes.length === 0
+          ? <p className="anx-learn-empty">Ainda não há perguntas registradas.</p>
+          : stats.recentes.map((l) => <LinhaAprendizado key={l.message_id} linha={l} mostrarFeedback />)}
+      </section>
+
+      <button className="anx-topbtn" onClick={() => void carregar()}>↻ Atualizar</button>
+    </div>
+  );
+}
+
 function Shell({ config }: { config: ShellConfig }) {
   void config;
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -251,6 +348,7 @@ function Shell({ config }: { config: ShellConfig }) {
   const [ocupado, setOcupado] = useState(false);
   const [modo, setModo] = useState<string | null>(null);
   const [conversaId, setConversaId] = useState<number | null>(null);
+  const [tela, setTela] = useState<'chat' | 'aprendizado'>('chat');
   const proximoId = useRef(1);
   const fimRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
@@ -346,7 +444,12 @@ function Shell({ config }: { config: ShellConfig }) {
               {modo === 'consultant' ? '✦ Consultor IA' : '📚 Recuperação'}
             </span>
           )}
-          <HistoricoMenu onAbrir={(id) => void abrirConversa(id)} ocupado={ocupado} />
+          <button className={`anx-topbtn${tela === 'aprendizado' ? ' is-on' : ''}`}
+            onClick={() => setTela((v) => (v === 'chat' ? 'aprendizado' : 'chat'))}
+            title="Uso, avaliações e lacunas da metodologia">
+            {tela === 'chat' ? '📊 Aprendizado' : '💬 Voltar ao chat'}
+          </button>
+          <HistoricoMenu onAbrir={(id) => { setTela('chat'); void abrirConversa(id); }} ocupado={ocupado} />
           <button className="anx-topbtn anx-topbtn-primary" onClick={novaConversa}
             disabled={ocupado || turnos.length === 0} title="Começar uma conversa nova">
             ＋ Nova conversa
@@ -354,6 +457,10 @@ function Shell({ config }: { config: ShellConfig }) {
         </div>
       </div>
 
+      {tela === 'aprendizado' && (
+        <div className="anx-scroll"><AprendizadoScreen /></div>
+      )}
+      {tela === 'chat' && (<>
       <div className="anx-scroll">
         <div className="anx-col">
           {turnos.length === 0 && (
@@ -417,6 +524,7 @@ function Shell({ config }: { config: ShellConfig }) {
           As respostas citam as unidades da metodologia (ex.: F13 · Q865). Nunca inventa dados da sua conta.
         </p>
       </div>
+      </>)}
     </div>
   );
 }

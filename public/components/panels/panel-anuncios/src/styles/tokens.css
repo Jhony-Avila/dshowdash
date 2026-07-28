@@ -145,6 +145,39 @@
 [data-anuncios-react-root] .anx-send:disabled { opacity: .45; cursor: default; }
 [data-anuncios-react-root] .anx-hint { max-width: 860px; margin: 7px auto 0; font-size: 11px; color: var(--anx-text-dim); text-align: center; }
 
+/* ── Painel de aprendizado (Fase 22) ─────────────────────────── */
+[data-anuncios-react-root] .anx-topbtn.is-on { background: color-mix(in srgb, var(--anx-primary) 14%, transparent); border-color: var(--anx-primary); color: var(--anx-primary-h); }
+[data-anuncios-react-root] .anx-learn { max-width: 900px; margin: 0 auto; padding: 22px 18px 40px; display: flex; flex-direction: column; gap: 22px; }
+[data-anuncios-react-root] .anx-learn-head h2 { margin: 0 0 4px; font-size: 18px; }
+[data-anuncios-react-root] .anx-learn-head p { margin: 0; font-size: 13px; color: var(--anx-text-dim); }
+
+/* Tiles: número em tinta de texto (nunca na cor da série) */
+[data-anuncios-react-root] .anx-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+[data-anuncios-react-root] .anx-tile { background: var(--anx-surface); border: 1px solid var(--anx-border); border-radius: 12px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 3px; }
+[data-anuncios-react-root] .anx-tile-n { font-size: 22px; font-weight: 700; line-height: 1.1; }
+[data-anuncios-react-root] .anx-tile-l { font-size: 11.5px; color: var(--anx-text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+
+[data-anuncios-react-root] .anx-learn-sec { background: var(--anx-surface); border: 1px solid var(--anx-border); border-radius: 12px; padding: 16px; }
+[data-anuncios-react-root] .anx-learn-sec h3 { margin: 0 0 12px; font-size: 14px; }
+[data-anuncios-react-root] .anx-learn-sub { font-size: 11.5px; font-weight: 400; color: var(--anx-text-dim); margin-left: 6px; }
+[data-anuncios-react-root] .anx-learn-empty { margin: 0; font-size: 12.5px; color: var(--anx-text-dim); }
+
+/* Barras de domínio: série única, um matiz, extremidade arredondada 4px */
+[data-anuncios-react-root] .anx-bars { display: flex; flex-direction: column; gap: 7px; }
+[data-anuncios-react-root] .anx-bar-row { display: grid; grid-template-columns: 190px 1fr 42px; align-items: center; gap: 10px; }
+[data-anuncios-react-root] .anx-bar-label { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-anuncios-react-root] .anx-bar-track { height: 12px; background: var(--anx-surface-2); border-radius: 4px; overflow: hidden; display: block; }
+[data-anuncios-react-root] .anx-bar-fill { display: block; height: 100%; background: var(--anx-primary); border-radius: 0 4px 4px 0; }
+[data-anuncios-react-root] .anx-bar-value { font-size: 12px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Linhas de pergunta/resposta */
+[data-anuncios-react-root] .anx-learn-row { padding: 10px 0; border-top: 1px solid var(--anx-border); display: flex; flex-direction: column; gap: 4px; }
+[data-anuncios-react-root] .anx-learn-row:first-of-type { border-top: 0; padding-top: 0; }
+[data-anuncios-react-root] .anx-learn-row-q { font-size: 13px; font-weight: 600; line-height: 1.4; }
+[data-anuncios-react-root] .anx-learn-row-a { font-size: 12.5px; color: var(--anx-text-dim); line-height: 1.5; }
+[data-anuncios-react-root] .anx-learn-row-c { font-size: 12.5px; color: var(--anx-warn); }
+[data-anuncios-react-root] .anx-learn-row-meta { font-size: 11px; color: var(--anx-text-dim); }
+
 /* ── Spinner ─────────────────────────────────────────────────── */
 [data-anuncios-react-root] .anx-spinner { width: 16px; height: 16px; border: 2px solid var(--anx-border); border-top-color: var(--anx-primary); border-radius: 50%; animation: anx-spin .8s linear infinite; display: inline-block; }
 [data-anuncios-react-root] .anx-spinner-sm { width: 14px; height: 14px; border-width: 2px; border-color: rgba(255,255,255,.35); border-top-color: #fff; }
