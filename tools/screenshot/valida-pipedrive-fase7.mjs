@@ -1,8 +1,13 @@
-// FASE 7 — Estabilização do Pipedrive: varredura das 16 telas + medição de performance.
+// FASE 7 — Estabilização do Pipedrive: varredura de TODAS as telas + medição de performance.
 //
 // Diferente das provas 4/5/6 (que aprovam uma tela nova), esta é uma VARREDURA de
 // regressão sobre o módulo inteiro:
-//   1. abre as 16 telas, em dark e light, e exige 0 erro de console do painel;
+//   0. CONFERE A PRÓPRIA COBERTURA: lê os itens de navegação que o painel realmente
+//      oferece e exige que batam com a lista TELAS. Tela nova na sidebar sem entrada
+//      aqui REPROVA — foi assim que a tela "Perdas" (17ª, criada 2026-07-27) passou
+//      dias sem cobertura enquanto esta prova anunciava "varredura limpa" sobre 16.
+//      Uma prova que não sabe o que deixou de fora mente com convicção.
+//   1. abre TODAS as telas, em dark e light, e exige 0 erro de console do painel;
 //   2. cobra consistência: toda tela tem cabeçalho padrão (ícone + título) e nenhuma
 //      mostra o `<h1>` cru que sobrou de antes do PageHeader;
 //   3. cobra "sem estouros" (§23) nas larguras onde o painel tem área: 1600 e 480;
@@ -15,11 +20,14 @@ import pkg from './node_modules/playwright/index.js';
 const { chromium } = pkg;
 import { getSessionCookies, isLoginPage, loginViaPage } from './auth.mjs';
 
-const OUT = '/tmp/claude-0/-root/14c7a297-852d-4236-a877-cb8c020f1514/scratchpad/fase7-shots';
+const OUT = '/tmp/claude-0/-root/1af6a59b-262c-4e47-bb42-c1a4935e1164/scratchpad/fase7-shots';
 const log = (...a) => console.log(...a);
 
+// Contrato de cobertura: a lista é conferida contra a navegação real do painel
+// (ver `conferirCobertura`). Ordem = a da sidebar, para a varredura seguir o caminho
+// que o usuário percorre.
 const TELAS = [
-  'Visão Geral', 'Alertas', 'Rankings', 'Previsão', 'Funis',
+  'Visão Geral', 'Alertas', 'Rankings', 'Previsão', 'Perdas', 'Funis',
   'Negócios', 'Kanban', 'Leads', 'Atividades',
   'Pessoas', 'Organizações', 'Produtos', 'Notas',
   'Usuários', 'Saúde', 'Configurações',
@@ -74,6 +82,14 @@ async function varrer(tema) {
 
   await abrirPainel(page);
 
+  // ── 0. A prova confere a própria cobertura ────────────────────────────────
+  // Lê os rótulos que a sidebar do painel realmente oferece. Comparar com TELAS
+  // pega os dois lados: tela nova sem cobertura E tela removida que ficou na lista.
+  const navReal = await page.evaluate(() =>
+    [...document.querySelectorAll('[data-pp-react-root] .pp-navitem')]
+      .map((x) => x.textContent.trim())
+      .filter(Boolean));
+
   const telas = {};
   for (const nome of TELAS) {
     telaAtual = nome;
@@ -110,7 +126,7 @@ async function varrer(tema) {
     });
   }
 
-  R[tema] = { telas, estouroCelular, errosPorTela, ruins };
+  R[tema] = { telas, estouroCelular, errosPorTela, ruins, navReal };
   await browser.close();
 }
 
@@ -179,6 +195,22 @@ log(JSON.stringify(R, null, 2));
 const falhas = [];
 for (const t of ['dark', 'light']) {
   const r = R[t];
+
+  // ── 0. Cobertura: a lista TELAS bate com a navegação real? ────────────────
+  // Sem isto a prova só sabe o que já sabia: uma tela nova nasce invisível e a
+  // varredura segue anunciando "limpa" sobre um módulo que cresceu.
+  const semCobertura = (r.navReal ?? []).filter((n) => !TELAS.includes(n));
+  const sobrando = TELAS.filter((n) => !(r.navReal ?? []).includes(n));
+  if (semCobertura.length) {
+    falhas.push(`${t}: ${semCobertura.length} tela(s) na navegação SEM cobertura nesta prova — ${semCobertura.join(', ')}. Inclua em TELAS.`);
+  }
+  if (sobrando.length) {
+    falhas.push(`${t}: TELAS lista tela(s) que a navegação não oferece — ${sobrando.join(', ')}. Removida do painel?`);
+  }
+  if (!semCobertura.length && !sobrando.length) {
+    log(`  ${t}: cobertura conferida — ${TELAS.length} telas na lista = ${r.navReal.length} na navegação`);
+  }
+
   for (const [tela, v] of Object.entries(r.telas)) {
     if (!v.montou) falhas.push(`${t}/${tela}: tela vazia`);
     if (!v.temCabecalho) falhas.push(`${t}/${tela}: sem cabeçalho padrão (PageHeader)`);
@@ -215,5 +247,9 @@ if (p25 && p200) {
   if ((p200.layout?.medianaMs ?? 0) > 120) falhas.push(`grid 200 linhas: reflow de ${p200.layout.medianaMs}ms`);
 }
 
-log(falhas.length ? `\n❌ FALHAS (${falhas.length}):\n - ` + falhas.join('\n - ') : '\n✅ VARREDURA LIMPA — 16 telas × 2 temas');
+// O número sai de TELAS.length, não de um literal: foi um "16" escrito à mão que
+// deixou a varredura anunciando cobertura total sobre 17 telas.
+log(falhas.length
+  ? `\n❌ FALHAS (${falhas.length}):\n - ` + falhas.join('\n - ')
+  : `\n✅ VARREDURA LIMPA — ${TELAS.length} telas × 2 temas`);
 process.exit(falhas.length ? 1 : 0);
