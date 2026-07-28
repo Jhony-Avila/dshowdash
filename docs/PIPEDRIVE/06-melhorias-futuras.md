@@ -97,7 +97,7 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 | # | Melhoria | Valor | Esforço | Status |
 |---|---|---|---|---|
 | 25 | **Valor ponderado por probabilidade** por etapa (forecast visual) | ⭐⭐ | P | ✅ |
-| 26 | **Filtro por dono / período** no Kanban | ⭐⭐ | P | 🔜 |
+| 26 | **Filtro por dono / período** no Kanban | ⭐⭐ | P | ✅ |
 | 27 | **Indicadores de saúde no card** (parado, fechamento atrasado) com ícones | ⭐⭐ | P | ✅ |
 
 - **#25** ✅ (2026-07-28, `Kanban.tsx v2.1.0` + `tokens.css v1.15.0`) — ponderado por etapa no cabeçalho e total do funil na descrição da página. **Zero backend novo.**
@@ -107,7 +107,13 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
   - Prova: `tools/screenshot/valida-pipedrive-ponderado.mjs` — dark+light, confere cada coluna contra `/forecast` (não contra a própria UI), o total contra a soma **das colunas exibidas** (usar `previsao.totals` somaria todos os funis), cobra a ausência da linha quando seria ruído, e verifica que não estoura em 1600 **nem em 480**.
 
 - **#27** (F5): selos de atenção no cartão + atividades atrasadas + tempo na etapa. ⚠️ Só os sinais de **peso alto** viram selo (atrasada, fechamento vencido) — cinco selos por cartão é ruído, não sinal; o resto fica no `title`. Os sinais usam **as mesmas regras de `commercialAlerts()`** para Kanban e Alertas nunca se contradizerem. ⚠️ **Tempo na etapa é honesto**: 93 dos 252 abertos não têm `stage_change_time` e nesses o tempo conta **da criação**, marcado com `*` na legenda.
-- **#25/#26** conferidos em 2026-07-27: o Kanban tem **só o seletor de funil**. O cabeçalho já exibe a **probabilidade da etapa** (vinda de `GET /funnel`), então o ponderado é multiplicação sobre número que já está na tela — #25 é o menor esforço dos dois.
+- **#26** ✅ (2026-07-28, `Kanban.tsx v2.2.0` + `tokens.css v1.16.0` + backend). Seletor de **dono** (com contagem por dono) e de **previsão de fechamento**; `GET /kanban` ganhou `owner_id` e `prazo`.
+  - ⚠️ **O filtro obrigou a estender o `/forecast` junto.** O ponderado do #25 vem de lá; sem passar o mesmo recorte, a coluna mostraria os negócios de um vendedor e o ponderado o da **etapa inteira** — exatamente as duas telas discordando que o #25 existiu para evitar. Agora `/forecast` aceita `owner_id`/`prazo`, e a chave de cache do Kanban só reusa a da tela Previsão (`'all'`) **quando não há filtro**.
+  - ⚠️ **48% dos abertos não têm previsão de fechamento** (117 de 248 no funil Principal). Um recorte por data esconderia quase metade do quadro em silêncio. Duas defesas: **"Sem previsão" é um dos recortes** (o balde vira pergunta útil — "quais negócios estão sem data?") e, com qualquer recorte por data ativo, a tela **declara quantos ficaram de fora**.
+  - Recortes: qualquer previsão · vencida · fecha este mês · 30 dias · 90 dias · sem previsão. Medidos: 248 / 26 / 24 / 47 / 93 / 117.
+  - **Prazo desconhecido não filtra nada** (allow-list no controller *e* no repositório): erra para o lado de mostrar tudo, nunca para o de esconder sem avisar. O SQL sai de constantes — o valor do usuário só escolhe qual string constante roda, nunca é concatenado.
+  - O **dono é limpo ao trocar de funil**: um vendedor do funil A não costuma existir no B, e o quadro ficaria vazio sem explicação. Os filtros **não persistem** entre sessões, pelo mesmo motivo.
+  - Prova: `tools/screenshot/valida-pipedrive-filtros-kanban.mjs` — confere contra o banco (via API sem filtro), e o teste central **prova que o recorte chegou ao `/forecast`**: exige que o ponderado desenhado seja igual ao `/forecast` **filtrado** e **diferente** do global. Se alguém "otimizar" reusando o cache `'all'`, a prova reprova.
 
 ## 5. Inteligência comercial
 
@@ -209,10 +215,13 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 | 60 | **Zona morta do app-shell (600–820 px)**: sidebar de 312 px fixos deixa 208–258 px úteis a QUALQUER painel | ⭐⭐⭐ | M | 💤 |
 | 61 | **Colunas mortas em `pipe_deals`**: popular no sync **ou** remover do schema (hoje são armadilha silenciosa) | ⭐⭐ | P | 💤 |
 | 62 | **Índices medidos** em `add_time`/`won_time`/`lost_time` (deals) e `done`/`due_date` (activities) — DDL em produção | ⭐⭐ | P | 💤 |
-| 63 | 🐛 **`403 POST /api/telemetry/collect.php`** — intermitente, do **app-shell** (ocorre com o painel fechado); catalogado, fora do escopo do módulo | ⭐⭐ | P | 💤 |
+| 63 | 🐛 **`POST /api/telemetry/collect.php`** — investigado 2026-07-28: **não é intermitente, a telemetria NUNCA persistiu**. Causa corrigida na fonte; publicar depende de decisão do dono (ver abaixo) | ⭐⭐⭐ | G | ◑ |
 | 64 | **Cor real das etiquetas**: `pipe_custom_field_options` guarda só id+rótulo (a cor vive em `dealFields`, não sincronizada) — hoje a cor é determinística pelo id | ⭐ | P | 🔜 |
 
 ⚠️ **#60 a #63 são decisões do dono/DBA, não trabalho de painel.** Estão aqui para não se perderem.
+
+- **#63** investigado em **2026-07-28**. O ticket dizia "403 intermitente"; a medição no access.log (rota ancorada) mostrou **15 dias, 1.755 POSTs e ZERO 200** — 921× 401, 833× 403. A telemetria **nunca persistiu um evento**. Causa: `transport/send.ts` não envia `X-CSRF-Token` e o endpoint exige `requireCsrf()` (o fallback `$_POST['csrf_token']` não vale — o corpo é JSON). Ficou 15 dias invisível porque o transporte devolvia **`success: true`** ao descartar o lote. Corrigido na fonte (**v5.3.0-CSRF**: header no `sendBatch`, `fetch(keepalive)` no lugar do `sendBeacon` — que não envia cabeçalho e por isso dava 403 estrutural —, métricas e check de saúde). Provas: `tools/screenshot/valida-telemetria-csrf.mjs` (sem CSRF → 403; com CSRF → 200, `inserted 1`).
+  🔴 **A correção NÃO está no ar.** Os 21 targets core têm cadeia de build circular (`_entry.ts` → `index.js` → o próprio `dist/*.bundle.js`), então rebuild re-empacota o bundle e ignora as fontes; e a fonte agregadora do `telemetry-core` (`Telemetry`, `createLegacyAdapter`) **foi perdida** — só existe no bundle minificado. Medido em `valida-telemetria-runtime.mjs`: fonte `5.3.0-CSRF`, no ar `5.1.1`, 4 envios, 0 com CSRF. **Decisão do dono**: reconstruir o agregador do telemetry-core ou consertar a cadeia de build dos bundles core — as duas mexem no boot do app e passam longe de "P".
 
 ---
 
@@ -236,5 +245,5 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 
 Depois disso, os estratégicos de maior porte: **Cruzamento ERP** (#34–#36) e **Mailbox** (#37–#38), quando houver decisão de escopo.
 
-> Total: **64 itens** catalogados — **23 ✅ · 7 ◑ · 1 ⚖️ · 21 🔜 · 12 💤** (contados no próprio arquivo, não estimados).
+> Total: **64 itens** catalogados — **24 ✅ · 8 ◑ · 1 ⚖️ · 20 🔜 · 11 💤** (contados no próprio arquivo, não estimados).
 > Priorize por Valor↑ / Esforço↓, mas leia antes o bloco "Bloqueios de DADO" da seção 0: três dos itens abertos não são questão de esforço.

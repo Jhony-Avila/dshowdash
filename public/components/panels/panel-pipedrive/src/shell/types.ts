@@ -217,6 +217,9 @@ export interface PipeKanbanColumn {
   exibidos: number;
   deals: PipeKanbanCard[];
 }
+/** Recortes por previsão de fechamento do Kanban (#26). Espelha SyncRepository::KANBAN_PRAZOS. */
+export type PipePrazoKanban = 'todos' | 'vencidos' | 'mes' | 'd30' | 'd90' | 'sem_previsao';
+
 export interface PipeKanbanBoard {
   pipeline_id: number | null; pipeline_name: string | null;
   pipelines: { id: number; name: string | null }[];
@@ -224,6 +227,14 @@ export interface PipeKanbanBoard {
   etiquetas: { id: number; label: string }[];
   limite_por_etapa: number;
   totais: { count: number; valor: number };
+  // #26 — donos com negócio aberto neste funil (para o seletor) e eco dos filtros.
+  owners: { id: number | null; name: string | null; count: number }[];
+  filtros: {
+    owner_id: number | null;
+    prazo: PipePrazoKanban;
+    /** Abertos do funil SEM previsão de fechamento — o que um recorte por data deixa de fora. */
+    sem_previsao_no_funil: number;
+  };
 }
 
 // Alertas comerciais (GET /alerts).

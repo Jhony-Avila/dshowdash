@@ -1,5 +1,5 @@
 // screens/Kanban.tsx — quadro read-only de negócios abertos por etapa (funil selecionável).
-// @version 2.1.0  @created 2026-07-21
+// @version 2.2.0  @created 2026-07-21
 //
 // v1.0.0: três linhas por cartão (título, valor, organização) e cabeçalho com contagem.
 // v2.0.0 (Fase 5 — Kanban):
@@ -27,6 +27,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   Columns3, TriangleAlert, CalendarClock, CalendarX2, Clock, Hourglass, ChevronRight, Rows3, Scale,
+  Filter,
 } from 'lucide-react';
 import { apiGet, chaves, ApiError } from '../lib/api';
 import { fmtBRL, fmtNum } from '../lib/format';
@@ -36,7 +37,7 @@ import { EstadoErro, SkeletonBloco } from './Estados';
 import { Avatar } from './Avatar';
 import type {
   PipeStatus, PipeKanbanBoard, PipeKanbanCard, PipeKanbanColumn, PipeSinalKanban, PipeFunnelData,
-  PipeForecast,
+  PipeForecast, PipePrazoKanban,
 } from '../shell/types';
 
 type Densidade = 'compacta' | 'padrao' | 'confortavel';
@@ -50,6 +51,19 @@ const DENS_OPCOES: { v: Densidade; label: string }[] = [
 // isto é só o palpite inicial para a barra de rolagem não pular no primeiro quadro.
 const ALTURA_EST: Record<Densidade, number> = { compacta: 86, padrao: 132, confortavel: 158 };
 const VIRTUALIZAR_A_PARTIR_DE = 40;
+
+// #26 — recortes por previsão de fechamento. "Sem previsão" é um deles de propósito:
+// 117 dos 248 abertos deste funil não têm data, então um recorte por prazo esconde
+// quase metade do quadro. Como balde visível, o que era sumiço vira pergunta útil
+// ("quais negócios estão sem data?").
+const PRAZOS: { v: PipePrazoKanban; label: string }[] = [
+  { v: 'todos', label: 'Qualquer previsão' },
+  { v: 'vencidos', label: 'Previsão vencida' },
+  { v: 'mes', label: 'Fecha este mês' },
+  { v: 'd30', label: 'Fecha em 30 dias' },
+  { v: 'd90', label: 'Fecha em 90 dias' },
+  { v: 'sem_previsao', label: 'Sem previsão' },
+];
 
 const ROTULO_SINAL: Record<PipeSinalKanban, string> = {
   ativ_atrasada: 'Atividade atrasada',
@@ -119,15 +133,33 @@ export function Kanban({ status }: { status?: PipeStatus }) {
   const [pipelineId, setPipelineId] = useState<number | null>(null);
   const [dealAberto, setDealAberto] = useState<number | null>(null);
   const [densidade, setDensidade] = useState<Densidade>(lerDensidade);
+  // #26 — recortes do quadro. Não persistem de propósito: filtro que sobrevive à
+  // sessão faz o usuário voltar e ver um quadro "vazio" sem lembrar por quê.
+  const [ownerId, setOwnerId] = useState<number | null>(null);
+  const [prazo, setPrazo] = useState<PipePrazoKanban>('todos');
 
   const trocarDensidade = (d: Densidade) => {
     setDensidade(d);
     try { localStorage.setItem(DENS_KEY, d); } catch { /* ignora */ }
   };
 
+  // Recorte em vigor, montado UMA vez e usado nas duas consultas (quadro e ponderado).
+  // Duas listas de parâmetros seria a porta de entrada para elas divergirem.
+  const recorte = useMemo(() => {
+    const p: Record<string, string | number> = {};
+    if (ownerId != null) p.owner_id = ownerId;
+    if (prazo !== 'todos') p.prazo = prazo;
+    return p;
+  }, [ownerId, prazo]);
+  const temFiltro = ownerId != null || prazo !== 'todos';
+
   const { data, isLoading, isFetching, error, refetch } = useQuery<PipeKanbanBoard>({
-    queryKey: ['pipe', 'kanban', pipelineId],
-    queryFn: ({ signal }) => apiGet<PipeKanbanBoard>('/kanban', pipelineId ? { pipeline_id: pipelineId } : undefined, signal),
+    queryKey: ['pipe', 'kanban', pipelineId, ownerId, prazo],
+    queryFn: ({ signal }) => apiGet<PipeKanbanBoard>(
+      '/kanban',
+      { ...(pipelineId ? { pipeline_id: pipelineId } : {}), ...recorte },
+      signal,
+    ),
     placeholderData: keepPreviousData,
     enabled: status?.status === 'connected',
     refetchInterval: 120_000,
@@ -146,9 +178,13 @@ export function Kanban({ status }: { status?: PipeStatus }) {
   // ao padrão daquela tela) de propósito — a chave de cache passa a ser a MESMA, então trocar
   // de funil aqui não gera consulta nova e o número não pode divergir do da Previsão.
   // `by_stage` vem com `stage_id` global, então cada coluna acha o seu.
+  // Sem filtro, a chave é a MESMA da tela Previsão ('all') e o cache é compartilhado.
+  // Com filtro (#26), a chave carrega o recorte: o ponderado precisa enxergar o mesmo
+  // conjunto que o quadro desenha, senão a coluna mostra os negócios de um vendedor e o
+  // ponderado o total da etapa inteira.
   const { data: previsao } = useQuery<PipeForecast>({
-    queryKey: [...chaves.forecast, 'all'],
-    queryFn: ({ signal }) => apiGet<PipeForecast>('/forecast', undefined, signal),
+    queryKey: temFiltro ? [...chaves.forecast, 'kanban', ownerId, prazo] : [...chaves.forecast, 'all'],
+    queryFn: ({ signal }) => apiGet<PipeForecast>('/forecast', temFiltro ? recorte : undefined, signal),
     enabled: status?.status === 'connected',
     staleTime: 120_000,
   });
@@ -211,8 +247,23 @@ export function Kanban({ status }: { status?: PipeStatus }) {
         acoes={
           <div className="pp-quick">
             <select className="pp-select" aria-label="Funil"
-              value={pipelineId ?? data?.pipeline_id ?? ''} onChange={(e) => setPipelineId(Number(e.target.value))}>
+              value={pipelineId ?? data?.pipeline_id ?? ''}
+              onChange={(e) => { setPipelineId(Number(e.target.value)); setOwnerId(null); }}>
               {(data?.pipelines ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            {/* #26 — o dono some ao trocar de funil (acima): um vendedor do funil A não
+                costuma existir no B, e o quadro ficaria vazio sem explicação. */}
+            <select className="pp-select" aria-label="Dono"
+              value={ownerId ?? ''}
+              onChange={(e) => setOwnerId(e.target.value === '' ? null : Number(e.target.value))}>
+              <option value="">Todos os donos</option>
+              {(data?.owners ?? []).map((o) => (
+                <option key={o.id ?? 'sem'} value={o.id ?? ''}>{o.name} ({o.count})</option>
+              ))}
+            </select>
+            <select className="pp-select" aria-label="Previsão de fechamento"
+              value={prazo} onChange={(e) => setPrazo(e.target.value as PipePrazoKanban)}>
+              {PRAZOS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
             </select>
             <div className="pp-seg" role="group" aria-label="Densidade dos cartões">
               {DENS_OPCOES.map((d) => (
@@ -237,6 +288,30 @@ export function Kanban({ status }: { status?: PipeStatus }) {
         <div className="pp-card"><p className="pp-placeholder">Nenhuma etapa ativa neste funil.</p></div>
       ) : (
         <>
+          {/* #26 — recorte ativo declarado na tela. Um quadro filtrado que parece um
+              quadro inteiro é a forma mais fácil de alguém concluir que o funil secou. */}
+          {temFiltro && (
+            <div className="pp-kan-recorte" role="status">
+              <Filter size={13} aria-hidden />
+              <span>
+                Recorte ativo: <strong>{data?.owners.find((o) => o.id === ownerId)?.name ?? 'todos os donos'}</strong>
+                {prazo !== 'todos' && <> · <strong>{PRAZOS.find((p) => p.v === prazo)?.label.toLowerCase()}</strong></>}
+                {' — '}{fmtNum(totalAbertos)} {totalAbertos === 1 ? 'negócio' : 'negócios'}
+              </span>
+              {/* O número que evita a conclusão errada: com recorte por data, os sem
+                  previsão não estão aqui — e são quase metade nesta base. */}
+              {prazo !== 'todos' && prazo !== 'sem_previsao' && (data?.filtros.sem_previsao_no_funil ?? 0) > 0 && (
+                <span className="pp-kan-fora">
+                  {fmtNum(data!.filtros.sem_previsao_no_funil)} sem previsão ficam fora deste recorte
+                </span>
+              )}
+              <button type="button" className="pp-kan-limpar"
+                onClick={() => { setOwnerId(null); setPrazo('todos'); }}>
+                Limpar filtros
+              </button>
+            </div>
+          )}
+
           <div className={`pp-kanban dens-${densidade}`}>
             {cols.map((c) => (
               <Coluna key={c.stage_id} col={c} totalValor={totalValor} densidade={densidade}

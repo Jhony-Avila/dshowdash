@@ -128,7 +128,12 @@ final class PipeQueryController
     {
         requireMethod(['GET']);
         $pl = isset($_GET['pipeline_id']) && ctype_digit((string)$_GET['pipeline_id']) ? (int)$_GET['pipeline_id'] : null;
-        ApiResponse::success((new PipeSyncRepository($pdo))->kanbanBoard($pl), ['ts' => date('c')]);
+        // #26 — dono e prazo. Entrada invalida vira null (sem recorte): o quadro erra
+        // para o lado de mostrar tudo, nunca para o de esconder sem avisar.
+        $owner = isset($_GET['owner_id']) && ctype_digit((string)$_GET['owner_id']) ? (int)$_GET['owner_id'] : null;
+        $prazo = isset($_GET['prazo']) && in_array($_GET['prazo'], PipeSyncRepository::KANBAN_PRAZOS, true)
+            ? (string)$_GET['prazo'] : null;
+        ApiResponse::success((new PipeSyncRepository($pdo))->kanbanBoard($pl, 200, $owner, $prazo), ['ts' => date('c')]);
     }
 
     public static function alerts(string $method, PDO $pdo): void

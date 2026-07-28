@@ -39,8 +39,14 @@ final class PipeAnalyticsController
         $pl = isset($_GET['pipeline_id']) && ctype_digit((string)$_GET['pipeline_id'])
             ? (int)$_GET['pipeline_id'] : null;
 
+        // #26 — mesmos recortes do Kanban, para o ponderado do quadro filtrado bater
+        // com a lista que ele desenha. A tela de Previsao nao passa nenhum dos dois.
+        $owner = isset($_GET['owner_id']) && ctype_digit((string)$_GET['owner_id']) ? (int)$_GET['owner_id'] : null;
+        $prazo = isset($_GET['prazo']) && in_array($_GET['prazo'], PipeSyncRepository::KANBAN_PRAZOS, true)
+            ? (string)$_GET['prazo'] : null;
+
         $repo = new PipeAnalyticsRepository($pdo);
-        $fc = $repo->forecast($pl);
+        $fc = $repo->forecast($pl, $owner, $prazo);
         $fc['pipelines']   = $repo->pipelinesList();
         $fc['pipeline_id'] = $pl;
         ApiResponse::success($fc, ['ts' => date('c')]);

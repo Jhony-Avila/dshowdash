@@ -1289,7 +1289,65 @@ final class PipeSyncRepository
      * cartao sao derivados de `pipe_activities` e das datas do proprio negocio, com as MESMAS
      * regras de `commercialAlerts()`, para as duas telas nao se contradizerem.
      */
-    public function kanbanBoard(?int $pipelineId, int $porEtapa = 200): array
+    /**
+     * Quadro Kanban dos negocios ABERTOS de um funil (backlog #26: filtro por dono e
+     * por previsao de fechamento).
+     *
+     * $prazo aceita: null|'todos' (sem recorte), 'vencidos', 'mes', 'd30', 'd90' e
+     * 'sem_previsao'. O balde 'sem_previsao' existe de proposito: 121 dos 253 abertos
+     * desta base NAO tem expected_close_date, entao qualquer recorte por data esconde
+     * metade do quadro. Melhor virar recorte que o usuario escolhe ver do que sumico
+     * silencioso — e a UI informa quantos ficaram de fora.
+     *
+     * O MESMO filtro entra nas tres consultas (agregado, pagina de cartoes e donos):
+     * filtrar so a pagina faria a contagem do cabecalho mentir sobre a lista.
+     */
+    /** Recortes por previsao de fechamento aceitos pelo Kanban (#26). Fonte unica: o
+     *  controller valida contra esta lista e o repositorio a usa como allow-list. */
+    public const KANBAN_PRAZOS = ['todos', 'vencidos', 'mes', 'd30', 'd90', 'sem_previsao'];
+
+    /**
+     * Monta o WHERE extra do Kanban (#26). Devolve [sql, params].
+     *
+     * O trecho de SQL sai de uma ALLOW-LIST de constantes: o valor de $prazo so
+     * ESCOLHE qual string constante e usada, nunca e concatenado. O dono vai por
+     * placeholder. Prazo desconhecido = sem recorte (falha para o lado de mostrar
+     * tudo, nunca para o de esconder em silencio).
+     */
+    private function kanbanFiltroSql(?int $ownerId, ?string $prazo): array
+    {
+        $sql = '';
+        $params = [];
+
+        if ($ownerId !== null) {
+            $sql .= ' AND owner_id = :fowner';
+            $params[':fowner'] = $ownerId;
+        }
+
+        // Recortes por previsao de fechamento (expected_close_date).
+        $porPrazo = [
+            'vencidos'     => ' AND expected_close_date IS NOT NULL AND expected_close_date <  CURDATE()',
+            'mes'          => ' AND expected_close_date IS NOT NULL'
+                            . ' AND expected_close_date BETWEEN CURDATE() AND LAST_DAY(CURDATE())',
+            'd30'          => ' AND expected_close_date IS NOT NULL'
+                            . ' AND expected_close_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)',
+            'd90'          => ' AND expected_close_date IS NOT NULL'
+                            . ' AND expected_close_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 90 DAY)',
+            'sem_previsao' => ' AND expected_close_date IS NULL',
+        ];
+        if ($prazo !== null && isset($porPrazo[$prazo])) {
+            $sql .= $porPrazo[$prazo];
+        }
+
+        return [$sql, $params];
+    }
+
+    public function kanbanBoard(
+        ?int $pipelineId,
+        int $porEtapa = 200,
+        ?int $ownerId = null,
+        ?string $prazo = null
+    ): array
     {
         $porEtapa = max(20, min($porEtapa, 500));
 
@@ -1315,14 +1373,47 @@ final class PipeSyncRepository
         $stStages->execute([':pl' => $pipelineId]);
         $stages = $stStages->fetchAll(PDO::FETCH_ASSOC);
 
+        // Filtros de #26. `kanbanFiltroSql` devolve SQL de CONSTANTES (allow-list) —
+        // nada vindo do usuario entra na string; o dono vai por placeholder.
+        [$filtroSql, $filtroParams] = $this->kanbanFiltroSql($ownerId, $prazo);
+
+        // Donos com negocio aberto NESTE funil, para alimentar o seletor. Nao aplica o
+        // filtro de dono (senao a lista encolheria para o proprio filtro e nao daria
+        // para trocar), mas aplica o de prazo, que e o recorte em vigor.
+        [$prazoSql, $prazoParams] = $this->kanbanFiltroSql(null, $prazo);
+        $stOwners = $this->pdo->prepare(
+            "SELECT d.owner_id AS id, COALESCE(u.name,'(sem dono)') AS name, COUNT(*) n
+               FROM pipe_deals d
+          LEFT JOIN pipe_users u ON u.pipedrive_id = d.owner_id
+              WHERE d.is_deleted=0 AND d.status='open' AND d.pipeline_id = :pl {$prazoSql}
+           GROUP BY d.owner_id, u.name
+           ORDER BY n DESC"
+        );
+        $stOwners->execute(array_merge([':pl' => $pipelineId], $prazoParams));
+        $owners = array_map(static fn($r) => [
+            'id' => $r['id'] !== null ? (int)$r['id'] : null,
+            'name' => $r['name'],
+            'count' => (int)$r['n'],
+        ], $stOwners->fetchAll(PDO::FETCH_ASSOC));
+
+        // Quantos abertos do funil ficam FORA por nao terem previsao — o numero que a
+        // tela mostra quando ha recorte por data, para o sumico nao ser silencioso.
+        $stSemPrev = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM pipe_deals
+              WHERE is_deleted=0 AND status='open' AND pipeline_id = :pl
+                AND expected_close_date IS NULL"
+        );
+        $stSemPrev->execute([':pl' => $pipelineId]);
+        $semPrevisao = (int)$stSemPrev->fetchColumn();
+
         // 2) Contagem e soma REAIS por etapa (independentes da pagina desenhada).
         $stAgg = $this->pdo->prepare(
             "SELECT stage_id, COUNT(*) n, COALESCE(SUM(value),0) v
                FROM pipe_deals
-              WHERE is_deleted=0 AND status='open' AND pipeline_id = :pl
+              WHERE is_deleted=0 AND status='open' AND pipeline_id = :pl {$filtroSql}
            GROUP BY stage_id"
         );
-        $stAgg->execute([':pl' => $pipelineId]);
+        $stAgg->execute(array_merge([':pl' => $pipelineId], $filtroParams));
         $agg = [];
         foreach ($stAgg->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $agg[(int)$r['stage_id']] = ['n' => (int)$r['n'], 'v' => (float)$r['v']];
@@ -1346,7 +1437,7 @@ final class PipeSyncRepository
                     SELECT pipedrive_id, stage_id,
                            ROW_NUMBER() OVER (PARTITION BY stage_id ORDER BY value DESC, update_time DESC) rn
                       FROM pipe_deals
-                     WHERE is_deleted=0 AND status='open' AND pipeline_id = :pl
+                     WHERE is_deleted=0 AND status='open' AND pipeline_id = :pl {$filtroSql}
                     ) r
                JOIN pipe_deals d        ON d.pipedrive_id = r.pipedrive_id
           LEFT JOIN pipe_users u        ON u.pipedrive_id = d.owner_id
@@ -1357,6 +1448,9 @@ final class PipeSyncRepository
         );
         $stDeals->bindValue(':pl', $pipelineId, PDO::PARAM_INT);
         $stDeals->bindValue(':lim', $porEtapa, PDO::PARAM_INT);
+        foreach ($filtroParams as $k => $v) {
+            $stDeals->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
         $stDeals->execute();
 
         $etiquetas = $this->etiquetasDeNegocio();
@@ -1386,6 +1480,15 @@ final class PipeSyncRepository
             'pipeline_id'   => $pipelineId,
             'pipeline_name' => $pipeName,
             'pipelines'     => array_map(static fn($p) => ['id' => (int)$p['id'], 'name' => $p['name']], $pipes),
+            'owners'        => $owners,
+            'filtros'       => [
+                'owner_id' => $ownerId,
+                'prazo'    => $prazo ?? 'todos',
+                // Abertos do funil sem previsao de fechamento. Quando ha recorte por
+                // data, estes NAO entram (exceto no proprio balde 'sem_previsao') — a
+                // tela usa este numero para dizer o que ficou fora.
+                'sem_previsao_no_funil' => $semPrevisao,
+            ],
             'columns'       => $columns,
             'etiquetas'     => array_map(static fn($id, $nome) => ['id' => $id, 'label' => $nome],
                                          array_keys($etiquetas), array_values($etiquetas)),

@@ -143,13 +143,35 @@ final class PipeAnalyticsRepository
      * pela probabilidade efetiva, agregados por etapa e por mes de fechamento.
      * @param int|null $pipelineId filtra por funil (null = todos).
      */
-    public function forecast(?int $pipelineId = null): array
+    public function forecast(?int $pipelineId = null, ?int $ownerId = null, ?string $prazo = null): array
     {
         $where = "d.is_deleted = 0 AND d.status = 'open'";
         $params = [];
         if ($pipelineId !== null) {
             $where .= " AND d.pipeline_id = :pl";
             $params[':pl'] = $pipelineId;
+        }
+        // #26: os MESMOS recortes do Kanban. Sem isto, um quadro filtrado por dono
+        // mostraria a lista de um vendedor e o ponderado da etapa INTEIRA — as duas
+        // telas discordando na cara do usuario, que e exatamente o que a decisao de
+        // buscar o ponderado aqui (em vez de recalcular no front) evitou.
+        if ($ownerId !== null) {
+            $where .= " AND d.owner_id = :fowner";
+            $params[':fowner'] = $ownerId;
+        }
+        // Allow-list de constantes: $prazo so ESCOLHE a string, nunca e concatenado.
+        $porPrazo = [
+            'vencidos'     => " AND d.expected_close_date IS NOT NULL AND d.expected_close_date <  CURDATE()",
+            'mes'          => " AND d.expected_close_date IS NOT NULL"
+                            . " AND d.expected_close_date BETWEEN CURDATE() AND LAST_DAY(CURDATE())",
+            'd30'          => " AND d.expected_close_date IS NOT NULL"
+                            . " AND d.expected_close_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)",
+            'd90'          => " AND d.expected_close_date IS NOT NULL"
+                            . " AND d.expected_close_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 90 DAY)",
+            'sem_previsao' => " AND d.expected_close_date IS NULL",
+        ];
+        if ($prazo !== null && isset($porPrazo[$prazo])) {
+            $where .= $porPrazo[$prazo];
         }
         // Probabilidade efetiva e valor ponderado, calculados uma vez em subconsulta.
         $base = "SELECT d.stage_id, d.pipeline_id, d.expected_close_date,
