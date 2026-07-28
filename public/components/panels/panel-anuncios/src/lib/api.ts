@@ -57,6 +57,8 @@ export interface PerguntaFiltros {
   domain?: string;
   segment?: string;
   k?: number;
+  /** Modo de resposta do consultor: rapida | executiva | completa. */
+  style?: string;
 }
 
 /** POST JSON autenticado (CSRF) com tratamento do envelope padrão. */

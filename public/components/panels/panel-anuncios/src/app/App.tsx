@@ -1,170 +1,34 @@
 // app/App.tsx — raiz do painel Anúncios (Consultor Google Ads / Decision Engine).
-// @version 1.1.0  @created 2026-07-27
+// @version 2.0.0  @created 2026-07-27
 //
-// UI de perguntas e respostas sobre a metodologia Dshow de Google Ads
-// (~1.500 regras). Fluxo: pergunta → proxy /api/anuncios/ask.php → Decision
-// Engine (retrieval BM25 + modo consultor com citações [id]).
-// v1.1.0: conversas persistentes (histórico no MySQL via proxy), memória
-// multi-turno (o servidor monta o contexto) e feedback 👍/👎 por resposta
-// (Fase 22 — aprendizado contínuo).
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+// v2.0.0 (Workspace Fase 1): resposta estruturada (components/Resposta),
+// tela inicial densa (components/Inicio), composer com autosize + modos de
+// resposta + cancelar geração, feedback com motivos, ícones Lucide.
+// v1.1.0: conversas persistentes, memória multi-turno, feedback 👍/👎.
+import { useEffect, useRef, useState } from 'react';
+import {
+  BarChart3, Brain, History as HistoryIcon, MessageSquareText,
+  Plus, RefreshCw, Send, Square,
+} from 'lucide-react';
 import {
   perguntar, perguntarStream, listarConversas, carregarConversa,
   enviarFeedback, carregarStats, ApiError,
 } from '../lib/api';
+import { BlocoResposta, rotuloDominio } from '../components/Resposta';
+import { Inicio } from '../components/Inicio';
 import type {
-  ShellConfig, Turno, Unidade, AskResposta, Conversa, Feedback,
+  ShellConfig, Turno, AskResposta, Conversa, Feedback,
   MensagemPersistida, Stats, StatsLinha,
 } from '../shell/types';
 import '../styles/tokens.css';
 
-const SUGESTOES = [
-  'Como avaliar se uma landing page está pronta para receber tráfego?',
-  'Quais problemas levam uma igreja a procurar um painel de LED?',
-  'Como diagnosticar uma campanha com CTR bom e conversão baixa?',
-  'Quando devo usar CPA desejado em vez de maximizar conversões?',
+type Estilo = 'rapida' | 'executiva' | 'completa';
+
+const ESTILOS: { id: Estilo; rotulo: string; dica: string }[] = [
+  { id: 'rapida', rotulo: 'Rápida', dica: 'Resposta curta e direta (resumo + próximos passos).' },
+  { id: 'executiva', rotulo: 'Executiva', dica: 'Foco em decisão: resumo, recomendações priorizadas e próximos passos.' },
+  { id: 'completa', rotulo: 'Completa', dica: 'Análise completa: diagnóstico, recomendações, plano e fontes.' },
 ];
-
-const ROTULO_DOMINIO: Record<string, string> = {
-  methodology: 'Metodologia', measurement: 'Mensuração', google_ads: 'Google Ads',
-  keywords: 'Palavras-chave', ads: 'Anúncios', landing_pages: 'Landing Pages',
-  metrics: 'Métricas', bidding: 'Lances', orchestration: 'Orquestração',
-  cognitive_architecture: 'Arquitetura Cognitiva', dshow_products: 'Produtos Dshow',
-  dshow_technologies: 'Tecnologias Dshow', dshow_segments: 'Segmentos Dshow',
-  commercial_qualification: 'Qualificação Comercial', rag: 'RAG',
-  testing: 'Testes', continuous_learning: 'Aprendizado Contínuo',
-};
-
-function rotuloDominio(d: string): string {
-  return ROTULO_DOMINIO[d] ?? d;
-}
-
-/** Renderiza texto do consultor: parágrafos, negrito **x**, itens "- " e citações [id]. */
-function TextoResposta({ texto }: { texto: string }) {
-  const blocos = texto.split(/\n{2,}/);
-  return (
-    <div className="anx-answer-text">
-      {blocos.map((bloco, i) => {
-        const linhas = bloco.split('\n');
-        const ehLista = linhas.length > 1 && linhas.every((l) => /^\s*[-•*]\s+/.test(l) || l.trim() === '');
-        if (ehLista) {
-          return (
-            <ul key={i}>
-              {linhas.filter((l) => l.trim() !== '').map((l, j) => (
-                <li key={j}>{renderInline(l.replace(/^\s*[-•*]\s+/, ''))}</li>
-              ))}
-            </ul>
-          );
-        }
-        return <p key={i}>{linhas.map((l, j) => (
-          <span key={j}>{j > 0 && <br />}{renderInline(l)}</span>
-        ))}</p>;
-      })}
-    </div>
-  );
-}
-
-/** Inline: citações [fase-...] viram chips; **negrito** vira <strong>. */
-function renderInline(linha: string): ReactNode[] {
-  const partes: ReactNode[] = [];
-  const re = /\[((?:fase|q)[^\]]*)\]|\*\*([^*]+)\*\*/g;
-  let ultimo = 0;
-  let m: RegExpExecArray | null;
-  let k = 0;
-  while ((m = re.exec(linha)) !== null) {
-    if (m.index > ultimo) partes.push(linha.slice(ultimo, m.index));
-    if (m[1] !== undefined) {
-      partes.push(<span key={`c${k++}`} className="anx-cite" title={m[1]}>{resumoCitacao(m[1])}</span>);
-    } else {
-      partes.push(<strong key={`b${k++}`}>{m[2]}</strong>);
-    }
-    ultimo = m.index + m[0].length;
-  }
-  if (ultimo < linha.length) partes.push(linha.slice(ultimo));
-  return partes;
-}
-
-/** "fase-13__bloco-b__q-0865__ab12cd34" -> "F13 · Q865". */
-function resumoCitacao(id: string): string {
-  const m = id.match(/fase-(\d+).*q-0*(\d+)/);
-  return m ? `F${Number(m[1])} · Q${m[2]}` : id.slice(0, 18);
-}
-
-function CartaoUnidade({ unidade, aberto }: { unidade: Unidade; aberto?: boolean }) {
-  const [expandido, setExpandido] = useState(!!aberto);
-  const s = unidade.source;
-  return (
-    <div className={`anx-unit${expandido ? ' is-open' : ''}`}>
-      <button className="anx-unit-head" onClick={() => setExpandido((v) => !v)} aria-expanded={expandido}>
-        <span className="anx-unit-q">{unidade.question}</span>
-        <span className="anx-unit-badges">
-          <span className="anx-badge anx-badge-dom">{rotuloDominio(unidade.domain)}</span>
-          {unidade.segment && <span className="anx-badge anx-badge-seg">{unidade.segment}</span>}
-          <span className="anx-badge">F{s.logical_phase} · Q{s.question_number}</span>
-        </span>
-        <span className="anx-unit-caret" aria-hidden>{expandido ? '▾' : '▸'}</span>
-      </button>
-      {expandido && (
-        <div className="anx-unit-body">
-          <p className="anx-unit-answer">{unidade.answer}</p>
-          {unidade.operational_rule && (
-            <p className="anx-unit-rule"><strong>Regra operacional:</strong> {unidade.operational_rule}</p>
-          )}
-          <p className="anx-unit-origin">
-            Origem: {s.file} (linhas {s.line_start}–{s.line_end}) · <code>{unidade.id}</code>
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BlocoResposta({ resposta, feedback, onFeedback }: {
-  resposta: AskResposta;
-  feedback: Feedback;
-  onFeedback: (valor: 1 | -1) => void;
-}) {
-  const [mostrarFontes, setMostrarFontes] = useState(resposta.mode === 'retrieval_only');
-  return (
-    <div className="anx-answer">
-      {resposta.mode === 'consultant' && resposta.answer ? (
-        <TextoResposta texto={resposta.answer} />
-      ) : (
-        <p className="anx-retrieval-note">
-          Modo recuperação: exibindo as unidades mais relevantes da metodologia.
-          Para respostas consultivas com IA, configure a chave da Anthropic no servidor.
-        </p>
-      )}
-      {resposta.units.length > 0 && (
-        <div className="anx-sources">
-          <button className="anx-sources-toggle" onClick={() => setMostrarFontes((v) => !v)}>
-            {mostrarFontes ? '▾' : '▸'} Fontes da metodologia ({resposta.units.length})
-          </button>
-          {mostrarFontes && (
-            <div className="anx-sources-list">
-              {resposta.units.map((u, i) => (
-                <CartaoUnidade key={u.id} unidade={u} aberto={resposta.mode === 'retrieval_only' && i === 0} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      {resposta.units.length === 0 && (
-        <p className="anx-retrieval-note">Nenhuma unidade da metodologia cobre esta pergunta.</p>
-      )}
-      {resposta.message_id > 0 && (
-        <div className="anx-fbrow" role="group" aria-label="Avaliar resposta">
-          <span className="anx-fb-label">Esta resposta ajudou?</span>
-          <button className={`anx-fb${feedback === 1 ? ' is-on' : ''}`}
-            onClick={() => onFeedback(1)} title="Resposta útil" aria-pressed={feedback === 1}>👍</button>
-          <button className={`anx-fb anx-fb-neg${feedback === -1 ? ' is-on' : ''}`}
-            onClick={() => onFeedback(-1)} title="Resposta ruim ou incorreta" aria-pressed={feedback === -1}>👎</button>
-          {feedback !== null && <span className="anx-fb-thanks">Avaliação registrada — obrigado!</span>}
-        </div>
-      )}
-    </div>
-  );
-}
 
 /** Converte mensagens persistidas (conversas.php?id=N) em turnos da tela. */
 function mensagensParaTurnos(mensagens: MensagemPersistida[]): Turno[] {
@@ -225,7 +89,9 @@ function HistoricoMenu({ onAbrir, ocupado }: {
   return (
     <div className="anx-histmenu" ref={ref}>
       <button className="anx-topbtn" onClick={() => void alternar()} disabled={ocupado}
-        aria-expanded={open} title="Conversas anteriores">🕓 Histórico</button>
+        aria-expanded={open} title="Conversas anteriores">
+        <HistoryIcon size={14} aria-hidden /> Histórico
+      </button>
       {open && (
         <div className="anx-histmenu-drop" role="listbox">
           {lista === null && <div className="anx-histmenu-note"><span className="anx-spinner" /> Carregando…</div>}
@@ -252,7 +118,7 @@ function LinhaAprendizado({ linha, mostrarFeedback }: { linha: StatsLinha; mostr
     <div className="anx-learn-row">
       <div className="anx-learn-row-q">
         {mostrarFeedback && linha.feedback !== null && (
-          <span aria-hidden>{linha.feedback === 1 ? '👍' : '👎'} </span>
+          <span aria-hidden>{linha.feedback === 1 ? '👍 ' : '👎 '}</span>
         )}
         {linha.pergunta || '(pergunta não localizada)'}
       </div>
@@ -337,7 +203,9 @@ function AprendizadoScreen() {
           : stats.recentes.map((l) => <LinhaAprendizado key={l.message_id} linha={l} mostrarFeedback />)}
       </section>
 
-      <button className="anx-topbtn" onClick={() => void carregar()}>↻ Atualizar</button>
+      <button className="anx-topbtn" onClick={() => void carregar()}>
+        <RefreshCw size={14} aria-hidden /> Atualizar
+      </button>
     </div>
   );
 }
@@ -350,13 +218,35 @@ function Shell({ config }: { config: ShellConfig }) {
   const [modo, setModo] = useState<string | null>(null);
   const [conversaId, setConversaId] = useState<number | null>(null);
   const [tela, setTela] = useState<'chat' | 'aprendizado'>('chat');
+  const [estilo, setEstilo] = useState<Estilo>('completa');
   const proximoId = useRef(1);
   const fimRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [turnos]);
+
+  // Autosize do composer.
+  const ajustarAltura = () => {
+    const el = areaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+  };
+  useEffect(ajustarAltura, [texto]);
+
+  // Atalho "/" foca o campo de pergunta.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      const emCampo = alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.isContentEditable);
+      if (e.key === '/' && !emCampo) { e.preventDefault(); areaRef.current?.focus(); }
+    };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, []);
 
   const enviar = async (pergunta: string) => {
     const q = pergunta.trim();
@@ -365,6 +255,10 @@ function Shell({ config }: { config: ShellConfig }) {
     setTurnos((t) => [...t, { id, pergunta: q, estado: 'carregando' }]);
     setTexto('');
     setOcupado(true);
+    setTela('chat');
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     const concluir = (resposta: AskResposta) => {
       setModo(resposta.mode);
@@ -374,6 +268,12 @@ function Shell({ config }: { config: ShellConfig }) {
       )));
     };
     const falhar = (e: unknown) => {
+      if (controller.signal.aborted) {
+        setTurnos((t) => t.map((x) => (
+          x.id === id ? { ...x, estado: 'erro', erro: 'Geração cancelada. A pergunta não foi salva no histórico.' } : x
+        )));
+        return;
+      }
       const msg = e instanceof ApiError
         ? (e.ehAuth ? 'Sessão expirada — recarregue a página e entre novamente.' : e.message)
         : 'Erro inesperado ao consultar o Decision Engine.';
@@ -405,40 +305,45 @@ function Shell({ config }: { config: ShellConfig }) {
               : x
           )));
         },
-        onDelta: (texto) => {
+        onDelta: (textoDelta) => {
           setTurnos((t) => t.map((x) => (
             x.id === id && x.resposta
-              ? { ...x, resposta: { ...x.resposta, answer: (x.resposta.answer ?? '') + texto } }
+              ? { ...x, resposta: { ...x.resposta, answer: (x.resposta.answer ?? '') + textoDelta } }
               : x
           )));
         },
-      });
+      }, { style: estilo }, controller.signal);
       concluir(resposta);
     } catch (e) {
-      if (!metaRecebida) {
-        // Streaming indisponível (buffer no caminho, proxy antigo etc.):
-        // cai no fluxo tradicional de forma transparente.
-        try { concluir(await perguntar(q, conversaId)); } catch (e2) { falhar(e2); }
+      if (!metaRecebida && !controller.signal.aborted) {
+        // Streaming indisponível: cai no fluxo tradicional de forma transparente.
+        try { concluir(await perguntar(q, conversaId, { style: estilo }, controller.signal)); }
+        catch (e2) { falhar(e2); }
       } else {
         falhar(e);
       }
     } finally {
+      abortRef.current = null;
       setOcupado(false);
       areaRef.current?.focus();
     }
   };
+
+  const cancelar = () => { abortRef.current?.abort(); };
 
   const novaConversa = () => {
     if (ocupado) return;
     setTurnos([]);
     setConversaId(null);
     proximoId.current = 1;
+    setTela('chat');
     areaRef.current?.focus();
   };
 
   const abrirConversa = async (id: number) => {
     if (ocupado) return;
     setOcupado(true);
+    setTela('chat');
     try {
       const { mensagens } = await carregarConversa(id);
       const carregados = mensagensParaTurnos(mensagens);
@@ -448,7 +353,7 @@ function Shell({ config }: { config: ShellConfig }) {
       const ultimo = [...carregados].reverse().find((t) => t.resposta);
       if (ultimo?.resposta) setModo(ultimo.resposta.mode);
     } catch {
-      /* mantém a tela atual; o dropdown já sinaliza erros de listagem */
+      /* mantém a tela atual */
     } finally {
       setOcupado(false);
     }
@@ -464,22 +369,27 @@ function Shell({ config }: { config: ShellConfig }) {
     try {
       await enviarFeedback(messageId, novo ?? 0);
     } catch {
-      // desfaz em caso de falha (otimista com rollback)
       setTurnos((t) => t.map((x) => (x.id === turnoId ? { ...x, feedback: atual } : x)));
     }
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      void enviar(texto);
-    }
+  const darMotivo = (turnoId: number, motivo: string) => {
+    const messageId = turnos.find((t) => t.id === turnoId)?.resposta?.message_id;
+    if (!messageId) return;
+    enviarFeedback(messageId, -1, motivo).catch(() => { /* silencioso */ });
   };
 
   return (
     <div className="anx-shell">
       <div className="anx-topbar">
-        <span className="anx-brand"><span className="anx-brand-mark" aria-hidden>🧠</span> Consultor de Anúncios</span>
+        <div className="anx-brand-wrap">
+          <span className="anx-breadcrumb">Google Ads › Inteligência</span>
+          <span className="anx-brand">
+            <span className="anx-brand-mark" aria-hidden><Brain size={15} /></span>
+            Consultor de Anúncios
+            <span className="anx-badge-ia">IA</span>
+          </span>
+        </div>
         <span className="anx-sub">Decision Engine · metodologia Dshow (~1.500 regras)</span>
         <div className="anx-topbar-right">
           {modo && (
@@ -493,12 +403,14 @@ function Shell({ config }: { config: ShellConfig }) {
           <button className={`anx-topbtn${tela === 'aprendizado' ? ' is-on' : ''}`}
             onClick={() => setTela((v) => (v === 'chat' ? 'aprendizado' : 'chat'))}
             title="Uso, avaliações e lacunas da metodologia">
-            {tela === 'chat' ? '📊 Aprendizado' : '💬 Voltar ao chat'}
+            {tela === 'chat'
+              ? <><BarChart3 size={14} aria-hidden /> Aprendizado</>
+              : <><MessageSquareText size={14} aria-hidden /> Voltar ao chat</>}
           </button>
-          <HistoricoMenu onAbrir={(id) => { setTela('chat'); void abrirConversa(id); }} ocupado={ocupado} />
+          <HistoricoMenu onAbrir={(id) => void abrirConversa(id)} ocupado={ocupado} />
           <button className="anx-topbtn anx-topbtn-primary" onClick={novaConversa}
             disabled={ocupado || turnos.length === 0} title="Começar uma conversa nova">
-            ＋ Nova conversa
+            <Plus size={14} aria-hidden /> Nova conversa
           </button>
         </div>
       </div>
@@ -510,22 +422,10 @@ function Shell({ config }: { config: ShellConfig }) {
       <div className="anx-scroll">
         <div className="anx-col">
           {turnos.length === 0 && (
-            <div className="anx-welcome">
-              <div className="anx-welcome-ic" aria-hidden>🧠</div>
-              <h2>Pergunte ao especialista em Google Ads da Dshow</h2>
-              <p>
-                Auditoria, diagnóstico, palavras-chave, landing pages, lances e
-                qualificação comercial — sempre fundamentado na metodologia, com as
-                fontes citadas em cada resposta.
-              </p>
-              <div className="anx-suggestions">
-                {SUGESTOES.map((s) => (
-                  <button key={s} className="anx-suggestion" onClick={() => void enviar(s)} disabled={ocupado}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Inicio
+              onUsarTemplate={(t) => { setTexto(t); areaRef.current?.focus(); }}
+              onAbrirConversa={(id) => void abrirConversa(id)}
+            />
           )}
 
           {turnos.map((t) => (
@@ -540,6 +440,7 @@ function Shell({ config }: { config: ShellConfig }) {
                   resposta={t.resposta}
                   feedback={t.feedback ?? null}
                   onFeedback={(valor) => void darFeedback(t.id, valor)}
+                  onMotivo={(motivo) => darMotivo(t.id, motivo)}
                 />
               )}
             </div>
@@ -549,25 +450,44 @@ function Shell({ config }: { config: ShellConfig }) {
       </div>
 
       <div className="anx-composer">
+        <div className="anx-composer-top">
+          <div className="anx-estilos" role="tablist" aria-label="Modo de resposta">
+            {ESTILOS.map((e) => (
+              <button key={e.id} className={`anx-estilo${estilo === e.id ? ' is-on' : ''}`}
+                onClick={() => setEstilo(e.id)} title={e.dica} role="tab" aria-selected={estilo === e.id}>
+                {e.rotulo}
+              </button>
+            ))}
+          </div>
+          <span className="anx-composer-count">{texto.length > 0 ? `${texto.length}/2000` : ''}</span>
+        </div>
         <div className="anx-composer-inner">
           <textarea
             ref={areaRef}
             className="anx-input"
-            placeholder="Pergunte sobre campanhas, palavras-chave, landing pages, lances…  (Enter envia)"
+            placeholder="Pergunte sobre campanhas, palavras-chave, landing pages, lances…  (Enter envia · Shift+Enter quebra linha · / foca)"
             value={texto}
             rows={2}
             maxLength={2000}
             onChange={(e) => setTexto(e.target.value)}
-            onKeyDown={onKeyDown}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar(texto); }
+            }}
             disabled={ocupado}
           />
-          <button className="anx-send" onClick={() => void enviar(texto)}
-            disabled={ocupado || texto.trim().length < 3} title="Enviar pergunta">
-            {ocupado ? <span className="anx-spinner anx-spinner-sm" /> : '➤'}
-          </button>
+          {ocupado ? (
+            <button className="anx-send anx-send-stop" onClick={cancelar} title="Cancelar geração">
+              <Square size={15} aria-hidden />
+            </button>
+          ) : (
+            <button className="anx-send" onClick={() => void enviar(texto)}
+              disabled={texto.trim().length < 3} title="Enviar pergunta">
+              <Send size={16} aria-hidden />
+            </button>
+          )}
         </div>
         <p className="anx-hint">
-          As respostas citam as unidades da metodologia (ex.: F13 · Q865). Nunca inventa dados da sua conta.
+          As respostas citam as unidades da metodologia (ex.: F13 · Q865) e nunca inventam dados da sua conta.
         </p>
       </div>
       </>)}

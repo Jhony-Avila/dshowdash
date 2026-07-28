@@ -195,6 +195,9 @@ function anuncios_payload_engine(string $question, array $body, array $history):
             $payload[$campo] = $body[$campo];
         }
     }
+    if (isset($body['style']) && in_array($body['style'], ['rapida', 'executiva', 'completa'], true)) {
+        $payload['style'] = $body['style'];
+    }
     if (isset($body['k']) && is_numeric($body['k'])) {
         $k = (int) $body['k'];
         if ($k >= 1 && $k <= 20) { $payload['k'] = $k; }
