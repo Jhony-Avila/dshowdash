@@ -117,6 +117,17 @@ $semCobertura = anuncios_stats_linhas(
 // ── Últimas perguntas (visão geral do uso) ─────────────────────────────────
 $recentes = anuncios_stats_linhas($pdo, '1=1', 20);
 
+// ── Atividade: perguntas por dia (últimos 30 dias) ─────────────────────────
+$atividade = [];
+$st = $pdo->query(
+    'SELECT DATE(created_at) AS dia, COUNT(*) AS n FROM anuncios_mensagens
+     WHERE role = "user" AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+     GROUP BY DATE(created_at) ORDER BY dia'
+);
+foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+    $atividade[] = ['dia' => (string) $r['dia'], 'n' => (int) $r['n']];
+}
+
 ApiResponse::success([
     'totais'        => $totais,
     'por_modo'      => $porModo,
@@ -124,4 +135,5 @@ ApiResponse::success([
     'negativas'     => $negativas,
     'sem_cobertura' => $semCobertura,
     'recentes'      => $recentes,
+    'atividade'     => $atividade,
 ]);

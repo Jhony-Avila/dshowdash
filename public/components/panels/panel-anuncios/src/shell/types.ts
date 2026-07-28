@@ -130,4 +130,5 @@ export interface Stats {
   negativas: StatsLinha[];
   sem_cobertura: StatsLinha[];
   recentes: StatsLinha[];
+  atividade?: { dia: string; n: number }[];
 }

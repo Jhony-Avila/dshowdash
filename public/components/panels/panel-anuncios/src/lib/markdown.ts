@@ -13,7 +13,8 @@ export type Bloco =
   | { tipo: 'lista'; ordenada: boolean; itens: string[] }
   | { tipo: 'checklist'; itens: string[] }
   | { tipo: 'regra'; texto: string }
-  | { tipo: 'quote'; texto: string };
+  | { tipo: 'quote'; texto: string }
+  | { tipo: 'tabela'; cabecalho: string[]; linhas: string[][] };
 
 export interface Secao {
   titulo: string; // '' para preâmbulo sem título
@@ -53,12 +54,19 @@ export function parseResposta(md: string): RespostaEstruturada {
     if (atual.titulo !== '' || atual.blocos.length > 0) secoes.push(atual);
   };
 
-  // Acumuladores de lista (flush quando o tipo de linha muda).
+  // Acumuladores de lista/tabela (flush quando o tipo de linha muda).
   let lista: { ordenada: boolean; itens: string[] } | null = null;
   let checklist: string[] | null = null;
+  let tabela: string[][] | null = null;
   const flushListas = () => {
     if (lista) { atual.blocos.push({ tipo: 'lista', ...lista }); lista = null; }
     if (checklist) { atual.blocos.push({ tipo: 'checklist', itens: checklist }); checklist = null; }
+    if (tabela) {
+      if (tabela.length > 0) {
+        atual.blocos.push({ tipo: 'tabela', cabecalho: tabela[0], linhas: tabela.slice(1) });
+      }
+      tabela = null;
+    }
   };
 
   for (const linhaBruta of md.split('\n')) {
@@ -74,6 +82,16 @@ export function parseResposta(md: string): RespostaEstruturada {
     }
 
     if (semEspaco === '' || /^-{3,}$/.test(semEspaco)) { flushListas(); continue; }
+
+    // Tabela Markdown: | a | b |  (a linha separadora |---|---| é ignorada).
+    if (/^\|.*\|$/.test(semEspaco)) {
+      if (lista) { atual.blocos.push({ tipo: 'lista', ...lista }); lista = null; }
+      if (checklist) { atual.blocos.push({ tipo: 'checklist', itens: checklist }); checklist = null; }
+      if (/^\|[\s:|-]+\|$/.test(semEspaco)) continue; // separadora
+      const celulas = semEspaco.slice(1, -1).split('|').map((c) => c.trim());
+      (tabela ??= []).push(celulas);
+      continue;
+    }
 
     // Títulos: ## abre seção; ### vira bloco; # solto degrada para ###.
     const mH2 = semEspaco.match(/^##(?!#)\s+(.+)$/);
@@ -143,18 +161,47 @@ export function parseResposta(md: string): RespostaEstruturada {
   return { secoes, confianca };
 }
 
+export type Grau3 = 'alto' | 'medio' | 'baixo';
+
 export interface ItemRecomendacao {
   prioridade: 'alta' | 'media' | 'baixa' | null;
+  impacto: Grau3 | null;
+  esforco: Grau3 | null;
   texto: string;
 }
 
-/** Extrai o badge "[Prioridade alta|média|baixa]" do começo de um item. */
-export function parsePrioridade(item: string): ItemRecomendacao {
-  const m = item.match(/^\[?\s*prioridade\s+(alta|m[eé]dia|baixa)\s*\]?\s*[:—–-]?\s*/i);
-  if (!m) return { prioridade: null, texto: item };
-  const p = m[1].toLowerCase();
-  return {
-    prioridade: p === 'alta' ? 'alta' : p === 'baixa' ? 'baixa' : 'media',
-    texto: item.slice(m[0].length).trim(),
-  };
+function grau(bruto: string): Grau3 {
+  const v = bruto.toLowerCase();
+  if (v.startsWith('alt')) return 'alto';
+  if (v.startsWith('baix')) return 'baixo';
+  return 'medio';
+}
+
+/** Extrai [Prioridade x] [Impacto y] [Esforço z] (qualquer ordem) do item. */
+export function parseAtributos(item: string): ItemRecomendacao {
+  const out: ItemRecomendacao = { prioridade: null, impacto: null, esforco: null, texto: item };
+  const re = /^\s*\[?\s*(prioridade|impacto|esfor[çc]o)\s+(alta|alto|m[eé]dia|m[eé]dio|baixa|baixo)\s*\]?\s*[:—–-]?\s*/i;
+  let resto = item;
+  for (let i = 0; i < 3; i++) {
+    const m = resto.match(re);
+    if (!m) break;
+    const chave = m[1].toLowerCase();
+    if (chave === 'prioridade') {
+      const g = grau(m[2]);
+      out.prioridade = g === 'alto' ? 'alta' : g === 'baixo' ? 'baixa' : 'media';
+    } else if (chave === 'impacto') {
+      out.impacto = grau(m[2]);
+    } else {
+      out.esforco = grau(m[2]);
+    }
+    resto = resto.slice(m[0].length);
+  }
+  out.texto = resto.trim();
+  return out;
+}
+
+/** Compatibilidade: só a prioridade (mantido para chamadas existentes). */
+export function parsePrioridade(item: string): { prioridade: ItemRecomendacao['prioridade']; texto: string } {
+  const { prioridade, texto } = parseAtributos(item);
+  return { prioridade, texto };
 }

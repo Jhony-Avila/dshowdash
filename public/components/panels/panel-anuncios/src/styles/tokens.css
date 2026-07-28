@@ -352,6 +352,47 @@
 [data-anuncios-react-root] .anx-palette-rotulo { font-weight: 600; }
 [data-anuncios-react-root] .anx-palette-dica { margin-left: auto; font-size: 11px; color: var(--anx-text-dim); }
 
+/* ── Workspace Fase 3: matriz, grade, gráfico e ações ────────── */
+[data-anuncios-react-root] .anx-attr { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 7px; font-size: 10px; font-weight: 700; color: var(--anx-text-dim); background: var(--anx-surface-2); vertical-align: 1px; white-space: nowrap; }
+
+/* Matriz de priorização (quadrantes impacto × esforço) */
+[data-anuncios-react-root] .anx-mx { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+[data-anuncios-react-root] .anx-mx-eixo-y,
+[data-anuncios-react-root] .anx-mx-eixo-x { font-size: 10.5px; font-weight: 700; color: var(--anx-text-dim); text-transform: uppercase; letter-spacing: .04em; }
+[data-anuncios-react-root] .anx-mx-eixo-x { text-align: right; }
+[data-anuncios-react-root] .anx-mx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+[data-anuncios-react-root] .anx-mx-cel { border: 1px solid var(--anx-border); border-radius: 10px; padding: 9px 11px; min-height: 64px; display: flex; flex-direction: column; gap: 4px; background: var(--anx-bg); }
+[data-anuncios-react-root] .anx-mx-titulo { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+[data-anuncios-react-root] .anx-mx-otimo { border-color: color-mix(in srgb, var(--anx-ok) 45%, var(--anx-border)); }
+[data-anuncios-react-root] .anx-mx-otimo .anx-mx-titulo { color: var(--anx-ok); }
+[data-anuncios-react-root] .anx-mx-planejar { border-color: color-mix(in srgb, var(--anx-warn) 40%, var(--anx-border)); }
+[data-anuncios-react-root] .anx-mx-planejar .anx-mx-titulo { color: var(--anx-warn); }
+[data-anuncios-react-root] .anx-mx-baixo .anx-mx-titulo { color: var(--anx-text-dim); }
+[data-anuncios-react-root] .anx-mx-evitar { border-color: color-mix(in srgb, var(--anx-danger) 35%, var(--anx-border)); }
+[data-anuncios-react-root] .anx-mx-evitar .anx-mx-titulo { color: var(--anx-danger); }
+[data-anuncios-react-root] .anx-mx-item { font-size: 11.5px; line-height: 1.4; color: var(--anx-text); }
+[data-anuncios-react-root] .anx-mx-vazio { font-size: 11px; color: var(--anx-text-dim); }
+
+/* Grade ordenável (tabelas Markdown) */
+[data-anuncios-react-root] .anx-grid-wrap { overflow-x: auto; border: 1px solid var(--anx-border); border-radius: 10px; }
+[data-anuncios-react-root] .anx-grid { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+[data-anuncios-react-root] .anx-grid th { background: var(--anx-surface-2); text-align: left; padding: 0; border-bottom: 1px solid var(--anx-border); position: sticky; top: 0; }
+[data-anuncios-react-root] .anx-grid-th { display: flex; align-items: center; gap: 5px; width: 100%; border: 0; background: transparent; color: var(--anx-text); padding: 8px 11px; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: left; }
+[data-anuncios-react-root] .anx-grid-th:hover { color: var(--anx-primary-h); }
+[data-anuncios-react-root] .anx-grid-sort { opacity: .45; }
+[data-anuncios-react-root] .anx-grid td { padding: 7px 11px; border-bottom: 1px solid color-mix(in srgb, var(--anx-border) 55%, transparent); vertical-align: top; line-height: 1.5; }
+[data-anuncios-react-root] .anx-grid tbody tr:nth-child(even) { background: color-mix(in srgb, var(--anx-surface-2) 45%, transparent); }
+[data-anuncios-react-root] .anx-grid tbody tr:hover { background: var(--anx-surface-2); }
+[data-anuncios-react-root] .anx-grid tbody tr:last-child td { border-bottom: 0; }
+
+/* Gráfico de atividade */
+[data-anuncios-react-root] .anx-chart { width: 100%; height: 190px; }
+
+/* Ações da resposta */
+[data-anuncios-react-root] .anx-acts { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--anx-border); }
+[data-anuncios-react-root] .anx-act { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--anx-border); background: var(--anx-bg); color: var(--anx-text-dim); border-radius: 9px; padding: 5px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: border-color .15s, color .15s; }
+[data-anuncios-react-root] .anx-act:hover { border-color: var(--anx-text-dim); color: var(--anx-text); }
+
 /* Responsivo: sidebar recolhe sozinha em telas estreitas */
 @media (max-width: 900px) {
   [data-anuncios-react-root] .anx-side { position: absolute; left: 0; top: 0; bottom: 0; z-index: 50; box-shadow: 12px 0 40px rgba(0,0,0,.35); }

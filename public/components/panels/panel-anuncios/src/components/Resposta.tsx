@@ -6,12 +6,15 @@
 // recomendações com prioridade, checklist de próximos passos, badge de
 // confiança e fontes com feedback (👍/👎 + motivos — Fase 22).
 // Tolerante a texto incompleto (streaming).
-import { useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  BookOpen, ChevronDown, ChevronRight, ClipboardList, Gauge,
-  Lightbulb, ScrollText, Stethoscope, ThumbsDown, ThumbsUp,
+  ArrowDownUp, BookOpen, Check, ChevronDown, ChevronRight, ClipboardList,
+  Copy, Download, Gauge, Lightbulb, RotateCcw, ScrollText, Stethoscope,
+  ThumbsDown, ThumbsUp,
 } from 'lucide-react';
-import { parseResposta, parsePrioridade, type Bloco, type Confianca } from '../lib/markdown';
+import {
+  parseResposta, parseAtributos, type Bloco, type Confianca, type ItemRecomendacao,
+} from '../lib/markdown';
 import type { AskResposta, Feedback, Unidade } from '../shell/types';
 
 export const ROTULO_DOMINIO: Record<string, string> = {
@@ -96,12 +99,15 @@ function BlocoView({ bloco, unidades, onCitacao }: {
       return <blockquote className="anx-r-quote">{linhas(bloco.texto, unidades, onCitacao)}</blockquote>;
     case 'checklist':
       return <ChecklistView itens={bloco.itens} unidades={unidades} onCitacao={onCitacao} />;
+    case 'tabela':
+      return <TabelaView cabecalho={bloco.cabecalho} linhas={bloco.linhas}
+        unidades={unidades} onCitacao={onCitacao} />;
     case 'lista':
       if (bloco.ordenada) {
         return (
           <ol className="anx-r-recs">
             {bloco.itens.map((item, i) => {
-              const { prioridade, texto } = parsePrioridade(item);
+              const { prioridade, impacto, esforco, texto } = parseAtributos(item);
               return (
                 <li key={i} className="anx-r-rec">
                   {prioridade && (
@@ -109,6 +115,8 @@ function BlocoView({ bloco, unidades, onCitacao }: {
                       {prioridade === 'alta' ? 'Alta' : prioridade === 'media' ? 'Média' : 'Baixa'}
                     </span>
                   )}
+                  {impacto && <span className="anx-attr" title="Impacto estimado">imp. {impacto}</span>}
+                  {esforco && <span className="anx-attr" title="Esforço estimado">esf. {esforco}</span>}
                   <span>{renderInline(texto, unidades, onCitacao)}</span>
                 </li>
               );
@@ -124,6 +132,97 @@ function BlocoView({ bloco, unidades, onCitacao }: {
     default:
       return <p className="anx-r-p">{linhas(bloco.texto, unidades, onCitacao)}</p>;
   }
+}
+
+/** Tabela Markdown → grade ordenável (clique no cabeçalho). */
+function TabelaView({ cabecalho, linhas: dados, unidades, onCitacao }: {
+  cabecalho: string[]; linhas: string[][];
+  unidades: Unidade[]; onCitacao?: (id: string) => void;
+}) {
+  const [ordem, setOrdem] = useState<{ col: number; asc: boolean } | null>(null);
+
+  const ordenadas = useMemo(() => {
+    if (!ordem) return dados;
+    const { col, asc } = ordem;
+    const copia = [...dados];
+    copia.sort((a, b) => {
+      const va = a[col] ?? ''; const vb = b[col] ?? '';
+      const na = parseFloat(va.replace(/[^\d.,-]/g, '').replace(',', '.'));
+      const nb = parseFloat(vb.replace(/[^\d.,-]/g, '').replace(',', '.'));
+      const cmp = (!Number.isNaN(na) && !Number.isNaN(nb))
+        ? na - nb
+        : va.localeCompare(vb, 'pt-BR');
+      return asc ? cmp : -cmp;
+    });
+    return copia;
+  }, [dados, ordem]);
+
+  return (
+    <div className="anx-grid-wrap">
+      <table className="anx-grid">
+        <thead>
+          <tr>
+            {cabecalho.map((c, i) => (
+              <th key={i}>
+                <button className="anx-grid-th" onClick={() =>
+                  setOrdem((o) => (o && o.col === i ? { col: i, asc: !o.asc } : { col: i, asc: true }))}>
+                  {c}
+                  {ordem?.col === i
+                    ? (ordem.asc ? <ChevronDown size={11} aria-hidden /> : <ChevronRight size={11} aria-hidden style={{ transform: 'rotate(-90deg)' }} />)
+                    : <ArrowDownUp size={11} aria-hidden className="anx-grid-sort" />}
+                </button>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {ordenadas.map((linha, i) => (
+            <tr key={i}>
+              {linha.map((cel, j) => <td key={j}>{renderInline(cel, unidades, onCitacao)}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Matriz de priorização impacto × esforço (quadrantes). */
+function MatrizPrioridade({ itens }: { itens: ItemRecomendacao[] }) {
+  const posicionaveis = itens
+    .map((item, i) => ({ ...item, n: i + 1 }))
+    .filter((r) => r.impacto !== null && r.esforco !== null);
+  if (posicionaveis.length < 2) return null;
+
+  const quadrante = (impAlto: boolean, esfBaixo: boolean) =>
+    posicionaveis.filter((r) =>
+      (r.impacto !== 'baixo') === impAlto && (r.esforco !== 'alto') === esfBaixo);
+
+  const celula = (titulo: string, classe: string, lista: typeof posicionaveis) => (
+    <div className={`anx-mx-cel ${classe}`}>
+      <div className="anx-mx-titulo">{titulo}</div>
+      {lista.length === 0
+        ? <span className="anx-mx-vazio">—</span>
+        : lista.map((r) => (
+            <span key={r.n} className="anx-mx-item" title={r.texto}>
+              <strong>#{r.n}</strong> {r.texto.length > 52 ? r.texto.slice(0, 52) + '…' : r.texto}
+            </span>
+          ))}
+    </div>
+  );
+
+  return (
+    <div className="anx-mx" role="img" aria-label="Matriz de priorização impacto por esforço (o conteúdo está listado nas recomendações abaixo)">
+      <div className="anx-mx-eixo-y">Impacto ↑</div>
+      <div className="anx-mx-grid">
+        {celula('Fazer primeiro', 'anx-mx-otimo', quadrante(true, true))}
+        {celula('Planejar bem', 'anx-mx-planejar', quadrante(true, false))}
+        {celula('Se sobrar tempo', 'anx-mx-baixo', quadrante(false, true))}
+        {celula('Evitar / repensar', 'anx-mx-evitar', quadrante(false, false))}
+      </div>
+      <div className="anx-mx-eixo-x">Esforço →</div>
+    </div>
+  );
 }
 
 function ChecklistView({ itens, unidades, onCitacao }: {
@@ -250,14 +349,17 @@ function FeedbackRow({ feedback, onFeedback, onMotivo }: {
 
 // ── Bloco principal da resposta ─────────────────────────────────────
 
-export function BlocoResposta({ resposta, feedback, onFeedback, onMotivo, onAbrirFonte }: {
+export function BlocoResposta({ resposta, feedback, onFeedback, onMotivo, onAbrirFonte, onRegenerar }: {
   resposta: AskResposta;
   feedback: Feedback;
   onFeedback: (valor: 1 | -1) => void;
   onMotivo: (motivo: string) => void;
   /** Quando presente, citações abrem a fonte no drawer lateral. */
   onAbrirFonte?: (unidade: Unidade) => void;
+  /** Refaz a mesma pergunta (nova geração). */
+  onRegenerar?: () => void;
 }) {
+  const [copiado, setCopiado] = useState(false);
   const [mostrarFontes, setMostrarFontes] = useState(resposta.mode === 'retrieval_only');
   const raizRef = useRef<HTMLDivElement>(null);
 
@@ -328,9 +430,19 @@ export function BlocoResposta({ resposta, feedback, onFeedback, onMotivo, onAbri
                 </div>
               );
             }
+            // Recomendações: matriz impacto×esforço acima da lista, quando anotada.
+            let matriz: ReactNode = null;
+            if (sec.titulo.toLowerCase() === 'recomendações') {
+              const listaOrdenada = sec.blocos.find(
+                (b): b is Extract<Bloco, { tipo: 'lista' }> => b.tipo === 'lista' && b.ordenada
+              );
+              if (listaOrdenada) {
+                matriz = <MatrizPrioridade itens={listaOrdenada.itens.map(parseAtributos)} />;
+              }
+            }
             return (
               <div key={i} data-sec-idx={i}>
-                <SecaoAccordion titulo={sec.titulo}>{conteudo}</SecaoAccordion>
+                <SecaoAccordion titulo={sec.titulo}>{matriz}{conteudo}</SecaoAccordion>
               </div>
             );
           })}
@@ -361,6 +473,43 @@ export function BlocoResposta({ resposta, feedback, onFeedback, onMotivo, onAbri
         <p className="anx-retrieval-note">Nenhuma unidade da metodologia cobre esta pergunta.</p>
       )}
 
+      {resposta.message_id > 0 && (
+        <div className="anx-acts">
+          {resposta.answer && (
+            <>
+              <button className="anx-act" type="button" title="Copiar a resposta"
+                onClick={() => {
+                  navigator.clipboard?.writeText(resposta.answer ?? '').then(() => {
+                    setCopiado(true);
+                    window.setTimeout(() => setCopiado(false), 1800);
+                  }).catch(() => { /* clipboard indisponível */ });
+                }}>
+                {copiado ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
+                {copiado ? 'Copiado' : 'Copiar'}
+              </button>
+              <button className="anx-act" type="button" title="Baixar a resposta em Markdown"
+                onClick={() => {
+                  const md = `# ${resposta.query}\n\n${resposta.answer}\n\n---\nFontes da metodologia:\n`
+                    + resposta.units.map((u) => `- [${u.id}] ${u.question}`).join('\n');
+                  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = 'consulta-anuncios.md';
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                }}>
+                <Download size={13} aria-hidden /> Exportar
+              </button>
+            </>
+          )}
+          {onRegenerar && (
+            <button className="anx-act" type="button" title="Gerar a resposta novamente"
+              onClick={onRegenerar}>
+              <RotateCcw size={13} aria-hidden /> Regenerar
+            </button>
+          )}
+        </div>
+      )}
       {resposta.message_id > 0 && (
         <FeedbackRow feedback={feedback} onFeedback={onFeedback} onMotivo={onMotivo} />
       )}

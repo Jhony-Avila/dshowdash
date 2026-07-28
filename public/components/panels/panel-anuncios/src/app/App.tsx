@@ -12,6 +12,7 @@ import {
   enviarFeedback, carregarStats, ApiError,
 } from '../lib/api';
 import { BlocoResposta, rotuloDominio } from '../components/Resposta';
+import { AtividadeChart } from '../components/AtividadeChart';
 import { Inicio } from '../components/Inicio';
 import { Sidebar } from '../components/Sidebar';
 import { Qualificacao } from '../components/Qualificacao';
@@ -114,6 +115,13 @@ function AprendizadoScreen() {
         <div className="anx-tile"><span className="anx-tile-n">{t.sem_cobertura}</span><span className="anx-tile-l">Sem cobertura</span></div>
         <div className="anx-tile"><span className="anx-tile-n">{avaliadas > 0 ? Math.round((t.positivas / avaliadas) * 100) + '%' : '—'}</span><span className="anx-tile-l">Aprovação</span></div>
       </div>
+
+      {stats.atividade && (
+        <section className="anx-learn-sec">
+          <h3>Perguntas por dia <span className="anx-learn-sub">últimos 30 dias</span></h3>
+          <AtividadeChart dados={stats.atividade} />
+        </section>
+      )}
 
       {stats.dominios.length > 0 && (
         <section className="anx-learn-sec">
@@ -446,6 +454,7 @@ function Shell({ config }: { config: ShellConfig }) {
                       onFeedback={(valor) => void darFeedback(t.id, valor)}
                       onMotivo={(motivo) => darMotivo(t.id, motivo)}
                       onAbrirFonte={(u) => setFonteAberta(u)}
+                      onRegenerar={() => void enviar(t.pergunta)}
                     />
                   )}
                 </div>
