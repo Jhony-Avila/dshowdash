@@ -52,6 +52,11 @@ export default defineConfig({
             if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
               return 'react-vendor';
             }
+            // ECharts (e o zrender, que ele usa) ficam num chunk próprio,
+            // referenciado SÓ pelo import dinâmico — carrega sob demanda.
+            if (/[\\/]node_modules[\\/](echarts|zrender)[\\/]/.test(id)) {
+              return 'echarts';
+            }
             return 'vendor';
           }
           return undefined;
