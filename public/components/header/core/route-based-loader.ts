@@ -54,7 +54,7 @@ const ROUTE_PRIORITIES = {
   '#/integrations/pipedrive': ['panel-pipedrive'],
   '#/integrations/asaas': ['panel-asaas'],
   '#/integrations/bling': ['panel-bling'],
-  '#/integrations/mercado-livre': ['panel-mercado-livre'],
+  '#/panel-mercadolivre': ['panel-mercado-livre'],
   '#/integrations/loja-integrada': ['panel-loja-integrada'],
   '#/integrations/google-drive': ['panel-google-drive'],
   '#/integrations/chatgpt': ['panel-chatgpt'],
