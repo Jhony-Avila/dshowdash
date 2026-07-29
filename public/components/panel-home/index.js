@@ -15,7 +15,9 @@ export const MODULE_ID = 'panel-home';
 export const VERSION = '2.0.0-home-inteligente';
 
 export async function mount(contentEl, config = {}) {
-  return painel.mount(contentEl, config);
+  // home:true liga o modo IMERSIVO (céu de página inteira + cards de vidro);
+  // o botão "Geral" monta o MESMO painel sem essa flag → dashboard sóbrio.
+  return painel.mount(contentEl, { ...config, home: true });
 }
 
 export async function unmount() {
