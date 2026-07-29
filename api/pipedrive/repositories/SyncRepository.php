@@ -1230,8 +1230,27 @@ final class PipeSyncRepository
             'done' => (int)$r['done'], 'due_date' => $r['due_date'], 'due_time' => $r['due_time'],
             'owner' => $r['owner'], 'deal' => $r['deal'], 'overdue' => (int)$r['overdue'], 'update_time' => $r['update_time'],
         ], $st->fetchAll(PDO::FETCH_ASSOC));
-        $types = $this->pdo->query("SELECT DISTINCT type FROM pipe_activities WHERE is_deleted=0 AND type IS NOT NULL ORDER BY type LIMIT 50")->fetchAll(PDO::FETCH_COLUMN);
-        return $this->pageEnvelope($rows, $total, $page, $perPage, ['facets' => ['types' => $types]]);
+        // Os tipos sao o catalogo da base: nao dependem dos filtros nem mudam entre a
+        // pagina 1 e a 7. Mesmo tratamento que o grid de Negocios ja recebeu (#46) —
+        // `facets=0` diz "ja tenho"; sem o parametro, o comportamento e o de sempre.
+        // ⚠️ O GANHO AQUI E CORRECAO DE BUG, NAO PERF. O `LIMIT 50` ESCONDIA UM TIPO:
+        // existem 51 na base e o 51o (`zoom_showroom`, 284 atividades) era INFILTRAVEL.
+        // Removido — catalogo tem de vir inteiro.
+        // Perf, MEDIDA EM 2026-07-29 (105.646 linhas ativas), page=4&per_page=25 pela
+        // origin, mediana de 7 rodadas: 68,4 ms -> 26,4 ms, ~42 ms por pagina navegada.
+        // No SQL puro o DISTINCT custa ~48 ms contra ~26 ms do COUNT de controle na mesma
+        // sessao (~22 ms); o resto do delta e serializacao do envelope.
+        // NAO ha temporary/filesort: `ix_del_type (is_deleted, type)` cobre a consulta
+        // (EXPLAIN: `Using where; Using index`). Se voce leu "177 ms / temporary+filesort
+        // / 52.959 linhas / ix_del_due_type" em alguma nota deste lote, era medicao antiga
+        // de antes do indice — nada disso vale hoje, e `ix_del_due_type` nem existe.
+        $facets = self::querFacets($f) ? [
+            'types' => $this->pdo->query(
+                "SELECT DISTINCT type FROM pipe_activities
+                  WHERE is_deleted=0 AND type IS NOT NULL ORDER BY type"
+            )->fetchAll(PDO::FETCH_COLUMN),
+        ] : null;
+        return $this->pageEnvelope($rows, $total, $page, $perPage, ['facets' => $facets]);
     }
 
     /** Detalhe completo de UM negocio + vinculos + produtos + timeline (atividades+notas). */

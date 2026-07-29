@@ -69,7 +69,14 @@ final class PipeQueryController
             ApiResponse::success($det, ['ts' => date('c')]);
             return;
         }
-        $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'done', 'type', 'owner_id', 'due_from', 'due_to']);
+        // `facets` FALTAVA nesta allowlist: o front manda `facets=0` para TODOS os grids
+        // (EntityGrid é genérico), mas sem o parâmetro na lista ele nunca chegava ao
+        // repositório — só `deals` e `products` honravam. Ver #46 (3º lote).
+        // Custo evitado por página: ~42 ms medidos (68,4 -> 26,4 ms), NÃO os 177 ms de
+        // notas antigas — ver o comentário em SyncRepository::activitiesPage. O ganho
+        // grande deste lote é outro: o catálogo de tipos vinha truncado em 50 e escondia
+        // um filtro inteiro (`zoom_showroom`, 284 atividades).
+        $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'done', 'type', 'owner_id', 'due_from', 'due_to', 'facets']);
         ApiResponse::success($repo->activitiesPage($f), ['ts' => date('c')]);
     }
 
