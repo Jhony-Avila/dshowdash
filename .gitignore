@@ -24,6 +24,8 @@
 # api/anuncios/ — proxy do Decision Engine (painel Anúncios).
 # O config real fica em config/decision_engine.php (NUNCA versionado).
 !/api/anuncios/
+# api/home/ — endpoints resumidos da Home Inteligente (clima etc.)
+!/api/home/
 
 # public/koala/ — só o código-fonte + configs de build (NÃO dist, NÃO node_modules)
 !/public/
