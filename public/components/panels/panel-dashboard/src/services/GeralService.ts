@@ -31,8 +31,8 @@ const fmtMoeda = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 const fmtN = (v: number) => v.toLocaleString('pt-BR');
 
-const FATOR_PERIODO: Record<PeriodoId, number> = { hoje: 1 / 22, '7d': 7 / 30, '30d': 1 };
-const DIAS_PERIODO: Record<PeriodoId, number> = { hoje: 1, '7d': 7, '30d': 30 };
+const FATOR_PERIODO: Record<PeriodoId, number> = { hoje: 1 / 22, ontem: 1 / 22, '7d': 7 / 30, '30d': 1, mes_atual: Math.max(1, new Date().getDate()) / 30 };
+const DIAS_PERIODO: Record<PeriodoId, number> = { hoje: 1, ontem: 1, '7d': 7, '30d': 30, mes_atual: Math.max(1, new Date().getDate()) };
 
 async function getJson<T>(url: string, timeoutMs = 8000): Promise<T> {
   const ctrl = new AbortController();
@@ -311,14 +311,14 @@ export function getAtividades(): Promise<Atividade[]> {
   const agora = Date.now();
   const min = (m: number) => new Date(agora - m * 60000).toISOString();
   const itens: Atividade[] = [
-    { id: 'a1', descricao: 'Sincronização do Ads Intelligence concluída', modulo: 'Ads', quando: min(4), rota: '#/panel-ads', simulado: false },
-    { id: 'a2', descricao: 'Pedido #34120 aprovado', modulo: 'Mercado Livre', quando: min(12), rota: '#/panel-mercadolivre/pedidos', simulado: true },
-    { id: 'a3', descricao: 'Nova consulta respondida pelo Consultor', modulo: 'Anuncios', quando: min(26), rota: '#/panel-anuncios', simulado: false },
-    { id: 'a4', descricao: 'Lead recebido — Painel LED Igrejas', modulo: 'Meta Ads', quando: min(41), rota: '#/panel-metaads/leads', simulado: true },
-    { id: 'a5', descricao: 'Negócio "Telão Colégio Saber" movido para Proposta', modulo: 'Pipedrive', quando: min(58), rota: '#/panel-pipedrive', simulado: true },
-    { id: 'a6', descricao: 'Pagamento de R$ 8.400 conciliado', modulo: 'Financeiro', quando: min(75), rota: null, simulado: true },
-    { id: 'a7', descricao: 'Alerta de estoque crítico: Painel Outdoor P5', modulo: 'E-commerce', quando: min(96), rota: null, simulado: true },
-    { id: 'a8', descricao: 'Relatório semanal de mídia gerado', modulo: 'Ads', quando: min(140), rota: '#/panel-ads/relatorios', simulado: true },
+    { id: 'a1', descricao: 'Sincronização do Ads Intelligence concluída', modulo: 'Ads', categoria: 'sistema' as const, quando: min(4), rota: '#/panel-ads', simulado: false },
+    { id: 'a2', descricao: 'Pedido #34120 aprovado', modulo: 'Mercado Livre', categoria: 'vendas' as const, quando: min(12), rota: '#/panel-mercadolivre/pedidos', simulado: true },
+    { id: 'a3', descricao: 'Nova consulta respondida pelo Consultor', modulo: 'Anuncios', categoria: 'marketing' as const, quando: min(26), rota: '#/panel-anuncios', simulado: false },
+    { id: 'a4', descricao: 'Lead recebido — Painel LED Igrejas', modulo: 'Meta Ads', categoria: 'marketing' as const, quando: min(41), rota: '#/panel-metaads/leads', simulado: true },
+    { id: 'a5', descricao: 'Negócio "Telão Colégio Saber" movido para Proposta', modulo: 'Pipedrive', categoria: 'vendas' as const, quando: min(58), rota: '#/panel-pipedrive', simulado: true },
+    { id: 'a6', descricao: 'Pagamento de R$ 8.400 conciliado', modulo: 'Financeiro', categoria: 'financeiro' as const, quando: min(75), rota: null, simulado: true },
+    { id: 'a7', descricao: 'Alerta de estoque crítico: Painel Outdoor P5', modulo: 'E-commerce', categoria: 'operacoes' as const, quando: min(96), rota: null, simulado: true },
+    { id: 'a8', descricao: 'Relatório semanal de mídia gerado', modulo: 'Ads', categoria: 'marketing' as const, quando: min(140), rota: '#/panel-ads/relatorios', simulado: true },
   ];
   return Promise.resolve(itens);
 }
