@@ -158,10 +158,10 @@
   <script type="module" src="/components/world-clock-map/index.js"></script>
   <!-- Trânsito SP — indicador standalone no header (auto-injeção estilo theme-toggle); abre painel-transito-sp no main. 2026-07-20 -->
   <script type="module" src="/components/traffic-monitor/header-indicator.js?v=20260720"></script>
-  <!-- DIAGNÓSTICO TEMPORÁRIO 2026-07-08: watcher READ-ONLY da "barra preta" no item ativo da sidebar.
-       Captura o elemento culpado (transitório) e envia p/ /api/diag/blackbar.php (logs/blackbar-diag.log).
-       REMOVER esta tag + public/diag/blackbar-watch.js + api/diag/blackbar.php após diagnosticar. -->
-  <script defer src="/diag/blackbar-watch.js?v=20260708-1"></script>
+  <!-- 2026-07-27: diagnóstico temporário da "barra preta" REMOVIDO (o próprio arquivo mandava
+       removê-lo após a captura). O incidente foi resolvido em 2026-07-17 — a barra não existia
+       na origem, persistia por cache-bust não bumpado. Ainda coletava: 2.012 POSTs em 14 dias.
+       Arquivos e o log de 1.870 capturas em /backup/diag-blackbar-remocao-20260727-220528. -->
 
 </body>
 
