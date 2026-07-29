@@ -164,8 +164,7 @@ export class StatusWeatherSpComponent {
 
 let _currentInstance: StatusWeatherSpComponent | null = null;
 
-// @ts-expect-error strict migration — TS2693
-export const mount = (container: any, config: any) => { const instance = new StatusWeatherSpComponent({ container: any, config }); instance.init(); instance.mount(container); _currentInstance = instance; return { success: true, moduleId: MODULE_ID, instance }; };
+export const mount = (container: any, config: any) => { const instance = new StatusWeatherSpComponent({ container, config }); instance.init(); instance.mount(container); _currentInstance = instance; return { success: true, moduleId: MODULE_ID, instance }; };
 export const unmount = () => { if (_currentInstance) { const instance = _currentInstance; _currentInstance = null; instance.unmount(); } return { success: true, moduleId: MODULE_ID }; };
 export const destroy = () => unmount();
 export const healthCheck = () => _currentInstance?.healthCheck() ?? { status: 'UNHEALTHY', mounted: false, version: VERSION, moduleId: MODULE_ID, timestamp: Date.now() };

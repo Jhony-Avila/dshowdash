@@ -196,7 +196,7 @@ class StatusCurrencyBtcComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const instance = new StatusCurrencyBtcComponent({ container: any, config });
+  const instance = new StatusCurrencyBtcComponent({ container, config });
   instance.init();
   instance.mount(container);
   _currentInstance = instance;

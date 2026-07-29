@@ -166,7 +166,7 @@ class UserPreferencesComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const i = new UserPreferencesComponent({ container: any, config });
+  const i = new UserPreferencesComponent({ container, config });
   i.init();
   i.mount(container);
   _currentInstance = i;

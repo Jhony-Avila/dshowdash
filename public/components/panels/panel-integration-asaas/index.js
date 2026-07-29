@@ -170,7 +170,7 @@ class IntegrationAsaasComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const i = new IntegrationAsaasComponent({ container: any, config });
+  const i = new IntegrationAsaasComponent({ container, config });
   i.init();
   i.mount(container);
   _currentInstance = i;

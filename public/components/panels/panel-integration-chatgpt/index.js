@@ -170,7 +170,7 @@ class IntegrationChatGPTComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const i = new IntegrationChatGPTComponent({ container: any, config });
+  const i = new IntegrationChatGPTComponent({ container, config });
   i.init();
   i.mount(container);
   _currentInstance = i;

@@ -190,7 +190,7 @@ class StatusWechatIntegrationComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const instance = new StatusWechatIntegrationComponent({ container: any, config });
+  const instance = new StatusWechatIntegrationComponent({ container, config });
   instance.init();
   instance.mount(container);
   _currentInstance = instance;

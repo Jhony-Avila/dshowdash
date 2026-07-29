@@ -82,8 +82,7 @@ export class IntegrationAlfineteComponent {
 }
 let _currentInstance: InstanceType<typeof IntegrationAlfineteComponent> | null = null;
 
-// @ts-expect-error strict migration — TS2693
-export const mount = (container: any, config: any) => { const i = new IntegrationAlfineteComponent({ container: any, config }); i.init(); i.mount(container); _currentInstance = i; return { success: true, moduleId: MODULE_ID, instance: i }; };
+export const mount = (container: any, config: any) => { const i = new IntegrationAlfineteComponent({ container, config }); i.init(); i.mount(container); _currentInstance = i; return { success: true, moduleId: MODULE_ID, instance: i }; };
 export const unmount = () => { if (_currentInstance) { const instance = _currentInstance; _currentInstance = null; instance.unmount(); } return { success: true, moduleId: MODULE_ID }; };
 export const destroy = () => unmount();
 export const healthCheck = () => _currentInstance?.healthCheck() ?? { status: 'UNHEALTHY', mounted: false, version: VERSION, moduleId: MODULE_ID, timestamp: Date.now() };

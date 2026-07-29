@@ -190,7 +190,7 @@ class StatusWeatherSpComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const instance = new StatusWeatherSpComponent({ container: any, config });
+  const instance = new StatusWeatherSpComponent({ container, config });
   instance.init();
   instance.mount(container);
   _currentInstance = instance;

@@ -195,7 +195,7 @@ class StatusWhatsappIntegrationComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const instance = new StatusWhatsappIntegrationComponent({ container: any, config });
+  const instance = new StatusWhatsappIntegrationComponent({ container, config });
   instance.init();
   instance.mount(container);
   _currentInstance = instance;

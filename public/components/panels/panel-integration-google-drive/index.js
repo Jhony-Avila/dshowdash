@@ -170,7 +170,7 @@ class IntegrationGoogleDriveComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const i = new IntegrationGoogleDriveComponent({ container: any, config });
+  const i = new IntegrationGoogleDriveComponent({ container, config });
   i.init();
   i.mount(container);
   _currentInstance = i;

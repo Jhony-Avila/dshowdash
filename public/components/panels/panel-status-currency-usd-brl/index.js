@@ -187,7 +187,7 @@ class StatusCurrencyUsdBrlComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const instance = new StatusCurrencyUsdBrlComponent({ container: any, config });
+  const instance = new StatusCurrencyUsdBrlComponent({ container, config });
   instance.init();
   instance.mount(container);
   _currentInstance = instance;

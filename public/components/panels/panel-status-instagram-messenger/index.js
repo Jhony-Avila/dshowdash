@@ -190,7 +190,7 @@ class StatusInstagramMessengerComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const instance = new StatusInstagramMessengerComponent({ container: any, config });
+  const instance = new StatusInstagramMessengerComponent({ container, config });
   instance.init();
   instance.mount(container);
   _currentInstance = instance;

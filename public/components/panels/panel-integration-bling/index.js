@@ -170,7 +170,7 @@ class IntegrationBlingComponent {
 }
 let _currentInstance = null;
 const mount = (container, config) => {
-  const i = new IntegrationBlingComponent({ container: any, config });
+  const i = new IntegrationBlingComponent({ container, config });
   i.init();
   i.mount(container);
   _currentInstance = i;
