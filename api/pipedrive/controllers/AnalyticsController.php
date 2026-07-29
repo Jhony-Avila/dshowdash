@@ -92,6 +92,26 @@ final class PipeAnalyticsController
     }
 
     /**
+     * GET /lead-sources?months=12&pipeline_id= — origem dos leads (#31) e o "por origem"
+     * que faltava no #7. `months=0` abre o historico completo (a base tem leads desde 2016).
+     * A janela e por data de CRIACAO do negocio — origem e propriedade do lead, nao do
+     * fechamento; ver o bloco de armadilhas em PipeAnalyticsRepository::leadSources().
+     */
+    public static function leadSources(string $method, PDO $pdo): void
+    {
+        requireMethod(['GET']);
+        $q = pipe_query(['months']);
+        $months = isset($q['months']) && is_numeric($q['months']) ? (int)$q['months'] : 12;
+        $pl = isset($_GET['pipeline_id']) && ctype_digit((string)$_GET['pipeline_id'])
+            ? (int)$_GET['pipeline_id'] : null;
+
+        $repo = new PipeAnalyticsRepository($pdo);
+        $ls = $repo->leadSources($months, $pl);
+        $ls['pipeline_id'] = $pl;
+        ApiResponse::success($ls, ['ts' => date('c')]);
+    }
+
+    /**
      * GET /summary?days=30 | ?periodo=mes — KPIs do periodo + base de comparacao.
      * `periodo` (#3) tem precedencia sobre `days` e aceita janela deslizante (d7/d30/
      * d90/d180) ou calendario (mes / mes_ant / trim / ano).

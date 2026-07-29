@@ -50,7 +50,7 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 | 4 | **Seletor de período global** (7/30/90 dias, custom) afetando os tiles/gráficos | ⭐⭐ | M | ◑ |
 | 5 | KPIs adicionais: **ticket médio**, **ciclo de vendas médio** (add→won), **taxa de perda por motivo** | ⭐⭐ | P | ✅ |
 | 6 | **Metas × realizado** (se houver metas comerciais a importar) | ⭐⭐ | M | 💤 |
-| 7 | Gráfico de **ganhos por vendedor / por etapa / por origem** | ⭐⭐ | M | ◑ |
+| 7 | Gráfico de **ganhos por vendedor / por etapa / por origem** | ⭐⭐ | M | ✅ |
 
 - **#2** (F4, `Funis v2`): entregue o funil visual, a **conversão para a etapa seguinte**, a etapa-**gargalo** destacada e a idade média por etapa. Continua ◑ porque "alcance" é **estimativa** (assume avanço em ordem) e o tempo-por-etapa **real** depende de `pipe_deal_history` — hoje vazia. A tela diz isso no rodapé; não fabricar o que falta é a parte difícil que já está feita.
 - **#3** ✅ (2026-07-28, `VisaoGeral.tsx v3.1.0` + `GET /summary?periodo=`). Oito períodos, em dois grupos separados no seletor: **janela deslizante** (7/30/90/180 d) e **calendário** (este mês · mês passado · trimestre · este ano). As duas naturezas convivem porque respondem perguntas diferentes — tendência sem borda de mês *versus* "julho contra junho", que é como a área comercial cobra.
@@ -62,7 +62,7 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
   - Prova: `tools/screenshot/valida-pipedrive-periodos.mjs`, que confere as **datas** devolvidas, exige trecho equivalente nos períodos em curso, cobra o aviso quando os tamanhos diferem (e proíbe o aviso quando não diferem) e verifica que os KPIs mudam entre períodos — se o parâmetro não chegasse ao SQL, seriam idênticos.
 - **#4** ◑ (2026-07-28): a escolha agora **persiste** (`pp:periodo`) e sobrevive a sair e voltar da tela — a fatia que valia a pena. **Continua ◑ porque "global" é bloqueado pelas outras telas, não por esforço aqui**: `GET /rankings` é **all-time** (não aceita janela) e `GET /lost-reasons` recorta em **meses**, não em dias. Um seletor único exigiria dar janela ao Rankings e unificar as unidades — decisão de produto antes de código.
 - **#5** ✅: ciclo de vendas médio (F4, `GET /conversion`), ticket médio (F4, comparação entre funis) e **taxa de perda por motivo** (tela Perdas, #30) — os três existem.
-- **#7** (F4): por **vendedor** ✅ (barras) e por **etapa** ✅ (valor em aberto, clicável). Falta **origem** → é o item **#31**.
+- **#7** ✅ (2026-07-28): por **vendedor** (barras, Rankings), por **etapa** (valor em aberto, clicável, Funis) e agora por **origem** — a peça que faltava saiu junto com o **#31**, na tela Origem dos Leads.
 
 ## 2. Grids / Tabelas
 
@@ -128,12 +128,22 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 | 28 | **Rankings** dedicados (vendedores / produtos / organizações por valor ganho) | ⭐⭐⭐ | M | ✅ |
 | 29 | **Previsão de fechamento** (forecast) — valor × probabilidade por etapa e por mês | ⭐⭐⭐ | M | ✅ |
 | 30 | **Análise de motivos de perda** (lost_reason agregado, tendências) | ⭐⭐ | P | ✅ |
-| 31 | **Análise de origem de leads** (conversão por origem/campanha) | ⭐⭐ | M | 🔜 |
+| 31 | **Análise de origem de leads** (conversão por origem/campanha) | ⭐⭐ | M | ✅ |
 | 32 | **Velocidade do funil** (tempo médio por etapa, gargalos) | ⭐⭐ | M | ◑ |
 | 33 | **Alertas enriquecidos**: "sem contato há X dias", "alto valor parado", com cooldown/dedup e regras configuráveis | ⭐⭐⭐ | M | ◑ |
 
 - **#30** ✅ (2026-07-27, `Perdas.tsx` v1.0.0 + `GET /lost-reasons`) — **17ª tela**, no grupo Análise: indicadores + ranking de motivos (quantidade e valor), tendência mensal ("Outros" absorve a cauda) e recortes por etapa/dono/funil com o motivo predominante. A tela **repete** três limites em vez de escondê-los: nem todo perdido tem motivo (participação usa TODOS os perdidos como denominador), o tempo é da criação até a perda (não por etapa — `pipe_deal_history` vazia) e a etapa é a de **fechamento**, com etapa excluída virando "Etapa removida (#id)" em vez de sumir da conta. Prova: `valida-pipedrive-perdas.mjs`.
   - 📌 **Correção de rastreamento**: a revisão de 2026-07-27 deste documento marcou #30 como pendente. Estava errado — a tela foi feita **no mesmo dia, por outra sessão**, e o `07-elevacao-visual.md` (usado como fonte da revisão) não a menciona porque não faz parte das 7 fases. **Lição: conferir o roteador (`App.tsx`) e `api/pipedrive/index.php`, não só o doc de fases.**
+- **#31** ✅ (2026-07-28, `OrigemLeads.tsx` v1.0.0 + `GET /lead-sources`) — **18ª tela**, no grupo Análise. Entrega o **#7** junto (era o "por origem" que faltava lá). Prova: `valida-pipedrive-origem.mjs` (48 checagens, 2 temas) + `scratchpad/prova-lead-sources.php` para o SQL.
+  - ⚠️ **A origem NÃO estava onde o schema promete.** `pipe_deals.origin` existe e está **100% NULL** — é uma das colunas mortas do **#61**. O dado real mora no campo customizado **"Origem Lead"** dentro do JSON `custom_fields`, chaveado por hash. Quem for mexer aqui: agrupar por `d.origin` devolve uma coluna de nulos, não um erro.
+  - ⚠️ **`JSON_LENGTH` de um JSON `null` devolve 1, não 0.** O teste óbvio de "tem origem?" (`JSON_LENGTH(...) > 0`) contava **19.930 de 19.930** classificados — cobertura de 100% falsa, do tipo que ninguém confere. O teste correto é `JSON_TYPE(...) = 'ARRAY'`, que devolve os **14.261** reais.
+  - ⚠️ **O campo é MULTI-valor** (`set`): 22 negócios têm duas origens e entram nas duas, então `soma(origens) ≠ classificados`. A tela declara quantos são, e a prova **exige a identidade** `soma − classificados == multi_origem` — uma conta que não fecha e não é explicada destrói a confiança na tela inteira.
+  - ⚠️ **A janela é por data de CRIAÇÃO** (safra de leads), não de fechamento — origem é propriedade do nascimento do lead. Safra recente ainda não converteu, por isso os **abertos** aparecem no rodapé do indicador.
+  - A conversão usa como denominador só o que **fechou** (ganho + perdido) e é `null`, não `0%`, quando nada fechou — "não dá para dizer" e "zero por cento" são afirmações diferentes.
+  - 📌 A tela mede a conversão da fatia **SEM origem** de propósito, como teste de viés: hoje ela converte **0%** (257 fechados) contra **38%** da janela — a fatia não classificada se comporta de outro jeito, então o ranking é retrato dos classificados, não da operação toda.
+  - 🔎 **Achado operacional** (ver §"Cobertura da origem despencou" abaixo).
+  - Fica **fora** por decisão consciente: drill-down do ranking para o grid de Negócios. Filtrar por campo customizado exige o filtro **e** a faceta no `EntityGrid`; meio-caminho devolveria "todos os negócios" em silêncio, que é pior que não ter o link.
+
 - **#32** (F4/F5): **gargalo identificado e destacado** nos Funis e no cabeçalho do Kanban (mesma fonte, `GET /funnel` — dois lugares computando a mesma taxa é exatamente como elas divergem). Falta o tempo médio por etapa **real**, preso em `pipe_deal_history`.
 - **#33** (F4): Alertas v2 tem painel de risco, severidade, agrupamento por dono/funil/etapa e filtros em dois níveis. ⚠️ **Somar o `count` das regras NÃO dá o total em risco** — um negócio parado *e* sem previsão dispara duas: 268 somando contra **160 negócios distintos**. Falta o que o item pede de verdade: **regras configuráveis** (presas em `pipe_alert_rules` vazia) e **cooldown/dedup** por negócio.
 
@@ -253,5 +263,36 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 
 Depois disso, os estratégicos de maior porte: **Cruzamento ERP** (#34–#36) e **Mailbox** (#37–#38), quando houver decisão de escopo.
 
-> Total: **64 itens** catalogados — **26 ✅ · 6 ◑ · 1 ⚖️ · 20 🔜 · 11 💤** (contados no próprio arquivo, não estimados).
+> Total: **64 itens** catalogados — **28 ✅ · 5 ◑ · 1 ⚖️ · 19 🔜 · 11 💤** (contados no próprio arquivo, não estimados).
 > Priorize por Valor↑ / Esforço↓, mas leia antes o bloco "Bloqueios de DADO" da seção 0: três dos itens abertos não são questão de esforço.
+
+---
+
+## 🔎 Achado: a cobertura da origem despencou em junho/2026 — **PENDENTE-DONO**
+
+Levantado em 2026-07-28 ao construir o **#31**. Não é bug de código: é a operação que parou de
+preencher o campo **"Origem Lead"** no Pipedrive. Medido direto na base (`pipe_deals`, por mês
+de criação):
+
+| Mês | Negócios criados | Com origem | Cobertura |
+|---|---|---|---|
+| 2026-04 | 269 | 259 | **96%** |
+| 2026-05 | 274 | 259 | **95%** |
+| 2026-06 | 279 | 121 | **43%** |
+| 2026-07 (até 28) | 227 | 63 | **28%** |
+
+Por que importa: a tela de Origem **é honesta sobre isso** (a série cinza "Sem origem" na
+tendência e o cartão de cobertura mostram a queda), mas honestidade não conserta o dado — de
+junho em diante o ranking de origens descreve **menos de metade** dos leads. Some-se a isso
+que a fatia sem origem converte **0%** contra 38% da janela: não é uma amostra aleatória do
+resto, é um perfil diferente. Quanto mais tempo assim, menos a análise por origem serve para
+decidir verba de marketing.
+
+**Ação é do dono, não do código:** ou o campo volta a ser obrigatório no Pipedrive, ou se
+decide que ele foi substituído por outro (há três candidatos no catálogo: `Origem Lead`,
+`Origem_Lead_RdStation` e `Empresa Responsável Atendimento - Site Origem`) e a análise passa
+a ler o novo. A constante `ORIGEM_FIELD_KEY` em `AnalyticsRepository.php` é o único ponto a
+trocar; a tela já avisa sozinha se o campo sumir do catálogo.
+
+*Achado menor, no mesmo levantamento:* 6 negócios têm `add_time` **no futuro** (agosto/2026).
+Não atrapalha nenhuma conta, mas explica a colunazinha solta à direita da tendência.

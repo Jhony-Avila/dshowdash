@@ -1109,9 +1109,13 @@
 [data-pp-react-root] .pp-minibar {
   position: absolute; left: 0; top: 3px; bottom: 3px;
   width: var(--w, 0%); max-width: 100%;
-  background: color-mix(in srgb, var(--pp-danger) 16%, transparent);
+  background: color-mix(in srgb, var(--pp-minibar-cor, var(--pp-danger)) 16%, transparent);
   border-radius: 3px; pointer-events: none;
 }
+/* Variante NEUTRA. A barra nasceu na tela de Perdas, onde vermelho é o significado certo.
+   Em telas que comparam volume sem juízo de valor (ex.: leads por origem) o vermelho diz
+   "ruim" sobre um dado que não é ruim — daí a cor virar variável em vez de fixa. */
+[data-pp-react-root] .pp-minibar.neutra { --pp-minibar-cor: var(--pp-primary); }
 [data-pp-react-root] .pp-table td.pp-comparar { position: relative; }
 /* Célula que pode quebrar: texto longo (ex.: motivo predominante) numa tabela estreita
    truncava com reticências e escondia o percentual — melhor quebrar em duas linhas. */

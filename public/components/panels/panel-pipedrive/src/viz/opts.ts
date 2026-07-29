@@ -251,6 +251,92 @@ export function optColunasEmpilhadas(
   };
 }
 
+export interface PontoBolha { label: string; x: number; y: number; tamanho?: number; }
+
+/**
+ * Dispersao (bolhas): duas medidas de ESCALAS DIFERENTES no mesmo plano — ex.: volume de
+ * leads (x) contra taxa de conversao (y), com o valor ganho no tamanho da bolha.
+ *
+ * Por que existe: a pergunta "que origem vale o esforco?" cruza volume e conversao, e a
+ * tentacao e um grafico de barras com uma linha de percentual por cima. Isso e um EIXO
+ * DUPLO — duas escalas no mesmo desenho, onde o cruzamento das series e um acidente da
+ * escala escolhida e nao um fato do dado. Dispersao poe cada medida no seu eixo e o
+ * cruzamento vira posicao, que e verdade.
+ *
+ * Identidade sai por ROTULO DIRETO, nao por cor: 9 origens exigiriam 9 matizes (a
+ * sequencia categorica tem 8, e a 9ª seria uma cor inventada). Uma cor so + rotulo
+ * resolve, e sobra contraste para a linha de referencia.
+ *
+ * `log` so e aplicado quando TODO x e > 0 — escala log com zero nao existe, e o eixo
+ * sairia vazio. Volume costuma variar em ordens de grandeza (11.316 contra 14), e sem
+ * log tudo se amontoa na parede esquerda.
+ */
+export function optDispersao(
+  pal: Paleta,
+  pontos: PontoBolha[],
+  { formatoX = 'num', formatoY = 'pct', cor, log = false, refY, refYRotulo, nomeX, nomeY, tamanhoMax = 44 }:
+  { formatoX?: Formato; formatoY?: Formato; cor?: string; log?: boolean;
+    refY?: number; refYRotulo?: string; nomeX?: string; nomeY?: string; tamanhoMax?: number } = {},
+): Opcao {
+  const c = cor ?? pal.primary;
+  const usaLog = log && pontos.every((p) => p.x > 0);
+  const maxTam = Math.max(1, ...pontos.map((p) => p.tamanho ?? 0));
+
+  return {
+    ...base(pal),
+    grid: { left: 8, right: 26, top: 26, bottom: 24, containLabel: true },
+    tooltip: {
+      ...(base(pal).tooltip as Opcao),
+      trigger: 'item',
+      formatter: (p: { name: string; value: number[]; marker: string }) =>
+        `${p.marker} <b>${p.name}</b><br/>`
+        + `${nomeX ?? 'X'}: ${fmtValor(p.value[0], formatoX)}<br/>`
+        + `${nomeY ?? 'Y'}: ${fmtValor(p.value[1], formatoY)}`
+        + (p.value[2] > 0 ? `<br/>Valor ganho: ${fmtBRL(p.value[2])}` : ''),
+    },
+    xAxis: {
+      ...eixoValor(pal, formatoX),
+      type: usaLog ? 'log' : 'value',
+      name: nomeX, nameLocation: 'middle', nameGap: 26,
+      nameTextStyle: { color: pal.textDim, fontSize: 11 },
+    },
+    yAxis: {
+      ...eixoValor(pal, formatoY),
+      name: nomeY, nameLocation: 'end', nameGap: 12,
+      nameTextStyle: { color: pal.textDim, fontSize: 11, align: 'left' },
+      ...(formatoY === 'pct' ? { min: 0, max: 100 } : {}),
+    },
+    series: [{
+      type: 'scatter',
+      // Area proporcional ao valor (raiz), nao o diametro: diametro proporcional exagera
+      // o maior por um fator quadratico e mente sobre a diferenca. Piso de 9px para a
+      // bolha continuar clicavel/visivel quando o valor e minusculo.
+      symbolSize: (v: number[]) => 9 + Math.sqrt((v[2] ?? 0) / maxTam) * tamanhoMax,
+      itemStyle: { color: c, opacity: 0.78, borderColor: pal.surface, borderWidth: 2 },
+      emphasis: { itemStyle: { opacity: 1 }, scale: 1.06 },
+      label: {
+        show: true, position: 'right', distance: 6,
+        color: pal.textDim, fontSize: 11,
+        formatter: (p: { name: string }) => p.name,
+      },
+      // Com muitas bolhas os rotulos colidem; esconder o que sobrepoe e melhor do que
+      // um amontoado ilegivel — o tooltip continua contando a historia completa.
+      labelLayout: { hideOverlap: true },
+      markLine: refY != null ? {
+        silent: true,
+        symbol: 'none',
+        lineStyle: { color: pal.textDim, type: 'dashed', width: 1.4, opacity: 0.8 },
+        label: {
+          formatter: refYRotulo ?? `média ${fmtValor(refY, formatoY)}`,
+          color: pal.textDim, fontSize: 10.5, position: 'insideEndTop',
+        },
+        data: [{ yAxis: refY }],
+      } : undefined,
+      data: pontos.map((p) => ({ name: p.label, value: [p.x, p.y, p.tamanho ?? 0] })),
+    }],
+  };
+}
+
 /** Funil (etapas). `pontos` ja deve vir na ordem da etapa 1 -> etapa N. */
 export function optFunil(
   pal: Paleta,

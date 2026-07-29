@@ -27,7 +27,7 @@ const log = (...a) => console.log(...a);
 // (ver `conferirCobertura`). Ordem = a da sidebar, para a varredura seguir o caminho
 // que o usuário percorre.
 const TELAS = [
-  'Visão Geral', 'Alertas', 'Rankings', 'Previsão', 'Perdas', 'Funis',
+  'Visão Geral', 'Alertas', 'Rankings', 'Previsão', 'Perdas', 'Origem', 'Funis',
   'Negócios', 'Kanban', 'Leads', 'Atividades',
   'Pessoas', 'Organizações', 'Produtos', 'Notas',
   'Usuários', 'Saúde', 'Configurações',

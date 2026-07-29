@@ -993,4 +993,353 @@ final class PipeAnalyticsRepository
 
         return ['total' => count($out), 'itens' => $itens];
     }
+
+    // ── Origem de leads (#31) ───────────────────────────────────────
+    //
+    // De onde vem o lead NAO esta em coluna propria: `pipe_deals.origin` existe no schema
+    // e esta 100% NULL (e uma das colunas mortas do #61 — a sync nunca a populou). O dado
+    // real mora no campo customizado "Origem Lead", dentro do JSON `custom_fields`,
+    // chaveado pelo hash do campo. Por isso este metodo explode o JSON em vez de agrupar
+    // por coluna.
+    //
+    // ⚠️ TRES armadilhas do dado, todas ja pagas aqui:
+    //
+    //  1. O campo e do tipo `set` (MULTI-valor): o valor e um ARRAY de option_id
+    //     (`[163]`, as vezes `[163, 927]`). Um negocio com duas origens entra nas DUAS —
+    //     e por isso a soma das origens NAO fecha com o total de negocios. Devolvemos
+    //     `multi_origem` para a tela poder dizer isso em vez de o usuario descobrir
+    //     somando a coluna e achando que a conta esta errada.
+    //
+    //  2. `JSON_LENGTH` de um JSON `null` devolve 1, nao 0. O teste obvio
+    //     (`JSON_LENGTH(...) > 0`) daria 19.930 negocios "com origem" quando so 14.261
+    //     tem — uma cobertura de 100% falsa, que e exatamente o tipo de numero que passa
+    //     despercebido. O teste correto e `JSON_TYPE(...) = 'ARRAY'`.
+    //
+    //  3. A janela e por DATA DE CRIACAO (coorte de leads), nao por fechamento — origem
+    //     e uma propriedade do nascimento do lead. Consequencia: uma coorte recente ainda
+    //     nao terminou de converter, entao a conversao dos ultimos meses sai subestimada.
+    //     Devolvemos `abertos` (os ainda nao decididos) para a tela avisar.
+    //
+    // A conversao usa como denominador so o que FECHOU (ganho + perdido). Negocio aberto
+    // nao e derrota; incluir os abertos no denominador afundaria toda origem recente.
+    private const ORIGEM_FIELD_KEY = '422b56fbb7db7f73cb4c05876119d8de92bca622'; // "Origem Lead"
+    // 5, e nao 6, por causa da LEGENDA: alem das origens a tendencia desenha "Outras"
+    // (cauda) e "Sem origem" (ausencia). Com 6 sobravam 8 series e a cauda acabava
+    // recebendo um cinza quase igual ao da ausencia — duas coisas diferentes com a mesma
+    // cor. Com 5 a cauda ganha cor propria e o cinza fica reservado para "sem dado".
+    private const LEAD_TREND_TOP   = 5;   // origens com serie propria na tendencia; resto = "Outras"
+    private const LEAD_RECORTE_MAX = 25;  // grupos devolvidos por recorte
+
+    /**
+     * @param int      $months     janela em meses sobre add_time; 0 = historico completo.
+     * @param int|null $pipelineId recorte por funil (null = todos).
+     */
+    public function leadSources(int $months = 12, ?int $pipelineId = null): array
+    {
+        $months = max(0, min($months, 120));
+        $de = $months > 0 ? date('Y-m-d', strtotime("-{$months} months")) : null;
+        $janela = ['meses' => $months, 'de' => $de, 'ate' => date('Y-m-d')];
+
+        // O campo pode ter sido renomeado/removido no Pipedrive. Sem ele nao ha analise —
+        // e melhor a tela dizer "campo nao configurado" do que desenhar zeros como verdade.
+        $stf = $this->pdo->prepare(
+            "SELECT id, name FROM pipe_custom_fields
+              WHERE field_key = ? AND entity = 'deal' LIMIT 1"
+        );
+        $stf->execute([self::ORIGEM_FIELD_KEY]);
+        $campo = $stf->fetch(PDO::FETCH_ASSOC) ?: null;
+        if ($campo === null) {
+            return [
+                'janela'    => $janela,
+                'campo'     => ['existe' => false, 'nome' => null, 'field_key' => self::ORIGEM_FIELD_KEY],
+                'totais'    => null,
+                'origens'   => [],
+                'tendencia' => ['meses' => [], 'series' => [], 'top' => self::LEAD_TREND_TOP],
+                'por_dono'  => ['total' => 0, 'itens' => []],
+                'por_funil' => ['total' => 0, 'itens' => []],
+                'pipelines' => $this->pipelinesList(),
+                'nota'      => 'O campo "Origem Lead" nao esta no catalogo de campos '
+                             . 'customizados desta base — nao ha de onde tirar a origem.',
+            ];
+        }
+        $fieldId = (int)$campo['id'];
+
+        // Caminho JSON montado a partir de uma CONSTANTE hex de 40 chars (char(40) no
+        // Pipedrive), nunca de entrada do usuario. A guarda existe para o dia em que
+        // alguem trocar a constante por algo vindo de fora.
+        if (preg_match('/^[0-9a-f]{40}$/', self::ORIGEM_FIELD_KEY) !== 1) {
+            throw new RuntimeException('ORIGEM_FIELD_KEY invalida');
+        }
+        $json      = "JSON_EXTRACT(d.custom_fields, '$.\"" . self::ORIGEM_FIELD_KEY . "\"')";
+        $temOrigem = "COALESCE(JSON_TYPE({$json}) = 'ARRAY', 0)";  // ver armadilha 2
+
+        // Placeholders POSICIONAIS: a conexao usa EMULATE_PREPARES=false e a mesma
+        // condicao e remontada em varias consultas (mesmo padrao de lostReasons).
+        $cond = ["d.is_deleted = 0"];
+        $args = [];
+        if ($de !== null)         { $cond[] = "d.add_time >= ?";   $args[] = $de; }
+        if ($pipelineId !== null) { $cond[] = "d.pipeline_id = ?"; $args[] = $pipelineId; }
+        $where = implode(' AND ', $cond);
+
+        $q = function (string $sql, array $extra = []) use ($args) {
+            $st = $this->pdo->prepare($sql);
+            $st->execute(array_merge($extra, $args));
+            return $st->fetchAll(PDO::FETCH_ASSOC);
+        };
+
+        // 1) Totais da coorte + a fatia SEM origem medida a parte. A fatia sem origem
+        //    ganha desfecho proprio de proposito: se ela converte muito diferente das
+        //    classificadas, o ranking esta enviesado e a tela precisa poder dizer isso.
+        $t = $q(
+            "SELECT COUNT(*) AS negocios,
+                    COALESCE(SUM({$temOrigem}),0)                                  AS com_origem,
+                    COALESCE(SUM({$temOrigem} = 1 AND JSON_LENGTH({$json}) > 1),0) AS multi_origem,
+                    COALESCE(SUM(d.status='won'),0)                                AS ganhos,
+                    COALESCE(SUM(d.status='lost'),0)                               AS perdidos,
+                    COALESCE(SUM(d.status='open'),0)                               AS abertos,
+                    COALESCE(SUM(CASE WHEN d.status='won' THEN d.value END),0)     AS valor_ganho,
+                    COALESCE(SUM({$temOrigem} = 0 AND d.status='won'),0)           AS sem_ganhos,
+                    COALESCE(SUM({$temOrigem} = 0 AND d.status='lost'),0)          AS sem_perdas
+               FROM pipe_deals d WHERE {$where}"
+        )[0] ?? [];
+
+        $negocios  = (int)($t['negocios'] ?? 0);
+        $comOrigem = (int)($t['com_origem'] ?? 0);
+        $ganhos    = (int)($t['ganhos'] ?? 0);
+        $perdidos  = (int)($t['perdidos'] ?? 0);
+        $fechados  = $ganhos + $perdidos;
+        $semGanhos = (int)($t['sem_ganhos'] ?? 0);
+        $semPerdas = (int)($t['sem_perdas'] ?? 0);
+        $semFech   = $semGanhos + $semPerdas;
+
+        // 2) Ranking por origem (JSON_TABLE explode o array; ver armadilha 1).
+        //    LEFT JOIN nas opcoes: opcao excluida no Pipedrive vira "Opcao removida (#id)"
+        //    em vez de sumir da conta — mesmo tratamento dado a etapa removida em #30.
+        $linhas = $q(
+            "SELECT jt.opt AS option_id,
+                    COALESCE(o.label, CONCAT('Opção removida (#', jt.opt, ')')) AS origem,
+                    COUNT(*)                                                   AS n,
+                    COALESCE(SUM(d.status='won'),0)                            AS ganhos,
+                    COALESCE(SUM(d.status='lost'),0)                           AS perdas,
+                    COALESCE(SUM(d.status='open'),0)                           AS abertos,
+                    COALESCE(SUM(CASE WHEN d.status='won'  THEN d.value END),0) AS valor_ganho,
+                    COALESCE(SUM(CASE WHEN d.status='open' THEN d.value END),0) AS valor_aberto,
+                    ROUND(AVG(CASE WHEN d.status='won' AND d.add_time IS NOT NULL
+                                    AND d.won_time >= d.add_time
+                               THEN DATEDIFF(d.won_time, d.add_time) END))     AS ciclo
+               FROM pipe_deals d
+               JOIN JSON_TABLE({$json}, '$[*]' COLUMNS (opt BIGINT PATH '$')) jt
+          LEFT JOIN pipe_custom_field_options o ON o.field_id = ? AND o.option_id = jt.opt
+              WHERE {$where}
+           GROUP BY jt.opt, o.label
+           ORDER BY n DESC",
+            [$fieldId]
+        );
+
+        $origens = array_map(static function ($r) use ($comOrigem, $fechados) {
+            $n   = (int)$r['n'];
+            $g   = (int)$r['ganhos'];
+            $p   = (int)$r['perdas'];
+            $fec = $g + $p;
+            $vg  = (float)$r['valor_ganho'];
+            return [
+                'option_id'    => (int)$r['option_id'],
+                'origem'       => $r['origem'],
+                'n'            => $n,
+                'ganhos'       => $g,
+                'perdas'       => $p,
+                'abertos'      => (int)$r['abertos'],
+                'fechados'     => $fec,
+                // Conversao so entre os DECIDIDOS. Null (nao zero) quando nada fechou:
+                // zero por cento e uma afirmacao, "ainda nao da para dizer" e outra.
+                'conversao_pct'=> $fec > 0 ? round($g / $fec * 100, 1) : null,
+                'valor_ganho'  => $vg,
+                'valor_aberto' => (float)$r['valor_aberto'],
+                'ticket_medio' => $g > 0 ? round($vg / $g, 2) : null,
+                // Participacao sobre os CLASSIFICADOS (nao sobre o total): o denominador
+                // honesto de "quanto esta origem representa" e o universo que tem origem.
+                'share_qtd'    => $comOrigem > 0 ? round($n / $comOrigem * 100, 1) : null,
+                'share_fechados' => $fechados > 0 ? round($fec / $fechados * 100, 1) : null,
+                'ciclo_medio_dias' => $r['ciclo'] !== null ? (int)$r['ciclo'] : null,
+            ];
+        }, $linhas);
+
+        return [
+            'janela' => $janela,
+            'campo'  => ['existe' => true, 'nome' => $campo['name'], 'field_key' => self::ORIGEM_FIELD_KEY],
+            'totais' => [
+                'negocios'      => $negocios,
+                'com_origem'    => $comOrigem,
+                'sem_origem'    => $negocios - $comOrigem,
+                'cobertura_pct' => $negocios > 0 ? round($comOrigem / $negocios * 100, 1) : null,
+                'multi_origem'  => (int)($t['multi_origem'] ?? 0),
+                'ganhos'        => $ganhos,
+                'perdidos'      => $perdidos,
+                'abertos'       => (int)($t['abertos'] ?? 0),
+                'fechados'      => $fechados,
+                'conversao_pct' => $fechados > 0 ? round($ganhos / $fechados * 100, 1) : null,
+                'valor_ganho'   => (float)($t['valor_ganho'] ?? 0),
+                'origens_distintas' => count($origens),
+                // Desfecho da fatia NAO classificada — o teste de vies do ranking.
+                'sem_origem_fechados'      => $semFech,
+                'sem_origem_conversao_pct' => $semFech > 0 ? round($semGanhos / $semFech * 100, 1) : null,
+            ],
+            'origens'   => $origens,
+            'tendencia' => $this->leadSourcesTendencia($where, $args, $json, $temOrigem, $fieldId, $origens),
+            'por_dono'  => $this->leadSourcesPorRecorte($where, $args, $json, $fieldId, 'dono'),
+            'por_funil' => $this->leadSourcesPorRecorte($where, $args, $json, $fieldId, 'funil'),
+            'pipelines' => $this->pipelinesList(),
+            'nota' => 'A origem vem do campo customizado "' . $campo['name'] . '", que aceita MAIS '
+                    . 'DE UMA opção por negócio — por isso a soma das origens pode passar do total '
+                    . 'de negócios. A janela é por data de CRIAÇÃO do negócio: uma safra recente '
+                    . 'ainda não terminou de converter, então a conversão dos últimos meses tende a '
+                    . 'subir depois. A conversão considera apenas o que já fechou (ganho + perdido).',
+        ];
+    }
+
+    /**
+     * Tendencia mensal de leads criados por origem. As TOP ganham serie propria, a cauda
+     * vai em "Outras" — e a fatia SEM origem entra como serie tambem, de proposito: ela
+     * mostra se a classificacao esta melhorando ou piorando ao longo do tempo, que e o
+     * que diz se da para confiar mais nos meses recentes do que nos antigos.
+     */
+    private function leadSourcesTendencia(
+        string $where, array $args, string $json, string $temOrigem, int $fieldId, array $origens
+    ): array {
+        $topNomes = array_map(static fn($o) => $o['origem'], array_slice($origens, 0, self::LEAD_TREND_TOP));
+        $topSet   = array_flip($topNomes);
+
+        $st = $this->pdo->prepare(
+            "SELECT DATE_FORMAT(d.add_time, '%Y-%m') AS mes,
+                    COALESCE(o.label, CONCAT('Opção removida (#', jt.opt, ')')) AS origem,
+                    COUNT(*) AS n
+               FROM pipe_deals d
+               JOIN JSON_TABLE({$json}, '$[*]' COLUMNS (opt BIGINT PATH '$')) jt
+          LEFT JOIN pipe_custom_field_options o ON o.field_id = ? AND o.option_id = jt.opt
+              WHERE {$where} AND d.add_time IS NOT NULL
+           GROUP BY mes, origem
+           ORDER BY mes"
+        );
+        $st->execute(array_merge([$fieldId], $args));
+
+        $meses = [];
+        $acum  = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $mes = (string)$r['mes'];
+            $meses[$mes] = true;
+            $chave = isset($topSet[$r['origem']]) ? (string)$r['origem'] : 'Outras';
+            $acum[$chave][$mes] = ($acum[$chave][$mes] ?? 0) + (int)$r['n'];
+        }
+
+        // Serie "Sem origem": contada no NEGOCIO (nao explodida), senao ela nao existiria —
+        // um negocio sem origem nao produz nenhuma linha no JSON_TABLE acima.
+        $sts = $this->pdo->prepare(
+            "SELECT DATE_FORMAT(d.add_time, '%Y-%m') AS mes, COUNT(*) AS n
+               FROM pipe_deals d
+              WHERE {$where} AND d.add_time IS NOT NULL AND {$temOrigem} = 0
+           GROUP BY mes ORDER BY mes"
+        );
+        $sts->execute($args);
+        foreach ($sts->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $mes = (string)$r['mes'];
+            $meses[$mes] = true;
+            $acum['Sem origem'][$mes] = ($acum['Sem origem'][$mes] ?? 0) + (int)$r['n'];
+        }
+
+        $meses = array_keys($meses);
+        sort($meses);
+
+        $ordem = $topNomes;
+        if (isset($acum['Outras']))     { $ordem[] = 'Outras'; }
+        if (isset($acum['Sem origem'])) { $ordem[] = 'Sem origem'; }
+
+        $series = [];
+        foreach ($ordem as $nome) {
+            if (!isset($acum[$nome])) { continue; }
+            $series[] = [
+                'origem' => $nome,
+                'n'      => array_map(static fn($m) => (int)($acum[$nome][$m] ?? 0), $meses),
+            ];
+        }
+
+        return ['meses' => $meses, 'series' => $series, 'top' => self::LEAD_TREND_TOP];
+    }
+
+    /**
+     * Leads agrupados por dono ou funil, com a origem predominante de cada grupo.
+     * Uma consulta so (grupo x origem); o predominante sai em PHP.
+     *
+     * Devolve ['total' => quantos grupos existem, 'itens' => os LEAD_RECORTE_MAX maiores],
+     * para um corte no teto nunca se passar por lista completa.
+     */
+    private function leadSourcesPorRecorte(
+        string $where, array $args, string $json, int $fieldId, string $tipo
+    ): array {
+        if ($tipo === 'funil') {
+            $sel  = "pl.pipedrive_id AS id, pl.name AS nome";
+            $from = "JOIN pipe_pipelines pl ON pl.pipedrive_id = d.pipeline_id";
+            $grp  = "pl.pipedrive_id, pl.name";
+            $extra = '';
+        } else {
+            $sel  = "d.owner_id AS id, COALESCE(u.name, CONCAT('#', d.owner_id)) AS nome";
+            $from = "LEFT JOIN pipe_users u ON u.pipedrive_id = d.owner_id";
+            $grp  = "d.owner_id, u.name";
+            $extra = ' AND d.owner_id IS NOT NULL';
+        }
+
+        $st = $this->pdo->prepare(
+            "SELECT {$sel},
+                    COALESCE(o.label, CONCAT('Opção removida (#', jt.opt, ')')) AS origem,
+                    COUNT(*) AS n,
+                    COALESCE(SUM(d.status='won'),0) AS ganhos,
+                    COALESCE(SUM(d.status='lost'),0) AS perdas,
+                    COALESCE(SUM(CASE WHEN d.status='won' THEN d.value END),0) AS valor_ganho
+               FROM pipe_deals d
+               JOIN JSON_TABLE({$json}, '$[*]' COLUMNS (opt BIGINT PATH '$')) jt
+          LEFT JOIN pipe_custom_field_options o ON o.field_id = ? AND o.option_id = jt.opt
+               {$from}
+              WHERE {$where}{$extra}
+           GROUP BY {$grp}, origem"
+        );
+        $st->execute(array_merge([$fieldId], $args));
+
+        $grupos = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $k = (string)$r['id'];
+            if (!isset($grupos[$k])) {
+                $grupos[$k] = [
+                    'id' => $r['id'] !== null ? (int)$r['id'] : null,
+                    'nome' => $r['nome'], 'n' => 0, 'ganhos' => 0, 'perdas' => 0, 'valor' => 0.0,
+                    'principal' => null, 'principal_n' => 0,
+                ];
+            }
+            $n = (int)$r['n'];
+            $grupos[$k]['n']      += $n;
+            $grupos[$k]['ganhos'] += (int)$r['ganhos'];
+            $grupos[$k]['perdas'] += (int)$r['perdas'];
+            $grupos[$k]['valor']  += (float)$r['valor_ganho'];
+            if ($n > $grupos[$k]['principal_n']) {
+                $grupos[$k]['principal']   = (string)$r['origem'];
+                $grupos[$k]['principal_n'] = $n;
+            }
+        }
+
+        $out = array_values($grupos);
+        usort($out, static fn($a, $b) => $b['n'] <=> $a['n']);
+        $itens = array_map(static function ($g) {
+            $fec = $g['ganhos'] + $g['perdas'];
+            return [
+                'id'    => $g['id'],
+                'nome'  => $g['nome'],
+                'n'     => $g['n'],
+                'valor' => round($g['valor'], 2),
+                'conversao_pct'   => $fec > 0 ? round($g['ganhos'] / $fec * 100, 1) : null,
+                'principal_origem'=> $g['principal'],
+                'principal_share' => $g['n'] > 0 && $g['principal'] !== null
+                    ? round($g['principal_n'] / $g['n'] * 100, 1) : null,
+            ];
+        }, array_slice($out, 0, self::LEAD_RECORTE_MAX));
+
+        return ['total' => count($out), 'itens' => $itens];
+    }
 }

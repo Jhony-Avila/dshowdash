@@ -549,3 +549,64 @@ export interface PipeLostData {
   pipeline_id: number | null;
   nota: string;
 }
+
+// ── Origem de leads (GET /lead-sources) — Backlog 06 #31 e o "por origem" do #7 ──
+//
+// A origem vem de um campo customizado MULTI-valor: um negócio pode ter duas origens e
+// entra nas duas. Por isso `soma(origens.n)` NÃO fecha com `totais.com_origem` — a
+// diferença é exatamente `totais.multi_origem`.
+export interface PipeOrigem {
+  option_id: number;
+  origem: string;
+  n: number;
+  ganhos: number;
+  perdas: number;
+  abertos: number;
+  /** Ganhos + perdas: o denominador da conversão (aberto ainda não é derrota). */
+  fechados: number;
+  /** null (≠ 0) quando nada fechou ainda: "não dá para dizer" não é "zero por cento". */
+  conversao_pct: number | null;
+  valor_ganho: number;
+  valor_aberto: number;
+  ticket_medio: number | null;
+  /** Participação sobre os CLASSIFICADOS (não sobre o total de negócios). */
+  share_qtd: number | null;
+  share_fechados: number | null;
+  /** Da criação até o ganho, em dias (média dos ganhos). */
+  ciclo_medio_dias: number | null;
+}
+export interface PipeOrigemGrupo {
+  id: number | null;
+  nome: string;
+  n: number;
+  valor: number;
+  conversao_pct: number | null;
+  principal_origem: string | null;
+  principal_share: number | null;
+}
+export interface PipeOrigemRecorte { total: number; itens: PipeOrigemGrupo[] }
+export interface PipeOrigemData {
+  janela: { meses: number; de: string | null; ate: string };
+  /** `existe:false` quando o campo sumiu do Pipedrive — a tela diz isso em vez de zerar. */
+  campo: { existe: boolean; nome: string | null; field_key: string };
+  totais: {
+    negocios: number; com_origem: number; sem_origem: number; cobertura_pct: number | null;
+    /** Quantos negócios têm MAIS DE UMA origem (a causa da soma não fechar). */
+    multi_origem: number;
+    ganhos: number; perdidos: number; abertos: number; fechados: number;
+    conversao_pct: number | null;
+    valor_ganho: number;
+    origens_distintas: number;
+    /** Desfecho da fatia SEM origem — o teste de viés do ranking. */
+    sem_origem_fechados: number;
+    sem_origem_conversao_pct: number | null;
+  } | null;
+  origens: PipeOrigem[];
+  /** Inclui as séries "Outras" (cauda) e "Sem origem" (cobertura ao longo do tempo). */
+  tendencia: { meses: string[]; series: { origem: string; n: number[] }[]; top: number };
+  por_dono: PipeOrigemRecorte;
+  por_funil: PipeOrigemRecorte;
+  pipelines: { id: number; name: string | null }[];
+  pipeline_id: number | null;
+  nota: string;
+}

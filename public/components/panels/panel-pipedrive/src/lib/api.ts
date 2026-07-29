@@ -131,4 +131,5 @@ export const chaves = {
   summary: ['pipe', 'summary'] as const,
   funnel: ['pipe', 'funnel'] as const,
   lostReasons: ['pipe', 'lost-reasons'] as const,
+  leadSources: ['pipe', 'lead-sources'] as const,
 };

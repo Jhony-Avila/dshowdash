@@ -172,6 +172,10 @@ switch ($segments[0] ?? '') {
         PipeAnalyticsController::lostReasons($method, $pdo);
         break;
 
+    case 'lead-sources':
+        PipeAnalyticsController::leadSources($method, $pdo);
+        break;
+
     case 'health':
         PipeHealthController::health($method, $pdo);
         break;
