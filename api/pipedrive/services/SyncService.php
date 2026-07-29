@@ -1,6 +1,6 @@
 <?php
 // Pipedrive / SyncService - orquestra a sincronizacao (fetch API -> persist local)
-// @version 1.0.0
+// @version 1.1.0
 // @created 2026-07-21
 // @app Pipedrive Analytics
 //
@@ -162,7 +162,9 @@ final class PipeSyncService
 
     /**
      * Sincroniza uma listagem generica. v2 incremental por marca-d'agua (updated_since +
-     * sort_by=update_time asc) quando $incremental e mode!=full; v1 sempre full (offset).
+     * sort_by=update_time asc) quando $incremental e mode!=full. v1/v1root nao tem
+     * updated_since: pagina DESC, GRAVA so o que esta acima da marca e para cedo.
+     * Contadores: `processed` = itens aplicados; `skipped` = itens ja conhecidos.
      */
     private function syncList(PipedriveClient $client, string $entity, string $path, string $version, callable $upsert, string $mode, array $opts, bool $incrementalCapable): array
     {
@@ -196,6 +198,23 @@ final class PipeSyncService
             $minLote = null;
             foreach ($lote as $item) {
                 if (!is_array($item)) { $c['skipped']++; continue; }
+                // A marca-d'agua precisa enxergar TODO item da pagina, inclusive os que
+                // nao serao gravados — por isso o update_time e lido antes do upsert.
+                $ut = PipeSyncRepository::dt($item['update_time'] ?? null);
+                if ($ut !== null) {
+                    if ($maxUpdate === null || $ut > $maxUpdate) { $maxUpdate = $ut; }
+                    if ($minLote === null || $ut < $minLote) { $minLote = $ut; }
+                }
+                // Abaixo da marca = ja gravado numa rodada anterior. Como a pagina vem
+                // ordenada DESC (a API v1/v1root honra `sort=update_time DESC` — provado
+                // contra a API real), nada mais novo aparece depois deste ponto: reescrever
+                // seria no-op. Sem isso, leads e notes regravavam a pagina inteira (500
+                // linhas) a cada 15 min para ~4 e ~12 mudancas reais por hora.
+                // Comparacao ESTRITA: o segundo exato da marca e reprocessado de proposito,
+                // porque dt() corta os milissegundos e um item de 18:40:04.900 nao pode ser
+                // descartado por uma marca de 18:40:04. update_time nulo = nao da para
+                // julgar -> grava.
+                if ($v1StopEarly && $wmDt !== null && $ut !== null && $ut < $wmDt) { $c['skipped']++; continue; }
                 $c['processed']++;
                 try {
                     $out = $upsert($item);
@@ -204,11 +223,6 @@ final class PipeSyncService
                 } catch (\Throwable $e) {
                     $c['errors']++;
                     error_log('[pipedrive] upsert ' . $c['processed'] . ' (' . ($item['id'] ?? '?') . '): ' . $e->getMessage());
-                }
-                $ut = PipeSyncRepository::dt($item['update_time'] ?? null);
-                if ($ut !== null) {
-                    if ($maxUpdate === null || $ut > $maxUpdate) { $maxUpdate = $ut; }
-                    if ($minLote === null || $ut < $minLote) { $minLote = $ut; }
                 }
             }
             // Ordenado DESC: se o item mais antigo do lote ja e < marca, os proximos

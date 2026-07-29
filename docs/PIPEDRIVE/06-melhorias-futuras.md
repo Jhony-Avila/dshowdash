@@ -312,6 +312,7 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 | 64 | **Cor real das etiquetas**: `pipe_custom_field_options` guarda só id+rótulo (a cor vive em `dealFields`, não sincronizada) — hoje a cor é determinística pelo id | ⭐ | P | 🔜 |
 | 65 | 🐛 **`pipe_webhook_events.status` nunca chega a `processed`** — o evento nasce `received` e só muda se o *enfileiramento* falhar (`error`). Os 4.984 eventos recebidos estão **todos** em `received`, mesmo com os 3.597 jobs concluídos | ⭐⭐ | P | 🔜 |
 | 66 | **Tela de Saúde: 4.984 eventos × 3.597 jobs** — a diferença (1.387) é o *coalescing* de `enqueueWebhook` (evento cujo alvo já tinha job pendente), mas a tela mostra os dois números sem explicar | ⭐⭐ | P | 🔜 |
+| 67 | 🐛 **`leads` e `notes` regravavam a página inteira (500 linhas) a cada 15 min** — o `stop-early` do caminho v1 parava de *paginar*, mas só depois de dar upsert nos 500 itens da página 1. Corrigido: pula o que está abaixo da marca-d'água | ⭐⭐ | P | ✅ |
 
 - **#65 e #66** levantados em **2026-07-28** ao construir o #41. São o mesmo assunto visto de dois
   lados: o ciclo de vida do `webhook_event` está **incompleto**. `recordWebhook()` grava
@@ -329,6 +330,32 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
   `getBoundingClientRect()` **engana**: dentro de um contêiner com `overflow-x:auto` o elemento
   reporta a largura inteira mesmo rolando corretamente — as duas medidas que valem são
   `main.scrollWidth > main.clientWidth` e esconder um card por vez para ver o estouro sumir.
+
+- **#67 levantado e fechado em 2026-07-29**, a partir de um achado lateral do #46: `leads` e `notes`
+  acusavam **336.000 registros processados em 7 dias** para tabelas de **853** e **26.389** linhas.
+  ⚠️ **A premissa registrada estava errada** — anotei "gasta quota de API à toa", e a medição mostrou
+  o contrário: são **1 chamada de API por entidade por rodada** (672 em 7 dias, irrelevante). O custo
+  era **100% escrita no banco**. O caminho v1/v1root não tem `updated_since`; o código pagina
+  `update_time DESC` e **para cedo** ao cruzar a marca — mas o `return false` só age *entre* lotes,
+  então a página 1 inteira (500 itens) já tinha passado pelo `upsert`. Medido: **501 linhas distintas
+  regravadas por hora** em cada entidade, contra **4 leads e 12 notas** que de fato mudaram no mesmo
+  período. Em `pipe_leads` o efeito é visível na coluna `sync_version`: máximo **761** reescritas para
+  linhas que mudaram duas ou três vezes na vida — o contador não media mudança, media rodadas de cron.
+  **Correção:** o item abaixo da marca não é mais gravado (conta em `skipped`); `processed` passa a
+  significar *aplicado*. Medido depois: `proc=500 → proc=1` nas duas entidades, mesma 1 chamada de API.
+  ⚠️ `payload_hash` **é gravado e nunca lido** — existia a matéria-prima para detectar no-op e ela
+  nunca foi usada; a marca-d'água resolve mais barato (nem chega a montar o `INSERT`).
+  **Provas:** `tools/screenshot/valida-pipedrive-marca-dagua.php` — o ramo do pulo não é exercitado
+  pelo caminho feliz (a marca vive colada em "agora", então a rodada normal só testa o caso trivial
+  "pula tudo"), por isso a prova **sombreia `pipe_sync_cursors` com `CREATE TEMPORARY TABLE`** e
+  rebobina a marca em 24 h e 7 dias, exigindo que o total gravado bata **exatamente** com a contagem
+  independente de itens acima da marca (6/124 leads, 22/93 notas) e que nenhum item acima da marca
+  fique desatualizado no banco. 26 checagens, 0 falha; guarda final confere que o cursor real ficou
+  intacto. ⚠️ **`sort=update_time DESC` foi conferido contra a API real** antes de confiar nele — se a
+  ordem não fosse honrada, pular seria perda de dado; as duas rotas honram.
+  ⚠️ **Comparação estrita de propósito**: `dt()` corta os milissegundos, então um item de
+  `18:40:04.900` não pode ser descartado por uma marca de `18:40:04` — o segundo exato da marca é
+  reprocessado (é o `proc=1` das rodadas normais, não sobra).
 
 ⚠️ **#60 a #63 são decisões do dono/DBA, não trabalho de painel.** Estão aqui para não se perderem.
 
@@ -361,7 +388,7 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 
 Depois disso, os estratégicos de maior porte: **Cruzamento ERP** (#34–#36) e **Mailbox** (#37–#38), quando houver decisão de escopo.
 
-> Total: **66 itens** catalogados — **30 ✅ · 5 ◑ · 1 ⚖️ · 19 🔜 · 11 💤** (contados no próprio arquivo, não estimados; 2026-07-29: #11 fechado).
+> Total: **67 itens** catalogados — **31 ✅ · 5 ◑ · 1 ⚖️ · 19 🔜 · 11 💤** (contados no próprio arquivo, não estimados; 2026-07-29: #11 e #67 fechados).
 > Priorize por Valor↑ / Esforço↓, mas leia antes o bloco "Bloqueios de DADO" da seção 0: três dos itens abertos não são questão de esforço.
 
 ---
