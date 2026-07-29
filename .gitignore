@@ -26,6 +26,8 @@
 !/api/anuncios/
 # api/home/ — endpoints resumidos da Home Inteligente (clima etc.)
 !/api/home/
+# api/avatar/ — persistência do Avatar Studio (studio.php + SvgSanitizer)
+!/api/avatar/
 
 # api/pipedrive/ — backend do painel Pipedrive Analytics.
 # Sem segredo embutido: o token do CRM vive cifrado no banco e a chave vem de

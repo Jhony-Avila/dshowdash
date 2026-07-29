@@ -40,6 +40,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [salvo, setSalvo] = useState<AvatarConfig | null>(null);
   const [estado, setEstado] = useState<EstadoSalvar>('sem_alteracoes');
   const [origem, setOrigem] = useState<OrigemDado>('padrao');
+  const [versao, setVersao] = useState(0);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
   const [aba, setAba] = useState<'itens' | 'presets'>('itens');
@@ -59,6 +60,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       setAtual(inicial);
       setSalvo(r.config);
       setOrigem(r.origem);
+      setVersao(r.versao);
       // primeira visita (nada salvo ainda) → deixa claro que precisa salvar
       if (!r.config) setEstado('alteracoes_pendentes');
       setCarregando(false);
@@ -113,18 +115,35 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   // ── Salvamento ────────────────────────────────────────────────────
   const salvar = useCallback(async () => {
     setEstado('salvando');
-    const r = await salvarAvatar(atual);
+    const r = await salvarAvatar(atual, versao);
     if (r.ok) {
       setSalvo(atual);
       setOrigem(r.origem);
+      if (r.versao !== undefined) setVersao(r.versao);
       setMensagem(r.mensagem ?? null);
       setEstado('salvo');
       window.setTimeout(() => setEstado((e) => (e === 'salvo' ? 'sem_alteracoes' : e)), 2200);
     } else {
       setMensagem(r.mensagem ?? 'Falha inesperada.');
-      setEstado(r.mensagem?.includes('Conflito') ? 'conflito' : 'erro');
+      setEstado(r.conflito ? 'conflito' : 'erro');
     }
-  }, [atual]);
+  }, [atual, versao]);
+
+  /** Conflito entre abas: recarrega a versão mais recente do servidor. */
+  const recarregarDoServidor = useCallback(async () => {
+    setCarregando(true);
+    const r = await carregarAvatar(shellConfig.signal);
+    const cfg = r.config ?? CONFIG_PADRAO;
+    setAtual(cfg);
+    setSalvo(r.config);
+    setVersao(r.versao);
+    setOrigem(r.origem);
+    setMensagem(null);
+    setEstado('sem_alteracoes');
+    desfazerPilha.current = [];
+    refazerPilha.current = [];
+    setCarregando(false);
+  }, [shellConfig.signal]);
 
   const sujo = useMemo(
     () => JSON.stringify(atual) !== JSON.stringify(salvo ?? {}),
@@ -227,6 +246,11 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
               )}
             </span>
             {mensagem && <span className="avst-barra-mensagem">{mensagem}</span>}
+            {estado === 'conflito' && (
+              <button type="button" className="avst-botao" onClick={() => void recarregarDoServidor()}>
+                Recarregar do servidor
+              </button>
+            )}
             <button type="button" className="avst-botao avst-botao-primario"
               onClick={() => void salvar()} disabled={!sujo || estado === 'salvando'}
               title="Salvar (Ctrl+S)">
