@@ -1,13 +1,16 @@
-// components/Foto.tsx — upload de foto com recorte (briefing §27).
-// @version 1.0.0  @created 2026-07-29
+// components/Foto.tsx — foto de perfil: upload, CÂMERA e galeria (briefing §27).
+// @version 1.1.0
+// @changelog v1.1.0 (2026-07-29, pedido do Jhony) — captura pela câmera
+//   (getUserMedia → frame → mesmo fluxo de recorte) e galeria "Suas fotos"
+//   (todas as fotos ficam guardadas no servidor; um clique reativa).
+// @created 2026-07-29
 //
-// Fluxo: escolher arquivo → recortar num palco quadrado (arrastar p/ posicionar
-// + slider de zoom) → canvas 480×480 → PNG data-url → salvarFoto().
-// O servidor re-encoda a imagem pixel a pixel (GD) — nada do arquivo original
-// sobrevive além dos pixels visíveis.
+// Fluxo: arquivo OU câmera → recorte (arrastar + zoom) → canvas 480×480 →
+// PNG data-url → salvarFoto(). O servidor re-encoda pixel a pixel (GD).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Camera, Check, ImageUp, LoaderCircle, X } from 'lucide-react';
-import { salvarFoto } from '../services/AvatarService';
+import { Aperture, Camera, Check, ImageUp, Images, LoaderCircle, RotateCcw, Video, X } from 'lucide-react';
+import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
+import type { FotoGuardada } from '../services/AvatarService';
 
 const LADO_PALCO = 280;   // px na tela
 const LADO_SAIDA = 480;   // px do PNG final
@@ -26,11 +29,67 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
   aoSalvar: (novaVersao: number) => void;
 }) {
   const [recorte, setRecorte] = useState<EstadoRecorte | null>(null);
+  const [camera, setCamera] = useState<MediaStream | null>(null);
+  const [galeria, setGaleria] = useState<FotoGuardada[] | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const arrasto = useRef<{ ativo: boolean; px: number; py: number }>({ ativo: false, px: 0, py: 0 });
 
+  // ── Galeria "Suas fotos" (recarrega a cada versão nova) ────────────
+  useEffect(() => {
+    let vivo = true;
+    void carregarFotos().then((f) => { if (vivo) setGaleria(f); });
+    return () => { vivo = false; };
+  }, [versao]);
+
+  // ── Câmera ──────────────────────────────────────────────────────────
+  const fecharCamera = useCallback(() => {
+    setCamera((s) => { s?.getTracks().forEach((t) => t.stop()); return null; });
+  }, []);
+
+  useEffect(() => () => { camera?.getTracks().forEach((t) => t.stop()); }, [camera]);
+
+  useEffect(() => {
+    if (camera && videoRef.current) {
+      videoRef.current.srcObject = camera;
+      void videoRef.current.play().catch(() => { /* autoplay bloqueado */ });
+    }
+  }, [camera]);
+
+  const abrirCamera = useCallback(async () => {
+    setMensagem(null);
+    setRecorte(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 960 }, height: { ideal: 960 }, facingMode: 'user' },
+        audio: false,
+      });
+      setCamera(stream);
+    } catch {
+      setMensagem('Não consegui acessar a câmera — verifique a permissão do navegador.');
+    }
+  }, []);
+
+  const capturar = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || video.videoWidth === 0) return;
+    const quadro = document.createElement('canvas');
+    quadro.width = video.videoWidth;
+    quadro.height = video.videoHeight;
+    const ctx = quadro.getContext('2d');
+    if (!ctx) return;
+    // espelha (selfie natural, como o preview)
+    ctx.translate(quadro.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0);
+    const img = new Image();
+    img.onload = () => { setRecorte({ img, zoom: 1, x: 0, y: 0 }); fecharCamera(); };
+    img.src = quadro.toDataURL('image/png');
+  }, [fecharCamera]);
+
+  // ── Arquivo ─────────────────────────────────────────────────────────
   const escolherArquivo = useCallback((arquivo: File | undefined) => {
     setMensagem(null);
     if (!arquivo) return;
@@ -50,12 +109,14 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
         URL.revokeObjectURL(url);
         return;
       }
+      fecharCamera();
       setRecorte({ img, zoom: 1, x: 0, y: 0 });
     };
     img.onerror = () => { setMensagem('Não consegui ler esta imagem.'); URL.revokeObjectURL(url); };
     img.src = url;
-  }, []);
+  }, [fecharCamera]);
 
+  // ── Recorte ─────────────────────────────────────────────────────────
   /** Desenha a imagem no palco respeitando zoom/pan (cover). */
   const desenhar = useCallback((ctx: CanvasRenderingContext2D, r: EstadoRecorte, lado: number) => {
     const { img, zoom, x, y } = r;
@@ -102,6 +163,7 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
 
   const aoSoltar = useCallback(() => { arrasto.current.ativo = false; }, []);
 
+  // ── Salvar / reativar ───────────────────────────────────────────────
   const usarFoto = useCallback(async () => {
     if (!recorte) return;
     setSalvando(true);
@@ -124,23 +186,63 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
     }
   }, [recorte, versao, desenhar, aoSalvar]);
 
+  const reativar = useCallback(async (foto: FotoGuardada) => {
+    setSalvando(true);
+    setMensagem(null);
+    const r = await reativarVersao(foto.id, versao);
+    setSalvando(false);
+    if (r.ok) {
+      setMensagem('Foto reativada! O header já foi atualizado.');
+      aoSalvar(r.versao ?? versao + 1);
+    } else {
+      setMensagem(r.mensagem ?? 'Não foi possível reativar a foto.');
+    }
+  }, [versao, aoSalvar]);
+
+  // ── UI ──────────────────────────────────────────────────────────────
   return (
     <section className="avst-foto" aria-label="Foto de perfil">
       <h3 className="avst-cores-titulo"><Camera size={14} aria-hidden /> Foto de perfil</h3>
       <p className="avst-foto-nota">
         {fotoAtiva
-          ? 'Sua foto está ativa agora. Salvar um avatar em camadas substitui a foto (ela fica no histórico).'
-          : 'Prefere uma foto real? Ela substitui o avatar em camadas (que fica guardado no histórico).'}
+          ? 'Sua foto está ativa agora. Salvar um avatar em camadas substitui a foto (ela fica guardada aqui).'
+          : 'Envie um arquivo ou tire uma foto na hora — o avatar em camadas fica guardado no histórico.'}
       </p>
 
-      {!recorte ? (
-        <label className="avst-foto-escolher">
-          <ImageUp size={22} aria-hidden />
-          <span>Escolher imagem…</span>
-          <input type="file" accept="image/png,image/jpeg,image/webp"
-            onChange={(e) => escolherArquivo(e.target.files?.[0])} />
-        </label>
-      ) : (
+      {!recorte && !camera && (
+        <div className="avst-foto-origem">
+          <label className="avst-foto-escolher">
+            <ImageUp size={22} aria-hidden />
+            <span>Escolher imagem…</span>
+            <input type="file" accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => escolherArquivo(e.target.files?.[0])} />
+          </label>
+          <button type="button" className="avst-foto-escolher" onClick={() => void abrirCamera()}>
+            <Video size={22} aria-hidden />
+            <span>Tirar foto agora</span>
+          </button>
+        </div>
+      )}
+
+      {camera && (
+        <>
+          <div className="avst-foto-palco" style={{ width: LADO_PALCO, height: LADO_PALCO }}>
+            <video ref={videoRef} playsInline muted
+              style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+            <span className="avst-foto-mascara" aria-hidden />
+          </div>
+          <div className="avst-foto-acoes">
+            <button type="button" className="avst-botao" onClick={fecharCamera}>
+              <X size={14} aria-hidden /> Cancelar
+            </button>
+            <button type="button" className="avst-botao avst-botao-primario" onClick={capturar}>
+              <Aperture size={14} aria-hidden /> Capturar
+            </button>
+          </div>
+        </>
+      )}
+
+      {recorte && (
         <>
           <div className="avst-foto-palco" style={{ width: LADO_PALCO, height: LADO_PALCO }}>
             <canvas ref={canvasRef} width={LADO_PALCO} height={LADO_PALCO}
@@ -166,6 +268,23 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
       )}
 
       {mensagem && <p className="avst-foto-msg" role="status">{mensagem}</p>}
+
+      {/* ── Suas fotos (guardadas no servidor, 1 clique p/ reativar) ── */}
+      {galeria && galeria.length > 0 && (
+        <div className="avst-foto-galeria">
+          <h4 className="avst-cores-titulo"><Images size={14} aria-hidden /> Suas fotos</h4>
+          <div className="avst-foto-grade" role="list" aria-label="Fotos guardadas">
+            {galeria.map((f) => (
+              <button key={f.id} type="button" role="listitem" className="avst-foto-item"
+                title="Usar esta foto de novo" disabled={salvando}
+                onClick={() => void reativar(f)}>
+                <img src={f.url} alt="Foto guardada" loading="lazy" />
+                <span className="avst-foto-item-usar"><RotateCcw size={13} aria-hidden /></span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

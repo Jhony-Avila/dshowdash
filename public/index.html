@@ -143,19 +143,41 @@
     .full-screen-mode { margin: 0 !important; padding: 0 !important; width: 100vw !important; height: 100vh !important; }
   </style>
 
-  <!-- Avatar Studio §22 — neutraliza o glow neon roxo do user-menu IMEDIATAMENTE
-       (component.css não tem ?v e fica até 4h no cache do Cloudflare; a fonte já
-       foi corrigida p/ v11.4.0 — este bloco pode ser removido num deploy futuro). -->
-  <style id="avatar-glow-fix">
+  <!-- ARCO CONTEXTUAL do avatar (pedido do Jhony 2026-07-29) — o anel orbit
+       volta, mas na COR DE DESTAQUE escolhida no Avatar Studio (--avst-aro-cor,
+       propagada pelo avatar-sync; padrão #7c3aed). Este bloco garante efeito
+       IMEDIATO enquanto o component.css (sem ?v) espira do cache do Cloudflare
+       — a fonte v11.5.0 tem as MESMAS regras; remover este bloco em deploy futuro. -->
+  <style id="avatar-aro-contextual">
     .user-menu-component .user-avatar::before,
+    .user-menu-dropdown-portal .user-avatar-large::before {
+      background: conic-gradient(from 0deg, transparent 0%,
+        var(--avst-aro-cor, #7c3aed) 20%,
+        color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 70%, white) 50%,
+        var(--avst-aro-cor, #7c3aed) 80%, transparent 100%) !important;
+      display: block !important;
+    }
     .user-menu-component .user-avatar::after,
-    .user-menu-dropdown-portal .user-avatar-large::before,
-    .user-menu-dropdown-portal .user-avatar-large::after { display: none !important; }
-    .user-menu-component .user-avatar,
-    .user-menu-trigger:hover .user-avatar { box-shadow: 0 1px 6px rgba(0,0,0,0.35) !important; }
-    .user-menu-dropdown-portal .user-avatar-large { box-shadow: 0 1px 8px rgba(0,0,0,0.35) !important; }
-    .user-menu-component .user-avatar .avatar-img,
-    .user-menu-dropdown-portal .user-avatar-large .avatar-img { border-color: rgba(255,255,255,0.22) !important; }
+    .user-menu-dropdown-portal .user-avatar-large::after {
+      background: conic-gradient(from 180deg, transparent 0%,
+        color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 90%, transparent) 20%,
+        color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 75%, white) 50%,
+        color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 90%, transparent) 80%,
+        transparent 100%) !important;
+      display: block !important;
+    }
+    .user-menu-component .user-avatar {
+      box-shadow:
+        0 0 10px color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 80%, transparent),
+        0 0 20px color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 50%, transparent),
+        0 0 30px color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 30%, transparent) !important;
+    }
+    .user-menu-dropdown-portal .user-avatar-large {
+      box-shadow:
+        0 0 12px color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 80%, transparent),
+        0 0 24px color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 50%, transparent),
+        0 0 36px color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 30%, transparent) !important;
+    }
   </style>
 </head>
 
@@ -174,12 +196,12 @@
   <script type="module" src="/components/world-clock-map/index.js"></script>
   <!-- Trânsito SP — indicador standalone no header (auto-injeção estilo theme-toggle); abre painel-transito-sp no main. 2026-07-20 -->
   <script type="module" src="/components/traffic-monitor/header-indicator.js?v=20260729-2"></script>
-  <!-- Avatar Sync — troca o avatar do header em tempo real (Avatar Studio). ADITIVO. 2026-07-29 -->
-  <script src="/components/avatar-sync/index.js?v=20260729-1"></script>
-  <!-- 2026-07-27: diagnóstico temporário da "barra preta" REMOVIDO (o próprio arquivo mandava
-       removê-lo após a captura). O incidente foi resolvido em 2026-07-17 — a barra não existia
-       na origem, persistia por cache-bust não bumpado. Ainda coletava: 2.012 POSTs em 14 dias.
-       Arquivos e o log de 1.870 capturas em /backup/diag-blackbar-remocao-20260727-220528. -->
+  <!-- Avatar Sync — atualiza o avatar do header/menu em tempo real quando o Avatar Studio salva (CustomEvent + BroadcastChannel + storage). ADITIVO, age só após load. 2026-07-29 -->
+  <script src="/components/avatar-sync/index.js?v=20260729-2"></script>
+  <!-- DIAGNÓSTICO TEMPORÁRIO 2026-07-08: watcher READ-ONLY da "barra preta" no item ativo da sidebar.
+       Captura o elemento culpado (transitório) e envia p/ /api/diag/blackbar.php (logs/blackbar-diag.log).
+       REMOVER esta tag + public/diag/blackbar-watch.js + api/diag/blackbar.php após diagnosticar. -->
+  <script defer src="/diag/blackbar-watch.js?v=20260708-1"></script>
 
 </body>
 
