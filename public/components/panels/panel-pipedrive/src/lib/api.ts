@@ -122,6 +122,7 @@ export const chaves = {
   status: ['pipe', 'status'] as const,
   overview: ['pipe', 'overview'] as const,
   queue: ['pipe', 'queue'] as const,
+  queueDead: ['pipe', 'queue', 'dead'] as const,
   webhooks: ['pipe', 'webhooks'] as const,
   metrics: ['pipe', 'metrics'] as const,
   rankings: ['pipe', 'rankings'] as const,

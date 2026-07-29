@@ -23,6 +23,8 @@
 //   GET    /queue                estado da fila de ingest (admin)
 //   POST   /queue/drain          drena a fila manualmente — diagnostico (admin)
 //   POST   /queue/requeue        reenfileira um job morto (admin)
+//   GET    /queue/dead           fila morta paginada + agregados (?entity=&page=) (admin)
+//   POST   /queue/requeue-bulk   reenfileira mortos em lote (ids[] OU entity) (admin)
 //   GET    /metrics              series diaria/horaria + top produtos + ranking (modulo)
 //   GET    /entity-stats         cards-resumo por entidade (modulo, 100% base local)
 //   GET    /rankings             rankings dedicados vendedores/produtos/orgs (modulo)

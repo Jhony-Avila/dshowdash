@@ -1,5 +1,5 @@
 // screens/SaudeSync.tsx — painel de saude da sincronizacao (backlog #39).
-// @version 1.0.0  @created 2026-07-22
+// @version 1.1.0  @created 2026-07-22  (v1.1: fila morta acionavel — backlog #41)
 //
 // Observabilidade do que ja roda em producao: estado por entidade (ultima rodada +
 // watermark + atraso), fila (pendentes/mortos), erros recentes, uso da API e rodadas.
@@ -9,6 +9,7 @@ import { apiGet, chaves, ApiError } from '../lib/api';
 import { fmtData, fmtNum } from '../lib/format';
 import { PageHeader } from './PageHeader';
 import { EstadoErro, SkeletonBloco } from './Estados';
+import { FilaMorta } from './FilaMorta';
 import { Activity } from 'lucide-react';
 import type { PipeHealth, PipeHealthEntity } from '../shell/types';
 
@@ -74,6 +75,9 @@ export function SaudeSync() {
             {entities.length === 0 ? (
               <p className="pp-placeholder">Nenhuma rodada de sincronização registrada ainda.</p>
             ) : (
+              /* Sem o wrapper rolável estas 5 colunas empurravam a página inteira em
+                 telas estreitas (medido: 635px de tabela em 388px de área útil). */
+              <div className="pp-tabela-rolavel">
               <table className="pp-table">
                 <thead>
                   <tr>
@@ -96,6 +100,7 @@ export function SaudeSync() {
                   })}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
 
@@ -110,17 +115,12 @@ export function SaudeSync() {
             </div>
             <div className="pp-row"><span className="pp-k">Último evento</span><span className="pp-v">{q?.last_event_at ? fmtData(q.last_event_at) : '—'}</span></div>
             <div className="pp-row"><span className="pp-k">Duplicados / erros de evento</span><span className="pp-v">{fmtNum(q?.webhook_events.duplicate)} · {fmtNum(q?.webhook_events.error)}</span></div>
-            {(data?.queue?.dead?.length ?? 0) > 0 && (
-              <table className="pp-table" style={{ marginTop: 12 }}>
-                <thead><tr><th>Entidade</th><th>ID externo</th><th className="ta-r">Tentativas</th><th>Erro</th></tr></thead>
-                <tbody>
-                  {data!.queue.dead.map((d) => (
-                    <tr key={d.id}><td className="pp-td-title">{d.entity ?? '—'}</td><td>{d.external_id ?? '—'}</td><td className="ta-r">{d.attempts}</td><td className="pp-td-sub" title={d.last_error ?? ''}>{d.last_error ?? '—'}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
           </div>
+
+          {/* Fila morta + reprocessamento em massa (#41). Antes havia aqui uma tabela
+              dos 20 descartes mais recentes, sem acao e sem total — util para notar o
+              problema, inutil para resolve-lo. */}
+          <FilaMorta jobsDone={q?.jobs.done} />
 
           {/* Uso da API 24h */}
           {api && (
@@ -157,6 +157,8 @@ export function SaudeSync() {
             {runs.length === 0 ? (
               <p className="pp-placeholder">Nenhuma rodada registrada.</p>
             ) : (
+              /* 7 colunas — a mais larga da tela (643px). Mesmo motivo do wrapper acima. */
+              <div className="pp-tabela-rolavel">
               <table className="pp-table">
                 <thead>
                   <tr>
@@ -178,6 +180,7 @@ export function SaudeSync() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </>

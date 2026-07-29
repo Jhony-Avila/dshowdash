@@ -168,11 +168,32 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 |---|---|---|---|---|
 | 39 | **Painel de saúde da sincronização** (última rodada por entidade, erros, watermark, jobs pendentes/mortos) | ⭐⭐⭐ | M | ✅ |
 | 40 | **Reconciliação por presença** para todas as entidades, agendável e com guarda de custo (hoje: deleted-scan de deals + presence opt-in) | ⭐⭐ | M | 🔜 |
-| 41 | **Fila de webhooks**: painel de jobs mortos + reprocessamento em massa (hoje: reenfileirar 1 a 1) | ⭐⭐ | P | 🔜 |
+| 41 | **Fila de webhooks**: painel de jobs mortos + reprocessamento em massa (hoje: reenfileirar 1 a 1) | ⭐⭐ | P | ✅ |
 | 42 | **deal_products incremental** (só negócios alterados desde a última carga) | ⭐⭐ | M | 🔜 |
 | 43 | **Métricas históricas** (`pipe_metrics_daily/hourly`) alimentando os gráficos do dashboard | ⭐⭐ | P | ✅ |
 | 44 | **Notas com HTML seguro** (sanitizar e renderizar, hoje é texto puro) | ⭐ | M | 🔜 |
 | 45 | **Registros deletados**: capturar `deleted.*` de todas as entidades (hoje webhook cobre; presence opcional) | ⭐⭐ | M | 🔜 |
+
+- **#41** (2026-07-28): `GET /queue/dead` (paginado, agregados por entidade e por erro) +
+  `POST /queue/requeue-bulk` (`ids[]` **ou** `entity`), com painel em `FilaMorta.tsx` dentro da
+  tela de Saúde. Três decisões que valem mais que o código:
+  - **A unidade é o ALVO, não o job morto.** Vários descartes do mesmo `(entidade, id externo)`
+    pedem o mesmo re-fetch — valem **uma** chamada de API. O lote reenfileira o mais recente de
+    cada alvo e encerra os irmãos com o marcador `COALESCIDO_NO_JOB_<id>`; o teto (200) conta
+    **alvos**, para que 300 descartes de um único negócio não consumam o lote inteiro.
+  - **"Nada" nunca vira "tudo".** Chamada sem `ids` e sem `entity` é operação nula (400), e
+    entidade inválida é **400, não "sem filtro"** — num lote destrutivo, degradar filtro
+    inválido para "todos" é o pior desfecho possível. Não existe botão de reprocessar a fila
+    inteira: é preciso recortar por entidade.
+  - **O que o teto deixou de fora é declarado** (`restantes`), nunca truncado em silêncio.
+  ⚠️ **A fila de produção nunca falhou**: 3.597 jobs, 100% `done`, `attempts=0` em todos,
+  `pipe_sync_errors` **vazia** desde 22/07. Ou seja, este recurso é **rede de segurança**, e o
+  caminho feliz não exercita nenhum ramo dele. Por isso a prova é dupla: `prova-fila-morta.php`
+  roda o repositório **real** contra uma `CREATE TEMPORARY TABLE pipe_sync_jobs` que sombreia a
+  de produção (47 checagens — o `pipe_app` não tem `CREATE TEMPORARY TABLES`, é privilégio à
+  parte), e `valida-pipedrive-fila-morta.mjs` intercepta a rota no navegador para exercitar a UI
+  que produção não mostra (70 checagens × 2 temas). **Não inserir jobs sintéticos na tabela real:
+  o cron drena a cada 1 minuto e chamaria a API com ids inexistentes.**
 
 ## 9. Performance / Estabilização (§32)
 
@@ -233,6 +254,25 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 | 62 | **Índices medidos** em `add_time`/`won_time`/`lost_time` (deals) e `done`/`due_date` (activities) — DDL em produção | ⭐⭐ | P | 💤 |
 | 63 | 🐛 **`POST /api/telemetry/collect.php`** — 2026-07-28: **não era intermitente, a telemetria NUNCA persistiu**. Corrigida e **NO AR** (CSRF + cadeia de build + contrato do backend). Resta a injeção do port `globalState` no boot | ⭐⭐⭐ | G | ✅ |
 | 64 | **Cor real das etiquetas**: `pipe_custom_field_options` guarda só id+rótulo (a cor vive em `dealFields`, não sincronizada) — hoje a cor é determinística pelo id | ⭐ | P | 🔜 |
+| 65 | 🐛 **`pipe_webhook_events.status` nunca chega a `processed`** — o evento nasce `received` e só muda se o *enfileiramento* falhar (`error`). Os 4.984 eventos recebidos estão **todos** em `received`, mesmo com os 3.597 jobs concluídos | ⭐⭐ | P | 🔜 |
+| 66 | **Tela de Saúde: 4.984 eventos × 3.597 jobs** — a diferença (1.387) é o *coalescing* de `enqueueWebhook` (evento cujo alvo já tinha job pendente), mas a tela mostra os dois números sem explicar | ⭐⭐ | P | 🔜 |
+
+- **#65 e #66** levantados em **2026-07-28** ao construir o #41. São o mesmo assunto visto de dois
+  lados: o ciclo de vida do `webhook_event` está **incompleto**. `recordWebhook()` grava
+  `received`; `markWebhookError()` grava `error`; **ninguém grava `processed`** — o valor existe no
+  enum e é inalcançável. Consequência direta no painel: "Eventos recebidos 4.984" ao lado de
+  "Concluídos 3.597", dois números que não fecham e cuja diferença (coalescing — evento cujo alvo
+  já tinha job pendente) não aparece em lugar nenhum. Não é perda de dado: os eventos foram
+  aplicados. É observabilidade que **parece** falha. Fechar o ciclo mexe no caminho de ingestão em
+  produção (que hoje funciona 100%), por isso não foi feito junto do #41 — **decisão do dono**.
+
+- **Corrigido de passagem (2026-07-28):** a tela de Saúde **estourava horizontalmente em telas
+  estreitas** — "Estado por entidade" (5 colunas, 635 px) e "Rodadas recentes" (7 colunas, 643 px)
+  usavam `.pp-table` **sem** o wrapper `.pp-tabela-rolavel`, em 388 px de área útil. Defeito
+  pré-existente (vinha do #39), não introduzido pelo #41. ⚠️ Diagnosticar isso com
+  `getBoundingClientRect()` **engana**: dentro de um contêiner com `overflow-x:auto` o elemento
+  reporta a largura inteira mesmo rolando corretamente — as duas medidas que valem são
+  `main.scrollWidth > main.clientWidth` e esconder um card por vez para ver o estouro sumir.
 
 ⚠️ **#60 a #63 são decisões do dono/DBA, não trabalho de painel.** Estão aqui para não se perderem.
 
@@ -251,7 +291,9 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 1. **#62 Índices** — os dois pontos lentos estão medidos (`/summary` 250 ms, `entity-stats?atividades` 620 ms). É DDL curto com ganho conhecido; só falta janela e aval do DBA.
 2. ~~**#25 Valor ponderado no Kanban**~~ ✅ **feito em 2026-07-28** (ver §4).
 3. ~~**#30 Motivos de perda** + **#5**~~ ✅ **já estavam feitos** (tela Perdas, 2026-07-27) — ver §5.
-4. **#41 Reprocessar jobs mortos em massa** — hoje é 1 a 1; a tela de Saúde já lista os mortos. **É o próximo do grupo A.**
+4. ~~**#41 Reprocessar jobs mortos em massa**~~ ✅ **feito em 2026-07-28** (ver §8). ⚠️ A premissa
+   do item estava invertida: a fila **não tem mortos** (nunca teve). É rede de segurança, não
+   correção de um problema em curso — o que o levantamento revelou de fato foram o **#65/#66**.
 5. **#26 Filtro por dono / período no Kanban** — o quadro tem só o seletor de funil; com o ponderado (#25) na tela, filtrar por dono passa a responder "qual a minha previsão".
 
 **B. Depende de decisão do dono (não começar antes)**
@@ -263,7 +305,7 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 
 Depois disso, os estratégicos de maior porte: **Cruzamento ERP** (#34–#36) e **Mailbox** (#37–#38), quando houver decisão de escopo.
 
-> Total: **64 itens** catalogados — **28 ✅ · 5 ◑ · 1 ⚖️ · 19 🔜 · 11 💤** (contados no próprio arquivo, não estimados).
+> Total: **66 itens** catalogados — **29 ✅ · 5 ◑ · 1 ⚖️ · 20 🔜 · 11 💤** (contados no próprio arquivo, não estimados; 2026-07-28: #41 fechado, #65 e #66 abertos).
 > Priorize por Valor↑ / Esforço↓, mas leia antes o bloco "Bloqueios de DADO" da seção 0: três dos itens abertos não são questão de esforço.
 
 ---

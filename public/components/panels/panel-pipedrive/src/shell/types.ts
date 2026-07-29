@@ -120,6 +120,37 @@ export interface PipeQueueDeadRow {
   attempts: number; last_error: string | null; processed_at: string | null;
 }
 export interface PipeQueueData { stats: PipeQueueStats; dead: PipeQueueDeadRow[]; }
+
+// Fila morta em massa (GET /queue/dead, POST /queue/requeue-bulk) — backlog #41.
+// "alvos" = pares (entidade, id externo) distintos. E o numero que importa: cada alvo
+// custa UMA chamada de API no reprocessamento, independentemente de quantos jobs
+// mortos apontem para ele.
+export interface PipeDeadStats {
+  total: number;
+  alvos: number;
+  mais_antigo: string | null;
+  mais_novo: string | null;
+  por_entidade: { entity: string; total: number; alvos: number; mais_novo: string | null }[];
+  por_erro: { erro: string; total: number }[];
+  teto_lote: number;
+}
+export interface PipeDeadRow extends PipeQueueDeadRow {
+  job_type: string | null;
+  created_at: string | null;
+}
+export interface PipeDeadData {
+  stats: PipeDeadStats;
+  entidades: string[];
+  lista: { itens: PipeDeadRow[]; total: number; page: number; per_page: number; paginas: number };
+  filtro: { entity: string | null };
+}
+export interface PipeRequeueBulkResult {
+  reenfileirados: number;
+  colapsados: number;   // irmaos do mesmo alvo, absorvidos pelo job que voltou
+  alvos: number;
+  restantes: number;    // alvos que ficaram de fora do teto — nunca descartados em silencio
+  ids: number[];
+}
 export interface PipeDrainResult {
   ok: boolean; claimed: number; done: number; deleted: number; retry: number; dead: number;
 }

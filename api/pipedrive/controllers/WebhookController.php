@@ -1,6 +1,6 @@
 <?php
 // Pipedrive / WebhookController - receptor externo + gestao da fila e dos webhooks
-// @version 1.0.0
+// @version 1.1.0
 // @created 2026-07-21
 // @app Pipedrive Analytics
 //
@@ -129,7 +129,65 @@ final class PipeWebhookController
             ApiResponse::success(['requeued' => $ok, 'id' => $id]);
             return;
         }
+        // ── Fila morta em massa (#41) ───────────────────────────────
+        if ($sub === 'dead' && $method === 'GET') {
+            $entity = self::entidadeMortaValida($repo, $_GET['entity'] ?? null); // 400 se invalida
+            $page   = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+            $per    = isset($_GET['per_page']) && is_numeric($_GET['per_page']) ? (int)$_GET['per_page'] : 25;
+            ApiResponse::success([
+                'stats'      => $repo->deadStats(),
+                'entidades'  => $repo->deadEntities(),
+                'lista'      => $repo->listDead($entity, $page, $per),
+                'filtro'     => ['entity' => $entity],
+            ], ['ts' => date('c')]);
+            return;
+        }
+        if ($sub === 'requeue-bulk' && $method === 'POST') {
+            $body   = pipe_body();
+            $ids    = isset($body['ids']) && is_array($body['ids']) ? $body['ids'] : null;
+            $entity = self::entidadeMortaValida($repo, $body['entity'] ?? null);
+            $limite = isset($body['limit']) && is_numeric($body['limit'])
+                ? (int)$body['limit'] : PipeQueueRepository::REQUEUE_MAX;
+
+            // Exigir alvo explicito: sem ids e sem entidade, um clique errado
+            // reprocessaria a fila inteira. "Nada" nunca vira "tudo".
+            if (($ids === null || $ids === []) && $entity === null) {
+                ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, [
+                    'reason'  => 'ALVO_OBRIGATORIO',
+                    'message' => 'Informe ids[] ou entity — o lote nao reprocessa a fila inteira por omissao.',
+                ]);
+            }
+            // ids e entity juntos sao ambiguos (recortes diferentes do mesmo lote).
+            if ($ids !== null && $ids !== [] && $entity !== null) {
+                ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, [
+                    'reason'  => 'ALVO_AMBIGUO',
+                    'message' => 'Use ids[] OU entity, nao os dois.',
+                ]);
+            }
+
+            $r = $repo->requeueDeadBulk($ids, $entity, $limite);
+            ApiResponse::success($r, ['action' => 'requeue-bulk']);
+            return;
+        }
         ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['message' => 'Rota de fila desconhecida']);
+    }
+
+    /**
+     * Valida a entidade contra as que REALMENTE existem entre os mortos.
+     * Ausente => null (sem filtro). Presente e desconhecida => 400, nunca "sem filtro":
+     * num lote destrutivo, degradar um filtro invalido para "todos" e o pior desfecho.
+     */
+    private static function entidadeMortaValida(PipeQueueRepository $repo, $valor): ?string
+    {
+        if ($valor === null || $valor === '' || $valor === 'todas') { return null; }
+        $permitidas = $repo->deadEntities();
+        if (!in_array($valor, $permitidas, true)) {
+            ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, [
+                'reason'     => 'ENTIDADE_INVALIDA',
+                'permitidas' => $permitidas,
+            ]);
+        }
+        return (string)$valor;
     }
 
     // ── Gestao dos webhooks no Pipedrive (admin) ────────────────────

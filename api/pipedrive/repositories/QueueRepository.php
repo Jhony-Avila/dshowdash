@@ -1,6 +1,6 @@
 <?php
 // Pipedrive / QueueRepository - persistencia do ingest orientado a eventos
-// @version 1.0.0
+// @version 1.1.0
 // @created 2026-07-21
 // @app Pipedrive Analytics
 //
@@ -250,6 +250,219 @@ final class PipeQueueRepository
         );
         $st->execute([':id' => $id]);
         return $st->rowCount() > 0;
+    }
+
+    // ── Fila morta em massa (#41) ───────────────────────────────────
+    //
+    // Um job morto e um pedido de "re-buscar a entidade X na API". Dois mortos com o
+    // mesmo (entity, external_id) pedem EXATAMENTE o mesmo trabalho — reenfileirar os
+    // dois gastaria duas chamadas de API para o mesmo objeto. Por isso o lote reenfileira
+    // UM job por alvo e absorve os irmaos (ver requeueDeadBulk).
+    //
+    // Teto por chamada: reenfileirar e barato no banco e CARO na API (1 re-fetch por
+    // alvo, sujeito ao rate limit do Pipedrive). O teto existe para que um clique nao
+    // vire milhares de chamadas; o que sobra e informado, nunca descartado em silencio.
+    public const REQUEUE_MAX = 200;
+
+    /** Marcador gravado no irmao absorvido — mantem o coalescing auditavel. */
+    private const COALESCED = 'COALESCIDO_NO_JOB_';
+
+    /**
+     * Entidades REALMENTE presentes entre os mortos. E a allow-list do filtro: o valor
+     * do usuario apenas ESCOLHE um destes, nunca entra no SQL como texto livre.
+     */
+    public function deadEntities(): array
+    {
+        $st = $this->pdo->query(
+            "SELECT DISTINCT entity FROM pipe_sync_jobs WHERE status = 'dead' AND entity IS NOT NULL ORDER BY entity"
+        );
+        return $st->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Agregacao dos mortos para o painel: total, alvos distintos (= chamadas de API que
+     * um reprocessamento completo custaria) e recorte por entidade e por erro.
+     */
+    public function deadStats(): array
+    {
+        $tot = $this->pdo->query(
+            "SELECT COUNT(*) total, COUNT(DISTINCT CONCAT(COALESCE(entity,''), ':', COALESCE(external_id,''))) alvos,
+                    MIN(processed_at) mais_antigo, MAX(processed_at) mais_novo
+               FROM pipe_sync_jobs WHERE status = 'dead'"
+        )->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $porEntidade = $this->pdo->query(
+            "SELECT COALESCE(entity,'(sem entidade)') entity, COUNT(*) total,
+                    COUNT(DISTINCT external_id) alvos, MAX(processed_at) mais_novo
+               FROM pipe_sync_jobs WHERE status = 'dead'
+              GROUP BY entity ORDER BY total DESC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        // Agrupa pelo inicio da mensagem: o final costuma trazer id/timestamp, que
+        // separaria em grupos de 1 o que na pratica e a mesma falha.
+        $porErro = $this->pdo->query(
+            "SELECT SUBSTRING(COALESCE(last_error,'(sem mensagem)'), 1, 80) erro, COUNT(*) total
+               FROM pipe_sync_jobs WHERE status = 'dead'
+              GROUP BY erro ORDER BY total DESC LIMIT 10"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'total'        => (int)($tot['total'] ?? 0),
+            'alvos'        => (int)($tot['alvos'] ?? 0),
+            'mais_antigo'  => $tot['mais_antigo'] ?? null,
+            'mais_novo'    => $tot['mais_novo'] ?? null,
+            'por_entidade' => array_map(static fn($r) => [
+                'entity' => $r['entity'], 'total' => (int)$r['total'],
+                'alvos'  => (int)$r['alvos'], 'mais_novo' => $r['mais_novo'],
+            ], $porEntidade),
+            'por_erro'     => array_map(static fn($r) => [
+                'erro' => $r['erro'], 'total' => (int)$r['total'],
+            ], $porErro),
+            'teto_lote'    => self::REQUEUE_MAX,
+        ];
+    }
+
+    /**
+     * Lista paginada dos mortos. $entity DEVE vir de deadEntities() (ja validado pelo
+     * controller) — aqui ele so entra como valor vinculado.
+     */
+    public function listDead(?string $entity, int $page, int $perPage): array
+    {
+        $perPage = max(1, min($perPage, 100));
+        $page    = max(1, $page);
+        $off     = ($page - 1) * $perPage;
+
+        $where = "status = 'dead'" . ($entity !== null ? " AND entity = :e" : '');
+        $bind  = $entity !== null ? [':e' => $entity] : [];
+
+        $cst = $this->pdo->prepare("SELECT COUNT(*) FROM pipe_sync_jobs WHERE {$where}");
+        $cst->execute($bind);
+        $total = (int)$cst->fetchColumn();
+
+        $st = $this->pdo->prepare(
+            "SELECT id, job_type, entity, external_id, attempts, last_error, created_at, processed_at
+               FROM pipe_sync_jobs WHERE {$where}
+              ORDER BY processed_at DESC, id DESC
+              LIMIT {$perPage} OFFSET {$off}"
+        );
+        $st->execute($bind);
+
+        return [
+            'itens'     => $st->fetchAll(PDO::FETCH_ASSOC),
+            'total'     => $total,
+            'page'      => $page,
+            'per_page'  => $perPage,
+            'paginas'   => (int)ceil($total / $perPage),
+        ];
+    }
+
+    /**
+     * Reenfileira mortos em lote. Recebe OU uma lista de ids OU uma entidade inteira —
+     * nunca "tudo por omissao": chamar sem alvo nao reprocessa nada.
+     *
+     * Colapso por alvo: entre mortos do mesmo (entity, external_id), so o mais recente
+     * volta para 'pending'. Os irmaos sao encerrados como 'done' com o marcador
+     * COALESCIDO_NO_JOB_<id> em last_error — o trabalho deles E o do job que voltou,
+     * entao mante-los mortos deixaria ruido permanente no painel, e reenfileira-los
+     * gastaria chamadas de API repetidas no mesmo objeto.
+     *
+     * @param int[]|null   $ids    ids explicitos (o que a UI selecionou)
+     * @param string|null  $entity entidade inteira; DEVE vir de deadEntities()
+     */
+    public function requeueDeadBulk(?array $ids, ?string $entity, int $limite): array
+    {
+        $limite = max(1, min($limite, self::REQUEUE_MAX));
+        $vazio  = ['reenfileirados' => 0, 'colapsados' => 0, 'alvos' => 0, 'restantes' => 0, 'ids' => []];
+
+        // Sem alvo explicito nao ha operacao: um lote destrutivo nunca deve
+        // interpretar "nada" como "tudo".
+        $temIds = is_array($ids) && $ids !== [];
+        if (!$temIds && $entity === null) { return $vazio; }
+
+        $where = "status = 'dead'";
+        $bind  = [];
+        if ($temIds) {
+            $ids = array_values(array_unique(array_map('intval', $ids)));
+            $ids = array_filter($ids, static fn($i) => $i > 0);
+            if (!$ids) { return $vazio; }
+            $ph     = implode(',', array_fill(0, count($ids), '?'));
+            $where .= " AND id IN ({$ph})";
+            $bind   = array_values($ids);
+        } elseif ($entity !== null) {
+            $where .= ' AND entity = ?';
+            $bind   = [$entity];
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            // Trava as linhas escolhidas: sem isso, uma drenagem concorrente poderia
+            // mudar o status entre a leitura e o UPDATE.
+            $sel = $this->pdo->prepare(
+                "SELECT id, entity, external_id FROM pipe_sync_jobs
+                  WHERE {$where}
+                  ORDER BY processed_at DESC, id DESC
+                  FOR UPDATE"
+            );
+            $sel->execute($bind);
+            $linhas = $sel->fetchAll(PDO::FETCH_ASSOC);
+            if (!$linhas) { $this->pdo->commit(); return $vazio; }
+
+            // Agrupa por alvo preservando a ordem (o primeiro de cada grupo e o mais recente).
+            $porAlvo = [];
+            foreach ($linhas as $l) {
+                $chave = ($l['entity'] ?? '') . ':' . ($l['external_id'] ?? '');
+                $porAlvo[$chave][] = (int)$l['id'];
+            }
+            $alvosTotal = count($porAlvo);
+
+            // O teto conta ALVOS (= chamadas de API), nao linhas: 300 mortos do mesmo
+            // negocio custam uma chamada so e nao deveriam consumir o lote inteiro.
+            $escolhidos = array_slice($porAlvo, 0, $limite, true);
+            $restantes  = $alvosTotal - count($escolhidos);
+
+            $lideres = [];
+            $irmaos  = [];   // id do irmao => id do lider que assumiu o trabalho
+            foreach ($escolhidos as $grupo) {
+                $lider     = array_shift($grupo);
+                $lideres[] = $lider;
+                foreach ($grupo as $outro) { $irmaos[$outro] = $lider; }
+            }
+
+            $ph  = implode(',', array_fill(0, count($lideres), '?'));
+            $upd = $this->pdo->prepare(
+                "UPDATE pipe_sync_jobs
+                    SET status = 'pending', attempts = 0, next_attempt_at = NOW(),
+                        last_error = NULL, processed_at = NULL
+                  WHERE status = 'dead' AND id IN ({$ph})"
+            );
+            $upd->execute($lideres);
+            $reenfileirados = $upd->rowCount();
+
+            $colapsados = 0;
+            if ($irmaos) {
+                $st = $this->pdo->prepare(
+                    "UPDATE pipe_sync_jobs
+                        SET status = 'done', processed_at = NOW(), last_error = :m
+                      WHERE status = 'dead' AND id = :id"
+                );
+                foreach ($irmaos as $idIrmao => $lider) {
+                    $st->execute([':m' => self::COALESCED . $lider, ':id' => $idIrmao]);
+                    $colapsados += $st->rowCount();
+                }
+            }
+
+            $this->pdo->commit();
+            return [
+                'reenfileirados' => $reenfileirados,
+                'colapsados'     => $colapsados,
+                'alvos'          => count($lideres),
+                'restantes'      => $restantes,
+                'ids'            => $lideres,
+            ];
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) { $this->pdo->rollBack(); }
+            throw $e;
+        }
     }
 
     // ── helpers ─────────────────────────────────────────────────────

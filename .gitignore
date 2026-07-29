@@ -78,6 +78,8 @@
 !/tools/screenshot/
 /tools/screenshot/*
 !/tools/screenshot/valida-pipedrive-*.mjs
+# .php: prova de lógica de banco que o navegador não alcança (fila morta, #41).
+!/tools/screenshot/valida-pipedrive-*.php
 !/tools/screenshot/auth.mjs
 !/tools/screenshot/config.mjs
 
