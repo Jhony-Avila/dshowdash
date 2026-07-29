@@ -264,6 +264,13 @@ function Shell({ config }: { config: ShellConfig }) {
       <div className="ger-controles">
         <span className="ger-controles-tit"><LayoutDashboard size={15} aria-hidden /> Principal</span>
         <div className="ger-controles-acoes">
+          {imersivo && (
+            <button className="ger-btn" onClick={() => navegar('#/panel-dashboard')}
+              title="Abrir o dashboard completo (Geral)">
+              <LayoutDashboard size={13} aria-hidden /> Visão geral completa
+            </button>
+          )}
+          {!imersivo && (<>
           <div className="ger-periodos" role="tablist" aria-label="Modo de visualização">
             <button role="tab" aria-selected={modo === 'operacional'}
               className={`ger-periodo${modo === 'operacional' ? ' is-on' : ''}`}
@@ -283,19 +290,22 @@ function Shell({ config }: { config: ShellConfig }) {
             onChange={(e) => trocarAuto(Number(e.target.value))}>
             {AUTO_REFRESH.map((a) => <option key={a.s} value={a.s}>{a.rotulo}</option>)}
           </select>
+          </>)}
           <button className="ger-btn" onClick={atualizar} title="Atualizar todos os widgets">
             <RefreshCw size={13} aria-hidden /> Atualizar
           </button>
+          {!imersivo && (
           <button className={`ger-btn${personalizar ? ' is-on' : ''}`}
             onClick={() => { setPersonalizar((v) => !v); if (personalizar) setOrganizar(false); }}
             aria-expanded={personalizar}>
             <SlidersHorizontal size={13} aria-hidden /> Personalizar
           </button>
+          )}
         </div>
       </div>
 
       {/* personalização (§25) */}
-      {personalizar && (
+      {!imersivo && personalizar && (
         <div className="ger-personalizar">
           <div className="ger-pers-head">
             <strong>Personalizar página</strong>
@@ -327,12 +337,12 @@ function Shell({ config }: { config: ShellConfig }) {
         <div className="ger-col-4"><ClimaAtualCard clima={clima} /></div>
       </div>
 
-      {/* Faixa 2 — KPIs executivos */}
-      <LinhaSaude alertas={alertas} integracoes={integracoes} visiveis={visiveis.length} />
+      {/* Faixa 2 — KPIs executivos (dashboard) */}
+      {!imersivo && <LinhaSaude alertas={alertas} integracoes={integracoes} visiveis={visiveis.length} />}
 
       {/* Faixa 3 — atenção (5) + atividades (4) + agenda (3) */}
       <div className="ger-faixa">
-        <div className={mostrar('atividades') ? 'ger-col-5' : 'ger-col-12'} data-ger-sec="alertas">
+        <div className={!imersivo && mostrar('atividades') ? 'ger-col-5' : 'ger-col-12'} data-ger-sec="alertas">
           {cAlertas && !alertas ? <Skeleton altura={200} /> : (
             <Secao titulo="Exige atenção" sub="alertas consolidados de todos os módulos">
               {(alertas ?? []).length === 0 ? (
@@ -355,7 +365,7 @@ function Shell({ config }: { config: ShellConfig }) {
           )}
         </div>
 
-        {mostrar('atividades') && (
+        {!imersivo && mostrar('atividades') && (
           <div className="ger-col-4">
             <Secao titulo="Atividades recentes" sub="últimos eventos nos módulos"
               acoes={(
@@ -388,12 +398,13 @@ function Shell({ config }: { config: ShellConfig }) {
           </div>
         )}
 
-        {mostrar('agenda') && (
+        {!imersivo && mostrar('agenda') && (
           <div className="ger-col-3"><AgendaWidget itens={agenda} carregando={cAgenda} /></div>
         )}
       </div>
 
       {/* Faixa 4 — gráfico consolidado (8) + distribuição (4) (§14–§15) */}
+      {!imersivo && (
       <div className="ger-faixa">
         <div className="ger-col-8">
           <Secao titulo="Desempenho consolidado" sub="visão de demonstração — os pontos virão dos módulos reais"
@@ -455,7 +466,10 @@ function Shell({ config }: { config: ShellConfig }) {
         </div>
       </div>
 
-      {/* Faixa 5 — widgets dos módulos com drag/resize (§12–§13 + Fase 4) */}
+      )}
+
+      {/* Faixa 5 — widgets dos módulos com drag/resize (§12–§13 + Fase 4) — dashboard */}
+      {!imersivo && (
       <div data-ger-sec="widgets" className={`ger-zona-widgets${organizar ? ' is-organizando' : ''}`}>
         {organizar && (
           <p className="ger-organizar-dica">Arraste pelo cabeçalho e redimensione pelo canto inferior direito. As mudanças salvam sozinhas.</p>
@@ -484,13 +498,16 @@ function Shell({ config }: { config: ShellConfig }) {
         </div>
       </div>
 
-      {/* Faixa 6 — insights (§22) */}
-      <InsightsPanel insights={insights} carregando={cInsights} aoAbrir={navegar} />
+      )}
+
+      {/* Faixa 6 — insights (§22) — dashboard */}
+      {!imersivo && <InsightsPanel insights={insights} carregando={cInsights} aoAbrir={navegar} />}
 
       {/* Faixa 7 — previsão 10 dias (§9) */}
       <PrevisaoDezDias clima={clima} />
 
-      {/* Faixa 8 — trânsito + e-mails */}
+      {/* Faixa 8 — trânsito + e-mails — dashboard */}
+      {!imersivo && (
       <div className="ger-faixa">
         <div className={mostrar('emails') ? 'ger-col-6' : 'ger-col-12'}>
           <TrafficWidget transito={transito} carregando={cTransito} erro={eTransito}
@@ -503,8 +520,10 @@ function Shell({ config }: { config: ShellConfig }) {
         )}
       </div>
 
-      {/* Faixa 9 — integrações (§20) */}
-      {mostrar('integracoes') && (
+      )}
+
+      {/* Faixa 9 — integrações (§20) — dashboard */}
+      {!imersivo && mostrar('integracoes') && (
         <div data-ger-sec="integracoes">
           <Secao titulo="Status das integrações" sub="a idade dos dados de cada fonte, sem segredo">
             {!integracoes ? <Skeleton altura={120} /> : (

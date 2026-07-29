@@ -246,7 +246,7 @@
 [data-geral-react-root] .ger-nuvem-3 { width: 140px; top: 40px; left: 12%; }
 
 /* ── GreetingHero transparente sobre o céu (v3.1) ──────────────── */
-[data-geral-react-root] [data-imersivo="1"] .ger-hero { min-height: 150px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 6px 10px; color: #fff; text-shadow: 0 1px 10px rgba(8, 10, 24, .55); }
+[data-geral-react-root] [data-imersivo="1"] .ger-hero { min-height: 34vh; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 6px 10px; color: #fff; text-shadow: 0 1px 10px rgba(8, 10, 24, .55); }
 [data-geral-react-root] .ger-tela-toda[data-imersivo="1"][data-ceu="manha"] .ger-hero,
 [data-geral-react-root] .ger-tela-toda[data-imersivo="1"][data-ceu="tarde"] .ger-hero { color: #14203a; text-shadow: 0 1px 8px rgba(255, 255, 255, .5); }
 [data-geral-react-root] .ger-hero-saudacao { margin: 0 0 4px; font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
