@@ -24,6 +24,8 @@
 # api/anuncios/ — proxy do Decision Engine (painel Anúncios).
 # O config real fica em config/decision_engine.php (NUNCA versionado).
 !/api/anuncios/
+# api/home/ — endpoints resumidos da Home Inteligente (clima etc.)
+!/api/home/
 
 # api/pipedrive/ — backend do painel Pipedrive Analytics.
 # Sem segredo embutido: o token do CRM vive cifrado no banco e a chave vem de

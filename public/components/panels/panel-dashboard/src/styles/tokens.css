@@ -194,3 +194,157 @@
 @media (prefers-reduced-motion: reduce) {
   [data-geral-react-root] * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   v3 — Home Inteligente (briefing 2026-07-29)
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Grid de 12 colunas (§5) */
+[data-geral-react-root] .ger-faixa { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: stretch; }
+[data-geral-react-root] .ger-col-3 { grid-column: span 3; min-width: 0; }
+[data-geral-react-root] .ger-col-4 { grid-column: span 4; min-width: 0; }
+[data-geral-react-root] .ger-col-5 { grid-column: span 5; min-width: 0; }
+[data-geral-react-root] .ger-col-6 { grid-column: span 6; min-width: 0; }
+[data-geral-react-root] .ger-col-8 { grid-column: span 8; min-width: 0; }
+[data-geral-react-root] .ger-col-12 { grid-column: span 12; min-width: 0; }
+[data-geral-react-root] .ger-faixa > div > .ger-sec { height: 100%; }
+@media (max-width: 1100px) {
+  [data-geral-react-root] .ger-col-3, [data-geral-react-root] .ger-col-4, [data-geral-react-root] .ger-col-5 { grid-column: span 6; }
+  [data-geral-react-root] .ger-col-8 { grid-column: span 12; }
+}
+@media (max-width: 760px) {
+  [data-geral-react-root] .ger-col-3, [data-geral-react-root] .ger-col-4, [data-geral-react-root] .ger-col-5, [data-geral-react-root] .ger-col-6 { grid-column: span 12; }
+}
+
+/* Barra de controles */
+[data-geral-react-root] .ger-controles { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+[data-geral-react-root] .ger-controles-tit { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 800; }
+[data-geral-react-root] .ger-controles-tit svg { color: var(--ger-azul); }
+[data-geral-react-root] .ger-controles-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+[data-geral-react-root] .ger-select { border: 1px solid var(--ger-borda); background: var(--ger-superficie); color: var(--ger-texto); border-radius: 9px; padding: 6px 8px; font-size: 11.5px; font-weight: 600; font-family: inherit; outline: none; }
+[data-geral-react-root] .ger-select:focus { border-color: var(--ger-azul); }
+[data-geral-react-root] .ger-pers-head-acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* ── GreetingHero (§6–§7): céu por horário + clima ─────────────── */
+[data-geral-react-root] .ger-hero { position: relative; overflow: hidden; border-radius: 14px; border: 1px solid var(--ger-borda); min-height: 172px; height: 100%; display: flex; align-items: flex-end; }
+[data-geral-react-root] .ger-hero-ceu { position: absolute; inset: 0; }
+[data-geral-react-root] .ger-hero[data-ceu="noite"], [data-geral-react-root] .ger-hero[data-ceu="madrugada"] { background: linear-gradient(180deg, #0b1026 0%, #141a3a 55%, #1d2450 100%); }
+[data-geral-react-root] .ger-hero[data-ceu="manha"] { background: linear-gradient(180deg, #8ec9f5 0%, #bfe0f8 60%, #ffe9c9 100%); }
+[data-geral-react-root] .ger-hero[data-ceu="tarde"] { background: linear-gradient(180deg, #6db3ec 0%, #a8d4f5 65%, #d8ecfb 100%); }
+[data-geral-react-root] .ger-hero[data-ceu="entardecer"] { background: linear-gradient(180deg, #3b3f77 0%, #9a5f8f 55%, #f0a05f 100%); }
+[data-geral-react-root] .ger-hero[data-clima="chuva"] .ger-hero-ceu::after,
+[data-geral-react-root] .ger-hero[data-clima="tempestade"] .ger-hero-ceu::after { content: ''; position: absolute; inset: 0; background: rgba(20, 28, 48, .38); }
+[data-geral-react-root] .ger-hero[data-clima="nublado"] .ger-hero-ceu::after { content: ''; position: absolute; inset: 0; background: rgba(90, 100, 120, .22); }
+[data-geral-react-root] .ger-lua { position: absolute; top: 16px; right: 40px; width: 52px; height: 52px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f5f3ea, #cfcdc4 70%); box-shadow: 0 0 34px 10px rgba(240, 238, 225, .28); }
+[data-geral-react-root] .ger-sol { position: absolute; top: 14px; right: 42px; width: 54px; height: 54px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #fff4c9, #f8cf5e 75%); box-shadow: 0 0 44px 14px rgba(248, 207, 94, .38); }
+[data-geral-react-root] .ger-estrela { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: rgba(255, 255, 255, .85); animation: ger-brilho 3.6s ease-in-out infinite; }
+@keyframes ger-brilho { 50% { opacity: .25; } }
+[data-geral-react-root] .ger-nuvem { position: absolute; height: 22px; border-radius: 20px; background: rgba(255, 255, 255, .28); filter: blur(1px); }
+[data-geral-react-root] .ger-hero[data-ceu="noite"] .ger-nuvem, [data-geral-react-root] .ger-hero[data-ceu="madrugada"] .ger-nuvem { background: rgba(200, 208, 235, .14); }
+[data-geral-react-root] .ger-nuvem-1 { width: 120px; top: 26px; right: 110px; }
+[data-geral-react-root] .ger-nuvem-2 { width: 84px; top: 58px; right: 40px; }
+[data-geral-react-root] .ger-hero-conteudo { position: relative; z-index: 1; width: 100%; padding: 18px 20px 14px; background: linear-gradient(180deg, transparent, rgba(10, 12, 24, .46) 60%); color: #fff; backdrop-filter: blur(2px); }
+[data-geral-react-root] .ger-hero[data-ceu="manha"] .ger-hero-conteudo,
+[data-geral-react-root] .ger-hero[data-ceu="tarde"] .ger-hero-conteudo { background: linear-gradient(180deg, transparent, rgba(255, 255, 255, .55) 60%); color: #14203a; }
+[data-geral-react-root] .ger-hero-saudacao { margin: 0 0 3px; font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+[data-geral-react-root] .ger-hero-frase { margin: 0 0 8px; font-size: 12.5px; opacity: .92; max-width: 640px; }
+[data-geral-react-root] .ger-hero-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; opacity: .85; }
+[data-geral-react-root] .ger-hero-meta span { display: inline-flex; align-items: center; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { [data-geral-react-root] .ger-estrela { animation: none; } }
+
+/* ── Clima atual (§8) ──────────────────────────────────────────── */
+[data-geral-react-root] .ger-clima { display: flex; flex-direction: column; gap: 9px; height: 100%; background: var(--ger-superficie); border: 1px solid var(--ger-borda); border-radius: 14px; padding: 14px 16px; }
+[data-geral-react-root] .ger-clima-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+[data-geral-react-root] .ger-clima-cidade { display: block; font-size: 13px; font-weight: 800; }
+[data-geral-react-root] .ger-clima-cond { font-size: 11.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-clima-ic { color: var(--ger-azul); }
+[data-geral-react-root] .ger-clima-temp { display: flex; align-items: baseline; gap: 10px; }
+[data-geral-react-root] .ger-clima-temp strong { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .ger-clima-temp span { font-size: 11px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-clima-alerta { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--ger-warn); background: color-mix(in srgb, var(--ger-warn) 11%, transparent); border-radius: 8px; padding: 5px 9px; }
+[data-geral-react-root] .ger-clima-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; font-size: 11.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-clima-grid span { display: inline-flex; align-items: center; gap: 5px; }
+[data-geral-react-root] .ger-clima-atualizado { margin-top: auto; font-size: 10px; color: var(--ger-texto-dim); }
+
+/* ── Previsão 10 dias (§9) ─────────────────────────────────────── */
+[data-geral-react-root] .ger-prev-faixa { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; scrollbar-width: thin; }
+[data-geral-react-root] .ger-prev-dia { flex: 0 0 92px; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 1px solid var(--ger-borda); background: var(--ger-fundo); border-radius: 11px; padding: 9px 6px; color: var(--ger-texto); cursor: pointer; transition: border-color .15s, transform .15s; }
+[data-geral-react-root] .ger-prev-dia:hover { border-color: var(--ger-azul); transform: translateY(-1px); }
+[data-geral-react-root] .ger-prev-dia.is-on { border-color: var(--ger-azul); background: color-mix(in srgb, var(--ger-azul) 9%, var(--ger-fundo)); }
+[data-geral-react-root] .ger-prev-dia.is-chuva .ger-prev-chuva { color: var(--ger-info); font-weight: 700; }
+[data-geral-react-root] .ger-prev-rotulo { font-size: 11px; font-weight: 800; }
+[data-geral-react-root] .ger-prev-data { font-size: 9.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-prev-ic { color: var(--ger-azul); margin: 2px 0; }
+[data-geral-react-root] .ger-prev-temps { font-size: 11.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-prev-temps strong { color: var(--ger-texto); }
+[data-geral-react-root] .ger-prev-chuva { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-prev-det { display: flex; gap: 16px; flex-wrap: wrap; border-top: 1px dashed var(--ger-borda); padding-top: 10px; margin-top: 6px; }
+[data-geral-react-root] .ger-prev-det-info { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--ger-texto-dim); min-width: 220px; }
+[data-geral-react-root] .ger-prev-det-info strong { color: var(--ger-texto); font-size: 12.5px; }
+[data-geral-react-root] .ger-prev-det-info span { display: inline-flex; align-items: center; gap: 4px; }
+[data-geral-react-root] .ger-prev-horas { display: flex; gap: 6px; overflow-x: auto; flex: 1; min-width: 0; padding-bottom: 4px; }
+[data-geral-react-root] .ger-prev-hora { flex: 0 0 56px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10.5px; color: var(--ger-texto-dim); border: 1px solid var(--ger-borda); border-radius: 9px; padding: 6px 4px; background: var(--ger-fundo); }
+[data-geral-react-root] .ger-prev-hora strong { color: var(--ger-texto); font-size: 12px; }
+[data-geral-react-root] .ger-prev-hora svg { color: var(--ger-azul); }
+[data-geral-react-root] .ger-prev-hora-chuva { color: var(--ger-info); }
+[data-geral-react-root] .ger-prev-nota { font-size: 11px; color: var(--ger-texto-dim); align-self: center; }
+
+/* ── Agenda (§17) ──────────────────────────────────────────────── */
+[data-geral-react-root] .ger-agenda { display: flex; flex-direction: column; gap: 6px; }
+[data-geral-react-root] .ger-agenda-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--ger-borda); border-radius: 9px; background: var(--ger-fundo); padding: 8px 10px; font-size: 12px; }
+[data-geral-react-root] .ger-agenda-item.is-atrasado { border-left: 3px solid var(--ger-warn); }
+[data-geral-react-root] .ger-agenda-hora { font-weight: 800; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .ger-agenda-ic { color: var(--ger-azul); display: inline-flex; }
+[data-geral-react-root] .ger-agenda-titulo { flex: 1; min-width: 0; }
+[data-geral-react-root] .ger-agenda-flag { font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--ger-warn); }
+[data-geral-react-root] .ger-vazio-inline { margin: 0; font-size: 12px; color: var(--ger-texto-dim); padding: 12px 0; }
+[data-geral-react-root] .ger-nota-widget { margin: 8px 0 0; font-size: 10.5px; color: var(--ger-texto-dim); }
+
+/* ── E-mails (§18) ─────────────────────────────────────────────── */
+[data-geral-react-root] .ger-emails { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 8px; }
+[data-geral-react-root] .ger-email-m { display: flex; flex-direction: column; border: 1px solid var(--ger-borda); border-radius: 9px; background: var(--ger-fundo); padding: 9px 11px; }
+[data-geral-react-root] .ger-email-m strong { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .ger-email-m span { font-size: 10.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-warn-txt { color: var(--ger-warn); }
+
+/* ── Trânsito (§19) ────────────────────────────────────────────── */
+[data-geral-react-root] .ger-transito { display: flex; align-items: center; gap: 14px; }
+[data-geral-react-root] .ger-transito-indice { display: flex; align-items: baseline; }
+[data-geral-react-root] .ger-transito-indice strong { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .ger-transito-indice span { font-size: 12px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-transito-corpo { display: flex; flex-direction: column; font-size: 11.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-transito-corpo strong { font-size: 13px; color: var(--ger-texto); }
+[data-geral-react-root] .ger-transito-normal .ger-transito-indice strong { color: var(--ger-ok); }
+[data-geral-react-root] .ger-transito-moderate .ger-transito-indice strong { color: var(--ger-warn); }
+[data-geral-react-root] .ger-transito-intense .ger-transito-indice strong { color: var(--ger-bad); }
+[data-geral-react-root] .ger-transito-barra { height: 8px; border-radius: 4px; background: var(--ger-superficie2); overflow: hidden; margin: 10px 0 8px; }
+[data-geral-react-root] .ger-transito-barra span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--ger-ok), var(--ger-warn), var(--ger-bad)); }
+[data-geral-react-root] .ger-transito-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 10.5px; color: var(--ger-texto-dim); flex-wrap: wrap; }
+
+/* ── Insights (§22) ────────────────────────────────────────────── */
+[data-geral-react-root] .ger-insights { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+[data-geral-react-root] .ger-insight { display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--ger-borda); border-left-width: 3px; border-radius: 11px; background: var(--ger-fundo); padding: 11px 13px; font-size: 11.5px; }
+[data-geral-react-root] .ger-insight header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+[data-geral-react-root] .ger-insight header strong { font-size: 12.5px; }
+[data-geral-react-root] .ger-insight-mod { font-size: 10px; font-weight: 700; color: var(--ger-texto-dim); white-space: nowrap; }
+[data-geral-react-root] .ger-insight p { margin: 0; color: var(--ger-texto-dim); line-height: 1.5; }
+[data-geral-react-root] .ger-insight p em { font-style: normal; font-weight: 700; color: var(--ger-texto); }
+[data-geral-react-root] .ger-insight-positivo { border-left-color: var(--ger-ok); }
+[data-geral-react-root] .ger-insight-atencao { border-left-color: var(--ger-warn); }
+[data-geral-react-root] .ger-insight-critico { border-left-color: var(--ger-bad); }
+[data-geral-react-root] .ger-insight-informativo { border-left-color: var(--ger-info); }
+
+/* ── Filtros de atividades (§16) ───────────────────────────────── */
+[data-geral-react-root] .ger-filtros-atv { display: flex; gap: 3px; flex-wrap: wrap; }
+[data-geral-react-root] .ger-filtro-atv { border: 0; background: transparent; color: var(--ger-texto-dim); padding: 3px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; cursor: pointer; }
+[data-geral-react-root] .ger-filtro-atv.is-on { background: color-mix(in srgb, var(--ger-azul) 14%, transparent); color: var(--ger-azul); }
+
+/* ── Zona de widgets com react-grid-layout (Fase 4) ────────────── */
+[data-geral-react-root] .ger-zona-widgets { position: relative; }
+[data-geral-react-root] .ger-rgl-item { display: flex; }
+[data-geral-react-root] .ger-rgl-item > article, [data-geral-react-root] .ger-rgl-item > .ger-skel { flex: 1; min-width: 0; overflow: auto; }
+[data-geral-react-root] .is-organizando .ger-rgl-item { outline: 2px dashed color-mix(in srgb, var(--ger-azul) 45%, transparent); outline-offset: 2px; border-radius: 12px; }
+[data-geral-react-root] .is-organizando .ger-wg-head { cursor: grab; }
+[data-geral-react-root] .ger-organizar-dica { margin: 0 0 8px; font-size: 11.5px; font-weight: 600; color: var(--ger-azul); }
+[data-geral-react-root] .react-grid-placeholder { background: color-mix(in srgb, var(--ger-azul) 22%, transparent) !important; border-radius: 12px; }
+[data-geral-react-root] .react-resizable-handle { opacity: .5; }
