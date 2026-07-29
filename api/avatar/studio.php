@@ -3,7 +3,11 @@ declare(strict_types=1);
 
 /**
  * /api/avatar/studio.php — persistência oficial do Avatar Studio.
- * @version 1.1.0
+ * @version 1.2.0
+ * @changelog 1.2.0 (2026-07-29) — galeria de fotos (GET ?fotos=1, dedup por
+ *   arquivo) e REATIVAÇÃO (POST {reativar_id}: clona a linha antiga como nova
+ *   versão ativa reaproveitando o MESMO arquivo — histórico continua
+ *   append-only; posse verificada por user_id da sessão, sem IDOR).
  * @changelog 1.1.0 (2026-07-29) — upload de FOTO (data:image/png recortado no
  *   front, re-ENCODADO no servidor via GD → mata payload embutido/polyglot,
  *   480×480, avatar_type='image'); GET devolve também tipo_ativo e
@@ -231,6 +235,26 @@ try {
             avst_ok(['itens' => $itens]);
         }
 
+        // Galeria "Suas fotos" — todas as fotos já enviadas/capturadas,
+        // deduplicadas por arquivo (reativações clonam a linha, não o PNG).
+        if (isset($_GET['fotos'])) {
+            $st = $pdo->prepare("
+                SELECT MAX(id) AS id, avatar_image_url AS url, MAX(created_at) AS criado_em
+                FROM app_user_avatars
+                WHERE user_id = ? AND avatar_type = 'image' AND avatar_image_url IS NOT NULL
+                GROUP BY avatar_image_url
+                ORDER BY MAX(id) DESC
+                LIMIT 24
+            ");
+            $st->execute([$userId]);
+            $fotos = [];
+            foreach ($st as $l) {
+                $fotos[] = ['id' => (int) $l['id'], 'url' => $l['url'], 'criado_em' => $l['criado_em']];
+            }
+            session_write_close();
+            avst_ok(['fotos' => $fotos]);
+        }
+
         $ativo = avst_ativo($pdo, $userId);
         $configAtivo = avst_config_da_linha($ativo);
 
@@ -291,14 +315,31 @@ try {
         avst_erro('RATE_LIMIT', 429, ['limite_por_hora' => AVST_LIMITE_HORA]);
     }
 
-    // ── Modo do salvamento: FOTO ou CAMADAS ─────────────────────────
-    $modoFoto  = isset($corpo['foto']);
+    // ── Modo do salvamento: REATIVAR, FOTO ou CAMADAS ───────────────
+    $modoReativar = isset($corpo['reativar_id']);
+    $modoFoto  = !$modoReativar && isset($corpo['foto']);
     $conteudo  = '';   // bytes a publicar
     $extensao  = '';
     $tipoLinha = '';
     $configJson = null;
+    $urlReuso   = null;
 
-    if ($modoFoto) {
+    if ($modoReativar) {
+        // posse SEMPRE verificada pela sessão (id + user_id) — sem IDOR
+        $stF = $pdo->prepare("
+            SELECT avatar_type, avatar_config, avatar_image_url
+            FROM app_user_avatars
+            WHERE id = ? AND user_id = ? AND avatar_type IN ('generated', 'image')
+        ");
+        $stF->execute([(int) $corpo['reativar_id'], $userId]);
+        $fonte = $stF->fetch(PDO::FETCH_ASSOC);
+        if (!$fonte || empty($fonte['avatar_image_url'])) {
+            avst_erro('VERSAO_NAO_ENCONTRADA', 404);
+        }
+        $tipoLinha  = $fonte['avatar_type'];
+        $configJson = $fonte['avatar_config'] ?: null;
+        $urlReuso   = $fonte['avatar_image_url'];
+    } elseif ($modoFoto) {
         try {
             $conteudo = avst_processar_foto(is_string($corpo['foto']) ? $corpo['foto'] : '');
         } catch (InvalidArgumentException $e) {
@@ -354,21 +395,26 @@ try {
 
     $novaVersao = $versaoAtual + 1;
 
-    // Publica o arquivo (nome versionado → fura o cache de 4h do Cloudflare)
-    $dirFisico = realpath(__DIR__ . '/../../public') . AVST_DIR_PUBLICO;
-    if (!is_dir($dirFisico) && !mkdir($dirFisico, 0755, true) && !is_dir($dirFisico)) {
-        $pdo->rollBack();
-        avst_erro('DIR_PUBLICACAO', 500);
+    if ($modoReativar) {
+        // reaproveita o arquivo já publicado — nenhum byte novo em disco
+        $renderUrl = $urlReuso;
+    } else {
+        // Publica o arquivo (nome versionado → fura o cache de 4h do Cloudflare)
+        $dirFisico = realpath(__DIR__ . '/../../public') . AVST_DIR_PUBLICO;
+        if (!is_dir($dirFisico) && !mkdir($dirFisico, 0755, true) && !is_dir($dirFisico)) {
+            $pdo->rollBack();
+            avst_erro('DIR_PUBLICACAO', 500);
+        }
+        $arquivo = sprintf('u%d-v%d.%s', $userId, $novaVersao, $extensao);
+        $caminho = $dirFisico . '/' . $arquivo;
+        $tmp = $caminho . '.tmp';
+        if (file_put_contents($tmp, $conteudo, LOCK_EX) === false || !rename($tmp, $caminho)) {
+            @unlink($tmp);
+            $pdo->rollBack();
+            avst_erro('ESCRITA_ARQUIVO', 500);
+        }
+        $renderUrl = AVST_DIR_PUBLICO . '/' . $arquivo;
     }
-    $arquivo = sprintf('u%d-v%d.%s', $userId, $novaVersao, $extensao);
-    $caminho = $dirFisico . '/' . $arquivo;
-    $tmp = $caminho . '.tmp';
-    if (file_put_contents($tmp, $conteudo, LOCK_EX) === false || !rename($tmp, $caminho)) {
-        @unlink($tmp);
-        $pdo->rollBack();
-        avst_erro('ESCRITA_ARQUIVO', 500);
-    }
-    $renderUrl = AVST_DIR_PUBLICO . '/' . $arquivo;
 
     $pdo->prepare('UPDATE app_user_avatars SET is_active = 0, updated_at = NOW() WHERE user_id = ? AND is_active = 1')
         ->execute([$userId]);
@@ -390,7 +436,11 @@ try {
     }
     session_write_close();
 
-    avst_ok(['version' => $novaVersao, 'render_url' => $renderUrl]);
+    avst_ok([
+        'version'    => $novaVersao,
+        'render_url' => $renderUrl,
+        'tipo'       => $tipoLinha === 'image' ? 'foto' : 'camadas',
+    ]);
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();

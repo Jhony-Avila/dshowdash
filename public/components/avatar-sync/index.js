@@ -1,7 +1,10 @@
 'use strict';
 // components/avatar-sync/index.js — sincronização do avatar em tempo real.
 // @module  avatar-sync
-// @version 1.0.0
+// @version 1.1.0
+// @changelog v1.1.0 (2026-07-29) — ARCO CONTEXTUAL: propaga a cor de destaque
+//   do avatar (--avst-aro-cor no :root) para o anel orbit do header; restaura
+//   a última cor do localStorage no boot. Pedido do Jhony ("quero o arco").
 // @created 2026-07-29
 //
 // Resolve a falha nº 1 do briefing de avatares (§2.2/§22): o header carregava
@@ -21,6 +24,7 @@
   const EVENTO = 'dshow:avatar:atualizado';
   const CANAL = 'dshow-avatar';
   const CHAVE = 'dshow.avatar.render.v1';
+  const CHAVE_ARO = 'dshow.avatar.aro.v1';
   const SELETORES = [
     '.user-avatar .avatar-img',
     '.user-avatar-large .avatar-img',
@@ -28,6 +32,12 @@
   ].join(',');
 
   let ultimo = '';
+
+  /** Tinge o arco orbit do header com a cor de destaque do avatar. */
+  function aplicarAro(cor) {
+    if (typeof cor !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(cor)) return;
+    try { document.documentElement.style.setProperty('--avst-aro-cor', cor); } catch (_) { /* sem DOM */ }
+  }
 
   function aplicar(render) {
     if (!render || typeof render !== 'string' || render === ultimo) return;
@@ -56,22 +66,31 @@
   }
 
   function iniciar() {
+    // 0) restaura a cor do arco escolhida no Avatar Studio (boot)
+    try { aplicarAro(localStorage.getItem(CHAVE_ARO)); } catch (_) { /* sem storage */ }
+
     // 1) mesma aba
     window.addEventListener(EVENTO, (ev) => {
-      aplicar(ev && ev.detail ? ev.detail.render : '');
+      const d = (ev && ev.detail) || {};
+      aplicar(d.render || '');
+      aplicarAro(d.corAro);
     });
 
     // 2) outras abas
     try {
       const canal = new BroadcastChannel(CANAL);
       canal.addEventListener('message', (ev) => {
-        if (ev && ev.data && ev.data.tipo === EVENTO) aplicar(ev.data.render);
+        if (ev && ev.data && ev.data.tipo === EVENTO) {
+          aplicar(ev.data.render);
+          aplicarAro(ev.data.corAro);
+        }
       });
     } catch (_) { /* navegador sem BroadcastChannel — storage cobre */ }
 
     // 3) fallback entre abas
     window.addEventListener('storage', (ev) => {
       if (ev.key === CHAVE && ev.newValue) aplicar(ev.newValue);
+      if (ev.key === CHAVE_ARO && ev.newValue) aplicarAro(ev.newValue);
     });
   }
 

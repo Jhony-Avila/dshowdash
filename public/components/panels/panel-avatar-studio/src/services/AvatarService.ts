@@ -1,5 +1,7 @@
 // services/AvatarService.ts — persistência e sincronização do avatar.
-// @version 2.1.0
+// @version 2.2.0
+// @changelog v2.2.0 — galeria de fotos (GET ?fotos=1), reativação de versões
+//   antigas (POST {reativar_id}) e cor do arco contextual no broadcast.
 // @changelog v2.1.0 — histórico (GET ?historico=1), foto recortada
 //   (POST {foto}), tipo_ativo + config_camadas_recente na carga.
 // @changelog v2.0.0 — contrato real do /api/avatar/studio.php: version p/
@@ -107,13 +109,22 @@ export async function carregarHistorico(signal?: AbortSignal): Promise<Historico
   }
 }
 
-/** Propaga o novo render para header/menu/perfil e outras abas. */
-function anunciar(render: string, origem: OrigemDado): void {
+const CHAVE_ARO = 'dshow.avatar.aro.v1';
+
+/**
+ * Propaga o novo render para header/menu/perfil e outras abas.
+ * `corAro` = cor de destaque do avatar (tinge o arco orbit do header);
+ * null (foto) mantém a última cor escolhida.
+ */
+function anunciar(render: string, origem: OrigemDado, corAro?: string | null): void {
   try { localStorage.setItem(CHAVE_RENDER, render); } catch { /* sem espaço */ }
-  try { window.dispatchEvent(new CustomEvent(EVENTO_DOM, { detail: { render, origem } })); } catch { /* ambiente sem DOM */ }
+  if (corAro) {
+    try { localStorage.setItem(CHAVE_ARO, corAro); } catch { /* sem espaço */ }
+  }
+  try { window.dispatchEvent(new CustomEvent(EVENTO_DOM, { detail: { render, origem, corAro } })); } catch { /* ambiente sem DOM */ }
   try {
     const canal = new BroadcastChannel(CANAL);
-    canal.postMessage({ tipo: EVENTO_DOM, render });
+    canal.postMessage({ tipo: EVENTO_DOM, render, corAro });
     canal.close();
   } catch { /* navegador sem suporte */ }
 }
@@ -144,7 +155,7 @@ export async function salvarAvatar(config: AvatarConfig, versaoBase: number): Pr
       const versao: number = corpo?.data?.version ?? versaoBase + 1;
       try { localStorage.setItem(CHAVE_CONFIG, JSON.stringify(validado)); } catch { /* espelho local */ }
       // bust explícito p/ <img> já montadas (o arquivo é novo, mas garante)
-      anunciar(renderUrl ? `${renderUrl}?t=${versao}` : dataUriDe(validado), 'api');
+      anunciar(renderUrl ? `${renderUrl}?t=${versao}` : dataUriDe(validado), 'api', validado.cores.destaque);
       return { ok: true, origem: 'api', versao };
     }
     if (r.status === 409) {
@@ -164,10 +175,71 @@ export async function salvarAvatar(config: AvatarConfig, versaoBase: number): Pr
   // 2) Fallback local (API fora do ar)
   try {
     localStorage.setItem(CHAVE_CONFIG, JSON.stringify(validado));
-    anunciar(dataUriDe(validado), 'local');
+    anunciar(dataUriDe(validado), 'local', validado.cores.destaque);
     return { ok: true, origem: 'local', mensagem: 'Salvo neste navegador (servidor indisponível).' };
   } catch {
     return { ok: false, origem: 'padrao', mensagem: 'Não foi possível salvar.' };
+  }
+}
+
+export interface FotoGuardada {
+  id: number;
+  url: string;
+  criadoEm: string;
+}
+
+/** Galeria "Suas fotos" — fotos já enviadas/capturadas, dedup por arquivo. */
+export async function carregarFotos(signal?: AbortSignal): Promise<FotoGuardada[]> {
+  try {
+    const r = await fetch(`${URL_API}?fotos=1`, { credentials: 'include', signal, cache: 'no-store' });
+    if (!r.ok) return [];
+    const corpo = await r.json();
+    const fotos = corpo?.data?.fotos;
+    if (!Array.isArray(fotos)) return [];
+    return fotos
+      .filter((f: Record<string, unknown>) => typeof f.url === 'string')
+      .map((f: Record<string, unknown>) => ({
+        id: Number(f.id) || 0,
+        url: String(f.url),
+        criadoEm: typeof f.criado_em === 'string' ? f.criado_em : '',
+      }));
+  } catch {
+    return [];
+  }
+}
+
+/** Reativa uma versão antiga (foto ou camadas) — vira nova versão ativa. */
+export async function reativarVersao(id: number, versaoBase: number): Promise<ResultadoSalvar> {
+  try {
+    const cabecalhos: Record<string, string> = { 'Content-Type': 'application/json' };
+    const csrf = await obterCsrf();
+    if (csrf) cabecalhos['X-CSRF-Token'] = csrf;
+
+    const r = await fetch(URL_API, {
+      method: 'POST',
+      credentials: 'include',
+      headers: cabecalhos,
+      body: JSON.stringify({ reativar_id: id, base_version: versaoBase }),
+    });
+
+    if (r.ok) {
+      const corpo = await r.json();
+      const renderUrl: string = corpo?.data?.render_url ?? '';
+      const versao: number = corpo?.data?.version ?? versaoBase + 1;
+      if (renderUrl) anunciar(`${renderUrl}?t=${versao}`, 'api');
+      return { ok: true, origem: 'api', versao };
+    }
+    if (r.status === 409) {
+      const corpo = await r.json().catch(() => null);
+      return {
+        ok: false, origem: 'api', conflito: true, versao: corpo?.data?.version,
+        mensagem: 'O avatar foi salvo em outra aba. Recarregue para ver a versão mais recente.',
+      };
+    }
+    const corpo = await r.json().catch(() => null);
+    return { ok: false, origem: 'api', mensagem: `Não foi possível reativar (${corpo?.error ?? r.status}).` };
+  } catch {
+    return { ok: false, origem: 'padrao', mensagem: 'Sem conexão com o servidor.' };
   }
 }
 
