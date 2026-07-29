@@ -307,7 +307,7 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 |---|---|---|---|---|
 | 60 | **Zona morta do app-shell (600–820 px)**: sidebar de 312 px fixos deixa 208–258 px úteis a QUALQUER painel | ⭐⭐⭐ | M | 💤 |
 | 61 | **Colunas mortas em `pipe_deals`**: popular no sync **ou** remover do schema (hoje são armadilha silenciosa) | ⭐⭐ | P | 💤 |
-| 62 | **Índices medidos** em `add_time`/`won_time`/`lost_time` (deals) e `done`/`due_date` (activities) — DDL em produção | ⭐⭐ | P | 💤 |
+| 62 | **Índices medidos** em `add_time`/`won_time` (deals) e `is_deleted`/`done`/`due_date` (activities) — DDL **executado** em 2026-07-29 com `LOCK=NONE`. `summary(30)` 207→**19 ms**, `dealsPage` pág. 7 72→**5 ms**. ⚠️1 dos 4 índices propostos era inútil e foi trocado por composto | ⭐⭐ | P | ✅ |
 | 63 | 🐛 **`POST /api/telemetry/collect.php`** — 2026-07-28: **não era intermitente, a telemetria NUNCA persistiu**. Corrigida e **NO AR** (CSRF + cadeia de build + contrato do backend). Resta a injeção do port `globalState` no boot | ⭐⭐⭐ | G | ✅ |
 | 64 | **Cor real das etiquetas**: `pipe_custom_field_options` guarda só id+rótulo (a cor vive em `dealFields`, não sincronizada) — hoje a cor é determinística pelo id | ⭐ | P | 🔜 |
 | 65 | 🐛 **`pipe_webhook_events.status` nunca chegava a `processed`** — o evento nascia `received` e só mudava se o *enfileiramento* falhasse (`error`). Corrigido: a drenagem fecha o evento quando o job do alvo conclui; passivo de 5.486 eventos zerado | ⭐⭐ | P | ✅ |
@@ -441,7 +441,7 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 
 Depois disso, os estratégicos de maior porte: **Cruzamento ERP** (#34–#36) e **Mailbox** (#37–#38), quando houver decisão de escopo.
 
-> Total: **67 itens** catalogados — **33 ✅ · 5 ◑ · 1 ⚖️ · 17 🔜 · 11 💤** (contados no próprio arquivo, não estimados; 2026-07-29: #11, #67, #65 e #66 fechados).
+> Total: **67 itens** catalogados — **34 ✅ · 5 ◑ · 1 ⚖️ · 17 🔜 · 10 💤** (contados no próprio arquivo, não estimados; 2026-07-29: #11, #67, #65, #66 e #62 fechados).
 > Priorize por Valor↑ / Esforço↓, mas leia antes o bloco "Bloqueios de DADO" da seção 0: três dos itens abertos não são questão de esforço.
 
 ---

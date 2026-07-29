@@ -1,6 +1,10 @@
-# Índices do PIPE_DSHOW — medição e DDL proposto (#46 / #62)
+# Índices do PIPE_DSHOW — medição e DDL (#46 / #62)
 
-> **2026-07-29.** Nada aqui foi executado em produção. O DDL da §4 espera aval do dono/DBA.
+> **2026-07-29 — ✅ EXECUTADO em produção**, autorizado pelo dono. **A §4 é a proposta, a §7 é o
+> que de fato está no banco** — e as duas divergem: um dos 4 índices propostos foi medido como
+> inútil e substituído. Para saber o estado real, leia a §7.
+>
+> **2026-07-29 (levantamento original).**
 > Medições feitas com aquecimento e **mediana de 7 tiros** (o primeiro tiro mede cache frio),
 > e o ganho de cada índice foi medido numa **cópia sombra** (`CREATE TEMPORARY TABLE` com os
 > mesmos dados), nunca na tabela real — conferido ao fim de cada script que produção ficou
@@ -73,9 +77,13 @@ repositório com cache de instância mediria o cache, não o banco:
 
 Ganho medido na sombra, mesma consulta nas duas tabelas:
 
+> ⚠️ **CORREÇÃO (2026-07-29, na execução):** a primeira linha desta tabela estava **errada** —
+> `pipe_deals (update_time)` não serve para a consulta real do grid. Foi criado, medido, e
+> **derrubado**; entrou `ix_upd_pd (update_time, pipedrive_id)` no lugar. Detalhe em §7.
+
 | Índice | Consulta | Antes | Depois | Ganho |
 |---|---|---|---|---|
-| `pipe_deals (update_time)` | grid, ordenação padrão | 40 ms | **0 ms** | **100%** — elimina o `Using filesort`, vira `Backward index scan` |
+| ~~`pipe_deals (update_time)`~~ ❌ **não serve** — ver §7 | grid, ordenação padrão | 40 ms | **0 ms** | medido **numa consulta que o código não executa** (sem o desempate do `ORDER BY`) |
 | `pipe_deals (add_time)` | janela por data **após** a correção da §2 | 44 ms | **2 ms** | **95%** |
 | `pipe_deals (status, won_time)` | ganhos na janela, idem | 17 ms | **0 ms** | **100%** |
 | `pipe_activities (is_deleted, done, due_date)` | contagem por estado | 81 ms | **37 ms** | **54%** — sai de `type=ALL` (88 mil linhas) para `Using index` |
@@ -122,18 +130,19 @@ ALTER TABLE pipe_activities DROP INDEX ix_del_done_due;
 - `pipe_activities`: **1.967** processados, **1.028** alterados (~147/dia).
 
 Nessa ordem de grandeza o custo de manutenção dos índices é irrelevante perto do ganho de
-leitura. *(À parte: `leads` e `notes` acusam **336.000** registros processados em 7 dias para
-tabelas de 847 e 26.375 linhas — sinal de que o incremental reprocessa tudo a cada rodada.
-Não é assunto de índice; anotado para o #42/#40.)*
+leitura. *(À parte: `leads` e `notes` acusavam **336.000** registros processados em 7 dias para
+tabelas de 853 e 26.389 linhas. ✅ **Virou o #67 e foi corrigido em 2026-07-29** — o stop-early
+parava de paginar, mas só depois de regravar os 500 itens da página 1. E a suspeita de "gasta
+quota de API" era **falsa**: 1 chamada por entidade por rodada; o custo era 100% escrita.)*
 
 ## 5. Ordem recomendada
 
 1. ~~**Código, sem DDL**~~ ✅ **FEITO em 2026-07-29** — ver §6.
-2. **DDL da §4** — com o dono/DBA, em janela. **Agora vale a pena**: com as consultas
-   sargable, `ix_add_time` e `ix_status_won` passam a ser usados de verdade
-   (medido: 74 ms → **3 ms**).
-3. **Reavaliar `leadSources`** (783 ms) por outro caminho: o custo é JSON. Opções: coluna
-   gerada + índice, ou materializar a origem numa coluna real durante o sync.
+2. ~~**DDL da §4**~~ ✅ **EXECUTADO em 2026-07-29, autorizado pelo dono** — ver §7. ⚠️ **Um dos
+   4 índices da §4 estava errado** e foi trocado; a tabela da §4 tem a correção anotada.
+3. **Reavaliar `leadSources`** (353 ms medidos após o DDL — índice não muda nada, como previsto)
+   por outro caminho: o custo é JSON. Opções: coluna gerada + índice, ou materializar a origem
+   numa coluna real durante o sync.
 
 ---
 
@@ -176,3 +185,91 @@ Prova: `tools/screenshot/valida-pipedrive-facets.mjs` — **22 checagens × 2 te
 coberto não é tempo, é **filtro vazio ao paginar**: a prova exige que Etapas/Donos/Motivo
 continuem populados depois de paginar, que filtrar ainda funcione, e que trocar de entidade
 não reaproveite as facets erradas.
+
+---
+
+## 7. EXECUTADO em 2026-07-29 — e o que a execução corrigiu
+
+Aplicado no banco `PIPE_DSHOW` com **`ALGORITHM=INPLACE, LOCK=NONE`** (MySQL 8.0.46), autorizado
+pelo dono. `LOCK=NONE` é a trava certa aqui: se o MySQL não pudesse fazer online, ele **erraria**
+em vez de bloquear a tabela. Tempo real: **0,44 s** (deals) + **0,73 s** (activities) — muito
+abaixo dos ~3,5 s e ~6,7 s estimados na sombra, porque lá o custo incluía copiar os dados.
+Índices: `pipe_deals` 6,1 → **8,4 MB**; `pipe_activities` 11,1 → **15,6 MB**.
+
+Backup e rollback prontos em `/backup/pipedrive-ddl-indices-2026-07-29/`
+(`esquema-antes.sql` + `ROLLBACK.sql`). ⚠️ O `ROLLBACK.sql` **não é o do §4** — ver abaixo.
+
+### O que estava errado no DDL proposto
+
+`ix_update_time (update_time)` foi criado e **não fez diferença**: a consulta real do grid ficou
+em 55,95 ms com ele contra 53,86 ms sem nenhum índice. O `EXPLAIN` explicou — o otimizador
+**ignorava** o índice novo e voltava para `ix_deleted` + `Using filesort` sobre 7.304 linhas.
+
+**A causa**: o `ORDER BY` do `dealsPage()` tem desempate — `ORDER BY $sort $dir, d.pipedrive_id
+DESC` — e um índice de **coluna única** não satisfaz uma ordenação de duas colunas. O "40 ms →
+0 ms" da §4 tinha sido medido numa consulta **sem o desempate**, isto é, numa consulta que o
+código não executa. ⚠️ **É a armadilha de medir o SQL reescrito à mão em vez do que o método
+monta.** A medição desta execução foi feita chamando `dealsPage()`/`summary()`/`entityStats()`
+de verdade, justamente para não repetir isso.
+
+**A correção**: `ix_upd_pd (update_time, pipedrive_id)`, que casa exatamente com o `ORDER BY`.
+
+| consulta real do grid | tempo |
+|---|---|
+| sem índice nenhum (base) | 53,86 ms |
+| com `ix_update_time` (coluna única) | 55,95 ms — **o otimizador não usa** |
+| com `ix_upd_pd` (composto) | **1,05 ms** — `Backward index scan`, `rows=50` |
+
+O de coluna única foi **derrubado** (o composto o subsume: qualquer uso de `update_time` como
+prefixo é atendido). Índices no banco hoje: `ix_upd_pd`, `ix_add_time`, `ix_status_won` em
+`pipe_deals`; `ix_del_done_due` em `pipe_activities`.
+
+### A/B por índice — mesma consulta com e sem, via `IGNORE INDEX`
+
+Feito no mesmo estado do servidor, para isolar o índice do resto do endpoint:
+
+| índice | consulta | sem | com | ganho |
+|---|---|---|---|---|
+| `ix_add_time` | janela por criação | 44,2 ms | **0,9 ms** | 98% |
+| `ix_status_won` | ganhos na janela | 8,4 ms | **0,5 ms** | 94% |
+| `ix_del_done_due` | atividades por estado | 142,1 ms | **21,0 ms** | 85% |
+| `ix_del_done_due` | agenda do mês | 3,7 ms | **0,5 ms** | 86% |
+| `ix_upd_pd` | grid, ordem padrão | 53,9 ms | **1,1 ms** | 98% |
+
+⚠️ O `ix_status_won` partia de 8,4 ms, não dos 17 ms da §4 — o ganho percentual se mantém, a
+base era menor.
+
+### Ponta a ponta, pelos métodos reais
+
+| método | antes do DDL | depois | ganho |
+|---|---|---|---|
+| `dealsPage` página 7 (`facets=0`) | 72,2 ms | **5,4 ms** | **−93%** |
+| `summary(30)` | 207,2 ms | **19,3 ms** | **−91%** |
+| `summary(90)` | 208,8 ms | **22,3 ms** | −89% |
+| `summary(365)` | 247,8 ms | **177,7 ms** | −28% |
+| `dealsPage` página 1 (com facets) | 199,6 ms | **104,0 ms** | −48% |
+| `entityStats(activities)` | 193,2 ms | **144,7 ms** | −25% |
+| `leadSources(12)` — **controle** | 361,5 ms | 353,3 ms | ~0% ✅ |
+
+O **controle importa**: `leadSources` não devia mudar (o custo é parsing de JSON) e não mudou.
+Se tivesse mudado, o resto da medição estaria contaminada.
+
+⚠️ **A página 1 do grid continua em 104 ms** e isso **não é o índice**: são as facets — `owners`
+64 ms + `lost_reasons` 40 ms. Já mitigado pelo `facets=0` das páginas seguintes (5,4 ms), que é
+justamente por que a página 7 despencou e a 1 não.
+
+⚠️ **`entityStats` não é 0 ms para tudo.** A §1 registrou "0 ms" — vale para `deals` (lê
+`pipe_metrics_*`). Para `activities` são **145 ms** mesmo depois do índice.
+
+### Custo de escrita: confirmado desprezível
+
+A rodada completa do sync **caiu** de 10.661 ms para **7.253 ms** depois do DDL — o custo de
+manter os índices na escrita é menor que o ganho de leitura dentro da própria rodada.
+
+### Correção não mudou nenhuma conta
+
+`valida-pipedrive-summary-sargable.php` — que guarda a **forma antiga embutida** e exige
+resultado idêntico campo a campo em 7 janelas — passou com **20/20** depois do DDL. Índice não
+deve mudar resultado, e a prova é o que garante isso em vez da confiança. Também verdes:
+`cf-colunas` (42), `fila-morta` (47), `marca-dagua` (26), `ciclo-evento` (23); `check-all` no
+mesmo 5/6 de sempre; app em 200.
