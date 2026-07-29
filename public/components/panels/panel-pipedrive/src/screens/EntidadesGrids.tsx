@@ -38,7 +38,7 @@ export function Pessoas({ status }: { status?: PipeStatus }) {
   const [aberto, setAberto] = useState<number | null>(null);
   return (
     <>
-      <EntityGrid<PipePersonRow> titulo="Pessoas" Icon={UsersRound} entidadePlural="pessoas" endpoint="/persons"
+      <EntityGrid<PipePersonRow> titulo="Pessoas" Icon={UsersRound} entidadePlural="pessoas" endpoint="/persons" cfEntity="person"
         colunas={COLS_PESSOAS} sortInicial="update_time" buscaPlaceholder="Buscar por nome, e-mail ou telefone…"
         statsEntity="persons" status={status} onRowClick={(r) => setAberto(r.id)} />
       {aberto != null && <PersonDrawer personId={aberto} onClose={() => setAberto(null)} />}
@@ -60,7 +60,7 @@ export function Organizacoes({ status }: { status?: PipeStatus }) {
   const [aberto, setAberto] = useState<number | null>(null);
   return (
     <>
-      <EntityGrid<PipeOrgRow> titulo="Organizações" Icon={Building2} entidadePlural="organizações" endpoint="/organizations"
+      <EntityGrid<PipeOrgRow> titulo="Organizações" Icon={Building2} entidadePlural="organizações" endpoint="/organizations" cfEntity="organization"
         colunas={COLS_ORGS} sortInicial="update_time" buscaPlaceholder="Buscar por nome ou CNPJ…"
         statsEntity="organizations" status={status} onRowClick={(r) => setAberto(r.id)} />
       {aberto != null && <OrgDrawer orgId={aberto} onClose={() => setAberto(null)} />}
@@ -176,7 +176,7 @@ export function Produtos({ status }: { status?: PipeStatus }) {
   const [aberto, setAberto] = useState<number | null>(null);
   return (
     <>
-      <EntityGrid<PipeProductRow> titulo="Produtos" Icon={Package} entidadePlural="produtos" endpoint="/products"
+      <EntityGrid<PipeProductRow> titulo="Produtos" Icon={Package} entidadePlural="produtos" endpoint="/products" cfEntity="product"
         colunas={COLS_PROD} sortInicial="name" buscaPlaceholder="Buscar por nome ou código…" status={status} statsEntity="products"
         onRowClick={(r) => setAberto(r.id)}
         filtros={[{ key: 'category', label: 'Todas as categorias', facetKey: 'categories' }]} />

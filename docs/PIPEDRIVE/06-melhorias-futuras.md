@@ -71,7 +71,7 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 | 8 | **Filtros avançados**: multi-seleção, faixa de datas, faixa de valor | ⭐⭐⭐ | M | ✅ |
 | 9 | **Saved views** (salvar combinações de filtros/colunas com nome) | ⭐⭐⭐ | M | ✅ |
 | 10 | **Exportação Excel (.xlsx)** além do CSV | ⭐⭐ | M | 🔜 |
-| 11 | **Colunas de campos personalizados** selecionáveis nos grids (hoje só nos drawers) | ⭐⭐ | M | 🔜 |
+| 11 | **Colunas de campos personalizados** selecionáveis nos grids (hoje só nos drawers) | ⭐⭐ | M | ✅ |
 | 12 | **Congelar a 1ª coluna** ao rolar horizontalmente | ⭐⭐ | P | ✅ |
 | 13 | **Ordenação multi-coluna** | ⭐ | M | 🔜 |
 | 14 | **Densidade de linha** (compacto/confortável) | ⭐ | P | ✅ |
@@ -85,6 +85,42 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 - **#16** (F2): seleção por linha + "marcar página" + **Exportar seleção** (CSV do marcado, sem nova consulta).
 - **#17** ⚖️ **decidido NÃO fazer nos grids, com medição** (F7): custo por linha **cai** com o volume (0,220 ms/linha a 25 linhas → **0,129 ms/linha** a 200) — sub-linear, sem penhasco. Virtualizar um `<table>` com colunas fixas, master-detail, totalizadores e `tfoot` poria quatro recursos em risco por ganho não comprovado. ⚠️ A **primeira** medição (por frame-timing) deu falso positivo — a série se contradizia e o piso do ambiente sem grid nenhum já era 29,3 ms. **O que reabre a decisão**: paginação passar de 200, grid renderizar sem paginar, ou o custo por linha passar a **crescer** com o volume. O **Kanban É virtualizado** (F5) porque lá uma coluna traz até 200 cartões ricos de uma vez, sem paginação intermediária.
 - **#13** conferido em 2026-07-27: **não existe** multi-sort no `EntityGrid` (ordenação é por uma coluna).
+- **#11** (2026-07-29): `cf=` nos grids de **negócio, pessoa, organização e produto**; o seletor de
+  colunas ganhou a seção "Campos personalizados". Reusa `formatCfValue` dos drawers — o rótulo de
+  um `enum` muda nos dois lugares de uma vez.
+  - ⚠️⚠️ **`pipe_custom_fields` NÃO é catálogo só de personalizados**: espelha `dealFields` da API e
+    traz os **nativos** junto (`id`, `add_time`, `currency`, `label`…). O personalizado se
+    distingue pela **chave-hash de 40 chars**. Contagem real: deal **26** (de 74 no catálogo bruto),
+    person 14 (57), organization 15 (53), product 10 (24), **activity 0** (39). Sem esse filtro o
+    seletor ofereceria "Etiqueta" e "Moeda" como se fossem personalizados, duplicando colunas que o
+    grid já tem. *(Corrige o "247 campos" citado antes: 247 é o catálogo inteiro; personalizados são
+    **65**.)*
+  - **Atividades e Leads ficam de fora por AUSÊNCIA DE DADO**, não por esquecimento:
+    `pipe_activities.custom_fields` e `pipe_leads` estão **0%** preenchidas. A UI diz isso.
+  - **A cobertura fica à vista no seletor** (% de registros preenchidos, do maior para o menor).
+    É o que evita adicionar uma coluna vazia: em negócios, 3 campos passam de 80% e **11 ficam
+    abaixo de 1%**. ⚠️ A contagem usa `JSON_TYPE(...) <> 'NULL'`; `JSON_LENGTH(x) > 0` **mentiria**
+    (num JSON `null` devolve 1) — medido no campo mais preenchido: diria 19.933 (100%) onde o real
+    é **18.048** (90,5%). Mesma armadilha do #31.
+  - **Quem não pede, não paga**: `custom_fields` só entra no SELECT quando há coluna escolhida
+    (medido: +10 ms numa página de 25, +20 ms em 200). A cobertura é uma query agregada (~254 ms)
+    servida atrás de `?cobertura=1`, ao abrir o seletor — nunca por página.
+  - `cf=` do cliente apenas **ESCOLHE** chaves do catálogo (teto de 12); o que não casa é
+    descartado e a resposta declara `cf_aplicados`, para a UI não desenhar coluna que o backend
+    ignorou. **Não são ordenáveis** de propósito — seria `ORDER BY` sobre `JSON_EXTRACT`, sem
+    índice, em 20 mil linhas; a tela explica isso em vez de oferecer o que não cumpre.
+  - ⚠️ **Achado de UX durante a prova**: com o campo listado nos dois lugares do popover, apareciam
+    **dois checkboxes com o mesmo rótulo e efeitos diferentes** (um ocultava a coluna, o outro
+    removia o campo). Corrigido: a seção de baixo lista só os **ainda não adicionados**, e a coluna
+    ganha um **×** na lista de cima.
+  - Provas: `valida-pipedrive-cf-colunas.php` (42 checagens no banco real, só leitura) e
+    `valida-pipedrive-cf-colunas.mjs` (44 × 2 temas).
+- 🔧 **Duas provas estavam MORTAS desde a Fase 7** e foram reanimadas junto: `valida-pipedrive-colunas.mjs`
+  procurava um `.pp-btn` com o texto "Colunas" e `valida-pipedrive-cf.mjs` um `.pp-filtros input` —
+  a toolbar única trocou os dois por ícone com `title` e por `.pp-toolbar .pp-input`. Ambas morriam
+  no `waitForSelector` **sem cobrir nada dali em diante**. ⚠️ `valida-pipedrive-cf.mjs` ainda tem um
+  ponto obsoleto (`drawerTemCF: false` — o fluxo de abrir o drawer mudou); a parte de API passa e
+  confirma os 5 campos resolvidos.
 
 ## 3. Detalhe / Drawers
 
@@ -305,7 +341,7 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 
 Depois disso, os estratégicos de maior porte: **Cruzamento ERP** (#34–#36) e **Mailbox** (#37–#38), quando houver decisão de escopo.
 
-> Total: **66 itens** catalogados — **29 ✅ · 5 ◑ · 1 ⚖️ · 20 🔜 · 11 💤** (contados no próprio arquivo, não estimados; 2026-07-28: #41 fechado, #65 e #66 abertos).
+> Total: **66 itens** catalogados — **30 ✅ · 5 ◑ · 1 ⚖️ · 19 🔜 · 11 💤** (contados no próprio arquivo, não estimados; 2026-07-29: #11 fechado).
 > Priorize por Valor↑ / Esforço↓, mas leia antes o bloco "Bloqueios de DADO" da seção 0: três dos itens abertos não são questão de esforço.
 
 ---

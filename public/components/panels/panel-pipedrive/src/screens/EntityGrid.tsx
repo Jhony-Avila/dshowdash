@@ -20,7 +20,7 @@ import { PageHeader } from './PageHeader';
 import { EstadoErro, EstadoVazio, SkeletonLinhas } from './Estados';
 import { useTooltipTruncado } from './TooltipTruncado';
 import { KpiStrip } from './KpiStrip';
-import type { PipePage, PipeStatus } from '../shell/types';
+import type { PipePage, PipeStatus, PipeCfCatalogo, ComCamposPersonalizados } from '../shell/types';
 
 export interface GridColuna<T> {
   key: string;
@@ -60,10 +60,24 @@ interface Props<T extends { id: number | string }> {
   acoesExtras?: ReactNode;                         // controles da tela (ex.: alternar grade/agenda)
   renderDetalhe?: (row: T) => ReactNode;           // master-detail (default: ficha com todas as colunas)
   semDetalhe?: boolean;                            // desliga a linha expansivel
+  /**
+   * Liga as COLUNAS DE CAMPOS PERSONALIZADOS (#11) para esta entidade do catálogo.
+   * Só 'deal' | 'person' | 'organization' | 'product' têm campos personalizados —
+   * atividade não tem nenhum e sua coluna `custom_fields` está 0% preenchida.
+   */
+  cfEntity?: 'deal' | 'person' | 'organization' | 'product';
 }
 
 type Pin = 'esq' | 'dir';
-interface ColCfg { ordem: string[]; ocultas: string[]; larguras?: Record<string, number>; fixadas?: Record<string, Pin>; }
+interface ColCfg {
+  ordem: string[]; ocultas: string[]; larguras?: Record<string, number>; fixadas?: Record<string, Pin>;
+  /** Chaves de campos personalizados escolhidas (#11) — persistem junto das colunas. */
+  cf?: string[];
+}
+/** Prefixo das colunas dinâmicas, para não colidir com uma coluna nativa de mesmo nome. */
+const CF_PREFIXO = 'cf:';
+/** Teto de colunas personalizadas simultâneas. O backend impõe o mesmo limite. */
+const CF_MAX = 12;
 interface SavedView { nome: string; sort: string; dir: 'asc' | 'desc'; q: string; fVals: Record<string, string>; cols: ColCfg; }
 interface Chip { id: string; texto: string; limpar: () => void; }
 type Densidade = 'compacta' | 'padrao' | 'confortavel';
@@ -146,10 +160,37 @@ export function EntityGrid<T extends { id: number | string }>(p: Props<T>) {
     return () => document.removeEventListener('keydown', onKey);
   }, [telaCheia, menuCols, menuViews, menuDens]);
 
-  const colByKey = new Map(p.colunas.map((c) => [c.key, c]));
+  // ── Colunas de campos personalizados (#11) ────────────────────────
+  // O catálogo com cobertura agrega a tabela inteira, então só é buscado quando serve:
+  // ao abrir o seletor, ou quando já há coluna escolhida (é dele que sai o cabeçalho).
+  const cfSel = cfg.cf ?? [];
+  const { data: cfCat } = useQuery<PipeCfCatalogo>({
+    queryKey: ['pipe', 'custom-fields', p.cfEntity, 'cobertura'],
+    queryFn: ({ signal }) =>
+      apiGet<PipeCfCatalogo>('/custom-fields', { entity: p.cfEntity, cobertura: 1 }, signal),
+    enabled: !!p.cfEntity && (menuCols || cfSel.length > 0),
+    staleTime: 10 * 60_000,   // catálogo muda com o cadastro no Pipedrive, não a cada minuto
+  });
+  const cfCampos = cfCat?.cobertura?.campos ?? [];
+  const cfPorKey = new Map(cfCampos.map((c) => [c.key, c]));
+  const cfDisponiveis = cfCampos.filter((c) => !cfSel.includes(c.key));
+
+  const colunasCf: GridColuna<T>[] = cfSel.map((k) => ({
+    key: CF_PREFIXO + k,
+    label: cfPorKey.get(k)?.name ?? 'Campo personalizado',
+    // NÃO ordenável de propósito: ordenar por isso seria ORDER BY sobre JSON_EXTRACT,
+    // sem índice, em 20 mil linhas. O cabeçalho não oferece o que o backend não faz.
+    sortavel: false,
+    width: 170,
+    render: (row: T) => (row as T & ComCamposPersonalizados).cf?.[k] ?? '—',
+    csv: (row: T) => (row as T & ComCamposPersonalizados).cf?.[k] ?? '',
+  }));
+  const colunasTodas = [...p.colunas, ...colunasCf];
+
+  const colByKey = new Map(colunasTodas.map((c) => [c.key, c]));
   const ordem = [
     ...cfg.ordem.filter((k) => colByKey.has(k)),
-    ...p.colunas.map((c) => c.key).filter((k) => !cfg.ordem.includes(k)),
+    ...colunasTodas.map((c) => c.key).filter((k) => !cfg.ordem.includes(k)),
   ];
   const pinDe = (k: string): Pin | undefined => cfg.fixadas?.[k];
   const visiveis = ordem.map((k) => colByKey.get(k)!).filter((c) => !cfg.ocultas.includes(c.key));
@@ -185,6 +226,31 @@ export function EntityGrid<T extends { id: number | string }>(p: Props<T>) {
     const c = colByKey.get(k); if (c?.fixa) return;
     setCfg((s) => ({ ...s, ocultas: s.ocultas.includes(k) ? s.ocultas.filter((x) => x !== k) : [...s.ocultas, k] }));
   }
+  /**
+   * Liga/desliga uma coluna de campo personalizado (#11). Ao desligar, tira também os
+   * vestígios em `ordem`/`ocultas`/`larguras`/`fixadas`: sem isso a configuração salva
+   * acumularia chaves de colunas que não existem mais.
+   */
+  function toggleCf(key: string) {
+    setCfg((s) => {
+      const atuais = s.cf ?? [];
+      const marcado = atuais.includes(key);
+      if (!marcado && atuais.length >= CF_MAX) return s;
+      const colKey = CF_PREFIXO + key;
+      if (marcado) {
+        return {
+          ...s,
+          cf: atuais.filter((k) => k !== key),
+          ordem: s.ordem.filter((k) => k !== colKey),
+          ocultas: s.ocultas.filter((k) => k !== colKey),
+          larguras: Object.fromEntries(Object.entries(s.larguras ?? {}).filter(([k]) => k !== colKey)),
+          fixadas: Object.fromEntries(Object.entries(s.fixadas ?? {}).filter(([k]) => k !== colKey)),
+        };
+      }
+      return { ...s, cf: [...atuais, key] };
+    });
+    setPage(1);
+  }
   function fixarCol(k: string, pin: Pin | null) {
     setCfg((s) => {
       const f = { ...(s.fixadas ?? {}) };
@@ -212,6 +278,9 @@ export function EntityGrid<T extends { id: number | string }>(p: Props<T>) {
 
   const params: Record<string, string | number> = { page, per_page: perPage, sort, dir, q };
   for (const [k, v] of Object.entries(fVals)) { if (v) params[k] = v; }
+  // Só pede o JSON quando há coluna personalizada escolhida — medido: +10 ms numa
+  // página de 25, +20 ms em 200. Quem não usa não paga.
+  if (p.cfEntity && cfSel.length) { params.cf = cfSel.join(','); }
 
   const { data, isLoading, isFetching, error, refetch } = useQuery<PipePage<T>>({
     queryKey: ['pipe', p.endpoint, params],
@@ -452,9 +521,62 @@ export function EntityGrid<T extends { id: number | string }>(p: Props<T>) {
                     </button>
                     <button disabled={i === 0} onClick={() => moverCol(k, -1)} title="Subir">▲</button>
                     <button disabled={i === ordem.length - 1} onClick={() => moverCol(k, 1)} title="Descer">▼</button>
+                    {/* Coluna de campo personalizado (#11) pode sair de vez — as nativas
+                        só se ocultam, porque voltar a ligá-las é o próprio checkbox. */}
+                    {k.startsWith(CF_PREFIXO) && (
+                      <button onClick={() => toggleCf(k.slice(CF_PREFIXO.length))}
+                        title="Remover coluna personalizada" aria-label="Remover coluna personalizada">
+                        <X size={11} />
+                      </button>
+                    )}
                   </span>
                 </div>
               ); })}
+              {/* Campos personalizados (#11). A COBERTURA fica à vista de propósito: sem
+                  ela o usuário adiciona a coluna e só descobre que está vazia depois de
+                  olhar a tela — nesta base, 11 dos 26 campos de negócio ficam abaixo de 1%. */}
+              {p.cfEntity && (
+                <>
+                  <div className="pp-colmenu-h" style={{ marginTop: 10 }}>
+                    Campos personalizados
+                    {cfCampos.length > 0 && <span style={{ float: 'right', fontWeight: 400, color: 'var(--pp-text-dim)' }}>preenchidos</span>}
+                  </div>
+                  {!cfCat ? (
+                    <div className="pp-colmenu-item" style={{ color: 'var(--pp-text-dim)', fontSize: 12.5 }}>Carregando…</div>
+                  ) : cfCampos.length === 0 ? (
+                    <div className="pp-colmenu-item" style={{ color: 'var(--pp-text-dim)', fontSize: 12.5 }}>
+                      Esta entidade não tem campos personalizados.
+                    </div>
+                  ) : cfDisponiveis.length === 0 ? (
+                    <div className="pp-colmenu-item" style={{ color: 'var(--pp-text-dim)', fontSize: 12.5 }}>
+                      Todos já foram adicionados acima.
+                    </div>
+                  ) : cfDisponiveis.map((c) => {
+                    // Só os NÃO adicionados: uma vez escolhido, o campo vira coluna e é
+                    // governado pela lista de cima (mover/fixar/remover). Listar nos dois
+                    // lugares dava dois checkboxes com o mesmo rótulo e efeitos diferentes
+                    // — um ocultava a coluna, o outro removia o campo.
+                    const noTeto = cfSel.length >= CF_MAX;
+                    return (
+                      <div className="pp-colmenu-item" key={c.key}>
+                        <label title={noTeto ? `Máximo de ${CF_MAX} colunas personalizadas` : `${c.type} · ${c.preenchidos.toLocaleString('pt-BR')} registros preenchidos`}>
+                          <input type="checkbox" checked={false} disabled={noTeto} onChange={() => toggleCf(c.key)} />
+                          {c.name}
+                        </label>
+                        <span className="pp-colmenu-mv" style={{ fontSize: 11, color: c.cobertura < 1 ? 'var(--pp-warn)' : 'var(--pp-text-dim)' }}>
+                          {c.cobertura < 1 ? '<1%' : `${Math.round(c.cobertura)}%`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {cfSel.length > 0 && (
+                    <div className="pp-colmenu-item" style={{ color: 'var(--pp-text-dim)', fontSize: 11.5, display: 'block', lineHeight: 1.45 }}>
+                      Colunas personalizadas não são ordenáveis — o valor vive dentro de um JSON,
+                      sem índice para ordenar 20 mil linhas.
+                    </div>
+                  )}
+                </>
+              )}
               <button className="pp-btn" style={{ width: '100%', marginTop: 8 }} onClick={restaurarCols}>Restaurar padrão</button>
             </div>
           </>

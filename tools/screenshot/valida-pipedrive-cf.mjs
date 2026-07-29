@@ -33,7 +33,9 @@ log('API deal 40565 custom_fields:', JSON.stringify(apiCF, null, 1));
 // Negocios -> buscar "Painel" -> abrir 1o resultado -> conferir secao
 await page.evaluate(() => { const b = [...document.querySelectorAll('.pp-navitem')].find(x => x.textContent.includes('Negócios')); b?.click(); });
 await page.waitForSelector('.pp-table tbody tr', { timeout: 15000 });
-await page.fill('.pp-filtros input', 'Painel');
+// A Fase 7 juntou busca e filtros numa toolbar unica: `.pp-filtros` deixou de existir
+// e este teste morria aqui no timeout, sem cobrir nada depois deste ponto.
+await page.fill('.pp-toolbar input.pp-input', 'Painel');
 await page.keyboard.press('Enter');
 await page.waitForTimeout(1500);
 let achou = null;

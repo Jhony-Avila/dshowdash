@@ -65,6 +65,119 @@ final class PipeSyncRepository
         return $out;
     }
 
+    // ── Campos personalizados como COLUNAS de grid (#11) ────────────
+    //
+    // ⚠️ `pipe_custom_fields` NAO e um catalogo so de campos personalizados: e o espelho
+    // de `dealFields`/`personFields` da API, que traz os NATIVOS junto (`id`, `add_time`,
+    // `currency`, `label`...). O personalizado se distingue pela chave: hash de 40 chars.
+    // Sem esse filtro o seletor de colunas ofereceria "Etiqueta" e "Moeda" como se fossem
+    // campos customizados, duplicando colunas que o grid ja tem. Contado hoje: deal 26
+    // personalizados (48 nativos), person 14 (43), organization 15 (38), product 10 (14),
+    // activity 0 — e `pipe_activities.custom_fields` e 0% preenchida, entao atividade fica
+    // de fora por AUSENCIA DE DADO, nao por esquecimento.
+    private const CF_ENTIDADES = ['deal', 'person', 'organization', 'product'];
+
+    /** Tabela que guarda o JSON de cada entidade — usado pela contagem de cobertura. */
+    private const CF_TABELA = [
+        'deal' => 'pipe_deals', 'person' => 'pipe_persons',
+        'organization' => 'pipe_organizations', 'product' => 'pipe_products',
+    ];
+
+    public static function cfEntidadeValida(string $entity): bool
+    {
+        return in_array($entity, self::CF_ENTIDADES, true);
+    }
+
+    /**
+     * Traduz o `cf=` do cliente em chaves REAIS da entidade. O valor do usuario apenas
+     * ESCOLHE entre as chaves do catalogo; nada dele chega ao SQL como texto. Chave
+     * desconhecida e descartada — e a resposta declara quais valeram (`cf_aplicados`),
+     * para a UI nunca mostrar uma coluna que o backend ignorou.
+     * @return string[] chaves na ordem pedida, sem repetir
+     */
+    public function cfKeysValidas(string $entity, $pedido): array
+    {
+        if (!self::cfEntidadeValida($entity) || !is_string($pedido) || trim($pedido) === '') { return []; }
+        $defs = $this->customFieldDefs($entity);
+        $out  = [];
+        foreach (explode(',', $pedido) as $k) {
+            $k = trim($k);
+            if ($k !== '' && isset($defs[$k]) && !in_array($k, $out, true)) { $out[] = $k; }
+        }
+        return array_slice($out, 0, 12);   // teto: 12 colunas extras ja e mais do que cabe na tela
+    }
+
+    /**
+     * Valores formatados APENAS das chaves pedidas. Reusa o mesmo `formatCfValue` dos
+     * drawers — se o rotulo de um `enum` mudar, muda nos dois lugares de uma vez.
+     * @return array<string,string> chave => valor pronto para exibir
+     */
+    public function cfSubset(string $entity, $customFields, array $keys): array
+    {
+        if (!$keys) { return []; }
+        $cf = is_array($customFields) ? $customFields : json_decode((string)$customFields, true);
+        if (!is_array($cf)) { return []; }
+        $defs = $this->customFieldDefs($entity);
+        $out  = [];
+        foreach ($keys as $k) {
+            $val = $cf[$k] ?? null;
+            if (!isset($defs[$k]) || $val === null || $val === '' || $val === []) { continue; }
+            $txt = $this->formatCfValue($defs[$k], $val);
+            if ($txt !== null && $txt !== '') { $out[$k] = $txt; }
+        }
+        return $out;
+    }
+
+    /**
+     * Catalogo dos personalizados COM cobertura real — quantos registros têm o campo
+     * preenchido. Sem esse número o usuário adiciona uma coluna e só descobre que ela é
+     * vazia depois de olhar a tela: dos campos de 'deal', 3 passam de 80% e 11 ficam
+     * abaixo de 1%.
+     *
+     * ⚠️ `JSON_LENGTH(x) > 0` NAO serve para detectar preenchimento (num JSON `null`
+     * devolve 1, o que daria 100% de cobertura falsa — a armadilha que o #31 pagou).
+     * O teste correto é `JSON_TYPE(...) <> 'NULL'` sobre o valor extraído.
+     *
+     * Uma única query agregada com um SUM por campo (~254 ms nos 20k negócios), chamada
+     * ao abrir o seletor de colunas — nunca por página do grid.
+     */
+    public function customFieldsCobertura(string $entity): array
+    {
+        if (!self::cfEntidadeValida($entity)) { return ['base' => 0, 'campos' => []]; }
+        $defs = $this->customFieldDefs($entity);
+        if (!$defs) { return ['base' => 0, 'campos' => []]; }
+        $tab = self::CF_TABELA[$entity];
+
+        $sel = [];
+        $keys = array_keys($defs);
+        foreach ($keys as $i => $k) {
+            // $k vem do catalogo (char(40) validado como hash na propria consulta de defs),
+            // nunca do cliente — por isso pode ser interpolado no caminho do JSON.
+            $sel[] = "SUM(JSON_EXTRACT(custom_fields, '$.\"{$k}\"') IS NOT NULL"
+                   . " AND JSON_TYPE(JSON_EXTRACT(custom_fields, '$.\"{$k}\"')) <> 'NULL') c{$i}";
+        }
+        $sqlDel = in_array($entity, ['deal', 'person', 'organization'], true) ? ' WHERE is_deleted = 0' : '';
+        $row = $this->pdo->query(
+            "SELECT COUNT(*) base, " . implode(', ', $sel) . " FROM `{$tab}`{$sqlDel}"
+        )->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $base = (int)($row['base'] ?? 0);
+        $campos = [];
+        foreach ($keys as $i => $k) {
+            $n = (int)($row["c{$i}"] ?? 0);
+            $campos[] = [
+                'key'         => $k,
+                'name'        => $defs[$k]['name'],
+                'type'        => $defs[$k]['type'],
+                'preenchidos' => $n,
+                'cobertura'   => $base > 0 ? round($n * 100 / $base, 1) : 0.0,
+            ];
+        }
+        // Mais preenchidos primeiro: a ordem do catalogo (order_nr) nao diz nada sobre utilidade.
+        usort($campos, static fn($a, $b) => $b['preenchidos'] <=> $a['preenchidos']);
+        return ['base' => $base, 'campos' => $campos];
+    }
+
     private function formatCfValue(array $def, $val): ?string
     {
         if (in_array($def['type'], ['enum', 'set'], true)) {
@@ -888,10 +1001,15 @@ final class PipeSyncRepository
 
         $total = (int)$this->prepFetch("SELECT COUNT(*) FROM pipe_deals d WHERE $whereSql", $params)->fetchColumn();
 
+        // Colunas de campos personalizados (#11): o JSON so entra no SELECT quem pediu.
+        // Medido: +10 ms numa pagina de 25 e +20 ms em 200 — quem nao usa nao paga.
+        $cfKeys = $this->cfKeysValidas('deal', $f['cf'] ?? null);
+        $cfSel  = $cfKeys ? ', d.custom_fields' : '';
+
         $sql = "SELECT d.pipedrive_id, d.title, d.value, d.currency, d.status, d.probability,
                        d.expected_close_date, d.update_time, d.add_time, d.lost_reason,
                        s.name AS stage, u.name AS owner, pl.name AS pipeline,
-                       p.name AS person, o.name AS org
+                       p.name AS person, o.name AS org{$cfSel}
                 FROM pipe_deals d
                 LEFT JOIN pipe_stages s   ON s.pipedrive_id  = d.stage_id
                 LEFT JOIN pipe_users  u   ON u.pipedrive_id  = d.owner_id
@@ -908,12 +1026,21 @@ final class PipeSyncRepository
         $st->execute();
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
 
+        $shaped = array_map([$this, 'shapeDealRow'], $rows);
+        foreach ($shaped as $i => &$linha) {
+            $linha['cf'] = $this->cfSubset('deal', $rows[$i]['custom_fields'] ?? null, $cfKeys);
+        }
+        unset($linha);
+
         return [
-            'rows'     => array_map([$this, 'shapeDealRow'], $rows),
+            'rows'     => $shaped,
             'total'    => $total,
             'page'     => $page,
             'per_page' => $perPage,
             'pages'    => (int)ceil($total / $perPage),
+            // Quais chaves o backend REALMENTE aplicou: a UI não deve desenhar coluna
+            // que foi descartada na validação.
+            'cf_aplicados' => $cfKeys,
             'facets'   => [
                 'stages' => $this->pdo->query("SELECT pipedrive_id AS id, name FROM pipe_stages WHERE is_active=1 ORDER BY order_nr")->fetchAll(PDO::FETCH_ASSOC),
                 'owners' => $this->pdo->query("SELECT DISTINCT u.pipedrive_id AS id, u.name FROM pipe_users u JOIN pipe_deals d ON d.owner_id=u.pipedrive_id WHERE d.is_deleted=0 ORDER BY u.name")->fetchAll(PDO::FETCH_ASSOC),
@@ -985,10 +1112,12 @@ final class PipeSyncRepository
         $whereSql = implode(' AND ', $where);
 
         $total = (int)$this->prepFetch("SELECT COUNT(*) FROM pipe_persons p WHERE $whereSql", $params)->fetchColumn();
+        $cfKeys = $this->cfKeysValidas('person', $f['cf'] ?? null);   // #11
+        $cfSel  = $cfKeys ? ', p.custom_fields' : '';
         $sql = "SELECT p.pipedrive_id, p.name, p.primary_email, p.primary_phone, p.job_title,
                        o.name AS org, u.name AS owner, p.update_time, p.add_time,
                        (SELECT COUNT(*) FROM pipe_deals d WHERE d.person_id=p.pipedrive_id AND d.is_deleted=0 AND d.status='open') AS open_deals,
-                       (SELECT COUNT(*) FROM pipe_deals d WHERE d.person_id=p.pipedrive_id AND d.is_deleted=0 AND d.status='won') AS won_deals
+                       (SELECT COUNT(*) FROM pipe_deals d WHERE d.person_id=p.pipedrive_id AND d.is_deleted=0 AND d.status='won') AS won_deals{$cfSel}
                 FROM pipe_persons p
                 LEFT JOIN pipe_organizations o ON o.pipedrive_id = p.org_id
                 LEFT JOIN pipe_users u ON u.pipedrive_id = p.owner_id
@@ -997,13 +1126,15 @@ final class PipeSyncRepository
         foreach ($params as $k => $v) { $st->bindValue($k, $v); }
         $st->bindValue(':lim', $perPage, PDO::PARAM_INT); $st->bindValue(':off', $offset, PDO::PARAM_INT);
         $st->execute();
-        $rows = array_map(static fn($r) => [
+        $brutos = $st->fetchAll(PDO::FETCH_ASSOC);
+        $rows = array_map(fn($r) => [
             'id' => (int)$r['pipedrive_id'], 'name' => $r['name'], 'email' => $r['primary_email'],
             'phone' => $r['primary_phone'], 'job_title' => $r['job_title'], 'org' => $r['org'],
             'owner' => $r['owner'], 'open_deals' => (int)$r['open_deals'], 'won_deals' => (int)$r['won_deals'],
             'add_time' => $r['add_time'], 'update_time' => $r['update_time'],
-        ], $st->fetchAll(PDO::FETCH_ASSOC));
-        return $this->pageEnvelope($rows, $total, $page, $perPage);
+            'cf' => $this->cfSubset('person', $r['custom_fields'] ?? null, $cfKeys),
+        ], $brutos);
+        return $this->pageEnvelope($rows, $total, $page, $perPage, ['cf_aplicados' => $cfKeys]);
     }
 
     /** Lista paginada de ORGANIZACOES. $f: page,per_page,sort,dir,q,owner_id */
@@ -1023,10 +1154,12 @@ final class PipeSyncRepository
         $whereSql = implode(' AND ', $where);
 
         $total = (int)$this->prepFetch("SELECT COUNT(*) FROM pipe_organizations o WHERE $whereSql", $params)->fetchColumn();
+        $cfKeys = $this->cfKeysValidas('organization', $f['cf'] ?? null);   // #11
+        $cfSel  = $cfKeys ? ', o.custom_fields' : '';
         $sql = "SELECT o.pipedrive_id, o.name, o.cnpj, o.city, o.state, u.name AS owner, o.update_time, o.add_time,
                        (SELECT COUNT(*) FROM pipe_persons pp WHERE pp.org_id=o.pipedrive_id AND pp.is_deleted=0) AS people,
                        (SELECT COUNT(*) FROM pipe_deals d WHERE d.org_id=o.pipedrive_id AND d.is_deleted=0 AND d.status='open') AS open_deals,
-                       (SELECT COALESCE(SUM(value),0) FROM pipe_deals d WHERE d.org_id=o.pipedrive_id AND d.is_deleted=0 AND d.status='won') AS valor_ganho
+                       (SELECT COALESCE(SUM(value),0) FROM pipe_deals d WHERE d.org_id=o.pipedrive_id AND d.is_deleted=0 AND d.status='won') AS valor_ganho{$cfSel}
                 FROM pipe_organizations o
                 LEFT JOIN pipe_users u ON u.pipedrive_id = o.owner_id
                 WHERE $whereSql ORDER BY $sort $dir, o.pipedrive_id DESC LIMIT :lim OFFSET :off";
@@ -1034,13 +1167,14 @@ final class PipeSyncRepository
         foreach ($params as $k => $v) { $st->bindValue($k, $v); }
         $st->bindValue(':lim', $perPage, PDO::PARAM_INT); $st->bindValue(':off', $offset, PDO::PARAM_INT);
         $st->execute();
-        $rows = array_map(static fn($r) => [
+        $rows = array_map(fn($r) => [
             'id' => (int)$r['pipedrive_id'], 'name' => $r['name'], 'cnpj' => $r['cnpj'],
             'city' => $r['city'], 'state' => $r['state'], 'owner' => $r['owner'],
             'people' => (int)$r['people'], 'open_deals' => (int)$r['open_deals'], 'valor_ganho' => (float)$r['valor_ganho'],
             'add_time' => $r['add_time'], 'update_time' => $r['update_time'],
+            'cf' => $this->cfSubset('organization', $r['custom_fields'] ?? null, $cfKeys),
         ], $st->fetchAll(PDO::FETCH_ASSOC));
-        return $this->pageEnvelope($rows, $total, $page, $perPage);
+        return $this->pageEnvelope($rows, $total, $page, $perPage, ['cf_aplicados' => $cfKeys]);
     }
 
     /** Lista paginada de ATIVIDADES. $f: page,per_page,sort,dir,q,done,type,owner_id,due_from,due_to */
@@ -1744,23 +1878,26 @@ final class PipeSyncRepository
         $whereSql = implode(' AND ', $where);
 
         $total = (int)$this->prepFetch("SELECT COUNT(*) FROM pipe_products pr WHERE $whereSql", $params)->fetchColumn();
+        $cfKeys = $this->cfKeysValidas('product', $f['cf'] ?? null);   // #11
+        $cfSel  = $cfKeys ? ', pr.custom_fields' : '';
         $sql = "SELECT pr.pipedrive_id, pr.name, pr.code, pr.category, pr.unit, pr.tax, u.name AS owner, pr.update_time,
                        (SELECT pp.price FROM pipe_product_prices pp WHERE pp.product_pd_id=pr.pipedrive_id ORDER BY pp.id LIMIT 1) AS price,
-                       (SELECT pp.currency FROM pipe_product_prices pp WHERE pp.product_pd_id=pr.pipedrive_id ORDER BY pp.id LIMIT 1) AS currency
+                       (SELECT pp.currency FROM pipe_product_prices pp WHERE pp.product_pd_id=pr.pipedrive_id ORDER BY pp.id LIMIT 1) AS currency{$cfSel}
                 FROM pipe_products pr LEFT JOIN pipe_users u ON u.pipedrive_id = pr.owner_id
                 WHERE $whereSql ORDER BY $sort $dir, pr.pipedrive_id DESC LIMIT :lim OFFSET :off";
         $st = $this->pdo->prepare($sql);
         foreach ($params as $k => $v) { $st->bindValue($k, $v); }
         $st->bindValue(':lim', $perPage, PDO::PARAM_INT); $st->bindValue(':off', $offset, PDO::PARAM_INT);
         $st->execute();
-        $rows = array_map(static fn($r) => [
+        $rows = array_map(fn($r) => [
             'id' => (int)$r['pipedrive_id'], 'name' => $r['name'], 'code' => $r['code'],
             'category' => $r['category'], 'unit' => $r['unit'],
             'price' => $r['price'] !== null ? (float)$r['price'] : null, 'currency' => $r['currency'],
             'tax' => $r['tax'] !== null ? (float)$r['tax'] : null, 'owner' => $r['owner'], 'update_time' => $r['update_time'],
+            'cf' => $this->cfSubset('product', $r['custom_fields'] ?? null, $cfKeys),
         ], $st->fetchAll(PDO::FETCH_ASSOC));
         $cats = $this->pdo->query("SELECT DISTINCT category FROM pipe_products WHERE is_deleted=0 AND category IS NOT NULL AND category<>'' ORDER BY category LIMIT 60")->fetchAll(PDO::FETCH_COLUMN);
-        return $this->pageEnvelope($rows, $total, $page, $perPage, ['facets' => ['categories' => $cats]]);
+        return $this->pageEnvelope($rows, $total, $page, $perPage, ['facets' => ['categories' => $cats], 'cf_aplicados' => $cfKeys]);
     }
 
     /** Detalhe de UMA atividade + vinculos (negocio/pessoa/organizacao) — backlog #18. */

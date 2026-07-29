@@ -179,7 +179,27 @@ export interface PipeMetrics {
 export interface PipePage<T> {
   rows: T[]; total: number; page: number; per_page: number; pages: number;
   facets?: Record<string, unknown>;
+  /** Chaves de campo personalizado que o backend REALMENTE aplicou (#11). O que ele
+   *  descartou na validação não pode virar coluna na tela. */
+  cf_aplicados?: string[];
 }
+
+// Campos personalizados como colunas de grid (#11).
+// ⚠️ `cobertura` só vem com ?cobertura=1 — agrega a tabela inteira, é para abrir o
+// seletor de colunas, não para cada página.
+export interface PipeCfCampo {
+  key: string;
+  name: string;
+  type: string;
+  preenchidos: number;
+  cobertura: number;      // % de registros com o campo preenchido
+}
+export interface PipeCfCatalogo {
+  entity: string;
+  cobertura?: { base: number; campos: PipeCfCampo[]; motivo?: string };
+}
+/** Toda linha de grid pode trazer os personalizados pedidos, chave => valor já formatado. */
+export interface ComCamposPersonalizados { cf?: Record<string, string>; }
 export interface PipePersonRow {
   id: number; name: string | null; email: string | null; phone: string | null;
   job_title: string | null; org: string | null; owner: string | null;

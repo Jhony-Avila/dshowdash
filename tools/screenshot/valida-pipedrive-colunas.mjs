@@ -29,11 +29,11 @@ await page.waitForTimeout(800);
 const colsAntes = await page.evaluate(() => [...document.querySelectorAll('.pp-table thead th')].map(t => t.textContent.replace(/[▲▼]/g, '').trim()));
 log('colunas antes:', JSON.stringify(colsAntes));
 
-const temBotao = await page.evaluate(() => [...document.querySelectorAll('.pp-btn')].some(b => b.textContent.includes('Colunas')));
+const temBotao = await page.evaluate(() => [...document.querySelectorAll('.pp-iconbtn')].some(b => /colunas/i.test(b.getAttribute('title') || '')));
 log('botao Colunas presente:', temBotao);
 
 // abre menu
-await page.evaluate(() => { const b = [...document.querySelectorAll('.pp-btn')].find(x => x.textContent.includes('Colunas')); b?.click(); });
+await page.evaluate(() => { const b = [...document.querySelectorAll('.pp-iconbtn')].find(x => /colunas/i.test(x.getAttribute('title') || '')); b?.click(); });
 await page.waitForSelector('.pp-colmenu', { timeout: 5000 });
 const menu = await page.evaluate(() => {
   const items = [...document.querySelectorAll('.pp-colmenu-item')].map(it => ({ lbl: it.querySelector('label')?.textContent?.trim(), fixa: it.querySelector('input')?.disabled }));
@@ -72,7 +72,7 @@ log('row->drawer:', drawer);
 await page.keyboard.press('Escape'); await page.waitForTimeout(300);
 
 // screenshot com menu aberto
-await page.evaluate(() => { const b = [...document.querySelectorAll('.pp-btn')].find(x => x.textContent.includes('Colunas')); b?.click(); });
+await page.evaluate(() => { const b = [...document.querySelectorAll('.pp-iconbtn')].find(x => /colunas/i.test(x.getAttribute('title') || '')); b?.click(); });
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${SP}/colunas-menu.png`, clip: { x: 210, y: 80, width: 1380, height: 560 } }).catch(() => {});
 // restaura padrao (limpa p/ nao deixar config alterada)

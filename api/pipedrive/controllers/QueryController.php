@@ -24,7 +24,7 @@ final class PipeQueryController
         }
         $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'status', 'stage_id', 'owner_id',
             'value_min', 'value_max', 'close_from', 'close_to', 'created_from', 'created_to',
-            'lost_reason']);
+            'lost_reason', 'cf']);   // cf: colunas de campos personalizados (#11)
         ApiResponse::success($repo->dealsPage($f), ['ts' => date('c')]);
     }
 
@@ -39,7 +39,7 @@ final class PipeQueryController
             ApiResponse::success($det, ['ts' => date('c')]);
             return;
         }
-        $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'owner_id']);
+        $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'owner_id', 'cf']);   // #11
         ApiResponse::success($repo->personsPage($f), ['ts' => date('c')]);
     }
 
@@ -54,7 +54,7 @@ final class PipeQueryController
             ApiResponse::success($det, ['ts' => date('c')]);
             return;
         }
-        $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'owner_id']);
+        $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'owner_id', 'cf']);   // #11
         ApiResponse::success($repo->organizationsPage($f), ['ts' => date('c')]);
     }
 
@@ -100,7 +100,7 @@ final class PipeQueryController
             ApiResponse::success($det, ['ts' => date('c')]);
             return;
         }
-        $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'category']);
+        $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'category', 'cf']);   // #11
         ApiResponse::success($repo->productsPage($f), ['ts' => date('c')]);
     }
 
@@ -150,6 +150,21 @@ final class PipeQueryController
             $entity = 'deal';
         }
         $repo = new PipeSyncRepository($pdo);
-        ApiResponse::success(['entity' => $entity, 'fields' => $repo->customFields($entity)], ['ts' => date('c')]);
+        // ?cobertura=1 (#11): acrescenta quantos registros têm cada campo PERSONALIZADO
+        // preenchido. Fica atrás de flag porque agrega a tabela inteira (~254 ms nos 20 mil
+        // negócios) — serve para abrir o seletor de colunas, não para cada página do grid.
+        $extra = [];
+        if (($_GET['cobertura'] ?? '') === '1') {
+            $extra['cobertura'] = PipeSyncRepository::cfEntidadeValida($entity)
+                ? $repo->customFieldsCobertura($entity)
+                // 'activity' está no catálogo mas não tem NENHUM campo personalizado e a
+                // coluna custom_fields está 0% preenchida: dizer isso é melhor que devolver
+                // uma lista vazia que parece falha de carregamento.
+                : ['base' => 0, 'campos' => [], 'motivo' => 'ENTIDADE_SEM_CAMPOS_PERSONALIZADOS'];
+        }
+        ApiResponse::success(
+            array_merge(['entity' => $entity, 'fields' => $repo->customFields($entity)], $extra),
+            ['ts' => date('c')]
+        );
     }
 }

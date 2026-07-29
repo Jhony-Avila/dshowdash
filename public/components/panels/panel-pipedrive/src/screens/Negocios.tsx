@@ -49,7 +49,7 @@ export function Negocios({ status, filtrosIniciais }: { status?: PipeStatus; fil
   return (
     <>
       <EntityGrid<PipeDealRow>
-        titulo="Negócios" Icon={BriefcaseBusiness} entidadePlural="negócios" endpoint="/deals"
+        titulo="Negócios" Icon={BriefcaseBusiness} entidadePlural="negócios" endpoint="/deals" cfEntity="deal"
         colunas={COLS} sortInicial="update_time" buscaPlaceholder="Buscar por título…"
         status={status} onRowClick={(d) => setDealAberto(d.id)} filtrosIniciais={filtrosIniciais}
         filtros={[
