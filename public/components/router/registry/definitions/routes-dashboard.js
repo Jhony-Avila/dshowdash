@@ -47,7 +47,7 @@ const dashboardRoutes = Object.freeze({
   "/panel-17": createPanelRoute("panel-17", "Painel 17", { aliases: ["#/panel-17"], permissions: ["level:80"] }),
   "/panel-18": createPanelRoute("panel-18", "Painel 18", { aliases: ["#/panel-18"], permissions: ["level:80"] }),
   "/panel-19": createPanelRoute("panel-19", "Painel 19", { aliases: ["#/panel-19"], permissions: ["level:100"] }),
-  "/panel-dashboard": createPanelRoute("panel-dashboard", "Produtos Dashboard", { aliases: ["#/panel-dashboard"], tags: ["products"] }),
+  "/panel-dashboard": createPanelRoute("panel-dashboard", "Visão Geral", { aliases: ["#/panel-dashboard"], tags: ["geral", "executivo"], description: "Resumo consolidado dos principais indicadores, operacoes e integracoes do Dshow Dash" }),
   "/panel-health-dashboard": createPanelRoute("panel-health-dashboard", "System Health", { aliases: ["#/panel-health-dashboard"], tags: ["admin", "health"], permissions: ["level:80"] }),
   "/panel-orchestrator": createPanelRoute("panel-orchestrator", "Core Orchestrator", { aliases: ["#/panel-orchestrator"], tags: ["system", "admin"], permissions: ["level:100"] }),
   "/panel-enterprise": createPanelRoute("panel-enterprise", "Enterprise Panel", { aliases: ["#/panel-enterprise"], tags: ["system"], permissions: ["level:100"] }),
