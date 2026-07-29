@@ -242,10 +242,30 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 
 - **#48** (F3/F4): **FullCalendar** (209 kB) sai do vendor por `React.lazy` + `manualChunks` — provado que o chunk só aparece na rede ao clicar em "Agenda"; **ECharts** (617 kB) entra por import dinâmico e só baixa quando um gráfico entra em tela. Quem fica nos grids não paga por nenhum dos dois.
 - **#49** (F1, `Estados.tsx`): `SkeletonLinhas` (linhas fantasma no `<tbody>`, preservando cabeçalho e larguras — não há salto de layout), `SkeletonBloco`, `EstadoVazio` com ação e `EstadoErro` com "Tentar novamente" que refaz a consulta. Respeita `prefers-reduced-motion`.
-- **#46** agora tem **número medido**, não suspeita — é o item de melhor relação valor/esforço da seção:
-  - `GET /summary` ≈ **250 ms** — sem índice em `add_time` / `won_time` / `lost_time` (20 mil negócios).
-  - `GET /entity-stats?entity=atividades` ≈ **620 ms** — sem índice em `done` / `due_date` (105 mil linhas). As outras entidades ficam em 7–143 ms.
-  - ⚠️ DDL em produção **não foi executado de propósito** (mesma decisão de risco das Fases 3 e 4). Criar índice é decisão do dono/DBA, com janela.
+- **#46 / #62 — REMEDIDO em 2026-07-29. Detalhe completo em `09-indices-medicao-e-DDL.md`.**
+  ⚠️ **Os dois números abaixo, de 2026-07-27, estavam errados** e levariam a criar índice que não
+  resolve nada. Ficam registrados para não serem citados de novo:
+  - ~~`GET /entity-stats?entity=atividades` ≈ 620 ms — sem índice em `done`/`due_date`~~ →
+    custa **0 ms** (passou a ler `pipe_metrics_*` pré-agregado, #43), e **`ix_done` e `ix_due` já
+    existem**.
+  - ~~`GET /summary` ≈ 250 ms — sem índice em `add_time`/`won_time`~~ → o tempo é real
+    (**249–273 ms**), mas **o índice não resolve**: `metricasJanela()` usa `DATE(add_time) BETWEEN`,
+    e função sobre a coluna torna o índice inutilizável. Medido na sombra: **51 ms sem índice → 67 ms
+    com índice** (piorou). Reescrita sargable: **44 ms → 2 ms** com `ix_add`, mesmo resultado
+    conferido.
+  - **Onde o tempo está de verdade**: `leadSources(0)` **783 ms** (custo é parsing de **JSON**, não
+    data — índice não muda); `dealsPage(25)` **255 ms**, dos quais ~**126 ms** são as 3 *facets*
+    recalculadas **a cada página** (`owners` 70 ms + `lost_reasons` 56 ms) embora não mudem entre
+    páginas — correção de código, sem DDL.
+  - **DDL proposto só com o que ganhou na medição**: `pipe_deals(update_time)` 40→0 ms (mata o
+    filesort), `pipe_deals(add_time)` 44→2 ms *(depois da reescrita)*, `pipe_deals(status,won_time)`
+    17→0 ms, `pipe_activities(is_deleted,done,due_date)` 81→37 ms. **Descartados por medição**:
+    `expected_close_date` (8→7 ms, o `index_merge` atual já resolve) e `add_time` para a tela de
+    Origem.
+  - Custo de escrita medido: **379** negócios e **1.028** atividades alterados em 7 dias —
+    irrelevante perto do ganho.
+  - ⚠️ **Ordem importa**: fazer o DDL antes de corrigir a consulta paga o custo sem colher o ganho.
+  - ⚠️ DDL em produção **não executado de propósito** — decisão do dono/DBA, com janela.
 - **#47**: hoje o que existe é **cache de 120 s no front**, não Redis. Vale medir se ainda é problema **depois** de #46 — índice barato pode tornar o cache desnecessário.
 
 ## 10. Segurança / RBAC / Governança
