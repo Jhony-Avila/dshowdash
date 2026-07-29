@@ -28,7 +28,7 @@ import {
 } from '../services/HomeService';
 import { useDados } from '../components/useDados';
 import { GChart } from '../components/GChart';
-import { GreetingHero } from '../components/Hero';
+import { CeuFundo, GreetingHero, ceuAtual } from '../components/Hero';
 import { ClimaAtualCard, PrevisaoDezDias } from '../components/Clima';
 import { AgendaWidget, EmailsWidget, InsightsPanel, TrafficWidget } from '../components/Extras';
 import {
@@ -251,8 +251,13 @@ function Shell({ config }: { config: ShellConfig }) {
   const atvFiltradas = (atividades ?? []).filter((a) => filtroAtv === 'todos' || a.categoria === filtroAtv);
   const mMeta = METRICAS.find((m) => m.id === metrica)!;
 
+  const ceu = ceuAtual();
+  const grupoClima = clima?.atual.grupo ?? null;
+
   return (
-    <div className="ger-shell">
+    <div className="ger-tela-toda" data-ceu={ceu} data-clima={grupoClima ?? 'limpo'}>
+      <CeuFundo grupo={grupoClima} />
+      <div className="ger-shell">
       {/* barra de controles (§21 do header + §28 + §29 + §26) */}
       <div className="ger-controles">
         <span className="ger-controles-tit"><LayoutDashboard size={15} aria-hidden /> Principal</span>
@@ -535,6 +540,7 @@ function Shell({ config }: { config: ShellConfig }) {
           ))}
         </div>
       </Secao>
+      </div>
     </div>
   );
 }
