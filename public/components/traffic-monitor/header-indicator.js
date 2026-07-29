@@ -1,11 +1,14 @@
 /**
  * TrafficHeaderIndicator — indicador de trânsito de São Paulo no header (standalone).
- * @version 2.0.0
- * @changelog v2.0.0 — Correção visual light/dark (briefing UX §3–§9): container com tokens
- *   de superfície do header (sem fundo preto no light), popover rico no lugar do tooltip
- *   (hierarquia, ícones Lucide inline, ação "Abrir painel"), estados de carregando /
- *   desatualizado / erro / sem dados, interação por hover + clique + Esc + teclado,
- *   posicionamento com clamp de viewport, aria-expanded/aria-controls.
+ * @version 2.1.0
+ * @changelog v2.1.0 — Tema por MEDIÇÃO: o componente lê a cor real de fundo do header
+ *   (luminância) e aplica data-tema="claro|escuro" em si mesmo, sem depender dos tokens
+ *   --hdr-* (que na prática seguiam com valores dark no tema light → pílula preta).
+ *   Reavaliado a cada tick do ensure (1s), então acompanha o toggle de tema ao vivo.
+ * @changelog v2.0.0 — Correção visual light/dark (briefing UX §3–§9): popover rico no
+ *   lugar do tooltip (hierarquia, ícones Lucide inline, ação "Abrir painel"), estados de
+ *   carregando / desatualizado / erro / sem dados, interação por hover + clique + Esc +
+ *   teclado, posicionamento com clamp de viewport, aria-expanded/aria-controls.
  * @description Auto-injeta um botão no `.header-right` (padrão theme-toggle, zero dependência
  *   de bundle/registry do header), faz polling de /api/traffic/summary.php e, ao clicar na
  *   ação do popover, navega para `#/panel-transito-sp` (via navigateToRoute → nav.intent).
@@ -51,38 +54,40 @@ const IC = {
 
 const LEVEL_PT = { normal: 'Normal', moderate: 'Moderado', intense: 'Intenso', unavailable: 'Indisponível' };
 
-// ── Estilos (tokens do header em ambos os temas; sem hardcode de tema) ─
+// ── Estilos — tema por MEDIÇÃO (data-tema aplicado pelo próprio componente) ─
 function injectStyleOnce() {
   if (document.getElementById('traffic-indicator-style')) return;
   const st = document.createElement('style');
   st.id = 'traffic-indicator-style';
   st.textContent = `
-/* ── Botão do header ─────────────────────────────────────────── */
-.traffic-indicator{position:relative;z-index:20;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 11px;margin:0 4px;border-radius:10px;cursor:pointer;border:1px solid var(--hdr-border,rgba(255,255,255,.08));background:var(--hdr-bg,transparent);color:var(--hdr-text-muted,rgba(255,255,255,.65));transition:background .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease;font:600 13px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}
-.traffic-indicator:hover{color:var(--hdr-text,rgba(255,255,255,.95));background:var(--hdr-bg-scrolled,rgba(255,255,255,.06));border-color:var(--hdr-border-accent,rgba(99,102,241,.4));box-shadow:0 1px 4px rgba(0,0,0,.12);}
-.traffic-indicator:focus-visible{outline:2px solid var(--hdr-active,#6366f1);outline-offset:2px;}
-.traffic-indicator[aria-expanded="true"]{color:var(--hdr-text,rgba(255,255,255,.95));background:var(--hdr-bg-scrolled,rgba(255,255,255,.06));border-color:var(--hdr-border-accent,rgba(99,102,241,.45));}
+/* ── Botão do header (escuro = padrão; claro via [data-tema="claro"]) ── */
+.traffic-indicator{--ti-bg:#15151d;--ti-bg-hover:#1e1e29;--ti-border:rgba(255,255,255,.12);--ti-border-hover:rgba(129,140,248,.5);--ti-fg:rgba(255,255,255,.72);--ti-fg-forte:rgba(255,255,255,.95);--ti-ok:#22c55e;--ti-warn:#eab308;--ti-bad:#ef4444;--ti-neutro:#9ca3af;--ti-foco:#818cf8;
+position:relative;z-index:20;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 11px;margin:0 4px;border-radius:10px;cursor:pointer;border:1px solid var(--ti-border);background:var(--ti-bg);color:var(--ti-fg);transition:background .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease;font:600 13px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}
+.traffic-indicator[data-tema="claro"]{--ti-bg:#ffffff;--ti-bg-hover:#f4f5fa;--ti-border:rgba(15,23,42,.14);--ti-border-hover:rgba(79,70,229,.45);--ti-fg:rgba(15,23,42,.62);--ti-fg-forte:rgba(15,23,42,.92);--ti-ok:#15803d;--ti-warn:#a16207;--ti-bad:#dc2626;--ti-neutro:#6b7280;--ti-foco:#4f46e5;}
+.traffic-indicator:hover{color:var(--ti-fg-forte);background:var(--ti-bg-hover);border-color:var(--ti-border-hover);box-shadow:0 1px 4px rgba(0,0,0,.12);}
+.traffic-indicator:focus-visible{outline:2px solid var(--ti-foco);outline-offset:2px;}
+.traffic-indicator[aria-expanded="true"]{color:var(--ti-fg-forte);background:var(--ti-bg-hover);border-color:var(--ti-border-hover);}
 .traffic-indicator svg{display:block;pointer-events:none;flex:0 0 auto;}
-.traffic-indicator .ti-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--ti-color,#9ca3af);box-shadow:0 0 5px var(--ti-glow,transparent);}
+.traffic-indicator .ti-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--ti-color,var(--ti-neutro));box-shadow:0 0 5px var(--ti-glow,transparent);}
 .traffic-indicator .ti-value{min-width:16px;text-align:center;color:var(--ti-color,inherit);font-variant-numeric:tabular-nums;font-weight:700;}
 .traffic-indicator.is-loading .ti-dot{animation:ti-pulse 1.1s ease-in-out infinite;}
 @keyframes ti-pulse{50%{opacity:.35;}}
-.traffic-indicator[data-status="normal"]{--ti-color:var(--hdr-success,#22c55e);--ti-glow:color-mix(in srgb,var(--hdr-success,#22c55e) 50%,transparent);}
-.traffic-indicator[data-status="moderate"]{--ti-color:var(--hdr-warning,#eab308);--ti-glow:color-mix(in srgb,var(--hdr-warning,#eab308) 50%,transparent);}
-.traffic-indicator[data-status="intense"]{--ti-color:var(--hdr-danger,#ef4444);--ti-glow:color-mix(in srgb,var(--hdr-danger,#ef4444) 55%,transparent);}
-.traffic-indicator[data-status="unavailable"]{--ti-color:var(--hdr-text-muted,#9ca3af);--ti-glow:transparent;}
+.traffic-indicator[data-status="normal"]{--ti-color:var(--ti-ok);--ti-glow:color-mix(in srgb,var(--ti-ok) 45%,transparent);}
+.traffic-indicator[data-status="moderate"]{--ti-color:var(--ti-warn);--ti-glow:color-mix(in srgb,var(--ti-warn) 45%,transparent);}
+.traffic-indicator[data-status="intense"]{--ti-color:var(--ti-bad);--ti-glow:color-mix(in srgb,var(--ti-bad) 50%,transparent);}
+.traffic-indicator[data-status="unavailable"]{--ti-color:var(--ti-neutro);--ti-glow:transparent;}
 
-/* ── Popover ─────────────────────────────────────────────────── */
-.traffic-pop{--tp-bg:#17171d;--tp-border:rgba(255,255,255,.1);--tp-text:rgba(255,255,255,.92);--tp-muted:rgba(255,255,255,.55);--tp-row:rgba(255,255,255,.04);--tp-link:#818cf8;
-position:fixed;z-index:9999;width:320px;padding:14px;border-radius:12px;background:var(--tp-bg);color:var(--tp-text);border:1px solid var(--tp-border);box-shadow:0 12px 32px rgba(0,0,0,.35);font:400 12.5px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .14s ease,transform .14s ease;}
+/* ── Popover (escuro = padrão; claro via [data-tema="claro"]) ── */
+.traffic-pop{--tp-bg:#17171d;--tp-border:rgba(255,255,255,.1);--tp-text:rgba(255,255,255,.92);--tp-muted:rgba(255,255,255,.55);--tp-row:rgba(255,255,255,.04);--tp-link:#818cf8;--tp-ok:#22c55e;--tp-warn:#eab308;--tp-bad:#ef4444;--tp-foco:#818cf8;--tp-sombra:0 12px 32px rgba(0,0,0,.35);
+position:fixed;z-index:9999;width:320px;padding:14px;border-radius:12px;background:var(--tp-bg);color:var(--tp-text);border:1px solid var(--tp-border);box-shadow:var(--tp-sombra);font:400 12.5px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .14s ease,transform .14s ease;}
+.traffic-pop[data-tema="claro"]{--tp-bg:#ffffff;--tp-border:rgba(0,0,0,.12);--tp-text:rgba(0,0,0,.88);--tp-muted:rgba(0,0,0,.55);--tp-row:rgba(0,0,0,.035);--tp-link:#4f46e5;--tp-ok:#15803d;--tp-warn:#a16207;--tp-bad:#dc2626;--tp-foco:#4f46e5;--tp-sombra:0 12px 28px rgba(15,23,42,.16);}
 .traffic-pop[data-show="1"]{opacity:1;transform:translateY(0);pointer-events:auto;}
-:root[data-theme="light"] .traffic-pop,:root.theme-light .traffic-pop{--tp-bg:#ffffff;--tp-border:rgba(0,0,0,.12);--tp-text:rgba(0,0,0,.88);--tp-muted:rgba(0,0,0,.55);--tp-row:rgba(0,0,0,.035);--tp-link:#4f46e5;box-shadow:0 12px 28px rgba(15,23,42,.16);}
 .traffic-pop .tp-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;}
 .traffic-pop .tp-title{font-weight:700;font-size:13px;}
 .traffic-pop .tp-badge{padding:2px 9px;border-radius:12px;font-size:10.5px;font-weight:700;color:var(--tp-lv,#9ca3af);background:color-mix(in srgb,var(--tp-lv,#9ca3af) 14%,transparent);white-space:nowrap;}
-.traffic-pop[data-level="normal"]{--tp-lv:var(--hdr-success,#22c55e);}
-.traffic-pop[data-level="moderate"]{--tp-lv:var(--hdr-warning,#eab308);}
-.traffic-pop[data-level="intense"]{--tp-lv:var(--hdr-danger,#ef4444);}
+.traffic-pop[data-level="normal"]{--tp-lv:var(--tp-ok);}
+.traffic-pop[data-level="moderate"]{--tp-lv:var(--tp-warn);}
+.traffic-pop[data-level="intense"]{--tp-lv:var(--tp-bad);}
 .traffic-pop .tp-indice{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:9px 11px;border-radius:9px;background:var(--tp-row);margin-bottom:9px;}
 .traffic-pop .tp-indice-rot{font-size:11px;color:var(--tp-muted);font-weight:600;}
 .traffic-pop .tp-indice-val{font-size:19px;font-weight:800;color:var(--tp-lv,var(--tp-text));font-variant-numeric:tabular-nums;}
@@ -92,19 +97,50 @@ position:fixed;z-index:9999;width:320px;padding:14px;border-radius:12px;backgrou
 .traffic-pop .tp-row svg{flex:0 0 auto;color:var(--tp-muted);}
 .traffic-pop .tp-row strong{font-variant-numeric:tabular-nums;}
 .traffic-pop .tp-row.tp-muted{color:var(--tp-muted);font-size:11.5px;}
-.traffic-pop .tp-aviso{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;font-size:11.5px;margin-bottom:9px;color:var(--hdr-warning,#eab308);background:color-mix(in srgb,var(--hdr-warning,#eab308) 11%,transparent);}
-.traffic-pop .tp-aviso.tp-erro{color:var(--hdr-danger,#ef4444);background:color-mix(in srgb,var(--hdr-danger,#ef4444) 10%,transparent);}
+.traffic-pop .tp-aviso{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;font-size:11.5px;margin-bottom:9px;color:var(--tp-warn);background:color-mix(in srgb,var(--tp-warn) 11%,transparent);}
+.traffic-pop .tp-aviso.tp-erro{color:var(--tp-bad);background:color-mix(in srgb,var(--tp-bad) 10%,transparent);}
 .traffic-pop .tp-aviso svg{flex:0 0 auto;}
 .traffic-pop .tp-retry{margin-left:auto;display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;color:inherit;font:700 11px/1 inherit;cursor:pointer;padding:3px 6px;border-radius:6px;}
 .traffic-pop .tp-retry:hover{background:color-mix(in srgb,currentColor 12%,transparent);}
 .traffic-pop .tp-acao{display:flex;align-items:center;gap:6px;width:100%;border:0;background:transparent;color:var(--tp-link);font:700 12.5px/1 inherit;cursor:pointer;padding:9px 4px 2px;border-top:1px solid var(--tp-border);margin-top:2px;}
 .traffic-pop .tp-acao:hover{text-decoration:underline;}
-.traffic-pop .tp-acao:focus-visible{outline:2px solid var(--hdr-active,#6366f1);outline-offset:2px;border-radius:6px;}
+.traffic-pop .tp-acao:focus-visible{outline:2px solid var(--tp-foco);outline-offset:2px;border-radius:6px;}
 .traffic-pop .tp-spin{display:inline-block;width:11px;height:11px;border:2px solid var(--tp-border);border-top-color:var(--tp-muted);border-radius:50%;animation:ti-spin .8s linear infinite;}
 @keyframes ti-spin{to{transform:rotate(360deg);}}
 @media (prefers-reduced-motion:reduce){.traffic-pop,.traffic-indicator{transition-duration:.01ms!important;}.traffic-indicator.is-loading .ti-dot,.traffic-pop .tp-spin{animation-duration:1.5s;}}
 `;
   document.head.appendChild(st);
+}
+
+// ── Tema por medição ───────────────────────────────────────────────────
+// Lê a cor de fundo REAL na região do header (subindo a árvore até achar uma
+// cor opaca) e decide claro/escuro pela luminância — independente de como o
+// app aplica o tema (classe, atributo ou tokens).
+function temaClaro() {
+  try {
+    let no = document.querySelector('.header-right') || document.body;
+    let cor = '';
+    while (no && no !== document.documentElement) {
+      const b = getComputedStyle(no).backgroundColor;
+      if (b && b !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(b)) { cor = b; break; }
+      no = no.parentElement;
+    }
+    if (!cor) cor = getComputedStyle(document.body).backgroundColor || '';
+    const m = cor.match(/rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/);
+    if (!m) return false;
+    return (0.2126 * +m[1] + 0.7152 * +m[2] + 0.0722 * +m[3]) > 140;
+  } catch (e) { return false; }
+}
+
+let _temaAtual = null;
+function aplicarTema(forcar) {
+  const claro = temaClaro();
+  if (!forcar && claro === _temaAtual) return;
+  _temaAtual = claro;
+  const valor = claro ? 'claro' : 'escuro';
+  const list = document.querySelectorAll('[' + BTN_ATTR + ']');
+  for (let i = 0; i < list.length; i++) list[i].setAttribute('data-tema', valor);
+  if (_pop) _pop.setAttribute('data-tema', valor);
 }
 
 // ── Botão ──────────────────────────────────────────────────────────────
@@ -129,6 +165,7 @@ function ensureButton() {
     injectStyleOnce();
     right.insertBefore(makeButton(), right.firstChild);
     paintAll();
+    aplicarTema(true);
   }
   return true;
 }
@@ -255,6 +292,7 @@ function openPop(btn) {
   clearTimeout(_openTimer); clearTimeout(_closeTimer);
   renderPop();
   positionPop(btn);
+  aplicarTema(true);
   ensurePop().setAttribute('data-show', '1');
   btn.setAttribute('aria-expanded', 'true');
 }
@@ -350,8 +388,8 @@ function start() {
   window.addEventListener('resize', () => { if (isOpen()) { const b = document.querySelector('[' + BTN_ATTR + ']'); if (b) positionPop(b); } });
   ensureButton();
   fetchSummary();
-  // injeção do botão: retry rápido (header pode montar depois), barato e guardado (padrão theme-toggle)
-  _ensureTimer = setInterval(() => { if (!document.hidden) ensureButton(); }, 1000);
+  // injeção do botão + acompanhamento do toggle de tema: retry rápido, barato e guardado
+  _ensureTimer = setInterval(() => { if (!document.hidden) { ensureButton(); aplicarTema(false); } }, 1000);
   // polling de dados: intervalo longo
   _timer = setInterval(() => { if (!document.hidden) fetchSummary(); }, POLL_MS);
 }
