@@ -111,7 +111,23 @@ export function SaudeSync() {
               <Tile n={fmtNum(q?.jobs.pending)} l="Pendentes" cor={q?.jobs.pending ? 'var(--pp-sync)' : undefined} />
               <Tile n={fmtNum(q?.jobs.done)} l="Concluídos" cor="var(--pp-ok)" />
               <Tile n={fmtNum(q?.jobs.dead)} l="Descartados" cor={q?.jobs.dead ? 'var(--pp-danger)' : undefined} />
-              <Tile n={fmtNum(q?.webhook_events.received)} l="Eventos recebidos" />
+              <Tile n={fmtNum(q?.webhook_events.total)} l="Eventos recebidos" />
+            </div>
+            {/* #66: "eventos recebidos" e "jobs concluídos" nunca foram o mesmo número, e a
+                tela mostrava os dois lado a lado sem dizer por quê — parecia perda. A causa
+                é o coalescing: vários eventos do mesmo alvo colapsam num job só, porque o
+                job re-busca o estado ATUAL e um re-fetch já cobre todos eles. */}
+            <div className="pp-row">
+              <span className="pp-k">Eventos → jobs</span>
+              <span className="pp-v" title="Vários eventos do mesmo alvo viram um job só: o re-fetch busca o estado atual e cobre todos.">
+                {fmtNum(q?.webhook_jobs)} jobs · {fmtNum(q?.events_coalesced)} agrupados no alvo
+              </span>
+            </div>
+            <div className="pp-row">
+              <span className="pp-k">Eventos em aberto</span>
+              <span className="pp-v" title="Em aberto = o job do alvo ainda não concluiu. Fecha na próxima drenagem.">
+                {fmtNum(q?.webhook_events.received)} · {fmtNum(q?.webhook_events.processed)} fechados
+              </span>
             </div>
             <div className="pp-row"><span className="pp-k">Último evento</span><span className="pp-v">{q?.last_event_at ? fmtData(q.last_event_at) : '—'}</span></div>
             <div className="pp-row"><span className="pp-k">Duplicados / erros de evento</span><span className="pp-v">{fmtNum(q?.webhook_events.duplicate)} · {fmtNum(q?.webhook_events.error)}</span></div>

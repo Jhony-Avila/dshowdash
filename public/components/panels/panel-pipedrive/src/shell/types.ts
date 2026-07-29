@@ -112,7 +112,11 @@ export interface PipeWebhooksData {
 export interface PipeQueueStats {
   jobs: { pending: number; running: number; done: number; error: number; dead: number };
   due_now: number;
-  webhook_events: { received: number; processed: number; error: number; duplicate: number };
+  // `received` = eventos EM ABERTO (ainda sem job concluído para o alvo); `total` = tudo
+  // que já chegou. Antes do #65 nada saía de `received`, então os dois eram o mesmo número.
+  webhook_events: { received: number; processed: number; error: number; duplicate: number; total: number };
+  webhook_jobs: number;
+  events_coalesced: number;
   last_event_at: string | null;
 }
 export interface PipeQueueDeadRow {

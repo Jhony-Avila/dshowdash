@@ -310,9 +310,60 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 | 62 | **Índices medidos** em `add_time`/`won_time`/`lost_time` (deals) e `done`/`due_date` (activities) — DDL em produção | ⭐⭐ | P | 💤 |
 | 63 | 🐛 **`POST /api/telemetry/collect.php`** — 2026-07-28: **não era intermitente, a telemetria NUNCA persistiu**. Corrigida e **NO AR** (CSRF + cadeia de build + contrato do backend). Resta a injeção do port `globalState` no boot | ⭐⭐⭐ | G | ✅ |
 | 64 | **Cor real das etiquetas**: `pipe_custom_field_options` guarda só id+rótulo (a cor vive em `dealFields`, não sincronizada) — hoje a cor é determinística pelo id | ⭐ | P | 🔜 |
-| 65 | 🐛 **`pipe_webhook_events.status` nunca chega a `processed`** — o evento nasce `received` e só muda se o *enfileiramento* falhar (`error`). Os 4.984 eventos recebidos estão **todos** em `received`, mesmo com os 3.597 jobs concluídos | ⭐⭐ | P | 🔜 |
-| 66 | **Tela de Saúde: 4.984 eventos × 3.597 jobs** — a diferença (1.387) é o *coalescing* de `enqueueWebhook` (evento cujo alvo já tinha job pendente), mas a tela mostra os dois números sem explicar | ⭐⭐ | P | 🔜 |
+| 65 | 🐛 **`pipe_webhook_events.status` nunca chegava a `processed`** — o evento nascia `received` e só mudava se o *enfileiramento* falhasse (`error`). Corrigido: a drenagem fecha o evento quando o job do alvo conclui; passivo de 5.486 eventos zerado | ⭐⭐ | P | ✅ |
+| 66 | **Tela de Saúde: eventos × jobs sem explicação** — a diferença é o *coalescing* de `enqueueWebhook`, e a tela mostrava os dois números lado a lado sem dizer por quê. Corrigido: a tela agora reconcilia (`eventos = jobs + agrupados`) | ⭐⭐ | P | ✅ |
 | 67 | 🐛 **`leads` e `notes` regravavam a página inteira (500 linhas) a cada 15 min** — o `stop-early` do caminho v1 parava de *paginar*, mas só depois de dar upsert nos 500 itens da página 1. Corrigido: pula o que está abaixo da marca-d'água | ⭐⭐ | P | ✅ |
+
+- ✅ **#65 e #66 fechados em 2026-07-29.** Números no fechamento: **5.486 eventos** (não 4.984 — a
+  medição foi refeita, o volume cresceu em um dia), **3.960 jobs**, todos `done`, **0 pendente, 0
+  morto**. Os 5.486 estavam **todos** em `received` e **0 tinha `processed_at`**.
+  ⚠️ **Além do que o ticket dizia**: `'duplicate'` também é inalcançável, e por bom motivo — o
+  `INSERT IGNORE` do `recordWebhook()` não cria segunda linha, então não existe linha para marcar
+  como duplicada. O valor do enum e o balde na tela ficam permanentemente em 0 **por desenho**, não
+  por defeito. Deixado como está para não mexer no enum.
+  **A regra do fechamento**: job concluído ⇒ o estado atual do alvo foi buscado e gravado ⇒ todos os
+  eventos daquele alvo **anteriores à busca** estão cobertos. Um job fecha **N** eventos: é
+  exatamente o coalescing, visto do outro lado.
+  ⚠️ **A fronteira é o instante ANTERIOR ao re-fetch, nunca o de conclusão do job.** Usar
+  `job.processed_at` fecharia evento que chegou *depois* da busca e cujo estado, portanto, não foi
+  gravado — perda silenciosa. O evento tardio fica `received` e o **próximo** job do alvo o fecha;
+  como o job atual está `running`, o coalescing não o reusa e um job novo nasce, então o caso se
+  resolve em uma drenagem (1 min).
+  ⚠️ **Job MORTO não fecha evento, de propósito**: `received` é a leitura honesta de "chegou e o
+  trabalho nunca completou". Marcar `error` ali criaria estado velho quando um reprocessamento
+  posterior desse certo.
+  ⚠️ **`pipe_sync_jobs.entity` é SINGULAR (`deal`) para jobs de webhook** e casa com
+  `pipe_webhook_events.event_object`. Não confundir com `pipe_sync_runs.entity`, que é o caminho
+  **plural** da API (`deals`). O `event_object` faz parte da chave: `activity#111` e `deal#111` são
+  alvos diferentes.
+  ⚠️ **`received` mudou de significado** — passou a ser "em aberto". Por isso `stats()` ganhou
+  `total`: sem ele a tela leria **"Eventos recebidos: 0"** justamente quando tudo está saudável.
+  Confirmado que nada mais depende do sentido antigo (`healthy` da tela olha status+erros+frescor).
+  **Passivo (one-shot).** `scripts/pipedrive-backfill-webhook-events.php` — ⚠️ **não está no git**
+  (`.gitignore: /scripts/*`), este parágrafo é o registro. Seco por padrão, grava só com `--apply`.
+  Regra conservadora e verificável linha a linha: fecha um evento só se existir job do **mesmo alvo**
+  com status `done` e `processed_at >= received_at`. Medido antes de aplicar: **5.486 com prova, 0
+  sem**. `processed_at` do evento recebeu o instante **daquele job**, não `NOW()` — o que importa
+  registrar é quando o trabalho aconteceu. Backup das linhas afetadas em
+  `/backup/pipedrive-backfill-webhook-events-2026-07-29/pipe_webhook_events-antes.csv`.
+  **Resultado**: `received 5.486 → 0`, `processed 0 → 5.486`. A conta fecha: **5.486 = 3.960 jobs +
+  1.526 agrupados**.
+  **Provas.** `tools/screenshot/valida-pipedrive-ciclo-evento.php` (23 checagens) sombreia
+  `pipe_webhook_events` e a **fila** com `CREATE TEMPORARY TABLE` e cobre o que produção não produz
+  sozinha: evento posterior à fronteira, evento já em `error`, outro alvo, mesmo id em outro objeto,
+  idempotência e o tardio fechando no job seguinte. ⚠️ A última fase é **ponta a ponta** com um job
+  sintético apontando para um **deal real** — sem ela, esquecer de chamar o fechamento dentro do
+  `drainQueue` passaria batido: as checagens de regra provam a *regra*, não a *fiação*.
+  `tools/screenshot/valida-pipedrive-ciclo-evento.mjs` (25 checagens) exige que a tela reconcilie e
+  que os números venham da API.
+  ⚠️ **Placeholder nomeado não repete** com prepares nativos (`EMULATE_PREPARES=false`): `:rt` em
+  duas colunas dá `Invalid parameter number`.
+  ⚠️ **Armadilha do teste de tema, custou uma rodada**: trocar `cm_theme` com a página já montada
+  **não repinta** o painel — a prova "passou" nos dois temas e gerou **dois PNGs byte a byte
+  idênticos**. O certo é **contexto fresco + `addInitScript`** antes de qualquer script rodar. E
+  ⚠️ **a classe `theme-light` no `<html>` não serve de sinal** (aparece nos dois casos): o que
+  distingue é a **cor computada** do card — `rgb(28,28,43)` no dark, `rgb(255,255,255)` no light.
+  Por isso a prova agora exige que os dois fundos **sejam diferentes**.
 
 - **#65 e #66** levantados em **2026-07-28** ao construir o #41. São o mesmo assunto visto de dois
   lados: o ciclo de vida do `webhook_event` está **incompleto**. `recordWebhook()` grava
@@ -321,7 +372,9 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
   "Concluídos 3.597", dois números que não fecham e cuja diferença (coalescing — evento cujo alvo
   já tinha job pendente) não aparece em lugar nenhum. Não é perda de dado: os eventos foram
   aplicados. É observabilidade que **parece** falha. Fechar o ciclo mexe no caminho de ingestão em
-  produção (que hoje funciona 100%), por isso não foi feito junto do #41 — **decisão do dono**.
+  produção (que funciona 100%), por isso não foi feito junto do #41 — **e foi feito em 2026-07-29,
+  autorizado pelo dono** (ver o parágrafo de fechamento acima). O diagnóstico deste parágrafo estava
+  certo; os números (4.984 / 3.597) eram do dia 28 e foram remedidos no fechamento.
 
 - **Corrigido de passagem (2026-07-28):** a tela de Saúde **estourava horizontalmente em telas
   estreitas** — "Estado por entidade" (5 colunas, 635 px) e "Rodadas recentes" (7 colunas, 643 px)
@@ -388,7 +441,7 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 
 Depois disso, os estratégicos de maior porte: **Cruzamento ERP** (#34–#36) e **Mailbox** (#37–#38), quando houver decisão de escopo.
 
-> Total: **67 itens** catalogados — **31 ✅ · 5 ◑ · 1 ⚖️ · 19 🔜 · 11 💤** (contados no próprio arquivo, não estimados; 2026-07-29: #11 e #67 fechados).
+> Total: **67 itens** catalogados — **33 ✅ · 5 ◑ · 1 ⚖️ · 17 🔜 · 11 💤** (contados no próprio arquivo, não estimados; 2026-07-29: #11, #67, #65 e #66 fechados).
 > Priorize por Valor↑ / Esforço↓, mas leia antes o bloco "Bloqueios de DADO" da seção 0: três dos itens abertos não são questão de esforço.
 
 ---

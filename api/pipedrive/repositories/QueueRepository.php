@@ -57,6 +57,41 @@ final class PipeQueueRepository
         return $st->rowCount() > 0 ? 'received' : 'duplicate';
     }
 
+    /** Instante do BANCO — mesma origem de relogio que o `NOW()` de `received_at`. */
+    public function agora(): string
+    {
+        return (string)$this->pdo->query('SELECT NOW()')->fetchColumn();
+    }
+
+    /**
+     * Fecha o ciclo do evento (#65): marca 'processed' os eventos que o re-fetch de um
+     * job cobriu. Coalescing: N eventos do mesmo alvo colapsam em 1 job, entao 1 job
+     * fecha N eventos — e por isso "eventos recebidos" e "jobs concluidos" nunca foram
+     * o mesmo numero.
+     *
+     * ⚠️ $ate e o instante ANTERIOR ao re-fetch, nunca o de conclusao do job: um evento
+     * que chegou DEPOIS da busca pode refletir estado mais novo que o gravado. Esse fica
+     * 'received' e o proximo job do alvo o fecha (enquanto o job atual esta 'running' o
+     * coalescing nao o reusa, entao um job novo nasce — o caso se resolve sozinho).
+     *
+     * ⚠️ `event_object` e SINGULAR ('deal') e casa com `pipe_sync_jobs.entity`, que para
+     * jobs de webhook tambem e singular. Nao confundir com `pipe_sync_runs.entity`, que
+     * e o caminho PLURAL da API ('deals').
+     *
+     * @return int quantos eventos foram fechados.
+     */
+    public function markWebhookEventsProcessed(string $entity, string $externalId, string $ate): int
+    {
+        $st = $this->pdo->prepare(
+            "UPDATE pipe_webhook_events
+                SET status = 'processed', processed_at = NOW()
+              WHERE status = 'received'
+                AND event_object = :e AND object_id = :x AND received_at <= :ate"
+        );
+        $st->execute([':e' => $entity, ':x' => $externalId, ':ate' => $ate]);
+        return $st->rowCount();
+    }
+
     /** Marca o event como erro de recepcao (ex.: enfileiramento falhou). */
     public function markWebhookError(?string $dedupKey): void
     {
@@ -218,12 +253,22 @@ final class PipeQueueRepository
         foreach ($this->pdo->query("SELECT status, COUNT(*) c FROM pipe_webhook_events GROUP BY status") as $r) {
             $wh[$r['status']] = (int)$r['c'];
         }
+        // 'received' passou a significar EM ABERTO (#65), entao o total precisa vir
+        // separado — senao a tela leria "eventos recebidos: 0" quando tudo esta fechado.
+        $wh['total'] = array_sum($wh);
         $lastEvent = $this->pdo->query("SELECT MAX(received_at) FROM pipe_webhook_events")->fetchColumn();
+
+        // Reconciliacao evento -> job (#66). Todo job de webhook nasce em enqueueWebhook
+        // (unico INSERT em pipe_sync_jobs), e um evento ou cria um job ou reusa o job
+        // pendente do mesmo alvo. Logo a diferenca E o coalescing, nao perda.
+        $jobsWebhook = (int)$this->pdo->query("SELECT COUNT(*) FROM pipe_sync_jobs WHERE job_type='webhook'")->fetchColumn();
 
         return [
             'jobs' => $counts,
             'due_now' => $due,
             'webhook_events' => $wh,
+            'webhook_jobs' => $jobsWebhook,
+            'events_coalesced' => max(0, $wh['total'] - $jobsWebhook),
             'last_event_at' => $lastEvent ?: null,
         ];
     }

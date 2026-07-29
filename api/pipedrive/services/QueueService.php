@@ -159,7 +159,11 @@ final class PipeQueueService
         })();
 
         $jobs = $this->queue->claimBatch($limit);
-        $c = ['ok' => true, 'error' => null, 'claimed' => count($jobs), 'done' => 0, 'deleted' => 0, 'retry' => 0, 'dead' => 0];
+        $c = ['ok' => true, 'error' => null, 'claimed' => count($jobs), 'done' => 0, 'deleted' => 0, 'retry' => 0, 'dead' => 0, 'events_closed' => 0];
+        // Fronteira para fechar eventos (#65): instante ANTERIOR a qualquer re-fetch
+        // deste lote, tirado do relogio do BANCO (mesma origem do `received_at`).
+        // Conservador de proposito — ver markWebhookEventsProcessed().
+        $antesDoLote = $this->queue->agora();
 
         foreach ($jobs as $job) {
             $id       = (int)$job['id'];
@@ -175,6 +179,11 @@ final class PipeQueueService
 
             if ($res['ok']) {
                 $this->queue->completeJob($id);
+                // Job concluido = o estado atual do alvo foi buscado e gravado. Todos os
+                // eventos daquele alvo anteriores a busca estao cobertos por ela.
+                // Job MORTO nao fecha evento de proposito: 'received' e a leitura honesta
+                // de "chegou e o trabalho nunca completou".
+                $c['events_closed'] += $this->queue->markWebhookEventsProcessed($entity, $extId, $antesDoLote);
                 if (($res['action'] ?? '') === 'deleted') { $c['deleted']++; } else { $c['done']++; }
             } else {
                 $out = $this->queue->failJob($id, $attempts, (string)($res['error'] ?? 'erro'), (bool)($res['retryable'] ?? true), $res['code'] ?? null, $entity, $extId);
