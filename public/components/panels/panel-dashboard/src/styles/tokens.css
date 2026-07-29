@@ -1,0 +1,196 @@
+/* tokens.css — tokens e layout do painel Visão Geral.
+   @version 2.0.0  @created 2026-07-29
+   Escopado a [data-geral-react-root]. Tema segue o shell (dark padrão;
+   light via :root[data-theme="light"] OU :root.theme-light — briefing §34). */
+
+[data-geral-react-root] {
+  --ger-fundo:      #12121c;
+  --ger-superficie: #1a1a28;
+  --ger-superficie2:#222234;
+  --ger-borda:      #2c2c42;
+  --ger-texto:      #e9e9f2;
+  --ger-texto-dim:  #9a9ab2;
+  --ger-azul:       #6366f1;   /* primária do dash (indigo do shell) */
+  --ger-azul-ct:    #ffffff;
+  --ger-roxo:       #8b5cf6;
+  --ger-ok:         #22c55e;
+  --ger-warn:       #f59e0b;
+  --ger-bad:        #ef4444;
+  --ger-info:       #38bdf8;
+
+  height: 100%;
+  color: var(--ger-texto);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  font-size: 13.5px;
+}
+[data-geral-react-root] *, [data-geral-react-root] *::before, [data-geral-react-root] *::after { box-sizing: border-box; }
+
+:root[data-theme="light"] [data-geral-react-root],
+:root.theme-light [data-geral-react-root] {
+  --ger-fundo:      #f4f5fa;
+  --ger-superficie: #ffffff;
+  --ger-superficie2:#eef1f8;
+  --ger-borda:      #dde1ec;
+  --ger-texto:      #1a1d29;
+  --ger-texto-dim:  #5a6273;
+  --ger-azul:       #4f46e5;
+  --ger-ok:         #15803d;
+  --ger-warn:       #b45309;
+  --ger-bad:        #dc2626;
+}
+
+/* ── Shell ────────────────────────────────────────────────────── */
+[data-geral-react-root] .ger-shell { display: flex; flex-direction: column; gap: 16px; min-height: 100%; background: var(--ger-fundo); padding: 18px 20px 44px; max-width: 1360px; margin: 0 auto; }
+
+/* Header da página (§21) */
+[data-geral-react-root] .ger-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+[data-geral-react-root] .ger-head-tit h1 { display: flex; align-items: center; gap: 8px; margin: 0 0 3px; font-size: 19px; }
+[data-geral-react-root] .ger-head-tit h1 svg { color: var(--ger-azul); }
+[data-geral-react-root] .ger-head-tit p { margin: 0; font-size: 12.5px; color: var(--ger-texto-dim); max-width: 560px; }
+[data-geral-react-root] .ger-head-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+[data-geral-react-root] .ger-carimbo { font-size: 11px; color: var(--ger-texto-dim); white-space: nowrap; }
+
+[data-geral-react-root] .ger-periodos { display: flex; gap: 3px; background: var(--ger-superficie); border: 1px solid var(--ger-borda); border-radius: 9px; padding: 3px; flex-wrap: wrap; }
+[data-geral-react-root] .ger-periodo { border: 0; background: transparent; color: var(--ger-texto-dim); padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; }
+[data-geral-react-root] .ger-periodo.is-on { background: var(--ger-azul); color: var(--ger-azul-ct); }
+
+[data-geral-react-root] .ger-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--ger-borda); background: var(--ger-superficie); color: var(--ger-texto); border-radius: 9px; padding: 6px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: border-color .15s; }
+[data-geral-react-root] .ger-btn:hover { border-color: var(--ger-azul); }
+[data-geral-react-root] .ger-btn:focus-visible { outline: 2px solid var(--ger-azul); outline-offset: 2px; }
+[data-geral-react-root] .ger-btn.is-on { border-color: var(--ger-azul); background: color-mix(in srgb, var(--ger-azul) 12%, var(--ger-superficie)); }
+[data-geral-react-root] .ger-btn-mini { padding: 4px 9px; font-size: 11px; }
+
+/* Personalização (§30) */
+[data-geral-react-root] .ger-personalizar { background: var(--ger-superficie); border: 1px solid var(--ger-borda); border-radius: 12px; padding: 13px 15px; }
+[data-geral-react-root] .ger-pers-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; font-size: 13px; }
+[data-geral-react-root] .ger-pers-lista { display: flex; gap: 7px 14px; flex-wrap: wrap; }
+[data-geral-react-root] .ger-pers-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; padding: 4px 6px; border-radius: 7px; }
+[data-geral-react-root] .ger-pers-item:hover { background: var(--ger-superficie2); }
+[data-geral-react-root] .ger-pers-item input { accent-color: var(--ger-azul); }
+[data-geral-react-root] .ger-pers-nota { margin: 9px 0 0; font-size: 11px; color: var(--ger-texto-dim); }
+
+/* Saúde (§22) */
+[data-geral-react-root] .ger-saudes { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+[data-geral-react-root] .ger-saude { display: flex; flex-direction: column; gap: 3px; text-align: left; background: var(--ger-superficie); border: 1px solid var(--ger-borda); border-left-width: 3px; border-radius: 12px; padding: 12px 14px; color: var(--ger-texto); cursor: default; }
+[data-geral-react-root] .ger-saude.is-click { cursor: pointer; transition: border-color .15s, transform .15s; }
+[data-geral-react-root] .ger-saude.is-click:hover { border-color: var(--ger-azul); transform: translateY(-1px); }
+[data-geral-react-root] .ger-saude-rotulo { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-saude-valor { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .ger-saude-detalhe { font-size: 11px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-nivel-ok { border-left-color: var(--ger-ok); }
+[data-geral-react-root] .ger-nivel-warn { border-left-color: var(--ger-warn); }
+[data-geral-react-root] .ger-nivel-bad { border-left-color: var(--ger-bad); }
+[data-geral-react-root] .ger-nivel-dim { border-left-color: var(--ger-borda); }
+
+/* Seções */
+[data-geral-react-root] .ger-sec { background: var(--ger-superficie); border: 1px solid var(--ger-borda); border-radius: 12px; padding: 14px 16px; }
+[data-geral-react-root] .ger-sec-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+[data-geral-react-root] .ger-sec-head h3 { margin: 0; font-size: 14px; }
+[data-geral-react-root] .ger-sec-sub { font-size: 11.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-duplo { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; }
+@media (max-width: 1000px) { [data-geral-react-root] .ger-duplo { grid-template-columns: 1fr; } }
+
+/* Alertas (§28) */
+[data-geral-react-root] .ger-alertas { display: flex; flex-direction: column; gap: 7px; }
+[data-geral-react-root] .ger-alerta { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 1px solid var(--ger-borda); background: var(--ger-fundo); border-radius: 10px; padding: 10px 13px; color: var(--ger-texto); font-size: 12.5px; cursor: pointer; transition: border-color .15s; }
+[data-geral-react-root] .ger-alerta:hover { border-color: var(--ger-azul); }
+[data-geral-react-root] .ger-alerta-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+[data-geral-react-root] .ger-alerta-corpo span { font-size: 11.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-alerta-acao { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; color: var(--ger-azul); white-space: nowrap; }
+[data-geral-react-root] .ger-prio-1 { border-left: 3px solid var(--ger-bad); }
+[data-geral-react-root] .ger-prio-1 > svg { color: var(--ger-bad); }
+[data-geral-react-root] .ger-prio-2 { border-left: 3px solid var(--ger-warn); }
+[data-geral-react-root] .ger-prio-2 > svg { color: var(--ger-warn); }
+[data-geral-react-root] .ger-prio-3 { border-left: 3px solid var(--ger-borda); }
+[data-geral-react-root] .ger-prio-3 > svg { color: var(--ger-texto-dim); }
+
+/* Widgets de módulo (§24) */
+[data-geral-react-root] .ger-widgets { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+[data-geral-react-root] .ger-widget { display: flex; flex-direction: column; gap: 10px; background: var(--ger-superficie); border: 1px solid var(--ger-borda); border-top-width: 3px; border-radius: 12px; padding: 13px 15px; }
+[data-geral-react-root] .ger-borda-ok { border-top-color: var(--ger-ok); }
+[data-geral-react-root] .ger-borda-warn { border-top-color: var(--ger-warn); }
+[data-geral-react-root] .ger-borda-bad { border-top-color: var(--ger-bad); }
+[data-geral-react-root] .ger-borda-dim { border-top-color: var(--ger-borda); }
+[data-geral-react-root] .ger-wg-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
+[data-geral-react-root] .ger-wg-ic { display: inline-flex; align-items: center; justify-content: center; color: var(--ger-azul); flex-shrink: 0; }
+[data-geral-react-root] .ger-wg-nome { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-geral-react-root] .ger-wg-status { margin-left: auto; padding: 2px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+[data-geral-react-root] .ger-status-ok { color: var(--ger-ok); background: color-mix(in srgb, var(--ger-ok) 13%, transparent); }
+[data-geral-react-root] .ger-status-warn { color: var(--ger-warn); background: color-mix(in srgb, var(--ger-warn) 14%, transparent); }
+[data-geral-react-root] .ger-status-bad { color: var(--ger-bad); background: color-mix(in srgb, var(--ger-bad) 13%, transparent); }
+[data-geral-react-root] .ger-status-dim { color: var(--ger-texto-dim); background: var(--ger-superficie2); }
+[data-geral-react-root] .ger-wg-metricas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+[data-geral-react-root] .ger-wg-metrica { display: flex; flex-direction: column; }
+[data-geral-react-root] .ger-wg-metrica-rotulo { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-wg-metrica-valor { font-size: 14.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .ger-wg-metrica-valor.is-ruim { color: var(--ger-bad); }
+[data-geral-react-root] .ger-wg-metrica-valor.is-bom { color: var(--ger-ok); }
+[data-geral-react-root] .ger-wg-spark { color: var(--ger-azul); opacity: .8; }
+[data-geral-react-root] .ger-spark { width: 100%; height: 26px; display: block; }
+[data-geral-react-root] .ger-wg-alerta { margin: 0; font-size: 11.5px; color: var(--ger-warn); background: color-mix(in srgb, var(--ger-warn) 9%, transparent); border-radius: 8px; padding: 6px 9px; }
+[data-geral-react-root] .ger-wg-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
+[data-geral-react-root] .ger-wg-quando { font-size: 10.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-wg-abrir { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--ger-azul); font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 4px 6px; border-radius: 7px; }
+[data-geral-react-root] .ger-wg-abrir:hover { background: color-mix(in srgb, var(--ger-azul) 11%, transparent); }
+[data-geral-react-root] .ger-selo-sim { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--ger-info); background: color-mix(in srgb, var(--ger-info) 13%, transparent); border-radius: 8px; padding: 1px 7px; white-space: nowrap; flex-shrink: 0; }
+
+/* Barras / distribuição */
+[data-geral-react-root] .ger-barras { display: flex; flex-direction: column; gap: 8px; }
+[data-geral-react-root] .ger-barra-row { display: grid; grid-template-columns: 130px 1fr 44px; align-items: center; gap: 10px; }
+[data-geral-react-root] .ger-barra-rotulo { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-geral-react-root] .ger-barra-track { height: 12px; background: var(--ger-superficie2); border-radius: 4px; overflow: hidden; display: block; }
+[data-geral-react-root] .ger-barra-fill { display: block; height: 100%; background: var(--ger-azul); border-radius: 0 4px 4px 0; opacity: .85; }
+[data-geral-react-root] .ger-barra-valor { font-size: 11.5px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Integrações (§26.3) */
+[data-geral-react-root] .ger-integracoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 9px; }
+[data-geral-react-root] .ger-integ { display: flex; align-items: center; gap: 10px; border: 1px solid var(--ger-borda); background: var(--ger-fundo); border-radius: 10px; padding: 10px 12px; }
+[data-geral-react-root] .ger-integ-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-integ-conectada .ger-integ-dot { background: var(--ger-ok); }
+[data-geral-react-root] .ger-integ-sincronizando .ger-integ-dot { background: var(--ger-info); }
+[data-geral-react-root] .ger-integ-desatualizada .ger-integ-dot { background: var(--ger-warn); }
+[data-geral-react-root] .ger-integ-erro .ger-integ-dot { background: var(--ger-bad); }
+[data-geral-react-root] .ger-integ-demonstracao .ger-integ-dot { background: var(--ger-info); opacity: .6; }
+[data-geral-react-root] .ger-integ-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+[data-geral-react-root] .ger-integ-corpo strong { font-size: 12.5px; }
+[data-geral-react-root] .ger-integ-corpo span { font-size: 11px; color: var(--ger-texto-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-geral-react-root] .ger-integ-meta { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; font-weight: 700; white-space: nowrap; }
+[data-geral-react-root] .ger-integ-meta em { font-style: normal; font-weight: 400; color: var(--ger-texto-dim); font-size: 10px; }
+
+/* Atividades (§27) */
+[data-geral-react-root] .ger-atividades { display: flex; flex-direction: column; gap: 6px; }
+[data-geral-react-root] .ger-atv { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 0; background: transparent; color: var(--ger-texto); padding: 7px 9px; border-radius: 9px; font-size: 12.5px; cursor: pointer; }
+[data-geral-react-root] .ger-atv:disabled { cursor: default; }
+[data-geral-react-root] .ger-atv:not(:disabled):hover { background: var(--ger-superficie2); }
+[data-geral-react-root] .ger-atv-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ger-azul); opacity: .7; flex-shrink: 0; }
+[data-geral-react-root] .ger-atv-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+[data-geral-react-root] .ger-atv-corpo strong { font-weight: 600; font-size: 12.5px; }
+[data-geral-react-root] .ger-atv-corpo span { font-size: 11px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .ger-atv > svg { color: var(--ger-texto-dim); flex-shrink: 0; }
+
+/* Atalhos (§29) */
+[data-geral-react-root] .ger-atalhos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+[data-geral-react-root] .ger-atalho { display: flex; align-items: center; gap: 8px; border: 1px solid var(--ger-borda); background: var(--ger-fundo); color: var(--ger-texto); border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: border-color .15s, transform .15s; text-align: left; }
+[data-geral-react-root] .ger-atalho:hover { border-color: var(--ger-azul); transform: translateY(-1px); }
+[data-geral-react-root] .ger-atalho svg { color: var(--ger-azul); flex-shrink: 0; }
+
+/* Estados (§31) */
+[data-geral-react-root] .ger-skel { border-radius: 12px; background: linear-gradient(100deg, var(--ger-superficie) 40%, var(--ger-superficie2) 50%, var(--ger-superficie) 60%); background-size: 200% 100%; animation: ger-shimmer 1.4s ease-in-out infinite; border: 1px solid var(--ger-borda); }
+@keyframes ger-shimmer { to { background-position: -200% 0; } }
+[data-geral-react-root] .ger-erro { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--ger-texto-dim); padding: 8px 0; }
+
+/* Gráficos */
+[data-geral-react-root] .ger-chart { width: 100%; }
+
+/* Responsividade (§25) */
+@media (max-width: 900px) {
+  [data-geral-react-root] .ger-shell { padding: 14px 12px 36px; }
+  [data-geral-react-root] .ger-saudes { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  [data-geral-react-root] .ger-widgets { grid-template-columns: 1fr; }
+}
+
+/* Acessibilidade */
+@media (prefers-reduced-motion: reduce) {
+  [data-geral-react-root] * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

@@ -4,7 +4,13 @@
 // Shell: topbar (seletor de contas §6 + período §8 + selo mock) + nav lateral
 // (21 áreas do §5.1) + main com roteamento por hash (#/panel-ads/<area>).
 // As áreas não construídas nesta rodada mostram um placeholder "em breve" (§30.3).
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  BadgeCheck, Bell, Bot, ChartNoAxesCombined, CircleDollarSign, Clock, FileText,
+  Funnel, History, Image, KeyRound, LayoutDashboard, Layers, Map, Megaphone,
+  PanelLeftClose, PanelLeftOpen, Search, Settings, Smartphone, Star, Target,
+  UserRound, Users,
+} from 'lucide-react';
 import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { queryClient, apiGet, chaves } from '../lib/api';
 import type { ShellConfig, AdsStatus, AdsAccount, Period, DrillFiltro } from '../shell/types';
@@ -36,32 +42,42 @@ import '../styles/tokens.css';
 
 const HASH_BASE = '#/panel-ads';
 
-interface Area { id: string; label: string; icon: string; group: string; impl: boolean; }
+// Ícones SVG padronizados (Lucide) no lugar de emojis — briefing UX §15.
+interface Area { id: string; label: string; icon: ReactNode; group: string; impl: boolean; }
 const AREAS: Area[] = [
-  { id: 'visao-geral', label: 'Visão Geral', icon: '📊', group: 'Visão', impl: true },
-  { id: 'diretoria', label: 'Diretoria', icon: '🎯', group: 'Visão', impl: true },
-  { id: 'campanhas', label: 'Campanhas', icon: '📣', group: 'Estrutura', impl: true },
-  { id: 'grupos', label: 'Grupos de anúncios', icon: '🗂️', group: 'Estrutura', impl: true },
-  { id: 'anuncios', label: 'Anúncios', icon: '🖼️', group: 'Estrutura', impl: true },
-  { id: 'palavras', label: 'Palavras-chave', icon: '🔑', group: 'Estrutura', impl: true },
-  { id: 'termos', label: 'Termos de pesquisa', icon: '🔎', group: 'Estrutura', impl: true },
-  { id: 'landing-pages', label: 'Landing Pages', icon: '📄', group: 'Segmentos', impl: true },
-  { id: 'conversoes', label: 'Conversões', icon: '✅', group: 'Segmentos', impl: true },
-  { id: 'publicos', label: 'Públicos', icon: '👥', group: 'Segmentos', impl: true },
-  { id: 'localizacoes', label: 'Localizações', icon: '🗺️', group: 'Segmentos', impl: true },
-  { id: 'dispositivos', label: 'Dispositivos', icon: '📱', group: 'Segmentos', impl: true },
-  { id: 'horarios', label: 'Horários e dias', icon: '🕐', group: 'Segmentos', impl: true },
-  { id: 'orcamentos', label: 'Orçamentos', icon: '💰', group: 'Gestão', impl: true },
-  { id: 'qualidade', label: 'Qualidade', icon: '⭐', group: 'Gestão', impl: true },
-  { id: 'funil', label: 'Funil Comercial', icon: '🔻', group: 'Gestão', impl: true },
-  { id: 'ia', label: 'Inteligência Artificial', icon: '🤖', group: 'Inteligência', impl: true },
-  { id: 'alertas', label: 'Alertas', icon: '🔔', group: 'Inteligência', impl: true },
-  { id: 'relatorios', label: 'Relatórios', icon: '📑', group: 'Inteligência', impl: true },
-  { id: 'historico', label: 'Histórico', icon: '🕓', group: 'Conta', impl: true },
-  { id: 'contas', label: 'Contas', icon: '👤', group: 'Conta', impl: true },
-  { id: 'config', label: 'Configurações', icon: '🔧', group: 'Conta', impl: true },
+  { id: 'visao-geral', label: 'Visão Geral', icon: <LayoutDashboard size={16} />, group: 'Visão', impl: true },
+  { id: 'diretoria', label: 'Diretoria', icon: <Target size={16} />, group: 'Visão', impl: true },
+  { id: 'campanhas', label: 'Campanhas', icon: <Megaphone size={16} />, group: 'Estrutura', impl: true },
+  { id: 'grupos', label: 'Grupos de anúncios', icon: <Layers size={16} />, group: 'Estrutura', impl: true },
+  { id: 'anuncios', label: 'Anúncios', icon: <Image size={16} />, group: 'Estrutura', impl: true },
+  { id: 'palavras', label: 'Palavras-chave', icon: <KeyRound size={16} />, group: 'Estrutura', impl: true },
+  { id: 'termos', label: 'Termos de pesquisa', icon: <Search size={16} />, group: 'Estrutura', impl: true },
+  { id: 'landing-pages', label: 'Landing Pages', icon: <FileText size={16} />, group: 'Segmentos', impl: true },
+  { id: 'conversoes', label: 'Conversões', icon: <BadgeCheck size={16} />, group: 'Segmentos', impl: true },
+  { id: 'publicos', label: 'Públicos', icon: <Users size={16} />, group: 'Segmentos', impl: true },
+  { id: 'localizacoes', label: 'Localizações', icon: <Map size={16} />, group: 'Segmentos', impl: true },
+  { id: 'dispositivos', label: 'Dispositivos', icon: <Smartphone size={16} />, group: 'Segmentos', impl: true },
+  { id: 'horarios', label: 'Horários e dias', icon: <Clock size={16} />, group: 'Segmentos', impl: true },
+  { id: 'orcamentos', label: 'Orçamentos', icon: <CircleDollarSign size={16} />, group: 'Gestão', impl: true },
+  { id: 'qualidade', label: 'Qualidade', icon: <Star size={16} />, group: 'Gestão', impl: true },
+  { id: 'funil', label: 'Funil Comercial', icon: <Funnel size={16} />, group: 'Gestão', impl: true },
+  { id: 'ia', label: 'Inteligência Artificial', icon: <Bot size={16} />, group: 'Inteligência', impl: true },
+  { id: 'alertas', label: 'Alertas', icon: <Bell size={16} />, group: 'Inteligência', impl: true },
+  { id: 'relatorios', label: 'Relatórios', icon: <ChartNoAxesCombined size={16} />, group: 'Inteligência', impl: true },
+  { id: 'historico', label: 'Histórico', icon: <History size={16} />, group: 'Conta', impl: true },
+  { id: 'contas', label: 'Contas', icon: <UserRound size={16} />, group: 'Conta', impl: true },
+  { id: 'config', label: 'Configurações', icon: <Settings size={16} />, group: 'Conta', impl: true },
 ];
 const GROUP_ORDER = ['Visão', 'Estrutura', 'Segmentos', 'Gestão', 'Inteligência', 'Conta'];
+
+// Persistência do estado da sidebar (briefing §13): preferência local por navegador.
+const NAV_STORAGE_KEY = 'dshow.ads-intelligence.sidebar.collapsed';
+function lerNavColapsada(): boolean {
+  try { return window.localStorage.getItem(NAV_STORAGE_KEY) === '1'; } catch (e) { return false; }
+}
+function salvarNavColapsada(v: boolean): void {
+  try { window.localStorage.setItem(NAV_STORAGE_KEY, v ? '1' : '0'); } catch (e) { /* sem storage */ }
+}
 
 function lerArea(): string {
   const h = window.location.hash || '';
@@ -139,6 +155,19 @@ function Shell({ config }: { config: ShellConfig }) {
   const [drill, setDrill] = useState<DrillFiltro | null>(lerDrill());
   const [accountId, setAccountId] = useState<number | null>(null);
   const [period, setPeriod] = useState<Period>('30d');
+  const [navMini, setNavMini] = useState<boolean>(lerNavColapsada());
+
+  // Colapso da sidebar (briefing §11–§12 e §16): persiste a preferência e,
+  // após a transição de largura (~200ms), notifica visualizações que medem o
+  // container (D3) via resize — os ECharts já têm ResizeObserver próprio.
+  const alternarNav = () => {
+    setNavMini((v) => {
+      const novo = !v;
+      salvarNavColapsada(novo);
+      window.setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
+      return novo;
+    });
+  };
 
   useEffect(() => {
     const onHash = () => { setArea(lerArea()); setDrill(lerDrill()); };
@@ -223,13 +252,21 @@ function Shell({ config }: { config: ShellConfig }) {
       </div>
 
       <div className="ads-body">
-        <nav className="ads-nav">
+        <nav className={`ads-nav${navMini ? ' is-mini' : ''}`} aria-label="Seções do Ads Intelligence">
+          <button className="ads-nav-toggle" onClick={alternarNav}
+            aria-label={navMini ? 'Expandir menu' : 'Recolher menu'}
+            aria-expanded={!navMini}
+            title={navMini ? 'Expandir menu' : 'Recolher menu'}>
+            {navMini ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+          </button>
           {gruposNav.map(({ group, itens }) => (
-            <div key={group}>
+            <div key={group} className="ads-nav-bloco">
               <div className="ads-nav-grp">{group}</div>
+              <div className="ads-nav-sep" aria-hidden />
               {itens.map((a) => (
                 <button key={a.id} className={`ads-navitem${area === a.id ? ' is-active' : ''}`}
-                  onClick={() => irPara(a.id)} title={a.label}>
+                  onClick={() => irPara(a.id)} title={a.label} aria-label={a.label}
+                  aria-current={area === a.id ? 'page' : undefined}>
                   <span className="ads-navitem-ic" aria-hidden>{a.icon}</span>
                   <span className="ads-navitem-lbl">{a.label}</span>
                   {!a.impl && <span className="ads-navitem-soon">breve</span>}

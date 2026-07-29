@@ -21,7 +21,7 @@ export function Loading({ label = 'Carregando…' }: { label?: string }) {
   return <div className="ads-skel"><span className="ads-spinner" /> {label}</div>;
 }
 
-export function EmptyState({ icon, title, desc, soon }: { icon: string; title: string; desc?: string; soon?: string }) {
+export function EmptyState({ icon, title, desc, soon }: { icon: ReactNode; title: string; desc?: string; soon?: string }) {
   return (
     <div className="ads-empty">
       <div className="ads-empty-ic" aria-hidden>{icon}</div>

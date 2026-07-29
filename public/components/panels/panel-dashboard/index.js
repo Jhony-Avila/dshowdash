@@ -1,96 +1,169 @@
-import { createPanelPorts } from "/core/runtime/ports-profiles.js";
-import { LIFECYCLE_EVENTS } from "/core/runtime/events/catalog/lifecycle.events.js";
-const VERSION = "9.3.0-P2-ENTERPRISE";
-const MODULE_ID = "panel-dashboard";
-const SVGS = { target: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>', check: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>', zap: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>', barChart: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>' };
-const Ports = createPanelPorts({ moduleId: MODULE_ID });
-const _initPorts = () => Ports.init();
-const _getPort = (name) => Ports.get(name);
-const _isAuthenticated = () => {
-  const auth = _getPort("auth");
-  return auth?.isAuthenticated?.() ?? false;
-};
-const _isDocumentVisible = () => typeof document !== "undefined" && !document.hidden;
-const injectPorts = (p) => Ports.inject(p);
-const getPorts = () => Ports.snapshot();
-const _debug = () => {
-  const cfg = _getPort("config");
-  return cfg?.app?.debug;
-};
-const _log = (level, ...args) => {
-  const logger = _getPort("logger");
-  if (!logger) return;
-  if (!_debug() && level === "debug") return;
-  const fn = logger[level] || logger.info;
-  if (typeof fn === "function") fn.apply(logger, ["[Dashboard]", ...args]);
-};
-let abortController = null;
-let _mountedAt = null;
-const mount = (root, props = {}, scope = {}) => {
-  if (!_isAuthenticated()) {
-    return { success: false, moduleId: MODULE_ID, error: "not-authenticated" };
-  }
+'use strict';
+// panel-dashboard/index.js — carregador do painel Visão Geral (React).
+// @module  panels/panel-dashboard
+// @version 2.0.0
+// @changelog v2.0.0 — Substitui o "Painel de Teste" (JSON/params de debug no DOM)
+//   pelo dashboard executivo do Dshow Dash (briefing UX §19–§33). Informações
+//   técnicas nunca são renderizadas em produção; diagnóstico vive em
+//   healthCheck()/info() e no console (DevTools).
+//
+// Espelha panel-metaads/index.js: adaptador vanilla que o PanelPort importa e
+// que monta a interface React dentro do container-main (sem iframe).
+// CSS injetado UMA vez, escopado a [data-geral-react-root] (tokens --ger-*).
+// Manifest lido com cache:'no-store' (fonte da verdade do entry hasheado).
+
+const MODULE_ID = 'panels/panel-dashboard';
+const VERSION   = '2.0.0';
+const FLAG_KEY  = 'panel_geral_enabled';
+
+let _reactMod    = null;
+let _folhasReact = [];
+let _mounted     = false;
+
+async function resolverPayload() {
+  const padrao = { react_routes: ['*'] };
   try {
-    _initPorts();
-    _log("debug", "Montando painel", { props, scope });
-    abortController = new AbortController();
-    _mountedAt = Date.now();
-    const propsStr = JSON.stringify(props, null, 2);
-    root.innerHTML = `<div style="padding: 2rem; background: rgba(255,255,255,0.03); border-radius: 8px;"><h2 style="color: rgba(255,255,255,0.9); margin: 0 0 1rem 0; display: flex; align-items: center; gap: 8px;">${SVGS.target} Dashboard - Painel de Teste</h2><p style="color: rgba(255,255,255,0.7); margin: 0 0 1rem 0;">O componente Main est\xE1 funcionando corretamente!</p><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;"><div style="padding: 1rem; background: rgba(59,130,246,0.1); border-radius: 6px;"><div style="color: rgba(59,130,246,1); font-size: 2rem; font-weight: bold;">${SVGS.check}</div><div style="color: rgba(255,255,255,0.9); margin-top: 0.5rem;">Sistema OK</div></div><div style="padding: 1rem; background: rgba(34,197,94,0.1); border-radius: 6px;"><div style="color: rgba(34,197,94,1); font-size: 2rem; font-weight: bold;">${SVGS.zap}</div><div style="color: rgba(255,255,255,0.9); margin-top: 0.5rem;">Main Ativo</div></div><div style="padding: 1rem; background: rgba(245,158,11,0.1); border-radius: 6px;"><div style="color: rgba(245,158,11,1); font-size: 2rem; font-weight: bold;">${SVGS.barChart}</div><div style="color: rgba(255,255,255,0.9); margin-top: 0.5rem;">Pronto p/ Uso</div></div></div><div style="margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 6px; border-left: 3px solid rgba(59,130,246,1);"><strong style="color: rgba(255,255,255,0.9);">Par\xE2metros recebidos:</strong><pre style="color: rgba(255,255,255,0.6); margin: 0.5rem 0 0 0; font-size: 0.85rem;">${propsStr}</pre></div></div>`;
-    scope.telemetry?.track?.(LIFECYCLE_EVENTS.MOUNTED, { props, source: MODULE_ID });
-    return Promise.resolve(true);
-  } catch (err) {
-    _log("error", "Mount failed", err?.message);
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    const res = await fetch(
+      `/api/feature-flags/?action=check&flag=${encodeURIComponent(FLAG_KEY)}`,
+      { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: ctrl.signal }
+    );
+    clearTimeout(t);
+    if (!res.ok) return padrao;
+    const body = await res.json();
+    const flag = body && body.data && body.data.flag;
+    return (flag && flag.payload && typeof flag.payload === 'object') ? flag.payload : padrao;
+  } catch (_) {
+    return padrao;
   }
-};
-const unmount = () => {
-  _log("debug", "Desmontando painel");
-  if (abortController) {
-    abortController.abort();
-    abortController = null;
-  }
-  _mountedAt = null;
-};
-const dispose = () => {
-  _log("debug", "Limpeza final");
-  unmount();
-};
-const getStatus = () => ({ mounted: !!abortController, version: VERSION, moduleId: MODULE_ID, p22Compliant: true });
-const healthCheck = () => {
-  const portsSnapshot = Ports.snapshot();
-  const checks = { instanceExists: true, abortControllerActive: !!abortController && !abortController.signal.aborted, portsInitialized: portsSnapshot._initialized };
-  const score = Object.values(checks).filter(Boolean).length;
-  const maxScore = Object.keys(checks).length;
-  return { status: score === maxScore ? "HEALTHY" : "DEGRADED", score, maxScore, scoreDisplay: `${score}/${maxScore}`, checks, version: VERSION, moduleId: MODULE_ID, p22Compliant: true, isDocumentVisible: _isDocumentVisible(), timestamp: Date.now() };
-};
-const info = () => {
-  const portsSnapshot = Ports.snapshot();
-  return {
-    moduleId: MODULE_ID,
-    version: VERSION,
-    mounted: !!abortController,
-    uptime: _mountedAt ? Date.now() - _mountedAt : 0,
-    portsInitialized: portsSnapshot._initialized,
-    healthCheck: healthCheck(),
-    p22Compliant: true,
-    timestamp: Date.now()
+}
+
+const CSS_ATTR = 'data-geral-react-css';
+
+function injetarCss(href) {
+  if (document.querySelector(`link[${CSS_ATTR}][href="${href}"]`)) return;
+  const l = document.createElement('link');
+  l.setAttribute(CSS_ATTR, '');
+  l.rel = 'stylesheet';
+  l.href = href;
+  document.head.appendChild(l);
+}
+
+function coletarCss(manifesto, chaveEntry, base) {
+  const folhas = [];
+  const vistos = new Set();
+  const visitar = (chave) => {
+    if (!chave || vistos.has(chave)) return;
+    vistos.add(chave);
+    const reg = manifesto[chave];
+    if (!reg) return;
+    (reg.css || []).forEach((c) => {
+      const href = base + c;
+      if (!folhas.includes(href)) folhas.push(href);
+    });
+    (reg.imports || []).forEach(visitar);
   };
-};
-const getVersion = () => VERSION;
-const destroy = () => unmount();
-var panel_dashboard_default = { mount, unmount, destroy, dispose, getStatus, healthCheck, info, getVersion, injectPorts, getPorts };
-export {
-  MODULE_ID,
-  VERSION,
-  panel_dashboard_default as default,
-  destroy,
-  dispose,
-  getPorts,
-  getStatus,
-  getVersion,
-  healthCheck,
-  info,
-  injectPorts,
-  mount,
-  unmount
-};
+  visitar(chaveEntry);
+  return folhas;
+}
+
+async function carregarReact() {
+  if (_reactMod) return _reactMod;
+  const base = '/components/panels/panel-dashboard/dist/';
+  let entrada = null;
+  try {
+    const res = await fetch(base + '.vite/manifest.json', {
+      credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' },
+    });
+    if (res.ok) {
+      const mf = await res.json();
+      const chave = Object.keys(mf).find((k) => k.endsWith('src/entry.tsx'))
+                 || Object.keys(mf).find((k) => k.endsWith('entry.tsx'));
+      const reg = chave ? mf[chave] : null;
+      if (reg && reg.file) {
+        entrada = base + reg.file;
+        _folhasReact = coletarCss(mf, chave, base);
+      }
+    }
+  } catch (_) { /* trata abaixo */ }
+
+  if (!entrada) {
+    throw new Error('Bundle React não encontrado (manifest ausente ou inválido)');
+  }
+  _reactMod = await import(/* @vite-ignore */ entrada);
+  return _reactMod;
+}
+
+function garantirCssReact() {
+  _folhasReact.forEach(injetarCss);
+}
+
+function renderErro(contentEl, err) {
+  console.error('[geral] falha ao carregar o React:', err);
+  if (!contentEl) return;
+  contentEl.innerHTML =
+    '<div style="padding:32px;max-width:520px;margin:40px auto;text-align:center;'
+    + 'border:1px solid var(--border-color,#2e2e44);border-radius:12px;'
+    + 'background:var(--bg-card,#1a1a2e);color:var(--text-primary,#e8e8f0)">'
+    + '<strong style="display:block;font-size:15px;margin-bottom:8px">Não foi possível carregar a Visão Geral</strong>'
+    + '<span style="font-size:13px;opacity:.8">Recarregue a página. Se persistir, avise a equipe de dev.</span>'
+    + '</div>';
+}
+
+export async function mount(contentEl, config = {}) {
+  if (_mounted) await unmount();
+  const payload = await resolverPayload();
+  if (config.signal && config.signal.aborted) return;
+  try {
+    const mod = await carregarReact();
+    garantirCssReact();
+    await mod.mountReact(contentEl, {
+      ...config,
+      flag: { key: FLAG_KEY, enabled: true, payload, source: 'geral' },
+    });
+    _mounted = true;
+    return { MODULE_ID, VERSION, impl: 'react' };
+  } catch (err) {
+    renderErro(contentEl, err);
+    _mounted = false;
+    return { MODULE_ID, VERSION, impl: 'error' };
+  }
+}
+
+export async function unmount() {
+  try {
+    if (_reactMod) {
+      await _reactMod.unmountReact();
+    }
+  } catch (err) {
+    console.error('[geral] erro no unmount:', err);
+  } finally {
+    _mounted = false;
+  }
+  return Promise.resolve();
+}
+
+export function healthCheck() {
+  const base = {
+    status: _mounted ? 'HEALTHY' : 'IDLE',
+    score: _mounted ? 100 : 0,
+    maxScore: 100,
+    details: { mounted: _mounted, impl: 'react', version: VERSION },
+  };
+  if (_mounted && _reactMod && _reactMod.reactInfo) {
+    base.details.react = _reactMod.reactInfo();
+  }
+  return base;
+}
+
+export function info() {
+  return { MODULE_ID, VERSION, impl: 'react', flagKey: FLAG_KEY };
+}
+
+const _panel = { mount, unmount, destroy: unmount, dispose: unmount, healthCheck, info, VERSION, MODULE_ID };
+
+export { MODULE_ID, VERSION };
+export const destroy = unmount;
+export const dispose = unmount;
+export default _panel;
