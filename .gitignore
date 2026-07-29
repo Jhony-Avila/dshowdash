@@ -26,6 +26,8 @@
 !/api/anuncios/
 # api/home/ — endpoints resumidos da Home Inteligente (clima etc.)
 !/api/home/
+# api/avatar/ — persistência do Avatar Studio (studio.php + SvgSanitizer)
+!/api/avatar/
 
 # public/koala/ — só o código-fonte + configs de build (NÃO dist, NÃO node_modules)
 !/public/

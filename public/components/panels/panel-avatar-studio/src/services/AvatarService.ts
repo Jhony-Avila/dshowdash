@@ -1,47 +1,51 @@
 // services/AvatarService.ts — persistência e sincronização do avatar.
-// @version 1.0.0  @created 2026-07-29
-//
-// Estratégia de confiabilidade (briefing §25):
-//   1. Tenta a API oficial (/api/avatar/studio.php — nasce na fase backend).
-//   2. Sem API (404/erro de rede) → localStorage, marcando origem 'local'.
-//   3. Todo salvamento emite EventBus + BroadcastChannel + localStorage de
-//      render — header/menu/perfil sincronizam sem F5 (briefing §28–§30).
-// O backend NUNCA confia no que chega daqui: revalida o config no servidor.
+// @version 2.0.0
+// @changelog v2.0.0 — contrato real do /api/avatar/studio.php: version p/
+//   concorrência otimista (409), CSRF via /api/auth/check.php (mesmo caminho
+//   do panel-user-profile), broadcast do render_url PUBLICADO pelo servidor.
+//   Fallback localStorage permanece p/ offline/erro (briefing §25).
+// O backend NUNCA confia no que sai daqui: revalida config e sanitiza o SVG.
 import type { AvatarConfig } from '../domain/types';
-import { validarConfig, dataUriDe } from './AvatarCatalog';
+import { validarConfig, svgDe, dataUriDe } from './AvatarCatalog';
 
 const URL_API = '/api/avatar/studio.php';
+const URL_SESSAO = '/api/auth/check.php';
 const CHAVE_CONFIG = 'dshow.avatar.config.v1';
 const CHAVE_RENDER = 'dshow.avatar.render.v1';
 const CANAL = 'dshow-avatar';
+const EVENTO_DOM = 'dshow:avatar:atualizado';
 
 export type OrigemDado = 'api' | 'local' | 'padrao';
 
 export interface ResultadoCarga {
   config: AvatarConfig | null;
+  versao: number;
   origem: OrigemDado;
+  renderUrl: string | null;
   urlLegado: string | null;
 }
 
 export interface ResultadoSalvar {
   ok: boolean;
   origem: OrigemDado;
+  versao?: number;
+  conflito?: boolean;
   mensagem?: string;
 }
 
-declare global {
-  interface Window {
-    DshowEventBus?: { emit?: (evento: string, dados?: unknown) => void };
-    csrfToken?: string;
-  }
-}
+let _csrf: string | null = null;
 
-function tokenCsrf(): string | null {
+/** Token CSRF da sessão — mesmo mecanismo do panel-user-profile. */
+async function obterCsrf(): Promise<string | null> {
+  if (_csrf) return _csrf;
   try {
-    if (typeof window.csrfToken === 'string') return window.csrfToken;
-    const meta = document.querySelector('meta[name="csrf-token"]');
-    return meta?.getAttribute('content') ?? null;
-  } catch { return null; }
+    const r = await fetch(URL_SESSAO, { credentials: 'include', cache: 'no-store' });
+    if (r.ok) {
+      const corpo = await r.json();
+      _csrf = corpo?.data?.session?.csrf_token ?? corpo?.session?.csrf_token ?? null;
+    }
+  } catch { /* sem sessão — o POST vai falhar e cair no fallback local */ }
+  return _csrf;
 }
 
 export async function carregarAvatar(signal?: AbortSignal): Promise<ResultadoCarga> {
@@ -50,63 +54,88 @@ export async function carregarAvatar(signal?: AbortSignal): Promise<ResultadoCar
     const r = await fetch(URL_API, { credentials: 'include', signal, cache: 'no-store' });
     if (r.ok) {
       const corpo = await r.json();
-      const bruto = corpo?.data?.config ?? corpo?.config ?? null;
+      const d = corpo?.data ?? {};
       return {
-        config: bruto ? validarConfig(bruto) : null,
+        config: d.config ? validarConfig(d.config) : null,
+        versao: typeof d.version === 'number' ? d.version : 0,
         origem: 'api',
-        urlLegado: corpo?.data?.avatar_url ?? corpo?.avatar_url ?? null,
+        renderUrl: d.render_url ?? null,
+        urlLegado: d.avatar_url ?? null,
       };
     }
   } catch { /* segue para o fallback */ }
 
-  // 2) localStorage
+  // 2) localStorage (rascunho offline / API indisponível)
   try {
     const salvo = localStorage.getItem(CHAVE_CONFIG);
-    if (salvo) return { config: validarConfig(JSON.parse(salvo)), origem: 'local', urlLegado: null };
+    if (salvo) {
+      return { config: validarConfig(JSON.parse(salvo)), versao: 0, origem: 'local', renderUrl: null, urlLegado: null };
+    }
   } catch { /* segue */ }
 
-  return { config: null, origem: 'padrao', urlLegado: null };
+  return { config: null, versao: 0, origem: 'padrao', renderUrl: null, urlLegado: null };
 }
 
-export async function salvarAvatar(config: AvatarConfig): Promise<ResultadoSalvar> {
+/** Propaga o novo render para header/menu/perfil e outras abas. */
+function anunciar(render: string, origem: OrigemDado): void {
+  try { localStorage.setItem(CHAVE_RENDER, render); } catch { /* sem espaço */ }
+  try { window.dispatchEvent(new CustomEvent(EVENTO_DOM, { detail: { render, origem } })); } catch { /* ambiente sem DOM */ }
+  try {
+    const canal = new BroadcastChannel(CANAL);
+    canal.postMessage({ tipo: EVENTO_DOM, render });
+    canal.close();
+  } catch { /* navegador sem suporte */ }
+}
+
+export async function salvarAvatar(config: AvatarConfig, versaoBase: number): Promise<ResultadoSalvar> {
   const validado = validarConfig(config);
-  const render = dataUriDe(validado, { forma: 'circulo' });
 
-  let resultado: ResultadoSalvar = { ok: false, origem: 'padrao' };
-
-  // 1) API oficial (o servidor revalida e re-renderiza — não confia no front)
+  // 1) API oficial (o servidor revalida o config e sanitiza o SVG)
   try {
     const cabecalhos: Record<string, string> = { 'Content-Type': 'application/json' };
-    const csrf = tokenCsrf();
+    const csrf = await obterCsrf();
     if (csrf) cabecalhos['X-CSRF-Token'] = csrf;
+
     const r = await fetch(URL_API, {
       method: 'POST',
       credentials: 'include',
       headers: cabecalhos,
-      body: JSON.stringify({ config: validado }),
+      body: JSON.stringify({
+        config: validado,
+        svg: svgDe(validado),          // quadro completo; círculo é corte do CSS
+        base_version: versaoBase,
+      }),
     });
-    if (r.ok) resultado = { ok: true, origem: 'api' };
-    else if (r.status === 409) return { ok: false, origem: 'api', mensagem: 'Conflito: o avatar foi alterado em outra aba.' };
+
+    if (r.ok) {
+      const corpo = await r.json();
+      const renderUrl: string = corpo?.data?.render_url ?? '';
+      const versao: number = corpo?.data?.version ?? versaoBase + 1;
+      try { localStorage.setItem(CHAVE_CONFIG, JSON.stringify(validado)); } catch { /* espelho local */ }
+      // bust explícito p/ <img> já montadas (o arquivo é novo, mas garante)
+      anunciar(renderUrl ? `${renderUrl}?t=${versao}` : dataUriDe(validado), 'api');
+      return { ok: true, origem: 'api', versao };
+    }
+    if (r.status === 409) {
+      const corpo = await r.json().catch(() => null);
+      return {
+        ok: false, origem: 'api', conflito: true,
+        versao: corpo?.data?.version,
+        mensagem: 'O avatar foi salvo em outra aba. Recarregue para ver a versão mais recente.',
+      };
+    }
+    if (r.status === 400) {
+      const corpo = await r.json().catch(() => null);
+      return { ok: false, origem: 'api', mensagem: `O servidor recusou o avatar (${corpo?.error ?? 'validação'}).` };
+    }
   } catch { /* segue para o fallback */ }
 
-  // 2) Fallback local (API ainda não publicada ou offline)
-  if (!resultado.ok) {
-    try {
-      localStorage.setItem(CHAVE_CONFIG, JSON.stringify(validado));
-      resultado = { ok: true, origem: 'local', mensagem: 'Salvo neste navegador (servidor indisponível).' };
-    } catch {
-      return { ok: false, origem: 'padrao', mensagem: 'Não foi possível salvar.' };
-    }
-  }
-
-  // 3) Sincronização instantânea com o shell (header/menu/perfil)
-  try { localStorage.setItem(CHAVE_RENDER, render); } catch { /* sem espaço */ }
-  try { window.DshowEventBus?.emit?.('avatar:atualizado', { render, origem: resultado.origem }); } catch { /* shell ausente */ }
+  // 2) Fallback local (API fora do ar)
   try {
-    const canal = new BroadcastChannel(CANAL);
-    canal.postMessage({ tipo: 'avatar:atualizado', render });
-    canal.close();
-  } catch { /* navegador sem suporte */ }
-
-  return resultado;
+    localStorage.setItem(CHAVE_CONFIG, JSON.stringify(validado));
+    anunciar(dataUriDe(validado), 'local');
+    return { ok: true, origem: 'local', mensagem: 'Salvo neste navegador (servidor indisponível).' };
+  } catch {
+    return { ok: false, origem: 'padrao', mensagem: 'Não foi possível salvar.' };
+  }
 }

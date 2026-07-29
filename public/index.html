@@ -159,6 +159,8 @@
   <script type="module" src="/components/world-clock-map/index.js"></script>
   <!-- Trânsito SP — indicador standalone no header (auto-injeção estilo theme-toggle); abre painel-transito-sp no main. 2026-07-20 -->
   <script type="module" src="/components/traffic-monitor/header-indicator.js?v=20260729-2"></script>
+  <!-- Avatar Sync — atualiza o avatar do header/menu em tempo real quando o Avatar Studio salva (CustomEvent + BroadcastChannel + storage). ADITIVO, age só após load. 2026-07-29 -->
+  <script src="/components/avatar-sync/index.js?v=20260729-1"></script>
   <!-- DIAGNÓSTICO TEMPORÁRIO 2026-07-08: watcher READ-ONLY da "barra preta" no item ativo da sidebar.
        Captura o elemento culpado (transitório) e envia p/ /api/diag/blackbar.php (logs/blackbar-diag.log).
        REMOVER esta tag + public/diag/blackbar-watch.js + api/diag/blackbar.php após diagnosticar. -->
