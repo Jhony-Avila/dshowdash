@@ -8,19 +8,43 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Brush, Camera, CircleUser, Columns2, Dices, Eye, Frame, Glasses, History,
-  Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Undo2, Wand2,
+  Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Undo2,
+  Volume2, VolumeX, Wand2,
 } from 'lucide-react';
-import type { AvatarConfig, CategoriaId, EstadoSalvar, ShellConfig } from '../domain/types';
-import { CATEGORIAS, CONFIG_PADRAO, aleatorio, validarConfig } from '../services/AvatarCatalog';
+import type { AvatarConfig, CategoriaId, EstadoSalvar, Raridade, ShellConfig } from '../domain/types';
+import {
+  CATEGORIAS, CONFIG_PADRAO, aleatorio, itemPorId, nivelRaridade, validarConfig,
+} from '../services/AvatarCatalog';
 import { carregarAvatar, salvarAvatar } from '../services/AvatarService';
 import type { OrigemDado, ResultadoCarga, TipoAtivo } from '../services/AvatarService';
+import { definirSom, somAtivo, tocarCelebracao, tocarEquipar, tocarSalvar } from '../services/Som';
+import { telemetria } from '../services/Telemetria';
 import { AvatarSvg } from '../components/AvatarSvg';
+import { PalcoCinema } from '../components/PalcoCinema';
+import type { Celebracao } from '../components/PalcoCinema';
 import { GradeItens } from '../components/GradeItens';
 import { Cores } from '../components/Cores';
 import { Presets } from '../components/Presets';
 import { Historico } from '../components/Historico';
 import { Foto } from '../components/Foto';
 import '../styles/estudio.css';
+
+/** Maior raridade entre os itens que MUDARAM de a→b (celebração/som). */
+function raridadeDaMudanca(a: AvatarConfig, b: AvatarConfig): Raridade | null {
+  const ids = new Set<string>();
+  if (a.base !== b.base) ids.add(b.base);
+  for (const [cat, id] of Object.entries(b.camadas)) {
+    if (id && a.camadas[cat as keyof AvatarConfig['camadas']] !== id) ids.add(id);
+  }
+  let melhor: Raridade | null = null;
+  for (const id of ids) {
+    const item = itemPorId(id);
+    if (item && (melhor === null || nivelRaridade(item.raridade) > nivelRaridade(melhor))) {
+      melhor = item.raridade;
+    }
+  }
+  return melhor;
+}
 
 const ICONES: Record<CategoriaId, React.ComponentType<{ size?: number }>> = {
   base: CircleUser, cabelo: Brush, olhos: Eye, boca: Smile, roupa: Shirt,
@@ -48,6 +72,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [categoria, setCategoria] = useState<CategoriaId>('base');
   const [aba, setAba] = useState<'itens' | 'presets' | 'historico' | 'foto'>('itens');
   const [comparando, setComparando] = useState(false);
+  const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
+  const [somLigado, setSomLigado] = useState(somAtivo);
 
   const desfazerPilha = useRef<AvatarConfig[]>([]);
   const refazerPilha = useRef<AvatarConfig[]>([]);
@@ -81,6 +107,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       if (!vivo) return;
       aplicarCarga(r);
       setCarregando(false);
+      telemetria('abriu', { tipoAtivo: r.tipoAtivo ?? 'nenhum' });
     })();
     return () => { vivo = false; };
   }, [shellConfig.signal, aplicarCarga]);
@@ -91,7 +118,19 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       desfazerPilha.current.push(anterior);
       if (desfazerPilha.current.length > 40) desfazerPilha.current.shift();
       refazerPilha.current = [];
-      return validarConfig(novo);
+      const validado = validarConfig(novo);
+      // som + celebração pela raridade do que acabou de ser equipado (AS3 F1)
+      const raridade = raridadeDaMudanca(anterior, validado);
+      if (raridade) {
+        tocarEquipar(nivelRaridade(raridade));
+        telemetria('equipou', { raridade });
+        if (nivelRaridade(raridade) >= nivelRaridade('lendario')) {
+          setCelebracao({ raridade, chave: Date.now() });
+          tocarCelebracao(raridade);
+          telemetria('celebracao', { raridade });
+        }
+      }
+      return validado;
     });
     setEstado('alteracoes_pendentes');
     setMensagem(null);
@@ -138,6 +177,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       setOrigem(r.origem);
       if (r.versao !== undefined) setVersao(r.versao);
       if (r.origem === 'api') setTipoAtivo('camadas');
+      tocarSalvar();
+      telemetria('salvou', { origem: r.origem });
       setMensagem(r.mensagem ?? null);
       setEstado('salvo');
       window.setTimeout(() => setEstado((e) => (e === 'salvo' ? 'sem_alteracoes' : e)), 2200);
@@ -192,6 +233,16 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           </div>
         </div>
         <div className="avst-topo-acoes">
+          <button type="button" className={`avst-botao ${somLigado ? 'avst-botao-ativo' : ''}`}
+            onClick={() => {
+              const novo = !somLigado;
+              definirSom(novo);
+              setSomLigado(novo);
+              telemetria('som', { ligado: novo });
+            }}
+            title={somLigado ? 'Desligar sons do estúdio' : 'Ligar sons do estúdio'}>
+            {somLigado ? <Volume2 size={15} aria-hidden /> : <VolumeX size={15} aria-hidden />}
+          </button>
           <button type="button" className="avst-botao" onClick={desfazer}
             disabled={desfazerPilha.current.length === 0} title="Desfazer (Ctrl+Z)">
             <Undo2 size={15} aria-hidden /> Desfazer
@@ -261,7 +312,10 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             </div>
           ) : (
             <div className="avst-palco-principal">
-              <AvatarSvg config={atual} uid="palco" />
+              <PalcoCinema config={atual}
+                categoria={aba === 'itens' ? categoria : null}
+                celebracao={celebracao}
+                aoFimCelebracao={() => setCelebracao(null)} />
             </div>
           )}
 

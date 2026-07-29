@@ -198,10 +198,8 @@
   <script type="module" src="/components/traffic-monitor/header-indicator.js?v=20260729-2"></script>
   <!-- Avatar Sync — atualiza o avatar do header/menu em tempo real quando o Avatar Studio salva (CustomEvent + BroadcastChannel + storage). ADITIVO, age só após load. 2026-07-29 -->
   <script src="/components/avatar-sync/index.js?v=20260729-2"></script>
-  <!-- DIAGNÓSTICO TEMPORÁRIO 2026-07-08: watcher READ-ONLY da "barra preta" no item ativo da sidebar.
-       Captura o elemento culpado (transitório) e envia p/ /api/diag/blackbar.php (logs/blackbar-diag.log).
-       REMOVER esta tag + public/diag/blackbar-watch.js + api/diag/blackbar.php após diagnosticar. -->
-  <script defer src="/diag/blackbar-watch.js?v=20260708-1"></script>
+  <!-- blackbar-watch (diagnóstico temporário 2026-07-08) REMOVIDO em 2026-07-29:
+       o arquivo já não existe no servidor e a tag só gerava 404 no console. -->
 
 </body>
 
