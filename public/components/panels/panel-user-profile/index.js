@@ -5,7 +5,7 @@ import { render, renderAuthBlockedView } from "./ui/renderer.js";
 import Store from "./state/store.js";
 import { EVENTS } from "./core/constants.js";
 const MODULE_ID = "panels/panel-user-profile";
-const VERSION = "9.4.0-RECONNECT";
+const VERSION = "9.5.0-AVATAR-STUDIO";
 const getVersion = () => VERSION;
 const Ports = createPanelPorts({ moduleId: MODULE_ID });
 const _initPorts = () => Ports.init();
@@ -140,6 +140,7 @@ class UserProfileComponent {
       toggleAvatarPicker: () => self.store.setShowAvatarPicker(!self.store.getState().showAvatarPicker),
       closeAvatarPicker: () => self.store.setShowAvatarPicker(false),
       selectAvatar: (url) => { if (url) self.store.setAvatar(url); },
+      openAvatarStudio: () => { if (typeof window !== "undefined") window.location.hash = "#/panel-avatar-studio"; },
       updateField: (field, value) => {
         // Edição de texto: NÃO reconstruir o innerHTML a cada tecla (perderia foco/cursor do input).
         // O input já reflete o valor digitado; aqui só atualizamos o store (dirty) e mostramos o footer.

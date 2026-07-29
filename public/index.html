@@ -142,6 +142,21 @@
     .layout-full-screen [data-region="main"] { margin-left: 0 !important; width: 100% !important; max-width: 100% !important; }
     .full-screen-mode { margin: 0 !important; padding: 0 !important; width: 100vw !important; height: 100vh !important; }
   </style>
+
+  <!-- Avatar Studio §22 — neutraliza o glow neon roxo do user-menu IMEDIATAMENTE
+       (component.css não tem ?v e fica até 4h no cache do Cloudflare; a fonte já
+       foi corrigida p/ v11.4.0 — este bloco pode ser removido num deploy futuro). -->
+  <style id="avatar-glow-fix">
+    .user-menu-component .user-avatar::before,
+    .user-menu-component .user-avatar::after,
+    .user-menu-dropdown-portal .user-avatar-large::before,
+    .user-menu-dropdown-portal .user-avatar-large::after { display: none !important; }
+    .user-menu-component .user-avatar,
+    .user-menu-trigger:hover .user-avatar { box-shadow: 0 1px 6px rgba(0,0,0,0.35) !important; }
+    .user-menu-dropdown-portal .user-avatar-large { box-shadow: 0 1px 8px rgba(0,0,0,0.35) !important; }
+    .user-menu-component .user-avatar .avatar-img,
+    .user-menu-dropdown-portal .user-avatar-large .avatar-img { border-color: rgba(255,255,255,0.22) !important; }
+  </style>
 </head>
 
 <body data-auth-ready="false" data-state="initializing">

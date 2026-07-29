@@ -1,17 +1,9 @@
-/* User Menu - Enterprise Premium v11.3.0-ORBIT-NEON-INTENSE */
+/* User Menu - Enterprise Premium v11.4.0-CLEAN */
+/* v11.4.0 (2026-07-29): REMOVIDO o glow neon roxo permanente (anéis orbit +
+   box-shadow) — briefing Avatar Studio §22: efeito era aplicado a todos os
+   usuários sem contexto. Quem dá destaque agora é a MOLDURA escolhida no
+   Avatar Studio (o SVG publicado já traz o aro/raridade do usuário). */
 /* v11.3.0: Neon intenso e impactante */
-
-/* === KEYFRAMES === */
-@keyframes avatar-orbit {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
 
 /* === TRIGGER CONTAINER === */
 .user-menu-component {
@@ -51,51 +43,11 @@
   border-radius: 50%;
   overflow: visible;
   z-index: 1;
-  box-shadow: 
-    0 0 10px rgba(124, 58, 237, 0.8),
-    0 0 20px rgba(124, 58, 237, 0.5),
-    0 0 30px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
 }
 
-/* Anel neon principal - INTENSO */
-.user-menu-component .user-avatar::before {
-  content: "";
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0%,
-    #7c3aed 20%,
-    #a855f7 35%,
-    #c084fc 50%,
-    #a855f7 65%,
-    #7c3aed 80%,
-    transparent 100%
-  );
-  animation: avatar-orbit 2.5s linear infinite;
-  filter: blur(2px);
-  z-index: -1;
-}
-
-/* Camada de glow externo */
-.user-menu-component .user-avatar::after {
-  content: "";
-  position: absolute;
-  inset: -10px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 180deg,
-    transparent 0%,
-    rgba(139, 92, 246, 0.9) 20%,
-    rgba(168, 85, 247, 0.9) 50%,
-    rgba(139, 92, 246, 0.9) 80%,
-    transparent 100%
-  );
-  animation: avatar-orbit 2.5s linear infinite reverse;
-  filter: blur(8px);
-  z-index: -2;
-}
+/* v11.4.0: anéis orbit (::before/::after) removidos — o destaque vem da
+   moldura do próprio avatar (Avatar Studio). */
 
 .user-menu-component .user-avatar .avatar-img {
   width: 100%;
@@ -104,7 +56,7 @@
   border-radius: 50%;
   position: relative;
   z-index: 2;
-  border: 2px solid rgba(168, 85, 247, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.22);
 }
 
 .user-menu-component .user-avatar .avatar-initials {
@@ -151,21 +103,9 @@
   transform: rotate(180deg); 
 }
 
-/* Hover - ainda mais brilho */
+/* Hover - leve elevação, sem neon (v11.4.0) */
 .user-menu-trigger:hover .user-avatar {
-  box-shadow: 
-    0 0 15px rgba(168, 85, 247, 1),
-    0 0 30px rgba(168, 85, 247, 0.7),
-    0 0 45px rgba(168, 85, 247, 0.4);
-}
-
-.user-menu-trigger:hover .user-avatar::before {
-  filter: blur(1px);
-}
-
-.user-menu-trigger:hover .user-avatar::after {
-  filter: blur(10px);
-  inset: -12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 /* === DROPDOWN PORTAL === */
@@ -214,51 +154,11 @@
   overflow: visible;
   flex-shrink: 0;
   z-index: 1;
-  box-shadow: 
-    0 0 12px rgba(124, 58, 237, 0.8),
-    0 0 24px rgba(124, 58, 237, 0.5),
-    0 0 36px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
 }
 
-/* Anel neon - dropdown INTENSO */
-.user-menu-dropdown-portal .user-avatar-large::before {
-  content: "";
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0%,
-    #7c3aed 20%,
-    #a855f7 35%,
-    #c084fc 50%,
-    #a855f7 65%,
-    #7c3aed 80%,
-    transparent 100%
-  );
-  animation: avatar-orbit 2.5s linear infinite;
-  filter: blur(2px);
-  z-index: -1;
-}
-
-/* Glow externo - dropdown */
-.user-menu-dropdown-portal .user-avatar-large::after {
-  content: "";
-  position: absolute;
-  inset: -14px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 180deg,
-    transparent 0%,
-    rgba(139, 92, 246, 0.9) 20%,
-    rgba(168, 85, 247, 0.9) 50%,
-    rgba(139, 92, 246, 0.9) 80%,
-    transparent 100%
-  );
-  animation: avatar-orbit 2.5s linear infinite reverse;
-  filter: blur(10px);
-  z-index: -2;
-}
+/* v11.4.0: anéis orbit do dropdown (::before/::after) removidos — o
+   destaque vem da moldura do próprio avatar (Avatar Studio). */
 
 .user-menu-dropdown-portal .user-avatar-large .avatar-img {
   width: 100%;
@@ -267,7 +167,7 @@
   border-radius: 50%;
   position: relative;
   z-index: 2;
-  border: 2px solid rgba(168, 85, 247, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.22);
 }
 
 .user-menu-dropdown-portal .user-avatar-large .avatar-initials {

@@ -24,12 +24,8 @@ function renderAuthBlocked() {
 function renderError(message = "Erro ao carregar perfil") {
   return `    <div class="pup" data-module="${CORE_MODULE_ID}">      <div class="pup-state">        <div class="pup-state-icon error">          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.5">            <circle cx="12" cy="12" r="10"/>            <path d="M12 8v4M12 16h.01"/>          </svg>        </div>        <h3 class="pup-state-title">${message}</h3>        <p class="pup-state-desc">N\xE3o foi poss\xEDvel carregar os dados</p>        <button class="pup-state-btn secondary" data-action="retry">          ${ICONS.refresh} Tentar Novamente        </button>      </div>    </div>  `;
 }
-function renderAvatarPicker(avatars, currentUrl) {
-  const items = avatars.slice(0, 50).map((a) => {
-    const selectedClass = a.url === currentUrl ? "selected" : "";
-    return `<div class="pup-picker-item ${selectedClass}" data-action="select-avatar" data-url="${a.url}"><img src="${a.url}" alt="${a.name || "Avatar"}"></div>`;
-  }).join("");
-  return `    <div class="pup-picker">      <div class="pup-picker-head">        <span class="pup-picker-title">Escolha um novo avatar</span>        <button class="pup-picker-close" data-action="close-picker">${ICONS.x}</button>      </div>      <div class="pup-picker-grid">${items}</div>    </div>  `;
+function renderAvatarPicker(_avatars, currentUrl) {
+  return `    <div class="pup-picker">      <div class="pup-picker-head">        <span class="pup-picker-title">Personalize no Avatar Studio</span>        <button class="pup-picker-close" data-action="close-picker">${ICONS.x}</button>      </div>      <div style="display:flex;align-items:center;gap:16px;padding:14px 4px;flex-wrap:wrap">        <img src="${currentUrl}" alt="Avatar atual" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.18)">        <div style="flex:1;min-width:220px">          <p style="margin:0 0 10px;font-size:13px;line-height:1.5;opacity:0.85">Monte seu personagem por camadas — rosto, cabelo, roupa, fundo, molduras de raridade e efeitos. Salva com hist\xF3rico e atualiza o header na hora.</p>          <button class="pup-btn pri" data-action="open-avatar-studio" style="display:inline-flex;align-items:center;gap:8px">${ICONS.star} Abrir Avatar Studio</button>        </div>      </div>    </div>  `;
 }
 function renderProfile(profile, avatars, showAvatarPicker, isDirty, saving) {
   const avatarUrl = profile.avatarUrl || "/assets/avatars/avatar.svg";
