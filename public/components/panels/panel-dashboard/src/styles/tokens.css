@@ -41,7 +41,7 @@
 }
 
 /* ── Shell ────────────────────────────────────────────────────── */
-[data-geral-react-root] .ger-shell { display: flex; flex-direction: column; gap: 16px; min-height: 100%; background: var(--ger-fundo); padding: 18px 20px 44px; max-width: 1360px; margin: 0 auto; }
+[data-geral-react-root] .ger-shell { display: flex; flex-direction: column; gap: 16px; min-height: 100%; background: transparent; padding: 18px 20px 44px; max-width: 1360px; margin: 0 auto; position: relative; z-index: 1; }
 
 /* Header da página (§21) */
 [data-geral-react-root] .ger-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
@@ -225,32 +225,56 @@
 [data-geral-react-root] .ger-select:focus { border-color: var(--ger-azul); }
 [data-geral-react-root] .ger-pers-head-acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
-/* ── GreetingHero (§6–§7): céu por horário + clima ─────────────── */
-[data-geral-react-root] .ger-hero { position: relative; overflow: hidden; border-radius: 14px; border: 1px solid var(--ger-borda); min-height: 172px; height: 100%; display: flex; align-items: flex-end; }
-[data-geral-react-root] .ger-hero-ceu { position: absolute; inset: 0; }
-[data-geral-react-root] .ger-hero[data-ceu="noite"], [data-geral-react-root] .ger-hero[data-ceu="madrugada"] { background: linear-gradient(180deg, #0b1026 0%, #141a3a 55%, #1d2450 100%); }
-[data-geral-react-root] .ger-hero[data-ceu="manha"] { background: linear-gradient(180deg, #8ec9f5 0%, #bfe0f8 60%, #ffe9c9 100%); }
-[data-geral-react-root] .ger-hero[data-ceu="tarde"] { background: linear-gradient(180deg, #6db3ec 0%, #a8d4f5 65%, #d8ecfb 100%); }
-[data-geral-react-root] .ger-hero[data-ceu="entardecer"] { background: linear-gradient(180deg, #3b3f77 0%, #9a5f8f 55%, #f0a05f 100%); }
-[data-geral-react-root] .ger-hero[data-clima="chuva"] .ger-hero-ceu::after,
-[data-geral-react-root] .ger-hero[data-clima="tempestade"] .ger-hero-ceu::after { content: ''; position: absolute; inset: 0; background: rgba(20, 28, 48, .38); }
-[data-geral-react-root] .ger-hero[data-clima="nublado"] .ger-hero-ceu::after { content: ''; position: absolute; inset: 0; background: rgba(90, 100, 120, .22); }
-[data-geral-react-root] .ger-lua { position: absolute; top: 16px; right: 40px; width: 52px; height: 52px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f5f3ea, #cfcdc4 70%); box-shadow: 0 0 34px 10px rgba(240, 238, 225, .28); }
-[data-geral-react-root] .ger-sol { position: absolute; top: 14px; right: 42px; width: 54px; height: 54px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #fff4c9, #f8cf5e 75%); box-shadow: 0 0 44px 14px rgba(248, 207, 94, .38); }
-[data-geral-react-root] .ger-estrela { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: rgba(255, 255, 255, .85); animation: ger-brilho 3.6s ease-in-out infinite; }
-@keyframes ger-brilho { 50% { opacity: .25; } }
-[data-geral-react-root] .ger-nuvem { position: absolute; height: 22px; border-radius: 20px; background: rgba(255, 255, 255, .28); filter: blur(1px); }
-[data-geral-react-root] .ger-hero[data-ceu="noite"] .ger-nuvem, [data-geral-react-root] .ger-hero[data-ceu="madrugada"] .ger-nuvem { background: rgba(200, 208, 235, .14); }
-[data-geral-react-root] .ger-nuvem-1 { width: 120px; top: 26px; right: 110px; }
-[data-geral-react-root] .ger-nuvem-2 { width: 84px; top: 58px; right: 40px; }
-[data-geral-react-root] .ger-hero-conteudo { position: relative; z-index: 1; width: 100%; padding: 18px 20px 14px; background: linear-gradient(180deg, transparent, rgba(10, 12, 24, .46) 60%); color: #fff; backdrop-filter: blur(2px); }
-[data-geral-react-root] .ger-hero[data-ceu="manha"] .ger-hero-conteudo,
-[data-geral-react-root] .ger-hero[data-ceu="tarde"] .ger-hero-conteudo { background: linear-gradient(180deg, transparent, rgba(255, 255, 255, .55) 60%); color: #14203a; }
-[data-geral-react-root] .ger-hero-saudacao { margin: 0 0 3px; font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
-[data-geral-react-root] .ger-hero-frase { margin: 0 0 8px; font-size: 12.5px; opacity: .92; max-width: 640px; }
-[data-geral-react-root] .ger-hero-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; opacity: .85; }
+/* ── Céu de PÁGINA INTEIRA (§7 — identidade imersiva, v3.1) ─────── */
+[data-geral-react-root] .ger-tela-toda { position: relative; min-height: 100%; }
+[data-geral-react-root] .ger-tela-toda[data-ceu="noite"], [data-geral-react-root] .ger-tela-toda[data-ceu="madrugada"] { background: linear-gradient(180deg, #0b1026 0%, #10163a 45%, #1a2150 100%); }
+[data-geral-react-root] .ger-tela-toda[data-ceu="manha"] { background: linear-gradient(180deg, #8ec9f5 0%, #bfe0f8 55%, #eaf2fb 100%); }
+[data-geral-react-root] .ger-tela-toda[data-ceu="tarde"] { background: linear-gradient(180deg, #6db3ec 0%, #a8d4f5 60%, #e2eefb 100%); }
+[data-geral-react-root] .ger-tela-toda[data-ceu="entardecer"] { background: linear-gradient(180deg, #3b3f77 0%, #9a5f8f 55%, #f0a05f 100%); }
+[data-geral-react-root] .ger-ceu-fundo { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+[data-geral-react-root] .ger-tela-toda[data-clima="chuva"] .ger-ceu-fundo::after,
+[data-geral-react-root] .ger-tela-toda[data-clima="tempestade"] .ger-ceu-fundo::after { content: ''; position: absolute; inset: 0; background: rgba(20, 28, 48, .34); }
+[data-geral-react-root] .ger-tela-toda[data-clima="nublado"] .ger-ceu-fundo::after { content: ''; position: absolute; inset: 0; background: rgba(90, 100, 120, .2); }
+[data-geral-react-root] .ger-lua { position: absolute; top: 64px; right: 8%; width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f5f3ea, #cfcdc4 70%); box-shadow: 0 0 70px 22px rgba(240, 238, 225, .26); }
+[data-geral-react-root] .ger-sol { position: absolute; top: 56px; right: 9%; width: 88px; height: 88px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #fff4c9, #f8cf5e 75%); box-shadow: 0 0 80px 26px rgba(248, 207, 94, .34); }
+[data-geral-react-root] .ger-estrela { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: rgba(255, 255, 255, .9); animation: ger-brilho 3.6s ease-in-out infinite; }
+@keyframes ger-brilho { 50% { opacity: .2; } }
+[data-geral-react-root] .ger-nuvem { position: absolute; height: 26px; border-radius: 22px; background: rgba(255, 255, 255, .26); filter: blur(1.5px); }
+[data-geral-react-root] .ger-tela-toda[data-ceu="noite"] .ger-nuvem, [data-geral-react-root] .ger-tela-toda[data-ceu="madrugada"] .ger-nuvem { background: rgba(200, 208, 235, .12); }
+[data-geral-react-root] .ger-nuvem-1 { width: 170px; top: 70px; right: 20%; }
+[data-geral-react-root] .ger-nuvem-2 { width: 110px; top: 130px; right: 6%; }
+[data-geral-react-root] .ger-nuvem-3 { width: 140px; top: 40px; left: 12%; }
+
+/* ── GreetingHero transparente sobre o céu (v3.1) ──────────────── */
+[data-geral-react-root] .ger-hero { min-height: 150px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 6px 10px; color: #fff; text-shadow: 0 1px 10px rgba(8, 10, 24, .55); }
+[data-geral-react-root] .ger-tela-toda[data-ceu="manha"] .ger-hero,
+[data-geral-react-root] .ger-tela-toda[data-ceu="tarde"] .ger-hero { color: #14203a; text-shadow: 0 1px 8px rgba(255, 255, 255, .5); }
+[data-geral-react-root] .ger-hero-saudacao { margin: 0 0 4px; font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
+[data-geral-react-root] .ger-hero-frase { margin: 0 0 9px; font-size: 13px; opacity: .95; max-width: 680px; }
+[data-geral-react-root] .ger-hero-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; opacity: .9; }
 [data-geral-react-root] .ger-hero-meta span { display: inline-flex; align-items: center; gap: 4px; }
 @media (prefers-reduced-motion: reduce) { [data-geral-react-root] .ger-estrela { animation: none; } }
+
+/* ── Vidro (glassmorphism §36.2): cards translúcidos sobre o céu ── */
+[data-geral-react-root] .ger-sec,
+[data-geral-react-root] .ger-saude,
+[data-geral-react-root] .ger-clima,
+[data-geral-react-root] .ger-widget,
+[data-geral-react-root] .ger-personalizar,
+[data-geral-react-root] .ger-skel {
+  background: color-mix(in srgb, var(--ger-superficie) 76%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: color-mix(in srgb, var(--ger-borda) 80%, transparent);
+}
+[data-geral-react-root] .ger-periodos, [data-geral-react-root] .ger-btn, [data-geral-react-root] .ger-select {
+  background: color-mix(in srgb, var(--ger-superficie) 82%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+[data-geral-react-root] .ger-controles-tit { color: #fff; text-shadow: 0 1px 8px rgba(8, 10, 24, .5); }
+[data-geral-react-root] .ger-tela-toda[data-ceu="manha"] .ger-controles-tit,
+[data-geral-react-root] .ger-tela-toda[data-ceu="tarde"] .ger-controles-tit { color: #14203a; text-shadow: none; }
 
 /* ── Clima atual (§8) ──────────────────────────────────────────── */
 [data-geral-react-root] .ger-clima { display: flex; flex-direction: column; gap: 9px; height: 100%; background: var(--ger-superficie); border: 1px solid var(--ger-borda); border-radius: 14px; padding: 14px 16px; }
