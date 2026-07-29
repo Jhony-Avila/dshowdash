@@ -487,24 +487,56 @@ final class PipeAnalyticsRepository
     }
 
     /** Metricas de negocio de UMA janela [de, ate] (datas inclusive). */
+    /**
+     * Métricas da janela, em 3 consultas SARGABLE — uma por coluna de data.
+     *
+     * A versão anterior resolvia tudo numa varredura só, com `SUM(DATE(add_time) BETWEEN ?)`.
+     * Envolver a coluna numa função **anula qualquer índice**: medido na cópia sombra, criar
+     * `ix_add_time` levava aquela consulta de 51 ms para 67 ms — pagava o índice e não usava.
+     * Assim, cada consulta filtra pela sua coluna no WHERE e pode usar o índice
+     * correspondente. Medido: **77 ms → 74 ms sem índice** (nunca pior) e **→ 3 ms** depois do
+     * DDL de `09-indices-medicao-e-DDL.md`.
+     *
+     * ⚠️ O limite superior é EXCLUSIVO (`< dia seguinte`), não `<= $ate`. As colunas são
+     * DATETIME: `<= '2026-07-29'` vale como `<= '2026-07-29 00:00:00'` e descartaria o dia
+     * inteiro. Provado na base: no dia 2024-06-13 (677 negócios criados), a forma com `<=`
+     * devolvia **0**.
+     *
+     * Equivalência com a versão antiga conferida número a número em 6 janelas — inclusive mês
+     * fechado, dia único e janela que não termina hoje.
+     */
     private function metricasJanela(string $de, string $ate): array
     {
-        $st = $this->pdo->prepare(
-            "SELECT
-                SUM(DATE(add_time)  BETWEEN ? AND ?)                                    AS criados,
-                COALESCE(SUM(CASE WHEN DATE(add_time) BETWEEN ? AND ? THEN value END),0) AS valor_criado,
-                SUM(status='won'  AND DATE(won_time)  BETWEEN ? AND ?)                  AS ganhos,
-                COALESCE(SUM(CASE WHEN status='won' AND DATE(won_time) BETWEEN ? AND ? THEN value END),0) AS valor_ganho,
-                SUM(status='lost' AND DATE(lost_time) BETWEEN ? AND ?)                  AS perdidos,
-                COALESCE(SUM(CASE WHEN status='lost' AND DATE(lost_time) BETWEEN ? AND ? THEN value END),0) AS valor_perdido,
-                ROUND(AVG(CASE WHEN status='won' AND DATE(won_time) BETWEEN ? AND ?
-                                AND add_time IS NOT NULL AND won_time >= add_time
-                               THEN DATEDIFF(won_time, add_time) END))                  AS ciclo_medio
-             FROM pipe_deals WHERE is_deleted = 0"
+        $ini = $de . ' 00:00:00';
+        $fim = date('Y-m-d', strtotime($ate . ' +1 day')) . ' 00:00:00';   // exclusivo
+
+        $criados = $this->pdo->prepare(
+            "SELECT COUNT(*) AS criados, COALESCE(SUM(value),0) AS valor_criado
+               FROM pipe_deals WHERE is_deleted = 0 AND add_time >= ? AND add_time < ?"
         );
-        // 7 pares (de, ate), na ordem em que aparecem no SQL.
-        $st->execute(array_merge(...array_fill(0, 7, [$de, $ate])));
-        $r = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+        $criados->execute([$ini, $fim]);
+
+        $ganhos = $this->pdo->prepare(
+            "SELECT COUNT(*) AS ganhos, COALESCE(SUM(value),0) AS valor_ganho,
+                    ROUND(AVG(CASE WHEN add_time IS NOT NULL AND won_time >= add_time
+                                   THEN DATEDIFF(won_time, add_time) END)) AS ciclo_medio
+               FROM pipe_deals
+              WHERE is_deleted = 0 AND status = 'won' AND won_time >= ? AND won_time < ?"
+        );
+        $ganhos->execute([$ini, $fim]);
+
+        $perdidos = $this->pdo->prepare(
+            "SELECT COUNT(*) AS perdidos, COALESCE(SUM(value),0) AS valor_perdido
+               FROM pipe_deals
+              WHERE is_deleted = 0 AND status = 'lost' AND lost_time >= ? AND lost_time < ?"
+        );
+        $perdidos->execute([$ini, $fim]);
+
+        $r = array_merge(
+            $criados->fetch(PDO::FETCH_ASSOC) ?: [],
+            $ganhos->fetch(PDO::FETCH_ASSOC) ?: [],
+            $perdidos->fetch(PDO::FETCH_ASSOC) ?: []
+        );
 
         return [
             'criados'       => (int)($r['criados'] ?? 0),
@@ -531,20 +563,32 @@ final class PipeAnalyticsRepository
         $vazia = static fn() => array_fill_keys(array_keys($dias), 0.0);
         $out = ['criados' => $vazia(), 'ganhos' => $vazia(), 'valor_ganho' => $vazia(), 'perdidos' => $vazia()];
 
+        // Mesma correção de `metricasJanela`: o RECORTE vai para o WHERE sem função sobre a
+        // coluna (aí o índice serve); `DATE()` fica só no SELECT/GROUP BY, onde é inevitável
+        // para agrupar por dia e não atrapalha o filtro.
+        // ⚠️ Limite superior EXCLUSIVO — colunas DATETIME (ver metricasJanela).
+        // Ganhos e valor_ganho eram DUAS consultas com filtro idêntico sobre `won_time`;
+        // viraram uma, com as duas agregações.
+        $ini = $de . ' 00:00:00';
+        $fim = date('Y-m-d', strtotime($ate . ' +1 day')) . ' 00:00:00';
+
         $blocos = [
-            ['add_time',  'is_deleted=0',                 'COUNT(*)',                'criados'],
-            ['won_time',  "is_deleted=0 AND status='won'", 'COUNT(*)',               'ganhos'],
-            ['won_time',  "is_deleted=0 AND status='won'", 'COALESCE(SUM(value),0)', 'valor_ganho'],
-            ['lost_time', "is_deleted=0 AND status='lost'", 'COUNT(*)',              'perdidos'],
+            ['add_time',  'is_deleted=0',                  ['criados' => 'COUNT(*)']],
+            ['won_time',  "is_deleted=0 AND status='won'", ['ganhos' => 'COUNT(*)', 'valor_ganho' => 'COALESCE(SUM(value),0)']],
+            ['lost_time', "is_deleted=0 AND status='lost'", ['perdidos' => 'COUNT(*)']],
         ];
-        foreach ($blocos as [$col, $filtro, $agg, $chave]) {
+        foreach ($blocos as [$col, $filtro, $aggs]) {
+            $sel = [];
+            foreach ($aggs as $alias => $agg) { $sel[] = "{$agg} AS `{$alias}`"; }
             $st = $this->pdo->prepare(
-                "SELECT DATE({$col}) d, {$agg} v FROM pipe_deals
-                  WHERE {$filtro} AND DATE({$col}) BETWEEN ? AND ? GROUP BY DATE({$col})"
+                "SELECT DATE({$col}) d, " . implode(', ', $sel) . " FROM pipe_deals
+                  WHERE {$filtro} AND {$col} >= ? AND {$col} < ? GROUP BY DATE({$col})"
             );
-            $st->execute([$de, $ate]);
+            $st->execute([$ini, $fim]);
             foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                if (isset($out[$chave][$r['d']])) { $out[$chave][$r['d']] = (float)$r['v']; }
+                foreach ($aggs as $alias => $_) {
+                    if (isset($out[$alias][$r['d']])) { $out[$alias][$r['d']] = (float)$r[$alias]; }
+                }
             }
         }
         foreach ($out as $k => $mapa) { $out[$k] = array_values($mapa); }

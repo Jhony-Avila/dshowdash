@@ -128,9 +128,51 @@ Não é assunto de índice; anotado para o #42/#40.)*
 
 ## 5. Ordem recomendada
 
-1. **Código, sem DDL** — reescrever `metricasJanela()` para ser sargable e tirar as *facets*
-   de dentro da paginação. É onde está a maior parte do tempo e não depende de aval.
-2. **DDL da §4** — com o dono/DBA, em janela. Só então os índices `add_time`/`status,won_time`
-   passam a valer alguma coisa.
+1. ~~**Código, sem DDL**~~ ✅ **FEITO em 2026-07-29** — ver §6.
+2. **DDL da §4** — com o dono/DBA, em janela. **Agora vale a pena**: com as consultas
+   sargable, `ix_add_time` e `ix_status_won` passam a ser usados de verdade
+   (medido: 74 ms → **3 ms**).
 3. **Reavaliar `leadSources`** (783 ms) por outro caminho: o custo é JSON. Opções: coluna
    gerada + índice, ou materializar a origem numa coluna real durante o sync.
+
+---
+
+## 6. Feito em 2026-07-29 (código, sem DDL)
+
+**`metricasJanela()` e `seriesJanela()` agora são sargable.** O recorte foi para o `WHERE`
+sem função sobre a coluna; `DATE()` sobrevive apenas no `SELECT`/`GROUP BY` da série, onde é
+inevitável para agrupar por dia e não atrapalha o filtro. Em `seriesJanela`, as duas consultas
+sobre `won_time` com filtro idêntico (ganhos e valor_ganho) viraram uma.
+
+| | antes | depois |
+|---|---|---|
+| `seriesJanela` | 104 ms | **79 ms** |
+| `summary(30)` | 249 ms | **222 ms** |
+| `metricasJanela` (isolada, já sargable, **com** índice) | — | **3 ms** |
+
+O ganho grande está represado no DDL: sem índice a forma nova apenas empata; com índice ela
+cai para 3 ms.
+
+⚠️ **Risco real não era performance, era a conta mudar em silêncio** — são os números da Visão
+Geral. `tools/screenshot/valida-pipedrive-summary-sargable.php` mantém a **forma antiga
+embutida** e exige resultado idêntico campo a campo e ponto a ponto da série, em 7 janelas
+(em curso, ano, semana, janela fechada, dia único, mês fechado, mês antigo de alto volume).
+**20 checagens, 0 falha.**
+
+⚠️ E prova a armadilha do limite: no dia **2024-06-13**, que tem **677** negócios criados, a
+forma com `<= dia` devolve **0**. Por isso `< dia+1`.
+
+**Facets fora da paginação.** Etapas, donos e motivos são o catálogo da base — não dependem
+dos filtros nem mudam ao paginar, mas eram recalculados a cada página. O backend passou a
+aceitar `facets=0` (ausente = comportamento antigo, retrocompatível) e o front guarda a
+primeira leva.
+
+| | tempo |
+|---|---|
+| `dealsPage(25)` com facets (1ª carga) | 154 ms |
+| `dealsPage(25)` sem facets (ao paginar) | **59 ms** — **62% menos** |
+
+Prova: `tools/screenshot/valida-pipedrive-facets.mjs` — **22 checagens × 2 temas**. O risco
+coberto não é tempo, é **filtro vazio ao paginar**: a prova exige que Etapas/Donos/Motivo
+continuem populados depois de paginar, que filtrar ainda funcione, e que trocar de entidade
+não reaproveite as facets erradas.

@@ -1041,7 +1041,12 @@ final class PipeSyncRepository
             // Quais chaves o backend REALMENTE aplicou: a UI não deve desenhar coluna
             // que foi descartada na validação.
             'cf_aplicados' => $cfKeys,
-            'facets'   => [
+            // As facets NÃO dependem dos filtros (são o catálogo de etapas, donos e motivos
+            // que existem na base) e não mudam entre a página 1 e a 7 — mas custavam ~126 ms
+            // em CADA página (owners 70 ms + lost_reasons 56 ms, ambas com temporary+filesort).
+            // Com `facets=0` o cliente diz "já tenho"; sem o parâmetro, o comportamento é o
+            // de sempre.
+            'facets'   => self::querFacets($f) ? [
                 'stages' => $this->pdo->query("SELECT pipedrive_id AS id, name FROM pipe_stages WHERE is_active=1 ORDER BY order_nr")->fetchAll(PDO::FETCH_ASSOC),
                 'owners' => $this->pdo->query("SELECT DISTINCT u.pipedrive_id AS id, u.name FROM pipe_users u JOIN pipe_deals d ON d.owner_id=u.pipedrive_id WHERE d.is_deleted=0 ORDER BY u.name")->fetchAll(PDO::FETCH_ASSOC),
                 // Motivo de perda (#30): id == name porque a chave E o proprio texto —
@@ -1052,7 +1057,7 @@ final class PipeSyncRepository
                       WHERE is_deleted=0 AND status='lost' AND lost_reason IS NOT NULL AND lost_reason <> ''
                    GROUP BY lost_reason ORDER BY COUNT(*) DESC"
                 )->fetchAll(PDO::FETCH_ASSOC),
-            ],
+            ] : null,
         ];
     }
 
@@ -1075,6 +1080,16 @@ final class PipeSyncRepository
             'update_time' => $r['update_time'],
             'lost_reason' => ($r['lost_reason'] ?? '') !== '' ? $r['lost_reason'] : null,
         ];
+    }
+
+    /**
+     * O cliente quer as facets nesta resposta? Só `facets=0` desliga — qualquer outra coisa
+     * (inclusive ausência do parâmetro) mantém o comportamento antigo, para não quebrar quem
+     * já consome a API.
+     */
+    private static function querFacets(array $f): bool
+    {
+        return (string)($f['facets'] ?? '') !== '0';
     }
 
     /** Parametros comuns de paginacao/ordenacao. @return [page, perPage, offset, dir] */
@@ -1896,8 +1911,11 @@ final class PipeSyncRepository
             'tax' => $r['tax'] !== null ? (float)$r['tax'] : null, 'owner' => $r['owner'], 'update_time' => $r['update_time'],
             'cf' => $this->cfSubset('product', $r['custom_fields'] ?? null, $cfKeys),
         ], $st->fetchAll(PDO::FETCH_ASSOC));
-        $cats = $this->pdo->query("SELECT DISTINCT category FROM pipe_products WHERE is_deleted=0 AND category IS NOT NULL AND category<>'' ORDER BY category LIMIT 60")->fetchAll(PDO::FETCH_COLUMN);
-        return $this->pageEnvelope($rows, $total, $page, $perPage, ['facets' => ['categories' => $cats], 'cf_aplicados' => $cfKeys]);
+        $cats = self::querFacets($f)
+            ? $this->pdo->query("SELECT DISTINCT category FROM pipe_products WHERE is_deleted=0 AND category IS NOT NULL AND category<>'' ORDER BY category LIMIT 60")->fetchAll(PDO::FETCH_COLUMN)
+            : null;
+        return $this->pageEnvelope($rows, $total, $page, $perPage,
+            ['facets' => $cats !== null ? ['categories' => $cats] : null, 'cf_aplicados' => $cfKeys]);
     }
 
     /** Detalhe de UMA atividade + vinculos (negocio/pessoa/organizacao) — backlog #18. */

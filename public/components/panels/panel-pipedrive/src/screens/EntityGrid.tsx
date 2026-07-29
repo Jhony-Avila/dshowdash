@@ -132,6 +132,11 @@ export function EntityGrid<T extends { id: number | string }>(p: Props<T>) {
   });
   useEffect(() => { try { localStorage.setItem(PERPAGE_KEY, String(perPage)); } catch { /* ignora */ } }, [perPage]);
 
+  // Facets já recebidas desta entidade. Zera quando o endpoint muda — o mesmo componente
+  // serve grids diferentes e as facets de negócios não valem para produtos.
+  const facetsRef = useRef<Record<string, unknown> | null>(null);
+  useEffect(() => { facetsRef.current = null; }, [p.endpoint]);
+
   const storageKey = `pp:cols:${p.endpoint}`;
   const [cfg, setCfg] = useState<ColCfg>(() => {
     try { const s = localStorage.getItem(storageKey); if (s) return JSON.parse(s) as ColCfg; } catch { /* ignora */ }
@@ -281,6 +286,10 @@ export function EntityGrid<T extends { id: number | string }>(p: Props<T>) {
   // Só pede o JSON quando há coluna personalizada escolhida — medido: +10 ms numa
   // página de 25, +20 ms em 200. Quem não usa não paga.
   if (p.cfEntity && cfSel.length) { params.cf = cfSel.join(','); }
+  // Facets (#46): são o catálogo da base (etapas, donos, motivos), não dependem dos
+  // filtros e não mudam ao paginar — mas custavam ~126 ms em CADA página. Assim que
+  // temos uma cópia, paramos de pedir. `facetsRef` guarda a última recebida.
+  if (facetsRef.current) { params.facets = 0; }
 
   const { data, isLoading, isFetching, error, refetch } = useQuery<PipePage<T>>({
     queryKey: ['pipe', p.endpoint, params],
@@ -376,10 +385,15 @@ export function EntityGrid<T extends { id: number | string }>(p: Props<T>) {
   const rangeFiltros = (p.filtros ?? []).filter((f) => f.tipo === 'dateRange' || f.tipo === 'numRange');
   const selNaPagina = rows.filter((r) => sel.has(r.id)).length;
   const colsTotalizadas = colsVisiveis.filter((c) => c.total === 'soma');
+  // Guarda a primeira leva de facets que chegar; a partir daí a resposta vem sem elas
+  // (`facets=0`) e os filtros continuam sendo alimentados por esta cópia.
+  if (data?.facets) { facetsRef.current = data.facets; }
+  const facetsEmUso = data?.facets ?? facetsRef.current;
+
   const opcoesDe = (f: GridFiltro): { value: string; label: string }[] => {
     if (f.options) return f.options;
     if (f.facetKey) {
-      const arr = (data?.facets?.[f.facetKey] as unknown[] | undefined) ?? [];
+      const arr = (facetsEmUso?.[f.facetKey] as unknown[] | undefined) ?? [];
       return arr.map((v) => (typeof v === 'object' && v !== null)
         ? { value: String((v as { id?: unknown; value?: unknown }).id ?? (v as { value?: unknown }).value ?? ''), label: String((v as { name?: unknown; label?: unknown }).name ?? (v as { label?: unknown }).label ?? '') }
         : { value: String(v), label: String(v) });
