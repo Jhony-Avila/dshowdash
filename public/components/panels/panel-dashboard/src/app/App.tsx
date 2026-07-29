@@ -177,7 +177,9 @@ function LinhaSaude({ alertas, integracoes, visiveis }: {
 
 // ── shell ───────────────────────────────────────────────────────────
 function Shell({ config }: { config: ShellConfig }) {
-  void config;
+  // Montado como PÁGINA INICIAL (via panel-home) → imersivo (céu + vidro).
+  // Montado como GERAL (botão da sidebar) → dashboard sóbrio (aspecto anterior).
+  const imersivo = config.home === true;
   const [periodo, setPeriodo] = useState<PeriodoId>('30d');
   const [versao, setVersao] = useState(0);
   const [carimbo, setCarimbo] = useState(() => new Date().toISOString());
@@ -255,8 +257,8 @@ function Shell({ config }: { config: ShellConfig }) {
   const grupoClima = clima?.atual.grupo ?? null;
 
   return (
-    <div className="ger-tela-toda" data-ceu={ceu} data-clima={grupoClima ?? 'limpo'}>
-      <CeuFundo grupo={grupoClima} />
+    <div className="ger-tela-toda" data-imersivo={imersivo ? '1' : '0'} data-ceu={ceu} data-clima={grupoClima ?? 'limpo'}>
+      {imersivo && <CeuFundo grupo={grupoClima} />}
       <div className="ger-shell">
       {/* barra de controles (§21 do header + §28 + §29 + §26) */}
       <div className="ger-controles">
