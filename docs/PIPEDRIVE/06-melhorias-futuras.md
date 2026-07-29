@@ -235,7 +235,7 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
 
 | # | Melhoria | Valor | Esforço | Status |
 |---|---|---|---|---|
-| 46 | **Índices** revisados nas colunas de filtro/ordenação (EXPLAIN nas queries dos grids) | ⭐⭐ | P | 🔜 |
+| 46 | **Índices** revisados nas colunas de filtro/ordenação (EXPLAIN nas queries dos grids) | ⭐⭐ | P | ✅ |
 | 47 | **Cache Redis** das leituras (overview, metrics, alerts, kanban) com invalidação por sync | ⭐⭐ | M | 🔜 |
 | 48 | **Lazy-load** das abas pesadas + code-splitting por tela | ⭐ | P | ✅ |
 | 49 | **Skeletons/estados vazios** refinados (loading mais suave) | ⭐ | P | ✅ |
@@ -265,7 +265,36 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
   - Custo de escrita medido: **379** negócios e **1.028** atividades alterados em 7 dias —
     irrelevante perto do ganho.
   - ⚠️ **Ordem importa**: fazer o DDL antes de corrigir a consulta paga o custo sem colher o ganho.
-  - ⚠️ DDL em produção **não executado de propósito** — decisão do dono/DBA, com janela.
+  - ~~⚠️ DDL em produção **não executado de propósito** — decisão do dono/DBA, com janela.~~ →
+    **SUPERADO: o DDL foi executado em 2026-07-29** (`LOCK=NONE`). A verdade do que está no banco é
+    `09-indices-medicao-e-DDL.md` **§7**; a §4 é só a proposta. Não citar esta linha de novo.
+- **#46 — 3º lote, FECHADO em 2026-07-29: grid de ATIVIDADES** (o último dos três que ainda
+  recalculava facets em toda página). Commits `ac2389b` (correção) e `9003b35` (prova).
+  - **O achado não é performance, é dado faltando na UI**: o `SELECT DISTINCT type` tinha `LIMIT
+    50` e existem **51** tipos na base. O 51º — **`zoom_showroom`, 284 atividades** — simplesmente
+    **não aparecia no filtro**, então aquelas 284 atividades eram inalcançáveis pela tela. `LIMIT`
+    removido; provado que o filtro passou a oferecer 52 opções (placeholder + 51) e que
+    `type=zoom_showroom` recorta os 284.
+  - `facets` **faltava na allowlist** do `PipeQueryController::activities`, então o `facets=0` que o
+    `EntityGrid` manda para **todos** os grids nunca chegava ao repositório — só `deals` e
+    `products` honravam. Estes três são os únicos métodos que produzem facets; com Atividades, o
+    lote está completo.
+  - Perf medida pela origin (`page=4&per_page=25`, mediana de 7): **68,4 → 26,4 ms**, ~**42 ms** por
+    página navegada. No SQL puro, o `DISTINCT` custa ~48 ms contra ~26 ms do `COUNT` de controle.
+  - ⚠️ **5ª premissa deste backlog a se inverter na medição.** As notas do próprio lote diziam
+    "**177 ms** de `temporary+filesort` sobre **52.959** linhas, resolvido por `ix_del_due_type`".
+    Nada disso vale: a base tem **105.646** linhas ativas, o `EXPLAIN` dá `Using where; Using index`
+    sobre **`ix_del_type (is_deleted, type)`** — sem temporary, sem filesort — e um índice chamado
+    `ix_del_due_type` **não existe**. Era medição de antes do DDL, copiada adiante sem re-medir.
+  - Compatibilidade preservada: **só `facets=0` desliga**; ausência do parâmetro ou qualquer outro
+    valor mantém o comportamento antigo. Controle (grid de Negócios): inalterado, 13 stages / 19
+    owners.
+  - Verificado e **MANTIDO**: o `LIMIT 50` do resumo por etapa (`SyncRepository` ~l. 878) não
+    esconde nada — há **13** stages.
+  - 🔎 **Achado lateral, não tratado**: existe a tabela **`pipe_activity_types`** (catálogo oficial).
+    O filtro hoje mostra a *chave* crua e truncada em 26 caracteres (`apresentacao_de_novos_prod`,
+    `nutricao_de_clientes_com_c`). Ler o rótulo dessa tabela deixaria o filtro legível — melhoria de
+    UI, fora do escopo deste lote.
 - **#47**: hoje o que existe é **cache de 120 s no front**, não Redis. Vale medir se ainda é problema **depois** de #46 — índice barato pode tornar o cache desnecessário.
 
 ## 10. Segurança / RBAC / Governança
@@ -441,7 +470,7 @@ Os quick wins de UI acabaram — as Fases 1–7 os consumiram. O que sobra se di
 
 Depois disso, os estratégicos de maior porte: **Cruzamento ERP** (#34–#36) e **Mailbox** (#37–#38), quando houver decisão de escopo.
 
-> Total: **67 itens** catalogados — **34 ✅ · 5 ◑ · 1 ⚖️ · 17 🔜 · 10 💤** (contados no próprio arquivo, não estimados; 2026-07-29: #11, #67, #65, #66 e #62 fechados).
+> Total: **67 itens** catalogados — **35 ✅ · 5 ◑ · 1 ⚖️ · 16 🔜 · 10 💤** (contados no próprio arquivo, não estimados; 2026-07-29: #11, #67, #65, #66, #62 e **#46** fechados).
 > Priorize por Valor↑ / Esforço↓, mas leia antes o bloco "Bloqueios de DADO" da seção 0: três dos itens abertos não são questão de esforço.
 
 ---
