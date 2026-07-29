@@ -66,8 +66,8 @@ function CardItem({ item, config, ativo, aoEscolher }: {
   return (
     <button type="button" role="option" aria-selected={ativo}
       className={`avst-card ${ativo ? 'avst-card-ativo' : ''}`}
+      data-raridade={item.raridade}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
-      title={`${item.nome} — ${rar.nome}\n${item.descricao}`}
       onClick={aoEscolher}>
       <span className="avst-card-thumb">
         <AvatarSvg config={preview} estatico uid={`th-${item.id}`} />
@@ -76,6 +76,12 @@ function CardItem({ item, config, ativo, aoEscolher }: {
       <span className="avst-card-raridade">{rar.nome}</span>
       {item.novo && <span className="avst-card-novo">NOVO</span>}
       {ativo && <span className="avst-card-check"><Check size={13} aria-hidden /></span>}
+      {/* tooltip rica (AS3 §9): nome, tier e lore */}
+      <span className="avst-tip" role="tooltip">
+        <strong>{item.nome}</strong>
+        <em style={{ color: rar.cor }}>{rar.nome}</em>
+        <span>{item.lore ?? item.descricao}</span>
+      </span>
     </button>
   );
 }

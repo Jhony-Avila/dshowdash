@@ -22,6 +22,13 @@ export interface OpcoesRender {
   forma?: 'quadrado' | 'circulo';
   /** Desliga animações SMIL (thumbnails em grade — economia de GPU). */
   estatico?: boolean;
+  /**
+   * Modo PALCO (AS3 F1): envolve as camadas em grupos data-anim
+   * (plano-fundo/plano-personagem/personagem/olhos/cabelo/palpebras/plano-frente)
+   * para o PalcoCinema animar via WAAPI. NUNCA usado na publicação —
+   * o SVG salvo permanece byte-estável (critério de aceite nº 8).
+   */
+  palco?: boolean;
 }
 
 /** Hash djb2 → base36. Estável entre execuções (nada de Math.random). */
@@ -62,9 +69,6 @@ export function renderAvatar(
   const efeitoAtras = efeitoDef?.atras ? efeitoSvg : '';
   const efeitoFrente = efeitoDef && !efeitoDef.atras ? efeitoSvg : '';
 
-  const personagem =
-    pintar(config.base) + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c])).join('');
-
   const moldura = pintar(config.camadas.moldura);
 
   const clip = forma === 'circulo'
@@ -73,9 +77,35 @@ export function renderAvatar(
 
   const dim = opcoes.tamanho ? ` width="${opcoes.tamanho}" height="${opcoes.tamanho}"` : '';
 
+  let conteudo: string;
+  if (opcoes.palco) {
+    // Grupos animáveis do palco (idle/parallax) — só no preview do estúdio.
+    const itemOlhos = config.camadas.olhos ? resolver(config.camadas.olhos) : undefined;
+    const palpebras = itemOlhos && itemOlhos.piscar !== false
+      ? `<g data-anim="palpebras" opacity="0">
+          <ellipse cx="${G.olhoEsqX}" cy="${G.olhosY - 1}" rx="12" ry="10" fill="${p.pele.escuro}"/>
+          <ellipse cx="${G.olhoDirX}" cy="${G.olhosY - 1}" rx="12" ry="10" fill="${p.pele.escuro}"/>
+        </g>`
+      : '';
+    // planos com sobre-escala: o parallax translada sem expor a borda do clip
+    conteudo =
+      `<g data-anim="plano-fundo"><g transform="translate(120 120) scale(1.08) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
+      `<g data-anim="plano-personagem"><g data-anim="personagem">` +
+        pintar(config.base) + pintar(config.camadas.roupa) + pintar(config.camadas.boca) +
+        `<g data-anim="olhos">${pintar(config.camadas.olhos)}</g>` +
+        `<g data-anim="cabelo">${pintar(config.camadas.cabelo)}</g>` +
+        pintar(config.camadas.acessorio) + palpebras +
+      `</g></g>` +
+      `<g data-anim="plano-frente"><g transform="translate(120 120) scale(1.1) translate(-120 -120)">${efeitoFrente}</g></g>`;
+  } else {
+    const personagem =
+      pintar(config.base) + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c])).join('');
+    conteudo = `${fundo}${efeitoAtras}${personagem}${efeitoFrente}`;
+  }
+
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"${dim} role="img" aria-label="Avatar personalizado">
 <defs><clipPath id="${uid}clip">${clip}</clipPath></defs>
-<g clip-path="url(#${uid}clip)">${fundo}${efeitoAtras}${personagem}${efeitoFrente}</g>
+<g clip-path="url(#${uid}clip)">${conteudo}</g>
 ${moldura}
 </svg>`;
 

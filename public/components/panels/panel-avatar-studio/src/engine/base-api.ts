@@ -4,7 +4,7 @@
 // Cada item do catálogo carrega sua própria função de render (string SVG pura).
 // `uid` prefixa TODOS os ids de <defs> — vários avatares na mesma página
 // (preview, comparação, presets) não podem colidir gradientes.
-import type { ItemCatalogo } from '../domain/types';
+import type { ItemCatalogo, PoseId } from '../domain/types';
 import type { Paleta } from './cores';
 
 /** Gera o markup SVG da parte. Determinístico: mesma entrada → mesmo SVG. */
@@ -13,7 +13,13 @@ export type ParteRender = (p: Paleta, uid: string) => string;
 export interface ParteDef extends ItemCatalogo {
   /** Efeitos com atras=true renderizam ATRÁS do personagem (aura, chuva digital). */
   atras?: boolean;
+  /** Pose frontal (padrão). */
   render: ParteRender;
+  /**
+   * Variantes de pose futuras (AS3 decisão #23) — o motor usa 'frontal' hoje;
+   * quando ¾/lateral/poder existirem, o resolvedor escolhe pela pose pedida.
+   */
+  variantes?: Partial<Record<PoseId, ParteRender>>;
 }
 
 // ── Geometria compartilhada (todas as partes se ancoram aqui) ───────

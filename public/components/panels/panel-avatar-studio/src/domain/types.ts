@@ -17,9 +17,13 @@ export type CategoriaId =
   | 'base' | 'cabelo' | 'olhos' | 'boca' | 'roupa'
   | 'acessorio' | 'fundo' | 'moldura' | 'efeito';
 
-export type Raridade = 'comum' | 'incomum' | 'raro' | 'epico' | 'lendario' | 'exclusivo';
+export type Raridade =
+  | 'comum' | 'incomum' | 'raro' | 'epico' | 'lendario' | 'mitico' | 'exclusivo';
 
 export type SlotCor = 'pele' | 'cabelo' | 'roupa' | 'destaque';
+
+/** Poses futuras (AS3 decisão #23) — hoje só 'frontal' é produzida. */
+export type PoseId = 'frontal' | 'tresquartos' | 'lateral' | 'pose' | 'poder';
 
 export interface ItemCatalogo {
   id: string;
@@ -29,6 +33,12 @@ export interface ItemCatalogo {
   raridade: Raridade;
   tema: string;                    // tecnologia, neon, executivo, casual, gamer…
   novo?: boolean;
+  /** história do item (tooltip rica) — obrigatória de raro pra cima (AS3 §9) */
+  lore?: string;
+  /** fonte de arte ('dshow' padrão) — arquitetura multi-biblioteca (AS3 §7) */
+  biblioteca?: string;
+  /** false = olhos que não piscam no idle (visores/LEDs) — AS3 §5.1 */
+  piscar?: boolean;
   /** slots de cor que este item usa (mostra o seletor correspondente) */
   usaCores?: SlotCor[];
   /** só compatível com estas bases (vazio = todas) — briefing §35 */

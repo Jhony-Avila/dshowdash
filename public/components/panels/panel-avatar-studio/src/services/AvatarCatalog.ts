@@ -39,13 +39,57 @@ export const CATEGORIAS: CategoriaMeta[] = [
 
 // ── Raridades (metadados de UI: selo, cor, peso no sorteio) ─────────
 
-export const RARIDADES: Record<Raridade, { nome: string; cor: string; peso: number }> = {
-  comum:     { nome: 'Comum',     cor: '#9aa4b8', peso: 40 },
-  incomum:   { nome: 'Incomum',   cor: '#4cd97c', peso: 28 },
-  raro:      { nome: 'Raro',      cor: '#4c9de8', peso: 16 },
-  epico:     { nome: 'Épico',     cor: '#b06ce8', peso: 9 },
-  lendario:  { nome: 'Lendário',  cor: '#e8b64c', peso: 5 },
-  exclusivo: { nome: 'Exclusivo', cor: '#ff5f8f', peso: 2 },
+export const RARIDADES: Record<Raridade, { nome: string; cor: string; peso: number; nivel: number }> = {
+  comum:     { nome: 'Comum',     cor: '#9aa4b8', peso: 40, nivel: 0 },
+  incomum:   { nome: 'Incomum',   cor: '#4cd97c', peso: 28, nivel: 1 },
+  raro:      { nome: 'Raro',      cor: '#4c9de8', peso: 16, nivel: 2 },
+  epico:     { nome: 'Épico',     cor: '#b06ce8', peso: 9,  nivel: 3 },
+  lendario:  { nome: 'Lendário',  cor: '#e8b64c', peso: 5,  nivel: 4 },
+  mitico:    { nome: 'Mítico',    cor: '#ff5230', peso: 3,  nivel: 5 },
+  exclusivo: { nome: 'Exclusivo', cor: '#ff5f8f', peso: 2,  nivel: 6 },
+};
+
+/** Nível numérico da raridade (comparações: celebração, ordenação). */
+export function nivelRaridade(r: Raridade): number {
+  return RARIDADES[r].nivel;
+}
+
+// ── Lore (AS3 §9 — obrigatória de raro pra cima; tooltip rica) ──────
+// Centralizada aqui para não tocar nos arquivos de arte do motor.
+
+const LORES: Record<string, string> = {
+  // raros
+  cab_longo: 'Dizem que cresceu um centímetro a cada meta batida. Ninguém ousou duvidar.',
+  cab_moicano: 'Forjado numa madrugada de deploy sem rollback. Sobreviveu. A crista ficou.',
+  olh_brilho: 'Quem viu o dashboard todo verde pela primeira vez nunca mais olhou igual.',
+  olh_led: 'Óptica sintética calibrada em 60fps. Não pisca — renderiza.',
+  boc_grade: 'O alto-falante original do primeiro LED Bot da Dshow. Ainda ecoa.',
+  rou_jaqueta: 'Costurada para quem cruza a linha de chegada antes do relatório carregar.',
+  rou_gamer: 'Jersey da primeira line-up campeã. O raio no peito não é enfeite — é aviso.',
+  ace_bone: 'Aba reta, ego alinhado. Edição de estreia da collab que nunca foi anunciada.',
+  fun_circuito: 'Um recorte da placa-mãe do servidor original, energizada até hoje.',
+  fun_nebulosa: 'Poeira de estrela recolhida no exato instante em que uma ideia nasceu.',
+  mol_tech: 'Suportes de HUD arrancados de um cockpit de simulação militar.',
+  efe_aura: 'Vaza energia de quem carrega o trimestre nas costas. Contenha-se.',
+  efe_chuva: 'Fragmento do código-fonte primordial. Se você lê os símbolos, já é tarde.',
+  efe_particulas: 'Cada ponto de luz é uma tarefa concluída flutuando em paz.',
+  // épicos
+  bas_androide: 'Chassi da série NEXUS-7, aposentado do laboratório com honras e segredos.',
+  cab_cyber: 'O undercut oficial da resistência digital. As trilhas raspadas brilham no escuro.',
+  olh_visor: 'HUD tático de quem enxerga o funil inteiro antes do lead piscar.',
+  rou_terno: 'Alfaiataria de guerra corporativa. Cada costura fechou um contrato.',
+  ace_headset: 'As conchas que ouviram o "GG" da grande final. O RGB nunca apagou.',
+  fun_aurora: 'O céu polar que apareceu uma única noite sobre o data center.',
+  mol_neon: 'Tubo de neon soprado por um artesão de arcade em 1989. Ainda pulsa.',
+  // lendários
+  bas_holo: 'Projeção volumétrica de uma consciência que escolheu ficar.',
+  rou_armadura: 'Peitoral NEXUS com núcleo de energia própria. Bate no ritmo do usuário.',
+  ace_coroa: 'Só encosta na cabeça de quem já foi Top 1. Ela sabe. Sempre soube.',
+  fun_arena: 'A arena lotada no ponto exato do último round. O grito ficou preso aqui.',
+  mol_ouro: 'Fundida com o ouro das metas impossíveis. As gemas são as exceções.',
+  efe_faiscas: 'Resíduo de troféu recém-polido. Gruda em quem vence com estilo.',
+  // exclusivos
+  mol_dshow: 'A assinatura da casa. Não se compra, não se pede — se reconhece.',
 };
 
 // ── Índices ─────────────────────────────────────────────────────────
@@ -53,7 +97,13 @@ export const RARIDADES: Record<Raridade, { nome: string; cor: string; peso: numb
 export const PARTES: ParteDef[] = [
   ...BASES, ...CABELOS, ...OLHOS, ...BOCAS, ...ROUPAS,
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
-];
+].map((x) => ({
+  ...x,
+  biblioteca: x.biblioteca ?? 'dshow',
+  lore: x.lore ?? LORES[x.id],
+  // olhos tech não piscam no idle (AS3 §5.1)
+  piscar: x.piscar ?? !(x.id === 'olh_visor' || x.id === 'olh_led'),
+}));
 
 const POR_ID = new Map<string, ParteDef>(PARTES.map((x) => [x.id, x]));
 
