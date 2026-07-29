@@ -74,6 +74,7 @@ export interface Preset {
 
 export interface HistoricoItem {
   id: number;
+  tipo: 'camadas' | 'foto';
   config: AvatarConfig | null;
   url: string | null;
   criadoEm: string;

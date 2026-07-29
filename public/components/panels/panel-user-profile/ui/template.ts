@@ -105,20 +105,22 @@ export function renderError(message = 'Erro ao carregar perfil') {
   `;
 }
 
-// Template: Avatar Picker
-export function renderAvatarPicker(avatars: Array<{ url: string; name?: string }>, currentUrl: string) {
-  const items = avatars.slice(0, 50).map((a: { url: string; name?: string }) => {
-    const selectedClass = a.url === currentUrl ? 'selected' : '';
-    return `<div class="pup-picker-item ${selectedClass}" data-action="select-avatar" data-url="${a.url}"><img src="${a.url}" alt="${a.name || 'Avatar'}"></div>`;
-  }).join('');
-
+// Template: chamada para o Avatar Studio (v9.5.0 — substitui a antiga grade
+// de 50 arquivos sem curadoria; o avatar agora é criado/gerenciado no estúdio).
+export function renderAvatarPicker(_avatars: Array<{ url: string; name?: string }>, currentUrl: string) {
   return `\
     <div class="pup-picker">\
       <div class="pup-picker-head">\
-        <span class="pup-picker-title">Escolha um novo avatar</span>\
+        <span class="pup-picker-title">Personalize no Avatar Studio</span>\
         <button class="pup-picker-close" data-action="close-picker">${ICONS.x}</button>\
       </div>\
-      <div class="pup-picker-grid">${items}</div>\
+      <div style="display:flex;align-items:center;gap:16px;padding:14px 4px;flex-wrap:wrap">\
+        <img src="${currentUrl}" alt="Avatar atual" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.18)">\
+        <div style="flex:1;min-width:220px">\
+          <p style="margin:0 0 10px;font-size:13px;line-height:1.5;opacity:0.85">Monte seu personagem por camadas — rosto, cabelo, roupa, fundo, molduras de raridade e efeitos. Salva com histórico e atualiza o header na hora.</p>\
+          <button class="pup-btn pri" data-action="open-avatar-studio" style="display:inline-flex;align-items:center;gap:8px">${ICONS.star} Abrir Avatar Studio</button>\
+        </div>\
+      </div>\
     </div>\
   `;
 }

@@ -86,6 +86,7 @@ function setupEventHandlers(container: HTMLElement, handlers: Record<string, ((.
     if (action === 'toggle-avatar-picker') handlers.toggleAvatarPicker?.();
     else if (action === 'close-picker') handlers.closeAvatarPicker?.();
     else if (action === 'select-avatar') handlers.selectAvatar?.(btn.dataset.url);
+    else if (action === 'open-avatar-studio') handlers.openAvatarStudio?.();
     else if (action === 'save') handlers.save?.();
     else if (action === 'cancel' || action === 'retry') handlers.cancel?.();
     else if (action === 'login') handlers.openLogin?.();

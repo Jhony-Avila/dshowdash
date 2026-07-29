@@ -2,25 +2,28 @@
 declare(strict_types=1);
 
 /**
- * /api/avatar/studio.php — persistência oficial do Avatar Studio (camadas).
- * @version 1.0.0  @created 2026-07-29
+ * /api/avatar/studio.php — persistência oficial do Avatar Studio.
+ * @version 1.1.0
+ * @changelog 1.1.0 (2026-07-29) — upload de FOTO (data:image/png recortado no
+ *   front, re-ENCODADO no servidor via GD → mata payload embutido/polyglot,
+ *   480×480, avatar_type='image'); GET devolve também tipo_ativo e
+ *   config_camadas_recente (o estúdio recupera o último trabalho em camadas
+ *   mesmo com foto ativa); rate limit passa a contar generated+image.
+ * @created 2026-07-29
  *
  * Contrato (envelope {ok,data,error,meta} padrão do dash):
- *   GET               → avatar ativo do usuário logado:
- *                       { config, version, render_url, avatar_url }
- *                       (config = null quando o ativo é legado/arquivo)
- *   GET ?historico=1  → { itens: [{id, config, url, criado_em}] } (últimos 12)
- *   POST              → salva { config, svg, base_version }:
- *                       revalida o config, SANITIZA o svg (SvgSanitizer),
- *                       versiona em app_user_avatars (histórico preservado,
- *                       is_active único), publica o arquivo em
- *                       /assets/avatars/studio/ e espelha app_users.avatar_url.
- *                       base_version divergente → 409 (conflito entre abas).
+ *   GET               → { config, version, render_url, avatar_url,
+ *                         tipo_ativo: 'camadas'|'foto'|'legado'|null,
+ *                         config_camadas_recente }
+ *   GET ?historico=1  → { itens: [{id, tipo, config, url, criado_em}] } (12)
+ *   POST {config,svg,base_version}  → salva avatar em camadas (SVG sanitizado)
+ *   POST {foto,base_version}        → salva foto recortada (PNG re-encodado)
+ *   base_version divergente → 409 (conflito entre abas).
  *
  * SEGURANÇA: nada do front é confiado — config é RECONSTRUÍDO campo a campo
- * (ids por regex, cores hex), o SVG passa por whitelist fail-closed, o
- * user_id vem SEMPRE da sessão (nunca do payload — sem IDOR), CSRF na
- * escrita, rate limit de 30 salvamentos/hora (mesmo padrão do avatar-upload).
+ * (ids por regex, cores hex), o SVG passa por whitelist fail-closed, fotos
+ * são re-encodadas pixel a pixel via GD, o user_id vem SEMPRE da sessão
+ * (nunca do payload — sem IDOR), CSRF na escrita, rate limit 30/h.
  * Convive com o sistema legado: linhas antigas ficam intactas (is_active=0).
  */
 
@@ -146,6 +149,59 @@ function avst_config_da_linha(?array $linha): ?array
     return (is_array($cfg) && ($cfg['formato'] ?? '') === 'camadas') ? $cfg : null;
 }
 
+/**
+ * Decodifica e RE-ENCODA a foto (front envia canvas PNG já recortado).
+ * Re-encodar pixel a pixel via GD elimina metadados e payloads embutidos.
+ * @return string bytes PNG 480×480
+ */
+function avst_processar_foto(string $dataUrl): string
+{
+    if (!function_exists('imagecreatefromstring')) {
+        throw new RuntimeException('SEM_GD');
+    }
+    if (!preg_match('#^data:image/png;base64,#', $dataUrl)) {
+        throw new InvalidArgumentException('FOTO_FORMATO');
+    }
+    $b64 = substr($dataUrl, strlen('data:image/png;base64,'));
+    if (strlen($b64) > 8_000_000) { // ~6 MB decodificado
+        throw new InvalidArgumentException('FOTO_MUITO_GRANDE');
+    }
+    $bytes = base64_decode($b64, true);
+    if ($bytes === false) {
+        throw new InvalidArgumentException('FOTO_BASE64');
+    }
+    $img = @imagecreatefromstring($bytes);
+    if ($img === false) {
+        throw new InvalidArgumentException('FOTO_INVALIDA');
+    }
+    $lg = imagesx($img);
+    $al = imagesy($img);
+    if ($lg < 64 || $al < 64) {
+        imagedestroy($img);
+        throw new InvalidArgumentException('FOTO_PEQUENA');
+    }
+    // recorte central quadrado (o front já manda quadrado; garantimos aqui)
+    $lado = min($lg, $al);
+    $final = imagecreatetruecolor(480, 480);
+    imagealphablending($final, false);
+    imagesavealpha($final, true);
+    imagecopyresampled(
+        $final, $img,
+        0, 0,
+        (int) (($lg - $lado) / 2), (int) (($al - $lado) / 2),
+        480, 480, $lado, $lado
+    );
+    imagedestroy($img);
+    ob_start();
+    imagepng($final, null, 7);
+    imagedestroy($final);
+    $png = ob_get_clean();
+    if ($png === false || $png === '') {
+        throw new RuntimeException('FOTO_ENCODE');
+    }
+    return $png;
+}
+
 try {
     $pdo = getConnection('DSHOWDASH');
 
@@ -153,9 +209,9 @@ try {
     if ($metodo === 'GET') {
         if (isset($_GET['historico'])) {
             $st = $pdo->prepare("
-                SELECT id, avatar_config, avatar_image_url, created_at
+                SELECT id, avatar_type, avatar_config, avatar_image_url, created_at
                 FROM app_user_avatars
-                WHERE user_id = ? AND avatar_type = 'generated'
+                WHERE user_id = ? AND avatar_type IN ('generated', 'image')
                 ORDER BY id DESC
                 LIMIT 12
             ");
@@ -165,6 +221,7 @@ try {
                 $cfg = json_decode((string) ($l['avatar_config'] ?? ''), true);
                 $itens[] = [
                     'id'        => (int) $l['id'],
+                    'tipo'      => $l['avatar_type'] === 'image' ? 'foto' : 'camadas',
                     'config'    => (is_array($cfg) && ($cfg['formato'] ?? '') === 'camadas') ? $cfg : null,
                     'url'       => $l['avatar_image_url'] ?: null,
                     'criado_em' => $l['created_at'],
@@ -175,16 +232,44 @@ try {
         }
 
         $ativo = avst_ativo($pdo, $userId);
+        $configAtivo = avst_config_da_linha($ativo);
+
+        // último trabalho em CAMADAS (mesmo que uma foto esteja ativa agora)
+        $configRecente = $configAtivo;
+        if ($configRecente === null) {
+            $stC = $pdo->prepare("
+                SELECT avatar_config FROM app_user_avatars
+                WHERE user_id = ? AND avatar_type = 'generated' AND avatar_config IS NOT NULL
+                ORDER BY id DESC LIMIT 1
+            ");
+            $stC->execute([$userId]);
+            $bruto = json_decode((string) ($stC->fetchColumn() ?: ''), true);
+            if (is_array($bruto) && ($bruto['formato'] ?? '') === 'camadas') {
+                $configRecente = $bruto;
+            }
+        }
+
+        $tipoAtivo = null;
+        if ($ativo) {
+            $tipoAtivo = $configAtivo !== null ? 'camadas'
+                : ($ativo['avatar_type'] === 'image' ? 'foto' : 'legado');
+        }
+
         $stU = $pdo->prepare('SELECT avatar_url FROM app_users WHERE id = ?');
         $stU->execute([$userId]);
         $avatarUrl = (string) ($stU->fetchColumn() ?: '');
+        if ($tipoAtivo === null && $avatarUrl !== '') {
+            $tipoAtivo = 'legado';
+        }
 
         session_write_close();
         avst_ok([
-            'config'     => avst_config_da_linha($ativo),
-            'version'    => $ativo ? (int) $ativo['version'] : 0,
-            'render_url' => $ativo['avatar_image_url'] ?? null,
-            'avatar_url' => $avatarUrl ?: null,
+            'config'                 => $configAtivo,
+            'version'                => $ativo ? (int) $ativo['version'] : 0,
+            'render_url'             => $ativo['avatar_image_url'] ?? null,
+            'avatar_url'             => $avatarUrl ?: null,
+            'tipo_ativo'             => $tipoAtivo,
+            'config_camadas_recente' => $configRecente,
         ]);
     }
 
@@ -196,31 +281,54 @@ try {
         avst_erro('JSON_INVALIDO', 400);
     }
 
-    // Rate limit (mesmo padrão do avatar-upload.php)
+    // Rate limit (mesmo padrão do avatar-upload.php; conta camadas + fotos)
     $stRl = $pdo->prepare("
         SELECT COUNT(*) FROM app_user_avatars
-        WHERE user_id = ? AND avatar_type = 'generated' AND created_at > ?
+        WHERE user_id = ? AND avatar_type IN ('generated', 'image') AND created_at > ?
     ");
     $stRl->execute([$userId, date('Y-m-d H:i:s', time() - 3600)]);
     if ((int) $stRl->fetchColumn() >= AVST_LIMITE_HORA) {
         avst_erro('RATE_LIMIT', 429, ['limite_por_hora' => AVST_LIMITE_HORA]);
     }
 
-    try {
-        $config = avst_validar_config($corpo['config'] ?? null);
-    } catch (InvalidArgumentException $e) {
-        avst_erro($e->getMessage(), 400);
-    }
+    // ── Modo do salvamento: FOTO ou CAMADAS ─────────────────────────
+    $modoFoto  = isset($corpo['foto']);
+    $conteudo  = '';   // bytes a publicar
+    $extensao  = '';
+    $tipoLinha = '';
+    $configJson = null;
 
-    $svgBruto = $corpo['svg'] ?? null;
-    if (!is_string($svgBruto) || $svgBruto === '') {
-        avst_erro('SVG_AUSENTE', 400);
-    }
-    try {
-        $svgLimpo = SvgSanitizer::sanitizar($svgBruto);
-    } catch (InvalidArgumentException $e) {
-        error_log("AVST_SVG_REJEITADO user=$userId motivo=" . $e->getMessage());
-        avst_erro('SVG_REJEITADO', 400, ['motivo' => $e->getMessage()]);
+    if ($modoFoto) {
+        try {
+            $conteudo = avst_processar_foto(is_string($corpo['foto']) ? $corpo['foto'] : '');
+        } catch (InvalidArgumentException $e) {
+            avst_erro($e->getMessage(), 400);
+        } catch (RuntimeException $e) {
+            error_log('[avatar/studio.php] foto: ' . $e->getMessage());
+            avst_erro($e->getMessage(), 500);
+        }
+        $extensao = 'png';
+        $tipoLinha = 'image';
+    } else {
+        try {
+            $config = avst_validar_config($corpo['config'] ?? null);
+        } catch (InvalidArgumentException $e) {
+            avst_erro($e->getMessage(), 400);
+        }
+
+        $svgBruto = $corpo['svg'] ?? null;
+        if (!is_string($svgBruto) || $svgBruto === '') {
+            avst_erro('SVG_AUSENTE', 400);
+        }
+        try {
+            $conteudo = SvgSanitizer::sanitizar($svgBruto);
+        } catch (InvalidArgumentException $e) {
+            error_log("AVST_SVG_REJEITADO user=$userId motivo=" . $e->getMessage());
+            avst_erro('SVG_REJEITADO', 400, ['motivo' => $e->getMessage()]);
+        }
+        $extensao = 'svg';
+        $tipoLinha = 'generated';
+        $configJson = json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     $baseVersion = isset($corpo['base_version']) ? (int) $corpo['base_version'] : null;
@@ -252,10 +360,10 @@ try {
         $pdo->rollBack();
         avst_erro('DIR_PUBLICACAO', 500);
     }
-    $arquivo = sprintf('u%d-v%d.svg', $userId, $novaVersao);
+    $arquivo = sprintf('u%d-v%d.%s', $userId, $novaVersao, $extensao);
     $caminho = $dirFisico . '/' . $arquivo;
     $tmp = $caminho . '.tmp';
-    if (file_put_contents($tmp, $svgLimpo, LOCK_EX) === false || !rename($tmp, $caminho)) {
+    if (file_put_contents($tmp, $conteudo, LOCK_EX) === false || !rename($tmp, $caminho)) {
         @unlink($tmp);
         $pdo->rollBack();
         avst_erro('ESCRITA_ARQUIVO', 500);
@@ -268,13 +376,8 @@ try {
     $pdo->prepare("
         INSERT INTO app_user_avatars
             (user_id, avatar_type, avatar_config, avatar_image_url, is_active, version, created_at, updated_at)
-        VALUES (?, 'generated', ?, ?, 1, ?, NOW(), NOW())
-    ")->execute([
-        $userId,
-        json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        $renderUrl,
-        $novaVersao,
-    ]);
+        VALUES (?, ?, ?, ?, 1, ?, NOW(), NOW())
+    ")->execute([$userId, $tipoLinha, $configJson, $renderUrl, $novaVersao]);
 
     // Espelho para o header/sessão (mesmo comportamento do avatar.php legado)
     $pdo->prepare('UPDATE app_users SET avatar_url = ?, updated_at = NOW() WHERE id = ?')

@@ -7,17 +7,19 @@
 // Undo/redo (§14), comparação atual×salvo (§15), estados de salvar (§25).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Brush, CircleUser, Columns2, Dices, Eye, Frame, Glasses, Image as ImagemIcon,
-  LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Undo2, Wand2,
+  Brush, Camera, CircleUser, Columns2, Dices, Eye, Frame, Glasses, History,
+  Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Undo2, Wand2,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, EstadoSalvar, ShellConfig } from '../domain/types';
 import { CATEGORIAS, CONFIG_PADRAO, aleatorio, validarConfig } from '../services/AvatarCatalog';
 import { carregarAvatar, salvarAvatar } from '../services/AvatarService';
-import type { OrigemDado } from '../services/AvatarService';
+import type { OrigemDado, ResultadoCarga, TipoAtivo } from '../services/AvatarService';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { GradeItens } from '../components/GradeItens';
 import { Cores } from '../components/Cores';
 import { Presets } from '../components/Presets';
+import { Historico } from '../components/Historico';
+import { Foto } from '../components/Foto';
 import '../styles/estudio.css';
 
 const ICONES: Record<CategoriaId, React.ComponentType<{ size?: number }>> = {
@@ -41,9 +43,10 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [estado, setEstado] = useState<EstadoSalvar>('sem_alteracoes');
   const [origem, setOrigem] = useState<OrigemDado>('padrao');
   const [versao, setVersao] = useState(0);
+  const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
-  const [aba, setAba] = useState<'itens' | 'presets'>('itens');
+  const [aba, setAba] = useState<'itens' | 'presets' | 'historico' | 'foto'>('itens');
   const [comparando, setComparando] = useState(false);
 
   const desfazerPilha = useRef<AvatarConfig[]>([]);
@@ -51,22 +54,36 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const sementeRef = useRef(Date.now() % 2147483647);
 
   // ── Carga inicial ─────────────────────────────────────────────────
+  const aplicarCarga = useCallback((r: ResultadoCarga) => {
+    // com foto/legado ativo, recupera o último trabalho em CAMADAS no editor
+    setAtual(r.config ?? r.configCamadasRecente ?? CONFIG_PADRAO);
+    setSalvo(r.config); // null quando foto/legado ativo → salvar volta às camadas
+    setOrigem(r.origem);
+    setVersao(r.versao);
+    setTipoAtivo(r.tipoAtivo);
+    if (r.tipoAtivo === 'foto') {
+      setEstado('sem_alteracoes');
+      setMensagem('Sua foto está ativa — salvar aqui volta para o avatar em camadas.');
+    } else if (!r.config) {
+      // primeira visita (nada salvo ainda) → deixa claro que precisa salvar
+      setEstado('alteracoes_pendentes');
+      setMensagem(null);
+    } else {
+      setEstado('sem_alteracoes');
+      setMensagem(null);
+    }
+  }, []);
+
   useEffect(() => {
     let vivo = true;
     (async () => {
       const r = await carregarAvatar(shellConfig.signal);
       if (!vivo) return;
-      const inicial = r.config ?? CONFIG_PADRAO;
-      setAtual(inicial);
-      setSalvo(r.config);
-      setOrigem(r.origem);
-      setVersao(r.versao);
-      // primeira visita (nada salvo ainda) → deixa claro que precisa salvar
-      if (!r.config) setEstado('alteracoes_pendentes');
+      aplicarCarga(r);
       setCarregando(false);
     })();
     return () => { vivo = false; };
-  }, [shellConfig.signal]);
+  }, [shellConfig.signal, aplicarCarga]);
 
   // ── Mutações (toda mudança passa por aqui: alimenta o undo) ───────
   const aplicar = useCallback((novo: AvatarConfig) => {
@@ -120,6 +137,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       setSalvo(atual);
       setOrigem(r.origem);
       if (r.versao !== undefined) setVersao(r.versao);
+      if (r.origem === 'api') setTipoAtivo('camadas');
       setMensagem(r.mensagem ?? null);
       setEstado('salvo');
       window.setTimeout(() => setEstado((e) => (e === 'salvo' ? 'sem_alteracoes' : e)), 2200);
@@ -133,17 +151,20 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const recarregarDoServidor = useCallback(async () => {
     setCarregando(true);
     const r = await carregarAvatar(shellConfig.signal);
-    const cfg = r.config ?? CONFIG_PADRAO;
-    setAtual(cfg);
-    setSalvo(r.config);
-    setVersao(r.versao);
-    setOrigem(r.origem);
-    setMensagem(null);
-    setEstado('sem_alteracoes');
+    aplicarCarga(r);
     desfazerPilha.current = [];
     refazerPilha.current = [];
     setCarregando(false);
-  }, [shellConfig.signal]);
+  }, [shellConfig.signal, aplicarCarga]);
+
+  /** Foto salva na aba Foto: sincroniza versão/estado do editor. */
+  const aoSalvarFoto = useCallback((novaVersao: number) => {
+    setVersao(novaVersao);
+    setTipoAtivo('foto');
+    setSalvo(null); // o "Salvar avatar" volta a valer p/ reativar as camadas
+    setEstado('sem_alteracoes');
+    setMensagem('Sua foto está ativa — salvar aqui volta para o avatar em camadas.');
+  }, []);
 
   const sujo = useMemo(
     () => JSON.stringify(atual) !== JSON.stringify(salvo ?? {}),
@@ -211,6 +232,18 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             <Sparkles size={17} aria-hidden />
             <span>Presets</span>
           </button>
+          <button type="button"
+            className={`avst-cat ${aba === 'historico' ? 'avst-cat-ativa' : ''}`}
+            onClick={() => setAba('historico')}>
+            <History size={17} aria-hidden />
+            <span>Histórico</span>
+          </button>
+          <button type="button"
+            className={`avst-cat ${aba === 'foto' ? 'avst-cat-ativa' : ''}`}
+            onClick={() => setAba('foto')}>
+            <Camera size={17} aria-hidden />
+            <span>Foto</span>
+          </button>
         </nav>
 
         {/* ── Coluna 2: palco ── */}
@@ -259,11 +292,12 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           </footer>
         </main>
 
-        {/* ── Coluna 3: itens/presets + cores ── */}
+        {/* ── Coluna 3: itens/presets/histórico/foto + cores ── */}
         <aside className="avst-lateral">
-          {aba === 'presets' ? (
-            <Presets aoAplicar={aplicar} />
-          ) : (
+          {aba === 'presets' && <Presets aoAplicar={aplicar} />}
+          {aba === 'historico' && <Historico key={`h-${versao}`} aoAplicar={aplicar} />}
+          {aba === 'foto' && <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'} aoSalvar={aoSalvarFoto} />}
+          {aba === 'itens' && (
             <>
               <GradeItens config={atual} categoria={categoria} aoEscolher={aplicar} />
               <Cores config={atual} aoMudar={aplicar} />

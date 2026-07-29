@@ -1,11 +1,14 @@
 // services/AvatarService.ts — persistência e sincronização do avatar.
-// @version 2.0.0
+// @version 2.1.0
+// @changelog v2.1.0 — histórico (GET ?historico=1), foto recortada
+//   (POST {foto}), tipo_ativo + config_camadas_recente na carga.
 // @changelog v2.0.0 — contrato real do /api/avatar/studio.php: version p/
 //   concorrência otimista (409), CSRF via /api/auth/check.php (mesmo caminho
 //   do panel-user-profile), broadcast do render_url PUBLICADO pelo servidor.
 //   Fallback localStorage permanece p/ offline/erro (briefing §25).
-// O backend NUNCA confia no que sai daqui: revalida config e sanitiza o SVG.
-import type { AvatarConfig } from '../domain/types';
+// O backend NUNCA confia no que sai daqui: revalida config, sanitiza o SVG
+// e re-encoda a foto.
+import type { AvatarConfig, HistoricoItem } from '../domain/types';
 import { validarConfig, svgDe, dataUriDe } from './AvatarCatalog';
 
 const URL_API = '/api/avatar/studio.php';
@@ -17,12 +20,17 @@ const EVENTO_DOM = 'dshow:avatar:atualizado';
 
 export type OrigemDado = 'api' | 'local' | 'padrao';
 
+export type TipoAtivo = 'camadas' | 'foto' | 'legado' | null;
+
 export interface ResultadoCarga {
   config: AvatarConfig | null;
   versao: number;
   origem: OrigemDado;
   renderUrl: string | null;
   urlLegado: string | null;
+  tipoAtivo: TipoAtivo;
+  /** último trabalho em camadas — recuperado mesmo com foto/legado ativo */
+  configCamadasRecente: AvatarConfig | null;
 }
 
 export interface ResultadoSalvar {
@@ -61,6 +69,8 @@ export async function carregarAvatar(signal?: AbortSignal): Promise<ResultadoCar
         origem: 'api',
         renderUrl: d.render_url ?? null,
         urlLegado: d.avatar_url ?? null,
+        tipoAtivo: d.tipo_ativo ?? null,
+        configCamadasRecente: d.config_camadas_recente ? validarConfig(d.config_camadas_recente) : null,
       };
     }
   } catch { /* segue para o fallback */ }
@@ -69,11 +79,32 @@ export async function carregarAvatar(signal?: AbortSignal): Promise<ResultadoCar
   try {
     const salvo = localStorage.getItem(CHAVE_CONFIG);
     if (salvo) {
-      return { config: validarConfig(JSON.parse(salvo)), versao: 0, origem: 'local', renderUrl: null, urlLegado: null };
+      const cfg = validarConfig(JSON.parse(salvo));
+      return { config: cfg, versao: 0, origem: 'local', renderUrl: null, urlLegado: null, tipoAtivo: null, configCamadasRecente: cfg };
     }
   } catch { /* segue */ }
 
-  return { config: null, versao: 0, origem: 'padrao', renderUrl: null, urlLegado: null };
+  return { config: null, versao: 0, origem: 'padrao', renderUrl: null, urlLegado: null, tipoAtivo: null, configCamadasRecente: null };
+}
+
+/** Últimas 12 versões (camadas e fotos) — briefing §26. */
+export async function carregarHistorico(signal?: AbortSignal): Promise<HistoricoItem[]> {
+  try {
+    const r = await fetch(`${URL_API}?historico=1`, { credentials: 'include', signal, cache: 'no-store' });
+    if (!r.ok) return [];
+    const corpo = await r.json();
+    const itens = corpo?.data?.itens;
+    if (!Array.isArray(itens)) return [];
+    return itens.map((i: Record<string, unknown>) => ({
+      id: Number(i.id) || 0,
+      tipo: i.tipo === 'foto' ? 'foto' as const : 'camadas' as const,
+      config: i.config ? validarConfig(i.config) : null,
+      url: typeof i.url === 'string' ? i.url : null,
+      criadoEm: typeof i.criado_em === 'string' ? i.criado_em : '',
+    }));
+  } catch {
+    return [];
+  }
 }
 
 /** Propaga o novo render para header/menu/perfil e outras abas. */
@@ -137,5 +168,40 @@ export async function salvarAvatar(config: AvatarConfig, versaoBase: number): Pr
     return { ok: true, origem: 'local', mensagem: 'Salvo neste navegador (servidor indisponível).' };
   } catch {
     return { ok: false, origem: 'padrao', mensagem: 'Não foi possível salvar.' };
+  }
+}
+
+/** Salva a FOTO recortada (canvas PNG). Sem fallback local — exige servidor. */
+export async function salvarFoto(dataUrlPng: string, versaoBase: number): Promise<ResultadoSalvar> {
+  try {
+    const cabecalhos: Record<string, string> = { 'Content-Type': 'application/json' };
+    const csrf = await obterCsrf();
+    if (csrf) cabecalhos['X-CSRF-Token'] = csrf;
+
+    const r = await fetch(URL_API, {
+      method: 'POST',
+      credentials: 'include',
+      headers: cabecalhos,
+      body: JSON.stringify({ foto: dataUrlPng, base_version: versaoBase }),
+    });
+
+    if (r.ok) {
+      const corpo = await r.json();
+      const renderUrl: string = corpo?.data?.render_url ?? '';
+      const versao: number = corpo?.data?.version ?? versaoBase + 1;
+      if (renderUrl) anunciar(`${renderUrl}?t=${versao}`, 'api');
+      return { ok: true, origem: 'api', versao };
+    }
+    if (r.status === 409) {
+      const corpo = await r.json().catch(() => null);
+      return {
+        ok: false, origem: 'api', conflito: true, versao: corpo?.data?.version,
+        mensagem: 'O avatar foi salvo em outra aba. Recarregue para ver a versão mais recente.',
+      };
+    }
+    const corpo = await r.json().catch(() => null);
+    return { ok: false, origem: 'api', mensagem: `O servidor recusou a foto (${corpo?.error ?? r.status}).` };
+  } catch {
+    return { ok: false, origem: 'padrao', mensagem: 'Sem conexão com o servidor — a foto precisa dele para ser salva.' };
   }
 }
