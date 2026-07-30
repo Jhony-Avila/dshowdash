@@ -198,6 +198,16 @@ UPDATE avatar_catalog_meta SET version = version + 1, published_at = NOW(),
   notes = 'Seed de assets migrado do catálogo TS' WHERE id = 1;`);
 
 writeFileSync(SAIDA, L.join('\n\n') + '\n');
+
+// ── dump p/ HOMOLOGAÇÃO (etapa 8): comparar-catalogo.php confere TS × banco ─
+const dumpJson = {};
+for (const p of dump.PARTES) {
+  dumpJson[p.id] = { categoria: p.categoria === 'base' ? 'especie' : p.categoria, raridade: p.raridade, nome: p.nome };
+}
+for (const t of dump.TITULOS ?? []) dumpJson[t.id] = { categoria: 'titulo', raridade: t.raridade, nome: t.nome };
+for (const a of dump.ARQUETIPOS ?? []) dumpJson[a.id] = { categoria: 'arquetipo', raridade: a.raridade, nome: a.nome };
+writeFileSync(join(RAIZ, 'sql/avatar/catalogo_dump.json'), JSON.stringify(dumpJson, null, 1) + '\n');
+
 const partes = dump.PARTES.length;
-console.log(`ok: ${SAIDA}`);
+console.log(`ok: ${SAIDA} (+catalogo_dump.json p/ homologação)`);
 console.log(`partes 2D: ${partes} · GLBs: ${glbs.length} · coleções: ${dump.COLECOES.length} · presets: ${dump.PRESETS.length}`);

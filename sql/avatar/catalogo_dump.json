@@ -1,0 +1,652 @@
+{
+ "bas_classica": {
+  "categoria": "especie",
+  "raridade": "comum",
+  "nome": "Clássica"
+ },
+ "bas_angular": {
+  "categoria": "especie",
+  "raridade": "incomum",
+  "nome": "Angular"
+ },
+ "bas_androide": {
+  "categoria": "especie",
+  "raridade": "epico",
+  "nome": "Androide"
+ },
+ "bas_holo": {
+  "categoria": "especie",
+  "raridade": "lendario",
+  "nome": "Holograma"
+ },
+ "bas_panda": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Panda"
+ },
+ "bas_coruja": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Coruja"
+ },
+ "bas_raposa": {
+  "categoria": "especie",
+  "raridade": "epico",
+  "nome": "Raposa"
+ },
+ "bas_lobo": {
+  "categoria": "especie",
+  "raridade": "epico",
+  "nome": "Lobo"
+ },
+ "bas_leao": {
+  "categoria": "especie",
+  "raridade": "lendario",
+  "nome": "Leão"
+ },
+ "bas_alien": {
+  "categoria": "especie",
+  "raridade": "mitico",
+  "nome": "Alienígena"
+ },
+ "bas_ledbot": {
+  "categoria": "especie",
+  "raridade": "exclusivo",
+  "nome": "LED Bot"
+ },
+ "cab_curto": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Curto Social"
+ },
+ "cab_topete": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Topete"
+ },
+ "cab_franja": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Franja Repicada"
+ },
+ "cab_ondulado": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Ondulado"
+ },
+ "cab_coque": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Coque Samurai"
+ },
+ "cab_cacheado": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Cacheado Power"
+ },
+ "cab_longo": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Longo Lendário"
+ },
+ "cab_moicano": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Moicano"
+ },
+ "cab_cyber": {
+  "categoria": "cabelo",
+  "raridade": "epico",
+  "nome": "Undercut Neon"
+ },
+ "olh_padrao": {
+  "categoria": "olhos",
+  "raridade": "comum",
+  "nome": "Confiante"
+ },
+ "olh_focado": {
+  "categoria": "olhos",
+  "raridade": "comum",
+  "nome": "Focado"
+ },
+ "olh_feliz": {
+  "categoria": "olhos",
+  "raridade": "comum",
+  "nome": "Alegre"
+ },
+ "olh_serio": {
+  "categoria": "olhos",
+  "raridade": "incomum",
+  "nome": "Analítico"
+ },
+ "olh_brilho": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Estelar"
+ },
+ "olh_led": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "LED Sintético"
+ },
+ "olh_brincalhao": {
+  "categoria": "olhos",
+  "raridade": "incomum",
+  "nome": "Piscadela"
+ },
+ "olh_cansado": {
+  "categoria": "olhos",
+  "raridade": "comum",
+  "nome": "Pós-Deploy"
+ },
+ "olh_misterioso": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Misterioso"
+ },
+ "olh_vilao": {
+  "categoria": "olhos",
+  "raridade": "mitico",
+  "nome": "Vilão"
+ },
+ "olh_visor": {
+  "categoria": "olhos",
+  "raridade": "epico",
+  "nome": "Visor Tático"
+ },
+ "boc_sorriso": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Sorriso"
+ },
+ "boc_neutra": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Neutra"
+ },
+ "boc_larga": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Gargalhada"
+ },
+ "boc_lado": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Sorriso de Canto"
+ },
+ "boc_determinada": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Determinada"
+ },
+ "boc_surpresa": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Surpresa"
+ },
+ "boc_lingua": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Deboche"
+ },
+ "boc_bigode": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Bigode de Respeito"
+ },
+ "boc_vilao": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Sorriso de Vilão"
+ },
+ "boc_grade": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Grade Sintética"
+ },
+ "rou_camiseta": {
+  "categoria": "roupa",
+  "raridade": "comum",
+  "nome": "Camiseta"
+ },
+ "rou_regata": {
+  "categoria": "roupa",
+  "raridade": "comum",
+  "nome": "Regata Treino"
+ },
+ "rou_social": {
+  "categoria": "roupa",
+  "raridade": "incomum",
+  "nome": "Camisa Social"
+ },
+ "rou_hoodie": {
+  "categoria": "roupa",
+  "raridade": "incomum",
+  "nome": "Hoodie Dev"
+ },
+ "rou_jaqueta": {
+  "categoria": "roupa",
+  "raridade": "raro",
+  "nome": "Jaqueta Racer"
+ },
+ "rou_gamer": {
+  "categoria": "roupa",
+  "raridade": "raro",
+  "nome": "Jersey Pro Player"
+ },
+ "rou_terno": {
+  "categoria": "roupa",
+  "raridade": "epico",
+  "nome": "Terno Executivo"
+ },
+ "rou_kimono": {
+  "categoria": "roupa",
+  "raridade": "epico",
+  "nome": "Kimono do Dojo"
+ },
+ "rou_astronauta": {
+  "categoria": "roupa",
+  "raridade": "lendario",
+  "nome": "Traje Orbital"
+ },
+ "rou_moletom_dshow": {
+  "categoria": "roupa",
+  "raridade": "exclusivo",
+  "nome": "Moletom Dshow"
+ },
+ "rou_armadura": {
+  "categoria": "roupa",
+  "raridade": "lendario",
+  "nome": "Armadura Nexus"
+ },
+ "ace_brinco": {
+  "categoria": "acessorio",
+  "raridade": "comum",
+  "nome": "Brinco de Argola"
+ },
+ "ace_oculos": {
+  "categoria": "acessorio",
+  "raridade": "comum",
+  "nome": "Óculos de Grau"
+ },
+ "ace_oculos_sol": {
+  "categoria": "acessorio",
+  "raridade": "incomum",
+  "nome": "Óculos Escuros"
+ },
+ "ace_fone": {
+  "categoria": "acessorio",
+  "raridade": "incomum",
+  "nome": "Fone Minimal"
+ },
+ "ace_bone": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Boné Snapback"
+ },
+ "ace_headset": {
+  "categoria": "acessorio",
+  "raridade": "epico",
+  "nome": "Headset Pro Gamer"
+ },
+ "ace_cachecol": {
+  "categoria": "acessorio",
+  "raridade": "comum",
+  "nome": "Cachecol"
+ },
+ "ace_chapeu_mago": {
+  "categoria": "acessorio",
+  "raridade": "epico",
+  "nome": "Chapéu de Arquimago"
+ },
+ "ace_drone": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Drone Companion"
+ },
+ "ace_medalha": {
+  "categoria": "acessorio",
+  "raridade": "epico",
+  "nome": "Medalha de Veterano"
+ },
+ "ace_gorro_natal": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Gorro de Natal"
+ },
+ "ace_chapeu_bruxa": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Chapéu de Bruxa"
+ },
+ "ace_coroa": {
+  "categoria": "acessorio",
+  "raridade": "lendario",
+  "nome": "Coroa do Top 1"
+ },
+ "fun_estudio": {
+  "categoria": "fundo",
+  "raridade": "comum",
+  "nome": "Estúdio"
+ },
+ "fun_estrelas": {
+  "categoria": "fundo",
+  "raridade": "comum",
+  "nome": "Campo Estelar"
+ },
+ "fun_grade": {
+  "categoria": "fundo",
+  "raridade": "incomum",
+  "nome": "Synthwave"
+ },
+ "fun_hex": {
+  "categoria": "fundo",
+  "raridade": "incomum",
+  "nome": "Colmeia Tech"
+ },
+ "fun_circuito": {
+  "categoria": "fundo",
+  "raridade": "raro",
+  "nome": "Placa-Mãe"
+ },
+ "fun_nebulosa": {
+  "categoria": "fundo",
+  "raridade": "raro",
+  "nome": "Nebulosa"
+ },
+ "fun_aurora": {
+  "categoria": "fundo",
+  "raridade": "epico",
+  "nome": "Aurora Boreal"
+ },
+ "fun_led_wall": {
+  "categoria": "fundo",
+  "raridade": "incomum",
+  "nome": "LED Wall Dshow"
+ },
+ "fun_lab": {
+  "categoria": "fundo",
+  "raridade": "raro",
+  "nome": "Laboratório de IA"
+ },
+ "fun_dojo": {
+  "categoria": "fundo",
+  "raridade": "epico",
+  "nome": "Dojo ao Entardecer"
+ },
+ "fun_arena": {
+  "categoria": "fundo",
+  "raridade": "lendario",
+  "nome": "Arena E-Sports"
+ },
+ "mol_aro": {
+  "categoria": "moldura",
+  "raridade": "comum",
+  "nome": "Aro Clean"
+ },
+ "mol_duplo": {
+  "categoria": "moldura",
+  "raridade": "incomum",
+  "nome": "Aro Duplo"
+ },
+ "mol_tech": {
+  "categoria": "moldura",
+  "raridade": "raro",
+  "nome": "Cantos Táticos"
+ },
+ "mol_neon": {
+  "categoria": "moldura",
+  "raridade": "epico",
+  "nome": "Neon Pulsante"
+ },
+ "mol_ouro": {
+  "categoria": "moldura",
+  "raridade": "lendario",
+  "nome": "Ouro Imperial"
+ },
+ "mol_rgb": {
+  "categoria": "moldura",
+  "raridade": "raro",
+  "nome": "LED RGB"
+ },
+ "mol_cristal": {
+  "categoria": "moldura",
+  "raridade": "mitico",
+  "nome": "Cristal Mítico"
+ },
+ "mol_pioneiro": {
+  "categoria": "moldura",
+  "raridade": "epico",
+  "nome": "Pioneiro"
+ },
+ "mol_dshow": {
+  "categoria": "moldura",
+  "raridade": "exclusivo",
+  "nome": "Exclusiva Dshow"
+ },
+ "efe_aura": {
+  "categoria": "efeito",
+  "raridade": "raro",
+  "nome": "Aura de Poder"
+ },
+ "efe_chuva": {
+  "categoria": "efeito",
+  "raridade": "raro",
+  "nome": "Chuva Digital"
+ },
+ "efe_scanlines": {
+  "categoria": "efeito",
+  "raridade": "incomum",
+  "nome": "Scanlines CRT"
+ },
+ "efe_particulas": {
+  "categoria": "efeito",
+  "raridade": "raro",
+  "nome": "Partículas Flutuantes"
+ },
+ "efe_portal": {
+  "categoria": "efeito",
+  "raridade": "lendario",
+  "nome": "Portal Dimensional"
+ },
+ "efe_raio": {
+  "categoria": "efeito",
+  "raridade": "epico",
+  "nome": "Tempestade Elétrica"
+ },
+ "efe_glitch": {
+  "categoria": "efeito",
+  "raridade": "epico",
+  "nome": "Glitch"
+ },
+ "efe_fogo": {
+  "categoria": "efeito",
+  "raridade": "mitico",
+  "nome": "Chamas Vivas"
+ },
+ "efe_confete": {
+  "categoria": "efeito",
+  "raridade": "lendario",
+  "nome": "Confete Eterno"
+ },
+ "efe_faiscas": {
+  "categoria": "efeito",
+  "raridade": "lendario",
+  "nome": "Faíscas Lendárias"
+ },
+ "aur_neon": {
+  "categoria": "aura",
+  "raridade": "raro",
+  "nome": "Aura Neon"
+ },
+ "aur_plasma": {
+  "categoria": "aura",
+  "raridade": "epico",
+  "nome": "Aura de Plasma"
+ },
+ "aur_eletrica": {
+  "categoria": "aura",
+  "raridade": "epico",
+  "nome": "Aura Elétrica"
+ },
+ "aur_cristal": {
+  "categoria": "aura",
+  "raridade": "lendario",
+  "nome": "Aura de Cristal"
+ },
+ "aur_dshow": {
+  "categoria": "aura",
+  "raridade": "exclusivo",
+  "nome": "Aura LED Dshow"
+ },
+ "ban_executivo": {
+  "categoria": "banner",
+  "raridade": "raro",
+  "nome": "Estandarte Executivo"
+ },
+ "ban_cyber": {
+  "categoria": "banner",
+  "raridade": "epico",
+  "nome": "Estandarte Cyber"
+ },
+ "ban_galaxy": {
+  "categoria": "banner",
+  "raridade": "epico",
+  "nome": "Estandarte Galáxia"
+ },
+ "ban_arena": {
+  "categoria": "banner",
+  "raridade": "raro",
+  "nome": "Flâmula da Arena"
+ },
+ "ban_dshow": {
+  "categoria": "banner",
+  "raridade": "exclusivo",
+  "nome": "Painel LED Dshow"
+ },
+ "emb_dshow": {
+  "categoria": "emblema",
+  "raridade": "exclusivo",
+  "nome": "Emblema Dshow"
+ },
+ "emb_nexus": {
+  "categoria": "emblema",
+  "raridade": "epico",
+  "nome": "Selo Nexus"
+ },
+ "emb_elite": {
+  "categoria": "emblema",
+  "raridade": "lendario",
+  "nome": "Estrela Elite"
+ },
+ "emb_cyber": {
+  "categoria": "emblema",
+  "raridade": "raro",
+  "nome": "Divisa Cyber"
+ },
+ "emb_diamond": {
+  "categoria": "emblema",
+  "raridade": "lendario",
+  "nome": "Broche Diamond"
+ },
+ "tit_estrategista": {
+  "categoria": "titulo",
+  "raridade": "incomum",
+  "nome": "Estrategista"
+ },
+ "tit_pro_player": {
+  "categoria": "titulo",
+  "raridade": "raro",
+  "nome": "Pro Player"
+ },
+ "tit_elite_trader": {
+  "categoria": "titulo",
+  "raridade": "raro",
+  "nome": "Elite Trader"
+ },
+ "tit_cyber_architect": {
+  "categoria": "titulo",
+  "raridade": "epico",
+  "nome": "Cyber Architect"
+ },
+ "tit_nexus_commander": {
+  "categoria": "titulo",
+  "raridade": "epico",
+  "nome": "Nexus Commander"
+ },
+ "tit_mestre_da_luz": {
+  "categoria": "titulo",
+  "raridade": "lendario",
+  "nome": "Mestre da Luz"
+ },
+ "tit_ceo_supremo": {
+  "categoria": "titulo",
+  "raridade": "lendario",
+  "nome": "CEO Supremo"
+ },
+ "tit_lenda_dshow": {
+  "categoria": "titulo",
+  "raridade": "exclusivo",
+  "nome": "Lenda Dshow"
+ },
+ "arq_executivo": {
+  "categoria": "arquetipo",
+  "raridade": "comum",
+  "nome": "Executivo"
+ },
+ "arq_ceo": {
+  "categoria": "arquetipo",
+  "raridade": "lendario",
+  "nome": "CEO"
+ },
+ "arq_engenheiro": {
+  "categoria": "arquetipo",
+  "raridade": "comum",
+  "nome": "Engenheiro"
+ },
+ "arq_programador": {
+  "categoria": "arquetipo",
+  "raridade": "raro",
+  "nome": "Programador"
+ },
+ "arq_comercial": {
+  "categoria": "arquetipo",
+  "raridade": "comum",
+  "nome": "Comercial"
+ },
+ "arq_cientista": {
+  "categoria": "arquetipo",
+  "raridade": "raro",
+  "nome": "Cientista"
+ },
+ "arq_hacker": {
+  "categoria": "arquetipo",
+  "raridade": "epico",
+  "nome": "Hacker"
+ },
+ "arq_operador": {
+  "categoria": "arquetipo",
+  "raridade": "epico",
+  "nome": "Operador"
+ },
+ "arq_samurai": {
+  "categoria": "arquetipo",
+  "raridade": "epico",
+  "nome": "Samurai"
+ },
+ "arq_guerreiro": {
+  "categoria": "arquetipo",
+  "raridade": "epico",
+  "nome": "Guerreiro"
+ },
+ "arq_explorador": {
+  "categoria": "arquetipo",
+  "raridade": "raro",
+  "nome": "Explorador"
+ },
+ "arq_piloto": {
+  "categoria": "arquetipo",
+  "raridade": "lendario",
+  "nome": "Piloto"
+ }
+}
