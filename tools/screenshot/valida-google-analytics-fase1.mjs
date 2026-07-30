@@ -147,7 +147,19 @@ for (const tema of ['dark', 'light']) {
   for (const tela of TELAS) {
     erros.length = 0;
     await page.evaluate((t) => { window.location.hash = `#/panel-google-analytics/${t}`; }, tela);
-    await page.waitForTimeout(950);
+    // ⚠️ ESPERA CONDICIONAL, não `waitForTimeout` fixo. Com timeout fixo a medição às vezes
+    // pegava o SKELETON (que tem pouco texto) e reprovava tela sã — foi o que aconteceu com
+    // `eventos`, que isolada mostrava 19 linhas, botão de CSV e zero erro de console.
+    // Espera o conteúdo real OU um erro visível; nunca mais depende de quanto a rede demorou.
+    await page.waitForFunction(() => {
+      const raiz = document.querySelector('[data-ga-react-root]');
+      if (!raiz) return false;
+      if (raiz.querySelector('.ga-erro[role="alert"]')) return true;   // erro também é resposta
+      const c = raiz.querySelector('.ga-conteudo');
+      const semSkeleton = !raiz.querySelector('.ga-skel');
+      return !!c && (c.textContent ?? '').trim().length > 40 && semSkeleton;
+    }, { timeout: 12000 }).catch(() => { /* deixa a checagem abaixo reprovar com o motivo */ });
+    await page.waitForTimeout(220);   // deixa o último paint assentar
     const estado = await page.evaluate(() => {
       const raiz = document.querySelector('[data-ga-react-root]');
       const conteudo = raiz?.querySelector('.ga-conteudo');
