@@ -22,9 +22,9 @@ const OUT = '/var/www/dshowdash/storage/media/images/screenshots';
 
 // Espelha `disponivel: true` de src/shell/types.ts. Se divergir, a prova acusa.
 const TELAS = [
-  'visao-geral', 'tempo-real', 'aquisicao', 'canais', 'campanhas', 'jornada', 'paginas', 'landing-pages',
+  'visao-geral', 'tempo-real', 'diretoria', 'aquisicao', 'canais', 'campanhas', 'jornada', 'paginas', 'landing-pages',
   'eventos', 'conversoes', 'funis', 'ecommerce', 'produtos', 'usuarios', 'dispositivos',
-  'localizacoes', 'retencao', 'qualidade', 'tagging', 'alertas', 'propriedades', 'quotas',
+  'localizacoes', 'retencao', 'qualidade', 'tagging', 'insights', 'alertas', 'propriedades', 'quotas',
 ];
 
 const log = (...a) => console.log(...a);
@@ -307,6 +307,113 @@ for (const tema of ['dark', 'light']) {
   // "-97%" comparando dado simulado com dado real.
   checa('NÃO exibe card de diferença com fontes mistas', !conc.tem_card_diferenca,
     conc.tem_card_diferenca ? 'card de diferença apareceu — a suspensão falhou' : '');
+
+  // ── FASE 3: insights com estatística, e exportação ──────────────────────
+  log('  — Fase 3 —');
+
+  // As regras estatísticas SÓ disparam em série deformada. Os dois cenários abaixo existem
+  // exatamente para isso — sem eles, z-score e regressão nunca rodam e ninguém sabe se
+  // funcionam. Foi assim que dois bugs meus apareceram (fórmula com `% 40` reportando ALTA
+  // num cenário chamado "queda", e pico anulado pelo peso do dia da semana).
+  const insightsDoCenario = async (cen) => {
+    // ⚠️ ORDEM IMPORTA: navegar PRIMEIRO, trocar o cenário DEPOIS. Na primeira versão eu
+    // trocava o cenário estando em outra tela e navegava em seguida — o `pico` não aparecia,
+    // e eu quase concluí que a regra estava quebrada (o backend estava certo o tempo todo).
+    await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/insights'; });
+    await page.waitForTimeout(1200);
+    const aceitou = await page.evaluate((c) => {
+      const sel = document.querySelector('[data-ga-react-root] #ga-cenario');
+      if (!sel) return { ok: false, motivo: 'select de cenário não encontrado' };
+      const temOpcao = [...sel.options].some((o) => o.value === c);
+      if (!temOpcao) return { ok: false, motivo: `opção ${c} não existe no select`, opcoes: [...sel.options].map((o) => o.value) };
+      sel.value = c;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      return { ok: true, valor: sel.value };
+    }, cen);
+    if (!aceitou.ok) { return { erroTroca: aceitou }; }
+    await page.waitForTimeout(2200);
+    return page.evaluate(() => {
+      const t = document.querySelector('[data-ga-react-root] .ga-conteudo')?.textContent ?? '';
+      return {
+        temZscore: /z-score/i.test(t),
+        temRegressao: /regressão linear/i.test(t),
+        temMetodo: /Como cada regra é calculada/i.test(t),
+        temLimitacao: /não é robusto a valores extremos/i.test(t),
+        pico: /Pico de sessões/i.test(t),
+        queda: /tendência de queda/i.test(t),
+      };
+    });
+  };
+
+  const anom = await insightsDoCenario('anomalia_dia');
+  checa('cenário de anomalia produz insight com z-score', !!anom.pico, JSON.stringify(anom));
+  const tend = await insightsDoCenario('tendencia_queda');
+  checa('cenário de tendência reporta QUEDA (não alta)', !!tend.queda, JSON.stringify(tend));
+  checa('a tela mostra o método de cada regra', tend.temMetodo);
+  // ⚠️ A limitação do z-score fica NA TELA: é o que permite ao usuário discordar da conclusão.
+  checa('a tela declara a limitação do z-score', tend.temLimitacao);
+
+  // volta ao cenário saudável
+  await page.evaluate(() => {
+    const sel = document.querySelector('[data-ga-react-root] #ga-cenario');
+    if (sel) { sel.value = 'saudavel'; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+  });
+  await page.waitForTimeout(900);
+
+  // Diretoria
+  await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/diretoria'; });
+  await page.waitForTimeout(2000);
+  const dir = await page.evaluate(() => {
+    const t = document.querySelector('[data-ga-react-root] .ga-conteudo')?.textContent ?? '';
+    return {
+      temFunil: /Do site ao CRM/i.test(t),
+      temAviso: /larguras das barras são ilustrativas/i.test(t),
+      temDecisao: /Exige decisão/i.test(t),
+    };
+  });
+  checa('Diretoria mostra o funil do site ao CRM', dir.temFunil, JSON.stringify(dir));
+  // ⚠️ O aviso é obrigatório: com um lado simulado e outro real, proporção é desenho, não dado.
+  checa('Diretoria avisa que as barras são ilustrativas', dir.temAviso);
+  checa('Diretoria tem bloco "Exige decisão"', dir.temDecisao);
+
+  // Exportação CSV — gera o arquivo e confere o conteúdo, sem depender de download real.
+  await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/campanhas'; });
+  await page.waitForTimeout(1600);
+  const csv = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('[data-ga-react-root] .ga-btn')]
+      .find((b) => /Exportar CSV/.test(b.textContent || ''));
+    if (!btn) return { achou: false };
+    // Intercepta o download: guarda o texto do Blob em vez de baixar.
+    let capturado = null;
+    const orig = URL.createObjectURL;
+    URL.createObjectURL = (blob) => { capturado = blob; return 'blob:fake'; };
+    const clickOrig = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () { /* não navega */ };
+    btn.click();
+    URL.createObjectURL = orig;
+    HTMLAnchorElement.prototype.click = clickOrig;
+    // ⚠️ O BOM tem de ser verificado nos BYTES, não no texto. `Blob.text()` decodifica em
+    // UTF-8 e CONSOME o BOM — a primeira versão desta prova reprovou o código por isso,
+    // enquanto os bytes EF BB BF estavam corretamente no arquivo.
+    return capturado
+      ? capturado.arrayBuffer().then((buf) => {
+          const b = new Uint8Array(buf);
+          const txt = new TextDecoder('utf-8').decode(buf);
+          return {
+            achou: true,
+            temBom: b[0] === 0xEF && b[1] === 0xBB && b[2] === 0xBF,
+            pontoEVirgula: (txt.split('\n')[0] || '').includes(';'),
+            semVirgulaDecimalErrada: !/\d\.\d{2};/.test(txt),
+            linhas: txt.trim().split(/\r?\n/).length,
+            cabecalho: (txt.split(/\r?\n/)[0] || '').replace('\uFEFF', '').slice(0, 60),
+          };
+        })
+      : { achou: true, capturado: false };
+  });
+  checa('o botão de exportar CSV existe e gera arquivo', !!csv.achou && csv.linhas > 1, JSON.stringify(csv));
+  // ⚠️ Estes dois são o que faz o arquivo ABRIR CERTO no Excel pt-BR.
+  checa('o CSV tem BOM UTF-8 (acento não quebra no Excel)', !!csv.temBom);
+  checa('o CSV usa ponto-e-vírgula como separador', !!csv.pontoEVirgula, csv.cabecalho ?? '');
 
   // ── tema exercitado de verdade ──────────────────────────────────────────
   await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/visao-geral'; });

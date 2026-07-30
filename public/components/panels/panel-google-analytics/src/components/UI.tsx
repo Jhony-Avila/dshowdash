@@ -9,18 +9,19 @@ import {
   Files, PanelsTopLeft, Zap, BadgeCheck, Filter, ShoppingCart, Package, Users,
   MonitorSmartphone, Map as MapIcon, Repeat2, ShieldCheck, Tags, BellRing, Lightbulb,
   Database, Gauge, PanelLeftClose, PanelLeftOpen, RefreshCw, AlertTriangle, Info,
-  CircleAlert, ArrowRight, TriangleAlert,
+  CircleAlert, ArrowRight, TriangleAlert, Download,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Kpi, MetaProcedencia } from '../shell/types';
 import { fmtValor, fmtVariacao, sentidoVariacao, fmtDesde, fmtCompacto } from '../lib/fmt';
+import { exportar } from '../lib/csv';
 
 const ICONES: Record<string, typeof LayoutDashboard> = {
   LayoutDashboard, Radio, Presentation, MousePointerClick, Share2, Megaphone, Route,
   Files, PanelsTopLeft, Zap, BadgeCheck, Filter, ShoppingCart, Package, Users,
   MonitorSmartphone, Map: MapIcon, Repeat2, ShieldCheck, Tags, BellRing, Lightbulb,
   Database, Gauge, PanelLeftClose, PanelLeftOpen, RefreshCw, AlertTriangle, Info,
-  CircleAlert, ArrowRight, TriangleAlert,
+  CircleAlert, ArrowRight, TriangleAlert, Download,
 };
 
 export function Icone({ nome, tam = 16 }: { nome: string; tam?: number }) {
@@ -181,10 +182,18 @@ export interface Coluna<T> {
   render: (linha: T) => ReactNode;
   /** Totalizador de rodapé (§60.1). */
   total?: (linhas: T[]) => ReactNode;
+  /**
+   * Valor CRU para exportação (§51.2).
+   *
+   * ⚠️ Existe porque `render` devolve JSX: exportar o resultado dele produziria "[object
+   * Object]" na planilha. Coluna sem `csv` é omitida do arquivo — é o caso das colunas que só
+   * desenham barra ou badge, que não têm o que exportar.
+   */
+  csv?: (linha: T) => unknown;
 }
 
 export function Grid<T>({
-  colunas, linhas, chave, vazio, onLinha, selecionada,
+  colunas, linhas, chave, vazio, onLinha, selecionada, exportarComo,
 }: {
   colunas: Coluna<T>[];
   linhas: T[];
@@ -192,12 +201,31 @@ export function Grid<T>({
   vazio?: ReactNode;
   onLinha?: (l: T) => void;
   selecionada?: (l: T) => boolean;
+  /** Nome-base do arquivo. Sem isto o botão de exportar não aparece. */
+  exportarComo?: string;
 }) {
   if (linhas.length === 0) {
     return <div className="ga-grid-wrap">{vazio ?? <Vazio titulo="Sem dados no período" detalhe="Ajuste o período ou limpe os filtros." />}</div>;
   }
   const temTotal = colunas.some((c) => c.total);
+  const exportaveis = colunas.filter((c) => c.csv);
   return (
+    <>
+      {exportarComo && exportaveis.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+          <button
+            className="ga-btn"
+            onClick={() => exportar(
+              exportarComo,
+              exportaveis.map((c) => ({ rotulo: c.rotulo, valor: c.csv! })),
+              linhas,
+            )}
+            title={`Exportar ${linhas.length} linhas para CSV (separador ; e decimal , para Excel pt-BR)`}
+          >
+            <Icone nome="Download" tam={13} /> Exportar CSV ({linhas.length})
+          </button>
+        </div>
+      )}
     <div className="ga-grid-wrap">
       <table className="ga-grid">
         <thead>
@@ -236,6 +264,7 @@ export function Grid<T>({
         )}
       </table>
     </div>
+    </>
   );
 }
 

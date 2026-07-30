@@ -113,7 +113,7 @@ export const GRUPOS: GrupoTelas[] = [
     telas: [
       { id: 'visao-geral', titulo: 'Visão Geral', icone: 'LayoutDashboard', disponivel: true, quota: 'core' },
       { id: 'tempo-real', titulo: 'Tempo Real', icone: 'Radio', disponivel: true, quota: 'realtime' },
-      { id: 'diretoria', titulo: 'Diretoria', icone: 'Presentation', disponivel: false, motivo: 'Fase 2: recorte executivo da Visão Geral, com metas.' },
+      { id: 'diretoria', titulo: 'Diretoria', icone: 'Presentation', disponivel: true, quota: 'core' },
     ],
   },
   {
@@ -162,7 +162,7 @@ export const GRUPOS: GrupoTelas[] = [
     id: 'inteligencia', titulo: 'Inteligência',
     telas: [
       { id: 'alertas', titulo: 'Alertas', icone: 'BellRing', disponivel: true, quota: 'core' },
-      { id: 'insights', titulo: 'Insights', icone: 'Lightbulb', disponivel: false, motivo: 'Fase 3: regras de anomalia sobre a série histórica.' },
+      { id: 'insights', titulo: 'Insights e Anomalias', icone: 'Lightbulb', disponivel: true, quota: 'core' },
     ],
   },
   {
@@ -202,4 +202,8 @@ export const CENARIOS: { id: string; rotulo: string }[] = [
   { id: 'coleta_quebrada', rotulo: 'Coleta quebrada' },
   { id: 'ecommerce', rotulo: 'E-commerce instrumentado' },
   { id: 'sem_dados', rotulo: 'Sem dados' },
+  // ⚠️ Estes dois existem para exercitar as regras estatísticas da tela de Insights (z-score e
+  // regressão linear). Sem eles as regras nunca disparam na série regular do mock.
+  { id: 'anomalia_dia', rotulo: 'Dia atípico (pico e vale)' },
+  { id: 'tendencia_queda', rotulo: 'Tendência de queda' },
 ];

@@ -56,8 +56,17 @@ interface GaProvider
     /** Qualidade da coleta e diagnóstico de instrumentação (§42). */
     public function qualidade(array $f): array;
 
-    /** Insights, anomalias e alertas (§50, §52). */
+    /** Alertas (§52). */
     public function alertas(array $f): array;
+
+    /**
+     * Insights e anomalias (§50).
+     *
+     * ⚠️ Separado de `alertas()`: alerta é limiar ("caiu 15%"), insight é análise da série
+     * (z-score, tendência). Cada insight DEVE trazer `evidencia` e `confianca` — sem isso a
+     * tela não tem como mostrar de onde saiu a conclusão, e a §50 exige que mostre.
+     */
+    public function insights(array $f): array;
 
     // ── Relatórios especializados (categorias de quota SEPARADAS) ────────
     // ⚠️ A Data API cobra Core, Realtime e Funnel em categorias de quota DIFERENTES

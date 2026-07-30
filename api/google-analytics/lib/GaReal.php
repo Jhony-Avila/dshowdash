@@ -114,6 +114,7 @@ final class GaReal implements GaProvider
     public function usuarios(array $f): array      { $this->indisponivel('usuarios'); }
     public function qualidade(array $f): array     { $this->indisponivel('qualidade'); }
     public function alertas(array $f): array       { $this->indisponivel('alertas'); }
+    public function insights(array $f): array      { $this->indisponivel('insights'); }
     public function tempoReal(array $f): array     { $this->indisponivel('tempo-real'); }
     public function funil(array $f): array         { $this->indisponivel('funil'); }
     // ⚠️ Na Fase 4 este método NÃO tem endpoint direto na Data API: caminho entre páginas se

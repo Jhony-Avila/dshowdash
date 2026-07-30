@@ -8,7 +8,7 @@
 #   1. php -l em todo o backend
 #   2. tsc --noEmit no painel
 #   3. node --check no adaptador
-#   4. as 17 rotas respondendo com envelope ok
+#   4. as 18 rotas respondendo com envelope ok
 #   5. gate de autenticação (rota sem sessão TEM de dar 401)
 #   6. COERÊNCIA dos números entre telas, em 4 cenários  <- o que pega mock mentiroso
 #   7. prova de UI em dark + light (Playwright)
@@ -71,9 +71,9 @@ CURL=(curl -s -k --resolve dshowdash.com.br:443:127.0.0.1)
 B=https://dshowdash.com.br/api/google-analytics
 
 # ── 4. rotas ─────────────────────────────────────────────────────────────
-titulo "4/8 · as 17 rotas"
+titulo "4/8 · as 18 rotas"
 ROTAS=(status header/summary overview realtime acquisition acquisition/flow pages events
-       conversions funnel journey ecommerce users quality alerts properties quotas)
+       conversions funnel journey ecommerce users quality insights alerts properties quotas)
 for r in "${ROTAS[@]}"; do
   corpo=$("${CURL[@]}" -b "$J" "$B/$r")
   if echo "$corpo" | grep -q '"ok":true'; then passou "GET /$r"; else falhou "GET /$r" "$(echo "$corpo" | head -c 120)"; fi

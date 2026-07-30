@@ -198,6 +198,28 @@ export interface RespostaAlertas {
   regras: { id: string; nome: string; metrica: string; limite: string; comparacao: string; ativa: boolean }[];
 }
 
+export interface Insight {
+  id: string;
+  tipo: 'anomalia' | 'tendencia' | 'oportunidade' | 'atribuicao';
+  severidade: 'alta' | 'media' | 'baixa';
+  conclusao: string;
+  /** ⚠️ A evidência numérica que gerou a conclusão. Se a tela não pode mostrar de onde saiu,
+   *  a conclusão não deveria estar na tela (§50). */
+  evidencia: string;
+  periodo: string;
+  impacto: string;
+  causa: string;
+  recomendacao: string;
+  confianca: 'alta' | 'media' | 'baixa';
+  tela: string;
+}
+
+export interface RespostaInsights {
+  insights: Insight[];
+  /** O método de cada regra — a tela mostra, para o usuário poder julgar a conclusão. */
+  metodo: { regra: string; como: string }[];
+}
+
 export interface RespostaStatus {
   provedor: string; pronto: boolean;
   measurement_id?: string; gtm_container?: string; property_id?: string;
@@ -246,6 +268,7 @@ export interface GoogleAnalyticsService {
   getUsers(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaUsuarios>>;
   getQuality(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaQualidade>>;
   getAlerts(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaAlertas>>;
+  getInsights(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaInsights>>;
   getProperties(sinal?: AbortSignal): Promise<ComMeta<RespostaPropriedades>>;
   getQuotas(sinal?: AbortSignal): Promise<ComMeta<RespostaQuotas>>;
 }
@@ -334,6 +357,7 @@ export class ApiGoogleAnalyticsService implements GoogleAnalyticsService {
   getUsers(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaUsuarios>(`/users${query(f)}`, this.s(sinal)); }
   getQuality(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaQualidade>(`/quality${query(f)}`, this.s(sinal)); }
   getAlerts(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaAlertas>(`/alerts${query(f)}`, this.s(sinal)); }
+  getInsights(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaInsights>(`/insights${query(f)}`, this.s(sinal)); }
   getProperties(sinal?: AbortSignal) { return pedir<RespostaPropriedades>('/properties', this.s(sinal)); }
   getQuotas(sinal?: AbortSignal) { return pedir<RespostaQuotas>('/quotas', this.s(sinal)); }
 }

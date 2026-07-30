@@ -25,6 +25,7 @@ export function Eventos(p: PropsTela) {
   const cols: Coluna<LinhaEvento>[] = [
     {
       chave: 'evento', rotulo: 'Evento',
+      csv: (l) => l.evento,
       render: (l) => (
         <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', minWidth: 0 }}>
           <span className="ga-mono ga-trunc">{l.evento}</span>
@@ -39,9 +40,9 @@ export function Eventos(p: PropsTela) {
       ),
     },
     { chave: 'classe', rotulo: 'Classe', larg: 120, render: (l) => <Badge tipo={CLASSE_BADGE[l.classe] ?? 'neutro'}>{l.classe}</Badge> },
-    { chave: 'cont', rotulo: 'Contagem', num: true, render: (l) => fmtInt(l.contagem), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.contagem, 0)) },
-    { chave: 'usr', rotulo: 'Usuários', num: true, render: (l) => fmtInt(l.usuarios) },
-    { chave: 'ps', rotulo: 'Por sessão', num: true, render: (l) => l.por_sessao.toFixed(4) },
+    { chave: 'cont', rotulo: 'Contagem', num: true, render: (l) => fmtInt(l.contagem), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.contagem, 0)), csv: (l) => l.contagem },
+    { chave: 'usr', rotulo: 'Usuários', num: true, render: (l) => fmtInt(l.usuarios), csv: (l) => l.usuarios },
+    { chave: 'ps', rotulo: 'Por sessão', num: true, render: (l) => l.por_sessao.toFixed(4), csv: (l) => l.por_sessao },
     { chave: 'ult', rotulo: 'Última ocorrência', num: true, render: (l) => l.ultima_ocorrencia },
   ];
 
@@ -50,7 +51,7 @@ export function Eventos(p: PropsTela) {
   return (
     <>
       <Card titulo="Eventos recebidos" nota={`${dados.eventos.length} eventos · ${comAviso.length} com apontamento`}>
-        <Grid colunas={cols} linhas={dados.eventos} chave={(l) => l.evento} />
+        <Grid colunas={cols} linhas={dados.eventos} chave={(l) => l.evento} exportarComo="ga-eventos" />
       </Card>
 
       {dados.ausentes.length > 0 && (

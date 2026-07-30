@@ -18,10 +18,12 @@ import { Ecommerce, Produtos } from './Ecommerce';
 import { Usuarios, Dispositivos, Localizacoes, Retencao } from './Usuarios';
 import { Qualidade, Tagging } from './Qualidade';
 import { Alertas, Propriedades, Quotas } from './Admin';
+import { Insights, Diretoria } from './Inteligencia';
 
 export const Telas: Partial<Record<TelaId, ComponentType<PropsTela>>> = {
   'visao-geral': VisaoGeral,
   'tempo-real': TempoReal,
+  diretoria: Diretoria,
   aquisicao: AquisicaoGeral,
   canais: Canais,
   campanhas: Campanhas,
@@ -40,6 +42,7 @@ export const Telas: Partial<Record<TelaId, ComponentType<PropsTela>>> = {
   qualidade: Qualidade,
   tagging: Tagging,
   alertas: Alertas,
+  insights: Insights,
   propriedades: Propriedades,
   quotas: Quotas,
 };

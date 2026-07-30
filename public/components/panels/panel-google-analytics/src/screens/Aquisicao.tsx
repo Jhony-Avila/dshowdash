@@ -35,12 +35,12 @@ export function AquisicaoGeral(p: PropsTela) {
 
   const max = Math.max(1, ...dados.por_canal.map((c) => c.sessoes));
   const cols: Coluna<LinhaCanal>[] = [
-    { chave: 'canal', rotulo: 'Canal', render: (l) => <b>{l.canal}</b> },
+    { chave: 'canal', rotulo: 'Canal', render: (l) => <b>{l.canal}</b>, csv: (l) => l.canal },
     { chave: 'bar', rotulo: '', larg: 120, render: (l) => <BarraProp valor={l.sessoes} max={max} /> },
-    { chave: 'sessoes', rotulo: 'Sessões', num: true, render: (l) => fmtInt(l.sessoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.sessoes, 0)) },
-    { chave: 'usuarios', rotulo: 'Usuários', num: true, render: (l) => fmtInt(l.usuarios), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.usuarios, 0)) },
-    { chave: 'conv', rotulo: 'Conversões', num: true, render: (l) => fmtInt(l.conversoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.conversoes, 0)) },
-    { chave: 'tx', rotulo: 'Taxa conv.', num: true, render: (l) => fmtPct(l.taxa_conversao) },
+    { chave: 'sessoes', rotulo: 'Sessões', num: true, render: (l) => fmtInt(l.sessoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.sessoes, 0)), csv: (l) => l.sessoes },
+    { chave: 'usuarios', rotulo: 'Usuários', num: true, render: (l) => fmtInt(l.usuarios), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.usuarios, 0)), csv: (l) => l.usuarios },
+    { chave: 'conv', rotulo: 'Conversões', num: true, render: (l) => fmtInt(l.conversoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.conversoes, 0)), csv: (l) => l.conversoes },
+    { chave: 'tx', rotulo: 'Taxa conv.', num: true, render: (l) => fmtPct(l.taxa_conversao), csv: (l) => l.taxa_conversao },
     { chave: 'custo', rotulo: 'Custo', num: true, render: (l) => <CelulaCusto valor={l.custo} fonte={l.custo === null ? null : 'ads-mock'} /> },
     { chave: 'cpa', rotulo: 'CPA', num: true, render: (l) => <CelulaCusto valor={l.cpa} fonte={l.cpa === null ? null : 'ads-mock'} /> },
   ];
@@ -57,6 +57,7 @@ export function AquisicaoGeral(p: PropsTela) {
           chave={(l) => l.canal}
           onLinha={(l) => p.onCorte({ canal: p.corte.canal === l.canal ? null : l.canal })}
           selecionada={(l) => p.corte.canal === l.canal}
+          exportarComo="ga-canais"
         />
       </Card>
 
@@ -159,6 +160,7 @@ export function Campanhas(p: PropsTela) {
   const cols: Coluna<LinhaCampanha>[] = [
     {
       chave: 'campanha', rotulo: 'Campanha',
+      csv: (l) => l.campanha,
       render: (l) => (
         <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', minWidth: 0 }}>
           <span className="ga-trunc" title={l.campanha}>{l.campanha}</span>
@@ -166,12 +168,12 @@ export function Campanhas(p: PropsTela) {
         </span>
       ),
     },
-    { chave: 'canal', rotulo: 'Canal', render: (l) => l.canal },
-    { chave: 'om', rotulo: 'Origem / mídia', render: (l) => <span className="ga-mono">{l.origem} / {l.midia || '(none)'}</span> },
-    { chave: 'ses', rotulo: 'Sessões', num: true, render: (l) => fmtInt(l.sessoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.sessoes, 0)) },
+    { chave: 'canal', rotulo: 'Canal', render: (l) => l.canal, csv: (l) => l.canal },
+    { chave: 'om', rotulo: 'Origem / mídia', render: (l) => <span className="ga-mono">{l.origem} / {l.midia || '(none)'}</span>, csv: (l) => `${l.origem} / ${l.midia || '(none)'}` },
+    { chave: 'ses', rotulo: 'Sessões', num: true, render: (l) => fmtInt(l.sessoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.sessoes, 0)), csv: (l) => l.sessoes },
     { chave: 'eng', rotulo: 'Engaj.', num: true, render: (l) => fmtPct(l.taxa_engajamento, 1) },
-    { chave: 'conv', rotulo: 'Conversões', num: true, render: (l) => fmtInt(l.conversoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.conversoes, 0)) },
-    { chave: 'tx', rotulo: 'Taxa', num: true, render: (l) => fmtPct(l.taxa_conversao) },
+    { chave: 'conv', rotulo: 'Conversões', num: true, render: (l) => fmtInt(l.conversoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.conversoes, 0)), csv: (l) => l.conversoes },
+    { chave: 'tx', rotulo: 'Taxa', num: true, render: (l) => fmtPct(l.taxa_conversao), csv: (l) => l.taxa_conversao },
     { chave: 'custo', rotulo: 'Custo', num: true, render: (l) => <CelulaCusto valor={l.custo} fonte={l.custo_fonte} /> },
     { chave: 'cpa', rotulo: 'CPA', num: true, render: (l) => <CelulaCusto valor={l.cpa} fonte={l.custo_fonte} /> },
     { chave: 'roas', rotulo: 'ROAS', num: true, render: (l) => (l.roas === null ? <span style={{ color: 'var(--ga-txt-3)' }}>—</span> : `${l.roas.toFixed(2)}×`) },
@@ -189,6 +191,7 @@ export function Campanhas(p: PropsTela) {
           chave={(l) => l.campanha + l.canal}
           onLinha={(l) => p.onCorte({ campanha: p.corte.campanha === l.campanha ? null : l.campanha })}
           selecionada={(l) => p.corte.campanha === l.campanha}
+          exportarComo="ga-campanhas"
         />
       </Card>
       <Procedencia meta={meta} />

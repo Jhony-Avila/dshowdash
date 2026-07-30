@@ -27,7 +27,7 @@ export function Paginas(p: PropsTela) {
 
   const max = Math.max(1, ...dados.paginas.map((l) => l.visualizacoes));
   const cols: Coluna<LinhaPagina>[] = [
-    { chave: 'titulo', rotulo: 'Página', render: (l) => (
+    { chave: 'titulo', rotulo: 'Página', csv: (l) => `${l.titulo} (${l.path})`, render: (l) => (
       <span style={{ display: 'grid', minWidth: 0 }}>
         <span className="ga-trunc" title={l.titulo}>{l.titulo}</span>
         <span className="ga-trunc ga-mono" style={{ color: 'var(--ga-txt-3)' }} title={l.path}>{l.path}</span>
@@ -35,11 +35,11 @@ export function Paginas(p: PropsTela) {
     ) },
     { chave: 'tipo', rotulo: 'Tipo', larg: 100, render: (l) => <Badge tipo={TIPO_BADGE[l.tipo] ?? 'neutro'}>{l.tipo}</Badge> },
     { chave: 'bar', rotulo: '', larg: 100, render: (l) => <BarraProp valor={l.visualizacoes} max={max} /> },
-    { chave: 'views', rotulo: 'Visualizações', num: true, render: (l) => fmtInt(l.visualizacoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.visualizacoes, 0)) },
+    { chave: 'views', rotulo: 'Visualizações', num: true, render: (l) => fmtInt(l.visualizacoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.visualizacoes, 0)), csv: (l) => l.visualizacoes },
     { chave: 'ent', rotulo: 'Entradas', num: true, render: (l) => (l.e_entrada ? fmtInt(l.entradas) : <span style={{ color: 'var(--ga-txt-3)' }}>—</span>) },
     { chave: 'eng', rotulo: 'Engaj.', num: true, render: (l) => fmtPct(l.taxa_engajamento, 1) },
     { chave: 'tempo', rotulo: 'Tempo médio', num: true, render: (l) => fmtSegundos(l.tempo_medio_seg) },
-    { chave: 'conv', rotulo: 'Conversões', num: true, render: (l) => fmtInt(l.conversoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.conversoes, 0)) },
+    { chave: 'conv', rotulo: 'Conversões', num: true, render: (l) => fmtInt(l.conversoes), total: (ls) => fmtInt(ls.reduce((a, b) => a + b.conversoes, 0)), csv: (l) => l.conversoes },
   ];
 
   const semConversao = dados.paginas.filter((l) => l.visualizacoes > 200 && l.conversoes === 0 && l.tipo !== 'erro');
@@ -54,6 +54,7 @@ export function Paginas(p: PropsTela) {
           chave={(l) => l.path}
           onLinha={(l) => p.onCorte({ pagina: p.corte.pagina === l.path ? null : l.path })}
           selecionada={(l) => p.corte.pagina === l.path}
+          exportarComo="ga-paginas"
         />
       </Card>
 

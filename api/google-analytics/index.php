@@ -22,7 +22,8 @@
 //   GET /ecommerce               e-commerce, produtos, checkout (§33–§35)
 //   GET /users                   usuários, dispositivos, regiões, coortes (§36–§40)
 //   GET /quality                 qualidade da coleta + tagging (§42, §44)
-//   GET /alerts                  alertas e regras (§50, §52)
+//   GET /insights                insights e anomalias: z-score + tendencia (§50)
+//   GET /alerts                  alertas e regras (§52)
 //   GET /properties              contas → propriedades → streams (§13)
 //   GET /quotas                  consumo por categoria de quota (§57.1)
 //
@@ -134,6 +135,11 @@ switch ($segments[0] ?? '') {
     case 'quality':
         $soGet();
         GaReportController::qualidade($p);
+        break;
+
+    case 'insights':
+        $soGet();
+        GaReportController::insights($p);
         break;
 
     case 'alerts':

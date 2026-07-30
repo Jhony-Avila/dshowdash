@@ -105,6 +105,11 @@ final class GaMock implements GaProvider
             'mobile_ruim'       => ['trafego' => 1.05, 'conversao' => 0.63, 'receita' => 0.71, 'erro' => 1.40],
             'ecommerce'         => ['trafego' => 1.15, 'conversao' => 1.05, 'receita' => 1.00, 'erro' => 1.00],
             'coleta_quebrada'   => ['trafego' => 0.94, 'conversao' => 0.35, 'receita' => 0.40, 'erro' => 3.10],
+            // ⚠️ Estes dois existem para EXERCITAR as regras estatísticas de `insights()`.
+            // Sem eles o z-score e a regressão linear nunca disparam na série regular do mock —
+            // e código de análise que nunca roda é código que ninguém sabe se funciona.
+            'anomalia_dia'      => ['trafego' => 1.00, 'conversao' => 1.00, 'receita' => 1.00, 'erro' => 1.00],
+            'tendencia_queda'   => ['trafego' => 1.00, 'conversao' => 0.90, 'receita' => 0.85, 'erro' => 1.00],
         ][$this->cenario] ?? null;
         if ($c === null) { $c = ['trafego' => 1.0, 'conversao' => 1.0, 'receita' => 1.0, 'erro' => 1.0]; }
         return $c[$familia] ?? 1.0;
@@ -259,7 +264,31 @@ final class GaMock implements GaProvider
         $base = [1 => 1.14, 2 => 1.18, 3 => 1.16, 4 => 1.09, 5 => 0.96, 6 => 0.52, 7 => 0.44][$dow];
         $ruido = $this->entre('sessoes|' . $d->format('Ymd'), 0.88, 1.12);
         $sazonal = 1 + 0.06 * sin(((int)$d->format('z')) / 58.0);
-        return (int)round(1780 * $base * $ruido * $sazonal * $this->fator('trafego'));
+        $v = 1780 * $base * $ruido * $sazonal * $this->fator('trafego');
+
+        // ── deformações de cenário, aplicadas por DIA ──────────────────────
+        // ⚠️ Ambas as fórmulas abaixo estavam ERRADAS na primeira versão, e só a medição
+        // mostrou. Ficam documentadas porque o erro é fácil de repetir.
+        if ($this->cenario === 'anomalia_dia') {
+            // Dia FIXO do mês (a prova precisa saber onde olhar): 11 = pico, 19 = vale.
+            // ⚠️ SUBSTITUI o valor, não multiplica. Multiplicar por 2,9 mantinha o peso do dia
+            // da semana embutido: quando o dia 11 caía num sábado (peso 0,52), o "pico" virava
+            // 1,5× a média e o z-score nem chegava a 2 — a anomalia não disparava.
+            $dia = (int)$d->format('j');
+            if ($dia === 11) { $v = 1780 * 2.9; }
+            if ($dia === 19) { $v = 1780 * 0.16; }
+        }
+        if ($this->cenario === 'tendencia_queda') {
+            // Declínio MONOTÔNICO: o fator cresce com a distância até hoje, então dias antigos
+            // são altos e dias recentes baixos.
+            // ⚠️ A primeira versão usava `dia_do_ano % 40`, que RESETA — criava dente de serra
+            // e a regressão linear reportava tendência de ALTA no cenário chamado "queda".
+            // Foi exatamente o oposto do que o nome promete, e a prova pegou.
+            $atras = (int)$d->diff(new DateTimeImmutable('today', new DateTimeZone('America/Sao_Paulo')))->days;
+            $v *= max(0.30, 0.40 + 0.02 * min($atras, 30));
+        }
+
+        return (int)round($v);
     }
 
     /** Taxa de conversão do dia (fração), antes do fator de canal/dispositivo. */
@@ -362,7 +391,7 @@ final class GaMock implements GaProvider
             'measurement_id' => self::MEASUREMENT_ID,
             'gtm_container'  => self::GTM_CONTAINER,
             'property_id'    => self::PROPERTY_ID,
-            'cenarios'       => ['saudavel', 'pico', 'queda_conversao', 'compra_parada', 'mobile_ruim', 'coleta_quebrada', 'ecommerce', 'sem_dados'],
+            'cenarios'       => ['saudavel', 'pico', 'queda_conversao', 'compra_parada', 'mobile_ruim', 'coleta_quebrada', 'ecommerce', 'sem_dados', 'anomalia_dia', 'tendencia_queda'],
             // O que falta para o provedor REAL subir (Fase 0 §3 e §10).
             'pendencias_para_real' => [
                 'Credencial GA4 (service account recomendada) com acesso de leitura à propriedade',
@@ -1267,6 +1296,204 @@ final class GaMock implements GaProvider
                 ],
             ],
             'meta' => $this->proc() + ['origem_achados' => 'docs/GOOGLE-ANALYTICS/00-fase0-investigacao.md'],
+        ];
+    }
+
+    /**
+     * Insights e anomalias (§50).
+     *
+     * ⚠️ A DIFERENÇA ENTRE ISTO E O PAINEL "EXIGE ATENÇÃO": lá as regras são de limiar simples
+     * (caiu mais de 15% → alerta). Aqui há **estatística sobre a própria série**: desvio padrão
+     * para achar dia atípico e regressão linear para achar tendência. Sem isso "insight" vira
+     * texto decorativo — o que a §50 explicitamente não quer, porque cada item precisa de
+     * `evidencia`, `impacto` e `confianca` defensáveis.
+     *
+     * Todo insight carrega a EVIDÊNCIA numérica que o gerou. Se a tela não pode mostrar de onde
+     * saiu a conclusão, a conclusão não deveria estar na tela.
+     */
+    public function insights(array $f): array
+    {
+        $serie = $this->serie($f);
+        $ant   = $this->serieAnterior($f);
+        if (count($serie) < 3) {
+            return ['insights' => [], 'metodo' => [], 'meta' => $this->proc()];
+        }
+
+        $out = [];
+
+        // ── 1. Dias atípicos (z-score sobre sessões) ──────────────────────
+        // Regra: |z| >= 2 é atípico. Com menos de 7 pontos o desvio padrão é instável e
+        // acusaria qualquer oscilação — por isso o piso de 7 dias.
+        if (count($serie) >= 7) {
+            $vals = array_map(static fn(array $l): float => (float)$l['sessoes'], $serie);
+            $n = count($vals);
+            $media = array_sum($vals) / $n;
+            $var = 0.0;
+            foreach ($vals as $v) { $var += ($v - $media) ** 2; }
+            $dp = sqrt($var / max(1, $n - 1));
+
+            if ($dp > 0) {
+                foreach ($serie as $i => $l) {
+                    $z = ((float)$l['sessoes'] - $media) / $dp;
+                    if (abs($z) < 2.0) { continue; }
+                    $acima = $z > 0;
+                    $out[] = [
+                        'id'         => 'anomalia-' . $l['data'],
+                        'tipo'       => 'anomalia',
+                        'severidade' => abs($z) >= 3 ? 'alta' : 'media',
+                        'conclusao'  => sprintf(
+                            '%s de sessões em %s: %s contra média de %s no período.',
+                            $acima ? 'Pico' : 'Vale',
+                            $l['data'],
+                            number_format((float)$l['sessoes'], 0, ',', '.'),
+                            number_format($media, 0, ',', '.')
+                        ),
+                        'evidencia'  => sprintf('z-score %+.2f (desvio padrão do período: %s sessões)', $z, number_format($dp, 0, ',', '.')),
+                        'periodo'    => $l['data'],
+                        'impacto'    => sprintf('%s%s sessões em relação à média do período',
+                            $acima ? '+' : '−', number_format(abs((float)$l['sessoes'] - $media), 0, ',', '.')),
+                        'causa'      => $acima
+                            ? 'Campanha iniciada, publicação em veículo de alcance, ou tráfego não humano.'
+                            : 'Site fora do ar, tag removida, pausa de mídia ou feriado.',
+                        'recomendacao' => $acima
+                            ? 'Conferir em Aquisição se o pico se concentra num canal — pico em Direto sem campanha costuma ser tráfego suspeito.'
+                            : 'Conferir Qualidade da Coleta primeiro: queda em todos os canais no mesmo dia aponta coleta, não mídia.',
+                        'confianca'  => abs($z) >= 3 ? 'alta' : 'media',
+                        'tela'       => $acima ? 'aquisicao' : 'qualidade',
+                    ];
+                }
+            }
+        }
+
+        // ── 2. Tendência (regressão linear sobre sessões) ─────────────────
+        // Mínimos quadrados no índice do dia. Só reporta se a inclinação for material:
+        // >= 1% da média por dia. Abaixo disso é ruído com cara de tendência.
+        $n = count($serie);
+        $sx = $sy = $sxy = $sxx = 0.0;
+        foreach ($serie as $i => $l) {
+            $x = (float)$i; $y = (float)$l['sessoes'];
+            $sx += $x; $sy += $y; $sxy += $x * $y; $sxx += $x * $x;
+        }
+        $den = ($n * $sxx) - ($sx * $sx);
+        if ($den != 0.0) {
+            $inclin = (($n * $sxy) - ($sx * $sy)) / $den;   // sessões por dia
+            $mediaS = $sy / $n;
+            $pctDia = $mediaS > 0 ? ($inclin / $mediaS) * 100 : 0.0;
+            if (abs($pctDia) >= 1.0) {
+                $sub = $inclin > 0;
+                $out[] = [
+                    'id'         => 'tendencia-sessoes',
+                    'tipo'       => 'tendencia',
+                    'severidade' => $sub ? 'baixa' : 'media',
+                    'conclusao'  => sprintf('Sessões em tendência de %s: %+.1f%% por dia no período.', $sub ? 'alta' : 'queda', $pctDia),
+                    'evidencia'  => sprintf('regressão linear sobre %d dias, inclinação de %+.1f sessões/dia', $n, $inclin),
+                    'periodo'    => $serie[0]['data'] . ' a ' . $serie[$n - 1]['data'],
+                    'impacto'    => sprintf('projeção de %s sessões em 7 dias mantida a inclinação',
+                        number_format(max(0, $mediaS + $inclin * 7), 0, ',', '.')),
+                    'causa'      => $sub ? 'Investimento crescente, ganho de posição orgânica ou sazonalidade.'
+                                         : 'Perda de posição orgânica, redução de mídia ou sazonalidade.',
+                    'recomendacao' => 'Comparar a inclinação por canal: tendência concentrada num canal é decisão de mídia; em todos, é mercado ou coleta.',
+                    'confianca'  => $n >= 21 ? 'alta' : 'media',
+                    'tela'       => 'aquisicao',
+                ];
+            }
+        }
+
+        // ── 3. Landing page com tráfego e nenhuma conversão ───────────────
+        $pg = $this->paginas($f);
+        foreach ($pg['landings'] as $l) {
+            if ($l['entradas'] >= 200 && $l['conversoes'] === 0) {
+                $out[] = [
+                    'id'         => 'lp-sem-conversao-' . $l['path'],
+                    'tipo'       => 'oportunidade',
+                    'severidade' => 'media',
+                    'conclusao'  => sprintf('A landing page %s recebe tráfego e não converte.', $l['path']),
+                    'evidencia'  => sprintf('%s sessões de entrada, 0 eventos importantes, engajamento de %.1f%%',
+                        number_format((float)$l['entradas'], 0, ',', '.'), $l['taxa_engajamento']),
+                    'periodo'    => ($f['inicio'] ?? '') . ' a ' . ($f['fim'] ?? ''),
+                    'impacto'    => sprintf('%s sessões sem retorno mensurável', number_format((float)$l['entradas'], 0, ',', '.')),
+                    'causa'      => 'Página sem chamada para ação clara, formulário quebrado, ou evento de conversão não instrumentado nela.',
+                    'recomendacao' => 'Conferir em Eventos se algum evento importante é disparado nessa URL antes de mexer no layout.',
+                    'confianca'  => 'media',
+                    'tela'       => 'landing-pages',
+                ];
+            }
+        }
+
+        // ── 4. Dispositivo com conversão desproporcional ───────────────────
+        $us = $this->usuarios($f);
+        $txs = array_map(static fn(array $d): float => (float)$d['taxa_conversao'], $us['por_dispositivo']);
+        $melhor = $txs === [] ? 0.0 : max($txs);
+        foreach ($us['por_dispositivo'] as $d) {
+            if ($melhor > 0 && $d['usuarios'] >= 500 && $d['taxa_conversao'] < $melhor * 0.5) {
+                $out[] = [
+                    'id'         => 'dispositivo-' . $d['dispositivo'],
+                    'tipo'       => 'oportunidade',
+                    'severidade' => 'alta',
+                    'conclusao'  => sprintf('%s converte a menos da metade do melhor dispositivo.', ucfirst((string)$d['dispositivo'])),
+                    'evidencia'  => sprintf('%.2f%% contra %.2f%% do melhor, com %s usuários',
+                        $d['taxa_conversao'], $melhor, number_format((float)$d['usuarios'], 0, ',', '.')),
+                    'periodo'    => ($f['inicio'] ?? '') . ' a ' . ($f['fim'] ?? ''),
+                    'impacto'    => sprintf('~%s conversões a menos se igualasse o melhor dispositivo',
+                        number_format(max(0, ($melhor - $d['taxa_conversao']) / 100 * (float)$d['usuarios']), 0, ',', '.')),
+                    'causa'      => 'Experiência ruim no dispositivo: peso da página, formulário difícil de preencher ou área de toque pequena.',
+                    'recomendacao' => 'Abrir o formulário nesse dispositivo e completar o fluxo à mão antes de concluir que é o tráfego.',
+                    'confianca'  => 'alta',
+                    'tela'       => 'dispositivos',
+                ];
+            }
+        }
+
+        // ── 5. A conciliação com o CRM (ponta REAL) ────────────────────────
+        [$ini, $fim] = $this->janela($f);
+        $crm = GaCrm::leads($ini->format('Y-m-d'), $fim->format('Y-m-d'));
+        if (($crm['disponivel'] ?? false) && ($crm['pct_manual'] ?? null) !== null && $crm['pct_manual'] >= 50) {
+            $out[] = [
+                'id'         => 'crm-leads-manuais',
+                'tipo'       => 'atribuicao',
+                'severidade' => 'media',
+                'conclusao'  => sprintf('%.1f%% dos leads do CRM foram criados à mão e não passaram pelo site.', $crm['pct_manual']),
+                'evidencia'  => sprintf('%d de %d leads com origin=ManuallyCreated no Pipedrive (dado real)',
+                    $crm['por_origem'][0]['total'] ?? 0, $crm['total'] ?? 0),
+                'periodo'    => $ini->format('Y-m-d') . ' a ' . $fim->format('Y-m-d'),
+                'impacto'    => 'Qualquer comparação direta entre generate_lead e o total do CRM vai divergir por construção.',
+                'causa'      => 'Time comercial cadastra lead de telefone, feira e indicação direto no CRM.',
+                'recomendacao' => 'Comparar o GA4 apenas contra os leads de origem API; o restante não tem contrapartida no site.',
+                'confianca'  => 'alta',
+                'tela'       => 'conversoes',
+            ];
+        }
+        if (($crm['disponivel'] ?? false) && (int)($crm['convertidos_em_negocio'] ?? 0) === 0 && (int)($crm['total'] ?? 0) >= 10) {
+            $out[] = [
+                'id'         => 'crm-sem-conversao-negocio',
+                'tipo'       => 'atribuicao',
+                'severidade' => 'alta',
+                'conclusao'  => sprintf('Nenhum dos %d leads do período virou negócio.', (int)$crm['total']),
+                'evidencia'  => 'converted_deal_id nulo em todos os leads do período (Pipedrive, dado real)',
+                'periodo'    => $ini->format('Y-m-d') . ' a ' . $fim->format('Y-m-d'),
+                'impacto'    => 'O topo do funil não está se convertendo em pipeline.',
+                'causa'      => 'Lead sem qualificação, demora no primeiro contato, ou conversão registrada fora do Pipedrive.',
+                'recomendacao' => 'Verificar com o comercial se a conversão de lead em negócio é registrada nesta ferramenta.',
+                'confianca'  => 'alta',
+                'tela'       => 'conversoes',
+            ];
+        }
+
+        // Mais grave primeiro; a tela não reordena.
+        $peso = ['alta' => 0, 'media' => 1, 'baixa' => 2];
+        usort($out, static fn(array $a, array $b): int => ($peso[$a['severidade']] ?? 9) <=> ($peso[$b['severidade']] ?? 9));
+
+        return [
+            'insights' => $out,
+            // A tela mostra o método: sem isso o usuário não tem como julgar a conclusão.
+            'metodo' => [
+                ['regra' => 'Dia atípico', 'como' => 'z-score sobre sessões; |z| ≥ 2 reporta, ≥ 3 vira confiança alta. Exige 7 dias no mínimo.'],
+                ['regra' => 'Tendência', 'como' => 'regressão linear (mínimos quadrados) sobre sessões; só reporta inclinação ≥ 1% da média por dia.'],
+                ['regra' => 'Landing sem conversão', 'como' => '≥ 200 sessões de entrada e zero eventos importantes.'],
+                ['regra' => 'Dispositivo desproporcional', 'como' => '≥ 500 usuários e taxa abaixo da metade do melhor dispositivo.'],
+                ['regra' => 'Atribuição de leads', 'como' => 'compara origem dos leads no Pipedrive (dado REAL) — não usa o GA4.'],
+            ],
+            'meta' => $this->proc(),
         ];
     }
 

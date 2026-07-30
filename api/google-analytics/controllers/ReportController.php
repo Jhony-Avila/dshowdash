@@ -122,7 +122,14 @@ final class GaReportController
         self::responde($p->qualidade($f), $f);
     }
 
-    /** GET /alerts — §50, §52 */
+    /** GET /insights — §50 */
+    public static function insights(GaProvider $p): void
+    {
+        $f = ga_filtros();
+        self::responde($p->insights($f), $f);
+    }
+
+    /** GET /alerts — §52 */
     public static function alertas(GaProvider $p): void
     {
         $f = ga_filtros();
