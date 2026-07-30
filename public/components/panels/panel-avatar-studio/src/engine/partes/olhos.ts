@@ -358,4 +358,230 @@ export const OLHOS: ParteDef[] = [
       <rect x="128" y="92" width="24" height="4" fill="${p.destaque.profundo}"/>`;
     },
   },
+  // ── 4.6 F2 · Onda 6 (identidade) — 12 olhares novos ───────────────
+  {
+    id: 'olh_gentil',
+    categoria: 'olhos',
+    nome: 'Gentil',
+    descricao: 'O code review mais educado da empresa.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      ${olhoHumano(100, 109)}${olhoHumano(140, 109)}
+      <path d="M89 101 q 11 -7 22 -2" stroke="${p.cabelo.escuro}" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M129 99 q 11 -5 22 2" stroke="${p.cabelo.escuro}" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M92 118 q 8 3 16 1 M132 119 q 8 2 16 -1" stroke="${alfa(p.pele.escuro, 0.35)}" stroke-width="2" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'olh_furia',
+    categoria: 'olhos',
+    nome: 'Fúria',
+    descricao: 'Alguém deu force push na main.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <ellipse cx="100" cy="109" rx="10.5" ry="7" fill="#ffe8e4"/>
+      <ellipse cx="140" cy="109" rx="10.5" ry="7" fill="#ffe8e4"/>
+      <circle cx="100" cy="109.5" r="4.6" fill="#c1272d"/>
+      <circle cx="140" cy="109.5" r="4.6" fill="#c1272d"/>
+      <circle cx="100" cy="109.5" r="2" fill="#3d0508"/>
+      <circle cx="140" cy="109.5" r="2" fill="#3d0508"/>
+      <circle cx="100" cy="109.5" r="7" fill="none" stroke="rgba(255,82,48,0.5)" stroke-width="2">
+        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="140" cy="109.5" r="7" fill="none" stroke="rgba(255,82,48,0.5)" stroke-width="2">
+        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      <path d="M87 88 l 24 9 M153 88 l -24 9" stroke="${p.cabelo.escuro}" stroke-width="4.8" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'olh_hipnotico',
+    categoria: 'olhos',
+    nome: 'Hipnótico',
+    descricao: 'Você já concordou com a proposta. Só não sabe ainda.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    piscar: false,
+    usaCores: ['destaque'],
+    render: (p) => {
+      const espiral = (x: number, sentido: number) => `
+        <g transform="translate(${x} 108)">
+          <circle r="9.5" fill="#fdfdfa"/>
+          <g>
+            <path d="M0 0 m 0 -1.5 a 1.5 1.5 0 0 1 1.5 1.5 a 3 3 0 0 1 -3 3 a 4.8 4.8 0 0 1 -4.8 -4.8 a 6.8 6.8 0 0 1 6.8 -6.8 a 8.6 8.6 0 0 1 8.6 8.6" fill="none" stroke="${p.destaque.profundo}" stroke-width="2.2"/>
+            <animateTransform attributeName="transform" type="rotate" values="0;${sentido * 360}" dur="3.2s" repeatCount="indefinite"/>
+          </g>
+        </g>`;
+      return `${espiral(100, 1)}${espiral(140, -1)}`;
+    },
+  },
+  {
+    id: 'olh_scanner',
+    categoria: 'olhos',
+    nome: 'Scanner',
+    descricao: 'Linha única varrendo o ambiente por métricas fracas.',
+    raridade: 'raro',
+    tema: 'sci-fi',
+    piscar: false,
+    usaCores: ['destaque'],
+    render: (p) => `
+      <rect x="86" y="103" width="28" height="10" rx="5" fill="#0c0f1a"/>
+      <rect x="126" y="103" width="28" height="10" rx="5" fill="#0c0f1a"/>
+      <rect x="90" y="106" width="6" height="4" rx="2" fill="${p.destaque.claro}">
+        <animate attributeName="x" values="90;104;90" dur="2.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="130" y="106" width="6" height="4" rx="2" fill="${p.destaque.claro}">
+        <animate attributeName="x" values="144;130;144" dur="2.2s" repeatCount="indefinite"/>
+      </rect>`,
+  },
+  {
+    id: 'olh_gatinho',
+    categoria: 'olhos',
+    nome: 'Delineado Gatinho',
+    descricao: 'O traço que corta qualquer reunião ao meio.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      ${olhoHumano(100, 108)}${olhoHumano(140, 108)}
+      <path d="M89 103 q 10 -6 21 -1 l 4 3 M110 105 l 6 -4" stroke="#14100c" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <path d="M129 102 q 11 -5 22 1 l -4 2 M150 104 l 7 -5" stroke="#14100c" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      ${sobrancelha(100, 92, 1, p.cabelo.escuro)}${sobrancelha(140, 92, 1, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_heterocromia',
+    categoria: 'olhos',
+    nome: 'Heterocromia',
+    descricao: 'Um olho natural, um olho na cor da sua energia.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    usaCores: ['cabelo', 'destaque'],
+    render: (p) => `
+      ${olhoHumano(100, 108)}
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+      <circle cx="140" cy="108.5" r="5.2" fill="${p.destaque.base}"/>
+      <circle cx="140" cy="108.5" r="2.5" fill="#14100c"/>
+      <circle cx="141.8" cy="106.4" r="1.5" fill="#ffffff" opacity="0.9"/>
+      <path d="M130 106 a 10.5 8 0 0 1 21 0" fill="none" stroke="${alfa('#14100c', 0.25)}" stroke-width="1.4"/>
+      ${sobrancelha(100, 93, 0, p.cabelo.escuro)}${sobrancelha(140, 93, 0, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_zen',
+    categoria: 'olhos',
+    nome: 'Zen',
+    descricao: 'Inbox zero por dentro e por fora.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <path d="M90 108 q 10 4 20 0" stroke="#14100c" stroke-width="3.6" stroke-linecap="round" fill="none"/>
+      <path d="M130 108 q 10 4 20 0" stroke="#14100c" stroke-width="3.6" stroke-linecap="round" fill="none"/>
+      ${sobrancelha(100, 95, 1, p.cabelo.escuro)}${sobrancelha(140, 95, 1, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_na_mira',
+    categoria: 'olhos',
+    nome: 'Na Mira',
+    descricao: 'Meta adquirida. Distância: um trimestre.',
+    raridade: 'raro',
+    tema: 'gamer',
+    piscar: false,
+    usaCores: ['destaque'],
+    render: (p) => {
+      const mira = (x: number) => `
+        <g transform="translate(${x} 108)">
+          <circle r="9" fill="#fdfdfa"/>
+          <circle r="7" fill="none" stroke="${p.destaque.profundo}" stroke-width="1.6"/>
+          <circle r="2.2" fill="${p.destaque.profundo}"/>
+          <path d="M0 -9 v 4 M0 9 v -4 M-9 0 h 4 M9 0 h -4" stroke="${p.destaque.profundo}" stroke-width="1.6"/>
+        </g>`;
+      return `${mira(100)}${mira(140)}`;
+    },
+  },
+  {
+    id: 'olh_anime',
+    categoria: 'olhos',
+    nome: 'Brilho de Anime',
+    descricao: 'Reflexos gigantes de protagonista no episódio final.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    usaCores: ['cabelo', 'destaque'],
+    render: (p) => {
+      const olho = (x: number) => `
+        <ellipse cx="${x}" cy="108" rx="11" ry="10" fill="#fdfdfa"/>
+        <ellipse cx="${x}" cy="109" rx="7.5" ry="8" fill="${p.destaque.profundo}"/>
+        <ellipse cx="${x}" cy="110" rx="4" ry="4.6" fill="#14100c"/>
+        <ellipse cx="${x - 2.6}" cy="104.5" rx="3" ry="2.4" fill="#ffffff"/>
+        <circle cx="${x + 3.4}" cy="112" r="1.6" fill="#ffffff" opacity="0.85"/>
+        <circle cx="${x + 1}" cy="106" r="0.9" fill="#ffffff"/>`;
+      return `
+      ${olho(100)}${olho(140)}
+      ${sobrancelha(100, 91, 1, p.cabelo.escuro)}${sobrancelha(140, 91, 1, p.cabelo.escuro)}`;
+    },
+  },
+  {
+    id: 'olh_calculista',
+    categoria: 'olhos',
+    nome: 'Calculista',
+    descricao: 'Dá para ver as planilhas refletidas na íris.',
+    raridade: 'incomum',
+    tema: 'executivo',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+      <circle cx="100" cy="108.5" r="5.2" fill="#1d4a3a"/>
+      <circle cx="140" cy="108.5" r="5.2" fill="#1d4a3a"/>
+      <path d="M97 107 h 6 M100 104 v 7 M137 107 h 6 M140 104 v 7" stroke="#aef4c4" stroke-width="1"/>
+      ${sobrancelha(100, 92, -1, p.cabelo.escuro)}${sobrancelha(140, 92, -1, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_prisma',
+    categoria: 'olhos',
+    nome: 'Prisma',
+    descricao: 'A íris decidiu ser todas as cores ao mesmo tempo.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}pri" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ff5f8f"/>
+          <stop offset="0.35" stop-color="#e8b64c"/>
+          <stop offset="0.7" stop-color="#4cd97c"/>
+          <stop offset="1" stop-color="#4c9de8"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+      <circle cx="100" cy="108.5" r="5.4" fill="url(#${u}pri)"/>
+      <circle cx="140" cy="108.5" r="5.4" fill="url(#${u}pri)"/>
+      <circle cx="100" cy="108.5" r="2.2" fill="#14100c"/>
+      <circle cx="140" cy="108.5" r="2.2" fill="#14100c"/>
+      <circle cx="101.8" cy="106.2" r="1.4" fill="#ffffff"/>
+      <circle cx="141.8" cy="106.2" r="1.4" fill="#ffffff"/>
+      ${sobrancelha(100, 92, 0, p.cabelo.escuro)}${sobrancelha(140, 92, 0, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_vazio',
+    categoria: 'olhos',
+    nome: 'Void',
+    descricao: 'Olhou para o abismo do legado. O abismo pediu refactor.',
+    raridade: 'mitico',
+    tema: 'fantasia',
+    piscar: false,
+    render: () => `
+      <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="#050308"/>
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="#050308"/>
+      <circle cx="100" cy="108" r="1.4" fill="#ffffff">
+        <animate attributeName="opacity" values="1;0.4;1" dur="2.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="140" cy="108" r="1.4" fill="#ffffff">
+        <animate attributeName="opacity" values="0.4;1;0.4" dur="2.8s" repeatCount="indefinite"/>
+      </circle>
+      <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="none" stroke="rgba(124,92,255,0.35)" stroke-width="1.6"/>
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="none" stroke="rgba(124,92,255,0.35)" stroke-width="1.6"/>`,
+  },
 ];
