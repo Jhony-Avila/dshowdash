@@ -3,7 +3,12 @@ declare(strict_types=1);
 
 /**
  * /api/avatar/studio.php — persistência oficial do Avatar Studio.
- * @version 1.2.0
+ * @version 1.4.0
+ * @changelog 1.4.0 (2026-07-30) — PERSISTÊNCIA 3D (Fase 2, PoC aprovada):
+ *   POST {config3d, render, base_version} salva parâmetros JSON formato:'3d'
+ *   (decisão #31) + PNG derivado re-encodado via GD como avatar oficial;
+ *   GET/histórico reconhecem tipo_ativo '3d'.
+ * @changelog 1.3.0 (2026-07-30) — desbloqueio validado no backend (403)
  * @changelog 1.2.0 (2026-07-29) — galeria de fotos (GET ?fotos=1, dedup por
  *   arquivo) e REATIVAÇÃO (POST {reativar_id}: clona a linha antiga como nova
  *   versão ativa reaproveitando o MESMO arquivo — histórico continua
@@ -138,6 +143,54 @@ function avst_validar_config($bruto): array
     return $saida;
 }
 
+/**
+ * Reconstrói um Config3D VÁLIDO (Fase 2 — persistência por PARÂMETROS,
+ * decisão #31: nunca arquivos; mesmo JSON → mesma cena). Enums fechados,
+ * cores hex, números clampados 0..1 — entrada hostil vira config padrão.
+ */
+function avst_validar_config3d($bruto): array
+{
+    if (!is_array($bruto)) {
+        throw new InvalidArgumentException('CONFIG3D_INVALIDO');
+    }
+    $enum = function ($v, array $ops, string $pad) {
+        return in_array($v, $ops, true) ? $v : $pad;
+    };
+    $hex = function ($v, string $pad) {
+        return (is_string($v) && preg_match('/^#[0-9a-f]{6}$/i', $v)) ? strtolower($v) : $pad;
+    };
+    $n01 = function ($v) {
+        return is_numeric($v) ? max(0.0, min(1.0, round((float) $v, 3))) : 0.0;
+    };
+    $variantes = ['casual', 'terno', 'punk', 'aventureiro'];
+    $cores = is_array($bruto['cores'] ?? null) ? $bruto['cores'] : [];
+    $mat = is_array($bruto['material'] ?? null) ? $bruto['material'] : [];
+    $mor = is_array($bruto['morfos'] ?? null) ? $bruto['morfos'] : [];
+    return [
+        'formato'   => '3d',
+        'versao'    => 1,
+        'arquetipo' => $enum($bruto['arquetipo'] ?? '', ['humano', 'androide', 'animal'], 'humano'),
+        'roupa'     => $enum($bruto['roupa'] ?? '', $variantes, 'casual'),
+        'cabeca'    => $enum($bruto['cabeca'] ?? '', $variantes, 'casual'),
+        'mochila'   => (bool) ($bruto['mochila'] ?? false),
+        'cores'     => [
+            'pele'    => $hex($cores['pele'] ?? null, '#e0ac69'),
+            'cabelo'  => $hex($cores['cabelo'] ?? null, '#3b2a1e'),
+            'roupa'   => $hex($cores['roupa'] ?? null, '#7c5cff'),
+            'detalhe' => $hex($cores['detalhe'] ?? null, '#e8ecf5'),
+        ],
+        'material'  => ['metal' => $n01($mat['metal'] ?? 0), 'brilho' => $n01($mat['brilho'] ?? 0.35)],
+        'morfos'    => [
+            'bravo'    => $n01($mor['bravo'] ?? 0),
+            'surpreso' => $n01($mor['surpreso'] ?? 0),
+            'triste'   => $n01($mor['triste'] ?? 0),
+        ],
+        'iluminacao' => $enum($bruto['iluminacao'] ?? '', ['estudio', 'dramatica', 'neon'], 'estudio'),
+        'cenario'    => $enum($bruto['cenario'] ?? '', ['vazio', 'grade'], 'vazio'),
+        'camera'     => $enum($bruto['camera'] ?? '', ['corpo', 'busto', 'rosto', 'tresquartos'], 'corpo'),
+    ];
+}
+
 /** Linha ativa "camadas" do usuário (ou null). */
 function avst_ativo(PDO $pdo, int $userId): ?array
 {
@@ -232,10 +285,11 @@ try {
             $itens = [];
             foreach ($st as $l) {
                 $cfg = json_decode((string) ($l['avatar_config'] ?? ''), true);
+                $formato = is_array($cfg) ? ($cfg['formato'] ?? '') : '';
                 $itens[] = [
                     'id'        => (int) $l['id'],
-                    'tipo'      => $l['avatar_type'] === 'image' ? 'foto' : 'camadas',
-                    'config'    => (is_array($cfg) && ($cfg['formato'] ?? '') === 'camadas') ? $cfg : null,
+                    'tipo'      => $l['avatar_type'] === 'image' ? 'foto' : ($formato === '3d' ? '3d' : 'camadas'),
+                    'config'    => ($formato === 'camadas') ? $cfg : null,
                     'url'       => $l['avatar_image_url'] ?: null,
                     'criado_em' => $l['created_at'],
                 ];
@@ -284,8 +338,16 @@ try {
 
         $tipoAtivo = null;
         if ($ativo) {
-            $tipoAtivo = $configAtivo !== null ? 'camadas'
-                : ($ativo['avatar_type'] === 'image' ? 'foto' : 'legado');
+            if ($configAtivo !== null) {
+                $tipoAtivo = 'camadas';
+            } else {
+                $cfg3 = json_decode((string) ($ativo['avatar_config'] ?? ''), true);
+                if (is_array($cfg3) && ($cfg3['formato'] ?? '') === '3d') {
+                    $tipoAtivo = '3d';
+                } else {
+                    $tipoAtivo = $ativo['avatar_type'] === 'image' ? 'foto' : 'legado';
+                }
+            }
         }
 
         $stU = $pdo->prepare('SELECT avatar_url FROM app_users WHERE id = ?');
@@ -324,9 +386,10 @@ try {
         avst_erro('RATE_LIMIT', 429, ['limite_por_hora' => AVST_LIMITE_HORA]);
     }
 
-    // ── Modo do salvamento: REATIVAR, FOTO ou CAMADAS ───────────────
+    // ── Modo do salvamento: REATIVAR, FOTO, 3D ou CAMADAS ───────────
     $modoReativar = isset($corpo['reativar_id']);
     $modoFoto  = !$modoReativar && isset($corpo['foto']);
+    $modo3d    = !$modoReativar && !$modoFoto && isset($corpo['config3d']);
     $conteudo  = '';   // bytes a publicar
     $extensao  = '';
     $tipoLinha = '';
@@ -359,6 +422,22 @@ try {
         }
         $extensao = 'png';
         $tipoLinha = 'image';
+    } elseif ($modo3d) {
+        // Fase 2 (PoC aprovada): parâmetros 3D no banco + render derivado
+        // como avatar oficial. O PNG vem do frame canônico do CLIENTE e é
+        // RE-ENCODADO pixel a pixel via GD (mesma defesa do fluxo de foto).
+        try {
+            $config3d = avst_validar_config3d($corpo['config3d'] ?? null);
+            $conteudo = avst_processar_foto(is_string($corpo['render'] ?? null) ? $corpo['render'] : '');
+        } catch (InvalidArgumentException $e) {
+            avst_erro($e->getMessage(), 400);
+        } catch (RuntimeException $e) {
+            error_log('[avatar/studio.php] render3d: ' . $e->getMessage());
+            avst_erro($e->getMessage(), 500);
+        }
+        $extensao = 'png';
+        $tipoLinha = 'generated';
+        $configJson = json_encode($config3d, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     } else {
         try {
             $config = avst_validar_config($corpo['config'] ?? null);
@@ -461,10 +540,16 @@ try {
     }
     session_write_close();
 
+    $tipoResp = 'camadas';
+    if ($tipoLinha === 'image') {
+        $tipoResp = 'foto';
+    } elseif (is_string($configJson) && strpos($configJson, '"formato":"3d"') !== false) {
+        $tipoResp = '3d';
+    }
     avst_ok([
         'version'    => $novaVersao,
         'render_url' => $renderUrl,
-        'tipo'       => $tipoLinha === 'image' ? 'foto' : 'camadas',
+        'tipo'       => $tipoResp,
     ]);
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {

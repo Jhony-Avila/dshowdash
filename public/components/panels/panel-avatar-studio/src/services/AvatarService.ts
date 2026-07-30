@@ -22,7 +22,7 @@ const EVENTO_DOM = 'dshow:avatar:atualizado';
 
 export type OrigemDado = 'api' | 'local' | 'padrao';
 
-export type TipoAtivo = 'camadas' | 'foto' | 'legado' | null;
+export type TipoAtivo = 'camadas' | 'foto' | '3d' | 'legado' | null;
 
 export interface ResultadoCarga {
   config: AvatarConfig | null;
@@ -186,8 +186,49 @@ export async function salvarAvatar(config: AvatarConfig, versaoBase: number): Pr
     localStorage.setItem(CHAVE_CONFIG, JSON.stringify(validado));
     anunciar(dataUriDe(validado), 'local', validado.cores.destaque);
     return { ok: true, origem: 'local', mensagem: 'Salvo neste navegador (servidor indisponível).' };
+  } catch { /* sem storage */ }
+  return { ok: false, origem: 'padrao', mensagem: 'Não foi possível salvar.' };
+}
+
+/**
+ * Salva o AVATAR 3D (Fase 2 — PoC aprovada): parâmetros JSON (formato:'3d')
+ * + render derivado (PNG do frame canônico) que vira o avatar oficial do
+ * header/menu/perfil. Sem fallback local: 3D só existe salvo no servidor.
+ */
+export async function salvar3D(
+  config3d: unknown,
+  renderPng: string,
+  versaoBase: number,
+  corAro?: string,
+): Promise<ResultadoSalvar> {
+  try {
+    const cabecalhos: Record<string, string> = { 'Content-Type': 'application/json' };
+    const csrf = await obterCsrf();
+    if (csrf) cabecalhos['X-CSRF-Token'] = csrf;
+    const r = await fetch(URL_API, {
+      method: 'POST',
+      credentials: 'include',
+      headers: cabecalhos,
+      body: JSON.stringify({ config3d, render: renderPng, base_version: versaoBase }),
+    });
+    if (r.ok) {
+      const corpo = await r.json().catch(() => null);
+      const versao = corpo?.data?.version as number | undefined;
+      const renderUrl = corpo?.data?.render_url as string | undefined;
+      if (renderUrl) anunciar(`${renderUrl}?t=${versao}`, 'api', corAro ?? null);
+      return { ok: true, origem: 'api', versao, mensagem: 'Avatar 3D salvo — header atualizado.' };
+    }
+    if (r.status === 409) {
+      const corpo = await r.json().catch(() => null);
+      return {
+        ok: false, origem: 'api', conflito: true, versao: corpo?.data?.version,
+        mensagem: 'O avatar foi salvo em outra aba. Recarregue o estúdio.',
+      };
+    }
+    const corpo = await r.json().catch(() => null);
+    return { ok: false, origem: 'api', mensagem: `O servidor recusou (${corpo?.error ?? r.status}).` };
   } catch {
-    return { ok: false, origem: 'padrao', mensagem: 'Não foi possível salvar.' };
+    return { ok: false, origem: 'padrao', mensagem: 'Sem conexão com o servidor.' };
   }
 }
 

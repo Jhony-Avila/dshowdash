@@ -12,10 +12,11 @@ import type { ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type * as THREE from 'three';
 import {
-  Aperture, Camera, Gauge, Hand, Lightbulb, MonitorX, PersonStanding, RotateCcw,
-  ShieldAlert, Sparkles, Zap,
+  Aperture, Camera, Gauge, Hand, Lightbulb, LoaderCircle, MonitorX, PersonStanding,
+  RotateCcw, Save, ShieldAlert, Sparkles, Zap,
 } from 'lucide-react';
 import { telemetria } from '../services/Telemetria';
+import { salvar3D } from '../services/AvatarService';
 import {
   CONFIG3D_PADRAO, CORES_3D, ROTULOS_VARIANTE,
 } from './catalogo3d';
@@ -65,7 +66,13 @@ function temWebGL2(): boolean {
   } catch { return false; }
 }
 
-export default function Estudio3D({ corDestaque }: { corDestaque?: string }) {
+export default function Estudio3D({ corDestaque, versaoBase = 0, aoSalvar }: {
+  corDestaque?: string;
+  /** versão atual do avatar (concorrência otimista — 409 entre abas) */
+  versaoBase?: number;
+  /** avisa o App quando o 3D vira o avatar oficial (nova versão) */
+  aoSalvar?: (novaVersao: number) => void;
+}) {
   const [config, setConfig] = useState<Config3D>(CONFIG3D_PADRAO);
   const [gesto, setGesto] = useState<Gesto>(null);
   const [fasePoder, setFasePoder] = useState<FasePoder>('inativo');
@@ -74,7 +81,10 @@ export default function Estudio3D({ corDestaque }: { corDestaque?: string }) {
   const [metricas, setMetricas] = useState<Metricas | null>(null);
   const [previa, setPrevia] = useState<string | null>(null);
   const [chaveCena, setChaveCena] = useState(0);
+  const [salvando, setSalvando] = useState(false);
+  const [msgSalvar, setMsgSalvar] = useState<string | null>(null);
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
+  const destaqueRef = useRef<string>('#7c5cff');
   const quedasSeguidas = useRef(0);
   const suportado = useRef(temWebGL2());
 
@@ -115,6 +125,38 @@ export default function Estudio3D({ corDestaque }: { corDestaque?: string }) {
     } catch { /* toDataURL bloqueado */ }
   }, [config.camera]);
 
+  /** Frame canônico 480×480 (corte central) — a Camada 2 nasce aqui. */
+  const capturaQuadrada = useCallback((): string | null => {
+    const gl = glRef.current;
+    if (!gl) return null;
+    try {
+      const fonte = gl.domElement;
+      const lado = Math.min(fonte.width, fonte.height);
+      const alvo = document.createElement('canvas');
+      alvo.width = 480;
+      alvo.height = 480;
+      const ctx = alvo.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(fonte, (fonte.width - lado) / 2, (fonte.height - lado) / 2, lado, lado, 0, 0, 480, 480);
+      return alvo.toDataURL('image/png');
+    } catch { return null; }
+  }, []);
+
+  const salvarComoAvatar = useCallback(async () => {
+    if (salvando) return;
+    const png = capturaQuadrada();
+    if (!png) { setMsgSalvar('Não consegui capturar o quadro — tente de novo.'); return; }
+    setSalvando(true);
+    setMsgSalvar(null);
+    const r = await salvar3D(config, png, versaoBase, destaqueRef.current);
+    setSalvando(false);
+    setMsgSalvar(r.mensagem ?? (r.ok ? 'Avatar 3D salvo!' : 'Falha ao salvar.'));
+    if (r.ok && r.versao !== undefined) {
+      telemetria('3d_salvou', { versao: r.versao });
+      aoSalvar?.(r.versao);
+    }
+  }, [salvando, capturaQuadrada, config, versaoBase, aoSalvar]);
+
   if (!suportado.current) {
     return (
       <div className="avst-3d-erro avst-3d-sem-webgl">
@@ -127,6 +169,7 @@ export default function Estudio3D({ corDestaque }: { corDestaque?: string }) {
   }
 
   const destaque = corDestaque ?? config.cores.roupa;
+  destaqueRef.current = destaque;
 
   return (
     <div className="avst-3d">
@@ -171,7 +214,18 @@ export default function Estudio3D({ corDestaque }: { corDestaque?: string }) {
 
       {/* ── controles ── */}
       <aside className="avst-3d-controles">
-        <p className="avst-3d-poc">PROVA DE CONCEITO · Fase 1 do briefing 4.0 — valide o rumo antes da produção em escala.</p>
+        {aoSalvar && (
+          <section className="avst-3d-salvar">
+            <button type="button" className="avst-botao avst-botao-primario" disabled={salvando}
+              onClick={() => void salvarComoAvatar()}>
+              {salvando ? <LoaderCircle size={15} className="avst-girando" aria-hidden /> : <Save size={15} aria-hidden />}
+              {salvando ? ' Salvando…' : ' Salvar como meu avatar'}
+            </button>
+            {msgSalvar && <p className="avst-3d-nota" role="status">{msgSalvar}</p>}
+            <p className="avst-3d-nota">Enquadre como quiser — o quadro atual vira seu avatar no header, menu e perfil.</p>
+          </section>
+        )}
+        <p className="avst-3d-poc">FASE 2 · PoC aprovada — persistência 3D ativa; conteúdo em expansão contínua.</p>
 
         <section>
           <h3><PersonStanding size={13} aria-hidden /> Arquétipo</h3>

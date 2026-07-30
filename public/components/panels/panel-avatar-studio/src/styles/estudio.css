@@ -926,3 +926,5 @@
 .avst-vitrine-info strong { font-size: 13px; }
 .avst-vitrine-info strong em { font-style: normal; font-size: 10.5px; color: var(--avst-acento); }
 .avst-vitrine-info span { font-size: 11px; color: var(--avst-texto-2); }
+.avst-3d-salvar { display: flex; flex-direction: column; gap: 7px; padding-bottom: 4px; border-bottom: 1px solid var(--avst-borda); }
+.avst-3d-salvar .avst-botao-primario { justify-content: center; }
