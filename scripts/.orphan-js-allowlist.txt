@@ -1,0 +1,49 @@
+# .orphan-js-allowlist.txt — FONTES .js MANUAIS REGISTRADAS (detector 2/6)
+#
+# POLITICA-TYPESCRIPT.md §4 exige: orfao-suspeito ou (a) e fonte .js manual legitima
+# — entao REGISTRA-SE com evidencia — ou (b) e divida a migrar para .ts. Proibido
+# "varrer pra baixo do tapete" com padrao curinga.
+#
+# Por isso esta lista e de CAMINHOS EXATOS, nao de padroes: um .js novo que apareca
+# em qualquer painel CONTINUA sendo acusado. Foi assim que, em 2026-07-27, o detector
+# pegou `panel-anuncios/index.js` surgindo no meio da sessao.
+#
+# EVIDENCIA (verificada arquivo a arquivo em 2026-07-27, lendo o cabecalho de cada um):
+#   * panels/*/index.js .......... "carregador do painel React" — script de boot carregado
+#                                  direto pelo navegador como modulo, sem etapa de build.
+#                                  O codigo TypeScript do painel vive em src/ e sai em dist/.
+#   * world-clock-map/** ......... painel standalone em .js puro por decisao de projeto
+#                                  (registrado na memoria do projeto desde 2026-07-08).
+#   * panel-cotacao-shared/*.js .. modulos vanilla compartilhados entre painel e header.
+#   * currency-panel/index.js .... ponte clique->painel, vanilla no header.
+#   * traffic-monitor/*.js ....... indicador standalone auto-injetado no header.
+#
+# Corrigiu/migrou um destes para .ts? APAGUE a linha.
+components/header/components/currency-panel/index.js
+components/gcal-header-popover/index.js
+components/panels/panel-ads/index.js
+components/panels/panel-anuncios/index.js
+components/panels/panel-cotacao-shared/chart.js
+components/panels/panel-cotacao-shared/prefs.js
+components/panels/panel-cotacao-shared/render.js
+components/panels/panel-cotacao/index.js
+components/panels/panel-datatables/index.js
+components/panels/panel-google-analytics/index.js
+components/panels/panel-google-calendar/index.js
+components/panels/panel-outlook/index.js
+components/panels/panel-pipedrive/index.js
+components/panels/panel-relogio-mundial/index.js
+components/panels/panel-transito-sp/index.js
+components/traffic-monitor/header-indicator.js
+components/world-clock-map/core/astro.js
+components/world-clock-map/core/prefs.js
+components/world-clock-map/core/projection.js
+components/world-clock-map/core/time.js
+components/world-clock-map/data/cities.js
+components/world-clock-map/data/worldmap.js
+components/world-clock-map/index.js
+components/world-clock-map/panel.js
+components/world-clock-map/ui/map.js
+components/world-clock-map/ui/search.js
+components/world-clock-map/ui/settings.js
+components/world-clock-map/ui/spotlight.js
