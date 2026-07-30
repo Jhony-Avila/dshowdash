@@ -609,7 +609,10 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
           {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
           {aba === 'conquistas' && <Conquistas vida={vida} />}
-          {aba === 'vitrine' && <Vitrine />}
+          {aba === 'vitrine' && (
+            <Vitrine config={atual} desbloqueados={vida?.desbloqueados ?? new Set()}
+              aoAplicar={aplicar} aoAbrirColecoes={() => setAba('colecoes')} />
+          )}
           {aba === 'ia' && <CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} />}
           {aba === 'historico' && <Historico key={`h-${versao}`} aoAplicar={aplicar} />}
           {aba === 'foto' && <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'} aoSalvar={aoSalvarFoto} />}
