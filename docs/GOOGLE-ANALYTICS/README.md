@@ -8,8 +8,12 @@ Briefing-fonte: **MEGA BRIEFING COMPLETO — MÓDULO GOOGLE ANALYTICS** (84 seç
 **Fase 0 (investigação)**: executada, e deliberadamente **NÃO fechada** — 7 dos 10 critérios da §80
 atendidos, 3 bloqueados por falta de credencial GA4.
 
-**Fase 1 (módulo no mock)**: **NO AR** em `GA_PROVIDER=mock` — backend com 16 rotas, painel React
-com 21 telas, sidebar, flag e provas. Verificação: `bash scripts/ga-smoke-all.sh`.
+**Fase 1 (módulo no mock)**: **NO AR** em `GA_PROVIDER=mock` — backend, painel React, sidebar, flag.
+
+**Fase 2 (D3)**: **NO AR** — Sankey de aquisição, árvore de jornada com abandono, mapa do Brasil e
+treemap de canais. Total: **17 rotas** e **22 telas com dados**.
+
+Verificação de tudo: `bash scripts/ga-smoke-all.sh` (29 checagens + prova de UI com 105).
 
 ## Documentos
 
@@ -17,6 +21,7 @@ com 21 telas, sidebar, flag e provas. Verificação: `bash scripts/ga-smoke-all.
 |---|---|
 | [`00-fase0-investigacao.md`](00-fase0-investigacao.md) | Entregável da seção 6: inventário da coleta, infra, banco, front-end, integrações, 11 riscos, plano de fases ajustado, 9 decisões do dono e o status item a item da seção 80 |
 | [`01-fase1-mock.md`](01-fase1-mock.md) | O que está no ar, as 2 decisões de desenho do mock, o bug de coerência que a medição pegou, o reúso sem instalar nada, as traps respeitadas e o que a fase deixou de fora |
+| [`02-fase2-d3.md`](02-fase2-d3.md) | Os 4 gráficos D3, por que foram escritos aqui e não importados do Ads, a regressão de chunk que a medição pegou (`import()` dinâmico **não** garante lazy-load), as decisões de leitura de cada gráfico e as 2 correções de honestidade na UI |
 
 ## O que já se sabe, em 6 linhas
 
