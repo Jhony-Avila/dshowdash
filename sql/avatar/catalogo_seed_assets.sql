@@ -17,10 +17,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'clássico', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -32,10 +33,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'clássico', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -47,10 +49,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'tecnologia', JSON_OBJECT('usaCores', '["pele","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -62,10 +65,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'tecnologia', JSON_OBJECT('usaCores', '["pele","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -77,10 +81,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'casual', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -92,10 +97,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'clássico', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -107,10 +113,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'esportivo', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -122,10 +129,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'executivo', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -137,10 +145,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 8,
   'aventura', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -152,10 +161,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 9,
   'casual', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -167,10 +177,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 10,
   'animais', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -182,10 +193,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 11,
   'animais', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -197,10 +209,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 12,
   'animais', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -212,10 +225,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 13,
   'animais', JSON_OBJECT('usaCores', '["pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -227,10 +241,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 14,
   'animais', JSON_OBJECT('usaCores', '["pele","cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -242,10 +257,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 15,
   'sci-fi', JSON_OBJECT('usaCores', '["pele","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -257,10 +273,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   1, 1, 16,
   'dshow', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -272,10 +289,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'executivo', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -287,10 +305,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'clássico', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -302,10 +321,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -317,10 +337,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -332,10 +353,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -347,10 +369,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -362,10 +385,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'clássico', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -377,10 +401,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'punk', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -392,10 +417,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 8,
   'cyberpunk', JSON_OBJECT('usaCores', '["cabelo","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -407,10 +433,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 9,
   'esportivo', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -422,10 +449,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 10,
   'executivo', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -437,10 +465,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 11,
   'esportivo', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -452,10 +481,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 12,
   'clássico', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -467,10 +497,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 13,
   'urbano', JSON_OBJECT('usaCores', '["cabelo","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -482,10 +513,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 14,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -497,10 +529,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 15,
   'clássico', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -512,10 +545,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 16,
   'urbano', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -527,10 +561,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 17,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -542,10 +577,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='cabelo'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 18,
   'cyberpunk', JSON_OBJECT('usaCores', '["cabelo","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -557,10 +593,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'clássico', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -572,10 +609,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'gamer', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -587,10 +625,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -602,10 +641,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'executivo', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -617,10 +657,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'fantasia', JSON_OBJECT('usaCores', '["cabelo","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -632,10 +673,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', FALSE), NOW(), NOW(), NOW())
+    'piscar', FALSE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -647,10 +689,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -662,10 +705,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -677,10 +721,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 8,
   'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -692,10 +737,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 9,
   'fantasia', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -707,10 +753,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 10,
   'cyberpunk', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', FALSE), NOW(), NOW(), NOW())
+    'piscar', FALSE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -722,10 +769,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 11,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -737,10 +785,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 12,
   'executivo', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -752,10 +801,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 13,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -767,10 +817,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 14,
   'executivo', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -782,10 +833,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 15,
   'gamer', JSON_OBJECT('usaCores', '["cabelo","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -797,10 +849,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 16,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -812,10 +865,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 17,
   'casual', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -827,10 +881,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 18,
   'gamer', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', FALSE), NOW(), NOW(), NOW())
+    'piscar', FALSE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -842,10 +897,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'clássico', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -857,10 +913,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'executivo', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -872,10 +929,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'casual', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -887,10 +945,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'gamer', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -902,10 +961,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'executivo', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -917,10 +977,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'casual', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -932,10 +993,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'casual', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -947,10 +1009,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'clássico', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -962,10 +1025,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 8,
   'fantasia', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -977,10 +1041,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 9,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -992,10 +1057,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 10,
   'casual', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1007,10 +1073,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 11,
   'gamer', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1022,10 +1089,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 12,
   'aventura', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1037,10 +1105,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 13,
   'urbano', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1052,10 +1121,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 14,
   'urbano', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1067,10 +1137,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 15,
   'clássico', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1082,10 +1153,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 16,
   'clássico', JSON_OBJECT('usaCores', '["cabelo"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1097,10 +1169,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 17,
   'casual', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1112,10 +1185,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'casual', JSON_OBJECT('usaCores', '["roupa"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1127,10 +1201,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'casual', JSON_OBJECT('usaCores', '["roupa","pele"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1142,10 +1217,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'executivo', JSON_OBJECT('usaCores', '["roupa"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1157,10 +1233,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'gamer', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1172,10 +1249,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'esporte', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1187,10 +1265,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'gamer', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1202,10 +1281,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'executivo', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1217,10 +1297,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'oriental', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1232,10 +1313,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 8,
   'espaço', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1247,10 +1329,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   1, 1, 9,
   'dshow', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1262,10 +1345,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 10,
   'sci-fi', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1277,10 +1361,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'casual', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'rosto'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1292,10 +1377,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'executivo', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'rosto'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1307,10 +1393,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'casual', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'rosto'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1322,10 +1409,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'casual', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'cabeca'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1337,10 +1425,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'casual', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'cabeca'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1352,10 +1441,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'gamer', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'cabeca'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1367,10 +1457,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'casual', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'pescoco'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1382,10 +1473,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'fantasia', JSON_OBJECT('usaCores', '["roupa","destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'cabeca'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1397,10 +1489,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 8,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'pescoco'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1412,10 +1505,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 0, 9,
   'conquista', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'pescoco'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1427,10 +1521,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 0, 10,
   'evento', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'cabeca'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1442,10 +1537,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 0, 11,
   'evento', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'cabeca'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1457,10 +1553,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id F
   'parte2d', 'published', '2d', '2d',
   0, 1, 12,
   'fantasia', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', 'cabeca'), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1472,10 +1569,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'clássico', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1487,10 +1585,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'espaço', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1502,10 +1601,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'retrô', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1517,10 +1617,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1532,10 +1633,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1547,10 +1649,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'espaço', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1562,10 +1665,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'natureza', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1577,10 +1681,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'dshow', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1592,10 +1697,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 8,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1607,10 +1713,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 9,
   'oriental', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1622,10 +1729,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='fundo'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 10,
   'gamer', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1637,10 +1745,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'clássico', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1652,10 +1761,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'clássico', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1667,10 +1777,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1682,10 +1793,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'cyberpunk', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1697,10 +1809,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'fantasia', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1712,10 +1825,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'gamer', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1727,10 +1841,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1742,10 +1857,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 0, 7,
   'conquista', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1757,10 +1873,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   1, 1, 8,
   'dshow', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1772,10 +1889,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1787,10 +1905,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'cyberpunk', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1802,10 +1921,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'retrô', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1817,10 +1937,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1832,10 +1953,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'sci-fi', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1847,10 +1969,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1862,10 +1985,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'cyberpunk', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1877,10 +2001,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'fantasia', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1892,10 +2017,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 0, 8,
   'conquista', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1907,10 +2033,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 9,
   'fantasia', JSON_OBJECT('usaCores', NULL,
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1922,10 +2049,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'cyberpunk', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1937,10 +2065,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'sci-fi', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1952,10 +2081,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1967,10 +2097,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1982,10 +2113,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   1, 1, 4,
   'dshow', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -1997,10 +2129,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'espaço', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2012,10 +2145,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2027,10 +2161,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM a
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2042,10 +2177,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 0,
   'executivo', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2057,10 +2193,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'cyberpunk', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2072,10 +2209,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'espaço', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2087,10 +2225,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'gamer', JSON_OBJECT('usaCores', '["destaque","roupa"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2102,10 +2241,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   1, 1, 4,
   'dshow', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2117,10 +2257,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'oriental', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2132,10 +2273,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2147,10 +2289,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'fantasia', JSON_OBJECT('usaCores', '[]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2162,10 +2305,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   1, 1, 0,
   'dshow', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2177,10 +2321,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 1,
   'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2192,10 +2337,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 2,
   'executivo', JSON_OBJECT('usaCores', '[]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2207,10 +2353,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 3,
   'cyberpunk', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2222,10 +2369,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'executivo', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2237,10 +2385,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 5,
   'gamer', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2252,10 +2401,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 6,
   'executivo', JSON_OBJECT('usaCores', '["destaque"]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
@@ -2267,10 +2417,11 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 7,
   'fantasia', JSON_OBJECT('usaCores', '[]',
-    'piscar', TRUE), NOW(), NOW(), NOW())
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
 
 
 -- ── Assets 3D da PoC (GLB Meshopt — licenças CC0 rastreadas) ──

@@ -5,7 +5,7 @@
 // presets e validação de config. O motor (engine/render) recebe o resolvedor
 // daqui — nenhum outro módulo importa as partes diretamente.
 import type {
-  AvatarConfig, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
+  AvatarConfig, CamadaId, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
 import { CORES_PADRAO, normalizarHex } from '../engine/cores';
 import type { ParteDef } from '../engine/base-api';
@@ -313,15 +313,33 @@ export function validarConfig(bruto: unknown): AvatarConfig {
 
   const camadas: AvatarConfig['camadas'] = {};
   const equipados: string[] = [];
-  for (const cat of CATS_OPCIONAIS) {
-    const id = b.camadas?.[cat];
-    if (typeof id !== 'string' || id === 'nenhum') continue;
+  const colocar = (chave: CamadaId, id: unknown): void => {
+    if (typeof id !== 'string' || id === 'nenhum' || camadas[chave]) return;
     const item = POR_ID.get(id);
-    if (!item || item.categoria !== cat) continue;
-    if (item.requerBase?.length && !item.requerBase.includes(base)) continue;
-    if (item.incompativelCom?.some((x) => equipados.includes(x))) continue;
-    camadas[cat] = id;
+    const catEsperada = chave.startsWith('acessorio') ? 'acessorio' : chave;
+    if (!item || item.categoria !== catEsperada) return;
+    if (item.requerBase?.length && !item.requerBase.includes(base)) return;
+    if (item.incompativelCom?.some((x) => equipados.includes(x))) return;
+    camadas[chave] = id;
     equipados.push(id);
+  };
+  for (const cat of CATS_OPCIONAIS) {
+    if (cat === 'acessorio') continue; // slots aditivos tratados abaixo
+    colocar(cat, b.camadas?.[cat]);
+  }
+  // Acessórios (4.6 §20, decisão #41): 3 slots ADITIVOS — o item SEMPRE
+  // pousa no slot que ele declara (chave de chegada é só transporte).
+  // A chave legada 'acessorio' migra para o slot do item e nunca persiste.
+  const candidatos: unknown[] = [
+    b.camadas?.acessorio_cabeca, b.camadas?.acessorio_rosto,
+    b.camadas?.acessorio_pescoco, b.camadas?.acessorio,
+  ];
+  for (const id of candidatos) {
+    if (typeof id !== 'string') continue;
+    const item = POR_ID.get(id);
+    if (item?.categoria === 'acessorio') {
+      colocar(`acessorio_${item.slot ?? 'cabeca'}`, id);
+    }
   }
 
   const c = (b.cores ?? {}) as Partial<Record<SlotCor, string>>;
@@ -411,7 +429,16 @@ export function aleatorio(semente: number): AvatarConfig {
     fundo: sortearPorRaridade(rnd, sorteaveis('fundo')).id,
   };
   if (rnd() < 0.85) camadas.cabelo = sortearPorRaridade(rnd, sorteaveis('cabelo')).id;
-  if (rnd() < 0.55) camadas.acessorio = sortearPorRaridade(rnd, sorteaveis('acessorio')).id;
+  // acessórios por SLOT (decisão #41): 1º sorteio comum, 2º menos provável
+  if (rnd() < 0.55) {
+    const a = sortearPorRaridade(rnd, sorteaveis('acessorio'));
+    camadas[`acessorio_${a.slot ?? 'cabeca'}`] = a.id;
+  }
+  if (rnd() < 0.22) {
+    const a = sortearPorRaridade(rnd, sorteaveis('acessorio'));
+    const chave = `acessorio_${a.slot ?? 'cabeca'}` as const;
+    if (!camadas[chave]) camadas[chave] = a.id;
+  }
   if (rnd() < 0.6) camadas.moldura = sortearPorRaridade(rnd, sorteaveis('moldura')).id;
   if (rnd() < 0.35) camadas.efeito = sortearPorRaridade(rnd, sorteaveis('efeito')).id;
   // Expansão: as categorias 2D novas também entram no sorteio

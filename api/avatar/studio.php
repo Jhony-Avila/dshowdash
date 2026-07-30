@@ -118,7 +118,10 @@ function avst_validar_config($bruto): array
     }
 
     // aura/banner/emblema: Expansão (decisão #33 — categorias 2D imediatas)
-    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'acessorio', 'fundo',
+    // acessorio_* : slots ADITIVOS (4.6 §20, decisão #41); 'acessorio'
+    // legado segue aceito — o front canonicaliza para o slot do item
+    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'acessorio',
+        'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco', 'fundo',
         'moldura', 'efeito', 'aura', 'banner', 'emblema'];
     $camadas = [];
     foreach ($categorias as $cat) {
@@ -220,6 +223,18 @@ function avst_validar_config3d($bruto): array
     $cores = is_array($bruto['cores'] ?? null) ? $bruto['cores'] : [];
     $mat = is_array($bruto['material'] ?? null) ? $bruto['material'] : [];
     $mor = is_array($bruto['morfos'] ?? null) ? $bruto['morfos'] : [];
+    // 14 SOCKETS do 3D (4.6 §20, decisão #41) — contrato fechado; o
+    // conteúdo por socket chega nas próximas levas 3D (fila #37 item 2).
+    $socketsValidos = ['head', 'face', 'eyes', 'ears', 'neck', 'shoulders',
+        'back', 'waist', 'wrist_l', 'wrist_r', 'hand_l', 'hand_r',
+        'companion', 'pet'];
+    $sockets = [];
+    foreach ((array) ($bruto['sockets'] ?? []) as $socket => $idItem) {
+        if (in_array($socket, $socketsValidos, true)
+            && is_string($idItem) && preg_match('/^[a-z0-9_]{1,40}$/', $idItem)) {
+            $sockets[$socket] = $idItem;
+        }
+    }
     return [
         'formato'   => '3d',
         'versao'    => 1,
@@ -227,6 +242,7 @@ function avst_validar_config3d($bruto): array
         'roupa'     => $enum($bruto['roupa'] ?? '', $variantes, 'casual'),
         'cabeca'    => $enum($bruto['cabeca'] ?? '', $variantes, 'casual'),
         'mochila'   => (bool) ($bruto['mochila'] ?? false),
+        'sockets'   => (object) $sockets,
         'cores'     => [
             'pele'    => $hex($cores['pele'] ?? null, '#e0ac69'),
             'cabelo'  => $hex($cores['cabelo'] ?? null, '#3b2a1e'),

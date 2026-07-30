@@ -16,6 +16,18 @@ export type CameraId = 'corpo' | 'busto' | 'rosto' | 'tresquartos';
 export type SlotMaterial = 'pele' | 'cabelo' | 'roupa' | 'detalhe';
 
 /** Parâmetros persistíveis da cena (decisão #31 — nunca arquivos, só JSON). */
+/**
+ * Os 14 SOCKETS de acessórios do 3D (4.6 §20, decisão #41).
+ * Contrato FECHADO nesta fase: o vocabulário e a validação existem de ponta
+ * a ponta (front + studio.php); o CONTEÚDO por socket chega nas próximas
+ * levas 3D (fila #37 item 2). `mochila` é o precursor do socket 'back'.
+ */
+export const SOCKETS_3D = [
+  'head', 'face', 'eyes', 'ears', 'neck', 'shoulders', 'back', 'waist',
+  'wrist_l', 'wrist_r', 'hand_l', 'hand_r', 'companion', 'pet',
+] as const;
+export type Socket3D = (typeof SOCKETS_3D)[number];
+
 export interface Config3D {
   arquetipo: ArquetipoId;
   /** humano: outfit (Body+Legs+Feet) e cabeça podem vir de variantes diferentes */
@@ -23,6 +35,8 @@ export interface Config3D {
   cabeca: VarianteHumanoId;
   /** acessório real do asset (nó Backpack do aventureiro) */
   mochila: boolean;
+  /** itens por socket (decisão #41) — opcional até a leva de conteúdo 3D */
+  sockets?: Partial<Record<Socket3D, string>>;
   cores: Record<SlotMaterial, string>;
   /** editor de materiais (PBR) aplicado ao slot de roupa */
   material: { metal: number; brilho: number };

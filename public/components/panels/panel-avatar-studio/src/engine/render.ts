@@ -56,7 +56,13 @@ export function congelarSvg(svg: string): string {
             .replace(/<animateTransform[^>]*\/>/g, '');
 }
 
-const ORDEM_CAMADAS = ['roupa', 'emblema', 'boca', 'olhos', 'cabelo', 'acessorio'] as const;
+// Slots ADITIVOS de acessórios (4.6 §20, decisão #41): pescoço/costas por
+// baixo, chapéu sobre o cabelo, rosto por cima de tudo. A chave legada
+// 'acessorio' fica na sequência por robustez (configs antigos sem validar).
+const ORDEM_CAMADAS = [
+  'roupa', 'emblema', 'boca', 'olhos', 'cabelo',
+  'acessorio', 'acessorio_pescoco', 'acessorio_cabeca', 'acessorio_rosto',
+] as const;
 
 /**
  * Compõe o SVG completo do avatar.
@@ -99,6 +105,11 @@ export function renderAvatar(
 
   const corpoTodo = opcoes.enquadramento === 'corpo' && opcoes.palco;
 
+  // acessórios nos 3 slots aditivos (+ legado) — usado nos modos de palco
+  const acessorios =
+    pintar(config.camadas.acessorio) + pintar(config.camadas.acessorio_pescoco) +
+    pintar(config.camadas.acessorio_cabeca) + pintar(config.camadas.acessorio_rosto);
+
   let conteudo: string;
   if (opcoes.palco) {
     // Grupos animáveis do palco (idle/parallax) — só no preview do estúdio.
@@ -116,7 +127,7 @@ export function renderAvatar(
         pintar(config.base) + pintar(config.camadas.boca) +
         `<g data-anim="olhos">${pintar(config.camadas.olhos)}</g>` +
         `<g data-anim="cabelo">${pintar(config.camadas.cabelo)}</g>` +
-        pintar(config.camadas.acessorio) + palpebras;
+        acessorios + palpebras;
       // roupa no CORPO INTEIRO: detalhes da peça sobre o scaffold (gola,
       // gravata, zíper, obi…) — sem isto a roupa só mudava a cor do corpo
       const roupaDef = config.camadas.roupa && config.camadas.roupa !== 'nenhum'
@@ -143,7 +154,7 @@ export function renderAvatar(
           pintar(config.camadas.boca) +
           `<g data-anim="olhos">${pintar(config.camadas.olhos)}</g>` +
           `<g data-anim="cabelo">${pintar(config.camadas.cabelo)}</g>` +
-          pintar(config.camadas.acessorio) + palpebras +
+          acessorios + palpebras +
         `</g></g>` +
         `<g data-anim="plano-frente"><g transform="translate(120 120) scale(1.1) translate(-120 -120)">${efeitoFrente}</g></g>`;
     }

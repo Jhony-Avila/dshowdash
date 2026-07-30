@@ -68,10 +68,11 @@ VALUES (${catId(categoria)}, ${bibId('dshow_svg')}, ${rarId(p.raridade)}, 2,
   'parte2d', 'published', '2d', '2d',
   ${p.raridade === 'exclusivo' ? 1 : 0}, ${p.bloqueadoPor ? 0 : 1}, ${ordem},
   ${txt(p.tema)}, JSON_OBJECT('usaCores', ${JSON.stringify(p.usaCores ?? null) === 'null' ? 'NULL' : `'${esc(JSON.stringify(p.usaCores))}'`},
-    'piscar', ${p.piscar === false ? 'FALSE' : 'TRUE'}), NOW(), NOW(), NOW())
+    'piscar', ${p.piscar === false ? 'FALSE' : 'TRUE'},
+    'slot', ${p.slot ? txt(p.slot) : 'NULL'}), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
-  tags = VALUES(tags), updated_at = NOW();`);
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();`);
 }
 
 // ── 4. assets 3D da PoC (metadados de GLB + licença CC0) ───────────────────
