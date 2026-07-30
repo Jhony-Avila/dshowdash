@@ -23,6 +23,8 @@ const HUMANOIDES = [
   'bas_redonda', 'bas_coracao', 'bas_quadrada', 'bas_longa', 'bas_marcada', 'bas_sardas',
   // Onda 7
   'bas_triangular', 'bas_bochechudo', 'bas_diamante', 'bas_veterano', 'bas_juvenil', 'bas_meio_cyborg',
+  // Onda 8
+  'bas_madura', 'bas_sereno', 'bas_gotico', 'bas_estatua',
 ];
 
 const BRILHO = `<path d="M88 66 a 46 40 0 0 1 34 -12" stroke="${alfa('#ffffff', 0.3)}" stroke-width="4" stroke-linecap="round" fill="none"/>`;
@@ -637,6 +639,332 @@ export const CABELOS: ParteDef[] = [
       <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
       <path d="M70 96 a 50 46 0 0 1 100 0 l -4 8 h -92 z" fill="url(#${u}cab)"/>
       <path d="M74 104 h 92" stroke="${alfa(p.cabelo.profundo, 0.6)}" stroke-width="3"/>
+      ${BRILHO}`,
+  },
+  // ── 4.6 F2 · Onda 8 (final §28) — 17 cabelos novos (50 ✓) ─────────
+  {
+    id: 'cab_rabo_baixo',
+    categoria: 'cabelo',
+    nome: 'Rabo Baixo',
+    descricao: 'Discrição na nuca, eficiência no resto.',
+    raridade: 'comum',
+    tema: 'executivo',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M70 102 c -2 -36 22 -55 50 -55 s 52 19 50 55 c -2 -7 -5 -12 -9 -15 c 2 -20 -17 -31 -41 -31 s -43 11 -41 31 c -4 3 -7 8 -9 15 z" fill="url(#${u}cab)"/>
+      <path d="M162 116 q 14 20 8 46 q -6 -4 -8 -10 q -2 8 -8 12 q -2 -26 2 -48 z" fill="url(#${u}cab)"/>
+      <ellipse cx="161" cy="120" rx="4.6" ry="6" fill="${alfa(p.cabelo.profundo, 0.75)}"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_franjinha',
+    categoria: 'cabelo',
+    nome: 'Franjinha Reta',
+    descricao: 'Régua e tesoura: precisão milimétrica na testa.',
+    raridade: 'comum',
+    tema: 'casual',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M70 104 c -2 -38 22 -57 50 -57 s 52 19 50 57 c -2 -8 -5 -13 -9 -16 c 2 -20 -17 -32 -41 -32 s -43 12 -41 32 c -4 3 -7 8 -9 16 z" fill="url(#${u}cab)"/>
+      <path d="M86 62 h 68 v 16 l -6 -4 l -6 5 l -6 -5 l -5 5 l -6 -5 l -6 5 l -5 -5 l -6 5 l -6 -4 l -6 4 l -6 -5 z" fill="url(#${u}cab)"/>
+      <path d="M88 76 h 64" stroke="${alfa(p.cabelo.profundo, 0.35)}" stroke-width="2"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_ondas_longas',
+    categoria: 'cabelo',
+    nome: 'Ondas Longas',
+    descricao: 'Movimento de comercial de shampoo em cada reunião.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M64 180 c -10 -70 16 -128 56 -128 s 66 58 56 128 l -14 4 c 6 -34 4 -64 -6 -84 q -2 12 -10 18 q 2 -14 -4 -24 q -6 8 -16 8 t -16 -8 q -6 10 -4 24 q -8 -6 -10 -18 c -10 20 -12 50 -6 84 z" fill="url(#${u}cab)"/>
+      <path d="M68 130 q -8 18 -2 38 q 6 -4 8 -12 M172 130 q 8 18 2 38 q -6 -4 -8 -12" stroke="url(#${u}cab)" stroke-width="9" stroke-linecap="round" fill="none"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_sidecut',
+    categoria: 'cabelo',
+    nome: 'Sidecut',
+    descricao: 'Um lado corporativo, outro lado revolução.',
+    raridade: 'raro',
+    tema: 'urbano',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M74 92 a 50 55 0 0 1 46 -44 l 0 10 a 44 48 0 0 0 -40 38 z" fill="${alfa(p.cabelo.base, 0.5)}"/>
+      <path d="M78 86 l 10 -14 M76 96 l 14 -18" stroke="${alfa(p.cabelo.profundo, 0.4)}" stroke-width="2" stroke-linecap="round"/>
+      <path d="M120 47 c 28 0 50 20 48 55 c -2 -8 -6 -14 -10 -17 c 3 -18 -14 -29 -38 -29 l -10 12 c -4 -8 -2 -16 10 -21 z" fill="url(#${u}cab)"/>
+      <path d="M112 58 c 20 -6 40 2 46 18 l 2 20 c -8 -18 -26 -28 -48 -26 z" fill="url(#${u}cab)"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_juba',
+    categoria: 'cabelo',
+    nome: 'Juba Rebelde',
+    descricao: 'Escova? Nunca ouviu falar. E funciona.',
+    raridade: 'incomum',
+    tema: 'casual',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => {
+      let tufos = '';
+      for (let i = 0; i < 9; i++) {
+        const ang = (-160 + i * 20) * (Math.PI / 180);
+        const x = 120 + Math.cos(ang) * 52;
+        const y = 78 + Math.sin(ang) * 40;
+        tufos += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="13" ry="9" fill="url(#${u}cab)" transform="rotate(${(-60 + i * 15).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+      }
+      return `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      ${tufos}
+      <path d="M70 102 c -4 -38 20 -58 50 -58 s 54 20 50 58 c -8 -22 -26 -34 -50 -34 s -42 12 -50 34 z" fill="url(#${u}cab)"/>
+      ${BRILHO}`;
+    },
+  },
+  {
+    id: 'cab_sabio',
+    categoria: 'cabelo',
+    nome: 'Sábio Calvo',
+    descricao: 'O topo aberto para as ideias entrarem direto.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M68 104 q 2 24 12 34 q 6 -14 2 -32 q -6 -6 -14 -2 z" fill="url(#${u}cab)"/>
+      <path d="M172 104 q -2 24 -12 34 q -6 -14 -2 -32 q 6 -6 14 -2 z" fill="url(#${u}cab)"/>
+      <path d="M70 106 a 50 57 0 0 1 4 -22 q 4 10 2 22 z M170 106 a 50 57 0 0 0 -4 -22 q -4 10 -2 22 z" fill="${alfa(p.cabelo.base, 0.8)}"/>
+      <path d="M96 56 a 50 40 0 0 1 12 -6" stroke="${alfa(p.cabelo.base, 0.5)}" stroke-width="3" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'cab_tranca_unica',
+    categoria: 'cabelo',
+    nome: 'Trança Única',
+    descricao: 'Uma trança no ombro e nenhuma pressa no mundo.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M70 104 c -2 -38 22 -57 50 -57 s 52 19 50 57 c -2 -8 -6 -14 -10 -17 c 3 -19 -16 -31 -40 -31 s -43 12 -40 31 c -4 3 -8 9 -10 17 z" fill="url(#${u}cab)"/>
+      <path d="M74 100 q -6 30 2 52 q 6 -6 8 -14 q 2 20 12 30 q 4 -10 2 -22" fill="none" stroke="url(#${u}cab)" stroke-width="10" stroke-linecap="round"/>
+      <g fill="${alfa(p.cabelo.profundo, 0.55)}">
+        <ellipse cx="76" cy="116" rx="5.4" ry="4"/>
+        <ellipse cx="78" cy="134" rx="5.4" ry="4"/>
+        <ellipse cx="84" cy="152" rx="5.2" ry="3.8"/>
+        <ellipse cx="92" cy="166" rx="5" ry="3.6"/>
+      </g>
+      <circle cx="96" cy="176" r="3.2" fill="#e8b64c"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_babyliss',
+    categoria: 'cabelo',
+    nome: 'Babyliss',
+    descricao: 'Cachos de salão prontos para a foto do crachá.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M68 150 c -6 -60 18 -103 52 -103 s 58 43 52 103 l -12 2 v -40 q -4 8 -10 10 q 2 -12 -2 -20 q -6 6 -12 6 q 2 -10 -4 -16 q -8 6 -18 4 q 0 8 -6 12 q -4 -6 -12 -6 l 0 48 z" fill="url(#${u}cab)"/>
+      <g fill="none" stroke="${alfa(p.cabelo.profundo, 0.4)}" stroke-width="2.6" stroke-linecap="round">
+        <path d="M74 128 q 6 4 4 12 q -2 8 4 12"/>
+        <path d="M164 126 q -6 4 -4 12 q 2 8 -4 12"/>
+      </g>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_espetadinho',
+    categoria: 'cabelo',
+    nome: 'Espetadinho',
+    descricao: 'Gel matinal e cinco minutos de espelho.',
+    raridade: 'comum',
+    tema: 'casual',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M74 96 c 0 -10 3 -19 8 -26 l 4 10 l 6 -16 l 6 12 l 8 -16 l 6 14 l 8 -16 l 8 16 l 6 -14 l 8 16 l 6 -12 l 6 16 l 4 -10 c 5 7 8 16 8 26 c -10 -16 -26 -24 -46 -24 s -36 8 -46 24 z" fill="url(#${u}cab)"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_permanente80',
+    categoria: 'cabelo',
+    nome: 'Permanente 80s',
+    descricao: 'Volume que precisa de crachá próprio.',
+    raridade: 'raro',
+    tema: 'retrô',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => {
+      let bolhas = '';
+      const pos: Array<[number, number, number]> = [
+        [78, 66, 16], [100, 50, 17], [124, 44, 18], [148, 52, 16], [166, 70, 15],
+        [70, 92, 14], [172, 96, 13], [68, 118, 12], [174, 120, 11],
+      ];
+      for (const [x, y, r] of pos) {
+        bolhas += `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#${u}cab)"/>`;
+      }
+      return `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      ${bolhas}
+      <path d="M72 104 c -4 -36 20 -56 48 -56 s 52 20 48 56 c -8 -20 -26 -30 -48 -30 s -40 10 -48 30 z" fill="url(#${u}cab)"/>
+      <circle cx="92" cy="58" r="3" fill="${alfa('#ffffff', 0.25)}"/>
+      <circle cx="136" cy="48" r="3" fill="${alfa('#ffffff', 0.25)}"/>
+      ${BRILHO}`;
+    },
+  },
+  {
+    id: 'cab_wolf',
+    categoria: 'cabelo',
+    nome: 'Wolf Cut',
+    descricao: 'Camadas selvagens domesticadas só na aparência.',
+    raridade: 'raro',
+    tema: 'urbano',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M70 106 c -4 -40 20 -61 50 -61 s 54 21 50 61 c -2 -8 -6 -14 -10 -18 c 2 -20 -16 -30 -40 -30 s -42 10 -40 30 c -4 4 -8 10 -10 18 z" fill="url(#${u}cab)"/>
+      <path d="M86 60 l 10 18 l -14 -4 l 8 16 l -14 -6 M154 60 l -10 18 l 14 -4 l -8 16 l 14 -6" fill="none" stroke="url(#${u}cab)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M66 110 q -4 26 6 44 q 4 -8 4 -18 q 4 12 12 18 q 2 -10 -2 -22 M174 110 q 4 26 -6 44 q -4 -8 -4 -18 q -4 12 -12 18 q -2 -10 2 -22" fill="url(#${u}cab)"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_slick_rabo',
+    categoria: 'cabelo',
+    nome: 'Slick + Rabo',
+    descricao: 'Liso espelhado na frente, rabo executivo atrás.',
+    raridade: 'incomum',
+    tema: 'executivo',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M72 98 c -2 -32 18 -51 48 -51 s 50 19 48 51 c -2 -6 -5 -11 -9 -14 c 2 -19 -15 -29 -39 -29 s -41 10 -39 29 c -4 3 -7 8 -9 14 z" fill="url(#${u}cab)"/>
+      <g stroke="${alfa(p.cabelo.claro, 0.35)}" stroke-width="1.8" fill="none">
+        <path d="M86 60 q 34 -12 68 0"/>
+        <path d="M84 70 q 36 -12 72 0"/>
+      </g>
+      <path d="M156 108 q 18 10 16 34 q -6 -4 -10 -10 q 0 10 -6 16 q -6 -20 -4 -40 z" fill="url(#${u}cab)"/>
+      <ellipse cx="157" cy="112" rx="4.4" ry="5.6" fill="${alfa(p.cabelo.profundo, 0.75)}"/>`,
+  },
+  {
+    id: 'cab_cortina',
+    categoria: 'cabelo',
+    nome: 'Cortina',
+    descricao: 'Repartido ao meio como um bom orçamento.',
+    raridade: 'comum',
+    tema: 'casual',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M70 104 c -2 -38 22 -57 50 -57 s 52 19 50 57 c -2 -8 -5 -13 -9 -16 c 2 -20 -17 -32 -41 -32 s -43 12 -41 32 c -4 3 -7 8 -9 16 z" fill="url(#${u}cab)"/>
+      <path d="M118 56 c -14 2 -24 14 -26 30 l -8 18 c -4 -14 -2 -30 6 -40 c 6 -8 16 -10 28 -8 z" fill="url(#${u}cab)"/>
+      <path d="M122 56 c 14 2 24 14 26 30 l 8 18 c 4 -14 2 -30 -6 -40 c -6 -8 -16 -10 -28 -8 z" fill="url(#${u}cab)"/>
+      <path d="M120 56 v 10" stroke="${alfa(p.cabelo.profundo, 0.5)}" stroke-width="2"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_estrela_raspada',
+    categoria: 'cabelo',
+    nome: 'Estrela Raspada',
+    descricao: 'Arte na máquina zero — barbeiro artista, cliente lenda.',
+    raridade: 'epico',
+    tema: 'urbano',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo', 'destaque'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M72 96 a 50 55 0 0 1 96 0 c -1 -4 -3 -8 -6 -11 a 44 48 0 0 0 -84 0 c -3 3 -5 7 -6 11 z" fill="${alfa(p.cabelo.base, 0.85)}"/>
+      <path d="M150 74 l 2.2 4.6 l 5 0.7 l -3.6 3.5 l 0.8 5 l -4.4 -2.4 l -4.4 2.4 l 0.8 -5 l -3.6 -3.5 l 5 -0.7 z" fill="none" stroke="${p.destaque.base}" stroke-width="2"/>
+      <path d="M84 82 q 4 -8 10 -12" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="2" stroke-linecap="round" fill="none"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_flamejante',
+    categoria: 'cabelo',
+    nome: 'Cabelo Flamejante',
+    descricao: 'Não é tinta. É temperatura de entrega.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}flam" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#ff5230"/>
+          <stop offset="0.55" stop-color="#ff8a3d"/>
+          <stop offset="1" stop-color="#ffd75e"/>
+        </linearGradient>
+      </defs>
+      <path d="M74 96 c -2 -14 2 -26 10 -34 q 2 10 8 12 q -4 -14 4 -24 q 4 10 12 12 q -2 -12 8 -18 q 4 10 12 12 q 2 -10 10 -14 q 2 12 10 16 q 6 -6 6 -14 c 10 10 14 24 12 38 c -10 -16 -26 -24 -46 -24 s -36 8 -46 24 z" fill="url(#${u}flam)">
+        <animateTransform attributeName="transform" type="scale" values="1 1;1 1.06;1 1" dur="1.4s" repeatCount="indefinite" additive="sum"/>
+      </path>
+      <path d="M92 62 q 4 -8 2 -14 M124 50 q 4 -6 2 -12 M150 64 q 6 -6 6 -12" stroke="${alfa('#ffd75e', 0.6)}" stroke-width="2.4" stroke-linecap="round" fill="none">
+        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.1s" repeatCount="indefinite"/>
+      </path>`,
+  },
+  {
+    id: 'cab_fibra_otica',
+    categoria: 'cabelo',
+    nome: 'Fibra Óptica',
+    descricao: 'Cada fio transmite 10Gbps de personalidade.',
+    raridade: 'epico',
+    tema: 'cyberpunk',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo', 'destaque'],
+    render: (p, u) => {
+      let fios = '';
+      for (let i = 0; i < 8; i++) {
+        const x = 82 + i * 11;
+        const desl = (i % 2 ? 6 : -5);
+        fios += `<path d="M${x} 62 q ${desl} 30 ${desl * 1.5} 62" stroke="${p.cabelo.base}" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <circle cx="${x + desl * 1.5}" cy="124" r="2.6" fill="${p.destaque.claro}">
+          <animate attributeName="opacity" values="1;0.25;1" dur="${(1.2 + (i % 4) * 0.4).toFixed(1)}s" repeatCount="indefinite"/>
+        </circle>`;
+      }
+      return `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      ${fios}
+      <path d="M72 100 c -4 -36 20 -55 48 -55 s 52 19 48 55 c -8 -20 -26 -30 -48 -30 s -40 10 -48 30 z" fill="url(#${u}cab)"/>
+      ${BRILHO}`;
+    },
+  },
+  {
+    id: 'cab_algodao',
+    categoria: 'cabelo',
+    nome: 'Algodão-Doce',
+    descricao: 'Fofo, alto e levemente comestível na aparência.',
+    raridade: 'raro',
+    tema: 'casual',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <circle cx="92" cy="58" r="19" fill="url(#${u}cab)"/>
+      <circle cx="120" cy="44" r="23" fill="url(#${u}cab)"/>
+      <circle cx="148" cy="58" r="19" fill="url(#${u}cab)"/>
+      <circle cx="76" cy="84" r="15" fill="url(#${u}cab)"/>
+      <circle cx="164" cy="84" r="15" fill="url(#${u}cab)"/>
+      <path d="M72 100 c -4 -34 20 -52 48 -52 s 52 18 48 52 c -10 -20 -26 -30 -48 -30 s -38 10 -48 30 z" fill="url(#${u}cab)"/>
+      <circle cx="104" cy="46" r="3" fill="${alfa('#ffffff', 0.35)}"/>
+      <circle cx="136" cy="40" r="2.6" fill="${alfa('#ffffff', 0.3)}"/>
+      <circle cx="86" cy="70" r="2.4" fill="${alfa('#ffffff', 0.25)}"/>
       ${BRILHO}`,
   },
 ];

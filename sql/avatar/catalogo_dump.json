@@ -79,6 +79,26 @@
   "raridade": "epico",
   "nome": "Meio-Cyborg"
  },
+ "bas_madura": {
+  "categoria": "especie",
+  "raridade": "incomum",
+  "nome": "Madura"
+ },
+ "bas_sereno": {
+  "categoria": "especie",
+  "raridade": "comum",
+  "nome": "Sereno"
+ },
+ "bas_gotico": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Pálido Gótico"
+ },
+ "bas_estatua": {
+  "categoria": "especie",
+  "raridade": "lendario",
+  "nome": "Estátua Dourada"
+ },
  "bas_panda": {
   "categoria": "especie",
   "raridade": "raro",
@@ -133,6 +153,31 @@
   "categoria": "especie",
   "raridade": "epico",
   "nome": "Fantasma"
+ },
+ "bas_tigre": {
+  "categoria": "especie",
+  "raridade": "epico",
+  "nome": "Tigre"
+ },
+ "bas_sapo": {
+  "categoria": "especie",
+  "raridade": "incomum",
+  "nome": "Sapo"
+ },
+ "bas_slime": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Slime"
+ },
+ "bas_caveira": {
+  "categoria": "especie",
+  "raridade": "epico",
+  "nome": "Caveira"
+ },
+ "bas_nuvem": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Nuvem"
  },
  "cab_curto": {
   "categoria": "cabelo",
@@ -298,6 +343,91 @@
   "categoria": "cabelo",
   "raridade": "comum",
   "nome": "Corte Tigela"
+ },
+ "cab_rabo_baixo": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Rabo Baixo"
+ },
+ "cab_franjinha": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Franjinha Reta"
+ },
+ "cab_ondas_longas": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Ondas Longas"
+ },
+ "cab_sidecut": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Sidecut"
+ },
+ "cab_juba": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Juba Rebelde"
+ },
+ "cab_sabio": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Sábio Calvo"
+ },
+ "cab_tranca_unica": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Trança Única"
+ },
+ "cab_babyliss": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Babyliss"
+ },
+ "cab_espetadinho": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Espetadinho"
+ },
+ "cab_permanente80": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Permanente 80s"
+ },
+ "cab_wolf": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Wolf Cut"
+ },
+ "cab_slick_rabo": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Slick + Rabo"
+ },
+ "cab_cortina": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Cortina"
+ },
+ "cab_estrela_raspada": {
+  "categoria": "cabelo",
+  "raridade": "epico",
+  "nome": "Estrela Raspada"
+ },
+ "cab_flamejante": {
+  "categoria": "cabelo",
+  "raridade": "lendario",
+  "nome": "Cabelo Flamejante"
+ },
+ "cab_fibra_otica": {
+  "categoria": "cabelo",
+  "raridade": "epico",
+  "nome": "Fibra Óptica"
+ },
+ "cab_algodao": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Algodão-Doce"
  },
  "olh_padrao": {
   "categoria": "olhos",
