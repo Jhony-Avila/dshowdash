@@ -82,7 +82,7 @@ INSERT INTO avatar_categories
    supported_renderers, created_at, updated_at)
 VALUES
   -- IDENTIDADE
-  ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'arquetipo',     'Arquétipo',     NULL,   'preset', 'single',    0, 0, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
+  ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'arquetipo',     'Arquétipo',     NULL,   'preset', 'single',    0, 1, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'especie',       'Espécie',       'base', 'asset',  'single',    1, 1, 1, 0, 0, 0, '2d,3d', NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'tipo_corporal', 'Tipo Corporal', NULL,   'morph',  'parameter', 2, 0, 0, 0, 0, 1, '3d',    NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'idade_visual',  'Idade Visual',  NULL,   'morph',  'parameter', 3, 0, 0, 0, 0, 1, '3d',    NOW(), NOW()),
@@ -110,12 +110,12 @@ VALUES
   -- EQUIPAMENTOS
   ((SELECT id FROM avatar_category_groups WHERE `key`='equipamentos'), 'acessorio',  'Acessórios',  'acessorio', 'asset', 'single',   0, 1, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='equipamentos'), 'ferramenta', 'Ferramentas', NULL,        'asset', 'single',   1, 0, 0, 0, 0, 0, '3d',    NOW(), NOW()),
-  ((SELECT id FROM avatar_category_groups WHERE `key`='equipamentos'), 'emblema',    'Emblemas',    NULL,        'asset', 'single',   2, 0, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
+  ((SELECT id FROM avatar_category_groups WHERE `key`='equipamentos'), 'emblema',    'Emblemas',    'emblema',   'asset', 'single',   2, 1, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='equipamentos'), 'broche',     'Broches',     NULL,        'asset', 'multiple', 3, 0, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='equipamentos'), 'companion',  'Companion',   NULL,        'asset', 'single',   4, 0, 0, 0, 0, 0, '3d',    NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='equipamentos'), 'pet',        'Pets',        NULL,        'asset', 'single',   5, 0, 0, 0, 0, 0, '3d',    NOW(), NOW()),
   -- PODERES
-  ((SELECT id FROM avatar_category_groups WHERE `key`='poderes'), 'aura',        'Aura',        NULL,     'asset', 'single', 0, 0, 0, 1, 0, 0, '2d,3d', NOW(), NOW()),
+  ((SELECT id FROM avatar_category_groups WHERE `key`='poderes'), 'aura',        'Aura',        'aura',   'asset', 'single', 0, 1, 0, 1, 0, 0, '2d,3d', NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='poderes'), 'particulas',  'Partículas',  NULL,     'asset', 'single', 1, 0, 0, 1, 0, 0, '3d',    NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='poderes'), 'efeito',      'Efeitos',     'efeito', 'asset', 'single', 2, 1, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='poderes'), 'super_poder', 'Super Poder', NULL,     'asset', 'single', 3, 0, 0, 0, 0, 0, '3d',    NOW(), NOW()),
@@ -129,7 +129,7 @@ VALUES
   ((SELECT id FROM avatar_category_groups WHERE `key`='aparencia'), 'hora_do_dia', 'Hora do Dia', NULL,      'scene', 'single', 3, 0, 0, 0, 0, 0, '3d',    NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='aparencia'), 'iluminacao',  'Iluminação',  NULL,      'scene', 'single', 4, 0, 0, 0, 0, 0, '3d',    NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='aparencia'), 'moldura',     'Moldura',     'moldura', 'asset', 'single', 5, 1, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
-  ((SELECT id FROM avatar_category_groups WHERE `key`='aparencia'), 'banner',      'Banner',      NULL,      'asset', 'single', 6, 0, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
+  ((SELECT id FROM avatar_category_groups WHERE `key`='aparencia'), 'banner',      'Banner',      'banner',  'asset', 'single', 6, 1, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
   -- PERSONALIDADE
   ((SELECT id FROM avatar_category_groups WHERE `key`='personalidade'), 'expressao',     'Expressões',     NULL, 'morph',       'parameter', 0, 0, 0, 0, 0, 1, '3d',    NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='personalidade'), 'pose',          'Pose',           NULL, 'animation',   'single',    1, 0, 0, 0, 0, 0, '3d',    NOW(), NOW()),
@@ -137,9 +137,10 @@ VALUES
   ((SELECT id FROM avatar_category_groups WHERE `key`='personalidade'), 'emote',         'Emotes',         NULL, 'animation',   'multiple',  3, 0, 0, 0, 0, 0, '3d',    NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='personalidade'), 'voz',           'Voz',            NULL, 'system',      'single',    4, 0, 0, 0, 0, 0, '3d',    NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='personalidade'), 'personalidade', 'Personalidade',  NULL, 'personality', 'single',    5, 0, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
-  ((SELECT id FROM avatar_category_groups WHERE `key`='personalidade'), 'titulo',        'Título',         NULL, 'system',      'single',    6, 0, 0, 0, 0, 0, '2d,3d', NOW(), NOW())
+  ((SELECT id FROM avatar_category_groups WHERE `key`='personalidade'), 'titulo',        'Título',         NULL, 'system',      'single',    6, 1, 0, 0, 0, 0, '2d,3d', NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), sort_order = VALUES(sort_order),
-  supported_renderers = VALUES(supported_renderers), updated_at = NOW();
+  supported_renderers = VALUES(supported_renderers), is_active = VALUES(is_active),
+  slot_key = VALUES(slot_key), updated_at = NOW();
 
 -- Versão inicial do catálogo (linha única)
 INSERT INTO avatar_catalog_meta (id, version, published_at, notes)

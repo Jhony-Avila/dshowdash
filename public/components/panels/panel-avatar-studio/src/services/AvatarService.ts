@@ -166,6 +166,15 @@ export async function salvarAvatar(config: AvatarConfig, versaoBase: number): Pr
         mensagem: 'O avatar foi salvo em outra aba. Recarregue para ver a versão mais recente.',
       };
     }
+    if (r.status === 403) {
+      // enforcement server-side (Expansão): item travado não salva
+      const corpo = await r.json().catch(() => null);
+      const itens = Array.isArray(corpo?.data?.itens) ? corpo.data.itens.join(', ') : '';
+      return {
+        ok: false, origem: 'api',
+        mensagem: `Um item equipado ainda está bloqueado${itens ? ` (${itens})` : ''} — troque-o para salvar.`,
+      };
+    }
     if (r.status === 400) {
       const corpo = await r.json().catch(() => null);
       return { ok: false, origem: 'api', mensagem: `O servidor recusou o avatar (${corpo?.error ?? 'validação'}).` };

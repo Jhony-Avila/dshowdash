@@ -9,21 +9,23 @@
 // salvar junto do personagem (§39.11) e toast de feedback ao equipar (§39.18).
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Bot, Box, Boxes, Brush, Camera, Check, CircleUser, Columns2, Dices, Eye, Frame, Glasses,
-  History, Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Trophy,
-  Undo2, Users, Volume2, VolumeX, Wand2,
+  BadgeCheck, Bot, Box, Boxes, Brush, Camera, Check, ChevronDown, CircleUser, Columns2,
+  Crown, Dices, Eye, Fingerprint, Flag, Frame, Glasses, History, Image as ImagemIcon,
+  LoaderCircle, Orbit, Redo2, Save, Shirt, Smile, Sparkles, Trophy, Undo2, Users,
+  Volume2, VolumeX, Wand2,
 } from 'lucide-react';
 
 // PoC 3D (AS4 Fase 1) — chunk separado: three/R3F só carregam nesta aba
 const Estudio3D = lazy(() => import('../poc3d/Estudio3D'));
-import type { AvatarConfig, CategoriaId, EstadoSalvar, Raridade, ShellConfig } from '../domain/types';
+import type { AvatarConfig, CategoriaId, EstadoSalvar, GrupoId, Raridade, ShellConfig } from '../domain/types';
 import {
-  CATEGORIAS, CONFIG_PADRAO, RARIDADES, aleatorio, itemPorId, nivelRaridade, validarConfig,
+  CATEGORIAS, CONFIG_PADRAO, GRUPOS, RARIDADES, aleatorio, itemPorId, nivelRaridade,
+  validarConfig,
 } from '../services/AvatarCatalog';
 import { carregarAvatar, salvarAvatar } from '../services/AvatarService';
 import type { OrigemDado, ResultadoCarga, TipoAtivo } from '../services/AvatarService';
 import { definirSom, somAtivo, tocarCelebracao, tocarEquipar, tocarSalvar } from '../services/Som';
-import { registrarUso } from '../services/Progresso';
+import { registrarUso, sincronizarFavoritos } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
 import { carregarVida } from '../services/VidaService';
 import type { Vida } from '../services/VidaService';
@@ -39,6 +41,8 @@ import { Cores } from '../components/Cores';
 import { Presets } from '../components/Presets';
 import { Historico } from '../components/Historico';
 import { Foto } from '../components/Foto';
+import { Titulos } from '../components/Titulos';
+import { Arquetipos } from '../components/Arquetipos';
 import '../styles/estudio.css';
 
 /** Itens que mudaram de a→b (comparação rica §21). */
@@ -76,6 +80,7 @@ function raridadeDaMudanca(a: AvatarConfig, b: AvatarConfig): Raridade | null {
 const ICONES: Record<CategoriaId, React.ComponentType<{ size?: number }>> = {
   base: CircleUser, cabelo: Brush, olhos: Eye, boca: Smile, roupa: Shirt,
   acessorio: Glasses, fundo: ImagemIcon, moldura: Frame, efeito: Sparkles,
+  aura: Orbit, banner: Flag, emblema: BadgeCheck,
 };
 
 const ROTULO_ESTADO: Record<EstadoSalvar, string> = {
@@ -86,6 +91,18 @@ const ROTULO_ESTADO: Record<EstadoSalvar, string> = {
   erro: 'Erro ao salvar',
   conflito: 'Conflito de versão',
 };
+
+/** Grupos colapsáveis da sidebar (Expansão) — estado persistido. */
+const CHAVE_GRUPOS = 'dshow.avatar.grupos.v1';
+
+function gruposGuardados(): Set<GrupoId> {
+  try {
+    const bruto = localStorage.getItem(CHAVE_GRUPOS);
+    if (!bruto) return new Set(GRUPOS.map((g) => g.id)); // 1ª visita: tudo aberto
+    const lista = JSON.parse(bruto);
+    return new Set(Array.isArray(lista) ? lista : []);
+  } catch { return new Set(GRUPOS.map((g) => g.id)); }
+}
 
 /** Painel direito redimensionável (AS4 §23.3): compacto/padrão/expandido. */
 const CHAVE_LARG = 'dshow.avatar.painel.larg.v1';
@@ -110,13 +127,24 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
-  const [aba, setAba] = useState<'itens' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
+  const [aba, setAba] = useState<'itens' | 'arquetipo' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [comparando, setComparando] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
   const [somLigado, setSomLigado] = useState(somAtivo);
   const [largPainel, setLargPainel] = useState(largGuardada);
   const [toastEquipar, setToastEquipar] = useState<{ nome: string; cor: string; chave: number } | null>(null);
+  const [gruposAbertos, setGruposAbertos] = useState<Set<GrupoId>>(gruposGuardados);
+
+  const alternarGrupo = useCallback((g: GrupoId) => {
+    setGruposAbertos((atuais) => {
+      const novo = new Set(atuais);
+      if (novo.has(g)) novo.delete(g);
+      else novo.add(g);
+      try { localStorage.setItem(CHAVE_GRUPOS, JSON.stringify([...novo])); } catch { /* sem storage */ }
+      return novo;
+    });
+  }, []);
 
   const desfazerPilha = useRef<AvatarConfig[]>([]);
   const refazerPilha = useRef<AvatarConfig[]>([]);
@@ -188,6 +216,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       aplicarCarga(r);
       setCarregando(false);
       telemetria('abriu', { tipoAtivo: r.tipoAtivo ?? 'nenhum' });
+      void sincronizarFavoritos(); // espelho multi-device (melhor esforço)
     })();
     // Vida (conquistas/eventos/desbloqueios) em paralelo — F3
     void carregarVida(shellConfig.signal).then((v) => {
@@ -371,15 +400,55 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         style={{ '--avst-larg-painel': `${largPainel}px` } as React.CSSProperties}>
         {/* ── Coluna 1: categorias ── */}
         <nav className="avst-categorias" aria-label="Categorias">
-          {CATEGORIAS.map((c) => {
-            const Icone = ICONES[c.id];
+          {/* grupos colapsáveis dirigidos pela taxonomia (Expansão) */}
+          {GRUPOS.map((g) => {
+            const cats = CATEGORIAS.filter((c) => c.grupo === g.id);
+            const temTitulo = g.id === 'personalidade';
+            if (cats.length === 0 && !temTitulo) return null;
+            const aberto = gruposAbertos.has(g.id);
+            const contemAtiva = (aba === 'itens' && cats.some((c) => c.id === categoria))
+              || (aba === 'titulo' && temTitulo)
+              || (aba === 'arquetipo' && g.id === 'identidade');
             return (
-              <button key={c.id} type="button"
-                className={`avst-cat ${categoria === c.id && aba === 'itens' ? 'avst-cat-ativa' : ''}`}
-                onClick={() => { setCategoria(c.id); setAba('itens'); }}>
-                <Icone size={17} aria-hidden />
-                <span>{c.nome}</span>
-              </button>
+              <div key={g.id} className="avst-grupo">
+                <button type="button" aria-expanded={aberto}
+                  className={`avst-grupo-cab ${!aberto && contemAtiva ? 'avst-grupo-cab-ativa' : ''}`}
+                  onClick={() => alternarGrupo(g.id)}>
+                  <span>{g.nome}</span>
+                  <ChevronDown size={13} aria-hidden
+                    className={`avst-grupo-seta ${aberto ? 'avst-grupo-seta-aberta' : ''}`} />
+                </button>
+                {/* sempre no DOM: o modo mobile (grupos achatados) reexibe via CSS */}
+                <div className="avst-grupo-itens" data-aberto={aberto ? 'sim' : 'nao'}>
+                    {g.id === 'identidade' && (
+                      <button type="button"
+                        className={`avst-cat ${aba === 'arquetipo' ? 'avst-cat-ativa' : ''}`}
+                        onClick={() => setAba('arquetipo')}>
+                        <Fingerprint size={17} aria-hidden />
+                        <span>Arquétipo</span>
+                      </button>
+                    )}
+                    {cats.map((c) => {
+                      const Icone = ICONES[c.id];
+                      return (
+                        <button key={c.id} type="button"
+                          className={`avst-cat ${categoria === c.id && aba === 'itens' ? 'avst-cat-ativa' : ''}`}
+                          onClick={() => { setCategoria(c.id); setAba('itens'); }}>
+                          <Icone size={17} aria-hidden />
+                          <span>{c.nome}</span>
+                        </button>
+                      );
+                    })}
+                    {temTitulo && (
+                      <button type="button"
+                        className={`avst-cat ${aba === 'titulo' ? 'avst-cat-ativa' : ''}`}
+                        onClick={() => setAba('titulo')}>
+                        <Crown size={17} aria-hidden />
+                        <span>Título</span>
+                      </button>
+                    )}
+                </div>
+              </div>
             );
           })}
           <div className="avst-cat-separador" />
@@ -526,6 +595,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           <div className="avst-redim" role="separator" aria-orientation="vertical"
             title="Arraste para redimensionar · duplo clique alterna 320/420/560"
             onPointerDown={iniciarArrasto} onDoubleClick={ciclarLargura} />
+          {aba === 'arquetipo' && <Arquetipos config={atual} aoAplicar={aplicar} />}
+          {aba === 'titulo' && <Titulos config={atual} aoAplicar={aplicar} />}
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
           {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
           {aba === 'conquistas' && <Conquistas vida={vida} />}

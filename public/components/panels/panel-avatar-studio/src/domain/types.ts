@@ -15,7 +15,9 @@ export interface ShellConfig {
 
 export type CategoriaId =
   | 'base' | 'cabelo' | 'olhos' | 'boca' | 'roupa'
-  | 'acessorio' | 'fundo' | 'moldura' | 'efeito';
+  | 'acessorio' | 'fundo' | 'moldura' | 'efeito'
+  // Expansão (decisão #33 — categorias 2D de baixo custo/alto valor):
+  | 'aura' | 'banner' | 'emblema';
 
 export type Raridade =
   | 'comum' | 'incomum' | 'raro' | 'epico' | 'lendario' | 'mitico' | 'exclusivo';
@@ -52,10 +54,16 @@ export interface ItemCatalogo {
   incompativelCom?: string[];
 }
 
+/** Grupos da navegação (Expansão — estrutura do briefing, espelho da taxonomia). */
+export type GrupoId =
+  | 'identidade' | 'corpo' | 'cabelo' | 'vestuario' | 'equipamentos'
+  | 'poderes' | 'aparencia' | 'personalidade';
+
 export interface CategoriaMeta {
   id: CategoriaId;
   nome: string;
   obrigatoria: boolean;            // base sempre; demais aceitam 'nenhum'
+  grupo: GrupoId;                  // grupo colapsável na sidebar (Expansão)
 }
 
 // ── Configuração do avatar (persistida) ─────────────────────────────
@@ -66,6 +74,8 @@ export interface AvatarConfig {
   base: string;                    // id do item de base
   camadas: Partial<Record<Exclude<CategoriaId, 'base'>, string>>; // id por categoria ('nenhum' = ausente)
   cores: Record<SlotCor, string>;
+  /** Título do personagem (Expansão §27) — exibido como selo, fora do SVG. */
+  titulo?: string;
 }
 
 export interface AvatarDoUsuario {

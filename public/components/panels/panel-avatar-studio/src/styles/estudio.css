@@ -116,6 +116,21 @@
 }
 .avst-cat-separador { height: 1px; margin: 8px 4px; background: var(--avst-borda); }
 
+/* grupos colapsáveis da sidebar (Expansão — estrutura do briefing) */
+.avst-grupo { display: flex; flex-direction: column; }
+.avst-grupo-cab {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 7px 11px 5px; border: 0; background: none; text-align: left;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--avst-texto-2); transition: color 0.15s;
+}
+.avst-grupo-cab:hover { color: var(--avst-texto); }
+.avst-grupo-cab-ativa { color: var(--avst-acento); }
+.avst-grupo-seta { transition: transform 0.18s; flex: 0 0 auto; }
+.avst-grupo-seta-aberta { transform: rotate(180deg); }
+.avst-grupo-itens { display: flex; flex-direction: column; gap: 4px; }
+.avst-grupo-itens[data-aberto="nao"] { display: none; }
+
 /* Coluna 2 — palco (espaço vazio reduzido + barra junto do personagem — §39.10/11) */
 .avst-palco {
   display: flex; flex-direction: column; align-items: center; gap: 13px;
@@ -717,6 +732,37 @@
 .avst-ia-historia { font-size: 12px; color: var(--avst-texto-2); font-style: italic; line-height: 1.45; }
 .avst-ia-info em { font-style: normal; font-size: 10.5px; color: var(--avst-texto-2); }
 
+/* ── Expansão: TÍTULOS (§27) + selo no palco ──────────────────────── */
+.avst-titulos { display: flex; flex-direction: column; gap: 8px; }
+.avst-titulo-card {
+  --avst-rar: var(--avst-texto-2);
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  padding: 11px 14px; border-radius: 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--avst-rar) 9%, var(--avst-painel)), var(--avst-painel) 60%);
+  border: 1px solid color-mix(in srgb, var(--avst-rar) 40%, var(--avst-borda));
+  transition: transform 0.12s, border-color 0.12s;
+}
+.avst-titulo-card:hover { transform: translateY(-2px); border-color: var(--avst-rar); }
+.avst-titulo-ativo { outline: 2px solid var(--avst-acento); outline-offset: 2px; }
+.avst-titulo-nome {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 14.5px; font-weight: 800; letter-spacing: 0.3px; color: var(--avst-rar);
+}
+.avst-titulo-nenhum { color: var(--avst-texto-2); }
+.avst-titulo-tier { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--avst-rar); }
+.avst-titulo-lore { font-size: 11.5px; font-style: italic; color: var(--avst-texto-2); line-height: 1.4; }
+
+.avst-cine-titulo {
+  position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%);
+  z-index: 6; display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 999px; pointer-events: none;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #fff;
+  background: rgba(10, 13, 22, 0.78);
+  border: 1px solid var(--avst-rar, var(--avst-acento));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--avst-rar, var(--avst-acento)) 30%, transparent);
+  backdrop-filter: blur(6px);
+}
+
 /* ── AS4 Fase 1: PoC 3D (aba Estúdio 3D) ─────────────────────────── */
 .avst-cat-3d { position: relative; }
 .avst-cat-poc {
@@ -837,6 +883,11 @@
   }
   .avst-cat span { display: inline; }
   .avst-cat-separador { width: 1px; height: auto; margin: 4px 8px; }
+  /* em coluna única os grupos achatam: cabeçalhos somem, itens ficam inline
+     (inclusive dos grupos fechados — sem cabeçalho não haveria como abrir) */
+  .avst-grupo { display: contents; }
+  .avst-grupo-cab { display: none; }
+  .avst-grupo-itens, .avst-grupo-itens[data-aberto="nao"] { display: contents; }
   .avst-lateral { border-left: 0; border-top: 1px solid var(--avst-borda); }
   .avst-redim { display: none; } /* sem redimensionar em coluna única */
   .avst-palco-principal { width: min(280px, 78%); }

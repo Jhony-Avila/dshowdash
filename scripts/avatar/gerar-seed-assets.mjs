@@ -24,9 +24,9 @@ const SAIDA = join(RAIZ, 'sql/avatar/catalogo_seed_assets.sql');
 const tmp = mkdtempSync(join(tmpdir(), 'avst-dump-'));
 const entrada = join(tmp, 'dump.ts');
 writeFileSync(entrada, `
-import { PARTES, COLECOES, PRESETS } from '${PAINEL.replace(/\\/g, '/')}/services/AvatarCatalog';
+import { PARTES, COLECOES, PRESETS, TITULOS, ARQUETIPOS } from '${PAINEL.replace(/\\/g, '/')}/services/AvatarCatalog';
 import { VARIANTES_HUMANO, ANDROIDE, ANIMAL } from '${PAINEL.replace(/\\/g, '/')}/poc3d/catalogo3d';
-export const dump = { PARTES, COLECOES, PRESETS, VARIANTES_HUMANO, ANDROIDE, ANIMAL };
+export const dump = { PARTES, COLECOES, PRESETS, TITULOS, ARQUETIPOS, VARIANTES_HUMANO, ANDROIDE, ANIMAL };
 `);
 const alvo = join(tmp, 'dump.mjs');
 await build({
@@ -94,6 +94,37 @@ VALUES (${catId(cat)}, ${bibId(bib)}, ${rarId('raro')}, 1,
     'slots', '${esc(JSON.stringify(m.slots))}', 'fonte', ${txt(m.licenca.fonte)}),
   NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE metadata = VALUES(metadata), updated_at = NOW();`);
+}
+
+// ── 4b. títulos (Expansão §27 — dados puros, categoria 'titulo') ───────────
+L.push('\n-- ── Títulos (Expansão §27) ──');
+for (const [i, t] of (dump.TITULOS ?? []).entries()) {
+  L.push(`INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, \`key\`, name, lore,
+   asset_type, status, supported_renderers, default_renderer, is_exclusive,
+   is_randomizable, sort_order, tags, published_at, created_at, updated_at)
+VALUES (${catId('titulo')}, ${bibId('dshow_svg')}, ${rarId(t.raridade)}, 2,
+  '${esc(t.id)}', ${txt(t.nome)}, ${txt(t.lore)}, 'titulo', 'published',
+  '2d,3d', '2d', ${t.raridade === 'exclusivo' ? 1 : 0}, 0, ${i}, 'titulo',
+  NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), lore = VALUES(lore),
+  rarity_id = VALUES(rarity_id), updated_at = NOW();`);
+}
+
+// ── 4c. arquétipos (Expansão §1 — kits de identidade) ──────────────────────
+L.push('\n-- ── Arquétipos (Expansão §1) ──');
+for (const [i, a] of (dump.ARQUETIPOS ?? []).entries()) {
+  L.push(`INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, \`key\`, name, short_description,
+   asset_type, status, supported_renderers, default_renderer, is_randomizable,
+   sort_order, tags, metadata, published_at, created_at, updated_at)
+VALUES (${catId('arquetipo')}, ${bibId('dshow_svg')}, ${rarId(a.raridade)}, 2,
+  '${esc(a.id)}', ${txt(a.nome)}, ${txt(a.papel)}, 'arquetipo', 'published',
+  '2d,3d', '2d', 0, ${i}, 'arquetipo',
+  '${esc(JSON.stringify({ base: a.base, camadas: a.camadas, cores: a.cores, titulo: a.titulo ?? null }))}',
+  NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), metadata = VALUES(metadata),
+  rarity_id = VALUES(rarity_id), updated_at = NOW();`);
 }
 
 // ── 5. regras declarativas (mesmo motor p/ 2D e 3D) ────────────────────────
@@ -167,6 +198,16 @@ UPDATE avatar_catalog_meta SET version = version + 1, published_at = NOW(),
   notes = 'Seed de assets migrado do catálogo TS' WHERE id = 1;`);
 
 writeFileSync(SAIDA, L.join('\n\n') + '\n');
+
+// ── dump p/ HOMOLOGAÇÃO (etapa 8): comparar-catalogo.php confere TS × banco ─
+const dumpJson = {};
+for (const p of dump.PARTES) {
+  dumpJson[p.id] = { categoria: p.categoria === 'base' ? 'especie' : p.categoria, raridade: p.raridade, nome: p.nome };
+}
+for (const t of dump.TITULOS ?? []) dumpJson[t.id] = { categoria: 'titulo', raridade: t.raridade, nome: t.nome };
+for (const a of dump.ARQUETIPOS ?? []) dumpJson[a.id] = { categoria: 'arquetipo', raridade: a.raridade, nome: a.nome };
+writeFileSync(join(RAIZ, 'sql/avatar/catalogo_dump.json'), JSON.stringify(dumpJson, null, 1) + '\n');
+
 const partes = dump.PARTES.length;
-console.log(`ok: ${SAIDA}`);
+console.log(`ok: ${SAIDA} (+catalogo_dump.json p/ homologação)`);
 console.log(`partes 2D: ${partes} · GLBs: ${glbs.length} · coleções: ${dump.COLECOES.length} · presets: ${dump.PRESETS.length}`);

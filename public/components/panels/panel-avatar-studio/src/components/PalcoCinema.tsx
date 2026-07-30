@@ -8,9 +8,9 @@
 // (critério nº 2: só transform/opacity/filter; pausa fora de vista/aba;
 // prefers-reduced-motion desliga o movimento — critério nº 4).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Hand, PartyPopper, RotateCcw, User, UserRound, Zap, ZoomIn, ZoomOut } from 'lucide-react';
+import { Crown, Hand, PartyPopper, RotateCcw, User, UserRound, Zap, ZoomIn, ZoomOut } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, Raridade } from '../domain/types';
-import { RARIDADES, svgDe } from '../services/AvatarCatalog';
+import { RARIDADES, svgDe, tituloPorId } from '../services/AvatarCatalog';
 import { tocarCelebracao, tocarEquipar } from '../services/Som';
 import { telemetria } from '../services/Telemetria';
 
@@ -313,6 +313,18 @@ export function PalcoCinema({ config, categoria, celebracao, aoFimCelebracao }: 
         title="Câmera do palco — ajuste com os botões abaixo">
         {categoria && ROTULO_FOCO[categoria] ? `${ROTULO_FOCO[categoria]} · ` : ''}{Math.round(escala * 100)}%
       </span>
+
+      {/* selo de TÍTULO (Expansão §27) — fora do SVG, sobre o palco */}
+      {(() => {
+        const titulo = tituloPorId(config.titulo);
+        if (!titulo) return null;
+        return (
+          <span className="avst-cine-titulo"
+            style={{ '--avst-rar': RARIDADES[titulo.raridade].cor } as React.CSSProperties}>
+            <Crown size={11} aria-hidden /> {titulo.nome}
+          </span>
+        );
+      })()}
 
       <div className="avst-cine-cam"
         style={{ transform: `scale(${escala})`, transformOrigin: cam.origem }}>

@@ -37,6 +37,7 @@ require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../core/CorsPolicy.php';
 require_once __DIR__ . '/../core/SessionGate.php';
 require_once __DIR__ . '/SvgSanitizer.php';
+require_once __DIR__ . '/VidaLib.php';
 
 CorsPolicy::setupApiEndpoint([
     'methods'  => ['GET', 'POST', 'OPTIONS'],
@@ -96,7 +97,9 @@ function avst_validar_config($bruto): array
         throw new InvalidArgumentException('CONFIG_BASE_INVALIDA');
     }
 
-    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'acessorio', 'fundo', 'moldura', 'efeito'];
+    // aura/banner/emblema: Expansão (decisão #33 — categorias 2D imediatas)
+    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'acessorio', 'fundo',
+        'moldura', 'efeito', 'aura', 'banner', 'emblema'];
     $camadas = [];
     foreach ($categorias as $cat) {
         $id = $bruto['camadas'][$cat] ?? null;
@@ -120,13 +123,19 @@ function avst_validar_config($bruto): array
 
     $versao = $bruto['versao'] ?? 1;
 
-    return [
+    $saida = [
         'formato' => 'camadas',
         'versao'  => is_int($versao) ? $versao : 1,
         'base'    => $base,
         'camadas' => (object) $camadas, // objeto mesmo vazio ({} e não [])
         'cores'   => $cores,
     ];
+    // título (Expansão §27) — opcional; mesmo regex de id do catálogo
+    $titulo = $bruto['titulo'] ?? null;
+    if (is_string($titulo) && preg_match($reId, $titulo)) {
+        $saida['titulo'] = $titulo;
+    }
+    return $saida;
 }
 
 /** Linha ativa "camadas" do usuário (ou null). */
@@ -355,6 +364,22 @@ try {
             $config = avst_validar_config($corpo['config'] ?? null);
         } catch (InvalidArgumentException $e) {
             avst_erro($e->getMessage(), 400);
+        }
+
+        // ── Desbloqueio validado no BACKEND (Expansão, critério §23) ──
+        // Itens com trava (regras do catálogo no banco) só salvam se o
+        // usuário realmente os destravou — o front filtra, mas o servidor
+        // nunca confia no front. Sem catálogo migrado → lista vazia (nada
+        // é barrado por infraestrutura ausente).
+        $equipados = array_merge([$config['base']], array_values((array) $config['camadas']));
+        $comTrava = vida_itens_com_trava($pdo, $equipados);
+        if ($comTrava !== []) {
+            $liberados = vida_desbloqueados($pdo, $userId);
+            $barrados = array_values(array_diff($comTrava, $liberados));
+            if ($barrados !== []) {
+                error_log("AVST_ITEM_BLOQUEADO user=$userId itens=" . implode(',', $barrados));
+                avst_erro('ITEM_BLOQUEADO', 403, ['itens' => $barrados]);
+            }
         }
 
         $svgBruto = $corpo['svg'] ?? null;

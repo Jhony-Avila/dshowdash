@@ -37,6 +37,7 @@ const FOCO_THUMB: Partial<Record<CategoriaId, string>> = {
   boca: '66 92 108 108',
   acessorio: '40 28 160 160',
   roupa: '30 70 180 170',
+  emblema: '108 162 92 92', // foco no peito — o pino aparece de verdade (§39.19)
 };
 
 /** Aplica um item (ou 'nenhum') ao config, imutável. */

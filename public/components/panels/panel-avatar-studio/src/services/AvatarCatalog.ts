@@ -5,7 +5,7 @@
 // presets e validação de config. O motor (engine/render) recebe o resolvedor
 // daqui — nenhum outro módulo importa as partes diretamente.
 import type {
-  AvatarConfig, CategoriaId, CategoriaMeta, Preset, Raridade, SlotCor,
+  AvatarConfig, CategoriaId, CategoriaMeta, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
 import { CORES_PADRAO, normalizarHex } from '../engine/cores';
 import type { ParteDef } from '../engine/base-api';
@@ -21,22 +21,133 @@ import { ACESSORIOS } from '../engine/partes/acessorios';
 import { FUNDOS } from '../engine/partes/fundos';
 import { MOLDURAS } from '../engine/partes/molduras';
 import { EFEITOS } from '../engine/partes/efeitos';
+import { AURAS } from '../engine/partes/auras';
+import { BANNERS } from '../engine/partes/banners';
+import { EMBLEMAS } from '../engine/partes/emblemas';
 
 export const VERSAO_CONFIG = 1;
 
 // ── Categorias (ordem = ordem da sidebar do studio) ─────────────────
 
-export const CATEGORIAS: CategoriaMeta[] = [
-  { id: 'base',      nome: 'Rosto',      obrigatoria: true },
-  { id: 'cabelo',    nome: 'Cabelo',     obrigatoria: false },
-  { id: 'olhos',     nome: 'Olhos',      obrigatoria: true },
-  { id: 'boca',      nome: 'Boca',       obrigatoria: true },
-  { id: 'roupa',     nome: 'Roupa',      obrigatoria: true },
-  { id: 'acessorio', nome: 'Acessório',  obrigatoria: false },
-  { id: 'fundo',     nome: 'Fundo',      obrigatoria: true },
-  { id: 'moldura',   nome: 'Moldura',    obrigatoria: false },
-  { id: 'efeito',    nome: 'Efeito',     obrigatoria: false },
+// Grupos e categorias ESPELHAM a taxonomia do banco (avatar_category_groups/
+// avatar_categories) — quando a flag avatar_catalog_db ligar, a fonte troca
+// para /api/avatar/catalog.php?taxonomia=1 sem mudança de interface.
+export const GRUPOS: Array<{ id: GrupoId; nome: string }> = [
+  { id: 'identidade',    nome: 'Identidade' },
+  { id: 'corpo',         nome: 'Corpo' },
+  { id: 'cabelo',        nome: 'Cabelo' },
+  { id: 'vestuario',     nome: 'Vestuário' },
+  { id: 'equipamentos',  nome: 'Equipamentos' },
+  { id: 'poderes',       nome: 'Poderes' },
+  { id: 'aparencia',     nome: 'Aparência' },
+  { id: 'personalidade', nome: 'Personalidade' },
 ];
+
+export const CATEGORIAS: CategoriaMeta[] = [
+  { id: 'base',      nome: 'Rosto',      obrigatoria: true,  grupo: 'identidade' },
+  { id: 'cabelo',    nome: 'Cabelo',     obrigatoria: false, grupo: 'cabelo' },
+  { id: 'olhos',     nome: 'Olhos',      obrigatoria: true,  grupo: 'corpo' },
+  { id: 'boca',      nome: 'Boca',       obrigatoria: true,  grupo: 'corpo' },
+  { id: 'roupa',     nome: 'Roupa',      obrigatoria: true,  grupo: 'vestuario' },
+  { id: 'acessorio', nome: 'Acessório',  obrigatoria: false, grupo: 'equipamentos' },
+  { id: 'fundo',     nome: 'Fundo',      obrigatoria: true,  grupo: 'aparencia' },
+  { id: 'moldura',   nome: 'Moldura',    obrigatoria: false, grupo: 'aparencia' },
+  { id: 'efeito',    nome: 'Efeito',     obrigatoria: false, grupo: 'poderes' },
+  // Expansão (decisão #33 — 2D imediato nas categorias de baixo custo)
+  { id: 'aura',      nome: 'Aura',       obrigatoria: false, grupo: 'poderes' },
+  { id: 'banner',    nome: 'Banner',     obrigatoria: false, grupo: 'aparencia' },
+  { id: 'emblema',   nome: 'Emblema',    obrigatoria: false, grupo: 'equipamentos' },
+];
+
+// ── Títulos (Expansão §27) — dados puros: exibidos como selo, fora do SVG ──
+export interface Titulo {
+  id: string;
+  nome: string;
+  raridade: Raridade;
+  lore: string;
+}
+
+export const TITULOS: Titulo[] = [
+  { id: 'tit_estrategista', nome: 'Estrategista', raridade: 'incomum', lore: 'Três jogadas à frente, sempre.' },
+  { id: 'tit_pro_player', nome: 'Pro Player', raridade: 'raro', lore: 'O GG dele ecoa na arena até hoje.' },
+  { id: 'tit_elite_trader', nome: 'Elite Trader', raridade: 'raro', lore: 'Compra no fundo. Vende no topo. Repete.' },
+  { id: 'tit_cyber_architect', nome: 'Cyber Architect', raridade: 'epico', lore: 'Desenha sistemas que sonham em produção.' },
+  { id: 'tit_nexus_commander', nome: 'Nexus Commander', raridade: 'epico', lore: 'Todos os nós da rede respondem ao seu comando.' },
+  { id: 'tit_mestre_da_luz', nome: 'Mestre da Luz', raridade: 'lendario', lore: 'Onde ele passa, o dashboard acende.' },
+  { id: 'tit_ceo_supremo', nome: 'CEO Supremo', raridade: 'lendario', lore: 'A última palavra em qualquer reunião.' },
+  { id: 'tit_lenda_dshow', nome: 'Lenda Dshow', raridade: 'exclusivo', lore: 'O nome que a casa conta para os novatos.' },
+];
+
+const TITULOS_POR_ID = new Map(TITULOS.map((t) => [t.id, t]));
+
+export function tituloPorId(id: string | undefined): Titulo | undefined {
+  return id ? TITULOS_POR_ID.get(id) : undefined;
+}
+
+// ── Arquétipos (Expansão §1) — a PRIMEIRA decisão do usuário ────────
+// Kits de identidade completos: base + camadas + cores + título sugerido.
+// "Presets de identidade" estão na lista 2D imediata da decisão #33.
+
+export interface Arquetipo {
+  id: string;
+  nome: string;
+  papel: string;
+  raridade: Raridade;
+  base: string;
+  camadas: AvatarConfig['camadas'];
+  cores: Partial<Record<SlotCor, string>>;
+  titulo?: string;
+}
+
+export const ARQUETIPOS: Arquetipo[] = [
+  { id: 'arq_executivo', nome: 'Executivo', papel: 'Fecha o trimestre antes do café esfriar.', raridade: 'comum',
+    base: 'bas_classica', camadas: { cabelo: 'cab_curto', olhos: 'olh_serio', boca: 'boc_neutra', roupa: 'rou_social', fundo: 'fun_estudio', banner: 'ban_executivo', emblema: 'emb_elite' },
+    cores: { roupa: '#1c2433', destaque: '#e8b64c' }, titulo: 'tit_elite_trader' },
+  { id: 'arq_ceo', nome: 'CEO', papel: 'A última palavra — e a primeira visão.', raridade: 'lendario',
+    base: 'bas_angular', camadas: { cabelo: 'cab_topete', olhos: 'olh_focado', boca: 'boc_determinada', roupa: 'rou_terno', acessorio: 'ace_oculos', fundo: 'fun_estudio', banner: 'ban_executivo', emblema: 'emb_diamond' },
+    cores: { roupa: '#14213d', destaque: '#e8b64c' }, titulo: 'tit_ceo_supremo' },
+  { id: 'arq_engenheiro', nome: 'Engenheiro', papel: 'Se está de pé, foi ele que estruturou.', raridade: 'comum',
+    base: 'bas_classica', camadas: { cabelo: 'cab_coque', olhos: 'olh_focado', boca: 'boc_neutra', roupa: 'rou_camiseta', acessorio: 'ace_oculos', fundo: 'fun_grade', emblema: 'emb_nexus' },
+    cores: { roupa: '#2563eb', destaque: '#4c9de8' } },
+  { id: 'arq_programador', nome: 'Programador', papel: 'Compila sonhos. Debuga pesadelos.', raridade: 'raro',
+    base: 'bas_classica', camadas: { cabelo: 'cab_franja', olhos: 'olh_cansado', boca: 'boc_lado', roupa: 'rou_hoodie', acessorio: 'ace_fone', fundo: 'fun_circuito', efeito: 'efe_chuva', emblema: 'emb_cyber' },
+    cores: { roupa: '#0f766e', destaque: '#4cd97c' }, titulo: 'tit_cyber_architect' },
+  { id: 'arq_comercial', nome: 'Comercial', papel: 'O funil respeita quem sorri primeiro.', raridade: 'comum',
+    base: 'bas_angular', camadas: { cabelo: 'cab_topete', olhos: 'olh_feliz', boca: 'boc_sorriso', roupa: 'rou_social', fundo: 'fun_estudio', emblema: 'emb_elite' },
+    cores: { roupa: '#5b3a8f', destaque: '#ff5f8f' } },
+  { id: 'arq_cientista', nome: 'Cientista', papel: 'Hipótese, teste, verdade. Nessa ordem.', raridade: 'raro',
+    base: 'bas_classica', camadas: { cabelo: 'cab_cacheado', olhos: 'olh_brilho', boca: 'boc_surpresa', roupa: 'rou_camiseta', acessorio: 'ace_oculos', fundo: 'fun_lab', aura: 'aur_plasma' },
+    cores: { roupa: '#e8ecf5', destaque: '#4cd9e8' } },
+  { id: 'arq_hacker', nome: 'Hacker', papel: 'As portas não sabem que estão abertas.', raridade: 'epico',
+    base: 'bas_classica', camadas: { cabelo: 'cab_cyber', olhos: 'olh_misterioso', boca: 'boc_lado', roupa: 'rou_jaqueta', fundo: 'fun_circuito', efeito: 'efe_glitch', banner: 'ban_cyber', emblema: 'emb_cyber' },
+    cores: { roupa: '#101726', destaque: '#4cd97c' } },
+  { id: 'arq_operador', nome: 'Operador', papel: 'Sintético, pontual e impossível de travar.', raridade: 'epico',
+    base: 'bas_androide', camadas: { olhos: 'olh_led', boca: 'boc_grade', roupa: 'rou_armadura', fundo: 'fun_led_wall', aura: 'aur_neon', emblema: 'emb_nexus' },
+    cores: { pele: '#c8d4e8', destaque: '#4cd9e8' }, titulo: 'tit_nexus_commander' },
+  { id: 'arq_samurai', nome: 'Samurai', papel: 'Treina antes do stand-up. Todos os dias.', raridade: 'epico',
+    base: 'bas_angular', camadas: { cabelo: 'cab_coque', olhos: 'olh_serio', boca: 'boc_determinada', roupa: 'rou_kimono', fundo: 'fun_dojo', aura: 'aur_cristal' },
+    cores: { roupa: '#d64545', destaque: '#ff5230' } },
+  { id: 'arq_guerreiro', nome: 'Guerreiro', papel: 'A matilha confia. A meta cai.', raridade: 'epico',
+    base: 'bas_lobo', camadas: { olhos: 'olh_serio', boca: 'boc_determinada', roupa: 'rou_armadura', fundo: 'fun_arena', aura: 'aur_eletrica', emblema: 'emb_elite' },
+    cores: { destaque: '#ff5230' } },
+  { id: 'arq_explorador', nome: 'Explorador', papel: 'O mapa termina onde ele começa.', raridade: 'raro',
+    base: 'bas_raposa', camadas: { olhos: 'olh_brincalhao', boca: 'boc_sorriso', roupa: 'rou_jaqueta', acessorio: 'ace_cachecol', fundo: 'fun_aurora', banner: 'ban_galaxy' },
+    cores: { destaque: '#e8b64c' } },
+  { id: 'arq_piloto', nome: 'Piloto', papel: 'Viu a Terra de cima e voltou com metas maiores.', raridade: 'lendario',
+    base: 'bas_classica', camadas: { cabelo: 'cab_curto', olhos: 'olh_visor', boca: 'boc_determinada', roupa: 'rou_astronauta', fundo: 'fun_nebulosa', banner: 'ban_galaxy', aura: 'aur_plasma' },
+    cores: { roupa: '#e8ecf5', destaque: '#4c9de8' } },
+];
+
+/** Aplica o arquétipo como PRIMEIRA decisão: kit completo, sempre validado. */
+export function aplicarArquetipo(a: Arquetipo, atual: AvatarConfig): AvatarConfig {
+  return validarConfig({
+    ...CONFIG_PADRAO,
+    base: a.base,
+    camadas: { ...a.camadas },
+    cores: { ...CONFIG_PADRAO.cores, pele: atual.cores.pele, ...a.cores },
+    titulo: a.titulo,
+  });
+}
 
 // ── Raridades (metadados de UI: selo, cor, peso no sorteio) ─────────
 
@@ -131,6 +242,7 @@ const LORES: Record<string, string> = {
 export const PARTES: ParteDef[] = [
   ...BASES, ...ESPECIES, ...CABELOS, ...OLHOS, ...BOCAS, ...ROUPAS,
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
+  ...AURAS, ...BANNERS, ...EMBLEMAS,
 ].map((x) => ({
   ...x,
   biblioteca: x.biblioteca ?? 'dshow',
@@ -207,7 +319,7 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   }
 
   const c = (b.cores ?? {}) as Partial<Record<SlotCor, string>>;
-  return {
+  const saida: AvatarConfig = {
     formato: 'camadas',
     versao: VERSAO_CONFIG,
     base,
@@ -219,6 +331,12 @@ export function validarConfig(bruto: unknown): AvatarConfig {
       destaque: normalizarHex(c.destaque, CORES_PADRAO.destaque),
     },
   };
+  // título (Expansão §27): só entra se existir no catálogo — campo OPCIONAL
+  // (ausente no JSON quando não escolhido → hash/publicação byte-estáveis)
+  if (typeof b.titulo === 'string' && TITULOS_POR_ID.has(b.titulo)) {
+    saida.titulo = b.titulo;
+  }
+  return saida;
 }
 
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────
@@ -273,6 +391,10 @@ export function aleatorio(semente: number): AvatarConfig {
   if (rnd() < 0.55) camadas.acessorio = sortearPorRaridade(rnd, sorteaveis('acessorio')).id;
   if (rnd() < 0.6) camadas.moldura = sortearPorRaridade(rnd, sorteaveis('moldura')).id;
   if (rnd() < 0.35) camadas.efeito = sortearPorRaridade(rnd, sorteaveis('efeito')).id;
+  // Expansão: as categorias 2D novas também entram no sorteio
+  if (rnd() < 0.3) camadas.aura = sortearPorRaridade(rnd, sorteaveis('aura')).id;
+  if (rnd() < 0.25) camadas.banner = sortearPorRaridade(rnd, sorteaveis('banner')).id;
+  if (rnd() < 0.35) camadas.emblema = sortearPorRaridade(rnd, sorteaveis('emblema')).id;
 
   return validarConfig({
     formato: 'camadas',
