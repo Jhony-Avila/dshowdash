@@ -95,6 +95,22 @@ export interface Preset {
   config: Omit<AvatarConfig, 'versao' | 'formato'>;
 }
 
+// ── Foto estilizada (4.6 §21) ───────────────────────────────────────
+// A foto só recebe assets de APRESENTAÇÃO — nunca roupa/corpo.
+
+export interface EstiloFoto {
+  camadas: {
+    fundo?: string;
+    banner?: string;
+    aura?: string;
+    efeito?: string;
+    moldura?: string;
+    emblema?: string;
+  };
+  titulo?: string;
+  cores: { destaque: string };
+}
+
 // ── Histórico / favoritos / conquistas ──────────────────────────────
 
 export interface HistoricoItem {

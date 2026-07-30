@@ -40,11 +40,20 @@ export interface OpcoesRender {
 }
 
 /** Hash djb2 → base36. Estável entre execuções (nada de Math.random). */
-export function hashConfig(config: AvatarConfig): string {
-  const s = JSON.stringify(config);
+export function hashTexto(s: string): string {
   let h = 5381;
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
   return `av${(h >>> 0).toString(36)}`;
+}
+
+export function hashConfig(config: AvatarConfig): string {
+  return hashTexto(JSON.stringify(config));
+}
+
+/** Remove blocos SMIL — thumbnails/rasterizações ficam congeladas. */
+export function congelarSvg(svg: string): string {
+  return svg.replace(/<animate[^>]*\/>|<animate[\s\S]*?<\/animate[^>]*>/g, '')
+            .replace(/<animateTransform[^>]*\/>/g, '');
 }
 
 const ORDEM_CAMADAS = ['roupa', 'emblema', 'boca', 'olhos', 'cabelo', 'acessorio'] as const;
@@ -151,9 +160,7 @@ ${corpoTodo ? '' : moldura}
 </svg>`;
 
   if (opcoes.estatico) {
-    // remove blocos <animate*> (SMIL) — thumbnails ficam congeladas
-    svg = svg.replace(/<animate[^>]*\/>|<animate[\s\S]*?<\/animate[^>]*>/g, '')
-             .replace(/<animateTransform[^>]*\/>/g, '');
+    svg = congelarSvg(svg);
   }
   return svg;
 }
