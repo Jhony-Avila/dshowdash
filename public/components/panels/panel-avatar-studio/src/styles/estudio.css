@@ -610,3 +610,24 @@
 @media (prefers-reduced-motion: reduce) {
   [data-avst-react-root] * { transition: none !important; animation-duration: 0.001s !important; }
 }
+
+/* ── F4: vitrine (leaderboard voluntário de coleção) ─────────────── */
+.avst-vitrine { display: flex; flex-direction: column; gap: 8px; }
+.avst-vitrine-item {
+  display: flex; align-items: center; gap: 11px; padding: 8px 12px;
+  border-radius: 12px; background: var(--avst-painel); border: 1px solid var(--avst-borda);
+}
+.avst-vitrine-eu { border-color: var(--avst-acento); box-shadow: 0 0 0 1px color-mix(in srgb, var(--avst-acento) 40%, transparent); }
+.avst-vitrine-pos {
+  width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center;
+  border-radius: 50%; font-size: 12px; font-weight: 800;
+  background: var(--avst-painel-2); color: var(--avst-texto-2);
+}
+.avst-vitrine-pos-1 { background: color-mix(in srgb, #e8b64c 25%, transparent); color: #e8b64c; }
+.avst-vitrine-pos-2 { background: color-mix(in srgb, #c4c9d6 22%, transparent); color: #c4c9d6; }
+.avst-vitrine-pos-3 { background: color-mix(in srgb, #d29e6f 22%, transparent); color: #d29e6f; }
+.avst-vitrine-item img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--avst-borda); }
+.avst-vitrine-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.avst-vitrine-info strong { font-size: 13px; }
+.avst-vitrine-info strong em { font-style: normal; font-size: 10.5px; color: var(--avst-acento); }
+.avst-vitrine-info span { font-size: 11px; color: var(--avst-texto-2); }
