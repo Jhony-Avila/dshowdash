@@ -217,6 +217,100 @@ export const FUNDOS: ParteDef[] = [
       <path d="M0 240 l40 -34 l30 22 l50 -42 l44 30 l40 -26 l36 24 v26 z" fill="#070c16"/>`,
   },
   {
+    id: 'fun_led_wall',
+    categoria: 'fundo',
+    nome: 'LED Wall Dshow',
+    descricao: 'O painel de LED da casa, vivo atrás de você.',
+    raridade: 'incomum',
+    tema: 'dshow',
+    usaCores: ['destaque'],
+    render: (p, u) => {
+      let celulas = '';
+      for (let lin = 0; lin < 10; lin++) {
+        for (let col = 0; col < 10; col++) {
+          const acesa = (lin * 7 + col * 11) % 13 < 3;
+          if (!acesa) continue;
+          const dur = (2 + ((lin + col) % 4) * 0.6).toFixed(1);
+          celulas += `<rect x="${col * 24 + 3}" y="${lin * 24 + 3}" width="18" height="18" rx="3" fill="${alfa(p.destaque.base, 0.5)}">
+            <animate attributeName="opacity" values="0.5;0.12;0.5" dur="${dur}s" begin="${((lin * 3 + col) % 10) / 5}s" repeatCount="indefinite"/>
+          </rect>`;
+        }
+      }
+      return `
+      <defs>
+        <linearGradient id="${u}lw" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0b0e18"/>
+          <stop offset="1" stop-color="#131829"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}lw)"/>
+      <g stroke="${alfa('#ffffff', 0.05)}" stroke-width="1">
+        ${Array.from({ length: 9 }, (_, i) => `<line x1="${(i + 1) * 24}" y1="0" x2="${(i + 1) * 24}" y2="240"/><line x1="0" y1="${(i + 1) * 24}" x2="240" y2="${(i + 1) * 24}"/>`).join('')}
+      </g>
+      ${celulas}`;
+    },
+  },
+  {
+    id: 'fun_lab',
+    categoria: 'fundo',
+    nome: 'Laboratório de IA',
+    descricao: 'Racks, vidro e o zumbido de mil inferências por segundo.',
+    raridade: 'raro',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}lab" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0e1322"/>
+          <stop offset="1" stop-color="#151b2e"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}lab)"/>
+      <rect x="18" y="40" width="42" height="150" rx="5" fill="#171d30" stroke="${alfa('#ffffff', 0.08)}"/>
+      <rect x="180" y="40" width="42" height="150" rx="5" fill="#171d30" stroke="${alfa('#ffffff', 0.08)}"/>
+      ${[0, 1, 2, 3, 4, 5].map((i) => `
+        <rect x="24" y="${50 + i * 23}" width="30" height="4" rx="2" fill="${alfa(p.destaque.base, 0.7)}">
+          <animate attributeName="opacity" values="0.7;0.2;0.7" dur="${(1.4 + i * 0.3).toFixed(1)}s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="186" y="${50 + i * 23}" width="30" height="4" rx="2" fill="${alfa('#4cd97c', 0.6)}">
+          <animate attributeName="opacity" values="0.6;0.15;0.6" dur="${(1.7 + i * 0.25).toFixed(1)}s" begin="0.4s" repeatCount="indefinite"/>
+        </rect>`).join('')}
+      <rect x="70" y="90" width="100" height="70" rx="6" fill="${alfa('#0a0d15', 0.8)}" stroke="${alfa(p.destaque.base, 0.35)}"/>
+      <path d="M80 140 l 16 -18 l 14 8 l 18 -26 l 14 12 l 18 -20" stroke="${p.destaque.base}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <rect x="0" y="196" width="240" height="44" fill="#0a0d16"/>
+      <line x1="0" y1="196" x2="240" y2="196" stroke="${alfa(p.destaque.base, 0.25)}" stroke-width="1.6"/>`,
+  },
+  {
+    id: 'fun_dojo',
+    categoria: 'fundo',
+    nome: 'Dojo ao Entardecer',
+    descricao: 'Shoji, montanhas e o silêncio antes do treino.',
+    raridade: 'epico',
+    tema: 'oriental',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}dj" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${misturar('#2a1530', p.destaque.base, 0.18)}"/>
+          <stop offset="0.55" stop-color="#4a1e33"/>
+          <stop offset="0.56" stop-color="#1a0f16"/>
+          <stop offset="1" stop-color="#120a10"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}dj)"/>
+      <circle cx="168" cy="66" r="30" fill="#ff8a5c" opacity="0.9"/>
+      <path d="M0 132 l 44 -36 l 38 30 l 30 -22 l 46 30 l 42 -26 l 40 26 v 30 h -240 z" fill="#241019"/>
+      <g stroke="#0c0710" stroke-width="5">
+        <line x1="30" y1="132" x2="30" y2="240"/>
+        <line x1="210" y1="132" x2="210" y2="240"/>
+      </g>
+      <rect x="30" y="132" width="180" height="6" fill="#0c0710"/>
+      <g fill="${alfa('#ffd9b8', 0.14)}" stroke="#0c0710" stroke-width="2">
+        ${[0, 1, 2, 3].map((i) => `<rect x="${44 + i * 40}" y="146" width="30" height="72"/>`).join('')}
+      </g>
+      <path d="M60 240 q 60 -14 120 0 z" fill="#0c0710"/>`,
+  },
+  {
     id: 'fun_arena',
     categoria: 'fundo',
     nome: 'Arena E-Sports',

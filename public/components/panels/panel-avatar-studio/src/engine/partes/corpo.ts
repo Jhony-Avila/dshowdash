@@ -63,18 +63,21 @@ export function corpoInteiro(p: Paleta, uid: string): string {
     <circle cx="120" cy="150" r="7" fill="${alfa(p.destaque.base, 0.85)}"/>
     <circle cx="120" cy="150" r="10" fill="none" stroke="${alfa(p.destaque.base, 0.4)}" stroke-width="2"/>
 
-    <!-- braço esquerdo (dele) — gira no ombro p/ performances -->
+    <!-- braço esquerdo (dele) — gira no ombro p/ performances; LUVAS no tom
+         da roupa (coerente p/ humanos E espécies — panda não tem mão de pele) -->
     <g data-anim="braco-dir" style="transform-box: view-box; transform-origin: ${CORPO.ombroEsqX}px ${CORPO.ombroY}px">
       <path d="M${CORPO.ombroEsqX} ${CORPO.ombroY - 8} c -14 4 -20 22 -20 42 c 0 20 4 38 10 50 l 14 -4 c -4 -12 -7 -28 -7 -46 c 0 -16 2 -30 3 -42 z" fill="url(#${d}b)"/>
-      <circle cx="72" cy="206" r="10" fill="${p.pele.base}"/>
-      <circle cx="70" cy="203" r="3.4" fill="${alfa('#ffffff', 0.25)}"/>
+      <circle cx="72" cy="206" r="10" fill="${p.roupa.profundo}"/>
+      <circle cx="72" cy="206" r="10" fill="none" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="1.6"/>
+      <circle cx="70" cy="203" r="3.4" fill="${alfa('#ffffff', 0.22)}"/>
     </g>
 
     <!-- braço direito (dele) -->
     <g data-anim="braco-esq" style="transform-box: view-box; transform-origin: ${CORPO.ombroDirX}px ${CORPO.ombroY}px">
       <path d="M${CORPO.ombroDirX} ${CORPO.ombroY - 8} c 14 4 20 22 20 42 c 0 20 -4 38 -10 50 l -14 -4 c 4 -12 7 -28 7 -46 c 0 -16 -2 -30 -3 -42 z" fill="url(#${d}b)"/>
-      <circle cx="168" cy="206" r="10" fill="${p.pele.base}"/>
-      <circle cx="166" cy="203" r="3.4" fill="${alfa('#ffffff', 0.25)}"/>
+      <circle cx="168" cy="206" r="10" fill="${p.roupa.profundo}"/>
+      <circle cx="168" cy="206" r="10" fill="none" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="1.6"/>
+      <circle cx="166" cy="203" r="3.4" fill="${alfa('#ffffff', 0.22)}"/>
     </g>
 
     <!-- gola/base do pescoço (encaixe da cabeça do busto) -->

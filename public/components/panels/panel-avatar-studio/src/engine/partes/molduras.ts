@@ -97,6 +97,57 @@ export const MOLDURAS: ParteDef[] = [
       <circle cx="233" cy="120" r="4" fill="#c99aff" stroke="#8a5f10" stroke-width="1"/>`,
   },
   {
+    id: 'mol_rgb',
+    categoria: 'moldura',
+    nome: 'LED RGB',
+    descricao: 'O aro gamer clássico — todas as cores, o tempo todo.',
+    raridade: 'raro',
+    tema: 'gamer',
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}rgb" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ff5f6e"/>
+          <stop offset="0.25" stop-color="#ffb74c"/>
+          <stop offset="0.5" stop-color="#4cd97c"/>
+          <stop offset="0.75" stop-color="#4c9de8"/>
+          <stop offset="1" stop-color="#b06ce8"/>
+        </linearGradient>
+      </defs>
+      <rect x="3" y="3" width="234" height="234" rx="${R}" fill="none" stroke="url(#${u}rgb)" stroke-width="5">
+        <animate attributeName="opacity" values="1;0.55;1" dur="3.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="10" y="10" width="220" height="220" rx="${R - 6}" fill="none" stroke="url(#${u}rgb)" stroke-width="1.4" opacity="0.4"/>`,
+  },
+  {
+    id: 'mol_cristal',
+    categoria: 'moldura',
+    nome: 'Cristal Mítico',
+    descricao: 'Lascas de gelo eterno cravadas no quadro.',
+    raridade: 'mitico',
+    tema: 'fantasia',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}cri" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#dff4ff"/>
+          <stop offset="0.5" stop-color="${p.destaque.claro}"/>
+          <stop offset="1" stop-color="${p.destaque.profundo}"/>
+        </linearGradient>
+      </defs>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="url(#${u}cri)" stroke-width="5"/>
+      <g fill="url(#${u}cri)" stroke="${alfa('#ffffff', 0.5)}" stroke-width="1">
+        <path d="M120 2 l 10 12 l -10 12 l -10 -12 z"/>
+        <path d="M120 214 l 9 11 l -9 12 l -9 -12 z"/>
+        <path d="M2 120 l 12 -10 l 12 10 l -12 10 z"/>
+        <path d="M214 120 l 12 -9 l 12 9 l -12 9 z"/>
+        <path d="M28 22 l 9 8 l -5 11 l -11 -7 z"/>
+        <path d="M212 22 l -9 8 l 5 11 l 11 -7 z"/>
+        <path d="M28 218 l 9 -8 l -5 -11 l -11 7 z"/>
+        <path d="M212 218 l -9 -8 l 5 -11 l 11 7 z"/>
+      </g>
+      <path d="M120 6 l 6 8 l -6 7" stroke="${alfa('#ffffff', 0.7)}" stroke-width="1.4" fill="none"/>`,
+  },
+  {
     id: 'mol_dshow',
     categoria: 'moldura',
     nome: 'Exclusiva Dshow',
