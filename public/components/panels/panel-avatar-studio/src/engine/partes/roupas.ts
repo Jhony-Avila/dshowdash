@@ -310,4 +310,236 @@ export const ROUPAS: ParteDef[] = [
       <path d="M92 196 h56 v6 h-56 z" fill="${p.destaque.base}"/>
     `,
   },
+  // ── 4.6 F2 · Onda 2 (equipamentos) — 8 roupas novas ───────────────
+  {
+    id: 'rou_polo',
+    categoria: 'roupa',
+    nome: 'Polo',
+    descricao: 'Gola firme, sexta casual garantida.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['roupa'],
+    render: (p, u) => `
+      <defs>${defsRoupa(u, p.roupa.claro, p.roupa.base, p.roupa.profundo)}</defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}rou)"/>
+      <path d="M100 184 l 20 12 l 20 -12 l 6 8 l -26 14 l -26 -14 z" fill="${p.roupa.claro}"/>
+      <path d="M120 196 v 22" stroke="${p.roupa.profundo}" stroke-width="2.4"/>
+      <circle cx="120" cy="204" r="1.8" fill="${p.roupa.claro}"/>
+      <circle cx="120" cy="212" r="1.8" fill="${p.roupa.claro}"/>
+      ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <path d="M104 108 l 16 10 l 16 -10 l -4 12 l -12 8 l -12 -8 z" fill="${alfa('#000000', 0.2)}"/>
+      <path d="M120 128 v 30" stroke="${alfa(p.roupa.profundo, 0.8)}" stroke-width="2"/>
+      <circle cx="120" cy="136" r="1.6" fill="${p.roupa.claro}"/>
+      <circle cx="120" cy="146" r="1.6" fill="${p.roupa.claro}"/>
+      <path d="M86 190 h 68 v 3 h -68 z" fill="${alfa('#000000', 0.16)}"/>
+    `,
+  },
+  {
+    id: 'rou_flanela',
+    categoria: 'roupa',
+    nome: 'Flanela Xadrez',
+    descricao: 'Xadrez de quem commita ouvindo lo-fi.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => {
+      let xadrez = '';
+      for (let i = 0; i < 6; i++) {
+        xadrez += `<line x1="${52 + i * 28}" y1="182" x2="${52 + i * 28}" y2="240" stroke="${alfa(p.destaque.base, 0.35)}" stroke-width="7"/>`;
+      }
+      for (let j = 0; j < 3; j++) {
+        xadrez += `<line x1="36" y1="${196 + j * 18}" x2="204" y2="${196 + j * 18}" stroke="${alfa(p.destaque.base, 0.3)}" stroke-width="6"/>`;
+      }
+      return `
+      <defs>${defsRoupa(u, p.roupa.claro, p.roupa.base, p.roupa.profundo)}
+        <clipPath id="${u}fx"><path d="${PATH_OMBROS}"/></clipPath></defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}rou)"/>
+      <g clip-path="url(#${u}fx)">${xadrez}</g>
+      <path d="M98 184 l 22 16 l -12 10 l -14 -18 z" fill="${p.roupa.escuro}"/>
+      <path d="M142 184 l -22 16 l 12 10 l 14 -18 z" fill="${p.roupa.escuro}"/>
+      ${SOMBRA_PESCOCO}`;
+    },
+    renderCorpo: (p, _u) => `
+      <g opacity="0.5">
+        <line x1="98" y1="108" x2="98" y2="200" stroke="${p.destaque.base}" stroke-width="5"/>
+        <line x1="124" y1="108" x2="124" y2="200" stroke="${p.destaque.base}" stroke-width="5"/>
+        <line x1="150" y1="108" x2="150" y2="200" stroke="${p.destaque.base}" stroke-width="5"/>
+        <line x1="86" y1="132" x2="154" y2="132" stroke="${p.destaque.base}" stroke-width="4"/>
+        <line x1="86" y1="162" x2="154" y2="162" stroke="${p.destaque.base}" stroke-width="4"/>
+      </g>
+      <path d="M116 108 l 4 10 l 4 -10 z" fill="${alfa('#000000', 0.25)}"/>
+      <path d="M120 118 v 76" stroke="${alfa('#000000', 0.3)}" stroke-width="2.4"/>
+    `,
+  },
+  {
+    id: 'rou_colete',
+    categoria: 'roupa',
+    nome: 'Colete Tático',
+    descricao: 'Bolsos para tudo — até para o carregador extra.',
+    raridade: 'raro',
+    tema: 'aventura',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>${defsRoupa(u, p.roupa.claro, p.roupa.base, p.roupa.profundo)}</defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}rou)"/>
+      <path d="M84 194 h 26 v 20 h -26 z" fill="${p.roupa.escuro}" stroke="${p.roupa.profundo}" stroke-width="2"/>
+      <path d="M130 194 h 26 v 20 h -26 z" fill="${p.roupa.escuro}" stroke="${p.roupa.profundo}" stroke-width="2"/>
+      <path d="M84 200 h 26 M130 200 h 26" stroke="${p.roupa.profundo}" stroke-width="2"/>
+      <path d="M60 196 l 24 -12 M180 196 l -24 -12" stroke="${alfa(p.destaque.base, 0.7)}" stroke-width="4" stroke-linecap="round"/>
+      <rect x="114" y="188" width="12" height="52" fill="${p.roupa.profundo}"/>
+      <path d="M116 198 h 8 M116 212 h 8 M116 226 h 8" stroke="${alfa('#ffffff', 0.25)}" stroke-width="2"/>
+      ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <path d="M92 112 l 20 8 v 74 l -20 -4 z" fill="${alfa('#000000', 0.26)}"/>
+      <path d="M148 112 l -20 8 v 74 l 20 -4 z" fill="${alfa('#000000', 0.26)}"/>
+      <path d="M96 138 h 14 v 12 h -14 z M130 138 h 14 v 12 h -14 z" fill="${p.roupa.profundo}" stroke="${alfa('#ffffff', 0.15)}" stroke-width="1.4"/>
+      <path d="M112 120 h 16 v 72 h -16 z" fill="${alfa(p.roupa.profundo, 0.9)}"/>
+      <path d="M114 132 h 12 M114 150 h 12 M114 168 h 12" stroke="${alfa(p.destaque.base, 0.6)}" stroke-width="2"/>
+    `,
+  },
+  {
+    id: 'rou_smoking',
+    categoria: 'roupa',
+    nome: 'Smoking',
+    descricao: 'Cetim na lapela e a noite inteira pela frente.',
+    raridade: 'epico',
+    tema: 'executivo',
+    usaCores: ['roupa'],
+    render: (p, u) => `
+      <defs>${defsRoupa(u, p.roupa.claro, p.roupa.base, p.roupa.profundo)}</defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}rou)"/>
+      <path d="M104 186 l 16 18 l 16 -18 l 8 54 h -48 z" fill="#f4f0e6"/>
+      <path d="M98 184 l 22 20 l -14 14 l -16 -26 z" fill="${p.roupa.profundo}"/>
+      <path d="M142 184 l -22 20 l 14 14 l 16 -26 z" fill="${p.roupa.profundo}"/>
+      <path d="M98 184 l 22 20 l -8 8 l -14 -20 z" fill="${alfa('#ffffff', 0.12)}"/>
+      <path d="M110 204 h 20 l -4 6 h -12 z" fill="#14100c"/>
+      <circle cx="112" cy="203" r="2.6" fill="#14100c"/>
+      <circle cx="128" cy="203" r="2.6" fill="#14100c"/>
+      <circle cx="120" cy="222" r="2" fill="#14100c"/>
+      ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <path d="M108 108 l 12 14 l 12 -14 l 2 84 h -28 z" fill="#f4f0e6"/>
+      <path d="M104 108 l 16 16 l -10 12 l -12 -20 z" fill="${p.roupa.profundo}"/>
+      <path d="M136 108 l -16 16 l 10 12 l 12 -20 z" fill="${p.roupa.profundo}"/>
+      <path d="M112 124 h 16 l -3 5 h -10 z" fill="#14100c"/>
+      <circle cx="120" cy="146" r="1.8" fill="#14100c"/>
+      <circle cx="120" cy="162" r="1.8" fill="#14100c"/>
+    `,
+  },
+  {
+    id: 'rou_jersey',
+    categoria: 'roupa',
+    nome: 'Jersey E-sports',
+    descricao: 'O uniforme oficial do time Dshow Nexus.',
+    raridade: 'raro',
+    tema: 'gamer',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>${defsRoupa(u, p.roupa.claro, p.roupa.base, p.roupa.profundo)}</defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}rou)"/>
+      <path d="M36 240 v-12 c 0 -14 8 -24 22 -32 l 10 44 z" fill="${p.destaque.base}"/>
+      <path d="M204 240 v-12 c 0 -14 -8 -24 -22 -32 l -10 44 z" fill="${p.destaque.base}"/>
+      <path d="M98 186 c 8 10 36 10 44 0 l 4 6 c -10 12 -42 12 -52 0 z" fill="${p.destaque.base}"/>
+      <text x="120" y="226" text-anchor="middle" font-family="system-ui, sans-serif" font-size="26" font-weight="800" fill="${alfa('#ffffff', 0.85)}">07</text>
+      ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <path d="M86 108 l 22 6 v 80 l -22 -4 z" fill="${alfa(p.destaque.base, 0.55)}"/>
+      <path d="M154 108 l -22 6 v 80 l 22 -4 z" fill="${alfa(p.destaque.base, 0.55)}"/>
+      <text x="120" y="164" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" font-weight="800" fill="${alfa('#ffffff', 0.85)}">07</text>
+      <path d="M104 108 q 16 10 32 0 l -3 8 q -13 8 -26 0 z" fill="${alfa('#000000', 0.22)}"/>
+    `,
+  },
+  {
+    id: 'rou_sobretudo',
+    categoria: 'roupa',
+    nome: 'Sobretudo',
+    descricao: 'Entra na sala e o vento entra junto.',
+    raridade: 'epico',
+    tema: 'aventura',
+    usaCores: ['roupa'],
+    render: (p, u) => `
+      <defs>${defsRoupa(u, p.roupa.claro, p.roupa.base, p.roupa.profundo)}</defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}rou)"/>
+      <path d="M36 240 v -14 c 0 -20 16 -34 38 -42 l -6 56 z" fill="${p.roupa.profundo}"/>
+      <path d="M204 240 v -14 c 0 -20 -16 -34 -38 -42 l 6 56 z" fill="${p.roupa.profundo}"/>
+      <path d="M96 182 l 24 22 l -16 16 l -18 -30 z" fill="${p.roupa.escuro}"/>
+      <path d="M144 182 l -24 22 l 16 16 l 18 -30 z" fill="${p.roupa.escuro}"/>
+      <path d="M96 182 l 24 22 l -8 8 l -18 -24 z" fill="${alfa('#ffffff', 0.1)}"/>
+      <path d="M116 210 h 8 v 30 h -8 z" fill="${alfa('#000000', 0.3)}"/>
+      <circle cx="108" cy="216" r="2.2" fill="${p.roupa.claro}"/>
+      <circle cx="132" cy="216" r="2.2" fill="${p.roupa.claro}"/>
+      ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <path d="M96 108 l 24 18 l -14 14 l -14 -24 z" fill="${p.roupa.escuro}"/>
+      <path d="M144 108 l -24 18 l 14 14 l 14 -24 z" fill="${p.roupa.escuro}"/>
+      <path d="M88 118 l 14 6 v 74 l -14 -4 z" fill="${alfa('#000000', 0.3)}"/>
+      <path d="M152 118 l -14 6 v 74 l 14 -4 z" fill="${alfa('#000000', 0.3)}"/>
+      <path d="M117 138 h 6 v 56 h -6 z" fill="${alfa('#000000', 0.32)}"/>
+      <circle cx="110" cy="146" r="1.8" fill="${p.roupa.claro}"/>
+      <circle cx="110" cy="162" r="1.8" fill="${p.roupa.claro}"/>
+    `,
+  },
+  {
+    id: 'rou_jaleco',
+    categoria: 'roupa',
+    nome: 'Jaleco',
+    descricao: 'Ciência aplicada com bolso cheio de canetas.',
+    raridade: 'incomum',
+    tema: 'ciência',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}jal" x1="0.15" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#ffffff"/>
+          <stop offset="0.5" stop-color="#eef1f6"/>
+          <stop offset="1" stop-color="#c9d0dd"/>
+        </linearGradient>
+      </defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}jal)"/>
+      <path d="M100 184 l 20 18 l -12 12 l -14 -22 z" fill="#d7dde8"/>
+      <path d="M140 184 l -20 18 l 12 12 l 14 -22 z" fill="#d7dde8"/>
+      <path d="M104 200 l 16 14 l 16 -14 l 2 40 h -36 z" fill="${p.roupa.base}"/>
+      <rect x="146" y="210" width="18" height="20" fill="#ffffff" stroke="#c9d0dd" stroke-width="1.6"/>
+      <path d="M150 212 v 12 M155 212 v 14 M160 212 v 10" stroke="${p.destaque.base}" stroke-width="2.4" stroke-linecap="round"/>
+      ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <path d="M86 110 h 68 l -2 84 h -64 z" fill="${alfa('#ffffff', 0.82)}"/>
+      <path d="M104 110 l 16 14 l 16 -14 l 0 12 l -16 12 l -16 -12 z" fill="#c9d0dd"/>
+      <path d="M112 128 l 8 8 l 8 -8 v 64 h -16 z" fill="${p.roupa.base}"/>
+      <path d="M92 150 h 12 v 14 h -12 z" fill="#ffffff" stroke="#c9d0dd" stroke-width="1.2"/>
+      <path d="M95 152 v 8 M99 152 v 9" stroke="${p.destaque.base}" stroke-width="1.8" stroke-linecap="round"/>
+    `,
+  },
+  {
+    id: 'rou_neon_racer',
+    categoria: 'roupa',
+    nome: 'Jaqueta Neon Racer',
+    descricao: 'Costura de luz viva — homologada para a madrugada.',
+    raridade: 'lendario',
+    tema: 'cyberpunk',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>${defsRoupa(u, p.roupa.claro, p.roupa.base, p.roupa.profundo)}</defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}rou)"/>
+      <path d="M52 222 c 16 -22 44 -34 68 -34 s 52 12 68 34" stroke="${p.destaque.base}" stroke-width="3.4" fill="none" stroke-linecap="round">
+        <animate attributeName="opacity" values="1;0.45;1" dur="1.8s" repeatCount="indefinite"/>
+      </path>
+      <path d="M60 240 c 14 -20 36 -30 60 -30 s 46 10 60 30" stroke="${alfa(p.destaque.claro, 0.6)}" stroke-width="2" fill="none"/>
+      <path d="M98 184 l 22 18 l -13 12 l -15 -22 z" fill="${p.roupa.escuro}"/>
+      <path d="M142 184 l -22 18 l 13 12 l 15 -22 z" fill="${p.roupa.escuro}"/>
+      <path d="M117 208 h 6 v 32 h -6 z" fill="${alfa(p.destaque.base, 0.8)}"/>
+      ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <path d="M90 120 l 18 8 v 66 l -18 -4 z" fill="${alfa('#000000', 0.28)}"/>
+      <path d="M150 120 l -18 8 v 66 l 18 -4 z" fill="${alfa('#000000', 0.28)}"/>
+      <path d="M96 130 q 24 -14 48 0" stroke="${p.destaque.base}" stroke-width="2.6" fill="none">
+        <animate attributeName="opacity" values="1;0.4;1" dur="1.8s" repeatCount="indefinite"/>
+      </path>
+      <path d="M96 176 q 24 14 48 0" stroke="${p.destaque.base}" stroke-width="2.6" fill="none">
+        <animate attributeName="opacity" values="0.4;1;0.4" dur="1.8s" repeatCount="indefinite"/>
+      </path>
+      <path d="M118 128 h 4 v 66 h -4 z" fill="${alfa(p.destaque.base, 0.75)}"/>
+    `,
+  },
 ];

@@ -189,4 +189,140 @@ export const MOLDURAS: ParteDef[] = [
       <path d="M92 232 h 56" stroke="#0c0f18" stroke-width="10" stroke-linecap="round"/>
       <text x="120" y="236.5" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="url(#${u}dsh)" letter-spacing="2">DSHOW</text>`,
   },
+  // ── 4.6 F2 · Onda 2 — 6 molduras novas (comportamento cresce com a
+  //    raridade, §7.3: comum = estática · épico+ = viva/animada) ─────
+  {
+    id: 'mol_madeira',
+    categoria: 'moldura',
+    nome: 'Madeira de Lei',
+    descricao: 'Clássica, quente e impossível de sair de moda.',
+    raridade: 'comum',
+    tema: 'clássico',
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}mad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#9a6a3a"/>
+          <stop offset="0.5" stop-color="#6a4426"/>
+          <stop offset="1" stop-color="#4a2d18"/>
+        </linearGradient>
+      </defs>
+      <rect x="3" y="3" width="234" height="234" rx="${R}" fill="none" stroke="url(#${u}mad)" stroke-width="8"/>
+      <rect x="8" y="8" width="224" height="224" rx="${R - 5}" fill="none" stroke="${alfa('#2b1a0e', 0.6)}" stroke-width="1.6"/>
+      <path d="M30 5 q 30 3 60 0 M150 235 q 30 -3 60 0" stroke="${alfa('#ffdca8', 0.25)}" stroke-width="2" fill="none"/>`,
+  },
+  {
+    id: 'mol_selo',
+    categoria: 'moldura',
+    nome: 'Selo Oficial',
+    descricao: 'Carimbo de autenticidade no canto do quadro.',
+    raridade: 'incomum',
+    tema: 'executivo',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <rect x="3" y="3" width="234" height="234" rx="${R}" fill="none" stroke="${p.destaque.base}" stroke-width="3.6"/>
+      <circle cx="206" cy="206" r="20" fill="${p.destaque.profundo}" stroke="${p.destaque.claro}" stroke-width="2.4"/>
+      <circle cx="206" cy="206" r="14" fill="none" stroke="${alfa('#ffffff', 0.5)}" stroke-width="1.4" stroke-dasharray="3 3"/>
+      <path d="M199 206 l 5 5 l 9 -10" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    id: 'mol_louros',
+    categoria: 'moldura',
+    nome: 'Louros da Vitória',
+    descricao: 'Folhas de quem subiu no pódio e pretende voltar.',
+    raridade: 'raro',
+    tema: 'esportivo',
+    render: (_p, u) => {
+      let folhas = '';
+      for (let lado = 0; lado < 2; lado++) {
+        const dir = lado === 0 ? 1 : -1;
+        for (let i = 0; i < 7; i++) {
+          const t = i / 6;
+          const ang = 150 - t * 120;
+          const rad = (ang * Math.PI) / 180;
+          const x = 120 - dir * Math.cos(rad) * 108;
+          const yy = 122 - Math.sin(rad) * 104;
+          folhas += `<ellipse cx="${x.toFixed(1)}" cy="${yy.toFixed(1)}" rx="10" ry="4.4" fill="url(#${u}lou)" transform="rotate(${(dir * (30 + t * 90)).toFixed(0)} ${x.toFixed(1)} ${yy.toFixed(1)})"/>`;
+        }
+      }
+      return `
+      <defs>
+        <linearGradient id="${u}lou" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#6fae5c"/>
+          <stop offset="1" stop-color="#3a7a34"/>
+        </linearGradient>
+      </defs>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="#3a7a34" stroke-width="3"/>
+      ${folhas}
+      <circle cx="120" cy="228" r="7" fill="#e8b64c" stroke="#b07d1e" stroke-width="1.6"/>`;
+    },
+  },
+  {
+    id: 'mol_circuito',
+    categoria: 'moldura',
+    nome: 'Circuito Vivo',
+    descricao: 'Trilhas energizadas percorrendo o contorno.',
+    raridade: 'epico',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${alfa(p.destaque.profundo, 0.9)}" stroke-width="5"/>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${p.destaque.claro}" stroke-width="2.2" stroke-dasharray="26 210">
+        <animate attributeName="stroke-dashoffset" values="0;-944" dur="6s" repeatCount="indefinite"/>
+      </rect>
+      <circle cx="120" cy="4" r="4" fill="${p.destaque.base}"><animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></circle>
+      <circle cx="120" cy="236" r="4" fill="${p.destaque.base}"><animate attributeName="opacity" values="0.4;1;0.4" dur="1.6s" repeatCount="indefinite"/></circle>
+      <circle cx="4" cy="120" r="4" fill="${p.destaque.base}"/>
+      <circle cx="236" cy="120" r="4" fill="${p.destaque.base}"/>
+      <path d="M30 12 h 24 l 8 -8 M186 228 h 24 l 8 8" stroke="${alfa(p.destaque.base, 0.7)}" stroke-width="2" fill="none"/>`,
+  },
+  {
+    id: 'mol_chamas',
+    categoria: 'moldura',
+    nome: 'Chamas Eternas',
+    descricao: 'O contorno queima — o conteúdo ainda mais.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    render: (_p, u) => {
+      let chamas = '';
+      for (let i = 0; i < 8; i++) {
+        const x = 26 + i * 27;
+        chamas += `<path d="M${x} 238 q -6 -14 0 -24 q 3 6 6 8 q 4 -8 2 -16 q 8 10 6 22 q -2 8 -14 10 z" fill="url(#${u}fla)" opacity="0.9">
+          <animateTransform attributeName="transform" type="scale" values="1 1;1 ${(1.12 + (i % 3) * 0.06).toFixed(2)};1 1" dur="${(1.2 + (i % 4) * 0.25).toFixed(2)}s" repeatCount="indefinite" additive="sum"/>
+        </path>`;
+      }
+      return `
+      <defs>
+        <linearGradient id="${u}fla" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#ff5230"/>
+          <stop offset="0.6" stop-color="#ff8a3d"/>
+          <stop offset="1" stop-color="#ffd75e"/>
+        </linearGradient>
+      </defs>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="#ff5230" stroke-width="4.4"/>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="#ffd75e" stroke-width="1.6" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2s" repeatCount="indefinite"/>
+      </rect>
+      ${chamas}`;
+    },
+  },
+  {
+    id: 'mol_glitch',
+    categoria: 'moldura',
+    nome: 'Glitch Dimensional',
+    descricao: 'O quadro não decide em qual realidade ficar.',
+    raridade: 'mitico',
+    tema: 'cyberpunk',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <rect x="6" y="6" width="228" height="228" rx="${R}" fill="none" stroke="#ff2e63" stroke-width="3" opacity="0.8">
+        <animateTransform attributeName="transform" type="translate" values="0 0;-3 1;2 -1;0 0" dur="0.9s" repeatCount="indefinite" calcMode="discrete"/>
+      </rect>
+      <rect x="6" y="6" width="228" height="228" rx="${R}" fill="none" stroke="#2ee6ff" stroke-width="3" opacity="0.8">
+        <animateTransform attributeName="transform" type="translate" values="0 0;3 -1;-2 1;0 0" dur="0.9s" repeatCount="indefinite" calcMode="discrete"/>
+      </rect>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${p.destaque.base}" stroke-width="4"/>
+      <path d="M4 84 h 14 M4 92 h 8 M236 148 h -14 M236 156 h -8" stroke="#ffffff" stroke-width="3">
+        <animate attributeName="opacity" values="1;0;1;0;1" dur="1.4s" repeatCount="indefinite" calcMode="discrete"/>
+      </path>`,
+  },
 ];
