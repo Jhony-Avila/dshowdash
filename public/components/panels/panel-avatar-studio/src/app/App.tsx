@@ -9,16 +9,17 @@
 // salvar junto do personagem (§39.11) e toast de feedback ao equipar (§39.18).
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BadgeCheck, Bot, Box, Boxes, Brush, Camera, Check, CircleUser, Columns2, Crown, Dices,
-  Eye, Flag, Frame, Glasses, History, Image as ImagemIcon, LoaderCircle, Orbit, Redo2,
-  Save, Shirt, Smile, Sparkles, Trophy, Undo2, Users, Volume2, VolumeX, Wand2,
+  BadgeCheck, Bot, Box, Boxes, Brush, Camera, Check, ChevronDown, CircleUser, Columns2,
+  Crown, Dices, Eye, Flag, Frame, Glasses, History, Image as ImagemIcon, LoaderCircle,
+  Orbit, Redo2, Save, Shirt, Smile, Sparkles, Trophy, Undo2, Users, Volume2, VolumeX, Wand2,
 } from 'lucide-react';
 
 // PoC 3D (AS4 Fase 1) — chunk separado: three/R3F só carregam nesta aba
 const Estudio3D = lazy(() => import('../poc3d/Estudio3D'));
-import type { AvatarConfig, CategoriaId, EstadoSalvar, Raridade, ShellConfig } from '../domain/types';
+import type { AvatarConfig, CategoriaId, EstadoSalvar, GrupoId, Raridade, ShellConfig } from '../domain/types';
 import {
-  CATEGORIAS, CONFIG_PADRAO, RARIDADES, aleatorio, itemPorId, nivelRaridade, validarConfig,
+  CATEGORIAS, CONFIG_PADRAO, GRUPOS, RARIDADES, aleatorio, itemPorId, nivelRaridade,
+  validarConfig,
 } from '../services/AvatarCatalog';
 import { carregarAvatar, salvarAvatar } from '../services/AvatarService';
 import type { OrigemDado, ResultadoCarga, TipoAtivo } from '../services/AvatarService';
@@ -89,6 +90,18 @@ const ROTULO_ESTADO: Record<EstadoSalvar, string> = {
   conflito: 'Conflito de versão',
 };
 
+/** Grupos colapsáveis da sidebar (Expansão) — estado persistido. */
+const CHAVE_GRUPOS = 'dshow.avatar.grupos.v1';
+
+function gruposGuardados(): Set<GrupoId> {
+  try {
+    const bruto = localStorage.getItem(CHAVE_GRUPOS);
+    if (!bruto) return new Set(GRUPOS.map((g) => g.id)); // 1ª visita: tudo aberto
+    const lista = JSON.parse(bruto);
+    return new Set(Array.isArray(lista) ? lista : []);
+  } catch { return new Set(GRUPOS.map((g) => g.id)); }
+}
+
 /** Painel direito redimensionável (AS4 §23.3): compacto/padrão/expandido. */
 const CHAVE_LARG = 'dshow.avatar.painel.larg.v1';
 const LARGURAS = [320, 420, 560];
@@ -119,6 +132,17 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [somLigado, setSomLigado] = useState(somAtivo);
   const [largPainel, setLargPainel] = useState(largGuardada);
   const [toastEquipar, setToastEquipar] = useState<{ nome: string; cor: string; chave: number } | null>(null);
+  const [gruposAbertos, setGruposAbertos] = useState<Set<GrupoId>>(gruposGuardados);
+
+  const alternarGrupo = useCallback((g: GrupoId) => {
+    setGruposAbertos((atuais) => {
+      const novo = new Set(atuais);
+      if (novo.has(g)) novo.delete(g);
+      else novo.add(g);
+      try { localStorage.setItem(CHAVE_GRUPOS, JSON.stringify([...novo])); } catch { /* sem storage */ }
+      return novo;
+    });
+  }, []);
 
   const desfazerPilha = useRef<AvatarConfig[]>([]);
   const refazerPilha = useRef<AvatarConfig[]>([]);
@@ -373,23 +397,48 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         style={{ '--avst-larg-painel': `${largPainel}px` } as React.CSSProperties}>
         {/* ── Coluna 1: categorias ── */}
         <nav className="avst-categorias" aria-label="Categorias">
-          {CATEGORIAS.map((c) => {
-            const Icone = ICONES[c.id];
+          {/* grupos colapsáveis dirigidos pela taxonomia (Expansão) */}
+          {GRUPOS.map((g) => {
+            const cats = CATEGORIAS.filter((c) => c.grupo === g.id);
+            const temTitulo = g.id === 'personalidade';
+            if (cats.length === 0 && !temTitulo) return null;
+            const aberto = gruposAbertos.has(g.id);
+            const contemAtiva = (aba === 'itens' && cats.some((c) => c.id === categoria))
+              || (aba === 'titulo' && temTitulo);
             return (
-              <button key={c.id} type="button"
-                className={`avst-cat ${categoria === c.id && aba === 'itens' ? 'avst-cat-ativa' : ''}`}
-                onClick={() => { setCategoria(c.id); setAba('itens'); }}>
-                <Icone size={17} aria-hidden />
-                <span>{c.nome}</span>
-              </button>
+              <div key={g.id} className="avst-grupo">
+                <button type="button" aria-expanded={aberto}
+                  className={`avst-grupo-cab ${!aberto && contemAtiva ? 'avst-grupo-cab-ativa' : ''}`}
+                  onClick={() => alternarGrupo(g.id)}>
+                  <span>{g.nome}</span>
+                  <ChevronDown size={13} aria-hidden
+                    className={`avst-grupo-seta ${aberto ? 'avst-grupo-seta-aberta' : ''}`} />
+                </button>
+                {/* sempre no DOM: o modo mobile (grupos achatados) reexibe via CSS */}
+                <div className="avst-grupo-itens" data-aberto={aberto ? 'sim' : 'nao'}>
+                    {cats.map((c) => {
+                      const Icone = ICONES[c.id];
+                      return (
+                        <button key={c.id} type="button"
+                          className={`avst-cat ${categoria === c.id && aba === 'itens' ? 'avst-cat-ativa' : ''}`}
+                          onClick={() => { setCategoria(c.id); setAba('itens'); }}>
+                          <Icone size={17} aria-hidden />
+                          <span>{c.nome}</span>
+                        </button>
+                      );
+                    })}
+                    {temTitulo && (
+                      <button type="button"
+                        className={`avst-cat ${aba === 'titulo' ? 'avst-cat-ativa' : ''}`}
+                        onClick={() => setAba('titulo')}>
+                        <Crown size={17} aria-hidden />
+                        <span>Título</span>
+                      </button>
+                    )}
+                </div>
+              </div>
             );
           })}
-          <button type="button"
-            className={`avst-cat ${aba === 'titulo' ? 'avst-cat-ativa' : ''}`}
-            onClick={() => setAba('titulo')}>
-            <Crown size={17} aria-hidden />
-            <span>Título</span>
-          </button>
           <div className="avst-cat-separador" />
           <button type="button"
             className={`avst-cat avst-cat-3d ${aba === '3d' ? 'avst-cat-ativa' : ''}`}

@@ -54,10 +54,16 @@ export interface ItemCatalogo {
   incompativelCom?: string[];
 }
 
+/** Grupos da navegação (Expansão — estrutura do briefing, espelho da taxonomia). */
+export type GrupoId =
+  | 'identidade' | 'corpo' | 'cabelo' | 'vestuario' | 'equipamentos'
+  | 'poderes' | 'aparencia' | 'personalidade';
+
 export interface CategoriaMeta {
   id: CategoriaId;
   nome: string;
   obrigatoria: boolean;            // base sempre; demais aceitam 'nenhum'
+  grupo: GrupoId;                  // grupo colapsável na sidebar (Expansão)
 }
 
 // ── Configuração do avatar (persistida) ─────────────────────────────

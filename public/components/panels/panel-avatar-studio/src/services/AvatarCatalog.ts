@@ -5,7 +5,7 @@
 // presets e validação de config. O motor (engine/render) recebe o resolvedor
 // daqui — nenhum outro módulo importa as partes diretamente.
 import type {
-  AvatarConfig, CategoriaId, CategoriaMeta, Preset, Raridade, SlotCor,
+  AvatarConfig, CategoriaId, CategoriaMeta, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
 import { CORES_PADRAO, normalizarHex } from '../engine/cores';
 import type { ParteDef } from '../engine/base-api';
@@ -29,20 +29,34 @@ export const VERSAO_CONFIG = 1;
 
 // ── Categorias (ordem = ordem da sidebar do studio) ─────────────────
 
+// Grupos e categorias ESPELHAM a taxonomia do banco (avatar_category_groups/
+// avatar_categories) — quando a flag avatar_catalog_db ligar, a fonte troca
+// para /api/avatar/catalog.php?taxonomia=1 sem mudança de interface.
+export const GRUPOS: Array<{ id: GrupoId; nome: string }> = [
+  { id: 'identidade',    nome: 'Identidade' },
+  { id: 'corpo',         nome: 'Corpo' },
+  { id: 'cabelo',        nome: 'Cabelo' },
+  { id: 'vestuario',     nome: 'Vestuário' },
+  { id: 'equipamentos',  nome: 'Equipamentos' },
+  { id: 'poderes',       nome: 'Poderes' },
+  { id: 'aparencia',     nome: 'Aparência' },
+  { id: 'personalidade', nome: 'Personalidade' },
+];
+
 export const CATEGORIAS: CategoriaMeta[] = [
-  { id: 'base',      nome: 'Rosto',      obrigatoria: true },
-  { id: 'cabelo',    nome: 'Cabelo',     obrigatoria: false },
-  { id: 'olhos',     nome: 'Olhos',      obrigatoria: true },
-  { id: 'boca',      nome: 'Boca',       obrigatoria: true },
-  { id: 'roupa',     nome: 'Roupa',      obrigatoria: true },
-  { id: 'acessorio', nome: 'Acessório',  obrigatoria: false },
-  { id: 'fundo',     nome: 'Fundo',      obrigatoria: true },
-  { id: 'moldura',   nome: 'Moldura',    obrigatoria: false },
-  { id: 'efeito',    nome: 'Efeito',     obrigatoria: false },
+  { id: 'base',      nome: 'Rosto',      obrigatoria: true,  grupo: 'identidade' },
+  { id: 'cabelo',    nome: 'Cabelo',     obrigatoria: false, grupo: 'cabelo' },
+  { id: 'olhos',     nome: 'Olhos',      obrigatoria: true,  grupo: 'corpo' },
+  { id: 'boca',      nome: 'Boca',       obrigatoria: true,  grupo: 'corpo' },
+  { id: 'roupa',     nome: 'Roupa',      obrigatoria: true,  grupo: 'vestuario' },
+  { id: 'acessorio', nome: 'Acessório',  obrigatoria: false, grupo: 'equipamentos' },
+  { id: 'fundo',     nome: 'Fundo',      obrigatoria: true,  grupo: 'aparencia' },
+  { id: 'moldura',   nome: 'Moldura',    obrigatoria: false, grupo: 'aparencia' },
+  { id: 'efeito',    nome: 'Efeito',     obrigatoria: false, grupo: 'poderes' },
   // Expansão (decisão #33 — 2D imediato nas categorias de baixo custo)
-  { id: 'aura',      nome: 'Aura',       obrigatoria: false },
-  { id: 'banner',    nome: 'Banner',     obrigatoria: false },
-  { id: 'emblema',   nome: 'Emblema',    obrigatoria: false },
+  { id: 'aura',      nome: 'Aura',       obrigatoria: false, grupo: 'poderes' },
+  { id: 'banner',    nome: 'Banner',     obrigatoria: false, grupo: 'aparencia' },
+  { id: 'emblema',   nome: 'Emblema',    obrigatoria: false, grupo: 'equipamentos' },
 ];
 
 // ── Títulos (Expansão §27) — dados puros: exibidos como selo, fora do SVG ──
