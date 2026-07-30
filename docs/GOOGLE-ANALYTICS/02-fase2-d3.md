@@ -152,3 +152,47 @@ Capturas: `ga-fase2-jornada-{dark,light}.png` e `ga-fase2-mapa-{dark,light}.png`
 | Diretoria, Insights | Fase 3 |
 | Exportação (§51.2) | Fase 3 |
 | Ícone no header (§9) | Pequeno, mas o header estava sendo editado por outra sessão nas duas fases; fica para quando não houver concorrência |
+
+---
+
+## 8. Adendo — §32: conciliação de leads com o CRM real (2026-07-30, commit `f8846af`)
+
+Primeira ponta **real** do módulo. `lib/GaCrm.php` consulta `PIPE_DSHOW` (Pipedrive LIVE) em
+leitura pura e devolve, para a janela do relatório: total de leads, quantos viraram negócio,
+origem e série diária.
+
+### 🔴 A divergência fica suspensa enquanto as fontes forem mistas
+
+| Lado | Valor (28 dias) | Fonte |
+|---|---|---|
+| `generate_lead` no GA4 | 1.426 | **mock** |
+| Leads no Pipedrive | **43** | **real** |
+
+Calcular "diferença" entre esses dois números daria **−97%** — um alarme que não significa
+nada, porque um lado é inventado. E alguém decidiria com base nele.
+
+`GaCrm::podeCompararCom()` exige que **os dois** lados sejam reais. Com fontes mistas a tela:
+mostra os dois números com a procedência de cada um, **não** exibe card de diferença, e diz por
+que a comparação está suspensa. A prova de UI trava isso: **falha se o card de diferença
+aparecer**.
+
+### ⚠️ A premissa que a medição derrubou
+
+Eu ia cruzar lead por **canal**. Não dá: `pipe_leads.origin` tem exatamente **dois** valores em
+produção — `ManuallyCreated` (570) e `API` (255). Não existe UTM, canal nem campanha nessa
+tabela. Qualquer atribuição de lead a canal por essa fonte seria invenção, e a tela diz isso.
+
+### 🔎 Dois achados de negócio, agora visíveis no painel
+
+- **74,4% dos leads dos últimos 28 dias foram criados à mão no CRM** e nunca passaram pelo
+  site — nenhum evento de GA4 corresponde a eles. É a primeira coisa a olhar antes de suspeitar
+  da instrumentação.
+- **0 de 43 leads do período viraram negócio.**
+
+### Notas de implementação
+
+- `_init.php` passou a incluir `db_connection.php` por **um** motivo: o lado CRM. O módulo
+  continua **sem banco próprio** — nenhuma tabela `ga_*` existe.
+- Se o Pipedrive não responder, `GaCrm` devolve `disponivel: false` **com o motivo** e a tela
+  continua funcionando. Nunca lança, nunca inventa número.
+- Prova: **115 checagens** (eram 105).
