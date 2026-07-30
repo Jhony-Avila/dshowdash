@@ -99,10 +99,18 @@ export interface Preset {
 
 export interface HistoricoItem {
   id: number;
-  tipo: 'camadas' | 'foto';
+  tipo: 'camadas' | 'foto' | '3d';
   config: AvatarConfig | null;
   url: string | null;
   criadoEm: string;
+  /** nome dado pelo usuário (4.6 §22) — null = sem nome */
+  nome: string | null;
+  /** fixada = nunca sai na poda de retenção (4.6 §22) */
+  fixado: boolean;
+  /** esta é a versão ativa agora (header/menu/perfil) */
+  ativo: boolean;
+  /** número sequencial da versão (v1, v2…) */
+  versao: number;
 }
 
 export interface Conquista {

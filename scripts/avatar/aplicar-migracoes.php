@@ -24,6 +24,7 @@ $arquivos = [
     $raiz . '/sql/avatar/catalogo_schema.sql',
     $raiz . '/sql/avatar/catalogo_seed_taxonomia.sql',
     $raiz . '/sql/avatar/catalogo_seed_assets.sql',
+    $raiz . '/sql/avatar/historico_schema.sql',
 ];
 $dryRun = in_array('--dry-run', $argv, true);
 

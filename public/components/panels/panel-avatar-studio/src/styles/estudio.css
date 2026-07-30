@@ -519,8 +519,63 @@
 }
 .avst-hist-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .avst-hist-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-.avst-hist-info strong { font-size: 12.5px; }
-.avst-hist-info em { font-style: normal; font-size: 11px; color: var(--avst-texto-2); }
+.avst-hist-info strong { font-size: 12.5px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.avst-hist-info em { font-style: normal; font-size: 11px; color: var(--avst-texto-2); display: inline-flex; align-items: center; gap: 4px; }
+
+/* ── 4.6 §22: histórico completo ─────────────────────────────────── */
+.avst-historico2 { display: flex; flex-direction: column; gap: 10px; }
+.avst-hist-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
+.avst-hist-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+  border-radius: 999px; font-size: 11.5px; cursor: pointer;
+  background: var(--avst-painel); border: 1px solid var(--avst-borda); color: var(--avst-texto-2);
+}
+.avst-hist-chip em { font-style: normal; font-size: 10px; opacity: 0.75; }
+.avst-hist-chip-ativo { border-color: var(--avst-acento); color: var(--avst-texto); background: color-mix(in srgb, var(--avst-acento) 14%, var(--avst-painel)); }
+.avst-hist-aviso { margin: 0; font-size: 11.5px; color: #ffb054; }
+.avst-hist-ativo { border-color: var(--avst-acento); }
+.avst-hist-comparando { box-shadow: 0 0 0 1px color-mix(in srgb, var(--avst-acento) 55%, transparent); }
+.avst-hist-badge {
+  display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px;
+  border-radius: 999px; font-size: 9px; font-weight: 700; letter-spacing: 0.3px;
+}
+.avst-hist-badge-ativo { background: color-mix(in srgb, var(--avst-acento) 22%, transparent); color: var(--avst-acento); }
+.avst-hist-badge-fixa { background: color-mix(in srgb, #e8b64c 20%, transparent); color: #e8b64c; }
+.avst-hist-acoes { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
+.avst-hist-mini {
+  width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px;
+  background: var(--avst-painel-2); border: 1px solid var(--avst-borda);
+  color: var(--avst-texto-2); cursor: pointer;
+}
+.avst-hist-mini:hover { color: var(--avst-texto); border-color: var(--avst-acento); }
+.avst-hist-mini-on { color: var(--avst-acento); border-color: var(--avst-acento); background: color-mix(in srgb, var(--avst-acento) 15%, var(--avst-painel-2)); }
+.avst-hist-nome-input {
+  width: 100%; max-width: 240px; padding: 3px 8px; border-radius: 8px; font-size: 12.5px;
+  background: var(--avst-painel-2); border: 1px solid var(--avst-acento); color: var(--avst-texto);
+}
+.avst-hist-comparar {
+  position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 10px; border-radius: 12px;
+  background: var(--avst-painel); border: 1px solid color-mix(in srgb, var(--avst-acento) 45%, var(--avst-borda));
+}
+.avst-hist-comparar figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.avst-hist-comp-thumb {
+  width: 132px; height: 132px; border-radius: 12px; overflow: hidden;
+  display: grid; place-items: center; background: #0a0d15;
+}
+.avst-hist-comp-thumb .avst-svg, .avst-hist-comp-thumb .avst-svg svg, .avst-hist-comp-thumb img { width: 132px; height: 132px; display: block; object-fit: cover; }
+.avst-hist-comparar figcaption { display: flex; flex-direction: column; align-items: center; gap: 1px; text-align: center; }
+.avst-hist-comparar figcaption strong { font-size: 12px; }
+.avst-hist-comparar figcaption em { font-style: normal; font-size: 10.5px; color: var(--avst-texto-2); }
+.avst-hist-comp-fechar {
+  position: absolute; top: 6px; right: 6px; width: 24px; height: 24px;
+  display: grid; place-items: center; border-radius: 8px; cursor: pointer;
+  background: var(--avst-painel-2); border: 1px solid var(--avst-borda); color: var(--avst-texto-2);
+}
+.avst-hist-retencao {
+  margin: 0; font-size: 10.5px; color: var(--avst-texto-2); text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
 .avst-vazio {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
   padding: 34px 16px; text-align: center; color: var(--avst-texto-2); font-size: 12.5px;
