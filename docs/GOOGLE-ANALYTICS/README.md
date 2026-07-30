@@ -5,15 +5,18 @@ Briefing-fonte: **MEGA BRIEFING COMPLETO — MÓDULO GOOGLE ANALYTICS** (84 seç
 
 ## Estado
 
-**Fase 0 (investigação) executada — e deliberadamente NÃO fechada.** 7 dos 10 critérios de aceite da
-seção 80 estão atendidos; **3 estão bloqueados pela mesma causa**: não existe credencial GA4 neste
-ambiente. Nenhuma linha do módulo foi escrita (a seção 4.1 do briefing manda investigar primeiro).
+**Fase 0 (investigação)**: executada, e deliberadamente **NÃO fechada** — 7 dos 10 critérios da §80
+atendidos, 3 bloqueados por falta de credencial GA4.
+
+**Fase 1 (módulo no mock)**: **NO AR** em `GA_PROVIDER=mock` — backend com 16 rotas, painel React
+com 21 telas, sidebar, flag e provas. Verificação: `bash scripts/ga-smoke-all.sh`.
 
 ## Documentos
 
 | Doc | Conteúdo |
 |---|---|
 | [`00-fase0-investigacao.md`](00-fase0-investigacao.md) | Entregável da seção 6: inventário da coleta, infra, banco, front-end, integrações, 11 riscos, plano de fases ajustado, 9 decisões do dono e o status item a item da seção 80 |
+| [`01-fase1-mock.md`](01-fase1-mock.md) | O que está no ar, as 2 decisões de desenho do mock, o bug de coerência que a medição pegou, o reúso sem instalar nada, as traps respeitadas e o que a fase deixou de fora |
 
 ## O que já se sabe, em 6 linhas
 
