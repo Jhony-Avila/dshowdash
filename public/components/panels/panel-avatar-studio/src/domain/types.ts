@@ -24,6 +24,15 @@ export type Raridade =
 
 export type SlotCor = 'pele' | 'cabelo' | 'roupa' | 'destaque';
 
+/**
+ * Slots ADITIVOS de acessórios no 2D (4.6 §20, decisão #41):
+ * até 3 acessórios simultâneos — um por região. Cada item declara o seu.
+ */
+export type SlotAcessorio = 'cabeca' | 'rosto' | 'pescoco';
+
+/** Chaves possíveis em AvatarConfig.camadas ('acessorio' legado migra no validarConfig). */
+export type CamadaId = Exclude<CategoriaId, 'base'> | `acessorio_${SlotAcessorio}`;
+
 /** Poses futuras (AS3 decisão #23) — hoje só 'frontal' é produzida. */
 export type PoseId = 'frontal' | 'tresquartos' | 'lateral' | 'pose' | 'poder';
 
@@ -52,6 +61,11 @@ export interface ItemCatalogo {
   requerBase?: string[];
   /** itens que não podem estar equipados junto — briefing §35 */
   incompativelCom?: string[];
+  /**
+   * Slot ADITIVO do acessório (decisão #41): cabeca | rosto | pescoco.
+   * Só faz sentido em categoria 'acessorio'; ausente = 'cabeca'.
+   */
+  slot?: SlotAcessorio;
 }
 
 /** Grupos da navegação (Expansão — estrutura do briefing, espelho da taxonomia). */
@@ -72,7 +86,7 @@ export interface AvatarConfig {
   formato: 'camadas';              // discrimina do legado (URL de arquivo)
   versao: number;
   base: string;                    // id do item de base
-  camadas: Partial<Record<Exclude<CategoriaId, 'base'>, string>>; // id por categoria ('nenhum' = ausente)
+  camadas: Partial<Record<CamadaId, string>>; // id por camada ('nenhum' = ausente)
   cores: Record<SlotCor, string>;
   /** Título do personagem (Expansão §27) — exibido como selo, fora do SVG. */
   titulo?: string;

@@ -41,19 +41,46 @@ export const FOCO_THUMB: Partial<Record<CategoriaId, string>> = {
   emblema: '108 162 92 92', // foco no peito — o pino aparece de verdade (§39.19)
 };
 
-/** Aplica um item (ou 'nenhum') ao config, imutável. */
+const SLOTS_ACESSORIO = ['cabeca', 'rosto', 'pescoco'] as const;
+
+/**
+ * Aplica um item (ou 'nenhum') ao config, imutável.
+ * Acessórios (decisão #41) são ADITIVOS por slot: equipar um chapéu não
+ * derruba os óculos; clicar num acessório JÁ equipado desequipa só ele;
+ * 'nenhum' limpa os três slots.
+ */
 export function comItem(config: AvatarConfig, categoria: CategoriaId, id: string | null): AvatarConfig {
   if (categoria === 'base') {
     return id ? { ...config, base: id } : config;
   }
   const camadas = { ...config.camadas };
+  if (categoria === 'acessorio') {
+    delete camadas.acessorio; // chave legada nunca persiste
+    if (id) {
+      const chave = `acessorio_${itemPorId(id)?.slot ?? 'cabeca'}` as const;
+      if (camadas[chave] === id) delete camadas[chave]; // toggle no mesmo slot
+      else camadas[chave] = id;
+    } else {
+      for (const s of SLOTS_ACESSORIO) delete camadas[`acessorio_${s}`];
+    }
+    return { ...config, camadas };
+  }
   if (id) camadas[categoria] = id;
   else delete camadas[categoria];
   return { ...config, camadas };
 }
 
-function idEquipado(config: AvatarConfig, categoria: CategoriaId): string | null {
-  return categoria === 'base' ? config.base : config.camadas[categoria] ?? null;
+/** Ids equipados na categoria (acessório pode ter até 3 — um por slot). */
+function idsEquipados(config: AvatarConfig, categoria: CategoriaId): string[] {
+  if (categoria === 'base') return [config.base];
+  if (categoria === 'acessorio') {
+    return [
+      config.camadas.acessorio, config.camadas.acessorio_cabeca,
+      config.camadas.acessorio_rosto, config.camadas.acessorio_pescoco,
+    ].filter((x): x is string => typeof x === 'string');
+  }
+  const id = config.camadas[categoria];
+  return id ? [id] : [];
 }
 
 export function GradeItens({ config, categoria, desbloqueados, aoEscolher }: {
@@ -105,8 +132,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoria, config.base, busca, tier, soFavoritos, ocultarBloqueados, ordem, favs, desbloqueados]);
 
-  const equipado = idEquipado(config, categoria);
-  const equipadoItem = equipado ? itemPorId(equipado) : null;
+  const equipados = new Set(idsEquipados(config, categoria));
+  const nomesEquipados = [...equipados].map((id) => itemPorId(id)?.nome).filter(Boolean).join(' + ');
   const filtrosAtivos = busca.trim() !== '' || tier !== null || soFavoritos || ocultarBloqueados;
 
   return (
@@ -117,7 +144,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher }: {
           <h2>{meta?.nome ?? categoria}</h2>
           <p>
             {itens.length} {itens.length === 1 ? 'item' : 'itens'}
-            {equipadoItem ? <> · equipado: <strong>{equipadoItem.nome}</strong></> : ' · nada equipado'}
+            {nomesEquipados ? <> · equipado: <strong>{nomesEquipados}</strong></> : ' · nada equipado'}
+            {categoria === 'acessorio' && <> · até 3 ao mesmo tempo (cabeça, rosto, pescoço)</>}
           </p>
         </div>
         <div className="avst-modos" role="radiogroup" aria-label="Modo de visualização">
@@ -172,8 +200,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher }: {
 
       <div className="avst-grade" data-modo={modo} role="listbox" aria-label={`Itens de ${meta?.nome ?? categoria}`}>
         {meta && !meta.obrigatoria && !filtrosAtivos && (
-          <button type="button" role="option" aria-selected={equipado === null}
-            className={`avst-card avst-card-nenhum ${equipado === null ? 'avst-card-ativo' : ''}`}
+          <button type="button" role="option" aria-selected={equipados.size === 0}
+            className={`avst-card avst-card-nenhum ${equipados.size === 0 ? 'avst-card-ativo' : ''}`}
             onClick={() => aoEscolher(comItem(config, categoria, null))}>
             <span className="avst-card-vazio"><Ban size={26} aria-hidden /></span>
             <span className="avst-card-nome">Nenhum</span>
@@ -181,7 +209,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher }: {
         )}
         {itens.map((item) => (
           <CardItem key={item.id} item={item} config={config} modo={modo}
-            ativo={equipado === item.id}
+            ativo={equipados.has(item.id)}
             favorito={favs.has(item.id)}
             bloqueado={bloqueado(item)}
             aoFavoritar={() => setFavs(new Set(alternarFavorito(item.id)))}
@@ -243,7 +271,9 @@ function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar,
           <button type="button" className={`avst-botao avst-btn-equipar ${ativo ? 'avst-botao-ativo' : ''}`}
             disabled={bloqueado}
             onClick={(e) => { e.stopPropagation(); escolher?.(); }}>
-            {ativo ? <><Check size={13} aria-hidden /> Equipado</> : 'Equipar'}
+            {ativo
+              ? (item.categoria === 'acessorio' ? <><Check size={13} aria-hidden /> Remover</> : <><Check size={13} aria-hidden /> Equipado</>)
+              : 'Equipar'}
           </button>
         </>
       ) : (
@@ -288,6 +318,11 @@ function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar,
         )}
         {item.usaCores && item.usaCores.length > 0 && (
           <span className="avst-tip-meta">Recolorível: {item.usaCores.join(', ')}</span>
+        )}
+        {item.categoria === 'acessorio' && (
+          <span className="avst-tip-meta">
+            Slot: {item.slot === 'rosto' ? 'rosto' : item.slot === 'pescoco' ? 'pescoço/costas' : 'cabeça'} — combina com os outros slots
+          </span>
         )}
         {bloqueado && <span className="avst-tip-lock">🔒 {dica}</span>}
       </Dica>

@@ -9,6 +9,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_brinco',
     categoria: 'acessorio',
+    slot: 'rosto',
     nome: 'Brinco de Argola',
     descricao: 'Detalhe dourado discreto na orelha.',
     raridade: 'comum',
@@ -20,6 +21,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_oculos',
     categoria: 'acessorio',
+    slot: 'rosto',
     nome: 'Óculos de Grau',
     descricao: 'Armação redonda de intelectual.',
     raridade: 'comum',
@@ -41,6 +43,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_oculos_sol',
     categoria: 'acessorio',
+    slot: 'rosto',
     nome: 'Óculos Escuros',
     descricao: 'Deal fechado, sol na cara, estilo intacto.',
     raridade: 'incomum',
@@ -64,6 +67,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_fone',
     categoria: 'acessorio',
+    slot: 'cabeca',
     nome: 'Fone Minimal',
     descricao: 'Headband slim para a playlist de foco.',
     raridade: 'incomum',
@@ -79,6 +83,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_bone',
     categoria: 'acessorio',
+    slot: 'cabeca',
     nome: 'Boné Snapback',
     descricao: 'Aba reta com logo bordado.',
     raridade: 'raro',
@@ -101,6 +106,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_headset',
     categoria: 'acessorio',
+    slot: 'cabeca',
     nome: 'Headset Pro Gamer',
     descricao: 'Conchas RGB com microfone articulado.',
     raridade: 'epico',
@@ -130,6 +136,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_cachecol',
     categoria: 'acessorio',
+    slot: 'pescoco',
     nome: 'Cachecol',
     descricao: 'Friozinho de ar-condicionado corporativo.',
     raridade: 'comum',
@@ -144,6 +151,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_chapeu_mago',
     categoria: 'acessorio',
+    slot: 'cabeca',
     nome: 'Chapéu de Arquimago',
     descricao: 'Conjura dashboards do nada. Nível 20 em SQL arcano.',
     raridade: 'epico',
@@ -166,6 +174,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_drone',
     categoria: 'acessorio',
+    slot: 'pescoco',
     nome: 'Drone Companion',
     descricao: 'Segue você desde o unboxing. Nunca pediu férias.',
     raridade: 'raro',
@@ -188,6 +197,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_medalha',
     categoria: 'acessorio',
+    slot: 'pescoco',
     nome: 'Medalha de Veterano',
     descricao: '30 dias de casa, cravados em bronze e fita.',
     raridade: 'epico',
@@ -209,6 +219,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_gorro_natal',
     categoria: 'acessorio',
+    slot: 'cabeca',
     nome: 'Gorro de Natal',
     descricao: 'Dezembro no dash também tem clima.',
     raridade: 'raro',
@@ -229,6 +240,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_chapeu_bruxa',
     categoria: 'acessorio',
+    slot: 'cabeca',
     nome: 'Chapéu de Bruxa',
     descricao: 'Halloween chegou ao dashboard. Cuidado com as queries.',
     raridade: 'raro',
@@ -250,6 +262,7 @@ export const ACESSORIOS: ParteDef[] = [
   {
     id: 'ace_coroa',
     categoria: 'acessorio',
+    slot: 'cabeca',
     nome: 'Coroa do Top 1',
     descricao: 'Ouro maciço para quem lidera o ranking.',
     raridade: 'lendario',
