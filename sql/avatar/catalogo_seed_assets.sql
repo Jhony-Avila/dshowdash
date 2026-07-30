@@ -172,10 +172,106 @@ INSERT INTO avatar_assets
    lore, asset_type, status, supported_renderers, default_renderer,
    is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
    created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'bas_triangular', 'Triangular', 'Mandíbula larga, decisões mais largas ainda.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 10,
+  'esportivo', JSON_OBJECT('usaCores', '["pele"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
+  'bas_bochechudo', 'Bochechudo', 'Covinhas de fábrica e reserva estratégica de simpatia.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 11,
+  'casual', JSON_OBJECT('usaCores', '["pele"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'bas_diamante', 'Diamante', 'Maçãs do rosto que dispensam iluminação de estúdio.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 12,
+  'clássico', JSON_OBJECT('usaCores', '["pele"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'bas_veterano', 'Veterano', 'Cada linha de expressão é um projeto entregue.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 13,
+  'clássico', JSON_OBJECT('usaCores', '["pele"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
+  'bas_juvenil', 'Juvenil', 'Energia de estagiário no primeiro dia — para sempre.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 14,
+  'casual', JSON_OBJECT('usaCores', '["pele"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
+  'bas_meio_cyborg', 'Meio-Cyborg', 'Metade humano, metade upgrade — cem por cento operacional.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 15,
+  'cyberpunk', JSON_OBJECT('usaCores', '["pele","destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
   'bas_panda', 'Panda', 'Calmo por fora, deadline por dentro.', 'Mastiga bambu e backlog na mesma velocidade: devagar e sem errar.',
   'parte2d', 'published', '2d', '2d',
-  0, 1, 10,
+  0, 1, 16,
   'animais', JSON_OBJECT('usaCores', NULL,
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
@@ -191,7 +287,7 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
   'bas_coruja', 'Coruja', 'Vê tudo. Principalmente o que tentaram esconder no relatório.', 'Plantonista noturna oficial. Nenhum log passa despercebido.',
   'parte2d', 'published', '2d', '2d',
-  0, 1, 11,
+  0, 1, 17,
   'animais', JSON_OBJECT('usaCores', '["pele"]',
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
@@ -207,7 +303,7 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
   'bas_raposa', 'Raposa', 'Esperta demais para reuniões que podiam ser e-mails.', 'Fechou três negociações antes de você abrir o CRM.',
   'parte2d', 'published', '2d', '2d',
-  0, 1, 12,
+  0, 1, 18,
   'animais', JSON_OBJECT('usaCores', '["pele"]',
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
@@ -223,7 +319,7 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
   'bas_lobo', 'Lobo', 'Caça metas em matilha, mas fecha o trimestre sozinho se precisar.', 'O uivo dele é o sino de meta batida.',
   'parte2d', 'published', '2d', '2d',
-  0, 1, 13,
+  0, 1, 19,
   'animais', JSON_OBJECT('usaCores', '["pele"]',
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
@@ -239,7 +335,7 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
   'bas_leao', 'Leão', 'A juba entra na sala antes dele.', 'Não disputa território: o território é dele desde o onboarding.',
   'parte2d', 'published', '2d', '2d',
-  0, 1, 14,
+  0, 1, 20,
   'animais', JSON_OBJECT('usaCores', '["pele","cabelo"]',
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
@@ -255,7 +351,7 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='mitico'), 2,
   'bas_alien', 'Alienígena', 'Veio estudar a humanidade. Ficou pelo dashboard.', 'Classificou a Terra como "habitável, mas o wi-fi cai". Ficou mesmo assim.',
   'parte2d', 'published', '2d', '2d',
-  0, 1, 15,
+  0, 1, 21,
   'sci-fi', JSON_OBJECT('usaCores', '["pele","destaque"]',
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
@@ -271,8 +367,72 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='exclusivo'), 2,
   'bas_ledbot', 'LED Bot', 'O mascote oficial da Dshow. Nasceu num painel de LED e nunca saiu do ar.', 'Primeiro pixel aceso da Dshow. Todo painel que brilha descende dele.',
   'parte2d', 'published', '2d', '2d',
-  1, 1, 16,
+  1, 1, 22,
   'dshow', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'bas_gato', 'Gato', 'Derruba o que estiver na borda da mesa. Inclusive prazos.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 23,
+  'animais', JSON_OBJECT('usaCores', '["pele"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'bas_urso', 'Urso', 'Abraço de esmagamento e paciência de hibernação.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 24,
+  'animais', JSON_OBJECT('usaCores', '["pele"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
+  'bas_dragao', 'Dragão', 'Guarda tesouros: métricas boas e feedbacks salvos.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 25,
+  'fantasia', JSON_OBJECT('usaCores', '["pele","destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='especie'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
+  'bas_fantasma', 'Fantasma', 'Aparece nas dailies, some nas retros. Uivos opcionais.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 26,
+  'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
@@ -1308,6 +1468,150 @@ INSERT INTO avatar_assets
    lore, asset_type, status, supported_renderers, default_renderer,
    is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
    created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'olh_lagrima', 'Lágrima Solitária', 'O commit foi revertido. A lágrima, não.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 31,
+  'casual', JSON_OBJECT('usaCores', '["cabelo"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
+  'olh_chamas', 'Olhos em Chamas', 'A meta do trimestre olhou de volta — e pegou fogo.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 32,
+  'fantasia', JSON_OBJECT('usaCores', NULL,
+    'piscar', FALSE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'olh_congelante', 'Congelante', 'O feedback veio em temperatura negativa.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 33,
+  'clima', JSON_OBJECT('usaCores', '["cabelo"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
+  'olh_relogio', 'Contra o Relógio', 'Cada piscada custa 15 minutos de sprint.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 34,
+  'executivo', JSON_OBJECT('usaCores', NULL,
+    'piscar', FALSE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'olh_lente', 'Lente de Câmera', 'Abertura f/1.4 — captura até ideia mal iluminada.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 35,
+  'tecnologia', JSON_OBJECT('usaCores', NULL,
+    'piscar', FALSE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
+  'olh_timido', 'Tímido', 'Olhando para o chão e para as próprias ideias boas.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 36,
+  'casual', JSON_OBJECT('usaCores', '["cabelo"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'olh_penetrante', 'Penetrante', 'Atravessa a desculpa e chega direto na causa raiz.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 37,
+  'executivo', JSON_OBJECT('usaCores', '["cabelo"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
+  'olh_galaxia', 'Galáxia', 'Duas espirais de estrelas no lugar do olhar.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 38,
+  'espaço', JSON_OBJECT('usaCores', '["cabelo"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='olhos'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'olh_buscando_sinal', 'Buscando Sinal', 'Carregando resposta… não desligue o colaborador.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 39,
+  'tecnologia', JSON_OBJECT('usaCores', NULL,
+    'piscar', FALSE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
   'boc_sorriso', 'Sorriso', 'Sorriso leve e seguro.', NULL,
   'parte2d', 'published', '2d', '2d',
@@ -1788,6 +2092,166 @@ INSERT INTO avatar_assets
    lore, asset_type, status, supported_renderers, default_renderer,
    is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
    created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
+  'boc_pensativa', 'Pensativa', 'Processando… a resposta chega depois do café.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 30,
+  'casual', JSON_OBJECT('usaCores', NULL,
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'boc_migalhas', 'Hora do Lanche', 'Não era a sua marmita, mas agora é tarde.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 31,
+  'casual', JSON_OBJECT('usaCores', NULL,
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'boc_ziper', 'Zíper', 'Segredo de roadmap guardado a sete dentes.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 32,
+  'tecnologia', JSON_OBJECT('usaCores', NULL,
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
+  'boc_rosa', 'Rosa nos Dentes', 'O tango começa quando o deploy termina.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 33,
+  'clássico', JSON_OBJECT('usaCores', NULL,
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'boc_canudo', 'Café Gelado', 'Cafeína em regime de gotejamento contínuo.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 34,
+  'casual', JSON_OBJECT('usaCores', NULL,
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'boc_aparelho', 'Aparelho', 'Sorriso em manutenção programada até dezembro.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 35,
+  'casual', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'boc_grito_guerra', 'Grito de Guerra', 'BORA, TIME! A sexta-feira não vai se entregar sozinha.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 36,
+  'esportivo', JSON_OBJECT('usaCores', NULL,
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
+  'boc_costurada', 'Costurada', 'Prometeu não dar spoiler da feature. Levou a sério.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 37,
+  'fantasia', JSON_OBJECT('usaCores', NULL,
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
+  'boc_neon', 'Sorriso Neon', 'O sorriso continua aceso mesmo com a luz apagada.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 38,
+  'cyberpunk', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='boca'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
+  'boc_mascando', 'Mascando', 'Chiclete de hortelã e paciência em processamento.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 39,
+  'casual', JSON_OBJECT('usaCores', NULL,
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
   'rou_camiseta', 'Camiseta', 'Básica de algodão, conforto absoluto.', NULL,
   'parte2d', 'published', '2d', '2d',
@@ -2081,6 +2545,182 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM 
   'parte2d', 'published', '2d', '2d',
   0, 1, 18,
   'cyberpunk', JSON_OBJECT('usaCores', '["roupa","destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'rou_havaiana', 'Havaiana', 'Flores tropicais em pleno Q3 — coragem e estilo.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 19,
+  'casual', JSON_OBJECT('usaCores', '["roupa","destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'rou_suspensorios', 'Suspensórios', 'Segurança redundante para calças e opiniões.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 20,
+  'retrô', JSON_OBJECT('usaCores', '["roupa","destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
+  'rou_tricot', 'Suéter de Tricô', 'Feito com pontos firmes e ar-condicionado em 17°C.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 21,
+  'casual', JSON_OBJECT('usaCores', '["roupa"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'rou_capa_chuva', 'Capa de Chuva', 'Amarela, impermeável e visível do espaço.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 22,
+  'clima', JSON_OBJECT('usaCores', NULL,
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'rou_chef', 'Dólmã de Chef', 'Mise en place até no backlog.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 23,
+  'casual', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'rou_blazer_power', 'Blazer Power', 'Ombros estruturados, argumentos idem.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 24,
+  'executivo', JSON_OBJECT('usaCores', '["roupa","destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'rou_regata_quadra', 'Regata de Quadra', 'Número 10 nas costas e nas avaliações de desempenho.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 25,
+  'esportivo', JSON_OBJECT('usaCores', '["roupa","pele","destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
+  'rou_tunica_arcana', 'Túnica Arcana', 'Runas bordadas que compilam feitiços em produção.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 26,
+  'fantasia', JSON_OBJECT('usaCores', '["roupa","destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
+  'rou_exoesqueleto', 'Exoesqueleto', 'Servomotores calibrados para carregar o time inteiro.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 27,
+  'sci-fi', JSON_OBJECT('usaCores', '["roupa","destaque"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
+  'rou_pijama', 'Pijama de Sexta', 'Home office nível máximo: listras e conforto absoluto.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 28,
+  'casual', JSON_OBJECT('usaCores', '["roupa"]',
+    'piscar', TRUE,
+    'slot', NULL), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), metadata = VALUES(metadata), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='roupa'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='exclusivo'), 2,
+  'rou_gala_dshow', 'Gala Dshow', 'O traje da premiação anual — roxo assinatura e pixel de ouro.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  1, 1, 29,
+  'dshow', JSON_OBJECT('usaCores', '["destaque"]',
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
@@ -5022,397 +5662,397 @@ ON DUPLICATE KEY UPDATE name = VALUES(name), metadata = VALUES(metadata),
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_curto'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_curto') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_curto') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_topete'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_topete') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_topete') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_franja'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_franja') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_franja') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_ondulado'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_ondulado') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_ondulado') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_coque'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_coque') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_coque') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_cacheado'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_cacheado') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_cacheado') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_longo'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_longo') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_longo') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_moicano'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_moicano') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_moicano') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_cyber'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_cyber') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_cyber') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_rabo'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_rabo') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_rabo') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_lateral'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_lateral') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_lateral') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_buzz'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_buzz') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_buzz') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_afro'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_afro') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_afro') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_trancas'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_trancas') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_trancas') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_medio'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_medio') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_medio') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_franja_longa'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_franja_longa') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_franja_longa') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_meio_coque'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_meio_coque') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_meio_coque') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_ondas_curtas'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_ondas_curtas') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_ondas_curtas') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_picos_neon'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_picos_neon') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_picos_neon') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_pixie'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_pixie') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_pixie') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_repicado_longo'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_repicado_longo') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_repicado_longo') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_dreads'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_dreads') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_dreads') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_mullet'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_mullet') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_mullet') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_pompadour'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_pompadour') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_pompadour') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_chanel'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_chanel') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_chanel') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_coques_duplos'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_coques_duplos') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_coques_duplos') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_grisalho'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_grisalho') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_grisalho') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_emo'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_emo') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_emo') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_lambido'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_lambido') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_lambido') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_cachos_soltos'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_cachos_soltos') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_cachos_soltos') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_viking'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_viking') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_viking') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_holo_gradiente'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_holo_gradiente') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_holo_gradiente') AND rule_type = 'requires_species';
 
 INSERT INTO avatar_asset_rules
   (source_asset_id, rule_type, target_type, target_key, `condition`, message, is_active)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='cab_tigela'), 'requires_species', 'species', NULL,
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}',
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}',
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_tigela') AND r.rule_type = 'requires_species');
 
 UPDATE avatar_asset_rules SET `condition` =
-  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas"]}'
+  '{"qualquer_de":["bas_classica","bas_angular","bas_holo","bas_redonda","bas_coracao","bas_quadrada","bas_longa","bas_marcada","bas_sardas","bas_triangular","bas_bochechudo","bas_diamante","bas_veterano","bas_juvenil","bas_meio_cyborg"]}'
 WHERE source_asset_id = (SELECT id FROM avatar_assets WHERE `key`='cab_tigela') AND rule_type = 'requires_species';
 
 

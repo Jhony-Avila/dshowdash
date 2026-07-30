@@ -584,4 +584,196 @@ export const OLHOS: ParteDef[] = [
       <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="none" stroke="rgba(124,92,255,0.35)" stroke-width="1.6"/>
       <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="none" stroke="rgba(124,92,255,0.35)" stroke-width="1.6"/>`,
   },
+  // ── 4.6 F2 · Onda 7 — 9 olhares finais (meta §28: 40 ✓) ───────────
+  {
+    id: 'olh_lagrima',
+    categoria: 'olhos',
+    nome: 'Lágrima Solitária',
+    descricao: 'O commit foi revertido. A lágrima, não.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      ${olhoHumano(100, 108)}${olhoHumano(140, 108)}
+      ${sobrancelha(100, 94, 2, p.cabelo.escuro)}${sobrancelha(140, 94, 2, p.cabelo.escuro)}
+      <path d="M92 118 q 3 6 0 10 q -3 -4 0 -10 z" fill="#69c8ff" opacity="0.9"/>`,
+  },
+  {
+    id: 'olh_chamas',
+    categoria: 'olhos',
+    nome: 'Olhos em Chamas',
+    descricao: 'A meta do trimestre olhou de volta — e pegou fogo.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    piscar: false,
+    render: (_p, u) => {
+      const chama = (x: number) => `
+        <ellipse cx="${x}" cy="108" rx="10.5" ry="8" fill="#1c0a06"/>
+        <path d="M${x} 113 c -4 -1 -5 -5 -3 -8 c 1 1.5 2 2 3 2 c -1 -2 0 -4 2 -5.5 c 0 2 0.6 3.4 2 4.2 c 1.4 -0.8 2 -2 2 -3.4 c 1.6 3 0.6 7 -2.6 8.6 c -1 0.6 -2.4 1.4 -3.4 2.1 z" fill="url(#${u}fla${x})"/>
+        <defs>
+          <linearGradient id="${u}fla${x}" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#ff5230"/>
+            <stop offset="1" stop-color="#ffd75e"/>
+          </linearGradient>
+        </defs>`;
+      return `${chama(100)}${chama(140)}
+      <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="none" stroke="rgba(255,138,61,0.5)" stroke-width="1.8">
+        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.2s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="none" stroke="rgba(255,138,61,0.5)" stroke-width="1.8">
+        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.2s" repeatCount="indefinite"/>
+      </ellipse>`;
+    },
+  },
+  {
+    id: 'olh_congelante',
+    categoria: 'olhos',
+    nome: 'Congelante',
+    descricao: 'O feedback veio em temperatura negativa.',
+    raridade: 'raro',
+    tema: 'clima',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="#eef8ff"/>
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="#eef8ff"/>
+      <circle cx="100" cy="108.5" r="5" fill="#7cc8f0"/>
+      <circle cx="140" cy="108.5" r="5" fill="#7cc8f0"/>
+      <circle cx="100" cy="108.5" r="2.2" fill="#0c2a3d"/>
+      <circle cx="140" cy="108.5" r="2.2" fill="#0c2a3d"/>
+      <path d="M88 100 l 4 3 m 4 -6 l 2 4 M152 100 l -4 3 m -4 -6 l -2 4" stroke="#bfe8ff" stroke-width="1.8" stroke-linecap="round"/>
+      ${sobrancelha(100, 92, -1, p.cabelo.escuro)}${sobrancelha(140, 92, -1, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_relogio',
+    categoria: 'olhos',
+    nome: 'Contra o Relógio',
+    descricao: 'Cada piscada custa 15 minutos de sprint.',
+    raridade: 'epico',
+    tema: 'executivo',
+    piscar: false,
+    render: () => {
+      const relogio = (x: number, dur: string) => `
+        <g transform="translate(${x} 108)">
+          <circle r="9.5" fill="#fdfdfa" stroke="#3a4054" stroke-width="1.6"/>
+          <path d="M0 -7.5 v 1.6 M0 7.5 v -1.6 M-7.5 0 h 1.6 M7.5 0 h -1.6" stroke="#3a4054" stroke-width="1.2"/>
+          <path d="M0 0 v -5.5" stroke="#14100c" stroke-width="1.8" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" values="0;360" dur="${dur}s" repeatCount="indefinite"/>
+          </path>
+          <path d="M0 0 h 3.6" stroke="#ff5230" stroke-width="1.4" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" values="0;360" dur="3" repeatCount="indefinite"/>
+          </path>
+          <circle r="1.2" fill="#14100c"/>
+        </g>`;
+      return `${relogio(100, '12')}${relogio(140, '12')}`;
+    },
+  },
+  {
+    id: 'olh_lente',
+    categoria: 'olhos',
+    nome: 'Lente de Câmera',
+    descricao: 'Abertura f/1.4 — captura até ideia mal iluminada.',
+    raridade: 'raro',
+    tema: 'tecnologia',
+    piscar: false,
+    render: () => {
+      const lente = (x: number) => `
+        <g transform="translate(${x} 108)">
+          <circle r="9.5" fill="#0c0f18"/>
+          <circle r="7" fill="none" stroke="#3a4054" stroke-width="1.4"/>
+          <path d="M-5 -3 L0 -6 L5 -3 L6 2 L0 6 L-6 2 Z" fill="none" stroke="#5a6274" stroke-width="1.2"/>
+          <circle r="2.6" fill="#1d3a5c"/>
+          <circle cx="-2.4" cy="-3" r="1.6" fill="rgba(160,200,255,0.65)"/>
+        </g>`;
+      return `${lente(100)}${lente(140)}`;
+    },
+  },
+  {
+    id: 'olh_timido',
+    categoria: 'olhos',
+    nome: 'Tímido',
+    descricao: 'Olhando para o chão e para as próprias ideias boas.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <ellipse cx="100" cy="109" rx="10" ry="7" fill="#fdfdfa"/>
+      <ellipse cx="140" cy="109" rx="10" ry="7" fill="#fdfdfa"/>
+      <circle cx="97" cy="112" r="4.4" fill="${IRIS}"/>
+      <circle cx="137" cy="112" r="4.4" fill="${IRIS}"/>
+      <circle cx="97" cy="112" r="2" fill="#14100c"/>
+      <circle cx="137" cy="112" r="2" fill="#14100c"/>
+      ${sobrancelha(100, 95, 2, p.cabelo.escuro)}${sobrancelha(140, 95, 2, p.cabelo.escuro)}
+      <ellipse cx="88" cy="121" rx="6" ry="3.4" fill="${alfa('#ff6b6b', 0.28)}"/>
+      <ellipse cx="152" cy="121" rx="6" ry="3.4" fill="${alfa('#ff6b6b', 0.28)}"/>`,
+  },
+  {
+    id: 'olh_penetrante',
+    categoria: 'olhos',
+    nome: 'Penetrante',
+    descricao: 'Atravessa a desculpa e chega direto na causa raiz.',
+    raridade: 'incomum',
+    tema: 'executivo',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <path d="M89 106 q 11 -6 22 0 q -11 8 -22 0 z" fill="#fdfdfa"/>
+      <path d="M129 106 q 11 -6 22 0 q -11 8 -22 0 z" fill="#fdfdfa"/>
+      <circle cx="100" cy="107.5" r="3.8" fill="${IRIS}"/>
+      <circle cx="140" cy="107.5" r="3.8" fill="${IRIS}"/>
+      <circle cx="100" cy="107.5" r="1.8" fill="#14100c"/>
+      <circle cx="140" cy="107.5" r="1.8" fill="#14100c"/>
+      <path d="M88 94 l 23 3 M152 94 l -23 3" stroke="${p.cabelo.escuro}" stroke-width="4.4" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'olh_galaxia',
+    categoria: 'olhos',
+    nome: 'Galáxia',
+    descricao: 'Duas espirais de estrelas no lugar do olhar.',
+    raridade: 'epico',
+    tema: 'espaço',
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>
+        <radialGradient id="${u}gal" cx="0.5" cy="0.5" r="0.6">
+          <stop offset="0" stop-color="#c99aff"/>
+          <stop offset="0.5" stop-color="#3d2a6e"/>
+          <stop offset="1" stop-color="#0c0a2e"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="url(#${u}gal)"/>
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="url(#${u}gal)"/>
+      <circle cx="97" cy="106" r="0.9" fill="#ffffff"/>
+      <circle cx="103" cy="110" r="0.7" fill="#ffffff" opacity="0.8"/>
+      <circle cx="137" cy="110" r="0.9" fill="#ffffff"/>
+      <circle cx="143" cy="106" r="0.7" fill="#ffffff" opacity="0.8"/>
+      <circle cx="100" cy="108" r="1.6" fill="#ffffff">
+        <animate attributeName="opacity" values="1;0.5;1" dur="2.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="140" cy="108" r="1.6" fill="#ffffff">
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="2.6s" repeatCount="indefinite"/>
+      </circle>
+      ${sobrancelha(100, 92, 0, p.cabelo.escuro)}${sobrancelha(140, 92, 0, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_buscando_sinal',
+    categoria: 'olhos',
+    nome: 'Buscando Sinal',
+    descricao: 'Carregando resposta… não desligue o colaborador.',
+    raridade: 'incomum',
+    tema: 'tecnologia',
+    piscar: false,
+    render: () => {
+      const pontos = (x: number, atraso: number) => `
+        <ellipse cx="${x}" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+        <circle cx="${x - 5}" cy="108" r="1.8" fill="#3a4054">
+          <animate attributeName="opacity" values="0.25;1;0.25" dur="1.4s" begin="${atraso}s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="${x}" cy="108" r="1.8" fill="#3a4054">
+          <animate attributeName="opacity" values="0.25;1;0.25" dur="1.4s" begin="${atraso + 0.25}s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="${x + 5}" cy="108" r="1.8" fill="#3a4054">
+          <animate attributeName="opacity" values="0.25;1;0.25" dur="1.4s" begin="${atraso + 0.5}s" repeatCount="indefinite"/>
+        </circle>`;
+      return `${pontos(100, 0)}${pontos(140, 0.15)}`;
+    },
+  },
 ];

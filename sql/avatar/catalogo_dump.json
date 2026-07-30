@@ -49,6 +49,36 @@
   "raridade": "incomum",
   "nome": "Sardas"
  },
+ "bas_triangular": {
+  "categoria": "especie",
+  "raridade": "incomum",
+  "nome": "Triangular"
+ },
+ "bas_bochechudo": {
+  "categoria": "especie",
+  "raridade": "comum",
+  "nome": "Bochechudo"
+ },
+ "bas_diamante": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Diamante"
+ },
+ "bas_veterano": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Veterano"
+ },
+ "bas_juvenil": {
+  "categoria": "especie",
+  "raridade": "comum",
+  "nome": "Juvenil"
+ },
+ "bas_meio_cyborg": {
+  "categoria": "especie",
+  "raridade": "epico",
+  "nome": "Meio-Cyborg"
+ },
  "bas_panda": {
   "categoria": "especie",
   "raridade": "raro",
@@ -83,6 +113,26 @@
   "categoria": "especie",
   "raridade": "exclusivo",
   "nome": "LED Bot"
+ },
+ "bas_gato": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Gato"
+ },
+ "bas_urso": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Urso"
+ },
+ "bas_dragao": {
+  "categoria": "especie",
+  "raridade": "lendario",
+  "nome": "Dragão"
+ },
+ "bas_fantasma": {
+  "categoria": "especie",
+  "raridade": "epico",
+  "nome": "Fantasma"
  },
  "cab_curto": {
   "categoria": "cabelo",
@@ -404,6 +454,51 @@
   "raridade": "mitico",
   "nome": "Void"
  },
+ "olh_lagrima": {
+  "categoria": "olhos",
+  "raridade": "incomum",
+  "nome": "Lágrima Solitária"
+ },
+ "olh_chamas": {
+  "categoria": "olhos",
+  "raridade": "lendario",
+  "nome": "Olhos em Chamas"
+ },
+ "olh_congelante": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Congelante"
+ },
+ "olh_relogio": {
+  "categoria": "olhos",
+  "raridade": "epico",
+  "nome": "Contra o Relógio"
+ },
+ "olh_lente": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Lente de Câmera"
+ },
+ "olh_timido": {
+  "categoria": "olhos",
+  "raridade": "comum",
+  "nome": "Tímido"
+ },
+ "olh_penetrante": {
+  "categoria": "olhos",
+  "raridade": "incomum",
+  "nome": "Penetrante"
+ },
+ "olh_galaxia": {
+  "categoria": "olhos",
+  "raridade": "epico",
+  "nome": "Galáxia"
+ },
+ "olh_buscando_sinal": {
+  "categoria": "olhos",
+  "raridade": "incomum",
+  "nome": "Buscando Sinal"
+ },
  "boc_sorriso": {
   "categoria": "boca",
   "raridade": "comum",
@@ -554,6 +649,56 @@
   "raridade": "incomum",
   "nome": "Queixo Heroico"
  },
+ "boc_pensativa": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Pensativa"
+ },
+ "boc_migalhas": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Hora do Lanche"
+ },
+ "boc_ziper": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Zíper"
+ },
+ "boc_rosa": {
+  "categoria": "boca",
+  "raridade": "epico",
+  "nome": "Rosa nos Dentes"
+ },
+ "boc_canudo": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Café Gelado"
+ },
+ "boc_aparelho": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Aparelho"
+ },
+ "boc_grito_guerra": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Grito de Guerra"
+ },
+ "boc_costurada": {
+  "categoria": "boca",
+  "raridade": "epico",
+  "nome": "Costurada"
+ },
+ "boc_neon": {
+  "categoria": "boca",
+  "raridade": "lendario",
+  "nome": "Sorriso Neon"
+ },
+ "boc_mascando": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Mascando"
+ },
  "rou_camiseta": {
   "categoria": "roupa",
   "raridade": "comum",
@@ -648,6 +793,61 @@
   "categoria": "roupa",
   "raridade": "lendario",
   "nome": "Jaqueta Neon Racer"
+ },
+ "rou_havaiana": {
+  "categoria": "roupa",
+  "raridade": "incomum",
+  "nome": "Havaiana"
+ },
+ "rou_suspensorios": {
+  "categoria": "roupa",
+  "raridade": "incomum",
+  "nome": "Suspensórios"
+ },
+ "rou_tricot": {
+  "categoria": "roupa",
+  "raridade": "comum",
+  "nome": "Suéter de Tricô"
+ },
+ "rou_capa_chuva": {
+  "categoria": "roupa",
+  "raridade": "raro",
+  "nome": "Capa de Chuva"
+ },
+ "rou_chef": {
+  "categoria": "roupa",
+  "raridade": "raro",
+  "nome": "Dólmã de Chef"
+ },
+ "rou_blazer_power": {
+  "categoria": "roupa",
+  "raridade": "raro",
+  "nome": "Blazer Power"
+ },
+ "rou_regata_quadra": {
+  "categoria": "roupa",
+  "raridade": "incomum",
+  "nome": "Regata de Quadra"
+ },
+ "rou_tunica_arcana": {
+  "categoria": "roupa",
+  "raridade": "epico",
+  "nome": "Túnica Arcana"
+ },
+ "rou_exoesqueleto": {
+  "categoria": "roupa",
+  "raridade": "lendario",
+  "nome": "Exoesqueleto"
+ },
+ "rou_pijama": {
+  "categoria": "roupa",
+  "raridade": "comum",
+  "nome": "Pijama de Sexta"
+ },
+ "rou_gala_dshow": {
+  "categoria": "roupa",
+  "raridade": "exclusivo",
+  "nome": "Gala Dshow"
  },
  "ace_brinco": {
   "categoria": "acessorio",

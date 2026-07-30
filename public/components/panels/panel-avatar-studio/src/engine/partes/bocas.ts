@@ -421,4 +421,144 @@ export const BOCAS: ParteDef[] = [
       <path d="M117 158 q 3 3 6 0" stroke="${alfa(p.pele.profundo, 0.5)}" stroke-width="2.4" stroke-linecap="round" fill="none"/>
       <path d="M108 148 q 12 6 24 0" stroke="${alfa(p.pele.escuro, 0.35)}" stroke-width="2" stroke-linecap="round" fill="none"/>`,
   },
+  // ── 4.6 F2 · Onda 7 — 10 bocas finais (meta §28: 40 ✓) ────────────
+  {
+    id: 'boc_pensativa',
+    categoria: 'boca',
+    nome: 'Pensativa',
+    descricao: 'Processando… a resposta chega depois do café.',
+    raridade: 'comum',
+    tema: 'casual',
+    render: (p) => `
+      <path d="M108 147 q 8 -5 16 -1 q 5 3 8 1" stroke="#5a2e26" stroke-width="4.2" stroke-linecap="round" fill="none"/>
+      <path d="M134 138 q 4 -1 6 2" stroke="${alfa(p.pele.escuro, 0.4)}" stroke-width="2" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'boc_migalhas',
+    categoria: 'boca',
+    nome: 'Hora do Lanche',
+    descricao: 'Não era a sua marmita, mas agora é tarde.',
+    raridade: 'incomum',
+    tema: 'casual',
+    render: () => `
+      <path d="M104 144 q 16 10 32 0 q -16 6 -32 0 z" fill="#431d18"/>
+      <path d="M106 144.5 q 14 4 28 0 l -1.4 3.4 q -12.6 3.6 -25.2 0 z" fill="#ffffff"/>
+      <circle cx="104" cy="156" r="1.8" fill="#d8a05c"/>
+      <circle cx="112" cy="160" r="1.4" fill="#b9834a"/>
+      <circle cx="134" cy="158" r="1.6" fill="#d8a05c"/>
+      <circle cx="126" cy="162" r="1.2" fill="#b9834a"/>`,
+  },
+  {
+    id: 'boc_ziper',
+    categoria: 'boca',
+    nome: 'Zíper',
+    descricao: 'Segredo de roadmap guardado a sete dentes.',
+    raridade: 'raro',
+    tema: 'tecnologia',
+    render: () => `
+      <path d="M102 146 h 36" stroke="#3a4054" stroke-width="6" stroke-linecap="round"/>
+      <path d="M104 146 h 32" stroke="#c4c9d6" stroke-width="2" stroke-dasharray="3 3"/>
+      <path d="M138 146 l 6 4 a 3 3 0 1 0 2 -5 z" fill="#c4c9d6" stroke="#5a6274" stroke-width="1"/>`,
+  },
+  {
+    id: 'boc_rosa',
+    categoria: 'boca',
+    nome: 'Rosa nos Dentes',
+    descricao: 'O tango começa quando o deploy termina.',
+    raridade: 'epico',
+    tema: 'clássico',
+    render: () => `
+      <path d="M106 144 q 14 8 28 0" stroke="#5a2e26" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M120 147 l 22 6" stroke="#2f6e3a" stroke-width="2.6"/>
+      <path d="M134 151 l 5 -4 M128 150 l 4 -5" stroke="#2f6e3a" stroke-width="1.8" stroke-linecap="round"/>
+      <g transform="translate(146 155)">
+        <circle r="6" fill="#c1272d"/>
+        <path d="M-3 -2 a 4 4 0 0 1 6 -1 M-1 2 a 3 3 0 0 1 4 -3" stroke="#ff5f8f" stroke-width="1.4" fill="none"/>
+      </g>`,
+  },
+  {
+    id: 'boc_canudo',
+    categoria: 'boca',
+    nome: 'Café Gelado',
+    descricao: 'Cafeína em regime de gotejamento contínuo.',
+    raridade: 'incomum',
+    tema: 'casual',
+    render: () => `
+      <ellipse cx="118" cy="146" rx="4.5" ry="5" fill="#431d18"/>
+      <path d="M120 146 l 24 14" stroke="#4cd97c" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M138 156 l 10 6" stroke="#3aa860" stroke-width="3.4" stroke-linecap="round"/>
+      <rect x="142" y="160" width="16" height="20" rx="3" fill="rgba(180,220,255,0.4)" stroke="#8fb7d8" stroke-width="1.4"/>
+      <rect x="142" y="168" width="16" height="12" rx="3" fill="rgba(122,74,50,0.75)"/>
+      <rect x="144" y="171" width="4" height="4" rx="1" fill="rgba(255,255,255,0.5)"/>`,
+  },
+  {
+    id: 'boc_aparelho',
+    categoria: 'boca',
+    nome: 'Aparelho',
+    descricao: 'Sorriso em manutenção programada até dezembro.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M102 141 q 18 18 36 0 q -18 8 -36 0 z" fill="#431d18"/>
+      <path d="M105 142 q 15 5 30 0 l -2 5 q -13 4 -26 0 z" fill="#ffffff"/>
+      <path d="M106 144.5 q 14 4.5 28 0" stroke="#8b93a7" stroke-width="1.6" fill="none"/>
+      <circle cx="110" cy="144.5" r="1.3" fill="${p.destaque.base}"/>
+      <circle cx="117" cy="146" r="1.3" fill="${p.destaque.base}"/>
+      <circle cx="124" cy="146.2" r="1.3" fill="${p.destaque.base}"/>
+      <circle cx="131" cy="145" r="1.3" fill="${p.destaque.base}"/>`,
+  },
+  {
+    id: 'boc_grito_guerra',
+    categoria: 'boca',
+    nome: 'Grito de Guerra',
+    descricao: 'BORA, TIME! A sexta-feira não vai se entregar sozinha.',
+    raridade: 'raro',
+    tema: 'esportivo',
+    render: () => `
+      <path d="M102 138 q 18 -4 36 0 q -2 18 -18 18 t -18 -18 z" fill="#431d18"/>
+      <path d="M104 138.5 q 16 -3 32 0 l -1.4 4 q -14.6 -2.5 -29.2 0 z" fill="#ffffff"/>
+      <path d="M112 152 q 8 4 16 0 q -4 4 -8 4 t -8 -4 z" fill="#c2554d"/>
+      <path d="M94 132 l -6 -4 M146 132 l 6 -4 M96 144 l -7 1 M144 144 l 7 1" stroke="rgba(255,255,255,0.35)" stroke-width="2" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'boc_costurada',
+    categoria: 'boca',
+    nome: 'Costurada',
+    descricao: 'Prometeu não dar spoiler da feature. Levou a sério.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    render: (p) => `
+      <path d="M104 146 q 16 6 32 0" stroke="${alfa(p.pele.profundo, 0.85)}" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <g stroke="#8b93a7" stroke-width="2" stroke-linecap="round">
+        <path d="M108 141 l 2 10 M115 140 l 1.6 11 M122 140 l 0.8 11 M129 140 l -0.8 11 M135 141 l -2 10"/>
+      </g>`,
+  },
+  {
+    id: 'boc_neon',
+    categoria: 'boca',
+    nome: 'Sorriso Neon',
+    descricao: 'O sorriso continua aceso mesmo com a luz apagada.',
+    raridade: 'lendario',
+    tema: 'cyberpunk',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M104 142 q 16 14 32 0" stroke="${p.destaque.claro}" stroke-width="3.4" stroke-linecap="round" fill="none">
+        <animate attributeName="opacity" values="1;0.5;1;1;0.7;1" keyTimes="0;0.05;0.1;0.6;0.65;1" dur="3.4s" repeatCount="indefinite" calcMode="discrete"/>
+      </path>
+      <path d="M104 142 q 16 14 32 0" stroke="${alfa(p.destaque.base, 0.4)}" stroke-width="8" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'boc_mascando',
+    categoria: 'boca',
+    nome: 'Mascando',
+    descricao: 'Chiclete de hortelã e paciência em processamento.',
+    raridade: 'comum',
+    tema: 'casual',
+    render: (p) => `
+      <path d="M106 144 q 10 6 20 2 q 5 -2 8 -5" stroke="#5a2e26" stroke-width="4.2" stroke-linecap="round" fill="none"/>
+      <ellipse cx="136" cy="152" rx="7" ry="5.4" fill="${alfa(p.pele.claro, 0.7)}">
+        <animate attributeName="rx" values="7;5.6;7" dur="1.1s" repeatCount="indefinite"/>
+      </ellipse>`,
+  },
 ];
