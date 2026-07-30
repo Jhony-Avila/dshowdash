@@ -37,6 +37,12 @@ const CAMERA_CORPO: Partial<Record<CategoriaId, { escala: number; origem: string
   roupa:     { escala: 1.5, origem: '50% 44%' },
 };
 
+/** Rótulo do foco da câmera (AS4 §39.12 — orientação do zoom contextual). */
+const ROTULO_FOCO: Partial<Record<CategoriaId, string>> = {
+  base: 'Rosto', olhos: 'Olhos', boca: 'Boca',
+  cabelo: 'Cabelo', acessorio: 'Acessório', roupa: 'Roupa',
+};
+
 /** Coreografias das PERFORMANCES (AS3 F2a — pedido do Jhony). */
 type PerformanceId = 'acenar' | 'pose' | 'comemorar';
 
@@ -301,6 +307,12 @@ export function PalcoCinema({ config, categoria, celebracao, aoFimCelebracao }: 
       {/* iluminação de fundo do palco */}
       <span className="avst-cine-luz" aria-hidden />
       <span className="avst-cine-glow" aria-hidden />
+
+      {/* nível de zoom + foco da câmera (AS4 §39.12/§39.13) */}
+      <span className="avst-cine-zoom" role="status"
+        title="Câmera do palco — ajuste com os botões abaixo">
+        {categoria && ROTULO_FOCO[categoria] ? `${ROTULO_FOCO[categoria]} · ` : ''}{Math.round(escala * 100)}%
+      </span>
 
       <div className="avst-cine-cam"
         style={{ transform: `scale(${escala})`, transformOrigin: cam.origem }}>

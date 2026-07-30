@@ -1,15 +1,17 @@
 // app/App.tsx — Avatar Studio (Sistema de Avatares Gamer AAA).
-// @version 1.0.0  @created 2026-07-29
+// @version 2.0.0  @created 2026-07-29  @updated 2026-07-30 (AS4 Fase 0)
 //
 // Layout de estúdio em 3 colunas (briefing §8):
 //   [categorias] [palco de preview + barra de salvar] [grade de itens / presets + cores]
 // Estado central aqui; renderização no motor; persistência no AvatarService.
 // Undo/redo (§14), comparação atual×salvo (§15), estados de salvar (§25).
+// AS4 Fase 0: painel direito redimensionável 320/420/560 (§23.3), barra de
+// salvar junto do personagem (§39.11) e toast de feedback ao equipar (§39.18).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Bot, Boxes, Brush, Camera, CircleUser, Columns2, Dices, Eye, Frame, Glasses, History,
-  Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Trophy, Undo2,
-  Users, Volume2, VolumeX, Wand2,
+  Bot, Boxes, Brush, Camera, Check, CircleUser, Columns2, Dices, Eye, Frame, Glasses,
+  History, Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Trophy,
+  Undo2, Users, Volume2, VolumeX, Wand2,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, EstadoSalvar, Raridade, ShellConfig } from '../domain/types';
 import {
@@ -82,6 +84,19 @@ const ROTULO_ESTADO: Record<EstadoSalvar, string> = {
   conflito: 'Conflito de versão',
 };
 
+/** Painel direito redimensionável (AS4 §23.3): compacto/padrão/expandido. */
+const CHAVE_LARG = 'dshow.avatar.painel.larg.v1';
+const LARGURAS = [320, 420, 560];
+const LARG_MIN = 320;
+const LARG_MAX = 560;
+
+function largGuardada(): number {
+  try {
+    const v = parseInt(localStorage.getItem(CHAVE_LARG) ?? '', 10);
+    return v >= LARG_MIN && v <= LARG_MAX ? v : 420;
+  } catch { return 420; }
+}
+
 export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [carregando, setCarregando] = useState(true);
   const [atual, setAtual] = useState<AvatarConfig>(CONFIG_PADRAO);
@@ -97,10 +112,49 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [comparando, setComparando] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
   const [somLigado, setSomLigado] = useState(somAtivo);
+  const [largPainel, setLargPainel] = useState(largGuardada);
+  const [toastEquipar, setToastEquipar] = useState<{ nome: string; cor: string; chave: number } | null>(null);
 
   const desfazerPilha = useRef<AvatarConfig[]>([]);
   const refazerPilha = useRef<AvatarConfig[]>([]);
   const sementeRef = useRef(Date.now() % 2147483647);
+  const corpoRef = useRef<HTMLDivElement>(null);
+
+  // ── Painel direito redimensionável (AS4 §23.3) ────────────────────
+  const guardarLargura = useCallback((v: number) => {
+    try { localStorage.setItem(CHAVE_LARG, String(v)); } catch { /* sem storage */ }
+  }, []);
+
+  const iniciarArrasto = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const direita = corpoRef.current?.getBoundingClientRect().right ?? window.innerWidth;
+    const mover = (ev: PointerEvent) => {
+      setLargPainel(Math.max(LARG_MIN, Math.min(LARG_MAX, Math.round(direita - ev.clientX))));
+    };
+    const soltar = () => {
+      window.removeEventListener('pointermove', mover);
+      window.removeEventListener('pointerup', soltar);
+      setLargPainel((v) => { guardarLargura(v); telemetria('painel_largura', { largura: v }); return v; });
+    };
+    window.addEventListener('pointermove', mover);
+    window.addEventListener('pointerup', soltar);
+  }, [guardarLargura]);
+
+  const ciclarLargura = useCallback(() => {
+    setLargPainel((v) => {
+      const atual = LARGURAS.findIndex((l) => v <= l);
+      const prox = LARGURAS[(atual + 1) % LARGURAS.length] ?? 420;
+      guardarLargura(prox);
+      return prox;
+    });
+  }, [guardarLargura]);
+
+  // toast de equipar some sozinho (AS4 §39.18)
+  useEffect(() => {
+    if (!toastEquipar) return;
+    const t = window.setTimeout(() => setToastEquipar(null), 1700);
+    return () => window.clearTimeout(t);
+  }, [toastEquipar]);
 
   // ── Carga inicial ─────────────────────────────────────────────────
   const aplicarCarga = useCallback((r: ResultadoCarga) => {
@@ -166,6 +220,11 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       if (raridade) {
         tocarEquipar(nivelRaridade(raridade));
         telemetria('equipou', { raridade });
+        // feedback claro ao equipar (AS4 §39.18): toast junto do personagem
+        const mudou = listarMudancas(anterior, validado)[0];
+        if (mudou) {
+          setToastEquipar({ nome: mudou.nome, cor: RARIDADES[mudou.raridade].cor, chave: Date.now() });
+        }
         if (nivelRaridade(raridade) >= nivelRaridade('lendario')) {
           setCelebracao({ raridade, chave: Date.now() });
           tocarCelebracao(raridade);
@@ -305,7 +364,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         </div>
       </header>
 
-      <div className="avst-corpo">
+      <div className="avst-corpo" ref={corpoRef}
+        style={{ '--avst-larg-painel': `${largPainel}px` } as React.CSSProperties}>
         {/* ── Coluna 1: categorias ── */}
         <nav className="avst-categorias" aria-label="Categorias">
           {CATEGORIAS.map((c) => {
@@ -397,14 +457,17 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
                 categoria={aba === 'itens' ? categoria : null}
                 celebracao={celebracao}
                 aoFimCelebracao={() => setCelebracao(null)} />
+              {/* feedback claro ao equipar (AS4 §39.18) */}
+              {toastEquipar && (
+                <div key={toastEquipar.chave} className="avst-toast-equipar" role="status"
+                  style={{ '--avst-rar': toastEquipar.cor } as React.CSSProperties}>
+                  <Check size={13} aria-hidden /> Equipado: <strong>{toastEquipar.nome}</strong>
+                </div>
+              )}
             </div>
           )}
 
-          <div className="avst-previas">
-            <figure><AvatarSvg config={atual} forma="circulo" uid="mini-h" /><figcaption>Header</figcaption></figure>
-            <figure className="avst-previa-menor"><AvatarSvg config={atual} forma="circulo" uid="mini-m" /><figcaption>Menu</figcaption></figure>
-          </div>
-
+          {/* barra de salvar JUNTO do personagem (AS4 §39.11) */}
           <footer className={`avst-barra avst-barra-${estado}`}>
             <span className="avst-barra-estado" role="status">
               {estado === 'salvando' && <LoaderCircle className="avst-girando" size={14} aria-hidden />}
@@ -425,10 +488,20 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
               <Save size={15} aria-hidden /> Salvar avatar
             </button>
           </footer>
+
+          {/* previews por contexto (header/menu) */}
+          <div className="avst-previas">
+            <figure><AvatarSvg config={atual} forma="circulo" uid="mini-h" /><figcaption>Header</figcaption></figure>
+            <figure className="avst-previa-menor"><AvatarSvg config={atual} forma="circulo" uid="mini-m" /><figcaption>Menu</figcaption></figure>
+          </div>
         </main>
 
         {/* ── Coluna 3: itens/presets/histórico/foto + cores ── */}
         <aside className="avst-lateral">
+          {/* alça de redimensionamento (AS4 §23.3): arraste ou duplo clique */}
+          <div className="avst-redim" role="separator" aria-orientation="vertical"
+            title="Arraste para redimensionar · duplo clique alterna 320/420/560"
+            onPointerDown={iniciarArrasto} onDoubleClick={ciclarLargura} />
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
           {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
           {aba === 'conquistas' && <Conquistas vida={vida} />}

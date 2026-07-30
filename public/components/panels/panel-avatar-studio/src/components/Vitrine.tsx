@@ -3,8 +3,8 @@
 //
 // Ranking VOLUNTÁRIO (só aparece quem criou avatar) e de COLEÇÃO (versões
 // exploradas) — nunca produtividade. Dados do /api/avatar/vitrine.php.
-import { useEffect, useState } from 'react';
-import { Crown, LoaderCircle, Medal, Users } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Crown, LoaderCircle, Medal, TriangleAlert, Users } from 'lucide-react';
 
 interface ItemVitrine {
   usuario: string;
@@ -16,16 +16,29 @@ interface ItemVitrine {
 
 export function Vitrine() {
   const [itens, setItens] = useState<ItemVitrine[] | null>(null);
+  const [erro, setErro] = useState(false);
 
-  useEffect(() => {
-    let vivo = true;
+  // estado de ERRO separado do vazio (AS4 Fase 0 §44 — estados de erro)
+  const carregar = useCallback(() => {
+    setItens(null);
+    setErro(false);
     void fetch('/api/avatar/vitrine.php', { credentials: 'include', cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((c) => { if (vivo) setItens(Array.isArray(c?.data?.vitrine) ? c.data.vitrine : []); })
-      .catch(() => { if (vivo) setItens([]); });
-    return () => { vivo = false; };
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((c) => setItens(Array.isArray(c?.data?.vitrine) ? c.data.vitrine : []))
+      .catch(() => setErro(true));
   }, []);
 
+  useEffect(() => { carregar(); }, [carregar]);
+
+  if (erro) {
+    return (
+      <div className="avst-vazio">
+        <TriangleAlert size={24} aria-hidden />
+        <p>Não deu para carregar a vitrine agora.</p>
+        <button type="button" className="avst-botao" onClick={carregar}>Tentar de novo</button>
+      </div>
+    );
+  }
   if (itens === null) {
     return (
       <div className="avst-vazio">
