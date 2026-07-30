@@ -201,6 +201,30 @@ export const EFEITOS: ParteDef[] = [
     },
   },
   {
+    id: 'efe_confete',
+    categoria: 'efeito',
+    nome: 'Confete Eterno',
+    descricao: 'A festa do Colecionador nunca termina.',
+    raridade: 'lendario',
+    tema: 'conquista',
+    bloqueadoPor: 'conquista:colecionador_5',
+    render: () => {
+      const CORES = ['#ff5f6e', '#ffb74c', '#4cd97c', '#4c9de8', '#b06ce8', '#ffd76e'];
+      let pedacos = '';
+      for (let i = 0; i < 16; i++) {
+        const x = ((i * 61) % 224) + 8;
+        const dur = (3 + (i % 5) * 0.5).toFixed(1);
+        const atraso = ((i * 7) % 30) / 10;
+        const rot = 40 + (i % 4) * 70;
+        pedacos += `
+        <rect x="${x}" y="-14" width="7" height="11" rx="1.5" fill="${CORES[i % CORES.length]}" opacity="0.9" transform="rotate(${rot} ${x} 0)">
+          <animateTransform attributeName="transform" type="translate" values="0 0; 0 268" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite" additive="sum"/>
+        </rect>`;
+      }
+      return pedacos;
+    },
+  },
+  {
     id: 'efe_faiscas',
     categoria: 'efeito',
     nome: 'Faíscas Lendárias',

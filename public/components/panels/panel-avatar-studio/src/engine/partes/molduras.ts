@@ -148,6 +148,28 @@ export const MOLDURAS: ParteDef[] = [
       <path d="M120 6 l 6 8 l -6 7" stroke="${alfa('#ffffff', 0.7)}" stroke-width="1.4" fill="none"/>`,
   },
   {
+    id: 'mol_pioneiro',
+    categoria: 'moldura',
+    nome: 'Pioneiro',
+    descricao: 'A moldura de quem criou a própria identidade primeiro.',
+    raridade: 'epico',
+    tema: 'conquista',
+    usaCores: ['destaque'],
+    bloqueadoPor: 'conquista:primeiro_avatar',
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}pio" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#d8deea"/>
+          <stop offset="0.5" stop-color="#8a94ab"/>
+          <stop offset="1" stop-color="#d8deea"/>
+        </linearGradient>
+      </defs>
+      <rect x="3" y="3" width="234" height="234" rx="${R}" fill="none" stroke="url(#${u}pio)" stroke-width="6"/>
+      <circle cx="120" cy="8" r="11" fill="url(#${u}pio)" stroke="#5b6578" stroke-width="1.4"/>
+      <path d="M117 3 l 3 -2 v 13 h -3 m 0 0 h 7" stroke="${p.destaque.profundo}" stroke-width="2.2" fill="none"/>
+      <rect x="10" y="10" width="220" height="220" rx="${R - 6}" fill="none" stroke="${alfa(p.destaque.base, 0.35)}" stroke-width="1.4"/>`,
+  },
+  {
     id: 'mol_dshow',
     categoria: 'moldura',
     nome: 'Exclusiva Dshow',

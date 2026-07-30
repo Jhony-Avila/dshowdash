@@ -39,6 +39,11 @@ export interface ItemCatalogo {
   biblioteca?: string;
   /** false = olhos que não piscam no idle (visores/LEDs) — AS3 §5.1 */
   piscar?: boolean;
+  /**
+   * Trava ADITIVA (AS3 F3, decisão #25): 'conquista:<id>' ou 'evento:<id>'.
+   * Itens sem este campo são livres; o desbloqueio vem do /api/avatar/vida.php.
+   */
+  bloqueadoPor?: string;
   /** slots de cor que este item usa (mostra o seletor correspondente) */
   usaCores?: SlotCor[];
   /** só compatível com estas bases (vazio = todas) — briefing §35 */
@@ -96,6 +101,8 @@ export interface Conquista {
   descricao: string;
   conquistada: boolean;
   em: string | null;
+  /** item liberado por esta conquista (desbloqueio ADITIVO — decisão #25) */
+  recompensa: string | null;
 }
 
 // ── Estados de salvamento (briefing §25) ────────────────────────────

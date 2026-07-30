@@ -118,6 +118,12 @@ const LORES: Record<string, string> = {
   fun_dojo: 'O sensei só disse uma coisa: "meça duas vezes, publique uma".',
   mol_rgb: 'Se não tem RGB, nem é setup. Lei universal.',
   mol_cristal: 'Congelou no exato instante de um recorde. Nunca mais derreteu.',
+  // F3 — recompensas de conquista e itens de evento
+  mol_pioneiro: 'Forjada para quem chegou primeiro. O relógio no topo marca aquele exato momento.',
+  efe_confete: 'Caiu na primeira comemoração e nunca parou. Ninguém varre. Ninguém quer.',
+  ace_medalha: 'Trinta dias. Parece pouco até você contar as segundas-feiras.',
+  ace_gorro_natal: 'Dezembro oficial da Dshow: meta fechada, gorro na cabeça.',
+  ace_chapeu_bruxa: 'Dizem que quem o veste em outubro faz as queries voarem.',
 };
 
 // ── Índices ─────────────────────────────────────────────────────────
@@ -141,6 +147,11 @@ export function itemPorId(id: string): ParteDef | undefined {
 
 export function itensDe(categoria: CategoriaId): ParteDef[] {
   return PARTES.filter((x) => x.categoria === categoria);
+}
+
+/** Itens sorteáveis (sem trava de conquista/evento) — usado pelo aleatório. */
+function sorteaveis(categoria: CategoriaId): ParteDef[] {
+  return itensDe(categoria).filter((x) => !x.bloqueadoPor);
 }
 
 // ── Cores sugeridas por slot (paleta curada; picker livre continua valendo) ──
@@ -253,20 +264,20 @@ function sortearPorRaridade(rnd: () => number, lista: ParteDef[]): ParteDef {
 export function aleatorio(semente: number): AvatarConfig {
   const rnd = mulberry32(semente);
   const camadas: AvatarConfig['camadas'] = {
-    olhos: sortearPorRaridade(rnd, itensDe('olhos')).id,
-    boca: sortearPorRaridade(rnd, itensDe('boca')).id,
-    roupa: sortearPorRaridade(rnd, itensDe('roupa')).id,
-    fundo: sortearPorRaridade(rnd, itensDe('fundo')).id,
+    olhos: sortearPorRaridade(rnd, sorteaveis('olhos')).id,
+    boca: sortearPorRaridade(rnd, sorteaveis('boca')).id,
+    roupa: sortearPorRaridade(rnd, sorteaveis('roupa')).id,
+    fundo: sortearPorRaridade(rnd, sorteaveis('fundo')).id,
   };
-  if (rnd() < 0.85) camadas.cabelo = sortearPorRaridade(rnd, itensDe('cabelo')).id;
-  if (rnd() < 0.55) camadas.acessorio = sortearPorRaridade(rnd, itensDe('acessorio')).id;
-  if (rnd() < 0.6) camadas.moldura = sortearPorRaridade(rnd, itensDe('moldura')).id;
-  if (rnd() < 0.35) camadas.efeito = sortearPorRaridade(rnd, itensDe('efeito')).id;
+  if (rnd() < 0.85) camadas.cabelo = sortearPorRaridade(rnd, sorteaveis('cabelo')).id;
+  if (rnd() < 0.55) camadas.acessorio = sortearPorRaridade(rnd, sorteaveis('acessorio')).id;
+  if (rnd() < 0.6) camadas.moldura = sortearPorRaridade(rnd, sorteaveis('moldura')).id;
+  if (rnd() < 0.35) camadas.efeito = sortearPorRaridade(rnd, sorteaveis('efeito')).id;
 
   return validarConfig({
     formato: 'camadas',
     versao: VERSAO_CONFIG,
-    base: sortearPorRaridade(rnd, itensDe('base')).id,
+    base: sortearPorRaridade(rnd, sorteaveis('base')).id,
     camadas,
     cores: {
       pele: sortear(rnd, CORES_SUGERIDAS.pele),
