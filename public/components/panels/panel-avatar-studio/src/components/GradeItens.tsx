@@ -29,8 +29,9 @@ const MODOS: Array<{ id: ModoGrade; nome: string; Icone: typeof LayoutGrid }> = 
 
 type Ordem = 'padrao' | 'raridade' | 'nome' | 'recentes';
 
-/** Enquadramento do thumbnail por categoria (AS4 §39.19 — foco na diferença). */
-const FOCO_THUMB: Partial<Record<CategoriaId, string>> = {
+/** Enquadramento do thumbnail por categoria (AS4 §39.19 — foco na diferença).
+ *  Exportado: a Vitrine (4.6 §23) usa o MESMO enquadramento nos cards. */
+export const FOCO_THUMB: Partial<Record<CategoriaId, string>> = {
   base: '45 36 150 150',
   cabelo: '38 6 164 164',
   olhos: '64 56 112 112',

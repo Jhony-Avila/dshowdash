@@ -928,3 +928,63 @@
 .avst-vitrine-info span { font-size: 11px; color: var(--avst-texto-2); }
 .avst-3d-salvar { display: flex; flex-direction: column; gap: 7px; padding-bottom: 4px; border-bottom: 1px solid var(--avst-borda); }
 .avst-3d-salvar .avst-botao-primario { justify-content: center; }
+
+/* ── 4.6 §23: Vitrine v2 — home do catálogo em seções ────────────── */
+.avst-vitrine2 { display: flex; flex-direction: column; gap: 18px; }
+.avst-vt-secao { display: flex; flex-direction: column; gap: 8px; }
+.avst-vt-cab h3 { margin: 0; font-size: 13.5px; letter-spacing: 0.2px; }
+.avst-vt-cab p { margin: 1px 0 0; font-size: 11px; color: var(--avst-texto-2); }
+.avst-vt-fila {
+  display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px;
+  scroll-snap-type: x proximity; scrollbar-width: thin;
+}
+.avst-vt-card {
+  position: relative; flex: 0 0 118px; scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 8px 9px; border-radius: 12px; cursor: pointer; text-align: center;
+  background: var(--avst-painel); border: 1px solid var(--avst-borda);
+  border-top: 2px solid color-mix(in srgb, var(--avst-rar, var(--avst-borda)) 65%, transparent);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.avst-vt-card:hover, .avst-vt-card:focus-visible { transform: translateY(-2px); border-color: var(--avst-rar, var(--avst-acento)); }
+.avst-vt-card-leitura { cursor: default; }
+.avst-vt-card-leitura:hover { transform: none; }
+.avst-vt-thumb {
+  width: 86px; height: 86px; border-radius: 10px; overflow: hidden;
+  background: var(--avst-painel-2); display: grid; place-items: center;
+}
+.avst-vt-thumb .avst-svg, .avst-vt-thumb .avst-svg svg { width: 86px; height: 86px; display: block; }
+.avst-vt-thumb-texto { display: grid; place-items: center; width: 100%; height: 100%; }
+.avst-vt-badges { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; }
+.avst-vt-badges em {
+  font-style: normal; font-size: 9.5px; padding: 1px 6px; border-radius: 999px;
+  background: var(--avst-painel-2); color: var(--avst-texto-2); white-space: nowrap;
+}
+.avst-vt-card .avst-card-nome { font-size: 11.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avst-vt-card .avst-card-raridade { font-size: 10px; }
+
+/* barra do experimento (experimentar × manter × reverter, antes → agora) */
+.avst-vt-experimento {
+  position: sticky; top: 0; z-index: var(--z-flutuante, 5);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 10px; border-radius: 12px;
+  background: color-mix(in srgb, var(--avst-acento) 12%, var(--avst-painel));
+  border: 1px solid color-mix(in srgb, var(--avst-acento) 45%, var(--avst-borda));
+}
+.avst-vt-exp-thumbs { display: flex; align-items: center; gap: 5px; }
+.avst-vt-exp-thumb { width: 34px; height: 34px; border-radius: 8px; overflow: hidden; border: 1px solid var(--avst-borda); }
+.avst-vt-exp-thumb .avst-svg, .avst-vt-exp-thumb .avst-svg svg { width: 34px; height: 34px; display: block; }
+.avst-vt-exp-agora { border-color: var(--avst-acento); }
+.avst-vt-exp-seta { font-size: 12px; color: var(--avst-texto-2); }
+.avst-vt-exp-info { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; min-width: 0; }
+.avst-vt-exp-acoes { display: inline-flex; gap: 6px; margin-left: auto; }
+
+/* cards de coleção (ação "abrir coleção") */
+.avst-vt-colecao { flex: 0 0 190px; align-items: flex-start; text-align: left; gap: 4px; }
+.avst-vt-col-nome { font-size: 12.5px; font-weight: 700; }
+.avst-vt-col-desc {
+  font-size: 10.5px; color: var(--avst-texto-2); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.avst-vt-col-meta { font-size: 10px; }
+.avst-vt-col-abrir { font-size: 10.5px; color: var(--avst-acento); margin-top: 2px; }
