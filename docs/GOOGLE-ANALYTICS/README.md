@@ -11,9 +11,14 @@ atendidos, 3 bloqueados por falta de credencial GA4.
 **Fase 1 (módulo no mock)**: **NO AR** em `GA_PROVIDER=mock` — backend, painel React, sidebar, flag.
 
 **Fase 2 (D3)**: **NO AR** — Sankey de aquisição, árvore de jornada com abandono, mapa do Brasil e
-treemap de canais. Total: **17 rotas** e **22 telas com dados**.
+treemap de canais.
 
-Verificação de tudo: `bash scripts/ga-smoke-all.sh` (29 checagens + prova de UI com 105).
+**§32**: **NO AR** — conciliação de leads com o CRM **real** (Pipedrive). Primeira ponta real.
+
+**Fase 3**: **NO AR** — insights com z-score e regressão linear, Diretoria e exportação CSV.
+
+Total: **18 rotas** e **24 telas com dados**.
+Verificação de tudo: `bash scripts/ga-smoke-all.sh` (29 checagens) + prova de UI com **139**.
 
 ## Documentos
 
@@ -21,6 +26,7 @@ Verificação de tudo: `bash scripts/ga-smoke-all.sh` (29 checagens + prova de U
 |---|---|
 | [`00-fase0-investigacao.md`](00-fase0-investigacao.md) | Entregável da seção 6: inventário da coleta, infra, banco, front-end, integrações, 11 riscos, plano de fases ajustado, 9 decisões do dono e o status item a item da seção 80 |
 | [`01-fase1-mock.md`](01-fase1-mock.md) | O que está no ar, as 2 decisões de desenho do mock, o bug de coerência que a medição pegou, o reúso sem instalar nada, as traps respeitadas e o que a fase deixou de fora |
+| [`03-fase3-inteligencia.md`](03-fase3-inteligencia.md) | Insights com estatística (z-score, regressão), Diretoria, exportação CSV, os 2 bugs que só apareceram ao criar cenários para exercitar as regras, e as 2 falhas da própria prova |
 | [`02-fase2-d3.md`](02-fase2-d3.md) | Os 4 gráficos D3, por que foram escritos aqui e não importados do Ads, a regressão de chunk que a medição pegou (`import()` dinâmico **não** garante lazy-load), as decisões de leitura de cada gráfico e as 2 correções de honestidade na UI |
 
 ## O que já se sabe, em 6 linhas
