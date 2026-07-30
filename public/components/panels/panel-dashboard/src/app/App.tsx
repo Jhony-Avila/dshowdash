@@ -101,6 +101,7 @@ function rolarPara(id: string) {
 
 // ── persistência local ──────────────────────────────────────────────
 const K_MODO = 'dshow.home.modo';
+const K_DENS = 'dshow.home.densidade';
 const K_AUTO = 'dshow.home.autorefresh';
 const K_LAYOUT = 'dshow.home.layout.v2';
 
@@ -193,6 +194,9 @@ function Shell({ config }: { config: ShellConfig }) {
   const [organizar, setOrganizar] = useState(false);
   const [ocultos, setOcultos] = useState<Set<ModuloId>>(() => lerOcultos());
   const [modo, setModo] = useState<ModoHome>(() => lerLS(K_MODO, 'operacional', (r) => (r === 'executivo' ? 'executivo' : 'operacional')));
+  // densidade (§26.1): compacto aperta paddings/gaps/tipografia via CSS
+  const [densidade, setDensidade] = useState<'conforto' | 'compacto'>(
+    () => lerLS(K_DENS, 'conforto', (r) => (r === 'compacto' ? 'compacto' : 'conforto')));
   const [autoS, setAutoS] = useState<number>(() => lerLS(K_AUTO, 0, (r) => Number(r) || 0));
   const [filtroAtv, setFiltroAtv] = useState<CategoriaAtividade | 'todos'>('todos');
   const [layouts, setLayouts] = useState<ResponsiveLayouts | null>(() =>
@@ -247,6 +251,7 @@ function Shell({ config }: { config: ShellConfig }) {
   };
 
   const trocarModo = (m: ModoHome) => { setModo(m); gravarLS(K_MODO, m); };
+  const trocarDensidade = (d: 'conforto' | 'compacto') => { setDensidade(d); gravarLS(K_DENS, d); };
   const trocarAuto = (s: number) => { setAutoS(s); gravarLS(K_AUTO, String(s)); };
 
   const layoutsEfetivos = useMemo(
@@ -267,7 +272,8 @@ function Shell({ config }: { config: ShellConfig }) {
   const grupoClima = clima?.atual.grupo ?? null;
 
   return (
-    <div className="ger-tela-toda" data-imersivo={imersivo ? '1' : '0'} data-ceu={ceu} data-clima={grupoClima ?? 'limpo'}>
+    <div className="ger-tela-toda" data-imersivo={imersivo ? '1' : '0'} data-ceu={ceu}
+      data-clima={grupoClima ?? 'limpo'} data-densidade={imersivo ? 'conforto' : densidade}>
       {imersivo && <CeuFundo grupo={grupoClima} />}
       <div className="ger-shell">
       {/* barra de controles (§21 do header + §28 + §29 + §26) */}
@@ -303,6 +309,14 @@ function Shell({ config }: { config: ShellConfig }) {
             <button role="tab" aria-selected={modo === 'executivo'}
               className={`ger-periodo${modo === 'executivo' ? ' is-on' : ''}`}
               onClick={() => trocarModo('executivo')}>Executivo</button>
+          </div>
+          <div className="ger-periodos" role="tablist" aria-label="Densidade">
+            <button role="tab" aria-selected={densidade === 'conforto'}
+              className={`ger-periodo${densidade === 'conforto' ? ' is-on' : ''}`}
+              onClick={() => trocarDensidade('conforto')}>Conforto</button>
+            <button role="tab" aria-selected={densidade === 'compacto'}
+              className={`ger-periodo${densidade === 'compacto' ? ' is-on' : ''}`}
+              onClick={() => trocarDensidade('compacto')}>Compacto</button>
           </div>
           <div className="ger-periodos" role="tablist" aria-label="Período">
             {PERIODOS.map((p) => (
@@ -507,7 +521,7 @@ function Shell({ config }: { config: ShellConfig }) {
               layouts={layoutsEfetivos}
               breakpoints={{ lg: 1000, md: 700, sm: 0 }}
               cols={{ lg: 12, md: 8, sm: 4 }}
-              rowHeight={92}
+              rowHeight={densidade === 'compacto' ? 74 : 92}
               margin={[12, 12]}
               dragConfig={{ enabled: organizar, handle: '.ger-wg-head' }}
               resizeConfig={{ enabled: organizar }}

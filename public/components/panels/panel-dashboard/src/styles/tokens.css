@@ -413,3 +413,18 @@
 [data-geral-react-root] .ger-link-chip button:hover { color: var(--ger-bad); }
 [data-geral-react-root] .ger-links-erro { color: var(--ger-bad); font-size: 11px; margin: 0 0 7px; }
 [data-geral-react-root] .ger-cenario { margin-left: 8px; border: 1px solid var(--ger-warn); color: var(--ger-warn); background: none; border-radius: 999px; padding: 2px 9px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }
+
+/* ── §26.1 modo COMPACTO — densidade apertada sem perder hierarquia ── */
+[data-geral-react-root] [data-densidade="compacto"] .ger-shell { gap: 10px; padding: 12px 16px 32px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-faixa { gap: 10px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-sec { padding: 10px 12px; border-radius: 10px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-sec-head { margin-bottom: 8px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-sec-head h3 { font-size: 12.5px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-sec-sub { font-size: 10.5px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-widget { padding: 9px 11px; gap: 7px; border-radius: 10px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-saudes { gap: 7px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-alerta,
+[data-geral-react-root] [data-densidade="compacto"] .ger-atv { padding: 7px 9px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-atalho { padding: 7px 10px; font-size: 11.5px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-notas { min-height: 96px; }
+[data-geral-react-root] [data-densidade="compacto"] .ger-integracoes { gap: 6px; }
