@@ -326,4 +326,168 @@ export const MOLDURAS: ParteDef[] = [
         <animate attributeName="opacity" values="1;0;1;0;1" dur="1.4s" repeatCount="indefinite" calcMode="discrete"/>
       </path>`,
   },
+  // ── 4.6 F2 · Onda 5 — 9 molduras novas (meta §28: 24 ✓) ───────────
+  {
+    id: 'mol_minimal',
+    categoria: 'moldura',
+    nome: 'Fio Minimal',
+    descricao: 'Um traço fino. Nada mais é necessário.',
+    raridade: 'comum',
+    tema: 'clássico',
+    render: () => `
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${alfa('#c4c9d6', 0.65)}" stroke-width="2"/>`,
+  },
+  {
+    id: 'mol_pontilhada',
+    categoria: 'moldura',
+    nome: 'Pontilhada',
+    descricao: 'Recorte aqui — mas só se for para emoldurar.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${p.destaque.base}" stroke-width="3" stroke-dasharray="1 9" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'mol_degrade',
+    categoria: 'moldura',
+    nome: 'Degradê Duplo',
+    descricao: 'Duas cores escorrendo pelo contorno.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}mdg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${p.destaque.claro}"/>
+          <stop offset="1" stop-color="${p.destaque.profundo}"/>
+        </linearGradient>
+      </defs>
+      <rect x="3" y="3" width="234" height="234" rx="${R}" fill="none" stroke="url(#${u}mdg)" stroke-width="5"/>
+      <rect x="9" y="9" width="222" height="222" rx="${R - 5}" fill="none" stroke="${alfa(p.destaque.base, 0.3)}" stroke-width="1.6"/>`,
+  },
+  {
+    id: 'mol_colmeia',
+    categoria: 'moldura',
+    nome: 'Colmeia',
+    descricao: 'Hexágonos disciplinados guardando os cantos.',
+    raridade: 'raro',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p) => {
+      const hex = (x: number, y: number, r: number, o: number) => {
+        let d = '';
+        for (let i = 0; i < 6; i++) {
+          const a = (Math.PI / 3) * i - Math.PI / 6;
+          d += `${i === 0 ? 'M' : 'L'}${(x + Math.cos(a) * r).toFixed(1)} ${(y + Math.sin(a) * r).toFixed(1)} `;
+        }
+        return `<path d="${d}z" fill="none" stroke="${alfa(p.destaque.base, o)}" stroke-width="2"/>`;
+      };
+      return `
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${alfa(p.destaque.base, 0.75)}" stroke-width="3.4"/>
+      ${hex(24, 24, 12, 0.9)}${hex(43, 15, 8, 0.5)}${hex(15, 43, 8, 0.5)}
+      ${hex(216, 216, 12, 0.9)}${hex(197, 225, 8, 0.5)}${hex(225, 197, 8, 0.5)}`;
+    },
+  },
+  {
+    id: 'mol_vetores',
+    categoria: 'moldura',
+    nome: 'Vetores',
+    descricao: 'Setas de alinhamento apontando para quem importa.',
+    raridade: 'raro',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <rect x="6" y="6" width="228" height="228" rx="${R}" fill="none" stroke="${alfa(p.destaque.base, 0.6)}" stroke-width="2.4"/>
+      <g stroke="${p.destaque.claro}" stroke-width="3" fill="none" stroke-linecap="round">
+        <path d="M20 34 v -14 h 14 M206 20 h 14 v 14 M220 206 v 14 h -14 M34 220 h -14 v -14">
+          <animate attributeName="opacity" values="1;0.45;1" dur="2.6s" repeatCount="indefinite"/>
+        </path>
+      </g>`,
+  },
+  {
+    id: 'mol_geada',
+    categoria: 'moldura',
+    nome: 'Geada',
+    descricao: 'Cristais de gelo avançando pelas bordas.',
+    raridade: 'epico',
+    tema: 'clima',
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}gel" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#bfe8ff"/>
+          <stop offset="1" stop-color="#5da8d8"/>
+        </linearGradient>
+      </defs>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="url(#${u}gel)" stroke-width="4.4"/>
+      <g fill="none" stroke="#dff4ff" stroke-width="2" stroke-linecap="round" opacity="0.9">
+        <path d="M10 60 l 14 -8 m -14 -6 l 18 2 m -18 -16 l 12 6"/>
+        <path d="M230 180 l -14 8 m 14 6 l -18 -2 m 18 16 l -12 -6"/>
+        <path d="M60 10 l -6 14 m 14 -14 l -2 18 m 16 -18 l -6 12"/>
+        <path d="M180 230 l 6 -14 m -14 14 l 2 -18 m -16 18 l 6 -12"/>
+        <animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.2s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'mol_espinhos',
+    categoria: 'moldura',
+    nome: 'Espinhos',
+    descricao: 'Bela por fora, intransponível por definição.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    usaCores: ['destaque'],
+    render: (p) => {
+      let espinhos = '';
+      for (let i = 0; i < 8; i++) {
+        const x = 36 + i * 24;
+        espinhos += `<path d="M${x} 5 l 5 -0.5 l -2.5 -8 z M${x + 10} 235 l 5 0.5 l -2.5 8 z" fill="${p.destaque.profundo}"/>`;
+      }
+      return `
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${p.destaque.profundo}" stroke-width="4.4"/>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${alfa(p.destaque.claro, 0.35)}" stroke-width="1.4"/>
+      ${espinhos}`;
+    },
+  },
+  {
+    id: 'mol_serpente',
+    categoria: 'moldura',
+    nome: 'Serpente de Luz',
+    descricao: 'Duas serpentes luminosas se perseguindo para sempre.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${alfa(p.destaque.profundo, 0.55)}" stroke-width="4"/>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${p.destaque.claro}" stroke-width="3" stroke-dasharray="60 412" stroke-linecap="round">
+        <animate attributeName="stroke-dashoffset" values="0;-944" dur="7s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="4" y="4" width="232" height="232" rx="${R}" fill="none" stroke="${alfa('#ffffff', 0.85)}" stroke-width="3" stroke-dasharray="60 412" stroke-linecap="round">
+        <animate attributeName="stroke-dashoffset" values="-472;-1416" dur="7s" repeatCount="indefinite"/>
+      </rect>`,
+  },
+  {
+    id: 'mol_constelacao',
+    categoria: 'moldura',
+    nome: 'Constelação',
+    descricao: 'Estrelas ligadas em volta — o mapa aponta para você.',
+    raridade: 'lendario',
+    tema: 'espaço',
+    render: () => {
+      const pontos: Array<[number, number]> = [
+        [30, 10], [90, 6], [160, 12], [228, 34], [234, 110], [228, 186],
+        [180, 230], [100, 234], [30, 226], [8, 150], [6, 70],
+      ];
+      let linhas = '';
+      let estrelas = '';
+      for (let i = 0; i < pontos.length; i++) {
+        const [x, y] = pontos[i];
+        const [x2, y2] = pontos[(i + 1) % pontos.length];
+        linhas += `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" stroke="rgba(200,220,255,0.35)" stroke-width="1.2"/>`;
+        estrelas += `<circle cx="${x}" cy="${y}" r="${2 + (i % 3)}" fill="#fff2c8">
+          <animate attributeName="opacity" values="1;0.35;1" dur="${(2 + (i % 4) * 0.6).toFixed(1)}s" repeatCount="indefinite"/>
+        </circle>`;
+      }
+      return `${linhas}${estrelas}`;
+    },
+  },
 ];
