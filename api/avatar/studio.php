@@ -3,7 +3,12 @@ declare(strict_types=1);
 
 /**
  * /api/avatar/studio.php — persistência oficial do Avatar Studio.
- * @version 1.4.0
+ * @version 1.5.0
+ * @changelog 1.5.0 (2026-07-30) — HISTÓRICO COMPLETO (4.6 §22, decisão #42):
+ *   GET ?historico=1 passa a 100 itens com nome/fixado/ativo/versão (JOIN
+ *   avatar_version_meta); POST {historico_meta:{id,nome?,fixado?}} nomeia e
+ *   fixa versões (posse pela sessão); retenção de 100 versões por usuário
+ *   com poda pós-salvamento — FIXADAS e a ATIVA nunca são podadas.
  * @changelog 1.4.0 (2026-07-30) — PERSISTÊNCIA 3D (Fase 2, PoC aprovada):
  *   POST {config3d, render, base_version} salva parâmetros JSON formato:'3d'
  *   (decisão #31) + PNG derivado re-encodado via GD como avatar oficial;
@@ -24,9 +29,11 @@ declare(strict_types=1);
  *   GET               → { config, version, render_url, avatar_url,
  *                         tipo_ativo: 'camadas'|'foto'|'legado'|null,
  *                         config_camadas_recente }
- *   GET ?historico=1  → { itens: [{id, tipo, config, url, criado_em}] } (12)
+ *   GET ?historico=1  → { itens: [{id, tipo, config, url, criado_em, nome,
+ *                         fixado, ativo, versao}], retencao } (100)
  *   POST {config,svg,base_version}  → salva avatar em camadas (SVG sanitizado)
  *   POST {foto,base_version}        → salva foto recortada (PNG re-encodado)
+ *   POST {historico_meta:{id,nome?,fixado?}} → nomeia/fixa versão do usuário
  *   base_version divergente → 409 (conflito entre abas).
  *
  * SEGURANÇA: nada do front é confiado — config é RECONSTRUÍDO campo a campo
@@ -63,6 +70,8 @@ $userId = (int) SessionGate::getUserId();
 
 const AVST_DIR_PUBLICO = '/assets/avatars/studio';
 const AVST_LIMITE_HORA = 30;
+const AVST_RETENCAO_VERSOES = 100;  // §22: últimas N por usuário (fixadas nunca saem)
+const AVST_NOME_VERSAO_MAX = 60;    // limite do label (espelha avatar_version_meta)
 
 /** Envelope de sucesso (mesmo shape do restante do dash). */
 function avst_ok(array $data): void
@@ -274,14 +283,33 @@ try {
     // ── GET ─────────────────────────────────────────────────────────
     if ($metodo === 'GET') {
         if (isset($_GET['historico'])) {
-            $st = $pdo->prepare("
-                SELECT id, avatar_type, avatar_config, avatar_image_url, created_at
-                FROM app_user_avatars
-                WHERE user_id = ? AND avatar_type IN ('generated', 'image')
-                ORDER BY id DESC
-                LIMIT 12
-            ");
-            $st->execute([$userId]);
+            // 4.6 §22: 100 itens + metadados de apresentação (nome/fixado).
+            // JOIN gracioso: se avatar_version_meta ainda não existir neste
+            // ambiente, cai na consulta antiga — a tela nunca quebra.
+            $temMeta = true;
+            try {
+                $st = $pdo->prepare('
+                    SELECT a.id, a.avatar_type, a.avatar_config, a.avatar_image_url,
+                           a.created_at, a.is_active, a.version,
+                           m.label, m.is_pinned
+                    FROM app_user_avatars a
+                    LEFT JOIN avatar_version_meta m
+                      ON m.user_id = a.user_id AND m.version_id = a.id
+                    WHERE a.user_id = ? AND a.avatar_type IN (\'generated\', \'image\')
+                    ORDER BY a.id DESC
+                    LIMIT ' . AVST_RETENCAO_VERSOES);
+                $st->execute([$userId]);
+            } catch (Throwable $e) {
+                $temMeta = false;
+                $st = $pdo->prepare('
+                    SELECT id, avatar_type, avatar_config, avatar_image_url,
+                           created_at, is_active, version
+                    FROM app_user_avatars
+                    WHERE user_id = ? AND avatar_type IN (\'generated\', \'image\')
+                    ORDER BY id DESC
+                    LIMIT ' . AVST_RETENCAO_VERSOES);
+                $st->execute([$userId]);
+            }
             $itens = [];
             foreach ($st as $l) {
                 $cfg = json_decode((string) ($l['avatar_config'] ?? ''), true);
@@ -292,10 +320,14 @@ try {
                     'config'    => ($formato === 'camadas') ? $cfg : null,
                     'url'       => $l['avatar_image_url'] ?: null,
                     'criado_em' => $l['created_at'],
+                    'nome'      => $temMeta ? (($l['label'] ?? null) !== null ? (string) $l['label'] : null) : null,
+                    'fixado'    => $temMeta && (int) ($l['is_pinned'] ?? 0) === 1,
+                    'ativo'     => (int) ($l['is_active'] ?? 0) === 1,
+                    'versao'    => (int) ($l['version'] ?? 0),
                 ];
             }
             session_write_close();
-            avst_ok(['itens' => $itens]);
+            avst_ok(['itens' => $itens, 'retencao' => AVST_RETENCAO_VERSOES]);
         }
 
         // Galeria "Suas fotos" — todas as fotos já enviadas/capturadas,
@@ -374,6 +406,51 @@ try {
     $corpo = json_decode(file_get_contents('php://input') ?: '', true);
     if (!is_array($corpo)) {
         avst_erro('JSON_INVALIDO', 400);
+    }
+
+    // ── Modo HISTORICO_META (4.6 §22): nomear/fixar versão ──────────
+    // Operação leve de metadado — não cria versão, então não consome o
+    // rate limit de salvamento. Posse SEMPRE pela sessão (sem IDOR).
+    if (isset($corpo['historico_meta'])) {
+        $hm = is_array($corpo['historico_meta']) ? $corpo['historico_meta'] : [];
+        $verId = isset($hm['id']) ? (int) $hm['id'] : 0;
+        if ($verId <= 0) {
+            avst_erro('VERSAO_INVALIDA', 400);
+        }
+        $stO = $pdo->prepare("
+            SELECT id FROM app_user_avatars
+            WHERE id = ? AND user_id = ? AND avatar_type IN ('generated', 'image')
+        ");
+        $stO->execute([$verId, $userId]);
+        if (!$stO->fetchColumn()) {
+            avst_erro('VERSAO_NAO_ENCONTRADA', 404);
+        }
+
+        // lê o meta atual e mescla só o que veio (nome e/ou fixado)
+        $stM = $pdo->prepare('SELECT label, is_pinned FROM avatar_version_meta WHERE user_id = ? AND version_id = ?');
+        $stM->execute([$userId, $verId]);
+        $meta = $stM->fetch(PDO::FETCH_ASSOC) ?: ['label' => null, 'is_pinned' => 0];
+
+        if (array_key_exists('nome', $hm)) {
+            $nome = is_string($hm['nome']) ? trim(strip_tags($hm['nome'])) : '';
+            $meta['label'] = $nome === '' ? null : mb_substr($nome, 0, AVST_NOME_VERSAO_MAX);
+        }
+        if (array_key_exists('fixado', $hm)) {
+            $meta['is_pinned'] = !empty($hm['fixado']) ? 1 : 0;
+        }
+
+        $pdo->prepare('
+            INSERT INTO avatar_version_meta (user_id, version_id, label, is_pinned, created_at, updated_at)
+            VALUES (?, ?, ?, ?, NOW(), NOW())
+            ON DUPLICATE KEY UPDATE label = VALUES(label), is_pinned = VALUES(is_pinned), updated_at = NOW()
+        ')->execute([$userId, $verId, $meta['label'], (int) $meta['is_pinned']]);
+
+        session_write_close();
+        avst_ok([
+            'id'     => $verId,
+            'nome'   => $meta['label'],
+            'fixado' => (int) $meta['is_pinned'] === 1,
+        ]);
     }
 
     // Rate limit (mesmo padrão do avatar-upload.php; conta camadas + fotos)
@@ -528,6 +605,36 @@ try {
             (user_id, avatar_type, avatar_config, avatar_image_url, is_active, version, created_at, updated_at)
         VALUES (?, ?, ?, ?, 1, ?, NOW(), NOW())
     ")->execute([$userId, $tipoLinha, $configJson, $renderUrl, $novaVersao]);
+
+    // ── Retenção (4.6 §22): poda além das N mais recentes ───────────
+    // FIXADAS (avatar_version_meta.is_pinned) e a ATIVA nunca saem; só
+    // linhas do banco são podadas — arquivos publicados ficam (podem ser
+    // compartilhados por reativações). Falha aqui NUNCA derruba o save.
+    try {
+        $pdo->prepare('
+            DELETE a FROM app_user_avatars a
+            LEFT JOIN avatar_version_meta m
+              ON m.user_id = a.user_id AND m.version_id = a.id AND m.is_pinned = 1
+            WHERE a.user_id = ? AND a.is_active = 0 AND m.version_id IS NULL
+              AND a.avatar_type IN (\'generated\', \'image\')
+              AND a.id NOT IN (
+                SELECT id FROM (
+                  SELECT id FROM app_user_avatars
+                  WHERE user_id = ? AND avatar_type IN (\'generated\', \'image\')
+                  ORDER BY id DESC
+                  LIMIT ' . AVST_RETENCAO_VERSOES . '
+                ) t
+              )
+        ')->execute([$userId, $userId]);
+        // meta órfã (versão podada) — limpeza explícita, sem FK no legado
+        $pdo->prepare('
+            DELETE m FROM avatar_version_meta m
+            LEFT JOIN app_user_avatars a ON a.id = m.version_id
+            WHERE m.user_id = ? AND a.id IS NULL
+        ')->execute([$userId]);
+    } catch (Throwable $e) {
+        error_log('[avatar/studio.php] poda: ' . $e->getMessage());
+    }
 
     // Espelho para o header/sessão (mesmo comportamento do avatar.php legado)
     $pdo->prepare('UPDATE app_users SET avatar_url = ?, updated_at = NOW() WHERE id = ?')

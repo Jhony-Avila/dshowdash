@@ -1,5 +1,7 @@
 // services/AvatarService.ts — persistência e sincronização do avatar.
-// @version 2.2.0
+// @version 2.3.0
+// @changelog v2.3.0 — histórico completo (4.6 §22): 100 itens com nome/
+//   fixado/ativo/versão + salvarMetaHistorico (nomear/fixar).
 // @changelog v2.2.0 — galeria de fotos (GET ?fotos=1), reativação de versões
 //   antigas (POST {reativar_id}) e cor do arco contextual no broadcast.
 // @changelog v2.1.0 — histórico (GET ?historico=1), foto recortada
@@ -89,7 +91,7 @@ export async function carregarAvatar(signal?: AbortSignal): Promise<ResultadoCar
   return { config: null, versao: 0, origem: 'padrao', renderUrl: null, urlLegado: null, tipoAtivo: null, configCamadasRecente: null };
 }
 
-/** Últimas 12 versões (camadas e fotos) — briefing §26. */
+/** Últimas 100 versões (camadas, fotos e 3D) — 4.6 §22. */
 export async function carregarHistorico(signal?: AbortSignal): Promise<HistoricoItem[]> {
   try {
     const r = await fetch(`${URL_API}?historico=1`, { credentials: 'include', signal, cache: 'no-store' });
@@ -99,13 +101,41 @@ export async function carregarHistorico(signal?: AbortSignal): Promise<Historico
     if (!Array.isArray(itens)) return [];
     return itens.map((i: Record<string, unknown>) => ({
       id: Number(i.id) || 0,
-      tipo: i.tipo === 'foto' ? 'foto' as const : 'camadas' as const,
+      tipo: i.tipo === 'foto' ? 'foto' as const : i.tipo === '3d' ? '3d' as const : 'camadas' as const,
       config: i.config ? validarConfig(i.config) : null,
       url: typeof i.url === 'string' ? i.url : null,
       criadoEm: typeof i.criado_em === 'string' ? i.criado_em : '',
+      nome: typeof i.nome === 'string' && i.nome !== '' ? i.nome : null,
+      fixado: i.fixado === true,
+      ativo: i.ativo === true,
+      versao: Number(i.versao) || 0,
     }));
   } catch {
     return [];
+  }
+}
+
+/**
+ * Nomeia e/ou fixa uma versão do histórico (4.6 §22).
+ * Envie só o campo que mudou; o servidor mescla com o meta existente.
+ */
+export async function salvarMetaHistorico(
+  id: number,
+  meta: { nome?: string | null; fixado?: boolean }
+): Promise<boolean> {
+  try {
+    const cabecalhos: Record<string, string> = { 'Content-Type': 'application/json' };
+    const csrf = await obterCsrf();
+    if (csrf) cabecalhos['X-CSRF-Token'] = csrf;
+    const r = await fetch(URL_API, {
+      method: 'POST',
+      credentials: 'include',
+      headers: cabecalhos,
+      body: JSON.stringify({ historico_meta: { id, ...meta } }),
+    });
+    return r.ok;
+  } catch {
+    return false;
   }
 }
 

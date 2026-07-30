@@ -343,6 +343,19 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
     setMensagem('Sua foto está ativa — salvar aqui volta para o avatar em camadas.');
   }, []);
 
+  /** Versão reativada pelo Histórico (4.6 §22): sincroniza versão/tipo. */
+  const aoReativarHistorico = useCallback((novaVersao: number, tipo: 'camadas' | 'foto' | '3d') => {
+    setVersao(novaVersao);
+    setTipoAtivo(tipo);
+    if (tipo !== 'camadas') {
+      setSalvo(null); // salvar no editor volta a valer p/ reativar as camadas
+      setMensagem(tipo === 'foto'
+        ? 'Sua foto voltou a ficar ativa — o header já trocou.'
+        : 'Seu avatar 3D voltou a ficar ativo — o header já trocou.');
+    }
+    setEstado('sem_alteracoes');
+  }, []);
+
   const sujo = useMemo(
     () => JSON.stringify(atual) !== JSON.stringify(salvo ?? {}),
     [atual, salvo],
@@ -614,7 +627,10 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
               aoAplicar={aplicar} aoAbrirColecoes={() => setAba('colecoes')} />
           )}
           {aba === 'ia' && <CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} />}
-          {aba === 'historico' && <Historico key={`h-${versao}`} aoAplicar={aplicar} />}
+          {aba === 'historico' && (
+            <Historico key={`h-${versao}`} versaoBase={versao}
+              aoAplicar={aplicar} aoReativar={aoReativarHistorico} />
+          )}
           {aba === 'foto' && <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'} aoSalvar={aoSalvarFoto} />}
           {aba === 'itens' && (
             <>
