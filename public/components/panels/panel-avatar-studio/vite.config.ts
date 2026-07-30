@@ -48,6 +48,14 @@ export default defineConfig({
         chunkFileNames: 'chunks/[name].[hash].js',
         assetFileNames: 'assets/[name].[hash][extname]',
         manualChunks(id) {
+          // O preload-helper do vite é compartilhado entre o entry e chunks
+          // dinâmicos — sem isto o Rollup pode alojá-lo no motor3d e transformar
+          // o chunk 3D em import estático do entry. SÓ ele: fixar também o
+          // commonjsHelpers criaria ciclo vendor↔react-vendor (React fica
+          // undefined durante a avaliação do vendor).
+          if (id.includes('vite/preload-helper')) {
+            return 'vendor';
+          }
           if (id.includes('node_modules')) {
             if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
               return 'react-vendor';
@@ -56,6 +64,12 @@ export default defineConfig({
             // referenciado SÓ pelo import dinâmico — carrega sob demanda.
             if (/[\\/]node_modules[\\/](echarts|zrender)[\\/]/.test(id)) {
               return 'echarts';
+            }
+            // Motor 3D (AS4): three + R3F + drei e TODAS as suas dependências
+            // num chunk próprio, alcançado só pelo import dinâmico da aba 3D.
+            // Nada disso pode vazar p/ o "vendor" (que carrega sempre).
+            if (/[\\/]node_modules[\\/](three|@react-three|three-stdlib|three-mesh-bvh|maath|camera-controls|@use-gesture|detect-gpu|glsl-noise|troika-three-text|troika-worker-utils|troika-three-utils|stats-gl|stats\.js|suspend-react|react-use-measure|its-fine|react-reconciler|zustand|@monogrid|hls\.js|meshline|webgl-sdf-generator|bidi-js|utility-types|tunnel-rat|@mediapipe|draco3d|web-worker)[\\/]/.test(id)) {
+              return 'motor3d';
             }
             return 'vendor';
           }

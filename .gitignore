@@ -75,6 +75,15 @@
 !/public/components/
 !/public/index.html
 
+# Assets 3D do Avatar Studio 4.0 (GLBs CC0 retrabalhados + licenças).
+# SÓ o subdiretório 3d/ — /assets/avatars/studio/ contém arquivos de RUNTIME
+# dos usuários (u{id}-v{v}.svg/png) e NUNCA deve ser versionado.
+!/public/assets/
+/public/assets/*
+!/public/assets/avatars/
+/public/assets/avatars/*
+!/public/assets/avatars/3d/
+
 # NUNCA incluir (senhas/segredos): config/, storage/, logs/, sessões
 # (já cobertos pelo "/*" padrão — listados aqui como documentação)
 

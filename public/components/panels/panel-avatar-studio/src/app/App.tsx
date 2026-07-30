@@ -7,12 +7,15 @@
 // Undo/redo (§14), comparação atual×salvo (§15), estados de salvar (§25).
 // AS4 Fase 0: painel direito redimensionável 320/420/560 (§23.3), barra de
 // salvar junto do personagem (§39.11) e toast de feedback ao equipar (§39.18).
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Bot, Boxes, Brush, Camera, Check, CircleUser, Columns2, Dices, Eye, Frame, Glasses,
+  Bot, Box, Boxes, Brush, Camera, Check, CircleUser, Columns2, Dices, Eye, Frame, Glasses,
   History, Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Trophy,
   Undo2, Users, Volume2, VolumeX, Wand2,
 } from 'lucide-react';
+
+// PoC 3D (AS4 Fase 1) — chunk separado: three/R3F só carregam nesta aba
+const Estudio3D = lazy(() => import('../poc3d/Estudio3D'));
 import type { AvatarConfig, CategoriaId, EstadoSalvar, Raridade, ShellConfig } from '../domain/types';
 import {
   CATEGORIAS, CONFIG_PADRAO, RARIDADES, aleatorio, itemPorId, nivelRaridade, validarConfig,
@@ -107,7 +110,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
-  const [aba, setAba] = useState<'itens' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto'>('itens');
+  const [aba, setAba] = useState<'itens' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [comparando, setComparando] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
@@ -381,6 +384,13 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           })}
           <div className="avst-cat-separador" />
           <button type="button"
+            className={`avst-cat avst-cat-3d ${aba === '3d' ? 'avst-cat-ativa' : ''}`}
+            onClick={() => setAba('3d')}>
+            <Box size={17} aria-hidden />
+            <span>Estúdio 3D</span>
+            <em className="avst-cat-poc">PoC</em>
+          </button>
+          <button type="button"
             className={`avst-cat ${aba === 'presets' ? 'avst-cat-ativa' : ''}`}
             onClick={() => setAba('presets')}>
             <Sparkles size={17} aria-hidden />
@@ -424,6 +434,20 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           </button>
         </nav>
 
+        {aba === '3d' ? (
+          /* ── PoC 3D (AS4 Fase 1): ocupa palco + painel ── */
+          <section className="avst-area3d" aria-label="Estúdio 3D — prova de conceito">
+            <Suspense fallback={(
+              <div className="avst-vazio avst-3d-carregando">
+                <LoaderCircle className="avst-girando" size={26} aria-hidden />
+                <p>Carregando o motor 3D… (baixa uma única vez, só nesta aba)</p>
+              </div>
+            )}>
+              <Estudio3D corDestaque={atual.cores.destaque} />
+            </Suspense>
+          </section>
+        ) : (
+          <>
         {/* ── Coluna 2: palco ── */}
         <main className="avst-palco">
           {comparando && salvo ? (
@@ -517,6 +541,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             </>
           )}
         </aside>
+          </>
+        )}
       </div>
     </div>
   );
