@@ -20,12 +20,18 @@
  * mesmo DOM — apenas ficam dentro do painel colapsável.
  */
 
-/* faixa superior → painel colapsado (max-height anima; display não) */
+/* faixa superior → painel colapsado (max-height anima; display não).
+   padding/border zerados AQUI TAMBÉM: o bundle de produção pode divergir
+   dos fontes (está congelado no servidor) — se ele tiver padding vertical
+   no __top, max-height:0 sozinho deixaria uma fresta da altura do padding. */
 .dsd-footer .dsd-footer__top {
   max-height: 0;
   overflow: hidden;
   opacity: 0;
-  border-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-top-width: 0;
+  border-bottom-width: 0;
   transition: max-height .28s ease .08s, opacity .22s ease .08s;
 }
 
