@@ -79,12 +79,12 @@ export interface ItemAtencao {
 
 export type TelaId =
   | 'visao-geral' | 'tempo-real' | 'diretoria'
-  | 'aquisicao' | 'canais' | 'campanhas'
-  | 'paginas' | 'landing-pages' | 'jornada'
-  | 'eventos' | 'conversoes' | 'funis'
+  | 'aquisicao' | 'canais' | 'campanhas' | 'origem-midia' | 'referencias'
+  | 'paginas' | 'landing-pages' | 'jornada' | 'engajamento' | 'saidas'
+  | 'eventos' | 'conversoes' | 'funis' | 'leads'
   | 'ecommerce' | 'produtos'
   | 'usuarios' | 'dispositivos' | 'localizacoes' | 'retencao'
-  | 'qualidade' | 'tagging'
+  | 'qualidade' | 'tagging' | 'streams'
   | 'alertas' | 'insights'
   | 'propriedades' | 'quotas';
 
@@ -122,6 +122,8 @@ export const GRUPOS: GrupoTelas[] = [
       { id: 'aquisicao', titulo: 'Aquisição Geral', icone: 'MousePointerClick', disponivel: true, quota: 'core' },
       { id: 'canais', titulo: 'Canais', icone: 'Share2', disponivel: true, quota: 'core' },
       { id: 'campanhas', titulo: 'Campanhas', icone: 'Megaphone', disponivel: true, quota: 'core' },
+      { id: 'origem-midia', titulo: 'Origem e Mídia', icone: 'Share2', disponivel: true, quota: 'core' },
+      { id: 'referencias', titulo: 'Referências', icone: 'ArrowRight', disponivel: true, quota: 'core' },
       { id: 'jornada', titulo: 'Fluxo e Jornada', icone: 'Route', disponivel: true, quota: 'core' },
     ],
   },
@@ -130,6 +132,8 @@ export const GRUPOS: GrupoTelas[] = [
     telas: [
       { id: 'paginas', titulo: 'Páginas', icone: 'Files', disponivel: true, quota: 'core' },
       { id: 'landing-pages', titulo: 'Landing Pages', icone: 'PanelsTopLeft', disponivel: true, quota: 'core' },
+      { id: 'engajamento', titulo: 'Engajamento', icone: 'Zap', disponivel: true, quota: 'core' },
+      { id: 'saidas', titulo: 'Saídas', icone: 'ArrowRight', disponivel: true, quota: 'core' },
     ],
   },
   {
@@ -137,6 +141,7 @@ export const GRUPOS: GrupoTelas[] = [
     telas: [
       { id: 'eventos', titulo: 'Eventos', icone: 'Zap', disponivel: true, quota: 'core' },
       { id: 'conversoes', titulo: 'Eventos Importantes', icone: 'BadgeCheck', disponivel: true, quota: 'core' },
+      { id: 'leads', titulo: 'Leads', icone: 'Users', disponivel: true, quota: 'core' },
       { id: 'funis', titulo: 'Funis', icone: 'Filter', disponivel: true, quota: 'funnel' },
       { id: 'ecommerce', titulo: 'E-commerce', icone: 'ShoppingCart', disponivel: true, quota: 'core' },
       { id: 'produtos', titulo: 'Produtos', icone: 'Package', disponivel: true, quota: 'core' },
@@ -156,6 +161,7 @@ export const GRUPOS: GrupoTelas[] = [
     telas: [
       { id: 'qualidade', titulo: 'Qualidade da Coleta', icone: 'ShieldCheck', disponivel: true, quota: 'core' },
       { id: 'tagging', titulo: 'Tagging e GTM', icone: 'Tags', disponivel: true, quota: 'core' },
+      { id: 'streams', titulo: 'Streams', icone: 'Database', disponivel: true, quota: 'admin' },
     ],
   },
   {

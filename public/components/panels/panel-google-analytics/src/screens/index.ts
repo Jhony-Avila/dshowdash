@@ -19,6 +19,7 @@ import { Usuarios, Dispositivos, Localizacoes, Retencao } from './Usuarios';
 import { Qualidade, Tagging } from './Qualidade';
 import { Alertas, Propriedades, Quotas } from './Admin';
 import { Insights, Diretoria } from './Inteligencia';
+import { OrigemMidia, Referencias, Engajamento, Saidas, Leads, Streams } from './Complementares';
 
 export const Telas: Partial<Record<TelaId, ComponentType<PropsTela>>> = {
   'visao-geral': VisaoGeral,
@@ -27,12 +28,17 @@ export const Telas: Partial<Record<TelaId, ComponentType<PropsTela>>> = {
   aquisicao: AquisicaoGeral,
   canais: Canais,
   campanhas: Campanhas,
+  'origem-midia': OrigemMidia,
+  referencias: Referencias,
   jornada: Jornada,
   paginas: Paginas,
   'landing-pages': LandingPages,
+  engajamento: Engajamento,
+  saidas: Saidas,
   eventos: Eventos,
   conversoes: Conversoes,
   funis: Funis,
+  leads: Leads,
   ecommerce: Ecommerce,
   produtos: Produtos,
   usuarios: Usuarios,
@@ -41,6 +47,7 @@ export const Telas: Partial<Record<TelaId, ComponentType<PropsTela>>> = {
   retencao: Retencao,
   qualidade: Qualidade,
   tagging: Tagging,
+  streams: Streams,
   alertas: Alertas,
   insights: Insights,
   propriedades: Propriedades,

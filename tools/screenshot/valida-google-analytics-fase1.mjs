@@ -22,7 +22,8 @@ const OUT = '/var/www/dshowdash/storage/media/images/screenshots';
 
 // Espelha `disponivel: true` de src/shell/types.ts. Se divergir, a prova acusa.
 const TELAS = [
-  'visao-geral', 'tempo-real', 'diretoria', 'aquisicao', 'canais', 'campanhas', 'jornada', 'paginas', 'landing-pages',
+  'visao-geral', 'tempo-real', 'diretoria', 'aquisicao', 'canais', 'campanhas', 'origem-midia',
+  'referencias', 'jornada', 'paginas', 'landing-pages', 'engajamento', 'saidas', 'leads', 'streams',
   'eventos', 'conversoes', 'funis', 'ecommerce', 'produtos', 'usuarios', 'dispositivos',
   'localizacoes', 'retencao', 'qualidade', 'tagging', 'insights', 'alertas', 'propriedades', 'quotas',
 ];
