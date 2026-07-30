@@ -256,7 +256,10 @@ function avst_validar_config3d($bruto): array
             'triste'   => $n01($mor['triste'] ?? 0),
         ],
         'iluminacao' => $enum($bruto['iluminacao'] ?? '', ['estudio', 'dramatica', 'neon'], 'estudio'),
-        'cenario'    => $enum($bruto['cenario'] ?? '', ['vazio', 'grade'], 'vazio'),
+        // PALCO VIVO (fila #37 item 4): cenários novos + hora + clima
+        'cenario'    => $enum($bruto['cenario'] ?? '', ['vazio', 'grade', 'estrelas', 'dojo'], 'vazio'),
+        'hora'       => $enum($bruto['hora'] ?? '', ['estudio', 'dia', 'entardecer', 'noite'], 'estudio'),
+        'clima'      => $enum($bruto['clima'] ?? '', ['limpo', 'chuva', 'neve', 'vagalumes'], 'limpo'),
         'camera'     => $enum($bruto['camera'] ?? '', ['corpo', 'busto', 'rosto', 'tresquartos'], 'corpo'),
     ];
 }

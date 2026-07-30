@@ -21,11 +21,13 @@ import {
   CONFIG3D_PADRAO, CORES_3D, ROTULOS_VARIANTE,
 } from './catalogo3d';
 import type {
-  ArquetipoId, CameraId, CenarioId, Config3D, IluminacaoId, SlotMaterial, VarianteHumanoId,
+  ArquetipoId, CameraId, CenarioId, ClimaId, Config3D, HoraId, IluminacaoId,
+  SlotMaterial, VarianteHumanoId,
 } from './catalogo3d';
 import { Personagem3D } from './Personagem3D';
 import type { Gesto } from './Personagem3D';
 import { Cena3D } from './Cena3D';
+import { Clima3D } from './Clima3D';
 import { Poder3D } from './Poder3D';
 import type { FasePoder } from './Poder3D';
 import { CameraRig3D } from './CameraRig3D';
@@ -184,7 +186,8 @@ export default function Estudio3D({ corDestaque, versaoBase = 0, aoSalvar }: {
             camera={{ fov: 34, near: 0.1, far: 40, position: [0, 1.35, 3.6] }}
             onCreated={(estado) => { glRef.current = estado.gl; }}>
             <Cena3D iluminacao={config.iluminacao} cenario={config.cenario}
-              corDestaque={destaque} sombras={qualidade !== 'economico'} />
+              hora={config.hora} corDestaque={destaque} sombras={qualidade !== 'economico'} />
+            <Clima3D clima={config.clima} />
             <Suspense fallback={null}>
               <Personagem3D config={config} gesto={gesto} aoTerminarGesto={() => setGesto(null)} />
             </Suspense>
@@ -352,10 +355,27 @@ export default function Estudio3D({ corDestaque, versaoBase = 0, aoSalvar }: {
             ))}
           </div>
           <div className="avst-3d-chips">
-            {(['vazio', 'grade'] as CenarioId[]).map((c) => (
+            {(['vazio', 'grade', 'estrelas', 'dojo'] as CenarioId[]).map((c) => (
               <button key={c} type="button" className={config.cenario === c ? 'avst-3d-chip-on' : ''}
                 onClick={() => mudar({ cenario: c })}>
-                {c === 'vazio' ? 'Palco vazio' : 'Grade neon'}
+                {c === 'vazio' ? 'Palco vazio' : c === 'grade' ? 'Grade neon' : c === 'estrelas' ? 'Céu estrelado' : 'Dojo'}
+              </button>
+            ))}
+          </div>
+          {/* PALCO VIVO (fila #37 item 4): hora do dia + clima */}
+          <div className="avst-3d-chips">
+            {(['estudio', 'dia', 'entardecer', 'noite'] as HoraId[]).map((horaOp) => (
+              <button key={horaOp} type="button" className={config.hora === horaOp ? 'avst-3d-chip-on' : ''}
+                onClick={() => mudar({ hora: horaOp })}>
+                {horaOp === 'estudio' ? 'Luz de estúdio' : horaOp === 'dia' ? 'Dia' : horaOp === 'entardecer' ? 'Entardecer' : 'Noite'}
+              </button>
+            ))}
+          </div>
+          <div className="avst-3d-chips">
+            {(['limpo', 'chuva', 'neve', 'vagalumes'] as ClimaId[]).map((cl) => (
+              <button key={cl} type="button" className={config.clima === cl ? 'avst-3d-chip-on' : ''}
+                onClick={() => mudar({ clima: cl })}>
+                {cl === 'limpo' ? 'Céu limpo' : cl === 'chuva' ? 'Chuva' : cl === 'neve' ? 'Neve' : 'Vagalumes'}
               </button>
             ))}
           </div>

@@ -11,7 +11,11 @@ export const BASE_3D = '/assets/avatars/3d/';
 export type ArquetipoId = 'humano' | 'androide' | 'animal';
 export type VarianteHumanoId = 'casual' | 'terno' | 'punk' | 'aventureiro';
 export type IluminacaoId = 'estudio' | 'dramatica' | 'neon';
-export type CenarioId = 'vazio' | 'grade';
+// PALCO VIVO (fila #37 item 4): cenários procedurais + hora + clima —
+// tudo geometria/partículas geradas em código (zero download extra).
+export type CenarioId = 'vazio' | 'grade' | 'estrelas' | 'dojo';
+export type HoraId = 'estudio' | 'dia' | 'entardecer' | 'noite';
+export type ClimaId = 'limpo' | 'chuva' | 'neve' | 'vagalumes';
 export type CameraId = 'corpo' | 'busto' | 'rosto' | 'tresquartos';
 export type SlotMaterial = 'pele' | 'cabelo' | 'roupa' | 'detalhe';
 
@@ -44,6 +48,10 @@ export interface Config3D {
   morfos: { bravo: number; surpreso: number; triste: number };
   iluminacao: IluminacaoId;
   cenario: CenarioId;
+  /** hora do dia (palco vivo) — 'estudio' = luz neutra dos presets */
+  hora: HoraId;
+  /** clima do palco (palco vivo) — partículas procedurais */
+  clima: ClimaId;
   camera: CameraId;
 }
 
@@ -57,6 +65,8 @@ export const CONFIG3D_PADRAO: Config3D = {
   morfos: { bravo: 0, surpreso: 0, triste: 0 },
   iluminacao: 'estudio',
   cenario: 'vazio',
+  hora: 'estudio',
+  clima: 'limpo',
   camera: 'corpo',
 };
 
