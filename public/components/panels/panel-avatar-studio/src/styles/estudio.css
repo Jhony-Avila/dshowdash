@@ -632,6 +632,49 @@
   transition: opacity 0.12s;
 }
 .avst-foto-item:hover .avst-foto-item-usar { opacity: 1; }
+.avst-foto-item-img {
+  display: block; width: 100%; height: 100%; padding: 0; border: 0;
+  background: transparent; cursor: pointer;
+}
+.avst-foto-item-img:disabled { opacity: 0.55; cursor: not-allowed; }
+.avst-foto-item-estilo {
+  position: absolute; left: 4px; bottom: 4px; width: 22px; height: 22px;
+  display: grid; place-items: center; border-radius: 50%; cursor: pointer;
+  background: var(--avst-painel-2); border: 1px solid var(--avst-borda);
+  color: var(--avst-texto-2); opacity: 0; transition: opacity 0.12s;
+}
+.avst-foto-item:hover .avst-foto-item-estilo { opacity: 1; }
+.avst-foto-item-estilo:hover { color: var(--avst-texto); border-color: var(--avst-acento); }
+
+/* ── 4.6 §21: FOTO ESTILIZADA ────────────────────────────────────── */
+.avst-foto-estilo { display: flex; flex-direction: column; gap: 12px; }
+.avst-ft-preview {
+  width: 280px; max-width: 100%; margin: 0 auto; border-radius: 16px; overflow: hidden;
+  background: #0a0d15; border: 1px solid var(--avst-borda);
+}
+.avst-ft-preview svg { width: 100%; height: auto; display: block; }
+.avst-ft-grupo { display: flex; flex-direction: column; gap: 5px; }
+.avst-ft-rotulo {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--avst-texto-2); display: inline-flex; align-items: center; gap: 4px;
+}
+.avst-ft-chips { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.avst-ft-chip {
+  flex: 0 0 auto; padding: 4px 10px; border-radius: 999px; font-size: 11px; cursor: pointer;
+  background: var(--avst-painel); color: var(--avst-texto-2);
+  border: 1px solid color-mix(in srgb, var(--avst-rar, var(--avst-borda)) 55%, var(--avst-borda));
+}
+.avst-ft-chip:hover { color: var(--avst-texto); }
+.avst-ft-chip-ativo {
+  color: var(--avst-texto); border-color: var(--avst-rar, var(--avst-acento));
+  background: color-mix(in srgb, var(--avst-rar, var(--avst-acento)) 16%, var(--avst-painel));
+}
+.avst-ft-cores { display: flex; gap: 6px; flex-wrap: wrap; }
+.avst-ft-cor {
+  width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; padding: 0;
+}
+.avst-ft-cor-ativa { border-color: #fff; box-shadow: 0 0 0 2px var(--avst-acento); }
 
 /* ── F2c: barra de inventário (busca + tiers + favoritos) ─────────── */
 .avst-biblioteca { display: flex; flex-direction: column; gap: 10px; }

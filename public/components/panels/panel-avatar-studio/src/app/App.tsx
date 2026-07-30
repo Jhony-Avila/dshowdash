@@ -631,7 +631,10 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             <Historico key={`h-${versao}`} versaoBase={versao}
               aoAplicar={aplicar} aoReativar={aoReativarHistorico} />
           )}
-          {aba === 'foto' && <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'} aoSalvar={aoSalvarFoto} />}
+          {aba === 'foto' && (
+            <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'}
+              desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto} />
+          )}
           {aba === 'itens' && (
             <>
               <GradeItens config={atual} categoria={categoria}

@@ -3,7 +3,13 @@ declare(strict_types=1);
 
 /**
  * /api/avatar/studio.php — persistência oficial do Avatar Studio.
- * @version 1.5.0
+ * @version 1.6.0
+ * @changelog 1.6.0 (2026-07-30) — FOTO ESTILIZADA (4.6 §21, decisão #42):
+ *   POST {foto, config_foto?, base_version} aceita parâmetros de APRESENTAÇÃO
+ *   (fundo/banner/aura/efeito/moldura/emblema/título/destaque — NUNCA
+ *   roupa/corpo) validados campo a campo e gravados como formato:
+ *   'foto_estilizada' junto do PNG composto (re-encodado GD, como sempre);
+ *   travas de desbloqueio valem também para os assets sobre a foto.
  * @changelog 1.5.0 (2026-07-30) — HISTÓRICO COMPLETO (4.6 §22, decisão #42):
  *   GET ?historico=1 passa a 100 itens com nome/fixado/ativo/versão (JOIN
  *   avatar_version_meta); POST {historico_meta:{id,nome?,fixado?}} nomeia e
@@ -150,6 +156,45 @@ function avst_validar_config($bruto): array
         $saida['titulo'] = $titulo;
     }
     return $saida;
+}
+
+/**
+ * Reconstrói o estilo da FOTO ESTILIZADA (4.6 §21) campo a campo.
+ * Só categorias de APRESENTAÇÃO são aceitas — roupa/corpo nunca entram.
+ * @return array|null null = sem estilização (foto simples)
+ */
+function avst_validar_config_foto($bruto): ?array
+{
+    if (!is_array($bruto)) {
+        return null;
+    }
+    $reId = '/^[a-z0-9_]{1,40}$/';
+    $camadas = [];
+    foreach (['fundo', 'banner', 'aura', 'efeito', 'moldura', 'emblema'] as $cat) {
+        $id = $bruto['camadas'][$cat] ?? null;
+        if ($id === null || $id === 'nenhum') {
+            continue;
+        }
+        if (!is_string($id) || !preg_match($reId, $id)) {
+            throw new InvalidArgumentException("FOTO_ESTILO_INVALIDO:$cat");
+        }
+        $camadas[$cat] = $id;
+    }
+    $saida = [
+        'formato' => 'foto_estilizada',
+        'versao'  => 1,
+        'camadas' => (object) $camadas,
+        'cores'   => new stdClass(),
+    ];
+    $destaque = $bruto['cores']['destaque'] ?? null;
+    if (is_string($destaque) && preg_match('/^#[0-9a-f]{6}$/i', $destaque)) {
+        $saida['cores'] = ['destaque' => strtolower($destaque)];
+    }
+    $titulo = $bruto['titulo'] ?? null;
+    if (is_string($titulo) && preg_match($reId, $titulo)) {
+        $saida['titulo'] = $titulo;
+    }
+    return $camadas === [] && !isset($saida['titulo']) ? null : $saida;
 }
 
 /**
@@ -491,11 +536,29 @@ try {
     } elseif ($modoFoto) {
         try {
             $conteudo = avst_processar_foto(is_string($corpo['foto']) ? $corpo['foto'] : '');
+            // 4.6 §21: estilização opcional — parâmetros validados campo a
+            // campo e guardados junto do PNG composto (fonte de verdade).
+            $estilo = avst_validar_config_foto($corpo['config_foto'] ?? null);
         } catch (InvalidArgumentException $e) {
             avst_erro($e->getMessage(), 400);
         } catch (RuntimeException $e) {
             error_log('[avatar/studio.php] foto: ' . $e->getMessage());
             avst_erro($e->getMessage(), 500);
+        }
+        if ($estilo !== null) {
+            // travas de desbloqueio valem TAMBÉM sobre a foto (mesma regra
+            // do fluxo de camadas — o servidor nunca confia no front)
+            $itensFoto = array_values((array) $estilo['camadas']);
+            $comTrava = vida_itens_com_trava($pdo, $itensFoto);
+            if ($comTrava !== []) {
+                $liberados = vida_desbloqueados($pdo, $userId);
+                $barrados = array_values(array_diff($comTrava, $liberados));
+                if ($barrados !== []) {
+                    error_log("AVST_ITEM_BLOQUEADO_FOTO user=$userId itens=" . implode(',', $barrados));
+                    avst_erro('ITEM_BLOQUEADO', 403, ['itens' => $barrados]);
+                }
+            }
+            $configJson = json_encode($estilo, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
         $extensao = 'png';
         $tipoLinha = 'image';

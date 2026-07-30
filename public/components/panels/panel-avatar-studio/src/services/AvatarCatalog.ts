@@ -5,12 +5,14 @@
 // presets e validação de config. O motor (engine/render) recebe o resolvedor
 // daqui — nenhum outro módulo importa as partes diretamente.
 import type {
-  AvatarConfig, CategoriaId, CategoriaMeta, GrupoId, Preset, Raridade, SlotCor,
+  AvatarConfig, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
 import { CORES_PADRAO, normalizarHex } from '../engine/cores';
 import type { ParteDef } from '../engine/base-api';
 import { renderAvatar, renderDataUri, hashConfig } from '../engine/render';
 import type { OpcoesRender } from '../engine/render';
+import { renderFotoEstilizada } from '../engine/render-foto';
+import type { OpcoesRenderFoto } from '../engine/render-foto';
 import { BASES } from '../engine/partes/bases';
 import { ESPECIES } from '../engine/partes/especies';
 import { CABELOS } from '../engine/partes/cabelos';
@@ -352,6 +354,23 @@ export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
 export function dataUriDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
   return renderDataUri(config, itemPorId, opcoes);
 }
+
+/**
+ * SVG da FOTO ESTILIZADA (4.6 §21) — resolve título e cores aqui (quem
+ * conhece o catálogo é o serviço; o motor só recebe o selo pronto).
+ */
+export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesRenderFoto): string {
+  const titulo = tituloPorId(estilo.titulo);
+  return renderFotoEstilizada(fotoHref, {
+    camadas: estilo.camadas,
+    cores: { ...CONFIG_PADRAO.cores, destaque: normalizarHex(estilo.cores.destaque, CONFIG_PADRAO.cores.destaque) },
+    selo: titulo ? { nome: titulo.nome, cor: RARIDADES[titulo.raridade].cor } : undefined,
+  }, itemPorId, opcoes);
+}
+
+/** Categorias permitidas SOBRE a foto (§21 — nunca roupa/corpo). */
+export const CATEGORIAS_FOTO: Array<keyof EstiloFoto['camadas']> =
+  ['fundo', 'banner', 'aura', 'efeito', 'moldura', 'emblema'];
 
 export { hashConfig };
 

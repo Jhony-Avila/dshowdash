@@ -1,5 +1,11 @@
-// components/Foto.tsx — foto de perfil: upload, CÂMERA e galeria (briefing §27).
-// @version 1.1.0
+// components/Foto.tsx — foto de perfil: upload, CÂMERA, galeria e ESTILO.
+// @version 2.0.0
+// @changelog v2.0.0 (2026-07-30) — FOTO ESTILIZADA (4.6 §21, decisão #42):
+//   modos Foto simples / Foto estilizada. Sobre a foto entram SÓ assets de
+//   apresentação (fundo, banner, aura, efeito, moldura, emblema-badge,
+//   título e cor de destaque) — nunca roupa/corpo. Composição determinística
+//   no motor (engine/render-foto), rasterizada a PNG 480 no cliente e salva
+//   com os PARÂMETROS (config_foto) — o servidor valida e re-encoda via GD.
 // @changelog v1.1.0 (2026-07-29, pedido do Jhony) — captura pela câmera
 //   (getUserMedia → frame → mesmo fluxo de recorte) e galeria "Suas fotos"
 //   (todas as fotos ficam guardadas no servidor; um clique reativa).
@@ -7,10 +13,19 @@
 //
 // Fluxo: arquivo OU câmera → recorte (arrastar + zoom) → canvas 480×480 →
 // PNG data-url → salvarFoto(). O servidor re-encoda pixel a pixel (GD).
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Aperture, Camera, Check, ImageUp, Images, LoaderCircle, RotateCcw, Video, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Aperture, Camera, Check, Crown, ImageUp, Images, LoaderCircle, RotateCcw,
+  Video, Wand2, X,
+} from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
 import type { FotoGuardada } from '../services/AvatarService';
+import type { EstiloFoto } from '../domain/types';
+import {
+  CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, RARIDADES,
+  TITULOS, itensDe, svgFotoDe,
+} from '../services/AvatarCatalog';
+import { telemetria } from '../services/Telemetria';
 
 const LADO_PALCO = 280;   // px na tela
 const LADO_SAIDA = 480;   // px do PNG final
@@ -22,10 +37,38 @@ interface EstadoRecorte {
   y: number;
 }
 
-export function Foto({ versao, fotoAtiva, aoSalvar }: {
+/** Rasteriza um SVG (com a foto embutida como data-url) em PNG 480. */
+async function rasterizarSvg(svg: string): Promise<string> {
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolver, rejeitar) => {
+      const i = new Image();
+      i.onload = () => resolver(i);
+      i.onerror = () => rejeitar(new Error('SVG_RASTER'));
+      i.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = LADO_SAIDA;
+    canvas.height = LADO_SAIDA;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('SEM_CANVAS');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, LADO_SAIDA, LADO_SAIDA);
+    return canvas.toDataURL('image/png');
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+const ESTILO_VAZIO: EstiloFoto = { camadas: {}, cores: { destaque: CONFIG_PADRAO.cores.destaque } };
+
+export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   versao: number;
   /** true quando o avatar ativo já é uma foto */
   fotoAtiva: boolean;
+  /** ids liberados por conquistas/eventos (mesma fonte da grade) */
+  desbloqueados: Set<string>;
   aoSalvar: (novaVersao: number) => void;
 }) {
   const [recorte, setRecorte] = useState<EstadoRecorte | null>(null);
@@ -33,6 +76,9 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
   const [galeria, setGaleria] = useState<FotoGuardada[] | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
+  // 4.6 §21 — modo estilizada: foto base (data-url 480) + parâmetros
+  const [fotoEstilo, setFotoEstilo] = useState<string | null>(null);
+  const [estilo, setEstilo] = useState<EstiloFoto>(ESTILO_VAZIO);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const arrasto = useRef<{ ativo: boolean; px: number; py: number }>({ ativo: false, px: 0, py: 0 });
@@ -163,19 +209,26 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
 
   const aoSoltar = useCallback(() => { arrasto.current.ativo = false; }, []);
 
-  // ── Salvar / reativar ───────────────────────────────────────────────
-  const usarFoto = useCallback(async () => {
-    if (!recorte) return;
-    setSalvando(true);
-    setMensagem(null);
+  // ── Salvar / reativar / estilizar ───────────────────────────────────
+  /** PNG 480 do recorte atual (base da foto simples E da estilizada). */
+  const recorteParaPng = useCallback((): string | null => {
+    if (!recorte) return null;
     const saida = document.createElement('canvas');
     saida.width = LADO_SAIDA;
     saida.height = LADO_SAIDA;
     const ctx = saida.getContext('2d');
-    if (!ctx) { setSalvando(false); return; }
+    if (!ctx) return null;
     ctx.imageSmoothingQuality = 'high';
     desenhar(ctx, recorte, LADO_SAIDA);
-    const r = await salvarFoto(saida.toDataURL('image/png'), versao);
+    return saida.toDataURL('image/png');
+  }, [recorte, desenhar]);
+
+  const usarFoto = useCallback(async () => {
+    const png = recorteParaPng();
+    if (!png) return;
+    setSalvando(true);
+    setMensagem(null);
+    const r = await salvarFoto(png, versao);
     setSalvando(false);
     if (r.ok) {
       setMensagem('Foto salva! O header já foi atualizado.');
@@ -184,7 +237,76 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
     } else {
       setMensagem(r.mensagem ?? 'Não foi possível salvar a foto.');
     }
-  }, [recorte, versao, desenhar, aoSalvar]);
+  }, [recorteParaPng, versao, aoSalvar]);
+
+  /** Entra no modo ESTILIZADA a partir do recorte atual (4.6 §21). */
+  const abrirEstilo = useCallback(() => {
+    const png = recorteParaPng();
+    if (!png) return;
+    setFotoEstilo(png);
+    setRecorte(null);
+    setMensagem(null);
+    telemetria('foto_estilo_abriu', { origem: 'recorte' });
+  }, [recorteParaPng]);
+
+  /** Entra no modo ESTILIZADA a partir de uma foto guardada. */
+  const estilizarGuardada = useCallback(async (foto: FotoGuardada) => {
+    setMensagem(null);
+    try {
+      const r = await fetch(foto.url, { credentials: 'include' });
+      if (!r.ok) throw new Error(String(r.status));
+      const blob = await r.blob();
+      const dataUrl = await new Promise<string>((resolver, rejeitar) => {
+        const fr = new FileReader();
+        fr.onload = () => resolver(String(fr.result));
+        fr.onerror = () => rejeitar(new Error('LEITURA'));
+        fr.readAsDataURL(blob);
+      });
+      setFotoEstilo(dataUrl);
+      telemetria('foto_estilo_abriu', { origem: 'galeria' });
+    } catch {
+      setMensagem('Não consegui carregar esta foto para estilizar.');
+    }
+  }, []);
+
+  const salvarEstilizada = useCallback(async () => {
+    if (!fotoEstilo) return;
+    setSalvando(true);
+    setMensagem(null);
+    try {
+      const svg = svgFotoDe(fotoEstilo, estilo, { estatico: true, tamanho: LADO_SAIDA, uid: 'ftsalva' });
+      const png = await rasterizarSvg(svg);
+      const r = await salvarFoto(png, versao, estilo);
+      if (r.ok) {
+        setMensagem('Foto estilizada salva! O header já foi atualizado.');
+        setFotoEstilo(null);
+        setEstilo(ESTILO_VAZIO);
+        telemetria('foto_estilo_salvou');
+        aoSalvar(r.versao ?? versao + 1);
+      } else {
+        setMensagem(r.mensagem ?? 'Não foi possível salvar a foto estilizada.');
+      }
+    } catch {
+      setMensagem('Não consegui compor a imagem final — tente de novo.');
+    } finally {
+      setSalvando(false);
+    }
+  }, [fotoEstilo, estilo, versao, aoSalvar]);
+
+  // preview vivo da estilização (animações ligadas — o PNG sai estático)
+  const previewEstilo = useMemo(
+    () => (fotoEstilo ? svgFotoDe(fotoEstilo, estilo, { uid: 'ftprev' }) : ''),
+    [fotoEstilo, estilo]
+  );
+
+  const mudarCamada = (cat: (typeof CATEGORIAS_FOTO)[number], id: string | null) => {
+    setEstilo((e) => {
+      const camadas = { ...e.camadas };
+      if (id) camadas[cat] = id;
+      else delete camadas[cat];
+      return { ...e, camadas };
+    });
+  };
 
   const reativar = useCallback(async (foto: FotoGuardada) => {
     setSalvando(true);
@@ -209,7 +331,7 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
           : 'Envie um arquivo ou tire uma foto na hora — o avatar em camadas fica guardado no histórico.'}
       </p>
 
-      {!recorte && !camera && (
+      {!recorte && !camera && !fotoEstilo && (
         <div className="avst-foto-origem">
           <label className="avst-foto-escolher">
             <ImageUp size={22} aria-hidden />
@@ -259,12 +381,99 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
             <button type="button" className="avst-botao" onClick={() => setRecorte(null)} disabled={salvando}>
               <X size={14} aria-hidden /> Cancelar
             </button>
+            <button type="button" className="avst-botao" onClick={abrirEstilo} disabled={salvando}
+              title="Fundo, moldura, aura, título e mais — por cima da sua foto">
+              <Wand2 size={14} aria-hidden /> Estilizar…
+            </button>
             <button type="button" className="avst-botao avst-botao-primario" onClick={() => void usarFoto()} disabled={salvando}>
               {salvando ? <LoaderCircle className="avst-girando" size={14} aria-hidden /> : <Check size={14} aria-hidden />}
               {salvando ? ' Enviando…' : ' Usar esta foto'}
             </button>
           </div>
         </>
+      )}
+
+      {/* ── Modo FOTO ESTILIZADA (4.6 §21) ─────────────────────────── */}
+      {fotoEstilo && (
+        <div className="avst-foto-estilo">
+          <div className="avst-ft-preview" aria-label="Prévia da foto estilizada"
+            dangerouslySetInnerHTML={{ __html: previewEstilo }} />
+          <p className="avst-foto-nota">
+            Só assets de <strong>apresentação</strong> entram na foto — roupa e corpo ficam no avatar em camadas.
+          </p>
+
+          {CATEGORIAS_FOTO.map((cat) => {
+            const meta = CATEGORIAS.find((c) => c.id === cat);
+            const itens = itensDe(cat).filter((i) => !i.bloqueadoPor || desbloqueados.has(i.id));
+            const atual = estilo.camadas[cat] ?? null;
+            return (
+              <div key={cat} className="avst-ft-grupo">
+                <span className="avst-ft-rotulo">{meta?.nome ?? cat}</span>
+                <div className="avst-ft-chips" role="radiogroup" aria-label={meta?.nome ?? cat}>
+                  <button type="button" role="radio" aria-checked={atual === null}
+                    className={`avst-ft-chip ${atual === null ? 'avst-ft-chip-ativo' : ''}`}
+                    onClick={() => mudarCamada(cat, null)}>
+                    Nenhum
+                  </button>
+                  {itens.map((i) => (
+                    <button key={i.id} type="button" role="radio" aria-checked={atual === i.id}
+                      className={`avst-ft-chip ${atual === i.id ? 'avst-ft-chip-ativo' : ''}`}
+                      style={{ '--avst-rar': RARIDADES[i.raridade].cor } as React.CSSProperties}
+                      title={`${i.nome} · ${RARIDADES[i.raridade].nome}`}
+                      onClick={() => mudarCamada(cat, i.id)}>
+                      {i.nome}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          <div className="avst-ft-grupo">
+            <span className="avst-ft-rotulo"><Crown size={11} aria-hidden /> Título</span>
+            <div className="avst-ft-chips" role="radiogroup" aria-label="Título">
+              <button type="button" role="radio" aria-checked={!estilo.titulo}
+                className={`avst-ft-chip ${!estilo.titulo ? 'avst-ft-chip-ativo' : ''}`}
+                onClick={() => setEstilo((e) => { const { titulo: _t, ...resto } = e; return resto as EstiloFoto; })}>
+                Nenhum
+              </button>
+              {TITULOS.map((t) => (
+                <button key={t.id} type="button" role="radio" aria-checked={estilo.titulo === t.id}
+                  className={`avst-ft-chip ${estilo.titulo === t.id ? 'avst-ft-chip-ativo' : ''}`}
+                  style={{ '--avst-rar': RARIDADES[t.raridade].cor } as React.CSSProperties}
+                  title={`${t.nome} · ${RARIDADES[t.raridade].nome}`}
+                  onClick={() => setEstilo((e) => ({ ...e, titulo: t.id }))}>
+                  {t.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="avst-ft-grupo">
+            <span className="avst-ft-rotulo">Cor de destaque</span>
+            <div className="avst-ft-cores" role="radiogroup" aria-label="Cor de destaque">
+              {CORES_SUGERIDAS.destaque.map((cor) => (
+                <button key={cor} type="button" role="radio"
+                  aria-checked={estilo.cores.destaque === cor}
+                  className={`avst-ft-cor ${estilo.cores.destaque === cor ? 'avst-ft-cor-ativa' : ''}`}
+                  style={{ background: cor }} title={cor}
+                  onClick={() => setEstilo((e) => ({ ...e, cores: { destaque: cor } }))} />
+              ))}
+            </div>
+          </div>
+
+          <div className="avst-foto-acoes">
+            <button type="button" className="avst-botao" disabled={salvando}
+              onClick={() => { setFotoEstilo(null); setEstilo(ESTILO_VAZIO); }}>
+              <X size={14} aria-hidden /> Cancelar
+            </button>
+            <button type="button" className="avst-botao avst-botao-primario"
+              onClick={() => void salvarEstilizada()} disabled={salvando}>
+              {salvando ? <LoaderCircle className="avst-girando" size={14} aria-hidden /> : <Wand2 size={14} aria-hidden />}
+              {salvando ? ' Compondo…' : ' Salvar foto estilizada'}
+            </button>
+          </div>
+        </div>
       )}
 
       {mensagem && <p className="avst-foto-msg" role="status">{mensagem}</p>}
@@ -275,12 +484,19 @@ export function Foto({ versao, fotoAtiva, aoSalvar }: {
           <h4 className="avst-cores-titulo"><Images size={14} aria-hidden /> Suas fotos</h4>
           <div className="avst-foto-grade" role="list" aria-label="Fotos guardadas">
             {galeria.map((f) => (
-              <button key={f.id} type="button" role="listitem" className="avst-foto-item"
-                title="Usar esta foto de novo" disabled={salvando}
-                onClick={() => void reativar(f)}>
-                <img src={f.url} alt="Foto guardada" loading="lazy" />
-                <span className="avst-foto-item-usar"><RotateCcw size={13} aria-hidden /></span>
-              </button>
+              <div key={f.id} role="listitem" className="avst-foto-item">
+                <button type="button" className="avst-foto-item-img"
+                  title="Usar esta foto de novo" disabled={salvando}
+                  onClick={() => void reativar(f)}>
+                  <img src={f.url} alt="Foto guardada" loading="lazy" />
+                  <span className="avst-foto-item-usar"><RotateCcw size={13} aria-hidden /></span>
+                </button>
+                <button type="button" className="avst-foto-item-estilo"
+                  title="Estilizar esta foto (fundo, moldura, título…)" disabled={salvando}
+                  onClick={() => void estilizarGuardada(f)}>
+                  <Wand2 size={12} aria-hidden />
+                </button>
+              </div>
             ))}
           </div>
         </div>

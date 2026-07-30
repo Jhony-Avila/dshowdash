@@ -12,7 +12,7 @@
 //   Fallback localStorage permanece p/ offline/erro (briefing §25).
 // O backend NUNCA confia no que sai daqui: revalida config, sanitiza o SVG
 // e re-encoda a foto.
-import type { AvatarConfig, HistoricoItem } from '../domain/types';
+import type { AvatarConfig, EstiloFoto, HistoricoItem } from '../domain/types';
 import { validarConfig, svgDe, dataUriDe } from './AvatarCatalog';
 
 const URL_API = '/api/avatar/studio.php';
@@ -323,8 +323,16 @@ export async function reativarVersao(id: number, versaoBase: number): Promise<Re
   }
 }
 
-/** Salva a FOTO recortada (canvas PNG). Sem fallback local — exige servidor. */
-export async function salvarFoto(dataUrlPng: string, versaoBase: number): Promise<ResultadoSalvar> {
+/**
+ * Salva a FOTO recortada (canvas PNG). Sem fallback local — exige servidor.
+ * `estilo` (4.6 §21): parâmetros da foto ESTILIZADA — o PNG enviado já vem
+ * composto no cliente; o servidor valida os parâmetros e re-encoda o PNG.
+ */
+export async function salvarFoto(
+  dataUrlPng: string,
+  versaoBase: number,
+  estilo?: EstiloFoto
+): Promise<ResultadoSalvar> {
   try {
     const cabecalhos: Record<string, string> = { 'Content-Type': 'application/json' };
     const csrf = await obterCsrf();
@@ -334,7 +342,11 @@ export async function salvarFoto(dataUrlPng: string, versaoBase: number): Promis
       method: 'POST',
       credentials: 'include',
       headers: cabecalhos,
-      body: JSON.stringify({ foto: dataUrlPng, base_version: versaoBase }),
+      body: JSON.stringify({
+        foto: dataUrlPng,
+        base_version: versaoBase,
+        ...(estilo ? { config_foto: estilo } : {}),
+      }),
     });
 
     if (r.ok) {
