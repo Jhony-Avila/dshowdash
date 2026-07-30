@@ -31,6 +31,27 @@
   --avst-texto-2: #5b6578;
 }
 
+/* ── AS4 Fase 0 (§22.5): escala OFICIAL de z-index — nunca valores soltos ── */
+[data-avst-react-root],
+[data-avst-overlay-root] {
+  --z-base: 0;
+  --z-sticky: 100;
+  --z-header: 200;
+  --z-dropdown: 500;
+  --z-popover: 700;
+  --z-tooltip: 800;
+  --z-modal: 1000;
+  --z-toast: 1200;
+}
+
+/* Overlay Root (§22.2): filho direto de <body>, acima de qualquer painel */
+[data-avst-overlay-root] {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-tooltip, 800);
+}
+
 [data-avst-react-root] * { box-sizing: border-box; }
 [data-avst-react-root] button { font: inherit; color: inherit; cursor: pointer; }
 
@@ -70,9 +91,9 @@
 }
 .avst-botao-primario:hover:not(:disabled) { filter: brightness(1.1); }
 
-/* ── Corpo em 3 colunas ───────────────────────────────────────────── */
+/* ── Corpo em 3 colunas (painel direito redimensionável — AS4 §23.3) ── */
 .avst-corpo {
-  display: grid; grid-template-columns: 148px minmax(300px, 1fr) minmax(320px, 460px);
+  display: grid; grid-template-columns: 148px minmax(300px, 1fr) var(--avst-larg-painel, 420px);
   gap: 0; flex: 1; min-height: 0;
 }
 
@@ -95,13 +116,14 @@
 }
 .avst-cat-separador { height: 1px; margin: 8px 4px; background: var(--avst-borda); }
 
-/* Coluna 2 — palco */
+/* Coluna 2 — palco (espaço vazio reduzido + barra junto do personagem — §39.10/11) */
 .avst-palco {
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
-  padding: 22px 18px 14px; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; align-items: center; gap: 13px;
+  padding: 18px 18px 12px; min-height: 0; overflow-y: auto;
 }
 .avst-palco-principal {
-  width: min(430px, 96%);
+  position: relative;
+  width: min(470px, 100%);
 }
 
 /* ── Palco Cinema (AS3 F1) — cena escura cinematográfica nos DOIS temas ── */
@@ -168,6 +190,34 @@
   display: flex; gap: 6px;
 }
 
+/* indicador de zoom + foco da câmera (AS4 §39.12/§39.13) */
+.avst-cine-zoom {
+  position: absolute; top: 10px; right: 10px; z-index: 6;
+  padding: 4px 10px; border-radius: 999px; pointer-events: none;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px;
+  color: #cfd6e6; background: rgba(10, 13, 22, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+}
+
+/* toast de feedback ao equipar (AS4 §39.18) — nível --z-toast da escala */
+.avst-toast-equipar {
+  position: absolute; left: 50%; bottom: 14px; z-index: var(--z-toast, 1200);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px; pointer-events: none;
+  font-size: 12px; font-weight: 600; color: #fff;
+  background: rgba(10, 13, 22, 0.88);
+  border: 1px solid var(--avst-rar, var(--avst-acento));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+  animation: avst-toast 1.7s ease forwards;
+}
+.avst-toast-equipar strong { font-weight: 800; }
+@keyframes avst-toast {
+  0% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  12%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+}
+
 /* enquadramento corpo inteiro: svg 240×400 centralizado no palco quadrado */
 .avst-cine-corpo .avst-cine-svg {
   height: 100%; display: flex; justify-content: center;
@@ -210,20 +260,20 @@
 .avst-comparacao figure { margin: 0; width: min(240px, 42%); text-align: center; }
 .avst-comparacao figcaption { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--avst-texto-2); text-transform: uppercase; letter-spacing: 0.6px; }
 
-.avst-previas { display: flex; align-items: flex-end; gap: 18px; }
+.avst-previas { display: flex; align-items: flex-end; gap: 18px; margin-top: auto; }
 .avst-previas figure { margin: 0; width: 64px; text-align: center; }
 .avst-previas .avst-previa-menor { width: 40px; }
 .avst-previas .avst-svg { border-radius: 50%; overflow: hidden; border: 2px solid var(--avst-borda); }
 .avst-previas figcaption { margin-top: 5px; font-size: 10.5px; color: var(--avst-texto-2); }
 
-/* Barra de salvamento */
+/* Barra de salvamento — logo abaixo do personagem (AS4 §39.11) */
 .avst-barra {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  width: 100%; margin-top: auto; padding: 11px 14px;
+  width: min(470px, 100%); padding: 11px 14px;
   border: 1px solid var(--avst-borda); border-radius: 12px;
   background: var(--avst-painel);
 }
-.avst-barra-estado { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; }
+.avst-barra-estado { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; }
 .avst-barra-origem { font-style: normal; color: var(--avst-texto-2); font-weight: 500; }
 .avst-barra-mensagem { font-size: 12px; color: var(--avst-texto-2); }
 .avst-barra .avst-botao-primario { margin-left: auto; }
@@ -232,34 +282,109 @@
 .avst-barra-erro .avst-barra-estado,
 .avst-barra-conflito .avst-barra-estado { color: var(--avst-erro); }
 
-/* Coluna 3 — itens + cores */
+/* Coluna 3 — itens + cores (redimensionável — AS4 §23.3) */
 .avst-lateral {
+  position: relative;
   display: flex; flex-direction: column; gap: 16px;
   padding: 16px; border-left: 1px solid var(--avst-borda);
-  overflow-y: auto; min-height: 0; background: color-mix(in srgb, var(--avst-painel) 55%, transparent);
+  overflow-y: auto; overscroll-behavior: contain; min-height: 0;
+  background: color-mix(in srgb, var(--avst-painel) 55%, transparent);
+}
+.avst-redim {
+  position: absolute; left: -5px; top: 0; bottom: 0; width: 10px;
+  cursor: col-resize; z-index: var(--z-sticky, 100); touch-action: none;
+}
+.avst-redim::after {
+  content: ""; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px;
+  background: transparent; transition: background 0.15s;
+}
+.avst-redim:hover::after, .avst-redim:active::after { background: var(--avst-acento); }
+
+/* título contextual do painel (AS4 §39.15) + modos de visualização (§23.1) */
+.avst-painel-titulo { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.avst-painel-titulo h2 { margin: 0; font-size: 15px; font-weight: 800; }
+.avst-painel-titulo p { margin: 3px 0 0; font-size: 12px; color: var(--avst-texto-2); }
+.avst-painel-titulo p strong { color: var(--avst-texto); font-weight: 700; }
+.avst-modos {
+  display: inline-flex; gap: 2px; padding: 2px; flex: 0 0 auto;
+  border: 1px solid var(--avst-borda); border-radius: 9px; background: var(--avst-painel);
+}
+.avst-modos button {
+  width: 27px; height: 24px; display: grid; place-items: center;
+  border: 0; border-radius: 7px; background: none; color: var(--avst-texto-2);
+}
+.avst-modos button[aria-checked="true"] {
+  background: var(--avst-painel-2); color: var(--avst-texto);
+  box-shadow: inset 0 0 0 1px var(--avst-borda);
 }
 
-.avst-grade {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px;
+/* ordenação (AS4 §23.2) */
+.avst-ordenar {
+  display: inline-flex; align-items: center; gap: 6px; color: var(--avst-texto-2);
 }
+.avst-ordenar select {
+  font: inherit; font-size: 12px; color: var(--avst-texto); cursor: pointer;
+  background: var(--avst-painel); border: 1px solid var(--avst-borda);
+  border-radius: 8px; padding: 5px 6px; outline: none;
+}
+.avst-ordenar select:focus { border-color: var(--avst-acento); }
+
+/* grade: alinhamento regular + alturas iguais (AS4 §39.8/§39.9) */
+.avst-grade {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 10px;
+  align-items: stretch;
+}
+.avst-grade[data-modo="compacta"] { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+.avst-grade[data-modo="lista"] { grid-template-columns: 1fr; gap: 8px; }
 .avst-card {
   --avst-rar: var(--avst-texto-2);
   position: relative; display: flex; flex-direction: column; gap: 6px;
   padding: 8px 8px 9px; border-radius: 12px; text-align: left;
   background: var(--avst-painel); border: 1px solid var(--avst-borda);
   transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+  content-visibility: auto; contain-intrinsic-size: 150px 200px;
 }
+.avst-grade[data-modo="compacta"] .avst-card { padding: 6px 6px 7px; gap: 4px; contain-intrinsic-size: 110px 140px; }
 .avst-card:hover {
   transform: translateY(-2px); border-color: var(--avst-rar);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
 }
-.avst-card-ativo {
-  border-color: var(--avst-rar);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--avst-rar) 55%, transparent);
+/* seleção CONSISTENTE (AS4 §39.5): anel de acento independe da raridade */
+.avst-card-ativo,
+.avst-card-ativo:hover {
+  outline: 2px solid var(--avst-acento); outline-offset: 2px;
 }
-.avst-card-thumb { border-radius: 9px; overflow: hidden; background: #0a0d15; }
-.avst-card-nome { font-size: 11.5px; font-weight: 700; line-height: 1.25; }
-.avst-card-raridade { font-size: 10px; font-weight: 700; color: var(--avst-rar); text-transform: uppercase; letter-spacing: 0.5px; }
+.avst-card-thumb { border-radius: 9px; overflow: hidden; background: #0a0d15; aspect-ratio: 1; }
+.avst-card-nome {
+  font-size: 12.5px; font-weight: 700; line-height: 1.25; min-height: calc(2 * 1.25em);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.avst-grade[data-modo="compacta"] .avst-card-nome { font-size: 11px; }
+.avst-card-raridade {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10.5px; font-weight: 700; color: var(--avst-rar); text-transform: uppercase; letter-spacing: 0.5px;
+}
+/* pips: raridade legível SEM depender só da cor (AS4 §39.20) */
+.avst-card-pips { display: inline-flex; gap: 2.5px; }
+.avst-card-pips i {
+  width: 5px; height: 5px; border-radius: 1.5px; transform: rotate(45deg);
+  background: var(--avst-rar);
+}
+.avst-card-desc {
+  font-size: 11px; color: var(--avst-texto-2); line-height: 1.35; min-height: calc(2 * 1.35em);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-style: italic;
+}
+/* modo lista (§23.1): linha com thumb + atributos + botão equipar */
+.avst-card-lista { flex-direction: row; align-items: center; gap: 12px; padding: 8px 12px; contain-intrinsic-size: auto 66px; }
+.avst-card-lista .avst-card-thumb { width: 46px; flex: 0 0 auto; }
+.avst-card-lista .avst-card-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.avst-card-lista .avst-card-nome { min-height: 0; -webkit-line-clamp: 1; }
+.avst-card-lista .avst-card-raridade { text-transform: none; letter-spacing: 0; font-size: 11px; }
+.avst-btn-equipar { flex: 0 0 auto; font-size: 11.5px; padding: 6px 10px; }
+.avst-card-lista .avst-card-fav { position: static; opacity: 1; }
+.avst-card-lista .avst-card-check { display: none; }
+.avst-card-lista .avst-card-lock { position: static; transform: none; width: 28px; height: 28px; flex: 0 0 auto; }
 .avst-card-novo {
   position: absolute; top: 6px; left: 6px; padding: 2px 6px; border-radius: 6px;
   font-size: 9px; font-weight: 800; background: var(--avst-ok); color: #08130c;
@@ -267,10 +392,14 @@
 .avst-card-check {
   position: absolute; top: 6px; right: 6px; width: 20px; height: 20px;
   display: grid; place-items: center; border-radius: 50%;
-  background: var(--avst-rar); color: #0a0d15;
+  background: var(--avst-acento); color: #fff;
+  animation: avst-check-pop 260ms cubic-bezier(0.3, 1.4, 0.5, 1);
 }
+@keyframes avst-check-pop { from { transform: scale(0.4); opacity: 0; } }
 .avst-card-nenhum { align-items: center; justify-content: center; min-height: 132px; }
 .avst-card-vazio { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; border: 2px dashed var(--avst-borda); color: var(--avst-texto-2); }
+.avst-grade[data-modo="lista"] .avst-card-nenhum { flex-direction: row; gap: 10px; min-height: 0; justify-content: flex-start; }
+.avst-grade[data-modo="lista"] .avst-card-vazio { width: 34px; height: 34px; }
 
 /* ── Peso visual por tier (AS3 §9 — raridade SENTIDA) ── */
 .avst-card[data-raridade="raro"] {
@@ -286,21 +415,20 @@
   box-shadow: inset 0 0 18px color-mix(in srgb, var(--avst-rar) 12%, transparent);
   overflow: hidden;
 }
-.avst-card[data-raridade="lendario"],
+/* AS4 §39.6 — brilho externo SÓ no topo da pirâmide (bordas calmas no resto) */
 .avst-card[data-raridade="mitico"],
 .avst-card[data-raridade="exclusivo"] {
   box-shadow:
     inset 0 0 20px color-mix(in srgb, var(--avst-rar) 16%, transparent),
-    0 0 14px color-mix(in srgb, var(--avst-rar) 24%, transparent);
+    0 0 10px color-mix(in srgb, var(--avst-rar) 18%, transparent);
 }
-/* shimmer varrendo épico+ */
-.avst-card[data-raridade="epico"]::before,
+/* shimmer varrendo lendário+ (épico ficou só com o degradê — §39.6) */
 .avst-card[data-raridade="lendario"]::before,
 .avst-card[data-raridade="mitico"]::before,
 .avst-card[data-raridade="exclusivo"]::before {
   content: ""; position: absolute; inset: -60% -30%; pointer-events: none;
   background: linear-gradient(115deg, transparent 42%, color-mix(in srgb, var(--avst-rar) 30%, white) 50%, transparent 58%);
-  opacity: 0.25; transform: translateX(-70%);
+  opacity: 0.18; transform: translateX(-70%);
   animation: avst-shimmer 3.4s ease-in-out infinite;
 }
 @keyframes avst-shimmer {
@@ -308,23 +436,24 @@
   85%, 100% { transform: translateX(70%); }
 }
 
-/* Tooltip rica (nome + tier + lore) */
+/* Tooltip rica (nome + tier + lore) — por PORTAL no Overlay Root (AS4 §22):
+   position:fixed relativo à viewport, NUNCA recortada por painel/card. */
 .avst-tip {
-  position: absolute; left: 50%; bottom: calc(100% + 8px); width: 208px;
-  transform: translateX(-50%) translateY(4px);
+  position: fixed; width: 216px;
+  transform: translateY(4px);
   display: flex; flex-direction: column; gap: 3px; padding: 10px 12px;
-  border-radius: 10px; border: 1px solid var(--avst-rar);
-  background: rgba(10, 13, 22, 0.94); color: #e8ecf5;
+  border-radius: 10px; border: 1px solid var(--avst-rar, #7c5cff);
+  background: rgba(10, 13, 22, 0.96); color: #e8ecf5;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
-  font-size: 11px; line-height: 1.45; text-align: left;
-  opacity: 0; pointer-events: none; z-index: 30;
+  font-size: 12px; line-height: 1.45; text-align: left;
+  opacity: 0; pointer-events: none;
   transition: opacity 0.16s, transform 0.16s;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
-.avst-tip strong { font-size: 12px; }
-.avst-tip em { font-style: normal; font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; }
+.avst-tip-visivel { opacity: 1; transform: translateY(0); }
+.avst-tip strong { font-size: 12.5px; }
+.avst-tip em { font-style: normal; font-weight: 800; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.6px; }
 .avst-tip span { color: #aeb7c9; font-style: italic; }
-.avst-card:hover .avst-tip { opacity: 1; transform: translateX(-50%) translateY(0); }
-.avst-grade > .avst-card:nth-child(-n+3) .avst-tip { bottom: auto; top: calc(100% + 8px); }
 
 /* Cores */
 .avst-cores { border-top: 1px solid var(--avst-borda); padding-top: 14px; }
@@ -382,6 +511,7 @@
   padding: 34px 16px; text-align: center; color: var(--avst-texto-2); font-size: 12.5px;
 }
 .avst-vazio p { margin: 0; }
+.avst-vazio .avst-botao { margin-top: 4px; }
 
 /* Foto (upload + recorte) */
 .avst-foto { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
@@ -589,7 +719,8 @@
 
 /* ── Responsivo ───────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
-  .avst-corpo { grid-template-columns: 56px minmax(260px, 1fr) minmax(280px, 380px); }
+  /* o painel redimensionável respeita o teto da tela estreita */
+  .avst-corpo { grid-template-columns: 56px minmax(260px, 1fr) min(var(--avst-larg-painel, 420px), 380px); }
   .avst-cat span { display: none; }
   .avst-cat { justify-content: center; }
 }
@@ -602,7 +733,9 @@
   .avst-cat span { display: inline; }
   .avst-cat-separador { width: 1px; height: auto; margin: 4px 8px; }
   .avst-lateral { border-left: 0; border-top: 1px solid var(--avst-borda); }
+  .avst-redim { display: none; } /* sem redimensionar em coluna única */
   .avst-palco-principal { width: min(280px, 78%); }
+  .avst-barra { width: 100%; }
 }
 
 /* Acessibilidade: reduz movimento (SMIL continua — pausa via atributo no futuro;
@@ -626,7 +759,13 @@
 .avst-vitrine-pos-1 { background: color-mix(in srgb, #e8b64c 25%, transparent); color: #e8b64c; }
 .avst-vitrine-pos-2 { background: color-mix(in srgb, #c4c9d6 22%, transparent); color: #c4c9d6; }
 .avst-vitrine-pos-3 { background: color-mix(in srgb, #d29e6f 22%, transparent); color: #d29e6f; }
-.avst-vitrine-item img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--avst-borda); }
+.avst-vitrine-item img {
+  width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--avst-borda);
+  /* loading individual (AS4 §39.17): esqueleto atrás enquanto a imagem chega */
+  background: linear-gradient(100deg, var(--avst-painel-2) 40%, color-mix(in srgb, var(--avst-painel-2) 70%, #ffffff) 50%, var(--avst-painel-2) 60%) 0 0 / 200% 100%;
+  animation: avst-skel 1.2s linear infinite;
+}
+@keyframes avst-skel { to { background-position: -200% 0; } }
 .avst-vitrine-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .avst-vitrine-info strong { font-size: 13px; }
 .avst-vitrine-info strong em { font-style: normal; font-size: 10.5px; color: var(--avst-acento); }
