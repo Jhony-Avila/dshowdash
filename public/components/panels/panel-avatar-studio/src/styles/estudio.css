@@ -996,6 +996,12 @@
   color: var(--avst-texto-2);
 }
 .avst-3d-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+/* leva 1 dos sockets (fila #37 item 2): fileira rotulada por ponto de encaixe */
+.avst-3d-socket { display: flex; flex-direction: column; gap: 4px; margin-bottom: 7px; }
+.avst-3d-socket-nome {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--avst-texto-2);
+}
 .avst-3d-chips button {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 6px 10px; border-radius: 9px; font-size: 12px; font-weight: 600;
