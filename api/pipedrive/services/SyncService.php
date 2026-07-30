@@ -255,6 +255,9 @@ final class PipeSyncService
                 'pipelines' => $this->syncEntity($client, 'pipelines', 'pipelines', 'v2', fn(array $x) => $this->repo->upsertPipeline($x), [], $opts, true),
                 'stages'    => $this->syncEntity($client, 'stages', 'stages', 'v2', fn(array $x) => $this->repo->upsertStage($x), [], $opts, true),
                 'users'     => $this->syncEntity($client, 'users', 'users', 'v1', fn(array $x) => $this->repo->upsertUser($x), [], $opts, true),
+                // Catalogo de tipos de atividade: alimenta o RÓTULO do filtro na tela de Atividades
+                // (a tabela estava vazia e a tela mostrava a chave crua). Ver upsertActivityType().
+                'activity_types' => $this->syncEntity($client, 'activity_types', 'activityTypes', 'v1', fn(array $x) => $this->repo->upsertActivityType($x), [], $opts, true),
             ],
         ];
     }

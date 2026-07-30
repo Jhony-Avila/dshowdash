@@ -313,6 +313,43 @@ final class PipeSyncRepository
         return self::outcome($st);
     }
 
+    /**
+     * Catalogo de tipos de atividade. A tabela existia no schema desde o inicio e NUNCA foi
+     * populada por ninguem (0 linhas), por isso o filtro de tipos da tela de Atividades mostrava
+     * a CHAVE crua em vez do nome.
+     *
+     * ⚠️ O nome so existe aqui — nao da para derivar da chave. A chave `instalao_` corresponde a
+     * "Acompanhamento Instalação": a origem perdeu os acentos e truncou em 26 caracteres. Qualquer
+     * tentativa de "embelezar" a chave no front produziria "Instalao ".
+     *
+     * ⚠️ `/v1/activityTypes` NAO e paginado (devolve o array inteiro, sem `additional_data`). O
+     * `paginate()` do client encerra na 1a pagina justamente por falta de `more_items_in_collection`,
+     * entao passar por `syncEntity()` e seguro e ganha a contabilidade de run de graca.
+     */
+    public function upsertActivityType(array $t): string
+    {
+        $st = $this->pdo->prepare(
+            "INSERT INTO pipe_activity_types
+               (pipedrive_id, name, key_string, icon_key, color, is_active, raw_payload, last_synced_at)
+             VALUES (:pd, :name, :key, :icon, :color, :act, :raw, NOW())
+             ON DUPLICATE KEY UPDATE
+               name=VALUES(name), key_string=VALUES(key_string), icon_key=VALUES(icon_key),
+               color=VALUES(color), is_active=VALUES(is_active), raw_payload=VALUES(raw_payload),
+               last_synced_at=NOW()"
+        );
+        $st->execute([
+            ':pd'    => self::i($t['id']),
+            ':name'  => self::s($t['name'] ?? null),
+            ':key'   => self::s($t['key_string'] ?? null),
+            ':icon'  => self::s($t['icon_key'] ?? null),
+            ':color' => self::s($t['color'] ?? null),
+            // ⚠️ Aqui o campo da API e `active_flag`, NAO `is_deleted` como nas outras entidades.
+            ':act'   => array_key_exists('active_flag', $t) ? (int)!empty($t['active_flag']) : 1,
+            ':raw'   => json_encode($t, JSON_UNESCAPED_UNICODE),
+        ]);
+        return $st->rowCount() === 1 ? 'created' : 'updated';
+    }
+
     public function upsertStage(array $s): string
     {
         $st = $this->pdo->prepare(
@@ -1244,13 +1281,57 @@ final class PipeSyncRepository
         // (EXPLAIN: `Using where; Using index`). Se voce leu "177 ms / temporary+filesort
         // / 52.959 linhas / ix_del_due_type" em alguma nota deste lote, era medicao antiga
         // de antes do indice — nada disso vale hoje, e `ix_del_due_type` nem existe.
-        $facets = self::querFacets($f) ? [
-            'types' => $this->pdo->query(
-                "SELECT DISTINCT type FROM pipe_activities
-                  WHERE is_deleted=0 AND type IS NOT NULL ORDER BY type"
-            )->fetchAll(PDO::FETCH_COLUMN),
-        ] : null;
+        $facets = self::querFacets($f) ? ['types' => $this->activityTypeFacet()] : null;
         return $this->pageEnvelope($rows, $total, $page, $perPage, ['facets' => $facets]);
+    }
+
+    /**
+     * Facet de tipos da tela de Atividades: `[{value, label}]`, onde `label` e o NOME do tipo.
+     *
+     * O rotulo so existe em `pipe_activity_types` — nao da para derivar da chave. `instalao_` e
+     * "Acompanhamento Instalação"; a origem perdeu acentos e truncou em 26 chars. O front
+     * (`EntityGrid.opcoesDe`) ja aceitava `{value,label}`, entao nada muda lá.
+     *
+     * ⚠️ DUAS CONSULTAS DE PROPOSITO, NAO POR DESCUIDO. A forma "elegante" —
+     * `DISTINCT ... LEFT JOIN pipe_activity_types ... ORDER BY label` — foi MEDIDA e custa
+     * **249 ms**, contra **48,7 ms** destas duas (47,5 do DISTINCT + 1,2 do catalogo, controle
+     * 20,5). O JOIN destroi o index-only scan de `ix_del_type` e devolveria a tela ao patamar que
+     * o 3o lote do #46 acabou de derrubar. Medido em 2026-07-29, 105.646 linhas.
+     *
+     * ⚠️ Lista os tipos EM USO, nao os `is_active=1`. Dos 51 em uso, so **18** estao ativos no
+     * Pipedrive — filtrar por ativo esconderia 33 tipos que TEM atividades historicas, repetindo
+     * exatamente o bug do `LIMIT 50` que este lote corrigiu.
+     *
+     * ⚠️ Ordenacao vem do MySQL (`ORDER BY name`), que tem collation para acento. Este PHP nao tem
+     * `intl`/`Collator`, e ordenar "Apresentação" em PHP puro erraria a acentuacao.
+     *
+     * @return list<array{value:string,label:string}>
+     */
+    private function activityTypeFacet(): array
+    {
+        $emUso = $this->pdo->query(
+            "SELECT DISTINCT type FROM pipe_activities
+              WHERE is_deleted=0 AND type IS NOT NULL ORDER BY type"
+        )->fetchAll(PDO::FETCH_COLUMN);
+        if (!$emUso) { return []; }
+
+        // key_string => name, já na ordem alfabética do NOME (collation do banco cuida do acento).
+        $catalogo = $this->pdo->query(
+            "SELECT key_string, name FROM pipe_activity_types
+              WHERE key_string IS NOT NULL AND name IS NOT NULL ORDER BY name"
+        )->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $usados = array_fill_keys($emUso, true);
+        $out = [];
+        foreach ($catalogo as $chave => $nome) {          // ordem = nome
+            if (isset($usados[$chave])) { $out[] = ['value' => (string)$chave, 'label' => (string)$nome]; unset($usados[$chave]); }
+        }
+        // Sobras = tipo em uso SEM entrada no catalogo (hoje ZERO, medido). Nunca sumir com eles:
+        // sem rotulo, aparecem com a propria chave, que e o comportamento anterior a este lote.
+        // Tambem e o caminho quando `pipe_activity_types` esta vazia — antes do 1o syncReference()
+        // a tela continua funcionando igual, so sem os nomes.
+        foreach (array_keys($usados) as $chave) { $out[] = ['value' => (string)$chave, 'label' => (string)$chave]; }
+        return $out;
     }
 
     /** Detalhe completo de UM negocio + vinculos + produtos + timeline (atividades+notas). */

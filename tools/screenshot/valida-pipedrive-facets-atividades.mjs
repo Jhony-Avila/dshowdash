@@ -114,6 +114,65 @@ for (const tema of ['dark', 'light']) {
   // 52 = "Todos os tipos" + 51 tipos. Com o LIMIT 50 antigo seriam 51 — é esta checagem
   // que prova que o 51º tipo voltou a ser selecionável na tela, não só na resposta.
   checa('o filtro oferece os 51 tipos (placeholder + 51)', antes.n === 52, `opcoes=${antes.n}`);
+
+  // ── o filtro mostra o NOME do tipo, não a chave crua ────────────────────────────────────
+  // `pipe_activity_types` estava VAZIA (0 linhas, nunca populada) e a tela exibia a chave. O nome
+  // só existe naquela tabela: `instalao_` é "Acompanhamento Instalação" — a origem perdeu o acento
+  // e truncou em 26 chars, então NÃO há como derivar o rótulo da chave no front.
+  const rotulos = await page.evaluate(() => {
+    const tb = document.querySelector('[data-pp-react-root] .pp-toolbar');
+    const sel = [...(tb?.querySelectorAll('select.pp-select') ?? [])]
+      .find((s) => /tipo/i.test(s.options[0]?.textContent ?? ''));
+    if (!sel) return null;
+    const opts = [...sel.options].slice(1).map((o) => ({ value: o.value, label: o.textContent.trim() }));
+    return {
+      opts,
+      comChaveCrua: opts.filter((o) => o.label === o.value).map((o) => o.value),
+      oCasoDificil: opts.find((o) => o.value === 'instalao_') ?? null,
+      primeiros: opts.slice(0, 3).map((o) => o.label),
+    };
+  });
+  checa('nenhuma opção exibe a chave crua', rotulos && rotulos.comChaveCrua.length === 0,
+    `sem rótulo: ${JSON.stringify(rotulos?.comChaveCrua ?? 'select não achado')}`);
+  // O caso que prova que o rótulo veio da tabela e não de um "embelezamento" da chave: nenhuma
+  // transformação de `instalao_` produz "Acompanhamento Instalação".
+  checa('`instalao_` aparece como "Acompanhamento Instalação"',
+    rotulos?.oCasoDificil?.label === 'Acompanhamento Instalação', JSON.stringify(rotulos?.oCasoDificil));
+  // ⚠️ O `value` TEM de continuar a chave: é o que vai para `?type=` no backend. Rótulo bonito com
+  // value trocado quebraria o filtro de um jeito que "parece certo" na tela.
+  checa('o value continua sendo a chave (é o que o backend filtra)',
+    rotulos?.oCasoDificil?.value === 'instalao_', `value=${rotulos?.oCasoDificil?.value}`);
+  // Ordenação por NOME (o MySQL ordena com collation de acento; este PHP não tem intl/Collator).
+  checa('as opções vêm ordenadas pelo nome', JSON.stringify(rotulos?.primeiros) === JSON.stringify([...(rotulos?.primeiros ?? [])].sort((a, b) => a.localeCompare(b, 'pt-BR'))),
+    JSON.stringify(rotulos?.primeiros));
+
+  // Selecionar pelo rótulo tem de recortar de verdade — prova que value/label estão pareados.
+  const recorte = await page.evaluate(async () => {
+    const tb = document.querySelector('[data-pp-react-root] .pp-toolbar');
+    const sel = [...(tb?.querySelectorAll('select.pp-select') ?? [])]
+      .find((s) => /tipo/i.test(s.options[0]?.textContent ?? ''));
+    const alvo = [...sel.options].find((o) => o.textContent.trim() === 'Acompanhamento Instalação');
+    sel.value = alvo.value;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 2500));
+    const t = document.querySelector('[data-pp-react-root] .pp-main')?.textContent ?? '';
+    return { valueEnviado: alvo.value, temLinhas: /\d/.test(t) };
+  });
+  checa('selecionar pelo nome filtra pela chave certa', recorte.valueEnviado === 'instalao_' && recorte.temLinhas,
+    JSON.stringify(recorte));
+  const chamadaFiltrada = chamadas.find((c) => /type=instalao_/.test(c.url));
+  checa('o backend recebeu `type=instalao_`', !!chamadaFiltrada,
+    `total=${chamadaFiltrada?.total ?? '—'}`);
+
+  // Volta o filtro para "todos", senão a paginação abaixo mede a lista recortada.
+  await page.evaluate(async () => {
+    const tb = document.querySelector('[data-pp-react-root] .pp-toolbar');
+    const sel = [...(tb?.querySelectorAll('select.pp-select') ?? [])]
+      .find((s) => /tipo/i.test(s.options[0]?.textContent ?? ''));
+    sel.value = sel.options[0].value;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 2500));
+  });
   await page.waitForTimeout(400);
 
   // Pagina.
