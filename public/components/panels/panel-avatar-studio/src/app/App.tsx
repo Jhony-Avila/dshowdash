@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bot, Boxes, Brush, Camera, CircleUser, Columns2, Dices, Eye, Frame, Glasses, History,
   Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Trophy, Undo2,
-  Volume2, VolumeX, Wand2,
+  Users, Volume2, VolumeX, Wand2,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, EstadoSalvar, Raridade, ShellConfig } from '../domain/types';
 import {
@@ -23,6 +23,7 @@ import { telemetria } from '../services/Telemetria';
 import { carregarVida } from '../services/VidaService';
 import type { Vida } from '../services/VidaService';
 import { Colecoes } from '../components/Colecoes';
+import { Vitrine } from '../components/Vitrine';
 import { Conquistas } from '../components/Conquistas';
 import { CriarIA } from '../components/CriarIA';
 import { AvatarSvg } from '../components/AvatarSvg';
@@ -91,7 +92,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
-  const [aba, setAba] = useState<'itens' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'historico' | 'foto'>('itens');
+  const [aba, setAba] = useState<'itens' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [comparando, setComparando] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
@@ -344,6 +345,12 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             <span>Criar com IA</span>
           </button>
           <button type="button"
+            className={`avst-cat ${aba === 'vitrine' ? 'avst-cat-ativa' : ''}`}
+            onClick={() => setAba('vitrine')}>
+            <Users size={17} aria-hidden />
+            <span>Vitrine</span>
+          </button>
+          <button type="button"
             className={`avst-cat ${aba === 'historico' ? 'avst-cat-ativa' : ''}`}
             onClick={() => setAba('historico')}>
             <History size={17} aria-hidden />
@@ -425,6 +432,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
           {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
           {aba === 'conquistas' && <Conquistas vida={vida} />}
+          {aba === 'vitrine' && <Vitrine />}
           {aba === 'ia' && <CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} />}
           {aba === 'historico' && <Historico key={`h-${versao}`} aoAplicar={aplicar} />}
           {aba === 'foto' && <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'} aoSalvar={aoSalvarFoto} />}
