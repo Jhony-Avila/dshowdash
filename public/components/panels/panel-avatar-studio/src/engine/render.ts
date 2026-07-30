@@ -108,6 +108,12 @@ export function renderAvatar(
         `<g data-anim="olhos">${pintar(config.camadas.olhos)}</g>` +
         `<g data-anim="cabelo">${pintar(config.camadas.cabelo)}</g>` +
         pintar(config.camadas.acessorio) + palpebras;
+      // roupa no CORPO INTEIRO: detalhes da peça sobre o scaffold (gola,
+      // gravata, zíper, obi…) — sem isto a roupa só mudava a cor do corpo
+      const roupaDef = config.camadas.roupa && config.camadas.roupa !== 'nenhum'
+        ? resolver(config.camadas.roupa)
+        : undefined;
+      const roupaCorpo = roupaDef?.renderCorpo ? roupaDef.renderCorpo(p, uid) : '';
       // emblema no peito do corpo inteiro (mapeia (152,206) do busto → (145,145))
       const emblemaCorpo = config.camadas.emblema && config.camadas.emblema !== 'nenhum'
         ? `<g transform="translate(15.8 -30.1) scale(0.85)">${pintar(config.camadas.emblema)}</g>`
@@ -115,7 +121,7 @@ export function renderAvatar(
       conteudo =
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
-          corpoInteiro(p, uid) + emblemaCorpo +
+          corpoInteiro(p, uid) + roupaCorpo + emblemaCorpo +
           `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>` +
         `</g></g>` +
         `<g data-anim="plano-frente"><g transform="translate(120 200) scale(1.8) translate(-120 -120)">${efeitoFrente}</g></g>`;

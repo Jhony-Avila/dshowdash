@@ -80,4 +80,40 @@ export const EMBLEMAS: ParteDef[] = [
       <path d="M-6 -2 L6 -2 M-3 -6 L0 7 M3 -6 L0 7"
         fill="none" stroke="${alfa('#0a0e18', 0.5)}" stroke-width="0.9"/>`),
   },
+  {
+    id: 'emb_raio',
+    categoria: 'emblema',
+    nome: 'Pino Relâmpago',
+    descricao: 'Energia de sobra para o sprint que vier.',
+    raridade: 'incomum',
+    tema: 'gamer',
+    usaCores: ['destaque'],
+    render: (p, u) => pino(u, 'erl', '#141926', alfa(p.destaque.base, 0.8), `
+      <path d="M1 -8 L-4 1 L0 1 L-1 8 L5 -2 L1 -2 Z" fill="${p.destaque.claro}"/>`),
+  },
+  {
+    id: 'emb_alvo',
+    categoria: 'emblema',
+    nome: 'Alvo Certeiro',
+    descricao: 'Três círculos. Um destino: o centro.',
+    raridade: 'raro',
+    tema: 'executivo',
+    usaCores: ['destaque'],
+    render: (p, u) => pino(u, 'eal', '#101726', alfa(p.destaque.base, 0.75), `
+      <circle r="7" fill="none" stroke="${alfa(p.destaque.claro, 0.8)}" stroke-width="1.6"/>
+      <circle r="3.6" fill="none" stroke="${alfa(p.destaque.claro, 0.9)}" stroke-width="1.6"/>
+      <circle r="1.4" fill="${p.destaque.claro}"/>`),
+  },
+  {
+    id: 'emb_coroa',
+    categoria: 'emblema',
+    nome: 'Coroa de Bolso',
+    descricao: 'Realeza discreta, presa à lapela.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    usaCores: [],
+    render: (_p, u) => pino(u, 'eco', '#221a08', '#e8b64c', `
+      <path d="M-6 3 L-6 -2 L-3 1 L0 -5 L3 1 L6 -2 L6 3 Z" fill="#e8b64c"/>
+      <path d="M-6 5 h12 v2 h-12 z" fill="${alfa('#e8b64c', 0.7)}"/>`),
+  },
 ];

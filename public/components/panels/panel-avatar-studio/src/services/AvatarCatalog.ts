@@ -76,6 +76,10 @@ export const TITULOS: Titulo[] = [
   { id: 'tit_mestre_da_luz', nome: 'Mestre da Luz', raridade: 'lendario', lore: 'Onde ele passa, o dashboard acende.' },
   { id: 'tit_ceo_supremo', nome: 'CEO Supremo', raridade: 'lendario', lore: 'A última palavra em qualquer reunião.' },
   { id: 'tit_lenda_dshow', nome: 'Lenda Dshow', raridade: 'exclusivo', lore: 'O nome que a casa conta para os novatos.' },
+  { id: 'tit_novato_promissor', nome: 'Novato Promissor', raridade: 'comum', lore: 'Chegou ontem. Já entregou hoje.' },
+  { id: 'tit_guardiao_da_base', nome: 'Guardião da Base', raridade: 'incomum', lore: 'Nada entra, nada cai, nada passa.' },
+  { id: 'tit_maquina_de_meta', nome: 'Máquina de Meta', raridade: 'raro', lore: 'Bateu. Rebateu. Pediu outra.' },
+  { id: 'tit_visionario', nome: 'Visionário', raridade: 'epico', lore: 'Enxerga o Q4 em pleno janeiro.' },
 ];
 
 const TITULOS_POR_ID = new Map(TITULOS.map((t) => [t.id, t]));
