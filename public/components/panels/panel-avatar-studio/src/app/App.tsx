@@ -11,8 +11,8 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } fro
 import {
   BadgeCheck, Bot, Box, Boxes, Brush, Camera, Check, ChevronDown, CircleUser, Columns2,
   Crown, Dices, Eye, Fingerprint, Flag, Frame, Glasses, History, Image as ImagemIcon,
-  LoaderCircle, Orbit, Redo2, Save, Shirt, Smile, Sparkles, Trophy, Undo2, Users,
-  Volume2, VolumeX, Wand2,
+  Layers, LoaderCircle, Orbit, PanelRight, Redo2, Save, Shirt, Smile, Sparkles, Trophy,
+  Undo2, Users, Volume2, VolumeX, Wand2,
 } from 'lucide-react';
 
 // PoC 3D (AS4 Fase 1) — chunk separado: three/R3F só carregam nesta aba
@@ -31,6 +31,7 @@ import { carregarVida } from '../services/VidaService';
 import type { Vida } from '../services/VidaService';
 import { Colecoes } from '../components/Colecoes';
 import { Vitrine } from '../components/Vitrine';
+import { Contextos } from '../components/Contextos';
 import { Conquistas } from '../components/Conquistas';
 import { CriarIA } from '../components/CriarIA';
 import { AvatarSvg } from '../components/AvatarSvg';
@@ -130,6 +131,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [aba, setAba] = useState<'itens' | 'arquetipo' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [comparando, setComparando] = useState(false);
+  const [contextosAberto, setContextosAberto] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
   const [somLigado, setSomLigado] = useState(somAtivo);
   const [largPainel, setLargPainel] = useState(largGuardada);
@@ -377,7 +379,25 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         <div className="avst-topo-titulo">
           <Wand2 size={20} aria-hidden />
           <div>
-            <h1>Avatar Studio</h1>
+            <h1>
+              Avatar Studio
+              {/* indicador do RENDERIZADOR ativo (4.6, decisão #42) */}
+              {tipoAtivo === '3d' && (
+                <span className="avst-render-chip avst-render-3d" title="Seu avatar ativo veio do Estúdio 3D">
+                  <Box size={11} aria-hidden /> 3D Premium
+                </span>
+              )}
+              {tipoAtivo === 'foto' && (
+                <span className="avst-render-chip avst-render-foto" title="Seu avatar ativo é uma foto">
+                  <Camera size={11} aria-hidden /> Foto
+                </span>
+              )}
+              {(tipoAtivo === 'camadas' || tipoAtivo === null) && (
+                <span className="avst-render-chip avst-render-2d" title="Seu avatar ativo é 2D em camadas — leve e econômico">
+                  <Layers size={11} aria-hidden /> 2D Econômico
+                </span>
+              )}
+            </h1>
             <p>Monte seu personagem — cada mudança aparece na hora no palco.</p>
           </div>
         </div>
@@ -604,10 +624,15 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             </button>
           </footer>
 
-          {/* previews por contexto (header/menu) */}
+          {/* previews por contexto (header/menu) + drawer completo (4.6) */}
           <div className="avst-previas">
             <figure><AvatarSvg config={atual} forma="circulo" uid="mini-h" /><figcaption>Header</figcaption></figure>
             <figure className="avst-previa-menor"><AvatarSvg config={atual} forma="circulo" uid="mini-m" /><figcaption>Menu</figcaption></figure>
+            <button type="button" className="avst-botao avst-previas-mais"
+              title="Header, menu, perfil, ranking e mobile — nos temas claro e escuro"
+              onClick={() => { setContextosAberto(true); telemetria('contextos_abriu'); }}>
+              <PanelRight size={14} aria-hidden /> Todos os contextos
+            </button>
           </div>
         </main>
 
@@ -646,6 +671,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           </>
         )}
       </div>
+      {/* drawer "Visualizar em contextos" (4.6, decisão #42) */}
+      {contextosAberto && <Contextos config={atual} aoFechar={() => setContextosAberto(false)} />}
     </div>
   );
 }

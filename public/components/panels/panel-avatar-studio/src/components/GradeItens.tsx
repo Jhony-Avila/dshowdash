@@ -267,11 +267,28 @@ function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar,
         onClick={(e) => { e.stopPropagation(); aoFavoritar(); }}>
         <Star size={12} aria-hidden />
       </button>
-      {/* tooltip rica (nome + tier + lore) — por PORTAL, nunca cortada (AS4 §22) */}
+      {/* CARD RICO (4.6, decisão #42): tooltip por PORTAL com lore completo,
+          origem, dependências e slots de cor — sem truncamento */}
       <Dica alvo={cardRef} id={`avst-tip-${item.id}`} cor={rar.cor}>
         <strong>{item.nome}</strong>
-        <em style={{ color: rar.cor }}>{rar.nome}</em>
+        <em style={{ color: rar.cor }}>{rar.nome} · {item.tema}</em>
         <span>{item.lore ?? item.descricao}</span>
+        <span className="avst-tip-meta">
+          Origem: {item.biblioteca === undefined || item.biblioteca === 'dshow' ? 'Dshow Original' : item.biblioteca}
+        </span>
+        {item.requerBase && item.requerBase.length > 0 && (
+          <span className="avst-tip-meta">
+            Só para: {item.requerBase.map((b) => itemPorId(b)?.nome ?? b).join(', ')}
+          </span>
+        )}
+        {item.incompativelCom && item.incompativelCom.length > 0 && (
+          <span className="avst-tip-meta">
+            Não combina com: {item.incompativelCom.map((i) => itemPorId(i)?.nome ?? i).join(', ')}
+          </span>
+        )}
+        {item.usaCores && item.usaCores.length > 0 && (
+          <span className="avst-tip-meta">Recolorível: {item.usaCores.join(', ')}</span>
+        )}
         {bloqueado && <span className="avst-tip-lock">🔒 {dica}</span>}
       </Dica>
     </div>

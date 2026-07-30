@@ -676,6 +676,69 @@
 }
 .avst-ft-cor-ativa { border-color: #fff; box-shadow: 0 0 0 2px var(--avst-acento); }
 
+/* ── 4.6: indicador do renderizador ativo ────────────────────────── */
+.avst-render-chip {
+  display: inline-flex; align-items: center; gap: 4px; margin-left: 8px;
+  padding: 2px 8px; border-radius: 999px; vertical-align: middle;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+}
+.avst-render-2d { background: color-mix(in srgb, #4cd97c 16%, transparent); color: #4cd97c; }
+.avst-render-3d { background: color-mix(in srgb, #b06ce8 18%, transparent); color: #c99aff; }
+.avst-render-foto { background: color-mix(in srgb, #e8b64c 16%, transparent); color: #e8b64c; }
+
+/* ── 4.6: cards ricos (metadados na Dica) ────────────────────────── */
+.avst-tip-meta { display: block; font-size: 10px; color: var(--avst-texto-2); }
+
+/* ── 4.6: drawer "Visualizar em contextos" ───────────────────────── */
+.avst-previas-mais { align-self: center; font-size: 11px; }
+.avst-ctx-fundo {
+  position: fixed; inset: 0; z-index: var(--z-modal, 60);
+  background: rgba(5, 7, 12, 0.55); backdrop-filter: blur(2px);
+}
+.avst-ctx-drawer {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(400px, 92vw);
+  overflow-y: auto; padding: 16px;
+  background: var(--avst-fundo, #0d1017); border-left: 1px solid var(--avst-borda);
+  box-shadow: -18px 0 40px rgba(0, 0, 0, 0.45);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.avst-ctx-cab { display: flex; align-items: center; justify-content: space-between; }
+.avst-ctx-cab h3 { margin: 0; font-size: 14px; }
+.avst-ctx-nota { margin: 0; font-size: 11.5px; color: var(--avst-texto-2); }
+.avst-ctx-secao {
+  margin: 8px 0 0; font-size: 10.5px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; color: var(--avst-texto-2);
+  display: flex; align-items: center; gap: 5px;
+}
+.avst-ctx-grade { display: flex; flex-direction: column; gap: 8px; }
+.avst-ctx-item { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.avst-ctx-item figcaption { font-size: 10px; color: var(--avst-texto-2); }
+.avst-ctx-escuro { --ctx-bg: #141926; --ctx-bg2: #1c2333; --ctx-tx: #e8ecf5; --ctx-tx2: #8b93a7; }
+.avst-ctx-claro { --ctx-bg: #f2f4f9; --ctx-bg2: #ffffff; --ctx-tx: #1b2233; --ctx-tx2: #6a7288; }
+.avst-ctx-header, .avst-ctx-menu, .avst-ctx-ranking, .avst-ctx-mobile, .avst-ctx-perfil {
+  border-radius: 12px; background: var(--ctx-bg); border: 1px solid rgba(128, 136, 160, 0.22);
+}
+.avst-ctx-header { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+.avst-ctx-logo { width: 18px; height: 18px; border-radius: 6px; background: var(--avst-acento); flex: 0 0 auto; }
+.avst-ctx-linhas { display: flex; gap: 8px; flex: 1; }
+.avst-ctx-linhas i { height: 6px; border-radius: 3px; background: var(--ctx-tx2); opacity: 0.45; flex: 1; max-width: 54px; }
+.avst-ctx-av { flex: 0 0 auto; border-radius: 50%; overflow: hidden; }
+.avst-ctx-av .avst-svg, .avst-ctx-av .avst-svg svg { display: block; width: 100%; height: 100%; }
+.avst-ctx-av-30 { width: 30px; height: 30px; }
+.avst-ctx-av-36 { width: 36px; height: 36px; }
+.avst-ctx-av-40 { width: 40px; height: 40px; }
+.avst-ctx-av-44 { width: 44px; height: 44px; }
+.avst-ctx-av-84 { width: 84px; height: 84px; }
+.avst-ctx-menu, .avst-ctx-ranking { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--ctx-bg2); }
+.avst-ctx-menu-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.avst-ctx-menu-info strong { font-size: 12px; color: var(--ctx-tx); }
+.avst-ctx-menu-info em { font-style: normal; font-size: 10.5px; color: var(--ctx-tx2); }
+.avst-ctx-pos { font-size: 12px; font-weight: 800; color: var(--ctx-tx2); width: 22px; text-align: center; }
+.avst-ctx-perfil { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 14px; }
+.avst-ctx-perfil strong { font-size: 13px; color: var(--ctx-tx); }
+.avst-ctx-titulo { font-style: normal; font-size: 10.5px; display: inline-flex; align-items: center; gap: 3px; }
+.avst-ctx-mobile { display: flex; align-items: center; gap: 10px; padding: 7px 10px; width: 200px; }
+
 /* ── F2c: barra de inventário (busca + tiers + favoritos) ─────────── */
 .avst-biblioteca { display: flex; flex-direction: column; gap: 10px; }
 .avst-filtros { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
