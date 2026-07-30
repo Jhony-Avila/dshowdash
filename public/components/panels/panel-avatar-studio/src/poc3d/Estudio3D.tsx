@@ -12,17 +12,18 @@ import type { ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type * as THREE from 'three';
 import {
-  Aperture, Camera, Gauge, Hand, Lightbulb, LoaderCircle, MonitorX, PersonStanding,
-  RotateCcw, Save, ShieldAlert, Sparkles, Zap,
+  Aperture, Camera, Gauge, Gem, Hand, Lightbulb, LoaderCircle, MonitorX,
+  PersonStanding, RotateCcw, Save, ShieldAlert, Sparkles, Zap,
 } from 'lucide-react';
 import { telemetria } from '../services/Telemetria';
 import { salvar3D } from '../services/AvatarService';
 import {
-  CONFIG3D_PADRAO, CORES_3D, ROTULOS_VARIANTE,
+  CONFIG3D_PADRAO, CORES_3D, ITENS_SOCKET, ROTULOS_SOCKET, ROTULOS_VARIANTE,
+  SOCKETS_LEVA1,
 } from './catalogo3d';
 import type {
   ArquetipoId, CameraId, CenarioId, ClimaId, Config3D, HoraId, IluminacaoId,
-  SlotMaterial, VarianteHumanoId,
+  SlotMaterial, Socket3D, VarianteHumanoId,
 } from './catalogo3d';
 import { Personagem3D } from './Personagem3D';
 import type { Gesto } from './Personagem3D';
@@ -94,6 +95,17 @@ export default function Estudio3D({ corDestaque, versaoBase = 0, aoSalvar }: {
 
   const mudar = useCallback((parcial: Partial<Config3D>) => {
     setConfig((c) => ({ ...c, ...parcial }));
+  }, []);
+
+  // sockets (decisão #41): equipar troca o item do socket; clicar no ativo
+  // ou em "—" desequipa só aquele socket — os outros ficam (aditivo)
+  const mudarSocket = useCallback((socket: Socket3D, id: string | null) => {
+    setConfig((c) => {
+      const sockets = { ...(c.sockets ?? {}) };
+      if (!id || sockets[socket] === id) delete sockets[socket];
+      else sockets[socket] = id;
+      return { ...c, sockets };
+    });
   }, []);
 
   // qualidade ADAPTATIVA: 3 medições seguidas < 28 fps → desce um degrau
@@ -189,7 +201,7 @@ export default function Estudio3D({ corDestaque, versaoBase = 0, aoSalvar }: {
               hora={config.hora} corDestaque={destaque} sombras={qualidade !== 'economico'} />
             <Clima3D clima={config.clima} />
             <Suspense fallback={null}>
-              <Personagem3D config={config} gesto={gesto} aoTerminarGesto={() => setGesto(null)} />
+              <Personagem3D config={config} corDestaque={destaque} gesto={gesto} aoTerminarGesto={() => setGesto(null)} />
             </Suspense>
             <Poder3D fase={fasePoder} cor={destaque} aoAvancar={setFasePoder} />
             <CameraRig3D preset={config.camera} arquetipo={config.arquetipo} />
@@ -288,6 +300,32 @@ export default function Estudio3D({ corDestaque, versaoBase = 0, aoSalvar }: {
             ))}
           </section>
         )}
+
+        {/* LEVA 1 dos sockets (fila #37 item 2, decisão #41): itens
+            procedurais em 7 dos 14 sockets — aditivos, um item por socket */}
+        <section>
+          <h3><Gem size={13} aria-hidden /> Acessórios · sockets</h3>
+          {SOCKETS_LEVA1.map((socket) => {
+            const itens = ITENS_SOCKET.filter((i) => i.socket === socket);
+            return (
+              <div key={socket} className="avst-3d-socket">
+                <span className="avst-3d-socket-nome">{ROTULOS_SOCKET[socket] ?? socket}</span>
+                <div className="avst-3d-chips">
+                  <button type="button" className={!config.sockets?.[socket] ? 'avst-3d-chip-on' : ''}
+                    title="Nada neste socket" onClick={() => mudarSocket(socket, null)}>—</button>
+                  {itens.map((item) => (
+                    <button key={item.id} type="button"
+                      className={config.sockets?.[socket] === item.id ? 'avst-3d-chip-on' : ''}
+                      onClick={() => mudarSocket(socket, item.id)}>
+                      {item.nome}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          <p className="avst-3d-nota">Combine vários sockets ao mesmo tempo — os 14 pontos de encaixe já valem para o corpo premium que vem aí.</p>
+        </section>
 
         <section>
           <h3>Cores e materiais</h3>

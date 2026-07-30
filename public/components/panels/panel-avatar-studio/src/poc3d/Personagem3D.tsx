@@ -20,6 +20,7 @@ import {
   ANDROIDE, ANIMAL, MORFOS_ANDROIDE, VARIANTES_HUMANO,
 } from './catalogo3d';
 import type { Config3D, Modelo3D, SlotMaterial } from './catalogo3d';
+import { Acessorios3D } from './Acessorios3D';
 
 export type Gesto = 'acenar' | 'poder' | 'extra' | null;
 
@@ -127,8 +128,8 @@ function usarAnimacao(
 }
 
 // ── Humano modular (outfit + cabeça de variantes possivelmente distintas) ──
-function Humano({ config, gesto, aoTerminarGesto }: {
-  config: Config3D; gesto: Gesto; aoTerminarGesto: () => void;
+function Humano({ config, corDestaque, gesto, aoTerminarGesto }: {
+  config: Config3D; corDestaque: string; gesto: Gesto; aoTerminarGesto: () => void;
 }) {
   const roupaDef = VARIANTES_HUMANO[config.roupa];
   const cabecaDef = VARIANTES_HUMANO[config.cabeca];
@@ -167,16 +168,22 @@ function Humano({ config, gesto, aoTerminarGesto }: {
 
   const escala = useMemo(() => normalizar(roupaG.scene, roupaDef.alturaAlvo), [roupaG.scene, roupaDef]);
   return (
-    <group scale={escala}>
-      <primitive object={roupaCena} />
-      <primitive object={cabecaCena} />
-    </group>
+    <>
+      <group scale={escala}>
+        <primitive object={roupaCena} />
+        <primitive object={cabecaCena} />
+      </group>
+      {/* sockets (decisão #41): cabeça/rosto/pescoço ancoram na CENA DA
+          CABEÇA (é ela que anima esses ossos); costas/mão, na do corpo */}
+      <Acessorios3D sockets={config.sockets} arquetipo="humano" corDestaque={corDestaque}
+        raizCabeca={cabecaCena} raizCorpo={roupaCena} />
+    </>
   );
 }
 
 // ── Arquétipos de cena única (androide com morphs / animal bípede) ────────
-function CenaUnica({ modelo, config, gesto, aoTerminarGesto }: {
-  modelo: Modelo3D; config: Config3D; gesto: Gesto; aoTerminarGesto: () => void;
+function CenaUnica({ modelo, config, corDestaque, gesto, aoTerminarGesto }: {
+  modelo: Modelo3D; config: Config3D; corDestaque: string; gesto: Gesto; aoTerminarGesto: () => void;
 }) {
   const gltf = useGLTF(modelo.arquivo);
   const cena = useMemo(() => instanciar(gltf.scene), [gltf.scene]);
@@ -204,17 +211,23 @@ function CenaUnica({ modelo, config, gesto, aoTerminarGesto }: {
   usarAnimacao(cena, gltf.animations, modelo, gesto, aoTerminarGesto);
 
   const escala = useMemo(() => normalizar(gltf.scene, modelo.alturaAlvo), [gltf.scene, modelo]);
-  return <primitive object={cena} scale={escala} />;
+  return (
+    <>
+      <primitive object={cena} scale={escala} />
+      <Acessorios3D sockets={config.sockets} arquetipo={config.arquetipo} corDestaque={corDestaque}
+        raizCabeca={cena} raizCorpo={cena} />
+    </>
+  );
 }
 
-export function Personagem3D({ config, gesto, aoTerminarGesto }: {
-  config: Config3D; gesto: Gesto; aoTerminarGesto: () => void;
+export function Personagem3D({ config, corDestaque, gesto, aoTerminarGesto }: {
+  config: Config3D; corDestaque: string; gesto: Gesto; aoTerminarGesto: () => void;
 }) {
   if (config.arquetipo === 'humano') {
-    return <Humano config={config} gesto={gesto} aoTerminarGesto={aoTerminarGesto} />;
+    return <Humano config={config} corDestaque={corDestaque} gesto={gesto} aoTerminarGesto={aoTerminarGesto} />;
   }
   const modelo = config.arquetipo === 'androide' ? ANDROIDE : ANIMAL;
-  return <CenaUnica modelo={modelo} config={config} gesto={gesto} aoTerminarGesto={aoTerminarGesto} />;
+  return <CenaUnica modelo={modelo} config={config} corDestaque={corDestaque} gesto={gesto} aoTerminarGesto={aoTerminarGesto} />;
 }
 
 // prefetch dos arquétipos padrão (streaming progressivo — decisão #29)

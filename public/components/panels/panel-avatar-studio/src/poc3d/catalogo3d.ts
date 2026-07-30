@@ -32,6 +32,34 @@ export const SOCKETS_3D = [
 ] as const;
 export type Socket3D = (typeof SOCKETS_3D)[number];
 
+/**
+ * LEVA 1 de conteúdo dos sockets (fila #37 item 2 — parcial): itens 100%
+ * PROCEDURAIS (geometria pura, zero download), no mesmo padrão do Palco
+ * Vivo. A camada de ancoragem (socket → osso, ver Acessorios3D.tsx) é
+ * agnóstica de rig — carrega direto para o corpo UBC da PoC Premium (#43).
+ * A ARTE por socket continua vindo nas próximas levas; isto valida o
+ * contrato de ponta a ponta com ≥3 acessórios simultâneos (decisão #41).
+ */
+export interface ItemSocket { id: string; socket: Socket3D; nome: string }
+export const ITENS_SOCKET: ItemSocket[] = [
+  { id: 'soc_coroa', socket: 'head', nome: 'Coroa Dourada' },
+  { id: 'soc_halo', socket: 'head', nome: 'Halo de Energia' },
+  { id: 'soc_oculos_neon', socket: 'face', nome: 'Óculos Neon' },
+  { id: 'soc_colar_estrela', socket: 'neck', nome: 'Colar Estelar' },
+  { id: 'soc_jetpack', socket: 'back', nome: 'Jetpack' },
+  { id: 'soc_asas_energia', socket: 'back', nome: 'Asas de Energia' },
+  { id: 'soc_cetro', socket: 'hand_r', nome: 'Cetro Arcano' },
+  { id: 'soc_drone', socket: 'companion', nome: 'Drone Fiel' },
+  { id: 'soc_pet_bit', socket: 'pet', nome: 'Bit (robô-pet)' },
+];
+
+/** Sockets com conteúdo na leva 1, na ordem da UI. */
+export const SOCKETS_LEVA1: Socket3D[] = ['head', 'face', 'neck', 'back', 'hand_r', 'companion', 'pet'];
+export const ROTULOS_SOCKET: Partial<Record<Socket3D, string>> = {
+  head: 'Cabeça', face: 'Rosto', neck: 'Pescoço', back: 'Costas',
+  hand_r: 'Mão direita', companion: 'Companheiro', pet: 'Pet',
+};
+
 export interface Config3D {
   arquetipo: ArquetipoId;
   /** humano: outfit (Body+Legs+Feet) e cabeça podem vir de variantes diferentes */
