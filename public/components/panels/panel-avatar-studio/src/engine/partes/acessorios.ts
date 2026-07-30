@@ -451,6 +451,7 @@ export const ACESSORIOS: ParteDef[] = [
     nome: 'Capa Heroica',
     descricao: 'Esvoaça mesmo sem vento — questão de atitude.',
     raridade: 'lendario',
+    bloqueadoPor: 'conquista:explorador_60',
     tema: 'fantasia',
     usaCores: ['destaque'],
     render: (p, u) => `

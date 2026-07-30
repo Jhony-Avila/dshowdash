@@ -43,14 +43,22 @@ export async function carregarVida(signal?: AbortSignal): Promise<Vida | null> {
     if (!r.ok) return null;
     const d = (await r.json())?.data ?? {};
     return {
-      conquistas: Array.isArray(d.conquistas) ? d.conquistas.map((c: Record<string, unknown>) => ({
-        id: String(c.id ?? ''),
-        nome: String(c.nome ?? ''),
-        descricao: String(c.descricao ?? ''),
-        conquistada: Boolean(c.conquistada),
-        em: typeof c.em === 'string' ? c.em : null,
-        recompensa: typeof c.recompensa === 'string' ? c.recompensa : null,
-      })) : [],
+      conquistas: Array.isArray(d.conquistas) ? d.conquistas.map((c: Record<string, unknown>) => {
+        const p = (c.progresso ?? {}) as Record<string, unknown>;
+        return {
+          id: String(c.id ?? ''),
+          nome: String(c.nome ?? ''),
+          descricao: String(c.descricao ?? ''),
+          categoria: typeof c.categoria === 'string' ? c.categoria : 'criacao',
+          conquistada: Boolean(c.conquistada),
+          em: typeof c.em === 'string' ? c.em : null,
+          recompensa: typeof c.recompensa === 'string' ? c.recompensa : null,
+          progresso: {
+            atual: Number(p.atual) || 0,
+            alvo: Math.max(1, Number(p.alvo) || 1),
+          },
+        };
+      }) : [],
       eventos: Array.isArray(d.eventos) ? d.eventos : [],
       desbloqueados: new Set(Array.isArray(d.desbloqueados) ? d.desbloqueados : []),
       iaDisponivel: Boolean(d.ia_disponivel),

@@ -50,6 +50,28 @@ L.push(`-- =====================================================================
 -- Idempotente (ON DUPLICATE KEY UPDATE). @generated ${new Date().toISOString().slice(0, 10)}
 -- ============================================================================`);
 
+// ── Guarda: ids DUPLICADOS abortam o seed (colisão sobrescreveria arte) ────
+{
+  const vistos = new Set();
+  const dups = [];
+  for (const p of dump.PARTES) {
+    if (vistos.has(p.id)) dups.push(p.id);
+    vistos.add(p.id);
+  }
+  for (const t of dump.TITULOS ?? []) {
+    if (vistos.has(t.id)) dups.push(t.id);
+    vistos.add(t.id);
+  }
+  for (const a of dump.ARQUETIPOS ?? []) {
+    if (vistos.has(a.id)) dups.push(a.id);
+    vistos.add(a.id);
+  }
+  if (dups.length) {
+    console.error('ERRO: ids duplicados no catálogo →', dups.join(', '));
+    process.exit(1);
+  }
+}
+
 // ── 3. partes 2D (biblioteca dshow_svg, licença própria) ───────────────────
 const ordemPorCategoria = new Map();
 L.push('\n-- ── Partes 2D (motor SVG — biblioteca dshow_svg) ──');

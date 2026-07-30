@@ -147,10 +147,14 @@ export interface Conquista {
   id: string;
   nome: string;
   descricao: string;
+  /** categoria do registro (4.6 §8.3): criacao/exploracao/colecao/dedicacao/maestria */
+  categoria: string;
   conquistada: boolean;
   em: string | null;
   /** item liberado por esta conquista (desbloqueio ADITIVO — decisão #25) */
   recompensa: string | null;
+  /** progresso auditável rumo ao alvo (4.6 §8.3) */
+  progresso: { atual: number; alvo: number };
 }
 
 // ── Estados de salvamento (briefing §25) ────────────────────────────

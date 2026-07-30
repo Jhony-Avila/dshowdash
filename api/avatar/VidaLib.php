@@ -3,11 +3,18 @@ declare(strict_types=1);
 
 /**
  * api/avatar/VidaLib.php — conquistas, eventos e desbloqueios (funções puras).
- * @version 1.0.0  @created 2026-07-30
+ * @version 2.0.0  @created 2026-07-30  @updated 2026-07-30 (4.6 §8.3)
+ * @changelog 2.0.0 — CONQUISTAS COM PROGRESSO (Onda 4): 6 → 30 conquistas em
+ *   5 categorias (criacao/exploracao/colecao/dedicacao/maestria), cada uma
+ *   com progresso {atual, alvo} calculado SÓ de dados verificáveis do
+ *   próprio usuário. Métricas novas: formatos salvos (3d/foto estilizada),
+ *   dias distintos, itens/categorias/espécies distintas usadas (parse dos
+ *   ≤100 configs retidos), lendários usados e coleções completas (JOIN no
+ *   catálogo, GRACIOSO), favoritos/desbloqueios/metadados de versão.
+ *   4 recompensas novas: mol_glitch, ace_capa_heroica, efe_moedas, emb_fenix.
  *
- * Extraída do vida.php (Expansão — critério de aceite: "desbloqueios
- * validados no backend"): o MESMO cálculo auditável alimenta o GET do
- * vida.php e o ENFORCEMENT no salvamento do studio.php — uma fonte, nunca
+ * Extraída do vida.php (Expansão): o MESMO cálculo auditável alimenta o GET
+ * do vida.php e o ENFORCEMENT no salvamento do studio.php — uma fonte, nunca
  * duas (princípio nº 3 do projeto: evitar duplicação de regras).
  */
 
@@ -33,14 +40,31 @@ function vida_eventos(): array
     return $saida;
 }
 
+/** Contagem simples com guarda (tabela pode não existir no ambiente). */
+function vida_contar(PDO $pdo, string $sql, array $binds): int
+{
+    try {
+        $st = $pdo->prepare($sql);
+        $st->execute($binds);
+        return (int) $st->fetchColumn();
+    } catch (Throwable $e) {
+        return 0;
+    }
+}
+
 // ── Conquistas (registro: cada entrada = cálculo auditável) ─────────
 function vida_conquistas(PDO $pdo, int $userId): array
 {
-    // métricas base (uma passada)
+    // ── métricas base (uma passada na tabela de versões) ────────────
     $st = $pdo->prepare("
         SELECT
             COUNT(*) AS total,
             SUM(avatar_type = 'image') AS fotos,
+            SUM(avatar_config LIKE '%\"formato\":\"3d\"%') AS tres_d,
+            SUM(avatar_config LIKE '%\"formato\":\"foto_estilizada\"%') AS estilizadas,
+            SUM(avatar_type = 'generated' AND (avatar_config IS NULL
+                OR avatar_config LIKE '%\"formato\":\"camadas\"%')) AS camadas_qtd,
+            COUNT(DISTINCT DATE(created_at)) AS dias,
             MIN(created_at) AS primeiro,
             SUM(HOUR(created_at) BETWEEN 5 AND 8) AS madrugadas
         FROM app_user_avatars
@@ -53,7 +77,7 @@ function vida_conquistas(PDO $pdo, int $userId): array
     $stU->execute([$userId]);
     $contaEm = (string) ($stU->fetchColumn() ?: '');
 
-    $stA = $pdo->prepare("SELECT updated_at FROM app_user_avatars WHERE user_id = ? AND is_active = 1 ORDER BY updated_at DESC LIMIT 1");
+    $stA = $pdo->prepare('SELECT updated_at FROM app_user_avatars WHERE user_id = ? AND is_active = 1 ORDER BY updated_at DESC LIMIT 1');
     $stA->execute([$userId]);
     $ativoEm = (string) ($stA->fetchColumn() ?: '');
 
@@ -63,24 +87,196 @@ function vida_conquistas(PDO $pdo, int $userId): array
         return $st->fetchColumn() ?: null;
     };
 
+    // ── métricas de EXPLORAÇÃO: parse dos configs retidos (≤100) ────
+    $usados = [];          // ids de itens já usados em qualquer versão
+    $categoriasUsadas = []; // chaves de camada usadas
+    $basesUsadas = [];
+    $usouTitulo = false;
+    $poderoso = false;      // aura+banner+emblema na MESMA versão
+    $tresSlots = false;     // 3 acessórios simultâneos (decisão #41)
+    try {
+        $stC = $pdo->prepare("SELECT avatar_config FROM app_user_avatars
+            WHERE user_id = ? AND avatar_config IS NOT NULL");
+        $stC->execute([$userId]);
+        foreach ($stC as $l) {
+            $cfg = json_decode((string) $l['avatar_config'], true);
+            if (!is_array($cfg) || ($cfg['formato'] ?? '') !== 'camadas') {
+                continue;
+            }
+            if (is_string($cfg['base'] ?? null)) {
+                $usados[$cfg['base']] = true;
+                $basesUsadas[$cfg['base']] = true;
+            }
+            $camadas = (array) ($cfg['camadas'] ?? []);
+            $acessorios = 0;
+            foreach ($camadas as $chave => $id) {
+                if (!is_string($id)) {
+                    continue;
+                }
+                $usados[$id] = true;
+                $categoriasUsadas[strpos((string) $chave, 'acessorio') === 0 ? 'acessorio' : (string) $chave] = true;
+                if (strpos((string) $chave, 'acessorio') === 0) {
+                    $acessorios++;
+                }
+            }
+            if ($acessorios >= 3) {
+                $tresSlots = true;
+            }
+            if (isset($camadas['aura'], $camadas['banner'], $camadas['emblema'])) {
+                $poderoso = true;
+            }
+            if (is_string($cfg['titulo'] ?? null)) {
+                $usouTitulo = true;
+                $categoriasUsadas['titulo'] = true;
+            }
+        }
+    } catch (Throwable $e) {
+        // sem tabela/erro de parse → métricas de exploração ficam em zero
+    }
+    $idsUsados = array_keys($usados);
+
+    // ── métricas de CATÁLOGO (graciosas — catálogo pode não existir) ─
+    $lendariosUsados = 0;
+    $colecoesCompletas = 0;
+    if ($idsUsados !== []) {
+        try {
+            $marc = implode(',', array_fill(0, count($idsUsados), '?'));
+            $stL = $pdo->prepare("
+                SELECT COUNT(DISTINCT a.`key`)
+                FROM avatar_assets a
+                JOIN avatar_rarities r ON r.id = a.rarity_id
+                WHERE a.`key` IN ($marc) AND r.level >= 4
+            ");
+            $stL->execute($idsUsados);
+            $lendariosUsados = (int) $stL->fetchColumn();
+        } catch (Throwable $e) {
+            $lendariosUsados = 0;
+        }
+        try {
+            $stCol = $pdo->query("
+                SELECT col.id AS cid, a.`key` AS k
+                FROM avatar_collections col
+                JOIN avatar_collection_items ci ON ci.collection_id = col.id
+                    AND ci.is_required_for_completion = 1
+                JOIN avatar_assets a ON a.id = ci.asset_id
+                WHERE col.status = 'published'
+            ");
+            $porColecao = [];
+            foreach ($stCol as $l) {
+                $porColecao[(string) $l['cid']][] = (string) $l['k'];
+            }
+            foreach ($porColecao as $itens) {
+                $faltam = array_diff($itens, $idsUsados);
+                if ($itens !== [] && $faltam === []) {
+                    $colecoesCompletas++;
+                }
+            }
+        } catch (Throwable $e) {
+            $colecoesCompletas = 0;
+        }
+    }
+
+    $favoritos = vida_contar($pdo, 'SELECT COUNT(*) FROM avatar_user_favorites WHERE user_id = ?', [$userId]);
+    $desbloqueiosReg = vida_contar($pdo, 'SELECT COUNT(*) FROM avatar_user_unlocks WHERE user_id = ?', [$userId]);
+    $arquivadas = vida_contar($pdo, 'SELECT COUNT(*) FROM avatar_version_meta WHERE user_id = ? AND (label IS NOT NULL OR is_pinned = 1)', [$userId]);
+
+    // ── números derivados ────────────────────────────────────────────
     $total = (int) ($m['total'] ?? 0);
     $fotos = (int) ($m['fotos'] ?? 0);
-    $dias30 = $contaEm !== '' && strtotime($contaEm) <= strtotime('-30 days');
-    $fiel7 = $ativoEm !== '' && strtotime($ativoEm) <= strtotime('-7 days');
+    $tresD = (int) ($m['tres_d'] ?? 0);
+    $estilizadas = (int) ($m['estilizadas'] ?? 0);
+    $camadasQtd = (int) ($m['camadas_qtd'] ?? 0);
+    $dias = (int) ($m['dias'] ?? 0);
+    $madrugadas = (int) ($m['madrugadas'] ?? 0);
+    $formatos = ($camadasQtd > 0 ? 1 : 0) + ($fotos > 0 ? 1 : 0) + ($tresD > 0 ? 1 : 0);
+    $diasCasa = $contaEm !== '' ? max(0, (int) floor((time() - strtotime($contaEm)) / 86400)) : 0;
+    $diasFiel = $ativoEm !== '' ? max(0, (int) floor((time() - strtotime($ativoEm)) / 86400)) : 0;
+
+    /** Monta uma entrada do registro (progresso SEMPRE presente — §8.3). */
+    $c = function (string $id, string $nome, string $desc, string $categoria,
+                   int $atual, int $alvo, ?string $recompensa = null, ?string $em = null): array {
+        $ok = $atual >= $alvo;
+        return [
+            'id' => $id, 'nome' => $nome, 'descricao' => $desc,
+            'categoria' => $categoria,
+            'conquistada' => $ok,
+            'em' => $ok ? $em : null,
+            'recompensa' => $recompensa,
+            'progresso' => ['atual' => min($atual, $alvo), 'alvo' => $alvo],
+        ];
+    };
 
     return [
-        ['id' => 'primeiro_avatar', 'nome' => 'Primeira Identidade', 'descricao' => 'Salve seu primeiro avatar no estúdio.',
-         'conquistada' => $total >= 1, 'em' => $total >= 1 ? ($m['primeiro'] ?? null) : null, 'recompensa' => 'mol_pioneiro'],
-        ['id' => 'colecionador_5', 'nome' => 'Colecionador', 'descricao' => 'Chegue a 5 versões salvas (camadas ou fotos).',
-         'conquistada' => $total >= 5, 'em' => $total >= 5 ? $enesimo(5) : null, 'recompensa' => 'efe_confete'],
-        ['id' => 'fotografo', 'nome' => 'Fotogênico', 'descricao' => 'Use uma foto real como avatar pelo menos uma vez.',
-         'conquistada' => $fotos >= 1, 'em' => null, 'recompensa' => null],
-        ['id' => 'veterano_30d', 'nome' => 'Veterano', 'descricao' => 'Complete 30 dias de casa no Dshow Dash.',
-         'conquistada' => $dias30, 'em' => $dias30 ? date('Y-m-d H:i:s', strtotime($contaEm . ' +30 days')) : null, 'recompensa' => 'ace_medalha'],
-        ['id' => 'madrugador', 'nome' => 'Madrugador', 'descricao' => 'Salve um avatar entre 5h e 9h da manhã.',
-         'conquistada' => ((int) ($m['madrugadas'] ?? 0)) >= 1, 'em' => null, 'recompensa' => null],
-        ['id' => 'identidade_fiel', 'nome' => 'Identidade Fiel', 'descricao' => 'Mantenha o mesmo avatar por 7 dias seguidos.',
-         'conquistada' => $fiel7, 'em' => null, 'recompensa' => null],
+        // ── CRIAÇÃO ──────────────────────────────────────────────────
+        $c('primeiro_avatar', 'Primeira Identidade', 'Salve seu primeiro avatar no estúdio.',
+            'criacao', $total, 1, 'mol_pioneiro', $m['primeiro'] ?? null),
+        $c('colecionador_5', 'Colecionador', 'Chegue a 5 versões salvas (camadas ou fotos).',
+            'criacao', $total, 5, 'efe_confete', $total >= 5 ? $enesimo(5) : null),
+        $c('colecionador_25', 'Colecionador Sênior', 'Chegue a 25 versões salvas.',
+            'criacao', $total, 25, null, $total >= 25 ? $enesimo(25) : null),
+        $c('colecionador_50', 'Arquivo Vivo', 'Chegue a 50 versões salvas.',
+            'criacao', $total, 50, null, $total >= 50 ? $enesimo(50) : null),
+        $c('centuriao_100', 'Centurião', '100 versões salvas — a poda respeita as fixadas.',
+            'criacao', $total, 100, 'mol_glitch', $total >= 100 ? $enesimo(100) : null),
+        $c('fotografo', 'Fotogênico', 'Use uma foto real como avatar pelo menos uma vez.',
+            'criacao', $fotos, 1),
+        $c('estilista', 'Estilista', 'Salve uma FOTO ESTILIZADA (fundo, moldura, título…).',
+            'criacao', $estilizadas, 1),
+        $c('tridimensional', 'Tridimensional', 'Salve um avatar vindo do Estúdio 3D.',
+            'criacao', $tresD, 1),
+        $c('multiverso', 'Multiverso', 'Tenha versões nos 3 formatos: camadas, foto e 3D.',
+            'criacao', $formatos, 3),
+
+        // ── EXPLORAÇÃO ───────────────────────────────────────────────
+        $c('explorador_25', 'Explorador', 'Use 25 itens diferentes do catálogo.',
+            'exploracao', count($idsUsados), 25),
+        $c('explorador_60', 'Cartógrafo', 'Use 60 itens diferentes do catálogo.',
+            'exploracao', count($idsUsados), 60, 'ace_capa_heroica'),
+        $c('explorador_100', 'Enciclopédia Viva', 'Use 100 itens diferentes do catálogo.',
+            'exploracao', count($idsUsados), 100),
+        $c('todas_as_frentes', 'Todas as Frentes', 'Use 10 categorias diferentes de item.',
+            'exploracao', count($categoriasUsadas), 10),
+        $c('lenda_viva', 'Toque Lendário', 'Use 3 itens lendários (ou acima) diferentes.',
+            'exploracao', $lendariosUsados, 3),
+        $c('camaleao', 'Camaleão', 'Experimente 5 rostos/espécies diferentes.',
+            'exploracao', count($basesUsadas), 5),
+        $c('poderoso', 'Presença Total', 'Salve com aura + banner + emblema juntos.',
+            'exploracao', $poderoso ? 1 : 0, 1),
+        $c('tres_slots', 'Equipado até os Dentes', 'Salve com 3 acessórios simultâneos.',
+            'exploracao', $tresSlots ? 1 : 0, 1),
+        $c('com_titulo', 'Assinatura Própria', 'Salve um avatar com um TÍTULO escolhido.',
+            'exploracao', $usouTitulo ? 1 : 0, 1),
+
+        // ── COLEÇÃO ──────────────────────────────────────────────────
+        $c('colecao_completa', 'Primeira Estante', 'Complete uma coleção inteira.',
+            'colecao', $colecoesCompletas, 1),
+        $c('curador', 'Curador', 'Complete 3 coleções.',
+            'colecao', $colecoesCompletas, 3),
+        $c('museu', 'Museu Particular', 'Complete 6 coleções.',
+            'colecao', $colecoesCompletas, 6),
+        $c('favoritador_10', 'Gosto Refinado', 'Marque 10 itens como favoritos.',
+            'colecao', $favoritos, 10),
+        $c('favoritador_25', 'Colecionador de Estrelas', 'Marque 25 itens como favoritos.',
+            'colecao', $favoritos, 25, 'efe_moedas'),
+        $c('chaveiro', 'Chaveiro', 'Registre 3 desbloqueios (conquistas, eventos, admin…).',
+            'colecao', $desbloqueiosReg, 3),
+
+        // ── DEDICAÇÃO ────────────────────────────────────────────────
+        $c('veterano_30d', 'Veterano', 'Complete 30 dias de casa no Dshow Dash.',
+            'dedicacao', $diasCasa, 30, 'ace_medalha',
+            $diasCasa >= 30 && $contaEm !== '' ? date('Y-m-d H:i:s', strtotime($contaEm . ' +30 days')) : null),
+        $c('madrugador', 'Madrugador', 'Salve um avatar entre 5h e 9h da manhã.',
+            'dedicacao', min($madrugadas, 1), 1),
+        $c('identidade_fiel', 'Identidade Fiel', 'Mantenha o mesmo avatar por 7 dias seguidos.',
+            'dedicacao', min($diasFiel, 7), 7),
+        $c('assiduo_7', 'Presença Semanal', 'Salve avatares em 7 dias diferentes.',
+            'dedicacao', $dias, 7),
+        $c('assiduo_30', 'Ritual Diário', 'Salve avatares em 30 dias diferentes.',
+            'dedicacao', $dias, 30, 'emb_fenix'),
+
+        // ── MAESTRIA ─────────────────────────────────────────────────
+        $c('arquivista', 'Arquivista', 'Nomeie ou fixe 3 versões no Histórico.',
+            'maestria', $arquivadas, 3),
     ];
 }
 

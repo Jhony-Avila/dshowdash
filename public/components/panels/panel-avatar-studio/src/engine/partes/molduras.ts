@@ -311,6 +311,7 @@ export const MOLDURAS: ParteDef[] = [
     nome: 'Glitch Dimensional',
     descricao: 'O quadro não decide em qual realidade ficar.',
     raridade: 'mitico',
+    bloqueadoPor: 'conquista:centuriao_100',
     tema: 'cyberpunk',
     usaCores: ['destaque'],
     render: (p) => `
