@@ -249,4 +249,176 @@ export const BOCAS: ParteDef[] = [
       <ellipse cx="120" cy="150" rx="4.6" ry="4" fill="#c2554d"/>
       <path d="M112 141 a 8 9 0 0 1 16 0" fill="none" stroke="${alfa(p.pele.escuro, 0.4)}" stroke-width="2"/>`,
   },
+  // ── 4.6 F2 · Onda 6 (identidade) — 12 bocas novas ─────────────────
+  {
+    id: 'boc_beijo',
+    categoria: 'boca',
+    nome: 'Beijinho',
+    descricao: 'Beijo no ar para a meta batida.',
+    raridade: 'incomum',
+    tema: 'casual',
+    render: () => `
+      <path d="M114 143 q 6 -4 8 0 q 4 -3 7 1 q 3 4 -3 7 q -7 4 -12 -1 q -4 -4 0 -7 z" fill="#c2554d"/>
+      <path d="M138 136 l -5 -4 a 3 3 0 1 1 4 -3 a 3 3 0 1 1 4 3 z" fill="#ff5f8f" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="0 0;8 -10" dur="2.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.9;0" dur="2.4s" repeatCount="indefinite"/>
+      </path>`,
+  },
+  {
+    id: 'boc_dente_ouro',
+    categoria: 'boca',
+    nome: 'Sorriso de Ouro',
+    descricao: 'Um brilho de 24 quilates no canto do sorriso.',
+    raridade: 'raro',
+    tema: 'urbano',
+    render: () => `
+      <path d="M102 140 q 18 20 36 0 q -18 8 -36 0 z" fill="#431d18"/>
+      <path d="M105 141 q 15 6 30 0 l -2 5 q -13 5 -26 0 z" fill="#ffffff"/>
+      <path d="M128 142 l 6 -0.6 l -1 4.6 l -5 0.8 z" fill="#e8b64c"/>
+      <path d="M130 143 l 2 1" stroke="#fff3c9" stroke-width="1"/>
+      <path d="M136 138 l 3 -3 m -1 4 l 4 -1" stroke="#ffe89a" stroke-width="1.4" stroke-linecap="round">
+        <animate attributeName="opacity" values="1;0.2;1" dur="1.8s" repeatCount="indefinite"/>
+      </path>`,
+  },
+  {
+    id: 'boc_presas',
+    categoria: 'boca',
+    nome: 'Presas',
+    descricao: 'Só sai depois do pôr do sol. Home office noturno.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    render: () => `
+      <path d="M104 142 q 16 12 32 0 q -16 6 -32 0 z" fill="#431d18"/>
+      <path d="M106 142.5 q 14 5 28 0 l -1.6 3.6 q -12 4 -24.8 0 z" fill="#ffffff"/>
+      <path d="M110 144 l 3.4 8.5 l 3 -7.5 z" fill="#ffffff"/>
+      <path d="M130 144 l -3.4 8.5 l -3 -7.5 z" fill="#ffffff"/>`,
+  },
+  {
+    id: 'boc_franzida',
+    categoria: 'boca',
+    nome: 'Franzida',
+    descricao: 'O gráfico caiu 2% e a boca acompanhou.',
+    raridade: 'comum',
+    tema: 'executivo',
+    render: (p) => `
+      <path d="M106 150 q 14 -10 28 0" stroke="#5a2e26" stroke-width="4.4" stroke-linecap="round" fill="none"/>
+      <path d="M104 143 q 4 3 8 2 M136 143 q -4 3 -8 2" stroke="${alfa(p.pele.escuro, 0.4)}" stroke-width="2" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'boc_apito',
+    categoria: 'boca',
+    nome: 'Apito de Coach',
+    descricao: 'Fim do intervalo — segundo tempo do trimestre.',
+    raridade: 'raro',
+    tema: 'esportivo',
+    render: () => `
+      <path d="M108 144 q 12 8 24 -2" stroke="#5a2e26" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <rect x="126" y="138" width="16" height="11" rx="5" fill="#c4c9d6" stroke="#8b93a7" stroke-width="1.4"/>
+      <circle cx="140" cy="149" r="5" fill="#c4c9d6" stroke="#8b93a7" stroke-width="1.4"/>
+      <circle cx="132" cy="143" r="1.6" fill="#5a6274"/>
+      <path d="M146 136 q 4 -2 4 -6 M150 140 q 5 -1 6 -5" stroke="#8fb7ff" stroke-width="1.8" stroke-linecap="round" fill="none">
+        <animate attributeName="opacity" values="0.9;0.2;0.9" dur="1.2s" repeatCount="indefinite"/>
+      </path>`,
+  },
+  {
+    id: 'boc_riso_nervoso',
+    categoria: 'boca',
+    nome: 'Riso Nervoso',
+    descricao: '"Claro que cabe na sprint" — e o riso saiu torto.',
+    raridade: 'incomum',
+    tema: 'casual',
+    render: (p) => `
+      <path d="M104 145 q 16 8 32 -2 q -14 12 -32 2 z" fill="#431d18"/>
+      <path d="M106 145 l 28 -1.4 l -1 3 l -26 0.6 z" fill="#ffffff"/>
+      <path d="M100 149 q -2 3 -1 6" stroke="${alfa(p.pele.escuro, 0.5)}" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <ellipse cx="146" cy="132" rx="2.6" ry="3.4" fill="#8fd4ff" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 6" dur="1.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.9;0.1" dur="1.8s" repeatCount="indefinite"/>
+      </ellipse>`,
+  },
+  {
+    id: 'boc_batom',
+    categoria: 'boca',
+    nome: 'Batom Marcante',
+    descricao: 'A assinatura em qualquer sala — na cor da sua energia.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M108 143 q 5 -5 12 -1 q 7 -4 12 1 q 3 3 -2 6 q -10 6 -20 0 q -5 -3 -2 -6 z" fill="${p.destaque.base}"/>
+      <path d="M110 144 q 4 -3 9 -1" stroke="${alfa('#ffffff', 0.4)}" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      <path d="M108 149 q 12 5 24 0" stroke="${alfa(p.destaque.profundo, 0.8)}" stroke-width="1.6" fill="none"/>`,
+  },
+  {
+    id: 'boc_pirulito',
+    categoria: 'boca',
+    nome: 'Pirulito',
+    descricao: 'Energia rápida para o code review longo.',
+    raridade: 'raro',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M106 144 q 12 8 24 0" stroke="#5a2e26" stroke-width="4.2" stroke-linecap="round" fill="none"/>
+      <path d="M130 146 l 18 12" stroke="#f4f0e6" stroke-width="3"/>
+      <circle cx="152" cy="160" r="8" fill="${p.destaque.base}"/>
+      <path d="M146 160 a 6 6 0 0 1 6 -6 a 3 3 0 0 1 0 6 a 3 3 0 0 0 -3 3 a 6 6 0 0 1 -3 -3 z" fill="${alfa('#ffffff', 0.5)}"/>`,
+  },
+  {
+    id: 'boc_bocejo',
+    categoria: 'boca',
+    nome: 'Bocejo',
+    descricao: 'A daily das 8h30 cobra seu preço.',
+    raridade: 'comum',
+    tema: 'casual',
+    render: (p) => `
+      <ellipse cx="120" cy="148" rx="9" ry="11" fill="#431d18"/>
+      <ellipse cx="120" cy="152" rx="5" ry="5" fill="#c2554d"/>
+      <path d="M111 142 a 9 11 0 0 1 18 0" fill="none" stroke="${alfa(p.pele.escuro, 0.4)}" stroke-width="2"/>
+      <path d="M140 132 l 6 -2 l -4 5 l 6 -1" stroke="${alfa('#8b93a7', 0.8)}" stroke-width="1.8" fill="none" stroke-linecap="round">
+        <animateTransform attributeName="transform" type="translate" values="0 0;6 -8" dur="2.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.9;0" dur="2.6s" repeatCount="indefinite"/>
+      </path>`,
+  },
+  {
+    id: 'boc_gato',
+    categoria: 'boca',
+    nome: 'Sorriso de Gato',
+    descricao: ':3 — aprovado sem ressalvas.',
+    raridade: 'raro',
+    tema: 'casual',
+    render: () => `
+      <path d="M108 144 q 6 6 12 0 q 6 6 12 0" stroke="#5a2e26" stroke-width="4" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'boc_onda_sonora',
+    categoria: 'boca',
+    nome: 'Onda Sonora',
+    descricao: 'Fala em formas de onda. Volume sempre no máximo.',
+    raridade: 'epico',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p) => {
+      let barras = '';
+      const alturas = [3, 7, 5, 10, 6, 9, 4, 7, 3];
+      alturas.forEach((h, i) => {
+        barras += `<rect x="${104 + i * 3.8}" y="${146 - h / 2}" width="2.4" height="${h}" rx="1.2" fill="${p.destaque.claro}">
+          <animate attributeName="height" values="${h};${h + 5};${h}" dur="${(0.6 + (i % 3) * 0.25).toFixed(2)}s" repeatCount="indefinite"/>
+          <animate attributeName="y" values="${146 - h / 2};${146 - (h + 5) / 2};${146 - h / 2}" dur="${(0.6 + (i % 3) * 0.25).toFixed(2)}s" repeatCount="indefinite"/>
+        </rect>`;
+      });
+      return `<rect x="100" y="137" width="40" height="18" rx="8" fill="#0c0f1a" stroke="${alfa(p.destaque.base, 0.6)}" stroke-width="1.6"/>${barras}`;
+    },
+  },
+  {
+    id: 'boc_heroica',
+    categoria: 'boca',
+    nome: 'Queixo Heroico',
+    descricao: 'Sorriso firme e covinha de pôster de recrutamento.',
+    raridade: 'incomum',
+    tema: 'aventura',
+    render: (p) => `
+      <path d="M104 143 q 16 8 32 0" stroke="#5a2e26" stroke-width="4.6" stroke-linecap="round" fill="none"/>
+      <path d="M117 158 q 3 3 6 0" stroke="${alfa(p.pele.profundo, 0.5)}" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <path d="M108 148 q 12 6 24 0" stroke="${alfa(p.pele.escuro, 0.35)}" stroke-width="2" stroke-linecap="round" fill="none"/>`,
+  },
 ];

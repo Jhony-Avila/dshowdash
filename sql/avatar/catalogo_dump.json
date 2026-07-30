@@ -179,6 +179,76 @@
   "raridade": "epico",
   "nome": "Picos Neon"
  },
+ "cab_pixie": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Pixie"
+ },
+ "cab_repicado_longo": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Repicado Longo"
+ },
+ "cab_dreads": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Dreads"
+ },
+ "cab_mullet": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Mullet"
+ },
+ "cab_pompadour": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Pompadour"
+ },
+ "cab_chanel": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Chanel"
+ },
+ "cab_coques_duplos": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Coques Duplos"
+ },
+ "cab_grisalho": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Grisalho Sábio"
+ },
+ "cab_emo": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Franja Emo"
+ },
+ "cab_lambido": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Liso Lambido"
+ },
+ "cab_cachos_soltos": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Cachos Soltos"
+ },
+ "cab_viking": {
+  "categoria": "cabelo",
+  "raridade": "epico",
+  "nome": "Trança Viking"
+ },
+ "cab_holo_gradiente": {
+  "categoria": "cabelo",
+  "raridade": "epico",
+  "nome": "Holo Gradiente"
+ },
+ "cab_tigela": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Corte Tigela"
+ },
  "olh_padrao": {
   "categoria": "olhos",
   "raridade": "comum",
@@ -274,6 +344,66 @@
   "raridade": "epico",
   "nome": "Pixel Retro"
  },
+ "olh_gentil": {
+  "categoria": "olhos",
+  "raridade": "comum",
+  "nome": "Gentil"
+ },
+ "olh_furia": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Fúria"
+ },
+ "olh_hipnotico": {
+  "categoria": "olhos",
+  "raridade": "epico",
+  "nome": "Hipnótico"
+ },
+ "olh_scanner": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Scanner"
+ },
+ "olh_gatinho": {
+  "categoria": "olhos",
+  "raridade": "incomum",
+  "nome": "Delineado Gatinho"
+ },
+ "olh_heterocromia": {
+  "categoria": "olhos",
+  "raridade": "epico",
+  "nome": "Heterocromia"
+ },
+ "olh_zen": {
+  "categoria": "olhos",
+  "raridade": "comum",
+  "nome": "Zen"
+ },
+ "olh_na_mira": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Na Mira"
+ },
+ "olh_anime": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Brilho de Anime"
+ },
+ "olh_calculista": {
+  "categoria": "olhos",
+  "raridade": "incomum",
+  "nome": "Calculista"
+ },
+ "olh_prisma": {
+  "categoria": "olhos",
+  "raridade": "lendario",
+  "nome": "Prisma"
+ },
+ "olh_vazio": {
+  "categoria": "olhos",
+  "raridade": "mitico",
+  "nome": "Void"
+ },
  "boc_sorriso": {
   "categoria": "boca",
   "raridade": "comum",
@@ -363,6 +493,66 @@
   "categoria": "boca",
   "raridade": "comum",
   "nome": "Uau"
+ },
+ "boc_beijo": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Beijinho"
+ },
+ "boc_dente_ouro": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Sorriso de Ouro"
+ },
+ "boc_presas": {
+  "categoria": "boca",
+  "raridade": "epico",
+  "nome": "Presas"
+ },
+ "boc_franzida": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Franzida"
+ },
+ "boc_apito": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Apito de Coach"
+ },
+ "boc_riso_nervoso": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Riso Nervoso"
+ },
+ "boc_batom": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Batom Marcante"
+ },
+ "boc_pirulito": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Pirulito"
+ },
+ "boc_bocejo": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Bocejo"
+ },
+ "boc_gato": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Sorriso de Gato"
+ },
+ "boc_onda_sonora": {
+  "categoria": "boca",
+  "raridade": "epico",
+  "nome": "Onda Sonora"
+ },
+ "boc_heroica": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Queixo Heroico"
  },
  "rou_camiseta": {
   "categoria": "roupa",
