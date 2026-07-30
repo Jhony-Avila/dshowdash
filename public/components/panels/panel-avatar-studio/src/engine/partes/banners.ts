@@ -123,4 +123,49 @@ export const BANNERS: ParteDef[] = [
         </rect>
       </g>`),
   },
+  {
+    id: 'ban_dojo',
+    categoria: 'banner',
+    nome: 'Estandarte do Dojo',
+    descricao: 'Seda vermelha e o círculo do treino diário.',
+    raridade: 'raro',
+    tema: 'oriental',
+    usaCores: ['destaque'],
+    render: (p, u) => estandarte('#5c1a1a', '#8a2f2f', u, 'bdj', `
+      <circle cx="120" cy="58" r="22" fill="none" stroke="${alfa('#ffffff', 0.85)}" stroke-width="4"/>
+      <path d="M96 100 h48 M96 114 h48" stroke="${alfa('#ffffff', 0.4)}" stroke-width="3" stroke-linecap="round"/>
+      <path d="M86 12 h68" stroke="${alfa(p.destaque.claro, 0.6)}" stroke-width="3" stroke-linecap="round"/>`),
+  },
+  {
+    id: 'ban_lab',
+    categoria: 'banner',
+    nome: 'Quadro do Laboratório',
+    descricao: 'Fórmulas de quem testa antes de afirmar.',
+    raridade: 'incomum',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p, u) => estandarte('#10241e', alfa(p.destaque.base, 0.6), u, 'blb', `
+      <g stroke="${alfa('#d9ffe9', 0.55)}" stroke-width="2.4" fill="none" stroke-linecap="round">
+        <path d="M94 30 h30 M94 44 h44 M94 58 h22"/>
+        <circle cx="132" cy="92" r="10"/>
+        <path d="M94 92 h26 M132 104 v18"/>
+      </g>
+      <circle cx="132" cy="92" r="3" fill="${p.destaque.claro}">
+        <animate attributeName="opacity" values="1;0.3;1" dur="2.4s" repeatCount="indefinite"/>
+      </circle>`),
+  },
+  {
+    id: 'ban_real',
+    categoria: 'banner',
+    nome: 'Estandarte Real',
+    descricao: 'Púrpura, ouro e a certeza de quem lidera o ranking.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    usaCores: [],
+    render: (_p, u) => estandarte('#2a1440', '#e8b64c', u, 'brl', `
+      <path d="M104 44 l 6 -12 l 10 10 l 10 -10 l 6 12 l -3 12 l -26 0 z" fill="#e8b64c"/>
+      <circle cx="120" cy="80" r="3" fill="${alfa('#e8b64c', 0.9)}"/>
+      <path d="M96 108 l 24 14 l 24 -14" fill="none" stroke="${alfa('#e8b64c', 0.55)}" stroke-width="3"/>
+      <path d="M96 130 l 24 14 l 24 -14" fill="none" stroke="${alfa('#e8b64c', 0.3)}" stroke-width="3"/>`),
+  },
 ];

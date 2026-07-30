@@ -34,6 +34,10 @@ export const ROUPAS: ParteDef[] = [
       <path d="M98 184 c 8 12 36 12 44 0 c 0 10 -8 16 -22 16 s -22 -6 -22 -16 z" fill="${p.roupa.profundo}"/>
       ${SOMBRA_PESCOCO}
       <path d="M52 226 c 10 -18 30 -28 48 -32" stroke="${alfa('#ffffff', 0.14)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+    renderCorpo: (_p, _u) => `
+      <path d="M104 108 q 16 10 32 0 l -4 8 q -12 8 -24 0 z" fill="${alfa('#000000', 0.22)}"/>
+      <path d="M96 196 h20 v2 h-20 z" fill="${alfa('#000000', 0.18)}"/>
+    `,
   },
   {
     id: 'rou_regata',
@@ -49,6 +53,11 @@ export const ROUPAS: ParteDef[] = [
       <path d="M204 240 v-12 c0 -26 -32 -44 -66 -46 l 22 20 v 38 z" fill="${p.pele.escuro}"/>
       <path d="M80 202 l 22 -20 c 4 10 32 10 36 0 l 22 20 v 38 h -80 z" fill="url(#${u}rou)"/>
       ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <path d="M86 108 l 18 0 l -8 26 q -8 -4 -12 -12 z" fill="${p.pele.base}"/>
+      <path d="M154 108 l -18 0 l 8 26 q 8 -4 12 -12 z" fill="${p.pele.base}"/>
+      <path d="M104 108 q 16 12 32 0 l -3 10 q -13 9 -26 0 z" fill="${alfa('#000000', 0.24)}"/>
+    `,
   },
   {
     id: 'rou_social',
@@ -67,6 +76,13 @@ export const ROUPAS: ParteDef[] = [
       <path d="M142 184 l -22 14 l 14 10 l 12 -16 z" fill="${p.roupa.claro}"/>
       <circle cx="120" cy="216" r="1.8" fill="${p.roupa.profundo}"/>
       <circle cx="120" cy="230" r="1.8" fill="${p.roupa.profundo}"/>`,
+    renderCorpo: (_p, _u) => `
+      <path d="M104 108 l 16 14 l 16 -14 l 6 6 l -22 18 l -22 -18 z" fill="#f2f4fa"/>
+      <path d="M120 140 v 70" stroke="${alfa('#000000', 0.25)}" stroke-width="2"/>
+      <circle cx="120" cy="152" r="1.8" fill="${alfa('#000000', 0.4)}"/>
+      <circle cx="120" cy="170" r="1.8" fill="${alfa('#000000', 0.4)}"/>
+      <circle cx="120" cy="188" r="1.8" fill="${alfa('#000000', 0.4)}"/>
+    `,
   },
   {
     id: 'rou_hoodie',
@@ -88,6 +104,13 @@ export const ROUPAS: ParteDef[] = [
       <circle cx="106" cy="230" r="2.6" fill="${p.destaque.claro}"/>
       <circle cx="134" cy="230" r="2.6" fill="${p.destaque.claro}"/>
       <path d="M84 240 v-20 m 72 20 v-20" stroke="${alfa('#000000', 0.2)}" stroke-width="3"/>`,
+    renderCorpo: (p, _u) => `
+      <path d="M98 106 q 22 20 44 0 l 4 10 q -26 20 -52 0 z" fill="${p.roupa.profundo}"/>
+      <path d="M112 126 l -4 30 M128 126 l 4 30" stroke="#f2f4fa" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="108" cy="158" r="2.4" fill="#f2f4fa"/>
+      <circle cx="132" cy="158" r="2.4" fill="#f2f4fa"/>
+      <path d="M96 176 h48 v26 h-48 z" fill="${alfa('#000000', 0.16)}" rx="6"/>
+    `,
   },
   {
     id: 'rou_jaqueta',
@@ -106,6 +129,13 @@ export const ROUPAS: ParteDef[] = [
       <path d="M120 198 v 42" stroke="${p.roupa.profundo}" stroke-width="6"/>
       <path d="M120 198 v 42" stroke="${alfa('#c9d4e8', 0.9)}" stroke-width="2" stroke-dasharray="5 4"/>
       <path d="M94 186 c 8 12 44 12 52 0 l 6 8 c -10 12 -54 12 -64 0 z" fill="${p.roupa.profundo}"/>`,
+    renderCorpo: (p, _u) => `
+      <path d="M120 110 v 100" stroke="${p.roupa.profundo}" stroke-width="6"/>
+      <path d="M120 110 v 100" stroke="${alfa('#ffffff', 0.35)}" stroke-width="1.6"/>
+      <path d="M104 108 l 14 18 l -12 8 z" fill="${p.roupa.profundo}"/>
+      <path d="M136 108 l -14 18 l 12 8 z" fill="${p.roupa.profundo}"/>
+      <path d="M92 206 h56 v6 h-56 z" fill="${p.roupa.profundo}"/>
+    `,
   },
   {
     id: 'rou_gamer',
@@ -123,6 +153,11 @@ export const ROUPAS: ParteDef[] = [
       <path d="M196 222 l -40 -34 l -6 8 l 44 34 z" fill="${alfa(p.destaque.base, 0.85)}"/>
       <path d="M127 202 l -17 19 h 9 l -6 17 l 18 -21 h -9 z" fill="${p.destaque.claro}" stroke="${p.destaque.profundo}" stroke-width="1.4" stroke-linejoin="round"/>
       <path d="M98 184 c 10 10 34 10 44 0 c 2 6 -8 12 -22 12 s -24 -6 -22 -12 z" fill="${p.roupa.profundo}"/>`,
+    renderCorpo: (p, _u) => `
+      <path d="M116 132 l 12 0 l -8 14 l 10 0 l -18 26 l 5 -18 l -9 0 z" fill="${p.destaque.claro}"/>
+      <path d="M90 112 v 96" stroke="${p.destaque.base}" stroke-width="3"/>
+      <path d="M150 112 v 96" stroke="${p.destaque.base}" stroke-width="3"/>
+    `,
   },
   {
     id: 'rou_terno',
@@ -144,6 +179,12 @@ export const ROUPAS: ParteDef[] = [
       <path d="M143 186 c -5 7 -13 13 -22 16" stroke="${alfa('#ffffff', 0.14)}" stroke-width="2" fill="none"/>
       ${SOMBRA_PESCOCO}
       <rect x="58" y="216" width="12" height="5" rx="2" fill="${alfa('#ffffff', 0.3)}" transform="rotate(-22 64 218)"/>`,
+    renderCorpo: (p, _u) => `
+      <path d="M104 108 l 16 22 l 16 -22 l 8 10 l -24 34 l -24 -34 z" fill="#f2f4fa"/>
+      <path d="M116 116 l 4 6 l 4 -6 l 4 6 l -8 44 l -8 -44 z" fill="${p.destaque.base}"/>
+      <path d="M104 108 l -8 12 l 14 22 l 10 -12 z" fill="${p.roupa.profundo}"/>
+      <path d="M136 108 l 8 12 l -14 22 l -10 -12 z" fill="${p.roupa.profundo}"/>
+    `,
   },
   {
     id: 'rou_kimono',
@@ -163,6 +204,12 @@ export const ROUPAS: ParteDef[] = [
       <path d="M100 188 l 20 26 l 20 -26" stroke="${p.destaque.base}" stroke-width="2.4" fill="none"/>
       <rect x="86" y="226" width="68" height="12" fill="${p.destaque.base}"/>
       <rect x="112" y="224" width="16" height="16" rx="2" fill="${p.destaque.escuro}"/>`,
+    renderCorpo: (p, _u) => `
+      <path d="M104 108 l 34 66 l 0 34 l -14 0 z" fill="${alfa('#000000', 0.18)}"/>
+      <path d="M136 108 l -34 66 l 0 8 l 40 -60 z" fill="${alfa('#ffffff', 0.28)}"/>
+      <path d="M90 178 h60 v14 h-60 z" fill="${p.destaque.profundo}"/>
+      <path d="M90 181 h60 v3 h-60 z" fill="${alfa('#ffffff', 0.25)}"/>
+    `,
   },
   {
     id: 'rou_astronauta',
@@ -193,6 +240,12 @@ export const ROUPAS: ParteDef[] = [
       <rect x="108" y="219" width="14" height="4" rx="2" fill="${alfa('#ffffff', 0.4)}"/>
       <path d="M52 226 c 8 -16 24 -26 44 -32" stroke="${alfa('#ffffff', 0.4)}" stroke-width="4" stroke-linecap="round" fill="none"/>
       ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <ellipse cx="120" cy="122" rx="22" ry="9" fill="none" stroke="${p.destaque.base}" stroke-width="4"/>
+      <rect x="104" y="140" width="14" height="10" rx="2" fill="${p.destaque.base}"/>
+      <path d="M138 138 q 12 8 8 26" fill="none" stroke="${alfa('#000000', 0.3)}" stroke-width="4" stroke-linecap="round"/>
+      <path d="M96 168 h48 v6 h-48 z" fill="${alfa('#000000', 0.2)}"/>
+    `,
   },
   {
     id: 'rou_moletom_dshow',
@@ -210,6 +263,13 @@ export const ROUPAS: ParteDef[] = [
       <circle cx="120" cy="222" r="15" fill="none" stroke="${p.destaque.base}" stroke-width="3"/>
       <path d="M114 214 v 16 c 8 2 14 -2 14 -8 s -6 -10 -14 -8 z" fill="${p.destaque.base}"/>
       <path d="M64 234 l 20 -10 m 92 10 l -20 -10" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="3" stroke-linecap="round"/>`,
+    renderCorpo: (p, _u) => `
+      <path d="M112 124 l -4 26 M128 124 l 4 26" stroke="#f2f4fa" stroke-width="3" stroke-linecap="round"/>
+      <rect x="110" y="150" width="20" height="20" rx="4" fill="${p.destaque.base}">
+        <animate attributeName="opacity" values="1;0.55;1" dur="2.8s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="115" y="155" width="10" height="10" rx="2" fill="#0a0e18"/>
+    `,
   },
   {
     id: 'rou_armadura',
@@ -240,5 +300,14 @@ export const ROUPAS: ParteDef[] = [
       <circle cx="120" cy="216" r="15" fill="none" stroke="${alfa(p.destaque.base, 0.6)}" stroke-width="2"/>
       <path d="M104 240 l 6 -14 m 26 14 l -6 -14" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="2"/>
       ${SOMBRA_PESCOCO}`,
+    renderCorpo: (p, _u) => `
+      <circle cx="120" cy="150" r="13" fill="${p.destaque.profundo}" stroke="${p.destaque.claro}" stroke-width="3"/>
+      <circle cx="120" cy="150" r="6" fill="${p.destaque.claro}">
+        <animate attributeName="opacity" values="1;0.45;1" dur="2.2s" repeatCount="indefinite"/>
+      </circle>
+      <path d="M92 128 l 16 8 l 0 44 l -16 -6 z" fill="${alfa('#ffffff', 0.14)}"/>
+      <path d="M148 128 l -16 8 l 0 44 l 16 -6 z" fill="${alfa('#000000', 0.2)}"/>
+      <path d="M92 196 h56 v6 h-56 z" fill="${p.destaque.base}"/>
+    `,
   },
 ];

@@ -119,4 +119,72 @@ export const AURAS: ParteDef[] = [
         </circle>
       </g>`,
   },
+  {
+    id: 'aur_orbital',
+    categoria: 'aura',
+    nome: 'Anel Orbital',
+    descricao: 'Um anel fino e constante, como um satélite fiel.',
+    raridade: 'incomum',
+    tema: 'espaço',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <g id="${u}ao" transform="rotate(-8 120 132)">
+        <ellipse cx="120" cy="132" rx="98" ry="26" fill="none"
+          stroke="${alfa(p.destaque.base, 0.45)}" stroke-width="2.4"/>
+      </g>
+      <circle cx="24" cy="120" r="4" fill="${p.destaque.claro}">
+        <animate attributeName="opacity" values="1;0.4;1" dur="2.6s" repeatCount="indefinite"/>
+      </circle>`,
+  },
+  {
+    id: 'aur_gelo',
+    categoria: 'aura',
+    nome: 'Aura Glacial',
+    descricao: 'Névoa fria e cristais suspensos — calma absoluta.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    usaCores: ['destaque'],
+    render: (_p, u) => `
+      <defs>
+        <radialGradient id="${u}agl" cx="0.5" cy="0.55" r="0.52">
+          <stop offset="0.5" stop-color="${alfa('#bfe8ff', 0)}"/>
+          <stop offset="0.85" stop-color="${alfa('#bfe8ff', 0.3)}"/>
+          <stop offset="1" stop-color="${alfa('#bfe8ff', 0)}"/>
+        </radialGradient>
+      </defs>
+      <circle cx="120" cy="128" r="100" fill="url(#${u}agl)"/>
+      <g fill="${alfa('#e6f6ff', 0.9)}">
+        <path d="M58 92 l 3 6 l -3 6 l -3 -6 Z">
+          <animate attributeName="opacity" values="0.9;0.3;0.9" dur="3.4s" repeatCount="indefinite"/>
+        </path>
+        <path d="M186 110 l 2.6 5 l -2.6 5 l -2.6 -5 Z">
+          <animate attributeName="opacity" values="0.4;1;0.4" dur="2.8s" repeatCount="indefinite"/>
+        </path>
+        <path d="M70 176 l 2.4 4.6 l -2.4 4.6 l -2.4 -4.6 Z">
+          <animate attributeName="opacity" values="0.7;0.2;0.7" dur="3.9s" repeatCount="indefinite"/>
+        </path>
+      </g>`,
+  },
+  {
+    id: 'aur_fenix',
+    categoria: 'aura',
+    nome: 'Aura de Fênix',
+    descricao: 'Labaredas orbitando devagar — renasce a cada trimestre.',
+    raridade: 'mitico',
+    tema: 'fantasia',
+    usaCores: ['destaque'],
+    render: (_p, u) => `
+      <g id="${u}afx">
+        <g>
+          <path d="M120 22 q 8 12 0 24 q -8 -12 0 -24 z" fill="${alfa('#ffb347', 0.85)}"/>
+          <path d="M214 128 q -12 8 -24 0 q 12 -8 24 0 z" fill="${alfa('#ff7847', 0.8)}"/>
+          <path d="M120 234 q -8 -12 0 -24 q 8 12 0 24 z" fill="${alfa('#ffb347', 0.75)}"/>
+          <path d="M26 128 q 12 -8 24 0 q -12 8 -24 0 z" fill="${alfa('#ff7847', 0.85)}"/>
+          <animateTransform attributeName="transform" type="rotate" from="0 120 128" to="360 120 128" dur="12s" repeatCount="indefinite"/>
+        </g>
+        <circle cx="120" cy="128" r="92" fill="none" stroke="${alfa('#ff9347', 0.3)}" stroke-width="8">
+          <animate attributeName="opacity" values="0.5;1;0.5" dur="2.2s" repeatCount="indefinite"/>
+        </circle>
+      </g>`,
+  },
 ];

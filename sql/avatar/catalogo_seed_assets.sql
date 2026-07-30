@@ -1512,6 +1512,51 @@ INSERT INTO avatar_assets
    lore, asset_type, status, supported_renderers, default_renderer,
    is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
    created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'aur_orbital', 'Anel Orbital', 'Um anel fino e constante, como um satélite fiel.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 5,
+  'espaço', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'aur_gelo', 'Aura Glacial', 'Névoa fria e cristais suspensos — calma absoluta.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 6,
+  'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='aura'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='mitico'), 2,
+  'aur_fenix', 'Aura de Fênix', 'Labaredas orbitando devagar — renasce a cada trimestre.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 7,
+  'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
   'ban_executivo', 'Estandarte Executivo', 'Painel sóbrio com friso dourado — sala de reunião vitalícia.', NULL,
   'parte2d', 'published', '2d', '2d',
@@ -1587,6 +1632,51 @@ INSERT INTO avatar_assets
    lore, asset_type, status, supported_renderers, default_renderer,
    is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
    created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'ban_dojo', 'Estandarte do Dojo', 'Seda vermelha e o círculo do treino diário.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 5,
+  'oriental', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'ban_lab', 'Quadro do Laboratório', 'Fórmulas de quem testa antes de afirmar.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 6,
+  'tecnologia', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='banner'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
+  'ban_real', 'Estandarte Real', 'Púrpura, ouro e a certeza de quem lidera o ranking.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 7,
+  'fantasia', JSON_OBJECT('usaCores', '[]',
+    'piscar', TRUE), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='exclusivo'), 2,
   'emb_dshow', 'Emblema Dshow', 'O pixel fundador, preso ao peito de quem é da casa.', NULL,
   'parte2d', 'published', '2d', '2d',
@@ -1652,6 +1742,51 @@ VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FRO
   'parte2d', 'published', '2d', '2d',
   0, 1, 4,
   'executivo', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'emb_raio', 'Pino Relâmpago', 'Energia de sobra para o sprint que vier.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 5,
+  'gamer', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'emb_alvo', 'Alvo Certeiro', 'Três círculos. Um destino: o centro.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 6,
+  'executivo', JSON_OBJECT('usaCores', '["destaque"]',
+    'piscar', TRUE), NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
+  lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
+  tags = VALUES(tags), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, short_description,
+   lore, asset_type, status, supported_renderers, default_renderer,
+   is_exclusive, is_randomizable, sort_order, tags, metadata, published_at,
+   created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
+  'emb_coroa', 'Coroa de Bolso', 'Realeza discreta, presa à lapela.', NULL,
+  'parte2d', 'published', '2d', '2d',
+  0, 1, 7,
+  'fantasia', JSON_OBJECT('usaCores', '[]',
     'piscar', TRUE), NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), short_description = VALUES(short_description),
   lore = VALUES(lore), rarity_id = VALUES(rarity_id), sort_order = VALUES(sort_order),
@@ -1825,6 +1960,50 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='titulo'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='exclusivo'), 2,
   'tit_lenda_dshow', 'Lenda Dshow', 'O nome que a casa conta para os novatos.', 'titulo', 'published',
   '2d,3d', '2d', 1, 0, 7, 'titulo',
+  NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), lore = VALUES(lore),
+  rarity_id = VALUES(rarity_id), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, lore,
+   asset_type, status, supported_renderers, default_renderer, is_exclusive,
+   is_randomizable, sort_order, tags, published_at, created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='titulo'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='comum'), 2,
+  'tit_novato_promissor', 'Novato Promissor', 'Chegou ontem. Já entregou hoje.', 'titulo', 'published',
+  '2d,3d', '2d', 0, 0, 8, 'titulo',
+  NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), lore = VALUES(lore),
+  rarity_id = VALUES(rarity_id), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, lore,
+   asset_type, status, supported_renderers, default_renderer, is_exclusive,
+   is_randomizable, sort_order, tags, published_at, created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='titulo'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 2,
+  'tit_guardiao_da_base', 'Guardião da Base', 'Nada entra, nada cai, nada passa.', 'titulo', 'published',
+  '2d,3d', '2d', 0, 0, 9, 'titulo',
+  NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), lore = VALUES(lore),
+  rarity_id = VALUES(rarity_id), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, lore,
+   asset_type, status, supported_renderers, default_renderer, is_exclusive,
+   is_randomizable, sort_order, tags, published_at, created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='titulo'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='raro'), 2,
+  'tit_maquina_de_meta', 'Máquina de Meta', 'Bateu. Rebateu. Pediu outra.', 'titulo', 'published',
+  '2d,3d', '2d', 0, 0, 10, 'titulo',
+  NOW(), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), lore = VALUES(lore),
+  rarity_id = VALUES(rarity_id), updated_at = NOW();
+
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, license_id, `key`, name, lore,
+   asset_type, status, supported_renderers, default_renderer, is_exclusive,
+   is_randomizable, sort_order, tags, published_at, created_at, updated_at)
+VALUES ((SELECT id FROM avatar_categories WHERE `key`='titulo'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='epico'), 2,
+  'tit_visionario', 'Visionário', 'Enxerga o Q4 em pleno janeiro.', 'titulo', 'published',
+  '2d,3d', '2d', 0, 0, 11, 'titulo',
   NOW(), NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), lore = VALUES(lore),
   rarity_id = VALUES(rarity_id), updated_at = NOW();

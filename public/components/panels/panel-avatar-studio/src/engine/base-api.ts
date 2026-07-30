@@ -20,6 +20,13 @@ export interface ParteDef extends ItemCatalogo {
    * quando ¾/lateral/poder existirem, o resolvedor escolhe pela pose pedida.
    */
   variantes?: Partial<Record<PoseId, ParteRender>>;
+  /**
+   * Sobreposição no CORPO INTEIRO (240×400): detalhes da peça desenhados
+   * sobre o scaffold do torso (gola, gravata, zíper, obi, núcleo…). Sem
+   * isto a roupa só muda a COR do corpo — feedback do Jhony na validação.
+   * Região útil do torso: x 86–154, y 108–218 (braços são grupos à parte).
+   */
+  renderCorpo?: ParteRender;
 }
 
 // ── Geometria compartilhada (todas as partes se ancoram aqui) ───────

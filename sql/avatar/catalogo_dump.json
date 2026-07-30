@@ -499,6 +499,21 @@
   "raridade": "exclusivo",
   "nome": "Aura LED Dshow"
  },
+ "aur_orbital": {
+  "categoria": "aura",
+  "raridade": "incomum",
+  "nome": "Anel Orbital"
+ },
+ "aur_gelo": {
+  "categoria": "aura",
+  "raridade": "raro",
+  "nome": "Aura Glacial"
+ },
+ "aur_fenix": {
+  "categoria": "aura",
+  "raridade": "mitico",
+  "nome": "Aura de Fênix"
+ },
  "ban_executivo": {
   "categoria": "banner",
   "raridade": "raro",
@@ -524,6 +539,21 @@
   "raridade": "exclusivo",
   "nome": "Painel LED Dshow"
  },
+ "ban_dojo": {
+  "categoria": "banner",
+  "raridade": "raro",
+  "nome": "Estandarte do Dojo"
+ },
+ "ban_lab": {
+  "categoria": "banner",
+  "raridade": "incomum",
+  "nome": "Quadro do Laboratório"
+ },
+ "ban_real": {
+  "categoria": "banner",
+  "raridade": "lendario",
+  "nome": "Estandarte Real"
+ },
  "emb_dshow": {
   "categoria": "emblema",
   "raridade": "exclusivo",
@@ -548,6 +578,21 @@
   "categoria": "emblema",
   "raridade": "lendario",
   "nome": "Broche Diamond"
+ },
+ "emb_raio": {
+  "categoria": "emblema",
+  "raridade": "incomum",
+  "nome": "Pino Relâmpago"
+ },
+ "emb_alvo": {
+  "categoria": "emblema",
+  "raridade": "raro",
+  "nome": "Alvo Certeiro"
+ },
+ "emb_coroa": {
+  "categoria": "emblema",
+  "raridade": "lendario",
+  "nome": "Coroa de Bolso"
  },
  "tit_estrategista": {
   "categoria": "titulo",
@@ -588,6 +633,26 @@
   "categoria": "titulo",
   "raridade": "exclusivo",
   "nome": "Lenda Dshow"
+ },
+ "tit_novato_promissor": {
+  "categoria": "titulo",
+  "raridade": "comum",
+  "nome": "Novato Promissor"
+ },
+ "tit_guardiao_da_base": {
+  "categoria": "titulo",
+  "raridade": "incomum",
+  "nome": "Guardião da Base"
+ },
+ "tit_maquina_de_meta": {
+  "categoria": "titulo",
+  "raridade": "raro",
+  "nome": "Máquina de Meta"
+ },
+ "tit_visionario": {
+  "categoria": "titulo",
+  "raridade": "epico",
+  "nome": "Visionário"
  },
  "arq_executivo": {
   "categoria": "arquetipo",
