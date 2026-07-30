@@ -245,4 +245,182 @@ export const EFEITOS: ParteDef[] = [
       ${faisca(66, 222, 5, '2.5', '1.9')}`;
     },
   },
+  // ── 4.6 F2 · Onda 3 (poderes) — 8 efeitos novos ───────────────────
+  {
+    id: 'efe_neve',
+    categoria: 'efeito',
+    nome: 'Nevasca',
+    descricao: 'Flocos caindo devagar — inverno particular.',
+    raridade: 'raro',
+    tema: 'clima',
+    atras: true,
+    render: () => {
+      let flocos = '';
+      for (let i = 0; i < 14; i++) {
+        const x = ((i * 67) % 232) + 4;
+        const r = 1.4 + (i % 3);
+        const dur = (4 + (i % 5)).toFixed(0);
+        const atraso = ((i * 11) % 30) / 10;
+        flocos += `<circle cx="${x}" cy="-8" r="${r}" fill="#eef6ff" opacity="0.85">
+          <animateTransform attributeName="transform" type="translate" values="0 0;${(i % 2 ? 10 : -10)} 256" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite"/>
+        </circle>`;
+      }
+      return flocos;
+    },
+  },
+  {
+    id: 'efe_folhas',
+    categoria: 'efeito',
+    nome: 'Folhas ao Vento',
+    descricao: 'Outono constante, prazos também.',
+    raridade: 'incomum',
+    tema: 'natureza',
+    atras: true,
+    render: () => {
+      let folhas = '';
+      const cores = ['#d98a3a', '#b0642a', '#e8b64c'];
+      for (let i = 0; i < 8; i++) {
+        const y = ((i * 53) % 200) + 16;
+        const dur = (5 + (i % 4)).toFixed(0);
+        const atraso = ((i * 13) % 40) / 10;
+        folhas += `<ellipse cx="-10" cy="${y}" rx="5" ry="2.6" fill="${cores[i % 3]}" opacity="0.8" transform="rotate(30)">
+          <animateTransform attributeName="transform" type="translate" values="0 0;270 ${(i % 2 ? 30 : -20)}" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite"/>
+        </ellipse>`;
+      }
+      return folhas;
+    },
+  },
+  {
+    id: 'efe_borboletas',
+    categoria: 'efeito',
+    nome: 'Borboletas',
+    descricao: 'Um jardim decidiu te acompanhar.',
+    raridade: 'raro',
+    tema: 'natureza',
+    usaCores: ['destaque'],
+    render: (p) => {
+      const borboleta = (x: number, y: number, esc: number, dur: string) => `
+        <g transform="translate(${x} ${y}) scale(${esc})">
+          <ellipse cx="-4" cy="0" rx="4.5" ry="3" fill="${p.destaque.base}" opacity="0.9">
+            <animateTransform attributeName="transform" type="scale" values="1 1;0.35 1;1 1" dur="${dur}s" repeatCount="indefinite"/>
+          </ellipse>
+          <ellipse cx="4" cy="0" rx="4.5" ry="3" fill="${p.destaque.claro}" opacity="0.9">
+            <animateTransform attributeName="transform" type="scale" values="0.35 1;1 1;0.35 1" dur="${dur}s" repeatCount="indefinite"/>
+          </ellipse>
+          <rect x="-0.8" y="-3" width="1.6" height="6" rx="0.8" fill="#3a2c20"/>
+        </g>`;
+      return `
+      ${borboleta(38, 70, 1, '0.7')}
+      ${borboleta(206, 110, 0.8, '0.9')}
+      ${borboleta(52, 196, 0.7, '0.8')}
+      ${borboleta(196, 208, 1.1, '0.75')}`;
+    },
+  },
+  {
+    id: 'efe_tempestade',
+    categoria: 'efeito',
+    nome: 'Tempestade',
+    descricao: 'Relâmpagos cortando o céu atrás de você.',
+    raridade: 'epico',
+    tema: 'clima',
+    atras: true,
+    render: () => `
+      <path d="M52 0 l -10 42 l 14 -6 l -12 40" stroke="#cfe0ff" stroke-width="3" fill="none" stroke-linecap="round" opacity="0">
+        <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.62;0.66;0.72;1" dur="3.4s" repeatCount="indefinite" calcMode="discrete"/>
+      </path>
+      <path d="M196 0 l 8 36 l -13 -4 l 10 44" stroke="#e8f0ff" stroke-width="3.4" fill="none" stroke-linecap="round" opacity="0">
+        <animate attributeName="opacity" values="0;1;0;0;0" keyTimes="0;0.08;0.14;0.6;1" dur="4.1s" repeatCount="indefinite" calcMode="discrete"/>
+      </path>
+      <rect width="240" height="240" fill="#cfe0ff" opacity="0">
+        <animate attributeName="opacity" values="0;0.16;0;0;0.1;0" keyTimes="0;0.07;0.12;0.6;0.65;1" dur="4.1s" repeatCount="indefinite" calcMode="discrete"/>
+      </rect>`,
+  },
+  {
+    id: 'efe_bolhas',
+    categoria: 'efeito',
+    nome: 'Bolhas',
+    descricao: 'Leveza subindo em câmera lenta.',
+    raridade: 'comum',
+    tema: 'casual',
+    atras: true,
+    usaCores: ['destaque'],
+    render: (p) => {
+      let bolhas = '';
+      for (let i = 0; i < 9; i++) {
+        const x = ((i * 79) % 224) + 8;
+        const r = 3 + (i % 4) * 2;
+        const dur = (5 + (i % 4)).toFixed(0);
+        const atraso = ((i * 17) % 40) / 10;
+        bolhas += `<circle cx="${x}" cy="252" r="${r}" fill="none" stroke="${alfa(p.destaque.claro, 0.5)}" stroke-width="1.4">
+          <animateTransform attributeName="transform" type="translate" values="0 0;${(i % 2 ? 8 : -8)} -270" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite"/>
+        </circle>`;
+      }
+      return bolhas;
+    },
+  },
+  {
+    id: 'efe_sakura',
+    categoria: 'efeito',
+    nome: 'Pétalas de Sakura',
+    descricao: 'O dojo floresce na sua passagem.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    atras: true,
+    render: () => {
+      let petalas = '';
+      for (let i = 0; i < 10; i++) {
+        const x = ((i * 71) % 228) + 6;
+        const dur = (4.5 + (i % 4) * 0.8).toFixed(1);
+        const atraso = ((i * 9) % 36) / 10;
+        petalas += `<path d="M${x} -6 q 3 -4 6 0 q -3 5 -6 0 z" fill="#ffb7d0" opacity="0.9">
+          <animateTransform attributeName="transform" type="translate" values="0 0;${(i % 2 ? 22 : -16)} 260" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite"/>
+        </path>`;
+      }
+      return petalas;
+    },
+  },
+  {
+    id: 'efe_moedas',
+    categoria: 'efeito',
+    nome: 'Chuva de Moedas',
+    descricao: 'O trimestre fechou verde — e transbordou.',
+    raridade: 'lendario',
+    tema: 'executivo',
+    render: () => {
+      let moedas = '';
+      for (let i = 0; i < 8; i++) {
+        const x = i < 4 ? 14 + i * 14 : 176 + (i - 4) * 14;
+        const dur = (2.2 + (i % 4) * 0.5).toFixed(1);
+        const atraso = ((i * 13) % 24) / 10;
+        moedas += `<g opacity="0.95">
+          <circle cx="${x}" cy="-10" r="6" fill="#e8b64c" stroke="#b07d1e" stroke-width="1.6"/>
+          <text x="${x}" y="-6.6" text-anchor="middle" font-family="system-ui, sans-serif" font-size="8" font-weight="800" fill="#8a5f10">$</text>
+          <animateTransform attributeName="transform" type="translate" values="0 0;0 262" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite"/>
+        </g>`;
+      }
+      return moedas;
+    },
+  },
+  {
+    id: 'efe_holo_interf',
+    categoria: 'efeito',
+    nome: 'Interferência Holo',
+    descricao: 'O sinal falha — a lenda, nunca.',
+    raridade: 'mitico',
+    tema: 'cyberpunk',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <rect x="0" y="0" width="240" height="3" fill="${alfa(p.destaque.claro, 0.55)}">
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 240;0 0" dur="4.6s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="0" y="60" width="240" height="1.4" fill="${alfa('#ffffff', 0.35)}">
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 160;0 0" dur="3.1s" repeatCount="indefinite"/>
+      </rect>
+      <g opacity="0">
+        <rect x="0" y="84" width="26" height="4" fill="${p.destaque.base}"/>
+        <rect x="214" y="150" width="26" height="4" fill="${p.destaque.base}"/>
+        <rect x="0" y="200" width="18" height="3" fill="#ffffff"/>
+        <animate attributeName="opacity" values="0;1;0;0;1;0" keyTimes="0;0.05;0.1;0.55;0.6;1" dur="2.8s" repeatCount="indefinite" calcMode="discrete"/>
+      </g>`,
+  },
 ];

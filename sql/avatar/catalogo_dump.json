@@ -809,6 +809,46 @@
   "raridade": "lendario",
   "nome": "Faíscas Lendárias"
  },
+ "efe_neve": {
+  "categoria": "efeito",
+  "raridade": "raro",
+  "nome": "Nevasca"
+ },
+ "efe_folhas": {
+  "categoria": "efeito",
+  "raridade": "incomum",
+  "nome": "Folhas ao Vento"
+ },
+ "efe_borboletas": {
+  "categoria": "efeito",
+  "raridade": "raro",
+  "nome": "Borboletas"
+ },
+ "efe_tempestade": {
+  "categoria": "efeito",
+  "raridade": "epico",
+  "nome": "Tempestade"
+ },
+ "efe_bolhas": {
+  "categoria": "efeito",
+  "raridade": "comum",
+  "nome": "Bolhas"
+ },
+ "efe_sakura": {
+  "categoria": "efeito",
+  "raridade": "epico",
+  "nome": "Pétalas de Sakura"
+ },
+ "efe_moedas": {
+  "categoria": "efeito",
+  "raridade": "lendario",
+  "nome": "Chuva de Moedas"
+ },
+ "efe_holo_interf": {
+  "categoria": "efeito",
+  "raridade": "mitico",
+  "nome": "Interferência Holo"
+ },
  "aur_neon": {
   "categoria": "aura",
   "raridade": "raro",
@@ -848,6 +888,41 @@
   "categoria": "aura",
   "raridade": "mitico",
   "nome": "Aura de Fênix"
+ },
+ "aur_solar": {
+  "categoria": "aura",
+  "raridade": "raro",
+  "nome": "Aura Solar"
+ },
+ "aur_sombria": {
+  "categoria": "aura",
+  "raridade": "epico",
+  "nome": "Aura Sombria"
+ },
+ "aur_runica": {
+  "categoria": "aura",
+  "raridade": "lendario",
+  "nome": "Aura Rúnica"
+ },
+ "aur_prisma": {
+  "categoria": "aura",
+  "raridade": "epico",
+  "nome": "Aura Prisma"
+ },
+ "aur_vento": {
+  "categoria": "aura",
+  "raridade": "incomum",
+  "nome": "Aura de Vento"
+ },
+ "aur_estelar": {
+  "categoria": "aura",
+  "raridade": "raro",
+  "nome": "Aura Estelar"
+ },
+ "aur_toxica": {
+  "categoria": "aura",
+  "raridade": "raro",
+  "nome": "Aura Tóxica"
  },
  "ban_executivo": {
   "categoria": "banner",
@@ -889,6 +964,41 @@
   "raridade": "lendario",
   "nome": "Estandarte Real"
  },
+ "ban_campeao": {
+  "categoria": "banner",
+  "raridade": "raro",
+  "nome": "Estandarte Campeão"
+ },
+ "ban_corsario": {
+  "categoria": "banner",
+  "raridade": "epico",
+  "nome": "Estandarte Corsário"
+ },
+ "ban_guardiao": {
+  "categoria": "banner",
+  "raridade": "incomum",
+  "nome": "Estandarte Guardião"
+ },
+ "ban_imperial": {
+  "categoria": "banner",
+  "raridade": "lendario",
+  "nome": "Estandarte Imperial"
+ },
+ "ban_neon_tokyo": {
+  "categoria": "banner",
+  "raridade": "epico",
+  "nome": "Estandarte Neon"
+ },
+ "ban_forjado": {
+  "categoria": "banner",
+  "raridade": "raro",
+  "nome": "Estandarte da Forja"
+ },
+ "ban_pixel": {
+  "categoria": "banner",
+  "raridade": "incomum",
+  "nome": "Estandarte Pixel"
+ },
  "emb_dshow": {
   "categoria": "emblema",
   "raridade": "exclusivo",
@@ -928,6 +1038,36 @@
   "categoria": "emblema",
   "raridade": "lendario",
   "nome": "Coroa de Bolso"
+ },
+ "emb_foguete": {
+  "categoria": "emblema",
+  "raridade": "raro",
+  "nome": "Foguete"
+ },
+ "emb_escudo": {
+  "categoria": "emblema",
+  "raridade": "incomum",
+  "nome": "Escudo"
+ },
+ "emb_coracao_pixel": {
+  "categoria": "emblema",
+  "raridade": "raro",
+  "nome": "Coração Pixel"
+ },
+ "emb_infinito": {
+  "categoria": "emblema",
+  "raridade": "epico",
+  "nome": "Infinito"
+ },
+ "emb_engrenagem": {
+  "categoria": "emblema",
+  "raridade": "comum",
+  "nome": "Engrenagem"
+ },
+ "emb_fenix": {
+  "categoria": "emblema",
+  "raridade": "lendario",
+  "nome": "Fênix"
  },
  "tit_estrategista": {
   "categoria": "titulo",
@@ -988,6 +1128,56 @@
   "categoria": "titulo",
   "raridade": "epico",
   "nome": "Visionário"
+ },
+ "tit_arquiteto_de_dados": {
+  "categoria": "titulo",
+  "raridade": "raro",
+  "nome": "Arquiteto de Dados"
+ },
+ "tit_cacador_de_bugs": {
+  "categoria": "titulo",
+  "raridade": "incomum",
+  "nome": "Caçador de Bugs"
+ },
+ "tit_mestre_do_pitch": {
+  "categoria": "titulo",
+  "raridade": "raro",
+  "nome": "Mestre do Pitch"
+ },
+ "tit_senhor_dos_dashboards": {
+  "categoria": "titulo",
+  "raridade": "epico",
+  "nome": "Senhor dos Dashboards"
+ },
+ "tit_alquimista_de_leads": {
+  "categoria": "titulo",
+  "raridade": "epico",
+  "nome": "Alquimista de Leads"
+ },
+ "tit_imperador_do_roi": {
+  "categoria": "titulo",
+  "raridade": "lendario",
+  "nome": "Imperador do ROI"
+ },
+ "tit_guardiao_do_uptime": {
+  "categoria": "titulo",
+  "raridade": "raro",
+  "nome": "Guardião do Uptime"
+ },
+ "tit_domador_de_algoritmos": {
+  "categoria": "titulo",
+  "raridade": "epico",
+  "nome": "Domador de Algoritmos"
+ },
+ "tit_forjado_na_madrugada": {
+  "categoria": "titulo",
+  "raridade": "incomum",
+  "nome": "Forjado na Madrugada"
+ },
+ "tit_oraculo": {
+  "categoria": "titulo",
+  "raridade": "mitico",
+  "nome": "Oráculo"
  },
  "arq_executivo": {
   "categoria": "arquetipo",

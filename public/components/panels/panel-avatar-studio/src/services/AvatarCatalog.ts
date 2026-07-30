@@ -82,6 +82,17 @@ export const TITULOS: Titulo[] = [
   { id: 'tit_guardiao_da_base', nome: 'Guardião da Base', raridade: 'incomum', lore: 'Nada entra, nada cai, nada passa.' },
   { id: 'tit_maquina_de_meta', nome: 'Máquina de Meta', raridade: 'raro', lore: 'Bateu. Rebateu. Pediu outra.' },
   { id: 'tit_visionario', nome: 'Visionário', raridade: 'epico', lore: 'Enxerga o Q4 em pleno janeiro.' },
+  // 4.6 F2 · Onda 3 — 10 títulos novos (rumo à meta §28: 30)
+  { id: 'tit_arquiteto_de_dados', nome: 'Arquiteto de Dados', raridade: 'raro', lore: 'Cada tabela no lugar, cada índice com propósito.' },
+  { id: 'tit_cacador_de_bugs', nome: 'Caçador de Bugs', raridade: 'incomum', lore: 'O stack trace treme quando ele abre o console.' },
+  { id: 'tit_mestre_do_pitch', nome: 'Mestre do Pitch', raridade: 'raro', lore: 'Três slides. Dois minutos. Um sim.' },
+  { id: 'tit_senhor_dos_dashboards', nome: 'Senhor dos Dashboards', raridade: 'epico', lore: 'Um painel para a todos governar.' },
+  { id: 'tit_alquimista_de_leads', nome: 'Alquimista de Leads', raridade: 'epico', lore: 'Transforma clique frio em contrato assinado.' },
+  { id: 'tit_imperador_do_roi', nome: 'Imperador do ROI', raridade: 'lendario', lore: 'Cada real investido volta fazendo reverência.' },
+  { id: 'tit_guardiao_do_uptime', nome: 'Guardião do Uptime', raridade: 'raro', lore: '99,99% — e o 0,01% foi planejado.' },
+  { id: 'tit_domador_de_algoritmos', nome: 'Domador de Algoritmos', raridade: 'epico', lore: 'O leilão de anúncios obedece ao seu assobio.' },
+  { id: 'tit_forjado_na_madrugada', nome: 'Forjado na Madrugada', raridade: 'incomum', lore: 'O deploy das 3h47 conta a história.' },
+  { id: 'tit_oraculo', nome: 'Oráculo', raridade: 'mitico', lore: 'Não prevê o futuro. Configura ele.' },
 ];
 
 const TITULOS_POR_ID = new Map(TITULOS.map((t) => [t.id, t]));

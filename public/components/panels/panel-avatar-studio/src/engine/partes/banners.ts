@@ -168,4 +168,114 @@ export const BANNERS: ParteDef[] = [
       <path d="M96 108 l 24 14 l 24 -14" fill="none" stroke="${alfa('#e8b64c', 0.55)}" stroke-width="3"/>
       <path d="M96 130 l 24 14 l 24 -14" fill="none" stroke="${alfa('#e8b64c', 0.3)}" stroke-width="3"/>`),
   },
+  // ── 4.6 F2 · Onda 3 — 7 banners novos (meta §28: 15 ✓) ────────────
+  {
+    id: 'ban_campeao',
+    categoria: 'banner',
+    nome: 'Estandarte Campeão',
+    descricao: 'Listras de pódio e o troféu do último split.',
+    raridade: 'raro',
+    tema: 'esportivo',
+    render: (_p, u) => estandarte('#1c2a1e', '#2f4a33', u, 'bca', `
+      <path d="M88 0 v 190 M152 0 v 190" stroke="${alfa('#e8b64c', 0.4)}" stroke-width="4"/>
+      <path d="M108 30 h 24 v 10 a 12 12 0 0 1 -24 0 z" fill="#e8b64c"/>
+      <path d="M104 32 a 6 6 0 0 0 6 8 M136 32 a 6 6 0 0 1 -6 8" stroke="#e8b64c" stroke-width="2.4" fill="none"/>
+      <path d="M116 50 h 8 v 6 h -8 z M112 56 h 16 v 4 h -16 z" fill="#b07d1e"/>
+      <circle cx="120" cy="90" r="2.6" fill="${alfa('#e8b64c', 0.8)}"/>
+      <circle cx="120" cy="110" r="2.6" fill="${alfa('#e8b64c', 0.5)}"/>`),
+  },
+  {
+    id: 'ban_corsario',
+    categoria: 'banner',
+    nome: 'Estandarte Corsário',
+    descricao: 'Bandeira de quem navega fora da rota — e chega primeiro.',
+    raridade: 'epico',
+    tema: 'aventura',
+    render: (_p, u) => estandarte('#14100c', '#3a2c20', u, 'bco', `
+      <circle cx="120" cy="46" r="14" fill="#f4f0e6"/>
+      <circle cx="115" cy="43" r="3" fill="#14100c"/>
+      <circle cx="125" cy="43" r="3" fill="#14100c"/>
+      <path d="M114 52 q 6 4 12 0" stroke="#14100c" stroke-width="2" fill="none"/>
+      <path d="M100 70 l 40 14 M140 70 l -40 14" stroke="#f4f0e6" stroke-width="5" stroke-linecap="round"/>
+      <path d="M92 110 h 56 M100 122 h 40" stroke="${alfa('#f4f0e6', 0.3)}" stroke-width="2"/>`),
+  },
+  {
+    id: 'ban_guardiao',
+    categoria: 'banner',
+    nome: 'Estandarte Guardião',
+    descricao: 'A árvore antiga que protege quem constrói.',
+    raridade: 'incomum',
+    tema: 'natureza',
+    render: (_p, u) => estandarte('#122016', '#274a30', u, 'bgu', `
+      <path d="M120 26 c -18 12 -26 28 -24 44 c 8 -6 16 -8 24 -8 s 16 2 24 8 c 2 -16 -6 -32 -24 -44 z" fill="#3ddc84" opacity="0.85"/>
+      <path d="M117 60 h 6 v 26 h -6 z" fill="#7a4a32"/>
+      <path d="M96 104 q 24 12 48 0 M96 124 q 24 12 48 0" stroke="${alfa('#3ddc84', 0.4)}" stroke-width="2.6" fill="none"/>
+      <circle cx="104" cy="42" r="2" fill="#aef4c4"/>
+      <circle cx="138" cy="50" r="2" fill="#aef4c4"/>`),
+  },
+  {
+    id: 'ban_imperial',
+    categoria: 'banner',
+    nome: 'Estandarte Imperial',
+    descricao: 'Púrpura, ouro e a coroa de quem assina o império.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    render: (_p, u) => estandarte('#2a1040', '#e8b64c', u, 'bre', `
+      <path d="M100 42 l 5 -16 l 9 11 l 6 -15 l 6 15 l 9 -11 l 5 16 c -13 -5 -27 -5 -40 0 z" fill="#e8b64c"/>
+      <path d="M100 42 c 13 -5 27 -5 40 0 l -1 5 c -12 -4 -26 -4 -38 0 z" fill="#b07d1e"/>
+      <circle cx="120" cy="22" r="2.6" fill="#ff5f8f"/>
+      <path d="M94 70 q 26 16 52 0 M94 92 q 26 16 52 0" stroke="${alfa('#e8b64c', 0.45)}" stroke-width="2.6" fill="none"/>
+      <path d="M88 130 l 8 8 l -8 8 M152 130 l -8 8 l 8 8" stroke="${alfa('#e8b64c', 0.6)}" stroke-width="2.4" fill="none"/>`),
+  },
+  {
+    id: 'ban_neon_tokyo',
+    categoria: 'banner',
+    nome: 'Estandarte Neon',
+    descricao: 'Letreiro vertical aceso na rua molhada.',
+    raridade: 'epico',
+    tema: 'cyberpunk',
+    usaCores: ['destaque'],
+    render: (p, u) => estandarte('#0a0d18', alfa(p.destaque.base, 0.8), u, 'bnt', `
+      <g stroke="${p.destaque.claro}" stroke-width="3" fill="none" stroke-linecap="round">
+        <path d="M108 28 h 24 M120 28 v 20 M108 48 h 24"/>
+        <path d="M110 66 h 20 v 16 h -20 z"/>
+        <path d="M108 100 l 12 16 l 12 -16"/>
+        <animate attributeName="opacity" values="1;0.45;1;1;0.6;1" keyTimes="0;0.06;0.12;0.6;0.66;1" dur="3.2s" repeatCount="indefinite" calcMode="discrete"/>
+      </g>
+      <path d="M86 140 v 30 M154 140 v 30" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="2"/>`),
+  },
+  {
+    id: 'ban_forjado',
+    categoria: 'banner',
+    nome: 'Estandarte da Forja',
+    descricao: 'Martelo, bigorna e brasas que não apagam.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    render: (_p, u) => estandarte('#241109', '#7a2408', u, 'bfo', `
+      <path d="M106 34 h 28 v 10 h -28 z" fill="#c4c9d6"/>
+      <path d="M117 44 h 6 v 22 h -6 z" fill="#7a4a32"/>
+      <path d="M102 78 h 36 l -6 10 h -24 z M110 88 h 20 v 6 h -20 z" fill="#5a6274"/>
+      <circle cx="104" cy="112" r="2.4" fill="#ff8a3d"><animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/></circle>
+      <circle cx="132" cy="120" r="2" fill="#ffb54d"><animate attributeName="opacity" values="0.4;1;0.4" dur="2.2s" repeatCount="indefinite"/></circle>
+      <circle cx="118" cy="132" r="1.8" fill="#ff5230"><animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite"/></circle>`),
+  },
+  {
+    id: 'ban_pixel',
+    categoria: 'banner',
+    nome: 'Estandarte Pixel',
+    descricao: 'Herança de 8 bits pendurada com orgulho.',
+    raridade: 'incomum',
+    tema: 'gamer',
+    usaCores: ['destaque'],
+    render: (p, u) => {
+      let px = '';
+      const mapa = [[1, 1], [3, 1], [2, 2], [1, 3], [2, 3], [3, 3], [2, 4], [1, 5], [3, 5]];
+      for (const [cx, cy] of mapa) {
+        px += `<rect x="${96 + cx * 12}" y="${22 + cy * 12}" width="11" height="11" fill="${p.destaque.base}"/>`;
+      }
+      return estandarte('#10141f', '#28324a', u, 'bpx', `
+      ${px}
+      <path d="M86 120 h 68 M86 132 h 68" stroke="${alfa(p.destaque.base, 0.35)}" stroke-width="4" stroke-dasharray="8 6"/>`);
+    },
+  },
 ];
