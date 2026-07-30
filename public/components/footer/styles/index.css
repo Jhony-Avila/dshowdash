@@ -10,3 +10,7 @@
  */
 @import url('./dist/footer-styles.bundle.css');
 @import url('/components/_shared/nav-fx/nav-button-fx.css');
+/* §35 rodapé CONTEXTUAL (decisão #44, Opção C — fase 1 via CSS puro).
+   Importado por ÚLTIMO para vencer o bundle por ordem de cascata.
+   ROLLBACK: remover esta linha. */
+@import url('./footer.contextual.css');
