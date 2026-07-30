@@ -352,3 +352,83 @@ export const PRESETS: Preset[] = [
 export function configDePreset(preset: Preset): AvatarConfig {
   return validarConfig({ formato: 'camadas', versao: VERSAO_CONFIG, ...preset.config });
 }
+
+// ── Coleções curadas (AS3 F2c — briefing 3.0 §8) ────────────────────
+// Conjuntos temáticos com progresso: "usado" = item já equipado alguma vez.
+
+export interface Colecao {
+  id: string;
+  nome: string;
+  descricao: string;
+  raridade: Raridade;
+  itens: string[];
+  /** aplica o conjunto por cima do avatar atual */
+  cores?: Partial<Record<SlotCor, string>>;
+}
+
+export const COLECOES: Colecao[] = [
+  {
+    id: 'col_cyber_nexus',
+    nome: 'Cyber Nexus',
+    descricao: 'O conjunto sintético completo: chassi, óptica, armadura e a chuva de código.',
+    raridade: 'lendario',
+    itens: ['bas_androide', 'olh_led', 'boc_grade', 'rou_armadura', 'fun_circuito', 'mol_tech', 'efe_chuva'],
+    cores: { pele: '#c8d4e8', destaque: '#4cd9e8' },
+  },
+  {
+    id: 'col_executivo',
+    nome: 'Executivo Elite',
+    descricao: 'Alfaiataria, olhar analítico e a moldura de quem assina o trimestre.',
+    raridade: 'epico',
+    itens: ['bas_angular', 'cab_curto', 'olh_serio', 'boc_determinada', 'rou_terno', 'ace_oculos', 'fun_estudio', 'mol_duplo'],
+    cores: { roupa: '#20242e', destaque: '#e8b64c' },
+  },
+  {
+    id: 'col_dojo',
+    nome: 'Caminho do Dojo',
+    descricao: 'Kimono, coque de samurai e o entardecer que forjou a disciplina.',
+    raridade: 'epico',
+    itens: ['cab_coque', 'rou_kimono', 'fun_dojo', 'boc_determinada', 'mol_cristal'],
+    cores: { roupa: '#7a2d3c', destaque: '#ff7a3d' },
+  },
+  {
+    id: 'col_galaxia',
+    nome: 'Galáxia',
+    descricao: 'Traje orbital, olhos estelares e a nebulosa inteira nas suas costas.',
+    raridade: 'lendario',
+    itens: ['rou_astronauta', 'olh_brilho', 'fun_nebulosa', 'efe_particulas', 'mol_neon'],
+    cores: { destaque: '#c99aff' },
+  },
+  {
+    id: 'col_dshow',
+    nome: 'Dshow Original',
+    descricao: 'LED Bot, moletom da casa, o LED Wall e a moldura assinada. 100% Dshow.',
+    raridade: 'exclusivo',
+    itens: ['bas_ledbot', 'rou_moletom_dshow', 'fun_led_wall', 'mol_dshow'],
+    cores: { destaque: '#7c5cff' },
+  },
+];
+
+/** Progresso da coleção dado o conjunto de itens já usados. */
+export function progressoColecao(colecao: Colecao, usados: Set<string>): { usados: number; total: number } {
+  return {
+    usados: colecao.itens.filter((i) => usados.has(i)).length,
+    total: colecao.itens.length,
+  };
+}
+
+/** Aplica a coleção por cima do config atual (itens + cores sugeridas). */
+export function aplicarColecao(base: AvatarConfig, colecao: Colecao): AvatarConfig {
+  const novo: AvatarConfig = {
+    ...base,
+    camadas: { ...base.camadas },
+    cores: { ...base.cores, ...colecao.cores },
+  };
+  for (const id of colecao.itens) {
+    const item = POR_ID.get(id);
+    if (!item) continue;
+    if (item.categoria === 'base') novo.base = id;
+    else novo.camadas[item.categoria as keyof AvatarConfig['camadas']] = id;
+  }
+  return validarConfig(novo);
+}
