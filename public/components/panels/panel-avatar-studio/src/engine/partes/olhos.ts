@@ -121,6 +121,69 @@ export const OLHOS: ParteDef[] = [
       <circle cx="134" cy="107.5" r="1.2" fill="#ffffff" opacity="0.9"/>`,
   },
   {
+    id: 'olh_brincalhao',
+    categoria: 'olhos',
+    nome: 'Piscadela',
+    descricao: 'Um olho no gráfico, outro na sexta-feira.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      ${olhoHumano(100, 108)}
+      <path d="M130 110 q 10 -8 20 0" stroke="#14100c" stroke-width="4" stroke-linecap="round" fill="none"/>
+      ${sobrancelha(100, 91, 2, p.cabelo.escuro)}${sobrancelha(140, 95, 0, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_cansado',
+    categoria: 'olhos',
+    nome: 'Pós-Deploy',
+    descricao: 'Sobreviveu à virada. As olheiras contam a história.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      ${olhoHumano(100, 109)}${olhoHumano(140, 109)}
+      <path d="M90 104 h20 a 10 8 0 0 0 -20 0 z" fill="${alfa(p.pele.escuro, 0.55)}"/>
+      <path d="M130 104 h20 a 10 8 0 0 0 -20 0 z" fill="${alfa(p.pele.escuro, 0.55)}"/>
+      <path d="M92 120 q 8 4 16 0 m 24 0 q 8 4 16 0" stroke="${alfa(p.pele.escuro, 0.5)}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      ${sobrancelha(100, 95, 1, p.cabelo.escuro)}${sobrancelha(140, 95, 1, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_misterioso',
+    categoria: 'olhos',
+    nome: 'Misterioso',
+    descricao: 'Ninguém sabe o que ele planeja. Nem o roadmap.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M66 88 h108 v22 q -54 14 -108 0 z" fill="${alfa('#0c0f1a', 0.62)}"/>
+      <ellipse cx="100" cy="106" rx="6" ry="4.5" fill="${p.destaque.base}">
+        <animate attributeName="opacity" values="1;0.6;1" dur="3s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="140" cy="106" rx="6" ry="4.5" fill="${p.destaque.base}">
+        <animate attributeName="opacity" values="1;0.6;1" dur="3s" repeatCount="indefinite"/>
+      </ellipse>`,
+  },
+  {
+    id: 'olh_vilao',
+    categoria: 'olhos',
+    nome: 'Vilão',
+    descricao: 'Todo herói de meta precisa de um rival à altura.',
+    raridade: 'mitico',
+    tema: 'fantasia',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <path d="M88 104 l 24 4 a 11 8 0 0 1 -22 2 z" fill="#fdfdfa"/>
+      <path d="M152 104 l -24 4 a 11 8 0 0 0 22 2 z" fill="#fdfdfa"/>
+      <circle cx="102" cy="109" r="4.6" fill="#a11a1a"/><circle cx="102" cy="109" r="2" fill="#2a0505"/>
+      <circle cx="138" cy="109" r="4.6" fill="#a11a1a"/><circle cx="138" cy="109" r="2" fill="#2a0505"/>
+      <circle cx="103.5" cy="107.5" r="1.1" fill="#ff8f8f"/>
+      <circle cx="139.5" cy="107.5" r="1.1" fill="#ff8f8f"/>
+      <path d="M86 92 l 26 10" stroke="${p.cabelo.escuro}" stroke-width="4.8" stroke-linecap="round"/>
+      <path d="M154 92 l -26 10" stroke="${p.cabelo.escuro}" stroke-width="4.8" stroke-linecap="round"/>`,
+  },
+  {
     id: 'olh_visor',
     categoria: 'olhos',
     nome: 'Visor Tático',

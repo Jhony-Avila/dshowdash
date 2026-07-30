@@ -12,6 +12,7 @@ import type { ParteDef } from '../engine/base-api';
 import { renderAvatar, renderDataUri, hashConfig } from '../engine/render';
 import type { OpcoesRender } from '../engine/render';
 import { BASES } from '../engine/partes/bases';
+import { ESPECIES } from '../engine/partes/especies';
 import { CABELOS } from '../engine/partes/cabelos';
 import { OLHOS } from '../engine/partes/olhos';
 import { BOCAS } from '../engine/partes/bocas';
@@ -90,12 +91,29 @@ const LORES: Record<string, string> = {
   efe_faiscas: 'Resíduo de troféu recém-polido. Gruda em quem vence com estilo.',
   // exclusivos
   mol_dshow: 'A assinatura da casa. Não se compra, não se pede — se reconhece.',
+  // espécies (F2b)
+  bas_panda: 'Mastiga bambu e backlog na mesma velocidade: devagar e sem errar.',
+  bas_coruja: 'Plantonista noturna oficial. Nenhum log passa despercebido.',
+  bas_raposa: 'Fechou três negociações antes de você abrir o CRM.',
+  bas_lobo: 'O uivo dele é o sino de meta batida.',
+  bas_leao: 'Não disputa território: o território é dele desde o onboarding.',
+  bas_alien: 'Classificou a Terra como "habitável, mas o wi-fi cai". Ficou mesmo assim.',
+  bas_ledbot: 'Primeiro pixel aceso da Dshow. Todo painel que brilha descende dele.',
+  // expressões (F2b)
+  olh_misterioso: 'Os olhos brilham no escuro da sala de reunião. Ninguém pergunta por quê.',
+  olh_vilao: 'Vermelho não é raiva. É foco em modo absoluto.',
+  boc_vilao: 'Sorriu assim uma vez. O concorrente mudou de nicho.',
+  // poderes (F2b)
+  efe_portal: 'Ninguém sabe para onde leva. Ele volta sempre com resultados.',
+  efe_raio: 'A energia estática de quem carrega três sprints no corpo.',
+  efe_glitch: 'Um erro de renderização? Não. Um aviso.',
+  efe_fogo: 'Arde desde o primeiro trimestre. Nunca precisou de gatilho.',
 };
 
 // ── Índices ─────────────────────────────────────────────────────────
 
 export const PARTES: ParteDef[] = [
-  ...BASES, ...CABELOS, ...OLHOS, ...BOCAS, ...ROUPAS,
+  ...BASES, ...ESPECIES, ...CABELOS, ...OLHOS, ...BOCAS, ...ROUPAS,
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
 ].map((x) => ({
   ...x,

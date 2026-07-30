@@ -15,6 +15,9 @@ function defsCabelo(u: string, claro: string, base: string, profundo: string): s
     </linearGradient>`;
 }
 
+/** Cabelos exigem cabeça humanoide (§35) — espécies/robôs têm o próprio topo. */
+const HUMANOIDES = ['bas_classica', 'bas_angular', 'bas_holo'];
+
 const BRILHO = `<path d="M88 66 a 46 40 0 0 1 34 -12" stroke="${alfa('#ffffff', 0.3)}" stroke-width="4" stroke-linecap="round" fill="none"/>`;
 
 export const CABELOS: ParteDef[] = [
@@ -25,6 +28,7 @@ export const CABELOS: ParteDef[] = [
     descricao: 'Corte baixo e alinhado, pronto para a reunião.',
     raridade: 'comum',
     tema: 'executivo',
+    requerBase: HUMANOIDES,
     usaCores: ['cabelo'],
     render: (p, u) => `
       <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
@@ -38,6 +42,7 @@ export const CABELOS: ParteDef[] = [
     descricao: 'Volume para cima com atitude clássica.',
     raridade: 'comum',
     tema: 'clássico',
+    requerBase: HUMANOIDES,
     usaCores: ['cabelo'],
     render: (p, u) => `
       <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
@@ -51,6 +56,7 @@ export const CABELOS: ParteDef[] = [
     descricao: 'Mechas caindo sobre a testa em camadas.',
     raridade: 'comum',
     tema: 'casual',
+    requerBase: HUMANOIDES,
     usaCores: ['cabelo'],
     render: (p, u) => `
       <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
@@ -64,6 +70,7 @@ export const CABELOS: ParteDef[] = [
     descricao: 'Ondas volumosas emoldurando o rosto.',
     raridade: 'incomum',
     tema: 'casual',
+    requerBase: HUMANOIDES,
     usaCores: ['cabelo'],
     render: (p, u) => `
       <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
@@ -79,6 +86,7 @@ export const CABELOS: ParteDef[] = [
     descricao: 'Preso no alto, disciplina e estilo.',
     raridade: 'incomum',
     tema: 'casual',
+    requerBase: HUMANOIDES,
     usaCores: ['cabelo'],
     render: (p, u) => `
       <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
@@ -94,6 +102,7 @@ export const CABELOS: ParteDef[] = [
     descricao: 'Coroa de cachos com presença e volume.',
     raridade: 'incomum',
     tema: 'casual',
+    requerBase: HUMANOIDES,
     usaCores: ['cabelo'],
     render: (p, u) => {
       let cachos = '';
@@ -117,6 +126,7 @@ export const CABELOS: ParteDef[] = [
     descricao: 'Cabelo longo escorrendo pelos ombros.',
     raridade: 'raro',
     tema: 'clássico',
+    requerBase: HUMANOIDES,
     usaCores: ['cabelo'],
     render: (p, u) => `
       <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
@@ -133,6 +143,7 @@ export const CABELOS: ParteDef[] = [
     descricao: 'Crista desafiadora de quem não segue manada.',
     raridade: 'raro',
     tema: 'punk',
+    requerBase: HUMANOIDES,
     usaCores: ['cabelo'],
     render: (p, u) => `
       <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
@@ -148,6 +159,7 @@ export const CABELOS: ParteDef[] = [
     descricao: 'Undercut futurista com trilhas de luz raspadas.',
     raridade: 'epico',
     tema: 'cyberpunk',
+    requerBase: HUMANOIDES,
     usaCores: ['cabelo', 'destaque'],
     render: (p, u) => `
       <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
