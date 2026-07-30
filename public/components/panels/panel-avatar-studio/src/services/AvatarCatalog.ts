@@ -84,6 +84,71 @@ export function tituloPorId(id: string | undefined): Titulo | undefined {
   return id ? TITULOS_POR_ID.get(id) : undefined;
 }
 
+// ── Arquétipos (Expansão §1) — a PRIMEIRA decisão do usuário ────────
+// Kits de identidade completos: base + camadas + cores + título sugerido.
+// "Presets de identidade" estão na lista 2D imediata da decisão #33.
+
+export interface Arquetipo {
+  id: string;
+  nome: string;
+  papel: string;
+  raridade: Raridade;
+  base: string;
+  camadas: AvatarConfig['camadas'];
+  cores: Partial<Record<SlotCor, string>>;
+  titulo?: string;
+}
+
+export const ARQUETIPOS: Arquetipo[] = [
+  { id: 'arq_executivo', nome: 'Executivo', papel: 'Fecha o trimestre antes do café esfriar.', raridade: 'comum',
+    base: 'bas_classica', camadas: { cabelo: 'cab_curto', olhos: 'olh_serio', boca: 'boc_neutra', roupa: 'rou_social', fundo: 'fun_estudio', banner: 'ban_executivo', emblema: 'emb_elite' },
+    cores: { roupa: '#1c2433', destaque: '#e8b64c' }, titulo: 'tit_elite_trader' },
+  { id: 'arq_ceo', nome: 'CEO', papel: 'A última palavra — e a primeira visão.', raridade: 'lendario',
+    base: 'bas_angular', camadas: { cabelo: 'cab_topete', olhos: 'olh_focado', boca: 'boc_determinada', roupa: 'rou_terno', acessorio: 'ace_oculos', fundo: 'fun_estudio', banner: 'ban_executivo', emblema: 'emb_diamond' },
+    cores: { roupa: '#14213d', destaque: '#e8b64c' }, titulo: 'tit_ceo_supremo' },
+  { id: 'arq_engenheiro', nome: 'Engenheiro', papel: 'Se está de pé, foi ele que estruturou.', raridade: 'comum',
+    base: 'bas_classica', camadas: { cabelo: 'cab_coque', olhos: 'olh_focado', boca: 'boc_neutra', roupa: 'rou_camiseta', acessorio: 'ace_oculos', fundo: 'fun_grade', emblema: 'emb_nexus' },
+    cores: { roupa: '#2563eb', destaque: '#4c9de8' } },
+  { id: 'arq_programador', nome: 'Programador', papel: 'Compila sonhos. Debuga pesadelos.', raridade: 'raro',
+    base: 'bas_classica', camadas: { cabelo: 'cab_franja', olhos: 'olh_cansado', boca: 'boc_lado', roupa: 'rou_hoodie', acessorio: 'ace_fone', fundo: 'fun_circuito', efeito: 'efe_chuva', emblema: 'emb_cyber' },
+    cores: { roupa: '#0f766e', destaque: '#4cd97c' }, titulo: 'tit_cyber_architect' },
+  { id: 'arq_comercial', nome: 'Comercial', papel: 'O funil respeita quem sorri primeiro.', raridade: 'comum',
+    base: 'bas_angular', camadas: { cabelo: 'cab_topete', olhos: 'olh_feliz', boca: 'boc_sorriso', roupa: 'rou_social', fundo: 'fun_estudio', emblema: 'emb_elite' },
+    cores: { roupa: '#5b3a8f', destaque: '#ff5f8f' } },
+  { id: 'arq_cientista', nome: 'Cientista', papel: 'Hipótese, teste, verdade. Nessa ordem.', raridade: 'raro',
+    base: 'bas_classica', camadas: { cabelo: 'cab_cacheado', olhos: 'olh_brilho', boca: 'boc_surpresa', roupa: 'rou_camiseta', acessorio: 'ace_oculos', fundo: 'fun_lab', aura: 'aur_plasma' },
+    cores: { roupa: '#e8ecf5', destaque: '#4cd9e8' } },
+  { id: 'arq_hacker', nome: 'Hacker', papel: 'As portas não sabem que estão abertas.', raridade: 'epico',
+    base: 'bas_classica', camadas: { cabelo: 'cab_cyber', olhos: 'olh_misterioso', boca: 'boc_lado', roupa: 'rou_jaqueta', fundo: 'fun_circuito', efeito: 'efe_glitch', banner: 'ban_cyber', emblema: 'emb_cyber' },
+    cores: { roupa: '#101726', destaque: '#4cd97c' } },
+  { id: 'arq_operador', nome: 'Operador', papel: 'Sintético, pontual e impossível de travar.', raridade: 'epico',
+    base: 'bas_androide', camadas: { olhos: 'olh_led', boca: 'boc_grade', roupa: 'rou_armadura', fundo: 'fun_led_wall', aura: 'aur_neon', emblema: 'emb_nexus' },
+    cores: { pele: '#c8d4e8', destaque: '#4cd9e8' }, titulo: 'tit_nexus_commander' },
+  { id: 'arq_samurai', nome: 'Samurai', papel: 'Treina antes do stand-up. Todos os dias.', raridade: 'epico',
+    base: 'bas_angular', camadas: { cabelo: 'cab_coque', olhos: 'olh_serio', boca: 'boc_determinada', roupa: 'rou_kimono', fundo: 'fun_dojo', aura: 'aur_cristal' },
+    cores: { roupa: '#d64545', destaque: '#ff5230' } },
+  { id: 'arq_guerreiro', nome: 'Guerreiro', papel: 'A matilha confia. A meta cai.', raridade: 'epico',
+    base: 'bas_lobo', camadas: { olhos: 'olh_serio', boca: 'boc_determinada', roupa: 'rou_armadura', fundo: 'fun_arena', aura: 'aur_eletrica', emblema: 'emb_elite' },
+    cores: { destaque: '#ff5230' } },
+  { id: 'arq_explorador', nome: 'Explorador', papel: 'O mapa termina onde ele começa.', raridade: 'raro',
+    base: 'bas_raposa', camadas: { olhos: 'olh_brincalhao', boca: 'boc_sorriso', roupa: 'rou_jaqueta', acessorio: 'ace_cachecol', fundo: 'fun_aurora', banner: 'ban_galaxy' },
+    cores: { destaque: '#e8b64c' } },
+  { id: 'arq_piloto', nome: 'Piloto', papel: 'Viu a Terra de cima e voltou com metas maiores.', raridade: 'lendario',
+    base: 'bas_classica', camadas: { cabelo: 'cab_curto', olhos: 'olh_visor', boca: 'boc_determinada', roupa: 'rou_astronauta', fundo: 'fun_nebulosa', banner: 'ban_galaxy', aura: 'aur_plasma' },
+    cores: { roupa: '#e8ecf5', destaque: '#4c9de8' } },
+];
+
+/** Aplica o arquétipo como PRIMEIRA decisão: kit completo, sempre validado. */
+export function aplicarArquetipo(a: Arquetipo, atual: AvatarConfig): AvatarConfig {
+  return validarConfig({
+    ...CONFIG_PADRAO,
+    base: a.base,
+    camadas: { ...a.camadas },
+    cores: { ...CONFIG_PADRAO.cores, pele: atual.cores.pele, ...a.cores },
+    titulo: a.titulo,
+  });
+}
+
 // ── Raridades (metadados de UI: selo, cor, peso no sorteio) ─────────
 
 export const RARIDADES: Record<Raridade, { nome: string; cor: string; peso: number; nivel: number }> = {

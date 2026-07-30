@@ -82,7 +82,7 @@ INSERT INTO avatar_categories
    supported_renderers, created_at, updated_at)
 VALUES
   -- IDENTIDADE
-  ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'arquetipo',     'Arquétipo',     NULL,   'preset', 'single',    0, 0, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
+  ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'arquetipo',     'Arquétipo',     NULL,   'preset', 'single',    0, 1, 0, 0, 0, 0, '2d,3d', NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'especie',       'Espécie',       'base', 'asset',  'single',    1, 1, 1, 0, 0, 0, '2d,3d', NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'tipo_corporal', 'Tipo Corporal', NULL,   'morph',  'parameter', 2, 0, 0, 0, 0, 1, '3d',    NOW(), NOW()),
   ((SELECT id FROM avatar_category_groups WHERE `key`='identidade'), 'idade_visual',  'Idade Visual',  NULL,   'morph',  'parameter', 3, 0, 0, 0, 0, 1, '3d',    NOW(), NOW()),

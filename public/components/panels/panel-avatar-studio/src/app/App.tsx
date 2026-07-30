@@ -10,8 +10,9 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BadgeCheck, Bot, Box, Boxes, Brush, Camera, Check, ChevronDown, CircleUser, Columns2,
-  Crown, Dices, Eye, Flag, Frame, Glasses, History, Image as ImagemIcon, LoaderCircle,
-  Orbit, Redo2, Save, Shirt, Smile, Sparkles, Trophy, Undo2, Users, Volume2, VolumeX, Wand2,
+  Crown, Dices, Eye, Fingerprint, Flag, Frame, Glasses, History, Image as ImagemIcon,
+  LoaderCircle, Orbit, Redo2, Save, Shirt, Smile, Sparkles, Trophy, Undo2, Users,
+  Volume2, VolumeX, Wand2,
 } from 'lucide-react';
 
 // PoC 3D (AS4 Fase 1) — chunk separado: three/R3F só carregam nesta aba
@@ -24,7 +25,7 @@ import {
 import { carregarAvatar, salvarAvatar } from '../services/AvatarService';
 import type { OrigemDado, ResultadoCarga, TipoAtivo } from '../services/AvatarService';
 import { definirSom, somAtivo, tocarCelebracao, tocarEquipar, tocarSalvar } from '../services/Som';
-import { registrarUso } from '../services/Progresso';
+import { registrarUso, sincronizarFavoritos } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
 import { carregarVida } from '../services/VidaService';
 import type { Vida } from '../services/VidaService';
@@ -41,6 +42,7 @@ import { Presets } from '../components/Presets';
 import { Historico } from '../components/Historico';
 import { Foto } from '../components/Foto';
 import { Titulos } from '../components/Titulos';
+import { Arquetipos } from '../components/Arquetipos';
 import '../styles/estudio.css';
 
 /** Itens que mudaram de a→b (comparação rica §21). */
@@ -125,7 +127,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
-  const [aba, setAba] = useState<'itens' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
+  const [aba, setAba] = useState<'itens' | 'arquetipo' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [comparando, setComparando] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
@@ -214,6 +216,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       aplicarCarga(r);
       setCarregando(false);
       telemetria('abriu', { tipoAtivo: r.tipoAtivo ?? 'nenhum' });
+      void sincronizarFavoritos(); // espelho multi-device (melhor esforço)
     })();
     // Vida (conquistas/eventos/desbloqueios) em paralelo — F3
     void carregarVida(shellConfig.signal).then((v) => {
@@ -404,7 +407,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             if (cats.length === 0 && !temTitulo) return null;
             const aberto = gruposAbertos.has(g.id);
             const contemAtiva = (aba === 'itens' && cats.some((c) => c.id === categoria))
-              || (aba === 'titulo' && temTitulo);
+              || (aba === 'titulo' && temTitulo)
+              || (aba === 'arquetipo' && g.id === 'identidade');
             return (
               <div key={g.id} className="avst-grupo">
                 <button type="button" aria-expanded={aberto}
@@ -416,6 +420,14 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
                 </button>
                 {/* sempre no DOM: o modo mobile (grupos achatados) reexibe via CSS */}
                 <div className="avst-grupo-itens" data-aberto={aberto ? 'sim' : 'nao'}>
+                    {g.id === 'identidade' && (
+                      <button type="button"
+                        className={`avst-cat ${aba === 'arquetipo' ? 'avst-cat-ativa' : ''}`}
+                        onClick={() => setAba('arquetipo')}>
+                        <Fingerprint size={17} aria-hidden />
+                        <span>Arquétipo</span>
+                      </button>
+                    )}
                     {cats.map((c) => {
                       const Icone = ICONES[c.id];
                       return (
@@ -583,6 +595,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           <div className="avst-redim" role="separator" aria-orientation="vertical"
             title="Arraste para redimensionar · duplo clique alterna 320/420/560"
             onPointerDown={iniciarArrasto} onDoubleClick={ciclarLargura} />
+          {aba === 'arquetipo' && <Arquetipos config={atual} aoAplicar={aplicar} />}
           {aba === 'titulo' && <Titulos config={atual} aoAplicar={aplicar} />}
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
           {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
