@@ -282,4 +282,231 @@ export const ACESSORIOS: ParteDef[] = [
       <circle cx="143" cy="40" r="3" fill="#4cd9e8"/>
       <circle cx="120" cy="33" r="1.4" fill="#ffffff" opacity="0.9"/>`,
   },
+  // ── 4.6 F2 · Onda 2 — 12 acessórios novos (4 por slot) ────────────
+  {
+    id: 'ace_boina',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Boina',
+    descricao: 'Direção de arte no ponto exato.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}boi" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="${p.destaque.claro}"/>
+          <stop offset="1" stop-color="${p.destaque.profundo}"/>
+        </linearGradient>
+      </defs>
+      <path d="M70 78 c -2 -26 24 -38 52 -36 c 30 2 50 16 46 38 c -2 10 -12 12 -24 10 c -26 -6 -52 -6 -66 -2 c -6 2 -8 -4 -8 -10 z" fill="url(#${u}boi)"/>
+      <circle cx="122" cy="40" r="4" fill="${p.destaque.profundo}"/>
+      <path d="M74 86 c 18 -6 48 -6 66 0" stroke="${alfa('#000000', 0.25)}" stroke-width="3" fill="none"/>`,
+  },
+  {
+    id: 'ace_viseira_vr',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Headset VR',
+    descricao: 'Metade aqui, metade no metaverso da Dshow.',
+    raridade: 'epico',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}vr" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3a4054"/>
+          <stop offset="1" stop-color="#171b28"/>
+        </linearGradient>
+      </defs>
+      <path d="M66 92 h 108 a 10 10 0 0 1 10 10 v 14 a 10 10 0 0 1 -10 10 h -30 c -8 -8 -40 -8 -48 0 h -30 a 10 10 0 0 1 -10 -10 v -14 a 10 10 0 0 1 10 -10 z" fill="url(#${u}vr)" stroke="#0c0f18" stroke-width="2"/>
+      <path d="M72 100 h 96 v 10 h -96 z" fill="${alfa(p.destaque.base, 0.5)}" rx="4">
+        <animate attributeName="opacity" values="0.5;0.9;0.5" dur="2.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M66 98 a 50 57 0 0 0 -8 12 M174 98 a 50 57 0 0 1 8 12" stroke="#171b28" stroke-width="6" fill="none"/>
+      <circle cx="170" cy="98" r="3" fill="${p.destaque.base}"/>`,
+  },
+  {
+    id: 'ace_chifres_oni',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Chifres de Oni',
+    descricao: 'O lado lendário do dojo desperta.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}oni" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#7a2d3c"/>
+          <stop offset="1" stop-color="#ffb54d"/>
+        </linearGradient>
+      </defs>
+      <path d="M88 64 c -8 -12 -10 -26 -4 -38 c 10 8 16 20 16 32 z" fill="url(#${u}oni)" stroke="#5a1f2c" stroke-width="1.6"/>
+      <path d="M152 64 c 8 -12 10 -26 4 -38 c -10 8 -16 20 -16 32 z" fill="url(#${u}oni)" stroke="#5a1f2c" stroke-width="1.6"/>
+      <path d="M90 52 c -3 -8 -3 -16 0 -22 M150 52 c 3 -8 3 -16 0 -22" stroke="${alfa('#ffffff', 0.35)}" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'ace_tiara_led',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Tiara LED',
+    descricao: 'Arco de luz fria sobre o cabelo.',
+    raridade: 'raro',
+    tema: 'cyberpunk',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M72 84 a 52 50 0 0 1 96 0" stroke="#20242e" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M72 84 a 52 50 0 0 1 96 0" stroke="${p.destaque.base}" stroke-width="3" fill="none" stroke-linecap="round">
+        <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+      </path>
+      <circle cx="72" cy="84" r="4.4" fill="${p.destaque.base}"/>
+      <circle cx="168" cy="84" r="4.4" fill="${p.destaque.base}"/>`,
+  },
+  {
+    id: 'ace_monoculo',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Monóculo',
+    descricao: 'Analisa o relatório com um só olho — e razão.',
+    raridade: 'raro',
+    tema: 'clássico',
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}mono" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${alfa('#cfe0ff', 0.4)}"/>
+          <stop offset="1" stop-color="${alfa('#cfe0ff', 0.1)}"/>
+        </linearGradient>
+      </defs>
+      <circle cx="140" cy="108" r="16" fill="url(#${u}mono)" stroke="#e8b64c" stroke-width="3"/>
+      <path d="M152 120 q 10 14 6 30" stroke="#e8b64c" stroke-width="2" fill="none"/>
+      <circle cx="158" cy="152" r="3" fill="#e8b64c"/>
+      <path d="M131 100 a 16 16 0 0 1 9 -7" stroke="${alfa('#ffffff', 0.6)}" stroke-width="2" fill="none"/>`,
+  },
+  {
+    id: 'ace_pintura_guerra',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Pintura de Guerra',
+    descricao: 'Três riscos: foco, meta e vitória.',
+    raridade: 'incomum',
+    tema: 'esportivo',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M82 116 l 14 4 M82 124 l 14 4" stroke="${p.destaque.base}" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+      <path d="M158 116 l -14 4 M158 124 l -14 4" stroke="${p.destaque.base}" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+      <path d="M116 130 l 8 3" stroke="${alfa(p.destaque.base, 0.6)}" stroke-width="3" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'ace_piercing',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Piercing',
+    descricao: 'Detalhe de aço na sobrancelha.',
+    raridade: 'comum',
+    tema: 'urbano',
+    render: () => `
+      <circle cx="150" cy="92" r="2.6" fill="none" stroke="#c4c9d6" stroke-width="1.8"/>
+      <circle cx="145" cy="94" r="1.6" fill="#c4c9d6"/>
+      <circle cx="149" cy="91" r="0.8" fill="#ffffff"/>`,
+  },
+  {
+    id: 'ace_oculos_3d',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Óculos Retrô 3D',
+    descricao: 'O cinema em casa de 1989 aprova.',
+    raridade: 'raro',
+    tema: 'gamer',
+    render: () => `
+      <path d="M78 96 h 84 v 24 a 6 6 0 0 1 -6 6 h -28 l -8 -8 l -8 8 h -28 a 6 6 0 0 1 -6 -6 z" fill="#f4f0e6" stroke="#d8d2c2" stroke-width="2"/>
+      <rect x="85" y="102" width="30" height="17" rx="3" fill="#ff4d5e" opacity="0.8"/>
+      <rect x="125" y="102" width="30" height="17" rx="3" fill="#3aa0ff" opacity="0.8"/>
+      <line x1="78" y1="102" x2="68" y2="100" stroke="#f4f0e6" stroke-width="4"/>
+      <line x1="162" y1="102" x2="172" y2="100" stroke="#f4f0e6" stroke-width="4"/>`,
+  },
+  {
+    id: 'ace_corrente',
+    categoria: 'acessorio',
+    slot: 'pescoco',
+    nome: 'Corrente Dourada',
+    descricao: 'Elo por elo, cada meta batida.',
+    raridade: 'raro',
+    tema: 'urbano',
+    render: () => {
+      let elos = '';
+      for (let i = 0; i < 9; i++) {
+        const t = i / 8;
+        const x = 88 + t * 64;
+        const y = 196 + Math.sin(t * Math.PI) * 22;
+        elos += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="none" stroke="#e8b64c" stroke-width="2.6"/>`;
+      }
+      return `${elos}<circle cx="120" cy="220" r="6.4" fill="#e8b64c" stroke="#b07d1e" stroke-width="1.6"/>
+      <path d="M118 218 l 2 -3 l 2 3 l -2 3 z" fill="#fff3c9"/>`;
+    },
+  },
+  {
+    id: 'ace_capa_heroica',
+    categoria: 'acessorio',
+    slot: 'pescoco',
+    nome: 'Capa Heroica',
+    descricao: 'Esvoaça mesmo sem vento — questão de atitude.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}capa" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${p.destaque.base}"/>
+          <stop offset="1" stop-color="${p.destaque.profundo}"/>
+        </linearGradient>
+      </defs>
+      <path d="M60 196 c -10 14 -16 30 -14 44 l 26 0 c -6 -16 -6 -30 0 -40 z" fill="url(#${u}capa)">
+        <animateTransform attributeName="transform" type="rotate" values="0 66 200;-3 66 200;0 66 200" dur="3.2s" repeatCount="indefinite"/>
+      </path>
+      <path d="M180 196 c 10 14 16 30 14 44 l -26 0 c 6 -16 6 -30 0 -40 z" fill="url(#${u}capa)">
+        <animateTransform attributeName="transform" type="rotate" values="0 174 200;3 174 200;0 174 200" dur="3.2s" repeatCount="indefinite"/>
+      </path>
+      <path d="M74 200 q 46 -22 92 0 l -4 8 q -42 -18 -84 0 z" fill="${p.destaque.profundo}"/>
+      <circle cx="94" cy="200" r="3.4" fill="#e8b64c"/>
+      <circle cx="146" cy="200" r="3.4" fill="#e8b64c"/>`,
+  },
+  {
+    id: 'ace_lenco_bandana',
+    categoria: 'acessorio',
+    slot: 'pescoco',
+    nome: 'Lenço Bandana',
+    descricao: 'Nó frouxo, espírito de estrada.',
+    raridade: 'incomum',
+    tema: 'aventura',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}band" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${p.destaque.claro}"/>
+          <stop offset="1" stop-color="${p.destaque.profundo}"/>
+        </linearGradient>
+      </defs>
+      <path d="M88 192 q 32 20 64 0 l -6 16 q -26 14 -52 0 z" fill="url(#${u}band)"/>
+      <path d="M112 206 l -10 22 l 12 -6 l 4 10 l 8 -24 z" fill="url(#${u}band)"/>
+      <path d="M92 196 q 28 16 56 0" stroke="${alfa('#ffffff', 0.25)}" stroke-width="2" fill="none"/>
+      <circle cx="100" cy="200" r="1.6" fill="${alfa('#ffffff', 0.5)}"/>
+      <circle cx="126" cy="205" r="1.6" fill="${alfa('#ffffff', 0.5)}"/>
+      <circle cx="142" cy="199" r="1.6" fill="${alfa('#ffffff', 0.5)}"/>`,
+  },
+  {
+    id: 'ace_cracha_dshow',
+    categoria: 'acessorio',
+    slot: 'pescoco',
+    nome: 'Crachá Dshow',
+    descricao: 'Acesso liberado a todos os andares da casa.',
+    raridade: 'exclusivo',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M104 186 l 14 26 M136 186 l -14 26" stroke="#20242e" stroke-width="3"/>
+      <rect x="106" y="210" width="28" height="20" rx="4" fill="#f4f6fb" stroke="#c9d0dd" stroke-width="1.4"/>
+      <rect x="106" y="210" width="28" height="6" rx="3" fill="${p.destaque.base}"/>
+      <circle cx="113" cy="222" r="3" fill="#c9d0dd"/>
+      <path d="M119 220 h 11 M119 224 h 8" stroke="#8b93a7" stroke-width="1.6" stroke-linecap="round"/>`,
+  },
 ];

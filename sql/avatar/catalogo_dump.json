@@ -419,6 +419,46 @@
   "raridade": "lendario",
   "nome": "Armadura Nexus"
  },
+ "rou_polo": {
+  "categoria": "roupa",
+  "raridade": "comum",
+  "nome": "Polo"
+ },
+ "rou_flanela": {
+  "categoria": "roupa",
+  "raridade": "incomum",
+  "nome": "Flanela Xadrez"
+ },
+ "rou_colete": {
+  "categoria": "roupa",
+  "raridade": "raro",
+  "nome": "Colete Tático"
+ },
+ "rou_smoking": {
+  "categoria": "roupa",
+  "raridade": "epico",
+  "nome": "Smoking"
+ },
+ "rou_jersey": {
+  "categoria": "roupa",
+  "raridade": "raro",
+  "nome": "Jersey E-sports"
+ },
+ "rou_sobretudo": {
+  "categoria": "roupa",
+  "raridade": "epico",
+  "nome": "Sobretudo"
+ },
+ "rou_jaleco": {
+  "categoria": "roupa",
+  "raridade": "incomum",
+  "nome": "Jaleco"
+ },
+ "rou_neon_racer": {
+  "categoria": "roupa",
+  "raridade": "lendario",
+  "nome": "Jaqueta Neon Racer"
+ },
  "ace_brinco": {
   "categoria": "acessorio",
   "raridade": "comum",
@@ -484,6 +524,66 @@
   "raridade": "lendario",
   "nome": "Coroa do Top 1"
  },
+ "ace_boina": {
+  "categoria": "acessorio",
+  "raridade": "incomum",
+  "nome": "Boina"
+ },
+ "ace_viseira_vr": {
+  "categoria": "acessorio",
+  "raridade": "epico",
+  "nome": "Headset VR"
+ },
+ "ace_chifres_oni": {
+  "categoria": "acessorio",
+  "raridade": "epico",
+  "nome": "Chifres de Oni"
+ },
+ "ace_tiara_led": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Tiara LED"
+ },
+ "ace_monoculo": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Monóculo"
+ },
+ "ace_pintura_guerra": {
+  "categoria": "acessorio",
+  "raridade": "incomum",
+  "nome": "Pintura de Guerra"
+ },
+ "ace_piercing": {
+  "categoria": "acessorio",
+  "raridade": "comum",
+  "nome": "Piercing"
+ },
+ "ace_oculos_3d": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Óculos Retrô 3D"
+ },
+ "ace_corrente": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Corrente Dourada"
+ },
+ "ace_capa_heroica": {
+  "categoria": "acessorio",
+  "raridade": "lendario",
+  "nome": "Capa Heroica"
+ },
+ "ace_lenco_bandana": {
+  "categoria": "acessorio",
+  "raridade": "incomum",
+  "nome": "Lenço Bandana"
+ },
+ "ace_cracha_dshow": {
+  "categoria": "acessorio",
+  "raridade": "exclusivo",
+  "nome": "Crachá Dshow"
+ },
  "fun_estudio": {
   "categoria": "fundo",
   "raridade": "comum",
@@ -539,6 +639,51 @@
   "raridade": "lendario",
   "nome": "Arena E-Sports"
  },
+ "fun_synthwave": {
+  "categoria": "fundo",
+  "raridade": "raro",
+  "nome": "Pôr do Sol Synthwave"
+ },
+ "fun_biblioteca": {
+  "categoria": "fundo",
+  "raridade": "incomum",
+  "nome": "Biblioteca"
+ },
+ "fun_chuva": {
+  "categoria": "fundo",
+  "raridade": "raro",
+  "nome": "Noite Chuvosa"
+ },
+ "fun_praia": {
+  "categoria": "fundo",
+  "raridade": "incomum",
+  "nome": "Praia Pixel"
+ },
+ "fun_montanhas": {
+  "categoria": "fundo",
+  "raridade": "comum",
+  "nome": "Montanhas"
+ },
+ "fun_escritorio": {
+  "categoria": "fundo",
+  "raridade": "comum",
+  "nome": "Escritório Noturno"
+ },
+ "fun_codigo": {
+  "categoria": "fundo",
+  "raridade": "epico",
+  "nome": "Cascata de Código"
+ },
+ "fun_forja": {
+  "categoria": "fundo",
+  "raridade": "lendario",
+  "nome": "Forja Vulcânica"
+ },
+ "fun_hangar": {
+  "categoria": "fundo",
+  "raridade": "epico",
+  "nome": "Hangar Nexus"
+ },
  "mol_aro": {
   "categoria": "moldura",
   "raridade": "comum",
@@ -583,6 +728,36 @@
   "categoria": "moldura",
   "raridade": "exclusivo",
   "nome": "Exclusiva Dshow"
+ },
+ "mol_madeira": {
+  "categoria": "moldura",
+  "raridade": "comum",
+  "nome": "Madeira de Lei"
+ },
+ "mol_selo": {
+  "categoria": "moldura",
+  "raridade": "incomum",
+  "nome": "Selo Oficial"
+ },
+ "mol_louros": {
+  "categoria": "moldura",
+  "raridade": "raro",
+  "nome": "Louros da Vitória"
+ },
+ "mol_circuito": {
+  "categoria": "moldura",
+  "raridade": "epico",
+  "nome": "Circuito Vivo"
+ },
+ "mol_chamas": {
+  "categoria": "moldura",
+  "raridade": "lendario",
+  "nome": "Chamas Eternas"
+ },
+ "mol_glitch": {
+  "categoria": "moldura",
+  "raridade": "mitico",
+  "nome": "Glitch Dimensional"
  },
  "efe_aura": {
   "categoria": "efeito",

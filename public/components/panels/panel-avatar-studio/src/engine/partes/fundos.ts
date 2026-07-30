@@ -344,4 +344,272 @@ export const FUNDOS: ParteDef[] = [
       </g>
       ${estrelas(26, p.destaque.claro, 13)}`,
   },
+  // ── 4.6 F2 · Onda 2 (aparência) — 9 fundos novos ──────────────────
+  {
+    id: 'fun_synthwave',
+    categoria: 'fundo',
+    nome: 'Pôr do Sol Synthwave',
+    descricao: 'O sol riscado que nunca termina de se pôr.',
+    raridade: 'raro',
+    tema: 'espaço',
+    usaCores: ['destaque'],
+    render: (p, u) => {
+      let grade = '';
+      for (let i = 0; i < 7; i++) {
+        grade += `<line x1="${-60 + i * 60}" y1="240" x2="${60 + i * 30}" y2="152" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="1.4"/>`;
+      }
+      for (let j = 0; j < 5; j++) {
+        grade += `<line x1="0" y1="${156 + j * j * 5}" x2="240" y2="${156 + j * j * 5}" stroke="${alfa(p.destaque.base, 0.45)}" stroke-width="1.2"/>`;
+      }
+      return `
+      <defs>
+        <linearGradient id="${u}sw" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#160b2e"/>
+          <stop offset="0.65" stop-color="${misturar('#2b0f45', p.destaque.base, 0.25)}"/>
+          <stop offset="1" stop-color="#0c0716"/>
+        </linearGradient>
+        <linearGradient id="${u}sol" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffd36e"/>
+          <stop offset="1" stop-color="#ff5f8f"/>
+        </linearGradient>
+        <clipPath id="${u}solc"><path d="M64 152 h 112 v -80 h -112 z M64 158 h 112 v 4 h -112 z"/></clipPath>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}sw)"/>
+      <circle cx="120" cy="140" r="46" fill="url(#${u}sol)" clip-path="url(#${u}solc)"/>
+      <rect y="152" width="240" height="88" fill="#0c0716"/>
+      ${grade}
+      ${estrelas(18, '#ffd0e8', 5)}`;
+    },
+  },
+  {
+    id: 'fun_biblioteca',
+    categoria: 'fundo',
+    nome: 'Biblioteca',
+    descricao: 'Estantes altas e silêncio produtivo.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    usaCores: ['destaque'],
+    render: (p, u) => {
+      let livros = '';
+      const cores = ['#7a4a32', '#3e5a4a', p.destaque.base, '#8a6a3a', '#4a4a6a'];
+      for (let pr = 0; pr < 3; pr++) {
+        const y = 46 + pr * 58;
+        for (let i = 0; i < 12; i++) {
+          const x = 12 + i * 19;
+          const alt2 = 30 + ((i * 7 + pr * 5) % 12);
+          livros += `<rect x="${x}" y="${y + 42 - alt2}" width="13" height="${alt2}" rx="2" fill="${cores[(i + pr) % 5]}" opacity="0.85"/>`;
+        }
+        livros += `<rect x="4" y="${y + 44}" width="232" height="6" fill="#2b2118"/>`;
+      }
+      return `
+      <defs>
+        <linearGradient id="${u}bib" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#241a12"/>
+          <stop offset="1" stop-color="#120d08"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}bib)"/>
+      ${livros}
+      <rect width="240" height="240" fill="${alfa('#000000', 0.25)}"/>
+      <ellipse cx="120" cy="120" rx="120" ry="110" fill="${alfa(misturar('#f9d9a0', p.destaque.base, 0.2), 0.09)}"/>`;
+    },
+  },
+  {
+    id: 'fun_chuva',
+    categoria: 'fundo',
+    nome: 'Noite Chuvosa',
+    descricao: 'Vidro molhado e a cidade desfocada lá fora.',
+    raridade: 'raro',
+    tema: 'urbano',
+    usaCores: ['destaque'],
+    render: (p, u) => {
+      let gotas = '';
+      for (let i = 0; i < 16; i++) {
+        const x = ((i * 61) % 232) + 4;
+        const y = ((i * 37) % 200) + 8;
+        gotas += `<line x1="${x}" y1="${y}" x2="${x - 3}" y2="${y + 14}" stroke="${alfa('#9fc4ff', 0.4)}" stroke-width="1.6" stroke-linecap="round">
+          <animate attributeName="opacity" values="0.4;0.1;0.4" dur="${(1.4 + (i % 5) * 0.3).toFixed(1)}s" repeatCount="indefinite"/>
+        </line>`;
+      }
+      let bokeh = '';
+      for (let i = 0; i < 8; i++) {
+        const x = ((i * 89) % 220) + 10;
+        const y = 60 + ((i * 53) % 120);
+        bokeh += `<circle cx="${x}" cy="${y}" r="${6 + (i % 4) * 3}" fill="${alfa(i % 2 ? p.destaque.base : '#ffb054', 0.18)}"/>`;
+      }
+      return `
+      <defs>
+        <linearGradient id="${u}chn" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0b101e"/>
+          <stop offset="1" stop-color="#141b30"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}chn)"/>
+      ${bokeh}${gotas}`;
+    },
+  },
+  {
+    id: 'fun_praia',
+    categoria: 'fundo',
+    nome: 'Praia Pixel',
+    descricao: 'Férias em 16 bits — protetor solar incluso.',
+    raridade: 'incomum',
+    tema: 'casual',
+    render: () => `
+      <rect width="240" height="150" fill="#7ec8ff"/>
+      <rect y="110" width="240" height="16" fill="#5db2f0"/>
+      <rect y="126" width="240" height="42" fill="#2a7fd4"/>
+      <rect y="150" width="240" height="10" fill="#7fd4e8"/>
+      <rect y="168" width="240" height="72" fill="#f2dca2"/>
+      <rect y="164" width="240" height="6" fill="#fff2c8"/>
+      <rect x="176" y="24" width="28" height="28" fill="#ffd75e"/>
+      <rect x="184" y="16" width="12" height="8" fill="#ffd75e"/>
+      <rect x="184" y="52" width="12" height="8" fill="#ffd75e"/>
+      <rect x="168" y="32" width="8" height="12" fill="#ffd75e"/>
+      <rect x="204" y="32" width="8" height="12" fill="#ffd75e"/>
+      <rect x="24" y="60" width="40" height="10" fill="#ffffff" opacity="0.9"/>
+      <rect x="34" y="52" width="24" height="8" fill="#ffffff" opacity="0.9"/>
+      <rect x="90" y="84" width="34" height="8" fill="#ffffff" opacity="0.7"/>`,
+  },
+  {
+    id: 'fun_montanhas',
+    categoria: 'fundo',
+    nome: 'Montanhas',
+    descricao: 'Ar puro e sinal de wi-fi surpreendentemente bom.',
+    raridade: 'comum',
+    tema: 'aventura',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}ceu" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${misturar('#8fb7e8', p.destaque.base, 0.15)}"/>
+          <stop offset="1" stop-color="#dcebf7"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}ceu)"/>
+      <path d="M0 190 l 55 -90 l 40 62 l 35 -52 l 50 80 l 60 -70 v 120 h -240 z" fill="#3c556e"/>
+      <path d="M55 100 l 14 24 l -10 2 l -8 -12 z" fill="#eef4fa"/>
+      <path d="M130 110 l 12 20 l -9 1 l -7 -10 z" fill="#eef4fa"/>
+      <path d="M0 210 l 60 -60 l 60 55 l 55 -45 l 65 50 v 30 h -240 z" fill="#22374c"/>
+      <ellipse cx="60" cy="52" rx="26" ry="9" fill="#ffffff" opacity="0.85"/>
+      <ellipse cx="170" cy="38" rx="20" ry="7" fill="#ffffff" opacity="0.7"/>`,
+  },
+  {
+    id: 'fun_escritorio',
+    categoria: 'fundo',
+    nome: 'Escritório Noturno',
+    descricao: 'A cidade acesa atrás da última entrega do dia.',
+    raridade: 'comum',
+    tema: 'executivo',
+    usaCores: ['destaque'],
+    render: (p, u) => {
+      let janelas = '';
+      for (let i = 0; i < 30; i++) {
+        const x = 20 + (i % 6) * 34;
+        const y = 40 + Math.floor(i / 6) * 26;
+        const acesa = (i * 13) % 7 < 3;
+        janelas += `<rect x="${x}" y="${y}" width="18" height="14" rx="1.5" fill="${acesa ? alfa('#ffd75e', 0.7) : alfa('#28324a', 0.9)}"/>`;
+      }
+      return `
+      <defs>
+        <linearGradient id="${u}esc" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0d1322"/>
+          <stop offset="1" stop-color="${misturar('#1a2338', p.destaque.base, 0.12)}"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}esc)"/>
+      <rect x="10" y="30" width="220" height="140" rx="6" fill="#131b2e" stroke="#232d47" stroke-width="3"/>
+      ${janelas}
+      <rect y="176" width="240" height="64" fill="#181f31"/>
+      <rect x="0" y="172" width="240" height="6" fill="#2b3550"/>`;
+    },
+  },
+  {
+    id: 'fun_codigo',
+    categoria: 'fundo',
+    nome: 'Cascata de Código',
+    descricao: 'As colunas verdes que explicam tudo.',
+    raridade: 'epico',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p, u) => {
+      let colunas = '';
+      for (let i = 0; i < 12; i++) {
+        const x = 8 + i * 20;
+        const alt2 = 60 + ((i * 37) % 120);
+        colunas += `<rect x="${x}" y="0" width="3" height="${alt2}" fill="url(#${u}cod)" opacity="${(0.3 + (i % 5) * 0.12).toFixed(2)}">
+          <animate attributeName="height" values="${alt2};${alt2 + 60};${alt2}" dur="${(2 + (i % 4) * 0.6).toFixed(1)}s" repeatCount="indefinite"/>
+        </rect>`;
+      }
+      return `
+      <defs>
+        <linearGradient id="${u}cod" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${alfa(p.destaque.base, 0)}"/>
+          <stop offset="0.7" stop-color="${p.destaque.base}"/>
+          <stop offset="1" stop-color="#ffffff"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="#050a08"/>
+      ${colunas}
+      <rect width="240" height="240" fill="${alfa('#000000', 0.15)}"/>`;
+    },
+  },
+  {
+    id: 'fun_forja',
+    categoria: 'fundo',
+    nome: 'Forja Vulcânica',
+    descricao: 'Onde os itens lendários são temperados.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}for" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1a0d08"/>
+          <stop offset="0.7" stop-color="#3a140a"/>
+          <stop offset="1" stop-color="#7a2408"/>
+        </linearGradient>
+        <linearGradient id="${u}lava" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffb54d"/>
+          <stop offset="1" stop-color="#ff5230"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}for)"/>
+      <path d="M0 150 l 50 -70 l 45 55 l 50 -65 l 55 70 l 40 -40 v 140 h -240 z" fill="#12080a"/>
+      <path d="M0 208 q 60 -14 120 0 t 120 0 v 32 h -240 z" fill="url(#${u}lava)">
+        <animate attributeName="opacity" values="1;0.8;1" dur="3s" repeatCount="indefinite"/>
+      </path>
+      <circle cx="60" cy="190" r="2.4" fill="#ffb54d"><animate attributeName="cy" values="190;168;190" dur="2.8s" repeatCount="indefinite"/></circle>
+      <circle cx="150" cy="196" r="1.8" fill="#ff8a4d"><animate attributeName="cy" values="196;172;196" dur="3.4s" repeatCount="indefinite"/></circle>
+      <circle cx="196" cy="192" r="2.2" fill="#ffd75e"><animate attributeName="cy" values="192;170;192" dur="2.4s" repeatCount="indefinite"/></circle>`,
+  },
+  {
+    id: 'fun_hangar',
+    categoria: 'fundo',
+    nome: 'Hangar Nexus',
+    descricao: 'A baia de lançamento da frota Dshow.',
+    raridade: 'epico',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}han" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0e1420"/>
+          <stop offset="1" stop-color="#1c2536"/>
+        </linearGradient>
+      </defs>
+      <rect width="240" height="240" fill="url(#${u}han)"/>
+      <path d="M20 0 v 168 M220 0 v 168 M60 0 v 168 M180 0 v 168" stroke="#28324a" stroke-width="6"/>
+      <path d="M0 30 h 240 M0 90 h 240" stroke="#28324a" stroke-width="4"/>
+      <path d="M0 168 h 240 v 8 h -240 z" fill="#2b3550"/>
+      <path d="M0 176 l 240 34 v 30 h -240 z" fill="#161d2c"/>
+      <path d="M30 176 l 30 40 M105 182 l 18 34 M180 190 l 8 28" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="2"/>
+      <circle cx="40" cy="60" r="5" fill="${p.destaque.base}">
+        <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="200" cy="60" r="5" fill="${p.destaque.base}">
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <rect x="84" y="44" width="72" height="32" rx="4" fill="${alfa(p.destaque.base, 0.16)}" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="1.6"/>
+      <path d="M92 52 h 40 M92 60 h 28 M92 68 h 34" stroke="${alfa(p.destaque.claro, 0.6)}" stroke-width="2"/>`,
+  },
 ];
