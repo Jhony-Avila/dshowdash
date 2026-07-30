@@ -195,9 +195,11 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
     setOrigem(r.origem);
     setVersao(r.versao);
     setTipoAtivo(r.tipoAtivo);
-    if (r.tipoAtivo === 'foto') {
+    if (r.tipoAtivo === 'foto' || r.tipoAtivo === '3d') {
       setEstado('sem_alteracoes');
-      setMensagem('Sua foto está ativa — salvar aqui volta para o avatar em camadas.');
+      setMensagem(r.tipoAtivo === '3d'
+        ? 'Seu avatar 3D está ativo — salvar aqui volta para o avatar em camadas.'
+        : 'Sua foto está ativa — salvar aqui volta para o avatar em camadas.');
     } else if (!r.config) {
       // primeira visita (nada salvo ainda) → deixa claro que precisa salvar
       setEstado('alteracoes_pendentes');
@@ -512,7 +514,14 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
                 <p>Carregando o motor 3D… (baixa uma única vez, só nesta aba)</p>
               </div>
             )}>
-              <Estudio3D corDestaque={atual.cores.destaque} />
+              <Estudio3D corDestaque={atual.cores.destaque} versaoBase={versao}
+                aoSalvar={(v) => {
+                  setVersao(v);
+                  setTipoAtivo('3d');
+                  setSalvo(null); // salvar no 2D volta a valer p/ reativar camadas
+                  setEstado('sem_alteracoes');
+                  setMensagem('Seu avatar 3D está ativo — salvar aqui volta para o avatar em camadas.');
+                }} />
             </Suspense>
           </section>
         ) : (
