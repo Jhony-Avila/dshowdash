@@ -3,9 +3,9 @@ import { isStrict, recordViolation } from "/core/runtime/enterprise/strict-mode.
 import { COMPONENT_EVENTS } from "/core/runtime/events/catalog/component.events.js";
 import { LifecycleManager } from "./core/lifecycle.js";
 import { CircuitBreaker } from "./core/circuit-breaker.js";
-import { StateStore } from "./state/store.js";
+import Store from "./state/store.js";
 import { Logger } from "./telemetry/logger.js";
-import { Tracker } from "./telemetry/tracker.js";
+import tracker from "./telemetry/tracker.js";
 const MODULE_ID = "panels/panel-user-preferences";
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const getVersion = () => VERSION;
@@ -38,11 +38,12 @@ class UserPreferencesComponent {
     this.container = options.container || null;
     this.config = { ...CONFIG, ...options.config };
     this.eventBus = options.eventBus || _getPort("eventBus");
-    this.store = new StateStore({ mounted: false, loading: false, error: null, data: null, theme: "--", language: "--" });
+    this.store = Store;
+    this.store.setState({ mounted: false, loading: false, error: null, data: null });
     this.lifecycle = new LifecycleManager(this);
     this.circuitBreaker = new CircuitBreaker({ threshold: 3, timeout: 3e4 });
     this.logger = new Logger({ prefix: `[${MODULE_ID}]` });
-    this.tracker = new Tracker({ moduleId: MODULE_ID });
+    this.tracker = tracker;
     this._mounted = false;
     this._initialized = false;
     this._element = null;

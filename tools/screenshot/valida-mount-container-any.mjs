@@ -13,20 +13,26 @@
 //     `panelId: panel-user-notifications`). Clicar no sino REALMENTE baixa o `index.js` do painel
 //     (verificado na aba de rede) — ali o ReferenceError era bug ATIVO de UI.
 //
-// ⚠️ ACHADO QUE ESTA PROVA REGISTRA DE PROPÓSITO: corrigir o `container` destrava o mount, mas
-// `panel-user-notifications` e `panel-user-preferences` batem logo depois num SEGUNDO defeito,
-// independente e anterior — `TypeError: StateStore is not a constructor`. Nesses dois o
-// `state/store.js` é um OBJETO singleton, não uma classe, e o `index.js` faz `new StateStore(...)`.
-// Os outros 14 têm `class StateStore` de verdade e montam. Ou seja: o ReferenceError MASCARAVA
-// esse segundo bug — os dois únicos painéis alcançáveis da família seguem sem montar, e consertar
-// isso é reescrever a integração do store (decisão de produto, fora do escopo desta correção).
-// A prova EXIGE os 14, e trava os 2 no defeito conhecido: se um deles passar a montar, alguém
-// consertou o store e esta prova precisa ser atualizada.
+// SEGUNDO defeito, que o ReferenceError mascarava e que esta prova cobria travado: nos painéis
+// `panel-user-*` o `state/store.js` é um OBJETO singleton, não classe, e o `index.js` fazia
+// `new StateStore(...)` — `TypeError: StateStore is not a constructor`. CORRIGIDO consumindo o
+// singleton pelo default export, que é a correção que o projeto já tinha aplicado em
+// `panel-user-profile` (v9.4.0-RECONNECT, 2026-07-08). Alcançou 3 painéis (notifications,
+// preferences, sessions) e, em `preferences`, ainda um terceiro nível: `new Tracker(...)` sobre
+// outro alias singleton. Todos montam agora — inclusive `panel-user-management`, que uma versão
+// anterior desta prova acusou por defeito DELA (o `mount()` daquele painel devolve Promise e o
+// harness não dava `await`).
+//
+// ⚠️ DEFEITO ADJACENTE, MEDIDO E **NÃO** CORRIGIDO (fora do escopo; decisão do dono): os painéis
+// montam mas o valor exibido não atualiza. Eles testam `if (j.success && j.data)`, e o envelope do
+// projeto é `{"ok":true,...}` — `ApiResponse.php` grava a chave `ok` (o método só se CHAMA
+// `success()`). São **17 painéis** com `j.success` e **zero** usando `j.ok`, então nenhum deles
+// sai do placeholder. Por isso a checagem aqui é "montou", não "mostra o número".
 import pkg from './node_modules/playwright/index.js';
 const { chromium } = pkg;
 import { getSessionCookies, isLoginPage, loginViaPage } from './auth.mjs';
 
-// Os 16 painéis corrigidos. Os 2 do fim têm o defeito de store documentado acima.
+// Os 14 painéis que tinham SÓ o `container: any` — store deles já era `class StateStore`.
 const SADIOS = [
   'panel-integration-adwords', 'panel-integration-alfinete', 'panel-integration-asaas',
   'panel-integration-bling', 'panel-integration-chatgpt', 'panel-integration-google-drive',
@@ -34,7 +40,9 @@ const SADIOS = [
   'panel-status-email-integration', 'panel-status-instagram-messenger', 'panel-status-weather-sp',
   'panel-status-wechat-integration', 'panel-status-whatsapp-integration',
 ];
-const COM_DEFEITO_DE_STORE = ['panel-user-notifications', 'panel-user-preferences'];
+// A família `panel-user-*` inteira: os 3 que tinham store singleton usado com `new`, mais
+// `profile` (já corrigido em 2026-07-08, serve de referência) e `management` (o do await).
+const FAMILIA_USER = ['panel-user-notifications', 'panel-user-preferences', 'panel-user-sessions', 'panel-user-profile', 'panel-user-management'];
 
 const log = (...a) => console.log(...a);
 let ok = 0, fail = 0;
@@ -64,14 +72,14 @@ const resultados = await page.evaluate(async (lista) => {
       const m = await import(`/components/panels/${p}/index.js`);
       const alvo = document.createElement('div');
       document.body.appendChild(alvo);
-      const res = m.mount(alvo, {});
+      const res = await m.mount(alvo, {});   // ⚠️ await: há mount() que devolve Promise
       out.push({ painel: p, montou: !!res?.success, erro: null });
       try { m.unmount?.(); } catch { /* */ }
       alvo.remove();
     } catch (e) { out.push({ painel: p, montou: false, erro: `${e.constructor.name}: ${e.message}` }); }
   }
   return out;
-}, [...SADIOS, ...COM_DEFEITO_DE_STORE]);
+}, [...SADIOS, ...FAMILIA_USER]);
 
 const por = (n) => resultados.find(r => r.painel === n);
 
@@ -85,13 +93,15 @@ log('\n=== nenhum painel pode mais morrer em ReferenceError (o bug corrigido) ==
 const refErr = resultados.filter(r => /ReferenceError|any is not defined/i.test(r.erro ?? ''));
 checa('zero ReferenceError nos 16', refErr.length === 0, refErr.map(r => r.painel).join(', '));
 
-log('\n=== os 2 alcançáveis: defeito de store CONHECIDO e ainda aberto ===');
-for (const p of COM_DEFEITO_DE_STORE) {
+log('\n=== a família panel-user-*: store singleton consertado, todos têm de montar ===');
+for (const p of FAMILIA_USER) {
   const r = por(p);
-  checa(`${p.padEnd(36)} ainda para em "StateStore is not a constructor"`,
-    /StateStore is not a constructor/.test(r?.erro ?? ''),
-    r?.montou ? 'MONTOU! alguém consertou o store — atualizar esta prova' : (r?.erro ?? ''));
+  checa(p.padEnd(36), r?.montou === true, r?.erro ?? '');
 }
+
+log('\n=== nenhum "is not a constructor" sobrou (o 2º defeito) ===');
+const ctorErr = resultados.filter(r => /is not a constructor/i.test(r.erro ?? ''));
+checa('zero TypeError de construtor', ctorErr.length === 0, ctorErr.map(r => `${r.painel}: ${r.erro}`).join(' | '));
 
 log(`\n${fail === 0 ? 'PASSOU' : 'REPROVOU'} — ${ok + fail} checagens, ${fail} falha(s)`);
 await browser.close();

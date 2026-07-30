@@ -40,12 +40,19 @@ import { COMPONENT_EVENTS } from '/core/runtime/events/catalog/component.events.
 import { LifecycleManager } from './core/lifecycle.js';
 import { CircuitBreaker } from './core/circuit-breaker.js';
 
-// @ts-expect-error TS migration - TS2614
-import { StateStore } from './state/store.js';
+// ⚠️ Store SINGLETON, não classe: o import nomeado pegava um objeto-alias e o `new StateStore(...)`
+// abaixo morria em `TypeError: StateStore is not a constructor` — o `@ts-expect-error TS2614` que
+// estava aqui calava justamente o aviso que apontava isso. Mesma correção de `panel-user-profile`
+// (v9.4.0-RECONNECT). Ganho extra: o singleton tem `theme`/`language` REAIS (default `system`/
+// `pt-BR`), enquanto a instância descartada nascia com `'--'` — é ele que `_updateDisplay()` quer.
+import Store from './state/store.js';
 import { Logger } from './telemetry/logger.js';
 
-// @ts-expect-error TS migration - TS2724
-import { Tracker } from './telemetry/tracker.js';
+// ⚠️ Mesma história do store: `telemetry/tracker.js` exporta um SINGLETON (`export const Tracker =
+// tracker`), e o construtor fazia `new Tracker(...)` — `TypeError: Tracker is not a constructor`,
+// o defeito que aparecia depois de consertar o store. Nada neste painel chama `this.tracker.*`;
+// o singleton é referenciado como está, sem instanciar.
+import tracker from './telemetry/tracker.js';
 export const MODULE_ID = 'panels/panel-user-preferences';
 export const VERSION = '9.3.0-P2-ENTERPRISE';
 export const getVersion = () => VERSION;
@@ -74,7 +81,7 @@ const _isDocumentVisible = () => typeof document !== 'undefined' && !document.hi
 const CONFIG = { id: 'user-preferences', area: 'user', label: 'Preferences', emoji: '⚙️', apiEndpoint: '/api/user/preferences.php', refreshInterval: 300000 };
 export class UserPreferencesComponent {
   [key: string]: any;
-  constructor(options: Record<string, unknown> = {}) { _initPorts(); this.container = options.container || null; this.config = { ...CONFIG, ...(options.config as Record<string, unknown>) }; this.eventBus = options.eventBus || _getPort('eventBus'); this.store = new StateStore({ mounted: false, loading: false, error: null, data: null, theme: '--', language: '--' }); this.lifecycle = new LifecycleManager(this); this.circuitBreaker = new CircuitBreaker({ threshold: 3, timeout: 30000 }); this.logger = new Logger({ prefix: `[${MODULE_ID}]` }); this.tracker = new Tracker({ moduleId: MODULE_ID }); this._mounted = false; this._initialized = false; this._element = null; this._abortController = null; this._refreshTimer = null; this._metrics = { mountCount: 0, errorCount: 0, fetchCount: 0, lastFetchAt: null }; }
+  constructor(options: Record<string, unknown> = {}) { _initPorts(); this.container = options.container || null; this.config = { ...CONFIG, ...(options.config as Record<string, unknown>) }; this.eventBus = options.eventBus || _getPort('eventBus'); this.store = Store; this.store.setState({ mounted: false, loading: false, error: null, data: null }); this.lifecycle = new LifecycleManager(this); this.circuitBreaker = new CircuitBreaker({ threshold: 3, timeout: 30000 }); this.logger = new Logger({ prefix: `[${MODULE_ID}]` }); this.tracker = tracker; this._mounted = false; this._initialized = false; this._element = null; this._abortController = null; this._refreshTimer = null; this._metrics = { mountCount: 0, errorCount: 0, fetchCount: 0, lastFetchAt: null }; }
   _canRefresh() { if (!this._mounted) return false; if (!_isDocumentVisible()) return false; if (!_isAuthenticated()) return false; return true; }
   init(ctx: Record<string, unknown> = {}) { if (this._initialized) return this; this._ctx = ctx || {}; this._initialized = true; return this; }
   mount(container: Element) {

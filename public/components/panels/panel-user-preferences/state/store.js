@@ -31,6 +31,9 @@ function reset() {
   _store = { theme: "system", density: "comfortable", language: "pt-BR", timezone: "America/Sao_Paulo", notifications: { email: true, push: true, sound: false }, accessibility: { highContrast: false, reducedMotion: false, fontSize: "medium" }, dashboard: { layout: "default", widgets: [], sidebarCollapsed: false }, _initialized: false, _dirty: false };
   _notify();
 }
+function setState(patch) {
+  set(patch);
+}
 function subscribe(fn) {
   _listeners.push(fn);
   return () => {
@@ -63,7 +66,7 @@ function info() {
 function healthCheck() {
   return { status: "HEALTHY", moduleId: MODULE_ID, version: VERSION, dirty: _store._dirty, initialized: _store._initialized };
 }
-var store_default = { getState, get, set, reset, subscribe, isDirty, markClean, isInitialized, setInitialized };
+var store_default = { getState, get, set, setState, reset, subscribe, isDirty, markClean, isInitialized, setInitialized };
 const StateStore = { getState, get, set, reset, subscribe, isDirty, markClean, isInitialized, setInitialized, info, healthCheck, VERSION, MODULE_ID };
 export {
   MODULE_ID,
@@ -80,5 +83,6 @@ export {
   reset,
   set,
   setInitialized,
+  setState,
   subscribe
 };

@@ -63,6 +63,12 @@ export function reset() {
   _notify();
 }
 
+// `setState(patch)` é o nome que os painéis irmãos (notifications, sessions, profile) usam e que
+// o `index.ts` daqui chama — este módulo só tinha `set()`. Alias explícito em vez de reescrever as
+// chamadas: mantém a família com a MESMA API de store e não duplica estado.
+// ⚠️ Diferente de `set()` só na assinatura: aqui é sempre um patch (objeto), nunca `(chave, valor)`.
+export function setState(patch: Record<string, unknown>) { set(patch); }
+
 export function subscribe(fn: (state: Record<string, unknown>) => void) { _listeners.push(fn); return () => { _listeners = _listeners.filter(l => l !== fn); }; }
 function _notify() { _listeners.forEach(fn => { try { fn(getState()); } catch (e) {} }); }
 
@@ -74,7 +80,7 @@ export function setInitialized(val: boolean) { _store._initialized = val; }
 export function info() { return { moduleId: MODULE_ID, version: VERSION }; }
 export function healthCheck() { return { status: 'HEALTHY', moduleId: MODULE_ID, version: VERSION, dirty: _store._dirty, initialized: _store._initialized }; }
 
-export default { getState, get, set, reset, subscribe, isDirty, markClean, isInitialized, setInitialized };
+export default { getState, get, set, setState, reset, subscribe, isDirty, markClean, isInitialized, setInitialized };
 
 // Alias export: consumers import { StateStore } from this module
 export const StateStore = { getState, get, set, reset, subscribe, isDirty, markClean, isInitialized, setInitialized, info, healthCheck, VERSION, MODULE_ID };
