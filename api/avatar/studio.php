@@ -96,7 +96,9 @@ function avst_validar_config($bruto): array
         throw new InvalidArgumentException('CONFIG_BASE_INVALIDA');
     }
 
-    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'acessorio', 'fundo', 'moldura', 'efeito'];
+    // aura/banner/emblema: Expansão (decisão #33 — categorias 2D imediatas)
+    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'acessorio', 'fundo',
+        'moldura', 'efeito', 'aura', 'banner', 'emblema'];
     $camadas = [];
     foreach ($categorias as $cat) {
         $id = $bruto['camadas'][$cat] ?? null;
@@ -120,13 +122,19 @@ function avst_validar_config($bruto): array
 
     $versao = $bruto['versao'] ?? 1;
 
-    return [
+    $saida = [
         'formato' => 'camadas',
         'versao'  => is_int($versao) ? $versao : 1,
         'base'    => $base,
         'camadas' => (object) $camadas, // objeto mesmo vazio ({} e não [])
         'cores'   => $cores,
     ];
+    // título (Expansão §27) — opcional; mesmo regex de id do catálogo
+    $titulo = $bruto['titulo'] ?? null;
+    if (is_string($titulo) && preg_match($reId, $titulo)) {
+        $saida['titulo'] = $titulo;
+    }
+    return $saida;
 }
 
 /** Linha ativa "camadas" do usuário (ou null). */

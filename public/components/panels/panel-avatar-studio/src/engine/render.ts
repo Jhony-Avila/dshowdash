@@ -6,8 +6,9 @@
 // (studio, header, menu, perfil) com resultado idêntico.
 //
 // Ordem de pintura (z-order fixo):
-//   fundo → efeito(atrás) → base → roupa → boca → olhos → cabelo
-//   → acessório → moldura → efeito(frente)
+//   fundo → banner → aura → efeito(atrás) → base → roupa → emblema → boca
+//   → olhos → cabelo → acessório → moldura → efeito(frente)
+//   (banner/aura/emblema — Expansão, decisão #33: categorias 2D de baixo custo)
 import type { AvatarConfig } from '../domain/types';
 import { paletaDe } from './cores';
 import type { ParteDef } from './base-api';
@@ -46,7 +47,7 @@ export function hashConfig(config: AvatarConfig): string {
   return `av${(h >>> 0).toString(36)}`;
 }
 
-const ORDEM_CAMADAS = ['roupa', 'boca', 'olhos', 'cabelo', 'acessorio'] as const;
+const ORDEM_CAMADAS = ['roupa', 'emblema', 'boca', 'olhos', 'cabelo', 'acessorio'] as const;
 
 /**
  * Compõe o SVG completo do avatar.
@@ -68,7 +69,9 @@ export function renderAvatar(
     return parte ? parte.render(p, uid) : '';
   };
 
-  const fundo = pintar(config.camadas.fundo);
+  // "fundo" composto: fundo → banner → aura (tudo atrás do personagem)
+  const fundo = pintar(config.camadas.fundo) + pintar(config.camadas.banner)
+    + pintar(config.camadas.aura);
   const efeitoDef = config.camadas.efeito && config.camadas.efeito !== 'nenhum'
     ? resolver(config.camadas.efeito)
     : undefined;
@@ -105,10 +108,14 @@ export function renderAvatar(
         `<g data-anim="olhos">${pintar(config.camadas.olhos)}</g>` +
         `<g data-anim="cabelo">${pintar(config.camadas.cabelo)}</g>` +
         pintar(config.camadas.acessorio) + palpebras;
+      // emblema no peito do corpo inteiro (mapeia (152,206) do busto → (145,145))
+      const emblemaCorpo = config.camadas.emblema && config.camadas.emblema !== 'nenhum'
+        ? `<g transform="translate(15.8 -30.1) scale(0.85)">${pintar(config.camadas.emblema)}</g>`
+        : '';
       conteudo =
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
-          corpoInteiro(p, uid) +
+          corpoInteiro(p, uid) + emblemaCorpo +
           `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>` +
         `</g></g>` +
         `<g data-anim="plano-frente"><g transform="translate(120 200) scale(1.8) translate(-120 -120)">${efeitoFrente}</g></g>`;
@@ -117,7 +124,8 @@ export function renderAvatar(
       conteudo =
         `<g data-anim="plano-fundo"><g transform="translate(120 120) scale(1.08) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
-          pintar(config.base) + pintar(config.camadas.roupa) + pintar(config.camadas.boca) +
+          pintar(config.base) + pintar(config.camadas.roupa) + pintar(config.camadas.emblema) +
+          pintar(config.camadas.boca) +
           `<g data-anim="olhos">${pintar(config.camadas.olhos)}</g>` +
           `<g data-anim="cabelo">${pintar(config.camadas.cabelo)}</g>` +
           pintar(config.camadas.acessorio) + palpebras +

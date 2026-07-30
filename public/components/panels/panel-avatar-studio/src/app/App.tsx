@@ -9,9 +9,9 @@
 // salvar junto do personagem (§39.11) e toast de feedback ao equipar (§39.18).
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Bot, Box, Boxes, Brush, Camera, Check, CircleUser, Columns2, Dices, Eye, Frame, Glasses,
-  History, Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Trophy,
-  Undo2, Users, Volume2, VolumeX, Wand2,
+  BadgeCheck, Bot, Box, Boxes, Brush, Camera, Check, CircleUser, Columns2, Crown, Dices,
+  Eye, Flag, Frame, Glasses, History, Image as ImagemIcon, LoaderCircle, Orbit, Redo2,
+  Save, Shirt, Smile, Sparkles, Trophy, Undo2, Users, Volume2, VolumeX, Wand2,
 } from 'lucide-react';
 
 // PoC 3D (AS4 Fase 1) — chunk separado: three/R3F só carregam nesta aba
@@ -39,6 +39,7 @@ import { Cores } from '../components/Cores';
 import { Presets } from '../components/Presets';
 import { Historico } from '../components/Historico';
 import { Foto } from '../components/Foto';
+import { Titulos } from '../components/Titulos';
 import '../styles/estudio.css';
 
 /** Itens que mudaram de a→b (comparação rica §21). */
@@ -76,6 +77,7 @@ function raridadeDaMudanca(a: AvatarConfig, b: AvatarConfig): Raridade | null {
 const ICONES: Record<CategoriaId, React.ComponentType<{ size?: number }>> = {
   base: CircleUser, cabelo: Brush, olhos: Eye, boca: Smile, roupa: Shirt,
   acessorio: Glasses, fundo: ImagemIcon, moldura: Frame, efeito: Sparkles,
+  aura: Orbit, banner: Flag, emblema: BadgeCheck,
 };
 
 const ROTULO_ESTADO: Record<EstadoSalvar, string> = {
@@ -110,7 +112,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
-  const [aba, setAba] = useState<'itens' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
+  const [aba, setAba] = useState<'itens' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [comparando, setComparando] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
@@ -382,6 +384,12 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
               </button>
             );
           })}
+          <button type="button"
+            className={`avst-cat ${aba === 'titulo' ? 'avst-cat-ativa' : ''}`}
+            onClick={() => setAba('titulo')}>
+            <Crown size={17} aria-hidden />
+            <span>Título</span>
+          </button>
           <div className="avst-cat-separador" />
           <button type="button"
             className={`avst-cat avst-cat-3d ${aba === '3d' ? 'avst-cat-ativa' : ''}`}
@@ -526,6 +534,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           <div className="avst-redim" role="separator" aria-orientation="vertical"
             title="Arraste para redimensionar · duplo clique alterna 320/420/560"
             onPointerDown={iniciarArrasto} onDoubleClick={ciclarLargura} />
+          {aba === 'titulo' && <Titulos config={atual} aoAplicar={aplicar} />}
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
           {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
           {aba === 'conquistas' && <Conquistas vida={vida} />}

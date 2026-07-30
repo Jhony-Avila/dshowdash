@@ -21,6 +21,9 @@ import { ACESSORIOS } from '../engine/partes/acessorios';
 import { FUNDOS } from '../engine/partes/fundos';
 import { MOLDURAS } from '../engine/partes/molduras';
 import { EFEITOS } from '../engine/partes/efeitos';
+import { AURAS } from '../engine/partes/auras';
+import { BANNERS } from '../engine/partes/banners';
+import { EMBLEMAS } from '../engine/partes/emblemas';
 
 export const VERSAO_CONFIG = 1;
 
@@ -36,7 +39,36 @@ export const CATEGORIAS: CategoriaMeta[] = [
   { id: 'fundo',     nome: 'Fundo',      obrigatoria: true },
   { id: 'moldura',   nome: 'Moldura',    obrigatoria: false },
   { id: 'efeito',    nome: 'Efeito',     obrigatoria: false },
+  // Expansão (decisão #33 — 2D imediato nas categorias de baixo custo)
+  { id: 'aura',      nome: 'Aura',       obrigatoria: false },
+  { id: 'banner',    nome: 'Banner',     obrigatoria: false },
+  { id: 'emblema',   nome: 'Emblema',    obrigatoria: false },
 ];
+
+// ── Títulos (Expansão §27) — dados puros: exibidos como selo, fora do SVG ──
+export interface Titulo {
+  id: string;
+  nome: string;
+  raridade: Raridade;
+  lore: string;
+}
+
+export const TITULOS: Titulo[] = [
+  { id: 'tit_estrategista', nome: 'Estrategista', raridade: 'incomum', lore: 'Três jogadas à frente, sempre.' },
+  { id: 'tit_pro_player', nome: 'Pro Player', raridade: 'raro', lore: 'O GG dele ecoa na arena até hoje.' },
+  { id: 'tit_elite_trader', nome: 'Elite Trader', raridade: 'raro', lore: 'Compra no fundo. Vende no topo. Repete.' },
+  { id: 'tit_cyber_architect', nome: 'Cyber Architect', raridade: 'epico', lore: 'Desenha sistemas que sonham em produção.' },
+  { id: 'tit_nexus_commander', nome: 'Nexus Commander', raridade: 'epico', lore: 'Todos os nós da rede respondem ao seu comando.' },
+  { id: 'tit_mestre_da_luz', nome: 'Mestre da Luz', raridade: 'lendario', lore: 'Onde ele passa, o dashboard acende.' },
+  { id: 'tit_ceo_supremo', nome: 'CEO Supremo', raridade: 'lendario', lore: 'A última palavra em qualquer reunião.' },
+  { id: 'tit_lenda_dshow', nome: 'Lenda Dshow', raridade: 'exclusivo', lore: 'O nome que a casa conta para os novatos.' },
+];
+
+const TITULOS_POR_ID = new Map(TITULOS.map((t) => [t.id, t]));
+
+export function tituloPorId(id: string | undefined): Titulo | undefined {
+  return id ? TITULOS_POR_ID.get(id) : undefined;
+}
 
 // ── Raridades (metadados de UI: selo, cor, peso no sorteio) ─────────
 
@@ -131,6 +163,7 @@ const LORES: Record<string, string> = {
 export const PARTES: ParteDef[] = [
   ...BASES, ...ESPECIES, ...CABELOS, ...OLHOS, ...BOCAS, ...ROUPAS,
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
+  ...AURAS, ...BANNERS, ...EMBLEMAS,
 ].map((x) => ({
   ...x,
   biblioteca: x.biblioteca ?? 'dshow',
@@ -207,7 +240,7 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   }
 
   const c = (b.cores ?? {}) as Partial<Record<SlotCor, string>>;
-  return {
+  const saida: AvatarConfig = {
     formato: 'camadas',
     versao: VERSAO_CONFIG,
     base,
@@ -219,6 +252,12 @@ export function validarConfig(bruto: unknown): AvatarConfig {
       destaque: normalizarHex(c.destaque, CORES_PADRAO.destaque),
     },
   };
+  // título (Expansão §27): só entra se existir no catálogo — campo OPCIONAL
+  // (ausente no JSON quando não escolhido → hash/publicação byte-estáveis)
+  if (typeof b.titulo === 'string' && TITULOS_POR_ID.has(b.titulo)) {
+    saida.titulo = b.titulo;
+  }
+  return saida;
 }
 
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────
@@ -273,6 +312,10 @@ export function aleatorio(semente: number): AvatarConfig {
   if (rnd() < 0.55) camadas.acessorio = sortearPorRaridade(rnd, sorteaveis('acessorio')).id;
   if (rnd() < 0.6) camadas.moldura = sortearPorRaridade(rnd, sorteaveis('moldura')).id;
   if (rnd() < 0.35) camadas.efeito = sortearPorRaridade(rnd, sorteaveis('efeito')).id;
+  // Expansão: as categorias 2D novas também entram no sorteio
+  if (rnd() < 0.3) camadas.aura = sortearPorRaridade(rnd, sorteaveis('aura')).id;
+  if (rnd() < 0.25) camadas.banner = sortearPorRaridade(rnd, sorteaveis('banner')).id;
+  if (rnd() < 0.35) camadas.emblema = sortearPorRaridade(rnd, sorteaveis('emblema')).id;
 
   return validarConfig({
     formato: 'camadas',
