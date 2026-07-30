@@ -108,6 +108,16 @@ const LORES: Record<string, string> = {
   efe_raio: 'A energia estática de quem carrega três sprints no corpo.',
   efe_glitch: 'Um erro de renderização? Não. Um aviso.',
   efe_fogo: 'Arde desde o primeiro trimestre. Nunca precisou de gatilho.',
+  // F2b2
+  rou_kimono: 'Costurado por um mestre que só aceitava pagamento em disciplina.',
+  rou_astronauta: 'Voltou da órbita com um adesivo: "meu outro veículo é um dashboard".',
+  rou_moletom_dshow: 'Distribuído no primeiro all-hands. Quem tem, não lava — preserva.',
+  ace_chapeu_mago: 'Sussurra queries otimizadas para quem o veste. Às vezes em latim.',
+  ace_drone: 'Firmware v0.1 até hoje. Recusa updates: "estou funcionando, não encosta".',
+  fun_lab: 'Aqui nasceram os modelos que ninguém teve coragem de desligar.',
+  fun_dojo: 'O sensei só disse uma coisa: "meça duas vezes, publique uma".',
+  mol_rgb: 'Se não tem RGB, nem é setup. Lei universal.',
+  mol_cristal: 'Congelou no exato instante de um recorde. Nunca mais derreteu.',
 };
 
 // ── Índices ─────────────────────────────────────────────────────────

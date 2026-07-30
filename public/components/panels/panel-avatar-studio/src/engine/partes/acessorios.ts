@@ -128,6 +128,64 @@ export const ACESSORIOS: ParteDef[] = [
       <circle cx="102" cy="162" r="2.4" fill="${p.destaque.claro}"/>`,
   },
   {
+    id: 'ace_cachecol',
+    categoria: 'acessorio',
+    nome: 'Cachecol',
+    descricao: 'Friozinho de ar-condicionado corporativo.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M92 176 c 16 12 40 12 56 0 l 4 14 c -20 12 -44 12 -64 0 z" fill="${p.destaque.escuro}"/>
+      <path d="M132 186 l 10 34 l 16 -6 l -12 -32 z" fill="${p.destaque.escuro}"/>
+      <path d="M138 208 l 14 -5 m -12 -8 l 13 -5" stroke="${alfa('#000000', 0.25)}" stroke-width="2.4"/>
+      <path d="M96 180 c 14 9 34 9 48 0" stroke="${alfa('#ffffff', 0.25)}" stroke-width="3" fill="none"/>`,
+  },
+  {
+    id: 'ace_chapeu_mago',
+    categoria: 'acessorio',
+    nome: 'Chapéu de Arquimago',
+    descricao: 'Conjura dashboards do nada. Nível 20 em SQL arcano.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}mag" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="${p.roupa.claro}"/>
+          <stop offset="1" stop-color="${p.roupa.profundo}"/>
+        </linearGradient>
+      </defs>
+      <path d="M64 76 c 36 -14 76 -14 112 0 c 4 2 4 8 -2 9 c -36 8 -72 8 -108 0 c -6 -1 -6 -7 -2 -9 z" fill="url(#${u}mag)"/>
+      <path d="M94 74 c 4 -28 16 -48 34 -58 c 2 -1 5 0 4 3 c -3 14 2 22 12 28 c 8 5 10 16 4 24 c -16 6 -38 7 -54 3 z" fill="url(#${u}mag)"/>
+      <path d="M96 68 c 18 4 32 3 46 -2" stroke="${p.destaque.base}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M128 26 l 2.2 5 l 5.4 0.6 l -4 3.6 l 1.1 5.3 l -4.7 -2.8 l -4.7 2.8 l 1.1 -5.3 l -4 -3.6 l 5.4 -0.6 z" fill="${p.destaque.claro}">
+        <animate attributeName="opacity" values="1;0.5;1" dur="2.6s" repeatCount="indefinite"/>
+      </path>`,
+  },
+  {
+    id: 'ace_drone',
+    categoria: 'acessorio',
+    nome: 'Drone Companion',
+    descricao: 'Segue você desde o unboxing. Nunca pediu férias.',
+    raridade: 'raro',
+    tema: 'tecnologia',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0 0; 0 -6; 0 0" dur="3.2s" repeatCount="indefinite"/>
+        <ellipse cx="196" cy="64" rx="17" ry="11" fill="#2a3040"/>
+        <ellipse cx="196" cy="61" rx="17" ry="8" fill="#3a4152"/>
+        <circle cx="196" cy="64" r="5.5" fill="${p.destaque.base}">
+          <animate attributeName="opacity" values="1;0.5;1" dur="1.6s" repeatCount="indefinite"/>
+        </circle>
+        <line x1="181" y1="56" x2="172" y2="50" stroke="#3a4152" stroke-width="3" stroke-linecap="round"/>
+        <line x1="211" y1="56" x2="220" y2="50" stroke="#3a4152" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="170" cy="49" rx="7" ry="2.4" fill="${alfa(p.destaque.base, 0.55)}"/>
+        <ellipse cx="222" cy="49" rx="7" ry="2.4" fill="${alfa(p.destaque.base, 0.55)}"/>
+      </g>`,
+  },
+  {
     id: 'ace_coroa',
     categoria: 'acessorio',
     nome: 'Coroa do Top 1',

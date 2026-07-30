@@ -146,6 +146,72 @@ export const ROUPAS: ParteDef[] = [
       <rect x="58" y="216" width="12" height="5" rx="2" fill="${alfa('#ffffff', 0.3)}" transform="rotate(-22 64 218)"/>`,
   },
   {
+    id: 'rou_kimono',
+    categoria: 'roupa',
+    nome: 'Kimono do Dojo',
+    descricao: 'Disciplina de samurai, prazo de sprint.',
+    raridade: 'epico',
+    tema: 'oriental',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>${defsRoupa(u, p.roupa.claro, p.roupa.base, p.roupa.profundo)}</defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}rou)"/>
+      ${SOMBRA_PESCOCO}
+      <path d="M96 184 l 24 30 l -14 26 h -20 c -2 -20 2 -40 10 -56 z" fill="${p.roupa.escuro}"/>
+      <path d="M144 184 l -24 30 l 14 26 h 20 c 2 -20 -2 -40 -10 -56 z" fill="${p.roupa.escuro}"/>
+      <path d="M96 184 l 24 30 l 24 -30" stroke="${alfa('#ffffff', 0.55)}" stroke-width="5" fill="none"/>
+      <path d="M100 188 l 20 26 l 20 -26" stroke="${p.destaque.base}" stroke-width="2.4" fill="none"/>
+      <rect x="86" y="226" width="68" height="12" fill="${p.destaque.base}"/>
+      <rect x="112" y="224" width="16" height="16" rx="2" fill="${p.destaque.escuro}"/>`,
+  },
+  {
+    id: 'rou_astronauta',
+    categoria: 'roupa',
+    nome: 'Traje Orbital',
+    descricao: 'Homologado para vácuo, reuniões e segundas-feiras.',
+    raridade: 'lendario',
+    tema: 'espaço',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}ast" x1="0" y1="0" x2="0.5" y2="1">
+          <stop offset="0" stop-color="#f2f4f8"/>
+          <stop offset="0.6" stop-color="#d5dae6"/>
+          <stop offset="1" stop-color="#aeb6c9"/>
+        </linearGradient>
+      </defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}ast)"/>
+      <path d="M92 182 a 30 18 0 0 0 56 0 l 8 6 a 38 24 0 0 1 -72 0 z" fill="${p.roupa.base}"/>
+      <circle cx="78" cy="214" r="11" fill="${p.roupa.base}"/>
+      <circle cx="162" cy="214" r="11" fill="${p.roupa.base}"/>
+      <circle cx="78" cy="214" r="5" fill="${p.destaque.base}"/>
+      <circle cx="162" cy="214" r="5" fill="${p.destaque.base}">
+        <animate attributeName="opacity" values="1;0.4;1" dur="2.4s" repeatCount="indefinite"/>
+      </circle>
+      <rect x="104" y="206" width="32" height="22" rx="5" fill="#20242c"/>
+      <rect x="108" y="210" width="24" height="5" rx="2.5" fill="${p.destaque.base}"/>
+      <rect x="108" y="219" width="14" height="4" rx="2" fill="${alfa('#ffffff', 0.4)}"/>
+      <path d="M52 226 c 8 -16 24 -26 44 -32" stroke="${alfa('#ffffff', 0.4)}" stroke-width="4" stroke-linecap="round" fill="none"/>
+      ${SOMBRA_PESCOCO}`,
+  },
+  {
+    id: 'rou_moletom_dshow',
+    categoria: 'roupa',
+    nome: 'Moletom Dshow',
+    descricao: 'O uniforme não oficial de quem constrói o dash.',
+    raridade: 'exclusivo',
+    tema: 'dshow',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>${defsRoupa(u, p.roupa.claro, p.roupa.base, p.roupa.profundo)}</defs>
+      <path d="${PATH_OMBROS}" fill="url(#${u}rou)"/>
+      ${SOMBRA_PESCOCO}
+      <path d="M96 184 c 8 14 40 14 48 0 c 4 8 -6 18 -24 18 s -28 -10 -24 -18 z" fill="${p.roupa.profundo}"/>
+      <circle cx="120" cy="222" r="15" fill="none" stroke="${p.destaque.base}" stroke-width="3"/>
+      <path d="M114 214 v 16 c 8 2 14 -2 14 -8 s -6 -10 -14 -8 z" fill="${p.destaque.base}"/>
+      <path d="M64 234 l 20 -10 m 92 10 l -20 -10" stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="3" stroke-linecap="round"/>`,
+  },
+  {
     id: 'rou_armadura',
     categoria: 'roupa',
     nome: 'Armadura Nexus',
