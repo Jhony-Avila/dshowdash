@@ -278,4 +278,134 @@ export const ESPECIES: ParteDef[] = [
       </ellipse>
       <path d="M80 66 a 50 56 0 0 1 36 -20" stroke="${alfa('#ffffff', 0.7)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
   },
+  // ── 4.6 F2 · Onda 8 (final §28) — 5 espécies novas ────────────────
+  {
+    id: 'bas_tigre',
+    categoria: 'base',
+    nome: 'Tigre',
+    descricao: 'Listras de quem caça resultado em silêncio.',
+    raridade: 'epico',
+    tema: 'animais',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPelagem(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="${p.pele.escuro}"/>
+      <path d="M80 66 l -12 -28 l 30 12 z" fill="url(#${u}pel)"/>
+      <path d="M160 66 l 12 -28 l -30 12 z" fill="url(#${u}pel)"/>
+      <ellipse cx="120" cy="108" rx="53" ry="55" fill="url(#${u}pel)"/>
+      <g fill="#20242c">
+        <path d="M92 58 q 6 10 2 18 q -8 -6 -10 -14 z"/>
+        <path d="M148 58 q -6 10 -2 18 q 8 -6 10 -14 z"/>
+        <path d="M68 96 q 12 2 18 8 q -10 4 -18 2 z"/>
+        <path d="M172 96 q -12 2 -18 8 q 10 4 18 2 z"/>
+        <path d="M70 128 q 10 0 16 5 q -8 5 -16 3 z"/>
+        <path d="M170 128 q -10 0 -16 5 q 8 5 16 3 z"/>
+        <path d="M112 52 q 8 -4 16 0 q -8 6 -16 0 z"/>
+      </g>
+      <ellipse cx="120" cy="136" rx="16" ry="11" fill="${BRANCO}"/>
+      <path d="M120 132 l -4 -4 h 8 z" fill="#ff9fb0"/>
+      <path d="M84 70 a 53 55 0 0 1 36 -18" stroke="${alfa('#ffffff', 0.4)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'bas_sapo',
+    categoria: 'base',
+    nome: 'Sapo',
+    descricao: 'Engole um sapo por sprint. Profissionalmente.',
+    raridade: 'incomum',
+    tema: 'animais',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPelagem(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="${p.pele.escuro}"/>
+      <circle cx="94" cy="54" r="15" fill="url(#${u}pel)"/>
+      <circle cx="146" cy="54" r="15" fill="url(#${u}pel)"/>
+      <circle cx="94" cy="52" r="8" fill="${BRANCO}"/>
+      <circle cx="146" cy="52" r="8" fill="${BRANCO}"/>
+      <circle cx="94" cy="52" r="3.4" fill="#14100c"/>
+      <circle cx="146" cy="52" r="3.4" fill="#14100c"/>
+      <ellipse cx="120" cy="110" rx="52" ry="52" fill="url(#${u}pel)"/>
+      <ellipse cx="120" cy="140" rx="22" ry="12" fill="${alfa(p.pele.claro, 0.65)}"/>
+      <circle cx="86" cy="120" r="3" fill="${alfa(p.pele.escuro, 0.5)}"/>
+      <circle cx="154" cy="120" r="3" fill="${alfa(p.pele.escuro, 0.5)}"/>
+      <path d="M84 72 a 52 52 0 0 1 36 -16" stroke="${alfa('#ffffff', 0.4)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'bas_slime',
+    categoria: 'base',
+    nome: 'Slime',
+    descricao: 'Se adapta a qualquer organograma. Literalmente.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    usaCores: ['pele', 'destaque'],
+    render: (p, u) => `
+      <defs>
+        <radialGradient id="${u}sli" cx="0.4" cy="0.3" r="1">
+          <stop offset="0" stop-color="${alfa(p.destaque.claro, 0.9)}"/>
+          <stop offset="0.6" stop-color="${alfa(p.destaque.base, 0.8)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.profundo, 0.85)}"/>
+        </radialGradient>
+      </defs>
+      <path d="M104 148 h 32 v 34 c -10 6 -22 6 -32 0 z" fill="${alfa(p.destaque.base, 0.7)}"/>
+      <path d="M120 50 c 30 0 50 24 50 54 c 0 20 -6 34 -16 44 q -2 8 -8 6 q -6 8 -12 4 q -8 6 -14 0 q -8 4 -12 -4 q -6 2 -8 -6 c -10 -10 -16 -24 -16 -44 c 0 -30 20 -54 50 -54 z" fill="url(#${u}sli)"/>
+      <circle cx="96" cy="76" r="6" fill="${alfa('#ffffff', 0.5)}"/>
+      <circle cx="146" cy="132" r="4" fill="${alfa('#ffffff', 0.3)}">
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -18;0 0" dur="4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="90" cy="128" r="3" fill="${alfa('#ffffff', 0.3)}">
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -12;0 0" dur="3.2s" repeatCount="indefinite"/>
+      </circle>
+      <path d="M80 66 a 50 54 0 0 1 38 -18" stroke="${alfa('#ffffff', 0.55)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'bas_caveira',
+    categoria: 'base',
+    nome: 'Caveira',
+    descricao: 'Deadline literal. Sorriso permanente de quem já entregou tudo.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    render: (_p, u) => `
+      <defs>
+        <radialGradient id="${u}cav" cx="0.38" cy="0.28" r="1">
+          <stop offset="0" stop-color="#ffffff"/>
+          <stop offset="0.6" stop-color="#eceadf"/>
+          <stop offset="1" stop-color="#c9c4b0"/>
+        </radialGradient>
+      </defs>
+      <path d="M108 150 h 24 v 34 c -8 5 -16 5 -24 0 z" fill="#d9d5c5"/>
+      <path d="M120 50 c 30 0 48 22 48 50 c 0 18 -6 30 -16 38 v 14 c 0 8 -6 12 -12 12 h -40 c -6 0 -12 -4 -12 -12 v -14 c -10 -8 -16 -20 -16 -38 c 0 -28 18 -50 48 -50 z" fill="url(#${u}cav)"/>
+      <path d="M108 146 v 14 M120 148 v 14 M132 146 v 14" stroke="#b8b29c" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="120" cy="134" rx="6" ry="8" fill="#3a362c"/>
+      <path d="M84 66 a 48 50 0 0 1 36 -16" stroke="${alfa('#ffffff', 0.7)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'bas_nuvem',
+    categoria: 'base',
+    nome: 'Nuvem',
+    descricao: 'Cabeça nas nuvens, uptime nos céus.',
+    raridade: 'raro',
+    tema: 'clima',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <radialGradient id="${u}nuv" cx="0.4" cy="0.3" r="1">
+          <stop offset="0" stop-color="#ffffff"/>
+          <stop offset="0.7" stop-color="#eef2fa"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.claro, 0.75)}"/>
+        </radialGradient>
+      </defs>
+      <path d="M104 150 h 32 v 30 c -10 6 -22 6 -32 0 z" fill="#dfe6f4"/>
+      <circle cx="86" cy="90" r="26" fill="url(#${u}nuv)"/>
+      <circle cx="120" cy="72" r="30" fill="url(#${u}nuv)"/>
+      <circle cx="154" cy="90" r="26" fill="url(#${u}nuv)"/>
+      <circle cx="94" cy="126" r="28" fill="url(#${u}nuv)"/>
+      <circle cx="146" cy="126" r="28" fill="url(#${u}nuv)"/>
+      <ellipse cx="120" cy="112" rx="44" ry="42" fill="url(#${u}nuv)"/>
+      <circle cx="76" cy="150" r="3" fill="${alfa(p.destaque.base, 0.5)}">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="166" cy="146" r="2.4" fill="${alfa(p.destaque.base, 0.5)}">
+        <animate attributeName="opacity" values="0.2;0.7;0.2" dur="2.8s" repeatCount="indefinite"/>
+      </circle>
+      <path d="M84 66 a 44 42 0 0 1 34 -14" stroke="${alfa('#ffffff', 0.85)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  },
 ];

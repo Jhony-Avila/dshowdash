@@ -388,4 +388,94 @@ export const BASES: ParteDef[] = [
       <ellipse cx="120" cy="152" rx="18" ry="6" fill="${alfa(p.pele.profundo, 0.26)}"/>
       ${rimLight()}`,
   },
+  // ── 4.6 F2 · Onda 8 (final §28) — 4 rostos humanoides ─────────────
+  {
+    id: 'bas_madura',
+    categoria: 'base',
+    nome: 'Madura',
+    descricao: 'Elegância que não pede licença para liderar.',
+    raridade: 'incomum',
+    tema: 'executivo',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <path d="M120 50 c 26 0 44 16 46 42 c 2 22 -4 40 -14 52 l -18 16 c -8 7 -20 7 -28 0 l -18 -16 c -10 -12 -16 -30 -14 -52 c 2 -26 20 -42 46 -42 z" fill="url(#${u}pele)"/>
+      <path d="M88 124 q 4 5 9 6 M152 124 q -4 5 -9 6" stroke="${alfa(p.pele.profundo, 0.24)}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+      <path d="M92 148 q 28 10 56 0" stroke="${alfa(p.pele.claro, 0.5)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <ellipse cx="72" cy="${G.orelhaY}" rx="8.5" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="168" cy="${G.orelhaY}" rx="8.5" ry="12" fill="${p.pele.base}"/>
+      <circle cx="168" cy="124" r="2.4" fill="#e8b64c"/>
+      <circle cx="72" cy="124" r="2.4" fill="#e8b64c"/>
+      <ellipse cx="120" cy="153" rx="16" ry="5.4" fill="${alfa(p.pele.profundo, 0.24)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_sereno',
+    categoria: 'base',
+    nome: 'Sereno',
+    descricao: 'Pressão externa não altera a pressão interna.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <ellipse cx="${G.cx}" cy="${G.cabecaCy}" rx="51" ry="55" fill="url(#${u}pele)"/>
+      <path d="M92 138 q 28 8 56 0" stroke="${alfa(p.pele.claro, 0.45)}" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <ellipse cx="70" cy="${G.orelhaY}" rx="9" ry="12.5" fill="${p.pele.base}"/>
+      <ellipse cx="170" cy="${G.orelhaY}" rx="9" ry="12.5" fill="${p.pele.base}"/>
+      <ellipse cx="71.5" cy="${G.orelhaY}" rx="4" ry="6.8" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <ellipse cx="168.5" cy="${G.orelhaY}" rx="4" ry="6.8" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <ellipse cx="120" cy="152" rx="17" ry="5.6" fill="${alfa(p.pele.profundo, 0.22)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_gotico',
+    categoria: 'base',
+    nome: 'Pálido Gótico',
+    descricao: 'Prefere modo escuro em tudo — inclusive na pele.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    render: (_p, u) => `
+      <defs>${defsPele(u, '#f0eef4', '#ddd8e6', '#b8b0c9')}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <ellipse cx="${G.cx}" cy="${G.cabecaCy}" rx="${G.cabecaRx}" ry="${G.cabecaRy}" fill="url(#${u}pele)"/>
+      <ellipse cx="100" cy="118" rx="8" ry="5" fill="${alfa('#7c5cff', 0.14)}"/>
+      <ellipse cx="140" cy="118" rx="8" ry="5" fill="${alfa('#7c5cff', 0.14)}"/>
+      <ellipse cx="70" cy="${G.orelhaY}" rx="9" ry="13" fill="#ddd8e6"/>
+      <ellipse cx="170" cy="${G.orelhaY}" rx="9" ry="13" fill="#ddd8e6"/>
+      <path d="M96 150 q 24 8 48 0" stroke="${alfa('#5a4a7a', 0.3)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <ellipse cx="120" cy="152" rx="18" ry="6" fill="${alfa('#5a4a7a', 0.24)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_estatua',
+    categoria: 'base',
+    nome: 'Estátua Dourada',
+    descricao: 'O troféu do funcionário do século criou vida.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    render: (_p, u) => `
+      <defs>
+        <radialGradient id="${u}ouro" cx="0.38" cy="0.28" r="1">
+          <stop offset="0" stop-color="#ffe89a"/>
+          <stop offset="0.58" stop-color="#e8b64c"/>
+          <stop offset="1" stop-color="#a5731a"/>
+        </radialGradient>
+        <linearGradient id="${u}ouroP" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a5731a"/>
+          <stop offset="1" stop-color="#e8b64c"/>
+        </linearGradient>
+      </defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}ouroP)"/>
+      <ellipse cx="${G.cx}" cy="${G.cabecaCy}" rx="${G.cabecaRx}" ry="${G.cabecaRy}" fill="url(#${u}ouro)"/>
+      <ellipse cx="70" cy="${G.orelhaY}" rx="9" ry="13" fill="#e8b64c"/>
+      <ellipse cx="170" cy="${G.orelhaY}" rx="9" ry="13" fill="#e8b64c"/>
+      <path d="M86 70 l 6 -6 M96 60 l 8 -8" stroke="${alfa('#ffffff', 0.7)}" stroke-width="2.4" stroke-linecap="round">
+        <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2.4s" repeatCount="indefinite"/>
+      </path>
+      <ellipse cx="120" cy="152" rx="18" ry="6" fill="${alfa('#7a5210', 0.4)}"/>
+      ${rimLight()}`,
+  },
 ];
