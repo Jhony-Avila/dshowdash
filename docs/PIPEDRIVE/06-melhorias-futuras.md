@@ -291,10 +291,33 @@ Três itens abaixo estão presos por tabela vazia, não por esforço. Registrado
     owners.
   - Verificado e **MANTIDO**: o `LIMIT 50` do resumo por etapa (`SyncRepository` ~l. 878) não
     esconde nada — há **13** stages.
-  - 🔎 **Achado lateral, não tratado**: existe a tabela **`pipe_activity_types`** (catálogo oficial).
-    O filtro hoje mostra a *chave* crua e truncada em 26 caracteres (`apresentacao_de_novos_prod`,
-    `nutricao_de_clientes_com_c`). Ler o rótulo dessa tabela deixaria o filtro legível — melhoria de
-    UI, fora do escopo deste lote.
+  - ✅ **4º lote (2026-07-29, commit `71bcf4a`): o filtro passou a mostrar o NOME do tipo.** Era o
+    "achado lateral" deste lote, aprovado pelo dono — e a premissa dele estava errada.
+    - ⚠️ **6ª premissa invertida na medição**: a nota dizia "existe a tabela `pipe_activity_types`,
+      basta ler o rótulo dela". A tabela existe no schema desde o início e tinha **0 linhas** —
+      **nada no projeto a populava**, e `PIPEDRIVE_API_TOKEN` no `.env` está **vazio** (o módulo usa
+      credencial cifrada no banco, via `AccountRepository::getActiveToken()`).
+    - ⚠️ **E não dava para "embelezar" a chave no front**: `instalao_` é **"Acompanhamento
+      Instalação"** e `lunch` é **"Almoço com Cliente"**. A origem perdeu os acentos e truncou em 26
+      chars (a coluna é `varchar(64)`, o truncamento **não** é nosso). Derivar da chave daria
+      "Instalao ". O nome só existe na API.
+    - Feito: `upsertActivityType()` + `activity_types` em `syncReference()`; `activityTypeFacet()`
+      devolve `[{value,label}]`. **Zero mudança no front** — `EntityGrid.opcoesDe` já aceitava esse
+      formato.
+    - ⚠️ **Duas consultas de propósito.** O `DISTINCT ... LEFT JOIN ... ORDER BY label` "elegante"
+      foi medido: **249 ms** contra **48,7 ms** das duas separadas (47,5 + 1,2; controle 20,5). O
+      JOIN mata o index-only scan de `ix_del_type` e devolveria a tela ao patamar que o 3º lote
+      acabou de derrubar. HTTP final: **60,3 ms** com facets / **29,5 ms** com `facets=0` — mesma
+      faixa de antes, o rótulo saiu de graça.
+    - ⚠️ Lista os tipos **em uso**, não os `is_active=1`: dos 51 em uso só **18** estão ativos no
+      Pipedrive. Filtrar por ativo esconderia **33** tipos com atividades históricas — o mesmo bug
+      do `LIMIT 50`.
+    - Sync executado: **65** tipos gravados (18 ativos), **0 órfãos**, **0 nomes duplicados** entre
+      os 51. Ordenação por nome fica com o MySQL (collation de acento; este PHP não tem
+      `intl`/`Collator`).
+    - Fallback preservado: sem entrada no catálogo — ou com a tabela vazia — o rótulo volta a ser a
+      chave. A tela não depende do sync ter rodado.
+    - Prova: 33 checagens em dark+light no `valida-pipedrive-facets-atividades.mjs`.
 - **#47**: hoje o que existe é **cache de 120 s no front**, não Redis. Vale medir se ainda é problema **depois** de #46 — índice barato pode tornar o cache desnecessário.
 
 ## 10. Segurança / RBAC / Governança
