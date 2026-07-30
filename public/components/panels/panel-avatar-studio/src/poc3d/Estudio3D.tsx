@@ -19,7 +19,7 @@ import { telemetria } from '../services/Telemetria';
 import { salvar3D } from '../services/AvatarService';
 import {
   CONFIG3D_PADRAO, CORES_3D, ITENS_SOCKET, ROTULOS_SOCKET, ROTULOS_VARIANTE,
-  SOCKETS_LEVA1,
+  SOCKETS_LEVA1, validarConfig3d,
 } from './catalogo3d';
 import type {
   ArquetipoId, CameraId, CenarioId, ClimaId, Config3D, HoraId, IluminacaoId,
@@ -69,14 +69,20 @@ function temWebGL2(): boolean {
   } catch { return false; }
 }
 
-export default function Estudio3D({ corDestaque, versaoBase = 0, aoSalvar }: {
+export default function Estudio3D({ corDestaque, versaoBase = 0, config3dInicial, aoSalvar }: {
   corDestaque?: string;
   /** versão atual do avatar (concorrência otimista — 409 entre abas) */
   versaoBase?: number;
+  /** último trabalho 3D salvo (retomada — fila #37); bruto, validado aqui */
+  config3dInicial?: unknown | null;
   /** avisa o App quando o 3D vira o avatar oficial (nova versão) */
   aoSalvar?: (novaVersao: number) => void;
 }) {
-  const [config, setConfig] = useState<Config3D>(CONFIG3D_PADRAO);
+  // retomada: reabre exatamente onde o usuário parou (sockets, palco vivo,
+  // cores, morfos) — fail-closed via validarConfig3d; sem salvo → padrão
+  const [config, setConfig] = useState<Config3D>(
+    () => (config3dInicial ? validarConfig3d(config3dInicial) : CONFIG3D_PADRAO),
+  );
   const [gesto, setGesto] = useState<Gesto>(null);
   const [fasePoder, setFasePoder] = useState<FasePoder>('inativo');
   const [qualidade, setQualidade] = useState<Qualidade>('alto');
