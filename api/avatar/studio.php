@@ -3,7 +3,13 @@ declare(strict_types=1);
 
 /**
  * /api/avatar/studio.php — persistência oficial do Avatar Studio.
- * @version 1.6.0
+ * @version 1.7.0
+ * @changelog 1.7.0 (2026-07-30) — RETOMADA DO 3D (fila #37): GET devolve
+ *   também config_3d_recente (último formato:'3d' do usuário, RE-VALIDADO
+ *   por avst_validar_config3d na leitura — fail-closed até contra linhas
+ *   antigas); o Estúdio 3D reabre exatamente onde o usuário parou
+ *   (sockets, palco vivo, cores, morfos), inclusive após reativar uma
+ *   versão 3D pelo Histórico.
  * @changelog 1.6.0 (2026-07-30) — FOTO ESTILIZADA (4.6 §21, decisão #42):
  *   POST {foto, config_foto?, base_version} aceita parâmetros de APRESENTAÇÃO
  *   (fundo/banner/aura/efeito/moldura/emblema/título/destaque — NUNCA
@@ -33,8 +39,8 @@ declare(strict_types=1);
  *
  * Contrato (envelope {ok,data,error,meta} padrão do dash):
  *   GET               → { config, version, render_url, avatar_url,
- *                         tipo_ativo: 'camadas'|'foto'|'legado'|null,
- *                         config_camadas_recente }
+ *                         tipo_ativo: 'camadas'|'foto'|'3d'|'legado'|null,
+ *                         config_camadas_recente, config_3d_recente }
  *   GET ?historico=1  → { itens: [{id, tipo, config, url, criado_em, nome,
  *                         fixado, ativo, versao}], retencao } (100)
  *   POST {config,svg,base_version}  → salva avatar em camadas (SVG sanitizado)
@@ -432,6 +438,22 @@ try {
             }
         }
 
+        // último trabalho em 3D (retomada do estúdio — fila #37): pega o
+        // formato:'3d' mais recente e RE-VALIDA na leitura (fail-closed
+        // também contra linhas gravadas por versões antigas do validador)
+        $config3dRecente = null;
+        $st3 = $pdo->prepare("
+            SELECT avatar_config FROM app_user_avatars
+            WHERE user_id = ? AND avatar_type = 'generated'
+              AND avatar_config LIKE '%\"formato\":\"3d\"%'
+            ORDER BY id DESC LIMIT 1
+        ");
+        $st3->execute([$userId]);
+        $bruto3 = json_decode((string) ($st3->fetchColumn() ?: ''), true);
+        if (is_array($bruto3) && ($bruto3['formato'] ?? '') === '3d') {
+            $config3dRecente = avst_validar_config3d($bruto3);
+        }
+
         $tipoAtivo = null;
         if ($ativo) {
             if ($configAtivo !== null) {
@@ -461,6 +483,7 @@ try {
             'avatar_url'             => $avatarUrl ?: null,
             'tipo_ativo'             => $tipoAtivo,
             'config_camadas_recente' => $configRecente,
+            'config_3d_recente'      => $config3dRecente,
         ]);
     }
 

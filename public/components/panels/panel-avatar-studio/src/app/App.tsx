@@ -126,6 +126,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [origem, setOrigem] = useState<OrigemDado>('padrao');
   const [versao, setVersao] = useState(0);
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>(null);
+  // último trabalho 3D (fila #37) — bruto; o Estúdio 3D valida no chunk dele
+  const [config3dInicial, setConfig3dInicial] = useState<unknown | null>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
   const [aba, setAba] = useState<'itens' | 'arquetipo' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
@@ -197,6 +199,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
     setOrigem(r.origem);
     setVersao(r.versao);
     setTipoAtivo(r.tipoAtivo);
+    setConfig3dInicial(r.config3dRecente);
     if (r.tipoAtivo === 'foto' || r.tipoAtivo === '3d') {
       setEstado('sem_alteracoes');
       setMensagem(r.tipoAtivo === '3d'
@@ -548,6 +551,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
               </div>
             )}>
               <Estudio3D corDestaque={atual.cores.destaque} versaoBase={versao}
+                config3dInicial={config3dInicial}
                 aoSalvar={(v) => {
                   setVersao(v);
                   setTipoAtivo('3d');

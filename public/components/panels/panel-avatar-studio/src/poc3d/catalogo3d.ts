@@ -98,6 +98,60 @@ export const CONFIG3D_PADRAO: Config3D = {
   camera: 'corpo',
 };
 
+/**
+ * Valida uma Config3D vinda de fora (API/histórico) — retomada do estúdio
+ * (fila #37). Fail-closed campo a campo, como o backend: enum desconhecido
+ * cai no padrão; sockets só aceitam PARES item×socket que existem no
+ * catálogo desta versão do front (mais estrito que o regex do servidor —
+ * um id de leva futura simplesmente não equipa aqui).
+ */
+export function validarConfig3d(bruto: unknown): Config3D {
+  const b = (bruto && typeof bruto === 'object' ? bruto : {}) as Record<string, unknown>;
+  const enumOu = <T extends string>(v: unknown, lista: readonly T[], padrao: T): T =>
+    (typeof v === 'string' && (lista as readonly string[]).includes(v) ? (v as T) : padrao);
+  const hexOu = (v: unknown, padrao: string): string =>
+    (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v.toLowerCase() : padrao);
+  const n01 = (v: unknown, padrao: number): number =>
+    (typeof v === 'number' && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : padrao);
+
+  const variantes: readonly VarianteHumanoId[] = ['casual', 'terno', 'punk', 'aventureiro'];
+  const cores = (b.cores && typeof b.cores === 'object' ? b.cores : {}) as Record<string, unknown>;
+  const mat = (b.material && typeof b.material === 'object' ? b.material : {}) as Record<string, unknown>;
+  const mor = (b.morfos && typeof b.morfos === 'object' ? b.morfos : {}) as Record<string, unknown>;
+
+  const sockets: Partial<Record<Socket3D, string>> = {};
+  const brutoSockets = (b.sockets && typeof b.sockets === 'object' ? b.sockets : {}) as Record<string, unknown>;
+  for (const [socket, id] of Object.entries(brutoSockets)) {
+    if (typeof id !== 'string') continue;
+    const item = ITENS_SOCKET.find((i) => i.id === id);
+    if (item && item.socket === socket) sockets[item.socket] = id;
+  }
+
+  const p = CONFIG3D_PADRAO;
+  return {
+    arquetipo: enumOu(b.arquetipo, ['humano', 'androide', 'animal'], p.arquetipo),
+    roupa: enumOu(b.roupa, variantes, p.roupa),
+    cabeca: enumOu(b.cabeca, variantes, p.cabeca),
+    mochila: b.mochila === true,
+    sockets,
+    cores: {
+      pele: hexOu(cores.pele, p.cores.pele),
+      cabelo: hexOu(cores.cabelo, p.cores.cabelo),
+      roupa: hexOu(cores.roupa, p.cores.roupa),
+      detalhe: hexOu(cores.detalhe, p.cores.detalhe),
+    },
+    material: { metal: n01(mat.metal, p.material.metal), brilho: n01(mat.brilho, p.material.brilho) },
+    morfos: {
+      bravo: n01(mor.bravo, 0), surpreso: n01(mor.surpreso, 0), triste: n01(mor.triste, 0),
+    },
+    iluminacao: enumOu(b.iluminacao, ['estudio', 'dramatica', 'neon'], p.iluminacao),
+    cenario: enumOu(b.cenario, ['vazio', 'grade', 'estrelas', 'dojo'], p.cenario),
+    hora: enumOu(b.hora, ['estudio', 'dia', 'entardecer', 'noite'], p.hora),
+    clima: enumOu(b.clima, ['limpo', 'chuva', 'neve', 'vagalumes'], p.clima),
+    camera: enumOu(b.camera, ['corpo', 'busto', 'rosto', 'tresquartos'], p.camera),
+  };
+}
+
 export interface Licenca {
   base: string;
   autor: string;

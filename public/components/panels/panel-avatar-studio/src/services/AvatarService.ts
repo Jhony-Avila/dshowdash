@@ -35,6 +35,9 @@ export interface ResultadoCarga {
   tipoAtivo: TipoAtivo;
   /** último trabalho em camadas — recuperado mesmo com foto/legado ativo */
   configCamadasRecente: AvatarConfig | null;
+  /** último trabalho 3D (fila #37) — o Estúdio 3D reabre onde parou;
+   *  validado DENTRO do chunk 3D (validarConfig3d), aqui fica bruto */
+  config3dRecente: unknown | null;
 }
 
 export interface ResultadoSalvar {
@@ -75,6 +78,7 @@ export async function carregarAvatar(signal?: AbortSignal): Promise<ResultadoCar
         urlLegado: d.avatar_url ?? null,
         tipoAtivo: d.tipo_ativo ?? null,
         configCamadasRecente: d.config_camadas_recente ? validarConfig(d.config_camadas_recente) : null,
+        config3dRecente: d.config_3d_recente ?? null,
       };
     }
   } catch { /* segue para o fallback */ }
@@ -84,11 +88,11 @@ export async function carregarAvatar(signal?: AbortSignal): Promise<ResultadoCar
     const salvo = localStorage.getItem(CHAVE_CONFIG);
     if (salvo) {
       const cfg = validarConfig(JSON.parse(salvo));
-      return { config: cfg, versao: 0, origem: 'local', renderUrl: null, urlLegado: null, tipoAtivo: null, configCamadasRecente: cfg };
+      return { config: cfg, versao: 0, origem: 'local', renderUrl: null, urlLegado: null, tipoAtivo: null, configCamadasRecente: cfg, config3dRecente: null };
     }
   } catch { /* segue */ }
 
-  return { config: null, versao: 0, origem: 'padrao', renderUrl: null, urlLegado: null, tipoAtivo: null, configCamadasRecente: null };
+  return { config: null, versao: 0, origem: 'padrao', renderUrl: null, urlLegado: null, tipoAtivo: null, configCamadasRecente: null, config3dRecente: null };
 }
 
 /** Últimas 100 versões (camadas, fotos e 3D) — 4.6 §22. */
