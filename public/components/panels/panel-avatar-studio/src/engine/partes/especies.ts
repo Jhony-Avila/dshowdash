@@ -187,4 +187,95 @@ export const ESPECIES: ParteDef[] = [
       <line x1="120" y1="48" x2="120" y2="56" stroke="#20242c" stroke-width="4"/>
       <path d="M80 66 a 24 24 0 0 1 20 -8" stroke="${alfa('#ffffff', 0.3)}" stroke-width="4" stroke-linecap="round" fill="none"/>`,
   },
+  // ── 4.6 F2 · Onda 7 — 4 espécies novas ────────────────────────────
+  {
+    id: 'bas_gato',
+    categoria: 'base',
+    nome: 'Gato',
+    descricao: 'Derruba o que estiver na borda da mesa. Inclusive prazos.',
+    raridade: 'raro',
+    tema: 'animais',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPelagem(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="${p.pele.escuro}"/>
+      <path d="M78 70 l -14 -34 l 34 16 z" fill="url(#${u}pel)"/>
+      <path d="M162 70 l 14 -34 l -34 16 z" fill="url(#${u}pel)"/>
+      <path d="M80 62 l -8 -20 l 20 10 z" fill="${alfa('#ff9fb0', 0.75)}"/>
+      <path d="M160 62 l 8 -20 l -20 10 z" fill="${alfa('#ff9fb0', 0.75)}"/>
+      <ellipse cx="120" cy="108" rx="52" ry="54" fill="url(#${u}pel)"/>
+      <ellipse cx="120" cy="134" rx="16" ry="11" fill="${BRANCO}"/>
+      <path d="M120 130 l -4 -4 h 8 z" fill="#ff9fb0"/>
+      <g stroke="${alfa('#ffffff', 0.75)}" stroke-width="1.6" stroke-linecap="round">
+        <path d="M64 126 l 26 3 M64 136 l 26 -1 M176 126 l -26 3 M176 136 l -26 -1"/>
+      </g>
+      <path d="M84 70 a 52 54 0 0 1 36 -18" stroke="${alfa('#ffffff', 0.4)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'bas_urso',
+    categoria: 'base',
+    nome: 'Urso',
+    descricao: 'Abraço de esmagamento e paciência de hibernação.',
+    raridade: 'raro',
+    tema: 'animais',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPelagem(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="${p.pele.escuro}"/>
+      <circle cx="82" cy="56" r="16" fill="url(#${u}pel)"/>
+      <circle cx="158" cy="56" r="16" fill="url(#${u}pel)"/>
+      <circle cx="84" cy="58" r="7" fill="${alfa(p.pele.claro, 0.7)}"/>
+      <circle cx="156" cy="58" r="7" fill="${alfa(p.pele.claro, 0.7)}"/>
+      <ellipse cx="120" cy="108" rx="54" ry="55" fill="url(#${u}pel)"/>
+      <ellipse cx="120" cy="136" rx="18" ry="13" fill="${alfa(p.pele.claro, 0.8)}"/>
+      <ellipse cx="120" cy="130" rx="8" ry="6" fill="#2b2118"/>
+      <path d="M84 70 a 54 55 0 0 1 38 -19" stroke="${alfa('#ffffff', 0.35)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'bas_dragao',
+    categoria: 'base',
+    nome: 'Dragão',
+    descricao: 'Guarda tesouros: métricas boas e feedbacks salvos.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    usaCores: ['pele', 'destaque'],
+    render: (p, u) => `
+      <defs>${defsPelagem(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="${p.pele.escuro}"/>
+      <path d="M84 58 c -10 -18 -8 -32 2 -40 c 4 12 12 18 20 20 z" fill="${p.destaque.base}"/>
+      <path d="M156 58 c 10 -18 8 -32 -2 -40 c -4 12 -12 18 -20 20 z" fill="${p.destaque.base}"/>
+      <path d="M112 44 c 2 -8 6 -12 8 -12 s 6 4 8 12 l -8 6 z" fill="${p.destaque.profundo}"/>
+      <ellipse cx="120" cy="108" rx="52" ry="55" fill="url(#${u}pel)"/>
+      <g fill="${alfa(p.pele.escuro, 0.5)}">
+        <path d="M78 92 q 5 -4 10 0 q -5 4 -10 0 z M92 78 q 5 -4 10 0 q -5 4 -10 0 z M150 80 q 5 -4 10 0 q -5 4 -10 0 z M160 96 q 5 -4 10 0 q -5 4 -10 0 z"/>
+      </g>
+      <ellipse cx="120" cy="136" rx="17" ry="11" fill="${alfa(p.pele.claro, 0.75)}"/>
+      <path d="M110 132 q 2 -3 4 0 M126 132 q 2 -3 4 0" stroke="${p.pele.escuro}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M104 146 q 4 4 8 4 M136 146 q -4 4 -8 4" stroke="${alfa('#ffffff', 0.4)}" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M84 70 a 52 55 0 0 1 36 -19" stroke="${alfa('#ffffff', 0.4)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  },
+  {
+    id: 'bas_fantasma',
+    categoria: 'base',
+    nome: 'Fantasma',
+    descricao: 'Aparece nas dailies, some nas retros. Uivos opcionais.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <radialGradient id="${u}fan" cx="0.4" cy="0.3" r="1">
+          <stop offset="0" stop-color="${alfa('#ffffff', 0.95)}"/>
+          <stop offset="0.6" stop-color="${alfa('#e8ecfa', 0.85)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.claro, 0.6)}"/>
+        </radialGradient>
+      </defs>
+      <path d="M104 150 h 32 v 30 c -5 6 -11 6 -16 0 c -5 6 -11 6 -16 0 z" fill="${alfa('#e8ecfa', 0.75)}"/>
+      <ellipse cx="120" cy="104" rx="50" ry="56" fill="url(#${u}fan)"/>
+      <path d="M70 120 c 0 22 8 34 16 40 c 4 -8 2 -16 -2 -22 c 8 6 12 14 12 22 c 6 -6 8 -14 6 -20 c 6 6 8 14 8 20 h 20 c 0 -6 2 -14 8 -20 c -2 6 0 14 6 20 c 0 -8 4 -16 12 -22 c -4 6 -6 14 -2 22 c 8 -6 16 -18 16 -40 z" fill="url(#${u}fan)"/>
+      <ellipse cx="120" cy="196" rx="30" ry="5" fill="${alfa(p.destaque.base, 0.35)}">
+        <animate attributeName="opacity" values="0.5;0.2;0.5" dur="3.4s" repeatCount="indefinite"/>
+      </ellipse>
+      <path d="M80 66 a 50 56 0 0 1 36 -20" stroke="${alfa('#ffffff', 0.7)}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  },
 ];

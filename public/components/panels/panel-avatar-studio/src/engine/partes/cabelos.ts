@@ -21,6 +21,8 @@ function defsCabelo(u: string, claro: string, base: string, profundo: string): s
 const HUMANOIDES = [
   'bas_classica', 'bas_angular', 'bas_holo',
   'bas_redonda', 'bas_coracao', 'bas_quadrada', 'bas_longa', 'bas_marcada', 'bas_sardas',
+  // Onda 7
+  'bas_triangular', 'bas_bochechudo', 'bas_diamante', 'bas_veterano', 'bas_juvenil', 'bas_meio_cyborg',
 ];
 
 const BRILHO = `<path d="M88 66 a 46 40 0 0 1 34 -12" stroke="${alfa('#ffffff', 0.3)}" stroke-width="4" stroke-linecap="round" fill="none"/>`;

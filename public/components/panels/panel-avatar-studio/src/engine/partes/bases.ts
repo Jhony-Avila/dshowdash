@@ -256,4 +256,136 @@ export const BASES: ParteDef[] = [
       ${rimLight()}`;
     },
   },
+  // ── 4.6 F2 · Onda 7 — 6 rostos humanoides novos ───────────────────
+  {
+    id: 'bas_triangular',
+    categoria: 'base',
+    nome: 'Triangular',
+    descricao: 'Mandíbula larga, decisões mais largas ainda.',
+    raridade: 'incomum',
+    tema: 'esportivo',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <path d="M120 50 c 24 0 40 14 42 38 c 2 22 -2 40 -12 52 l -16 14 c -8 7 -20 7 -28 0 l -16 -14 c -10 -12 -14 -30 -12 -52 c 2 -24 18 -38 42 -38 z" fill="url(#${u}pele)"/>
+      <ellipse cx="74" cy="${G.orelhaY}" rx="8" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="166" cy="${G.orelhaY}" rx="8" ry="12" fill="${p.pele.base}"/>
+      <path d="M98 156 h 44" stroke="${alfa(p.pele.profundo, 0.22)}" stroke-width="5" stroke-linecap="round"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_bochechudo',
+    categoria: 'base',
+    nome: 'Bochechudo',
+    descricao: 'Covinhas de fábrica e reserva estratégica de simpatia.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <ellipse cx="${G.cx}" cy="${G.cabecaCy + 3}" rx="53" ry="55" fill="url(#${u}pele)"/>
+      <ellipse cx="88" cy="132" rx="13" ry="10" fill="${alfa(p.pele.claro, 0.55)}"/>
+      <ellipse cx="152" cy="132" rx="13" ry="10" fill="${alfa(p.pele.claro, 0.55)}"/>
+      <path d="M84 140 q 2 3 5 3 M156 140 q -2 3 -5 3" stroke="${alfa(p.pele.profundo, 0.3)}" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <ellipse cx="70" cy="${G.orelhaY}" rx="9" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="170" cy="${G.orelhaY}" rx="9" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="120" cy="154" rx="18" ry="6" fill="${alfa(p.pele.profundo, 0.22)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_diamante',
+    categoria: 'base',
+    nome: 'Diamante',
+    descricao: 'Maçãs do rosto que dispensam iluminação de estúdio.',
+    raridade: 'raro',
+    tema: 'clássico',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <path d="M120 50 c 20 0 34 10 40 28 c 6 16 8 30 2 44 c -6 16 -20 30 -34 40 c -5 3 -11 3 -16 0 c -14 -10 -28 -24 -34 -40 c -6 -14 -4 -28 2 -44 c 6 -18 20 -28 40 -28 z" fill="url(#${u}pele)"/>
+      <path d="M84 118 l 12 -6 M156 118 l -12 -6" stroke="${alfa(p.pele.claro, 0.7)}" stroke-width="4" stroke-linecap="round"/>
+      <ellipse cx="72" cy="${G.orelhaY - 2}" rx="8" ry="11" fill="${p.pele.base}"/>
+      <ellipse cx="168" cy="${G.orelhaY - 2}" rx="8" ry="11" fill="${p.pele.base}"/>
+      <ellipse cx="120" cy="152" rx="14" ry="5" fill="${alfa(p.pele.profundo, 0.24)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_veterano',
+    categoria: 'base',
+    nome: 'Veterano',
+    descricao: 'Cada linha de expressão é um projeto entregue.',
+    raridade: 'raro',
+    tema: 'clássico',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <ellipse cx="${G.cx}" cy="${G.cabecaCy}" rx="${G.cabecaRx}" ry="${G.cabecaRy}" fill="url(#${u}pele)"/>
+      <g stroke="${alfa(p.pele.profundo, 0.3)}" stroke-width="2.2" stroke-linecap="round" fill="none">
+        <path d="M96 84 q 24 -6 48 0"/>
+        <path d="M100 76 q 20 -5 40 0"/>
+        <path d="M84 122 q 4 6 10 8"/>
+        <path d="M156 122 q -4 6 -10 8"/>
+        <path d="M108 158 q 12 4 24 0"/>
+      </g>
+      <ellipse cx="70" cy="${G.orelhaY}" rx="9" ry="13" fill="${p.pele.base}"/>
+      <ellipse cx="170" cy="${G.orelhaY}" rx="9" ry="13" fill="${p.pele.base}"/>
+      <ellipse cx="120" cy="152" rx="18" ry="6" fill="${alfa(p.pele.profundo, 0.26)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_juvenil',
+    categoria: 'base',
+    nome: 'Juvenil',
+    descricao: 'Energia de estagiário no primeiro dia — para sempre.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <ellipse cx="${G.cx}" cy="${G.cabecaCy + 1}" rx="49" ry="54" fill="url(#${u}pele)"/>
+      <ellipse cx="93" cy="126" rx="8" ry="5" fill="${alfa('#ff8d7a', 0.3)}"/>
+      <ellipse cx="147" cy="126" rx="8" ry="5" fill="${alfa('#ff8d7a', 0.3)}"/>
+      <circle cx="120" cy="70" r="2" fill="${alfa('#ffffff', 0.5)}"/>
+      <ellipse cx="71" cy="${G.orelhaY}" rx="8.5" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="169" cy="${G.orelhaY}" rx="8.5" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="120" cy="151" rx="16" ry="5.4" fill="${alfa(p.pele.profundo, 0.2)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_meio_cyborg',
+    categoria: 'base',
+    nome: 'Meio-Cyborg',
+    descricao: 'Metade humano, metade upgrade — cem por cento operacional.',
+    raridade: 'epico',
+    tema: 'cyberpunk',
+    usaCores: ['pele', 'destaque'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}
+        <linearGradient id="${u}cyb" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#4a5266"/>
+          <stop offset="1" stop-color="#20242e"/>
+        </linearGradient>
+        <clipPath id="${u}cybc"><path d="M120 46 h 54 v 124 h -54 z"/></clipPath>
+      </defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <ellipse cx="${G.cx}" cy="${G.cabecaCy}" rx="${G.cabecaRx}" ry="${G.cabecaRy}" fill="url(#${u}pele)"/>
+      <g clip-path="url(#${u}cybc)">
+        <ellipse cx="${G.cx}" cy="${G.cabecaCy}" rx="${G.cabecaRx}" ry="${G.cabecaRy}" fill="url(#${u}cyb)"/>
+        <path d="M124 60 v 96 M138 54 l 6 20 M132 130 l 12 14" stroke="${alfa(p.destaque.base, 0.55)}" stroke-width="1.8"/>
+        <circle cx="150" cy="86" r="3" fill="${p.destaque.base}">
+          <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+      <path d="M120 49 v 114" stroke="${alfa('#0c0f18', 0.6)}" stroke-width="2.4"/>
+      <ellipse cx="70" cy="${G.orelhaY}" rx="9" ry="13" fill="${p.pele.base}"/>
+      <rect x="162" y="100" width="14" height="26" rx="7" fill="#20242e"/>
+      <rect x="166" y="106" width="6" height="14" rx="3" fill="${p.destaque.base}"/>
+      <ellipse cx="120" cy="152" rx="18" ry="6" fill="${alfa(p.pele.profundo, 0.26)}"/>
+      ${rimLight()}`,
+  },
 ];
