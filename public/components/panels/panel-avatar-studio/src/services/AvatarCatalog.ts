@@ -93,6 +93,15 @@ export const TITULOS: Titulo[] = [
   { id: 'tit_domador_de_algoritmos', nome: 'Domador de Algoritmos', raridade: 'epico', lore: 'O leilão de anúncios obedece ao seu assobio.' },
   { id: 'tit_forjado_na_madrugada', nome: 'Forjado na Madrugada', raridade: 'incomum', lore: 'O deploy das 3h47 conta a história.' },
   { id: 'tit_oraculo', nome: 'Oráculo', raridade: 'mitico', lore: 'Não prevê o futuro. Configura ele.' },
+  // 4.6 F2 · Onda 5 — 8 títulos novos (meta §28: 30 ✓)
+  { id: 'tit_lider_de_guilda', nome: 'Líder de Guilda', raridade: 'raro', lore: 'A raid do trimestre não se organiza sozinha.' },
+  { id: 'tit_ninja_do_excel', nome: 'Ninja do Excel', raridade: 'incomum', lore: 'PROCV na mão esquerda, tabela dinâmica na direita.' },
+  { id: 'tit_barao_dos_cliques', nome: 'Barão dos Cliques', raridade: 'epico', lore: 'CTR de dois dígitos e um monóculo de respeito.' },
+  { id: 'tit_sussurrador_de_apis', nome: 'Sussurrador de APIs', raridade: 'raro', lore: 'Fala baixinho com o endpoint e ele responde 200.' },
+  { id: 'tit_colecionador', nome: 'Colecionador de Conquistas', raridade: 'incomum', lore: 'A estante de troféus pediu reforço estrutural.' },
+  { id: 'tit_mago_do_funil', nome: 'Mago do Funil', raridade: 'epico', lore: 'Transforma topo em fundo com um passe de mãos.' },
+  { id: 'tit_sentinela', nome: 'Sentinela da Madrugada', raridade: 'raro', lore: 'Enquanto o dash dorme, alguém vigia os alertas.' },
+  { id: 'tit_avatar_supremo', nome: 'Avatar Supremo', raridade: 'lendario', lore: 'Dominou os quatro elementos: 2D, 3D, foto e estilo.' },
 ];
 
 const TITULOS_POR_ID = new Map(TITULOS.map((t) => [t.id, t]));

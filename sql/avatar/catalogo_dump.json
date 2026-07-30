@@ -584,6 +584,31 @@
   "raridade": "exclusivo",
   "nome": "Crachá Dshow"
  },
+ "ace_antena": {
+  "categoria": "acessorio",
+  "raridade": "incomum",
+  "nome": "Antena Retrô"
+ },
+ "ace_tapa_olho": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Tapa-olho"
+ },
+ "ace_colar_perolas": {
+  "categoria": "acessorio",
+  "raridade": "raro",
+  "nome": "Colar de Pérolas"
+ },
+ "ace_mochila_jato": {
+  "categoria": "acessorio",
+  "raridade": "epico",
+  "nome": "Mochila a Jato"
+ },
+ "ace_aureola": {
+  "categoria": "acessorio",
+  "raridade": "lendario",
+  "nome": "Auréola"
+ },
  "fun_estudio": {
   "categoria": "fundo",
   "raridade": "comum",
@@ -759,6 +784,51 @@
   "raridade": "mitico",
   "nome": "Glitch Dimensional"
  },
+ "mol_minimal": {
+  "categoria": "moldura",
+  "raridade": "comum",
+  "nome": "Fio Minimal"
+ },
+ "mol_pontilhada": {
+  "categoria": "moldura",
+  "raridade": "comum",
+  "nome": "Pontilhada"
+ },
+ "mol_degrade": {
+  "categoria": "moldura",
+  "raridade": "incomum",
+  "nome": "Degradê Duplo"
+ },
+ "mol_colmeia": {
+  "categoria": "moldura",
+  "raridade": "raro",
+  "nome": "Colmeia"
+ },
+ "mol_vetores": {
+  "categoria": "moldura",
+  "raridade": "raro",
+  "nome": "Vetores"
+ },
+ "mol_geada": {
+  "categoria": "moldura",
+  "raridade": "epico",
+  "nome": "Geada"
+ },
+ "mol_espinhos": {
+  "categoria": "moldura",
+  "raridade": "epico",
+  "nome": "Espinhos"
+ },
+ "mol_serpente": {
+  "categoria": "moldura",
+  "raridade": "lendario",
+  "nome": "Serpente de Luz"
+ },
+ "mol_constelacao": {
+  "categoria": "moldura",
+  "raridade": "lendario",
+  "nome": "Constelação"
+ },
  "efe_aura": {
   "categoria": "efeito",
   "raridade": "raro",
@@ -848,6 +918,36 @@
   "categoria": "efeito",
   "raridade": "mitico",
   "nome": "Interferência Holo"
+ },
+ "efe_vagalumes": {
+  "categoria": "efeito",
+  "raridade": "incomum",
+  "nome": "Vagalumes"
+ },
+ "efe_veu_aurora": {
+  "categoria": "efeito",
+  "raridade": "epico",
+  "nome": "Véu de Aurora"
+ },
+ "efe_poeira": {
+  "categoria": "efeito",
+  "raridade": "comum",
+  "nome": "Poeira Estelar"
+ },
+ "efe_descarga": {
+  "categoria": "efeito",
+  "raridade": "lendario",
+  "nome": "Descarga de Energia"
+ },
+ "efe_nevoa": {
+  "categoria": "efeito",
+  "raridade": "incomum",
+  "nome": "Névoa Baixa"
+ },
+ "efe_metricas": {
+  "categoria": "efeito",
+  "raridade": "raro",
+  "nome": "Métricas Subindo"
  },
  "aur_neon": {
   "categoria": "aura",
@@ -1069,6 +1169,36 @@
   "raridade": "lendario",
   "nome": "Fênix"
  },
+ "emb_trofeu": {
+  "categoria": "emblema",
+  "raridade": "raro",
+  "nome": "Trofeuzinho"
+ },
+ "emb_cafe": {
+  "categoria": "emblema",
+  "raridade": "comum",
+  "nome": "Xícara Eterna"
+ },
+ "emb_grafico": {
+  "categoria": "emblema",
+  "raridade": "incomum",
+  "nome": "Curva de Alta"
+ },
+ "emb_lua": {
+  "categoria": "emblema",
+  "raridade": "raro",
+  "nome": "Quarto Crescente"
+ },
+ "emb_dado": {
+  "categoria": "emblema",
+  "raridade": "epico",
+  "nome": "D20 da Sorte"
+ },
+ "emb_chave": {
+  "categoria": "emblema",
+  "raridade": "incomum",
+  "nome": "Chave-Mestra"
+ },
  "tit_estrategista": {
   "categoria": "titulo",
   "raridade": "incomum",
@@ -1178,6 +1308,46 @@
   "categoria": "titulo",
   "raridade": "mitico",
   "nome": "Oráculo"
+ },
+ "tit_lider_de_guilda": {
+  "categoria": "titulo",
+  "raridade": "raro",
+  "nome": "Líder de Guilda"
+ },
+ "tit_ninja_do_excel": {
+  "categoria": "titulo",
+  "raridade": "incomum",
+  "nome": "Ninja do Excel"
+ },
+ "tit_barao_dos_cliques": {
+  "categoria": "titulo",
+  "raridade": "epico",
+  "nome": "Barão dos Cliques"
+ },
+ "tit_sussurrador_de_apis": {
+  "categoria": "titulo",
+  "raridade": "raro",
+  "nome": "Sussurrador de APIs"
+ },
+ "tit_colecionador": {
+  "categoria": "titulo",
+  "raridade": "incomum",
+  "nome": "Colecionador de Conquistas"
+ },
+ "tit_mago_do_funil": {
+  "categoria": "titulo",
+  "raridade": "epico",
+  "nome": "Mago do Funil"
+ },
+ "tit_sentinela": {
+  "categoria": "titulo",
+  "raridade": "raro",
+  "nome": "Sentinela da Madrugada"
+ },
+ "tit_avatar_supremo": {
+  "categoria": "titulo",
+  "raridade": "lendario",
+  "nome": "Avatar Supremo"
  },
  "arq_executivo": {
   "categoria": "arquetipo",

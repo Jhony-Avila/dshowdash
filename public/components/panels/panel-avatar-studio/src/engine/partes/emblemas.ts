@@ -212,4 +212,78 @@ export const EMBLEMAS: ParteDef[] = [
       </defs>
       <circle cx="1" cy="-4" r="0.9" fill="#1c0a06"/>`),
   },
+  // ── 4.6 F2 · Onda 5 — 6 emblemas novos (20 total) ─────────────────
+  {
+    id: 'emb_trofeu',
+    categoria: 'emblema',
+    nome: 'Trofeuzinho',
+    descricao: 'A taça do último campeonato interno.',
+    raridade: 'raro',
+    tema: 'esportivo',
+    render: (_p, u) => pino(u, 'etf', '#1c1608', '#e8b64c', `
+      <path d="M-4 -6 h 8 v 3 a 4 4 0 0 1 -8 0 z" fill="#e8b64c"/>
+      <path d="M-6 -5.5 a 2.5 2.5 0 0 0 2.5 3 M6 -5.5 a 2.5 2.5 0 0 1 -2.5 3" stroke="#e8b64c" stroke-width="1.2" fill="none"/>
+      <path d="M-1.4 1 h 2.8 v 2.4 h -2.8 z M-3 3.4 h 6 v 1.8 h -6 z" fill="#b07d1e"/>`),
+  },
+  {
+    id: 'emb_cafe',
+    categoria: 'emblema',
+    nome: 'Xícara Eterna',
+    descricao: 'O combustível oficial do quarto deploy do dia.',
+    raridade: 'comum',
+    tema: 'casual',
+    render: (_p, u) => pino(u, 'ecf', '#1a120c', '#b07a4e', `
+      <path d="M-5 -2 h 8 v 5 a 4 4 0 0 1 -8 0 z" fill="#f4f0e6"/>
+      <path d="M3 -1 a 2.6 2.6 0 0 1 0 5" stroke="#f4f0e6" stroke-width="1.4" fill="none"/>
+      <path d="M-3.5 -5 q 1 -2 0 -3.5 M-0.5 -5 q 1 -2 0 -3.5" stroke="rgba(244,240,230,0.6)" stroke-width="1.2" fill="none" stroke-linecap="round">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.4s" repeatCount="indefinite"/>
+      </path>`),
+  },
+  {
+    id: 'emb_grafico',
+    categoria: 'emblema',
+    nome: 'Curva de Alta',
+    descricao: 'A única direção aceitável: para cima e para a direita.',
+    raridade: 'incomum',
+    tema: 'executivo',
+    render: (_p, u) => pino(u, 'egr', '#0d1a12', '#4cd97c', `
+      <path d="M-6 5 L-2 0 L1 2.4 L6 -5" stroke="#4cd97c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 -5.5 L6 -5 L5.5 -2" stroke="#4cd97c" stroke-width="1.8" fill="none" stroke-linecap="round"/>`),
+  },
+  {
+    id: 'emb_lua',
+    categoria: 'emblema',
+    nome: 'Quarto Crescente',
+    descricao: 'Time da madrugada, com orgulho e café.',
+    raridade: 'raro',
+    tema: 'espaço',
+    render: (_p, u) => pino(u, 'elu', '#0c1024', '#cfe0ff', `
+      <path d="M2 -7 a 7 7 0 1 0 0 14 a 5.6 5.6 0 0 1 0 -14 z" fill="#eef4ff"/>
+      <circle cx="-4" cy="-3" r="0.9" fill="#eef4ff" opacity="0.8"/>
+      <circle cx="-5.5" cy="2" r="0.6" fill="#eef4ff" opacity="0.6"/>`),
+  },
+  {
+    id: 'emb_dado',
+    categoria: 'emblema',
+    nome: 'D20 da Sorte',
+    descricao: 'Rolou 20 natural na daily. Crítico de produtividade.',
+    raridade: 'epico',
+    tema: 'gamer',
+    usaCores: ['destaque'],
+    render: (p, u) => pino(u, 'ed20', '#120a1c', alfa(p.destaque.base, 0.85), `
+      <path d="M0 -8 L7 -3 L7 3 L0 8 L-7 3 L-7 -3 Z" fill="none" stroke="${p.destaque.claro}" stroke-width="1.6"/>
+      <path d="M0 -8 L4.5 -1 L0 8 M0 -8 L-4.5 -1 L0 8 M-7 -3 L-4.5 -1 L-7 3 M7 -3 L4.5 -1 L7 3 M-4.5 -1 L4.5 -1" stroke="${alfa(p.destaque.claro, 0.5)}" stroke-width="0.9" fill="none"/>
+      <text x="0" y="2.4" text-anchor="middle" font-family="system-ui, sans-serif" font-size="5.5" font-weight="800" fill="${p.destaque.claro}">20</text>`),
+  },
+  {
+    id: 'emb_chave',
+    categoria: 'emblema',
+    nome: 'Chave-Mestra',
+    descricao: 'Abre qualquer porta — inclusive a da sala de reunião.',
+    raridade: 'incomum',
+    tema: 'aventura',
+    render: (_p, u) => pino(u, 'ech', '#171308', '#e8b64c', `
+      <circle cx="-3" cy="-3" r="3.4" fill="none" stroke="#e8b64c" stroke-width="1.8"/>
+      <path d="M-0.6 -0.6 L5 5 M3 3 L5 1 M4 4 L6 2" stroke="#e8b64c" stroke-width="1.8" fill="none" stroke-linecap="round"/>`),
+  },
 ];

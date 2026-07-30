@@ -424,4 +424,137 @@ export const EFEITOS: ParteDef[] = [
         <animate attributeName="opacity" values="0;1;0;0;1;0" keyTimes="0;0.05;0.1;0.55;0.6;1" dur="2.8s" repeatCount="indefinite" calcMode="discrete"/>
       </g>`,
   },
+  // ── 4.6 F2 · Onda 5 — 6 efeitos novos (meta §28: 24 ✓) ────────────
+  {
+    id: 'efe_vagalumes',
+    categoria: 'efeito',
+    nome: 'Vagalumes',
+    descricao: 'Pequenas luzes vagando na penumbra ao seu redor.',
+    raridade: 'incomum',
+    tema: 'natureza',
+    atras: true,
+    render: () => {
+      let luzes = '';
+      const pontos: Array<[number, number, number, number]> = [
+        [40, 80, 14, -10], [200, 60, -12, 16], [30, 180, 16, 12], [210, 190, -18, -8],
+        [60, 40, 8, 18], [190, 130, -10, -14], [50, 220, 12, -16],
+      ];
+      pontos.forEach(([x, y, dx, dy], i) => {
+        const dur = (3.5 + (i % 4) * 0.9).toFixed(1);
+        luzes += `<circle cx="${x}" cy="${y}" r="2.2" fill="#d8ff8a">
+          <animateTransform attributeName="transform" type="translate" values="0 0;${dx} ${dy};0 0" dur="${dur}s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.9;0.15;0.9" dur="${(1.4 + (i % 3) * 0.5).toFixed(1)}s" repeatCount="indefinite"/>
+        </circle>`;
+      });
+      return luzes;
+    },
+  },
+  {
+    id: 'efe_veu_aurora',
+    categoria: 'efeito',
+    nome: 'Véu de Aurora',
+    descricao: 'Cortinas polares ondulando atrás de você.',
+    raridade: 'epico',
+    tema: 'clima',
+    atras: true,
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}vau" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="rgba(61,220,132,0.5)"/>
+          <stop offset="0.6" stop-color="rgba(76,157,232,0.28)"/>
+          <stop offset="1" stop-color="rgba(76,157,232,0)"/>
+        </linearGradient>
+      </defs>
+      <path d="M0 0 h 60 q -10 60 8 120 L 40 120 Q 20 60 0 40 z" fill="url(#${u}vau)">
+        <animateTransform attributeName="transform" type="skewX" values="0;6;0;-4;0" dur="7s" repeatCount="indefinite"/>
+      </path>
+      <path d="M180 0 h 60 v 40 q -20 20 -40 80 l -28 -10 q 18 -60 8 -110 z" fill="url(#${u}vau)">
+        <animateTransform attributeName="transform" type="skewX" values="0;-5;0;4;0" dur="8.5s" repeatCount="indefinite"/>
+      </path>`,
+  },
+  {
+    id: 'efe_poeira',
+    categoria: 'efeito',
+    nome: 'Poeira Estelar',
+    descricao: 'Grãos de luz à deriva, sem pressa nenhuma.',
+    raridade: 'comum',
+    tema: 'espaço',
+    atras: true,
+    usaCores: ['destaque'],
+    render: (p) => {
+      let graos = '';
+      for (let i = 0; i < 12; i++) {
+        const x = ((i * 83) % 230) + 5;
+        const y = ((i * 59) % 220) + 10;
+        const dur = (6 + (i % 5)).toFixed(0);
+        graos += `<circle cx="${x}" cy="${y}" r="${(0.8 + (i % 3) * 0.6).toFixed(1)}" fill="${alfa(p.destaque.claro, 0.55)}">
+          <animateTransform attributeName="transform" type="translate" values="0 0;${(i % 2 ? 6 : -6)} -14;0 0" dur="${dur}s" repeatCount="indefinite"/>
+        </circle>`;
+      }
+      return graos;
+    },
+  },
+  {
+    id: 'efe_descarga',
+    categoria: 'efeito',
+    nome: 'Descarga de Energia',
+    descricao: 'Arcos elétricos serpenteando pelas bordas do quadro.',
+    raridade: 'lendario',
+    tema: 'sci-fi',
+    usaCores: ['destaque'],
+    render: (p) => {
+      const arco = (d: string, dur: string, atraso: string) => `
+        <path d="${d}" stroke="${p.destaque.claro}" stroke-width="2.2" fill="none" stroke-linejoin="round" opacity="0">
+          <animate attributeName="opacity" values="0;1;0.4;1;0;0" keyTimes="0;0.05;0.09;0.13;0.2;1" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite" calcMode="discrete"/>
+        </path>`;
+      return `
+      ${arco('M8 30 l 14 8 l -6 10 l 16 6 l -8 12 l 14 6', '2.6', '0')}
+      ${arco('M232 44 l -14 6 l 8 10 l -18 4 l 10 12 l -12 8', '3.1', '0.9')}
+      ${arco('M10 200 l 16 -6 l -4 -12 l 18 -2 l -6 -12', '2.9', '1.7')}
+      ${arco('M230 196 l -16 -4 l 6 -12 l -18 -4 l 8 -10', '3.4', '0.4')}`;
+    },
+  },
+  {
+    id: 'efe_nevoa',
+    categoria: 'efeito',
+    nome: 'Névoa Baixa',
+    descricao: 'Um tapete de névoa rolando aos seus pés.',
+    raridade: 'incomum',
+    tema: 'clima',
+    render: () => `
+      <g fill="rgba(210,220,240,0.16)">
+        <ellipse cx="60" cy="228" rx="70" ry="18">
+          <animateTransform attributeName="transform" type="translate" values="0 0;24 -3;0 0" dur="7s" repeatCount="indefinite"/>
+        </ellipse>
+        <ellipse cx="170" cy="234" rx="80" ry="20">
+          <animateTransform attributeName="transform" type="translate" values="0 0;-28 -4;0 0" dur="8.5s" repeatCount="indefinite"/>
+        </ellipse>
+        <ellipse cx="120" cy="240" rx="90" ry="22">
+          <animateTransform attributeName="transform" type="translate" values="0 0;14 -6;0 0" dur="6s" repeatCount="indefinite"/>
+        </ellipse>
+      </g>`,
+  },
+  {
+    id: 'efe_metricas',
+    categoria: 'efeito',
+    nome: 'Métricas Subindo',
+    descricao: 'Setas verdes decolando — o dashboard aprova.',
+    raridade: 'raro',
+    tema: 'executivo',
+    render: () => {
+      const seta = (x: number, y: number, esc: number, dur: string, atraso: string) => `
+        <g transform="translate(${x} ${y}) scale(${esc})" opacity="0.9">
+          <path d="M0 10 L0 -6 M-5 -1 L0 -6 L5 -1" stroke="#4cd97c" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <animateTransform attributeName="transform" type="translate" values="${x} ${y};${x} ${y - 34}" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite" additive="replace"/>
+          <animate attributeName="opacity" values="0;0.9;0" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite"/>
+        </g>`;
+      return `
+      ${seta(28, 190, 1, '2.6', '0')}
+      ${seta(46, 150, 0.7, '3.1', '0.8')}
+      ${seta(206, 200, 1.1, '2.8', '0.4')}
+      ${seta(220, 140, 0.8, '3.4', '1.4')}
+      <path d="M14 96 l 12 -10 l 8 6 l 14 -16" stroke="rgba(76,217,124,0.5)" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M196 92 l 12 -8 l 8 5 l 14 -14" stroke="rgba(76,217,124,0.4)" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+    },
+  },
 ];

@@ -510,4 +510,102 @@ export const ACESSORIOS: ParteDef[] = [
       <circle cx="113" cy="222" r="3" fill="#c9d0dd"/>
       <path d="M119 220 h 11 M119 224 h 8" stroke="#8b93a7" stroke-width="1.6" stroke-linecap="round"/>`,
   },
+  // ── 4.6 F2 · Onda 5 — 5 acessórios novos (meta §28: 30 ✓) ─────────
+  {
+    id: 'ace_antena',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Antena Retrô',
+    descricao: 'Sintonia fina com frequências que ninguém mais ouve.',
+    raridade: 'incomum',
+    tema: 'sci-fi',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M150 56 q 14 -18 8 -34" stroke="#5a6274" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      <circle cx="158" cy="20" r="5" fill="${p.destaque.base}">
+        <animate attributeName="opacity" values="1;0.35;1" dur="1.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="158" cy="20" r="9" fill="none" stroke="${alfa(p.destaque.base, 0.45)}" stroke-width="1.6">
+        <animate attributeName="r" values="7;12;7" dur="1.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0;0.6" dur="1.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="149" cy="57" r="4" fill="#5a6274"/>`,
+  },
+  {
+    id: 'ace_tapa_olho',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Tapa-olho',
+    descricao: 'Perdeu a aposta do sprint. Ganhou personalidade.',
+    raridade: 'raro',
+    tema: 'aventura',
+    render: () => `
+      <path d="M62 96 q 58 -22 116 6" stroke="#14100c" stroke-width="3.4" fill="none"/>
+      <path d="M126 96 a 15 13 0 0 1 28 4 a 15 13 0 0 1 -28 -4 z" fill="#14100c"/>
+      <path d="M130 98 a 11 9 0 0 1 12 -3" stroke="rgba(255,255,255,0.18)" stroke-width="2" fill="none"/>`,
+  },
+  {
+    id: 'ace_colar_perolas',
+    categoria: 'acessorio',
+    slot: 'pescoco',
+    nome: 'Colar de Pérolas',
+    descricao: 'Clássico absoluto — combina até com moletom.',
+    raridade: 'raro',
+    tema: 'clássico',
+    render: () => {
+      let perolas = '';
+      for (let i = 0; i < 11; i++) {
+        const t = i / 10;
+        const x = 92 + t * 56;
+        const y = 194 + Math.sin(t * Math.PI) * 16;
+        perolas += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.6" fill="#f2ecf4" stroke="#c9bfd0" stroke-width="0.8"/>
+        <circle cx="${(x - 1).toFixed(1)}" cy="${(y - 1.2).toFixed(1)}" r="1" fill="#ffffff"/>`;
+      }
+      return perolas;
+    },
+  },
+  {
+    id: 'ace_mochila_jato',
+    categoria: 'acessorio',
+    slot: 'pescoco',
+    nome: 'Mochila a Jato',
+    descricao: 'Para reuniões em prédios diferentes com 5 min de intervalo.',
+    raridade: 'epico',
+    tema: 'sci-fi',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}jato" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#4a5266"/>
+          <stop offset="1" stop-color="#20242e"/>
+        </linearGradient>
+      </defs>
+      <rect x="52" y="186" width="22" height="40" rx="9" fill="url(#${u}jato)" stroke="#14171f" stroke-width="2"/>
+      <rect x="166" y="186" width="22" height="40" rx="9" fill="url(#${u}jato)" stroke="#14171f" stroke-width="2"/>
+      <rect x="56" y="192" width="14" height="6" rx="3" fill="${alfa(p.destaque.base, 0.85)}"/>
+      <rect x="170" y="192" width="14" height="6" rx="3" fill="${alfa(p.destaque.base, 0.85)}"/>
+      <path d="M58 228 q 5 8 10 0 z" fill="#ffb54d">
+        <animateTransform attributeName="transform" type="scale" values="1 1;1 1.5;1 1" dur="0.5s" repeatCount="indefinite" additive="sum"/>
+      </path>
+      <path d="M172 228 q 5 8 10 0 z" fill="#ffb54d">
+        <animateTransform attributeName="transform" type="scale" values="1 1.4;1 1;1 1.4" dur="0.5s" repeatCount="indefinite" additive="sum"/>
+      </path>`,
+  },
+  {
+    id: 'ace_aureola',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Auréola',
+    descricao: 'Zero bugs em produção este mês. Santidade comprovada.',
+    raridade: 'lendario',
+    tema: 'fantasia',
+    render: () => `
+      <ellipse cx="120" cy="30" rx="30" ry="8" fill="none" stroke="#ffe89a" stroke-width="4">
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur="3s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="120" cy="30" rx="30" ry="8" fill="none" stroke="rgba(255,232,154,0.4)" stroke-width="8">
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur="3s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0.25;0.6" dur="3s" repeatCount="indefinite"/>
+      </ellipse>`,
+  },
 ];
