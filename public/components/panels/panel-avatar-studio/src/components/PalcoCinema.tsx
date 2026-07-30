@@ -8,14 +8,19 @@
 // (critério nº 2: só transform/opacity/filter; pausa fora de vista/aba;
 // prefers-reduced-motion desliga o movimento — critério nº 4).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { Hand, PartyPopper, RotateCcw, User, UserRound, Zap, ZoomIn, ZoomOut } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, Raridade } from '../domain/types';
 import { RARIDADES, svgDe } from '../services/AvatarCatalog';
+import { tocarCelebracao, tocarEquipar } from '../services/Som';
+import { telemetria } from '../services/Telemetria';
 
 export interface Celebracao { raridade: Raridade; chave: number }
 
+type Enquadramento = 'busto' | 'corpo';
+const CHAVE_ENQ = 'dshow.avatar.palco.enq.v1';
+
 /** Enquadramento automático por categoria (AS3 §5.3 — zoom contextual). */
-const CAMERA: Partial<Record<CategoriaId, { escala: number; origem: string }>> = {
+const CAMERA_BUSTO: Partial<Record<CategoriaId, { escala: number; origem: string }>> = {
   base:      { escala: 1.5,  origem: '50% 42%' },
   olhos:     { escala: 1.62, origem: '50% 42%' },
   boca:      { escala: 1.62, origem: '50% 50%' },
@@ -23,6 +28,17 @@ const CAMERA: Partial<Record<CategoriaId, { escala: number; origem: string }>> =
   acessorio: { escala: 1.42, origem: '50% 36%' },
   roupa:     { escala: 1.4,  origem: '50% 80%' },
 };
+const CAMERA_CORPO: Partial<Record<CategoriaId, { escala: number; origem: string }>> = {
+  base:      { escala: 2.1, origem: '50% 10%' },
+  olhos:     { escala: 2.2, origem: '50% 10%' },
+  boca:      { escala: 2.2, origem: '50% 14%' },
+  cabelo:    { escala: 2.0, origem: '50% 4%' },
+  acessorio: { escala: 1.9, origem: '50% 8%' },
+  roupa:     { escala: 1.5, origem: '50% 44%' },
+};
+
+/** Coreografias das PERFORMANCES (AS3 F2a — pedido do Jhony). */
+type PerformanceId = 'acenar' | 'pose' | 'comemorar';
 
 const reduzMovimento = () =>
   typeof window !== 'undefined' &&
@@ -35,14 +51,99 @@ export function PalcoCinema({ config, categoria, celebracao, aoFimCelebracao }: 
   celebracao: Celebracao | null;
   aoFimCelebracao: () => void;
 }) {
-  const svg = useMemo(() => svgDe(config, { palco: true, uid: 'cine' }), [config]);
+  const [enquadramento, setEnquadramento] = useState<Enquadramento>(() => {
+    try { return localStorage.getItem(CHAVE_ENQ) === 'busto' ? 'busto' : 'corpo'; }
+    catch { return 'corpo'; }
+  });
+  const svg = useMemo(
+    () => svgDe(config, { palco: true, uid: 'cine', enquadramento }),
+    [config, enquadramento],
+  );
   const palcoRef = useRef<HTMLDivElement>(null);
   const svgHostRef = useRef<HTMLDivElement>(null);
   const animacoes = useRef<Animation[]>([]);
   const alvo = useRef({ x: 0, y: 0 });     // cursor normalizado (-1..1)
   const suave = useRef({ x: 0, y: 0 });    // posição interpolada
   const [zoomManual, setZoomManual] = useState(1);
+  const [performando, setPerformando] = useState(false);
+  const [festa, setFesta] = useState<Celebracao | null>(null);
   const primeiraPintura = useRef(true);
+
+  const trocarEnquadramento = useCallback(() => {
+    setEnquadramento((e) => {
+      const novo = e === 'corpo' ? 'busto' : 'corpo';
+      try { localStorage.setItem(CHAVE_ENQ, novo); } catch { /* sem storage */ }
+      telemetria('enquadramento', { modo: novo });
+      return novo;
+    });
+    setZoomManual(1);
+  }, []);
+
+  // ── Performances (AS3 F2a): coreografias nos braços/personagem ─────
+  const performar = useCallback((id: PerformanceId) => {
+    if (performando || reduzMovimento()) return;
+    const q = (nome: string): SVGGElement | null =>
+      svgHostRef.current?.querySelector(`[data-anim="${nome}"]`) ?? null;
+    const personagem = q('personagem');
+    const bracoEsq = q('braco-esq');
+    const bracoDir = q('braco-dir');
+    if (!personagem) return;
+    setPerformando(true);
+    telemetria('performance', { id });
+    const fim = () => setPerformando(false);
+
+    if (id === 'acenar' && bracoEsq) {
+      tocarEquipar(2);
+      bracoEsq.animate(
+        [
+          { transform: 'rotate(0deg)' },
+          { transform: 'rotate(-135deg)', offset: 0.25 },
+          { transform: 'rotate(-110deg)', offset: 0.45 },
+          { transform: 'rotate(-140deg)', offset: 0.65 },
+          { transform: 'rotate(-110deg)', offset: 0.82 },
+          { transform: 'rotate(0deg)' },
+        ],
+        { duration: 1500, easing: 'ease-in-out' },
+      ).finished.then(fim, fim);
+    } else if (id === 'pose' && bracoEsq && bracoDir) {
+      tocarEquipar(4);
+      bracoEsq.animate(
+        [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-52deg)', offset: 0.3 }, { transform: 'rotate(-52deg)', offset: 0.75 }, { transform: 'rotate(0deg)' }],
+        { duration: 1400, easing: 'ease-in-out' },
+      );
+      bracoDir.animate(
+        [{ transform: 'rotate(0deg)' }, { transform: 'rotate(52deg)', offset: 0.3 }, { transform: 'rotate(52deg)', offset: 0.75 }, { transform: 'rotate(0deg)' }],
+        { duration: 1400, easing: 'ease-in-out' },
+      );
+      personagem.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(1.05)', offset: 0.35 }, { transform: 'scale(1.05)', offset: 0.7 }, { transform: 'scale(1)' }],
+        { duration: 1400, easing: 'ease-in-out', composite: 'add' },
+      ).finished.then(fim, fim);
+    } else if (id === 'comemorar') {
+      tocarCelebracao('lendario');
+      setFesta({ raridade: 'lendario', chave: Date.now() });
+      bracoEsq?.animate(
+        [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-150deg)', offset: 0.3 }, { transform: 'rotate(-150deg)', offset: 0.75 }, { transform: 'rotate(0deg)' }],
+        { duration: 1600, easing: 'ease-in-out' },
+      );
+      bracoDir?.animate(
+        [{ transform: 'rotate(0deg)' }, { transform: 'rotate(150deg)', offset: 0.3 }, { transform: 'rotate(150deg)', offset: 0.75 }, { transform: 'rotate(0deg)' }],
+        { duration: 1600, easing: 'ease-in-out' },
+      );
+      personagem.animate(
+        [
+          { transform: 'translateY(0px)' },
+          { transform: 'translateY(-12px)', offset: 0.25 },
+          { transform: 'translateY(0px)', offset: 0.45 },
+          { transform: 'translateY(-9px)', offset: 0.65 },
+          { transform: 'translateY(0px)' },
+        ],
+        { duration: 1600, easing: 'ease-in-out', composite: 'add' },
+      ).finished.then(fim, fim);
+    } else {
+      fim();
+    }
+  }, [performando]);
 
   const buscar = useCallback((nome: string): SVGGElement | null =>
     svgHostRef.current?.querySelector(`[data-anim="${nome}"]`) ?? null, []);
@@ -56,7 +157,7 @@ export function PalcoCinema({ config, categoria, celebracao, aoFimCelebracao }: 
     const personagem = buscar('personagem');
     if (personagem) {
       personagem.style.transformBox = 'view-box';
-      personagem.style.transformOrigin = '120px 170px';
+      personagem.style.transformOrigin = enquadramento === 'corpo' ? '120px 250px' : '120px 170px';
       anims.push(personagem.animate(
         [
           { transform: 'translateY(0px) rotate(-0.5deg) scale(1)' },
@@ -110,7 +211,7 @@ export function PalcoCinema({ config, categoria, celebracao, aoFimCelebracao }: 
       cronometros.forEach((t) => window.clearTimeout(t));
       animacoes.current = [];
     };
-  }, [svg, buscar]);
+  }, [svg, buscar, enquadramento]);
 
   // ── Parallax + olhos seguindo o cursor (rAF com lerp) ──────────────
   useEffect(() => {
@@ -180,14 +281,22 @@ export function PalcoCinema({ config, categoria, celebracao, aoFimCelebracao }: 
     return () => window.clearTimeout(t);
   }, [celebracao, aoFimCelebracao]);
 
+  useEffect(() => {
+    if (!festa) return;
+    const t = window.setTimeout(() => setFesta(null), 1200);
+    return () => window.clearTimeout(t);
+  }, [festa]);
+
   // ── Câmera (zoom contextual × manual) ──────────────────────────────
-  const cam = (categoria && CAMERA[categoria]) || { escala: 1, origem: '50% 50%' };
-  const escala = Math.max(0.8, Math.min(2.6, cam.escala * zoomManual));
+  const mapaCamera = enquadramento === 'corpo' ? CAMERA_CORPO : CAMERA_BUSTO;
+  const cam = (categoria && mapaCamera[categoria]) || { escala: 1, origem: '50% 50%' };
+  const escala = Math.max(0.8, Math.min(2.8, cam.escala * zoomManual));
   const corGlow = config.cores.destaque;
-  const corCelebra = celebracao ? RARIDADES[celebracao.raridade].cor : '';
+  const celebraAtiva = celebracao ?? festa;
+  const corCelebra = celebraAtiva ? RARIDADES[celebraAtiva.raridade].cor : '';
 
   return (
-    <div ref={palcoRef} className="avst-cine"
+    <div ref={palcoRef} className={`avst-cine ${enquadramento === 'corpo' ? 'avst-cine-corpo' : ''}`}
       style={{ '--avst-glow': corGlow } as React.CSSProperties}>
       {/* iluminação de fundo do palco */}
       <span className="avst-cine-luz" aria-hidden />
@@ -203,9 +312,9 @@ export function PalcoCinema({ config, categoria, celebracao, aoFimCelebracao }: 
       <span className="avst-cine-sombra" aria-hidden />
       <span className="avst-cine-vinheta" aria-hidden />
 
-      {/* celebração */}
-      {celebracao && (
-        <div key={celebracao.chave} className="avst-celebra" aria-hidden
+      {/* celebração (equipar lendário+ OU performance de comemorar) */}
+      {celebraAtiva && (
+        <div key={celebraAtiva.chave} className="avst-celebra" aria-hidden
           style={{ '--avst-celebra': corCelebra } as React.CSSProperties}>
           <span className="avst-celebra-flash" />
           {Array.from({ length: 14 }, (_, i) => (
@@ -215,9 +324,30 @@ export function PalcoCinema({ config, categoria, celebracao, aoFimCelebracao }: 
         </div>
       )}
 
+      {/* enquadramento + performances (AS3 F2a) */}
+      <div className="avst-cine-acoes">
+        <button type="button" title={enquadramento === 'corpo' ? 'Ver busto' : 'Ver corpo inteiro'}
+          onClick={trocarEnquadramento}>
+          {enquadramento === 'corpo' ? <UserRound size={14} aria-hidden /> : <User size={14} aria-hidden />}
+        </button>
+        {enquadramento === 'corpo' && !reduzMovimento() && (
+          <>
+            <button type="button" title="Acenar" disabled={performando} onClick={() => performar('acenar')}>
+              <Hand size={14} aria-hidden />
+            </button>
+            <button type="button" title="Pose de poder" disabled={performando} onClick={() => performar('pose')}>
+              <Zap size={14} aria-hidden />
+            </button>
+            <button type="button" title="Comemorar" disabled={performando} onClick={() => performar('comemorar')}>
+              <PartyPopper size={14} aria-hidden />
+            </button>
+          </>
+        )}
+      </div>
+
       {/* controles de câmera */}
       <div className="avst-cine-controles">
-        <button type="button" title="Aproximar" onClick={() => setZoomManual((z) => Math.min(1.6, z * 1.18))}>
+        <button type="button" title="Aproximar" onClick={() => setZoomManual((z) => Math.min(1.8, z * 1.18))}>
           <ZoomIn size={14} aria-hidden />
         </button>
         <button type="button" title="Afastar" onClick={() => setZoomManual((z) => Math.max(0.7, z / 1.18))}>

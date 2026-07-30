@@ -151,13 +151,32 @@
   position: absolute; right: 10px; bottom: 10px; z-index: 6;
   display: flex; flex-direction: column; gap: 6px;
 }
-.avst-cine-controles button {
+.avst-cine-controles button,
+.avst-cine-acoes button {
   width: 30px; height: 30px; display: grid; place-items: center;
   border-radius: 9px; border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(10, 13, 22, 0.62); color: #cfd6e6;
   backdrop-filter: blur(6px); transition: border-color 0.15s, color 0.15s;
 }
-.avst-cine-controles button:hover { border-color: var(--avst-glow, #7c5cff); color: #fff; }
+.avst-cine-controles button:hover,
+.avst-cine-acoes button:hover:not(:disabled) { border-color: var(--avst-glow, #7c5cff); color: #fff; }
+.avst-cine-acoes button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* barra de performances (esquerda) */
+.avst-cine-acoes {
+  position: absolute; left: 10px; bottom: 10px; z-index: 6;
+  display: flex; gap: 6px;
+}
+
+/* enquadramento corpo inteiro: svg 240×400 centralizado no palco quadrado */
+.avst-cine-corpo .avst-cine-svg {
+  height: 100%; display: flex; justify-content: center;
+}
+.avst-cine-corpo .avst-cine-svg svg {
+  width: auto; height: 100%;
+}
+.avst-cine-corpo .avst-cine-cam { display: flex; justify-content: center; }
+.avst-cine-corpo .avst-cine-sombra { display: none; } /* o corpo já traz a sua */
 
 /* Celebração (equipar lendário/mítico/exclusivo) — ≤1,2s */
 .avst-celebra { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
