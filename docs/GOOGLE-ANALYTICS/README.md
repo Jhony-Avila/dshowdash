@@ -17,7 +17,7 @@ treemap de canais.
 
 **Fase 3**: **NO AR** — insights com z-score e regressão linear, Diretoria e exportação CSV.
 
-Total: **18 rotas** e **24 telas com dados**.
+Total: **18 rotas** e **30 telas com dados**.
 Verificação de tudo: `bash scripts/ga-smoke-all.sh` (29 checagens) + prova de UI com **139**.
 
 ## Documentos

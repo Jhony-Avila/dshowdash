@@ -106,3 +106,40 @@ repetir:
 | XLSX e PDF (§51.2) | CSV cobre o uso real (abrir no Excel). XLSX exigiria biblioteca nova no `package.json` da raiz |
 | Relatórios salvos / agendamento (§51) | Depende de banco próprio do módulo, que não existe |
 | Ícone no header (§9) | **Quarta fase seguida.** O header é servido bundlado e a sessão paralela segue com `panel-calendar` não commitado; rebuildar empacotaria trabalho dela pela metade |
+
+
+---
+
+## 7. Adendo — 6 telas do §10, sem rota nova (commit `4408e37`)
+
+**30 telas** (eram 24), ainda **18 rotas**. Todas as novas derivam de endpoints existentes.
+
+| Tela | §10 | Deriva de | A leitura que ela adiciona |
+|---|---|---|---|
+| Origem e Mídia | #7 | `/acquisition` | par origem/mídia agrupado, com `(none)` e capitalização divergente destacados |
+| Referências | #12 | `/acquisition` | canal Referral em detalhe + o alerta de cross-domain ausente |
+| Engajamento | #19 | `/overview` + `/pages` + `/events` | taxa por dia e por página, eventos de rolagem e tempo |
+| Saídas | #20 | `/pages` | onde as pessoas deixam o site, separando o abandono do fim de fluxo |
+| Leads | #25 | `/conversions` | a ponta **real** do CRM, que antes vivia dentro de Conversões |
+| Streams | #39 | `/properties` | streams com measurement ID, domínio e fuso |
+
+### 🔁 A regra que fica
+
+**Tela nova só ganha endpoint novo quando precisa de dado que ainda não vem.** Seis rotas para
+seis recortes do mesmo dado multiplicariam o consumo da Data API por nada — e quota é o recurso
+mais escasso da integração real (§57, e a §74 proíbe uma chamada por card).
+
+Verificado após a mudança: o roteador tem os **mesmos** cases, e as 6 telas fazem 8 chamadas a
+métodos **já existentes** do serviço.
+
+### Quatro decisões de leitura que evitam conclusão errada
+
+- **Saída alta em página de "obrigado" não é destacada.** O fluxo terminou ali — pintar de
+  vermelho seria alarme falso. Só páginas fora do fluxo esperado aparecem em destaque.
+- **"100% − engajamento" não é taxa de rejeição.** A tela diz isso, porque é a leitura errada
+  mais comum dessa métrica no GA4: engajada é a sessão com 10s+, evento importante ou 2+ views.
+- **Dias sem lead não são preenchidos com zero** na série do CRM. A série mostra o que houve; zeros
+  inventados pareceriam queda onde não houve medição.
+- **Referências trazem o aviso de cross-domain.** Sem cross-domain configurado — como a Fase 0
+  apurou — navegação entre domínios próprios entra aqui como referência de terceiro e infla o
+  canal com tráfego que já era seu.
