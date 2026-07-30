@@ -200,6 +200,7 @@ export const EMBLEMAS: ParteDef[] = [
     nome: 'Fênix',
     descricao: 'Caiu em produção, renasceu no hotfix.',
     raridade: 'lendario',
+    bloqueadoPor: 'conquista:assiduo_30',
     tema: 'fantasia',
     render: (_p, u) => pino(u, 'efx', '#1c0a06', '#ff8a3d', `
       <path d="M0 6 c -5 -2 -7 -7 -5 -11 c 1 2 3 3 4 3 c -1 -3 0 -6 3 -8 c 0 3 1 5 3 6 c 2 -1 3 -3 3 -5 c 2 4 1 9 -3 12 c -1 1 -3 3 -5 3 z" fill="url(#${u}efxg)"/>

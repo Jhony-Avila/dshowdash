@@ -739,6 +739,23 @@
 .avst-ctx-titulo { font-style: normal; font-size: 10.5px; display: inline-flex; align-items: center; gap: 3px; }
 .avst-ctx-mobile { display: flex; align-items: center; gap: 10px; padding: 7px 10px; width: 200px; }
 
+/* ── 4.6 §8.3: conquistas com progresso ──────────────────────────── */
+.avst-conq-grupo { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.avst-conq-cab { display: flex; align-items: center; gap: 6px; }
+.avst-conq-cab em { font-style: normal; font-size: 10px; color: var(--avst-texto-2); }
+.avst-conq-progresso { display: flex; align-items: center; gap: 7px; margin-top: 2px; }
+.avst-conq-barra {
+  flex: 1; max-width: 220px; height: 5px; border-radius: 999px; overflow: hidden;
+  background: var(--avst-painel-2);
+}
+.avst-conq-barra i {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--avst-acento), color-mix(in srgb, var(--avst-acento) 55%, #4cd97c));
+  transition: width 0.4s ease;
+}
+.avst-conquista-ok .avst-conq-barra i { background: #4cd97c; }
+.avst-conq-progresso em { font-style: normal; font-size: 10px; color: var(--avst-texto-2); white-space: nowrap; }
+
 /* ── F2c: barra de inventário (busca + tiers + favoritos) ─────────── */
 .avst-biblioteca { display: flex; flex-direction: column; gap: 10px; }
 .avst-filtros { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

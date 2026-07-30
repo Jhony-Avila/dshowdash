@@ -1839,7 +1839,7 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='acessorio'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
   'ace_capa_heroica', 'Capa Heroica', 'Esvoaça mesmo sem vento — questão de atitude.', NULL,
   'parte2d', 'published', '2d', '2d',
-  0, 1, 22,
+  0, 0, 22,
   'fantasia', JSON_OBJECT('usaCores', '["destaque"]',
     'piscar', TRUE,
     'slot', 'pescoco'), NOW(), NOW(), NOW())
@@ -2431,7 +2431,7 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='moldura'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='mitico'), 2,
   'mol_glitch', 'Glitch Dimensional', 'O quadro não decide em qual realidade ficar.', NULL,
   'parte2d', 'published', '2d', '2d',
-  0, 1, 14,
+  0, 0, 14,
   'cyberpunk', JSON_OBJECT('usaCores', '["destaque"]',
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
@@ -2703,7 +2703,7 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='efeito'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
   'efe_moedas', 'Chuva de Moedas', 'O trimestre fechou verde — e transbordou.', NULL,
   'parte2d', 'published', '2d', '2d',
-  0, 1, 16,
+  0, 0, 16,
   'executivo', JSON_OBJECT('usaCores', NULL,
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
@@ -3423,7 +3423,7 @@ INSERT INTO avatar_assets
 VALUES ((SELECT id FROM avatar_categories WHERE `key`='emblema'), (SELECT id FROM avatar_libraries WHERE `key`='dshow_svg'), (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 2,
   'emb_fenix', 'Fênix', 'Caiu em produção, renasceu no hotfix.', NULL,
   'parte2d', 'published', '2d', '2d',
-  0, 1, 13,
+  0, 0, 13,
   'fantasia', JSON_OBJECT('usaCores', NULL,
     'piscar', TRUE,
     'slot', NULL), NOW(), NOW(), NOW())
@@ -4158,15 +4158,39 @@ WHERE NOT EXISTS (SELECT 1 FROM avatar_unlock_rules u
 
 INSERT INTO avatar_unlock_rules
   (asset_id, unlock_type, reference_type, reference_id, priority)
+SELECT (SELECT id FROM avatar_assets WHERE `key`='ace_capa_heroica'), 'achievement', 'conquista', 'explorador_60', 0
+WHERE NOT EXISTS (SELECT 1 FROM avatar_unlock_rules u
+  WHERE u.asset_id = (SELECT id FROM avatar_assets WHERE `key`='ace_capa_heroica') AND u.unlock_type = 'achievement');
+
+INSERT INTO avatar_unlock_rules
+  (asset_id, unlock_type, reference_type, reference_id, priority)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='mol_pioneiro'), 'achievement', 'conquista', 'primeiro_avatar', 0
 WHERE NOT EXISTS (SELECT 1 FROM avatar_unlock_rules u
   WHERE u.asset_id = (SELECT id FROM avatar_assets WHERE `key`='mol_pioneiro') AND u.unlock_type = 'achievement');
 
 INSERT INTO avatar_unlock_rules
   (asset_id, unlock_type, reference_type, reference_id, priority)
+SELECT (SELECT id FROM avatar_assets WHERE `key`='mol_glitch'), 'achievement', 'conquista', 'centuriao_100', 0
+WHERE NOT EXISTS (SELECT 1 FROM avatar_unlock_rules u
+  WHERE u.asset_id = (SELECT id FROM avatar_assets WHERE `key`='mol_glitch') AND u.unlock_type = 'achievement');
+
+INSERT INTO avatar_unlock_rules
+  (asset_id, unlock_type, reference_type, reference_id, priority)
 SELECT (SELECT id FROM avatar_assets WHERE `key`='efe_confete'), 'achievement', 'conquista', 'colecionador_5', 0
 WHERE NOT EXISTS (SELECT 1 FROM avatar_unlock_rules u
   WHERE u.asset_id = (SELECT id FROM avatar_assets WHERE `key`='efe_confete') AND u.unlock_type = 'achievement');
+
+INSERT INTO avatar_unlock_rules
+  (asset_id, unlock_type, reference_type, reference_id, priority)
+SELECT (SELECT id FROM avatar_assets WHERE `key`='efe_moedas'), 'achievement', 'conquista', 'favoritador_25', 0
+WHERE NOT EXISTS (SELECT 1 FROM avatar_unlock_rules u
+  WHERE u.asset_id = (SELECT id FROM avatar_assets WHERE `key`='efe_moedas') AND u.unlock_type = 'achievement');
+
+INSERT INTO avatar_unlock_rules
+  (asset_id, unlock_type, reference_type, reference_id, priority)
+SELECT (SELECT id FROM avatar_assets WHERE `key`='emb_fenix'), 'achievement', 'conquista', 'assiduo_30', 0
+WHERE NOT EXISTS (SELECT 1 FROM avatar_unlock_rules u
+  WHERE u.asset_id = (SELECT id FROM avatar_assets WHERE `key`='emb_fenix') AND u.unlock_type = 'achievement');
 
 
 -- ── Coleções (AS3 F2c) ──
@@ -4293,6 +4317,172 @@ VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_dshow'), (SELECT id 
 INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
 VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_dshow'), (SELECT id FROM avatar_assets WHERE `key`='mol_dshow'), 3);
 
+INSERT INTO avatar_collections
+  (`key`, name, description, rarity_id, status, metadata, created_at, updated_at)
+VALUES ('col_oito_bits', 'Oito Bits', 'Fliperama completo: pixel nos olhos, no coração e na praia.', (SELECT id FROM avatar_rarities WHERE `key`='epico'),
+  'published', JSON_OBJECT('cores', '{"destaque":"#4cd97c"}'), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description),
+  updated_at = NOW();
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_oito_bits'), (SELECT id FROM avatar_assets WHERE `key`='olh_pixel'), 0);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_oito_bits'), (SELECT id FROM avatar_assets WHERE `key`='ban_pixel'), 1);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_oito_bits'), (SELECT id FROM avatar_assets WHERE `key`='emb_coracao_pixel'), 2);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_oito_bits'), (SELECT id FROM avatar_assets WHERE `key`='fun_praia'), 3);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_oito_bits'), (SELECT id FROM avatar_assets WHERE `key`='ace_oculos_3d'), 4);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_oito_bits'), (SELECT id FROM avatar_assets WHERE `key`='mol_rgb'), 5);
+
+INSERT INTO avatar_collections
+  (`key`, name, description, rarity_id, status, metadata, created_at, updated_at)
+VALUES ('col_tempestade', 'Olho da Tempestade', 'Chuva, relâmpagos e a sombra elegante do sobretudo.', (SELECT id FROM avatar_rarities WHERE `key`='epico'),
+  'published', JSON_OBJECT('cores', '{"destaque":"#4c9de8"}'), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description),
+  updated_at = NOW();
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_tempestade'), (SELECT id FROM avatar_assets WHERE `key`='rou_sobretudo'), 0);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_tempestade'), (SELECT id FROM avatar_assets WHERE `key`='fun_chuva'), 1);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_tempestade'), (SELECT id FROM avatar_assets WHERE `key`='efe_tempestade'), 2);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_tempestade'), (SELECT id FROM avatar_assets WHERE `key`='aur_sombria'), 3);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_tempestade'), (SELECT id FROM avatar_assets WHERE `key`='mol_tech'), 4);
+
+INSERT INTO avatar_collections
+  (`key`, name, description, rarity_id, status, metadata, created_at, updated_at)
+VALUES ('col_campeao', 'Circuito Campeão', 'Jersey oficial, louros e o confete da final.', (SELECT id FROM avatar_rarities WHERE `key`='raro'),
+  'published', JSON_OBJECT('cores', '{"roupa":"#20242e","destaque":"#4cd97c"}'), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description),
+  updated_at = NOW();
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_campeao'), (SELECT id FROM avatar_assets WHERE `key`='rou_jersey'), 0);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_campeao'), (SELECT id FROM avatar_assets WHERE `key`='ban_campeao'), 1);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_campeao'), (SELECT id FROM avatar_assets WHERE `key`='mol_louros'), 2);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_campeao'), (SELECT id FROM avatar_assets WHERE `key`='efe_confete'), 3);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_campeao'), (SELECT id FROM avatar_assets WHERE `key`='olh_estrela'), 4);
+
+INSERT INTO avatar_collections
+  (`key`, name, description, rarity_id, status, metadata, created_at, updated_at)
+VALUES ('col_forja', 'Coração da Forja', 'Brasas, bigorna, barba e as chamas que temperam lendas.', (SELECT id FROM avatar_rarities WHERE `key`='lendario'),
+  'published', JSON_OBJECT('cores', '{"destaque":"#ff8a3d"}'), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description),
+  updated_at = NOW();
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_forja'), (SELECT id FROM avatar_assets WHERE `key`='fun_forja'), 0);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_forja'), (SELECT id FROM avatar_assets WHERE `key`='ban_forjado'), 1);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_forja'), (SELECT id FROM avatar_assets WHERE `key`='efe_fogo'), 2);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_forja'), (SELECT id FROM avatar_assets WHERE `key`='boc_barba'), 3);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_forja'), (SELECT id FROM avatar_assets WHERE `key`='mol_chamas'), 4);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_forja'), (SELECT id FROM avatar_assets WHERE `key`='emb_engrenagem'), 5);
+
+INSERT INTO avatar_collections
+  (`key`, name, description, rarity_id, status, metadata, created_at, updated_at)
+VALUES ('col_neon_noturno', 'Neon Noturno', 'A madrugada synthwave completa: jaqueta, letreiro e circuito vivo.', (SELECT id FROM avatar_rarities WHERE `key`='lendario'),
+  'published', JSON_OBJECT('cores', '{"destaque":"#ff5f8f"}'), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description),
+  updated_at = NOW();
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_neon_noturno'), (SELECT id FROM avatar_assets WHERE `key`='rou_neon_racer'), 0);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_neon_noturno'), (SELECT id FROM avatar_assets WHERE `key`='fun_synthwave'), 1);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_neon_noturno'), (SELECT id FROM avatar_assets WHERE `key`='aur_neon'), 2);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_neon_noturno'), (SELECT id FROM avatar_assets WHERE `key`='ban_neon_tokyo'), 3);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_neon_noturno'), (SELECT id FROM avatar_assets WHERE `key`='ace_tiara_led'), 4);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_neon_noturno'), (SELECT id FROM avatar_assets WHERE `key`='mol_circuito'), 5);
+
+INSERT INTO avatar_collections
+  (`key`, name, description, rarity_id, status, metadata, created_at, updated_at)
+VALUES ('col_guardiao_verde', 'Guardião Verde', 'Folhas, vento e a bandana de quem protege a trilha.', (SELECT id FROM avatar_rarities WHERE `key`='raro'),
+  'published', JSON_OBJECT('cores', '{"destaque":"#4cd97c"}'), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description),
+  updated_at = NOW();
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_guardiao_verde'), (SELECT id FROM avatar_assets WHERE `key`='ban_guardiao'), 0);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_guardiao_verde'), (SELECT id FROM avatar_assets WHERE `key`='efe_folhas'), 1);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_guardiao_verde'), (SELECT id FROM avatar_assets WHERE `key`='aur_vento'), 2);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_guardiao_verde'), (SELECT id FROM avatar_assets WHERE `key`='fun_montanhas'), 3);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_guardiao_verde'), (SELECT id FROM avatar_assets WHERE `key`='ace_lenco_bandana'), 4);
+
+INSERT INTO avatar_collections
+  (`key`, name, description, rarity_id, status, metadata, created_at, updated_at)
+VALUES ('col_realeza', 'Sangue Real', 'Coroa, smoking, estandarte imperial e o sol como aura.', (SELECT id FROM avatar_rarities WHERE `key`='lendario'),
+  'published', JSON_OBJECT('cores', '{"destaque":"#e8b64c"}'), NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description),
+  updated_at = NOW();
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_realeza'), (SELECT id FROM avatar_assets WHERE `key`='rou_smoking'), 0);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_realeza'), (SELECT id FROM avatar_assets WHERE `key`='ban_imperial'), 1);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_realeza'), (SELECT id FROM avatar_assets WHERE `key`='emb_coroa'), 2);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_realeza'), (SELECT id FROM avatar_assets WHERE `key`='ace_coroa'), 3);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_realeza'), (SELECT id FROM avatar_assets WHERE `key`='mol_ouro'), 4);
+
+INSERT IGNORE INTO avatar_collection_items (collection_id, asset_id, sort_order)
+VALUES ((SELECT id FROM avatar_collections WHERE `key`='col_realeza'), (SELECT id FROM avatar_assets WHERE `key`='aur_solar'), 5);
+
 
 -- ── Presets de sistema ──
 
@@ -4347,6 +4537,168 @@ INSERT INTO avatar_presets
 VALUES ('pre_holograma', 'Holograma Synth', 'Projeção translúcida sobre o grid oitentista. Puro synthwave.',
   (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 1, 1,
   '{"id":"pre_holograma","nome":"Holograma Synth","descricao":"Projeção translúcida sobre o grid oitentista. Puro synthwave.","raridade":"lendario","config":{"base":"bas_holo","camadas":{"olhos":"olh_visor","boca":"boc_neutra","roupa":"rou_jaqueta","fundo":"fun_grade","moldura":"mol_neon","efeito":"efe_scanlines"},"cores":{"pele":"#9fe8c8","cabelo":"#3d2b1f","roupa":"#5b3d8a","destaque":"#ff5f8f"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_arquiteto', 'Arquiteto de Dados', 'Risca impecável, monóculo analítico e a cidade acesa atrás.',
+  (SELECT id FROM avatar_rarities WHERE `key`='raro'), 1, 1,
+  '{"id":"pre_arquiteto","nome":"Arquiteto de Dados","descricao":"Risca impecável, monóculo analítico e a cidade acesa atrás.","raridade":"raro","config":{"base":"bas_longa","camadas":{"cabelo":"cab_lateral","olhos":"olh_serio","boca":"boc_neutra","roupa":"rou_social","acessorio":"ace_oculos","fundo":"fun_escritorio","moldura":"mol_selo"},"cores":{"pele":"#d29e6f","cabelo":"#2a2a33","roupa":"#3e5a7a","destaque":"#4c9de8"},"titulo":"tit_arquiteto_de_dados"}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_streamer', 'Streamer ao Vivo', 'Picos neon, olhos de estrela e o LED wall no talo.',
+  (SELECT id FROM avatar_rarities WHERE `key`='epico'), 1, 1,
+  '{"id":"pre_streamer","nome":"Streamer ao Vivo","descricao":"Picos neon, olhos de estrela e o LED wall no talo.","raridade":"epico","config":{"base":"bas_redonda","camadas":{"cabelo":"cab_picos_neon","olhos":"olh_estrela","boca":"boc_larga","roupa":"rou_jersey","acessorio":"ace_headset","fundo":"fun_led_wall","moldura":"mol_rgb","efeito":"efe_confete"},"cores":{"pele":"#e8b58c","cabelo":"#20242e","roupa":"#20242e","destaque":"#ff5f8f"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_cientista', 'Cientista de Plantão', 'Jaleco, sardas e a cara de quem achou um outlier às 2h.',
+  (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 1, 1,
+  '{"id":"pre_cientista","nome":"Cientista de Plantão","descricao":"Jaleco, sardas e a cara de quem achou um outlier às 2h.","raridade":"incomum","config":{"base":"bas_sardas","camadas":{"cabelo":"cab_coque","olhos":"olh_arregalado","boca":"boc_uau","roupa":"rou_jaleco","acessorio":"ace_oculos","fundo":"fun_lab","moldura":"mol_aro"},"cores":{"pele":"#e8b58c","cabelo":"#8a4a2a","roupa":"#2d6a8a","destaque":"#4cd9e8"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_ronin', 'Ronin da Madrugada', 'Meio coque, máscara e pétalas de sakura no vento do dojo.',
+  (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 1, 1,
+  '{"id":"pre_ronin","nome":"Ronin da Madrugada","descricao":"Meio coque, máscara e pétalas de sakura no vento do dojo.","raridade":"lendario","config":{"base":"bas_marcada","camadas":{"cabelo":"cab_meio_coque","olhos":"olh_misterioso","boca":"boc_mascara","roupa":"rou_kimono","fundo":"fun_dojo","moldura":"mol_cristal","efeito":"efe_sakura","aura":"aur_vento"},"cores":{"pele":"#d29e6f","cabelo":"#14100c","roupa":"#7a2d3c","destaque":"#ff7a3d"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_navegante', 'Navegante', 'Colete, bandana e o estandarte corsário içado.',
+  (SELECT id FROM avatar_rarities WHERE `key`='raro'), 1, 1,
+  '{"id":"pre_navegante","nome":"Navegante","descricao":"Colete, bandana e o estandarte corsário içado.","raridade":"raro","config":{"base":"bas_quadrada","camadas":{"cabelo":"cab_buzz","olhos":"olh_focado","boca":"boc_palito","roupa":"rou_colete","acessorio":"ace_lenco_bandana","fundo":"fun_montanhas","banner":"ban_corsario"},"cores":{"pele":"#b07a4e","cabelo":"#3d2b1f","roupa":"#5a4a32","destaque":"#e8b64c"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_dj', 'DJ do Deploy', 'Fone no pescoço... quer dizer, na cabeça — e o synthwave rolando.',
+  (SELECT id FROM avatar_rarities WHERE `key`='raro'), 1, 1,
+  '{"id":"pre_dj","nome":"DJ do Deploy","descricao":"Fone no pescoço... quer dizer, na cabeça — e o synthwave rolando.","raridade":"raro","config":{"base":"bas_coracao","camadas":{"cabelo":"cab_ondas_curtas","olhos":"olh_brincalhao","boca":"boc_assobio","roupa":"rou_hoodie","acessorio":"ace_fone","fundo":"fun_synthwave","moldura":"mol_neon","efeito":"efe_bolhas"},"cores":{"pele":"#e8b58c","cabelo":"#6b4a2a","roupa":"#2a2438","destaque":"#c99aff"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_bibliotecario', 'Guardião do Acervo', 'Flanela, monóculo e paz entre as estantes.',
+  (SELECT id FROM avatar_rarities WHERE `key`='incomum'), 1, 1,
+  '{"id":"pre_bibliotecario","nome":"Guardião do Acervo","descricao":"Flanela, monóculo e paz entre as estantes.","raridade":"incomum","config":{"base":"bas_longa","camadas":{"cabelo":"cab_franja_longa","olhos":"olh_sonolento","boca":"boc_neutra","roupa":"rou_flanela","acessorio":"ace_monoculo","fundo":"fun_biblioteca","moldura":"mol_madeira"},"cores":{"pele":"#d29e6f","cabelo":"#5a3a22","roupa":"#5a2d2d","destaque":"#e8b64c"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_magnata', 'Magnata', 'Smoking, corrente e cifrões na pupila. O ROI agradece.',
+  (SELECT id FROM avatar_rarities WHERE `key`='epico'), 1, 1,
+  '{"id":"pre_magnata","nome":"Magnata","descricao":"Smoking, corrente e cifrões na pupila. O ROI agradece.","raridade":"epico","config":{"base":"bas_angular","camadas":{"cabelo":"cab_topete","olhos":"olh_cifrao","boca":"boc_lado","roupa":"rou_smoking","acessorio":"ace_corrente","fundo":"fun_escritorio","moldura":"mol_ouro","efeito":"efe_faiscas"},"cores":{"pele":"#d29e6f","cabelo":"#14100c","roupa":"#14213d","destaque":"#e8b64c"},"titulo":"tit_imperador_do_roi"}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_inverno', 'Sentinela do Inverno', 'Sobretudo, cachecol, barba cheia e a nevasca por testemunha.',
+  (SELECT id FROM avatar_rarities WHERE `key`='epico'), 1, 1,
+  '{"id":"pre_inverno","nome":"Sentinela do Inverno","descricao":"Sobretudo, cachecol, barba cheia e a nevasca por testemunha.","raridade":"epico","config":{"base":"bas_marcada","camadas":{"cabelo":"cab_longo","olhos":"olh_serio","boca":"boc_barba","roupa":"rou_sobretudo","acessorio":"ace_cachecol","fundo":"fun_montanhas","moldura":"mol_cristal","efeito":"efe_neve"},"cores":{"pele":"#e8b58c","cabelo":"#6b6b70","roupa":"#2b3550","destaque":"#4cd9e8"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_oni', 'Oni do Dojo', 'Chifres, sorriso travesso e a aura sombria de quem venceu.',
+  (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 1, 1,
+  '{"id":"pre_oni","nome":"Oni do Dojo","descricao":"Chifres, sorriso travesso e a aura sombria de quem venceu.","raridade":"lendario","config":{"base":"bas_angular","camadas":{"cabelo":"cab_moicano","olhos":"olh_vilao","boca":"boc_travessa","roupa":"rou_kimono","acessorio":"ace_chifres_oni","fundo":"fun_dojo","moldura":"mol_chamas","aura":"aur_sombria"},"cores":{"pele":"#b0642a","cabelo":"#14100c","roupa":"#3a1420","destaque":"#ff5230"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_piloto_vr', 'Piloto de Simulação', 'Headset VR, jaqueta neon e o hangar Nexus pronto p/ launch.',
+  (SELECT id FROM avatar_rarities WHERE `key`='lendario'), 1, 1,
+  '{"id":"pre_piloto_vr","nome":"Piloto de Simulação","descricao":"Headset VR, jaqueta neon e o hangar Nexus pronto p/ launch.","raridade":"lendario","config":{"base":"bas_classica","camadas":{"cabelo":"cab_buzz","olhos":"olh_focado","boca":"boc_determinada","roupa":"rou_neon_racer","acessorio":"ace_viseira_vr","fundo":"fun_hangar","moldura":"mol_circuito","aura":"aur_neon"},"cores":{"pele":"#e8b58c","cabelo":"#20242e","roupa":"#1c2333","destaque":"#4cd9e8"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_panda_zen', 'Panda Zen', 'Kimono, brisa suave e zero notificações.',
+  (SELECT id FROM avatar_rarities WHERE `key`='raro'), 1, 1,
+  '{"id":"pre_panda_zen","nome":"Panda Zen","descricao":"Kimono, brisa suave e zero notificações.","raridade":"raro","config":{"base":"bas_panda","camadas":{"olhos":"olh_feliz","boca":"boc_sorriso","roupa":"rou_kimono","fundo":"fun_dojo","moldura":"mol_aro","aura":"aur_vento"},"cores":{"pele":"#eef1f6","cabelo":"#14100c","roupa":"#2f4a33","destaque":"#4cd97c"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_raposa_estelar', 'Raposa Estelar', 'Mistério, jaqueta e uma constelação particular em órbita.',
+  (SELECT id FROM avatar_rarities WHERE `key`='epico'), 1, 1,
+  '{"id":"pre_raposa_estelar","nome":"Raposa Estelar","descricao":"Mistério, jaqueta e uma constelação particular em órbita.","raridade":"epico","config":{"base":"bas_raposa","camadas":{"olhos":"olh_misterioso","boca":"boc_lado","roupa":"rou_jaqueta","fundo":"fun_synthwave","moldura":"mol_neon","aura":"aur_estelar"},"cores":{"pele":"#d98a3a","cabelo":"#3d2b1f","roupa":"#2a2438","destaque":"#c99aff"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_guardiao', 'Guardião da Trilha', 'Colete, escudo no peito e folhas dançando ao redor.',
+  (SELECT id FROM avatar_rarities WHERE `key`='raro'), 1, 1,
+  '{"id":"pre_guardiao","nome":"Guardião da Trilha","descricao":"Colete, escudo no peito e folhas dançando ao redor.","raridade":"raro","config":{"base":"bas_quadrada","camadas":{"cabelo":"cab_curto","olhos":"olh_focado","boca":"boc_determinada","roupa":"rou_colete","fundo":"fun_montanhas","banner":"ban_guardiao","emblema":"emb_escudo","efeito":"efe_folhas"},"cores":{"pele":"#b07a4e","cabelo":"#3d2b1f","roupa":"#3e5a4a","destaque":"#4cd97c"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_pixelado', 'Herói de 8 Bits', 'Olhos pixel, coração de fliperama e praia renderizada em 16 cores.',
+  (SELECT id FROM avatar_rarities WHERE `key`='epico'), 1, 1,
+  '{"id":"pre_pixelado","nome":"Herói de 8 Bits","descricao":"Olhos pixel, coração de fliperama e praia renderizada em 16 cores.","raridade":"epico","config":{"base":"bas_classica","camadas":{"cabelo":"cab_moicano","olhos":"olh_pixel","boca":"boc_travessa","roupa":"rou_gamer","fundo":"fun_praia","banner":"ban_pixel","emblema":"emb_coracao_pixel","moldura":"mol_rgb"},"cores":{"pele":"#e8b58c","cabelo":"#ff5f8f","roupa":"#20242e","destaque":"#4cd97c"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_tempestade', 'Olho da Tempestade', 'Sobretudo na chuva, relâmpagos e calma absoluta.',
+  (SELECT id FROM avatar_rarities WHERE `key`='epico'), 1, 1,
+  '{"id":"pre_tempestade","nome":"Olho da Tempestade","descricao":"Sobretudo na chuva, relâmpagos e calma absoluta.","raridade":"epico","config":{"base":"bas_longa","camadas":{"cabelo":"cab_medio","olhos":"olh_serio","boca":"boc_neutra","roupa":"rou_sobretudo","fundo":"fun_chuva","moldura":"mol_tech","efeito":"efe_tempestade","aura":"aur_eletrica"},"cores":{"pele":"#d29e6f","cabelo":"#2a2a33","roupa":"#28324a","destaque":"#4c9de8"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_verao', 'Modo Férias', 'Regata, óculos escuros e chiclete — o backlog que espere.',
+  (SELECT id FROM avatar_rarities WHERE `key`='comum'), 1, 1,
+  '{"id":"pre_verao","nome":"Modo Férias","descricao":"Regata, óculos escuros e chiclete — o backlog que espere.","raridade":"comum","config":{"base":"bas_redonda","camadas":{"cabelo":"cab_rabo","olhos":"olh_feliz","boca":"boc_chiclete","roupa":"rou_regata","acessorio":"ace_oculos_sol","fundo":"fun_praia","moldura":"mol_aro","efeito":"efe_bolhas"},"cores":{"pele":"#b07a4e","cabelo":"#6b4a2a","roupa":"#1f6e5a","destaque":"#ff7a3d"}}}', 'tudo', NOW(), NOW())
+ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
+  updated_at = NOW();
+
+INSERT INTO avatar_presets
+  (`key`, name, description, rarity_id, is_system, is_public, configuration,
+   apply_scope, created_at, updated_at)
+VALUES ('pre_forjador', 'Mestre Forjador', 'Barba, brasas e a engrenagem que faz tudo girar.',
+  (SELECT id FROM avatar_rarities WHERE `key`='raro'), 1, 1,
+  '{"id":"pre_forjador","nome":"Mestre Forjador","descricao":"Barba, brasas e a engrenagem que faz tudo girar.","raridade":"raro","config":{"base":"bas_quadrada","camadas":{"cabelo":"cab_buzz","olhos":"olh_focado","boca":"boc_barba","roupa":"rou_colete","fundo":"fun_forja","banner":"ban_forjado","emblema":"emb_engrenagem","moldura":"mol_madeira","efeito":"efe_fogo"},"cores":{"pele":"#b0642a","cabelo":"#3d2b1f","roupa":"#4a2d18","destaque":"#ff8a3d"}}}', 'tudo', NOW(), NOW())
 ON DUPLICATE KEY UPDATE name = VALUES(name), configuration = VALUES(configuration),
   updated_at = NOW();
 

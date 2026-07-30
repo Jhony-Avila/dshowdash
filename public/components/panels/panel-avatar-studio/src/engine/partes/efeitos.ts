@@ -385,6 +385,7 @@ export const EFEITOS: ParteDef[] = [
     nome: 'Chuva de Moedas',
     descricao: 'O trimestre fechou verde — e transbordou.',
     raridade: 'lendario',
+    bloqueadoPor: 'conquista:favoritador_25',
     tema: 'executivo',
     render: () => {
       let moedas = '';
