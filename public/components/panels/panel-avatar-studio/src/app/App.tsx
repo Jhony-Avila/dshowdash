@@ -7,8 +7,8 @@
 // Undo/redo (§14), comparação atual×salvo (§15), estados de salvar (§25).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Boxes, Brush, Camera, CircleUser, Columns2, Dices, Eye, Frame, Glasses, History,
-  Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Undo2,
+  Bot, Boxes, Brush, Camera, CircleUser, Columns2, Dices, Eye, Frame, Glasses, History,
+  Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Trophy, Undo2,
   Volume2, VolumeX, Wand2,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, EstadoSalvar, Raridade, ShellConfig } from '../domain/types';
@@ -20,7 +20,11 @@ import type { OrigemDado, ResultadoCarga, TipoAtivo } from '../services/AvatarSe
 import { definirSom, somAtivo, tocarCelebracao, tocarEquipar, tocarSalvar } from '../services/Som';
 import { registrarUso } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
+import { carregarVida } from '../services/VidaService';
+import type { Vida } from '../services/VidaService';
 import { Colecoes } from '../components/Colecoes';
+import { Conquistas } from '../components/Conquistas';
+import { CriarIA } from '../components/CriarIA';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { PalcoCinema } from '../components/PalcoCinema';
 import type { Celebracao } from '../components/PalcoCinema';
@@ -87,7 +91,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
-  const [aba, setAba] = useState<'itens' | 'presets' | 'colecoes' | 'historico' | 'foto'>('itens');
+  const [aba, setAba] = useState<'itens' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'historico' | 'foto'>('itens');
+  const [vida, setVida] = useState<Vida | null>(null);
   const [comparando, setComparando] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
   const [somLigado, setSomLigado] = useState(somAtivo);
@@ -126,6 +131,25 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       setCarregando(false);
       telemetria('abriu', { tipoAtivo: r.tipoAtivo ?? 'nenhum' });
     })();
+    // Vida (conquistas/eventos/desbloqueios) em paralelo — F3
+    void carregarVida(shellConfig.signal).then((v) => {
+      if (!vivo || !v) return;
+      setVida(v);
+      // celebra conquistas NOVAS desde a última visita (reação do personagem)
+      try {
+        const chave = 'dshow.avatar.conquistas.v1';
+        const vistas = new Set<string>(JSON.parse(localStorage.getItem(chave) ?? '[]'));
+        const feitas = v.conquistas.filter((c) => c.conquistada);
+        const nova = feitas.find((c) => !vistas.has(c.id));
+        if (nova && vistas.size > 0) { // 1ª visita não comemora retroativo
+          setCelebracao({ raridade: 'lendario', chave: Date.now() });
+          tocarCelebracao('lendario');
+          setMensagem(`🏆 Conquista desbloqueada: ${nova.nome}!`);
+          telemetria('conquista', { id: nova.id });
+        }
+        localStorage.setItem(chave, JSON.stringify(feitas.map((c) => c.id)));
+      } catch { /* sem storage */ }
+    });
     return () => { vivo = false; };
   }, [shellConfig.signal, aplicarCarga]);
 
@@ -308,6 +332,18 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             <span>Coleções</span>
           </button>
           <button type="button"
+            className={`avst-cat ${aba === 'conquistas' ? 'avst-cat-ativa' : ''}`}
+            onClick={() => setAba('conquistas')}>
+            <Trophy size={17} aria-hidden />
+            <span>Conquistas</span>
+          </button>
+          <button type="button"
+            className={`avst-cat ${aba === 'ia' ? 'avst-cat-ativa' : ''}`}
+            onClick={() => setAba('ia')}>
+            <Bot size={17} aria-hidden />
+            <span>Criar com IA</span>
+          </button>
+          <button type="button"
             className={`avst-cat ${aba === 'historico' ? 'avst-cat-ativa' : ''}`}
             onClick={() => setAba('historico')}>
             <History size={17} aria-hidden />
@@ -388,11 +424,14 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         <aside className="avst-lateral">
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
           {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
+          {aba === 'conquistas' && <Conquistas vida={vida} />}
+          {aba === 'ia' && <CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} />}
           {aba === 'historico' && <Historico key={`h-${versao}`} aoAplicar={aplicar} />}
           {aba === 'foto' && <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'} aoSalvar={aoSalvarFoto} />}
           {aba === 'itens' && (
             <>
-              <GradeItens config={atual} categoria={categoria} aoEscolher={aplicar} />
+              <GradeItens config={atual} categoria={categoria}
+                desbloqueados={vida?.desbloqueados ?? new Set()} aoEscolher={aplicar} />
               <Cores config={atual} aoMudar={aplicar} />
             </>
           )}

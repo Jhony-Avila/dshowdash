@@ -186,6 +186,68 @@ export const ACESSORIOS: ParteDef[] = [
       </g>`,
   },
   {
+    id: 'ace_medalha',
+    categoria: 'acessorio',
+    nome: 'Medalha de Veterano',
+    descricao: '30 dias de casa, cravados em bronze e fita.',
+    raridade: 'epico',
+    tema: 'conquista',
+    usaCores: ['destaque'],
+    bloqueadoPor: 'conquista:veterano_30d',
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}med" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffd98a"/>
+          <stop offset="1" stop-color="#b07d1e"/>
+        </linearGradient>
+      </defs>
+      <path d="M96 186 l 10 24 l 8 -6 l -8 -22 z" fill="${p.destaque.base}"/>
+      <path d="M116 182 l -6 26 l 9 2 l 7 -24 z" fill="${p.destaque.escuro}"/>
+      <circle cx="112" cy="216" r="13" fill="url(#${u}med)" stroke="#8a5f10" stroke-width="1.6"/>
+      <path d="M112 208 l 2.4 5 l 5.6 0.6 l -4.2 3.8 l 1.2 5.6 l -5 -3 l -5 3 l 1.2 -5.6 l -4.2 -3.8 l 5.6 -0.6 z" fill="#8a5f10"/>`,
+  },
+  {
+    id: 'ace_gorro_natal',
+    categoria: 'acessorio',
+    nome: 'Gorro de Natal',
+    descricao: 'Dezembro no dash também tem clima.',
+    raridade: 'raro',
+    tema: 'evento',
+    bloqueadoPor: 'evento:natal',
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}gn" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e85555"/>
+          <stop offset="1" stop-color="#a12a2a"/>
+        </linearGradient>
+      </defs>
+      <path d="M70 82 c 4 -34 30 -50 56 -46 c 26 4 44 26 40 54 l -10 -4 c -26 -14 -58 -16 -86 -4 z" fill="url(#${u}gn)"/>
+      <path d="M166 90 c 10 2 16 10 14 20 c -2 8 -12 12 -18 6 c -6 -6 -4 -18 4 -26 z" fill="url(#${u}gn)"/>
+      <circle cx="172" cy="112" r="9" fill="#f6f3ec"/>
+      <path d="M68 84 c 30 -13 62 -11 90 4 l -2 12 c -28 -14 -58 -16 -86 -4 z" fill="#f6f3ec"/>`,
+  },
+  {
+    id: 'ace_chapeu_bruxa',
+    categoria: 'acessorio',
+    nome: 'Chapéu de Bruxa',
+    descricao: 'Halloween chegou ao dashboard. Cuidado com as queries.',
+    raridade: 'raro',
+    tema: 'evento',
+    usaCores: ['destaque'],
+    bloqueadoPor: 'evento:halloween',
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}bx" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#3a3050"/>
+          <stop offset="1" stop-color="#171226"/>
+        </linearGradient>
+      </defs>
+      <path d="M60 80 c 40 -12 80 -12 120 0 c 5 2 5 8 -1 9 c -39 8 -79 8 -118 0 c -6 -1 -6 -7 -1 -9 z" fill="url(#${u}bx)"/>
+      <path d="M92 78 c 2 -26 12 -46 30 -58 c 3 -2 6 0 5 3 c -4 16 4 24 12 32 c 8 8 8 18 0 25 c -15 5 -32 4 -47 -2 z" fill="url(#${u}bx)"/>
+      <path d="M94 72 c 16 5 30 5 44 -1" stroke="${p.destaque.base}" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <rect x="118" y="62" width="9" height="9" rx="2" fill="${p.destaque.claro}" transform="rotate(12 122 66)"/>`,
+  },
+  {
     id: 'ace_coroa',
     categoria: 'acessorio',
     nome: 'Coroa do Top 1',

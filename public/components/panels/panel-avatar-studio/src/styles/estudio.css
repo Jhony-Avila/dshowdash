@@ -518,6 +518,75 @@
 }
 .avst-diff-nada { font-size: 11.5px; color: var(--avst-texto-2); }
 
+/* ── F3: itens travados (desbloqueio aditivo) ─────────────────────── */
+.avst-card-bloqueado { cursor: not-allowed; }
+.avst-card-bloqueado .avst-card-thumb { filter: grayscale(0.85) brightness(0.6); }
+.avst-card-lock {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -70%);
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border-radius: 50%; background: rgba(8, 10, 18, 0.8);
+  border: 1px solid var(--avst-rar); color: var(--avst-rar);
+}
+.avst-tip-lock { font-style: normal; color: #ffd98a; }
+
+/* ── F3: conquistas + eventos ─────────────────────────────────────── */
+.avst-conquistas { display: flex; flex-direction: column; gap: 8px; }
+.avst-conquistas-resumo {
+  display: flex; align-items: center; gap: 7px; margin: 0 0 4px;
+  font-size: 12px; font-weight: 700; color: var(--avst-texto-2);
+}
+.avst-conquista {
+  display: flex; gap: 11px; padding: 10px 12px; border-radius: 12px;
+  background: var(--avst-painel); border: 1px solid var(--avst-borda);
+  opacity: 0.62;
+}
+.avst-conquista-ok { opacity: 1; border-color: color-mix(in srgb, #e8b64c 45%, var(--avst-borda)); }
+.avst-conquista-icone {
+  width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center;
+  border-radius: 50%; background: var(--avst-painel-2); color: var(--avst-texto-2);
+}
+.avst-conquista-ok .avst-conquista-icone { background: color-mix(in srgb, #e8b64c 22%, transparent); color: #e8b64c; }
+.avst-conquista-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.avst-conquista-info strong { font-size: 13px; }
+.avst-conquista-info span { font-size: 11.5px; color: var(--avst-texto-2); line-height: 1.4; }
+.avst-conquista-info em { font-style: normal; font-size: 10.5px; color: #e8b64c; }
+.avst-conquista-premio {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 2px;
+  font-size: 11px !important; font-weight: 700; color: var(--avst-rar, var(--avst-texto)) !important;
+}
+.avst-evento-ativo {
+  margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  font-size: 9.5px; font-weight: 800; background: color-mix(in srgb, var(--avst-ok) 22%, transparent); color: var(--avst-ok);
+}
+
+/* ── F3: Criar com IA ─────────────────────────────────────────────── */
+.avst-ia { display: flex; flex-direction: column; gap: 12px; }
+.avst-ia-entrada { display: flex; gap: 8px; }
+.avst-ia-entrada input {
+  flex: 1; min-width: 0; padding: 9px 12px; border-radius: 10px;
+  background: var(--avst-painel); border: 1px solid var(--avst-borda);
+  color: var(--avst-texto); font: inherit; font-size: 13px; outline: none;
+}
+.avst-ia-entrada input:focus { border-color: var(--avst-acento); }
+.avst-ia-sugestoes { display: flex; gap: 6px; flex-wrap: wrap; }
+.avst-ia-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+  background: var(--avst-painel); border: 1px solid var(--avst-borda); color: var(--avst-texto-2);
+  transition: border-color 0.12s, color 0.12s;
+}
+.avst-ia-chip:hover { border-color: var(--avst-acento); color: var(--avst-texto); }
+.avst-ia-resultado {
+  display: flex; gap: 12px; padding: 12px; border-radius: 13px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--avst-acento) 10%, var(--avst-painel)), var(--avst-painel) 60%);
+  border: 1px solid color-mix(in srgb, var(--avst-acento) 45%, var(--avst-borda));
+}
+.avst-ia-thumb { width: 110px; flex: 0 0 auto; border-radius: 10px; overflow: hidden; align-self: flex-start; }
+.avst-ia-info { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.avst-ia-info strong { font-size: 14.5px; }
+.avst-ia-historia { font-size: 12px; color: var(--avst-texto-2); font-style: italic; line-height: 1.45; }
+.avst-ia-info em { font-style: normal; font-size: 10.5px; color: var(--avst-texto-2); }
+
 /* ── Responsivo ───────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
   .avst-corpo { grid-template-columns: 56px minmax(260px, 1fr) minmax(280px, 380px); }

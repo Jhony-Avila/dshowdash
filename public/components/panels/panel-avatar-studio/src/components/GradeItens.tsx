@@ -5,7 +5,7 @@
 // briefing §10) com selo de raridade. Categorias opcionais ganham o card
 // "Nenhum". Thumbnails são estáticas (sem SMIL) por economia de GPU.
 import { useMemo, useState } from 'react';
-import { Ban, Check, Search, Star } from 'lucide-react';
+import { Ban, Check, Lock, Search, Star } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, Raridade } from '../domain/types';
 import { CATEGORIAS, RARIDADES, itensDe, validarConfig } from '../services/AvatarCatalog';
 import { alternarFavorito, favoritos } from '../services/Progresso';
@@ -29,9 +29,11 @@ function idEquipado(config: AvatarConfig, categoria: CategoriaId): string | null
   return categoria === 'base' ? config.base : config.camadas[categoria] ?? null;
 }
 
-export function GradeItens({ config, categoria, aoEscolher }: {
+export function GradeItens({ config, categoria, desbloqueados, aoEscolher }: {
   config: AvatarConfig;
   categoria: CategoriaId;
+  /** ids liberados por conquistas/eventos (vem do /api/avatar/vida.php) */
+  desbloqueados: Set<string>;
   aoEscolher: (novo: AvatarConfig) => void;
 }) {
   const meta = CATEGORIAS.find((c) => c.id === categoria);
@@ -95,6 +97,7 @@ export function GradeItens({ config, categoria, aoEscolher }: {
           <CardItem key={item.id} item={item} config={config}
             ativo={equipado === item.id}
             favorito={favs.has(item.id)}
+            bloqueado={Boolean(item.bloqueadoPor) && !desbloqueados.has(item.id)}
             aoFavoritar={() => setFavs(new Set(alternarFavorito(item.id)))}
             aoEscolher={() => aoEscolher(comItem(config, categoria, item.id))} />
         ))}
@@ -106,25 +109,30 @@ export function GradeItens({ config, categoria, aoEscolher }: {
   );
 }
 
-function CardItem({ item, config, ativo, favorito, aoFavoritar, aoEscolher }: {
+function CardItem({ item, config, ativo, favorito, bloqueado, aoFavoritar, aoEscolher }: {
   item: ParteDef;
   config: AvatarConfig;
   ativo: boolean;
   favorito: boolean;
+  bloqueado: boolean;
   aoFavoritar: () => void;
   aoEscolher: () => void;
 }) {
   const rar = RARIDADES[item.raridade];
   // valida o preview: trocar p/ uma espécie derruba o cabelo TAMBÉM no thumbnail
   const preview = useMemo(() => validarConfig(comItem(config, item.categoria, item.id)), [config, item]);
+  const escolher = bloqueado ? undefined : aoEscolher;
+  const dica = item.bloqueadoPor?.startsWith('evento:')
+    ? 'Item de evento — volta a ficar disponível na próxima janela.'
+    : 'Recompensa de conquista — veja a aba Conquistas.';
 
   return (
-    <div role="option" aria-selected={ativo}
-      className={`avst-card ${ativo ? 'avst-card-ativo' : ''}`}
+    <div role="option" aria-selected={ativo} aria-disabled={bloqueado}
+      className={`avst-card ${ativo ? 'avst-card-ativo' : ''} ${bloqueado ? 'avst-card-bloqueado' : ''}`}
       data-raridade={item.raridade}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
-      onClick={aoEscolher}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aoEscolher(); } }}
+      onClick={escolher}
+      onKeyDown={(e) => { if (escolher && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); escolher(); } }}
       tabIndex={0}>
       <span className="avst-card-thumb">
         <AvatarSvg config={preview} estatico uid={`th-${item.id}`} />
@@ -133,6 +141,7 @@ function CardItem({ item, config, ativo, favorito, aoFavoritar, aoEscolher }: {
       <span className="avst-card-raridade">{rar.nome}</span>
       {item.novo && <span className="avst-card-novo">NOVO</span>}
       {ativo && <span className="avst-card-check"><Check size={13} aria-hidden /></span>}
+      {bloqueado && <span className="avst-card-lock"><Lock size={15} aria-hidden /></span>}
       <button type="button" className={`avst-card-fav ${favorito ? 'avst-card-fav-on' : ''}`}
         title={favorito ? 'Remover dos favoritos' : 'Favoritar'}
         aria-pressed={favorito}
@@ -144,6 +153,7 @@ function CardItem({ item, config, ativo, favorito, aoFavoritar, aoEscolher }: {
         <strong>{item.nome}</strong>
         <em style={{ color: rar.cor }}>{rar.nome}</em>
         <span>{item.lore ?? item.descricao}</span>
+        {bloqueado && <span className="avst-tip-lock">🔒 {dica}</span>}
       </span>
     </div>
   );
