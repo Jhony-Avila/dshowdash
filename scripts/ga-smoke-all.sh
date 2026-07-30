@@ -8,7 +8,7 @@
 #   1. php -l em todo o backend
 #   2. tsc --noEmit no painel
 #   3. node --check no adaptador
-#   4. as 16 rotas respondendo com envelope ok
+#   4. as 17 rotas respondendo com envelope ok
 #   5. gate de autenticação (rota sem sessão TEM de dar 401)
 #   6. COERÊNCIA dos números entre telas, em 4 cenários  <- o que pega mock mentiroso
 #   7. prova de UI em dark + light (Playwright)
@@ -71,9 +71,9 @@ CURL=(curl -s -k --resolve dshowdash.com.br:443:127.0.0.1)
 B=https://dshowdash.com.br/api/google-analytics
 
 # ── 4. rotas ─────────────────────────────────────────────────────────────
-titulo "4/8 · as 16 rotas"
+titulo "4/8 · as 17 rotas"
 ROTAS=(status header/summary overview realtime acquisition acquisition/flow pages events
-       conversions funnel ecommerce users quality alerts properties quotas)
+       conversions funnel journey ecommerce users quality alerts properties quotas)
 for r in "${ROTAS[@]}"; do
   corpo=$("${CURL[@]}" -b "$J" "$B/$r")
   if echo "$corpo" | grep -q '"ok":true'; then passou "GET /$r"; else falhou "GET /$r" "$(echo "$corpo" | head -c 120)"; fi
@@ -123,6 +123,45 @@ for cen in ["saudavel","pico","queda_conversao","mobile_ruim"]:
 sys.exit(1 if falhas else 0)
 PY
 [ $? -eq 0 ] && passou "todos os cenários coerentes" || falhou "coerência" "ver acima"
+
+# ── 6b. integridade do grafo do Sankey e da árvore (Fase 2) ──────────────
+titulo "6b/8 · integridade do grafo (Fase 2)"
+python3 - "$J" <<'PYGRAFO'
+import json, subprocess, sys
+J = sys.argv[1]
+B = "https://dshowdash.com.br/api/google-analytics"
+def get(r):
+    out = subprocess.run(["curl","-s","-k","--resolve","dshowdash.com.br:443:127.0.0.1","-b",J,f"{B}/{r}"],
+                         capture_output=True, text=True).stdout
+    return json.loads(out)["data"]
+falhas = 0
+def ok(t):  print(f"  \033[0;32mOK\033[0m    {t}")
+def err(t):
+    global falhas
+    falhas += 1
+    print(f"  \033[0;31mFALHA\033[0m {t}")
+
+for cen in ["saudavel", "pico", "sem_dados"]:
+    f = get(f"acquisition/flow?periodo=28d&cenario={cen}")
+    ids = {n["id"] for n in f["nos"]}
+    # d3-sankey LANÇA com link apontando para nó inexistente -> tela em branco.
+    orf = [l for l in f["links"] if l["origem"] not in ids or l["destino"] not in ids]
+    if orf: err(f"[{cen}] {len(orf)} link(s) com id inexistente")
+    else:   ok(f"[{cen}] todo link aponta para nó existente ({len(f['links'])} links / {len(ids)} nós)")
+    # Ciclo também faz o d3-sankey lançar. As camadas são ordenadas: nenhum link pode voltar.
+    ordem = {c["id"]: i for i, c in enumerate(f["camadas"])}
+    cam = {n["id"]: n["camada"] for n in f["nos"]}
+    tras = [l for l in f["links"] if ordem.get(cam.get(l["origem"]), 0) >= ordem.get(cam.get(l["destino"]), 99)]
+    if tras: err(f"[{cen}] {len(tras)} link(s) para trás ou na mesma camada")
+    else:    ok(f"[{cen}] nenhum ciclo entre camadas")
+    j = get(f"journey?periodo=28d&cenario={cen}")
+    def prof(n): return 1 + max([prof(x) for x in n["filhos"]], default=0)
+    p = prof(j["arvore"])
+    if p > 6: err(f"[{cen}] árvore muito profunda ({p} níveis): ilegível na tela")
+    else:     ok(f"[{cen}] árvore com {p} níveis")
+sys.exit(1 if falhas else 0)
+PYGRAFO
+[ $? -eq 0 ] && passou "grafo do Sankey e árvore íntegros" || falhou "grafo/árvore" "ver acima"
 
 # ── 7. estabilidade (mesma seed = mesma resposta) ────────────────────────
 titulo "7/8 · estabilidade da semente"

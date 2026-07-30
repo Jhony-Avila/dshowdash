@@ -5,6 +5,7 @@ import { usarDados } from './usarDados';
 import { Card, Carregando, Erro, Procedencia, Grid, BarraProp, Badge, Vazio, AlertaItem } from '../components/UI';
 import type { Coluna } from '../components/UI';
 import type { LinhaCanal, LinhaCampanha } from '../services/GoogleAnalyticsService';
+import { Treemap } from '../components/viz/Treemap';
 import { fmtInt, fmtPct, fmtMoeda } from '../lib/fmt';
 
 function usarAquisicao(p: PropsTela) {
@@ -88,10 +89,35 @@ export function Canais(p: PropsTela) {
   if (!dados) return <Vazio titulo="Sem dados" />;
 
   const maxSes = Math.max(1, ...dados.por_canal.map((c) => c.sessoes));
-  const maxTx = Math.max(0.01, ...dados.por_canal.map((c) => c.taxa_conversao));
+  // Usado pelo treemap (intensidade da cor) E pela barra de qualidade abaixo — a MESMA
+  // referência nos dois, senão o mesmo canal aparece "bom" num gráfico e "médio" no outro.
+  const maxTx = Math.max(0.0001, ...dados.por_canal.map((c) => c.taxa_conversao));
 
   return (
     <>
+      <Card
+        titulo="Participação e qualidade"
+        nota="área = sessões · cor = taxa de conversão (escuro converte menos)"
+      >
+        <div className="ga-card">
+          <div className="ga-card__corpo">
+            <Treemap
+              altura={330}
+              selecionada={p.corte.canal ?? null}
+              fatias={dados.por_canal.map((c) => ({
+                nome: c.canal,
+                valor: c.sessoes,
+                // Normalizado pelo MELHOR canal, não por 100%: taxas de conversão vivem entre
+                // 1% e 5%, então escalar por 100 deixaria tudo na mesma cor pálida.
+                qualidade: c.taxa_conversao / maxTx,
+                detalhe: `conversão ${fmtPct(c.taxa_conversao)} · ${fmtInt(c.conversoes)} conversões`,
+              }))}
+              onClicar={(fa) => p.onCorte({ canal: p.corte.canal === fa.nome ? null : fa.nome })}
+            />
+          </div>
+        </div>
+      </Card>
+
       <Card titulo="Volume × qualidade" nota="barra = sessões · ponto = taxa de conversão">
         <div className="ga-card">
           <div className="ga-card__corpo">

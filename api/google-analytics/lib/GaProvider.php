@@ -69,4 +69,13 @@ interface GaProvider
 
     /** Funil (§30, §31). Categoria de quota: Funnel. */
     public function funil(array $f): array;
+
+    /**
+     * Jornada entre páginas e árvore de navegação (§25, §26).
+     *
+     * ⚠️ Separado de `fluxoAquisicao()` de propósito: aquele mostra de ONDE o tráfego vem,
+     * este mostra o que a pessoa faz DEPOIS de entrar. Um endpoint só pareceria economia e
+     * devolveria um gráfico que não responde nenhuma das duas perguntas.
+     */
+    public function jornada(array $f): array;
 }

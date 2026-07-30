@@ -131,6 +131,26 @@ export interface RespostaEcommerce {
   checkout: { etapa: string; usuarios: number; taxa: number; perda: number }[];
 }
 
+export interface NoFluxo { id: string; nome: string; camada: string; valor: number }
+export interface LinkFluxo { origem: string; destino: string; valor: number }
+
+export interface RespostaFluxo {
+  nos: NoFluxo[];
+  links: LinkFluxo[];
+  camadas: { id: string; rotulo: string }[];
+}
+
+export interface NoJornadaApi {
+  id: string; nome: string; titulo: string; tipo: string;
+  usuarios: number; converteu: number; filhos: NoJornadaApi[];
+}
+
+export interface RespostaJornada {
+  inicio: string;
+  inicios_disponiveis: { path: string; titulo: string }[];
+  arvore: NoJornadaApi;
+}
+
 export interface RespostaUsuarios {
   kpis: Kpi[];
   por_dispositivo: { dispositivo: string; usuarios: number; conversoes: number; taxa_conversao: number; taxa_engajamento: number }[];
@@ -196,6 +216,8 @@ export interface GoogleAnalyticsService {
   getEvents(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaEventos>>;
   getConversions(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaConversoes>>;
   getFunnel(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaFunil>>;
+  getFlow(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaFluxo>>;
+  getJourney(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaJornada>>;
   getEcommerce(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaEcommerce>>;
   getUsers(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaUsuarios>>;
   getQuality(f: FiltrosAnalytics, sinal?: AbortSignal): Promise<ComMeta<RespostaQualidade>>;
@@ -282,6 +304,8 @@ export class ApiGoogleAnalyticsService implements GoogleAnalyticsService {
   getEvents(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaEventos>(`/events${query(f)}`, this.s(sinal)); }
   getConversions(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaConversoes>(`/conversions${query(f)}`, this.s(sinal)); }
   getFunnel(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaFunil>(`/funnel${query(f)}`, this.s(sinal)); }
+  getFlow(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaFluxo>(`/acquisition/flow${query(f)}`, this.s(sinal)); }
+  getJourney(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaJornada>(`/journey${query(f)}`, this.s(sinal)); }
   getEcommerce(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaEcommerce>(`/ecommerce${query(f)}`, this.s(sinal)); }
   getUsers(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaUsuarios>(`/users${query(f)}`, this.s(sinal)); }
   getQuality(f: FiltrosAnalytics, sinal?: AbortSignal) { return pedir<RespostaQualidade>(`/quality${query(f)}`, this.s(sinal)); }

@@ -94,6 +94,13 @@ final class GaReportController
         self::responde($p->funil($f), $f);
     }
 
+    /** GET /journey — §25, §26 */
+    public static function jornada(GaProvider $p): void
+    {
+        $f = ga_filtros();
+        self::responde($p->jornada($f), $f);
+    }
+
     /** GET /ecommerce — §33, §34, §35 */
     public static function ecommerce(GaProvider $p): void
     {

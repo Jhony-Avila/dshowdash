@@ -52,6 +52,12 @@ export default defineConfig({
             if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react-vendor';
             // ECharts entra na conta de quem abre gráfico; separá-lo mantém o primeiro paint leve.
             if (/[\\/]node_modules[\\/]echarts|zrender[\\/]/.test(id)) return 'echarts';
+            // ⚠️ D3 e topojson em chunk PRÓPRIO. Sem esta regra eles caem no `vendor`, que é
+            // carregado junto com o entry — e o `import('d3-sankey')` dinâmico dos gráficos
+            // não adiaria download nenhum, só a execução. Medido: vendor 9,7 -> 77,5 kB ao
+            // adicionar os componentes D3; com o chunk separado o vendor volta ao tamanho
+            // original e quem não abre Fluxo/Localizações/Canais não paga.
+            if (/[\\/]node_modules[\\/](d3-|topojson)/.test(id)) return 'd3';
             return 'vendor';
           }
           return undefined;

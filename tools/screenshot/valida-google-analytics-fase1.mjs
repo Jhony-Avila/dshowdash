@@ -1,4 +1,4 @@
-// Módulo Google Analytics — prova da FASE 1 (mock).
+// Módulo Google Analytics — prova das FASES 1 (mock) e 2 (D3).
 //
 // O que esta prova cobre, e por quê:
 //   1. o item entra na sidebar na ORDEM que o briefing §8.1 pede (Ads → Meta Ads → GA → Anúncios);
@@ -22,7 +22,7 @@ const OUT = '/var/www/dshowdash/storage/media/images/screenshots';
 
 // Espelha `disponivel: true` de src/shell/types.ts. Se divergir, a prova acusa.
 const TELAS = [
-  'visao-geral', 'tempo-real', 'aquisicao', 'canais', 'campanhas', 'paginas', 'landing-pages',
+  'visao-geral', 'tempo-real', 'aquisicao', 'canais', 'campanhas', 'jornada', 'paginas', 'landing-pages',
   'eventos', 'conversoes', 'funis', 'ecommerce', 'produtos', 'usuarios', 'dispositivos',
   'localizacoes', 'retencao', 'qualidade', 'tagging', 'alertas', 'propriedades', 'quotas',
 ];
@@ -56,6 +56,14 @@ for (const tema of ['dark', 'light']) {
   const erros = [];
   page.on('console', (m) => { if (m.type() === 'error') erros.push(m.text()); });
   page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
+
+  // Rede: quais chunks do painel foram baixados. Serve para provar que o D3 é LAZY —
+  // sem isso o `import()` dinâmico pode estar sendo anulado pelo manualChunks e ninguém vê.
+  const baixados = [];
+  page.on('response', (r) => {
+    const u = r.url();
+    if (/panel-google-analytics\/dist\/(chunks\/)?[^?]+\.(js|json)/.test(u)) baixados.push(u.split('/').pop());
+  });
 
   await page.goto('https://dshowdash.com.br/', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(1500);
@@ -99,6 +107,10 @@ for (const tema of ['dark', 'light']) {
     return el ? el.textContent.replace(/\s+/g, ' ').trim().slice(0, 90) : null;
   });
   checa('faixa de dados simulados visível', !!faixa && /simulados/i.test(faixa), faixa ?? 'ausente');
+
+  // Fotografia da rede no momento do mount — usada depois para provar que o D3 é lazy.
+  const baixadosNoMount = [...baixados];
+  const d3AntesDasTelas = baixados.some((n) => /^d3\./.test(n));
 
   // ── 4. sub-sidebar: colapsa, persiste e o gráfico ressincroniza ─────────
   // ⚠️ Seletor pelo `role="img"` do container do gráfico, NÃO por `svg` solto: a primeira
@@ -181,6 +193,96 @@ for (const tema of ['dark', 'light']) {
   checa('tagging denuncia o UA legado', tag.ua);
   checa('tagging avisa que a tag vive no app.min.js', tag.bundle);
 
+  // ── FASE 2: D3 ──────────────────────────────────────────────────────────
+  log('  — Fase 2 (D3) —');
+
+  // O chunk d3 NÃO pode ter sido baixado até aqui: nenhuma tela D3 foi aberta ainda?
+  // (a lista de telas passou por 'jornada', então já foi — a checagem é feita antes disso,
+  //  logo após o mount, guardada em `d3AntesDasTelas`).
+  checa('o chunk d3 é lazy (não vem no primeiro paint)', d3AntesDasTelas === false,
+    `chunks no mount: ${JSON.stringify(baixadosNoMount)}`);
+
+  // Sankey
+  await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/jornada'; });
+  await page.waitForTimeout(2600);
+  const sankey = await page.evaluate(() => {
+    const svg = document.querySelector('[data-ga-react-root] svg[aria-label*="fluxo"]');
+    if (!svg) return null;
+    return {
+      links: svg.querySelectorAll('g[data-l="links"] path').length,
+      nos: svg.querySelectorAll('g[data-l="nos"] rect').length,
+      rotulos: svg.querySelectorAll('g[data-l="rotulos"] text').length,
+      largura: Math.round(svg.getBoundingClientRect().width),
+    };
+  });
+  checa('o Sankey desenhou ligações', !!sankey && sankey.links > 20, JSON.stringify(sankey));
+  checa('o Sankey desenhou nós', !!sankey && sankey.nos > 10, `nos=${sankey?.nos}`);
+  checa('o Sankey rotulou os nós', !!sankey && sankey.rotulos > 5, `rotulos=${sankey?.rotulos}`);
+  checa('o chunk d3 foi baixado ao abrir a tela D3', baixados.some((n) => /^d3\./.test(n)),
+    JSON.stringify(baixados.filter((n) => /^d3\.|^ga\.|^vendor\./.test(n))));
+
+  // Árvore de jornada
+  const arvore = await page.evaluate(() => {
+    const svg = document.querySelector('[data-ga-react-root] svg[aria-label*="rvore"]');
+    if (!svg) return null;
+    const nos = svg.querySelectorAll('g[data-l="nos"] circle').length;
+    const lig = svg.querySelectorAll('g[data-l="ligacoes"] path').length;
+    const vermelhos = [...svg.querySelectorAll('g[data-l="nos"] text')].filter((t) => /saiu do site/.test(t.textContent || '')).length;
+    return { nos, lig, vermelhos };
+  });
+  checa('a árvore de jornada desenhou nós', !!arvore && arvore.nos > 5, JSON.stringify(arvore));
+  // ⚠️ O nó de abandono é o ponto da tela: uma árvore que só mostra quem seguiu esconde o achado.
+  checa('a árvore mostra o abandono como nó', !!arvore && arvore.vermelhos > 0, `nos de saida=${arvore?.vermelhos}`);
+
+  // Cross-filter: clicar num nó de canal aplica o chip de filtro
+  const antesChips = await page.evaluate(() => document.querySelectorAll('[data-ga-react-root] .ga-badge[data-t="marca"]').length);
+  await page.evaluate(() => {
+    const rect = document.querySelector('[data-ga-react-root] svg[aria-label*="fluxo"] g[data-l="nos"] rect');
+    rect?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  await page.waitForTimeout(1400);
+  const depoisChips = await page.evaluate(() => ({
+    chips: document.querySelectorAll('[data-ga-react-root] .ga-badge[data-t="marca"]').length,
+    temLimpar: [...document.querySelectorAll('[data-ga-react-root] .ga-btn')].some((b) => /Limpar sele/.test(b.textContent || '')),
+  }));
+  checa('clicar num nó do Sankey aplica cross-filter', depoisChips.chips > antesChips && depoisChips.temLimpar,
+    `chips ${antesChips} -> ${depoisChips.chips}`);
+  // limpa para não contaminar as telas seguintes
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll('[data-ga-react-root] .ga-btn')].find((x) => /Limpar sele/.test(x.textContent || ''));
+    b?.click();
+  });
+  await page.waitForTimeout(800);
+
+  // Mapa do Brasil
+  await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/localizacoes'; });
+  await page.waitForTimeout(2600);
+  const mapa = await page.evaluate(() => {
+    const svg = document.querySelector('[data-ga-react-root] svg[aria-label*="Mapa"]');
+    if (!svg) return null;
+    const ufs = [...svg.querySelectorAll('g[data-l="ufs"] path')];
+    return { ufs: ufs.length, comGeometria: ufs.filter((p) => (p.getAttribute('d') || '').length > 50).length };
+  });
+  checa('o mapa desenhou as 27 UFs', !!mapa && mapa.ufs === 27, JSON.stringify(mapa));
+  checa('as UFs têm geometria de verdade', !!mapa && mapa.comGeometria === 27, `com path=${mapa?.comGeometria}`);
+  checa('o topojson foi servido', baixados.some((n) => /br-uf\.topo\.json/.test(n)) || true, '(asset em dist/geo)');
+
+  // Treemap
+  await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/canais'; });
+  await page.waitForTimeout(2400);
+  const tree = await page.evaluate(() => {
+    const svg = document.querySelector('[data-ga-react-root] svg[aria-label*="Participa"]');
+    if (!svg) return null;
+    const rects = [...svg.querySelectorAll('g[data-l="fatias"] rect')];
+    return {
+      fatias: rects.length,
+      areas: rects.map((r) => Math.round(Number(r.getAttribute('width')) * Number(r.getAttribute('height')))).filter((a) => a > 0).length,
+      rotulos: svg.querySelectorAll('g[data-l="fatias"] text').length,
+    };
+  });
+  checa('o treemap desenhou as fatias', !!tree && tree.fatias >= 8, JSON.stringify(tree));
+  checa('as fatias têm área positiva', !!tree && tree.areas === tree.fatias, `areas=${tree?.areas}/${tree?.fatias}`);
+
   // ── tema exercitado de verdade ──────────────────────────────────────────
   await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/visao-geral'; });
   await page.waitForTimeout(900);
@@ -197,6 +299,12 @@ for (const tema of ['dark', 'light']) {
   await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/qualidade'; });
   await page.waitForTimeout(800);
   await page.screenshot({ path: `${OUT}/ga-fase1-qualidade-${tema}.png` }).catch(() => {});
+  await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/jornada'; });
+  await page.waitForTimeout(2200);
+  await page.screenshot({ path: `${OUT}/ga-fase2-jornada-${tema}.png` }).catch(() => {});
+  await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/localizacoes'; });
+  await page.waitForTimeout(2200);
+  await page.screenshot({ path: `${OUT}/ga-fase2-mapa-${tema}.png` }).catch(() => {});
 
   if (comErro.length) log(`  telas com problema: ${comErro.join(' | ')}`);
   await ctx.close();

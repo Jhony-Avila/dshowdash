@@ -122,7 +122,7 @@ export const GRUPOS: GrupoTelas[] = [
       { id: 'aquisicao', titulo: 'Aquisição Geral', icone: 'MousePointerClick', disponivel: true, quota: 'core' },
       { id: 'canais', titulo: 'Canais', icone: 'Share2', disponivel: true, quota: 'core' },
       { id: 'campanhas', titulo: 'Campanhas', icone: 'Megaphone', disponivel: true, quota: 'core' },
-      { id: 'jornada', titulo: 'Fluxo de Aquisição', icone: 'Route', disponivel: false, motivo: 'Fase 2: Sankey em D3. O endpoint /acquisition/flow já devolve nós e links.' },
+      { id: 'jornada', titulo: 'Fluxo e Jornada', icone: 'Route', disponivel: true, quota: 'core' },
     ],
   },
   {

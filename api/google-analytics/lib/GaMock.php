@@ -726,36 +726,174 @@ final class GaMock implements GaProvider
         return $out;
     }
 
+    /**
+     * Sankey da aquisição (§21): canal → origem/mídia → campanha → landing → conversão.
+     *
+     * ⚠️ Nós têm **`id` estável**, não índice de array. A primeira versão devolvia
+     * `origem`/`destino` como POSIÇÃO no array de nós — funciona, mas amarra o contrato à
+     * ordem: qualquer reordenação no backend reescreve o diagrama inteiro no front, e o
+     * cross-filter não tem como dizer "o usuário clicou no canal Paid Search" a partir de um
+     * número. Com `id`, o clique num nó vira filtro (§63) sem tabela de tradução.
+     *
+     * ⚠️ Cada nó carrega `camada`: o `d3-sankey` calcula a coluna sozinho, mas a tela precisa
+     * saber a que ETAPA o nó pertence para colorir e para o drill-down (§64).
+     */
     public function fluxoAquisicao(array $f): array
     {
-        // Sankey (§21): canal → origem/mídia → campanha → landing → conversão.
         $aq = $this->aquisicao($f);
         $nos = [];
         $links = [];
-        $idx = function (string $nome) use (&$nos): int {
-            foreach ($nos as $i => $n) { if ($n['nome'] === $nome) { return $i; } }
-            $nos[] = ['nome' => $nome];
-            return count($nos) - 1;
+
+        // Registra um nó por id e devolve o próprio id — idempotente.
+        $no = function (string $id, string $nome, string $camada) use (&$nos): string {
+            if (!isset($nos[$id])) {
+                $nos[$id] = ['id' => $id, 'nome' => $nome, 'camada' => $camada, 'valor' => 0];
+            }
+            return $id;
         };
+        $liga = function (string $de, string $para, int $valor) use (&$links, &$nos): void {
+            if ($valor <= 0) { return; }
+            $chave = $de . '→' . $para;
+            if (isset($links[$chave])) { $links[$chave]['valor'] += $valor; }
+            else { $links[$chave] = ['origem' => $de, 'destino' => $para, 'valor' => $valor]; }
+            // O valor do nó é o que SAI dele (ou entra, no último nível).
+            $nos[$de]['valor'] = ($nos[$de]['valor'] ?? 0) + $valor;
+            $nos[$para]['valor'] = ($nos[$para]['valor'] ?? 0);
+        };
+
         $entradas = array_values(array_filter($this->paginasBase(), fn($p) => $p['entrada']));
-        foreach ($aq['campanhas'] as $i => $c) {
+
+        foreach ($aq['campanhas'] as $c) {
             if ($c['sessoes'] <= 0) { continue; }
-            $a = $idx($c['canal']);
-            $b = $idx($c['origem'] . ' / ' . ($c['midia'] !== '' ? $c['midia'] : '(none)'));
-            $d = $idx($c['campanha']);
-            $links[] = ['origem' => $a, 'destino' => $b, 'valor' => $c['sessoes']];
-            $links[] = ['origem' => $b, 'destino' => $d, 'valor' => $c['sessoes']];
-            // Distribui a campanha em 2 landings estáveis
+
+            $nCanal = $no('canal:' . $c['canal'], $c['canal'], 'canal');
+            $midia  = $c['midia'] !== '' ? $c['midia'] : '(none)';
+            $nOm    = $no('om:' . $c['origem'] . '/' . $midia, $c['origem'] . ' / ' . $midia, 'origem-midia');
+            $nCamp  = $no('camp:' . $c['campanha'], $c['campanha'], 'campanha');
+
+            $liga($nCanal, $nOm, $c['sessoes']);
+            $liga($nOm, $nCamp, $c['sessoes']);
+
+            // Duas landings estáveis por campanha (a escolha é determinística pela semente).
             $p1 = $entradas[(int)floor($this->rnd('lp1|' . $c['campanha']) * count($entradas))];
             $p2 = $entradas[(int)floor($this->rnd('lp2|' . $c['campanha']) * count($entradas))];
+            $nLp1 = $no('lp:' . $p1['path'], $p1['path'], 'landing');
             $s1 = (int)round($c['sessoes'] * 0.62);
-            $links[] = ['origem' => $d, 'destino' => $idx($p1['path']), 'valor' => $s1];
-            $links[] = ['origem' => $d, 'destino' => $idx($p2['path']), 'valor' => $c['sessoes'] - $s1];
+            $liga($nCamp, $nLp1, $s1);
+            if ($p2['path'] !== $p1['path']) {
+                $nLp2 = $no('lp:' . $p2['path'], $p2['path'], 'landing');
+                $liga($nCamp, $nLp2, $c['sessoes'] - $s1);
+            } else {
+                $liga($nCamp, $nLp1, $c['sessoes'] - $s1);
+            }
+
             if ($c['conversoes'] > 0) {
-                $links[] = ['origem' => $idx($p1['path']), 'destino' => $idx('generate_lead'), 'valor' => $c['conversoes']];
+                $nConv = $no('ev:generate_lead', 'generate_lead', 'conversao');
+                $liga($nLp1, $nConv, $c['conversoes']);
             }
         }
-        return ['nos' => $nos, 'links' => $links, 'meta' => $this->proc()];
+
+        // ⚠️ O último nível não tem saída, então seu `valor` fica 0 pelo cálculo acima. Aqui ele
+        // recebe o que ENTRA — senão a conversão aparece com valor zero no tooltip.
+        foreach ($links as $l) {
+            if (($nos[$l['destino']]['valor'] ?? 0) === 0) {
+                $nos[$l['destino']]['valor'] += $l['valor'];
+            }
+        }
+
+        return [
+            'nos'    => array_values($nos),
+            'links'  => array_values($links),
+            'camadas' => [
+                ['id' => 'canal', 'rotulo' => 'Canal'],
+                ['id' => 'origem-midia', 'rotulo' => 'Origem / mídia'],
+                ['id' => 'campanha', 'rotulo' => 'Campanha'],
+                ['id' => 'landing', 'rotulo' => 'Landing page'],
+                ['id' => 'conversao', 'rotulo' => 'Conversão'],
+            ],
+            'meta' => $this->proc(),
+        ];
+    }
+
+    /**
+     * Jornada entre páginas (§25) e árvore de navegação (§26).
+     *
+     * Devolve as sequências mais comuns a partir de um ponto inicial, em formato de árvore —
+     * o que o `d3-hierarchy` consome direto.
+     *
+     * ⚠️ Isto NÃO é o mesmo dado do Sankey de aquisição. O Sankey mostra de onde o tráfego
+     * vem; a jornada mostra o que a pessoa faz DEPOIS de entrar. Misturar os dois num único
+     * endpoint pareceria economia e produziria um gráfico que não responde nenhuma das duas
+     * perguntas.
+     */
+    public function jornada(array $f): array
+    {
+        $serie = $this->serie($f);
+        $ses = (int)$this->total($serie, 'sessoes');
+        $conv = (int)$this->total($serie, 'conversoes');
+        $pgs = $this->paginasBase();
+
+        $raizPath = $f['pagina'] ?? '/';
+        $raiz = null;
+        foreach ($pgs as $p) { if ($p['path'] === $raizPath) { $raiz = $p; break; } }
+        $raiz ??= $pgs[0];
+
+        // Candidatos de próximo passo: páginas que não são a atual nem página de erro.
+        $proximos = array_values(array_filter($pgs, fn($p) => $p['path'] !== $raiz['path'] && $p['tipo'] !== 'erro'));
+
+        $entradaRaiz = (int)round($ses * $this->entre('jr|' . $raiz['path'], 0.18, 0.34));
+
+        /** Constrói um nível da árvore, com abandono explícito. */
+        $nivel = function (array $pai, int $volume, int $prof) use (&$nivel, $proximos): array {
+            if ($prof >= 3 || $volume < 12) { return []; }
+            $filhos = [];
+            $restante = $volume;
+            // 2 a 3 caminhos por nível — mais que isso vira ruído ilegível na árvore.
+            $quantos = 2 + (int)round($this->rnd('jq|' . $pai['path'] . $prof));
+            for ($i = 0; $i < $quantos; $i++) {
+                $cand = $proximos[(int)floor($this->rnd('jc|' . $pai['path'] . $prof . $i) * count($proximos))];
+                $fatia = (int)round($volume * $this->entre('jf|' . $pai['path'] . $prof . $i, 0.12, 0.34));
+                if ($fatia < 8) { continue; }
+                $restante -= $fatia;
+                $filhos[] = [
+                    'id'       => 'n' . $prof . '-' . $i . ':' . $cand['path'],
+                    'nome'     => $cand['path'],
+                    'titulo'   => $cand['titulo'],
+                    'tipo'     => $cand['tipo'],
+                    'usuarios' => $fatia,
+                    'converteu'=> $cand['tipo'] === 'obrigado' || $cand['tipo'] === 'conversao'
+                        ? (int)round($fatia * $this->entre('jcv|' . $cand['path'] . $prof, 0.22, 0.61))
+                        : 0,
+                    'filhos'   => $nivel($cand, $fatia, $prof + 1),
+                ];
+            }
+            // ⚠️ O abandono entra como NÓ, não como sobra invisível. Uma árvore de navegação que
+            // só mostra quem seguiu adiante esconde exatamente o que se quer descobrir (§25).
+            if ($restante > 8) {
+                $filhos[] = [
+                    'id' => 'saida' . $prof . ':' . $pai['path'], 'nome' => '(saiu do site)',
+                    'titulo' => 'Abandono', 'tipo' => 'saida', 'usuarios' => $restante,
+                    'converteu' => 0, 'filhos' => [],
+                ];
+            }
+            return $filhos;
+        };
+
+        return [
+            'inicio' => $raiz['path'],
+            'inicios_disponiveis' => array_map(fn($p) => ['path' => $p['path'], 'titulo' => $p['titulo']],
+                array_values(array_filter($pgs, fn($p) => $p['entrada']))),
+            'arvore' => [
+                'id' => 'raiz:' . $raiz['path'],
+                'nome' => $raiz['path'],
+                'titulo' => $raiz['titulo'],
+                'tipo' => $raiz['tipo'],
+                'usuarios' => $entradaRaiz,
+                'converteu' => 0,
+                'filhos' => $nivel($raiz, $entradaRaiz, 0),
+            ],
+            'meta' => $this->proc(),
+        ];
     }
 
     public function paginas(array $f): array

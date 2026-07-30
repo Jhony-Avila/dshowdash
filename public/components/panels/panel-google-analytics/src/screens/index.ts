@@ -10,6 +10,7 @@ import type { TelaId } from '../shell/types';
 
 import VisaoGeral from './VisaoGeral';
 import TempoReal from './TempoReal';
+import Jornada from './Jornada';
 import { AquisicaoGeral, Canais, Campanhas } from './Aquisicao';
 import { Paginas, LandingPages } from './Comportamento';
 import { Eventos, Conversoes, Funis } from './Conversoes';
@@ -24,6 +25,7 @@ export const Telas: Partial<Record<TelaId, ComponentType<PropsTela>>> = {
   aquisicao: AquisicaoGeral,
   canais: Canais,
   campanhas: Campanhas,
+  jornada: Jornada,
   paginas: Paginas,
   'landing-pages': LandingPages,
   eventos: Eventos,

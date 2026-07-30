@@ -18,6 +18,7 @@
 //   GET /events                  central de eventos + ausentes (§28)
 //   GET /conversions             eventos importantes + conciliação CRM (§29, §32)
 //   GET /funnel                  funis (§30, §31)                    [quota: FUNNEL]
+//   GET /journey                 jornada entre páginas + árvore de navegação (§25, §26)
 //   GET /ecommerce               e-commerce, produtos, checkout (§33–§35)
 //   GET /users                   usuários, dispositivos, regiões, coortes (§36–§40)
 //   GET /quality                 qualidade da coleta + tagging (§42, §44)
@@ -113,6 +114,11 @@ switch ($segments[0] ?? '') {
     case 'funnel':
         $soGet();
         GaReportController::funil($p);
+        break;
+
+    case 'journey':
+        $soGet();
+        GaReportController::jornada($p);
         break;
 
     case 'ecommerce':

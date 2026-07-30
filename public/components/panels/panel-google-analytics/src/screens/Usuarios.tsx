@@ -1,9 +1,11 @@
 // screens/Usuarios.tsx — §36 (Usuários), §39 (Dispositivos), §40 (Localizações), §37 (Retenção)
-// @version 1.0.0  @created 2026-07-30
+// @version 1.1.0  @created 2026-07-30  @updated 2026-07-30 (Fase 2: mapa em D3)
+import { useState } from 'react';
 import type { PropsTela } from '../app/App';
 import { usarDados } from './usarDados';
 import { Card, Carregando, Erro, Procedencia, Grid, KpiCard, Vazio, BarraProp } from '../components/UI';
 import type { Coluna } from '../components/UI';
+import { MapaBrasil } from '../components/viz/MapaBrasil';
 import { fmtInt, fmtPct } from '../lib/fmt';
 
 function usarUsuarios(p: PropsTela) {
@@ -122,6 +124,7 @@ export function Dispositivos(p: PropsTela) {
 }
 
 export function Localizacoes(p: PropsTela) {
+  const [ufSel, setUfSel] = useState<string | null>(null);
   const { dados, meta, carregando, erro } = usarUsuarios(p);
   if (erro) return <Erro erro={erro} />;
   if (carregando && !dados) return <Carregando />;
@@ -140,15 +143,38 @@ export function Localizacoes(p: PropsTela) {
 
   return (
     <>
-      <Card
-        titulo="Localizações"
-        nota="mapa em D3 entra na Fase 2 — o componente GeoMapaBrasil já existe no módulo de Ads"
-      >
-        <Grid colunas={cols} linhas={dados.por_regiao} chave={(l) => l.uf + l.regiao} />
+      <Card titulo="Distribuição por estado" nota="clique num estado para destacá-lo na tabela abaixo">
+        <div className="ga-card">
+          <div className="ga-card__corpo">
+            <MapaBrasil
+              dados={dados.por_regiao}
+              metrica="usuarios"
+              altura={430}
+              selecionada={ufSel}
+              onClicarUf={(u) => {
+                setUfSel(u.uf === ufSel ? null : u.uf);
+                // ⚠️ O filtro global do módulo não tem dimensão de UF; o corte por região
+                // entra junto com a Fase 3 (drill-down completo). Aqui a seleção é local e
+                // serve para ligar mapa e tabela — dizer que filtra tudo seria mentira.
+              }}
+            />
+          </div>
+        </div>
+        <div style={{ fontSize: 11.5, color: 'var(--ga-txt-3)', marginTop: 6 }}>
+          Intensidade = usuários. A precisão geográfica é a que a fonte fornece — o módulo não
+          infere localização mais fina que isso.
+        </div>
       </Card>
-      <div style={{ fontSize: 11.5, color: 'var(--ga-txt-3)' }}>
-        A precisão geográfica é a que a fonte fornece — o módulo não infere localização mais fina que isso.
-      </div>
+
+      <Card titulo="Estados" nota={ufSel ? `destacando ${ufSel}` : undefined}>
+        <Grid
+          colunas={cols}
+          linhas={dados.por_regiao}
+          chave={(l) => l.uf + l.regiao}
+          onLinha={(l) => setUfSel(l.uf === ufSel ? null : l.uf)}
+          selecionada={(l) => l.uf === ufSel}
+        />
+      </Card>
       <Procedencia meta={meta} />
     </>
   );
