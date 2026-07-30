@@ -254,6 +254,7 @@ function resumoSimulado(id: ModuloId, periodo: PeriodoId): Promise<ResumoModulo>
 // ── Alertas consolidados (§28) ──────────────────────────────────────
 
 export async function getAlertas(): Promise<AlertaGeral[]> {
+  if (cenarioAtual() === 'vazio') return []; // §45: testa o estado vazio
   const alertas: AlertaGeral[] = [];
   // Trânsito real vira alerta quando intenso/desatualizado.
   try {
@@ -302,12 +303,29 @@ export async function getAlertas(): Promise<AlertaGeral[]> {
       rota: '#/panel-pipedrive', simulado: true,
     },
   );
+  if (cenarioAtual() === 'critico') { // §45: testa a hierarquia sob estresse
+    alertas.push(
+      {
+        id: 'qa-estoque', severidade: 1, modulo: 'E-commerce',
+        descricao: 'Estoque zerado em 4 produtos campeões de venda',
+        impacto: 'Vendas sendo recusadas agora (cenário de QA).',
+        rota: '#/panel-05', simulado: true,
+      },
+      {
+        id: 'qa-gasto', severidade: 1, modulo: 'Meta Ads',
+        descricao: 'Gasto 3× acima do teto diário nas campanhas ativas',
+        impacto: 'Orçamento do mês em risco (cenário de QA).',
+        rota: '#/panel-metaads', simulado: true,
+      },
+    );
+  }
   return alertas.sort((a, b) => a.severidade - b.severidade);
 }
 
 // ── Atividades recentes (§27) — simuladas até o feed real ──────────
 
 export function getAtividades(): Promise<Atividade[]> {
+  if (cenarioAtual() === 'vazio') return Promise.resolve([]); // §45
   const agora = Date.now();
   const min = (m: number) => new Date(agora - m * 60000).toISOString();
   const itens: Atividade[] = [
@@ -363,6 +381,12 @@ export async function getIntegracoes(): Promise<StatusIntegracao[]> {
     { nome: 'Pipedrive', detalhe: 'CRM comercial', estado: 'demonstracao', ultimaSync: null },
     { nome: 'Outlook / 365', detalhe: 'E-mails e agenda', estado: 'demonstracao', ultimaSync: null },
   );
+  if (cenarioAtual() === 'critico') { // §45: 2 fontes caem no cenário de QA
+    for (const nome of ['Meta Ads', 'Mercado Livre']) {
+      const i = out.findIndex((o) => o.nome === nome);
+      if (i >= 0) out[i] = { ...out[i], estado: 'erro', detalhe: 'Falha simulada (cenário de QA)', ultimaSync: null };
+    }
+  }
   return out;
 }
 
@@ -398,6 +422,31 @@ export function getDistribuicao(): Promise<DistribuicaoModulo[]> {
     { rotulo: 'Financeiro', valor: 5 },
     { rotulo: 'Outros', valor: 3 },
   ]);
+}
+
+// ── Cenários de demonstração (§45 — seletor OCULTO de QA) ───────────
+// 'vazio' mostra a Home sem eventos (testa estados vazios); 'critico'
+// força alertas graves e integrações em erro (testa a hierarquia visual).
+// Ativação escondida: 5 cliques rápidos no título "Principal".
+
+export type CenarioMock = 'padrao' | 'vazio' | 'critico';
+const K_CENARIO = 'dshow.home.cenario';
+
+export function cenarioAtual(): CenarioMock {
+  try {
+    const c = window.localStorage.getItem(K_CENARIO);
+    return c === 'vazio' || c === 'critico' ? c : 'padrao';
+  } catch { return 'padrao'; }
+}
+
+export function alternarCenario(): CenarioMock {
+  const ordem: CenarioMock[] = ['padrao', 'vazio', 'critico'];
+  const prox = ordem[(ordem.indexOf(cenarioAtual()) + 1) % ordem.length];
+  try {
+    if (prox === 'padrao') window.localStorage.removeItem(K_CENARIO);
+    else window.localStorage.setItem(K_CENARIO, prox);
+  } catch { /* sem storage */ }
+  return prox;
 }
 
 // ── Preferências de widgets (§30 — fase 1: mostrar/ocultar) ─────────
