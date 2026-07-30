@@ -47,10 +47,13 @@
 
 # sql/anuncios/ — DDL do histórico de conversas do painel Anúncios
 !/sql/anuncios/
+# sql/avatar/ — schema + seeds do catálogo do Avatar Studio (Expansão)
+!/sql/avatar/
 
 # scripts do Koala
 !/scripts/
 /scripts/*
+!/scripts/avatar/
 !/scripts/koala-build.sh
 !/scripts/koala-smoke-all.sh
 !/scripts/koala-smoke-all.php
