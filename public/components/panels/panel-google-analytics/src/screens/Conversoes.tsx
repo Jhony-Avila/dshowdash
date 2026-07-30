@@ -122,33 +122,87 @@ export function Conversoes(p: PropsTela) {
         <Grid colunas={cols} linhas={dados.importantes} chave={(l) => l.evento} />
       </Card>
 
-      <Card titulo="Conciliação com o CRM" nota="GA4 × Pipedrive — a única integração com as duas pontas reais">
+      <Card
+        titulo="Conciliação com o CRM"
+        nota="GA4 × Pipedrive — a única conciliação com uma ponta real hoje"
+      >
         <div className="ga-kpis" style={{ marginBottom: 10 }}>
-          <KpiCard kpi={{ chave: 'ga', rotulo: 'generate_lead (GA4)', valor: c.ga4_generate_lead, unidade: 'int' }} />
-          <KpiCard kpi={{ chave: 'crm', rotulo: 'Leads no CRM', valor: c.crm_leads, unidade: 'int' }} />
-          <KpiCard kpi={{ chave: 'dif', rotulo: 'Diferença', valor: c.diferenca, unidade: 'int', variacao_pct: c.diferenca_pct, maior_melhor: false }} />
+          <KpiCard kpi={{ chave: 'ga', rotulo: `generate_lead (GA4 · ${c.ga4_fonte})`, valor: c.ga4_generate_lead, unidade: 'int' }} />
+          {c.crm.disponivel ? (
+            <KpiCard kpi={{ chave: 'crm', rotulo: 'Leads no CRM (Pipedrive · real)', valor: c.crm_leads ?? 0, unidade: 'int' }} />
+          ) : null}
+          {c.crm.disponivel && (
+            <KpiCard kpi={{ chave: 'conv', rotulo: 'Viraram negócio', valor: c.crm.convertidos_em_negocio ?? 0, unidade: 'int' }} />
+          )}
+          {/* ⚠️ O card de diferença SÓ aparece quando os dois lados são reais. Ver abaixo. */}
+          {c.comparavel && (
+            <KpiCard kpi={{ chave: 'dif', rotulo: 'Diferença', valor: c.diferenca ?? 0, unidade: 'int', variacao_pct: c.diferenca_pct, maior_melhor: false }} />
+          )}
         </div>
-        <div className="ga-card">
-          <div className="ga-card__corpo">
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-              <Badge tipo={c.status === 'conciliado' ? 'ok' : 'alerta'}>{c.status}</Badge>
-              <span style={{ fontSize: 12, color: 'var(--ga-txt-2)' }}>
-                {c.diferenca > 0
-                  ? `${fmtInt(c.diferenca)} eventos no GA4 sem lead correspondente no CRM.`
-                  : `${fmtInt(Math.abs(c.diferenca))} leads no CRM sem evento no GA4.`}
-              </span>
+
+        {/* ⚠️ ESTE BLOCO É O PONTO DA TELA. Com o GA4 em mock, comparar os dois lados daria
+            "−97%" (1.426 simulados contra 43 reais) — um alarme que não significa nada. Em vez
+            de exibir esse número, a tela diz por que a comparação está suspensa. */}
+        {!c.comparavel && (
+          <div className="ga-erro" style={{ borderColor: '#F59E0B55', background: '#F59E0B14', marginBottom: 10 }}>
+            <div className="ga-erro__t" style={{ color: 'var(--ga-alerta)' }}>
+              <Icone nome="TriangleAlert" tam={14} /> Comparação suspensa
             </div>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Motivos possíveis</div>
-            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 11.5, color: 'var(--ga-txt-2)', lineHeight: 1.6 }}>
-              {c.motivos_possiveis.map((m, i) => <li key={i}>{m}</li>)}
-            </ul>
-            {/* §46.1: nenhuma fonte é verdade absoluta. Isto fica na tela, não escondido. */}
-            <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--ga-txt-3)', borderTop: '1px solid var(--ga-borda)', paddingTop: 8 }}>
-              {c.aviso}
+            <div className="ga-erro__d">{c.motivo_nao_comparavel}</div>
+          </div>
+        )}
+
+        {c.crm.disponivel ? (
+          <div className="ga-card">
+            <div className="ga-card__corpo">
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+                <Badge tipo={c.comparavel ? (c.status === 'conciliado' ? 'ok' : 'alerta') : 'neutro'}>{c.status}</Badge>
+                <Badge tipo="info">CRM: {c.crm.banco}</Badge>
+                <span style={{ fontSize: 11.5, color: 'var(--ga-txt-3)' }}>
+                  {c.crm.por_dia.length} dias com lead no período
+                </span>
+              </div>
+
+              {/* Achado de negócio, não detalhe técnico. */}
+              {c.crm.pct_manual !== null && c.crm.pct_manual !== undefined && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 5 }}>De onde vêm os leads do CRM</div>
+                  {(c.crm.por_origem ?? []).map((o) => (
+                    <div key={o.origem} className="ga-rt-lin">
+                      <span>{o.rotulo}</span>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{fmtInt(o.total)}</span>
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 11.5, color: 'var(--ga-txt-2)', marginTop: 8, lineHeight: 1.55 }}>
+                    <b style={{ color: 'var(--ga-txt)' }}>{fmtPct(c.crm.pct_manual, 1)}</b> dos leads foram criados à mão
+                    no CRM e <b>nunca passaram pelo site</b> — nenhum evento de GA4 corresponde a eles.
+                    É a primeira coisa a olhar antes de suspeitar da instrumentação.
+                  </div>
+                </div>
+              )}
+
+              {c.crm.convertidos_em_negocio === 0 && (c.crm.total ?? 0) > 0 && (
+                <div style={{ fontSize: 11.5, color: 'var(--ga-alerta)', marginBottom: 10 }}>
+                  Nenhum dos {fmtInt(c.crm.total ?? 0)} leads do período virou negócio ainda.
+                </div>
+              )}
+
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Motivos possíveis para a diferença</div>
+              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 11.5, color: 'var(--ga-txt-2)', lineHeight: 1.6 }}>
+                {c.motivos_possiveis.map((m, i) => <li key={i}>{m}</li>)}
+              </ul>
+
+              <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--ga-txt-3)', borderTop: '1px solid var(--ga-borda)', paddingTop: 8 }}>
+                {c.aviso}
+                {c.crm.aviso_origem && <><br />{c.crm.aviso_origem}</>}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <Erro erro={{ message: c.crm.motivo ?? 'O CRM não respondeu.' }} />
+        )}
       </Card>
+
       <Procedencia meta={meta} />
     </>
   );

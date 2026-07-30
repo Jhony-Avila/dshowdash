@@ -96,12 +96,36 @@ export interface RespostaEventos {
   ausentes: { evento: string; motivo: string }[];
 }
 
+export interface CrmLeads {
+  disponivel: boolean;
+  fonte: string;
+  banco?: string;
+  motivo?: string;
+  total: number | null;
+  convertidos_em_negocio?: number;
+  valor_total?: number;
+  por_origem?: { origem: string; rotulo: string; total: number }[];
+  pct_manual?: number | null;
+  por_dia: { data: string; leads: number }[];
+  aviso_origem?: string;
+}
+
 export interface RespostaConversoes {
   importantes: LinhaEvento[];
   conciliacao_crm: {
-    ga4_generate_lead: number; crm_leads: number; diferenca: number;
-    diferenca_pct: number | null; status: string;
-    motivos_possiveis: string[]; aviso: string;
+    ga4_generate_lead: number;
+    ga4_fonte: string;
+    crm_leads: number | null;
+    crm_fonte: string | null;
+    crm: CrmLeads;
+    /** ⚠️ `false` quando um lado é simulado: a tela NÃO mostra diferença nesse caso. */
+    comparavel: boolean;
+    motivo_nao_comparavel: string | null;
+    diferenca: number | null;
+    diferenca_pct: number | null;
+    status: string;
+    motivos_possiveis: string[];
+    aviso: string;
   };
 }
 

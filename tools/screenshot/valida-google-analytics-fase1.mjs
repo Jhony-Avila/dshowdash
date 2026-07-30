@@ -283,6 +283,31 @@ for (const tema of ['dark', 'light']) {
   checa('o treemap desenhou as fatias', !!tree && tree.fatias >= 8, JSON.stringify(tree));
   checa('as fatias têm área positiva', !!tree && tree.areas === tree.fatias, `areas=${tree?.areas}/${tree?.fatias}`);
 
+  // ── conciliação de leads com o CRM REAL (§32) ───────────────────────────
+  log('  — conciliação GA4 × CRM real —');
+  await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/conversoes'; });
+  await page.waitForTimeout(2200);
+  const conc = await page.evaluate(() => {
+    const t = document.querySelector('[data-ga-react-root] .ga-conteudo')?.textContent ?? '';
+    return {
+      // ⚠️ O ponto da tela: com o GA4 em mock a diferença NÃO pode ser exibida.
+      suspensa: /Comparação suspensa/i.test(t),
+      diz_por_que: /fontes diferentes|simulado e o lado CRM é real/i.test(t),
+      mostra_banco: /PIPE_DSHOW/.test(t),
+      mostra_manual: /criados à mão/i.test(t),
+      // Se aparecer um percentual de diferença aqui, a suspensão falhou.
+      tem_card_diferenca: /Diferença/.test(t),
+    };
+  });
+  checa('a comparação aparece SUSPENSA (fontes mistas)', conc.suspensa, JSON.stringify(conc));
+  checa('a tela explica por que está suspensa', conc.diz_por_que);
+  checa('mostra o banco real consultado (PIPE_DSHOW)', conc.mostra_banco);
+  checa('mostra que a maioria dos leads é criada à mão', conc.mostra_manual);
+  // ⚠️ Esta é a checagem que protege contra a regressão mais perigosa desta tela: exibir
+  // "-97%" comparando dado simulado com dado real.
+  checa('NÃO exibe card de diferença com fontes mistas', !conc.tem_card_diferenca,
+    conc.tem_card_diferenca ? 'card de diferença apareceu — a suspensão falhou' : '');
+
   // ── tema exercitado de verdade ──────────────────────────────────────────
   await page.evaluate(() => { window.location.hash = '#/panel-google-analytics/visao-geral'; });
   await page.waitForTimeout(900);

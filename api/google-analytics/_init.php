@@ -12,9 +12,14 @@ require_once __DIR__ . '/../core/CorsPolicy.php';
 require_once __DIR__ . '/../core/SessionGate.php';
 require_once __DIR__ . '/../_helpers/ApiResponse.php';
 require_once __DIR__ . '/../_helpers/AuthHelpers.php';
+// ⚠️ Banco entra aqui por UM motivo só: a conciliação de leads (§32) precisa do lado CRM
+// REAL (PIPE_DSHOW). O módulo NÃO tem banco próprio — nenhuma tabela `ga_*` existe.
+// Toda leitura daqui é somente-leitura e vive em `GaCrm`.
+require_once __DIR__ . '/../../config/db_connection.php';
 
 // ── Bibliotecas do módulo ───────────────────────────────────────
 require_once __DIR__ . '/lib/GaProvider.php';
+require_once __DIR__ . '/lib/GaCrm.php';
 require_once __DIR__ . '/lib/GaMock.php';
 require_once __DIR__ . '/lib/GaReal.php';
 

@@ -1016,24 +1016,43 @@ final class GaMock implements GaProvider
         }
         unset($e);
 
-        // Conciliação com o CRM (§32) — Pipedrive é a ÚNICA ponta real hoje (Fase 0 §7).
+        // ── Conciliação com o CRM (§32) — o lado do CRM é REAL ─────────────
+        // ⚠️ MUDANÇA IMPORTANTE: o CRM não é mais simulado. `GaCrm` consulta PIPE_DSHOW
+        // (Pipedrive LIVE) de verdade. Esta é a única conciliação da §47 com uma ponta real.
         $ga = 0;
         foreach ($importantes as $e) { if ($e['evento'] === 'generate_lead') { $ga = $e['contagem']; } }
-        $crm = (int)round($ga * $this->entre('crm', 0.78, 0.94));
+
+        [$ini, $fim] = $this->janela($f);
+        $crmDados = GaCrm::leads($ini->format('Y-m-d'), $fim->format('Y-m-d'));
+        $crm = $crmDados['disponivel'] ? (int)$crmDados['total'] : null;
+
+        // ⚠️ O PORTÃO: com o GA4 em mock, a diferença entre os lados NÃO é calculada.
+        // Medido: 1.426 (mock) contra 43 (real) = "−97%", um alarme que não significa nada
+        // porque um lado é inventado. Mostrar isso seria pior que não ter a conciliação.
+        $podeComparar = GaCrm::podeCompararCom($this->nome()) && $crm !== null;
 
         return [
             'importantes' => $importantes,
             'conciliacao_crm' => [
                 'ga4_generate_lead' => $ga,
+                'ga4_fonte'         => $this->nome(),
                 'crm_leads'         => $crm,
-                'diferenca'         => $ga - $crm,
-                'diferenca_pct'     => $ga > 0 ? round((($ga - $crm) / $ga) * 100, 1) : null,
-                'status'            => $ga === $crm ? 'conciliado' : 'divergente',
+                'crm_fonte'         => $crmDados['fonte'] ?? null,
+                'crm'               => $crmDados,
+                'comparavel'        => $podeComparar,
+                'motivo_nao_comparavel' => $podeComparar ? null
+                    : ($crm === null
+                        ? 'O CRM não respondeu: ' . ($crmDados['motivo'] ?? 'motivo desconhecido')
+                        : 'Fontes diferentes: o lado GA4 é simulado e o lado CRM é real. A diferença entre os dois só passa a ter significado quando o GA4 vier da Data API.'),
+                'diferenca'         => $podeComparar ? $ga - $crm : null,
+                'diferenca_pct'     => $podeComparar && $ga > 0 ? round((($ga - $crm) / $ga) * 100, 1) : null,
+                'status'            => $podeComparar ? ($ga === $crm ? 'conciliado' : 'divergente') : 'suspenso',
                 'motivos_possiveis' => [
                     'Bloqueadores de anúncio e consentimento negado impedem o evento no GA4, mas o lead chega ao CRM.',
                     'Lead criado manualmente pelo time comercial não passa pelo site.',
                     'Janela de atribuição e fuso horário diferentes entre as duas plataformas.',
                     'Formulário enviado duas vezes gera 1 lead no CRM e 2 eventos no GA4.',
+                    'MEDIDO na base real: a maioria dos leads do Pipedrive é criada À MÃO pelo time (origin=ManuallyCreated) e nunca passou pelo site — nenhum evento de GA4 corresponde a eles.',
                 ],
                 'aviso' => 'Nenhuma das duas fontes é verdade absoluta (§46.1). A conciliação mostra a diferença; não decide quem está certo.',
             ],
