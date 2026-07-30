@@ -206,4 +206,156 @@ export const OLHOS: ParteDef[] = [
       <rect x="64" y="96" width="8" height="24" rx="4" fill="${p.destaque.profundo}"/>
       <rect x="168" y="96" width="8" height="24" rx="4" fill="${p.destaque.profundo}"/>`,
   },
+  // ── 4.6 F2 · Onda 1 (identidade) — 8 olhares novos ────────────────
+  {
+    id: 'olh_sonolento',
+    categoria: 'olhos',
+    nome: 'Sonolento',
+    descricao: 'Café ainda não fez efeito.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <path d="M90 108 a 10.5 8 0 0 0 20 2" fill="none" stroke="#14100c" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M130 110 a 10.5 8 0 0 0 20 0" fill="none" stroke="#14100c" stroke-width="3.4" stroke-linecap="round"/>
+      <circle cx="101" cy="111" r="3.4" fill="#14100c"/>
+      <circle cx="141" cy="111" r="3.4" fill="#14100c"/>
+      <path d="M90 104 h 20 M130 104 h 20" stroke="${alfa(p.pele.escuro, 0.55)}" stroke-width="4" stroke-linecap="round"/>
+      ${sobrancelha(100, 96, 2, p.cabelo.escuro)}${sobrancelha(140, 96, 2, p.cabelo.escuro)}
+      <path d="M160 84 l 5 -5 h -5 l 5 -5" stroke="${alfa('#8b93a7', 0.8)}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'olh_desconfiado',
+    categoria: 'olhos',
+    nome: 'Desconfiado',
+    descricao: 'Uma sobrancelha no alto: "tem certeza desse número?"',
+    raridade: 'incomum',
+    tema: 'executivo',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      ${olhoHumano(100, 108)}
+      <ellipse cx="140" cy="109" rx="10.5" ry="5.6" fill="#fdfdfa"/>
+      <circle cx="140" cy="109.5" r="4.4" fill="${IRIS}"/>
+      <circle cx="140" cy="109.5" r="2.2" fill="#14100c"/>
+      <path d="M129 106 h 22" stroke="${alfa(p.pele.escuro, 0.5)}" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M88 88 q 12 -8 24 -2" stroke="${p.cabelo.escuro}" stroke-width="4.4" stroke-linecap="round" fill="none"/>
+      <path d="M129 96 l 22 2" stroke="${p.cabelo.escuro}" stroke-width="4.4" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'olh_apaixonado',
+    categoria: 'olhos',
+    nome: 'Apaixonado',
+    descricao: 'Quando o resultado do mês chega verde.',
+    raridade: 'raro',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => {
+      const coracao = (x: number, y: number) => `
+        <path d="M${x} ${y + 5} l -6.5 -6.5 a 4.5 4.5 0 1 1 6.5 -5 a 4.5 4.5 0 1 1 6.5 5 z" fill="#ff5f8f">
+          <animateTransform attributeName="transform" type="scale" values="1;1.12;1" dur="1.2s" repeatCount="indefinite" additive="sum"/>
+        </path>`;
+      return `
+      <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+      ${coracao(100, 105)}${coracao(140, 105)}
+      ${sobrancelha(100, 92, 1, p.cabelo.escuro)}${sobrancelha(140, 92, 1, p.cabelo.escuro)}`;
+    },
+  },
+  {
+    id: 'olh_cifrao',
+    categoria: 'olhos',
+    nome: 'Cifrão',
+    descricao: 'ROI detectado. Pupilas em modo faturamento.',
+    raridade: 'epico',
+    tema: 'executivo',
+    usaCores: ['cabelo'],
+    render: (p) => {
+      const cifra = (x: number) => `
+        <ellipse cx="${x}" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+        <circle cx="${x}" cy="108" r="6" fill="#1d7a46"/>
+        <text x="${x}" y="112" text-anchor="middle" font-family="system-ui, sans-serif" font-size="9.5" font-weight="800" fill="#aef4c4">$</text>`;
+      return `
+      ${cifra(100)}${cifra(140)}
+      ${sobrancelha(100, 92, 0, p.cabelo.escuro)}${sobrancelha(140, 92, 0, p.cabelo.escuro)}`;
+    },
+  },
+  {
+    id: 'olh_estrela',
+    categoria: 'olhos',
+    nome: 'Estrelado',
+    descricao: 'Viu o lançamento e virou fã na hora.',
+    raridade: 'raro',
+    tema: 'gamer',
+    usaCores: ['cabelo', 'destaque'],
+    render: (p) => {
+      const estrela = (x: number, y: number) => {
+        let d = '';
+        for (let i = 0; i < 5; i++) {
+          const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+          const b = a + Math.PI / 5;
+          d += `${i === 0 ? 'M' : 'L'}${(x + Math.cos(a) * 6.5).toFixed(1)} ${(y + Math.sin(a) * 6.5).toFixed(1)} L${(x + Math.cos(b) * 2.8).toFixed(1)} ${(y + Math.sin(b) * 2.8).toFixed(1)} `;
+        }
+        return `<path d="${d}z" fill="${p.destaque.base}"/>`;
+      };
+      return `
+      <ellipse cx="100" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+      <ellipse cx="140" cy="108" rx="10.5" ry="8" fill="#fdfdfa"/>
+      ${estrela(100, 108)}${estrela(140, 108)}
+      ${sobrancelha(100, 92, 1, p.cabelo.escuro)}${sobrancelha(140, 92, 1, p.cabelo.escuro)}`;
+    },
+  },
+  {
+    id: 'olh_arregalado',
+    categoria: 'olhos',
+    nome: 'Arregalado',
+    descricao: 'Plot twist na daily.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <circle cx="100" cy="108" r="10" fill="#fdfdfa" stroke="${alfa('#14100c', 0.3)}" stroke-width="1.4"/>
+      <circle cx="140" cy="108" r="10" fill="#fdfdfa" stroke="${alfa('#14100c', 0.3)}" stroke-width="1.4"/>
+      <circle cx="100" cy="108" r="3.2" fill="#14100c"/>
+      <circle cx="140" cy="108" r="3.2" fill="#14100c"/>
+      <circle cx="101.5" cy="106" r="1.1" fill="#ffffff"/>
+      <circle cx="141.5" cy="106" r="1.1" fill="#ffffff"/>
+      ${sobrancelha(100, 88, -2, p.cabelo.escuro)}${sobrancelha(140, 88, -2, p.cabelo.escuro)}`,
+  },
+  {
+    id: 'olh_emocionado',
+    categoria: 'olhos',
+    nome: 'Emocionado',
+    descricao: 'Lágrima de alegria — bateu a meta do trimestre.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <path d="M90 110 q 10 -10 20 0" stroke="#14100c" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M130 110 q 10 -10 20 0" stroke="#14100c" stroke-width="4" stroke-linecap="round" fill="none"/>
+      ${sobrancelha(100, 94, 1, p.cabelo.escuro)}${sobrancelha(140, 94, 1, p.cabelo.escuro)}
+      <path d="M152 112 q 5 8 0 12 q -5 -4 0 -12 z" fill="#69c8ff" opacity="0.9">
+        <animate attributeName="opacity" values="0.9;0.5;0.9" dur="1.8s" repeatCount="indefinite"/>
+      </path>`,
+  },
+  {
+    id: 'olh_pixel',
+    categoria: 'olhos',
+    nome: 'Pixel Retro',
+    descricao: 'Óptica 8-bit direto do fliperama.',
+    raridade: 'epico',
+    tema: 'gamer',
+    piscar: false, // tela não pisca — sem pálpebras no idle
+    usaCores: ['destaque'],
+    render: (p) => {
+      const px = (x: number) => `
+        <rect x="${x - 8}" y="100" width="16" height="16" fill="#0f131d"/>
+        <rect x="${x - 5}" y="103" width="6" height="6" fill="${p.destaque.base}"/>
+        <rect x="${x + 1}" y="109" width="4" height="4" fill="${alfa(p.destaque.claro, 0.9)}"/>
+        <rect x="${x - 8}" y="100" width="16" height="2" fill="${alfa('#ffffff', 0.18)}"/>`;
+      return `
+      ${px(100)}${px(140)}
+      <rect x="88" y="92" width="24" height="4" fill="${p.destaque.profundo}"/>
+      <rect x="128" y="92" width="24" height="4" fill="${p.destaque.profundo}"/>`;
+    },
+  },
 ];

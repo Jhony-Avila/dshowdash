@@ -129,4 +129,131 @@ export const BASES: ParteDef[] = [
       ${rimLight()}`;
     },
   },
+  // ── 4.6 F2 · Onda 1 (identidade) — 6 rostos humanoides novos ──────
+  {
+    id: 'bas_redonda',
+    categoria: 'base',
+    nome: 'Redonda',
+    descricao: 'Bochechas cheias e simpatia imediata.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <circle cx="${G.cx}" cy="${G.cabecaCy + 2}" r="54" fill="url(#${u}pele)"/>
+      <ellipse cx="68" cy="${G.orelhaY}" rx="9" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="172" cy="${G.orelhaY}" rx="9" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="69.5" cy="${G.orelhaY}" rx="4" ry="6.5" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <ellipse cx="170.5" cy="${G.orelhaY}" rx="4" ry="6.5" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <ellipse cx="92" cy="128" rx="9" ry="6" fill="${alfa('#ff8d7a', 0.22)}"/>
+      <ellipse cx="148" cy="128" rx="9" ry="6" fill="${alfa('#ff8d7a', 0.22)}"/>
+      <ellipse cx="120" cy="154" rx="19" ry="6" fill="${alfa(p.pele.profundo, 0.24)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_coracao',
+    categoria: 'base',
+    nome: 'Coração',
+    descricao: 'Testa ampla e queixo delicado — simetria de capa.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <path d="M120 49 c 32 0 52 20 52 48 c0 16 -8 32 -20 44 l -24 20 c -5 4 -11 4 -16 0 l -24 -20 c -12 -12 -20 -28 -20 -44 c0 -28 20 -48 52 -48 z" fill="url(#${u}pele)"/>
+      <ellipse cx="69" cy="${G.orelhaY - 2}" rx="9" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="171" cy="${G.orelhaY - 2}" rx="9" ry="12" fill="${p.pele.base}"/>
+      <ellipse cx="70.5" cy="${G.orelhaY - 2}" rx="4" ry="6" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <ellipse cx="169.5" cy="${G.orelhaY - 2}" rx="4" ry="6" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <ellipse cx="120" cy="152" rx="15" ry="5" fill="${alfa(p.pele.profundo, 0.24)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_quadrada',
+    categoria: 'base',
+    nome: 'Quadrada',
+    descricao: 'Mandíbula reta de quem não pula o treino.',
+    raridade: 'incomum',
+    tema: 'esportivo',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <path d="M120 50 c 28 0 48 16 48 44 v 28 c0 16 -6 28 -16 36 l -18 12 c -8 5 -20 5 -28 0 l -18 -12 c -10 -8 -16 -20 -16 -36 v -28 c0 -28 20 -44 48 -44 z" fill="url(#${u}pele)"/>
+      <ellipse cx="69" cy="${G.orelhaY}" rx="9" ry="13" fill="${p.pele.base}"/>
+      <ellipse cx="171" cy="${G.orelhaY}" rx="9" ry="13" fill="${p.pele.base}"/>
+      <ellipse cx="70.5" cy="${G.orelhaY}" rx="4" ry="7" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <ellipse cx="169.5" cy="${G.orelhaY}" rx="4" ry="7" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <path d="M96 154 h 48" stroke="${alfa(p.pele.profundo, 0.2)}" stroke-width="5" stroke-linecap="round"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_longa',
+    categoria: 'base',
+    nome: 'Alongada',
+    descricao: 'Traços finos e elegância de editorial.',
+    raridade: 'raro',
+    tema: 'executivo',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <ellipse cx="${G.cx}" cy="${G.cabecaCy + 2}" rx="44" ry="61" fill="url(#${u}pele)"/>
+      <ellipse cx="76" cy="${G.orelhaY}" rx="8" ry="13" fill="${p.pele.base}"/>
+      <ellipse cx="164" cy="${G.orelhaY}" rx="8" ry="13" fill="${p.pele.base}"/>
+      <ellipse cx="77.5" cy="${G.orelhaY}" rx="3.5" ry="7" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <ellipse cx="162.5" cy="${G.orelhaY}" rx="3.5" ry="7" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <path d="M104 128 q -4 6 0 12" stroke="${alfa(p.pele.profundo, 0.18)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M136 128 q 4 6 0 12" stroke="${alfa(p.pele.profundo, 0.18)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <ellipse cx="120" cy="156" rx="15" ry="5" fill="${alfa(p.pele.profundo, 0.24)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_marcada',
+    categoria: 'base',
+    nome: 'Marcada',
+    descricao: 'Uma cicatriz, mil histórias — nenhuma delas calma.',
+    raridade: 'raro',
+    tema: 'aventura',
+    usaCores: ['pele'],
+    render: (p, u) => `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <path d="M120 49 c 30 0 50 22 50 52 c0 18 -6 33 -18 45 l -20 16 c -7 5 -17 5 -24 0 l -20 -16 c -12 -12 -18 -27 -18 -45 c0 -30 20 -52 50 -52 z" fill="url(#${u}pele)"/>
+      <ellipse cx="70" cy="${G.orelhaY}" rx="9" ry="13" fill="${p.pele.base}"/>
+      <ellipse cx="170" cy="${G.orelhaY}" rx="9" ry="13" fill="${p.pele.base}"/>
+      <path d="M146 84 l 10 22" stroke="${alfa('#a0432f', 0.75)}" stroke-width="3" stroke-linecap="round"/>
+      <path d="M144 90 l 8 -3 M147 97 l 8 -3" stroke="${alfa('#a0432f', 0.6)}" stroke-width="2" stroke-linecap="round"/>
+      <path d="M88 126 q 6 4 12 2" stroke="${alfa(p.pele.profundo, 0.28)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M152 126 q -6 4 -12 2" stroke="${alfa(p.pele.profundo, 0.28)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <ellipse cx="120" cy="153" rx="17" ry="6" fill="${alfa(p.pele.profundo, 0.26)}"/>
+      ${rimLight()}`,
+  },
+  {
+    id: 'bas_sardas',
+    categoria: 'base',
+    nome: 'Sardas',
+    descricao: 'Constelação própria nas bochechas.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['pele'],
+    render: (p, u) => {
+      const sardas = [[96, 124], [104, 130], [112, 126], [128, 126], [136, 130], [144, 124], [100, 134], [140, 134]]
+        .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.6" fill="${alfa(p.pele.profundo, 0.5)}"/>`)
+        .join('');
+      return `
+      <defs>${defsPele(u, p.pele.claro, p.pele.base, p.pele.escuro)}</defs>
+      <path d="${PATH_PESCOCO}" fill="url(#${u}pesc)"/>
+      <ellipse cx="${G.cx}" cy="${G.cabecaCy}" rx="${G.cabecaRx}" ry="${G.cabecaRy}" fill="url(#${u}pele)"/>
+      <ellipse cx="70" cy="${G.orelhaY}" rx="9" ry="13" fill="${p.pele.base}"/>
+      <ellipse cx="170" cy="${G.orelhaY}" rx="9" ry="13" fill="${p.pele.base}"/>
+      <ellipse cx="71.5" cy="${G.orelhaY}" rx="4" ry="7" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      <ellipse cx="168.5" cy="${G.orelhaY}" rx="4" ry="7" fill="${alfa(p.pele.escuro, 0.7)}"/>
+      ${sardas}
+      <ellipse cx="120" cy="152" rx="20" ry="7" fill="${alfa(p.pele.profundo, 0.28)}"/>
+      ${rimLight()}`;
+    },
+  },
 ];

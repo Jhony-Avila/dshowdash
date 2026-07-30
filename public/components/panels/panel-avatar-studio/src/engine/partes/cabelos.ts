@@ -15,8 +15,13 @@ function defsCabelo(u: string, claro: string, base: string, profundo: string): s
     </linearGradient>`;
 }
 
-/** Cabelos exigem cabeça humanoide (§35) — espécies/robôs têm o próprio topo. */
-const HUMANOIDES = ['bas_classica', 'bas_angular', 'bas_holo'];
+/** Cabelos exigem cabeça humanoide (§35) — espécies/robôs têm o próprio topo.
+ *  4.6 F2 Onda 1: os 6 rostos novos entram aqui (a lista É compartilhada —
+ *  atualizar aqui atualiza requerBase de TODOS os cabelos). */
+const HUMANOIDES = [
+  'bas_classica', 'bas_angular', 'bas_holo',
+  'bas_redonda', 'bas_coracao', 'bas_quadrada', 'bas_longa', 'bas_marcada', 'bas_sardas',
+];
 
 const BRILHO = `<path d="M88 66 a 46 40 0 0 1 34 -12" stroke="${alfa('#ffffff', 0.3)}" stroke-width="4" stroke-linecap="round" fill="none"/>`;
 
@@ -171,6 +176,200 @@ export const CABELOS: ParteDef[] = [
         <path d="M164 96 l -14 -8"/>
         <path d="M162 104 l -16 -9"/>
       </g>
+      ${BRILHO}`,
+  },
+  // ── 4.6 F2 · Onda 1 (identidade) — 10 cabelos novos ───────────────
+  {
+    id: 'cab_rabo',
+    categoria: 'cabelo',
+    nome: 'Rabo de Cavalo',
+    descricao: 'Preso alto, pronto para resolver qualquer sprint.',
+    raridade: 'comum',
+    tema: 'esportivo',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M70 100 c -2 -36 22 -55 50 -55 s 52 19 50 55 c -2 -8 -6 -14 -10 -18 c 2 -20 -16 -30 -40 -30 s -42 10 -40 30 c -4 4 -8 10 -10 18 z" fill="url(#${u}cab)"/>
+      <path d="M158 62 c 14 -4 22 4 22 16 c 0 20 -8 44 -22 56 c 6 -20 8 -42 0 -60 z" fill="url(#${u}cab)"/>
+      <ellipse cx="160" cy="66" rx="5" ry="7" fill="${alfa(p.cabelo.profundo, 0.8)}"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_lateral',
+    categoria: 'cabelo',
+    nome: 'Risca Lateral',
+    descricao: 'Divisão milimétrica — pente e disciplina.',
+    raridade: 'comum',
+    tema: 'executivo',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M70 100 c -2 -36 22 -55 50 -55 s 52 19 50 55 c -2 -10 -6 -16 -10 -20 c 0 -8 -2 -14 -8 -18 l -48 4 c -14 4 -24 14 -24 26 c -4 2 -8 6 -10 8 z" fill="url(#${u}cab)"/>
+      <path d="M104 62 l 44 -4 c 8 4 10 12 8 18 l -50 2 c -2 -6 -2 -12 -2 -16 z" fill="${alfa(p.cabelo.profundo, 0.55)}"/>
+      <path d="M104 62 l 46 -4" stroke="${alfa(p.cabelo.claro, 0.5)}" stroke-width="1.6"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_buzz',
+    categoria: 'cabelo',
+    nome: 'Raspado',
+    descricao: 'Máquina zero e foco total.',
+    raridade: 'comum',
+    tema: 'esportivo',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M72 96 a 50 55 0 0 1 96 0 c -1 -4 -3 -8 -6 -11 a 44 48 0 0 0 -84 0 c -3 3 -5 7 -6 11 z" fill="${alfa(p.cabelo.base, 0.85)}"/>
+      <path d="M76 88 a 46 50 0 0 1 88 0" stroke="${alfa(p.cabelo.profundo, 0.35)}" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="2 4"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_afro',
+    categoria: 'cabelo',
+    nome: 'Afro',
+    descricao: 'Coroa cheia com volume de respeito.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <circle cx="88" cy="70" r="20" fill="url(#${u}cab)"/>
+      <circle cx="120" cy="58" r="24" fill="url(#${u}cab)"/>
+      <circle cx="152" cy="70" r="20" fill="url(#${u}cab)"/>
+      <circle cx="72" cy="92" r="16" fill="url(#${u}cab)"/>
+      <circle cx="168" cy="92" r="16" fill="url(#${u}cab)"/>
+      <path d="M72 100 c -2 -34 20 -52 48 -52 s 50 18 48 52 c -10 -22 -26 -32 -48 -32 s -38 10 -48 32 z" fill="url(#${u}cab)"/>
+      <circle cx="100" cy="56" r="3" fill="${alfa('#ffffff', 0.22)}"/>
+      <circle cx="132" cy="52" r="3" fill="${alfa('#ffffff', 0.22)}"/>
+      <circle cx="82" cy="76" r="2.5" fill="${alfa('#ffffff', 0.18)}"/>`,
+  },
+  {
+    id: 'cab_trancas',
+    categoria: 'cabelo',
+    nome: 'Tranças Box',
+    descricao: 'Fileiras alinhadas e tranças com contas de luz.',
+    raridade: 'raro',
+    tema: 'urbano',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo', 'destaque'],
+    render: (p, u) => {
+      // fileiras (cornrows) SÓ no couro cabeludo + tranças penduradas nas
+      // laterais — nunca sobre o rosto
+      let fileiras = '';
+      for (let i = 0; i < 5; i++) {
+        const x = 92 + i * 14;
+        fileiras += `<path d="M${x} 48 q ${(x - 120) * 0.35} 16 ${(x - 120) * 0.55} 26" stroke="${alfa(p.cabelo.profundo, 0.55)}" stroke-width="3" stroke-linecap="round" fill="none"/>`;
+      }
+      let laterais = '';
+      for (const dir of [-1, 1]) {
+        for (let j = 0; j < 2; j++) {
+          const x = 120 + dir * (46 + j * 8);
+          laterais += `<path d="M${x} ${92 + j * 6} q ${dir * 6} 30 ${dir * 3} ${56 - j * 10}" stroke="url(#${u}cab)" stroke-width="8" stroke-linecap="round" fill="none"/>`;
+          for (let k = 0; k < 3; k++) {
+            laterais += `<ellipse cx="${x + dir * (2 + k)}" cy="${106 + j * 4 + k * 15}" rx="4.2" ry="3" fill="${alfa(p.cabelo.profundo, 0.55)}"/>`;
+          }
+          laterais += `<circle cx="${x + dir * 4}" cy="${150 - j * 6}" r="3.2" fill="${p.destaque.base}" opacity="0.9"/>`;
+        }
+      }
+      return `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M72 100 c -4 -34 20 -54 48 -54 s 52 20 48 54 c -8 -20 -26 -30 -48 -30 s -40 10 -48 30 z" fill="url(#${u}cab)"/>
+      ${fileiras}
+      ${laterais}
+      ${BRILHO}`;
+    },
+  },
+  {
+    id: 'cab_medio',
+    categoria: 'cabelo',
+    nome: 'Médio Despojado',
+    descricao: 'Na altura do queixo, do jeito que acordou.',
+    raridade: 'comum',
+    tema: 'casual',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M68 132 c -6 -52 20 -87 52 -87 s 58 35 52 87 c -4 -8 -8 -12 -12 -14 l 2 -18 c -4 6 -8 8 -12 8 c 2 -12 -2 -22 -10 -28 c 2 8 0 14 -4 18 c -6 -10 -16 -14 -26 -12 c 4 4 6 8 6 12 c -12 -4 -24 2 -30 12 l 2 20 c -8 2 -16 -4 -20 2 z" fill="url(#${u}cab)"/>
+      <path d="M70 128 q -4 10 2 18 M170 128 q 4 10 -2 18" stroke="url(#${u}cab)" stroke-width="10" stroke-linecap="round" fill="none"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_franja_longa',
+    categoria: 'cabelo',
+    nome: 'Longo com Franja',
+    descricao: 'Cortina lisa até os ombros com franja reta.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M66 170 c -8 -70 18 -125 54 -125 s 62 55 54 125 l -14 6 c 4 -40 0 -70 -8 -88 l 0 14 l -64 0 l 0 -14 c -8 18 -12 48 -8 88 z" fill="url(#${u}cab)"/>
+      <path d="M88 68 h 64 c 2 8 2 16 0 22 l -8 -8 l -8 10 l -8 -10 l -8 10 l -8 -10 l -8 10 l -8 -8 c -2 -6 -2 -14 0 -16 z" fill="url(#${u}cab)"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_meio_coque',
+    categoria: 'cabelo',
+    nome: 'Meio Coque',
+    descricao: 'Metade presa, metade solta — equilíbrio perfeito.',
+    raridade: 'raro',
+    tema: 'urbano',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <circle cx="120" cy="38" r="15" fill="url(#${u}cab)"/>
+      <path d="M108 46 q 12 8 24 0" stroke="${alfa(p.cabelo.profundo, 0.5)}" stroke-width="3" fill="none"/>
+      <path d="M70 118 c -4 -44 20 -66 50 -66 s 54 22 50 66 c -4 -8 -8 -12 -12 -14 c 2 -24 -14 -36 -38 -36 s -40 12 -38 36 c -4 2 -8 6 -12 14 z" fill="url(#${u}cab)"/>
+      <path d="M72 116 q -4 14 4 24 M168 116 q 4 14 -4 24" stroke="url(#${u}cab)" stroke-width="9" stroke-linecap="round" fill="none"/>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_ondas_curtas',
+    categoria: 'cabelo',
+    nome: 'Ondas Curtas',
+    descricao: 'Textura viva sem esforço nenhum.',
+    raridade: 'incomum',
+    tema: 'casual',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}</defs>
+      <path d="M70 100 c -2 -36 22 -55 50 -55 s 52 19 50 55 c -3 -7 -6 -12 -10 -16 c 3 -19 -16 -30 -40 -30 s -43 11 -40 30 c -4 4 -7 9 -10 16 z" fill="url(#${u}cab)"/>
+      <g stroke="${alfa(p.cabelo.profundo, 0.45)}" stroke-width="2.6" fill="none" stroke-linecap="round">
+        <path d="M88 62 q 4 -4 8 0 q 4 4 8 0"/>
+        <path d="M112 54 q 4 -4 8 0 q 4 4 8 0"/>
+        <path d="M136 62 q 4 -4 8 0"/>
+        <path d="M98 74 q 4 -4 8 0 q 4 4 8 0"/>
+        <path d="M126 72 q 4 -4 8 0"/>
+      </g>
+      ${BRILHO}`,
+  },
+  {
+    id: 'cab_picos_neon',
+    categoria: 'cabelo',
+    nome: 'Picos Neon',
+    descricao: 'Espetado com pontas mergulhadas em luz.',
+    raridade: 'epico',
+    tema: 'cyberpunk',
+    requerBase: HUMANOIDES,
+    usaCores: ['cabelo', 'destaque'],
+    render: (p, u) => `
+      <defs>${defsCabelo(u, p.cabelo.claro, p.cabelo.base, p.cabelo.profundo)}
+        <linearGradient id="${u}pico" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="${p.cabelo.base}"/>
+          <stop offset="0.62" stop-color="${p.cabelo.base}"/>
+          <stop offset="1" stop-color="${p.destaque.base}"/>
+        </linearGradient>
+      </defs>
+      <path d="M74 96 c 0 -12 4 -22 10 -30 l 2 -22 l 10 16 l 8 -22 l 8 18 l 8 -24 l 8 24 l 8 -18 l 8 22 l 10 -16 l 2 22 c 6 8 10 18 10 30 c -10 -18 -26 -26 -46 -26 s -36 8 -46 26 z" fill="url(#${u}pico)"/>
+      <path d="M86 44 l 10 16 M110 36 l 8 18 M134 36 l -8 18 M158 44 l -10 16" stroke="${alfa(p.destaque.claro, 0.35)}" stroke-width="2" stroke-linecap="round"/>
       ${BRILHO}`,
   },
 ];

@@ -138,6 +138,11 @@ SELECT ${astId(p.id)}, 'requires_species', 'species', NULL,
   'Compatível apenas com espécies humanoides.', 1
 WHERE NOT EXISTS (SELECT 1 FROM avatar_asset_rules r
   WHERE r.source_asset_id = ${astId(p.id)} AND r.rule_type = 'requires_species');`);
+    // a LISTA de espécies evolui (Onda 1 somou 6 rostos) — refresca a condição
+    // das regras já existentes; idempotente (UPDATE para o mesmo valor é no-op)
+    L.push(`UPDATE avatar_asset_rules SET \`condition\` =
+  '${esc(JSON.stringify({ qualquer_de: p.requerBase }))}'
+WHERE source_asset_id = ${astId(p.id)} AND rule_type = 'requires_species';`);
   }
   if (Array.isArray(p.incompativelCom) && p.incompativelCom.length) {
     for (const alvo2 of p.incompativelCom) {

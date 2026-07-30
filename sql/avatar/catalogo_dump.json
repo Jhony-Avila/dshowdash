@@ -19,6 +19,36 @@
   "raridade": "lendario",
   "nome": "Holograma"
  },
+ "bas_redonda": {
+  "categoria": "especie",
+  "raridade": "comum",
+  "nome": "Redonda"
+ },
+ "bas_coracao": {
+  "categoria": "especie",
+  "raridade": "incomum",
+  "nome": "Coração"
+ },
+ "bas_quadrada": {
+  "categoria": "especie",
+  "raridade": "incomum",
+  "nome": "Quadrada"
+ },
+ "bas_longa": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Alongada"
+ },
+ "bas_marcada": {
+  "categoria": "especie",
+  "raridade": "raro",
+  "nome": "Marcada"
+ },
+ "bas_sardas": {
+  "categoria": "especie",
+  "raridade": "incomum",
+  "nome": "Sardas"
+ },
  "bas_panda": {
   "categoria": "especie",
   "raridade": "raro",
@@ -99,6 +129,56 @@
   "raridade": "epico",
   "nome": "Undercut Neon"
  },
+ "cab_rabo": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Rabo de Cavalo"
+ },
+ "cab_lateral": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Risca Lateral"
+ },
+ "cab_buzz": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Raspado"
+ },
+ "cab_afro": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Afro"
+ },
+ "cab_trancas": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Tranças Box"
+ },
+ "cab_medio": {
+  "categoria": "cabelo",
+  "raridade": "comum",
+  "nome": "Médio Despojado"
+ },
+ "cab_franja_longa": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Longo com Franja"
+ },
+ "cab_meio_coque": {
+  "categoria": "cabelo",
+  "raridade": "raro",
+  "nome": "Meio Coque"
+ },
+ "cab_ondas_curtas": {
+  "categoria": "cabelo",
+  "raridade": "incomum",
+  "nome": "Ondas Curtas"
+ },
+ "cab_picos_neon": {
+  "categoria": "cabelo",
+  "raridade": "epico",
+  "nome": "Picos Neon"
+ },
  "olh_padrao": {
   "categoria": "olhos",
   "raridade": "comum",
@@ -154,6 +234,46 @@
   "raridade": "epico",
   "nome": "Visor Tático"
  },
+ "olh_sonolento": {
+  "categoria": "olhos",
+  "raridade": "comum",
+  "nome": "Sonolento"
+ },
+ "olh_desconfiado": {
+  "categoria": "olhos",
+  "raridade": "incomum",
+  "nome": "Desconfiado"
+ },
+ "olh_apaixonado": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Apaixonado"
+ },
+ "olh_cifrao": {
+  "categoria": "olhos",
+  "raridade": "epico",
+  "nome": "Cifrão"
+ },
+ "olh_estrela": {
+  "categoria": "olhos",
+  "raridade": "raro",
+  "nome": "Estrelado"
+ },
+ "olh_arregalado": {
+  "categoria": "olhos",
+  "raridade": "comum",
+  "nome": "Arregalado"
+ },
+ "olh_emocionado": {
+  "categoria": "olhos",
+  "raridade": "incomum",
+  "nome": "Emocionado"
+ },
+ "olh_pixel": {
+  "categoria": "olhos",
+  "raridade": "epico",
+  "nome": "Pixel Retro"
+ },
  "boc_sorriso": {
   "categoria": "boca",
   "raridade": "comum",
@@ -203,6 +323,46 @@
   "categoria": "boca",
   "raridade": "raro",
   "nome": "Grade Sintética"
+ },
+ "boc_assobio": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Assobiando"
+ },
+ "boc_travessa": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Sorriso Travesso"
+ },
+ "boc_mascara": {
+  "categoria": "boca",
+  "raridade": "epico",
+  "nome": "Máscara Ninja"
+ },
+ "boc_palito": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Palito"
+ },
+ "boc_chiclete": {
+  "categoria": "boca",
+  "raridade": "raro",
+  "nome": "Chiclete"
+ },
+ "boc_barba": {
+  "categoria": "boca",
+  "raridade": "incomum",
+  "nome": "Barba Cheia"
+ },
+ "boc_cavanhaque": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Cavanhaque"
+ },
+ "boc_uau": {
+  "categoria": "boca",
+  "raridade": "comum",
+  "nome": "Uau"
  },
  "rou_camiseta": {
   "categoria": "roupa",
