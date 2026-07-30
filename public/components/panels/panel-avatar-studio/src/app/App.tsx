@@ -7,18 +7,20 @@
 // Undo/redo (§14), comparação atual×salvo (§15), estados de salvar (§25).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Brush, Camera, CircleUser, Columns2, Dices, Eye, Frame, Glasses, History,
+  Boxes, Brush, Camera, CircleUser, Columns2, Dices, Eye, Frame, Glasses, History,
   Image as ImagemIcon, LoaderCircle, Redo2, Save, Shirt, Smile, Sparkles, Undo2,
   Volume2, VolumeX, Wand2,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, EstadoSalvar, Raridade, ShellConfig } from '../domain/types';
 import {
-  CATEGORIAS, CONFIG_PADRAO, aleatorio, itemPorId, nivelRaridade, validarConfig,
+  CATEGORIAS, CONFIG_PADRAO, RARIDADES, aleatorio, itemPorId, nivelRaridade, validarConfig,
 } from '../services/AvatarCatalog';
 import { carregarAvatar, salvarAvatar } from '../services/AvatarService';
 import type { OrigemDado, ResultadoCarga, TipoAtivo } from '../services/AvatarService';
 import { definirSom, somAtivo, tocarCelebracao, tocarEquipar, tocarSalvar } from '../services/Som';
+import { registrarUso } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
+import { Colecoes } from '../components/Colecoes';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { PalcoCinema } from '../components/PalcoCinema';
 import type { Celebracao } from '../components/PalcoCinema';
@@ -28,6 +30,21 @@ import { Presets } from '../components/Presets';
 import { Historico } from '../components/Historico';
 import { Foto } from '../components/Foto';
 import '../styles/estudio.css';
+
+/** Itens que mudaram de a→b (comparação rica §21). */
+function listarMudancas(a: AvatarConfig, b: AvatarConfig): Array<{ id: string; nome: string; raridade: Raridade }> {
+  const ids = new Set<string>();
+  if (a.base !== b.base) ids.add(b.base);
+  for (const [cat, id] of Object.entries(b.camadas)) {
+    if (id && a.camadas[cat as keyof AvatarConfig['camadas']] !== id) ids.add(id);
+  }
+  const saida: Array<{ id: string; nome: string; raridade: Raridade }> = [];
+  for (const id of ids) {
+    const item = itemPorId(id);
+    if (item) saida.push({ id, nome: item.nome, raridade: item.raridade });
+  }
+  return saida;
+}
 
 /** Maior raridade entre os itens que MUDARAM de a→b (celebração/som). */
 function raridadeDaMudanca(a: AvatarConfig, b: AvatarConfig): Raridade | null {
@@ -70,7 +87,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
-  const [aba, setAba] = useState<'itens' | 'presets' | 'historico' | 'foto'>('itens');
+  const [aba, setAba] = useState<'itens' | 'presets' | 'colecoes' | 'historico' | 'foto'>('itens');
   const [comparando, setComparando] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
   const [somLigado, setSomLigado] = useState(somAtivo);
@@ -130,6 +147,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           telemetria('celebracao', { raridade });
         }
       }
+      registrarUso(validado); // progresso das coleções (F2c)
       return validado;
     });
     setEstado('alteracoes_pendentes');
@@ -284,6 +302,12 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             <span>Presets</span>
           </button>
           <button type="button"
+            className={`avst-cat ${aba === 'colecoes' ? 'avst-cat-ativa' : ''}`}
+            onClick={() => setAba('colecoes')}>
+            <Boxes size={17} aria-hidden />
+            <span>Coleções</span>
+          </button>
+          <button type="button"
             className={`avst-cat ${aba === 'historico' ? 'avst-cat-ativa' : ''}`}
             onClick={() => setAba('historico')}>
             <History size={17} aria-hidden />
@@ -300,15 +324,29 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         {/* ── Coluna 2: palco ── */}
         <main className="avst-palco">
           {comparando && salvo ? (
-            <div className="avst-comparacao">
-              <figure>
-                <AvatarSvg config={salvo} uid="cmp-salvo" />
-                <figcaption>Salvo</figcaption>
-              </figure>
-              <figure>
-                <AvatarSvg config={atual} uid="cmp-atual" />
-                <figcaption>Editando</figcaption>
-              </figure>
+            <div className="avst-comparacao-area">
+              <div className="avst-comparacao">
+                <figure>
+                  <AvatarSvg config={salvo} uid="cmp-salvo" />
+                  <figcaption>Salvo</figcaption>
+                </figure>
+                <figure>
+                  <AvatarSvg config={atual} uid="cmp-atual" />
+                  <figcaption>Editando</figcaption>
+                </figure>
+              </div>
+              {/* diff de itens (AS3 §21 — comparação rica) */}
+              <div className="avst-diff" aria-label="Itens alterados">
+                {listarMudancas(salvo, atual).map((m) => (
+                  <span key={m.id} className="avst-diff-chip"
+                    style={{ '--avst-rar': RARIDADES[m.raridade].cor } as React.CSSProperties}>
+                    {m.nome}
+                  </span>
+                ))}
+                {listarMudancas(salvo, atual).length === 0 && (
+                  <span className="avst-diff-nada">Nenhum item alterado — só cores ou nada.</span>
+                )}
+              </div>
             </div>
           ) : (
             <div className="avst-palco-principal">
@@ -349,6 +387,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         {/* ── Coluna 3: itens/presets/histórico/foto + cores ── */}
         <aside className="avst-lateral">
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
+          {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
           {aba === 'historico' && <Historico key={`h-${versao}`} aoAplicar={aplicar} />}
           {aba === 'foto' && <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'} aoSalvar={aoSalvarFoto} />}
           {aba === 'itens' && (
