@@ -64,6 +64,56 @@ export const BOCAS: ParteDef[] = [
       <path d="M110 153 q 10 2 20 0" stroke="${alfa(p.pele.escuro, 0.4)}" stroke-width="2" stroke-linecap="round" fill="none"/>`,
   },
   {
+    id: 'boc_surpresa',
+    categoria: 'boca',
+    nome: 'Surpresa',
+    descricao: 'Quando o CTR dobra sem ninguém mexer em nada.',
+    raridade: 'comum',
+    tema: 'casual',
+    render: () => `
+      <ellipse cx="120" cy="146" rx="8" ry="10" fill="#431d18"/>
+      <ellipse cx="120" cy="150" rx="4.5" ry="5" fill="#c2554d"/>
+      <ellipse cx="117" cy="141" rx="2.4" ry="3" fill="${alfa('#ffffff', 0.35)}"/>`,
+  },
+  {
+    id: 'boc_lingua',
+    categoria: 'boca',
+    nome: 'Deboche',
+    descricao: 'Resposta oficial para "isso não vai funcionar".',
+    raridade: 'incomum',
+    tema: 'casual',
+    render: () => `
+      <path d="M103 141 q 17 16 34 0 q -17 6 -34 0 z" fill="#431d18"/>
+      <path d="M116 148 q 8 3 15 -1 l 2 8 c 1 6 -4 10 -9 10 s -10 -4 -9 -10 z" fill="#d9625a"/>
+      <path d="M122 150 l 1 12" stroke="#b04840" stroke-width="1.6"/>`,
+  },
+  {
+    id: 'boc_bigode',
+    categoria: 'boca',
+    nome: 'Bigode de Respeito',
+    descricao: 'Aprovado em todas as reuniões desde 1974.',
+    raridade: 'incomum',
+    tema: 'clássico',
+    usaCores: ['cabelo'],
+    render: (p) => `
+      <path d="M106 143 q 14 -5 28 0" stroke="#5a2e26" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M120 136 c -4 -6 -14 -7 -19 -2 c -4 4 -3 10 2 11 c 6 1 13 -3 17 -9 z" fill="${p.cabelo.base}"/>
+      <path d="M120 136 c 4 -6 14 -7 19 -2 c 4 4 3 10 -2 11 c -6 1 -13 -3 -17 -9 z" fill="${p.cabelo.base}"/>
+      <path d="M104 132 q 8 -3 14 2 m 4 0 q 6 -5 14 -2" stroke="${alfa(p.cabelo.escuro, 0.6)}" stroke-width="1.6" fill="none"/>`,
+  },
+  {
+    id: 'boc_vilao',
+    categoria: 'boca',
+    nome: 'Sorriso de Vilão',
+    descricao: 'O plano está em movimento. Há semanas.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    render: () => `
+      <path d="M100 140 q 20 18 40 -2 q -8 12 -20 12 t -20 -10 z" fill="#431d18"/>
+      <path d="M106 143 l 4 8 l 5 -6 z" fill="#fdfdfa"/>
+      <path d="M134 141 l -4 8 l -5 -6 z" fill="#fdfdfa"/>`,
+  },
+  {
     id: 'boc_grade',
     categoria: 'boca',
     nome: 'Grade Sintética',

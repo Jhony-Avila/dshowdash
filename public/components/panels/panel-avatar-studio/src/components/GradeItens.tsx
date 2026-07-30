@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 import { Ban, Check } from 'lucide-react';
 import type { AvatarConfig, CategoriaId } from '../domain/types';
-import { CATEGORIAS, RARIDADES, itensDe } from '../services/AvatarCatalog';
+import { CATEGORIAS, RARIDADES, itensDe, validarConfig } from '../services/AvatarCatalog';
 import type { ParteDef } from '../engine/base-api';
 import { AvatarSvg } from './AvatarSvg';
 
@@ -32,7 +32,11 @@ export function GradeItens({ config, categoria, aoEscolher }: {
   aoEscolher: (novo: AvatarConfig) => void;
 }) {
   const meta = CATEGORIAS.find((c) => c.id === categoria);
-  const itens = useMemo(() => itensDe(categoria), [categoria]);
+  // esconde itens incompatíveis com a base equipada (§35 — ex.: cabelos em espécies)
+  const itens = useMemo(
+    () => itensDe(categoria).filter((i) => !i.requerBase || i.requerBase.includes(config.base)),
+    [categoria, config.base],
+  );
   const equipado = idEquipado(config, categoria);
 
   return (
@@ -61,7 +65,8 @@ function CardItem({ item, config, ativo, aoEscolher }: {
   aoEscolher: () => void;
 }) {
   const rar = RARIDADES[item.raridade];
-  const preview = useMemo(() => comItem(config, item.categoria, item.id), [config, item]);
+  // valida o preview: trocar p/ uma espécie derruba o cabelo TAMBÉM no thumbnail
+  const preview = useMemo(() => validarConfig(comItem(config, item.categoria, item.id)), [config, item]);
 
   return (
     <button type="button" role="option" aria-selected={ativo}

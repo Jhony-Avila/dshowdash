@@ -30,7 +30,8 @@ final class SvgSanitizer
         'transform', 'clip-path', 'filter', 'offset', 'stop-color',
         'stop-opacity', 'gradientunits', 'gradienttransform', 'patternunits',
         'stddeviation', 'attributename', 'values', 'dur', 'begin',
-        'repeatcount', 'type', 'font-family', 'font-size', 'font-weight',
+        'repeatcount', 'type', 'from', 'to', 'keytimes', 'additive',
+        'calcmode', 'font-family', 'font-size', 'font-weight',
         'letter-spacing', 'text-anchor', 'role', 'aria-label', 'aria-hidden',
         'xmlns',
     ];

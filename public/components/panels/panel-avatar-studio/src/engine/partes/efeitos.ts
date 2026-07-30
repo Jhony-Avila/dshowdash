@@ -100,6 +100,107 @@ export const EFEITOS: ParteDef[] = [
     },
   },
   {
+    id: 'efe_portal',
+    categoria: 'efeito',
+    nome: 'Portal Dimensional',
+    descricao: 'Anéis giratórios de outra dimensão atrás de você.',
+    raridade: 'lendario',
+    tema: 'sci-fi',
+    usaCores: ['destaque'],
+    atras: true,
+    render: (p, u) => `
+      <defs>
+        <radialGradient id="${u}ptl" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0.55" stop-color="${alfa(p.destaque.base, 0)}"/>
+          <stop offset="0.8" stop-color="${alfa(p.destaque.base, 0.3)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.base, 0)}"/>
+        </radialGradient>
+      </defs>
+      <circle cx="120" cy="118" r="92" fill="url(#${u}ptl)"/>
+      <g stroke="${alfa(p.destaque.claro, 0.7)}" stroke-width="2.4" fill="none" stroke-dasharray="26 18">
+        <circle cx="120" cy="118" r="86">
+          <animateTransform attributeName="transform" type="rotate" from="0 120 118" to="360 120 118" dur="14s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+      <g stroke="${alfa(p.destaque.base, 0.5)}" stroke-width="1.6" fill="none" stroke-dasharray="10 14">
+        <circle cx="120" cy="118" r="74">
+          <animateTransform attributeName="transform" type="rotate" from="360 120 118" to="0 120 118" dur="10s" repeatCount="indefinite"/>
+        </circle>
+      </g>`,
+  },
+  {
+    id: 'efe_raio',
+    categoria: 'efeito',
+    nome: 'Tempestade Elétrica',
+    descricao: 'Relâmpagos estalando ao redor — cuidado ao apertar a mão.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    usaCores: ['destaque'],
+    render: (p) => {
+      const raio = (d: string, dur: string, atraso: string) => `
+        <path d="${d}" stroke="${p.destaque.claro}" stroke-width="2.6" fill="none" stroke-linejoin="round" opacity="0">
+          <animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.06;0.16;1" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite"/>
+        </path>`;
+      return `
+      ${raio('M30 40 l 12 22 l -10 4 l 14 26', '2.8', '0')}
+      ${raio('M208 60 l -12 20 l 10 5 l -13 23', '3.4', '1.1')}
+      ${raio('M44 190 l 10 -18 l -8 -4 l 12 -20', '3.1', '2.0')}
+      ${raio('M198 186 l -9 -16 l 8 -5 l -11 -19', '2.6', '0.7')}`;
+    },
+  },
+  {
+    id: 'efe_glitch',
+    categoria: 'efeito',
+    nome: 'Glitch',
+    descricao: 'A realidade desincroniza por um instante. Você não.',
+    raridade: 'epico',
+    tema: 'cyberpunk',
+    render: () => `
+      <g opacity="0">
+        <rect x="0" y="58" width="240" height="7" fill="rgba(76,217,232,0.5)"/>
+        <rect x="0" y="132" width="240" height="5" fill="rgba(255,95,143,0.5)"/>
+        <animate attributeName="opacity" values="0;1;0;0;1;0;0" keyTimes="0;0.03;0.08;0.5;0.53;0.58;1" dur="3.6s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0; -8 0; 6 0; 0 0" dur="3.6s" repeatCount="indefinite"/>
+      </g>
+      <g opacity="0">
+        <rect x="0" y="90" width="240" height="4" fill="rgba(76,217,232,0.45)"/>
+        <rect x="0" y="182" width="240" height="6" fill="rgba(255,95,143,0.45)"/>
+        <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.3;0.34;0.4;1" dur="4.4s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0; 9 0; -5 0; 0 0" dur="4.4s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'efe_fogo',
+    categoria: 'efeito',
+    nome: 'Chamas Vivas',
+    descricao: 'O fogo de quem carrega a meta do time inteiro.',
+    raridade: 'mitico',
+    tema: 'fantasia',
+    atras: true,
+    render: (_p, u) => {
+      const chama = (x: number, esc: number, dur: string, atraso: string) => `
+        <g transform="translate(${x} 236) scale(${esc})">
+          <path d="M0 0 c -12 -14 -8 -30 0 -42 c 3 10 10 12 8 24 c 6 -6 6 -14 4 -20 c 8 10 10 26 -2 38 z" fill="url(#${u}fg1)">
+            <animateTransform attributeName="transform" type="scale" values="1;1.14 0.92;1" dur="${dur}s" begin="${atraso}s" repeatCount="indefinite" additive="sum"/>
+          </path>
+        </g>`;
+      return `
+      <defs>
+        <linearGradient id="${u}fg1" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#ff5230"/>
+          <stop offset="0.6" stop-color="#ff9a3d"/>
+          <stop offset="1" stop-color="#ffd76e"/>
+        </linearGradient>
+      </defs>
+      ${chama(28, 1, '0.9', '0')}
+      ${chama(54, 0.7, '1.1', '0.3')}
+      ${chama(186, 0.75, '1.0', '0.5')}
+      ${chama(212, 1.05, '0.85', '0.2')}
+      ${chama(40, 0.5, '1.2', '0.6')}
+      ${chama(200, 0.55, '1.15', '0.1')}`;
+    },
+  },
+  {
     id: 'efe_faiscas',
     categoria: 'efeito',
     nome: 'Faíscas Lendárias',
