@@ -20,6 +20,24 @@ import { GradeItens } from '../components/GradeItens';
 import { BarraSalvamento } from './BarraSalvamento';
 
 const CHAVE_LARGURAS = 'dshow.avst5.larguras.v1';
+const CHAVE_FUNDO = 'dshow.avst5.fundo.v1';
+
+/** R2 (P1 §9.4): enquadramento AUTOMÁTICO por categoria — retângulo do
+ *  viewBox 240×240 que a câmera deve ocupar (FOCO_THUMB é a semente). */
+const ENQUADRAMENTOS: Partial<Record<CategoriaId, [number, number, number, number]>> = {
+  base: [45, 36, 150, 150],
+  cabelo: [38, 6, 164, 164],
+  olhos: [64, 56, 112, 112],
+  boca: [66, 92, 108, 108],
+  acessorio: [40, 28, 160, 160],
+  roupa: [30, 70, 180, 170],
+  emblema: [108, 162, 92, 92],
+};
+
+/** R1 (P1 §9.3): fundos do palco por MODO. */
+const FUNDOS_PALCO = ['neutro', 'estudio', 'grade'] as const;
+type FundoPalco = (typeof FUNDOS_PALCO)[number];
+const ROTULO_FUNDO: Record<FundoPalco, string> = { neutro: 'Neutro', estudio: 'Estúdio', grade: 'Grade' };
 const DEGRAUS_ESQ = [64, 84, 176, 220, 280];
 
 function lerLarguras(): { esq: number; dir: number } {
@@ -67,6 +85,42 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // estados locais de UI (§607.2/§607.3 — nunca entram no AvatarStore)
   const [categoria, setCategoria] = useState<CategoriaId>('base');
   const [larguras, setLarguras] = useState(lerLarguras);
+  const [fundo, setFundo] = useState<FundoPalco>(() => {
+    try {
+      const f = localStorage.getItem(CHAVE_FUNDO) as FundoPalco | null;
+      return f && (FUNDOS_PALCO as readonly string[]).includes(f) ? f : 'estudio';
+    } catch { return 'estudio'; }
+  });
+
+  // R11: atalhos de undo/redo (Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y)
+  useEffect(() => {
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName)) return;
+      if (e.key.toLowerCase() === 'z' && e.shiftKey) { e.preventDefault(); store.refazer(); }
+      else if (e.key.toLowerCase() === 'z') { e.preventDefault(); store.desfazer(); }
+      else if (e.key.toLowerCase() === 'y') { e.preventDefault(); store.refazer(); }
+    };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, [store]);
+
+  // R2: câmera contextual — zoom suave via transform (viewBox não anima)
+  const enquadramento = ENQUADRAMENTOS[categoria];
+  const zoomEstilo = useMemo(() => {
+    if (!enquadramento) return { transform: 'scale(1)', transformOrigin: '50% 50%' };
+    const [x, y, w, h] = enquadramento;
+    return {
+      transform: `scale(${Math.min(2.4, 240 / Math.max(w, h))})`,
+      transformOrigin: `${((x + w / 2) / 240) * 100}% ${((y + h / 2) / 240) * 100}%`,
+    };
+  }, [enquadramento]);
+
+  const trocarFundo = (f: FundoPalco) => {
+    setFundo(f);
+    try { localStorage.setItem(CHAVE_FUNDO, f); } catch { /* sem storage */ }
+  };
 
   // GradeItens fala AvatarConfig — cada escolha vira COMANDO com inverso
   const aoEscolher = useCallback((novo: AvatarConfig) => {
@@ -138,9 +192,18 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             onPointerDown={(e) => { arraste.current = { lado: 'esq', x0: e.clientX, w0: larguras.esq }; }} />
 
           {/* viewport dominante (R1) — SEM scroll de página (R5) */}
-          <main className="avst5-viewport" aria-label="Palco do avatar">
+          <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}>
             <div className="avst5-palco">
-              <AvatarSvg config={configVisivel} uid="avst5" />
+              <div className="avst5-zoom" style={zoomEstilo}>
+                <AvatarSvg config={configVisivel} uid="avst5" />
+              </div>
+            </div>
+            <div className="avst5-fundos" role="radiogroup" aria-label="Fundo do palco">
+              {FUNDOS_PALCO.map((f) => (
+                <button key={f} type="button" role="radio" aria-checked={fundo === f}
+                  className={fundo === f ? 'avst5-fundo-on' : ''}
+                  onClick={() => trocarFundo(f)}>{ROTULO_FUNDO[f]}</button>
+              ))}
             </div>
             <BarraSalvamento store={store} aoSalvar={async () => {
               const r = await aoSalvarLegado(paraLegado2d(store.estadoDraft));

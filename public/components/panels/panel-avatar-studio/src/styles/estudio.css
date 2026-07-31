@@ -1189,8 +1189,7 @@
 .avst5-alca:hover { background: var(--avst-acento, #7c5cff); opacity: 0.4; }
 .avst5-viewport { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; position: relative; }
 .avst5-palco { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 12px; }
-.avst5-palco { overflow: hidden; }
-.avst5-palco .avst-svg, .avst5-palco svg { height: 100%; max-height: 100%; width: auto; aspect-ratio: 1; }
+.avst5-palco { overflow: hidden; position: relative; }
 .avst5-palco svg { filter: drop-shadow(0 18px 40px rgba(0,0,0,.45)); }
 .avst5-salvar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--avst-borda, #232a38); font-size: 12px; }
 .avst5-salvar-pendente { background: color-mix(in srgb, var(--avst-acento, #7c5cff) 8%, transparent); }
@@ -1198,3 +1197,13 @@
 .avst5-painel { overflow-y: auto; border-left: 1px solid var(--avst-borda, #232a38); padding: 10px; min-height: 0; }
 .avst5-erro { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 16px; text-align: center; }
 @media (max-width: 1023px) { .avst5-corpo { grid-template-columns: 64px 0 1fr 0 300px; } .avst5-alca { display: none; } }
+
+/* AS5 F2 S2 — viewport dominante: zoom contextual + fundos do palco */
+.avst5-zoom { display: flex; align-items: center; justify-content: center; height: 100%; transition: transform .45s cubic-bezier(.22,.9,.28,1); will-change: transform; }
+.avst5-zoom .avst-svg, .avst5-zoom svg { height: 100%; max-height: 100%; width: auto; aspect-ratio: 1; }
+.avst5-viewport[data-fundo="neutro"] .avst5-palco { background: #0d1017; }
+.avst5-viewport[data-fundo="estudio"] .avst5-palco { background: radial-gradient(ellipse 70% 60% at 50% 42%, #1c2233 0%, #0d1017 78%); }
+.avst5-viewport[data-fundo="grade"] .avst5-palco { background: #0d1017 repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(124,92,255,.09) 32px), repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(124,92,255,.09) 32px); }
+.avst5-fundos { position: absolute; top: 10px; left: 12px; display: flex; gap: 4px; z-index: 2; }
+.avst5-fundos button { background: rgba(13,16,23,.7); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); border-radius: 999px; padding: 3px 10px; font-size: 10.5px; cursor: pointer; backdrop-filter: blur(4px); }
+.avst5-fundos .avst5-fundo-on { color: var(--avst-texto, #e6eaf2); border-color: var(--avst-acento, #7c5cff); }
