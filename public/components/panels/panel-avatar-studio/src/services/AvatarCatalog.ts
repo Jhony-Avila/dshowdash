@@ -438,6 +438,57 @@ export const PALETAS_ROUPA: PaletaRoupa[] = [
   { id: 'pal_escuro', nome: 'Escuro', canais: { roupa: '#14161d', destaque: '#5b3d8a' } },
 ];
 
+// ── Templates do Photo Studio (§326–§327 — AS5 F6) ──────────────────
+// Composições reutilizáveis de EstiloFoto com assets REAIS do catálogo.
+// Aplicação segue §326.3: itens bloqueados ficam de fora (a UI filtra e
+// informa) e a foto do usuário nunca é tocada.
+export interface TemplateFoto {
+  id: string;
+  nome: string;
+  descricao: string;
+  /** categoria §326.1 (corporativo/gamer/minimalista/evento…) */
+  categoria: string;
+  estilo: EstiloFoto;
+}
+
+export const TEMPLATES_FOTO: TemplateFoto[] = [
+  {
+    id: 'tpl_dshow_executive', nome: 'Dshow Executive', categoria: 'executivo',
+    descricao: 'Fundo escuro, dourado corporativo e o selo de CEO (§327.1).',
+    estilo: { camadas: { fundo: 'fun_escritorio', banner: 'ban_executivo', moldura: 'mol_minimal', emblema: 'emb_dshow' }, titulo: 'tit_ceo_supremo', cores: { destaque: '#e8b64c' } },
+  },
+  {
+    id: 'tpl_showroom_master', nome: 'Showroom Master', categoria: 'dshow',
+    descricao: 'Parede de LED, moldura RGB e aura da casa (§327.2).',
+    estilo: { camadas: { fundo: 'fun_led_wall', aura: 'aur_dshow', moldura: 'mol_rgb', emblema: 'emb_nexus' }, titulo: 'tit_visionario', cores: { destaque: '#7c5cff' } },
+  },
+  {
+    id: 'tpl_cyber_profile', nome: 'Cyber Profile', categoria: 'tecnologia',
+    descricao: 'Synthwave, aura neon e interferência holográfica (§327.3).',
+    estilo: { camadas: { fundo: 'fun_synthwave', aura: 'aur_neon', moldura: 'mol_neon', efeito: 'efe_holo_interf' }, titulo: 'tit_cyber_architect', cores: { destaque: '#4cd9e8' } },
+  },
+  {
+    id: 'tpl_pro_player', nome: 'Pro Player', categoria: 'gamer',
+    descricao: 'Arena, faíscas de clutch e título de pro (§327.4).',
+    estilo: { camadas: { fundo: 'fun_arena', banner: 'ban_campeao', moldura: 'mol_tech', efeito: 'efe_faiscas' }, titulo: 'tit_pro_player', cores: { destaque: '#39d98a' } },
+  },
+  {
+    id: 'tpl_minimal_clean', nome: 'Minimal Clean', categoria: 'minimalista',
+    descricao: 'Estúdio neutro, moldura fina, legibilidade máxima (§327.5).',
+    estilo: { camadas: { fundo: 'fun_estudio', moldura: 'mol_minimal' }, cores: { destaque: '#4c9de8' } },
+  },
+  {
+    id: 'tpl_achievement', nome: 'Achievement Reveal', categoria: 'conquista',
+    descricao: 'Troféu, louros e confete — composição celebratória (§327.6).',
+    estilo: { camadas: { fundo: 'fun_estrelas', moldura: 'mol_louros', emblema: 'emb_trofeu', efeito: 'efe_confete' }, titulo: 'tit_lenda_dshow', cores: { destaque: '#e8b64c' } },
+  },
+  {
+    id: 'tpl_china_trip', nome: 'China Trip', categoria: 'evento',
+    descricao: 'Montanhas, sakura ao vento e selo de viagem (§327.7).',
+    estilo: { camadas: { fundo: 'fun_montanhas', moldura: 'mol_selo', emblema: 'emb_lua', efeito: 'efe_sakura' }, cores: { destaque: '#ff5f8f' } },
+  },
+];
+
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────
 
 export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {

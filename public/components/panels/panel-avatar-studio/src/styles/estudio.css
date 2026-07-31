@@ -1341,3 +1341,12 @@
 .avst5-rascunho { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 8px; background: rgba(13,16,23,.88); border: 1px solid var(--avst-acento, #7c5cff); color: var(--avst-texto, #e6eaf2); border-radius: 12px; padding: 9px 14px; font-size: 12px; backdrop-filter: blur(6px); box-shadow: 0 10px 30px rgba(0,0,0,.45); max-width: 92%; }
 .avst5-outra-aba { position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 8px; background: rgba(60,34,12,.85); border: 1px solid #e8b64c; color: #ffe9c2; border-radius: 999px; padding: 6px 12px; font-size: 11px; backdrop-filter: blur(4px); }
 .avst5-outra-aba button { background: none; border: none; color: inherit; cursor: pointer; line-height: 0; padding: 2px; }
+
+/* AS5 F6 — templates do Photo Studio (§326-§327) + exportação (§368) */
+.avst-ft-templates { display: flex; gap: 6px; flex-wrap: wrap; }
+.avst-ft-template { display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2); border-radius: 999px; padding: 5px 11px 5px 6px; font-size: 11px; cursor: pointer; transition: border-color .15s ease; }
+.avst-ft-template:hover { border-color: var(--avst-acento, #7c5cff); }
+.avst-ft-template i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); flex-shrink: 0; }
+.avst-ft-template small { color: var(--avst-texto-2, #8a93a6); font-size: 9px; text-transform: uppercase; letter-spacing: .05em; }
+.avst-ft-template-limpar { border-style: dashed; color: var(--avst-texto-2, #8a93a6); padding: 5px 11px; }
+.avst-ft-escala select { background: var(--avst-fundo, #0d1017); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2); border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; }

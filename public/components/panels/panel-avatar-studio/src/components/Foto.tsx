@@ -15,16 +15,17 @@
 // PNG data-url → salvarFoto(). O servidor re-encoda pixel a pixel (GD).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Aperture, Camera, Check, Crown, ImageUp, Images, LoaderCircle, RotateCcw,
-  Video, Wand2, X,
+  Aperture, Camera, Check, Crown, Download, ImageUp, Images, LoaderCircle,
+  RotateCcw, Video, Wand2, X,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
 import type { FotoGuardada } from '../services/AvatarService';
 import type { EstiloFoto } from '../domain/types';
 import {
   CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, RARIDADES,
-  TITULOS, itensDe, svgFotoDe,
+  TEMPLATES_FOTO, TITULOS, itemPorId, itensDe, svgFotoDe,
 } from '../services/AvatarCatalog';
+import type { TemplateFoto } from '../services/AvatarCatalog';
 import { telemetria } from '../services/Telemetria';
 
 const LADO_PALCO = 280;   // px na tela
@@ -37,8 +38,9 @@ interface EstadoRecorte {
   y: number;
 }
 
-/** Rasteriza um SVG (com a foto embutida como data-url) em PNG 480. */
-async function rasterizarSvg(svg: string): Promise<string> {
+/** Rasteriza um SVG (com a foto embutida como data-url) em PNG.
+ *  `lado` parametrizado (AS5 F6 §368: exportação em escala 1×/2×/4×). */
+async function rasterizarSvg(svg: string, lado: number = LADO_SAIDA): Promise<string> {
   const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   try {
@@ -49,16 +51,31 @@ async function rasterizarSvg(svg: string): Promise<string> {
       i.src = url;
     });
     const canvas = document.createElement('canvas');
-    canvas.width = LADO_SAIDA;
-    canvas.height = LADO_SAIDA;
+    canvas.width = lado;
+    canvas.height = lado;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('SEM_CANVAS');
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, 0, 0, LADO_SAIDA, LADO_SAIDA);
+    ctx.drawImage(img, 0, 0, lado, lado);
     return canvas.toDataURL('image/png');
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+/** §362: rascunho do ESTILO (só parâmetros — a foto nunca vai ao storage). */
+const CHAVE_ESTILO = 'dshow.avst.foto.estilo.v1';
+function lerEstiloSalvo(): EstiloFoto | null {
+  try {
+    const e = JSON.parse(localStorage.getItem(CHAVE_ESTILO) ?? 'null') as EstiloFoto | null;
+    return e && e.camadas && e.cores ? e : null;
+  } catch { return null; }
+}
+function gravarEstilo(e: EstiloFoto): void {
+  try { localStorage.setItem(CHAVE_ESTILO, JSON.stringify(e)); } catch { /* sem storage */ }
+}
+function limparEstiloSalvo(): void {
+  try { localStorage.removeItem(CHAVE_ESTILO); } catch { /* sem storage */ }
 }
 
 const ESTILO_VAZIO: EstiloFoto = { camadas: {}, cores: { destaque: CONFIG_PADRAO.cores.destaque } };
@@ -245,9 +262,60 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     if (!png) return;
     setFotoEstilo(png);
     setRecorte(null);
-    setMensagem(null);
+    // §362: retoma o estilo da última sessão (a foto é sempre a nova)
+    const salvo = lerEstiloSalvo();
+    if (salvo) { setEstilo(salvo); setMensagem('Retomamos seu estilo anterior — use Limpar para começar do zero.'); }
+    else setMensagem(null);
     telemetria('foto_estilo_abriu', { origem: 'recorte' });
   }, [recorteParaPng]);
+
+  // §362: autosave do ESTILO enquanto o modo estilizada está aberto
+  useEffect(() => {
+    if (!fotoEstilo) return;
+    const t = setTimeout(() => {
+      if (Object.keys(estilo.camadas).length || estilo.titulo) gravarEstilo(estilo);
+      else limparEstiloSalvo();
+    }, 500);
+    return () => clearTimeout(t);
+  }, [fotoEstilo, estilo]);
+
+  // §326.3: aplicar template PRESERVANDO o que está bloqueado (fica de fora)
+  const aplicarTemplate = useCallback((tpl: TemplateFoto) => {
+    const camadas: EstiloFoto['camadas'] = {};
+    let pulados = 0;
+    for (const [cat, id] of Object.entries(tpl.estilo.camadas)) {
+      if (!id) continue;
+      const item = itemPorId(id);
+      if (item?.bloqueadoPor && !desbloqueados.has(id)) { pulados += 1; continue; }
+      camadas[cat as keyof EstiloFoto['camadas']] = id;
+    }
+    let titulo = tpl.estilo.titulo;
+    if (titulo && !TITULOS.some((x) => x.id === titulo)) { titulo = undefined; pulados += 1; }
+    setEstilo({ camadas, cores: { destaque: tpl.estilo.cores.destaque }, ...(titulo ? { titulo } : {}) });
+    setMensagem(pulados
+      ? `Template "${tpl.nome}" aplicado — ${pulados} item(ns) ainda bloqueado(s) ficaram de fora.`
+      : `Template "${tpl.nome}" aplicado.`);
+    telemetria('foto_template', { id: tpl.id, pulados });
+  }, [desbloqueados]);
+
+  // §368: exportação local em escala (1×/2×/4× do PNG 480)
+  const [escala, setEscala] = useState<1 | 2 | 4>(1);
+  const baixarPng = useCallback(async () => {
+    if (!fotoEstilo) return;
+    setMensagem(null);
+    try {
+      const lado = LADO_SAIDA * escala;
+      const svg = svgFotoDe(fotoEstilo, estilo, { estatico: true, tamanho: lado, uid: 'ftexp' });
+      const png = await rasterizarSvg(svg, lado);
+      const a = document.createElement('a');
+      a.href = png;
+      a.download = `dshow-foto-${lado}px.png`;
+      a.click();
+      telemetria('foto_exportou', { lado });
+    } catch {
+      setMensagem('Não consegui gerar o PNG para download — tente de novo.');
+    }
+  }, [fotoEstilo, estilo, escala]);
 
   /** Entra no modo ESTILIZADA a partir de uma foto guardada. */
   const estilizarGuardada = useCallback(async (foto: FotoGuardada) => {
@@ -281,6 +349,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
         setMensagem('Foto estilizada salva! O header já foi atualizado.');
         setFotoEstilo(null);
         setEstilo(ESTILO_VAZIO);
+        limparEstiloSalvo(); // §362: trabalho concluído — rascunho fecha
         telemetria('foto_estilo_salvou');
         aoSalvar(r.versao ?? versao + 1);
       } else {
@@ -402,6 +471,27 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
             Só assets de <strong>apresentação</strong> entram na foto — roupa e corpo ficam no avatar em camadas.
           </p>
 
+          {/* §326/§327: templates prioritários — composição em 1 clique */}
+          <div className="avst-ft-grupo">
+            <span className="avst-ft-rotulo"><Wand2 size={11} aria-hidden /> Templates</span>
+            <div className="avst-ft-templates" data-teste="templates-foto">
+              {TEMPLATES_FOTO.map((tpl) => (
+                <button key={tpl.id} type="button" className="avst-ft-template"
+                  title={tpl.descricao}
+                  onClick={() => aplicarTemplate(tpl)}>
+                  <i style={{ background: tpl.estilo.cores.destaque }} aria-hidden />
+                  <span>{tpl.nome}</span>
+                  <small>{tpl.categoria}</small>
+                </button>
+              ))}
+              <button type="button" className="avst-ft-template avst-ft-template-limpar"
+                title="Remover tudo e começar do zero"
+                onClick={() => { setEstilo(ESTILO_VAZIO); limparEstiloSalvo(); setMensagem(null); }}>
+                <span>Limpar</span>
+              </button>
+            </div>
+          </div>
+
           {CATEGORIAS_FOTO.map((cat) => {
             const meta = CATEGORIAS.find((c) => c.id === cat);
             const itens = itensDe(cat).filter((i) => !i.bloqueadoPor || desbloqueados.has(i.id));
@@ -466,6 +556,20 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
             <button type="button" className="avst-botao" disabled={salvando}
               onClick={() => { setFotoEstilo(null); setEstilo(ESTILO_VAZIO); }}>
               <X size={14} aria-hidden /> Cancelar
+            </button>
+            {/* §368: download local em escala — não passa pelo servidor */}
+            <label className="avst-ft-escala" title="Resolução do PNG exportado">
+              <select value={escala} aria-label="Escala de exportação"
+                onChange={(e) => setEscala(Number(e.target.value) as 1 | 2 | 4)}>
+                <option value={1}>480px</option>
+                <option value={2}>960px</option>
+                <option value={4}>1920px</option>
+              </select>
+            </label>
+            <button type="button" className="avst-botao" disabled={salvando}
+              title="Baixar o PNG desta composição no seu computador"
+              onClick={() => void baixarPng()}>
+              <Download size={14} aria-hidden /> Baixar PNG
             </button>
             <button type="button" className="avst-botao avst-botao-primario"
               onClick={() => void salvarEstilizada()} disabled={salvando}>
