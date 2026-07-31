@@ -83,12 +83,16 @@ function idsEquipados(config: AvatarConfig, categoria: CategoriaId): string[] {
   return id ? [id] : [];
 }
 
-export function GradeItens({ config, categoria, desbloqueados, aoEscolher }: {
+export type AbaCatalogo = 'todos' | 'equipados' | 'favoritos' | 'novos' | 'bloqueados';
+
+export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos' }: {
   config: AvatarConfig;
   categoria: CategoriaId;
   /** ids liberados por conquistas/eventos (vem do /api/avatar/vida.php) */
   desbloqueados: Set<string>;
   aoEscolher: (novo: AvatarConfig) => void;
+  /** AS5 F2 S3 (P1 §22): aba externa do shell novo — 'todos' preserva o comportamento clássico */
+  filtroAba?: AbaCatalogo;
 }) {
   const meta = CATEGORIAS.find((c) => c.id === categoria);
   const [busca, setBusca] = useState('');
@@ -113,11 +117,21 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher }: {
 
   // esconde incompatíveis com a base (§35) e aplica busca/raridade/favoritos
   // (F2c) + bloqueados/ordenação (AS4 §23.2/§39.14)
+  const equipadosAba = new Set(idsEquipados(config, categoria));
   const itens = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     const usados = itensUsados();
     const lista = itensDe(categoria)
       .filter((i) => !i.requerBase || i.requerBase.includes(config.base))
+      .filter((i) => {
+        switch (filtroAba) {
+          case 'equipados': return equipadosAba.has(i.id);
+          case 'favoritos': return favs.has(i.id);
+          case 'novos': return !!i.novo;
+          case 'bloqueados': return bloqueado(i);
+          default: return true;
+        }
+      })
       .filter((i) => !tier || i.raridade === tier)
       .filter((i) => !soFavoritos || favs.has(i.id))
       .filter((i) => !ocultarBloqueados || !bloqueado(i))
@@ -130,7 +144,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher }: {
     if (ordem === 'recentes') lista.sort((a, b) => Number(usados.has(b.id)) - Number(usados.has(a.id)));
     return lista;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria, config.base, busca, tier, soFavoritos, ocultarBloqueados, ordem, favs, desbloqueados]);
+  }, [categoria, config.base, busca, tier, soFavoritos, ocultarBloqueados, ordem, favs, desbloqueados, filtroAba]);
 
   const equipados = new Set(idsEquipados(config, categoria));
   const nomesEquipados = [...equipados].map((id) => itemPorId(id)?.nome).filter(Boolean).join(' + ');

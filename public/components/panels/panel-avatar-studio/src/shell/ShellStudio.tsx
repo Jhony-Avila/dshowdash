@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { Redo2, ShieldAlert, Undo2 } from 'lucide-react';
+import { ArrowUp, ChevronsLeft, ChevronsRight, Palette, Redo2, ShieldAlert, Undo2 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { CATEGORIAS, validarConfig } from '../services/AvatarCatalog';
 import { conectarTelemetria } from '../services/ObservarNucleo';
@@ -17,6 +17,8 @@ import type { Comando } from '../nucleo/estado';
 import { deLegado2d, paraLegado2d } from '../nucleo/adaptadores';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { GradeItens } from '../components/GradeItens';
+import type { AbaCatalogo } from '../components/GradeItens';
+import { Cores } from '../components/Cores';
 import { BarraSalvamento } from './BarraSalvamento';
 
 const CHAVE_LARGURAS = 'dshow.avst5.larguras.v1';
@@ -85,6 +87,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // estados locais de UI (§607.2/§607.3 — nunca entram no AvatarStore)
   const [categoria, setCategoria] = useState<CategoriaId>('base');
   const [larguras, setLarguras] = useState(lerLarguras);
+  const [aba, setAba] = useState<AbaCatalogo>('todos');
+  const [painelLargo, setPainelLargo] = useState(false);
+  const [painelFechado, setPainelFechado] = useState(false);
+  const [mostrarTopo, setMostrarTopo] = useState(false);
+  const [propriedades, setPropriedades] = useState(false);
+  const refPainel = useRef<HTMLDivElement>(null);
   const [fundo, setFundo] = useState<FundoPalco>(() => {
     try {
       const f = localStorage.getItem(CHAVE_FUNDO) as FundoPalco | null;
@@ -162,7 +170,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1"
-        style={{ '--avst5-esq': `${larguras.esq}px`, '--avst5-dir': `${larguras.dir}px` } as React.CSSProperties}>
+        style={{ '--avst5-esq': `${larguras.esq}px`,
+          '--avst5-dir': painelFechado ? '36px' : painelLargo ? '560px' : `${larguras.dir}px` } as React.CSSProperties}>
         {/* header interno (§626) */}
         <header className="avst5-header">
           <strong>Avatar Studio</strong>
@@ -215,9 +224,49 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <div className="avst5-alca" role="separator" aria-orientation="vertical" aria-label="Redimensionar catálogo"
             onPointerDown={(e) => { arraste.current = { lado: 'dir', x0: e.clientX, w0: larguras.dir }; }} />
           {/* painel direito — workspace com scroll INTERNO (R4/R5) */}
-          <aside className="avst5-painel" aria-label="Catálogo">
-            <GradeItens config={configVisivel} categoria={categoria}
-              desbloqueados={desbloqueados} aoEscolher={aoEscolher} />
+          <aside className={`avst5-painel${painelFechado ? ' avst5-painel-fechado' : ''}`} aria-label="Catálogo">
+            {/* cabeçalho FIXO do workspace (P1 §20–§22) */}
+            <div className="avst5-painel-topo">
+              <button type="button" className="avst5-painel-btn" title={painelFechado ? 'Abrir catálogo' : 'Recolher catálogo'}
+                onClick={() => setPainelFechado((v) => !v)}>
+                {painelFechado ? <ChevronsLeft size={14} aria-hidden /> : <ChevronsRight size={14} aria-hidden />}
+              </button>
+              {!painelFechado && (<>
+                <div className="avst5-abas" role="tablist" aria-label="Filtro do catálogo">
+                  {(['todos', 'equipados', 'favoritos', 'novos', 'bloqueados'] as AbaCatalogo[]).map((a) => (
+                    <button key={a} type="button" role="tab" aria-selected={aba === a}
+                      className={aba === a ? 'avst5-aba-on' : ''} onClick={() => setAba(a)}>
+                      {a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : 'Bloqueados'}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" className={`avst5-painel-btn${propriedades ? ' avst5-painel-btn-on' : ''}`}
+                  title="Cores e propriedades" aria-pressed={propriedades}
+                  onClick={() => setPropriedades((v) => !v)}><Palette size={14} aria-hidden /></button>
+                <button type="button" className="avst5-painel-btn" title={painelLargo ? 'Largura normal' : 'Expandir painel'}
+                  onClick={() => setPainelLargo((v) => !v)}>
+                  {painelLargo ? <ChevronsRight size={14} aria-hidden /> : <ChevronsLeft size={14} aria-hidden />}
+                </button>
+              </>)}
+            </div>
+            {!painelFechado && (
+              <div className="avst5-painel-scroll" ref={refPainel}
+                onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
+                {propriedades && (
+                  <section className="avst5-propriedades" aria-label="Cores">
+                    <Cores config={configVisivel} aoMudar={aoEscolher} />
+                  </section>
+                )}
+                <GradeItens config={configVisivel} categoria={categoria}
+                  desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba} />
+              </div>
+            )}
+            {!painelFechado && mostrarTopo && (
+              <button type="button" className="avst5-topo" title="Voltar ao topo"
+                onClick={() => refPainel.current?.scrollTo({ top: 0, behavior: 'smooth' })}>
+                <ArrowUp size={14} aria-hidden /> Topo
+              </button>
+            )}
           </aside>
         </div>
       </div>

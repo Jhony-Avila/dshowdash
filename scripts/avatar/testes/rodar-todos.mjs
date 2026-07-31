@@ -11,7 +11,7 @@
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
-const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pessoal.mjs', 'home-compacto.mjs', 'shell-s1.mjs', 'shell-s2.mjs'];
+const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pessoal.mjs', 'home-compacto.mjs', 'shell-s1.mjs', 'shell-s2.mjs', 'shell-s3.mjs'];
 let falhas = 0;
 for (const t of TESTES) {
   console.log(`\n━━ ${t} ━━`);
