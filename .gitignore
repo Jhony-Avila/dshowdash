@@ -99,6 +99,11 @@ dist/
 *.tmp
 .DS_Store
 
+# docs do programa Avatar Studio 5.0 (mega briefing)
+!/docs/
+/docs/*
+!/docs/AVATAR-STUDIO-5/
+
 # suíte de testes headless: artefatos locais nunca entram
 /scripts/avatar/testes/saida/
 /scripts/avatar/testes/node_modules
