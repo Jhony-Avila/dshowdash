@@ -1316,3 +1316,28 @@
 .avst5-comparar { position: absolute; bottom: 64px; left: 14px; z-index: 4; display: inline-flex; align-items: center; gap: 6px; background: rgba(13,16,23,.75); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2); border-radius: 999px; padding: 6px 12px; font-size: 11px; cursor: pointer; backdrop-filter: blur(4px); user-select: none; touch-action: none; }
 .avst5-comparar:active { border-color: var(--avst-acento, #7c5cff); }
 .avst5-comparando { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 4; background: rgba(13,16,23,.8); border: 1px solid var(--avst-acento, #7c5cff); color: var(--avst-texto, #e6eaf2); border-radius: 999px; padding: 5px 14px; font-size: 11px; backdrop-filter: blur(4px); }
+
+/* AS5 F4 — presets pessoais (§136/§199), histórico da sessão (§138), rascunho (§139) */
+.avst5-presets-salvar { display: flex; gap: 6px; margin-bottom: 10px; }
+.avst5-presets-salvar input { flex: 1; background: var(--avst-fundo, #0d1017); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2); border-radius: 8px; padding: 7px 10px; font-size: 12px; }
+.avst5-presets-salvar input:focus { outline: none; border-color: var(--avst-acento, #7c5cff); }
+.avst5-presets-vazio { font-size: 12px; color: var(--avst-texto-2, #8a93a6); line-height: 1.6; border: 1px dashed var(--avst-borda, #232a38); border-radius: 10px; padding: 14px; }
+.avst5-presets-lista { display: flex; flex-direction: column; gap: 6px; }
+.avst5-preset { display: flex; align-items: center; gap: 6px; border: 1px solid var(--avst-borda, #232a38); border-radius: 10px; padding: 6px 8px; }
+.avst5-preset-corpo { display: flex; align-items: center; gap: 10px; flex: 1; background: none; border: none; color: var(--avst-texto, #e6eaf2); cursor: pointer; text-align: left; padding: 0; }
+.avst5-preset-corpo img { border-radius: 8px; background: var(--avst-fundo, #0d1017); }
+.avst5-preset-info { display: flex; flex-direction: column; gap: 2px; }
+.avst5-preset-info strong { font-size: 12.5px; }
+.avst5-preset-info small { font-size: 10.5px; color: var(--avst-texto-2, #8a93a6); }
+.avst5-preset-acoes { display: flex; gap: 4px; }
+.avst5-preset-acoes button { background: none; border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); border-radius: 6px; padding: 4px 5px; cursor: pointer; line-height: 0; }
+.avst5-preset-acoes button:hover, .avst5-preset-acoes .avst5-eq-on { color: var(--avst-texto, #e6eaf2); border-color: var(--avst-acento, #7c5cff); }
+.avst5-historico { margin-top: 14px; border-top: 1px solid var(--avst-borda, #232a38); padding-top: 10px; }
+.avst5-hist-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.avst5-hist-lista button { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 1px solid transparent; color: var(--avst-texto-2, #8a93a6); border-radius: 7px; padding: 5px 8px; font-size: 11.5px; cursor: pointer; text-align: left; }
+.avst5-hist-lista button:hover { border-color: var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2); }
+.avst5-hist-lista .avst5-hist-on { border-color: var(--avst-acento, #7c5cff); color: var(--avst-texto, #e6eaf2); background: color-mix(in srgb, var(--avst-acento, #7c5cff) 10%, transparent); }
+.avst5-hist-lista em { font-style: normal; font-variant-numeric: tabular-nums; font-size: 10px; }
+.avst5-rascunho { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 8px; background: rgba(13,16,23,.88); border: 1px solid var(--avst-acento, #7c5cff); color: var(--avst-texto, #e6eaf2); border-radius: 12px; padding: 9px 14px; font-size: 12px; backdrop-filter: blur(6px); box-shadow: 0 10px 30px rgba(0,0,0,.45); max-width: 92%; }
+.avst5-outra-aba { position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 8px; background: rgba(60,34,12,.85); border: 1px solid #e8b64c; color: #ffe9c2; border-radius: 999px; padding: 6px 12px; font-size: 11px; backdrop-filter: blur(4px); }
+.avst5-outra-aba button { background: none; border: none; color: inherit; cursor: pointer; line-height: 0; padding: 2px; }

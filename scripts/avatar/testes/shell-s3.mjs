@@ -10,7 +10,7 @@ await irParaHarness(p, 'avst-harness.html', 1200);
 const falhas = [];
 const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 
-ok(await p.locator('.avst5-abas button').count() === 5, 'esperava 5 tabs');
+ok(await p.locator('.avst5-abas button').count() === 6, 'esperava 6 tabs (F4 adicionou Presets)');
 await p.locator('.avst5-abas button', { hasText: 'Equipados' }).click();
 await p.waitForTimeout(600);
 // F3 C1 (§70): a aba Equipados virou o painel slot→item (não mais a grade)

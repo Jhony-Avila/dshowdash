@@ -24,6 +24,12 @@ import type { AbaCatalogo } from '../components/GradeItens';
 import { Cores } from '../components/Cores';
 import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
+import { PresetsShell } from './PresetsShell';
+import { HistoricoSessao, useHistoricoSessao } from './HistoricoSessao';
+import {
+  CHAVE_RASCUNHO_STORAGE, gravarRascunho, idDaAba, lerRascunho, limparRascunho,
+} from '../services/PresetsPessoais';
+import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
 
 /** §68.3: chips de navegação por slot na categoria Acessórios. */
@@ -100,7 +106,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // estados locais de UI (§607.2/§607.3 — nunca entram no AvatarStore)
   const [categoria, setCategoria] = useState<CategoriaId>('base');
   const [larguras, setLarguras] = useState(lerLarguras);
-  const [aba, setAba] = useState<AbaCatalogo>('todos');
+  const [aba, setAba] = useState<AbaCatalogo | 'presets'>('todos');
   // §68.3: chip de slot ativo (só em Acessórios; troca de categoria zera)
   const [filtroSlot, setFiltroSlot] = useState<'todos' | SlotAcessorio>('todos');
   // R7/R8: modos do palco — edicao | foco (F/Esc) | studio (apresentação)
@@ -240,6 +246,43 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     [comparando, configVisivel, store],
   );
 
+  // §138: registro da timeline vive AQUI (a sessão inteira, não só na aba)
+  const historico = useHistoricoSessao(store);
+
+  // §139: AUTOSAVE do rascunho (debounce) — limpa quando não há mudanças
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const parar = store.assinar(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (store.temMudancas) gravarRascunho(paraLegado2d(store.estadoDraft), store.versao);
+        else limparRascunho();
+      }, 800);
+    });
+    return () => { clearTimeout(timer); parar(); };
+  }, [store]);
+
+  // §139: recuperação — rascunho órfão diferente do estado carregado
+  const [rascunho, setRascunho] = useState<Rascunho | null>(() => {
+    const r = lerRascunho();
+    if (!r) return null;
+    return JSON.stringify(validarConfig(r.config)) !== JSON.stringify(validarConfig(configInicial)) ? r : null;
+  });
+
+  // §629 "conflito entre abas": outra aba gravou rascunho → avisa
+  const [outraAba, setOutraAba] = useState(false);
+  useEffect(() => {
+    const aoStorage = (e: StorageEvent) => {
+      if (e.key !== CHAVE_RASCUNHO_STORAGE || !e.newValue) return;
+      try {
+        const r = JSON.parse(e.newValue) as Rascunho;
+        if (r.aba && r.aba !== idDaAba()) setOutraAba(true);
+      } catch { /* rascunho ilegível — ignora */ }
+    };
+    window.addEventListener('storage', aoStorage);
+    return () => window.removeEventListener('storage', aoStorage);
+  }, []);
+
   // §68.2: resumo dos acessórios equipados no topo da categoria
   const resumoAcessorios = useMemo(() => {
     const nomes = (['acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco'] as const)
@@ -342,6 +385,31 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {comparando && (
               <div className="avst5-comparando" role="status">Original salvo · solte para voltar</div>
             )}
+            {rascunho && (
+              <div className="avst5-rascunho" role="alertdialog" aria-label="Rascunho recuperado" data-teste="rascunho">
+                <span>
+                  Recuperamos um rascunho de{' '}
+                  {new Date(rascunho.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.
+                  Deseja continuar?
+                </span>
+                <button type="button" className="avst-botao avst-botao-primario"
+                  onClick={() => { aplicarComando(validarConfig(rascunho.config)); setRascunho(null); }}>
+                  Continuar
+                </button>
+                <button type="button" className="avst-botao"
+                  onClick={() => { limparRascunho(); setRascunho(null); }}>
+                  Descartar
+                </button>
+              </div>
+            )}
+            {outraAba && (
+              <div className="avst5-outra-aba" role="status">
+                Outra aba também está editando este avatar — a última que salvar prevalece.
+                <button type="button" onClick={() => setOutraAba(false)} aria-label="Entendi">
+                  <X size={12} aria-hidden />
+                </button>
+              </div>
+            )}
             {store.temMudancas && modo === 'edicao' && (
               <button type="button" className="avst5-comparar" title="Segure para ver o original (V)"
                 onPointerDown={() => setComparando(true)}
@@ -385,10 +453,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               </button>
               {!painelFechado && (<>
                 <div className="avst5-abas" role="tablist" aria-label="Filtro do catálogo">
-                  {(['todos', 'equipados', 'favoritos', 'novos', 'bloqueados'] as AbaCatalogo[]).map((a) => (
+                  {(['todos', 'equipados', 'favoritos', 'novos', 'bloqueados', 'presets'] as Array<AbaCatalogo | 'presets'>).map((a) => (
                     <button key={a} type="button" role="tab" aria-selected={aba === a}
                       className={aba === a ? 'avst5-aba-on' : ''} onClick={() => setAba(a)}>
-                      {a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : 'Bloqueados'}
+                      {a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : a === 'bloqueados' ? 'Bloqueados' : 'Presets'}
                     </button>
                   ))}
                 </div>
@@ -426,7 +494,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     ))}
                   </div>
                 </>)}
-                {aba === 'equipados' ? (
+                {aba === 'presets' ? (
+                  <PresetsShell configAtual={paraLegado2d(store.estadoDraft)}
+                    aoAplicar={(cfg) => aplicarComando(validarConfig(cfg))} />
+                ) : aba === 'equipados' ? (<>
                   <Equipados config={paraLegado2d(store.estadoDraft)} bloqueios={bloqueios}
                     aoRemover={(slot) => {
                       const cfg = paraLegado2d(store.estadoDraft);
@@ -437,9 +508,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     aoTrocar={(cat) => { setCategoria(cat); setAba('todos'); }}
                     aoBloquear={(slot) => setBloqueios(new Set(alternarBloqueio(slot)))}
                     aoMudarFavs={() => setTicFavs((t) => t + 1)} />
-                ) : (
+                  {/* §138: timeline granular da sessão junto da gestão do estado */}
+                  <HistoricoSessao entradas={historico.entradas} posicao={historico.posicao} irPara={historico.irPara} />
+                </>) : (
                   <GradeItens config={configVisivel} categoria={categoria}
-                    desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba}
+                    desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                     aoPrever={aoPrever} filtroSlot={filtroSlot} />
                 )}
               </div>
