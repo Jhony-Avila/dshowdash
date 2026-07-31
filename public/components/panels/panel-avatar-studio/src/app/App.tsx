@@ -28,6 +28,8 @@ import { definirSom, somAtivo, tocarCelebracao, tocarEquipar, tocarSalvar } from
 import { registrarUso, sincronizarFavoritos } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
 import { carregarVida } from '../services/VidaService';
+import { flag } from '../nucleo/flags';
+import { ShellStudio } from '../shell/ShellStudio';
 import type { Vida } from '../services/VidaService';
 import { Colecoes } from '../components/Colecoes';
 import { Vitrine } from '../components/Vitrine';
@@ -130,6 +132,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [config3dInicial, setConfig3dInicial] = useState<unknown | null>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaId>('base');
+  // AS5 F2 (decisão #47): novo shell atrás da flag; sair volta ao clássico
+  const [shellNovo, setShellNovo] = useState<boolean>(() => flag('as5.novo_shell'));
   const [aba, setAba] = useState<'itens' | 'arquetipo' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [comparando, setComparando] = useState(false);
@@ -372,6 +376,21 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         <LoaderCircle className="avst-girando" size={34} aria-hidden />
         <p>Abrindo o Avatar Studio…</p>
       </div>
+    );
+  }
+
+
+  // ── AS5: novo shell (F2) — flag as5.novo_shell ──────────────────
+  if (shellNovo) {
+    return (
+      <ShellStudio configInicial={atual} versaoBase={versao}
+        desbloqueados={vida?.desbloqueados ?? new Set()}
+        aoSalvarLegado={async (cfg) => {
+          const r = await salvarAvatar(cfg, versao);
+          if (r.ok && typeof r.versao === 'number') setVersao(r.versao);
+          return { ok: r.ok, versao: r.versao };
+        }}
+        aoSairDoShell={() => setShellNovo(false)} />
     );
   }
 

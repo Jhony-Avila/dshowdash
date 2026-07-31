@@ -1172,3 +1172,29 @@
 }
 .avst-vt-col-meta { font-size: 10px; }
 .avst-vt-col-abrir { font-size: 10.5px; color: var(--avst-acento); margin-top: 2px; }
+
+/* ── AS5 F2 S1 — novo shell (flag as5.novo_shell) ──────────────────── */
+.avst5-shell { display: flex; flex-direction: column; height: 100%; min-height: 78vh; background: var(--avst-fundo, #0d1017); color: var(--avst-texto, #e6eaf2); }
+.avst5-header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--avst-borda, #232a38); }
+.avst5-header-sub { font-size: 11px; color: var(--avst-texto-2, #8a93a6); }
+.avst5-header-acoes { margin-left: auto; display: flex; gap: 6px; }
+.avst5-corpo { display: grid; grid-template-columns: var(--avst5-esq, 176px) 6px 1fr 6px var(--avst5-dir, 380px); height: calc(100vh - 150px); min-height: 480px; }
+.avst5-sidebar { overflow-y: auto; border-right: 1px solid var(--avst-borda, #232a38); padding: 8px 6px; display: flex; flex-direction: column; gap: 2px; }
+.avst5-cat { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: 1px solid transparent; color: inherit; border-radius: 8px; padding: 7px 9px; font-size: 12px; cursor: pointer; }
+.avst5-cat:hover { border-color: var(--avst-borda, #232a38); }
+.avst5-cat-on { background: var(--avst-superficie, #161b26); border-color: var(--avst-acento, #7c5cff); }
+.avst5-cat-inicial { width: 20px; height: 20px; border-radius: 6px; background: var(--avst-superficie, #161b26); display: inline-flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; flex-shrink: 0; }
+.avst5-sidebar-compacta .avst5-cat { justify-content: center; padding: 7px 4px; }
+.avst5-alca { cursor: col-resize; background: transparent; }
+.avst5-alca:hover { background: var(--avst-acento, #7c5cff); opacity: 0.4; }
+.avst5-viewport { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; position: relative; }
+.avst5-palco { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 12px; }
+.avst5-palco { overflow: hidden; }
+.avst5-palco .avst-svg, .avst5-palco svg { height: 100%; max-height: 100%; width: auto; aspect-ratio: 1; }
+.avst5-palco svg { filter: drop-shadow(0 18px 40px rgba(0,0,0,.45)); }
+.avst5-salvar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--avst-borda, #232a38); font-size: 12px; }
+.avst5-salvar-pendente { background: color-mix(in srgb, var(--avst-acento, #7c5cff) 8%, transparent); }
+.avst5-salvar-erro { color: #ef4444; }
+.avst5-painel { overflow-y: auto; border-left: 1px solid var(--avst-borda, #232a38); padding: 10px; min-height: 0; }
+.avst5-erro { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 16px; text-align: center; }
+@media (max-width: 1023px) { .avst5-corpo { grid-template-columns: 64px 0 1fr 0 300px; } .avst5-alca { display: none; } }
