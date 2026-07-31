@@ -1220,3 +1220,23 @@
 .avst5-painel-scroll { flex: 1; overflow-y: auto; padding: 10px; min-height: 0; }
 .avst5-propriedades { margin-bottom: 10px; border: 1px solid var(--avst-borda, #232a38); border-radius: 10px; padding: 10px; }
 .avst5-topo { position: absolute; bottom: 12px; right: 14px; display: inline-flex; align-items: center; gap: 5px; background: var(--avst-superficie, #161b26); border: 1px solid var(--avst-acento, #7c5cff); color: var(--avst-texto, #e6eaf2); border-radius: 999px; padding: 6px 12px; font-size: 11px; cursor: pointer; z-index: 3; }
+
+/* AS5 F2 S4 — modos foco/studio (R7/R8), responsivo (R9), estados (R10) */
+.avst5-shell[data-modo="foco"] .avst5-corpo,
+.avst5-shell[data-modo="studio"] .avst5-corpo { grid-template-columns: 1fr; }
+.avst5-shell[data-modo="foco"] .avst5-sidebar, .avst5-shell[data-modo="foco"] .avst5-painel,
+.avst5-shell[data-modo="studio"] .avst5-sidebar, .avst5-shell[data-modo="studio"] .avst5-painel,
+.avst5-shell[data-modo="foco"] .avst5-alca, .avst5-shell[data-modo="studio"] .avst5-alca { display: none; }
+.avst5-shell[data-modo="studio"] .avst5-salvar { display: none; }
+.avst5-shell[data-modo="studio"] .avst5-fundos { display: none; }
+.avst5-sair-modo { position: absolute; top: 10px; right: 12px; z-index: 4; display: inline-flex; align-items: center; gap: 6px; background: rgba(13,16,23,.75); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2); border-radius: 999px; padding: 6px 12px; font-size: 11px; cursor: pointer; backdrop-filter: blur(4px); }
+.avst5-titulo-selo { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 3; background: rgba(13,16,23,.78); border: 1px solid var(--avst-acento, #7c5cff); color: var(--avst-texto, #e6eaf2); border-radius: 999px; padding: 7px 18px; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: capitalize; backdrop-filter: blur(4px); }
+.avst5-drawer-abrir { display: none; }
+@media (max-width: 1023px) {
+  .avst5-corpo { grid-template-columns: 64px 1fr; }
+  .avst5-sidebar span:not(.avst5-cat-inicial) { display: none; }
+  .avst5-painel { position: fixed; top: 0; right: 0; bottom: 0; width: min(86vw, 420px); z-index: 30; background: var(--avst-fundo, #0d1017); box-shadow: -18px 0 40px rgba(0,0,0,.5); transform: translateX(0); transition: transform .25s ease; }
+  .avst5-painel-fechado { transform: translateX(100%); }
+  .avst5-painel-fechado .avst5-painel-topo { display: none; }
+  .avst5-drawer-abrir { display: inline-flex; position: absolute; bottom: 64px; right: 14px; z-index: 5; background: var(--avst-acento, #7c5cff); border: none; color: #fff; border-radius: 50%; width: 44px; height: 44px; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
+}

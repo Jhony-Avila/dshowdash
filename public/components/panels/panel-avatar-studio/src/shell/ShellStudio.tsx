@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, ChevronsLeft, ChevronsRight, Palette, Redo2, ShieldAlert, Undo2 } from 'lucide-react';
+import { ArrowUp, ChevronsLeft, ChevronsRight, Clapperboard, Focus, LayoutGrid, Palette, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { CATEGORIAS, validarConfig } from '../services/AvatarCatalog';
 import { conectarTelemetria } from '../services/ObservarNucleo';
@@ -88,6 +88,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [categoria, setCategoria] = useState<CategoriaId>('base');
   const [larguras, setLarguras] = useState(lerLarguras);
   const [aba, setAba] = useState<AbaCatalogo>('todos');
+  // R7/R8: modos do palco — edicao | foco (F/Esc) | studio (apresentação)
+  const [modo, setModo] = useState<'edicao' | 'foco' | 'studio'>('edicao');
   const [painelLargo, setPainelLargo] = useState(false);
   const [painelFechado, setPainelFechado] = useState(false);
   const [mostrarTopo, setMostrarTopo] = useState(false);
@@ -110,8 +112,22 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       else if (e.key.toLowerCase() === 'z') { e.preventDefault(); store.desfazer(); }
       else if (e.key.toLowerCase() === 'y') { e.preventDefault(); store.refazer(); }
     };
+    const aoTeclarModo = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName)) return;
+      if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setModo((m) => (m === 'foco' ? 'edicao' : 'foco'));
+      } else if (e.key === 'Escape') {
+        setModo('edicao');
+      }
+    };
+    window.addEventListener('keydown', aoTeclarModo);
     window.addEventListener('keydown', aoTeclar);
-    return () => window.removeEventListener('keydown', aoTeclar);
+    return () => {
+      window.removeEventListener('keydown', aoTeclar);
+      window.removeEventListener('keydown', aoTeclarModo);
+    };
   }, [store]);
 
   // R2: câmera contextual — zoom suave via transform (viewBox não anima)
@@ -169,7 +185,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   return (
     <LimiteShell aoSair={aoSairDoShell}>
-      <div className="avst5-shell" data-avst5="1"
+      <div className="avst5-shell" data-avst5="1" data-modo={modo}
         style={{ '--avst5-esq': `${larguras.esq}px`,
           '--avst5-dir': painelFechado ? '36px' : painelLargo ? '560px' : `${larguras.dir}px` } as React.CSSProperties}>
         {/* header interno (§626) */}
@@ -177,6 +193,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <strong>Avatar Studio</strong>
           <span className="avst5-header-sub">5.0 · novo estúdio (prévia)</span>
           <div className="avst5-header-acoes">
+            <button type="button" className="avst-botao" title="Modo foco (F)"
+              aria-pressed={modo === 'foco'}
+              onClick={() => setModo((m) => (m === 'foco' ? 'edicao' : 'foco'))}>
+              <Focus size={14} aria-hidden /></button>
+            <button type="button" className="avst-botao" title="Modo Studio (apresentação)"
+              aria-pressed={modo === 'studio'}
+              onClick={() => setModo((m) => (m === 'studio' ? 'edicao' : 'studio'))}>
+              <Clapperboard size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" disabled={!store.podeDesfazer}
               title="Desfazer (Ctrl+Z)" onClick={() => store.desfazer()}><Undo2 size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" disabled={!store.podeRefazer}
@@ -207,6 +231,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 <AvatarSvg config={configVisivel} uid="avst5" />
               </div>
             </div>
+            {modo !== 'edicao' && (
+              <button type="button" className="avst5-sair-modo" title="Voltar à edição (Esc)"
+                onClick={() => setModo('edicao')}><X size={14} aria-hidden /> Sair</button>
+            )}
+            <button type="button" className="avst5-drawer-abrir" title="Abrir catálogo"
+              onClick={() => setPainelFechado(false)}><LayoutGrid size={16} aria-hidden /></button>
+            {modo === 'studio' && configVisivel.titulo && (
+              <div className="avst5-titulo-selo" role="note">{String(configVisivel.titulo).replace(/^tit_/, '').replace(/_/g, ' ')}</div>
+            )}
             <div className="avst5-fundos" role="radiogroup" aria-label="Fundo do palco">
               {FUNDOS_PALCO.map((f) => (
                 <button key={f} type="button" role="radio" aria-checked={fundo === f}
