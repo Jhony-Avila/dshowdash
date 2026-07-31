@@ -8,7 +8,7 @@
 // da cor (§39.20) e tooltip por PORTAL no Overlay Root (§22).
 import { useMemo, useRef, useState } from 'react';
 import {
-  ArrowDownUp, Ban, Check, Grid2x2, LayoutGrid, List, Lock, LockOpen, Search, Star,
+  ArrowDownUp, Ban, Check, Grid2x2, LayoutGrid, List, Lock, Search, SlidersHorizontal, Star, X,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, Raridade, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, validarConfig } from '../services/AvatarCatalog';
@@ -117,16 +117,24 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     try { localStorage.setItem(CHAVE_MODO, novo); } catch { /* sem storage */ }
   };
 
+  // §56: popover de filtros secundários + contagem de ativos p/ o badge
+  const [popoverAberto, setPopoverAberto] = useState(false);
+  const nFiltros = (tier ? 1 : 0) + (soFavoritos ? 1 : 0) + (ocultarBloqueados ? 1 : 0);
+  const limparFiltros = () => {
+    setTier(null); setSoFavoritos(false); setOcultarBloqueados(false);
+    setOrdem('padrao'); setPopoverAberto(false);
+  };
+
   const bloqueado = (i: ParteDef) => Boolean(i.bloqueadoPor) && !desbloqueados.has(i.id);
 
-  // esconde incompatíveis com a base (§35) e aplica busca/raridade/favoritos
-  // (F2c) + bloqueados/ordenação (AS4 §23.2/§39.14)
+  // esconde incompatíveis com a base (§35) e aplica busca/aba/slot — a BASE
+  // dos filtros secundários (§56.2: os contadores do popover contam AQUI,
+  // antes de raridade/favoritos/bloqueados serem aplicados)
   const equipadosAba = new Set(idsEquipados(config, categoria));
-  const itens = useMemo(() => {
+  const listaBase = useMemo(() => {
     const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const termos = normalizar(busca.trim()).split(/\s+/).filter(Boolean);
-    const usados = itensUsados();
-    const lista = itensDe(categoria)
+    return itensDe(categoria)
       .filter((i) => !i.requerBase || i.requerBase.includes(config.base))
       .filter((i) => {
         switch (filtroAba) {
@@ -139,20 +147,34 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       })
       .filter((i) => categoria !== 'acessorio' || filtroSlot === 'todos'
         || (i.slot ?? 'cabeca') === filtroSlot) // §68.3
-      .filter((i) => !tier || i.raridade === tier)
-      .filter((i) => !soFavoritos || favs.has(i.id))
-      .filter((i) => !ocultarBloqueados || !bloqueado(i))
       .filter((i) => {
         if (!termos.length) return true;
         const alvo = normalizar(`${i.nome} ${i.tema} ${i.lore ?? i.descricao}`);
         return termos.every((t) => alvo.includes(t)); // AND (§57)
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot]);
+
+  // §56.2: contagem por raridade no CONTEXTO atual (mostrada no popover)
+  const contagem = useMemo(() => {
+    const c = new Map<Raridade, number>();
+    for (const i of listaBase) c.set(i.raridade, (c.get(i.raridade) ?? 0) + 1);
+    return c;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listaBase, desbloqueados]);
+
+  const itens = useMemo(() => {
+    const usados = itensUsados();
+    const lista = listaBase
+      .filter((i) => !tier || i.raridade === tier)
+      .filter((i) => !soFavoritos || favs.has(i.id))
+      .filter((i) => !ocultarBloqueados || !bloqueado(i));
     if (ordem === 'raridade') lista.sort((a, b) => nivelRaridade(b.raridade) - nivelRaridade(a.raridade));
     if (ordem === 'nome') lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
     if (ordem === 'recentes') lista.sort((a, b) => Number(usados.has(b.id)) - Number(usados.has(a.id)));
     return lista;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria, config.base, busca, tier, soFavoritos, ocultarBloqueados, ordem, favs, desbloqueados, filtroAba, filtroSlot]);
+  }, [listaBase, tier, soFavoritos, ocultarBloqueados, ordem, favs]);
 
   const equipados = new Set(idsEquipados(config, categoria));
   const nomesEquipados = [...equipados].map((id) => itemPorId(id)?.nome).filter(Boolean).join(' + ');
@@ -180,45 +202,88 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         </div>
       </header>
 
-      {/* barra de inventário: busca + tiers + favoritos + bloqueados + ordem */}
+      {/* §56: busca sempre visível; filtros secundários no POPOVER "Filtros" */}
       <div className="avst-filtros">
         <label className="avst-busca">
           <Search size={13} aria-hidden />
           <input type="search" value={busca} placeholder="Buscar item, tema ou lore…"
             onChange={(e) => setBusca(e.target.value)} aria-label="Buscar itens" />
         </label>
-        <div className="avst-tiers" role="radiogroup" aria-label="Filtrar por raridade">
-          {TIERS.map(([id, r]) => (
-            <button key={id} type="button" role="radio" aria-checked={tier === id}
-              className={`avst-tier ${tier === id ? 'avst-tier-ativo' : ''}`}
-              style={{ '--avst-rar': r.cor } as React.CSSProperties}
-              title={r.nome}
-              onClick={() => setTier((t) => (t === id ? null : id))} />
-          ))}
-          <button type="button"
-            className={`avst-tier-fav ${soFavoritos ? 'avst-tier-fav-ativo' : ''}`}
-            title="Só favoritos" aria-pressed={soFavoritos}
-            onClick={() => setSoFavoritos((v) => !v)}>
-            <Star size={13} aria-hidden />
+        <div className="avst-fpop-ancora">
+          <button type="button" className={`avst-botao avst-fpop-abrir${nFiltros ? ' avst-fpop-abrir-on' : ''}`}
+            aria-expanded={popoverAberto} aria-haspopup="dialog"
+            onClick={() => setPopoverAberto((v) => !v)}>
+            <SlidersHorizontal size={13} aria-hidden /> Filtros{nFiltros ? <em>{nFiltros}</em> : null}
           </button>
-          <button type="button"
-            className={`avst-tier-fav ${ocultarBloqueados ? 'avst-tier-fav-ativo' : ''}`}
-            title={ocultarBloqueados ? 'Mostrando só os desbloqueados' : 'Ocultar itens bloqueados'}
-            aria-pressed={ocultarBloqueados}
-            onClick={() => setOcultarBloqueados((v) => !v)}>
-            {ocultarBloqueados ? <LockOpen size={13} aria-hidden /> : <Lock size={13} aria-hidden />}
+          {popoverAberto && (<>
+            <button type="button" className="avst-fpop-fundo" aria-label="Fechar filtros"
+              onClick={() => setPopoverAberto(false)} />
+            <div className="avst-fpop" role="dialog" aria-label="Filtros avançados">
+              <h5>Raridade</h5>
+              <div className="avst-fpop-raridades" role="radiogroup" aria-label="Filtrar por raridade">
+                {TIERS.map(([id, r]) => (
+                  <button key={id} type="button" role="radio" aria-checked={tier === id}
+                    className={`avst-fpop-rar${tier === id ? ' avst-fpop-rar-on' : ''}`}
+                    style={{ '--avst-rar': r.cor } as React.CSSProperties}
+                    disabled={!contagem.get(id)}
+                    onClick={() => setTier((t) => (t === id ? null : id))}>
+                    <i aria-hidden /> {r.nome} <span>({contagem.get(id) ?? 0})</span>
+                  </button>
+                ))}
+              </div>
+              <h5>Exibição</h5>
+              <label className="avst-fpop-opcao">
+                <input type="checkbox" checked={soFavoritos}
+                  onChange={(e) => setSoFavoritos(e.target.checked)} />
+                <Star size={12} aria-hidden /> Só favoritos
+              </label>
+              <label className="avst-fpop-opcao">
+                <input type="checkbox" checked={ocultarBloqueados}
+                  onChange={(e) => setOcultarBloqueados(e.target.checked)} />
+                <Lock size={12} aria-hidden /> Ocultar bloqueados
+              </label>
+              <label className="avst-fpop-opcao avst-ordenar" title="Ordenar itens">
+                <ArrowDownUp size={12} aria-hidden />
+                <select value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)} aria-label="Ordenar por">
+                  <option value="padrao">Padrão</option>
+                  <option value="raridade">Raridade</option>
+                  <option value="nome">Nome</option>
+                  <option value="recentes">Recentes</option>
+                </select>
+              </label>
+              {nFiltros > 0 && (
+                <button type="button" className="avst-fpop-limpar" onClick={limparFiltros}>
+                  Limpar tudo
+                </button>
+              )}
+            </div>
+          </>)}
+        </div>
+      </div>
+      {/* §56.1: filtros aplicados viram chips removíveis */}
+      {nFiltros > 0 && (
+        <div className="avst-fchips" data-teste="chips-filtros">
+          {tier && (
+            <button type="button" className="avst-fchip" onClick={() => setTier(null)}
+              style={{ '--avst-rar': RARIDADES[tier].cor } as React.CSSProperties}>
+              <i aria-hidden /> {RARIDADES[tier].nome} <X size={11} aria-hidden />
+            </button>
+          )}
+          {soFavoritos && (
+            <button type="button" className="avst-fchip" onClick={() => setSoFavoritos(false)}>
+              Só favoritos <X size={11} aria-hidden />
+            </button>
+          )}
+          {ocultarBloqueados && (
+            <button type="button" className="avst-fchip" onClick={() => setOcultarBloqueados(false)}>
+              Só desbloqueados <X size={11} aria-hidden />
+            </button>
+          )}
+          <button type="button" className="avst-fchip avst-fchip-limpar" onClick={limparFiltros}>
+            Limpar tudo
           </button>
         </div>
-        <label className="avst-ordenar" title="Ordenar itens">
-          <ArrowDownUp size={12} aria-hidden />
-          <select value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)} aria-label="Ordenar por">
-            <option value="padrao">Padrão</option>
-            <option value="raridade">Raridade</option>
-            <option value="nome">Nome</option>
-            <option value="recentes">Recentes</option>
-          </select>
-        </label>
-      </div>
+      )}
 
       <div className="avst-grade" data-modo={modo} role="listbox" aria-label={`Itens de ${meta?.nome ?? categoria}`}>
         {meta && !meta.obrigatoria && !filtrosAtivos && (

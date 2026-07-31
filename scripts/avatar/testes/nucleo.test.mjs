@@ -159,6 +159,27 @@ const svgSem1 = renderAvatar({ ...cfgC, coresCamada: undefined } as never, resol
 const svgSem2 = renderAvatar({ ...cfgC, coresCamada: {} } as never, resolver as never, { uid: 'tt' });
 ok(svgSem1 === svgSem2, 'coresCamada vazio deveria render byte-identico ao ausente');
 
+// §90 (F3 P1'): aleatório inteligente — determinismo + bloqueios + modos
+import { CONFIG_PADRAO, aleatorioInteligente, itensDe, validarConfig } from '${PAINEL}/src/services/AvatarCatalog';
+const cab0 = itensDe('cabelo')[0].id;
+const cfgA = validarConfig({ ...CONFIG_PADRAO, camadas: { ...CONFIG_PADRAO.camadas, cabelo: cab0 } });
+const r1 = aleatorioInteligente(cfgA, { semente: 42, modo: 'completo', bloqueados: new Set(['cabelo']) });
+const r2 = aleatorioInteligente(cfgA, { semente: 42, modo: 'completo', bloqueados: new Set(['cabelo']) });
+ok(JSON.stringify(r1) === JSON.stringify(r2), 'aleatorioInteligente nao deterministico');
+ok(r1.camadas.cabelo === cab0, 'slot BLOQUEADO foi trocado pelo aleatorio');
+const rc = aleatorioInteligente(cfgA, { semente: 7, modo: 'cores' });
+ok(JSON.stringify(rc.camadas) === JSON.stringify(cfgA.camadas) && rc.base === cfgA.base,
+  'modo cores mexeu nas camadas');
+ok(JSON.stringify(rc.cores) !== JSON.stringify(cfgA.cores), 'modo cores nao trocou as cores');
+const rk = aleatorioInteligente(cfgA, { semente: 7, modo: 'categoria', categoria: 'olhos' });
+ok(rk.camadas.cabelo === cab0 && rk.base === cfgA.base, 'modo categoria vazou p/ outros slots');
+ok(typeof rk.camadas.olhos === 'string', 'modo categoria nao sorteou a categoria pedida');
+// slot bloqueado VAZIO permanece vazio (§135.1: ausencia tambem e escolha)
+const semAura = validarConfig({ ...cfgA, camadas: { ...cfgA.camadas } });
+delete (semAura.camadas as Record<string, string>).aura;
+const rv = aleatorioInteligente(semAura, { semente: 1, modo: 'completo', bloqueados: new Set(['aura']) });
+ok(!rv.camadas.aura, 'slot bloqueado VAZIO foi preenchido');
+
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);
 `);

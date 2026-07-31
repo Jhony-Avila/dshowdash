@@ -535,6 +535,109 @@ export function aleatorio(semente: number): AvatarConfig {
   });
 }
 
+// ── Aleatório INTELIGENTE (§90 + §135/§135.1 — AS5 F3 P1') ──────────
+
+export type ModoAleatorio = 'completo' | 'cores' | 'categoria' | 'favoritos';
+
+export interface OpcoesAleatorio {
+  semente: number;
+  modo: ModoAleatorio;
+  /** exigido no modo 'categoria' */
+  categoria?: CategoriaId;
+  /** slots BLOQUEADOS (§70.1/§135.1) — o sorteio NUNCA os troca (nem os preenche) */
+  bloqueados?: ReadonlySet<string>;
+  /** modo 'favoritos': cada categoria sorteia dos favoritos quando houver */
+  favoritos?: ReadonlySet<string>;
+}
+
+const SLOTS_ACESSORIO_ALEATORIO = ['acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco'] as const;
+
+/**
+ * §90: aleatório que respeita o que o usuário PROTEGEU e mantém coerência.
+ * Compatibilidade é estrutural: o resultado passa pelo validarConfig
+ * (requerBase/incompativelCom) — todo modo é "aleatório compatível".
+ * Determinístico por semente (mesma semente → mesmo avatar, como o §13).
+ */
+export function aleatorioInteligente(atual: AvatarConfig, o: OpcoesAleatorio): AvatarConfig {
+  const bloq = o.bloqueados ?? new Set<string>();
+  const cand = aleatorio(o.semente);
+
+  // §135: "apenas cores" — camadas intactas, só a paleta gira
+  if (o.modo === 'cores') {
+    return validarConfig({ ...atual, cores: cand.cores });
+  }
+
+  // "apenas a categoria ativa" — os demais slots ficam como estão
+  if (o.modo === 'categoria' && o.categoria) {
+    const rnd = mulberry32(o.semente ^ 0x5f3c);
+    const novo: AvatarConfig = { ...atual, camadas: { ...atual.camadas } };
+    if (o.categoria === 'base') {
+      if (!bloq.has('base')) novo.base = sortearPorRaridade(rnd, sorteaveis('base')).id;
+    } else if (o.categoria === 'acessorio') {
+      for (const s of SLOTS_ACESSORIO_ALEATORIO) if (!bloq.has(s)) delete novo.camadas[s];
+      const a = sortearPorRaridade(rnd, sorteaveis('acessorio'));
+      const chave = `acessorio_${a.slot ?? 'cabeca'}` as const;
+      if (!bloq.has(chave)) novo.camadas[chave] = a.id;
+    } else if (!bloq.has(o.categoria)) {
+      novo.camadas[o.categoria] = sortearPorRaridade(rnd, sorteaveis(o.categoria)).id;
+    }
+    return validarConfig(novo);
+  }
+
+  // 'completo' | 'favoritos': parte do candidato inteiro…
+  const novo: AvatarConfig = { ...cand, camadas: { ...cand.camadas } };
+
+  // …modo favoritos re-sorteia cada camada dentro dos favoritos da categoria
+  if (o.modo === 'favoritos' && o.favoritos?.size) {
+    const rnd = mulberry32(o.semente ^ 0x9e37);
+    if (!bloq.has('base')) {
+      const favBase = sorteaveis('base').filter((i) => o.favoritos!.has(i.id));
+      if (favBase.length) novo.base = sortearPorRaridade(rnd, favBase).id;
+    }
+    for (const chave of Object.keys(novo.camadas) as CamadaId[]) {
+      const cat = chave.startsWith('acessorio') ? 'acessorio' : (chave as CategoriaId);
+      const favCat = sorteaveis(cat).filter((i) => o.favoritos!.has(i.id));
+      if (favCat.length) {
+        const escolhido = sortearPorRaridade(rnd, favCat);
+        if (cat === 'acessorio') {
+          delete novo.camadas[chave];
+          novo.camadas[`acessorio_${escolhido.slot ?? 'cabeca'}`] = escolhido.id;
+        } else {
+          novo.camadas[chave] = escolhido.id;
+        }
+      }
+    }
+  }
+
+  // …e devolve TUDO que está protegido (valor atual, inclusive ausência)
+  if (bloq.has('base')) novo.base = atual.base;
+  for (const slot of bloq) {
+    if (slot === 'base') continue;
+    delete novo.camadas[slot as CamadaId];
+    const idAtual = atual.camadas[slot as CamadaId];
+    if (idAtual) novo.camadas[slot as CamadaId] = idAtual;
+  }
+  // regulagens (§71/§73) sobrevivem onde o item NÃO mudou
+  const params: NonNullable<AvatarConfig['params']> = {};
+  for (const [slot, v] of Object.entries(atual.params ?? {})) {
+    if (novo.camadas[slot as CamadaId] === atual.camadas[slot as CamadaId] && v) {
+      params[slot as CamadaId] = v;
+    }
+  }
+  const coresCamada: NonNullable<AvatarConfig['coresCamada']> = {};
+  for (const [slot, v] of Object.entries(atual.coresCamada ?? {})) {
+    if (novo.camadas[slot as CamadaId] === atual.camadas[slot as CamadaId] && v) {
+      coresCamada[slot as CamadaId] = v;
+    }
+  }
+  return validarConfig({
+    ...novo,
+    ...(atual.titulo ? { titulo: atual.titulo } : {}),
+    ...(Object.keys(params).length ? { params } : {}),
+    ...(Object.keys(coresCamada).length ? { coresCamada } : {}),
+  });
+}
+
 // ── Presets curados (briefing §12) ──────────────────────────────────
 
 export const PRESETS: Preset[] = [

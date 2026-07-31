@@ -1283,3 +1283,36 @@
 .avst5-canal-chip .avst-swatch { width: 18px; height: 18px; flex-shrink: 0; }
 .avst5-canal-chip em { margin-left: auto; font-style: normal; font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--avst-acento, #7c5cff); }
 .avst5-canal-cores { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px 4px 2px; }
+
+/* AS5 F3 P1' — filtros em popover (§56), aleatório inteligente (§90), comparação (§65.3) */
+.avst-fpop-ancora { position: relative; }
+.avst-fpop-abrir { display: inline-flex; align-items: center; gap: 6px; }
+.avst-fpop-abrir em { font-style: normal; background: var(--avst-acento, #7c5cff); color: #fff; border-radius: 999px; min-width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; padding: 0 4px; }
+.avst-fpop-abrir-on { border-color: var(--avst-acento, #7c5cff); }
+.avst-fpop-fundo { position: fixed; inset: 0; background: transparent; border: none; z-index: 40; cursor: default; }
+.avst-fpop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 41; width: 240px; background: var(--avst-superficie, #161b26); border: 1px solid var(--avst-borda, #232a38); border-radius: 12px; padding: 12px 14px; box-shadow: 0 14px 34px rgba(0,0,0,.45); }
+.avst-fpop h5 { margin: 8px 0 6px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--avst-texto-2, #8a93a6); }
+.avst-fpop h5:first-child { margin-top: 0; }
+.avst-fpop-raridades { display: flex; flex-direction: column; gap: 2px; }
+.avst-fpop-rar { display: flex; align-items: center; gap: 7px; background: none; border: 1px solid transparent; color: var(--avst-texto, #e6eaf2); border-radius: 7px; padding: 4px 7px; font-size: 11.5px; cursor: pointer; text-align: left; }
+.avst-fpop-rar i { width: 9px; height: 9px; border-radius: 50%; background: var(--avst-rar); flex-shrink: 0; }
+.avst-fpop-rar span { margin-left: auto; color: var(--avst-texto-2, #8a93a6); font-size: 10.5px; }
+.avst-fpop-rar:hover { border-color: var(--avst-borda, #232a38); }
+.avst-fpop-rar-on { border-color: var(--avst-rar); background: color-mix(in srgb, var(--avst-rar) 12%, transparent); }
+.avst-fpop-rar:disabled { opacity: .35; cursor: default; }
+.avst-fpop-opcao { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--avst-texto, #e6eaf2); padding: 4px 2px; cursor: pointer; }
+.avst-fpop-limpar { margin-top: 10px; width: 100%; background: none; border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); border-radius: 8px; padding: 6px; font-size: 11px; cursor: pointer; }
+.avst-fpop-limpar:hover { color: var(--avst-texto, #e6eaf2); border-color: var(--avst-acento, #7c5cff); }
+.avst-fchips { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin: -4px 0 10px; }
+.avst-fchip { display: inline-flex; align-items: center; gap: 5px; background: none; border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2); border-radius: 999px; padding: 3px 9px; font-size: 10.5px; cursor: pointer; }
+.avst-fchip i { width: 8px; height: 8px; border-radius: 50%; background: var(--avst-rar, var(--avst-acento, #7c5cff)); }
+.avst-fchip:hover { border-color: var(--avst-acento, #7c5cff); }
+.avst-fchip-limpar { color: var(--avst-texto-2, #8a93a6); border-style: dashed; }
+.avst5-alea { position: relative; }
+.avst5-alea-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 41; width: 210px; background: var(--avst-superficie, #161b26); border: 1px solid var(--avst-borda, #232a38); border-radius: 10px; padding: 5px; box-shadow: 0 14px 34px rgba(0,0,0,.45); display: flex; flex-direction: column; }
+.avst5-alea-menu button { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: none; border: none; color: var(--avst-texto, #e6eaf2); border-radius: 7px; padding: 7px 9px; font-size: 12px; cursor: pointer; text-align: left; }
+.avst5-alea-menu button:hover { background: color-mix(in srgb, var(--avst-acento, #7c5cff) 14%, transparent); }
+.avst5-alea-menu small { color: var(--avst-texto-2, #8a93a6); font-size: 9.5px; }
+.avst5-comparar { position: absolute; bottom: 64px; left: 14px; z-index: 4; display: inline-flex; align-items: center; gap: 6px; background: rgba(13,16,23,.75); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2); border-radius: 999px; padding: 6px 12px; font-size: 11px; cursor: pointer; backdrop-filter: blur(4px); user-select: none; touch-action: none; }
+.avst5-comparar:active { border-color: var(--avst-acento, #7c5cff); }
+.avst5-comparando { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 4; background: rgba(13,16,23,.8); border: 1px solid var(--avst-acento, #7c5cff); color: var(--avst-texto, #e6eaf2); border-radius: 999px; padding: 5px 14px; font-size: 11px; backdrop-filter: blur(4px); }

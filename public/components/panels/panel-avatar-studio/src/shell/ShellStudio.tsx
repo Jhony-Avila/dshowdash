@@ -8,9 +8,11 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, ChevronsLeft, ChevronsRight, Clapperboard, Focus, LayoutGrid, Palette, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
+import { ArrowUp, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
-import { CATEGORIAS, itemPorId, validarConfig } from '../services/AvatarCatalog';
+import { CATEGORIAS, aleatorioInteligente, itemPorId, validarConfig } from '../services/AvatarCatalog';
+import type { ModoAleatorio } from '../services/AvatarCatalog';
+import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
 import { AvatarStore } from '../nucleo/estado';
 import type { Comando } from '../nucleo/estado';
@@ -203,6 +205,41 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     else store.limparPreview();
   }, [store]);
 
+  // §90: aleatório inteligente — bloqueios §70.1 NUNCA são trocados.
+  // Aplica direto (sem modal §69.1): a proteção já aconteceu no sorteio.
+  const [menuAleatorio, setMenuAleatorio] = useState(false);
+  const rodarAleatorio = useCallback((modoAlea: ModoAleatorio) => {
+    setMenuAleatorio(false);
+    const novo = aleatorioInteligente(paraLegado2d(store.estadoDraft), {
+      semente: Date.now() % 2147483647,
+      modo: modoAlea,
+      categoria,
+      bloqueados: lerBloqueios(),
+      favoritos: favoritos(),
+    });
+    aplicarComando(novo);
+  }, [store, categoria, aplicarComando]);
+
+  // §65.3: comparação por tecla — SEGURAR mostra a versão persistida
+  const [comparando, setComparando] = useState(false);
+  useEffect(() => {
+    const baixo = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName)) return;
+      if (e.key.toLowerCase() === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey) setComparando(true);
+    };
+    const cima = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'v') setComparando(false);
+    };
+    window.addEventListener('keydown', baixo);
+    window.addEventListener('keyup', cima);
+    return () => { window.removeEventListener('keydown', baixo); window.removeEventListener('keyup', cima); };
+  }, []);
+  const configPalco = useMemo(
+    () => (comparando ? validarConfig(paraLegado2d(store.estadoPersistido)) : configVisivel),
+    [comparando, configVisivel, store],
+  );
+
   // §68.2: resumo dos acessórios equipados no topo da categoria
   const resumoAcessorios = useMemo(() => {
     const nomes = (['acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco'] as const)
@@ -247,6 +284,23 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <strong>Avatar Studio</strong>
           <span className="avst5-header-sub">5.0 · novo estúdio (prévia)</span>
           <div className="avst5-header-acoes">
+            <div className="avst5-alea">
+              <button type="button" className="avst-botao" title="Aleatório inteligente (§90)"
+                aria-expanded={menuAleatorio} aria-haspopup="menu"
+                onClick={() => setMenuAleatorio((v) => !v)}>
+                <Dices size={14} aria-hidden /> Aleatório
+              </button>
+              {menuAleatorio && (<>
+                <button type="button" className="avst-fpop-fundo" aria-label="Fechar menu"
+                  onClick={() => setMenuAleatorio(false)} />
+                <div className="avst5-alea-menu" role="menu" aria-label="Modos de aleatório">
+                  <button type="button" role="menuitem" onClick={() => rodarAleatorio('completo')}>Completo <small>respeita bloqueios</small></button>
+                  <button type="button" role="menuitem" onClick={() => rodarAleatorio('categoria')}>Só esta categoria</button>
+                  <button type="button" role="menuitem" onClick={() => rodarAleatorio('cores')}>Só cores</button>
+                  <button type="button" role="menuitem" onClick={() => rodarAleatorio('favoritos')}>Dos favoritos</button>
+                </div>
+              </>)}
+            </div>
             <button type="button" className="avst-botao" title="Modo foco (F)"
               aria-pressed={modo === 'foco'}
               onClick={() => setModo((m) => (m === 'foco' ? 'edicao' : 'foco'))}>
@@ -282,9 +336,20 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}>
             <div className="avst5-palco">
               <div className="avst5-zoom" style={zoomEstilo}>
-                <AvatarSvg config={configVisivel} uid="avst5" />
+                <AvatarSvg config={configPalco} uid="avst5" />
               </div>
             </div>
+            {comparando && (
+              <div className="avst5-comparando" role="status">Original salvo · solte para voltar</div>
+            )}
+            {store.temMudancas && modo === 'edicao' && (
+              <button type="button" className="avst5-comparar" title="Segure para ver o original (V)"
+                onPointerDown={() => setComparando(true)}
+                onPointerUp={() => setComparando(false)}
+                onPointerLeave={() => setComparando(false)}>
+                <Eye size={13} aria-hidden /> Original
+              </button>
+            )}
             {modo !== 'edicao' && (
               <button type="button" className="avst5-sair-modo" title="Voltar à edição (Esc)"
                 onClick={() => setModo('edicao')}><X size={14} aria-hidden /> Sair</button>
