@@ -85,7 +85,7 @@ function idsEquipados(config: AvatarConfig, categoria: CategoriaId): string[] {
 
 export type AbaCatalogo = 'todos' | 'equipados' | 'favoritos' | 'novos' | 'bloqueados';
 
-export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos' }: {
+export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever }: {
   config: AvatarConfig;
   categoria: CategoriaId;
   /** ids liberados por conquistas/eventos (vem do /api/avatar/vida.php) */
@@ -93,6 +93,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   aoEscolher: (novo: AvatarConfig) => void;
   /** AS5 F2 S3 (P1 §22): aba externa do shell novo — 'todos' preserva o comportamento clássico */
   filtroAba?: AbaCatalogo;
+  /** AS5 F3 C1 (P2 §64): hover no card → preview no PALCO (null = sair) */
+  aoPrever?: (novo: AvatarConfig | null) => void;
 }) {
   const meta = CATEGORIAS.find((c) => c.id === categoria);
   const [busca, setBusca] = useState('');
@@ -119,7 +121,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   // (F2c) + bloqueados/ordenação (AS4 §23.2/§39.14)
   const equipadosAba = new Set(idsEquipados(config, categoria));
   const itens = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
+    const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const termos = normalizar(busca.trim()).split(/\s+/).filter(Boolean);
     const usados = itensUsados();
     const lista = itensDe(categoria)
       .filter((i) => !i.requerBase || i.requerBase.includes(config.base))
@@ -135,10 +138,11 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       .filter((i) => !tier || i.raridade === tier)
       .filter((i) => !soFavoritos || favs.has(i.id))
       .filter((i) => !ocultarBloqueados || !bloqueado(i))
-      .filter((i) => !termo
-        || i.nome.toLowerCase().includes(termo)
-        || i.tema.toLowerCase().includes(termo)
-        || (i.lore ?? i.descricao).toLowerCase().includes(termo));
+      .filter((i) => {
+        if (!termos.length) return true;
+        const alvo = normalizar(`${i.nome} ${i.tema} ${i.lore ?? i.descricao}`);
+        return termos.every((t) => alvo.includes(t)); // AND (§57)
+      });
     if (ordem === 'raridade') lista.sort((a, b) => nivelRaridade(b.raridade) - nivelRaridade(a.raridade));
     if (ordem === 'nome') lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
     if (ordem === 'recentes') lista.sort((a, b) => Number(usados.has(b.id)) - Number(usados.has(a.id)));
@@ -222,7 +226,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           </button>
         )}
         {itens.map((item) => (
-          <CardItem key={item.id} item={item} config={config} modo={modo}
+          <CardItem key={item.id} item={item} config={config} modo={modo} aoPrever={aoPrever}
             ativo={equipados.has(item.id)}
             favorito={favs.has(item.id)}
             bloqueado={bloqueado(item)}
@@ -246,7 +250,7 @@ function Pips({ raridade }: { raridade: Raridade }) {
   );
 }
 
-function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar, aoEscolher }: {
+function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar, aoEscolher, aoPrever }: {
   item: ParteDef;
   config: AvatarConfig;
   modo: ModoGrade;
@@ -255,6 +259,7 @@ function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar,
   bloqueado: boolean;
   aoFavoritar: () => void;
   aoEscolher: () => void;
+  aoPrever?: (novo: AvatarConfig | null) => void;
 }) {
   const rar = RARIDADES[item.raridade];
   const cardRef = useRef<HTMLDivElement>(null);
@@ -271,6 +276,8 @@ function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar,
       data-raridade={item.raridade}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
       onClick={escolher}
+      onMouseEnter={aoPrever && !bloqueado ? () => aoPrever(preview) : undefined}
+      onMouseLeave={aoPrever ? () => aoPrever(null) : undefined}
       onKeyDown={(e) => { if (escolher && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); escolher(); } }}
       tabIndex={0}>
       <span className="avst-card-thumb">

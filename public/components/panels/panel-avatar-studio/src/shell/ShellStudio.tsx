@@ -19,6 +19,7 @@ import { AvatarSvg } from '../components/AvatarSvg';
 import { GradeItens } from '../components/GradeItens';
 import type { AbaCatalogo } from '../components/GradeItens';
 import { Cores } from '../components/Cores';
+import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { BarraSalvamento } from './BarraSalvamento';
 
 const CHAVE_LARGURAS = 'dshow.avst5.larguras.v1';
@@ -94,6 +95,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [painelFechado, setPainelFechado] = useState(false);
   const [mostrarTopo, setMostrarTopo] = useState(false);
   const [propriedades, setPropriedades] = useState(false);
+  const [bloqueios, setBloqueios] = useState<Set<string>>(() => lerBloqueios());
+  const [, setTicFavs] = useState(0); // re-render após favoritar no Equipados
+  // §69.1: conflito pendente aguardando decisão do usuário
+  const [conflito, setConflito] = useState<{ novo: AvatarConfig; slot: string; antes: string; depois: string } | null>(null);
   const refPainel = useRef<HTMLDivElement>(null);
   const [fundo, setFundo] = useState<FundoPalco>(() => {
     try {
@@ -147,7 +152,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   };
 
   // GradeItens fala AvatarConfig — cada escolha vira COMANDO com inverso
-  const aoEscolher = useCallback((novo: AvatarConfig) => {
+  const aplicarComando = useCallback((novo: AvatarConfig) => {
     const antes = store.estadoDraft;
     const depois = deLegado2d(novo);
     const cmd: Comando = {
@@ -156,6 +161,32 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       desfazer: () => antes,
     };
     store.executar(cmd);
+  }, [store]);
+
+  // §69.1: SUBSTITUIÇÃO em slot (item A → item B) ou slot BLOQUEADO pede
+  // confirmação explícita — nada de troca silenciosa
+  const aoEscolher = useCallback((novo: AvatarConfig) => {
+    const antes = paraLegado2d(store.estadoDraft);
+    const chaves = new Set([...Object.keys(antes.camadas), ...Object.keys(novo.camadas)]);
+    for (const slot of chaves) {
+      const a = (antes.camadas as Record<string, string | undefined>)[slot];
+      const b = (novo.camadas as Record<string, string | undefined>)[slot];
+      if (a && b && a !== b && (bloqueios.has(slot) || slot.startsWith('acessorio'))) {
+        setConflito({ novo, slot, antes: a, depois: b });
+        return;
+      }
+      if (a && !b && bloqueios.has(slot)) { // remoção de slot bloqueado
+        setConflito({ novo, slot, antes: a, depois: '' });
+        return;
+      }
+    }
+    aplicarComando(novo);
+  }, [store, bloqueios, aplicarComando]);
+
+  // §64: hover do card → preview no palco (nunca contamina o draft)
+  const aoPrever = useCallback((cfg: AvatarConfig | null) => {
+    if (cfg) store.visualizar(() => deLegado2d(cfg));
+    else store.limparPreview();
   }, [store]);
 
   // arraste das larguras (R3/R4) com persistência
@@ -290,8 +321,22 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     <Cores config={configVisivel} aoMudar={aoEscolher} />
                   </section>
                 )}
-                <GradeItens config={configVisivel} categoria={categoria}
-                  desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba} />
+                {aba === 'equipados' ? (
+                  <Equipados config={paraLegado2d(store.estadoDraft)} bloqueios={bloqueios}
+                    aoRemover={(slot) => {
+                      const cfg = paraLegado2d(store.estadoDraft);
+                      const camadas = { ...cfg.camadas } as Record<string, string>;
+                      delete camadas[slot];
+                      aoEscolher({ ...cfg, camadas });
+                    }}
+                    aoTrocar={(cat) => { setCategoria(cat); setAba('todos'); }}
+                    aoBloquear={(slot) => setBloqueios(new Set(alternarBloqueio(slot)))}
+                    aoMudarFavs={() => setTicFavs((t) => t + 1)} />
+                ) : (
+                  <GradeItens config={configVisivel} categoria={categoria}
+                    desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba}
+                    aoPrever={aoPrever} />
+                )}
               </div>
             )}
             {!painelFechado && mostrarTopo && (
@@ -302,6 +347,25 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
           </aside>
         </div>
+        {conflito && (
+          <div className="avst5-modal-fundo" role="dialog" aria-modal="true" aria-label="Conflito de equipamento">
+            <div className="avst5-modal">
+              <p>
+                {conflito.depois
+                  ? <>Equipar este item vai <strong>substituir</strong> o que está no slot{bloqueios.has(conflito.slot) ? ' BLOQUEADO' : ''}.</>
+                  : <>Este slot está <strong>bloqueado</strong> — remover mesmo assim?</>}
+              </p>
+              <div className="avst5-modal-acoes">
+                <button type="button" className="avst-botao"
+                  onClick={() => { store.limparPreview(); setConflito(null); }}>Cancelar</button>
+                <button type="button" className="avst-botao avst-botao-primario"
+                  onClick={() => { aplicarComando(conflito.novo); setConflito(null); }}>
+                  {conflito.depois ? 'Equipar e substituir' : 'Remover'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </LimiteShell>
   );

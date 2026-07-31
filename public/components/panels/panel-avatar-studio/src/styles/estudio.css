@@ -1240,3 +1240,15 @@
   .avst5-painel-fechado .avst5-painel-topo { display: none; }
   .avst5-drawer-abrir { display: inline-flex; position: absolute; bottom: 64px; right: 14px; z-index: 5; background: var(--avst-acento, #7c5cff); border: none; color: #fff; border-radius: 50%; width: 44px; height: 44px; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
 }
+
+/* AS5 F3 C1 — Equipados (§70) + modal de conflito (§69.1) */
+.avst5-equipados { display: flex; flex-direction: column; gap: 6px; }
+.avst5-eq-linha { display: flex; align-items: center; gap: 10px; border: 1px solid var(--avst-borda, #232a38); border-radius: 9px; padding: 8px 10px; }
+.avst5-eq-slot { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--avst-texto-2, #8a93a6); width: 128px; flex-shrink: 0; }
+.avst5-eq-nome { font-size: 12px; flex: 1; }
+.avst5-eq-acoes { display: flex; gap: 4px; }
+.avst5-eq-acoes button { background: none; border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); border-radius: 6px; padding: 4px 5px; cursor: pointer; line-height: 0; }
+.avst5-eq-acoes button:hover, .avst5-eq-acoes .avst5-eq-on { color: var(--avst-texto, #e6eaf2); border-color: var(--avst-acento, #7c5cff); }
+.avst5-modal-fundo { position: fixed; inset: 0; background: rgba(5,7,12,.6); display: flex; align-items: center; justify-content: center; z-index: 60; backdrop-filter: blur(3px); }
+.avst5-modal { background: var(--avst-superficie, #161b26); border: 1px solid var(--avst-borda, #232a38); border-radius: 12px; padding: 18px 20px; max-width: 380px; font-size: 13px; line-height: 1.55; }
+.avst5-modal-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
