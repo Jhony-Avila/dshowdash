@@ -14,6 +14,7 @@ const tmp = mkdtempSync(join(tmpdir(), 'avst-nucleo-'));
 writeFileSync(join(tmp, 'prova.ts'), `
 import { AvatarStore } from '${PAINEL}/src/nucleo/estado';
 import { avaliarRegras, checksumEstado, estadoVazio } from '${PAINEL}/src/nucleo/contratos';
+import { deLegado2d, deLegado3d, paraLegado2d } from '${PAINEL}/src/nucleo/adaptadores';
 import type { Comando, EstadoAvatar } from '${PAINEL}/src/nucleo/estado';
 
 const falhas: string[] = [];
@@ -75,6 +76,28 @@ ok(!avaliarRegras({ id: 'x', slot: null, regras: [{ rule: 'requires_renderer', r
   'requires_renderer deveria bloquear');
 ok(avaliarRegras({ id: 'x', slot: null, regras: [{ rule: 'requires_asset', assets: ['ace_oculos'] }] }, estado, '2d').ok,
   'requires_asset deveria passar');
+
+// adaptadores: roundtrip 2D sem perda + migração de 'acessorio' + 3D parcial
+const cfg = { formato: 'camadas' as const, versao: 1, base: 'bas_gotico',
+  camadas: { cabelo: 'cab_moicano', acessorio: 'ace_oculos', xdesconhecida: 'lixo' },
+  cores: { destaque: '#7c5cff', pele: '#e0ac69' }, titulo: 'tit_lenda' };
+const est = deLegado2d(cfg);
+ok(est.body.base === 'bas_gotico', 'deLegado2d base');
+ok(est.equipment.acessorio_cabeca === 'ace_oculos', 'acessorio legado deveria migrar p/ cabeca');
+ok(!('xdesconhecida' in est.equipment), 'chave desconhecida deveria ser descartada');
+ok(est.presentation.titulo === 'tit_lenda', 'titulo deveria virar presentation');
+const volta = paraLegado2d(est);
+ok(volta.base === 'bas_gotico' && volta.camadas.cabelo === 'cab_moicano'
+  && volta.camadas.acessorio_cabeca === 'ace_oculos' && volta.cores.destaque === '#7c5cff'
+  && volta.titulo === 'tit_lenda', 'roundtrip 2D perdeu dados');
+const est3 = deLegado3d({ arquetipo: 'humano', sockets: { head: 'soc_coroa', pet: 'soc_pet_bit' },
+  cores: { pele: '#c68642' }, material: { metal: 0.6, brilho: 0.7 }, morfos: { bravo: 0.5 },
+  iluminacao: 'neon', cenario: 'dojo', hora: 'noite', clima: 'neve' });
+ok(est3.equipment.head === 'soc_coroa' && est3.equipment.pet === 'soc_pet_bit', '3d sockets');
+ok(est3.environment.cenario === 'dojo' && est3.environment.clima === 'neve', '3d environment');
+ok(est3.renderer.preferido === '3d' && est3.body.morfos.bravo === 0.5, '3d renderer/morfos');
+const semSockets3d = paraLegado2d(est3);
+ok(!('head' in semSockets3d.camadas) && !('pet' in semSockets3d.camadas), 'sockets 3D vazaram p/ 2D');
 
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);

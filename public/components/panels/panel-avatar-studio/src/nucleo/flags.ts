@@ -8,6 +8,7 @@
 const PADROES: Record<string, boolean> = {
   'as5.novo_shell': false,       // F2 — corte do shell novo
   'as5.registry_api': false,     // F1 — catálogo servido pelo registry
+  'as5.estado_api': false,       // F1 — persistência via §619 (leitura dual)
   'as5.undo_redo': true,         // F1 — pilhas de comando na UI
   'as5.photo_studio': false,     // F6
   'as5.ia_assistiva': false,     // F8
