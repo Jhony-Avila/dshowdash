@@ -180,6 +180,36 @@ delete (semAura.camadas as Record<string, string>).aura;
 const rv = aleatorioInteligente(semAura, { semente: 1, modo: 'completo', bloqueados: new Set(['aura']) });
 ok(!rv.camadas.aura, 'slot bloqueado VAZIO foi preenchido');
 
+// §401 (F5): contrato RenderizadorAvatar + Renderizador2d headless
+import { pendenciasPara } from '${PAINEL}/src/nucleo/renderizador';
+import { Renderizador2d } from '${PAINEL}/src/services/Renderizador2d';
+const estadoMisto = { ...estadoVazio(), body: { base: 'bas_classica', morfos: {} },
+  equipment: { cabelo: itensDe('cabelo')[0].id, aura: itensDe('aura')[0].id,
+    head: 'soc_coroa', pet: 'soc_pet_bit' } };
+const pend = pendenciasPara(estadoMisto as never, '2d');
+ok(pend.includes('head') && pend.includes('pet') && !pend.includes('cabelo'),
+  'pendenciasPara deveria listar SÓ os sockets 3D');
+ok(pendenciasPara(estadoMisto as never, '3d').length === 0, '3D não deveria ter pendências');
+const r2d = new Renderizador2d();
+await r2d.inicializar({ qualidade: 'auto' });
+const alvoFake = { innerHTML: '' };
+await r2d.montar(alvoFake);
+const res = await r2d.aplicarEstado(estadoMisto as never);
+ok(res.ok && res.pendencias.length === 2, 'aplicarEstado: ok+pendencias');
+ok(alvoFake.innerHTML.startsWith('<svg') && alvoFake.innerHTML.includes('</svg>'),
+  'renderizador 2D não pintou SVG no alvo');
+const animado = alvoFake.innerHTML;
+r2d.pausar();
+ok(!alvoFake.innerHTML.includes('<animate') && animado !== alvoFake.innerHTML,
+  'pausar deveria congelar o SMIL');
+r2d.retomar();
+ok(alvoFake.innerHTML === animado, 'retomar deveria voltar ao render animado');
+const cap = await r2d.capturar({ largura: 96, altura: 96, deterministica: true });
+ok(cap.dataUri.startsWith('data:image/svg+xml') && !decodeURIComponent(cap.dataUri).includes('<animate'),
+  'captura deveria ser dataUri ESTÁTICO (§508)');
+await r2d.descartar();
+ok(alvoFake.innerHTML === '', 'descartar deveria limpar o alvo');
+
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);
 `);
