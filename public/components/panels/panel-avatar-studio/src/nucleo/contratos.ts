@@ -79,13 +79,14 @@ export interface EstadoAvatar {
   schemaVersion: number;
   identity: { nome: string | null; slug: string | null };
   body: { base: AssetId | null; morfos: Record<string, number> };
-  /** `params` (§71): propriedades por slot equipado (aura/emblema…) — campo
-   *  OPCIONAL: ausente quando nada foi regulado, preservando o checksum de
-   *  todos os estados anteriores à feature (sem bump de schemaVersion). */
+  /** `params` (§71) e `coresCamada` (§73): regulagens por slot equipado —
+   *  campos OPCIONAIS: ausentes quando nada foi regulado, preservando o
+   *  checksum dos estados anteriores (sem bump de schemaVersion). */
   appearance: {
     cores: Record<string, string>;
     materiais: Record<string, number>;
     params?: Record<string, Record<string, number>>;
+    coresCamada?: Record<string, Record<string, string>>;
   };
   equipment: Partial<Record<SlotId, AssetId>>;
   presentation: { titulo: AssetId | null; poderId: AssetId | null; pose: string | null; expressao: string | null };

@@ -105,6 +105,15 @@ export interface AvatarConfig {
    * publicação reagem a mudanças de propriedade sem código extra.
    */
   params?: Partial<Record<CamadaId, ParamsAsset>>;
+  /**
+   * §73 (AS5 F3 C3): CANAIS DE COR por camada — override local da paleta
+   * para UMA peça. Canal = família de cor que a arte já usa (usaCores do
+   * item): 'roupa' recolore a peça, 'destaque' os detalhes — sem que a
+   * troca vaze para aura/emblema/moldura (que usam o 'destaque' GLOBAL).
+   * Sanitizado no validarConfig (só camadas equipadas, só canais que o
+   * item declara, hex normalizado, valor igual ao global não persiste).
+   */
+  coresCamada?: Partial<Record<CamadaId, Partial<Record<SlotCor, string>>>>;
 }
 
 export interface AvatarDoUsuario {

@@ -134,6 +134,31 @@ ok(comP.includes('opacity="0.5"') && comP.includes('dur="1.6s"'), 'aura: opacity
 const emb = aplicarParamsSvg('emblema', '<circle/>', { escala: 1.2 });
 ok(emb.includes('translate(152 206) scale(1.2)'), 'emblema: escala fora do centro do peito');
 
+// §73 (F3 C3): canais de cor por camada — roundtrip + paleta LOCAL no motor
+import { renderAvatar } from '${PAINEL}/src/engine/render';
+const cfgC = { formato: 'camadas' as const, versao: 1, base: 'bas_gotico',
+  camadas: { roupa: 'rou_x', aura: 'aur_x' }, cores: { destaque: '#7c5cff' },
+  coresCamada: { roupa: { destaque: '#ff5f8f' } } };
+const estC = deLegado2d(cfgC);
+ok(estC.appearance.coresCamada?.roupa?.destaque === '#ff5f8f', 'deLegado2d perdeu coresCamada');
+ok(paraLegado2d(estC).coresCamada?.roupa?.destaque === '#ff5f8f', 'roundtrip perdeu coresCamada');
+ok(paraLegado2d(deLegado2d({ ...cfgC, coresCamada: undefined })).coresCamada === undefined,
+  'config sem canais deveria voltar SEM coresCamada');
+// motor: a peça com canal usa a paleta LOCAL; quem divide a cor global não muda
+const resolver = (id: string) => ({
+  id, categoria: id.startsWith('rou') ? 'roupa' : 'aura', nome: id, descricao: '',
+  raridade: 'comum', tema: 't',
+  render: (p: { destaque: { base: string } }) =>
+    '<rect data-id="' + id + '" fill="' + p.destaque.base + '"/>',
+} as never);
+const svgC = renderAvatar(cfgC as never, resolver as never, { uid: 'tt' });
+ok(svgC.includes('data-id="rou_x" fill="#ff5f8f"'), 'roupa deveria usar o canal PRÓPRIO');
+ok(svgC.includes('data-id="aur_x" fill="#7c5cff"'), 'aura deveria manter o destaque GLOBAL');
+// sem override → byte-idêntico ao render de antes da feature
+const svgSem1 = renderAvatar({ ...cfgC, coresCamada: undefined } as never, resolver as never, { uid: 'tt' });
+const svgSem2 = renderAvatar({ ...cfgC, coresCamada: {} } as never, resolver as never, { uid: 'tt' });
+ok(svgSem1 === svgSem2, 'coresCamada vazio deveria render byte-identico ao ausente');
+
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);
 `);

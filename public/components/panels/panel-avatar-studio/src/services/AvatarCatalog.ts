@@ -392,12 +392,51 @@ export function validarConfig(bruto: unknown): AvatarConfig {
     }
     if (Object.keys(params).length) saida.params = params;
   }
+  // §73 (AS5 F3 C3): canais de cor por camada — só camadas equipadas, só
+  // canais que o ITEM declara (usaCores), hex normalizado; valor idêntico
+  // ao global é um no-op e não persiste (byte-estável)
+  if (b.coresCamada && typeof b.coresCamada === 'object') {
+    const coresCamada: NonNullable<AvatarConfig['coresCamada']> = {};
+    for (const [chave, canais] of Object.entries(b.coresCamada)) {
+      const idItem = camadas[chave as CamadaId];
+      if (!idItem || !canais || typeof canais !== 'object') continue;
+      const declarados = POR_ID.get(idItem)?.usaCores ?? [];
+      const limpos: Partial<Record<SlotCor, string>> = {};
+      for (const canal of declarados) {
+        const hex = (canais as Record<string, unknown>)[canal];
+        if (typeof hex !== 'string') continue;
+        const norm = normalizarHex(hex, saida.cores[canal]);
+        if (norm !== saida.cores[canal]) limpos[canal] = norm;
+      }
+      if (Object.keys(limpos).length) coresCamada[chave as CamadaId] = limpos;
+    }
+    if (Object.keys(coresCamada).length) saida.coresCamada = coresCamada;
+  }
   return saida;
 }
 
 // ── Propriedades por asset (§71) — fachada para a UI ────────────────
 export { PARAMS_POR_CATEGORIA, paramsDaCamada } from '../engine/params';
 export type { ParamDef } from '../engine/params';
+
+// ── Paletas de roupa (§74) — presets que preenchem os CANAIS (§73) ──
+// 'Original' não está na lista: é a AÇÃO de remover o override da peça.
+// 'Personalizado' também não: é qualquer escolha manual nos canais.
+export interface PaletaRoupa {
+  id: string;
+  nome: string;
+  canais: { roupa: string; destaque: string };
+}
+export const PALETAS_ROUPA: PaletaRoupa[] = [
+  { id: 'pal_dshow', nome: 'Dshow', canais: { roupa: '#20242e', destaque: '#7c5cff' } },
+  { id: 'pal_executivo', nome: 'Executivo', canais: { roupa: '#2b2f3a', destaque: '#c9a75a' } },
+  { id: 'pal_mono', nome: 'Monocromático', canais: { roupa: '#3a3f4c', destaque: '#8a93a6' } },
+  { id: 'pal_cyber', nome: 'Cyber', canais: { roupa: '#1a1035', destaque: '#4cd9e8' } },
+  { id: 'pal_gamer', nome: 'Gamer', canais: { roupa: '#16241c', destaque: '#39d98a' } },
+  { id: 'pal_neon', nome: 'Neon', canais: { roupa: '#241436', destaque: '#ff5f8f' } },
+  { id: 'pal_claro', nome: 'Claro', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+  { id: 'pal_escuro', nome: 'Escuro', canais: { roupa: '#14161d', destaque: '#5b3d8a' } },
+];
 
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────
 
