@@ -79,7 +79,14 @@ export interface EstadoAvatar {
   schemaVersion: number;
   identity: { nome: string | null; slug: string | null };
   body: { base: AssetId | null; morfos: Record<string, number> };
-  appearance: { cores: Record<string, string>; materiais: Record<string, number> };
+  /** `params` (§71): propriedades por slot equipado (aura/emblema…) — campo
+   *  OPCIONAL: ausente quando nada foi regulado, preservando o checksum de
+   *  todos os estados anteriores à feature (sem bump de schemaVersion). */
+  appearance: {
+    cores: Record<string, string>;
+    materiais: Record<string, number>;
+    params?: Record<string, Record<string, number>>;
+  };
   equipment: Partial<Record<SlotId, AssetId>>;
   presentation: { titulo: AssetId | null; poderId: AssetId | null; pose: string | null; expressao: string | null };
   environment: { cenario: string | null; iluminacao: string | null; hora: string | null; clima: string | null };
@@ -103,9 +110,21 @@ export function estadoVazio(): EstadoAvatar {
   };
 }
 
+/** Serialização canônica: chaves ordenadas em TODOS os níveis. (Bug F1
+ *  corrigido na F3 C2: o replacer em array do JSON.stringify era uma
+ *  WHITELIST recursiva — descartava as chaves internas de equipment/body
+ *  e igualava estados DIFERENTES, quebrando o lock otimista §619.1.) */
+function serializarCanonico(v: unknown): string {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v) ?? 'null';
+  if (Array.isArray(v)) return `[${v.map(serializarCanonico).join(',')}]`;
+  const o = v as Record<string, unknown>;
+  const chaves = Object.keys(o).filter((k) => o[k] !== undefined).sort();
+  return `{${chaves.map((k) => `${JSON.stringify(k)}:${serializarCanonico(o[k])}`).join(',')}}`;
+}
+
 /** Checksum determinístico do estado (concorrência §619.1 / auditoria). */
 export function checksumEstado(e: EstadoAvatar): string {
-  const texto = JSON.stringify(e, Object.keys(e as unknown as Record<string, unknown>).sort());
+  const texto = serializarCanonico(e);
   let h = 5381;
   for (let i = 0; i < texto.length; i++) h = ((h * 33) ^ texto.charCodeAt(i)) >>> 0;
   return h.toString(36);

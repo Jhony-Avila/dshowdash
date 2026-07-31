@@ -18,6 +18,8 @@ export interface ConfigLegado2d {
   camadas: Partial<Record<string, string>>;
   cores: Record<string, string>;
   titulo?: string;
+  /** §71: propriedades por camada (F3 C2) — roundtrip sem perda. */
+  params?: Partial<Record<string, Record<string, number>>>;
 }
 
 const SLOTS_VALIDOS = new Set<string>(SLOTS_EQUIPAMENTO);
@@ -33,6 +35,13 @@ export function deLegado2d(cfg: ConfigLegado2d): EstadoAvatar {
     if (SLOTS_VALIDOS.has(slot)) e.equipment[slot as SlotId] = id;
   }
   e.appearance.cores = { ...(cfg.cores ?? {}) };
+  // §71: propriedades acompanham a MESMA regra das camadas (chave conhecida)
+  for (const [chave, valores] of Object.entries(cfg.params ?? {})) {
+    if (!valores || !Object.keys(valores).length) continue;
+    const slot = chave === 'acessorio' ? 'acessorio_cabeca' : chave;
+    if (!SLOTS_VALIDOS.has(slot)) continue;
+    (e.appearance.params ??= {})[slot] = { ...valores };
+  }
   e.presentation.titulo = cfg.titulo ?? null;
   e.renderer.preferido = '2d';
   return e;
@@ -48,6 +57,13 @@ export function paraLegado2d(e: EstadoAvatar, baseFallback = 'bas_classica'): Co
       'wrist_l', 'wrist_r', 'hand_l', 'hand_r', 'companion', 'pet'].includes(slot)) continue;
     camadas[slot] = id;
   }
+  // §71: propriedades voltam SÓ das camadas que voltaram (nada de slot 3D)
+  const params: Partial<Record<string, Record<string, number>>> = {};
+  for (const [slot, valores] of Object.entries(e.appearance.params ?? {})) {
+    if (camadas[slot] && valores && Object.keys(valores).length) {
+      params[slot] = { ...valores };
+    }
+  }
   return {
     formato: 'camadas',
     versao: 1,
@@ -55,6 +71,7 @@ export function paraLegado2d(e: EstadoAvatar, baseFallback = 'bas_classica'): Co
     camadas,
     cores: { ...e.appearance.cores },
     ...(e.presentation.titulo ? { titulo: e.presentation.titulo } : {}),
+    ...(Object.keys(params).length ? { params } : {}),
   };
 }
 

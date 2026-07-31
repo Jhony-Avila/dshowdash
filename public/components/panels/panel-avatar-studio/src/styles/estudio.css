@@ -1252,3 +1252,20 @@
 .avst5-modal-fundo { position: fixed; inset: 0; background: rgba(5,7,12,.6); display: flex; align-items: center; justify-content: center; z-index: 60; backdrop-filter: blur(3px); }
 .avst5-modal { background: var(--avst-superficie, #161b26); border: 1px solid var(--avst-borda, #232a38); border-radius: 12px; padding: 18px 20px; max-width: 380px; font-size: 13px; line-height: 1.55; }
 .avst5-modal-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+/* AS5 F3 C2 — navegação por slot (§68.2/§68.3) + propriedades por asset (§71) */
+.avst5-resumo-slots { font-size: 11px; color: var(--avst-texto-2, #8a93a6); line-height: 1.5; margin: 2px 2px 8px; }
+.avst5-resumo-slots strong { color: var(--avst-texto, #e6eaf2); font-weight: 600; }
+.avst5-chips { display: flex; gap: 5px; flex-wrap: wrap; margin: 0 0 10px; }
+.avst5-chip { background: none; border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); border-radius: 999px; padding: 4px 12px; font-size: 11px; cursor: pointer; transition: border-color .15s ease, color .15s ease; }
+.avst5-chip:hover { color: var(--avst-texto, #e6eaf2); }
+.avst5-chip-on { color: var(--avst-texto, #e6eaf2); border-color: var(--avst-acento, #7c5cff); background: color-mix(in srgb, var(--avst-acento, #7c5cff) 14%, transparent); }
+.avst5-props { margin-top: 12px; border-top: 1px solid var(--avst-borda, #232a38); padding-top: 10px; }
+.avst5-props-titulo { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--avst-texto-2, #8a93a6); font-weight: 600; }
+.avst5-props-item { border: 1px solid var(--avst-borda, #232a38); border-radius: 9px; padding: 9px 11px; margin-bottom: 8px; }
+.avst5-props-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.avst5-props-reset { display: inline-flex; align-items: center; gap: 4px; background: none; border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); border-radius: 6px; padding: 3px 8px; font-size: 10.5px; cursor: pointer; }
+.avst5-props-reset:hover { color: var(--avst-texto, #e6eaf2); border-color: var(--avst-acento, #7c5cff); }
+.avst5-slider { display: grid; grid-template-columns: 84px 1fr 44px; align-items: center; gap: 8px; margin: 5px 0; font-size: 11.5px; color: var(--avst-texto-2, #8a93a6); }
+.avst5-slider input[type="range"] { width: 100%; accent-color: var(--avst-acento, #7c5cff); cursor: pointer; }
+.avst5-slider-valor { text-align: right; font-variant-numeric: tabular-nums; color: var(--avst-texto, #e6eaf2); }

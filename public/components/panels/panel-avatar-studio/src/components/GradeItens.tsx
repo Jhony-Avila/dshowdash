@@ -10,7 +10,7 @@ import { useMemo, useRef, useState } from 'react';
 import {
   ArrowDownUp, Ban, Check, Grid2x2, LayoutGrid, List, Lock, LockOpen, Search, Star,
 } from 'lucide-react';
-import type { AvatarConfig, CategoriaId, Raridade } from '../domain/types';
+import type { AvatarConfig, CategoriaId, Raridade, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, validarConfig } from '../services/AvatarCatalog';
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 import type { ParteDef } from '../engine/base-api';
@@ -85,7 +85,7 @@ function idsEquipados(config: AvatarConfig, categoria: CategoriaId): string[] {
 
 export type AbaCatalogo = 'todos' | 'equipados' | 'favoritos' | 'novos' | 'bloqueados';
 
-export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever }: {
+export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever, filtroSlot = 'todos' }: {
   config: AvatarConfig;
   categoria: CategoriaId;
   /** ids liberados por conquistas/eventos (vem do /api/avatar/vida.php) */
@@ -95,6 +95,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   filtroAba?: AbaCatalogo;
   /** AS5 F3 C1 (P2 §64): hover no card → preview no PALCO (null = sair) */
   aoPrever?: (novo: AvatarConfig | null) => void;
+  /** AS5 F3 C2 (P2 §68.3): chips de navegação por slot — só age em 'acessorio' */
+  filtroSlot?: 'todos' | SlotAcessorio;
 }) {
   const meta = CATEGORIAS.find((c) => c.id === categoria);
   const [busca, setBusca] = useState('');
@@ -135,6 +137,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           default: return true;
         }
       })
+      .filter((i) => categoria !== 'acessorio' || filtroSlot === 'todos'
+        || (i.slot ?? 'cabeca') === filtroSlot) // §68.3
       .filter((i) => !tier || i.raridade === tier)
       .filter((i) => !soFavoritos || favs.has(i.id))
       .filter((i) => !ocultarBloqueados || !bloqueado(i))
@@ -148,7 +152,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     if (ordem === 'recentes') lista.sort((a, b) => Number(usados.has(b.id)) - Number(usados.has(a.id)));
     return lista;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria, config.base, busca, tier, soFavoritos, ocultarBloqueados, ordem, favs, desbloqueados, filtroAba]);
+  }, [categoria, config.base, busca, tier, soFavoritos, ocultarBloqueados, ordem, favs, desbloqueados, filtroAba, filtroSlot]);
 
   const equipados = new Set(idsEquipados(config, categoria));
   const nomesEquipados = [...equipados].map((id) => itemPorId(id)?.nome).filter(Boolean).join(' + ');

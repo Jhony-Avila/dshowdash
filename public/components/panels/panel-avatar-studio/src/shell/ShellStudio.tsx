@@ -9,18 +9,28 @@
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowUp, ChevronsLeft, ChevronsRight, Clapperboard, Focus, LayoutGrid, Palette, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
-import type { AvatarConfig, CategoriaId } from '../domain/types';
-import { CATEGORIAS, validarConfig } from '../services/AvatarCatalog';
+import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
+import { CATEGORIAS, itemPorId, validarConfig } from '../services/AvatarCatalog';
 import { conectarTelemetria } from '../services/ObservarNucleo';
 import { AvatarStore } from '../nucleo/estado';
 import type { Comando } from '../nucleo/estado';
+import { checksumEstado } from '../nucleo/contratos';
 import { deLegado2d, paraLegado2d } from '../nucleo/adaptadores';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { GradeItens } from '../components/GradeItens';
 import type { AbaCatalogo } from '../components/GradeItens';
 import { Cores } from '../components/Cores';
 import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
+import { PropriedadesAsset } from './PropriedadesAsset';
 import { BarraSalvamento } from './BarraSalvamento';
+
+/** §68.3: chips de navegação por slot na categoria Acessórios. */
+const CHIPS_SLOT: Array<{ id: 'todos' | SlotAcessorio; nome: string }> = [
+  { id: 'todos', nome: 'Todos' },
+  { id: 'cabeca', nome: 'Cabeça' },
+  { id: 'rosto', nome: 'Rosto' },
+  { id: 'pescoco', nome: 'Pescoço' },
+];
 
 const CHAVE_LARGURAS = 'dshow.avst5.larguras.v1';
 const CHAVE_FUNDO = 'dshow.avst5.fundo.v1';
@@ -89,6 +99,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [categoria, setCategoria] = useState<CategoriaId>('base');
   const [larguras, setLarguras] = useState(lerLarguras);
   const [aba, setAba] = useState<AbaCatalogo>('todos');
+  // §68.3: chip de slot ativo (só em Acessórios; troca de categoria zera)
+  const [filtroSlot, setFiltroSlot] = useState<'todos' | SlotAcessorio>('todos');
   // R7/R8: modos do palco — edicao | foco (F/Esc) | studio (apresentação)
   const [modo, setModo] = useState<'edicao' | 'foco' | 'studio'>('edicao');
   const [painelLargo, setPainelLargo] = useState(false);
@@ -155,6 +167,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const aplicarComando = useCallback((novo: AvatarConfig) => {
     const antes = store.estadoDraft;
     const depois = deLegado2d(novo);
+    // no-op nunca entra na pilha (clique em slider parado, re-clique na base)
+    if (checksumEstado(antes) === checksumEstado(depois)) return;
     const cmd: Comando = {
       nome: `equipar:${novoDiff(paraLegado2d(antes), novo)}`,
       executar: () => depois,
@@ -188,6 +202,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     if (cfg) store.visualizar(() => deLegado2d(cfg));
     else store.limparPreview();
   }, [store]);
+
+  // §68.2: resumo dos acessórios equipados no topo da categoria
+  const resumoAcessorios = useMemo(() => {
+    const nomes = (['acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco'] as const)
+      .map((s) => configVisivel.camadas[s])
+      .filter((id): id is string => Boolean(id))
+      .map((id) => itemPorId(id)?.nome ?? id);
+    return nomes;
+  }, [configVisivel]);
 
   // arraste das larguras (R3/R4) com persistência
   const arraste = useRef<{ lado: 'esq' | 'dir'; x0: number; w0: number } | null>(null);
@@ -246,7 +269,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {CATEGORIAS.map((c) => (
               <button key={c.id} type="button"
                 className={`avst5-cat${categoria === c.id ? ' avst5-cat-on' : ''}`}
-                title={c.nome} onClick={() => setCategoria(c.id)}>
+                title={c.nome} onClick={() => { setCategoria(c.id); setFiltroSlot('todos'); }}>
                 <span className="avst5-cat-inicial" aria-hidden>{c.nome.slice(0, 1)}</span>
                 {!compacta && <span>{c.nome}</span>}
               </button>
@@ -317,10 +340,27 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               <div className="avst5-painel-scroll" ref={refPainel}
                 onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
                 {propriedades && (
-                  <section className="avst5-propriedades" aria-label="Cores">
+                  <section className="avst5-propriedades" aria-label="Cores e propriedades">
                     <Cores config={configVisivel} aoMudar={aoEscolher} />
+                    {/* §71: sliders das camadas equipadas com propriedades */}
+                    <PropriedadesAsset config={configVisivel} aoAplicar={aoEscolher} aoPrever={aoPrever} />
                   </section>
                 )}
+                {aba !== 'equipados' && categoria === 'acessorio' && (<>
+                  {/* §68.2/§68.3: resumo + navegação por slot */}
+                  <div className="avst5-resumo-slots" data-teste="resumo-acessorios">
+                    {resumoAcessorios.length
+                      ? <><strong>{resumoAcessorios.length} equipado{resumoAcessorios.length > 1 ? 's' : ''}</strong> · {resumoAcessorios.join(' · ')}</>
+                      : 'Nenhum acessório equipado'}
+                  </div>
+                  <div className="avst5-chips" role="radiogroup" aria-label="Filtrar por slot">
+                    {CHIPS_SLOT.map((s) => (
+                      <button key={s.id} type="button" role="radio" aria-checked={filtroSlot === s.id}
+                        className={`avst5-chip${filtroSlot === s.id ? ' avst5-chip-on' : ''}`}
+                        onClick={() => setFiltroSlot(s.id)}>{s.nome}</button>
+                    ))}
+                  </div>
+                </>)}
                 {aba === 'equipados' ? (
                   <Equipados config={paraLegado2d(store.estadoDraft)} bloqueios={bloqueios}
                     aoRemover={(slot) => {
@@ -335,7 +375,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 ) : (
                   <GradeItens config={configVisivel} categoria={categoria}
                     desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba}
-                    aoPrever={aoPrever} />
+                    aoPrever={aoPrever} filtroSlot={filtroSlot} />
                 )}
               </div>
             )}

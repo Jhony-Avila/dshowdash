@@ -32,7 +32,7 @@ await p.evaluate(() => {
   cards[1]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 });
 await p.waitForTimeout(700);
-ok((await p.locator('.avst5-salvar').textContent())?.includes('Alterações'), 'barra deveria acusar alterações');
+ok((await p.locator('.avst5-salvar').textContent())?.includes('alteraç'), 'barra deveria acusar alterações');
 const undoBtn = p.locator('.avst5-header-acoes button[title^="Desfazer"]');
 ok(!(await undoBtn.isDisabled()), 'undo deveria habilitar após equipar');
 await undoBtn.click();

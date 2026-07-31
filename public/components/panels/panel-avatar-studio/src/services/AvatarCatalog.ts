@@ -8,6 +8,7 @@ import type {
   AvatarConfig, CamadaId, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
 import { CORES_PADRAO, normalizarHex } from '../engine/cores';
+import { sanitizarParams } from '../engine/params';
 import type { ParteDef } from '../engine/base-api';
 import { renderAvatar, renderDataUri, hashConfig } from '../engine/render';
 import type { OpcoesRender } from '../engine/render';
@@ -380,8 +381,23 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   if (typeof b.titulo === 'string' && TITULOS_POR_ID.has(b.titulo)) {
     saida.titulo = b.titulo;
   }
+  // §71 (AS5 F3 C2): propriedades por asset — só de camadas EQUIPADAS,
+  // grampeadas ao [min,max] e sem valores padrão (byte-estável como o título)
+  if (b.params && typeof b.params === 'object') {
+    const params: NonNullable<AvatarConfig['params']> = {};
+    for (const [chave, bruto] of Object.entries(b.params)) {
+      if (!camadas[chave as CamadaId]) continue;
+      const limpo = sanitizarParams(chave, bruto);
+      if (limpo) params[chave as CamadaId] = limpo;
+    }
+    if (Object.keys(params).length) saida.params = params;
+  }
   return saida;
 }
+
+// ── Propriedades por asset (§71) — fachada para a UI ────────────────
+export { PARAMS_POR_CATEGORIA, paramsDaCamada } from '../engine/params';
+export type { ParamDef } from '../engine/params';
 
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────
 

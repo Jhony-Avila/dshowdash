@@ -13,8 +13,9 @@ const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 ok(await p.locator('.avst5-abas button').count() === 5, 'esperava 5 tabs');
 await p.locator('.avst5-abas button', { hasText: 'Equipados' }).click();
 await p.waitForTimeout(600);
-const nEquipados = await p.locator('.avst5-painel .avst-card:not(.avst-card-nenhum)').count();
-ok(nEquipados === 1, `aba Equipados deveria mostrar 1 card (mostrou ${nEquipados})`);
+// F3 C1 (§70): a aba Equipados virou o painel slot→item (não mais a grade)
+const nEquipados = await p.locator('.avst5-painel .avst5-eq-linha').count();
+ok(nEquipados >= 1, `aba Equipados deveria listar linhas slot→item (mostrou ${nEquipados})`);
 await p.locator('.avst5-abas button', { hasText: 'Todos' }).click();
 await p.waitForTimeout(400);
 

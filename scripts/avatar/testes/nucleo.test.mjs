@@ -64,6 +64,12 @@ ok(!store.podeDesfazer, 'descartar deveria limpar pilha de undo');
 const a = checksumEstado(estadoVazio());
 const b = checksumEstado(estadoVazio());
 ok(a === b && a.length > 0, 'checksum nao deterministico');
+// REGRESSÃO (bug F1 achado na C2): estados com equipment/base diferentes
+// TÊM que dar checksums diferentes (o replacer-whitelist os igualava)
+const comCabelo = { ...estadoVazio(), equipment: { cabelo: 'cab_moicano' } };
+ok(checksumEstado(comCabelo) !== a, 'checksum IGNOROU equipment (whitelist recursiva)');
+ok(checksumEstado({ ...estadoVazio(), body: { base: 'bas_robo', morfos: {} } }) !== a,
+  'checksum IGNOROU body.base');
 
 // motor de regras (§617)
 const estado: EstadoAvatar = { ...estadoVazio(), body: { base: 'bas_robo', morfos: {} },
@@ -98,6 +104,35 @@ ok(est3.environment.cenario === 'dojo' && est3.environment.clima === 'neve', '3d
 ok(est3.renderer.preferido === '3d' && est3.body.morfos.bravo === 0.5, '3d renderer/morfos');
 const semSockets3d = paraLegado2d(est3);
 ok(!('head' in semSockets3d.camadas) && !('pet' in semSockets3d.camadas), 'sockets 3D vazaram p/ 2D');
+
+// §71 (F3 C2): propriedades por asset — roundtrip + sanitização + motor
+import { sanitizarParams, aplicarParamsSvg } from '${PAINEL}/src/engine/params';
+const cfgP = { formato: 'camadas' as const, versao: 1, base: 'bas_gotico',
+  camadas: { aura: 'aur_neon', emblema: 'emb_coroa' }, cores: { destaque: '#7c5cff' },
+  params: { aura: { intensidade: 0.6, velocidade: 1.5 }, emblema: { escala: 1.2 } } };
+const estP = deLegado2d(cfgP);
+ok(estP.appearance.params?.aura?.intensidade === 0.6, 'deLegado2d perdeu params');
+const voltaP = paraLegado2d(estP);
+ok(voltaP.params?.aura?.velocidade === 1.5 && voltaP.params?.emblema?.escala === 1.2,
+  'roundtrip 2D perdeu params');
+ok(paraLegado2d(deLegado2d({ ...cfgP, params: undefined })).params === undefined,
+  'config sem params deveria voltar SEM params (byte-estavel)');
+// estado sem params tem o MESMO checksum de antes da feature
+ok(checksumEstado(estadoVazio()) === a, 'params opcionais mudaram o checksum do estado vazio');
+// sanitização: grampeia, descarta desconhecido, remove padrão
+const san = sanitizarParams('aura', { intensidade: 0.1, velocidade: 1, foo: 3 });
+ok(san?.intensidade === 0.25 && !('velocidade' in (san ?? {})) && !('foo' in (san ?? {})),
+  'sanitizarParams: grampo/padrao/desconhecido');
+ok(sanitizarParams('aura', { intensidade: 9 }) === undefined,
+  'grampear NO padrao (max=padrao) deveria descartar');
+ok(sanitizarParams('cabelo', { x: 1 }) === undefined, 'categoria sem props deveria dar undefined');
+// aplicação no SVG: byte-estável sem params; wrappers/dur com params
+const frag = '<g><animate dur="3.2s"/></g>';
+ok(aplicarParamsSvg('aura', frag, undefined) === frag, 'sem params deveria ser byte-identico');
+const comP = aplicarParamsSvg('aura', frag, { intensidade: 0.5, velocidade: 2 });
+ok(comP.includes('opacity="0.5"') && comP.includes('dur="1.6s"'), 'aura: opacity/dur nao aplicados');
+const emb = aplicarParamsSvg('emblema', '<circle/>', { escala: 1.2 });
+ok(emb.includes('translate(152 206) scale(1.2)'), 'emblema: escala fora do centro do peito');
 
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);

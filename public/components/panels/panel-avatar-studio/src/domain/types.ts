@@ -33,6 +33,15 @@ export type SlotAcessorio = 'cabeca' | 'rosto' | 'pescoco';
 /** Chaves possíveis em AvatarConfig.camadas ('acessorio' legado migra no validarConfig). */
 export type CamadaId = Exclude<CategoriaId, 'base'> | `acessorio_${SlotAcessorio}`;
 
+/**
+ * §71 (AS5 F3 C2): valores de PROPRIEDADES de um asset equipado
+ * (ex.: aura → { intensidade: 0.6, velocidade: 1.4 }). O vocabulário e os
+ * limites por categoria vivem em engine/params.ts (PARAMS_POR_CATEGORIA);
+ * validarConfig sanitiza e só persiste valores NÃO-padrão — mesmo visual
+ * → mesmo JSON (princípio da publicação byte-estável, como `titulo`).
+ */
+export type ParamsAsset = Record<string, number>;
+
 /** Poses futuras (AS3 decisão #23) — hoje só 'frontal' é produzida. */
 export type PoseId = 'frontal' | 'tresquartos' | 'lateral' | 'pose' | 'poder';
 
@@ -90,6 +99,12 @@ export interface AvatarConfig {
   cores: Record<SlotCor, string>;
   /** Título do personagem (Expansão §27) — exibido como selo, fora do SVG. */
   titulo?: string;
+  /**
+   * §71: propriedades por camada equipada (AUSENTE quando tudo é padrão).
+   * Entra no hashConfig automaticamente (JSON.stringify) — thumbnails e
+   * publicação reagem a mudanças de propriedade sem código extra.
+   */
+  params?: Partial<Record<CamadaId, ParamsAsset>>;
 }
 
 export interface AvatarDoUsuario {
