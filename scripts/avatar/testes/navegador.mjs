@@ -1,0 +1,65 @@
+// scripts/avatar/testes/navegador.mjs — helper compartilhado da suíte.
+// @version 1.0.0  @created 2026-07-30
+//
+// Pré-requisitos (uma vez, em qualquer pasta com node): npm i playwright-core
+// e um Chromium local. Configure por ambiente quando os padrões não valerem:
+//   PW_CHROME=/caminho/do/chrome   BASE_URL=http://127.0.0.1:8901
+// Antes de rodar: build dos painéis + `node scripts/avatar/gerar-harness.mjs`
+// + servidor estático em public/ (python3 -m http.server 8901).
+import { chromium } from 'playwright-core';
+import { mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+export const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:8901';
+export const SAIDA = resolve(import.meta.dirname, 'saida');
+mkdirSync(SAIDA, { recursive: true });
+
+export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = false, init } = {}) {
+  const args = ['--no-sandbox'];
+  if (webgl) args.push('--enable-unsafe-swiftshader'); // WebGL por software no headless
+  const navegador = await chromium.launch({
+    executablePath: process.env.PW_CHROME ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    args,
+  });
+  const contexto = await navegador.newContext({ viewport });
+  if (init) await contexto.addInitScript(init);
+  const pagina = await contexto.newPage();
+  const erros = [];
+  pagina.on('pageerror', (e) => erros.push(e.message.slice(0, 160)));
+  return { navegador, pagina, erros };
+}
+
+export async function irParaHarness(pagina, arquivo, esperaMs = 600) {
+  await pagina.goto(`${BASE}/${arquivo}`, { waitUntil: 'networkidle' });
+  await pagina.waitForFunction(() => window.__pronto === true, { timeout: 20000 });
+  await pagina.waitForTimeout(esperaMs);
+}
+
+/** Abre a aba "Estúdio 3D" e espera motor3d + GLBs (lento no SwiftShader). */
+export async function abrirAba3d(pagina) {
+  await pagina.evaluate(() => {
+    [...document.querySelectorAll('nav.avst-categorias button.avst-cat')]
+      .find((x) => x.textContent.includes('Estúdio'))?.click();
+  });
+  await pagina.waitForTimeout(9000);
+}
+
+/** Captura o canvas 3D via toDataURL (screenshot de elemento sai BRANCO no
+ *  SwiftShader) com double-RAF para garantir quadro fresco. */
+export async function fotografarCanvas(pagina, caminho) {
+  await pagina.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const data = await pagina.evaluate(() => document.querySelector('.avst-3d-palco canvas')?.toDataURL('image/png'));
+  if (data && data.length > 2000) {
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(caminho, Buffer.from(data.split(',')[1], 'base64'));
+    return true;
+  }
+  await pagina.locator('.avst-3d-palco, canvas').first().screenshot({ path: caminho });
+  return false;
+}
+
+export function relatorio(nome, falhas, erros) {
+  console.log(`[${nome}] FALHAS:`, falhas.length ? falhas.join(' || ') : 'nenhuma');
+  console.log(`[${nome}] ERROS JS:`, erros.length ? erros.join(' | ') : 'nenhum');
+  return falhas.length === 0;
+}

@@ -122,3 +122,7 @@ dist/
 *.log
 *.tmp
 .DS_Store
+
+# suíte de testes headless: artefatos locais nunca entram
+/scripts/avatar/testes/saida/
+/scripts/avatar/testes/node_modules

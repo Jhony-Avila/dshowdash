@@ -7,25 +7,30 @@
 // (react-grid-layout, Fase 4), trânsito, e-mails, integrações, atalhos,
 // insights por regras, modo operacional/executivo e auto-refresh.
 // Cada widget carrega e falha de forma independente (§32).
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   ResponsiveGridLayout, useContainerWidth,
   type Layout, type LayoutItem, type ResponsiveLayouts,
 } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import {
-  AlertTriangle, ArrowRight, Bot, CalendarDays, Car, CircleDollarSign,
+  AlertTriangle, ArrowRight, Bot, CalendarDays, Car, CircleDollarSign, History,
   Handshake, LayoutDashboard, Mail, Megaphone, RefreshCw, RotateCcw,
-  Share2, ShoppingBag, ShoppingCart, SlidersHorizontal, Store, Table2,
+  Share2, ShoppingBag, ShoppingCart, SlidersHorizontal, Star, Store, Table2,
 } from 'lucide-react';
 import {
-  getAlertas, getAtividades, getDistribuicao, getIntegracoes,
-  getResumoModulo, getSerieConsolidada, getTransito, lerOcultos,
-  restaurarPadrao, salvarOcultos,
+  alternarCenario, cenarioAtual, getAlertas, getAtividades, getDistribuicao,
+  getIntegracoes, getResumoModulo, getSerieConsolidada, getTransito,
+  lerOcultos, restaurarPadrao, salvarOcultos,
 } from '../services/GeralService';
+import type { CenarioMock } from '../services/GeralService';
 import {
   getAgenda, getClima, getEmails, getInsights, getSaudacao,
 } from '../services/HomeService';
+import {
+  alternarFavoritoModulo, favoritosModulos, registrarRecente, rotasRecentes,
+} from '../services/PessoalService';
+import { LinksWidget, NotasWidget } from '../components/Pessoal';
 import { useDados } from '../components/useDados';
 import { GChart } from '../components/GChart';
 import { CeuFundo, GreetingHero, ceuAtual } from '../components/Hero';
@@ -85,18 +90,19 @@ const AUTO_REFRESH: { s: number; rotulo: string }[] = [
 ];
 
 // Modo executivo esconde o operacional fino (§26)
-const OCULTAS_EXECUTIVO = new Set(['agenda', 'emails', 'atividades', 'integracoes']);
+const OCULTAS_EXECUTIVO = new Set(['agenda', 'emails', 'atividades', 'integracoes', 'pessoais']);
 
 const fmtMoeda = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
-function navegar(rota: string) { window.location.hash = rota; }
+function navegar(rota: string) { registrarRecente(rota); window.location.hash = rota; }
 function rolarPara(id: string) {
   document.querySelector(`[data-ger-sec="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ── persistência local ──────────────────────────────────────────────
 const K_MODO = 'dshow.home.modo';
+const K_DENS = 'dshow.home.densidade';
 const K_AUTO = 'dshow.home.autorefresh';
 const K_LAYOUT = 'dshow.home.layout.v2';
 
@@ -189,10 +195,18 @@ function Shell({ config }: { config: ShellConfig }) {
   const [organizar, setOrganizar] = useState(false);
   const [ocultos, setOcultos] = useState<Set<ModuloId>>(() => lerOcultos());
   const [modo, setModo] = useState<ModoHome>(() => lerLS(K_MODO, 'operacional', (r) => (r === 'executivo' ? 'executivo' : 'operacional')));
+  // densidade (§26.1): compacto aperta paddings/gaps/tipografia via CSS
+  const [densidade, setDensidade] = useState<'conforto' | 'compacto'>(
+    () => lerLS(K_DENS, 'conforto', (r) => (r === 'compacto' ? 'compacto' : 'conforto')));
   const [autoS, setAutoS] = useState<number>(() => lerLS(K_AUTO, 0, (r) => Number(r) || 0));
   const [filtroAtv, setFiltroAtv] = useState<CategoriaAtividade | 'todos'>('todos');
   const [layouts, setLayouts] = useState<ResponsiveLayouts | null>(() =>
     lerLS<ResponsiveLayouts | null>(K_LAYOUT, null, (r) => JSON.parse(r) as ResponsiveLayouts));
+  // favoritos + recentes (§24) e cenário de QA (§45 — gatilho oculto)
+  const [favs, setFavs] = useState<Set<ModuloId>>(() => favoritosModulos());
+  const [recs] = useState(() => rotasRecentes());
+  const [cenario, setCenario] = useState<CenarioMock>(() => cenarioAtual());
+  const cliquesTitulo = useRef<number[]>([]);
   const { width: larguraZona, containerRef: refZona, mounted: zonaPronta } = useContainerWidth();
 
   const atualizar = () => { setVersao((v) => v + 1); setCarimbo(new Date().toISOString()); };
@@ -238,6 +252,7 @@ function Shell({ config }: { config: ShellConfig }) {
   };
 
   const trocarModo = (m: ModoHome) => { setModo(m); gravarLS(K_MODO, m); };
+  const trocarDensidade = (d: 'conforto' | 'compacto') => { setDensidade(d); gravarLS(K_DENS, d); };
   const trocarAuto = (s: number) => { setAutoS(s); gravarLS(K_AUTO, String(s)); };
 
   /**
@@ -283,12 +298,28 @@ function Shell({ config }: { config: ShellConfig }) {
   const grupoClima = clima?.atual.grupo ?? null;
 
   return (
-    <div className="ger-tela-toda" data-imersivo={imersivo ? '1' : '0'} data-ceu={ceu} data-clima={grupoClima ?? 'limpo'}>
+    <div className="ger-tela-toda" data-imersivo={imersivo ? '1' : '0'} data-ceu={ceu}
+      data-clima={grupoClima ?? 'limpo'} data-densidade={imersivo ? 'conforto' : densidade}>
       {imersivo && <CeuFundo grupo={grupoClima} />}
       <div className="ger-shell">
       {/* barra de controles (§21 do header + §28 + §29 + §26) */}
       <div className="ger-controles">
-        <span className="ger-controles-tit"><LayoutDashboard size={15} aria-hidden /> Principal</span>
+        <span className="ger-controles-tit" onClick={() => {
+          const agora = Date.now();
+          cliquesTitulo.current = [...cliquesTitulo.current.filter((t) => agora - t < 2500), agora];
+          if (cliquesTitulo.current.length >= 5) { // §45: seletor oculto de QA
+            cliquesTitulo.current = [];
+            setCenario(alternarCenario());
+            atualizar();
+          }
+        }}><LayoutDashboard size={15} aria-hidden /> Principal
+          {cenario !== 'padrao' && (
+            <button type="button" className="ger-cenario" title="Cenário de demonstração ativo — clique para alternar"
+              onClick={(e) => { e.stopPropagation(); setCenario(alternarCenario()); atualizar(); }}>
+              QA: {cenario}
+            </button>
+          )}
+        </span>
         <div className="ger-controles-acoes">
           {imersivo && (
             <button className="ger-btn" onClick={() => navegar('#/panel-dashboard')}
@@ -304,6 +335,14 @@ function Shell({ config }: { config: ShellConfig }) {
             <button role="tab" aria-selected={modo === 'executivo'}
               className={`ger-periodo${modo === 'executivo' ? ' is-on' : ''}`}
               onClick={() => trocarModo('executivo')}>Executivo</button>
+          </div>
+          <div className="ger-periodos" role="tablist" aria-label="Densidade">
+            <button role="tab" aria-selected={densidade === 'conforto'}
+              className={`ger-periodo${densidade === 'conforto' ? ' is-on' : ''}`}
+              onClick={() => trocarDensidade('conforto')}>Conforto</button>
+            <button role="tab" aria-selected={densidade === 'compacto'}
+              className={`ger-periodo${densidade === 'compacto' ? ' is-on' : ''}`}
+              onClick={() => trocarDensidade('compacto')}>Compacto</button>
           </div>
           <div className="ger-periodos" role="tablist" aria-label="Período">
             {PERIODOS.map((p) => (
@@ -508,7 +547,7 @@ function Shell({ config }: { config: ShellConfig }) {
               layouts={layoutsEfetivos}
               breakpoints={{ lg: 1000, md: 700, sm: 0 }}
               cols={{ lg: 12, md: 8, sm: 4 }}
-              rowHeight={92}
+              rowHeight={densidade === 'compacto' ? 74 : 92}
               margin={[12, 12]}
               dragConfig={{ enabled: organizar, handle: '.ger-wg-head' }}
               resizeConfig={{ enabled: organizar }}
@@ -528,6 +567,14 @@ function Shell({ config }: { config: ShellConfig }) {
 
       {/* Faixa 6 — insights (§22) — dashboard */}
       {!imersivo && <InsightsPanel insights={insights} carregando={cInsights} aoAbrir={navegar} />}
+
+      {/* Faixa 6b — widgets pessoais (§23) — dashboard */}
+      {!imersivo && mostrar('pessoais') && (
+        <div className="ger-faixa">
+          <div className="ger-col-6"><NotasWidget /></div>
+          <div className="ger-col-6"><LinksWidget /></div>
+        </div>
+      )}
 
       {/* Faixa 7 — previsão 10 dias (§9) */}
       <PrevisaoDezDias clima={clima} />
@@ -576,16 +623,43 @@ function Shell({ config }: { config: ShellConfig }) {
         </div>
       )}
 
-      {/* Faixa 10 — atalhos (§21, máx. 8) */}
-      <Secao titulo="Atalhos" sub="acesso rápido aos módulos mais usados">
+      {/* Faixa 10 — atalhos com FAVORITOS + abertos recentemente (§21 + §24) */}
+      <Secao titulo="Atalhos" sub="favorite com a estrela — seus favoritos vêm primeiro">
         <div className="ger-atalhos">
-          {MODULOS.filter((m) => m.rota).slice(0, 8).map((m) => (
-            <button key={m.id} className="ger-atalho" onClick={() => navegar(m.rota!)}>
-              <span className="ger-wg-ic" aria-hidden>{m.icone}</span>
-              <span>{m.nome}</span>
-            </button>
-          ))}
+          {(() => {
+            const comRota = MODULOS.filter((m) => m.rota);
+            const ordenados = [...comRota.filter((m) => favs.has(m.id)), ...comRota.filter((m) => !favs.has(m.id))];
+            const nFavs = comRota.filter((m) => favs.has(m.id)).length;
+            return ordenados.slice(0, Math.max(8, nFavs)).map((m) => (
+              <span key={m.id} className="ger-atalho-wrap">
+                <button className={`ger-atalho${favs.has(m.id) ? ' is-fav' : ''}`} onClick={() => navegar(m.rota!)}>
+                  <span className="ger-wg-ic" aria-hidden>{m.icone}</span>
+                  <span>{m.nome}</span>
+                </button>
+                <button type="button" className={`ger-fav${favs.has(m.id) ? ' is-on' : ''}`}
+                  title={favs.has(m.id) ? 'Remover dos favoritos' : 'Favoritar'}
+                  aria-pressed={favs.has(m.id)}
+                  onClick={() => setFavs(new Set(alternarFavoritoModulo(m.id)))}>
+                  <Star size={12} aria-hidden />
+                </button>
+              </span>
+            ));
+          })()}
         </div>
+        {recs.length > 0 && (
+          <div className="ger-recentes" aria-label="Abertos recentemente">
+            <span className="ger-recentes-tit"><History size={11} aria-hidden /> Abertos recentemente:</span>
+            {recs.map((r) => {
+              const mod = MODULOS.find((m) => m.rota && r.rota.startsWith(m.rota));
+              const nome = mod?.nome ?? r.rota.replace('#/', '').replace(/^panel-/, '');
+              return (
+                <button key={r.rota} type="button" className="ger-recente" onClick={() => navegar(r.rota)}>
+                  {nome} <em>{relTempo(r.quando)}</em>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </Secao>
       </div>
     </div>

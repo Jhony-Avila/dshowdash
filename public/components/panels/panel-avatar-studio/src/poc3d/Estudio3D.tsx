@@ -83,6 +83,17 @@ export default function Estudio3D({ corDestaque, versaoBase = 0, config3dInicial
   const [config, setConfig] = useState<Config3D>(
     () => (config3dInicial ? validarConfig3d(config3dInicial) : CONFIG3D_PADRAO),
   );
+
+  // corrida da carga: se o usuário abrir a aba 3D ANTES do GET terminar, o
+  // salvo chega depois — adota o valor tardio SOMENTE se o estado ainda é o
+  // objeto PADRÃO intocado (mudar() sempre cria objeto novo, então qualquer
+  // edição do usuário quebra a igualdade por referência e vence)
+  useEffect(() => {
+    if (config === CONFIG3D_PADRAO && config3dInicial) {
+      setConfig(validarConfig3d(config3dInicial));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config3dInicial]);
   const [gesto, setGesto] = useState<Gesto>(null);
   const [fasePoder, setFasePoder] = useState<FasePoder>('inativo');
   const [qualidade, setQualidade] = useState<Qualidade>('alto');
