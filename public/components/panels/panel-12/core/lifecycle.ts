@@ -42,7 +42,8 @@ import { createPanelPorts } from '/core/runtime/ports-profiles.js';
 import { PANEL_EVENTS } from '/core/runtime/events/catalog/panels.events.js';
 import { LIFECYCLE_EVENTS } from '/core/runtime/events/catalog/lifecycle.events.js';
 import * as logger from '../utils/logger.js';
-import { PANEL_ID, VERSION as CSS_PATH, REFRESH_INTERVAL_BASE, REFRESH_INTERVAL_DEGRADED } from './constants.js';
+// CSS_PATH pelo nome real — `VERSION as CSS_PATH` punha a versao no href (ver .js).
+import { PANEL_ID, CSS_PATH, REFRESH_INTERVAL_BASE, REFRESH_INTERVAL_DEGRADED } from './constants.js';
 
 const VERSION = '9.3.0-P2-ENTERPRISE';
 const MODULE_ID = 'panel-12.core.lifecycle';

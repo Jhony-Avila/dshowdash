@@ -155,6 +155,7 @@ function ConnectionStatus(this: any, config: Record<string,unknown>) {
     this._currentStatus = 'offline';
     this._currentLatency = null;
     this._checkInterval = null;
+    this._onVisibilityChange = null;
     this._instanceId = `cs-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 }
 
@@ -224,7 +225,18 @@ ConnectionStatus.prototype._render = function() {
 ConnectionStatus.prototype._startMonitoring = function() {
     const self = this;
     this._checkConnection();
-    this._checkInterval = setInterval(() => { self._checkConnection(); }, 30000);
+    // Aba oculta nao consome requisicao: o indicador nao esta a vista, e este
+    // componente fica montado em TODAS as telas (2 req/min por aba parada).
+    this._checkInterval = setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return;
+        self._checkConnection();
+    }, 30000);
+    // Ao voltar para a aba, revalida na hora — senao o indicador mostraria a
+    // latencia de antes de ocultar, que pode estar bem velha.
+    this._onVisibilityChange = () => {
+        if (typeof document !== 'undefined' && !document.hidden) self._checkConnection();
+    };
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
 };
 
 ConnectionStatus.prototype._checkConnection = function() {
@@ -317,6 +329,7 @@ ConnectionStatus.prototype.checkNow = function() { this._checkConnection(); retu
 ConnectionStatus.prototype.unmount = function() {
     if (!this._mounted) return;
     if (this._checkInterval) { clearInterval(this._checkInterval); this._checkInterval = null; }
+    if (this._onVisibilityChange) { document.removeEventListener('visibilitychange', this._onVisibilityChange); this._onVisibilityChange = null; }
     if (this._elements.wrapper) { this._elements.wrapper.remove(); }
     this._mounted = false;
     this._elements = {};

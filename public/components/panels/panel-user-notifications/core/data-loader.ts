@@ -85,7 +85,7 @@ DataLoader.prototype.loadData = async function() {
 
     if (res.ok) {
       const data = await res.json();
-      if (data.success && data.data) {
+      if ((data.ok ?? data.success) && data.data) {
         store.setSettings(data.data);
       } else {
         store.setSettings(Object.assign({}, DEFAULT_SETTINGS));
@@ -149,7 +149,7 @@ DataLoader.prototype.saveSettings = async function(settings: Record<string, unkn
     });
 
     const data = await res.json();
-    if (data.success) {
+    if ((data.ok ?? data.success)) {
       store.setDirty(false);
       circuitBreaker.recordSuccess();
       telemetry.saved({});

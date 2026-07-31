@@ -36,7 +36,11 @@ class UIComponent {
   async init() {
     if (!this.container) return;
     this.toastManager = new ToastManager();
-    this.drawerComponent = new DrawerComponent(this.logger, {});
+    // `DrawerComponent` e' ALIAS de `openDrawer` (ui/drawer.js:
+    // `export { openDrawer as DrawerComponent }`) — funcao que ABRE um drawer num
+    // container, nao classe. `new DrawerComponent(this.logger, {})` rodava openDrawer
+    // com o logger no lugar do container -> `container.appendChild is not a function`
+    // -> mount.failed. Mesmo defeito do panel-14. Para abrir: openDrawer(el, {...}).
     this.keyboardNav = new KeyboardNavigation(this.container, {});
     this._setupListeners();
     this.mounted = true;

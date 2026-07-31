@@ -14,7 +14,7 @@ import {
 } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import {
-  AlertTriangle, ArrowRight, Bot, Car, CircleDollarSign,
+  AlertTriangle, ArrowRight, Bot, CalendarDays, Car, CircleDollarSign,
   Handshake, LayoutDashboard, Mail, Megaphone, RefreshCw, RotateCcw,
   Share2, ShoppingBag, ShoppingCart, SlidersHorizontal, Store, Table2,
 } from 'lucide-react';
@@ -53,6 +53,7 @@ const MODULOS: DefModulo[] = [
   { id: 'financeiro', nome: 'Financeiro', icone: <CircleDollarSign size={15} />, rota: null },
   { id: 'compras', nome: 'Compras', icone: <ShoppingBag size={15} />, rota: null },
   { id: 'outlook', nome: 'Outlook', icone: <Mail size={15} />, rota: '#/panel-outlook' },
+  { id: 'google-calendar', nome: 'Google Calendar', icone: <CalendarDays size={15} />, rota: '#/panel-google-calendar' },
   { id: 'transito', nome: 'Trânsito', icone: <Car size={15} />, rota: '#/panel-transito-sp' },
   { id: 'datatables', nome: 'DataTables', icone: <Table2 size={15} />, rota: '#/panel-datatables' },
 ];
@@ -239,10 +240,35 @@ function Shell({ config }: { config: ShellConfig }) {
   const trocarModo = (m: ModoHome) => { setModo(m); gravarLS(K_MODO, m); };
   const trocarAuto = (s: number) => { setAutoS(s); gravarLS(K_AUTO, String(s)); };
 
-  const layoutsEfetivos = useMemo(
-    () => layouts ?? layoutPadrao(visiveis.map((m) => m.id)),
-    [layouts, visiveis]
-  );
+  /**
+   * Layout salvo + módulos que entraram depois.
+   *
+   * BUG QUE ISTO CORRIGE: usar o layout salvo cru deixa INVISÍVEL todo módulo
+   * adicionado após o usuário ter arrastado algum widget — o objeto salvo não
+   * tem entrada para o id novo, e o grid não posiciona filho sem layout. Vale
+   * para qualquer módulo futuro, não só o que motivou o achado.
+   *
+   * Também descarta entradas órfãs (módulo oculto ou removido do registro),
+   * que de outro modo ficam ocupando espaço reservado no grid.
+   */
+  const layoutsEfetivos = useMemo(() => {
+    const ids = visiveis.map((m) => m.id);
+    const padrao = layoutPadrao(ids);
+    if (!layouts) return padrao;
+
+    const validos = new Set<string>(ids);
+    const completar = (bp: 'lg' | 'md' | 'sm'): LayoutItem[] => {
+      const salvos = (layouts[bp] ?? []).filter((it) => validos.has(it.i));
+      const presentes = new Set(salvos.map((it) => it.i));
+      const faltando = (padrao[bp] ?? []).filter((it) => !presentes.has(it.i));
+      if (!faltando.length) return salvos;
+      // Entra embaixo do que já existe: não empurra o que o usuário organizou.
+      const base = salvos.reduce((m, it) => Math.max(m, it.y + it.h), 0);
+      return [...salvos, ...faltando.map((it, k) => ({ ...it, y: base + Math.floor(k / 4) * it.h }))];
+    };
+
+    return { lg: completar('lg'), md: completar('md'), sm: completar('sm') };
+  }, [layouts, visiveis]);
 
   const aoMudarLayout = (_atual: Layout, todos: ResponsiveLayouts) => {
     if (!organizar) return;

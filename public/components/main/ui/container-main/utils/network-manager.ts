@@ -52,6 +52,7 @@ export function createNetworkManager(options: Record<string, any> = {}) {
   let _downlink = 0;
   let _rtt = 0;
   let _pingTimer: ReturnType<typeof setTimeout> | null = null;
+  let _onVisibilityChange: (() => void) | null = null;
   let _counter = 0;
   let _metrics = { statusChanges: 0, pings: 0, failures: 0 };
 
@@ -135,12 +136,21 @@ export function createNetworkManager(options: Record<string, any> = {}) {
 
     startMonitoring(interval = pingInterval) {
       this.stopMonitoring();
-      _pingTimer = setInterval(() => _ping(), interval);
+      // Aba oculta nao gasta ping: o monitor roda em toda tela e a latencia
+      // medida em segundo plano nao seria mostrada a ninguem.
+      _pingTimer = setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return;
+        _ping();
+      }, interval);
+      // Ao voltar, mede na hora — evita exibir a latencia de antes de ocultar.
+      _onVisibilityChange = () => { if (!document.hidden) _ping(); };
+      document.addEventListener('visibilitychange', _onVisibilityChange);
       _ping();
     },
 
     stopMonitoring() {
       if (_pingTimer) { clearInterval(_pingTimer); _pingTimer = null; }
+      if (_onVisibilityChange) { document.removeEventListener('visibilitychange', _onVisibilityChange); _onVisibilityChange = null; }
     },
 
     onOnline(callback: (...args: unknown[]) => void) { const id = `on-${++_counter}`; _listeners.set(id, { event: 'online', callback }); return id; },

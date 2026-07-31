@@ -36,7 +36,11 @@ export const VERSION = '8.8.0-ES6';
 export const id = 'panel-bling';
 export const capabilities = { type: 'panel', reorderable: true, hideable: true, critical: false, rendersUI: true };
 export const MODULE_ID = 'header/components/panel-bling';
-const PANEL_CONFIG = { id: 'panel-bling', label: 'Bling', route: '#/integrations/bling', icon: '/assets/icons/system/header/bling.svg' };
+// ROTA (@2026-07-30): aponta para #/panel-bling — o MÓDULO React.
+// Antes era #/integrations/bling, que resolve pelo registry BUNDLEADO e cai em
+// panel-integration-bling: o widget de status, não o módulo. Não usar #/bling
+// tampouco — ITEM_TO_PANEL['bling'] leva a panel-04 (stub 'Produtos/Bling').
+const PANEL_CONFIG = { id: 'panel-bling', label: 'Bling', route: '#/panel-bling', icon: '/assets/icons/system/header/bling.svg' };
 
 const Ports = createUiPorts({ moduleId: MODULE_ID });
 function _initPorts() { Ports.init(); }
@@ -59,7 +63,23 @@ PanelBlingComponent.prototype.mount = function(container: HTMLElement|null) {
 
 PanelBlingComponent.prototype._render = function() { this.element = document.createElement('button'); this.element.type = 'button'; this.element.className = 'header-panel-trigger panel-bling-trigger'; this.element.title = PANEL_CONFIG.label; this.element.setAttribute('aria-label', `Abrir ${PANEL_CONFIG.label}`); this.element.setAttribute('aria-haspopup', 'dialog'); this.element.setAttribute('data-panel-trigger', PANEL_CONFIG.id); this.element.setAttribute('data-uarps-trigger', 'trigger:header:open-panel-bling'); this.element.innerHTML = `<img src="${PANEL_CONFIG.icon}" alt="${PANEL_CONFIG.label}" class="trigger-icon" loading="lazy" />`; this.container.appendChild(this.element); };
 
-PanelBlingComponent.prototype._attachEvents = function() { const self = this; if (!this.element) return; this._clickHandler = (e: Event) => { e.preventDefault(); self._metrics.clickCount++; self._metrics.lastClickAt = Date.now(); navigateToRoute(PANEL_CONFIG.route, MODULE_ID); }; this.element.addEventListener('click', this._clickHandler); };
+// NAVEGAÇÃO (@2026-07-30) — por que existe um fallback aqui.
+//
+// `navigateToRoute` delega ao navigation-adapter, que emite NAV_INTENTS.NAVIGATE
+// no EventBus e retorna `true` assim que o emit acontece — mesmo que ninguém
+// esteja escutando. Medição de 2026-07-30 com clique real: os DEZ botões de
+// painel do header (pipedrive, bling, mercado-livre, loja-integrada,
+// google-drive, calendar, adwords, asaas, chatgpt, maps) NÃO navegam. O hash
+// não muda em nenhum deles. É um problema pré-existente do header, anterior a
+// este módulo — o do Pipedrive está assim com o painel em produção.
+//
+// A correção da causa (ligar o ouvinte de NAV_INTENTS.NAVIGATE) afeta os 10
+// botões de uma vez e precisa de decisão do dono; está reportada em
+// docs/BLING/README.md. Aqui aplicamos só o fallback local: emite a intenção
+// como sempre e, se o hash não mudar, navega direto. É o mesmo último recurso
+// que o próprio navigation-adapter tem (window.location) e que nunca é
+// alcançado porque o emit "dá certo" antes.
+PanelBlingComponent.prototype._attachEvents = function() { const self = this; if (!this.element) return; this._clickHandler = (e: Event) => { e.preventDefault(); self._metrics.clickCount++; self._metrics.lastClickAt = Date.now(); const antes = window.location.hash; navigateToRoute(PANEL_CONFIG.route, MODULE_ID); window.setTimeout(() => { if (window.location.hash === antes) { window.location.hash = PANEL_CONFIG.route; } }, 140); }; this.element.addEventListener('click', this._clickHandler); };
 PanelBlingComponent.prototype._detachEvents = function() { if (this.element && this._clickHandler) { this.element.removeEventListener('click', this._clickHandler); this._clickHandler = null; } };
 
 PanelBlingComponent.prototype.unmount = function() { if (!this._isMounted || this._isDestroyed) return Promise.resolve(this); this._detachEvents(); if (this.element) { this.element.remove(); this.element = null; } this._isMounted = false; this._metrics.unmountCount++; _emit(COMPONENT_EVENTS.UNMOUNTED, { componentId: PANEL_CONFIG.id, moduleId: MODULE_ID }); return Promise.resolve(this); };

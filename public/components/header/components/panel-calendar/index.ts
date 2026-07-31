@@ -36,7 +36,8 @@ export const VERSION = '8.8.0-ES6';
 export const id = 'panel-calendar';
 export const capabilities = { type: 'panel', reorderable: true, hideable: true, critical: false, rendersUI: true };
 export const MODULE_ID = 'header/components/panel-calendar';
-const PANEL_CONFIG = { id: 'panel-calendar', label: 'Calendário', route: '#/integrations/calendar', icon: '/assets/icons/system/header/calendar.svg' };
+// route repontada em 2026-07-29 para o módulo Google Calendar (ver index.js).
+const PANEL_CONFIG = { id: 'panel-calendar', label: 'Google Calendar', route: '#/panel-google-calendar', icon: '/assets/icons/system/header/calendar.svg' };
 
 const Ports = createUiPorts({ moduleId: MODULE_ID });
 function _initPorts() { Ports.init(); }

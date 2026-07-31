@@ -45,7 +45,7 @@ async function fetchItems(forceRefresh) {
   try {
     const response = await fetch(`${_apiBase}/items`, { method: "GET", credentials: "include", headers: { "Content-Type": "application/json" } });
     const result = await response.json();
-    if (result.success && result.data) {
+    if ((result.ok ?? result.success) && result.data) {
       _cachedItems = result.data.map((item, index) => ({
         id: item.item_key,
         label: item.label,
@@ -78,7 +78,7 @@ async function fetchGroups() {
   try {
     const response = await fetch(`${_apiBase}/groups`, { method: "GET", credentials: "include", headers: { "Content-Type": "application/json" } });
     const result = await response.json();
-    if (result.success) {
+    if ((result.ok ?? result.success)) {
       _cachedGroups = result.data || [];
     }
     return result;
@@ -92,7 +92,7 @@ async function createItem(item) {
     const payload = { item_key: item.id, label: item.label, tooltip: item.tooltip || null, icon_name: item.icon || "circle", group_id: item.groupId || null, action_type: item.actionType || "openPanel", action_panel_id: item.actionPanelId || null, order_index: item.order || 99, badge_type: item.badgeType || "none", show_on_desktop: item.showOnDesktop ? 1 : 0, show_on_tablet: item.showOnTablet ? 1 : 0, show_on_mobile: item.showOnMobile ? 1 : 0, is_active: item.isActive ? 1 : 0, uarps_trigger_id: item.uarpsTrigger || null };
     const response = await fetch(`${_apiBase}/items`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const result = await response.json();
-    if (result.success) clearCache();
+    if ((result.ok ?? result.success)) clearCache();
     return result;
   } catch (err) {
     log("error", "Failed to create item", { error: err.message });
@@ -117,7 +117,7 @@ async function updateItem(itemId, updates) {
     if (updates.uarpsTrigger !== void 0) payload.uarps_trigger_id = updates.uarpsTrigger;
     const response = await fetch(`${_apiBase}/items`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const result = await response.json();
-    if (result.success) clearCache();
+    if ((result.ok ?? result.success)) clearCache();
     return result;
   } catch (err) {
     log("error", "Failed to update item", { error: err.message });
@@ -128,7 +128,7 @@ async function deleteItem(itemId) {
   try {
     const response = await fetch(`${_apiBase}/items?id=${itemId}`, { method: "DELETE", credentials: "include", headers: { "Content-Type": "application/json" } });
     const result = await response.json();
-    if (result.success) clearCache();
+    if ((result.ok ?? result.success)) clearCache();
     return result;
   } catch (err) {
     log("error", "Failed to delete item", { error: err.message });
@@ -146,7 +146,7 @@ async function reorderItems(itemIds) {
     body: JSON.stringify({ items })
   });
   var result = await response.json();
-  if (result.success) clearCache();
+  if ((result.ok ?? result.success)) clearCache();
   return result;
 }
 const NavRailAdapter = { getItems: fetchItems, getGroups: fetchGroups, createItem, updateItem, deleteItem, reorderItems, clearCache, injectPorts, getPorts };

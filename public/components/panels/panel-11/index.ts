@@ -124,7 +124,7 @@ class Panel11 {
         this.uiComponent = new UIComponent(contentEl, { debug: _log, info: _log, error: _log });
 
         // @ts-expect-error TS migration - TS2794
-        this.uiComponent.init().then(() => { this.setupStateSubscription(); this.setupEventListeners(); return this.loadData(); }).then(() => { this.startAutoRefresh(); this.startCountdown(); this.mounted = true; this.setState(STATES.MOUNTED); _log('debug', 'Montado', { version: VERSION }); this.eventBus?.emit?.(PANEL_EVENTS.MOUNTED, { panelId: PAINEL_ID, version: VERSION, timestamp: Date.now(), source: MODULE_ID }); resolve(); }).catch((error) => { this.setState(STATES.ERROR); _log('error', 'mount.failed', { error: error.message }); reject(error); });
+        this.uiComponent.init().then(() => { this.setupStateSubscription(); this.setupEventListeners(); /* mounted ANTES de loadData: o guard `if (!this.mounted) return` abortava a CARGA INICIAL */ this.mounted = true; return this.loadData(); }).then(() => { this.startAutoRefresh(); this.startCountdown(); this.setState(STATES.MOUNTED); _log('debug', 'Montado', { version: VERSION }); this.eventBus?.emit?.(PANEL_EVENTS.MOUNTED, { panelId: PAINEL_ID, version: VERSION, timestamp: Date.now(), source: MODULE_ID }); resolve(); }).catch((error) => { this.setState(STATES.ERROR); _log('error', 'mount.failed', { error: error.message }); reject(error); });
       } catch (error: any) { this.setState(STATES.ERROR); _log('error', 'mount.failed', { error: error.message }); reject(error); }
     });
   }

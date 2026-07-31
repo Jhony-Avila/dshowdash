@@ -64,6 +64,13 @@ import * as PermissionsAdapter from './adapters/permissions-guard-adapter.js';
 import * as ConfirmationModal from './ui/confirmation-modal.js';
 import * as AuditEmitter from './bus/audit-emitter.js';
 
+// isAvailable/getUserContext/canApplyPreset NAO existem no permissions-guard-adapter
+// (os casts `as any` escondiam isso). getUserContext derrubava o mount. canApplyPreset
+// fica FAIL-CLOSED de proposito — escolher a string de permissao muda politica de
+// acesso e e' decisao do dono. Ver comentario completo no index.js irmao.
+const _canApplyPreset = (): boolean => false;
+
+
 export const VERSION = '9.3.0-P2-ENTERPRISE';
 export const MODULE_ID = 'panel-orchestrator';
 
@@ -97,7 +104,7 @@ const _updateIntegrationsStatus = () => {
   _integrationsStatus.globalStateAvailable = !!_getPort('globalState');
   _integrationsStatus.telemetryAvailable = !!_getPort('telemetry');
   _integrationsStatus.coreInitialized = coreOrchestrator?.initialized ?? false;
-  _integrationsStatus.permissionsAvailable = (PermissionsAdapter as any).isAvailable();
+  _integrationsStatus.permissionsAvailable = PermissionsAdapter.isReady();
   _integrationsStatus.layoutManagerAvailable = !!_getLayoutManager();
 };
 
@@ -142,7 +149,7 @@ export const mount = (container: HTMLElement, props = {}, scope: Record<string, 
   const accessCheck = PermissionsAdapter.canAccessPanel();
   if (!accessCheck.allowed) {
     // @ts-expect-error strict migration — TS2345
-    if (!_accessDeniedLogged) { _log('warn', 'Access denied:', accessCheck.reason); orchestratorTelemetry.track(PERMISSIONS_EVENTS.ACCESS_DENIED, { reason: accessCheck.reason, userId: (PermissionsAdapter as any).getUserContext().userId, panelId: MODULE_ID }); AuditEmitter.emitAccessDenied(accessCheck.reason); _accessDeniedLogged = true; }
+    if (!_accessDeniedLogged) { _log('warn', 'Access denied:', accessCheck.reason); orchestratorTelemetry.track(PERMISSIONS_EVENTS.ACCESS_DENIED, { reason: accessCheck.reason, userId: PermissionsAdapter.getUser()?.userId, panelId: MODULE_ID }); AuditEmitter.emitAccessDenied(accessCheck.reason); _accessDeniedLogged = true; }
     return Promise.reject(new Error(`[Panel Orchestrator] Access denied: ${accessCheck.reason}`));
   }
 
@@ -169,7 +176,7 @@ export const mount = (container: HTMLElement, props = {}, scope: Record<string, 
 const _setupEventHandlers = () => {
   orchestratorUIEvents
     .onApplyPreset((presetId: string) => {
-      if (!(PermissionsAdapter as any).canApplyPreset(presetId)) { _log('warn', 'Permission denied for applyPreset:', presetId); orchestratorTelemetry.track('panel-orchestrator:preset:denied', { presetId }); AuditEmitter.emitPresetDenied(presetId, 'Permission denied'); return Promise.resolve(); }
+      if (!_canApplyPreset(presetId)) { _log('warn', 'Permission denied for applyPreset:', presetId); orchestratorTelemetry.track('panel-orchestrator:preset:denied', { presetId }); AuditEmitter.emitPresetDenied(presetId, 'Permission denied'); return Promise.resolve(); }
       const cfg = _getPort('config'); const env = cfg?.app?.environment ?? 'production';
       const confirmPromise = _confirmActions ? ConfirmationModal.confirmApplyPreset(presetId, { environment: env }) : Promise.resolve(true);
       return confirmPromise.then((confirmed) => { if (!confirmed) { _log('info', 'Apply preset cancelled by user'); return; } _log('info', `UI: Apply preset ${presetId}`); _metrics.presetApplyCount++; _metrics.lastPresetAt = Date.now(); const result = coreOrchestrator.applyPreset(presetId); if (result) { orchestratorControls.updatePanelList(result.panels); orchestratorControls.updatePresetSelector(presetId); AuditEmitter.emitPresetApplied(presetId, { panelCount: result.panels.length }); _syncLayoutManager(result.layoutMode); } });
@@ -186,7 +193,7 @@ const _syncLayoutManager = (layoutMode: string) => { const lm = _getLayoutManage
 
 const _exposeGlobalAPI = () => {
   if (typeof window === 'undefined' || isStrict()) return;
-  (window as any).Orchestrator = { getVersion, healthCheck, info, isInitialized, reset, getMetrics, getIntegrationsStatus, resetMetrics, setDebug, setConfirmActions, applyPreset: (id: string, ctx: Record<string, unknown>) => { if (!(PermissionsAdapter as Record<string, unknown>).canApplyPreset) { _log('warn', 'Permission denied'); return null; } _metrics.presetApplyCount++; _metrics.lastPresetAt = Date.now(); const result = coreOrchestrator.applyPreset(id, ctx); if (result) AuditEmitter.emitPresetApplied(id, ctx); return result; }, getActivePanels: () => coreOrchestrator.getActivePanels(), getLayoutMode: () => coreOrchestrator.getLayoutMode(), getCurrentPreset: () => coreOrchestrator.getCurrentPreset(), refreshAll: () => { _metrics.refreshCount++; AuditEmitter.emitRefreshAll(coreOrchestrator.getActivePanels().length); return coreOrchestrator.refreshAll(); }, getState: () => coreOrchestrator.getState(), getSnapshot: () => coreOrchestrator.getSnapshot(), getFullStatus: () => coreOrchestrator.getFullStatus(), on: (evt: string, handler: (...args: unknown[]) => void) => coreOrchestrator.on(evt, handler), off: (evt: string, handler: (...args: unknown[]) => void) => coreOrchestrator.off(evt, handler), registerModule: (config: Record<string, unknown>) => coreOrchestrator.registerModule(config), version: VERSION, moduleId: MODULE_ID };
+  (window as any).Orchestrator = { getVersion, healthCheck, info, isInitialized, reset, getMetrics, getIntegrationsStatus, resetMetrics, setDebug, setConfirmActions, applyPreset: (id: string, ctx: Record<string, unknown>) => { if (!_canApplyPreset()) { _log('warn', 'Permission denied'); return null; } _metrics.presetApplyCount++; _metrics.lastPresetAt = Date.now(); const result = coreOrchestrator.applyPreset(id, ctx); if (result) AuditEmitter.emitPresetApplied(id, ctx); return result; }, getActivePanels: () => coreOrchestrator.getActivePanels(), getLayoutMode: () => coreOrchestrator.getLayoutMode(), getCurrentPreset: () => coreOrchestrator.getCurrentPreset(), refreshAll: () => { _metrics.refreshCount++; AuditEmitter.emitRefreshAll(coreOrchestrator.getActivePanels().length); return coreOrchestrator.refreshAll(); }, getState: () => coreOrchestrator.getState(), getSnapshot: () => coreOrchestrator.getSnapshot(), getFullStatus: () => coreOrchestrator.getFullStatus(), on: (evt: string, handler: (...args: unknown[]) => void) => coreOrchestrator.on(evt, handler), off: (evt: string, handler: (...args: unknown[]) => void) => coreOrchestrator.off(evt, handler), registerModule: (config: Record<string, unknown>) => coreOrchestrator.registerModule(config), version: VERSION, moduleId: MODULE_ID };
   window.__dev = window.__dev || {}; window.__dev.orchestrator = { getVersion, getStatus, healthCheck, info, isInitialized, reset, getMetrics, getIntegrationsStatus, resetMetrics, setDebug, setConfirmActions, core: coreOrchestrator, store: orchestratorStore, bus: orchestratorBus, telemetry: orchestratorTelemetry, permissions: PermissionsAdapter, confirmModal: ConfirmationModal, auditEmitter: AuditEmitter };
   _log('info', `Global API exposed: (window as any).Orchestrator (${VERSION})`);
 };

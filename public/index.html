@@ -120,6 +120,8 @@
   <!-- LIGHT MODE incremental (light total) — aditivo, só age sob [data-theme=light]; dark intocado.
        ?v BUMPA a cada deploy (index.html no-store) p/ furar cache immutable de /assets/css/. -->
   <link rel="stylesheet" href="/assets/css/theme.light-total.css?v=39">
+  <!-- Google Calendar — badge de estado + popover do ícone do header. Aditivo. 2026-07-30 -->
+  <link rel="stylesheet" href="/components/gcal-header-popover/style.css?v=20260730-1">
 
   <!-- App Config (module) -->
   <script type="module" src="/config/app.config.js"></script>
@@ -198,6 +200,17 @@
   <script type="module" src="/components/traffic-monitor/header-indicator.js?v=20260729-2"></script>
   <!-- Avatar Sync — atualiza o avatar do header/menu em tempo real quando o Avatar Studio salva (CustomEvent + BroadcastChannel + storage). ADITIVO, age só após load. 2026-07-29 -->
   <script src="/components/avatar-sync/index.js?v=20260729-2"></script>
+  <!-- Google Calendar — estado do ícone (§8.3) + popover dos próximos (§9). NÃO intercepta o clique
+       (que segue navegando para o painel); só hover/foco. Standalone porque o botão vem do
+       header-components.bundle.js, cujo rebuild está desaconselhado. 2026-07-30 -->
+  <script type="module" src="/components/gcal-header-popover/index.js?v=20260730-1"></script>
+  <!-- Rota inicial — o shell não honra o hash no BOOT A FRIO: abrir #/panel-ads direto
+       montava o home ("Principal") com a URL certa. Medido 2026-07-30 em 3 rotas.
+       ADITIVO: age só se o boot caiu no home, uma vez, via RouterGlobal.navigate.
+       Standalone porque quem carrega o painel no boot vive dentro do
+       main.bundle.js, cujo rebuild está desaconselhado. 2026-07-30 -->
+  <script type="module" src="/app/router/initial-route.js?v=20260730-1"></script>
+
   <!-- blackbar-watch (diagnóstico temporário 2026-07-08) REMOVIDO em 2026-07-29:
        o arquivo já não existe no servidor e a tag só gerava 404 no console. -->
 

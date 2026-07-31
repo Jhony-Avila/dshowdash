@@ -66,7 +66,7 @@ export function renderMain(state: Record<string, unknown>, displayData: Array<Re
         <section class="p16-distributions" id="p16-distributions" aria-label="Distribuições">${dataKpis ? renderDistributions(dataKpis) : renderLoading('dist')}</section>
         <section class="p16-filters" id="p16-filters" aria-label="Filtros">${renderFilters({ ...state, displayDataLength: displayData.length })}</section>
         <section class="p16-table-wrapper p16-sticky-wrapper ${useInfiniteScroll ? 'p16-infinite-scroll' : ''}" id="p16-table" role="region" aria-label="Tabela de fornecedores" aria-live="polite">${displayData.length > 0 || isLoading ? (renderTable as unknown as (state: Record<string, unknown>, data: Record<string, unknown>[]) => string)(state, displayData) : renderEmpty(!!hasFilters)}</section>
-        ${!useInfiniteScroll ? `<nav class="p16-pagination" id="p16-pagination" aria-label="Paginação">${(renderPagination as unknown as (pagination: Record<string, unknown>) => string)(dataPagination)}</nav>` : ''}
+        ${!useInfiniteScroll ? `<nav class="p16-pagination" id="p16-pagination" aria-label="Paginação"></nav>` : ''}
       </div>
       ${hasDetail ? renderDetailPanel(selectedFornecedor as Record<string, unknown>, favorites as Set<string>) : ''}
     </div>

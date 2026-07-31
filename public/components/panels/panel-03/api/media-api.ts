@@ -69,7 +69,7 @@ MediaAPI.loadFiles = options => {
   if (searchQuery) params.set('search', searchQuery);
   _log('debug', 'Loading files...');
   return fetch(`${API.LIST}?${params.toString()}`, { credentials: 'include', signal: options.signal }).then(res => res.json()).then(data => {
-    if (data.success) {
+    if ((data.ok ?? data.success)) {
       const files = data.data.files || [];
       _log('info', `Loaded ${files.length} files`);
       return { success: true, files, folders: data.data.folders || [], stats: data.data.stats || {}, storageUsed: data.data.stats && data.data.stats.totalSize ? data.data.stats.totalSize : 0, storageLimit: data.data.stats && data.data.stats.storageLimit ? data.data.stats.storageLimit : 5 * 1024 * 1024 * 1024 };
@@ -83,7 +83,7 @@ MediaAPI.loadFiles = options => {
 MediaAPI.deleteFile = (fileId, { signal }: { signal?: AbortSignal } = {}) => {
   _log('debug', 'Deleting file:', fileId);
   return fetch(API.DELETE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: fileId }), signal }).then(res => res.json()).then(data => {
-    if (data.success) {
+    if ((data.ok ?? data.success)) {
       _emitIntent(UI_INTENTS.SHOW_TOAST, { message: 'Arquivo excluído', type: 'success' });
       _log('info', 'File deleted:', fileId);
       return { success: true };
@@ -104,7 +104,7 @@ MediaAPI.deleteMultiple = (fileIds, { signal }: { signal?: AbortSignal } = {}) =
   let chain = Promise.resolve();
   for (let i = 0; i < fileIds.length; i++) {
     (id => {
-      chain = chain.then(() => fetch(API.DELETE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id }), signal }).then(res => res.json()).then(data => { if (data.success) results.success++; else results.failed++; }).catch(() => { results.failed++; }));
+      chain = chain.then(() => fetch(API.DELETE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id }), signal }).then(res => res.json()).then(data => { if ((data.ok ?? data.success)) results.success++; else results.failed++; }).catch(() => { results.failed++; }));
     })(fileIds[i]);
   }
   return chain.then(() => {
@@ -119,7 +119,7 @@ MediaAPI.deleteMultiple = (fileIds, { signal }: { signal?: AbortSignal } = {}) =
 MediaAPI.toggleStar = (fileId, { signal }: { signal?: AbortSignal } = {}) => {
   _log('debug', 'Toggling star:', fileId);
   return fetch(API.STAR, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: fileId }), signal }).then(res => res.json()).then(data => {
-    if (data.success) { _log('info', 'Star toggled:', fileId, data.data.starred); return { success: true, starred: data.data.starred }; }
+    if ((data.ok ?? data.success)) { _log('info', 'Star toggled:', fileId, data.data.starred); return { success: true, starred: data.data.starred }; }
     throw new Error(data.error || 'Erro ao favoritar');
   }).catch(error => {
     _emitIntent(UI_INTENTS.SHOW_TOAST, { message: 'Erro ao favoritar', type: 'error' });
@@ -131,7 +131,7 @@ MediaAPI.toggleStar = (fileId, { signal }: { signal?: AbortSignal } = {}) => {
 
 // @ts-expect-error TS migration - TS2339
 MediaAPI.getFile = (fileId, { signal }: { signal?: AbortSignal } = {}) => fetch(`${API.GET}?id=${fileId}`, { credentials: 'include', signal }).then(res => res.json()).then(data => {
-  if (data.success) return { success: true, file: data.data };
+  if ((data.ok ?? data.success)) return { success: true, file: data.data };
   throw new Error(data.error || 'Erro ao buscar arquivo');
 }).catch(error => { _log('error', 'Get file failed:', error.message); return { success: false, error: error.message }; });
 

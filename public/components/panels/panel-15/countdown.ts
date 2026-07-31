@@ -44,6 +44,7 @@ export function startCountdown(panel: Record<string, unknown>) {
   updateCountdown(panel.container as HTMLElement, panel.countdownValue as number);
 
   panel.countdownInterval = setInterval(() => {
+    if (typeof document !== 'undefined' && document.hidden) return;  // aba oculta: nao conta nem busca
     if (!panel.autoRefreshEnabled) return;
 
     (panel.countdownValue as number);

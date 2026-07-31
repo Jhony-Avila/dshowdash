@@ -121,11 +121,14 @@ class Panel11 {
         this.uiComponent.init().then(() => {
           this.setupStateSubscription();
           this.setupEventListeners();
+          // `mounted` ANTES de loadData(): loadData() comeca com
+          // `if (!this.mounted || this.destroyed) return Promise.resolve();`, entao com a
+          // atribuicao depois a CARGA INICIAL era abortada e o painel montava vazio.
+          this.mounted = true;
           return this.loadData();
         }).then(() => {
           this.startAutoRefresh();
           this.startCountdown();
-          this.mounted = true;
           this.setState(STATES.MOUNTED);
           _log("debug", "Montado", { version: VERSION });
           this.eventBus?.emit?.(PANEL_EVENTS.MOUNTED, { panelId: PAINEL_ID, version: VERSION, timestamp: Date.now(), source: MODULE_ID });

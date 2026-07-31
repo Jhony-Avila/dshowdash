@@ -113,7 +113,7 @@ class StatusWeatherSpComponent {
       const response = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: "include", headers: { "Accept": "application/json" } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
-      if (result.success && result.data) {
+      if ((result.ok ?? result.success) && result.data) {
         const temperature = result.data.temperature !== void 0 ? `${result.data.temperature}\xB0C` : "--";
         const icon = result.data.icon || "\u{1F321}\uFE0F";
         this.store.setState({ loading: false, error: null, data: result.data, temperature, icon });

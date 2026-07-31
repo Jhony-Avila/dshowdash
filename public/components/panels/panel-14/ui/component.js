@@ -30,7 +30,12 @@ class UIComponent {
   async init() {
     if (!this.container) return;
     this.toastManager = new ToastManager();
-    this.drawerComponent = new DrawerComponent(this.logger, {});
+    // NAO instanciar drawer aqui: `DrawerComponent` e' um ALIAS de `openDrawer`
+    // (ui/drawer.js: `export { openDrawer as DrawerComponent }`) — uma funcao que
+    // ABRE um drawer dentro de um container. `new DrawerComponent(this.logger, {})`
+    // a executava com o logger no lugar do container -> `container.appendChild is
+    // not a function` -> mount.failed, painel 100% morto. A referencia so era usada
+    // por um `?.destroy()` orfao. Para abrir um drawer: openDrawer(el, {title, content}).
     this.keyboardNav = new KeyboardNavigation(this.container, {});
     this._setupListeners();
     this.mounted = true;

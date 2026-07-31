@@ -1,0 +1,59 @@
+/* panel-bling/src/styles/modulo.css — estilos próprios do módulo
+ * @version 1.0.0  @created 2026-07-30
+ *
+ * Os tokens vêm de _shared-react/styles/tokens.css. Aqui ficam apenas os
+ * comportamentos específicos do painel Bling. Tudo escopado em [data-bl-root] —
+ * nada vaza para o app-shell.
+ */
+
+@keyframes bl-brilho {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* Hover de linha do grid. Fica no CSS (e não em style inline) porque :hover em
+   linha virtualizada com handler JS custa um re-render por movimento de mouse. */
+[data-bl-root] .bl-linha:hover td {
+  background: var(--bl-superficie-2);
+}
+[data-bl-root] .bl-linha:focus-visible {
+  outline: 2px solid var(--bl-verde);
+  outline-offset: -2px;
+}
+
+/* Barra de rolagem discreta, coerente nos dois temas. */
+[data-bl-root] *::-webkit-scrollbar { width: 9px; height: 9px; }
+[data-bl-root] *::-webkit-scrollbar-track { background: transparent; }
+[data-bl-root] *::-webkit-scrollbar-thumb {
+  background: var(--bl-borda-forte);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+[data-bl-root] *::-webkit-scrollbar-thumb:hover { background: var(--bl-texto-3); background-clip: content-box; }
+[data-bl-root] { scrollbar-width: thin; scrollbar-color: var(--bl-borda-forte) transparent; }
+
+/* Campos herdam a fonte do painel — sem isso o Chrome usa a fonte do sistema
+   e os inputs destoam do resto da interface. */
+[data-bl-root] input,
+[data-bl-root] select,
+[data-bl-root] button,
+[data-bl-root] textarea { font-family: inherit; }
+
+[data-bl-root] select {
+  appearance: none;
+  padding-right: 24px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 13px) 52%, calc(100% - 8px) 52%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+/* Impressão: sem navegação, sem barras, só o conteúdo. */
+@media print {
+  [data-bl-root] nav,
+  [data-bl-root] header button,
+  [data-bl-root] [role="group"] { display: none !important; }
+  [data-bl-root] main { overflow: visible !important; }
+}

@@ -72,7 +72,7 @@ export async function fetchItems(forceRefresh: boolean) {
   try {
     const response = await fetch(`${_apiBase}/items`, { method: 'GET', credentials: 'include', headers: { 'Content-Type': 'application/json' } });
     const result = await response.json();
-    if (result.success && result.data) {
+    if ((result.ok ?? result.success) && result.data) {
       _cachedItems = result.data.map((item: Record<string, unknown>, index: number) => ({
         id: item.item_key,
         label: item.label,
@@ -103,7 +103,7 @@ export async function fetchGroups() {
   try {
     const response = await fetch(`${_apiBase}/groups`, { method: 'GET', credentials: 'include', headers: { 'Content-Type': 'application/json' } });
     const result = await response.json();
-    if (result.success) { _cachedGroups = result.data || []; }
+    if ((result.ok ?? result.success)) { _cachedGroups = result.data || []; }
     return result;
   } catch (err: any) { log('error', 'Failed to fetch groups', { error: err.message }); return { success: false, error: err.message }; }
 }
@@ -113,7 +113,7 @@ export async function createItem(item: Record<string, unknown>) {
     const payload = { item_key: item.id, label: item.label, tooltip: item.tooltip || null, icon_name: item.icon || 'circle', group_id: item.groupId || null, action_type: item.actionType || 'openPanel', action_panel_id: item.actionPanelId || null, order_index: item.order || 99, badge_type: item.badgeType || 'none', show_on_desktop: item.showOnDesktop ? 1 : 0, show_on_tablet: item.showOnTablet ? 1 : 0, show_on_mobile: item.showOnMobile ? 1 : 0, is_active: item.isActive ? 1 : 0, uarps_trigger_id: item.uarpsTrigger || null };
     const response = await fetch(`${_apiBase}/items`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const result = await response.json();
-    if (result.success) clearCache();
+    if ((result.ok ?? result.success)) clearCache();
     return result;
   } catch (err: any) { log('error', 'Failed to create item', { error: err.message }); return { success: false, error: err.message }; }
 }
@@ -136,7 +136,7 @@ export async function updateItem(itemId: string | number, updates: Record<string
     if (updates.uarpsTrigger !== undefined) payload.uarps_trigger_id = updates.uarpsTrigger;
     const response = await fetch(`${_apiBase}/items`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const result = await response.json();
-    if (result.success) clearCache();
+    if ((result.ok ?? result.success)) clearCache();
     return result;
   } catch (err: any) { log('error', 'Failed to update item', { error: err.message }); return { success: false, error: err.message }; }
 }
@@ -145,7 +145,7 @@ export async function deleteItem(itemId: string | number) {
   try {
     const response = await fetch(`${_apiBase}/items?id=${itemId}`, { method: 'DELETE', credentials: 'include', headers: { 'Content-Type': 'application/json' } });
     const result = await response.json();
-    if (result.success) clearCache();
+    if ((result.ok ?? result.success)) clearCache();
     return result;
   } catch (err: any) { log('error', 'Failed to delete item', { error: err.message }); return { success: false, error: err.message }; }
 }
@@ -160,7 +160,7 @@ export async function reorderItems(itemIds: (string | number)[]) {
         body: JSON.stringify({ items: items })
     });
     var result = await response.json();
-    if (result.success) clearCache();
+    if ((result.ok ?? result.success)) clearCache();
     return result;
 }
 

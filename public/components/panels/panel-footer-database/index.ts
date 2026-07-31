@@ -123,7 +123,7 @@ export class FooterDatabaseComponent {
       const response = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: 'include', headers: { 'Accept': 'application/json' } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
-      if (result.success && result.data) {
+      if ((result.ok ?? result.success) && result.data) {
         const displayValue = result.data.status === 'online' ? 'OK' : result.data.status;
         this.store.setState({ loading: false, error: null, data: result.data, usage: displayValue, status: result.data.status || 'unknown' });
         this._updateDisplay();

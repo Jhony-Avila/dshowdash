@@ -98,7 +98,7 @@ export const ITEM_TO_PANEL = Object.freeze({
   'principal': 'panel-01',
   'geral': 'panel-02',
   'automacoes': 'panel-03',
-  'bling': 'panel-04',
+  'bling': 'panel-bling',        // @2026-07-30: era 'panel-04' (stub 'Produtos/Bling')
   'clientes': 'panel-03',
   'colaboradores': 'panel-06',
   'rh-pessoas': 'panel-06',

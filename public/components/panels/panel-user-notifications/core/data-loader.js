@@ -50,7 +50,7 @@ DataLoader.prototype.loadData = async function() {
     const loadTime = performance.now() - loadStartTime;
     if (res.ok) {
       const data = await res.json();
-      if (data.success && data.data) {
+      if ((data.ok ?? data.success) && data.data) {
         store.setSettings(data.data);
       } else {
         store.setSettings(Object.assign({}, DEFAULT_SETTINGS));
@@ -109,7 +109,7 @@ DataLoader.prototype.saveSettings = async function(settings) {
       body: JSON.stringify(settings)
     });
     const data = await res.json();
-    if (data.success) {
+    if ((data.ok ?? data.success)) {
       store.setDirty(false);
       circuitBreaker.recordSuccess();
       telemetry.saved({});

@@ -52,7 +52,8 @@ import { isStrict, recordViolation } from '/core/runtime/enterprise/strict-mode.
 import { COMPONENT_EVENTS } from '/core/runtime/events/catalog/component.events.js';
 
 // @ts-expect-error TS migration - TS2614
-import { initPorts, getPort, injectPorts, getPorts, isPortsInitialized } from './ports.js';
+// ports.js exporta `setPorts`, nao `injectPorts` — nome inexistente quebra o modulo (ver .js).
+import { initPorts, getPort, setPorts as injectPorts, getPorts, isPortsInitialized } from './ports.js';
 
 // @ts-expect-error TS migration - TS2614
 import { createLogger } from './logger-helper.js';

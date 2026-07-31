@@ -123,7 +123,7 @@ export class StatusCurrencyBtcComponent {
       const response = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: 'include', headers: { 'Accept': 'application/json' } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
-      if (result.success && result.data) {
+      if ((result.ok ?? result.success) && result.data) {
         const price = result.data.usd ? `$${(result.data.usd).toLocaleString('en-US')}` : '--';
         const change = result.data.usd_24h_change || 0;
         this.store.setState({ loading: false, error: null, data: result.data, price, change });

@@ -113,7 +113,7 @@ class FooterServerComponent {
       const response = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: "include", headers: { "Accept": "application/json" } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
-      if (result.success && result.data) {
+      if ((result.ok ?? result.success) && result.data) {
         const uptime = result.data.uptime || "--";
         const shortUptime = uptime.replace("up ", "").replace(" weeks", "w").replace(" week", "w").replace(" days", "d").replace(" day", "d").replace(" hours", "h").replace(" hour", "h").replace(" minutes", "m").replace(", ", " ");
         this.store.setState({ loading: false, error: null, data: result.data, usage: shortUptime, status: result.data.status || "unknown" });

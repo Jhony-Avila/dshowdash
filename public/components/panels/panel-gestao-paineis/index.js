@@ -151,6 +151,8 @@ const PanelGestaoPaineis = /* @__PURE__ */ (() => {
       loadCategories(signal)
     ]);
     _refreshTimer = setInterval(() => {
+      // aba oculta: nao gasta requisicao (o painel nao esta a vista)
+      if (typeof document !== "undefined" && document.hidden) return;
       loadPanels(_abortController?.signal);
     }, CONFIG.refreshInterval);
     trackMount();

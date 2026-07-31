@@ -113,7 +113,7 @@ class FooterStatusComponent {
       const response = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: "include", headers: { "Accept": "application/json" } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
-      if (result.success && result.data) {
+      if ((result.ok ?? result.success) && result.data) {
         this.store.setState({ loading: false, error: null, data: result.data, requestsMin: result.data.requests_min || 0, status: result.data.status || "unknown" });
         this._updateDisplay();
       }

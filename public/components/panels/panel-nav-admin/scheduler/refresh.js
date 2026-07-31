@@ -39,6 +39,7 @@ const start = (options = {}) => {
   _countdown = seconds;
   if (_onTick) _onTick(_countdown);
   _countdownId = setInterval(() => {
+    if (typeof document !== "undefined" && document.hidden) return;  // aba oculta: nao conta nem busca
     if (_paused || _refreshing) return;
     _countdown--;
     if (_onTick) _onTick(_countdown);

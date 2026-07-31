@@ -77,6 +77,12 @@ PanelBlingComponent.prototype._render = function() {
   this.element.innerHTML = `<img src="${PANEL_CONFIG.icon}" alt="${PANEL_CONFIG.label}" class="trigger-icon" loading="lazy" />`;
   this.container.appendChild(this.element);
 };
+// NAVEGAÇÃO (@2026-07-30): fallback local. O navigation-adapter emite
+// NAV_INTENTS.NAVIGATE e devolve `true` mesmo sem ninguém escutando — medido em
+// 2026-07-30 com clique real, os DEZ botões de painel do header não navegam
+// (pipedrive inclusive, com o painel em produção). Problema pré-existente do
+// header, reportado em docs/BLING/README.md. Aqui só o Bling é corrigido, e sem
+// tocar nos outros nove. Ver nota completa no index.ts.
 PanelBlingComponent.prototype._attachEvents = function() {
   const self = this;
   if (!this.element) return;
@@ -84,7 +90,11 @@ PanelBlingComponent.prototype._attachEvents = function() {
     e.preventDefault();
     self._metrics.clickCount++;
     self._metrics.lastClickAt = Date.now();
+    const antes = window.location.hash;
     navigateToRoute(PANEL_CONFIG.route, MODULE_ID);
+    window.setTimeout(() => {
+      if (window.location.hash === antes) { window.location.hash = PANEL_CONFIG.route; }
+    }, 140);
   };
   this.element.addEventListener("click", this._clickHandler);
 };

@@ -13,6 +13,7 @@ function createNetworkManager(options = {}) {
   let _downlink = 0;
   let _rtt = 0;
   let _pingTimer = null;
+  let _onVisibilityChange = null;
   let _counter = 0;
   let _metrics = { statusChanges: 0, pings: 0, failures: 0 };
   function _updateConnectionInfo() {
@@ -98,13 +99,22 @@ function createNetworkManager(options = {}) {
     },
     startMonitoring(interval = pingInterval) {
       this.stopMonitoring();
-      _pingTimer = setInterval(() => _ping(), interval);
+      _pingTimer = setInterval(() => {
+        if (typeof document !== "undefined" && document.hidden) return;
+        _ping();
+      }, interval);
+      _onVisibilityChange = () => { if (!document.hidden) _ping(); };
+      document.addEventListener("visibilitychange", _onVisibilityChange);
       _ping();
     },
     stopMonitoring() {
       if (_pingTimer) {
         clearInterval(_pingTimer);
         _pingTimer = null;
+      }
+      if (_onVisibilityChange) {
+        document.removeEventListener("visibilitychange", _onVisibilityChange);
+        _onVisibilityChange = null;
       }
     },
     onOnline(callback) {

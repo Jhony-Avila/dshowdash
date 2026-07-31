@@ -12,6 +12,11 @@ import { STATES } from "./core/states.js";
 import { CIRCUIT_BREAKER_THRESHOLD, CIRCUIT_BREAKER_TIMEOUT, DEFAULT_PERFORMANCE_METRICS } from "./core/config.js";
 import { renderStructure } from "./core/template.js";
 import { DataLoader } from "./core/data-loader.js";
+// Logger/PanelTelemetryTracker vivem no proprio painel mas NUNCA eram
+// importados: o codigo chamava `new PanelLogger`/`new Telemetry`, nomes que
+// nao existem -> ReferenceError no constructor -> painel 100% morto.
+import { Logger } from "./utils/logger.js";
+import { PanelTelemetryTracker } from "./telemetry/tracker.js";
 const MODULE_ID = "panel-18";
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const hasDocument = typeof document !== "undefined";
@@ -40,8 +45,8 @@ class Painel18 {
   constructor() {
     this.container = null;
     this.uiComponent = null;
-    this.logger = new PanelLogger(PAINEL_ID, VERSION);
-    this.telemetry = new Telemetry(PAINEL_ID, VERSION);
+    this.logger = new Logger(PAINEL_ID, VERSION);
+    this.telemetry = new PanelTelemetryTracker(PAINEL_ID, VERSION);
     this.circuitBreaker = new CircuitBreaker(CIRCUIT_BREAKER_THRESHOLD, CIRCUIT_BREAKER_TIMEOUT, this.logger);
     this.apiClient = new ApiClient(PAINEL_ID, this.logger);
     this.store = new StateStore(this.logger);

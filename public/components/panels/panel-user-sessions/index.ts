@@ -88,7 +88,7 @@ export class UserSessionsComponent {
   async _fetchData() {
     if (!this._canRefresh()) return;
     this.store.setState({ loading: true }); this._metrics.fetchCount++; this._metrics.lastFetchAt = Date.now();
-    try { const r = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: 'include' }); if (!r.ok) throw new Error(`HTTP ${r.status}`); const j = await r.json(); if (j.success && j.data) { this.store.setState({ loading: false, error: null, data: j.data, activeSessions: j.data.active_sessions || 0 }); this._updateDisplay(); } } catch (e: any) { if (e.name !== 'AbortError') { this._metrics.errorCount++; this.store.setState({ loading: false, error: e.message }); } }
+    try { const r = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: 'include' }); if (!r.ok) throw new Error(`HTTP ${r.status}`); const j = await r.json(); if ((j.ok ?? j.success) && j.data) { this.store.setState({ loading: false, error: null, data: j.data, activeSessions: j.data.active_sessions || 0 }); this._updateDisplay(); } } catch (e: any) { if (e.name !== 'AbortError') { this._metrics.errorCount++; this.store.setState({ loading: false, error: e.message }); } }
   }
   _startRefresh() { this._stopRefresh(); this._refreshTimer = setInterval(() => { if (this._canRefresh()) this._fetchData(); }, this.config.refreshInterval); }
   _stopRefresh() { if (this._refreshTimer) { clearInterval(this._refreshTimer); this._refreshTimer = null; } }

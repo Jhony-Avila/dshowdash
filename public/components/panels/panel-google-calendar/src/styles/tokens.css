@@ -1,0 +1,231 @@
+/* tokens.css — tokens e layout do painel Google Calendar.
+   @version 1.0.0  @created 2026-07-29
+
+   TUDO escopado a [data-gc-react-root]: quando o painel fecha, o root some e
+   estas regras ficam inertes (nunca vazam para o shell).
+
+   TEMA — MEDIDO no shell em 2026-07-29, nos dois modos:
+
+     <html class="density-comfortable theme-light" data-theme="dark|light">
+     <body class="… theme-dark|theme-light">
+
+   ⚠️ A classe `theme-light` no <html> fica PRESA: ela está lá mesmo com o tema
+   escuro ativo. NÃO é sinal de tema — quem usar `:root.theme-light` prende o
+   painel em claro para sempre (aconteceu aqui na primeira versão deste arquivo,
+   e só apareceu ao medir os dois temas lado a lado).
+
+   Os sinais REAIS e concordantes são `html[data-theme]` e a classe no <body>.
+   Declaramos os dois: cobre tanto o mecanismo do Outlook/Pipedrive quanto o do
+   DataTables, sem depender do sinal falso. */
+
+[data-gc-react-root] {
+  /* superfícies */
+  --gc-bg:         #14141f;
+  --gc-surface:    #1c1c2b;
+  --gc-surface-2:  #23233a;
+  --gc-surface-3:  #2a2a3d;
+  --gc-overlay:    #1c1c2b;   /* OPACO: overlay translúcido em position:fixed
+                                 já causou drawer transparente neste projeto */
+  --gc-borda:      #2e2e44;
+  --gc-borda-forte:#3c3c56;
+
+  /* texto */
+  --gc-texto:      #e8e8f0;
+  --gc-texto-2:    #a2a2b8;   /* 6,7:1 sobre a superfície */
+  /* Era #767689 = 3,78:1 — reprovado para texto pequeno (piso 4,5:1). A
+     homologação mediu 140 textos abaixo do piso, quase todos por este token:
+     ele veste rótulo de grupo, meta de evento e "td fraco", todos em 10-11px.
+     #9898ae dá 5,95:1 na superfície e 5,42:1 sobre a superfície-2 (chips). */
+  --gc-texto-3:    #9898ae;
+
+  /* identidade — as quatro cores do Google Calendar, em dose moderada (§69.1) */
+  --gc-azul:       #4285f4;
+  --gc-vermelho:   #ea4335;
+  --gc-amarelo:    #fbbc04;
+  --gc-verde:      #34a853;
+
+  /* Botão primário é texto BRANCO sobre este fundo: #4285f4 dava só 3,56:1.
+     #3372cf mantém a cara do azul Google e chega a 4,72:1. */
+  --gc-primaria:   #3372cf;
+  --gc-primaria-h: #3f81e0;
+  --gc-primaria-ct:#ffffff;
+  /* O azul original segue disponível para MARCA (ícone, faixa), onde não há
+     texto pequeno por cima. */
+  --gc-azul-marca: #4285f4;
+  /* AÇÃO COMO TEXTO é outro papel: `--gc-primaria` foi escolhida para ser FUNDO
+     com texto branco por cima, e no escuro ela é escura demais para virar
+     texto (3,0-3,6:1 medidos em contagem regressiva, "Agendar" e links).
+     Este tom claro dá 5,3-7,2:1 sobre as superfícies do dark. */
+  --gc-primaria-txt: #7dabf0;
+
+  /* estado */
+  --gc-ok:         #34d399;
+  --gc-atencao:    #fbbf24;
+  --gc-alerta:     #f87171;
+  --gc-foco:       #a78bfa;
+
+  /* data-viz — paleta validada (validate_palette.js, modos light e dark) */
+  --gc-serie-1:    #3987e5;
+  --gc-serie-2:    #d95926;
+  --gc-serie-3:    #199e70;
+  --gc-grade:      rgba(162, 162, 184, .18);
+
+  /* métrica */
+  --gc-r:          10px;
+  --gc-r-s:        7px;
+  --gc-sombra:     0 1px 2px rgba(0,0,0,.28), 0 6px 18px rgba(0,0,0,.18);
+
+  height: 100%;
+  color: var(--gc-texto);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+[data-gc-react-root] *,
+[data-gc-react-root] *::before,
+[data-gc-react-root] *::after { box-sizing: border-box; }
+
+:root[data-theme="light"] [data-gc-react-root],
+body.theme-light [data-gc-react-root] {
+  --gc-bg:         #f5f6fa;
+  --gc-surface:    #ffffff;
+  --gc-surface-2:  #eef1f7;
+  --gc-surface-3:  #e5e9f2;
+  --gc-overlay:    #ffffff;
+  --gc-borda:      #dfe3ec;
+  --gc-borda-forte:#c7cddb;
+
+  --gc-texto:      #1b1f2a;
+  --gc-texto-2:    #5b6373;   /* 6,0:1 */
+  /* 5,78:1 no branco, 5,11:1 na superfície-2 e 4,75:1 na superfície-3 — este
+     token veste texto de 10-11px em fundos diferentes, então tem de passar em
+     TODOS, não só no branco. #6b7280 dava 4,27:1 sobre a superfície-2. */
+  --gc-texto-3:    #5f6673;
+
+  --gc-primaria:   #1668d4;   /* era #1a73e8 = 4,51:1, no limite; agora 5,3:1 */
+  --gc-primaria-h: #1257b4;
+  /* No claro o tom escuro serve para os dois papéis (6,9:1 como texto). */
+  --gc-primaria-txt: #1257b4;
+
+  /* Cores de estado no claro vestem TEXTO sobre um fundo de 18% delas mesmas
+     (pílulas e tags). Nessa combinação as versões vivas ficavam em 2,5-3,8:1.
+     Estes tons passam de 4,9:1 mantendo a semântica de cada estado. */
+  --gc-ok:         #046c3b;
+  --gc-atencao:    #96490a;
+  --gc-alerta:     #b02010;
+  --gc-foco:       #6d28d9;
+
+  --gc-serie-1:    #2a78d6;
+  --gc-serie-2:    #eb6834;
+  --gc-serie-3:    #1baf7a;
+  --gc-grade:      rgba(27, 31, 42, .12);
+
+  --gc-sombra:     0 1px 2px rgba(16,24,40,.06), 0 6px 16px rgba(16,24,40,.08);
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────────
+   O app-shell reserva 312 px fixos para a sidebar dele. Em janelas de
+   600–820 px o painel fica com ~210–260 px de pista útil, então CADA item de
+   grid precisa de min-width:0 — minmax(0,1fr) na pista sozinho não segura, e
+   o sintoma é a tabela empurrando a página para o lado. */
+[data-gc-react-root] .gc-root {
+  display: flex; flex-direction: column;
+  height: 100%; min-height: 480px; min-width: 0;
+  background: var(--gc-bg);
+}
+[data-gc-react-root] .gc-layout {
+  display: flex; flex: 1 1 auto; min-height: 0; min-width: 0; position: relative;
+}
+[data-gc-react-root] .gc-conteudo {
+  flex: 1 1 auto; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column;
+}
+[data-gc-react-root] .gc-scroll {
+  flex: 1 1 auto; min-height: 0; min-width: 0;
+  overflow-y: auto; overflow-x: hidden;
+  padding: 14px 16px 28px;
+}
+[data-gc-react-root] .gc-tela {
+  display: flex; flex-direction: column; gap: 14px; min-width: 0;
+}
+
+/* ── Sub-sidebar (§11) ─────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-subsidebar {
+  flex: 0 0 240px; width: 240px; min-width: 0;
+  display: flex; flex-direction: column;
+  background: var(--gc-surface);
+  border-right: 1px solid var(--gc-borda);
+  transition: flex-basis .16s ease, width .16s ease;
+}
+[data-gc-react-root] .gc-subsidebar.is-colapsada { flex-basis: 72px; width: 72px; }
+
+[data-gc-react-root] .gc-subsidebar-toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; margin: 0; width: 100%;
+  background: none; border: 0; border-bottom: 1px solid var(--gc-borda);
+  color: var(--gc-texto-2); font: inherit; font-size: 12px; cursor: pointer;
+}
+[data-gc-react-root] .gc-subsidebar.is-colapsada .gc-subsidebar-toggle { justify-content: center; }
+[data-gc-react-root] .gc-subsidebar-toggle:hover { color: var(--gc-texto); background: var(--gc-surface-2); }
+
+[data-gc-react-root] .gc-subsidebar-scroll { flex: 1 1 auto; overflow-y: auto; padding: 8px 0 16px; }
+[data-gc-react-root] .gc-grupo { margin-bottom: 6px; }
+[data-gc-react-root] .gc-grupo-label {
+  padding: 10px 16px 5px; font-size: 10.5px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--gc-texto-3);
+}
+[data-gc-react-root] .gc-grupo-sep { height: 1px; margin: 8px 14px; background: var(--gc-borda); }
+[data-gc-react-root] .gc-grupo-itens { list-style: none; margin: 0; padding: 0 8px; }
+
+[data-gc-react-root] .gc-item {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 8px 10px; margin: 1px 0;
+  background: none; border: 0; border-radius: var(--gc-r-s);
+  color: var(--gc-texto-2); font: inherit; font-size: 12.5px;
+  text-align: left; cursor: pointer;
+}
+[data-gc-react-root] .gc-subsidebar.is-colapsada .gc-item { justify-content: center; padding: 9px 0; }
+[data-gc-react-root] .gc-item:hover { background: var(--gc-surface-2); color: var(--gc-texto); }
+[data-gc-react-root] .gc-item:focus-visible { outline: 2px solid var(--gc-primaria); outline-offset: -2px; }
+[data-gc-react-root] .gc-item.is-ativo {
+  background: color-mix(in srgb, var(--gc-primaria) 14%, transparent);
+  color: var(--gc-texto); font-weight: 600;
+}
+[data-gc-react-root] .gc-item.is-ativo::before {
+  content: ''; position: absolute; left: -8px; top: 6px; bottom: 6px;
+  width: 3px; border-radius: 0 3px 3px 0; background: var(--gc-primaria);
+}
+[data-gc-react-root] .gc-item-icone { display: flex; flex: 0 0 auto; }
+[data-gc-react-root] .gc-item-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+[data-gc-react-root] .gc-badge {
+  flex: 0 0 auto; min-width: 19px; height: 18px; padding: 0 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 9px; background: var(--gc-alerta); color: #fff;
+  font-size: 10.5px; font-weight: 700;
+}
+[data-gc-react-root] .gc-badge.is-compacto {
+  position: absolute; top: 5px; right: 10px;
+  min-width: 8px; width: 8px; height: 8px; padding: 0;
+}
+
+[data-gc-react-root] .gc-sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ── Responsivo (§79) ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  [data-gc-react-root] .gc-subsidebar { flex-basis: 72px; width: 72px; }
+  [data-gc-react-root] .gc-subsidebar .gc-item-label,
+  [data-gc-react-root] .gc-subsidebar .gc-grupo-label { display: none; }
+  [data-gc-react-root] .gc-subsidebar .gc-item { justify-content: center; }
+}
+@media (max-width: 700px) {
+  [data-gc-react-root] .gc-subsidebar { display: none; }
+  [data-gc-react-root] .gc-scroll { padding: 10px 10px 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-gc-react-root] * { animation: none !important; transition: none !important; }
+}

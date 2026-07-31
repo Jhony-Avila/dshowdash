@@ -71,7 +71,9 @@ export class UIComponent {
   async init() {
     if (!this.container) return;
     this.toastManager = new ToastManager();
-    this.drawerComponent = new (DrawerComponent as unknown as new (logger: unknown, opts: Record<string, unknown>) => Record<string, unknown>)(this.logger, {});
+    // `DrawerComponent` e' alias de `openDrawer` (funcao, nao classe). O cast duplo
+    // `as unknown as new (...)` a disfarcava de construtor e o mount morria em
+    // `container.appendChild is not a function`. Ver .js irmao.
     this.keyboardNav = new (KeyboardNavigation as unknown as new (container: HTMLElement, opts: Record<string, unknown>) => Record<string, unknown>)(this.container, {});
     this._setupListeners();
     this.mounted = true;

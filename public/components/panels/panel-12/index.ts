@@ -162,11 +162,13 @@ export const mount = (container: HTMLElement) => { try {
   }
   _log('debug', 'Mounting panel-12...'); _initPorts(); loadCSS();
   _abortController = new AbortController();
-  const savedSort = (persist as any).getSortState();
-  if (savedSort) (store as any).setSort(savedSort);
+  // persist NAO exporta getSortState (so getSortColumn/getSortDirection) e
+  // store.setSort recebe DOIS argumentos — o `as any` escondia ambos os erros.
+  (store as any).setSort((persist as any).getSortColumn(), (persist as any).getSortDirection());
   container.id = 'painel-12';
   container.innerHTML = (renderHeader as any)();
-  (panelHeader as any).setup(container, { onSearchChange: (v: string) => handleSearchChange(v, callbacks), onSearchClear: () => handleSearchClear(callbacks), onFilterChange: (t: string, v: string) => handleFilterChange(t, v, callbacks), onRefresh: () => { if (_isAuthenticated()) loadData(container, callbacks); } });
+  // ui/header exporta bindHeaderEvents, nunca `setup` — outro erro que o `as any` escondia.
+  (panelHeader as any).bindHeaderEvents(container, { onSearchChange: (v: string) => handleSearchChange(v, callbacks), onSearchClear: () => handleSearchClear(callbacks), onFilterChange: (t: string, v: string) => handleFilterChange(t, v, callbacks), onRefresh: () => { if (_isAuthenticated()) loadData(container, callbacks); } });
   setupDelegatedEventListeners(container);
   return loadData(container, callbacks).then(() => {
     startPolling(container);

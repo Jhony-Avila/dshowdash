@@ -14,6 +14,22 @@ import logger from "./utils/logger.js";
 import * as PermissionsAdapter from "./adapters/permissions-guard-adapter.js";
 import * as ConfirmationModal from "./ui/confirmation-modal.js";
 import * as AuditEmitter from "./bus/audit-emitter.js";
+
+// ── Adaptador de permissoes: 3 metodos chamados NAO existem ──────────────────
+// `adapters/permissions-guard-adapter` exporta: can, canAccessPanel, getLevel,
+// getPermissions, getRoles, getUser, guard, healthCheck, isAuthenticated, isReady.
+// Chamavam-se `isAvailable`, `getUserContext` e `canApplyPreset` — o segundo
+// derrubava o mount (`getUserContext is not a function`), painel 100% morto.
+//   isAvailable  -> isReady      (mesma semantica: adaptador pronto)
+//   getUserContext -> getUser    (pode retornar null -> optional chaining)
+//   canApplyPreset -> SEM equivalente. Mantido FAIL-CLOSED de proposito: hoje o
+//     caminho de window.Orchestrator ja negava sempre (`!undefined` === true) e o
+//     handler de UI lancava TypeError. Escolher a string de permissao (o adapter usa
+//     a convencao "orchestrator:*" em can(action)) MUDA politica de acesso e e'
+//     decisao do dono — `can()` cai em fallback permissivo por papel/nivel quando a
+//     acao e' desconhecida, entao chutar aqui afrouxaria o controle. PENDENTE-DONO.
+const _canApplyPreset = () => false;
+
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const MODULE_ID = "panel-orchestrator";
 const Ports = createPanelPorts({ moduleId: MODULE_ID });
@@ -55,7 +71,7 @@ const _updateIntegrationsStatus = () => {
   _integrationsStatus.globalStateAvailable = !!_getPort("globalState");
   _integrationsStatus.telemetryAvailable = !!_getPort("telemetry");
   _integrationsStatus.coreInitialized = coreOrchestrator?.initialized ?? false;
-  _integrationsStatus.permissionsAvailable = PermissionsAdapter.isAvailable();
+  _integrationsStatus.permissionsAvailable = PermissionsAdapter.isReady();
   _integrationsStatus.layoutManagerAvailable = !!_getLayoutManager();
 };
 const getVersion = () => VERSION;
@@ -138,7 +154,7 @@ const mount = (container, props = {}, scope = {}) => {
   if (!accessCheck.allowed) {
     if (!_accessDeniedLogged) {
       _log("warn", "Access denied:", accessCheck.reason);
-      orchestratorTelemetry.track(PERMISSIONS_EVENTS.ACCESS_DENIED, { reason: accessCheck.reason, userId: PermissionsAdapter.getUserContext().userId, panelId: MODULE_ID });
+      orchestratorTelemetry.track(PERMISSIONS_EVENTS.ACCESS_DENIED, { reason: accessCheck.reason, userId: PermissionsAdapter.getUser()?.userId, panelId: MODULE_ID });
       AuditEmitter.emitAccessDenied(accessCheck.reason);
       _accessDeniedLogged = true;
     }
@@ -185,7 +201,7 @@ const mount = (container, props = {}, scope = {}) => {
 };
 const _setupEventHandlers = () => {
   orchestratorUIEvents.onApplyPreset((presetId) => {
-    if (!PermissionsAdapter.canApplyPreset(presetId)) {
+    if (!_canApplyPreset(presetId)) {
       _log("warn", "Permission denied for applyPreset:", presetId);
       orchestratorTelemetry.track("panel-orchestrator:preset:denied", { presetId });
       AuditEmitter.emitPresetDenied(presetId, "Permission denied");
@@ -287,7 +303,7 @@ const _syncLayoutManager = (layoutMode) => {
 const _exposeGlobalAPI = () => {
   if (typeof window === "undefined" || isStrict()) return;
   window.Orchestrator = { getVersion, healthCheck, info, isInitialized, reset, getMetrics, getIntegrationsStatus, resetMetrics, setDebug, setConfirmActions, applyPreset: (id, ctx) => {
-    if (!PermissionsAdapter.canApplyPreset) {
+    if (!_canApplyPreset()) {
       _log("warn", "Permission denied");
       return null;
     }

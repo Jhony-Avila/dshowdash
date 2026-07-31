@@ -123,7 +123,7 @@ async function checkUARPSTrigger(trigger: string, { signal }: { signal?: AbortSi
     const response = await fetch('/api/permissions/uarps?action=user-permissions', { credentials: 'include', signal });
     if (response.ok) {
       const data = await response.json();
-      if (data.success && data.data?.triggers) {
+      if ((data.ok ?? data.success) && data.data?.triggers) {
         _uarpsCache = {};
         data.data.triggers.forEach((t: Record<string, unknown>) => { if (_uarpsCache) _uarpsCache[t.trigger_id as string] = t.state === 'allow'; });
         _uarpsCacheTime = Date.now();

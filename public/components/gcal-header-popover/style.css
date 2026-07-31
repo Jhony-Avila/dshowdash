@@ -1,0 +1,192 @@
+/* gcal-header-popover — estilos do badge e do popover do header.
+   @version 1.0.0  @created 2026-07-30
+
+   Fora do escopo [data-gc-react-root] de propósito: isto vive no HEADER, não
+   dentro do painel. Todo seletor é prefixado .gcal- e ancorado no botão do
+   calendário, para não vazar para os outros ícones do header.
+
+   Tema: `html[data-theme]` e `body.theme-*` são os sinais reais.
+   A classe theme-light do <html> fica PRESA e NÃO serve (medido 2026-07-29). */
+
+/* ── indicador de estado no ícone (§8.3) ─────────────────────────── */
+[data-panel-trigger="panel-calendar"] {
+  position: relative;
+}
+[data-panel-trigger="panel-calendar"]::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background .18s ease;
+  pointer-events: none;
+}
+[data-panel-trigger="panel-calendar"][data-gcal-estado="mock"]::after      { background: #fbbc04; }
+[data-panel-trigger="panel-calendar"][data-gcal-estado="stale"]::after     { background: #f59e0b; }
+[data-panel-trigger="panel-calendar"][data-gcal-estado="attention"]::after { background: #f97316; }
+[data-panel-trigger="panel-calendar"][data-gcal-estado="error"]::after     { background: #ea4335; }
+[data-panel-trigger="panel-calendar"][data-gcal-estado="upcoming"]::after  {
+  background: #34a853;
+  animation: gcal-pulso 1.8s ease-in-out infinite;
+}
+@keyframes gcal-pulso {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%      { transform: scale(1.5); opacity: .6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-panel-trigger="panel-calendar"][data-gcal-estado="upcoming"]::after { animation: none; }
+}
+
+.gcal-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #ea4335;
+  color: #fff;
+  font: 600 9.5px/1 system-ui, sans-serif;
+  pointer-events: none;
+}
+
+/* ── popover ─────────────────────────────────────────────────────── */
+.gcal-pop {
+  position: fixed;
+  z-index: 10000;
+  width: 316px;
+  max-width: calc(100vw - 20px);
+  padding: 11px 12px;
+  border-radius: 11px;
+  /* OPACO: overlay translúcido em position:fixed já causou painel transparente
+     neste projeto (incidente do drawer do DataTables). */
+  background: #1c1c2b;
+  border: 1px solid #2e2e44;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .42);
+  color: #e8e8f0;
+  font: 12px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  animation: gcal-entra .14s ease-out;
+}
+@keyframes gcal-entra {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gcal-pop { animation: none; }
+}
+
+html[data-theme="light"] .gcal-pop,
+body.theme-light .gcal-pop {
+  background: #ffffff;
+  border-color: #dfe3ec;
+  color: #1b1f2a;
+  box-shadow: 0 12px 34px rgba(16, 24, 40, .16);
+}
+
+.gcal-pop-mock {
+  margin: 0 0 7px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: #fbbc04;
+  color: #4a3200;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.gcal-pop-resumo {
+  margin: 0 0 9px;
+  font-size: 11px;
+  opacity: .72;
+}
+.gcal-pop-vazio {
+  margin: 6px 0 10px;
+  font-size: 11.5px;
+  opacity: .68;
+}
+
+.gcal-pop-lista { list-style: none; margin: 0 0 10px; padding: 0; }
+.gcal-pop-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(128, 128, 150, .18);
+}
+.gcal-pop-item:last-child { border-bottom: 0; }
+.gcal-pop-hora {
+  flex: 0 0 38px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.gcal-pop-corpo { flex: 1 1 auto; min-width: 0; }
+.gcal-pop-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gcal-pop-ponto {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.gcal-pop-meta {
+  display: block;
+  margin-top: 1px;
+  font-size: 10.5px;
+  opacity: .62;
+}
+.gcal-pop-meet {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #4285f4;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.gcal-pop-acoes { display: flex; gap: 6px; }
+.gcal-pop-btn {
+  flex: 1 1 auto;
+  height: 27px;
+  border-radius: 6px;
+  border: 1px solid #2e2e44;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+html[data-theme="light"] .gcal-pop-btn,
+body.theme-light .gcal-pop-btn { border-color: #dfe3ec; }
+.gcal-pop-btn:hover { background: rgba(128, 128, 150, .16); }
+.gcal-pop-btn.is-primario {
+  background: #4285f4;
+  border-color: #4285f4;
+  color: #fff;
+}
+.gcal-pop-btn.is-primario:hover { background: #5a95f5; }
+.gcal-pop-btn:focus-visible { outline: 2px solid #4285f4; outline-offset: 1px; }
+
+.gcal-pop-skel { display: flex; flex-direction: column; gap: 7px; }
+.gcal-pop-skel i {
+  height: 15px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, rgba(128,128,150,.14) 25%, rgba(128,128,150,.26) 50%, rgba(128,128,150,.14) 75%);
+  background-size: 200% 100%;
+  animation: gcal-shimmer 1.3s linear infinite;
+}
+.gcal-pop-skel i:nth-child(2) { width: 82%; }
+.gcal-pop-skel i:nth-child(3) { width: 64%; }
+@keyframes gcal-shimmer { to { background-position: -200% 0; } }

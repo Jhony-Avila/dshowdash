@@ -149,11 +149,10 @@ const mount = (container) => {
     _initPorts();
     loadCSS();
     _abortController = new AbortController();
-    const savedSort = persist.getSortState();
-    if (savedSort) store.setSort(savedSort);
+    store.setSort(persist.getSortColumn(), persist.getSortDirection());
     container.id = "painel-12";
     container.innerHTML = renderHeader();
-    panelHeader.setup(container, { onSearchChange: (v) => handleSearchChange(v, callbacks), onSearchClear: () => handleSearchClear(callbacks), onFilterChange: (t, v) => handleFilterChange(t, v, callbacks), onRefresh: () => {
+    panelHeader.bindHeaderEvents(container, { onSearchChange: (v) => handleSearchChange(v, callbacks), onSearchClear: () => handleSearchClear(callbacks), onFilterChange: (t, v) => handleFilterChange(t, v, callbacks), onRefresh: () => {
       if (_isAuthenticated()) loadData(container, callbacks);
     } });
     setupDelegatedEventListeners(container);

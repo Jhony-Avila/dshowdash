@@ -92,6 +92,7 @@ function start(options: Record<string, unknown> = {}) {
   const seconds = Math.floor(_interval / 1000); _countdown = seconds;
   if (_onTick) _onTick(_countdown);
   _countdownId = setInterval(() => {
+    if (typeof document !== 'undefined' && document.hidden) return;  // aba oculta: nao conta nem busca
     if (_paused || _refreshing) return;
     _countdown--;
     if (_onTick) _onTick(_countdown);

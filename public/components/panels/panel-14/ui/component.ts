@@ -65,7 +65,7 @@ export class UIComponent {
   async init() {
     if (!this.container) return;
     this.toastManager = new ToastManager();
-    this.drawerComponent = new DrawerComponent(this.logger, {});
+    // `DrawerComponent` e' alias de `openDrawer` (funcao, nao classe) — ver .js irmao.
     this.keyboardNav = new KeyboardNavigation(this.container, {});
     this._setupListeners();
     this.mounted = true;

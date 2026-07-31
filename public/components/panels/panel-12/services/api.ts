@@ -45,8 +45,11 @@ export async function loadJobs(signal: AbortSignal | null = null) {
   const options = signal ? { signal } : {};
   const result = await http.get(API_BASE, options);
   if (!result.success) { return { success: false, error: result.error || 'Erro ao carregar jobs', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
-  if (!result.data.success || !result.data.data || !Array.isArray(result.data.data.jobs)) { return { success: false, error: 'Invalid response structure', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
-  return { success: true, data: { jobs: result.data.data.jobs as Record<string, unknown>[] }, duration: result.duration };
+  // O endpoint responde {ok, data:{panel_id, config, data:[...]}, error}: a LISTA vem
+  // em payload.data, nunca em payload.jobs (que nunca existiu no servidor).
+  const payload = result.data.data;
+  if (!(result.data.ok ?? result.data.success) || !payload || !Array.isArray(payload.data)) { return { success: false, error: 'Invalid response structure', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
+  return { success: true, data: { jobs: payload.data as Record<string, unknown>[] }, duration: result.duration };
 }
 
 export async function createJob(jobName: string, signal: AbortSignal | null = null) {
@@ -57,7 +60,7 @@ export async function createJob(jobName: string, signal: AbortSignal | null = nu
   const options = signal ? { signal } : {};
   const result = await http.post(API_BASE, { job_name: trimmed, is_active: 1 }, options);
   if (!result.success) { return { success: false, error: result.error || 'Erro ao criar job', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
-  if (!result.data.success) { return { success: false, error: result.data.error || 'Erro desconhecido ao criar job', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
+  if (!(result.data.ok ?? result.data.success)) { return { success: false, error: result.data.error || 'Erro desconhecido ao criar job', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
   const createdJob = result.data.data || null;
   return { success: true, data: { jobs: createdJob ? [createdJob as Record<string, unknown>] : [] as Record<string, unknown>[] }, duration: result.duration };
 }
@@ -68,7 +71,7 @@ export async function toggleJob(jobId: string, isActive: boolean, signal: AbortS
   const options = signal ? { signal } : {};
   const result = await http.put(`${API_BASE}?id=${jobId}`, { is_active: isActive ? 1 : 0 }, options);
   if (!result.success) { return { success: false, error: result.error || 'Erro ao atualizar job', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
-  if (!result.data.success) { return { success: false, error: result.data.error || 'Erro desconhecido ao atualizar job', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
+  if (!(result.data.ok ?? result.data.success)) { return { success: false, error: result.data.error || 'Erro desconhecido ao atualizar job', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
   return { success: true, data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration };
 }
 
@@ -77,7 +80,7 @@ export async function deleteJob(jobId: string, signal: AbortSignal | null = null
   const options = signal ? { signal } : {};
   const result = await http.del(`${API_BASE}?id=${jobId}`, options);
   if (!result.success) { return { success: false, error: result.error || 'Erro ao excluir job', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
-  if (!result.data.success) { return { success: false, error: result.data.error || 'Erro desconhecido ao excluir job', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
+  if (!(result.data.ok ?? result.data.success)) { return { success: false, error: result.data.error || 'Erro desconhecido ao excluir job', data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration }; }
   return { success: true, data: { jobs: [] as Record<string, unknown>[] }, duration: result.duration };
 }
 

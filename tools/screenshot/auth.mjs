@@ -62,11 +62,34 @@ export async function getSessionCookies() {
 }
 
 // Detecta se a pagina atual e a tela de login
+// Seletor do formulario de login. Casa tambem com o honeypot anti-bot
+// (div.lm-honeypot), que so a checagem de visibilidade descarta.
+const LOGIN_FORM_SELECTOR = 'input[placeholder*="Usu"], input[name="login"], input[type="text"][autocomplete="username"], .login-modal input, form input[type="password"]';
+
 export async function isLoginPage(page) {
   try {
-    // Verifica presenca do formulario de login
-    const loginForm = await page.$('input[placeholder*="Usu"], input[name="login"], input[type="text"][autocomplete="username"], .login-modal input, form input[type="password"]');
-    return !!loginForm;
+    // PRESENCA NAO PROVA NADA: o modal de login fica no DOM em TODA sessao, oculto
+    // por div.login-container depois que o app monta. Medido em 2026-07-30 com sessao
+    // valida: 4 nos casam o seletor, 0 estao visiveis. A versao antiga respondia
+    // "true" com o app montado e a sidebar viva, fazendo o chamador cair em
+    // loginViaPage() -- que espera um campo de senha VISIVEL e estoura o timeout de
+    // 10s. Isso derrubava qualquer suite que recarregasse a pagina ja autenticada.
+    //
+    // A visibilidade precisa subir a cadeia de ancestrais: o honeypot e ocultado por
+    // opacity:0 no PAI, e tanto o getBoundingClientRect do filho quanto o isVisible()
+    // do Playwright o consideram visivel.
+    return await page.evaluate((sel) => {
+      const visivel = (el) => {
+        for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+          const cs = getComputedStyle(n);
+          if (cs.display === 'none' || cs.visibility === 'hidden' || cs.visibility === 'collapse') return false;
+          if (Number(cs.opacity) === 0) return false;
+        }
+        const box = el.getBoundingClientRect();
+        return box.width > 0 && box.height > 0;
+      };
+      return Array.from(document.querySelectorAll(sel)).some(visivel);
+    }, LOGIN_FORM_SELECTOR);
   } catch {
     return false;
   }

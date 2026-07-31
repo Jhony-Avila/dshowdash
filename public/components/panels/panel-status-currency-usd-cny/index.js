@@ -113,7 +113,7 @@ class StatusCurrencyUsdCnyComponent {
       const response = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: "include", headers: { "Accept": "application/json" } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
-      if (result.success && result.data) {
+      if ((result.ok ?? result.success) && result.data) {
         const rate = result.data.rate ? `\xA5 ${result.data.rate.toFixed(2)}` : "--";
         this.store.setState({ loading: false, error: null, data: result.data, rate });
         this._updateDisplay();

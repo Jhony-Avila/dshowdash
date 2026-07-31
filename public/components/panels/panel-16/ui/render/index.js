@@ -11,6 +11,14 @@ function renderMain(state, displayData) {
   const data = state.data;
   const dataKpis = data.kpis;
   const dataList = data.list;
+  // dataPagination fica sem consumidor de proposito. `renderPagination(container, opts)`
+  // e' IMPERATIVA (faz container.innerHTML/appendChild e liga listeners) e retorna
+  // undefined — era chamada dentro do template como se devolvesse HTML, recebendo os
+  // DADOS no lugar do container: `container.appendChild is not a function` -> mount.failed.
+  // A paginacao nunca foi ligada neste painel (nao existe onPageChange/setPage/goToPage,
+  // e o state usa {total,page,limit} enquanto renderPagination espera
+  // {currentPage,totalPages,onPageChange}). Para ligar: apos o innerHTML de renderMain,
+  // chamar renderPagination(el('#p16-pagination'), {...}) com um handler de verdade.
   const dataPagination = data.pagination;
   const selectedRowsSet = selectedRows;
   const hasDetail = selectedFornecedor;
@@ -26,7 +34,7 @@ function renderMain(state, displayData) {
         <section class="p16-distributions" id="p16-distributions" aria-label="Distribui\xE7\xF5es">${dataKpis ? renderDistributions(dataKpis) : renderLoading("dist")}</section>
         <section class="p16-filters" id="p16-filters" aria-label="Filtros">${renderFilters({ ...state, displayDataLength: displayData.length })}</section>
         <section class="p16-table-wrapper p16-sticky-wrapper ${useInfiniteScroll ? "p16-infinite-scroll" : ""}" id="p16-table" role="region" aria-label="Tabela de fornecedores" aria-live="polite">${displayData.length > 0 || isLoading ? renderTable(state, displayData) : renderEmpty(!!hasFilters)}</section>
-        ${!useInfiniteScroll ? `<nav class="p16-pagination" id="p16-pagination" aria-label="Pagina\xE7\xE3o">${renderPagination(dataPagination)}</nav>` : ""}
+        ${!useInfiniteScroll ? `<nav class="p16-pagination" id="p16-pagination" aria-label="Pagina\xE7\xE3o"></nav>` : ""}
       </div>
       ${hasDetail ? renderDetailPanel(selectedFornecedor, favorites) : ""}
     </div>

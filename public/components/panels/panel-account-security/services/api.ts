@@ -45,11 +45,11 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout 
 
 
 // @ts-expect-error TS migration - TS2339
-export async function loadSecurityInfo() { try { const response = await fetchWithTimeout(API_ENDPOINTS.GET_SECURITY_INFO); if (!response.ok) throw new Error(`HTTP ${response.status}`); const data = await response.json(); if (!data.success) throw new Error(data.error || 'Erro ao carregar informações'); return data.data || data; } catch (error) { _getPort('logger')?.error(`[${MODULE_ID}] loadSecurityInfo error:`, error); throw error; } }
+export async function loadSecurityInfo() { try { const response = await fetchWithTimeout(API_ENDPOINTS.GET_SECURITY_INFO); if (!response.ok) throw new Error(`HTTP ${response.status}`); const data = await response.json(); if (!(data.ok ?? data.success)) throw new Error(data.error || 'Erro ao carregar informações'); return data.data || data; } catch (error) { _getPort('logger')?.error(`[${MODULE_ID}] loadSecurityInfo error:`, error); throw error; } }
 
 
 // @ts-expect-error TS migration - TS2339
-export async function changePassword(currentPassword, newPassword) { try { const response = await fetchWithTimeout(API_ENDPOINTS.CHANGE_PASSWORD, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }) }); if (!response.ok) throw new Error(`HTTP ${response.status}`); const data = await response.json(); if (!data.success) throw new Error(data.error || 'Erro ao alterar senha'); return data; } catch (error) { _getPort('logger')?.error(`[${MODULE_ID}] changePassword error:`, error); throw error; } }
+export async function changePassword(currentPassword, newPassword) { try { const response = await fetchWithTimeout(API_ENDPOINTS.CHANGE_PASSWORD, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }) }); if (!response.ok) throw new Error(`HTTP ${response.status}`); const data = await response.json(); if (!(data.ok ?? data.success)) throw new Error(data.error || 'Erro ao alterar senha'); return data; } catch (error) { _getPort('logger')?.error(`[${MODULE_ID}] changePassword error:`, error); throw error; } }
 
 export default { loadSecurityInfo, changePassword };
 export function info() { return { moduleId: MODULE_ID, version: VERSION, portsInitialized: Ports.isInitialized() }; }

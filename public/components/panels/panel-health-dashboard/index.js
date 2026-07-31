@@ -1,6 +1,9 @@
 import { isStrict } from "/core/runtime/enterprise/strict-mode.js";
 import { COMPONENT_EVENTS } from "/core/runtime/events/catalog/component.events.js";
-import { initPorts, getPort, injectPorts, getPorts, isPortsInitialized } from "./ports.js";
+// ports.js exporta `setPorts`, nao `injectPorts`. Importar um nome inexistente e' erro
+// de MODULO: quebra a importacao inteira e o painel nunca carrega. O nome publico
+// `injectPorts` e' mantido por ser o padrao dos demais paineis (re-exportado abaixo).
+import { initPorts, getPort, setPorts as injectPorts, getPorts, isPortsInitialized } from "./ports.js";
 import { createLogger } from "./logger-helper.js";
 import { createTelemetry } from "./telemetry-helper.js";
 import { bindUIEvents, updateCountdownDisplay, renderAuthBlockedView, renderErrorView } from "./ui-handlers.js";

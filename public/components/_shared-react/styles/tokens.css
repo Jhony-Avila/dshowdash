@@ -1,0 +1,199 @@
+/* _shared-react/styles/tokens.css — tokens visuais compartilhados
+ * @version 1.0.0  @created 2026-07-30
+ *
+ * ─── COMO O TEMA É DETECTADO (leia antes de mexer) ────────────────────────
+ * Este projeto tem uma armadilha conhecida: a classe `theme-light` existe no
+ * <html> nos DOIS temas. Escrever `:root.theme-light { ... }` PRENDE o painel
+ * no tema claro para sempre.
+ *
+ * Os sinais confiáveis são, nesta ordem:
+ *   1. html[data-theme="light"|"dark"]
+ *   2. body.theme-light / body.theme-dark
+ *
+ * O padrão abaixo é ESCURO (o dashboard é escuro por padrão) e o claro só entra
+ * quando um dos dois sinais confiáveis aparece. Sempre medir os dois temas lado
+ * a lado depois de alterar qualquer cor aqui.
+ * ──────────────────────────────────────────────────────────────────────────
+ *
+ * Escopo: tudo vive sob [data-bl-root]. Nenhum seletor vaza para o app-shell.
+ */
+
+[data-bl-root] {
+  /* superfícies */
+  --bl-bg:            #0f1117;
+  --bl-bg-elevado:    #161923;
+  --bl-superficie:    #1a1e2a;
+  --bl-superficie-2:  #212636;
+  --bl-overlay:       #12151d;   /* OPACO — usado em position:fixed (drawer/modal).
+                                    Superfície translúcida em fixed vaza o fundo. */
+  --bl-borda:         #2a3042;
+  --bl-borda-forte:   #3a4258;
+
+  /* texto */
+  --bl-texto:         #e8eaf2;
+  --bl-texto-2:       #a4abbd;
+  --bl-texto-3:       #6f7789;
+
+  /* identidade Bling: verde de acento, nunca como fundo de tela inteira (§57.1) */
+  --bl-verde:         #6fbe44;
+  --bl-verde-forte:   #58a233;
+  --bl-verde-suave:   rgba(111, 190, 68, 0.14);
+  --bl-verde-borda:   rgba(111, 190, 68, 0.38);
+
+  /* semânticas */
+  --bl-sucesso:       #3ecf8e;
+  --bl-sucesso-bg:    rgba(62, 207, 142, 0.13);
+  --bl-aviso:         #f0b429;
+  --bl-aviso-bg:      rgba(240, 180, 41, 0.13);
+  --bl-erro:          #f2555a;
+  --bl-erro-bg:       rgba(242, 85, 90, 0.13);
+  --bl-info:          #4aa3ff;
+  --bl-info-bg:       rgba(74, 163, 255, 0.13);
+  --bl-neutro:        #8b93a7;
+  --bl-neutro-bg:     rgba(139, 147, 167, 0.13);
+
+  /* série de gráficos — ordem fixa; a 1ª é o verde da identidade */
+  --bl-serie-1: #6fbe44;
+  --bl-serie-2: #4aa3ff;
+  --bl-serie-3: #f0b429;
+  --bl-serie-4: #b07cf5;
+  --bl-serie-5: #3ecf8e;
+  --bl-serie-6: #f2555a;
+  --bl-serie-7: #34c6d3;
+  --bl-serie-8: #f58b4a;
+
+  /* medidas */
+  --bl-raio:      10px;
+  --bl-raio-sm:   6px;
+  --bl-sombra:    0 1px 2px rgba(0,0,0,.28), 0 4px 14px rgba(0,0,0,.22);
+  --bl-sombra-sm: 0 1px 2px rgba(0,0,0,.24);
+  --bl-sidebar-larga: 240px;
+  --bl-sidebar-estreita: 72px;
+  --bl-linha: 38px;
+
+  --bl-fonte: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --bl-fonte-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* ── Tema claro: só pelos sinais confiáveis ───────────────────────────── */
+html[data-theme="light"] [data-bl-root],
+body.theme-light [data-bl-root] {
+  --bl-bg:            #f5f6f9;
+  --bl-bg-elevado:    #ffffff;
+  --bl-superficie:    #ffffff;
+  --bl-superficie-2:  #f0f2f6;
+  --bl-overlay:       #ffffff;
+  --bl-borda:         #dfe3ec;
+  --bl-borda-forte:   #c3cad8;
+
+  --bl-texto:         #1b2030;
+  --bl-texto-2:       #5a6377;
+  --bl-texto-3:       #868fa3;
+
+  --bl-verde:         #4e9b2b;
+  --bl-verde-forte:   #3f7f22;
+  --bl-verde-suave:   rgba(78, 155, 43, 0.11);
+  --bl-verde-borda:   rgba(78, 155, 43, 0.34);
+
+  --bl-sucesso:       #148f5b;
+  --bl-sucesso-bg:    rgba(20, 143, 91, 0.11);
+  --bl-aviso:         #a97706;
+  --bl-aviso-bg:      rgba(169, 119, 6, 0.12);
+  --bl-erro:          #cf2c37;
+  --bl-erro-bg:       rgba(207, 44, 55, 0.10);
+  --bl-info:          #1668c9;
+  --bl-info-bg:       rgba(22, 104, 201, 0.10);
+  --bl-neutro:        #667085;
+  --bl-neutro-bg:     rgba(102, 112, 133, 0.10);
+
+  --bl-serie-1: #4e9b2b;
+  --bl-serie-2: #1668c9;
+  --bl-serie-3: #a97706;
+  --bl-serie-4: #7c3fcf;
+  --bl-serie-5: #148f5b;
+  --bl-serie-6: #cf2c37;
+  --bl-serie-7: #0d7f8c;
+  --bl-serie-8: #c25a13;
+
+  --bl-sombra:    0 1px 2px rgba(20,25,40,.07), 0 4px 14px rgba(20,25,40,.06);
+  --bl-sombra-sm: 0 1px 2px rgba(20,25,40,.07);
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+
+[data-bl-root] {
+  font-family: var(--bl-fonte);
+  color: var(--bl-texto);
+  background: var(--bl-bg);
+  font-size: 13px;
+  line-height: 1.45;
+  /* min-width:0 é obrigatório: sem ele o painel estoura a pista do grid do
+     app-shell (a sidebar do shell é 312px FIXOS e não cede). */
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-bl-root] *,
+[data-bl-root] *::before,
+[data-bl-root] *::after { box-sizing: border-box; }
+
+[data-bl-root] :focus-visible {
+  outline: 2px solid var(--bl-verde);
+  outline-offset: 2px;
+  border-radius: var(--bl-raio-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-bl-root] *, [data-bl-root] *::before, [data-bl-root] *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ── Utilitários ──────────────────────────────────────────────────────── */
+
+.bl-cartao {
+  background: var(--bl-superficie);
+  border: 1px solid var(--bl-borda);
+  border-radius: var(--bl-raio);
+  box-shadow: var(--bl-sombra-sm);
+}
+
+.bl-titulo-secao {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--bl-texto-3);
+  margin: 0 0 10px;
+}
+
+.bl-so-leitor {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Qualquer conteúdo largo rola dentro do próprio contêiner — a página nunca
+   rola na horizontal. */
+.bl-rola-x { overflow-x: auto; max-width: 100%; }
+
+.bl-botao {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 11px;
+  font: inherit; font-size: 12px; font-weight: 500;
+  color: var(--bl-texto); background: var(--bl-superficie-2);
+  border: 1px solid var(--bl-borda); border-radius: var(--bl-raio-sm);
+  cursor: pointer; white-space: nowrap;
+  transition: background .12s ease, border-color .12s ease;
+}
+.bl-botao:hover:not(:disabled) { background: var(--bl-borda); border-color: var(--bl-borda-forte); }
+.bl-botao:disabled { opacity: .5; cursor: not-allowed; }
+.bl-botao--primario {
+  background: var(--bl-verde-suave); border-color: var(--bl-verde-borda); color: var(--bl-verde);
+}
+.bl-botao--primario:hover:not(:disabled) { background: var(--bl-verde-borda); color: var(--bl-texto); }
+.bl-botao--icone { width: 30px; padding: 0; justify-content: center; }

@@ -92,7 +92,7 @@ async function checkUARPSTrigger(trigger, { signal } = {}) {
     const response = await fetch("/api/permissions/uarps?action=user-permissions", { credentials: "include", signal });
     if (response.ok) {
       const data = await response.json();
-      if (data.success && data.data?.triggers) {
+      if ((data.ok ?? data.success) && data.data?.triggers) {
         _uarpsCache = {};
         data.data.triggers.forEach((t) => {
           if (_uarpsCache) _uarpsCache[t.trigger_id] = t.state === "allow";

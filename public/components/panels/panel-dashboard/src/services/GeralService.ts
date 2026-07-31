@@ -86,6 +86,47 @@ export async function getAds(): Promise<ResumoAds> {
   };
 }
 
+export interface ResumoAgenda {
+  hoje: number;
+  proximaTitulo: string | null;
+  proximaHora: string | null;
+  convitesPendentes: number;
+  conflitos: number;
+  livreMin: number;
+  estado: string;
+  simulado: boolean;
+}
+
+/**
+ * Resumo da agenda para o widget da home.
+ *
+ * Usa `/header/summary`, o mesmo endpoint enxuto do ícone do header — a home
+ * não precisa (nem deve) arrastar a agenda inteira para mostrar quatro números.
+ */
+export async function getAgenda(): Promise<ResumoAgenda> {
+  interface Prox { summary?: string; start?: string }
+  interface Bruto {
+    estado?: string; hoje?: number; proxima?: Prox | null;
+    convites_pendentes?: number; conflitos?: number; livre_min?: number; mock?: boolean;
+  }
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
+  const d = await getJson<Bruto>('/api/google-calendar/header/summary?tz=' + encodeURIComponent(tz));
+  const hora = d.proxima?.start
+    ? new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false })
+        .format(new Date(d.proxima.start))
+    : null;
+  return {
+    hoje: d.hoje ?? 0,
+    proximaTitulo: d.proxima?.summary ?? null,
+    proximaHora: hora,
+    convitesPendentes: d.convites_pendentes ?? 0,
+    conflitos: d.conflitos ?? 0,
+    livreMin: d.livre_min ?? 0,
+    estado: d.estado ?? 'connected',
+    simulado: !!d.mock,
+  };
+}
+
 export async function getAnuncios(): Promise<ResumoAnuncios> {
   interface Bruto {
     totais?: { conversas?: number; perguntas?: number; positivas?: number; negativas?: number };
@@ -135,6 +176,28 @@ export async function getResumoModulo(id: ModuloId, periodo: PeriodoId): Promise
         alerta: null,
         atualizadoEm: new Date().toISOString(),
         simulado: !a.provedorReal,
+      };
+    }
+    case 'google-calendar': {
+      const g = await getAgenda();
+      const h = Math.floor(g.livreMin / 60);
+      const m = g.livreMin % 60;
+      return {
+        status: g.estado === 'error' || g.estado === 'not_connected' ? 'critico'
+              : g.conflitos > 0 || g.convitesPendentes > 0 ? 'atencao' : 'ok',
+        statusRotulo: g.estado === 'not_connected' ? 'Sem conta'
+                    : g.simulado ? 'Modo de testes' : 'Conectado',
+        metricas: [
+          { rotulo: 'Hoje', valor: fmtN(g.hoje) },
+          { rotulo: 'Próxima', valor: g.proximaHora ?? '—' },
+          { rotulo: 'Convites', valor: fmtN(g.convitesPendentes) },
+          { rotulo: 'Livre', valor: g.livreMin > 0 ? (h > 0 ? `${h}h${m ? String(m).padStart(2, '0') : ''}` : `${m}min`) : '—' },
+        ],
+        alerta: g.conflitos > 0
+          ? `${g.conflitos} conflito(s) na agenda de hoje.`
+          : (g.proximaTitulo ? `Próxima: ${g.proximaTitulo}` : null),
+        atualizadoEm: new Date().toISOString(),
+        simulado: g.simulado,
       };
     }
     case 'anuncios': {

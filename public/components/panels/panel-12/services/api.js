@@ -22,10 +22,13 @@ async function loadJobs(signal = null) {
   if (!result.success) {
     return { success: false, error: result.error || "Erro ao carregar jobs", data: { jobs: [] }, duration: result.duration };
   }
-  if (!result.data.success || !result.data.data || !Array.isArray(result.data.data.jobs)) {
+  // O endpoint responde {ok, data:{panel_id, config, data:[...]}, error}: a LISTA vem
+  // em payload.data, nunca em payload.jobs (que nunca existiu no servidor).
+  const payload = result.data.data;
+  if (!(result.data.ok ?? result.data.success) || !payload || !Array.isArray(payload.data)) {
     return { success: false, error: "Invalid response structure", data: { jobs: [] }, duration: result.duration };
   }
-  return { success: true, data: { jobs: result.data.data.jobs }, duration: result.duration };
+  return { success: true, data: { jobs: payload.data }, duration: result.duration };
 }
 async function createJob(jobName, signal = null) {
   if (!jobName || typeof jobName !== "string") {
@@ -43,7 +46,7 @@ async function createJob(jobName, signal = null) {
   if (!result.success) {
     return { success: false, error: result.error || "Erro ao criar job", data: { jobs: [] }, duration: result.duration };
   }
-  if (!result.data.success) {
+  if (!(result.data.ok ?? result.data.success)) {
     return { success: false, error: result.data.error || "Erro desconhecido ao criar job", data: { jobs: [] }, duration: result.duration };
   }
   const createdJob = result.data.data || null;
@@ -61,7 +64,7 @@ async function toggleJob(jobId, isActive, signal = null) {
   if (!result.success) {
     return { success: false, error: result.error || "Erro ao atualizar job", data: { jobs: [] }, duration: result.duration };
   }
-  if (!result.data.success) {
+  if (!(result.data.ok ?? result.data.success)) {
     return { success: false, error: result.data.error || "Erro desconhecido ao atualizar job", data: { jobs: [] }, duration: result.duration };
   }
   return { success: true, data: { jobs: [] }, duration: result.duration };
@@ -75,7 +78,7 @@ async function deleteJob(jobId, signal = null) {
   if (!result.success) {
     return { success: false, error: result.error || "Erro ao excluir job", data: { jobs: [] }, duration: result.duration };
   }
-  if (!result.data.success) {
+  if (!(result.data.ok ?? result.data.success)) {
     return { success: false, error: result.data.error || "Erro desconhecido ao excluir job", data: { jobs: [] }, duration: result.duration };
   }
   return { success: true, data: { jobs: [] }, duration: result.duration };

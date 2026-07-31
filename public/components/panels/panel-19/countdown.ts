@@ -42,6 +42,7 @@ export function startCountdown(panel: PanelCtx) {
   updateCountdown(panel.container, panel.countdownValue);
 
   panel.countdownInterval = setInterval(() => {
+    if (typeof document !== 'undefined' && document.hidden) return;  // aba oculta: nao conta nem busca
     if (!panel.autoRefreshEnabled) return;
 
     panel.countdownValue--;

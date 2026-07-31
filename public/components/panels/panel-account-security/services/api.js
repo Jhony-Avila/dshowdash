@@ -33,7 +33,7 @@ async function loadSecurityInfo() {
     const response = await fetchWithTimeout(API_ENDPOINTS.GET_SECURITY_INFO);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    if (!data.success) throw new Error(data.error || "Erro ao carregar informa\xE7\xF5es");
+    if (!(data.ok ?? data.success)) throw new Error(data.error || "Erro ao carregar informa\xE7\xF5es");
     return data.data || data;
   } catch (error) {
     _getPort("logger")?.error(`[${MODULE_ID}] loadSecurityInfo error:`, error);
@@ -45,7 +45,7 @@ async function changePassword(currentPassword, newPassword) {
     const response = await fetchWithTimeout(API_ENDPOINTS.CHANGE_PASSWORD, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }) });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    if (!data.success) throw new Error(data.error || "Erro ao alterar senha");
+    if (!(data.ok ?? data.success)) throw new Error(data.error || "Erro ao alterar senha");
     return data;
   } catch (error) {
     _getPort("logger")?.error(`[${MODULE_ID}] changePassword error:`, error);

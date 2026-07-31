@@ -60,7 +60,7 @@ export class UIComponent {
 
   async init() {
     if (!this.container) return;
-    this.toastManager = new ToastManager();
+    // `ToastManager` e' objeto literal, nao classe — `new` lancava (ver .js irmao).
     this._setupListeners();
     this.mounted = true;
   }

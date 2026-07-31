@@ -65,7 +65,8 @@ import { store } from './state/store.js';
 import { apiClient } from './services/api.js';
 import { updateCountdown } from './renderer/status.js';
 import { clear as clearTable } from './renderer/table.js';
-import { stop as stopScheduler } from './scheduler/refresh.js';
+// `start` faltava: o mount chamava startScheduler(...) -> ReferenceError (ver .js).
+import { start as startScheduler, stop as stopScheduler } from './scheduler/refresh.js';
 import * as Telemetry from './telemetry/tracker.js';
 import { toastManager } from './ui/toast.js';
 import { chartsRenderer } from './ui/charts.js';
@@ -159,10 +160,13 @@ export const mount = (container: HTMLElement, config: Record<string, unknown> = 
     document.addEventListener('click', (e) => { if ((e.target as Element).closest('[data-action="close-modal"]')) ModalController.close(); }, { signal: _abortController.signal });
     document.addEventListener('keydown', (e) => handleKeyboard(e, ctx), { signal: _abortController.signal });
 
-    // @ts-expect-error TS migration - TS2552 startScheduler not imported
-    startScheduler({ interval: config.refreshInterval || REFRESH_INTERVAL || 60000, onTick: (seconds: number | null) => updateCountdown(_refs, seconds), onRefresh: () => loadClientes() });
+    // O `@ts-expect-error TS2552 startScheduler not imported` que existia aqui estava
+    // CERTO: o compilador apontou o ReferenceError e a supressao o escondeu. Import
+    // corrigido no topo; o scheduler agora arranca so apos a carga inicial dar certo
+    // (senao um setInterval orfao sobrevive a um mount falho). Ver .js irmao.
     try {
       await loadAllData(MODULE_ID, VERSION);
+      startScheduler({ interval: config.refreshInterval || REFRESH_INTERVAL || 60000, onTick: (seconds: number | null) => updateCountdown(_refs, seconds), onRefresh: () => loadClientes() });
       _initialized = true; _mountedAt = Date.now();
       const duration = Telemetry.endTimer('mount');
       Telemetry.track('mount', { duration });
@@ -171,7 +175,7 @@ export const mount = (container: HTMLElement, config: Record<string, unknown> = 
       _log('info', `Mounted v${VERSION}`);
       toastManager.success('Painel carregado');
       return true;
-    } catch (err: unknown) { _log('error', 'Mount failed', { error: (err as Error)?.message }); _emitLifecycle(PANEL_EVENTS.ERROR, { error: (err as Error)?.message }); return false; }
+    } catch (err: unknown) { stopScheduler(); _log('error', 'Mount failed', { error: (err as Error)?.message }); _emitLifecycle(PANEL_EVENTS.ERROR, { error: (err as Error)?.message }); return false; }
   };
   if (_initialized) return unmount().then(doMount);
   return doMount();

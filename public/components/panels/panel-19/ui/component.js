@@ -27,7 +27,9 @@ class UIComponent {
   }
   async init() {
     if (!this.container) return;
-    this.toastManager = new ToastManager();
+    // `ToastManager` aqui e' OBJETO literal (`const ToastManager = { showToast }`),
+    // nao classe: `new` nele lanca "is not a constructor" e matava o mount. A
+    // referencia nao era usada em lugar nenhum. Para notificar: showToast(...).
     this._setupListeners();
     this.mounted = true;
   }

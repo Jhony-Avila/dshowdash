@@ -1,0 +1,1143 @@
+/* base.css — componentes do painel Google Calendar.
+   @version 1.0.0  @created 2026-07-29
+   Escopado a [data-gc-react-root]. Tokens em tokens.css. */
+
+/* ── Faixa de demonstração ───────────────────────────────────────────── */
+[data-gc-react-root] .gc-faixa-mock {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 16px; font-size: 12px; font-weight: 600;
+  color: #4a3200; background: var(--gc-amarelo);
+  border-bottom: 1px solid rgba(0,0,0,.12);
+}
+[data-gc-react-root] .gc-faixa-ponto {
+  width: 7px; height: 7px; border-radius: 50%; background: #4a3200;
+}
+
+/* ── Header interno ──────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-header {
+  flex: 0 0 auto; padding: 12px 16px 10px;
+  background: var(--gc-surface); border-bottom: 1px solid var(--gc-borda);
+}
+[data-gc-react-root] .gc-header-linha1 {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+}
+[data-gc-react-root] .gc-header-id { display: flex; align-items: center; gap: 11px; min-width: 0; }
+[data-gc-react-root] .gc-header-icone {
+  display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto;
+  border-radius: var(--gc-r-s); color: #fff;
+  background: linear-gradient(135deg, var(--gc-azul-marca, var(--gc-azul)), var(--gc-verde));
+}
+[data-gc-react-root] .gc-header-titulo { margin: 0; font-size: 15.5px; font-weight: 700; }
+[data-gc-react-root] .gc-header-sub { margin: 1px 0 0; font-size: 11.5px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-header-acoes { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+[data-gc-react-root] .gc-busca {
+  display: flex; align-items: center; gap: 6px; min-width: 0;
+  padding: 0 9px; height: 31px; border-radius: var(--gc-r-s);
+  background: var(--gc-surface-2); border: 1px solid var(--gc-borda);
+  color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-busca input {
+  width: 190px; max-width: 34vw; min-width: 0;
+  background: none; border: 0; outline: none; color: var(--gc-texto); font: inherit; font-size: 12px;
+}
+[data-gc-react-root] .gc-busca:focus-within { border-color: var(--gc-primaria); }
+[data-gc-react-root] .gc-busca-limpar { background: none; border: 0; color: inherit; cursor: pointer; display: flex; }
+
+[data-gc-react-root] .gc-header-linha2 {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-top: 10px; flex-wrap: wrap;
+}
+[data-gc-react-root] .gc-cal-chips { display: flex; gap: 5px; flex-wrap: wrap; min-width: 0; }
+[data-gc-react-root] .gc-cal-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 20px; font-size: 11.5px; cursor: pointer;
+  background: var(--gc-surface-2); border: 1px solid var(--gc-borda);
+  color: var(--gc-texto-2); font-family: inherit;
+}
+[data-gc-react-root] .gc-cal-chip.is-ativo { color: var(--gc-texto); border-color: var(--gc-borda-forte); }
+[data-gc-react-root] .gc-cal-chip:hover { background: var(--gc-surface-3); }
+[data-gc-react-root] .gc-cal-cor {
+  width: 9px; height: 9px; border-radius: 3px; border: 1.5px solid; flex: 0 0 auto;
+}
+
+[data-gc-react-root] .gc-status {
+  display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-status-ponto { width: 7px; height: 7px; border-radius: 50%; background: var(--gc-texto-3); }
+[data-gc-react-root] .gc-status-ok .gc-status-ponto     { background: var(--gc-ok); }
+[data-gc-react-root] .gc-status-mock .gc-status-ponto   { background: var(--gc-amarelo); }
+[data-gc-react-root] .gc-status-atencao .gc-status-ponto{ background: var(--gc-atencao); }
+[data-gc-react-root] .gc-status-alerta .gc-status-ponto { background: var(--gc-alerta); }
+[data-gc-react-root] .gc-status-sep { opacity: .5; }
+
+/* ── Botões ──────────────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 31px; padding: 0 11px; border-radius: var(--gc-r-s);
+  border: 1px solid var(--gc-borda); background: var(--gc-surface-2);
+  color: var(--gc-texto); font: inherit; font-size: 12px; font-weight: 500;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+}
+[data-gc-react-root] .gc-btn:hover:not(:disabled) { background: var(--gc-surface-3); }
+[data-gc-react-root] .gc-btn:disabled { opacity: .55; cursor: not-allowed; }
+[data-gc-react-root] .gc-btn:focus-visible { outline: 2px solid var(--gc-primaria); outline-offset: 1px; }
+[data-gc-react-root] .gc-btn-primario {
+  background: var(--gc-primaria); border-color: var(--gc-primaria); color: var(--gc-primaria-ct);
+}
+[data-gc-react-root] .gc-btn-primario:hover:not(:disabled) { background: var(--gc-primaria-h); }
+[data-gc-react-root] .gc-btn-fantasma { background: transparent; }
+[data-gc-react-root] .gc-btn-icone { width: 31px; padding: 0; }
+[data-gc-react-root] .gc-btn-perigo { color: var(--gc-alerta); border-color: color-mix(in srgb, var(--gc-alerta) 45%, transparent); background: transparent; }
+[data-gc-react-root] .gc-btn-perigo:hover:not(:disabled) { background: color-mix(in srgb, var(--gc-alerta) 12%, transparent); }
+[data-gc-react-root] .gc-btn-resp { height: 28px; font-size: 11.5px; }
+[data-gc-react-root] .gc-btn-resp.is-ativo { background: var(--gc-primaria); border-color: var(--gc-primaria); color: var(--gc-primaria-ct); }
+[data-gc-react-root] .gc-btn-bloco { width: 100%; margin-top: 8px; }
+[data-gc-react-root] .gc-girando { animation: gc-spin 1s linear infinite; }
+@keyframes gc-spin { to { transform: rotate(360deg); } }
+
+/* ── Cartões e KPIs ──────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-card {
+  background: var(--gc-surface); border: 1px solid var(--gc-borda);
+  border-radius: var(--gc-r); box-shadow: var(--gc-sombra); min-width: 0;
+}
+[data-gc-react-root] .gc-card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 14px; border-bottom: 1px solid var(--gc-borda);
+}
+[data-gc-react-root] .gc-card-titulo { margin: 0; font-size: 13px; font-weight: 650; }
+[data-gc-react-root] .gc-card-body { padding: 12px 14px; min-width: 0; }
+
+[data-gc-react-root] .gc-kpis {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(120px, 15vw, 168px), 1fr));
+}
+[data-gc-react-root] .gc-kpi {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  padding: 11px 13px; text-align: left;
+  background: var(--gc-surface); border: 1px solid var(--gc-borda);
+  border-radius: var(--gc-r); box-shadow: var(--gc-sombra);
+  color: var(--gc-texto); font: inherit;
+}
+[data-gc-react-root] .gc-kpi.is-clicavel { cursor: pointer; }
+[data-gc-react-root] .gc-kpi.is-clicavel:hover { border-color: var(--gc-borda-forte); }
+[data-gc-react-root] .gc-kpi-icone { color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-kpi-valor { font-size: 21px; font-weight: 700; line-height: 1.15; }
+[data-gc-react-root] .gc-kpi-valor small { font-size: 12px; font-weight: 500; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-kpi-rotulo { font-size: 11px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-tom-ok .gc-kpi-icone      { color: var(--gc-ok); }
+[data-gc-react-root] .gc-tom-atencao .gc-kpi-icone { color: var(--gc-atencao); }
+[data-gc-react-root] .gc-tom-alerta .gc-kpi-icone  { color: var(--gc-alerta); }
+[data-gc-react-root] .gc-tom-alerta .gc-kpi-valor  { color: var(--gc-alerta); }
+
+/* ── Estados ─────────────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-estado {
+  padding: 22px 18px; text-align: center; border-radius: var(--gc-r);
+  border: 1px dashed var(--gc-borda); background: var(--gc-surface-2);
+}
+[data-gc-react-root] .gc-estado-erro { border-style: solid; border-color: color-mix(in srgb, var(--gc-alerta) 40%, transparent); text-align: left; }
+[data-gc-react-root] .gc-estado-erro.is-pendente { border-color: color-mix(in srgb, var(--gc-atencao) 45%, transparent); }
+[data-gc-react-root] .gc-estado-titulo { display: block; font-size: 13.5px; margin-bottom: 4px; }
+[data-gc-react-root] .gc-estado-msg { margin: 0 0 10px; font-size: 12.5px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-estado-acoes { display: flex; gap: 7px; justify-content: inherit; flex-wrap: wrap; }
+[data-gc-react-root] .gc-estado-vazio .gc-estado-acoes { justify-content: center; }
+[data-gc-react-root] .gc-estado-pend { margin: 0 0 10px; padding-left: 18px; font-size: 12px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-estado-detalhe {
+  display: grid; grid-template-columns: auto 1fr; gap: 3px 12px;
+  margin: 10px 0 0; padding-top: 9px; border-top: 1px solid var(--gc-borda);
+  font-size: 11.5px; color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-estado-detalhe dt { font-weight: 600; }
+[data-gc-react-root] .gc-estado-detalhe dd { margin: 0; font-family: ui-monospace, monospace; }
+
+[data-gc-react-root] .gc-skel { display: flex; flex-direction: column; gap: 8px; }
+[data-gc-react-root] .gc-skel-linha, [data-gc-react-root] .gc-skel-card {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--gc-surface-2) 25%, var(--gc-surface-3) 50%, var(--gc-surface-2) 75%);
+  background-size: 200% 100%; animation: gc-shimmer 1.4s linear infinite;
+}
+[data-gc-react-root] .gc-skel-card { height: 74px; }
+@keyframes gc-shimmer { to { background-position: -200% 0; } }
+
+/* ── Avisos e notas ──────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-aviso {
+  display: flex; align-items: center; gap: 7px; margin: 0 0 10px;
+  padding: 8px 11px; border-radius: var(--gc-r-s); font-size: 12px;
+}
+[data-gc-react-root] .gc-aviso-erro     { background: color-mix(in srgb, var(--gc-alerta) 14%, transparent); color: var(--gc-alerta); }
+[data-gc-react-root] .gc-aviso-info     { background: color-mix(in srgb, var(--gc-primaria) 14%, transparent); color: var(--gc-primaria-txt); }
+[data-gc-react-root] .gc-aviso-privado  { background: var(--gc-surface-2); color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-aviso-cancelado{ background: color-mix(in srgb, var(--gc-atencao) 16%, transparent); color: var(--gc-atencao); }
+[data-gc-react-root] .gc-nota { margin: 8px 0 0; font-size: 11.5px; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-nota-destaque {
+  display: flex; align-items: center; gap: 7px; margin: 0;
+  padding: 8px 11px; border-radius: var(--gc-r-s);
+  background: var(--gc-surface-2); color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-sub { margin: 14px 0 7px; font-size: 12px; font-weight: 650; color: var(--gc-texto-2); }
+
+/* ── Tags, pílulas, chips ────────────────────────────────────────────── */
+[data-gc-react-root] .gc-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 7px; border-radius: 20px; font-size: 10.5px; font-weight: 600;
+  background: var(--gc-surface-3); color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-tag-conflito { background: color-mix(in srgb, var(--gc-alerta) 18%, transparent); color: var(--gc-alerta); }
+[data-gc-react-root] .gc-tag-atencao  { background: color-mix(in srgb, var(--gc-atencao) 18%, transparent); color: var(--gc-atencao); }
+[data-gc-react-root] .gc-tag-privado  { background: var(--gc-surface-3); color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-tag-externo  { background: color-mix(in srgb, var(--gc-foco) 20%, transparent); color: var(--gc-foco); }
+
+[data-gc-react-root] .gc-pilula {
+  display: inline-flex; padding: 1px 8px; border-radius: 20px;
+  font-size: 10.5px; font-weight: 650; white-space: nowrap;
+}
+[data-gc-react-root] .gc-resp-accepted   { background: color-mix(in srgb, var(--gc-ok) 18%, transparent); color: var(--gc-ok); }
+[data-gc-react-root] .gc-resp-declined   { background: color-mix(in srgb, var(--gc-alerta) 18%, transparent); color: var(--gc-alerta); }
+[data-gc-react-root] .gc-resp-tentative  { background: color-mix(in srgb, var(--gc-atencao) 18%, transparent); color: var(--gc-atencao); }
+[data-gc-react-root] .gc-resp-needsAction{ background: var(--gc-surface-3); color: var(--gc-texto-2); }
+
+[data-gc-react-root] .gc-sev { padding: 1px 7px; border-radius: 20px; font-size: 10.5px; font-weight: 650; }
+[data-gc-react-root] .gc-sev-alta  { background: color-mix(in srgb, var(--gc-alerta) 18%, transparent); color: var(--gc-alerta); }
+[data-gc-react-root] .gc-sev-media { background: color-mix(in srgb, var(--gc-atencao) 18%, transparent); color: var(--gc-atencao); }
+[data-gc-react-root] .gc-sev-baixa { background: var(--gc-surface-3); color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-sev-borda-alta  { border-left: 3px solid var(--gc-alerta); }
+[data-gc-react-root] .gc-sev-borda-media { border-left: 3px solid var(--gc-atencao); }
+[data-gc-react-root] .gc-sev-borda-baixa { border-left: 3px solid var(--gc-borda-forte); }
+
+[data-gc-react-root] .gc-chips { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
+[data-gc-react-root] .gc-chips-fim { margin-left: auto; }
+[data-gc-react-root] .gc-filtro-rot { font-size: 11.5px; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; cursor: pointer;
+  background: var(--gc-surface-2); border: 1px solid var(--gc-borda);
+  color: var(--gc-texto-2); font: inherit; font-size: 11.5px;
+}
+[data-gc-react-root] .gc-chip.is-ativo {
+  background: color-mix(in srgb, var(--gc-primaria) 16%, transparent);
+  border-color: var(--gc-primaria); color: var(--gc-texto);
+}
+[data-gc-react-root] .gc-chip-n { font-weight: 700; opacity: .75; }
+[data-gc-react-root] .gc-barra-filtros {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0;
+}
+[data-gc-react-root] .gc-resumo-tipos { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Linha de evento ─────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-lev {
+  display: flex; align-items: flex-start; gap: 11px; width: 100%; min-width: 0;
+  padding: 8px 9px; border-radius: var(--gc-r-s);
+  background: none; border: 0; color: inherit; font: inherit; text-align: left;
+}
+[data-gc-react-root] .gc-lev.is-clicavel { cursor: pointer; }
+[data-gc-react-root] .gc-lev.is-clicavel:hover { background: var(--gc-surface-2); }
+[data-gc-react-root] .gc-lev-hora {
+  flex: 0 0 62px; display: flex; flex-direction: column;
+  font-size: 12.5px; font-weight: 650; font-variant-numeric: tabular-nums;
+}
+[data-gc-react-root] .gc-lev-hora small { font-size: 10.5px; font-weight: 400; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-lev-corpo { flex: 1 1 auto; min-width: 0; }
+[data-gc-react-root] .gc-lev-titulo {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12.5px; font-weight: 550;
+}
+[data-gc-react-root] .gc-lev-meta {
+  display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;
+  font-size: 11px; color: var(--gc-texto-3);
+}
+[data-gc-react-root] .gc-lev-vinculo { display: inline-flex; align-items: center; gap: 4px; }
+[data-gc-react-root] .gc-lev-fim { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-riscado { text-decoration: line-through; opacity: .65; }
+[data-gc-react-root] .gc-ponto { width: 8px; height: 8px; border-radius: 3px; flex: 0 0 auto; }
+
+[data-gc-react-root] .gc-timeline { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-timeline-item { border-bottom: 1px solid var(--gc-borda); }
+[data-gc-react-root] .gc-timeline-item:last-child { border-bottom: 0; }
+[data-gc-react-root] .gc-lista-simples { list-style: none; margin: 0; padding: 0; }
+
+/* ── Tela Hoje ───────────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-hoje-grade {
+  display: grid; gap: 12px; min-width: 0;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+}
+@media (max-width: 1080px) {
+  [data-gc-react-root] .gc-hoje-grade { grid-template-columns: minmax(0, 1fr); }
+}
+[data-gc-react-root] .gc-hoje-coluna { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+[data-gc-react-root] .gc-proximo { display: flex; flex-direction: column; gap: 7px; }
+[data-gc-react-root] .gc-proximo-topo { display: flex; align-items: center; gap: 7px; }
+[data-gc-react-root] .gc-proximo-titulo { font-size: 14px; }
+[data-gc-react-root] .gc-proximo-hora { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+[data-gc-react-root] .gc-proximo-h { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+[data-gc-react-root] .gc-proximo-ate { font-size: 12px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-proximo-contagem {
+  margin-left: auto; padding: 2px 9px; border-radius: 20px;
+  background: color-mix(in srgb, var(--gc-primaria) 16%, transparent);
+  color: var(--gc-primaria-txt); font-size: 11.5px; font-weight: 650;
+}
+[data-gc-react-root] .gc-proximo-local,
+[data-gc-react-root] .gc-proximo-part {
+  display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-proximo-acoes { display: flex; gap: 7px; margin-top: 4px; flex-wrap: wrap; }
+[data-gc-react-root] .gc-fuso-duplo {
+  display: flex; gap: 12px; font-size: 11.5px; color: var(--gc-texto-2);
+  font-variant-numeric: tabular-nums;
+}
+[data-gc-react-root] .gc-vinculos { list-style: none; margin: 4px 0 0; padding: 0; font-size: 11.5px; }
+[data-gc-react-root] .gc-vinculos li { display: flex; align-items: center; gap: 5px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-vinculo-extra { margin-left: auto; font-weight: 650; color: var(--gc-texto); }
+
+[data-gc-react-root] .gc-defs { display: grid; gap: 5px; margin: 0; }
+[data-gc-react-root] .gc-defs > div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+[data-gc-react-root] .gc-defs dt { color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-defs dd { margin: 0; font-weight: 600; text-align: right; }
+
+/* ── Agenda / FullCalendar ───────────────────────────────────────────── */
+[data-gc-react-root] .gc-legenda {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  font-size: 11.5px; color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-legenda > span { display: inline-flex; align-items: center; gap: 5px; }
+[data-gc-react-root] .gc-legenda-meta { margin-left: auto; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-leg { width: 10px; height: 10px; border-radius: 3px; background: var(--gc-serie-1); }
+[data-gc-react-root] .gc-leg-normal   { background: var(--gc-azul); }
+[data-gc-react-root] .gc-leg-foco     { background: var(--gc-foco); }
+[data-gc-react-root] .gc-leg-ooo      { background: var(--gc-amarelo); }
+[data-gc-react-root] .gc-leg-livre    { background: transparent; border: 1.5px dashed var(--gc-borda-forte); }
+[data-gc-react-root] .gc-leg-conflito { background: transparent; border: 2px solid var(--gc-alerta); }
+
+[data-gc-react-root] .gc-fc-wrap {
+  background: var(--gc-surface); border: 1px solid var(--gc-borda);
+  border-radius: var(--gc-r); padding: 10px; min-width: 0; overflow-x: auto;
+  --fc-border-color: var(--gc-borda);
+  --fc-page-bg-color: var(--gc-surface);
+  --fc-neutral-bg-color: var(--gc-surface-2);
+  --fc-today-bg-color: color-mix(in srgb, var(--gc-primaria) 9%, transparent);
+  --fc-now-indicator-color: var(--gc-alerta);
+  --fc-button-bg-color: var(--gc-surface-2);
+  --fc-button-border-color: var(--gc-borda);
+  --fc-button-text-color: var(--gc-texto);
+  --fc-button-hover-bg-color: var(--gc-surface-3);
+  --fc-button-hover-border-color: var(--gc-borda-forte);
+  --fc-button-active-bg-color: var(--gc-primaria);
+  --fc-button-active-border-color: var(--gc-primaria);
+  --fc-small-font-size: 11px;
+  /* O FullCalendar pinta o texto do evento em `.fc-event-main` a partir DESTA
+     variável (padrão #fff). Declarar `color` em `.fc-event` não adianta: a regra
+     interna vence por especificidade e o texto volta a branco. Medido: com
+     branco, o verde dava 2,54:1 e o amarelo 2,15:1. */
+  --fc-event-text-color: #111827;
+  color: var(--gc-texto);
+}
+[data-gc-react-root] .gc-fc-wrap .fc { font-size: 12px; }
+[data-gc-react-root] .gc-fc-wrap .fc .fc-toolbar-title { font-size: 15px; font-weight: 650; }
+[data-gc-react-root] .gc-fc-wrap .fc .fc-button { text-transform: none; font-size: 11.5px; padding: 3px 9px; }
+[data-gc-react-root] .gc-fc-wrap .fc .fc-col-header-cell-cushion,
+[data-gc-react-root] .gc-fc-wrap .fc .fc-daygrid-day-number { color: var(--gc-texto-2); text-decoration: none; }
+/* Texto ESCURO no evento, não branco.
+   Medido: branco sobre as cores de calendário dá 2,15:1 (amarelo), 2,54:1
+   (verde) e 3,68:1 (azul) — todos reprovados. Com quase-preto os mesmos fundos
+   dão 8,79 / 7,44 / 5,13. O único que preferia branco era o cinza dos feriados,
+   por isso ele foi clareado na semente. */
+[data-gc-react-root] .gc-fc-wrap .fc-event { border-radius: 4px; border-width: 1px; padding: 0 2px; }
+/* Botão ATIVO da barra do FullCalendar: o fundo vira a cor primária, então o
+   texto tem de virar branco junto — o token de texto do FC é um só. */
+[data-gc-react-root] .gc-fc-wrap .fc .fc-button-active,
+[data-gc-react-root] .gc-fc-wrap .fc .fc-button-primary:not(:disabled).fc-button-active {
+  color: var(--gc-primaria-ct);
+}
+[data-gc-react-root] .gc-fc-wrap .gc-ev-conflito { outline: 2px solid var(--gc-alerta); outline-offset: -2px; }
+[data-gc-react-root] .gc-fc-wrap .gc-ev-cancelado { opacity: .55; text-decoration: line-through; }
+[data-gc-react-root] .gc-fc-wrap .gc-ev-livre { background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(255,255,255,.22) 4px 8px); }
+[data-gc-react-root] .gc-fc-wrap .gc-ev-focusTime { background-color: #c4b5fd !important; border-color: #a78bfa !important; }
+[data-gc-react-root] .gc-fc-wrap .gc-ev-outOfOffice { background-color: var(--gc-amarelo) !important; border-color: var(--gc-amarelo) !important; color: #4a3200; }
+[data-gc-react-root] .gc-fc-wrap .gc-ev-privado { background-image: repeating-linear-gradient(135deg, transparent 0 3px, rgba(0,0,0,.16) 3px 6px); }
+
+/* ── Grades de dados ─────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-grid-wrap { overflow-x: auto; min-width: 0; }
+[data-gc-react-root] .gc-grid { width: 100%; border-collapse: collapse; font-size: 12px; }
+[data-gc-react-root] .gc-grid th, [data-gc-react-root] .gc-grid td {
+  padding: 7px 9px; text-align: left; border-bottom: 1px solid var(--gc-borda); white-space: nowrap;
+}
+[data-gc-react-root] .gc-grid-compacta th, [data-gc-react-root] .gc-grid-compacta td { padding: 4px 8px; }
+[data-gc-react-root] .gc-grid thead th {
+  position: sticky; top: 0; z-index: 1; background: var(--gc-surface-2);
+  font-size: 11px; font-weight: 650; color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-grid thead th.is-ordenavel { cursor: pointer; user-select: none; }
+[data-gc-react-root] .gc-grid tbody tr:nth-child(even) { background: color-mix(in srgb, var(--gc-surface-2) 45%, transparent); }
+[data-gc-react-root] .gc-grid tbody tr:hover { background: var(--gc-surface-2); }
+[data-gc-react-root] .gc-grid tbody tr.is-atencao { background: color-mix(in srgb, var(--gc-atencao) 10%, transparent); }
+[data-gc-react-root] .gc-td-forte { font-weight: 600; font-variant-numeric: tabular-nums; }
+[data-gc-react-root] .gc-td-fraco { color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-td-erro  { color: var(--gc-alerta); font-weight: 650; }
+[data-gc-react-root] .gc-td-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 0; padding: 0; color: inherit; font: inherit;
+  cursor: pointer; text-align: left;
+}
+[data-gc-react-root] .gc-td-link:hover { color: var(--gc-primaria-txt); }
+[data-gc-react-root] .gc-td-vinculo { display: inline-flex; align-items: center; gap: 4px; color: var(--gc-texto-2); }
+
+[data-gc-react-root] .gc-colunas-equipe {
+  display: grid; gap: 12px; min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(240px, 30vw, 340px), 1fr));
+}
+[data-gc-react-root] .gc-recursos {
+  display: grid; gap: 12px; min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(250px, 32vw, 380px), 1fr));
+}
+
+/* ── Calendários ─────────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-cal-lista { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-cal-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--gc-borda); flex-wrap: wrap; min-width: 0;
+}
+[data-gc-react-root] .gc-cal-item:last-child { border-bottom: 0; }
+[data-gc-react-root] .gc-cal-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; min-width: 0; }
+[data-gc-react-root] .gc-cal-cor-grande { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+[data-gc-react-root] .gc-cal-nome { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+[data-gc-react-root] .gc-cal-desc { width: 100%; font-size: 11px; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-cal-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; flex-wrap: wrap; }
+[data-gc-react-root] .gc-acesso-freeBusyReader { background: color-mix(in srgb, var(--gc-foco) 18%, transparent); color: var(--gc-foco); }
+[data-gc-react-root] .gc-acesso-reader { background: var(--gc-surface-3); color: var(--gc-texto-3); }
+
+/* ── Convites ────────────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-convites { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-convite {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 11px 0; border-bottom: 1px solid var(--gc-borda); flex-wrap: wrap; min-width: 0;
+}
+[data-gc-react-root] .gc-convite:last-child { border-bottom: 0; }
+[data-gc-react-root] .gc-convite-info { min-width: 0; flex: 1 1 260px; }
+[data-gc-react-root] .gc-convite-titulo { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 13px; }
+[data-gc-react-root] .gc-convite-meta { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; font-size: 11.5px; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-convite-vinculo { display: flex; align-items: center; gap: 5px; margin-top: 3px; font-size: 11.5px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-convite-acoes { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Modal / drawer ──────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-modal-fundo {
+  position: fixed; inset: 0; z-index: 900;
+  display: grid; place-items: center; padding: 20px;
+  background: rgba(0, 0, 0, .55);
+}
+[data-gc-react-root] .gc-modal {
+  width: min(520px, 100%); max-height: 88vh; overflow-y: auto;
+  padding: 18px; border-radius: var(--gc-r);
+  background: var(--gc-overlay);           /* OPACO — ver tokens.css */
+  border: 1px solid var(--gc-borda); box-shadow: 0 18px 48px rgba(0,0,0,.4);
+}
+[data-gc-react-root] .gc-modal-largo { width: min(720px, 100%); }
+[data-gc-react-root] .gc-modal h3 { margin: 0 0 12px; font-size: 15px; }
+[data-gc-react-root] .gc-modal-head { display: flex; align-items: center; justify-content: space-between; }
+[data-gc-react-root] .gc-modal-head h3 { margin: 0; }
+[data-gc-react-root] .gc-modal-acoes { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+[data-gc-react-root] .gc-drawer {
+  position: absolute; top: 0; right: 0; bottom: 0; z-index: 850;
+  width: min(420px, 100%); display: flex; flex-direction: column;
+  background: var(--gc-overlay);           /* OPACO */
+  border-left: 1px solid var(--gc-borda); box-shadow: -8px 0 28px rgba(0,0,0,.28);
+}
+[data-gc-react-root] .gc-drawer-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  padding: 13px 14px; border-bottom: 1px solid var(--gc-borda);
+}
+[data-gc-react-root] .gc-drawer-id { display: flex; align-items: center; gap: 8px; min-width: 0; }
+[data-gc-react-root] .gc-drawer-id h3 { margin: 0; font-size: 14px; }
+[data-gc-react-root] .gc-drawer-body { flex: 1 1 auto; overflow-y: auto; padding: 13px 14px; }
+[data-gc-react-root] .gc-drawer-foot { flex: 0 0 auto; padding: 12px 14px; border-top: 1px solid var(--gc-borda); display: flex; flex-direction: column; gap: 10px; }
+[data-gc-react-root] .gc-drawer-defs { display: grid; gap: 9px; margin: 0 0 14px; }
+[data-gc-react-root] .gc-drawer-defs dt { font-size: 10.5px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-drawer-defs dd { margin: 2px 0 0; font-size: 12.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+[data-gc-react-root] .gc-desc { white-space: pre-wrap; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-dur { color: var(--gc-texto-3); font-size: 11.5px; }
+[data-gc-react-root] .gc-drawer-sec { margin-bottom: 14px; }
+[data-gc-react-root] .gc-drawer-sec h4 { margin: 0 0 7px; font-size: 12px; font-weight: 650; }
+[data-gc-react-root] .gc-participantes { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-participantes li {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 5px 0; border-bottom: 1px solid var(--gc-borda); font-size: 12px;
+}
+[data-gc-react-root] .gc-part-nome { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
+[data-gc-react-root] .gc-conf {
+  display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px;
+  padding: 11px; border-radius: var(--gc-r-s); background: var(--gc-surface-2);
+}
+[data-gc-react-root] .gc-conf-topo { display: flex; align-items: center; gap: 7px; font-size: 12.5px; }
+[data-gc-react-root] .gc-conf-tel { margin: 0; font-size: 11.5px; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-vinculos-drawer li {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 7px 0; border-bottom: 1px solid var(--gc-borda);
+}
+[data-gc-react-root] .gc-vinculo-tipo { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-vinculo-extras { display: flex; gap: 10px; font-size: 11px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-resposta { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+[data-gc-react-root] .gc-resposta-rot { font-size: 11.5px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-resposta-btns { display: flex; gap: 5px; }
+[data-gc-react-root] .gc-confirma { display: flex; flex-direction: column; gap: 9px; }
+[data-gc-react-root] .gc-confirma p { margin: 0; font-size: 12.5px; }
+[data-gc-react-root] .gc-confirma-btns { display: flex; gap: 7px; flex-wrap: wrap; }
+
+/* ── Formulários ─────────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-form { display: flex; flex-direction: column; gap: 11px; }
+[data-gc-react-root] .gc-form-linha { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; min-width: 0; }
+[data-gc-react-root] .gc-campo { display: flex; flex-direction: column; gap: 3px; flex: 1 1 170px; min-width: 0; }
+[data-gc-react-root] .gc-campo-hora { flex: 0 0 110px; }
+[data-gc-react-root] .gc-campo > span { font-size: 11.5px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-campo input,
+[data-gc-react-root] .gc-campo select,
+[data-gc-react-root] .gc-campo textarea {
+  width: 100%; min-width: 0; padding: 7px 9px; border-radius: var(--gc-r-s);
+  background: var(--gc-surface-2); border: 1px solid var(--gc-borda);
+  color: var(--gc-texto); font: inherit; font-size: 12.5px;
+}
+[data-gc-react-root] .gc-campo input:focus,
+[data-gc-react-root] .gc-campo select:focus,
+[data-gc-react-root] .gc-campo textarea:focus { outline: 2px solid var(--gc-primaria); outline-offset: -1px; }
+[data-gc-react-root] .gc-campo [aria-invalid="true"] { border-color: var(--gc-alerta); }
+[data-gc-react-root] .gc-erro-campo { font-size: 11px; color: var(--gc-alerta); font-style: normal; }
+[data-gc-react-root] .gc-check { display: flex; align-items: center; gap: 7px; font-size: 12.5px; cursor: pointer; }
+
+/* ── Disponibilidade ─────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-sugestoes { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+[data-gc-react-root] .gc-sugestao {
+  display: flex; flex-direction: column; gap: 2px; padding: 9px 13px;
+  border-radius: var(--gc-r-s); cursor: pointer; text-align: left;
+  background: var(--gc-surface-2); border: 1px solid var(--gc-borda);
+  color: var(--gc-texto); font: inherit;
+}
+[data-gc-react-root] .gc-sugestao:hover { border-color: var(--gc-primaria); }
+[data-gc-react-root] .gc-sugestao-dia { font-size: 11px; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-sugestao-hora { font-size: 13.5px; font-weight: 650; font-variant-numeric: tabular-nums; }
+[data-gc-react-root] .gc-sugestao-cta { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--gc-primaria-txt); }
+
+[data-gc-react-root] .gc-matriz-dia { margin-top: 12px; }
+[data-gc-react-root] .gc-matriz-wrap { overflow-x: auto; min-width: 0; }
+[data-gc-react-root] .gc-matriz { border-collapse: collapse; font-size: 10.5px; }
+[data-gc-react-root] .gc-matriz th { font-weight: 600; color: var(--gc-texto-3); padding: 2px 3px; }
+[data-gc-react-root] .gc-matriz-canto, [data-gc-react-root] .gc-matriz-pessoa {
+  position: sticky; left: 0; background: var(--gc-surface); z-index: 1;
+  text-align: left; padding-right: 9px; white-space: nowrap;
+}
+[data-gc-react-root] .gc-matriz-h { min-width: 15px; }
+[data-gc-react-root] .gc-slot { width: 15px; height: 20px; border: 1px solid var(--gc-surface); }
+[data-gc-react-root] .gc-slot-free      { background: color-mix(in srgb, var(--gc-ok) 30%, transparent); }
+[data-gc-react-root] .gc-slot-busy      { background: var(--gc-serie-1); }
+[data-gc-react-root] .gc-slot-focus     { background: var(--gc-foco); }
+[data-gc-react-root] .gc-slot-ooo       { background: var(--gc-amarelo); }
+[data-gc-react-root] .gc-slot-off_hours { background: var(--gc-surface-3); }
+[data-gc-react-root] .gc-slot-lunch     { background: repeating-linear-gradient(45deg, var(--gc-surface-3) 0 3px, var(--gc-surface-2) 3px 6px); }
+[data-gc-react-root] .gc-legenda .gc-slot-free,
+[data-gc-react-root] .gc-legenda .gc-slot-busy,
+[data-gc-react-root] .gc-legenda .gc-slot-focus,
+[data-gc-react-root] .gc-legenda .gc-slot-ooo,
+[data-gc-react-root] .gc-legenda .gc-slot-off_hours,
+[data-gc-react-root] .gc-legenda .gc-slot-lunch { width: 10px; height: 10px; border-radius: 3px; border: 0; }
+
+/* ── Conflitos e alertas ─────────────────────────────────────────────── */
+[data-gc-react-root] .gc-conflitos, [data-gc-react-root] .gc-alertas { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-conflito {
+  padding: 11px 0 11px 12px; margin-bottom: 10px;
+  border-bottom: 1px solid var(--gc-borda);
+}
+[data-gc-react-root] .gc-conflito:last-child { margin-bottom: 0; border-bottom: 0; }
+[data-gc-react-root] .gc-conflito-topo { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+[data-gc-react-root] .gc-conflito-msg { margin: 4px 0 7px; font-size: 12px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-conflito-eventos { list-style: none; margin: 0 0 7px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+[data-gc-react-root] .gc-conflito-eventos li { font-size: 12px; }
+[data-gc-react-root] .gc-conflito-hora { font-variant-numeric: tabular-nums; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-conflito-sugestao { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 11.5px; color: var(--gc-texto-3); }
+
+[data-gc-react-root] .gc-alerta {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0 10px 12px; border-bottom: 1px solid var(--gc-borda);
+}
+[data-gc-react-root] .gc-alerta:last-child { border-bottom: 0; }
+[data-gc-react-root] .gc-alerta-icone { color: var(--gc-texto-3); padding-top: 1px; }
+[data-gc-react-root] .gc-alerta-corpo { flex: 1 1 auto; min-width: 0; }
+[data-gc-react-root] .gc-alerta-topo { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 12.5px; }
+[data-gc-react-root] .gc-alerta-corpo p { margin: 2px 0 0; font-size: 11.5px; color: var(--gc-texto-2); }
+
+/* ── Contas ──────────────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-contas { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-conta { padding: 12px 0; border-bottom: 1px solid var(--gc-borda); }
+[data-gc-react-root] .gc-conta:last-child { border-bottom: 0; }
+[data-gc-react-root] .gc-conta.is-problema { border-left: 3px solid var(--gc-atencao); padding-left: 11px; }
+[data-gc-react-root] .gc-conta-id { display: flex; align-items: flex-start; gap: 9px; }
+[data-gc-react-root] .gc-conta-ponto { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; background: var(--gc-texto-3); flex: 0 0 auto; }
+[data-gc-react-root] .gc-conexao-connected { background: var(--gc-ok); }
+[data-gc-react-root] .gc-conexao-reauth_required { background: var(--gc-atencao); }
+[data-gc-react-root] .gc-conexao-revoked { background: var(--gc-alerta); }
+[data-gc-react-root] .gc-conta-email { font-size: 11.5px; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-conta-meta { display: grid; gap: 4px; margin: 9px 0 0; }
+[data-gc-react-root] .gc-conta-meta > div { display: flex; justify-content: space-between; gap: 12px; font-size: 11.5px; }
+[data-gc-react-root] .gc-conta-meta dt { color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-conta-meta dd { margin: 0; text-align: right; }
+[data-gc-react-root] .gc-conta-acoes { display: flex; gap: 7px; margin-top: 9px; }
+[data-gc-react-root] .gc-sync-ok    { background: color-mix(in srgb, var(--gc-ok) 18%, transparent); color: var(--gc-ok); }
+[data-gc-react-root] .gc-sync-stale { background: color-mix(in srgb, var(--gc-atencao) 18%, transparent); color: var(--gc-atencao); }
+[data-gc-react-root] .gc-sync-error { background: color-mix(in srgb, var(--gc-alerta) 18%, transparent); color: var(--gc-alerta); }
+
+/* ── Visualizações ───────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-viz-dupla {
+  display: grid; gap: 12px; min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(260px, 34vw, 460px), 1fr));
+}
+[data-gc-react-root] .gc-figura { margin: 0; min-width: 0; }
+[data-gc-react-root] .gc-figura-titulo { font-size: 12.5px; font-weight: 650; margin-bottom: 9px; }
+[data-gc-react-root] .gc-gr { width: 100%; height: 200px; min-width: 0; }
+[data-gc-react-root] .gc-tabela-alt { margin-top: 8px; font-size: 11.5px; }
+[data-gc-react-root] .gc-tabela-alt summary { cursor: pointer; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-tabela-alt table { margin-top: 7px; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FASE 3 — interação, visualização e mobile (2026-07-30)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Dica de interação ────────────────────────────────────────────── */
+[data-gc-react-root] .gc-dica {
+  margin: 0; font-size: 11.5px; color: var(--gc-texto-3);
+}
+
+/* ── Arrastar: o cursor precisa dizer o que dá para fazer ─────────── */
+[data-gc-react-root] .gc-fc-wrap .gc-ev-editavel { cursor: grab; }
+[data-gc-react-root] .gc-fc-wrap .gc-ev-editavel:active { cursor: grabbing; }
+[data-gc-react-root] .gc-fc-wrap .gc-ev-travado { cursor: pointer; }
+/* Espelho da seleção: a faixa que aparece ao arrastar no vazio. */
+[data-gc-react-root] .gc-fc-wrap .fc-highlight {
+  background: color-mix(in srgb, var(--gc-primaria) 22%, transparent);
+  border-radius: 4px;
+}
+[data-gc-react-root] .gc-fc-wrap .fc-event-dragging,
+[data-gc-react-root] .gc-fc-wrap .fc-event-resizing { opacity: .85; }
+
+/* ── Toasts (§60) ─────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-toasts {
+  position: fixed; right: 18px; bottom: 18px; z-index: 1200;
+  display: flex; flex-direction: column; gap: 8px;
+  max-width: min(360px, calc(100vw - 36px)); pointer-events: none;
+}
+[data-gc-react-root] .gc-toast {
+  display: flex; align-items: center; gap: 9px; pointer-events: auto;
+  padding: 9px 11px; border-radius: var(--gc-r-s);
+  background: var(--gc-overlay); border: 1px solid var(--gc-borda);
+  box-shadow: 0 8px 26px rgba(0,0,0,.34);
+  font-size: 12.5px; animation: gc-toast-entra .16s ease-out;
+}
+@keyframes gc-toast-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+[data-gc-react-root] .gc-toast-icone { display: flex; flex: 0 0 auto; }
+[data-gc-react-root] .gc-toast-texto { flex: 1 1 auto; min-width: 0; }
+[data-gc-react-root] .gc-toast-acao {
+  flex: 0 0 auto; background: none; border: 0; padding: 0;
+  color: var(--gc-primaria-txt); font: inherit; font-weight: 650; cursor: pointer;
+}
+[data-gc-react-root] .gc-toast-x {
+  flex: 0 0 auto; background: none; border: 0; padding: 2px;
+  color: var(--gc-texto-3); cursor: pointer; display: flex;
+}
+[data-gc-react-root] .gc-toast-ok       { border-left: 3px solid var(--gc-ok); }
+[data-gc-react-root] .gc-toast-ok .gc-toast-icone { color: var(--gc-ok); }
+[data-gc-react-root] .gc-toast-erro     { border-left: 3px solid var(--gc-alerta); }
+[data-gc-react-root] .gc-toast-erro .gc-toast-icone { color: var(--gc-alerta); }
+[data-gc-react-root] .gc-toast-info     { border-left: 3px solid var(--gc-primaria); }
+[data-gc-react-root] .gc-toast-salvando { border-left: 3px solid var(--gc-texto-3); }
+
+/* ── Popover de criação rápida (§18) ──────────────────────────────── */
+[data-gc-react-root] .gc-popover {
+  z-index: 1100; width: 280px; padding: 12px;
+  border-radius: var(--gc-r); background: var(--gc-overlay);
+  border: 1px solid var(--gc-borda); box-shadow: 0 14px 40px rgba(0,0,0,.38);
+}
+[data-gc-react-root] .gc-criacao-titulo {
+  width: 100%; padding: 5px 0; margin-bottom: 8px;
+  background: none; border: 0; border-bottom: 2px solid var(--gc-borda);
+  color: var(--gc-texto); font: inherit; font-size: 14.5px; font-weight: 600;
+}
+[data-gc-react-root] .gc-criacao-titulo:focus {
+  outline: none; border-bottom-color: var(--gc-primaria);
+}
+[data-gc-react-root] .gc-criacao-quando {
+  display: flex; align-items: center; gap: 6px; margin: 0 0 9px;
+  font-size: 11.5px; color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-criacao-linha {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 7px;
+  color: var(--gc-texto-3);
+}
+[data-gc-react-root] .gc-criacao-linha input,
+[data-gc-react-root] .gc-criacao-linha select {
+  flex: 1 1 auto; min-width: 0; padding: 5px 7px; border-radius: 6px;
+  background: var(--gc-surface-2); border: 1px solid var(--gc-borda);
+  color: var(--gc-texto); font: inherit; font-size: 12px;
+}
+[data-gc-react-root] .gc-criacao-acoes {
+  display: flex; align-items: center; gap: 6px; margin-top: 10px;
+}
+
+/* ── Heatmap D3 (§39) ─────────────────────────────────────────────── */
+[data-gc-react-root] .gc-heat-wrap {
+  display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; min-width: 0;
+}
+[data-gc-react-root] .gc-heat-svg {
+  flex: 1 1 320px; min-width: 0; max-width: 420px; height: auto;
+}
+[data-gc-react-root] .gc-heat-rot {
+  fill: var(--gc-texto-3); font-size: 9.5px;
+  font-family: system-ui, sans-serif;
+}
+[data-gc-react-root] .gc-heat-cel {
+  cursor: pointer; transition: opacity .12s ease;
+  stroke: transparent; stroke-width: 2;
+}
+[data-gc-react-root] .gc-heat-cel:hover { opacity: .8; }
+[data-gc-react-root] .gc-heat-cel:focus-visible { outline: none; stroke: var(--gc-texto); }
+[data-gc-react-root] .gc-heat-cel.is-sel { stroke: var(--gc-texto); }
+[data-gc-react-root] .gc-heat-cel.is-vazio { cursor: default; }
+[data-gc-react-root] .gc-heat-lateral {
+  flex: 1 1 190px; min-width: 0; display: flex; flex-direction: column; gap: 9px;
+}
+[data-gc-react-root] .gc-heat-legenda {
+  display: flex; align-items: center; gap: 3px; font-size: 10.5px;
+}
+[data-gc-react-root] .gc-heat-leg { width: 15px; height: 11px; border-radius: 2px; }
+[data-gc-react-root] .gc-heat-dica {
+  margin: 0; font-size: 11.5px; color: var(--gc-texto-2); min-height: 32px;
+}
+[data-gc-react-root] .gc-heat-limpar { margin-left: 10px; height: 24px; font-size: 11px; }
+
+/* ── Mobile (§79) ─────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  /* Drawer vira folha inferior: em tela estreita, painel lateral de 420px
+     cobre tudo e o usuário perde a referência de onde estava. */
+  [data-gc-react-root] .gc-drawer {
+    top: auto; left: 0; right: 0; bottom: 0;
+    width: 100%; max-height: 86vh;
+    border-left: 0; border-top: 1px solid var(--gc-borda);
+    border-radius: var(--gc-r) var(--gc-r) 0 0;
+    box-shadow: 0 -8px 28px rgba(0,0,0,.34);
+    animation: gc-sheet-sobe .18s ease-out;
+  }
+  @keyframes gc-sheet-sobe { from { transform: translateY(14px); opacity: .9; } to { transform: none; opacity: 1; } }
+  [data-gc-react-root] .gc-drawer-head::before {
+    content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+    width: 34px; height: 3px; border-radius: 2px; background: var(--gc-borda-forte);
+  }
+  [data-gc-react-root] .gc-drawer-head { position: relative; padding-top: 16px; }
+
+  [data-gc-react-root] .gc-modal-fundo { padding: 0; align-items: flex-end; }
+  [data-gc-react-root] .gc-modal {
+    width: 100%; max-height: 92vh; border-radius: var(--gc-r) var(--gc-r) 0 0;
+  }
+
+  [data-gc-react-root] .gc-header-acoes { width: 100%; }
+  [data-gc-react-root] .gc-busca { flex: 1 1 auto; }
+  [data-gc-react-root] .gc-busca input { width: 100%; max-width: none; }
+  [data-gc-react-root] .gc-so-desktop { display: none; }
+  [data-gc-react-root] .gc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-gc-react-root] .gc-hoje-grade { grid-template-columns: minmax(0, 1fr); }
+  [data-gc-react-root] .gc-viz-dupla { grid-template-columns: minmax(0, 1fr); }
+  [data-gc-react-root] .gc-heat-svg { max-width: none; }
+  [data-gc-react-root] .gc-toasts { right: 10px; left: 10px; bottom: 10px; max-width: none; }
+  [data-gc-react-root] .gc-convite { flex-direction: column; align-items: stretch; }
+  [data-gc-react-root] .gc-convite-acoes { justify-content: flex-start; }
+  [data-gc-react-root] .gc-cal-item { flex-direction: column; align-items: flex-start; gap: 6px; }
+  /* Alvo de toque ≥ 40px: no dedo, 28px de botão erra. */
+  [data-gc-react-root] .gc-btn { min-height: 38px; }
+  [data-gc-react-root] .gc-btn-icone { width: 38px; }
+}
+
+/* ── Foco visível em tudo que recebe teclado (§80) ────────────────── */
+[data-gc-react-root] a:focus-visible,
+[data-gc-react-root] button:focus-visible,
+[data-gc-react-root] input:focus-visible,
+[data-gc-react-root] select:focus-visible,
+[data-gc-react-root] textarea:focus-visible,
+[data-gc-react-root] summary:focus-visible,
+[data-gc-react-root] [tabindex]:focus-visible {
+  outline: 2px solid var(--gc-primaria);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Tabela de atalhos (Configurações) */
+[data-gc-react-root] .gc-atalhos { display: grid; gap: 5px; margin: 0; }
+[data-gc-react-root] .gc-atalhos > div {
+  display: flex; align-items: center; gap: 10px; font-size: 12px;
+}
+[data-gc-react-root] .gc-atalhos kbd {
+  min-width: 26px; padding: 2px 6px; text-align: center;
+  border-radius: 5px; border: 1px solid var(--gc-borda);
+  background: var(--gc-surface-2); font: 600 10.5px/1.4 ui-monospace, monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FASE 7 — relatórios, Sankey, rede e impressão (2026-07-30)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Layout da tela de relatórios ─────────────────────────────────── */
+[data-gc-react-root] .gc-rel-layout {
+  display: grid; gap: 14px; min-width: 0;
+  grid-template-columns: 208px minmax(0, 1fr);
+}
+@media (max-width: 900px) {
+  [data-gc-react-root] .gc-rel-layout { grid-template-columns: minmax(0, 1fr); }
+}
+[data-gc-react-root] .gc-rel-menu {
+  min-width: 0; padding: 10px; border-radius: var(--gc-r);
+  background: var(--gc-surface); border: 1px solid var(--gc-borda);
+  align-self: start; max-height: calc(100vh - 220px); overflow-y: auto;
+}
+[data-gc-react-root] .gc-rel-grupo { margin-bottom: 12px; }
+[data-gc-react-root] .gc-rel-grupo:last-child { margin-bottom: 0; }
+[data-gc-react-root] .gc-rel-grupo h4 {
+  margin: 0 0 5px; padding: 0 6px; font-size: 10px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--gc-texto-3);
+}
+[data-gc-react-root] .gc-rel-grupo ul { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-rel-grupo li { display: flex; align-items: center; gap: 2px; }
+[data-gc-react-root] .gc-rel-item {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px; border-radius: var(--gc-r-s);
+  background: none; border: 0; color: var(--gc-texto-2);
+  font: inherit; font-size: 12px; text-align: left; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+[data-gc-react-root] .gc-rel-item:hover { background: var(--gc-surface-2); color: var(--gc-texto); }
+[data-gc-react-root] .gc-rel-item.is-ativo {
+  background: color-mix(in srgb, var(--gc-primaria) 15%, transparent);
+  color: var(--gc-texto); font-weight: 600;
+}
+[data-gc-react-root] .gc-rel-fav {
+  flex: 0 0 auto; padding: 4px; background: none; border: 0;
+  color: var(--gc-texto-3); cursor: pointer; display: flex; opacity: .5;
+}
+[data-gc-react-root] .gc-rel-fav:hover { opacity: 1; }
+[data-gc-react-root] .gc-rel-fav .is-fav { color: var(--gc-amarelo); opacity: 1; }
+[data-gc-react-root] .gc-rel-conteudo { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+[data-gc-react-root] .gc-rel-cabecalho {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+[data-gc-react-root] .gc-rel-cabecalho h3 { margin: 0; font-size: 15px; }
+[data-gc-react-root] .gc-rel-periodo { margin: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
+[data-gc-react-root] .gc-rel-tabela th.is-direita,
+[data-gc-react-root] .gc-rel-tabela td.is-direita { text-align: right; font-variant-numeric: tabular-nums; }
+[data-gc-react-root] .gc-rel-tabela tfoot td {
+  border-top: 2px solid var(--gc-borda-forte); background: var(--gc-surface-2);
+}
+[data-gc-react-root] .gc-rel-tabela tfoot { position: sticky; bottom: 0; }
+
+/* ── Barras em SVG (relatório) ────────────────────────────────────── */
+[data-gc-react-root] .gc-barras-svg { width: 100%; height: auto; min-width: 0; }
+[data-gc-react-root] .gc-barras-barra { fill: var(--gc-serie-1); }
+[data-gc-react-root] .gc-barras-barra:hover { fill: var(--gc-primaria-h); }
+[data-gc-react-root] .gc-barras-grade { stroke: var(--gc-grade); stroke-dasharray: 3 3; }
+[data-gc-react-root] .gc-barras-rot {
+  fill: var(--gc-texto-3); font-size: 9px; font-family: system-ui, sans-serif;
+}
+
+/* ── Sankey (§40) ─────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-figura-meta { margin-left: 10px; font-weight: 400; color: var(--gc-texto-3); }
+[data-gc-react-root] .gc-fluxo-wrap { overflow-x: auto; min-width: 0; }
+[data-gc-react-root] .gc-fluxo-svg { width: 100%; min-width: 520px; height: auto; }
+[data-gc-react-root] .gc-fluxo-fita {
+  fill: none; stroke: var(--gc-texto-3); stroke-opacity: .26;
+  transition: stroke-opacity .12s ease;
+}
+[data-gc-react-root] .gc-fluxo-fita:hover { stroke-opacity: .5; }
+[data-gc-react-root] .gc-fluxo-fita.is-apagada { stroke-opacity: .07; }
+[data-gc-react-root] .gc-fluxo-no { cursor: default; }
+[data-gc-react-root] .gc-fluxo-rot {
+  fill: var(--gc-texto-2); font-size: 10.5px; font-family: system-ui, sans-serif;
+}
+
+/* ── Rede (§65) ───────────────────────────────────────────────────── */
+[data-gc-react-root] .gc-rede-wrap { min-width: 0; }
+[data-gc-react-root] .gc-rede-svg { width: 100%; height: auto; min-width: 0; }
+[data-gc-react-root] .gc-rede-aresta { stroke: var(--gc-texto-3); stroke-opacity: .3; }
+[data-gc-react-root] .gc-rede-aresta.is-apagada { stroke-opacity: .07; }
+[data-gc-react-root] .gc-rede-no {
+  fill: var(--gc-serie-1); stroke: var(--gc-surface); stroke-width: 2; cursor: pointer;
+}
+[data-gc-react-root] .gc-rede-no.is-externo { fill: var(--gc-serie-2); }
+[data-gc-react-root] .gc-rede-no.is-sel { stroke: var(--gc-texto); stroke-width: 3; }
+[data-gc-react-root] .gc-rede-no:focus-visible { stroke: var(--gc-texto); stroke-width: 3; outline: none; }
+[data-gc-react-root] .is-apagada { opacity: .22; }
+[data-gc-react-root] .gc-rede-rot {
+  fill: var(--gc-texto-2); font-size: 9.5px; font-family: system-ui, sans-serif;
+  pointer-events: none;
+}
+[data-gc-react-root] .gc-rede-legenda {
+  display: flex; align-items: center; gap: 14px; margin-top: 8px;
+  font-size: 11px; color: var(--gc-texto-2); flex-wrap: wrap;
+}
+[data-gc-react-root] .gc-rede-legenda > span { display: inline-flex; align-items: center; gap: 5px; }
+[data-gc-react-root] .gc-rede-leg {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--gc-serie-1);
+}
+[data-gc-react-root] .gc-rede-leg.is-externo { background: var(--gc-serie-2); }
+
+/* ── Impressão / PDF (§64.1) ──────────────────────────────────────────
+   O usuário imprime a TABELA, não a interface. Escondemos o cromo do app
+   inteiro e deixamos só o conteúdo do relatório — sem isso, a folha sai com
+   sidebar, header e navegação ocupando metade do papel. */
+@media print {
+  html.gc-imprimindo body * { visibility: hidden; }
+  html.gc-imprimindo [data-gc-react-root] .gc-rel-conteudo,
+  html.gc-imprimindo [data-gc-react-root] .gc-rel-conteudo * { visibility: visible; }
+  html.gc-imprimindo [data-gc-react-root] .gc-rel-conteudo {
+    position: absolute; left: 0; top: 0; width: 100%;
+  }
+  html.gc-imprimindo .gc-nao-imprime,
+  html.gc-imprimindo .gc-tabela-alt,
+  html.gc-imprimindo .gc-toasts { display: none !important; }
+
+  /* Fundo branco e texto preto: economiza tinta e garante contraste no papel,
+     independentemente do tema em que o usuário estava. */
+  /* Classe DUPLICADA de propósito: o seletor de tema
+     `:root[data-theme="light"] [data-gc-react-root]` tem especificidade (0,3,0)
+     e vencia o (0,2,1) de `html.gc-imprimindo [data-gc-react-root]` — a folha
+     saía com os tokens do tema em vez dos de impressão. Duplicar sobe para
+     (0,3,1) e resolve sem `!important`. Medido: `--gc-surface` vinha #ffffff
+     (tema light) em vez de #fff (impressão). */
+  html.gc-imprimindo.gc-imprimindo [data-gc-react-root] {
+    --gc-bg: #fff; --gc-surface: #fff; --gc-surface-2: #fff; --gc-surface-3: #f4f4f5;
+    --gc-texto: #000; --gc-texto-2: #333; --gc-texto-3: #555;
+    --gc-borda: #bbb; --gc-borda-forte: #888; --gc-sombra: none;
+  }
+  html.gc-imprimindo [data-gc-react-root] .gc-card { border: 1px solid #bbb; box-shadow: none; }
+  html.gc-imprimindo [data-gc-react-root] .gc-grid thead th { position: static; }
+  html.gc-imprimindo [data-gc-react-root] .gc-grid-wrap { overflow: visible; }
+  /* Repete o cabeçalho da tabela em cada página. */
+  html.gc-imprimindo [data-gc-react-root] .gc-rel-tabela thead { display: table-header-group; }
+  html.gc-imprimindo [data-gc-react-root] .gc-rel-tabela tfoot { display: table-footer-group; position: static; }
+  html.gc-imprimindo [data-gc-react-root] .gc-rel-tabela tr { break-inside: avoid; }
+  @page { margin: 14mm; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FASE 6 — vínculos internos e ficha lateral (2026-07-30)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+[data-gc-react-root] .gc-drawer-sec h4 {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+[data-gc-react-root] .gc-drawer-sec-acao { height: 24px; font-size: 11px; padding: 0 8px; }
+
+/* ── Seletor de vínculo ───────────────────────────────────────────── */
+[data-gc-react-root] .gc-vinc-resultados { margin-top: 10px; min-height: 120px; max-height: 46vh; overflow-y: auto; }
+[data-gc-react-root] .gc-vinc-lista { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-vinc-item {
+  display: flex; align-items: flex-start; gap: 10px; width: 100%; min-width: 0;
+  padding: 9px; border-radius: var(--gc-r-s); text-align: left; cursor: pointer;
+  background: none; border: 1px solid transparent; color: inherit; font: inherit;
+}
+[data-gc-react-root] .gc-vinc-item:hover:not(:disabled) {
+  background: var(--gc-surface-2); border-color: var(--gc-borda);
+}
+[data-gc-react-root] .gc-vinc-item:disabled { opacity: .55; cursor: default; }
+[data-gc-react-root] .gc-vinc-ic { flex: 0 0 auto; color: var(--gc-texto-3); padding-top: 1px; }
+[data-gc-react-root] .gc-vinc-corpo { flex: 1 1 auto; min-width: 0; }
+[data-gc-react-root] .gc-vinc-label {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12.5px; font-weight: 550;
+}
+[data-gc-react-root] .gc-vinc-sub { display: block; font-size: 11px; color: var(--gc-texto-3); margin-top: 1px; }
+[data-gc-react-root] .gc-vinc-extra {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 3px;
+  font-size: 10.5px; color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-vinc-fim {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 6px; color: var(--gc-texto-3);
+}
+[data-gc-react-root] .gc-tag-ok {
+  background: color-mix(in srgb, var(--gc-ok) 18%, transparent); color: var(--gc-ok);
+}
+
+/* ── Ficha lateral (§32.2) ────────────────────────────────────────── */
+[data-gc-react-root] .gc-fichas { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-ficha {
+  border: 1px solid var(--gc-borda); border-radius: var(--gc-r-s); margin-bottom: 7px;
+  background: var(--gc-surface-2);
+}
+[data-gc-react-root] .gc-ficha-cabeca {
+  display: flex; align-items: flex-start; gap: 8px; width: 100%; min-width: 0;
+  padding: 8px 10px; background: none; border: 0; color: inherit;
+  font: inherit; text-align: left; cursor: pointer;
+}
+[data-gc-react-root] .gc-ficha-id { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+[data-gc-react-root] .gc-ficha-id strong { font-size: 12.5px; }
+[data-gc-react-root] .gc-ficha-corpo {
+  padding: 4px 10px 10px; border-top: 1px solid var(--gc-borda);
+}
+[data-gc-react-root] .gc-ficha-destaque { font-size: 13.5px; color: var(--gc-ok); }
+[data-gc-react-root] .gc-ficha-sub {
+  margin: 10px 0 5px; font-size: 11px; font-weight: 650; color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-ficha-atividades { list-style: none; margin: 0; padding: 0; }
+[data-gc-react-root] .gc-ficha-atividades li {
+  display: flex; align-items: center; gap: 6px; padding: 3px 0;
+  font-size: 11.5px; color: var(--gc-texto-2);
+}
+[data-gc-react-root] .gc-ficha-atividades li > span:nth-child(2) {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+[data-gc-react-root] .gc-ficha-atividades li.is-feita { opacity: .6; }
+[data-gc-react-root] .gc-ficha-atividades li.is-feita > span:nth-child(2) { text-decoration: line-through; }
+[data-gc-react-root] .gc-ficha-acoes { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+[data-gc-react-root] .gc-ficha-remover { margin-top: 8px; height: 26px; font-size: 11px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   GO-LIVE — checklist de ativação do módulo (tela de Contas)
+   Só usa tokens já validados por contraste nos DOIS temas; nenhuma cor
+   literal entra aqui, senão o tema claro volta a reprovar na medição.
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-gc-react-root] .gc-aviso-ok {
+  background: color-mix(in srgb, var(--gc-ok) 14%, transparent); color: var(--gc-ok);
+}
+
+[data-gc-react-root] .gc-golive.is-pronto { border-color: color-mix(in srgb, var(--gc-ok) 45%, var(--gc-borda)); }
+
+[data-gc-react-root] .gc-golive-topo {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+}
+[data-gc-react-root] .gc-golive-resumo {
+  margin: 0; font-size: 12.5px; color: var(--gc-texto-2); flex: 1 1 200px; min-width: 0;
+}
+[data-gc-react-root] .gc-golive-barra {
+  flex: 0 1 180px; height: 6px; border-radius: 999px;
+  background: var(--gc-surface-3); overflow: hidden;
+}
+[data-gc-react-root] .gc-golive-barra > span {
+  display: block; height: 100%; border-radius: 999px;
+  background: var(--gc-primaria); transition: width .25s ease;
+}
+[data-gc-react-root] .gc-golive.is-pronto .gc-golive-barra > span { background: var(--gc-ok); }
+
+[data-gc-react-root] .gc-passos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+
+[data-gc-react-root] .gc-passo {
+  border: 1px solid var(--gc-borda); border-radius: var(--gc-r-s);
+  background: var(--gc-surface-2); overflow: hidden;
+}
+[data-gc-react-root] .gc-passo.is-bloqueia { border-color: color-mix(in srgb, var(--gc-alerta) 40%, var(--gc-borda)); }
+[data-gc-react-root] .gc-passo.is-ok       { border-color: color-mix(in srgb, var(--gc-ok) 32%, var(--gc-borda)); }
+
+[data-gc-react-root] .gc-passo-cabeca {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  /* 40px de alvo: a checklist é tocada em tablet no chão de operação. */
+  min-height: 40px; padding: 7px 11px;
+  background: none; border: 0; text-align: left; cursor: pointer;
+  color: var(--gc-texto); font: inherit; font-size: 12.5px;
+}
+[data-gc-react-root] .gc-passo-cabeca:hover { background: var(--gc-surface-3); }
+[data-gc-react-root] .gc-passo-cabeca:focus-visible { outline: 2px solid var(--gc-primaria); outline-offset: -2px; }
+
+[data-gc-react-root] .gc-passo-marca { display: inline-flex; flex: 0 0 auto; }
+[data-gc-react-root] .gc-passo.is-ok       .gc-passo-marca { color: var(--gc-ok); }
+[data-gc-react-root] .gc-passo.is-bloqueia .gc-passo-marca { color: var(--gc-alerta); }
+[data-gc-react-root] .gc-passo.is-aviso    .gc-passo-marca { color: var(--gc-atencao); }
+
+[data-gc-react-root] .gc-passo-num {
+  flex: 0 0 auto; width: 17px; text-align: center;
+  font-size: 11px; font-variant-numeric: tabular-nums; color: var(--gc-texto-3);
+}
+[data-gc-react-root] .gc-passo-titulo { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+[data-gc-react-root] .gc-passo-estado {
+  flex: 0 0 auto; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--gc-texto-3);
+}
+[data-gc-react-root] .gc-passo.is-ok       .gc-passo-estado { color: var(--gc-ok); }
+[data-gc-react-root] .gc-passo.is-bloqueia .gc-passo-estado { color: var(--gc-alerta); }
+
+[data-gc-react-root] .gc-passo-corpo {
+  padding: 2px 11px 11px 48px; border-top: 1px solid var(--gc-borda);
+  display: grid; gap: 8px;
+}
+[data-gc-react-root] .gc-passo-detalhe { margin: 8px 0 0; font-size: 12px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-passo-resolver {
+  margin: 0; font-size: 12px; color: var(--gc-texto); line-height: 1.55;
+  white-space: pre-line;   /* o backend manda quebra de linha em comandos */
+}
+[data-gc-react-root] .gc-passo-rotulo { font-size: 11.5px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-passo-extra { display: grid; gap: 5px; }
+
+[data-gc-react-root] .gc-escopos { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+[data-gc-react-root] .gc-escopos code,
+[data-gc-react-root] .gc-passo-resolver code,
+[data-gc-react-root] .gc-passo-rotulo code {
+  font-size: 11px; padding: 1px 5px; border-radius: 4px;
+  background: var(--gc-surface-3); color: var(--gc-texto-2);
+}
+
+[data-gc-react-root] .gc-copiavel {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  padding: 7px 9px; border-radius: var(--gc-r-s);
+  background: var(--gc-surface-3); border: 1px solid var(--gc-borda);
+}
+[data-gc-react-root] .gc-copiavel-valor {
+  flex: 1 1 240px; min-width: 0; font-size: 11.5px; color: var(--gc-texto);
+  /* Quebra em QUALQUER ponto: a URI é uma palavra só e sem isso estoura a
+     largura do cartão em janelas estreitas (a zona morta do app-shell chega
+     a deixar 208px para o painel). */
+  overflow-wrap: anywhere;
+}
+[data-gc-react-root] .gc-btn-mini { height: 26px; padding: 0 9px; font-size: 11px; gap: 5px; }
+[data-gc-react-root] .gc-btn-perigo { color: var(--gc-alerta); }
+[data-gc-react-root] .gc-btn-perigo:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--gc-alerta) 12%, transparent);
+  border-color: color-mix(in srgb, var(--gc-alerta) 45%, var(--gc-borda));
+}
+
+/* Duas ações no cabeçalho do cartão (ex.: "Recarga completa" + "Sincronizar
+   agora"). Sem isto os botões encostam um no outro e, em janela estreita,
+   empurram o título para fora — a sidebar do shell é 312px FIXOS, então o
+   painel chega a receber ~208px. */
+[data-gc-react-root] .gc-card-acao {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FILA E CANAIS PUSH (Fase 5) — tela de Sincronização
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-gc-react-root] .gc-fila { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 4px; }
+
+[data-gc-react-root] .gc-fila-item {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 9px; border-radius: var(--gc-r-s);
+  background: var(--gc-surface-2); border: 1px solid var(--gc-borda);
+  font-size: 12px;
+}
+[data-gc-react-root] .gc-fila-item.is-dead {
+  border-color: color-mix(in srgb, var(--gc-alerta) 45%, var(--gc-borda));
+}
+[data-gc-react-root] .gc-fila-item.is-running {
+  border-color: color-mix(in srgb, var(--gc-primaria) 45%, var(--gc-borda));
+}
+
+[data-gc-react-root] .gc-fila-n {
+  flex: 0 0 auto; min-width: 22px; padding: 1px 6px; border-radius: 999px;
+  background: var(--gc-surface-3); color: var(--gc-texto);
+  font-size: 11px; font-weight: 650; font-variant-numeric: tabular-nums; text-align: center;
+}
+[data-gc-react-root] .gc-fila-kind {
+  flex: 1 1 160px; min-width: 0; color: var(--gc-texto); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+[data-gc-react-root] .gc-fila-status {
+  flex: 0 0 auto; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--gc-texto-3);
+}
+[data-gc-react-root] .gc-fila-item.is-dead .gc-fila-status { color: var(--gc-alerta); }
+[data-gc-react-root] .gc-fila-quando { flex: 0 0 auto; font-size: 11.5px; color: var(--gc-texto-2); }
+[data-gc-react-root] .gc-fila-id {
+  flex: 0 0 auto; font-size: 10.5px; padding: 1px 5px; border-radius: 4px;
+  background: var(--gc-surface-3); color: var(--gc-texto-3);
+}

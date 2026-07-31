@@ -106,7 +106,7 @@ class FooterFinancialComponent {
       const r = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: "include" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const j = await r.json();
-      if (j.success && j.data) {
+      if ((j.ok ?? j.success) && j.data) {
         this.store.setState({ loading: false, error: null, data: j.data, transactions: j.data.month_transactions || 0, status: j.data.status || "unknown" });
         this._updateDisplay();
       }
