@@ -32,6 +32,7 @@ $todos = [
     $raiz . '/sql/avatar/catalogo_seed_taxonomia.sql',
     $raiz . '/sql/avatar/catalogo_seed_assets.sql',
     $raiz . '/sql/avatar/historico_schema.sql',
+    $raiz . '/sql/avatar/as5_schema.sql',
 ];
 $dryRun = in_array('--dry-run', $argv, true);
 $checar = in_array('--checar', $argv, true);
@@ -71,7 +72,10 @@ if ($checar) {
         'avatar_asset_rules', 'avatar_unlock_rules', 'avatar_presets',
         'avatar_collections', 'avatar_collection_items', 'avatar_user_favorites',
         'avatar_user_unlocks', 'avatar_user_inventory', 'avatar_catalog_meta',
-        'avatar_catalog_audit', 'avatar_version_meta'];
+        'avatar_catalog_audit', 'avatar_version_meta',
+        // AS5 F1 (§610–§615)
+        'avatar_profiles', 'avatar_states', 'avatar_state_versions',
+        'avatar_asset_versions', 'avatar_asset_files'];
     $st = $pdo->query("
         SELECT table_name FROM information_schema.tables
         WHERE table_schema = DATABASE() AND table_name LIKE 'avatar\\_%'
