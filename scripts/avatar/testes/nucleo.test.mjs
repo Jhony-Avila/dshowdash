@@ -210,6 +210,37 @@ ok(cap.dataUri.startsWith('data:image/svg+xml') && !decodeURIComponent(cap.dataU
 await r2d.descartar();
 ok(alvoFake.innerHTML === '', 'descartar deveria limpar o alvo');
 
+// §636 (F8): validador de sugestão de IA — nunca inventa ID, relata rejeições
+import { validarSugestaoIA, resumirAjustes } from '${PAINEL}/src/services/ValidadorIA';
+const cabeloReal = itensDe('cabelo')[0].id;
+const bloqueadoReal = itensDe('moldura').find((i) => i.bloqueadoPor)?.id;
+const rel = validarSugestaoIA({
+  base: 'bas_inventada_pela_ia',
+  camadas: { cabelo: cabeloReal, olhos: 'olho_fake_9000', roupa: cabeloReal,
+    ...(bloqueadoReal ? { moldura: bloqueadoReal } : {}) },
+  cores: { destaque: '#39d98a' },
+}, new Set());
+ok(rel.rejeitados.some((r) => r.id === 'bas_inventada_pela_ia' && r.motivo === 'id_inexistente'),
+  'base inventada deveria cair como id_inexistente');
+ok(rel.rejeitados.some((r) => r.id === 'olho_fake_9000' && r.motivo === 'id_inexistente'),
+  'id inventado em camada deveria cair');
+ok(rel.rejeitados.some((r) => r.slot === 'roupa' && r.motivo === 'categoria_incompativel'),
+  'cabelo no slot roupa deveria cair como categoria_incompativel');
+if (bloqueadoReal) {
+  ok(rel.rejeitados.some((r) => r.id === bloqueadoReal && r.motivo === 'bloqueado'),
+    'item bloqueado deveria cair sem desbloqueio');
+}
+ok(rel.aceitos.includes(cabeloReal) && rel.config.camadas.cabelo === cabeloReal,
+  'item válido deveria sobreviver');
+ok(rel.config.base && rel.config.formato === 'camadas', 'config final deveria ser seguro');
+ok((resumirAjustes(rel.rejeitados) ?? '').includes('não existe'), 'resumo deveria citar ids inexistentes');
+ok(resumirAjustes([]) === null, 'sem rejeições → sem nota');
+// com desbloqueio, o item bloqueado passa
+if (bloqueadoReal) {
+  const rel2 = validarSugestaoIA({ camadas: { moldura: bloqueadoReal } }, new Set([bloqueadoReal]));
+  ok(rel2.aceitos.includes(bloqueadoReal), 'desbloqueado deveria passar');
+}
+
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);
 `);

@@ -20,10 +20,12 @@ const SUGESTOES = [
   'me surpreenda',
 ];
 
-export function CriarIA({ config, iaDisponivel, aoAplicar }: {
+export function CriarIA({ config, iaDisponivel, aoAplicar, desbloqueados }: {
   config: AvatarConfig;
   iaDisponivel: boolean;
   aoAplicar: (novo: AvatarConfig) => void;
+  /** §636 (F8): permissão real do usuário — o validador barra itens bloqueados */
+  desbloqueados?: Set<string>;
 }) {
   const [pedido, setPedido] = useState('');
   const [gerando, setGerando] = useState(false);
@@ -34,10 +36,10 @@ export function CriarIA({ config, iaDisponivel, aoAplicar }: {
     if (!limpo || gerando) return;
     setGerando(true);
     telemetria('ia', { fonte: iaDisponivel ? 'servidor' : 'local' });
-    const p = await criarComIA(limpo, config);
+    const p = await criarComIA(limpo, config, desbloqueados);
     setResultado(p);
     setGerando(false);
-  }, [config, gerando, iaDisponivel]);
+  }, [config, gerando, iaDisponivel, desbloqueados]);
 
   return (
     <section className="avst-ia" aria-label="Criar com IA">
@@ -77,6 +79,7 @@ export function CriarIA({ config, iaDisponivel, aoAplicar }: {
             <strong>{resultado.nome}</strong>
             <span className="avst-ia-historia">{resultado.historia}</span>
             <em>{resultado.fonte === 'ia' ? 'montado pela IA' : 'montado pelo compositor do estúdio'}</em>
+            {resultado.ajuste && <em className="avst-ia-ajuste" data-teste="ia-ajuste">{resultado.ajuste}</em>}
             <div className="avst-foto-acoes">
               <button type="button" className="avst-botao" disabled={gerando}
                 onClick={() => void gerar(pedido || 'me surpreenda')}>

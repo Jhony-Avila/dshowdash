@@ -674,7 +674,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             <Vitrine config={atual} desbloqueados={vida?.desbloqueados ?? new Set()}
               aoAplicar={aplicar} aoAbrirColecoes={() => setAba('colecoes')} />
           )}
-          {aba === 'ia' && <CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} />}
+          {aba === 'ia' && <CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} desbloqueados={vida?.desbloqueados} />}
           {aba === 'historico' && (
             <Historico key={`h-${versao}`} versaoBase={versao}
               aoAplicar={aplicar} aoReativar={aoReativarHistorico} />
