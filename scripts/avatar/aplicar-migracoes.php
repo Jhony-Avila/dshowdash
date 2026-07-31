@@ -7,12 +7,19 @@ declare(strict_types=1);
  * @version 1.0.0  @created 2026-07-30
  *
  * Uso (CLI apenas, na raiz do projeto):
- *   php scripts/avatar/aplicar-migracoes.php            → aplica schema+seeds
- *   php scripts/avatar/aplicar-migracoes.php --dry-run  → só lista os passos
+ *   php scripts/avatar/aplicar-migracoes.php                 → aplica tudo
+ *   php scripts/avatar/aplicar-migracoes.php --dry-run       → só lista
+ *   php scripts/avatar/aplicar-migracoes.php --checar        → diagnóstico
+ *       (quais tabelas existem, contagens) SEM executar nada
+ *   php scripts/avatar/aplicar-migracoes.php <arquivo.sql…>  → só os arquivos
+ *       citados (ex.: só os SEEDS quando o usuário do banco não tem CREATE —
+ *       v1.1.0: o dshowdash_app perdeu CREATE no endurecimento de permissões,
+ *       então schema roda como root em passo explícito e seeds rodam aqui)
  *
  * Idempotente por construção (IF NOT EXISTS / ON DUPLICATE KEY). Para testes
  * fora do servidor: AVST_MIG_DSN/AVST_MIG_USER/AVST_MIG_PASS sobrescrevem a
  * conexão (nunca usados em produção).
+ * @version 1.1.0 — --checar + filtro de arquivos por argumento
  */
 if (PHP_SAPI !== 'cli') {
     fwrite(STDERR, "Somente CLI.\n");
@@ -20,13 +27,32 @@ if (PHP_SAPI !== 'cli') {
 }
 
 $raiz = dirname(__DIR__, 2);
-$arquivos = [
+$todos = [
     $raiz . '/sql/avatar/catalogo_schema.sql',
     $raiz . '/sql/avatar/catalogo_seed_taxonomia.sql',
     $raiz . '/sql/avatar/catalogo_seed_assets.sql',
     $raiz . '/sql/avatar/historico_schema.sql',
 ];
 $dryRun = in_array('--dry-run', $argv, true);
+$checar = in_array('--checar', $argv, true);
+
+// arquivos passados na linha de comando limitam a execução (só da lista oficial)
+$pedidos = array_values(array_filter(array_slice($argv, 1),
+    static fn (string $a): bool => !str_starts_with($a, '--')));
+if ($pedidos !== []) {
+    $arquivos = [];
+    foreach ($pedidos as $p) {
+        $alvo = str_starts_with($p, '/') ? $p : $raiz . '/' . ltrim($p, './');
+        if (!in_array($alvo, $todos, true)) {
+            fwrite(STDERR, "RECUSADO (fora da lista oficial de migracoes): {$p}
+");
+            exit(1);
+        }
+        $arquivos[] = $alvo;
+    }
+} else {
+    $arquivos = $todos;
+}
 
 $dsn = getenv('AVST_MIG_DSN');
 if ($dsn !== false && $dsn !== '') {
@@ -36,6 +62,36 @@ if ($dsn !== false && $dsn !== '') {
     require_once $raiz . '/config/db_connection.php';
     $pdo = getConnection('DSHOWDASH');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+}
+
+// ── modo --checar: diagnóstico sem executar nada ─────────────────────
+if ($checar) {
+    $esperadas = ['avatar_licenses', 'avatar_libraries', 'avatar_categories',
+        'avatar_category_groups', 'avatar_rarities', 'avatar_assets',
+        'avatar_asset_rules', 'avatar_unlock_rules', 'avatar_presets',
+        'avatar_collections', 'avatar_collection_items', 'avatar_user_favorites',
+        'avatar_user_unlocks', 'avatar_user_inventory', 'avatar_catalog_meta',
+        'avatar_catalog_audit', 'avatar_version_meta'];
+    $st = $pdo->query("
+        SELECT table_name FROM information_schema.tables
+        WHERE table_schema = DATABASE() AND table_name LIKE 'avatar\\_%'
+    ");
+    $existentes = array_map(static fn ($l) => (string) $l[0], $st->fetchAll(PDO::FETCH_NUM));
+    foreach ($esperadas as $t) {
+        echo (in_array($t, $existentes, true) ? 'OK      ' : 'FALTA   ') . $t . "\n";
+    }
+    foreach (array_diff($existentes, $esperadas) as $extra) {
+        echo "EXTRA   {$extra}\n";
+    }
+    foreach (['avatar_categories' => 'categorias', 'avatar_assets' => 'assets',
+        'avatar_collections' => 'colecoes'] as $tab => $rotulo) {
+        if (in_array($tab, $existentes, true)) {
+            $n = (int) $pdo->query("SELECT COUNT(*) FROM {$tab}")->fetchColumn();
+            echo "CONTAGEM {$rotulo}: {$n}\n";
+        }
+    }
+    echo "== CHECAGEM CONCLUIDA (nada foi executado) ==\n";
+    exit(0);
 }
 
 /** Divide o arquivo em comandos: ';' no fim de linha encerra o statement. */
