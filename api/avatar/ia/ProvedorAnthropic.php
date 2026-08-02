@@ -10,6 +10,7 @@ declare(strict_types=1);
  * disponivel() = false e o front usa o compositor temático local.
  */
 require_once __DIR__ . '/ProvedorIA.php';
+require_once __DIR__ . '/EnvIA.php';
 
 final class ProvedorAnthropic implements ProvedorIA
 {
@@ -18,25 +19,9 @@ final class ProvedorAnthropic implements ProvedorIA
 
     public function __construct()
     {
-        $this->chave = $this->lerEnv('ANTHROPIC_API_KEY');
-        $this->modelo = $this->lerEnv('AVATAR_IA_MODELO') ?: 'claude-sonnet-4-5';
-    }
-
-    private function lerEnv(string $nome): ?string
-    {
-        $valor = getenv($nome);
-        if (is_string($valor) && $valor !== '') {
-            return $valor;
-        }
-        $arquivo = __DIR__ . '/../../../config/.env';
-        if (is_readable($arquivo)) {
-            foreach (file($arquivo, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $linha) {
-                if (preg_match('/^' . preg_quote($nome, '/') . '\s*=\s*["\']?([^"\'#]+)/', trim($linha), $m)) {
-                    return trim($m[1]);
-                }
-            }
-        }
-        return null;
+        // leitura centralizada (EnvIA) — F8.2: um só ponto de config p/ IA
+        $this->chave = EnvIA::ler('ANTHROPIC_API_KEY');
+        $this->modelo = EnvIA::ler('AVATAR_IA_MODELO') ?: 'claude-sonnet-4-5';
     }
 
     public function disponivel(): bool
