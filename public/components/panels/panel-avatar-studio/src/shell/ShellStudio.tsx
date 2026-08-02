@@ -25,6 +25,7 @@ import { Cores } from '../components/Cores';
 import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
+import { DetalheAsset } from './DetalheAsset';
 import { HistoricoSessao, useHistoricoSessao } from './HistoricoSessao';
 import {
   CHAVE_RASCUNHO_STORAGE, gravarRascunho, idDaAba, lerRascunho, limparRascunho,
@@ -109,6 +110,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [aba, setAba] = useState<AbaCatalogo | 'presets'>('todos');
   // §68.3: chip de slot ativo (só em Acessórios; troca de categoria zera)
   const [filtroSlot, setFiltroSlot] = useState<'todos' | SlotAcessorio>('todos');
+  // §67: drawer de detalhes do asset (null = fechado)
+  const [detalheId, setDetalheId] = useState<string | null>(null);
   // R7/R8: modos do palco — edicao | foco (F/Esc) | studio (apresentação)
   const [modo, setModo] = useState<'edicao' | 'foco' | 'studio'>('edicao');
   const [painelLargo, setPainelLargo] = useState(false);
@@ -513,7 +516,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 </>) : (
                   <GradeItens config={configVisivel} categoria={categoria}
                     desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
-                    aoPrever={aoPrever} filtroSlot={filtroSlot} />
+                    aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
                 )}
               </div>
             )}
@@ -525,6 +528,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
           </aside>
         </div>
+        {detalheId && (
+          <DetalheAsset id={detalheId} config={configVisivel} desbloqueados={desbloqueados}
+            aoEscolher={aoEscolher} aoPrever={aoPrever} aoFechar={() => setDetalheId(null)} />
+        )}
         {conflito && (
           <div className="avst5-modal-fundo" role="dialog" aria-modal="true" aria-label="Conflito de equipamento">
             <div className="avst5-modal">

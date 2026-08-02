@@ -8,7 +8,7 @@
 // da cor (§39.20) e tooltip por PORTAL no Overlay Root (§22).
 import { useMemo, useRef, useState } from 'react';
 import {
-  ArrowDownUp, Ban, Check, Grid2x2, LayoutGrid, List, Lock, Search, SlidersHorizontal, Star, X,
+  ArrowDownUp, Ban, Check, Grid2x2, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal, Star, X,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, Raridade, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, validarConfig } from '../services/AvatarCatalog';
@@ -85,7 +85,7 @@ function idsEquipados(config: AvatarConfig, categoria: CategoriaId): string[] {
 
 export type AbaCatalogo = 'todos' | 'equipados' | 'favoritos' | 'novos' | 'bloqueados';
 
-export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever, filtroSlot = 'todos' }: {
+export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever, filtroSlot = 'todos', aoDetalhes }: {
   config: AvatarConfig;
   categoria: CategoriaId;
   /** ids liberados por conquistas/eventos (vem do /api/avatar/vida.php) */
@@ -97,6 +97,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   aoPrever?: (novo: AvatarConfig | null) => void;
   /** AS5 F3 C2 (P2 §68.3): chips de navegação por slot — só age em 'acessorio' */
   filtroSlot?: 'todos' | SlotAcessorio;
+  /** AS5 §67: abre o DRAWER DE DETALHES do asset (shell novo) */
+  aoDetalhes?: (id: string) => void;
 }) {
   const meta = CATEGORIAS.find((c) => c.id === categoria);
   const [busca, setBusca] = useState('');
@@ -295,7 +297,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           </button>
         )}
         {itens.map((item) => (
-          <CardItem key={item.id} item={item} config={config} modo={modo} aoPrever={aoPrever}
+          <CardItem key={item.id} item={item} config={config} modo={modo} aoPrever={aoPrever} aoDetalhes={aoDetalhes}
             ativo={equipados.has(item.id)}
             favorito={favs.has(item.id)}
             bloqueado={bloqueado(item)}
@@ -319,7 +321,7 @@ function Pips({ raridade }: { raridade: Raridade }) {
   );
 }
 
-function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar, aoEscolher, aoPrever }: {
+function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: {
   item: ParteDef;
   config: AvatarConfig;
   modo: ModoGrade;
@@ -329,6 +331,7 @@ function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar,
   aoFavoritar: () => void;
   aoEscolher: () => void;
   aoPrever?: (novo: AvatarConfig | null) => void;
+  aoDetalhes?: (id: string) => void;
 }) {
   const rar = RARIDADES[item.raridade];
   const cardRef = useRef<HTMLDivElement>(null);
@@ -387,6 +390,12 @@ function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar,
         onClick={(e) => { e.stopPropagation(); aoFavoritar(); }}>
         <Star size={12} aria-hidden />
       </button>
+      {aoDetalhes && (
+        <button type="button" className="avst-card-info-btn" title="Detalhes do item (§67)"
+          onClick={(e) => { e.stopPropagation(); aoDetalhes(item.id); }}>
+          <Info size={12} aria-hidden />
+        </button>
+      )}
       {/* CARD RICO (4.6, decisão #42): tooltip por PORTAL com lore completo,
           origem, dependências e slots de cor — sem truncamento */}
       <Dica alvo={cardRef} id={`avst-tip-${item.id}`} cor={rar.cor}>
