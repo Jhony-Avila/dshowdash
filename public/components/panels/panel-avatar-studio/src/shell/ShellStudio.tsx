@@ -30,6 +30,8 @@ import { HistoricoSessao, useHistoricoSessao } from './HistoricoSessao';
 import {
   CHAVE_RASCUNHO_STORAGE, gravarRascunho, idDaAba, lerRascunho, limparRascunho,
 } from '../services/PresetsPessoais';
+import { carregarEstado, estadoApiAtivo, salvarDraft, salvarVersao } from '../services/EstadoService';
+import { telemetria } from '../services/Telemetria';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
 
@@ -252,18 +254,45 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // §138: registro da timeline vive AQUI (a sessão inteira, não só na aba)
   const historico = useHistoricoSessao(store);
 
+  // §619 (Etapa 3 do §647 — DUAL-WRITE atrás da flag as5.estado_api):
+  // o legado segue como FONTE DA VERDADE; o estado novo é espelhado
+  // best-effort com lock otimista (§619.1). Falha nunca interrompe o fluxo.
+  const refChecksum619 = useRef<string | null>(null);
+  useEffect(() => {
+    if (!estadoApiAtivo()) return;
+    let vivo = true;
+    void carregarEstado().then((c) => {
+      if (vivo && c) refChecksum619.current = c.checksum;
+    });
+    return () => { vivo = false; };
+  }, []);
+  const espelhar619 = useCallback(async (comVersao: boolean) => {
+    if (!estadoApiAtivo()) return;
+    try {
+      const r = await salvarDraft(store.estadoDraft, refChecksum619.current);
+      if (r.ok && r.checksum) refChecksum619.current = r.checksum;
+      if (r.conflito) telemetria('estado619_conflito');
+      if (r.ok && comVersao) {
+        const v = await salvarVersao('shell as5', true);
+        telemetria('estado619_versao', { ok: v.ok, versao: v.versao ?? 0 });
+      }
+    } catch { /* espelho é best-effort */ }
+  }, [store]);
+
   // §139: AUTOSAVE do rascunho (debounce) — limpa quando não há mudanças
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const parar = store.assinar(() => {
       clearTimeout(timer);
       timer = setTimeout(() => {
-        if (store.temMudancas) gravarRascunho(paraLegado2d(store.estadoDraft), store.versao);
-        else limparRascunho();
+        if (store.temMudancas) {
+          gravarRascunho(paraLegado2d(store.estadoDraft), store.versao);
+          void espelhar619(false); // §139 "sincronizar quando possível"
+        } else limparRascunho();
       }, 800);
     });
     return () => { clearTimeout(timer); parar(); };
-  }, [store]);
+  }, [store, espelhar619]);
 
   // §139: recuperação — rascunho órfão diferente do estado carregado
   const [rascunho, setRascunho] = useState<Rascunho | null>(() => {
@@ -439,7 +468,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             </div>
             <BarraSalvamento store={store} aoSalvar={async () => {
               const r = await aoSalvarLegado(paraLegado2d(store.estadoDraft));
-              if (r.ok) store.confirmarPersistencia(r.versao ?? store.versao + 1);
+              if (r.ok) {
+                store.confirmarPersistencia(r.versao ?? store.versao + 1);
+                void espelhar619(true); // §619: versão publicada no espelho
+              }
               return r.ok;
             }} />
           </main>
