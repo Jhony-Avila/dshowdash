@@ -27,7 +27,7 @@ cd /var/www/dshowdash && CARIMBO=$(date +%Y%m%d-%H%M%S) && DB=$(php -r '$e=parse
 ## Passo 3 — Aplicar a migração (runner oficial, só o arquivo AS5)
 
 ```bash
-cd /var/www/dshowdash && read -s -p "senha root: " SENHA && echo && AVST_MIG_DSN="mysql:host=127.0.0.1;dbname=$(php -r '$e=parse_ini_file("config/.env"); echo $e["DB_NAME"] ?? $e["DB_DATABASE"];');charset=utf8mb4" AVST_MIG_USER=root AVST_MIG_PASS="$SENHA" php scripts/avatar/aplicar-migracoes.php as5_schema.sql && unset SENHA && echo MIGRACAO_OK
+cd /var/www/dshowdash && read -s -p "senha root: " SENHA && echo && AVST_MIG_DSN="mysql:host=127.0.0.1;dbname=$(php -r '$e=parse_ini_file("config/.env"); echo $e["DB_NAME"] ?? $e["DB_DATABASE"];');charset=utf8mb4" AVST_MIG_USER=root AVST_MIG_PASS="$SENHA" php scripts/avatar/aplicar-migracoes.php sql/avatar/as5_schema.sql && unset SENHA && echo MIGRACAO_OK
 ```
 
 ## Passo 4 — Validar o resultado

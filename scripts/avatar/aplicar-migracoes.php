@@ -45,9 +45,17 @@ if ($pedidos !== []) {
     foreach ($pedidos as $p) {
         $alvo = str_starts_with($p, '/') ? $p : $raiz . '/' . ltrim($p, './');
         if (!in_array($alvo, $todos, true)) {
-            fwrite(STDERR, "RECUSADO (fora da lista oficial de migracoes): {$p}
+            // conveniência: aceitar o BASENAME (ex.: as5_schema.sql) —
+            // continua 100% restrito à lista oficial acima
+            $porNome = array_values(array_filter($todos,
+                static fn (string $t): bool => basename($t) === basename($p)));
+            if (count($porNome) === 1) {
+                $alvo = $porNome[0];
+            } else {
+                fwrite(STDERR, "RECUSADO (fora da lista oficial de migracoes): {$p}
 ");
-            exit(1);
+                exit(1);
+            }
         }
         $arquivos[] = $alvo;
     }
