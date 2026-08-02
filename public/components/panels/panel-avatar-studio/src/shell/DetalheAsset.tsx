@@ -8,8 +8,8 @@
 // Ações §67.2: Experimentar (SEGURAR = preview §608, mesma semântica do
 // botão Original), Equipar/Remover, Favoritar, Salvar como preset e Ver
 // coleção. Itens relacionados: mesmo tema, navegáveis dentro do drawer.
-import { useMemo, useState } from 'react';
-import { BookmarkPlus, Check, Eye, Layers, Lock, Star, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeftRight, BookmarkPlus, Check, Eye, Layers, Lock, Pause, Play, Star, X } from 'lucide-react';
 import type { AvatarConfig, SlotCor } from '../domain/types';
 import {
   COLECOES, RARIDADES, itemPorId, itensDe, progressoColecao, validarConfig,
@@ -35,6 +35,8 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
 }) {
   const [atual, setAtual] = useState(id);
   const [salvo, setSalvo] = useState(false);
+  const [comparando, setComparando] = useState(false);
+  const [alternando, setAlternando] = useState(false);
   const [, setTic] = useState(0);
   const item = itemPorId(atual);
 
@@ -42,9 +44,37 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
     () => (item ? validarConfig(comItem(config, item.categoria, item.id)) : config),
     [config, item],
   );
+
+  // §65.2: alternar automaticamente A/B no palco (preview §608 — nunca o
+  // draft). Hook ANTES do early return (rules of hooks).
+  // O efeito depende SÓ de `alternando` e lê o preview por REF — depender
+  // do objeto preview realimentava o próprio toggle (preview muda o
+  // configVisivel → config → preview → efeito de novo = loop).
+  const refLado = useRef(false);
+  const refPreview = useRef(preview);
+  refPreview.current = preview;
+  useEffect(() => {
+    if (!alternando) return;
+    const tique = () => { refLado.current = !refLado.current; aoPrever(refLado.current ? refPreview.current : null); };
+    tique();
+    const timer = setInterval(tique, 1100);
+    return () => { clearInterval(timer); aoPrever(null); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alternando]);
+
   if (!item) return null;
 
   const rar = RARIDADES[item.raridade];
+  // §65.1: lado A = o que está EQUIPADO neste lugar hoje (pode ser nada)
+  const idEquipadoNoLugar = item.categoria === 'base'
+    ? config.base
+    : item.categoria === 'acessorio'
+      ? config.camadas[`acessorio_${item.slot ?? 'cabeca'}`] ?? null
+      : config.camadas[item.categoria] ?? null;
+  const itemEquipado = idEquipadoNoLugar ? itemPorId(idEquipadoNoLugar) : undefined;
+  const colecaoEquipado = itemEquipado
+    ? COLECOES.find((c) => c.itens.includes(itemEquipado.id))
+    : undefined;
   const bloqueado = Boolean(item.bloqueadoPor) && !desbloqueados.has(item.id);
   const equipado = config.base === item.id || Object.values(config.camadas).includes(item.id);
   const colecao = COLECOES.find((c) => c.itens.includes(item.id));
@@ -99,18 +129,51 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
             onClick={() => { if (salvarPreset(`Com ${item.nome}`, preview)) setSalvo(true); }}>
             <BookmarkPlus size={13} aria-hidden /> {salvo ? 'Preset salvo ✓' : 'Salvar preset'}
           </button>
+          <button type="button" className={`avst-botao${comparando ? ' avst-botao-ativo' : ''}`}
+            title="Lado a lado com o que está equipado (§65.1)"
+            onClick={() => { setComparando((v) => !v); setAlternando(false); }}>
+            <ArrowLeftRight size={13} aria-hidden /> Comparar
+          </button>
           <button type="button" className="avst-botao avst-botao-primario" disabled={bloqueado}
             onClick={() => { aoEscolher(comItem(config, item.categoria, item.id)); aoFechar(); }}>
             <Check size={13} aria-hidden /> {equipado ? (item.categoria === 'acessorio' ? 'Remover' : 'Equipado') : 'Equipar'}
           </button>
         </div>
 
+        {comparando && (
+          <div className="avst5-comparacao" data-teste="comparacao">
+            <div className="avst5-comp-lado">
+              <span className="avst5-comp-rotulo">Equipado agora</span>
+              <AvatarSvg config={config} estatico uid="cmp-a" foco={FOCO_THUMB[item.categoria]} />
+              <strong>{itemEquipado?.nome ?? 'Nada neste lugar'}</strong>
+              {itemEquipado && (
+                <em style={{ color: RARIDADES[itemEquipado.raridade].cor }}>
+                  {RARIDADES[itemEquipado.raridade].nome}{colecaoEquipado ? ` · ${colecaoEquipado.nome}` : ''}
+                </em>
+              )}
+            </div>
+            <div className="avst5-comp-lado avst5-comp-lado-b">
+              <span className="avst5-comp-rotulo">Com {item.nome}</span>
+              <AvatarSvg config={preview} estatico uid="cmp-b" foco={FOCO_THUMB[item.categoria]} />
+              <strong>{item.nome}</strong>
+              <em style={{ color: rar.cor }}>{rar.nome}{colecao ? ` · ${colecao.nome}` : ''}</em>
+            </div>
+            <button type="button" className="avst-botao avst5-comp-alternar"
+              aria-pressed={alternando}
+              title="Alterna A/B no palco a cada instante (§65.2)"
+              onClick={() => setAlternando((v) => !v)}>
+              {alternando ? <Pause size={13} aria-hidden /> : <Play size={13} aria-hidden />}
+              {alternando ? ' Parar alternância' : ' Alternar no palco'}
+            </button>
+          </div>
+        )}
+
         {relacionados.length > 0 && (
           <div className="avst5-det-rel">
             <h4 className="avst5-props-titulo">Relacionados ({item.tema})</h4>
             <div className="avst5-det-rel-lista">
               {relacionados.map((r) => (
-                <button key={r.id} type="button" title={r.nome} onClick={() => { setAtual(r.id); setSalvo(false); }}>
+                <button key={r.id} type="button" title={r.nome} onClick={() => { setAtual(r.id); setSalvo(false); setComparando(false); setAlternando(false); }}>
                   <AvatarSvg config={validarConfig(comItem(config, r.categoria, r.id))} estatico
                     uid={`rel-${r.id}`} foco={FOCO_THUMB[r.categoria]} />
                   <span>{r.nome}</span>

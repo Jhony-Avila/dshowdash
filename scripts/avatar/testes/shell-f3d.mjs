@@ -49,6 +49,27 @@ if (nRel > 0) {
   await p.waitForTimeout(400);
   ok((await p.locator('.avst5-det-cab strong').textContent()) !== nomeAntes, 'relacionado não trocou o item do drawer');
 }
+// §65.1: Comparar mostra lado a lado A (equipado) × B (com o item)
+await p.locator('.avst5-det-acoes button', { hasText: 'Comparar' }).click();
+await p.waitForTimeout(400);
+ok(await p.locator('[data-teste="comparacao"]').count() === 1, 'comparação §65.1 não abriu');
+ok(await p.locator('.avst5-comp-lado svg').count() === 2, 'deveria haver 2 previews lado a lado');
+ok((await p.locator('.avst5-comp-rotulo').first().textContent())?.includes('Equipado'),
+  'rótulo do lado A ausente');
+// §65.2: alternância sequencial troca o PALCO sozinha (e nunca vira alteração)
+const salvarAntes = await p.locator('.avst5-salvar').textContent();
+const palcoA = await svgPalco();
+await p.evaluate(() => document.querySelector('.avst5-comp-alternar')?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+await p.waitForTimeout(700);
+const palcoB = await svgPalco();
+await p.waitForTimeout(1200);
+const palcoC = await svgPalco();
+ok(palcoB !== palcoA || palcoC !== palcoB, 'alternância §65.2 não trocou o palco');
+await p.evaluate(() => document.querySelector('.avst5-comp-alternar')?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+await p.waitForTimeout(500);
+ok((await svgPalco()) === palcoA, 'parar a alternância não restaurou o palco');
+ok((await p.locator('.avst5-salvar').textContent()) === salvarAntes,
+  'alternância NUNCA pode virar alteração (preview §608)');
 await p.screenshot({ path: `${SAIDA}/f3d-drawer.png` });
 
 // Equipar fecha o drawer e aplica (vira alteração)

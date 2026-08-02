@@ -529,7 +529,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           </aside>
         </div>
         {detalheId && (
-          <DetalheAsset id={detalheId} config={configVisivel} desbloqueados={desbloqueados}
+          <DetalheAsset id={detalheId} config={validarConfig(paraLegado2d(store.estadoDraft))} desbloqueados={desbloqueados}
             aoEscolher={aoEscolher} aoPrever={aoPrever} aoFechar={() => setDetalheId(null)} />
         )}
         {conflito && (
