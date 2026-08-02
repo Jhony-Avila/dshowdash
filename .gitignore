@@ -54,6 +54,7 @@
 !/scripts/
 /scripts/*
 !/scripts/avatar/
+!/scripts/deploy/
 !/scripts/koala-build.sh
 !/scripts/koala-smoke-all.sh
 !/scripts/koala-smoke-all.php
