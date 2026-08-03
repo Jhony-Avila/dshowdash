@@ -10,7 +10,7 @@ import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncEx
 import type { ReactNode } from 'react';
 import { ArrowUp, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
-import { CATEGORIAS, aleatorioInteligente, itemPorId, validarConfig } from '../services/AvatarCatalog';
+import { CATEGORIAS, aleatorioInteligente, itemPorId, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
@@ -259,6 +259,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §138: registro da timeline vive AQUI (a sessão inteira, não só na aba)
   const historico = useHistoricoSessao(store);
+
+  // §158: GATILHO de efeito — celebração efêmera ao SALVAR (nunca persiste;
+  // respeita redução de movimento §297)
+  const [celebrando, setCelebrando] = useState(false);
+  const celebrar = useCallback(() => {
+    if (movReduzido) return;
+    setCelebrando(true);
+    setTimeout(() => setCelebrando(false), 2200);
+  }, [movReduzido]);
 
   // §568–§571: TOUR de primeiro uso (auto na 1ª visita; "?" reabre)
   const [tour, setTour] = useState(() => !tourJaVisto());
@@ -513,6 +522,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {comparando && (
               <div className="avst5-comparando" role="status">Original salvo · solte para voltar</div>
             )}
+            {celebrando && (
+              <div className="avst5-celebracao" aria-hidden data-teste="celebracao"
+                dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado('efe_confete') }} />
+            )}
             {anuncio && !comparando && (
               <div className="avst5-anuncio" role="status" aria-live="polite">{anuncio}</div>
             )}
@@ -576,6 +589,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               if (r.ok) {
                 store.confirmarPersistencia(r.versao ?? store.versao + 1);
                 void espelhar619(true); // §619: versão publicada no espelho
+                celebrar(); // §158: gatilho de celebração
               }
               return r.ok;
             }} />
