@@ -233,6 +233,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §65.3: comparação por tecla — SEGURAR mostra a versão persistida
   const [comparando, setComparando] = useState(false);
+  // §297 (P6) + §151 (P4): redução de movimento — palco ESTÁTICO (congela SMIL)
+  const [movReduzido] = useState(() => {
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
+  });
   useEffect(() => {
     const baixo = (e: KeyboardEvent) => {
       const alvo = e.target as HTMLElement | null;
@@ -411,7 +415,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}>
             <div className="avst5-palco">
               <div className="avst5-zoom" style={zoomEstilo}>
-                <AvatarSvg config={configPalco} uid="avst5" />
+                <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido} />
               </div>
             </div>
             {comparando && (

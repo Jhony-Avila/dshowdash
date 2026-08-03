@@ -21,4 +21,22 @@ prefers-reduced-motion via render estático).
 hora/clima/iluminação REAIS → exigem motor 3D (UBC) e/ou arte nova (F9) ·
 §178 sound design → assets de áudio · §177 pós-processamento → 3D.
 
-## Próximas partes: P6 (8071) → P9 (15157) → P12 (22676) → P14 (27202) → P17 (33126) → P18 (36006)
+## P6 — Arquitetura técnica (§261–§318) · turno 2
+
+✅ Já coberto pelo programa F0–F9 (P6 é o espelho técnico do que foi construído):
+domínios §263 = EstadoAvatar §607 · engine §264 = contrato §401 + Renderizador2d ·
+Avatar State §265 = AvatarStore (draft/preview/undo §282) · Asset Registry/Manifest
+§266–267 = registry.php + as5_schema + manifest 3D §517 · eventos §280 = BarramentoEventos ·
+feature flags §295 = nucleo/flags fail-safe · observabilidade §290–292 = ObservarNucleo/Telemetria ·
+versionamento/migrações §299–300 = runner v1.1 + runbook · APIs §301 = §618/§619 ·
+banco §302 = as5_schema · IA §303–304 = FabricaIA + ValidadorIA §636 · testes §311 = suíte 18 + ~90 asserções ·
+undo/redo §282 ✓ · segurança §298 = fail-closed/CSRF/sanitizador (regras da casa).
+⚙️ IMPLEMENTADO NESTE TURNO: §297 redução de movimento — prefers-reduced-motion
+congela o SMIL do palco (render estático; fecha também §151 da P4).
+⚙️ Futuro: §285 Motion System unificado (biblioteca WAAPI) · §276 virtualização da
+grade (392 itens ainda ok; necessário ao escalar catálogo) · §296 i18n (produto é pt-BR).
+⛔ Bloqueado/estratégico: §268–271 pipeline de assets automatizado (ferramentaria
+build — junto do UBC) · §278–279 offline/sync real · §293 heatmap · §305 SDK ·
+§307–308 plugins/marketplace · §313 CI/CD (infra do Jhony).
+
+## Próximas partes: P9 (15157) → P12 (22676) → P14 (27202) → P17 (33126) → P18 (36006)
