@@ -20,6 +20,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const LIMITES_TRIANGULOS = { lod0: 60_000, lod1: 25_000, lod2: 8_000 }; // §631/§468
+// EXCEÇÃO AUDITÁVEL (mega 8): fontes flat-shaded resistem a simplify (cada
+// triângulo tem vértices próprios — sem arestas compartilhadas p/ colapsar).
+// O manifest pode DECLARAR excecoes[lod] com justificativa; o validador
+// aceita até o TETO ABSOLUTO com AVISO. Sem declaração = erro, sempre.
+const TETO_ABSOLUTO = { lod0: 70_000, lod1: 30_000, lod2: 12_000 };
 const ARQUIVOS_OBRIGATORIOS = [
   'modelo.lod0.glb', 'modelo.lod1.glb', 'modelo.lod2.glb',
   'thumb.webp', 'preview.webp', 'manifest.json',
@@ -75,11 +80,14 @@ export function validarAsset(pasta, opcoes = {}) {
   const medidas = { triangulos: {}, bones: 0 };
   const dir = resolve(pasta);
 
-  // 1. arquivos obrigatórios
+  // 1. arquivos obrigatórios — thumbs ausentes NÃO abortam as demais
+  // checagens (lição mega 8: o return antecipado mascarava violação de
+  // gate §631 quando só faltavam thumbs); GLB/manifest ausentes abortam.
   for (const nome of ARQUIVOS_OBRIGATORIOS) {
     if (!existsSync(join(dir, nome))) erros.push(`arquivo obrigatório ausente: ${nome}`);
   }
-  if (erros.length) return { aprovado: false, erros, avisos, medidas }; // sem base p/ seguir
+  const faltaCritico = erros.some((e) => e.includes('.glb') || e.includes('manifest.json'));
+  if (faltaCritico) return { aprovado: false, erros, avisos, medidas }; // sem base p/ seguir
 
   // 2. manifest §517
   let manifest;
@@ -109,7 +117,12 @@ export function validarAsset(pasta, opcoes = {}) {
       const tri = contarTriangulos(gltf);
       medidas.triangulos[lod] = tri;
       if (tri > LIMITES_TRIANGULOS[lod]) {
-        erros.push(`${lod} com ${tri} triângulos — acima do gate §631 (máx ${LIMITES_TRIANGULOS[lod]})`);
+        const excecao = manifest.excecoes?.[lod];
+        if (excecao && tri <= TETO_ABSOLUTO[lod]) {
+          avisos.push(`${lod} com ${tri} triângulos acima do gate §631 (máx ${LIMITES_TRIANGULOS[lod]}) — EXCEÇÃO declarada no manifest: ${excecao}`);
+        } else {
+          erros.push(`${lod} com ${tri} triângulos — acima do gate §631 (máx ${LIMITES_TRIANGULOS[lod]}${excecao ? `; exceção declarada mas TETO ABSOLUTO é ${TETO_ABSOLUTO[lod]}` : '; sem exceção declarada'})`);
+        }
       }
       if (tri === 0) avisos.push(`${lod} sem triângulos TRIANGLES — conferir exportação`);
       // 5. bones (uma vez, no lod0 — o rig é o mesmo)

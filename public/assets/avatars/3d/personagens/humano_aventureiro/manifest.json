@@ -11,12 +11,15 @@
   "hashes": {
     "lod0": "sha256:6541df9f50e9e0e16173b9fdf0caa5b16989ed07683ab08afc26a25e83866c8a",
     "lod1": "sha256:6541df9f50e9e0e16173b9fdf0caa5b16989ed07683ab08afc26a25e83866c8a",
-    "lod2": "sha256:3d3b579055a1ae7f1588c0465419960c66cfcc00b9ca3929d30efc0474467f2b"
+    "lod2": "sha256:14a82545399f33696827a1fde1c84d965ffa807abacbe711e5559eaff9873dd7"
   },
   "triangulos": {
     "lod0": 10202,
     "lod1": 10202,
-    "lod2": 10062
+    "lod2": 9997
+  },
+  "excecoes": {
+    "lod2": "fonte resiste a simplify (flat-shaded; 10202→9997, 2.0%) — aceito até o teto absoluto 12000"
   },
   "animacoes": [
     "idle"

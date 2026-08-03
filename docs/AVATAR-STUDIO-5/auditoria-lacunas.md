@@ -222,3 +222,23 @@ Suíte: 28 entradas — 28/28 + núcleo verdes.
 
 Suíte: 29 entradas — 29/29 + núcleo verdes. Entry: 201→205KB (só o wiring;
 o peso 3D segue no chunk sob demanda — hashes conferidos).
+
+## MEGA TAREFA 8 "Blindagem" · 2026-08-03
+
+✅ GATE DE PESO no deploy — scripts/deploy/pesos-esperados.json (máximos
+   por chunk, margem ~15%) conferido na etapa 6: crescimento silencioso de
+   bundle FALHA o deploy; crescer é decisão registrada no commit.
+✅ REGISTRO §614 dos 6 curados — sql/avatar/registro-curados-3d.sql (6
+   transações idempotentes) + entrada na lista oficial do runner.
+✅ E2E DO SOM §584 — shell-som.mjs com AudioContext stubado (conta
+   osciladores): equipar toca, salvar toca o acorde, mute corta tudo.
+🐛 2 BUGS REAIS pegos pelo próprio gate ao registrar os curados:
+   (a) validador: thumbs ausentes davam return antecipado que MASCARAVA
+   violações de gate — agora só GLB/manifest ausentes abortam;
+   (b) aventureiro lod2 flat-shaded resiste a simplify (10202→9997) e
+   passou despercebido → simplify agora é ITERATIVO (erro 0.01→0.25) e,
+   quando a fonte resiste, EXCEÇÃO AUDITÁVEL declarada no manifest
+   (aceita até teto absoluto 12k com AVISO; sem declaração = erro; acima
+   do teto = erro mesmo com exceção). Cobertos por 3 casos novos no teste.
+
+Suíte: 30 entradas — 30/30 + núcleo verdes.

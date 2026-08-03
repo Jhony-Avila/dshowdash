@@ -98,6 +98,34 @@ try {
   ok(!rSem.aprovado && rSem.erros.some((e) => e.includes('preview.webp')),
     `arquivo faltando não reprovou: ${rSem.erros.join(' | ')}`);
 
+  // 4b. REGRESSÃO mega 8: thumbs ausentes NÃO mascaram violação de gate —
+  // pasta sem preview E com lod2 estourado precisa reprovar PELO GATE
+  const dirMascara = montarPasta('mascara', { glbs: { lod2: glbSintetico({ triangulos: 9000 }) } });
+  pastas.push(dirMascara);
+  rmSync(join(dirMascara, 'preview.webp'));
+  const rMascara = validarAsset(dirMascara, { rigCanonico: [] });
+  ok(!rMascara.aprovado && rMascara.erros.some((e) => e.includes('631')),
+    `thumb ausente mascarou o gate §631: ${rMascara.erros.join(' | ')}`);
+
+  // 4c. EXCEÇÃO auditável: declarada no manifest → aviso (aprova até o
+  // teto 12k); acima do teto reprova MESMO com exceção
+  const dirExc = montarPasta('exc', {
+    glbs: { lod2: glbSintetico({ triangulos: 9000 }) },
+    manifestExtra: { excecoes: { lod2: 'fonte flat de teste' } },
+  });
+  pastas.push(dirExc);
+  const rExc = validarAsset(dirExc, { rigCanonico: [] });
+  ok(rExc.aprovado && rExc.avisos.some((e) => e.includes('EXCEÇÃO')),
+    `exceção declarada deveria aprovar com aviso: ${rExc.erros.join(' | ')}`);
+  const dirTeto = montarPasta('teto', {
+    glbs: { lod2: glbSintetico({ triangulos: 13000 }) },
+    manifestExtra: { excecoes: { lod2: 'acima do teto' } },
+  });
+  pastas.push(dirTeto);
+  const rTeto = validarAsset(dirTeto, { rigCanonico: [] });
+  ok(!rTeto.aprovado && rTeto.erros.some((e) => e.includes('TETO ABSOLUTO')),
+    'acima do teto absoluto deveria reprovar mesmo com exceção');
+
   // 5. bone com ESPAÇO reprova citando §436; e lista canônica exige presença
   const comEspaco = glbSintetico({ bones: ['Hips', 'Wrist R'] });
   const dirBone = montarPasta('bone', { glbs: { lod0: comEspaco } });

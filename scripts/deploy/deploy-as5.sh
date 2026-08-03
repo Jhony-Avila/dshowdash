@@ -168,6 +168,28 @@ for PAINEL in panel-avatar-studio panel-dashboard; do
   echo "✓ ${PAINEL}: ${ENTRADA} ($(du -k "public/components/panels/${PAINEL}/dist/${ENTRADA}" | cut -f1)KB)"
 done
 
+# GATE de regressão de PESO (mega 8): compara cada chunk do avatar-studio
+# com o máximo versionado em pesos-esperados.json — crescimento silencioso
+# de bundle FALHA o deploy (crescer é decisão, nunca acidente)
+PESOS="scripts/deploy/pesos-esperados.json"
+if [ -s "${PESOS}" ]; then
+  ESTOUROS=$(php -r '
+    $lim = json_decode(file_get_contents($argv[1]), true)["panel-avatar-studio"] ?? [];
+    $erros = [];
+    foreach ($lim as $nome => $maxKb) {
+      foreach (glob("public/components/panels/panel-avatar-studio/dist/" . $nome . ".*.js") as $arq) {
+        $kb = (int) ceil(filesize($arq) / 1024);
+        if ($kb > $maxKb) $erros[] = basename($arq) . " com {$kb}KB (máx {$maxKb}KB)";
+      }
+    }
+    echo implode(" · ", $erros);
+  ' "${PESOS}")
+  if [ -n "${ESTOUROS}" ]; then
+    falha "gate de peso: ${ESTOUROS} — se o crescimento é intencional, atualize scripts/deploy/pesos-esperados.json no commit da feature"
+  fi
+  echo "✓ gate de peso: chunks dentro dos máximos versionados"
+fi
+
 # ── 7. VALIDAÇÃO DE BANCO (diagnóstico — NUNCA aplica nada) ───────────
 etapa "7/9 Diagnóstico do banco (runner --checar; migração é runbook à parte)"
 php scripts/avatar/aplicar-migracoes.php --checar || echo "⚠ diagnóstico apontou pendências — ver RUNBOOK-BANCO.md (passo root)"

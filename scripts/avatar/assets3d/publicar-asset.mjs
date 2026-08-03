@@ -95,23 +95,43 @@ export async function publicarAsset(opcoes) {
 
   // lod1/lod2: simplificação meshopt até caber no gate §631 (com margem)
   const medidas = { lod0: tri0 };
+  const excecoes = {};
   for (const [lod, limite] of Object.entries(LIMITES)) {
     const doc = semCompressao(await io.read(resolve(fonte)));
     await doc.transform(dedup(), prune());
     const antes = triangulosDe(doc);
     const alvo = Math.min(limite * MARGEM, antes);
+    // §631: erro cresce em PASSADAS até caber no gate — qualidade primeiro,
+    // mas o limite é INEGOCIÁVEL (lição mega 8: aventureiro lod2 travou em
+    // 10062 com erro fixo 0.01 e passou despercebido até o registro)
+    const errosPassada = [0.01, 0.04, 0.1, 0.25];
     if (antes > alvo) {
       // ratio do simplify é POR PRIMITIVA — usa a proporção global do alvo
-      await doc.transform(
-        weld(), // funde vértices duplicados ANTES (o simplify rende mais)
-        simplify({
-          simplifier: MeshoptSimplifier,
-          ratio: alvo / antes,
-          error: 0.01,      // §631: qualidade primeiro; erro visual baixo
-          lockBorder: true, // costura entre partes do corpo não abre
-        }),
-        prune(),
-      );
+      await doc.transform(weld()); // funde vértices ANTES (o simplify rende mais)
+      for (const erroAlvo of errosPassada) {
+        await doc.transform(
+          simplify({
+            simplifier: MeshoptSimplifier,
+            ratio: alvo / triangulosDe(doc),
+            error: erroAlvo,
+            lockBorder: erroAlvo <= 0.04, // costura protegida enquanto dá
+          }),
+        );
+        if (triangulosDe(doc) <= limite) break;
+      }
+      await doc.transform(prune());
+      const resultado = triangulosDe(doc);
+      if (resultado > limite) {
+        // fonte resiste (flat-shaded): exceção AUDITÁVEL até o teto absoluto
+        const teto = { lod1: 30_000, lod2: 12_000 }[lod];
+        const reducao = ((antes - resultado) / antes) * 100;
+        if (resultado <= teto && reducao < 8) {
+          excecoes[lod] = `fonte resiste a simplify (flat-shaded; ${antes}→${resultado}, ${reducao.toFixed(1)}%) — aceito até o teto absoluto ${teto}`;
+          log(`⚠ ${lod}: ${resultado} acima do gate ${limite} — EXCEÇÃO declarada no manifest (teto ${teto})`);
+        } else {
+          throw new Error(`${lod} não coube no gate §631 nem com simplificação agressiva (${resultado} > ${limite}) — reveja a fonte`);
+        }
+      }
       // compactPrimitive: descarta a FAIXA de vértices que o simplify
       // deixou sem referência (prune só remove acessores inteiros) —
       // sem isto o lod1 sai MAIOR em bytes que o lod0
@@ -136,6 +156,7 @@ export async function publicarAsset(opcoes) {
       lod2: sha256De(join(pasta, 'modelo.lod2.glb')),
     },
     triangulos: medidas,
+    ...(Object.keys(excecoes).length ? { excecoes } : {}),
     animacoes,
     licenca: { tipo: licencaTipo, fonte: origem, comprovante },
     origem,

@@ -33,6 +33,7 @@ $todos = [
     $raiz . '/sql/avatar/catalogo_seed_assets.sql',
     $raiz . '/sql/avatar/historico_schema.sql',
     $raiz . '/sql/avatar/as5_schema.sql',
+    $raiz . '/sql/avatar/registro-curados-3d.sql', // §614: 6 personagens curados (mega 8)
 ];
 $dryRun = in_array('--dry-run', $argv, true);
 $checar = in_array('--checar', $argv, true);
