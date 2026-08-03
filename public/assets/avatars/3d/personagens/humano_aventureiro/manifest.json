@@ -1,0 +1,32 @@
+{
+  "id": "humano_aventureiro",
+  "tipo": "personagem_base",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:6541df9f50e9e0e16173b9fdf0caa5b16989ed07683ab08afc26a25e83866c8a",
+    "lod1": "sha256:6541df9f50e9e0e16173b9fdf0caa5b16989ed07683ab08afc26a25e83866c8a",
+    "lod2": "sha256:3d3b579055a1ae7f1588c0465419960c66cfcc00b9ca3929d30efc0474467f2b"
+  },
+  "triangulos": {
+    "lod0": 10202,
+    "lod1": 10202,
+    "lod2": 10062
+  },
+  "animacoes": [
+    "idle"
+  ],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "as4-curados",
+    "comprovante": "public/assets/avatars/3d/LICENCAS.md"
+  },
+  "origem": "as4-curados",
+  "fonte_original": "humano_aventureiro.glb",
+  "criado_em": "2026-08-03"
+}

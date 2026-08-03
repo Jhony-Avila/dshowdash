@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Undo2, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
@@ -29,6 +29,8 @@ import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { DetalheAsset } from './DetalheAsset';
+import { Palco3d } from './Palco3d';
+import { flag } from '../nucleo/flags';
 import { HistoricoSessao, useHistoricoSessao } from './HistoricoSessao';
 import {
   CHAVE_RASCUNHO_STORAGE, gravarRascunho, idDaAba, lerRascunho, limparRascunho,
@@ -317,7 +319,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     setTimeout(() => setCelebrando(false), 2200);
   }, [movReduzido]);
 
-  // §584 (P9): SOM no shell — reusa services/Som (WebAudio synth, sem
+  // mega 7: PRÉVIA 3D no viewport (flag as5.palco3d fail-safe OFF) —
+  // o chunk pesado (motor3d) só carrega quando o usuário LIGA o modo
+  const flagPalco3d = flag('as5.palco3d');
+  const [palco3d, setPalco3d] = useState(false);
+
+    // §584 (P9): SOM no shell — reusa services/Som (WebAudio synth, sem
   // assets); preferência única compartilhada com o modo clássico
   const [somLigado, setSomLigado] = useState(somAtivo);
   const alternarSom = useCallback(() => {
@@ -529,6 +536,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               data-teste="showcase" disabled={apresentando}
               onClick={() => void apresentar()}>
               <Play size={14} aria-hidden /> Apresentar</button>
+            {flagPalco3d && (
+              <button type="button" className="avst-botao" title="Prévia 3D (personagens curados)"
+                aria-pressed={palco3d} data-teste="botao-3d"
+                onClick={() => setPalco3d((v) => !v)}>
+                <Boxes size={14} aria-hidden /> 3D</button>
+            )}
             <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
               aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
               {somLigado ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}</button>
@@ -559,11 +572,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
           {/* viewport dominante (R1) — SEM scroll de página (R5) */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}>
-            <div className="avst5-palco">
-              <div className="avst5-zoom" style={zoomEstilo}>
-                <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido} />
+            {palco3d ? (
+              <Palco3d estado={estadoDraft} movReduzido={movReduzido} />
+            ) : (
+              <div className="avst5-palco">
+                <div className="avst5-zoom" style={zoomEstilo}>
+                  <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido} />
+                </div>
               </div>
-            </div>
+            )}
             {comparando && (
               <div className="avst5-comparando" role="status">Original salvo · solte para voltar</div>
             )}

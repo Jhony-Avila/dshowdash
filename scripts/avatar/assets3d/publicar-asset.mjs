@@ -25,8 +25,9 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { NodeIO } from '@gltf-transform/core';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { compactPrimitive, dedup, prune, simplify, weld } from '@gltf-transform/functions';
-import { MeshoptSimplifier } from 'meshoptimizer';
+import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import { validarAsset } from './validar-asset.mjs';
 
 const LIMITES = { lod1: 25_000, lod2: 8_000 }; // gate §631 (lod0 só confere)
@@ -71,13 +72,22 @@ export async function publicarAsset(opcoes) {
   if (!fonte || !saida || !id) throw new Error('obrigatórios: fonte, saida, id');
   if (!/^[a-z0-9_]+$/.test(id)) throw new Error(`id "${id}" fora do snake_case ASCII`);
 
-  const io = new NodeIO();
-  await MeshoptSimplifier.ready;
+  // extensões registradas (fontes AS4 usam EXT_meshopt_compression); a
+  // SAÍDA é sempre GLB PLANO — o palco carrega sem decoder (§423 universal)
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
+    .registerDependencies({ 'meshopt.decoder': MeshoptDecoder, 'meshopt.encoder': MeshoptEncoder });
+  await Promise.all([MeshoptSimplifier.ready, MeshoptDecoder.ready, MeshoptEncoder.ready]);
+  const semCompressao = (doc) => {
+    for (const ext of doc.getRoot().listExtensionsUsed()) {
+      if (ext.extensionName === 'EXT_meshopt_compression') ext.dispose();
+    }
+    return doc;
+  };
   const pasta = resolve(saida);
   mkdirSync(pasta, { recursive: true });
 
   // lod0: fonte otimizada SEM perda (dedup de acessores + poda de órfãos)
-  const lod0 = await io.read(resolve(fonte));
+  const lod0 = semCompressao(await io.read(resolve(fonte)));
   await lod0.transform(dedup(), prune());
   const tri0 = triangulosDe(lod0);
   await io.write(join(pasta, 'modelo.lod0.glb'), lod0);
@@ -86,7 +96,7 @@ export async function publicarAsset(opcoes) {
   // lod1/lod2: simplificação meshopt até caber no gate §631 (com margem)
   const medidas = { lod0: tri0 };
   for (const [lod, limite] of Object.entries(LIMITES)) {
-    const doc = await io.read(resolve(fonte));
+    const doc = semCompressao(await io.read(resolve(fonte)));
     await doc.transform(dedup(), prune());
     const antes = triangulosDe(doc);
     const alvo = Math.min(limite * MARGEM, antes);

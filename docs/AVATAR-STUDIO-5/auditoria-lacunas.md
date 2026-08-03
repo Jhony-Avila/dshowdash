@@ -203,3 +203,22 @@ Pós-zip UBC: retargeting §436 com clipes reais + mapeamento base 2D →
 personagem 3D no resolvedor injetado + palco do shell consumindo a fábrica.
 
 Suíte: 28 entradas — 28/28 + núcleo verdes.
+
+## MEGA TAREFA 7 "Palco 3D no Shell" · 2026-08-03 (autorizada pelo Jhony)
+
+✅ 6 personagens CURADOS do AS4 (androide, pug, aventureiro, casual, punk,
+   terno — CC0, LICENCAS.md) publicados pelo pipeline mega 5: LODs no gate
+   §631, manifest §517, thumbs §508 — VERSIONADOS (política AS4 de curados
+   reconciliada no doc do pipeline; farm UBC em massa segue fora do git).
+   Publicador ganhou EXT_meshopt_compression na LEITURA (fontes AS4) com
+   saída sempre em GLB plano (§423 universal, palco sem decoder).
+✅ shell/Palco3d.tsx — prévia 3D no viewport atrás da flag as5.palco3d
+   (fail-safe OFF): botão 3D nas header-acoes, chunk motor3d só carrega ao
+   LIGAR, 6 personagens selecionáveis (persistido), câmeras §453.1
+   (corpo/retrato/cinemática), chip de pendências §481 honesto, §297
+   desliga o idle, indisponível nunca derruba o shell.
+✅ shell-palco3d.mjs — 9 asserções (canvas pinta, troca de personagem,
+   órbita cinemática, volta ao 2D desmonta, flag OFF esconde o botão).
+
+Suíte: 29 entradas — 29/29 + núcleo verdes. Entry: 201→205KB (só o wiring;
+o peso 3D segue no chunk sob demanda — hashes conferidos).
