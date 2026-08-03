@@ -11,7 +11,7 @@
 // card real quando se aproximam do viewport (IntersectionObserver ÚNICO
 // compartilhado, buffer de pré-render). Sem lib externa; fail-safe: sem
 // IntersectionObserver no ambiente, tudo renderiza direto.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDownUp, Ban, Check, Grid2x2, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal, Star, X,
 } from 'lucide-react';
@@ -417,7 +417,16 @@ function CardPreguicoso({ observar, ...props }: CardProps & {
   );
 }
 
-function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: CardProps) {
+/** PERF: memo com comparador explícito — favoritar/equipar UM card não
+ *  re-renderiza os outros 40+. aoFavoritar/aoEscolher ficam FORA da
+ *  comparação de propósito: são recriados a cada render do pai, mas só
+ *  fecham sobre valores JÁ comparados (item, config; setFavs é estável). */
+const CardItem = memo(CardItemBase, (a, b) =>
+  a.item === b.item && a.config === b.config && a.modo === b.modo
+  && a.ativo === b.ativo && a.favorito === b.favorito && a.bloqueado === b.bloqueado
+  && a.aoPrever === b.aoPrever && a.aoDetalhes === b.aoDetalhes);
+
+function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: CardProps) {
   const rar = RARIDADES[item.raridade];
   const cardRef = useRef<HTMLDivElement>(null);
   // valida o preview: trocar p/ uma espécie derruba o cabelo TAMBÉM no thumbnail

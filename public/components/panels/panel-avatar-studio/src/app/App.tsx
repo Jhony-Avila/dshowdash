@@ -136,6 +136,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [shellNovo, setShellNovo] = useState<boolean>(() => flag('as5.novo_shell'));
   const [aba, setAba] = useState<'itens' | 'arquetipo' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
+  const [vidaCarregando, setVidaCarregando] = useState(true); // §557
   const [comparando, setComparando] = useState(false);
   const [contextosAberto, setContextosAberto] = useState(false);
   const [celebracao, setCelebracao] = useState<Celebracao | null>(null);
@@ -230,8 +231,12 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       void sincronizarFavoritos(); // espelho multi-device (melhor esforço)
     })();
     // Vida (conquistas/eventos/desbloqueios) em paralelo — F3
+    // §557: enquanto não RESOLVE, a aba Conquistas mostra skeleton (não a
+    // mensagem de falha — carregar ≠ falhar)
     void carregarVida(shellConfig.signal).then((v) => {
-      if (!vivo || !v) return;
+      if (!vivo) return;
+      setVidaCarregando(false);
+      if (!v) return;
       setVida(v);
       // celebra conquistas NOVAS desde a última visita (reação do personagem)
       try {
@@ -669,7 +674,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           {aba === 'titulo' && <Titulos config={atual} aoAplicar={aplicar} />}
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
           {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
-          {aba === 'conquistas' && <Conquistas vida={vida} />}
+          {aba === 'conquistas' && <Conquistas vida={vida} carregando={vidaCarregando} />}
           {aba === 'vitrine' && (
             <Vitrine config={atual} desbloqueados={vida?.desbloqueados ?? new Set()}
               aoAplicar={aplicar} aoAbrirColecoes={() => setAba('colecoes')} />

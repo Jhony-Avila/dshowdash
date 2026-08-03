@@ -130,10 +130,13 @@ export function Historico({ versaoBase, aoAplicar, aoReativar }: {
   };
 
   if (itens === null) {
+    // §557: skeleton no formato REAL da lista (não spinner genérico)
     return (
-      <div className="avst-vazio">
-        <LoaderCircle className="avst-girando" size={22} aria-hidden />
-        <p>Carregando histórico…</p>
+      <div className="avst-historico" role="status" aria-label="Carregando histórico"
+        data-teste="esqueleto-historico">
+        {Array.from({ length: 3 }, (_, i) => (
+          <span key={i} className="avst-esqueleto" style={{ height: 74 }} />
+        ))}
       </div>
     );
   }

@@ -1443,12 +1443,18 @@
    Mesmas dimensões do card real (thumb com aspect-ratio 1 herdado): a altura
    do scroll não pula quando o card de verdade monta no lugar. */
 .avst-card-adiado { pointer-events: none; }
-.avst-thumb-adiado {
+/* .avst-esqueleto (§557): shimmer genérico de carregamento — Conquistas,
+   Histórico, galeria de fotos e o thumb adiado do §276 usam a MESMA base. */
+.avst-thumb-adiado, .avst-esqueleto {
   background: linear-gradient(100deg, #0a0d15 40%, #131a28 50%, #0a0d15 60%);
   background-size: 200% 100%; animation: avst-adiado 1.4s linear infinite;
 }
+.avst-esqueleto { display: block; border-radius: 10px; border: 1px solid var(--avst-borda, #232a38); }
+[data-teste="esqueleto-conquistas"], [data-teste="esqueleto-historico"] {
+  display: flex; flex-direction: column; gap: 10px;
+}
 @keyframes avst-adiado { from { background-position: 130% 0; } to { background-position: -30% 0; } }
-@media (prefers-reduced-motion: reduce) { .avst-thumb-adiado { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .avst-thumb-adiado, .avst-esqueleto { animation: none; } }
 
 /* §325: preview dos formatos WIDE ocupa a largura toda do painel */
 .avst-ft-preview[data-formato="header"], .avst-ft-preview[data-formato="banner"],

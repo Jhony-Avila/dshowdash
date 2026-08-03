@@ -619,6 +619,19 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
 
       {mensagem && <p className="avst-foto-msg" role="status">{mensagem}</p>}
 
+      {/* §557: galeria ainda carregando → skeleton (4 quadrados) */}
+      {galeria === null && (
+        <div className="avst-foto-galeria" role="status" aria-label="Carregando suas fotos"
+          data-teste="esqueleto-galeria">
+          <h4 className="avst-cores-titulo"><Images size={14} aria-hidden /> Suas fotos</h4>
+          <div className="avst-foto-grade">
+            {Array.from({ length: 4 }, (_, i) => (
+              <span key={i} className="avst-esqueleto" style={{ aspectRatio: '1', width: '100%' }} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Suas fotos (guardadas no servidor, 1 clique p/ reativar) ── */}
       {galeria && galeria.length > 0 && (
         <div className="avst-foto-galeria">

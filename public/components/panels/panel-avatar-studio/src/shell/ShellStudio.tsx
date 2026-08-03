@@ -10,7 +10,7 @@ import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncEx
 import type { ReactNode } from 'react';
 import { ArrowUp, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
-import { CATEGORIAS, aleatorioInteligente, itemPorId, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
+import { CATEGORIAS, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
@@ -36,6 +36,7 @@ import { carregarEstado, estadoApiAtivo, salvarDraft, salvarVersao } from '../se
 import { telemetria } from '../services/Telemetria';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
+import { MOVIMENTOS, SHOWCASE_174, animar, movimentoReduzido, sequencia } from './movimento';
 
 /** §68.3: chips de navegação por slot na categoria Acessórios. */
 const CHIPS_SLOT: Array<{ id: 'todos' | SlotAcessorio; nome: string }> = [
@@ -116,6 +117,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // assinatura do estado visível (preview > draft) — §608
   const estado = useSyncExternalStore(store.assinar, () => store.estadoVisivel);
   const configVisivel = useMemo(() => validarConfig(paraLegado2d(estado)), [estado]);
+  // PERF (§276/§64): a GRADE olha o DRAFT, não o visível — o hover-preview
+  // muda só o palco; estadoDraft mantém a MESMA referência durante preview,
+  // então a grade (40+ thumbnails SVG) não re-renderiza a cada hover.
+  const estadoDraft = useSyncExternalStore(store.assinar, () => store.estadoDraft);
+  const configDraft = useMemo(() => validarConfig(paraLegado2d(estadoDraft)), [estadoDraft]);
 
   // estados locais de UI (§607.2/§607.3 — nunca entram no AvatarStore)
   const [categoria, setCategoria] = useState<CategoriaId>('base');
@@ -202,16 +208,30 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // GradeItens fala AvatarConfig — cada escolha vira COMANDO com inverso
   const aplicarComando = useCallback((novo: AvatarConfig) => {
+    const antesLegado = paraLegado2d(store.estadoDraft);
     const antes = store.estadoDraft;
     const depois = deLegado2d(novo);
     // no-op nunca entra na pilha (clique em slider parado, re-clique na base)
     if (checksumEstado(antes) === checksumEstado(depois)) return;
     const cmd: Comando = {
-      nome: `equipar:${novoDiff(paraLegado2d(antes), novo)}`,
+      nome: `equipar:${novoDiff(antesLegado, novo)}`,
       executar: () => depois,
       desfazer: () => antes,
     };
     store.executar(cmd);
+    // §158 (gatilho EQUIPAR): item novo ÉPICO+ ganha brilho curto no palco —
+    // efeito efêmero via Motion System §285 (nunca persiste; §297 no módulo)
+    const equipadosNovos = [
+      ...(novo.base !== antesLegado.base ? [novo.base] : []),
+      ...Object.entries(novo.camadas)
+        .filter(([k, v]) => v && (antesLegado.camadas as Record<string, string | undefined>)[k] !== v)
+        .map(([, v]) => v as string),
+    ];
+    const temRaro = equipadosNovos.some((id) => {
+      const item = itemPorId(id);
+      return item && nivelRaridade(item.raridade) >= nivelRaridade('epico');
+    });
+    if (temRaro) void animar(document.querySelector('.avst5-palco'), MOVIMENTOS.brilho, { duracao: 700 });
   }, [store]);
 
   // §69.1: SUBSTITUIÇÃO em slot (item A → item B) ou slot BLOQUEADO pede
@@ -257,10 +277,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §65.3: comparação por tecla — SEGURAR mostra a versão persistida
   const [comparando, setComparando] = useState(false);
-  // §297 (P6) + §151 (P4): redução de movimento — palco ESTÁTICO (congela SMIL)
-  const [movReduzido] = useState(() => {
-    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
-  });
+  // §297 (P6) + §151 (P4): redução de movimento — palco ESTÁTICO (congela
+  // SMIL). Guard vem do Motion System §285 (fonte única).
+  const [movReduzido] = useState(movimentoReduzido);
   useEffect(() => {
     const baixo = (e: KeyboardEvent) => {
       const alvo = e.target as HTMLElement | null;
@@ -309,29 +328,16 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §174 SHOWCASE: apresentação cinematográfica 2D no modo Studio.
   // Sequência automática (fade → aproxima → gira → composição §174.1),
-  // duração média ~6s (§174.2); respeita redução de movimento (§297).
+  // ~6s (§174.2). A coreografia e o guard §297 vivem no Motion System §285.
   const [apresentando, setApresentando] = useState(false);
   const apresentar = useCallback(async () => {
     if (apresentando) return;
     setApresentando(true);
     setModo('studio');
     await new Promise((r) => setTimeout(r, 80)); // studio monta primeiro
-    const alvo = document.querySelector('.avst5-zoom') as HTMLElement | null;
-    if (alvo && !movReduzido && typeof alvo.animate === 'function') {
-      const passos: Array<[Keyframe[], number]> = [
-        [[{ opacity: 0, transform: 'scale(0.9)' }, { opacity: 1, transform: 'scale(1)' }], 900],
-        [[{ transform: 'scale(1)' }, { transform: 'scale(1.22)' }], 1700],
-        [[{ transform: 'scale(1.22) rotate(0deg)' }, { transform: 'scale(1.16) rotate(-2.2deg)' },
-          { transform: 'scale(1.2) rotate(2.2deg)' }, { transform: 'scale(1.18) rotate(0deg)' }], 2400],
-        [[{ transform: 'scale(1.18)' }, { transform: 'scale(1)' }], 1000],
-      ];
-      for (const [quadros, dur] of passos) {
-        try { await alvo.animate(quadros, { duration: dur, easing: 'ease-in-out', fill: 'forwards' }).finished; }
-        catch { break; }
-      }
-    }
+    await sequencia(document.querySelector('.avst5-zoom'), SHOWCASE_174);
     setApresentando(false);
-  }, [apresentando, movReduzido]);
+  }, [apresentando]);
 
   // §174.1 item 11: CAPTURA do palco em PNG (rasterização local, como na Foto)
   const capturarPalco = useCallback(async () => {
@@ -695,7 +701,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   {/* §138: timeline granular da sessão junto da gestão do estado */}
                   <HistoricoSessao entradas={historico.entradas} posicao={historico.posicao} irPara={historico.irPara} />
                 </>) : (
-                  <GradeItens config={configVisivel} categoria={categoria}
+                  <GradeItens config={configDraft} categoria={categoria}
                     desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                     aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
                 )}
