@@ -37,7 +37,7 @@ const sq = (v) => `'${String(v).replace(/\\/g, '\\\\').replace(/'/g, "''")}'`;
 /** Gera o SQL e devolve a string. Exportado p/ o teste (snapshot). */
 export function gerarRegistroSql(pastaPublicada, opcoes = {}) {
   const {
-    categoria = 'base', biblioteca = 'dshow_3d', raridade = 'comum',
+    categoria = 'rosto', biblioteca = 'cc0_quaternius', raridade = 'comum',
     status = 'aprovado', exigirValido = true,
   } = opcoes;
   const pasta = resolve(pastaPublicada);
@@ -68,8 +68,13 @@ export function gerarRegistroSql(pastaPublicada, opcoes = {}) {
 -- ══════════════════════════════════════════════════════════════
 START TRANSACTION;
 
--- 1. conferência (o operador vê o que existe ANTES)
+-- 1. conferência (o operador vê o que existe ANTES) + RESOLUÇÃO da
+-- taxonomia (id NULL aqui = chave errada; pare ANTES do INSERT falhar)
 SELECT id, \`key\`, name, status FROM avatar_assets WHERE \`key\` = ${sq(id)};
+SELECT
+  (SELECT id FROM avatar_categories WHERE \`key\` = ${sq(categoria)}) AS categoria_id,
+  (SELECT id FROM avatar_libraries  WHERE \`key\` = ${sq(biblioteca)}) AS biblioteca_id,
+  (SELECT id FROM avatar_rarities   WHERE \`key\` = ${sq(raridade)})  AS raridade_id;
 
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
@@ -120,8 +125,8 @@ if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
   }
   try {
     const sql = gerarRegistroSql(pasta, {
-      categoria: argumento('categoria', 'base'),
-      biblioteca: argumento('biblioteca', 'dshow_3d'),
+      categoria: argumento('categoria', 'rosto'),
+      biblioteca: argumento('biblioteca', 'cc0_quaternius'),
       raridade: argumento('raridade', 'comum'),
       status: argumento('status', 'aprovado'),
     });
