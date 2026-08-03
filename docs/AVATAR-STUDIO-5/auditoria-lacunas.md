@@ -40,3 +40,40 @@ build — junto do UBC) · §278–279 offline/sync real · §293 heatmap · §3
 §307–308 plugins/marketplace · §313 CI/CD (infra do Jhony).
 
 ## Próximas partes: P9 (15157) → P12 (22676) → P14 (27202) → P17 (33126) → P18 (36006)
+
+## P9 — UX e polimento (§538–§599) · turno 3
+
+✅ Já coberto: hover/seleção/equipado §549–551 (cards+preview §64) · undo §561 (pilhas+histórico) ·
+autosave §562 (F4) · barra inferior §563 (BarraSalvamento) · tooltips §567 (Dica) · comparação §580 (§65) ·
+responsivo §581 + teclado §583 (F2) · dark §588 (nativo) · estados vazios §558 (§92).
+⚙️ IMPLEMENTADO NESTE TURNO: §548/§561 ANUNCIADOR de ações (aria-live no palco:
+Aplicado/Desfeito/Refeito — feedback visual + screen reader §297).
+⚙️ Futuro: §566 command palette · §557 skeletons (com registry async) · §568–571 onboarding/tour ·
+§574–575 dashboard pessoal · §590 temas.  ⛔ §584 som (assets) · §591 UX analytics server.
+
+## P12 — Ecossistema (§845–§924) · turno 3
+
+✅ Semente: identidade §847 (avatar no header/menu via avatar-sync) · API §875 parcial (§618/619).
+⛔ ESTRATÉGICO (servidor/produto futuro): presence, feed social, marketplace, plugins, XR,
+GPU farm, multi-região — decisões de roadmap do Jhony, não lacunas de implementação.
+
+## P14 — Social (§1070–§1217) · turno 3
+
+✅ Semente: vitrine/galeria pessoais (Vitrine.tsx), compartilhar preset (F4).
+⛔ Tudo mais exige backend social (feed/comunidades/reações/menções) — roadmap.
+
+## P17 — Padrões de engenharia (§1424–§1603*) · turno 3
+
+✅ CONFORMIDADE VERIFICADA no código AS5: responsabilidade única, contratos antes da
+implementação (§401/§617/§624), dependência explícita (núcleo dependência-zero),
+imutabilidade (comandos/estado), falhas isoladas (ErrorBoundary/fail-safe), observabilidade
+por padrão (bus→telemetria), tipos de domínio, funções puras no engine.
+⚙️ Futuro: monorepo formal §1427 e apps separados §1428 — reorganização estrutural (decisão do Jhony).
+
+## P18 — Gestão de produto (§1584+) · turno 3
+
+Doutrina organizacional (papéis, discovery, hipóteses, testes de usabilidade §1598 — cujas
+tarefas exemplo JÁ são executáveis no shell novo). Vira governança dos próximos ciclos:
+o checklist de 14 perguntas do §1585 será aplicado a toda feature nova. Sem código.
+
+## CICLO CONCLUÍDO — todas as 18 partes lidas/auditadas (P1–P3, P5, P7, P8, P10, P11, P13, P15, P16 nas fases F0–F9; P4, P6, P9, P12, P14, P17, P18 neste ciclo).

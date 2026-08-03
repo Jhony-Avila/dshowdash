@@ -258,6 +258,22 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // §138: registro da timeline vive AQUI (a sessão inteira, não só na aba)
   const historico = useHistoricoSessao(store);
 
+  // §548/§561 (P9) + §297: ANUNCIADOR de ações — feedback visível e lido
+  // por screen reader (aria-live) para equipar/desfazer/refazer
+  const [anuncio, setAnuncio] = useState<string | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const mostrar = (txt: string) => {
+      setAnuncio(txt);
+      clearTimeout(timer);
+      timer = setTimeout(() => setAnuncio(null), 1800);
+    };
+    const p1 = store.bus.em('comando:executado', (d) => mostrar(`Aplicado: ${d.nome.replace('equipar:', '')}`));
+    const p2 = store.bus.em('comando:desfeito', (d) => mostrar(`Desfeito: ${d.nome.replace('equipar:', '')}`));
+    const p3 = store.bus.em('comando:refeito', (d) => mostrar(`Refeito: ${d.nome.replace('equipar:', '')}`));
+    return () => { clearTimeout(timer); p1(); p2(); p3(); };
+  }, [store]);
+
   // §619 (Etapa 3 do §647 — DUAL-WRITE atrás da flag as5.estado_api):
   // o legado segue como FONTE DA VERDADE; o estado novo é espelhado
   // best-effort com lock otimista (§619.1). Falha nunca interrompe o fluxo.
@@ -420,6 +436,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             </div>
             {comparando && (
               <div className="avst5-comparando" role="status">Original salvo · solte para voltar</div>
+            )}
+            {anuncio && !comparando && (
+              <div className="avst5-anuncio" role="status" aria-live="polite">{anuncio}</div>
             )}
             {rascunho && (
               <div className="avst5-rascunho" role="alertdialog" aria-label="Rascunho recuperado" data-teste="rascunho">
