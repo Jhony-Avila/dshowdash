@@ -22,6 +22,11 @@ export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = f
     args,
   });
   const contexto = await navegador.newContext({ viewport });
+  // tour §568 auto-abre em storage limpo — testes marcam VISTO por padrão
+  // (o shell-tour.mjs remove a marca no próprio init para testar a 1ª visita)
+  await contexto.addInitScript(() => {
+    try { if (!localStorage.getItem('dshow.avst5.tour.v1')) localStorage.setItem('dshow.avst5.tour.v1', 'feito'); } catch { /* sem storage */ }
+  });
   if (init) await contexto.addInitScript(init);
   const pagina = await contexto.newPage();
   const erros = [];
