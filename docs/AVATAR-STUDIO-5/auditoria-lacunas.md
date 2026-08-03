@@ -183,3 +183,23 @@ houver assets REAIS (retargeting §436 pede bones verdadeiros).
 
 Suíte: 27 entradas — 27/27 + núcleo verdes. Tooling novo (devDeps raiz):
 @gltf-transform/core+functions, meshoptimizer, playwright-core.
+
+## MEGA TAREFA 6 "Renderizador 3D §401" · 2026-08-03 (GIGANTE)
+
+✅ §401 COMPLETO NO 3D — services/Renderizador3d.ts implementa TODO o
+   contrato em three imperativo (framework-agnostic como o §401 pede):
+   montar/aplicarEstado/definirCamera §453.1/tocarAnimacao (idle
+   procedural §436-ready)/capturar §508/definirQualidade (LOD a quente
+   §423)/pausar/retomar/descartar (dispose profundo).
+✅ Pendências HONESTAS §481 — o renderer reporta cobertura REAL (slots
+   sem asset 3D publicado), distinta do classificador de sockets.
+✅ services/Personagens3d.ts (manifest §517 + lodPorQualidade §423) e
+   FabricaRenderizador (3D por import dinâmico — entry não engorda; chunks
+   conferidos byte a byte).
+✅ renderizador3d.test.mjs — 12 asserções em Chromium/SwiftShader com o
+   manequim publicado on-the-fly (economico→lod2 provado por request,
+   alto→lod0 a quente, idle mexe, pausar congela, PNG 256, DOM limpo).
+Pós-zip UBC: retargeting §436 com clipes reais + mapeamento base 2D →
+personagem 3D no resolvedor injetado + palco do shell consumindo a fábrica.
+
+Suíte: 28 entradas — 28/28 + núcleo verdes.
