@@ -10,10 +10,12 @@
 // continuam honestas; flag as5.palco3d fail-safe OFF; erro nunca derruba
 // o shell.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Camera, CircleDot, Clapperboard, PersonStanding, Play, Sparkles, UserRound, Wand2 } from 'lucide-react';
+import { Box, Camera, CircleDot, Clapperboard, PersonStanding, Play, Share2, Sparkles, UserRound, Wand2 } from 'lucide-react';
 import type { EstadoAvatar } from '../nucleo/contratos';
 import type { EstadoCamera, RenderizadorAvatar } from '../nucleo/renderizador';
 import { criarRenderizador } from '../services/FabricaRenderizador';
+import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
+import { telemetria } from '../services/Telemetria';
 import { carregarIndice3d, personagemParaBase } from '../services/Personagens3d';
 import type { EntradaIndice3d } from '../services/Personagens3d';
 
@@ -53,6 +55,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
   const [animacao, setAnimacao] = useState('Idle');
   // mega 10: SHOWCASE 3D (§174) — coreografia com clipes reais + órbita
   const [apresentando, setApresentando] = useState(false);
+  // mega 16 (§528): tier efetivo anunciado pelo renderer adaptativo
+  const [tierAtual, setTierAtual] = useState<'medio' | 'economico' | 'alto' | null>(null);
+  // mega 18: anúncio p/ leitores de tela (aria-live)
+  const [anuncio, setAnuncio] = useState('');
   const [sinalLocal, setSinalLocal] = useState(0);
   const sinalShowcase = sinalApresentar + sinalLocal;
   // mega 13 (§174.2): GRAVAÇÃO do showcase — MediaRecorder no canvas
@@ -78,6 +84,11 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
       try {
         const r = await criarRenderizador('3d', {
           resolverPersonagem: () => refPersonagem.current,
+          aoMudarQualidade: (tier, motivo) => {
+            setTierAtual(tier);
+            setAnuncio(`Qualidade ajustada para ${tier === 'economico' ? 'econômica' : 'média'}`);
+            telemetria('p3d_qualidade', { tier, motivo }); // §290
+          },
         });
         if (!vivo) { void r.descartar(); return; }
         refR.current = r;
@@ -100,9 +111,11 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
   useEffect(() => {
     const r = refR.current;
     if (!r || fase !== 'pronto') return;
+    const t0 = performance.now();
     void r.aplicarEstado(estado).then((res) => {
       if (!res.ok) { setFase('indisponivel'); return; }
       setPendencias(res.pendencias.length);
+      telemetria('p3d_aplicou', { personagem, ms: Math.round(performance.now() - t0) }); // §290
       if (apresentando) return; // coreografia §174 no comando
       r.definirCamera({ modo: cameraModo, distancia: 2.15 });
       // personagem novo pode não ter a animação atual → volta ao Idle
@@ -116,9 +129,16 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
     return destaque.length ? destaque.slice(0, 6) : doIndice.slice(0, 6);
   }, [indice, personagem]);
 
+  // mega 17: prefetch oportunista no hover do chip
+  const precarregar = useCallback((slug: string) => {
+    (refR.current as unknown as { precarregar?: (s: string) => void })?.precarregar?.(slug);
+  }, []);
+
   const trocarPersonagem = useCallback((slug: string | null) => {
     setOverride(slug);
     setAnimacao('Idle');
+    setAnuncio(slug ? `Personagem: ${slug}` : 'Personagem automático pela espécie 2D');
+    telemetria('p3d_personagem', { escolha: slug ?? 'auto' }); // §290
     try {
       if (slug) localStorage.setItem(CHAVE_OVERRIDE, slug);
       else localStorage.removeItem(CHAVE_OVERRIDE);
@@ -136,6 +156,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
     const espera = (ms: number) => new Promise((res) => { setTimeout(res, ms); });
     void (async () => {
       setApresentando(true);
+      telemetria('p3d_showcase', { personagem: refPersonagem.current }); // §290
       const todas = indice.find((x) => x.slug === refPersonagem.current)?.animacoes ?? [];
       const roteiro = ['Wave', 'Dance', 'Victory', 'Running', 'Walk'].filter((x) => todas.includes(x)).slice(0, 2);
       r.definirCamera({ modo: 'cinematica' });
@@ -180,6 +201,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
       refGravador.current = gravador;
       gravador.start(250);
       setGravando(true);
+      telemetria('p3d_gravou', { personagem: refPersonagem.current }); // §290
       setSinalLocal((n) => n + 1); // dispara a coreografia junto
     } catch { setGravando(false); refGravador.current = null; }
   }, [podeGravar, gravando, apresentando]);
@@ -194,12 +216,23 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
     if (refGravador.current?.state === 'recording') refGravador.current.stop();
   }, []);
 
+  // mega 15: compartilhar a captura (share→clipboard→download)
+  const compartilhar3d = useCallback(async () => {
+    const r = refR.current;
+    if (!r) return;
+    try {
+      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
+      await compartilharPng(foto.dataUri, 'dshow-avatar-3d.png', 'Meu avatar 3D Dshow');
+    } catch { /* cosmético */ }
+  }, []);
+
   // mega 10 §174.1: captura PNG 960 determinística do palco 3D
   const capturar3d = useCallback(async () => {
     const r = refR.current;
     if (!r) return;
     try {
       const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
+      telemetria('p3d_capturou', { personagem: refPersonagem.current }); // §290
       const a = document.createElement('a');
       a.href = foto.dataUri;
       a.download = 'dshow-avatar-3d-960.png';
@@ -211,6 +244,21 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
     setCameraModo(modo);
     refR.current?.definirCamera({ modo, distancia: 2.15 });
   }, []);
+
+  // mega 18 (§583): atalhos do palco 3D — P apresenta, R grava, C captura
+  useEffect(() => {
+    const aoTecla = (ev: KeyboardEvent) => {
+      const alvo = ev.target as HTMLElement | null;
+      if (alvo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName)) return;
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      const k = ev.key.toLowerCase();
+      if (k === 'p' && !movReduzido && !apresentando) setSinalLocal((n) => n + 1);
+      else if (k === 'r' && podeGravar && !gravando && !apresentando && !movReduzido) gravarShowcase();
+      else if (k === 'c') void capturar3d();
+    };
+    window.addEventListener('keydown', aoTecla);
+    return () => window.removeEventListener('keydown', aoTecla);
+  }, [movReduzido, apresentando, gravando, podeGravar, gravarShowcase, capturar3d]);
 
   if (fase === 'indisponivel') {
     return (
@@ -239,6 +287,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
             <button key={p.slug} type="button" role="radio"
               aria-checked={override === p.slug || (override === null && personagem === p.slug)}
               className={`avst5-p3d-chip${personagem === p.slug ? ' avst5-p3d-chip-on' : ''}`}
+              onMouseEnter={() => precarregar(p.slug)} onFocus={() => precarregar(p.slug)}
               onClick={() => trocarPersonagem(p.slug)}>
               {p.nome}
             </button>
@@ -260,6 +309,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
         <div className="avst5-p3d-acoes">
           <button type="button" title="Capturar PNG do palco 3D (§174.1)" data-teste="p3d-capturar"
             onClick={() => void capturar3d()}><Camera size={13} aria-hidden /></button>
+          {podeCompartilhar() && (
+            <button type="button" title="Compartilhar a captura" data-teste="p3d-compartilhar"
+              onClick={() => void compartilhar3d()}><Share2 size={13} aria-hidden /></button>
+          )}
           <button type="button" title="Showcase 3D (§174)" data-teste="p3d-apresentar"
             disabled={apresentando || movReduzido}
             onClick={() => setSinalLocal((n) => n + 1)}><Play size={13} aria-hidden /></button>
@@ -278,8 +331,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
           <button type="button" role="radio" aria-checked={cameraModo === 'cinematica'} title="Cinemática (órbita)"
             onClick={() => trocarCamera('cinematica')}><Clapperboard size={13} aria-hidden /></button>
         </div>
+        <span className="avst5-sr-only" role="status" aria-live="polite">{anuncio}</span>
         <div className="avst5-p3d-nota" role="note" data-teste="p3d-pendencias">
           {override === null ? 'Auto pela espécie 2D' : 'Personagem fixado'}
+          {tierAtual ? ` · qualidade ${tierAtual === 'economico' ? 'econômica (auto)' : tierAtual}` : ''}
           {pendencias > 0 ? ` · ${pendencias} item(ns) equipados seguem no 2D` : ''}
         </div>
       </>)}

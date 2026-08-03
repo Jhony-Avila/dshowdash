@@ -1535,3 +1535,14 @@
 .avst5-p3d-rec { color: #ff5230 !important; border-color: #ff5230 !important; animation: avst5-rec 1s ease-in-out infinite; }
 @keyframes avst5-rec { 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .avst5-p3d-rec { animation: none; } }
+
+/* mega 14: cards de personagens 3D na Vitrine */
+.avst-vt-card-3d { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; border-radius: 12px; background: var(--avst-painel, #12151d); border: 1px solid var(--avst-borda, #232a38); font-size: 12px; }
+.avst-vt-card-3d img { border-radius: 10px; background: #0a0d15; }
+.avst-vt-card-3d small { color: var(--avst-texto-2, #8a93a6); font-size: 10.5px; }
+
+/* mega 18: utilitário sr-only + foco visível nos overlays do palco 3D */
+.avst5-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.avst5-p3d-chip:focus-visible, .avst5-p3d-cameras button:focus-visible, .avst5-p3d-acoes button:focus-visible {
+  outline: 2px solid var(--avst-acento, #7c5cff); outline-offset: 2px;
+}

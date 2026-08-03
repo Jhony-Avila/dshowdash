@@ -31,6 +31,8 @@ export interface OpcoesRenderizador3d {
   resolverPersonagem?: (estado: EstadoAvatar) => string;
   /** base das pastas publicadas (o teste aponta p/ servidor efêmero) */
   basePersonagens?: string;
+  /** mega 16 (§528): avisa quando o modo 'auto' rebaixa/sobe o tier */
+  aoMudarQualidade?: (tier: QualidadeTier, motivo: 'fps_baixo' | 'fps_folga') => void;
 }
 
 const FUNDO_ESTUDIO = '#0d1017';
@@ -57,6 +59,20 @@ export class Renderizador3d implements RenderizadorAvatar {
   private relogio = 0; // tempo do idle: avança por frame (determinístico)
   private idleAtivo = true;
   private orbitaAuto = false;
+  // câmera ATUAL memorizada — reload adaptativo (§528) não pode resetá-la
+  private cameraAtual: EstadoCamera = { modo: 'corpo' };
+  // mega 16 (§528): QUALIDADE ADAPTATIVA — média móvel de FPS decide o
+  // tier quando qualidade === 'auto' (histerese: desce <30, sobe >55)
+  private tierAuto: QualidadeTier = 'medio';
+  private fpsUltimo = 0;
+  private fpsSoma = 0;
+  private fpsN = 0;
+  // mega 17 (§402): CACHE dos BYTES do GLB por URL (LRU 8) — a parte cara
+  // é a REDE; cada uso faz parseAsync fresco (ms) e a cena nasce íntegra.
+  // (Clonar cena skinned foi descartado: RobotExpressive/2-skins ficou
+  // invisível com SkeletonUtils.clone — bytes+parse elimina a classe.)
+  private cacheGlb: Map<string, Promise<ArrayBuffer>> = new Map();
+
   private bones: Map<string, THREE.Bone> = new Map();
   private poseBase: Map<string, THREE.Quaternion> = new Map();
   // ANIMAÇÕES REAIS (mega 9): clipes do próprio GLB via AnimationMixer;
@@ -69,6 +85,7 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.opcoes = {
       resolverPersonagem: opcoes.resolverPersonagem ?? (() => 'manequim_dev'),
       basePersonagens: opcoes.basePersonagens ?? '/assets/avatars/3d/personagens',
+      aoMudarQualidade: opcoes.aoMudarQualidade ?? (() => { /* opcional */ }),
     };
   }
 
@@ -127,6 +144,7 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   definirCamera(camera: EstadoCamera): void {
+    this.cameraAtual = camera;
     if (!this.camera || !this.personagem) return;
     const caixa = new THREE.Box3().setFromObject(this.personagem);
     const centro = caixa.getCenter(new THREE.Vector3());
@@ -223,6 +241,7 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.mixer = null;
     this.acaoAtual = null;
     this.clipes.clear();
+    this.cacheGlb.clear();
     this.removerPersonagem();
     if (this.renderer) {
       this.renderer.dispose();
@@ -235,18 +254,56 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   // ── privados ────────────────────────────────────────────────────
+  /** Tier EFETIVO: 'auto' delega ao adaptativo (mega 16). */
+  private tierEfetivo(): QualidadeTier {
+    return this.qualidade === 'auto' ? this.tierAuto : this.qualidade;
+  }
+
   private lodDesejado(): string {
     return this.manifest === null || this.slugAtual === null
-      ? `?${String(this.qualidade)}`
-      : urlDoLod(this.manifest, this.qualidade, this.opcoes.basePersonagens);
+      ? `?${String(this.tierEfetivo())}`
+      : urlDoLod(this.manifest, this.tierEfetivo(), this.opcoes.basePersonagens);
+  }
+
+  /** mega 17: pré-carrega manifest+GLB do personagem (hover no chip). */
+  precarregar(slug: string): void {
+    void carregarManifest3d(slug, this.opcoes.basePersonagens)
+      .then((m) => { void this.gltfDe(urlDoLod(m, this.tierEfetivo(), this.opcoes.basePersonagens)); })
+      .catch(() => { /* prefetch é oportunista */ });
+  }
+
+  /** Bytes do GLB com cache LRU (8) + parse fresco por uso (mega 17). */
+  private async gltfDe(url: string): Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }> {
+    let bytes = this.cacheGlb.get(url);
+    if (!bytes) {
+      bytes = fetch(url, { cache: 'default' }).then((r) => {
+        if (!r.ok) throw new Error(`GLB ${r.status}`);
+        return r.arrayBuffer();
+      });
+      this.cacheGlb.set(url, bytes);
+      bytes.catch(() => this.cacheGlb.delete(url)); // erro não envenena
+      if (this.cacheGlb.size > 8) {
+        const primeira = this.cacheGlb.keys().next().value;
+        if (primeira) this.cacheGlb.delete(primeira);
+      }
+    }
+    const buf = await bytes;
+    const g = await new GLTFLoader().parseAsync(buf.slice(0), '');
+    return { scene: g.scene, animations: g.animations ?? [] };
   }
 
   private async carregarPersonagem(slug: string): Promise<void> {
     this.manifest = await carregarManifest3d(slug, this.opcoes.basePersonagens);
-    const url = urlDoLod(this.manifest, this.qualidade, this.opcoes.basePersonagens);
-    const gltf = await new GLTFLoader().loadAsync(url);
+    const url = urlDoLod(this.manifest, this.tierEfetivo(), this.opcoes.basePersonagens);
+    const gltf = await this.gltfDe(url); // parse fresco — cena exclusiva do palco
     this.removerPersonagem();
     this.personagem = gltf.scene;
+    // SkinnedMesh clonado: a boundingSphere fica do BIND POSE original e o
+    // frustum culling corta o mesh (androide/RobotExpressive ficou
+    // invisível — mega 17). Skinned anima longe da esfera: culling OFF.
+    this.personagem.traverse((n) => {
+      if ((n as THREE.SkinnedMesh).isSkinnedMesh) n.frustumCulled = false;
+    });
     this.cena?.add(this.personagem);
     this.slugAtual = slug;
     this.lodAtual = url;
@@ -273,7 +330,7 @@ export class Renderizador3d implements RenderizadorAvatar {
         this.poseBase.set(n.name, n.quaternion.clone());
       }
     });
-    this.definirCamera({ modo: 'corpo' });
+    this.definirCamera(this.cameraAtual); // preserva órbita/retrato no reload §528
   }
 
   private removerPersonagem(): void {
@@ -314,6 +371,28 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.raf = requestAnimationFrame(this.laço);
     if (this.pausado || !this.renderer || !this.cena || !this.camera) return;
     this.relogio += 1 / 60; // passo FIXO: idle igual em qualquer refresh
+    // mega 16: FPS real (média móvel de 90 quadros) → tier adaptativo
+    const agora = performance.now();
+    if (this.fpsUltimo > 0) {
+      const dt = agora - this.fpsUltimo;
+      if (dt > 0 && dt < 1000) { this.fpsSoma += 1000 / dt; this.fpsN += 1; }
+      if (this.fpsN >= 90) {
+        const media = this.fpsSoma / this.fpsN;
+        this.fpsSoma = 0; this.fpsN = 0;
+        if (this.qualidade === 'auto') {
+          if (media < 30 && this.tierAuto !== 'economico') {
+            this.tierAuto = 'economico';
+            this.opcoes.aoMudarQualidade('economico', 'fps_baixo');
+            if (this.ultimoEstado) void this.aplicarEstado(this.ultimoEstado);
+          } else if (media > 55 && this.tierAuto !== 'medio') {
+            this.tierAuto = 'medio';
+            this.opcoes.aoMudarQualidade('medio', 'fps_folga');
+            if (this.ultimoEstado) void this.aplicarEstado(this.ultimoEstado);
+          }
+        }
+      }
+    }
+    this.fpsUltimo = agora;
     this.animarIdle();
     this.mixer?.update(1 / 60);
     if (this.orbitaAuto && this.personagem) {
