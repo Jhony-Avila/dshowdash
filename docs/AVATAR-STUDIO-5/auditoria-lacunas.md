@@ -161,3 +161,25 @@ de rede instrumentam ESSA camada, nunca page.route.
    paralelo; cache preservado nos dois sentidos (arte × lógica).
 
 Suíte: 26 entradas (25 navegador + assets3d node) — 26/26 + núcleo verdes.
+
+## MEGA TAREFA 5 "Pipeline 3D Industrial" · 2026-08-03 (GIGANTE)
+
+F5 destravado ANTES do zip UBC — publicar personagem virou 1 comando:
+✅ publicar-asset.mjs (§461/§478/§517) — lod0 dedup+prune; lod1/lod2 weld+
+   simplify meshopt (alvo 90% do gate §631) + compactPrimitive + dedup;
+   hashes sha256; manifest completo; AUTOVALIDAÇÃO §487 no fim.
+✅ gerar-manequim.mjs — personagem rigged procedural (16 bones §436,
+   esferas UV, pesos rígidos, IBMs); --denso 46k tri exercita o simplify.
+✅ gerar-thumbs-3d.mjs (§508) — câmera/luz canônicas, three por import-map
+   + servidor efêmero próprio, Chromium/SwiftShader; thumb 128 + preview
+   512 webp.
+✅ gerar-registro-sql.mjs (§614/§615) — SQL idempotente/transacional/
+   determinístico p/ o runner; recusa pasta reprovada no §487.
+✅ pipeline3d.test.mjs — E2E completo com corrupção; assets3d.test.mjs já
+   cobria o validador. Provas: 46208 → lod1 22496 / lod2 7886; §487
+   APROVADO com thumbs; SQL 2× idêntico.
+Fora de escopo consciente: Renderizador3d §401 no palco fica p/ quando
+houver assets REAIS (retargeting §436 pede bones verdadeiros).
+
+Suíte: 27 entradas — 27/27 + núcleo verdes. Tooling novo (devDeps raiz):
+@gltf-transform/core+functions, meshoptimizer, playwright-core.
