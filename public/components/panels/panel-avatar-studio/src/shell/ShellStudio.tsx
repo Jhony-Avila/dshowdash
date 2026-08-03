@@ -10,7 +10,7 @@ import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncEx
 import type { ReactNode } from 'react';
 import { ArrowUp, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
-import { CATEGORIAS, aleatorioInteligente, itemPorId, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
+import { CATEGORIAS, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
@@ -36,7 +36,7 @@ import { carregarEstado, estadoApiAtivo, salvarDraft, salvarVersao } from '../se
 import { telemetria } from '../services/Telemetria';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
-import { SHOWCASE_174, movimentoReduzido, sequencia } from './movimento';
+import { MOVIMENTOS, SHOWCASE_174, animar, movimentoReduzido, sequencia } from './movimento';
 
 /** §68.3: chips de navegação por slot na categoria Acessórios. */
 const CHIPS_SLOT: Array<{ id: 'todos' | SlotAcessorio; nome: string }> = [
@@ -203,16 +203,30 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // GradeItens fala AvatarConfig — cada escolha vira COMANDO com inverso
   const aplicarComando = useCallback((novo: AvatarConfig) => {
+    const antesLegado = paraLegado2d(store.estadoDraft);
     const antes = store.estadoDraft;
     const depois = deLegado2d(novo);
     // no-op nunca entra na pilha (clique em slider parado, re-clique na base)
     if (checksumEstado(antes) === checksumEstado(depois)) return;
     const cmd: Comando = {
-      nome: `equipar:${novoDiff(paraLegado2d(antes), novo)}`,
+      nome: `equipar:${novoDiff(antesLegado, novo)}`,
       executar: () => depois,
       desfazer: () => antes,
     };
     store.executar(cmd);
+    // §158 (gatilho EQUIPAR): item novo ÉPICO+ ganha brilho curto no palco —
+    // efeito efêmero via Motion System §285 (nunca persiste; §297 no módulo)
+    const equipadosNovos = [
+      ...(novo.base !== antesLegado.base ? [novo.base] : []),
+      ...Object.entries(novo.camadas)
+        .filter(([k, v]) => v && (antesLegado.camadas as Record<string, string | undefined>)[k] !== v)
+        .map(([, v]) => v as string),
+    ];
+    const temRaro = equipadosNovos.some((id) => {
+      const item = itemPorId(id);
+      return item && nivelRaridade(item.raridade) >= nivelRaridade('epico');
+    });
+    if (temRaro) void animar(document.querySelector('.avst5-palco'), MOVIMENTOS.brilho, { duracao: 700 });
   }, [store]);
 
   // §69.1: SUBSTITUIÇÃO em slot (item A → item B) ou slot BLOQUEADO pede
