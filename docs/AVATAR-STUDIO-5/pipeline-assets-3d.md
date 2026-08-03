@@ -88,3 +88,30 @@ retargeting §436 depende deles). Slug = `tipo_tema_variacao`
 lod0 ≤ 60k triângulos · lod1 ≤ 25k · lod2 ≤ 8k · textura ≤ 2048px (lod0)
 / 1024px (lod1) / 512px (lod2) · nenhum material com mais de 4 mapas ·
 FPS alvo: 60 desktop / 30 mobile no palco com 1 personagem + cenário.
+
+## 7. FERRAMENTAS PRONTAS (mega 5 · 2026-08-03) — publicar é UM comando por asset
+
+Quando o zip UBC estiver em `storage/assets-3d-fonte/ubc-standard-v1/`:
+
+```bash
+# 1. publicar (LODs no gate §631 + hashes + manifest §517 + validador §487)
+node scripts/avatar/assets3d/publicar-asset.mjs \
+  --fonte storage/assets-3d-fonte/ubc-standard-v1/extraido/<PERSONAGEM>.glb \
+  --saida public/assets/avatars/3d/personagens/<slug> --id <slug> \
+  --animacoes idle,walk --data $(date +%F)
+
+# 2. thumbs determinísticos §508 (Chromium headless)
+node scripts/avatar/assets3d/gerar-thumbs-3d.mjs public/assets/avatars/3d/personagens/<slug>
+
+# 3. conferir (agora sem pendências)
+node scripts/avatar/assets3d/validar-asset.mjs public/assets/avatars/3d/personagens/<slug>
+
+# 4. registro §614 → SQL p/ o runner do servidor
+node scripts/avatar/assets3d/gerar-registro-sql.mjs \
+  public/assets/avatars/3d/personagens/<slug> --saida sql/avatar/registro-<slug>.sql
+```
+
+No PRIMEIRO personagem real: preencher `scripts/avatar/assets3d/rig-ubc-v1.json`
+com os nomes de bones do GLB (o validador passa a exigir presença exata).
+Manequim de desenvolvimento: `gerar-manequim.mjs <saida.glb> [--denso]`.
+Teste E2E de tudo: `node scripts/avatar/testes/pipeline3d.test.mjs`.
