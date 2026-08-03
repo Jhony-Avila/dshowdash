@@ -19,12 +19,13 @@ import type { Comando } from '../nucleo/estado';
 import { checksumEstado } from '../nucleo/contratos';
 import { deLegado2d, paraLegado2d } from '../nucleo/adaptadores';
 import { AvatarSvg } from '../components/AvatarSvg';
-import { GradeItens } from '../components/GradeItens';
+import { GradeItens, comItem } from '../components/GradeItens';
 import type { AbaCatalogo } from '../components/GradeItens';
 import { Cores } from '../components/Cores';
 import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
+import { PaletaComandos } from './PaletaComandos';
 import { DetalheAsset } from './DetalheAsset';
 import { HistoricoSessao, useHistoricoSessao } from './HistoricoSessao';
 import {
@@ -257,6 +258,19 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §138: registro da timeline vive AQUI (a sessão inteira, não só na aba)
   const historico = useHistoricoSessao(store);
+
+  // §566: COMMAND PALETTE — Ctrl+K/⌘K
+  const [paleta, setPaleta] = useState(false);
+  useEffect(() => {
+    const aoK = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaleta((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', aoK);
+    return () => window.removeEventListener('keydown', aoK);
+  }, []);
 
   // §174 SHOWCASE: apresentação cinematográfica 2D no modo Studio.
   // Sequência automática (fade → aproxima → gira → composição §174.1),
@@ -645,6 +659,27 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
           </aside>
         </div>
+        {paleta && (
+          <PaletaComandos
+            aoFechar={() => setPaleta(false)}
+            aoNavegar={(cat) => { setCategoria(cat as CategoriaId); setAba('todos'); setFiltroSlot('todos'); }}
+            aoEquipar={(id) => {
+              const item = itemPorId(id);
+              if (item) aoEscolher(comItem(paraLegado2d(store.estadoDraft), item.categoria, id));
+            }}
+            acoes={[
+              { id: 'aleatorio', rotulo: 'Randomizar (aleatório completo)', executar: () => rodarAleatorio('completo') },
+              { id: 'apresentar', rotulo: 'Apresentar (Showcase §174)', executar: () => void apresentar() },
+              { id: 'capturar', rotulo: 'Capturar PNG do palco', executar: () => { setModo('studio'); setTimeout(() => void capturarPalco(), 150); } },
+              { id: 'desfazer', rotulo: 'Desfazer última ação', executar: () => store.desfazer() },
+              { id: 'refazer', rotulo: 'Refazer', executar: () => store.refazer() },
+              { id: 'foco', rotulo: 'Alternar modo Foco', executar: () => setModo((m) => (m === 'foco' ? 'edicao' : 'foco')) },
+              { id: 'studio', rotulo: 'Alternar modo Studio', executar: () => setModo((m) => (m === 'studio' ? 'edicao' : 'studio')) },
+              { id: 'presets', rotulo: 'Abrir meus Presets', executar: () => setAba('presets') },
+              { id: 'equipados', rotulo: 'Abrir Equipados', executar: () => setAba('equipados') },
+              { id: 'classico', rotulo: 'Voltar ao modo clássico', executar: aoSairDoShell },
+            ]} />
+        )}
         {detalheId && (
           <DetalheAsset id={detalheId} config={validarConfig(paraLegado2d(store.estadoDraft))} desbloqueados={desbloqueados}
             aoEscolher={aoEscolher} aoPrever={aoPrever} aoFechar={() => setDetalheId(null)} />
