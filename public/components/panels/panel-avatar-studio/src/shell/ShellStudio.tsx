@@ -8,12 +8,13 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
+import { ArrowUp, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
+import { definirSom, somAtivo, tocarEquipar, tocarSalvar } from '../services/Som';
 import { AvatarStore } from '../nucleo/estado';
 import type { Comando } from '../nucleo/estado';
 import { checksumEstado } from '../nucleo/contratos';
@@ -232,6 +233,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       return item && nivelRaridade(item.raridade) >= nivelRaridade('epico');
     });
     if (temRaro) void animar(document.querySelector('.avst5-palco'), MOVIMENTOS.brilho, { duracao: 700 });
+    // §584: clique de equipar afinado pela MAIOR raridade recém-equipada
+    const maiorNivel = equipadosNovos.reduce((m, id) => {
+      const item = itemPorId(id);
+      return item ? Math.max(m, nivelRaridade(item.raridade)) : m;
+    }, -1);
+    if (maiorNivel >= 0) tocarEquipar(maiorNivel);
   }, [store]);
 
   // §69.1: SUBSTITUIÇÃO em slot (item A → item B) ou slot BLOQUEADO pede
@@ -309,6 +316,13 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     setCelebrando(true);
     setTimeout(() => setCelebrando(false), 2200);
   }, [movReduzido]);
+
+  // §584 (P9): SOM no shell — reusa services/Som (WebAudio synth, sem
+  // assets); preferência única compartilhada com o modo clássico
+  const [somLigado, setSomLigado] = useState(somAtivo);
+  const alternarSom = useCallback(() => {
+    setSomLigado((v) => { definirSom(!v); return !v; });
+  }, []);
 
   // §568–§571: TOUR de primeiro uso (auto na 1ª visita; "?" reabre)
   const [tour, setTour] = useState(() => !tourJaVisto());
@@ -515,6 +529,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               data-teste="showcase" disabled={apresentando}
               onClick={() => void apresentar()}>
               <Play size={14} aria-hidden /> Apresentar</button>
+            <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
+              aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
+              {somLigado ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}</button>
             <button type="button" className="avst-botao" disabled={!store.podeDesfazer}
               title="Desfazer (Ctrl+Z)" onClick={() => store.desfazer()}><Undo2 size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" disabled={!store.podeRefazer}
@@ -609,7 +626,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               {TEMAS.map((x) => (
                 <button key={x.id} type="button" role="radio" aria-checked={tema === x.id}
                   className={`avst5-tema-bolinha${tema === x.id ? ' avst5-tema-on' : ''}`}
-                  title={`Tema ${x.nome}`} style={{ background: x.cor }}
+                  title={`Tema ${x.nome}`} aria-label={`Tema ${x.nome}`}
+                  style={{ background: x.cor }}
                   onClick={() => trocarTema(x.id)} />
               ))}
             </div>
@@ -626,6 +644,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 store.confirmarPersistencia(r.versao ?? store.versao + 1);
                 void espelhar619(true); // §619: versão publicada no espelho
                 celebrar(); // §158: gatilho de celebração
+                tocarSalvar(); // §584: acorde de salvamento
               }
               return r.ok;
             }} />

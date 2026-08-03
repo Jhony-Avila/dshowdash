@@ -56,6 +56,14 @@ export default defineConfig({
           if (id.includes('vite/preload-helper')) {
             return 'vendor';
           }
+          // Arte do CATÁLOGO 2D (engine/partes, ~380KB de fonte) em chunk
+          // próprio: arte e lógica mudam em ritmos diferentes — separar
+          // preserva o cache do navegador nos dois sentidos (deploy de arte
+          // nova não re-baixa o app; fix no app não re-baixa a arte).
+          // Continua import ESTÁTICO (carrega em paralelo com o entry).
+          if (id.includes('/src/engine/partes/')) {
+            return 'catalogo-arte';
+          }
           if (id.includes('node_modules')) {
             if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
               return 'react-vendor';

@@ -128,3 +128,36 @@ skeletons async · e os ⛔ bloqueados por 3D/assets/infra listados acima.
 
 Suíte: 24 testes (novo shell-polish.mjs: temas §590, dashboard §574,
 brilho-equipar §158 com contra-prova) — 24/24 + núcleo verdes em 2026-08-03.
+
+## MEGA TAREFA 3 "Acabamento & Cobertura" · 2026-08-03
+
+✅ §557.2 (P9) SKELETON DA CARGA INICIAL — App carregando mostra a silhueta
+   do estúdio (3 colunas shimmer + rótulo) em vez de spinner; aria-busy.
+✅ §285 ADOÇÃO — entrada animada via MOVIMENTOS.aparecer no drawer
+   DetalheAsset (180ms, re-anima ao navegar entre assets) e na
+   PaletaComandos (160ms); a11y: bolinhas de tema com aria-label.
+✅ COBERTURA §158-salvar — shell-save.mjs E2E: instrumenta o fetch mockado
+   do harness (page.route não enxerga mocks inline), prova POST no
+   studio.php + confete no sucesso + overlay efêmero (~2.2s) + barra
+   confirmada; e §619 flag OFF = zero chamadas ao espelho (__ch619).
+
+Suíte: 25 testes de navegador + núcleo — 25/25 verdes em 2026-08-03.
+Aprendizado de harness: os mocks de API são um window.fetch inline — testes
+de rede instrumentam ESSA camada, nunca page.route.
+
+## MEGA TAREFA 4 "Fundações 3D & Som" · 2026-08-03
+
+✅ §487 (P8/F5) VALIDADOR DE ASSET 3D — scripts/avatar/assets3d/
+   validar-asset.mjs (node puro, lê o chunk JSON do GLB sem three):
+   arquivos obrigatórios, manifest §517, licença §511, hashes §478,
+   gate §631 de triângulos por LOD, bones §436 (ASCII sem espaço; lista
+   canônica do rig em rig-ubc-v1.json — preencher com o 1º GLB real).
+   Teste assets3d.test.mjs com GLB sintético: caso feliz + 4 corrupções.
+   → Quando o zip UBC chegar, o passo 5 do pipeline já tem ferramenta.
+✅ §584 (P9) SOM NO SHELL 5.0 — reuso integral do services/Som (WebAudio
+   synth): equipar afinado pela maior raridade, acorde no salvar, botão
+   mute nas header-acoes (preferência única com o clássico).
+✅ PERF chunk catalogo-arte — entry 497KB → 201KB + arte 297KB em
+   paralelo; cache preservado nos dois sentidos (arte × lógica).
+
+Suíte: 26 entradas (25 navegador + assets3d node) — 26/26 + núcleo verdes.

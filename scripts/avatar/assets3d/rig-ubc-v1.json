@@ -1,0 +1,4 @@
+{
+  "comentario": "Lista CANÔNICA de bones do rig ubc-v1 (§436) — preencher a partir do primeiro GLB real do pacote UBC Standard (quaternius). Enquanto vazia, o validador confere só as regras gerais de nome (ASCII, sem espaço) e AVISA que a lista canônica está pendente.",
+  "bones": []
+}

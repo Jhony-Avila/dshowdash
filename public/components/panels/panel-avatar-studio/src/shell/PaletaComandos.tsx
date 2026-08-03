@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Command, CornerDownLeft } from 'lucide-react';
 import { CATEGORIAS, PARTES, RARIDADES } from '../services/AvatarCatalog';
+import { MOVIMENTOS, animar } from './movimento';
 
 export interface ComandoPaleta {
   id: string;
@@ -28,6 +29,12 @@ export function PaletaComandos({ acoes, aoNavegar, aoEquipar, aoFechar }: {
   const [indice, setIndice] = useState(0);
   const refInput = useRef<HTMLInputElement>(null);
   useEffect(() => { refInput.current?.focus(); }, []);
+
+  // §285: entrada suave da paleta (Motion System — guard §297 no módulo)
+  const refCaixa = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    void animar(refCaixa.current, MOVIMENTOS.aparecer, { duracao: 160, easing: 'ease-out' });
+  }, []);
 
   const comandos = useMemo<ComandoPaleta[]>(() => {
     const termos = normalizar(busca.trim()).split(/\s+/).filter(Boolean);
@@ -58,7 +65,7 @@ export function PaletaComandos({ acoes, aoNavegar, aoEquipar, aoFechar }: {
   return (
     <div className="avst5-detalhe-fundo" role="dialog" aria-modal="true" aria-label="Paleta de comandos">
       <button type="button" className="avst-fpop-fundo" aria-label="Fechar" onClick={aoFechar} />
-      <div className="avst5-paleta-cmd" data-teste="paleta-comandos">
+      <div ref={refCaixa} className="avst5-paleta-cmd" data-teste="paleta-comandos">
         <div className="avst5-cmd-busca">
           <Command size={14} aria-hidden />
           <input ref={refInput} type="text" value={busca} placeholder="Digite um comando, categoria ou item…"

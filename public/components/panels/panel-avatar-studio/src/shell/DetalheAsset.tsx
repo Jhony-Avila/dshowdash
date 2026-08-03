@@ -18,6 +18,7 @@ import { comItem, FOCO_THUMB } from '../components/GradeItens';
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 import { salvarPreset } from '../services/PresetsPessoais';
 import { AvatarSvg } from '../components/AvatarSvg';
+import { MOVIMENTOS, animar } from './movimento';
 
 const NOME_CANAL: Record<SlotCor, string> = {
   pele: 'Pele', cabelo: 'Cabelo', roupa: 'Cor principal', destaque: 'Detalhes',
@@ -62,6 +63,13 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alternando]);
 
+  // §285: entrada suave do drawer (Motion System — guard §297 no módulo);
+  // re-anima ao navegar p/ outro asset dentro do próprio drawer
+  const refRaiz = useRef<HTMLElement>(null);
+  useEffect(() => {
+    void animar(refRaiz.current, MOVIMENTOS.aparecer, { duracao: 180, easing: 'ease-out' });
+  }, [atual]);
+
   if (!item) return null;
 
   const rar = RARIDADES[item.raridade];
@@ -89,7 +97,7 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
   return (
     <div className="avst5-detalhe-fundo" role="dialog" aria-modal="true" aria-label={`Detalhes de ${item.nome}`}>
       <button type="button" className="avst-fpop-fundo" aria-label="Fechar detalhes" onClick={aoFechar} />
-      <aside className="avst5-detalhe" data-teste="drawer-detalhe" style={{ '--avst-rar': rar.cor } as React.CSSProperties}>
+      <aside ref={refRaiz} className="avst5-detalhe" data-teste="drawer-detalhe" style={{ '--avst-rar': rar.cor } as React.CSSProperties}>
         <header className="avst5-det-cab">
           <strong>{item.nome}</strong>
           <button type="button" className="avst5-painel-btn" title="Fechar" onClick={aoFechar}><X size={14} aria-hidden /></button>

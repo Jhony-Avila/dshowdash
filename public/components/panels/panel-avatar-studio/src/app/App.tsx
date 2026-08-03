@@ -376,10 +376,30 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   );
 
   if (carregando) {
+    // §557.2: skeleton com a SILHUETA do estúdio (3 colunas) em vez de
+    // spinner genérico — a página "já parece o produto" enquanto carrega
     return (
-      <div className="avst-shell avst-carregando">
-        <LoaderCircle className="avst-girando" size={34} aria-hidden />
-        <p>Abrindo o Avatar Studio…</p>
+      <div className="avst-shell avst-carregando" role="status" aria-busy="true"
+        aria-label="Abrindo o Avatar Studio" data-teste="esqueleto-app">
+        <div className="avst-carregando-colunas" aria-hidden>
+          <div className="avst-carregando-col avst-carregando-nav">
+            {Array.from({ length: 8 }, (_, i) => (
+              <span key={i} className="avst-esqueleto" style={{ height: 34 }} />
+            ))}
+          </div>
+          <div className="avst-carregando-col">
+            <span className="avst-esqueleto avst-carregando-palco" />
+            <span className="avst-esqueleto" style={{ height: 46 }} />
+          </div>
+          <div className="avst-carregando-col">
+            {Array.from({ length: 6 }, (_, i) => (
+              <span key={i} className="avst-esqueleto" style={{ height: 64 }} />
+            ))}
+          </div>
+        </div>
+        <p className="avst-carregando-rotulo">
+          <LoaderCircle className="avst-girando" size={14} aria-hidden /> Abrindo o Avatar Studio…
+        </p>
       </div>
     );
   }
