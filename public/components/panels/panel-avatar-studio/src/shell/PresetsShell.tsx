@@ -6,7 +6,7 @@
 // favoritar, duplicar e excluir. Thumbnail = render estático do próprio
 // config (determinístico — mesma fonte de verdade do palco).
 import { useState } from 'react';
-import { BookmarkPlus, Copy, Star, Trash2 } from 'lucide-react';
+import { BookmarkPlus, Copy, Star, Trash2, TrendingUp } from 'lucide-react';
 import type { AvatarConfig } from '../domain/types';
 import { dataUriDe } from '../services/AvatarCatalog';
 import {
@@ -14,7 +14,6 @@ import {
 } from '../services/PresetsPessoais';
 import { calcularXp, nivelDe } from '../components/ProgressoPerfil';
 import { favoritos, itensUsados } from '../services/Progresso';
-import { TrendingUp } from 'lucide-react';
 
 export function PresetsShell({ configAtual, aoAplicar }: {
   configAtual: AvatarConfig;

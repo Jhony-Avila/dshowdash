@@ -182,6 +182,28 @@ const semAura = validarConfig({ ...cfgA, camadas: { ...cfgA.camadas } });
 delete (semAura.camadas as Record<string, string>).aura;
 const rv = aleatorioInteligente(semAura, { semente: 1, modo: 'completo', bloqueados: new Set(['aura']) });
 ok(!rv.camadas.aura, 'slot bloqueado VAZIO foi preenchido');
+// §90 REGRESSÃO: base sorteada não pode derrubar item bloqueado (requerBase
+// §35) — antes, uma base incompatível fazia validarConfig remover o cabelo
+// bloqueado (era a "flakiness" do shell-p1). Varre 40 sementes + os 2 modos.
+const cabRestrito = itensDe('cabelo').find((i) => i.requerBase && i.requerBase.length > 0);
+if (cabRestrito) {
+  const base0 = cabRestrito.requerBase![0];
+  const cfgR = validarConfig({ ...CONFIG_PADRAO, base: base0,
+    camadas: { ...CONFIG_PADRAO.camadas, cabelo: cabRestrito.id } });
+  ok(cfgR.camadas.cabelo === cabRestrito.id, 'setup §90: cabelo restrito nao equipou');
+  for (let s = 0; s < 40; s += 1) {
+    const rCompleto = aleatorioInteligente(cfgR, { semente: s, modo: 'completo', bloqueados: new Set(['cabelo']) });
+    if (rCompleto.camadas.cabelo !== cabRestrito.id) {
+      falhas.push('§90: aleatorio completo derrubou cabelo bloqueado (semente ' + s + ')');
+      break;
+    }
+    const rBase = aleatorioInteligente(cfgR, { semente: s, modo: 'categoria', categoria: 'base', bloqueados: new Set(['cabelo']) });
+    if (rBase.camadas.cabelo !== cabRestrito.id) {
+      falhas.push('§90: aleatorio de base derrubou cabelo bloqueado (semente ' + s + ')');
+      break;
+    }
+  }
+}
 
 // §401 (F5): contrato RenderizadorAvatar + Renderizador2d headless
 import { pendenciasPara } from '${PAINEL}/src/nucleo/renderizador';

@@ -626,6 +626,16 @@ export function aleatorioInteligente(atual: AvatarConfig, o: OpcoesAleatorio): A
   const bloq = o.bloqueados ?? new Set<string>();
   const cand = aleatorio(o.semente);
 
+  // §90: o BLOQUEIO vence o sorteio — se a base sorteada derrubaria um item
+  // bloqueado (requerBase §35: validarConfig o removeria), a base NÃO troca
+  // (a atual é comprovadamente compatível: o item está equipado nela).
+  const baseSeguraParaBloqueados = (candidato: AvatarConfig): boolean => {
+    if (bloq.size === 0) return true;
+    const validado = validarConfig(candidato);
+    return ![...bloq].some((slot) => slot !== 'base'
+      && candidato.camadas[slot as CamadaId] && !validado.camadas[slot as CamadaId]);
+  };
+
   // §135: "apenas cores" — camadas intactas, só a paleta gira
   if (o.modo === 'cores') {
     return validarConfig({ ...atual, cores: cand.cores });
@@ -636,7 +646,10 @@ export function aleatorioInteligente(atual: AvatarConfig, o: OpcoesAleatorio): A
     const rnd = mulberry32(o.semente ^ 0x5f3c);
     const novo: AvatarConfig = { ...atual, camadas: { ...atual.camadas } };
     if (o.categoria === 'base') {
-      if (!bloq.has('base')) novo.base = sortearPorRaridade(rnd, sorteaveis('base')).id;
+      if (!bloq.has('base')) {
+        novo.base = sortearPorRaridade(rnd, sorteaveis('base')).id;
+        if (!baseSeguraParaBloqueados(novo)) novo.base = atual.base; // §90
+      }
     } else if (o.categoria === 'acessorio') {
       for (const s of SLOTS_ACESSORIO_ALEATORIO) if (!bloq.has(s)) delete novo.camadas[s];
       const a = sortearPorRaridade(rnd, sorteaveis('acessorio'));
@@ -681,6 +694,9 @@ export function aleatorioInteligente(atual: AvatarConfig, o: OpcoesAleatorio): A
     const idAtual = atual.camadas[slot as CamadaId];
     if (idAtual) novo.camadas[slot as CamadaId] = idAtual;
   }
+  // §90: com os bloqueados restaurados, a base sorteada precisa sustentá-los
+  if (!bloq.has('base') && !baseSeguraParaBloqueados(novo)) novo.base = atual.base;
+
   // regulagens (§71/§73) sobrevivem onde o item NÃO mudou
   const params: NonNullable<AvatarConfig['params']> = {};
   for (const [slot, v] of Object.entries(atual.params ?? {})) {

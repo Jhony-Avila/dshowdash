@@ -117,6 +117,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // assinatura do estado visível (preview > draft) — §608
   const estado = useSyncExternalStore(store.assinar, () => store.estadoVisivel);
   const configVisivel = useMemo(() => validarConfig(paraLegado2d(estado)), [estado]);
+  // PERF (§276/§64): a GRADE olha o DRAFT, não o visível — o hover-preview
+  // muda só o palco; estadoDraft mantém a MESMA referência durante preview,
+  // então a grade (40+ thumbnails SVG) não re-renderiza a cada hover.
+  const estadoDraft = useSyncExternalStore(store.assinar, () => store.estadoDraft);
+  const configDraft = useMemo(() => validarConfig(paraLegado2d(estadoDraft)), [estadoDraft]);
 
   // estados locais de UI (§607.2/§607.3 — nunca entram no AvatarStore)
   const [categoria, setCategoria] = useState<CategoriaId>('base');
@@ -696,7 +701,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   {/* §138: timeline granular da sessão junto da gestão do estado */}
                   <HistoricoSessao entradas={historico.entradas} posicao={historico.posicao} irPara={historico.irPara} />
                 </>) : (
-                  <GradeItens config={configVisivel} categoria={categoria}
+                  <GradeItens config={configDraft} categoria={categoria}
                     desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                     aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
                 )}
