@@ -12,6 +12,7 @@ const PADROES: Record<string, boolean> = {
   'as5.undo_redo': true,         // F1 — pilhas de comando na UI
   'as5.photo_studio': false,     // F6
   'as5.ia_assistiva': false,     // F8
+  'as5.palco3d': false,          // mega 7 — prévia 3D no viewport do shell
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

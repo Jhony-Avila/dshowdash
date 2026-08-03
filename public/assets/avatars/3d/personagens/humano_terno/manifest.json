@@ -1,0 +1,32 @@
+{
+  "id": "humano_terno",
+  "tipo": "personagem_base",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:21aa2221b6c19ef94f6aa58f756be5eeaed23f04ca7707b3e1a1116c5bb5e42d",
+    "lod1": "sha256:21aa2221b6c19ef94f6aa58f756be5eeaed23f04ca7707b3e1a1116c5bb5e42d",
+    "lod2": "sha256:b3e622f2fc8f1b457d7fadff091ec9db7b6c2c8e16780681948055c7fd4ccbe6"
+  },
+  "triangulos": {
+    "lod0": 7674,
+    "lod1": 7674,
+    "lod2": 7542
+  },
+  "animacoes": [
+    "idle"
+  ],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "as4-curados",
+    "comprovante": "public/assets/avatars/3d/LICENCAS.md"
+  },
+  "origem": "as4-curados",
+  "fonte_original": "humano_terno.glb",
+  "criado_em": "2026-08-03"
+}

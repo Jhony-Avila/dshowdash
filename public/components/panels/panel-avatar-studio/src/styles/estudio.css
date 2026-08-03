@@ -1469,3 +1469,36 @@
 .avst-ft-preview[data-formato="header"], .avst-ft-preview[data-formato="banner"],
 .avst-ft-preview[data-formato="wallpaper"] { width: 100%; }
 .avst-ft-chip small { opacity: .65; font-size: 9.5px; margin-left: 3px; }
+
+/* ── mega 7: PRÉVIA 3D no viewport (flag as5.palco3d) ────────────── */
+.avst5-p3d { position: relative; flex: 1; min-height: 0; display: flex; }
+.avst5-p3d-tela { flex: 1; min-height: 0; }
+.avst5-p3d-tela canvas { display: block; width: 100% !important; height: 100% !important; }
+.avst5-p3d-personagens {
+  position: absolute; top: 46px; left: 14px; display: flex; gap: 5px; flex-wrap: wrap; max-width: 70%;
+}
+.avst5-p3d-chip {
+  padding: 4px 11px; border-radius: 999px; font-size: 11px; cursor: pointer;
+  background: rgba(13, 16, 23, 0.82); color: var(--avst-texto-2, #8a93a6);
+  border: 1px solid var(--avst-borda, #232a38);
+}
+.avst5-p3d-chip:hover { color: var(--avst-texto, #e6eaf2); }
+.avst5-p3d-chip-on { color: #fff; border-color: var(--avst-acento, #7c5cff); background: color-mix(in srgb, var(--avst-acento, #7c5cff) 30%, rgba(13,16,23,.85)); }
+.avst5-p3d-cameras {
+  position: absolute; bottom: 46px; right: 14px; display: flex; gap: 4px;
+}
+.avst5-p3d-cameras button {
+  width: 28px; height: 28px; display: grid; place-items: center; cursor: pointer;
+  border-radius: 8px; background: rgba(13, 16, 23, 0.82); color: var(--avst-texto-2, #8a93a6);
+  border: 1px solid var(--avst-borda, #232a38);
+}
+.avst5-p3d-cameras button[aria-checked="true"] { color: #fff; border-color: var(--avst-acento, #7c5cff); }
+.avst5-p3d-nota {
+  position: absolute; bottom: 12px; left: 14px; font-size: 10.5px;
+  color: var(--avst-texto-2, #8a93a6); background: rgba(13, 16, 23, 0.82);
+  border: 1px solid var(--avst-borda, #232a38); border-radius: 999px; padding: 4px 11px;
+}
+.avst5-p3d-vazio, .avst5-p3d-carregando {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; color: var(--avst-texto-2, #8a93a6); font-size: 13px; text-align: center; padding: 24px;
+}

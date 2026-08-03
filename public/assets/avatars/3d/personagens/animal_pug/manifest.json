@@ -1,0 +1,32 @@
+{
+  "id": "animal_pug",
+  "tipo": "personagem_base",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:df853146f137a09e85570b93468c39d498119a9850a7adc90edbf2bc3ad209e1",
+    "lod1": "sha256:df853146f137a09e85570b93468c39d498119a9850a7adc90edbf2bc3ad209e1",
+    "lod2": "sha256:df853146f137a09e85570b93468c39d498119a9850a7adc90edbf2bc3ad209e1"
+  },
+  "triangulos": {
+    "lod0": 2124,
+    "lod1": 2124,
+    "lod2": 2124
+  },
+  "animacoes": [
+    "idle"
+  ],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "as4-curados",
+    "comprovante": "public/assets/avatars/3d/LICENCAS.md"
+  },
+  "origem": "as4-curados",
+  "fonte_original": "animal_pug.glb",
+  "criado_em": "2026-08-03"
+}

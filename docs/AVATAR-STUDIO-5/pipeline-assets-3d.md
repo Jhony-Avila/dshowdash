@@ -30,7 +30,7 @@ storage/assets-3d-fonte/            ← BRUTO (nunca servido; §513)
     LICENSE.txt                     ← comprovante da licença (§511)
     extraido/…                      ← conteúdo original sem edição
 
-public/assets/avatars/3d/           ← SERVIDO (runtime; nunca versionado no git)
+public/assets/avatars/3d/           ← SERVIDO (política: CURADOS versionados como no AS4 — poucos MB; a FARM UBC em massa fica fora do git)
   personagens/<slug>/               ← ex.: base_humano_m
     modelo.lod0.glb                 ← qualidade máxima (§423.3 premium)
     modelo.lod1.glb                 ← padrão (§423.2)

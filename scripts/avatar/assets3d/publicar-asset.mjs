@@ -25,8 +25,9 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { NodeIO } from '@gltf-transform/core';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { compactPrimitive, dedup, prune, simplify, weld } from '@gltf-transform/functions';
-import { MeshoptSimplifier } from 'meshoptimizer';
+import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import { validarAsset } from './validar-asset.mjs';
 
 const LIMITES = { lod1: 25_000, lod2: 8_000 }; // gate §631 (lod0 só confere)
@@ -71,13 +72,22 @@ export async function publicarAsset(opcoes) {
   if (!fonte || !saida || !id) throw new Error('obrigatórios: fonte, saida, id');
   if (!/^[a-z0-9_]+$/.test(id)) throw new Error(`id "${id}" fora do snake_case ASCII`);
 
-  const io = new NodeIO();
-  await MeshoptSimplifier.ready;
+  // extensões registradas (fontes AS4 usam EXT_meshopt_compression); a
+  // SAÍDA é sempre GLB PLANO — o palco carrega sem decoder (§423 universal)
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
+    .registerDependencies({ 'meshopt.decoder': MeshoptDecoder, 'meshopt.encoder': MeshoptEncoder });
+  await Promise.all([MeshoptSimplifier.ready, MeshoptDecoder.ready, MeshoptEncoder.ready]);
+  const semCompressao = (doc) => {
+    for (const ext of doc.getRoot().listExtensionsUsed()) {
+      if (ext.extensionName === 'EXT_meshopt_compression') ext.dispose();
+    }
+    return doc;
+  };
   const pasta = resolve(saida);
   mkdirSync(pasta, { recursive: true });
 
   // lod0: fonte otimizada SEM perda (dedup de acessores + poda de órfãos)
-  const lod0 = await io.read(resolve(fonte));
+  const lod0 = semCompressao(await io.read(resolve(fonte)));
   await lod0.transform(dedup(), prune());
   const tri0 = triangulosDe(lod0);
   await io.write(join(pasta, 'modelo.lod0.glb'), lod0);
@@ -85,23 +95,43 @@ export async function publicarAsset(opcoes) {
 
   // lod1/lod2: simplificação meshopt até caber no gate §631 (com margem)
   const medidas = { lod0: tri0 };
+  const excecoes = {};
   for (const [lod, limite] of Object.entries(LIMITES)) {
-    const doc = await io.read(resolve(fonte));
+    const doc = semCompressao(await io.read(resolve(fonte)));
     await doc.transform(dedup(), prune());
     const antes = triangulosDe(doc);
     const alvo = Math.min(limite * MARGEM, antes);
+    // §631: erro cresce em PASSADAS até caber no gate — qualidade primeiro,
+    // mas o limite é INEGOCIÁVEL (lição mega 8: aventureiro lod2 travou em
+    // 10062 com erro fixo 0.01 e passou despercebido até o registro)
+    const errosPassada = [0.01, 0.04, 0.1, 0.25];
     if (antes > alvo) {
       // ratio do simplify é POR PRIMITIVA — usa a proporção global do alvo
-      await doc.transform(
-        weld(), // funde vértices duplicados ANTES (o simplify rende mais)
-        simplify({
-          simplifier: MeshoptSimplifier,
-          ratio: alvo / antes,
-          error: 0.01,      // §631: qualidade primeiro; erro visual baixo
-          lockBorder: true, // costura entre partes do corpo não abre
-        }),
-        prune(),
-      );
+      await doc.transform(weld()); // funde vértices ANTES (o simplify rende mais)
+      for (const erroAlvo of errosPassada) {
+        await doc.transform(
+          simplify({
+            simplifier: MeshoptSimplifier,
+            ratio: alvo / triangulosDe(doc),
+            error: erroAlvo,
+            lockBorder: erroAlvo <= 0.04, // costura protegida enquanto dá
+          }),
+        );
+        if (triangulosDe(doc) <= limite) break;
+      }
+      await doc.transform(prune());
+      const resultado = triangulosDe(doc);
+      if (resultado > limite) {
+        // fonte resiste (flat-shaded): exceção AUDITÁVEL até o teto absoluto
+        const teto = { lod1: 30_000, lod2: 12_000 }[lod];
+        const reducao = ((antes - resultado) / antes) * 100;
+        if (resultado <= teto && reducao < 8) {
+          excecoes[lod] = `fonte resiste a simplify (flat-shaded; ${antes}→${resultado}, ${reducao.toFixed(1)}%) — aceito até o teto absoluto ${teto}`;
+          log(`⚠ ${lod}: ${resultado} acima do gate ${limite} — EXCEÇÃO declarada no manifest (teto ${teto})`);
+        } else {
+          throw new Error(`${lod} não coube no gate §631 nem com simplificação agressiva (${resultado} > ${limite}) — reveja a fonte`);
+        }
+      }
       // compactPrimitive: descarta a FAIXA de vértices que o simplify
       // deixou sem referência (prune só remove acessores inteiros) —
       // sem isto o lod1 sai MAIOR em bytes que o lod0
@@ -126,6 +156,7 @@ export async function publicarAsset(opcoes) {
       lod2: sha256De(join(pasta, 'modelo.lod2.glb')),
     },
     triangulos: medidas,
+    ...(Object.keys(excecoes).length ? { excecoes } : {}),
     animacoes,
     licenca: { tipo: licencaTipo, fonte: origem, comprovante },
     origem,
