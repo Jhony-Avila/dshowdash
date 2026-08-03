@@ -19,7 +19,12 @@
     "lod2": 2124
   },
   "animacoes": [
-    "idle"
+    "Idle",
+    "Jump",
+    "Punch",
+    "Roll",
+    "Victory",
+    "Walk"
   ],
   "licenca": {
     "tipo": "CC0",

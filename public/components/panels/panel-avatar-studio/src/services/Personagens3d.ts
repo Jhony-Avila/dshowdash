@@ -54,3 +54,42 @@ export function urlDoLod(
 ): string {
   return urlDoPersonagem(manifest.id, manifest.lods[lodPorQualidade(qualidade)], base);
 }
+
+// ── mega 9: índice dinâmico + mapeamento base 2D → personagem 3D ────
+
+/** Entrada do index.json gerado por gerar-indice-3d.mjs. */
+export interface EntradaIndice3d {
+  slug: string;
+  nome: string;
+  thumb: string;
+  animacoes: string[];
+}
+
+/** Carrega o índice de personagens publicados (index.json DERIVADO da
+ *  publicação); erro/ausência → null (a UI usa o fallback embutido). */
+export async function carregarIndice3d(
+  base: string = BASE_PERSONAGENS_3D,
+): Promise<EntradaIndice3d[] | null> {
+  try {
+    const r = await fetch(`${base}/index.json`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    const corpo = await r.json() as { personagens?: EntradaIndice3d[] };
+    return Array.isArray(corpo?.personagens) && corpo.personagens.length ? corpo.personagens : null;
+  } catch { return null; }
+}
+
+/** Mapa base 2D → personagem 3D (mega 9): a espécie escolhida no 2D
+ *  decide o personagem da prévia — o seletor manual da UI faz OVERRIDE.
+ *  Fonte única; cresce junto do catálogo (UBC adicionará variações). */
+const MAPA_BASE_3D: Record<string, string> = {
+  bas_androide: 'androide', bas_ledbot: 'androide', bas_holo: 'androide',
+  bas_alien: 'androide', bas_fantasma: 'androide',
+  bas_panda: 'animal_pug', bas_coruja: 'animal_pug', bas_raposa: 'animal_pug',
+  bas_lobo: 'animal_pug', bas_leao: 'animal_pug', bas_gato: 'animal_pug',
+  bas_urso: 'animal_pug', bas_dragao: 'animal_pug', bas_tigre: 'animal_pug',
+};
+
+/** Resolve o personagem 3D a partir do ESTADO (body.base 2D). */
+export function personagemParaBase(base: string | null): string {
+  return (base && MAPA_BASE_3D[base]) || 'humano_casual';
+}

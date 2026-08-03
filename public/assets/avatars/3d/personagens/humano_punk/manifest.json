@@ -19,7 +19,12 @@
     "lod2": 5500
   },
   "animacoes": [
-    "idle"
+    "Idle",
+    "Idle_Neutral",
+    "Punch_Right",
+    "Roll",
+    "Walk",
+    "Wave"
   ],
   "licenca": {
     "tipo": "CC0",

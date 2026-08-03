@@ -19,7 +19,20 @@
     "lod2": 3237
   },
   "animacoes": [
-    "idle"
+    "Dance",
+    "Death",
+    "Idle",
+    "Jump",
+    "No",
+    "Punch",
+    "Running",
+    "Sitting",
+    "Standing",
+    "ThumbsUp",
+    "Walking",
+    "WalkJump",
+    "Wave",
+    "Yes"
   ],
   "licenca": {
     "tipo": "CC0",

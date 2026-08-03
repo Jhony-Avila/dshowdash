@@ -242,3 +242,24 @@ o peso 3D segue no chunk sob demanda — hashes conferidos).
    do teto = erro mesmo com exceção). Cobertos por 3 casos novos no teste.
 
 Suíte: 30 entradas — 30/30 + núcleo verdes.
+
+## MEGA TAREFA 9 "3D Vivo & Conectado" · 2026-08-03
+
+Descoberta: os 6 curados têm CLIPES REAIS embutidos (androide 14; demais 6
+— Idle/Walk/Wave/Dance/Jump…). O 3D deixou de ser estátua:
+✅ Renderizador3d com THREE.AnimationMixer — tocarAnimacao toca clipe REAL
+   com crossfade (transicaoMs/loop do contrato §401); Idle automático ao
+   carregar; idle procedural vira FALLBACK p/ GLBs sem clipes; pausar
+   congela o mixer; animacoesDisponiveis() p/ a UI.
+✅ publicar-asset EXTRAI as animações do GLB p/ o manifest (fim do
+   hardcode); 6 republicados com listas reais.
+✅ gerar-indice-3d.mjs — index.json DERIVADO da publicação (slug, nome,
+   thumb, animações, exceções); Palco3d consome com fallback embutido.
+✅ MAPEAMENTO base 2D→3D (personagemParaBase): a espécie escolhida no 2D
+   decide o personagem da prévia (bas_androide/ledbot/holo/alien/fantasma→
+   androide; espécies animais→pug; humanos→casual); seletor manual vira
+   OVERRIDE com chip "Auto" — trocar o rosto no 2D TROCA o 3D.
+✅ Seletor de ANIMAÇÕES no palco (destaques Idle/Walk/Wave/Dance…).
+
+Testes: shell-palco3d v2 (animações + auto-mapeamento E2E). Suíte 30/30 +
+núcleo verdes. Registro §614 regenerado com os manifests novos.
