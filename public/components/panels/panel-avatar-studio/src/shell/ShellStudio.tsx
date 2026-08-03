@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
+import { ArrowUp, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Undo2, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, aleatorioInteligente, itemPorId, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
@@ -258,6 +258,58 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // §138: registro da timeline vive AQUI (a sessão inteira, não só na aba)
   const historico = useHistoricoSessao(store);
 
+  // §174 SHOWCASE: apresentação cinematográfica 2D no modo Studio.
+  // Sequência automática (fade → aproxima → gira → composição §174.1),
+  // duração média ~6s (§174.2); respeita redução de movimento (§297).
+  const [apresentando, setApresentando] = useState(false);
+  const apresentar = useCallback(async () => {
+    if (apresentando) return;
+    setApresentando(true);
+    setModo('studio');
+    await new Promise((r) => setTimeout(r, 80)); // studio monta primeiro
+    const alvo = document.querySelector('.avst5-zoom') as HTMLElement | null;
+    if (alvo && !movReduzido && typeof alvo.animate === 'function') {
+      const passos: Array<[Keyframe[], number]> = [
+        [[{ opacity: 0, transform: 'scale(0.9)' }, { opacity: 1, transform: 'scale(1)' }], 900],
+        [[{ transform: 'scale(1)' }, { transform: 'scale(1.22)' }], 1700],
+        [[{ transform: 'scale(1.22) rotate(0deg)' }, { transform: 'scale(1.16) rotate(-2.2deg)' },
+          { transform: 'scale(1.2) rotate(2.2deg)' }, { transform: 'scale(1.18) rotate(0deg)' }], 2400],
+        [[{ transform: 'scale(1.18)' }, { transform: 'scale(1)' }], 1000],
+      ];
+      for (const [quadros, dur] of passos) {
+        try { await alvo.animate(quadros, { duration: dur, easing: 'ease-in-out', fill: 'forwards' }).finished; }
+        catch { break; }
+      }
+    }
+    setApresentando(false);
+  }, [apresentando, movReduzido]);
+
+  // §174.1 item 11: CAPTURA do palco em PNG (rasterização local, como na Foto)
+  const capturarPalco = useCallback(async () => {
+    const svg = document.querySelector('.avst5-palco svg');
+    if (!svg) return;
+    try {
+      const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const img = await new Promise<HTMLImageElement>((res, rej) => {
+        const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = 960; canvas.height = 960;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, 960, 960);
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = 'dshow-showcase-960px.png';
+        a.click();
+        telemetria('showcase_captura');
+      }
+      URL.revokeObjectURL(url);
+    } catch { /* captura é conveniência — nunca quebra o shell */ }
+  }, []);
+
   // §548/§561 (P9) + §297: ANUNCIADOR de ações — feedback visível e lido
   // por screen reader (aria-live) para equipar/desfazer/refazer
   const [anuncio, setAnuncio] = useState<string | null>(null);
@@ -371,7 +423,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   return (
     <LimiteShell aoSair={aoSairDoShell}>
-      <div className="avst5-shell" data-avst5="1" data-modo={modo}
+      <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
         style={{ '--avst5-esq': `${larguras.esq}px`,
           '--avst5-dir': painelFechado ? '36px' : painelLargo ? '560px' : `${larguras.dir}px` } as React.CSSProperties}>
         {/* header interno (§626) */}
@@ -404,6 +456,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               aria-pressed={modo === 'studio'}
               onClick={() => setModo((m) => (m === 'studio' ? 'edicao' : 'studio'))}>
               <Clapperboard size={14} aria-hidden /></button>
+            <button type="button" className="avst-botao" title="Showcase — apresentação cinematográfica (§174)"
+              data-teste="showcase" disabled={apresentando}
+              onClick={() => void apresentar()}>
+              <Play size={14} aria-hidden /> Apresentar</button>
             <button type="button" className="avst-botao" disabled={!store.podeDesfazer}
               title="Desfazer (Ctrl+Z)" onClick={() => store.desfazer()}><Undo2 size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" disabled={!store.podeRefazer}
@@ -479,6 +535,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
             <button type="button" className="avst5-drawer-abrir" title="Abrir catálogo"
               onClick={() => setPainelFechado(false)}><LayoutGrid size={16} aria-hidden /></button>
+            {modo === 'studio' && (
+              <button type="button" className="avst5-comparar avst5-capturar" title="Baixar PNG do palco (§174.1)"
+                onClick={() => void capturarPalco()}>
+                <Camera size={13} aria-hidden /> Capturar
+              </button>
+            )}
             {modo === 'studio' && configVisivel.titulo && (
               <div className="avst5-titulo-selo" role="note">{String(configVisivel.titulo).replace(/^tit_/, '').replace(/_/g, ' ')}</div>
             )}
