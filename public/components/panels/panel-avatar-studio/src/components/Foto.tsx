@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Aperture, Box, Camera, Check, Crown, Download, ImageUp, Images, LoaderCircle,
-  RotateCcw, Video, Wand2, X,
+  RotateCcw, Share2, Video, Wand2, X,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
 import type { FotoGuardada } from '../services/AvatarService';
@@ -31,6 +31,7 @@ import { criarRenderizador } from '../services/FabricaRenderizador';
 import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d';
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { estadoVazio } from '../nucleo/contratos';
+import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 
 const LADO_PALCO = 280;   // px na tela
 const LADO_SAIDA = 480;   // px do PNG final
@@ -370,6 +371,22 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   }, [fotoEstilo, estilo, escala, formato]);
 
   /** Entra no modo ESTILIZADA a partir de uma foto guardada. */
+  // mega 15 (§21.5): compartilhar a composição atual (share→clipboard→download)
+  const compartilharFoto = useCallback(async () => {
+    if (!fotoEstilo) return;
+    setMensagem(null);
+    try {
+      const wide = formato !== 'perfil';
+      const [lw, lh] = wide ? FORMATOS_FOTO[formato].saida : [LADO_SAIDA, LADO_SAIDA];
+      const svg = svgFotoDe(fotoEstilo, estilo, { estatico: true, uid: 'ftshare', ...(wide ? { formato } : { tamanho: lw }) });
+      const png = await rasterizarSvg(svg, lw, lh);
+      const canal = await compartilharPng(png, wide ? `dshow-${formato}.png` : 'dshow-foto.png', 'Minha foto Dshow');
+      telemetria('foto_compartilhou', { canal, formato });
+      if (canal === 'clipboard') setMensagem('Imagem copiada — cole onde quiser.');
+      if (canal === 'download') setMensagem('Sem compartilhamento neste navegador — baixei o PNG.');
+    } catch { setMensagem('Não consegui compartilhar — tente Baixar PNG.'); }
+  }, [fotoEstilo, estilo, formato]);
+
   const estilizarGuardada = useCallback(async (foto: FotoGuardada) => {
     setMensagem(null);
     try {
@@ -688,6 +705,14 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               onClick={() => void baixarPng()}>
               <Download size={14} aria-hidden /> Baixar PNG
             </button>
+            {podeCompartilhar() && (
+              <button type="button" className="avst-botao" disabled={salvando}
+                title="Compartilhar (sistema, área de transferência ou download)"
+                data-teste="compartilhar-foto"
+                onClick={() => void compartilharFoto()}>
+                <Share2 size={14} aria-hidden /> Compartilhar
+              </button>
+            )}
             <button type="button" className="avst-botao avst-botao-primario"
               onClick={() => void salvarEstilizada()} disabled={salvando}>
               {salvando ? <LoaderCircle className="avst-girando" size={14} aria-hidden /> : <Wand2 size={14} aria-hidden />}

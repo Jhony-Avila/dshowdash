@@ -11,6 +11,12 @@ await irParaHarness(p, 'avst-harness.html', 1200);
 const falhas = [];
 const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 
+// mega 14: Vitrine com a seção Personagens 3D (6 cards do índice)
+await p.evaluate(() => { [...document.querySelectorAll('.avst-cat')].find((x) => x.textContent.includes('Vitrine'))?.click(); });
+await p.waitForTimeout(900);
+ok(await p.locator('[data-teste="vitrine-3d"]').count() === 1, 'seção Personagens 3D ausente na Vitrine');
+ok(await p.locator('[data-teste="vitrine-3d"] .avst-vt-card-3d').count() === 6, 'esperava 6 cards 3D na Vitrine');
+
 // aba Foto (modo clássico) → origem "Personagem 3D"
 await p.evaluate(() => { [...document.querySelectorAll('.avst-cat')].find((x) => x.textContent.trim() === 'Foto')?.click(); });
 await p.waitForTimeout(600);
@@ -38,6 +44,8 @@ ok(svg.includes('<image'), 'preview estilizada sem a captura embutida');
 ok(await p.locator('[data-teste="templates-foto"]').count() === 1, 'fluxo Estilizar não abriu após a captura');
 // captura 3D real: o data-uri embutido tem tamanho de imagem de verdade
 ok(svg.length > 20000, `SVG do preview suspeito de captura vazia (${svg.length} chars)`);
+// mega 15: botão Compartilhar presente (ClipboardItem existe no Chromium)
+ok(await p.locator('[data-teste="compartilhar-foto"]').count() === 1, 'botão Compartilhar ausente na estilizada');
 await p.screenshot({ path: `${SAIDA}/foto3d-estilizada.png` });
 
 const ok_ = relatorio('foto-3d', falhas, erros);
