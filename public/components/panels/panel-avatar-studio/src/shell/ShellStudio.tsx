@@ -26,6 +26,7 @@ import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
+import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { DetalheAsset } from './DetalheAsset';
 import { HistoricoSessao, useHistoricoSessao } from './HistoricoSessao';
 import {
@@ -259,6 +260,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // §138: registro da timeline vive AQUI (a sessão inteira, não só na aba)
   const historico = useHistoricoSessao(store);
 
+  // §568–§571: TOUR de primeiro uso (auto na 1ª visita; "?" reabre)
+  const [tour, setTour] = useState(() => !tourJaVisto());
+
   // §566: COMMAND PALETTE — Ctrl+K/⌘K
   const [paleta, setPaleta] = useState(false);
   useEffect(() => {
@@ -478,6 +482,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               title="Desfazer (Ctrl+Z)" onClick={() => store.desfazer()}><Undo2 size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" disabled={!store.podeRefazer}
               title="Refazer" onClick={() => store.refazer()}><Redo2 size={14} aria-hidden /></button>
+            <button type="button" className="avst-botao" title="Rever o tour do estúdio (§569)"
+              data-teste="tour-abrir" onClick={() => setTour(true)}>?</button>
             <button type="button" className="avst-botao" onClick={aoSairDoShell}>Modo clássico</button>
           </div>
         </header>
@@ -659,6 +665,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
           </aside>
         </div>
+        {tour && <TourGuiado aoFechar={() => setTour(false)} />}
         {paleta && (
           <PaletaComandos
             aoFechar={() => setPaleta(false)}
