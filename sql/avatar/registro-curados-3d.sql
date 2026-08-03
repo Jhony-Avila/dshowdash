@@ -1,63 +1,17 @@
 -- ══════════════════════════════════════════════════════════════
--- REGISTRO §614 · asset 3D 'androide' · gerado por gerar-registro-sql.mjs
--- Idempotente e transacional; sem NOW() (created_at = DEFAULT do banco).
--- Pré-requisito: taxonomia com as chaves 'base'/'dshow_3d'/'comum'.
--- ══════════════════════════════════════════════════════════════
-START TRANSACTION;
-
--- 1. conferência (o operador vê o que existe ANTES)
-SELECT id, `key`, name, status FROM avatar_assets WHERE `key` = 'androide';
-
--- 2. asset base SE ausente (subselects por key — chave errada insere 0)
-INSERT INTO avatar_assets
-  (category_id, library_id, rarity_id, `key`, name, short_description,
-   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer)
-SELECT c.id, b.id, r.id, 'androide', 'androide', 'Personagem 3D (as4-curados)',
-       'glb', 'published', '/assets/avatars/3d/personagens/androide/thumb.webp', '/assets/avatars/3d/personagens/androide/preview.webp', '2d,3d', '3d'
-FROM avatar_categories c, avatar_libraries b, avatar_rarities r
-WHERE c.`key` = 'base' AND b.`key` = 'dshow_3d' AND r.`key` = 'comum'
-  AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'androide');
-
-SET @asset_id = (SELECT id FROM avatar_assets WHERE `key` = 'androide');
-
--- 3. versão 1 (uq asset_id+version → re-rodar ATUALIZA)
-INSERT INTO avatar_asset_versions (asset_id, version, metadata_json, checksum, status)
-VALUES (@asset_id, 1, '{"id":"androide","tipo":"personagem_base","versao":1,"rig":"ubc-v1","lods":{"lod0":"modelo.lod0.glb","lod1":"modelo.lod1.glb","lod2":"modelo.lod2.glb"},"hashes":{"lod0":"sha256:8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf","lod1":"sha256:8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf","lod2":"sha256:8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf"},"triangulos":{"lod0":3237,"lod1":3237,"lod2":3237},"animacoes":["Dance","Death","Idle","Jump","No","Punch","Running","Sitting","Standing","ThumbsUp","Walking","WalkJump","Wave","Yes"],"licenca":{"tipo":"CC0","fonte":"as4-curados","comprovante":"public/assets/avatars/3d/LICENCAS.md"},"origem":"as4-curados","fonte_original":"androide.glb","criado_em":"2026-08-03"}', '8375797e00aec7d8', 'aprovado')
-ON DUPLICATE KEY UPDATE
-  metadata_json = VALUES(metadata_json),
-  checksum      = VALUES(checksum),
-  status        = VALUES(status);
-
-SET @versao_id = (SELECT id FROM avatar_asset_versions
-                  WHERE asset_id = @asset_id AND version = 1);
-
--- 4. arquivos da versão (§615) — troca completa, nunca acumula lixo
-DELETE FROM avatar_asset_files WHERE asset_version_id = @versao_id;
-INSERT INTO avatar_asset_files
-  (asset_version_id, file_role, renderer, quality_tier, format, url, file_size, checksum, metadata_json)
-VALUES
-  (@versao_id, 'model', '3d', 'alto', 'glb', '/assets/avatars/3d/personagens/androide/modelo.lod0.glb', 325792, '8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf', JSON_OBJECT('lod', 'lod0', 'triangulos', 3237)),
-  (@versao_id, 'model', '3d', 'medio', 'glb', '/assets/avatars/3d/personagens/androide/modelo.lod1.glb', 325792, '8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf', JSON_OBJECT('lod', 'lod1', 'triangulos', 3237)),
-  (@versao_id, 'model', '3d', 'economico', 'glb', '/assets/avatars/3d/personagens/androide/modelo.lod2.glb', 325792, '8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf', JSON_OBJECT('lod', 'lod2', 'triangulos', 3237)),
-  (@versao_id, 'thumbnail', '3d', 'alto', 'webp', '/assets/avatars/3d/personagens/androide/thumb.webp', 3278, NULL, JSON_OBJECT('lado', 128)),
-  (@versao_id, 'preview', '3d', 'alto', 'webp', '/assets/avatars/3d/personagens/androide/preview.webp', 15814, NULL, JSON_OBJECT('lado', 512));
-
-COMMIT;
-
--- 5. verificação (esperado: asset=1 · versao=1 · arquivos=5)
-SELECT
-  (SELECT COUNT(*) FROM avatar_assets WHERE `key` = 'androide')                        AS asset,
-  (SELECT COUNT(*) FROM avatar_asset_versions WHERE asset_id = @asset_id)              AS versoes,
-  (SELECT COUNT(*) FROM avatar_asset_files    WHERE asset_version_id = @versao_id)     AS arquivos;
--- ══════════════════════════════════════════════════════════════
 -- REGISTRO §614 · asset 3D 'animal_pug' · gerado por gerar-registro-sql.mjs
 -- Idempotente e transacional; sem NOW() (created_at = DEFAULT do banco).
--- Pré-requisito: taxonomia com as chaves 'base'/'dshow_3d'/'comum'.
+-- Pré-requisito: taxonomia com as chaves 'rosto'/'cc0_quaternius'/'comum'.
 -- ══════════════════════════════════════════════════════════════
 START TRANSACTION;
 
--- 1. conferência (o operador vê o que existe ANTES)
+-- 1. conferência (o operador vê o que existe ANTES) + RESOLUÇÃO da
+-- taxonomia (id NULL aqui = chave errada; pare ANTES do INSERT falhar)
 SELECT id, `key`, name, status FROM avatar_assets WHERE `key` = 'animal_pug';
+SELECT
+  (SELECT id FROM avatar_categories WHERE `key` = 'rosto') AS categoria_id,
+  (SELECT id FROM avatar_libraries  WHERE `key` = 'cc0_quaternius') AS biblioteca_id,
+  (SELECT id FROM avatar_rarities   WHERE `key` = 'comum')  AS raridade_id;
 
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
@@ -66,7 +20,7 @@ INSERT INTO avatar_assets
 SELECT c.id, b.id, r.id, 'animal_pug', 'animal_pug', 'Personagem 3D (as4-curados)',
        'glb', 'published', '/assets/avatars/3d/personagens/animal_pug/thumb.webp', '/assets/avatars/3d/personagens/animal_pug/preview.webp', '2d,3d', '3d'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
-WHERE c.`key` = 'base' AND b.`key` = 'dshow_3d' AND r.`key` = 'comum'
+WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'animal_pug');
 
 SET @asset_id = (SELECT id FROM avatar_assets WHERE `key` = 'animal_pug');
@@ -103,12 +57,17 @@ SELECT
 -- ══════════════════════════════════════════════════════════════
 -- REGISTRO §614 · asset 3D 'humano_aventureiro' · gerado por gerar-registro-sql.mjs
 -- Idempotente e transacional; sem NOW() (created_at = DEFAULT do banco).
--- Pré-requisito: taxonomia com as chaves 'base'/'dshow_3d'/'comum'.
+-- Pré-requisito: taxonomia com as chaves 'rosto'/'cc0_quaternius'/'comum'.
 -- ══════════════════════════════════════════════════════════════
 START TRANSACTION;
 
--- 1. conferência (o operador vê o que existe ANTES)
+-- 1. conferência (o operador vê o que existe ANTES) + RESOLUÇÃO da
+-- taxonomia (id NULL aqui = chave errada; pare ANTES do INSERT falhar)
 SELECT id, `key`, name, status FROM avatar_assets WHERE `key` = 'humano_aventureiro';
+SELECT
+  (SELECT id FROM avatar_categories WHERE `key` = 'rosto') AS categoria_id,
+  (SELECT id FROM avatar_libraries  WHERE `key` = 'cc0_quaternius') AS biblioteca_id,
+  (SELECT id FROM avatar_rarities   WHERE `key` = 'comum')  AS raridade_id;
 
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
@@ -117,7 +76,7 @@ INSERT INTO avatar_assets
 SELECT c.id, b.id, r.id, 'humano_aventureiro', 'humano_aventureiro', 'Personagem 3D (as4-curados)',
        'glb', 'published', '/assets/avatars/3d/personagens/humano_aventureiro/thumb.webp', '/assets/avatars/3d/personagens/humano_aventureiro/preview.webp', '2d,3d', '3d'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
-WHERE c.`key` = 'base' AND b.`key` = 'dshow_3d' AND r.`key` = 'comum'
+WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'humano_aventureiro');
 
 SET @asset_id = (SELECT id FROM avatar_assets WHERE `key` = 'humano_aventureiro');
@@ -154,12 +113,17 @@ SELECT
 -- ══════════════════════════════════════════════════════════════
 -- REGISTRO §614 · asset 3D 'humano_casual' · gerado por gerar-registro-sql.mjs
 -- Idempotente e transacional; sem NOW() (created_at = DEFAULT do banco).
--- Pré-requisito: taxonomia com as chaves 'base'/'dshow_3d'/'comum'.
+-- Pré-requisito: taxonomia com as chaves 'rosto'/'cc0_quaternius'/'comum'.
 -- ══════════════════════════════════════════════════════════════
 START TRANSACTION;
 
--- 1. conferência (o operador vê o que existe ANTES)
+-- 1. conferência (o operador vê o que existe ANTES) + RESOLUÇÃO da
+-- taxonomia (id NULL aqui = chave errada; pare ANTES do INSERT falhar)
 SELECT id, `key`, name, status FROM avatar_assets WHERE `key` = 'humano_casual';
+SELECT
+  (SELECT id FROM avatar_categories WHERE `key` = 'rosto') AS categoria_id,
+  (SELECT id FROM avatar_libraries  WHERE `key` = 'cc0_quaternius') AS biblioteca_id,
+  (SELECT id FROM avatar_rarities   WHERE `key` = 'comum')  AS raridade_id;
 
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
@@ -168,7 +132,7 @@ INSERT INTO avatar_assets
 SELECT c.id, b.id, r.id, 'humano_casual', 'humano_casual', 'Personagem 3D (as4-curados)',
        'glb', 'published', '/assets/avatars/3d/personagens/humano_casual/thumb.webp', '/assets/avatars/3d/personagens/humano_casual/preview.webp', '2d,3d', '3d'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
-WHERE c.`key` = 'base' AND b.`key` = 'dshow_3d' AND r.`key` = 'comum'
+WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'humano_casual');
 
 SET @asset_id = (SELECT id FROM avatar_assets WHERE `key` = 'humano_casual');
@@ -205,12 +169,17 @@ SELECT
 -- ══════════════════════════════════════════════════════════════
 -- REGISTRO §614 · asset 3D 'humano_punk' · gerado por gerar-registro-sql.mjs
 -- Idempotente e transacional; sem NOW() (created_at = DEFAULT do banco).
--- Pré-requisito: taxonomia com as chaves 'base'/'dshow_3d'/'comum'.
+-- Pré-requisito: taxonomia com as chaves 'rosto'/'cc0_quaternius'/'comum'.
 -- ══════════════════════════════════════════════════════════════
 START TRANSACTION;
 
--- 1. conferência (o operador vê o que existe ANTES)
+-- 1. conferência (o operador vê o que existe ANTES) + RESOLUÇÃO da
+-- taxonomia (id NULL aqui = chave errada; pare ANTES do INSERT falhar)
 SELECT id, `key`, name, status FROM avatar_assets WHERE `key` = 'humano_punk';
+SELECT
+  (SELECT id FROM avatar_categories WHERE `key` = 'rosto') AS categoria_id,
+  (SELECT id FROM avatar_libraries  WHERE `key` = 'cc0_quaternius') AS biblioteca_id,
+  (SELECT id FROM avatar_rarities   WHERE `key` = 'comum')  AS raridade_id;
 
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
@@ -219,7 +188,7 @@ INSERT INTO avatar_assets
 SELECT c.id, b.id, r.id, 'humano_punk', 'humano_punk', 'Personagem 3D (as4-curados)',
        'glb', 'published', '/assets/avatars/3d/personagens/humano_punk/thumb.webp', '/assets/avatars/3d/personagens/humano_punk/preview.webp', '2d,3d', '3d'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
-WHERE c.`key` = 'base' AND b.`key` = 'dshow_3d' AND r.`key` = 'comum'
+WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'humano_punk');
 
 SET @asset_id = (SELECT id FROM avatar_assets WHERE `key` = 'humano_punk');
@@ -256,12 +225,17 @@ SELECT
 -- ══════════════════════════════════════════════════════════════
 -- REGISTRO §614 · asset 3D 'humano_terno' · gerado por gerar-registro-sql.mjs
 -- Idempotente e transacional; sem NOW() (created_at = DEFAULT do banco).
--- Pré-requisito: taxonomia com as chaves 'base'/'dshow_3d'/'comum'.
+-- Pré-requisito: taxonomia com as chaves 'rosto'/'cc0_quaternius'/'comum'.
 -- ══════════════════════════════════════════════════════════════
 START TRANSACTION;
 
--- 1. conferência (o operador vê o que existe ANTES)
+-- 1. conferência (o operador vê o que existe ANTES) + RESOLUÇÃO da
+-- taxonomia (id NULL aqui = chave errada; pare ANTES do INSERT falhar)
 SELECT id, `key`, name, status FROM avatar_assets WHERE `key` = 'humano_terno';
+SELECT
+  (SELECT id FROM avatar_categories WHERE `key` = 'rosto') AS categoria_id,
+  (SELECT id FROM avatar_libraries  WHERE `key` = 'cc0_quaternius') AS biblioteca_id,
+  (SELECT id FROM avatar_rarities   WHERE `key` = 'comum')  AS raridade_id;
 
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
@@ -270,7 +244,7 @@ INSERT INTO avatar_assets
 SELECT c.id, b.id, r.id, 'humano_terno', 'humano_terno', 'Personagem 3D (as4-curados)',
        'glb', 'published', '/assets/avatars/3d/personagens/humano_terno/thumb.webp', '/assets/avatars/3d/personagens/humano_terno/preview.webp', '2d,3d', '3d'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
-WHERE c.`key` = 'base' AND b.`key` = 'dshow_3d' AND r.`key` = 'comum'
+WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'humano_terno');
 
 SET @asset_id = (SELECT id FROM avatar_assets WHERE `key` = 'humano_terno');
@@ -302,5 +276,61 @@ COMMIT;
 -- 5. verificação (esperado: asset=1 · versao=1 · arquivos=5)
 SELECT
   (SELECT COUNT(*) FROM avatar_assets WHERE `key` = 'humano_terno')                        AS asset,
+  (SELECT COUNT(*) FROM avatar_asset_versions WHERE asset_id = @asset_id)              AS versoes,
+  (SELECT COUNT(*) FROM avatar_asset_files    WHERE asset_version_id = @versao_id)     AS arquivos;
+-- ══════════════════════════════════════════════════════════════
+-- REGISTRO §614 · asset 3D 'androide' · gerado por gerar-registro-sql.mjs
+-- Idempotente e transacional; sem NOW() (created_at = DEFAULT do banco).
+-- Pré-requisito: taxonomia com as chaves 'rosto'/'cc0_threejs'/'comum'.
+-- ══════════════════════════════════════════════════════════════
+START TRANSACTION;
+
+-- 1. conferência (o operador vê o que existe ANTES) + RESOLUÇÃO da
+-- taxonomia (id NULL aqui = chave errada; pare ANTES do INSERT falhar)
+SELECT id, `key`, name, status FROM avatar_assets WHERE `key` = 'androide';
+SELECT
+  (SELECT id FROM avatar_categories WHERE `key` = 'rosto') AS categoria_id,
+  (SELECT id FROM avatar_libraries  WHERE `key` = 'cc0_threejs') AS biblioteca_id,
+  (SELECT id FROM avatar_rarities   WHERE `key` = 'comum')  AS raridade_id;
+
+-- 2. asset base SE ausente (subselects por key — chave errada insere 0)
+INSERT INTO avatar_assets
+  (category_id, library_id, rarity_id, `key`, name, short_description,
+   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer)
+SELECT c.id, b.id, r.id, 'androide', 'androide', 'Personagem 3D (as4-curados)',
+       'glb', 'published', '/assets/avatars/3d/personagens/androide/thumb.webp', '/assets/avatars/3d/personagens/androide/preview.webp', '2d,3d', '3d'
+FROM avatar_categories c, avatar_libraries b, avatar_rarities r
+WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_threejs' AND r.`key` = 'comum'
+  AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'androide');
+
+SET @asset_id = (SELECT id FROM avatar_assets WHERE `key` = 'androide');
+
+-- 3. versão 1 (uq asset_id+version → re-rodar ATUALIZA)
+INSERT INTO avatar_asset_versions (asset_id, version, metadata_json, checksum, status)
+VALUES (@asset_id, 1, '{"id":"androide","tipo":"personagem_base","versao":1,"rig":"ubc-v1","lods":{"lod0":"modelo.lod0.glb","lod1":"modelo.lod1.glb","lod2":"modelo.lod2.glb"},"hashes":{"lod0":"sha256:8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf","lod1":"sha256:8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf","lod2":"sha256:8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf"},"triangulos":{"lod0":3237,"lod1":3237,"lod2":3237},"animacoes":["Dance","Death","Idle","Jump","No","Punch","Running","Sitting","Standing","ThumbsUp","Walking","WalkJump","Wave","Yes"],"licenca":{"tipo":"CC0","fonte":"as4-curados","comprovante":"public/assets/avatars/3d/LICENCAS.md"},"origem":"as4-curados","fonte_original":"androide.glb","criado_em":"2026-08-03"}', '8375797e00aec7d8', 'aprovado')
+ON DUPLICATE KEY UPDATE
+  metadata_json = VALUES(metadata_json),
+  checksum      = VALUES(checksum),
+  status        = VALUES(status);
+
+SET @versao_id = (SELECT id FROM avatar_asset_versions
+                  WHERE asset_id = @asset_id AND version = 1);
+
+-- 4. arquivos da versão (§615) — troca completa, nunca acumula lixo
+DELETE FROM avatar_asset_files WHERE asset_version_id = @versao_id;
+INSERT INTO avatar_asset_files
+  (asset_version_id, file_role, renderer, quality_tier, format, url, file_size, checksum, metadata_json)
+VALUES
+  (@versao_id, 'model', '3d', 'alto', 'glb', '/assets/avatars/3d/personagens/androide/modelo.lod0.glb', 325792, '8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf', JSON_OBJECT('lod', 'lod0', 'triangulos', 3237)),
+  (@versao_id, 'model', '3d', 'medio', 'glb', '/assets/avatars/3d/personagens/androide/modelo.lod1.glb', 325792, '8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf', JSON_OBJECT('lod', 'lod1', 'triangulos', 3237)),
+  (@versao_id, 'model', '3d', 'economico', 'glb', '/assets/avatars/3d/personagens/androide/modelo.lod2.glb', 325792, '8375797e00aec7d8e72a86407f3017c97411c4e915d75f4fc357f0c183ad73cf', JSON_OBJECT('lod', 'lod2', 'triangulos', 3237)),
+  (@versao_id, 'thumbnail', '3d', 'alto', 'webp', '/assets/avatars/3d/personagens/androide/thumb.webp', 3278, NULL, JSON_OBJECT('lado', 128)),
+  (@versao_id, 'preview', '3d', 'alto', 'webp', '/assets/avatars/3d/personagens/androide/preview.webp', 15814, NULL, JSON_OBJECT('lado', 512));
+
+COMMIT;
+
+-- 5. verificação (esperado: asset=1 · versao=1 · arquivos=5)
+SELECT
+  (SELECT COUNT(*) FROM avatar_assets WHERE `key` = 'androide')                        AS asset,
   (SELECT COUNT(*) FROM avatar_asset_versions WHERE asset_id = @asset_id)              AS versoes,
   (SELECT COUNT(*) FROM avatar_asset_files    WHERE asset_version_id = @versao_id)     AS arquivos;
