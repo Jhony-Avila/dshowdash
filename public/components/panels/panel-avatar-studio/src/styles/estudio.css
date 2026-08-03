@@ -61,6 +61,15 @@
   align-items: center; justify-content: center; gap: 12px;
   color: var(--avst-texto-2); font-size: 14px;
 }
+/* §557.2: skeleton da carga inicial — silhueta das 3 colunas do estúdio */
+.avst-carregando-colunas {
+  display: grid; grid-template-columns: 150px 1fr 340px; gap: 16px;
+  width: min(1200px, 94%); flex: 1; min-height: 0; padding-top: 18px;
+}
+.avst-carregando-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.avst-carregando-palco { flex: 1; min-height: 260px; }
+.avst-carregando-rotulo { display: flex; align-items: center; gap: 7px; padding-bottom: 16px; margin: 0; }
+@media (max-width: 900px) { .avst-carregando-colunas { grid-template-columns: 1fr; } .avst-carregando-nav { display: none; } }
 .avst-girando { animation: avst-girar 0.9s linear infinite; }
 @keyframes avst-girar { to { transform: rotate(360deg); } }
 
