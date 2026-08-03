@@ -52,7 +52,20 @@ function CardConquista({ c }: { c: Conquista }) {
   );
 }
 
-export function Conquistas({ vida }: { vida: Vida | null }) {
+export function Conquistas({ vida, carregando = false }: { vida: Vida | null; carregando?: boolean }) {
+  // §557: carregar ≠ falhar — enquanto a vida não RESOLVE, skeleton
+  if (!vida && carregando) {
+    return (
+      <div className="avst-conquistas" role="status" aria-label="Carregando conquistas"
+        data-teste="esqueleto-conquistas">
+        <span className="avst-esqueleto" style={{ height: 92 }} />
+        <span className="avst-esqueleto" style={{ height: 18, width: '60%' }} />
+        {Array.from({ length: 4 }, (_, i) => (
+          <span key={i} className="avst-esqueleto" style={{ height: 58 }} />
+        ))}
+      </div>
+    );
+  }
   if (!vida) {
     return (
       <div className="avst-vazio">
