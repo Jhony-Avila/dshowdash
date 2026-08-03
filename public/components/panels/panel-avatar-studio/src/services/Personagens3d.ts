@@ -65,17 +65,32 @@ export interface EntradaIndice3d {
   animacoes: string[];
 }
 
-/** Carrega o índice de personagens publicados (index.json DERIVADO da
- *  publicação); erro/ausência → null (a UI usa o fallback embutido). */
+/** mega 11: CADEIA fail-safe de catálogo — REGISTRY §614 (API) →
+ *  index.json (derivado da publicação) → null (a UI usa o embutido).
+ *  Devolve também a FONTE que serviu (telemetria/diagnóstico). */
 export async function carregarIndice3d(
   base: string = BASE_PERSONAGENS_3D,
-): Promise<EntradaIndice3d[] | null> {
+): Promise<{ personagens: EntradaIndice3d[]; fonte: 'registry' | 'indice' } | null> {
+  // 1) registry vivo (§614) — vazio/erro NUNCA bloqueia (§481)
+  try {
+    const r = await fetch('/api/avatar/personagens3d.php', { credentials: 'include', cache: 'no-store' });
+    if (r.ok) {
+      const corpo = await r.json() as { data?: { personagens?: EntradaIndice3d[] } };
+      const lista = corpo?.data?.personagens;
+      if (Array.isArray(lista) && lista.length) return { personagens: lista, fonte: 'registry' };
+    }
+  } catch { /* segue a cadeia */ }
+  // 2) index.json estático (derivado por gerar-indice-3d.mjs)
   try {
     const r = await fetch(`${base}/index.json`, { cache: 'no-store' });
-    if (!r.ok) return null;
-    const corpo = await r.json() as { personagens?: EntradaIndice3d[] };
-    return Array.isArray(corpo?.personagens) && corpo.personagens.length ? corpo.personagens : null;
-  } catch { return null; }
+    if (r.ok) {
+      const corpo = await r.json() as { personagens?: EntradaIndice3d[] };
+      if (Array.isArray(corpo?.personagens) && corpo.personagens.length) {
+        return { personagens: corpo.personagens, fonte: 'indice' };
+      }
+    }
+  } catch { /* fallback embutido decide na UI */ }
+  return null;
 }
 
 /** Mapa base 2D → personagem 3D (mega 9): a espécie escolhida no 2D

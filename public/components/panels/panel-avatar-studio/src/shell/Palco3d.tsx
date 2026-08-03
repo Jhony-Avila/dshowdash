@@ -63,7 +63,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
   // índice publicado (derivado) — fallback embutido se indisponível
   useEffect(() => {
     let vivo = true;
-    void carregarIndice3d().then((i) => { if (vivo && i) setIndice(i); });
+    void carregarIndice3d().then((i) => { if (vivo && i) setIndice(i.personagens); });
     return () => { vivo = false; };
   }, []);
 
