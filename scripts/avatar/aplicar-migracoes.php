@@ -143,7 +143,19 @@ foreach ($arquivos as $arquivo) {
     }
     foreach ($comandos as $i => $cmd) {
         try {
-            $pdo->exec($cmd);
+            // query() em vez de exec(): SELECTs de CONFERÊNCIA (ex.: registro
+            // §614) devolvem result set — sem consumir/fechar, o MySQL trava o
+            // próximo comando (erro 2014, visto em 2026-08-03). As linhas são
+            // IMPRESSAS: a conferência vira output de auditoria do runner.
+            $st = $pdo->query($cmd);
+            if ($st instanceof PDOStatement) {
+                if ($st->columnCount() > 0) {
+                    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $linha) {
+                        echo '   › ' . json_encode($linha, JSON_UNESCAPED_UNICODE) . "\n";
+                    }
+                }
+                $st->closeCursor();
+            }
             $totalOk++;
         } catch (Throwable $e) {
             fwrite(STDERR, sprintf("ERRO em %s (comando %d): %s\n",
