@@ -16,9 +16,11 @@ SELECT
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, `key`, name, short_description,
-   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer)
+   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer,
+   created_at, updated_at)
 SELECT c.id, b.id, r.id, 'animal_pug', 'animal_pug', 'Personagem 3D (as4-curados)',
-       'glb', 'published', '/assets/avatars/3d/personagens/animal_pug/thumb.webp', '/assets/avatars/3d/personagens/animal_pug/preview.webp', '2d,3d', '3d'
+       'glb', 'published', '/assets/avatars/3d/personagens/animal_pug/thumb.webp', '/assets/avatars/3d/personagens/animal_pug/preview.webp', '2d,3d', '3d',
+       '2026-08-03 00:00:00', '2026-08-03 00:00:00'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
 WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'animal_pug');
@@ -72,9 +74,11 @@ SELECT
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, `key`, name, short_description,
-   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer)
+   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer,
+   created_at, updated_at)
 SELECT c.id, b.id, r.id, 'humano_aventureiro', 'humano_aventureiro', 'Personagem 3D (as4-curados)',
-       'glb', 'published', '/assets/avatars/3d/personagens/humano_aventureiro/thumb.webp', '/assets/avatars/3d/personagens/humano_aventureiro/preview.webp', '2d,3d', '3d'
+       'glb', 'published', '/assets/avatars/3d/personagens/humano_aventureiro/thumb.webp', '/assets/avatars/3d/personagens/humano_aventureiro/preview.webp', '2d,3d', '3d',
+       '2026-08-03 00:00:00', '2026-08-03 00:00:00'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
 WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'humano_aventureiro');
@@ -128,9 +132,11 @@ SELECT
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, `key`, name, short_description,
-   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer)
+   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer,
+   created_at, updated_at)
 SELECT c.id, b.id, r.id, 'humano_casual', 'humano_casual', 'Personagem 3D (as4-curados)',
-       'glb', 'published', '/assets/avatars/3d/personagens/humano_casual/thumb.webp', '/assets/avatars/3d/personagens/humano_casual/preview.webp', '2d,3d', '3d'
+       'glb', 'published', '/assets/avatars/3d/personagens/humano_casual/thumb.webp', '/assets/avatars/3d/personagens/humano_casual/preview.webp', '2d,3d', '3d',
+       '2026-08-03 00:00:00', '2026-08-03 00:00:00'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
 WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'humano_casual');
@@ -184,9 +190,11 @@ SELECT
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, `key`, name, short_description,
-   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer)
+   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer,
+   created_at, updated_at)
 SELECT c.id, b.id, r.id, 'humano_punk', 'humano_punk', 'Personagem 3D (as4-curados)',
-       'glb', 'published', '/assets/avatars/3d/personagens/humano_punk/thumb.webp', '/assets/avatars/3d/personagens/humano_punk/preview.webp', '2d,3d', '3d'
+       'glb', 'published', '/assets/avatars/3d/personagens/humano_punk/thumb.webp', '/assets/avatars/3d/personagens/humano_punk/preview.webp', '2d,3d', '3d',
+       '2026-08-03 00:00:00', '2026-08-03 00:00:00'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
 WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'humano_punk');
@@ -240,9 +248,11 @@ SELECT
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, `key`, name, short_description,
-   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer)
+   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer,
+   created_at, updated_at)
 SELECT c.id, b.id, r.id, 'humano_terno', 'humano_terno', 'Personagem 3D (as4-curados)',
-       'glb', 'published', '/assets/avatars/3d/personagens/humano_terno/thumb.webp', '/assets/avatars/3d/personagens/humano_terno/preview.webp', '2d,3d', '3d'
+       'glb', 'published', '/assets/avatars/3d/personagens/humano_terno/thumb.webp', '/assets/avatars/3d/personagens/humano_terno/preview.webp', '2d,3d', '3d',
+       '2026-08-03 00:00:00', '2026-08-03 00:00:00'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
 WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_quaternius' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'humano_terno');
@@ -296,9 +306,11 @@ SELECT
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, `key`, name, short_description,
-   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer)
+   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer,
+   created_at, updated_at)
 SELECT c.id, b.id, r.id, 'androide', 'androide', 'Personagem 3D (as4-curados)',
-       'glb', 'published', '/assets/avatars/3d/personagens/androide/thumb.webp', '/assets/avatars/3d/personagens/androide/preview.webp', '2d,3d', '3d'
+       'glb', 'published', '/assets/avatars/3d/personagens/androide/thumb.webp', '/assets/avatars/3d/personagens/androide/preview.webp', '2d,3d', '3d',
+       '2026-08-03 00:00:00', '2026-08-03 00:00:00'
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
 WHERE c.`key` = 'rosto' AND b.`key` = 'cc0_threejs' AND r.`key` = 'comum'
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.`key` = 'androide');
