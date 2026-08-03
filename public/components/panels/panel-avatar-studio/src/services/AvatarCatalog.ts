@@ -14,6 +14,10 @@ import { renderAvatar, renderDataUri, hashConfig } from '../engine/render';
 import type { OpcoesRender } from '../engine/render';
 import { renderFotoEstilizada } from '../engine/render-foto';
 import type { OpcoesRenderFoto } from '../engine/render-foto';
+
+// §325: formatos de saída da foto — fachada re-exporta a fonte do engine
+export { FORMATOS_FOTO } from '../engine/render-foto';
+export type { FormatoFotoId } from '../engine/render-foto';
 import { BASES } from '../engine/partes/bases';
 import { ESPECIES } from '../engine/partes/especies';
 import { CABELOS } from '../engine/partes/cabelos';

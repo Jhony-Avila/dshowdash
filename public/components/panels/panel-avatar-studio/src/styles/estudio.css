@@ -647,13 +647,16 @@
 .avst-foto-item-estilo:hover { color: var(--avst-texto); border-color: var(--avst-acento); }
 
 /* ── 4.6 §21: FOTO ESTILIZADA ────────────────────────────────────── */
-.avst-foto-estilo { display: flex; flex-direction: column; gap: 12px; }
+/* min-width: 0 — sem isso o min-content das linhas de chips (20+ itens,
+   nowrap por design: são faixas com scroll horizontal) infla a coluna a
+   ~3000px e o overflow-x:auto dos chips nunca engata (§325 expôs o bug). */
+.avst-foto-estilo { display: flex; flex-direction: column; gap: 12px; min-width: 0; max-width: 100%; }
 .avst-ft-preview {
   width: 280px; max-width: 100%; margin: 0 auto; border-radius: 16px; overflow: hidden;
   background: #0a0d15; border: 1px solid var(--avst-borda);
 }
 .avst-ft-preview svg { width: 100%; height: auto; display: block; }
-.avst-ft-grupo { display: flex; flex-direction: column; gap: 5px; }
+.avst-ft-grupo { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .avst-ft-rotulo {
   font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
   color: var(--avst-texto-2); display: inline-flex; align-items: center; gap: 4px;
@@ -1446,3 +1449,8 @@
 }
 @keyframes avst-adiado { from { background-position: 130% 0; } to { background-position: -30% 0; } }
 @media (prefers-reduced-motion: reduce) { .avst-thumb-adiado { animation: none; } }
+
+/* §325: preview dos formatos WIDE ocupa a largura toda do painel */
+.avst-ft-preview[data-formato="header"], .avst-ft-preview[data-formato="banner"],
+.avst-ft-preview[data-formato="wallpaper"] { width: 100%; }
+.avst-ft-chip small { opacity: .65; font-size: 9.5px; margin-left: 3px; }
