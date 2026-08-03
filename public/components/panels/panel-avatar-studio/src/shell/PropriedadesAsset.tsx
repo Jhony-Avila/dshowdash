@@ -113,7 +113,21 @@ export function PropriedadesAsset({ config, aoAplicar, aoPrever }: {
                     </button>
                   )}
                 </div>
-                {defs.map((def) => {
+                {chave === 'aura' && (
+              <div className="avst5-paletas" role="group" aria-label="Presets rápidos da aura (§150.2)">
+                {([['Sutil', { intensidade: 0.4, velocidade: 0.7, raio: 0.85 }],
+                   ['Padrão', {}],
+                   ['Intensa', { intensidade: 1, velocidade: 1.5, raio: 1.15 }]] as Array<[string, Record<string, number>]>).map(([nome, valores]) => (
+                  <button key={nome} type="button" className="avst5-paleta"
+                    onClick={() => {
+                      let cfg = config;
+                      for (const d of defs) cfg = comParam(cfg, chave, d, valores[d.id] ?? d.padrao);
+                      aoPrever(null); aoAplicar(cfg);
+                    }}>{nome}</button>
+                ))}
+              </div>
+            )}
+            {defs.map((def) => {
                   const valor = config.params?.[chave]?.[def.id] ?? def.padrao;
                   return (
                     <label key={def.id} className="avst5-slider">

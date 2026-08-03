@@ -133,6 +133,9 @@ const comP = aplicarParamsSvg('aura', frag, { intensidade: 0.5, velocidade: 2 })
 ok(comP.includes('opacity="0.5"') && comP.includes('dur="1.6s"'), 'aura: opacity/dur nao aplicados');
 const emb = aplicarParamsSvg('emblema', '<circle/>', { escala: 1.2 });
 ok(emb.includes('translate(152 206) scale(1.2)'), 'emblema: escala fora do centro do peito');
+// §150.1 (P4): raio da aura = escala do centro do palco
+const rai = aplicarParamsSvg('aura', '<circle/>', { raio: 1.2 });
+ok(rai.includes('translate(120 120) scale(1.2)'), 'aura: raio deveria escalar do centro 120,120');
 
 // §73 (F3 C3): canais de cor por camada — roundtrip + paleta LOCAL no motor
 import { renderAvatar } from '${PAINEL}/src/engine/render';
