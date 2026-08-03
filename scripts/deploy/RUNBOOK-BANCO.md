@@ -12,7 +12,7 @@ Senhas NUNCA passam pelo chat: todo prompt de senha é digitado no terminal.
 ## Passo 1 — Verificar acesso e permissões (só leitura, seguro)
 
 ```bash
-cd /var/www/dshowdash && php -r '$e=parse_ini_file("config/.env"); echo "usuario_app=", $e["DB_USER"] ?? $e["DB_USERNAME"], "  banco=", $e["DB_NAME"] ?? $e["DB_DATABASE"], PHP_EOL;' && mysql -u root -p -e "SELECT CURRENT_USER(); SHOW GRANTS FOR CURRENT_USER();"
+cd /var/www/dshowdash && php -r 'require "config/db_connection.php"; $p=getConnection("DSHOWDASH"); echo "banco=", $p->query("SELECT DATABASE()")->fetchColumn(), "  usuario_app=", $p->query("SELECT CURRENT_USER()")->fetchColumn(), PHP_EOL;' && mysql -u root -p -e "SELECT CURRENT_USER(); SHOW GRANTS FOR CURRENT_USER();"
 ```
 
 *(digite a senha root no prompt; se não lembrar, vá ao ANEXO A antes)*
@@ -21,19 +21,19 @@ Esperado: `GRANT ALL PRIVILEGES` (ou ao menos CREATE) para o root.
 ## Passo 2 — Backup completo ANTES (obrigatório)
 
 ```bash
-cd /var/www/dshowdash && CARIMBO=$(date +%Y%m%d-%H%M%S) && DB=$(php -r '$e=parse_ini_file("config/.env"); echo $e["DB_NAME"] ?? $e["DB_DATABASE"];') && mysqldump -u root -p --single-transaction --routines --triggers "$DB" | gzip > /backup/db-pre-migracao-$CARIMBO.sql.gz && ls -lh /backup/db-pre-migracao-$CARIMBO.sql.gz && echo BACKUP_OK
+cd /var/www/dshowdash && CARIMBO=$(date +%Y%m%d-%H%M%S) && DB=$(php -r 'require "config/db_connection.php"; echo getConnection("DSHOWDASH")->query("SELECT DATABASE()")->fetchColumn();') && mysqldump -u root -p --single-transaction --routines --triggers "$DB" | gzip > /backup/db-pre-migracao-$CARIMBO.sql.gz && ls -lh /backup/db-pre-migracao-$CARIMBO.sql.gz && echo BACKUP_OK
 ```
 
 ## Passo 3 — Aplicar a migração (runner oficial, só o arquivo AS5)
 
 ```bash
-cd /var/www/dshowdash && read -s -p "senha root: " SENHA && echo && AVST_MIG_DSN="mysql:host=127.0.0.1;dbname=$(php -r '$e=parse_ini_file("config/.env"); echo $e["DB_NAME"] ?? $e["DB_DATABASE"];');charset=utf8mb4" AVST_MIG_USER=root AVST_MIG_PASS="$SENHA" php scripts/avatar/aplicar-migracoes.php sql/avatar/as5_schema.sql && unset SENHA && echo MIGRACAO_OK
+cd /var/www/dshowdash && read -s -p "senha root: " SENHA && echo && AVST_MIG_DSN="mysql:host=127.0.0.1;dbname=$(php -r 'require "config/db_connection.php"; echo getConnection("DSHOWDASH")->query("SELECT DATABASE()")->fetchColumn();');charset=utf8mb4" AVST_MIG_USER=root AVST_MIG_PASS="$SENHA" php scripts/avatar/aplicar-migracoes.php sql/avatar/as5_schema.sql && unset SENHA && echo MIGRACAO_OK
 ```
 
 ## Passo 4 — Validar o resultado
 
 ```bash
-cd /var/www/dshowdash && php scripts/avatar/aplicar-migracoes.php --checar && mysql -u root -p -e "USE $(php -r '$e=parse_ini_file("config/.env"); echo $e["DB_NAME"] ?? $e["DB_DATABASE"];'); SHOW TABLES LIKE 'avatar_%'; SELECT COUNT(*) linhas_states FROM avatar_states;"
+cd /var/www/dshowdash && php scripts/avatar/aplicar-migracoes.php --checar && mysql -u root -p -e "USE $(php -r 'require "config/db_connection.php"; echo getConnection("DSHOWDASH")->query("SELECT DATABASE()")->fetchColumn();'); SHOW TABLES LIKE 'avatar_%'; SELECT COUNT(*) linhas_states FROM avatar_states;"
 ```
 
 Esperado: 22/22 tabelas no `--checar`; as 5 novas listadas; `linhas_states = 0`.
@@ -45,7 +45,7 @@ Depois disso, ligar a flag `as5.estado_api` no navegador ativa o espelho
 As tabelas novas nascem vazias; remover não toca em nada existente:
 
 ```bash
-mysql -u root -p -e "USE $(cd /var/www/dshowdash && php -r '$e=parse_ini_file("config/.env"); echo $e["DB_NAME"] ?? $e["DB_DATABASE"];'); DROP TABLE IF EXISTS avatar_asset_files, avatar_asset_versions, avatar_state_versions, avatar_states, avatar_profiles;" && echo ROLLBACK_SCHEMA_OK
+mysql -u root -p -e "USE $(cd /var/www/dshowdash && php -r 'require "config/db_connection.php"; echo getConnection("DSHOWDASH")->query("SELECT DATABASE()")->fetchColumn();'); DROP TABLE IF EXISTS avatar_asset_files, avatar_asset_versions, avatar_state_versions, avatar_states, avatar_profiles;" && echo ROLLBACK_SCHEMA_OK
 ```
 
 Cenário extremo (não deve acontecer — nada existente é alterado): restaurar
