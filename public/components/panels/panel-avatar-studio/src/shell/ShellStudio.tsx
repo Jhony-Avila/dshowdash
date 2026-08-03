@@ -609,7 +609,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               {TEMAS.map((x) => (
                 <button key={x.id} type="button" role="radio" aria-checked={tema === x.id}
                   className={`avst5-tema-bolinha${tema === x.id ? ' avst5-tema-on' : ''}`}
-                  title={`Tema ${x.nome}`} style={{ background: x.cor }}
+                  title={`Tema ${x.nome}`} aria-label={`Tema ${x.nome}`}
+                  style={{ background: x.cor }}
                   onClick={() => trocarTema(x.id)} />
               ))}
             </div>
