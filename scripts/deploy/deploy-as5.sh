@@ -90,9 +90,13 @@ if [ -n "${DB_NOME}" ] && [ -n "${DB_USER}" ]; then
     [ -n "${DB_PORT}" ] && echo "port=${DB_PORT}"
     true
   } >> "${CRED_TMP}"
-  mysqldump --defaults-extra-file="${CRED_TMP}" --single-transaction --routines \
-    "${DB_NOME}" 2>/dev/null | gzip > "${BACKUP}/db-pre-as5-${CARIMBO}.sql.gz" \
-    || { rm -f "${CRED_TMP}"; falha "mysqldump (backup do banco)"; }
+  # --no-tablespaces: mysqldump 8 exige PROCESS p/ tablespaces — o usuário
+  # de APP não tem (e não deve ter) esse privilégio global; tablespaces são
+  # irrelevantes p/ restore lógico. stderr vai p/ o log (nunca /dev/null —
+  # lição de 2026-08-03: o erro real ficou invisível).
+  mysqldump --defaults-extra-file="${CRED_TMP}" --single-transaction --routines --no-tablespaces \
+    "${DB_NOME}" | gzip > "${BACKUP}/db-pre-as5-${CARIMBO}.sql.gz" \
+    || { rm -f "${CRED_TMP}"; falha "mysqldump (backup do banco — veja o erro acima)"; }
   rm -f "${CRED_TMP}"
   DUMP_KB=$(du -k "${BACKUP}/db-pre-as5-${CARIMBO}.sql.gz" | cut -f1)
   [ "${DUMP_KB}" -gt 1 ] || falha "dump do banco suspeito (${DUMP_KB}KB)"
