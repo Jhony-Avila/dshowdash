@@ -36,6 +36,7 @@ import { carregarEstado, estadoApiAtivo, salvarDraft, salvarVersao } from '../se
 import { telemetria } from '../services/Telemetria';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
+import { SHOWCASE_174, movimentoReduzido, sequencia } from './movimento';
 
 /** §68.3: chips de navegação por slot na categoria Acessórios. */
 const CHIPS_SLOT: Array<{ id: 'todos' | SlotAcessorio; nome: string }> = [
@@ -257,10 +258,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §65.3: comparação por tecla — SEGURAR mostra a versão persistida
   const [comparando, setComparando] = useState(false);
-  // §297 (P6) + §151 (P4): redução de movimento — palco ESTÁTICO (congela SMIL)
-  const [movReduzido] = useState(() => {
-    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
-  });
+  // §297 (P6) + §151 (P4): redução de movimento — palco ESTÁTICO (congela
+  // SMIL). Guard vem do Motion System §285 (fonte única).
+  const [movReduzido] = useState(movimentoReduzido);
   useEffect(() => {
     const baixo = (e: KeyboardEvent) => {
       const alvo = e.target as HTMLElement | null;
@@ -309,29 +309,16 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §174 SHOWCASE: apresentação cinematográfica 2D no modo Studio.
   // Sequência automática (fade → aproxima → gira → composição §174.1),
-  // duração média ~6s (§174.2); respeita redução de movimento (§297).
+  // ~6s (§174.2). A coreografia e o guard §297 vivem no Motion System §285.
   const [apresentando, setApresentando] = useState(false);
   const apresentar = useCallback(async () => {
     if (apresentando) return;
     setApresentando(true);
     setModo('studio');
     await new Promise((r) => setTimeout(r, 80)); // studio monta primeiro
-    const alvo = document.querySelector('.avst5-zoom') as HTMLElement | null;
-    if (alvo && !movReduzido && typeof alvo.animate === 'function') {
-      const passos: Array<[Keyframe[], number]> = [
-        [[{ opacity: 0, transform: 'scale(0.9)' }, { opacity: 1, transform: 'scale(1)' }], 900],
-        [[{ transform: 'scale(1)' }, { transform: 'scale(1.22)' }], 1700],
-        [[{ transform: 'scale(1.22) rotate(0deg)' }, { transform: 'scale(1.16) rotate(-2.2deg)' },
-          { transform: 'scale(1.2) rotate(2.2deg)' }, { transform: 'scale(1.18) rotate(0deg)' }], 2400],
-        [[{ transform: 'scale(1.18)' }, { transform: 'scale(1)' }], 1000],
-      ];
-      for (const [quadros, dur] of passos) {
-        try { await alvo.animate(quadros, { duration: dur, easing: 'ease-in-out', fill: 'forwards' }).finished; }
-        catch { break; }
-      }
-    }
+    await sequencia(document.querySelector('.avst5-zoom'), SHOWCASE_174);
     setApresentando(false);
-  }, [apresentando, movReduzido]);
+  }, [apresentando]);
 
   // §174.1 item 11: CAPTURA do palco em PNG (rasterização local, como na Foto)
   const capturarPalco = useCallback(async () => {
