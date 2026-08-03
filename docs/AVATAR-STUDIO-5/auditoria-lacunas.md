@@ -263,3 +263,17 @@ Descoberta: os 6 curados têm CLIPES REAIS embutidos (androide 14; demais 6
 
 Testes: shell-palco3d v2 (animações + auto-mapeamento E2E). Suíte 30/30 +
 núcleo verdes. Registro §614 regenerado com os manifests novos.
+
+## MEGA TAREFA 10 "Showcase 3D & Captura" · 2026-08-03
+
+✅ §174.1 CAPTURA 3D — botão no palco 3D → renderer.capturar (960×960,
+   determinística §508) → download PNG; paridade com o 2D.
+✅ §174 SHOWCASE 3D — coreografia com CLIPES REAIS: câmera cinemática
+   orbitando + roteiro do personagem (Wave → Dance/Victory/Running,
+   conforme o índice) → volta ao Idle e à câmera anterior (~6s);
+   botão local no palco + delegação do Apresentar do shell (sinal);
+   §297 pula a coreografia; data-apresentando p/ testabilidade.
+✅ shell-palco3d v3 — captura interceptada (PNG 960 nomeado) + showcase
+   (liga, anima, desabilita o botão, termina no Idle).
+
+Suíte: 30 entradas — 30/30 + núcleo verdes.

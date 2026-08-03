@@ -57,6 +57,37 @@ const orbita = await p.evaluate(async () => {
 });
 ok(orbita, 'câmera cinemática não orbitou');
 
+// R3c (mega 10): CAPTURA PNG 960 do palco 3D (download interceptado)
+const captura = await p.evaluate(async () => {
+  const original = HTMLAnchorElement.prototype.click;
+  let pego = null;
+  HTMLAnchorElement.prototype.click = function () { pego = { href: this.href, nome: this.download }; };
+  document.querySelector('[data-teste="p3d-capturar"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  for (let i = 0; i < 50 && !pego; i += 1) await new Promise((r) => setTimeout(r, 100));
+  HTMLAnchorElement.prototype.click = original;
+  if (!pego) return null;
+  const img = new Image();
+  await new Promise((r) => { img.onload = r; img.src = pego.href; });
+  return { nome: pego.nome, w: img.naturalWidth, h: img.naturalHeight };
+});
+ok(captura?.w === 960 && captura?.h === 960, `captura 3D deveria ser 960×960 (${captura?.w}×${captura?.h})`);
+ok(captura?.nome === 'dshow-avatar-3d-960.png', `nome da captura inesperado (${captura?.nome})`);
+
+// R3d (mega 10): SHOWCASE 3D — data-apresentando liga, quadros mudam, desliga
+await p.locator('[data-teste="p3d-apresentar"]').click();
+await p.waitForSelector('[data-teste="palco-3d"][data-apresentando]', { timeout: 5000 });
+const showQuadros = await p.evaluate(async () => {
+  const c = document.querySelector('[data-teste="palco-3d"] canvas');
+  const a2 = c.toDataURL();
+  await new Promise((r) => setTimeout(r, 900));
+  return a2 !== c.toDataURL();
+});
+ok(showQuadros, 'showcase 3D não animou os quadros');
+ok(await p.locator('[data-teste="p3d-apresentar"]').isDisabled(), 'Apresentar deveria desabilitar durante o showcase');
+await p.waitForSelector('[data-teste="palco-3d"]:not([data-apresentando])', { timeout: 15000 });
+ok(await p.locator('[data-teste="p3d-animacoes"] .avst5-p3d-chip[aria-checked="true"]', { hasText: 'Idle' }).count() === 1,
+  'showcase deveria terminar de volta no Idle');
+
 // R3b (mega 9): AUTO segue a BASE 2D — equipar Androide troca o personagem
 await p.locator('[data-teste="p3d-auto"]').click();
 await p.waitForTimeout(4000);

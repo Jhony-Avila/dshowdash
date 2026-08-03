@@ -323,6 +323,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // o chunk pesado (motor3d) só carrega quando o usuário LIGA o modo
   const flagPalco3d = flag('as5.palco3d');
   const [palco3d, setPalco3d] = useState(false);
+  // mega 10: Apresentar delega ao showcase 3D quando o palco 3D está ativo
+  const [sinal3d, setSinal3d] = useState(0);
 
     // §584 (P9): SOM no shell — reusa services/Som (WebAudio synth, sem
   // assets); preferência única compartilhada com o modo clássico
@@ -534,7 +536,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               <Clapperboard size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" title="Showcase — apresentação cinematográfica (§174)"
               data-teste="showcase" disabled={apresentando}
-              onClick={() => void apresentar()}>
+              onClick={() => { if (palco3d) setSinal3d((n) => n + 1); else void apresentar(); }}>
               <Play size={14} aria-hidden /> Apresentar</button>
             {flagPalco3d && (
               <button type="button" className="avst-botao" title="Prévia 3D (personagens curados)"
@@ -573,7 +575,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* viewport dominante (R1) — SEM scroll de página (R5) */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}>
             {palco3d ? (
-              <Palco3d estado={estadoDraft} movReduzido={movReduzido} />
+              <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d} />
             ) : (
               <div className="avst5-palco">
                 <div className="avst5-zoom" style={zoomEstilo}>

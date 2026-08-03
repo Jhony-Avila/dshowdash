@@ -1508,3 +1508,13 @@
   position: absolute; top: 84px; left: 14px; display: flex; gap: 5px; flex-wrap: wrap;
   align-items: center; max-width: 70%; color: var(--avst-texto-2, #8a93a6);
 }
+
+/* mega 10: ações do palco 3D (capturar + showcase) acima das câmeras */
+.avst5-p3d-acoes { position: absolute; bottom: 82px; right: 14px; display: flex; gap: 4px; }
+.avst5-p3d-acoes button {
+  width: 28px; height: 28px; display: grid; place-items: center; cursor: pointer;
+  border-radius: 8px; background: rgba(13, 16, 23, 0.82); color: var(--avst-texto-2, #8a93a6);
+  border: 1px solid var(--avst-borda, #232a38);
+}
+.avst5-p3d-acoes button:disabled { opacity: .45; cursor: default; }
+.avst5-p3d-acoes button:not(:disabled):hover { color: #fff; border-color: var(--avst-acento, #7c5cff); }
