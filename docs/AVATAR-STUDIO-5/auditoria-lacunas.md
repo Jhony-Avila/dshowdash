@@ -106,3 +106,25 @@ flakou 1× por timeout sob carga da suíte (passa isolado e na re-execução).
 
 ⚙️ Ainda futuros (inalterados): §285 Motion System · §296 i18n · §557
 skeletons async · e os ⛔ bloqueados por 3D/assets/infra listados acima.
+
+## MEGA TAREFA 2 "Movimento & Robustez" · 2026-08-03
+
+✅ §285 (P6) MOTION SYSTEM — shell/movimento.ts: movimentoReduzido() (guard
+   §297 central), animar(), sequencia(), presets MOVIMENTOS, coreografia
+   SHOWCASE_174 como dado; apresentar() §174 e celebrar() §158 migrados.
+✅ §158 (P4) COMPLETO — gatilho ao EQUIPAR: épico+ dispara MOVIMENTOS.brilho
+   (~700ms) no palco via Motion System (equipar+salvar agora cobertos).
+✅ §557 (P9) SKELETONS — .avst-esqueleto genérico (base compartilhada com o
+   thumb adiado §276); Conquistas distingue carregar≠falhar (vidaCarregando
+   no App), Histórico com 3 linhas skeleton, galeria de fotos com 4 quadrados.
+✅ PERF da grade — GradeItens lê o DRAFT (hover-preview não re-renderiza 40+
+   thumbnails; mesma correção do DetalheAsset) + React.memo no CardItem com
+   comparador documentado.
+🐛 FIX §90 — aleatorioInteligente sorteava base incompatível com item
+   BLOQUEADO (requerBase §35): validarConfig derrubava o item e o bloqueio
+   era violado (era a "flakiness" do shell-p1 — semente aleatória). Agora o
+   bloqueio vence a base nos modos completo e categoria:base. Regressão no
+   nucleo.test (40 sementes × 2 modos) + shell-p1 4× verde.
+
+Suíte: 24 testes (novo shell-polish.mjs: temas §590, dashboard §574,
+brilho-equipar §158 com contra-prova) — 24/24 + núcleo verdes em 2026-08-03.
