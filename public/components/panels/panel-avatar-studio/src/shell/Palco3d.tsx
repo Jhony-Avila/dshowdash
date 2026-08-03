@@ -10,7 +10,7 @@
 // continuam honestas; flag as5.palco3d fail-safe OFF; erro nunca derruba
 // o shell.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Clapperboard, PersonStanding, Sparkles, UserRound, Wand2 } from 'lucide-react';
+import { Box, Camera, Clapperboard, PersonStanding, Play, Sparkles, UserRound, Wand2 } from 'lucide-react';
 import type { EstadoAvatar } from '../nucleo/contratos';
 import type { EstadoCamera, RenderizadorAvatar } from '../nucleo/renderizador';
 import { criarRenderizador } from '../services/FabricaRenderizador';
@@ -36,9 +36,11 @@ function overrideGuardado(): string | null {
   try { return localStorage.getItem(CHAVE_OVERRIDE); } catch { return null; }
 }
 
-export function Palco3d({ estado, movReduzido }: {
+export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
   estado: EstadoAvatar;
   movReduzido: boolean;
+  /** mega 10: incrementa a cada clique em Apresentar (o shell delega §174) */
+  sinalApresentar?: number;
 }) {
   const refAlvo = useRef<HTMLDivElement>(null);
   const refR = useRef<RenderizadorAvatar | null>(null);
@@ -49,6 +51,10 @@ export function Palco3d({ estado, movReduzido }: {
   const [pendencias, setPendencias] = useState(0);
   const [cameraModo, setCameraModo] = useState<EstadoCamera['modo']>('corpo');
   const [animacao, setAnimacao] = useState('Idle');
+  // mega 10: SHOWCASE 3D (§174) — coreografia com clipes reais + órbita
+  const [apresentando, setApresentando] = useState(false);
+  const [sinalLocal, setSinalLocal] = useState(0);
+  const sinalShowcase = sinalApresentar + sinalLocal;
 
   const personagem = override ?? personagemParaBase(estado.body.base);
   const refPersonagem = useRef(personagem);
@@ -93,11 +99,12 @@ export function Palco3d({ estado, movReduzido }: {
     void r.aplicarEstado(estado).then((res) => {
       if (!res.ok) { setFase('indisponivel'); return; }
       setPendencias(res.pendencias.length);
+      if (apresentando) return; // coreografia §174 no comando
       r.definirCamera({ modo: cameraModo, distancia: 2.15 });
       // personagem novo pode não ter a animação atual → volta ao Idle
       void r.tocarAnimacao({ id: movReduzido ? 'nenhum' : animacao });
     });
-  }, [estado, personagem, fase, cameraModo, animacao, movReduzido]);
+  }, [estado, personagem, fase, cameraModo, animacao, movReduzido, apresentando]);
 
   const animacoesDoAtual = useMemo(() => {
     const doIndice = indice.find((p) => p.slug === personagem)?.animacoes ?? [];
@@ -112,6 +119,47 @@ export function Palco3d({ estado, movReduzido }: {
       if (slug) localStorage.setItem(CHAVE_OVERRIDE, slug);
       else localStorage.removeItem(CHAVE_OVERRIDE);
     } catch { /* sem storage */ }
+  }, []);
+
+  // mega 10 §174: roteiro com os clipes REAIS do personagem — Wave e um
+  // número musical (Dance/Victory/Running/Walk, o que existir); órbita
+  // cinemática durante; volta ao Idle + câmera anterior. §297 pula tudo.
+  useEffect(() => {
+    if (sinalShowcase === 0 || fase !== 'pronto' || movReduzido || apresentando) return;
+    const r = refR.current;
+    if (!r) return;
+    let vivo = true;
+    const espera = (ms: number) => new Promise((res) => { setTimeout(res, ms); });
+    void (async () => {
+      setApresentando(true);
+      const todas = indice.find((x) => x.slug === refPersonagem.current)?.animacoes ?? [];
+      const roteiro = ['Wave', 'Dance', 'Victory', 'Running', 'Walk'].filter((x) => todas.includes(x)).slice(0, 2);
+      r.definirCamera({ modo: 'cinematica' });
+      for (const clipe of roteiro.length ? roteiro : ['Idle']) {
+        await r.tocarAnimacao({ id: clipe, transicaoMs: 350 });
+        await espera(2600);
+        if (!vivo) return;
+      }
+      await r.tocarAnimacao({ id: 'Idle', transicaoMs: 400 });
+      r.definirCamera({ modo: cameraModo, distancia: 2.15 });
+      setAnimacao('Idle');
+      setApresentando(false);
+    })();
+    return () => { vivo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sinalShowcase]);
+
+  // mega 10 §174.1: captura PNG 960 determinística do palco 3D
+  const capturar3d = useCallback(async () => {
+    const r = refR.current;
+    if (!r) return;
+    try {
+      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
+      const a = document.createElement('a');
+      a.href = foto.dataUri;
+      a.download = 'dshow-avatar-3d-960.png';
+      a.click();
+    } catch { /* captura é cosmética — nunca derruba o palco */ }
   }, []);
 
   const trocarCamera = useCallback((modo: EstadoCamera['modo']) => {
@@ -132,7 +180,7 @@ export function Palco3d({ estado, movReduzido }: {
   }
 
   return (
-    <div className="avst5-p3d" data-teste="palco-3d">
+    <div className="avst5-p3d" data-teste="palco-3d" data-apresentando={apresentando || undefined}>
       <div ref={refAlvo} className="avst5-p3d-tela" aria-label="Palco 3D (prévia)" />
       {fase === 'pronto' && (<>
         <div className="avst5-p3d-personagens" role="radiogroup" aria-label="Personagem da prévia 3D">
@@ -164,6 +212,13 @@ export function Palco3d({ estado, movReduzido }: {
             ))}
           </div>
         )}
+        <div className="avst5-p3d-acoes">
+          <button type="button" title="Capturar PNG do palco 3D (§174.1)" data-teste="p3d-capturar"
+            onClick={() => void capturar3d()}><Camera size={13} aria-hidden /></button>
+          <button type="button" title="Showcase 3D (§174)" data-teste="p3d-apresentar"
+            disabled={apresentando || movReduzido}
+            onClick={() => setSinalLocal((n) => n + 1)}><Play size={13} aria-hidden /></button>
+        </div>
         <div className="avst5-p3d-cameras" role="radiogroup" aria-label="Câmera (§453.1)">
           <button type="button" role="radio" aria-checked={cameraModo === 'corpo'} title="Corpo inteiro"
             onClick={() => trocarCamera('corpo')}><PersonStanding size={13} aria-hidden /></button>
