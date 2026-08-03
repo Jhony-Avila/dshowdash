@@ -59,18 +59,46 @@ tar -czf "${BACKUP}/pre-as5-${CARIMBO}-dist.tar.gz" \
   public/components/panels/panel-dashboard/dist \
   public/components/footer/dist \
   public/index.html api/avatar 2>/dev/null || falha "tar do backup de código"
-DB_NOME=$(php -r '$e=parse_ini_file("config/.env"); echo $e["DB_NAME"] ?? $e["DB_DATABASE"] ?? "";' 2>/dev/null || true)
-DB_USER=$(php -r '$e=parse_ini_file("config/.env"); echo $e["DB_USER"] ?? $e["DB_USERNAME"] ?? "";' 2>/dev/null || true)
-DB_PASS=$(php -r '$e=parse_ini_file("config/.env"); echo $e["DB_PASS"] ?? $e["DB_PASSWORD"] ?? "";' 2>/dev/null || true)
+# Credenciais pela MESMA fonte que o app usa (config/db_connection.php →
+# env DB_DSHOWDASH_*): fonte única de verdade — o servidor NÃO tem config/.env
+# (descoberto em 2026-08-03). getConnection() força a carga do env do app;
+# valores ficam SÓ em variáveis do shell, nunca impressos nem logados.
+LER_CRED='require "config/db_connection.php";
+  try { getConnection("DSHOWDASH"); } catch (Throwable $e) { /* env já carregado no require */ }
+  echo getenv("DB_DSHOWDASH_" . ($argv[1] ?? "")) ?: "";'
+DB_NOME=$(php -r "${LER_CRED}" NAME 2>/dev/null || true)
+DB_USER=$(php -r "${LER_CRED}" USER 2>/dev/null || true)
+DB_PASS=$(php -r "${LER_CRED}" PASS 2>/dev/null || true)
+DB_HOST=$(php -r "${LER_CRED}" HOST 2>/dev/null || true)
+DB_PORT=$(php -r "${LER_CRED}" PORT 2>/dev/null || true)
+if [ -z "${DB_NOME}" ] || [ -z "${DB_USER}" ]; then
+  # fallback legado (instalações que usem config/.env estilo dotenv)
+  DB_NOME=$(php -r '$e=@parse_ini_file("config/.env"); echo $e["DB_NAME"] ?? $e["DB_DATABASE"] ?? "";' 2>/dev/null || true)
+  DB_USER=$(php -r '$e=@parse_ini_file("config/.env"); echo $e["DB_USER"] ?? $e["DB_USERNAME"] ?? "";' 2>/dev/null || true)
+  DB_PASS=$(php -r '$e=@parse_ini_file("config/.env"); echo $e["DB_PASS"] ?? $e["DB_PASSWORD"] ?? "";' 2>/dev/null || true)
+fi
 if [ -n "${DB_NOME}" ] && [ -n "${DB_USER}" ]; then
-  MYSQL_PWD="${DB_PASS}" mysqldump -u "${DB_USER}" --single-transaction --routines \
+  # arquivo de credencial EFÊMERO (600, dentro de /backup, removido já já) —
+  # senha fora de argv/env do mysqldump (não aparece em ps/painéis)
+  CRED_TMP=$(mktemp "${BACKUP}/.dbcred-XXXXXX") || falha "mktemp da credencial"
+  chmod 600 "${CRED_TMP}"
+  {
+    echo "[client]"
+    echo "user=${DB_USER}"
+    echo "password=${DB_PASS}"
+    [ -n "${DB_HOST}" ] && echo "host=${DB_HOST}"
+    [ -n "${DB_PORT}" ] && echo "port=${DB_PORT}"
+    true
+  } >> "${CRED_TMP}"
+  mysqldump --defaults-extra-file="${CRED_TMP}" --single-transaction --routines \
     "${DB_NOME}" 2>/dev/null | gzip > "${BACKUP}/db-pre-as5-${CARIMBO}.sql.gz" \
-    || falha "mysqldump (backup do banco)"
+    || { rm -f "${CRED_TMP}"; falha "mysqldump (backup do banco)"; }
+  rm -f "${CRED_TMP}"
   DUMP_KB=$(du -k "${BACKUP}/db-pre-as5-${CARIMBO}.sql.gz" | cut -f1)
   [ "${DUMP_KB}" -gt 1 ] || falha "dump do banco suspeito (${DUMP_KB}KB)"
-  echo "✓ banco: db-pre-as5-${CARIMBO}.sql.gz (${DUMP_KB}KB)"
+  echo "✓ banco: db-pre-as5-${CARIMBO}.sql.gz (${DUMP_KB}KB · ${DB_NOME} via db_connection.php)"
 else
-  echo "⚠ credenciais do banco não lidas do config/.env — backup de banco PULADO (código segue)"
+  echo "⚠ credenciais não obtidas (db_connection.php/env) — backup de banco PULADO (código segue)"
 fi
 echo "✓ código: pre-as5-${CARIMBO}-dist.tar.gz (rollback: git reset --hard ${COMMIT_ANTES} + tar -xzf)"
 
