@@ -1,36 +1,39 @@
-// shell/Palco3d.tsx — PRÉVIA 3D no viewport do shell (AS5 · mega 7).
-// @version 1.0.0  @created 2026-08-03
+// shell/Palco3d.tsx — PRÉVIA 3D no viewport do shell (AS5 · megas 7+9).
+// @version 2.0.0  @created 2026-08-03  @updated 2026-08-03 (mega 9)
 //
 // Wrapper React fino do Renderizador3d (§401) via fábrica: o three só
-// atravessa a rede quando o usuário LIGA o 3D (import dinâmico → chunk
-// motor3d). Mostra os personagens CURADOS publicados pelo pipeline
-// (public/assets/avatars/3d/personagens); pendências §481 viram um chip
-// honesto — itens equipados seguem representados no 2D até o catálogo 3D
-// ganhar as peças. Flag as5.palco3d (fail-safe OFF) decide se o botão
-// sequer aparece; erro aqui NUNCA derruba o shell (estado indisponível).
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, Clapperboard, PersonStanding, UserRound } from 'lucide-react';
+// atravessa a rede quando o usuário LIGA o 3D (import dinâmico → motor3d).
+// Mega 9: personagens vêm do ÍNDICE publicado (index.json derivado da
+// publicação; fallback embutido), a BASE 2D escolhida decide o personagem
+// (auto-mapeamento com OVERRIDE manual + chip "Auto"), e as ANIMAÇÕES
+// REAIS do GLB viram seletor (Idle/Walk/Wave/Dance…). Pendências §481
+// continuam honestas; flag as5.palco3d fail-safe OFF; erro nunca derruba
+// o shell.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Box, Clapperboard, PersonStanding, Sparkles, UserRound, Wand2 } from 'lucide-react';
 import type { EstadoAvatar } from '../nucleo/contratos';
 import type { EstadoCamera, RenderizadorAvatar } from '../nucleo/renderizador';
 import { criarRenderizador } from '../services/FabricaRenderizador';
+import { carregarIndice3d, personagemParaBase } from '../services/Personagens3d';
+import type { EntradaIndice3d } from '../services/Personagens3d';
 
-/** Personagens curados publicados (AS4 → pipeline mega 5, versionados). */
-export const PERSONAGENS_CURADOS = [
-  { slug: 'humano_casual', nome: 'Casual' },
-  { slug: 'humano_aventureiro', nome: 'Aventureiro' },
-  { slug: 'humano_terno', nome: 'Executivo' },
-  { slug: 'humano_punk', nome: 'Punk' },
-  { slug: 'androide', nome: 'Androide' },
-  { slug: 'animal_pug', nome: 'Pug' },
-] as const;
+/** Fallback embutido (índice indisponível — ex.: publicação parcial). */
+const CURADOS_FALLBACK: EntradaIndice3d[] = [
+  { slug: 'humano_casual', nome: 'Casual', thumb: '', animacoes: [] },
+  { slug: 'humano_aventureiro', nome: 'Aventureiro', thumb: '', animacoes: [] },
+  { slug: 'humano_terno', nome: 'Executivo', thumb: '', animacoes: [] },
+  { slug: 'humano_punk', nome: 'Punk', thumb: '', animacoes: [] },
+  { slug: 'androide', nome: 'Androide', thumb: '', animacoes: [] },
+  { slug: 'animal_pug', nome: 'Pug', thumb: '', animacoes: [] },
+];
 
-const CHAVE_PERSONAGEM = 'dshow.avst5.p3d.personagem.v1';
+/** Animações em destaque no seletor (ordem de preferência §174-friendly). */
+const ANIMACOES_DESTAQUE = ['Idle', 'Walk', 'Walking', 'Running', 'Wave', 'Dance', 'Jump', 'Victory', 'ThumbsUp'];
 
-function personagemGuardado(): string {
-  try {
-    const s = localStorage.getItem(CHAVE_PERSONAGEM);
-    return PERSONAGENS_CURADOS.some((p) => p.slug === s) ? (s as string) : 'humano_casual';
-  } catch { return 'humano_casual'; }
+const CHAVE_OVERRIDE = 'dshow.avst5.p3d.personagem.v1';
+
+function overrideGuardado(): string | null {
+  try { return localStorage.getItem(CHAVE_OVERRIDE); } catch { return null; }
 }
 
 export function Palco3d({ estado, movReduzido }: {
@@ -39,11 +42,24 @@ export function Palco3d({ estado, movReduzido }: {
 }) {
   const refAlvo = useRef<HTMLDivElement>(null);
   const refR = useRef<RenderizadorAvatar | null>(null);
-  const refPersonagem = useRef(personagemGuardado());
-  const [personagem, setPersonagem] = useState(refPersonagem.current);
+  // mega 9: override manual (null = AUTO — segue a base 2D do estado)
+  const [override, setOverride] = useState<string | null>(overrideGuardado);
+  const [indice, setIndice] = useState<EntradaIndice3d[]>(CURADOS_FALLBACK);
   const [fase, setFase] = useState<'carregando' | 'pronto' | 'indisponivel'>('carregando');
   const [pendencias, setPendencias] = useState(0);
   const [cameraModo, setCameraModo] = useState<EstadoCamera['modo']>('corpo');
+  const [animacao, setAnimacao] = useState('Idle');
+
+  const personagem = override ?? personagemParaBase(estado.body.base);
+  const refPersonagem = useRef(personagem);
+  refPersonagem.current = personagem;
+
+  // índice publicado (derivado) — fallback embutido se indisponível
+  useEffect(() => {
+    let vivo = true;
+    void carregarIndice3d().then((i) => { if (vivo && i) setIndice(i); });
+    return () => { vivo = false; };
+  }, []);
 
   // monta o renderer UMA vez; descarta ao sair do modo 3D
   useEffect(() => {
@@ -70,28 +86,32 @@ export function Palco3d({ estado, movReduzido }: {
     };
   }, []);
 
-  // estado do DRAFT + personagem escolhido → renderer (pendências honestas)
+  // estado do DRAFT + personagem (auto ou override) → renderer
   useEffect(() => {
-    refPersonagem.current = personagem;
     const r = refR.current;
     if (!r || fase !== 'pronto') return;
     void r.aplicarEstado(estado).then((res) => {
       if (!res.ok) { setFase('indisponivel'); return; }
       setPendencias(res.pendencias.length);
-      // enquadramento com folga (o default do renderer corta o topo em
-      // viewports largos) — respeita o modo de câmera escolhido
       r.definirCamera({ modo: cameraModo, distancia: 2.15 });
+      // personagem novo pode não ter a animação atual → volta ao Idle
+      void r.tocarAnimacao({ id: movReduzido ? 'nenhum' : animacao });
     });
-  }, [estado, personagem, fase, cameraModo]);
+  }, [estado, personagem, fase, cameraModo, animacao, movReduzido]);
 
-  // §297: movimento reduzido = sem idle
-  useEffect(() => {
-    if (fase === 'pronto') void refR.current?.tocarAnimacao({ id: movReduzido ? 'nenhum' : 'idle' });
-  }, [movReduzido, fase]);
+  const animacoesDoAtual = useMemo(() => {
+    const doIndice = indice.find((p) => p.slug === personagem)?.animacoes ?? [];
+    const destaque = ANIMACOES_DESTAQUE.filter((a) => doIndice.includes(a));
+    return destaque.length ? destaque.slice(0, 6) : doIndice.slice(0, 6);
+  }, [indice, personagem]);
 
-  const trocarPersonagem = useCallback((slug: string) => {
-    setPersonagem(slug);
-    try { localStorage.setItem(CHAVE_PERSONAGEM, slug); } catch { /* sem storage */ }
+  const trocarPersonagem = useCallback((slug: string | null) => {
+    setOverride(slug);
+    setAnimacao('Idle');
+    try {
+      if (slug) localStorage.setItem(CHAVE_OVERRIDE, slug);
+      else localStorage.removeItem(CHAVE_OVERRIDE);
+    } catch { /* sem storage */ }
   }, []);
 
   const trocarCamera = useCallback((modo: EstadoCamera['modo']) => {
@@ -116,14 +136,34 @@ export function Palco3d({ estado, movReduzido }: {
       <div ref={refAlvo} className="avst5-p3d-tela" aria-label="Palco 3D (prévia)" />
       {fase === 'pronto' && (<>
         <div className="avst5-p3d-personagens" role="radiogroup" aria-label="Personagem da prévia 3D">
-          {PERSONAGENS_CURADOS.map((p) => (
-            <button key={p.slug} type="button" role="radio" aria-checked={personagem === p.slug}
+          <button type="button" role="radio" aria-checked={override === null}
+            className={`avst5-p3d-chip${override === null ? ' avst5-p3d-chip-on' : ''}`}
+            title="Segue a espécie escolhida no 2D" data-teste="p3d-auto"
+            onClick={() => trocarPersonagem(null)}>
+            <Wand2 size={11} aria-hidden /> Auto
+          </button>
+          {indice.map((p) => (
+            <button key={p.slug} type="button" role="radio"
+              aria-checked={override === p.slug || (override === null && personagem === p.slug)}
               className={`avst5-p3d-chip${personagem === p.slug ? ' avst5-p3d-chip-on' : ''}`}
               onClick={() => trocarPersonagem(p.slug)}>
               {p.nome}
             </button>
           ))}
         </div>
+        {animacoesDoAtual.length > 0 && (
+          <div className="avst5-p3d-animacoes" role="radiogroup" aria-label="Animação"
+            data-teste="p3d-animacoes">
+            <Sparkles size={11} aria-hidden />
+            {animacoesDoAtual.map((a) => (
+              <button key={a} type="button" role="radio" aria-checked={animacao === a}
+                className={`avst5-p3d-chip${animacao === a ? ' avst5-p3d-chip-on' : ''}`}
+                onClick={() => setAnimacao(a)}>
+                {a}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="avst5-p3d-cameras" role="radiogroup" aria-label="Câmera (§453.1)">
           <button type="button" role="radio" aria-checked={cameraModo === 'corpo'} title="Corpo inteiro"
             onClick={() => trocarCamera('corpo')}><PersonStanding size={13} aria-hidden /></button>
@@ -133,7 +173,7 @@ export function Palco3d({ estado, movReduzido }: {
             onClick={() => trocarCamera('cinematica')}><Clapperboard size={13} aria-hidden /></button>
         </div>
         <div className="avst5-p3d-nota" role="note" data-teste="p3d-pendencias">
-          Prévia 3D (curados)
+          {override === null ? 'Auto pela espécie 2D' : 'Personagem fixado'}
           {pendencias > 0 ? ` · ${pendencias} item(ns) equipados seguem no 2D` : ''}
         </div>
       </>)}

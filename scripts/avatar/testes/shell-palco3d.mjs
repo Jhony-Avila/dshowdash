@@ -28,7 +28,13 @@ const pintou = await p.evaluate(() => {
 });
 ok(pintou > 2000, `canvas 3D não pintou (${pintou} bytes de dataURL)`);
 ok(await p.locator('[data-teste="p3d-pendencias"]').count() === 1, 'chip de pendências §481 ausente');
-ok(await p.locator('.avst5-p3d-personagens .avst5-p3d-chip').count() === 6, 'esperava 6 personagens curados');
+ok(await p.locator('.avst5-p3d-personagens .avst5-p3d-chip').count() === 7, 'esperava Auto + 6 personagens (índice)');
+// mega 9: ANIMAÇÕES reais viram seletor; trocar seleção funciona
+ok(await p.locator('[data-teste="p3d-animacoes"] .avst5-p3d-chip').count() >= 2, 'seletor de animações ausente');
+await p.locator('[data-teste="p3d-animacoes"] .avst5-p3d-chip', { hasText: 'Wave' }).click();
+await p.waitForTimeout(600);
+ok(await p.locator('[data-teste="p3d-animacoes"] .avst5-p3d-chip[aria-checked="true"]', { hasText: 'Wave' }).count() === 1,
+  'seleção de animação não refletiu');
 await p.screenshot({ path: `${SAIDA}/palco3d-casual.png` });
 
 // R2: trocar de personagem recarrega sem erro (Androide)
@@ -50,6 +56,21 @@ const orbita = await p.evaluate(async () => {
   return a !== c.toDataURL();
 });
 ok(orbita, 'câmera cinemática não orbitou');
+
+// R3b (mega 9): AUTO segue a BASE 2D — equipar Androide troca o personagem
+await p.locator('[data-teste="p3d-auto"]').click();
+await p.waitForTimeout(4000);
+await p.evaluate(() => { [...document.querySelectorAll('.avst5-cat')].find((x) => x.textContent.includes('Rosto'))?.click(); });
+await p.waitForTimeout(700);
+await p.evaluate(() => {
+  const alvo = [...document.querySelectorAll('.avst5-painel .avst-card')].find((c) => c.textContent.includes('Androide'));
+  alvo?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+});
+await p.waitForTimeout(6000);
+ok(await p.locator('.avst5-p3d-personagens .avst5-p3d-chip-on', { hasText: 'Androide' }).count() === 1,
+  'auto-mapeamento base 2D→3D não trocou p/ Androide');
+ok((await p.locator('[data-teste="p3d-pendencias"]').textContent())?.includes('Auto'),
+  'nota deveria indicar modo Auto');
 
 // R4: voltar ao 2D restaura o palco SVG (e o 3D é descartado)
 await p.locator('[data-teste="botao-3d"]').click();

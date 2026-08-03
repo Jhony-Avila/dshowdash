@@ -59,6 +59,11 @@ export class Renderizador3d implements RenderizadorAvatar {
   private orbitaAuto = false;
   private bones: Map<string, THREE.Bone> = new Map();
   private poseBase: Map<string, THREE.Quaternion> = new Map();
+  // ANIMAÇÕES REAIS (mega 9): clipes do próprio GLB via AnimationMixer;
+  // o idle procedural vira FALLBACK p/ modelos sem clipes (ex.: manequim)
+  private mixer: THREE.AnimationMixer | null = null;
+  private clipes: Map<string, THREE.AnimationClip> = new Map();
+  private acaoAtual: THREE.AnimationAction | null = null;
 
   constructor(opcoes: OpcoesRenderizador3d = {}) {
     this.opcoes = {
@@ -149,9 +154,33 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   async tocarAnimacao(pedido: PedidoAnimacao): Promise<void> {
-    // hoje: idle procedural (§436-ready). Clipes reais entram com o UBC —
-    // aqui só ligamos/desligamos; id desconhecido é ignorado sem erro.
     this.idleAtivo = pedido.id !== 'nenhum';
+    if (!this.mixer) return; // sem clipes no GLB → idle procedural decide
+    if (pedido.id === 'nenhum') {
+      this.acaoAtual?.fadeOut((pedido.transicaoMs ?? 200) / 1000);
+      this.acaoAtual = null;
+      return;
+    }
+    const clipe = this.clipes.get(pedido.id);
+    if (!clipe || this.acaoAtual?.getClip() === clipe) return; // desconhecido/já ativo: sem erro
+    const nova = this.mixer.clipAction(clipe);
+    nova.reset();
+    nova.setLoop(pedido.loop === false ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+    nova.clampWhenFinished = pedido.loop === false;
+    const cross = (pedido.transicaoMs ?? 280) / 1000;
+    if (this.acaoAtual) {
+      nova.play();
+      this.acaoAtual.crossFadeTo(nova, cross, false);
+    } else {
+      nova.fadeIn(cross).play();
+    }
+    this.acaoAtual = nova;
+  }
+
+  /** Clipes REAIS disponíveis no personagem carregado (mega 9 — a UI
+   *  monta o seletor daqui; vazio = modelo sem animações embutidas). */
+  animacoesDisponiveis(): string[] {
+    return [...this.clipes.keys()];
   }
 
   async tocarPoder(_pedido: PedidoPoder): Promise<void> {
@@ -190,6 +219,10 @@ export class Renderizador3d implements RenderizadorAvatar {
   async descartar(): Promise<void> {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
+    this.mixer?.stopAllAction();
+    this.mixer = null;
+    this.acaoAtual = null;
+    this.clipes.clear();
     this.removerPersonagem();
     if (this.renderer) {
       this.renderer.dispose();
@@ -217,6 +250,20 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.cena?.add(this.personagem);
     this.slugAtual = slug;
     this.lodAtual = url;
+    // clipes REAIS do GLB (mega 9): mixer + mapa por nome; toca Idle já
+    this.mixer?.stopAllAction();
+    this.mixer = null;
+    this.acaoAtual = null;
+    this.clipes.clear();
+    if (gltf.animations?.length) {
+      this.mixer = new THREE.AnimationMixer(this.personagem);
+      for (const clipe of gltf.animations) this.clipes.set(clipe.name, clipe);
+      const idle = this.clipes.get('Idle') ?? this.clipes.get('Idle_Neutral') ?? gltf.animations[0];
+      if (idle && this.idleAtivo) {
+        this.acaoAtual = this.mixer.clipAction(idle);
+        this.acaoAtual.play();
+      }
+    }
     // bones p/ o idle procedural + pose de referência (volta ao pausar)
     this.bones.clear();
     this.poseBase.clear();
@@ -245,9 +292,9 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.lodAtual = null;
   }
 
-  /** Idle procedural: respiração no tronco + balanço sutil (§436-ready). */
+  /** Idle procedural — FALLBACK p/ GLBs sem clipes (ex.: manequim dev). */
   private animarIdle(): void {
-    if (!this.idleAtivo) return;
+    if (!this.idleAtivo || this.mixer) return;
     const t = this.relogio;
     const girar = (nome: string, eixoX: number, eixoZ: number) => {
       const bone = this.bones.get(nome);
@@ -268,6 +315,7 @@ export class Renderizador3d implements RenderizadorAvatar {
     if (this.pausado || !this.renderer || !this.cena || !this.camera) return;
     this.relogio += 1 / 60; // passo FIXO: idle igual em qualquer refresh
     this.animarIdle();
+    this.mixer?.update(1 / 60);
     if (this.orbitaAuto && this.personagem) {
       const caixa = new THREE.Box3().setFromObject(this.personagem);
       const centro = caixa.getCenter(new THREE.Vector3());

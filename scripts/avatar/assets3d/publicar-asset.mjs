@@ -64,7 +64,7 @@ export async function publicarAsset(opcoes) {
     origem = 'ubc-standard-v1',
     licencaTipo = 'CC0',
     comprovante = 'storage/assets-3d-fonte/ubc-standard-v1/LICENSE.txt',
-    animacoes = ['idle'],
+    animacoes = null, // null = EXTRAIR do GLB (mega 9); lista = override
     data = null,
     validar = true,
     log = (m) => console.log(m),
@@ -146,6 +146,11 @@ export async function publicarAsset(opcoes) {
     log(`${lod}: ${antes} → ${depois} triângulos (limite §631: ${limite})`);
   }
 
+  // animações REAIS do GLB (mega 9) — nada de hardcode: o manifest lista
+  // exatamente os clipes embutidos (a UI monta o seletor daqui)
+  const clipesReais = (lod0.getRoot().listAnimations() ?? []).map((an) => an.getName()).filter(Boolean);
+  const animacoesFinal = animacoes ?? (clipesReais.length ? clipesReais : []);
+
   // manifest §517 (hashes calculados dos ARQUIVOS finais — §478)
   const manifest = {
     id, tipo, versao: 1, rig,
@@ -157,7 +162,7 @@ export async function publicarAsset(opcoes) {
     },
     triangulos: medidas,
     ...(Object.keys(excecoes).length ? { excecoes } : {}),
-    animacoes,
+    animacoes: animacoesFinal,
     licenca: { tipo: licencaTipo, fonte: origem, comprovante },
     origem,
     fonte_original: basename(String(fonte)),
@@ -195,7 +200,9 @@ if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
     origem: argumento('origem', 'ubc-standard-v1'),
     licencaTipo: argumento('licenca', 'CC0'),
     comprovante: argumento('comprovante', 'storage/assets-3d-fonte/ubc-standard-v1/LICENSE.txt'),
-    animacoes: argumento('animacoes', 'idle').split(',').map((s) => s.trim()).filter(Boolean),
+    animacoes: process.argv.includes('--animacoes')
+      ? argumento('animacoes', '').split(',').map((s) => s.trim()).filter(Boolean)
+      : null, // default: extrair do GLB
     data: argumento('data', null),
     validar: !process.argv.includes('--sem-validar'),
   }).then(({ pasta, medidas }) => {
