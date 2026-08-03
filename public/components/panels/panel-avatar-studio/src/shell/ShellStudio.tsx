@@ -47,6 +47,15 @@ const CHIPS_SLOT: Array<{ id: 'todos' | SlotAcessorio; nome: string }> = [
 
 const CHAVE_LARGURAS = 'dshow.avst5.larguras.v1';
 const CHAVE_FUNDO = 'dshow.avst5.fundo.v1';
+// §590 (P9): TEMAS de acento do estúdio — preferência local, nunca flag
+const CHAVE_TEMA = 'dshow.avst5.tema.v1';
+const TEMAS = [
+  { id: 'roxo', nome: 'Roxo', cor: '#7c5cff' },
+  { id: 'verde', nome: 'Verde', cor: '#39d98a' },
+  { id: 'ambar', nome: 'Âmbar', cor: '#e8b64c' },
+  { id: 'ciano', nome: 'Ciano', cor: '#4cd9e8' },
+] as const;
+type TemaId = (typeof TEMAS)[number]['id'];
 
 /** R2 (P1 §9.4): enquadramento AUTOMÁTICO por categoria — retângulo do
  *  viewBox 240×240 que a câmera deve ocupar (FOCO_THUMB é a semente). */
@@ -127,6 +136,19 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // §69.1: conflito pendente aguardando decisão do usuário
   const [conflito, setConflito] = useState<{ novo: AvatarConfig; slot: string; antes: string; depois: string } | null>(null);
   const refPainel = useRef<HTMLDivElement>(null);
+  // §590: tema de acento persistido
+  const [tema, setTema] = useState<TemaId>(() => {
+    try {
+      const v = localStorage.getItem(CHAVE_TEMA) as TemaId | null;
+      return v && TEMAS.some((x) => x.id === v) ? v : 'roxo';
+    } catch { return 'roxo'; }
+  });
+  const trocarTema = (id: TemaId) => {
+    setTema(id);
+    try { localStorage.setItem(CHAVE_TEMA, id); } catch { /* sem storage */ }
+  };
+  const corTema = TEMAS.find((x) => x.id === tema)!.cor;
+
   const [fundo, setFundo] = useState<FundoPalco>(() => {
     try {
       const f = localStorage.getItem(CHAVE_FUNDO) as FundoPalco | null;
@@ -451,7 +473,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
-        style={{ '--avst5-esq': `${larguras.esq}px`,
+        style={{ '--avst-acento': corTema, '--avst5-esq': `${larguras.esq}px`,
           '--avst5-dir': painelFechado ? '36px' : painelLargo ? '560px' : `${larguras.dir}px` } as React.CSSProperties}>
         {/* header interno (§626) */}
         <header className="avst5-header">
@@ -577,6 +599,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {modo === 'studio' && configVisivel.titulo && (
               <div className="avst5-titulo-selo" role="note">{String(configVisivel.titulo).replace(/^tit_/, '').replace(/_/g, ' ')}</div>
             )}
+            <div className="avst5-temas" role="radiogroup" aria-label="Tema do estúdio (§590)">
+              {TEMAS.map((x) => (
+                <button key={x.id} type="button" role="radio" aria-checked={tema === x.id}
+                  className={`avst5-tema-bolinha${tema === x.id ? ' avst5-tema-on' : ''}`}
+                  title={`Tema ${x.nome}`} style={{ background: x.cor }}
+                  onClick={() => trocarTema(x.id)} />
+              ))}
+            </div>
             <div className="avst5-fundos" role="radiogroup" aria-label="Fundo do palco">
               {FUNDOS_PALCO.map((f) => (
                 <button key={f} type="button" role="radio" aria-checked={fundo === f}
