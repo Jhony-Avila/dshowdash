@@ -84,14 +84,21 @@ echo "✓ ${COMMIT_ANTES} → ${COMMIT_DEPOIS}"
 
 # ── 3. VARREDURA (regra da casa: nada se apaga, tudo vai p/ /backup) ──
 etapa "3/9 Varredura de artefatos soltos → ${BACKUP}"
-SOLTOS=$(find public -maxdepth 1 -name "*.js" -type f | head -20)
-if [ -n "${SOLTOS}" ]; then
-  mkdir -p "${BACKUP}/varredura-${CARIMBO}"
-  echo "${SOLTOS}" | while read -r f; do mv "$f" "${BACKUP}/varredura-${CARIMBO}/"; done
-  echo "✓ movidos: $(echo "${SOLTOS}" | wc -l) arquivo(s)"
-else
-  echo "✓ nada solto"
-fi
+# NUNCA mover arquivo referenciado pelo index.html (lição do deploy de
+# 2026-08-03: a varredura cega moveu bundles do shell → tela branca)
+MOVIDOS=0
+while IFS= read -r f; do
+  NOME=$(basename "$f")
+  if grep -q "${NOME}" public/index.html; then
+    echo "• preservado (referenciado no index.html): ${NOME}"
+  else
+    mkdir -p "${BACKUP}/varredura-${CARIMBO}"
+    mv "$f" "${BACKUP}/varredura-${CARIMBO}/"
+    echo "• movido p/ backup: ${NOME}"
+    MOVIDOS=$((MOVIDOS+1))
+  fi
+done < <(find public -maxdepth 1 -name "*.js" -type f | head -20)
+echo "✓ varredura: ${MOVIDOS} movido(s)"
 
 # ── 4. VALIDAÇÃO PHP (antes de servir qualquer coisa nova) ────────────
 etapa "4/9 php -l em todas as APIs do avatar"

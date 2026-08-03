@@ -33,6 +33,7 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
   aura: [
     { id: 'intensidade', nome: 'Intensidade', min: 0.25, max: 1, passo: 0.05, padrao: 1 },
     { id: 'velocidade', nome: 'Velocidade', min: 0.5, max: 2, passo: 0.1, padrao: 1 },
+    { id: 'raio', nome: 'Raio', min: 0.7, max: 1.3, passo: 0.05, padrao: 1 }, // §150.1 (P4)
   ],
   emblema: [
     { id: 'escala', nome: 'Escala', min: 0.6, max: 1.5, passo: 0.05, padrao: 1 },
@@ -42,6 +43,7 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
 /** Centro geométrico para transformações de escala, por categoria (viewBox 240×240). */
 const CENTRO_ESCALA: Partial<Record<CategoriaId, [number, number]>> = {
   emblema: [152, 206], // peito do busto — mesmo ponto do mapeamento corpo inteiro
+  aura: [120, 120],    // §150.1: raio escala do CENTRO do palco
 };
 
 /** Categoria "dona" de uma chave de camada (acessorio_* → acessorio). */
@@ -104,7 +106,7 @@ export function aplicarParamsSvg(chave: CamadaId | string, svg: string, params?:
   let saida = svg;
   const velocidade = valor('velocidade');
   if (velocidade !== undefined) saida = reescalarDur(saida, velocidade);
-  const escala = valor('escala');
+  const escala = valor('escala') ?? valor('raio'); // raio (aura §150) = escala central
   if (escala !== undefined) {
     const [cx, cy] = CENTRO_ESCALA[categoriaDaCamada(chave)] ?? [120, 120];
     saida = `<g transform="translate(${cx} ${cy}) scale(${escala}) translate(${-cx} ${-cy})">${saida}</g>`;

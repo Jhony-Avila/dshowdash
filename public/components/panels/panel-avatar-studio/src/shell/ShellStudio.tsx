@@ -233,6 +233,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §65.3: comparação por tecla — SEGURAR mostra a versão persistida
   const [comparando, setComparando] = useState(false);
+  // §297 (P6) + §151 (P4): redução de movimento — palco ESTÁTICO (congela SMIL)
+  const [movReduzido] = useState(() => {
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
+  });
   useEffect(() => {
     const baixo = (e: KeyboardEvent) => {
       const alvo = e.target as HTMLElement | null;
@@ -253,6 +257,22 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §138: registro da timeline vive AQUI (a sessão inteira, não só na aba)
   const historico = useHistoricoSessao(store);
+
+  // §548/§561 (P9) + §297: ANUNCIADOR de ações — feedback visível e lido
+  // por screen reader (aria-live) para equipar/desfazer/refazer
+  const [anuncio, setAnuncio] = useState<string | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const mostrar = (txt: string) => {
+      setAnuncio(txt);
+      clearTimeout(timer);
+      timer = setTimeout(() => setAnuncio(null), 1800);
+    };
+    const p1 = store.bus.em('comando:executado', (d) => mostrar(`Aplicado: ${d.nome.replace('equipar:', '')}`));
+    const p2 = store.bus.em('comando:desfeito', (d) => mostrar(`Desfeito: ${d.nome.replace('equipar:', '')}`));
+    const p3 = store.bus.em('comando:refeito', (d) => mostrar(`Refeito: ${d.nome.replace('equipar:', '')}`));
+    return () => { clearTimeout(timer); p1(); p2(); p3(); };
+  }, [store]);
 
   // §619 (Etapa 3 do §647 — DUAL-WRITE atrás da flag as5.estado_api):
   // o legado segue como FONTE DA VERDADE; o estado novo é espelhado
@@ -411,11 +431,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}>
             <div className="avst5-palco">
               <div className="avst5-zoom" style={zoomEstilo}>
-                <AvatarSvg config={configPalco} uid="avst5" />
+                <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido} />
               </div>
             </div>
             {comparando && (
               <div className="avst5-comparando" role="status">Original salvo · solte para voltar</div>
+            )}
+            {anuncio && !comparando && (
+              <div className="avst5-anuncio" role="status" aria-live="polite">{anuncio}</div>
             )}
             {rascunho && (
               <div className="avst5-rascunho" role="alertdialog" aria-label="Rascunho recuperado" data-teste="rascunho">
