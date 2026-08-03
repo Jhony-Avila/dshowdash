@@ -10,7 +10,7 @@
 // continuam honestas; flag as5.palco3d fail-safe OFF; erro nunca derruba
 // o shell.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Camera, Clapperboard, PersonStanding, Play, Sparkles, UserRound, Wand2 } from 'lucide-react';
+import { Box, Camera, CircleDot, Clapperboard, PersonStanding, Play, Sparkles, UserRound, Wand2 } from 'lucide-react';
 import type { EstadoAvatar } from '../nucleo/contratos';
 import type { EstadoCamera, RenderizadorAvatar } from '../nucleo/renderizador';
 import { criarRenderizador } from '../services/FabricaRenderizador';
@@ -55,6 +55,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
   const [apresentando, setApresentando] = useState(false);
   const [sinalLocal, setSinalLocal] = useState(0);
   const sinalShowcase = sinalApresentar + sinalLocal;
+  // mega 13 (§174.2): GRAVAÇÃO do showcase — MediaRecorder no canvas
+  const [gravando, setGravando] = useState(false);
+  const refGravador = useRef<MediaRecorder | null>(null);
+  const podeGravar = typeof MediaRecorder !== 'undefined';
 
   const personagem = override ?? personagemParaBase(estado.body.base);
   const refPersonagem = useRef(personagem);
@@ -149,6 +153,47 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sinalShowcase]);
 
+  // mega 13 §174.2: grava a COREOGRAFIA em WebM (vp9→vp8→padrão do
+  // navegador) direto do canvas; para sozinha quando o showcase termina.
+  // Falha de codec/stream nunca derruba o palco — só desiste da gravação.
+  const gravarShowcase = useCallback(() => {
+    if (!podeGravar || gravando || apresentando) return;
+    const canvas = refAlvo.current?.querySelector('canvas') as HTMLCanvasElement | null;
+    if (!canvas || typeof canvas.captureStream !== 'function') return;
+    try {
+      const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+        .find((m) => MediaRecorder.isTypeSupported(m));
+      const gravador = new MediaRecorder(canvas.captureStream(30), mime ? { mimeType: mime } : undefined);
+      const pedacos: Blob[] = [];
+      gravador.ondataavailable = (e) => { if (e.data.size) pedacos.push(e.data); };
+      gravador.onstop = () => {
+        setGravando(false);
+        refGravador.current = null;
+        if (!pedacos.length) return;
+        const url = URL.createObjectURL(new Blob(pedacos, { type: mime ?? 'video/webm' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'dshow-showcase.webm';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      };
+      refGravador.current = gravador;
+      gravador.start(250);
+      setGravando(true);
+      setSinalLocal((n) => n + 1); // dispara a coreografia junto
+    } catch { setGravando(false); refGravador.current = null; }
+  }, [podeGravar, gravando, apresentando]);
+
+  // fim do showcase (ou desmontagem) encerra a gravação
+  useEffect(() => {
+    if (!apresentando && refGravador.current?.state === 'recording') {
+      refGravador.current.stop();
+    }
+  }, [apresentando]);
+  useEffect(() => () => {
+    if (refGravador.current?.state === 'recording') refGravador.current.stop();
+  }, []);
+
   // mega 10 §174.1: captura PNG 960 determinística do palco 3D
   const capturar3d = useCallback(async () => {
     const r = refR.current;
@@ -218,6 +263,12 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
           <button type="button" title="Showcase 3D (§174)" data-teste="p3d-apresentar"
             disabled={apresentando || movReduzido}
             onClick={() => setSinalLocal((n) => n + 1)}><Play size={13} aria-hidden /></button>
+          {podeGravar && (
+            <button type="button" title="Gravar o showcase em WebM (§174.2)" data-teste="p3d-gravar"
+              disabled={apresentando || gravando || movReduzido}
+              className={gravando ? 'avst5-p3d-rec' : ''}
+              onClick={gravarShowcase}><CircleDot size={13} aria-hidden /></button>
+          )}
         </div>
         <div className="avst5-p3d-cameras" role="radiogroup" aria-label="Câmera (§453.1)">
           <button type="button" role="radio" aria-checked={cameraModo === 'corpo'} title="Corpo inteiro"

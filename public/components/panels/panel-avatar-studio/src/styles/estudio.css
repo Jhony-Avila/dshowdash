@@ -1530,3 +1530,8 @@
 .avst-foto-3d-item img { border-radius: 9px; background: #0a0d15; }
 .avst-foto-3d-item:not(:disabled):hover { color: var(--avst-texto, #e6eaf2); border-color: var(--avst-acento, #7c5cff); }
 .avst-foto-3d-item:disabled { opacity: .5; cursor: default; }
+
+/* mega 13: botão REC gravando = vermelho pulsante */
+.avst5-p3d-rec { color: #ff5230 !important; border-color: #ff5230 !important; animation: avst5-rec 1s ease-in-out infinite; }
+@keyframes avst5-rec { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .avst5-p3d-rec { animation: none; } }
