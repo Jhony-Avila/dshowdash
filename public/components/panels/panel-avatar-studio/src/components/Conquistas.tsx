@@ -7,6 +7,7 @@ import { CalendarDays, Gift, Lock, Trophy } from 'lucide-react';
 import type { Conquista } from '../domain/types';
 import { RARIDADES, itemPorId } from '../services/AvatarCatalog';
 import type { Vida } from '../services/VidaService';
+import { ProgressoPerfil } from './ProgressoPerfil';
 
 function fmtData(iso: string | null): string {
   if (!iso) return '';
@@ -66,6 +67,8 @@ export function Conquistas({ vida }: { vida: Vida | null }) {
 
   return (
     <div className="avst-conquistas">
+      {/* AS5 F7 (§220-§224 + §89): nível/XP transparentes, badges, timeline */}
+      <ProgressoPerfil conquistas={vida.conquistas} />
       <p className="avst-conquistas-resumo">
         <Trophy size={13} aria-hidden /> {feitas}/{vida.conquistas.length} conquistas ({pctGeral}%) — todas medidas em dados reais do seu uso.
       </p>

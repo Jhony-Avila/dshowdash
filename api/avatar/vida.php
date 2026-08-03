@@ -23,7 +23,7 @@ require_once __DIR__ . '/../_helpers/AuthHelpers.php';
 require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../core/CorsPolicy.php';
 require_once __DIR__ . '/../core/SessionGate.php';
-require_once __DIR__ . '/ia/ProvedorAnthropic.php';
+require_once __DIR__ . '/ia/FabricaIA.php';
 require_once __DIR__ . '/VidaLib.php';
 
 CorsPolicy::setupApiEndpoint(['methods' => ['GET', 'POST', 'OPTIONS'], 'no_cache' => true]);
@@ -57,7 +57,7 @@ function vida_erro(string $codigo, int $status): void
 
 try {
     $pdo = getConnection('DSHOWDASH');
-    $ia = new ProvedorAnthropic();
+    $ia = FabricaIA::criar(); // provedor resolvido por config (AS5 F8.2)
 
     if ($metodo === 'GET') {
         $conquistas = vida_conquistas($pdo, $userId);

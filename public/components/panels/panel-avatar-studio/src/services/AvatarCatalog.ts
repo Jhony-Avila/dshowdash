@@ -8,6 +8,7 @@ import type {
   AvatarConfig, CamadaId, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
 import { CORES_PADRAO, normalizarHex } from '../engine/cores';
+import { sanitizarParams } from '../engine/params';
 import type { ParteDef } from '../engine/base-api';
 import { renderAvatar, renderDataUri, hashConfig } from '../engine/render';
 import type { OpcoesRender } from '../engine/render';
@@ -380,8 +381,113 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   if (typeof b.titulo === 'string' && TITULOS_POR_ID.has(b.titulo)) {
     saida.titulo = b.titulo;
   }
+  // §71 (AS5 F3 C2): propriedades por asset — só de camadas EQUIPADAS,
+  // grampeadas ao [min,max] e sem valores padrão (byte-estável como o título)
+  if (b.params && typeof b.params === 'object') {
+    const params: NonNullable<AvatarConfig['params']> = {};
+    for (const [chave, bruto] of Object.entries(b.params)) {
+      if (!camadas[chave as CamadaId]) continue;
+      const limpo = sanitizarParams(chave, bruto);
+      if (limpo) params[chave as CamadaId] = limpo;
+    }
+    if (Object.keys(params).length) saida.params = params;
+  }
+  // §73 (AS5 F3 C3): canais de cor por camada — só camadas equipadas, só
+  // canais que o ITEM declara (usaCores), hex normalizado; valor idêntico
+  // ao global é um no-op e não persiste (byte-estável)
+  if (b.coresCamada && typeof b.coresCamada === 'object') {
+    const coresCamada: NonNullable<AvatarConfig['coresCamada']> = {};
+    for (const [chave, canais] of Object.entries(b.coresCamada)) {
+      const idItem = camadas[chave as CamadaId];
+      if (!idItem || !canais || typeof canais !== 'object') continue;
+      const declarados = POR_ID.get(idItem)?.usaCores ?? [];
+      const limpos: Partial<Record<SlotCor, string>> = {};
+      for (const canal of declarados) {
+        const hex = (canais as Record<string, unknown>)[canal];
+        if (typeof hex !== 'string') continue;
+        const norm = normalizarHex(hex, saida.cores[canal]);
+        if (norm !== saida.cores[canal]) limpos[canal] = norm;
+      }
+      if (Object.keys(limpos).length) coresCamada[chave as CamadaId] = limpos;
+    }
+    if (Object.keys(coresCamada).length) saida.coresCamada = coresCamada;
+  }
   return saida;
 }
+
+// ── Propriedades por asset (§71) — fachada para a UI ────────────────
+export { PARAMS_POR_CATEGORIA, paramsDaCamada } from '../engine/params';
+export type { ParamDef } from '../engine/params';
+
+// ── Paletas de roupa (§74) — presets que preenchem os CANAIS (§73) ──
+// 'Original' não está na lista: é a AÇÃO de remover o override da peça.
+// 'Personalizado' também não: é qualquer escolha manual nos canais.
+export interface PaletaRoupa {
+  id: string;
+  nome: string;
+  canais: { roupa: string; destaque: string };
+}
+export const PALETAS_ROUPA: PaletaRoupa[] = [
+  { id: 'pal_dshow', nome: 'Dshow', canais: { roupa: '#20242e', destaque: '#7c5cff' } },
+  { id: 'pal_executivo', nome: 'Executivo', canais: { roupa: '#2b2f3a', destaque: '#c9a75a' } },
+  { id: 'pal_mono', nome: 'Monocromático', canais: { roupa: '#3a3f4c', destaque: '#8a93a6' } },
+  { id: 'pal_cyber', nome: 'Cyber', canais: { roupa: '#1a1035', destaque: '#4cd9e8' } },
+  { id: 'pal_gamer', nome: 'Gamer', canais: { roupa: '#16241c', destaque: '#39d98a' } },
+  { id: 'pal_neon', nome: 'Neon', canais: { roupa: '#241436', destaque: '#ff5f8f' } },
+  { id: 'pal_claro', nome: 'Claro', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+  { id: 'pal_escuro', nome: 'Escuro', canais: { roupa: '#14161d', destaque: '#5b3d8a' } },
+];
+
+// ── Templates do Photo Studio (§326–§327 — AS5 F6) ──────────────────
+// Composições reutilizáveis de EstiloFoto com assets REAIS do catálogo.
+// Aplicação segue §326.3: itens bloqueados ficam de fora (a UI filtra e
+// informa) e a foto do usuário nunca é tocada.
+export interface TemplateFoto {
+  id: string;
+  nome: string;
+  descricao: string;
+  /** categoria §326.1 (corporativo/gamer/minimalista/evento…) */
+  categoria: string;
+  estilo: EstiloFoto;
+}
+
+export const TEMPLATES_FOTO: TemplateFoto[] = [
+  {
+    id: 'tpl_dshow_executive', nome: 'Dshow Executive', categoria: 'executivo',
+    descricao: 'Fundo escuro, dourado corporativo e o selo de CEO (§327.1).',
+    estilo: { camadas: { fundo: 'fun_escritorio', banner: 'ban_executivo', moldura: 'mol_minimal', emblema: 'emb_dshow' }, titulo: 'tit_ceo_supremo', cores: { destaque: '#e8b64c' } },
+  },
+  {
+    id: 'tpl_showroom_master', nome: 'Showroom Master', categoria: 'dshow',
+    descricao: 'Parede de LED, moldura RGB e aura da casa (§327.2).',
+    estilo: { camadas: { fundo: 'fun_led_wall', aura: 'aur_dshow', moldura: 'mol_rgb', emblema: 'emb_nexus' }, titulo: 'tit_visionario', cores: { destaque: '#7c5cff' } },
+  },
+  {
+    id: 'tpl_cyber_profile', nome: 'Cyber Profile', categoria: 'tecnologia',
+    descricao: 'Synthwave, aura neon e interferência holográfica (§327.3).',
+    estilo: { camadas: { fundo: 'fun_synthwave', aura: 'aur_neon', moldura: 'mol_neon', efeito: 'efe_holo_interf' }, titulo: 'tit_cyber_architect', cores: { destaque: '#4cd9e8' } },
+  },
+  {
+    id: 'tpl_pro_player', nome: 'Pro Player', categoria: 'gamer',
+    descricao: 'Arena, faíscas de clutch e título de pro (§327.4).',
+    estilo: { camadas: { fundo: 'fun_arena', banner: 'ban_campeao', moldura: 'mol_tech', efeito: 'efe_faiscas' }, titulo: 'tit_pro_player', cores: { destaque: '#39d98a' } },
+  },
+  {
+    id: 'tpl_minimal_clean', nome: 'Minimal Clean', categoria: 'minimalista',
+    descricao: 'Estúdio neutro, moldura fina, legibilidade máxima (§327.5).',
+    estilo: { camadas: { fundo: 'fun_estudio', moldura: 'mol_minimal' }, cores: { destaque: '#4c9de8' } },
+  },
+  {
+    id: 'tpl_achievement', nome: 'Achievement Reveal', categoria: 'conquista',
+    descricao: 'Troféu, louros e confete — composição celebratória (§327.6).',
+    estilo: { camadas: { fundo: 'fun_estrelas', moldura: 'mol_louros', emblema: 'emb_trofeu', efeito: 'efe_confete' }, titulo: 'tit_lenda_dshow', cores: { destaque: '#e8b64c' } },
+  },
+  {
+    id: 'tpl_china_trip', nome: 'China Trip', categoria: 'evento',
+    descricao: 'Montanhas, sakura ao vento e selo de viagem (§327.7).',
+    estilo: { camadas: { fundo: 'fun_montanhas', moldura: 'mol_selo', emblema: 'emb_lua', efeito: 'efe_sakura' }, cores: { destaque: '#ff5f8f' } },
+  },
+];
 
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────
 
@@ -477,6 +583,109 @@ export function aleatorio(semente: number): AvatarConfig {
       roupa: sortear(rnd, CORES_SUGERIDAS.roupa),
       destaque: sortear(rnd, CORES_SUGERIDAS.destaque),
     },
+  });
+}
+
+// ── Aleatório INTELIGENTE (§90 + §135/§135.1 — AS5 F3 P1') ──────────
+
+export type ModoAleatorio = 'completo' | 'cores' | 'categoria' | 'favoritos';
+
+export interface OpcoesAleatorio {
+  semente: number;
+  modo: ModoAleatorio;
+  /** exigido no modo 'categoria' */
+  categoria?: CategoriaId;
+  /** slots BLOQUEADOS (§70.1/§135.1) — o sorteio NUNCA os troca (nem os preenche) */
+  bloqueados?: ReadonlySet<string>;
+  /** modo 'favoritos': cada categoria sorteia dos favoritos quando houver */
+  favoritos?: ReadonlySet<string>;
+}
+
+const SLOTS_ACESSORIO_ALEATORIO = ['acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco'] as const;
+
+/**
+ * §90: aleatório que respeita o que o usuário PROTEGEU e mantém coerência.
+ * Compatibilidade é estrutural: o resultado passa pelo validarConfig
+ * (requerBase/incompativelCom) — todo modo é "aleatório compatível".
+ * Determinístico por semente (mesma semente → mesmo avatar, como o §13).
+ */
+export function aleatorioInteligente(atual: AvatarConfig, o: OpcoesAleatorio): AvatarConfig {
+  const bloq = o.bloqueados ?? new Set<string>();
+  const cand = aleatorio(o.semente);
+
+  // §135: "apenas cores" — camadas intactas, só a paleta gira
+  if (o.modo === 'cores') {
+    return validarConfig({ ...atual, cores: cand.cores });
+  }
+
+  // "apenas a categoria ativa" — os demais slots ficam como estão
+  if (o.modo === 'categoria' && o.categoria) {
+    const rnd = mulberry32(o.semente ^ 0x5f3c);
+    const novo: AvatarConfig = { ...atual, camadas: { ...atual.camadas } };
+    if (o.categoria === 'base') {
+      if (!bloq.has('base')) novo.base = sortearPorRaridade(rnd, sorteaveis('base')).id;
+    } else if (o.categoria === 'acessorio') {
+      for (const s of SLOTS_ACESSORIO_ALEATORIO) if (!bloq.has(s)) delete novo.camadas[s];
+      const a = sortearPorRaridade(rnd, sorteaveis('acessorio'));
+      const chave = `acessorio_${a.slot ?? 'cabeca'}` as const;
+      if (!bloq.has(chave)) novo.camadas[chave] = a.id;
+    } else if (!bloq.has(o.categoria)) {
+      novo.camadas[o.categoria] = sortearPorRaridade(rnd, sorteaveis(o.categoria)).id;
+    }
+    return validarConfig(novo);
+  }
+
+  // 'completo' | 'favoritos': parte do candidato inteiro…
+  const novo: AvatarConfig = { ...cand, camadas: { ...cand.camadas } };
+
+  // …modo favoritos re-sorteia cada camada dentro dos favoritos da categoria
+  if (o.modo === 'favoritos' && o.favoritos?.size) {
+    const rnd = mulberry32(o.semente ^ 0x9e37);
+    if (!bloq.has('base')) {
+      const favBase = sorteaveis('base').filter((i) => o.favoritos!.has(i.id));
+      if (favBase.length) novo.base = sortearPorRaridade(rnd, favBase).id;
+    }
+    for (const chave of Object.keys(novo.camadas) as CamadaId[]) {
+      const cat = chave.startsWith('acessorio') ? 'acessorio' : (chave as CategoriaId);
+      const favCat = sorteaveis(cat).filter((i) => o.favoritos!.has(i.id));
+      if (favCat.length) {
+        const escolhido = sortearPorRaridade(rnd, favCat);
+        if (cat === 'acessorio') {
+          delete novo.camadas[chave];
+          novo.camadas[`acessorio_${escolhido.slot ?? 'cabeca'}`] = escolhido.id;
+        } else {
+          novo.camadas[chave] = escolhido.id;
+        }
+      }
+    }
+  }
+
+  // …e devolve TUDO que está protegido (valor atual, inclusive ausência)
+  if (bloq.has('base')) novo.base = atual.base;
+  for (const slot of bloq) {
+    if (slot === 'base') continue;
+    delete novo.camadas[slot as CamadaId];
+    const idAtual = atual.camadas[slot as CamadaId];
+    if (idAtual) novo.camadas[slot as CamadaId] = idAtual;
+  }
+  // regulagens (§71/§73) sobrevivem onde o item NÃO mudou
+  const params: NonNullable<AvatarConfig['params']> = {};
+  for (const [slot, v] of Object.entries(atual.params ?? {})) {
+    if (novo.camadas[slot as CamadaId] === atual.camadas[slot as CamadaId] && v) {
+      params[slot as CamadaId] = v;
+    }
+  }
+  const coresCamada: NonNullable<AvatarConfig['coresCamada']> = {};
+  for (const [slot, v] of Object.entries(atual.coresCamada ?? {})) {
+    if (novo.camadas[slot as CamadaId] === atual.camadas[slot as CamadaId] && v) {
+      coresCamada[slot as CamadaId] = v;
+    }
+  }
+  return validarConfig({
+    ...novo,
+    ...(atual.titulo ? { titulo: atual.titulo } : {}),
+    ...(Object.keys(params).length ? { params } : {}),
+    ...(Object.keys(coresCamada).length ? { coresCamada } : {}),
   });
 }
 

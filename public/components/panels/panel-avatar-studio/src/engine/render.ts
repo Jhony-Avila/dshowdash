@@ -9,8 +9,9 @@
 //   fundo → banner → aura → efeito(atrás) → base → roupa → emblema → boca
 //   → olhos → cabelo → acessório → moldura → efeito(frente)
 //   (banner/aura/emblema — Expansão, decisão #33: categorias 2D de baixo custo)
-import type { AvatarConfig } from '../domain/types';
+import type { AvatarConfig, CamadaId } from '../domain/types';
 import { paletaDe } from './cores';
+import { aplicarParamsSvg } from './params';
 import type { ParteDef } from './base-api';
 import { G } from './base-api';
 import { corpoInteiro } from './partes/corpo';
@@ -78,23 +79,35 @@ export function renderAvatar(
   const p = paletaDe(config.cores);
   const forma = opcoes.forma ?? 'quadrado';
 
-  const pintar = (id: string | undefined): string => {
+  // §73: paleta LOCAL da camada — override de canais só para esta peça
+  // (a arte não muda: recebe outra Paleta pela MESMA injeção de sempre).
+  const paletaDa = (chave?: CamadaId) => {
+    const canais = chave ? config.coresCamada?.[chave] : undefined;
+    return canais && Object.keys(canais).length
+      ? paletaDe({ ...config.cores, ...canais })
+      : p;
+  };
+
+  // §71: `chave` liga as PROPRIEDADES da camada (config.params) ao fragmento
+  // — sem params o retorno é byte-idêntico ao de antes da feature.
+  const pintar = (id: string | undefined, chave?: CamadaId): string => {
     if (!id || id === 'nenhum') return '';
     const parte = resolver(id);
-    return parte ? parte.render(p, uid) : '';
+    const svg = parte ? parte.render(paletaDa(chave), uid) : '';
+    return chave ? aplicarParamsSvg(chave, svg, config.params?.[chave]) : svg;
   };
 
   // "fundo" composto: fundo → banner → aura (tudo atrás do personagem)
-  const fundo = pintar(config.camadas.fundo) + pintar(config.camadas.banner)
-    + pintar(config.camadas.aura);
+  const fundo = pintar(config.camadas.fundo, 'fundo') + pintar(config.camadas.banner, 'banner')
+    + pintar(config.camadas.aura, 'aura');
   const efeitoDef = config.camadas.efeito && config.camadas.efeito !== 'nenhum'
     ? resolver(config.camadas.efeito)
     : undefined;
-  const efeitoSvg = efeitoDef ? efeitoDef.render(p, uid) : '';
+  const efeitoSvg = efeitoDef ? pintar(config.camadas.efeito, 'efeito') : '';
   const efeitoAtras = efeitoDef?.atras ? efeitoSvg : '';
   const efeitoFrente = efeitoDef && !efeitoDef.atras ? efeitoSvg : '';
 
-  const moldura = pintar(config.camadas.moldura);
+  const moldura = pintar(config.camadas.moldura, 'moldura');
 
   const alto = opcoes.enquadramento === 'corpo' && opcoes.palco ? 400 : 240;
   const clip = forma === 'circulo' && alto === 240
@@ -107,8 +120,8 @@ export function renderAvatar(
 
   // acessórios nos 3 slots aditivos (+ legado) — usado nos modos de palco
   const acessorios =
-    pintar(config.camadas.acessorio) + pintar(config.camadas.acessorio_pescoco) +
-    pintar(config.camadas.acessorio_cabeca) + pintar(config.camadas.acessorio_rosto);
+    pintar(config.camadas.acessorio, 'acessorio') + pintar(config.camadas.acessorio_pescoco, 'acessorio_pescoco') +
+    pintar(config.camadas.acessorio_cabeca, 'acessorio_cabeca') + pintar(config.camadas.acessorio_rosto, 'acessorio_rosto');
 
   let conteudo: string;
   if (opcoes.palco) {
@@ -124,24 +137,24 @@ export function renderAvatar(
       // CORPO INTEIRO (240×400): corpo novo + cabeça do busto (sem a roupa
       // de busto) reaproveitada em escala no topo — arte 100% compartilhada.
       const cabeca =
-        pintar(config.base) + pintar(config.camadas.boca) +
-        `<g data-anim="olhos">${pintar(config.camadas.olhos)}</g>` +
-        `<g data-anim="cabelo">${pintar(config.camadas.cabelo)}</g>` +
+        pintar(config.base) + pintar(config.camadas.boca, 'boca') +
+        `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
+        `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
         acessorios + palpebras;
       // roupa no CORPO INTEIRO: detalhes da peça sobre o scaffold (gola,
       // gravata, zíper, obi…) — sem isto a roupa só mudava a cor do corpo
       const roupaDef = config.camadas.roupa && config.camadas.roupa !== 'nenhum'
         ? resolver(config.camadas.roupa)
         : undefined;
-      const roupaCorpo = roupaDef?.renderCorpo ? roupaDef.renderCorpo(p, uid) : '';
+      const roupaCorpo = roupaDef?.renderCorpo ? roupaDef.renderCorpo(paletaDa('roupa'), uid) : '';
       // emblema no peito do corpo inteiro (mapeia (152,206) do busto → (145,145))
       const emblemaCorpo = config.camadas.emblema && config.camadas.emblema !== 'nenhum'
-        ? `<g transform="translate(15.8 -30.1) scale(0.85)">${pintar(config.camadas.emblema)}</g>`
+        ? `<g transform="translate(15.8 -30.1) scale(0.85)">${pintar(config.camadas.emblema, 'emblema')}</g>`
         : '';
       conteudo =
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
-          corpoInteiro(p, uid) + roupaCorpo + emblemaCorpo +
+          corpoInteiro(paletaDa('roupa'), uid) + roupaCorpo + emblemaCorpo +
           `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>` +
         `</g></g>` +
         `<g data-anim="plano-frente"><g transform="translate(120 200) scale(1.8) translate(-120 -120)">${efeitoFrente}</g></g>`;
@@ -150,17 +163,17 @@ export function renderAvatar(
       conteudo =
         `<g data-anim="plano-fundo"><g transform="translate(120 120) scale(1.08) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
-          pintar(config.base) + pintar(config.camadas.roupa) + pintar(config.camadas.emblema) +
-          pintar(config.camadas.boca) +
-          `<g data-anim="olhos">${pintar(config.camadas.olhos)}</g>` +
-          `<g data-anim="cabelo">${pintar(config.camadas.cabelo)}</g>` +
+          pintar(config.base) + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.emblema, 'emblema') +
+          pintar(config.camadas.boca, 'boca') +
+          `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
+          `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
           acessorios + palpebras +
         `</g></g>` +
         `<g data-anim="plano-frente"><g transform="translate(120 120) scale(1.1) translate(-120 -120)">${efeitoFrente}</g></g>`;
     }
   } else {
     const personagem =
-      pintar(config.base) + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c])).join('');
+      pintar(config.base) + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c], c)).join('');
     conteudo = `${fundo}${efeitoAtras}${personagem}${efeitoFrente}`;
   }
 

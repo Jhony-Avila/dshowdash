@@ -9,6 +9,8 @@ import type { AvatarConfig, Conquista } from '../domain/types';
 import {
   CONFIG_PADRAO, CORES_SUGERIDAS, PARTES, aleatorio, itensDe, validarConfig,
 } from './AvatarCatalog';
+import { resumirAjustes, validarSugestaoIA } from './ValidadorIA';
+import { telemetria } from './Telemetria';
 
 const URL_VIDA = '/api/avatar/vida.php';
 const URL_SESSAO = '/api/auth/check.php';
@@ -35,6 +37,8 @@ export interface Personagem {
   nome: string;
   historia: string;
   fonte: 'ia' | 'local';
+  /** §636 (AS5 F8): nota de transparência quando a sugestão foi ajustada */
+  ajuste?: string | null;
 }
 
 export async function carregarVida(signal?: AbortSignal): Promise<Vida | null> {
@@ -90,7 +94,7 @@ function catalogoCompacto(): Record<string, Array<{ id: string; nome: string; te
   return saida;
 }
 
-export async function criarComIA(pedido: string, base: AvatarConfig): Promise<Personagem> {
+export async function criarComIA(pedido: string, base: AvatarConfig, desbloqueadosAtuais?: ReadonlySet<string>): Promise<Personagem> {
   try {
     const cab: Record<string, string> = { 'Content-Type': 'application/json' };
     const t = await csrf();
@@ -103,11 +107,21 @@ export async function criarComIA(pedido: string, base: AvatarConfig): Promise<Pe
       const p = (await r.json())?.data?.personagem ?? {};
       // resposta sem base utilizável → não confia: cai no compositor local
       if (typeof p.base === 'string' && p.base && p.camadas && typeof p.camadas === 'object') {
+        // §636: valida com RELATÓRIO — a IA nunca inventa ID e o usuário
+        // fica sabendo o que foi ajustado (desbloqueados: sem a Vida em
+        // mãos aqui, permissão fica com o conjunto vazio = só itens livres;
+        // o chamador que tiver a Vida pode revalidar com o set real)
+        const rel = validarSugestaoIA(
+          { base: p.base, camadas: p.camadas, cores: p.cores },
+          desbloqueadosAtuais ?? new Set<string>(),
+        );
+        telemetria('ia_validacao', { aceitos: rel.aceitos.length, rejeitados: rel.rejeitados.length });
         return {
-          config: validarConfig({ ...CONFIG_PADRAO, base: p.base, camadas: p.camadas, cores: { ...CONFIG_PADRAO.cores, ...p.cores } }),
+          config: rel.config,
           nome: p.nome || 'Personagem',
           historia: p.historia || '',
           fonte: 'ia',
+          ajuste: resumirAjustes(rel.rejeitados),
         };
       }
     }

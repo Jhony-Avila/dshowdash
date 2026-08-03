@@ -55,8 +55,8 @@ ${css.map((c) => `<link rel="stylesheet" href="${base}${c}">`).join('\n')}
 <div id="host"></div>
 <script>
   const RESPOSTAS = [
-${mocks.map(([re, corpo]) => `    [${re}, () => (${corpo})],`).join('\n')}
-    [/\\/api\\//, () => ({ ok: true, data: {} })],
+${mocks.map(([re, corpo]) => `    [${re}, (u, opts) => (${corpo})],`).join('\n')}
+    [/\\/api\\//, (u, opts) => ({ ok: true, data: {} })],
   ];
   const fetchReal = window.fetch.bind(window);
   window.fetch = (url, opts) => {
@@ -89,8 +89,9 @@ function gerarAvatar() {
       ['/\\/api\\/avatar\\/studio\\.php\\?historico=1/', '{ ok: true, data: { itens: [], retencao: 100 } }'],
       ['/\\/api\\/avatar\\/studio\\.php\\?fotos=1/', '{ ok: true, data: { fotos: [] } }'],
       ['/\\/api\\/avatar\\/studio\\.php/', '{ ok: true, data: { config: null, version: 0, render_url: null, avatar_url: null, tipo_ativo: null, config_camadas_recente: null, config_3d_recente: null } }'],
-      ['/\\/api\\/avatar\\/vida\\.php/', "{ ok: true, data: { conquistas: [], eventos: [], desbloqueados: ['mol_glitch','ace_capa_heroica','efe_moedas','emb_fenix'], ia_disponivel: false } }"],
+      ['/\\/api\\/avatar\\/vida\\.php/', "{ ok: true, data: { conquistas: [{ id: 'cq1', nome: 'Primeiro Look', descricao: 'Salvou o primeiro avatar', categoria: 'criacao', conquistada: true, em: '2026-07-20 10:00:00', recompensa: null, progresso: { atual: 1, alvo: 1 } },{ id: 'cq2', nome: 'Explorador', descricao: 'Explorou 10 itens', categoria: 'exploracao', conquistada: true, em: '2026-07-28 15:30:00', recompensa: null, progresso: { atual: 10, alvo: 10 } },{ id: 'cq3', nome: 'Colecionador', descricao: 'Complete uma coleção', categoria: 'colecao', conquistada: false, em: null, recompensa: 'mol_ouro', progresso: { atual: 2, alvo: 6 } }], eventos: [], desbloqueados: ['mol_glitch','ace_capa_heroica','efe_moedas','emb_fenix'], ia_disponivel: false } }"],
       ['/\\/api\\/avatar\\/vitrine\\.php/', '{ ok: true, data: { equipe: [], secoes: [], colecoes: [] } }'],
+      ['/\\/api\\/avatar\\/estado\\.php/', "(window.__ch619 = window.__ch619 || [], window.__ch619.push({ m: (opts && opts.method) || 'GET', corpo: opts && opts.body ? JSON.parse(opts.body) : null }), ((opts && opts.method) === 'POST') ? (JSON.parse(opts.body).draft ? { success: true, data: { checksum: 'ck' + window.__ch619.length }, errors: [], meta: {} } : { success: true, data: { versao: 7 }, errors: [], meta: {} }) : { success: true, data: { perfil: { id: 1 }, estado: null, checksum: 'ck0', versoes: [] }, errors: [], meta: {} })"],
       ['/\\/api\\/auth\\/check\\.php/', "{ ok: true, data: { session: { csrf_token: 'x' } } }"],
     ],
     monta: '{}',

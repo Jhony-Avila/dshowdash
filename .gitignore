@@ -59,6 +59,7 @@
 !/scripts/
 /scripts/*
 !/scripts/avatar/
+!/scripts/deploy/
 !/scripts/koala-build.sh
 !/scripts/koala-smoke-all.sh
 !/scripts/koala-smoke-all.php
@@ -122,6 +123,11 @@ dist/
 *.log
 *.tmp
 .DS_Store
+
+# docs do programa Avatar Studio 5.0 (mega briefing)
+!/docs/
+/docs/*
+!/docs/AVATAR-STUDIO-5/
 
 # suíte de testes headless: artefatos locais nunca entram
 /scripts/avatar/testes/saida/
