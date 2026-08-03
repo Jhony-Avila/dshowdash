@@ -128,3 +128,19 @@ skeletons async · e os ⛔ bloqueados por 3D/assets/infra listados acima.
 
 Suíte: 24 testes (novo shell-polish.mjs: temas §590, dashboard §574,
 brilho-equipar §158 com contra-prova) — 24/24 + núcleo verdes em 2026-08-03.
+
+## MEGA TAREFA 3 "Acabamento & Cobertura" · 2026-08-03
+
+✅ §557.2 (P9) SKELETON DA CARGA INICIAL — App carregando mostra a silhueta
+   do estúdio (3 colunas shimmer + rótulo) em vez de spinner; aria-busy.
+✅ §285 ADOÇÃO — entrada animada via MOVIMENTOS.aparecer no drawer
+   DetalheAsset (180ms, re-anima ao navegar entre assets) e na
+   PaletaComandos (160ms); a11y: bolinhas de tema com aria-label.
+✅ COBERTURA §158-salvar — shell-save.mjs E2E: instrumenta o fetch mockado
+   do harness (page.route não enxerga mocks inline), prova POST no
+   studio.php + confete no sucesso + overlay efêmero (~2.2s) + barra
+   confirmada; e §619 flag OFF = zero chamadas ao espelho (__ch619).
+
+Suíte: 25 testes de navegador + núcleo — 25/25 verdes em 2026-08-03.
+Aprendizado de harness: os mocks de API são um window.fetch inline — testes
+de rede instrumentam ESSA camada, nunca page.route.
