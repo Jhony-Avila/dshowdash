@@ -88,6 +88,24 @@ await p.waitForSelector('[data-teste="palco-3d"]:not([data-apresentando])', { ti
 ok(await p.locator('[data-teste="p3d-animacoes"] .avst5-p3d-chip[aria-checked="true"]', { hasText: 'Idle' }).count() === 1,
   'showcase deveria terminar de volta no Idle');
 
+// R3e (mega 13): GRAVAÇÃO do showcase — REC dispara coreografia e baixa WebM
+const gravacao = await p.evaluate(async () => {
+  const original = HTMLAnchorElement.prototype.click;
+  let pego = null;
+  HTMLAnchorElement.prototype.click = function () { pego = { href: this.href, nome: this.download }; };
+  document.querySelector('[data-teste="p3d-gravar"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  for (let i = 0; i < 160 && !pego; i += 1) await new Promise((r) => setTimeout(r, 100));
+  HTMLAnchorElement.prototype.click = original;
+  if (!pego) return null;
+  const blob = await fetch(pego.href).then((r) => r.blob());
+  return { nome: pego.nome, tipo: blob.type, kb: Math.round(blob.size / 1024) };
+});
+ok(gravacao !== null, 'gravação do showcase não gerou download');
+ok(gravacao?.nome === 'dshow-showcase.webm', `nome da gravação inesperado (${gravacao?.nome})`);
+ok((gravacao?.kb ?? 0) > 5 && String(gravacao?.tipo).includes('webm'),
+  `WebM suspeito (${gravacao?.kb}KB, ${gravacao?.tipo})`);
+await p.waitForSelector('[data-teste="palco-3d"]:not([data-apresentando])', { timeout: 15000 });
+
 // R3b (mega 9): AUTO segue a BASE 2D — equipar Androide troca o personagem
 await p.locator('[data-teste="p3d-auto"]').click();
 await p.waitForTimeout(4000);

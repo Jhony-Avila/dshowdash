@@ -15,7 +15,7 @@
 // PNG data-url → salvarFoto(). O servidor re-encoda pixel a pixel (GD).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Aperture, Camera, Check, Crown, Download, ImageUp, Images, LoaderCircle,
+  Aperture, Box, Camera, Check, Crown, Download, ImageUp, Images, LoaderCircle,
   RotateCcw, Video, Wand2, X,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
@@ -27,6 +27,10 @@ import {
 } from '../services/AvatarCatalog';
 import type { FormatoFotoId, TemplateFoto } from '../services/AvatarCatalog';
 import { telemetria } from '../services/Telemetria';
+import { criarRenderizador } from '../services/FabricaRenderizador';
+import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d';
+import type { EntradaIndice3d } from '../services/Personagens3d';
+import { estadoVazio } from '../nucleo/contratos';
 
 const LADO_PALCO = 280;   // px na tela
 const LADO_SAIDA = 480;   // px do PNG final
@@ -95,6 +99,9 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   const [mensagem, setMensagem] = useState<string | null>(null);
   // 4.6 §21 — modo estilizada: foto base (data-url 480) + parâmetros
   const [fotoEstilo, setFotoEstilo] = useState<string | null>(null);
+  // mega 12 (§21×§174.1): TERCEIRA origem — captura do personagem 3D
+  const [galeria3d, setGaleria3d] = useState<EntradaIndice3d[] | null>(null);
+  const [capturando3d, setCapturando3d] = useState(false);
   const [estilo, setEstilo] = useState<EstiloFoto>(ESTILO_VAZIO);
   // §325: formato de saída — 'perfil' vai ao servidor; wide sai por download
   const [formato, setFormato] = useState<FormatoFotoId>('perfil');
@@ -271,6 +278,45 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     telemetria('foto_estilo_abriu', { origem: 'recorte' });
   }, [recorteParaPng]);
 
+  // mega 12: abre a galeria de personagens 3D (cadeia registry→índice)
+  const abrirGaleria3d = useCallback(async () => {
+    setMensagem(null);
+    const i = await carregarIndice3d();
+    if (!i) { setMensagem('Personagens 3D indisponíveis neste ambiente.'); return; }
+    setGaleria3d(i.personagens);
+  }, []);
+
+  // mega 12: captura HEADLESS 960 do personagem (renderer §401 efêmero:
+  // monta oculto → capturar determinístico §508 → descartar) e cai
+  // DIRETO no fluxo Estilizar — sem recorte (a captura já é quadrada)
+  const escolher3d = useCallback(async (slug: string) => {
+    setCapturando3d(true);
+    setMensagem(null);
+    const palco = document.createElement('div');
+    palco.style.cssText = 'position:fixed;left:-99999px;top:0;width:960px;height:960px';
+    document.body.appendChild(palco);
+    let r: Awaited<ReturnType<typeof criarRenderizador>> | null = null;
+    try {
+      r = await criarRenderizador('3d', { resolverPersonagem: () => slug });
+      await r.inicializar({ qualidade: 'alto', pixelRatioMax: 1 });
+      await r.montar(palco as unknown as { innerHTML: string });
+      const aplicado = await r.aplicarEstado(estadoVazio());
+      if (!aplicado.ok) throw new Error('personagem indisponível');
+      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
+      setFotoEstilo(foto.dataUri);
+      setGaleria3d(null);
+      const salvo = lerEstiloSalvo();
+      if (salvo) setEstilo(salvo);
+      telemetria('foto_estilo_abriu', { origem: '3d', personagem: slug });
+    } catch {
+      setMensagem('Não consegui capturar o personagem 3D — tente outro.');
+    } finally {
+      await r?.descartar().catch(() => { /* efêmero */ });
+      palco.remove();
+      setCapturando3d(false);
+    }
+  }, []);
+
   // §362: autosave do ESTILO enquanto o modo estilizada está aberto
   useEffect(() => {
     if (!fotoEstilo) return;
@@ -419,6 +465,40 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
             <Video size={22} aria-hidden />
             <span>Tirar foto agora</span>
           </button>
+          <button type="button" className="avst-foto-escolher" data-teste="origem-3d"
+            onClick={() => void abrirGaleria3d()}>
+            <Box size={22} aria-hidden />
+            <span>Personagem 3D</span>
+          </button>
+        </div>
+      )}
+
+      {/* mega 12: galeria de personagens 3D (thumbs §508 publicados) */}
+      {galeria3d && !fotoEstilo && (
+        <div className="avst-foto-3d" data-teste="galeria-3d">
+          <p className="avst-foto-nota">
+            Escolha o personagem — a captura entra direto no estúdio de estilo.
+          </p>
+          <div className="avst-foto-3d-grade" role="list">
+            {galeria3d.map((p3) => (
+              <button key={p3.slug} type="button" role="listitem" disabled={capturando3d}
+                className="avst-foto-3d-item" title={p3.nome}
+                onClick={() => void escolher3d(p3.slug)}>
+                <img src={`${BASE_PERSONAGENS_3D}/${p3.thumb || `${p3.slug}/thumb.webp`}`} alt={p3.nome}
+                  width={72} height={72} loading="lazy" />
+                <span>{p3.nome}</span>
+              </button>
+            ))}
+          </div>
+          <div className="avst-foto-acoes">
+            <button type="button" className="avst-botao" disabled={capturando3d}
+              onClick={() => setGaleria3d(null)}>
+              <X size={14} aria-hidden /> Cancelar
+            </button>
+            {capturando3d && (
+              <span className="avst-foto-nota"><LoaderCircle className="avst-girando" size={13} aria-hidden /> Capturando personagem…</span>
+            )}
+          </div>
         </div>
       )}
 

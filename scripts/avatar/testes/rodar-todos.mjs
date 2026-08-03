@@ -11,7 +11,7 @@
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
-const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pessoal.mjs', 'home-compacto.mjs', 'shell-s1.mjs', 'shell-s2.mjs', 'shell-s3.mjs', 'shell-s4.mjs', 'shell-c1.mjs', 'shell-c2.mjs', 'shell-c3.mjs', 'shell-p1.mjs', 'shell-f4.mjs', 'foto-f6.mjs', 'conquistas-f7.mjs', 'shell-f3d.mjs', 'shell-619.mjs', 'shell-show.mjs', 'shell-cmd.mjs', 'shell-tour.mjs', 'shell-vgrid.mjs', 'foto-wide.mjs', 'shell-polish.mjs', 'shell-save.mjs', 'assets3d.test.mjs', 'pipeline3d.test.mjs', 'renderizador3d.test.mjs', 'shell-palco3d.mjs', 'shell-som.mjs'];
+const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pessoal.mjs', 'home-compacto.mjs', 'shell-s1.mjs', 'shell-s2.mjs', 'shell-s3.mjs', 'shell-s4.mjs', 'shell-c1.mjs', 'shell-c2.mjs', 'shell-c3.mjs', 'shell-p1.mjs', 'shell-f4.mjs', 'foto-f6.mjs', 'conquistas-f7.mjs', 'shell-f3d.mjs', 'shell-619.mjs', 'shell-show.mjs', 'shell-cmd.mjs', 'shell-tour.mjs', 'shell-vgrid.mjs', 'foto-wide.mjs', 'shell-polish.mjs', 'shell-save.mjs', 'assets3d.test.mjs', 'pipeline3d.test.mjs', 'renderizador3d.test.mjs', 'shell-palco3d.mjs', 'shell-som.mjs', 'foto-3d.mjs'];
 let falhas = 0;
 for (const t of TESTES) {
   console.log(`\n━━ ${t} ━━`);

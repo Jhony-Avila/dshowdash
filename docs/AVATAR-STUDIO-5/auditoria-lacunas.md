@@ -277,3 +277,21 @@ núcleo verdes. Registro §614 regenerado com os manifests novos.
    (liga, anima, desabilita o botão, termina no Idle).
 
 Suíte: 30 entradas — 30/30 + núcleo verdes.
+
+## MEGAS 11+12+13 (lote) · 2026-08-03
+
+✅ MEGA 11 "Registry Vivo" — api/avatar/personagens3d.php serve o catálogo
+   3D do REGISTRY §614 (glb ativos × versão máxima aprovada/publicada,
+   manifest do metadata_json); front com CADEIA fail-safe: registry →
+   index.json → embutido (§481: erro/vazio nunca derruba). Aplicar
+   registro-curados-3d.sql agora tem efeito visível.
+✅ MEGA 12 "Foto 3D" (§21×§174.1) — Photo Studio com TERCEIRA origem:
+   galeria dos curados (thumbs §508) → captura headless 960 via renderer
+   §401 efêmero → direto no Estilizar (medalhão/fundo/título).
+✅ MEGA 13 "Gravação §174.2" — REC no palco 3D: MediaRecorder no canvas
+   (vp9→vp8→padrão) grava a coreografia inteira e baixa
+   dshow-showcase.webm; para sozinho no fim; sem MediaRecorder o botão
+   some; falha nunca derruba o palco.
+
+Testes: foto-3d.mjs novo + shell-palco3d v4 (gravação interceptada,
+blob WebM real). Suíte: 31 entradas — 31/31 + núcleo verdes.
