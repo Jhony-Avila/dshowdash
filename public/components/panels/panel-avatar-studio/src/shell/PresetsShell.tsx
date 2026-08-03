@@ -12,6 +12,9 @@ import { dataUriDe } from '../services/AvatarCatalog';
 import {
   alternarFavoritoPreset, duplicarPreset, excluirPreset, listarPresets, salvarPreset,
 } from '../services/PresetsPessoais';
+import { calcularXp, nivelDe } from '../components/ProgressoPerfil';
+import { favoritos, itensUsados } from '../services/Progresso';
+import { TrendingUp } from 'lucide-react';
 
 export function PresetsShell({ configAtual, aoAplicar }: {
   configAtual: AvatarConfig;
@@ -26,8 +29,20 @@ export function PresetsShell({ configAtual, aoAplicar }: {
     if (salvarPreset(nome, configAtual)) { setNome(''); setTic((t) => t + 1); }
   };
 
+  // §574 (P9): DASHBOARD PESSOAL compacto — derivado de dados locais
+  // (conquistas ficam no clássico; aqui: exploração, favoritos e biblioteca)
+  const usados = itensUsados();
+  const xp = calcularXp([], usados.size); // sem a Vida aqui: XP de exploração
+  const { nivel } = nivelDe(xp);
+
   return (
     <section className="avst5-presets" aria-label="Meus presets">
+      <div className="avst5-dash" data-teste="dashboard-pessoal">
+        <span className="avst5-dash-item"><TrendingUp size={12} aria-hidden /> Nível {nivel}</span>
+        <span className="avst5-dash-item"><strong>{usados.size}</strong> itens explorados</span>
+        <span className="avst5-dash-item"><strong>{favoritos().size}</strong> favoritos</span>
+        <span className="avst5-dash-item"><strong>{presets.length}</strong> presets salvos</span>
+      </div>
       <div className="avst5-presets-salvar">
         <input type="text" value={nome} maxLength={48}
           placeholder="Nome do preset (ex.: CEO, Cyber, Evento)…"

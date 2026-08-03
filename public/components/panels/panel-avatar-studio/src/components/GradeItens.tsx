@@ -6,7 +6,12 @@
 // AS4 Fase 0: título contextual (§39.15), modos compacta/detalhada/lista
 // (§23.1), ordenação + ocultar bloqueados (§23.2), raridade com pips além
 // da cor (§39.20) e tooltip por PORTAL no Overlay Root (§22).
-import { useMemo, useRef, useState } from 'react';
+// AS5 §276: VIRTUALIZAÇÃO — em listas grandes, cards fora da tela montam
+// como esqueleto leve (nome + raridade, sem o AvatarSvg completo) e viram
+// card real quando se aproximam do viewport (IntersectionObserver ÚNICO
+// compartilhado, buffer de pré-render). Sem lib externa; fail-safe: sem
+// IntersectionObserver no ambiente, tudo renderiza direto.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDownUp, Ban, Check, Grid2x2, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal, Star, X,
 } from 'lucide-react';
@@ -42,6 +47,16 @@ export const FOCO_THUMB: Partial<Record<CategoriaId, string>> = {
 };
 
 const SLOTS_ACESSORIO = ['cabeca', 'rosto', 'pescoco'] as const;
+
+// ── §276: parâmetros da virtualização ───────────────────────────────────
+// O plano citava limiar 60, mas a MAIOR categoria do catálogo hoje tem 50
+// itens (Cabelo) — 60 nunca ativaria. 40 ativa onde o custo dos thumbnails
+// (um AvatarSvg COMPLETO por card) já é mensurável, e segue conservador.
+export const LIMIAR_VIRTUALIZACAO = 40;
+/** Primeiros N cards sempre montam de verdade (acima da dobra, zero flash). */
+const CARDS_IMEDIATOS = 24;
+/** Buffer de pré-render: ~2 fileiras antes de o card entrar na tela. */
+const MARGEM_PRE_RENDER = '600px 0px';
 
 /**
  * Aplica um item (ou 'nenhum') ao config, imutável.
@@ -182,6 +197,34 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   const nomesEquipados = [...equipados].map((id) => itemPorId(id)?.nome).filter(Boolean).join(' + ');
   const filtrosAtivos = busca.trim() !== '' || tier !== null || soFavoritos || ocultarBloqueados;
 
+  // §276: UM IntersectionObserver para a grade inteira (nunca 1 por card).
+  // Cada esqueleto registra seu elemento + callback num Map; ao intersectar,
+  // dispara o callback e sai do observer (montagem é one-way: card real fica).
+  const registroIO = useRef<{ io: IntersectionObserver | null; alvos: Map<Element, () => void> } | null>(null);
+  const observar = useCallback((el: Element, aoVer: () => void) => {
+    if (!registroIO.current) {
+      const alvos = new Map<Element, () => void>();
+      const io = typeof IntersectionObserver === 'undefined' ? null
+        : new IntersectionObserver((entradas) => {
+          for (const e of entradas) {
+            if (!e.isIntersecting) continue;
+            const cb = alvos.get(e.target);
+            alvos.delete(e.target);
+            registroIO.current?.io?.unobserve(e.target);
+            cb?.();
+          }
+        }, { rootMargin: MARGEM_PRE_RENDER });
+      registroIO.current = { io, alvos };
+    }
+    const r = registroIO.current;
+    if (!r.io) { aoVer(); return () => { /* nada a limpar */ }; } // fail-safe: sem IO, monta direto
+    r.alvos.set(el, aoVer);
+    r.io.observe(el);
+    return () => { r.io?.unobserve(el); r.alvos.delete(el); };
+  }, []);
+  useEffect(() => () => registroIO.current?.io?.disconnect(), []);
+  const virtualizar = itens.length > LIMIAR_VIRTUALIZACAO;
+
   return (
     <div className="avst-biblioteca">
       {/* título contextual (AS4 §39.15) + modos de visualização (§23.1) */}
@@ -296,14 +339,19 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             <span className="avst-card-nome">Nenhum</span>
           </button>
         )}
-        {itens.map((item) => (
-          <CardItem key={item.id} item={item} config={config} modo={modo} aoPrever={aoPrever} aoDetalhes={aoDetalhes}
-            ativo={equipados.has(item.id)}
-            favorito={favs.has(item.id)}
-            bloqueado={bloqueado(item)}
-            aoFavoritar={() => setFavs(new Set(alternarFavorito(item.id)))}
-            aoEscolher={() => aoEscolher(comItem(config, categoria, item.id))} />
-        ))}
+        {itens.map((item, idx) => {
+          const props = {
+            item, config, modo, aoPrever, aoDetalhes,
+            ativo: equipados.has(item.id),
+            favorito: favs.has(item.id),
+            bloqueado: bloqueado(item),
+            aoFavoritar: () => setFavs(new Set(alternarFavorito(item.id))),
+            aoEscolher: () => aoEscolher(comItem(config, categoria, item.id)),
+          };
+          return virtualizar && idx >= CARDS_IMEDIATOS
+            ? <CardPreguicoso key={item.id} observar={observar} {...props} />
+            : <CardItem key={item.id} {...props} />;
+        })}
         {itens.length === 0 && (
           <p className="avst-grade-vazia">Nenhum item bate com o filtro — limpe a busca ou os tiers.</p>
         )}
@@ -321,7 +369,7 @@ function Pips({ raridade }: { raridade: Raridade }) {
   );
 }
 
-function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: {
+type CardProps = {
   item: ParteDef;
   config: AvatarConfig;
   modo: ModoGrade;
@@ -332,7 +380,44 @@ function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar,
   aoEscolher: () => void;
   aoPrever?: (novo: AvatarConfig | null) => void;
   aoDetalhes?: (id: string) => void;
+};
+
+/** §276: card ADIADO — esqueleto com as mesmas dimensões (nome + pips ficam
+ *  legíveis p/ leitores de tela; só o AvatarSvg caro é diferido). Vira
+ *  CardItem real quando o observer avisa que se aproximou do viewport. */
+function CardPreguicoso({ observar, ...props }: CardProps & {
+  observar: (el: Element, aoVer: () => void) => () => void;
 }) {
+  const [visto, setVisto] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (visto || !ref.current) return undefined;
+    return observar(ref.current, () => setVisto(true));
+  }, [visto, observar]);
+  if (visto) return <CardItem {...props} />;
+  const { item, modo, ativo, bloqueado } = props;
+  return (
+    <div ref={ref} role="option" aria-selected={ativo} aria-disabled={bloqueado}
+      className={`avst-card avst-card-adiado ${modo === 'lista' ? 'avst-card-lista' : ''}`}
+      data-raridade={item.raridade} data-teste="card-adiado"
+      style={{ '--avst-rar': RARIDADES[item.raridade].cor } as React.CSSProperties}>
+      <span className="avst-card-thumb avst-thumb-adiado" aria-hidden />
+      {modo === 'lista' ? (
+        <span className="avst-card-info">
+          <span className="avst-card-nome">{item.nome}</span>
+          <span className="avst-card-raridade">{RARIDADES[item.raridade].nome} <Pips raridade={item.raridade} /></span>
+        </span>
+      ) : (
+        <>
+          <span className="avst-card-nome">{item.nome}</span>
+          <span className="avst-card-raridade"><Pips raridade={item.raridade} /></span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function CardItem({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: CardProps) {
   const rar = RARIDADES[item.raridade];
   const cardRef = useRef<HTMLDivElement>(null);
   // valida o preview: trocar p/ uma espécie derruba o cabelo TAMBÉM no thumbnail

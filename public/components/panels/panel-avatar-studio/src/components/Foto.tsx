@@ -22,10 +22,10 @@ import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarSer
 import type { FotoGuardada } from '../services/AvatarService';
 import type { EstiloFoto } from '../domain/types';
 import {
-  CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, RARIDADES,
-  TEMPLATES_FOTO, TITULOS, itemPorId, itensDe, svgFotoDe,
+  CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, FORMATOS_FOTO,
+  RARIDADES, TEMPLATES_FOTO, TITULOS, itemPorId, itensDe, svgFotoDe,
 } from '../services/AvatarCatalog';
-import type { TemplateFoto } from '../services/AvatarCatalog';
+import type { FormatoFotoId, TemplateFoto } from '../services/AvatarCatalog';
 import { telemetria } from '../services/Telemetria';
 
 const LADO_PALCO = 280;   // px na tela
@@ -39,8 +39,8 @@ interface EstadoRecorte {
 }
 
 /** Rasteriza um SVG (com a foto embutida como data-url) em PNG.
- *  `lado` parametrizado (AS5 F6 §368: exportação em escala 1×/2×/4×). */
-async function rasterizarSvg(svg: string, lado: number = LADO_SAIDA): Promise<string> {
+ *  Dimensões parametrizadas (§368: escala 1×/2×/4×; §325: formatos wide). */
+async function rasterizarSvg(svg: string, largura: number = LADO_SAIDA, altura: number = largura): Promise<string> {
   const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   try {
@@ -51,12 +51,12 @@ async function rasterizarSvg(svg: string, lado: number = LADO_SAIDA): Promise<st
       i.src = url;
     });
     const canvas = document.createElement('canvas');
-    canvas.width = lado;
-    canvas.height = lado;
+    canvas.width = largura;
+    canvas.height = altura;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('SEM_CANVAS');
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, 0, 0, lado, lado);
+    ctx.drawImage(img, 0, 0, largura, altura);
     return canvas.toDataURL('image/png');
   } finally {
     URL.revokeObjectURL(url);
@@ -96,6 +96,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   // 4.6 §21 — modo estilizada: foto base (data-url 480) + parâmetros
   const [fotoEstilo, setFotoEstilo] = useState<string | null>(null);
   const [estilo, setEstilo] = useState<EstiloFoto>(ESTILO_VAZIO);
+  // §325: formato de saída — 'perfil' vai ao servidor; wide sai por download
+  const [formato, setFormato] = useState<FormatoFotoId>('perfil');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const arrasto = useRef<{ ativo: boolean; px: number; py: number }>({ ativo: false, px: 0, py: 0 });
@@ -299,23 +301,27 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   }, [desbloqueados]);
 
   // §368: exportação local em escala (1×/2×/4× do PNG 480)
+  // §325: formatos wide exportam nas dimensões NATIVAS do formato
   const [escala, setEscala] = useState<1 | 2 | 4>(1);
   const baixarPng = useCallback(async () => {
     if (!fotoEstilo) return;
     setMensagem(null);
     try {
-      const lado = LADO_SAIDA * escala;
-      const svg = svgFotoDe(fotoEstilo, estilo, { estatico: true, tamanho: lado, uid: 'ftexp' });
-      const png = await rasterizarSvg(svg, lado);
+      const wide = formato !== 'perfil';
+      const [lw, lh] = wide ? FORMATOS_FOTO[formato].saida : [LADO_SAIDA * escala, LADO_SAIDA * escala];
+      const svg = svgFotoDe(fotoEstilo, estilo, {
+        estatico: true, uid: 'ftexp', ...(wide ? { formato } : { tamanho: lw }),
+      });
+      const png = await rasterizarSvg(svg, lw, lh);
       const a = document.createElement('a');
       a.href = png;
-      a.download = `dshow-foto-${lado}px.png`;
+      a.download = wide ? `dshow-${formato}-${lw}x${lh}.png` : `dshow-foto-${lw}px.png`;
       a.click();
-      telemetria('foto_exportou', { lado });
+      telemetria('foto_exportou', { lado: lw, formato });
     } catch {
       setMensagem('Não consegui gerar o PNG para download — tente de novo.');
     }
-  }, [fotoEstilo, estilo, escala]);
+  }, [fotoEstilo, estilo, escala, formato]);
 
   /** Entra no modo ESTILIZADA a partir de uma foto guardada. */
   const estilizarGuardada = useCallback(async (foto: FotoGuardada) => {
@@ -362,10 +368,11 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     }
   }, [fotoEstilo, estilo, versao, aoSalvar]);
 
-  // preview vivo da estilização (animações ligadas — o PNG sai estático)
+  // preview vivo da estilização (animações ligadas — o PNG sai estático);
+  // §325: o preview segue o FORMATO selecionado
   const previewEstilo = useMemo(
-    () => (fotoEstilo ? svgFotoDe(fotoEstilo, estilo, { uid: 'ftprev' }) : ''),
-    [fotoEstilo, estilo]
+    () => (fotoEstilo ? svgFotoDe(fotoEstilo, estilo, { uid: 'ftprev', formato }) : ''),
+    [fotoEstilo, estilo, formato]
   );
 
   const mudarCamada = (cat: (typeof CATEGORIAS_FOTO)[number], id: string | null) => {
@@ -465,11 +472,32 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
       {/* ── Modo FOTO ESTILIZADA (4.6 §21) ─────────────────────────── */}
       {fotoEstilo && (
         <div className="avst-foto-estilo">
-          <div className="avst-ft-preview" aria-label="Prévia da foto estilizada"
+          <div className="avst-ft-preview" data-formato={formato} aria-label="Prévia da foto estilizada"
             dangerouslySetInnerHTML={{ __html: previewEstilo }} />
           <p className="avst-foto-nota">
             Só assets de <strong>apresentação</strong> entram na foto — roupa e corpo ficam no avatar em camadas.
           </p>
+
+          {/* §325: FORMATO de saída — perfil 1:1 + wide (header/banner/wallpaper) */}
+          <div className="avst-ft-grupo">
+            <span className="avst-ft-rotulo"><Images size={11} aria-hidden /> Formato</span>
+            <div className="avst-ft-chips" role="radiogroup" aria-label="Formato de saída" data-teste="formatos-foto">
+              {(Object.keys(FORMATOS_FOTO) as FormatoFotoId[]).map((id) => (
+                <button key={id} type="button" role="radio" aria-checked={formato === id}
+                  className={`avst-ft-chip ${formato === id ? 'avst-ft-chip-ativo' : ''}`}
+                  title={`${FORMATOS_FOTO[id].proporcao} · ${FORMATOS_FOTO[id].saida[0]}×${FORMATOS_FOTO[id].saida[1]}px`}
+                  onClick={() => setFormato(id)}>
+                  {FORMATOS_FOTO[id].nome} <small>{FORMATOS_FOTO[id].proporcao}</small>
+                </button>
+              ))}
+            </div>
+            {formato !== 'perfil' && (
+              <p className="avst-foto-nota" data-teste="nota-wide">
+                Formato wide sai pelo <strong>Baixar PNG</strong> ({FORMATOS_FOTO[formato].saida[0]}×{FORMATOS_FOTO[formato].saida[1]}px).
+                “Salvar” grava sempre a foto de perfil 1:1 · moldura só entra no Perfil.
+              </p>
+            )}
+          </div>
 
           {/* §326/§327: templates prioritários — composição em 1 clique */}
           <div className="avst-ft-grupo">
@@ -496,11 +524,16 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
             const meta = CATEGORIAS.find((c) => c.id === cat);
             const itens = itensDe(cat).filter((i) => !i.bloqueadoPor || desbloqueados.has(i.id));
             const atual = estilo.camadas[cat] ?? null;
+            // §325: moldura é desenhada para 1:1 — nos formatos wide os
+            // chips ficam desabilitados (a composição já a omite)
+            const foraDoFormato = cat === 'moldura' && formato !== 'perfil';
             return (
               <div key={cat} className="avst-ft-grupo">
-                <span className="avst-ft-rotulo">{meta?.nome ?? cat}</span>
+                <span className="avst-ft-rotulo">
+                  {meta?.nome ?? cat}{foraDoFormato ? ' · só no formato Perfil' : ''}
+                </span>
                 <div className="avst-ft-chips" role="radiogroup" aria-label={meta?.nome ?? cat}>
-                  <button type="button" role="radio" aria-checked={atual === null}
+                  <button type="button" role="radio" aria-checked={atual === null} disabled={foraDoFormato}
                     className={`avst-ft-chip ${atual === null ? 'avst-ft-chip-ativo' : ''}`}
                     onClick={() => mudarCamada(cat, null)}>
                     Nenhum
@@ -510,6 +543,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                       className={`avst-ft-chip ${atual === i.id ? 'avst-ft-chip-ativo' : ''}`}
                       style={{ '--avst-rar': RARIDADES[i.raridade].cor } as React.CSSProperties}
                       title={`${i.nome} · ${RARIDADES[i.raridade].nome}`}
+                      disabled={foraDoFormato}
                       onClick={() => mudarCamada(cat, i.id)}>
                       {i.nome}
                     </button>
@@ -557,15 +591,18 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               onClick={() => { setFotoEstilo(null); setEstilo(ESTILO_VAZIO); }}>
               <X size={14} aria-hidden /> Cancelar
             </button>
-            {/* §368: download local em escala — não passa pelo servidor */}
-            <label className="avst-ft-escala" title="Resolução do PNG exportado">
-              <select value={escala} aria-label="Escala de exportação"
-                onChange={(e) => setEscala(Number(e.target.value) as 1 | 2 | 4)}>
-                <option value={1}>480px</option>
-                <option value={2}>960px</option>
-                <option value={4}>1920px</option>
-              </select>
-            </label>
+            {/* §368: download local em escala — não passa pelo servidor.
+                §325: wide tem dimensão fixa do formato (escala oculta) */}
+            {formato === 'perfil' && (
+              <label className="avst-ft-escala" title="Resolução do PNG exportado">
+                <select value={escala} aria-label="Escala de exportação"
+                  onChange={(e) => setEscala(Number(e.target.value) as 1 | 2 | 4)}>
+                  <option value={1}>480px</option>
+                  <option value={2}>960px</option>
+                  <option value={4}>1920px</option>
+                </select>
+              </label>
+            )}
             <button type="button" className="avst-botao" disabled={salvando}
               title="Baixar o PNG desta composição no seu computador"
               onClick={() => void baixarPng()}>

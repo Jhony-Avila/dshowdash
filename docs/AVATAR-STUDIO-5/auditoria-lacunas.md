@@ -77,3 +77,32 @@ tarefas exemplo JÁ são executáveis no shell novo). Vira governança dos próx
 o checklist de 14 perguntas do §1585 será aplicado a toda feature nova. Sem código.
 
 ## CICLO CONCLUÍDO — todas as 18 partes lidas/auditadas (P1–P3, P5, P7, P8, P10, P11, P13, P15, P16 nas fases F0–F9; P4, P6, P9, P12, P14, P17, P18 neste ciclo).
+
+## MEGA TAREFA "Polimento Total" · 2026-08-03 (pós-ciclo)
+
+Fecha de uma vez os "⚙️ Futuro" acumulados nas partes auditadas acima:
+
+✅ §158 (P4) GATILHOS DE EFEITO — confete efêmero ao salvar com sucesso
+   (svgEfeitoIsolado no catálogo + overlay .avst5-celebracao 2.2s; respeita
+   prefers-reduced-motion §297).
+✅ §574–575 (P9) DASHBOARD PESSOAL — chips Nível/explorados/favoritos/presets
+   na aba Presets (XP de exploração local, conquistas seguem no clássico).
+✅ §590 (P9) TEMAS — 4 acentos (roxo/verde/âmbar/ciano) via --avst-acento,
+   bolinhas no palco, persistência dshow.avst5.tema.v1.
+✅ §276 (P6) VIRTUALIZAÇÃO DA GRADE — IntersectionObserver único, esqueletos
+   fora da tela, 24 cards imediatos, fail-safe sem IO. Limiar 40 (não os 60
+   do plano: a maior categoria hoje tem 50 itens — 60 nunca ativaria).
+✅ §325 (P5) FOTO WIDE — FORMATOS_FOTO (perfil 1:1 480² / header 3:1
+   1500×500 / banner 4:1 1920×480 / wallpaper 16:9 1920×1080), composição
+   comporWide (medalhão à esquerda, título+emblema à direita, fundo/banner
+   esticados; moldura só no 1:1), seletor na UI da Foto, export nas
+   dimensões nativas. Salvar continua gravando o perfil 1:1 (contrato do
+   servidor intocado). Bônus: corrigido overflow pré-existente das faixas
+   de chips (min-width:0 — o scroll horizontal por design nunca engatava).
+
+Suíte: 23 testes de navegador (novos: shell-vgrid, foto-wide) + nucleo
+(~95 asserções) — 23/23 e núcleo verdes em 2026-08-03. Nota: shell-p1
+flakou 1× por timeout sob carga da suíte (passa isolado e na re-execução).
+
+⚙️ Ainda futuros (inalterados): §285 Motion System · §296 i18n · §557
+skeletons async · e os ⛔ bloqueados por 3D/assets/infra listados acima.

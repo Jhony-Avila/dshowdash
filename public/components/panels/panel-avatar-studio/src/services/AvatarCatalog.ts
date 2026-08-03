@@ -7,13 +7,17 @@
 import type {
   AvatarConfig, CamadaId, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
-import { CORES_PADRAO, normalizarHex } from '../engine/cores';
+import { CORES_PADRAO, normalizarHex, paletaDe } from '../engine/cores';
 import { sanitizarParams } from '../engine/params';
 import type { ParteDef } from '../engine/base-api';
 import { renderAvatar, renderDataUri, hashConfig } from '../engine/render';
 import type { OpcoesRender } from '../engine/render';
 import { renderFotoEstilizada } from '../engine/render-foto';
 import type { OpcoesRenderFoto } from '../engine/render-foto';
+
+// §325: formatos de saída da foto — fachada re-exporta a fonte do engine
+export { FORMATOS_FOTO } from '../engine/render-foto';
+export type { FormatoFotoId } from '../engine/render-foto';
 import { BASES } from '../engine/partes/bases';
 import { ESPECIES } from '../engine/partes/especies';
 import { CABELOS } from '../engine/partes/cabelos';
@@ -490,6 +494,15 @@ export const TEMPLATES_FOTO: TemplateFoto[] = [
 ];
 
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────
+
+/** §158 (AS5): SVG de UM efeito isolado — overlays efêmeros de gatilho
+ *  (celebração ao salvar etc.). Nunca entra no config/persistência. */
+export function svgEfeitoIsolado(id: string, destaque?: string): string {
+  const parte = POR_ID.get(id);
+  if (!parte || parte.categoria !== 'efeito') return '';
+  const paleta = paletaDe({ ...CONFIG_PADRAO.cores, ...(destaque ? { destaque } : {}) });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="presentation">${parte.render(paleta, 'fx')}</svg>`;
+}
 
 export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
   return renderAvatar(config, itemPorId, opcoes);
