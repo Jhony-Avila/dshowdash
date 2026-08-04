@@ -15,8 +15,9 @@
 // PNG data-url → salvarFoto(). O servidor re-encoda pixel a pixel (GD).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Aperture, Box, Camera, Check, Crown, Download, ImageUp, Images, LoaderCircle,
-  RotateCcw, Share2, Video, Wand2, X,
+  Aperture, BadgeCheck, BookmarkPlus, Box, Camera, Check, Crown, Download, FolderOpen, ImageUp,
+  Images, Layers, LoaderCircle, Redo2, RotateCcw, Share2, SlidersHorizontal, Trash2, Undo2,
+  Video, Wand2, X,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
 import type { FotoGuardada } from '../services/AvatarService';
@@ -32,6 +33,9 @@ import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { estadoVazio } from '../nucleo/contratos';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
+import { excluirProjetoFoto, listarProjetosFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
+import type { ProjetoFoto } from '../services/ProjetosFoto';
+import type { AjustesFoto } from '../domain/types';
 
 const LADO_PALCO = 280;   // px na tela
 const LADO_SAIDA = 480;   // px do PNG final
@@ -108,6 +112,124 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   const [estilo, setEstilo] = useState<EstiloFoto>(ESTILO_VAZIO);
   // §325: formato de saída — 'perfil' vai ao servidor; wide sai por download
   const [formato, setFormato] = useState<FormatoFotoId>('perfil');
+  // §368: escala do export local (declarada AQUI — validação/lote usam)
+  const [escala, setEscala] = useState<1 | 2 | 4>(1);
+
+  // mega 56 (§360): HISTÓRICO não destrutivo do estilo — undo/redo de
+  // camadas/título/cores/templates (ajustes têm o "Zerar" próprio; sliders
+  // não poluem a pilha). Abrir/fechar o modo estilizada zera as pilhas.
+  const refPassado = useRef<EstiloFoto[]>([]);
+  const refFuturo = useRef<EstiloFoto[]>([]);
+  const [ticHist, setTicHist] = useState(0);
+  void ticHist;
+  const mudarEstilo = useCallback((fn: (e: EstiloFoto) => EstiloFoto) => {
+    setEstilo((e) => {
+      refPassado.current = [...refPassado.current.slice(-29), e];
+      refFuturo.current = [];
+      return fn(e);
+    });
+    setTicHist((t) => t + 1);
+  }, []);
+  const desfazerEstilo = useCallback(() => {
+    const anterior = refPassado.current.pop();
+    if (!anterior) return;
+    setEstilo((e) => { refFuturo.current.push(e); return anterior; });
+    setTicHist((t) => t + 1);
+  }, []);
+  const refazerEstilo = useCallback(() => {
+    const proximo = refFuturo.current.pop();
+    if (!proximo) return;
+    setEstilo((e) => { refPassado.current.push(e); return proximo; });
+    setTicHist((t) => t + 1);
+  }, []);
+  const zerarHistorico = useCallback(() => {
+    refPassado.current = [];
+    refFuturo.current = [];
+    setTicHist((t) => t + 1);
+  }, []);
+
+  // megas 51–54: AJUSTES da foto — neutro é REMOVIDO (estilo limpo; sem
+  // ajustes o SVG é byte a byte o legado)
+  const NEUTROS: Required<Omit<AjustesFoto, 'espelhar' | 'sombra'>> = {
+    brilho: 1, contraste: 1, saturacao: 1, temperatura: 0, vinheta: 0, rotacao: 0,
+  };
+  const mudarAjuste = useCallback((campo: keyof AjustesFoto, valor: number | boolean) => {
+    setEstilo((e) => {
+      const aj: AjustesFoto = { ...e.ajustes };
+      const neutro = typeof valor === 'boolean'
+        ? valor === false
+        : valor === (NEUTROS as Record<string, number>)[campo];
+      if (neutro) delete aj[campo];
+      else (aj as Record<string, number | boolean>)[campo] = valor;
+      if (Object.keys(aj).length === 0) { const { ajustes: _a, ...resto } = e; return resto as EstiloFoto; }
+      return { ...e, ajustes: aj };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // mega 57 (§364): PROJETOS do Photo Studio (localStorage v1)
+  const [projetos, setProjetos] = useState<ProjetoFoto[]>(listarProjetosFoto);
+  const guardarProjeto = useCallback(async () => {
+    if (!fotoEstilo) return;
+    const p = await salvarProjetoFoto(fotoEstilo, estilo, formato);
+    setProjetos(listarProjetosFoto());
+    setMensagem(p ? `Projeto "${p.nome}" guardado — reabra quando quiser.` : 'Limite de 6 projetos atingido.');
+    if (p) telemetria('foto_projeto_salvou');
+  }, [fotoEstilo, estilo, formato]);
+  const abrirProjeto = useCallback((p: ProjetoFoto) => {
+    setFotoEstilo(p.foto);
+    setEstilo(p.estilo);
+    setFormato(p.formato);
+    zerarHistorico();
+    setMensagem(`Projeto "${p.nome}" reaberto.`);
+    telemetria('foto_projeto_abriu');
+  }, [zerarHistorico]);
+
+  // mega 58 (§370): VALIDAÇÃO pré-export — rasteriza e reporta sem baixar
+  const [validando, setValidando] = useState(false);
+  const validarExport = useCallback(async () => {
+    if (!fotoEstilo) return;
+    setValidando(true);
+    try {
+      const wide = formato !== 'perfil';
+      const [lw, lh] = wide ? FORMATOS_FOTO[formato].saida : [LADO_SAIDA * escala, LADO_SAIDA * escala];
+      const svg = svgFotoDe(fotoEstilo, estilo, { estatico: true, uid: 'ftval', ...(wide ? { formato } : { tamanho: lw }) });
+      const png = await rasterizarSvg(svg, lw, lh);
+      const kb = Math.round((png.length * 3) / 4 / 1024); // base64 → bytes
+      const camadas = Object.keys(estilo.camadas).length;
+      const avisos: string[] = [];
+      if (wide && estilo.camadas.moldura) avisos.push('moldura fica de fora no wide');
+      if (kb > 1500) avisos.push('arquivo pesado p/ web');
+      setMensagem(`Validação: ${lw}×${lh}px · ~${kb}KB · ${camadas} camada(s)`
+        + (estilo.ajustes ? ' · ajustes ativos' : '') + (avisos.length ? ` · ⚠ ${avisos.join('; ')}` : ' · tudo certo.'));
+      telemetria('foto_validou', { kb, formato });
+    } catch { setMensagem('Não consegui validar — tente de novo.'); }
+    finally { setValidando(false); }
+  }, [fotoEstilo, estilo, formato, escala]);
+
+  // mega 59 (§371): EXPORTAÇÃO EM LOTE — todos os formatos numa ação
+  const [exportandoLote, setExportandoLote] = useState(false);
+  const exportarLote = useCallback(async () => {
+    if (!fotoEstilo || exportandoLote) return;
+    setExportandoLote(true);
+    try {
+      const ids = Object.keys(FORMATOS_FOTO) as FormatoFotoId[];
+      for (const id of ids) {
+        const wide = id !== 'perfil';
+        const [lw, lh] = wide ? FORMATOS_FOTO[id].saida : [960, 960];
+        const svg = svgFotoDe(fotoEstilo, estilo, { estatico: true, uid: `ftlote${id}`, ...(wide ? { formato: id } : { tamanho: lw }) });
+        const png = await rasterizarSvg(svg, lw, lh);
+        const a = document.createElement('a');
+        a.href = png;
+        a.download = `dshow-${id}-${lw}x${lh}.png`;
+        a.click();
+        await new Promise((r) => setTimeout(r, 350)); // navegador respira
+      }
+      setMensagem(`Lote exportado: ${ids.length} formatos (§371).`);
+      telemetria('foto_exportou_lote', { formatos: ids.length });
+    } catch { setMensagem('O lote parou no meio — tente de novo.'); }
+    finally { setExportandoLote(false); }
+  }, [fotoEstilo, estilo, exportandoLote]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const arrasto = useRef<{ ativo: boolean; px: number; py: number }>({ ativo: false, px: 0, py: 0 });
@@ -345,16 +467,15 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     }
     let titulo = tpl.estilo.titulo;
     if (titulo && !TITULOS.some((x) => x.id === titulo)) { titulo = undefined; pulados += 1; }
-    setEstilo({ camadas, cores: { destaque: tpl.estilo.cores.destaque }, ...(titulo ? { titulo } : {}) });
+    mudarEstilo((e) => ({ ...e, camadas, cores: { destaque: tpl.estilo.cores.destaque }, ...(titulo ? { titulo } : { titulo: undefined }) }));
     setMensagem(pulados
       ? `Template "${tpl.nome}" aplicado — ${pulados} item(ns) ainda bloqueado(s) ficaram de fora.`
       : `Template "${tpl.nome}" aplicado.`);
     telemetria('foto_template', { id: tpl.id, pulados });
-  }, [desbloqueados]);
+  }, [desbloqueados, mudarEstilo]);
 
   // §368: exportação local em escala (1×/2×/4× do PNG 480)
   // §325: formatos wide exportam nas dimensões NATIVAS do formato
-  const [escala, setEscala] = useState<1 | 2 | 4>(1);
   const baixarPng = useCallback(async () => {
     if (!fotoEstilo) return;
     setMensagem(null);
@@ -444,7 +565,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   );
 
   const mudarCamada = (cat: (typeof CATEGORIAS_FOTO)[number], id: string | null) => {
-    setEstilo((e) => {
+    mudarEstilo((e) => {           // mega 56: vira passo do histórico
       const camadas = { ...e.camadas };
       if (id) camadas[cat] = id;
       else delete camadas[cat];
@@ -492,6 +613,28 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
             <Box size={22} aria-hidden />
             <span>Personagem 3D</span>
           </button>
+        </div>
+      )}
+
+      {/* mega 57 (§364): PROJETOS guardados — reabrir o trabalho onde parou */}
+      {!recorte && !camera && !fotoEstilo && !galeria3d && projetos.length > 0 && (
+        <div className="avst-foto-galeria" data-teste="projetos-foto">
+          <h4 className="avst-cores-titulo"><FolderOpen size={14} aria-hidden /> Projetos guardados</h4>
+          <div className="avst-foto-grade" role="list" aria-label="Projetos do Photo Studio">
+            {projetos.map((p2) => (
+              <div key={p2.id} role="listitem" className="avst-foto-item">
+                <button type="button" className="avst-foto-item-img" title={`Reabrir ${p2.nome}`}
+                  onClick={() => abrirProjeto(p2)}>
+                  <img src={p2.foto} alt={p2.nome} loading="lazy" />
+                  <span className="avst-foto-item-usar"><FolderOpen size={13} aria-hidden /></span>
+                </button>
+                <button type="button" className="avst-foto-item-estilo" title={`Excluir ${p2.nome}`}
+                  onClick={() => { excluirProjetoFoto(p2.id); setProjetos(listarProjetosFoto()); }}>
+                  <Trash2 size={12} aria-hidden />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -621,7 +764,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               ))}
               <button type="button" className="avst-ft-template avst-ft-template-limpar"
                 title="Remover tudo e começar do zero"
-                onClick={() => { setEstilo(ESTILO_VAZIO); limparEstiloSalvo(); setMensagem(null); }}>
+                onClick={() => { mudarEstilo(() => ESTILO_VAZIO); limparEstiloSalvo(); setMensagem(null); }}>
                 <span>Limpar</span>
               </button>
             </div>
@@ -665,7 +808,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
             <div className="avst-ft-chips" role="radiogroup" aria-label="Título">
               <button type="button" role="radio" aria-checked={!estilo.titulo}
                 className={`avst-ft-chip ${!estilo.titulo ? 'avst-ft-chip-ativo' : ''}`}
-                onClick={() => setEstilo((e) => { const { titulo: _t, ...resto } = e; return resto as EstiloFoto; })}>
+                onClick={() => mudarEstilo((e) => { const { titulo: _t, ...resto } = e; return resto as EstiloFoto; })}>
                 Nenhum
               </button>
               {TITULOS.map((t) => (
@@ -673,7 +816,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                   className={`avst-ft-chip ${estilo.titulo === t.id ? 'avst-ft-chip-ativo' : ''}`}
                   style={{ '--avst-rar': RARIDADES[t.raridade].cor } as React.CSSProperties}
                   title={`${t.nome} · ${RARIDADES[t.raridade].nome}`}
-                  onClick={() => setEstilo((e) => ({ ...e, titulo: t.id }))}>
+                  onClick={() => mudarEstilo((e) => ({ ...e, titulo: t.id }))}>
                   {t.nome}
                 </button>
               ))}
@@ -688,14 +831,60 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                   aria-checked={estilo.cores.destaque === cor}
                   className={`avst-ft-cor ${estilo.cores.destaque === cor ? 'avst-ft-cor-ativa' : ''}`}
                   style={{ background: cor }} title={cor}
-                  onClick={() => setEstilo((e) => ({ ...e, cores: { destaque: cor } }))} />
+                  onClick={() => mudarEstilo((e) => ({ ...e, cores: { destaque: cor } }))} />
               ))}
+            </div>
+          </div>
+
+          {/* megas 51–54: AJUSTES não destrutivos (§333/§334/§337/§340) */}
+          <div className="avst-ft-grupo" data-teste="ajustes-foto">
+            <span className="avst-ft-rotulo"><SlidersHorizontal size={11} aria-hidden /> Ajustes da foto</span>
+            <div className="avst-ft-ajustes">
+              {([
+                ['brilho', 'Brilho', 0.5, 1.5, 0.01],
+                ['contraste', 'Contraste', 0.5, 1.5, 0.01],
+                ['saturacao', 'Saturação', 0, 2, 0.01],
+                ['temperatura', 'Temperatura', -1, 1, 0.01],
+                ['vinheta', 'Vinheta', 0, 1, 0.01],
+                ['rotacao', 'Rotação', -180, 180, 1],
+              ] as Array<[keyof AjustesFoto, string, number, number, number]>).map(([campo, rotulo, min, max, passo]) => (
+                <label key={campo} className="avst-ft-ajuste">
+                  <span>{rotulo}</span>
+                  <input type="range" min={min} max={max} step={passo}
+                    value={Number(estilo.ajustes?.[campo] ?? (NEUTROS as Record<string, number>)[campo])}
+                    aria-label={rotulo} data-teste={`ajuste-${campo}`}
+                    onChange={(e) => mudarAjuste(campo, Number(e.target.value))} />
+                </label>
+              ))}
+              <button type="button" className="avst-ft-chip" aria-pressed={estilo.ajustes?.espelhar === true}
+                data-teste="ajuste-espelhar"
+                onClick={() => mudarAjuste('espelhar', !(estilo.ajustes?.espelhar === true))}>Espelhar</button>
+              <button type="button" className="avst-ft-chip" aria-pressed={estilo.ajustes?.sombra === true}
+                data-teste="ajuste-sombra" title="Sombra de contato sob o medalhão (§337)"
+                onClick={() => mudarAjuste('sombra', !(estilo.ajustes?.sombra === true))}>Sombra</button>
+              <button type="button" className="avst-ft-chip" disabled={!estilo.ajustes}
+                data-teste="ajuste-zerar"
+                onClick={() => setEstilo((e) => { const { ajustes: _a, ...resto } = e; return resto as EstiloFoto; })}>
+                Zerar ajustes</button>
+            </div>
+          </div>
+
+          {/* mega 56 (§360): histórico visível do estilo */}
+          <div className="avst-ft-grupo" data-teste="historico-estilo">
+            <span className="avst-ft-rotulo">Histórico · {refPassado.current.length} passo(s)</span>
+            <div className="avst-ft-chips">
+              <button type="button" className="avst-ft-chip" disabled={refPassado.current.length === 0}
+                data-teste="ft-desfazer" onClick={desfazerEstilo}>
+                <Undo2 size={11} aria-hidden /> Desfazer</button>
+              <button type="button" className="avst-ft-chip" disabled={refFuturo.current.length === 0}
+                data-teste="ft-refazer" onClick={refazerEstilo}>
+                <Redo2 size={11} aria-hidden /> Refazer</button>
             </div>
           </div>
 
           <div className="avst-foto-acoes">
             <button type="button" className="avst-botao" disabled={salvando}
-              onClick={() => { setFotoEstilo(null); setEstilo(ESTILO_VAZIO); }}>
+              onClick={() => { setFotoEstilo(null); setEstilo(ESTILO_VAZIO); zerarHistorico(); }}>
               <X size={14} aria-hidden /> Cancelar
             </button>
             {/* §368: download local em escala — não passa pelo servidor.
@@ -714,6 +903,22 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               title="Baixar o PNG desta composição no seu computador"
               onClick={() => void baixarPng()}>
               <Download size={14} aria-hidden /> Baixar PNG
+            </button>
+            <button type="button" className="avst-botao" disabled={salvando || exportandoLote}
+              title="Baixar TODOS os formatos de uma vez (§371)" data-teste="exportar-lote"
+              onClick={() => void exportarLote()}>
+              {exportandoLote ? <LoaderCircle className="avst-girando" size={14} aria-hidden /> : <Layers size={14} aria-hidden />}
+              {exportandoLote ? ' Exportando…' : ' Todos os formatos'}
+            </button>
+            <button type="button" className="avst-botao" disabled={salvando || validando}
+              title="Conferir dimensões e peso antes de exportar (§370)" data-teste="validar-foto"
+              onClick={() => void validarExport()}>
+              <BadgeCheck size={14} aria-hidden /> Validar
+            </button>
+            <button type="button" className="avst-botao" disabled={salvando}
+              title="Guardar este trabalho como projeto (reabra depois — §364)" data-teste="guardar-projeto"
+              onClick={() => void guardarProjeto()}>
+              <BookmarkPlus size={14} aria-hidden /> Projeto
             </button>
             {podeCompartilhar() && (
               <button type="button" className="avst-botao" disabled={salvando}

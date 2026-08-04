@@ -27,6 +27,65 @@ export interface EstiloFotoRender {
   cores: AvatarConfig['cores'];
   /** selo do título JÁ resolvido pelo serviço (nome + cor da raridade) */
   selo?: { nome: string; cor: string };
+  /** megas 51–54: ajustes não destrutivos (ausente = render legado) */
+  ajustes?: {
+    brilho?: number; contraste?: number; saturacao?: number; temperatura?: number;
+    vinheta?: number; rotacao?: number; espelhar?: boolean; sombra?: boolean;
+  };
+}
+
+// ── megas 51–54: AJUSTES não destrutivos ────────────────────────────
+// Primitivas SVG puras (feComponentTransfer/feColorMatrix) — determinís-
+// ticas e rasterizáveis; nada de CSS filter (o canvas raster não vê).
+type AjustesRender = NonNullable<EstiloFotoRender['ajustes']>;
+
+const NEUTRO: Required<AjustesRender> = {
+  brilho: 1, contraste: 1, saturacao: 1, temperatura: 0,
+  vinheta: 0, rotacao: 0, espelhar: false, sombra: false,
+};
+
+function ajustesEfetivos(a?: AjustesRender): Required<AjustesRender> | null {
+  if (!a) return null;
+  const v = { ...NEUTRO, ...a };
+  const neutro = v.brilho === 1 && v.contraste === 1 && v.saturacao === 1
+    && v.temperatura === 0 && v.vinheta === 0 && v.rotacao === 0
+    && !v.espelhar && !v.sombra;
+  return neutro ? null : v;
+}
+
+/** <filter> de cor (brilho/contraste/saturação/temperatura) p/ a foto. */
+function filtroAjustes(uid: string, a: Required<AjustesRender>): string {
+  const precisaCor = a.brilho !== 1 || a.contraste !== 1 || a.saturacao !== 1 || a.temperatura !== 0;
+  if (!precisaCor) return '';
+  const b = a.brilho;
+  const c = a.contraste;
+  const interc = 0.5 - 0.5 * c; // contraste linear em volta do meio-tom
+  // temperatura: desloca R e B em direções opostas (quente = +R −B)
+  const tR = 1 + a.temperatura * 0.18;
+  const tB = 1 - a.temperatura * 0.18;
+  return `<filter id="${uid}aj" color-interpolation-filters="sRGB">` +
+    `<feColorMatrix type="saturate" values="${a.saturacao}"/>` +
+    `<feColorMatrix type="matrix" values="${tR} 0 0 0 0  0 1 0 0 0  0 0 ${tB} 0 0  0 0 0 1 0"/>` +
+    `<feComponentTransfer>` +
+      `<feFuncR type="linear" slope="${b * c}" intercept="${interc}"/>` +
+      `<feFuncG type="linear" slope="${b * c}" intercept="${interc}"/>` +
+      `<feFuncB type="linear" slope="${b * c}" intercept="${interc}"/>` +
+    `</feComponentTransfer></filter>`;
+}
+
+/** Vinheta radial dentro do clip (0–1). */
+function vinhetaSvg(uid: string, intensidade: number, W = 240, H = 240): string {
+  if (intensidade <= 0) return '';
+  return `<radialGradient id="${uid}vin" cx="50%" cy="50%" r="72%">` +
+    `<stop offset="58%" stop-color="#000" stop-opacity="0"/>` +
+    `<stop offset="100%" stop-color="#000" stop-opacity="${(0.72 * intensidade).toFixed(3)}"/>` +
+    `</radialGradient><rect width="${W}" height="${H}" fill="url(#${uid}vin)"/>`;
+}
+
+/** §337: sombra de contato — elipse suave sob o medalhão. */
+function sombraContato(uid: string): string {
+  return `<filter id="${uid}sb"><feGaussianBlur stdDeviation="4"/></filter>` +
+    `<ellipse cx="120" cy="218" rx="72" ry="9" fill="#000" opacity="0.38" filter="url(#${uid}sb)"/>`;
 }
 
 // ── §325: FORMATOS de saída (fonte única de verdade) ────────────────
@@ -71,9 +130,11 @@ export function renderFotoEstilizada(
   resolver: (id: string) => ParteDef | undefined,
   opcoes: OpcoesRenderFoto = {},
 ): string {
-  const uid = opcoes.uid ?? hashTexto(JSON.stringify(estilo.camadas) + (estilo.selo?.nome ?? ''));
+  const uid = opcoes.uid ?? hashTexto(JSON.stringify(estilo.camadas) + (estilo.selo?.nome ?? '')
+    + (estilo.ajustes ? JSON.stringify(estilo.ajustes) : ''));
   const p = paletaDe(estilo.cores);
   const forma = opcoes.forma ?? 'quadrado';
+  const aj = ajustesEfetivos(estilo.ajustes); // megas 51–54 (null = legado)
 
   const pintar = (id: string | undefined): string => {
     if (!id || id === 'nenhum') return '';
@@ -96,7 +157,7 @@ export function renderFotoEstilizada(
   const moldura = pintar(estilo.camadas.moldura);
 
   // medalhão central: aro externo → anel de destaque → foto clipada
-  const medalhao = medalhaoSvg(fotoHref, p, uid);
+  const medalhao = medalhaoSvg(fotoHref, p, uid, aj);
 
   // emblema vira BADGE no canto inferior direito do medalhão
   // (o pino desenha centrado em (152,206) → alvo (178,178))
@@ -122,9 +183,14 @@ export function renderFotoEstilizada(
     : `<rect width="240" height="240" rx="26"/>`;
   const dim = opcoes.tamanho ? ` width="${opcoes.tamanho}" height="${opcoes.tamanho}"` : '';
 
+  // megas 51–54: com ajustes ativos entram filtro/vinheta; SEM ajustes o
+  // SVG é byte a byte o de sempre (fotos salvas continuam determinísticas)
+  const defsAj = aj ? filtroAjustes(uid, aj) : '';
+  const vinheta = aj ? vinhetaSvg(uid, aj.vinheta) : '';
+
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"${dim} role="img" aria-label="Foto estilizada">
-<defs><clipPath id="${uid}clip">${clip}</clipPath><clipPath id="${uid}fclip"><circle cx="120" cy="118" r="92"/></clipPath></defs>
-<g clip-path="url(#${uid}clip)">${fundo}${efeitoAtras}${medalhao}${badge}${efeitoFrente}${selo}</g>
+<defs><clipPath id="${uid}clip">${clip}</clipPath><clipPath id="${uid}fclip"><circle cx="120" cy="118" r="92"/></clipPath>${defsAj}</defs>
+<g clip-path="url(#${uid}clip)">${fundo}${efeitoAtras}${medalhao}${badge}${efeitoFrente}${vinheta}${selo}</g>
 ${moldura}
 </svg>`;
 
@@ -137,10 +203,26 @@ ${moldura}
 /** Medalhão (aro → foto clipada → anel de destaque) — compartilhado entre
  *  o quadrado clássico e os formatos wide (§325). Geometria IDÊNTICA à
  *  original: o output do formato 'perfil' segue byte a byte o mesmo. */
-function medalhaoSvg(fotoHref: string, p: ReturnType<typeof paletaDe>, uid: string): string {
-  return `<circle cx="120" cy="118" r="97" fill="#0a0d15" opacity="0.92"/>` +
+function medalhaoSvg(
+  fotoHref: string,
+  p: ReturnType<typeof paletaDe>,
+  uid: string,
+  aj: Required<AjustesRender> | null = null,
+): string {
+  // megas 51+53: filtro de cor + rotação/espelho da FOTO (medalhão parado)
+  let extras = '';
+  if (aj) {
+    const temCor = aj.brilho !== 1 || aj.contraste !== 1 || aj.saturacao !== 1 || aj.temperatura !== 0;
+    if (temCor) extras += ` filter="url(#${uid}aj)"`;
+    const t: string[] = [];
+    if (aj.rotacao !== 0) t.push(`rotate(${aj.rotacao} 120 118)`);
+    if (aj.espelhar) t.push('translate(240 0) scale(-1 1)');
+    if (t.length) extras += ` transform="${t.join(' ')}"`;
+  }
+  const sombra = aj?.sombra ? sombraContato(uid) : '';
+  return sombra + `<circle cx="120" cy="118" r="97" fill="#0a0d15" opacity="0.92"/>` +
     `<image href="${escaparAtributo(fotoHref)}" x="28" y="26" width="184" height="184" ` +
-      `preserveAspectRatio="xMidYMid slice" clip-path="url(#${uid}fclip)"/>` +
+      `preserveAspectRatio="xMidYMid slice" clip-path="url(#${uid}fclip)"${extras}/>` +
     `<circle cx="120" cy="118" r="93" fill="none" stroke="${p.destaque.base}" stroke-width="3" opacity="0.9"/>`;
 }
 
@@ -161,6 +243,9 @@ function comporWide(
   const formato = FORMATOS_FOTO[opcoes.formato ?? 'header'];
   const [W, H] = formato.caixa;
   const sx = W / 240;
+  const aj = ajustesEfetivos(estilo.ajustes); // megas 51–54
+  const defsAj = aj ? filtroAjustes(uid, aj) : '';
+  const vinheta = aj ? vinhetaSvg(uid, aj.vinheta, W, H) : '';
 
   // fundo + banner esticados ("fundo esticado" — §325); gradientes ficam
   // imperceptíveis, padrões alargam de leve (aceito pelo briefing)
@@ -195,8 +280,8 @@ function comporWide(
   const dims = opcoes.estatico ? ` width="${lw}" height="${lh}"` : '';
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"${dims} ` +
     `preserveAspectRatio="none" role="img" aria-label="Foto estilizada (${formato.nome})">
-<defs><clipPath id="${uid}clip"><rect width="${W}" height="${H}" rx="14"/></clipPath><clipPath id="${uid}fclip"><circle cx="120" cy="118" r="92"/></clipPath></defs>
-<g clip-path="url(#${uid}clip)"><rect width="${W}" height="${H}" fill="#0a0d15"/>${fundo}${efeitoAtras}${aura}${medalhaoSvg(fotoHref, p, uid)}${badge}${efeitoFrente}${selo}</g>
+<defs><clipPath id="${uid}clip"><rect width="${W}" height="${H}" rx="14"/></clipPath><clipPath id="${uid}fclip"><circle cx="120" cy="118" r="92"/></clipPath>${defsAj}</defs>
+<g clip-path="url(#${uid}clip)"><rect width="${W}" height="${H}" fill="#0a0d15"/>${fundo}${efeitoAtras}${aura}${medalhaoSvg(fotoHref, p, uid, aj)}${badge}${efeitoFrente}${vinheta}${selo}</g>
 </svg>`;
 
   if (opcoes.estatico) svg = congelarSvg(svg);
