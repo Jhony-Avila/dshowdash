@@ -437,3 +437,38 @@ arquivo inválido recusado sem tocar a biblioteca). Suíte: 33/33 + núcleo.
 Aprendizados novos do lote: overlay dentro de .avst5-detalhe-fundo PRECISA
 de z-index 56 (o backdrop interno usa 40); prefetch no hover consome mocks
 de rede (cliques de teste p/ contagem exata = dispatchEvent).
+
+## MEGAS 51–70 "LOTE GIGANTE: Photo Studio PRO + Palco de Apresentação + Progressão" · 2026-08-04
+
+Primeiro lote pós-mapa-de-lacunas-v2 (trilho A). 20 megas num ciclo único.
+
+✅ 51–54 AJUSTES DA FOTO (§333/§334/§337/§340) — brilho/contraste/
+   saturação/temperatura em primitivas SVG puras (rasterizáveis),
+   vinheta, rotação/espelho da foto no medalhão, sombra de contato.
+   NEUTRO OMITIDO: sem ajustes o SVG é byte a byte o legado (provado em
+   teste). Servidor persiste 'ajustes' com clamps campo a campo.
+✅ 56 HISTÓRICO DO ESTILO (§360) — undo/redo com pilha 30; camadas/
+   título/cores/templates viram passos.
+✅ 57 PROJETOS (§364) — ProjetosFoto.ts; foto JPEG 480 na cota; máx 6;
+   guardar/reabrir/excluir.
+✅ 58 VALIDAÇÃO PRÉ-EXPORT (§370) — dimensões + peso real + avisos.
+✅ 59 EXPORT EM LOTE (§371) — 4 formatos §325 numa ação.
+✅ 60–62 CENÁRIOS/HORA/LUZ 2D (§160/§162/§164) — Dojo/Neon/Galáxia,
+   dia/tarde/noite, 4 luzes (filtro só no avatar); persistidos.
+✅ 63 ATIVAR PODER (§153–155) — overlay efêmero 2,6s; svgEfeitoIsolado
+   aceita AURA (era só efeito — pego pelo teste).
+✅ 64 EDITORES MOLDURA/BANNER (§166–172) — intensidade via motor §71.
+✅ 65–66 CENAS + HISTÓRICO DE APRESENTAÇÃO (§180/§185) — combos salvos
+   (máx 6) + última cena registrada com "↺ última".
+✅ 67 PÁGINA DA COLEÇÃO (§207–214) — hero, LORE (campo novo), checklist,
+   recompensa.
+✅ 68 CONQUISTAS+ (§218–221) — filtros todas/feitas/pendentes + faixa de
+   estatísticas por categoria.
+✅ 69 COMPARAÇÃO DE PRESETS (§231) — 2 lado a lado + diff de camadas.
+✅ 70 CONSOLIDAÇÃO — suíte 38/38 + núcleo; entry 257/295 (teto subiu de
+   265 com justificativa); php -l ok; este registro.
+
+Lições novas: regra CSS base declarada DEPOIS vence o empate (offsets de
+.avst5-horas precisaram de especificidade dupla); coleções/conquistas
+vivem no CLÁSSICO (testes trocam de modo); esperas de mensagem = 
+waitForFunction, nunca timeout fixo.
