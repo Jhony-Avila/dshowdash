@@ -22,7 +22,7 @@ import {
   CATEGORIAS, CONFIG_PADRAO, GRUPOS, RARIDADES, aleatorio, itemPorId, nivelRaridade,
   validarConfig,
 } from '../services/AvatarCatalog';
-import { carregarAvatar, salvarAvatar } from '../services/AvatarService';
+import { carregarAvatar, salvarAvatar, salvarFoto } from '../services/AvatarService';
 import type { OrigemDado, ResultadoCarga, TipoAtivo } from '../services/AvatarService';
 import { definirSom, somAtivo, tocarCelebracao, tocarEquipar, tocarSalvar } from '../services/Som';
 import { registrarUso, sincronizarFavoritos } from '../services/Progresso';
@@ -414,6 +414,13 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           const r = await salvarAvatar(cfg, versao);
           if (r.ok && typeof r.versao === 'number') setVersao(r.versao);
           return { ok: r.ok, versao: r.versao };
+        }}
+        aoSalvarFotoLegado={async (png960) => {
+          // mega 24: captura do palco 3D vira o avatar oficial (mesmo
+          // pipeline da Foto — servidor re-encoda pixel a pixel §325)
+          const r = await salvarFoto(png960, versao);
+          if (r.ok && typeof r.versao === 'number') setVersao(r.versao);
+          return r.ok;
         }}
         aoSairDoShell={() => setShellNovo(false)} />
     );

@@ -10,13 +10,14 @@
 // continuam honestas; flag as5.palco3d fail-safe OFF; erro nunca derruba
 // o shell.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Camera, CircleDot, Clapperboard, PersonStanding, Play, Share2, Sparkles, UserRound, Wand2 } from 'lucide-react';
+import { Activity, BadgeCheck, Box, Camera, CircleDot, Clapperboard, Grid3x3, LayoutPanelTop, Lightbulb, Pause, PersonStanding, Play, Rotate3d, Share2, Sparkles, UserRound, Wand2 } from 'lucide-react';
 import type { EstadoAvatar } from '../nucleo/contratos';
 import type { EstadoCamera, RenderizadorAvatar } from '../nucleo/renderizador';
 import { criarRenderizador } from '../services/FabricaRenderizador';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { telemetria } from '../services/Telemetria';
 import { carregarIndice3d, personagemParaBase } from '../services/Personagens3d';
+import { flag } from '../nucleo/flags';
 import type { EntradaIndice3d } from '../services/Personagens3d';
 
 /** Fallback embutido (índice indisponível — ex.: publicação parcial). */
@@ -38,11 +39,13 @@ function overrideGuardado(): string | null {
   try { return localStorage.getItem(CHAVE_OVERRIDE); } catch { return null; }
 }
 
-export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
+export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAvatar }: {
   estado: EstadoAvatar;
   movReduzido: boolean;
   /** mega 10: incrementa a cada clique em Apresentar (o shell delega §174) */
   sinalApresentar?: number;
+  /** mega 24: captura vira o AVATAR OFICIAL (pipeline salvarFoto do App) */
+  aoUsarComoAvatar?: (png960: string) => Promise<boolean>;
 }) {
   const refAlvo = useRef<HTMLDivElement>(null);
   const refR = useRef<RenderizadorAvatar | null>(null);
@@ -59,6 +62,18 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
   const [tierAtual, setTierAtual] = useState<'medio' | 'economico' | 'alto' | null>(null);
   // mega 18: anúncio p/ leitores de tela (aria-live)
   const [anuncio, setAnuncio] = useState('');
+  // megas 21/22: fundo e luz do palco 3D
+  const [fundo3d, setFundo3d] = useState<'neutro' | 'estudio' | 'grade'>('estudio');
+  const [luz3d, setLuz3d] = useState<'estudio' | 'quente' | 'fria' | 'neon'>('estudio');
+  // mega 26: marca d'água nas capturas/ficha
+  const [marca, setMarca] = useState(true);
+  // mega 29: pose congelada (freeze frame)
+  const [congelado, setCongelado] = useState(false);
+  // mega 24: feedback do salvar avatar
+  const [salvandoAvatar, setSalvandoAvatar] = useState(false);
+  // mega 28: HUD de performance (flag dev)
+  const hudLigado = flag('as5.hud3d');
+  const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number } | null>(null);
   const [sinalLocal, setSinalLocal] = useState(0);
   const sinalShowcase = sinalApresentar + sinalLocal;
   // mega 13 (§174.2): GRAVAÇÃO do showcase — MediaRecorder no canvas
@@ -233,8 +248,9 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
     try {
       const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
       telemetria('p3d_capturou', { personagem: refPersonagem.current }); // §290
+      const comM = await comMarca(foto.dataUri, 960);
       const a = document.createElement('a');
-      a.href = foto.dataUri;
+      a.href = comM;
       a.download = 'dshow-avatar-3d-960.png';
       a.click();
     } catch { /* captura é cosmética — nunca derruba o palco */ }
@@ -244,6 +260,115 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
     setCameraModo(modo);
     refR.current?.definirCamera({ modo, distancia: 2.15 });
   }, []);
+
+  // megas 21/22: fundo e luz refletem no renderer
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    (refR.current as unknown as { definirFundo?: (f: string) => void })?.definirFundo?.(fundo3d);
+  }, [fundo3d, fase, personagem]);
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    (refR.current as unknown as { definirLuz?: (l: string) => void })?.definirLuz?.(luz3d);
+  }, [luz3d, fase]);
+
+  // mega 29: pose congelada — pausa/retoma o renderer
+  useEffect(() => {
+    const r = refR.current;
+    if (!r || fase !== 'pronto') return;
+    if (congelado) r.pausar(); else r.retomar();
+  }, [congelado, fase]);
+
+  // mega 28: HUD (flag as5.hud3d) — amostra o diagnostico() a cada 1s
+  useEffect(() => {
+    if (!hudLigado || fase !== 'pronto') return;
+    const timer = setInterval(() => {
+      const d = (refR.current as unknown as { diagnostico?: () => { fps: number; tier: string; triangulos: number } })?.diagnostico?.();
+      if (d) setHud(d);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [hudLigado, fase]);
+
+  // mega 27: VIDA no idle — alterna Idle↔Idle_Neutral a cada 12s quando
+  // o personagem tem os dois (nunca em showcase/pose/animação escolhida ≠ Idle)
+  useEffect(() => {
+    if (fase !== 'pronto' || movReduzido) return;
+    const timer = setInterval(() => {
+      if (apresentando || congelado || animacao !== 'Idle') return;
+      const todas = indice.find((x) => x.slug === refPersonagem.current)?.animacoes ?? [];
+      if (!todas.includes('Idle_Neutral')) return;
+      const r = refR.current;
+      if (!r) return;
+      void (async () => {
+        await r.tocarAnimacao({ id: 'Idle_Neutral', transicaoMs: 600 });
+        setTimeout(() => { void refR.current?.tocarAnimacao({ id: 'Idle', transicaoMs: 600 }); }, 4000);
+      })();
+    }, 12000);
+    return () => clearInterval(timer);
+  }, [fase, movReduzido, apresentando, congelado, animacao, indice]);
+
+  // mega 26: marca d'água discreta num dataURI (canvas overlay)
+  const comMarca = useCallback(async (dataUri: string, lado: number): Promise<string> => {
+    if (!marca) return dataUri;
+    const img = new Image();
+    await new Promise((res) => { img.onload = res; img.src = dataUri; });
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d');
+    if (!g) return dataUri;
+    g.drawImage(img, 0, 0);
+    const fs = Math.round(lado * 0.024);
+    g.font = `700 ${fs}px system-ui, sans-serif`;
+    g.fillStyle = 'rgba(230, 234, 242, 0.5)';
+    g.textAlign = 'right';
+    g.fillText('DSHOW', c.width - fs, c.height - fs);
+    return c.toDataURL('image/png');
+  }, [marca]);
+
+  // mega 25: FICHA do personagem — 4 ângulos §508 num contact sheet 2×2
+  const gerarFicha = useCallback(async () => {
+    const r = refR.current;
+    if (!r) return;
+    try {
+      const angulos: Array<{ rotulo: string; azimute: number }> = [
+        { rotulo: 'frente', azimute: 0 },
+        { rotulo: 'três quartos', azimute: 0.65 },
+        { rotulo: 'perfil', azimute: Math.PI / 2 },
+        { rotulo: 'costas', azimute: Math.PI },
+      ];
+      const lados = 960;
+      const c = document.createElement('canvas');
+      c.width = lados * 2; c.height = lados * 2;
+      const g = c.getContext('2d');
+      if (!g) return;
+      for (let i = 0; i < angulos.length; i += 1) {
+        r.definirCamera({ modo: 'corpo', distancia: 2.15, azimute: angulos[i].azimute, elevacao: 0.3 });
+        const foto = await r.capturar({ largura: lados, altura: lados, deterministica: true });
+        const img = new Image();
+        await new Promise((res) => { img.onload = res; img.src = foto.dataUri; });
+        g.drawImage(img, (i % 2) * lados, Math.floor(i / 2) * lados);
+      }
+      r.definirCamera({ modo: cameraModo, distancia: 2.15 }); // restaura
+      const pronto = await comMarca(c.toDataURL('image/png'), lados * 2);
+      const a = document.createElement('a');
+      a.href = pronto;
+      a.download = `dshow-ficha-${refPersonagem.current}.png`;
+      a.click();
+      telemetria('p3d_ficha', { personagem: refPersonagem.current }); // §290
+    } catch { /* cosmético */ }
+  }, [cameraModo, comMarca]);
+
+  // mega 24: a captura vira o AVATAR OFICIAL (pipeline legado salvarFoto)
+  const usarComoAvatar = useCallback(async () => {
+    const r = refR.current;
+    if (!r || !aoUsarComoAvatar || salvandoAvatar) return;
+    setSalvandoAvatar(true);
+    try {
+      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
+      const okSalvo = await aoUsarComoAvatar(foto.dataUri);
+      setAnuncio(okSalvo ? 'Personagem 3D agora é seu avatar' : 'Não consegui salvar o avatar');
+      telemetria('p3d_virou_avatar', { personagem: refPersonagem.current, ok: okSalvo }); // §290
+    } catch { setAnuncio('Não consegui salvar o avatar'); } finally { setSalvandoAvatar(false); }
+  }, [aoUsarComoAvatar, salvandoAvatar]);
 
   // mega 18 (§583): atalhos do palco 3D — P apresenta, R grava, C captura
   useEffect(() => {
@@ -255,6 +380,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
       if (k === 'p' && !movReduzido && !apresentando) setSinalLocal((n) => n + 1);
       else if (k === 'r' && podeGravar && !gravando && !apresentando && !movReduzido) gravarShowcase();
       else if (k === 'c') void capturar3d();
+      else if (k === ' ') { ev.preventDefault(); setCongelado((v) => !v); } // mega 29
     };
     window.addEventListener('keydown', aoTecla);
     return () => window.removeEventListener('keydown', aoTecla);
@@ -307,8 +433,22 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
           </div>
         )}
         <div className="avst5-p3d-acoes">
+          <button type="button" title={congelado ? 'Retomar (espaço)' : 'Congelar pose (espaço)'}
+            aria-pressed={congelado} data-teste="p3d-pose"
+            onClick={() => setCongelado((v) => !v)}>
+            {congelado ? <Play size={13} aria-hidden /> : <Pause size={13} aria-hidden />}</button>
           <button type="button" title="Capturar PNG do palco 3D (§174.1)" data-teste="p3d-capturar"
             onClick={() => void capturar3d()}><Camera size={13} aria-hidden /></button>
+          <button type="button" title="Ficha do personagem — 4 ângulos (§508)" data-teste="p3d-ficha"
+            onClick={() => void gerarFicha()}><LayoutPanelTop size={13} aria-hidden /></button>
+          <button type="button" title={marca ? 'Marca Dshow LIGADA nas capturas' : 'Marca Dshow desligada'}
+            aria-pressed={marca} data-teste="p3d-marca"
+            onClick={() => setMarca((v) => !v)}><Grid3x3 size={13} aria-hidden /></button>
+          {aoUsarComoAvatar && (
+            <button type="button" title="Usar como meu AVATAR (header/perfil)" data-teste="p3d-usar-avatar"
+              disabled={salvandoAvatar}
+              onClick={() => void usarComoAvatar()}><BadgeCheck size={13} aria-hidden /></button>
+          )}
           {podeCompartilhar() && (
             <button type="button" title="Compartilhar a captura" data-teste="p3d-compartilhar"
               onClick={() => void compartilhar3d()}><Share2 size={13} aria-hidden /></button>
@@ -323,12 +463,43 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0 }: {
               onClick={gravarShowcase}><CircleDot size={13} aria-hidden /></button>
           )}
         </div>
+        <div className="avst5-p3d-cenario">
+          <span role="radiogroup" aria-label="Fundo do palco 3D" data-teste="p3d-fundos">
+            {(['neutro', 'estudio', 'grade'] as const).map((f2) => (
+              <button key={f2} type="button" role="radio" aria-checked={fundo3d === f2}
+                className={`avst5-p3d-chip${fundo3d === f2 ? ' avst5-p3d-chip-on' : ''}`}
+                onClick={() => setFundo3d(f2)}>
+                {f2 === 'neutro' ? 'Neutro' : f2 === 'estudio' ? 'Estúdio' : 'Grade'}
+              </button>
+            ))}
+          </span>
+          <span role="radiogroup" aria-label="Iluminação (§163)" data-teste="p3d-luzes">
+            <Lightbulb size={11} aria-hidden />
+            {(['estudio', 'quente', 'fria', 'neon'] as const).map((l2) => (
+              <button key={l2} type="button" role="radio" aria-checked={luz3d === l2}
+                className={`avst5-p3d-chip${luz3d === l2 ? ' avst5-p3d-chip-on' : ''}`}
+                onClick={() => setLuz3d(l2)}>
+                {l2 === 'estudio' ? 'Estúdio' : l2 === 'quente' ? 'Quente' : l2 === 'fria' ? 'Fria' : 'Neon'}
+              </button>
+            ))}
+          </span>
+        </div>
+        {hudLigado && hud && (
+          <div className="avst5-p3d-hud" data-teste="p3d-hud" role="note">
+            <Activity size={10} aria-hidden /> {hud.fps}fps · {hud.tier} · {hud.triangulos.toLocaleString('pt-BR')}△
+          </div>
+        )}
+        {congelado && (
+          <div className="avst5-p3d-congelado" role="status" data-teste="p3d-congelado">Pose congelada (espaço retoma)</div>
+        )}
         <div className="avst5-p3d-cameras" role="radiogroup" aria-label="Câmera (§453.1)">
           <button type="button" role="radio" aria-checked={cameraModo === 'corpo'} title="Corpo inteiro"
             onClick={() => trocarCamera('corpo')}><PersonStanding size={13} aria-hidden /></button>
           <button type="button" role="radio" aria-checked={cameraModo === 'retrato'} title="Retrato"
             onClick={() => trocarCamera('retrato')}><UserRound size={13} aria-hidden /></button>
-          <button type="button" role="radio" aria-checked={cameraModo === 'cinematica'} title="Cinemática (órbita)"
+          <button type="button" role="radio" aria-checked={cameraModo === 'orbita'} title="Órbita livre — arraste p/ girar, roda p/ zoom (mega 23)"
+            data-teste="p3d-orbita" onClick={() => trocarCamera('orbita')}><Rotate3d size={13} aria-hidden /></button>
+          <button type="button" role="radio" aria-checked={cameraModo === 'cinematica'} title="Cinemática (órbita automática)"
             onClick={() => trocarCamera('cinematica')}><Clapperboard size={13} aria-hidden /></button>
         </div>
         <span className="avst5-sr-only" role="status" aria-live="polite">{anuncio}</span>

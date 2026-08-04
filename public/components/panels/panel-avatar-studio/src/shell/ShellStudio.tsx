@@ -102,12 +102,14 @@ class LimiteShell extends Component<{ aoSair: () => void; children: ReactNode },
   }
 }
 
-export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvarLegado, aoSairDoShell }: {
+export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvarLegado, aoSalvarFotoLegado, aoSairDoShell }: {
   configInicial: AvatarConfig;
   versaoBase: number;
   desbloqueados: Set<string>;
   /** salva pelo caminho legado (studio.php) até o corte do §619 */
   aoSalvarLegado: (config: AvatarConfig) => Promise<{ ok: boolean; versao?: number }>;
+  /** mega 24: captura 3D vira o AVATAR OFICIAL (pipeline salvarFoto do App) */
+  aoSalvarFotoLegado?: (png960: string) => Promise<boolean>;
   /** flag off / erro → App clássico */
   aoSairDoShell: () => void;
 }) {
@@ -575,7 +577,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* viewport dominante (R1) — SEM scroll de página (R5) */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}>
             {palco3d ? (
-              <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d} />
+              <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d}
+                aoUsarComoAvatar={aoSalvarFotoLegado} />
             ) : (
               <div className="avst5-palco">
                 <div className="avst5-zoom" style={zoomEstilo}>
