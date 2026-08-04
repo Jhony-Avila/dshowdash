@@ -34,6 +34,8 @@ export interface OpcoesRenderizador3d {
   basePersonagens?: string;
   /** mega 16 (§528): avisa quando o modo 'auto' rebaixa/sobe o tier */
   aoMudarQualidade?: (tier: QualidadeTier, motivo: 'fps_baixo' | 'fps_folga') => void;
+  /** mega 41: watchdog — avisa a UI quando o contexto WebGL cai/volta */
+  aoContexto?: (fase: 'perdido' | 'restaurado') => void;
 }
 
 const FUNDO_ESTUDIO = '#0d1017';
@@ -91,11 +93,18 @@ export class Renderizador3d implements RenderizadorAvatar {
   private clipes: Map<string, THREE.AnimationClip> = new Map();
   private acaoAtual: THREE.AnimationAction | null = null;
 
+  // mega 41: contexto WebGL perdido (GPU reset/aba de fundo) — watchdog
+  private contextoPerdido = false;
+  // mega 45: nitidez responsiva — o canvas segue o contêiner de verdade
+  private observadorTamanho: ResizeObserver | null = null;
+  private alvoEl: HTMLElement | null = null;
+
   constructor(opcoes: OpcoesRenderizador3d = {}) {
     this.opcoes = {
       resolverPersonagem: opcoes.resolverPersonagem ?? (() => 'manequim_dev'),
       basePersonagens: opcoes.basePersonagens ?? '/assets/avatars/3d/personagens',
       aoMudarQualidade: opcoes.aoMudarQualidade ?? (() => { /* opcional */ }),
+      aoContexto: opcoes.aoContexto ?? (() => { /* opcional */ }),
     };
   }
 
@@ -103,6 +112,9 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.qualidade = config.qualidade;
     this.pixelRatioMax = config.pixelRatioMax ?? 2;
     this.antialias = config.antialias ?? true;
+    // mega 42: dica de CAPACIDADE (§605-lite) — só o ponto de partida do
+    // adaptativo §528; o FPS real continua mandando depois
+    if (config.dicaTier && this.qualidade === 'auto') this.tierAuto = config.dicaTier;
   }
 
   async montar(alvo: { innerHTML: string }): Promise<void> {
@@ -117,6 +129,17 @@ export class Renderizador3d implements RenderizadorAvatar {
     const a = Math.max(1, el.clientHeight || 480);
     this.renderer.setSize(l, a);
     el.appendChild(this.renderer.domElement);
+    // mega 41: WATCHDOG de contexto — preventDefault permite o restore;
+    // o laço para de renderizar até o navegador devolver o contexto
+    this.renderer.domElement.addEventListener('webglcontextlost', this.aoPerderContexto, false);
+    this.renderer.domElement.addEventListener('webglcontextrestored', this.aoRestaurarContexto, false);
+    // mega 45: NITIDEZ RESPONSIVA — fullscreen/redimensionamento do painel
+    // ganham buffer REAL (antes o CSS só esticava o canvas montado)
+    this.alvoEl = el;
+    if (typeof ResizeObserver !== 'undefined') {
+      this.observadorTamanho = new ResizeObserver(() => this.redimensionar());
+      this.observadorTamanho.observe(el);
+    }
 
     // cena canônica — MESMA luz do §508 (thumbs): palco e thumb conversam
     this.cena = new THREE.Scene();
@@ -239,6 +262,7 @@ export class Renderizador3d implements RenderizadorAvatar {
 
   async capturar(opcoes: OpcoesCaptura): Promise<CapturaRender> {
     if (!this.renderer || !this.cena || !this.camera) throw new Error('capturar() antes de montar()');
+    if (this.contextoPerdido) throw new Error('contexto WebGL perdido — aguarde a recuperação (mega 41)');
     const estava = this.pausado;
     if (opcoes.deterministica !== false) this.pausado = true; // §508
     // mega 32: transparente HONRADO — só o personagem atravessa o frame
@@ -282,6 +306,19 @@ export class Renderizador3d implements RenderizadorAvatar {
   pausar(): void { this.pausado = true; }
   retomar(): void { this.pausado = false; }
 
+  /** mega 44: SCRUB — avança/volta a pose um passo e pinta UM quadro,
+   *  mesmo pausado (achar o frame perfeito antes de capturar). */
+  avancarQuadro(delta = 0.15): void {
+    if (!this.renderer || !this.cena || !this.camera || this.contextoPerdido) return;
+    if (this.mixer) {
+      this.mixer.update(delta);
+    } else {
+      this.relogio += delta;
+      this.animarIdle();
+    }
+    this.renderer.render(this.cena, this.camera);
+  }
+
   async descartar(): Promise<void> {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
@@ -293,7 +330,12 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.removerPersonagem();
     this.controles?.dispose();
     this.controles = null;
+    this.observadorTamanho?.disconnect();
+    this.observadorTamanho = null;
+    this.alvoEl = null;
     if (this.renderer) {
+      this.renderer.domElement.removeEventListener('webglcontextlost', this.aoPerderContexto);
+      this.renderer.domElement.removeEventListener('webglcontextrestored', this.aoRestaurarContexto);
       this.renderer.dispose();
       this.renderer.forceContextLoss();
       this.renderer.domElement.remove();
@@ -301,6 +343,33 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.renderer = null;
     this.cena = null;
     this.camera = null;
+  }
+
+  // ── mega 41: watchdog de contexto WebGL ─────────────────────────
+  private aoPerderContexto = (e: Event): void => {
+    e.preventDefault(); // sem isso o navegador NUNCA restaura
+    this.contextoPerdido = true;
+    this.opcoes.aoContexto('perdido');
+  };
+
+  private aoRestaurarContexto = (): void => {
+    this.contextoPerdido = false;
+    // o three re-sobe o estado GL; reaplicar o estado garante texturas/LOD
+    if (this.ultimoEstado) void this.aplicarEstado(this.ultimoEstado);
+    this.opcoes.aoContexto('restaurado');
+  };
+
+  /** mega 45: buffer real acompanha o contêiner (fullscreen nítido). */
+  private redimensionar(): void {
+    if (!this.renderer || !this.camera || !this.alvoEl) return;
+    const l = Math.max(1, this.alvoEl.clientWidth);
+    const a = Math.max(1, this.alvoEl.clientHeight);
+    const atual = new THREE.Vector2();
+    this.renderer.getSize(atual);
+    if (atual.x === l && atual.y === a) return;
+    this.renderer.setSize(l, a);
+    this.camera.aspect = l / a;
+    this.camera.updateProjectionMatrix();
   }
 
   // ── privados ────────────────────────────────────────────────────
@@ -465,7 +534,7 @@ export class Renderizador3d implements RenderizadorAvatar {
 
   private laço = (): void => {
     this.raf = requestAnimationFrame(this.laço);
-    if (this.pausado || !this.renderer || !this.cena || !this.camera) return;
+    if (this.pausado || this.contextoPerdido || !this.renderer || !this.cena || !this.camera) return;
     this.relogio += 1 / 60; // passo FIXO: idle igual em qualquer refresh
     // mega 16: FPS real (média móvel de 90 quadros) → tier adaptativo
     const agora = performance.now();

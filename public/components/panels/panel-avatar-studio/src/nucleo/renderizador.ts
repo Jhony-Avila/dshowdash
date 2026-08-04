@@ -20,6 +20,10 @@ export interface InicializacaoRenderer {
   /** teto do devicePixelRatio (§402/§528) — economia em telas 4K */
   pixelRatioMax?: number;
   antialias?: boolean;
+  /** mega 42 (§605-lite): ponto de PARTIDA do modo 'auto' sugerido pelo
+   *  diagnóstico de capacidade — o adaptativo §528 segue mandando depois.
+   *  Renderers sem modo auto ignoram. */
+  dicaTier?: QualidadeTier;
 }
 
 /** §453.1 — estados de câmera; o renderer 2D ignora o que não se aplica. */

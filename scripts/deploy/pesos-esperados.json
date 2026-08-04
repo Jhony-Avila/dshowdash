@@ -7,6 +7,6 @@
     "chunks/vendor": 40,
     "chunks/motor3d": 1180,
     "chunks/Estudio3D": 50,
-    "chunks/Renderizador3d": 12
+    "chunks/Renderizador3d": 16
   }
 }
