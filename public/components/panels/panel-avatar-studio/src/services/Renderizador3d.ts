@@ -19,6 +19,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type {
   CapturaRender, EstadoCamera, InicializacaoRenderer, OpcoesCaptura,
   PedidoAnimacao, PedidoPoder, RenderizadorAvatar, ResultadoAplicarEstado,
@@ -95,6 +96,13 @@ export class Renderizador3d implements RenderizadorAvatar {
 
   // mega 41: contexto WebGL perdido (GPU reset/aba de fundo) — watchdog
   private contextoPerdido = false;
+  // mega 79 (§451): sombras REAIS por tier (econômico fica na fake)
+  private chaoSombra: THREE.Mesh | null = null;
+  private sombrasLigadas = false;
+  // mega 81 (§419): tinta de destaque nos materiais do personagem
+  private tinta: { cor: string; forca: number } | null = null;
+  // mega 82 (§444): aura 3D — anel additive na cor do avatar
+  private aura3d: THREE.Mesh | null = null;
   // mega 45: nitidez responsiva — o canvas segue o contêiner de verdade
   private observadorTamanho: ResizeObserver | null = null;
   private alvoEl: HTMLElement | null = null;
@@ -125,6 +133,12 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.renderer = new THREE.WebGLRenderer({ antialias: this.antialias, alpha: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.pixelRatioMax)); // §402
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // mega 78 (§458): tone mapping cinematográfico (exposição ajustável)
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
+    // mega 79 (§451): shadow map pronto — ligar/desligar é por TIER
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     const l = Math.max(1, el.clientWidth || 480);
     const a = Math.max(1, el.clientHeight || 480);
     this.renderer.setSize(l, a);
@@ -158,6 +172,29 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.chao.position.y = 0.01;
     this.cena.add(this.chao);
     this.definirFundo(this.fundoAtual);
+    // mega 77 (§449): ENVIRONMENT MAP procedural (RoomEnvironment — zero
+    // download) → materiais standard ganham reflexo/ambiente AAA
+    try {
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.cena.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      (this.cena as THREE.Scene & { environmentIntensity?: number }).environmentIntensity = 0.55;
+      pmrem.dispose();
+    } catch { /* ambiente sem suporte — as 3 luzes canônicas seguram */ }
+    // mega 79: chão receptor de sombra REAL (invisível fora do tier)
+    this.chaoSombra = new THREE.Mesh(
+      new THREE.PlaneGeometry(6, 6).rotateX(-Math.PI / 2),
+      new THREE.ShadowMaterial({ opacity: 0.32 }),
+    );
+    this.chaoSombra.position.y = 0.005;
+    this.chaoSombra.receiveShadow = true;
+    this.chaoSombra.visible = false;
+    this.cena.add(this.chaoSombra);
+    if (this.luzes) {
+      this.luzes.chave.shadow.mapSize.set(1024, 1024);
+      this.luzes.chave.shadow.camera.near = 0.5;
+      this.luzes.chave.shadow.camera.far = 12;
+    }
+    this.atualizarSombras();
     this.camera = new THREE.PerspectiveCamera(32, l / a, 0.01, 100);
 
     if (this.ultimoEstado) await this.aplicarEstado(this.ultimoEstado);
@@ -270,10 +307,12 @@ export class Renderizador3d implements RenderizadorAvatar {
     const fundoAntes = this.cena.background;
     const chaoAntes = this.chao?.visible ?? true;
     const gradeAntes = this.grade?.visible ?? true;
+    const sombraAntes = this.chaoSombra?.visible ?? false;
     if (opcoes.transparente) {
       this.cena.background = null;
       if (this.chao) this.chao.visible = false;
       if (this.grade) this.grade.visible = false;
+      if (this.chaoSombra) this.chaoSombra.visible = false; // recorte limpo
     }
     const tamanhoAntes = new THREE.Vector2();
     this.renderer.getSize(tamanhoAntes);
@@ -289,6 +328,7 @@ export class Renderizador3d implements RenderizadorAvatar {
       this.cena.background = fundoAntes;
       if (this.chao) this.chao.visible = chaoAntes;
       if (this.grade) this.grade.visible = gradeAntes;
+      if (this.chaoSombra) this.chaoSombra.visible = sombraAntes;
       this.renderer.render(this.cena, this.camera); // não deixa frame vazado
     }
     this.pausado = estava;
@@ -297,6 +337,7 @@ export class Renderizador3d implements RenderizadorAvatar {
 
   definirQualidade(perfil: QualidadeTier | 'auto'): void {
     this.qualidade = perfil;
+    this.atualizarSombras(); // mega 79: sombras seguem o tier
     // troca de LOD a quente: recarrega em silêncio se o tier mudou o arquivo
     if (this.ultimoEstado && this.lodDesejado() !== this.lodAtual) {
       void this.aplicarEstado(this.ultimoEstado);
@@ -333,6 +374,12 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.observadorTamanho?.disconnect();
     this.observadorTamanho = null;
     this.alvoEl = null;
+    this.definirAura3d(null); // mega 82: dispose do anel
+    if (this.chaoSombra) {
+      this.chaoSombra.geometry.dispose();
+      (this.chaoSombra.material as THREE.Material).dispose();
+      this.chaoSombra = null;
+    }
     if (this.renderer) {
       this.renderer.domElement.removeEventListener('webglcontextlost', this.aoPerderContexto);
       this.renderer.domElement.removeEventListener('webglcontextrestored', this.aoRestaurarContexto);
@@ -404,15 +451,102 @@ export class Renderizador3d implements RenderizadorAvatar {
     else aplicar(0xffffff, 2.6, 0x9db4ff, 1.1, 0.55);
   }
 
-  /** mega 28 (§290): números vivos p/ o HUD de dev. */
-  diagnostico(): { fps: number; tier: string; triangulos: number } {
+  /** mega 28 (§290): números vivos p/ o HUD de dev (mega 79: + sombras). */
+  diagnostico(): { fps: number; tier: string; triangulos: number; sombras: boolean } {
     return {
       fps: Math.round(this.fpsMedia),
       tier: this.tierEfetivo(),
       triangulos: this.manifest?.triangulos?.[
         { alto: 'lod0', medio: 'lod1', economico: 'lod2' }[this.tierEfetivo()] as 'lod0'
       ] ?? 0,
+      sombras: this.sombrasLigadas,
     };
+  }
+
+  /** mega 78 (§458): exposição do tone mapping (0.6–1.6; 1 = neutro). */
+  definirExposicao(v: number): void {
+    if (this.renderer) this.renderer.toneMappingExposure = Math.min(1.6, Math.max(0.6, v));
+  }
+
+  /** mega 79 (§451): sombras REAIS quando o tier aguenta; econômico usa a
+   *  sombra fake de sempre. Chamado no montar/qualidade/carregar. */
+  private atualizarSombras(): void {
+    const reais = this.tierEfetivo() !== 'economico';
+    this.sombrasLigadas = reais;
+    if (this.luzes) this.luzes.chave.castShadow = reais;
+    if (this.chaoSombra) this.chaoSombra.visible = reais;
+    if (this.chao) this.chao.visible = !reais; // fake só quando a real está fora
+    this.personagem?.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).castShadow = reais;
+    });
+  }
+
+  /** mega 81 (§419–§420): TINTA de destaque nos materiais (null = original).
+   *  Cor original fica em userData — reaplicar nunca acumula. */
+  definirTinta(cor: string | null, forca = 0.3): void {
+    this.tinta = cor ? { cor, forca } : null;
+    this.aplicarTinta();
+  }
+
+  private aplicarTinta(): void {
+    if (!this.personagem) return;
+    this.personagem.traverse((o) => {
+      const bruto = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+      const lista = Array.isArray(bruto) ? bruto : bruto ? [bruto] : [];
+      for (const mat of lista) {
+        const ms = mat as THREE.MeshStandardMaterial & { userData: { corOriginal?: number } };
+        if (!ms.color) continue;
+        if (ms.userData.corOriginal === undefined) ms.userData.corOriginal = ms.color.getHex();
+        ms.color.setHex(ms.userData.corOriginal);
+        if (this.tinta) ms.color.lerp(new THREE.Color(this.tinta.cor), this.tinta.forca);
+      }
+    });
+  }
+
+  /** mega 82 (§444): AURA 3D — anel additive pulsante na cor do avatar. */
+  definirAura3d(cor: string | null): void {
+    if (this.aura3d) {
+      this.cena?.remove(this.aura3d);
+      this.aura3d.geometry.dispose();
+      (this.aura3d.material as THREE.Material).dispose();
+      this.aura3d = null;
+    }
+    if (!cor || !this.cena) return;
+    this.aura3d = new THREE.Mesh(
+      new THREE.TorusGeometry(0.55, 0.05, 12, 48),
+      new THREE.MeshBasicMaterial({
+        color: cor, transparent: true, opacity: 0.5,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }),
+    );
+    this.aura3d.rotation.x = -Math.PI / 2;
+    this.aura3d.position.y = 0.07;
+    this.cena.add(this.aura3d);
+  }
+
+  /** mega 80 (§442–§443): congela o clipe num TEMPO exato (pose salva). */
+  poseNoTempo(clipe: string, tempo: number): void {
+    if (!this.mixer) return;
+    const c = this.clipes.get(clipe);
+    if (!c) return;
+    this.acaoAtual?.stop();
+    const acao = this.mixer.clipAction(c);
+    acao.reset();
+    acao.play();
+    acao.paused = true;
+    acao.time = Math.max(0, tempo % Math.max(0.001, c.duration));
+    this.acaoAtual = acao;
+    this.mixer.update(0);
+    this.pausado = true;
+    if (this.renderer && this.cena && this.camera) this.renderer.render(this.cena, this.camera);
+  }
+
+  /** mega 80: tempo atual do clipe ativo (p/ salvar a pose do scrub). */
+  tempoDaPose(): { clipe: string | null; tempo: number } {
+    const clip = this.acaoAtual?.getClip();
+    let nome: string | null = null;
+    if (clip) for (const [k, v] of this.clipes) { if (v === clip) { nome = k; break; } }
+    return { clipe: nome, tempo: this.acaoAtual?.time ?? 0 };
   }
 
   /** Tier EFETIVO: 'auto' delega ao adaptativo (mega 16). */
@@ -495,6 +629,8 @@ export class Renderizador3d implements RenderizadorAvatar {
       const caixa = new THREE.Box3().setFromObject(this.personagem);
       this.controles.target.copy(caixa.getCenter(new THREE.Vector3()));
     }
+    this.atualizarSombras(); // mega 79: castShadow no personagem novo
+    this.aplicarTinta();     // mega 81: tinta sobrevive à troca/LOD
     this.definirCamera(this.cameraAtual); // preserva órbita/retrato no reload §528
   }
 
@@ -548,10 +684,12 @@ export class Renderizador3d implements RenderizadorAvatar {
         if (this.qualidade === 'auto') {
           if (media < 30 && this.tierAuto !== 'economico') {
             this.tierAuto = 'economico';
+            this.atualizarSombras(); // mega 79
             this.opcoes.aoMudarQualidade('economico', 'fps_baixo');
             if (this.ultimoEstado) void this.aplicarEstado(this.ultimoEstado);
           } else if (media > 55 && this.tierAuto !== 'medio') {
             this.tierAuto = 'medio';
+            this.atualizarSombras(); // mega 79
             this.opcoes.aoMudarQualidade('medio', 'fps_folga');
             if (this.ultimoEstado) void this.aplicarEstado(this.ultimoEstado);
           }
@@ -561,6 +699,12 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.fpsUltimo = agora;
     this.animarIdle();
     this.mixer?.update(1 / 60);
+    // mega 82: aura 3D respira (rotação + pulso sutil)
+    if (this.aura3d) {
+      this.aura3d.rotation.z = this.relogio * 0.8;
+      const pulso = 1 + Math.sin(this.relogio * 2.2) * 0.045;
+      this.aura3d.scale.set(pulso, pulso, 1);
+    }
     if (this.controles?.enabled) {
       // alvo do orbit acompanha o personagem (uma vez por frame é barato)
       this.controles.update();

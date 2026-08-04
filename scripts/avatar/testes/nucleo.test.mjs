@@ -294,6 +294,25 @@ ok(imp.cenas?.length === 1 && imp.cenas[0].luz === 'estudio' && imp.cenas[0].fun
   'cena: campo fora do domínio deveria cair no padrão');
 ok(imp.avisos.length === 2, 'avisos deveriam contar 1 preset + 1 cena descartados, deu ' + imp.avisos.length);
 
+// megas 72–74 (§108–§111): morfologia paramétrica — escala com centro certo
+ok(sanitizarParams('olhos', { escala: 0.9 })?.escala === 0.9, 'params olhos §109 não sanitizam');
+ok(aplicarParamsSvg('olhos', '<circle/>', { escala: 0.9 }).includes('translate(120 108) scale(0.9)'),
+  'escala dos olhos fora do centro (120,108)');
+ok(aplicarParamsSvg('boca', '<circle/>', { escala: 1.1 }).includes('translate(120 146) scale(1.1)'),
+  'escala da boca fora do centro (120,146)');
+ok(sanitizarParams('moldura', { intensidade: 0.5 })?.intensidade === 0.5, 'params moldura §166 não sanitizam');
+
+// mega 97 (§373-lite): código do look — roundtrip + lixo recusado
+import { codigoDoLook, lerCodigoDoLook } from '${PAINEL}/src/services/Backup';
+const cod = codigoDoLook(CONFIG_PADRAO);
+ok(cod.startsWith('DSHOW-'), 'código do look sem prefixo');
+const volta2 = lerCodigoDoLook(cod);
+ok(volta2 !== null && volta2.base === CONFIG_PADRAO.base, 'roundtrip do código do look perdeu a base');
+ok(lerCodigoDoLook('DSHOW-lixo') === null && lerCodigoDoLook('qualquercoisa') === null,
+  'código lixo deveria devolver null');
+const codMau = codigoDoLook({ ...CONFIG_PADRAO, camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_hacker_9000' } });
+ok(lerCodigoDoLook(codMau)?.camadas.olhos !== 'olh_hacker_9000', 'ID inventado atravessou o código do look');
+
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);
 `);

@@ -108,8 +108,23 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
         </div>
         <p className="avst5-det-rar" style={{ color: rar.cor }}>{rar.nome} · {item.tema}{bloqueado && <> · <Lock size={11} aria-hidden /> bloqueado</>}</p>
         <p className="avst5-det-lore">{item.lore ?? item.descricao}</p>
-        {item.bloqueadoPor && (
-          <p className="avst5-det-meta">Origem: {item.bloqueadoPor.startsWith('evento:') ? 'item de evento sazonal' : 'recompensa de conquista'}{bloqueado ? ' (ainda não desbloqueado)' : ' (desbloqueado ✓)'}</p>
+        {/* megas 92+93 (§85/§225–§228): ECONOMIA do asset — origem,
+            disponibilidade e o caminho de desbloqueio explícito */}
+        <p className="avst5-det-meta" data-teste="det-economia">
+          Origem: {!item.bloqueadoPor ? 'catálogo base'
+            : item.bloqueadoPor.startsWith('evento:') ? 'evento sazonal' : 'recompensa de conquista'}
+          {' · '}Disponibilidade: {item.bloqueadoPor?.startsWith('evento:') ? 'sazonal' : 'permanente'}
+          {' · '}{itensUsados().has(item.id) ? 'já explorado ✓' : 'ainda não explorado'}
+        </p>
+        {bloqueado && (
+          <p className="avst5-det-meta avst5-det-desbloqueio" data-teste="det-desbloqueio">
+            <Lock size={11} aria-hidden /> Como desbloquear: {item.bloqueadoPor!.startsWith('evento:')
+              ? `participe do evento "${item.bloqueadoPor!.slice(7).replace(/_/g, ' ')}"`
+              : `complete a conquista "${item.bloqueadoPor!.replace(/^conquista:/, '').replace(/_/g, ' ')}"`}
+          </p>
+        )}
+        {item.bloqueadoPor && !bloqueado && (
+          <p className="avst5-det-meta">Desbloqueado ✓</p>
         )}
         {colecao && prog && (
           <button type="button" className="avst5-det-colecao" onClick={() => aoVerColecao?.(colecao.id)}>

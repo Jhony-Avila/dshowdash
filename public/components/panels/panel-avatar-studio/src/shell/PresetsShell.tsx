@@ -12,7 +12,7 @@ import { dataUriDe, itemPorId } from '../services/AvatarCatalog';
 import {
   alternarFavoritoPreset, duplicarPreset, excluirPreset, listarPresets, salvarPreset,
 } from '../services/PresetsPessoais';
-import { aplicarBackup, exportarBackup, interpretarBackup } from '../services/Backup';
+import { aplicarBackup, codigoDoLook, exportarBackup, interpretarBackup, lerCodigoDoLook } from '../services/Backup';
 import { calcularXp, nivelDe } from '../components/ProgressoPerfil';
 import { favoritos, itensUsados } from '../services/Progresso';
 
@@ -106,6 +106,28 @@ export function PresetsShell({ configAtual, aoAplicar }: {
           aria-label="Arquivo de backup" data-teste="backup-arquivo"
           onChange={(e) => void importar(e.target.files?.[0])} />
         {avisoBackup && <p className="avst5-backup-aviso" role="status" data-teste="backup-aviso">{avisoBackup}</p>}
+      </div>
+      {/* mega 97 (§373-lite): CÓDIGO DO LOOK — compartilha por texto */}
+      <div className="avst5-backup avst5-look" data-teste="codigo-look">
+        <button type="button" className="avst-botao" data-teste="look-copiar"
+          title="Copia um código de texto com o look atual — cole em chat/e-mail"
+          onClick={() => {
+            const cod = codigoDoLook(configAtual);
+            void navigator.clipboard?.writeText?.(cod).then(
+              () => setAvisoBackup('Código do look copiado — é só colar.'),
+              () => setAvisoBackup(cod), // sem clipboard: mostra p/ copiar à mão
+            );
+          }}>
+          Copiar código do look
+        </button>
+        <input type="text" placeholder="Colar código DSHOW-…" aria-label="Código do look"
+          data-teste="look-entrada"
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return;
+            const cfg = lerCodigoDoLook((e.target as HTMLInputElement).value);
+            if (cfg) { aoAplicar(cfg); setAvisoBackup('Look aplicado a partir do código.'); (e.target as HTMLInputElement).value = ''; }
+            else setAvisoBackup('Código inválido — confira se copiou inteiro.');
+          }} />
       </div>
       {/* mega 69 (§231): painel de comparação — aparece com 2 escolhidos */}
       {cmpA && cmpB && (

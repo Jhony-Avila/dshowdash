@@ -116,3 +116,23 @@ export function aplicarBackup(r: ResultadoImport): void {
   if (r.presets) substituirPresets(r.presets);
   if (r.cenas) substituirCenas(r.cenas);
 }
+
+// ── mega 97 (§373-lite): CÓDIGO DO LOOK — compartilhar por texto ────
+// base64url de {f,v,c}: cola em chat/e-mail e o colega aplica. A leitura
+// SANITIZA pelo catálogo (mesma regra do import — ID inventado não entra).
+
+export function codigoDoLook(config: AvatarConfig): string {
+  const json = JSON.stringify({ f: 'dshow-look', v: 1, c: validarConfig(config) });
+  const b64 = btoa(unescape(encodeURIComponent(json)));
+  return `DSHOW-${b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}`;
+}
+
+export function lerCodigoDoLook(texto: string): AvatarConfig | null {
+  try {
+    const cru = texto.trim().replace(/^DSHOW-/, '').replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(escape(atob(cru)));
+    const bruto = JSON.parse(json) as { f?: string; v?: number; c?: AvatarConfig };
+    if (bruto.f !== 'dshow-look' || bruto.v !== 1 || !bruto.c) return null;
+    return validarConfig(bruto.c); // sanitizado — nunca aplica lixo
+  } catch { return null; }
+}
