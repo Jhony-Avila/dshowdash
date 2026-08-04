@@ -53,7 +53,8 @@ const PAGINA = `<!doctype html><html><head><meta charset="utf-8">
   "three": "/three/build/three.module.js",
   "three/examples/jsm/loaders/GLTFLoader.js": "/three/examples/jsm/loaders/GLTFLoader.js",
   "three/examples/jsm/utils/SkeletonUtils.js": "/three/examples/jsm/utils/SkeletonUtils.js",
-  "three/examples/jsm/controls/OrbitControls.js": "/three/examples/jsm/controls/OrbitControls.js"
+  "three/examples/jsm/controls/OrbitControls.js": "/three/examples/jsm/controls/OrbitControls.js",
+  "three/examples/jsm/environments/RoomEnvironment.js": "/three/examples/jsm/environments/RoomEnvironment.js"
 }}</script></head><body style="margin:0">
 <div id="palco" style="width:480px;height:480px"></div>
 <script type="module" src="/bundle.js"></script></body></html>`;
@@ -120,10 +121,11 @@ try {
   ok(requests.some((u) => u.endsWith('modelo.lod2.glb')), 'economico deveria baixar o lod2');
   ok(!requests.some((u) => u.endsWith('modelo.lod0.glb')), 'lod0 não deveria ter sido baixado ainda');
 
-  // qualidade a quente: alto → lod0 atravessa a rede
+  // qualidade a quente: alto → lod0 atravessa a rede (folga p/ SwiftShader
+  // com environment map + shadow map do lote 71–90)
   await p.evaluate(async () => {
     window.__r3d.definirQualidade('alto');
-    await new Promise((res) => setTimeout(res, 600));
+    await new Promise((res) => setTimeout(res, 1600));
   });
   ok(requests.some((u) => u.endsWith('modelo.lod0.glb')), 'definirQualidade(alto) deveria baixar o lod0');
 
@@ -141,6 +143,54 @@ try {
   });
   ok(idle.mexeu, 'idle procedural não alterou o quadro');
   ok(idle.congelou, 'pausar não congelou o quadro');
+
+  // lote 71–90: sombras por tier (79), pose exata (80), tinta (81),
+  // aura 3D (82) e exposição (78) — tudo pela API do contrato
+  const aaa = await p.evaluate(async () => {
+    const r3d = window.__r3d;
+    const c = document.querySelector('#palco canvas');
+    const saida = {};
+    saida.sombrasAlto = r3d.diagnostico().sombras;      // está em 'alto' (teste anterior)
+    r3d.definirQualidade('economico');
+    await new Promise((res) => setTimeout(res, 900));    // troca de LOD
+    saida.sombrasEco = r3d.diagnostico().sombras;
+    r3d.definirQualidade('alto');
+    await new Promise((res) => setTimeout(res, 900));
+    // pose exata: congela num tempo e o quadro fica ESTÁVEL
+    r3d.pausar();
+    const antes = c.toDataURL();
+    r3d.avancarQuadro(0.3);
+    saida.avancou = c.toDataURL() !== antes;
+    // delta 0 = RE-RENDER puro (idle procedural não mexe a pose — a
+    // comparação byte a byte precisa da MESMA pose)
+    const semTinta = c.toDataURL();
+    r3d.definirTinta('#ff2d75', 0.6);
+    r3d.avancarQuadro(0);
+    saida.tintou = c.toDataURL() !== semTinta;
+    r3d.definirTinta(null);
+    r3d.avancarQuadro(0);
+    saida.destintou = c.toDataURL() === semTinta;
+    // aura 3D entra no quadro
+    r3d.definirAura3d('#4cd9e8');
+    r3d.avancarQuadro(0);
+    saida.aurou = c.toDataURL() !== semTinta;
+    r3d.definirAura3d(null);
+    // exposição muda o tone mapping
+    r3d.avancarQuadro(0);
+    const expAntes = c.toDataURL();
+    r3d.definirExposicao(0.6);
+    r3d.avancarQuadro(0);
+    saida.expos = c.toDataURL() !== expAntes;
+    r3d.definirExposicao(1);
+    r3d.retomar();
+    return saida;
+  });
+  ok(aaa.sombrasAlto === true, 'tier alto deveria ligar sombras REAIS (§451)');
+  ok(aaa.sombrasEco === false, 'tier econômico deveria voltar à sombra fake');
+  ok(aaa.avancou, 'avancarQuadro não repintou pausado (mega 44/80)');
+  ok(aaa.tintou && aaa.destintou, 'tinta §419 não aplicou/restaurou com exatidão');
+  ok(aaa.aurou, 'aura 3D §444 não entrou no quadro');
+  ok(aaa.expos, 'exposição §458 não mudou o tone mapping');
 
   // descartar limpa o DOM
   const limpou = await p.evaluate(async () => {

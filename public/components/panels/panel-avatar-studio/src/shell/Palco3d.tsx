@@ -24,6 +24,8 @@ import type { EntradaIndice3d } from '../services/Personagens3d';
 import { excluirCena, listarCenas, salvarCena } from '../services/Cenas3d';
 import type { Cena3d } from '../services/Cenas3d';
 import { detectarCapacidade3d } from '../services/Capacidade3d';
+import { excluirPose, listarPoses, salvarPose } from '../services/Poses3d';
+import { log } from '../services/Log';
 import { paraLegado2d } from '../nucleo/adaptadores';
 import { validarConfig } from '../services/AvatarCatalog';
 import { AvatarSvg } from '../components/AvatarSvg';
@@ -119,6 +121,18 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // mega 49: comparar 2D×3D lado a lado
   const [comparando2d, setComparando2d] = useState(false);
   const config2d = useMemo(() => validarConfig(paraLegado2d(estado)), [estado]);
+  // mega 78 (§458): exposição do tone mapping
+  const [exposicao, setExposicao] = useState(1);
+  // mega 80 (§442): biblioteca de poses
+  const [poses, setPoses] = useState(listarPoses);
+  // mega 81 (§419): tinta de destaque nos materiais
+  const [tinta, setTinta] = useState(false);
+  // mega 101: galeria LOCAL das últimas capturas (memória da sessão)
+  const [capturas, setCapturas] = useState<string[]>([]);
+  // mega 102 (§372): texto da marca d'água configurável
+  const [marcaTexto, setMarcaTexto] = useState<string>(() => {
+    try { return localStorage.getItem('dshow.avst5.p3d.marca.v1') ?? 'DSHOW'; } catch { return 'DSHOW'; }
+  });
   // mega 28: HUD de performance (flag dev)
   const hudLigado = flag('as5.hud3d');
   const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number } | null>(null);
@@ -178,7 +192,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         if (!refAlvo.current) throw new Error('alvo desmontado');
         await r.montar(refAlvo.current as unknown as { innerHTML: string });
         if (vivo) setFase('pronto');
-      } catch {
+      } catch (e) {
+        log.erro('p3d_montagem_falhou', { motivo: String((e as Error)?.message ?? e).slice(0, 80) }); // §291
         if (vivo) setFase('indisponivel');
       }
     })();
@@ -202,8 +217,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         if (refTentativa.current < 1) {
           refTentativa.current += 1;
           telemetria('p3d_retry', { personagem }); // §290
+          log.aviso('p3d_aplicar_falhou_retry', { personagem }); // §291
           setTimeout(() => setSinalRetry((n) => n + 1), 800);
         } else {
+          log.erro('p3d_indisponivel', { personagem }); // §291
           setFase('indisponivel');
         }
         return;
@@ -325,9 +342,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     g.font = `700 ${fs}px system-ui, sans-serif`;
     g.fillStyle = 'rgba(230, 234, 242, 0.5)';
     g.textAlign = 'right';
-    g.fillText('DSHOW', c.width - fs, c.height - fs);
+    // mega 102 (§372): texto configurável (sanitizado; vazio volta ao padrão)
+    g.fillText((marcaTexto.trim() || 'DSHOW').slice(0, 16), c.width - fs, c.height - fs);
     return c.toDataURL('image/png');
-  }, [marca]);
+  }, [marca, marcaTexto]);
 
   // mega 15: compartilhar a captura (share→clipboard→download) — mesma
   // composição da captura (marca + transparente, megas 26/32)
@@ -350,6 +368,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
       const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true, transparente });
       telemetria('p3d_capturou', { personagem: refPersonagem.current, transparente }); // §290
       const comM = await comMarca(foto.dataUri, 960);
+      setCapturas((c2) => [comM, ...c2].slice(0, 6)); // mega 101: galeria local
       const a = document.createElement('a');
       a.href = comM;
       a.download = 'dshow-avatar-3d-960.png';
@@ -395,6 +414,45 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     refR.current?.definirCamera({ modo: cameraModo, distancia: camDist, elevacao: camElev });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camDist, camElev]);
+
+  // mega 78: exposição do tone mapping → renderer
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    (refR.current as unknown as { definirExposicao?: (v: number) => void })?.definirExposicao?.(exposicao);
+  }, [exposicao, fase]);
+
+  // mega 81: tinta de destaque (cor do avatar 2D) nos materiais 3D
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    (refR.current as unknown as { definirTinta?: (c: string | null) => void })
+      ?.definirTinta?.(tinta ? config2d.cores.destaque : null);
+  }, [tinta, config2d, fase, personagem]);
+
+  // mega 82: aura equipada no 2D vira ANEL 3D na cor de destaque (§444)
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    (refR.current as unknown as { definirAura3d?: (c: string | null) => void })
+      ?.definirAura3d?.(estado.equipment.aura ? config2d.cores.destaque : null);
+  }, [estado, config2d, fase, personagem]);
+
+  // mega 80: salvar/aplicar/excluir POSES (clipe + tempo do scrub)
+  const salvarPoseAtual = useCallback(() => {
+    const r = refR.current as unknown as { tempoDaPose?: () => { clipe: string | null; tempo: number } };
+    const t = r?.tempoDaPose?.();
+    if (!t?.clipe) { setAnuncio('Este personagem não tem clipes p/ pose'); return; }
+    const p = salvarPose(refPersonagem.current, t.clipe, t.tempo);
+    setPoses(listarPoses());
+    setAnuncio(p ? `Pose "${p.nome}" salva` : 'Limite de 8 poses');
+    if (p) telemetria('p3d_pose_salvou', { clipe: t.clipe }); // §290
+  }, []);
+  const aplicarPose = useCallback((id: string) => {
+    const p = listarPoses().find((x) => x.id === id);
+    if (!p) return;
+    setCongelado(true);
+    setAnimacao(p.clipe);
+    (refR.current as unknown as { poseNoTempo?: (c: string, t: number) => void })?.poseNoTempo?.(p.clipe, p.tempo);
+    telemetria('p3d_pose_aplicou', { clipe: p.clipe }); // §290
+  }, []);
 
   // mega 44: SCRUB — um passo de pose por clique (funciona congelado)
   const avancarQuadroUi = useCallback((delta: number) => {
@@ -628,6 +686,9 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           <button type="button" title={marca ? 'Marca Dshow LIGADA nas capturas' : 'Marca Dshow desligada'}
             aria-pressed={marca} data-teste="p3d-marca"
             onClick={() => setMarca((v) => !v)}><Grid3x3 size={13} aria-hidden /></button>
+          <button type="button" title="Cores do avatar nos materiais 3D (§419)"
+            aria-pressed={tinta} data-teste="p3d-tinta"
+            onClick={() => setTinta((v) => !v)}><Sparkles size={13} aria-hidden /></button>
           {aoUsarComoAvatar && (
             <button type="button" title="Usar como meu AVATAR (header/perfil)" data-teste="p3d-usar-avatar"
               disabled={salvandoAvatar}
@@ -700,8 +761,33 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                   aria-label="Elevação da câmera"
                   onChange={(e) => setCamElev(Number(e.target.value))} />
               </label>
+              <label className="avst5-p3d-slider">Exposição
+                <input type="range" min="0.6" max="1.6" step="0.05" value={exposicao} data-teste="p3d-exp"
+                  aria-label="Exposição (tone mapping §458)"
+                  onChange={(e) => setExposicao(Number(e.target.value))} />
+              </label>
+              <label className="avst5-p3d-slider">Marca
+                <input type="text" maxLength={16} value={marcaTexto} data-teste="p3d-marca-texto"
+                  aria-label="Texto da marca d'água (§372)"
+                  onChange={(e) => {
+                    setMarcaTexto(e.target.value);
+                    try { localStorage.setItem('dshow.avst5.p3d.marca.v1', e.target.value); } catch { /* sem storage */ }
+                  }} />
+              </label>
             </>)}
           </span>
+          {poses.filter((p3) => p3.personagem === personagem).length > 0 && (
+            <span role="group" aria-label="Poses salvas (§442)" data-teste="p3d-poses">
+              {poses.filter((p3) => p3.personagem === personagem).map((p3) => (
+                <span key={p3.id} className="avst5-p3d-cena">
+                  <button type="button" className="avst5-p3d-chip" title={`${p3.clipe} @ ${p3.tempo.toFixed(2)}s`}
+                    onClick={() => aplicarPose(p3.id)}>{p3.nome}</button>
+                  <button type="button" className="avst5-p3d-cena-x" aria-label={`Excluir ${p3.nome}`}
+                    onClick={() => { excluirPose(p3.id); setPoses(listarPoses()); }}>×</button>
+                </span>
+              ))}
+            </span>
+          )}
           <span role="group" aria-label="Cenas salvas do palco" data-teste="p3d-cenas">
             <button type="button" className="avst5-p3d-chip" data-teste="p3d-cena-salvar"
               title="Salvar o setup atual (personagem, fundo, luz, câmera, animação)"
@@ -732,6 +818,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               onClick={() => avancarQuadroUi(-0.15)}><SkipBack size={13} aria-hidden /></button>
             <button type="button" title="Próximo quadro (mega 44)" data-teste="p3d-quadro-frente"
               onClick={() => avancarQuadroUi(0.15)}><SkipForward size={13} aria-hidden /></button>
+            <button type="button" title="Salvar esta pose (§443)" data-teste="p3d-pose-salvar"
+              onClick={salvarPoseAtual}><BookmarkPlus size={13} aria-hidden /></button>
           </div>
         )}
         {recuperando && (
@@ -755,6 +843,18 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           <button type="button" role="radio" aria-checked={cameraModo === 'cinematica'} title="Cinemática (órbita automática)"
             onClick={() => trocarCamera('cinematica')}><Clapperboard size={13} aria-hidden /></button>
         </div>
+        {capturas.length > 0 && (
+          <div className="avst5-p3d-capturas" data-teste="p3d-capturas" role="list"
+            aria-label="Últimas capturas desta sessão">
+            {capturas.map((c3, i) => (
+              <button key={`${i}-${c3.slice(-16)}`} type="button" role="listitem"
+                title="Baixar esta captura de novo"
+                onClick={() => { const a = document.createElement('a'); a.href = c3; a.download = `dshow-captura-${i + 1}.png`; a.click(); }}>
+                <img src={c3} alt={`Captura ${i + 1}`} width={40} height={40} />
+              </button>
+            ))}
+          </div>
+        )}
         <span className="avst5-sr-only" role="status" aria-live="polite">{anuncio}</span>
         <div className="avst5-p3d-nota" role="note" data-teste="p3d-pendencias">
           {override === null ? 'Auto pela espécie 2D' : 'Personagem fixado'}
