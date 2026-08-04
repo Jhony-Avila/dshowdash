@@ -620,9 +620,11 @@
   font-size: 12px; font-weight: 600; color: var(--avst-texto-2);
 }
 .avst-foto-zoom input { flex: 1; accent-color: var(--avst-acento); }
-.avst-foto-acoes { display: flex; gap: 8px; align-self: stretch; justify-content: flex-end; }
+.avst-foto-acoes { display: flex; gap: 8px; align-self: stretch; justify-content: flex-end; flex-wrap: wrap; }
+/* mega 15: com Compartilhar a fila cresceu — sem wrap, o 1º botão
+   transbordava p/ CIMA do palco e ficava inclicável (pego pelo foto-f6) */
 .avst-foto-msg { margin: 0; font-size: 12px; color: var(--avst-texto-2); }
-.avst-foto-origem { display: flex; gap: 10px; width: 100%; }
+.avst-foto-origem { display: flex; gap: 10px; width: 100%; flex-wrap: wrap; }
 .avst-foto-origem .avst-foto-escolher { flex: 1; min-height: 110px; background: none; font: inherit; color: var(--avst-texto-2); }
 .avst-foto-galeria { width: 100%; border-top: 1px solid var(--avst-borda); padding-top: 12px; }
 .avst-foto-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }

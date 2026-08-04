@@ -295,3 +295,23 @@ Suíte: 30 entradas — 30/30 + núcleo verdes.
 
 Testes: foto-3d.mjs novo + shell-palco3d v4 (gravação interceptada,
 blob WebM real). Suíte: 31 entradas — 31/31 + núcleo verdes.
+
+## MEGAS 14–20 (lote de 7) · 2026-08-03/04
+
+✅ 14 VITRINE 3D (§23) — seção Personagens 3D (previews §508 + nº de
+   animações); lição rules-of-hooks REINCIDENTE pega em teste (hooks
+   após early return crashavam o painel).
+✅ 15 COMPARTILHAR (§21.5) — cascata share(File)→ClipboardItem→download
+   na foto estilizada e na captura 3D; canal na telemetria. Fix de
+   layout: filas de ações com wrap (Cancelar transbordava sobre o palco).
+✅ 16 QUALIDADE ADAPTATIVA (§528) — FPS média móvel, histerese 30/55,
+   LOD a quente no modo auto; câmera preservada no reload; tier na nota.
+✅ 17 CACHE/PREFETCH (§402) — LRU dos BYTES do GLB + parseAsync fresco;
+   prefetch no hover. Decisão de arquitetura: clonar cena skinned
+   DESCARTADO (SkeletonUtils.clone deixou o androide 2-skins invisível;
+   diagnóstico por sondas: cena ok, mixer ok, canvas só fundo).
+✅ 18 A11Y & TECLADO (§583/§548) — atalhos P/R/C, aria-live, focus-visible.
+✅ 19 TELEMETRIA 3D (§290–292) — p3d_aplicou(+ms)/personagem/qualidade/
+   showcase/capturou/gravou + foto_compartilhou.
+✅ 20 CONSOLIDAÇÃO — suíte 31/31 + núcleo; relatórios do projeto
+   atualizados; este registro.
