@@ -1571,3 +1571,45 @@
   color: #fff; background: color-mix(in srgb, var(--avst-acento, #7c5cff) 38%, rgba(13,16,23,.88));
   border: 1px solid var(--avst-acento, #7c5cff); pointer-events: none;
 }
+
+/* lote 31–40: fila de ações comporta os botões novos sem transbordar */
+.avst5-p3d-acoes { flex-wrap: wrap; justify-content: flex-end; max-width: 42%; }
+
+/* mega 31: chip de cena com o × de excluir acoplado */
+.avst5-p3d-cena { display: inline-flex; align-items: stretch; }
+.avst5-p3d-cena .avst5-p3d-chip { border-radius: 999px 0 0 999px; border-right: none; }
+.avst5-p3d-cena-x {
+  padding: 0 8px; border-radius: 0 999px 999px 0; cursor: pointer; font-size: 12px; line-height: 1;
+  background: rgba(13, 16, 23, 0.82); color: var(--avst-texto-2, #8a93a6);
+  border: 1px solid var(--avst-borda, #232a38);
+}
+.avst5-p3d-cena-x:hover { color: #ff5230; border-color: #ff5230; }
+.avst5-p3d-cena-x:focus-visible { outline: 2px solid var(--avst-acento, #7c5cff); outline-offset: 2px; }
+[data-teste="p3d-cenas"] button:disabled { opacity: .45; cursor: default; }
+
+/* mega 39: modo apresentação — palco em tela cheia fica só o 3D */
+.avst5-p3d:fullscreen { background: #05070c; }
+.avst5-p3d:fullscreen .avst5-p3d-tela { width: 100vw; height: 100vh; }
+
+/* mega 37: folha de ATALHOS (§548) */
+.avst5-atalhos {
+  position: relative; z-index: 1; width: min(680px, 92vw); max-height: 80vh; overflow: auto;
+  padding: 18px 20px; border-radius: 16px; background: var(--avst-painel, #12151d);
+  border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2);
+}
+.avst5-atalhos h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 15px; }
+.avst5-atalhos-grupos { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.avst5-atalhos h4 { margin: 0 0 6px; font-size: 12px; color: var(--avst-texto-2, #8a93a6); text-transform: uppercase; letter-spacing: .04em; }
+.avst5-atalhos ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.avst5-atalhos li { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+.avst5-atalhos-teclas { display: inline-flex; gap: 3px; min-width: 108px; }
+.avst5-atalhos kbd {
+  padding: 2px 7px; border-radius: 6px; font-size: 11px; font-family: inherit;
+  background: rgba(13, 16, 23, 0.82); border: 1px solid var(--avst-borda, #232a38);
+  color: var(--avst-texto-2, #8a93a6);
+}
+.avst5-atalhos-nota { margin: 12px 0 0; font-size: 11px; color: var(--avst-texto-2, #8a93a6); }
+
+/* mega 38: backup export/import na aba Presets */
+.avst5-backup { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.avst5-backup-aviso { margin: 0; flex-basis: 100%; font-size: 11.5px; color: var(--avst-texto-2, #8a93a6); }

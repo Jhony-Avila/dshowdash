@@ -72,6 +72,11 @@ export function duplicarPreset(id: string): void {
   if (alvo) salvarPreset(`${alvo.nome} (cópia)`, alvo.config, alvo.tags);
 }
 
+/** mega 38: substitui a biblioteca inteira (import de backup VALIDADO). */
+export function substituirPresets(lista: PresetPessoal[]): void {
+  gravar(lista);
+}
+
 // ── Rascunho automático (§139) + conflito entre abas (§629) ─────────
 
 const CHAVE_RASCUNHO = 'dshow.avst5.rascunho.v1';

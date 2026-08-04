@@ -5,13 +5,14 @@
 // biblioteca (favoritos primeiro), aplicar (vira COMANDO com undo),
 // favoritar, duplicar e excluir. Thumbnail = render estático do próprio
 // config (determinístico — mesma fonte de verdade do palco).
-import { useState } from 'react';
-import { BookmarkPlus, Copy, Star, Trash2, TrendingUp } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { BookmarkPlus, Copy, HardDriveDownload, HardDriveUpload, Star, Trash2, TrendingUp } from 'lucide-react';
 import type { AvatarConfig } from '../domain/types';
 import { dataUriDe } from '../services/AvatarCatalog';
 import {
   alternarFavoritoPreset, duplicarPreset, excluirPreset, listarPresets, salvarPreset,
 } from '../services/PresetsPessoais';
+import { aplicarBackup, exportarBackup, interpretarBackup } from '../services/Backup';
 import { calcularXp, nivelDe } from '../components/ProgressoPerfil';
 import { favoritos, itensUsados } from '../services/Progresso';
 
@@ -21,11 +22,29 @@ export function PresetsShell({ configAtual, aoAplicar }: {
 }) {
   const [nome, setNome] = useState('');
   const [tic, setTic] = useState(0); // relê a biblioteca após cada mutação
+  // mega 38: feedback do import de backup (avisos de itens descartados)
+  const [avisoBackup, setAvisoBackup] = useState('');
+  const refArquivo = useRef<HTMLInputElement>(null);
   const presets = listarPresets();
   void tic;
 
   const salvar = () => {
     if (salvarPreset(nome, configAtual)) { setNome(''); setTic((t) => t + 1); }
+  };
+
+  // mega 38: importa o JSON — validação ESTRITA no serviço; config vira
+  // COMANDO (undo) via aoAplicar; presets/cenas substituem as bibliotecas
+  const importar = async (arquivo: File | undefined) => {
+    if (!arquivo) return;
+    try {
+      const r = interpretarBackup(await arquivo.text());
+      if (!r.ok) { setAvisoBackup(r.erro ?? 'Backup inválido.'); return; }
+      aplicarBackup(r);
+      if (r.config) aoAplicar(r.config);
+      setTic((t) => t + 1);
+      setAvisoBackup(['Backup importado.', ...r.avisos].join(' '));
+    } catch { setAvisoBackup('Não consegui ler o arquivo.'); }
+    finally { if (refArquivo.current) refArquivo.current.value = ''; }
   };
 
   // §574 (P9): DASHBOARD PESSOAL compacto — derivado de dados locais
@@ -52,6 +71,22 @@ export function PresetsShell({ configAtual, aoAplicar }: {
           disabled={!nome.trim()} onClick={salvar}>
           <BookmarkPlus size={13} aria-hidden /> Salvar atual
         </button>
+      </div>
+      <div className="avst5-backup" data-teste="backup">
+        <button type="button" className="avst-botao" data-teste="backup-exportar"
+          title="Baixa um JSON com o look atual, seus presets e as cenas 3D"
+          onClick={() => exportarBackup(configAtual)}>
+          <HardDriveDownload size={13} aria-hidden /> Exportar backup
+        </button>
+        <button type="button" className="avst-botao" data-teste="backup-importar"
+          title="Restaura um backup exportado (validação estrita — nada inválido entra)"
+          onClick={() => refArquivo.current?.click()}>
+          <HardDriveUpload size={13} aria-hidden /> Importar
+        </button>
+        <input ref={refArquivo} type="file" accept="application/json,.json" hidden
+          aria-label="Arquivo de backup" data-teste="backup-arquivo"
+          onChange={(e) => void importar(e.target.files?.[0])} />
+        {avisoBackup && <p className="avst5-backup-aviso" role="status" data-teste="backup-aviso">{avisoBackup}</p>}
       </div>
       {presets.length === 0 ? (
         <p className="avst5-presets-vazio">

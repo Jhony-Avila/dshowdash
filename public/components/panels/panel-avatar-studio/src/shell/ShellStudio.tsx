@@ -27,6 +27,7 @@ import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
+import { Atalhos } from './Atalhos';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { DetalheAsset } from './DetalheAsset';
 import { Palco3d } from './Palco3d';
@@ -349,6 +350,21 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     };
     window.addEventListener('keydown', aoK);
     return () => window.removeEventListener('keydown', aoK);
+  }, []);
+
+  // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
+  const [atalhos, setAtalhos] = useState(false);
+  useEffect(() => {
+    const aoInterrogacao = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName)) return;
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setAtalhos((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', aoInterrogacao);
+    return () => window.removeEventListener('keydown', aoInterrogacao);
   }, []);
 
   // §174 SHOWCASE: apresentação cinematográfica 2D no modo Studio.
@@ -757,6 +773,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           </aside>
         </div>
         {tour && <TourGuiado aoFechar={() => setTour(false)} />}
+        {atalhos && <Atalhos aoFechar={() => setAtalhos(false)} />}
         {paleta && (
           <PaletaComandos
             aoFechar={() => setPaleta(false)}
@@ -775,6 +792,13 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               { id: 'studio', rotulo: 'Alternar modo Studio', executar: () => setModo((m) => (m === 'studio' ? 'edicao' : 'studio')) },
               { id: 'presets', rotulo: 'Abrir meus Presets', executar: () => setAba('presets') },
               { id: 'equipados', rotulo: 'Abrir Equipados', executar: () => setAba('equipados') },
+              // mega 35: o 3D e a folha de atalhos entram na paleta §566
+              ...(flagPalco3d ? [{
+                id: 'palco3d',
+                rotulo: palco3d ? 'Desligar a prévia 3D' : 'Ligar a prévia 3D',
+                executar: () => setPalco3d((v) => !v),
+              }] : []),
+              { id: 'atalhos', rotulo: 'Atalhos do teclado (?)', executar: () => setAtalhos(true) },
               { id: 'classico', rotulo: 'Voltar ao modo clássico', executar: aoSairDoShell },
             ]} />
         )}
