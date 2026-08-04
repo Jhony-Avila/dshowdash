@@ -28,6 +28,7 @@ import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
 import { Atalhos } from './Atalhos';
+import { TelemetriaDev } from './TelemetriaDev';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { DetalheAsset } from './DetalheAsset';
 import { Palco3d } from './Palco3d';
@@ -351,6 +352,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     window.addEventListener('keydown', aoK);
     return () => window.removeEventListener('keydown', aoK);
   }, []);
+
+  // mega 46 (§290): viewer local de telemetria (flag dev)
+  const [telemetriaDev, setTelemetriaDev] = useState(false);
 
   // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
   const [atalhos, setAtalhos] = useState(false);
@@ -774,6 +778,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         </div>
         {tour && <TourGuiado aoFechar={() => setTour(false)} />}
         {atalhos && <Atalhos aoFechar={() => setAtalhos(false)} />}
+        {telemetriaDev && <TelemetriaDev aoFechar={() => setTelemetriaDev(false)} />}
         {paleta && (
           <PaletaComandos
             aoFechar={() => setPaleta(false)}
@@ -799,6 +804,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 executar: () => setPalco3d((v) => !v),
               }] : []),
               { id: 'atalhos', rotulo: 'Atalhos do teclado (?)', executar: () => setAtalhos(true) },
+              // mega 46: viewer de telemetria (só com a flag dev ligada)
+              ...(flag('as5.telemetria_painel') ? [{
+                id: 'telemetria', rotulo: 'Telemetria local (dev)', executar: () => setTelemetriaDev(true),
+              }] : []),
               { id: 'classico', rotulo: 'Voltar ao modo clássico', executar: aoSairDoShell },
             ]} />
         )}

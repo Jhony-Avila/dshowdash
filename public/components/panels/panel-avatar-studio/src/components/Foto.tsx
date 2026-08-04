@@ -103,6 +103,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   // mega 12 (§21×§174.1): TERCEIRA origem — captura do personagem 3D
   const [galeria3d, setGaleria3d] = useState<EntradaIndice3d[] | null>(null);
   const [capturando3d, setCapturando3d] = useState(false);
+  // mega 47: captura 3D com fundo TRANSPARENTE (compõe limpa nos templates)
+  const [transparente3d, setTransparente3d] = useState(false);
   const [estilo, setEstilo] = useState<EstiloFoto>(ESTILO_VAZIO);
   // §325: formato de saída — 'perfil' vai ao servidor; wide sai por download
   const [formato, setFormato] = useState<FormatoFotoId>('perfil');
@@ -303,12 +305,15 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
       await r.montar(palco as unknown as { innerHTML: string });
       const aplicado = await r.aplicarEstado(estadoVazio());
       if (!aplicado.ok) throw new Error('personagem indisponível');
-      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
+      // mega 47: transparente §21×§325 — o template compõe sem fundo escuro
+      const foto = await r.capturar({
+        largura: 960, altura: 960, deterministica: true, transparente: transparente3d,
+      });
       setFotoEstilo(foto.dataUri);
       setGaleria3d(null);
       const salvo = lerEstiloSalvo();
       if (salvo) setEstilo(salvo);
-      telemetria('foto_estilo_abriu', { origem: '3d', personagem: slug });
+      telemetria('foto_estilo_abriu', { origem: '3d', personagem: slug, transparente: transparente3d });
     } catch {
       setMensagem('Não consegui capturar o personagem 3D — tente outro.');
     } finally {
@@ -316,7 +321,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
       palco.remove();
       setCapturando3d(false);
     }
-  }, []);
+  }, [transparente3d]);
 
   // §362: autosave do ESTILO enquanto o modo estilizada está aberto
   useEffect(() => {
@@ -496,6 +501,11 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
           <p className="avst-foto-nota">
             Escolha o personagem — a captura entra direto no estúdio de estilo.
           </p>
+          <label className="avst-foto-3d-transp" data-teste="foto-3d-transparente">
+            <input type="checkbox" checked={transparente3d}
+              onChange={(e) => setTransparente3d(e.target.checked)} />
+            Fundo transparente (compõe melhor nos templates)
+          </label>
           <div className="avst-foto-3d-grade" role="list">
             {galeria3d.map((p3) => (
               <button key={p3.slug} type="button" role="listitem" disabled={capturando3d}

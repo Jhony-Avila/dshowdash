@@ -14,6 +14,7 @@ const PADROES: Record<string, boolean> = {
   'as5.ia_assistiva': false,     // F8
   'as5.palco3d': false,          // mega 7 — prévia 3D no viewport do shell
   'as5.hud3d': false,            // mega 28 — HUD de performance do palco 3D (dev)
+  'as5.telemetria_painel': false, // mega 46 — viewer local de telemetria (dev)
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

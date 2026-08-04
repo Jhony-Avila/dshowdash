@@ -36,6 +36,10 @@ const thumbOk = await p.evaluate(async () => {
 ok(thumbOk, 'thumb do personagem não carregou');
 await p.screenshot({ path: `${SAIDA}/foto3d-galeria.png` });
 
+// mega 47: toggle "fundo transparente" LIGADO antes de escolher
+ok(await p.locator('[data-teste="foto-3d-transparente"]').count() === 1, 'toggle transparente ausente na galeria');
+await p.locator('[data-teste="foto-3d-transparente"] input').check();
+
 // escolher Casual → captura headless (SwiftShader é lento) → Estilizar
 await p.locator('.avst-foto-3d-item', { hasText: 'Casual' }).click();
 await p.waitForSelector('.avst-ft-preview svg', { timeout: 45000 });
@@ -46,6 +50,21 @@ ok(await p.locator('[data-teste="templates-foto"]').count() === 1, 'fluxo Estili
 ok(svg.length > 20000, `SVG do preview suspeito de captura vazia (${svg.length} chars)`);
 // mega 15: botão Compartilhar presente (ClipboardItem existe no Chromium)
 ok(await p.locator('[data-teste="compartilhar-foto"]').count() === 1, 'botão Compartilhar ausente na estilizada');
+// mega 47: a captura embutida tem canto TRANSPARENTE (alpha 0) — o
+// template compõe sem o fundo escuro do palco
+const alphaCanto = await p.evaluate(async () => {
+  const img = document.querySelector('.avst-ft-preview svg image');
+  const href = img?.getAttribute('href') ?? img?.getAttribute('xlink:href');
+  if (!href) return null;
+  const el = new Image();
+  await new Promise((r) => { el.onload = r; el.src = href; });
+  const c = document.createElement('canvas');
+  c.width = el.width; c.height = el.height;
+  const g = c.getContext('2d');
+  g.drawImage(el, 0, 0);
+  return g.getImageData(2, 2, 1, 1).data[3];
+});
+ok(alphaCanto === 0, `captura 3D da Foto deveria ter canto transparente (alpha ${alphaCanto})`);
 await p.screenshot({ path: `${SAIDA}/foto3d-estilizada.png` });
 
 const ok_ = relatorio('foto-3d', falhas, erros);

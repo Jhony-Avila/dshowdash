@@ -12,7 +12,7 @@
 // continuam honestas; flag as5.palco3d fail-safe OFF; erro nunca derruba
 // o shell.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, BadgeCheck, BookmarkPlus, Box, Camera, CircleDot, Clapperboard, Eraser, Grid3x3, LayoutPanelTop, Lightbulb, Maximize2, Minimize2, Pause, PersonStanding, Play, Rotate3d, RotateCw, Share2, Sparkles, UserRound, Wand2 } from 'lucide-react';
+import { Activity, BadgeCheck, BookmarkPlus, Box, Camera, CircleDot, Clapperboard, Columns2, Eraser, Grid3x3, LayoutPanelTop, Lightbulb, Maximize2, Minimize2, Pause, PersonStanding, Play, RefreshCcw, Rotate3d, RotateCw, Share2, SkipBack, SkipForward, SlidersHorizontal, Sparkles, UserRound, Wand2 } from 'lucide-react';
 import type { EstadoAvatar } from '../nucleo/contratos';
 import type { EstadoCamera, RenderizadorAvatar } from '../nucleo/renderizador';
 import { criarRenderizador } from '../services/FabricaRenderizador';
@@ -23,6 +23,10 @@ import { flag } from '../nucleo/flags';
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { excluirCena, listarCenas, salvarCena } from '../services/Cenas3d';
 import type { Cena3d } from '../services/Cenas3d';
+import { detectarCapacidade3d } from '../services/Capacidade3d';
+import { paraLegado2d } from '../nucleo/adaptadores';
+import { validarConfig } from '../services/AvatarCatalog';
+import { AvatarSvg } from '../components/AvatarSvg';
 
 /** Fallback embutido (índice indisponível — ex.: publicação parcial). */
 const CURADOS_FALLBACK: EntradaIndice3d[] = [
@@ -53,6 +57,9 @@ function qualidadeGuardada(): Qualidade3d {
     return q === 'alto' || q === 'medio' || q === 'economico' ? q : 'auto';
   } catch { return 'auto'; }
 }
+
+// mega 42: capacidade reportada UMA vez por sessão (§290)
+let capacidadeReportada = false;
 
 export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAvatar }: {
   estado: EstadoAvatar;
@@ -95,6 +102,23 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // mega 39: modo apresentação (fullscreen no contêiner do palco)
   const [telaCheia, setTelaCheia] = useState(false);
   const refWrap = useRef<HTMLDivElement>(null);
+  // mega 41: contexto WebGL em recuperação (watchdog)
+  const [recuperando, setRecuperando] = useState(false);
+  // mega 42: diagnóstico de capacidade (§605-lite) — 1 sondagem por sessão
+  const capacidade = useMemo(detectarCapacidade3d, []);
+  // mega 43: retry com backoff + remontagem manual ("Tentar de novo")
+  const refTentativa = useRef(0);
+  const [sinalRetry, setSinalRetry] = useState(0);
+  const [remontagens, setRemontagens] = useState(0);
+  // mega 48: ajuste fino de câmera (zoom/altura sobre o Box3)
+  const [ajusteAberto, setAjusteAberto] = useState(false);
+  const [camDist, setCamDist] = useState(2.15);
+  const [camElev, setCamElev] = useState(0.35);
+  const refCam = useRef({ dist: 2.15, elev: 0.35 });
+  refCam.current = { dist: camDist, elev: camElev };
+  // mega 49: comparar 2D×3D lado a lado
+  const [comparando2d, setComparando2d] = useState(false);
+  const config2d = useMemo(() => validarConfig(paraLegado2d(estado)), [estado]);
   // mega 28: HUD de performance (flag dev)
   const hudLigado = flag('as5.hud3d');
   const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number } | null>(null);
@@ -116,11 +140,21 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     return () => { vivo = false; };
   }, []);
 
-  // monta o renderer UMA vez; descarta ao sair do modo 3D
+  // monta o renderer (remontagens > 0 = "Tentar de novo" da mega 43);
+  // descarta ao sair do modo 3D
   useEffect(() => {
     let vivo = true;
+    setFase('carregando');
     (async () => {
       try {
+        // mega 42: capacidade → telemetria 1×/sessão + dica de tier
+        if (!capacidadeReportada) {
+          capacidadeReportada = true;
+          telemetria('p3d_capacidade', {
+            software: capacidade.software, webgl2: capacidade.webgl2,
+            dica: capacidade.dicaTier, renderizador: capacidade.renderizador.slice(0, 60),
+          }); // §290
+        }
         const r = await criarRenderizador('3d', {
           resolverPersonagem: () => refPersonagem.current,
           aoMudarQualidade: (tier, motivo) => {
@@ -128,10 +162,19 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             setAnuncio(`Qualidade ajustada para ${tier === 'economico' ? 'econômica' : 'média'}`);
             telemetria('p3d_qualidade', { tier, motivo }); // §290
           },
+          // mega 41: watchdog — GPU reset/aba de fundo não mata o palco
+          aoContexto: (fase2) => {
+            setRecuperando(fase2 === 'perdido');
+            setAnuncio(fase2 === 'perdido' ? 'Recuperando o 3D…' : 'Palco 3D recuperado');
+            telemetria('p3d_contexto', { fase: fase2 }); // §290
+          },
         });
         if (!vivo) { void r.descartar(); return; }
         refR.current = r;
-        await r.inicializar({ qualidade: qualidadeGuardada(), pixelRatioMax: 2 }); // mega 34
+        await r.inicializar({
+          qualidade: qualidadeGuardada(), pixelRatioMax: 2,
+          dicaTier: capacidade.dicaTier, // mega 42 (§605-lite)
+        }); // mega 34
         if (!refAlvo.current) throw new Error('alvo desmontado');
         await r.montar(refAlvo.current as unknown as { innerHTML: string });
         if (vivo) setFase('pronto');
@@ -144,7 +187,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
       void refR.current?.descartar();
       refR.current = null;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remontagens]);
 
   // estado do DRAFT + personagem (auto ou override) → renderer
   useEffect(() => {
@@ -152,15 +196,27 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     if (!r || fase !== 'pronto') return;
     const t0 = performance.now();
     void r.aplicarEstado(estado).then((res) => {
-      if (!res.ok) { setFase('indisponivel'); return; }
+      if (!res.ok) {
+        // mega 43: RETRY com backoff (1×) antes de declarar indisponível —
+        // rede piscando não pode derrubar o palco
+        if (refTentativa.current < 1) {
+          refTentativa.current += 1;
+          telemetria('p3d_retry', { personagem }); // §290
+          setTimeout(() => setSinalRetry((n) => n + 1), 800);
+        } else {
+          setFase('indisponivel');
+        }
+        return;
+      }
+      refTentativa.current = 0;
       setPendencias(res.pendencias.length);
       telemetria('p3d_aplicou', { personagem, ms: Math.round(performance.now() - t0) }); // §290
       if (apresentando) return; // coreografia §174 no comando
-      r.definirCamera({ modo: cameraModo, distancia: 2.15 });
+      r.definirCamera({ modo: cameraModo, distancia: refCam.current.dist, elevacao: refCam.current.elev });
       // personagem novo pode não ter a animação atual → volta ao Idle
       void r.tocarAnimacao({ id: movReduzido ? 'nenhum' : animacao });
     });
-  }, [estado, personagem, fase, cameraModo, animacao, movReduzido, apresentando]);
+  }, [estado, personagem, fase, cameraModo, animacao, movReduzido, apresentando, sinalRetry]);
 
   const animacoesDoAtual = useMemo(() => {
     const doIndice = indice.find((p) => p.slug === personagem)?.animacoes ?? [];
@@ -205,7 +261,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         if (!vivo) return;
       }
       await r.tocarAnimacao({ id: 'Idle', transicaoMs: 400 });
-      r.definirCamera({ modo: cameraModo, distancia: 2.15 });
+      r.definirCamera({ modo: cameraModo, distancia: refCam.current.dist, elevacao: refCam.current.elev });
       setAnimacao('Idle');
       setApresentando(false);
     })();
@@ -318,7 +374,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         await new Promise((res) => { img.onload = res; img.src = foto.dataUri; });
         g.drawImage(img, (i % 4) * lado, Math.floor(i / 4) * lado);
       }
-      r.definirCamera({ modo: cameraModo, distancia: 2.15 }); // restaura
+      r.definirCamera({ modo: cameraModo, distancia: refCam.current.dist, elevacao: refCam.current.elev }); // restaura
       const pronto = await comMarca(c.toDataURL('image/png'), c.width);
       const a = document.createElement('a');
       a.href = pronto;
@@ -330,7 +386,19 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
 
   const trocarCamera = useCallback((modo: EstadoCamera['modo']) => {
     setCameraModo(modo);
-    refR.current?.definirCamera({ modo, distancia: 2.15 });
+    refR.current?.definirCamera({ modo, distancia: refCam.current.dist, elevacao: refCam.current.elev });
+  }, []);
+
+  // mega 48: sliders de AJUSTE FINO → câmera (sobre o enquadramento Box3)
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    refR.current?.definirCamera({ modo: cameraModo, distancia: camDist, elevacao: camElev });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camDist, camElev]);
+
+  // mega 44: SCRUB — um passo de pose por clique (funciona congelado)
+  const avancarQuadroUi = useCallback((delta: number) => {
+    (refR.current as unknown as { avancarQuadro?: (d: number) => void })?.avancarQuadro?.(delta);
   }, []);
 
   // mega 34: qualidade manual → renderer (auto volta ao adaptativo §528)
@@ -453,7 +521,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         await new Promise((res) => { img.onload = res; img.src = foto.dataUri; });
         g.drawImage(img, (i % 2) * lados, Math.floor(i / 2) * lados);
       }
-      r.definirCamera({ modo: cameraModo, distancia: 2.15 }); // restaura
+      r.definirCamera({ modo: cameraModo, distancia: refCam.current.dist, elevacao: refCam.current.elev }); // restaura
       const pronto = await comMarca(c.toDataURL('image/png'), lados * 2);
       const a = document.createElement('a');
       a.href = pronto;
@@ -500,6 +568,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           Prévia 3D indisponível neste ambiente — os personagens publicados não
           foram encontrados (ou o WebGL está desligado).
         </p>
+        <button type="button" className="avst-botao" data-teste="p3d-tentar"
+          onClick={() => { refTentativa.current = 0; setRemontagens((n) => n + 1); }}>
+          <RefreshCcw size={13} aria-hidden /> Tentar de novo
+        </button>
       </div>
     );
   }
@@ -565,6 +637,9 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             <button type="button" title="Compartilhar a captura" data-teste="p3d-compartilhar"
               onClick={() => void compartilhar3d()}><Share2 size={13} aria-hidden /></button>
           )}
+          <button type="button" title="Comparar com o 2D lado a lado" aria-pressed={comparando2d}
+            data-teste="p3d-comparar" onClick={() => setComparando2d((v) => !v)}>
+            <Columns2 size={13} aria-hidden /></button>
           <button type="button" title={telaCheia ? 'Sair da tela cheia (Esc)' : 'Modo apresentação — tela cheia'}
             aria-pressed={telaCheia} data-teste="p3d-tela-cheia"
             onClick={alternarTelaCheia}>
@@ -608,6 +683,25 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               </button>
             ))}
           </span>
+          <span role="group" aria-label="Ajuste fino da câmera" data-teste="p3d-ajuste-grupo">
+            <button type="button" className="avst5-p3d-chip" aria-pressed={ajusteAberto}
+              data-teste="p3d-ajuste" title="Zoom e altura da câmera (§453)"
+              onClick={() => setAjusteAberto((v) => !v)}>
+              <SlidersHorizontal size={11} aria-hidden /> Ajuste
+            </button>
+            {ajusteAberto && (<>
+              <label className="avst5-p3d-slider">Zoom
+                <input type="range" min="1.2" max="4" step="0.05" value={camDist} data-teste="p3d-dist"
+                  aria-label="Distância da câmera"
+                  onChange={(e) => setCamDist(Number(e.target.value))} />
+              </label>
+              <label className="avst5-p3d-slider">Altura
+                <input type="range" min="0.05" max="0.9" step="0.05" value={camElev} data-teste="p3d-elev"
+                  aria-label="Elevação da câmera"
+                  onChange={(e) => setCamElev(Number(e.target.value))} />
+              </label>
+            </>)}
+          </span>
           <span role="group" aria-label="Cenas salvas do palco" data-teste="p3d-cenas">
             <button type="button" className="avst5-p3d-chip" data-teste="p3d-cena-salvar"
               title="Salvar o setup atual (personagem, fundo, luz, câmera, animação)"
@@ -632,6 +726,25 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         {congelado && (
           <div className="avst5-p3d-congelado" role="status" data-teste="p3d-congelado">Pose congelada (espaço retoma)</div>
         )}
+        {congelado && (
+          <div className="avst5-p3d-quadros" data-teste="p3d-quadros" role="group" aria-label="Passo a passo da pose">
+            <button type="button" title="Quadro anterior (mega 44)" data-teste="p3d-quadro-tras"
+              onClick={() => avancarQuadroUi(-0.15)}><SkipBack size={13} aria-hidden /></button>
+            <button type="button" title="Próximo quadro (mega 44)" data-teste="p3d-quadro-frente"
+              onClick={() => avancarQuadroUi(0.15)}><SkipForward size={13} aria-hidden /></button>
+          </div>
+        )}
+        {recuperando && (
+          <div className="avst5-p3d-congelado avst5-p3d-recuperando" role="status" data-teste="p3d-recuperando">
+            Recuperando o 3D…
+          </div>
+        )}
+        {comparando2d && (
+          <div className="avst5-p3d-cmp" data-teste="p3d-comparar-painel" aria-label="Comparação com o 2D">
+            <AvatarSvg config={config2d} uid="p3dcmp" estatico />
+            <span>2D</span>
+          </div>
+        )}
         <div className="avst5-p3d-cameras" role="radiogroup" aria-label="Câmera (§453.1)">
           <button type="button" role="radio" aria-checked={cameraModo === 'corpo'} title="Corpo inteiro"
             onClick={() => trocarCamera('corpo')}><PersonStanding size={13} aria-hidden /></button>
@@ -645,6 +758,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         <span className="avst5-sr-only" role="status" aria-live="polite">{anuncio}</span>
         <div className="avst5-p3d-nota" role="note" data-teste="p3d-pendencias">
           {override === null ? 'Auto pela espécie 2D' : 'Personagem fixado'}
+          {capacidade.software ? ' · render por software' : ''}
           {qualidade !== 'auto'
             ? ` · qualidade ${qualidade === 'economico' ? 'econômica' : qualidade === 'medio' ? 'média' : 'alta'}`
             : tierAtual ? ` · qualidade ${tierAtual === 'economico' ? 'econômica (auto)' : `${tierAtual} (auto)`}` : ''}
