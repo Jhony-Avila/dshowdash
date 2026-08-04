@@ -1218,6 +1218,46 @@
 .avst5-viewport[data-fundo="neutro"] .avst5-palco { background: #0d1017; }
 .avst5-viewport[data-fundo="estudio"] .avst5-palco { background: radial-gradient(ellipse 70% 60% at 50% 42%, #1c2233 0%, #0d1017 78%); }
 .avst5-viewport[data-fundo="grade"] .avst5-palco { background: #0d1017 repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(124,92,255,.09) 32px), repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(124,92,255,.09) 32px); }
+/* megas 61+62: filas de HORA e LUZ abaixo da fila de cenários — a regra
+   base .avst5-fundos vem DEPOIS no arquivo, então a especificidade dupla
+   garante o offset (lição: última regra vence no empate) */
+.avst5-fundos.avst5-horas { top: 38px; }
+.avst5-fundos.avst5-luzes { top: 66px; }
+/* mega 60 (§160): cenários prioritários */
+.avst5-viewport[data-fundo="dojo"] .avst5-palco { background: linear-gradient(180deg, #1a1210 0%, #241a12 46%, #0d0a08 100%); box-shadow: inset 0 -60px 90px rgba(255,140,50,.08), inset 0 40px 80px rgba(0,0,0,.5); }
+.avst5-viewport[data-fundo="neon"] .avst5-palco { background: linear-gradient(180deg, #0a0618 0%, #150a2e 60%, #06040f 100%); box-shadow: inset 0 -50px 100px rgba(255,60,180,.14), inset 0 50px 100px rgba(60,220,255,.10); }
+.avst5-viewport[data-fundo="galaxia"] .avst5-palco { background: radial-gradient(ellipse 90% 70% at 30% 20%, #1a1440 0%, transparent 55%), radial-gradient(ellipse 70% 60% at 75% 70%, #2a0f38 0%, transparent 60%), #05040c; box-shadow: inset 0 0 120px rgba(124,92,255,.12); }
+/* mega 61 (§162): HORA DO DIA — véu de luz sobre o cenário */
+.avst5-viewport[data-hora] .avst5-palco { position: relative; }
+.avst5-viewport[data-hora="tarde"] .avst5-palco::after,
+.avst5-viewport[data-hora="noite"] .avst5-palco::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+}
+.avst5-viewport[data-hora="tarde"] .avst5-palco::after { background: linear-gradient(180deg, rgba(255,140,60,.10), rgba(255,80,40,.06)); mix-blend-mode: screen; }
+.avst5-viewport[data-hora="noite"] .avst5-palco::after { background: linear-gradient(180deg, rgba(20,30,80,.34), rgba(5,8,24,.38)); }
+/* mega 62 (§164): ILUMINAÇÃO 2D — filtro no avatar, cenário intacto */
+.avst5-viewport[data-luz="quente"] .avst5-zoom { filter: sepia(.18) saturate(1.15) brightness(1.04); }
+.avst5-viewport[data-luz="fria"] .avst5-zoom { filter: hue-rotate(-8deg) saturate(1.05) brightness(1.02) contrast(1.02); }
+.avst5-viewport[data-luz="dramatica"] .avst5-zoom { filter: contrast(1.18) brightness(.92) drop-shadow(0 18px 26px rgba(0,0,0,.55)); }
+/* mega 63 (§154): poder ativado — overlay maior e mais vivo que o confete */
+.avst5-poder svg { transform: scale(1.35); }
+/* mega 65 (§180): presets de apresentação no modo studio */
+.avst5-apresenta {
+  position: absolute; bottom: 52px; left: 14px; display: flex; align-items: center; gap: 5px;
+  flex-wrap: wrap; max-width: 60%; font-size: 10.5px; color: var(--avst-texto-2, #8a93a6);
+}
+.avst5-apresenta button {
+  padding: 3px 10px; border-radius: 999px; cursor: pointer; font-size: 10.5px;
+  background: rgba(13, 16, 23, 0.82); color: var(--avst-texto-2, #8a93a6);
+  border: 1px solid var(--avst-borda, #232a38);
+}
+.avst5-apresenta button:not(:disabled):hover { color: #fff; border-color: var(--avst-acento, #7c5cff); }
+.avst5-apresenta button:disabled { opacity: .45; cursor: default; }
+.avst5-apresenta-item { display: inline-flex; }
+.avst5-apresenta-item button:first-child { border-radius: 999px 0 0 999px; border-right: none; }
+.avst5-apresenta-item button:last-child { border-radius: 0 999px 999px 0; padding: 3px 7px; }
+.avst5-apresenta-item button:last-child:hover { color: #ff5230; border-color: #ff5230; }
+.avst5-poder-btn:disabled { opacity: .45; cursor: default; }
 .avst5-fundos { position: absolute; top: 10px; left: 12px; display: flex; gap: 4px; z-index: 2; }
 .avst5-fundos button { background: rgba(13,16,23,.7); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); border-radius: 999px; padding: 3px 10px; font-size: 10.5px; cursor: pointer; backdrop-filter: blur(4px); }
 .avst5-fundos .avst5-fundo-on { color: var(--avst-texto, #e6eaf2); border-color: var(--avst-acento, #7c5cff); }
@@ -1669,3 +1709,46 @@
 /* mega 47: toggle de fundo transparente na galeria 3D da Foto */
 .avst-foto-3d-transp { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--avst-texto-2, #8a93a6); cursor: pointer; }
 .avst-foto-3d-transp input { accent-color: var(--avst-acento, #7c5cff); }
+
+/* mega 67 (§207–§214): PÁGINA da coleção */
+.avst-col-pagina { display: flex; flex-direction: column; gap: 12px; }
+.avst-col-pagina > .avst-botao { align-self: flex-start; }
+.avst-col-hero { display: flex; gap: 16px; align-items: flex-start; padding: 14px; border-radius: 14px; background: var(--avst-painel, #12151d); border: 1px solid var(--avst-rar, var(--avst-borda, #232a38)); }
+.avst-col-hero-thumb { flex: 0 0 132px; }
+.avst-col-hero-thumb svg { width: 132px; height: 132px; border-radius: 12px; background: #0a0d15; }
+.avst-col-hero h3 { margin: 0 0 6px; font-size: 16px; display: flex; gap: 8px; align-items: baseline; }
+.avst-col-hero h3 em { font-size: 11px; font-style: normal; }
+.avst-col-hero p { margin: 0 0 8px; font-size: 12.5px; color: var(--avst-texto-2, #8a93a6); }
+.avst-col-lore { display: flex; gap: 7px; align-items: flex-start; font-style: italic; line-height: 1.45; }
+.avst-col-recompensa { display: flex; gap: 7px; align-items: center; margin: 8px 0; font-size: 12px; }
+.avst-col-itens { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+.avst-col-itens li { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 10px; font-size: 12px; background: var(--avst-painel, #12151d); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); }
+.avst-col-itens li em { margin-left: auto; font-size: 10px; font-style: normal; }
+.avst-col-item-ok { color: var(--avst-texto, #e6eaf2) !important; border-color: var(--avst-rar, #7c5cff) !important; }
+
+/* mega 68 (§218–§221): filtros + estatísticas das conquistas */
+.avst-conq-stats { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.avst-conq-stats span { font-size: 11px; padding: 4px 10px; border-radius: 999px; background: var(--avst-painel, #12151d); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); }
+.avst-conq-stats strong { color: var(--avst-texto, #e6eaf2); }
+.avst-conq-filtros { display: flex; gap: 5px; margin: 4px 0 10px; }
+
+/* mega 69 (§231): comparação de presets */
+.avst5-cmp-presets { padding: 12px; border-radius: 12px; background: var(--avst-painel, #12151d); border: 1px solid var(--avst-acento, #7c5cff); display: flex; flex-direction: column; gap: 8px; }
+.avst5-cmp-presets header { display: flex; justify-content: space-between; align-items: center; }
+.avst5-cmp-presets header strong { display: flex; gap: 7px; align-items: center; font-size: 13px; }
+.avst5-cmp-presets header button { background: none; border: none; color: var(--avst-texto-2, #8a93a6); cursor: pointer; }
+.avst5-cmp-lado-a-lado { display: flex; gap: 14px; }
+.avst5-cmp-lado-a-lado figure { margin: 0; text-align: center; font-size: 11px; color: var(--avst-texto-2, #8a93a6); }
+.avst5-cmp-lado-a-lado img { border-radius: 10px; background: #0a0d15; }
+.avst5-cmp-difs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; }
+.avst5-cmp-difs em { font-style: normal; color: var(--avst-texto-2, #8a93a6); margin-right: 6px; }
+
+/* megas 51–54: AJUSTES não destrutivos da foto (§333/§334) */
+.avst-ft-ajustes { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.avst-ft-ajuste {
+  display: inline-flex; align-items: center; gap: 7px; font-size: 11px;
+  color: var(--avst-texto-2, #8a93a6);
+}
+.avst-ft-ajuste span { min-width: 74px; }
+.avst-ft-ajuste input[type="range"] { width: 110px; accent-color: var(--avst-acento, #7c5cff); }
+.avst-ft-ajustes .avst-ft-chip[aria-pressed="true"] { color: #fff; border-color: var(--avst-acento, #7c5cff); }

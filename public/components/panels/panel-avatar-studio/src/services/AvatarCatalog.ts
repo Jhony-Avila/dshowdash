@@ -496,10 +496,11 @@ export const TEMPLATES_FOTO: TemplateFoto[] = [
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────
 
 /** §158 (AS5): SVG de UM efeito isolado — overlays efêmeros de gatilho
- *  (celebração ao salvar etc.). Nunca entra no config/persistência. */
+ *  (celebração ao salvar etc.). Nunca entra no config/persistência.
+ *  Mega 63 (§153): AURAS também podem ser "ativadas" como poder. */
 export function svgEfeitoIsolado(id: string, destaque?: string): string {
   const parte = POR_ID.get(id);
-  if (!parte || parte.categoria !== 'efeito') return '';
+  if (!parte || (parte.categoria !== 'efeito' && parte.categoria !== 'aura')) return '';
   const paleta = paletaDe({ ...CONFIG_PADRAO.cores, ...(destaque ? { destaque } : {}) });
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="presentation">${parte.render(paleta, 'fx')}</svg>`;
 }
@@ -522,6 +523,7 @@ export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesR
     camadas: estilo.camadas,
     cores: { ...CONFIG_PADRAO.cores, destaque: normalizarHex(estilo.cores.destaque, CONFIG_PADRAO.cores.destaque) },
     selo: titulo ? { nome: titulo.nome, cor: RARIDADES[titulo.raridade].cor } : undefined,
+    ...(estilo.ajustes ? { ajustes: estilo.ajustes } : {}), // megas 51–54
   }, itemPorId, opcoes);
 }
 
@@ -1006,6 +1008,8 @@ export interface Colecao {
   itens: string[];
   /** aplica o conjunto por cima do avatar atual */
   cores?: Partial<Record<SlotCor, string>>;
+  /** mega 67 (§210): LORE — a história que a página da coleção conta */
+  lore?: string;
 }
 
 export const COLECOES: Colecao[] = [
@@ -1016,6 +1020,7 @@ export const COLECOES: Colecao[] = [
     raridade: 'lendario',
     itens: ['bas_androide', 'olh_led', 'boc_grade', 'rou_armadura', 'fun_circuito', 'mol_tech', 'efe_chuva'],
     cores: { pele: '#c8d4e8', destaque: '#4cd9e8' },
+    lore: 'Dizem que o Nexus acordou numa madrugada de deploy, entre um commit e um rollback. Quem veste o conjunto completo escuta o hum da rede — e nunca mais olha um dashboard do mesmo jeito.',
   },
   {
     id: 'col_executivo',
@@ -1024,6 +1029,7 @@ export const COLECOES: Colecao[] = [
     raridade: 'epico',
     itens: ['bas_angular', 'cab_curto', 'olh_serio', 'boc_determinada', 'rou_terno', 'ace_oculos', 'fun_estudio', 'mol_duplo'],
     cores: { roupa: '#20242e', destaque: '#e8b64c' },
+    lore: 'O trimestre não se assina sozinho. Cada peça deste conjunto foi vista em pelo menos uma reunião que mudou a meta — e em três que deveriam ter sido um e-mail.',
   },
   {
     id: 'col_dojo',
@@ -1032,6 +1038,7 @@ export const COLECOES: Colecao[] = [
     raridade: 'epico',
     itens: ['cab_coque', 'rou_kimono', 'fun_dojo', 'boc_determinada', 'mol_cristal'],
     cores: { roupa: '#7a2d3c', destaque: '#ff7a3d' },
+    lore: 'No dojo, a primeira lição é chegar. A segunda é voltar amanhã. O entardecer da moldura marca a hora em que a disciplina vira hábito — e o hábito vira identidade.',
   },
   {
     id: 'col_galaxia',
