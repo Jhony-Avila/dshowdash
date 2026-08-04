@@ -1,5 +1,7 @@
-// shell/Palco3d.tsx — PRÉVIA 3D no viewport do shell (AS5 · megas 7+9).
-// @version 2.0.0  @created 2026-08-03  @updated 2026-08-03 (mega 9)
+// shell/Palco3d.tsx — PRÉVIA 3D no viewport do shell (AS5 · megas 7–39).
+// @version 3.0.0  @created 2026-08-03  @updated 2026-08-04 (lote 31–39:
+// cenas salvas, captura transparente, turntable 360°, qualidade manual,
+// vídeo na cascata §21.5, tela cheia)
 //
 // Wrapper React fino do Renderizador3d (§401) via fábrica: o three só
 // atravessa a rede quando o usuário LIGA o 3D (import dinâmico → motor3d).
@@ -10,15 +12,17 @@
 // continuam honestas; flag as5.palco3d fail-safe OFF; erro nunca derruba
 // o shell.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, BadgeCheck, Box, Camera, CircleDot, Clapperboard, Grid3x3, LayoutPanelTop, Lightbulb, Pause, PersonStanding, Play, Rotate3d, Share2, Sparkles, UserRound, Wand2 } from 'lucide-react';
+import { Activity, BadgeCheck, BookmarkPlus, Box, Camera, CircleDot, Clapperboard, Eraser, Grid3x3, LayoutPanelTop, Lightbulb, Maximize2, Minimize2, Pause, PersonStanding, Play, Rotate3d, RotateCw, Share2, Sparkles, UserRound, Wand2 } from 'lucide-react';
 import type { EstadoAvatar } from '../nucleo/contratos';
 import type { EstadoCamera, RenderizadorAvatar } from '../nucleo/renderizador';
 import { criarRenderizador } from '../services/FabricaRenderizador';
-import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
+import { compartilharBlob, compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { telemetria } from '../services/Telemetria';
 import { carregarIndice3d, personagemParaBase } from '../services/Personagens3d';
 import { flag } from '../nucleo/flags';
 import type { EntradaIndice3d } from '../services/Personagens3d';
+import { excluirCena, listarCenas, salvarCena } from '../services/Cenas3d';
+import type { Cena3d } from '../services/Cenas3d';
 
 /** Fallback embutido (índice indisponível — ex.: publicação parcial). */
 const CURADOS_FALLBACK: EntradaIndice3d[] = [
@@ -34,9 +38,20 @@ const CURADOS_FALLBACK: EntradaIndice3d[] = [
 const ANIMACOES_DESTAQUE = ['Idle', 'Walk', 'Walking', 'Running', 'Wave', 'Dance', 'Jump', 'Victory', 'ThumbsUp'];
 
 const CHAVE_OVERRIDE = 'dshow.avst5.p3d.personagem.v1';
+const CHAVE_QUALIDADE = 'dshow.avst5.p3d.qualidade.v1';
+
+type Qualidade3d = 'auto' | 'alto' | 'medio' | 'economico';
 
 function overrideGuardado(): string | null {
   try { return localStorage.getItem(CHAVE_OVERRIDE); } catch { return null; }
+}
+
+/** mega 34: qualidade escolhida sobrevive à sessão (auto = adaptativa §528). */
+function qualidadeGuardada(): Qualidade3d {
+  try {
+    const q = localStorage.getItem(CHAVE_QUALIDADE);
+    return q === 'alto' || q === 'medio' || q === 'economico' ? q : 'auto';
+  } catch { return 'auto'; }
 }
 
 export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAvatar }: {
@@ -71,6 +86,15 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const [congelado, setCongelado] = useState(false);
   // mega 24: feedback do salvar avatar
   const [salvandoAvatar, setSalvandoAvatar] = useState(false);
+  // mega 31: cenas salvas do palco (setup completo nomeado)
+  const [cenas, setCenas] = useState<Cena3d[]>(listarCenas);
+  // mega 32: captura com fundo TRANSPARENTE (compor no Photo Studio)
+  const [transparente, setTransparente] = useState(false);
+  // mega 34: qualidade manual (auto = adaptativa §528) — persistida
+  const [qualidade, setQualidade] = useState<Qualidade3d>(qualidadeGuardada);
+  // mega 39: modo apresentação (fullscreen no contêiner do palco)
+  const [telaCheia, setTelaCheia] = useState(false);
+  const refWrap = useRef<HTMLDivElement>(null);
   // mega 28: HUD de performance (flag dev)
   const hudLigado = flag('as5.hud3d');
   const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number } | null>(null);
@@ -107,7 +131,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         });
         if (!vivo) { void r.descartar(); return; }
         refR.current = r;
-        await r.inicializar({ qualidade: 'auto', pixelRatioMax: 2 });
+        await r.inicializar({ qualidade: qualidadeGuardada(), pixelRatioMax: 2 }); // mega 34
         if (!refAlvo.current) throw new Error('alvo desmontado');
         await r.montar(refAlvo.current as unknown as { innerHTML: string });
         if (vivo) setFase('pronto');
@@ -206,12 +230,11 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         setGravando(false);
         refGravador.current = null;
         if (!pedacos.length) return;
-        const url = URL.createObjectURL(new Blob(pedacos, { type: mime ?? 'video/webm' }));
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'dshow-showcase.webm';
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        // mega 36 (§21.5): o vídeo entra na MESMA cascata da imagem —
+        // share(File) no mobile; desktop degrada p/ download (idêntico ao antigo)
+        const blob = new Blob(pedacos, { type: mime ?? 'video/webm' });
+        void compartilharBlob(blob, 'dshow-showcase.webm', 'Showcase 3D Dshow')
+          .then((canal) => telemetria('p3d_gravou_canal', { canal })); // §290
       };
       refGravador.current = gravador;
       gravador.start(250);
@@ -231,34 +254,135 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     if (refGravador.current?.state === 'recording') refGravador.current.stop();
   }, []);
 
-  // mega 15: compartilhar a captura (share→clipboard→download)
+  // mega 26: marca d'água discreta num dataURI (canvas overlay) —
+  // declarada ANTES de quem a usa nos deps (TDZ)
+  const comMarca = useCallback(async (dataUri: string, lado: number): Promise<string> => {
+    if (!marca) return dataUri;
+    const img = new Image();
+    await new Promise((res) => { img.onload = res; img.src = dataUri; });
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d');
+    if (!g) return dataUri;
+    g.drawImage(img, 0, 0);
+    const fs = Math.round(lado * 0.024);
+    g.font = `700 ${fs}px system-ui, sans-serif`;
+    g.fillStyle = 'rgba(230, 234, 242, 0.5)';
+    g.textAlign = 'right';
+    g.fillText('DSHOW', c.width - fs, c.height - fs);
+    return c.toDataURL('image/png');
+  }, [marca]);
+
+  // mega 15: compartilhar a captura (share→clipboard→download) — mesma
+  // composição da captura (marca + transparente, megas 26/32)
   const compartilhar3d = useCallback(async () => {
     const r = refR.current;
     if (!r) return;
     try {
-      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
-      await compartilharPng(foto.dataUri, 'dshow-avatar-3d.png', 'Meu avatar 3D Dshow');
+      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true, transparente });
+      await compartilharPng(await comMarca(foto.dataUri, 960), 'dshow-avatar-3d.png', 'Meu avatar 3D Dshow');
     } catch { /* cosmético */ }
-  }, []);
+  }, [transparente, comMarca]);
 
   // mega 10 §174.1: captura PNG 960 determinística do palco 3D
+  // (mega 32: honra o toggle transparente; mega 26: marca — deps CORRETAS,
+  // a closure antiga congelava a primeira versão do comMarca)
   const capturar3d = useCallback(async () => {
     const r = refR.current;
     if (!r) return;
     try {
-      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
-      telemetria('p3d_capturou', { personagem: refPersonagem.current }); // §290
+      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true, transparente });
+      telemetria('p3d_capturou', { personagem: refPersonagem.current, transparente }); // §290
       const comM = await comMarca(foto.dataUri, 960);
       const a = document.createElement('a');
       a.href = comM;
       a.download = 'dshow-avatar-3d-960.png';
       a.click();
     } catch { /* captura é cosmética — nunca derruba o palco */ }
-  }, []);
+  }, [transparente, comMarca]);
+
+  // mega 33: TURNTABLE 360° — 8 azimutes §508 numa folha 4×2 (1920×960)
+  const gerarTurntable = useCallback(async () => {
+    const r = refR.current;
+    if (!r) return;
+    try {
+      const lado = 480;
+      const c = document.createElement('canvas');
+      c.width = lado * 4; c.height = lado * 2;
+      const g = c.getContext('2d');
+      if (!g) return;
+      for (let i = 0; i < 8; i += 1) {
+        r.definirCamera({ modo: 'corpo', distancia: 2.15, azimute: i * (Math.PI / 4), elevacao: 0.3 });
+        const foto = await r.capturar({ largura: lado, altura: lado, deterministica: true });
+        const img = new Image();
+        await new Promise((res) => { img.onload = res; img.src = foto.dataUri; });
+        g.drawImage(img, (i % 4) * lado, Math.floor(i / 4) * lado);
+      }
+      r.definirCamera({ modo: cameraModo, distancia: 2.15 }); // restaura
+      const pronto = await comMarca(c.toDataURL('image/png'), c.width);
+      const a = document.createElement('a');
+      a.href = pronto;
+      a.download = `dshow-turntable-${refPersonagem.current}.png`;
+      a.click();
+      telemetria('p3d_turntable', { personagem: refPersonagem.current }); // §290
+    } catch { /* cosmético */ }
+  }, [cameraModo, comMarca]);
 
   const trocarCamera = useCallback((modo: EstadoCamera['modo']) => {
     setCameraModo(modo);
     refR.current?.definirCamera({ modo, distancia: 2.15 });
+  }, []);
+
+  // mega 34: qualidade manual → renderer (auto volta ao adaptativo §528)
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    refR.current?.definirQualidade(qualidade);
+    if (qualidade !== 'auto') setTierAtual(qualidade);
+    try { localStorage.setItem(CHAVE_QUALIDADE, qualidade); } catch { /* sem storage */ }
+  }, [qualidade, fase]);
+
+  // mega 31: CENAS do palco — salvar/aplicar/excluir o setup completo
+  const salvarCenaAtual = useCallback(() => {
+    const cena = salvarCena({
+      personagem: override, fundo: fundo3d, luz: luz3d,
+      camera: cameraModo, animacao, marca, qualidade,
+    });
+    setCenas(listarCenas());
+    setAnuncio(cena ? `Cena "${cena.nome}" salva` : 'Limite de 8 cenas atingido');
+    if (cena) telemetria('p3d_cena_salvou', { nome: cena.nome }); // §290
+  }, [override, fundo3d, luz3d, cameraModo, animacao, marca, qualidade]);
+
+  const aplicarCena = useCallback((c: Cena3d) => {
+    trocarPersonagem(c.personagem);
+    setFundo3d(c.fundo);
+    setLuz3d(c.luz);
+    trocarCamera(c.camera);
+    setAnimacao(c.animacao);
+    setMarca(c.marca);
+    setQualidade(c.qualidade);
+    setAnuncio(`Cena "${c.nome}" aplicada`);
+    telemetria('p3d_cena_aplicou', { nome: c.nome }); // §290
+  }, [trocarPersonagem, trocarCamera]);
+
+  const removerCena = useCallback((id: string) => {
+    excluirCena(id);
+    setCenas(listarCenas());
+  }, []);
+
+  // mega 39: MODO APRESENTAÇÃO — fullscreen no contêiner (fail-safe sem API)
+  const alternarTelaCheia = useCallback(() => {
+    const el = refWrap.current;
+    if (!el) return;
+    if (document.fullscreenElement) { void document.exitFullscreen().catch(() => { /* já saiu */ }); return; }
+    if (typeof el.requestFullscreen !== 'function') { setAnuncio('Tela cheia indisponível neste navegador'); return; }
+    void el.requestFullscreen()
+      .then(() => telemetria('p3d_tela_cheia', { personagem: refPersonagem.current })) // §290
+      .catch(() => setAnuncio('Tela cheia bloqueada pelo navegador'));
+  }, []);
+  useEffect(() => {
+    const ao = () => setTelaCheia(Boolean(document.fullscreenElement));
+    document.addEventListener('fullscreenchange', ao);
+    return () => document.removeEventListener('fullscreenchange', ao);
   }, []);
 
   // megas 21/22: fundo e luz refletem no renderer
@@ -305,24 +429,6 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     }, 12000);
     return () => clearInterval(timer);
   }, [fase, movReduzido, apresentando, congelado, animacao, indice]);
-
-  // mega 26: marca d'água discreta num dataURI (canvas overlay)
-  const comMarca = useCallback(async (dataUri: string, lado: number): Promise<string> => {
-    if (!marca) return dataUri;
-    const img = new Image();
-    await new Promise((res) => { img.onload = res; img.src = dataUri; });
-    const c = document.createElement('canvas');
-    c.width = img.width; c.height = img.height;
-    const g = c.getContext('2d');
-    if (!g) return dataUri;
-    g.drawImage(img, 0, 0);
-    const fs = Math.round(lado * 0.024);
-    g.font = `700 ${fs}px system-ui, sans-serif`;
-    g.fillStyle = 'rgba(230, 234, 242, 0.5)';
-    g.textAlign = 'right';
-    g.fillText('DSHOW', c.width - fs, c.height - fs);
-    return c.toDataURL('image/png');
-  }, [marca]);
 
   // mega 25: FICHA do personagem — 4 ângulos §508 num contact sheet 2×2
   const gerarFicha = useCallback(async () => {
@@ -399,7 +505,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   }
 
   return (
-    <div className="avst5-p3d" data-teste="palco-3d" data-apresentando={apresentando || undefined}>
+    <div ref={refWrap} className="avst5-p3d" data-teste="palco-3d"
+      data-apresentando={apresentando || undefined} data-tela-cheia={telaCheia || undefined}>
       <div ref={refAlvo} className="avst5-p3d-tela" aria-label="Palco 3D (prévia)" />
       {fase === 'pronto' && (<>
         <div className="avst5-p3d-personagens" role="radiogroup" aria-label="Personagem da prévia 3D">
@@ -439,6 +546,11 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             {congelado ? <Play size={13} aria-hidden /> : <Pause size={13} aria-hidden />}</button>
           <button type="button" title="Capturar PNG do palco 3D (§174.1)" data-teste="p3d-capturar"
             onClick={() => void capturar3d()}><Camera size={13} aria-hidden /></button>
+          <button type="button" title={transparente ? 'Captura com fundo TRANSPARENTE (PNG alpha)' : 'Captura com o fundo do palco'}
+            aria-pressed={transparente} data-teste="p3d-transparente"
+            onClick={() => setTransparente((v) => !v)}><Eraser size={13} aria-hidden /></button>
+          <button type="button" title="Turntable 360° — 8 ângulos (§508)" data-teste="p3d-turntable"
+            onClick={() => void gerarTurntable()}><RotateCw size={13} aria-hidden /></button>
           <button type="button" title="Ficha do personagem — 4 ângulos (§508)" data-teste="p3d-ficha"
             onClick={() => void gerarFicha()}><LayoutPanelTop size={13} aria-hidden /></button>
           <button type="button" title={marca ? 'Marca Dshow LIGADA nas capturas' : 'Marca Dshow desligada'}
@@ -453,6 +565,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             <button type="button" title="Compartilhar a captura" data-teste="p3d-compartilhar"
               onClick={() => void compartilhar3d()}><Share2 size={13} aria-hidden /></button>
           )}
+          <button type="button" title={telaCheia ? 'Sair da tela cheia (Esc)' : 'Modo apresentação — tela cheia'}
+            aria-pressed={telaCheia} data-teste="p3d-tela-cheia"
+            onClick={alternarTelaCheia}>
+            {telaCheia ? <Minimize2 size={13} aria-hidden /> : <Maximize2 size={13} aria-hidden />}</button>
           <button type="button" title="Showcase 3D (§174)" data-teste="p3d-apresentar"
             disabled={apresentando || movReduzido}
             onClick={() => setSinalLocal((n) => n + 1)}><Play size={13} aria-hidden /></button>
@@ -483,6 +599,30 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               </button>
             ))}
           </span>
+          <span role="radiogroup" aria-label="Qualidade (§423)" data-teste="p3d-qualidade">
+            {(['auto', 'alto', 'medio', 'economico'] as const).map((q2) => (
+              <button key={q2} type="button" role="radio" aria-checked={qualidade === q2}
+                className={`avst5-p3d-chip${qualidade === q2 ? ' avst5-p3d-chip-on' : ''}`}
+                onClick={() => setQualidade(q2)}>
+                {q2 === 'auto' ? 'Auto' : q2 === 'alto' ? 'Alta' : q2 === 'medio' ? 'Média' : 'Econ.'}
+              </button>
+            ))}
+          </span>
+          <span role="group" aria-label="Cenas salvas do palco" data-teste="p3d-cenas">
+            <button type="button" className="avst5-p3d-chip" data-teste="p3d-cena-salvar"
+              title="Salvar o setup atual (personagem, fundo, luz, câmera, animação)"
+              disabled={cenas.length >= 8} onClick={salvarCenaAtual}>
+              <BookmarkPlus size={11} aria-hidden /> Cena
+            </button>
+            {cenas.map((c2) => (
+              <span key={c2.id} className="avst5-p3d-cena">
+                <button type="button" className="avst5-p3d-chip" title={`Aplicar a cena ${c2.nome}`}
+                  onClick={() => aplicarCena(c2)}>{c2.nome}</button>
+                <button type="button" className="avst5-p3d-cena-x" aria-label={`Excluir a cena ${c2.nome}`}
+                  onClick={() => removerCena(c2.id)}>×</button>
+              </span>
+            ))}
+          </span>
         </div>
         {hudLigado && hud && (
           <div className="avst5-p3d-hud" data-teste="p3d-hud" role="note">
@@ -505,7 +645,9 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         <span className="avst5-sr-only" role="status" aria-live="polite">{anuncio}</span>
         <div className="avst5-p3d-nota" role="note" data-teste="p3d-pendencias">
           {override === null ? 'Auto pela espécie 2D' : 'Personagem fixado'}
-          {tierAtual ? ` · qualidade ${tierAtual === 'economico' ? 'econômica (auto)' : tierAtual}` : ''}
+          {qualidade !== 'auto'
+            ? ` · qualidade ${qualidade === 'economico' ? 'econômica' : qualidade === 'medio' ? 'média' : 'alta'}`
+            : tierAtual ? ` · qualidade ${tierAtual === 'economico' ? 'econômica (auto)' : `${tierAtual} (auto)`}` : ''}
           {pendencias > 0 ? ` · ${pendencias} item(ns) equipados seguem no 2D` : ''}
         </div>
       </>)}

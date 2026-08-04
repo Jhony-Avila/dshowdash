@@ -241,6 +241,16 @@ export class Renderizador3d implements RenderizadorAvatar {
     if (!this.renderer || !this.cena || !this.camera) throw new Error('capturar() antes de montar()');
     const estava = this.pausado;
     if (opcoes.deterministica !== false) this.pausado = true; // §508
+    // mega 32: transparente HONRADO — só o personagem atravessa o frame
+    // (background nulo + chão/grade ocultos; canvas nasceu com alpha:true)
+    const fundoAntes = this.cena.background;
+    const chaoAntes = this.chao?.visible ?? true;
+    const gradeAntes = this.grade?.visible ?? true;
+    if (opcoes.transparente) {
+      this.cena.background = null;
+      if (this.chao) this.chao.visible = false;
+      if (this.grade) this.grade.visible = false;
+    }
     const tamanhoAntes = new THREE.Vector2();
     this.renderer.getSize(tamanhoAntes);
     this.renderer.setSize(opcoes.largura, opcoes.altura);
@@ -251,6 +261,12 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.renderer.setSize(tamanhoAntes.x, tamanhoAntes.y);
     this.camera.aspect = tamanhoAntes.x / Math.max(1, tamanhoAntes.y);
     this.camera.updateProjectionMatrix();
+    if (opcoes.transparente) {
+      this.cena.background = fundoAntes;
+      if (this.chao) this.chao.visible = chaoAntes;
+      if (this.grade) this.grade.visible = gradeAntes;
+      this.renderer.render(this.cena, this.camera); // não deixa frame vazado
+    }
     this.pausado = estava;
     return { dataUri, largura: opcoes.largura, altura: opcoes.altura };
   }

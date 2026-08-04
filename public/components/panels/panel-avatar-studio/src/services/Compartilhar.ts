@@ -32,7 +32,16 @@ export async function compartilharPng(
 ): Promise<CanalCompartilhamento> {
   const blob = dataUriParaBlob(dataUri);
   if (!blob) return 'nenhum';
+  return compartilharBlob(blob, nomeArquivo, titulo);
+}
 
+/** mega 36: a MESMA cascata para qualquer blob (vídeo WebM incluso) —
+ *  clipboard sem suporte ao MIME cai limpo para o download. */
+export async function compartilharBlob(
+  blob: Blob,
+  nomeArquivo: string,
+  titulo: string,
+): Promise<CanalCompartilhamento> {
   // 1) Web Share nível 2 — a folha nativa do sistema (mobile primeiro)
   try {
     if (typeof navigator.share === 'function') {
@@ -47,10 +56,16 @@ export async function compartilharPng(
     /* segue a cascata */
   }
 
-  // 2) área de transferência (colar direto em chat/doc)
+  // 2) área de transferência (colar direto em chat/doc) — SÓ imagem:
+  // vídeo nunca é aceito pelo clipboard do Chromium e o write() pode ficar
+  // PENDENTE p/ sempre (visto na mega 36) — a cascata não pode estalar,
+  // então além do filtro de tipo há um guarda de tempo.
   try {
-    if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    if (blob.type.startsWith('image/') && typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+      const guarda = new Promise<never>((_, rejeitar) => {
+        setTimeout(() => rejeitar(new Error('clipboard pendente')), 2500);
+      });
+      await Promise.race([navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]), guarda]);
       return 'clipboard';
     }
   } catch { /* segue a cascata */ }
