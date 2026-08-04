@@ -17,6 +17,18 @@
 # =====================================================================
 set -euo pipefail
 
+# BLINDAGEM (2026-08-04): o passo 2 faz merge que pode ALTERAR ESTE
+# PRÓPRIO ARQUIVO em execução — o bash relê o script conforme executa e
+# um deslocamento de bytes viraria comando corrompido. Solução: na
+# primeira execução o script se copia p/ um arquivo efêmero e re-executa
+# de lá; o merge muda o original à vontade, a CÓPIA em execução é imune.
+if [ -z "${DEPLOY_AS5_REEXEC:-}" ]; then
+  _COPIA="$(mktemp /tmp/deploy-as5-run.XXXXXX.sh)"
+  cp "${BASH_SOURCE[0]}" "${_COPIA}"
+  DEPLOY_AS5_REEXEC=1 exec bash "${_COPIA}" "$@"
+fi
+trap 'rm -f "${BASH_SOURCE[0]}"' EXIT # a cópia efêmera se limpa ao sair
+
 # Overrides por env = testabilidade (ensaio local) + reuso em outros hosts.
 # Em produção NADA precisa ser passado: os padrões são os do servidor.
 RAIZ="${DEPLOY_RAIZ:-/var/www/dshowdash}"
