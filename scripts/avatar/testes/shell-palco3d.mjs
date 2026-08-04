@@ -223,7 +223,8 @@ ok(await p.locator('[data-teste="palco-3d"]').count() === 0, 'palco 3D não foi 
 const ctx2 = await b.newContext({ viewport: { width: 1500, height: 940 } });
 await ctx2.addInitScript(() => {
   localStorage.setItem('dshow.avst5.tour.v1', 'feito');
-  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true }));
+  // §650: palco3d é padrão ON — o fail-safe agora se prova DESLIGANDO
+  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false }));
 });
 const p2 = await ctx2.newPage();
 await p2.goto('http://127.0.0.1:8901/avst-harness.html', { waitUntil: 'networkidle' });
