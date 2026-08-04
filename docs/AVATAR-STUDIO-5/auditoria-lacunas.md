@@ -472,3 +472,37 @@ Lições novas: regra CSS base declarada DEPOIS vence o empate (offsets de
 .avst5-horas precisaram de especificidade dupla); coleções/conquistas
 vivem no CLÁSSICO (testes trocam de modo); esperas de mensagem = 
 waitForFunction, nunca timeout fixo.
+
+## MEGAS 71–110 "2 LOTES GIGANTES" (40 megas) · 2026-08-04
+
+Lote 71–90 "Criação Avançada + 3D AAA + Fundações" e lote 91–110
+"Catálogo, Economia & UX Enterprise", num ciclo único (pedido do Jhony).
+
+✅ 71 Personalidade §117 · 72–74 Morfologia paramétrica §108–111 (motor
+   §71, zero engine nova) · 75 Luz de edição fiel §132 · 76 Emotes §120
+   (preview §608) · 77 Environment map §449 (RoomEnvironment/PMREM, zero
+   assets) · 78 ACES + exposição §458 · 79 SOMBRAS REAIS por tier §451
+   (diagnostico expõe; adaptativo desliga sozinho) · 80 Pose Manager
+   §442–443 (poseNoTempo + Poses3d.ts) · 81 Tinta nos materiais §419
+   (cor original em userData — nunca acumula) · 82 Aura 3D §444 ·
+   83 Preload por visibilidade §274 · 84 Manifest §267 (determinístico,
+   testado; mora em docs/ pois public/assets é gitignored) · 85 Tokens
+   §283–289 · 86 Log.ts §291 · 87 Checklist §1585 · 88 Paleta com
+   cenário/hora/luz · 89 Sons captura/poder §584 · 90 consolidação.
+✅ 91 Selo SAZONAL §60 · 92–94 Economia+desbloqueio+exploração §85/
+   §225–228 · 95 Busca com operadores §57+ · 96 Lado do medalhão §350 ·
+   97 Código do look §373-lite (sanitizado; núcleo prova que ID
+   inventado não entra) · 98 Responsividade §375 · 99 Micro-motion §285 ·
+   100 Empty states com caminho · 101 Galeria local de capturas 3D ·
+   102 Marca configurável §372 · 103 Wide transparente §372 · 104 Foco
+   nos diálogos §548 · 105 Tecla E emote · 106 Funil §294 · 107 Selo CC0
+   na Vitrine · 108 (já coberto: coleção no DetalheAsset) · 109 Saúde do
+   storage · 110 consolidação.
+
+Testes: r3d estendido (sombras/tinta/aura/exposição byte a byte com
+avancarQuadro(0)), lotes-gigantes.mjs (E2E dos 2 lotes), manifest.test
+(determinismo). Suíte 40/40 + núcleo. Lições novas: delta>0 no scrub
+mexe o idle procedural (comparação byte exige re-render puro); galeria
+ancorada onde fila com wrap cresce = interceptação; rascunho §139
+aparece após reload em teste com edição (descartar antes); testes de
+1º slider quebram quando o painel ganha grupos novos (mirar por rótulo).
