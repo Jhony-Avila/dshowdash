@@ -202,6 +202,9 @@ if [ -s "${PESOS}" ]; then
   echo "✓ gate de peso: chunks dentro dos máximos versionados"
 fi
 
+# lote 151 (§605/§312): SMOKE do dist — todo chunk do manifest existe
+node "${RAIZ}/scripts/deploy/smoke-dist.mjs"
+
 # ── 7. VALIDAÇÃO DE BANCO (diagnóstico — NUNCA aplica nada) ───────────
 etapa "7/9 Diagnóstico do banco (runner --checar; migração é runbook à parte)"
 php scripts/avatar/aplicar-migracoes.php --checar || echo "⚠ diagnóstico apontou pendências — ver RUNBOOK-BANCO.md (passo root)"

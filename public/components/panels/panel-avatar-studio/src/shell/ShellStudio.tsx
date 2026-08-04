@@ -41,6 +41,7 @@ import {
 } from '../services/PresetsPessoais';
 import { carregarEstado, estadoApiAtivo, salvarDraft, salvarVersao } from '../services/EstadoService';
 import { telemetria } from '../services/Telemetria';
+import { log } from '../services/Log';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
 import { MOVIMENTOS, SHOWCASE_174, animar, movimentoReduzido, sequencia } from './movimento';
@@ -140,6 +141,10 @@ function lerLarguras(): { esq: number; dir: number } {
 class LimiteShell extends Component<{ aoSair: () => void; children: ReactNode }, { erro: boolean }> {
   state = { erro: false };
   static getDerivedStateFromError() { return { erro: true }; }
+  // lote 156 (§291): o error boundary REPORTA antes de degradar
+  componentDidCatch(e: Error) {
+    log.erro('shell_error_boundary', { motivo: String(e?.message ?? e).slice(0, 120) });
+  }
   render() {
     if (!this.state.erro) return this.props.children;
     return (
@@ -369,6 +374,23 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     aplicarComando(validarConfig({ ...cfg, camadas: { ...cfg.camadas, olhos: p.olhos, boca: p.boca } }));
     telemetria('personalidade_aplicou', { id: p.id }); // §290
   }, [store, aplicarComando]);
+
+  // lote 157: GUARDA de cota do storage — dshow.* passando de ~3,5MB
+  // avisa uma vez (antes que um save silenciosamente falhe)
+  useEffect(() => {
+    try {
+      let bytes = 0;
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const k = localStorage.key(i);
+        if (k?.startsWith('dshow.')) bytes += (localStorage.getItem(k)?.length ?? 0) * 2;
+      }
+      if (bytes > 3.5 * 1024 * 1024) {
+        log.aviso('storage_perto_da_cota', { kb: Math.round(bytes / 1024) }); // §291
+        setAnuncio('Armazenamento local quase cheio — considere limpar projetos/cenas antigos.');
+      }
+    } catch { /* sem storage */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // mega 106 (§294): FUNIL — entrou→editou→salvou (1× por sessão de shell)
   const refFunil = useRef({ entrou: false, editou: false });

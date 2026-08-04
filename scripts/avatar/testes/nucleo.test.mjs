@@ -313,6 +313,21 @@ ok(lerCodigoDoLook('DSHOW-lixo') === null && lerCodigoDoLook('qualquercoisa') ==
 const codMau = codigoDoLook({ ...CONFIG_PADRAO, camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_hacker_9000' } });
 ok(lerCodigoDoLook(codMau)?.camadas.olhos !== 'olh_hacker_9000', 'ID inventado atravessou o código do look');
 
+// lote 121–130 (§232–§240): CONSULTOR é motor de regras DETERMINÍSTICO
+import { sugerirPorObjetivo, sugestoesDeEstilo } from '${PAINEL}/src/services/ConselheiroEstilo';
+const ctxCons = { desbloqueados: new Set<string>(), usados: new Set<string>() };
+const s1 = sugestoesDeEstilo(CONFIG_PADRAO, ctxCons);
+const s2 = sugestoesDeEstilo(CONFIG_PADRAO, ctxCons);
+ok(JSON.stringify(s1) === JSON.stringify(s2), '§232: mesma entrada deveria dar as MESMAS sugestões');
+ok(s1.length >= 1 && s1.length <= 8, \`agregador do consultor fora do teto 8 (\${s1.length})\`);
+ok(s1.every((s) => s.porQue.length >= 8), '§238: toda sugestão precisa do porquê');
+const prof = sugerirPorObjetivo(CONFIG_PADRAO, 'profissional', new Set<string>());
+if (prof) {
+  const trocasProf = (['roupa', 'olhos', 'boca', 'fundo', 'moldura', 'efeito'] as const)
+    .filter((c) => prof.config.camadas[c] !== CONFIG_PADRAO.camadas[c]);
+  ok(trocasProf.length >= 2, \`§233: look por objetivo exige >=2 trocas (\${trocasProf.length})\`);
+}
+
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);
 `);

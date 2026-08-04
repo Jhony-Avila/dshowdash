@@ -1,8 +1,9 @@
 // testes/shell-save.mjs — AS5 §158: CONFETE ao salvar com SUCESSO.
 // O harness mocka window.fetch (POST studio.php responde ok) — o teste
 // instrumenta ESSA camada (page.route nunca vê os mocks) e usa o registro
-// __ch619 do próprio harness p/ provar §619 flag OFF = zero chamadas.
-// @version 1.1.0  @created 2026-08-03
+// __ch619 do próprio harness p/ provar o §619 do lote 141: escrita SEMPRE
+// (best-effort), leitura de montagem gated pela flag.
+// @version 1.2.0  @created 2026-08-03  @updated 2026-08-04 (lote 141)
 import { SAIDA, abrir, irParaHarness, relatorio } from './navegador.mjs';
 
 const { navegador: b, pagina: p, erros } = await abrir({
@@ -52,9 +53,12 @@ await p.waitForTimeout(2400);
 ok(await p.locator('.avst5-celebracao').count() === 0, 'confete não sumiu sozinho (deveria durar ~2.2s)');
 ok((await p.locator('.avst5-salvar').textContent())?.toLowerCase().includes('salv'), 'barra não confirmou o salvamento');
 
-// §619: flag as5.estado_api OFF → espelho NUNCA é chamado (registro do harness)
-const ch619 = await p.evaluate(() => (window.__ch619 ?? []).length);
-ok(ch619 === 0, `flag OFF deveria significar zero chamadas ao estado.php (${ch619})`);
+// §619 (lote 141): a ESCRITA no espelho é SEMPRE ativa (best-effort) — mesmo
+// com as5.estado_api OFF o save espelha o draft; só o GET de montagem é gated
+const ch619 = await p.evaluate(() => window.__ch619 ?? []);
+ok(ch619.length > 0 && ch619.every((c) => c.m === 'POST'),
+  `flag OFF: esperava só POSTs best-effort no estado.php (${ch619.map((c) => c.m).join(',') || 'nenhuma chamada'})`);
+ok(ch619.some((c) => c.corpo?.draft), 'save não espelhou nenhum draft no §619 (lote 141)');
 
 const ok_ = relatorio('shell-save', falhas, erros);
 await b.close();
