@@ -396,3 +396,44 @@ Testes novos: shell-palco3d-criativo (alpha do canto=0 na transparente,
 cena roundtrip Grade+Neon, turntable interceptado, fullscreen) e
 shell-atalhos-backup (export parseado, import com descarte contado,
 arquivo inválido recusado sem tocar a biblioteca). Suíte: 33/33 + núcleo.
+
+## MEGAS 41–50 "Robustez, Diagnóstico & Direção de Arte" (lote de 10) · 2026-08-04
+
+✅ 41 WATCHDOG DE CONTEXTO WEBGL — contextlost (preventDefault + laço e
+   captura suspensos + badge âmbar "Recuperando o 3D…") / restored
+   (reaplica estado, palco volta sozinho); GPU reset e aba de fundo
+   deixaram de ser fatais. Teste REAL com WEBGL_lose_context.
+✅ 42 CAPACIDADE (§605-lite) — Capacidade3d.ts: WebGL2, renderer real,
+   software (SwiftShader/llvmpipe), memória/núcleos → dica CONSERVADORA
+   de tier inicial (contrato ganhou dicaTier; o adaptativo §528 segue
+   mandando); nota do palco avisa "render por software"; telemetria
+   p3d_capacidade 1×/sessão.
+✅ 43 RETRY COM BACKOFF — falha de aplicarEstado tenta de novo 1× (800ms)
+   antes de "indisponível"; botão "Tentar de novo" REMONTA o renderer.
+   Teste prova: 1 falha de rede se recupera SOZINHA; 2 falhas → botão →
+   volta. (Prefetch §402 consumia o mock — clique via dispatchEvent.)
+✅ 44 SCRUB DE POSE — avancarQuadro(±0,15s): mixer.update + render manual
+   MESMO pausado; ⏮/⏭ aparecem com a pose congelada (quadro perfeito
+   antes de capturar).
+✅ 45 NITIDEZ RESPONSIVA — ResizeObserver no contêiner → setSize/aspect
+   reais (fechou a lacuna registrada no lote 39: fullscreen esticava o
+   canvas montado).
+✅ 46 TELEMETRIA VIEWER (flag NOVA as5.telemetria_painel) — ring buffer
+   local (100 eventos §290, sem PII, nada persiste) + assinatura;
+   painel dev com lista viva, export JSON e limpar; comando na paleta
+   some sem a flag (fail-safe).
+✅ 47 FOTO 3D TRANSPARENTE (§21×§325) — toggle na galeria 3D; captura
+   alpha compõe limpa nos templates (teste decodifica o <image> do
+   preview e prova alpha 0 no canto).
+✅ 48 AJUSTE FINO DE CÂMERA (§453) — sliders zoom (1.2–4×) e altura
+   (0.05–0.9 rad) sobre o enquadramento Box3; refCam alimenta todas as
+   restaurações (ficha/turntable/showcase).
+✅ 49 COMPARAR 2D×3D (§65-3D) — split com o AvatarSvg dentro do palco
+   p/ veredito visual de paridade.
+✅ 50 CONSOLIDAÇÃO — suíte 35/35 + núcleo; pesos no gate (entry 233/265 ·
+   Renderizador3d 11,6/16 — teto subiu de 12 com justificativa); FIX de
+   stacking context (atalhos/telemetria sob o backdrop z-40 → 56); docs.
+
+Aprendizados novos do lote: overlay dentro de .avst5-detalhe-fundo PRECISA
+de z-index 56 (o backdrop interno usa 40); prefetch no hover consome mocks
+de rede (cliques de teste p/ contagem exata = dispatchEvent).
