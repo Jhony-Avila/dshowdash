@@ -315,3 +315,42 @@ blob WebM real). Suíte: 31 entradas — 31/31 + núcleo verdes.
    showcase/capturou/gravou + foto_compartilhou.
 ✅ 20 CONSOLIDAÇÃO — suíte 31/31 + núcleo; relatórios do projeto
    atualizados; este registro.
+
+## MEGAS 21–30 "Palco 3D Profissional" (lote de 10) · 2026-08-04
+
+✅ 21 CENÁRIO (§9.3) — fundos Neutro/Estúdio/Grade no renderer
+   (background + GridHelper + chão-disco com sombra fake que ancora o
+   personagem); fila de chips no palco.
+✅ 22 ILUMINAÇÃO (§163-lite) — presets Estúdio/Quente/Fria/Neon MUTAM as
+   3 luzes canônicas (chave/preencher/ambiente) sem recriar a cena; a
+   luz canônica continua idêntica à das thumbs §508 no preset padrão.
+✅ 23 ÓRBITA MANUAL (§453) — modo de câmera 'orbita' liga OrbitControls
+   (drag gira, roda dá zoom; damping; alvo no centro do personagem;
+   dispose no descartar). Radio próprio no palco; cinemática continua
+   sendo a órbita AUTOMÁTICA.
+✅ 24 USAR COMO AVATAR (§21×§325) — captura 960 do palco 3D entra no
+   MESMO pipeline salvarFoto da Foto (POST studio.php, re-encode pixel
+   a pixel no servidor, versão otimista do App atualizada). Fio:
+   App.aoSalvarFotoLegado → ShellStudio → Palco3d.aoUsarComoAvatar;
+   botão só existe com a prop (fail-safe).
+✅ 25 FICHA DO PERSONAGEM (§508) — contact sheet 2×2 (1920²) com 4
+   ângulos determinísticos (frente/¾/perfil/costas via azimute);
+   câmera restaurada; download dshow-ficha-<slug>.png.
+✅ 26 MARCA D'ÁGUA — "DSHOW" no canto das capturas/ficha; toggle
+   aria-pressed (nasce ligada; desligável).
+✅ 27 IDLE VIVO — alterna Idle↔Idle_Neutral a cada 12s quando o clipe
+   existe; nunca durante showcase/pose congelada (vida sem ruído).
+✅ 28 HUD DE PERFORMANCE — flag NOVA as5.hud3d (fail-safe OFF):
+   fps · tier · triângulos via diagnostico() do renderer (média móvel
+   §528); poll 1s; pointer-events none.
+✅ 29 POSE CONGELADA — botão + tecla espaço pausam/retomam o laço
+   (freeze frame p/ enquadrar captura); badge com role=status.
+✅ 30 CONSOLIDAÇÃO — suíte 31/31 + núcleo verdes; pesos DENTRO do gate
+   (entry 221/240 · motor3d 1043/1180 · Renderizador3d 9.9/12 — o
+   OrbitControls foi p/ o motor3d, chunk certo); relatórios do projeto
+   atualizados (relatório final v2, mapa v60); este registro.
+
+Testes: shell-palco3d v2(=v5 funcional) — pixel do canto prova a troca
+de fundo, drag da órbita, freeze/retomar, ficha 1920² interceptada,
+marca, HUD, usar-avatar; renderizador3d.test com OrbitControls no
+import-map. Suíte: 31/31 + núcleo verdes.
