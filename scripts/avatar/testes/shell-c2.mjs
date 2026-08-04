@@ -51,7 +51,9 @@ ok(await p.locator('.avst5-props .avst5-slider').count() >= 2, 'sliders da aura 
 const antesSlider = await svgPalco();
 ok(!antesSlider.includes('opacity="0.5"><g'), 'palco já tinha wrapper de intensidade antes do slider');
 // mover o slider de INTENSIDADE para 0.5 (change = preview; pointerup = commit)
-await p.locator('.avst5-slider input[type="range"]').first().evaluate((el) => {
+// (megas 72–74: o painel agora tem MAIS grupos de props — mirar pelo rótulo)
+await p.locator('.avst5-props .avst5-slider', { hasText: 'Intensidade' }).first()
+  .locator('input[type="range"]').evaluate((el) => {
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
   setter.call(el, '0.5');
   el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -70,8 +72,9 @@ await p.keyboard.press('Control+Shift+Z');
 await p.waitForTimeout(500);
 ok((await svgPalco()).includes('opacity="0.5"'), 'redo não reaplicou a propriedade');
 
-// Restaurar padrão limpa params
-await p.locator('.avst5-props-reset').first().click();
+// Restaurar padrão limpa params (megas 72–74: pode haver vários grupos —
+// restaura TODOS p/ garantir que a aura volta)
+for (const btn of await p.locator('.avst5-props-reset').all()) await btn.click();
 await p.waitForTimeout(500);
 ok(!(await svgPalco()).includes('opacity="0.5"'), 'Restaurar não voltou ao padrão');
 await p.screenshot({ path: `${SAIDA}/c2-propriedades.png` });

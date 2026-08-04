@@ -46,12 +46,27 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
   banner: [
     { id: 'intensidade', nome: 'Intensidade', min: 0.3, max: 1, passo: 0.05, padrao: 1 },
   ],
+  // megas 72–74 (§108–§111): MORFOLOGIA paramétrica — escala em torno do
+  // centro geométrico de cada feição (mesmo wrapper de escala do emblema)
+  olhos: [
+    { id: 'escala', nome: 'Tamanho', min: 0.8, max: 1.2, passo: 0.02, padrao: 1 },
+  ],
+  boca: [
+    { id: 'escala', nome: 'Tamanho', min: 0.8, max: 1.2, passo: 0.02, padrao: 1 },
+  ],
+  cabelo: [
+    { id: 'escala', nome: 'Volume', min: 0.9, max: 1.12, passo: 0.02, padrao: 1 },
+  ],
 };
 
 /** Centro geométrico para transformações de escala, por categoria (viewBox 240×240). */
 const CENTRO_ESCALA: Partial<Record<CategoriaId, [number, number]>> = {
   emblema: [152, 206], // peito do busto — mesmo ponto do mapeamento corpo inteiro
   aura: [120, 120],    // §150.1: raio escala do CENTRO do palco
+  // megas 72–74: centros das feições (G do base-api — olhosY 108, bocaY 146)
+  olhos: [120, 108],
+  boca: [120, 146],
+  cabelo: [120, 78],   // massa do cabelo acima do centro da cabeça (106)
 };
 
 /** Categoria "dona" de uma chave de camada (acessorio_* → acessorio). */

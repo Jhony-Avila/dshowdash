@@ -22,8 +22,10 @@ await p.locator('[data-teste="cenarios-2d"] button', { hasText: 'Dojo' }).click(
 await p.locator('[data-teste="horas-2d"] button', { hasText: 'Noite' }).click();
 await p.locator('[data-teste="luzes-2d"] button', { hasText: 'Dramática' }).click();
 await p.waitForTimeout(300);
-ok(await p.locator('.avst5-viewport[data-fundo="dojo"][data-hora="noite"][data-luz="dramatica"]').count() === 1,
-  'cenário/hora/luz não refletiram no viewport');
+// mega 75 (§132): na EDIÇÃO a luz é sempre neutra (cor fiel) — a
+// dramática escolhida só vale nos modos studio/foco (assert no R2)
+ok(await p.locator('.avst5-viewport[data-fundo="dojo"][data-hora="noite"][data-luz="neutra"]').count() === 1,
+  'cenário/hora não refletiram (ou §132 quebrou a luz neutra da edição)');
 await p.screenshot({ path: `${SAIDA}/palco-dojo-noite.png` });
 // persistência das escolhas
 const persistiu = await p.evaluate(() => [
@@ -43,6 +45,9 @@ await p.evaluate(() => {
   [...document.querySelectorAll('button')].find((x) => x.title?.includes('Studio'))?.click();
 });
 await p.waitForTimeout(600);
+// §132/§164: no STUDIO a luz escolhida vale de verdade
+ok(await p.locator('.avst5-viewport[data-luz="dramatica"]').count() === 1,
+  'studio deveria aplicar a luz Dramática escolhida');
 ok(await p.locator('[data-teste="ativar-poder"]').count() === 1, 'botão Ativar poder ausente no studio');
 const desabilitado = await p.locator('[data-teste="ativar-poder"]').isDisabled();
 ok(!desabilitado, 'com aura equipada o poder deveria estar habilitado');

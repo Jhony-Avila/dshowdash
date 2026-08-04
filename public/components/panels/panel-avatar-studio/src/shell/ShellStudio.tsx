@@ -14,7 +14,7 @@ import { CATEGORIAS, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIs
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
-import { definirSom, somAtivo, tocarEquipar, tocarSalvar } from '../services/Som';
+import { definirSom, somAtivo, tocarCapturar, tocarEquipar, tocarPoder, tocarSalvar } from '../services/Som';
 import { AvatarStore } from '../nucleo/estado';
 import type { Comando } from '../nucleo/estado';
 import { checksumEstado } from '../nucleo/contratos';
@@ -110,6 +110,22 @@ function gravarApresentacoes(l: PresetApresentacao[]): void {
   try { localStorage.setItem(CHAVE_APRESENTACAO, JSON.stringify(l.slice(0, 6))); } catch { /* sem storage */ }
 }
 const DEGRAUS_ESQ = [64, 84, 176, 220, 280];
+
+// mega 71 (§117): PERSONALIDADE — combos curados de olhos+boca (1 clique)
+const PERSONALIDADES = [
+  { id: 'confiante', nome: 'Confiante', olhos: 'olh_serio', boca: 'boc_determinada' },
+  { id: 'alegre', nome: 'Alegre', olhos: 'olh_feliz', boca: 'boc_sorriso' },
+  { id: 'focado', nome: 'Focado', olhos: 'olh_focado', boca: 'boc_neutra' },
+  { id: 'intenso', nome: 'Intenso', olhos: 'olh_chamas', boca: 'boc_determinada' },
+] as const;
+
+// mega 76 (§120): EMOTES — expressão TEMPORÁRIA (preview §608, nunca comando)
+const EMOTES = [
+  { id: 'feliz', rotulo: '😊', olhos: 'olh_feliz', boca: 'boc_sorriso' },
+  { id: 'uau', rotulo: '😮', olhos: 'olh_arregalado', boca: 'boc_bocejo' },
+  { id: 'bravo', rotulo: '😠', olhos: 'olh_chamas', boca: 'boc_determinada' },
+  { id: 'amor', rotulo: '😍', olhos: 'olh_apaixonado', boca: 'boc_beijo' },
+] as const;
 
 function lerLarguras(): { esq: number; dir: number } {
   try {
@@ -215,6 +231,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         setModo((m) => (m === 'foco' ? 'edicao' : 'foco'));
+      } else if (e.key.toLowerCase() === 'e' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // mega 105: E = emote aleatório (só faz algo no modo studio)
+        window.dispatchEvent(new CustomEvent('avst5:emote-aleatorio'));
       } else if (e.key === 'Escape') {
         setModo('edicao');
       }
@@ -275,6 +294,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     if (!idPoder || poderAtivo) return;
     setPoderAtivo(idPoder);
     telemetria('palco_poder', { id: idPoder }); // §290
+    tocarPoder(); // mega 89 (§584)
     setTimeout(() => setPoderAtivo(null), 2600);
   }, [idPoder, poderAtivo]);
 
@@ -315,6 +335,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       desfazer: () => antes,
     };
     store.executar(cmd);
+    if (!refFunil.current.editou) { // mega 106 (§294)
+      refFunil.current.editou = true;
+      telemetria('funil', { etapa: 'editou' });
+    }
     // §158 (gatilho EQUIPAR): item novo ÉPICO+ ganha brilho curto no palco —
     // efeito efêmero via Motion System §285 (nunca persiste; §297 no módulo)
     const equipadosNovos = [
@@ -335,6 +359,50 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     }, -1);
     if (maiorNivel >= 0) tocarEquipar(maiorNivel);
   }, [store]);
+
+  // mega 71 (§117): aplica um combo de personalidade (vira COMANDO c/ undo)
+  const aplicarPersonalidade = useCallback((p: (typeof PERSONALIDADES)[number]) => {
+    const cfg = paraLegado2d(store.estadoDraft);
+    if (!itemPorId(p.olhos) || !itemPorId(p.boca)) return; // catálogo manda
+    aplicarComando(validarConfig({ ...cfg, camadas: { ...cfg.camadas, olhos: p.olhos, boca: p.boca } }));
+    telemetria('personalidade_aplicou', { id: p.id }); // §290
+  }, [store, aplicarComando]);
+
+  // mega 106 (§294): FUNIL — entrou→editou→salvou (1× por sessão de shell)
+  const refFunil = useRef({ entrou: false, editou: false });
+  useEffect(() => {
+    if (!refFunil.current.entrou) {
+      refFunil.current.entrou = true;
+      telemetria('funil', { etapa: 'entrou' });
+    }
+  }, []);
+
+  // mega 99 (§285): micro-motion na troca de categoria (§297 no módulo)
+  useEffect(() => {
+    void animar(document.querySelector('.avst5-painel'), MOVIMENTOS.aparecer, { duracao: 140, easing: 'ease-out' });
+  }, [categoria]);
+
+  // mega 76 (§120): EMOTE — troca temporária via preview (§608); 2s e volta
+  const refEmote = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fazerEmote = useCallback((e: (typeof EMOTES)[number]) => {
+    if (!itemPorId(e.olhos) || !itemPorId(e.boca)) return;
+    if (refEmote.current) clearTimeout(refEmote.current);
+    store.visualizar((est) => ({ ...est, equipment: { ...est.equipment, olhos: e.olhos, boca: e.boca } }));
+    telemetria('emote', { id: e.id }); // §290
+    refEmote.current = setTimeout(() => { store.limparPreview(); refEmote.current = null; }, 2000);
+  }, [store]);
+  useEffect(() => () => { if (refEmote.current) clearTimeout(refEmote.current); }, []);
+  // mega 105: tecla E dispara um emote aleatório (studio apenas)
+  const refModo = useRef(modo);
+  refModo.current = modo;
+  useEffect(() => {
+    const ao = () => {
+      if (refModo.current !== 'studio') return;
+      fazerEmote(EMOTES[Math.floor(Math.random() * EMOTES.length)]);
+    };
+    window.addEventListener('avst5:emote-aleatorio', ao);
+    return () => window.removeEventListener('avst5:emote-aleatorio', ao);
+  }, [fazerEmote]);
 
   // §69.1: SUBSTITUIÇÃO em slot (item A → item B) ou slot BLOQUEADO pede
   // confirmação explícita — nada de troca silenciosa
@@ -506,6 +574,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         a.download = 'dshow-showcase-960px.png';
         a.click();
         telemetria('showcase_captura');
+        tocarCapturar(); // mega 89 (§584)
         registrarApresentacao('captura'); // mega 66 (§185)
       }
       URL.revokeObjectURL(url);
@@ -697,8 +766,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             onPointerDown={(e) => { arraste.current = { lado: 'esq', x0: e.clientX, w0: larguras.esq }; }} />
 
           {/* viewport dominante (R1) — SEM scroll de página (R5) */}
+          {/* mega 75 (§132): EDIÇÃO tem luz neutra garantida — cor fiel;
+              a iluminação §164 só vale nos modos studio/foco */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}
-            data-hora={hora} data-luz={luz}>
+            data-hora={hora} data-luz={modo === 'edicao' ? 'neutra' : luz}>
             {palco3d ? (
               <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d}
                 aoUsarComoAvatar={aoSalvarFotoLegado} />
@@ -798,6 +869,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 )}
               </div>
             )}
+            {modo === 'studio' && (
+              <div className="avst5-emotes" role="group" aria-label="Emotes (§120)" data-teste="emotes">
+                {EMOTES.map((e) => (
+                  <button key={e.id} type="button" title={`Emote ${e.id} (expressão por 2s)`}
+                    onClick={() => fazerEmote(e)}>{e.rotulo}</button>
+                ))}
+              </div>
+            )}
             {modo === 'studio' && configVisivel.titulo && (
               <div className="avst5-titulo-selo" role="note">{String(configVisivel.titulo).replace(/^tit_/, '').replace(/_/g, ' ')}</div>
             )}
@@ -838,6 +917,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 void espelhar619(true); // §619: versão publicada no espelho
                 celebrar(); // §158: gatilho de celebração
                 tocarSalvar(); // §584: acorde de salvamento
+                telemetria('funil', { etapa: 'salvou' }); // mega 106 (§294)
               }
               return r.ok;
             }} />
@@ -954,6 +1034,22 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 rotulo: palco3d ? 'Desligar a prévia 3D' : 'Ligar a prévia 3D',
                 executar: () => setPalco3d((v) => !v),
               }] : []),
+              // mega 71 (§117): personalidades na paleta
+              ...PERSONALIDADES.map((p) => ({
+                id: `pers-${p.id}`,
+                rotulo: `Personalidade: ${p.nome}`,
+                executar: () => aplicarPersonalidade(p),
+              })),
+              // mega 88: cenário/hora/luz também pela paleta (§566)
+              ...FUNDOS_PALCO.map((f) => ({
+                id: `cen-${f}`, rotulo: `Cenário: ${ROTULO_FUNDO[f]}`, executar: () => trocarFundo(f),
+              })),
+              ...HORAS_PALCO.map((h) => ({
+                id: `hora-${h}`, rotulo: `Hora do dia: ${ROTULO_HORA[h]}`, executar: () => trocarHora(h),
+              })),
+              ...LUZES_PALCO.map((l) => ({
+                id: `luz-${l}`, rotulo: `Iluminação: ${ROTULO_LUZ[l]}`, executar: () => trocarLuz(l),
+              })),
               { id: 'atalhos', rotulo: 'Atalhos do teclado (?)', executar: () => setAtalhos(true) },
               // mega 46: viewer de telemetria (só com a flag dev ligada)
               ...(flag('as5.telemetria_painel') ? [{

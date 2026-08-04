@@ -75,6 +75,21 @@ export function tocarSalvar(): void {
   nota(659.25, 0.06, 0.34, 0.55);  // mi
 }
 
+/** mega 89 (§584): CLIQUE de captura — obturador (nota curta grave+aguda). */
+export function tocarCapturar(): void {
+  if (!somAtivo()) return;
+  nota(220, 0, 0.05, 0.5);
+  nota(880, 0.045, 0.09, 0.4);
+}
+
+/** mega 89 (§584): PODER ativado — quinta ascendente com brilho. */
+export function tocarPoder(): void {
+  if (!somAtivo()) return;
+  nota(392, 0, 0.22, 0.55);      // sol
+  nota(587.33, 0.08, 0.3, 0.5);  // ré
+  nota(783.99, 0.16, 0.4, 0.35); // sol agudo
+}
+
 /** Celebração lendário/mítico/exclusivo — arpejo ascendente com brilho. */
 export function tocarCelebracao(raridade: Raridade): void {
   if (!somAtivo()) return;

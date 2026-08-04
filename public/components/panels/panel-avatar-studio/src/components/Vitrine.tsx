@@ -107,6 +107,32 @@ export function Vitrine({ config, desbloqueados, aoAplicar, aoAbrirColecoes }: {
     void carregarIndice3d().then((i) => { if (vivo) setPersonagens3d(i?.personagens ?? null); });
     return () => { vivo = false; };
   }, []);
+  // mega 83 (§274): PRELOAD por visibilidade — quando a seção 3D entra na
+  // tela, esquenta o cache HTTP (manifests + lod2 dos 3 primeiros). Ligar
+  // o palco 3D depois disso é quase instantâneo. Oportunista: falha cala.
+  const refSecao3d = useRef<HTMLElement>(null);
+  const refPreaqueceu = useRef(false);
+  useEffect(() => {
+    const alvo = refSecao3d.current;
+    if (!alvo || !personagens3d?.length || refPreaqueceu.current || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver((entradas) => {
+      if (!entradas.some((e) => e.isIntersecting) || refPreaqueceu.current) return;
+      refPreaqueceu.current = true;
+      io.disconnect();
+      telemetria('vitrine_preaqueceu_3d', { n: Math.min(3, personagens3d.length) }); // §290
+      for (const p3 of personagens3d.slice(0, 3)) {
+        void fetch(`${BASE_PERSONAGENS_3D}/${p3.slug}/manifest.json`, { cache: 'default' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((m) => {
+            const lod2 = m?.arquivos?.lod2 ?? m?.lods?.lod2;
+            if (typeof lod2 === 'string') void fetch(`${BASE_PERSONAGENS_3D}/${p3.slug}/${lod2}`, { cache: 'default' });
+          })
+          .catch(() => { /* preload é oportunista */ });
+      }
+    }, { rootMargin: '120px' });
+    io.observe(alvo);
+    return () => io.disconnect();
+  }, [personagens3d]);
   const [favs, setFavs] = useState<Set<string>>(favoritos);
   // experimento ativo: snapshot de ANTES + nome do último item vestido
   const [experimento, setExperimento] = useState<{ antes: AvatarConfig; nome: string } | null>(null);
@@ -188,7 +214,7 @@ export function Vitrine({ config, desbloqueados, aoAplicar, aoAbrirColecoes }: {
 
       {/* mega 14 (§23): seção PERSONAGENS 3D — previews §508 publicados */}
       {personagens3d && personagens3d.length > 0 && (
-        <section className="avst-vt-secao" aria-label="Personagens 3D" data-teste="vitrine-3d">
+        <section ref={refSecao3d} className="avst-vt-secao" aria-label="Personagens 3D" data-teste="vitrine-3d">
           <header className="avst-vt-cab">
             <h3>Personagens 3D</h3>
             <p>Os curados do palco 3D — ligue a prévia no estúdio novo ou use na Foto.</p>
@@ -196,6 +222,8 @@ export function Vitrine({ config, desbloqueados, aoAplicar, aoAbrirColecoes }: {
           <div className="avst-vt-fila" role="list">
             {personagens3d.map((p3) => (
               <div key={p3.slug} role="listitem" className="avst-vt-card avst-vt-card-3d" title={p3.nome}>
+                {/* mega 107: proveniência transparente — curados são CC0 */}
+                <small className="avst-vt-cc0" title="Modelos CC0 (Quaternius / three.js) — proveniência em LICENCAS.md">CC0</small>
                 <img src={`${BASE_PERSONAGENS_3D}/${p3.slug}/preview.webp`} alt={p3.nome}
                   width={96} height={96} loading="lazy" />
                 <strong>{p3.nome}</strong>
