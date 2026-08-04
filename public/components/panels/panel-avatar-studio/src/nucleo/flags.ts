@@ -6,13 +6,13 @@
 // não inventa infraestrutura: consome /api/feature-flags se existir
 // (INVESTIGAR na F2 a integração com o panel-feature-flags-admin do dash).
 const PADROES: Record<string, boolean> = {
-  'as5.novo_shell': false,       // F2 — corte do shell novo
+  'as5.novo_shell': true,        // F2 — LIGADA no rollout §650 (2026-08-04, veredito visual do Jhony); rollback §651 = voltar p/ false
   'as5.registry_api': false,     // F1 — catálogo servido pelo registry
   'as5.estado_api': false,       // F1 — persistência via §619 (leitura dual)
   'as5.undo_redo': true,         // F1 — pilhas de comando na UI
   'as5.photo_studio': false,     // F6
   'as5.ia_assistiva': false,     // F8
-  'as5.palco3d': false,          // mega 7 — prévia 3D no viewport do shell
+  'as5.palco3d': true,           // mega 7 — LIGADA no rollout §650 (o motor 3D segue opt-in: só carrega no clique do botão)
   'as5.hud3d': false,            // mega 28 — HUD de performance do palco 3D (dev)
   'as5.telemetria_painel': false, // mega 46 — viewer local de telemetria (dev)
 };

@@ -26,6 +26,15 @@ export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = f
   // (o shell-tour.mjs remove a marca no próprio init para testar a 1ª visita)
   await contexto.addInitScript(() => {
     try { if (!localStorage.getItem('dshow.avst5.tour.v1')) localStorage.setItem('dshow.avst5.tour.v1', 'feito'); } catch { /* sem storage */ }
+    // rollout §650: novo_shell/palco3d agora são padrão ON no código — os
+    // testes LEGADOS (sem flags no init) continuam cobrindo o modo CLÁSSICO
+    // (fallback §651). Quem quer o padrão real remove a chave no próprio
+    // init (rollout-padrao.mjs); quem quer o shell declara as flags.
+    try {
+      if (!localStorage.getItem('dshow.avst.flags.v1')) {
+        localStorage.setItem('dshow.avst.flags.v1', '{"as5.novo_shell":false,"as5.palco3d":false}');
+      }
+    } catch { /* sem storage */ }
   });
   if (init) await contexto.addInitScript(init);
   const pagina = await contexto.newPage();
