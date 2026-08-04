@@ -506,3 +506,48 @@ mexe o idle procedural (comparação byte exige re-render puro); galeria
 ancorada onde fila com wrap cresce = interceptação; rascunho §139
 aparece após reload em teste com edição (descartar antes); testes de
 1º slider quebram quando o painel ganha grupos novos (mirar por rótulo).
+
+## Registro 2026-08-04 (noite) — PROGRAMA 111–160: 5 mega lotes temáticos
+
+Pedido: "mais 5 mega lotes". Trilho A do mapa v2, em 5 commits temáticos:
+
+✅ L1 111–120 (Photo Studio PRO-max): forma do medalhão §341 (círculo/
+   hexágono/losango/squircle — clip+aro+anel na MESMA silhueta), filtro
+   de cor §333 (P&B/sépia), desfoque de fundo, granulação §335
+   (feTurbulence seed fixo), zoom §340, anel ajustável, legenda §344
+   (sanitizada no TS e no PHP com a MESMA whitelist), export do VETOR
+   .svg §369 e copiar PNG §373 (clipboard com guarda de 2,5s).
+✅ L2 121–130 (Consultor §232–240): motor de REGRAS determinístico
+   (objetivo/cor/coleção/evento; ≥2 trocas; desempate lexicográfico;
+   NÃO é IA — honestidade §238 no drawer; grounding p/ o Copilot P13),
+   drawer com porquê em cada card, prever ao segurar §239 (não
+   destrutivo), aplicar = comando com undo, biblioteca §240 (≤8).
+   Flag as5.consultor ON (client-only, §651 desliga em 1 linha).
+✅ L3 131–140 (Sockets 3D §426–431): definirProp3d/aplicarProps no
+   Renderizador3d — chapéu/coroa/óculos/pet PROCEDURAIS (primitivas
+   three; a MESMA API recebe as malhas reais do UBC quando o zip
+   chegar), escala pela altura real (Box3), bone Head com compensação
+   de escala mundial, pet orbitando com bobbing, sombras seguem o tier,
+   dispose completo. Acessório 2D equipado → prop aproximada + nota
+   honesta "N aproximado(s) no 3D" (§481). Fix: acessorio legado migra
+   no adaptador (não existe equipment.acessorio no núcleo).
+✅ L4 141–150 (Espelho §619 de verdade): a ESCRITA deixa de depender da
+   flag — sempre ativa, best-effort, alimentando avatar_states/
+   avatar_state_versions; as5.estado_api passa a gatear SÓ o corte de
+   leitura futuro. Drawer VERSÕES: timeline com origem/resumo/data/
+   publicada, restaurar = comando com undo, consistência §629
+   informativa, espelho fora do ar = aviso honesto (nunca quebra).
+✅ L5 151–160 (QA/Perf enterprise): smoke-dist.mjs no deploy (manifest
+   vite × disco, 2 painéis), baselines.md §605 geradas por script
+   determinístico (o diff no git É o relatório de regressão), error
+   boundary do shell loga §291, guarda de cota do storage (>3,5MB avisa
+   sem quebrar), runbook-operacao.md (deploy/rollback/sinais/segredos),
+   teto do Renderizador3d 16→20KB (crescimento intencional dos sockets).
+
+Testes: programa-160.mjs NOVO (forma→polygon, P&B→saturate 0, legenda,
+zoom, byte-estabilidade do neutro, consultor porquê+aplicar+undo,
+versões §619 sem flag, prop 3D com nota §426 no SwiftShader); nucleo
+ganhou asserts do consultor (determinismo, teto 8, ≥2 trocas); shell-save
+e shell-619 ATUALIZADOS p/ a semântica do lote 141 (escrita sempre).
+Suíte 41 arquivos + núcleo. Lição nova: mudar semântica de flag exige
+varrer os testes que provavam a semântica ANTIGA no mesmo lote.

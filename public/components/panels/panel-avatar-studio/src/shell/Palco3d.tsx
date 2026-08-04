@@ -435,6 +435,26 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
       ?.definirAura3d?.(estado.equipment.aura ? config2d.cores.destaque : null);
   }, [estado, config2d, fase, personagem]);
 
+  // lote 131–140 (§426–§431): acessórios 2D viram PROPS aproximadas nos
+  // sockets 3D (a mesma API recebe as malhas reais quando o UBC chegar)
+  const aproximados = useMemo(() => {
+    let n = 0;
+    if (estado.equipment.acessorio_cabeca) n += 1;
+    if (estado.equipment.acessorio_rosto) n += 1;
+    if (estado.equipment.pet) n += 1;
+    return n;
+  }, [estado]);
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    const r = refR.current as unknown as { definirProp3d?: (s: string, t: string | null, c?: string) => void };
+    if (!r?.definirProp3d) return;
+    const cor = config2d.cores.destaque;
+    const cabeca = estado.equipment.acessorio_cabeca; // legado migra p/ cá no deLegado2d
+    r.definirProp3d('cabeca', cabeca ? (String(cabeca).includes('coroa') ? 'coroa' : 'chapeu') : null, cor);
+    r.definirProp3d('rosto', estado.equipment.acessorio_rosto ? 'oculos' : null, cor);
+    r.definirProp3d('pet', estado.equipment.pet ? 'pet' : null, cor);
+  }, [estado, config2d, fase, personagem]);
+
   // mega 80: salvar/aplicar/excluir POSES (clipe + tempo do scrub)
   const salvarPoseAtual = useCallback(() => {
     const r = refR.current as unknown as { tempoDaPose?: () => { clipe: string | null; tempo: number } };
@@ -862,7 +882,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           {qualidade !== 'auto'
             ? ` · qualidade ${qualidade === 'economico' ? 'econômica' : qualidade === 'medio' ? 'média' : 'alta'}`
             : tierAtual ? ` · qualidade ${tierAtual === 'economico' ? 'econômica (auto)' : `${tierAtual} (auto)`}` : ''}
-          {pendencias > 0 ? ` · ${pendencias} item(ns) equipados seguem no 2D` : ''}
+          {pendencias > 0 ? ` · ${Math.max(0, pendencias - aproximados)} item(ns) só no 2D` : ''}
+          {aproximados > 0 ? ` · ${aproximados} aproximado(s) no 3D` : ''}
         </div>
       </>)}
       {fase === 'carregando' && (

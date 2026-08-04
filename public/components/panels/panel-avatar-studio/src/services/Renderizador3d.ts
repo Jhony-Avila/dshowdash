@@ -103,6 +103,10 @@ export class Renderizador3d implements RenderizadorAvatar {
   private tinta: { cor: string; forca: number } | null = null;
   // mega 82 (§444): aura 3D — anel additive na cor do avatar
   private aura3d: THREE.Mesh | null = null;
+  // lote 131–140 (§426–§431): SOCKETS — props procedurais presos aos
+  // bones (arquitetura pronta p/ as malhas reais do UBC)
+  private tiposProp: Map<'cabeca' | 'rosto' | 'pet', { tipo: string; cor: string }> = new Map();
+  private props3d: Map<'cabeca' | 'rosto' | 'pet', THREE.Object3D> = new Map();
   // mega 45: nitidez responsiva — o canvas segue o contêiner de verdade
   private observadorTamanho: ResizeObserver | null = null;
   private alvoEl: HTMLElement | null = null;
@@ -375,6 +379,8 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.observadorTamanho = null;
     this.alvoEl = null;
     this.definirAura3d(null); // mega 82: dispose do anel
+    this.tiposProp.clear();   // lote 131: dispose das props
+    this.aplicarProps();
     if (this.chaoSombra) {
       this.chaoSombra.geometry.dispose();
       (this.chaoSombra.material as THREE.Material).dispose();
@@ -479,6 +485,10 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.personagem?.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).castShadow = reais;
     });
+    // lote 131: props fora do personagem (pet) também seguem o tier
+    for (const [, prop] of this.props3d) {
+      prop.traverse((o) => { if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).castShadow = reais; });
+    }
   }
 
   /** mega 81 (§419–§420): TINTA de destaque nos materiais (null = original).
@@ -539,6 +549,99 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.mixer.update(0);
     this.pausado = true;
     if (this.renderer && this.cena && this.camera) this.renderer.render(this.cena, this.camera);
+  }
+
+  // ── lote 131–140 (§426–§431): SOCKETS de acessórios ─────────────
+  /** §426: prop procedural num socket ('cabeca'|'rosto'|'pet'; null tira).
+   *  Tipos: chapeu · coroa · oculos · pet. A prop é APROXIMAÇÃO honesta —
+   *  quando o UBC chegar, a MESMA API recebe as malhas reais. */
+  definirProp3d(socket: 'cabeca' | 'rosto' | 'pet', tipo: string | null, cor = '#7c5cff'): void {
+    if (tipo) this.tiposProp.set(socket, { tipo, cor });
+    else this.tiposProp.delete(socket);
+    this.aplicarProps();
+  }
+
+  /** Reconstrói as props (troca de personagem/LOD chama de novo). */
+  private aplicarProps(): void {
+    // remove as atuais
+    for (const [, obj] of this.props3d) {
+      obj.parent?.remove(obj);
+      obj.traverse((n) => {
+        const m = n as THREE.Mesh;
+        if (m.isMesh) { m.geometry?.dispose(); (Array.isArray(m.material) ? m.material : [m.material]).forEach((x) => x?.dispose()); }
+      });
+    }
+    this.props3d.clear();
+    if (!this.personagem || !this.cena) return;
+    // §427: escala pela CABEÇA real do personagem (Box3 — pug ≠ androide)
+    const caixa = new THREE.Box3().setFromObject(this.personagem);
+    const altura = Math.max(0.2, caixa.getSize(new THREE.Vector3()).y);
+    const s = altura * 0.16;
+    const boneCabeca = this.bones.get('Head') ?? this.bones.get('head')
+      ?? this.bones.get('mixamorigHead') ?? this.bones.get('Neck') ?? null;
+    for (const [socket, { tipo, cor }] of this.tiposProp) {
+      const prop = this.construirProp(tipo, cor, s);
+      if (!prop) continue;
+      prop.traverse((n) => { if ((n as THREE.Mesh).isMesh) (n as THREE.Mesh).castShadow = this.sombrasLigadas; });
+      if (socket === 'pet') {
+        this.cena.add(prop); // §430: companion orbita a CENA no laço
+      } else if (boneCabeca) {
+        // bones podem carregar ESCALA herdada — compensa p/ tamanho mundial
+        const escalaMundo = new THREE.Vector3();
+        boneCabeca.getWorldScale(escalaMundo);
+        const f = 1 / Math.max(0.0001, escalaMundo.y);
+        prop.scale.multiplyScalar(f);
+        prop.position.y = (socket === 'cabeca' ? s * 1.15 : s * 0.15) * f;
+        if (socket === 'rosto') prop.position.z = s * 0.75 * f;
+        boneCabeca.add(prop);
+      } else {
+        // sem rig de cabeça (personagem estático): ancora no topo da caixa
+        prop.position.set(0, caixa.max.y + (socket === 'cabeca' ? s * 0.4 : 0), socket === 'rosto' ? s * 0.7 : 0);
+        this.cena.add(prop);
+      }
+      this.props3d.set(socket, prop);
+    }
+  }
+
+  /** Geometria procedural de cada tipo (primitivas three — zero download). */
+  private construirProp(tipo: string, cor: string, s: number): THREE.Object3D | null {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.45, metalness: 0.35 });
+    const escuro = new THREE.MeshStandardMaterial({ color: '#14181f', roughness: 0.6, metalness: 0.2 });
+    if (tipo === 'chapeu') {
+      g.add(new THREE.Mesh(new THREE.CylinderGeometry(s * 0.95, s * 0.95, s * 0.08, 24), mat)); // aba
+      const copa = new THREE.Mesh(new THREE.CylinderGeometry(s * 0.55, s * 0.6, s * 0.7, 24), escuro);
+      copa.position.y = s * 0.38;
+      g.add(copa);
+    } else if (tipo === 'coroa') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(s * 0.62, s * 0.62, s * 0.3, 24, 1, true),
+        new THREE.MeshStandardMaterial({ color: cor, roughness: 0.25, metalness: 0.8, side: THREE.DoubleSide }));
+      g.add(base);
+      for (let i = 0; i < 5; i += 1) {
+        const ponta = new THREE.Mesh(new THREE.ConeGeometry(s * 0.12, s * 0.32, 8), base.material);
+        const a = (i / 5) * Math.PI * 2;
+        ponta.position.set(Math.sin(a) * s * 0.62, s * 0.3, Math.cos(a) * s * 0.62);
+        g.add(ponta);
+      }
+    } else if (tipo === 'oculos') {
+      const aro = new THREE.TorusGeometry(s * 0.28, s * 0.05, 10, 24);
+      const e = new THREE.Mesh(aro, escuro);
+      e.position.x = -s * 0.34;
+      const d = new THREE.Mesh(aro.clone(), escuro);
+      d.position.x = s * 0.34;
+      const ponte = new THREE.Mesh(new THREE.CylinderGeometry(s * 0.04, s * 0.04, s * 0.24, 8), escuro);
+      ponte.rotation.z = Math.PI / 2;
+      g.add(e, d, ponte);
+    } else if (tipo === 'pet') {
+      const corpo = new THREE.Mesh(new THREE.SphereGeometry(s * 0.5, 20, 16), mat);
+      const olho = new THREE.Mesh(new THREE.SphereGeometry(s * 0.16, 12, 10),
+        new THREE.MeshBasicMaterial({ color: '#ffffff' }));
+      olho.position.set(0, s * 0.1, s * 0.42);
+      g.add(corpo, olho);
+    } else {
+      return null;
+    }
+    return g;
   }
 
   /** mega 80: tempo atual do clipe ativo (p/ salvar a pose do scrub). */
@@ -631,6 +734,7 @@ export class Renderizador3d implements RenderizadorAvatar {
     }
     this.atualizarSombras(); // mega 79: castShadow no personagem novo
     this.aplicarTinta();     // mega 81: tinta sobrevive à troca/LOD
+    this.aplicarProps();     // lote 131: props seguem o personagem novo
     this.definirCamera(this.cameraAtual); // preserva órbita/retrato no reload §528
   }
 
@@ -704,6 +808,20 @@ export class Renderizador3d implements RenderizadorAvatar {
       this.aura3d.rotation.z = this.relogio * 0.8;
       const pulso = 1 + Math.sin(this.relogio * 2.2) * 0.045;
       this.aura3d.scale.set(pulso, pulso, 1);
+    }
+    // §430: o PET orbita o personagem com bobbing (companion vivo)
+    const pet = this.props3d.get('pet');
+    if (pet && this.personagem) {
+      const caixa = new THREE.Box3().setFromObject(this.personagem);
+      const centro = caixa.getCenter(new THREE.Vector3());
+      const alturaP = caixa.getSize(new THREE.Vector3()).y;
+      const a = this.relogio * 0.9;
+      pet.position.set(
+        centro.x + Math.sin(a) * alturaP * 0.55,
+        centro.y + alturaP * 0.28 + Math.sin(this.relogio * 2.6) * alturaP * 0.04,
+        centro.z + Math.cos(a) * alturaP * 0.55,
+      );
+      pet.lookAt(centro.x, pet.position.y, centro.z);
     }
     if (this.controles?.enabled) {
       // alvo do orbit acompanha o personagem (uma vez por frame é barato)

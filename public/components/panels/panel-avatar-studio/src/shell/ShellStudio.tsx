@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
@@ -27,6 +27,8 @@ import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
+import { Consultor } from './Consultor';
+import { VersoesAvatar } from './VersoesAvatar';
 import { Atalhos } from './Atalhos';
 import { TelemetriaDev } from './TelemetriaDev';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
@@ -39,6 +41,7 @@ import {
 } from '../services/PresetsPessoais';
 import { carregarEstado, estadoApiAtivo, salvarDraft, salvarVersao } from '../services/EstadoService';
 import { telemetria } from '../services/Telemetria';
+import { log } from '../services/Log';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
 import { MOVIMENTOS, SHOWCASE_174, animar, movimentoReduzido, sequencia } from './movimento';
@@ -138,6 +141,10 @@ function lerLarguras(): { esq: number; dir: number } {
 class LimiteShell extends Component<{ aoSair: () => void; children: ReactNode }, { erro: boolean }> {
   state = { erro: false };
   static getDerivedStateFromError() { return { erro: true }; }
+  // lote 156 (§291): o error boundary REPORTA antes de degradar
+  componentDidCatch(e: Error) {
+    log.erro('shell_error_boundary', { motivo: String(e?.message ?? e).slice(0, 120) });
+  }
   render() {
     if (!this.state.erro) return this.props.children;
     return (
@@ -368,6 +375,23 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     telemetria('personalidade_aplicou', { id: p.id }); // §290
   }, [store, aplicarComando]);
 
+  // lote 157: GUARDA de cota do storage — dshow.* passando de ~3,5MB
+  // avisa uma vez (antes que um save silenciosamente falhe)
+  useEffect(() => {
+    try {
+      let bytes = 0;
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const k = localStorage.key(i);
+        if (k?.startsWith('dshow.')) bytes += (localStorage.getItem(k)?.length ?? 0) * 2;
+      }
+      if (bytes > 3.5 * 1024 * 1024) {
+        log.aviso('storage_perto_da_cota', { kb: Math.round(bytes / 1024) }); // §291
+        setAnuncio('Armazenamento local quase cheio — considere limpar projetos/cenas antigos.');
+      }
+    } catch { /* sem storage */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // mega 106 (§294): FUNIL — entrou→editou→salvou (1× por sessão de shell)
   const refFunil = useRef({ entrou: false, editou: false });
   useEffect(() => {
@@ -513,6 +537,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // mega 46 (§290): viewer local de telemetria (flag dev)
   const [telemetriaDev, setTelemetriaDev] = useState(false);
 
+  // lote 121–130 (§232): CONSULTOR de estilo (regras, flag as5.consultor)
+  const [consultor, setConsultor] = useState(false);
+  // lote 141–150 (§619): timeline de VERSÕES do espelho
+  const [versoes619, setVersoes619] = useState(false);
+
   // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
   const [atalhos, setAtalhos] = useState(false);
   useEffect(() => {
@@ -610,7 +639,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     return () => { vivo = false; };
   }, []);
   const espelhar619 = useCallback(async (comVersao: boolean) => {
-    if (!estadoApiAtivo()) return;
+    // lote 141 (§619): a ESCRITA no espelho é sempre ativa (best-effort,
+    // aditiva, fail-safe — alimenta a timeline de versões); a flag
+    // as5.estado_api segue gateando só o CORTE DE LEITURA futuro.
     try {
       const r = await salvarDraft(store.estadoDraft, refChecksum619.current);
       if (r.ok && r.checksum) refChecksum619.current = r.checksum;
@@ -737,6 +768,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 onClick={() => setPalco3d((v) => !v)}>
                 <Boxes size={14} aria-hidden /> 3D</button>
             )}
+            {flag('as5.consultor') && (
+              <button type="button" className="avst-botao" title="Consultor de estilo — sugestões por regras (§232)"
+                data-teste="consultor-abrir" onClick={() => setConsultor(true)}>
+                <Lightbulb size={14} aria-hidden /></button>
+            )}
+            <button type="button" className="avst-botao" title="Versões do avatar no espelho (§619)"
+              data-teste="versoes-abrir" onClick={() => setVersoes619(true)}>
+              <ArrowUp size={14} aria-hidden style={{ transform: 'rotate(180deg)' }} /></button>
             <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
               aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
               {somLigado ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}</button>
@@ -1010,6 +1049,18 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         {tour && <TourGuiado aoFechar={() => setTour(false)} />}
         {atalhos && <Atalhos aoFechar={() => setAtalhos(false)} />}
         {telemetriaDev && <TelemetriaDev aoFechar={() => setTelemetriaDev(false)} />}
+        {consultor && (
+          <Consultor config={validarConfig(paraLegado2d(store.estadoDraft))}
+            desbloqueados={desbloqueados}
+            aoAplicar={(novo) => { aplicarComando(validarConfig(novo)); }}
+            aoPrever={aoPrever}
+            aoFechar={() => setConsultor(false)} />
+        )}
+        {versoes619 && (
+          <VersoesAvatar estadoLocal={store.estadoDraft}
+            aoAplicarEstado={(novo) => aplicarComando(validarConfig(paraLegado2d(novo)))}
+            aoFechar={() => setVersoes619(false)} />
+        )}
         {paleta && (
           <PaletaComandos
             aoFechar={() => setPaleta(false)}

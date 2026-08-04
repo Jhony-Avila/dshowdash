@@ -215,6 +215,9 @@ function avst_validar_config_foto($bruto): ?array
             'brilho' => [0.5, 1.5, 1.0], 'contraste' => [0.5, 1.5, 1.0],
             'saturacao' => [0.0, 2.0, 1.0], 'temperatura' => [-1.0, 1.0, 0.0],
             'vinheta' => [0.0, 1.0, 0.0], 'rotacao' => [-180.0, 180.0, 0.0],
+            // lote 111 (§332–§341)
+            'desfoqueFundo' => [0.0, 1.0, 0.0], 'granulacao' => [0.0, 1.0, 0.0],
+            'zoomFoto' => [1.0, 1.6, 1.0], 'anel' => [1.0, 6.0, 3.0],
         ];
         foreach ($mapa as $campo => [$min, $max, $neutro]) {
             $v = $clamp($aj[$campo] ?? null, $min, $max, $neutro);
@@ -227,11 +230,28 @@ function avst_validar_config_foto($bruto): ?array
                 $limpo[$campo] = true;
             }
         }
+        // lote 111: enums fechados — fora da lista = neutro (omitido)
+        $forma = $aj['forma'] ?? null;
+        if (in_array($forma, ['hexagono', 'losango', 'squircle'], true)) {
+            $limpo['forma'] = $forma;
+        }
+        $filtroCor = $aj['filtroCor'] ?? null;
+        if (in_array($filtroCor, ['pb', 'sepia'], true)) {
+            $limpo['filtroCor'] = $filtroCor;
+        }
         if ($limpo !== []) {
             $saida['ajustes'] = $limpo;
         }
     }
-    return $camadas === [] && !isset($saida['titulo']) && !isset($saida['ajustes']) ? null : $saida;
+    // mega 115 (§344): legenda — whitelist de caracteres, ≤40, nunca HTML
+    $legenda = $bruto['legenda'] ?? null;
+    if (is_string($legenda)) {
+        $limpa = trim(mb_substr(preg_replace('/[^\p{L}\p{N} .,!?\'\-]/u', '', $legenda), 0, 40));
+        if ($limpa !== '') {
+            $saida['legenda'] = $limpa;
+        }
+    }
+    return $camadas === [] && !isset($saida['titulo']) && !isset($saida['ajustes']) && !isset($saida['legenda']) ? null : $saida;
 }
 
 /**

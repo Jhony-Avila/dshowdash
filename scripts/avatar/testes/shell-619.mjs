@@ -1,5 +1,6 @@
-// testes/shell-619.mjs — AS5: espelho §619 atrás da flag as5.estado_api
-// (dual-write: legado é a verdade; draft §619 com lock otimista §619.1).
+// testes/shell-619.mjs — AS5: espelho §619 (dual-write: legado é a verdade;
+// draft §619 com lock otimista §619.1). Lote 141: a ESCRITA é sempre ativa
+// (best-effort); as5.estado_api gateia só o GET de montagem/corte de leitura.
 import { SAIDA, abrir, irParaHarness, relatorio } from './navegador.mjs';
 
 const { navegador: b, pagina: p, erros } = await abrir({
@@ -44,13 +45,14 @@ ok(typeof base2 === 'string' && base2.startsWith('ck') && base2 !== 'ck0',
   `lock otimista não encadeou (base do 2º draft: ${base2})`);
 await p.screenshot({ path: `${SAIDA}/s619-espelho.png` });
 
-// FLAG OFF (fail-safe): desligar EM TEMPO DE EXECUÇÃO corta o espelho
-// (sem reload — o addInitScript re-semearia as flags; lição registrada)
+// LOTE 141: desligar as5.estado_api EM TEMPO DE EXECUÇÃO não corta mais a
+// ESCRITA (best-effort sempre — alimenta o espelho p/ o corte futuro);
+// a flag passou a gatear só a LEITURA (GET de montagem/corte §647)
 await p.evaluate(() => localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true })));
 const antesOff = (await chamadas()).length;
 await equipar();
 await p.waitForTimeout(1600);
-ok(((await chamadas()).length) === antesOff, 'com a flag OFF o espelho §619 deveria PARAR');
+ok(((await chamadas()).length) > antesOff, 'lote 141: a escrita no espelho deveria CONTINUAR com a flag OFF');
 
 const ok_ = relatorio('shell-619', falhas, erros);
 await b.close();

@@ -1780,3 +1780,25 @@
 .avst-ft-ajuste span { min-width: 74px; }
 .avst-ft-ajuste input[type="range"] { width: 110px; accent-color: var(--avst-acento, #7c5cff); }
 .avst-ft-ajustes .avst-ft-chip[aria-pressed="true"] { color: #fff; border-color: var(--avst-acento, #7c5cff); }
+/* lote 141–150: VERSÕES do espelho §619 */
+.avst5-versoes-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.avst5-versoes-lista li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 12px; background: var(--avst-painel, #12151d); border: 1px solid var(--avst-borda, #232a38); }
+.avst5-versoes-lista li > div { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.avst5-versoes-lista span { color: var(--avst-texto-2, #8a93a6); }
+.avst5-versoes-lista time { font-size: 10.5px; color: var(--avst-texto-2, #8a93a6); }
+.avst5-versoes-pub { font-size: 9.5px; font-style: normal; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--avst-ok, #39d98a) 25%, transparent); color: var(--avst-ok, #39d98a); width: fit-content; }
+
+/* lote 121–130: CONSULTOR de estilo (§232–§240) */
+.avst5-consultor { display: flex; flex-direction: column; gap: 10px; }
+.avst5-cons-nota { margin: 0; font-size: 11.5px; color: var(--avst-texto-2, #8a93a6); line-height: 1.5; }
+.avst5-cons-titulo { margin: 6px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--avst-texto-2, #8a93a6); }
+.avst5-cons-card { display: flex; gap: 10px; padding: 10px; border-radius: 12px; background: var(--avst-painel, #12151d); border: 1px solid var(--avst-borda, #232a38); }
+.avst5-cons-thumb { padding: 0; border: none; background: none; cursor: pointer; }
+.avst5-cons-thumb img { border-radius: 10px; background: #0a0d15; display: block; }
+.avst5-cons-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.avst5-cons-info strong { font-size: 13px; }
+.avst5-cons-info p { margin: 0; font-size: 11.5px; color: var(--avst-texto-2, #8a93a6); line-height: 1.45; }
+.avst5-cons-acoes { display: flex; gap: 6px; margin-top: 2px; }
+
+/* mega 115: legenda livre */
+.avst-ft-legenda input { flex: 1; min-width: 160px; background: var(--avst-fundo, #0d1017); border: 1px solid var(--avst-borda, #232a38); border-radius: 8px; padding: 5px 10px; color: var(--avst-texto, #e6eaf2); font-size: 12px; }

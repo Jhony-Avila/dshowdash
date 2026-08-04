@@ -155,6 +155,19 @@ export interface AjustesFoto {
   espelhar?: boolean;
   /** §337: sombra de contato sob o medalhão */
   sombra?: boolean;
+  // ── lote 111–120 (§332/§333/§334/§341) ──
+  /** §341: FORMA do medalhão · 'circulo' = neutro (byte-estável) */
+  forma?: 'circulo' | 'hexagono' | 'losango' | 'squircle';
+  /** §334: desfoque do CENÁRIO atrás do medalhão · 0–1 · 0 = neutro */
+  desfoqueFundo?: number;
+  /** §334: granulação de filme · 0–1 · 0 = neutro */
+  granulacao?: number;
+  /** §333: filtro de cor global · 'nenhum' = neutro */
+  filtroCor?: 'nenhum' | 'pb' | 'sepia';
+  /** §332: zoom da FOTO dentro do medalhão · 1–1.6 · 1 = neutro */
+  zoomFoto?: number;
+  /** espessura do anel de destaque · 1–6 · 3 = neutro (o legado) */
+  anel?: number;
 }
 
 export interface EstiloFoto {
@@ -170,6 +183,8 @@ export interface EstiloFoto {
   cores: { destaque: string };
   /** megas 51–54 — ausente = sem ajustes (render idêntico ao legado) */
   ajustes?: AjustesFoto;
+  /** mega 115 (§344): legenda LIVRE curta (sanitizada aqui e no PHP) */
+  legenda?: string;
 }
 
 // ── Histórico / favoritos / conquistas ──────────────────────────────

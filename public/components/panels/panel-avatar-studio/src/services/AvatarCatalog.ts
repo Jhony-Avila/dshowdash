@@ -524,7 +524,14 @@ export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesR
     cores: { ...CONFIG_PADRAO.cores, destaque: normalizarHex(estilo.cores.destaque, CONFIG_PADRAO.cores.destaque) },
     selo: titulo ? { nome: titulo.nome, cor: RARIDADES[titulo.raridade].cor } : undefined,
     ...(estilo.ajustes ? { ajustes: estilo.ajustes } : {}), // megas 51–54
+    // mega 115 (§344): legenda SANITIZADA (whitelist de caracteres, ≤40)
+    ...(estilo.legenda ? { legenda: sanitizarLegendaFoto(estilo.legenda) } : {}),
   }, itemPorId, opcoes);
+}
+
+/** mega 115 (§344): legenda da foto — só letras/números/pontuação leve. */
+export function sanitizarLegendaFoto(texto: string): string {
+  return texto.replace(/[^\p{L}\p{N} .,!?'\-]/gu, '').slice(0, 40).trim();
 }
 
 /** Categorias permitidas SOBRE a foto (§21 — nunca roupa/corpo). */
