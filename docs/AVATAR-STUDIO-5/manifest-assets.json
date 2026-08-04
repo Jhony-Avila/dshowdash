@@ -1,0 +1,1864 @@
+{
+  "formato": "dshow-avatar-manifest",
+  "versao": 1,
+  "resumo": {
+    "itens2d": 344,
+    "categorias": 12,
+    "titulos": 30,
+    "colecoes": 12,
+    "personagens3d": 6
+  },
+  "categorias": [
+    "base",
+    "cabelo",
+    "olhos",
+    "boca",
+    "roupa",
+    "acessorio",
+    "fundo",
+    "moldura",
+    "efeito",
+    "aura",
+    "banner",
+    "emblema"
+  ],
+  "raridades": [
+    "comum",
+    "incomum",
+    "raro",
+    "epico",
+    "lendario",
+    "mitico",
+    "exclusivo"
+  ],
+  "itens": [
+    {
+      "id": "ace_antena",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_aureola",
+      "categoria": "acessorio",
+      "raridade": "lendario"
+    },
+    {
+      "id": "ace_boina",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_bone",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_brinco",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
+      "id": "ace_cachecol",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
+      "id": "ace_capa_heroica",
+      "categoria": "acessorio",
+      "raridade": "lendario"
+    },
+    {
+      "id": "ace_chapeu_bruxa",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_chapeu_mago",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_chifres_oni",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_colar_perolas",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_coroa",
+      "categoria": "acessorio",
+      "raridade": "lendario"
+    },
+    {
+      "id": "ace_corrente",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_cracha_dshow",
+      "categoria": "acessorio",
+      "raridade": "exclusivo"
+    },
+    {
+      "id": "ace_drone",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_fone",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_gorro_natal",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_headset",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_lenco_bandana",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_medalha",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_mochila_jato",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_monoculo",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_oculos",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
+      "id": "ace_oculos_3d",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_oculos_sol",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_piercing",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
+      "id": "ace_pintura_guerra",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_tapa_olho",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_tiara_led",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_viseira_vr",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "aur_cristal",
+      "categoria": "aura",
+      "raridade": "lendario"
+    },
+    {
+      "id": "aur_dshow",
+      "categoria": "aura",
+      "raridade": "exclusivo"
+    },
+    {
+      "id": "aur_eletrica",
+      "categoria": "aura",
+      "raridade": "epico"
+    },
+    {
+      "id": "aur_estelar",
+      "categoria": "aura",
+      "raridade": "raro"
+    },
+    {
+      "id": "aur_fenix",
+      "categoria": "aura",
+      "raridade": "mitico"
+    },
+    {
+      "id": "aur_gelo",
+      "categoria": "aura",
+      "raridade": "raro"
+    },
+    {
+      "id": "aur_neon",
+      "categoria": "aura",
+      "raridade": "raro"
+    },
+    {
+      "id": "aur_orbital",
+      "categoria": "aura",
+      "raridade": "incomum"
+    },
+    {
+      "id": "aur_plasma",
+      "categoria": "aura",
+      "raridade": "epico"
+    },
+    {
+      "id": "aur_prisma",
+      "categoria": "aura",
+      "raridade": "epico"
+    },
+    {
+      "id": "aur_runica",
+      "categoria": "aura",
+      "raridade": "lendario"
+    },
+    {
+      "id": "aur_solar",
+      "categoria": "aura",
+      "raridade": "raro"
+    },
+    {
+      "id": "aur_sombria",
+      "categoria": "aura",
+      "raridade": "epico"
+    },
+    {
+      "id": "aur_toxica",
+      "categoria": "aura",
+      "raridade": "raro"
+    },
+    {
+      "id": "aur_vento",
+      "categoria": "aura",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ban_arena",
+      "categoria": "banner",
+      "raridade": "raro"
+    },
+    {
+      "id": "ban_campeao",
+      "categoria": "banner",
+      "raridade": "raro"
+    },
+    {
+      "id": "ban_corsario",
+      "categoria": "banner",
+      "raridade": "epico"
+    },
+    {
+      "id": "ban_cyber",
+      "categoria": "banner",
+      "raridade": "epico"
+    },
+    {
+      "id": "ban_dojo",
+      "categoria": "banner",
+      "raridade": "raro"
+    },
+    {
+      "id": "ban_dshow",
+      "categoria": "banner",
+      "raridade": "exclusivo"
+    },
+    {
+      "id": "ban_executivo",
+      "categoria": "banner",
+      "raridade": "raro"
+    },
+    {
+      "id": "ban_forjado",
+      "categoria": "banner",
+      "raridade": "raro"
+    },
+    {
+      "id": "ban_galaxy",
+      "categoria": "banner",
+      "raridade": "epico"
+    },
+    {
+      "id": "ban_guardiao",
+      "categoria": "banner",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ban_imperial",
+      "categoria": "banner",
+      "raridade": "lendario"
+    },
+    {
+      "id": "ban_lab",
+      "categoria": "banner",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ban_neon_tokyo",
+      "categoria": "banner",
+      "raridade": "epico"
+    },
+    {
+      "id": "ban_pixel",
+      "categoria": "banner",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ban_real",
+      "categoria": "banner",
+      "raridade": "lendario"
+    },
+    {
+      "id": "bas_alien",
+      "categoria": "base",
+      "raridade": "mitico"
+    },
+    {
+      "id": "bas_androide",
+      "categoria": "base",
+      "raridade": "epico"
+    },
+    {
+      "id": "bas_angular",
+      "categoria": "base",
+      "raridade": "incomum"
+    },
+    {
+      "id": "bas_bochechudo",
+      "categoria": "base",
+      "raridade": "comum"
+    },
+    {
+      "id": "bas_caveira",
+      "categoria": "base",
+      "raridade": "epico"
+    },
+    {
+      "id": "bas_classica",
+      "categoria": "base",
+      "raridade": "comum"
+    },
+    {
+      "id": "bas_coracao",
+      "categoria": "base",
+      "raridade": "incomum"
+    },
+    {
+      "id": "bas_coruja",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_diamante",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_dragao",
+      "categoria": "base",
+      "raridade": "lendario"
+    },
+    {
+      "id": "bas_estatua",
+      "categoria": "base",
+      "raridade": "lendario"
+    },
+    {
+      "id": "bas_fantasma",
+      "categoria": "base",
+      "raridade": "epico"
+    },
+    {
+      "id": "bas_gato",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_gotico",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_holo",
+      "categoria": "base",
+      "raridade": "lendario"
+    },
+    {
+      "id": "bas_juvenil",
+      "categoria": "base",
+      "raridade": "comum"
+    },
+    {
+      "id": "bas_leao",
+      "categoria": "base",
+      "raridade": "lendario"
+    },
+    {
+      "id": "bas_ledbot",
+      "categoria": "base",
+      "raridade": "exclusivo"
+    },
+    {
+      "id": "bas_lobo",
+      "categoria": "base",
+      "raridade": "epico"
+    },
+    {
+      "id": "bas_longa",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_madura",
+      "categoria": "base",
+      "raridade": "incomum"
+    },
+    {
+      "id": "bas_marcada",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_meio_cyborg",
+      "categoria": "base",
+      "raridade": "epico"
+    },
+    {
+      "id": "bas_nuvem",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_panda",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_quadrada",
+      "categoria": "base",
+      "raridade": "incomum"
+    },
+    {
+      "id": "bas_raposa",
+      "categoria": "base",
+      "raridade": "epico"
+    },
+    {
+      "id": "bas_redonda",
+      "categoria": "base",
+      "raridade": "comum"
+    },
+    {
+      "id": "bas_sapo",
+      "categoria": "base",
+      "raridade": "incomum"
+    },
+    {
+      "id": "bas_sardas",
+      "categoria": "base",
+      "raridade": "incomum"
+    },
+    {
+      "id": "bas_sereno",
+      "categoria": "base",
+      "raridade": "comum"
+    },
+    {
+      "id": "bas_slime",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_tigre",
+      "categoria": "base",
+      "raridade": "epico"
+    },
+    {
+      "id": "bas_triangular",
+      "categoria": "base",
+      "raridade": "incomum"
+    },
+    {
+      "id": "bas_urso",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_veterano",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_aparelho",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_apito",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_assobio",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_barba",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_batom",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_beijo",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_bigode",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_bocejo",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_canudo",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_cavanhaque",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_chiclete",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_costurada",
+      "categoria": "boca",
+      "raridade": "epico"
+    },
+    {
+      "id": "boc_dente_ouro",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_determinada",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_franzida",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_gato",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_grade",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_grito_guerra",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_heroica",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_lado",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_larga",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_lingua",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_mascando",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_mascara",
+      "categoria": "boca",
+      "raridade": "epico"
+    },
+    {
+      "id": "boc_migalhas",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_neon",
+      "categoria": "boca",
+      "raridade": "lendario"
+    },
+    {
+      "id": "boc_neutra",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_onda_sonora",
+      "categoria": "boca",
+      "raridade": "epico"
+    },
+    {
+      "id": "boc_palito",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_pensativa",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_pirulito",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_presas",
+      "categoria": "boca",
+      "raridade": "epico"
+    },
+    {
+      "id": "boc_riso_nervoso",
+      "categoria": "boca",
+      "raridade": "incomum"
+    },
+    {
+      "id": "boc_rosa",
+      "categoria": "boca",
+      "raridade": "epico"
+    },
+    {
+      "id": "boc_sorriso",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_surpresa",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_travessa",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_uau",
+      "categoria": "boca",
+      "raridade": "comum"
+    },
+    {
+      "id": "boc_vilao",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_ziper",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_afro",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_algodao",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_babyliss",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_buzz",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_cacheado",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_cachos_soltos",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_chanel",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_coque",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_coques_duplos",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_cortina",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_curto",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_cyber",
+      "categoria": "cabelo",
+      "raridade": "epico"
+    },
+    {
+      "id": "cab_dreads",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_emo",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_espetadinho",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_estrela_raspada",
+      "categoria": "cabelo",
+      "raridade": "epico"
+    },
+    {
+      "id": "cab_fibra_otica",
+      "categoria": "cabelo",
+      "raridade": "epico"
+    },
+    {
+      "id": "cab_flamejante",
+      "categoria": "cabelo",
+      "raridade": "lendario"
+    },
+    {
+      "id": "cab_franja",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_franja_longa",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_franjinha",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_grisalho",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_holo_gradiente",
+      "categoria": "cabelo",
+      "raridade": "epico"
+    },
+    {
+      "id": "cab_juba",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_lambido",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_lateral",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_longo",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_medio",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_meio_coque",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_moicano",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_mullet",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_ondas_curtas",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_ondas_longas",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_ondulado",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_permanente80",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_picos_neon",
+      "categoria": "cabelo",
+      "raridade": "epico"
+    },
+    {
+      "id": "cab_pixie",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_pompadour",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_rabo",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_rabo_baixo",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_repicado_longo",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_sabio",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_sidecut",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_slick_rabo",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_tigela",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_topete",
+      "categoria": "cabelo",
+      "raridade": "comum"
+    },
+    {
+      "id": "cab_tranca_unica",
+      "categoria": "cabelo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "cab_trancas",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_viking",
+      "categoria": "cabelo",
+      "raridade": "epico"
+    },
+    {
+      "id": "cab_wolf",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "efe_aura",
+      "categoria": "efeito",
+      "raridade": "raro"
+    },
+    {
+      "id": "efe_bolhas",
+      "categoria": "efeito",
+      "raridade": "comum"
+    },
+    {
+      "id": "efe_borboletas",
+      "categoria": "efeito",
+      "raridade": "raro"
+    },
+    {
+      "id": "efe_chuva",
+      "categoria": "efeito",
+      "raridade": "raro"
+    },
+    {
+      "id": "efe_confete",
+      "categoria": "efeito",
+      "raridade": "lendario"
+    },
+    {
+      "id": "efe_descarga",
+      "categoria": "efeito",
+      "raridade": "lendario"
+    },
+    {
+      "id": "efe_faiscas",
+      "categoria": "efeito",
+      "raridade": "lendario"
+    },
+    {
+      "id": "efe_fogo",
+      "categoria": "efeito",
+      "raridade": "mitico"
+    },
+    {
+      "id": "efe_folhas",
+      "categoria": "efeito",
+      "raridade": "incomum"
+    },
+    {
+      "id": "efe_glitch",
+      "categoria": "efeito",
+      "raridade": "epico"
+    },
+    {
+      "id": "efe_holo_interf",
+      "categoria": "efeito",
+      "raridade": "mitico"
+    },
+    {
+      "id": "efe_metricas",
+      "categoria": "efeito",
+      "raridade": "raro"
+    },
+    {
+      "id": "efe_moedas",
+      "categoria": "efeito",
+      "raridade": "lendario"
+    },
+    {
+      "id": "efe_neve",
+      "categoria": "efeito",
+      "raridade": "raro"
+    },
+    {
+      "id": "efe_nevoa",
+      "categoria": "efeito",
+      "raridade": "incomum"
+    },
+    {
+      "id": "efe_particulas",
+      "categoria": "efeito",
+      "raridade": "raro"
+    },
+    {
+      "id": "efe_poeira",
+      "categoria": "efeito",
+      "raridade": "comum"
+    },
+    {
+      "id": "efe_portal",
+      "categoria": "efeito",
+      "raridade": "lendario"
+    },
+    {
+      "id": "efe_raio",
+      "categoria": "efeito",
+      "raridade": "epico"
+    },
+    {
+      "id": "efe_sakura",
+      "categoria": "efeito",
+      "raridade": "epico"
+    },
+    {
+      "id": "efe_scanlines",
+      "categoria": "efeito",
+      "raridade": "incomum"
+    },
+    {
+      "id": "efe_tempestade",
+      "categoria": "efeito",
+      "raridade": "epico"
+    },
+    {
+      "id": "efe_vagalumes",
+      "categoria": "efeito",
+      "raridade": "incomum"
+    },
+    {
+      "id": "efe_veu_aurora",
+      "categoria": "efeito",
+      "raridade": "epico"
+    },
+    {
+      "id": "emb_alvo",
+      "categoria": "emblema",
+      "raridade": "raro"
+    },
+    {
+      "id": "emb_cafe",
+      "categoria": "emblema",
+      "raridade": "comum"
+    },
+    {
+      "id": "emb_chave",
+      "categoria": "emblema",
+      "raridade": "incomum"
+    },
+    {
+      "id": "emb_coracao_pixel",
+      "categoria": "emblema",
+      "raridade": "raro"
+    },
+    {
+      "id": "emb_coroa",
+      "categoria": "emblema",
+      "raridade": "lendario"
+    },
+    {
+      "id": "emb_cyber",
+      "categoria": "emblema",
+      "raridade": "raro"
+    },
+    {
+      "id": "emb_dado",
+      "categoria": "emblema",
+      "raridade": "epico"
+    },
+    {
+      "id": "emb_diamond",
+      "categoria": "emblema",
+      "raridade": "lendario"
+    },
+    {
+      "id": "emb_dshow",
+      "categoria": "emblema",
+      "raridade": "exclusivo"
+    },
+    {
+      "id": "emb_elite",
+      "categoria": "emblema",
+      "raridade": "lendario"
+    },
+    {
+      "id": "emb_engrenagem",
+      "categoria": "emblema",
+      "raridade": "comum"
+    },
+    {
+      "id": "emb_escudo",
+      "categoria": "emblema",
+      "raridade": "incomum"
+    },
+    {
+      "id": "emb_fenix",
+      "categoria": "emblema",
+      "raridade": "lendario"
+    },
+    {
+      "id": "emb_foguete",
+      "categoria": "emblema",
+      "raridade": "raro"
+    },
+    {
+      "id": "emb_grafico",
+      "categoria": "emblema",
+      "raridade": "incomum"
+    },
+    {
+      "id": "emb_infinito",
+      "categoria": "emblema",
+      "raridade": "epico"
+    },
+    {
+      "id": "emb_lua",
+      "categoria": "emblema",
+      "raridade": "raro"
+    },
+    {
+      "id": "emb_nexus",
+      "categoria": "emblema",
+      "raridade": "epico"
+    },
+    {
+      "id": "emb_raio",
+      "categoria": "emblema",
+      "raridade": "incomum"
+    },
+    {
+      "id": "emb_trofeu",
+      "categoria": "emblema",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_arena",
+      "categoria": "fundo",
+      "raridade": "lendario"
+    },
+    {
+      "id": "fun_aurora",
+      "categoria": "fundo",
+      "raridade": "epico"
+    },
+    {
+      "id": "fun_biblioteca",
+      "categoria": "fundo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "fun_chuva",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_circuito",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_codigo",
+      "categoria": "fundo",
+      "raridade": "epico"
+    },
+    {
+      "id": "fun_dojo",
+      "categoria": "fundo",
+      "raridade": "epico"
+    },
+    {
+      "id": "fun_escritorio",
+      "categoria": "fundo",
+      "raridade": "comum"
+    },
+    {
+      "id": "fun_estrelas",
+      "categoria": "fundo",
+      "raridade": "comum"
+    },
+    {
+      "id": "fun_estudio",
+      "categoria": "fundo",
+      "raridade": "comum"
+    },
+    {
+      "id": "fun_forja",
+      "categoria": "fundo",
+      "raridade": "lendario"
+    },
+    {
+      "id": "fun_grade",
+      "categoria": "fundo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "fun_hangar",
+      "categoria": "fundo",
+      "raridade": "epico"
+    },
+    {
+      "id": "fun_hex",
+      "categoria": "fundo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "fun_lab",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_led_wall",
+      "categoria": "fundo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "fun_montanhas",
+      "categoria": "fundo",
+      "raridade": "comum"
+    },
+    {
+      "id": "fun_nebulosa",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_praia",
+      "categoria": "fundo",
+      "raridade": "incomum"
+    },
+    {
+      "id": "fun_synthwave",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "mol_aro",
+      "categoria": "moldura",
+      "raridade": "comum"
+    },
+    {
+      "id": "mol_chamas",
+      "categoria": "moldura",
+      "raridade": "lendario"
+    },
+    {
+      "id": "mol_circuito",
+      "categoria": "moldura",
+      "raridade": "epico"
+    },
+    {
+      "id": "mol_colmeia",
+      "categoria": "moldura",
+      "raridade": "raro"
+    },
+    {
+      "id": "mol_constelacao",
+      "categoria": "moldura",
+      "raridade": "lendario"
+    },
+    {
+      "id": "mol_cristal",
+      "categoria": "moldura",
+      "raridade": "mitico"
+    },
+    {
+      "id": "mol_degrade",
+      "categoria": "moldura",
+      "raridade": "incomum"
+    },
+    {
+      "id": "mol_dshow",
+      "categoria": "moldura",
+      "raridade": "exclusivo"
+    },
+    {
+      "id": "mol_duplo",
+      "categoria": "moldura",
+      "raridade": "incomum"
+    },
+    {
+      "id": "mol_espinhos",
+      "categoria": "moldura",
+      "raridade": "epico"
+    },
+    {
+      "id": "mol_geada",
+      "categoria": "moldura",
+      "raridade": "epico"
+    },
+    {
+      "id": "mol_glitch",
+      "categoria": "moldura",
+      "raridade": "mitico"
+    },
+    {
+      "id": "mol_louros",
+      "categoria": "moldura",
+      "raridade": "raro"
+    },
+    {
+      "id": "mol_madeira",
+      "categoria": "moldura",
+      "raridade": "comum"
+    },
+    {
+      "id": "mol_minimal",
+      "categoria": "moldura",
+      "raridade": "comum"
+    },
+    {
+      "id": "mol_neon",
+      "categoria": "moldura",
+      "raridade": "epico"
+    },
+    {
+      "id": "mol_ouro",
+      "categoria": "moldura",
+      "raridade": "lendario"
+    },
+    {
+      "id": "mol_pioneiro",
+      "categoria": "moldura",
+      "raridade": "epico"
+    },
+    {
+      "id": "mol_pontilhada",
+      "categoria": "moldura",
+      "raridade": "comum"
+    },
+    {
+      "id": "mol_rgb",
+      "categoria": "moldura",
+      "raridade": "raro"
+    },
+    {
+      "id": "mol_selo",
+      "categoria": "moldura",
+      "raridade": "incomum"
+    },
+    {
+      "id": "mol_serpente",
+      "categoria": "moldura",
+      "raridade": "lendario"
+    },
+    {
+      "id": "mol_tech",
+      "categoria": "moldura",
+      "raridade": "raro"
+    },
+    {
+      "id": "mol_vetores",
+      "categoria": "moldura",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_anime",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_apaixonado",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_arregalado",
+      "categoria": "olhos",
+      "raridade": "comum"
+    },
+    {
+      "id": "olh_brilho",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_brincalhao",
+      "categoria": "olhos",
+      "raridade": "incomum"
+    },
+    {
+      "id": "olh_buscando_sinal",
+      "categoria": "olhos",
+      "raridade": "incomum"
+    },
+    {
+      "id": "olh_calculista",
+      "categoria": "olhos",
+      "raridade": "incomum"
+    },
+    {
+      "id": "olh_cansado",
+      "categoria": "olhos",
+      "raridade": "comum"
+    },
+    {
+      "id": "olh_chamas",
+      "categoria": "olhos",
+      "raridade": "lendario"
+    },
+    {
+      "id": "olh_cifrao",
+      "categoria": "olhos",
+      "raridade": "epico"
+    },
+    {
+      "id": "olh_congelante",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_desconfiado",
+      "categoria": "olhos",
+      "raridade": "incomum"
+    },
+    {
+      "id": "olh_emocionado",
+      "categoria": "olhos",
+      "raridade": "incomum"
+    },
+    {
+      "id": "olh_estrela",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_feliz",
+      "categoria": "olhos",
+      "raridade": "comum"
+    },
+    {
+      "id": "olh_focado",
+      "categoria": "olhos",
+      "raridade": "comum"
+    },
+    {
+      "id": "olh_furia",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_galaxia",
+      "categoria": "olhos",
+      "raridade": "epico"
+    },
+    {
+      "id": "olh_gatinho",
+      "categoria": "olhos",
+      "raridade": "incomum"
+    },
+    {
+      "id": "olh_gentil",
+      "categoria": "olhos",
+      "raridade": "comum"
+    },
+    {
+      "id": "olh_heterocromia",
+      "categoria": "olhos",
+      "raridade": "epico"
+    },
+    {
+      "id": "olh_hipnotico",
+      "categoria": "olhos",
+      "raridade": "epico"
+    },
+    {
+      "id": "olh_lagrima",
+      "categoria": "olhos",
+      "raridade": "incomum"
+    },
+    {
+      "id": "olh_led",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_lente",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_misterioso",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_na_mira",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_padrao",
+      "categoria": "olhos",
+      "raridade": "comum"
+    },
+    {
+      "id": "olh_penetrante",
+      "categoria": "olhos",
+      "raridade": "incomum"
+    },
+    {
+      "id": "olh_pixel",
+      "categoria": "olhos",
+      "raridade": "epico"
+    },
+    {
+      "id": "olh_prisma",
+      "categoria": "olhos",
+      "raridade": "lendario"
+    },
+    {
+      "id": "olh_relogio",
+      "categoria": "olhos",
+      "raridade": "epico"
+    },
+    {
+      "id": "olh_scanner",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_serio",
+      "categoria": "olhos",
+      "raridade": "incomum"
+    },
+    {
+      "id": "olh_sonolento",
+      "categoria": "olhos",
+      "raridade": "comum"
+    },
+    {
+      "id": "olh_timido",
+      "categoria": "olhos",
+      "raridade": "comum"
+    },
+    {
+      "id": "olh_vazio",
+      "categoria": "olhos",
+      "raridade": "mitico"
+    },
+    {
+      "id": "olh_vilao",
+      "categoria": "olhos",
+      "raridade": "mitico"
+    },
+    {
+      "id": "olh_visor",
+      "categoria": "olhos",
+      "raridade": "epico"
+    },
+    {
+      "id": "olh_zen",
+      "categoria": "olhos",
+      "raridade": "comum"
+    },
+    {
+      "id": "rou_armadura",
+      "categoria": "roupa",
+      "raridade": "lendario"
+    },
+    {
+      "id": "rou_astronauta",
+      "categoria": "roupa",
+      "raridade": "lendario"
+    },
+    {
+      "id": "rou_blazer_power",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_camiseta",
+      "categoria": "roupa",
+      "raridade": "comum"
+    },
+    {
+      "id": "rou_capa_chuva",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_chef",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_colete",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_exoesqueleto",
+      "categoria": "roupa",
+      "raridade": "lendario"
+    },
+    {
+      "id": "rou_flanela",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
+      "id": "rou_gala_dshow",
+      "categoria": "roupa",
+      "raridade": "exclusivo"
+    },
+    {
+      "id": "rou_gamer",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_havaiana",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
+      "id": "rou_hoodie",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
+      "id": "rou_jaleco",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
+      "id": "rou_jaqueta",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_jersey",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_kimono",
+      "categoria": "roupa",
+      "raridade": "epico"
+    },
+    {
+      "id": "rou_moletom_dshow",
+      "categoria": "roupa",
+      "raridade": "exclusivo"
+    },
+    {
+      "id": "rou_neon_racer",
+      "categoria": "roupa",
+      "raridade": "lendario"
+    },
+    {
+      "id": "rou_pijama",
+      "categoria": "roupa",
+      "raridade": "comum"
+    },
+    {
+      "id": "rou_polo",
+      "categoria": "roupa",
+      "raridade": "comum"
+    },
+    {
+      "id": "rou_regata",
+      "categoria": "roupa",
+      "raridade": "comum"
+    },
+    {
+      "id": "rou_regata_quadra",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
+      "id": "rou_smoking",
+      "categoria": "roupa",
+      "raridade": "epico"
+    },
+    {
+      "id": "rou_sobretudo",
+      "categoria": "roupa",
+      "raridade": "epico"
+    },
+    {
+      "id": "rou_social",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
+      "id": "rou_suspensorios",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
+      "id": "rou_terno",
+      "categoria": "roupa",
+      "raridade": "epico"
+    },
+    {
+      "id": "rou_tricot",
+      "categoria": "roupa",
+      "raridade": "comum"
+    },
+    {
+      "id": "rou_tunica_arcana",
+      "categoria": "roupa",
+      "raridade": "epico"
+    }
+  ],
+  "titulos": [
+    "tit_alquimista_de_leads",
+    "tit_arquiteto_de_dados",
+    "tit_avatar_supremo",
+    "tit_barao_dos_cliques",
+    "tit_cacador_de_bugs",
+    "tit_ceo_supremo",
+    "tit_colecionador",
+    "tit_cyber_architect",
+    "tit_domador_de_algoritmos",
+    "tit_elite_trader",
+    "tit_estrategista",
+    "tit_forjado_na_madrugada",
+    "tit_guardiao_da_base",
+    "tit_guardiao_do_uptime",
+    "tit_imperador_do_roi",
+    "tit_lenda_dshow",
+    "tit_lider_de_guilda",
+    "tit_mago_do_funil",
+    "tit_maquina_de_meta",
+    "tit_mestre_da_luz",
+    "tit_mestre_do_pitch",
+    "tit_nexus_commander",
+    "tit_ninja_do_excel",
+    "tit_novato_promissor",
+    "tit_oraculo",
+    "tit_pro_player",
+    "tit_senhor_dos_dashboards",
+    "tit_sentinela",
+    "tit_sussurrador_de_apis",
+    "tit_visionario"
+  ],
+  "colecoes": [
+    {
+      "id": "col_cyber_nexus",
+      "itens": 7
+    },
+    {
+      "id": "col_executivo",
+      "itens": 8
+    },
+    {
+      "id": "col_dojo",
+      "itens": 5
+    },
+    {
+      "id": "col_galaxia",
+      "itens": 5
+    },
+    {
+      "id": "col_dshow",
+      "itens": 4
+    },
+    {
+      "id": "col_oito_bits",
+      "itens": 6
+    },
+    {
+      "id": "col_tempestade",
+      "itens": 5
+    },
+    {
+      "id": "col_campeao",
+      "itens": 5
+    },
+    {
+      "id": "col_forja",
+      "itens": 6
+    },
+    {
+      "id": "col_neon_noturno",
+      "itens": 6
+    },
+    {
+      "id": "col_guardiao_verde",
+      "itens": 5
+    },
+    {
+      "id": "col_realeza",
+      "itens": 6
+    }
+  ],
+  "personagens3d": [
+    {
+      "slug": "androide",
+      "animacoes": 14
+    },
+    {
+      "slug": "animal_pug",
+      "animacoes": 6
+    },
+    {
+      "slug": "humano_aventureiro",
+      "animacoes": 6
+    },
+    {
+      "slug": "humano_casual",
+      "animacoes": 6
+    },
+    {
+      "slug": "humano_punk",
+      "animacoes": 6
+    },
+    {
+      "slug": "humano_terno",
+      "animacoes": 6
+    }
+  ]
+}

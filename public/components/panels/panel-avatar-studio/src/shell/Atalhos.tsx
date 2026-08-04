@@ -30,6 +30,7 @@ export const ATALHOS: GrupoAtalhos[] = [
       { teclas: ['V'], faz: 'Segurar: compara com o último salvo (§65)' },
       { teclas: ['F'], faz: 'Modo foco' },
       { teclas: ['S'], faz: 'Modo studio' },
+      { teclas: ['E'], faz: 'Emote aleatório no studio (§120)' },
     ],
   },
   {
@@ -48,6 +49,10 @@ export function Atalhos({ aoFechar }: { aoFechar: () => void }) {
   const refCaixa = useRef<HTMLDivElement>(null);
   useEffect(() => {
     void animar(refCaixa.current, MOVIMENTOS.aparecer, { duracao: 160, easing: 'ease-out' });
+    // mega 104 (§548): foco entra no diálogo ao abrir (leitores/teclado)
+    refCaixa.current?.querySelector<HTMLElement>('button, [tabindex]')?.focus?.();
+    refCaixa.current?.setAttribute('tabindex', '-1');
+    refCaixa.current?.focus();
     const aoEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') aoFechar(); };
     window.addEventListener('keydown', aoEsc);
     return () => window.removeEventListener('keydown', aoEsc);

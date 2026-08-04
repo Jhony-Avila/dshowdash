@@ -16,6 +16,9 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
   const refCaixa = useRef<HTMLDivElement>(null);
   useEffect(() => {
     void animar(refCaixa.current, MOVIMENTOS.aparecer, { duracao: 160, easing: 'ease-out' });
+    // mega 104 (§548): foco entra no diálogo ao abrir
+    refCaixa.current?.setAttribute('tabindex', '-1');
+    refCaixa.current?.focus();
     const cancelar = assinarTelemetria(() => setTic((t) => t + 1));
     const aoEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') aoFechar(); };
     window.addEventListener('keydown', aoEsc);
@@ -23,6 +26,23 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
   }, [aoFechar]);
 
   const eventos = eventosRecentes();
+
+  // mega 109: SAÚDE DO STORAGE — uso por chave dshow.* (só leitura)
+  const storage = (() => {
+    try {
+      const linhas: Array<{ chave: string; kb: number }> = [];
+      let total = 0;
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const k = localStorage.key(i);
+        if (!k?.startsWith('dshow.')) continue;
+        const kb = Math.round(((localStorage.getItem(k)?.length ?? 0) * 2) / 1024 * 10) / 10;
+        linhas.push({ chave: k, kb });
+        total += kb;
+      }
+      linhas.sort((a, b) => b.kb - a.kb);
+      return { linhas: linhas.slice(0, 10), total: Math.round(total * 10) / 10 };
+    } catch { return { linhas: [], total: 0 }; }
+  })();
 
   const exportar = () => {
     const blob = new Blob([JSON.stringify(eventos, null, 2)], { type: 'application/json' });
@@ -60,6 +80,15 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
             ))}
           </ol>
         )}
+        {/* mega 109: saúde do localStorage (top 10 chaves dshow.*) */}
+        <div className="avst5-tlm-storage" data-teste="tlm-storage">
+          <h4>Storage local · {storage.total}KB em chaves dshow.*</h4>
+          <ul>
+            {storage.linhas.map((l) => (
+              <li key={l.chave}><code>{l.chave}</code><em>{l.kb}KB</em></li>
+            ))}
+          </ul>
+        </div>
         <p className="avst5-tlm-nota">Só nesta aba, sem PII, nada persiste (§290).</p>
       </div>
     </div>

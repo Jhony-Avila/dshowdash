@@ -114,6 +114,10 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   const [formato, setFormato] = useState<FormatoFotoId>('perfil');
   // §368: escala do export local (declarada AQUI — validação/lote usam)
   const [escala, setEscala] = useState<1 | 2 | 4>(1);
+  // mega 96 (§350): lado do medalhão nos formatos wide
+  const [ladoWide, setLadoWide] = useState<'esquerda' | 'direita'>('esquerda');
+  // mega 103 (§372): wide com fundo TRANSPARENTE (PNG alpha)
+  const [wideTransp, setWideTransp] = useState(false);
 
   // mega 56 (§360): HISTÓRICO não destrutivo do estilo — undo/redo de
   // camadas/título/cores/templates (ajustes têm o "Zerar" próprio; sliders
@@ -483,7 +487,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
       const wide = formato !== 'perfil';
       const [lw, lh] = wide ? FORMATOS_FOTO[formato].saida : [LADO_SAIDA * escala, LADO_SAIDA * escala];
       const svg = svgFotoDe(fotoEstilo, estilo, {
-        estatico: true, uid: 'ftexp', ...(wide ? { formato } : { tamanho: lw }),
+        estatico: true, uid: 'ftexp',
+        ...(wide ? { formato, lado: ladoWide, semFundo: wideTransp } : { tamanho: lw }),
       });
       const png = await rasterizarSvg(svg, lw, lh);
       const a = document.createElement('a');
@@ -494,7 +499,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     } catch {
       setMensagem('Não consegui gerar o PNG para download — tente de novo.');
     }
-  }, [fotoEstilo, estilo, escala, formato]);
+  }, [fotoEstilo, estilo, escala, formato, ladoWide, wideTransp]);
 
   /** Entra no modo ESTILIZADA a partir de uma foto guardada. */
   // mega 15 (§21.5): compartilhar a composição atual (share→clipboard→download)
@@ -504,14 +509,17 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     try {
       const wide = formato !== 'perfil';
       const [lw, lh] = wide ? FORMATOS_FOTO[formato].saida : [LADO_SAIDA, LADO_SAIDA];
-      const svg = svgFotoDe(fotoEstilo, estilo, { estatico: true, uid: 'ftshare', ...(wide ? { formato } : { tamanho: lw }) });
+      const svg = svgFotoDe(fotoEstilo, estilo, {
+        estatico: true, uid: 'ftshare',
+        ...(wide ? { formato, lado: ladoWide, semFundo: wideTransp } : { tamanho: lw }),
+      });
       const png = await rasterizarSvg(svg, lw, lh);
       const canal = await compartilharPng(png, wide ? `dshow-${formato}.png` : 'dshow-foto.png', 'Minha foto Dshow');
       telemetria('foto_compartilhou', { canal, formato });
       if (canal === 'clipboard') setMensagem('Imagem copiada — cole onde quiser.');
       if (canal === 'download') setMensagem('Sem compartilhamento neste navegador — baixei o PNG.');
     } catch { setMensagem('Não consegui compartilhar — tente Baixar PNG.'); }
-  }, [fotoEstilo, estilo, formato]);
+  }, [fotoEstilo, estilo, formato, ladoWide, wideTransp]);
 
   const estilizarGuardada = useCallback(async (foto: FotoGuardada) => {
     setMensagem(null);
@@ -560,8 +568,13 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   // preview vivo da estilização (animações ligadas — o PNG sai estático);
   // §325: o preview segue o FORMATO selecionado
   const previewEstilo = useMemo(
-    () => (fotoEstilo ? svgFotoDe(fotoEstilo, estilo, { uid: 'ftprev', formato }) : ''),
-    [fotoEstilo, estilo, formato]
+    () => (fotoEstilo
+      ? svgFotoDe(fotoEstilo, estilo, {
+        uid: 'ftprev', formato,
+        ...(formato !== 'perfil' ? { lado: ladoWide, semFundo: wideTransp } : {}),
+      })
+      : ''),
+    [fotoEstilo, estilo, formato, ladoWide, wideTransp]
   );
 
   const mudarCamada = (cat: (typeof CATEGORIAS_FOTO)[number], id: string | null) => {
@@ -746,6 +759,26 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 Formato wide sai pelo <strong>Baixar PNG</strong> ({FORMATOS_FOTO[formato].saida[0]}×{FORMATOS_FOTO[formato].saida[1]}px).
                 “Salvar” grava sempre a foto de perfil 1:1 · moldura só entra no Perfil.
               </p>
+            )}
+            {formato !== 'perfil' && (
+              <div className="avst-ft-chips" data-teste="opcoes-wide">
+                {/* mega 96 (§350): lado do medalhão */}
+                {(['esquerda', 'direita'] as const).map((l) => (
+                  <button key={l} type="button" role="radio" aria-checked={ladoWide === l}
+                    className={`avst-ft-chip ${ladoWide === l ? 'avst-ft-chip-ativo' : ''}`}
+                    data-teste={`foto-lado-${l}`}
+                    onClick={() => setLadoWide(l)}>
+                    Medalhão à {l}
+                  </button>
+                ))}
+                {/* mega 103 (§372): wide com alpha */}
+                <button type="button" aria-pressed={wideTransp}
+                  className={`avst-ft-chip ${wideTransp ? 'avst-ft-chip-ativo' : ''}`}
+                  data-teste="foto-wide-transp" title="PNG com fundo transparente (§372)"
+                  onClick={() => setWideTransp((v) => !v)}>
+                  Fundo transparente
+                </button>
+              </div>
             )}
           </div>
 

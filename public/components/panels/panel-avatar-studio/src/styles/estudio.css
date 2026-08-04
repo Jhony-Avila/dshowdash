@@ -1,6 +1,7 @@
 /* styles/estudio.css — Avatar Studio (escopado em [data-avst-react-root]).
    @version 1.0.0  @created 2026-07-29
    Dark-first; tema claro via [data-theme="light"]. Sem tocar em tokens globais. */
+@import './tokens.css'; /* mega 85 (§283–§289): camada de design tokens */
 
 [data-avst-react-root] {
   --avst-fundo: #0d1017;
@@ -1709,6 +1710,33 @@
 /* mega 47: toggle de fundo transparente na galeria 3D da Foto */
 .avst-foto-3d-transp { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--avst-texto-2, #8a93a6); cursor: pointer; }
 .avst-foto-3d-transp input { accent-color: var(--avst-acento, #7c5cff); }
+
+/* lote 71–110: novos elementos */
+.avst5-emotes { position: absolute; bottom: 52px; right: 14px; display: flex; gap: 4px; }
+.avst5-emotes button { width: 30px; height: 30px; display: grid; place-items: center; cursor: pointer; border-radius: 8px; font-size: 15px; background: rgba(13,16,23,.82); border: 1px solid var(--avst-borda, #232a38); }
+.avst5-emotes button:hover { border-color: var(--avst-acento, #7c5cff); }
+/* esquerda-baixo: a fila de ações (direita) QUEBRA LINHA p/ cima e
+   interceptaria cliques (lição shell-palco3d na suíte) */
+.avst5-p3d-capturas { position: absolute; bottom: 42px; left: 14px; display: flex; gap: 4px; }
+.avst5-p3d-capturas button { padding: 0; width: 42px; height: 42px; border-radius: 8px; overflow: hidden; cursor: pointer; background: #0a0d15; border: 1px solid var(--avst-borda, #232a38); }
+.avst5-p3d-capturas img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avst5-p3d-slider input[type="text"] { width: 84px; background: none; border: none; outline: none; color: var(--avst-texto, #e6eaf2); font-size: 11px; }
+.avst-card-sazonal { background: #2a6fdb !important; }
+.avst-vt-cc0 { position: absolute; top: 6px; left: 6px; font-size: 9px; padding: 1px 6px; border-radius: 999px; background: rgba(13,16,23,.85); color: var(--avst-texto-2, #8a93a6); border: 1px solid var(--avst-borda, #232a38); }
+.avst-vt-card-3d { position: relative; }
+.avst5-det-desbloqueio { display: flex; align-items: center; gap: 6px; color: var(--avst-aviso, #e8b64c) !important; }
+.avst5-tlm-storage h4 { margin: 10px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--avst-texto-2, #8a93a6); }
+.avst5-tlm-storage ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
+.avst5-tlm-storage li { display: flex; justify-content: space-between; gap: 10px; }
+.avst5-tlm-storage em { font-style: normal; color: var(--avst-texto-2, #8a93a6); }
+.avst5-look input { flex: 1; min-width: 180px; background: var(--avst-fundo, #0d1017); border: 1px solid var(--avst-borda, #232a38); border-radius: 8px; padding: 6px 10px; color: var(--avst-texto, #e6eaf2); font-size: 12px; }
+/* mega 98 (§375): Photo Studio em telas estreitas */
+@media (max-width: 900px) {
+  .avst-ft-ajuste input[type="range"] { width: 84px; }
+  .avst-foto-3d-grade { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+  .avst-foto-acoes { gap: 6px; }
+  .avst-foto-acoes .avst-botao { padding: 6px 10px; font-size: 12px; }
+}
 
 /* mega 67 (§207–§214): PÁGINA da coleção */
 .avst-col-pagina { display: flex; flex-direction: column; gap: 12px; }

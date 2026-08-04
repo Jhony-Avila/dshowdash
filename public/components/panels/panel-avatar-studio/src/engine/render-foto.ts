@@ -110,6 +110,10 @@ export interface OpcoesRenderFoto {
   tamanho?: number;
   /** §325: formato de saída — omitido/'perfil' = quadrado clássico */
   formato?: FormatoFotoId;
+  /** mega 96 (§350): lado do medalhão nos formatos WIDE (padrão esquerda) */
+  lado?: 'esquerda' | 'direita';
+  /** mega 103 (§372): wide SEM o retângulo de base — PNG com alpha */
+  semFundo?: boolean;
 }
 
 function escaparAtributo(v: string): string {
@@ -258,8 +262,12 @@ function comporWide(
   const efeitoAtras = efeitoDef?.atras ? efeitoSvg : '';
   const efeitoFrente = efeitoDef && !efeitoDef.atras ? efeitoSvg : '';
 
-  // célula direita: emblema (badge grande) em cima, selo do título embaixo
-  const cx2 = (240 + W) / 2;
+  // mega 96 (§350): medalhão pode ir p/ a DIREITA — o texto/emblema troca
+  // de lado junto (a foto "olha" para dentro da composição)
+  const direita = opcoes.lado === 'direita';
+  const deslocMedalhao = direita ? W - 240 : 0;
+  // célula do texto: oposta ao medalhão
+  const cx2 = direita ? (W - 240) / 2 : (240 + W) / 2;
   const badge = estilo.camadas.emblema && estilo.camadas.emblema !== 'nenhum'
     ? `<g transform="translate(${cx2 - 152} -114) scale(1)">${pintar(estilo.camadas.emblema)}</g>`
     : '';
@@ -281,7 +289,7 @@ function comporWide(
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"${dims} ` +
     `preserveAspectRatio="none" role="img" aria-label="Foto estilizada (${formato.nome})">
 <defs><clipPath id="${uid}clip"><rect width="${W}" height="${H}" rx="14"/></clipPath><clipPath id="${uid}fclip"><circle cx="120" cy="118" r="92"/></clipPath>${defsAj}</defs>
-<g clip-path="url(#${uid}clip)"><rect width="${W}" height="${H}" fill="#0a0d15"/>${fundo}${efeitoAtras}${aura}${medalhaoSvg(fotoHref, p, uid, aj)}${badge}${efeitoFrente}${vinheta}${selo}</g>
+<g clip-path="url(#${uid}clip)">${opcoes.semFundo ? '' : `<rect width="${W}" height="${H}" fill="#0a0d15"/>`}${fundo}${efeitoAtras}${direita ? `<g transform="translate(${deslocMedalhao} 0)">` : ''}${aura}${medalhaoSvg(fotoHref, p, uid, aj)}${direita ? '</g>' : ''}${badge}${efeitoFrente}${vinheta}${selo}</g>
 </svg>`;
 
   if (opcoes.estatico) svg = congelarSvg(svg);

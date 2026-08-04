@@ -167,7 +167,13 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       .filter((i) => {
         if (!termos.length) return true;
         const alvo = normalizar(`${i.nome} ${i.tema} ${i.lore ?? i.descricao}`);
-        return termos.every((t) => alvo.includes(t)); // AND (§57)
+        // mega 95 (§57+): OPERADORES — "raridade:epico" filtra por raridade,
+        // "tema:cyber" pelo tema exato; o resto segue busca AND normal
+        return termos.every((t) => {
+          if (t.startsWith('raridade:')) return normalizar(i.raridade) === t.slice(9);
+          if (t.startsWith('tema:')) return normalizar(i.tema).includes(t.slice(5));
+          return alvo.includes(t); // AND (§57)
+        });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot]);
@@ -353,7 +359,16 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             : <CardItem key={item.id} {...props} />;
         })}
         {itens.length === 0 && (
-          <p className="avst-grade-vazia">Nenhum item bate com o filtro — limpe a busca ou os tiers.</p>
+          // mega 100: empty state DIZ o caminho, não só o problema
+          <p className="avst-grade-vazia" data-teste="grade-vazia">
+            {filtroAba === 'favoritos'
+              ? 'Nenhum favorito aqui ainda — toque na estrela de qualquer card para guardar os seus queridinhos.'
+              : filtroAba === 'novos'
+                ? 'Nada novo nesta categoria agora — as novidades chegam com os eventos.'
+                : filtroAba === 'bloqueados'
+                  ? 'Nada bloqueado por aqui — você já destravou tudo desta categoria.'
+                  : 'Nenhum item bate com o filtro — limpe a busca ou os tiers. Dica: use "raridade:epico" ou "tema:cyber" na busca.'}
+          </p>
         )}
       </div>
     </div>
@@ -476,6 +491,10 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, aoFavori
         </>
       )}
       {item.novo && <span className="avst-card-novo">NOVO</span>}
+      {/* mega 91 (§60/§227): item de evento ganha selo SAZONAL no card */}
+      {!item.novo && item.bloqueadoPor?.startsWith('evento:') && (
+        <span className="avst-card-novo avst-card-sazonal">SAZONAL</span>
+      )}
       {ativo && <span className="avst-card-check"><Check size={13} aria-hidden /></span>}
       {bloqueado && <span className="avst-card-lock"><Lock size={15} aria-hidden /></span>}
       <button type="button" className={`avst-card-fav ${favorito ? 'avst-card-fav-on' : ''}`}
