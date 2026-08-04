@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Aperture, Box, Camera, Check, Crown, Download, ImageUp, Images, LoaderCircle,
-  RotateCcw, Video, Wand2, X,
+  RotateCcw, Share2, Video, Wand2, X,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
 import type { FotoGuardada } from '../services/AvatarService';
@@ -31,6 +31,7 @@ import { criarRenderizador } from '../services/FabricaRenderizador';
 import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d';
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { estadoVazio } from '../nucleo/contratos';
+import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 
 const LADO_PALCO = 280;   // px na tela
 const LADO_SAIDA = 480;   // px do PNG final
@@ -102,6 +103,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   // mega 12 (§21×§174.1): TERCEIRA origem — captura do personagem 3D
   const [galeria3d, setGaleria3d] = useState<EntradaIndice3d[] | null>(null);
   const [capturando3d, setCapturando3d] = useState(false);
+  // mega 47: captura 3D com fundo TRANSPARENTE (compõe limpa nos templates)
+  const [transparente3d, setTransparente3d] = useState(false);
   const [estilo, setEstilo] = useState<EstiloFoto>(ESTILO_VAZIO);
   // §325: formato de saída — 'perfil' vai ao servidor; wide sai por download
   const [formato, setFormato] = useState<FormatoFotoId>('perfil');
@@ -302,12 +305,15 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
       await r.montar(palco as unknown as { innerHTML: string });
       const aplicado = await r.aplicarEstado(estadoVazio());
       if (!aplicado.ok) throw new Error('personagem indisponível');
-      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true });
+      // mega 47: transparente §21×§325 — o template compõe sem fundo escuro
+      const foto = await r.capturar({
+        largura: 960, altura: 960, deterministica: true, transparente: transparente3d,
+      });
       setFotoEstilo(foto.dataUri);
       setGaleria3d(null);
       const salvo = lerEstiloSalvo();
       if (salvo) setEstilo(salvo);
-      telemetria('foto_estilo_abriu', { origem: '3d', personagem: slug });
+      telemetria('foto_estilo_abriu', { origem: '3d', personagem: slug, transparente: transparente3d });
     } catch {
       setMensagem('Não consegui capturar o personagem 3D — tente outro.');
     } finally {
@@ -315,7 +321,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
       palco.remove();
       setCapturando3d(false);
     }
-  }, []);
+  }, [transparente3d]);
 
   // §362: autosave do ESTILO enquanto o modo estilizada está aberto
   useEffect(() => {
@@ -370,6 +376,22 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   }, [fotoEstilo, estilo, escala, formato]);
 
   /** Entra no modo ESTILIZADA a partir de uma foto guardada. */
+  // mega 15 (§21.5): compartilhar a composição atual (share→clipboard→download)
+  const compartilharFoto = useCallback(async () => {
+    if (!fotoEstilo) return;
+    setMensagem(null);
+    try {
+      const wide = formato !== 'perfil';
+      const [lw, lh] = wide ? FORMATOS_FOTO[formato].saida : [LADO_SAIDA, LADO_SAIDA];
+      const svg = svgFotoDe(fotoEstilo, estilo, { estatico: true, uid: 'ftshare', ...(wide ? { formato } : { tamanho: lw }) });
+      const png = await rasterizarSvg(svg, lw, lh);
+      const canal = await compartilharPng(png, wide ? `dshow-${formato}.png` : 'dshow-foto.png', 'Minha foto Dshow');
+      telemetria('foto_compartilhou', { canal, formato });
+      if (canal === 'clipboard') setMensagem('Imagem copiada — cole onde quiser.');
+      if (canal === 'download') setMensagem('Sem compartilhamento neste navegador — baixei o PNG.');
+    } catch { setMensagem('Não consegui compartilhar — tente Baixar PNG.'); }
+  }, [fotoEstilo, estilo, formato]);
+
   const estilizarGuardada = useCallback(async (foto: FotoGuardada) => {
     setMensagem(null);
     try {
@@ -479,6 +501,11 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
           <p className="avst-foto-nota">
             Escolha o personagem — a captura entra direto no estúdio de estilo.
           </p>
+          <label className="avst-foto-3d-transp" data-teste="foto-3d-transparente">
+            <input type="checkbox" checked={transparente3d}
+              onChange={(e) => setTransparente3d(e.target.checked)} />
+            Fundo transparente (compõe melhor nos templates)
+          </label>
           <div className="avst-foto-3d-grade" role="list">
             {galeria3d.map((p3) => (
               <button key={p3.slug} type="button" role="listitem" disabled={capturando3d}
@@ -688,6 +715,14 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               onClick={() => void baixarPng()}>
               <Download size={14} aria-hidden /> Baixar PNG
             </button>
+            {podeCompartilhar() && (
+              <button type="button" className="avst-botao" disabled={salvando}
+                title="Compartilhar (sistema, área de transferência ou download)"
+                data-teste="compartilhar-foto"
+                onClick={() => void compartilharFoto()}>
+                <Share2 size={14} aria-hidden /> Compartilhar
+              </button>
+            )}
             <button type="button" className="avst-botao avst-botao-primario"
               onClick={() => void salvarEstilizada()} disabled={salvando}>
               {salvando ? <LoaderCircle className="avst-girando" size={14} aria-hidden /> : <Wand2 size={14} aria-hidden />}

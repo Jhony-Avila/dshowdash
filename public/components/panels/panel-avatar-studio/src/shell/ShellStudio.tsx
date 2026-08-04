@@ -27,6 +27,8 @@ import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
+import { Atalhos } from './Atalhos';
+import { TelemetriaDev } from './TelemetriaDev';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { DetalheAsset } from './DetalheAsset';
 import { Palco3d } from './Palco3d';
@@ -102,12 +104,14 @@ class LimiteShell extends Component<{ aoSair: () => void; children: ReactNode },
   }
 }
 
-export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvarLegado, aoSairDoShell }: {
+export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvarLegado, aoSalvarFotoLegado, aoSairDoShell }: {
   configInicial: AvatarConfig;
   versaoBase: number;
   desbloqueados: Set<string>;
   /** salva pelo caminho legado (studio.php) até o corte do §619 */
   aoSalvarLegado: (config: AvatarConfig) => Promise<{ ok: boolean; versao?: number }>;
+  /** mega 24: captura 3D vira o AVATAR OFICIAL (pipeline salvarFoto do App) */
+  aoSalvarFotoLegado?: (png960: string) => Promise<boolean>;
   /** flag off / erro → App clássico */
   aoSairDoShell: () => void;
 }) {
@@ -349,6 +353,24 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     return () => window.removeEventListener('keydown', aoK);
   }, []);
 
+  // mega 46 (§290): viewer local de telemetria (flag dev)
+  const [telemetriaDev, setTelemetriaDev] = useState(false);
+
+  // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
+  const [atalhos, setAtalhos] = useState(false);
+  useEffect(() => {
+    const aoInterrogacao = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName)) return;
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setAtalhos((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', aoInterrogacao);
+    return () => window.removeEventListener('keydown', aoInterrogacao);
+  }, []);
+
   // §174 SHOWCASE: apresentação cinematográfica 2D no modo Studio.
   // Sequência automática (fade → aproxima → gira → composição §174.1),
   // ~6s (§174.2). A coreografia e o guard §297 vivem no Motion System §285.
@@ -575,7 +597,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* viewport dominante (R1) — SEM scroll de página (R5) */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}>
             {palco3d ? (
-              <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d} />
+              <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d}
+                aoUsarComoAvatar={aoSalvarFotoLegado} />
             ) : (
               <div className="avst5-palco">
                 <div className="avst5-zoom" style={zoomEstilo}>
@@ -754,6 +777,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           </aside>
         </div>
         {tour && <TourGuiado aoFechar={() => setTour(false)} />}
+        {atalhos && <Atalhos aoFechar={() => setAtalhos(false)} />}
+        {telemetriaDev && <TelemetriaDev aoFechar={() => setTelemetriaDev(false)} />}
         {paleta && (
           <PaletaComandos
             aoFechar={() => setPaleta(false)}
@@ -772,6 +797,17 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               { id: 'studio', rotulo: 'Alternar modo Studio', executar: () => setModo((m) => (m === 'studio' ? 'edicao' : 'studio')) },
               { id: 'presets', rotulo: 'Abrir meus Presets', executar: () => setAba('presets') },
               { id: 'equipados', rotulo: 'Abrir Equipados', executar: () => setAba('equipados') },
+              // mega 35: o 3D e a folha de atalhos entram na paleta §566
+              ...(flagPalco3d ? [{
+                id: 'palco3d',
+                rotulo: palco3d ? 'Desligar a prévia 3D' : 'Ligar a prévia 3D',
+                executar: () => setPalco3d((v) => !v),
+              }] : []),
+              { id: 'atalhos', rotulo: 'Atalhos do teclado (?)', executar: () => setAtalhos(true) },
+              // mega 46: viewer de telemetria (só com a flag dev ligada)
+              ...(flag('as5.telemetria_painel') ? [{
+                id: 'telemetria', rotulo: 'Telemetria local (dev)', executar: () => setTelemetriaDev(true),
+              }] : []),
               { id: 'classico', rotulo: 'Voltar ao modo clássico', executar: aoSairDoShell },
             ]} />
         )}

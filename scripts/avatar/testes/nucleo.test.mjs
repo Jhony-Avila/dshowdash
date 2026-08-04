@@ -266,6 +266,34 @@ if (bloqueadoReal) {
   ok(rel2.aceitos.includes(bloqueadoReal), 'desbloqueado deveria passar');
 }
 
+// mega 38: interpretarBackup é PURA e ESTRITA — formato/versão conferidos,
+// config sanitizado (ID inventado NUNCA entra), lixo descartado com aviso
+import { interpretarBackup } from '${PAINEL}/src/services/Backup';
+ok(!interpretarBackup('nao é json').ok, 'texto inválido deveria falhar');
+ok(!interpretarBackup('{"formato":"outro"}').ok, 'formato errado deveria falhar');
+ok(!interpretarBackup('{"formato":"dshow-avatar-backup","versao":99}').ok,
+  'versão futura deveria falhar');
+const imp = interpretarBackup(JSON.stringify({
+  formato: 'dshow-avatar-backup', versao: 1, criadoEm: 'x',
+  config: { formato: 'camadas', versao: 1, base: 'bas_inventada_pela_ia',
+    camadas: { cabelo: 'cab_fake_9000' }, cores: { destaque: '#7c5cff' } },
+  presets: [
+    { id: 'pp_ok', nome: 'Válido', config: CONFIG_PADRAO },
+    { id: 777, nome: 'sem forma' },
+  ],
+  cenas3d: [
+    { id: 'c3_ok', nome: 'Boa', fundo: 'grade', luz: 'INVALIDA', camera: 'corpo' },
+    { id: 'c3_x' }, // sem nome → descartada
+  ],
+}));
+ok(imp.ok, 'backup válido deveria passar');
+ok(imp.config?.base !== 'bas_inventada_pela_ia' && imp.config?.camadas.cabelo !== 'cab_fake_9000',
+  'IDs inventados no config deveriam ser sanitizados');
+ok(imp.presets?.length === 1 && imp.presets[0].id === 'pp_ok', 'preset malformado deveria cair');
+ok(imp.cenas?.length === 1 && imp.cenas[0].luz === 'estudio' && imp.cenas[0].fundo === 'grade',
+  'cena: campo fora do domínio deveria cair no padrão');
+ok(imp.avisos.length === 2, 'avisos deveriam contar 1 preset + 1 cena descartados, deu ' + imp.avisos.length);
+
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);
 `);

@@ -620,9 +620,11 @@
   font-size: 12px; font-weight: 600; color: var(--avst-texto-2);
 }
 .avst-foto-zoom input { flex: 1; accent-color: var(--avst-acento); }
-.avst-foto-acoes { display: flex; gap: 8px; align-self: stretch; justify-content: flex-end; }
+.avst-foto-acoes { display: flex; gap: 8px; align-self: stretch; justify-content: flex-end; flex-wrap: wrap; }
+/* mega 15: com Compartilhar a fila cresceu — sem wrap, o 1º botão
+   transbordava p/ CIMA do palco e ficava inclicável (pego pelo foto-f6) */
 .avst-foto-msg { margin: 0; font-size: 12px; color: var(--avst-texto-2); }
-.avst-foto-origem { display: flex; gap: 10px; width: 100%; }
+.avst-foto-origem { display: flex; gap: 10px; width: 100%; flex-wrap: wrap; }
 .avst-foto-origem .avst-foto-escolher { flex: 1; min-height: 110px; background: none; font: inherit; color: var(--avst-texto-2); }
 .avst-foto-galeria { width: 100%; border-top: 1px solid var(--avst-borda); padding-top: 12px; }
 .avst-foto-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
@@ -1535,3 +1537,135 @@
 .avst5-p3d-rec { color: #ff5230 !important; border-color: #ff5230 !important; animation: avst5-rec 1s ease-in-out infinite; }
 @keyframes avst5-rec { 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .avst5-p3d-rec { animation: none; } }
+
+/* mega 14: cards de personagens 3D na Vitrine */
+.avst-vt-card-3d { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; border-radius: 12px; background: var(--avst-painel, #12151d); border: 1px solid var(--avst-borda, #232a38); font-size: 12px; }
+.avst-vt-card-3d img { border-radius: 10px; background: #0a0d15; }
+.avst-vt-card-3d small { color: var(--avst-texto-2, #8a93a6); font-size: 10.5px; }
+
+/* mega 18: utilitário sr-only + foco visível nos overlays do palco 3D */
+.avst5-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.avst5-p3d-chip:focus-visible, .avst5-p3d-cameras button:focus-visible, .avst5-p3d-acoes button:focus-visible {
+  outline: 2px solid var(--avst-acento, #7c5cff); outline-offset: 2px;
+}
+
+/* megas 21+22: CENÁRIO (fundos + iluminação) abaixo das animações */
+.avst5-p3d-cenario {
+  position: absolute; top: 122px; left: 14px; display: flex; flex-direction: column;
+  gap: 5px; max-width: 70%;
+}
+.avst5-p3d-cenario > span { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; color: var(--avst-texto-2, #8a93a6); }
+
+/* mega 28: HUD de performance (flag as5.hud3d) — discreto, canto sup. dir. */
+.avst5-p3d-hud {
+  position: absolute; top: 46px; right: 14px; display: flex; align-items: center; gap: 5px;
+  font-size: 10.5px; font-variant-numeric: tabular-nums; padding: 4px 10px; border-radius: 999px;
+  color: var(--avst-texto-2, #8a93a6); background: rgba(13, 16, 23, 0.82);
+  border: 1px solid var(--avst-borda, #232a38); pointer-events: none;
+}
+
+/* mega 29: badge de POSE CONGELADA (topo central) */
+.avst5-p3d-congelado {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; padding: 4px 12px; border-radius: 999px; white-space: nowrap;
+  color: #fff; background: color-mix(in srgb, var(--avst-acento, #7c5cff) 38%, rgba(13,16,23,.88));
+  border: 1px solid var(--avst-acento, #7c5cff); pointer-events: none;
+}
+
+/* lote 31–40: fila de ações comporta os botões novos sem transbordar */
+.avst5-p3d-acoes { flex-wrap: wrap; justify-content: flex-end; max-width: 42%; }
+
+/* mega 31: chip de cena com o × de excluir acoplado */
+.avst5-p3d-cena { display: inline-flex; align-items: stretch; }
+.avst5-p3d-cena .avst5-p3d-chip { border-radius: 999px 0 0 999px; border-right: none; }
+.avst5-p3d-cena-x {
+  padding: 0 8px; border-radius: 0 999px 999px 0; cursor: pointer; font-size: 12px; line-height: 1;
+  background: rgba(13, 16, 23, 0.82); color: var(--avst-texto-2, #8a93a6);
+  border: 1px solid var(--avst-borda, #232a38);
+}
+.avst5-p3d-cena-x:hover { color: #ff5230; border-color: #ff5230; }
+.avst5-p3d-cena-x:focus-visible { outline: 2px solid var(--avst-acento, #7c5cff); outline-offset: 2px; }
+[data-teste="p3d-cenas"] button:disabled { opacity: .45; cursor: default; }
+
+/* mega 39: modo apresentação — palco em tela cheia fica só o 3D */
+.avst5-p3d:fullscreen { background: #05070c; }
+.avst5-p3d:fullscreen .avst5-p3d-tela { width: 100vw; height: 100vh; }
+
+/* mega 37: folha de ATALHOS (§548) */
+.avst5-atalhos {
+  position: absolute; top: 10vh; left: 50%; transform: translateX(-50%); z-index: 56;
+  width: min(680px, 92vw); max-height: 80vh; overflow: auto;
+  padding: 18px 20px; border-radius: 16px; background: var(--avst-painel, #12151d);
+  border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2);
+}
+.avst5-atalhos h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 15px; }
+.avst5-atalhos-grupos { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.avst5-atalhos h4 { margin: 0 0 6px; font-size: 12px; color: var(--avst-texto-2, #8a93a6); text-transform: uppercase; letter-spacing: .04em; }
+.avst5-atalhos ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.avst5-atalhos li { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+.avst5-atalhos-teclas { display: inline-flex; gap: 3px; min-width: 108px; }
+.avst5-atalhos kbd {
+  padding: 2px 7px; border-radius: 6px; font-size: 11px; font-family: inherit;
+  background: rgba(13, 16, 23, 0.82); border: 1px solid var(--avst-borda, #232a38);
+  color: var(--avst-texto-2, #8a93a6);
+}
+.avst5-atalhos-nota { margin: 12px 0 0; font-size: 11px; color: var(--avst-texto-2, #8a93a6); }
+
+/* mega 38: backup export/import na aba Presets */
+.avst5-backup { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.avst5-backup-aviso { margin: 0; flex-basis: 100%; font-size: 11.5px; color: var(--avst-texto-2, #8a93a6); }
+
+/* mega 41: badge de recuperação do contexto (âmbar p/ diferenciar da pose) */
+.avst5-p3d-recuperando { border-color: #f5a623 !important; background: color-mix(in srgb, #f5a623 30%, rgba(13,16,23,.9)) !important; }
+
+/* mega 44: passo a passo da pose (aparece junto do badge congelado) */
+.avst5-p3d-quadros { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; }
+.avst5-p3d-quadros button {
+  width: 28px; height: 28px; display: grid; place-items: center; cursor: pointer;
+  border-radius: 8px; background: rgba(13, 16, 23, 0.82); color: var(--avst-texto-2, #8a93a6);
+  border: 1px solid var(--avst-borda, #232a38);
+}
+.avst5-p3d-quadros button:hover { color: #fff; border-color: var(--avst-acento, #7c5cff); }
+
+/* mega 48: sliders de ajuste fino da câmera */
+.avst5-p3d-slider {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px;
+  color: var(--avst-texto-2, #8a93a6); background: rgba(13, 16, 23, 0.82);
+  border: 1px solid var(--avst-borda, #232a38); border-radius: 999px; padding: 2px 10px;
+}
+.avst5-p3d-slider input[type="range"] { width: 90px; accent-color: var(--avst-acento, #7c5cff); }
+
+/* mega 49: painel de comparação 2D×3D (metade esquerda do palco) */
+.avst5-p3d-cmp {
+  position: absolute; inset: 0 50% 0 0; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--avst-painel, #12151d) 88%, transparent);
+  border-right: 1px solid var(--avst-borda, #232a38); pointer-events: none;
+}
+.avst5-p3d-cmp svg { width: 72%; height: auto; max-height: 86%; }
+.avst5-p3d-cmp > span {
+  position: absolute; top: 12px; left: 14px; font-size: 10.5px; padding: 3px 10px;
+  border-radius: 999px; color: var(--avst-texto-2, #8a93a6);
+  background: rgba(13, 16, 23, 0.82); border: 1px solid var(--avst-borda, #232a38);
+}
+
+/* mega 46: viewer local de telemetria (dev) */
+.avst5-tlm {
+  position: absolute; top: 8vh; left: 50%; transform: translateX(-50%); z-index: 56;
+  width: min(720px, 94vw); max-height: 82vh; overflow: auto;
+  padding: 18px 20px; border-radius: 16px; background: var(--avst-painel, #12151d);
+  border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2);
+}
+.avst5-tlm h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 14px; }
+.avst5-tlm-acoes { display: flex; gap: 8px; margin-bottom: 10px; }
+.avst5-tlm-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.avst5-tlm-lista li {
+  display: flex; align-items: baseline; gap: 8px; font-size: 11.5px; padding: 4px 8px;
+  border-radius: 8px; background: rgba(13, 16, 23, 0.6);
+}
+.avst5-tlm-lista time { color: var(--avst-texto-2, #8a93a6); font-variant-numeric: tabular-nums; }
+.avst5-tlm-lista code { color: var(--avst-texto-2, #8a93a6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avst5-tlm-vazio, .avst5-tlm-nota { font-size: 11.5px; color: var(--avst-texto-2, #8a93a6); }
+
+/* mega 47: toggle de fundo transparente na galeria 3D da Foto */
+.avst-foto-3d-transp { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--avst-texto-2, #8a93a6); cursor: pointer; }
+.avst-foto-3d-transp input { accent-color: var(--avst-acento, #7c5cff); }

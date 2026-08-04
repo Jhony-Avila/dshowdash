@@ -295,3 +295,145 @@ Suíte: 30 entradas — 30/30 + núcleo verdes.
 
 Testes: foto-3d.mjs novo + shell-palco3d v4 (gravação interceptada,
 blob WebM real). Suíte: 31 entradas — 31/31 + núcleo verdes.
+
+## MEGAS 14–20 (lote de 7) · 2026-08-03/04
+
+✅ 14 VITRINE 3D (§23) — seção Personagens 3D (previews §508 + nº de
+   animações); lição rules-of-hooks REINCIDENTE pega em teste (hooks
+   após early return crashavam o painel).
+✅ 15 COMPARTILHAR (§21.5) — cascata share(File)→ClipboardItem→download
+   na foto estilizada e na captura 3D; canal na telemetria. Fix de
+   layout: filas de ações com wrap (Cancelar transbordava sobre o palco).
+✅ 16 QUALIDADE ADAPTATIVA (§528) — FPS média móvel, histerese 30/55,
+   LOD a quente no modo auto; câmera preservada no reload; tier na nota.
+✅ 17 CACHE/PREFETCH (§402) — LRU dos BYTES do GLB + parseAsync fresco;
+   prefetch no hover. Decisão de arquitetura: clonar cena skinned
+   DESCARTADO (SkeletonUtils.clone deixou o androide 2-skins invisível;
+   diagnóstico por sondas: cena ok, mixer ok, canvas só fundo).
+✅ 18 A11Y & TECLADO (§583/§548) — atalhos P/R/C, aria-live, focus-visible.
+✅ 19 TELEMETRIA 3D (§290–292) — p3d_aplicou(+ms)/personagem/qualidade/
+   showcase/capturou/gravou + foto_compartilhou.
+✅ 20 CONSOLIDAÇÃO — suíte 31/31 + núcleo; relatórios do projeto
+   atualizados; este registro.
+
+## MEGAS 21–30 "Palco 3D Profissional" (lote de 10) · 2026-08-04
+
+✅ 21 CENÁRIO (§9.3) — fundos Neutro/Estúdio/Grade no renderer
+   (background + GridHelper + chão-disco com sombra fake que ancora o
+   personagem); fila de chips no palco.
+✅ 22 ILUMINAÇÃO (§163-lite) — presets Estúdio/Quente/Fria/Neon MUTAM as
+   3 luzes canônicas (chave/preencher/ambiente) sem recriar a cena; a
+   luz canônica continua idêntica à das thumbs §508 no preset padrão.
+✅ 23 ÓRBITA MANUAL (§453) — modo de câmera 'orbita' liga OrbitControls
+   (drag gira, roda dá zoom; damping; alvo no centro do personagem;
+   dispose no descartar). Radio próprio no palco; cinemática continua
+   sendo a órbita AUTOMÁTICA.
+✅ 24 USAR COMO AVATAR (§21×§325) — captura 960 do palco 3D entra no
+   MESMO pipeline salvarFoto da Foto (POST studio.php, re-encode pixel
+   a pixel no servidor, versão otimista do App atualizada). Fio:
+   App.aoSalvarFotoLegado → ShellStudio → Palco3d.aoUsarComoAvatar;
+   botão só existe com a prop (fail-safe).
+✅ 25 FICHA DO PERSONAGEM (§508) — contact sheet 2×2 (1920²) com 4
+   ângulos determinísticos (frente/¾/perfil/costas via azimute);
+   câmera restaurada; download dshow-ficha-<slug>.png.
+✅ 26 MARCA D'ÁGUA — "DSHOW" no canto das capturas/ficha; toggle
+   aria-pressed (nasce ligada; desligável).
+✅ 27 IDLE VIVO — alterna Idle↔Idle_Neutral a cada 12s quando o clipe
+   existe; nunca durante showcase/pose congelada (vida sem ruído).
+✅ 28 HUD DE PERFORMANCE — flag NOVA as5.hud3d (fail-safe OFF):
+   fps · tier · triângulos via diagnostico() do renderer (média móvel
+   §528); poll 1s; pointer-events none.
+✅ 29 POSE CONGELADA — botão + tecla espaço pausam/retomam o laço
+   (freeze frame p/ enquadrar captura); badge com role=status.
+✅ 30 CONSOLIDAÇÃO — suíte 31/31 + núcleo verdes; pesos DENTRO do gate
+   (entry 221/240 · motor3d 1043/1180 · Renderizador3d 9.9/12 — o
+   OrbitControls foi p/ o motor3d, chunk certo); relatórios do projeto
+   atualizados (relatório final v2, mapa v60); este registro.
+
+Testes: shell-palco3d v2(=v5 funcional) — pixel do canto prova a troca
+de fundo, drag da órbita, freeze/retomar, ficha 1920² interceptada,
+marca, HUD, usar-avatar; renderizador3d.test com OrbitControls no
+import-map. Suíte: 31/31 + núcleo verdes.
+
+## MEGAS 31–40 "Estúdio Criativo & Governança" (lote de 10) · 2026-08-04
+
+✅ 31 CENAS DO PALCO (§136-3D) — Cenas3d.ts no molde PresetsPessoais
+   (localStorage versionado dshow.avst5.p3d.cenas.v1, máx 8, sanitização
+   de DOMÍNIO por campo); chips salvar/aplicar/excluir no cenário.
+✅ 32 CAPTURA TRANSPARENTE (§21×§325) — capturar() honra transparente:
+   true (o contrato §401 já previa; o 3D ignorava): background null +
+   chão/grade ocultos SÓ no frame, restaura e re-renderiza (nada vaza
+   p/ o palco). PNG alpha pronto p/ compor no Photo Studio.
+✅ 33 TURNTABLE 360° (§508) — folha 4×2 (1920×960) com 8 azimutes
+   determinísticos; dshow-turntable-<slug>.png; câmera restaurada.
+✅ 34 QUALIDADE MANUAL (§423) — chips Auto/Alta/Média/Econ. →
+   definirQualidade; persistida; Auto continua o adaptativo §528; a
+   nota diferencia "econômica" (manual) de "econômica (auto)".
+✅ 35 PALETA §566 + 3D — ações injetadas: ligar/desligar prévia 3D
+   (flag-gated) e abrir a folha de atalhos.
+✅ 36 VÍDEO NA CASCATA §21.5 — compartilharBlob (PNG delega); gravação
+   WebM compartilhável. BUG REAL pego pelo teste: clipboard.write com
+   vídeo fica PENDENTE p/ SEMPRE no Chromium (nem resolve nem rejeita)
+   → cascata estalava; fix: clipboard SÓ image/* + guarda de 2,5s.
+✅ 37 FOLHA DE ATALHOS (§548/§583) — "?" abre overlay acessível
+   data-driven (2D+3D); Esc fecha; fora de campos de texto.
+✅ 38 BACKUP EXPORT/IMPORT (governança) — JSON versionado com config +
+   presets + cenas 3D; interpretarBackup PURA e ESTRITA (formato/versão
+   conferidos, config re-sanitizado — ID inventado NUNCA entra, lixo
+   descartado e contado no aviso); aplicar config vira COMANDO (undo);
+   substituirPresets/substituirCenas p/ restauração íntegra.
+✅ 39 MODO APRESENTAÇÃO — fullscreen no contêiner do palco 3D
+   (fullscreenchange, aria-pressed, CSS :fullscreen, fail-safe sem API).
+   Aprendizado de teste: Esc SINTÉTICO não sai do fullscreen (gesto de
+   UI confiável) — o teste sai pelo próprio botão.
+✅ 40 CONSOLIDAÇÃO — suíte 33/33 + núcleo (interpretarBackup coberto em
+   node puro); pesos no gate (entry 232/265 — teto subiu de 240 com
+   justificativa no commit; motor3d/renderizador inalterados); fix
+   LATENTE da mega 26 (deps do capturar3d congelavam o comMarca — marca
+   OFF não valia na captura); docs do projeto atualizados; este registro.
+
+Testes novos: shell-palco3d-criativo (alpha do canto=0 na transparente,
+cena roundtrip Grade+Neon, turntable interceptado, fullscreen) e
+shell-atalhos-backup (export parseado, import com descarte contado,
+arquivo inválido recusado sem tocar a biblioteca). Suíte: 33/33 + núcleo.
+
+## MEGAS 41–50 "Robustez, Diagnóstico & Direção de Arte" (lote de 10) · 2026-08-04
+
+✅ 41 WATCHDOG DE CONTEXTO WEBGL — contextlost (preventDefault + laço e
+   captura suspensos + badge âmbar "Recuperando o 3D…") / restored
+   (reaplica estado, palco volta sozinho); GPU reset e aba de fundo
+   deixaram de ser fatais. Teste REAL com WEBGL_lose_context.
+✅ 42 CAPACIDADE (§605-lite) — Capacidade3d.ts: WebGL2, renderer real,
+   software (SwiftShader/llvmpipe), memória/núcleos → dica CONSERVADORA
+   de tier inicial (contrato ganhou dicaTier; o adaptativo §528 segue
+   mandando); nota do palco avisa "render por software"; telemetria
+   p3d_capacidade 1×/sessão.
+✅ 43 RETRY COM BACKOFF — falha de aplicarEstado tenta de novo 1× (800ms)
+   antes de "indisponível"; botão "Tentar de novo" REMONTA o renderer.
+   Teste prova: 1 falha de rede se recupera SOZINHA; 2 falhas → botão →
+   volta. (Prefetch §402 consumia o mock — clique via dispatchEvent.)
+✅ 44 SCRUB DE POSE — avancarQuadro(±0,15s): mixer.update + render manual
+   MESMO pausado; ⏮/⏭ aparecem com a pose congelada (quadro perfeito
+   antes de capturar).
+✅ 45 NITIDEZ RESPONSIVA — ResizeObserver no contêiner → setSize/aspect
+   reais (fechou a lacuna registrada no lote 39: fullscreen esticava o
+   canvas montado).
+✅ 46 TELEMETRIA VIEWER (flag NOVA as5.telemetria_painel) — ring buffer
+   local (100 eventos §290, sem PII, nada persiste) + assinatura;
+   painel dev com lista viva, export JSON e limpar; comando na paleta
+   some sem a flag (fail-safe).
+✅ 47 FOTO 3D TRANSPARENTE (§21×§325) — toggle na galeria 3D; captura
+   alpha compõe limpa nos templates (teste decodifica o <image> do
+   preview e prova alpha 0 no canto).
+✅ 48 AJUSTE FINO DE CÂMERA (§453) — sliders zoom (1.2–4×) e altura
+   (0.05–0.9 rad) sobre o enquadramento Box3; refCam alimenta todas as
+   restaurações (ficha/turntable/showcase).
+✅ 49 COMPARAR 2D×3D (§65-3D) — split com o AvatarSvg dentro do palco
+   p/ veredito visual de paridade.
+✅ 50 CONSOLIDAÇÃO — suíte 35/35 + núcleo; pesos no gate (entry 233/265 ·
+   Renderizador3d 11,6/16 — teto subiu de 12 com justificativa); FIX de
+   stacking context (atalhos/telemetria sob o backdrop z-40 → 56); docs.
+
+Aprendizados novos do lote: overlay dentro de .avst5-detalhe-fundo PRECISA
+de z-index 56 (o backdrop interno usa 40); prefetch no hover consome mocks
+de rede (cliques de teste p/ contagem exata = dispatchEvent).

@@ -44,14 +44,16 @@ import { estadoVazio } from '${PAINEL}/src/nucleo/contratos';
 const esbuild = [join(PAINEL, 'node_modules', '.bin', 'esbuild'), join(RAIZ, 'node_modules', '.bin', 'esbuild')]
   .find((c) => existsSync(c)) ?? 'esbuild';
 execSync(`"${esbuild}" "${join(dir, 'entrada.ts')}" --bundle --format=esm ` +
-  '--external:three --external:three/examples/jsm/loaders/GLTFLoader.js ' +
+  '--external:three --external:three/examples/jsm/* ' +
   `--outfile="${join(dir, 'bundle.js')}"`, { stdio: 'inherit' });
 
 // 3. página + servidor efêmero (conta requests p/ provar o LOD por tier)
 const PAGINA = `<!doctype html><html><head><meta charset="utf-8">
 <script type="importmap">{"imports":{
   "three": "/three/build/three.module.js",
-  "three/examples/jsm/loaders/GLTFLoader.js": "/three/examples/jsm/loaders/GLTFLoader.js"
+  "three/examples/jsm/loaders/GLTFLoader.js": "/three/examples/jsm/loaders/GLTFLoader.js",
+  "three/examples/jsm/utils/SkeletonUtils.js": "/three/examples/jsm/utils/SkeletonUtils.js",
+  "three/examples/jsm/controls/OrbitControls.js": "/three/examples/jsm/controls/OrbitControls.js"
 }}</script></head><body style="margin:0">
 <div id="palco" style="width:480px;height:480px"></div>
 <script type="module" src="/bundle.js"></script></body></html>`;

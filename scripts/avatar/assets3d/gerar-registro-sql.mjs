@@ -37,7 +37,7 @@ const sq = (v) => `'${String(v).replace(/\\/g, '\\\\').replace(/'/g, "''")}'`;
 /** Gera o SQL e devolve a string. Exportado p/ o teste (snapshot). */
 export function gerarRegistroSql(pastaPublicada, opcoes = {}) {
   const {
-    categoria = 'base', biblioteca = 'dshow_3d', raridade = 'comum',
+    categoria = 'rosto', biblioteca = 'cc0_quaternius', raridade = 'comum',
     status = 'aprovado', exigirValido = true,
   } = opcoes;
   const pasta = resolve(pastaPublicada);
@@ -51,6 +51,10 @@ export function gerarRegistroSql(pastaPublicada, opcoes = {}) {
   const hex = (lod) => String(manifest.hashes[lod]).replace(/^sha256:/, '');
   const peso = (arq) => statSync(join(pasta, arq)).size;
   const statusVersao = status === 'publicado' ? 'publicado' : 'aprovado';
+  // avatar_assets exige created_at/updated_at (DATETIME NOT NULL sem
+  // default) — literal DETERMINÍSTICO do manifest (nunca NOW(): o SQL
+  // gerado é snapshot-testável e re-rodável byte a byte)
+  const criadoEm = `${manifest.criado_em ?? '2026-01-01'} 00:00:00`;
 
   const linhasModelo = ['lod0', 'lod1', 'lod2'].map((lod) => {
     const arq = manifest.lods[lod];
@@ -68,15 +72,22 @@ export function gerarRegistroSql(pastaPublicada, opcoes = {}) {
 -- ══════════════════════════════════════════════════════════════
 START TRANSACTION;
 
--- 1. conferência (o operador vê o que existe ANTES)
+-- 1. conferência (o operador vê o que existe ANTES) + RESOLUÇÃO da
+-- taxonomia (id NULL aqui = chave errada; pare ANTES do INSERT falhar)
 SELECT id, \`key\`, name, status FROM avatar_assets WHERE \`key\` = ${sq(id)};
+SELECT
+  (SELECT id FROM avatar_categories WHERE \`key\` = ${sq(categoria)}) AS categoria_id,
+  (SELECT id FROM avatar_libraries  WHERE \`key\` = ${sq(biblioteca)}) AS biblioteca_id,
+  (SELECT id FROM avatar_rarities   WHERE \`key\` = ${sq(raridade)})  AS raridade_id;
 
 -- 2. asset base SE ausente (subselects por key — chave errada insere 0)
 INSERT INTO avatar_assets
   (category_id, library_id, rarity_id, \`key\`, name, short_description,
-   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer)
+   asset_type, status, thumbnail_url, preview_url, supported_renderers, default_renderer,
+   created_at, updated_at)
 SELECT c.id, b.id, r.id, ${sq(id)}, ${sq(manifest.nome ?? id)}, ${sq(`Personagem 3D (${manifest.origem})`)},
-       'glb', 'published', ${sq(url('thumb.webp'))}, ${sq(url('preview.webp'))}, '2d,3d', '3d'
+       'glb', 'published', ${sq(url('thumb.webp'))}, ${sq(url('preview.webp'))}, '2d,3d', '3d',
+       ${sq(criadoEm)}, ${sq(criadoEm)}
 FROM avatar_categories c, avatar_libraries b, avatar_rarities r
 WHERE c.\`key\` = ${sq(categoria)} AND b.\`key\` = ${sq(biblioteca)} AND r.\`key\` = ${sq(raridade)}
   AND NOT EXISTS (SELECT 1 FROM avatar_assets a WHERE a.\`key\` = ${sq(id)});
@@ -120,8 +131,8 @@ if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
   }
   try {
     const sql = gerarRegistroSql(pasta, {
-      categoria: argumento('categoria', 'base'),
-      biblioteca: argumento('biblioteca', 'dshow_3d'),
+      categoria: argumento('categoria', 'rosto'),
+      biblioteca: argumento('biblioteca', 'cc0_quaternius'),
       raridade: argumento('raridade', 'comum'),
       status: argumento('status', 'aprovado'),
     });

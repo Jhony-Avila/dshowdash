@@ -21,6 +21,8 @@ import {
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
 import { AvatarSvg } from './AvatarSvg';
+import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d';
+import type { EntradaIndice3d } from '../services/Personagens3d';
 import { Dica } from './Dica';
 import { FOCO_THUMB, comItem } from './GradeItens';
 
@@ -96,6 +98,15 @@ export function Vitrine({ config, desbloqueados, aoAplicar, aoAbrirColecoes }: {
 }) {
   const [dados, setDados] = useState<DadosVitrine | null>(null);
   const [erro, setErro] = useState(false);
+  // mega 14 (§23): personagens 3D na porta de entrada (cadeia registry→
+  // índice) — hooks AQUI no topo, antes dos early returns (rules of hooks;
+  // mesma lição do DetalheAsset)
+  const [personagens3d, setPersonagens3d] = useState<EntradaIndice3d[] | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    void carregarIndice3d().then((i) => { if (vivo) setPersonagens3d(i?.personagens ?? null); });
+    return () => { vivo = false; };
+  }, []);
   const [favs, setFavs] = useState<Set<string>>(favoritos);
   // experimento ativo: snapshot de ANTES + nome do último item vestido
   const [experimento, setExperimento] = useState<{ antes: AvatarConfig; nome: string } | null>(null);
@@ -173,6 +184,26 @@ export function Vitrine({ config, desbloqueados, aoAplicar, aoAbrirColecoes }: {
             </button>
           </span>
         </div>
+      )}
+
+      {/* mega 14 (§23): seção PERSONAGENS 3D — previews §508 publicados */}
+      {personagens3d && personagens3d.length > 0 && (
+        <section className="avst-vt-secao" aria-label="Personagens 3D" data-teste="vitrine-3d">
+          <header className="avst-vt-cab">
+            <h3>Personagens 3D</h3>
+            <p>Os curados do palco 3D — ligue a prévia no estúdio novo ou use na Foto.</p>
+          </header>
+          <div className="avst-vt-fila" role="list">
+            {personagens3d.map((p3) => (
+              <div key={p3.slug} role="listitem" className="avst-vt-card avst-vt-card-3d" title={p3.nome}>
+                <img src={`${BASE_PERSONAGENS_3D}/${p3.slug}/preview.webp`} alt={p3.nome}
+                  width={96} height={96} loading="lazy" />
+                <strong>{p3.nome}</strong>
+                <small>{(p3.animacoes ?? []).length} animações</small>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {dados.secoes.length === 0 && (
