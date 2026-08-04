@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Undo2, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
@@ -75,10 +75,40 @@ const ENQUADRAMENTOS: Partial<Record<CategoriaId, [number, number, number, numbe
   emblema: [108, 162, 92, 92],
 };
 
-/** R1 (P1 §9.3): fundos do palco por MODO. */
-const FUNDOS_PALCO = ['neutro', 'estudio', 'grade'] as const;
+/** R1 (P1 §9.3) + mega 60 (§160): CENÁRIOS do palco — os 3 clássicos
+ *  seguem intactos; dojo/neon/galáxia são os prioritários do briefing. */
+const FUNDOS_PALCO = ['neutro', 'estudio', 'grade', 'dojo', 'neon', 'galaxia'] as const;
 type FundoPalco = (typeof FUNDOS_PALCO)[number];
-const ROTULO_FUNDO: Record<FundoPalco, string> = { neutro: 'Neutro', estudio: 'Estúdio', grade: 'Grade' };
+const ROTULO_FUNDO: Record<FundoPalco, string> = {
+  neutro: 'Neutro', estudio: 'Estúdio', grade: 'Grade',
+  dojo: 'Dojo', neon: 'Neon', galaxia: 'Galáxia',
+};
+// mega 61 (§162): HORA DO DIA — modificador de luz do cenário
+const HORAS_PALCO = ['dia', 'tarde', 'noite'] as const;
+type HoraPalco = (typeof HORAS_PALCO)[number];
+const ROTULO_HORA: Record<HoraPalco, string> = { dia: 'Dia', tarde: 'Tarde', noite: 'Noite' };
+// mega 62 (§164): ILUMINAÇÃO 2D — presets de filtro sobre o avatar
+const LUZES_PALCO = ['neutra', 'quente', 'fria', 'dramatica'] as const;
+type LuzPalco = (typeof LUZES_PALCO)[number];
+const ROTULO_LUZ: Record<LuzPalco, string> = { neutra: 'Neutra', quente: 'Quente', fria: 'Fria', dramatica: 'Dramática' };
+const CHAVE_HORA = 'dshow.avst5.palco.hora.v1';
+const CHAVE_LUZ = 'dshow.avst5.palco.luz.v1';
+// mega 65 (§180): PRESETS DE APRESENTAÇÃO {fundo, hora, luz}
+const CHAVE_APRESENTACAO = 'dshow.avst5.apresentacao.v1';
+interface PresetApresentacao { id: string; nome: string; fundo: FundoPalco; hora: HoraPalco; luz: LuzPalco }
+function lerApresentacoes(): PresetApresentacao[] {
+  try {
+    const b = JSON.parse(localStorage.getItem(CHAVE_APRESENTACAO) ?? '[]');
+    return Array.isArray(b) ? b.filter((p): p is PresetApresentacao =>
+      !!p && typeof p.id === 'string' && typeof p.nome === 'string'
+      && (FUNDOS_PALCO as readonly string[]).includes(p.fundo)
+      && (HORAS_PALCO as readonly string[]).includes(p.hora)
+      && (LUZES_PALCO as readonly string[]).includes(p.luz)).slice(0, 6) : [];
+  } catch { return []; }
+}
+function gravarApresentacoes(l: PresetApresentacao[]): void {
+  try { localStorage.setItem(CHAVE_APRESENTACAO, JSON.stringify(l.slice(0, 6))); } catch { /* sem storage */ }
+}
 const DEGRAUS_ESQ = [64, 84, 176, 220, 280];
 
 function lerLarguras(): { esq: number; dir: number } {
@@ -212,6 +242,65 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     setFundo(f);
     try { localStorage.setItem(CHAVE_FUNDO, f); } catch { /* sem storage */ }
   };
+
+  // megas 61+62 (§162/§164): hora do dia + iluminação 2D (persistidas)
+  const [hora, setHora] = useState<HoraPalco>(() => {
+    try {
+      const h = localStorage.getItem(CHAVE_HORA) as HoraPalco | null;
+      return h && (HORAS_PALCO as readonly string[]).includes(h) ? h : 'dia';
+    } catch { return 'dia'; }
+  });
+  const [luz, setLuz] = useState<LuzPalco>(() => {
+    try {
+      const l = localStorage.getItem(CHAVE_LUZ) as LuzPalco | null;
+      return l && (LUZES_PALCO as readonly string[]).includes(l) ? l : 'neutra';
+    } catch { return 'neutra'; }
+  });
+  const trocarHora = (h: HoraPalco) => {
+    setHora(h);
+    telemetria('palco_hora', { hora: h }); // §290
+    try { localStorage.setItem(CHAVE_HORA, h); } catch { /* sem storage */ }
+  };
+  const trocarLuz = (l: LuzPalco) => {
+    setLuz(l);
+    telemetria('palco_luz', { luz: l }); // §290
+    try { localStorage.setItem(CHAVE_LUZ, l); } catch { /* sem storage */ }
+  };
+
+  // mega 63 (§153–§155): ATIVAR PODER — efeito/aura equipado explode no
+  // palco por ~2,6s (overlay isolado; nada muda no estado do avatar)
+  const [poderAtivo, setPoderAtivo] = useState<string | null>(null);
+  const idPoder = configVisivel.camadas.efeito ?? configVisivel.camadas.aura ?? null;
+  const ativarPoder = useCallback(() => {
+    if (!idPoder || poderAtivo) return;
+    setPoderAtivo(idPoder);
+    telemetria('palco_poder', { id: idPoder }); // §290
+    setTimeout(() => setPoderAtivo(null), 2600);
+  }, [idPoder, poderAtivo]);
+
+  // mega 65 (§180): presets de APRESENTAÇÃO (fundo+hora+luz num clique)
+  const [apresentacoes, setApresentacoes] = useState<PresetApresentacao[]>(lerApresentacoes);
+  const salvarApresentacao = useCallback(() => {
+    const atuais = lerApresentacoes();
+    if (atuais.length >= 6) return;
+    const nova: PresetApresentacao = {
+      id: `ap_${Date.now().toString(36)}`, nome: `Cena ${atuais.length + 1}`, fundo, hora, luz,
+    };
+    gravarApresentacoes([...atuais, nova]);
+    setApresentacoes(lerApresentacoes());
+    telemetria('palco_apresentacao_salvou', { fundo, hora, luz }); // §290
+  }, [fundo, hora, luz]);
+  const aplicarApresentacao = useCallback((p: PresetApresentacao) => {
+    trocarFundo(p.fundo);
+    trocarHora(p.hora);
+    trocarLuz(p.luz);
+    telemetria('palco_apresentacao_aplicou', { nome: p.nome }); // §290
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const excluirApresentacao = useCallback((id: string) => {
+    gravarApresentacoes(lerApresentacoes().filter((p) => p.id !== id));
+    setApresentacoes(lerApresentacoes());
+  }, []);
 
   // GradeItens fala AvatarConfig — cada escolha vira COMANDO com inverso
   const aplicarComando = useCallback((novo: AvatarConfig) => {
@@ -375,14 +464,26 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // Sequência automática (fade → aproxima → gira → composição §174.1),
   // ~6s (§174.2). A coreografia e o guard §297 vivem no Motion System §285.
   const [apresentando, setApresentando] = useState(false);
+  // mega 66 (§185): HISTÓRICO de apresentação — última cena usada em
+  // showcase/captura fica registrada e volta num clique
+  const [ultimaCena, setUltimaCena] = useState<{ fundo: FundoPalco; hora: HoraPalco; luz: LuzPalco } | null>(() => {
+    try { return JSON.parse(localStorage.getItem('dshow.avst5.apresentacao.ultima.v1') ?? 'null'); } catch { return null; }
+  });
+  const registrarApresentacao = useCallback((tipo: 'showcase' | 'captura') => {
+    const cena = { fundo, hora, luz };
+    setUltimaCena(cena);
+    telemetria('palco_apresentou', { tipo, ...cena }); // §290/§185
+    try { localStorage.setItem('dshow.avst5.apresentacao.ultima.v1', JSON.stringify(cena)); } catch { /* sem storage */ }
+  }, [fundo, hora, luz]);
   const apresentar = useCallback(async () => {
     if (apresentando) return;
     setApresentando(true);
     setModo('studio');
+    registrarApresentacao('showcase'); // mega 66
     await new Promise((r) => setTimeout(r, 80)); // studio monta primeiro
     await sequencia(document.querySelector('.avst5-zoom'), SHOWCASE_174);
     setApresentando(false);
-  }, [apresentando]);
+  }, [apresentando, registrarApresentacao]);
 
   // §174.1 item 11: CAPTURA do palco em PNG (rasterização local, como na Foto)
   const capturarPalco = useCallback(async () => {
@@ -405,10 +506,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         a.download = 'dshow-showcase-960px.png';
         a.click();
         telemetria('showcase_captura');
+        registrarApresentacao('captura'); // mega 66 (§185)
       }
       URL.revokeObjectURL(url);
     } catch { /* captura é conveniência — nunca quebra o shell */ }
-  }, []);
+  }, [registrarApresentacao]);
 
   // §548/§561 (P9) + §297: ANUNCIADOR de ações — feedback visível e lido
   // por screen reader (aria-live) para equipar/desfazer/refazer
@@ -595,7 +697,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             onPointerDown={(e) => { arraste.current = { lado: 'esq', x0: e.clientX, w0: larguras.esq }; }} />
 
           {/* viewport dominante (R1) — SEM scroll de página (R5) */}
-          <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}>
+          <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}
+            data-hora={hora} data-luz={luz}>
             {palco3d ? (
               <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d}
                 aoUsarComoAvatar={aoSalvarFotoLegado} />
@@ -612,6 +715,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {celebrando && (
               <div className="avst5-celebracao" aria-hidden data-teste="celebracao"
                 dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado('efe_confete') }} />
+            )}
+            {poderAtivo && (
+              <div className="avst5-celebracao avst5-poder" aria-hidden data-teste="poder-ativo"
+                dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado(poderAtivo, configVisivel.cores.destaque) }} />
             )}
             {anuncio && !comparando && (
               <div className="avst5-anuncio" role="status" aria-live="polite">{anuncio}</div>
@@ -661,6 +768,36 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 <Camera size={13} aria-hidden /> Capturar
               </button>
             )}
+            {modo === 'studio' && (
+              <button type="button" className="avst5-comparar avst5-poder-btn" data-teste="ativar-poder"
+                title={idPoder ? 'Ativar o poder equipado (§154)' : 'Equipe um efeito ou aura para ativar'}
+                disabled={!idPoder || poderAtivo !== null}
+                onClick={ativarPoder}>
+                <Sparkles size={13} aria-hidden /> Poder
+              </button>
+            )}
+            {modo === 'studio' && (
+              <div className="avst5-apresenta" data-teste="apresentacoes">
+                <span>Cenas:</span>
+                {apresentacoes.map((p) => (
+                  <span key={p.id} className="avst5-apresenta-item">
+                    <button type="button" title={`${ROTULO_FUNDO[p.fundo]} · ${ROTULO_HORA[p.hora]} · ${ROTULO_LUZ[p.luz]}`}
+                      onClick={() => aplicarApresentacao(p)}>{p.nome}</button>
+                    <button type="button" aria-label={`Excluir ${p.nome}`}
+                      onClick={() => excluirApresentacao(p.id)}>×</button>
+                  </span>
+                ))}
+                <button type="button" data-teste="apresentacao-salvar" disabled={apresentacoes.length >= 6}
+                  title="Guardar fundo+hora+luz atuais como cena (§180)"
+                  onClick={salvarApresentacao}>+ salvar</button>
+                {ultimaCena && (ultimaCena.fundo !== fundo || ultimaCena.hora !== hora || ultimaCena.luz !== luz) && (
+                  <button type="button" data-teste="apresentacao-ultima"
+                    title="Voltar à cena da última apresentação (§185)"
+                    onClick={() => { trocarFundo(ultimaCena.fundo); trocarHora(ultimaCena.hora); trocarLuz(ultimaCena.luz); }}>
+                    ↺ última</button>
+                )}
+              </div>
+            )}
             {modo === 'studio' && configVisivel.titulo && (
               <div className="avst5-titulo-selo" role="note">{String(configVisivel.titulo).replace(/^tit_/, '').replace(/_/g, ' ')}</div>
             )}
@@ -673,11 +810,25 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   onClick={() => trocarTema(x.id)} />
               ))}
             </div>
-            <div className="avst5-fundos" role="radiogroup" aria-label="Fundo do palco">
+            <div className="avst5-fundos" role="radiogroup" aria-label="Cenário do palco (§160)" data-teste="cenarios-2d">
               {FUNDOS_PALCO.map((f) => (
                 <button key={f} type="button" role="radio" aria-checked={fundo === f}
                   className={fundo === f ? 'avst5-fundo-on' : ''}
                   onClick={() => trocarFundo(f)}>{ROTULO_FUNDO[f]}</button>
+              ))}
+            </div>
+            <div className="avst5-fundos avst5-horas" role="radiogroup" aria-label="Hora do dia (§162)" data-teste="horas-2d">
+              {HORAS_PALCO.map((h) => (
+                <button key={h} type="button" role="radio" aria-checked={hora === h}
+                  className={hora === h ? 'avst5-fundo-on' : ''}
+                  onClick={() => trocarHora(h)}>{ROTULO_HORA[h]}</button>
+              ))}
+            </div>
+            <div className="avst5-fundos avst5-luzes" role="radiogroup" aria-label="Iluminação (§164)" data-teste="luzes-2d">
+              {LUZES_PALCO.map((l) => (
+                <button key={l} type="button" role="radio" aria-checked={luz === l}
+                  className={luz === l ? 'avst5-fundo-on' : ''}
+                  onClick={() => trocarLuz(l)}>{ROTULO_LUZ[l]}</button>
               ))}
             </div>
             <BarraSalvamento store={store} aoSalvar={async () => {

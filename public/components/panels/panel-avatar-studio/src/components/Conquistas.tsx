@@ -1,8 +1,7 @@
 // components/Conquistas.tsx — conquistas reais + eventos sazonais.
-// @version 2.0.0  @created 2026-07-30  @updated 2026-07-30 (4.6 §8.3, Onda 4)
-//
-// v2 — 30 conquistas em 5 CATEGORIAS, cada uma com BARRA DE PROGRESSO
-// auditável (atual/alvo vem do servidor, calculado só de dados reais).
+// @version 3.0.0  @created 2026-07-30  @updated 2026-08-04 (mega 68:
+// FILTROS todas/feitas/pendentes + faixa de estatísticas §218–§221)
+import { useState } from 'react';
 import { CalendarDays, Gift, Lock, Trophy } from 'lucide-react';
 import type { Conquista } from '../domain/types';
 import { RARIDADES, itemPorId } from '../services/AvatarCatalog';
@@ -52,7 +51,11 @@ function CardConquista({ c }: { c: Conquista }) {
   );
 }
 
+type FiltroConq = 'todas' | 'feitas' | 'pendentes';
+
 export function Conquistas({ vida, carregando = false }: { vida: Vida | null; carregando?: boolean }) {
+  // mega 68 (§218): filtro — hooks ANTES de qualquer early return
+  const [filtro, setFiltro] = useState<FiltroConq>('todas');
   // §557: carregar ≠ falhar — enquanto a vida não RESOLVE, skeleton
   if (!vida && carregando) {
     return (
@@ -86,21 +89,46 @@ export function Conquistas({ vida, carregando = false }: { vida: Vida | null; ca
         <Trophy size={13} aria-hidden /> {feitas}/{vida.conquistas.length} conquistas ({pctGeral}%) — todas medidas em dados reais do seu uso.
       </p>
 
+      {/* mega 68 (§221): faixa de ESTATÍSTICAS por categoria */}
+      <div className="avst-conq-stats" data-teste="conq-stats" role="list" aria-label="Estatísticas por categoria">
+        {CATEGORIAS_CONQ.map((cat) => {
+          const doGrupo = vida.conquistas.filter((c) => c.categoria === cat.id);
+          if (doGrupo.length === 0) return null;
+          const ok = doGrupo.filter((c) => c.conquistada).length;
+          return (
+            <span key={cat.id} role="listitem" title={`${cat.nome}: ${ok}/${doGrupo.length}`}>
+              {cat.nome} <strong>{Math.round((ok / doGrupo.length) * 100)}%</strong>
+            </span>
+          );
+        })}
+      </div>
+
+      {/* mega 68 (§218): FILTRO todas/feitas/pendentes */}
+      <div className="avst-conq-filtros" role="radiogroup" aria-label="Filtrar conquistas" data-teste="conq-filtros">
+        {([['todas', 'Todas'], ['feitas', 'Conquistadas'], ['pendentes', 'Pendentes']] as Array<[FiltroConq, string]>).map(([id, nome]) => (
+          <button key={id} type="button" role="radio" aria-checked={filtro === id}
+            className={`avst-ft-chip ${filtro === id ? 'avst-ft-chip-ativo' : ''}`}
+            onClick={() => setFiltro(id)}>{nome}</button>
+        ))}
+      </div>
+
       {CATEGORIAS_CONQ.map((cat) => {
-        const doGrupo = vida.conquistas.filter((c) => c.categoria === cat.id);
+        const doGrupo = vida.conquistas.filter((c) => c.categoria === cat.id
+          && (filtro === 'todas' || (filtro === 'feitas' ? c.conquistada : !c.conquistada)));
         if (doGrupo.length === 0) return null;
         const ok = doGrupo.filter((c) => c.conquistada).length;
         return (
           <section key={cat.id} className="avst-conq-grupo" aria-label={cat.nome}>
             <h3 className="avst-cores-titulo avst-conq-cab">
-              {cat.nome} <em>{ok}/{doGrupo.length}</em>
+              {cat.nome} <em>{filtro === 'todas' ? `${ok}/${doGrupo.length}` : `${doGrupo.length}`}</em>
             </h3>
             {doGrupo.map((c) => <CardConquista key={c.id} c={c} />)}
           </section>
         );
       })}
       {/* conquistas de categorias futuras (fontes novas, ex.: Pipedrive) */}
-      {vida.conquistas.filter((c) => !CATEGORIAS_CONQ.some((k) => k.id === c.categoria))
+      {vida.conquistas.filter((c) => !CATEGORIAS_CONQ.some((k) => k.id === c.categoria)
+        && (filtro === 'todas' || (filtro === 'feitas' ? c.conquistada : !c.conquistada)))
         .map((c) => <CardConquista key={c.id} c={c} />)}
 
       <h3 className="avst-cores-titulo" style={{ marginTop: 14 }}>

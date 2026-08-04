@@ -136,6 +136,27 @@ export interface Preset {
 // ── Foto estilizada (4.6 §21) ───────────────────────────────────────
 // A foto só recebe assets de APRESENTAÇÃO — nunca roupa/corpo.
 
+/** Megas 51–54 (§333/§334/§337/§340): ajustes NÃO destrutivos da foto.
+ *  Todo campo é opcional e o VALOR NEUTRO é omitido — estilo sem ajustes
+ *  rende byte a byte igual ao de antes (fotos já salvas intocadas). */
+export interface AjustesFoto {
+  /** 0.5–1.5 · 1 = neutro */
+  brilho?: number;
+  /** 0.5–1.5 · 1 = neutro */
+  contraste?: number;
+  /** 0–2 · 1 = neutro */
+  saturacao?: number;
+  /** -1 (fria) … 1 (quente) · 0 = neutro */
+  temperatura?: number;
+  /** 0–1 · 0 = sem vinheta */
+  vinheta?: number;
+  /** graus -180…180 · 0 = neutro (gira a FOTO dentro do medalhão) */
+  rotacao?: number;
+  espelhar?: boolean;
+  /** §337: sombra de contato sob o medalhão */
+  sombra?: boolean;
+}
+
 export interface EstiloFoto {
   camadas: {
     fundo?: string;
@@ -147,6 +168,8 @@ export interface EstiloFoto {
   };
   titulo?: string;
   cores: { destaque: string };
+  /** megas 51–54 — ausente = sem ajustes (render idêntico ao legado) */
+  ajustes?: AjustesFoto;
 }
 
 // ── Histórico / favoritos / conquistas ──────────────────────────────

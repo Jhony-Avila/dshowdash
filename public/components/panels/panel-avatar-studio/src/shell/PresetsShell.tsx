@@ -6,9 +6,9 @@
 // favoritar, duplicar e excluir. Thumbnail = render estático do próprio
 // config (determinístico — mesma fonte de verdade do palco).
 import { useRef, useState } from 'react';
-import { BookmarkPlus, Copy, HardDriveDownload, HardDriveUpload, Star, Trash2, TrendingUp } from 'lucide-react';
+import { BookmarkPlus, Copy, HardDriveDownload, HardDriveUpload, Scale, Star, Trash2, TrendingUp, X } from 'lucide-react';
 import type { AvatarConfig } from '../domain/types';
-import { dataUriDe } from '../services/AvatarCatalog';
+import { dataUriDe, itemPorId } from '../services/AvatarCatalog';
 import {
   alternarFavoritoPreset, duplicarPreset, excluirPreset, listarPresets, salvarPreset,
 } from '../services/PresetsPessoais';
@@ -25,8 +25,27 @@ export function PresetsShell({ configAtual, aoAplicar }: {
   // mega 38: feedback do import de backup (avisos de itens descartados)
   const [avisoBackup, setAvisoBackup] = useState('');
   const refArquivo = useRef<HTMLInputElement>(null);
+  // mega 69 (§231): COMPARAÇÃO — escolha 2 presets p/ ver lado a lado
+  const [comparar, setComparar] = useState<string[]>([]);
+  const alternarComparar = (id: string) => {
+    setComparar((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c.slice(-1), id]));
+  };
   const presets = listarPresets();
+  const [cmpA, cmpB] = comparar.map((id) => presets.find((p) => p.id === id)).filter(Boolean);
   void tic;
+
+  /** mega 69: diferenças camada a camada entre dois configs. */
+  const diferencas = (a: AvatarConfig, b: AvatarConfig): Array<{ slot: string; de: string; para: string }> => {
+    const chaves = new Set([...Object.keys(a.camadas), ...Object.keys(b.camadas)]);
+    const saida: Array<{ slot: string; de: string; para: string }> = [];
+    for (const k of chaves) {
+      const va = (a.camadas as Record<string, string | undefined>)[k];
+      const vb = (b.camadas as Record<string, string | undefined>)[k];
+      if (va !== vb) saida.push({ slot: k, de: va ?? '—', para: vb ?? '—' });
+    }
+    if (a.base !== b.base) saida.unshift({ slot: 'base', de: a.base, para: b.base });
+    return saida;
+  };
 
   const salvar = () => {
     if (salvarPreset(nome, configAtual)) { setNome(''); setTic((t) => t + 1); }
@@ -88,6 +107,34 @@ export function PresetsShell({ configAtual, aoAplicar }: {
           onChange={(e) => void importar(e.target.files?.[0])} />
         {avisoBackup && <p className="avst5-backup-aviso" role="status" data-teste="backup-aviso">{avisoBackup}</p>}
       </div>
+      {/* mega 69 (§231): painel de comparação — aparece com 2 escolhidos */}
+      {cmpA && cmpB && (
+        <div className="avst5-cmp-presets" data-teste="presets-comparar">
+          <header>
+            <strong><Scale size={13} aria-hidden /> {cmpA.nome} × {cmpB.nome}</strong>
+            <button type="button" aria-label="Fechar comparação" onClick={() => setComparar([])}>
+              <X size={13} aria-hidden /></button>
+          </header>
+          <div className="avst5-cmp-lado-a-lado">
+            {[cmpA, cmpB].map((p) => (
+              <figure key={p.id}>
+                <img src={dataUriDe(p.config, { estatico: true, tamanho: 128 })} alt={p.nome} width={96} height={96} />
+                <figcaption>{p.nome}</figcaption>
+              </figure>
+            ))}
+          </div>
+          <ul className="avst5-cmp-difs" data-teste="presets-difs">
+            {diferencas(cmpA.config, cmpB.config).map((d) => (
+              <li key={d.slot}>
+                <em>{d.slot}</em>
+                <span>{itemPorId(d.de)?.nome ?? d.de} → {itemPorId(d.para)?.nome ?? d.para}</span>
+              </li>
+            ))}
+            {diferencas(cmpA.config, cmpB.config).length === 0 && <li>Idênticos nas camadas — só cores/props mudam.</li>}
+          </ul>
+        </div>
+      )}
+
       {presets.length === 0 ? (
         <p className="avst5-presets-vazio">
           Sua biblioteca está vazia. Monte um look e salve como preset — ele
@@ -109,6 +156,12 @@ export function PresetsShell({ configAtual, aoAplicar }: {
                 </span>
               </button>
               <span className="avst5-preset-acoes">
+                <button type="button" title="Comparar com outro preset (§231)"
+                  className={comparar.includes(p.id) ? 'avst5-eq-on' : ''}
+                  data-teste="preset-comparar"
+                  onClick={() => alternarComparar(p.id)}>
+                  <Scale size={13} aria-hidden />
+                </button>
                 <button type="button" title={p.favorito ? 'Tirar dos favoritos' : 'Favoritar'}
                   className={p.favorito ? 'avst5-eq-on' : ''}
                   onClick={() => { alternarFavoritoPreset(p.id); setTic((t) => t + 1); }}>

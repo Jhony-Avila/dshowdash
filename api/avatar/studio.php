@@ -203,7 +203,35 @@ function avst_validar_config_foto($bruto): ?array
     if (is_string($titulo) && preg_match($reId, $titulo)) {
         $saida['titulo'] = $titulo;
     }
-    return $camadas === [] && !isset($saida['titulo']) ? null : $saida;
+    // megas 51–54: AJUSTES não destrutivos — números clampados campo a
+    // campo (entrada hostil vira neutro e some); nada além da whitelist.
+    $aj = $bruto['ajustes'] ?? null;
+    if (is_array($aj)) {
+        $clamp = function ($v, float $min, float $max, float $neutro): float {
+            return is_numeric($v) ? max($min, min($max, (float) $v)) : $neutro;
+        };
+        $limpo = [];
+        $mapa = [
+            'brilho' => [0.5, 1.5, 1.0], 'contraste' => [0.5, 1.5, 1.0],
+            'saturacao' => [0.0, 2.0, 1.0], 'temperatura' => [-1.0, 1.0, 0.0],
+            'vinheta' => [0.0, 1.0, 0.0], 'rotacao' => [-180.0, 180.0, 0.0],
+        ];
+        foreach ($mapa as $campo => [$min, $max, $neutro]) {
+            $v = $clamp($aj[$campo] ?? null, $min, $max, $neutro);
+            if ($v !== $neutro) {
+                $limpo[$campo] = $v;
+            }
+        }
+        foreach (['espelhar', 'sombra'] as $campo) {
+            if (($aj[$campo] ?? null) === true) {
+                $limpo[$campo] = true;
+            }
+        }
+        if ($limpo !== []) {
+            $saida['ajustes'] = $limpo;
+        }
+    }
+    return $camadas === [] && !isset($saida['titulo']) && !isset($saida['ajustes']) ? null : $saida;
 }
 
 /**

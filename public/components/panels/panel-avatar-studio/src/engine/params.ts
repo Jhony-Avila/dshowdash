@@ -38,6 +38,14 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
   emblema: [
     { id: 'escala', nome: 'Escala', min: 0.6, max: 1.5, passo: 0.05, padrao: 1 },
   ],
+  // mega 64 (§166–§172): editores de MOLDURA e BANNER — intensidade usa o
+  // wrapper genérico <g opacity>; escala fica de fora (deformaria o quadro)
+  moldura: [
+    { id: 'intensidade', nome: 'Intensidade', min: 0.3, max: 1, passo: 0.05, padrao: 1 },
+  ],
+  banner: [
+    { id: 'intensidade', nome: 'Intensidade', min: 0.3, max: 1, passo: 0.05, padrao: 1 },
+  ],
 };
 
 /** Centro geométrico para transformações de escala, por categoria (viewBox 240×240). */
