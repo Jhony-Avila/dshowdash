@@ -354,3 +354,45 @@ Testes: shell-palco3d v2(=v5 funcional) — pixel do canto prova a troca
 de fundo, drag da órbita, freeze/retomar, ficha 1920² interceptada,
 marca, HUD, usar-avatar; renderizador3d.test com OrbitControls no
 import-map. Suíte: 31/31 + núcleo verdes.
+
+## MEGAS 31–40 "Estúdio Criativo & Governança" (lote de 10) · 2026-08-04
+
+✅ 31 CENAS DO PALCO (§136-3D) — Cenas3d.ts no molde PresetsPessoais
+   (localStorage versionado dshow.avst5.p3d.cenas.v1, máx 8, sanitização
+   de DOMÍNIO por campo); chips salvar/aplicar/excluir no cenário.
+✅ 32 CAPTURA TRANSPARENTE (§21×§325) — capturar() honra transparente:
+   true (o contrato §401 já previa; o 3D ignorava): background null +
+   chão/grade ocultos SÓ no frame, restaura e re-renderiza (nada vaza
+   p/ o palco). PNG alpha pronto p/ compor no Photo Studio.
+✅ 33 TURNTABLE 360° (§508) — folha 4×2 (1920×960) com 8 azimutes
+   determinísticos; dshow-turntable-<slug>.png; câmera restaurada.
+✅ 34 QUALIDADE MANUAL (§423) — chips Auto/Alta/Média/Econ. →
+   definirQualidade; persistida; Auto continua o adaptativo §528; a
+   nota diferencia "econômica" (manual) de "econômica (auto)".
+✅ 35 PALETA §566 + 3D — ações injetadas: ligar/desligar prévia 3D
+   (flag-gated) e abrir a folha de atalhos.
+✅ 36 VÍDEO NA CASCATA §21.5 — compartilharBlob (PNG delega); gravação
+   WebM compartilhável. BUG REAL pego pelo teste: clipboard.write com
+   vídeo fica PENDENTE p/ SEMPRE no Chromium (nem resolve nem rejeita)
+   → cascata estalava; fix: clipboard SÓ image/* + guarda de 2,5s.
+✅ 37 FOLHA DE ATALHOS (§548/§583) — "?" abre overlay acessível
+   data-driven (2D+3D); Esc fecha; fora de campos de texto.
+✅ 38 BACKUP EXPORT/IMPORT (governança) — JSON versionado com config +
+   presets + cenas 3D; interpretarBackup PURA e ESTRITA (formato/versão
+   conferidos, config re-sanitizado — ID inventado NUNCA entra, lixo
+   descartado e contado no aviso); aplicar config vira COMANDO (undo);
+   substituirPresets/substituirCenas p/ restauração íntegra.
+✅ 39 MODO APRESENTAÇÃO — fullscreen no contêiner do palco 3D
+   (fullscreenchange, aria-pressed, CSS :fullscreen, fail-safe sem API).
+   Aprendizado de teste: Esc SINTÉTICO não sai do fullscreen (gesto de
+   UI confiável) — o teste sai pelo próprio botão.
+✅ 40 CONSOLIDAÇÃO — suíte 33/33 + núcleo (interpretarBackup coberto em
+   node puro); pesos no gate (entry 232/265 — teto subiu de 240 com
+   justificativa no commit; motor3d/renderizador inalterados); fix
+   LATENTE da mega 26 (deps do capturar3d congelavam o comMarca — marca
+   OFF não valia na captura); docs do projeto atualizados; este registro.
+
+Testes novos: shell-palco3d-criativo (alpha do canto=0 na transparente,
+cena roundtrip Grade+Neon, turntable interceptado, fullscreen) e
+shell-atalhos-backup (export parseado, import com descarte contado,
+arquivo inválido recusado sem tocar a biblioteca). Suíte: 33/33 + núcleo.
