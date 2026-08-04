@@ -439,7 +439,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // sockets 3D (a mesma API recebe as malhas reais quando o UBC chegar)
   const aproximados = useMemo(() => {
     let n = 0;
-    if (estado.equipment.acessorio_cabeca || estado.equipment.acessorio) n += 1;
+    if (estado.equipment.acessorio_cabeca) n += 1;
     if (estado.equipment.acessorio_rosto) n += 1;
     if (estado.equipment.pet) n += 1;
     return n;
@@ -449,7 +449,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     const r = refR.current as unknown as { definirProp3d?: (s: string, t: string | null, c?: string) => void };
     if (!r?.definirProp3d) return;
     const cor = config2d.cores.destaque;
-    const cabeca = estado.equipment.acessorio_cabeca ?? estado.equipment.acessorio;
+    const cabeca = estado.equipment.acessorio_cabeca; // legado migra p/ cá no deLegado2d
     r.definirProp3d('cabeca', cabeca ? (String(cabeca).includes('coroa') ? 'coroa' : 'chapeu') : null, cor);
     r.definirProp3d('rosto', estado.equipment.acessorio_rosto ? 'oculos' : null, cor);
     r.definirProp3d('pet', estado.equipment.pet ? 'pet' : null, cor);
