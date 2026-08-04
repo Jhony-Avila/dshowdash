@@ -52,7 +52,8 @@ const PAGINA = `<!doctype html><html><head><meta charset="utf-8">
 <script type="importmap">{"imports":{
   "three": "/three/build/three.module.js",
   "three/examples/jsm/loaders/GLTFLoader.js": "/three/examples/jsm/loaders/GLTFLoader.js",
-  "three/examples/jsm/utils/SkeletonUtils.js": "/three/examples/jsm/utils/SkeletonUtils.js"
+  "three/examples/jsm/utils/SkeletonUtils.js": "/three/examples/jsm/utils/SkeletonUtils.js",
+  "three/examples/jsm/controls/OrbitControls.js": "/three/examples/jsm/controls/OrbitControls.js"
 }}</script></head><body style="margin:0">
 <div id="palco" style="width:480px;height:480px"></div>
 <script type="module" src="/bundle.js"></script></body></html>`;

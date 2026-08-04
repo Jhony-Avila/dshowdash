@@ -18,6 +18,7 @@
 // nasce junto do catálogo 3D povoado (§614).
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type {
   CapturaRender, EstadoCamera, InicializacaoRenderer, OpcoesCaptura,
   PedidoAnimacao, PedidoPoder, RenderizadorAvatar, ResultadoAplicarEstado,
@@ -61,6 +62,15 @@ export class Renderizador3d implements RenderizadorAvatar {
   private orbitaAuto = false;
   // câmera ATUAL memorizada — reload adaptativo (§528) não pode resetá-la
   private cameraAtual: EstadoCamera = { modo: 'corpo' };
+  // mega 21/22: fundo e luz do palco (paridade §9.3 / presets §163-lite)
+  private fundoAtual: 'neutro' | 'estudio' | 'grade' = 'estudio';
+  private grade: THREE.GridHelper | null = null;
+  private chao: THREE.Mesh | null = null;
+  private luzes: { chave: THREE.DirectionalLight; preencher: THREE.DirectionalLight; ambiente: THREE.AmbientLight } | null = null;
+  // mega 23: órbita MANUAL (drag/zoom) — só no modo câmera 'orbita'
+  private controles: OrbitControls | null = null;
+  // mega 28: última média de FPS p/ o diagnostico() (HUD §290)
+  private fpsMedia = 0;
   // mega 16 (§528): QUALIDADE ADAPTATIVA — média móvel de FPS decide o
   // tier quando qualidade === 'auto' (histerese: desce <30, sobe >55)
   private tierAuto: QualidadeTier = 'medio';
@@ -110,12 +120,21 @@ export class Renderizador3d implements RenderizadorAvatar {
 
     // cena canônica — MESMA luz do §508 (thumbs): palco e thumb conversam
     this.cena = new THREE.Scene();
-    this.cena.background = new THREE.Color(FUNDO_ESTUDIO);
     const chave = new THREE.DirectionalLight(0xffffff, 2.6);
     chave.position.set(2.2, 3.0, 2.6);
     const preencher = new THREE.DirectionalLight(0x9db4ff, 1.1);
     preencher.position.set(-2.4, 1.2, -1.6);
-    this.cena.add(chave, preencher, new THREE.AmbientLight(0xffffff, 0.55));
+    const ambiente = new THREE.AmbientLight(0xffffff, 0.55);
+    this.luzes = { chave, preencher, ambiente };
+    this.cena.add(chave, preencher, ambiente);
+    // mega 21: CHÃO com sombra fake — disco escuro ancora o personagem
+    this.chao = new THREE.Mesh(
+      new THREE.CircleGeometry(0.85, 48).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.34 }),
+    );
+    this.chao.position.y = 0.01;
+    this.cena.add(this.chao);
+    this.definirFundo(this.fundoAtual);
     this.camera = new THREE.PerspectiveCamera(32, l / a, 0.01, 100);
 
     if (this.ultimoEstado) await this.aplicarEstado(this.ultimoEstado);
@@ -146,6 +165,19 @@ export class Renderizador3d implements RenderizadorAvatar {
   definirCamera(camera: EstadoCamera): void {
     this.cameraAtual = camera;
     if (!this.camera || !this.personagem) return;
+    // mega 23 (§453): modo 'orbita' liga o controle MANUAL (drag+wheel)
+    if (camera.modo === 'orbita' && this.renderer) {
+      if (!this.controles) {
+        this.controles = new OrbitControls(this.camera, this.renderer.domElement);
+        this.controles.enableDamping = true;
+        this.controles.dampingFactor = 0.08;
+        this.controles.minDistance = 0.6;
+        this.controles.maxDistance = 8;
+      }
+      this.controles.enabled = true;
+    } else if (this.controles) {
+      this.controles.enabled = false;
+    }
     const caixa = new THREE.Box3().setFromObject(this.personagem);
     const centro = caixa.getCenter(new THREE.Vector3());
     const tamanho = caixa.getSize(new THREE.Vector3());
@@ -243,6 +275,8 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.clipes.clear();
     this.cacheGlb.clear();
     this.removerPersonagem();
+    this.controles?.dispose();
+    this.controles = null;
     if (this.renderer) {
       this.renderer.dispose();
       this.renderer.forceContextLoss();
@@ -254,6 +288,48 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   // ── privados ────────────────────────────────────────────────────
+  /** mega 21 (§9.3): fundo do palco 3D — paridade com o 2D. */
+  definirFundo(fundo: 'neutro' | 'estudio' | 'grade'): void {
+    this.fundoAtual = fundo;
+    if (!this.cena) return;
+    const cores = { neutro: '#161a24', estudio: FUNDO_ESTUDIO, grade: '#0a0d15' } as const;
+    this.cena.background = new THREE.Color(cores[fundo]);
+    if (fundo === 'grade' && !this.grade) {
+      this.grade = new THREE.GridHelper(8, 32, 0x2c3550, 0x1a2030);
+      this.cena.add(this.grade);
+    } else if (fundo !== 'grade' && this.grade) {
+      this.cena.remove(this.grade);
+      this.grade.dispose();
+      this.grade = null;
+    }
+  }
+
+  /** mega 22 (§163-lite): presets de ILUMINAÇÃO sobre as luzes canônicas. */
+  definirLuz(preset: 'estudio' | 'quente' | 'fria' | 'neon'): void {
+    if (!this.luzes) return;
+    const { chave, preencher, ambiente } = this.luzes;
+    const aplicar = (cChave: number, iChave: number, cPre: number, iPre: number, iAmb: number) => {
+      chave.color.setHex(cChave); chave.intensity = iChave;
+      preencher.color.setHex(cPre); preencher.intensity = iPre;
+      ambiente.intensity = iAmb;
+    };
+    if (preset === 'quente') aplicar(0xffd9a0, 2.9, 0xff9d5c, 0.9, 0.5);
+    else if (preset === 'fria') aplicar(0xcfe4ff, 2.7, 0x6c8cff, 1.2, 0.45);
+    else if (preset === 'neon') aplicar(0xff5f8f, 2.4, 0x4cd9e8, 1.6, 0.35);
+    else aplicar(0xffffff, 2.6, 0x9db4ff, 1.1, 0.55);
+  }
+
+  /** mega 28 (§290): números vivos p/ o HUD de dev. */
+  diagnostico(): { fps: number; tier: string; triangulos: number } {
+    return {
+      fps: Math.round(this.fpsMedia),
+      tier: this.tierEfetivo(),
+      triangulos: this.manifest?.triangulos?.[
+        { alto: 'lod0', medio: 'lod1', economico: 'lod2' }[this.tierEfetivo()] as 'lod0'
+      ] ?? 0,
+    };
+  }
+
   /** Tier EFETIVO: 'auto' delega ao adaptativo (mega 16). */
   private tierEfetivo(): QualidadeTier {
     return this.qualidade === 'auto' ? this.tierAuto : this.qualidade;
@@ -330,6 +406,10 @@ export class Renderizador3d implements RenderizadorAvatar {
         this.poseBase.set(n.name, n.quaternion.clone());
       }
     });
+    if (this.controles) {
+      const caixa = new THREE.Box3().setFromObject(this.personagem);
+      this.controles.target.copy(caixa.getCenter(new THREE.Vector3()));
+    }
     this.definirCamera(this.cameraAtual); // preserva órbita/retrato no reload §528
   }
 
@@ -378,6 +458,7 @@ export class Renderizador3d implements RenderizadorAvatar {
       if (dt > 0 && dt < 1000) { this.fpsSoma += 1000 / dt; this.fpsN += 1; }
       if (this.fpsN >= 90) {
         const media = this.fpsSoma / this.fpsN;
+        this.fpsMedia = media;
         this.fpsSoma = 0; this.fpsN = 0;
         if (this.qualidade === 'auto') {
           if (media < 30 && this.tierAuto !== 'economico') {
@@ -395,7 +476,10 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.fpsUltimo = agora;
     this.animarIdle();
     this.mixer?.update(1 / 60);
-    if (this.orbitaAuto && this.personagem) {
+    if (this.controles?.enabled) {
+      // alvo do orbit acompanha o personagem (uma vez por frame é barato)
+      this.controles.update();
+    } else if (this.orbitaAuto && this.personagem) {
       const caixa = new THREE.Box3().setFromObject(this.personagem);
       const centro = caixa.getCenter(new THREE.Vector3());
       const maior = Math.max(...caixa.getSize(new THREE.Vector3()).toArray());
