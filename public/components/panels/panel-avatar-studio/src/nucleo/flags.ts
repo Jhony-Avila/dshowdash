@@ -15,6 +15,7 @@ const PADROES: Record<string, boolean> = {
   'as5.palco3d': true,           // mega 7 — LIGADA no rollout §650 (o motor 3D segue opt-in: só carrega no clique do botão)
   'as5.hud3d': false,            // mega 28 — HUD de performance do palco 3D (dev)
   'as5.telemetria_painel': false, // mega 46 — viewer local de telemetria (dev)
+  'as5.consultor': true,          // lote 121–130 — consultor de estilo POR REGRAS (client-only; §651 desliga)
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

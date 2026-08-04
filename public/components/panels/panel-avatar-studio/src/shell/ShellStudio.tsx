@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
@@ -27,6 +27,7 @@ import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
+import { Consultor } from './Consultor';
 import { Atalhos } from './Atalhos';
 import { TelemetriaDev } from './TelemetriaDev';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
@@ -513,6 +514,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // mega 46 (§290): viewer local de telemetria (flag dev)
   const [telemetriaDev, setTelemetriaDev] = useState(false);
 
+  // lote 121–130 (§232): CONSULTOR de estilo (regras, flag as5.consultor)
+  const [consultor, setConsultor] = useState(false);
+
   // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
   const [atalhos, setAtalhos] = useState(false);
   useEffect(() => {
@@ -736,6 +740,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 aria-pressed={palco3d} data-teste="botao-3d"
                 onClick={() => setPalco3d((v) => !v)}>
                 <Boxes size={14} aria-hidden /> 3D</button>
+            )}
+            {flag('as5.consultor') && (
+              <button type="button" className="avst-botao" title="Consultor de estilo — sugestões por regras (§232)"
+                data-teste="consultor-abrir" onClick={() => setConsultor(true)}>
+                <Lightbulb size={14} aria-hidden /></button>
             )}
             <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
               aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
@@ -1010,6 +1019,13 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         {tour && <TourGuiado aoFechar={() => setTour(false)} />}
         {atalhos && <Atalhos aoFechar={() => setAtalhos(false)} />}
         {telemetriaDev && <TelemetriaDev aoFechar={() => setTelemetriaDev(false)} />}
+        {consultor && (
+          <Consultor config={validarConfig(paraLegado2d(store.estadoDraft))}
+            desbloqueados={desbloqueados}
+            aoAplicar={(novo) => { aplicarComando(validarConfig(novo)); }}
+            aoPrever={aoPrever}
+            aoFechar={() => setConsultor(false)} />
+        )}
         {paleta && (
           <PaletaComandos
             aoFechar={() => setPaleta(false)}
