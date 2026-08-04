@@ -28,6 +28,7 @@ import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
 import { Consultor } from './Consultor';
+import { VersoesAvatar } from './VersoesAvatar';
 import { Atalhos } from './Atalhos';
 import { TelemetriaDev } from './TelemetriaDev';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
@@ -516,6 +517,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // lote 121–130 (§232): CONSULTOR de estilo (regras, flag as5.consultor)
   const [consultor, setConsultor] = useState(false);
+  // lote 141–150 (§619): timeline de VERSÕES do espelho
+  const [versoes619, setVersoes619] = useState(false);
 
   // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
   const [atalhos, setAtalhos] = useState(false);
@@ -614,7 +617,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     return () => { vivo = false; };
   }, []);
   const espelhar619 = useCallback(async (comVersao: boolean) => {
-    if (!estadoApiAtivo()) return;
+    // lote 141 (§619): a ESCRITA no espelho é sempre ativa (best-effort,
+    // aditiva, fail-safe — alimenta a timeline de versões); a flag
+    // as5.estado_api segue gateando só o CORTE DE LEITURA futuro.
     try {
       const r = await salvarDraft(store.estadoDraft, refChecksum619.current);
       if (r.ok && r.checksum) refChecksum619.current = r.checksum;
@@ -746,6 +751,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 data-teste="consultor-abrir" onClick={() => setConsultor(true)}>
                 <Lightbulb size={14} aria-hidden /></button>
             )}
+            <button type="button" className="avst-botao" title="Versões do avatar no espelho (§619)"
+              data-teste="versoes-abrir" onClick={() => setVersoes619(true)}>
+              <ArrowUp size={14} aria-hidden style={{ transform: 'rotate(180deg)' }} /></button>
             <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
               aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
               {somLigado ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}</button>
@@ -1025,6 +1033,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             aoAplicar={(novo) => { aplicarComando(validarConfig(novo)); }}
             aoPrever={aoPrever}
             aoFechar={() => setConsultor(false)} />
+        )}
+        {versoes619 && (
+          <VersoesAvatar estadoLocal={store.estadoDraft}
+            aoAplicarEstado={(novo) => aplicarComando(validarConfig(paraLegado2d(novo)))}
+            aoFechar={() => setVersoes619(false)} />
         )}
         {paleta && (
           <PaletaComandos
