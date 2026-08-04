@@ -154,17 +154,20 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
 
   // megas 51–54: AJUSTES da foto — neutro é REMOVIDO (estilo limpo; sem
   // ajustes o SVG é byte a byte o legado)
-  const NEUTROS: Required<Omit<AjustesFoto, 'espelhar' | 'sombra'>> = {
+  const NEUTROS: Record<string, number | string> = {
     brilho: 1, contraste: 1, saturacao: 1, temperatura: 0, vinheta: 0, rotacao: 0,
+    // lote 111 (§332–§341)
+    desfoqueFundo: 0, granulacao: 0, zoomFoto: 1, anel: 3,
+    forma: 'circulo', filtroCor: 'nenhum',
   };
-  const mudarAjuste = useCallback((campo: keyof AjustesFoto, valor: number | boolean) => {
+  const mudarAjuste = useCallback((campo: keyof AjustesFoto, valor: number | boolean | string) => {
     setEstilo((e) => {
       const aj: AjustesFoto = { ...e.ajustes };
       const neutro = typeof valor === 'boolean'
         ? valor === false
-        : valor === (NEUTROS as Record<string, number>)[campo];
+        : valor === NEUTROS[campo];
       if (neutro) delete aj[campo];
-      else (aj as Record<string, number | boolean>)[campo] = valor;
+      else (aj as Record<string, number | boolean | string>)[campo] = valor;
       if (Object.keys(aj).length === 0) { const { ajustes: _a, ...resto } = e; return resto as EstiloFoto; }
       return { ...e, ajustes: aj };
     });
@@ -210,6 +213,41 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     } catch { setMensagem('Não consegui validar — tente de novo.'); }
     finally { setValidando(false); }
   }, [fotoEstilo, estilo, formato, escala]);
+
+  // mega 118 (§369+): exporta o VETOR (.svg) da composição
+  const baixarSvg = useCallback(() => {
+    if (!fotoEstilo) return;
+    const wide = formato !== 'perfil';
+    const svg = svgFotoDe(fotoEstilo, estilo, {
+      estatico: true, uid: 'ftsvg',
+      ...(wide ? { formato, lado: ladoWide, semFundo: wideTransp } : { tamanho: LADO_SAIDA }),
+    });
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dshow-foto-${formato}.svg`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    telemetria('foto_exportou_svg', { formato });
+  }, [fotoEstilo, estilo, formato, ladoWide, wideTransp]);
+
+  // mega 119 (§373): copia o PNG direto p/ a área de transferência
+  const copiarPng = useCallback(async () => {
+    if (!fotoEstilo) return;
+    try {
+      const wide = formato !== 'perfil';
+      const [lw, lh] = wide ? FORMATOS_FOTO[formato].saida : [LADO_SAIDA, LADO_SAIDA];
+      const svg = svgFotoDe(fotoEstilo, estilo, {
+        estatico: true, uid: 'ftcopy',
+        ...(wide ? { formato, lado: ladoWide, semFundo: wideTransp } : { tamanho: lw }),
+      });
+      const png = await rasterizarSvg(svg, lw, lh);
+      const blob = await (await fetch(png)).blob();
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setMensagem('Imagem copiada — cole onde quiser.');
+      telemetria('foto_copiou', { formato });
+    } catch { setMensagem('Copiar não funcionou neste navegador — use Baixar PNG.'); }
+  }, [fotoEstilo, estilo, formato, ladoWide, wideTransp]);
 
   // mega 59 (§371): EXPORTAÇÃO EM LOTE — todos os formatos numa ação
   const [exportandoLote, setExportandoLote] = useState(false);
@@ -880,6 +918,10 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 ['temperatura', 'Temperatura', -1, 1, 0.01],
                 ['vinheta', 'Vinheta', 0, 1, 0.01],
                 ['rotacao', 'Rotação', -180, 180, 1],
+                ['zoomFoto', 'Zoom da foto', 1, 1.6, 0.01],
+                ['desfoqueFundo', 'Desfoque fundo', 0, 1, 0.01],
+                ['granulacao', 'Granulação', 0, 1, 0.01],
+                ['anel', 'Anel', 1, 6, 0.5],
               ] as Array<[keyof AjustesFoto, string, number, number, number]>).map(([campo, rotulo, min, max, passo]) => (
                 <label key={campo} className="avst-ft-ajuste">
                   <span>{rotulo}</span>
@@ -900,6 +942,35 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 onClick={() => setEstilo((e) => { const { ajustes: _a, ...resto } = e; return resto as EstiloFoto; })}>
                 Zerar ajustes</button>
             </div>
+            {/* mega 111 (§341): FORMA do medalhão */}
+            <div className="avst-ft-chips" role="radiogroup" aria-label="Forma do medalhão" data-teste="formas-medalhao">
+              {([['circulo', 'Círculo'], ['hexagono', 'Hexágono'], ['losango', 'Losango'], ['squircle', 'Squircle']] as const).map(([f2, nome]) => (
+                <button key={f2} type="button" role="radio"
+                  aria-checked={(estilo.ajustes?.forma ?? 'circulo') === f2}
+                  className={`avst-ft-chip ${(estilo.ajustes?.forma ?? 'circulo') === f2 ? 'avst-ft-chip-ativo' : ''}`}
+                  onClick={() => mudarAjuste('forma', f2)}>{nome}</button>
+              ))}
+            </div>
+            {/* mega 114 (§333): filtro de cor */}
+            <div className="avst-ft-chips" role="radiogroup" aria-label="Filtro de cor" data-teste="filtros-cor">
+              {([['nenhum', 'Sem filtro'], ['pb', 'P&B'], ['sepia', 'Sépia']] as const).map(([f3, nome]) => (
+                <button key={f3} type="button" role="radio"
+                  aria-checked={(estilo.ajustes?.filtroCor ?? 'nenhum') === f3}
+                  className={`avst-ft-chip ${(estilo.ajustes?.filtroCor ?? 'nenhum') === f3 ? 'avst-ft-chip-ativo' : ''}`}
+                  onClick={() => mudarAjuste('filtroCor', f3)}>{nome}</button>
+              ))}
+            </div>
+            {/* mega 115 (§344): legenda livre (sanitizada aqui e no PHP) */}
+            <label className="avst-ft-ajuste avst-ft-legenda">
+              <span>Legenda</span>
+              <input type="text" maxLength={40} value={estilo.legenda ?? ''}
+                placeholder="Um toque seu na foto…" data-teste="legenda-foto"
+                onChange={(e) => setEstilo((es) => {
+                  const v = e.target.value;
+                  if (!v.trim()) { const { legenda: _l, ...resto } = es; return resto as EstiloFoto; }
+                  return { ...es, legenda: v };
+                })} />
+            </label>
           </div>
 
           {/* mega 56 (§360): histórico visível do estilo */}
@@ -937,6 +1008,18 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               onClick={() => void baixarPng()}>
               <Download size={14} aria-hidden /> Baixar PNG
             </button>
+            <button type="button" className="avst-botao" disabled={salvando}
+              title="Baixar o VETOR (.svg) desta composição (§369)" data-teste="baixar-svg"
+              onClick={baixarSvg}>
+              <Download size={14} aria-hidden /> SVG
+            </button>
+            {typeof ClipboardItem !== 'undefined' && (
+              <button type="button" className="avst-botao" disabled={salvando}
+                title="Copiar o PNG p/ a área de transferência (§373)" data-teste="copiar-png"
+                onClick={() => void copiarPng()}>
+                <Share2 size={14} aria-hidden /> Copiar
+              </button>
+            )}
             <button type="button" className="avst-botao" disabled={salvando || exportandoLote}
               title="Baixar TODOS os formatos de uma vez (§371)" data-teste="exportar-lote"
               onClick={() => void exportarLote()}>

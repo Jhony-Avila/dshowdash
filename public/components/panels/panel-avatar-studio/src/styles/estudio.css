@@ -1780,3 +1780,5 @@
 .avst-ft-ajuste span { min-width: 74px; }
 .avst-ft-ajuste input[type="range"] { width: 110px; accent-color: var(--avst-acento, #7c5cff); }
 .avst-ft-ajustes .avst-ft-chip[aria-pressed="true"] { color: #fff; border-color: var(--avst-acento, #7c5cff); }
+/* mega 115: legenda livre */
+.avst-ft-legenda input { flex: 1; min-width: 160px; background: var(--avst-fundo, #0d1017); border: 1px solid var(--avst-borda, #232a38); border-radius: 8px; padding: 5px 10px; color: var(--avst-texto, #e6eaf2); font-size: 12px; }

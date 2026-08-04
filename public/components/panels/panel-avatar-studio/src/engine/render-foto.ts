@@ -27,11 +27,17 @@ export interface EstiloFotoRender {
   cores: AvatarConfig['cores'];
   /** selo do título JÁ resolvido pelo serviço (nome + cor da raridade) */
   selo?: { nome: string; cor: string };
-  /** megas 51–54: ajustes não destrutivos (ausente = render legado) */
+  /** megas 51–54 + lote 111: ajustes não destrutivos (ausente = legado) */
   ajustes?: {
     brilho?: number; contraste?: number; saturacao?: number; temperatura?: number;
     vinheta?: number; rotacao?: number; espelhar?: boolean; sombra?: boolean;
+    forma?: 'circulo' | 'hexagono' | 'losango' | 'squircle';
+    desfoqueFundo?: number; granulacao?: number;
+    filtroCor?: 'nenhum' | 'pb' | 'sepia';
+    zoomFoto?: number; anel?: number;
   };
+  /** mega 115 (§344): legenda livre já SANITIZADA pelo serviço */
+  legenda?: string;
 }
 
 // ── megas 51–54: AJUSTES não destrutivos ────────────────────────────
@@ -42,6 +48,8 @@ type AjustesRender = NonNullable<EstiloFotoRender['ajustes']>;
 const NEUTRO: Required<AjustesRender> = {
   brilho: 1, contraste: 1, saturacao: 1, temperatura: 0,
   vinheta: 0, rotacao: 0, espelhar: false, sombra: false,
+  forma: 'circulo', desfoqueFundo: 0, granulacao: 0,
+  filtroCor: 'nenhum', zoomFoto: 1, anel: 3,
 };
 
 function ajustesEfetivos(a?: AjustesRender): Required<AjustesRender> | null {
@@ -49,13 +57,37 @@ function ajustesEfetivos(a?: AjustesRender): Required<AjustesRender> | null {
   const v = { ...NEUTRO, ...a };
   const neutro = v.brilho === 1 && v.contraste === 1 && v.saturacao === 1
     && v.temperatura === 0 && v.vinheta === 0 && v.rotacao === 0
-    && !v.espelhar && !v.sombra;
+    && !v.espelhar && !v.sombra
+    && v.forma === 'circulo' && v.desfoqueFundo === 0 && v.granulacao === 0
+    && v.filtroCor === 'nenhum' && v.zoomFoto === 1 && v.anel === 3;
   return neutro ? null : v;
 }
 
-/** <filter> de cor (brilho/contraste/saturação/temperatura) p/ a foto. */
+/** mega 111 (§341): a FORMA do medalhão como path centrado em (120,118).
+ *  'circulo' devolve null → strings LEGADAS byte a byte. */
+function pathForma(forma: Required<AjustesRender>['forma'], r: number): string | null {
+  const cx = 120; const cy = 118;
+  if (forma === 'hexagono') {
+    const p = Array.from({ length: 6 }, (_, i) => {
+      const a = (Math.PI / 3) * i - Math.PI / 2;
+      return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+    }).join(' ');
+    return `<polygon points="${p}"`;
+  }
+  if (forma === 'losango') {
+    return `<polygon points="${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}"`;
+  }
+  if (forma === 'squircle') {
+    const l = r * 1.62;
+    return `<rect x="${(cx - l / 2).toFixed(1)}" y="${(cy - l / 2).toFixed(1)}" width="${l.toFixed(1)}" height="${l.toFixed(1)}" rx="${(r * 0.55).toFixed(1)}"`;
+  }
+  return null;
+}
+
+/** <filter> de cor (brilho/contraste/saturação/temperatura/§333 filtro). */
 function filtroAjustes(uid: string, a: Required<AjustesRender>): string {
-  const precisaCor = a.brilho !== 1 || a.contraste !== 1 || a.saturacao !== 1 || a.temperatura !== 0;
+  const precisaCor = a.brilho !== 1 || a.contraste !== 1 || a.saturacao !== 1
+    || a.temperatura !== 0 || a.filtroCor !== 'nenhum';
   if (!precisaCor) return '';
   const b = a.brilho;
   const c = a.contraste;
@@ -63,7 +95,14 @@ function filtroAjustes(uid: string, a: Required<AjustesRender>): string {
   // temperatura: desloca R e B em direções opostas (quente = +R −B)
   const tR = 1 + a.temperatura * 0.18;
   const tB = 1 - a.temperatura * 0.18;
+  // mega 114 (§333): PB = dessatura; SÉPIA = matriz clássica
+  const filtroBase = a.filtroCor === 'pb'
+    ? `<feColorMatrix type="saturate" values="0"/>`
+    : a.filtroCor === 'sepia'
+      ? `<feColorMatrix type="matrix" values="0.393 0.769 0.189 0 0  0.349 0.686 0.168 0 0  0.272 0.534 0.131 0 0  0 0 0 1 0"/>`
+      : '';
   return `<filter id="${uid}aj" color-interpolation-filters="sRGB">` +
+    filtroBase +
     `<feColorMatrix type="saturate" values="${a.saturacao}"/>` +
     `<feColorMatrix type="matrix" values="${tR} 0 0 0 0  0 1 0 0 0  0 0 ${tB} 0 0  0 0 0 1 0"/>` +
     `<feComponentTransfer>` +
@@ -71,6 +110,19 @@ function filtroAjustes(uid: string, a: Required<AjustesRender>): string {
       `<feFuncG type="linear" slope="${b * c}" intercept="${interc}"/>` +
       `<feFuncB type="linear" slope="${b * c}" intercept="${interc}"/>` +
     `</feComponentTransfer></filter>`;
+}
+
+/** mega 112 (§334): defs do desfoque de fundo (0 = ausente). */
+function filtroDesfoque(uid: string, v: number): string {
+  return v > 0 ? `<filter id="${uid}bf"><feGaussianBlur stdDeviation="${(v * 6).toFixed(2)}"/></filter>` : '';
+}
+
+/** mega 113 (§334): GRANULAÇÃO de filme via turbulência determinística. */
+function granulacaoSvg(uid: string, v: number, W = 240, H = 240): string {
+  if (v <= 0) return '';
+  return `<filter id="${uid}gr"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" stitchTiles="stitch"/>` +
+    `<feColorMatrix type="matrix" values="0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 ${(v * 0.5).toFixed(3)} 0"/></filter>` +
+    `<rect width="${W}" height="${H}" filter="url(#${uid}gr)" style="mix-blend-mode:overlay"/>`;
 }
 
 /** Vinheta radial dentro do clip (0–1). */
@@ -187,14 +239,23 @@ export function renderFotoEstilizada(
     : `<rect width="240" height="240" rx="26"/>`;
   const dim = opcoes.tamanho ? ` width="${opcoes.tamanho}" height="${opcoes.tamanho}"` : '';
 
-  // megas 51–54: com ajustes ativos entram filtro/vinheta; SEM ajustes o
-  // SVG é byte a byte o de sempre (fotos salvas continuam determinísticas)
-  const defsAj = aj ? filtroAjustes(uid, aj) : '';
+  // megas 51–54 + lote 111: com ajustes ativos entram filtro/vinheta/
+  // desfoque/grão/forma; SEM ajustes o SVG é byte a byte o de sempre
+  const defsAj = (aj ? filtroAjustes(uid, aj) : '') + (aj ? filtroDesfoque(uid, aj.desfoqueFundo) : '');
   const vinheta = aj ? vinhetaSvg(uid, aj.vinheta) : '';
+  const grao = aj ? granulacaoSvg(uid, aj.granulacao) : '';
+  const formaClip = aj ? pathForma(aj.forma, 92) : null;
+  const fclip = formaClip ? `${formaClip}/>` : `<circle cx="120" cy="118" r="92"/>`;
+  const fundoComp = aj && aj.desfoqueFundo > 0 ? `<g filter="url(#${uid}bf)">${fundo}</g>` : fundo;
+  // mega 115 (§344): legenda curta acima do selo
+  const legenda = estilo.legenda
+    ? `<text x="120" y="200" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" ` +
+      `font-size="11" font-weight="600" fill="#e6eaf2" opacity="0.92">${escaparTexto(estilo.legenda)}</text>`
+    : '';
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"${dim} role="img" aria-label="Foto estilizada">
-<defs><clipPath id="${uid}clip">${clip}</clipPath><clipPath id="${uid}fclip"><circle cx="120" cy="118" r="92"/></clipPath>${defsAj}</defs>
-<g clip-path="url(#${uid}clip)">${fundo}${efeitoAtras}${medalhao}${badge}${efeitoFrente}${vinheta}${selo}</g>
+<defs><clipPath id="${uid}clip">${clip}</clipPath><clipPath id="${uid}fclip">${fclip}</clipPath>${defsAj}</defs>
+<g clip-path="url(#${uid}clip)">${fundoComp}${efeitoAtras}${medalhao}${badge}${efeitoFrente}${vinheta}${grao}${legenda}${selo}</g>
 ${moldura}
 </svg>`;
 
@@ -213,21 +274,36 @@ function medalhaoSvg(
   uid: string,
   aj: Required<AjustesRender> | null = null,
 ): string {
-  // megas 51+53: filtro de cor + rotação/espelho da FOTO (medalhão parado)
+  // megas 51+53+117: filtro de cor + rotação/espelho/zoom da FOTO
   let extras = '';
   if (aj) {
-    const temCor = aj.brilho !== 1 || aj.contraste !== 1 || aj.saturacao !== 1 || aj.temperatura !== 0;
+    const temCor = aj.brilho !== 1 || aj.contraste !== 1 || aj.saturacao !== 1
+      || aj.temperatura !== 0 || aj.filtroCor !== 'nenhum';
     if (temCor) extras += ` filter="url(#${uid}aj)"`;
     const t: string[] = [];
+    if (aj.zoomFoto !== 1) t.push(`translate(120 118) scale(${aj.zoomFoto}) translate(-120 -118)`);
     if (aj.rotacao !== 0) t.push(`rotate(${aj.rotacao} 120 118)`);
     if (aj.espelhar) t.push('translate(240 0) scale(-1 1)');
     if (t.length) extras += ` transform="${t.join(' ')}"`;
   }
   const sombra = aj?.sombra ? sombraContato(uid) : '';
-  return sombra + `<circle cx="120" cy="118" r="97" fill="#0a0d15" opacity="0.92"/>` +
+  // mega 111 (§341): forma ≠ círculo troca ARO + ANEL pela mesma silhueta;
+  // círculo mantém as strings LEGADAS byte a byte
+  const forma = aj ? pathForma(aj.forma, 97) : null;
+  const anelW = aj?.anel ?? 3;
+  const aro = forma
+    ? `${forma} fill="#0a0d15" opacity="0.92"/>`
+    : `<circle cx="120" cy="118" r="97" fill="#0a0d15" opacity="0.92"/>`;
+  const formaAnel = aj ? pathForma(aj.forma, 93) : null;
+  const anel = formaAnel
+    ? `${formaAnel} fill="none" stroke="${p.destaque.base}" stroke-width="${anelW}" opacity="0.9"/>`
+    : anelW !== 3
+      ? `<circle cx="120" cy="118" r="93" fill="none" stroke="${p.destaque.base}" stroke-width="${anelW}" opacity="0.9"/>`
+      : `<circle cx="120" cy="118" r="93" fill="none" stroke="${p.destaque.base}" stroke-width="3" opacity="0.9"/>`;
+  return sombra + aro +
     `<image href="${escaparAtributo(fotoHref)}" x="28" y="26" width="184" height="184" ` +
       `preserveAspectRatio="xMidYMid slice" clip-path="url(#${uid}fclip)"${extras}/>` +
-    `<circle cx="120" cy="118" r="93" fill="none" stroke="${p.destaque.base}" stroke-width="3" opacity="0.9"/>`;
+    anel;
 }
 
 /** §325: composição WIDE — medalhão à ESQUERDA (célula 240×240 intocada:
@@ -247,9 +323,17 @@ function comporWide(
   const formato = FORMATOS_FOTO[opcoes.formato ?? 'header'];
   const [W, H] = formato.caixa;
   const sx = W / 240;
-  const aj = ajustesEfetivos(estilo.ajustes); // megas 51–54
-  const defsAj = aj ? filtroAjustes(uid, aj) : '';
+  const aj = ajustesEfetivos(estilo.ajustes); // megas 51–54 + lote 111
+  const defsAj = (aj ? filtroAjustes(uid, aj) : '') + (aj ? filtroDesfoque(uid, aj.desfoqueFundo) : '');
   const vinheta = aj ? vinhetaSvg(uid, aj.vinheta, W, H) : '';
+  const grao = aj ? granulacaoSvg(uid, aj.granulacao, W, H) : '';
+  const formaClipW = aj ? pathForma(aj.forma, 92) : null;
+  const fclipW = formaClipW ? `${formaClipW}/>` : `<circle cx="120" cy="118" r="92"/>`;
+  const legendaW = estilo.legenda
+    ? `<text x="${opcoes.lado === 'direita' ? (W - 240) / 2 : (240 + W) / 2}" y="108" text-anchor="middle" ` +
+      `font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" ` +
+      `fill="#e6eaf2" opacity="0.92">${escaparTexto(estilo.legenda)}</text>`
+    : '';
 
   // fundo + banner esticados ("fundo esticado" — §325); gradientes ficam
   // imperceptíveis, padrões alargam de leve (aceito pelo briefing)
@@ -288,8 +372,8 @@ function comporWide(
   const dims = opcoes.estatico ? ` width="${lw}" height="${lh}"` : '';
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"${dims} ` +
     `preserveAspectRatio="none" role="img" aria-label="Foto estilizada (${formato.nome})">
-<defs><clipPath id="${uid}clip"><rect width="${W}" height="${H}" rx="14"/></clipPath><clipPath id="${uid}fclip"><circle cx="120" cy="118" r="92"/></clipPath>${defsAj}</defs>
-<g clip-path="url(#${uid}clip)">${opcoes.semFundo ? '' : `<rect width="${W}" height="${H}" fill="#0a0d15"/>`}${fundo}${efeitoAtras}${direita ? `<g transform="translate(${deslocMedalhao} 0)">` : ''}${aura}${medalhaoSvg(fotoHref, p, uid, aj)}${direita ? '</g>' : ''}${badge}${efeitoFrente}${vinheta}${selo}</g>
+<defs><clipPath id="${uid}clip"><rect width="${W}" height="${H}" rx="14"/></clipPath><clipPath id="${uid}fclip">${fclipW}</clipPath>${defsAj}</defs>
+<g clip-path="url(#${uid}clip)">${opcoes.semFundo ? '' : `<rect width="${W}" height="${H}" fill="#0a0d15"/>`}${aj && aj.desfoqueFundo > 0 ? `<g filter="url(#${uid}bf)">${fundo}</g>` : fundo}${efeitoAtras}${direita ? `<g transform="translate(${deslocMedalhao} 0)">` : ''}${aura}${medalhaoSvg(fotoHref, p, uid, aj)}${direita ? '</g>' : ''}${badge}${efeitoFrente}${vinheta}${grao}${legendaW}${selo}</g>
 </svg>`;
 
   if (opcoes.estatico) svg = congelarSvg(svg);
