@@ -27,8 +27,13 @@ import { detectarCapacidade3d } from '../services/Capacidade3d';
 import { excluirPose, listarPoses, salvarPose } from '../services/Poses3d';
 import { log } from '../services/Log';
 import { paraLegado2d } from '../nucleo/adaptadores';
-import { validarConfig } from '../services/AvatarCatalog';
+import { tituloPorId, validarConfig } from '../services/AvatarCatalog';
 import { AvatarSvg } from '../components/AvatarSvg';
+// megas 226–227 (§175/§175.1): editor de showcase + modo automático
+import {
+  excluirRoteiro, listarRoteiros, montarRoteiroAutomatico, salvarRoteiro,
+} from '../services/Roteiros';
+import type { RascunhoRoteiro, RoteiroShowcase } from '../services/Roteiros';
 
 /** Fallback embutido (índice indisponível — ex.: publicação parcial). */
 const CURADOS_FALLBACK: EntradaIndice3d[] = [
@@ -89,6 +94,9 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // megas 21/22: fundo e luz do palco 3D
   const [fundo3d, setFundo3d] = useState<'neutro' | 'estudio' | 'grade'>('estudio');
   const [luz3d, setLuz3d] = useState<'estudio' | 'quente' | 'fria' | 'neon'>('estudio');
+  // mega 226: leitura fresca dentro do showcase (restauro pós-roteiro)
+  const refCena3d = useRef({ fundo: fundo3d, luz: luz3d });
+  refCena3d.current = { fundo: fundo3d, luz: luz3d };
   // mega 26: marca d'água nas capturas/ficha
   const [marca, setMarca] = useState(true);
   // mega 29: pose congelada (freeze frame)
@@ -138,6 +146,17 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number } | null>(null);
   const [sinalLocal, setSinalLocal] = useState(0);
   const sinalShowcase = sinalApresentar + sinalLocal;
+  // megas 226–227 (§175): EDITOR DE SHOWCASE — roteiro ativo comanda a
+  // apresentação; luz/fundo do roteiro valem SÓ durante ela (restaura)
+  const editorLigado = flag('as5.showcase_editor');
+  const [editorAberto, setEditorAberto] = useState(false);
+  const [roteiros, setRoteiros] = useState<RoteiroShowcase[]>(listarRoteiros);
+  const [roteiroAtivo, setRoteiroAtivo] = useState<RoteiroShowcase | null>(null);
+  const refRoteiro = useRef<RoteiroShowcase | null>(null);
+  refRoteiro.current = roteiroAtivo;
+  const [rascunho, setRascunho] = useState<RascunhoRoteiro>({
+    clipes: [], duracaoClipeMs: 2600, camera: 'cinematica', encerramento: 'Idle',
+  });
   // mega 13 (§174.2): GRAVAÇÃO do showcase — MediaRecorder no canvas
   const [gravando, setGravando] = useState(false);
   const refGravador = useRef<MediaRecorder | null>(null);
@@ -260,6 +279,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // mega 10 §174: roteiro com os clipes REAIS do personagem — Wave e um
   // número musical (Dance/Victory/Running/Walk, o que existir); órbita
   // cinemática durante; volta ao Idle + câmera anterior. §297 pula tudo.
+  // megas 226–227 (§175): quando há ROTEIRO ativo, ele comanda clipes/
+  // duração/câmera/encerramento e a luz/fundo valem SÓ durante (restaura).
   useEffect(() => {
     if (sinalShowcase === 0 || fase !== 'pronto' || movReduzido || apresentando) return;
     const r = refR.current;
@@ -268,16 +289,32 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     const espera = (ms: number) => new Promise((res) => { setTimeout(res, ms); });
     void (async () => {
       setApresentando(true);
-      telemetria('p3d_showcase', { personagem: refPersonagem.current }); // §290
+      const rot = refRoteiro.current; // §175
+      telemetria('p3d_showcase', { personagem: refPersonagem.current, roteiro: rot ? rot.id : 'padrao' }); // §290
       const todas = indice.find((x) => x.slug === refPersonagem.current)?.animacoes ?? [];
-      const roteiro = ['Wave', 'Dance', 'Victory', 'Running', 'Walk'].filter((x) => todas.includes(x)).slice(0, 2);
-      r.definirCamera({ modo: 'cinematica' });
+      const roteiro = rot
+        ? rot.clipes.filter((x) => todas.includes(x)).slice(0, 4)
+        : ['Wave', 'Dance', 'Victory', 'Running', 'Walk'].filter((x) => todas.includes(x)).slice(0, 2);
+      const dur = rot?.duracaoClipeMs ?? 2600;
+      const cenaAntes = { ...refCena3d.current };
+      if (rot?.luz) setLuz3d(rot.luz);
+      if (rot?.fundo) setFundo3d(rot.fundo);
+      r.definirCamera({ modo: rot?.camera ?? 'cinematica' });
       for (const clipe of roteiro.length ? roteiro : ['Idle']) {
         await r.tocarAnimacao({ id: clipe, transicaoMs: 350 });
-        await espera(2600);
+        await espera(dur);
+        if (!vivo) return;
+      }
+      // §175: encerramento (se o personagem tiver o clipe)
+      if (rot && rot.encerramento !== 'Idle' && todas.includes(rot.encerramento)
+        && !roteiro.includes(rot.encerramento)) {
+        await r.tocarAnimacao({ id: rot.encerramento, transicaoMs: 350 });
+        await espera(1400);
         if (!vivo) return;
       }
       await r.tocarAnimacao({ id: 'Idle', transicaoMs: 400 });
+      if (rot?.luz) setLuz3d(cenaAntes.luz);
+      if (rot?.fundo) setFundo3d(cenaAntes.fundo);
       r.definirCamera({ modo: cameraModo, distancia: refCam.current.dist, elevacao: refCam.current.elev });
       setAnimacao('Idle');
       setApresentando(false);
@@ -514,6 +551,61 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     excluirCena(id);
     setCenas(listarCenas());
   }, []);
+
+  // ── megas 226–227 (§175/§175.1): handlers do EDITOR DE SHOWCASE ─────
+  /** todos os clipes do personagem atual (o seletor de destaque corta em 6) */
+  const todasAnimacoes = useMemo(
+    () => indice.find((x) => x.slug === personagem)?.animacoes ?? [],
+    [indice, personagem],
+  );
+
+  const alternarClipeRoteiro = useCallback((clipe: string) => {
+    setRascunho((ra) => ({
+      ...ra,
+      clipes: ra.clipes.includes(clipe)
+        ? ra.clipes.filter((c) => c !== clipe)
+        : [...ra.clipes, clipe].slice(0, 4),
+    }));
+  }, []);
+
+  const tocarRoteiro = useCallback((rot: RoteiroShowcase) => {
+    if (apresentando || movReduzido) return;
+    setRoteiroAtivo(rot);
+    setSinalLocal((n) => n + 1);
+    telemetria('p3d_roteiro_tocou', { id: rot.id, clipes: rot.clipes.length }); // §290
+  }, [apresentando, movReduzido]);
+
+  const tocarRascunho = useCallback(() => {
+    if (!rascunho.clipes.length) { setAnuncio('Escolha ao menos um clipe para o roteiro'); return; }
+    tocarRoteiro({ ...rascunho, id: 'rascunho', nome: 'Rascunho', criadoEm: '' });
+  }, [rascunho, tocarRoteiro]);
+
+  const guardarRoteiro = useCallback(() => {
+    if (!rascunho.clipes.length) { setAnuncio('Escolha ao menos um clipe para salvar'); return; }
+    const r2 = salvarRoteiro(rascunho);
+    setRoteiros(listarRoteiros());
+    setAnuncio(r2 ? `Roteiro "${r2.nome}" salvo` : 'Limite de 6 roteiros atingido');
+    if (r2) telemetria('p3d_roteiro_salvou', { clipes: r2.clipes.length }); // §290
+  }, [rascunho]);
+
+  const removerRoteiro = useCallback((id: string) => {
+    excluirRoteiro(id);
+    setRoteiros(listarRoteiros());
+    setRoteiroAtivo((ra) => (ra?.id === id ? null : ra));
+  }, []);
+
+  /** §175.1: montagem AUTOMÁTICA determinística (regras — nunca IA) */
+  const montarAutomatico = useCallback(() => {
+    const titulo = tituloPorId(config2d.titulo);
+    const auto = montarRoteiroAutomatico({
+      raridadeTitulo: titulo?.raridade ?? null,
+      temAura: !!estado.equipment.aura,
+      animacoes: todasAnimacoes,
+    });
+    setRascunho(auto);
+    setAnuncio('Roteiro montado por regras — coerente com seu avatar (§175.1)');
+    telemetria('p3d_roteiro_auto', { clipes: auto.clipes.length }); // §290
+  }, [config2d, estado, todasAnimacoes]);
 
   // mega 39: MODO APRESENTAÇÃO — fullscreen no contêiner (fail-safe sem API)
   const alternarTelaCheia = useCallback(() => {
@@ -823,7 +915,115 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               </span>
             ))}
           </span>
+          {editorLigado && (
+            <span role="group" aria-label="Editor de showcase (§175)">
+              <button type="button" className={`avst5-p3d-chip${editorAberto ? ' avst5-p3d-chip-on' : ''}`}
+                aria-pressed={editorAberto} data-teste="p3d-editor"
+                title="Editor de showcase — monte sua apresentação (§175)"
+                onClick={() => setEditorAberto((v) => !v)}>
+                <Clapperboard size={11} aria-hidden /> Showcase
+              </button>
+            </span>
+          )}
         </div>
+        {editorLigado && editorAberto && (
+          <div className="avst5-p3d-editor" data-teste="p3d-editor-painel"
+            role="group" aria-label="Editor de showcase (§175)">
+            <span className="avst5-p3d-editor-rotulo">Clipes (na ordem · até 4)</span>
+            <span role="group" aria-label="Clipes do roteiro" data-teste="p3d-rot-clipes">
+              {(todasAnimacoes.length ? todasAnimacoes : ['Idle']).map((a2) => {
+                const idx = rascunho.clipes.indexOf(a2);
+                return (
+                  <button key={a2} type="button" aria-pressed={idx >= 0}
+                    className={`avst5-p3d-chip${idx >= 0 ? ' avst5-p3d-chip-on' : ''}`}
+                    data-teste={`p3d-rot-clipe-${a2}`}
+                    onClick={() => alternarClipeRoteiro(a2)}>
+                    {idx >= 0 ? `${idx + 1}· ` : ''}{a2}
+                  </button>
+                );
+              })}
+            </span>
+            <label className="avst5-p3d-slider">Duração/clipe
+              <input type="range" min="1200" max="5000" step="200" value={rascunho.duracaoClipeMs}
+                aria-label="Duração por clipe (ms)" data-teste="p3d-rot-duracao"
+                onChange={(e) => setRascunho((ra) => ({ ...ra, duracaoClipeMs: Number(e.target.value) }))} />
+              <em>{(rascunho.duracaoClipeMs / 1000).toFixed(1)}s</em>
+            </label>
+            <span role="radiogroup" aria-label="Câmera do showcase" data-teste="p3d-rot-camera">
+              {(['cinematica', 'orbita'] as const).map((cm) => (
+                <button key={cm} type="button" role="radio" aria-checked={rascunho.camera === cm}
+                  className={`avst5-p3d-chip${rascunho.camera === cm ? ' avst5-p3d-chip-on' : ''}`}
+                  onClick={() => setRascunho((ra) => ({ ...ra, camera: cm }))}>
+                  {cm === 'cinematica' ? 'Cinemática' : 'Órbita'}
+                </button>
+              ))}
+            </span>
+            <span role="radiogroup" aria-label="Luz durante o showcase" data-teste="p3d-rot-luz">
+              <Lightbulb size={11} aria-hidden />
+              {([['', 'Do palco'], ['estudio', 'Estúdio'], ['quente', 'Quente'], ['fria', 'Fria'], ['neon', 'Neon']] as const).map(([lz, nome]) => (
+                <button key={lz || 'palco'} type="button" role="radio"
+                  aria-checked={(rascunho.luz ?? '') === lz}
+                  className={`avst5-p3d-chip${(rascunho.luz ?? '') === lz ? ' avst5-p3d-chip-on' : ''}`}
+                  onClick={() => setRascunho((ra) => {
+                    const { luz: _l, ...resto } = ra;
+                    return lz === '' ? resto : { ...resto, luz: lz };
+                  })}>{nome}</button>
+              ))}
+            </span>
+            <span role="radiogroup" aria-label="Cenário durante o showcase" data-teste="p3d-rot-fundo">
+              {([['', 'Do palco'], ['neutro', 'Neutro'], ['estudio', 'Estúdio'], ['grade', 'Grade']] as const).map(([fd, nome]) => (
+                <button key={fd || 'palco'} type="button" role="radio"
+                  aria-checked={(rascunho.fundo ?? '') === fd}
+                  className={`avst5-p3d-chip${(rascunho.fundo ?? '') === fd ? ' avst5-p3d-chip-on' : ''}`}
+                  onClick={() => setRascunho((ra) => {
+                    const { fundo: _f, ...resto } = ra;
+                    return fd === '' ? resto : { ...resto, fundo: fd };
+                  })}>{nome}</button>
+              ))}
+            </span>
+            <span role="radiogroup" aria-label="Encerramento" data-teste="p3d-rot-fim">
+              {(['Idle', 'Wave'] as const).map((fim) => (
+                <button key={fim} type="button" role="radio" aria-checked={rascunho.encerramento === fim}
+                  className={`avst5-p3d-chip${rascunho.encerramento === fim ? ' avst5-p3d-chip-on' : ''}`}
+                  onClick={() => setRascunho((ra) => ({ ...ra, encerramento: fim }))}>
+                  {fim === 'Idle' ? 'Fim neutro' : 'Fim com aceno'}
+                </button>
+              ))}
+            </span>
+            <span role="group" aria-label="Ações do roteiro">
+              <button type="button" className="avst5-p3d-chip" data-teste="p3d-rot-auto"
+                title="Montagem por REGRAS, coerente com raridade/aura (§175.1) — nunca IA"
+                onClick={montarAutomatico}>
+                <Wand2 size={11} aria-hidden /> Montar pra mim
+              </button>
+              <button type="button" className="avst5-p3d-chip" data-teste="p3d-rot-tocar"
+                disabled={apresentando || movReduzido || rascunho.clipes.length === 0}
+                onClick={tocarRascunho}>
+                <Play size={11} aria-hidden /> Tocar
+              </button>
+              <button type="button" className="avst5-p3d-chip" data-teste="p3d-rot-salvar"
+                disabled={roteiros.length >= 6 || rascunho.clipes.length === 0}
+                onClick={guardarRoteiro}>
+                <BookmarkPlus size={11} aria-hidden /> Salvar
+              </button>
+            </span>
+            {roteiros.length > 0 && (
+              <span role="group" aria-label="Roteiros salvos" data-teste="p3d-rot-salvos">
+                {roteiros.map((r3) => (
+                  <span key={r3.id} className="avst5-p3d-cena">
+                    <button type="button"
+                      className={`avst5-p3d-chip${roteiroAtivo?.id === r3.id ? ' avst5-p3d-chip-on' : ''}`}
+                      title={`${r3.clipes.join(' → ')} · ${(r3.duracaoClipeMs / 1000).toFixed(1)}s/clipe`}
+                      disabled={apresentando || movReduzido}
+                      onClick={() => tocarRoteiro(r3)}>{r3.nome}</button>
+                    <button type="button" className="avst5-p3d-cena-x" aria-label={`Excluir ${r3.nome}`}
+                      onClick={() => removerRoteiro(r3.id)}>×</button>
+                  </span>
+                ))}
+              </span>
+            )}
+          </div>
+        )}
         {hudLigado && hud && (
           <div className="avst5-p3d-hud" data-teste="p3d-hud" role="note">
             <Activity size={10} aria-hidden /> {hud.fps}fps · {hud.tier} · {hud.triangulos.toLocaleString('pt-BR')}△

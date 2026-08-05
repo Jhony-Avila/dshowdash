@@ -9,7 +9,7 @@
 // botão Original), Equipar/Remover, Favoritar, Salvar como preset e Ver
 // coleção. Itens relacionados: mesmo tema, navegáveis dentro do drawer.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeftRight, BookmarkPlus, Check, Eye, Layers, Lock, Pause, Play, Star, X } from 'lucide-react';
+import { ArrowLeftRight, BookmarkPlus, Check, Eye, Layers, Lock, Pause, Pin, Play, Star, X } from 'lucide-react';
 import type { AvatarConfig, SlotCor } from '../domain/types';
 import {
   COLECOES, RARIDADES, itemPorId, itensDe, progressoColecao, validarConfig,
@@ -17,6 +17,9 @@ import {
 import { comItem, FOCO_THUMB } from '../components/GradeItens';
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 import { alternarNaLista, criarLista, excluirLista, listarListas } from '../services/Listas';
+// mega 229 (§229): favoritos que crescem — marca de permanente
+import { alternarPermanente, favoritosPermanentes } from '../services/FavoritosCategorias';
+import { flag } from '../nucleo/flags';
 import { salvarPreset } from '../services/PresetsPessoais';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { MOVIMENTOS, animar } from './movimento';
@@ -162,6 +165,16 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
             onClick={() => { alternarFavorito(item.id); setTic((t) => t + 1); }}>
             <Star size={13} aria-hidden /> {favorito ? 'Favorito' : 'Favoritar'}
           </button>
+          {/* mega 229 (§229): favorito PERMANENTE — nunca sai do topo */}
+          {flag('as5.favoritos_categorias') && favorito && (
+            <button type="button" data-teste="fav-permanente"
+              className={`avst-botao${favoritosPermanentes().has(item.id) ? ' avst-botao-ativo' : ''}`}
+              title="Favorito permanente — fica sempre no topo da visão de favoritos (§229)"
+              aria-pressed={favoritosPermanentes().has(item.id)}
+              onClick={() => { alternarPermanente(item.id); setTic((t) => t + 1); }}>
+              <Pin size={13} aria-hidden /> {favoritosPermanentes().has(item.id) ? 'Permanente' : 'Tornar permanente'}
+            </button>
+          )}
           <button type="button" className="avst-botao" disabled={salvo}
             title="Salva o avatar COM este item como preset"
             onClick={() => { if (salvarPreset(`Com ${item.nome}`, preview)) setSalvo(true); }}>

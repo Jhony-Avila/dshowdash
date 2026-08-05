@@ -1915,3 +1915,110 @@
 .avst5-ctx-header { max-height: 96px; overflow: hidden; display: flex; align-items: center; }
 .avst5-ctx-header svg { transform: scale(1.15); }
 .avst5-ctx-menu { max-width: 72px; margin-inline: auto; }
+
+/* ── lote 221–223 (§323/§324): PHOTO STUDIO PRO — canvas + 3 regiões ──
+   Flag OFF: wrappers com display:contents = fluxo clássico intocado.
+   Flag ON: canvas/posições sempre; as 3 REGIÕES (ferramentas ▏canvas ▏
+   propriedades) engajam via CONTAINER QUERY quando a seção tem ≥700px
+   (decisão #51 — o aside clássico tem ~390px e o grid colapsaria). */
+.avst-foto { container-type: inline-size; }
+.avst-ftp-centroa, .avst-ftp-esq, .avst-ftp-dir, .avst-ftp-centrob { display: contents; }
+.avst-ft-pro { width: 100%; }
+@container (min-width: 700px) {
+  .avst-ft-pro {
+    display: grid;
+    grid-template-columns: minmax(200px, 260px) minmax(240px, 1fr) minmax(220px, 290px);
+    grid-template-areas: 'esq centroa dir' 'esq centrob dir';
+    gap: 14px;
+    align-items: start;
+  }
+  .avst-ft-pro .avst-ftp-centroa { display: flex; flex-direction: column; gap: 10px; grid-area: centroa; min-width: 0; }
+  .avst-ft-pro .avst-ftp-esq { display: flex; flex-direction: column; gap: 12px; grid-area: esq; min-width: 0; }
+  .avst-ft-pro .avst-ftp-dir { display: flex; flex-direction: column; gap: 12px; grid-area: dir; min-width: 0; }
+  .avst-ft-pro .avst-ftp-centrob { display: flex; flex-direction: column; gap: 10px; grid-area: centrob; min-width: 0; }
+}
+/* §324: viewport do canvas — a vista (zoom/pan) NUNCA toca o SVG salvo */
+.avst-ftp-viewport {
+  position: relative; overflow: hidden; min-height: 320px; max-height: 62vh; width: 100%;
+  border: 1px solid var(--avst-borda); border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(76, 157, 232, 0.06), transparent 70%),
+    #0d1017;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; touch-action: none; outline-offset: -2px;
+}
+.avst-ftp-viewport:active { cursor: grabbing; }
+.avst-ftp-viewport[data-arrastando='el'] { cursor: move; }
+.avst-ftp-mundo { will-change: transform; }
+.avst-ftp-caixa { position: relative; width: 300px; max-width: 92%; }
+.avst-ftp-caixa .avst-ft-preview { width: 100%; margin: 0; }
+.avst-ftp-caixa[data-fundo='claro'] .avst-ft-preview { background: #dfe4ee; }
+.avst-ftp-caixa[data-fundo='escuro'] .avst-ft-preview { background: #05070c; }
+.avst-ftp-caixa[data-fundo='xadrez'] .avst-ft-preview {
+  background:
+    repeating-conic-gradient(#2a3040 0% 25%, #1a1f2b 0% 50%) 0 0 / 16px 16px;
+}
+.avst-ftp-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.avst-ftp-controles {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-width: 0;
+}
+.avst-ftp-pct {
+  min-width: 42px; text-align: center; font-size: 11px; font-weight: 700;
+  color: var(--avst-texto-2); font-variant-numeric: tabular-nums;
+}
+/* formatos wide dentro do canvas PRO ganham a largura toda */
+.avst-ftp-caixa:has(.avst-ft-preview[data-formato='header']),
+.avst-ftp-caixa:has(.avst-ft-preview[data-formato='banner']),
+.avst-ftp-caixa:has(.avst-ft-preview[data-formato='wallpaper']) { width: 92%; }
+
+/* ── megas 226–227 (§175): EDITOR DE SHOWCASE no palco 3D ── */
+.avst5-p3d-editor {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 8px 10px; border-radius: 10px;
+  background: rgba(10, 13, 21, 0.72); border: 1px solid var(--avst-borda);
+  backdrop-filter: blur(6px);
+}
+.avst5-p3d-editor > span[role] { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.avst5-p3d-editor-rotulo {
+  flex-basis: 100%; font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+  text-transform: uppercase; color: var(--avst-texto-2);
+}
+.avst5-p3d-editor .avst5-p3d-slider em { font-style: normal; font-size: 10.5px; color: var(--avst-texto-2); }
+
+/* ── mega 228 (§220): LINHA DO TEMPO no shell ── */
+.avst5-tl-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.avst5-tl-mes { display: flex; flex-direction: column; gap: 6px; }
+.avst5-tl-mes-titulo {
+  margin: 6px 0 0; font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+  text-transform: capitalize; color: var(--avst-texto-2);
+  border-bottom: 1px solid var(--avst-borda); padding-bottom: 4px;
+}
+.avst5-tl-nota { font-style: normal; font-size: 11.5px; color: var(--avst-texto-2); }
+
+/* ── mega 229 (§229): sub-filtros de favoritos ── */
+.avst-fchip-on { border-color: var(--avst-acento); color: var(--avst-texto); background: rgba(76, 157, 232, 0.12); }
+
+/* ── mega 230 (§1076/§1077): MINHA VITRINE + galerias ── */
+.avst-mv { display: flex; flex-direction: column; gap: 10px; width: 100%; min-width: 0; }
+.avst-mv-blocos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.avst-mv-bloco {
+  border: 1px solid var(--avst-borda); border-radius: 10px; padding: 8px;
+  display: flex; flex-direction: column; gap: 6px; background: rgba(20, 24, 34, 0.5);
+}
+.avst-mv-bloco header { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.avst-mv-bloco header strong { font-size: 10.5px; display: inline-flex; align-items: center; gap: 4px; color: var(--avst-texto-2); text-transform: uppercase; letter-spacing: 0.3px; }
+.avst-mv-mover { display: inline-flex; gap: 2px; }
+.avst-mv-conteudo { display: flex; align-items: center; gap: 6px; min-height: 44px; font-size: 12px; }
+.avst-mv-conteudo img { border-radius: 8px; }
+.avst-mv-conteudo em { font-style: normal; color: var(--avst-texto-2); display: inline-flex; align-items: center; gap: 4px; }
+.avst-mv-presets { display: inline-flex; gap: 4px; }
+.avst-mv-galerias { display: flex; flex-direction: column; gap: 6px; }
+.avst-mv-gal-grade { display: flex; flex-wrap: wrap; gap: 6px; }
+.avst-mv-gal-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; width: 68px;
+  background: none; border: 1px solid var(--avst-borda); border-radius: 8px; padding: 5px;
+  color: var(--avst-texto-2); font-size: 9.5px; cursor: pointer;
+}
+.avst-mv-gal-item img { border-radius: 6px; }
+.avst-mv-gal-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avst-mv-gal-item.ativo { border-color: var(--avst-acento); color: var(--avst-texto); }

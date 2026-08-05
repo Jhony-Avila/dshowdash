@@ -324,7 +324,42 @@ function avst_validar_config_foto($bruto): ?array
             $saida['tipografia'] = $tpLimpo;
         }
     }
-    $temNovo = isset($saida['subtitulo']) || isset($saida['camadasFoto']) || isset($saida['luzLocal']) || isset($saida['tipografia']);
+    // mega 223 (§323.2/§324.2): posições manuais — whitelist de elementos,
+    // números clampados na caixa estendida (240-base; wide até 960), 1 casa
+    // decimal; entrada hostil vira ausente (layout legado)
+    $pos = $bruto['pos'] ?? null;
+    if (is_array($pos)) {
+        $posLimpo = [];
+        foreach (['legenda', 'subtitulo', 'selo', 'emblema'] as $el) {
+            $p = $pos[$el] ?? null;
+            if (!is_array($p) || !is_numeric($p['x'] ?? null) || !is_numeric($p['y'] ?? null)) {
+                continue;
+            }
+            $posLimpo[$el] = [
+                'x' => round(max(-20.0, min(980.0, (float) $p['x'])), 1),
+                'y' => round(max(-20.0, min(260.0, (float) $p['y'])), 1),
+            ];
+        }
+        if ($posLimpo !== []) {
+            $saida['pos'] = $posLimpo;
+        }
+    }
+    // mega 224 (§344): título-componente — enums fechados, neutro omitido
+    $seloCfg = $bruto['seloCfg'] ?? null;
+    if (is_array($seloCfg)) {
+        $seloLimpo = [];
+        if (in_array($seloCfg['escala'] ?? null, ['p', 'g'], true)) {
+            $seloLimpo['escala'] = $seloCfg['escala'];
+        }
+        if (($seloCfg['compacto'] ?? null) === true) {
+            $seloLimpo['compacto'] = true;
+        }
+        if ($seloLimpo !== []) {
+            $saida['seloCfg'] = $seloLimpo;
+        }
+    }
+    $temNovo = isset($saida['subtitulo']) || isset($saida['camadasFoto']) || isset($saida['luzLocal']) || isset($saida['tipografia'])
+        || isset($saida['pos']) || isset($saida['seloCfg']); // lote 221–224
     return $camadas === [] && !isset($saida['titulo']) && !isset($saida['ajustes']) && !isset($saida['legenda']) && !$temNovo ? null : $saida;
 }
 

@@ -194,6 +194,21 @@ export interface TipografiaFoto {
   caixaAlta?: boolean;
 }
 
+// ── lote 221–230 (§323.2/§324.2/§344/§345) ──────────────────────────
+/** mega 223: elementos da composição que aceitam POSIÇÃO manual. */
+export type ElementoPosFoto = 'legenda' | 'subtitulo' | 'selo' | 'emblema';
+/** mega 223 (§323.2/§324.2): posição em unidades do viewBox (240-base).
+ *  AUSENTE = posição legada byte a byte (fotos salvas intocadas). */
+export type PosFoto = Partial<Record<ElementoPosFoto, { x: number; y: number }>>;
+/** mega 224 (§344): o TÍTULO como componente visual — escala dentro de
+ *  limites e versão compacta. Ausente = selo legado byte a byte. */
+export interface SeloCfgFoto {
+  /** 'm' = neutro (omitido) */
+  escala?: 'p' | 'm' | 'g';
+  /** §344: versão compacta (pílula menor, nome abreviado) */
+  compacto?: boolean;
+}
+
 export interface EstiloFoto {
   camadas: {
     fundo?: string;
@@ -217,6 +232,10 @@ export interface EstiloFoto {
   tipografia?: TipografiaFoto;
   /** lote 167 (§343.1): subtítulo (cargo/contexto) — formatos WIDE */
   subtitulo?: string;
+  /** mega 223 (§323.2/§324.2): posições manuais — ausente = layout legado */
+  pos?: PosFoto;
+  /** mega 224 (§344): título-componente — ausente = selo legado */
+  seloCfg?: SeloCfgFoto;
 }
 
 // ── Histórico / favoritos / conquistas ──────────────────────────────

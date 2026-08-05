@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Flag, Focus, GitBranch, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Flag, Focus, GitBranch, History, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, COLECOES, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
@@ -29,6 +29,7 @@ import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
 import { Consultor } from './Consultor';
 import { Evolucao } from './Evolucao';
+import { TimelineShell } from './TimelineShell'; // mega 228 (§220)
 import { Missoes } from './Missoes';
 import { avaliarMissoes } from '../services/Missoes';
 import { registrarMarco } from '../services/Evolucao';
@@ -639,6 +640,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [evolucao, setEvolucao] = useState(false);
   // lote 196–198 (§250/§251): drawer de MISSÕES
   const [missoes, setMissoes] = useState(false);
+  // mega 228 (§220): LINHA DO TEMPO unificada (flag as5.timeline_shell)
+  const [timeline, setTimeline] = useState(false);
 
   // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
   const [atalhos, setAtalhos] = useState(false);
@@ -877,6 +880,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             <button type="button" className="avst-botao" title="Evolução do avatar — linha do tempo (§241)"
               data-teste="evolucao-abrir" onClick={() => setEvolucao(true)}>
               <GitBranch size={14} aria-hidden /></button>
+            {flag('as5.timeline_shell') && (
+              <button type="button" className="avst-botao" title="Linha do tempo — sua jornada (§220)"
+                data-teste="timeline-abrir" onClick={() => setTimeline(true)}>
+                <History size={14} aria-hidden /></button>
+            )}
             <button type="button" className="avst-botao" title="Versões do avatar no espelho (§619)"
               data-teste="versoes-abrir" onClick={() => setVersoes619(true)}>
               <ArrowUp size={14} aria-hidden style={{ transform: 'rotate(180deg)' }} /></button>
@@ -1263,6 +1271,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         {missoes && (
           <Missoes config={validarConfig(paraLegado2d(store.estadoDraft))}
             aoFechar={() => setMissoes(false)} />
+        )}
+        {timeline && (
+          <TimelineShell aoFechar={() => setTimeline(false)}
+            aoAbrirEvolucao={() => setEvolucao(true)} />
         )}
         {paleta && (
           <PaletaComandos
