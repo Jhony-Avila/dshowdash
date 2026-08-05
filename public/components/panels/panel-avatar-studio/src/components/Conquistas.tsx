@@ -3,10 +3,13 @@
 // FILTROS todas/feitas/pendentes + faixa de estatísticas §218–§221)
 import { useState } from 'react';
 import { CalendarDays, Gift, Lock, Trophy } from 'lucide-react';
-import type { Conquista } from '../domain/types';
+import type { AvatarConfig, Conquista } from '../domain/types';
 import { RARIDADES, itemPorId } from '../services/AvatarCatalog';
 import type { Vida } from '../services/VidaService';
 import { ProgressoPerfil } from './ProgressoPerfil';
+// mega 230 (§1076/§1077): Minha Vitrine no perfil (flag as5.vitrine_pessoal)
+import { MinhaVitrine } from './MinhaVitrine';
+import { flag } from '../nucleo/flags';
 
 function fmtData(iso: string | null): string {
   if (!iso) return '';
@@ -53,7 +56,12 @@ function CardConquista({ c }: { c: Conquista }) {
 
 type FiltroConq = 'todas' | 'feitas' | 'pendentes';
 
-export function Conquistas({ vida, carregando = false }: { vida: Vida | null; carregando?: boolean }) {
+export function Conquistas({ vida, carregando = false, config }: {
+  vida: Vida | null;
+  carregando?: boolean;
+  /** mega 230 (§1076): habilita a Minha Vitrine (ausente = perfil clássico) */
+  config?: AvatarConfig;
+}) {
   // mega 68 (§218): filtro — hooks ANTES de qualquer early return
   const [filtro, setFiltro] = useState<FiltroConq>('todas');
   // §557: carregar ≠ falhar — enquanto a vida não RESOLVE, skeleton
@@ -85,6 +93,10 @@ export function Conquistas({ vida, carregando = false }: { vida: Vida | null; ca
     <div className="avst-conquistas">
       {/* AS5 F7 (§220-§224 + §89): nível/XP transparentes, badges, timeline */}
       <ProgressoPerfil conquistas={vida.conquistas} />
+      {/* mega 230 (§1076/§1077): Minha Vitrine + galerias locais */}
+      {config && flag('as5.vitrine_pessoal') && (
+        <MinhaVitrine config={config} conquistas={vida.conquistas} />
+      )}
       <p className="avst-conquistas-resumo">
         <Trophy size={13} aria-hidden /> {feitas}/{vida.conquistas.length} conquistas ({pctGeral}%) — todas medidas em dados reais do seu uso.
       </p>

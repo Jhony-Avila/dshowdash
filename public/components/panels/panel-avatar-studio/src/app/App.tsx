@@ -701,7 +701,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           {aba === 'titulo' && <Titulos config={atual} aoAplicar={aplicar} />}
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}
           {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
-          {aba === 'conquistas' && <Conquistas vida={vida} carregando={vidaCarregando} />}
+          {aba === 'conquistas' && <Conquistas vida={vida} carregando={vidaCarregando} config={atual} />}
           {aba === 'vitrine' && (
             <Vitrine config={atual} desbloqueados={vida?.desbloqueados ?? new Set()}
               aoAplicar={aplicar} aoAbrirColecoes={() => setAba('colecoes')} />

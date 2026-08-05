@@ -1984,3 +1984,41 @@
   text-transform: uppercase; color: var(--avst-texto-2);
 }
 .avst5-p3d-editor .avst5-p3d-slider em { font-style: normal; font-size: 10.5px; color: var(--avst-texto-2); }
+
+/* ── mega 228 (§220): LINHA DO TEMPO no shell ── */
+.avst5-tl-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.avst5-tl-mes { display: flex; flex-direction: column; gap: 6px; }
+.avst5-tl-mes-titulo {
+  margin: 6px 0 0; font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+  text-transform: capitalize; color: var(--avst-texto-2);
+  border-bottom: 1px solid var(--avst-borda); padding-bottom: 4px;
+}
+.avst5-tl-nota { font-style: normal; font-size: 11.5px; color: var(--avst-texto-2); }
+
+/* ── mega 229 (§229): sub-filtros de favoritos ── */
+.avst-fchip-on { border-color: var(--avst-acento); color: var(--avst-texto); background: rgba(76, 157, 232, 0.12); }
+
+/* ── mega 230 (§1076/§1077): MINHA VITRINE + galerias ── */
+.avst-mv { display: flex; flex-direction: column; gap: 10px; width: 100%; min-width: 0; }
+.avst-mv-blocos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.avst-mv-bloco {
+  border: 1px solid var(--avst-borda); border-radius: 10px; padding: 8px;
+  display: flex; flex-direction: column; gap: 6px; background: rgba(20, 24, 34, 0.5);
+}
+.avst-mv-bloco header { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.avst-mv-bloco header strong { font-size: 10.5px; display: inline-flex; align-items: center; gap: 4px; color: var(--avst-texto-2); text-transform: uppercase; letter-spacing: 0.3px; }
+.avst-mv-mover { display: inline-flex; gap: 2px; }
+.avst-mv-conteudo { display: flex; align-items: center; gap: 6px; min-height: 44px; font-size: 12px; }
+.avst-mv-conteudo img { border-radius: 8px; }
+.avst-mv-conteudo em { font-style: normal; color: var(--avst-texto-2); display: inline-flex; align-items: center; gap: 4px; }
+.avst-mv-presets { display: inline-flex; gap: 4px; }
+.avst-mv-galerias { display: flex; flex-direction: column; gap: 6px; }
+.avst-mv-gal-grade { display: flex; flex-wrap: wrap; gap: 6px; }
+.avst-mv-gal-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; width: 68px;
+  background: none; border: 1px solid var(--avst-borda); border-radius: 8px; padding: 5px;
+  color: var(--avst-texto-2); font-size: 9.5px; cursor: pointer;
+}
+.avst-mv-gal-item img { border-radius: 6px; }
+.avst-mv-gal-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avst-mv-gal-item.ativo { border-color: var(--avst-acento); color: var(--avst-texto); }

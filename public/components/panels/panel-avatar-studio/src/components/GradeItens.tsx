@@ -18,6 +18,9 @@ import {
 import type { AvatarConfig, CategoriaId, Raridade, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, validarConfig } from '../services/AvatarCatalog';
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
+// mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
+import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
+import { flag } from '../nucleo/flags';
 import type { ParteDef } from '../engine/base-api';
 import { AvatarSvg } from './AvatarSvg';
 import { Dica } from './Dica';
@@ -122,6 +125,17 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   const [ocultarBloqueados, setOcultarBloqueados] = useState(false);
   const [ordem, setOrdem] = useState<Ordem>('padrao');
   const [favs, setFavs] = useState<Set<string>>(favoritos);
+  // mega 229 (§229): sub-filtro das categorias de favorito + coleção alvo
+  const favCats = flag('as5.favoritos_categorias');
+  const [subFav, setSubFav] = useState<'todos' | 'rapidos' | 'permanentes' | 'colecao'>('todos');
+  const [colFav, setColFav] = useState<string | null>(null);
+  const [permanentes, setPermanentes] = useState<Set<string>>(favoritosPermanentes);
+  // outras superfícies (DetalheAsset) mudam a marca — resincroniza ao focar
+  useEffect(() => {
+    const ao = () => setPermanentes(favoritosPermanentes());
+    window.addEventListener('focus', ao);
+    return () => window.removeEventListener('focus', ao);
+  }, []);
   const [modo, setModo] = useState<ModoGrade>(() => {
     try {
       const m = localStorage.getItem(CHAVE_MODO);
@@ -186,18 +200,40 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listaBase, desbloqueados]);
 
+  // mega 229 (§229): a visão de favoritos está ativa? (aba do shell OU
+  // o toggle clássico) — só aí os sub-filtros aparecem/filtram
+  const emFavoritos = filtroAba === 'favoritos' || soFavoritos;
+  const colecoesFav = useMemo(
+    () => (favCats && emFavoritos ? favoritosPorColecao(favs) : []),
+    [favCats, emFavoritos, favs],
+  );
+
   const itens = useMemo(() => {
     const usados = itensUsados();
-    const lista = listaBase
+    let lista = listaBase
       .filter((i) => !tier || i.raridade === tier)
       .filter((i) => !soFavoritos || favs.has(i.id))
       .filter((i) => !ocultarBloqueados || !bloqueado(i));
+    // mega 229 (§229): rápidos = estrela sem marca · permanentes = marcados
+    // · por coleção = favoritos da coleção escolhida
+    if (favCats && emFavoritos && subFav !== 'todos') {
+      const daColecao = subFav === 'colecao' && colFav
+        ? new Set(colecoesFav.find((c) => c.id === colFav)?.itens ?? [])
+        : null;
+      lista = lista.filter((i) => (subFav === 'rapidos' ? favs.has(i.id) && !permanentes.has(i.id)
+        : subFav === 'permanentes' ? permanentes.has(i.id)
+          : daColecao ? daColecao.has(i.id) : favs.has(i.id)));
+    }
     if (ordem === 'raridade') lista.sort((a, b) => nivelRaridade(b.raridade) - nivelRaridade(a.raridade));
     if (ordem === 'nome') lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
     if (ordem === 'recentes') lista.sort((a, b) => Number(usados.has(b.id)) - Number(usados.has(a.id)));
+    // §229: PERMANENTES sempre no topo da visão de favoritos (estável)
+    if (favCats && emFavoritos && ordem === 'padrao') {
+      lista = [...lista].sort((a, b) => Number(permanentes.has(b.id)) - Number(permanentes.has(a.id)));
+    }
     return lista;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listaBase, tier, soFavoritos, ocultarBloqueados, ordem, favs]);
+  }, [listaBase, tier, soFavoritos, ocultarBloqueados, ordem, favs, favCats, emFavoritos, subFav, colFav, permanentes, colecoesFav]);
 
   const equipados = new Set(idsEquipados(config, categoria));
   const nomesEquipados = [...equipados].map((id) => itemPorId(id)?.nome).filter(Boolean).join(' + ');
@@ -333,6 +369,33 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           <button type="button" className="avst-fchip avst-fchip-limpar" onClick={limparFiltros}>
             Limpar tudo
           </button>
+        </div>
+      )}
+
+      {/* mega 229 (§229): FAVORITOS QUE CRESCEM — sub-filtros da visão de
+          favoritos (rápidos = estrela · permanentes = marcados · por coleção) */}
+      {favCats && emFavoritos && (
+        <div className="avst-fchips" role="radiogroup" aria-label="Categorias de favoritos (§229)"
+          data-teste="fav-categorias">
+          {([['todos', 'Todos'], ['rapidos', 'Rápidos'], ['permanentes', 'Permanentes'], ['colecao', 'Por coleção']] as const).map(([id, nome]) => (
+            <button key={id} type="button" role="radio" aria-checked={subFav === id}
+              className={`avst-fchip${subFav === id ? ' avst-fchip-on' : ''}`}
+              data-teste={`fav-cat-${id}`}
+              onClick={() => { setSubFav(id); if (id !== 'colecao') setColFav(null); }}>
+              {nome}
+            </button>
+          ))}
+          {subFav === 'colecao' && colecoesFav.map((c) => (
+            <button key={c.id} type="button" role="radio" aria-checked={colFav === c.id}
+              className={`avst-fchip${colFav === c.id ? ' avst-fchip-on' : ''}`}
+              data-teste={`fav-col-${c.id}`}
+              onClick={() => setColFav((v) => (v === c.id ? null : c.id))}>
+              {c.nome} · {c.itens.length}
+            </button>
+          ))}
+          {subFav === 'colecao' && colecoesFav.length === 0 && (
+            <span className="avst-foto-nota" data-teste="fav-col-vazio">Nenhum favorito pertence a uma coleção ainda.</span>
+          )}
         </div>
       )}
 
