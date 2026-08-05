@@ -10,6 +10,24 @@ Backup duplo automático (código tar + banco mysqldump) → /backup · gate de
 peso versionado · smoke do dist (lote 151) · php -l · diagnóstico do banco
 (nunca aplica). O script roda de CÓPIA efêmera (imune ao próprio merge).
 
+## Auto-deploy (webhook · decisão #47)
+Fluxo normal desde 2026-08-05: **push no `main` → deploy sozinho em ≤1 min**
+(fim do patch/scp manual). Duas peças, ambas versionadas:
+- **Endpoint** `api/deploy/webhook.php` (público): valida HMAC sha256 do corpo
+  (`X-Hub-Signature-256`, `hash_equals`) contra `config/webhook-secret.txt`
+  (fora do git, 600); `ping`→`pong`; só age em push de `refs/heads/main`.
+  NUNCA executa shell — apenas grava `storage/deploy-fila/pedido-<sha>`.
+  Sem assinatura válida → 403. Config secret ausente → 503.
+- **Runner** `scripts/deploy/auto-deploy-runner.sh` (root, via
+  `/etc/cron.d/dshow-auto-deploy`, 1/min): `flock` (1 por vez), consome a
+  fila e roda `deploy-as5.sh` (backup duplo/gate/smoke/rollback). Log em
+  `/backup/deploy-logs/auto-deploy.log`. Instalação e cron no cabeçalho do
+  próprio script.
+- **Interruptor:** `touch config/auto-deploy.off` desliga (webhook responde
+  202 `desligado`, runner sai limpo) · `rm config/auto-deploy.off` religa.
+- **Diagnóstico:** fila presa? `ls storage/deploy-fila/` · último deploy?
+  `tail /backup/deploy-logs/auto-deploy.log` · webhook chegou? log do PHP/nginx.
+
 ## Rollback
 1. **Total (código+dist):** impresso no resumo de CADA deploy —
    `git reset --hard <commit> && tar -xzf /backup/pre-as5-<carimbo>-dist.tar.gz -C /var/www/dshowdash`
