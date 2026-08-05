@@ -17,6 +17,12 @@ const PADROES: Record<string, boolean> = {
   'as5.telemetria_painel': false, // mega 46 — viewer local de telemetria (dev)
   'as5.consultor': true,          // lote 121–130 — consultor de estilo POR REGRAS (client-only; §651 desliga)
   'as5.foto_galeria': true,       // lote 211–220 — galeria de templates de foto (filtro/favoritos/destaque §326); §651 desliga p/ lista simples
+  // ── lote 221–230 (decisão #50: LIGADAS no padrão, rollback §651 = false) ──
+  'as5.foto_canvas_pro': true,    // megas 221–225 — Photo Studio PRO: 3 regiões §323, canvas §324, snapping §324.2, título-componente §344, emblemas §345
+  'as5.showcase_editor': true,    // megas 226–227 — editor de showcase §175 + modo automático §175.1 (palco 3D)
+  'as5.timeline_shell': true,     // mega 228 — linha do tempo unificada §220 no shell
+  'as5.favoritos_categorias': true, // mega 229 — favoritos rápidos/permanentes/por coleção §229
+  'as5.vitrine_pessoal': true,    // mega 230 — Minha Vitrine §1076 + galerias locais §1077 (client-side)
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

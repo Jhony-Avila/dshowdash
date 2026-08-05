@@ -12,8 +12,8 @@ import { sanitizarParams } from '../engine/params';
 import type { ParteDef } from '../engine/base-api';
 import { renderAvatar, renderDataUri, hashConfig } from '../engine/render';
 import type { OpcoesRender } from '../engine/render';
-import { renderFotoEstilizada } from '../engine/render-foto';
-import type { OpcoesRenderFoto } from '../engine/render-foto';
+import { FORMATOS_FOTO, renderFotoEstilizada } from '../engine/render-foto';
+import type { FormatoFotoId, OpcoesRenderFoto } from '../engine/render-foto';
 
 // §325: formatos de saída da foto — fachada re-exporta a fonte do engine
 export { FORMATOS_FOTO } from '../engine/render-foto';
@@ -564,6 +564,54 @@ export const TEMPLATES_FOTO: TemplateFoto[] = [
       tipografia: { fonte: 'mono', peso: 600, cor: '#7cd9ff' },
     },
   },
+  // ── mega 225 (§326×§344×§345×§343×§334): categoria ASSINATURA — estreia
+  // o título-componente (seloCfg) e as posições manuais (pos) dos megas
+  // 223–224, sempre com ids REAIS e valores que os sanitizadores aceitam.
+  {
+    id: 'tpl_selo_discreto', nome: 'Selo Discreto', categoria: 'assinatura',
+    descricao: 'Estúdio limpo com o selo compacto no TOPO da composição (§344).',
+    estilo: {
+      camadas: { fundo: 'fun_estudio', moldura: 'mol_minimal' },
+      titulo: 'tit_visionario', cores: { destaque: '#4c9de8' },
+      seloCfg: { escala: 'p', compacto: true },
+      pos: { selo: { x: 120, y: 14 } },
+      luzLocal: { tipo: 'radial', intensidade: 0.2 },
+    },
+  },
+  {
+    id: 'tpl_manchete', nome: 'Manchete', categoria: 'assinatura',
+    descricao: 'Legenda em MANCHETE no alto, parede de LED e selo embaixo (§343×§323.2).',
+    estilo: {
+      camadas: { fundo: 'fun_led_wall', aura: 'aur_dshow', moldura: 'mol_rgb' },
+      titulo: 'tit_lenda_dshow', cores: { destaque: '#7c5cff' },
+      tipografia: { peso: 800, tamanho: 'g', contorno: true, caixaAlta: true },
+      pos: { legenda: { x: 120, y: 36 } },
+      camadasFoto: { aura: { blend: 'soft-light' } },
+    },
+  },
+  {
+    id: 'tpl_assimetrico', nome: 'Assimétrico', categoria: 'assinatura',
+    descricao: 'Emblema no canto superior (§345.1) e selo GRANDE — composição fora do eixo.',
+    estilo: {
+      camadas: { fundo: 'fun_montanhas', aura: 'aur_estelar', emblema: 'emb_lua', moldura: 'mol_selo' },
+      titulo: 'tit_oraculo', cores: { destaque: '#ff9ecb' },
+      seloCfg: { escala: 'g' },
+      pos: { emblema: { x: 202, y: 38 } },
+      camadasFoto: { aura: { blend: 'soft-light', opacidade: 0.9 } },
+    },
+  },
+  {
+    id: 'tpl_vitrine_executiva', nome: 'Vitrine Executiva', categoria: 'assinatura',
+    descricao: 'Escritório, ouro, emblema junto ao selo compacto e serifa (§344×§345.1).',
+    estilo: {
+      camadas: { fundo: 'fun_escritorio', moldura: 'mol_ouro', emblema: 'emb_grafico' },
+      titulo: 'tit_estrategista', cores: { destaque: '#e8b64c' },
+      seloCfg: { compacto: true },
+      pos: { emblema: { x: 40, y: 214 } },
+      tipografia: { fonte: 'serif', cor: '#ffd75e' },
+      luzLocal: { tipo: 'linear', intensidade: 0.2 },
+    },
+  },
 ];
 
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────
@@ -597,6 +645,9 @@ export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesR
   const cfLimpo = estilo.camadasFoto ? sanitizarCamadasFoto(estilo.camadasFoto) : {};
   const luzLimpa = estilo.luzLocal ? sanitizarLuzLocal(estilo.luzLocal) : null;
   const tpLimpa = estilo.tipografia ? sanitizarTipografiaFoto(estilo.tipografia) : {};
+  // lote 221–224 (§323.2/§344): idem — vazios são OMITIDOS (byte-estável)
+  const posLimpa = estilo.pos ? sanitizarPosFoto(estilo.pos) : {};
+  const seloLimpo = estilo.seloCfg ? sanitizarSeloCfgFoto(estilo.seloCfg) : {};
   return renderFotoEstilizada(fotoHref, {
     camadas: estilo.camadas,
     cores: { ...CONFIG_PADRAO.cores, destaque: normalizarHex(estilo.cores.destaque, CONFIG_PADRAO.cores.destaque) },
@@ -609,6 +660,8 @@ export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesR
     ...(luzLimpa ? { luzLocal: luzLimpa } : {}),
     ...(Object.keys(tpLimpa).length ? { tipografia: tpLimpa } : {}),
     ...(estilo.subtitulo ? { subtitulo: sanitizarLegendaFoto(estilo.subtitulo) } : {}),
+    ...(Object.keys(posLimpa).length ? { pos: posLimpa } : {}),
+    ...(Object.keys(seloLimpo).length ? { seloCfg: seloLimpo } : {}),
   }, itemPorId, opcoes);
 }
 
@@ -656,6 +709,79 @@ export function sanitizarTipografiaFoto(t: NonNullable<EstiloFoto['tipografia']>
   return limpo;
 }
 
+// ── lote 221–225 (§323.2/§324.2/§344/§345) ──────────────────────────
+/** mega 223: elementos posicionáveis (whitelist fechada — espelhada no PHP). */
+export const ELEMENTOS_POS_FOTO = ['legenda', 'subtitulo', 'selo', 'emblema'] as const;
+
+/** mega 223 (§323.2/§324.2): posições — clamp na caixa estendida (viewBox
+ *  240-base, wide até 960); número hostil vira ausente; vazio = omitido. */
+export function sanitizarPosFoto(pos: NonNullable<EstiloFoto['pos']>): NonNullable<EstiloFoto['pos']> {
+  const saida: NonNullable<EstiloFoto['pos']> = {};
+  for (const el of ELEMENTOS_POS_FOTO) {
+    const p = pos[el];
+    if (!p || typeof p.x !== 'number' || typeof p.y !== 'number'
+      || !Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
+    saida[el] = {
+      x: Math.round(Math.max(-20, Math.min(980, p.x)) * 10) / 10,
+      y: Math.round(Math.max(-20, Math.min(260, p.y)) * 10) / 10,
+    };
+  }
+  return saida;
+}
+
+/** mega 224 (§344): título-componente — enums fechados, neutro omitido. */
+export function sanitizarSeloCfgFoto(cfg: NonNullable<EstiloFoto['seloCfg']>): NonNullable<EstiloFoto['seloCfg']> {
+  const limpo: NonNullable<EstiloFoto['seloCfg']> = {};
+  if (cfg.escala === 'p' || cfg.escala === 'g') limpo.escala = cfg.escala;
+  if (cfg.compacto === true) limpo.compacto = true;
+  return limpo;
+}
+
+/** mega 223: posição PADRÃO de cada elemento por formato (a mesma do
+ *  render legado — arrastar parte de onde o elemento já está). */
+export function posPadraoElementoFoto(
+  el: (typeof ELEMENTOS_POS_FOTO)[number],
+  formato: FormatoFotoId,
+  lado: 'esquerda' | 'direita' = 'esquerda',
+  temSubtitulo = false,
+): { x: number; y: number } {
+  if (formato === 'perfil') {
+    if (el === 'legenda') return { x: 120, y: 200 };
+    if (el === 'selo') return { x: 120, y: 206 };
+    return { x: 178, y: 178 }; // emblema (subtítulo não existe no 1:1)
+  }
+  const W = FORMATOS_FOTO[formato].caixa[0];
+  const cx = lado === 'direita' ? (W - 240) / 2 : (240 + W) / 2;
+  if (el === 'legenda') return { x: cx, y: temSubtitulo ? 96 : 108 };
+  if (el === 'subtitulo') return { x: cx, y: 118 };
+  if (el === 'selo') return { x: cx, y: 128 };
+  return { x: cx, y: 92 }; // emblema (alvo do pino no wide)
+}
+
+/** mega 345.1: posições SUGERIDAS do emblema (§345.1) — nunca sobre o
+ *  rosto: cantos e vizinhança do título, por formato. */
+export function posSugeridasEmblema(
+  formato: FormatoFotoId,
+  lado: 'esquerda' | 'direita' = 'esquerda',
+): Array<{ id: string; nome: string; pos: { x: number; y: number } | null }> {
+  if (formato === 'perfil') {
+    return [
+      { id: 'auto', nome: 'Auto', pos: null },
+      { id: 'canto-sup', nome: 'Canto superior', pos: { x: 202, y: 38 } },
+      { id: 'canto-inf', nome: 'Canto inferior', pos: { x: 38, y: 178 } },
+      { id: 'perto-titulo', nome: 'Perto do título', pos: { x: 40, y: 214 } },
+    ];
+  }
+  const W = FORMATOS_FOTO[formato].caixa[0];
+  const cx = lado === 'direita' ? (W - 240) / 2 : (240 + W) / 2;
+  return [
+    { id: 'auto', nome: 'Auto', pos: null },
+    { id: 'canto-sup', nome: 'Canto superior', pos: { x: W - 34, y: 34 } },
+    { id: 'canto-inf', nome: 'Canto inferior', pos: { x: W - 34, y: 206 } },
+    { id: 'perto-titulo', nome: 'Perto do título', pos: { x: cx, y: 168 } },
+  ];
+}
+
 /** lote 168 (§349): DICAS de composição — determinísticas, com correção
  *  1-clique quando fizer sentido (nunca aplica sozinho — §239). */
 export interface DicaFoto {
@@ -691,6 +817,14 @@ export function dicasComposicao(estilo: EstiloFoto, formato: string): DicaFoto[]
   if (estilo.camadasFoto && tudoOculto && Object.values(estilo.camadasFoto).some((c) => c?.oculta)) {
     dicas.push({ id: 'sem-cenario', correcao: { camadasFoto: {} },
       texto: 'Todas as camadas estão ocultas — a foto perde o cenário. Reexibir devolve a composição.' });
+  }
+  // mega 223 (§349×§345.1): legenda arrastada para CIMA do rosto no 1:1
+  const pLeg = estilo.pos?.legenda;
+  if (formato === 'perfil' && estilo.legenda && pLeg
+    && Math.hypot(pLeg.x - 120, pLeg.y - 118) < 80) {
+    const { legenda: _l, ...posSem } = estilo.pos ?? {};
+    dicas.push({ id: 'legenda-no-rosto', correcao: { pos: posSem },
+      texto: 'A legenda está sobre o rosto — voltar ao layout automático devolve a legibilidade.' });
   }
   return dicas.slice(0, 3);
 }

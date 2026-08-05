@@ -53,8 +53,23 @@ export interface EstiloFotoRender {
   };
   /** lote 167 (§343.1): subtítulo — só entra nos formatos WIDE */
   subtitulo?: string;
+  /** mega 223 (§323.2/§324.2): posições manuais já VALIDADAS pelo serviço.
+   *  Ausente = layout legado byte a byte. */
+  pos?: Partial<Record<'legenda' | 'subtitulo' | 'selo' | 'emblema', { x: number; y: number }>>;
+  /** mega 224 (§344): título-componente (escala/compacto) já validado. */
+  seloCfg?: { escala?: 'p' | 'm' | 'g'; compacto?: boolean };
 }
 export type CamadaFotoRenderId = 'fundo' | 'banner' | 'aura' | 'efeito' | 'moldura' | 'emblema';
+
+// ── mega 224 (§344): fator de escala do selo — limites do briefing ───
+function escalaSelo(cfg?: EstiloFotoRender['seloCfg']): number {
+  return cfg?.escala === 'p' ? 0.82 : cfg?.escala === 'g' ? 1.18 : 1;
+}
+
+/** mega 224 (§344): nome exibido no selo (compacto = abreviado). */
+function nomeSelo(nome: string, cfg?: EstiloFotoRender['seloCfg']): string {
+  return cfg?.compacto && nome.length > 14 ? `${nome.slice(0, 12).trimEnd()}…` : nome;
+}
 
 // ── lote 161–164 (§338/§339/§342): painel de camadas ────────────────
 type CfgCamadas = EstiloFotoRender['camadasFoto'];
@@ -239,6 +254,35 @@ function escaparAtributo(v: string): string {
   return v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/** mega 223: 1 casa decimal — determinístico e curto no SVG. */
+function round1(v: number): number {
+  return Math.round(v * 10) / 10;
+}
+
+/** mega 224 (§344): selo como COMPONENTE — escala dentro de limites,
+ *  versão compacta e posição. Só roda quando seloCfg/pos.selo existem
+ *  (o caminho legado permanece byte a byte). */
+function seloComponente(
+  selo: { nome: string; cor: string },
+  cfg: EstiloFotoRender['seloCfg'],
+  pos: { x: number; y: number },
+  modoWide: boolean,
+  maxLarg?: number,
+): string {
+  const esc = escalaSelo(cfg);
+  const nome = nomeSelo(selo.nome, cfg);
+  const base = modoWide
+    ? { h: 30, rx: 15, fs: 16, dy: 20, sw: 1.6, larg: Math.max(120, Math.round(nome.length * 10) + 34) }
+    : { h: 22, rx: 11, fs: 12, dy: 15, sw: 1.4, larg: Math.max(92, Math.round(nome.length * 7.4) + 26) };
+  const larg = round1(Math.min(maxLarg ?? (modoWide ? 480 : 200), base.larg * esc));
+  const cx = round1(pos.x);
+  const cy = round1(pos.y);
+  return `<g><rect x="${round1(cx - larg / 2)}" y="${cy}" width="${larg}" height="${round1(base.h * esc)}" rx="${round1(base.rx * esc)}" fill="#0a0d15" opacity="0.88" ` +
+      `stroke="${selo.cor}" stroke-width="${base.sw}"/>` +
+    `<text x="${cx}" y="${round1(cy + base.dy * esc)}" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" ` +
+      `font-size="${round1(base.fs * esc)}" font-weight="700" fill="${selo.cor}">${escaparTexto(nome)}</text></g>`;
+}
+
 function escaparTexto(v: string): string {
   return v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -259,7 +303,10 @@ export function renderFotoEstilizada(
     + (estilo.camadasFoto ? JSON.stringify(estilo.camadasFoto) : '')
     + (estilo.luzLocal ? JSON.stringify(estilo.luzLocal) : '')
     + (estilo.tipografia ? JSON.stringify(estilo.tipografia) : '')
-    + (estilo.subtitulo ?? ''));
+    + (estilo.subtitulo ?? '')
+    // lote 221–224 (§323.2/§344): idem — ausentes não mudam o hash
+    + (estilo.pos ? JSON.stringify(estilo.pos) : '')
+    + (estilo.seloCfg ? JSON.stringify(estilo.seloCfg) : ''));
   const p = paletaDe(estilo.cores);
   const forma = opcoes.forma ?? 'quadrado';
   const aj = ajustesEfetivos(estilo.ajustes); // megas 51–54 (null = legado)
@@ -295,22 +342,33 @@ export function renderFotoEstilizada(
   const medalhao = medalhaoSvg(fotoHref, p, uid, aj);
 
   // emblema vira BADGE no canto inferior direito do medalhão
-  // (o pino desenha centrado em (152,206) → alvo (178,178))
+  // (o pino desenha centrado em (152,206) → alvo (178,178));
+  // mega 223/§345.1: pos.emblema move o alvo (ausente = translate legado)
+  const posEmb = estilo.pos?.emblema;
+  const trEmb = posEmb
+    ? `translate(${round1(posEmb.x - 152)} ${round1(posEmb.y - 206)})`
+    : 'translate(26 -28)';
   const badge = estilo.camadas.emblema && estilo.camadas.emblema !== 'nenhum'
-    ? envolverCamada('emblema', `<g transform="translate(26 -28)">${pintar(estilo.camadas.emblema)}</g>`, cfgC)
+    ? envolverCamada('emblema', `<g transform="${trEmb}">${pintar(estilo.camadas.emblema)}</g>`, cfgC)
     : '';
 
-  // selo do título: faixa inferior legível no PNG derivado (480px)
+  // selo do título: faixa inferior legível no PNG derivado (480px);
+  // mega 224 (§344) + 223: escala/compacto/posição — ausentes = byte a byte
   let selo = '';
   if (estilo.selo) {
-    const nome = estilo.selo.nome;
-    const larg = Math.min(200, Math.max(92, Math.round(nome.length * 7.4) + 26));
-    const x = 120 - larg / 2;
-    selo =
-      `<g><rect x="${x}" y="206" width="${larg}" height="22" rx="11" fill="#0a0d15" opacity="0.88" ` +
-        `stroke="${estilo.selo.cor}" stroke-width="1.4"/>` +
-      `<text x="120" y="221" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" ` +
-        `font-size="12" font-weight="700" fill="${estilo.selo.cor}">${escaparTexto(nome)}</text></g>`;
+    const posS = estilo.pos?.selo;
+    if (!estilo.seloCfg && !posS) {
+      const nome = estilo.selo.nome;
+      const larg = Math.min(200, Math.max(92, Math.round(nome.length * 7.4) + 26));
+      const x = 120 - larg / 2;
+      selo =
+        `<g><rect x="${x}" y="206" width="${larg}" height="22" rx="11" fill="#0a0d15" opacity="0.88" ` +
+          `stroke="${estilo.selo.cor}" stroke-width="1.4"/>` +
+        `<text x="120" y="221" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" ` +
+          `font-size="12" font-weight="700" fill="${estilo.selo.cor}">${escaparTexto(nome)}</text></g>`;
+    } else {
+      selo = seloComponente(estilo.selo, estilo.seloCfg, posS ?? { x: 120, y: 206 }, false);
+    }
   }
 
   const clip = forma === 'circulo'
@@ -326,10 +384,12 @@ export function renderFotoEstilizada(
   const formaClip = aj ? pathForma(aj.forma, 92) : null;
   const fclip = formaClip ? `${formaClip}/>` : `<circle cx="120" cy="118" r="92"/>`;
   const fundoComp = aj && aj.desfoqueFundo > 0 ? `<g filter="url(#${uid}bf)">${fundo}</g>` : fundo;
-  // mega 115 (§344) + lote 166 (§343): legenda curta acima do selo
+  // mega 115 (§344) + lote 166 (§343): legenda curta acima do selo;
+  // mega 223: pos.legenda move a âncora (ausente = 120/200 legado)
   const tx = atributosTexto(estilo.tipografia, 11, '#e6eaf2');
+  const posLeg = estilo.pos?.legenda;
   const legenda = estilo.legenda
-    ? `<text x="120" y="200" text-anchor="middle" ${tx.attrs} opacity="0.92">` +
+    ? `<text x="${posLeg ? round1(posLeg.x) : 120}" y="${posLeg ? round1(posLeg.y) : 200}" text-anchor="middle" ${tx.attrs} opacity="0.92">` +
       `${escaparTexto(tx.caixaAlta ? estilo.legenda.toUpperCase() : estilo.legenda)}</text>`
     : '';
   const luz = luzLocalSvg(uid, estilo.luzLocal); // lote 165 (§334)
@@ -411,16 +471,19 @@ function comporWide(
   const formaClipW = aj ? pathForma(aj.forma, 92) : null;
   const fclipW = formaClipW ? `${formaClipW}/>` : `<circle cx="120" cy="118" r="92"/>`;
   const cxTexto = opcoes.lado === 'direita' ? (W - 240) / 2 : (240 + W) / 2;
-  // lote 166+167 (§343): tipografia + subtítulo (presente = legenda sobe)
+  // lote 166+167 (§343): tipografia + subtítulo (presente = legenda sobe);
+  // mega 223: pos.legenda/pos.subtitulo movem a âncora (ausente = legado)
   const txW = atributosTexto(estilo.tipografia, 13, '#e6eaf2');
   const yLegenda = estilo.subtitulo ? 96 : 108;
+  const posLegW = estilo.pos?.legenda;
   const legendaW = estilo.legenda
-    ? `<text x="${cxTexto}" y="${yLegenda}" text-anchor="middle" ${txW.attrs} opacity="0.92">` +
+    ? `<text x="${posLegW ? round1(posLegW.x) : cxTexto}" y="${posLegW ? round1(posLegW.y) : yLegenda}" text-anchor="middle" ${txW.attrs} opacity="0.92">` +
       `${escaparTexto(txW.caixaAlta ? estilo.legenda.toUpperCase() : estilo.legenda)}</text>`
     : '';
   const txSub = atributosTexto(estilo.tipografia, 10.5, '#8b93a7');
+  const posSubW = estilo.pos?.subtitulo;
   const subtituloW = estilo.subtitulo
-    ? `<text x="${cxTexto}" y="118" text-anchor="middle" ${txSub.attrs} opacity="0.9">` +
+    ? `<text x="${posSubW ? round1(posSubW.x) : cxTexto}" y="${posSubW ? round1(posSubW.y) : 118}" text-anchor="middle" ${txSub.attrs} opacity="0.9">` +
       `${escaparTexto(txSub.caixaAlta ? estilo.subtitulo.toUpperCase() : estilo.subtitulo)}</text>`
     : '';
 
@@ -444,19 +507,30 @@ function comporWide(
   const deslocMedalhao = direita ? W - 240 : 0;
   // célula do texto: oposta ao medalhão
   const cx2 = direita ? (W - 240) / 2 : (240 + W) / 2;
+  // mega 223/§345.1: pos.emblema move o badge (ausente = translate legado)
+  const posEmbW = estilo.pos?.emblema;
+  const trEmbW = posEmbW
+    ? `translate(${round1(posEmbW.x - 152)} ${round1(posEmbW.y - 206)}) scale(1)`
+    : `translate(${cx2 - 152} -114) scale(1)`;
   const badge = estilo.camadas.emblema && estilo.camadas.emblema !== 'nenhum'
-    ? envolverCamada('emblema', `<g transform="translate(${cx2 - 152} -114) scale(1)">${pintar(estilo.camadas.emblema)}</g>`, cfgC)
+    ? envolverCamada('emblema', `<g transform="${trEmbW}">${pintar(estilo.camadas.emblema)}</g>`, cfgC)
     : '';
   const luzW = luzLocalSvg(uid, estilo.luzLocal); // lote 165 (§334)
+  // mega 224 (§344) + 223: selo-componente quando configurado (senão legado)
   let selo = '';
   if (estilo.selo) {
-    const nome = estilo.selo.nome;
-    const larg = Math.min(W - 240 - 24, Math.max(120, Math.round(nome.length * 10) + 34));
-    selo =
-      `<g><rect x="${cx2 - larg / 2}" y="128" width="${larg}" height="30" rx="15" fill="#0a0d15" opacity="0.88" ` +
-        `stroke="${estilo.selo.cor}" stroke-width="1.6"/>` +
-      `<text x="${cx2}" y="148" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" ` +
-        `font-size="16" font-weight="700" fill="${estilo.selo.cor}">${escaparTexto(nome)}</text></g>`;
+    const posSW = estilo.pos?.selo;
+    if (!estilo.seloCfg && !posSW) {
+      const nome = estilo.selo.nome;
+      const larg = Math.min(W - 240 - 24, Math.max(120, Math.round(nome.length * 10) + 34));
+      selo =
+        `<g><rect x="${cx2 - larg / 2}" y="128" width="${larg}" height="30" rx="15" fill="#0a0d15" opacity="0.88" ` +
+          `stroke="${estilo.selo.cor}" stroke-width="1.6"/>` +
+        `<text x="${cx2}" y="148" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" ` +
+          `font-size="16" font-weight="700" fill="${estilo.selo.cor}">${escaparTexto(nome)}</text></g>`;
+    } else {
+      selo = seloComponente(estilo.selo, estilo.seloCfg, posSW ?? { x: cx2, y: 128 }, true, W - 240 - 24);
+    }
   }
 
   // dimensões explícitas SÓ no export (raster nítido no canvas); no preview

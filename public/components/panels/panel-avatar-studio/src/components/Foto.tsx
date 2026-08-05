@@ -15,16 +15,17 @@
 // PNG data-url → salvarFoto(). O servidor re-encoda pixel a pixel (GD).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Aperture, BadgeCheck, BookmarkPlus, Box, Camera, Check, Crown, Download, FolderOpen, ImageUp,
-  Images, Layers, Lightbulb, LoaderCircle, Redo2, RotateCcw, Share2, SlidersHorizontal, Sparkles, Star, Trash2, Undo2,
-  Video, Wand2, X,
+  Aperture, BadgeCheck, BookmarkPlus, Box, Camera, Check, Crown, Download, FolderOpen, Grid3x3, ImageUp,
+  Images, Layers, Lightbulb, LoaderCircle, Maximize, Move, Redo2, RotateCcw, Share2, SlidersHorizontal, Sparkles, Star, Trash2, Undo2,
+  Video, Wand2, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
 import type { FotoGuardada } from '../services/AvatarService';
 import type { EstiloFoto } from '../domain/types';
 import {
   CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, CORES_TEXTO_FOTO,
-  FORMATOS_FOTO, RARIDADES, TEMPLATES_FOTO, TITULOS, dicasComposicao, itemPorId, itensDe, svgFotoDe,
+  FORMATOS_FOTO, RARIDADES, TEMPLATES_FOTO, TITULOS, dicasComposicao, itemPorId, itensDe,
+  posPadraoElementoFoto, posSugeridasEmblema, svgFotoDe,
 } from '../services/AvatarCatalog';
 import type { DicaFoto, FormatoFotoId, TemplateFoto } from '../services/AvatarCatalog';
 import { telemetria } from '../services/Telemetria';
@@ -38,7 +39,9 @@ import { alternarFavoritoTemplate, favoritosTemplate } from '../services/Favorit
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { excluirProjetoFoto, listarProjetosFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
 import type { ProjetoFoto } from '../services/ProjetosFoto';
-import type { AjustesFoto, BlendFoto, CamadaFotoCfg, CamadaFotoId, TipografiaFoto } from '../domain/types';
+import type {
+  AjustesFoto, BlendFoto, CamadaFotoCfg, CamadaFotoId, ElementoPosFoto, SeloCfgFoto, TipografiaFoto,
+} from '../domain/types';
 
 const LADO_PALCO = 280;   // px na tela
 const LADO_SAIDA = 480;   // px do PNG final
@@ -97,7 +100,8 @@ function limparEstiloSalvo(): void {
 function estiloTemConteudo(e: EstiloFoto): boolean {
   const temObj = (o?: object | null) => !!o && Object.keys(o).length > 0;
   return temObj(e.camadas) || !!e.titulo || !!e.legenda || !!e.subtitulo
-    || temObj(e.ajustes) || !!e.luzLocal || temObj(e.tipografia) || temObj(e.camadasFoto);
+    || temObj(e.ajustes) || !!e.luzLocal || temObj(e.tipografia) || temObj(e.camadasFoto)
+    || temObj(e.pos) || temObj(e.seloCfg); // lote 221–224
 }
 
 const ESTILO_VAZIO: EstiloFoto = { camadas: {}, cores: { destaque: CONFIG_PADRAO.cores.destaque } };
@@ -154,6 +158,22 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   const galeriaTpl = flag('as5.foto_galeria');
   const [filtroTpl, setFiltroTpl] = useState<string>('todos');
   const [favsTpl, setFavsTpl] = useState<string[]>(favoritosTemplate);
+
+  // ── lote 221–223 (§323/§324): CANVAS PRO — estado de VISTA (nunca vai
+  // ao estilo/servidor: zoom/pan/grade/safe/fundo são só do editor) ──
+  const canvasPro = flag('as5.foto_canvas_pro');
+  const [vista, setVista] = useState({ zoom: 1, x: 0, y: 0 });
+  const [gradeCv, setGradeCv] = useState(false);
+  const [safeCv, setSafeCv] = useState(false);
+  const [fundoPrev, setFundoPrev] = useState<'padrao' | 'claro' | 'escuro' | 'xadrez'>('padrao');
+  // §323.2: elemento SELECIONADO para manipulação direta
+  const [selEl, setSelEl] = useState<ElementoPosFoto | null>(null);
+  // §324.2: linhas-guia temporárias do snapping (coords do viewBox)
+  const [guias, setGuias] = useState<{ v?: number; h?: number } | null>(null);
+  const refViewport = useRef<HTMLDivElement>(null);
+  const refCaixaPrev = useRef<HTMLDivElement>(null);
+  const refArrCv = useRef<{ modo: 'pan' | 'el'; px: number; py: number; hist?: boolean } | null>(null);
+  const refEspaco = useRef(false); // §324.1: espaço+arraste = mover a vista
   const mudarEstilo = useCallback((fn: (e: EstiloFoto) => EstiloFoto) => {
     setEstilo((e) => {
       refPassado.current = [...refPassado.current.slice(-29), e];
@@ -240,6 +260,164 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
       return { ...e, tipografia: t };
     });
   }, []);
+
+  // ── lote 221–224: helpers do canvas PRO ─────────────────────────────
+  /** caixa do viewBox no formato atual (240-base; wide até 960 de largura) */
+  const caixaAtual = FORMATOS_FOTO[formato].caixa;
+
+  /** mega 224 (§344): título-componente (neutro = chave some) */
+  const mudarSeloCfg = useCallback((patch: Partial<SeloCfgFoto>) => {
+    mudarEstilo((e) => {
+      const s: SeloCfgFoto = { ...(e.seloCfg ?? {}), ...patch };
+      if (!s.escala || s.escala === 'm') delete s.escala;
+      if (s.compacto !== true) delete s.compacto;
+      if (!Object.keys(s).length) { const { seloCfg: _s, ...resto } = e; return resto as EstiloFoto; }
+      return { ...e, seloCfg: s };
+    });
+  }, [mudarEstilo]);
+
+  /** mega 223: posição de um elemento (null = volta ao layout legado).
+   *  comHistorico=false durante o arraste (como os sliders — §360). */
+  const definirPos = useCallback((el: ElementoPosFoto, p: { x: number; y: number } | null, comHistorico = true) => {
+    const fn = (e: EstiloFoto): EstiloFoto => {
+      const pos = { ...(e.pos ?? {}) };
+      if (p) pos[el] = { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 };
+      else delete pos[el];
+      if (!Object.keys(pos).length) { const { pos: _p, ...resto } = e; return resto as EstiloFoto; }
+      return { ...e, pos };
+    };
+    if (comHistorico) mudarEstilo(fn); else setEstilo(fn);
+  }, [mudarEstilo]);
+
+  /** posição EFETIVA do elemento (manual ou o padrão do layout legado) */
+  const posAtualEl = useCallback((el: ElementoPosFoto): { x: number; y: number } => (
+    estilo.pos?.[el] ?? posPadraoElementoFoto(el, formato, ladoWide, !!estilo.subtitulo)
+  ), [estilo.pos, estilo.subtitulo, formato, ladoWide]);
+
+  /** §323.2: só elementos PRESENTES na composição são selecionáveis */
+  const elementosPos = useMemo(() => {
+    const lista: Array<{ id: ElementoPosFoto; nome: string }> = [];
+    if (estilo.legenda) lista.push({ id: 'legenda', nome: 'Legenda' });
+    if (estilo.subtitulo && formato !== 'perfil') lista.push({ id: 'subtitulo', nome: 'Subtítulo' });
+    if (estilo.titulo) lista.push({ id: 'selo', nome: 'Título' });
+    if (estilo.camadas.emblema && estilo.camadas.emblema !== 'nenhum') lista.push({ id: 'emblema', nome: 'Emblema' });
+    return lista;
+  }, [estilo.legenda, estilo.subtitulo, estilo.titulo, estilo.camadas.emblema, formato]);
+
+  // seleção morre junto com o elemento (ex.: legenda apagada)
+  useEffect(() => {
+    if (selEl && !elementosPos.some((e) => e.id === selEl)) setSelEl(null);
+  }, [selEl, elementosPos]);
+
+  /** §324.2: snapping — centro/margens/grade; devolve pos + linhas-guia */
+  const encaixar = useCallback((p: { x: number; y: number }): { x: number; y: number; v?: number; h?: number } => {
+    const [W, H] = caixaAtual;
+    const tol = 5;
+    let { x, y } = p;
+    let v: number | undefined;
+    let h: number | undefined;
+    const alvosX = [W / 2, 12, W - 12, ...(formato !== 'perfil' ? [120, (240 + W) / 2] : [])];
+    const alvosY = [H / 2, 12, H - 12];
+    for (const a of alvosX) if (Math.abs(x - a) <= tol) { x = a; v = a; break; }
+    for (const a of alvosY) if (Math.abs(y - a) <= tol) { y = a; h = a; break; }
+    if (gradeCv && v === undefined) x = Math.round(x / 8) * 8;
+    if (gradeCv && h === undefined) y = Math.round(y / 8) * 8;
+    return { x: Math.max(-20, Math.min(980, x)), y: Math.max(-20, Math.min(260, y)), v, h };
+  }, [caixaAtual, formato, gradeCv]);
+
+  // §324.1: scroll = zoom (listener nativo — precisa de preventDefault)
+  useEffect(() => {
+    const alvo = refViewport.current;
+    if (!alvo || !canvasPro || !fotoEstilo) return;
+    const aoRoda = (e: WheelEvent) => {
+      e.preventDefault();
+      setVista((z) => ({ ...z, zoom: Math.max(0.25, Math.min(4, z.zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15))) }));
+    };
+    alvo.addEventListener('wheel', aoRoda, { passive: false });
+    return () => alvo.removeEventListener('wheel', aoRoda);
+  }, [canvasPro, fotoEstilo]);
+
+  // §324.1: ESPAÇO+arraste move a vista mesmo com elemento selecionado
+  useEffect(() => {
+    if (!canvasPro || !fotoEstilo) return;
+    const baixo = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName)) return;
+      if (e.key === ' ') refEspaco.current = true;
+    };
+    const cima = (e: KeyboardEvent) => { if (e.key === ' ') refEspaco.current = false; };
+    window.addEventListener('keydown', baixo);
+    window.addEventListener('keyup', cima);
+    return () => { window.removeEventListener('keydown', baixo); window.removeEventListener('keyup', cima); };
+  }, [canvasPro, fotoEstilo]);
+
+  const aoPressionarCv = useCallback((e: React.PointerEvent) => {
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    const modo = selEl && !refEspaco.current ? 'el' : 'pan';
+    refArrCv.current = { modo, px: e.clientX, py: e.clientY };
+  }, [selEl]);
+
+  const aoMoverCv = useCallback((e: React.PointerEvent) => {
+    const arr = refArrCv.current;
+    if (!arr) return;
+    const dx = e.clientX - arr.px;
+    const dy = e.clientY - arr.py;
+    arr.px = e.clientX;
+    arr.py = e.clientY;
+    if (arr.modo === 'pan') {
+      setVista((z) => ({ ...z, x: z.x + dx, y: z.y + dy }));
+      return;
+    }
+    if (!selEl) return;
+    const rect = refCaixaPrev.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return;
+    if (!arr.hist) { arr.hist = true; mudarEstilo((es) => ({ ...es })); } // 1 passo/arraste (§360)
+    const k = rect.width / caixaAtual[0]; // px de tela por unidade do viewBox
+    const atual = posAtualEl(selEl);
+    const enc = encaixar({ x: atual.x + dx / k, y: atual.y + dy / k });
+    definirPos(selEl, { x: enc.x, y: enc.y }, false);
+    setGuias(enc.v !== undefined || enc.h !== undefined ? { v: enc.v, h: enc.h } : null);
+  }, [selEl, caixaAtual, posAtualEl, encaixar, definirPos, mudarEstilo]);
+
+  const aoSoltarCv = useCallback(() => {
+    refArrCv.current = null;
+    setGuias(null);
+  }, []);
+
+  /** §324.1: duplo clique alterna foco 1× ⇄ 2× */
+  const aoDuploCliqueCv = useCallback(() => {
+    setVista((z) => (z.zoom === 1 ? { ...z, zoom: 2 } : { zoom: 1, x: 0, y: 0 }));
+  }, []);
+
+  /** §324: fit (reset) e 100% (1 px do PNG final = 1 px de tela) */
+  const ajustarVista = useCallback((modo: 'fit' | '100' | 'mais' | 'menos') => {
+    if (modo === 'fit') { setVista({ zoom: 1, x: 0, y: 0 }); return; }
+    if (modo === '100') {
+      const rect = refCaixaPrev.current?.getBoundingClientRect();
+      setVista((z) => {
+        if (!rect || rect.width === 0) return { zoom: 1, x: 0, y: 0 };
+        const base = rect.width / z.zoom; // largura CSS sem zoom
+        const alvo = formato === 'perfil' ? LADO_SAIDA : FORMATOS_FOTO[formato].saida[0];
+        return { zoom: Math.max(0.25, Math.min(4, alvo / base)), x: 0, y: 0 };
+      });
+      return;
+    }
+    setVista((z) => ({ ...z, zoom: Math.max(0.25, Math.min(4, z.zoom * (modo === 'mais' ? 1.25 : 0.8))) }));
+  }, [formato]);
+
+  /** setas movem o elemento selecionado (2 un.; Shift = 8) — §323.2 */
+  const aoTeclaCv = useCallback((e: React.KeyboardEvent) => {
+    if (!selEl) return;
+    const passo = e.shiftKey ? 8 : 2;
+    const delta: Record<string, [number, number]> = {
+      ArrowLeft: [-passo, 0], ArrowRight: [passo, 0], ArrowUp: [0, -passo], ArrowDown: [0, passo],
+    };
+    const d = delta[e.key];
+    if (!d) return;
+    e.preventDefault();
+    const atual = posAtualEl(selEl);
+    definirPos(selEl, { x: Math.max(-20, Math.min(980, atual.x + d[0])), y: Math.max(-20, Math.min(260, atual.y + d[1])) });
+  }, [selEl, posAtualEl, definirPos]);
 
   // lote 168 (§349): dicas determinísticas de composição (§239: só sugere)
   const dicas = useMemo(() => (fotoEstilo ? dicasComposicao(estilo, formato) : []), [fotoEstilo, estilo, formato]);
@@ -613,6 +791,19 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
       if (tpl.estilo.luzLocal) est.luzLocal = tpl.estilo.luzLocal;
       if (tpl.estilo.tipografia) est.tipografia = tpl.estilo.tipografia;
       if (tpl.estilo.subtitulo) est.subtitulo = tpl.estilo.subtitulo;
+      // lote 221–225 (§344/§345): posições/título-componente do template —
+      // só entram se o alvo ainda existe após o filtro de bloqueados
+      if (tpl.estilo.pos) {
+        const pv: NonNullable<EstiloFoto['pos']> = {};
+        for (const [el, p] of Object.entries(tpl.estilo.pos)) {
+          if (!p) continue;
+          if (el === 'selo' && !est.titulo) continue;
+          if (el === 'emblema' && !camadas.emblema) continue;
+          pv[el as ElementoPosFoto] = p;
+        }
+        if (Object.keys(pv).length) est.pos = pv;
+      }
+      if (tpl.estilo.seloCfg && est.titulo) est.seloCfg = tpl.estilo.seloCfg;
       return est;
     });
     setMensagem(pulados
@@ -900,14 +1091,105 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
         </>
       )}
 
-      {/* ── Modo FOTO ESTILIZADA (4.6 §21) ─────────────────────────── */}
+      {/* ── Modo FOTO ESTILIZADA (4.6 §21) ─────────────────────────────
+          lote 221 (§323): com a flag as5.foto_canvas_pro o MESMO conteúdo
+          se reorganiza em 3 regiões (ferramentas ▏canvas ▏propriedades) via
+          wrappers + grid; flag OFF = wrappers com display:contents (fluxo
+          idêntico ao clássico, byte a byte no render). */}
       {fotoEstilo && (
-        <div className="avst-foto-estilo">
-          <div className="avst-ft-preview" data-formato={formato} aria-label="Prévia da foto estilizada"
-            dangerouslySetInnerHTML={{ __html: previewEstilo }} />
-          <p className="avst-foto-nota">
-            Só assets de <strong>apresentação</strong> entram na foto — roupa e corpo ficam no avatar em camadas.
-          </p>
+        <div className={canvasPro ? 'avst-foto-estilo avst-ft-pro' : 'avst-foto-estilo'}
+          {...(canvasPro ? { 'data-teste': 'ftpro' } : {})}>
+          <div className="avst-ftp-centroa">
+            {canvasPro ? (
+              /* megas 222–223 (§324): canvas profissional — zoom/pan/grade/
+                 safe/guias; arraste move o elemento SELECIONADO (§323.2) */
+              <div className="avst-ft-grupo" data-teste="ftp-canvas">
+                <div className="avst-ftp-viewport" ref={refViewport} tabIndex={0} role="application"
+                  aria-label="Canvas da composição — setas movem o elemento selecionado"
+                  data-arrastando={selEl ? 'el' : 'pan'}
+                  onPointerDown={aoPressionarCv} onPointerMove={aoMoverCv} onPointerUp={aoSoltarCv}
+                  onPointerCancel={aoSoltarCv} onDoubleClick={aoDuploCliqueCv} onKeyDown={aoTeclaCv}>
+                  <div className="avst-ftp-mundo"
+                    style={{ transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.zoom})` }}>
+                    <div className="avst-ftp-caixa" ref={refCaixaPrev} data-fundo={fundoPrev}>
+                      <div className="avst-ft-preview" data-formato={formato} aria-label="Prévia da foto estilizada"
+                        dangerouslySetInnerHTML={{ __html: previewEstilo }} />
+                      <svg className="avst-ftp-overlay" viewBox={`0 0 ${caixaAtual[0]} ${caixaAtual[1]}`} aria-hidden>
+                        {gradeCv && (
+                          <>
+                            <defs>
+                              <pattern id="ftpgrade" width="8" height="8" patternUnits="userSpaceOnUse">
+                                <path d="M8 0H0V8" fill="none" stroke="#4c9de8" strokeOpacity="0.3" strokeWidth="0.4" />
+                              </pattern>
+                            </defs>
+                            <rect width={caixaAtual[0]} height={caixaAtual[1]} fill="url(#ftpgrade)" data-teste="ftp-grade" />
+                          </>
+                        )}
+                        {safeCv && (
+                          <g data-teste="ftp-safe">
+                            <rect x="12" y="12" width={caixaAtual[0] - 24} height={caixaAtual[1] - 24} fill="none"
+                              stroke="#39d98a" strokeOpacity="0.55" strokeWidth="0.8" strokeDasharray="4 3" rx="4" />
+                            {formato === 'perfil' && (
+                              <circle cx="120" cy="118" r="92" fill="none" stroke="#39d98a" strokeOpacity="0.35"
+                                strokeWidth="0.8" strokeDasharray="2 3" />
+                            )}
+                          </g>
+                        )}
+                        {guias?.v !== undefined && (
+                          <line x1={guias.v} y1={-20} x2={guias.v} y2={caixaAtual[1] + 20}
+                            stroke="#ffd75e" strokeWidth="0.7" data-teste="ftp-guia-v" />
+                        )}
+                        {guias?.h !== undefined && (
+                          <line x1={-20} y1={guias.h} x2={caixaAtual[0] + 20} y2={guias.h}
+                            stroke="#ffd75e" strokeWidth="0.7" data-teste="ftp-guia-h" />
+                        )}
+                        {selEl && (() => {
+                          const pSel = posAtualEl(selEl);
+                          return (
+                            <g data-teste="ftp-marcador">
+                              <circle cx={pSel.x} cy={pSel.y} r="4" fill="none" stroke="#ffd75e" strokeWidth="0.9" />
+                              <line x1={pSel.x - 7} y1={pSel.y} x2={pSel.x + 7} y2={pSel.y} stroke="#ffd75e" strokeWidth="0.5" />
+                              <line x1={pSel.x} y1={pSel.y - 7} x2={pSel.x} y2={pSel.y + 7} stroke="#ffd75e" strokeWidth="0.5" />
+                            </g>
+                          );
+                        })()}
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div className="avst-ftp-controles" data-teste="ftp-controles">
+                  <button type="button" className="avst-ft-chip" title="Diminuir zoom (§324.1)" data-teste="ftp-menos"
+                    onClick={() => ajustarVista('menos')}><ZoomOut size={12} aria-hidden /></button>
+                  <span className="avst-ftp-pct" data-teste="ftp-pct">{Math.round(vista.zoom * 100)}%</span>
+                  <button type="button" className="avst-ft-chip" title="Aumentar zoom" data-teste="ftp-mais"
+                    onClick={() => ajustarVista('mais')}><ZoomIn size={12} aria-hidden /></button>
+                  <button type="button" className="avst-ft-chip" title="Ajustar à tela" data-teste="ftp-fit"
+                    onClick={() => ajustarVista('fit')}><Maximize size={12} aria-hidden /> Fit</button>
+                  <button type="button" className="avst-ft-chip" title="Pixels reais do PNG exportado" data-teste="ftp-100"
+                    onClick={() => ajustarVista('100')}>100%</button>
+                  <button type="button" className="avst-ft-chip" aria-pressed={gradeCv} title="Grade (§324)"
+                    data-teste="ftp-grade-toggle" onClick={() => setGradeCv((v) => !v)}>
+                    <Grid3x3 size={12} aria-hidden /></button>
+                  <button type="button" className="avst-ft-chip" aria-pressed={safeCv} title="Safe areas (§324)"
+                    data-teste="ftp-safe-toggle" onClick={() => setSafeCv((v) => !v)}>Safe</button>
+                  <select className="avst-ft-select" value={fundoPrev} aria-label="Fundo do preview (§324)"
+                    data-teste="ftp-fundo" onChange={(e2) => setFundoPrev(e2.target.value as typeof fundoPrev)}>
+                    <option value="padrao">Fundo padrão</option>
+                    <option value="claro">Fundo claro</option>
+                    <option value="escuro">Fundo escuro</option>
+                    <option value="xadrez">Transparência</option>
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="avst-ft-preview" data-formato={formato} aria-label="Prévia da foto estilizada"
+                dangerouslySetInnerHTML={{ __html: previewEstilo }} />
+            )}
+            <p className="avst-foto-nota">
+              Só assets de <strong>apresentação</strong> entram na foto — roupa e corpo ficam no avatar em camadas.
+            </p>
+          </div>
+          <div className="avst-ftp-esq">
 
           {/* §325: FORMATO de saída — perfil 1:1 + wide (header/banner/wallpaper) */}
           <div className="avst-ft-grupo">
@@ -1082,6 +1364,22 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 </button>
               ))}
             </div>
+            {/* mega 224 (§344): TÍTULO-COMPONENTE — escala com limites +
+                versão compacta (neutro = omitido; selo legado intocado) */}
+            {canvasPro && estilo.titulo && (
+              <div className="avst-ft-chips" data-teste="selo-cfg" role="group" aria-label="Selo do título (§344)">
+                {([['p', 'Selo P'], ['m', 'Selo M'], ['g', 'Selo G']] as const).map(([esc2, nome2]) => (
+                  <button key={esc2} type="button" role="radio"
+                    aria-checked={(estilo.seloCfg?.escala ?? 'm') === esc2}
+                    className={`avst-ft-chip ${(estilo.seloCfg?.escala ?? 'm') === esc2 ? 'avst-ft-chip-ativo' : ''}`}
+                    data-teste={`selo-esc-${esc2}`} title="Escala do selo dentro de limites (§344)"
+                    onClick={() => mudarSeloCfg({ escala: esc2 })}>{nome2}</button>
+                ))}
+                <button type="button" className="avst-ft-chip" aria-pressed={!!estilo.seloCfg?.compacto}
+                  data-teste="selo-compacto" title="Versão compacta do selo (§344)"
+                  onClick={() => mudarSeloCfg({ compacto: !estilo.seloCfg?.compacto })}>Compacto</button>
+              </div>
+            )}
           </div>
 
           <div className="avst-ft-grupo">
@@ -1096,6 +1394,60 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               ))}
             </div>
           </div>
+          </div>
+          <div className="avst-ftp-dir">
+          {/* mega 223 (§323.2): SELEÇÃO direta + nudge + presets do emblema
+              (§345.1) — só no canvas PRO (posições ficam no estilo.pos) */}
+          {canvasPro && elementosPos.length > 0 && (
+            <div className="avst-ft-grupo" data-teste="ftp-posicao">
+              <span className="avst-ft-rotulo"><Move size={11} aria-hidden /> Posição dos elementos</span>
+              <div className="avst-ft-chips">
+                {elementosPos.map((el2) => (
+                  <button key={el2.id} type="button" role="radio" aria-checked={selEl === el2.id}
+                    className={`avst-ft-chip ${selEl === el2.id ? 'avst-ft-chip-ativo' : ''}`}
+                    data-teste={`ftp-el-${el2.id}`}
+                    onClick={() => setSelEl((s) => (s === el2.id ? null : el2.id))}>{el2.nome}</button>
+                ))}
+              </div>
+              {selEl && (
+                <div className="avst-ft-chips" data-teste="ftp-nudge">
+                  <button type="button" className="avst-ft-chip" aria-label="Mover à esquerda"
+                    onClick={() => { const p2 = posAtualEl(selEl); definirPos(selEl, { x: p2.x - 2, y: p2.y }); }}>◀</button>
+                  <button type="button" className="avst-ft-chip" aria-label="Mover acima"
+                    onClick={() => { const p2 = posAtualEl(selEl); definirPos(selEl, { x: p2.x, y: p2.y - 2 }); }}>▲</button>
+                  <button type="button" className="avst-ft-chip" aria-label="Mover abaixo"
+                    onClick={() => { const p2 = posAtualEl(selEl); definirPos(selEl, { x: p2.x, y: p2.y + 2 }); }}>▼</button>
+                  <button type="button" className="avst-ft-chip" aria-label="Mover à direita"
+                    onClick={() => { const p2 = posAtualEl(selEl); definirPos(selEl, { x: p2.x + 2, y: p2.y }); }}>▶</button>
+                  <button type="button" className="avst-ft-chip" data-teste="ftp-centralizar"
+                    title="Encaixar no centro horizontal (§324.2)"
+                    onClick={() => { const p2 = posAtualEl(selEl); definirPos(selEl, { x: caixaAtual[0] / 2, y: p2.y }); }}>
+                    Centralizar</button>
+                  <button type="button" className="avst-ft-chip" data-teste="ftp-restaurar" disabled={!estilo.pos?.[selEl]}
+                    title="Voltar ao layout automático"
+                    onClick={() => definirPos(selEl, null)}>Restaurar</button>
+                </div>
+              )}
+              {estilo.camadas.emblema && estilo.camadas.emblema !== 'nenhum' && (
+                <div className="avst-ft-chips" data-teste="ftp-emblema-presets" role="radiogroup"
+                  aria-label="Posição do emblema (§345.1)">
+                  {posSugeridasEmblema(formato, ladoWide).map((s2) => {
+                    const ativo = s2.pos === null ? !estilo.pos?.emblema
+                      : estilo.pos?.emblema?.x === s2.pos.x && estilo.pos?.emblema?.y === s2.pos.y;
+                    return (
+                      <button key={s2.id} type="button" role="radio" aria-checked={ativo}
+                        className={`avst-ft-chip ${ativo ? 'avst-ft-chip-ativo' : ''}`}
+                        data-teste={`ftp-emb-${s2.id}`}
+                        onClick={() => definirPos('emblema', s2.pos)}>{s2.nome}</button>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="avst-foto-nota">
+                Arraste no canvas move o elemento selecionado · espaço+arraste move a vista · setas ajustam fino.
+              </p>
+            </div>
+          )}
 
           {/* megas 51–54: AJUSTES não destrutivos (§333/§334/§337/§340) */}
           <div className="avst-ft-grupo" data-teste="ajustes-foto">
@@ -1279,6 +1631,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 <Redo2 size={11} aria-hidden /> Refazer</button>
             </div>
           </div>
+          </div>
+          <div className="avst-ftp-centrob">
 
           <div className="avst-foto-acoes">
             <button type="button" className="avst-botao" disabled={salvando}
@@ -1343,6 +1697,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               {salvando ? <LoaderCircle className="avst-girando" size={14} aria-hidden /> : <Wand2 size={14} aria-hidden />}
               {salvando ? ' Compondo…' : ' Salvar foto estilizada'}
             </button>
+          </div>
           </div>
         </div>
       )}

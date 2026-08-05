@@ -36,7 +36,7 @@ const svgDe = () => p.evaluate(() => document.querySelector('.avst-ft-preview sv
 
 // equipa um FUNDO para o painel de camadas ter conteúdo
 await p.evaluate(() => {
-  const grupo = [...document.querySelectorAll('.avst-ft-grupo')].find((x) => x.textContent.includes('Fundo'));
+  const grupo = [...document.querySelectorAll('.avst-ft-grupo')].find((x) => x.querySelector('.avst-ft-rotulo')?.textContent.trim().startsWith('Fundo')); // lote 221: o canvas PRO também diz 'Fundo' nos controles — mirar o RÓTULO
   [...(grupo?.querySelectorAll('.avst-ft-chip') ?? [])][1]?.click();
 });
 await p.waitForTimeout(400);

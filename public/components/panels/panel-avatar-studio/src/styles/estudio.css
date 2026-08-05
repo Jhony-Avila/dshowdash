@@ -1915,3 +1915,58 @@
 .avst5-ctx-header { max-height: 96px; overflow: hidden; display: flex; align-items: center; }
 .avst5-ctx-header svg { transform: scale(1.15); }
 .avst5-ctx-menu { max-width: 72px; margin-inline: auto; }
+
+/* ── lote 221–223 (§323/§324): PHOTO STUDIO PRO — canvas + 3 regiões ──
+   Flag OFF: wrappers com display:contents = fluxo clássico intocado.
+   Flag ON: canvas/posições sempre; as 3 REGIÕES (ferramentas ▏canvas ▏
+   propriedades) engajam via CONTAINER QUERY quando a seção tem ≥700px
+   (decisão #51 — o aside clássico tem ~390px e o grid colapsaria). */
+.avst-foto { container-type: inline-size; }
+.avst-ftp-centroa, .avst-ftp-esq, .avst-ftp-dir, .avst-ftp-centrob { display: contents; }
+.avst-ft-pro { width: 100%; }
+@container (min-width: 700px) {
+  .avst-ft-pro {
+    display: grid;
+    grid-template-columns: minmax(200px, 260px) minmax(240px, 1fr) minmax(220px, 290px);
+    grid-template-areas: 'esq centroa dir' 'esq centrob dir';
+    gap: 14px;
+    align-items: start;
+  }
+  .avst-ft-pro .avst-ftp-centroa { display: flex; flex-direction: column; gap: 10px; grid-area: centroa; min-width: 0; }
+  .avst-ft-pro .avst-ftp-esq { display: flex; flex-direction: column; gap: 12px; grid-area: esq; min-width: 0; }
+  .avst-ft-pro .avst-ftp-dir { display: flex; flex-direction: column; gap: 12px; grid-area: dir; min-width: 0; }
+  .avst-ft-pro .avst-ftp-centrob { display: flex; flex-direction: column; gap: 10px; grid-area: centrob; min-width: 0; }
+}
+/* §324: viewport do canvas — a vista (zoom/pan) NUNCA toca o SVG salvo */
+.avst-ftp-viewport {
+  position: relative; overflow: hidden; min-height: 320px; max-height: 62vh; width: 100%;
+  border: 1px solid var(--avst-borda); border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(76, 157, 232, 0.06), transparent 70%),
+    #0d1017;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; touch-action: none; outline-offset: -2px;
+}
+.avst-ftp-viewport:active { cursor: grabbing; }
+.avst-ftp-viewport[data-arrastando='el'] { cursor: move; }
+.avst-ftp-mundo { will-change: transform; }
+.avst-ftp-caixa { position: relative; width: 300px; max-width: 92%; }
+.avst-ftp-caixa .avst-ft-preview { width: 100%; margin: 0; }
+.avst-ftp-caixa[data-fundo='claro'] .avst-ft-preview { background: #dfe4ee; }
+.avst-ftp-caixa[data-fundo='escuro'] .avst-ft-preview { background: #05070c; }
+.avst-ftp-caixa[data-fundo='xadrez'] .avst-ft-preview {
+  background:
+    repeating-conic-gradient(#2a3040 0% 25%, #1a1f2b 0% 50%) 0 0 / 16px 16px;
+}
+.avst-ftp-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.avst-ftp-controles {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-width: 0;
+}
+.avst-ftp-pct {
+  min-width: 42px; text-align: center; font-size: 11px; font-weight: 700;
+  color: var(--avst-texto-2); font-variant-numeric: tabular-nums;
+}
+/* formatos wide dentro do canvas PRO ganham a largura toda */
+.avst-ftp-caixa:has(.avst-ft-preview[data-formato='header']),
+.avst-ftp-caixa:has(.avst-ft-preview[data-formato='banner']),
+.avst-ftp-caixa:has(.avst-ft-preview[data-formato='wallpaper']) { width: 92%; }

@@ -66,7 +66,7 @@ ok(await svgDe() === antes, 'Zerar ajustes deveria voltar ao SVG byte-idêntico 
 // R2 (mega 56): histórico — equipar camada vira passo; desfazer/refazer
 ok(await p.locator('[data-teste="ft-desfazer"]').isDisabled(), 'desfazer deveria começar desabilitado');
 await p.evaluate(() => {
-  const grupo = [...document.querySelectorAll('.avst-ft-grupo')].find((x) => x.textContent.includes('Fundo'));
+  const grupo = [...document.querySelectorAll('.avst-ft-grupo')].find((x) => x.querySelector('.avst-ft-rotulo')?.textContent.trim().startsWith('Fundo')); // lote 221: o canvas PRO também diz 'Fundo' nos controles — mirar o RÓTULO
   [...(grupo?.querySelectorAll('.avst-ft-chip') ?? [])][1]?.click(); // 1º item real
 });
 await p.waitForTimeout(300);
