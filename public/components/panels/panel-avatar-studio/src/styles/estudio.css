@@ -1837,3 +1837,28 @@
   width: 92px; background: #121622; color: #e6eaf2;
   border: 1px solid #3a4a75; border-radius: 8px; font-size: 11px; padding: 2px 6px;
 }
+
+/* ── lote 181–189 (§241–§246/§229–§230): evolução + listas ── */
+.avst5-evolucao { max-width: 420px; }
+.avst5-evo-lista { list-style: none; margin: 8px 0 0; padding: 0; }
+.avst5-evo-marco {
+  display: flex; gap: 10px; align-items: center; padding: 7px 4px;
+  border-left: 2px solid #2a3350; margin-left: 6px; position: relative;
+}
+.avst5-evo-marco::before {
+  content: ''; position: absolute; left: -5px; top: 50%; width: 8px; height: 8px;
+  border-radius: 50%; background: #4c5f9e;
+}
+.avst5-evo-thumb { background: #121622; border: 1px solid #262c3d; border-radius: 10px; padding: 2px; cursor: pointer; }
+.avst5-evo-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.avst5-evo-info strong { font-size: 12px; }
+.avst5-evo-info time { font-size: 10px; color: #8b93a7; }
+.avst5-evo-nota { background: none; border: none; color: #9db4ff; font-size: 10.5px; text-align: left; cursor: pointer; padding: 0; }
+.avst5-evo-info input { background: #121622; color: #e6eaf2; border: 1px solid #3a4a75; border-radius: 8px; font-size: 11px; padding: 3px 6px; }
+.avst5-evo-acoes { display: flex; gap: 4px; align-items: center; }
+.avst5-evo-comparar { display: flex; gap: 10px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
+.avst5-evo-comparar figure { margin: 0; text-align: center; }
+.avst5-evo-comparar figcaption { font-size: 10px; color: #8b93a7; }
+.avst5-det-listas { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 8px; }
+.avst5-lista-chip-grupo { display: inline-flex; gap: 2px; align-items: center; }
+.avst5-lista-nova { background: #121622; color: #e6eaf2; border: 1px dashed #3a4a75; border-radius: 8px; font-size: 11px; padding: 3px 8px; width: 108px; }

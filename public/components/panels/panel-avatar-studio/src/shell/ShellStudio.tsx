@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, GitBranch, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { CATEGORIAS, COLECOES, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
@@ -28,6 +28,8 @@ import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
 import { Consultor } from './Consultor';
+import { Evolucao } from './Evolucao';
+import { registrarMarco } from '../services/Evolucao';
 import { VersoesAvatar } from './VersoesAvatar';
 import { Atalhos } from './Atalhos';
 import { TelemetriaDev } from './TelemetriaDev';
@@ -602,6 +604,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [consultor, setConsultor] = useState(false);
   // lote 141–150 (§619): timeline de VERSÕES do espelho
   const [versoes619, setVersoes619] = useState(false);
+  // lote 181–187 (§241–§246): drawer de EVOLUÇÃO
+  const [evolucao, setEvolucao] = useState(false);
 
   // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
   const [atalhos, setAtalhos] = useState(false);
@@ -834,6 +838,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 data-teste="consultor-abrir" onClick={() => setConsultor(true)}>
                 <Lightbulb size={14} aria-hidden /></button>
             )}
+            <button type="button" className="avst-botao" title="Evolução do avatar — linha do tempo (§241)"
+              data-teste="evolucao-abrir" onClick={() => setEvolucao(true)}>
+              <GitBranch size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" title="Versões do avatar no espelho (§619)"
               data-teste="versoes-abrir" onClick={() => setVersoes619(true)}>
               <ArrowUp size={14} aria-hidden style={{ transform: 'rotate(180deg)' }} /></button>
@@ -1042,6 +1049,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               if (r.ok) {
                 store.confirmarPersistencia(r.versao ?? store.versao + 1);
                 void espelhar619(true); // §619: versão publicada no espelho
+                registrarMarco(paraLegado2d(store.estadoDraft), 'salvo'); // §241
                 celebrar(); // §158: gatilho de celebração
                 tocarSalvar(); // §584: acorde de salvamento
                 telemetria('funil', { etapa: 'salvou' }); // mega 106 (§294)
@@ -1148,6 +1156,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <VersoesAvatar estadoLocal={store.estadoDraft}
             aoAplicarEstado={(novo) => aplicarComando(validarConfig(paraLegado2d(novo)))}
             aoFechar={() => setVersoes619(false)} />
+        )}
+        {evolucao && (
+          <Evolucao configAtual={validarConfig(paraLegado2d(store.estadoDraft))}
+            aoAplicar={(cfg) => aplicarComando(validarConfig(cfg))}
+            aoFechar={() => setEvolucao(false)} />
         )}
         {paleta && (
           <PaletaComandos
