@@ -1404,6 +1404,18 @@
 .avst-ft-template i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); flex-shrink: 0; }
 .avst-ft-template small { color: var(--avst-texto-2, #8a93a6); font-size: 9px; text-transform: uppercase; letter-spacing: .05em; }
 .avst-ft-template-limpar { border-style: dashed; color: var(--avst-texto-2, #8a93a6); padding: 5px 11px; }
+/* lote 211–220 (§326/§229): galeria de templates — filtro/favoritos/destaque */
+.avst-ft-tpl-filtros { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 2px; }
+.avst-ft-tpl-filtro { background: none; border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto-2, #8a93a6); border-radius: 999px; padding: 3px 9px; font-size: 10px; text-transform: capitalize; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; transition: border-color .15s ease, color .15s ease; }
+.avst-ft-tpl-filtro:hover { border-color: var(--avst-acento, #7c5cff); color: var(--avst-texto, #e6eaf2); }
+.avst-ft-tpl-filtro.ativo { border-color: var(--avst-acento, #7c5cff); color: var(--avst-texto, #e6eaf2); background: color-mix(in srgb, var(--avst-acento, #7c5cff) 16%, transparent); }
+.avst-ft-template-wrap { position: relative; display: inline-flex; }
+.avst-ft-template-wrap.destaque .avst-ft-template { border-color: var(--avst-acento, #7c5cff); box-shadow: 0 0 0 1px var(--avst-acento, #7c5cff) inset; }
+.avst-ft-template-wrap .avst-ft-template { padding-right: 26px; }
+.avst-ft-tpl-fav { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--avst-texto-2, #8a93a6); cursor: pointer; padding: 2px; line-height: 0; border-radius: 50%; }
+.avst-ft-tpl-fav:hover { color: var(--avst-texto, #e6eaf2); }
+.avst-ft-tpl-fav.ativo { color: #ffd75e; }
+.avst-ft-tpl-vazio { color: var(--avst-texto-2, #8a93a6); font-size: 11px; padding: 4px 2px; }
 .avst-ft-escala select { background: var(--avst-fundo, #0d1017); border: 1px solid var(--avst-borda, #232a38); color: var(--avst-texto, #e6eaf2); border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; }
 
 /* AS5 F7 — perfil de progressão (§220-§224, §634) */

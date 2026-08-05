@@ -610,3 +610,61 @@ SEM top próprio herda top:10px da base absoluta e SOBREPÕE a fileira de
 cenários — o "unstable" do Playwright era hit-target coberto, não
 animação. Fix: .avst5-fundos.avst5-climas { top: 94px } (especificidade
 dupla). Chips do palco em testes seguem por dispatchEvent.
+
+## Registro 2026-08-05 (3) — ONDA 211+ (sessão no servidor)
+
+Contexto: sessão rodou NO servidor (branch feat/pipedrive), desenvolvimento
+em worktree limpo de origin/main (`/var/www/dshowdash-wave`, branch
+wave-211), entrega por `git push origin main` → auto-deploy (decisão #47).
+
+✅ COMMIT 0 (infra, pendência da decisão #47): versiona api/deploy/
+   webhook.php (exceção !/api/deploy/ no .gitignore) + scripts/deploy/
+   auto-deploy-runner.sh (espelho do /usr/local/bin/dshow-auto-deploy.sh) +
+   seção "Auto-deploy" no runbook-operacao.md. Push no main passa a
+   deployar sozinho em ≤1 min.
+
+✅ L1 211–220 (§326/§344/§349/§229 — GALERIA de templates de foto):
+   Descoberta: os 7 templates antigos e o Foto.aplicarTemplate só levavam
+   camadas/cor/título — os recursos da onda 161–200 (camadasFoto blend/
+   opacidade/plano §338–§342, luz local §334, tipografia §343, subtítulo)
+   ficavam INACESSÍVEIS via template. Mudança habilitadora: aplicarTemplate
+   agora SUBSTITUI a decoração por inteiro (sem resíduo ao trocar) e
+   PRESERVA ajustes/legenda do usuário (que são da foto dele); campos novos
+   entram sanitizados pelo svgFotoDe (sem novo campo persistido → PHP
+   intocado, byte-estabilidade trivial). 6 templates PRO novos que estreiam
+   o sistema de camadas: Aurora Boreal, Noir Executive, Neon Tokyo, Campeão
+   da Arena, Zen Dojo, Data Oracle (só ids REAIS + paleta de texto aprovada).
+   Galeria (flag as5.foto_galeria, §651 → lista simples): filtro por
+   categoria derivado do catálogo, favoritos local-first
+   (FavoritosTemplate.ts, dshow.avst5.foto.tpl.fav.v1, ring ≤24) e destaque
+   determinístico da semana (§251 via semanaIso). Telemetria §290
+   foto_template_filtro/foto_template_favorito. Teto de peso: entry 311/340,
+   catalogo-arte 290/345 (dentro do gate — sem atualizar pesos-esperados).
+
+Testes: foto-galeria-220.mjs NOVO (campos ricos entram no aplicar, troca
+substitui a decoração e preserva legenda, filtro estreita, favorito
+persiste + filtro Favoritos, 1 destaque da semana). Suíte 44 arquivos +
+núcleo. Lição herdada e re-provada: tipografia §343 só entra no SVG quando
+há LEGENDA (o selo do título usa fonte fixa) — o teste seta a legenda
+antes, o que de quebra prova a preservação da legenda na troca de template.
+
+Revisão adversarial (workflow, 5 dimensões × verificação): asset-ids,
+byte-estabilidade e rollback-da-flag SEM achados (núcleo sólido). 3 achados
+confirmados e CORRIGIDOS no mesmo lote:
+- [média · CWE-377/59] auto-deploy-runner.sh usava lock em /tmp (world-
+  writable) rodando como root → DoS silencioso (usuário local segura o
+  flock e trava o deploy) + truncamento via symlink em kernel sem
+  fs.protected_symlinks. Fix: lock em /run (root:root, fallback /var/lock)
+  + umask 077. PENDÊNCIA JHONY: reinstalar o runner no servidor
+  (cp scripts/deploy/auto-deploy-runner.sh /usr/local/bin/dshow-auto-deploy.sh)
+  — mudança fora do git, não feita autonomamente (decisão #45.4).
+- [baixa] autosave §362 (pré-existente) só persistia rascunho com camadas/
+  título — subtítulo/legenda/ajustes/luz/tipografia/camadasFoto isolados
+  eram descartados no fechar/reabrir. Fix: estiloTemConteudo() cobre todos
+  os campos (a cor de destaque sozinha não conta). Passou a interessar
+  porque aplicarTemplate agora carrega esses campos.
+- [baixa] aplicarTemplate validava existência do título mas não da camada
+  (assimetria) e a mensagem rotulava id inválido como "bloqueado". Fix:
+  camada inexistente também fica de fora (mesma simetria) + mensagem
+  "indisponível(is)". Impacto latente (todos os ids dos 13 templates são
+  reais), mas limpa a função que o lote reescreveu.

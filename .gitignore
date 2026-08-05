@@ -20,6 +20,9 @@
 !/api/
 /api/*
 !/api/koala/
+# api/deploy/ — endpoint do auto-deploy por webhook (decisão #47).
+# O secret (config/webhook-secret.txt) e a fila (storage/) ficam FORA do git.
+!/api/deploy/
 
 # api/anuncios/ — proxy do Decision Engine (painel Anúncios).
 # O config real fica em config/decision_engine.php (NUNCA versionado).
