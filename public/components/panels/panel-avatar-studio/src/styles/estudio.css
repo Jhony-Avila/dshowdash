@@ -1862,3 +1862,27 @@
 .avst5-det-listas { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 8px; }
 .avst5-lista-chip-grupo { display: inline-flex; gap: 2px; align-items: center; }
 .avst5-lista-nova { background: #121622; color: #e6eaf2; border: 1px dashed #3a4a75; border-radius: 8px; font-size: 11px; padding: 3px 8px; width: 108px; }
+
+/* ── lote 191–198 (§250/§251/§224): missões + desafio da semana ── */
+.avst5-missoes { max-width: 400px; }
+.avst5-desafio {
+  background: linear-gradient(135deg, #182036, #121a2e); border: 1px solid #3a4a75;
+  border-radius: 12px; padding: 10px 12px; margin: 8px 0;
+}
+.avst5-desafio-selo {
+  display: inline-block; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #9db4ff; border: 1px solid #3a4a75; border-radius: 999px; padding: 1px 8px; margin-bottom: 4px;
+}
+.avst5-desafio strong { display: block; font-size: 13px; }
+.avst5-desafio p { margin: 3px 0 0; font-size: 11px; color: #aeb6c9; }
+.avst5-desafio em { color: #39d98a; font-style: normal; font-size: 11px; }
+.avst5-missoes-lista { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.avst5-missoes-lista li {
+  display: flex; gap: 10px; align-items: center; padding: 7px 9px;
+  background: #10141f; border: 1px solid #1f2536; border-radius: 10px;
+}
+.avst5-missao-feita { opacity: 0.85; border-color: #2c4a3a !important; }
+.avst5-missao-badge { font-size: 18px; }
+.avst5-missoes-lista strong { font-size: 12px; display: block; }
+.avst5-missoes-lista p { margin: 1px 0 0; font-size: 10.5px; color: #8b93a7; }
+.avst5-missao-check { margin-left: auto; color: #39d98a; font-weight: 700; }
