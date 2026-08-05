@@ -47,12 +47,20 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
     { id: 'brilho', nome: 'Brilho', min: 0.6, max: 1.6, passo: 0.05, padrao: 1 },
     { id: 'matiz', nome: 'Matiz', min: -180, max: 180, passo: 5, padrao: 0 },
     { id: 'velocidade', nome: 'Velocidade', min: 0.5, max: 2, passo: 0.1, padrao: 1 },
+    // mega 238 (§168): emissão (glow), sombra e escala com limites curtos
+    // ("versão compacta" = escala <1) — sempre wrappers, arte intocada
+    { id: 'emissao', nome: 'Emissão', min: 0, max: 1, passo: 0.05, padrao: 0 },
+    { id: 'sombra', nome: 'Sombra', min: 0, max: 1, passo: 0.05, padrao: 0 },
+    { id: 'escala', nome: 'Escala', min: 0.85, max: 1.05, passo: 0.01, padrao: 1 },
   ],
   banner: [
     { id: 'intensidade', nome: 'Intensidade', min: 0.3, max: 1, passo: 0.05, padrao: 1 },
     // lote 172 (§170): cor (matiz) + brilho do banner
     { id: 'brilho', nome: 'Brilho', min: 0.6, max: 1.6, passo: 0.05, padrao: 1 },
     { id: 'matiz', nome: 'Matiz', min: -180, max: 180, passo: 5, padrao: 0 },
+    // mega 239 (§170/§170.1): POSIÇÃO horizontal do banner (presets de
+    // composição esquerda/centro/direita usam este mesmo parâmetro)
+    { id: 'deslocamento', nome: 'Posição', min: -30, max: 30, passo: 2, padrao: 0 },
   ],
   // megas 72–74 (§108–§111): MORFOLOGIA paramétrica — escala em torno do
   // centro geométrico de cada feição (mesmo wrapper de escala do emblema)
@@ -75,6 +83,7 @@ const CENTRO_ESCALA: Partial<Record<CategoriaId, [number, number]>> = {
   olhos: [120, 108],
   boca: [120, 146],
   cabelo: [120, 78],   // massa do cabelo acima do centro da cabeça (106)
+  moldura: [120, 120], // mega 238 (§168): compacta/expande do centro do quadro
 };
 
 /** Categoria "dona" de uma chave de camada (acessorio_* → acessorio). */
@@ -148,14 +157,24 @@ export function aplicarParamsSvg(chave: CamadaId | string, svg: string, params?:
   }
   // lote 171–172 (§168/§170): brilho/matiz via CSS filter functions no
   // atributo `filter` (SVG2 — suportado no render inline e na rasterização)
+  // mega 238 (§168): emissão (glow) e sombra entram na MESMA cadeia
   const brilho = valor('brilho');
   const matiz = valor('matiz');
-  if (brilho !== undefined || matiz !== undefined) {
+  const emissao = valor('emissao');
+  const sombra = valor('sombra');
+  if (brilho !== undefined || matiz !== undefined || emissao !== undefined || sombra !== undefined) {
     const fns = [
       brilho !== undefined ? `brightness(${brilho})` : '',
       matiz !== undefined ? `hue-rotate(${matiz}deg)` : '',
+      emissao !== undefined ? `drop-shadow(0 0 ${Math.round(emissao * 8 * 10) / 10}px rgba(160,180,255,${Math.round(emissao * 0.7 * 100) / 100}))` : '',
+      sombra !== undefined ? `drop-shadow(0 5px ${Math.round(sombra * 7 * 10) / 10}px rgba(0,0,0,${Math.round(sombra * 0.65 * 100) / 100}))` : '',
     ].filter(Boolean).join(' ');
     saida = `<g filter="${fns}">${saida}</g>`;
+  }
+  // mega 239 (§170/§170.1): deslocamento HORIZONTAL do banner
+  const deslocamento = valor('deslocamento');
+  if (deslocamento !== undefined) {
+    saida = `<g transform="translate(${deslocamento} 0)">${saida}</g>`;
   }
   return saida;
 }

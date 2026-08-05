@@ -17,7 +17,8 @@ const falhas = [];
 const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 
 // R1 (megas 60–62): cenários/hora/luz refletem em data-attrs do viewport
-ok(await p.locator('[data-teste="cenarios-2d"] button').count() === 6, 'esperava 6 cenários (§160)');
+// lote 231 (§160.1–.4): +4 cenários v2 com a flag as5.palco_v2 (padrão ON)
+ok(await p.locator('[data-teste="cenarios-2d"] button').count() === 10, 'esperava 10 cenários (6 clássicos + 4 v2 §160)');
 await p.locator('[data-teste="cenarios-2d"] button', { hasText: 'Dojo' }).click();
 await p.locator('[data-teste="horas-2d"] button', { hasText: 'Noite' }).click();
 await p.locator('[data-teste="luzes-2d"] button', { hasText: 'Dramática' }).click();

@@ -42,7 +42,8 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
   const [salvo, setSalvo] = useState(false);
   const [comparando, setComparando] = useState(false);
   // lote 207–208 (§181/§168/§170): preview por CONTEXTO (moldura/banner)
-  const [contexto, setContexto] = useState<'palco' | 'perfil' | 'header' | 'menu'>('palco');
+  // mega 238 (§168): +ranking e notificação — "o sistema deverá mostrar"
+  const [contexto, setContexto] = useState<'palco' | 'perfil' | 'header' | 'menu' | 'ranking' | 'notificacao'>('palco');
   const [alternando, setAlternando] = useState(false);
   const [, setTic] = useState(0);
   const item = itemPorId(atual);
@@ -116,11 +117,32 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
             em contextos reais (perfil/header/menu) sem sair do drawer */}
         {(item.categoria === 'moldura' || item.categoria === 'banner') && (
           <div className="avst-ft-chips avst5-ctx-chips" role="radiogroup" aria-label="Ver em contexto (§181)" data-teste="ctx-preview">
-            {([['palco', 'Palco'], ['perfil', 'Perfil'], ['header', 'Header'], ['menu', 'Menu']] as const).map(([c, nome]) => (
+            {([['palco', 'Palco'], ['perfil', 'Perfil'], ['header', 'Header'], ['menu', 'Menu'],
+              // mega 238 (§168): contextos novos atrás da flag do palco v2
+              ...(flag('as5.palco_v2') ? [['ranking', 'Ranking'], ['notificacao', 'Notif.']] as const : [])] as const).map(([c, nome]) => (
               <button key={c} type="button" role="radio" aria-checked={contexto === c}
                 className={`avst-ft-chip ${contexto === c ? 'avst-ft-chip-ativo' : ''}`}
                 data-teste={`ctx-${c}`}
                 onClick={() => setContexto(c)}>{nome}</button>
+            ))}
+          </div>
+        )}
+        {/* mega 239 (§170.1): PRESETS DE COMPOSIÇÃO do banner — equipam o
+            banner com a posição escolhida (comando com undo) */}
+        {flag('as5.palco_v2') && item.categoria === 'banner' && !bloqueado && (
+          <div className="avst-ft-chips" role="group" aria-label="Composição do banner (§170.1)" data-teste="banner-presets">
+            {([['esquerda', -24], ['centro', 0], ['direita', 24]] as const).map(([nome2, desloc]) => (
+              <button key={nome2} type="button" className="avst-ft-chip"
+                data-teste={`banner-comp-${nome2}`}
+                title={`Equipar com o banner à ${nome2} (§170.1)`}
+                onClick={() => {
+                  const base2 = comItem(config, 'banner', item.id);
+                  const params = { ...(base2.params ?? {}) };
+                  if (desloc === 0) delete params.banner;
+                  else params.banner = { ...(params.banner ?? {}), deslocamento: desloc };
+                  aoEscolher(validarConfig({ ...base2, ...(Object.keys(params).length ? { params } : {}) }));
+                  setTic((t) => t + 1);
+                }}>Banner à {nome2}</button>
             ))}
           </div>
         )}

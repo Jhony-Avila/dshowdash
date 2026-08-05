@@ -177,10 +177,14 @@ export function renderAvatar(
     conteudo = `${fundo}${efeitoAtras}${personagem}${efeitoFrente}`;
   }
 
+  // mega 237 (§167): no modo PALCO a moldura ganha um grupo animável
+  // (comportamento por raridade via CSS do shell); publicação intocada —
+  // palco:true NUNCA é usado no SVG salvo (critério de aceite nº 8)
+  const molduraFinal = corpoTodo ? '' : (opcoes.palco && moldura ? `<g data-anim="moldura">${moldura}</g>` : moldura);
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 ${alto}"${dim} role="img" aria-label="Avatar personalizado">
 <defs><clipPath id="${uid}clip">${clip}</clipPath></defs>
 <g clip-path="url(#${uid}clip)">${conteudo}</g>
-${corpoTodo ? '' : moldura}
+${molduraFinal}
 </svg>`;
 
   if (opcoes.estatico) {

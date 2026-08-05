@@ -16,7 +16,7 @@ import {
   ArrowDownUp, Ban, Check, Grid2x2, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal, Star, X,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, Raridade, SlotAcessorio } from '../domain/types';
-import { CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, validarConfig } from '../services/AvatarCatalog';
+import { CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 // mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
 import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
@@ -513,6 +513,12 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, aoFavori
   const dica = item.bloqueadoPor?.startsWith('evento:')
     ? 'Item de evento — volta a ficar disponível na próxima janela.'
     : 'Recompensa de conquista — veja a aba Conquistas.';
+  // mega 236 (§155): PREVIEW DE PODER — hover no card de efeito/aura toca
+  // o próprio poder animado sobre o thumb (pausa ao sair; §297 respeitado)
+  const [poderVivo, setPoderVivo] = useState(false);
+  const podePoderVivo = (item.categoria === 'efeito' || item.categoria === 'aura')
+    && !bloqueado && flag('as5.palco_v2')
+    && !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
   return (
     <div ref={cardRef} role="option" aria-selected={ativo} aria-disabled={bloqueado}
@@ -520,12 +526,16 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, aoFavori
       data-raridade={item.raridade}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
       onClick={escolher}
-      onMouseEnter={aoPrever && !bloqueado ? () => aoPrever(preview) : undefined}
-      onMouseLeave={aoPrever ? () => aoPrever(null) : undefined}
+      onMouseEnter={() => { if (aoPrever && !bloqueado) aoPrever(preview); if (podePoderVivo) setPoderVivo(true); }}
+      onMouseLeave={() => { aoPrever?.(null); setPoderVivo(false); }}
       onKeyDown={(e) => { if (escolher && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); escolher(); } }}
       tabIndex={0}>
       <span className="avst-card-thumb">
         <AvatarSvg config={preview} estatico uid={`th-${item.id}`} foco={FOCO_THUMB[item.categoria]} />
+        {poderVivo && (
+          <span className="avst-card-poder" aria-hidden data-teste="poder-preview"
+            dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado(item.id, config.cores.destaque) }} />
+        )}
       </span>
       {modo === 'lista' ? (
         <>

@@ -2022,3 +2022,109 @@
 .avst-mv-gal-item img { border-radius: 6px; }
 .avst-mv-gal-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .avst-mv-gal-item.ativo { border-color: var(--avst-acento); color: var(--avst-texto); }
+
+/* ── lote 231–240 (§160–§172): PALCO v2 ─────────────────────────────── */
+/* mega 231 (§160.1–.4): cenários prioritários — Showroom LED, Escritório
+   Premium, Arena E-Sports, Cidade Cyberpunk (flag as5.palco_v2) */
+.avst5-viewport[data-fundo="showroom"] .avst5-palco {
+  background:
+    repeating-linear-gradient(90deg, rgba(76, 157, 232, 0.10) 0 3px, transparent 3px 22px),
+    repeating-linear-gradient(0deg, rgba(124, 92, 255, 0.08) 0 3px, transparent 3px 26px),
+    linear-gradient(180deg, #0b1020 0%, #101a33 55%, #070b16 100%);
+  box-shadow: inset 0 -50px 110px rgba(76, 157, 232, 0.16), inset 0 40px 90px rgba(0, 0, 0, 0.5);
+}
+.avst5-viewport[data-fundo="escritorio"] .avst5-palco {
+  background:
+    linear-gradient(105deg, transparent 0 58%, rgba(232, 182, 76, 0.05) 58% 60%, transparent 60%),
+    repeating-linear-gradient(90deg, rgba(230, 234, 242, 0.035) 0 2px, transparent 2px 56px),
+    linear-gradient(180deg, #16151b 0%, #201d22 52%, #0d0c10 100%);
+  box-shadow: inset 0 -46px 90px rgba(232, 182, 76, 0.07), inset 0 36px 80px rgba(0, 0, 0, 0.45);
+}
+.avst5-viewport[data-fundo="arena"] .avst5-palco {
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 108%, rgba(57, 217, 138, 0.16) 0%, transparent 60%),
+    repeating-conic-gradient(from 0deg at 50% 130%, rgba(57, 217, 138, 0.05) 0deg 6deg, transparent 6deg 14deg),
+    linear-gradient(180deg, #07120c 0%, #0d1a12 60%, #05090a 100%);
+  box-shadow: inset 0 -40px 100px rgba(57, 217, 138, 0.10), inset 0 50px 90px rgba(0, 0, 0, 0.55);
+}
+.avst5-viewport[data-fundo="cyberpunk"] .avst5-palco {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 34px, rgba(255, 95, 143, 0.10) 34px 37px, transparent 37px 70px, rgba(76, 217, 232, 0.09) 70px 72px),
+    linear-gradient(180deg, #120820 0%, #1c0f30 46%, #08040f 100%);
+  box-shadow: inset 0 -55px 120px rgba(255, 95, 143, 0.13), inset 0 45px 100px rgba(20, 8, 40, 0.6);
+}
+/* mega 232 (§162): horas v2 — modificadores sobre qualquer cenário */
+.avst5-viewport[data-hora="amanhecer"] .avst5-palco::after,
+.avst5-viewport[data-hora="por-do-sol"] .avst5-palco::after,
+.avst5-viewport[data-hora="madrugada"] .avst5-palco::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+}
+.avst5-viewport[data-hora="amanhecer"] .avst5-palco::after { background: linear-gradient(180deg, rgba(255, 190, 120, 0.12), rgba(120, 160, 255, 0.07)); mix-blend-mode: screen; }
+.avst5-viewport[data-hora="por-do-sol"] .avst5-palco::after { background: linear-gradient(180deg, rgba(255, 110, 60, 0.16), rgba(150, 60, 120, 0.10)); mix-blend-mode: screen; }
+.avst5-viewport[data-hora="madrugada"] .avst5-palco::after { background: linear-gradient(180deg, rgba(10, 16, 44, 0.44), rgba(4, 6, 18, 0.5)); }
+/* §163.2: compat clima×cenário — chuva no showroom fica "atrás do vidro" */
+.avst5-viewport[data-fundo="showroom"][data-clima="chuva"] .avst5-clima { opacity: 0.45; filter: blur(0.6px); }
+.avst5-viewport[data-fundo="escritorio"][data-clima="neve"] .avst5-clima { opacity: 0.5; }
+/* mega 233 (§161): overlay de propriedades do cenário */
+.avst5-cenprop { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; }
+.avst5-cenprops { flex-wrap: wrap; }
+.avst5-cen-slider {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 10px;
+  color: var(--avst-texto-2);
+}
+.avst5-cen-slider input { width: 64px; }
+/* mega 234 (§161): CENÁRIO VIVO — movimento sutil por cenário (reduced
+   motion desliga via guard no data-attr; keyframes leves, GPU-friendly) */
+@keyframes avst5-cen-respira { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.06); } }
+@keyframes avst5-cen-desliza { 0% { background-position: 0 0, 0 0, 0 0; } 100% { background-position: 44px 0, 0 26px, 0 0; } }
+.avst5-viewport[data-cen-vivo] .avst5-palco { animation: avst5-cen-respira 6s ease-in-out infinite; }
+.avst5-viewport[data-cen-vivo][data-fundo="showroom"] .avst5-palco,
+.avst5-viewport[data-cen-vivo][data-fundo="cyberpunk"] .avst5-palco { animation: avst5-cen-desliza 14s linear infinite; }
+/* mega 235 (§154 item 7): NOME do poder durante a reprodução */
+.avst5-poder-nome {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+  background: rgba(10, 13, 21, 0.82); color: var(--avst-rar, #e6eaf2);
+  border: 1px solid var(--avst-rar, var(--avst-borda));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--avst-rar, #7c5cff) 35%, transparent);
+  z-index: 5; animation: avst5-poder-nome-entra 0.35s ease-out;
+}
+.avst5-poder-nome small { font-weight: 600; font-size: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.4px; }
+@keyframes avst5-poder-nome-entra { from { opacity: 0; transform: translateX(-50%) translateY(-6px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.avst5-poder-btn[data-fase="cooldown"] { opacity: 0.55; }
+/* mega 237 (§167): comportamento da MOLDURA por raridade — só no palco
+   (o SVG salvo nunca anima; o alvo são os nós da moldura após defs+clip) */
+@keyframes avst5-mold-pulso { 0%, 100% { opacity: 1; } 50% { opacity: 0.82; } }
+@keyframes avst5-mold-energia { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.25) saturate(1.2); } }
+@keyframes avst5-mold-reativa { 0%, 100% { filter: drop-shadow(0 0 2px rgba(232, 182, 76, 0.25)); } 50% { filter: drop-shadow(0 0 9px rgba(232, 182, 76, 0.65)); } }
+.avst5-viewport[data-moldura-viva="pulso"] .avst5-zoom svg > *:nth-child(n+3) { animation: avst5-mold-pulso 2.8s ease-in-out infinite; }
+.avst5-viewport[data-moldura-viva="energia"] .avst5-zoom svg > *:nth-child(n+3) { animation: avst5-mold-energia 2.2s ease-in-out infinite; }
+.avst5-viewport[data-moldura-viva="reativa"] .avst5-zoom svg > *:nth-child(n+3) { animation: avst5-mold-reativa 2.6s ease-in-out infinite; }
+/* mega 239 (§172): selo do título — alinhamento/escala */
+.avst5-titulo-selo { border-color: var(--avst-rar, var(--avst-borda)); }
+.avst5-ts-esquerda { left: 18px; right: auto; transform: none; }
+.avst5-ts-direita { left: auto; right: 18px; transform: none; }
+.avst5-ts-p { font-size: 10.5px; padding: 3px 10px; }
+.avst5-ts-g { font-size: 15px; padding: 6px 18px; }
+.avst5-titulo-editor { gap: 3px; }
+.avst5-titulo-protegido { font-size: 11px; opacity: 0.8; }
+/* mega 236 (§155): preview de PODER no card do catálogo */
+.avst-card-poder {
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.avst-card-poder svg { width: 100%; height: 100%; }
+/* mega 238 (§168): contextos ranking e notificação no drawer §67 */
+.avst5-ctx-ranking { max-width: 120px; margin-inline: auto; display: flex; align-items: center; gap: 8px; }
+.avst5-ctx-ranking::before { content: '#4'; font-size: 15px; font-weight: 800; color: var(--avst-texto-2); }
+.avst5-ctx-ranking svg { border-radius: 12px; }
+.avst5-ctx-notificacao { max-width: 46px; margin-inline: auto; }
+.avst5-ctx-notificacao svg { border-radius: 50%; outline: 2px solid var(--avst-rar, var(--avst-acento)); outline-offset: 1px; }
+/* lote 231–240: posicionamento das filas novas do palco v2.
+   cenprops fica abaixo da fila de clima (94px); o editor de título vive
+   SÓ no Studio — precisa furar o display:none das .avst5-fundos lá */
+.avst5-fundos.avst5-cenprops { top: 122px; max-width: min(72%, 560px); }
+.avst5-shell[data-modo="studio"] .avst5-titulo-editor {
+  display: flex; top: auto; bottom: 58px; left: 50%; transform: translateX(-50%);
+}
