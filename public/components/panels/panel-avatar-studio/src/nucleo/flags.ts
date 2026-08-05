@@ -23,6 +23,10 @@ const PADROES: Record<string, boolean> = {
   'as5.timeline_shell': true,     // mega 228 — linha do tempo unificada §220 no shell
   'as5.favoritos_categorias': true, // mega 229 — favoritos rápidos/permanentes/por coleção §229
   'as5.vitrine_pessoal': true,    // mega 230 — Minha Vitrine §1076 + galerias locais §1077 (client-side)
+  // ── onda 231–260 (decisão #53; padrão ON conforme #50) ──
+  'as5.palco_v2': true,           // lote 231–240 — cenários §160 + horas §162 + propriedades §161 + poder §154 + preview §155 + editores §167–§172
+  'as5.progressao_v2': true,      // lote 241–250 — coleções §207–§214 + conquistas §215–§221 + economia §226–§228 + comparação §231
+  'as5.criacao_avancada': true,   // lote 251–260 — tipo corporal §102 + postura §118 + presets faciais §105 + idle 2D §119
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

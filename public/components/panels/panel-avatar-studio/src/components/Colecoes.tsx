@@ -2,15 +2,18 @@
 // @version 2.0.0  @created 2026-07-30  @updated 2026-08-04 (mega 67:
 // PÁGINA da coleção §207–§214 — hero + lore + checklist + recompensa)
 import { useMemo, useState } from 'react';
-import { ArrowLeft, BookOpen, Check, Layers, Trophy } from 'lucide-react';
+import { ArrowLeft, BookOpen, Check, Eye, Layers, Trophy } from 'lucide-react';
 import type { AvatarConfig } from '../domain/types';
 import {
-  COLECOES, RARIDADES, aplicarColecao, itemPorId, progressoColecao,
+  COLECOES, RARIDADES, aplicarColecao, itemPorId, progressoColecao, validarConfig,
 } from '../services/AvatarCatalog';
 import type { Colecao } from '../services/AvatarCatalog';
 import { itensUsados } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
 import { AvatarSvg } from './AvatarSvg';
+// megas 241–242 (§208/§209/§214): hero v2 + galeria (flag as5.progressao_v2)
+import { comItem, FOCO_THUMB } from './GradeItens';
+import { flag } from '../nucleo/flags';
 
 /** mega 67 (§207–§214): página da coleção — hero, lore, checklist, CTA. */
 function PaginaColecao({ col, config, usados, aoAplicar, aoVoltar }: {
@@ -24,6 +27,16 @@ function PaginaColecao({ col, config, usados, aoAplicar, aoVoltar }: {
   const prog = progressoColecao(col, usados);
   const completa = prog.usados === prog.total;
   const preview = aplicarColecao(config, col);
+  const v2 = flag('as5.progressao_v2');
+  // mega 241 (§209): EXPERIMENTAR — segurar mostra o conjunto em tamanho
+  // grande (overlay efêmero; nada muda no config até Equipar)
+  const [experimentando, setExperimentando] = useState(false);
+  // mega 241 (§208): TAGS derivadas dos temas reais dos itens + criador
+  const tags = useMemo(() => {
+    const t = new Set<string>();
+    for (const id of col.itens) { const tema = itemPorId(id)?.tema; if (tema) t.add(tema); }
+    return [...t].slice(0, 5);
+  }, [col]);
   return (
     <article className="avst-col-pagina" data-teste="col-pagina"
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}>
@@ -53,12 +66,53 @@ function PaginaColecao({ col, config, usados, aoAplicar, aoVoltar }: {
               ? 'Coleção COMPLETA — o selo entra na sua linha do tempo de conquistas.'
               : `Explore os ${prog.total - prog.usados} item(ns) restantes para completar.`}
           </p>
-          <button type="button" className="avst-botao avst-botao-primario"
-            onClick={() => { aoAplicar(preview); telemetria('colecao_equipou', { id: col.id }); }}>
-            Equipar coleção completa
-          </button>
+          {v2 && (
+            <p className="avst-col-tags" data-teste="col-tags">
+              <em>Dshow Originals</em>
+              {tags.map((t) => <span key={t} className="avst-fchip">{t}</span>)}
+            </p>
+          )}
+          <div className="avst-foto-acoes">
+            {v2 && (
+              <button type="button" className="avst-botao" data-teste="col-experimentar"
+                title="Segure para ver o conjunto completo em destaque (§209)"
+                onPointerDown={() => setExperimentando(true)}
+                onPointerUp={() => setExperimentando(false)}
+                onPointerLeave={() => setExperimentando(false)}>
+                <Eye size={13} aria-hidden /> Experimentar
+              </button>
+            )}
+            <button type="button" className="avst-botao avst-botao-primario"
+              onClick={() => { aoAplicar(preview); telemetria('colecao_equipou', { id: col.id }); }}>
+              Equipar coleção completa
+            </button>
+          </div>
         </div>
       </div>
+      {v2 && experimentando && (
+        <div className="avst-col-experimenta" data-teste="col-experimenta" aria-hidden>
+          <AvatarSvg config={preview} uid={`colxp-${col.id}`} />
+        </div>
+      )}
+      {/* mega 242 (§214): GALERIA — cada item da coleção renderizado no SEU
+          avatar, com foco da categoria (a página deixa de ser só lista) */}
+      {v2 && (
+        <div className="avst-col-galeria" data-teste="col-galeria" role="list"
+          aria-label={`Galeria da coleção ${col.nome}`}>
+          {col.itens.map((id) => {
+            const item = itemPorId(id);
+            if (!item) return null;
+            const cfgItem = validarConfig(comItem(config, item.categoria, item.id));
+            return (
+              <figure key={id} role="listitem" className={usados.has(id) ? 'avst-col-gal-ok' : ''}>
+                <AvatarSvg config={cfgItem} estatico uid={`colg-${id}`}
+                  foco={FOCO_THUMB[item.categoria]} />
+                <figcaption>{item.nome}{usados.has(id) ? ' ✓' : ''}</figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      )}
       {/* §208/§214: checklist item a item (✓ = já explorado) */}
       <ul className="avst-col-itens" data-teste="col-itens">
         {col.itens.map((id) => {

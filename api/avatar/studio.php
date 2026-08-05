@@ -164,6 +164,16 @@ function avst_validar_config($bruto): array
     if (is_string($titulo) && preg_match($reId, $titulo)) {
         $saida['titulo'] = $titulo;
     }
+    // megas 254–255 (§102/§118): tipo corporal e postura — enums FECHADOS
+    // espelhando o validarConfig do front; neutro/desconhecido é omitido
+    $corpo = $bruto['corpo'] ?? null;
+    if (in_array($corpo, ['esbelto', 'atletico', 'robusto', 'compacto'], true)) {
+        $saida['corpo'] = $corpo;
+    }
+    $postura = $bruto['postura'] ?? null;
+    if (in_array($postura, ['confiante', 'relaxada', 'executiva', 'heroica', 'misteriosa'], true)) {
+        $saida['postura'] = $postura;
+    }
     return $saida;
 }
 

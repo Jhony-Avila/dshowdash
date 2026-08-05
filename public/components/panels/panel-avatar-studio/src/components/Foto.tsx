@@ -25,7 +25,7 @@ import type { EstiloFoto } from '../domain/types';
 import {
   CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, CORES_TEXTO_FOTO,
   FORMATOS_FOTO, RARIDADES, TEMPLATES_FOTO, TITULOS, dicasComposicao, itemPorId, itensDe,
-  posPadraoElementoFoto, posSugeridasEmblema, svgFotoDe,
+  comporAutomatico, posPadraoElementoFoto, posSugeridasEmblema, svgFotoDe,
 } from '../services/AvatarCatalog';
 import type { DicaFoto, FormatoFotoId, TemplateFoto } from '../services/AvatarCatalog';
 import { telemetria } from '../services/Telemetria';
@@ -37,7 +37,10 @@ import { flag } from '../nucleo/flags';
 import { semanaIso } from '../services/Missoes';
 import { alternarFavoritoTemplate, favoritosTemplate } from '../services/FavoritosTemplate';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
-import { excluirProjetoFoto, listarProjetosFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
+import { excluirProjetoFoto, listarProjetosFoto, renomearProjetoFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
+// megas 253+258 (§369/§349): presets de exportação + compor pra mim
+import { excluirPresetExport, listarPresetsExport, salvarPresetExport } from '../services/PresetsExport';
+import type { PresetExport } from '../services/PresetsExport';
 import type { ProjetoFoto } from '../services/ProjetosFoto';
 import type {
   AjustesFoto, BlendFoto, CamadaFotoCfg, CamadaFotoId, ElementoPosFoto, SeloCfgFoto, TipografiaFoto,
@@ -434,6 +437,38 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
 
   // mega 57 (§364): PROJETOS do Photo Studio (localStorage v1)
   const [projetos, setProjetos] = useState<ProjetoFoto[]>(listarProjetosFoto);
+  // mega 252 (§364 v2): renomear projeto inline
+  const [renomeandoProj, setRenomeandoProj] = useState<{ id: string; nome: string } | null>(null);
+  // mega 251 (§361): HISTÓRICO VISUAL — thumbs clicáveis da pilha de undo
+  const [histVisual, setHistVisual] = useState(false);
+  const saltarParaPasso = useCallback((idx: number) => {
+    setEstilo((atual) => {
+      const passado = refPassado.current;
+      if (idx < 0 || idx >= passado.length) return atual;
+      const alvo = passado[idx];
+      refFuturo.current = [...refFuturo.current, atual, ...passado.slice(idx + 1).reverse()];
+      refPassado.current = passado.slice(0, idx);
+      return alvo;
+    });
+    setTicHist((t) => t + 1);
+    telemetria('foto_hist_saltou', { idx });
+  }, []);
+  // mega 253 (§369): PRESETS DE EXPORTAÇÃO nomeados
+  const [presetsExp, setPresetsExp] = useState<PresetExport[]>(listarPresetsExport);
+  const aplicarPresetExport = useCallback((pe: PresetExport) => {
+    setFormato(pe.formato);
+    setEscala(pe.escala);
+    setWideTransp(pe.transparente);
+    setLadoWide(pe.lado);
+    telemetria('foto_export_preset', { id: pe.id });
+  }, []);
+  // mega 258 (§349): COMPOR PRA MIM — regras determinísticas, com undo
+  const comporPraMim = useCallback(() => {
+    mudarEstilo((e) => ({ ...e, ...comporAutomatico(e, formato) }));
+    setMensagem('Composição montada por regras (§349) — desfazer volta como estava.');
+    telemetria('foto_compos_auto', { formato });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formato]);
   const guardarProjeto = useCallback(async () => {
     if (!fotoEstilo) return;
     const p = await salvarProjetoFoto(fotoEstilo, estilo, formato);
@@ -1004,6 +1039,23 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                   onClick={() => { excluirProjetoFoto(p2.id); setProjetos(listarProjetosFoto()); }}>
                   <Trash2 size={12} aria-hidden />
                 </button>
+                {/* mega 252 (§364 v2): nome visível + renomear inline */}
+                {renomeandoProj?.id === p2.id ? (
+                  <input className="avst-foto-item-nome" autoFocus value={renomeandoProj.nome} maxLength={24}
+                    aria-label={`Novo nome de ${p2.nome}`} data-teste="projeto-renomear-input"
+                    onChange={(ev) => setRenomeandoProj({ id: p2.id, nome: ev.target.value })}
+                    onBlur={() => { renomearProjetoFoto(p2.id, renomeandoProj.nome); setRenomeandoProj(null); setProjetos(listarProjetosFoto()); }}
+                    onKeyDown={(ev) => {
+                      if (ev.key === 'Enter') { renomearProjetoFoto(p2.id, renomeandoProj.nome); setRenomeandoProj(null); setProjetos(listarProjetosFoto()); }
+                      if (ev.key === 'Escape') setRenomeandoProj(null);
+                    }} />
+                ) : (
+                  <button type="button" className="avst-foto-item-nome" data-teste="projeto-nome"
+                    title={`${p2.nome} · ${new Date(p2.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} — clique para renomear (§364)`}
+                    onClick={() => setRenomeandoProj({ id: p2.id, nome: p2.nome })}>
+                    {p2.nome}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -1204,6 +1256,27 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 </button>
               ))}
             </div>
+            {/* mega 253 (§369): PRESETS DE EXPORTAÇÃO nomeados */}
+            <div className="avst-ft-chips" data-teste="export-presets">
+              {presetsExp.map((pe) => (
+                <span key={pe.id} className="avst5-lista-chip-grupo">
+                  <button type="button" className="avst-ft-chip" data-teste={`export-preset-${pe.id}`}
+                    title={`${FORMATOS_FOTO[pe.formato].nome} · ${pe.escala}× · ${pe.transparente ? 'transparente' : 'com fundo'} (§369)`}
+                    onClick={() => aplicarPresetExport(pe)}>{pe.nome}</button>
+                  <button type="button" className="avst5-painel-btn" aria-label={`Excluir ${pe.nome}`}
+                    onClick={() => { excluirPresetExport(pe.id); setPresetsExp(listarPresetsExport()); }}>×</button>
+                </span>
+              ))}
+              {presetsExp.length < 4 && (
+                <button type="button" className="avst-ft-chip" data-teste="export-preset-salvar"
+                  title="Guardar formato+escala+transparência atuais como preset (§369)"
+                  onClick={() => {
+                    const novo9 = salvarPresetExport({ formato, escala, transparente: wideTransp, lado: ladoWide });
+                    setPresetsExp(listarPresetsExport());
+                    setMensagem(novo9 ? `Preset de exportação "${novo9.nome}" salvo (§369).` : 'Limite de 4 presets de exportação.');
+                  }}>+ exportação</button>
+              )}
+            </div>
             {formato !== 'perfil' && (
               <p className="avst-foto-nota" data-teste="nota-wide">
                 Formato wide sai pelo <strong>Baixar PNG</strong> ({FORMATOS_FOTO[formato].saida[0]}×{FORMATOS_FOTO[formato].saida[1]}px).
@@ -1309,6 +1382,12 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 title="Remover tudo e começar do zero"
                 onClick={() => { mudarEstilo(() => ESTILO_VAZIO); limparEstiloSalvo(); setMensagem(null); }}>
                 <span>Limpar</span>
+              </button>
+              {/* mega 258 (§349): assistente de layout por REGRAS (nunca IA) */}
+              <button type="button" className="avst-ft-template avst-ft-template-compor" data-teste="compor-auto"
+                title="Compor pra mim — posições/selo/tipografia por regras determinísticas (§349); desfazer reverte"
+                onClick={comporPraMim}>
+                <span>✦ Compor pra mim</span>
               </button>
             </div>
           </div>
@@ -1629,7 +1708,29 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               <button type="button" className="avst-ft-chip" disabled={refFuturo.current.length === 0}
                 data-teste="ft-refazer" onClick={refazerEstilo}>
                 <Redo2 size={11} aria-hidden /> Refazer</button>
+              {/* mega 251 (§361): histórico VISUAL — thumbs clicáveis */}
+              <button type="button" className="avst-ft-chip" aria-pressed={histVisual}
+                disabled={refPassado.current.length === 0 && !histVisual}
+                data-teste="hist-visual-toggle" title="Ver os passos como miniaturas (§361)"
+                onClick={() => setHistVisual((v) => !v)}>Ver passos</button>
             </div>
+            {histVisual && fotoEstilo && (
+              <div className="avst-ft-histvisual" data-teste="hist-visual" role="list"
+                aria-label="Passos do histórico (§361)">
+                {refPassado.current.slice(-6).map((passo, i, arr) => {
+                  const idx = refPassado.current.length - arr.length + i;
+                  return (
+                    <button key={idx} type="button" role="listitem" className="avst-ft-histpasso"
+                      title={`Voltar ao passo ${idx + 1} (§361)`} data-teste={`hist-passo-${idx}`}
+                      onClick={() => saltarParaPasso(idx)}
+                      dangerouslySetInnerHTML={{ __html: svgFotoDe(fotoEstilo, passo, { estatico: true, uid: `hv${idx}`, tamanho: 44 }) }} />
+                  );
+                })}
+                <span className="avst-ft-histpasso avst-ft-histpasso-atual" aria-current="step"
+                  title="Estado atual"
+                  dangerouslySetInnerHTML={{ __html: svgFotoDe(fotoEstilo, estilo, { estatico: true, uid: 'hvatual', tamanho: 44 }) }} />
+              </div>
+            )}
           </div>
           </div>
           <div className="avst-ftp-centrob">

@@ -416,6 +416,15 @@ export function validarConfig(bruto: unknown): AvatarConfig {
     }
     if (Object.keys(coresCamada).length) saida.coresCamada = coresCamada;
   }
+  // megas 254–255 (§102/§118): tipo corporal e postura — enums FECHADOS;
+  // neutro/desconhecido é OMITIDO (avatares existentes byte-estáveis)
+  if (b.corpo === 'esbelto' || b.corpo === 'atletico' || b.corpo === 'robusto' || b.corpo === 'compacto') {
+    saida.corpo = b.corpo;
+  }
+  if (b.postura === 'confiante' || b.postura === 'relaxada' || b.postura === 'executiva'
+    || b.postura === 'heroica' || b.postura === 'misteriosa') {
+    saida.postura = b.postura;
+  }
   return saida;
 }
 
@@ -832,6 +841,38 @@ export function dicasComposicao(estilo: EstiloFoto, formato: string): DicaFoto[]
 /** Categorias permitidas SOBRE a foto (§21 — nunca roupa/corpo). */
 export const CATEGORIAS_FOTO: Array<keyof EstiloFoto['camadas']> =
   ['fundo', 'banner', 'aura', 'efeito', 'moldura', 'emblema'];
+
+/** mega 258 (§349): COMPOR PRA MIM — assistente de layout DETERMINÍSTICO
+ *  por regras (mesmo estilo do consultor §232–§240: nunca IA, sempre o
+ *  mesmo resultado para a mesma entrada). Devolve um PATCH de EstiloFoto:
+ *  posições/selo/tipografia coerentes com o que está equipado + formato. */
+export function comporAutomatico(estilo: EstiloFoto, formato: FormatoFotoId): Partial<EstiloFoto> {
+  const patch: Partial<EstiloFoto> = {};
+  const pos: NonNullable<EstiloFoto['pos']> = {};
+  const temTitulo = !!estilo.titulo;
+  const temLegenda = !!estilo.legenda;
+  const temEmblema = !!estilo.camadas.emblema && estilo.camadas.emblema !== 'nenhum';
+  if (formato === 'perfil') {
+    if (temTitulo && temLegenda) {
+      // rodapé disputado (mesma regra da dica §349) → selo compacto no TOPO
+      patch.seloCfg = { escala: 'p', compacto: true };
+      pos.selo = { x: 120, y: 14 };
+    } else if (temTitulo) {
+      patch.seloCfg = { escala: 'g' }; // título é a estrela
+    }
+    if (temEmblema) pos.emblema = { x: 202, y: 38 }; // canto superior §345.1
+  } else {
+    // wide: emblema no canto superior oposto ao medalhão; contorno na
+    // legenda para legibilidade sobre qualquer cenário (§349 contraste)
+    const sug = posSugeridasEmblema(formato, 'esquerda').find((x) => x.id === 'canto-sup');
+    if (temEmblema && sug?.pos) pos.emblema = sug.pos;
+  }
+  if (temLegenda) {
+    patch.tipografia = { ...(estilo.tipografia ?? {}), contorno: true };
+  }
+  if (Object.keys(pos).length) patch.pos = { ...(estilo.pos ?? {}), ...pos };
+  return patch;
+}
 
 export { hashConfig };
 

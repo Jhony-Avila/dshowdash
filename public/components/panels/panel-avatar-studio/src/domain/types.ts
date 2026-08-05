@@ -114,7 +114,16 @@ export interface AvatarConfig {
    * item declara, hex normalizado, valor igual ao global não persiste).
    */
   coresCamada?: Partial<Record<CamadaId, Partial<Record<SlotCor, string>>>>;
+  /** mega 254 (§102): TIPO CORPORAL — transform de wrapper na figura;
+   *  'medio' é o neutro e NUNCA persiste (byte-estável). */
+  corpo?: TipoCorporal;
+  /** mega 255 (§118): POSTURA — idem; 'neutra' nunca persiste. */
+  postura?: PosturaAvatar;
 }
+
+// ── lote 251–260 (§102/§118): criação avançada 2D ───────────────────
+export type TipoCorporal = 'esbelto' | 'atletico' | 'robusto' | 'compacto';
+export type PosturaAvatar = 'confiante' | 'relaxada' | 'executiva' | 'heroica' | 'misteriosa';
 
 export interface AvatarDoUsuario {
   config: AvatarConfig | null;     // null = legado/URL ou nunca criado

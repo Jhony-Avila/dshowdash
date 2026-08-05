@@ -34,7 +34,9 @@ export function PresetsShell({ configAtual, aoAplicar }: {
   const [cmpA, cmpB] = comparar.map((id) => presets.find((p) => p.id === id)).filter(Boolean);
   void tic;
 
-  /** mega 69: diferenças camada a camada entre dois configs. */
+  /** mega 69: diferenças camada a camada entre dois configs.
+   *  mega 249 (§231): agora também CORES e TÍTULO — a comparação cobre
+   *  roupas, cores, títulos, auras e poderes como o briefing pede. */
   const diferencas = (a: AvatarConfig, b: AvatarConfig): Array<{ slot: string; de: string; para: string }> => {
     const chaves = new Set([...Object.keys(a.camadas), ...Object.keys(b.camadas)]);
     const saida: Array<{ slot: string; de: string; para: string }> = [];
@@ -44,6 +46,15 @@ export function PresetsShell({ configAtual, aoAplicar }: {
       if (va !== vb) saida.push({ slot: k, de: va ?? '—', para: vb ?? '—' });
     }
     if (a.base !== b.base) saida.unshift({ slot: 'base', de: a.base, para: b.base });
+    // mega 249 (§231): título + cores por canal
+    if ((a.titulo ?? '—') !== (b.titulo ?? '—')) {
+      saida.push({ slot: 'título', de: a.titulo ?? '—', para: b.titulo ?? '—' });
+    }
+    for (const canal of ['pele', 'cabelo', 'roupa', 'destaque'] as const) {
+      if (a.cores[canal] !== b.cores[canal]) {
+        saida.push({ slot: `cor ${canal}`, de: a.cores[canal], para: b.cores[canal] });
+      }
+    }
     return saida;
   };
 

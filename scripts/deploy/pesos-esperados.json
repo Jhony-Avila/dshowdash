@@ -1,7 +1,7 @@
 {
-  "comentario": "GATE de regressão de PESO (mega 8): máximos em KB por chunk do panel-avatar-studio (nome sem hash). Margem ~10% sobre o build 2026-08-05 (lote 221-230). Crescimento INTENCIONAL = atualizar aqui no MESMO commit da feature, com justificativa no commit.",
+  "comentario": "GATE de regressão de PESO (mega 8): máximos em KB por chunk do panel-avatar-studio (nome sem hash). Margem ~10% sobre o build 2026-08-05 (onda 231-260). Crescimento INTENCIONAL = atualizar aqui no MESMO commit da feature, com justificativa no commit.",
   "panel-avatar-studio": {
-    "chunks/entry": 385,
+    "chunks/entry": 410,
     "chunks/catalogo-arte": 345,
     "chunks/react-vendor": 225,
     "chunks/vendor": 40,

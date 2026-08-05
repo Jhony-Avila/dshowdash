@@ -20,6 +20,8 @@ import { alternarNaLista, criarLista, excluirLista, listarListas } from '../serv
 // mega 229 (§229): favoritos que crescem — marca de permanente
 import { alternarPermanente, favoritosPermanentes } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
+// mega 248 (§228): estado ARQUIVADO (local-first, reversível)
+import { alternarArquivado, arquivados } from '../services/ArquivoItens';
 import { salvarPreset } from '../services/PresetsPessoais';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { MOVIMENTOS, animar } from './movimento';
@@ -42,7 +44,8 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
   const [salvo, setSalvo] = useState(false);
   const [comparando, setComparando] = useState(false);
   // lote 207–208 (§181/§168/§170): preview por CONTEXTO (moldura/banner)
-  const [contexto, setContexto] = useState<'palco' | 'perfil' | 'header' | 'menu'>('palco');
+  // mega 238 (§168): +ranking e notificação — "o sistema deverá mostrar"
+  const [contexto, setContexto] = useState<'palco' | 'perfil' | 'header' | 'menu' | 'ranking' | 'notificacao'>('palco');
   const [alternando, setAlternando] = useState(false);
   const [, setTic] = useState(0);
   const item = itemPorId(atual);
@@ -116,11 +119,32 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
             em contextos reais (perfil/header/menu) sem sair do drawer */}
         {(item.categoria === 'moldura' || item.categoria === 'banner') && (
           <div className="avst-ft-chips avst5-ctx-chips" role="radiogroup" aria-label="Ver em contexto (§181)" data-teste="ctx-preview">
-            {([['palco', 'Palco'], ['perfil', 'Perfil'], ['header', 'Header'], ['menu', 'Menu']] as const).map(([c, nome]) => (
+            {([['palco', 'Palco'], ['perfil', 'Perfil'], ['header', 'Header'], ['menu', 'Menu'],
+              // mega 238 (§168): contextos novos atrás da flag do palco v2
+              ...(flag('as5.palco_v2') ? [['ranking', 'Ranking'], ['notificacao', 'Notif.']] as const : [])] as const).map(([c, nome]) => (
               <button key={c} type="button" role="radio" aria-checked={contexto === c}
                 className={`avst-ft-chip ${contexto === c ? 'avst-ft-chip-ativo' : ''}`}
                 data-teste={`ctx-${c}`}
                 onClick={() => setContexto(c)}>{nome}</button>
+            ))}
+          </div>
+        )}
+        {/* mega 239 (§170.1): PRESETS DE COMPOSIÇÃO do banner — equipam o
+            banner com a posição escolhida (comando com undo) */}
+        {flag('as5.palco_v2') && item.categoria === 'banner' && !bloqueado && (
+          <div className="avst-ft-chips" role="group" aria-label="Composição do banner (§170.1)" data-teste="banner-presets">
+            {([['esquerda', -24], ['centro', 0], ['direita', 24]] as const).map(([nome2, desloc]) => (
+              <button key={nome2} type="button" className="avst-ft-chip"
+                data-teste={`banner-comp-${nome2}`}
+                title={`Equipar com o banner à ${nome2} (§170.1)`}
+                onClick={() => {
+                  const base2 = comItem(config, 'banner', item.id);
+                  const params = { ...(base2.params ?? {}) };
+                  if (desloc === 0) delete params.banner;
+                  else params.banner = { ...(params.banner ?? {}), deslocamento: desloc };
+                  aoEscolher(validarConfig({ ...base2, ...(Object.keys(params).length ? { params } : {}) }));
+                  setTic((t) => t + 1);
+                }}>Banner à {nome2}</button>
             ))}
           </div>
         )}
@@ -129,11 +153,31 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
         {/* megas 92+93 (§85/§225–§228): ECONOMIA do asset — origem,
             disponibilidade e o caminho de desbloqueio explícito */}
         <p className="avst5-det-meta" data-teste="det-economia">
-          Origem: {!item.bloqueadoPor ? 'catálogo base'
-            : item.bloqueadoPor.startsWith('evento:') ? 'evento sazonal' : 'recompensa de conquista'}
-          {' · '}Disponibilidade: {item.bloqueadoPor?.startsWith('evento:') ? 'sazonal' : 'permanente'}
+          {/* mega 247 (§226/§227): a COLEÇÃO entra como origem explícita */}
+          Origem: {colecao ? `coleção ${colecao.nome}`
+            : !item.bloqueadoPor ? 'catálogo Dshow'
+              : item.bloqueadoPor.startsWith('evento:') ? 'evento sazonal' : 'recompensa de conquista'}
+          {' · '}Disponibilidade: {item.bloqueadoPor?.startsWith('evento:') ? 'sazonal (janela do evento)'
+            : item.bloqueadoPor ? 'permanente após desbloquear' : 'sempre'}
           {' · '}{itensUsados().has(item.id) ? 'já explorado ✓' : 'ainda não explorado'}
         </p>
+        {/* mega 248 (§228): ESTADO do asset — badges derivados + arquivar */}
+        {flag('as5.progressao_v2') && (
+          <p className="avst5-det-meta avst5-det-estados" data-teste="det-estados">
+            {(equipado ? ['Equipado'] : bloqueado ? ['Bloqueado'] : ['Disponível'])
+              .concat(favorito ? ['Favorito'] : [])
+              .concat(arquivados().has(item.id) ? ['Arquivado'] : [])
+              .map((e2) => <span key={e2} className="avst-fchip" data-estado={e2.toLowerCase()}>{e2}</span>)}
+            <button type="button" className="avst-fchip" data-teste="det-arquivar"
+              aria-pressed={arquivados().has(item.id)}
+              title={arquivados().has(item.id)
+                ? 'Devolver à grade padrão (§228)'
+                : 'Arquivar — sai da grade padrão sem perder nada (§228)'}
+              onClick={() => { alternarArquivado(item.id); setTic((t) => t + 1); }}>
+              {arquivados().has(item.id) ? 'Desarquivar' : 'Arquivar'}
+            </button>
+          </p>
+        )}
         {bloqueado && (
           <p className="avst5-det-meta avst5-det-desbloqueio" data-teste="det-desbloqueio">
             <Lock size={11} aria-hidden /> Como desbloquear: {item.bloqueadoPor!.startsWith('evento:')

@@ -16,11 +16,13 @@ import {
   ArrowDownUp, Ban, Check, Grid2x2, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal, Star, X,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, Raridade, SlotAcessorio } from '../domain/types';
-import { CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, validarConfig } from '../services/AvatarCatalog';
+import { CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 // mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
 import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
+// mega 248 (§228): itens ARQUIVADOS saem da grade padrão (reversível)
+import { arquivados } from '../services/ArquivoItens';
 import type { ParteDef } from '../engine/base-api';
 import { AvatarSvg } from './AvatarSvg';
 import { Dica } from './Dica';
@@ -130,11 +132,16 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   const [subFav, setSubFav] = useState<'todos' | 'rapidos' | 'permanentes' | 'colecao'>('todos');
   const [colFav, setColFav] = useState<string | null>(null);
   const [permanentes, setPermanentes] = useState<Set<string>>(favoritosPermanentes);
+  // mega 248 (§228): arquivados fora da grade padrão; toggle no popover
+  const progV2 = flag('as5.progressao_v2');
+  const [soArquivados, setSoArquivados] = useState(false);
+  const [arq, setArq] = useState<Set<string>>(arquivados);
   // outras superfícies (DetalheAsset) mudam a marca — resincroniza ao focar
   useEffect(() => {
-    const ao = () => setPermanentes(favoritosPermanentes());
+    const ao = () => { setPermanentes(favoritosPermanentes()); setArq(arquivados()); };
     window.addEventListener('focus', ao);
-    return () => window.removeEventListener('focus', ao);
+    window.addEventListener('avst:arquivados', ao); // mega 248: drawer avisa
+    return () => { window.removeEventListener('focus', ao); window.removeEventListener('avst:arquivados', ao); };
   }, []);
   const [modo, setModo] = useState<ModoGrade>(() => {
     try {
@@ -224,6 +231,10 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         : subFav === 'permanentes' ? permanentes.has(i.id)
           : daColecao ? daColecao.has(i.id) : favs.has(i.id)));
     }
+    // mega 248 (§228): padrão esconde ARQUIVADOS; o toggle inverte a visão
+    if (progV2) {
+      lista = lista.filter((i) => (soArquivados ? arq.has(i.id) : !arq.has(i.id)));
+    }
     if (ordem === 'raridade') lista.sort((a, b) => nivelRaridade(b.raridade) - nivelRaridade(a.raridade));
     if (ordem === 'nome') lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
     if (ordem === 'recentes') lista.sort((a, b) => Number(usados.has(b.id)) - Number(usados.has(a.id)));
@@ -233,7 +244,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     }
     return lista;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listaBase, tier, soFavoritos, ocultarBloqueados, ordem, favs, favCats, emFavoritos, subFav, colFav, permanentes, colecoesFav]);
+  }, [listaBase, tier, soFavoritos, ocultarBloqueados, ordem, favs, favCats, emFavoritos, subFav, colFav, permanentes, colecoesFav, progV2, soArquivados, arq]);
 
   const equipados = new Set(idsEquipados(config, categoria));
   const nomesEquipados = [...equipados].map((id) => itemPorId(id)?.nome).filter(Boolean).join(' + ');
@@ -329,6 +340,13 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
                   onChange={(e) => setOcultarBloqueados(e.target.checked)} />
                 <Lock size={12} aria-hidden /> Ocultar bloqueados
               </label>
+              {flag('as5.progressao_v2') && (
+                <label className="avst-fpop-opcao" data-teste="filtro-arquivados">
+                  <input type="checkbox" checked={soArquivados}
+                    onChange={(e) => { setSoArquivados(e.target.checked); setArq(arquivados()); }} />
+                  Só arquivados (§228)
+                </label>
+              )}
               <label className="avst-fpop-opcao avst-ordenar" title="Ordenar itens">
                 <ArrowDownUp size={12} aria-hidden />
                 <select value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)} aria-label="Ordenar por">
@@ -513,6 +531,12 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, aoFavori
   const dica = item.bloqueadoPor?.startsWith('evento:')
     ? 'Item de evento — volta a ficar disponível na próxima janela.'
     : 'Recompensa de conquista — veja a aba Conquistas.';
+  // mega 236 (§155): PREVIEW DE PODER — hover no card de efeito/aura toca
+  // o próprio poder animado sobre o thumb (pausa ao sair; §297 respeitado)
+  const [poderVivo, setPoderVivo] = useState(false);
+  const podePoderVivo = (item.categoria === 'efeito' || item.categoria === 'aura')
+    && !bloqueado && flag('as5.palco_v2')
+    && !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
   return (
     <div ref={cardRef} role="option" aria-selected={ativo} aria-disabled={bloqueado}
@@ -520,12 +544,16 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, aoFavori
       data-raridade={item.raridade}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
       onClick={escolher}
-      onMouseEnter={aoPrever && !bloqueado ? () => aoPrever(preview) : undefined}
-      onMouseLeave={aoPrever ? () => aoPrever(null) : undefined}
+      onMouseEnter={() => { if (aoPrever && !bloqueado) aoPrever(preview); if (podePoderVivo) setPoderVivo(true); }}
+      onMouseLeave={() => { aoPrever?.(null); setPoderVivo(false); }}
       onKeyDown={(e) => { if (escolher && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); escolher(); } }}
       tabIndex={0}>
       <span className="avst-card-thumb">
         <AvatarSvg config={preview} estatico uid={`th-${item.id}`} foco={FOCO_THUMB[item.categoria]} />
+        {poderVivo && (
+          <span className="avst-card-poder" aria-hidden data-teste="poder-preview"
+            dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado(item.id, config.cores.destaque) }} />
+        )}
       </span>
       {modo === 'lista' ? (
         <>

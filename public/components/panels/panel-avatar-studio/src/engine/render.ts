@@ -65,6 +65,32 @@ const ORDEM_CAMADAS = [
   'acessorio', 'acessorio_pescoco', 'acessorio_cabeca', 'acessorio_rosto',
 ] as const;
 
+// ── megas 254–255 (§102/§118): TIPO CORPORAL e POSTURA ──────────────
+// Transforms de WRAPPER na figura (arte 100% intocada — regra da F2);
+// ancorados na BASE da figura (cy) para os pés não "flutuarem". Campo
+// ausente = wrapper ausente = SVG byte a byte o de sempre.
+const TIPOS_CORPO: Record<string, [number, number]> = {
+  esbelto: [0.95, 1.02], atletico: [1.05, 1], robusto: [1.1, 0.98], compacto: [0.97, 0.94],
+};
+const POSTURAS_FIG: Record<string, string> = {
+  confiante: 'rotate(-2 120 __CY__)',
+  relaxada: 'rotate(2.5 120 __CY__)',
+  executiva: 'rotate(-1 120 __CY__)',
+  heroica: 'rotate(-1.5 120 __CY__)',
+  misteriosa: 'rotate(1.5 120 __CY__) translate(0 2)',
+};
+
+/** Wrapper §102/§118 da FIGURA (cy = base da figura no viewBox atual). */
+function envolverFigura(svg: string, config: AvatarConfig, cy: number): string {
+  const corpo = config.corpo ? TIPOS_CORPO[config.corpo] : undefined;
+  const postura = config.postura ? POSTURAS_FIG[config.postura] : undefined;
+  if (!corpo && !postura) return svg;
+  const partes: string[] = [];
+  if (corpo) partes.push(`translate(120 ${cy}) scale(${corpo[0]} ${corpo[1]}) translate(-120 -${cy})`);
+  if (postura) partes.push(postura.replace(/__CY__/g, String(Math.round(cy * 0.82))));
+  return `<g transform="${partes.join(' ')}">${svg}</g>`;
+}
+
 /**
  * Compõe o SVG completo do avatar.
  * `resolver` desacopla o motor do catálogo (inversão de dependência):
@@ -154,8 +180,11 @@ export function renderAvatar(
       conteudo =
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
-          corpoInteiro(paletaDa('roupa'), uid) + roupaCorpo + emblemaCorpo +
-          `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>` +
+          envolverFigura(
+            corpoInteiro(paletaDa('roupa'), uid) + roupaCorpo + emblemaCorpo +
+            `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`,
+            config, 396,
+          ) +
         `</g></g>` +
         `<g data-anim="plano-frente"><g transform="translate(120 200) scale(1.8) translate(-120 -120)">${efeitoFrente}</g></g>`;
     } else {
@@ -163,24 +192,33 @@ export function renderAvatar(
       conteudo =
         `<g data-anim="plano-fundo"><g transform="translate(120 120) scale(1.08) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
-          pintar(config.base) + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.emblema, 'emblema') +
-          pintar(config.camadas.boca, 'boca') +
-          `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
-          `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
-          acessorios + palpebras +
+          envolverFigura(
+            pintar(config.base) + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.emblema, 'emblema') +
+            pintar(config.camadas.boca, 'boca') +
+            `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
+            `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
+            acessorios + palpebras,
+            config, 236,
+          ) +
         `</g></g>` +
         `<g data-anim="plano-frente"><g transform="translate(120 120) scale(1.1) translate(-120 -120)">${efeitoFrente}</g></g>`;
     }
   } else {
-    const personagem =
-      pintar(config.base) + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c], c)).join('');
+    const personagem = envolverFigura(
+      pintar(config.base) + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c], c)).join(''),
+      config, 236,
+    );
     conteudo = `${fundo}${efeitoAtras}${personagem}${efeitoFrente}`;
   }
 
+  // mega 237 (§167): no modo PALCO a moldura ganha um grupo animável
+  // (comportamento por raridade via CSS do shell); publicação intocada —
+  // palco:true NUNCA é usado no SVG salvo (critério de aceite nº 8)
+  const molduraFinal = corpoTodo ? '' : (opcoes.palco && moldura ? `<g data-anim="moldura">${moldura}</g>` : moldura);
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 ${alto}"${dim} role="img" aria-label="Avatar personalizado">
 <defs><clipPath id="${uid}clip">${clip}</clipPath></defs>
 <g clip-path="url(#${uid}clip)">${conteudo}</g>
-${corpoTodo ? '' : moldura}
+${molduraFinal}
 </svg>`;
 
   if (opcoes.estatico) {
