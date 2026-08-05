@@ -27,6 +27,11 @@ const PADROES: Record<string, boolean> = {
   'as5.palco_v2': true,           // lote 231–240 — cenários §160 + horas §162 + propriedades §161 + poder §154 + preview §155 + editores §167–§172
   'as5.progressao_v2': true,      // lote 241–250 — coleções §207–§214 + conquistas §215–§221 + economia §226–§228 + comparação §231
   'as5.criacao_avancada': true,   // lote 251–260 — tipo corporal §102 + postura §118 + presets faciais §105 + idle 2D §119
+  // ── onda 261–310 (decisão #55; padrão ON conforme #50) ──
+  'as5.palco3d_v2': true,         // lote 261–270 — A5 sem UBC: vida §440–§441, ambiente §449, tone mapping §457–§458, partículas §444–§446, rim §452, enquadrar §454
+  'as5.fundacoes_v2': true,       // lote 271–280 — A6: manifest §267, tokens §283–§289, logging §291 v2
+  'as5.poderes_familia': true,    // lote 281–290 — poderes por família §153.1–.4 + partículas §156
+  'as5.microinteracoes': true,    // lote 291–300 — progressão v3 + microinterações
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';
