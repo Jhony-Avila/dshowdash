@@ -10,8 +10,9 @@
   231–240 PALCO v2 (§160–§172) · 241–250 PROGRESSÃO v2 (§207–§231) ·
   251–260 CRIAÇÃO AVANÇADA + Photo PRO restante (§102–§119/§349/§361–§369)
   · consolidação (gate #54, baselines, docs).
-- Suíte: **51 arquivos** (4 novos: palco-v2, progressao-v2, criacao-v2 +
-  os 47 anteriores) + nucleo.test.
+- Suíte: **50 arquivos** (3 novos: palco-v2, progressao-v2, criacao-v2 +
+  os 47 anteriores) + nucleo.test — **50/50 verdes** antes da entrega
+  (foto-f6 atualizado: strip com Compor pra mim).
 - Byte-stability VERIFICADA mecanicamente 2× nesta onda (renderAvatar com
   configs legados; wrapper §102/§118 só entra com campo presente).
 - Flags novas (padrão ON, #50): `as5.palco_v2`, `as5.progressao_v2`,

@@ -28,10 +28,10 @@ await p.waitForTimeout(800);
 await p.locator('button', { hasText: 'Estilizar' }).click();
 await p.waitForTimeout(600);
 
-// §326/§327 + lotes 211–220/221–230 (§344): strip com os 17 templates +
-// Limpar (7 clássicos + 6 PRO + 4 assinatura; Limpar também é .avst-ft-template)
-ok(await p.locator('[data-teste="templates-foto"] .avst-ft-template').count() === 18,
-  'esperava 17 templates + Limpar');
+// §326/§327 + lotes 211–260 (§344/§349): strip com os 17 templates +
+// Limpar + Compor pra mim (mega 258) — todos são .avst-ft-template
+ok(await p.locator('[data-teste="templates-foto"] .avst-ft-template').count() === 19,
+  'esperava 17 templates + Limpar + Compor pra mim');
 await p.locator('.avst-ft-template', { hasText: 'Cyber Profile' }).click();
 await p.waitForTimeout(600);
 const svg = await p.locator('.avst-ft-preview svg').evaluate((el) => el.outerHTML);
