@@ -1817,3 +1817,23 @@
   background: #12182a; border: 1px solid #24304d; border-radius: 10px; margin-top: 4px;
 }
 .avst-ft-dica p { margin: 0; font-size: 11px; color: #aeb6c9; flex: 1; }
+
+/* ── lote 171–178 (§168/§179/§180/§185): editores de apresentação ── */
+.avst5-palco-climax { animation: avst5-climax 2.6s ease-in-out; }
+@keyframes avst5-climax {
+  0% { filter: brightness(1); }
+  12% { filter: brightness(1.06) saturate(1.08); } /* §179: aura cresce antes */
+  30% { filter: brightness(1.22) saturate(1.25); } /* clímax: a luz reage */
+  60% { filter: brightness(1.12) saturate(1.12); }
+  100% { filter: brightness(1); }
+}
+.avst5-sugestao-cenario {
+  background: #182036 !important; border: 1px solid #3a4a75 !important;
+  color: #9db4ff !important; font-size: 10.5px;
+}
+.avst5-hist-palco { display: inline-flex; gap: 4px; align-items: center; }
+.avst5-hist-palco button { font-size: 10px; opacity: 0.85; }
+.avst5-apresenta-item input {
+  width: 92px; background: #121622; color: #e6eaf2;
+  border: 1px solid #3a4a75; border-radius: 8px; font-size: 11px; padding: 2px 6px;
+}
