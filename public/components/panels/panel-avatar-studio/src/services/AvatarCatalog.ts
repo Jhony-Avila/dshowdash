@@ -491,6 +491,79 @@ export const TEMPLATES_FOTO: TemplateFoto[] = [
     descricao: 'Montanhas, sakura ao vento e selo de viagem (§327.7).',
     estilo: { camadas: { fundo: 'fun_montanhas', moldura: 'mol_selo', emblema: 'emb_lua', efeito: 'efe_sakura' }, cores: { destaque: '#ff5f8f' } },
   },
+  // ── lote 211–220 (§344/§349): galeria PRO — composições que estreiam o
+  // sistema de CAMADAS da onda 161–200 (blend/opacidade/plano §338–§342,
+  // luz local §334 e tipografia §343). Só ids REAIS do catálogo; cores de
+  // texto da paleta aprovada CORES_TEXTO_FOTO. Aplicação: §326.3 (item
+  // bloqueado fica de fora) + Foto.aplicarTemplate carrega os campos novos.
+  {
+    id: 'tpl_aurora_boreal', nome: 'Aurora Boreal', categoria: 'artistico',
+    descricao: 'Céu de aurora, véu estelar em screen e luz radial fria (§349).',
+    estilo: {
+      camadas: { fundo: 'fun_aurora', aura: 'aur_estelar', efeito: 'efe_veu_aurora', moldura: 'mol_cristal' },
+      titulo: 'tit_mestre_da_luz', cores: { destaque: '#4cd9e8' },
+      camadasFoto: { efeito: { blend: 'screen', opacidade: 0.85, plano: 'frente' }, aura: { blend: 'soft-light' } },
+      luzLocal: { tipo: 'radial', intensidade: 0.35 },
+      tipografia: { fonte: 'serif', peso: 600, cor: '#7cd9ff' },
+    },
+  },
+  {
+    id: 'tpl_noir_executive', nome: 'Noir Executive', categoria: 'executivo',
+    descricao: 'Retrato dramático: escritório suave, ouro e luz de holofote (§334).',
+    estilo: {
+      camadas: { fundo: 'fun_escritorio', moldura: 'mol_ouro', emblema: 'emb_grafico' },
+      titulo: 'tit_estrategista', cores: { destaque: '#e8b64c' },
+      camadasFoto: { fundo: { opacidade: 0.7 } },
+      luzLocal: { tipo: 'radial', intensidade: 0.42 },
+      tipografia: { fonte: 'serif', peso: 800, cor: '#ffd75e', caixaAlta: true },
+      subtitulo: 'Diretoria',
+    },
+  },
+  {
+    id: 'tpl_neon_tokyo', nome: 'Neon Tokyo', categoria: 'cyber',
+    descricao: 'Synthwave, banner de Tóquio, scanlines em screen e mono neon (§342).',
+    estilo: {
+      camadas: { fundo: 'fun_synthwave', banner: 'ban_neon_tokyo', aura: 'aur_neon', efeito: 'efe_scanlines', moldura: 'mol_glitch' },
+      titulo: 'tit_cyber_architect', cores: { destaque: '#4cd9e8' },
+      camadasFoto: { efeito: { blend: 'screen', opacidade: 0.6, plano: 'frente' }, aura: { blend: 'screen' } },
+      luzLocal: { tipo: 'linear', intensidade: 0.2 },
+      tipografia: { fonte: 'mono', peso: 800, cor: '#ff9ecb', contorno: true },
+    },
+  },
+  {
+    id: 'tpl_campeao_arena', nome: 'Campeão da Arena', categoria: 'gamer',
+    descricao: 'Arena, fênix, chamas e faíscas ao vento — pódio (§349).',
+    estilo: {
+      camadas: { fundo: 'fun_arena', banner: 'ban_campeao', aura: 'aur_fenix', efeito: 'efe_faiscas', moldura: 'mol_chamas' },
+      titulo: 'tit_pro_player', cores: { destaque: '#39d98a' },
+      camadasFoto: { aura: { blend: 'screen', opacidade: 0.8 }, efeito: { blend: 'screen', plano: 'frente' } },
+      luzLocal: { tipo: 'radial', intensidade: 0.3 },
+      tipografia: { fonte: 'sistema', peso: 800, cor: '#ffd75e', caixaAlta: true },
+    },
+  },
+  {
+    id: 'tpl_zen_dojo', nome: 'Zen Dojo', categoria: 'sereno',
+    descricao: 'Dojo tranquilo, madeira, sakura suave e serifa leve (§334).',
+    estilo: {
+      camadas: { fundo: 'fun_dojo', moldura: 'mol_madeira', efeito: 'efe_sakura' },
+      titulo: 'tit_oraculo', cores: { destaque: '#ff9ecb' },
+      camadasFoto: { fundo: { opacidade: 0.85 }, efeito: { opacidade: 0.7, plano: 'frente' } },
+      luzLocal: { tipo: 'radial', intensidade: 0.25 },
+      tipografia: { fonte: 'serif', peso: 400, cor: '#e6eaf2' },
+      subtitulo: 'Equilíbrio',
+    },
+  },
+  {
+    id: 'tpl_data_oracle', nome: 'Data Oracle', categoria: 'dados',
+    descricao: 'Grade de dados, órbita, métricas em screen e mono técnico (§342).',
+    estilo: {
+      camadas: { fundo: 'fun_grade', aura: 'aur_orbital', efeito: 'efe_metricas', moldura: 'mol_vetores', emblema: 'emb_grafico' },
+      titulo: 'tit_arquiteto_de_dados', cores: { destaque: '#4c9de8' },
+      camadasFoto: { efeito: { blend: 'screen', opacidade: 0.75, plano: 'frente' }, aura: { blend: 'soft-light', opacidade: 0.9 } },
+      luzLocal: { tipo: 'linear', intensidade: 0.15 },
+      tipografia: { fonte: 'mono', peso: 600, cor: '#7cd9ff' },
+    },
+  },
 ];
 
 // ── Renderização (fachada — a UI só fala com o catálogo) ────────────

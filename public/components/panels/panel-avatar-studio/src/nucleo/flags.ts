@@ -16,6 +16,7 @@ const PADROES: Record<string, boolean> = {
   'as5.hud3d': false,            // mega 28 — HUD de performance do palco 3D (dev)
   'as5.telemetria_painel': false, // mega 46 — viewer local de telemetria (dev)
   'as5.consultor': true,          // lote 121–130 — consultor de estilo POR REGRAS (client-only; §651 desliga)
+  'as5.foto_galeria': true,       // lote 211–220 — galeria de templates de foto (filtro/favoritos/destaque §326); §651 desliga p/ lista simples
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

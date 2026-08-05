@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Aperture, BadgeCheck, BookmarkPlus, Box, Camera, Check, Crown, Download, FolderOpen, ImageUp,
-  Images, Layers, Lightbulb, LoaderCircle, Redo2, RotateCcw, Share2, SlidersHorizontal, Sparkles, Trash2, Undo2,
+  Images, Layers, Lightbulb, LoaderCircle, Redo2, RotateCcw, Share2, SlidersHorizontal, Sparkles, Star, Trash2, Undo2,
   Video, Wand2, X,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
@@ -32,6 +32,9 @@ import { criarRenderizador } from '../services/FabricaRenderizador';
 import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d';
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { estadoVazio } from '../nucleo/contratos';
+import { flag } from '../nucleo/flags';
+import { semanaIso } from '../services/Missoes';
+import { alternarFavoritoTemplate, favoritosTemplate } from '../services/FavoritosTemplate';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { excluirProjetoFoto, listarProjetosFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
 import type { ProjetoFoto } from '../services/ProjetosFoto';
@@ -87,6 +90,16 @@ function limparEstiloSalvo(): void {
   try { localStorage.removeItem(CHAVE_ESTILO); } catch { /* sem storage */ }
 }
 
+// lote 211–220: o rascunho §362 tem CONTEÚDO se houver qualquer campo do
+// estilo além da cor de destaque (que ESTILO_VAZIO já traz). Antes o gate só
+// olhava camadas/título e descartava rascunhos só-subtítulo/legenda/ajustes/
+// luz/tipografia/camadasFoto — campos que aplicarTemplate agora carrega.
+function estiloTemConteudo(e: EstiloFoto): boolean {
+  const temObj = (o?: object | null) => !!o && Object.keys(o).length > 0;
+  return temObj(e.camadas) || !!e.titulo || !!e.legenda || !!e.subtitulo
+    || temObj(e.ajustes) || !!e.luzLocal || temObj(e.tipografia) || temObj(e.camadasFoto);
+}
+
 const ESTILO_VAZIO: EstiloFoto = { camadas: {}, cores: { destaque: CONFIG_PADRAO.cores.destaque } };
 
 // lote 161–164 (§338/§342): rótulos do painel de camadas
@@ -136,6 +149,11 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   const refFuturo = useRef<EstiloFoto[]>([]);
   const [ticHist, setTicHist] = useState(0);
   void ticHist;
+  // lote 211–220 (§326/§229): galeria de templates — filtro por categoria,
+  // favoritos (local-first) e destaque determinístico da semana (§251).
+  const galeriaTpl = flag('as5.foto_galeria');
+  const [filtroTpl, setFiltroTpl] = useState<string>('todos');
+  const [favsTpl, setFavsTpl] = useState<string[]>(favoritosTemplate);
   const mudarEstilo = useCallback((fn: (e: EstiloFoto) => EstiloFoto) => {
     setEstilo((e) => {
       refPassado.current = [...refPassado.current.slice(-29), e];
@@ -553,7 +571,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   useEffect(() => {
     if (!fotoEstilo) return;
     const t = setTimeout(() => {
-      if (Object.keys(estilo.camadas).length || estilo.titulo) gravarEstilo(estilo);
+      if (estiloTemConteudo(estilo)) gravarEstilo(estilo);
       else limparEstiloSalvo();
     }, 500);
     return () => clearTimeout(t);
@@ -566,17 +584,67 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     for (const [cat, id] of Object.entries(tpl.estilo.camadas)) {
       if (!id) continue;
       const item = itemPorId(id);
-      if (item?.bloqueadoPor && !desbloqueados.has(id)) { pulados += 1; continue; }
+      // fora se INEXISTENTE (id inválido) ou BLOQUEADO — mesma simetria do título
+      if (!item || (item.bloqueadoPor && !desbloqueados.has(id))) { pulados += 1; continue; }
       camadas[cat as keyof EstiloFoto['camadas']] = id;
     }
     let titulo = tpl.estilo.titulo;
     if (titulo && !TITULOS.some((x) => x.id === titulo)) { titulo = undefined; pulados += 1; }
-    mudarEstilo((e) => ({ ...e, camadas, cores: { destaque: tpl.estilo.cores.destaque }, ...(titulo ? { titulo } : { titulo: undefined }) }));
+    // lote 211–220: o template define a DECORAÇÃO por inteiro (substitui, não
+    // acumula — troca de template não deixa resíduo). Os ajustes/legenda do
+    // USUÁRIO (enquadramento da foto dele) são preservados. Campos novos da
+    // onda 161–200 (camadasFoto/luz/tipografia/subtítulo) entram sanitizados
+    // no svgFotoDe; camadasFoto só p/ camadas que de fato entraram.
+    mudarEstilo((e) => {
+      const est: EstiloFoto = {
+        camadas,
+        cores: { destaque: tpl.estilo.cores.destaque },
+        ...(e.ajustes ? { ajustes: e.ajustes } : {}),
+        ...(e.legenda ? { legenda: e.legenda } : {}),
+        ...(titulo ? { titulo } : {}),
+      };
+      if (tpl.estilo.camadasFoto) {
+        const cf: NonNullable<EstiloFoto['camadasFoto']> = {};
+        for (const [cat, cfg] of Object.entries(tpl.estilo.camadasFoto)) {
+          if (cfg && camadas[cat as keyof EstiloFoto['camadas']]) cf[cat as CamadaFotoId] = cfg;
+        }
+        if (Object.keys(cf).length) est.camadasFoto = cf;
+      }
+      if (tpl.estilo.luzLocal) est.luzLocal = tpl.estilo.luzLocal;
+      if (tpl.estilo.tipografia) est.tipografia = tpl.estilo.tipografia;
+      if (tpl.estilo.subtitulo) est.subtitulo = tpl.estilo.subtitulo;
+      return est;
+    });
     setMensagem(pulados
-      ? `Template "${tpl.nome}" aplicado — ${pulados} item(ns) ainda bloqueado(s) ficaram de fora.`
+      ? `Template "${tpl.nome}" aplicado — ${pulados} item(ns) indisponível(is) ficaram de fora.`
       : `Template "${tpl.nome}" aplicado.`);
     telemetria('foto_template', { id: tpl.id, pulados });
   }, [desbloqueados, mudarEstilo]);
+
+  // lote 211–220 (§326/§229): derivados da galeria de templates.
+  const categoriasTpl = useMemo(
+    () => ['todos', ...Array.from(new Set(TEMPLATES_FOTO.map((t) => t.categoria)))],
+    [],
+  );
+  const destaqueTplId = useMemo(() => TEMPLATES_FOTO[semanaIso() % TEMPLATES_FOTO.length].id, []);
+  const templatesVisiveis = useMemo(() => {
+    const base = filtroTpl === 'favoritos'
+      ? TEMPLATES_FOTO.filter((t) => favsTpl.includes(t.id))
+      : filtroTpl === 'todos'
+        ? TEMPLATES_FOTO
+        : TEMPLATES_FOTO.filter((t) => t.categoria === filtroTpl);
+    // favoritos primeiro (estável), preservando a ordem do catálogo dentro de cada grupo
+    return [...base].sort((a, b) => Number(favsTpl.includes(b.id)) - Number(favsTpl.includes(a.id)));
+  }, [filtroTpl, favsTpl]);
+  const alternarFavTpl = useCallback((tpl: TemplateFoto) => {
+    const prox = alternarFavoritoTemplate(tpl.id);
+    setFavsTpl(prox);
+    telemetria('foto_template_favorito', { id: tpl.id, ativo: prox.includes(tpl.id) });
+  }, []);
+  const mudarFiltroTpl = useCallback((cat: string) => {
+    setFiltroTpl(cat);
+    telemetria('foto_template_filtro', { categoria: cat });
+  }, []);
 
   // §368: exportação local em escala (1×/2×/4× do PNG 480)
   // §325: formatos wide exportam nas dimensões NATIVAS do formato
@@ -901,19 +969,60 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
             )}
           </div>
 
-          {/* §326/§327: templates prioritários — composição em 1 clique */}
+          {/* §326/§327: templates prioritários — composição em 1 clique.
+              lote 211–220 (§326/§229): galeria com filtro/favoritos/destaque
+              (flag as5.foto_galeria; §651 desligada = lista simples). */}
           <div className="avst-ft-grupo">
             <span className="avst-ft-rotulo"><Wand2 size={11} aria-hidden /> Templates</span>
-            <div className="avst-ft-templates" data-teste="templates-foto">
-              {TEMPLATES_FOTO.map((tpl) => (
-                <button key={tpl.id} type="button" className="avst-ft-template"
-                  title={tpl.descricao}
-                  onClick={() => aplicarTemplate(tpl)}>
-                  <i style={{ background: tpl.estilo.cores.destaque }} aria-hidden />
-                  <span>{tpl.nome}</span>
-                  <small>{tpl.categoria}</small>
+            {galeriaTpl && (
+              <div className="avst-ft-tpl-filtros" role="tablist" aria-label="Filtrar templates" data-teste="tpl-filtros">
+                <button type="button" role="tab" aria-selected={filtroTpl === 'favoritos'}
+                  className={`avst-ft-tpl-filtro ${filtroTpl === 'favoritos' ? 'ativo' : ''}`}
+                  data-teste="tpl-filtro-favoritos"
+                  onClick={() => mudarFiltroTpl('favoritos')}>
+                  <Star size={10} aria-hidden /> Favoritos{favsTpl.length ? ` (${favsTpl.length})` : ''}
                 </button>
-              ))}
+                {categoriasTpl.map((cat) => (
+                  <button key={cat} type="button" role="tab" aria-selected={filtroTpl === cat}
+                    className={`avst-ft-tpl-filtro ${filtroTpl === cat ? 'ativo' : ''}`}
+                    data-teste={`tpl-filtro-${cat}`}
+                    onClick={() => mudarFiltroTpl(cat)}>
+                    {cat === 'todos' ? 'Todos' : cat}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="avst-ft-templates" data-teste="templates-foto">
+              {(galeriaTpl ? templatesVisiveis : TEMPLATES_FOTO).map((tpl) => {
+                const fav = favsTpl.includes(tpl.id);
+                const destaque = galeriaTpl && tpl.id === destaqueTplId;
+                return (
+                  <span key={tpl.id} className={`avst-ft-template-wrap ${destaque ? 'destaque' : ''}`} data-teste={`tpl-${tpl.id}`}>
+                    <button type="button" className="avst-ft-template"
+                      title={tpl.descricao}
+                      onClick={() => aplicarTemplate(tpl)}>
+                      <i style={{ background: tpl.estilo.cores.destaque }} aria-hidden />
+                      <span>{tpl.nome}</span>
+                      <small>{destaque ? '★ da semana' : tpl.categoria}</small>
+                    </button>
+                    {galeriaTpl && (
+                      <button type="button"
+                        className={`avst-ft-tpl-fav ${fav ? 'ativo' : ''}`}
+                        aria-label={fav ? `Desfavoritar ${tpl.nome}` : `Favoritar ${tpl.nome}`}
+                        aria-pressed={fav}
+                        data-teste={`tpl-fav-${tpl.id}`}
+                        onClick={() => alternarFavTpl(tpl)}>
+                        <Star size={12} aria-hidden fill={fav ? 'currentColor' : 'none'} />
+                      </button>
+                    )}
+                  </span>
+                );
+              })}
+              {galeriaTpl && templatesVisiveis.length === 0 && (
+                <span className="avst-ft-tpl-vazio" data-teste="tpl-vazio">
+                  {filtroTpl === 'favoritos' ? 'Nenhum favorito ainda — toque na ★ de um template.' : 'Nenhum template nesta categoria.'}
+                </span>
+              )}
               <button type="button" className="avst-ft-template avst-ft-template-limpar"
                 title="Remover tudo e começar do zero"
                 onClick={() => { mudarEstilo(() => ESTILO_VAZIO); limparEstiloSalvo(); setMensagem(null); }}>
