@@ -8,9 +8,9 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Focus, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Flag, Focus, GitBranch, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
-import { CATEGORIAS, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
+import { CATEGORIAS, COLECOES, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
@@ -28,6 +28,10 @@ import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
 import { PaletaComandos } from './PaletaComandos';
 import { Consultor } from './Consultor';
+import { Evolucao } from './Evolucao';
+import { Missoes } from './Missoes';
+import { avaliarMissoes } from '../services/Missoes';
+import { registrarMarco } from '../services/Evolucao';
 import { VersoesAvatar } from './VersoesAvatar';
 import { Atalhos } from './Atalhos';
 import { TelemetriaDev } from './TelemetriaDev';
@@ -112,6 +116,23 @@ function lerApresentacoes(): PresetApresentacao[] {
 function gravarApresentacoes(l: PresetApresentacao[]): void {
   try { localStorage.setItem(CHAVE_APRESENTACAO, JSON.stringify(l.slice(0, 6))); } catch { /* sem storage */ }
 }
+// lote 175–176 (§185): HISTÓRICO de apresentação — restaurar composição completa
+const CHAVE_HIST_PALCO = 'dshow.avst5.palco.hist.v1';
+interface ComposicaoPalco { fundo: FundoPalco; hora: HoraPalco; luz: LuzPalco }
+function lerHistPalco(): ComposicaoPalco[] {
+  try {
+    const b = JSON.parse(localStorage.getItem(CHAVE_HIST_PALCO) ?? '[]');
+    return Array.isArray(b) ? b.filter((h): h is ComposicaoPalco =>
+      !!h && (FUNDOS_PALCO as readonly string[]).includes(h.fundo)
+      && (HORAS_PALCO as readonly string[]).includes(h.hora)
+      && (LUZES_PALCO as readonly string[]).includes(h.luz)).slice(-10) : [];
+  } catch { return []; }
+}
+// lote 174 (§179): ponte Coleção → Cenário ("itens sugerem ambiente")
+const COLECAO_CENARIO: Partial<Record<string, FundoPalco>> = {
+  col_cyber_nexus: 'neon', col_neon_noturno: 'neon', col_dojo: 'dojo',
+  col_galaxia: 'galaxia', col_oito_bits: 'grade', col_executivo: 'estudio',
+};
 const DEGRAUS_ESQ = [64, 84, 176, 220, 280];
 
 // mega 71 (§117): PERSONALIDADE — combos curados de olhos+boca (1 clique)
@@ -293,6 +314,17 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     try { localStorage.setItem(CHAVE_LUZ, l); } catch { /* sem storage */ }
   };
 
+  // lote 174 (§179): itens de coleção sugerem o AMBIENTE correspondente
+  const sugestaoCenario = useMemo(() => {
+    const equipados = new Set(Object.values(configVisivel.camadas).filter(Boolean) as string[]);
+    for (const [colId, fundoSug] of Object.entries(COLECAO_CENARIO)) {
+      const col = COLECOES.find((c) => c.id === colId);
+      if (!col || !fundoSug || fundo === fundoSug) continue;
+      if (col.itens.filter((i) => equipados.has(i)).length >= 2) return { col, fundoSug };
+    }
+    return null;
+  }, [configVisivel, fundo]);
+
   // mega 63 (§153–§155): ATIVAR PODER — efeito/aura equipado explode no
   // palco por ~2,6s (overlay isolado; nada muda no estado do avatar)
   const [poderAtivo, setPoderAtivo] = useState<string | null>(null);
@@ -317,6 +349,39 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     setApresentacoes(lerApresentacoes());
     telemetria('palco_apresentacao_salvou', { fundo, hora, luz }); // §290
   }, [fundo, hora, luz]);
+  // lote 175–176 (§185): histórico do palco (ring ≤10, dedupe consecutivo)
+  const [histPalco, setHistPalco] = useState<ComposicaoPalco[]>(lerHistPalco);
+  useEffect(() => {
+    const atual: ComposicaoPalco = { fundo, hora, luz };
+    const t = setTimeout(() => {
+      setHistPalco((h) => {
+        const ult = h[h.length - 1];
+        if (ult && ult.fundo === atual.fundo && ult.hora === atual.hora && ult.luz === atual.luz) return h;
+        const novo = [...h, atual].slice(-10);
+        try { localStorage.setItem(CHAVE_HIST_PALCO, JSON.stringify(novo)); } catch { /* sem storage */ }
+        return novo;
+      });
+    }, 700); // preset aplicado = 1 entrada só (não 3)
+    return () => clearTimeout(t);
+  }, [fundo, hora, luz]);
+  const restaurarComposicao = useCallback((h: ComposicaoPalco) => {
+    trocarFundo(h.fundo); trocarHora(h.hora); trocarLuz(h.luz);
+    telemetria('palco_hist_restaurou', { fundo: h.fundo, hora: h.hora, luz: h.luz }); // §290
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // lote 177 (§180): RENOMEAR preset de apresentação (inline)
+  const [renomeandoAp, setRenomeandoAp] = useState<{ id: string; nome: string } | null>(null);
+  const confirmarRenomear = useCallback(() => {
+    if (!renomeandoAp) return;
+    const nome = renomeandoAp.nome.replace(/[^\p{L}\p{N} \-]/gu, '').slice(0, 18).trim();
+    if (nome) {
+      gravarApresentacoes(lerApresentacoes().map((x) => (x.id === renomeandoAp.id ? { ...x, nome } : x)));
+      setApresentacoes(lerApresentacoes());
+    }
+    setRenomeandoAp(null);
+  }, [renomeandoAp]);
+
   const aplicarApresentacao = useCallback((p: PresetApresentacao) => {
     trocarFundo(p.fundo);
     trocarHora(p.hora);
@@ -541,6 +606,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [consultor, setConsultor] = useState(false);
   // lote 141–150 (§619): timeline de VERSÕES do espelho
   const [versoes619, setVersoes619] = useState(false);
+  // lote 181–187 (§241–§246): drawer de EVOLUÇÃO
+  const [evolucao, setEvolucao] = useState(false);
+  // lote 196–198 (§250/§251): drawer de MISSÕES
+  const [missoes, setMissoes] = useState(false);
 
   // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
   const [atalhos, setAtalhos] = useState(false);
@@ -773,6 +842,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 data-teste="consultor-abrir" onClick={() => setConsultor(true)}>
                 <Lightbulb size={14} aria-hidden /></button>
             )}
+            <button type="button" className="avst-botao" title="Missões e desafio da semana (§250)"
+              data-teste="missoes-abrir" onClick={() => setMissoes(true)}>
+              <Flag size={14} aria-hidden /></button>
+            <button type="button" className="avst-botao" title="Evolução do avatar — linha do tempo (§241)"
+              data-teste="evolucao-abrir" onClick={() => setEvolucao(true)}>
+              <GitBranch size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" title="Versões do avatar no espelho (§619)"
               data-teste="versoes-abrir" onClick={() => setVersoes619(true)}>
               <ArrowUp size={14} aria-hidden style={{ transform: 'rotate(180deg)' }} /></button>
@@ -813,7 +888,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d}
                 aoUsarComoAvatar={aoSalvarFotoLegado} />
             ) : (
-              <div className="avst5-palco">
+              <div className={`avst5-palco${poderAtivo ? ' avst5-palco-climax' : ''}`}>
                 <div className="avst5-zoom" style={zoomEstilo}>
                   <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido} />
                 </div>
@@ -891,8 +966,18 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 <span>Cenas:</span>
                 {apresentacoes.map((p) => (
                   <span key={p.id} className="avst5-apresenta-item">
-                    <button type="button" title={`${ROTULO_FUNDO[p.fundo]} · ${ROTULO_HORA[p.hora]} · ${ROTULO_LUZ[p.luz]}`}
-                      onClick={() => aplicarApresentacao(p)}>{p.nome}</button>
+                    {renomeandoAp?.id === p.id ? (
+                      <input autoFocus value={renomeandoAp.nome} maxLength={18}
+                        aria-label="Novo nome da cena" data-teste="ap-renomear-input"
+                        onChange={(ev) => setRenomeandoAp({ id: p.id, nome: ev.target.value })}
+                        onBlur={confirmarRenomear}
+                        onKeyDown={(ev) => { if (ev.key === 'Enter') confirmarRenomear(); if (ev.key === 'Escape') setRenomeandoAp(null); }} />
+                    ) : (
+                      <button type="button" title={`${ROTULO_FUNDO[p.fundo]} · ${ROTULO_HORA[p.hora]} · ${ROTULO_LUZ[p.luz]} — duplo clique renomeia (§180)`}
+                        data-teste="ap-aplicar"
+                        onDoubleClick={() => setRenomeandoAp({ id: p.id, nome: p.nome })}
+                        onClick={() => aplicarApresentacao(p)}>{p.nome}</button>
+                    )}
                     <button type="button" aria-label={`Excluir ${p.nome}`}
                       onClick={() => excluirApresentacao(p.id)}>×</button>
                   </span>
@@ -905,6 +990,23 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     title="Voltar à cena da última apresentação (§185)"
                     onClick={() => { trocarFundo(ultimaCena.fundo); trocarHora(ultimaCena.hora); trocarLuz(ultimaCena.luz); }}>
                     ↺ última</button>
+                )}
+                {sugestaoCenario && (
+                  <button type="button" className="avst5-sugestao-cenario" data-teste="sugestao-cenario"
+                    title={`§179: ${sugestaoCenario.col.nome} combina com o cenário ${ROTULO_FUNDO[sugestaoCenario.fundoSug]}`}
+                    onClick={() => { trocarFundo(sugestaoCenario.fundoSug); telemetria('palco_sugestao_cenario', { col: sugestaoCenario.col.id }); }}>
+                    ✦ {ROTULO_FUNDO[sugestaoCenario.fundoSug]} combina com {sugestaoCenario.col.nome}</button>
+                )}
+                {histPalco.length > 1 && (
+                  <span className="avst5-hist-palco" data-teste="hist-palco">
+                    <span aria-hidden>·</span>
+                    {histPalco.slice(0, -1).slice(-3).reverse().map((h, i) => (
+                      <button key={`${h.fundo}-${h.hora}-${h.luz}-${i}`} type="button" data-teste="hist-restaurar"
+                        title={`Restaurar composição (§185): ${ROTULO_FUNDO[h.fundo]} · ${ROTULO_HORA[h.hora]} · ${ROTULO_LUZ[h.luz]}`}
+                        onClick={() => restaurarComposicao(h)}>
+                        ⤺ {ROTULO_FUNDO[h.fundo]}·{ROTULO_HORA[h.hora].slice(0, 3)}·{ROTULO_LUZ[h.luz].slice(0, 4)}</button>
+                    ))}
+                  </span>
                 )}
               </div>
             )}
@@ -954,6 +1056,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               if (r.ok) {
                 store.confirmarPersistencia(r.versao ?? store.versao + 1);
                 void espelhar619(true); // §619: versão publicada no espelho
+                registrarMarco(paraLegado2d(store.estadoDraft), 'salvo'); // §241
+                { // lote 199 (§250): missão concluída no salvar → anúncio
+                  const novas = avaliarMissoes(paraLegado2d(store.estadoDraft));
+                  if (novas.length) {
+                    setAnuncio(`Missão concluída: ${novas.join(', ')} — badge liberado!`);
+                    telemetria('missao_concluida', { ids: novas.join(',') }); // §290
+                  }
+                }
                 celebrar(); // §158: gatilho de celebração
                 tocarSalvar(); // §584: acorde de salvamento
                 telemetria('funil', { etapa: 'salvou' }); // mega 106 (§294)
@@ -1060,6 +1170,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <VersoesAvatar estadoLocal={store.estadoDraft}
             aoAplicarEstado={(novo) => aplicarComando(validarConfig(paraLegado2d(novo)))}
             aoFechar={() => setVersoes619(false)} />
+        )}
+        {evolucao && (
+          <Evolucao configAtual={validarConfig(paraLegado2d(store.estadoDraft))}
+            aoAplicar={(cfg) => aplicarComando(validarConfig(cfg))}
+            aoFechar={() => setEvolucao(false)} />
+        )}
+        {missoes && (
+          <Missoes config={validarConfig(paraLegado2d(store.estadoDraft))}
+            aoFechar={() => setMissoes(false)} />
         )}
         {paleta && (
           <PaletaComandos

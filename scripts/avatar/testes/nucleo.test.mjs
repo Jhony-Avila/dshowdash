@@ -328,6 +328,24 @@ if (prof) {
   ok(trocasProf.length >= 2, \`§233: look por objetivo exige >=2 trocas (\${trocasProf.length})\`);
 }
 
+// onda 161–200: params novos, missões determinísticas e listas
+import { aplicarParamsSvg } from '${PAINEL}/src/engine/params';
+ok(aplicarParamsSvg('moldura', '<rect/>', { brilho: 1.3 }).includes('brightness(1.3)'),
+  '§168: brilho da moldura não virou filter');
+ok(aplicarParamsSvg('banner', '<rect/>', { matiz: 90 }).includes('hue-rotate(90deg)'),
+  '§170: matiz do banner não virou filter');
+ok(aplicarParamsSvg('moldura', '<rect/>', { brilho: 1 }) === '<rect/>',
+  'brilho padrão deveria devolver o fragmento intacto (byte-estável)');
+import { desafioDaSemana, semanaIso } from '${PAINEL}/src/services/Missoes';
+const d20 = new Date('2026-08-05T12:00:00Z');
+ok(semanaIso(d20) === semanaIso(new Date('2026-08-07T12:00:00Z')),
+  '§251: mesma semana ISO deveria dar o mesmo número');
+ok(desafioDaSemana(d20).id === desafioDaSemana(new Date('2026-08-06T12:00:00Z')).id,
+  '§251: desafio da semana deveria ser estável dentro da semana');
+import { sanitizarNomeLista } from '${PAINEL}/src/services/Listas';
+ok(sanitizarNomeLista('<img onerror=x> Cyber!') === 'img onerrorx Cyber',
+  '§230: nome de lista não sanitizou');
+
 console.log('[nucleo] FALHAS:', falhas.length ? falhas.join(' || ') : 'nenhuma');
 process.exit(falhas.length ? 1 : 0);
 `);

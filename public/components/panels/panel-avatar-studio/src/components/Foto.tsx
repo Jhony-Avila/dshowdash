@@ -16,17 +16,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Aperture, BadgeCheck, BookmarkPlus, Box, Camera, Check, Crown, Download, FolderOpen, ImageUp,
-  Images, Layers, LoaderCircle, Redo2, RotateCcw, Share2, SlidersHorizontal, Trash2, Undo2,
+  Images, Layers, Lightbulb, LoaderCircle, Redo2, RotateCcw, Share2, SlidersHorizontal, Sparkles, Trash2, Undo2,
   Video, Wand2, X,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
 import type { FotoGuardada } from '../services/AvatarService';
 import type { EstiloFoto } from '../domain/types';
 import {
-  CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, FORMATOS_FOTO,
-  RARIDADES, TEMPLATES_FOTO, TITULOS, itemPorId, itensDe, svgFotoDe,
+  CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, CORES_TEXTO_FOTO,
+  FORMATOS_FOTO, RARIDADES, TEMPLATES_FOTO, TITULOS, dicasComposicao, itemPorId, itensDe, svgFotoDe,
 } from '../services/AvatarCatalog';
-import type { FormatoFotoId, TemplateFoto } from '../services/AvatarCatalog';
+import type { DicaFoto, FormatoFotoId, TemplateFoto } from '../services/AvatarCatalog';
 import { telemetria } from '../services/Telemetria';
 import { criarRenderizador } from '../services/FabricaRenderizador';
 import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d';
@@ -35,7 +35,7 @@ import { estadoVazio } from '../nucleo/contratos';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { excluirProjetoFoto, listarProjetosFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
 import type { ProjetoFoto } from '../services/ProjetosFoto';
-import type { AjustesFoto } from '../domain/types';
+import type { AjustesFoto, BlendFoto, CamadaFotoCfg, CamadaFotoId, TipografiaFoto } from '../domain/types';
 
 const LADO_PALCO = 280;   // px na tela
 const LADO_SAIDA = 480;   // px do PNG final
@@ -88,6 +88,16 @@ function limparEstiloSalvo(): void {
 }
 
 const ESTILO_VAZIO: EstiloFoto = { camadas: {}, cores: { destaque: CONFIG_PADRAO.cores.destaque } };
+
+// lote 161–164 (§338/§342): rótulos do painel de camadas
+const NOMES_CAMADA_FOTO: Record<CamadaFotoId, string> = {
+  fundo: 'Fundo', banner: 'Banner', aura: 'Aura',
+  efeito: 'Efeito', moldura: 'Moldura', emblema: 'Emblema',
+};
+const NOMES_BLEND: Record<BlendFoto, string> = {
+  normal: 'Normal', multiply: 'Escurecer', screen: 'Clarear',
+  overlay: 'Contraste', 'soft-light': 'Luz suave',
+};
 
 export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
   versao: number;
@@ -173,6 +183,58 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // lote 161–164 (§338/§339/§342): config POR CAMADA (neutro = chave some)
+  const mudarCamadaFoto = useCallback((cat: CamadaFotoId, patch: Partial<CamadaFotoCfg>) => {
+    mudarEstilo((e) => {
+      const atual: CamadaFotoCfg = { ...(e.camadasFoto?.[cat] ?? {}), ...patch };
+      if (atual.oculta !== true) delete atual.oculta;
+      if (typeof atual.opacidade !== 'number' || atual.opacidade >= 1) delete atual.opacidade;
+      if (!atual.blend || atual.blend === 'normal') delete atual.blend;
+      if (cat !== 'efeito' || (atual.plano !== 'atras' && atual.plano !== 'frente')) delete atual.plano;
+      const cfg = { ...(e.camadasFoto ?? {}) };
+      if (Object.keys(atual).length) cfg[cat] = atual; else delete cfg[cat];
+      if (!Object.keys(cfg).length) { const { camadasFoto: _c, ...resto } = e; return resto as EstiloFoto; }
+      return { ...e, camadasFoto: cfg };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // lote 165 (§334): luz local — slider não polui a pilha (como ajustes)
+  const mudarLuz = useCallback((tipo: 'radial' | 'linear' | null, intensidade?: number) => {
+    setEstilo((e) => {
+      if (!tipo || intensidade === 0) { const { luzLocal: _l, ...resto } = e; return resto as EstiloFoto; }
+      return { ...e, luzLocal: { tipo, intensidade: intensidade ?? e.luzLocal?.intensidade ?? 0.4 } };
+    });
+  }, []);
+
+  // lote 166 (§343): tipografia aprovada (padrões = chave some)
+  const mudarTipografia = useCallback((patch: Partial<TipografiaFoto>) => {
+    setEstilo((e) => {
+      const t: TipografiaFoto = { ...(e.tipografia ?? {}), ...patch };
+      if (!t.fonte || t.fonte === 'sistema') delete t.fonte;
+      if (!t.peso || t.peso === 600) delete t.peso;
+      if (!t.tamanho || t.tamanho === 'm') delete t.tamanho;
+      if (!t.cor || t.cor === CORES_TEXTO_FOTO[0]) delete t.cor;
+      if (t.contorno !== true) delete t.contorno;
+      if (t.caixaAlta !== true) delete t.caixaAlta;
+      if (!Object.keys(t).length) { const { tipografia: _t, ...resto } = e; return resto as EstiloFoto; }
+      return { ...e, tipografia: t };
+    });
+  }, []);
+
+  // lote 168 (§349): dicas determinísticas de composição (§239: só sugere)
+  const dicas = useMemo(() => (fotoEstilo ? dicasComposicao(estilo, formato) : []), [fotoEstilo, estilo, formato]);
+  const aplicarDica = useCallback((d: DicaFoto) => {
+    if (d.formatoSugerido) setFormato(d.formatoSugerido);
+    if (d.correcao) mudarEstilo((e) => ({ ...e, ...d.correcao }));
+    telemetria('foto_dica_aplicada', { id: d.id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const camadasAtivasFoto = useMemo(
+    () => CATEGORIAS_FOTO.filter((c) => estilo.camadas[c] && estilo.camadas[c] !== 'nenhum'),
+    [estilo.camadas],
+  );
 
   // mega 57 (§364): PROJETOS do Photo Studio (localStorage v1)
   const [projetos, setProjetos] = useState<ProjetoFoto[]>(listarProjetosFoto);
@@ -816,7 +878,26 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                   onClick={() => setWideTransp((v) => !v)}>
                   Fundo transparente
                 </button>
+                {/* lote 169 (§170.1): preset de composição — foco no título */}
+                <button type="button" className="avst-ft-chip" data-teste="preset-foco-titulo"
+                  title="Texto maior com contorno — foco no título (§170.1)"
+                  onClick={() => mudarTipografia({ tamanho: 'g', contorno: true })}>
+                  Foco no título
+                </button>
               </div>
+            )}
+            {/* lote 167 (§343.1): SUBTÍTULO nos formatos wide */}
+            {formato !== 'perfil' && (
+              <label className="avst-ft-ajuste avst-ft-legenda">
+                <span>Subtítulo</span>
+                <input type="text" maxLength={48} value={estilo.subtitulo ?? ''}
+                  placeholder="Cargo, contexto, data…" data-teste="subtitulo-foto"
+                  onChange={(e2) => setEstilo((es) => {
+                    const v = e2.target.value;
+                    if (!v.trim()) { const { subtitulo: _s, ...resto } = es; return resto as EstiloFoto; }
+                    return { ...es, subtitulo: v };
+                  })} />
+              </label>
             )}
           </div>
 
@@ -972,6 +1053,110 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 })} />
             </label>
           </div>
+
+          {/* lote 161–165 (§338/§339/§342/§334): PAINEL DE CAMADAS + luz local */}
+          {camadasAtivasFoto.length > 0 && (
+            <div className="avst-ft-grupo" data-teste="camadas-foto">
+              <span className="avst-ft-rotulo"><Layers size={11} aria-hidden /> Camadas da composição</span>
+              {camadasAtivasFoto.map((cat) => {
+                const c = estilo.camadasFoto?.[cat];
+                return (
+                  <div key={cat} className="avst-ft-camada" data-teste={`cf-${cat}`}>
+                    <button type="button" className="avst-ft-chip avst-ft-olho" aria-pressed={!c?.oculta}
+                      title={c?.oculta ? 'Mostrar camada' : 'Ocultar camada (não destrutivo — §338)'}
+                      data-teste={`cf-olho-${cat}`}
+                      onClick={() => mudarCamadaFoto(cat, { oculta: !c?.oculta })}>
+                      {c?.oculta ? '◌' : '●'}
+                    </button>
+                    <span className="avst-ft-camada-nome">{NOMES_CAMADA_FOTO[cat]}</span>
+                    <input type="range" min={0.2} max={1} step={0.05} value={c?.opacidade ?? 1}
+                      aria-label={`Opacidade de ${NOMES_CAMADA_FOTO[cat]}`} data-teste={`cf-op-${cat}`}
+                      onChange={(ev) => mudarCamadaFoto(cat, { opacidade: Number(ev.target.value) })} />
+                    <select className="avst-ft-select" value={c?.blend ?? 'normal'} data-teste={`cf-blend-${cat}`}
+                      aria-label={`Blend de ${NOMES_CAMADA_FOTO[cat]} (§342)`}
+                      onChange={(ev) => mudarCamadaFoto(cat, { blend: ev.target.value as BlendFoto })}>
+                      {(Object.keys(NOMES_BLEND) as BlendFoto[]).map((b) => (
+                        <option key={b} value={b}>{NOMES_BLEND[b]}</option>
+                      ))}
+                    </select>
+                    {cat === 'efeito' && (
+                      <button type="button" className="avst-ft-chip" data-teste="cf-plano-efeito"
+                        title="§339: trocar o plano do efeito (atrás ⇄ frente)"
+                        onClick={() => mudarCamadaFoto('efeito', { plano: c?.plano === 'frente' ? 'atras' : 'frente' })}>
+                        {c?.plano === 'frente' ? 'Frente' : c?.plano === 'atras' ? 'Atrás' : 'Plano auto'}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="avst-ft-camada" data-teste="luz-local">
+                <Lightbulb size={12} aria-hidden />
+                {([['nenhuma', 'Sem luz'], ['radial', 'Radial'], ['linear', 'Linear']] as const).map(([t2, nome]) => (
+                  <button key={t2} type="button" role="radio"
+                    aria-checked={t2 === 'nenhuma' ? !estilo.luzLocal : estilo.luzLocal?.tipo === t2}
+                    className={`avst-ft-chip ${(t2 === 'nenhuma' ? !estilo.luzLocal : estilo.luzLocal?.tipo === t2) ? 'avst-ft-chip-ativo' : ''}`}
+                    onClick={() => mudarLuz(t2 === 'nenhuma' ? null : t2)}>{nome}</button>
+                ))}
+                <input type="range" min={-1} max={1} step={0.05} value={estilo.luzLocal?.intensidade ?? 0}
+                  disabled={!estilo.luzLocal} aria-label="Intensidade da luz local (§334)" data-teste="luz-intensidade"
+                  onChange={(ev) => mudarLuz(estilo.luzLocal?.tipo ?? 'radial', Number(ev.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {/* lote 166 (§343): TIPOGRAFIA controlada da legenda/subtítulo */}
+          {(estilo.legenda || estilo.subtitulo) && (
+            <div className="avst-ft-grupo" data-teste="tipografia-foto">
+              <span className="avst-ft-rotulo">Aa Tipografia</span>
+              <div className="avst-ft-chips">
+                {([['sistema', 'Sistema'], ['mono', 'Mono'], ['serif', 'Serif']] as const).map(([f2, nome]) => (
+                  <button key={f2} type="button" role="radio" aria-checked={(estilo.tipografia?.fonte ?? 'sistema') === f2}
+                    className={`avst-ft-chip ${(estilo.tipografia?.fonte ?? 'sistema') === f2 ? 'avst-ft-chip-ativo' : ''}`}
+                    data-teste={`tf-fonte-${f2}`}
+                    onClick={() => mudarTipografia({ fonte: f2 })}>{nome}</button>
+                ))}
+                {([[400, 'Leve'], [600, 'Média'], [800, 'Forte']] as const).map(([w, nome]) => (
+                  <button key={w} type="button" role="radio" aria-checked={(estilo.tipografia?.peso ?? 600) === w}
+                    className={`avst-ft-chip ${(estilo.tipografia?.peso ?? 600) === w ? 'avst-ft-chip-ativo' : ''}`}
+                    onClick={() => mudarTipografia({ peso: w })}>{nome}</button>
+                ))}
+              </div>
+              <div className="avst-ft-chips">
+                {(['p', 'm', 'g'] as const).map((t3) => (
+                  <button key={t3} type="button" role="radio" aria-checked={(estilo.tipografia?.tamanho ?? 'm') === t3}
+                    className={`avst-ft-chip ${(estilo.tipografia?.tamanho ?? 'm') === t3 ? 'avst-ft-chip-ativo' : ''}`}
+                    data-teste={`tf-tam-${t3}`}
+                    onClick={() => mudarTipografia({ tamanho: t3 })}>{t3.toUpperCase()}</button>
+                ))}
+                {CORES_TEXTO_FOTO.map((cor) => (
+                  <button key={cor} type="button"
+                    className={`avst-ft-cor ${(estilo.tipografia?.cor ?? CORES_TEXTO_FOTO[0]) === cor ? 'avst-ft-cor-ativa' : ''}`}
+                    style={{ background: cor }} aria-label={`Cor do texto ${cor}`} title={cor}
+                    onClick={() => mudarTipografia({ cor })} />
+                ))}
+                <button type="button" className="avst-ft-chip" aria-pressed={!!estilo.tipografia?.contorno}
+                  data-teste="tf-contorno" title="Contorno escuro p/ legibilidade sobre qualquer fundo"
+                  onClick={() => mudarTipografia({ contorno: !estilo.tipografia?.contorno })}>Contorno</button>
+                <button type="button" className="avst-ft-chip" aria-pressed={!!estilo.tipografia?.caixaAlta}
+                  data-teste="tf-caixa"
+                  onClick={() => mudarTipografia({ caixaAlta: !estilo.tipografia?.caixaAlta })}>CAIXA ALTA</button>
+              </div>
+            </div>
+          )}
+
+          {/* lote 168 (§349): DICAS de composição — determinísticas */}
+          {dicas.length > 0 && (
+            <div className="avst-ft-grupo" data-teste="dicas-foto">
+              <span className="avst-ft-rotulo"><Sparkles size={11} aria-hidden /> Dicas de composição</span>
+              {dicas.map((d) => (
+                <div key={d.id} className="avst-ft-dica">
+                  <p>{d.texto}</p>
+                  <button type="button" className="avst-ft-chip" data-teste="dica-aplicar"
+                    onClick={() => aplicarDica(d)}>Aplicar</button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* mega 56 (§360): histórico visível do estilo */}
           <div className="avst-ft-grupo" data-teste="historico-estilo">

@@ -1802,3 +1802,87 @@
 
 /* mega 115: legenda livre */
 .avst-ft-legenda input { flex: 1; min-width: 160px; background: var(--avst-fundo, #0d1017); border: 1px solid var(--avst-borda, #232a38); border-radius: 8px; padding: 5px 10px; color: var(--avst-texto, #e6eaf2); font-size: 12px; }
+
+/* ── lote 161–168 (§338/§342/§334/§343/§349): Photo camadas PRO ── */
+.avst-ft-camada { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+.avst-ft-camada-nome { font-size: 11px; color: var(--avst-texto-2, #8b93a7); min-width: 56px; }
+.avst-ft-camada input[type='range'] { flex: 1; min-width: 60px; }
+.avst-ft-olho { min-width: 26px; text-align: center; }
+.avst-ft-select {
+  background: #121622; color: #e6eaf2; border: 1px solid #262c3d;
+  border-radius: 8px; font-size: 11px; padding: 3px 6px; max-width: 96px;
+}
+.avst-ft-dica {
+  display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+  background: #12182a; border: 1px solid #24304d; border-radius: 10px; margin-top: 4px;
+}
+.avst-ft-dica p { margin: 0; font-size: 11px; color: #aeb6c9; flex: 1; }
+
+/* ── lote 171–178 (§168/§179/§180/§185): editores de apresentação ── */
+.avst5-palco-climax { animation: avst5-climax 2.6s ease-in-out; }
+@keyframes avst5-climax {
+  0% { filter: brightness(1); }
+  12% { filter: brightness(1.06) saturate(1.08); } /* §179: aura cresce antes */
+  30% { filter: brightness(1.22) saturate(1.25); } /* clímax: a luz reage */
+  60% { filter: brightness(1.12) saturate(1.12); }
+  100% { filter: brightness(1); }
+}
+.avst5-sugestao-cenario {
+  background: #182036 !important; border: 1px solid #3a4a75 !important;
+  color: #9db4ff !important; font-size: 10.5px;
+}
+.avst5-hist-palco { display: inline-flex; gap: 4px; align-items: center; }
+.avst5-hist-palco button { font-size: 10px; opacity: 0.85; }
+.avst5-apresenta-item input {
+  width: 92px; background: #121622; color: #e6eaf2;
+  border: 1px solid #3a4a75; border-radius: 8px; font-size: 11px; padding: 2px 6px;
+}
+
+/* ── lote 181–189 (§241–§246/§229–§230): evolução + listas ── */
+.avst5-evolucao { max-width: 420px; }
+.avst5-evo-lista { list-style: none; margin: 8px 0 0; padding: 0; }
+.avst5-evo-marco {
+  display: flex; gap: 10px; align-items: center; padding: 7px 4px;
+  border-left: 2px solid #2a3350; margin-left: 6px; position: relative;
+}
+.avst5-evo-marco::before {
+  content: ''; position: absolute; left: -5px; top: 50%; width: 8px; height: 8px;
+  border-radius: 50%; background: #4c5f9e;
+}
+.avst5-evo-thumb { background: #121622; border: 1px solid #262c3d; border-radius: 10px; padding: 2px; cursor: pointer; }
+.avst5-evo-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.avst5-evo-info strong { font-size: 12px; }
+.avst5-evo-info time { font-size: 10px; color: #8b93a7; }
+.avst5-evo-nota { background: none; border: none; color: #9db4ff; font-size: 10.5px; text-align: left; cursor: pointer; padding: 0; }
+.avst5-evo-info input { background: #121622; color: #e6eaf2; border: 1px solid #3a4a75; border-radius: 8px; font-size: 11px; padding: 3px 6px; }
+.avst5-evo-acoes { display: flex; gap: 4px; align-items: center; }
+.avst5-evo-comparar { display: flex; gap: 10px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
+.avst5-evo-comparar figure { margin: 0; text-align: center; }
+.avst5-evo-comparar figcaption { font-size: 10px; color: #8b93a7; }
+.avst5-det-listas { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 8px; }
+.avst5-lista-chip-grupo { display: inline-flex; gap: 2px; align-items: center; }
+.avst5-lista-nova { background: #121622; color: #e6eaf2; border: 1px dashed #3a4a75; border-radius: 8px; font-size: 11px; padding: 3px 8px; width: 108px; }
+
+/* ── lote 191–198 (§250/§251/§224): missões + desafio da semana ── */
+.avst5-missoes { max-width: 400px; }
+.avst5-desafio {
+  background: linear-gradient(135deg, #182036, #121a2e); border: 1px solid #3a4a75;
+  border-radius: 12px; padding: 10px 12px; margin: 8px 0;
+}
+.avst5-desafio-selo {
+  display: inline-block; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #9db4ff; border: 1px solid #3a4a75; border-radius: 999px; padding: 1px 8px; margin-bottom: 4px;
+}
+.avst5-desafio strong { display: block; font-size: 13px; }
+.avst5-desafio p { margin: 3px 0 0; font-size: 11px; color: #aeb6c9; }
+.avst5-desafio em { color: #39d98a; font-style: normal; font-size: 11px; }
+.avst5-missoes-lista { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.avst5-missoes-lista li {
+  display: flex; gap: 10px; align-items: center; padding: 7px 9px;
+  background: #10141f; border: 1px solid #1f2536; border-radius: 10px;
+}
+.avst5-missao-feita { opacity: 0.85; border-color: #2c4a3a !important; }
+.avst5-missao-badge { font-size: 18px; }
+.avst5-missoes-lista strong { font-size: 12px; display: block; }
+.avst5-missoes-lista p { margin: 1px 0 0; font-size: 10.5px; color: #8b93a7; }
+.avst5-missao-check { margin-left: auto; color: #39d98a; font-weight: 700; }

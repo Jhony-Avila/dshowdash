@@ -16,6 +16,7 @@ import {
 } from '../services/AvatarCatalog';
 import { comItem, FOCO_THUMB } from '../components/GradeItens';
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
+import { alternarNaLista, criarLista, excluirLista, listarListas } from '../services/Listas';
 import { salvarPreset } from '../services/PresetsPessoais';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { MOVIMENTOS, animar } from './movimento';
@@ -161,6 +162,35 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
             onClick={() => { aoEscolher(comItem(config, item.categoria, item.id)); aoFechar(); }}>
             <Check size={13} aria-hidden /> {equipado ? (item.categoria === 'acessorio' ? 'Remover' : 'Equipado') : 'Equipar'}
           </button>
+        </div>
+
+        {/* lote 188–189 (§229–§230): LISTAS nomeadas — favoritos que crescem */}
+        <div className="avst5-det-listas" data-teste="listas-item">
+          <span className="avst5-det-meta">Listas (§230):</span>
+          {listarListas().map((l) => (
+            <span key={l.id} className="avst5-lista-chip-grupo">
+              <button type="button" className={`avst-ft-chip${l.itens.includes(item.id) ? ' avst-ft-chip-ativo' : ''}`}
+                aria-pressed={l.itens.includes(item.id)} data-teste="lista-toggle"
+                title={l.itens.includes(item.id) ? `Tirar de "${l.nome}"` : `Guardar em "${l.nome}" (${l.itens.length})`}
+                onClick={() => { alternarNaLista(l.id, item.id); setTic((t) => t + 1); }}>
+                {l.nome} · {l.itens.length}
+              </button>
+              {l.itens.length === 0 && (
+                <button type="button" className="avst5-painel-btn" aria-label={`Excluir lista ${l.nome}`}
+                  onClick={() => { excluirLista(l.id); setTic((t) => t + 1); }}>×</button>
+              )}
+            </span>
+          ))}
+          {listarListas().length < 8 && (
+            <input className="avst5-lista-nova" placeholder="+ nova lista" maxLength={18} data-teste="lista-nova"
+              onKeyDown={(ev) => {
+                if (ev.key === 'Enter') {
+                  const alvo = ev.target as HTMLInputElement;
+                  const nova = criarLista(alvo.value);
+                  if (nova) { alternarNaLista(nova.id, item.id); alvo.value = ''; setTic((t) => t + 1); }
+                }
+              }} />
+          )}
         </div>
 
         {comparando && (

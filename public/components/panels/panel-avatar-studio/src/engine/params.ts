@@ -42,9 +42,17 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
   // wrapper genérico <g opacity>; escala fica de fora (deformaria o quadro)
   moldura: [
     { id: 'intensidade', nome: 'Intensidade', min: 0.3, max: 1, passo: 0.05, padrao: 1 },
+    // lote 171 (§168): brilho + matiz + velocidade — wrappers genéricos,
+    // NUNCA tocam a arte (regra da F2)
+    { id: 'brilho', nome: 'Brilho', min: 0.6, max: 1.6, passo: 0.05, padrao: 1 },
+    { id: 'matiz', nome: 'Matiz', min: -180, max: 180, passo: 5, padrao: 0 },
+    { id: 'velocidade', nome: 'Velocidade', min: 0.5, max: 2, passo: 0.1, padrao: 1 },
   ],
   banner: [
     { id: 'intensidade', nome: 'Intensidade', min: 0.3, max: 1, passo: 0.05, padrao: 1 },
+    // lote 172 (§170): cor (matiz) + brilho do banner
+    { id: 'brilho', nome: 'Brilho', min: 0.6, max: 1.6, passo: 0.05, padrao: 1 },
+    { id: 'matiz', nome: 'Matiz', min: -180, max: 180, passo: 5, padrao: 0 },
   ],
   // megas 72–74 (§108–§111): MORFOLOGIA paramétrica — escala em torno do
   // centro geométrico de cada feição (mesmo wrapper de escala do emblema)
@@ -137,6 +145,17 @@ export function aplicarParamsSvg(chave: CamadaId | string, svg: string, params?:
   const intensidade = valor('intensidade');
   if (intensidade !== undefined) {
     saida = `<g opacity="${intensidade}">${saida}</g>`;
+  }
+  // lote 171–172 (§168/§170): brilho/matiz via CSS filter functions no
+  // atributo `filter` (SVG2 — suportado no render inline e na rasterização)
+  const brilho = valor('brilho');
+  const matiz = valor('matiz');
+  if (brilho !== undefined || matiz !== undefined) {
+    const fns = [
+      brilho !== undefined ? `brightness(${brilho})` : '',
+      matiz !== undefined ? `hue-rotate(${matiz}deg)` : '',
+    ].filter(Boolean).join(' ');
+    saida = `<g filter="${fns}">${saida}</g>`;
   }
   return saida;
 }

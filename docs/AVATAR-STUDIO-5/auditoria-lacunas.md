@@ -551,3 +551,40 @@ ganhou asserts do consultor (determinismo, teto 8, ≥2 trocas); shell-save
 e shell-619 ATUALIZADOS p/ a semântica do lote 141 (escrita sempre).
 Suíte 41 arquivos + núcleo. Lição nova: mudar semântica de flag exige
 varrer os testes que provavam a semântica ANTIGA no mesmo lote.
+
+## Registro 2026-08-05 — ONDA 161–200: 4 mega lotes (onda máxima da sessão)
+
+Pedido: "uns 20 mega lotes" → decisão registrada: onda máxima com
+qualidade (40 megas) + meta maior fica p/ ondas seguintes se o Jhony
+quiser. Mapa por evidência no briefing (006a394b).
+
+✅ L1 161–170 (Photo camadas PRO §338–§343): painel de CAMADAS com
+   ocultar/opacidade/blend §342 por camada (ordem protegida §339 — só o
+   efeito troca de plano), luz local no medalhão §334 (radial/linear,
+   clareia/escurece), tipografia controlada §343 (fontes aprovadas,
+   paleta fechada, contorno, caixa alta), subtítulo §343.1 no wide,
+   DICAS de composição §349 (determinísticas, Aplicar 1-clique),
+   preset Foco no título §170.1. Neutro OMITIDO em tudo; validação PHP
+   campo a campo. Teto do entry 295→340 (crescimento da onda).
+✅ L2 171–180 (editores de apresentação): moldura ganha brilho/matiz/
+   velocidade e banner brilho/matiz §168/§170 (CSS filter fns no engine
+   de params — arte intocada; sliders schema-driven aparecem sozinhos),
+   ponte §179 Coleção→Cenário (chip de sugestão), HISTÓRICO de
+   apresentação §185 (ring ≤10, debounce, restaurar composição),
+   renomear presets §180 (duplo clique), clímax Poder→Iluminação §179.
+✅ L3 181–190 (evolução §241–§246 + listas §229–§230): salvamento vira
+   MARCO local (dedupe por hash, ring ≤24), linha/álbum/timeline git,
+   antes×depois, MEMÓRIAS por marco (sanitizadas), listas nomeadas no
+   detalhe do item (≤8×40). Aplicar marco = comando com undo.
+✅ L4 191–200 (missões §250/§251): 7 missões determinísticas com badge
+   §224 persistente, desafio da semana por semana ISO, drawer no shell,
+   salvar reavalia e anuncia; XP/nível NÃO duplicados (ProgressoPerfil
+   clássico segue dono de §220–§224).
+
+Testes: onda-200.mjs NOVO (camadas byte-estável, blend, luz, tipografia,
+dica muda formato, subtítulo, histórico §185 restaurar, renomear §180,
+marco+memória §246, missões com memorialista concluída); núcleo ganhou
+asserts de params (brilho/matiz/byte-estável), §251 determinístico e
+sanitização de listas. Suíte 42 arquivos + núcleo. Lições novas: a UI de
+cenas/histórico do palco vive no modo STUDIO (testes precisam entrar no
+modo); caixa alta ligada muda asserts de texto subsequentes.

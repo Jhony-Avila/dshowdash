@@ -38,6 +38,73 @@ export interface EstiloFotoRender {
   };
   /** mega 115 (§344): legenda livre já SANITIZADA pelo serviço */
   legenda?: string;
+  /** lote 161–164 (§338/§342): config POR CAMADA (já validada no serviço) */
+  camadasFoto?: Partial<Record<CamadaFotoRenderId, {
+    oculta?: boolean; opacidade?: number;
+    blend?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'soft-light';
+    plano?: 'atras' | 'frente';
+  }>>;
+  /** lote 165 (§334): luz local no medalhão (-1 escurece … 1 clareia) */
+  luzLocal?: { tipo: 'radial' | 'linear'; intensidade: number };
+  /** lote 166 (§343): tipografia aprovada (ausente = strings legadas) */
+  tipografia?: {
+    fonte?: 'sistema' | 'mono' | 'serif'; peso?: 400 | 600 | 800;
+    tamanho?: 'p' | 'm' | 'g'; cor?: string; contorno?: boolean; caixaAlta?: boolean;
+  };
+  /** lote 167 (§343.1): subtítulo — só entra nos formatos WIDE */
+  subtitulo?: string;
+}
+export type CamadaFotoRenderId = 'fundo' | 'banner' | 'aura' | 'efeito' | 'moldura' | 'emblema';
+
+// ── lote 161–164 (§338/§339/§342): painel de camadas ────────────────
+type CfgCamadas = EstiloFotoRender['camadasFoto'];
+
+/** Envolve o SVG de uma camada com oculta/opacidade/blend (ausente = intacto). */
+function envolverCamada(id: CamadaFotoRenderId, svg: string, cfg: CfgCamadas): string {
+  const c = cfg?.[id];
+  if (!c || !svg) return c?.oculta ? '' : svg;
+  if (c.oculta) return '';
+  const op = c.opacidade !== undefined && c.opacidade !== 1 ? ` opacity="${c.opacidade}"` : '';
+  const blend = c.blend && c.blend !== 'normal' ? ` style="mix-blend-mode:${c.blend}"` : '';
+  return op || blend ? `<g${op}${blend}>${svg}</g>` : svg;
+}
+
+/** lote 165 (§334): luz local sobre o MEDALHÃO (clipada pela silhueta). */
+function luzLocalSvg(uid: string, luz: EstiloFotoRender['luzLocal']): string {
+  if (!luz || luz.intensidade === 0) return '';
+  const clara = luz.intensidade > 0;
+  const cor = clara ? '#ffffff' : '#000000';
+  const alfa = Math.min(1, Math.abs(luz.intensidade)).toFixed(3);
+  const grad = luz.tipo === 'radial'
+    ? `<radialGradient id="${uid}luz" cx="50%" cy="42%" r="62%">` +
+      `<stop offset="0%" stop-color="${cor}" stop-opacity="${alfa}"/>` +
+      `<stop offset="100%" stop-color="${cor}" stop-opacity="0"/></radialGradient>`
+    : `<linearGradient id="${uid}luz" x1="0" y1="0" x2="0" y2="1">` +
+      `<stop offset="0%" stop-color="${cor}" stop-opacity="${alfa}"/>` +
+      `<stop offset="70%" stop-color="${cor}" stop-opacity="0"/></linearGradient>`;
+  return grad + `<rect x="28" y="26" width="184" height="184" fill="url(#${uid}luz)" ` +
+    `clip-path="url(#${uid}fclip)" style="mix-blend-mode:soft-light"/>`;
+}
+
+/** lote 166 (§343): atributos de texto — padrões IGUAIS às strings legadas. */
+function atributosTexto(
+  t: EstiloFotoRender['tipografia'], base: number, corPadrao: string,
+): { attrs: string; caixaAlta: boolean } {
+  const familias = {
+    sistema: 'system-ui, -apple-system, sans-serif',
+    mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+    serif: "Georgia, 'Times New Roman', serif",
+  } as const;
+  const familia = familias[t?.fonte ?? 'sistema'];
+  const peso = t?.peso ?? 600;
+  const escala = t?.tamanho === 'p' ? 0.85 : t?.tamanho === 'g' ? 1.25 : 1;
+  const tam = Math.round(base * escala * 10) / 10;
+  const cor = t?.cor ?? corPadrao;
+  const contorno = t?.contorno ? ` stroke="#0a0d15" stroke-width="2.2" paint-order="stroke" stroke-linejoin="round"` : '';
+  return {
+    attrs: `font-family="${familia}" font-size="${tam}" font-weight="${peso}" fill="${cor}"${contorno}`,
+    caixaAlta: !!t?.caixaAlta,
+  };
 }
 
 // ── megas 51–54: AJUSTES não destrutivos ────────────────────────────
@@ -187,7 +254,12 @@ export function renderFotoEstilizada(
   opcoes: OpcoesRenderFoto = {},
 ): string {
   const uid = opcoes.uid ?? hashTexto(JSON.stringify(estilo.camadas) + (estilo.selo?.nome ?? '')
-    + (estilo.ajustes ? JSON.stringify(estilo.ajustes) : ''));
+    + (estilo.ajustes ? JSON.stringify(estilo.ajustes) : '')
+    // lote 161+ (§338/§334/§343): campos novos só entram no hash quando presentes
+    + (estilo.camadasFoto ? JSON.stringify(estilo.camadasFoto) : '')
+    + (estilo.luzLocal ? JSON.stringify(estilo.luzLocal) : '')
+    + (estilo.tipografia ? JSON.stringify(estilo.tipografia) : '')
+    + (estilo.subtitulo ?? ''));
   const p = paletaDe(estilo.cores);
   const forma = opcoes.forma ?? 'quadrado';
   const aj = ajustesEfetivos(estilo.ajustes); // megas 51–54 (null = legado)
@@ -203,14 +275,21 @@ export function renderFotoEstilizada(
     return comporWide(fotoHref, estilo, pintar, resolver, p, uid, opcoes);
   }
 
-  const fundo = pintar(estilo.camadas.fundo) + pintar(estilo.camadas.banner) + pintar(estilo.camadas.aura);
+  // lote 161–164 (§338): cada camada decorativa passa pelo envelope
+  const cfgC = estilo.camadasFoto;
+  const fundo = envolverCamada('fundo', pintar(estilo.camadas.fundo), cfgC)
+    + envolverCamada('banner', pintar(estilo.camadas.banner), cfgC)
+    + envolverCamada('aura', pintar(estilo.camadas.aura), cfgC);
   const efeitoDef = estilo.camadas.efeito && estilo.camadas.efeito !== 'nenhum'
     ? resolver(estilo.camadas.efeito)
     : undefined;
-  const efeitoSvg = efeitoDef ? efeitoDef.render(p, uid) : '';
-  const efeitoAtras = efeitoDef?.atras ? efeitoSvg : '';
-  const efeitoFrente = efeitoDef && !efeitoDef.atras ? efeitoSvg : '';
-  const moldura = pintar(estilo.camadas.moldura);
+  const efeitoSvg = envolverCamada('efeito', efeitoDef ? efeitoDef.render(p, uid) : '', cfgC);
+  // lote 162 (§339): o PLANO do efeito pode ser trocado (ordem protegida:
+  // só o efeito tem essa liberdade; fundo/moldura mantêm posição fixa)
+  const efeitoAtrasFlag = cfgC?.efeito?.plano ? cfgC.efeito.plano === 'atras' : !!efeitoDef?.atras;
+  const efeitoAtras = efeitoDef && efeitoAtrasFlag ? efeitoSvg : '';
+  const efeitoFrente = efeitoDef && !efeitoAtrasFlag ? efeitoSvg : '';
+  const moldura = envolverCamada('moldura', pintar(estilo.camadas.moldura), cfgC);
 
   // medalhão central: aro externo → anel de destaque → foto clipada
   const medalhao = medalhaoSvg(fotoHref, p, uid, aj);
@@ -218,7 +297,7 @@ export function renderFotoEstilizada(
   // emblema vira BADGE no canto inferior direito do medalhão
   // (o pino desenha centrado em (152,206) → alvo (178,178))
   const badge = estilo.camadas.emblema && estilo.camadas.emblema !== 'nenhum'
-    ? `<g transform="translate(26 -28)">${pintar(estilo.camadas.emblema)}</g>`
+    ? envolverCamada('emblema', `<g transform="translate(26 -28)">${pintar(estilo.camadas.emblema)}</g>`, cfgC)
     : '';
 
   // selo do título: faixa inferior legível no PNG derivado (480px)
@@ -247,15 +326,17 @@ export function renderFotoEstilizada(
   const formaClip = aj ? pathForma(aj.forma, 92) : null;
   const fclip = formaClip ? `${formaClip}/>` : `<circle cx="120" cy="118" r="92"/>`;
   const fundoComp = aj && aj.desfoqueFundo > 0 ? `<g filter="url(#${uid}bf)">${fundo}</g>` : fundo;
-  // mega 115 (§344): legenda curta acima do selo
+  // mega 115 (§344) + lote 166 (§343): legenda curta acima do selo
+  const tx = atributosTexto(estilo.tipografia, 11, '#e6eaf2');
   const legenda = estilo.legenda
-    ? `<text x="120" y="200" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" ` +
-      `font-size="11" font-weight="600" fill="#e6eaf2" opacity="0.92">${escaparTexto(estilo.legenda)}</text>`
+    ? `<text x="120" y="200" text-anchor="middle" ${tx.attrs} opacity="0.92">` +
+      `${escaparTexto(tx.caixaAlta ? estilo.legenda.toUpperCase() : estilo.legenda)}</text>`
     : '';
+  const luz = luzLocalSvg(uid, estilo.luzLocal); // lote 165 (§334)
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"${dim} role="img" aria-label="Foto estilizada">
 <defs><clipPath id="${uid}clip">${clip}</clipPath><clipPath id="${uid}fclip">${fclip}</clipPath>${defsAj}</defs>
-<g clip-path="url(#${uid}clip)">${fundoComp}${efeitoAtras}${medalhao}${badge}${efeitoFrente}${vinheta}${grao}${legenda}${selo}</g>
+<g clip-path="url(#${uid}clip)">${fundoComp}${efeitoAtras}${medalhao}${luz}${badge}${efeitoFrente}${vinheta}${grao}${legenda}${selo}</g>
 ${moldura}
 </svg>`;
 
@@ -329,22 +410,33 @@ function comporWide(
   const grao = aj ? granulacaoSvg(uid, aj.granulacao, W, H) : '';
   const formaClipW = aj ? pathForma(aj.forma, 92) : null;
   const fclipW = formaClipW ? `${formaClipW}/>` : `<circle cx="120" cy="118" r="92"/>`;
+  const cxTexto = opcoes.lado === 'direita' ? (W - 240) / 2 : (240 + W) / 2;
+  // lote 166+167 (§343): tipografia + subtítulo (presente = legenda sobe)
+  const txW = atributosTexto(estilo.tipografia, 13, '#e6eaf2');
+  const yLegenda = estilo.subtitulo ? 96 : 108;
   const legendaW = estilo.legenda
-    ? `<text x="${opcoes.lado === 'direita' ? (W - 240) / 2 : (240 + W) / 2}" y="108" text-anchor="middle" ` +
-      `font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" ` +
-      `fill="#e6eaf2" opacity="0.92">${escaparTexto(estilo.legenda)}</text>`
+    ? `<text x="${cxTexto}" y="${yLegenda}" text-anchor="middle" ${txW.attrs} opacity="0.92">` +
+      `${escaparTexto(txW.caixaAlta ? estilo.legenda.toUpperCase() : estilo.legenda)}</text>`
+    : '';
+  const txSub = atributosTexto(estilo.tipografia, 10.5, '#8b93a7');
+  const subtituloW = estilo.subtitulo
+    ? `<text x="${cxTexto}" y="118" text-anchor="middle" ${txSub.attrs} opacity="0.9">` +
+      `${escaparTexto(txSub.caixaAlta ? estilo.subtitulo.toUpperCase() : estilo.subtitulo)}</text>`
     : '';
 
   // fundo + banner esticados ("fundo esticado" — §325); gradientes ficam
   // imperceptíveis, padrões alargam de leve (aceito pelo briefing)
-  const fundo = `<g transform="scale(${sx} 1)">${pintar(estilo.camadas.fundo) + pintar(estilo.camadas.banner)}</g>`;
-  const aura = pintar(estilo.camadas.aura); // ancorada na célula esquerda
+  const cfgC = estilo.camadasFoto; // lote 161–164 (§338)
+  const fundo = `<g transform="scale(${sx} 1)">${envolverCamada('fundo', pintar(estilo.camadas.fundo), cfgC)
+    + envolverCamada('banner', pintar(estilo.camadas.banner), cfgC)}</g>`;
+  const aura = envolverCamada('aura', pintar(estilo.camadas.aura), cfgC); // ancorada na célula esquerda
   const efeitoDef = estilo.camadas.efeito && estilo.camadas.efeito !== 'nenhum'
     ? resolver(estilo.camadas.efeito)
     : undefined;
-  const efeitoSvg = efeitoDef ? efeitoDef.render(p, uid) : '';
-  const efeitoAtras = efeitoDef?.atras ? efeitoSvg : '';
-  const efeitoFrente = efeitoDef && !efeitoDef.atras ? efeitoSvg : '';
+  const efeitoSvg = envolverCamada('efeito', efeitoDef ? efeitoDef.render(p, uid) : '', cfgC);
+  const efeitoAtrasFlag = cfgC?.efeito?.plano ? cfgC.efeito.plano === 'atras' : !!efeitoDef?.atras;
+  const efeitoAtras = efeitoDef && efeitoAtrasFlag ? efeitoSvg : '';
+  const efeitoFrente = efeitoDef && !efeitoAtrasFlag ? efeitoSvg : '';
 
   // mega 96 (§350): medalhão pode ir p/ a DIREITA — o texto/emblema troca
   // de lado junto (a foto "olha" para dentro da composição)
@@ -353,8 +445,9 @@ function comporWide(
   // célula do texto: oposta ao medalhão
   const cx2 = direita ? (W - 240) / 2 : (240 + W) / 2;
   const badge = estilo.camadas.emblema && estilo.camadas.emblema !== 'nenhum'
-    ? `<g transform="translate(${cx2 - 152} -114) scale(1)">${pintar(estilo.camadas.emblema)}</g>`
+    ? envolverCamada('emblema', `<g transform="translate(${cx2 - 152} -114) scale(1)">${pintar(estilo.camadas.emblema)}</g>`, cfgC)
     : '';
+  const luzW = luzLocalSvg(uid, estilo.luzLocal); // lote 165 (§334)
   let selo = '';
   if (estilo.selo) {
     const nome = estilo.selo.nome;
@@ -373,7 +466,7 @@ function comporWide(
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"${dims} ` +
     `preserveAspectRatio="none" role="img" aria-label="Foto estilizada (${formato.nome})">
 <defs><clipPath id="${uid}clip"><rect width="${W}" height="${H}" rx="14"/></clipPath><clipPath id="${uid}fclip">${fclipW}</clipPath>${defsAj}</defs>
-<g clip-path="url(#${uid}clip)">${opcoes.semFundo ? '' : `<rect width="${W}" height="${H}" fill="#0a0d15"/>`}${aj && aj.desfoqueFundo > 0 ? `<g filter="url(#${uid}bf)">${fundo}</g>` : fundo}${efeitoAtras}${direita ? `<g transform="translate(${deslocMedalhao} 0)">` : ''}${aura}${medalhaoSvg(fotoHref, p, uid, aj)}${direita ? '</g>' : ''}${badge}${efeitoFrente}${vinheta}${grao}${legendaW}${selo}</g>
+<g clip-path="url(#${uid}clip)">${opcoes.semFundo ? '' : `<rect width="${W}" height="${H}" fill="#0a0d15"/>`}${aj && aj.desfoqueFundo > 0 ? `<g filter="url(#${uid}bf)">${fundo}</g>` : fundo}${efeitoAtras}${direita ? `<g transform="translate(${deslocMedalhao} 0)">` : ''}${aura}${medalhaoSvg(fotoHref, p, uid, aj)}${luzW}${direita ? '</g>' : ''}${badge}${efeitoFrente}${vinheta}${grao}${legendaW}${subtituloW}${selo}</g>
 </svg>`;
 
   if (opcoes.estatico) svg = congelarSvg(svg);
