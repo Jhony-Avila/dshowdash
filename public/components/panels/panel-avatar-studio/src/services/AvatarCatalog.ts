@@ -519,6 +519,11 @@ export function dataUriDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
  */
 export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesRenderFoto): string {
   const titulo = tituloPorId(estilo.titulo);
+  // lote 161+: sanitizados AQUI e OMITIDOS quando vazios (objeto vazio no
+  // estilo não pode mudar o uid/render — byte-estabilidade defensiva)
+  const cfLimpo = estilo.camadasFoto ? sanitizarCamadasFoto(estilo.camadasFoto) : {};
+  const luzLimpa = estilo.luzLocal ? sanitizarLuzLocal(estilo.luzLocal) : null;
+  const tpLimpa = estilo.tipografia ? sanitizarTipografiaFoto(estilo.tipografia) : {};
   return renderFotoEstilizada(fotoHref, {
     camadas: estilo.camadas,
     cores: { ...CONFIG_PADRAO.cores, destaque: normalizarHex(estilo.cores.destaque, CONFIG_PADRAO.cores.destaque) },
@@ -527,9 +532,9 @@ export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesR
     // mega 115 (§344): legenda SANITIZADA (whitelist de caracteres, ≤40)
     ...(estilo.legenda ? { legenda: sanitizarLegendaFoto(estilo.legenda) } : {}),
     // lote 161–167 (§338/§334/§343): campos novos SEMPRE validados aqui
-    ...(estilo.camadasFoto ? { camadasFoto: sanitizarCamadasFoto(estilo.camadasFoto) } : {}),
-    ...(estilo.luzLocal ? { luzLocal: sanitizarLuzLocal(estilo.luzLocal) ?? undefined } : {}),
-    ...(estilo.tipografia ? { tipografia: sanitizarTipografiaFoto(estilo.tipografia) } : {}),
+    ...(Object.keys(cfLimpo).length ? { camadasFoto: cfLimpo } : {}),
+    ...(luzLimpa ? { luzLocal: luzLimpa } : {}),
+    ...(Object.keys(tpLimpa).length ? { tipografia: tpLimpa } : {}),
     ...(estilo.subtitulo ? { subtitulo: sanitizarLegendaFoto(estilo.subtitulo) } : {}),
   }, itemPorId, opcoes);
 }
