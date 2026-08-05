@@ -1,10 +1,17 @@
 // components/Conquistas.tsx — conquistas reais + eventos sazonais.
 // @version 3.0.0  @created 2026-07-30  @updated 2026-08-04 (mega 68:
 // FILTROS todas/feitas/pendentes + faixa de estatísticas §218–§221)
-import { useState } from 'react';
-import { CalendarDays, Gift, Lock, Trophy } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { BarChart3, CalendarDays, Gift, Lock, Trophy } from 'lucide-react';
 import type { AvatarConfig, Conquista } from '../domain/types';
-import { RARIDADES, itemPorId } from '../services/AvatarCatalog';
+import { COLECOES, RARIDADES, itemPorId, progressoColecao } from '../services/AvatarCatalog';
+// megas 243–246 (§217/§218/§219/§221): tiers, ordenação, elo com coleção
+// e "seus números" — tudo derivado de dados locais/já exibidos
+import { itensUsados } from '../services/Progresso';
+import { listarPresets } from '../services/PresetsPessoais';
+import { listarProjetosFoto } from '../services/ProjetosFoto';
+import { marcosEvolucao } from '../services/Evolucao';
+import { lerContadores } from '../services/Contadores';
 import type { Vida } from '../services/VidaService';
 import { ProgressoPerfil } from './ProgressoPerfil';
 // mega 230 (§1076/§1077): Minha Vitrine no perfil (flag as5.vitrine_pessoal)
@@ -25,9 +32,25 @@ const CATEGORIAS_CONQ: Array<{ id: string; nome: string }> = [
   { id: 'maestria', nome: 'Maestria' },
 ];
 
+// mega 245 (§217): TIER derivado do esforço real (alvo) — determinístico
+export function tierConquista(c: Conquista): { id: string; nome: string; cor: string } {
+  const alvo = c.progresso.alvo;
+  if (alvo <= 1) return { id: 'bronze', nome: 'Bronze', cor: '#b07a4a' };
+  if (alvo <= 5) return { id: 'prata', nome: 'Prata', cor: '#aeb6c9' };
+  if (alvo <= 12) return { id: 'ouro', nome: 'Ouro', cor: '#e8b64c' };
+  if (alvo <= 25) return { id: 'platina', nome: 'Platina', cor: '#7cd9ff' };
+  return { id: 'diamante', nome: 'Diamante', cor: '#7c5cff' };
+}
+
 function CardConquista({ c }: { c: Conquista }) {
   const recompensa = c.recompensa ? itemPorId(c.recompensa) : undefined;
   const pct = Math.round((c.progresso.atual / c.progresso.alvo) * 100);
+  const v2 = flag('as5.progressao_v2');
+  // mega 243 (§219): a COLEÇÃO ligada à conquista (via recompensa)
+  const colecaoLigada = v2 && recompensa
+    ? COLECOES.find((col) => col.itens.includes(recompensa.id))
+    : undefined;
+  const tier = v2 ? tierConquista(c) : null;
   return (
     <article className={`avst-conquista ${c.conquistada ? 'avst-conquista-ok' : ''}`}>
       <span className="avst-conquista-icone">
@@ -43,6 +66,15 @@ function CardConquista({ c }: { c: Conquista }) {
           <em>{c.progresso.atual}/{c.progresso.alvo}</em>
         </span>
         {c.conquistada && c.em && <em>Conquistada em {fmtData(c.em)}</em>}
+        {tier && (
+          <span className="avst-conq-tier" data-teste="conq-tier" data-tier={tier.id}
+            style={{ color: tier.cor, borderColor: tier.cor }}>{tier.nome}</span>
+        )}
+        {colecaoLigada && (
+          <span className="avst-conquista-premio" data-teste="conq-colecao">
+            <Trophy size={11} aria-hidden /> Coleção: {colecaoLigada.nome}
+          </span>
+        )}
         {recompensa && (
           <span className="avst-conquista-premio"
             style={{ '--avst-rar': RARIDADES[recompensa.raridade].cor } as React.CSSProperties}>
@@ -64,6 +96,23 @@ export function Conquistas({ vida, carregando = false, config }: {
 }) {
   // mega 68 (§218): filtro — hooks ANTES de qualquer early return
   const [filtro, setFiltro] = useState<FiltroConq>('todas');
+  // mega 244 (§218): ORDENAÇÃO — mais difíceis / últimas / mais raras
+  const [ordem, setOrdem] = useState<'padrao' | 'dificeis' | 'ultimas' | 'raras'>('padrao');
+  const v2 = flag('as5.progressao_v2');
+  // mega 246 (§221): SEUS NÚMEROS — contadores locais derivados
+  const numeros = useMemo(() => {
+    if (!v2) return null;
+    const usados2 = itensUsados();
+    const contadores = lerContadores();
+    return [
+      ['Marcos do avatar', marcosEvolucao().length],
+      ['Presets salvos', listarPresets().length],
+      ['Projetos de foto', listarProjetosFoto().length],
+      ['Itens explorados', usados2.size],
+      ['Coleções completas', COLECOES.filter((col) => { const pr = progressoColecao(col, usados2); return pr.usados === pr.total; }).length],
+      ['Poderes ativados', contadores.poderes ?? 0],
+    ] as Array<[string, number]>;
+  }, [v2]);
   // §557: carregar ≠ falhar — enquanto a vida não RESOLVE, skeleton
   if (!vida && carregando) {
     return (
@@ -124,7 +173,30 @@ export function Conquistas({ vida, carregando = false, config }: {
         ))}
       </div>
 
-      {CATEGORIAS_CONQ.map((cat) => {
+      {/* mega 244 (§218): ordenações — com ordem ativa a lista vira ÚNICA
+          (rankeada), sem os grupos por categoria */}
+      {v2 && (
+        <div className="avst-conq-filtros" role="radiogroup" aria-label="Ordenar conquistas (§218)" data-teste="conq-ordem">
+          {([['padrao', 'Por categoria'], ['dificeis', 'Mais difíceis'], ['ultimas', 'Últimas'], ['raras', 'Mais raras']] as const).map(([id, nome]) => (
+            <button key={id} type="button" role="radio" aria-checked={ordem === id}
+              className={`avst-ft-chip ${ordem === id ? 'avst-ft-chip-ativo' : ''}`}
+              data-teste={`ordem-${id}`}
+              onClick={() => setOrdem(id)}>{nome}</button>
+          ))}
+        </div>
+      )}
+      {v2 && ordem !== 'padrao' ? (
+        <section className="avst-conq-grupo" aria-label="Conquistas ordenadas" data-teste="conq-rank">
+          {vida.conquistas
+            .filter((c) => filtro === 'todas' || (filtro === 'feitas' ? c.conquistada : !c.conquistada))
+            .sort((a, b2) => {
+              if (ordem === 'dificeis') return (a.progresso.atual / a.progresso.alvo) - (b2.progresso.atual / b2.progresso.alvo);
+              if (ordem === 'ultimas') return String(b2.em ?? '').localeCompare(String(a.em ?? ''));
+              return b2.progresso.alvo - a.progresso.alvo; // raras = maior esforço (tier §217) primeiro
+            })
+            .map((c) => <CardConquista key={c.id} c={c} />)}
+        </section>
+      ) : CATEGORIAS_CONQ.map((cat) => {
         const doGrupo = vida.conquistas.filter((c) => c.categoria === cat.id
           && (filtro === 'todas' || (filtro === 'feitas' ? c.conquistada : !c.conquistada)));
         if (doGrupo.length === 0) return null;
@@ -138,6 +210,17 @@ export function Conquistas({ vida, carregando = false, config }: {
           </section>
         );
       })}
+      {/* mega 246 (§221): SEUS NÚMEROS */}
+      {numeros && (
+        <div className="avst-conq-numeros" data-teste="conq-numeros" role="list" aria-label="Seus números (§221)">
+          <h3 className="avst-cores-titulo"><BarChart3 size={14} aria-hidden /> Seus números</h3>
+          <div className="avst-conq-numeros-grade">
+            {numeros.map(([nome, n]) => (
+              <span key={nome} role="listitem"><strong>{n}</strong> {nome}</span>
+            ))}
+          </div>
+        </div>
+      )}
       {/* conquistas de categorias futuras (fontes novas, ex.: Pipedrive) */}
       {vida.conquistas.filter((c) => !CATEGORIAS_CONQ.some((k) => k.id === c.categoria)
         && (filtro === 'todas' || (filtro === 'feitas' ? c.conquistada : !c.conquistada)))

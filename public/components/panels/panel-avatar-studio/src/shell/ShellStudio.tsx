@@ -30,6 +30,7 @@ import { PaletaComandos } from './PaletaComandos';
 import { Consultor } from './Consultor';
 import { Evolucao } from './Evolucao';
 import { TimelineShell } from './TimelineShell'; // mega 228 (§220)
+import { incrementar } from '../services/Contadores'; // mega 246 (§221)
 import { Missoes } from './Missoes';
 import { avaliarMissoes } from '../services/Missoes';
 import { registrarMarco } from '../services/Evolucao';
@@ -420,6 +421,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     if (palcoV2 && (poderFase !== 'pronto' || movReduzido)) return;
     setPoderAtivo(idPoder);
     telemetria('palco_poder', { id: idPoder }); // §290
+    incrementar('poderes'); // mega 246 (§221): "seus números" local
     tocarPoder(); // mega 89 (§584)
     if (palcoV2) {
       setPoderFase('reproduzindo');

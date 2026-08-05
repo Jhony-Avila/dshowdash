@@ -20,6 +20,8 @@ import { alternarNaLista, criarLista, excluirLista, listarListas } from '../serv
 // mega 229 (§229): favoritos que crescem — marca de permanente
 import { alternarPermanente, favoritosPermanentes } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
+// mega 248 (§228): estado ARQUIVADO (local-first, reversível)
+import { alternarArquivado, arquivados } from '../services/ArquivoItens';
 import { salvarPreset } from '../services/PresetsPessoais';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { MOVIMENTOS, animar } from './movimento';
@@ -151,11 +153,31 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
         {/* megas 92+93 (§85/§225–§228): ECONOMIA do asset — origem,
             disponibilidade e o caminho de desbloqueio explícito */}
         <p className="avst5-det-meta" data-teste="det-economia">
-          Origem: {!item.bloqueadoPor ? 'catálogo base'
-            : item.bloqueadoPor.startsWith('evento:') ? 'evento sazonal' : 'recompensa de conquista'}
-          {' · '}Disponibilidade: {item.bloqueadoPor?.startsWith('evento:') ? 'sazonal' : 'permanente'}
+          {/* mega 247 (§226/§227): a COLEÇÃO entra como origem explícita */}
+          Origem: {colecao ? `coleção ${colecao.nome}`
+            : !item.bloqueadoPor ? 'catálogo Dshow'
+              : item.bloqueadoPor.startsWith('evento:') ? 'evento sazonal' : 'recompensa de conquista'}
+          {' · '}Disponibilidade: {item.bloqueadoPor?.startsWith('evento:') ? 'sazonal (janela do evento)'
+            : item.bloqueadoPor ? 'permanente após desbloquear' : 'sempre'}
           {' · '}{itensUsados().has(item.id) ? 'já explorado ✓' : 'ainda não explorado'}
         </p>
+        {/* mega 248 (§228): ESTADO do asset — badges derivados + arquivar */}
+        {flag('as5.progressao_v2') && (
+          <p className="avst5-det-meta avst5-det-estados" data-teste="det-estados">
+            {(equipado ? ['Equipado'] : bloqueado ? ['Bloqueado'] : ['Disponível'])
+              .concat(favorito ? ['Favorito'] : [])
+              .concat(arquivados().has(item.id) ? ['Arquivado'] : [])
+              .map((e2) => <span key={e2} className="avst-fchip" data-estado={e2.toLowerCase()}>{e2}</span>)}
+            <button type="button" className="avst-fchip" data-teste="det-arquivar"
+              aria-pressed={arquivados().has(item.id)}
+              title={arquivados().has(item.id)
+                ? 'Devolver à grade padrão (§228)'
+                : 'Arquivar — sai da grade padrão sem perder nada (§228)'}
+              onClick={() => { alternarArquivado(item.id); setTic((t) => t + 1); }}>
+              {arquivados().has(item.id) ? 'Desarquivar' : 'Arquivar'}
+            </button>
+          </p>
+        )}
         {bloqueado && (
           <p className="avst5-det-meta avst5-det-desbloqueio" data-teste="det-desbloqueio">
             <Lock size={11} aria-hidden /> Como desbloquear: {item.bloqueadoPor!.startsWith('evento:')
