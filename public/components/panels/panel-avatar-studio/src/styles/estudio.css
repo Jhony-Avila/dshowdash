@@ -2157,3 +2157,32 @@
 .avst5-det-estados [data-estado='equipado'] { border-color: var(--avst-acento); color: var(--avst-texto); }
 .avst5-det-estados [data-estado='favorito'] { border-color: #e8b64c; color: #e8b64c; }
 .avst5-det-estados [data-estado='arquivado'] { opacity: 0.75; }
+
+/* ── lote 251–260 (§102–§119/§349/§361–§369): CRIAÇÃO AVANÇADA ── */
+.avst5-cavancada {
+  display: flex; flex-direction: column; gap: 5px; padding: 8px 10px 4px;
+  border-bottom: 1px solid var(--avst-borda);
+}
+/* mega 257 (§119): IDLE 2D — anima o CONTAINER do palco (o SVG salvo
+   permanece estático; §297 nunca liga o data-attr) */
+@keyframes avst5-idle-respirar { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.008); } }
+@keyframes avst5-idle-flutuar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes avst5-idle-balancar { 0%, 100% { transform: rotate(-0.6deg); } 50% { transform: rotate(0.6deg); } }
+.avst5-viewport[data-idle='respirar'] .avst5-zoom svg { animation: avst5-idle-respirar 4.6s ease-in-out infinite; transform-origin: 50% 92%; }
+.avst5-viewport[data-idle='flutuar'] .avst5-zoom svg { animation: avst5-idle-flutuar 5.2s ease-in-out infinite; }
+.avst5-viewport[data-idle='balancar'] .avst5-zoom svg { animation: avst5-idle-balancar 5.8s ease-in-out infinite; transform-origin: 50% 96%; }
+/* megas 251–253 (§361/§364/§369): histórico visual + projetos + export */
+.avst-ft-histvisual { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.avst-ft-histpasso {
+  width: 44px; height: 44px; padding: 0; border: 1px solid var(--avst-borda);
+  border-radius: 8px; overflow: hidden; background: #0a0d15; cursor: pointer; line-height: 0;
+}
+.avst-ft-histpasso svg { width: 100%; height: 100%; }
+.avst-ft-histpasso-atual { border-color: var(--avst-acento); cursor: default; }
+.avst-foto-item-nome {
+  display: block; width: 100%; margin-top: 2px; background: none; border: none;
+  color: var(--avst-texto-2); font-size: 10px; text-align: center; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius: 6px; color: var(--avst-texto); cursor: text; }
+.avst-ft-template-compor span { color: var(--avst-acento); }

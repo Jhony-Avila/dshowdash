@@ -10,7 +10,7 @@ import type { EstiloFoto } from '../domain/types';
 import type { FormatoFotoId } from '../engine/render-foto';
 
 const CHAVE = 'dshow.avst5.foto.projetos.v1';
-const LIMITE = 6;
+const LIMITE = 8; // mega 252 (§364 v2): 6→8
 const LADO_MINIATURA = 480;
 
 export interface ProjetoFoto {
@@ -72,6 +72,16 @@ export async function salvarProjetoFoto(
   };
   gravar([projeto, ...atuais]);
   return projeto;
+}
+
+/** mega 252 (§364 v2): renomear projeto (sanitizado; vazio = no-op). */
+export function renomearProjetoFoto(id: string, nome: string): void {
+  const limpo = nome.replace(/[^\p{L}\p{N} \-]/gu, '').slice(0, 24).trim();
+  if (!limpo) return;
+  try {
+    const lista = listarProjetosFoto().map((p) => (p.id === id ? { ...p, nome: limpo } : p));
+    localStorage.setItem(CHAVE, JSON.stringify(lista));
+  } catch { /* sem storage */ }
 }
 
 export function excluirProjetoFoto(id: string): void {

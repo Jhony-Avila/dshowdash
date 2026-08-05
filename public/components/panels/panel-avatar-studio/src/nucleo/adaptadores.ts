@@ -18,6 +18,10 @@ export interface ConfigLegado2d {
   camadas: Partial<Record<string, string>>;
   cores: Record<string, string>;
   titulo?: string;
+  /** megas 254–255 (§102/§118): tipo corporal e postura — roundtrip sem
+   *  perda (mesmos literais do domain/types; o validarConfig re-sanitiza). */
+  corpo?: 'esbelto' | 'atletico' | 'robusto' | 'compacto';
+  postura?: 'confiante' | 'relaxada' | 'executiva' | 'heroica' | 'misteriosa';
   /** §71: propriedades por camada (F3 C2) — roundtrip sem perda. */
   params?: Partial<Record<string, Record<string, number>>>;
   /** §73: canais de cor por camada (F3 C3) — roundtrip sem perda. */
@@ -51,6 +55,9 @@ export function deLegado2d(cfg: ConfigLegado2d): EstadoAvatar {
     (e.appearance.coresCamada ??= {})[slot] = { ...canais };
   }
   e.presentation.titulo = cfg.titulo ?? null;
+  // megas 254–255 (§102/§118): campos opcionais — ausentes NÃO entram
+  if (cfg.corpo) e.body.tipo = cfg.corpo;
+  if (cfg.postura) e.body.postura = cfg.postura;
   e.renderer.preferido = '2d';
   return e;
 }
@@ -85,6 +92,8 @@ export function paraLegado2d(e: EstadoAvatar, baseFallback = 'bas_classica'): Co
     camadas,
     cores: { ...e.appearance.cores },
     ...(e.presentation.titulo ? { titulo: e.presentation.titulo } : {}),
+    ...(e.body.tipo ? { corpo: e.body.tipo as ConfigLegado2d['corpo'] } : {}),
+    ...(e.body.postura ? { postura: e.body.postura as ConfigLegado2d['postura'] } : {}),
     ...(Object.keys(params).length ? { params } : {}),
     ...(Object.keys(coresCamada).length ? { coresCamada } : {}),
   };

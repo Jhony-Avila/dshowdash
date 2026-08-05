@@ -127,8 +127,13 @@ type AmbienteCenario = (typeof AMBIENTES_CENARIO)[number];
 const COR_AMBIENTE: Record<Exclude<AmbienteCenario, 'nenhuma'>, string> = {
   azul: '#4c9de8', ambar: '#e8b64c', violeta: '#7c5cff', verde: '#39d98a',
 };
-interface PropsCenario { luz: number; profundidade: number; ambiente: AmbienteCenario; vivo: boolean }
-const CENARIO_NEUTRO: PropsCenario = { luz: 1, profundidade: 0, ambiente: 'nenhuma', vivo: false };
+// mega 257 (§119): IDLE 2D — respiração/flutuação/balanço do avatar no
+// palco (preferência local; o render salvo é sempre estático)
+const IDLES_2D = ['nenhum', 'respirar', 'flutuar', 'balancar'] as const;
+type Idle2d = (typeof IDLES_2D)[number];
+const ROTULO_IDLE: Record<Idle2d, string> = { nenhum: 'Parado', respirar: 'Respirar', flutuar: 'Flutuar', balancar: 'Balançar' };
+interface PropsCenario { luz: number; profundidade: number; ambiente: AmbienteCenario; vivo: boolean; idle: Idle2d }
+const CENARIO_NEUTRO: PropsCenario = { luz: 1, profundidade: 0, ambiente: 'nenhuma', vivo: false, idle: 'nenhum' };
 const CHAVE_CENARIO_PROPS = 'dshow.avst5.palco.cenario.v1';
 function lerPropsCenario(): PropsCenario {
   try {
@@ -139,6 +144,7 @@ function lerPropsCenario(): PropsCenario {
       profundidade: typeof b.profundidade === 'number' ? Math.max(0, Math.min(1, b.profundidade)) : 0,
       ambiente: (AMBIENTES_CENARIO as readonly string[]).includes(b.ambiente) ? b.ambiente : 'nenhuma',
       vivo: b.vivo === true,
+      idle: (IDLES_2D as readonly string[]).includes(b.idle) ? b.idle : 'nenhum',
     };
   } catch { return { ...CENARIO_NEUTRO }; }
 }
@@ -205,6 +211,10 @@ const EMOTES = [
   { id: 'uau', rotulo: '😮', olhos: 'olh_arregalado', boca: 'boc_bocejo' },
   { id: 'bravo', rotulo: '😠', olhos: 'olh_chamas', boca: 'boc_determinada' },
   { id: 'amor', rotulo: '😍', olhos: 'olh_apaixonado', boca: 'boc_beijo' },
+  // mega 259 (§120): emotes v2 — combos com arte EXISTENTE (nunca partes novas)
+  { id: 'surpresa', rotulo: '😲', olhos: 'olh_arregalado', boca: 'boc_surpresa' },
+  { id: 'sono', rotulo: '😴', olhos: 'olh_sonolento', boca: 'boc_bocejo' },
+  { id: 'fa', rotulo: '🤩', olhos: 'olh_estrela', boca: 'boc_sorriso' },
 ] as const;
 
 function lerLarguras(): { esq: number; dir: number } {
@@ -1024,7 +1034,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}
             data-hora={hora} data-luz={modo === 'edicao' ? 'neutra' : luz} data-clima={clima}
             data-moldura-viva={!palco3d ? molduraViva : undefined}
-            data-cen-vivo={palcoV2 && !palco3d && propsCen.vivo && !movReduzido ? '' : undefined}>
+            data-cen-vivo={palcoV2 && !palco3d && propsCen.vivo && !movReduzido ? '' : undefined}
+            data-idle={flag('as5.criacao_avancada') && !palco3d && !movReduzido && propsCen.idle !== 'nenhum' ? propsCen.idle : undefined}>
             {/* lote 201 (§163): overlay de CLIMA — determinístico, sobre o cenário
                 e atrás dos controles; reduced-motion desliga o movimento (§182) */}
             {clima !== 'limpo' && !palco3d && (
@@ -1318,6 +1329,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     title={movReduzido ? 'Indisponível com redução de movimento (§297)' : 'Cenário vivo — movimento sutil (§161)'}
                     disabled={movReduzido}
                     onClick={() => mudarPropsCen({ vivo: !propsCen.vivo })}>Vivo</button>
+                  {/* mega 257 (§119): idle 2D do avatar */}
+                  {flag('as5.criacao_avancada') && IDLES_2D.map((idl) => (
+                    <button key={idl} type="button" role="radio" aria-checked={propsCen.idle === idl}
+                      className={propsCen.idle === idl ? 'avst5-fundo-on' : ''}
+                      data-teste={`idle-${idl}`}
+                      title={movReduzido ? 'Indisponível com redução de movimento (§297)' : `Idle ${ROTULO_IDLE[idl]} (§119)`}
+                      disabled={movReduzido && idl !== 'nenhum'}
+                      onClick={() => mudarPropsCen({ idle: idl })}>{ROTULO_IDLE[idl]}</button>
+                  ))}
                   <button type="button" data-teste="cen-zerar"
                     title="Voltar o cenário ao padrão"
                     onClick={() => mudarPropsCen({ ...CENARIO_NEUTRO })}>Zerar</button>
@@ -1433,9 +1453,65 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   {/* §138: timeline granular da sessão junto da gestão do estado */}
                   <HistoricoSessao entradas={historico.entradas} posicao={historico.posicao} irPara={historico.irPara} />
                 </>) : (
+                  <>
+                  {/* megas 254–256 (§102/§118/§105): CRIAÇÃO AVANÇADA — na
+                      categoria Base (identidade do corpo); tudo vira COMANDO
+                      com undo via aoEscolher; neutro = campo some */}
+                  {flag('as5.criacao_avancada') && categoria === 'base' && (
+                    <div className="avst5-cavancada" data-teste="criacao-avancada">
+                      <span className="avst-ft-rotulo">Tipo corporal (§102)</span>
+                      <div className="avst-ft-chips" role="radiogroup" aria-label="Tipo corporal (§102)">
+                        {([[null, 'Médio'], ['esbelto', 'Esbelto'], ['atletico', 'Atlético'], ['robusto', 'Robusto'], ['compacto', 'Compacto']] as const).map(([v, nome]) => (
+                          <button key={nome} type="button" role="radio"
+                            aria-checked={(configDraft.corpo ?? null) === v}
+                            className={`avst-ft-chip ${(configDraft.corpo ?? null) === v ? 'avst-ft-chip-ativo' : ''}`}
+                            data-teste={`corpo-${v ?? 'medio'}`}
+                            onClick={() => {
+                              const { corpo: _c, ...resto } = configDraft;
+                              aoEscolher(validarConfig(v ? { ...resto, corpo: v } : resto));
+                            }}>{nome}</button>
+                        ))}
+                      </div>
+                      <span className="avst-ft-rotulo">Postura (§118)</span>
+                      <div className="avst-ft-chips" role="radiogroup" aria-label="Postura (§118)">
+                        {([[null, 'Neutra'], ['confiante', 'Confiante'], ['relaxada', 'Relaxada'], ['executiva', 'Executiva'], ['heroica', 'Heroica'], ['misteriosa', 'Misteriosa']] as const).map(([v, nome]) => (
+                          <button key={nome} type="button" role="radio"
+                            aria-checked={(configDraft.postura ?? null) === v}
+                            className={`avst-ft-chip ${(configDraft.postura ?? null) === v ? 'avst-ft-chip-ativo' : ''}`}
+                            data-teste={`postura-${v ?? 'neutra'}`}
+                            onClick={() => {
+                              const { postura: _p, ...resto } = configDraft;
+                              aoEscolher(validarConfig(v ? { ...resto, postura: v } : resto));
+                            }}>{nome}</button>
+                        ))}
+                      </div>
+                      <span className="avst-ft-rotulo">Formato facial (§105)</span>
+                      <div className="avst-ft-chips" role="group" aria-label="Presets de formato facial (§105)">
+                        {([['classico', 'Clássico', null], ['suave', 'Suave', { olhos: 1.08, boca: 0.95 }],
+                          ['marcante', 'Marcante', { olhos: 0.9, boca: 1.1 }],
+                          ['expressivo', 'Expressivo', { olhos: 1.14, boca: 1.06 }]] as const).map(([id2, nome, esc]) => (
+                            <button key={id2} type="button" className="avst-ft-chip"
+                              data-teste={`facial-${id2}`}
+                              title={esc ? `Aplica a morfologia §108 (olhos ${esc.olhos}× · boca ${esc.boca}×)` : 'Volta a morfologia facial ao padrão'}
+                              onClick={() => {
+                                const params = { ...(configDraft.params ?? {}) };
+                                if (esc) {
+                                  params.olhos = { ...(params.olhos ?? {}), escala: esc.olhos };
+                                  params.boca = { ...(params.boca ?? {}), escala: esc.boca };
+                                } else {
+                                  if (params.olhos) { const { escala: _e, ...ro } = params.olhos; if (Object.keys(ro).length) params.olhos = ro; else delete params.olhos; }
+                                  if (params.boca) { const { escala: _e2, ...rb } = params.boca; if (Object.keys(rb).length) params.boca = rb; else delete params.boca; }
+                                }
+                                aoEscolher(validarConfig({ ...configDraft, ...(Object.keys(params).length ? { params } : { params: {} }) }));
+                              }}>{nome}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <GradeItens config={configDraft} categoria={categoria}
                     desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                     aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
+                  </>
                 )}
               </div>
             )}

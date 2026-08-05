@@ -78,7 +78,14 @@ export interface Envelope<T> {
 export interface EstadoAvatar {
   schemaVersion: number;
   identity: { nome: string | null; slug: string | null };
-  body: { base: AssetId | null; morfos: Record<string, number> };
+  body: {
+    base: AssetId | null;
+    morfos: Record<string, number>;
+    /** megas 254–255 (§102/§118): OPCIONAIS — ausentes preservam o
+     *  checksum de estados anteriores (mesma regra de params §71). */
+    tipo?: string;
+    postura?: string;
+  };
   /** `params` (§71) e `coresCamada` (§73): regulagens por slot equipado —
    *  campos OPCIONAIS: ausentes quando nada foi regulado, preservando o
    *  checksum dos estados anteriores (sem bump de schemaVersion). */
