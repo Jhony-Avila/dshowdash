@@ -100,9 +100,14 @@ type LuzPalco = (typeof LUZES_PALCO)[number];
 const ROTULO_LUZ: Record<LuzPalco, string> = { neutra: 'Neutra', quente: 'Quente', fria: 'Fria', dramatica: 'Dramática' };
 const CHAVE_HORA = 'dshow.avst5.palco.hora.v1';
 const CHAVE_LUZ = 'dshow.avst5.palco.luz.v1';
+// lote 201 (§163): CLIMA do palco — overlay determinístico sobre o cenário
+const CLIMAS_PALCO = ['limpo', 'chuva', 'neve', 'nevoa'] as const;
+type ClimaPalco = (typeof CLIMAS_PALCO)[number];
+const ROTULO_CLIMA: Record<ClimaPalco, string> = { limpo: 'Limpo', chuva: 'Chuva', neve: 'Neve', nevoa: 'Névoa' };
+const CHAVE_CLIMA = 'dshow.avst5.palco.clima.v1';
 // mega 65 (§180): PRESETS DE APRESENTAÇÃO {fundo, hora, luz}
 const CHAVE_APRESENTACAO = 'dshow.avst5.apresentacao.v1';
-interface PresetApresentacao { id: string; nome: string; fundo: FundoPalco; hora: HoraPalco; luz: LuzPalco }
+interface PresetApresentacao { id: string; nome: string; fundo: FundoPalco; hora: HoraPalco; luz: LuzPalco; clima?: ClimaPalco }
 function lerApresentacoes(): PresetApresentacao[] {
   try {
     const b = JSON.parse(localStorage.getItem(CHAVE_APRESENTACAO) ?? '[]');
@@ -110,7 +115,8 @@ function lerApresentacoes(): PresetApresentacao[] {
       !!p && typeof p.id === 'string' && typeof p.nome === 'string'
       && (FUNDOS_PALCO as readonly string[]).includes(p.fundo)
       && (HORAS_PALCO as readonly string[]).includes(p.hora)
-      && (LUZES_PALCO as readonly string[]).includes(p.luz)).slice(0, 6) : [];
+      && (LUZES_PALCO as readonly string[]).includes(p.luz)
+      && (p.clima === undefined || (CLIMAS_PALCO as readonly string[]).includes(p.clima))).slice(0, 6) : [];
   } catch { return []; }
 }
 function gravarApresentacoes(l: PresetApresentacao[]): void {
@@ -118,14 +124,15 @@ function gravarApresentacoes(l: PresetApresentacao[]): void {
 }
 // lote 175–176 (§185): HISTÓRICO de apresentação — restaurar composição completa
 const CHAVE_HIST_PALCO = 'dshow.avst5.palco.hist.v1';
-interface ComposicaoPalco { fundo: FundoPalco; hora: HoraPalco; luz: LuzPalco }
+interface ComposicaoPalco { fundo: FundoPalco; hora: HoraPalco; luz: LuzPalco; clima?: ClimaPalco }
 function lerHistPalco(): ComposicaoPalco[] {
   try {
     const b = JSON.parse(localStorage.getItem(CHAVE_HIST_PALCO) ?? '[]');
     return Array.isArray(b) ? b.filter((h): h is ComposicaoPalco =>
       !!h && (FUNDOS_PALCO as readonly string[]).includes(h.fundo)
       && (HORAS_PALCO as readonly string[]).includes(h.hora)
-      && (LUZES_PALCO as readonly string[]).includes(h.luz)).slice(-10) : [];
+      && (LUZES_PALCO as readonly string[]).includes(h.luz)
+      && (h.clima === undefined || (CLIMAS_PALCO as readonly string[]).includes(h.clima))).slice(-10) : [];
   } catch { return []; }
 }
 // lote 174 (§179): ponte Coleção → Cenário ("itens sugerem ambiente")
@@ -313,6 +320,18 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     telemetria('palco_luz', { luz: l }); // §290
     try { localStorage.setItem(CHAVE_LUZ, l); } catch { /* sem storage */ }
   };
+  // lote 201–202 (§163): clima persistido
+  const [clima, setClima] = useState<ClimaPalco>(() => {
+    try {
+      const c = localStorage.getItem(CHAVE_CLIMA) as ClimaPalco | null;
+      return c && (CLIMAS_PALCO as readonly string[]).includes(c) ? c : 'limpo';
+    } catch { return 'limpo'; }
+  });
+  const trocarClima = (c: ClimaPalco) => {
+    setClima(c);
+    telemetria('palco_clima', { clima: c }); // §290
+    try { localStorage.setItem(CHAVE_CLIMA, c); } catch { /* sem storage */ }
+  };
 
   // lote 174 (§179): itens de coleção sugerem o AMBIENTE correspondente
   const sugestaoCenario = useMemo(() => {
@@ -324,6 +343,13 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     }
     return null;
   }, [configVisivel, fundo]);
+
+  // lote 205 (§179): ponte Clima→Iluminação (chuva pede luz fria; névoa, dramática)
+  const sugestaoLuz = useMemo(() => {
+    if (clima === 'chuva' && luz !== 'fria') return { luzSug: 'fria' as LuzPalco, motivo: 'a chuva' };
+    if (clima === 'nevoa' && luz !== 'dramatica') return { luzSug: 'dramatica' as LuzPalco, motivo: 'a névoa' };
+    return null;
+  }, [clima, luz]);
 
   // mega 63 (§153–§155): ATIVAR PODER — efeito/aura equipado explode no
   // palco por ~2,6s (overlay isolado; nada muda no estado do avatar)
@@ -344,28 +370,30 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     if (atuais.length >= 6) return;
     const nova: PresetApresentacao = {
       id: `ap_${Date.now().toString(36)}`, nome: `Cena ${atuais.length + 1}`, fundo, hora, luz,
+      ...(clima !== 'limpo' ? { clima } : {}), // lote 204 (§180 v2 — compat)
     };
     gravarApresentacoes([...atuais, nova]);
     setApresentacoes(lerApresentacoes());
-    telemetria('palco_apresentacao_salvou', { fundo, hora, luz }); // §290
-  }, [fundo, hora, luz]);
+    telemetria('palco_apresentacao_salvou', { fundo, hora, luz, clima }); // §290
+  }, [fundo, hora, luz, clima]);
   // lote 175–176 (§185): histórico do palco (ring ≤10, dedupe consecutivo)
   const [histPalco, setHistPalco] = useState<ComposicaoPalco[]>(lerHistPalco);
   useEffect(() => {
-    const atual: ComposicaoPalco = { fundo, hora, luz };
+    const atual: ComposicaoPalco = { fundo, hora, luz, ...(clima !== 'limpo' ? { clima } : {}) };
     const t = setTimeout(() => {
       setHistPalco((h) => {
         const ult = h[h.length - 1];
-        if (ult && ult.fundo === atual.fundo && ult.hora === atual.hora && ult.luz === atual.luz) return h;
+        if (ult && ult.fundo === atual.fundo && ult.hora === atual.hora && ult.luz === atual.luz
+          && (ult.clima ?? 'limpo') === (atual.clima ?? 'limpo')) return h;
         const novo = [...h, atual].slice(-10);
         try { localStorage.setItem(CHAVE_HIST_PALCO, JSON.stringify(novo)); } catch { /* sem storage */ }
         return novo;
       });
     }, 700); // preset aplicado = 1 entrada só (não 3)
     return () => clearTimeout(t);
-  }, [fundo, hora, luz]);
+  }, [fundo, hora, luz, clima]);
   const restaurarComposicao = useCallback((h: ComposicaoPalco) => {
-    trocarFundo(h.fundo); trocarHora(h.hora); trocarLuz(h.luz);
+    trocarFundo(h.fundo); trocarHora(h.hora); trocarLuz(h.luz); trocarClima(h.clima ?? 'limpo');
     telemetria('palco_hist_restaurou', { fundo: h.fundo, hora: h.hora, luz: h.luz }); // §290
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -386,6 +414,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     trocarFundo(p.fundo);
     trocarHora(p.hora);
     trocarLuz(p.luz);
+    trocarClima(p.clima ?? 'limpo'); // lote 204
     telemetria('palco_apresentacao_aplicou', { nome: p.nome }); // §290
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -883,7 +912,45 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* mega 75 (§132): EDIÇÃO tem luz neutra garantida — cor fiel;
               a iluminação §164 só vale nos modos studio/foco */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}
-            data-hora={hora} data-luz={modo === 'edicao' ? 'neutra' : luz}>
+            data-hora={hora} data-luz={modo === 'edicao' ? 'neutra' : luz} data-clima={clima}>
+            {/* lote 201 (§163): overlay de CLIMA — determinístico, sobre o cenário
+                e atrás dos controles; reduced-motion desliga o movimento (§182) */}
+            {clima !== 'limpo' && !palco3d && (
+              <svg className="avst5-clima" aria-hidden viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" data-teste="clima-overlay">
+                {clima === 'chuva' && Array.from({ length: 26 }, (_, i) => (
+                  <line key={i} x1={(i * 61) % 400} y1={-20 - ((i * 37) % 60)} x2={((i * 61) % 400) - 8} y2={4 - ((i * 37) % 60)}
+                    stroke="#9db4ff" strokeWidth="1.1" opacity="0.5">
+                    {!movReduzido && (
+                      <animateTransform attributeName="transform" type="translate" from="0 0" to="-40 340"
+                        dur={`${(1.1 + (i % 5) * 0.14).toFixed(2)}s`} repeatCount="indefinite" />
+                    )}
+                  </line>
+                ))}
+                {clima === 'neve' && Array.from({ length: 22 }, (_, i) => (
+                  <circle key={i} cx={(i * 73) % 400} cy={-8 - ((i * 41) % 40)} r={1.4 + (i % 3) * 0.7}
+                    fill="#e6eaf2" opacity="0.75">
+                    {!movReduzido && (
+                      <animateTransform attributeName="transform" type="translate" from="0 0" to={`${(i % 2 ? 18 : -14)} 330`}
+                        dur={`${(4 + (i % 6) * 0.8).toFixed(2)}s`} repeatCount="indefinite" />
+                    )}
+                  </circle>
+                ))}
+                {clima === 'nevoa' && (<>
+                  <defs>
+                    <linearGradient id="avst5nevoa" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%" stopColor="#aeb6c9" stopOpacity="0.42" />
+                      <stop offset="60%" stopColor="#aeb6c9" stopOpacity="0.10" />
+                      <stop offset="100%" stopColor="#aeb6c9" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <rect width="400" height="300" fill="url(#avst5nevoa)">
+                    {!movReduzido && (
+                      <animate attributeName="opacity" values="0.85;1;0.85" dur="7s" repeatCount="indefinite" />
+                    )}
+                  </rect>
+                </>)}
+              </svg>
+            )}
             {palco3d ? (
               <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d}
                 aoUsarComoAvatar={aoSalvarFotoLegado} />
@@ -1004,7 +1071,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                       <button key={`${h.fundo}-${h.hora}-${h.luz}-${i}`} type="button" data-teste="hist-restaurar"
                         title={`Restaurar composição (§185): ${ROTULO_FUNDO[h.fundo]} · ${ROTULO_HORA[h.hora]} · ${ROTULO_LUZ[h.luz]}`}
                         onClick={() => restaurarComposicao(h)}>
-                        ⤺ {ROTULO_FUNDO[h.fundo]}·{ROTULO_HORA[h.hora].slice(0, 3)}·{ROTULO_LUZ[h.luz].slice(0, 4)}</button>
+                        ⤺ {ROTULO_FUNDO[h.fundo]}·{ROTULO_HORA[h.hora].slice(0, 3)}·{ROTULO_LUZ[h.luz].slice(0, 4)}{h.clima && h.clima !== 'limpo' ? `·${ROTULO_CLIMA[h.clima]}` : ''}</button>
                     ))}
                   </span>
                 )}
@@ -1051,6 +1118,23 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   onClick={() => trocarLuz(l)}>{ROTULO_LUZ[l]}</button>
               ))}
             </div>
+            {/* clima é do palco 2D — no 3D o cenário próprio manda (evita
+                sobrepor os chips do p3d na mesma faixa do viewport) */}
+            {!palco3d && (
+            <div className="avst5-fundos avst5-climas" role="radiogroup" aria-label="Clima (§163)" data-teste="climas-2d">
+              {CLIMAS_PALCO.map((c) => (
+                <button key={c} type="button" role="radio" aria-checked={clima === c}
+                  className={clima === c ? 'avst5-fundo-on' : ''}
+                  onClick={() => trocarClima(c)}>{ROTULO_CLIMA[c]}</button>
+              ))}
+              {sugestaoLuz && (
+                <button type="button" className="avst5-sugestao-cenario" data-teste="sugestao-luz"
+                  title={`§179: ${sugestaoLuz.motivo} combina com a luz ${ROTULO_LUZ[sugestaoLuz.luzSug]}`}
+                  onClick={() => { trocarLuz(sugestaoLuz.luzSug); telemetria('palco_sugestao_luz', { luz: sugestaoLuz.luzSug }); }}>
+                  ✦ Luz {ROTULO_LUZ[sugestaoLuz.luzSug]} combina com {sugestaoLuz.motivo}</button>
+              )}
+            </div>
+            )}
             <BarraSalvamento store={store} aoSalvar={async () => {
               const r = await aoSalvarLegado(paraLegado2d(store.estadoDraft));
               if (r.ok) {

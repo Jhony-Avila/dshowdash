@@ -588,3 +588,25 @@ asserts de params (brilho/matiz/byte-estável), §251 determinístico e
 sanitização de listas. Suíte 42 arquivos + núcleo. Lições novas: a UI de
 cenas/histórico do palco vive no modo STUDIO (testes precisam entrar no
 modo); caixa alta ligada muda asserts de texto subsequentes.
+
+## Registro 2026-08-05 (2) — LOTE 201–210: clima §163 + contexto §181
+
+✅ 201–202: CLIMA do palco 2D (limpo/chuva/neve/névoa) — overlay SVG
+   determinístico (SMIL; reduced-motion desliga §182), chips + data-clima,
+   persistência própria.
+✅ 203–204: clima entra na COMPOSIÇÃO — histórico §185 e presets §180
+   viram v2 COM COMPATIBILIDADE (entradas antigas sem clima = limpo;
+   validação aceita ausência).
+✅ 205: ponte §179 Clima→Iluminação (chuva→fria, névoa→dramática) como
+   chip de sugestão 1-clique (nunca aplica sozinho).
+✅ 206: névoa/chuva dão gradação sutil no palco via CSS (filter).
+✅ 207–208: preview por CONTEXTO §181/§168/§170 no detalhe de moldura e
+   banner (Palco/Perfil/Header/Menu — o hero muda de corte).
+✅ 209: telemetria palco_clima/palco_sugestao_luz (§290).
+✅ 210: clima-210.mjs (overlay, sugestão aplica e some, histórico
+   restaura clima, preset v2, chips de contexto) — suíte 43 arquivos.
+Lição nova (CORRIGIDA no mesmo lote): fileira nova de chips do palco
+SEM top próprio herda top:10px da base absoluta e SOBREPÕE a fileira de
+cenários — o "unstable" do Playwright era hit-target coberto, não
+animação. Fix: .avst5-fundos.avst5-climas { top: 94px } (especificidade
+dupla). Chips do palco em testes seguem por dispatchEvent.

@@ -1886,3 +1886,20 @@
 .avst5-missoes-lista strong { font-size: 12px; display: block; }
 .avst5-missoes-lista p { margin: 1px 0 0; font-size: 10.5px; color: #8b93a7; }
 .avst5-missao-check { margin-left: auto; color: #39d98a; font-weight: 700; }
+
+/* ── lote 201–208 (§163/§179/§181): clima + preview por contexto ── */
+/* fileira de clima abaixo das luzes (fundos 10 / horas 38 / luzes 66);
+   especificidade DUPLA — a base .avst5-fundos posterior não vence */
+.avst5-fundos.avst5-climas { top: 94px; }
+.avst5-clima {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 3;
+}
+.avst5-viewport[data-clima='nevoa'] .avst5-palco { filter: saturate(0.88) brightness(0.97); }
+.avst5-viewport[data-clima='chuva'] .avst5-palco { filter: saturate(0.92); }
+.avst5-ctx-chips { margin-top: 4px; }
+.avst5-det-hero { transition: max-width 0.25s ease, max-height 0.25s ease; }
+.avst5-ctx-perfil svg { border-radius: 50%; }
+.avst5-ctx-header { max-height: 96px; overflow: hidden; display: flex; align-items: center; }
+.avst5-ctx-header svg { transform: scale(1.15); }
+.avst5-ctx-menu { max-width: 72px; margin-inline: auto; }

@@ -8,7 +8,7 @@ regenerar após cada build; o diff no git É o relatório de regressão).
 | chunk | real | teto | uso |
 |---|---|---|---|
 | catalogo-arte | 290.6KB | 345KB | 84% |
-| entry | 302.8KB | 340KB | 89% |
+| entry | 306KB | 340KB | 90% |
 | Estudio3D | 37.3KB | 50KB | 75% |
 | motor3d | 1020.7KB | 1180KB | 87% |
 | react-vendor | 188KB | 225KB | 84% |
@@ -17,6 +17,6 @@ regenerar após cada build; o diff no git É o relatório de regressão).
 
 ## Cobertura
 
-- Suíte de navegador/node: **42 arquivos** (rodar-todos) + nucleo.test.
+- Suíte de navegador/node: **43 arquivos** (rodar-todos) + nucleo.test.
 - Catálogo 2D: **344 itens** em 12 categorias · 30 títulos · 12 coleções.
 - Personagens 3D publicados: **6**.

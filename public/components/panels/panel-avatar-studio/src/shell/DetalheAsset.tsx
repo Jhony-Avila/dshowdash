@@ -38,6 +38,8 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
   const [atual, setAtual] = useState(id);
   const [salvo, setSalvo] = useState(false);
   const [comparando, setComparando] = useState(false);
+  // lote 207–208 (§181/§168/§170): preview por CONTEXTO (moldura/banner)
+  const [contexto, setContexto] = useState<'palco' | 'perfil' | 'header' | 'menu'>('palco');
   const [alternando, setAlternando] = useState(false);
   const [, setTic] = useState(0);
   const item = itemPorId(atual);
@@ -104,9 +106,21 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
           <button type="button" className="avst5-painel-btn" title="Fechar" onClick={aoFechar}><X size={14} aria-hidden /></button>
         </header>
         {/* hero: o item aplicado AO SEU avatar, animado (§67.1) */}
-        <div className="avst5-det-hero">
+        <div className={`avst5-det-hero avst5-ctx-${contexto}`}>
           <AvatarSvg config={preview} uid={`det-${item.id}`} foco={FOCO_THUMB[item.categoria]} />
         </div>
+        {/* lote 207–208 (§181): "o sistema deverá mostrar" — moldura/banner
+            em contextos reais (perfil/header/menu) sem sair do drawer */}
+        {(item.categoria === 'moldura' || item.categoria === 'banner') && (
+          <div className="avst-ft-chips avst5-ctx-chips" role="radiogroup" aria-label="Ver em contexto (§181)" data-teste="ctx-preview">
+            {([['palco', 'Palco'], ['perfil', 'Perfil'], ['header', 'Header'], ['menu', 'Menu']] as const).map(([c, nome]) => (
+              <button key={c} type="button" role="radio" aria-checked={contexto === c}
+                className={`avst-ft-chip ${contexto === c ? 'avst-ft-chip-ativo' : ''}`}
+                data-teste={`ctx-${c}`}
+                onClick={() => setContexto(c)}>{nome}</button>
+            ))}
+          </div>
+        )}
         <p className="avst5-det-rar" style={{ color: rar.cor }}>{rar.nome} · {item.tema}{bloqueado && <> · <Lock size={11} aria-hidden /> bloqueado</>}</p>
         <p className="avst5-det-lore">{item.lore ?? item.descricao}</p>
         {/* megas 92+93 (§85/§225–§228): ECONOMIA do asset — origem,
