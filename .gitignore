@@ -108,6 +108,10 @@ dist/
 /docs/*
 !/docs/AVATAR-STUDIO-5/
 
+# contexto versionado para sessões de IA (lote 221-230, decisão #45.6):
+# qualquer sessão futura se auto-abastece só de clonar
+!/claude/
+
 # suíte de testes headless: artefatos locais nunca entram
 /scripts/avatar/testes/saida/
 /scripts/avatar/testes/node_modules
