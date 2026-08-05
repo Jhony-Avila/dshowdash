@@ -35,6 +35,16 @@
   (crescimento intencional do lote 221–230: canvas PRO + editor showcase +
   timeline + vitrine, +40KB reais); margem ~10% preservada.
 
+- **#53 (2026-08-05) — Escopo da onda 231–260** (pedido do Jhony: "231 a
+  260"): lote 231–240 A2 palco (§160–§172, flag `as5.palco_v2`), lote
+  241–250 A4 progressão (§207–§231, flag `as5.progressao_v2`), lote
+  251–260 A1 restante + A3 criação 2D (§102/§105/§118/§119/§120 v2 +
+  §349/§361/§364/§369, flag `as5.criacao_avancada`). Campos novos de
+  config `corpo`/`postura` com espelho PHP + roundtrip no núcleo
+  (body.tipo/postura opcionais — checksum preservado).
+- **#54 (2026-08-05) — Teto do chunk `entry` 385→410KB** (onda 231–260:
+  +22KB reais, entry em 369KB; margem ~10% restaurada).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 201–210, 211–220 e 221–230 · Chave IA (Anexo B

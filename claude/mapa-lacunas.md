@@ -1,52 +1,49 @@
-# Mapa de Lacunas do Briefing — v3 (pós lote 221–230, 2026-08-05)
+# Mapa de Lacunas do Briefing — v4 (pós onda 231–260, 2026-08-05)
 
 > Método: briefing (006a394b, 1.764 §§) cruzado por evidência com o código.
-> v2 completa nos docs do projeto Claude; aqui o delta operacional.
 
-## O que o lote 221–230 fechou
+## O que a onda 231–260 fechou
 
-- §323/§323.1–.3 arquitetura 3 regiões · §324/§324.1–.2 canvas profissional
-  (zoom/pan/grade/safe/snapping/guias) · §344 título-componente ·
-  §345/§345.1 emblemas com layout automático · §175/§175.1 editor de
-  showcase + automático · §220 timeline no shell · §229 favoritos em 3
-  categorias · §1076 vitrine pessoal · §1077 galerias (recorte local).
+- **A2**: §160.1–.4 (4 cenários novos), §161 (propriedades + vivo), §162
+  (6 horas), §154/§154.1 (sequência do poder), §155 (preview no card),
+  §167 (moldura por raridade), §168 (emissão/sombra/escala + contextos
+  ranking/notificação), §170/§170.1 (posição + presets do banner),
+  §171.3/§172 (selo real + editor de título).
+- **A4**: §208/§209 (hero v2 + experimentar), §214 (galeria), §217
+  (tiers), §218 (ordenações), §219 (coleção no card), §221 (seus
+  números), §226–§228 (origem/disponibilidade/arquivado), §231 (diff
+  cores+título).
+- **A1/A3**: §102 (tipo corporal), §105 (presets faciais), §118
+  (postura), §119 (idle 2D), §120 v2 (7 emotes), §349 (compor pra mim),
+  §361 (histórico visual), §364 v2 (renomear/8), §369 (presets export).
 
-## TRILHO A — implementável agora (sem bloqueio externo)
+## TRILHO A — implementável agora (restante)
 
-**A1 · Photo Studio PRO (restante)**: correções locais finas (§333–334
-parcial ok), máscaras de camada (§340–341 além da forma), publicação/
-derivação no Dash (§365–366), presets de exportação named (§369), histórico
-VISUAL do §361, versionamento de projetos §364 v2 (hoje 6 slots).
-**A2 · Palco**: poderes "Ativar" + preview (§153–155), cenários prioritários/
-hora do dia (§160–162), luz 2D §164, editores de moldura/banner/título
-(§166–172).
-**A3 · Criação 2D**: tipo corporal §102, presets faciais §105, granularidade
-§108–111, barba §114, personalidade/postura §117–118, idle 2D §119, emotes
-§120.
-**A4 · Progressão**: página de coleção com hero/lore (§207–214), página de
-conquistas real (§215–219, §221 parcial), economia de assets (§225–228),
-comparação de presets §231.
-**A5 · 3D sem UBC**: piscar/respiração §440–441, environment maps §449,
-pós-processamento §457, material manager §419–420 (tinta parcial), partículas
-3D §444–446.
-**A6 · Fundações**: asset manifest §267, streaming §274–275, design tokens
-§283–289, logging §291 v2.
+**A1**: correções locais finas §333–334, máscaras §340–341 (além da
+forma), publicação/derivação no Dash §365–366 (precisa de endpoint —
+semi-B). **A2**: poderes com roteiro visual por FAMÍLIA §153.1–.4
+(partículas §156 dedicadas), som ambiente §161, editores §166.2–.3
+(camadas/comportamentos de moldura — pede arte nova → semi-B). **A3**:
+granularidade §108–111 além da escala (pede arte), barba §114 (pede
+arte), §102.2 parâmetros finos. **A4**: §207 coleções multi-categoria
+(pede curadoria), trailer §208 (asset). **A5 3D**: piscar §440, env maps
+§449, pós-processamento §457, partículas 3D §444–446. **A6**: manifest
+§267, streaming §274, tokens §283–289, logging §291 v2.
 
-## TRILHO B — bloqueado em itens do Jhony
+## TRILHO B — bloqueado no Jhony
 
-Zip UBC (morphs §412–414, roupas §416, sockets §426–431, física §424, root
-motion §437) · Chave IA (P13 inteiro, §232-IA, §355–358) · Infra P16.
+Zip UBC (morphs §412+, roupas §416, sockets §426+) · Chave IA (P13; IA de
+imagem §355–358) · Infra P16 · endpoints novos (publicação §365–366).
 
-## TRILHO C — estratégico (decidir antes de codar)
+## TRILHO C — estratégico
 
-P11 CMS admin · P12 plataforma · P14 social server-side (o recorte
-client-side §1076/§1077 já entrou) · P17 monorepo · P18 processos.
+P11 CMS · P12 plataforma · P14 social server-side · P17 monorepo · P18
+processos.
 
-## Sequência recomendada (próximos lotes)
+## Sequência recomendada (261+)
 
-1. **231–240**: A2 palco (poderes §153–155 + cenários §160–162 + editores
-   §166–172) — apresentação é a vitrine do produto.
-2. **241–250**: A4 progressão (página de coleção §207–214 + conquistas
-   §215–221 + economia §225–228).
-3. **251–260**: A1 restante + A3 granularidade facial.
-4. A5/A6 diluídos como sempre.
+1. **261–270**: A5 3D sem UBC (piscar §440–441, env maps §449, pós §457,
+   aura/partículas §444–446) — o palco 3D é a vitrine técnica.
+2. **271–280**: A6 fundações (manifest §267, streaming §274–275, design
+   tokens §283–289, logging §291) — dívida que barateia tudo depois.
+3. **281+**: A1/A2 finos que não pedem arte nova.
