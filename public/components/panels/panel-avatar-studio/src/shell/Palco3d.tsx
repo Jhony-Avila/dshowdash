@@ -247,7 +247,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           log.aviso('p3d_aplicar_falhou_retry', { personagem }); // §291
           setTimeout(() => setSinalRetry((n) => n + 1), 800);
         } else {
-          log.erro('p3d_indisponivel', { personagem }); // §291
+          log.critico('p3d_indisponivel', { personagem }); // §291 v2: retries esgotados = fluxo quebrado
           setFase('indisponivel');
         }
         return;

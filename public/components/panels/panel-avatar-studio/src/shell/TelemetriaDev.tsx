@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, ScrollText, Trash2 } from 'lucide-react';
 import { assinarTelemetria, eventosRecentes, limparTelemetria } from '../services/Telemetria';
+import { lerCriticos, limparCriticos } from '../services/Log';
 import { MOVIMENTOS, animar } from './movimento';
 
 export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
@@ -26,6 +27,20 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
   }, [aoFechar]);
 
   const eventos = eventosRecentes();
+  const criticos = lerCriticos(); // mega 279 (§291 v2): ring do suporte
+
+  // mega 278 (§290 v2): MEMÓRIA JS quando o navegador expõe (Chrome) —
+  // honesto: ausente = não mostra, nunca estima
+  const memoria = (() => {
+    try {
+      const m = (performance as Performance & { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
+      if (!m) return null;
+      return {
+        usadoMb: Math.round(m.usedJSHeapSize / 1048576),
+        limiteMb: Math.round(m.jsHeapSizeLimit / 1048576),
+      };
+    } catch { return null; }
+  })();
 
   // mega 109: SAÚDE DO STORAGE — uso por chave dshow.* (só leitura)
   const storage = (() => {
@@ -80,9 +95,29 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
             ))}
           </ol>
         )}
+        {/* mega 279 (§291 v2): críticos persistidos — o que o suporte lê */}
+        {criticos.length > 0 && (
+          <div className="avst5-tlm-storage" data-teste="tlm-criticos">
+            <h4>Críticos persistidos · {criticos.length} (sobrevivem ao reload)</h4>
+            <ul>
+              {criticos.slice(0, 8).map((c, i) => (
+                <li key={`${c.quando}-${i}`}>
+                  <code>{c.quando.slice(11, 19)} {c.evento}</code>
+                  <em>{JSON.stringify(c.dados)}</em>
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="avst-botao" data-teste="tlm-criticos-limpar"
+              onClick={() => { limparCriticos(); setTic((t) => t + 1); }}>
+              <Trash2 size={12} aria-hidden /> Limpar críticos</button>
+          </div>
+        )}
         {/* mega 109: saúde do localStorage (top 10 chaves dshow.*) */}
         <div className="avst5-tlm-storage" data-teste="tlm-storage">
-          <h4>Storage local · {storage.total}KB em chaves dshow.*</h4>
+          <h4>
+            Storage local · {storage.total}KB em chaves dshow.*
+            {memoria && <> · heap JS {memoria.usadoMb}/{memoria.limiteMb}MB (§290)</>}
+          </h4>
           <ul>
             {storage.linhas.map((l) => (
               <li key={l.chave}><code>{l.chave}</code><em>{l.kb}KB</em></li>

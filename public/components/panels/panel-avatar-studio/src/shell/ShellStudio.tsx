@@ -6,7 +6,7 @@
 // §38 — o avatar nunca sai do foco). Vive atrás da flag as5.novo_shell;
 // com a flag OFF o App atual segue intacto. O estado é o AvatarStore da F1
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
-import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Flag, Focus, GitBranch, History, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
@@ -26,21 +26,26 @@ import { Cores } from '../components/Cores';
 import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
-import { PaletaComandos } from './PaletaComandos';
-import { Consultor } from './Consultor';
 import { Evolucao } from './Evolucao';
-import { TimelineShell } from './TimelineShell'; // mega 228 (§220)
 import { incrementar } from '../services/Contadores'; // mega 246 (§221)
-import { Missoes } from './Missoes';
 import { avaliarMissoes } from '../services/Missoes';
 import { registrarMarco } from '../services/Evolucao';
-import { VersoesAvatar } from './VersoesAvatar';
-import { Atalhos } from './Atalhos';
-import { TelemetriaDev } from './TelemetriaDev';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
-import { DetalheAsset } from './DetalheAsset';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
+
+// ── megas 273–275 (§274–§275, lazy §275): painéis SOB DEMANDA ────────
+// Cada um vira chunk próprio e só atravessa a rede na PRIMEIRA abertura
+// (thumbnail/metadados na tela antes do peso — streaming §274). Suspense
+// fallback null: o overlay aparece um frame depois, nunca quebra o shell.
+const PaletaComandos = lazy(() => import('./PaletaComandos').then((m) => ({ default: m.PaletaComandos })));
+const Consultor = lazy(() => import('./Consultor').then((m) => ({ default: m.Consultor })));
+const TimelineShell = lazy(() => import('./TimelineShell').then((m) => ({ default: m.TimelineShell }))); // mega 228 (§220)
+const Missoes = lazy(() => import('./Missoes').then((m) => ({ default: m.Missoes })));
+const VersoesAvatar = lazy(() => import('./VersoesAvatar').then((m) => ({ default: m.VersoesAvatar })));
+const Atalhos = lazy(() => import('./Atalhos').then((m) => ({ default: m.Atalhos })));
+const TelemetriaDev = lazy(() => import('./TelemetriaDev').then((m) => ({ default: m.TelemetriaDev })));
+const DetalheAsset = lazy(() => import('./DetalheAsset').then((m) => ({ default: m.DetalheAsset })));
 import { HistoricoSessao, useHistoricoSessao } from './HistoricoSessao';
 import {
   CHAVE_RASCUNHO_STORAGE, gravarRascunho, idDaAba, lerRascunho, limparRascunho,
@@ -228,9 +233,10 @@ function lerLarguras(): { esq: number; dir: number } {
 class LimiteShell extends Component<{ aoSair: () => void; children: ReactNode }, { erro: boolean }> {
   state = { erro: false };
   static getDerivedStateFromError() { return { erro: true }; }
-  // lote 156 (§291): o error boundary REPORTA antes de degradar
+  // lote 156 (§291): o error boundary REPORTA antes de degradar —
+  // mega 279 (§291 v2): CRÍTICO (quebrou o fluxo; entra no ring do suporte)
   componentDidCatch(e: Error) {
-    log.erro('shell_error_boundary', { motivo: String(e?.message ?? e).slice(0, 120) });
+    log.critico('shell_error_boundary', { motivo: String(e?.message ?? e).slice(0, 120) });
   }
   render() {
     if (!this.state.erro) return this.props.children;
@@ -1524,6 +1530,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           </aside>
         </div>
         {tour && <TourGuiado aoFechar={() => setTour(false)} />}
+        <Suspense fallback={null}>
         {atalhos && <Atalhos aoFechar={() => setAtalhos(false)} />}
         {telemetriaDev && <TelemetriaDev aoFechar={() => setTelemetriaDev(false)} />}
         {consultor && (
@@ -1603,6 +1610,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <DetalheAsset id={detalheId} config={validarConfig(paraLegado2d(store.estadoDraft))} desbloqueados={desbloqueados}
             aoEscolher={aoEscolher} aoPrever={aoPrever} aoFechar={() => setDetalheId(null)} />
         )}
+        </Suspense>
         {conflito && (
           <div className="avst5-modal-fundo" role="dialog" aria-modal="true" aria-label="Conflito de equipamento">
             <div className="avst5-modal">
