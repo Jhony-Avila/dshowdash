@@ -170,6 +170,30 @@ export interface AjustesFoto {
   anel?: number;
 }
 
+/** lote 161–164 (§338/§339/§342): id e config POR CAMADA decorativa. */
+export type CamadaFotoId = 'fundo' | 'banner' | 'aura' | 'efeito' | 'moldura' | 'emblema';
+/** §342: blends SEGUROS agrupados (modo avançado; 'normal' = neutro) */
+export type BlendFoto = 'normal' | 'multiply' | 'screen' | 'overlay' | 'soft-light';
+export interface CamadaFotoCfg {
+  /** §338.2 ocultar (não destrutivo — o id continua equipado) */
+  oculta?: boolean;
+  /** 0.2–1 · 1 = neutro */
+  opacidade?: number;
+  blend?: BlendFoto;
+  /** §339: SÓ o efeito pode trocar de plano (ordem protegida) */
+  plano?: 'atras' | 'frente';
+}
+/** lote 166 (§343): tipografia CONTROLADA (fontes aprovadas, sem upload) */
+export interface TipografiaFoto {
+  fonte?: 'sistema' | 'mono' | 'serif';
+  peso?: 400 | 600 | 800;
+  tamanho?: 'p' | 'm' | 'g';
+  /** hex aprovado pela paleta (normalizado no serviço) */
+  cor?: string;
+  contorno?: boolean;
+  caixaAlta?: boolean;
+}
+
 export interface EstiloFoto {
   camadas: {
     fundo?: string;
@@ -185,6 +209,14 @@ export interface EstiloFoto {
   ajustes?: AjustesFoto;
   /** mega 115 (§344): legenda LIVRE curta (sanitizada aqui e no PHP) */
   legenda?: string;
+  /** lote 161–164 (§338): painel de camadas — ausente = render legado */
+  camadasFoto?: Partial<Record<CamadaFotoId, CamadaFotoCfg>>;
+  /** lote 165 (§334): luz LOCAL no medalhão · intensidade -1…1 (0 = fora) */
+  luzLocal?: { tipo: 'radial' | 'linear'; intensidade: number };
+  /** lote 166 (§343) — ausente = tipografia legada byte a byte */
+  tipografia?: TipografiaFoto;
+  /** lote 167 (§343.1): subtítulo (cargo/contexto) — formatos WIDE */
+  subtitulo?: string;
 }
 
 // ── Histórico / favoritos / conquistas ──────────────────────────────

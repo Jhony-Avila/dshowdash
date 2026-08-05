@@ -251,7 +251,81 @@ function avst_validar_config_foto($bruto): ?array
             $saida['legenda'] = $limpa;
         }
     }
-    return $camadas === [] && !isset($saida['titulo']) && !isset($saida['ajustes']) && !isset($saida['legenda']) ? null : $saida;
+    // lote 167 (§343.1): subtítulo — mesma whitelist da legenda, ≤48
+    $subtitulo = $bruto['subtitulo'] ?? null;
+    if (is_string($subtitulo)) {
+        $limpo2 = trim(mb_substr(preg_replace('/[^\p{L}\p{N} .,!?\'\-]/u', '', $subtitulo), 0, 48));
+        if ($limpo2 !== '') {
+            $saida['subtitulo'] = $limpo2;
+        }
+    }
+    // lote 161–164 (§338/§339/§342): painel de camadas — whitelist fechada
+    $cf = $bruto['camadasFoto'] ?? null;
+    if (is_array($cf)) {
+        $cfLimpo = [];
+        foreach (['fundo', 'banner', 'aura', 'efeito', 'moldura', 'emblema'] as $cat) {
+            $c = $cf[$cat] ?? null;
+            if (!is_array($c)) {
+                continue;
+            }
+            $item = [];
+            if (($c['oculta'] ?? null) === true) {
+                $item['oculta'] = true;
+            }
+            $op = $c['opacidade'] ?? null;
+            if (is_numeric($op) && (float) $op >= 0.2 && (float) $op < 1.0) {
+                $item['opacidade'] = round((float) $op, 2);
+            }
+            $blend = $c['blend'] ?? null;
+            if (in_array($blend, ['multiply', 'screen', 'overlay', 'soft-light'], true)) {
+                $item['blend'] = $blend;
+            }
+            if ($cat === 'efeito' && in_array($c['plano'] ?? null, ['atras', 'frente'], true)) {
+                $item['plano'] = $c['plano'];
+            }
+            if ($item !== []) {
+                $cfLimpo[$cat] = $item;
+            }
+        }
+        if ($cfLimpo !== []) {
+            $saida['camadasFoto'] = $cfLimpo;
+        }
+    }
+    // lote 165 (§334): luz local — enum + clamp
+    $luz = $bruto['luzLocal'] ?? null;
+    if (is_array($luz) && in_array($luz['tipo'] ?? null, ['radial', 'linear'], true)) {
+        $i = is_numeric($luz['intensidade'] ?? null) ? max(-1.0, min(1.0, (float) $luz['intensidade'])) : 0.0;
+        if ($i !== 0.0) {
+            $saida['luzLocal'] = ['tipo' => $luz['tipo'], 'intensidade' => round($i, 2)];
+        }
+    }
+    // lote 166 (§343): tipografia — enums fechados + paleta aprovada
+    $tp = $bruto['tipografia'] ?? null;
+    if (is_array($tp)) {
+        $tpLimpo = [];
+        if (in_array($tp['fonte'] ?? null, ['mono', 'serif'], true)) {
+            $tpLimpo['fonte'] = $tp['fonte'];
+        }
+        if (in_array($tp['peso'] ?? null, [400, 800], true)) {
+            $tpLimpo['peso'] = $tp['peso'];
+        }
+        if (in_array($tp['tamanho'] ?? null, ['p', 'g'], true)) {
+            $tpLimpo['tamanho'] = $tp['tamanho'];
+        }
+        if (in_array($tp['cor'] ?? null, ['#ffd75e', '#7cd9ff', '#ff9ecb'], true)) {
+            $tpLimpo['cor'] = $tp['cor'];
+        }
+        foreach (['contorno', 'caixaAlta'] as $campo) {
+            if (($tp[$campo] ?? null) === true) {
+                $tpLimpo[$campo] = true;
+            }
+        }
+        if ($tpLimpo !== []) {
+            $saida['tipografia'] = $tpLimpo;
+        }
+    }
+    $temNovo = isset($saida['subtitulo']) || isset($saida['camadasFoto']) || isset($saida['luzLocal']) || isset($saida['tipografia']);
+    return $camadas === [] && !isset($saida['titulo']) && !isset($saida['ajustes']) && !isset($saida['legenda']) && !$temNovo ? null : $saida;
 }
 
 /**

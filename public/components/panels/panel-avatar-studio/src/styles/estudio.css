@@ -1802,3 +1802,18 @@
 
 /* mega 115: legenda livre */
 .avst-ft-legenda input { flex: 1; min-width: 160px; background: var(--avst-fundo, #0d1017); border: 1px solid var(--avst-borda, #232a38); border-radius: 8px; padding: 5px 10px; color: var(--avst-texto, #e6eaf2); font-size: 12px; }
+
+/* ── lote 161–168 (§338/§342/§334/§343/§349): Photo camadas PRO ── */
+.avst-ft-camada { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+.avst-ft-camada-nome { font-size: 11px; color: var(--avst-texto-2, #8b93a7); min-width: 56px; }
+.avst-ft-camada input[type='range'] { flex: 1; min-width: 60px; }
+.avst-ft-olho { min-width: 26px; text-align: center; }
+.avst-ft-select {
+  background: #121622; color: #e6eaf2; border: 1px solid #262c3d;
+  border-radius: 8px; font-size: 11px; padding: 3px 6px; max-width: 96px;
+}
+.avst-ft-dica {
+  display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+  background: #12182a; border: 1px solid #24304d; border-radius: 10px; margin-top: 4px;
+}
+.avst-ft-dica p { margin: 0; font-size: 11px; color: #aeb6c9; flex: 1; }

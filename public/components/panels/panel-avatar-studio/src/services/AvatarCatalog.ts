@@ -526,12 +526,95 @@ export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesR
     ...(estilo.ajustes ? { ajustes: estilo.ajustes } : {}), // megas 51–54
     // mega 115 (§344): legenda SANITIZADA (whitelist de caracteres, ≤40)
     ...(estilo.legenda ? { legenda: sanitizarLegendaFoto(estilo.legenda) } : {}),
+    // lote 161–167 (§338/§334/§343): campos novos SEMPRE validados aqui
+    ...(estilo.camadasFoto ? { camadasFoto: sanitizarCamadasFoto(estilo.camadasFoto) } : {}),
+    ...(estilo.luzLocal ? { luzLocal: sanitizarLuzLocal(estilo.luzLocal) ?? undefined } : {}),
+    ...(estilo.tipografia ? { tipografia: sanitizarTipografiaFoto(estilo.tipografia) } : {}),
+    ...(estilo.subtitulo ? { subtitulo: sanitizarLegendaFoto(estilo.subtitulo) } : {}),
   }, itemPorId, opcoes);
 }
 
 /** mega 115 (§344): legenda da foto — só letras/números/pontuação leve. */
 export function sanitizarLegendaFoto(texto: string): string {
   return texto.replace(/[^\p{L}\p{N} .,!?'\-]/gu, '').slice(0, 40).trim();
+}
+
+// ── lote 161–168 (§338/§342/§334/§343/§349) ─────────────────────────
+const BLENDS_FOTO = ['normal', 'multiply', 'screen', 'overlay', 'soft-light'] as const;
+/** §343.3: paleta de texto APROVADA (nada de cor livre). */
+export const CORES_TEXTO_FOTO = ['#e6eaf2', '#ffd75e', '#7cd9ff', '#ff9ecb'] as const;
+
+export function sanitizarCamadasFoto(cfg: NonNullable<EstiloFoto['camadasFoto']>): NonNullable<EstiloFoto['camadasFoto']> {
+  const saida: NonNullable<EstiloFoto['camadasFoto']> = {};
+  for (const cat of CATEGORIAS_FOTO) {
+    const c = cfg[cat];
+    if (!c) continue;
+    const limpo: NonNullable<typeof c> = {};
+    if (c.oculta === true) limpo.oculta = true;
+    if (typeof c.opacidade === 'number' && c.opacidade >= 0.2 && c.opacidade < 1) {
+      limpo.opacidade = Math.round(c.opacidade * 100) / 100;
+    }
+    if (c.blend && c.blend !== 'normal' && (BLENDS_FOTO as readonly string[]).includes(c.blend)) limpo.blend = c.blend;
+    if (cat === 'efeito' && (c.plano === 'atras' || c.plano === 'frente')) limpo.plano = c.plano; // §339
+    if (Object.keys(limpo).length) saida[cat] = limpo;
+  }
+  return saida;
+}
+
+export function sanitizarLuzLocal(luz: NonNullable<EstiloFoto['luzLocal']>): EstiloFoto['luzLocal'] | null {
+  if (luz.tipo !== 'radial' && luz.tipo !== 'linear') return null;
+  const i = Math.max(-1, Math.min(1, Number(luz.intensidade) || 0));
+  return i === 0 ? null : { tipo: luz.tipo, intensidade: Math.round(i * 100) / 100 };
+}
+
+export function sanitizarTipografiaFoto(t: NonNullable<EstiloFoto['tipografia']>): NonNullable<EstiloFoto['tipografia']> {
+  const limpo: NonNullable<EstiloFoto['tipografia']> = {};
+  if (t.fonte === 'mono' || t.fonte === 'serif') limpo.fonte = t.fonte;
+  if (t.peso === 400 || t.peso === 800) limpo.peso = t.peso;
+  if (t.tamanho === 'p' || t.tamanho === 'g') limpo.tamanho = t.tamanho;
+  if (t.cor && (CORES_TEXTO_FOTO as readonly string[]).includes(t.cor)) limpo.cor = t.cor;
+  if (t.contorno === true) limpo.contorno = true;
+  if (t.caixaAlta === true) limpo.caixaAlta = true;
+  return limpo;
+}
+
+/** lote 168 (§349): DICAS de composição — determinísticas, com correção
+ *  1-clique quando fizer sentido (nunca aplica sozinho — §239). */
+export interface DicaFoto {
+  id: string;
+  texto: string;
+  /** patch aplicável direto no estilo (opcional) */
+  correcao?: Partial<EstiloFoto>;
+  /** sugestão de trocar o formato de saída (a UI decide) */
+  formatoSugerido?: 'header';
+}
+
+export function dicasComposicao(estilo: EstiloFoto, formato: string): DicaFoto[] {
+  const dicas: DicaFoto[] = [];
+  const aj = estilo.ajustes;
+  if (formato === 'perfil' && (estilo.legenda?.length ?? 0) > 24) {
+    dicas.push({ id: 'legenda-longa', formatoSugerido: 'header',
+      texto: 'Legenda longa para o 1:1 — o formato Header dá mais respiro ao texto.' });
+  }
+  if (formato === 'perfil' && estilo.legenda && estilo.titulo) {
+    dicas.push({ id: 'rodape-cheio', formatoSugerido: 'header',
+      texto: 'Legenda e selo do título disputam o rodapé no 1:1 — no Header cada um tem seu lugar.' });
+  }
+  if ((aj?.granulacao ?? 0) > 0.6 && (aj?.desfoqueFundo ?? 0) > 0.6) {
+    dicas.push({ id: 'ruido-blur', correcao: { ajustes: { ...aj, granulacao: 0.3 } },
+      texto: 'Granulação e desfoque fortes juntos embaçam o resultado — reduzir o grão limpa a foto.' });
+  }
+  if ((aj?.zoomFoto ?? 1) > 1.45) {
+    dicas.push({ id: 'zoom-corte', correcao: { ajustes: { ...aj, zoomFoto: 1.3 } },
+      texto: 'Zoom muito alto pode cortar o rosto na exportação — 1.3 preserva o enquadramento.' });
+  }
+  const tudoOculto = CATEGORIAS_FOTO.every((c) => !estilo.camadas[c] || estilo.camadas[c] === 'nenhum'
+    || estilo.camadasFoto?.[c]?.oculta);
+  if (estilo.camadasFoto && tudoOculto && Object.values(estilo.camadasFoto).some((c) => c?.oculta)) {
+    dicas.push({ id: 'sem-cenario', correcao: { camadasFoto: {} },
+      texto: 'Todas as camadas estão ocultas — a foto perde o cenário. Reexibir devolve a composição.' });
+  }
+  return dicas.slice(0, 3);
 }
 
 /** Categorias permitidas SOBRE a foto (§21 — nunca roupa/corpo). */
