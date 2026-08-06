@@ -11,6 +11,9 @@ import { assinarTelemetria, eventosRecentes, limparTelemetria } from '../service
 import { lerCriticos, limparCriticos } from '../services/Log';
 import { MOVIMENTOS, animar } from './movimento';
 import { flag } from '../nucleo/flags'; // mega 381 (§183)
+import { itemPorId } from '../services/AvatarCatalog'; // lote 461-470 (§293)
+import { itensUsados } from '../services/Progresso';
+import { lerRecentes } from '../services/Recentes';
 
 export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
   const [tic, setTic] = useState(0);
@@ -68,6 +71,28 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
     } catch { return { linhas: [], total: 0, corrompidas: 0 }; }
   })();
 
+  // ── lote 461-470 (§292-§294, flag as5.analytics_local) ──
+  // mega 461-463 (§293): HEATMAP local — uso por categoria (dados que o
+  // usuário já produziu; nada de rede, nada de PII)
+  const heatmap = (() => {
+    if (!flag('as5.analytics_local')) return null;
+    const porCat = new Map<string, number>();
+    for (const id of itensUsados()) {
+      const cat = itemPorId(id)?.categoria;
+      if (cat) porCat.set(cat, (porCat.get(cat) ?? 0) + 1);
+    }
+    const linhas = [...porCat.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const max = linhas[0]?.[1] ?? 1;
+    return { linhas, max, topRecentes: lerRecentes().slice(0, 5).map((id) => itemPorId(id)?.nome ?? id) };
+  })();
+  // megas 464-466 (§294): contagem por EVENTO do ring da telemetria
+  const porEvento = (() => {
+    if (!flag('as5.analytics_local')) return null;
+    const m = new Map<string, number>();
+    for (const e of eventos) m.set(e.evento, (m.get(e.evento) ?? 0) + 1);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  })();
+
   const exportar = () => {
     const blob = new Blob([JSON.stringify(eventos, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -119,6 +144,36 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
             <button type="button" className="avst-botao" data-teste="tlm-criticos-limpar"
               onClick={() => { limparCriticos(); setTic((t) => t + 1); }}>
               <Trash2 size={12} aria-hidden /> Limpar críticos</button>
+          </div>
+        )}
+        {/* lote 461-470 (§293/§294, flag as5.analytics_local) */}
+        {heatmap && heatmap.linhas.length > 0 && (
+          <div className="avst5-tlm-storage" data-teste="heatmap">
+            <h4>Heatmap de uso (§293) · categorias mais exploradas</h4>
+            <ul>
+              {heatmap.linhas.map(([cat, n]) => (
+                <li key={cat}>
+                  <code>{cat}</code>
+                  <em>
+                    <i aria-hidden style={{ display: 'inline-block', height: 6, borderRadius: 3, background: 'var(--avst-acento, #7c5cff)', width: `${Math.max(8, (n / heatmap.max) * 90)}px`, marginRight: 6 }} />
+                    {n}
+                  </em>
+                </li>
+              ))}
+            </ul>
+            {heatmap.topRecentes.length > 0 && (
+              <p className="avst5-tlm-nota" data-teste="heatmap-recentes">Últimos usados: {heatmap.topRecentes.join(' · ')}</p>
+            )}
+          </div>
+        )}
+        {porEvento && porEvento.length > 0 && (
+          <div className="avst5-tlm-storage" data-teste="por-evento">
+            <h4>Eventos da sessão (§294) · top {porEvento.length}</h4>
+            <ul>
+              {porEvento.map(([ev, n]) => (
+                <li key={ev}><code>{ev}</code><em>×{n}</em></li>
+              ))}
+            </ul>
           </div>
         )}
         {/* mega 109: saúde do localStorage (top 10 chaves dshow.*) */}
