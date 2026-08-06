@@ -9,27 +9,27 @@ regenerar após cada build; o diff no git É o relatório de regressão).
 |---|---|---|---|
 | Atalhos | 2.2KB | 4KB | 55% |
 | catalogo-arte | 290.6KB | 345KB | 84% |
-| Consultor | 6KB | 9KB | 67% |
-| DetalheAsset | 10KB | 15KB | 67% |
-| entry | 353.9KB | 410KB | 86% |
+| Consultor | 2.7KB | 9KB | 30% |
+| DetalheAsset | 10.2KB | 15KB | 68% |
+| entry | 374.6KB | 410KB | 91% |
 | Estudio3D | 37.3KB | 50KB | 75% |
 | Missoes | 2.2KB | 4KB | 55% |
 | motor3d | 1020.7KB | 1180KB | 87% |
 | PaletaComandos | 2.5KB | 5KB | 50% |
 | react-vendor | 188KB | 225KB | 84% |
-| Renderizador3d | 19.5KB | 24KB | 81% |
-| TelemetriaDev | 4.1KB | 7KB | 59% |
+| Renderizador3d | 20.4KB | 24KB | 85% |
+| TelemetriaDev | 4.3KB | 7KB | 61% |
 | TimelineShell | 2.6KB | 5KB | 52% |
 | vendor | 34.3KB | 40KB | 86% |
 | VersoesAvatar | 2.7KB | 5KB | 54% |
 
 ## Cobertura
 
-- Suíte de navegador/node: **54 arquivos** (rodar-todos) + nucleo.test.
+- Suíte de navegador/node: **63 arquivos** (rodar-todos) + nucleo.test.
 - Catálogo 2D: **344 itens** em 12 categorias · 30 títulos · 12 coleções.
 - Personagens 3D publicados: **6**.
-- Feature flags `as5.*`: **23** (§605 v2 — nova flag = diff aqui).
-- Chaves de storage conhecidas: **48** (§629):
+- Feature flags `as5.*`: **32** (§605 v2 — nova flag = diff aqui).
+- Chaves de storage conhecidas: **51** (§629):
   - `dshow.avatar.aro.v1`
   - `dshow.avatar.config.v1`
   - `dshow.avatar.conquistas.v1`
@@ -72,9 +72,12 @@ regenerar após cada build; o diff no git É o relatório de regressão).
   - `dshow.avst5.palco.hist.v1`
   - `dshow.avst5.palco.hora.v1`
   - `dshow.avst5.palco.luz.v1`
+  - `dshow.avst5.palco.luzint.v1`
   - `dshow.avst5.palco.titulo.v1`
   - `dshow.avst5.presets.v1`
   - `dshow.avst5.rascunho.v1`
+  - `dshow.avst5.recentes.v1`
+  - `dshow.avst5.recordes.v1`
   - `dshow.avst5.tema.v1`
   - `dshow.avst5.tour.v1`
   - `dshow.avst5.vitrine.ordem.v1`

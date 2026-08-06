@@ -1,4 +1,4 @@
-# Mapa de Lacunas do Briefing — v5 (pós onda 261–310, 2026-08-06)
+# Mapa de Lacunas do Briefing — v6 (pós onda 311–410, 2026-08-06)
 
 > Método: briefing (006a394b, 1.764 §§) cruzado por evidência com o código.
 
@@ -52,11 +52,22 @@ processos.
   badges por tier §224 v2 · extrato §634 · microinterações · focus trap ·
   prefers-contrast · kill-switch §297 · storage doctor §629 v2.
 
-## Sequência recomendada (311+)
+## O que a onda 311–410 fechou
 
-1. **Foto fina** (adiada da 281–290, decisão #56): nitidez §333, formas do
-   medalhão §340–341 (TS+PHP), export JPEG §369, marca d'água §372,
-   galeria §326 v2, som ambiente §161, crossfade de cenário.
-2. **A1/A3 finos sem arte**: §102.2 parâmetros, correções locais §333–334.
-3. **Pós-processamento 3D §457 real** (bloom/vinheta por EffectComposer —
-  pesado; medir no tier).
+- **Foto**: nitidez §333 · formas §340–341 (estrela/escudo) · JPEG §369 ·
+  marca §372 · galeria §326 v2 (contagens).
+- **Palco**: som ambiente §161/§178 · crossfade §157.4 · presença §157.5 ·
+  luz §164.3–.4 · efeitos funcionais §157.1–.5 + gatilho §158.1.
+- **3D**: câmera cinematográfica §176 · pós leve §457/§177.1 · poses §443 v2.
+- **Sistemas**: presets §201–§205 (versão/snapshot/inteligente) ·
+  temporadas §248 · desafios §251 · recordes §252 · diário §245 v2 ·
+  portabilidade §254/§309/§310 · orçamento §183/§186.1 · prefetch §274 ·
+  recentes §88 · vazios §92 v2 · raridade §61 v2 · materiais §75.
+
+## Sequência recomendada (411+)
+
+1. **I18N §296** (fundação t() + dicionário PT/EN das superfícies novas).
+2. **A1/A3 finos sem arte**: §102.2 parâmetros finos, máscaras §340–341
+   além da forma, §68 slots restantes.
+3. **Pós 3D §457 real** (EffectComposer bloom — medir peso no motor3d).
+4. **§268 pipeline v2 / §158 editor completo de efeitos (camadas)**.
