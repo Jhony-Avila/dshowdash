@@ -44,6 +44,20 @@
   (body.tipo/postura opcionais — checksum preservado).
 - **#54 (2026-08-05) — Teto do chunk `entry` 385→410KB** (onda 231–260:
   +22KB reais, entry em 369KB; margem ~10% restaurada).
+- **#55 (2026-08-05) — Escopo da onda 261–310** (pedido: "50 mega lotes de
+  uma única vez"): 261–270 A5 3D (`as5.palco3d_v2`) · 271–280 A6 fundações
+  (`as5.fundacoes_v2`) · 281–290 poderes/partículas (`as5.poderes_familia`)
+  · 291–300 progressão v3 + microinterações (`as5.microinteracoes`) ·
+  301–310 A11y/QA/consolidação. Mapa completo no doc 12 do projeto.
+- **#56 (2026-08-06) — Adaptações da onda vs. mapa** (autonomia #45, por
+  auditoria de código): (a) 271–280 trocou prefetch §274/funil §294/
+  skeletons §557 (já existentes ou de baixo valor) por manifest §267 REAL
+  + cache multinível §277 + lazy §275 em 8 painéis + tokens §283 v2 +
+  crítico §291 v2 — mais denso; (b) 281–290 dedicou o lote inteiro a
+  §153.1–.4 + §156 (biblioteca de partículas própria) e ADIOU a foto fina
+  (§333/§340–341/§369/§372 → backlog 311+); (c) gate: Renderizador3d
+  20→24KB e tetos p/ os 8 chunks lazy novos; (d) trap de foco P10 é
+  delegado (um listener) e desliga com `as5.microinteracoes` (§651).
 
 ## Pendências do Jhony (herdadas — nunca autônomas)
 

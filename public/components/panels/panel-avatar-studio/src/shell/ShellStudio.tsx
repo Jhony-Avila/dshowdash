@@ -34,6 +34,7 @@ import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
 import { ROTULO_FAMILIA, familiaDoPoder, svgRoteiroFamilia } from '../services/PoderesFamilia'; // lote 281-290 (§153/§156)
+import { instalarFocoPreso } from './foco'; // mega 301 (P10)
 
 // ── megas 273–275 (§274–§275, lazy §275): painéis SOB DEMANDA ────────
 // Cada um vira chunk próprio e só atravessa a rede na PRIMEIRA abertura
@@ -267,6 +268,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     return s;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => conectarTelemetria(store), [store]);
+  // mega 301 (P10/§548): focus trap delegado — prende o Tab no dialog aberto
+  useEffect(() => instalarFocoPreso(), []);
 
   // assinatura do estado visível (preview > draft) — §608
   const estado = useSyncExternalStore(store.assinar, () => store.estadoVisivel);
@@ -1154,7 +1157,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
             {/* mega 235 (§154 item 7): NOME do poder durante a reprodução */}
             {palcoV2 && poderAtivo && metaPoder && (
-              <div className="avst5-poder-nome" role="status" data-teste="poder-nome"
+              <div className="avst5-poder-nome" role="status" aria-live="polite" data-teste="poder-nome"
                 style={{ '--avst-rar': RARIDADES[metaPoder.raridade].cor } as React.CSSProperties}>
                 <Sparkles size={12} aria-hidden /> {metaPoder.nome}
                 <small>

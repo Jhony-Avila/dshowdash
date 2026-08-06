@@ -43,20 +43,28 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
   })();
 
   // mega 109: SAÚDE DO STORAGE — uso por chave dshow.* (só leitura)
+  // mega 307 (§629 v2): STORAGE DOCTOR — chave que deveria ser JSON e não
+  // parseia = CORROMPIDA (aparece marcada; chaves de texto puro são OK)
+  const CHAVES_TEXTO = ['dshow.avst5.tour.v1', 'dshow.avst5.p3d.marca.v1'];
   const storage = (() => {
     try {
-      const linhas: Array<{ chave: string; kb: number }> = [];
+      const linhas: Array<{ chave: string; kb: number; sana: boolean }> = [];
       let total = 0;
       for (let i = 0; i < localStorage.length; i += 1) {
         const k = localStorage.key(i);
         if (!k?.startsWith('dshow.')) continue;
-        const kb = Math.round(((localStorage.getItem(k)?.length ?? 0) * 2) / 1024 * 10) / 10;
-        linhas.push({ chave: k, kb });
+        const bruto = localStorage.getItem(k) ?? '';
+        const kb = Math.round((bruto.length * 2) / 1024 * 10) / 10;
+        let sana = true;
+        if (!CHAVES_TEXTO.includes(k)) {
+          try { JSON.parse(bruto); } catch { sana = false; }
+        }
+        linhas.push({ chave: k, kb, sana });
         total += kb;
       }
-      linhas.sort((a, b) => b.kb - a.kb);
-      return { linhas: linhas.slice(0, 10), total: Math.round(total * 10) / 10 };
-    } catch { return { linhas: [], total: 0 }; }
+      linhas.sort((a, b) => Number(a.sana) - Number(b.sana) || b.kb - a.kb);
+      return { linhas: linhas.slice(0, 10), total: Math.round(total * 10) / 10, corrompidas: linhas.filter((l) => !l.sana).length };
+    } catch { return { linhas: [], total: 0, corrompidas: 0 }; }
   })();
 
   const exportar = () => {
@@ -117,10 +125,16 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
           <h4>
             Storage local · {storage.total}KB em chaves dshow.*
             {memoria && <> · heap JS {memoria.usadoMb}/{memoria.limiteMb}MB (§290)</>}
+            {/* mega 307 (§629 v2): doctor — resumo honesto */}
+            {storage.corrompidas > 0
+              ? <> · <strong data-teste="doctor-corrompidas">{storage.corrompidas} corrompida(s)</strong></>
+              : <> · doctor OK (§629)</>}
           </h4>
           <ul>
             {storage.linhas.map((l) => (
-              <li key={l.chave}><code>{l.chave}</code><em>{l.kb}KB</em></li>
+              <li key={l.chave} data-sana={l.sana ? undefined : '0'}>
+                <code>{l.chave}</code><em>{l.kb}KB{l.sana ? '' : ' · CORROMPIDA'}</em>
+              </li>
             ))}
           </ul>
         </div>

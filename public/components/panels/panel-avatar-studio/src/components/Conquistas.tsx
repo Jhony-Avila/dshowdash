@@ -1,7 +1,7 @@
 // components/Conquistas.tsx — conquistas reais + eventos sazonais.
 // @version 3.0.0  @created 2026-07-30  @updated 2026-08-04 (mega 68:
 // FILTROS todas/feitas/pendentes + faixa de estatísticas §218–§221)
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { BarChart3, CalendarDays, Gift, Lock, Trophy } from 'lucide-react';
 import type { AvatarConfig, Conquista } from '../domain/types';
 import { COLECOES, RARIDADES, itemPorId, progressoColecao } from '../services/AvatarCatalog';
@@ -60,7 +60,8 @@ export function tierConquista(c: Conquista): { id: string; nome: string; cor: st
   return { id: 'diamante', nome: 'Diamante', cor: '#7c5cff' };
 }
 
-function CardConquista({ c }: { c: Conquista }) {
+// mega 305 (P10): memo — a lista re-renderiza por filtro/ordem, os cards não
+const CardConquista = memo(function CardConquista({ c }: { c: Conquista }) {
   const recompensa = c.recompensa ? itemPorId(c.recompensa) : undefined;
   const pct = Math.round((c.progresso.atual / c.progresso.alvo) * 100);
   const v2 = flag('as5.progressao_v2');
@@ -108,7 +109,7 @@ function CardConquista({ c }: { c: Conquista }) {
       </div>
     </article>
   );
-}
+});
 
 type FiltroConq = 'todas' | 'feitas' | 'pendentes';
 
