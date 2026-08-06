@@ -139,6 +139,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const [particulas, setParticulas] = useState(false);
   const [rim, setRim] = useState(false);
   const [ambiente, setAmbiente] = useState(0.55); // = padrão do renderer (mega 77) — flag ON não muda o visual
+  // ── lote 331–340 (§176/§457, flag as5.palco3d_cine) ──
+  const cineLigado = flag('as5.palco3d_cine');
+  const [movCam, setMovCam] = useState<'nenhum' | 'dolly' | 'panoramica'>('nenhum');
+  const [posFx, setPosFx] = useState(false);
   // mega 80 (§442): biblioteca de poses
   const [poses, setPoses] = useState(listarPoses);
   // mega 81 (§419): tinta de destaque nos materiais
@@ -490,6 +494,17 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     r?.definirParticulas3d?.(particulas ? config2d.cores.destaque : null);
   }, [rim, particulas, config2d, fase, cinemaLigado, personagem]);
 
+  // lote 331–340: movimento §176 + pós §457 → renderer (flag própria)
+  useEffect(() => {
+    if (fase !== 'pronto' || !cineLigado) return;
+    (refR.current as unknown as { definirMovimentoCamera?: (m: string) => void })
+      ?.definirMovimentoCamera?.(movReduzido ? 'nenhum' : movCam); // §297
+  }, [movCam, fase, cineLigado, movReduzido, personagem]);
+  useEffect(() => {
+    if (fase !== 'pronto' || !cineLigado) return;
+    (refR.current as unknown as { definirPos?: (v: boolean) => void })?.definirPos?.(posFx);
+  }, [posFx, fase, cineLigado, personagem]);
+
   // mega 81: tinta de destaque (cor do avatar 2D) nos materiais 3D
   useEffect(() => {
     if (fase !== 'pronto') return;
@@ -526,13 +541,25 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
 
   // mega 80: salvar/aplicar/excluir POSES (clipe + tempo do scrub)
   const salvarPoseAtual = useCallback(() => {
-    const r = refR.current as unknown as { tempoDaPose?: () => { clipe: string | null; tempo: number } };
+    const r = refR.current as unknown as {
+      tempoDaPose?: () => { clipe: string | null; tempo: number };
+      capturar?: (o: { largura: number; altura: number }) => Promise<{ dataUri: string }>;
+    };
     const t = r?.tempoDaPose?.();
     if (!t?.clipe) { setAnuncio('Este personagem não tem clipes p/ pose'); return; }
-    const p = salvarPose(refPersonagem.current, t.clipe, t.tempo);
-    setPoses(listarPoses());
-    setAnuncio(p ? `Pose "${p.nome}" salva` : 'Limite de 8 poses');
-    if (p) telemetria('p3d_pose_salvou', { clipe: t.clipe }); // §290
+    const clipe = t.clipe; // estreitado p/ o TS dentro dos callbacks
+    // mega 335 (§443 v2): thumb 96px do palco no momento do salvamento
+    const salvarCom = (thumb?: string) => {
+      const p = salvarPose(refPersonagem.current, clipe, t.tempo, thumb);
+      setPoses(listarPoses());
+      setAnuncio(p ? `Pose "${p.nome}" salva` : 'Limite de 8 poses');
+      if (p) telemetria('p3d_pose_salvou', { clipe }); // §290
+    };
+    if (flag('as5.palco3d_cine') && r?.capturar) {
+      r.capturar({ largura: 96, altura: 96 })
+        .then((c) => salvarCom(c.dataUri))
+        .catch(() => salvarCom());
+    } else salvarCom();
   }, []);
   const aplicarPose = useCallback((id: string) => {
     const p = listarPoses().find((x) => x.id === id);
@@ -965,6 +992,23 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                   onClick={() => (refR.current as unknown as { enquadrar?: (a: string) => void })?.enquadrar?.('auto')}>
                   Enquadrar
                 </button>
+                {/* lote 331–340 (§176/§457, flag as5.palco3d_cine) */}
+                {cineLigado && (<>
+                  <span role="group" aria-label="Movimento de câmera (§176)" data-teste="p3d-mov">
+                    {([['nenhum', 'Fixa'], ['dolly', 'Dolly'], ['panoramica', 'Panorâmica']] as const).map(([m, nome]) => (
+                      <button key={m} type="button" data-teste={`p3d-mov-${m}`}
+                        className={`avst5-p3d-chip${movCam === m ? ' avst5-p3d-chip-on' : ''}`}
+                        aria-pressed={movCam === m}
+                        title={movReduzido ? 'Indisponível com redução de movimento (§297)' : `Movimento ${nome} (§176)`}
+                        disabled={movReduzido && m !== 'nenhum'}
+                        onClick={() => setMovCam(m)}>{nome}</button>
+                    ))}
+                  </span>
+                  <button type="button" className={`avst5-p3d-chip${posFx ? ' avst5-p3d-chip-on' : ''}`}
+                    aria-pressed={posFx} data-teste="p3d-pos"
+                    title="Pós-processamento leve: vinheta + saturação (§457; sai no tier econômico §177.1)"
+                    onClick={() => setPosFx((v) => !v)}>Pós</button>
+                </>)}
               </>)}
             </span>
           )}
@@ -973,7 +1017,12 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               {poses.filter((p3) => p3.personagem === personagem).map((p3) => (
                 <span key={p3.id} className="avst5-p3d-cena">
                   <button type="button" className="avst5-p3d-chip" title={`${p3.clipe} @ ${p3.tempo.toFixed(2)}s`}
-                    onClick={() => aplicarPose(p3.id)}>{p3.nome}</button>
+                    onClick={() => aplicarPose(p3.id)}>
+                    {/* mega 335 (§443 v2): thumb capturado ao salvar */}
+                    {p3.thumb && <img src={p3.thumb} alt="" width={18} height={18} data-teste="pose-thumb"
+                      style={{ borderRadius: 4, marginRight: 4, verticalAlign: 'middle' }} />}
+                    {p3.nome}
+                  </button>
                   <button type="button" className="avst5-p3d-cena-x" aria-label={`Excluir ${p3.nome}`}
                     onClick={() => { excluirPose(p3.id); setPoses(listarPoses()); }}>×</button>
                 </span>
