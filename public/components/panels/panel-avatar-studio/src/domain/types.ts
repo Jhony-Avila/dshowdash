@@ -162,11 +162,15 @@ export interface AjustesFoto {
   /** graus -180…180 · 0 = neutro (gira a FOTO dentro do medalhão) */
   rotacao?: number;
   espelhar?: boolean;
+  /** mega 311 (§333, lote 311-320): NITIDEZ 0-1 · 0 = neutro (omitido) */
+  nitidez?: number;
+  /** mega 315 (§372): MARCA D'ÁGUA curta na foto · ausente = sem marca */
+  marca?: string;
   /** §337: sombra de contato sob o medalhão */
   sombra?: boolean;
   // ── lote 111–120 (§332/§333/§334/§341) ──
   /** §341: FORMA do medalhão · 'circulo' = neutro (byte-estável) */
-  forma?: 'circulo' | 'hexagono' | 'losango' | 'squircle';
+  forma?: 'circulo' | 'hexagono' | 'losango' | 'squircle' | 'estrela' | 'escudo'; // §340-341 (+312/313)
   /** §334: desfoque do CENÁRIO atrás do medalhão · 0–1 · 0 = neutro */
   desfoqueFundo?: number;
   /** §334: granulação de filme · 0–1 · 0 = neutro */

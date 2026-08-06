@@ -31,10 +31,11 @@ export interface EstiloFotoRender {
   ajustes?: {
     brilho?: number; contraste?: number; saturacao?: number; temperatura?: number;
     vinheta?: number; rotacao?: number; espelhar?: boolean; sombra?: boolean;
-    forma?: 'circulo' | 'hexagono' | 'losango' | 'squircle';
+    forma?: 'circulo' | 'hexagono' | 'losango' | 'squircle' | 'estrela' | 'escudo';
     desfoqueFundo?: number; granulacao?: number;
     filtroCor?: 'nenhum' | 'pb' | 'sepia';
     zoomFoto?: number; anel?: number;
+    nitidez?: number; marca?: string; // lote 311-320 (§333/§372)
   };
   /** mega 115 (§344): legenda livre já SANITIZADA pelo serviço */
   legenda?: string;
@@ -132,6 +133,7 @@ const NEUTRO: Required<AjustesRender> = {
   vinheta: 0, rotacao: 0, espelhar: false, sombra: false,
   forma: 'circulo', desfoqueFundo: 0, granulacao: 0,
   filtroCor: 'nenhum', zoomFoto: 1, anel: 3,
+  nitidez: 0, marca: '', // lote 311-320: neutros dos campos novos
 };
 
 function ajustesEfetivos(a?: AjustesRender): Required<AjustesRender> | null {
@@ -141,7 +143,8 @@ function ajustesEfetivos(a?: AjustesRender): Required<AjustesRender> | null {
     && v.temperatura === 0 && v.vinheta === 0 && v.rotacao === 0
     && !v.espelhar && !v.sombra
     && v.forma === 'circulo' && v.desfoqueFundo === 0 && v.granulacao === 0
-    && v.filtroCor === 'nenhum' && v.zoomFoto === 1 && v.anel === 3;
+    && v.filtroCor === 'nenhum' && v.zoomFoto === 1 && v.anel === 3
+    && v.nitidez === 0 && v.marca === '';
   return neutro ? null : v;
 }
 
@@ -159,6 +162,20 @@ function pathForma(forma: Required<AjustesRender>['forma'], r: number): string |
   if (forma === 'losango') {
     return `<polygon points="${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}"`;
   }
+  if (forma === 'estrela') {
+    // mega 312 (§341): estrela de 5 pontas (raio interno 45% do externo)
+    const p = Array.from({ length: 10 }, (_, i) => {
+      const rr = i % 2 === 0 ? r : r * 0.45;
+      const a = (Math.PI / 5) * i - Math.PI / 2;
+      return `${(cx + rr * Math.cos(a)).toFixed(1)},${(cy + rr * Math.sin(a)).toFixed(1)}`;
+    }).join(' ');
+    return `<polygon points="${p}"`;
+  }
+  if (forma === 'escudo') {
+    // mega 313 (§341): escudo heráldico simples (topo reto, base em ponta)
+    const w = r * 0.92;
+    return `<path d="M${(cx - w).toFixed(1)} ${(cy - r * 0.82).toFixed(1)} H${(cx + w).toFixed(1)} V${(cy + r * 0.18).toFixed(1)} Q${(cx + w).toFixed(1)} ${(cy + r * 0.62).toFixed(1)} ${cx} ${(cy + r).toFixed(1)} Q${(cx - w).toFixed(1)} ${(cy + r * 0.62).toFixed(1)} ${(cx - w).toFixed(1)} ${(cy + r * 0.18).toFixed(1)} Z"`;
+  }
   if (forma === 'squircle') {
     const l = r * 1.62;
     return `<rect x="${(cx - l / 2).toFixed(1)}" y="${(cy - l / 2).toFixed(1)}" width="${l.toFixed(1)}" height="${l.toFixed(1)}" rx="${(r * 0.55).toFixed(1)}"`;
@@ -169,8 +186,13 @@ function pathForma(forma: Required<AjustesRender>['forma'], r: number): string |
 /** <filter> de cor (brilho/contraste/saturação/temperatura/§333 filtro). */
 function filtroAjustes(uid: string, a: Required<AjustesRender>): string {
   const precisaCor = a.brilho !== 1 || a.contraste !== 1 || a.saturacao !== 1
-    || a.temperatura !== 0 || a.filtroCor !== 'nenhum';
+    || a.temperatura !== 0 || a.filtroCor !== 'nenhum' || a.nitidez > 0;
   if (!precisaCor) return '';
+  // mega 311 (§333): NITIDEZ — unsharp por convolução 3×3 (k cresce c/ o slider)
+  const k = a.nitidez > 0 ? a.nitidez * 0.7 : 0;
+  const nit = k > 0
+    ? `<feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 ${-k} 0 ${-k} ${1 + 4 * k} ${-k} 0 ${-k} 0"/>`
+    : '';
   const b = a.brilho;
   const c = a.contraste;
   const interc = 0.5 - 0.5 * c; // contraste linear em volta do meio-tom
@@ -191,7 +213,7 @@ function filtroAjustes(uid: string, a: Required<AjustesRender>): string {
       `<feFuncR type="linear" slope="${b * c}" intercept="${interc}"/>` +
       `<feFuncG type="linear" slope="${b * c}" intercept="${interc}"/>` +
       `<feFuncB type="linear" slope="${b * c}" intercept="${interc}"/>` +
-    `</feComponentTransfer></filter>`;
+    `</feComponentTransfer>` + nit + `</filter>`;
 }
 
 /** mega 112 (§334): defs do desfoque de fundo (0 = ausente). */
@@ -393,10 +415,17 @@ export function renderFotoEstilizada(
       `${escaparTexto(tx.caixaAlta ? estilo.legenda.toUpperCase() : estilo.legenda)}</text>`
     : '';
   const luz = luzLocalSvg(uid, estilo.luzLocal); // lote 165 (§334)
+  // mega 315 (§372): MARCA D'ÁGUA opcional — canto inferior direito,
+  // discreta; ausente/vazia = string legada byte a byte
+  const marca = aj && aj.marca
+    ? `<text x="232" y="234" text-anchor="end" font-family="system-ui, sans-serif" ` +
+      `font-size="8" font-weight="600" fill="#e6eaf2" opacity="0.4" letter-spacing="0.6">` +
+      `${escaparTexto(aj.marca.toUpperCase())}</text>`
+    : '';
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"${dim} role="img" aria-label="Foto estilizada">
 <defs><clipPath id="${uid}clip">${clip}</clipPath><clipPath id="${uid}fclip">${fclip}</clipPath>${defsAj}</defs>
-<g clip-path="url(#${uid}clip)">${fundoComp}${efeitoAtras}${medalhao}${luz}${badge}${efeitoFrente}${vinheta}${grao}${legenda}${selo}</g>
+<g clip-path="url(#${uid}clip)">${fundoComp}${efeitoAtras}${medalhao}${luz}${badge}${efeitoFrente}${vinheta}${grao}${legenda}${selo}${marca}</g>
 ${moldura}
 </svg>`;
 

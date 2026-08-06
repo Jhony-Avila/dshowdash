@@ -2233,3 +2233,6 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   [data-avst-react-root] .avst5-shell[data-micro] .avst5-p3d-chip { transition: none; transform: none; }
   [data-avst-react-root] .avst5-poder-part { animation: none; }
 }
+
+/* ── lote 311–320 (§326 v2, flag as5.foto_fina): contagem por categoria ── */
+.avst-ft-tpl-n { margin-left: 5px; font-style: normal; font-size: var(--t-fonte-10, 10.5px); opacity: 0.65; }
