@@ -52,7 +52,15 @@ const PAGINA = `<!doctype html><html><head><meta charset="utf-8">
   "three/examples/jsm/loaders/GLTFLoader.js": "/three/examples/jsm/loaders/GLTFLoader.js",
   "three/examples/jsm/utils/SkeletonUtils.js": "/three/examples/jsm/utils/SkeletonUtils.js",
   "three/examples/jsm/controls/OrbitControls.js": "/three/examples/jsm/controls/OrbitControls.js",
-  "three/examples/jsm/environments/RoomEnvironment.js": "/three/examples/jsm/environments/RoomEnvironment.js"
+  "three/examples/jsm/environments/RoomEnvironment.js": "/three/examples/jsm/environments/RoomEnvironment.js",
+  "three/examples/jsm/postprocessing/EffectComposer.js": "/three/examples/jsm/postprocessing/EffectComposer.js",
+  "three/examples/jsm/postprocessing/RenderPass.js": "/three/examples/jsm/postprocessing/RenderPass.js",
+  "three/examples/jsm/postprocessing/ShaderPass.js": "/three/examples/jsm/postprocessing/ShaderPass.js",
+  "three/examples/jsm/postprocessing/UnrealBloomPass.js": "/three/examples/jsm/postprocessing/UnrealBloomPass.js",
+  "three/examples/jsm/postprocessing/Pass.js": "/three/examples/jsm/postprocessing/Pass.js",
+  "three/examples/jsm/postprocessing/MaskPass.js": "/three/examples/jsm/postprocessing/MaskPass.js",
+  "three/examples/jsm/shaders/CopyShader.js": "/three/examples/jsm/shaders/CopyShader.js",
+  "three/examples/jsm/shaders/LuminosityHighPassShader.js": "/three/examples/jsm/shaders/LuminosityHighPassShader.js"
 }}</script></head><body style="margin:0">
 <div id="palco" style="width:480px;height:480px"></div>
 <script type="module" src="/bundle.js"></script></body></html>`;
@@ -150,7 +158,7 @@ const { navegador: b, pagina: p2, erros } = await abrir({
   viewport: { width: 1500, height: 940 }, webgl: true,
   init: () => {
     localStorage.setItem('dshow.avst.flags.v1',
-      JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true }));
+      JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true, 'as5.pos3d_real': false }));
   },
 });
 try {
