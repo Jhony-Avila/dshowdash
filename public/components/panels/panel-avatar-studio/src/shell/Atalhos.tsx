@@ -31,6 +31,7 @@ export const ATALHOS: GrupoAtalhos[] = [
       { teclas: ['F'], faz: 'Modo foco' },
       { teclas: ['S'], faz: 'Modo studio' },
       { teclas: ['E'], faz: 'Emote aleatório no studio (§120)' },
+      { teclas: ['A'], faz: 'Ativar o poder equipado no studio (§154)' }, // mega 297 (§548 v2)
     ],
   },
   {

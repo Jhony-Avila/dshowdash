@@ -32,6 +32,24 @@ const CATEGORIAS_CONQ: Array<{ id: string; nome: string }> = [
   { id: 'maestria', nome: 'Maestria' },
 ];
 
+// mega 291 (§216): TIPO derivado da categoria — studio/coleção/social/
+// dshow (eventos §216 já têm seção própria abaixo). Determinístico:
+// categoria nova cai em 'studio' (o tipo mais neutro) até ser mapeada.
+const TIPO_216: Record<string, { id: string; nome: string }> = {
+  criacao: { id: 'studio', nome: 'Studio' },
+  exploracao: { id: 'studio', nome: 'Studio' },
+  colecao: { id: 'colecao', nome: 'Coleção' },
+  maestria: { id: 'social', nome: 'Social' },
+  dedicacao: { id: 'dshow', nome: 'Dshow' },
+};
+export function tipoConquista(c: Conquista): { id: string; nome: string } {
+  return TIPO_216[c.categoria] ?? { id: 'studio', nome: 'Studio' };
+}
+const TIPOS_216: Array<{ id: string; nome: string }> = [
+  { id: 'studio', nome: 'Studio' }, { id: 'colecao', nome: 'Coleção' },
+  { id: 'social', nome: 'Social' }, { id: 'dshow', nome: 'Dshow' },
+];
+
 // mega 245 (§217): TIER derivado do esforço real (alvo) — determinístico
 export function tierConquista(c: Conquista): { id: string; nome: string; cor: string } {
   const alvo = c.progresso.alvo;
@@ -70,6 +88,12 @@ function CardConquista({ c }: { c: Conquista }) {
           <span className="avst-conq-tier" data-teste="conq-tier" data-tier={tier.id}
             style={{ color: tier.cor, borderColor: tier.cor }}>{tier.nome}</span>
         )}
+        {/* mega 291 (§216): TIPO da conquista visível no card */}
+        {flag('as5.microinteracoes') && (
+          <span className="avst-conq-tier avst-conq-tipo" data-teste="conq-tipo-chip">
+            {tipoConquista(c).nome}
+          </span>
+        )}
         {colecaoLigada && (
           <span className="avst-conquista-premio" data-teste="conq-colecao">
             <Trophy size={11} aria-hidden /> Coleção: {colecaoLigada.nome}
@@ -97,7 +121,7 @@ export function Conquistas({ vida, carregando = false, config }: {
   // mega 68 (§218): filtro — hooks ANTES de qualquer early return
   const [filtro, setFiltro] = useState<FiltroConq>('todas');
   // mega 244 (§218): ORDENAÇÃO — mais difíceis / últimas / mais raras
-  const [ordem, setOrdem] = useState<'padrao' | 'dificeis' | 'ultimas' | 'raras'>('padrao');
+  const [ordem, setOrdem] = useState<'padrao' | 'dificeis' | 'ultimas' | 'raras' | 'tipos'>('padrao');
   const v2 = flag('as5.progressao_v2');
   // mega 246 (§221): SEUS NÚMEROS — contadores locais derivados
   const numeros = useMemo(() => {
@@ -177,7 +201,9 @@ export function Conquistas({ vida, carregando = false, config }: {
           (rankeada), sem os grupos por categoria */}
       {v2 && (
         <div className="avst-conq-filtros" role="radiogroup" aria-label="Ordenar conquistas (§218)" data-teste="conq-ordem">
-          {([['padrao', 'Por categoria'], ['dificeis', 'Mais difíceis'], ['ultimas', 'Últimas'], ['raras', 'Mais raras']] as const).map(([id, nome]) => (
+          {([['padrao', 'Por categoria'], ['dificeis', 'Mais difíceis'], ['ultimas', 'Últimas'], ['raras', 'Mais raras'],
+            // mega 291 (§216): agrupamento pelos TIPOS do briefing
+            ...(flag('as5.microinteracoes') ? [['tipos', 'Por tipo (§216)']] as const : [])] as const).map(([id, nome]) => (
             <button key={id} type="button" role="radio" aria-checked={ordem === id}
               className={`avst-ft-chip ${ordem === id ? 'avst-ft-chip-ativo' : ''}`}
               data-teste={`ordem-${id}`}
@@ -185,7 +211,21 @@ export function Conquistas({ vida, carregando = false, config }: {
           ))}
         </div>
       )}
-      {v2 && ordem !== 'padrao' ? (
+      {v2 && ordem === 'tipos' ? (
+        // mega 291 (§216): grupos pelos TIPOS do briefing
+        TIPOS_216.map((tipo) => {
+          const doTipo = vida.conquistas.filter((c) => tipoConquista(c).id === tipo.id
+            && (filtro === 'todas' || (filtro === 'feitas' ? c.conquistada : !c.conquistada)));
+          if (doTipo.length === 0) return null;
+          const okT = doTipo.filter((c) => c.conquistada).length;
+          return (
+            <section key={tipo.id} className="avst-conq-grupo" aria-label={`Tipo ${tipo.nome}`} data-teste="conq-tipo">
+              <h3 className="avst-cores-titulo avst-conq-cab">{tipo.nome} <em>{okT}/{doTipo.length}</em></h3>
+              {doTipo.map((c) => <CardConquista key={c.id} c={c} />)}
+            </section>
+          );
+        })
+      ) : v2 && ordem !== 'padrao' ? (
         <section className="avst-conq-grupo" aria-label="Conquistas ordenadas" data-teste="conq-rank">
           {vida.conquistas
             .filter((c) => filtro === 'todas' || (filtro === 'feitas' ? c.conquistada : !c.conquistada))

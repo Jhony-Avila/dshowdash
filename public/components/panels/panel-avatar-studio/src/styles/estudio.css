@@ -2197,3 +2197,18 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
    .avst5-zoom (zoomEstilo) — CSS aqui perderia p/ o style do elemento. */
 .avst5-det-familia { margin: 2px 0 8px; font-size: var(--t-fonte-11, 11px); color: var(--avst-texto-2, #8a93a6); }
 .avst5-det-familia strong { color: var(--avst-texto, #e6eaf2); }
+
+/* ── mega 296 (P9/§285): MICROINTERAÇÕES — só com data-micro no shell
+   (flag as5.microinteracoes E sem movimento reduzido; tokens §283/§285) */
+.avst5-shell[data-micro] .avst-card { transition: transform var(--t-dur-rapida, 120ms) ease, box-shadow var(--t-dur-rapida, 120ms) ease; }
+.avst5-shell[data-micro] .avst-card:hover { transform: translateY(-2px); box-shadow: var(--t-sombra-1); }
+.avst5-shell[data-micro] .avst-card:active { transform: translateY(0) scale(.98); }
+.avst5-shell[data-micro] .avst-ft-chip,
+.avst5-shell[data-micro] .avst5-p3d-chip { transition: transform var(--t-dur-rapida, 120ms) ease; }
+.avst5-shell[data-micro] .avst-ft-chip:active,
+.avst5-shell[data-micro] .avst5-p3d-chip:active { transform: scale(.94); }
+.avst-perfil-titulo-nivel { margin-left: 6px; font-style: normal; font-size: var(--t-fonte-11, 11px); color: var(--avst-texto-2, #8a93a6); }
+.avst-perfil-extrato { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.avst-perfil-extrato li { display: inline-flex; gap: 4px; font-size: var(--t-fonte-10, 10.5px); color: var(--avst-texto-2, #8a93a6); }
+.avst-perfil-extrato strong { color: var(--avst-texto, #e6eaf2); }
+.avst-conq-tipo { opacity: .8; }

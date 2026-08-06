@@ -12,12 +12,12 @@ await irParaHarness(p, 'avst-harness.html', 1200);
 const falhas = [];
 const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 
-// 1ª visita: tour abre sozinho no passo 1/5
+// 1ª visita: tour abre sozinho no passo 1/6 (mega 299: +passo do poder)
 ok(await p.locator('[data-teste="tour"]').count() === 1, 'tour não abriu na primeira visita');
-ok((await p.locator('.avst5-tour-card em').textContent()) === '1/5', 'não começou no passo 1/5');
+ok((await p.locator('.avst5-tour-card em').textContent()) === '1/6', 'não começou no passo 1/6');
 await p.screenshot({ path: `${SAIDA}/tour-passo1.png` });
 // avança todos os passos até "Começar!"
-for (let i = 0; i < 5; i++) { await p.locator('[data-teste="tour-proximo"]').click(); await p.waitForTimeout(350); }
+for (let i = 0; i < 6; i++) { await p.locator('[data-teste="tour-proximo"]').click(); await p.waitForTimeout(350); }
 ok(await p.locator('[data-teste="tour"]').count() === 0, 'tour não fechou no fim');
 // persistência: reload NÃO reabre (localStorage marcou visto)
 await p.reload();

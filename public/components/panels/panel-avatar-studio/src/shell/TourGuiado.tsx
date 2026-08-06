@@ -8,6 +8,7 @@
 // onboarding nunca prende o usuário). Acessível: dialog + foco no card.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { flag } from '../nucleo/flags';
 
 export const CHAVE_TOUR = 'dshow.avst5.tour.v1';
 
@@ -28,11 +29,22 @@ const PASSOS: Passo[] = [
   { alvo: '.avst5-header-acoes', titulo: 'Extras', texto: 'Aleatório inteligente (respeita seus bloqueios), Apresentar (showcase cinematográfico) e o modo clássico a um clique.' },
 ];
 
+// mega 299 (§568 v2): passo extra do poder — só com a flag do lote ligada
+// (o alvo .avst5-viewport sempre existe; o texto apresenta a novidade)
+const PASSO_PODER: Passo = {
+  alvo: '.avst5-viewport',
+  titulo: 'Poderes por família',
+  texto: 'Equipe um efeito ou aura e ative o PODER no modo Studio (tecla A): cada família — Dshow Originals, Tecnológico, Elemental, Cósmico — tem partículas próprias na sua cor.',
+};
+
 export function TourGuiado({ aoFechar }: { aoFechar: () => void }) {
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const refCard = useRef<HTMLDivElement>(null);
-  const passo = PASSOS[i];
+  // mega 299 (§568 v2): a lista cresce com a flag do lote 291-300
+  const passos = useMemo(
+    () => (flag('as5.microinteracoes') ? [...PASSOS, PASSO_PODER] : PASSOS), []);
+  const passo = passos[i];
 
   useEffect(() => {
     const el = document.querySelector(passo.alvo);
@@ -52,7 +64,7 @@ export function TourGuiado({ aoFechar }: { aoFechar: () => void }) {
       <div ref={refCard} tabIndex={-1} className={`avst5-tour-card${cardEmCima ? ' avst5-tour-card-cima' : ''}`}
         onKeyDown={(e) => { if (e.key === 'Escape') fechar(); }}>
         <header>
-          <em>{i + 1}/{PASSOS.length}</em>
+          <em>{i + 1}/{passos.length}</em>
           <strong>{passo.titulo}</strong>
           <button type="button" title="Fechar tour" onClick={fechar}><X size={13} aria-hidden /></button>
         </header>
@@ -61,8 +73,8 @@ export function TourGuiado({ aoFechar }: { aoFechar: () => void }) {
           <button type="button" className="avst-botao" onClick={fechar}>Pular</button>
           {i > 0 && <button type="button" className="avst-botao" onClick={() => setI(i - 1)}>Voltar</button>}
           <button type="button" className="avst-botao avst-botao-primario" data-teste="tour-proximo"
-            onClick={() => (i + 1 < PASSOS.length ? setI(i + 1) : fechar())}>
-            {i + 1 < PASSOS.length ? 'Próximo' : 'Começar!'}
+            onClick={() => (i + 1 < passos.length ? setI(i + 1) : fechar())}>
+            {i + 1 < passos.length ? 'Próximo' : 'Começar!'}
           </button>
         </footer>
       </div>

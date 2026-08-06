@@ -335,6 +335,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       } else if (e.key.toLowerCase() === 'e' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // mega 105: E = emote aleatório (só faz algo no modo studio)
         window.dispatchEvent(new CustomEvent('avst5:emote-aleatorio'));
+      } else if (e.key.toLowerCase() === 'a' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // mega 297 (§548 v2): A = ativar o poder equipado (evento — o
+        // handler do poder decide se pode; nada acontece sem poder)
+        if (flag('as5.microinteracoes')) window.dispatchEvent(new CustomEvent('avst5:ativar-poder'));
       } else if (e.key === 'Escape') {
         setModo('edicao');
       }
@@ -448,6 +452,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   }, [idPoder, poderAtivo, palcoV2, poderFase, movReduzido]);
   // §154.1: controles do cenário ficam travados DURANTE a reprodução
   const controlesTravados = palcoV2 && poderFase === 'reproduzindo';
+
+  // mega 297 (§548 v2): tecla A dispara o poder — mesmo alcance do botão
+  // (só no modo studio; os guards do ativarPoder decidem o resto)
+  useEffect(() => {
+    const ao = () => { if (modo === 'studio') ativarPoder(); };
+    window.addEventListener('avst5:ativar-poder', ao);
+    return () => window.removeEventListener('avst5:ativar-poder', ao);
+  }, [ativarPoder, modo]);
 
   const zoomEstilo = useMemo(() => {
     // mega 287 (§154 passo 2): a "câmera" aproxima de leve DURANTE o poder
@@ -799,6 +811,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const registrarApresentacao = useCallback((tipo: 'showcase' | 'captura') => {
     const cena = { fundo, hora, luz };
     setUltimaCena(cena);
+    // mega 292 (§221/§223): "seus números" + XP por uso na fórmula aberta
+    incrementar(tipo === 'showcase' ? 'apresentacoes' : 'capturas');
     telemetria('palco_apresentou', { tipo, ...cena }); // §290/§185
     try { localStorage.setItem('dshow.avst5.apresentacao.ultima.v1', JSON.stringify(cena)); } catch { /* sem storage */ }
   }, [fundo, hora, luz]);
@@ -956,6 +970,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
+        data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
         style={{ '--avst-acento': corTema, '--avst5-esq': `${larguras.esq}px`,
           '--avst5-dir': painelFechado ? '36px' : painelLargo ? '560px' : `${larguras.dir}px` } as React.CSSProperties}>
         {/* header interno (§626) */}
@@ -1624,6 +1639,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               ...LUZES_PALCO.map((l) => ({
                 id: `luz-${l}`, rotulo: `Iluminação: ${ROTULO_LUZ[l]}`, executar: () => trocarLuz(l),
               })),
+              // mega 298 (§566 v2): o poder também sai da paleta
+              ...(flag('as5.microinteracoes') && idPoder ? [{
+                id: 'poder',
+                rotulo: `Ativar poder: ${metaPoder?.nome ?? 'equipado'} (§154)`,
+                executar: () => { setModo('studio'); setTimeout(() => window.dispatchEvent(new CustomEvent('avst5:ativar-poder')), 200); },
+              }] : []),
               { id: 'atalhos', rotulo: 'Atalhos do teclado (?)', executar: () => setAtalhos(true) },
               // mega 46: viewer de telemetria (só com a flag dev ligada)
               ...(flag('as5.telemetria_painel') ? [{
