@@ -22,7 +22,7 @@ import {
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
 import type { FotoGuardada } from '../services/AvatarService';
 import type { EstiloFoto } from '../domain/types';
-import {
+import { dataUriDe, validarConfig,
   CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, CORES_TEXTO_FOTO,
   FORMATOS_FOTO, RARIDADES, TEMPLATES_FOTO, TITULOS, dicasComposicao, itemPorId, itensDe,
   comporAutomatico, posPadraoElementoFoto, posSugeridasEmblema, svgFotoDe,
@@ -34,12 +34,15 @@ import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { estadoVazio } from '../nucleo/contratos';
 import { flag } from '../nucleo/flags';
+import { t } from '../nucleo/i18n'; // lote 521-530 (§296)
 import { semanaIso } from '../services/Missoes';
 import { alternarFavoritoTemplate, favoritosTemplate } from '../services/FavoritosTemplate';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { excluirProjetoFoto, listarProjetosFoto, renomearProjetoFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
 // megas 253+258 (§369/§349): presets de exportação + compor pra mim
 import { excluirPresetExport, listarPresetsExport, salvarPresetExport } from '../services/PresetsExport';
+import { listarPresets } from '../services/PresetsPessoais'; // lote 531-540 (§321.2)
+import type { AvatarConfig } from '../domain/types';
 import type { PresetExport } from '../services/PresetsExport';
 import type { ProjetoFoto } from '../services/ProjetosFoto';
 import type {
@@ -120,13 +123,15 @@ const NOMES_BLEND: Record<BlendFoto, string> = {
   overlay: 'Contraste', 'soft-light': 'Luz suave',
 };
 
-export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
+export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }: {
   versao: number;
   /** true quando o avatar ativo já é uma foto */
   fotoAtiva: boolean;
   /** ids liberados por conquistas/eventos (mesma fonte da grade) */
   desbloqueados: Set<string>;
   aoSalvar: (novaVersao: number) => void;
+  /** lote 531-540 (§321.1-.2, flag as5.foto_entrada): entrada pelo AVATAR */
+  configAtual?: AvatarConfig;
 }) {
   const [recorte, setRecorte] = useState<EstadoRecorte | null>(null);
   const [camera, setCamera] = useState<MediaStream | null>(null);
@@ -212,6 +217,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     desfoqueFundo: 0, granulacao: 0, zoomFoto: 1, anel: 3,
     forma: 'circulo', filtroCor: 'nenhum',
     nitidez: 0, marca: '', // lote 311-320 (§333/§372)
+    particulas: 'nenhum', // lote 541-550 (§348.1)
+    borda: 0, // megas 565-567 (§340-341): pluma da borda do medalhão
   };
   const mudarAjuste = useCallback((campo: keyof AjustesFoto, valor: number | boolean | string) => {
     setEstilo((e) => {
@@ -650,6 +657,20 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     img.src = url;
   }, [fecharCamera]);
 
+  // megas 531-534 (§321.1-.2, flag as5.foto_entrada): AVATAR (ou preset)
+  // vira a FONTE da foto — renderiza o SVG e entra no MESMO funil do
+  // recorte/estilização (nada novo depois daqui)
+  const usarConfigComoFoto = useCallback((cfg: AvatarConfig) => {
+    try {
+      const uri = dataUriDe(validarConfig(cfg), { estatico: true, tamanho: 480 });
+      const img = new Image();
+      img.onload = () => setRecorte({ img, zoom: 1, x: 0, y: 0 });
+      img.onerror = () => setMensagem('Não consegui renderizar o avatar como foto.');
+      img.src = uri;
+    } catch { setMensagem('Não consegui renderizar o avatar como foto.'); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Recorte ─────────────────────────────────────────────────────────
   /** Desenha a imagem no palco respeitando zoom/pan (cover). */
   const desenhar = useCallback((ctx: CanvasRenderingContext2D, r: EstadoRecorte, lado: number) => {
@@ -1012,6 +1033,28 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
           <label className="avst-foto-escolher">
             <ImageUp size={22} aria-hidden />
             <span>Escolher imagem…</span>
+            {/* megas 531-534 (§321.1-.2, flag as5.foto_entrada) */}
+            {flag('as5.foto_entrada') && configAtual && (
+              <button type="button" className="avst-botao" data-teste="foto-do-avatar"
+                title="Usa o seu avatar ATUAL como a foto (§321.1)"
+                onClick={() => usarConfigComoFoto(configAtual)}>
+                Usar meu avatar
+              </button>
+            )}
+            {flag('as5.foto_entrada') && listarPresets().length > 0 && (
+              <select className="avst-botao" data-teste="foto-de-preset" defaultValue=""
+                aria-label="Usar um preset como foto (§321.2)"
+                onChange={(e) => {
+                  const pz = listarPresets().find((x) => x.id === e.target.value);
+                  if (pz) usarConfigComoFoto(pz.config);
+                  e.target.value = '';
+                }}>
+                <option value="" disabled>De um preset…</option>
+                {listarPresets().map((pz) => (
+                  <option key={pz.id} value={pz.id}>{pz.nome}</option>
+                ))}
+              </select>
+            )}
             <input type="file" accept="image/png,image/jpeg,image/webp"
               onChange={(e) => escolherArquivo(e.target.files?.[0])} />
           </label>
@@ -1555,6 +1598,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 ['anel', 'Anel', 1, 6, 0.5],
                 // mega 311 (§333, flag as5.foto_fina): nitidez por convolução
                 ...(flag('as5.foto_fina') ? [['nitidez', 'Nitidez', 0, 1, 0.01]] : []),
+                // megas 565-567 (§340-341, flag as5.criacao_fina): borda suave
+                ...(flag('as5.criacao_fina') ? [['borda', 'Borda suave', 0, 1, 0.01]] : []),
               ] as Array<[keyof AjustesFoto, string, number, number, number]>).map(([campo, rotulo, min, max, passo]) => (
                 <label key={campo} className="avst-ft-ajuste">
                   <span>{rotulo}</span>
@@ -1570,6 +1615,17 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               <button type="button" className="avst-ft-chip" aria-pressed={estilo.ajustes?.sombra === true}
                 data-teste="ajuste-sombra" title="Sombra de contato sob o medalhão (§337)"
                 onClick={() => mudarAjuste('sombra', !(estilo.ajustes?.sombra === true))}>Sombra</button>
+              {/* megas 541-543 (§348.1, flag as5.foto_pro2): partículas estáticas */}
+              {flag('as5.foto_pro2') && (
+                <span role="radiogroup" aria-label="Partículas estáticas (§348.1)" data-teste="foto-particulas">
+                  {([['nenhum', 'Sem partículas'], ['pontos', 'Pontos'], ['estrelas', 'Estrelas'], ['pixels', 'Pixels']] as const).map(([id, nome]) => (
+                    <button key={id} type="button" role="radio" data-teste={`fpart-${id}`}
+                      aria-checked={(estilo.ajustes?.particulas ?? 'nenhum') === id}
+                      className={`avst-ft-chip ${(estilo.ajustes?.particulas ?? 'nenhum') === id ? 'avst-ft-chip-ativo' : ''}`}
+                      onClick={() => mudarAjuste('particulas', id)}>{nome}</button>
+                  ))}
+                </span>
+              )}
               {/* mega 315 (§372, flag as5.foto_fina): marca d'água opcional */}
               {flag('as5.foto_fina') && (
                 <label className="avst-ft-ajuste" title="Marca d'água discreta no canto (§372)">
@@ -1776,10 +1832,19 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 </select>
               </label>
             )}
+            {/* megas 544-545 (§370, flag as5.foto_pro2): validação visível
+                ANTES de exportar — resolução/proporção/transparência */}
+            {flag('as5.foto_pro2') && (
+              <span className="avst-ft-tpl-n" data-teste="export-specs" role="status">
+                {formato === 'perfil'
+                  ? `${LADO_SAIDA * escala}×${LADO_SAIDA * escala}px · 1:1 · fundo opaco`
+                  : `${FORMATOS_FOTO[formato].saida[0]}×${FORMATOS_FOTO[formato].saida[1]}px · ${wideTransp ? 'FUNDO TRANSPARENTE' : 'fundo opaco'}`}
+              </span>
+            )}
             <button type="button" className="avst-botao" disabled={salvando}
               title="Baixar o PNG desta composição no seu computador"
               onClick={() => void baixarPng()}>
-              <Download size={14} aria-hidden /> Baixar PNG
+              <Download size={14} aria-hidden /> {t('Baixar PNG')}
             </button>
             {/* mega 314 (§369, flag as5.foto_fina): JPEG 0.9 p/ e-mail/docs */}
             {flag('as5.foto_fina') && (

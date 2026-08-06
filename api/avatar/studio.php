@@ -174,6 +174,27 @@ function avst_validar_config($bruto): array
     if (in_array($postura, ['confiante', 'relaxada', 'executiva', 'heroica', 'misteriosa'], true)) {
         $saida['postura'] = $postura;
     }
+    // megas 561–564 (§102.2): ajuste FINO do corpo — clamps espelhando o
+    // validarConfig do front; 1 = neutro OMITIDO; objeto vazio omitido
+    $fino = $bruto['corpoFino'] ?? null;
+    if (is_array($fino)) {
+        $cf = [];
+        if (isset($fino['largura']) && is_numeric($fino['largura'])) {
+            $v = min(1.08, max(0.92, (float) $fino['largura']));
+            if ($v != 1.0) {
+                $cf['largura'] = $v;
+            }
+        }
+        if (isset($fino['altura']) && is_numeric($fino['altura'])) {
+            $v = min(1.04, max(0.96, (float) $fino['altura']));
+            if ($v != 1.0) {
+                $cf['altura'] = $v;
+            }
+        }
+        if ($cf !== []) {
+            $saida['corpoFino'] = $cf;
+        }
+    }
     return $saida;
 }
 
@@ -229,6 +250,7 @@ function avst_validar_config_foto($bruto): ?array
             'desfoqueFundo' => [0.0, 1.0, 0.0], 'granulacao' => [0.0, 1.0, 0.0],
             'zoomFoto' => [1.0, 1.6, 1.0], 'anel' => [1.0, 6.0, 3.0],
             'nitidez' => [0.0, 1.0, 0.0], // mega 311 (§333, lote 311-320)
+            'borda' => [0.0, 1.0, 0.0], // megas 565-567 (§340-341): pluma
         ];
         foreach ($mapa as $campo => [$min, $max, $neutro]) {
             $v = $clamp($aj[$campo] ?? null, $min, $max, $neutro);
@@ -249,6 +271,11 @@ function avst_validar_config_foto($bruto): ?array
         $filtroCor = $aj['filtroCor'] ?? null;
         if (in_array($filtroCor, ['pb', 'sepia'], true)) {
             $limpo['filtroCor'] = $filtroCor;
+        }
+        // megas 541-543 (§348.1): partículas estáticas — enum fechado
+        $particulas = $aj['particulas'] ?? null;
+        if (in_array($particulas, ['pontos', 'estrelas', 'pixels'], true)) {
+            $limpo['particulas'] = $particulas;
         }
         // mega 315 (§372): marca d'água — mesma whitelist da legenda, <=16
         $marca = $aj['marca'] ?? null;

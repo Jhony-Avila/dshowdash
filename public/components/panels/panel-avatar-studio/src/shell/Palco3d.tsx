@@ -141,7 +141,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const [ambiente, setAmbiente] = useState(0.55); // = padrão do renderer (mega 77) — flag ON não muda o visual
   // ── lote 331–340 (§176/§457, flag as5.palco3d_cine) ──
   const cineLigado = flag('as5.palco3d_cine');
-  const [movCam, setMovCam] = useState<'nenhum' | 'dolly' | 'panoramica'>('nenhum');
+  const [movCam, setMovCam] = useState<'nenhum' | 'dolly' | 'panoramica' | 'orbita' | 'composto'>('nenhum');
   const [posFx, setPosFx] = useState(false);
   // mega 80 (§442): biblioteca de poses
   const [poses, setPoses] = useState(listarPoses);
@@ -998,7 +998,9 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                 {/* lote 331–340 (§176/§457, flag as5.palco3d_cine) */}
                 {cineLigado && (<>
                   <span role="group" aria-label="Movimento de câmera (§176)" data-teste="p3d-mov">
-                    {([['nenhum', 'Fixa'], ['dolly', 'Dolly'], ['panoramica', 'Panorâmica']] as const).map(([m, nome]) => (
+                    {/* megas 571–573 (§176.1, flag as5.palco_v3): órbita + composto */}
+                    {([['nenhum', 'Fixa'], ['dolly', 'Dolly'], ['panoramica', 'Panorâmica'],
+                      ...(flag('as5.palco_v3') ? [['orbita', 'Órbita'], ['composto', 'Composto']] as const : [])] as ReadonlyArray<readonly [typeof movCam, string]>).map(([m, nome]) => (
                       <button key={m} type="button" data-teste={`p3d-mov-${m}`}
                         className={`avst5-p3d-chip${movCam === m ? ' avst5-p3d-chip-on' : ''}`}
                         aria-pressed={movCam === m}

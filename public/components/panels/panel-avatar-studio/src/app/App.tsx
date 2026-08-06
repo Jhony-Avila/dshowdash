@@ -29,6 +29,7 @@ import { registrarUso, sincronizarFavoritos } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
 import { carregarVida } from '../services/VidaService';
 import { flag } from '../nucleo/flags';
+import { rodarMigracoes } from '../nucleo/migracoes'; // lote 581-590 (§299-§300)
 import { ShellStudio } from '../shell/ShellStudio';
 import type { Vida } from '../services/VidaService';
 import { Colecoes } from '../components/Colecoes';
@@ -222,6 +223,9 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
 
   useEffect(() => {
     let vivo = true;
+    // megas 587–589 (§299–§300, flag as5.infra_v3): migrações de storage
+    // ANTES de qualquer leitor (idempotente; a chave antiga permanece)
+    rodarMigracoes();
     (async () => {
       const r = await carregarAvatar(shellConfig.signal);
       if (!vivo) return;
@@ -713,7 +717,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           )}
           {aba === 'foto' && (
             <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'}
-              desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto} />
+              desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto}
+              configAtual={atual} /* lote 531-540 (§321.1): avatar atual → foto */ />
           )}
           {aba === 'itens' && (
             <>

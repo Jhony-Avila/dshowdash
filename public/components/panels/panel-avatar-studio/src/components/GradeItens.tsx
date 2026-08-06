@@ -21,10 +21,12 @@ import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso'
 // mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
 import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
+import { t } from '../nucleo/i18n'; // lote 511-520 (§296)
 // mega 248 (§228): itens ARQUIVADOS saem da grade padrão (reversível)
 import { arquivados } from '../services/ArquivoItens';
 import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // lote 351-360 (§157)
 import { lerRecentes, registrarRecente } from '../services/Recentes'; // lote 391-400 (§88)
+import { CONJUNTOS, aplicarConjunto } from '../services/Conjuntos'; // lote 551-560 (§72)
 import type { ParteDef } from '../engine/base-api';
 import { AvatarSvg } from './AvatarSvg';
 import { Dica } from './Dica';
@@ -390,7 +392,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       <div className="avst-filtros">
         <label className="avst-busca">
           <Search size={13} aria-hidden />
-          <input type="search" value={busca} placeholder="Buscar item, tema ou lore…"
+          <input type="search" value={busca} placeholder={t('Buscar item, tema ou lore…')}
             onChange={(e) => setBusca(e.target.value)} aria-label="Buscar itens" />
         </label>
         <div className="avst-fpop-ancora">
@@ -436,12 +438,12 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
               <label className="avst-fpop-opcao avst-ordenar" title="Ordenar itens">
                 <ArrowDownUp size={12} aria-hidden />
                 <select value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)} aria-label="Ordenar por">
-                  <option value="padrao">Padrão</option>
-                  <option value="raridade">Raridade</option>
-                  <option value="nome">Nome</option>
-                  <option value="recentes">Recentes</option>
+                  <option value="padrao">{t('Padrão')}</option>
+                  <option value="raridade">{t('Raridade')}</option>
+                  <option value="nome">{t('Nome')}</option>
+                  <option value="recentes">{t('Recentes')}</option>
                   {/* mega 424 (§58 v2, flag as5.busca_v2) */}
-                  {flag('as5.busca_v2') && <option value="novos">Novos primeiro</option>}
+                  {flag('as5.busca_v2') && <option value="novos">{t('Novos primeiro')}</option>}
                 </select>
               </label>
               {nFiltros > 0 && (
@@ -505,7 +507,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         </div>
       )}
 
-      <div ref={refGrade} className="avst-grade" data-modo={modo} role="listbox"
+      <div ref={refGrade} className="avst-grade" data-modo={modo}
+        data-uxfinal={flag('as5.ux_final') ? '' : undefined} role="listbox"
         data-a11y={flag('as5.a11y_v2') ? '' : undefined}
         aria-label={`Itens de ${meta?.nome ?? categoria}`}>
         {meta && !meta.obrigatoria && !filtrosAtivos && (
@@ -516,6 +519,29 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             <span className="avst-card-nome">Nenhum</span>
           </button>
         )}
+        {/* megas 551-556 (§72.1/§72.3, flag as5.roupas_camada): CONJUNTOS
+            aplicam vários slots de uma vez com proteção de bloqueios */}
+        {categoria === 'roupa' && flag('as5.roupas_camada') && (
+          <div className="avst-conq-filtros" role="group" aria-label="Conjuntos (§72.1)" data-teste="conjuntos">
+            <span style={{ fontSize: 11, opacity: 0.7 }}>{t('Conjuntos:')}</span>
+            {CONJUNTOS.map((cj) => (
+              <button key={cj.id} type="button" className="avst-ft-chip" data-teste={`conjunto-${cj.id}`}
+                title={`Aplica roupa + acessórios${cj.paleta ? ' + paleta' : ''} de uma vez; slots bloqueados são preservados (§72.3)`}
+                onClick={() => {
+                  const r = aplicarConjunto(config, cj);
+                  aoEscolher(r.config);
+                  try {
+                    const partes = [];
+                    if (r.substituidos.length) partes.push(`substituiu: ${r.substituidos.join(', ')}`);
+                    if (r.preservados.length) partes.push(`preservou (bloqueado): ${r.preservados.join(', ')}`);
+                    if (partes.length) window.dispatchEvent(new CustomEvent('avst5:anuncio', { detail: `Conjunto ${cj.nome} — ${partes.join(' · ')}` }));
+                  } catch { /* anúncio é cosmético */ }
+                }}>
+                {cj.nome}
+              </button>
+            ))}
+          </div>
+        )}
         {/* mega 391 (§88, flag as5.catalogo_v2): RECENTES da categoria */}
         {flag('as5.catalogo_v2') && ticRec >= 0 && (() => {
           const rec = lerRecentes()
@@ -525,7 +551,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           if (rec.length === 0) return null;
           return (
             <div className="avst-conq-filtros" role="group" aria-label="Usados recentemente (§88)" data-teste="recentes">
-              <span style={{ fontSize: 11, opacity: 0.7 }}>Recentes:</span>
+              <span style={{ fontSize: 11, opacity: 0.7 }}>{t('Recentes:')}</span>
               {rec.map((i) => (
                 <button key={i.id} type="button" className="avst-ft-chip" data-teste="recente-chip"
                   title={`Equipar ${i.nome} de novo (§88)`}
@@ -546,7 +572,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
               <button key={id} type="button" role="radio" aria-checked={filtroFx === id}
                 className={`avst-ft-chip ${filtroFx === id ? 'avst-ft-chip-ativo' : ''}`}
                 data-teste={`fx-${id}`}
-                onClick={() => setFiltroFx(id)}>{nome}</button>
+                onClick={() => setFiltroFx(id)}>{t(nome)}</button>
             ))}
           </div>
         )}
@@ -584,7 +610,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           return (
             <button type="button" className="avst-botao" data-teste="quis-dizer"
               onClick={() => setBusca(perto)}>
-              Você quis dizer <strong>&nbsp;{perto}</strong>?
+              {t('Você quis dizer')} <strong>&nbsp;{perto}</strong>?
             </button>
           );
         })()}
@@ -592,7 +618,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         {itens.length === 0 && flag('as5.catalogo_v2') && (filtroFx !== 'todos' || busca) && (
           <button type="button" className="avst-botao" data-teste="vazio-limpar"
             onClick={() => { setFiltroFx('todos'); setBusca(''); }}>
-            Limpar filtros e busca
+            {t('Limpar filtros e busca')}
           </button>
         )}
         {itens.length === 0 && (
@@ -696,6 +722,15 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
   const podePoderVivo = (item.categoria === 'efeito' || item.categoria === 'aura')
     && !bloqueado && flag('as5.palco_v2')
     && !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  // megas 596–597 (§60.4/§60.6, flag as5.ux_final): badge "Prévia" no card
+  // sob hover-preview e sinal de CONFLITO com o que está equipado
+  const uxFinal = flag('as5.ux_final');
+  const [prevendo, setPrevendo] = useState(false);
+  const conflitos = useMemo(() => {
+    if (!uxFinal || ativo || !item.incompativelCom?.length) return [];
+    const equipadosIds = Object.values(config.camadas).filter(Boolean) as string[];
+    return item.incompativelCom.filter((i) => equipadosIds.includes(i));
+  }, [uxFinal, ativo, item, config]);
 
   return (
     <div ref={cardRef} role="option" aria-selected={ativo} aria-disabled={bloqueado || indisponivel || undefined}
@@ -704,8 +739,8 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
       data-indisponivel={indisponivel ? '' : undefined}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
       onClick={escolher}
-      onMouseEnter={() => { if (aoPrever && !bloqueado) aoPrever(preview); if (podePoderVivo) setPoderVivo(true); }}
-      onMouseLeave={() => { aoPrever?.(null); setPoderVivo(false); }}
+      onMouseEnter={() => { if (aoPrever && !bloqueado) { aoPrever(preview); if (uxFinal) setPrevendo(true); } if (podePoderVivo) setPoderVivo(true); }}
+      onMouseLeave={() => { aoPrever?.(null); setPrevendo(false); setPoderVivo(false); }}
       onKeyDown={(e) => { if (escolher && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); escolher(); } }}
       tabIndex={0}>
       <span className="avst-card-thumb">
@@ -748,6 +783,14 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
       )}
       {ativo && <span className="avst-card-check"><Check size={13} aria-hidden /></span>}
       {bloqueado && <span className="avst-card-lock"><Lock size={15} aria-hidden /></span>}
+      {/* mega 596 (§60.4, flag as5.ux_final): badge temporário sob preview */}
+      {prevendo && <span className="avst-card-previa" data-teste="card-previa">{t('Prévia')}</span>}
+      {/* mega 597 (§60.6): conflito com equipado — ícone + motivo acessível */}
+      {conflitos.length > 0 && (
+        <span className="avst-card-conflito" data-teste="card-conflito" role="img"
+          aria-label={`Não combina com ${conflitos.map((i) => itemPorId(i)?.nome ?? i).join(', ')}`}
+          title={`Não combina com: ${conflitos.map((i) => itemPorId(i)?.nome ?? i).join(', ')}`}>⚠</span>
+      )}
       <button type="button" className={`avst-card-fav ${favorito ? 'avst-card-fav-on' : ''}`}
         title={favorito ? 'Remover dos favoritos' : 'Favoritar'}
         aria-pressed={favorito}

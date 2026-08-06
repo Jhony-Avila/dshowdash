@@ -22,6 +22,8 @@ export interface ConfigLegado2d {
    *  perda (mesmos literais do domain/types; o validarConfig re-sanitiza). */
   corpo?: 'esbelto' | 'atletico' | 'robusto' | 'compacto';
   postura?: 'confiante' | 'relaxada' | 'executiva' | 'heroica' | 'misteriosa';
+  /** megas 561–564 (§102.2): ajuste FINO do corpo — roundtrip sem perda. */
+  corpoFino?: { largura?: number; altura?: number };
   /** §71: propriedades por camada (F3 C2) — roundtrip sem perda. */
   params?: Partial<Record<string, Record<string, number>>>;
   /** §73: canais de cor por camada (F3 C3) — roundtrip sem perda. */
@@ -58,6 +60,8 @@ export function deLegado2d(cfg: ConfigLegado2d): EstadoAvatar {
   // megas 254–255 (§102/§118): campos opcionais — ausentes NÃO entram
   if (cfg.corpo) e.body.tipo = cfg.corpo;
   if (cfg.postura) e.body.postura = cfg.postura;
+  // megas 561–564 (§102.2): fino só entra com conteúdo (checksum estável)
+  if (cfg.corpoFino && Object.keys(cfg.corpoFino).length) e.body.fino = { ...cfg.corpoFino };
   e.renderer.preferido = '2d';
   return e;
 }
@@ -94,6 +98,7 @@ export function paraLegado2d(e: EstadoAvatar, baseFallback = 'bas_classica'): Co
     ...(e.presentation.titulo ? { titulo: e.presentation.titulo } : {}),
     ...(e.body.tipo ? { corpo: e.body.tipo as ConfigLegado2d['corpo'] } : {}),
     ...(e.body.postura ? { postura: e.body.postura as ConfigLegado2d['postura'] } : {}),
+    ...(e.body.fino && Object.keys(e.body.fino).length ? { corpoFino: { ...e.body.fino } } : {}),
     ...(Object.keys(params).length ? { params } : {}),
     ...(Object.keys(coresCamada).length ? { coresCamada } : {}),
   };

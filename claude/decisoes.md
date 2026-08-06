@@ -95,9 +95,41 @@
   manual; roving tabindex gerenciado no DOM (MutationObserver rearma na
   virtualização).
 
+- **#61 (2026-08-06) — Escopo da onda 511–610** (pedido: "todos os mega
+  lotes que NÃO dependem de mim + validação 1 por 1"): 511–520 i18n
+  catálogo · 521–530 i18n painéis (ambos via `as5.i18n`, ver #62) ·
+  531–540 foto entrada §321 (`as5.foto_entrada`) · 541–550 foto pro2
+  (`as5.foto_pro2`) · 551–560 conjuntos §72 (`as5.roupas_camada`) ·
+  561–570 criação fina §102.2/§340–341 (`as5.criacao_fina`) · 571–580
+  palco/som v3 §176.1/§178.2/§157.4 (`as5.palco_v3`) · 581–590 infra v3
+  §268/§277/§299–300 (`as5.infra_v3`) · 591–600 ux final §59.1/§60/
+  §64.2/§545 (`as5.ux_final`) · 601–610 validação 1-por-1 + entrega.
+  Esta onda ESGOTA o trilho A. Mapa: doc 16 do projeto Claude.
+- **#62 (2026-08-06) — i18n de cobertura sem flag própria**: lotes que só
+  AMPLIAM a cobertura do `t()` não ganham flag — o `t()` é inerte em PT
+  (chave = texto canônico) e `as5.i18n` já governa o EN globalmente; flag
+  extra = superfície de rollback falsa.
+- **#63 (2026-08-06) — Escolhas técnicas da onda 511–610**: §300
+  substituição automática de asset removido DESLIGADA (conflita com
+  byte-stability; nenhum asset removido; validarConfig degrada seguro;
+  mapa de sucessores nasce na 1ª remoção real) · migrações de storage
+  NUNCA apagam a chave antiga (ela é o backup — espelho da regra /backup)
+  e leitores fazem leitura dual · som migrado escreve nas DUAS chaves (o
+  modo clássico segue lendo a antiga) · §178.2 preview responde só ao
+  liga/desliga geral (é o botão de conferir timbre) · §176.1 órbita com
+  ângulo em seno (amplitude limitada = zero deriva, §176.3) · §64.2 com
+  janela de graça de 380ms p/ alcançar o botão Fixar · §59.1 medida só em
+  cards renderizados (content-visibility reporta placeholder fora do
+  viewport) · corpoFino MULTIPLICA o preset §102 (arredondado a 3 casas;
+  1 omitido) · borda §340 = máscara plumada que substitui o clip só
+  quando > 0 · conjuntos §72.1 = curadoria fixa sobre itens existentes
+  (peças reais pedem arte → trilho B) · §60.6 mecanismo pronto porém
+  inerte (nenhum item declara incompativelCom hoje).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
-Validação visual 201–210, 211–220 e 221–230 · Chave IA (Anexo B
-RUNBOOK-BANCO) · zip UBC Standard · rotação GitHub PAT · rotação do secret
-do webhook · renovar nexatechs.com.br · item B `#/panel-pipedrive/produtos` ·
-decisão do trilho C (P11/P12/P14/P17/P18).
+Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
+IA (Anexo B RUNBOOK-BANCO) · zip UBC Standard · rotação GitHub PAT ·
+rotação do secret do webhook · renovar nexatechs.com.br · item B
+`#/panel-pipedrive/produtos` · decisão do trilho C (P11/P12/P14/P17/P18) ·
+arte nova (peças de roupa §72, morfologia facial §108–111, fundos §335–336).

@@ -14,7 +14,7 @@ import { CATEGORIAS, COLECOES, RARIDADES, aleatorioInteligente, itemPorId, nivel
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
-import { definirSom, pararAmbiente, somAtivo, tocarAmbiente, tocarCapturar, tocarEquipar, tocarPoder, tocarSalvar } from '../services/Som';
+import { definirPrefSom, definirSom, pararAmbiente, prefsSom, somAtivo, tocarAmbiente, tocarCapturar, tocarEquipar, tocarPoder, tocarPreview, tocarSalvar } from '../services/Som';
 import { AvatarStore } from '../nucleo/estado';
 import type { Comando } from '../nucleo/estado';
 import { checksumEstado } from '../nucleo/contratos';
@@ -277,6 +277,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     return s;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => conectarTelemetria(store), [store]);
+  // megas 555-556 (§72.3): anúncio de conjunto → aria-live do shell
+  useEffect(() => {
+    const ao = (e: Event) => setAnuncio(String((e as CustomEvent).detail ?? ''));
+    window.addEventListener('avst5:anuncio', ao);
+    return () => window.removeEventListener('avst5:anuncio', ao);
+  }, []);
   // mega 301 (P10/§548): focus trap delegado — prende o Tab no dialog aberto
   useEffect(() => instalarFocoPreso(), []);
 
@@ -709,9 +715,41 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   }, [store, bloqueios, aplicarComando]);
 
   // §64: hover do card → preview no palco (nunca contamina o draft)
+  // megas 591–593 (§64.2, flag as5.ux_final): FIXAR PRÉVIA — com prévia
+  // fixada o hover não mexe no palco; sair do card tem uma janela de
+  // graça p/ alcançar o botão "Fixar" (o clique cancela a limpeza)
+  const [previaFixa, setPreviaFixa] = useState<AvatarConfig | null>(null);
+  const [previaAtiva, setPreviaAtiva] = useState<AvatarConfig | null>(null);
+  const refLimparPrevia = useRef<number | null>(null);
   const aoPrever = useCallback((cfg: AvatarConfig | null) => {
-    if (cfg) store.visualizar(() => deLegado2d(cfg));
-    else store.limparPreview();
+    if (!flag('as5.ux_final')) { // caminho legado intacto (§651)
+      if (cfg) store.visualizar(() => deLegado2d(cfg));
+      else store.limparPreview();
+      return;
+    }
+    if (previaFixa) return; // §64.2: fixada = hover ignorado
+    if (refLimparPrevia.current) { clearTimeout(refLimparPrevia.current); refLimparPrevia.current = null; }
+    if (cfg) {
+      setPreviaAtiva(cfg);
+      store.visualizar(() => deLegado2d(cfg));
+    } else {
+      refLimparPrevia.current = window.setTimeout(() => {
+        refLimparPrevia.current = null;
+        setPreviaAtiva(null);
+        store.limparPreview();
+      }, 380); // janela de graça — alcança o "Fixar" no viewport
+    }
+  }, [store, previaFixa]);
+  const fixarPrevia = useCallback(() => {
+    if (!previaAtiva) return;
+    if (refLimparPrevia.current) { clearTimeout(refLimparPrevia.current); refLimparPrevia.current = null; }
+    setPreviaFixa(previaAtiva);
+    store.visualizar(() => deLegado2d(previaAtiva));
+  }, [previaAtiva, store]);
+  const soltarPrevia = useCallback(() => {
+    setPreviaFixa(null);
+    setPreviaAtiva(null);
+    store.limparPreview();
   }, [store]);
 
   // §90: aleatório inteligente — bloqueios §70.1 NUNCA são trocados.
@@ -831,6 +869,28 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const alternarSom = useCallback(() => {
     setSomLigado((v) => { definirSom(!v); return !v; });
   }, []);
+  // megas 574–577 (§178.2, flag as5.palco_v3): preferências de som por
+  // CATEGORIA — volume geral + efeitos/ambiente/celebrações + preview
+  const [somPrefsAberto, setSomPrefsAberto] = useState(false);
+  const [somPrefs, setSomPrefs] = useState(prefsSom);
+  const mudarPrefSom = useCallback((patch: Parameters<typeof definirPrefSom>[0]) => {
+    definirPrefSom(patch);
+    setSomPrefs(prefsSom());
+  }, []);
+  // megas 578–579 (§157.4, flag as5.palco_v3): transição de ENTRADA do
+  // avatar no palco 2D — one-shot por gesto; §297 nunca liga o data-attr
+  const [entrada2d, setEntrada2d] = useState<'materializar' | 'teleporte' | 'ascender' | null>(null);
+  const dispararEntrada = useCallback((id: 'materializar' | 'teleporte' | 'ascender') => {
+    if (movReduzido) return; // §297: feedback visual estático basta
+    setEntrada2d(null); // reinicia a animação mesmo repetindo o efeito
+    requestAnimationFrame(() => setEntrada2d(id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movReduzido]);
+  useEffect(() => {
+    if (!entrada2d) return undefined;
+    const t = setTimeout(() => setEntrada2d(null), 1400);
+    return () => clearTimeout(t);
+  }, [entrada2d]);
 
   // §568–§571: TOUR de primeiro uso (auto na 1ª visita; "?" reabre)
   const [tour, setTour] = useState(() => !tourJaVisto());
@@ -1051,6 +1111,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
+        data-uxfinal={flag('as5.ux_final') ? '' : undefined} // megas 598-599 (§545-§546)
         data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
         style={{ '--avst-acento': corTema, '--avst5-esq': `${larguras.esq}px`,
           '--avst5-dir': painelFechado ? '36px' : painelLargo ? '560px' : `${larguras.dir}px` } as React.CSSProperties}>
@@ -1125,6 +1186,33 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
               aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
               {somLigado ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}</button>
+            {/* megas 574–577 (§178.2, flag as5.palco_v3): prefs por categoria */}
+            {flag('as5.palco_v3') && somLigado && (
+              <span style={{ position: 'relative' }}>
+                <button type="button" className="avst-botao" data-teste="som-prefs-abrir"
+                  aria-expanded={somPrefsAberto} title="Preferências de som por categoria (§178.2)"
+                  onClick={() => setSomPrefsAberto((v) => !v)}>♪</button>
+                {somPrefsAberto && (
+                  <div className="avst5-som-prefs" data-teste="som-prefs" role="group" aria-label="Preferências de som (§178.2)">
+                    <label className="avst5-som-linha">
+                      <span>{t('Volume geral')}</span>
+                      <input type="range" min={0} max={1} step={0.05} value={somPrefs.volume}
+                        data-teste="som-volume" aria-label={t('Volume geral')}
+                        onChange={(e) => mudarPrefSom({ volume: Number(e.target.value) })} />
+                    </label>
+                    {([['efeitos', 'Efeitos'], ['ambiente', 'Ambiente'], ['celebracoes', 'Celebrações']] as const).map(([cat, nome]) => (
+                      <button key={cat} type="button" className="avst-ft-chip"
+                        aria-pressed={somPrefs[cat]} data-teste={`som-cat-${cat}`}
+                        onClick={() => mudarPrefSom({ [cat]: !somPrefs[cat] })}>
+                        {somPrefs[cat] ? '✓ ' : ''}{t(nome)}</button>
+                    ))}
+                    <button type="button" className="avst-ft-chip" data-teste="som-preview"
+                      title="Tocar uma nota de teste (§178.2)"
+                      onClick={() => tocarPreview()}>{t('Testar som')}</button>
+                  </div>
+                )}
+              </span>
+            )}
             <button type="button" className="avst-botao" disabled={!store.podeDesfazer}
               title="Desfazer (Ctrl+Z)" onClick={() => store.desfazer()}><Undo2 size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" disabled={!store.podeRefazer}
@@ -1163,6 +1251,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             data-poder-cam={podFamilia && poderAtivo && !movReduzido ? '' : undefined}
             data-luzctx={flag('as5.luz_contextual') ? '' : undefined}
             data-presenca={presenca ? '' : undefined}
+            data-entrada={flag('as5.palco_v3') && !palco3d && !movReduzido && entrada2d ? entrada2d : undefined}
             data-luzadv={sensorial && luzInt !== 1 && !palco3d ? '' : undefined}
             style={sensorial && luzInt !== 1 && !palco3d ? { '--avst5-luzint': luzInt } as React.CSSProperties : undefined}>
             {/* mega 323 (§157.4): o fundo ANTERIOR desvanece por cima do novo
@@ -1236,6 +1325,21 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
             {comparando && (
               <div className="avst5-comparando" role="status">Original salvo · solte para voltar</div>
+            )}
+            {/* megas 591–593 (§64.2, flag as5.ux_final): badge de prévia com
+                fixar/soltar — comparar detalhes sem segurar o hover */}
+            {flag('as5.ux_final') && (previaAtiva || previaFixa) && !comparando && (
+              <div className="avst5-previa-badge" data-teste="previa-badge" role="status">
+                <span>{previaFixa ? t('Prévia fixada') : t('Prévia')}</span>
+                {previaFixa
+                  ? (
+                    <button type="button" data-teste="previa-soltar"
+                      onClick={soltarPrevia}>{t('Soltar')}</button>
+                  ) : (
+                    <button type="button" data-teste="previa-fixar"
+                      onClick={fixarPrevia}>{t('Fixar prévia')}</button>
+                  )}
+              </div>
             )}
             {celebrando && (
               <div className="avst5-celebracao" aria-hidden data-teste="celebracao"
@@ -1454,7 +1558,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 <button key={h} type="button" role="radio" aria-checked={hora === h}
                   className={hora === h ? 'avst5-fundo-on' : ''}
                   disabled={controlesTravados}
-                  onClick={() => trocarHora(h)}>{ROTULO_HORA[h]}</button>
+                  onClick={() => trocarHora(h)}>{t(ROTULO_HORA[h])}</button>
               ))}
             </div>
             <div className="avst5-fundos avst5-luzes" role="radiogroup" aria-label="Iluminação (§164)" data-teste="luzes-2d">
@@ -1462,7 +1566,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 <button key={l} type="button" role="radio" aria-checked={luz === l}
                   className={luz === l ? 'avst5-fundo-on' : ''}
                   disabled={controlesTravados}
-                  onClick={() => trocarLuz(l)}>{ROTULO_LUZ[l]}</button>
+                  onClick={() => trocarLuz(l)}>{t(ROTULO_LUZ[l])}</button>
               ))}
               {/* mega 471-473 (§165, flag as5.luz_contextual): AUTO */}
               {flag('as5.luz_contextual') && (
@@ -1470,7 +1574,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   className={luzAuto ? 'avst5-fundo-on' : ''}
                   data-teste="luz-auto" disabled={controlesTravados}
                   title="A luz segue a hora do palco (§165): tarde=quente, noite=dramática, madrugada=fria"
-                  onClick={() => mudarLuzAuto(!luzAuto)}>Auto</button>
+                  onClick={() => mudarLuzAuto(!luzAuto)}>{t('Auto')}</button>
               )}
               {/* mega 325 (§164.3, flag as5.palco_sensorial): INTENSIDADE —
                   modo simples §164.4 = deixar em 1 (zero mudança visual) */}
@@ -1522,6 +1626,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                       title={movReduzido ? 'Indisponível com redução de movimento (§297)' : `Idle ${ROTULO_IDLE[idl]} (§119)`}
                       disabled={movReduzido && idl !== 'nenhum'}
                       onClick={() => mudarPropsCen({ idle: idl })}>{ROTULO_IDLE[idl]}</button>
+                  ))}
+                  {/* megas 578–579 (§157.4, flag as5.palco_v3): transição de
+                      ENTRADA one-shot — apresentação pura, nada persiste */}
+                  {flag('as5.palco_v3') && ([['materializar', 'Materializar'], ['teleporte', 'Teleporte'], ['ascender', 'Ascender']] as const).map(([id2, nome]) => (
+                    <button key={id2} type="button" data-teste={`entrada-${id2}`}
+                      title={movReduzido ? 'Indisponível com redução de movimento (§297)' : `Entrada ${nome} (§157.4)`}
+                      disabled={movReduzido}
+                      onClick={() => dispararEntrada(id2)}>{t(nome)}</button>
                   ))}
                   <button type="button" data-teste="cen-zerar"
                     title="Voltar o cenário ao padrão"
@@ -1583,7 +1695,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   {(['todos', 'equipados', 'favoritos', 'novos', 'bloqueados', 'presets'] as Array<AbaCatalogo | 'presets'>).map((a) => (
                     <button key={a} type="button" role="tab" aria-selected={aba === a}
                       className={aba === a ? 'avst5-aba-on' : ''} onClick={() => setAba(a)}>
-                      {a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : a === 'bloqueados' ? 'Bloqueados' : 'Presets'}
+                      {/* megas 511-513 (§296): abas traduzíveis (PT = chave) */}
+                      {t(a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : a === 'bloqueados' ? 'Bloqueados' : 'Presets')}
                     </button>
                   ))}
                 </div>
@@ -1691,6 +1804,35 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                               }}>{nome}</button>
                         ))}
                       </div>
+                      {/* megas 561–564 (§102.2, flag as5.criacao_fina): ajuste
+                          FINO — sliders multiplicam o preset; 1 = neutro e o
+                          campo SOME (byte-stability); undo via aoEscolher */}
+                      {flag('as5.criacao_fina') && (
+                        <>
+                          <span className="avst-ft-rotulo">{t('Ajuste fino (§102.2)')}</span>
+                          {([['largura', 'Largura', 0.92, 1.08], ['altura', 'Altura', 0.96, 1.04]] as const).map(([ch, nome, min, max]) => (
+                            <label key={ch} className="avst-ft-linha" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ minWidth: 56 }}>{t(nome)}</span>
+                              <input type="range" min={min} max={max} step={0.01}
+                                data-teste={`fino-${ch}`}
+                                value={configDraft.corpoFino?.[ch] ?? 1}
+                                aria-label={`${t(nome)} (§102.2)`}
+                                onChange={(e) => {
+                                  const v = Number(e.target.value);
+                                  const cf = { ...(configDraft.corpoFino ?? {}), [ch]: v };
+                                  const { corpoFino: _f, ...resto } = configDraft;
+                                  aoEscolher(validarConfig({ ...resto, corpoFino: cf }));
+                                }} />
+                              <span aria-hidden>{(configDraft.corpoFino?.[ch] ?? 1).toFixed(2)}×</span>
+                            </label>
+                          ))}
+                          <button type="button" className="avst-ft-chip" data-teste="fino-neutro"
+                            onClick={() => {
+                              const { corpoFino: _f, ...resto } = configDraft;
+                              aoEscolher(validarConfig(resto));
+                            }}>{t('Restaurar neutro')}</button>
+                        </>
+                      )}
                     </div>
                   )}
                   <GradeItens config={configDraft} categoria={categoria}

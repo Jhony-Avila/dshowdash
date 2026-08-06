@@ -418,6 +418,15 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   }
   // megas 254–255 (§102/§118): tipo corporal e postura — enums FECHADOS;
   // neutro/desconhecido é OMITIDO (avatares existentes byte-estáveis)
+  // megas 561-564 (§102.2): corpoFino — clamps curtos; 1/vazio some
+  if (b.corpoFino && typeof b.corpoFino === 'object') {
+    const cf: { largura?: number; altura?: number } = {};
+    const lg = Number((b.corpoFino as { largura?: unknown }).largura);
+    const al = Number((b.corpoFino as { altura?: unknown }).altura);
+    if (Number.isFinite(lg)) { const v = Math.min(1.08, Math.max(0.92, lg)); if (v !== 1) cf.largura = v; }
+    if (Number.isFinite(al)) { const v = Math.min(1.04, Math.max(0.96, al)); if (v !== 1) cf.altura = v; }
+    if (Object.keys(cf).length > 0) (saida as { corpoFino?: typeof cf }).corpoFino = cf;
+  }
   if (b.corpo === 'esbelto' || b.corpo === 'atletico' || b.corpo === 'robusto' || b.corpo === 'compacto') {
     saida.corpo = b.corpo;
   }
