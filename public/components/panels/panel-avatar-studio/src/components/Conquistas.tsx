@@ -178,6 +178,14 @@ export function Conquistas({ vida, carregando = false, config }: {
               <strong data-teste="temporada-nome">{temp.nome}</strong> · desafios trocam toda semana — sem punição,
               sem compra: tudo medido no seu uso real (§634).
             </p>
+            {/* megas 487-488 (§247, flag as5.memorias_v2): evento ATIVO em
+                destaque no topo — o usuário vê sem rolar até a seção */}
+            {flag('as5.memorias_v2') && vida.eventos.some((e) => e.ativo) && (
+              <p className="avst-conquistas-resumo" data-teste="evento-destaque"
+                style={{ borderLeft: '3px solid var(--avst-acento, #7c5cff)', paddingLeft: 8 }}>
+                <strong>EVENTO ATIVO:</strong> {vida.eventos.filter((e) => e.ativo).map((e) => e.nome).join(' · ')}
+              </p>
+            )}
             <div className="avst-conq-numeros-grade" data-teste="desafios" role="list" aria-label="Desafios da semana (§251)">
               {desafios.map((d) => (
                 <span key={d.id} role="listitem" data-teste="desafio" data-completo={d.atual >= d.alvo ? '' : undefined}>

@@ -258,7 +258,13 @@ export function PresetsShell({ configAtual, aoAplicar }: {
                   <button type="button" title="Aplicar o snapshot anterior deste preset (§204)"
                     data-teste="preset-snapshot"
                     onClick={() => { const c = snapshotDoPreset(p.id, 0); if (c) aoAplicar(c); }}>
-                    <X size={13} aria-hidden style={{ display: 'none' }} />
+                    {/* megas 484-486 (§203, flag as5.memorias_v2): HISTÓRICO
+                        VISUAL — o snapshot mostra a própria cara */}
+                    {flag('as5.memorias_v2') && p.historico?.[0] && (
+                      <img src={dataUriDe(p.historico[0], { estatico: true, tamanho: 48 })} alt=""
+                        width={16} height={16} data-teste="snapshot-thumb"
+                        style={{ borderRadius: 3, marginRight: 3, verticalAlign: 'middle' }} />
+                    )}
                     <span aria-hidden style={{ fontSize: 10, fontWeight: 700 }}>v{Math.max(1, (p.versao ?? 1) - 1)}</span>
                   </button>
                 )}

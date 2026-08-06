@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { Paintbrush, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import type { AvatarConfig, CamadaId, SlotCor } from '../domain/types';
 import { CORES_SUGERIDAS, PALETAS_ROUPA, itemPorId, paramsDaCamada } from '../services/AvatarCatalog';
+import { flag } from '../nucleo/flags';
 import type { ParamDef } from '../services/AvatarCatalog';
 
 /** Config com UMA propriedade regulada (imutável; padrão → remove entrada). */
@@ -59,7 +60,9 @@ export function comPaleta(
 /** Camadas equipadas COM propriedades (§71) — na ordem do config. */
 function camadasComProps(config: AvatarConfig): CamadaId[] {
   return (Object.keys(config.camadas) as CamadaId[])
-    .filter((c) => config.camadas[c] && config.camadas[c] !== 'nenhum' && paramsDaCamada(c));
+    .filter((c) => config.camadas[c] && config.camadas[c] !== 'nenhum' && paramsDaCamada(c))
+    // mega 444 (§158, §651): editor do EFEITO só com a flag do lote
+    .filter((c) => c !== 'efeito' || flag('as5.editor_efeitos'));
 }
 
 /** §73 v1: canais expostos só na ROUPA (infra é genérica — qualquer camada

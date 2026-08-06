@@ -20,6 +20,11 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+// lote 451-460 (§457/§177, flag as5.pos3d_real): PÓS real por composer
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import type {
   CapturaRender, EstadoCamera, InicializacaoRenderer, OpcoesCaptura,
   PedidoAnimacao, PedidoPoder, RenderizadorAvatar, ResultadoAplicarEstado,
@@ -125,6 +130,10 @@ export class Renderizador3d implements RenderizadorAvatar {
   // (§177.1: barato, desliga no econômico; composer real fica p/ quando o
   // peso do motor3d justificar — registrado)
   private posAtivo = false;
+  // megas 451-455 (§457): composer REAL (bloom leve + vinheta) — criado
+  // sob demanda no 1º uso; null = caminho de render 100% legado
+  private composer: EffectComposer | null = null;
+  private composerReal = false;
   // mega 45: nitidez responsiva — o canvas segue o contêiner de verdade
   private observadorTamanho: ResizeObserver | null = null;
   private alvoEl: HTMLElement | null = null;
@@ -379,7 +388,8 @@ export class Renderizador3d implements RenderizadorAvatar {
       this.relogio += delta;
       this.animarIdle();
     }
-    this.renderer.render(this.cena, this.camera);
+    if (this.composerReal && this.composer) this.composer.render();
+    else this.renderer.render(this.cena, this.camera);
   }
 
   async descartar(): Promise<void> {
@@ -605,13 +615,31 @@ export class Renderizador3d implements RenderizadorAvatar {
 
   /** mega 333 (§457/§177): pós leve (vinheta + saturação) no canvas.
    *  §177.1: NUNCA no tier econômico; false = canvas 100% legado. */
-  definirPos(ligado: boolean): void {
+  definirPos(ligado: boolean, real = false): void {
     this.posAtivo = ligado;
     const canvas = this.renderer?.domElement;
     if (!canvas) return;
     const aplicar = ligado && this.tierEfetivo() !== 'economico';
-    canvas.style.filter = aplicar ? 'saturate(1.12) contrast(1.05)' : '';
-    canvas.style.boxShadow = aplicar ? 'inset 0 0 90px 30px rgba(0,0,0,0.4)' : '';
+    // megas 451-455 (§457, flag as5.pos3d_real): COMPOSER de verdade —
+    // bloom leve + vinheta em shader; §177.1: nunca no econômico
+    this.composerReal = aplicar && real;
+    if (this.composerReal && !this.composer && this.renderer && this.cena && this.camera) {
+      try {
+        const tam = this.renderer.getSize(new THREE.Vector2());
+        const composer = new EffectComposer(this.renderer);
+        composer.addPass(new RenderPass(this.cena, this.camera));
+        composer.addPass(new UnrealBloomPass(tam, 0.32, 0.5, 0.85)); // sutil
+        composer.addPass(new ShaderPass({
+          uniforms: { tDiffuse: { value: null } },
+          vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+          fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv); float d = distance(vUv, vec2(0.5)); c.rgb *= smoothstep(0.95, 0.45, d) * 0.25 + 0.75; gl_FragColor = c; }',
+        }));
+        this.composer = composer;
+      } catch { this.composerReal = false; /* fallback: filter abaixo */ }
+    }
+    const filtroCss = aplicar && !this.composerReal;
+    canvas.style.filter = filtroCss ? 'saturate(1.12) contrast(1.05)' : '';
+    canvas.style.boxShadow = filtroCss ? 'inset 0 0 90px 30px rgba(0,0,0,0.4)' : '';
   }
 
   /** mega 79 (§451): sombras REAIS quando o tier aguenta; econômico usa a
@@ -1029,6 +1057,7 @@ export class Renderizador3d implements RenderizadorAvatar {
       );
       this.camera.lookAt(centro);
     }
-    this.renderer.render(this.cena, this.camera);
+    if (this.composerReal && this.composer) this.composer.render();
+    else this.renderer.render(this.cena, this.camera);
   };
 }

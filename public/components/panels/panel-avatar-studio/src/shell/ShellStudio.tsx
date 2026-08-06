@@ -33,6 +33,7 @@ import { registrarMarco } from '../services/Evolucao';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
+import { definirIdioma, idiomaAtual, t } from '../nucleo/i18n'; // lote 411-420 (§296)
 import { ROTULO_FAMILIA, familiaDoPoder, svgRoteiroFamilia } from '../services/PoderesFamilia'; // lote 281-290 (§153/§156)
 import { svgParticulas } from '../engine/particulas'; // lote 351-360 (§157.3)
 import { instalarFocoPreso } from './foco'; // mega 301 (P10)
@@ -117,6 +118,13 @@ const ROTULO_HORA: Record<HoraPalco, string> = {
 };
 // mega 62 (§164): ILUMINAÇÃO 2D — presets de filtro sobre o avatar
 const LUZES_PALCO = ['neutra', 'quente', 'fria', 'dramatica'] as const;
+// lote 471-480 (§165, flag as5.luz_contextual): a LUZ segue a HORA no
+// modo AUTO — mapeamento fixo e transparente (nada muda sem o usuário
+// escolher Auto; presets manuais continuam mandando fora dele)
+const LUZ_POR_HORA: Record<HoraPalco, LuzPalco> = {
+  amanhecer: 'neutra', dia: 'neutra', tarde: 'quente',
+  'por-do-sol': 'quente', noite: 'dramatica', madrugada: 'fria',
+};
 type LuzPalco = (typeof LUZES_PALCO)[number];
 const ROTULO_LUZ: Record<LuzPalco, string> = { neutra: 'Neutra', quente: 'Quente', fria: 'Fria', dramatica: 'Dramática' };
 const CHAVE_HORA = 'dshow.avst5.palco.hora.v1';
@@ -382,7 +390,16 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     telemetria('palco_hora', { hora: h }); // §290
     try { localStorage.setItem(CHAVE_HORA, h); } catch { /* sem storage */ }
   };
+  // mega 471 (§165): modo AUTO persistido; escolher preset manual desliga
+  const [luzAuto, setLuzAuto] = useState<boolean>(() => {
+    try { return localStorage.getItem('dshow.avst5.palco.luzauto.v1') === '1'; } catch { return false; }
+  });
+  const mudarLuzAuto = (v: boolean) => {
+    setLuzAuto(v);
+    try { localStorage.setItem('dshow.avst5.palco.luzauto.v1', v ? '1' : '0'); } catch { /* sem storage */ }
+  };
   const trocarLuz = (l: LuzPalco) => {
+    if (flag('as5.luz_contextual')) mudarLuzAuto(false); // manual manda (§165)
     setLuz(l);
     telemetria('palco_luz', { luz: l }); // §290
     try { localStorage.setItem(CHAVE_LUZ, l); } catch { /* sem storage */ }
@@ -762,6 +779,13 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     // §584 (P9): SOM no shell — reusa services/Som (WebAudio synth, sem
   // assets); preferência única compartilhada com o modo clássico
   const [somLigado, setSomLigado] = useState(somAtivo);
+  // lote 411-420 (§296): re-render ao trocar idioma (troca ao vivo)
+  const [, setTicIdioma] = useState(0);
+  useEffect(() => {
+    const ao = () => setTicIdioma(x => x + 1);
+    window.addEventListener('avst:idioma', ao);
+    return () => window.removeEventListener('avst:idioma', ao);
+  }, []);
   // ── lote 321–330 (§157/§161/§164/§178, flag as5.palco_sensorial) ──
   const sensorial = flag('as5.palco_sensorial');
   // mega 321 (§161/§178): PAD ambiente por cenário — segue fundo+mute+3D
@@ -1052,20 +1076,20 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 </div>
               </>)}
             </div>
-            <button type="button" className="avst-botao" title="Modo foco (F)"
+            <button type="button" className="avst-botao" title={`${t('Modo foco')} (F)`}
               aria-pressed={modo === 'foco'}
               onClick={() => setModo((m) => (m === 'foco' ? 'edicao' : 'foco'))}>
               <Focus size={14} aria-hidden /></button>
-            <button type="button" className="avst-botao" title="Modo Studio (apresentação)"
+            <button type="button" className="avst-botao" title={t('Modo Studio (apresentação)')}
               aria-pressed={modo === 'studio'}
               onClick={() => setModo((m) => (m === 'studio' ? 'edicao' : 'studio'))}>
               <Clapperboard size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" title="Showcase — apresentação cinematográfica (§174)"
               data-teste="showcase" disabled={apresentando}
               onClick={() => { if (palco3d) setSinal3d((n) => n + 1); else void apresentar(); }}>
-              <Play size={14} aria-hidden /> Apresentar</button>
+              <Play size={14} aria-hidden /> {t('Apresentar')}</button>
             {flagPalco3d && (
-              <button type="button" className="avst-botao" title="Prévia 3D (personagens curados)"
+              <button type="button" className="avst-botao" title={t('Prévia 3D (personagens curados)')}
                 aria-pressed={palco3d} data-teste="botao-3d"
                 onMouseEnter={prefetch3d} onFocus={prefetch3d}
                 onClick={() => setPalco3d((v) => !v)}>
@@ -1090,6 +1114,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             <button type="button" className="avst-botao" title="Versões do avatar no espelho (§619)"
               data-teste="versoes-abrir" onClick={() => setVersoes619(true)}>
               <ArrowUp size={14} aria-hidden style={{ transform: 'rotate(180deg)' }} /></button>
+            {/* mega 415 (§296, flag as5.i18n): seletor de idioma */}
+            {flag('as5.i18n') && (
+              <button type="button" className="avst-botao" data-teste="idioma-toggle"
+                title={idiomaAtual() === 'pt' ? 'Switch interface to English (§296)' : 'Voltar a interface para português (§296)'}
+                onClick={() => definirIdioma(idiomaAtual() === 'pt' ? 'en' : 'pt')}>
+                {idiomaAtual() === 'pt' ? 'EN' : 'PT'}
+              </button>
+            )}
             <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
               aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
               {somLigado ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}</button>
@@ -1122,11 +1154,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* mega 75 (§132): EDIÇÃO tem luz neutra garantida — cor fiel;
               a iluminação §164 só vale nos modos studio/foco */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}
-            data-hora={hora} data-luz={modo === 'edicao' ? 'neutra' : luz} data-clima={clima}
+            data-hora={hora}
+            data-luz={modo === 'edicao' ? 'neutra'
+              : (flag('as5.luz_contextual') && luzAuto ? LUZ_POR_HORA[hora] : luz)} data-clima={clima}
             data-moldura-viva={!palco3d ? molduraViva : undefined}
             data-cen-vivo={palcoV2 && !palco3d && propsCen.vivo && !movReduzido ? '' : undefined}
             data-idle={flag('as5.criacao_avancada') && !palco3d && !movReduzido && propsCen.idle !== 'nenhum' ? propsCen.idle : undefined}
             data-poder-cam={podFamilia && poderAtivo && !movReduzido ? '' : undefined}
+            data-luzctx={flag('as5.luz_contextual') ? '' : undefined}
             data-presenca={presenca ? '' : undefined}
             data-luzadv={sensorial && luzInt !== 1 && !palco3d ? '' : undefined}
             style={sensorial && luzInt !== 1 && !palco3d ? { '--avst5-luzint': luzInt } as React.CSSProperties : undefined}>
@@ -1208,12 +1243,19 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   // megas 354-355 (§157.3/§158.1, flag as5.efeitos_v2): a
                   // celebração do gatilho usa a biblioteca §156 na COR do
                   // avatar; flag off = confete legado byte a byte
-                  __html: flag('as5.efeitos_v2')
-                    ? svgParticulas('pontos', {
+                  // megas 445-446 (§158.1, flag as5.editor_efeitos): o TIPO
+                  // da celebração é configurável (paleta); 'legado' = confete
+                  __html: (() => {
+                    const tipoPref = flag('as5.editor_efeitos')
+                      ? (() => { try { return localStorage.getItem('dshow.avst5.gatilho.v1') ?? 'pontos'; } catch { return 'pontos'; } })()
+                      : 'pontos';
+                    if (!flag('as5.efeitos_v2') || tipoPref === 'legado') return svgEfeitoIsolado('efe_confete');
+                    const tipo = (['pontos', 'estrelas', 'pixels', 'faiscas'].includes(tipoPref) ? tipoPref : 'pontos') as 'pontos' | 'estrelas' | 'pixels' | 'faiscas';
+                    return svgParticulas(tipo, {
                       quantidade: 34, tamanho: 6, velocidade: 1.3, direcao: 'explodir',
                       cor: configVisivel.cores.destaque, opacidade: 0.9, duracaoMs: 1600, turbulencia: 0.3,
-                    }, 'medio', 5)
-                    : svgEfeitoIsolado('efe_confete'),
+                    }, 'medio', 5);
+                  })(),
                 }} />
             )}
             {poderAtivo && (
@@ -1287,7 +1329,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {modo === 'studio' && (
               <button type="button" className="avst5-comparar avst5-capturar" title="Baixar PNG do palco (§174.1)"
                 onClick={() => void capturarPalco()}>
-                <Camera size={13} aria-hidden /> Capturar
+                <Camera size={13} aria-hidden /> {t('Capturar')}
               </button>
             )}
             {modo === 'studio' && (
@@ -1422,6 +1464,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   disabled={controlesTravados}
                   onClick={() => trocarLuz(l)}>{ROTULO_LUZ[l]}</button>
               ))}
+              {/* mega 471-473 (§165, flag as5.luz_contextual): AUTO */}
+              {flag('as5.luz_contextual') && (
+                <button type="button" role="radio" aria-checked={luzAuto}
+                  className={luzAuto ? 'avst5-fundo-on' : ''}
+                  data-teste="luz-auto" disabled={controlesTravados}
+                  title="A luz segue a hora do palco (§165): tarde=quente, noite=dramática, madrugada=fria"
+                  onClick={() => mudarLuzAuto(!luzAuto)}>Auto</button>
+              )}
               {/* mega 325 (§164.3, flag as5.palco_sensorial): INTENSIDADE —
                   modo simples §164.4 = deixar em 1 (zero mudança visual) */}
               {sensorial && !palco3d && (
@@ -1733,6 +1783,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 rotulo: `Ativar poder: ${metaPoder?.nome ?? 'equipado'} (§154)`,
                 executar: () => { setModo('studio'); setTimeout(() => window.dispatchEvent(new CustomEvent('avst5:ativar-poder')), 200); },
               }] : []),
+              // megas 447-448 (§158.1, flag as5.editor_efeitos): gatilho
+              ...(flag('as5.editor_efeitos') ? (['pontos', 'estrelas', 'pixels', 'faiscas', 'legado'] as const).map((tp) => ({
+                id: `gatilho-${tp}`,
+                rotulo: `Celebração ao salvar: ${tp === 'legado' ? 'confete clássico' : tp} (§158.1)`,
+                executar: () => { try { localStorage.setItem('dshow.avst5.gatilho.v1', tp); } catch { /* sem storage */ } },
+              })) : []),
               { id: 'atalhos', rotulo: 'Atalhos do teclado (?)', executar: () => setAtalhos(true) },
               // mega 46: viewer de telemetria (só com a flag dev ligada)
               ...(flag('as5.telemetria_painel') ? [{

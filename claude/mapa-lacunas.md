@@ -1,4 +1,4 @@
-# Mapa de Lacunas do Briefing — v6 (pós onda 311–410, 2026-08-06)
+# Mapa de Lacunas do Briefing — v7 (pós onda 411–510, 2026-08-06)
 
 > Método: briefing (006a394b, 1.764 §§) cruzado por evidência com o código.
 
@@ -64,10 +64,24 @@ processos.
   portabilidade §254/§309/§310 · orçamento §183/§186.1 · prefetch §274 ·
   recentes §88 · vazios §92 v2 · raridade §61 v2 · materiais §75.
 
-## Sequência recomendada (411+)
+## O que a onda 411–510 fechou
 
-1. **I18N §296** (fundação t() + dicionário PT/EN das superfícies novas).
+- i18n §296 (fundação PT/EN + seletor) · busca §57.1–.3 (tolerante,
+  sugestão, atalho /) + §58 v2 · cards §60.9 (indisponível visível) /
+  §60.10 (substitui X) / §66 (hover premium) · editor de efeitos §158 +
+  gatilho §158.1 · pós 3D REAL §457/§177 (EffectComposer+bloom+vinheta) ·
+  heatmap §293 + eventos §294 locais · luz AUTO §165 + combinados §164.2 ·
+  timeline git-like v2 §244 + histórico visual §203 + evento ativo §247 ·
+  setas na grade §297 + foco visível.
+
+## Sequência recomendada (511+)
+
+1. **I18N cobertura total** (migrar catálogo/foto/conquistas p/ t();
+   dicionário EN completo).
 2. **A1/A3 finos sem arte**: §102.2 parâmetros finos, máscaras §340–341
-   além da forma, §68 slots restantes.
-3. **Pós 3D §457 real** (EffectComposer bloom — medir peso no motor3d).
-4. **§268 pipeline v2 / §158 editor completo de efeitos (camadas)**.
+   além da forma, §68 slots restantes, §72 editor de roupas por camada.
+3. **§268 pipeline v2** (fases de validação no publicar-asset) ·
+   **§59 redesenho dos cards** (proporção §59.1) · **§176.1 movimentos
+   extras** (travel/orbit compostos).
+4. **Trilho B destravado** (quando chegarem): zip UBC → morphs §412+/
+   piscar §440 real; chave IA → §355–358; endpoints → §365–366.
