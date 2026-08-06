@@ -10,6 +10,7 @@ import { Download, ScrollText, Trash2 } from 'lucide-react';
 import { assinarTelemetria, eventosRecentes, limparTelemetria } from '../services/Telemetria';
 import { lerCriticos, limparCriticos } from '../services/Log';
 import { MOVIMENTOS, animar } from './movimento';
+import { flag } from '../nucleo/flags'; // mega 381 (§183)
 
 export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
   const [tic, setTic] = useState(0);
@@ -126,6 +127,11 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
             Storage local · {storage.total}KB em chaves dshow.*
             {memoria && <> · heap JS {memoria.usadoMb}/{memoria.limiteMb}MB (§290)</>}
             {/* mega 307 (§629 v2): doctor — resumo honesto */}
+            {/* mega 381 (§183, flag as5.orcamento_perf): orçamento honesto —
+                ~5MB de localStorage; >80% = aviso de verdade */}
+            {flag('as5.orcamento_perf') && storage.total > 4000 && (
+              <strong data-teste="orcamento-aviso"> · ORÇAMENTO §183: {Math.round((storage.total / 5000) * 100)}% do storage</strong>
+            )}
             {storage.corrompidas > 0
               ? <> · <strong data-teste="doctor-corrompidas">{storage.corrompidas} corrompida(s)</strong></>
               : <> · doctor OK (§629)</>}

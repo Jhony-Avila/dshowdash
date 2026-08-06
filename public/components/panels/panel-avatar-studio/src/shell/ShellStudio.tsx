@@ -747,6 +747,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // mega 7: PRÉVIA 3D no viewport (flag as5.palco3d fail-safe OFF) —
   // o chunk pesado (motor3d) só carrega quando o usuário LIGA o modo
   const flagPalco3d = flag('as5.palco3d');
+  // mega 386 (§274, flag as5.orcamento_perf): PREFETCH do motor3d no
+  // hover/focus do botão — o clique encontra o chunk já no cache HTTP
+  const refPrefetch3d = useRef(false);
+  const prefetch3d = useCallback(() => {
+    if (refPrefetch3d.current || !flag('as5.orcamento_perf')) return;
+    refPrefetch3d.current = true;
+    void import('../services/Renderizador3d').catch(() => { refPrefetch3d.current = false; });
+  }, []);
   const [palco3d, setPalco3d] = useState(false);
   // mega 10: Apresentar delega ao showcase 3D quando o palco 3D está ativo
   const [sinal3d, setSinal3d] = useState(0);
@@ -882,15 +890,18 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       const img = await new Promise<HTMLImageElement>((res, rej) => {
         const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url;
       });
+      // mega 383 (§186.1, flag as5.orcamento_perf): captura em ALTA
+      // qualidade (1920px) — SVG é vetor, o custo é só do canvas final
+      const lado = flag('as5.orcamento_perf') ? 1920 : 960;
       const canvas = document.createElement('canvas');
-      canvas.width = 960; canvas.height = 960;
+      canvas.width = lado; canvas.height = lado;
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, 960, 960);
+        ctx.drawImage(img, 0, 0, lado, lado);
         const a = document.createElement('a');
         a.href = canvas.toDataURL('image/png');
-        a.download = 'dshow-showcase-960px.png';
+        a.download = `dshow-showcase-${lado}px.png`;
         a.click();
         telemetria('showcase_captura');
         tocarCapturar(); // mega 89 (§584)
@@ -1056,6 +1067,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {flagPalco3d && (
               <button type="button" className="avst-botao" title="Prévia 3D (personagens curados)"
                 aria-pressed={palco3d} data-teste="botao-3d"
+                onMouseEnter={prefetch3d} onFocus={prefetch3d}
                 onClick={() => setPalco3d((v) => !v)}>
                 <Boxes size={14} aria-hidden /> 3D</button>
             )}
