@@ -42,6 +42,16 @@ const PADROES: Record<string, boolean> = {
   'as5.portabilidade': true,      // lote 371–380 — §254/§255/§309/§310
   'as5.orcamento_perf': true,     // lote 381–390 — §182–§184/§186.1/§274
   'as5.catalogo_v2': true,        // lote 391–400 — §61/§75/§88/§92/§94
+  // ── onda 411–510 (decisão #59; padrão ON conforme #50) ──
+  'as5.i18n': true,               // lote 411–420 — §296 fundação PT/EN
+  'as5.busca_v2': true,           // lote 421–430 — §57.1–.3/§58
+  'as5.cards_v2': true,           // lote 431–440 — §60.9–.10/§66
+  'as5.editor_efeitos': true,     // lote 441–450 — §158/§158.1
+  'as5.pos3d_real': true,         // lote 451–460 — §457/§177 composer
+  'as5.analytics_local': true,    // lote 461–470 — §292–§294 local
+  'as5.luz_contextual': true,     // lote 471–480 — §164.2/§165
+  'as5.memorias_v2': true,        // lote 481–490 — §203/§244/§247
+  'as5.a11y_v2': true,            // lote 491–500 — §297 setas/live
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

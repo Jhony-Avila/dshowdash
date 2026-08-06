@@ -33,6 +33,7 @@ import { registrarMarco } from '../services/Evolucao';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
+import { definirIdioma, idiomaAtual, t } from '../nucleo/i18n'; // lote 411-420 (§296)
 import { ROTULO_FAMILIA, familiaDoPoder, svgRoteiroFamilia } from '../services/PoderesFamilia'; // lote 281-290 (§153/§156)
 import { svgParticulas } from '../engine/particulas'; // lote 351-360 (§157.3)
 import { instalarFocoPreso } from './foco'; // mega 301 (P10)
@@ -762,6 +763,13 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     // §584 (P9): SOM no shell — reusa services/Som (WebAudio synth, sem
   // assets); preferência única compartilhada com o modo clássico
   const [somLigado, setSomLigado] = useState(somAtivo);
+  // lote 411-420 (§296): re-render ao trocar idioma (troca ao vivo)
+  const [, setTicIdioma] = useState(0);
+  useEffect(() => {
+    const ao = () => setTicIdioma(x => x + 1);
+    window.addEventListener('avst:idioma', ao);
+    return () => window.removeEventListener('avst:idioma', ao);
+  }, []);
   // ── lote 321–330 (§157/§161/§164/§178, flag as5.palco_sensorial) ──
   const sensorial = flag('as5.palco_sensorial');
   // mega 321 (§161/§178): PAD ambiente por cenário — segue fundo+mute+3D
@@ -1052,20 +1060,20 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 </div>
               </>)}
             </div>
-            <button type="button" className="avst-botao" title="Modo foco (F)"
+            <button type="button" className="avst-botao" title={`${t('Modo foco')} (F)`}
               aria-pressed={modo === 'foco'}
               onClick={() => setModo((m) => (m === 'foco' ? 'edicao' : 'foco'))}>
               <Focus size={14} aria-hidden /></button>
-            <button type="button" className="avst-botao" title="Modo Studio (apresentação)"
+            <button type="button" className="avst-botao" title={t('Modo Studio (apresentação)')}
               aria-pressed={modo === 'studio'}
               onClick={() => setModo((m) => (m === 'studio' ? 'edicao' : 'studio'))}>
               <Clapperboard size={14} aria-hidden /></button>
             <button type="button" className="avst-botao" title="Showcase — apresentação cinematográfica (§174)"
               data-teste="showcase" disabled={apresentando}
               onClick={() => { if (palco3d) setSinal3d((n) => n + 1); else void apresentar(); }}>
-              <Play size={14} aria-hidden /> Apresentar</button>
+              <Play size={14} aria-hidden /> {t('Apresentar')}</button>
             {flagPalco3d && (
-              <button type="button" className="avst-botao" title="Prévia 3D (personagens curados)"
+              <button type="button" className="avst-botao" title={t('Prévia 3D (personagens curados)')}
                 aria-pressed={palco3d} data-teste="botao-3d"
                 onMouseEnter={prefetch3d} onFocus={prefetch3d}
                 onClick={() => setPalco3d((v) => !v)}>
@@ -1090,6 +1098,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             <button type="button" className="avst-botao" title="Versões do avatar no espelho (§619)"
               data-teste="versoes-abrir" onClick={() => setVersoes619(true)}>
               <ArrowUp size={14} aria-hidden style={{ transform: 'rotate(180deg)' }} /></button>
+            {/* mega 415 (§296, flag as5.i18n): seletor de idioma */}
+            {flag('as5.i18n') && (
+              <button type="button" className="avst-botao" data-teste="idioma-toggle"
+                title={idiomaAtual() === 'pt' ? 'Switch interface to English (§296)' : 'Voltar a interface para português (§296)'}
+                onClick={() => definirIdioma(idiomaAtual() === 'pt' ? 'en' : 'pt')}>
+                {idiomaAtual() === 'pt' ? 'EN' : 'PT'}
+              </button>
+            )}
             <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
               aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
               {somLigado ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}</button>
@@ -1287,7 +1303,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {modo === 'studio' && (
               <button type="button" className="avst5-comparar avst5-capturar" title="Baixar PNG do palco (§174.1)"
                 onClick={() => void capturarPalco()}>
-                <Camera size={13} aria-hidden /> Capturar
+                <Camera size={13} aria-hidden /> {t('Capturar')}
               </button>
             )}
             {modo === 'studio' && (
