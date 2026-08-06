@@ -20,6 +20,7 @@ import { alternarNaLista, criarLista, excluirLista, listarListas } from '../serv
 // mega 229 (§229): favoritos que crescem — marca de permanente
 import { alternarPermanente, favoritosPermanentes } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
+import { ROTULO_FAMILIA, familiaDoPoder } from '../services/PoderesFamilia'; // mega 288 (§153)
 // mega 248 (§228): estado ARQUIVADO (local-first, reversível)
 import { alternarArquivado, arquivados } from '../services/ArquivoItens';
 import { salvarPreset } from '../services/PresetsPessoais';
@@ -115,6 +116,12 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
         <div className={`avst5-det-hero avst5-ctx-${contexto}`}>
           <AvatarSvg config={preview} uid={`det-${item.id}`} foco={FOCO_THUMB[item.categoria]} />
         </div>
+        {/* mega 288 (§153.1–.4): FAMÍLIA do poder visível no detalhe */}
+        {flag('as5.poderes_familia') && (item.categoria === 'efeito' || item.categoria === 'aura') && (
+          <p className="avst5-det-familia" data-teste="det-familia">
+            Família: <strong>{ROTULO_FAMILIA[familiaDoPoder(item.id)]}</strong>
+          </p>
+        )}
         {/* lote 207–208 (§181): "o sistema deverá mostrar" — moldura/banner
             em contextos reais (perfil/header/menu) sem sair do drawer */}
         {(item.categoria === 'moldura' || item.categoria === 'banner') && (

@@ -33,6 +33,7 @@ import { registrarMarco } from '../services/Evolucao';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
+import { ROTULO_FAMILIA, familiaDoPoder, svgRoteiroFamilia } from '../services/PoderesFamilia'; // lote 281-290 (§153/§156)
 
 // ── megas 273–275 (§274–§275, lazy §275): painéis SOB DEMANDA ────────
 // Cada um vira chunk próprio e só atravessa a rede na PRIMEIRA abertura
@@ -348,14 +349,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // R2: câmera contextual — zoom suave via transform (viewBox não anima)
   const enquadramento = ENQUADRAMENTOS[categoria];
-  const zoomEstilo = useMemo(() => {
-    if (!enquadramento) return { transform: 'scale(1)', transformOrigin: '50% 50%' };
-    const [x, y, w, h] = enquadramento;
-    return {
-      transform: `scale(${Math.min(2.4, 240 / Math.max(w, h))})`,
-      transformOrigin: `${((x + w / 2) / 240) * 100}% ${((y + h / 2) / 240) * 100}%`,
-    };
-  }, [enquadramento]);
+  // (zoomEstilo desceu p/ depois do estado do poder — mega 287 §154 passo 2)
 
   const trocarFundo = (f: FundoPalco) => {
     setFundo(f);
@@ -428,6 +422,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // poder no overlay, controles conflitantes desabilitados e replay;
   // movimento reduzido = indisponível (§154.1)
   const palcoV2 = flag('as5.palco_v2');
+  // lote 281–290 (§153.1–.4/§156): roteiro visual POR FAMÍLIA do poder
+  const podFamilia = flag('as5.poderes_familia');
   const [poderAtivo, setPoderAtivo] = useState<string | null>(null);
   const [poderFase, setPoderFase] = useState<'pronto' | 'reproduzindo' | 'cooldown'>('pronto');
   const idPoder = configVisivel.camadas.efeito ?? configVisivel.camadas.aura ?? null;
@@ -436,7 +432,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     if (!idPoder || poderAtivo) return;
     if (palcoV2 && (poderFase !== 'pronto' || movReduzido)) return;
     setPoderAtivo(idPoder);
-    telemetria('palco_poder', { id: idPoder }); // §290
+    // mega 289 (§292): família junto no evento — heatmap §293 por família
+    telemetria('palco_poder', podFamilia
+      ? { id: idPoder, familia: familiaDoPoder(idPoder) }
+      : { id: idPoder }); // §290
     incrementar('poderes'); // mega 246 (§221): "seus números" local
     tocarPoder(); // mega 89 (§584)
     if (palcoV2) {
@@ -449,6 +448,18 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   }, [idPoder, poderAtivo, palcoV2, poderFase, movReduzido]);
   // §154.1: controles do cenário ficam travados DURANTE a reprodução
   const controlesTravados = palcoV2 && poderFase === 'reproduzindo';
+
+  const zoomEstilo = useMemo(() => {
+    // mega 287 (§154 passo 2): a "câmera" aproxima de leve DURANTE o poder
+    // (multiplica o zoom contextual; ×1 fora do poder = bytes idênticos)
+    const cam = podFamilia && poderAtivo && !movReduzido ? 1.05 : 1;
+    if (!enquadramento) return { transform: `scale(${cam})`, transformOrigin: '50% 50%' };
+    const [x, y, w, h] = enquadramento;
+    return {
+      transform: `scale(${Math.min(2.4, 240 / Math.max(w, h)) * cam})`,
+      transformOrigin: `${((x + w / 2) / 240) * 100}% ${((y + h / 2) / 240) * 100}%`,
+    };
+  }, [enquadramento, podFamilia, poderAtivo, movReduzido]);
 
   // megas 233–234 (§161): propriedades do cenário (locais, flag v2)
   const [propsCen, setPropsCen] = useState<PropsCenario>(lerPropsCenario);
@@ -1041,7 +1052,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             data-hora={hora} data-luz={modo === 'edicao' ? 'neutra' : luz} data-clima={clima}
             data-moldura-viva={!palco3d ? molduraViva : undefined}
             data-cen-vivo={palcoV2 && !palco3d && propsCen.vivo && !movReduzido ? '' : undefined}
-            data-idle={flag('as5.criacao_avancada') && !palco3d && !movReduzido && propsCen.idle !== 'nenhum' ? propsCen.idle : undefined}>
+            data-idle={flag('as5.criacao_avancada') && !palco3d && !movReduzido && propsCen.idle !== 'nenhum' ? propsCen.idle : undefined}
+            data-poder-cam={podFamilia && poderAtivo && !movReduzido ? '' : undefined}>
             {/* lote 201 (§163): overlay de CLIMA — determinístico, sobre o cenário
                 e atrás dos controles; reduced-motion desliga o movimento (§182) */}
             {clima !== 'limpo' && !palco3d && (
@@ -1115,12 +1127,26 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               <div className="avst5-celebracao avst5-poder" aria-hidden data-teste="poder-ativo"
                 dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado(poderAtivo, configVisivel.cores.destaque) }} />
             )}
+            {/* megas 283–287 (§153.1–.4 + §156): ROTEIRO da família — campo
+                de partículas próprio por cima do efeito; movimento reduzido
+                = poses estáticas (a biblioteca não anima) */}
+            {podFamilia && poderAtivo && (
+              <div className="avst5-celebracao avst5-poder-part" aria-hidden
+                data-teste="poder-particulas" data-familia={familiaDoPoder(poderAtivo)}
+                dangerouslySetInnerHTML={{
+                  __html: svgRoteiroFamilia(familiaDoPoder(poderAtivo), configVisivel.cores.destaque, 'medio', !movReduzido),
+                }} />
+            )}
             {/* mega 235 (§154 item 7): NOME do poder durante a reprodução */}
             {palcoV2 && poderAtivo && metaPoder && (
               <div className="avst5-poder-nome" role="status" data-teste="poder-nome"
                 style={{ '--avst-rar': RARIDADES[metaPoder.raridade].cor } as React.CSSProperties}>
                 <Sparkles size={12} aria-hidden /> {metaPoder.nome}
-                <small>{RARIDADES[metaPoder.raridade].nome}</small>
+                <small>
+                  {RARIDADES[metaPoder.raridade].nome}
+                  {/* mega 288 (§153): família visível na placa do poder */}
+                  {podFamilia && <> · {ROTULO_FAMILIA[familiaDoPoder(poderAtivo)]}</>}
+                </small>
               </div>
             )}
             {anuncio && !comparando && (
