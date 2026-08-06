@@ -218,6 +218,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
     forma: 'circulo', filtroCor: 'nenhum',
     nitidez: 0, marca: '', // lote 311-320 (§333/§372)
     particulas: 'nenhum', // lote 541-550 (§348.1)
+    borda: 0, // megas 565-567 (§340-341): pluma da borda do medalhão
   };
   const mudarAjuste = useCallback((campo: keyof AjustesFoto, valor: number | boolean | string) => {
     setEstilo((e) => {
@@ -1597,6 +1598,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
                 ['anel', 'Anel', 1, 6, 0.5],
                 // mega 311 (§333, flag as5.foto_fina): nitidez por convolução
                 ...(flag('as5.foto_fina') ? [['nitidez', 'Nitidez', 0, 1, 0.01]] : []),
+                // megas 565-567 (§340-341, flag as5.criacao_fina): borda suave
+                ...(flag('as5.criacao_fina') ? [['borda', 'Borda suave', 0, 1, 0.01]] : []),
               ] as Array<[keyof AjustesFoto, string, number, number, number]>).map(([campo, rotulo, min, max, passo]) => (
                 <label key={campo} className="avst-ft-ajuste">
                   <span>{rotulo}</span>

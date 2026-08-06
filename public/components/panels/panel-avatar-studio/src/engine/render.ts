@@ -84,9 +84,17 @@ const POSTURAS_FIG: Record<string, string> = {
 function envolverFigura(svg: string, config: AvatarConfig, cy: number): string {
   const corpo = config.corpo ? TIPOS_CORPO[config.corpo] : undefined;
   const postura = config.postura ? POSTURAS_FIG[config.postura] : undefined;
-  if (!corpo && !postura) return svg;
+  // megas 561–564 (§102.2): ajuste FINO multiplica o preset (1 = neutro).
+  // validarConfig omite valores 1 — corpoFino ausente ⇒ sx/sy iguais ao
+  // preset puro ⇒ saída byte a byte a de sempre (byte-stability).
+  const fino = config.corpoFino;
+  const sx = (corpo?.[0] ?? 1) * (fino?.largura ?? 1);
+  const sy = (corpo?.[1] ?? 1) * (fino?.altura ?? 1);
+  const escala = sx !== 1 || sy !== 1;
+  if (!escala && !postura) return svg;
+  const arr = (n: number) => Math.round(n * 1000) / 1000;
   const partes: string[] = [];
-  if (corpo) partes.push(`translate(120 ${cy}) scale(${corpo[0]} ${corpo[1]}) translate(-120 -${cy})`);
+  if (escala) partes.push(`translate(120 ${cy}) scale(${arr(sx)} ${arr(sy)}) translate(-120 -${cy})`);
   if (postura) partes.push(postura.replace(/__CY__/g, String(Math.round(cy * 0.82))));
   return `<g transform="${partes.join(' ')}">${svg}</g>`;
 }

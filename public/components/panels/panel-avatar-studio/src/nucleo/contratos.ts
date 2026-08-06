@@ -85,6 +85,8 @@ export interface EstadoAvatar {
      *  checksum de estados anteriores (mesma regra de params §71). */
     tipo?: string;
     postura?: string;
+    /** megas 561–564 (§102.2): ajuste FINO — mesma regra de opcionais. */
+    fino?: { largura?: number; altura?: number };
   };
   /** `params` (§71) e `coresCamada` (§73): regulagens por slot equipado —
    *  campos OPCIONAIS: ausentes quando nada foi regulado, preservando o

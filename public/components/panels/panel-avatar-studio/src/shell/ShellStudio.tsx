@@ -1698,6 +1698,35 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                               }}>{nome}</button>
                         ))}
                       </div>
+                      {/* megas 561–564 (§102.2, flag as5.criacao_fina): ajuste
+                          FINO — sliders multiplicam o preset; 1 = neutro e o
+                          campo SOME (byte-stability); undo via aoEscolher */}
+                      {flag('as5.criacao_fina') && (
+                        <>
+                          <span className="avst-ft-rotulo">{t('Ajuste fino (§102.2)')}</span>
+                          {([['largura', 'Largura', 0.92, 1.08], ['altura', 'Altura', 0.96, 1.04]] as const).map(([ch, nome, min, max]) => (
+                            <label key={ch} className="avst-ft-linha" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ minWidth: 56 }}>{t(nome)}</span>
+                              <input type="range" min={min} max={max} step={0.01}
+                                data-teste={`fino-${ch}`}
+                                value={configDraft.corpoFino?.[ch] ?? 1}
+                                aria-label={`${t(nome)} (§102.2)`}
+                                onChange={(e) => {
+                                  const v = Number(e.target.value);
+                                  const cf = { ...(configDraft.corpoFino ?? {}), [ch]: v };
+                                  const { corpoFino: _f, ...resto } = configDraft;
+                                  aoEscolher(validarConfig({ ...resto, corpoFino: cf }));
+                                }} />
+                              <span aria-hidden>{(configDraft.corpoFino?.[ch] ?? 1).toFixed(2)}×</span>
+                            </label>
+                          ))}
+                          <button type="button" className="avst-ft-chip" data-teste="fino-neutro"
+                            onClick={() => {
+                              const { corpoFino: _f, ...resto } = configDraft;
+                              aoEscolher(validarConfig(resto));
+                            }}>{t('Restaurar neutro')}</button>
+                        </>
+                      )}
                     </div>
                   )}
                   <GradeItens config={configDraft} categoria={categoria}

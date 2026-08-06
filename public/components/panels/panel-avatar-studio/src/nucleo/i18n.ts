@@ -97,6 +97,11 @@ const EN: Record<string, string> = {
   Fria: 'Cool',
   Dramática: 'Dramatic',
   Auto: 'Auto',
+  // lote 561-570 (§102.2): criação fina
+  'Ajuste fino (§102.2)': 'Fine tuning (§102.2)',
+  Largura: 'Width',
+  Altura: 'Height',
+  'Restaurar neutro': 'Reset to neutral',
   // 3D
   'Prévia 3D (personagens curados)': '3D preview (curated characters)',
   Enquadrar: 'Frame',

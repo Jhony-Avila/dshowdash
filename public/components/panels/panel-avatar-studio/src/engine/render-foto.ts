@@ -38,6 +38,7 @@ export interface EstiloFotoRender {
     zoomFoto?: number; anel?: number;
     nitidez?: number; marca?: string; // lote 311-320 (§333/§372)
     particulas?: 'pontos' | 'estrelas' | 'pixels'; // lote 541-550 (§348.1)
+    borda?: number; // megas 565-567 (§340-341): pluma da borda 0..1 (0 = ausente)
   };
   /** mega 115 (§344): legenda livre já SANITIZADA pelo serviço */
   legenda?: string;
@@ -137,6 +138,7 @@ const NEUTRO: Required<AjustesRender> = {
   filtroCor: 'nenhum', zoomFoto: 1, anel: 3,
   nitidez: 0, marca: '', // lote 311-320: neutros dos campos novos
   particulas: 'nenhum' as never, // lote 541-550: neutro = ausente
+  borda: 0, // megas 565-567 (§340-341): sem pluma = clip duro legado
 };
 
 function ajustesEfetivos(a?: AjustesRender): Required<AjustesRender> | null {
@@ -147,7 +149,8 @@ function ajustesEfetivos(a?: AjustesRender): Required<AjustesRender> | null {
     && !v.espelhar && !v.sombra
     && v.forma === 'circulo' && v.desfoqueFundo === 0 && v.granulacao === 0
     && v.filtroCor === 'nenhum' && v.zoomFoto === 1 && v.anel === 3
-    && v.nitidez === 0 && v.marca === '' && (v.particulas as unknown as string) === 'nenhum';
+    && v.nitidez === 0 && v.marca === '' && (v.particulas as unknown as string) === 'nenhum'
+    && v.borda === 0;
   return neutro ? null : v;
 }
 
@@ -435,7 +438,7 @@ export function renderFotoEstilizada(
     : '';
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"${dim} role="img" aria-label="Foto estilizada">
-<defs><clipPath id="${uid}clip">${clip}</clipPath><clipPath id="${uid}fclip">${fclip}</clipPath>${defsAj}</defs>
+<defs><clipPath id="${uid}clip">${clip}</clipPath><clipPath id="${uid}fclip">${fclip}</clipPath>${defsAj}${mascaraBorda(uid, aj, fclip)}</defs>
 <g clip-path="url(#${uid}clip)">${fundoComp}${efeitoAtras}${medalhao}${luz}${badge}${efeitoFrente}${vinheta}${grao}${particulasFoto}${legenda}${selo}${marca}</g>
 ${moldura}
 </svg>`;
@@ -444,6 +447,17 @@ ${moldura}
     svg = congelarSvg(svg);
   }
   return svg;
+}
+
+/** megas 565–567 (§340–341): BORDA SUAVE — máscara com PLUMA (feGaussian-
+ *  Blur na silhueta branca) que substitui o clip DURO da foto do medalhão
+ *  quando borda > 0. borda 0/ausente = string vazia = defs byte a byte. */
+function mascaraBorda(uid: string, aj: Required<AjustesRender> | null, fclip: string): string {
+  if (!aj || !(aj.borda > 0)) return '';
+  const desvio = Math.round(aj.borda * 6 * 10) / 10; // 0..1 → 0..6px de pluma
+  return `<filter id="${uid}fblur" x="-20%" y="-20%" width="140%" height="140%">` +
+    `<feGaussianBlur stdDeviation="${desvio}"/></filter>` +
+    `<mask id="${uid}fmask">${fclip.replace('/>', ` fill="#ffffff" filter="url(#${uid}fblur)"/>`)}</mask>`;
 }
 
 /** Medalhão (aro → foto clipada → anel de destaque) — compartilhado entre
@@ -481,9 +495,12 @@ function medalhaoSvg(
     : anelW !== 3
       ? `<circle cx="120" cy="118" r="93" fill="none" stroke="${p.destaque.base}" stroke-width="${anelW}" opacity="0.9"/>`
       : `<circle cx="120" cy="118" r="93" fill="none" stroke="${p.destaque.base}" stroke-width="3" opacity="0.9"/>`;
+  // megas 565–567 (§340–341): com borda > 0 a foto usa a MÁSCARA plumada
+  // (definida nos defs do chamador); sem borda, o clip legado byte a byte
+  const recorte = aj && aj.borda > 0 ? `mask="url(#${uid}fmask)"` : `clip-path="url(#${uid}fclip)"`;
   return sombra + aro +
     `<image href="${escaparAtributo(fotoHref)}" x="28" y="26" width="184" height="184" ` +
-      `preserveAspectRatio="xMidYMid slice" clip-path="url(#${uid}fclip)"${extras}/>` +
+      `preserveAspectRatio="xMidYMid slice" ${recorte}${extras}/>` +
     anel;
 }
 
@@ -579,7 +596,7 @@ function comporWide(
   const dims = opcoes.estatico ? ` width="${lw}" height="${lh}"` : '';
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"${dims} ` +
     `preserveAspectRatio="none" role="img" aria-label="Foto estilizada (${formato.nome})">
-<defs><clipPath id="${uid}clip"><rect width="${W}" height="${H}" rx="14"/></clipPath><clipPath id="${uid}fclip">${fclipW}</clipPath>${defsAj}</defs>
+<defs><clipPath id="${uid}clip"><rect width="${W}" height="${H}" rx="14"/></clipPath><clipPath id="${uid}fclip">${fclipW}</clipPath>${defsAj}${mascaraBorda(uid, aj, fclipW)}</defs>
 <g clip-path="url(#${uid}clip)">${opcoes.semFundo ? '' : `<rect width="${W}" height="${H}" fill="#0a0d15"/>`}${aj && aj.desfoqueFundo > 0 ? `<g filter="url(#${uid}bf)">${fundo}</g>` : fundo}${efeitoAtras}${direita ? `<g transform="translate(${deslocMedalhao} 0)">` : ''}${aura}${medalhaoSvg(fotoHref, p, uid, aj)}${luzW}${direita ? '</g>' : ''}${badge}${efeitoFrente}${vinheta}${grao}${legendaW}${subtituloW}${selo}</g>
 </svg>`;
 

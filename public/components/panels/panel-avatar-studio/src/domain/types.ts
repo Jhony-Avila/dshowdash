@@ -118,6 +118,9 @@ export interface AvatarConfig {
    *  'medio' é o neutro e NUNCA persiste (byte-estável). */
   corpo?: TipoCorporal;
   /** mega 255 (§118): POSTURA — idem; 'neutra' nunca persiste. */
+  /** megas 561-564 (§102.2, lote 561-570): ajuste FINO do corpo —
+   *  largura/altura sutis; 1 = neutro (campo/objeto omitidos) */
+  corpoFino?: { largura?: number; altura?: number };
   postura?: PosturaAvatar;
 }
 
@@ -168,6 +171,8 @@ export interface AjustesFoto {
   marca?: string;
   /** megas 541-543 (§348.1, lote 541-550): PARTÍCULAS estáticas na foto */
   particulas?: 'pontos' | 'estrelas' | 'pixels';
+  /** megas 565-567 (§340-341, lote 561-570): BORDA SUAVE (pluma) 0-1 · 0 = neutro */
+  borda?: number;
   /** §337: sombra de contato sob o medalhão */
   sombra?: boolean;
   // ── lote 111–120 (§332/§333/§334/§341) ──
