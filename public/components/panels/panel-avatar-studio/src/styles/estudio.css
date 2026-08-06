@@ -2251,3 +2251,19 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   .avst5-viewport.avst5-cen-fade { animation: none; opacity: 0; }
   .avst5-viewport[data-presenca] .avst5-zoom { animation: none; }
 }
+
+/* ── lote 391–400 (§61/§75, flag as5.catalogo_v2 via [data-catv2]) ──── */
+/* §61 v2: raridade alta ganha borda com gradiente sutil */
+[data-catv2] .avst-card[data-raridade="lendario"],
+[data-catv2] .avst-card[data-raridade="exclusivo"] {
+  border-image: linear-gradient(135deg, var(--avst-rar, #e8b64c), transparent 65%) 1;
+}
+/* §75: MATERIAL — sheen no hover dos cards épicos+ (barato, GPU-friendly) */
+[data-catv2] .avst-card[data-raridade="epico"]:hover,
+[data-catv2] .avst-card[data-raridade="lendario"]:hover,
+[data-catv2] .avst-card[data-raridade="exclusivo"]:hover {
+  background-image: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.06) 50%, transparent 60%);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-catv2] .avst-card:hover { background-image: none; }
+}

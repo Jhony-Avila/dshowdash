@@ -24,6 +24,7 @@ import { flag } from '../nucleo/flags';
 // mega 248 (§228): itens ARQUIVADOS saem da grade padrão (reversível)
 import { arquivados } from '../services/ArquivoItens';
 import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // lote 351-360 (§157)
+import { lerRecentes, registrarRecente } from '../services/Recentes'; // lote 391-400 (§88)
 import type { ParteDef } from '../engine/base-api';
 import { AvatarSvg } from './AvatarSvg';
 import { Dica } from './Dica';
@@ -150,6 +151,13 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       return m === 'compacta' || m === 'lista' ? m : 'detalhada';
     } catch { return 'detalhada'; }
   });
+  // mega 391 (§88): recência reativa — o registrar dispara o evento
+  const [ticRec, setTicRec] = useState(0);
+  useEffect(() => {
+    const ao = () => setTicRec((t) => t + 1);
+    window.addEventListener('avst:recentes', ao);
+    return () => window.removeEventListener('avst:recentes', ao);
+  }, []);
   // megas 351-353 (§157): filtro por categoria FUNCIONAL (efeitos)
   const [filtroFx, setFiltroFx] = useState<'todos' | 'ambiental' | 'distorcao' | 'celebracao' | 'transicao' | 'presenca'>('todos');
 
@@ -285,7 +293,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   const virtualizar = itens.length > LIMIAR_VIRTUALIZACAO;
 
   return (
-    <div className="avst-biblioteca">
+    <div className="avst-biblioteca" data-catv2={flag('as5.catalogo_v2') ? '' : undefined}>
       {/* título contextual (AS4 §39.15) + modos de visualização (§23.1) */}
       <header className="avst-painel-titulo">
         <div>
@@ -432,6 +440,26 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             <span className="avst-card-nome">Nenhum</span>
           </button>
         )}
+        {/* mega 391 (§88, flag as5.catalogo_v2): RECENTES da categoria */}
+        {flag('as5.catalogo_v2') && ticRec >= 0 && (() => {
+          const rec = lerRecentes()
+            .map((id) => itemPorId(id))
+            .filter((i): i is NonNullable<typeof i> => Boolean(i && i.categoria === categoria))
+            .slice(0, 6);
+          if (rec.length === 0) return null;
+          return (
+            <div className="avst-conq-filtros" role="group" aria-label="Usados recentemente (§88)" data-teste="recentes">
+              <span style={{ fontSize: 11, opacity: 0.7 }}>Recentes:</span>
+              {rec.map((i) => (
+                <button key={i.id} type="button" className="avst-ft-chip" data-teste="recente-chip"
+                  title={`Equipar ${i.nome} de novo (§88)`}
+                  onClick={() => { registrarRecente(i.id); aoEscolher(comItem(config, categoria, i.id)); }}>
+                  {i.nome}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
         {/* megas 351-353 (§157.1-.5, flag as5.efeitos_v2): categorias
             funcionais do efeito — filtro honesto por classificação */}
         {categoria === 'efeito' && flag('as5.efeitos_v2') && (
@@ -453,12 +481,22 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             favorito: favs.has(item.id),
             bloqueado: bloqueado(item),
             aoFavoritar: () => setFavs(new Set(alternarFavorito(item.id))),
-            aoEscolher: () => aoEscolher(comItem(config, categoria, item.id)),
+            aoEscolher: () => {
+              if (flag('as5.catalogo_v2')) registrarRecente(item.id); // §88
+              aoEscolher(comItem(config, categoria, item.id));
+            },
           };
           return virtualizar && idx >= CARDS_IMEDIATOS
             ? <CardPreguicoso key={item.id} observar={observar} {...props} />
             : <CardItem key={item.id} {...props} />;
         })}
+        {/* mega 393 (§92 v2): vazio ganha AÇÃO quando o filtro causou */}
+        {itens.length === 0 && flag('as5.catalogo_v2') && (filtroFx !== 'todos' || busca) && (
+          <button type="button" className="avst-botao" data-teste="vazio-limpar"
+            onClick={() => { setFiltroFx('todos'); setBusca(''); }}>
+            Limpar filtros e busca
+          </button>
+        )}
         {itens.length === 0 && (
           // mega 100: empty state DIZ o caminho, não só o problema
           <p className="avst-grade-vazia" data-teste="grade-vazia">
