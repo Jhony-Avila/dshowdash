@@ -14,7 +14,7 @@ import { sugerirPorCor } from '../services/ConselheiroEstilo'; // mega 345 (§20
 import {
   alternarFavoritoPreset, atualizarPreset, duplicarPreset, excluirPreset, listarPresets, salvarPreset, snapshotDoPreset,
 } from '../services/PresetsPessoais';
-import { aplicarBackup, codigoDoLook, exportarBackup, interpretarBackup, lerCodigoDoLook } from '../services/Backup';
+import { aplicarBackup, aplicarPacote, codigoDoLook, exportarBackup, exportarTudo, interpretarBackup, interpretarPacote, lerCodigoDoLook } from '../services/Backup';
 import { calcularXp, nivelDe } from '../components/ProgressoPerfil';
 import { favoritos, itensUsados } from '../services/Progresso';
 
@@ -27,6 +27,15 @@ export function PresetsShell({ configAtual, aoAplicar }: {
   // mega 38: feedback do import de backup (avisos de itens descartados)
   const [avisoBackup, setAvisoBackup] = useState('');
   const refArquivo = useRef<HTMLInputElement>(null);
+  const refArquivoTudo = useRef<HTMLInputElement>(null); // lote 371-380
+  const importarTudo = async (arquivo?: File | null) => {
+    if (!arquivo) return;
+    const r = interpretarPacote(await arquivo.text());
+    if (!r.ok) { setAvisoBackup(`Backup completo recusado: ${r.motivo}`); return; }
+    const n = aplicarPacote(r);
+    setAvisoBackup(`Backup completo aplicado: ${n} chave(s). Recarregue a página para ver tudo.`);
+    setTic((t) => t + 1);
+  };
   // mega 69 (§231): COMPARAÇÃO — escolha 2 presets p/ ver lado a lado
   const [comparar, setComparar] = useState<string[]>([]);
   const alternarComparar = (id: string) => {
@@ -132,6 +141,22 @@ export function PresetsShell({ configAtual, aoAplicar }: {
         <input ref={refArquivo} type="file" accept="application/json,.json" hidden
           aria-label="Arquivo de backup" data-teste="backup-arquivo"
           onChange={(e) => void importar(e.target.files?.[0])} />
+        {/* lote 371-380 (§254/§309/§310, flag as5.portabilidade): TUDO */}
+        {flag('as5.portabilidade') && (<>
+          <button type="button" className="avst-botao" data-teste="port-exportar"
+            title="Exporta TUDO (presets, projetos de foto, preferências, contadores) num JSON versionado (§254/§310)"
+            onClick={exportarTudo}>
+            <HardDriveDownload size={13} aria-hidden /> Exportar TUDO
+          </button>
+          <button type="button" className="avst-botao" data-teste="port-importar"
+            title="Importa um backup completo (validação estrita por chave §309)"
+            onClick={() => refArquivoTudo.current?.click()}>
+            <HardDriveUpload size={13} aria-hidden /> Importar TUDO
+          </button>
+          <input ref={refArquivoTudo} type="file" accept="application/json,.json" hidden
+            aria-label="Arquivo de backup completo" data-teste="port-arquivo"
+            onChange={(e) => void importarTudo(e.target.files?.[0])} />
+        </>)}
         {avisoBackup && <p className="avst5-backup-aviso" role="status" data-teste="backup-aviso">{avisoBackup}</p>}
       </div>
       {/* mega 97 (§373-lite): CÓDIGO DO LOOK — compartilha por texto */}
