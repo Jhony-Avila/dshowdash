@@ -52,6 +52,15 @@ const PADROES: Record<string, boolean> = {
   'as5.luz_contextual': true,     // lote 471–480 — §164.2/§165
   'as5.memorias_v2': true,        // lote 481–490 — §203/§244/§247
   'as5.a11y_v2': true,            // lote 491–500 — §297 setas/live
+  // ── onda 511–610 (decisão #61; padrão ON conforme #50) ──
+  // (i18n de cobertura usa a as5.i18n existente — decisão #62)
+  'as5.foto_entrada': true,       // lote 531–540 — §321.1–.2 avatar/preset → foto
+  'as5.foto_pro2': true,          // lote 541–550 — §335–§348/§359–§371 restos
+  'as5.roupas_camada': true,      // lote 551–560 — §72–§74
+  'as5.criacao_fina': true,       // lote 561–570 — §102.2/§340–341/§68
+  'as5.palco_v3': true,           // lote 571–580 — §176.1/§178.2/§157 restos
+  'as5.infra_v3': true,           // lote 581–590 — §268/§277/§299–300
+  'as5.ux_final': true,           // lote 591–600 — §59.1/§60/§64.2/§545+
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

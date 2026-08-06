@@ -713,7 +713,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           )}
           {aba === 'foto' && (
             <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'}
-              desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto} />
+              desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto}
+              configAtual={atual} /* lote 531-540 (§321.1): avatar atual → foto */ />
           )}
           {aba === 'itens' && (
             <>

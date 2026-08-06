@@ -22,7 +22,7 @@ import {
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
 import type { FotoGuardada } from '../services/AvatarService';
 import type { EstiloFoto } from '../domain/types';
-import {
+import { dataUriDe, validarConfig,
   CATEGORIAS, CATEGORIAS_FOTO, CONFIG_PADRAO, CORES_SUGERIDAS, CORES_TEXTO_FOTO,
   FORMATOS_FOTO, RARIDADES, TEMPLATES_FOTO, TITULOS, dicasComposicao, itemPorId, itensDe,
   comporAutomatico, posPadraoElementoFoto, posSugeridasEmblema, svgFotoDe,
@@ -41,6 +41,8 @@ import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { excluirProjetoFoto, listarProjetosFoto, renomearProjetoFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
 // megas 253+258 (§369/§349): presets de exportação + compor pra mim
 import { excluirPresetExport, listarPresetsExport, salvarPresetExport } from '../services/PresetsExport';
+import { listarPresets } from '../services/PresetsPessoais'; // lote 531-540 (§321.2)
+import type { AvatarConfig } from '../domain/types';
 import type { PresetExport } from '../services/PresetsExport';
 import type { ProjetoFoto } from '../services/ProjetosFoto';
 import type {
@@ -121,13 +123,15 @@ const NOMES_BLEND: Record<BlendFoto, string> = {
   overlay: 'Contraste', 'soft-light': 'Luz suave',
 };
 
-export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
+export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }: {
   versao: number;
   /** true quando o avatar ativo já é uma foto */
   fotoAtiva: boolean;
   /** ids liberados por conquistas/eventos (mesma fonte da grade) */
   desbloqueados: Set<string>;
   aoSalvar: (novaVersao: number) => void;
+  /** lote 531-540 (§321.1-.2, flag as5.foto_entrada): entrada pelo AVATAR */
+  configAtual?: AvatarConfig;
 }) {
   const [recorte, setRecorte] = useState<EstadoRecorte | null>(null);
   const [camera, setCamera] = useState<MediaStream | null>(null);
@@ -651,6 +655,20 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     img.src = url;
   }, [fecharCamera]);
 
+  // megas 531-534 (§321.1-.2, flag as5.foto_entrada): AVATAR (ou preset)
+  // vira a FONTE da foto — renderiza o SVG e entra no MESMO funil do
+  // recorte/estilização (nada novo depois daqui)
+  const usarConfigComoFoto = useCallback((cfg: AvatarConfig) => {
+    try {
+      const uri = dataUriDe(validarConfig(cfg), { estatico: true, tamanho: 480 });
+      const img = new Image();
+      img.onload = () => setRecorte({ img, zoom: 1, x: 0, y: 0 });
+      img.onerror = () => setMensagem('Não consegui renderizar o avatar como foto.');
+      img.src = uri;
+    } catch { setMensagem('Não consegui renderizar o avatar como foto.'); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Recorte ─────────────────────────────────────────────────────────
   /** Desenha a imagem no palco respeitando zoom/pan (cover). */
   const desenhar = useCallback((ctx: CanvasRenderingContext2D, r: EstadoRecorte, lado: number) => {
@@ -1013,6 +1031,28 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
           <label className="avst-foto-escolher">
             <ImageUp size={22} aria-hidden />
             <span>Escolher imagem…</span>
+            {/* megas 531-534 (§321.1-.2, flag as5.foto_entrada) */}
+            {flag('as5.foto_entrada') && configAtual && (
+              <button type="button" className="avst-botao" data-teste="foto-do-avatar"
+                title="Usa o seu avatar ATUAL como a foto (§321.1)"
+                onClick={() => usarConfigComoFoto(configAtual)}>
+                Usar meu avatar
+              </button>
+            )}
+            {flag('as5.foto_entrada') && listarPresets().length > 0 && (
+              <select className="avst-botao" data-teste="foto-de-preset" defaultValue=""
+                aria-label="Usar um preset como foto (§321.2)"
+                onChange={(e) => {
+                  const pz = listarPresets().find((x) => x.id === e.target.value);
+                  if (pz) usarConfigComoFoto(pz.config);
+                  e.target.value = '';
+                }}>
+                <option value="" disabled>De um preset…</option>
+                {listarPresets().map((pz) => (
+                  <option key={pz.id} value={pz.id}>{pz.nome}</option>
+                ))}
+              </select>
+            )}
             <input type="file" accept="image/png,image/jpeg,image/webp"
               onChange={(e) => escolherArquivo(e.target.files?.[0])} />
           </label>
