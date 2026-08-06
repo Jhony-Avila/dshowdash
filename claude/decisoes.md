@@ -76,6 +76,25 @@
   tudo ANTES de aplicar (duas etapas); recência §88 reativa por evento
   (grade não espera remontagem).
 
+- **#59 (2026-08-06) — Escopo da onda 411–510** (pedido: "100 Mega Lotes
+  de uma vez", 2ª onda de 100): 411–420 i18n §296 (`as5.i18n`) · 421–430
+  busca v2 §57 (`as5.busca_v2`) · 431–440 cards v2 §60/§66
+  (`as5.cards_v2`) · 441–450 editor de efeitos §158 (`as5.editor_efeitos`)
+  · 451–460 pós 3D real §457 (`as5.pos3d_real`) · 461–470 analytics local
+  §292–294 (`as5.analytics_local`) · 471–480 luz contextual §164–165
+  (`as5.luz_contextual`) · 481–490 memórias v2 §203/§244/§247
+  (`as5.memorias_v2`) · 491–500 a11y §297 (`as5.a11y_v2`) · 501–510 QA.
+  Mapa: doc 15 do projeto Claude.
+- **#60 (2026-08-06) — Escolhas técnicas da onda 411–510**: PT é o idioma
+  CANÔNICO do i18n (chave = texto atual; flag off FORÇA PT); ordenação
+  §58 já existia → só 'Novos primeiro' somado (não duplicar módulo);
+  §60.9 muda filtro→indisponível-visível SÓ com flag; efeito entra nos
+  params §71 EXISTENTES (wrappers genéricos; params seguem locais);
+  composer real com fallback hierárquico p/ o filter CSS e capturar()
+  legado; heatmap/analytics 100% locais; luz AUTO desliga no preset
+  manual; roving tabindex gerenciado no DOM (MutationObserver rearma na
+  virtualização).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 201–210, 211–220 e 221–230 · Chave IA (Anexo B
