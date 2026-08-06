@@ -14,6 +14,7 @@ import {
 } from '../services/Evolucao';
 import type { MarcoEvolucao } from '../services/Evolucao';
 import { telemetria } from '../services/Telemetria';
+import { flag } from '../nucleo/flags'; // lote 481-490 (§244)
 
 const dataCurta = (ms: number): string =>
   new Date(ms).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
@@ -70,7 +71,14 @@ export function Evolucao({ configAtual, aoAplicar, aoFechar }: {
                 <img src={dataUriDe(m.config, { estatico: true, tamanho: 96 })} alt="" width={64} height={64} />
               </button>
               <div className="avst5-evo-info">
-                <strong>{ROTULO_ORIGEM[m.origem]}</strong>
+                <strong>
+                  {/* megas 481-483 (§244, flag as5.memorias_v2): marco de
+                      RESTAURAÇÃO é uma bifurcação na linha — marcado */}
+                  {flag('as5.memorias_v2') && m.origem === 'restauracao' && (
+                    <span className="avst5-evo-branch" data-teste="evo-branch" title="Bifurcação: você voltou a um look anterior e seguiu por outro caminho (§244)">⎇ </span>
+                  )}
+                  {ROTULO_ORIGEM[m.origem]}
+                </strong>
                 <time>{dataCurta(m.quando)}</time>
                 {notaDe?.id === m.id ? (
                   <input autoFocus value={notaDe.texto} maxLength={80} data-teste="evo-nota-input"
