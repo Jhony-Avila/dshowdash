@@ -502,7 +502,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   }, [movCam, fase, cineLigado, movReduzido, personagem]);
   useEffect(() => {
     if (fase !== 'pronto' || !cineLigado) return;
-    (refR.current as unknown as { definirPos?: (v: boolean) => void })?.definirPos?.(posFx);
+    // lote 451-460 (§457, flag as5.pos3d_real): composer REAL quando a
+    // flag está ligada; senão o filter leve do lote 331-340
+    (refR.current as unknown as { definirPos?: (v: boolean, real?: boolean) => void })
+      ?.definirPos?.(posFx, flag('as5.pos3d_real'));
   }, [posFx, fase, cineLigado, personagem]);
 
   // mega 81: tinta de destaque (cor do avatar 2D) nos materiais 3D
