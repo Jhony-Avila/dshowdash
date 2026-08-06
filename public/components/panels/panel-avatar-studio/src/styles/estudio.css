@@ -2271,3 +2271,9 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 /* ── lote 431–440 (§60.9, flag as5.cards_v2): INDISPONÍVEL no modo ──── */
 .avst-card-indisponivel { opacity: .45; filter: grayscale(.5); cursor: not-allowed; }
 .avst-card-indisponivel:hover { transform: none; }
+
+/* ── lote 471–480 (§164.2/§165, flag as5.luz_contextual via data-luzctx) ──
+   Presets COMBINADOS §164.2: hora+luz específicas compõem um visual novo
+   — só com a flag (atributo data-luzctx), zero mudança no legado. */
+.avst5-viewport[data-luzctx][data-luz="quente"][data-hora="por-do-sol"] .avst5-zoom { filter: sepia(.22) saturate(1.2) brightness(1.03) drop-shadow(0 12px 30px rgba(255,140,50,.25)); }
+.avst5-viewport[data-luzctx][data-luz="dramatica"][data-hora="noite"] .avst5-zoom { filter: contrast(1.22) brightness(.88) saturate(1.1) drop-shadow(0 18px 30px rgba(0,0,0,.6)); }

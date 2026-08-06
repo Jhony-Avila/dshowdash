@@ -118,6 +118,13 @@ const ROTULO_HORA: Record<HoraPalco, string> = {
 };
 // mega 62 (§164): ILUMINAÇÃO 2D — presets de filtro sobre o avatar
 const LUZES_PALCO = ['neutra', 'quente', 'fria', 'dramatica'] as const;
+// lote 471-480 (§165, flag as5.luz_contextual): a LUZ segue a HORA no
+// modo AUTO — mapeamento fixo e transparente (nada muda sem o usuário
+// escolher Auto; presets manuais continuam mandando fora dele)
+const LUZ_POR_HORA: Record<HoraPalco, LuzPalco> = {
+  amanhecer: 'neutra', dia: 'neutra', tarde: 'quente',
+  'por-do-sol': 'quente', noite: 'dramatica', madrugada: 'fria',
+};
 type LuzPalco = (typeof LUZES_PALCO)[number];
 const ROTULO_LUZ: Record<LuzPalco, string> = { neutra: 'Neutra', quente: 'Quente', fria: 'Fria', dramatica: 'Dramática' };
 const CHAVE_HORA = 'dshow.avst5.palco.hora.v1';
@@ -383,7 +390,16 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     telemetria('palco_hora', { hora: h }); // §290
     try { localStorage.setItem(CHAVE_HORA, h); } catch { /* sem storage */ }
   };
+  // mega 471 (§165): modo AUTO persistido; escolher preset manual desliga
+  const [luzAuto, setLuzAuto] = useState<boolean>(() => {
+    try { return localStorage.getItem('dshow.avst5.palco.luzauto.v1') === '1'; } catch { return false; }
+  });
+  const mudarLuzAuto = (v: boolean) => {
+    setLuzAuto(v);
+    try { localStorage.setItem('dshow.avst5.palco.luzauto.v1', v ? '1' : '0'); } catch { /* sem storage */ }
+  };
   const trocarLuz = (l: LuzPalco) => {
+    if (flag('as5.luz_contextual')) mudarLuzAuto(false); // manual manda (§165)
     setLuz(l);
     telemetria('palco_luz', { luz: l }); // §290
     try { localStorage.setItem(CHAVE_LUZ, l); } catch { /* sem storage */ }
@@ -1138,11 +1154,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* mega 75 (§132): EDIÇÃO tem luz neutra garantida — cor fiel;
               a iluminação §164 só vale nos modos studio/foco */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}
-            data-hora={hora} data-luz={modo === 'edicao' ? 'neutra' : luz} data-clima={clima}
+            data-hora={hora}
+            data-luz={modo === 'edicao' ? 'neutra'
+              : (flag('as5.luz_contextual') && luzAuto ? LUZ_POR_HORA[hora] : luz)} data-clima={clima}
             data-moldura-viva={!palco3d ? molduraViva : undefined}
             data-cen-vivo={palcoV2 && !palco3d && propsCen.vivo && !movReduzido ? '' : undefined}
             data-idle={flag('as5.criacao_avancada') && !palco3d && !movReduzido && propsCen.idle !== 'nenhum' ? propsCen.idle : undefined}
             data-poder-cam={podFamilia && poderAtivo && !movReduzido ? '' : undefined}
+            data-luzctx={flag('as5.luz_contextual') ? '' : undefined}
             data-presenca={presenca ? '' : undefined}
             data-luzadv={sensorial && luzInt !== 1 && !palco3d ? '' : undefined}
             style={sensorial && luzInt !== 1 && !palco3d ? { '--avst5-luzint': luzInt } as React.CSSProperties : undefined}>
@@ -1445,6 +1464,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   disabled={controlesTravados}
                   onClick={() => trocarLuz(l)}>{ROTULO_LUZ[l]}</button>
               ))}
+              {/* mega 471-473 (§165, flag as5.luz_contextual): AUTO */}
+              {flag('as5.luz_contextual') && (
+                <button type="button" role="radio" aria-checked={luzAuto}
+                  className={luzAuto ? 'avst5-fundo-on' : ''}
+                  data-teste="luz-auto" disabled={controlesTravados}
+                  title="A luz segue a hora do palco (§165): tarde=quente, noite=dramática, madrugada=fria"
+                  onClick={() => mudarLuzAuto(!luzAuto)}>Auto</button>
+              )}
               {/* mega 325 (§164.3, flag as5.palco_sensorial): INTENSIDADE —
                   modo simples §164.4 = deixar em 1 (zero mudança visual) */}
               {sensorial && !palco3d && (
