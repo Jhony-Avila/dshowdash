@@ -14,7 +14,7 @@ import { CATEGORIAS, COLECOES, RARIDADES, aleatorioInteligente, itemPorId, nivel
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
-import { definirSom, somAtivo, tocarCapturar, tocarEquipar, tocarPoder, tocarSalvar } from '../services/Som';
+import { definirSom, pararAmbiente, somAtivo, tocarAmbiente, tocarCapturar, tocarEquipar, tocarPoder, tocarSalvar } from '../services/Som';
 import { AvatarStore } from '../nucleo/estado';
 import type { Comando } from '../nucleo/estado';
 import { checksumEstado } from '../nucleo/contratos';
@@ -753,6 +753,48 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     // §584 (P9): SOM no shell — reusa services/Som (WebAudio synth, sem
   // assets); preferência única compartilhada com o modo clássico
   const [somLigado, setSomLigado] = useState(somAtivo);
+  // ── lote 321–330 (§157/§161/§164/§178, flag as5.palco_sensorial) ──
+  const sensorial = flag('as5.palco_sensorial');
+  // mega 321 (§161/§178): PAD ambiente por cenário — segue fundo+mute+3D
+  useEffect(() => {
+    if (!sensorial || !somLigado || palco3d) { pararAmbiente(); return undefined; }
+    tocarAmbiente(fundo);
+    return () => pararAmbiente();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sensorial, somLigado, fundo, palco3d]);
+  // mega 323 (§157.4): CROSSFADE de cenário — camada com o fundo ANTERIOR
+  // desvanece por cima do novo (350ms); movimento reduzido pula
+  const [fadeFundo, setFadeFundo] = useState<FundoPalco | null>(null);
+  const refFundoAnt = useRef(fundo);
+  useEffect(() => {
+    if (refFundoAnt.current === fundo) return undefined;
+    const anterior = refFundoAnt.current;
+    refFundoAnt.current = fundo;
+    if (!sensorial || movReduzido || palco3d) return undefined;
+    setFadeFundo(anterior);
+    const t = setTimeout(() => setFadeFundo(null), 380);
+    return () => clearTimeout(t);
+  }, [fundo, sensorial, movReduzido, palco3d]);
+  // mega 324 (§157.5): PRESENÇA — entrada sutil ao trocar a base do avatar
+  const [presenca, setPresenca] = useState(false);
+  const refBaseAnt = useRef(configVisivel.base);
+  useEffect(() => {
+    if (refBaseAnt.current === configVisivel.base) return undefined;
+    refBaseAnt.current = configVisivel.base;
+    if (!sensorial || movReduzido) return undefined;
+    setPresenca(true);
+    const t = setTimeout(() => setPresenca(false), 650);
+    return () => clearTimeout(t);
+  }, [configVisivel.base, sensorial, movReduzido]);
+  // mega 325 (§164.3): INTENSIDADE da luz (modo simples §164.4 = 1)
+  const [luzInt, setLuzInt] = useState(() => {
+    try { return Number(localStorage.getItem('dshow.avst5.palco.luzint.v1') ?? '1') || 1; } catch { return 1; }
+  });
+  const mudarLuzInt = useCallback((v: number) => {
+    const lim = Math.min(1.3, Math.max(0.7, v));
+    setLuzInt(lim);
+    try { localStorage.setItem('dshow.avst5.palco.luzint.v1', String(lim)); } catch { /* sem storage */ }
+  }, []);
   const alternarSom = useCallback(() => {
     setSomLigado((v) => { definirSom(!v); return !v; });
   }, []);
@@ -1071,7 +1113,17 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             data-moldura-viva={!palco3d ? molduraViva : undefined}
             data-cen-vivo={palcoV2 && !palco3d && propsCen.vivo && !movReduzido ? '' : undefined}
             data-idle={flag('as5.criacao_avancada') && !palco3d && !movReduzido && propsCen.idle !== 'nenhum' ? propsCen.idle : undefined}
-            data-poder-cam={podFamilia && poderAtivo && !movReduzido ? '' : undefined}>
+            data-poder-cam={podFamilia && poderAtivo && !movReduzido ? '' : undefined}
+            data-presenca={presenca ? '' : undefined}
+            data-luzadv={sensorial && luzInt !== 1 && !palco3d ? '' : undefined}
+            style={sensorial && luzInt !== 1 && !palco3d ? { '--avst5-luzint': luzInt } as React.CSSProperties : undefined}>
+            {/* mega 323 (§157.4): o fundo ANTERIOR desvanece por cima do novo
+                — reusa os seletores reais (.avst5-viewport[data-fundo] .avst5-palco) */}
+            {fadeFundo && (
+              <div className="avst5-viewport avst5-cen-fade" data-fundo={fadeFundo} aria-hidden data-teste="cen-fade">
+                <div className="avst5-palco" />
+              </div>
+            )}
             {/* lote 201 (§163): overlay de CLIMA — determinístico, sobre o cenário
                 e atrás dos controles; reduced-motion desliga o movimento (§182) */}
             {clima !== 'limpo' && !palco3d && (
@@ -1347,6 +1399,16 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   disabled={controlesTravados}
                   onClick={() => trocarLuz(l)}>{ROTULO_LUZ[l]}</button>
               ))}
+              {/* mega 325 (§164.3, flag as5.palco_sensorial): INTENSIDADE —
+                  modo simples §164.4 = deixar em 1 (zero mudança visual) */}
+              {sensorial && !palco3d && (
+                <label className="avst5-p3d-slider" title="Intensidade da luz do palco (§164.3)">
+                  <input type="range" min="0.7" max="1.3" step="0.05" value={luzInt}
+                    aria-label="Intensidade da luz" data-teste="luz-intensidade"
+                    disabled={controlesTravados}
+                    onChange={(e) => mudarLuzInt(Number(e.target.value))} />
+                </label>
+              )}
             </div>
             {/* megas 233–234 (§161): propriedades do cenário — colapsável */}
             {palcoV2 && !palco3d && (
