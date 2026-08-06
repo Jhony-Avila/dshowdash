@@ -34,6 +34,7 @@ import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
 import { ROTULO_FAMILIA, familiaDoPoder, svgRoteiroFamilia } from '../services/PoderesFamilia'; // lote 281-290 (§153/§156)
+import { svgParticulas } from '../engine/particulas'; // lote 351-360 (§157.3)
 import { instalarFocoPreso } from './foco'; // mega 301 (P10)
 
 // ── megas 273–275 (§274–§275, lazy §275): painéis SOB DEMANDA ────────
@@ -1191,7 +1192,17 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
             {celebrando && (
               <div className="avst5-celebracao" aria-hidden data-teste="celebracao"
-                dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado('efe_confete') }} />
+                dangerouslySetInnerHTML={{
+                  // megas 354-355 (§157.3/§158.1, flag as5.efeitos_v2): a
+                  // celebração do gatilho usa a biblioteca §156 na COR do
+                  // avatar; flag off = confete legado byte a byte
+                  __html: flag('as5.efeitos_v2')
+                    ? svgParticulas('pontos', {
+                      quantidade: 34, tamanho: 6, velocidade: 1.3, direcao: 'explodir',
+                      cor: configVisivel.cores.destaque, opacidade: 0.9, duracaoMs: 1600, turbulencia: 0.3,
+                    }, 'medio', 5)
+                    : svgEfeitoIsolado('efe_confete'),
+                }} />
             )}
             {poderAtivo && (
               <div className="avst5-celebracao avst5-poder" aria-hidden data-teste="poder-ativo"

@@ -23,6 +23,7 @@ import { favoritosPermanentes, favoritosPorColecao } from '../services/Favoritos
 import { flag } from '../nucleo/flags';
 // mega 248 (§228): itens ARQUIVADOS saem da grade padrão (reversível)
 import { arquivados } from '../services/ArquivoItens';
+import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // lote 351-360 (§157)
 import type { ParteDef } from '../engine/base-api';
 import { AvatarSvg } from './AvatarSvg';
 import { Dica } from './Dica';
@@ -149,6 +150,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       return m === 'compacta' || m === 'lista' ? m : 'detalhada';
     } catch { return 'detalhada'; }
   });
+  // megas 351-353 (§157): filtro por categoria FUNCIONAL (efeitos)
+  const [filtroFx, setFiltroFx] = useState<'todos' | 'ambiental' | 'distorcao' | 'celebracao' | 'transicao' | 'presenca'>('todos');
 
   const trocarModo = (novo: ModoGrade) => {
     setModo(novo);
@@ -185,6 +188,9 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       })
       .filter((i) => categoria !== 'acessorio' || filtroSlot === 'todos'
         || (i.slot ?? 'cabeca') === filtroSlot) // §68.3
+      // megas 351-353 (§157.1-.5, flag as5.efeitos_v2): filtro FUNCIONAL
+      .filter((i) => categoria !== 'efeito' || filtroFx === 'todos'
+        || categoriaFuncional(i.id) === filtroFx)
       .filter((i) => {
         if (!termos.length) return true;
         const alvo = normalizar(`${i.nome} ${i.tema} ${i.lore ?? i.descricao}`);
@@ -197,7 +203,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot]);
+  }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot, filtroFx]);
 
   // §56.2: contagem por raridade no CONTEXTO atual (mostrada no popover)
   const contagem = useMemo(() => {
@@ -425,6 +431,20 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             <span className="avst-card-vazio"><Ban size={26} aria-hidden /></span>
             <span className="avst-card-nome">Nenhum</span>
           </button>
+        )}
+        {/* megas 351-353 (§157.1-.5, flag as5.efeitos_v2): categorias
+            funcionais do efeito — filtro honesto por classificação */}
+        {categoria === 'efeito' && flag('as5.efeitos_v2') && (
+          <div className="avst-conq-filtros" role="radiogroup" aria-label="Categoria funcional (§157)" data-teste="fx-funcional">
+            {([['todos', 'Todos'], ['ambiental', ROTULO_FUNCIONAL.ambiental], ['distorcao', ROTULO_FUNCIONAL.distorcao],
+              ['celebracao', ROTULO_FUNCIONAL.celebracao], ['transicao', ROTULO_FUNCIONAL.transicao],
+              ['presenca', ROTULO_FUNCIONAL.presenca]] as const).map(([id, nome]) => (
+              <button key={id} type="button" role="radio" aria-checked={filtroFx === id}
+                className={`avst-ft-chip ${filtroFx === id ? 'avst-ft-chip-ativo' : ''}`}
+                data-teste={`fx-${id}`}
+                onClick={() => setFiltroFx(id)}>{nome}</button>
+            ))}
+          </div>
         )}
         {itens.map((item, idx) => {
           const props = {

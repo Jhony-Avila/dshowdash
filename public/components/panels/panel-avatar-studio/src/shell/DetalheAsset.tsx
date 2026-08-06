@@ -21,6 +21,7 @@ import { alternarNaLista, criarLista, excluirLista, listarListas } from '../serv
 import { alternarPermanente, favoritosPermanentes } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
 import { ROTULO_FAMILIA, familiaDoPoder } from '../services/PoderesFamilia'; // mega 288 (§153)
+import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // mega 353 (§157)
 // mega 248 (§228): estado ARQUIVADO (local-first, reversível)
 import { alternarArquivado, arquivados } from '../services/ArquivoItens';
 import { salvarPreset } from '../services/PresetsPessoais';
@@ -116,6 +117,12 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
         <div className={`avst5-det-hero avst5-ctx-${contexto}`}>
           <AvatarSvg config={preview} uid={`det-${item.id}`} foco={FOCO_THUMB[item.categoria]} />
         </div>
+        {/* mega 353 (§157.1–.5): categoria FUNCIONAL do efeito */}
+        {flag('as5.efeitos_v2') && item.categoria === 'efeito' && (
+          <p className="avst5-det-familia" data-teste="det-funcional">
+            Categoria: <strong>{ROTULO_FUNCIONAL[categoriaFuncional(item.id)]}</strong>
+          </p>
+        )}
         {/* mega 288 (§153.1–.4): FAMÍLIA do poder visível no detalhe */}
         {flag('as5.poderes_familia') && (item.categoria === 'efeito' || item.categoria === 'aura') && (
           <p className="avst5-det-familia" data-teste="det-familia">
