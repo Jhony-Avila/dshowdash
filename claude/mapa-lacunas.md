@@ -1,4 +1,7 @@
-# Mapa de Lacunas do Briefing — v7 (pós onda 411–510, 2026-08-06)
+# Mapa de Lacunas do Briefing — v8 (pós onda 511–610, 2026-08-06)
+
+> **TRILHO A ESGOTADO** nesta onda (decisão #61). O que resta do briefing
+> depende do Jhony (trilho B) ou de decisão estratégica (trilho C).
 
 > Método: briefing (006a394b, 1.764 §§) cruzado por evidência com o código.
 
@@ -74,14 +77,32 @@ processos.
   timeline git-like v2 §244 + histórico visual §203 + evento ativo §247 ·
   setas na grade §297 + foco visível.
 
-## Sequência recomendada (511+)
+## O que a onda 511–610 fechou (trilho A ESGOTADO)
 
-1. **I18N cobertura total** (migrar catálogo/foto/conquistas p/ t();
-   dicionário EN completo).
-2. **A1/A3 finos sem arte**: §102.2 parâmetros finos, máscaras §340–341
-   além da forma, §68 slots restantes, §72 editor de roupas por camada.
-3. **§268 pipeline v2** (fases de validação no publicar-asset) ·
-   **§59 redesenho dos cards** (proporção §59.1) · **§176.1 movimentos
-   extras** (travel/orbit compostos).
-4. **Trilho B destravado** (quando chegarem): zip UBC → morphs §412+/
-   piscar §440 real; chave IA → §355–358; endpoints → §365–366.
+- **i18n §296 cobertura**: catálogo (busca/ordenar/abas/chips §157/
+  recentes/quis-dizer) + painéis (Foto/Conquistas/horas/luzes/presets).
+- **Foto**: §321.1–.2 (avatar/preset → foto) · §348.1 partículas
+  estáticas · §370 specs de export · luz/composição §335–348 restos.
+- **Roupas §72.1/.3/§74**: CONJUNTOS curados (roupa+acessórios+paleta em
+  1 clique, bloqueios preservados, anúncio aria-live).
+- **Criação fina §102.2**: corpoFino largura/altura multiplica o preset
+  (TS+PHP+adaptadores) · borda suave §340–341 (máscara plumada).
+- **Palco/som v3**: §176.1 Órbita/Composto · §178.2 som POR CATEGORIA
+  (volume/efeitos/ambiente/celebrações/preview) · §157.4 entradas
+  one-shot (Materializar/Teleporte/Ascender).
+- **Infra v3**: §268 pipeline com fases · §277 thumbs em IDB · §299–300
+  migrações com backup + leitura dual (§300 substituição automática
+  registrada como desligada — decisão #63).
+- **UX final**: §64.2 fixar prévia · §59.1 compacta 70–80% · §60.4/.6
+  badges · §545 durações padronizadas.
+
+## Sequência recomendada (611+)
+
+1. **Trilho B destravado** (quando chegarem, nesta ordem de valor):
+   zip UBC → morphs §412+/piscar §440 real/roupas 3D §416/sockets §426+;
+   chave IA → §355–358 (estilização por IA com validador §636);
+   endpoints → publicação/derivação §365–366.
+2. **Arte nova** (decisão do Jhony): peças de roupa §72 reais · morfologia
+   facial §108–111 · barba §114 · fundos §335–336 · trailer §208.
+3. **Trilho C** (decisão estratégica): P11 CMS · P12 plataforma · P14
+   social server-side · P17 monorepo · P18 processos.

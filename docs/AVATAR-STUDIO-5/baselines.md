@@ -28,8 +28,8 @@ regenerar após cada build; o diff no git É o relatório de regressão).
 - Suíte de navegador/node: **72 arquivos** (rodar-todos) + nucleo.test.
 - Catálogo 2D: **344 itens** em 12 categorias · 30 títulos · 12 coleções.
 - Personagens 3D publicados: **6**.
-- Feature flags `as5.*`: **41** (§605 v2 — nova flag = diff aqui).
-- Chaves de storage conhecidas: **54** (§629):
+- Feature flags `as5.*`: **48** (§605 v2 — nova flag = diff aqui; onda 511–610: +foto_entrada +foto_pro2 +roupas_camada +criacao_fina +palco_v3 +infra_v3 +ux_final).
+- Chaves de storage conhecidas: **57** locais + IDB (§629):
   - `dshow.avatar.aro.v1`
   - `dshow.avatar.config.v1`
   - `dshow.avatar.conquistas.v1`
@@ -43,7 +43,8 @@ regenerar após cada build; o diff no git É o relatório de regressão).
   - `dshow.avatar.usados.v1`
   - `dshow.avst.flags.v1`
   - `dshow.avst.foto.estilo.v1`
-  - `dshow.avst5.aba`
+  - `dshow.avst5.aba` (sessão; migrada p/ `.v1` — §299, chave antiga permanece)
+  - `dshow.avst5.aba.v1` (sessão)
   - `dshow.avst5.apresentacao.ultima.v1`
   - `dshow.avst5.apresentacao.v1`
   - `dshow.avst5.arquivados.v1`
@@ -81,6 +82,9 @@ regenerar após cada build; o diff no git É o relatório de regressão).
   - `dshow.avst5.rascunho.v1`
   - `dshow.avst5.recentes.v1`
   - `dshow.avst5.recordes.v1`
+  - `dshow.avst5.som.prefs.v1` (§178.2 — só o não-neutro; neutro = chave ausente)
+  - `dshow.avst5.som.v1` (§299 — espelho migrado de `dshow.avatar.som.v1`; escrita dual)
   - `dshow.avst5.tema.v1`
   - `dshow.avst5.tour.v1`
   - `dshow.avst5.vitrine.ordem.v1`
+- IndexedDB `avst-cache-v1/kv` (§277): manifest remoto + `foto-thumb:<id>` (thumb 96px de projeto de foto, TTL 90d, removida com o projeto).
