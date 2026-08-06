@@ -174,6 +174,39 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     window.addEventListener('avst:recentes', ao);
     return () => window.removeEventListener('avst:recentes', ao);
   }, []);
+  // megas 491-495 (§297, flag as5.a11y_v2): NAVEGAÇÃO POR SETAS na grade
+  // — roving tabindex gerenciado no DOM (React fora do caminho quente)
+  const refGrade = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!flag('as5.a11y_v2')) return undefined;
+    const grade = refGrade.current;
+    if (!grade) return undefined;
+    const cards = () => [...grade.querySelectorAll<HTMLElement>('.avst-card:not([data-indisponivel])')];
+    const armar = () => {
+      const lista = cards();
+      lista.forEach((c, i) => { c.tabIndex = i === 0 ? 0 : -1; });
+    };
+    armar();
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
+      const lista = cards();
+      const atual = (e.target as HTMLElement | null)?.closest?.('.avst-card') as HTMLElement | null;
+      const idx = atual ? lista.indexOf(atual) : -1;
+      if (idx < 0) return;
+      e.preventDefault();
+      const alvo = e.key === 'Home' ? 0
+        : e.key === 'End' ? lista.length - 1
+          : e.key === 'ArrowRight' ? Math.min(lista.length - 1, idx + 1) : Math.max(0, idx - 1);
+      lista.forEach((c, i) => { c.tabIndex = i === alvo ? 0 : -1; });
+      lista[alvo]?.focus();
+    };
+    grade.addEventListener('keydown', aoTeclar);
+    const mo = new MutationObserver(armar);
+    mo.observe(grade, { childList: true });
+    return () => { grade.removeEventListener('keydown', aoTeclar); mo.disconnect(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoria]);
+
   // mega 423 (§57.3, flag as5.busca_v2): "/" foca a busca (fora de campos)
   useEffect(() => {
     if (!flag('as5.busca_v2')) return undefined;
@@ -472,7 +505,9 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         </div>
       )}
 
-      <div className="avst-grade" data-modo={modo} role="listbox" aria-label={`Itens de ${meta?.nome ?? categoria}`}>
+      <div ref={refGrade} className="avst-grade" data-modo={modo} role="listbox"
+        data-a11y={flag('as5.a11y_v2') ? '' : undefined}
+        aria-label={`Itens de ${meta?.nome ?? categoria}`}>
         {meta && !meta.obrigatoria && !filtrosAtivos && (
           <button type="button" role="option" aria-selected={equipados.size === 0}
             className={`avst-card avst-card-nenhum ${equipados.size === 0 ? 'avst-card-ativo' : ''}`}

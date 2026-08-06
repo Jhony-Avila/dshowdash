@@ -2280,3 +2280,10 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 
 /* lote 481–490 (§244, flag as5.memorias_v2): bifurcação na evolução */
 .avst5-evo-branch { color: var(--avst-acento, #7c5cff); font-weight: 800; }
+
+/* ── lote 491–500 (§297, flag as5.a11y_v2): foco visível reforçado ──── */
+.avst-grade[data-a11y] .avst-card:focus-visible {
+  outline: 3px solid var(--avst-acento, #7c5cff);
+  outline-offset: 2px;
+  z-index: 1;
+}
