@@ -102,6 +102,15 @@ const EN: Record<string, string> = {
   Largura: 'Width',
   Altura: 'Height',
   'Restaurar neutro': 'Reset to neutral',
+  // lote 571-580 (§178.2/§157.4): palco/som v3
+  'Volume geral': 'Master volume',
+  Efeitos: 'Effects',
+  Ambiente: 'Ambience',
+  Celebrações: 'Celebrations',
+  'Testar som': 'Test sound',
+  Materializar: 'Materialize',
+  Teleporte: 'Teleport',
+  Ascender: 'Ascend',
   // 3D
   'Prévia 3D (personagens curados)': '3D preview (curated characters)',
   Enquadrar: 'Frame',

@@ -124,7 +124,7 @@ export class Renderizador3d implements RenderizadorAvatar {
   private rim: THREE.DirectionalLight | null = null;
   // ── lote 331–340 (§176/§457, flag as5.palco3d_cine) ────────────────
   // mega 331 (§176): MOVIMENTO cinematográfico contínuo da câmera
-  private movCamera: 'nenhum' | 'dolly' | 'panoramica' = 'nenhum';
+  private movCamera: 'nenhum' | 'dolly' | 'panoramica' | 'orbita' | 'composto' = 'nenhum';
   private movBase: { pos: THREE.Vector3; alvo: THREE.Vector3 } | null = null;
   // mega 333 (§457/§177): PÓS — vinheta/saturação por CSS filter no canvas
   // (§177.1: barato, desliga no econômico; composer real fica p/ quando o
@@ -606,8 +606,11 @@ export class Renderizador3d implements RenderizadorAvatar {
 
   /** mega 331 (§176): movimento contínuo da câmera — 'dolly' aproxima e
    *  afasta lentamente; 'panoramica' desliza na vertical. §176.3: comandos
-   *  manuais (controles/enquadrar/definirCamera) desligam o movimento. */
-  definirMovimentoCamera(modo: 'nenhum' | 'dolly' | 'panoramica'): void {
+   *  manuais (controles/enquadrar/definirCamera) desligam o movimento.
+   *  megas 571–573 (§176.1, flag as5.palco_v3 na UI): 'orbita' gira em
+   *  torno do alvo (amplitude limitada — sem deriva) e 'composto' soma
+   *  dolly + panorâmica (movimento composto). */
+  definirMovimentoCamera(modo: 'nenhum' | 'dolly' | 'panoramica' | 'orbita' | 'composto'): void {
     this.movCamera = modo;
     this.movBase = null; // re-ancora no próximo frame
     if (modo !== 'nenhum') this.orbitaAuto = false;
@@ -1017,6 +1020,21 @@ export class Renderizador3d implements RenderizadorAvatar {
         const dir = bm.pos.clone().sub(bm.alvo);
         const fator = 1 + Math.sin(this.relogio * 0.35) * 0.09;
         this.camera.position.copy(bm.alvo.clone().add(dir.multiplyScalar(fator)));
+      } else if (this.movCamera === 'orbita') {
+        // megas 571–573 (§176.1): órbita LIMITADA em torno do alvo — o
+        // ângulo oscila (seno), então nunca acumula deriva (§176.3)
+        const ang = Math.sin(this.relogio * 0.22) * 0.5;
+        const dir = bm.pos.clone().sub(bm.alvo);
+        dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), ang);
+        this.camera.position.copy(bm.alvo.clone().add(dir));
+      } else if (this.movCamera === 'composto') {
+        // megas 571–573 (§176.1): MOVIMENTO COMPOSTO = dolly + panorâmica
+        // em fases diferentes (nunca sincronizados = sensação orgânica)
+        const dir = bm.pos.clone().sub(bm.alvo);
+        const fator = 1 + Math.sin(this.relogio * 0.28) * 0.07;
+        const pos = bm.alvo.clone().add(dir.multiplyScalar(fator));
+        pos.y += Math.sin(this.relogio * 0.19 + 1.3) * 0.1;
+        this.camera.position.copy(pos);
       } else {
         this.camera.position.set(bm.pos.x, bm.pos.y + Math.sin(this.relogio * 0.3) * 0.12, bm.pos.z);
       }

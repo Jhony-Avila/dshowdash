@@ -2171,6 +2171,23 @@
 .avst5-viewport[data-idle='respirar'] .avst5-zoom svg { animation: avst5-idle-respirar 4.6s ease-in-out infinite; transform-origin: 50% 92%; }
 .avst5-viewport[data-idle='flutuar'] .avst5-zoom svg { animation: avst5-idle-flutuar 5.2s ease-in-out infinite; }
 .avst5-viewport[data-idle='balancar'] .avst5-zoom svg { animation: avst5-idle-balancar 5.8s ease-in-out infinite; transform-origin: 50% 96%; }
+/* ── lote 571–580 (as5.palco_v3) ─────────────────────────────────────
+   megas 578–579 (§157.4): transições de ENTRADA one-shot do avatar 2D
+   (data-entrada some sozinho após a animação; §297 nunca liga o attr) */
+@keyframes avst5-ent-materializar { 0% { opacity: 0; filter: blur(9px); } 100% { opacity: 1; filter: blur(0); } }
+@keyframes avst5-ent-teleporte { 0% { opacity: 0; transform: scaleY(0.05); } 55% { opacity: 1; transform: scaleY(1.06); } 100% { transform: scaleY(1); } }
+@keyframes avst5-ent-ascender { 0% { opacity: 0; transform: translateY(26px); filter: brightness(2.2); } 100% { opacity: 1; transform: translateY(0); filter: brightness(1); } }
+.avst5-viewport[data-entrada='materializar'] .avst5-zoom svg { animation: avst5-ent-materializar 1.15s ease-out both; }
+.avst5-viewport[data-entrada='teleporte'] .avst5-zoom svg { animation: avst5-ent-teleporte 1.05s cubic-bezier(0.2, 0.8, 0.3, 1) both; transform-origin: 50% 96%; }
+.avst5-viewport[data-entrada='ascender'] .avst5-zoom svg { animation: avst5-ent-ascender 1.2s ease-out both; }
+/* megas 574–577 (§178.2): painel de preferências de som por categoria */
+.avst5-som-prefs {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 40;
+  display: flex; flex-direction: column; gap: 6px; min-width: 190px;
+  padding: 10px; border: 1px solid var(--avst-borda); border-radius: 10px;
+  background: var(--avst-fundo-2, #10141f); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+.avst5-som-linha { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--avst-texto-2); }
 /* megas 251–253 (§361/§364/§369): histórico visual + projetos + export */
 .avst-ft-histvisual { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .avst-ft-histpasso {
