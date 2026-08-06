@@ -98,3 +98,74 @@ export function tocarCelebracao(raridade: Raridade): void {
   acorde.forEach((m, i) => nota(base * m, i * 0.07, 0.5, 0.6 - i * 0.08));
   nota(base * 3, 0.3, 0.6, 0.18);  // harmônico de fecho
 }
+
+// ── lote 321–330 (§161/§178, flag as5.palco_sensorial): SOM AMBIENTE ──
+// Pad contínuo sintetizado POR CENÁRIO (§178.1 categoria "ambiente") —
+// dois osciladores detunados + filtro passa-baixa + LFO lento no ganho.
+// Regras §178.3: só toca com o som do estúdio LIGADO; parar é imediato;
+// volume abaixo dos efeitos (ambiente sussurra por baixo).
+let _amb: { osc: OscillatorNode[]; ganho: GainNode; lfo: OscillatorNode } | null = null;
+
+/** Acordes-base por cenário (fundamental em Hz + cor do filtro). */
+const AMBIENTES: Record<string, { freq: number; corte: number }> = {
+  estudio: { freq: 110, corte: 520 },      // acolhedor
+  grade: { freq: 98, corte: 900 },         // eletrônico
+  dojo: { freq: 116.5, corte: 380 },       // orgânico
+  neon: { freq: 92.5, corte: 1000 },
+  galaxia: { freq: 73.4, corte: 1300 },    // sci-fi
+  showroom: { freq: 87.3, corte: 700 },    // Dshow
+  escritorio: { freq: 130.8, corte: 420 }, // corporativo calmo
+  arena: { freq: 82.4, corte: 1100 },      // gamer
+  cyberpunk: { freq: 78, corte: 1200 },
+};
+
+export function pararAmbiente(): void {
+  if (!_amb) return;
+  try {
+    const agora = _ctx?.currentTime ?? 0;
+    _amb.ganho.gain.setTargetAtTime(0.0001, agora, 0.12);
+    const antigo = _amb;
+    setTimeout(() => {
+      try { antigo.osc.forEach((o) => o.stop()); antigo.lfo.stop(); } catch { /* já parado */ }
+    }, 500);
+  } catch { /* melhor esforço */ }
+  _amb = null;
+}
+
+/** Liga (ou troca) o pad ambiente do cenário; null/desconhecido = para. */
+export function tocarAmbiente(fundo: string | null): void {
+  pararAmbiente();
+  if (!fundo || !somAtivo()) return;
+  const def = AMBIENTES[fundo] ?? null;
+  if (!def) return;
+  const ctx = contexto();
+  if (!ctx || !_mestre) return;
+  try {
+    const ganho = ctx.createGain();
+    ganho.gain.value = 0;
+    const filtro = ctx.createBiquadFilter();
+    filtro.type = 'lowpass';
+    filtro.frequency.value = def.corte;
+    ganho.connect(filtro);
+    filtro.connect(_mestre);
+    const osc = [0, 7.02].map((detune) => {
+      const o = ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = def.freq;
+      o.detune.value = detune * 2; // batimento lento
+      o.connect(ganho);
+      o.start();
+      return o;
+    });
+    // LFO ~0.1Hz respira o ganho (0.10–0.16 do mestre)
+    const lfo = ctx.createOscillator();
+    const lfoGanho = ctx.createGain();
+    lfo.frequency.value = 0.1;
+    lfoGanho.gain.value = 0.03;
+    lfo.connect(lfoGanho);
+    lfoGanho.connect(ganho.gain);
+    lfo.start();
+    ganho.gain.setTargetAtTime(0.13, ctx.currentTime, 0.8); // fade-in suave
+    _amb = { osc, ganho, lfo };
+  } catch { /* sem áudio */ }
+}

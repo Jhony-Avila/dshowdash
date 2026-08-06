@@ -14,7 +14,7 @@ import { CATEGORIAS, COLECOES, RARIDADES, aleatorioInteligente, itemPorId, nivel
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
-import { definirSom, somAtivo, tocarCapturar, tocarEquipar, tocarPoder, tocarSalvar } from '../services/Som';
+import { definirSom, pararAmbiente, somAtivo, tocarAmbiente, tocarCapturar, tocarEquipar, tocarPoder, tocarSalvar } from '../services/Som';
 import { AvatarStore } from '../nucleo/estado';
 import type { Comando } from '../nucleo/estado';
 import { checksumEstado } from '../nucleo/contratos';
@@ -34,6 +34,7 @@ import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
 import { ROTULO_FAMILIA, familiaDoPoder, svgRoteiroFamilia } from '../services/PoderesFamilia'; // lote 281-290 (§153/§156)
+import { svgParticulas } from '../engine/particulas'; // lote 351-360 (§157.3)
 import { instalarFocoPreso } from './foco'; // mega 301 (P10)
 
 // ── megas 273–275 (§274–§275, lazy §275): painéis SOB DEMANDA ────────
@@ -746,6 +747,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // mega 7: PRÉVIA 3D no viewport (flag as5.palco3d fail-safe OFF) —
   // o chunk pesado (motor3d) só carrega quando o usuário LIGA o modo
   const flagPalco3d = flag('as5.palco3d');
+  // mega 386 (§274, flag as5.orcamento_perf): PREFETCH do motor3d no
+  // hover/focus do botão — o clique encontra o chunk já no cache HTTP
+  const refPrefetch3d = useRef(false);
+  const prefetch3d = useCallback(() => {
+    if (refPrefetch3d.current || !flag('as5.orcamento_perf')) return;
+    refPrefetch3d.current = true;
+    void import('../services/Renderizador3d').catch(() => { refPrefetch3d.current = false; });
+  }, []);
   const [palco3d, setPalco3d] = useState(false);
   // mega 10: Apresentar delega ao showcase 3D quando o palco 3D está ativo
   const [sinal3d, setSinal3d] = useState(0);
@@ -753,6 +762,48 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     // §584 (P9): SOM no shell — reusa services/Som (WebAudio synth, sem
   // assets); preferência única compartilhada com o modo clássico
   const [somLigado, setSomLigado] = useState(somAtivo);
+  // ── lote 321–330 (§157/§161/§164/§178, flag as5.palco_sensorial) ──
+  const sensorial = flag('as5.palco_sensorial');
+  // mega 321 (§161/§178): PAD ambiente por cenário — segue fundo+mute+3D
+  useEffect(() => {
+    if (!sensorial || !somLigado || palco3d) { pararAmbiente(); return undefined; }
+    tocarAmbiente(fundo);
+    return () => pararAmbiente();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sensorial, somLigado, fundo, palco3d]);
+  // mega 323 (§157.4): CROSSFADE de cenário — camada com o fundo ANTERIOR
+  // desvanece por cima do novo (350ms); movimento reduzido pula
+  const [fadeFundo, setFadeFundo] = useState<FundoPalco | null>(null);
+  const refFundoAnt = useRef(fundo);
+  useEffect(() => {
+    if (refFundoAnt.current === fundo) return undefined;
+    const anterior = refFundoAnt.current;
+    refFundoAnt.current = fundo;
+    if (!sensorial || movReduzido || palco3d) return undefined;
+    setFadeFundo(anterior);
+    const t = setTimeout(() => setFadeFundo(null), 380);
+    return () => clearTimeout(t);
+  }, [fundo, sensorial, movReduzido, palco3d]);
+  // mega 324 (§157.5): PRESENÇA — entrada sutil ao trocar a base do avatar
+  const [presenca, setPresenca] = useState(false);
+  const refBaseAnt = useRef(configVisivel.base);
+  useEffect(() => {
+    if (refBaseAnt.current === configVisivel.base) return undefined;
+    refBaseAnt.current = configVisivel.base;
+    if (!sensorial || movReduzido) return undefined;
+    setPresenca(true);
+    const t = setTimeout(() => setPresenca(false), 650);
+    return () => clearTimeout(t);
+  }, [configVisivel.base, sensorial, movReduzido]);
+  // mega 325 (§164.3): INTENSIDADE da luz (modo simples §164.4 = 1)
+  const [luzInt, setLuzInt] = useState(() => {
+    try { return Number(localStorage.getItem('dshow.avst5.palco.luzint.v1') ?? '1') || 1; } catch { return 1; }
+  });
+  const mudarLuzInt = useCallback((v: number) => {
+    const lim = Math.min(1.3, Math.max(0.7, v));
+    setLuzInt(lim);
+    try { localStorage.setItem('dshow.avst5.palco.luzint.v1', String(lim)); } catch { /* sem storage */ }
+  }, []);
   const alternarSom = useCallback(() => {
     setSomLigado((v) => { definirSom(!v); return !v; });
   }, []);
@@ -839,15 +890,18 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       const img = await new Promise<HTMLImageElement>((res, rej) => {
         const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url;
       });
+      // mega 383 (§186.1, flag as5.orcamento_perf): captura em ALTA
+      // qualidade (1920px) — SVG é vetor, o custo é só do canvas final
+      const lado = flag('as5.orcamento_perf') ? 1920 : 960;
       const canvas = document.createElement('canvas');
-      canvas.width = 960; canvas.height = 960;
+      canvas.width = lado; canvas.height = lado;
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, 960, 960);
+        ctx.drawImage(img, 0, 0, lado, lado);
         const a = document.createElement('a');
         a.href = canvas.toDataURL('image/png');
-        a.download = 'dshow-showcase-960px.png';
+        a.download = `dshow-showcase-${lado}px.png`;
         a.click();
         telemetria('showcase_captura');
         tocarCapturar(); // mega 89 (§584)
@@ -1013,6 +1067,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {flagPalco3d && (
               <button type="button" className="avst-botao" title="Prévia 3D (personagens curados)"
                 aria-pressed={palco3d} data-teste="botao-3d"
+                onMouseEnter={prefetch3d} onFocus={prefetch3d}
                 onClick={() => setPalco3d((v) => !v)}>
                 <Boxes size={14} aria-hidden /> 3D</button>
             )}
@@ -1071,7 +1126,17 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             data-moldura-viva={!palco3d ? molduraViva : undefined}
             data-cen-vivo={palcoV2 && !palco3d && propsCen.vivo && !movReduzido ? '' : undefined}
             data-idle={flag('as5.criacao_avancada') && !palco3d && !movReduzido && propsCen.idle !== 'nenhum' ? propsCen.idle : undefined}
-            data-poder-cam={podFamilia && poderAtivo && !movReduzido ? '' : undefined}>
+            data-poder-cam={podFamilia && poderAtivo && !movReduzido ? '' : undefined}
+            data-presenca={presenca ? '' : undefined}
+            data-luzadv={sensorial && luzInt !== 1 && !palco3d ? '' : undefined}
+            style={sensorial && luzInt !== 1 && !palco3d ? { '--avst5-luzint': luzInt } as React.CSSProperties : undefined}>
+            {/* mega 323 (§157.4): o fundo ANTERIOR desvanece por cima do novo
+                — reusa os seletores reais (.avst5-viewport[data-fundo] .avst5-palco) */}
+            {fadeFundo && (
+              <div className="avst5-viewport avst5-cen-fade" data-fundo={fadeFundo} aria-hidden data-teste="cen-fade">
+                <div className="avst5-palco" />
+              </div>
+            )}
             {/* lote 201 (§163): overlay de CLIMA — determinístico, sobre o cenário
                 e atrás dos controles; reduced-motion desliga o movimento (§182) */}
             {clima !== 'limpo' && !palco3d && (
@@ -1139,7 +1204,17 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
             {celebrando && (
               <div className="avst5-celebracao" aria-hidden data-teste="celebracao"
-                dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado('efe_confete') }} />
+                dangerouslySetInnerHTML={{
+                  // megas 354-355 (§157.3/§158.1, flag as5.efeitos_v2): a
+                  // celebração do gatilho usa a biblioteca §156 na COR do
+                  // avatar; flag off = confete legado byte a byte
+                  __html: flag('as5.efeitos_v2')
+                    ? svgParticulas('pontos', {
+                      quantidade: 34, tamanho: 6, velocidade: 1.3, direcao: 'explodir',
+                      cor: configVisivel.cores.destaque, opacidade: 0.9, duracaoMs: 1600, turbulencia: 0.3,
+                    }, 'medio', 5)
+                    : svgEfeitoIsolado('efe_confete'),
+                }} />
             )}
             {poderAtivo && (
               <div className="avst5-celebracao avst5-poder" aria-hidden data-teste="poder-ativo"
@@ -1347,6 +1422,16 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   disabled={controlesTravados}
                   onClick={() => trocarLuz(l)}>{ROTULO_LUZ[l]}</button>
               ))}
+              {/* mega 325 (§164.3, flag as5.palco_sensorial): INTENSIDADE —
+                  modo simples §164.4 = deixar em 1 (zero mudança visual) */}
+              {sensorial && !palco3d && (
+                <label className="avst5-p3d-slider" title="Intensidade da luz do palco (§164.3)">
+                  <input type="range" min="0.7" max="1.3" step="0.05" value={luzInt}
+                    aria-label="Intensidade da luz" data-teste="luz-intensidade"
+                    disabled={controlesTravados}
+                    onChange={(e) => mudarLuzInt(Number(e.target.value))} />
+                </label>
+              )}
             </div>
             {/* megas 233–234 (§161): propriedades do cenário — colapsável */}
             {palcoV2 && !palco3d && (

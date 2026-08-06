@@ -59,6 +59,23 @@
   20→24KB e tetos p/ os 8 chunks lazy novos; (d) trap de foco P10 é
   delegado (um listener) e desliga com `as5.microinteracoes` (§651).
 
+- **#57 (2026-08-06) — Escopo da onda 311–410** (pedido: "100 mega lotes
+  de uma única vez"): 10 lotes, cada um com flag própria (ON, #50):
+  311–320 foto fina (`as5.foto_fina`) · 321–330 palco sensorial
+  (`as5.palco_sensorial`) · 331–340 3D cine (`as5.palco3d_cine`) ·
+  341–350 presets v2 (`as5.presets_v2`) · 351–360 efeitos funcionais
+  (`as5.efeitos_v2`) · 361–370 temporadas local (`as5.temporadas`) ·
+  371–380 portabilidade (`as5.portabilidade`) · 381–390 orçamento perf
+  (`as5.orcamento_perf`) · 391–400 catálogo polish (`as5.catalogo_v2`) ·
+  401–410 QA/consolidação. Mapa: doc 14 do projeto Claude.
+- **#58 (2026-08-06) — Escolhas técnicas da onda 311–410**: §457 pós 3D
+  como filter no canvas (composer real adiado — peso do motor3d);
+  temporadas/desafios/recordes 100% locais e determinísticos (social
+  server-side segue P14); §158 gatilho de efeito = celebração no salvar
+  com partículas §156 na cor de destaque; import completo §309 valida
+  tudo ANTES de aplicar (duas etapas); recência §88 reativa por evento
+  (grade não espera remontagem).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 201–210, 211–220 e 221–230 · Chave IA (Anexo B

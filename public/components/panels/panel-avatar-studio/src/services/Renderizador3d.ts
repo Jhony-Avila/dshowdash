@@ -117,6 +117,14 @@ export class Renderizador3d implements RenderizadorAvatar {
   private particulasBase: Float32Array | null = null;
   // mega 268 (§452): RIM LIGHT (luz de aro) atrás do personagem
   private rim: THREE.DirectionalLight | null = null;
+  // ── lote 331–340 (§176/§457, flag as5.palco3d_cine) ────────────────
+  // mega 331 (§176): MOVIMENTO cinematográfico contínuo da câmera
+  private movCamera: 'nenhum' | 'dolly' | 'panoramica' = 'nenhum';
+  private movBase: { pos: THREE.Vector3; alvo: THREE.Vector3 } | null = null;
+  // mega 333 (§457/§177): PÓS — vinheta/saturação por CSS filter no canvas
+  // (§177.1: barato, desliga no econômico; composer real fica p/ quando o
+  // peso do motor3d justificar — registrado)
+  private posAtivo = false;
   // mega 45: nitidez responsiva — o canvas segue o contêiner de verdade
   private observadorTamanho: ResizeObserver | null = null;
   private alvoEl: HTMLElement | null = null;
@@ -565,6 +573,7 @@ export class Renderizador3d implements RenderizadorAvatar {
   enquadrar(alvo: 'auto' | 'rosto' = 'auto'): void {
     if (!this.camera || !this.personagem) return;
     this.orbitaAuto = false; // one-shot manda: a órbita cinematográfica solta
+    this.movCamera = 'nenhum'; this.movBase = null; // §176.3
     const caixa = new THREE.Box3().setFromObject(this.personagem);
     const centro = caixa.getCenter(new THREE.Vector3());
     const tam = caixa.getSize(new THREE.Vector3());
@@ -585,10 +594,31 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.camera.lookAt(centro);
   }
 
+  /** mega 331 (§176): movimento contínuo da câmera — 'dolly' aproxima e
+   *  afasta lentamente; 'panoramica' desliza na vertical. §176.3: comandos
+   *  manuais (controles/enquadrar/definirCamera) desligam o movimento. */
+  definirMovimentoCamera(modo: 'nenhum' | 'dolly' | 'panoramica'): void {
+    this.movCamera = modo;
+    this.movBase = null; // re-ancora no próximo frame
+    if (modo !== 'nenhum') this.orbitaAuto = false;
+  }
+
+  /** mega 333 (§457/§177): pós leve (vinheta + saturação) no canvas.
+   *  §177.1: NUNCA no tier econômico; false = canvas 100% legado. */
+  definirPos(ligado: boolean): void {
+    this.posAtivo = ligado;
+    const canvas = this.renderer?.domElement;
+    if (!canvas) return;
+    const aplicar = ligado && this.tierEfetivo() !== 'economico';
+    canvas.style.filter = aplicar ? 'saturate(1.12) contrast(1.05)' : '';
+    canvas.style.boxShadow = aplicar ? 'inset 0 0 90px 30px rgba(0,0,0,0.4)' : '';
+  }
+
   /** mega 79 (§451): sombras REAIS quando o tier aguenta; econômico usa a
    *  sombra fake de sempre. Chamado no montar/qualidade/carregar. */
   private atualizarSombras(): void {
     const reais = this.tierEfetivo() !== 'economico';
+    this.definirPos(this.posAtivo); // §177.1: pós segue o tier a quente
     this.sombrasLigadas = reais;
     if (this.luzes) this.luzes.chave.castShadow = reais;
     if (this.chaoSombra) this.chaoSombra.visible = reais;
@@ -946,6 +976,23 @@ export class Renderizador3d implements RenderizadorAvatar {
         arr[i + 2] = base[i + 2] + Math.cos(this.relogio * 0.8 + i) * 0.05;
       }
       attr.needsUpdate = true;
+    }
+    // mega 331 (§176): movimento cinematográfico — oscilação senoidal
+    // ANCORADA na pose atual da câmera (nunca acumula deriva)
+    if (this.movCamera !== 'nenhum' && this.camera && this.personagem) {
+      if (!this.movBase) {
+        const caixa = new THREE.Box3().setFromObject(this.personagem);
+        this.movBase = { pos: this.camera.position.clone(), alvo: caixa.getCenter(new THREE.Vector3()) };
+      }
+      const bm = this.movBase;
+      if (this.movCamera === 'dolly') {
+        const dir = bm.pos.clone().sub(bm.alvo);
+        const fator = 1 + Math.sin(this.relogio * 0.35) * 0.09;
+        this.camera.position.copy(bm.alvo.clone().add(dir.multiplyScalar(fator)));
+      } else {
+        this.camera.position.set(bm.pos.x, bm.pos.y + Math.sin(this.relogio * 0.3) * 0.12, bm.pos.z);
+      }
+      this.camera.lookAt(bm.alvo);
     }
     // mega 82: aura 3D respira (rotação + pulso sutil)
     if (this.aura3d) {

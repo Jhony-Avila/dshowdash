@@ -136,3 +136,83 @@ export function lerCodigoDoLook(texto: string): AvatarConfig | null {
     return validarConfig(bruto.c); // sanitizado — nunca aplica lixo
   } catch { return null; }
 }
+
+// ── lote 371–380 (§254/§255/§309/§310, flag as5.portabilidade) ───────
+// EXPORT/IMPORT COMPLETOS do estúdio: um JSON versionado com TODAS as
+// chaves locais conhecidas (whitelist por prefixo dshow. — nada além).
+// Import §309 é ESTRITO: só chaves da whitelist, cada valor precisa
+// parsear; nada é gravado se o arquivo for inválido (tudo-ou-nada).
+const PREFIXO_PORT = 'dshow.';
+const VERSAO_PORT = 1;
+
+export interface PacotePortabilidade {
+  formato: 'dshow-avatar-studio';
+  v: number;
+  quando: string;
+  chaves: Record<string, string>;
+}
+
+/** §254/§310: monta o pacote com TODAS as chaves dshow.* atuais. */
+export function montarPacoteCompleto(): PacotePortabilidade {
+  const chaves: Record<string, string> = {};
+  try {
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const k = localStorage.key(i);
+      if (!k?.startsWith(PREFIXO_PORT)) continue;
+      const v = localStorage.getItem(k);
+      if (v !== null) chaves[k] = v;
+    }
+  } catch { /* sem storage */ }
+  return { formato: 'dshow-avatar-studio', v: VERSAO_PORT, quando: new Date().toISOString(), chaves };
+}
+
+/** §310: baixa o pacote como arquivo .json. */
+export function exportarTudo(): void {
+  const pacote = montarPacoteCompleto();
+  const blob = new Blob([JSON.stringify(pacote, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dshow-avatar-studio-${pacote.quando.slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+export interface ResultadoImportCompleto {
+  ok: boolean;
+  motivo?: string;
+  /** contagem de chaves válidas prontas p/ aplicar */
+  chaves?: number;
+  pacote?: PacotePortabilidade;
+}
+
+/** §309: valida SEM aplicar — import é decisão em duas etapas. */
+export function interpretarPacote(texto: string): ResultadoImportCompleto {
+  try {
+    const bruto = JSON.parse(texto) as Partial<PacotePortabilidade>;
+    if (bruto?.formato !== 'dshow-avatar-studio') return { ok: false, motivo: 'não é um backup do Avatar Studio' };
+    if (bruto.v !== VERSAO_PORT) return { ok: false, motivo: `versão ${bruto.v} desconhecida` };
+    if (!bruto.chaves || typeof bruto.chaves !== 'object') return { ok: false, motivo: 'sem chaves' };
+    const entradas = Object.entries(bruto.chaves)
+      .filter(([k, v]) => k.startsWith(PREFIXO_PORT) && typeof v === 'string' && v.length < 400000);
+    if (entradas.length === 0) return { ok: false, motivo: 'nenhuma chave válida' };
+    return {
+      ok: true,
+      chaves: entradas.length,
+      pacote: { formato: 'dshow-avatar-studio', v: VERSAO_PORT, quando: String(bruto.quando ?? ''), chaves: Object.fromEntries(entradas) },
+    };
+  } catch { return { ok: false, motivo: 'JSON inválido' }; }
+}
+
+/** §309: aplica um pacote JÁ validado (tudo-ou-nada por chave válida). */
+export function aplicarPacote(r: ResultadoImportCompleto): number {
+  if (!r.ok || !r.pacote) return 0;
+  let aplicadas = 0;
+  try {
+    for (const [k, v] of Object.entries(r.pacote.chaves)) {
+      localStorage.setItem(k, v);
+      aplicadas += 1;
+    }
+  } catch { /* quota */ }
+  return aplicadas;
+}

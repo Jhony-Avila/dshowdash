@@ -32,6 +32,16 @@ const PADROES: Record<string, boolean> = {
   'as5.fundacoes_v2': true,       // lote 271–280 — A6: manifest §267, tokens §283–§289, logging §291 v2
   'as5.poderes_familia': true,    // lote 281–290 — poderes por família §153.1–.4 + partículas §156
   'as5.microinteracoes': true,    // lote 291–300 — progressão v3 + microinterações
+  // ── onda 311–410 (decisão #57; padrão ON conforme #50) ──
+  'as5.foto_fina': true,          // lote 311–320 — nitidez §333, formas §340–341, JPEG §369, marca §372, galeria §326 v2
+  'as5.palco_sensorial': true,    // lote 321–330 — som ambiente §161/§178, crossfade §157.4, presença §157.5, luz avançada §164.3
+  'as5.palco3d_cine': true,       // lote 331–340 — câmera §176, pós 3D §457/§177, poses v2 §443
+  'as5.presets_v2': true,         // lote 341–350 — §197–§205
+  'as5.efeitos_v2': true,         // lote 351–360 — categorias §157 + editor §158
+  'as5.temporadas': true,         // lote 361–370 — §245/§248/§251/§252 local
+  'as5.portabilidade': true,      // lote 371–380 — §254/§255/§309/§310
+  'as5.orcamento_perf': true,     // lote 381–390 — §182–§184/§186.1/§274
+  'as5.catalogo_v2': true,        // lote 391–400 — §61/§75/§88/§92/§94
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

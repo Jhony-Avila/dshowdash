@@ -22,6 +22,12 @@ export interface PresetPessoal {
   criadoEm: string;          // ISO — exibido na biblioteca (§199)
   renderizador: '2d' | '3d'; // §199 — hoje só '2d' é produzido
   config: AvatarConfig;
+  // ── lote 341–350 (§202/§204, flag as5.presets_v2) ──
+  /** §202: versão — 1 na criação, +1 a cada atualização */
+  versao?: number;
+  atualizadoEm?: string;
+  /** §204: SNAPSHOTS — até 3 configs anteriores (mais recente primeiro) */
+  historico?: AvatarConfig[];
 }
 
 function lerTudo(): PresetPessoal[] {
@@ -57,6 +63,29 @@ export function salvarPreset(nome: string, config: AvatarConfig, tags: string[] 
   };
   gravar([preset, ...lerTudo()]);
   return preset;
+}
+
+/** mega 342 (§202): atualiza o preset com o look ATUAL — versão +1 e o
+ *  config anterior vira snapshot (§204, ring de 3). */
+export function atualizarPreset(id: string, config: AvatarConfig): PresetPessoal | null {
+  const lista = lerTudo();
+  const alvo = lista.find((p) => p.id === id);
+  if (!alvo) return null;
+  const novo: PresetPessoal = {
+    ...alvo,
+    config,
+    versao: (alvo.versao ?? 1) + 1,
+    atualizadoEm: new Date().toISOString(),
+    historico: [alvo.config, ...(alvo.historico ?? [])].slice(0, 3),
+  };
+  gravar(lista.map((p) => (p.id === id ? novo : p)));
+  return novo;
+}
+
+/** mega 343 (§204): devolve o config de um snapshot (não muda nada). */
+export function snapshotDoPreset(id: string, indice: number): AvatarConfig | null {
+  const alvo = lerTudo().find((p) => p.id === id);
+  return alvo?.historico?.[indice] ?? null;
 }
 
 export function excluirPreset(id: string): void {

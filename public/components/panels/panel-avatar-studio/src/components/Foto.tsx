@@ -58,7 +58,7 @@ interface EstadoRecorte {
 
 /** Rasteriza um SVG (com a foto embutida como data-url) em PNG.
  *  Dimensões parametrizadas (§368: escala 1×/2×/4×; §325: formatos wide). */
-async function rasterizarSvg(svg: string, largura: number = LADO_SAIDA, altura: number = largura): Promise<string> {
+async function rasterizarSvg(svg: string, largura: number = LADO_SAIDA, altura: number = largura, tipo: 'png' | 'jpeg' = 'png'): Promise<string> {
   const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   try {
@@ -74,8 +74,9 @@ async function rasterizarSvg(svg: string, largura: number = LADO_SAIDA, altura: 
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('SEM_CANVAS');
     ctx.imageSmoothingQuality = 'high';
+    if (tipo === 'jpeg') { ctx.fillStyle = '#0d1017'; ctx.fillRect(0, 0, largura, altura); } // JPEG sem alfa (§369)
     ctx.drawImage(img, 0, 0, largura, altura);
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL(tipo === 'jpeg' ? 'image/jpeg' : 'image/png', tipo === 'jpeg' ? 0.9 : undefined);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -210,6 +211,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
     // lote 111 (§332–§341)
     desfoqueFundo: 0, granulacao: 0, zoomFoto: 1, anel: 3,
     forma: 'circulo', filtroCor: 'nenhum',
+    nitidez: 0, marca: '', // lote 311-320 (§333/§372)
   };
   const mudarAjuste = useCallback((campo: keyof AjustesFoto, valor: number | boolean | string) => {
     setEstilo((e) => {
@@ -874,7 +876,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
 
   // §368: exportação local em escala (1×/2×/4× do PNG 480)
   // §325: formatos wide exportam nas dimensões NATIVAS do formato
-  const baixarPng = useCallback(async () => {
+  const baixarPng = useCallback(async (tipo: 'png' | 'jpeg' = 'png') => {
     if (!fotoEstilo) return;
     setMensagem(null);
     try {
@@ -884,14 +886,16 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
         estatico: true, uid: 'ftexp',
         ...(wide ? { formato, lado: ladoWide, semFundo: wideTransp } : { tamanho: lw }),
       });
-      const png = await rasterizarSvg(svg, lw, lh);
+      // mega 314 (§369, flag as5.foto_fina): JPEG qualidade 0.9 opcional
+      const img = await rasterizarSvg(svg, lw, lh, tipo);
       const a = document.createElement('a');
-      a.href = png;
-      a.download = wide ? `dshow-${formato}-${lw}x${lh}.png` : `dshow-foto-${lw}px.png`;
+      a.href = img;
+      const ext = tipo === 'jpeg' ? 'jpg' : 'png';
+      a.download = wide ? `dshow-${formato}-${lw}x${lh}.${ext}` : `dshow-foto-${lw}px.${ext}`;
       a.click();
-      telemetria('foto_exportou', { lado: lw, formato });
+      telemetria('foto_exportou', { lado: lw, formato, tipo });
     } catch {
-      setMensagem('Não consegui gerar o PNG para download — tente de novo.');
+      setMensagem('Não consegui gerar a imagem para download — tente de novo.');
     }
   }, [fotoEstilo, estilo, escala, formato, ladoWide, wideTransp]);
 
@@ -1343,6 +1347,12 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                     data-teste={`tpl-filtro-${cat}`}
                     onClick={() => mudarFiltroTpl(cat)}>
                     {cat === 'todos' ? 'Todos' : cat}
+                    {/* mega 316 (§326 v2): contagem honesta por categoria */}
+                    {flag('as5.foto_fina') && (
+                      <em className="avst-ft-tpl-n" data-teste="tpl-contagem">
+                        {cat === 'todos' ? TEMPLATES_FOTO.length : TEMPLATES_FOTO.filter((t) => t.categoria === cat).length}
+                      </em>
+                    )}
                   </button>
                 ))}
               </div>
@@ -1543,6 +1553,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
                 ['desfoqueFundo', 'Desfoque fundo', 0, 1, 0.01],
                 ['granulacao', 'Granulação', 0, 1, 0.01],
                 ['anel', 'Anel', 1, 6, 0.5],
+                // mega 311 (§333, flag as5.foto_fina): nitidez por convolução
+                ...(flag('as5.foto_fina') ? [['nitidez', 'Nitidez', 0, 1, 0.01]] : []),
               ] as Array<[keyof AjustesFoto, string, number, number, number]>).map(([campo, rotulo, min, max, passo]) => (
                 <label key={campo} className="avst-ft-ajuste">
                   <span>{rotulo}</span>
@@ -1558,6 +1570,16 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               <button type="button" className="avst-ft-chip" aria-pressed={estilo.ajustes?.sombra === true}
                 data-teste="ajuste-sombra" title="Sombra de contato sob o medalhão (§337)"
                 onClick={() => mudarAjuste('sombra', !(estilo.ajustes?.sombra === true))}>Sombra</button>
+              {/* mega 315 (§372, flag as5.foto_fina): marca d'água opcional */}
+              {flag('as5.foto_fina') && (
+                <label className="avst-ft-ajuste" title="Marca d'água discreta no canto (§372)">
+                  <span>Marca</span>
+                  <input type="text" maxLength={16} data-teste="ajuste-marca"
+                    value={String(estilo.ajustes?.marca ?? '')}
+                    aria-label="Texto da marca d'água (vazio = sem marca)"
+                    onChange={(e) => mudarAjuste('marca', e.target.value.replace(/[^\p{L}\p{N} .\-]/gu, '').slice(0, 16))} />
+                </label>
+              )}
               <button type="button" className="avst-ft-chip" disabled={!estilo.ajustes}
                 data-teste="ajuste-zerar"
                 onClick={() => setEstilo((e) => { const { ajustes: _a, ...resto } = e; return resto as EstiloFoto; })}>
@@ -1565,8 +1587,10 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
             </div>
             {/* mega 111 (§341): FORMA do medalhão */}
             <div className="avst-ft-chips" role="radiogroup" aria-label="Forma do medalhão" data-teste="formas-medalhao">
-              {([['circulo', 'Círculo'], ['hexagono', 'Hexágono'], ['losango', 'Losango'], ['squircle', 'Squircle']] as const).map(([f2, nome]) => (
-                <button key={f2} type="button" role="radio"
+              {([['circulo', 'Círculo'], ['hexagono', 'Hexágono'], ['losango', 'Losango'], ['squircle', 'Squircle'],
+                // megas 312-313 (§340-341, flag as5.foto_fina)
+                ...(flag('as5.foto_fina') ? [['estrela', 'Estrela'], ['escudo', 'Escudo']] as const : [])] as const).map(([f2, nome]) => (
+                <button key={f2} type="button" role="radio" data-teste={`forma-${f2}`}
                   aria-checked={(estilo.ajustes?.forma ?? 'circulo') === f2}
                   className={`avst-ft-chip ${(estilo.ajustes?.forma ?? 'circulo') === f2 ? 'avst-ft-chip-ativo' : ''}`}
                   onClick={() => mudarAjuste('forma', f2)}>{nome}</button>
@@ -1757,6 +1781,14 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
               onClick={() => void baixarPng()}>
               <Download size={14} aria-hidden /> Baixar PNG
             </button>
+            {/* mega 314 (§369, flag as5.foto_fina): JPEG 0.9 p/ e-mail/docs */}
+            {flag('as5.foto_fina') && (
+              <button type="button" className="avst-botao" disabled={salvando}
+                title="Baixar em JPEG (qualidade 0,9 — arquivos menores, §369)" data-teste="baixar-jpeg"
+                onClick={() => void baixarPng('jpeg')}>
+                <Download size={14} aria-hidden /> JPEG
+              </button>
+            )}
             <button type="button" className="avst-botao" disabled={salvando}
               title="Baixar o VETOR (.svg) desta composição (§369)" data-teste="baixar-svg"
               onClick={baixarSvg}>

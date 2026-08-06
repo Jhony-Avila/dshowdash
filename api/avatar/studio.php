@@ -228,6 +228,7 @@ function avst_validar_config_foto($bruto): ?array
             // lote 111 (§332–§341)
             'desfoqueFundo' => [0.0, 1.0, 0.0], 'granulacao' => [0.0, 1.0, 0.0],
             'zoomFoto' => [1.0, 1.6, 1.0], 'anel' => [1.0, 6.0, 3.0],
+            'nitidez' => [0.0, 1.0, 0.0], // mega 311 (§333, lote 311-320)
         ];
         foreach ($mapa as $campo => [$min, $max, $neutro]) {
             $v = $clamp($aj[$campo] ?? null, $min, $max, $neutro);
@@ -242,12 +243,20 @@ function avst_validar_config_foto($bruto): ?array
         }
         // lote 111: enums fechados — fora da lista = neutro (omitido)
         $forma = $aj['forma'] ?? null;
-        if (in_array($forma, ['hexagono', 'losango', 'squircle'], true)) {
+        if (in_array($forma, ['hexagono', 'losango', 'squircle', 'estrela', 'escudo'], true)) { // megas 312-313 (§340-341)
             $limpo['forma'] = $forma;
         }
         $filtroCor = $aj['filtroCor'] ?? null;
         if (in_array($filtroCor, ['pb', 'sepia'], true)) {
             $limpo['filtroCor'] = $filtroCor;
+        }
+        // mega 315 (§372): marca d'água — mesma whitelist da legenda, <=16
+        $marca = $aj['marca'] ?? null;
+        if (is_string($marca)) {
+            $limpaM = trim(mb_substr(preg_replace('/[^\p{L}\p{N} .\-]/u', '', $marca), 0, 16));
+            if ($limpaM !== '') {
+                $limpo['marca'] = $limpaM;
+            }
         }
         if ($limpo !== []) {
             $saida['ajustes'] = $limpo;

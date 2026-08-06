@@ -13,6 +13,8 @@ export interface Pose3d {
   personagem: string;   // slug — pose só vale p/ quem tem o clipe
   clipe: string;
   tempo: number;        // segundos dentro do clipe
+  /** mega 335 (§443 v2, flag as5.palco3d_cine): thumb 96px ao salvar */
+  thumb?: string;
 }
 
 function sanitizar(bruto: unknown): Pose3d | null {
@@ -25,6 +27,8 @@ function sanitizar(bruto: unknown): Pose3d | null {
     personagem: typeof p.personagem === 'string' ? p.personagem.slice(0, 64) : '',
     clipe: p.clipe.slice(0, 48),
     tempo: typeof p.tempo === 'number' && Number.isFinite(p.tempo) ? Math.max(0, Math.min(600, p.tempo)) : 0,
+    ...(typeof p.thumb === 'string' && p.thumb.startsWith('data:image/') && p.thumb.length < 40000
+      ? { thumb: p.thumb } : {}),
   };
 }
 
@@ -44,7 +48,7 @@ export function listarPoses(personagem?: string): Pose3d[] {
   return personagem ? todas.filter((p) => p.personagem === personagem) : todas;
 }
 
-export function salvarPose(personagem: string, clipe: string, tempo: number): Pose3d | null {
+export function salvarPose(personagem: string, clipe: string, tempo: number, thumb?: string): Pose3d | null {
   const atuais = lerTudo();
   if (atuais.length >= LIMITE) return null;
   const pose: Pose3d = {
@@ -52,6 +56,7 @@ export function salvarPose(personagem: string, clipe: string, tempo: number): Po
     nome: `Pose ${atuais.length + 1}`,
     personagem, clipe,
     tempo: Math.max(0, tempo),
+    ...(thumb && thumb.startsWith('data:image/') && thumb.length < 40000 ? { thumb } : {}),
   };
   gravar([...atuais, pose]);
   return pose;
