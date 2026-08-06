@@ -7,6 +7,14 @@
     "chunks/vendor": 40,
     "chunks/motor3d": 1180,
     "chunks/Estudio3D": 50,
-    "chunks/Renderizador3d": 20
+    "chunks/Renderizador3d": 24,
+    "chunks/Atalhos": 4,
+    "chunks/Consultor": 9,
+    "chunks/DetalheAsset": 15,
+    "chunks/Missoes": 4,
+    "chunks/PaletaComandos": 5,
+    "chunks/TelemetriaDev": 7,
+    "chunks/TimelineShell": 5,
+    "chunks/VersoesAvatar": 5
   }
 }

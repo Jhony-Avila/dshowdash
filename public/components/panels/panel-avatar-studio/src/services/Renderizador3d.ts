@@ -107,6 +107,16 @@ export class Renderizador3d implements RenderizadorAvatar {
   // bones (arquitetura pronta p/ as malhas reais do UBC)
   private tiposProp: Map<'cabeca' | 'rosto' | 'pet', { tipo: string; cor: string }> = new Map();
   private props3d: Map<'cabeca' | 'rosto' | 'pet', THREE.Object3D> = new Map();
+  // ── onda 261–270 (§440–§458): A5 sem UBC ──────────────────────────
+  // mega 261/267 (§440–§441): VIDA procedural — respiração + micro-
+  // movimento de cabeça ADITIVOS (aplicados DEPOIS do mixer, nunca
+  // sobrescrevem clipes); null = desligada (padrão — zero mudança)
+  private vida: { intensidade: number } | null = null;
+  // mega 264/269 (§444–§446): PARTÍCULAS na cor de destaque
+  private particulas3d: THREE.Points | null = null;
+  private particulasBase: Float32Array | null = null;
+  // mega 268 (§452): RIM LIGHT (luz de aro) atrás do personagem
+  private rim: THREE.DirectionalLight | null = null;
   // mega 45: nitidez responsiva — o canvas segue o contêiner de verdade
   private observadorTamanho: ResizeObserver | null = null;
   private alvoEl: HTMLElement | null = null;
@@ -474,6 +484,107 @@ export class Renderizador3d implements RenderizadorAvatar {
     if (this.renderer) this.renderer.toneMappingExposure = Math.min(1.6, Math.max(0.6, v));
   }
 
+  // ── onda 261–270 (§440–§458): A5 sem UBC ──────────────────────────
+
+  /** mega 263 (§457–§458): MODO do tone mapping (aces = o de sempre). */
+  definirTonemapping(modo: 'aces' | 'agx' | 'neutro' | 'reinhard'): void {
+    if (!this.renderer) return;
+    const mapa = {
+      aces: THREE.ACESFilmicToneMapping,
+      agx: THREE.AgXToneMapping,
+      neutro: THREE.NeutralToneMapping,
+      reinhard: THREE.ReinhardToneMapping,
+    } as const;
+    this.renderer.toneMapping = mapa[modo] ?? THREE.ACESFilmicToneMapping;
+    // materiais compilados cacheiam o tone mapping — força recompilação
+    this.personagem?.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+      (Array.isArray(m) ? m : m ? [m] : []).forEach((x) => { x.needsUpdate = true; });
+    });
+  }
+
+  /** mega 262 (§449): intensidade do ENVIRONMENT map (0 = desliga). */
+  definirAmbiente(intensidade: number): void {
+    if (!this.cena) return;
+    (this.cena as THREE.Scene & { environmentIntensity?: number }).environmentIntensity =
+      Math.min(1.2, Math.max(0, intensidade));
+  }
+
+  /** megas 261/267 (§440–§441): VIDA procedural (null = desliga). */
+  definirVida(intensidade: number | null): void {
+    this.vida = intensidade === null ? null : { intensidade: Math.min(1.5, Math.max(0.2, intensidade)) };
+  }
+
+  /** mega 268 (§452): RIM LIGHT — aro na cor dada (null = remove). */
+  definirRim(cor: string | null): void {
+    if (this.rim) {
+      this.cena?.remove(this.rim);
+      this.rim.dispose();
+      this.rim = null;
+    }
+    if (!cor || !this.cena) return;
+    this.rim = new THREE.DirectionalLight(cor, 2.4);
+    this.rim.position.set(-1.2, 1.6, -2.2); // atrás e acima — contorno
+    this.cena.add(this.rim);
+  }
+
+  /** megas 264/269 (§444–§446): PARTÍCULAS determinísticas na cor dada.
+   *  Campo cilíndrico ao redor do personagem; densidade cai no tier
+   *  econômico; null = remove e libera GPU. */
+  definirParticulas3d(cor: string | null): void {
+    if (this.particulas3d) {
+      this.cena?.remove(this.particulas3d);
+      this.particulas3d.geometry.dispose();
+      (this.particulas3d.material as THREE.Material).dispose();
+      this.particulas3d = null;
+      this.particulasBase = null;
+    }
+    if (!cor || !this.cena) return;
+    const n = this.tierEfetivo() === 'economico' ? 36 : 90;
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      // determinístico: mulberry-like por índice (nunca Math.random)
+      const a = ((i * 2654435761) % 4096) / 4096 * Math.PI * 2;
+      const r = 0.45 + (((i * 40503) % 997) / 997) * 0.55;
+      pos[i * 3] = Math.cos(a) * r;
+      pos[i * 3 + 1] = (((i * 69069) % 1013) / 1013) * 1.6;
+      pos[i * 3 + 2] = Math.sin(a) * r;
+    }
+    this.particulasBase = pos.slice();
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    this.particulas3d = new THREE.Points(geo, new THREE.PointsMaterial({
+      color: cor, size: 0.035, transparent: true, opacity: 0.85,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+    }));
+    this.cena.add(this.particulas3d);
+  }
+
+  /** mega 265 (§454): ENQUADRAMENTO fino — 'auto' ajusta ao Box3 com
+   *  margem; 'rosto' aproxima do bone da cabeça (fallback: topo da caixa). */
+  enquadrar(alvo: 'auto' | 'rosto' = 'auto'): void {
+    if (!this.camera || !this.personagem) return;
+    this.orbitaAuto = false; // one-shot manda: a órbita cinematográfica solta
+    const caixa = new THREE.Box3().setFromObject(this.personagem);
+    const centro = caixa.getCenter(new THREE.Vector3());
+    const tam = caixa.getSize(new THREE.Vector3());
+    if (alvo === 'rosto') {
+      const boneCabeca = this.bones.get('Head') ?? this.bones.get('head')
+        ?? this.bones.get('mixamorigHead') ?? this.bones.get('Neck') ?? null;
+      const foco = new THREE.Vector3();
+      if (boneCabeca) boneCabeca.getWorldPosition(foco);
+      else foco.set(centro.x, caixa.max.y - tam.y * 0.12, centro.z);
+      const d = Math.max(0.4, tam.y * 0.55);
+      this.camera.position.set(foco.x + d * 0.25, foco.y + d * 0.1, foco.z + d);
+      this.camera.lookAt(foco);
+      return;
+    }
+    const maior = Math.max(tam.x, tam.y, tam.z);
+    const d = maior * 1.9;
+    this.camera.position.set(centro.x + d * 0.28, centro.y + maior * 0.32, centro.z + d);
+    this.camera.lookAt(centro);
+  }
+
   /** mega 79 (§451): sombras REAIS quando o tier aguenta; econômico usa a
    *  sombra fake de sempre. Chamado no montar/qualidade/carregar. */
   private atualizarSombras(): void {
@@ -803,6 +914,39 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.fpsUltimo = agora;
     this.animarIdle();
     this.mixer?.update(1 / 60);
+    // megas 261/267 (§440–§441): VIDA procedural ADITIVA — DEPOIS do mixer
+    // (o clipe manda; a vida só soma micro-rotações por cima, nunca troca)
+    if (this.vida) {
+      const k = this.vida.intensidade;
+      const t = this.relogio;
+      const soma = (nome: string, rx: number, rz: number) => {
+        const bone = this.bones.get(nome);
+        if (!bone) return;
+        if (!this.mixer && !this.idleAtivo) {
+          // sem mixer nem idle ninguém repõe a pose → repõe aqui (não acumula)
+          const base = this.poseBase.get(nome);
+          if (base) bone.quaternion.copy(base);
+        }
+        bone.rotateX(rx);
+        bone.rotateZ(rz);
+      };
+      soma('Spine', Math.sin(t * 1.4) * 0.02 * k, 0); // respiração §440
+      soma('Chest', Math.sin(t * 1.4 + 0.4) * 0.016 * k, 0);
+      soma('Head', Math.sin(t * 0.7) * 0.018 * k, Math.sin(t * 0.5) * 0.012 * k); // §441
+    }
+    // megas 264/269 (§444–§446): partículas em DERIVA ascendente com
+    // reciclagem no topo — determinístico (base + relógio, nunca random)
+    if (this.particulas3d && this.particulasBase) {
+      const attr = this.particulas3d.geometry.getAttribute('position') as THREE.BufferAttribute;
+      const arr = attr.array as Float32Array;
+      const base = this.particulasBase;
+      for (let i = 0; i < base.length; i += 3) {
+        arr[i] = base[i] + Math.sin(this.relogio * 0.9 + i) * 0.05;
+        arr[i + 1] = (base[i + 1] + this.relogio * 0.16 + i * 0.002) % 1.7;
+        arr[i + 2] = base[i + 2] + Math.cos(this.relogio * 0.8 + i) * 0.05;
+      }
+      attr.needsUpdate = true;
+    }
     // mega 82: aura 3D respira (rotação + pulso sutil)
     if (this.aura3d) {
       this.aura3d.rotation.z = this.relogio * 0.8;

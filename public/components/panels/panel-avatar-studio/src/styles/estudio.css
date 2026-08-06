@@ -2186,3 +2186,50 @@
 }
 input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius: 6px; color: var(--avst-texto); cursor: text; }
 .avst-ft-template-compor span { color: var(--avst-acento); }
+
+/* ── lote 281–290 (§153.1–.4 + §156): poderes por FAMÍLIA ─────────────
+   Campo de partículas da família por cima do efeito (z acima do poder,
+   abaixo da placa de nome) e "câmera" §154 passo 2: o palco 2D aproxima
+   de leve durante a reprodução (transição já existente do .avst5-zoom). */
+.avst5-poder-part { z-index: 7; }
+.avst5-poder-part svg { width: 100%; height: 100%; }
+/* §154 passo 2: o zoom da "câmera" é aplicado no transform INLINE do
+   .avst5-zoom (zoomEstilo) — CSS aqui perderia p/ o style do elemento. */
+.avst5-det-familia { margin: 2px 0 8px; font-size: var(--t-fonte-11, 11px); color: var(--avst-texto-2, #8a93a6); }
+.avst5-det-familia strong { color: var(--avst-texto, #e6eaf2); }
+
+/* ── mega 296 (P9/§285): MICROINTERAÇÕES — só com data-micro no shell
+   (flag as5.microinteracoes E sem movimento reduzido; tokens §283/§285) */
+.avst5-shell[data-micro] .avst-card { transition: transform var(--t-dur-rapida, 120ms) ease, box-shadow var(--t-dur-rapida, 120ms) ease; }
+.avst5-shell[data-micro] .avst-card:hover { transform: translateY(-2px); box-shadow: var(--t-sombra-1); }
+.avst5-shell[data-micro] .avst-card:active { transform: translateY(0) scale(.98); }
+.avst5-shell[data-micro] .avst-ft-chip,
+.avst5-shell[data-micro] .avst5-p3d-chip { transition: transform var(--t-dur-rapida, 120ms) ease; }
+.avst5-shell[data-micro] .avst-ft-chip:active,
+.avst5-shell[data-micro] .avst5-p3d-chip:active { transform: scale(.94); }
+.avst-perfil-titulo-nivel { margin-left: 6px; font-style: normal; font-size: var(--t-fonte-11, 11px); color: var(--avst-texto-2, #8a93a6); }
+.avst-perfil-extrato { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.avst-perfil-extrato li { display: inline-flex; gap: 4px; font-size: var(--t-fonte-10, 10.5px); color: var(--avst-texto-2, #8a93a6); }
+.avst-perfil-extrato strong { color: var(--avst-texto, #e6eaf2); }
+.avst-conq-tipo { opacity: .8; }
+
+/* ── mega 303 (P10): PREFERS-CONTRAST — bordas e estados reforçados ── */
+@media (prefers-contrast: more) {
+  [data-avst-react-root] .avst-card,
+  [data-avst-react-root] .avst-ft-chip,
+  [data-avst-react-root] .avst5-p3d-chip { border-width: 2px; }
+  [data-avst-react-root] .avst-ft-chip-ativo,
+  [data-avst-react-root] .avst5-p3d-chip-on { outline: 2px solid var(--avst-acento, #7c5cff); outline-offset: 1px; }
+  [data-avst-react-root] .avst-perfil-formula,
+  [data-avst-react-root] .avst-perfil-extrato li { color: var(--avst-texto, #e6eaf2); }
+}
+
+/* ── mega 304 (§297): KILL-SWITCH de movimento — cinto e suspensório
+   sobre os guards de JS (data-micro já respeita movReduzido; aqui o CSS
+   garante o mesmo para transições/animações das ondas novas). */
+@media (prefers-reduced-motion: reduce) {
+  [data-avst-react-root] .avst5-shell[data-micro] .avst-card,
+  [data-avst-react-root] .avst5-shell[data-micro] .avst-ft-chip,
+  [data-avst-react-root] .avst5-shell[data-micro] .avst5-p3d-chip { transition: none; transform: none; }
+  [data-avst-react-root] .avst5-poder-part { animation: none; }
+}

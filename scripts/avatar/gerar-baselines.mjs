@@ -19,6 +19,21 @@ const chunks = readdirSync(DIST).filter((f) => f.endsWith('.js'))
 
 const suite = readFileSync(join(RAIZ, 'scripts/avatar/testes/rodar-todos.mjs'), 'utf8');
 const nTestes = (suite.match(/\.mjs'/g) ?? []).length;
+
+// mega 306 (§605 v2): flags e chaves de storage CONHECIDAS também são
+// baseline — flag/chave nova aparece no diff deste arquivo
+const flagsSrc = readFileSync(join(RAIZ, 'public/components/panels/panel-avatar-studio/src/nucleo/flags.ts'), 'utf8');
+const nFlags = (flagsSrc.match(/'as5\.[a-z0-9_]+'/g) ?? []).length;
+function chavesStorage(dir) {
+  const chaves = new Set();
+  for (const f of readdirSync(dir, { recursive: true })) {
+    if (!/\.(ts|tsx)$/.test(String(f))) continue;
+    const txt = readFileSync(join(dir, String(f)), 'utf8');
+    for (const m of txt.matchAll(/'(dshow\.[a-z0-9._-]+)'/gi)) chaves.add(m[1]);
+  }
+  return [...chaves].sort();
+}
+const chaves = chavesStorage(join(RAIZ, 'public/components/panels/panel-avatar-studio/src'));
 const manifest = JSON.parse(readFileSync(join(RAIZ, 'docs/AVATAR-STUDIO-5/manifest-assets.json'), 'utf8'));
 
 const linhas = chunks.map((c) => {
@@ -43,5 +58,8 @@ ${linhas.join('\n')}
 - Suíte de navegador/node: **${nTestes} arquivos** (rodar-todos) + nucleo.test.
 - Catálogo 2D: **${manifest.resumo.itens2d} itens** em ${manifest.resumo.categorias} categorias · ${manifest.resumo.titulos} títulos · ${manifest.resumo.colecoes} coleções.
 - Personagens 3D publicados: **${manifest.resumo.personagens3d}**.
+- Feature flags \`as5.*\`: **${nFlags}** (§605 v2 — nova flag = diff aqui).
+- Chaves de storage conhecidas: **${chaves.length}** (§629):
+${chaves.map((k) => `  - \`${k}\``).join('\n')}
 `);
 console.log(`baselines → docs/AVATAR-STUDIO-5/baselines.md (${chunks.length} chunks · ${nTestes} testes)`);

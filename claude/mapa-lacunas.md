@@ -1,4 +1,4 @@
-# Mapa de Lacunas do Briefing — v4 (pós onda 231–260, 2026-08-05)
+# Mapa de Lacunas do Briefing — v5 (pós onda 261–310, 2026-08-06)
 
 > Método: briefing (006a394b, 1.764 §§) cruzado por evidência com o código.
 
@@ -40,10 +40,23 @@ imagem §355–358) · Infra P16 · endpoints novos (publicação §365–366).
 P11 CMS · P12 plataforma · P14 social server-side · P17 monorepo · P18
 processos.
 
-## Sequência recomendada (261+)
+## O que a onda 261–310 fechou
 
-1. **261–270**: A5 3D sem UBC (piscar §440–441, env maps §449, pós §457,
-   aura/partículas §444–446) — o palco 3D é a vitrine técnica.
-2. **271–280**: A6 fundações (manifest §267, streaming §274–275, design
-   tokens §283–289, logging §291) — dívida que barateia tudo depois.
-3. **281+**: A1/A2 finos que não pedem arte nova.
+- **A5 3D**: vida procedural §440–441 · ambiente §449 v2 · tone mapping
+  §457–458 · partículas 3D §444–446 · rim §452 · enquadrar §454.
+- **A6**: manifest §267 · cache multinível §277 · lazy §275 (8 chunks) ·
+  tokens §283/§287 v2 · heap no viewer §290 v2 · crítico §291 v2.
+- **A2**: famílias §153.1–.4 + biblioteca de partículas §156 (roteiro por
+  família na cor de destaque, câmera §154 passo 2).
+- **A4/P9/P10**: tipos §216 · XP por uso §222–223 · títulos de nível ·
+  badges por tier §224 v2 · extrato §634 · microinterações · focus trap ·
+  prefers-contrast · kill-switch §297 · storage doctor §629 v2.
+
+## Sequência recomendada (311+)
+
+1. **Foto fina** (adiada da 281–290, decisão #56): nitidez §333, formas do
+   medalhão §340–341 (TS+PHP), export JPEG §369, marca d'água §372,
+   galeria §326 v2, som ambiente §161, crossfade de cenário.
+2. **A1/A3 finos sem arte**: §102.2 parâmetros, correções locais §333–334.
+3. **Pós-processamento 3D §457 real** (bloom/vinheta por EffectComposer —
+  pesado; medir no tier).

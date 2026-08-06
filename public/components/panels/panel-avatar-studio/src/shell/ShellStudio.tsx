@@ -6,7 +6,7 @@
 // §38 — o avatar nunca sai do foco). Vive atrás da flag as5.novo_shell;
 // com a flag OFF o App atual segue intacto. O estado é o AvatarStore da F1
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
-import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Flag, Focus, GitBranch, History, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
@@ -26,21 +26,28 @@ import { Cores } from '../components/Cores';
 import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
 import { PropriedadesAsset } from './PropriedadesAsset';
 import { PresetsShell } from './PresetsShell';
-import { PaletaComandos } from './PaletaComandos';
-import { Consultor } from './Consultor';
 import { Evolucao } from './Evolucao';
-import { TimelineShell } from './TimelineShell'; // mega 228 (§220)
 import { incrementar } from '../services/Contadores'; // mega 246 (§221)
-import { Missoes } from './Missoes';
 import { avaliarMissoes } from '../services/Missoes';
 import { registrarMarco } from '../services/Evolucao';
-import { VersoesAvatar } from './VersoesAvatar';
-import { Atalhos } from './Atalhos';
-import { TelemetriaDev } from './TelemetriaDev';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
-import { DetalheAsset } from './DetalheAsset';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
+import { ROTULO_FAMILIA, familiaDoPoder, svgRoteiroFamilia } from '../services/PoderesFamilia'; // lote 281-290 (§153/§156)
+import { instalarFocoPreso } from './foco'; // mega 301 (P10)
+
+// ── megas 273–275 (§274–§275, lazy §275): painéis SOB DEMANDA ────────
+// Cada um vira chunk próprio e só atravessa a rede na PRIMEIRA abertura
+// (thumbnail/metadados na tela antes do peso — streaming §274). Suspense
+// fallback null: o overlay aparece um frame depois, nunca quebra o shell.
+const PaletaComandos = lazy(() => import('./PaletaComandos').then((m) => ({ default: m.PaletaComandos })));
+const Consultor = lazy(() => import('./Consultor').then((m) => ({ default: m.Consultor })));
+const TimelineShell = lazy(() => import('./TimelineShell').then((m) => ({ default: m.TimelineShell }))); // mega 228 (§220)
+const Missoes = lazy(() => import('./Missoes').then((m) => ({ default: m.Missoes })));
+const VersoesAvatar = lazy(() => import('./VersoesAvatar').then((m) => ({ default: m.VersoesAvatar })));
+const Atalhos = lazy(() => import('./Atalhos').then((m) => ({ default: m.Atalhos })));
+const TelemetriaDev = lazy(() => import('./TelemetriaDev').then((m) => ({ default: m.TelemetriaDev })));
+const DetalheAsset = lazy(() => import('./DetalheAsset').then((m) => ({ default: m.DetalheAsset })));
 import { HistoricoSessao, useHistoricoSessao } from './HistoricoSessao';
 import {
   CHAVE_RASCUNHO_STORAGE, gravarRascunho, idDaAba, lerRascunho, limparRascunho,
@@ -228,9 +235,10 @@ function lerLarguras(): { esq: number; dir: number } {
 class LimiteShell extends Component<{ aoSair: () => void; children: ReactNode }, { erro: boolean }> {
   state = { erro: false };
   static getDerivedStateFromError() { return { erro: true }; }
-  // lote 156 (§291): o error boundary REPORTA antes de degradar
+  // lote 156 (§291): o error boundary REPORTA antes de degradar —
+  // mega 279 (§291 v2): CRÍTICO (quebrou o fluxo; entra no ring do suporte)
   componentDidCatch(e: Error) {
-    log.erro('shell_error_boundary', { motivo: String(e?.message ?? e).slice(0, 120) });
+    log.critico('shell_error_boundary', { motivo: String(e?.message ?? e).slice(0, 120) });
   }
   render() {
     if (!this.state.erro) return this.props.children;
@@ -260,6 +268,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     return s;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => conectarTelemetria(store), [store]);
+  // mega 301 (P10/§548): focus trap delegado — prende o Tab no dialog aberto
+  useEffect(() => instalarFocoPreso(), []);
 
   // assinatura do estado visível (preview > draft) — §608
   const estado = useSyncExternalStore(store.assinar, () => store.estadoVisivel);
@@ -328,6 +338,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       } else if (e.key.toLowerCase() === 'e' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // mega 105: E = emote aleatório (só faz algo no modo studio)
         window.dispatchEvent(new CustomEvent('avst5:emote-aleatorio'));
+      } else if (e.key.toLowerCase() === 'a' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // mega 297 (§548 v2): A = ativar o poder equipado (evento — o
+        // handler do poder decide se pode; nada acontece sem poder)
+        if (flag('as5.microinteracoes')) window.dispatchEvent(new CustomEvent('avst5:ativar-poder'));
       } else if (e.key === 'Escape') {
         setModo('edicao');
       }
@@ -342,14 +356,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // R2: câmera contextual — zoom suave via transform (viewBox não anima)
   const enquadramento = ENQUADRAMENTOS[categoria];
-  const zoomEstilo = useMemo(() => {
-    if (!enquadramento) return { transform: 'scale(1)', transformOrigin: '50% 50%' };
-    const [x, y, w, h] = enquadramento;
-    return {
-      transform: `scale(${Math.min(2.4, 240 / Math.max(w, h))})`,
-      transformOrigin: `${((x + w / 2) / 240) * 100}% ${((y + h / 2) / 240) * 100}%`,
-    };
-  }, [enquadramento]);
+  // (zoomEstilo desceu p/ depois do estado do poder — mega 287 §154 passo 2)
 
   const trocarFundo = (f: FundoPalco) => {
     setFundo(f);
@@ -422,6 +429,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // poder no overlay, controles conflitantes desabilitados e replay;
   // movimento reduzido = indisponível (§154.1)
   const palcoV2 = flag('as5.palco_v2');
+  // lote 281–290 (§153.1–.4/§156): roteiro visual POR FAMÍLIA do poder
+  const podFamilia = flag('as5.poderes_familia');
   const [poderAtivo, setPoderAtivo] = useState<string | null>(null);
   const [poderFase, setPoderFase] = useState<'pronto' | 'reproduzindo' | 'cooldown'>('pronto');
   const idPoder = configVisivel.camadas.efeito ?? configVisivel.camadas.aura ?? null;
@@ -430,7 +439,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     if (!idPoder || poderAtivo) return;
     if (palcoV2 && (poderFase !== 'pronto' || movReduzido)) return;
     setPoderAtivo(idPoder);
-    telemetria('palco_poder', { id: idPoder }); // §290
+    // mega 289 (§292): família junto no evento — heatmap §293 por família
+    telemetria('palco_poder', podFamilia
+      ? { id: idPoder, familia: familiaDoPoder(idPoder) }
+      : { id: idPoder }); // §290
     incrementar('poderes'); // mega 246 (§221): "seus números" local
     tocarPoder(); // mega 89 (§584)
     if (palcoV2) {
@@ -443,6 +455,26 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   }, [idPoder, poderAtivo, palcoV2, poderFase, movReduzido]);
   // §154.1: controles do cenário ficam travados DURANTE a reprodução
   const controlesTravados = palcoV2 && poderFase === 'reproduzindo';
+
+  // mega 297 (§548 v2): tecla A dispara o poder — mesmo alcance do botão
+  // (só no modo studio; os guards do ativarPoder decidem o resto)
+  useEffect(() => {
+    const ao = () => { if (modo === 'studio') ativarPoder(); };
+    window.addEventListener('avst5:ativar-poder', ao);
+    return () => window.removeEventListener('avst5:ativar-poder', ao);
+  }, [ativarPoder, modo]);
+
+  const zoomEstilo = useMemo(() => {
+    // mega 287 (§154 passo 2): a "câmera" aproxima de leve DURANTE o poder
+    // (multiplica o zoom contextual; ×1 fora do poder = bytes idênticos)
+    const cam = podFamilia && poderAtivo && !movReduzido ? 1.05 : 1;
+    if (!enquadramento) return { transform: `scale(${cam})`, transformOrigin: '50% 50%' };
+    const [x, y, w, h] = enquadramento;
+    return {
+      transform: `scale(${Math.min(2.4, 240 / Math.max(w, h)) * cam})`,
+      transformOrigin: `${((x + w / 2) / 240) * 100}% ${((y + h / 2) / 240) * 100}%`,
+    };
+  }, [enquadramento, podFamilia, poderAtivo, movReduzido]);
 
   // megas 233–234 (§161): propriedades do cenário (locais, flag v2)
   const [propsCen, setPropsCen] = useState<PropsCenario>(lerPropsCenario);
@@ -782,6 +814,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const registrarApresentacao = useCallback((tipo: 'showcase' | 'captura') => {
     const cena = { fundo, hora, luz };
     setUltimaCena(cena);
+    // mega 292 (§221/§223): "seus números" + XP por uso na fórmula aberta
+    incrementar(tipo === 'showcase' ? 'apresentacoes' : 'capturas');
     telemetria('palco_apresentou', { tipo, ...cena }); // §290/§185
     try { localStorage.setItem('dshow.avst5.apresentacao.ultima.v1', JSON.stringify(cena)); } catch { /* sem storage */ }
   }, [fundo, hora, luz]);
@@ -939,6 +973,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
+        data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
         style={{ '--avst-acento': corTema, '--avst5-esq': `${larguras.esq}px`,
           '--avst5-dir': painelFechado ? '36px' : painelLargo ? '560px' : `${larguras.dir}px` } as React.CSSProperties}>
         {/* header interno (§626) */}
@@ -1035,7 +1070,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             data-hora={hora} data-luz={modo === 'edicao' ? 'neutra' : luz} data-clima={clima}
             data-moldura-viva={!palco3d ? molduraViva : undefined}
             data-cen-vivo={palcoV2 && !palco3d && propsCen.vivo && !movReduzido ? '' : undefined}
-            data-idle={flag('as5.criacao_avancada') && !palco3d && !movReduzido && propsCen.idle !== 'nenhum' ? propsCen.idle : undefined}>
+            data-idle={flag('as5.criacao_avancada') && !palco3d && !movReduzido && propsCen.idle !== 'nenhum' ? propsCen.idle : undefined}
+            data-poder-cam={podFamilia && poderAtivo && !movReduzido ? '' : undefined}>
             {/* lote 201 (§163): overlay de CLIMA — determinístico, sobre o cenário
                 e atrás dos controles; reduced-motion desliga o movimento (§182) */}
             {clima !== 'limpo' && !palco3d && (
@@ -1109,12 +1145,26 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               <div className="avst5-celebracao avst5-poder" aria-hidden data-teste="poder-ativo"
                 dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado(poderAtivo, configVisivel.cores.destaque) }} />
             )}
+            {/* megas 283–287 (§153.1–.4 + §156): ROTEIRO da família — campo
+                de partículas próprio por cima do efeito; movimento reduzido
+                = poses estáticas (a biblioteca não anima) */}
+            {podFamilia && poderAtivo && (
+              <div className="avst5-celebracao avst5-poder-part" aria-hidden
+                data-teste="poder-particulas" data-familia={familiaDoPoder(poderAtivo)}
+                dangerouslySetInnerHTML={{
+                  __html: svgRoteiroFamilia(familiaDoPoder(poderAtivo), configVisivel.cores.destaque, 'medio', !movReduzido),
+                }} />
+            )}
             {/* mega 235 (§154 item 7): NOME do poder durante a reprodução */}
             {palcoV2 && poderAtivo && metaPoder && (
-              <div className="avst5-poder-nome" role="status" data-teste="poder-nome"
+              <div className="avst5-poder-nome" role="status" aria-live="polite" data-teste="poder-nome"
                 style={{ '--avst-rar': RARIDADES[metaPoder.raridade].cor } as React.CSSProperties}>
                 <Sparkles size={12} aria-hidden /> {metaPoder.nome}
-                <small>{RARIDADES[metaPoder.raridade].nome}</small>
+                <small>
+                  {RARIDADES[metaPoder.raridade].nome}
+                  {/* mega 288 (§153): família visível na placa do poder */}
+                  {podFamilia && <> · {ROTULO_FAMILIA[familiaDoPoder(poderAtivo)]}</>}
+                </small>
               </div>
             )}
             {anuncio && !comparando && (
@@ -1524,6 +1574,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           </aside>
         </div>
         {tour && <TourGuiado aoFechar={() => setTour(false)} />}
+        <Suspense fallback={null}>
         {atalhos && <Atalhos aoFechar={() => setAtalhos(false)} />}
         {telemetriaDev && <TelemetriaDev aoFechar={() => setTelemetriaDev(false)} />}
         {consultor && (
@@ -1591,6 +1642,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               ...LUZES_PALCO.map((l) => ({
                 id: `luz-${l}`, rotulo: `Iluminação: ${ROTULO_LUZ[l]}`, executar: () => trocarLuz(l),
               })),
+              // mega 298 (§566 v2): o poder também sai da paleta
+              ...(flag('as5.microinteracoes') && idPoder ? [{
+                id: 'poder',
+                rotulo: `Ativar poder: ${metaPoder?.nome ?? 'equipado'} (§154)`,
+                executar: () => { setModo('studio'); setTimeout(() => window.dispatchEvent(new CustomEvent('avst5:ativar-poder')), 200); },
+              }] : []),
               { id: 'atalhos', rotulo: 'Atalhos do teclado (?)', executar: () => setAtalhos(true) },
               // mega 46: viewer de telemetria (só com a flag dev ligada)
               ...(flag('as5.telemetria_painel') ? [{
@@ -1603,6 +1660,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <DetalheAsset id={detalheId} config={validarConfig(paraLegado2d(store.estadoDraft))} desbloqueados={desbloqueados}
             aoEscolher={aoEscolher} aoPrever={aoPrever} aoFechar={() => setDetalheId(null)} />
         )}
+        </Suspense>
         {conflito && (
           <div className="avst5-modal-fundo" role="dialog" aria-modal="true" aria-label="Conflito de equipamento">
             <div className="avst5-modal">

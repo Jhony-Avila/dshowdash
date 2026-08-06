@@ -131,6 +131,14 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const config2d = useMemo(() => validarConfig(paraLegado2d(estado)), [estado]);
   // mega 78 (§458): exposição do tone mapping
   const [exposicao, setExposicao] = useState(1);
+  // ── lote 261–270 (§440–§458, flag as5.palco3d_v2): CINEMA do palco ──
+  const cinemaLigado = flag('as5.palco3d_v2');
+  const [cinemaAberto, setCinemaAberto] = useState(false);
+  const [toneMapa, setToneMapa] = useState<'aces' | 'agx' | 'neutro' | 'reinhard'>('aces');
+  const [vida, setVida] = useState(true); // §440: o palco nasce VIVO
+  const [particulas, setParticulas] = useState(false);
+  const [rim, setRim] = useState(false);
+  const [ambiente, setAmbiente] = useState(0.55); // = padrão do renderer (mega 77) — flag ON não muda o visual
   // mega 80 (§442): biblioteca de poses
   const [poses, setPoses] = useState(listarPoses);
   // mega 81 (§419): tinta de destaque nos materiais
@@ -239,7 +247,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           log.aviso('p3d_aplicar_falhou_retry', { personagem }); // §291
           setTimeout(() => setSinalRetry((n) => n + 1), 800);
         } else {
-          log.erro('p3d_indisponivel', { personagem }); // §291
+          log.critico('p3d_indisponivel', { personagem }); // §291 v2: retries esgotados = fluxo quebrado
           setFase('indisponivel');
         }
         return;
@@ -457,6 +465,30 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     if (fase !== 'pronto') return;
     (refR.current as unknown as { definirExposicao?: (v: number) => void })?.definirExposicao?.(exposicao);
   }, [exposicao, fase]);
+
+  // lote 261–270: CINEMA → renderer (tone §457, ambiente §449, vida §440,
+  // rim §452, partículas §444) — tudo condicionado à flag as5.palco3d_v2
+  useEffect(() => {
+    if (fase !== 'pronto' || !cinemaLigado) return;
+    const r = refR.current as unknown as {
+      definirTonemapping?: (m: string) => void; definirAmbiente?: (v: number) => void;
+    };
+    r?.definirTonemapping?.(toneMapa);
+    r?.definirAmbiente?.(ambiente);
+  }, [toneMapa, ambiente, fase, cinemaLigado]);
+  useEffect(() => {
+    if (fase !== 'pronto' || !cinemaLigado) return;
+    (refR.current as unknown as { definirVida?: (v: number | null) => void })
+      ?.definirVida?.(vida ? 0.8 : null);
+  }, [vida, fase, cinemaLigado, personagem]);
+  useEffect(() => {
+    if (fase !== 'pronto' || !cinemaLigado) return;
+    const r = refR.current as unknown as {
+      definirRim?: (c: string | null) => void; definirParticulas3d?: (c: string | null) => void;
+    };
+    r?.definirRim?.(rim ? config2d.cores.destaque : null);
+    r?.definirParticulas3d?.(particulas ? config2d.cores.destaque : null);
+  }, [rim, particulas, config2d, fase, cinemaLigado, personagem]);
 
   // mega 81: tinta de destaque (cor do avatar 2D) nos materiais 3D
   useEffect(() => {
@@ -888,6 +920,54 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               </label>
             </>)}
           </span>
+          {cinemaLigado && (
+            <span role="group" aria-label="Cinema do palco (§440–§458)" data-teste="p3d-cinema-grupo">
+              <button type="button" className={`avst5-p3d-chip${cinemaAberto ? ' avst5-p3d-chip-on' : ''}`}
+                aria-pressed={cinemaAberto} data-teste="p3d-cinema"
+                title="Vida, luz de aro, partículas e tone mapping (§440–§458)"
+                onClick={() => setCinemaAberto((v) => !v)}>
+                <Sparkles size={11} aria-hidden /> Cinema
+              </button>
+              {cinemaAberto && (<>
+                <button type="button" className={`avst5-p3d-chip${vida ? ' avst5-p3d-chip-on' : ''}`}
+                  aria-pressed={vida} data-teste="p3d-vida"
+                  title="Respiração e micro-movimentos aditivos (§440–§441)"
+                  onClick={() => setVida((v) => !v)}>Vida</button>
+                <button type="button" className={`avst5-p3d-chip${rim ? ' avst5-p3d-chip-on' : ''}`}
+                  aria-pressed={rim} data-teste="p3d-rim"
+                  title="Luz de aro na cor de destaque (§452)"
+                  onClick={() => setRim((v) => !v)}>Aro</button>
+                <button type="button" className={`avst5-p3d-chip${particulas ? ' avst5-p3d-chip-on' : ''}`}
+                  aria-pressed={particulas} data-teste="p3d-part"
+                  title="Partículas na cor de destaque (§444–§446)"
+                  onClick={() => setParticulas((v) => !v)}>Partículas</button>
+                <span role="group" aria-label="Tone mapping (§457)" data-teste="p3d-tone">
+                  {(['aces', 'agx', 'neutro', 'reinhard'] as const).map((m) => (
+                    <button key={m} type="button" data-teste={`p3d-tone-${m}`}
+                      className={`avst5-p3d-chip${toneMapa === m ? ' avst5-p3d-chip-on' : ''}`}
+                      aria-pressed={toneMapa === m} onClick={() => setToneMapa(m)}>
+                      {m === 'aces' ? 'ACES' : m === 'agx' ? 'AgX' : m === 'neutro' ? 'Neutro' : 'Reinhard'}
+                    </button>
+                  ))}
+                </span>
+                <label className="avst5-p3d-slider">Ambiente
+                  <input type="range" min="0" max="1.2" step="0.05" value={ambiente} data-teste="p3d-amb"
+                    aria-label="Intensidade da luz ambiente (§449)"
+                    onChange={(e) => setAmbiente(Number(e.target.value))} />
+                </label>
+                <button type="button" className="avst5-p3d-chip" data-teste="p3d-enq-rosto"
+                  title="Aproximar a câmera do rosto (§454)"
+                  onClick={() => (refR.current as unknown as { enquadrar?: (a: string) => void })?.enquadrar?.('rosto')}>
+                  Rosto
+                </button>
+                <button type="button" className="avst5-p3d-chip" data-teste="p3d-enq-auto"
+                  title="Reenquadrar o personagem inteiro (§454)"
+                  onClick={() => (refR.current as unknown as { enquadrar?: (a: string) => void })?.enquadrar?.('auto')}>
+                  Enquadrar
+                </button>
+              </>)}
+            </span>
+          )}
           {poses.filter((p3) => p3.personagem === personagem).length > 0 && (
             <span role="group" aria-label="Poses salvas (§442)" data-teste="p3d-poses">
               {poses.filter((p3) => p3.personagem === personagem).map((p3) => (
