@@ -39,7 +39,7 @@ const MODOS: Array<{ id: ModoGrade; nome: string; Icone: typeof LayoutGrid }> = 
   { id: 'lista', nome: 'Lista', Icone: List },
 ];
 
-type Ordem = 'padrao' | 'raridade' | 'nome' | 'recentes';
+type Ordem = 'padrao' | 'raridade' | 'nome' | 'recentes' | 'novos'; // +novos (§58 v2, lote 421-430)
 
 /** Enquadramento do thumbnail por categoria (AS4 §39.19 — foco na diferença).
  *  Exportado: a Vitrine (4.6 §23) usa o MESMO enquadramento nos cards. */
@@ -59,6 +59,22 @@ const SLOTS_ACESSORIO = ['cabeca', 'rosto', 'pescoco'] as const;
 // O plano citava limiar 60, mas a MAIOR categoria do catálogo hoje tem 50
 // itens (Cabelo) — 60 nunca ativaria. 40 ativa onde o custo dos thumbnails
 // (um AvatarSvg COMPLETO por card) já é mensurável, e segue conservador.
+// mega 421 (§57.1, lote 421-430): distância de edição ≤1 (rápida, sem DP
+// completa — só o caso que §57.1 pede: 1 troca/inserção/remoção)
+export function distanciaAte1(a: string, b: string): boolean {
+  if (a === b) return true;
+  const la = a.length; const lb = b.length;
+  if (Math.abs(la - lb) > 1) return false;
+  let i = 0; let j = 0; let erros = 0;
+  while (i < la && j < lb) {
+    if (a[i] === b[j]) { i += 1; j += 1; continue; }
+    if (erros === 1) return false;
+    erros = 1;
+    if (la === lb) { i += 1; j += 1; } else if (la > lb) { i += 1; } else { j += 1; }
+  }
+  return erros + (la - i) + (lb - j) <= 1;
+}
+
 export const LIMIAR_VIRTUALIZACAO = 40;
 /** Primeiros N cards sempre montam de verdade (acima da dobra, zero flash). */
 const CARDS_IMEDIATOS = 24;
@@ -158,6 +174,20 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     window.addEventListener('avst:recentes', ao);
     return () => window.removeEventListener('avst:recentes', ao);
   }, []);
+  // mega 423 (§57.3, flag as5.busca_v2): "/" foca a busca (fora de campos)
+  useEffect(() => {
+    if (!flag('as5.busca_v2')) return undefined;
+    const ao = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName)) return;
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        document.querySelector<HTMLInputElement>('input[aria-label="Buscar itens"]')?.focus();
+      }
+    };
+    window.addEventListener('keydown', ao);
+    return () => window.removeEventListener('keydown', ao);
+  }, []);
   // megas 351-353 (§157): filtro por categoria FUNCIONAL (efeitos)
   const [filtroFx, setFiltroFx] = useState<'todos' | 'ambiental' | 'distorcao' | 'celebracao' | 'transicao' | 'presenca'>('todos');
 
@@ -207,7 +237,13 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         return termos.every((t) => {
           if (t.startsWith('raridade:')) return normalizar(i.raridade) === t.slice(9);
           if (t.startsWith('tema:')) return normalizar(i.tema).includes(t.slice(5));
-          return alvo.includes(t); // AND (§57)
+          if (alvo.includes(t)) return true; // AND (§57)
+          // mega 421 (§57.1, flag as5.busca_v2): TOLERANTE — termo ≥4
+          // letras casa com distância de edição 1 em qualquer palavra
+          if (flag('as5.busca_v2') && t.length >= 4) {
+            return alvo.split(/[^a-z0-9]+/).some((w) => w.length >= 3 && distanciaAte1(t, w));
+          }
+          return false;
         });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -252,6 +288,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     if (ordem === 'raridade') lista.sort((a, b) => nivelRaridade(b.raridade) - nivelRaridade(a.raridade));
     if (ordem === 'nome') lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
     if (ordem === 'recentes') lista.sort((a, b) => Number(usados.has(b.id)) - Number(usados.has(a.id)));
+    // mega 424 (§58 v2, flag as5.busca_v2): NOVOS primeiro
+    if (ordem === 'novos') lista.sort((a, b) => Number(!!b.novo) - Number(!!a.novo));
     // §229: PERMANENTES sempre no topo da visão de favoritos (estável)
     if (favCats && emFavoritos && ordem === 'padrao') {
       lista = [...lista].sort((a, b) => Number(permanentes.has(b.id)) - Number(permanentes.has(a.id)));
@@ -368,6 +406,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
                   <option value="raridade">Raridade</option>
                   <option value="nome">Nome</option>
                   <option value="recentes">Recentes</option>
+                  {/* mega 424 (§58 v2, flag as5.busca_v2) */}
+                  {flag('as5.busca_v2') && <option value="novos">Novos primeiro</option>}
                 </select>
               </label>
               {nFiltros > 0 && (
@@ -490,6 +530,25 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             ? <CardPreguicoso key={item.id} observar={observar} {...props} />
             : <CardItem key={item.id} {...props} />;
         })}
+        {/* mega 422 (§57.2, flag as5.busca_v2): "você quis dizer" — termo
+            mais próximo do VOCABULÁRIO real da categoria (distância ≤1) */}
+        {flag('as5.busca_v2') && itens.length === 0 && busca.trim() && (() => {
+          const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const termo = norm(busca.trim()).split(/\s+/)[0] ?? '';
+          if (termo.length < 4) return null;
+          const vocab = new Set<string>();
+          for (const i of itensDe(categoria)) {
+            for (const w of norm(`${i.nome} ${i.tema}`).split(/[^a-z0-9]+/)) if (w.length >= 4) vocab.add(w);
+          }
+          const perto = [...vocab].find((w) => w !== termo && distanciaAte1(termo, w));
+          if (!perto) return null;
+          return (
+            <button type="button" className="avst-botao" data-teste="quis-dizer"
+              onClick={() => setBusca(perto)}>
+              Você quis dizer <strong>&nbsp;{perto}</strong>?
+            </button>
+          );
+        })()}
         {/* mega 393 (§92 v2): vazio ganha AÇÃO quando o filtro causou */}
         {itens.length === 0 && flag('as5.catalogo_v2') && (filtroFx !== 'todos' || busca) && (
           <button type="button" className="avst-botao" data-teste="vazio-limpar"
