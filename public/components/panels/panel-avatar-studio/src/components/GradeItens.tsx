@@ -16,7 +16,7 @@ import {
   ArrowDownUp, Ban, Check, Grid2x2, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal, Star, X,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, Raridade, SlotAcessorio } from '../domain/types';
-import { CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
+import { COLECOES, CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 // mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
 import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
@@ -214,7 +214,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const termos = normalizar(busca.trim()).split(/\s+/).filter(Boolean);
     return itensDe(categoria)
-      .filter((i) => !i.requerBase || i.requerBase.includes(config.base))
+      .filter((i) => !i.requerBase || i.requerBase.includes(config.base)
+        || flag('as5.cards_v2')) // §60.9: visível como INDISPONÍVEL
       .filter((i) => {
         switch (filtroAba) {
           case 'equipados': return equipadosAba.has(i.id);
@@ -520,8 +521,11 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             ativo: equipados.has(item.id),
             favorito: favs.has(item.id),
             bloqueado: bloqueado(item),
+            indisponivel: flag('as5.cards_v2') && !!item.requerBase && !item.requerBase.includes(config.base),
             aoFavoritar: () => setFavs(new Set(alternarFavorito(item.id))),
             aoEscolher: () => {
+              // §60.9: indisponível no modo atual não equipa (sem punição)
+              if (flag('as5.cards_v2') && item.requerBase && !item.requerBase.includes(config.base)) return;
               if (flag('as5.catalogo_v2')) registrarRecente(item.id); // §88
               aoEscolher(comItem(config, categoria, item.id));
             },
@@ -589,6 +593,9 @@ type CardProps = {
   ativo: boolean;
   favorito: boolean;
   bloqueado: boolean;
+  /** mega 434 (§60.9, flag as5.cards_v2): fora da base atual — visível
+   *  mas não equipável (antes era simplesmente filtrado da grade) */
+  indisponivel?: boolean;
   aoFavoritar: () => void;
   aoEscolher: () => void;
   aoPrever?: (novo: AvatarConfig | null) => void;
@@ -639,7 +646,7 @@ const CardItem = memo(CardItemBase, (a, b) =>
   && a.ativo === b.ativo && a.favorito === b.favorito && a.bloqueado === b.bloqueado
   && a.aoPrever === b.aoPrever && a.aoDetalhes === b.aoDetalhes);
 
-function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: CardProps) {
+function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indisponivel, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: CardProps) {
   const rar = RARIDADES[item.raridade];
   const cardRef = useRef<HTMLDivElement>(null);
   // valida o preview: trocar p/ uma espécie derruba o cabelo TAMBÉM no thumbnail
@@ -656,9 +663,10 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, aoFavori
     && !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
   return (
-    <div ref={cardRef} role="option" aria-selected={ativo} aria-disabled={bloqueado}
-      className={`avst-card ${modo === 'lista' ? 'avst-card-lista' : ''} ${ativo ? 'avst-card-ativo' : ''} ${bloqueado ? 'avst-card-bloqueado' : ''}`}
+    <div ref={cardRef} role="option" aria-selected={ativo} aria-disabled={bloqueado || indisponivel || undefined}
+      className={`avst-card ${modo === 'lista' ? 'avst-card-lista' : ''} ${ativo ? 'avst-card-ativo' : ''} ${bloqueado ? 'avst-card-bloqueado' : ''} ${indisponivel ? 'avst-card-indisponivel' : ''}`}
       data-raridade={item.raridade}
+      data-indisponivel={indisponivel ? '' : undefined}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
       onClick={escolher}
       onMouseEnter={() => { if (aoPrever && !bloqueado) aoPrever(preview); if (podePoderVivo) setPoderVivo(true); }}
@@ -744,6 +752,23 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, aoFavori
             Slot: {item.slot === 'rosto' ? 'rosto' : item.slot === 'pescoco' ? 'pescoço/costas' : 'cabeça'} — combina com os outros slots
           </span>
         )}
+        {/* megas 431-433 (§66/§60.10, flag as5.cards_v2): hover premium */}
+        {flag('as5.cards_v2') && (() => {
+          const col = COLECOES.find((c) => c.itens.includes(item.id));
+          const noLugar = item.categoria === 'base'
+            ? null // trocar a base nunca "substitui" item de slot
+            : (config.camadas as Record<string, string | undefined>)[item.categoria === 'acessorio'
+              ? `acessorio_${item.slot ?? 'cabeca'}` : item.categoria] ?? null;
+          const substitui = noLugar && noLugar !== item.id ? itemPorId(noLugar) : null;
+          return (<>
+            {col && <span className="avst-tip-meta" data-teste="tip-colecao">Coleção: {col.nome}</span>}
+            {substitui && !ativo && (
+              <span className="avst-tip-meta" data-teste="tip-substitui">
+                Substitui: {substitui.nome} (§60.10)
+              </span>
+            )}
+          </>);
+        })()}
         {bloqueado && <span className="avst-tip-lock">🔒 {dica}</span>}
       </Dica>
     </div>

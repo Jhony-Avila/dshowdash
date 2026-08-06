@@ -2267,3 +2267,7 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 @media (prefers-reduced-motion: reduce) {
   [data-catv2] .avst-card:hover { background-image: none; }
 }
+
+/* ── lote 431–440 (§60.9, flag as5.cards_v2): INDISPONÍVEL no modo ──── */
+.avst-card-indisponivel { opacity: .45; filter: grayscale(.5); cursor: not-allowed; }
+.avst-card-indisponivel:hover { transform: none; }
