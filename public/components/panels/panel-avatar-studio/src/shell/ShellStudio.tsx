@@ -715,9 +715,41 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   }, [store, bloqueios, aplicarComando]);
 
   // §64: hover do card → preview no palco (nunca contamina o draft)
+  // megas 591–593 (§64.2, flag as5.ux_final): FIXAR PRÉVIA — com prévia
+  // fixada o hover não mexe no palco; sair do card tem uma janela de
+  // graça p/ alcançar o botão "Fixar" (o clique cancela a limpeza)
+  const [previaFixa, setPreviaFixa] = useState<AvatarConfig | null>(null);
+  const [previaAtiva, setPreviaAtiva] = useState<AvatarConfig | null>(null);
+  const refLimparPrevia = useRef<number | null>(null);
   const aoPrever = useCallback((cfg: AvatarConfig | null) => {
-    if (cfg) store.visualizar(() => deLegado2d(cfg));
-    else store.limparPreview();
+    if (!flag('as5.ux_final')) { // caminho legado intacto (§651)
+      if (cfg) store.visualizar(() => deLegado2d(cfg));
+      else store.limparPreview();
+      return;
+    }
+    if (previaFixa) return; // §64.2: fixada = hover ignorado
+    if (refLimparPrevia.current) { clearTimeout(refLimparPrevia.current); refLimparPrevia.current = null; }
+    if (cfg) {
+      setPreviaAtiva(cfg);
+      store.visualizar(() => deLegado2d(cfg));
+    } else {
+      refLimparPrevia.current = window.setTimeout(() => {
+        refLimparPrevia.current = null;
+        setPreviaAtiva(null);
+        store.limparPreview();
+      }, 380); // janela de graça — alcança o "Fixar" no viewport
+    }
+  }, [store, previaFixa]);
+  const fixarPrevia = useCallback(() => {
+    if (!previaAtiva) return;
+    if (refLimparPrevia.current) { clearTimeout(refLimparPrevia.current); refLimparPrevia.current = null; }
+    setPreviaFixa(previaAtiva);
+    store.visualizar(() => deLegado2d(previaAtiva));
+  }, [previaAtiva, store]);
+  const soltarPrevia = useCallback(() => {
+    setPreviaFixa(null);
+    setPreviaAtiva(null);
+    store.limparPreview();
   }, [store]);
 
   // §90: aleatório inteligente — bloqueios §70.1 NUNCA são trocados.
@@ -1079,6 +1111,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
+        data-uxfinal={flag('as5.ux_final') ? '' : undefined} // megas 598-599 (§545-§546)
         data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
         style={{ '--avst-acento': corTema, '--avst5-esq': `${larguras.esq}px`,
           '--avst5-dir': painelFechado ? '36px' : painelLargo ? '560px' : `${larguras.dir}px` } as React.CSSProperties}>
@@ -1292,6 +1325,21 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             )}
             {comparando && (
               <div className="avst5-comparando" role="status">Original salvo · solte para voltar</div>
+            )}
+            {/* megas 591–593 (§64.2, flag as5.ux_final): badge de prévia com
+                fixar/soltar — comparar detalhes sem segurar o hover */}
+            {flag('as5.ux_final') && (previaAtiva || previaFixa) && !comparando && (
+              <div className="avst5-previa-badge" data-teste="previa-badge" role="status">
+                <span>{previaFixa ? t('Prévia fixada') : t('Prévia')}</span>
+                {previaFixa
+                  ? (
+                    <button type="button" data-teste="previa-soltar"
+                      onClick={soltarPrevia}>{t('Soltar')}</button>
+                  ) : (
+                    <button type="button" data-teste="previa-fixar"
+                      onClick={fixarPrevia}>{t('Fixar prévia')}</button>
+                  )}
+              </div>
             )}
             {celebrando && (
               <div className="avst5-celebracao" aria-hidden data-teste="celebracao"

@@ -507,7 +507,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         </div>
       )}
 
-      <div ref={refGrade} className="avst-grade" data-modo={modo} role="listbox"
+      <div ref={refGrade} className="avst-grade" data-modo={modo}
+        data-uxfinal={flag('as5.ux_final') ? '' : undefined} role="listbox"
         data-a11y={flag('as5.a11y_v2') ? '' : undefined}
         aria-label={`Itens de ${meta?.nome ?? categoria}`}>
         {meta && !meta.obrigatoria && !filtrosAtivos && (
@@ -721,6 +722,15 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
   const podePoderVivo = (item.categoria === 'efeito' || item.categoria === 'aura')
     && !bloqueado && flag('as5.palco_v2')
     && !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  // megas 596–597 (§60.4/§60.6, flag as5.ux_final): badge "Prévia" no card
+  // sob hover-preview e sinal de CONFLITO com o que está equipado
+  const uxFinal = flag('as5.ux_final');
+  const [prevendo, setPrevendo] = useState(false);
+  const conflitos = useMemo(() => {
+    if (!uxFinal || ativo || !item.incompativelCom?.length) return [];
+    const equipadosIds = Object.values(config.camadas).filter(Boolean) as string[];
+    return item.incompativelCom.filter((i) => equipadosIds.includes(i));
+  }, [uxFinal, ativo, item, config]);
 
   return (
     <div ref={cardRef} role="option" aria-selected={ativo} aria-disabled={bloqueado || indisponivel || undefined}
@@ -729,8 +739,8 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
       data-indisponivel={indisponivel ? '' : undefined}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
       onClick={escolher}
-      onMouseEnter={() => { if (aoPrever && !bloqueado) aoPrever(preview); if (podePoderVivo) setPoderVivo(true); }}
-      onMouseLeave={() => { aoPrever?.(null); setPoderVivo(false); }}
+      onMouseEnter={() => { if (aoPrever && !bloqueado) { aoPrever(preview); if (uxFinal) setPrevendo(true); } if (podePoderVivo) setPoderVivo(true); }}
+      onMouseLeave={() => { aoPrever?.(null); setPrevendo(false); setPoderVivo(false); }}
       onKeyDown={(e) => { if (escolher && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); escolher(); } }}
       tabIndex={0}>
       <span className="avst-card-thumb">
@@ -773,6 +783,14 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
       )}
       {ativo && <span className="avst-card-check"><Check size={13} aria-hidden /></span>}
       {bloqueado && <span className="avst-card-lock"><Lock size={15} aria-hidden /></span>}
+      {/* mega 596 (§60.4, flag as5.ux_final): badge temporário sob preview */}
+      {prevendo && <span className="avst-card-previa" data-teste="card-previa">{t('Prévia')}</span>}
+      {/* mega 597 (§60.6): conflito com equipado — ícone + motivo acessível */}
+      {conflitos.length > 0 && (
+        <span className="avst-card-conflito" data-teste="card-conflito" role="img"
+          aria-label={`Não combina com ${conflitos.map((i) => itemPorId(i)?.nome ?? i).join(', ')}`}
+          title={`Não combina com: ${conflitos.map((i) => itemPorId(i)?.nome ?? i).join(', ')}`}>⚠</span>
+      )}
       <button type="button" className={`avst-card-fav ${favorito ? 'avst-card-fav-on' : ''}`}
         title={favorito ? 'Remover dos favoritos' : 'Favoritar'}
         aria-pressed={favorito}

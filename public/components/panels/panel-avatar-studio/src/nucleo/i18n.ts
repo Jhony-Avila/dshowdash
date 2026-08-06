@@ -111,6 +111,11 @@ const EN: Record<string, string> = {
   Materializar: 'Materialize',
   Teleporte: 'Teleport',
   Ascender: 'Ascend',
+  // lote 591-600 (§60.4/§64.2): ux final
+  'Prévia': 'Preview',
+  'Prévia fixada': 'Preview pinned',
+  'Fixar prévia': 'Pin preview',
+  Soltar: 'Unpin',
   // 3D
   'Prévia 3D (personagens curados)': '3D preview (curated characters)',
   Enquadrar: 'Frame',

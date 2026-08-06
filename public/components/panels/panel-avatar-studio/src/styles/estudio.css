@@ -2180,6 +2180,41 @@
 .avst5-viewport[data-entrada='materializar'] .avst5-zoom svg { animation: avst5-ent-materializar 1.15s ease-out both; }
 .avst5-viewport[data-entrada='teleporte'] .avst5-zoom svg { animation: avst5-ent-teleporte 1.05s cubic-bezier(0.2, 0.8, 0.3, 1) both; transform-origin: 50% 96%; }
 .avst5-viewport[data-entrada='ascender'] .avst5-zoom svg { animation: avst5-ent-ascender 1.2s ease-out both; }
+/* ── lote 591–600 (as5.ux_final) ─────────────────────────────────────
+   §59.1: grade compacta v2 — a IMAGEM ocupa 70–80% do card (padding e
+   texto mínimos; §59.2 mantém nome + raridade + estados) */
+.avst-grade[data-uxfinal][data-modo="compacta"] .avst-card { padding: 3px 3px 4px; gap: 2px; contain-intrinsic-size: 110px 126px; }
+.avst-grade[data-uxfinal][data-modo="compacta"] .avst-card-nome { font-size: 10.5px; min-height: 0; -webkit-line-clamp: 1; }
+.avst-grade[data-uxfinal][data-modo="compacta"] .avst-card-raridade { line-height: 1; margin: 0; }
+/* §60.4: badge temporário de prévia no card sob hover */
+.avst-card-previa {
+  position: absolute; top: 5px; left: 5px; padding: 1px 6px; border-radius: 7px;
+  background: color-mix(in srgb, var(--avst-acento) 85%, black); color: #fff;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.4px; pointer-events: none;
+}
+/* §60.6: conflito com item equipado — ícone + motivo no title/aria */
+.avst-card-conflito {
+  position: absolute; bottom: 28px; right: 5px; width: 17px; height: 17px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: rgba(255, 170, 40, 0.92); color: #201400; font-size: 11px; cursor: help;
+}
+/* §64.2: badge de prévia no PALCO com fixar/soltar */
+.avst5-previa-badge {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 9;
+  display: flex; align-items: center; gap: 7px; padding: 4px 10px;
+  border: 1px solid var(--avst-borda); border-radius: 999px;
+  background: rgba(10, 13, 21, 0.88); font-size: 11px; color: var(--avst-texto);
+}
+.avst5-previa-badge button {
+  border: 1px solid var(--avst-acento); border-radius: 999px; background: none;
+  color: var(--avst-acento); font-size: 10.5px; padding: 1px 8px; cursor: pointer;
+}
+/* §545: durações PADRONIZADAS (micro 120–180 · hover 100–150 · drawer
+   220–300 · modal 250–350) — só com a flag (data-uxfinal no shell/grade) */
+[data-uxfinal] .avst-card { transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease; }
+.avst5-shell[data-uxfinal] .avst5-drawer { transition-duration: 260ms; }
+.avst5-shell[data-uxfinal] .avst-botao, .avst5-shell[data-uxfinal] .avst-ft-chip { transition-duration: 130ms; }
+
 /* megas 574–577 (§178.2): painel de preferências de som por categoria */
 .avst5-som-prefs {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 40;
