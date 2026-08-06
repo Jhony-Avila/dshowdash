@@ -64,6 +64,30 @@ export async function lembrar<T>(chave: string, ttlMs: number, buscar: () => Pro
   return valor;
 }
 
+// ── megas 585–586 (§277, lote 581–590): escrita/leitura DIRETAS ──────
+// Para valores que o painel PRODUZ (thumbs de foto §277) em vez de
+// buscar: `guardar` grava nos dois níveis; `espiar` lê sem produzir.
+
+/** Grava direto (memória + IDB); mesmo fail-safe do lembrar(). */
+export function guardar(chave: string, valor: unknown, ttlMs: number): void {
+  const registro = { valor, expira: Date.now() + ttlMs };
+  memoria.set(chave, registro);
+  void idbGravar(chave, registro).catch(() => { /* fail-safe */ });
+}
+
+/** Lê sem callback de busca — null quando ausente/expirado. */
+export async function espiar<T>(chave: string): Promise<T | null> {
+  const agora = Date.now();
+  const m = memoria.get(chave);
+  if (m && m.expira > agora) return m.valor as T;
+  const d = await idbLer(chave).catch(() => null);
+  if (d && d.expira > agora) {
+    memoria.set(chave, d);
+    return d.valor as T;
+  }
+  return null;
+}
+
 /** Invalida uma chave nos DOIS níveis (memória síncrona; IDB best-effort). */
 export function esquecer(chave: string): void {
   memoria.delete(chave);

@@ -8,17 +8,29 @@ import type { Raridade } from '../domain/types';
 import { flag } from '../nucleo/flags';
 
 const CHAVE = 'dshow.avatar.som.v1';
+// megas 587–589 (§299, flag as5.infra_v3): chave no namespace avst5 — a
+// antiga permanece (modo clássico lê dela); leitura dual, escrita nas duas
+const CHAVE_V2 = 'dshow.avst5.som.v1';
 const VOLUME_MESTRE = 0.11;
 
 let _ctx: AudioContext | null = null;
 let _mestre: GainNode | null = null;
 
 export function somAtivo(): boolean {
-  try { return localStorage.getItem(CHAVE) === '1'; } catch { return false; }
+  try {
+    if (flag('as5.infra_v3')) {
+      const novo = localStorage.getItem(CHAVE_V2);
+      if (novo !== null) return novo === '1';
+    }
+    return localStorage.getItem(CHAVE) === '1';
+  } catch { return false; }
 }
 
 export function definirSom(ligado: boolean): void {
-  try { localStorage.setItem(CHAVE, ligado ? '1' : '0'); } catch { /* sem storage */ }
+  try {
+    localStorage.setItem(CHAVE, ligado ? '1' : '0');
+    if (flag('as5.infra_v3')) localStorage.setItem(CHAVE_V2, ligado ? '1' : '0');
+  } catch { /* sem storage */ }
   if (ligado) contexto(); // desbloqueia o AudioContext no gesto do usuário
 }
 

@@ -10,6 +10,8 @@
 // indisponível degrada para lista vazia, nunca quebra o shell.
 import type { AvatarConfig } from '../domain/types';
 import { validarConfig } from './AvatarCatalog';
+import { lerMigrado } from '../nucleo/migracoes'; // lote 581-590 (§299-§300)
+import { flag } from '../nucleo/flags';
 
 const CHAVE = 'dshow.avst5.presets.v1';
 const LIMITE = 40; // biblioteca generosa sem estourar localStorage
@@ -117,14 +119,25 @@ export interface Rascunho {
   aba: string;     // id desta aba — detecta concorrência (§629)
 }
 
-/** Id estável DESTA aba (sessionStorage sobrevive a reload, não a nova aba). */
+/** Id estável DESTA aba (sessionStorage sobrevive a reload, não a nova aba).
+ *  megas 587–589 (§299): leitura DUAL (.v1 → legada); escreve nas duas —
+ *  a legada permanece enquanto houver leitor antigo (regra §300). */
 export function idDaAba(): string {
   try {
-    let id = sessionStorage.getItem('dshow.avst5.aba');
+    if (!flag('as5.infra_v3')) { // §651: flag off = caminho legado intacto
+      let idLegado = sessionStorage.getItem('dshow.avst5.aba');
+      if (!idLegado) {
+        idLegado = Math.random().toString(36).slice(2, 10);
+        sessionStorage.setItem('dshow.avst5.aba', idLegado);
+      }
+      return idLegado;
+    }
+    let id = lerMigrado({ de: 'dshow.avst5.aba', para: 'dshow.avst5.aba.v1', area: 'session' });
     if (!id) {
       id = Math.random().toString(36).slice(2, 10);
       sessionStorage.setItem('dshow.avst5.aba', id);
     }
+    sessionStorage.setItem('dshow.avst5.aba.v1', id);
     return id;
   } catch { return 'aba'; }
 }

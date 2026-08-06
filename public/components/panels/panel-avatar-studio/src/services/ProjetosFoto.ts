@@ -8,10 +8,14 @@
 // cabem com folga na cota; o export final SEMPRE recompõe do estilo.
 import type { EstiloFoto } from '../domain/types';
 import type { FormatoFotoId } from '../engine/render-foto';
+import { flag } from '../nucleo/flags';
+import { processarFoto } from './PipelineAsset'; // lote 581-590 (§268)
+import { esquecer, guardar } from './CacheNiveis'; // lote 581-590 (§277)
 
 const CHAVE = 'dshow.avst5.foto.projetos.v1';
 const LIMITE = 8; // mega 252 (§364 v2): 6→8
 const LADO_MINIATURA = 480;
+const TTL_THUMB_MS = 90 * 24 * 60 * 60 * 1000; // §277: thumb vive 90 dias
 
 export interface ProjetoFoto {
   id: string;
@@ -56,17 +60,34 @@ export async function miniaturizarFoto(dataUri: string): Promise<string> {
   return c.toDataURL('image/jpeg', 0.85);
 }
 
-/** Salva (nome vazio ganha "Projeto N"). Devolve null no limite/cota. */
+/** Salva (nome vazio ganha "Projeto N"). Devolve null no limite/cota.
+ *  megas 581–586 (§268/§277, flag as5.infra_v3): a foto passa pelo
+ *  PIPELINE com fases (importação→validação→compressão→thumbnail→
+ *  preview→metadados) e a thumb 96px vai ao cache multinível (IDB);
+ *  flag off = caminho legado byte a byte (miniaturizarFoto direto). */
 export async function salvarProjetoFoto(
   fotoDataUri: string, estilo: EstiloFoto, formato: FormatoFotoId, nome = '',
 ): Promise<ProjetoFoto | null> {
   const atuais = lerTudo();
   if (atuais.length >= LIMITE) return null;
+  const id = `pf_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  let foto: string;
+  if (flag('as5.infra_v3')) {
+    const r = await processarFoto(fotoDataUri, LADO_MINIATURA);
+    if (r.ok && r.foto) {
+      foto = r.foto;
+      if (r.thumb) guardar(`foto-thumb:${id}`, r.thumb, TTL_THUMB_MS); // §277
+    } else {
+      foto = await miniaturizarFoto(fotoDataUri); // fase falhou → legado
+    }
+  } else {
+    foto = await miniaturizarFoto(fotoDataUri);
+  }
   const projeto: ProjetoFoto = {
-    id: `pf_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    id,
     nome: (nome.trim() || `Projeto ${atuais.length + 1}`).slice(0, 32),
     criadoEm: new Date().toISOString(),
-    foto: await miniaturizarFoto(fotoDataUri),
+    foto,
     estilo,
     formato,
   };
@@ -86,4 +107,5 @@ export function renomearProjetoFoto(id: string, nome: string): void {
 
 export function excluirProjetoFoto(id: string): void {
   gravar(lerTudo().filter((p) => p.id !== id));
+  esquecer(`foto-thumb:${id}`); // §277: thumb acompanha o projeto
 }
