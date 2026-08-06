@@ -26,6 +26,7 @@ import { t } from '../nucleo/i18n'; // lote 511-520 (§296)
 import { arquivados } from '../services/ArquivoItens';
 import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // lote 351-360 (§157)
 import { lerRecentes, registrarRecente } from '../services/Recentes'; // lote 391-400 (§88)
+import { CONJUNTOS, aplicarConjunto } from '../services/Conjuntos'; // lote 551-560 (§72)
 import type { ParteDef } from '../engine/base-api';
 import { AvatarSvg } from './AvatarSvg';
 import { Dica } from './Dica';
@@ -516,6 +517,29 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             <span className="avst-card-vazio"><Ban size={26} aria-hidden /></span>
             <span className="avst-card-nome">Nenhum</span>
           </button>
+        )}
+        {/* megas 551-556 (§72.1/§72.3, flag as5.roupas_camada): CONJUNTOS
+            aplicam vários slots de uma vez com proteção de bloqueios */}
+        {categoria === 'roupa' && flag('as5.roupas_camada') && (
+          <div className="avst-conq-filtros" role="group" aria-label="Conjuntos (§72.1)" data-teste="conjuntos">
+            <span style={{ fontSize: 11, opacity: 0.7 }}>{t('Conjuntos:')}</span>
+            {CONJUNTOS.map((cj) => (
+              <button key={cj.id} type="button" className="avst-ft-chip" data-teste={`conjunto-${cj.id}`}
+                title={`Aplica roupa + acessórios${cj.paleta ? ' + paleta' : ''} de uma vez; slots bloqueados são preservados (§72.3)`}
+                onClick={() => {
+                  const r = aplicarConjunto(config, cj);
+                  aoEscolher(r.config);
+                  try {
+                    const partes = [];
+                    if (r.substituidos.length) partes.push(`substituiu: ${r.substituidos.join(', ')}`);
+                    if (r.preservados.length) partes.push(`preservou (bloqueado): ${r.preservados.join(', ')}`);
+                    if (partes.length) window.dispatchEvent(new CustomEvent('avst5:anuncio', { detail: `Conjunto ${cj.nome} — ${partes.join(' · ')}` }));
+                  } catch { /* anúncio é cosmético */ }
+                }}>
+                {cj.nome}
+              </button>
+            ))}
+          </div>
         )}
         {/* mega 391 (§88, flag as5.catalogo_v2): RECENTES da categoria */}
         {flag('as5.catalogo_v2') && ticRec >= 0 && (() => {

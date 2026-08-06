@@ -277,6 +277,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     return s;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => conectarTelemetria(store), [store]);
+  // megas 555-556 (§72.3): anúncio de conjunto → aria-live do shell
+  useEffect(() => {
+    const ao = (e: Event) => setAnuncio(String((e as CustomEvent).detail ?? ''));
+    window.addEventListener('avst5:anuncio', ao);
+    return () => window.removeEventListener('avst5:anuncio', ao);
+  }, []);
   // mega 301 (P10/§548): focus trap delegado — prende o Tab no dialog aberto
   useEffect(() => instalarFocoPreso(), []);
 

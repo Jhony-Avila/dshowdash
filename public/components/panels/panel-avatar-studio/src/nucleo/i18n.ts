@@ -67,6 +67,7 @@ const EN: Record<string, string> = {
   Transição: 'Transition',
   Presença: 'Presence',
   'Recentes:': 'Recent:',
+  'Conjuntos:': 'Outfits:',
   'Você quis dizer': 'Did you mean',
   'Limpar filtros': 'Clear filters',
   // lote 521-530 (§296): PAINÉIS
