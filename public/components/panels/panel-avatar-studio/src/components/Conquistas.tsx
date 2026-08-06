@@ -17,6 +17,7 @@ import { ProgressoPerfil } from './ProgressoPerfil';
 // mega 230 (§1076/§1077): Minha Vitrine no perfil (flag as5.vitrine_pessoal)
 import { MinhaVitrine } from './MinhaVitrine';
 import { flag } from '../nucleo/flags';
+import { atualizarRecordes, desafiosDaSemana, diarioDoAvatar, temporadaAtual } from '../services/Temporadas'; // lote 361-370
 
 function fmtData(iso: string | null): string {
   if (!iso) return '';
@@ -165,6 +166,44 @@ export function Conquistas({ vida, carregando = false, config }: {
 
   return (
     <div className="avst-conquistas">
+      {/* lote 361-370 (§245/§248/§251/§252, flag as5.temporadas) */}
+      {flag('as5.temporadas') && (() => {
+        const temp = temporadaAtual();
+        const desafios = desafiosDaSemana();
+        const rec = atualizarRecordes();
+        const diario = diarioDoAvatar();
+        return (
+          <div className="avst-temporada-bloco" data-teste="temporada">
+            <p className="avst-conquistas-resumo" style={{ borderLeft: `3px solid ${temp.cor}`, paddingLeft: 8 }}>
+              <strong data-teste="temporada-nome">{temp.nome}</strong> · desafios trocam toda semana — sem punição,
+              sem compra: tudo medido no seu uso real (§634).
+            </p>
+            <div className="avst-conq-numeros-grade" data-teste="desafios" role="list" aria-label="Desafios da semana (§251)">
+              {desafios.map((d) => (
+                <span key={d.id} role="listitem" data-teste="desafio" data-completo={d.atual >= d.alvo ? '' : undefined}>
+                  <strong>{d.atual}/{d.alvo}</strong> {d.nome}
+                  <em style={{ display: 'block', opacity: 0.75 }}>{d.descricao}</em>
+                </span>
+              ))}
+            </div>
+            <div className="avst-conq-numeros-grade" data-teste="recordes" role="list" aria-label="Seus recordes (§252)">
+              <span role="listitem"><strong>{rec.poderes}</strong> poderes (recorde)</span>
+              <span role="listitem"><strong>{rec.capturas}</strong> capturas (recorde)</span>
+              <span role="listitem"><strong>{rec.presets}</strong> presets (recorde)</span>
+            </div>
+            {diario.length > 0 && (
+              <div className="avst-perfil-timeline" data-teste="diario" aria-label="Diário do avatar (§245)">
+                <h4 className="avst-props-titulo-claro">Diário do avatar</h4>
+                <ol>
+                  {diario.slice(0, 5).map((d) => (
+                    <li key={d.dia}><em>{d.dia.slice(5)}</em> <span>{d.marcos} marco(s) · {d.origens.join(', ')}</span></li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
+        );
+      })()}
       {/* AS5 F7 (§220-§224 + §89): nível/XP transparentes, badges, timeline */}
       <ProgressoPerfil conquistas={vida.conquistas} />
       {/* mega 230 (§1076/§1077): Minha Vitrine + galerias locais */}
