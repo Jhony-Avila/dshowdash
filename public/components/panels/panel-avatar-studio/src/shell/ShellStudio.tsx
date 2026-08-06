@@ -1224,12 +1224,19 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   // megas 354-355 (§157.3/§158.1, flag as5.efeitos_v2): a
                   // celebração do gatilho usa a biblioteca §156 na COR do
                   // avatar; flag off = confete legado byte a byte
-                  __html: flag('as5.efeitos_v2')
-                    ? svgParticulas('pontos', {
+                  // megas 445-446 (§158.1, flag as5.editor_efeitos): o TIPO
+                  // da celebração é configurável (paleta); 'legado' = confete
+                  __html: (() => {
+                    const tipoPref = flag('as5.editor_efeitos')
+                      ? (() => { try { return localStorage.getItem('dshow.avst5.gatilho.v1') ?? 'pontos'; } catch { return 'pontos'; } })()
+                      : 'pontos';
+                    if (!flag('as5.efeitos_v2') || tipoPref === 'legado') return svgEfeitoIsolado('efe_confete');
+                    const tipo = (['pontos', 'estrelas', 'pixels', 'faiscas'].includes(tipoPref) ? tipoPref : 'pontos') as 'pontos' | 'estrelas' | 'pixels' | 'faiscas';
+                    return svgParticulas(tipo, {
                       quantidade: 34, tamanho: 6, velocidade: 1.3, direcao: 'explodir',
                       cor: configVisivel.cores.destaque, opacidade: 0.9, duracaoMs: 1600, turbulencia: 0.3,
-                    }, 'medio', 5)
-                    : svgEfeitoIsolado('efe_confete'),
+                    }, 'medio', 5);
+                  })(),
                 }} />
             )}
             {poderAtivo && (
@@ -1749,6 +1756,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 rotulo: `Ativar poder: ${metaPoder?.nome ?? 'equipado'} (§154)`,
                 executar: () => { setModo('studio'); setTimeout(() => window.dispatchEvent(new CustomEvent('avst5:ativar-poder')), 200); },
               }] : []),
+              // megas 447-448 (§158.1, flag as5.editor_efeitos): gatilho
+              ...(flag('as5.editor_efeitos') ? (['pontos', 'estrelas', 'pixels', 'faiscas', 'legado'] as const).map((tp) => ({
+                id: `gatilho-${tp}`,
+                rotulo: `Celebração ao salvar: ${tp === 'legado' ? 'confete clássico' : tp} (§158.1)`,
+                executar: () => { try { localStorage.setItem('dshow.avst5.gatilho.v1', tp); } catch { /* sem storage */ } },
+              })) : []),
               { id: 'atalhos', rotulo: 'Atalhos do teclado (?)', executar: () => setAtalhos(true) },
               // mega 46: viewer de telemetria (só com a flag dev ligada)
               ...(flag('as5.telemetria_painel') ? [{

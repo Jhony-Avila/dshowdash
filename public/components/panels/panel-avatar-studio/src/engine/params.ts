@@ -35,6 +35,14 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
     { id: 'velocidade', nome: 'Velocidade', min: 0.5, max: 2, passo: 0.1, padrao: 1 },
     { id: 'raio', nome: 'Raio', min: 0.7, max: 1.3, passo: 0.05, padrao: 1 }, // §150.1 (P4)
   ],
+  // megas 441-443 (§158, lote 441-450, flag as5.editor_efeitos na UI):
+  // EDITOR do efeito equipado — intensidade (<g opacity>) e velocidade
+  // (reescala dur SMIL), ambos wrappers genéricos já existentes; valor
+  // padrão é OMITIDO → render byte-idêntico ao legado
+  efeito: [
+    { id: 'intensidade', nome: 'Intensidade', min: 0.25, max: 1, passo: 0.05, padrao: 1 },
+    { id: 'velocidade', nome: 'Velocidade', min: 0.5, max: 2, passo: 0.1, padrao: 1 },
+  ],
   emblema: [
     { id: 'escala', nome: 'Escala', min: 0.6, max: 1.5, passo: 0.05, padrao: 1 },
   ],
