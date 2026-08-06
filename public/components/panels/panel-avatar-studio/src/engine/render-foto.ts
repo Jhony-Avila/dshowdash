@@ -10,6 +10,7 @@
 // SVG. Este SVG existe SÓ no cliente (preview + rasterização p/ PNG 480);
 // o que vai ao servidor é o PNG re-encodado + o JSON de parâmetros — o
 // sanitizador de SVG do backend continua NÃO aceitando <image>.
+import { svgParticulas } from './particulas'; // lote 541-550 (§348.1)
 import type { AvatarConfig } from '../domain/types';
 import { paletaDe } from './cores';
 import type { ParteDef } from './base-api';
@@ -36,6 +37,7 @@ export interface EstiloFotoRender {
     filtroCor?: 'nenhum' | 'pb' | 'sepia';
     zoomFoto?: number; anel?: number;
     nitidez?: number; marca?: string; // lote 311-320 (§333/§372)
+    particulas?: 'pontos' | 'estrelas' | 'pixels'; // lote 541-550 (§348.1)
   };
   /** mega 115 (§344): legenda livre já SANITIZADA pelo serviço */
   legenda?: string;
@@ -134,6 +136,7 @@ const NEUTRO: Required<AjustesRender> = {
   forma: 'circulo', desfoqueFundo: 0, granulacao: 0,
   filtroCor: 'nenhum', zoomFoto: 1, anel: 3,
   nitidez: 0, marca: '', // lote 311-320: neutros dos campos novos
+  particulas: 'nenhum' as never, // lote 541-550: neutro = ausente
 };
 
 function ajustesEfetivos(a?: AjustesRender): Required<AjustesRender> | null {
@@ -144,7 +147,7 @@ function ajustesEfetivos(a?: AjustesRender): Required<AjustesRender> | null {
     && !v.espelhar && !v.sombra
     && v.forma === 'circulo' && v.desfoqueFundo === 0 && v.granulacao === 0
     && v.filtroCor === 'nenhum' && v.zoomFoto === 1 && v.anel === 3
-    && v.nitidez === 0 && v.marca === '';
+    && v.nitidez === 0 && v.marca === '' && (v.particulas as unknown as string) === 'nenhum';
   return neutro ? null : v;
 }
 
@@ -415,6 +418,14 @@ export function renderFotoEstilizada(
       `${escaparTexto(tx.caixaAlta ? estilo.legenda.toUpperCase() : estilo.legenda)}</text>`
     : '';
   const luz = luzLocalSvg(uid, estilo.luzLocal); // lote 165 (§334)
+  // megas 541-543 (§348.1): PARTÍCULAS estáticas por cima do medalhão —
+  // biblioteca §156 em modo ESTÁTICO (zero animação; export fiel)
+  const particulasFoto = aj && (aj.particulas as unknown as string) !== 'nenhum'
+    ? `<g opacity="0.75">${svgParticulas(aj.particulas as 'pontos' | 'estrelas' | 'pixels', {
+      quantidade: 22, tamanho: 5, velocidade: 1, direcao: 'subir',
+      cor: estilo.cores.destaque, opacidade: 0.85, duracaoMs: 1500,
+    }, 'medio', 9, false).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '')}</g>`
+    : '';
   // mega 315 (§372): MARCA D'ÁGUA opcional — canto inferior direito,
   // discreta; ausente/vazia = string legada byte a byte
   const marca = aj && aj.marca
@@ -425,7 +436,7 @@ export function renderFotoEstilizada(
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"${dim} role="img" aria-label="Foto estilizada">
 <defs><clipPath id="${uid}clip">${clip}</clipPath><clipPath id="${uid}fclip">${fclip}</clipPath>${defsAj}</defs>
-<g clip-path="url(#${uid}clip)">${fundoComp}${efeitoAtras}${medalhao}${luz}${badge}${efeitoFrente}${vinheta}${grao}${legenda}${selo}${marca}</g>
+<g clip-path="url(#${uid}clip)">${fundoComp}${efeitoAtras}${medalhao}${luz}${badge}${efeitoFrente}${vinheta}${grao}${particulasFoto}${legenda}${selo}${marca}</g>
 ${moldura}
 </svg>`;
 

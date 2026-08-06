@@ -166,6 +166,8 @@ export interface AjustesFoto {
   nitidez?: number;
   /** mega 315 (§372): MARCA D'ÁGUA curta na foto · ausente = sem marca */
   marca?: string;
+  /** megas 541-543 (§348.1, lote 541-550): PARTÍCULAS estáticas na foto */
+  particulas?: 'pontos' | 'estrelas' | 'pixels';
   /** §337: sombra de contato sob o medalhão */
   sombra?: boolean;
   // ── lote 111–120 (§332/§333/§334/§341) ──

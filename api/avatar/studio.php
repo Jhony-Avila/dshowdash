@@ -250,6 +250,11 @@ function avst_validar_config_foto($bruto): ?array
         if (in_array($filtroCor, ['pb', 'sepia'], true)) {
             $limpo['filtroCor'] = $filtroCor;
         }
+        // megas 541-543 (§348.1): partículas estáticas — enum fechado
+        $particulas = $aj['particulas'] ?? null;
+        if (in_array($particulas, ['pontos', 'estrelas', 'pixels'], true)) {
+            $limpo['particulas'] = $particulas;
+        }
         // mega 315 (§372): marca d'água — mesma whitelist da legenda, <=16
         $marca = $aj['marca'] ?? null;
         if (is_string($marca)) {

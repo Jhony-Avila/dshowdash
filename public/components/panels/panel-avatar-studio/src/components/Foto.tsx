@@ -217,6 +217,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
     desfoqueFundo: 0, granulacao: 0, zoomFoto: 1, anel: 3,
     forma: 'circulo', filtroCor: 'nenhum',
     nitidez: 0, marca: '', // lote 311-320 (§333/§372)
+    particulas: 'nenhum', // lote 541-550 (§348.1)
   };
   const mudarAjuste = useCallback((campo: keyof AjustesFoto, valor: number | boolean | string) => {
     setEstilo((e) => {
@@ -1611,6 +1612,17 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
               <button type="button" className="avst-ft-chip" aria-pressed={estilo.ajustes?.sombra === true}
                 data-teste="ajuste-sombra" title="Sombra de contato sob o medalhão (§337)"
                 onClick={() => mudarAjuste('sombra', !(estilo.ajustes?.sombra === true))}>Sombra</button>
+              {/* megas 541-543 (§348.1, flag as5.foto_pro2): partículas estáticas */}
+              {flag('as5.foto_pro2') && (
+                <span role="radiogroup" aria-label="Partículas estáticas (§348.1)" data-teste="foto-particulas">
+                  {([['nenhum', 'Sem partículas'], ['pontos', 'Pontos'], ['estrelas', 'Estrelas'], ['pixels', 'Pixels']] as const).map(([id, nome]) => (
+                    <button key={id} type="button" role="radio" data-teste={`fpart-${id}`}
+                      aria-checked={(estilo.ajustes?.particulas ?? 'nenhum') === id}
+                      className={`avst-ft-chip ${(estilo.ajustes?.particulas ?? 'nenhum') === id ? 'avst-ft-chip-ativo' : ''}`}
+                      onClick={() => mudarAjuste('particulas', id)}>{nome}</button>
+                  ))}
+                </span>
+              )}
               {/* mega 315 (§372, flag as5.foto_fina): marca d'água opcional */}
               {flag('as5.foto_fina') && (
                 <label className="avst-ft-ajuste" title="Marca d'água discreta no canto (§372)">
@@ -1816,6 +1828,15 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
                   <option value={4}>1920px</option>
                 </select>
               </label>
+            )}
+            {/* megas 544-545 (§370, flag as5.foto_pro2): validação visível
+                ANTES de exportar — resolução/proporção/transparência */}
+            {flag('as5.foto_pro2') && (
+              <span className="avst-ft-tpl-n" data-teste="export-specs" role="status">
+                {formato === 'perfil'
+                  ? `${LADO_SAIDA * escala}×${LADO_SAIDA * escala}px · 1:1 · fundo opaco`
+                  : `${FORMATOS_FOTO[formato].saida[0]}×${FORMATOS_FOTO[formato].saida[1]}px · ${wideTransp ? 'FUNDO TRANSPARENTE' : 'fundo opaco'}`}
+              </span>
             )}
             <button type="button" className="avst-botao" disabled={salvando}
               title="Baixar o PNG desta composição no seu computador"
