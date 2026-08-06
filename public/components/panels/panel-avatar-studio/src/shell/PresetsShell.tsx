@@ -9,8 +9,10 @@ import { useRef, useState } from 'react';
 import { BookmarkPlus, Copy, HardDriveDownload, HardDriveUpload, Scale, Star, Trash2, TrendingUp, X } from 'lucide-react';
 import type { AvatarConfig } from '../domain/types';
 import { dataUriDe, itemPorId } from '../services/AvatarCatalog';
+import { flag } from '../nucleo/flags';
+import { sugerirPorCor } from '../services/ConselheiroEstilo'; // mega 345 (§205)
 import {
-  alternarFavoritoPreset, duplicarPreset, excluirPreset, listarPresets, salvarPreset,
+  alternarFavoritoPreset, atualizarPreset, duplicarPreset, excluirPreset, listarPresets, salvarPreset, snapshotDoPreset,
 } from '../services/PresetsPessoais';
 import { aplicarBackup, codigoDoLook, exportarBackup, interpretarBackup, lerCodigoDoLook } from '../services/Backup';
 import { calcularXp, nivelDe } from '../components/ProgressoPerfil';
@@ -91,6 +93,20 @@ export function PresetsShell({ configAtual, aoAplicar }: {
         <span className="avst5-dash-item"><strong>{favoritos().size}</strong> favoritos</span>
         <span className="avst5-dash-item"><strong>{presets.length}</strong> presets salvos</span>
       </div>
+      {/* mega 345 (§205, flag as5.presets_v2): preset INTELIGENTE — a
+          sugestão do consultor (regras §238, determinística) vira preset */}
+      {flag('as5.presets_v2') && (
+        <button type="button" className="avst-botao" data-teste="preset-inteligente"
+          title="Gera um preset a partir da 1ª sugestão do consultor de estilo (§205/§238)"
+          onClick={() => {
+            const sug = sugerirPorCor(configAtual)[0];
+            if (!sug) return;
+            salvarPreset(`Inteligente: ${sug.titulo}`.slice(0, 24), sug.config);
+            setTic((t) => t + 1);
+          }}>
+          Preset inteligente (§205)
+        </button>
+      )}
       <div className="avst5-presets-salvar">
         <input type="text" value={nome} maxLength={48}
           placeholder="Nome do preset (ex.: CEO, Cyber, Evento)…"
@@ -185,6 +201,10 @@ export function PresetsShell({ configAtual, aoAplicar }: {
                   <small>
                     {new Date(p.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     {p.tags.length ? ` · ${p.tags.join(', ')}` : ''}
+                    {/* mega 341 (§201/§202): versão + atualização no card */}
+                    {flag('as5.presets_v2') && (p.versao ?? 1) > 1 && (
+                      <em data-teste="preset-versao"> · v{p.versao} · {new Date(p.atualizadoEm ?? p.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</em>
+                    )}
                   </small>
                 </span>
               </button>
@@ -200,6 +220,23 @@ export function PresetsShell({ configAtual, aoAplicar }: {
                   onClick={() => { alternarFavoritoPreset(p.id); setTic((t) => t + 1); }}>
                   <Star size={13} aria-hidden fill={p.favorito ? 'currentColor' : 'none'} />
                 </button>
+                {/* mega 342 (§202): atualizar com o look atual = versão nova */}
+                {flag('as5.presets_v2') && (
+                  <button type="button" title="Atualizar com o look ATUAL (versão +1, §202)"
+                    data-teste="preset-atualizar"
+                    onClick={() => { atualizarPreset(p.id, configAtual); setTic((t) => t + 1); }}>
+                    <TrendingUp size={13} aria-hidden />
+                  </button>
+                )}
+                {/* mega 343 (§204): voltar ao snapshot mais recente */}
+                {flag('as5.presets_v2') && (p.historico?.length ?? 0) > 0 && (
+                  <button type="button" title="Aplicar o snapshot anterior deste preset (§204)"
+                    data-teste="preset-snapshot"
+                    onClick={() => { const c = snapshotDoPreset(p.id, 0); if (c) aoAplicar(c); }}>
+                    <X size={13} aria-hidden style={{ display: 'none' }} />
+                    <span aria-hidden style={{ fontSize: 10, fontWeight: 700 }}>v{Math.max(1, (p.versao ?? 1) - 1)}</span>
+                  </button>
+                )}
                 <button type="button" title="Duplicar"
                   onClick={() => { duplicarPreset(p.id); setTic((t) => t + 1); }}>
                   <Copy size={13} aria-hidden />
