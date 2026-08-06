@@ -1583,7 +1583,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   {(['todos', 'equipados', 'favoritos', 'novos', 'bloqueados', 'presets'] as Array<AbaCatalogo | 'presets'>).map((a) => (
                     <button key={a} type="button" role="tab" aria-selected={aba === a}
                       className={aba === a ? 'avst5-aba-on' : ''} onClick={() => setAba(a)}>
-                      {a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : a === 'bloqueados' ? 'Bloqueados' : 'Presets'}
+                      {/* megas 511-513 (§296): abas traduzíveis (PT = chave) */}
+                      {t(a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : a === 'bloqueados' ? 'Bloqueados' : 'Presets')}
                     </button>
                   ))}
                 </div>

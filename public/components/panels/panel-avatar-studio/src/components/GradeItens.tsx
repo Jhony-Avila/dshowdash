@@ -21,6 +21,7 @@ import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso'
 // mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
 import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
+import { t } from '../nucleo/i18n'; // lote 511-520 (§296)
 // mega 248 (§228): itens ARQUIVADOS saem da grade padrão (reversível)
 import { arquivados } from '../services/ArquivoItens';
 import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // lote 351-360 (§157)
@@ -390,7 +391,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       <div className="avst-filtros">
         <label className="avst-busca">
           <Search size={13} aria-hidden />
-          <input type="search" value={busca} placeholder="Buscar item, tema ou lore…"
+          <input type="search" value={busca} placeholder={t('Buscar item, tema ou lore…')}
             onChange={(e) => setBusca(e.target.value)} aria-label="Buscar itens" />
         </label>
         <div className="avst-fpop-ancora">
@@ -436,12 +437,12 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
               <label className="avst-fpop-opcao avst-ordenar" title="Ordenar itens">
                 <ArrowDownUp size={12} aria-hidden />
                 <select value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)} aria-label="Ordenar por">
-                  <option value="padrao">Padrão</option>
-                  <option value="raridade">Raridade</option>
-                  <option value="nome">Nome</option>
-                  <option value="recentes">Recentes</option>
+                  <option value="padrao">{t('Padrão')}</option>
+                  <option value="raridade">{t('Raridade')}</option>
+                  <option value="nome">{t('Nome')}</option>
+                  <option value="recentes">{t('Recentes')}</option>
                   {/* mega 424 (§58 v2, flag as5.busca_v2) */}
-                  {flag('as5.busca_v2') && <option value="novos">Novos primeiro</option>}
+                  {flag('as5.busca_v2') && <option value="novos">{t('Novos primeiro')}</option>}
                 </select>
               </label>
               {nFiltros > 0 && (
@@ -525,7 +526,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           if (rec.length === 0) return null;
           return (
             <div className="avst-conq-filtros" role="group" aria-label="Usados recentemente (§88)" data-teste="recentes">
-              <span style={{ fontSize: 11, opacity: 0.7 }}>Recentes:</span>
+              <span style={{ fontSize: 11, opacity: 0.7 }}>{t('Recentes:')}</span>
               {rec.map((i) => (
                 <button key={i.id} type="button" className="avst-ft-chip" data-teste="recente-chip"
                   title={`Equipar ${i.nome} de novo (§88)`}
@@ -546,7 +547,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
               <button key={id} type="button" role="radio" aria-checked={filtroFx === id}
                 className={`avst-ft-chip ${filtroFx === id ? 'avst-ft-chip-ativo' : ''}`}
                 data-teste={`fx-${id}`}
-                onClick={() => setFiltroFx(id)}>{nome}</button>
+                onClick={() => setFiltroFx(id)}>{t(nome)}</button>
             ))}
           </div>
         )}
@@ -584,7 +585,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           return (
             <button type="button" className="avst-botao" data-teste="quis-dizer"
               onClick={() => setBusca(perto)}>
-              Você quis dizer <strong>&nbsp;{perto}</strong>?
+              {t('Você quis dizer')} <strong>&nbsp;{perto}</strong>?
             </button>
           );
         })()}
@@ -592,7 +593,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         {itens.length === 0 && flag('as5.catalogo_v2') && (filtroFx !== 'todos' || busca) && (
           <button type="button" className="avst-botao" data-teste="vazio-limpar"
             onClick={() => { setFiltroFx('todos'); setBusca(''); }}>
-            Limpar filtros e busca
+            {t('Limpar filtros e busca')}
           </button>
         )}
         {itens.length === 0 && (
