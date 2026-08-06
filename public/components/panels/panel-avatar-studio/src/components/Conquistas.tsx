@@ -17,6 +17,7 @@ import { ProgressoPerfil } from './ProgressoPerfil';
 // mega 230 (§1076/§1077): Minha Vitrine no perfil (flag as5.vitrine_pessoal)
 import { MinhaVitrine } from './MinhaVitrine';
 import { flag } from '../nucleo/flags';
+import { t } from '../nucleo/i18n'; // lote 521-530 (§296)
 import { atualizarRecordes, desafiosDaSemana, diarioDoAvatar, temporadaAtual } from '../services/Temporadas'; // lote 361-370
 
 function fmtData(iso: string | null): string {
@@ -241,7 +242,7 @@ export function Conquistas({ vida, carregando = false, config }: {
         {([['todas', 'Todas'], ['feitas', 'Conquistadas'], ['pendentes', 'Pendentes']] as Array<[FiltroConq, string]>).map(([id, nome]) => (
           <button key={id} type="button" role="radio" aria-checked={filtro === id}
             className={`avst-ft-chip ${filtro === id ? 'avst-ft-chip-ativo' : ''}`}
-            onClick={() => setFiltro(id)}>{nome}</button>
+            onClick={() => setFiltro(id)}>{t(nome)}</button>
         ))}
       </div>
 
@@ -255,7 +256,7 @@ export function Conquistas({ vida, carregando = false, config }: {
             <button key={id} type="button" role="radio" aria-checked={ordem === id}
               className={`avst-ft-chip ${ordem === id ? 'avst-ft-chip-ativo' : ''}`}
               data-teste={`ordem-${id}`}
-              onClick={() => setOrdem(id)}>{nome}</button>
+              onClick={() => setOrdem(id)}>{t(nome)}</button>
           ))}
         </div>
       )}

@@ -1454,7 +1454,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 <button key={h} type="button" role="radio" aria-checked={hora === h}
                   className={hora === h ? 'avst5-fundo-on' : ''}
                   disabled={controlesTravados}
-                  onClick={() => trocarHora(h)}>{ROTULO_HORA[h]}</button>
+                  onClick={() => trocarHora(h)}>{t(ROTULO_HORA[h])}</button>
               ))}
             </div>
             <div className="avst5-fundos avst5-luzes" role="radiogroup" aria-label="Iluminação (§164)" data-teste="luzes-2d">
@@ -1462,7 +1462,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 <button key={l} type="button" role="radio" aria-checked={luz === l}
                   className={luz === l ? 'avst5-fundo-on' : ''}
                   disabled={controlesTravados}
-                  onClick={() => trocarLuz(l)}>{ROTULO_LUZ[l]}</button>
+                  onClick={() => trocarLuz(l)}>{t(ROTULO_LUZ[l])}</button>
               ))}
               {/* mega 471-473 (§165, flag as5.luz_contextual): AUTO */}
               {flag('as5.luz_contextual') && (
@@ -1470,7 +1470,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   className={luzAuto ? 'avst5-fundo-on' : ''}
                   data-teste="luz-auto" disabled={controlesTravados}
                   title="A luz segue a hora do palco (§165): tarde=quente, noite=dramática, madrugada=fria"
-                  onClick={() => mudarLuzAuto(!luzAuto)}>Auto</button>
+                  onClick={() => mudarLuzAuto(!luzAuto)}>{t('Auto')}</button>
               )}
               {/* mega 325 (§164.3, flag as5.palco_sensorial): INTENSIDADE —
                   modo simples §164.4 = deixar em 1 (zero mudança visual) */}

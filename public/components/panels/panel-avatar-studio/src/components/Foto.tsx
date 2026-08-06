@@ -34,6 +34,7 @@ import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { estadoVazio } from '../nucleo/contratos';
 import { flag } from '../nucleo/flags';
+import { t } from '../nucleo/i18n'; // lote 521-530 (§296)
 import { semanaIso } from '../services/Missoes';
 import { alternarFavoritoTemplate, favoritosTemplate } from '../services/FavoritosTemplate';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
@@ -1779,7 +1780,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar }: {
             <button type="button" className="avst-botao" disabled={salvando}
               title="Baixar o PNG desta composição no seu computador"
               onClick={() => void baixarPng()}>
-              <Download size={14} aria-hidden /> Baixar PNG
+              <Download size={14} aria-hidden /> {t('Baixar PNG')}
             </button>
             {/* mega 314 (§369, flag as5.foto_fina): JPEG 0.9 p/ e-mail/docs */}
             {flag('as5.foto_fina') && (

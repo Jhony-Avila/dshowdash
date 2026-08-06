@@ -10,6 +10,7 @@ import { BookmarkPlus, Copy, HardDriveDownload, HardDriveUpload, Scale, Star, Tr
 import type { AvatarConfig } from '../domain/types';
 import { dataUriDe, itemPorId } from '../services/AvatarCatalog';
 import { flag } from '../nucleo/flags';
+import { t } from '../nucleo/i18n'; // lote 521-530 (§296)
 import { sugerirPorCor } from '../services/ConselheiroEstilo'; // mega 345 (§205)
 import {
   alternarFavoritoPreset, atualizarPreset, duplicarPreset, excluirPreset, listarPresets, salvarPreset, snapshotDoPreset,
@@ -113,7 +114,7 @@ export function PresetsShell({ configAtual, aoAplicar }: {
             salvarPreset(`Inteligente: ${sug.titulo}`.slice(0, 24), sug.config);
             setTic((t) => t + 1);
           }}>
-          Preset inteligente (§205)
+          {t('Preset inteligente (§205)')}
         </button>
       )}
       <div className="avst5-presets-salvar">
@@ -146,12 +147,12 @@ export function PresetsShell({ configAtual, aoAplicar }: {
           <button type="button" className="avst-botao" data-teste="port-exportar"
             title="Exporta TUDO (presets, projetos de foto, preferências, contadores) num JSON versionado (§254/§310)"
             onClick={exportarTudo}>
-            <HardDriveDownload size={13} aria-hidden /> Exportar TUDO
+            <HardDriveDownload size={13} aria-hidden /> {t('Exportar TUDO')}
           </button>
           <button type="button" className="avst-botao" data-teste="port-importar"
             title="Importa um backup completo (validação estrita por chave §309)"
             onClick={() => refArquivoTudo.current?.click()}>
-            <HardDriveUpload size={13} aria-hidden /> Importar TUDO
+            <HardDriveUpload size={13} aria-hidden /> {t('Importar TUDO')}
           </button>
           <input ref={refArquivoTudo} type="file" accept="application/json,.json" hidden
             aria-label="Arquivo de backup completo" data-teste="port-arquivo"
