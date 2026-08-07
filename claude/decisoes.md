@@ -247,6 +247,21 @@
   poder §495 = F9 com arte; origem/orientação §487 = preview visual).
   Doc: docs/AVATAR-STUDIO-5/homologacao-onda-611.md.
 
+- **#72 (2026-08-07) — Onda 721+ abre pelo Photo Studio 3D**: "prossiga"
+  do Jhony sem escolha explícita → decisão minha pelo critério de
+  alavancagem: a captura v2 (lote 691) deixou o §329 pronto — o lote
+  721–730 transforma a entrada 3D da Foto (mega 12/47, que capturava o
+  personagem PELADO com estadoVazio) na captura ALTA §329: estado REAL
+  do usuário (cores personalizadas §420 + corpo §414 — mesma regra do
+  palco), pose Idle via pacote UAL (§329.2 passo 4, com estabilização
+  §508; 404 degrada §481), DPR 2 + supersampling §506 e fases §329.3 no
+  indicador. Partes 3D (cabelo/roupa do palco) NÃO entram: são seleção
+  efêmera de sessão do palco, não persistidas no estado — entram quando
+  a receita §407 for serializada (registrado como pendência de design).
+  Flag `as5.foto3d` (off = fluxo anterior byte a byte). Próximos
+  candidatos da onda: ual_extra multi-pacote · polish AAA pós-veredito ·
+  F8 IA (com a chave).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

@@ -72,6 +72,8 @@ const PADROES: Record<string, boolean> = {
   'as5.progressivo3d': true,      // lote 681–690 — LOD por tela §462 + lod2-primeiro §470 + IndexedDB §475 + loading manager §472
   'as5.quality3d_v2': true,       // lote 691–700 — perfis ultra/cine §482.1 + DPR dinâmico §483
   'as5.captura3d_v2': true,       // lote 691–700 — captura §506/§329: LOD alto + supersampling + formatos + indicador §329.3
+  // ── onda 721+ (decisão #72; padrão ON conforme #50) ──
+  'as5.foto3d': true,             // lote 721–730 — Foto×3D §329: captura com o ESTADO do usuário (cores §420 + corpo §414 + pose Idle UAL) + super 2× + fases §329.3
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

@@ -1,7 +1,7 @@
 # Status do Projeto — Avatar Studio (no repo)
 
 > Fonte viva: docs do projeto Claude "Avatar Studio" (04-status-do-projeto).
-> Última atualização: **2026-08-07 — ONDA 611–720 COMPLETA no main** (validação 1-por-1 no doc 19 do projeto Claude; produção segue no marco 610 até o deploy).
+> Última atualização: **2026-08-07 — onda 721+ aberta (decisão #72)**: lote 721–730 Foto×3D §329 entregue; mapa no doc 20 do projeto Claude. Produção segue no marco 610 até o deploy.
 
 ## Marco atual
 
