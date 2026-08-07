@@ -2,7 +2,7 @@
   "id": "humano_casual",
   "tipo": "personagem_base",
   "versao": 1,
-  "rig": "ubc-v1",
+  "rig": "quaternius-legado",
   "lods": {
     "lod0": "modelo.lod0.glb",
     "lod1": "modelo.lod1.glb",

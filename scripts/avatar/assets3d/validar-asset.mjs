@@ -20,6 +20,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const LIMITES_TRIANGULOS = { lod0: 60_000, lod1: 25_000, lod2: 8_000 }; // §631/§468
+// megas 611-613 (§631 texturas): maior DIMENSÃO permitida por LOD — o
+// publicador v2 redimensiona; o validador cobra (fontes UBC vêm em 4096)
+const LIMITES_TEXTURA = { lod0: 2048, lod1: 1024, lod2: 512 };
 // EXCEÇÃO AUDITÁVEL (mega 8): fontes flat-shaded resistem a simplify (cada
 // triângulo tem vértices próprios — sem arestas compartilhadas p/ colapsar).
 // O manifest pode DECLARAR excecoes[lod] com justificativa; o validador
@@ -55,6 +58,75 @@ export function contarTriangulos(gltf) {
     }
   }
   return total;
+}
+
+/** megas 611-613: bytes de um bufferView do GLB (chunk BIN). */
+function bytesDoBufferView(buf, gltf, indice) {
+  const bv = gltf.bufferViews?.[indice];
+  if (!bv) return null;
+  // chunk BIN começa após o header (12) + chunk JSON (8 + tamanho)
+  const tamJson = buf.readUInt32LE(12);
+  const inicioBin = 12 + 8 + tamJson + 8;
+  const off = inicioBin + (bv.byteOffset ?? 0);
+  return buf.subarray(off, off + bv.byteLength);
+}
+
+/** megas 611-613: dimensões de PNG/JPEG/WebP lendo SÓ o header (node puro). */
+export function dimensoesDaImagem(bytes) {
+  if (!bytes || bytes.length < 30) return null;
+  // PNG: assinatura + IHDR nos bytes 16..24
+  if (bytes.readUInt32BE(0) === 0x89504e47) {
+    return { largura: bytes.readUInt32BE(16), altura: bytes.readUInt32BE(20) };
+  }
+  // WebP: RIFF....WEBP + VP8/VP8L/VP8X
+  if (bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP') {
+    const forma = bytes.toString('ascii', 12, 16);
+    if (forma === 'VP8X') {
+      return {
+        largura: 1 + (bytes.readUIntLE(24, 3)),
+        altura: 1 + (bytes.readUIntLE(27, 3)),
+      };
+    }
+    if (forma === 'VP8L') {
+      const b = bytes.readUInt32LE(21);
+      return { largura: 1 + (b & 0x3fff), altura: 1 + ((b >> 14) & 0x3fff) };
+    }
+    if (forma === 'VP8 ') {
+      return { largura: bytes.readUInt16LE(26) & 0x3fff, altura: bytes.readUInt16LE(28) & 0x3fff };
+    }
+    return null;
+  }
+  // JPEG: varre marcadores até um SOF (C0–CF, exceto C4/C8/CC)
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) {
+    let i = 2;
+    while (i + 9 < bytes.length) {
+      if (bytes[i] !== 0xff) { i += 1; continue; }
+      const marcador = bytes[i + 1];
+      if (marcador >= 0xc0 && marcador <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marcador)) {
+        return { largura: bytes.readUInt16BE(i + 7), altura: bytes.readUInt16BE(i + 5) };
+      }
+      i += 2 + (bytes.readUInt16BE(i + 2) ?? 0);
+    }
+  }
+  return null;
+}
+
+/** megas 611-613 (§631): maior dimensão de textura embutida no GLB. */
+export function maiorTexturaDoGlb(caminho) {
+  const buf = readFileSync(caminho);
+  const gltf = lerJsonDoGlb(caminho);
+  let maior = 0;
+  let total = 0;
+  for (const img of gltf.images ?? []) {
+    if (img.bufferView === undefined) continue; // uri externa não entra no GLB
+    const bytes = bytesDoBufferView(buf, gltf, img.bufferView);
+    const dim = dimensoesDaImagem(bytes);
+    if (dim) {
+      maior = Math.max(maior, dim.largura, dim.altura);
+      total += 1;
+    }
+  }
+  return { maior, texturas: total };
 }
 
 /** Nomes dos bones (joints de todos os skins, sem repetição). */
@@ -125,6 +197,14 @@ export function validarAsset(pasta, opcoes = {}) {
         }
       }
       if (tri === 0) avisos.push(`${lod} sem triângulos TRIANGLES — conferir exportação`);
+      // megas 611-613 (§631): dimensão máxima de textura POR LOD
+      const tex = maiorTexturaDoGlb(arquivo);
+      if (tex.texturas > 0) {
+        (medidas.texturas ??= {})[lod] = tex.maior;
+        if (tex.maior > LIMITES_TEXTURA[lod]) {
+          erros.push(`${lod} com textura de ${tex.maior}px — acima do gate §631 (máx ${LIMITES_TEXTURA[lod]}px; o publicador v2 redimensiona)`);
+        }
+      }
       // 5. bones (uma vez, no lod0 — o rig é o mesmo)
       if (lod === 'lod0') {
         const bones = nomesDosBones(gltf);
@@ -134,12 +214,17 @@ export function validarAsset(pasta, opcoes = {}) {
             erros.push(`bone "${b}" com espaço/não-ASCII — o GLTFLoader sanitiza e o retargeting §436 quebra`);
           }
         }
-        const canonico = opcoes.rigCanonico ?? lerRigCanonico();
+        // megas 611-620: lista canônica POR NOME DE RIG (rig-<nome>.json) —
+        // o manifest declara o rig e o validador cobra a lista DELE; rig
+        // sem lista registrada = aviso (nunca cobrar esqueleto errado:
+        // os 6 legados têm rigs próprios, corrigidos nos manifests)
+        const nomeRig = String(manifest.rig ?? 'ubc-v1');
+        const canonico = opcoes.rigCanonico ?? lerRigCanonico(nomeRig);
         if (canonico.length === 0) {
-          avisos.push('lista canônica do rig ubc-v1 ainda vazia (preencher com o 1º GLB real do UBC) — checagem de presença PULADA');
+          avisos.push(`rig "${nomeRig}" sem lista canônica registrada (rig-${nomeRig}.json) — checagem de presença PULADA`);
         } else {
           for (const b of canonico) {
-            if (!bones.includes(b)) erros.push(`bone canônico "${b}" ausente do rig (§436)`);
+            if (!bones.includes(b)) erros.push(`bone canônico "${b}" ausente do rig ${nomeRig} (§436)`);
           }
         }
       }
@@ -151,9 +236,10 @@ export function validarAsset(pasta, opcoes = {}) {
   return { aprovado: erros.length === 0, erros, avisos, medidas };
 }
 
-function lerRigCanonico() {
+function lerRigCanonico(rig = 'ubc-v1') {
   try {
-    const r = JSON.parse(readFileSync(join(import.meta.dirname, 'rig-ubc-v1.json'), 'utf8'));
+    if (!/^[a-z0-9-]+$/.test(rig)) return []; // nome fora do padrão = sem lista
+    const r = JSON.parse(readFileSync(join(import.meta.dirname, `rig-${rig}.json`), 'utf8'));
     return Array.isArray(r.bones) ? r.bones : [];
   } catch { return []; }
 }

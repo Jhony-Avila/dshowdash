@@ -26,12 +26,31 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { compactPrimitive, dedup, prune, simplify, weld } from '@gltf-transform/functions';
+import { compactPrimitive, dedup, prune, simplify, textureCompress, weld } from '@gltf-transform/functions';
 import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
+import sharp from 'sharp';
 import { validarAsset } from './validar-asset.mjs';
 
 const LIMITES = { lod1: 25_000, lod2: 8_000 }; // gate §631 (lod0 só confere)
 const MARGEM = 0.9; // alvo = 90% do limite (folga p/ variação do simplify)
+// megas 611-613 (§631 texturas): fontes UBC vêm em 4096px — cada LOD
+// redimensiona pro seu teto e converte pra WebP (EXT_texture_webp; o
+// GLTFLoader do three decodifica nativo). Sem isto o GLB embutiria
+// ~12MB de PNG e estouraria a política de "poucos MB" versionados.
+const TEXTURA_MAX = { lod0: 2048, lod1: 1024, lod2: 512 };
+
+/** Redimensiona/converte TODAS as texturas do doc pro teto do LOD. */
+async function ajustarTexturas(doc, lod, log) {
+  const teto = TEXTURA_MAX[lod];
+  await doc.transform(textureCompress({
+    encoder: sharp,
+    targetFormat: 'webp',
+    quality: 82,
+    effort: 4,
+    resize: [teto, teto], // "contain": só ENCOLHE o que passa do teto
+  }));
+  log?.(`${lod}: texturas → webp ≤ ${teto}px`);
+}
 
 function argumento(nome, padrao) {
   const i = process.argv.indexOf(`--${nome}`);
@@ -86,12 +105,14 @@ export async function publicarAsset(opcoes) {
   const pasta = resolve(saida);
   mkdirSync(pasta, { recursive: true });
 
-  // lod0: fonte otimizada SEM perda (dedup de acessores + poda de órfãos)
+  // lod0: fonte otimizada SEM perda de malha (dedup + poda de órfãos);
+  // texturas entram no teto §631 do lod0 (2048px, webp) — megas 611-613
   const lod0 = semCompressao(await io.read(resolve(fonte)));
   await lod0.transform(dedup(), prune());
+  await ajustarTexturas(lod0, 'lod0', log);
   const tri0 = triangulosDe(lod0);
   await io.write(join(pasta, 'modelo.lod0.glb'), lod0);
-  log(`lod0: ${tri0} triângulos (otimizado, sem perda)`);
+  log(`lod0: ${tri0} triângulos (otimizado, sem perda de malha)`);
 
   // lod1/lod2: simplificação meshopt até caber no gate §631 (com margem)
   const medidas = { lod0: tri0 };
@@ -140,6 +161,7 @@ export async function publicarAsset(opcoes) {
       }
       await doc.transform(dedup()); // re-compartilha acessores idênticos entre primitivas
     }
+    await ajustarTexturas(doc, lod, log); // megas 611-613 (§631 texturas)
     const depois = triangulosDe(doc);
     medidas[lod] = depois;
     await io.write(join(pasta, `modelo.${lod}.glb`), doc);

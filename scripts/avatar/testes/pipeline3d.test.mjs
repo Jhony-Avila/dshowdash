@@ -27,6 +27,8 @@ try {
   const { medidas, manifest } = await publicarAsset({
     fonte, saida: pasta, id: 'manequim_dev',
     origem: 'manequim-procedural',
+    rig: 'manequim-dev', // megas 611-620: lista canônica é POR RIG — o
+    // manequim (16 bones) não é ubc-v1 e não pode ser cobrado como tal
     comprovante: 'scripts/avatar/assets3d/gerar-manequim.mjs',
     data: '2026-08-03', log: () => {},
   });
@@ -63,6 +65,54 @@ try {
   let recusou = false;
   try { gerarRegistroSql(pasta); } catch { recusou = true; }
   ok(recusou, 'gerarRegistroSql deveria RECUSAR pasta reprovada no §487');
+
+  // 7. megas 611-613 (§631 texturas): fonte com textura 1600px → publicador
+  //    redimensiona por LOD (2048/1024/512) e converte pra webp; validador
+  //    mede e aprova — e reprovaria acima do teto
+  {
+    const { NodeIO } = await import('@gltf-transform/core');
+    const sharp = (await import('sharp')).default;
+    const io = new NodeIO();
+    const doc = await io.read(fonte);
+    // gradiente (NÃO sólida): o prune converte textura de cor única em
+    // fator do material (keepSolidTextures=false) — comportamento certo
+    // em produção, mas mataria um teste de textura chapada
+    const png = await sharp(Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600">' +
+      '<defs><linearGradient id="g"><stop offset="0" stop-color="#a55"/><stop offset="1" stop-color="#58e"/></linearGradient></defs>' +
+      '<rect width="1600" height="1600" fill="url(#g)"/></svg>',
+    )).png().toBuffer();
+    const textura = doc.createTexture('teste-1600').setImage(png).setMimeType('image/png');
+    const material = doc.createMaterial('mat-teste').setBaseColorTexture(textura);
+    const buffer = doc.getRoot().listBuffers()[0];
+    doc.getRoot().listMeshes()[0]?.listPrimitives().forEach((p) => {
+      // sem UV o prune derruba a textura — dá TEXCOORD_0 zerado ao teste
+      const n = p.getAttribute('POSITION')?.getCount() ?? 0;
+      const uv = doc.createAccessor().setType('VEC2')
+        .setArray(new Float32Array(n * 2)).setBuffer(buffer);
+      p.setAttribute('TEXCOORD_0', uv).setMaterial(material);
+    });
+    const fonteTex = join(dir, 'manequim-tex.glb');
+    await io.write(fonteTex, doc);
+
+    const pastaTex = join(dir, 'publicado-tex');
+    await publicarAsset({
+      fonte: fonteTex, saida: pastaTex, id: 'manequim_tex',
+      origem: 'manequim-procedural', rig: 'manequim-dev',
+      comprovante: 'scripts/avatar/assets3d/gerar-manequim.mjs',
+      data: '2026-08-03', validar: false, log: () => {},
+    });
+    const { maiorTexturaDoGlb } = await import('../assets3d/validar-asset.mjs');
+    const t0 = maiorTexturaDoGlb(join(pastaTex, 'modelo.lod0.glb'));
+    const t1 = maiorTexturaDoGlb(join(pastaTex, 'modelo.lod1.glb'));
+    const t2 = maiorTexturaDoGlb(join(pastaTex, 'modelo.lod2.glb'));
+    ok(t0.texturas === 1 && t0.maior === 1600, `lod0 deveria manter 1600px (≤2048; veio ${t0.maior})`);
+    ok(t1.maior === 1024, `lod1 deveria encolher pra 1024px (veio ${t1.maior})`);
+    ok(t2.maior === 512, `lod2 deveria encolher pra 512px (veio ${t2.maior})`);
+    const rTex = validarAsset(pastaTex, { rigCanonico: [] });
+    const errosTex = rTex.erros.filter((e) => e.includes('textura'));
+    ok(errosTex.length === 0, `validador acusou textura fora do gate: ${errosTex.join(' | ')}`);
+  }
 } catch (e) {
   falhas.push(`exceção: ${e.message}`);
 } finally {
