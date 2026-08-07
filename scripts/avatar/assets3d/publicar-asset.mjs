@@ -85,6 +85,7 @@ export async function publicarAsset(opcoes) {
     comprovante = 'storage/assets-3d-fonte/ubc-standard-v1/LICENSE.txt',
     animacoes = null, // null = EXTRAIR do GLB (mega 9); lista = override
     mascara = null, // megas 631-633 (§415.2): regiões do corpo que a parte oculta
+    familia = null, // lote 651-660 (§423): família de complexidade; cabelo/barba sem valor = economico
     data = null,
     validar = true,
     log = (m) => console.log(m),
@@ -175,8 +176,12 @@ export async function publicarAsset(opcoes) {
   const animacoesFinal = animacoes ?? (clipesReais.length ? clipesReais : []);
 
   // manifest §517 (hashes calculados dos ARQUIVOS finais — §478)
+  // §423: cabelo/barba SEMPRE declaram família (padrão: econômico — hair
+  // cards rígidos dos packs CC0); outras categorias só se pedida
+  const familiaFinal = familia ?? (tipo === 'parte_cabelo' || tipo === 'parte_barba' ? 'economico' : null);
   const manifest = {
     id, tipo, versao: 1, rig,
+    ...(familiaFinal ? { familia: familiaFinal } : {}),
     lods: { lod0: 'modelo.lod0.glb', lod1: 'modelo.lod1.glb', lod2: 'modelo.lod2.glb' },
     hashes: {
       lod0: sha256De(join(pasta, 'modelo.lod0.glb')),
@@ -230,6 +235,7 @@ if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
     mascara: process.argv.includes('--mascara')
       ? argumento('mascara', '').split(',').map((s) => s.trim()).filter(Boolean)
       : null, // megas 631-633 (§415.2)
+    familia: argumento('familia', null), // lote 651-660 (§423)
     data: argumento('data', null),
     validar: !process.argv.includes('--sem-validar'),
   }).then(({ pasta, medidas }) => {

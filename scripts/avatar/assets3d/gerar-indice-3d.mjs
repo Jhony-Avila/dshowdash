@@ -44,6 +44,8 @@ export function gerarIndice3d(pastaPersonagens) {
       nome: NOMES_AMIGAVEIS[m.id] ?? m.id,
       tipo: m.tipo,
       rig: m.rig,
+      // §423 (lote 651-660): família de complexidade declarada no manifest
+      ...(m.familia ? { familia: m.familia } : {}),
       thumb: `${m.id}/thumb.webp`,
       preview: `${m.id}/preview.webp`,
       animacoes: m.animacoes ?? [],

@@ -65,6 +65,8 @@ const PADROES: Record<string, boolean> = {
   'as5.assembler3d': true,        // lote 621–630 — Character Assembler §406 + partes §423
   'as5.roupas3d': true,           // lote 631–640 — roupas §415–§417 (body masking §415.2)
   'as5.materiais3d': true,        // lote 641–650 — Material Manager §419 + canais §73→3D (§420–§421)
+  'as5.cabelo3d': true,           // lote 651–660 — barba como slot próprio §425 + combinações cabelo+barba + famílias §423
+  'as5.morfos3d': true,           // lote 651–660 — morfos estruturais §412–§414 via escala (tipo §102 + fino §102.2 no 3D)
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

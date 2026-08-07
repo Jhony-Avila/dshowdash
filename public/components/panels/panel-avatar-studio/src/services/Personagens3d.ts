@@ -20,6 +20,8 @@ export interface ManifestPersonagem3d {
   animacoes?: string[];
   /** megas 631-633 (§415.2): regiões do corpo que a PARTE oculta */
   mascara?: string[];
+  /** lote 651-660 (§423): família de complexidade (economico|padrao|premium) */
+  familia?: string;
 }
 
 /** §423: tier → LOD (auto = medio, DETERMINÍSTICO — nada de sniffing aqui;

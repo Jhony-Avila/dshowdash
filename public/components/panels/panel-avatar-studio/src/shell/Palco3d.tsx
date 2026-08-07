@@ -193,6 +193,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // ── lote 631–640 (§415–§417, flag as5.roupas3d): ROUPAS por look ───
   const [partesRoupa, setPartesRoupa] = useState<EntradaIndiceParte[]>([]);
   const [roupa3d, setRoupa3d] = useState<'ranger' | 'peasant' | null>(null);
+  // ── lote 651–660 (§425, flag as5.cabelo3d): BARBA como slot PRÓPRIO —
+  // combinações cabelo+barba montam JUNTAS no mesmo esqueleto §406
+  const [partesBarba, setPartesBarba] = useState<EntradaIndiceParte[]>([]);
+  const [barba3d, setBarba3d] = useState<string | null>(null);
   const rigAtualEhUbc = useMemo(
     () => indice.find((x) => x.slug === personagem)?.rig === 'ubc-v1',
     [indice, personagem],
@@ -200,9 +204,17 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const genero3d = personagem?.endsWith('_f') ? 'f' : 'm';
   useEffect(() => {
     if (!flag('as5.assembler3d')) return;
+    // §425 (lote 651–660): com as5.cabelo3d a barba vira slot próprio;
+    // rollback §651 = barba volta para a lista de cabelos (comportamento
+    // do lote 621–630, byte a byte)
+    const barbaSeparada = flag('as5.cabelo3d');
     void carregarIndicePartes().then((lista) => {
       if (!lista) return;
-      setPartesCabelo(lista.filter((p) => categoriaDaParte(p.tipo) === 'cabelo' || categoriaDaParte(p.tipo) === 'barba'));
+      setPartesCabelo(lista.filter((p) => {
+        const c = categoriaDaParte(p.tipo);
+        return c === 'cabelo' || (!barbaSeparada && c === 'barba');
+      }));
+      setPartesBarba(barbaSeparada ? lista.filter((p) => categoriaDaParte(p.tipo) === 'barba') : []);
       setPartesRoupa(lista.filter((p) => categoriaDaParte(p.tipo) === 'roupa'));
     });
   }, []);
@@ -210,6 +222,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     if (!flag('as5.assembler3d')) return;
     const slugs: string[] = [];
     if (cabelo3d && rigAtualEhUbc) slugs.push(cabelo3d);
+    // §425: barba COMBINA com o cabelo (mesmo esqueleto pós-rebind §406)
+    if (flag('as5.cabelo3d') && barba3d && rigAtualEhUbc) slugs.push(barba3d);
     // §416: o look veste TODAS as peças do gênero da base atual
     if (flag('as5.roupas3d') && roupa3d && rigAtualEhUbc) {
       slugs.push(...partesRoupa
@@ -218,7 +232,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     }
     (refR.current as unknown as { definirPartes3d?: (s: string[]) => Promise<void> })
       ?.definirPartes3d?.(slugs);
-  }, [cabelo3d, roupa3d, partesRoupa, genero3d, rigAtualEhUbc, fase, personagem]);
+  }, [cabelo3d, barba3d, roupa3d, partesRoupa, genero3d, rigAtualEhUbc, fase, personagem]);
   const refPersonagem = useRef(personagem);
   refPersonagem.current = personagem;
 
@@ -571,6 +585,17 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
       ?.definirCores3d?.(tem ? coresPersonalizadas : null);
   }, [coresPersonalizadas, fase, personagem]);
 
+  // lote 651–660 (§412–§414, flag as5.morfos3d): tipo corporal §102 e
+  // ajuste fino §102.2 do 2D moldam o personagem 3D (tabela única §102)
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    const corpo = flag('as5.morfos3d') && (estado.body.tipo || estado.body.fino)
+      ? { tipo: estado.body.tipo ?? null, fino: estado.body.fino ?? null }
+      : null;
+    (refR.current as unknown as { definirCorpo3d?: (c: typeof corpo) => void })
+      ?.definirCorpo3d?.(corpo);
+  }, [estado, fase, personagem]);
+
   // mega 82: aura equipada no 2D vira ANEL 3D na cor de destaque (§444)
   useEffect(() => {
     if (fase !== 'pronto') return;
@@ -902,6 +927,25 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                 data-teste={`p3d-cabelo-${pc.slug}`}
                 onClick={() => setCabelo3d(pc.slug)}>
                 {pc.nome}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* lote 651–660 (§425, flag as5.cabelo3d): BARBA como slot próprio —
+            combina com o cabelo no mesmo esqueleto; material = canal cabelo */}
+        {flag('as5.cabelo3d') && partesBarba.length > 0 && rigAtualEhUbc && (
+          <div className="avst5-p3d-personagens avst5-p3d-partes" role="radiogroup"
+            aria-label="Barba (§425 — combina com o cabelo)" data-teste="p3d-barbas">
+            <button type="button" role="radio" aria-checked={barba3d === null}
+              className={`avst5-p3d-chip${barba3d === null ? ' avst5-p3d-chip-on' : ''}`}
+              data-teste="p3d-barba-nenhuma"
+              onClick={() => setBarba3d(null)}>Sem barba</button>
+            {partesBarba.map((pb) => (
+              <button key={pb.slug} type="button" role="radio" aria-checked={barba3d === pb.slug}
+                className={`avst5-p3d-chip${barba3d === pb.slug ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-barba-${pb.slug}`}
+                onClick={() => setBarba3d(pb.slug)}>
+                {pb.nome}
               </button>
             ))}
           </div>

@@ -212,10 +212,14 @@ export function montarPersonagem(receita: ReceitaMontagem): ResultadoMontagem {
     pendencias.push('rig sem lista canônica (validação de presença pulada)');
   }
 
-  // 3. tipo corporal §414 — entra com as roupas/body-masks (lote 631+)
-  okFase('tipo_corporal', 'n/a nesta fase (§414 — lote de roupas)');
-  // 4. morphs §412 — entram com cabelo/barba/morphs (lote 651+)
-  okFase('morphs', 'n/a nesta fase (§412 — lote de morphs)');
+  // 3. tipo corporal §414 — aplicado no RENDERER via escala (lote 651+,
+  //    flag as5.morfos3d): base e partes compartilham o esqueleto, então
+  //    a escala do objeto raiz veste todo o conjunto junto (§413)
+  okFase('tipo_corporal', 'coberto pelo renderer (escala §414 — as5.morfos3d)');
+  // 4. morphs §412 — GLBs do farm CC0 não trazem morph targets; os
+  //    ESTRUTURAIS saem via escala §414 (passo 3); expressivos ficam
+  //    para a animação §440 (piscar procedural, lote 661+)
+  okFase('morphs', 'base sem morph targets — estruturais via escala §414');
 
   // 5. pele §411/§418 — tinge materiais de PELE (nome contém skin/pele)
   if (receita.pele) {
@@ -263,12 +267,13 @@ export function montarPersonagem(receita: ReceitaMontagem): ResultadoMontagem {
   //     materiais de cada parte pela CATEGORIA (§73: cabelo/roupa/
   //     destaque). Tintura fica no pipeline central do Material Manager
   //     (Materiais3d.aplicarPipelineCores) — o renderer converte canais.
-  const canaisMarcados: string[] = [];
+  const porCanal: Record<string, number> = {};
   for (const parte of receita.partes ?? []) {
     const canal = canalDaCategoria(parte.categoria);
     const n = marcarCanal(parte.cena, canal);
-    if (n) canaisMarcados.push(`${canal}×${n}`);
+    if (n) porCanal[canal] = (porCanal[canal] ?? 0) + n;
   }
+  const canaisMarcados = Object.entries(porCanal).map(([c, n]) => `${c}×${n}`);
   okFase('materiais', canaisMarcados.length
     ? `canais §73 marcados: ${canaisMarcados.join(' ')}`
     : 'sem partes — materiais dos GLBs mantidos');

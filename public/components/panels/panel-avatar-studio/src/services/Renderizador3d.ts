@@ -113,6 +113,9 @@ export class Renderizador3d implements RenderizadorAvatar {
   // lote 641–650 (§418–§421, flag as5.materiais3d no CALLER): cores §73
   // PERSONALIZADAS por canal (§420) — null = arte original dos GLBs
   private cores3d: Record<string, string> | null = null;
+  // lote 651–660 (§412–§414, flag as5.morfos3d no CALLER): morfos
+  // estruturais via ESCALA do personagem — null/neutro = escala 1
+  private corpo3d: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null } | null = null;
   // mega 82 (§444): aura 3D — anel additive na cor do avatar
   private aura3d: THREE.Mesh | null = null;
   // lote 131–140 (§426–§431): SOCKETS — props procedurais presos aos
@@ -699,6 +702,32 @@ export class Renderizador3d implements RenderizadorAvatar {
     aplicarPipelineCores(this.personagem, { cores: this.cores3d, tinta: this.tinta });
   }
 
+  /** lote 651–660 (§412–§414): morfos ESTRUTURAIS de corpo — a MESMA
+   *  tabela §102 do 2D (engine/render) vira escala do personagem; o
+   *  ajuste fino §102.2 MULTIPLICA o preset (regra da decisão #63).
+   *  Escala no OBJETO raiz: base, cabelo, barba e roupas (mesmo esqueleto
+   *  pós-rebind) acompanham juntas — §413 "morphs respeitam roupas/rig".
+   *  Neutro = escala 1 = render idêntico (byte-stability do visual).
+   *  O CALLER decide a flag (as5.morfos3d) — aqui é só o mecanismo. */
+  definirCorpo3d(corpo: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null } | null): void {
+    if (JSON.stringify(corpo) === JSON.stringify(this.corpo3d)) return;
+    this.corpo3d = corpo ? { tipo: corpo.tipo ?? null, fino: corpo.fino ?? null } : null;
+    this.aplicarCorpo3d();
+  }
+
+  /** Tabela §102 (espelho de engine/render.ts — [largura, altura]). */
+  private static readonly CORPOS_3D: Record<string, [number, number]> = {
+    esbelto: [0.95, 1.02], atletico: [1.05, 1], robusto: [1.1, 0.98], compacto: [0.97, 0.94],
+  };
+
+  private aplicarCorpo3d(): void {
+    if (!this.personagem) return;
+    const preset = Renderizador3d.CORPOS_3D[this.corpo3d?.tipo ?? ''] ?? [1, 1];
+    const larg = Math.min(1.15, Math.max(0.88, preset[0] * (this.corpo3d?.fino?.largura ?? 1)));
+    const alt = Math.min(1.07, Math.max(0.9, preset[1] * (this.corpo3d?.fino?.altura ?? 1)));
+    this.personagem.scale.set(larg, alt, larg); // XZ = largura · Y = altura
+  }
+
   /** mega 82 (§444): AURA 3D — anel additive pulsante na cor do avatar. */
   definirAura3d(cor: string | null): void {
     if (this.aura3d) {
@@ -923,6 +952,7 @@ export class Renderizador3d implements RenderizadorAvatar {
     await this.montarPartes3d();
     this.atualizarSombras(); // mega 79: castShadow no personagem novo
     this.aplicarTinta();     // mega 81: tinta sobrevive à troca/LOD
+    this.aplicarCorpo3d();   // lote 651-660: morfos §414 sobrevivem à troca/LOD
     this.aplicarProps();     // lote 131: props seguem o personagem novo
     this.definirCamera(this.cameraAtual); // preserva órbita/retrato no reload §528
   }

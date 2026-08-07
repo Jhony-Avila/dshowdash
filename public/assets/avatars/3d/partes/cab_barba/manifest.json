@@ -3,6 +3,7 @@
   "tipo": "parte_barba",
   "versao": 1,
   "rig": "ubc-v1",
+  "familia": "economico",
   "lods": {
     "lod0": "modelo.lod0.glb",
     "lod1": "modelo.lod1.glb",

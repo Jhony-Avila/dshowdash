@@ -146,6 +146,23 @@
   Bônus a11y: vida §440 agora respeita prefers-reduced-motion (§297) —
   idle e câmera já respeitavam; o teste determinístico expôs o gap.
 
+- **#66 (2026-08-07) — Cabelo/barba/morfos 3D (lote 651–660)**: barba vira
+  slot PRÓPRIO combinável com cabelo (§425 — mesmo esqueleto pós-rebind);
+  rollback §651 devolve a barba à lista de cabelos (comportamento 621–630
+  byte a byte). Famílias §423 DECLARADAS no manifest (`familia`) — todo o
+  farm CC0 é `economico` (hair cards rígidos); publicador estampa por
+  padrão em cabelo/barba. Física §424: os assets não trazem spring bones →
+  rígido no tier econômico ("responder a movimento" = ancoragem no head
+  bone); física real fica como pendência premium até assets com bones de
+  cabelo. §425 checklist: material da barba = canal cabelo (tinge junto);
+  mandíbula n/a (rig ubc-v1 sem jaw bone). Morfos §412–§414: GLBs sem
+  morph targets → ESTRUTURAIS via escala do objeto raiz com a MESMA
+  tabela §102 do 2D (engine/render), fino §102.2 MULTIPLICA o preset
+  (espelho da #63); base+cabelo+barba+roupas escalam JUNTAS (mesmo
+  esqueleto — §413 "respeita roupas/rig"); neutro = escala 1 = render
+  idêntico; expressivos (piscar §440) ficam na animação, lote 661+.
+  Sobrancelhas: já cobertas pelo canal cabelo (materiais MI_Hair da base).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

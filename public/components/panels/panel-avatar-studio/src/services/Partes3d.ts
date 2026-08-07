@@ -39,6 +39,9 @@ export interface EntradaIndiceParte {
   nome: string;
   tipo: string; // parte_cabelo | parte_barba | parte_roupa | parte_acessorio
   rig: string;
+  /** lote 651-660 (§423): família de complexidade declarada no manifest
+   *  (economico | padrao | premium) — hoje todo o farm CC0 é econômico */
+  familia?: string;
   thumb: string;
 }
 
