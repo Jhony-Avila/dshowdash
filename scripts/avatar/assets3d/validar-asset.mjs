@@ -233,7 +233,64 @@ export function validarAsset(pasta, opcoes = {}) {
     }
   }
 
+  // ── lote 701-710 (§487): checagens ampliadas — RESSALVAS, nunca
+  // reprovação retroativa de asset já publicado ──
+  if (!manifest.licenca) {
+    avisos.push('sem metadados de licença (§511) — regularizar na próxima republicação');
+  }
+  try {
+    const gltf0 = lerJsonDoGlb(join(dir, 'modelo.lod0.glb'));
+    // materiais §487/§488 (informativo + teto do gate)
+    medidas.materiais = (gltf0.materials ?? []).length;
+    if (medidas.materiais > 8) avisos.push(`${medidas.materiais} materiais no lod0 — conferir consolidação (§467)`);
+    // UV §487: primitiva com material TEXTURIZADO precisa de TEXCOORD_0
+    const materiaisComTextura = new Set();
+    (gltf0.materials ?? []).forEach((m, i) => {
+      if (m.pbrMetallicRoughness?.baseColorTexture || m.normalTexture || m.emissiveTexture) materiaisComTextura.add(i);
+    });
+    let semUv = 0;
+    for (const malha of gltf0.meshes ?? []) {
+      for (const prim of malha.primitives ?? []) {
+        if (materiaisComTextura.has(prim.material) && prim.attributes?.TEXCOORD_0 === undefined) semUv += 1;
+      }
+    }
+    if (semUv > 0) avisos.push(`${semUv} primitiva(s) texturizada(s) SEM TEXCOORD_0 (§487 — textura vira cor chapada)`);
+    // escala §487: altura do bounding box do POSITION (personagens 0.8–3m)
+    let yMin = Infinity;
+    let yMax = -Infinity;
+    for (const malha of gltf0.meshes ?? []) {
+      for (const prim of malha.primitives ?? []) {
+        const acc = gltf0.accessors?.[prim.attributes?.POSITION];
+        if (acc?.min && acc?.max) { yMin = Math.min(yMin, acc.min[1]); yMax = Math.max(yMax, acc.max[1]); }
+      }
+    }
+    if (Number.isFinite(yMin) && Number.isFinite(yMax)) {
+      medidas.alturaM = Math.round((yMax - yMin) * 100) / 100;
+      if (String(manifest.tipo) === 'personagem_base' && (medidas.alturaM < 0.8 || medidas.alturaM > 3)) {
+        avisos.push(`altura ${medidas.alturaM}m fora da faixa 0,8–3m (§487 escala) — conferir unidade`);
+      }
+    }
+  } catch { /* lod0 ilegível já reportado acima */ }
+
   return { aprovado: erros.length === 0, erros, avisos, medidas };
+}
+
+/** §488: RELATÓRIO de validação — status + linhas humanas por item. */
+export function relatorioDeValidacao(pasta) {
+  const r = validarAsset(pasta);
+  const status = !r.aprovado ? 'reprovado'
+    : r.avisos.length ? 'aprovado com ressalvas' : 'aprovado';
+  const linhas = [
+    `Status: ${status}`,
+    `Triângulos: lod0=${r.medidas.triangulos.lod0 ?? '?'} lod1=${r.medidas.triangulos.lod1 ?? '?'} lod2=${r.medidas.triangulos.lod2 ?? '?'}`,
+    `Bones: ${r.medidas.bones}`,
+    ...(r.medidas.materiais !== undefined ? [`Materiais: ${r.medidas.materiais}`] : []),
+    ...(r.medidas.texturas ? [`Texturas (máx px): ${Object.entries(r.medidas.texturas).map(([l, v]) => `${l}=${v}`).join(' ')}`] : []),
+    ...(r.medidas.alturaM !== undefined ? [`Altura: ${r.medidas.alturaM}m`] : []),
+    ...r.erros.map((e) => `ERRO: ${e}`),
+    ...r.avisos.map((a) => `Ressalva: ${a}`),
+  ];
+  return { status, linhas, ...r };
 }
 
 function lerRigCanonico(rig = 'ubc-v1') {

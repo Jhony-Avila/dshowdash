@@ -234,6 +234,19 @@
   exigem UV/atlas; nada de fake). Flags: `as5.quality3d_v2` +
   `as5.captura3d_v2`.
 
+- **#71 (2026-08-07) — Homologação (lote 701–710)**: sem flag — homologar
+  é VERIFICAR, não mudar comportamento (nada a desligar). Validador §487
+  ampliado com regras novas como RESSALVA (licença §511, UV, escala,
+  materiais) — nunca reprovação retroativa de asset publicado; relatório
+  §488 com três status (aprovado/com ressalvas/reprovado; reprovado nunca
+  publica). Homologação EXECUTÁVEL (homologacao.mjs na suíte): varre os
+  34 assets reais (0 reprovados; UBC obrigatoriamente LIMPO), confere o
+  pacote UAL por hash §477, mede o gate §631 no dist local e roda os
+  checklists §489/§490/§493 no palco com evidências. N/A honestos
+  registrados no doc (boné/capacete §491, acessórios §492, cenário §494 e
+  poder §495 = F9 com arte; origem/orientação §487 = preview visual).
+  Doc: docs/AVATAR-STUDIO-5/homologacao-onda-611.md.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

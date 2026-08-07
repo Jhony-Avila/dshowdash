@@ -18,7 +18,8 @@
   horizontal, cores junto ao canvas — decisão #68). Flags:
   as5.assembler3d · as5.roupas3d · as5.materiais3d · as5.cabelo3d ·
   as5.morfos3d · as5.animacao3d · as5.classico_aaa · as5.progressivo3d.
-  Suíte: **89 arquivos**. Onda 611–720: 681–690 LOD/progressivo ✅
+  Suíte: **90 arquivos** (inclui homologação §487–§495 executável —
+  lote 701–710, decisão #71: 34 assets 0 reprovados, gate §631 ok). Onda 611–720: 681–690 LOD/progressivo ✅
   (decisão #69) · 691–700 quality/captura ✅ (perfis Ultra/Cine §482.1,
   DPR dinâmico §483, captura v2 §506/§329 com LOD alto + supersampling +
   indicador §329.3 — decisão #70; flags as5.quality3d_v2 +
@@ -38,8 +39,8 @@
 3. Build DENTRO do dir do painel; harness da RAIZ; servidor 8901 de public/.
 4. Push: dry-run; 403 → bloco SSH (comprovado 11×). 5. Próximo: seguir o
    mapa da onda 611–720 (doc 18 do projeto Claude) a partir do lote
-   701–710 (homologação §487–§495 + gate §631); decisões a partir de
-   **#71**.
+   711–720 (validação 1-por-1 + entrega final da onda); decisões a
+   partir de **#72**.
 
 ## Pendências (Jhony)
 
