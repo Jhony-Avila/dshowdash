@@ -294,6 +294,11 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remontagens]);
 
+  // lote 661-670 (§432): sinais do pacote de animações (declarados antes
+  // do efeito de estado que os consome)
+  const [sinalAnim, setSinalAnim] = useState(0);
+  const [animsRenderer, setAnimsRenderer] = useState<string[]>([]);
+
   // estado do DRAFT + personagem (auto ou override) → renderer
   useEffect(() => {
     const r = refR.current;
@@ -317,18 +322,34 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
       refTentativa.current = 0;
       setPendencias(res.pendencias.length);
       telemetria('p3d_aplicou', { personagem, ms: Math.round(performance.now() - t0) }); // §290
+      // lote 661-670 (§432): clipes REAIS disponíveis (inclui o pacote UAL)
+      setAnimsRenderer((r as unknown as { animacoesDisponiveis?: () => string[] }).animacoesDisponiveis?.() ?? []);
       if (apresentando) return; // coreografia §174 no comando
       r.definirCamera({ modo: cameraModo, distancia: refCam.current.dist, elevacao: refCam.current.elev });
       // personagem novo pode não ter a animação atual → volta ao Idle
       void r.tocarAnimacao({ id: movReduzido ? 'nenhum' : animacao });
     });
-  }, [estado, personagem, fase, cameraModo, animacao, movReduzido, apresentando, sinalRetry]);
+  }, [estado, personagem, fase, cameraModo, animacao, movReduzido, apresentando, sinalRetry, sinalAnim]);
+
+  // lote 661-670 (§432/§436, flag as5.animacao3d): pacote UAL para bases
+  // ubc-v1 — publicado por publicar-animacoes.mjs; 404 degrada §481
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    const url = flag('as5.animacao3d') && rigAtualEhUbc
+      ? '/assets/avatars/3d/animacoes/ual_basico/pacote.glb'
+      : null;
+    void (refR.current as unknown as { definirPacoteAnimacoes?: (u: string | null) => Promise<void> })
+      ?.definirPacoteAnimacoes?.(url)
+      ?.then(() => setSinalAnim((n) => n + 1)); // re-lê os clipes disponíveis
+  }, [fase, personagem, rigAtualEhUbc]);
 
   const animacoesDoAtual = useMemo(() => {
     const doIndice = indice.find((p) => p.slug === personagem)?.animacoes ?? [];
-    const destaque = ANIMACOES_DESTAQUE.filter((a) => doIndice.includes(a));
-    return destaque.length ? destaque.slice(0, 6) : doIndice.slice(0, 6);
-  }, [indice, personagem]);
+    // §432: clipes do renderer (pacote UAL anexado) somam ao índice
+    const todos = [...new Set([...doIndice, ...animsRenderer])];
+    const destaque = ANIMACOES_DESTAQUE.filter((a) => todos.includes(a));
+    return destaque.length ? destaque.slice(0, 6) : todos.slice(0, 6);
+  }, [indice, personagem, animsRenderer]);
 
   // mega 17: prefetch oportunista no hover do chip
   const precarregar = useCallback((slug: string) => {
@@ -892,7 +913,21 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   return (
     <div ref={refWrap} className="avst5-p3d" data-teste="palco-3d"
       data-apresentando={apresentando || undefined} data-tela-cheia={telaCheia || undefined}>
-      <div ref={refAlvo} className="avst5-p3d-tela" aria-label="Palco 3D (prévia)" />
+      {/* lote 661-670 (§439): olhar segue o cursor — amplitude limitada,
+          suave, desliga em movimento reduzido e volta ao centro ao sair */}
+      <div ref={refAlvo} className="avst5-p3d-tela" aria-label="Palco 3D (prévia)"
+        onMouseMove={(e) => {
+          if (!flag('as5.animacao3d') || movReduzido || fase !== 'pronto') return;
+          const caixa = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          const nx = ((e.clientX - caixa.left) / Math.max(1, caixa.width)) * 2 - 1;
+          const ny = ((e.clientY - caixa.top) / Math.max(1, caixa.height)) * 2 - 1;
+          (refR.current as unknown as { definirOlhar?: (x: number | null, y: number | null) => void })
+            ?.definirOlhar?.(nx, ny);
+        }}
+        onMouseLeave={() => {
+          (refR.current as unknown as { definirOlhar?: (x: number | null, y: number | null) => void })
+            ?.definirOlhar?.(null, null); // §439: retorna ao centro
+        }} />
       {fase === 'pronto' && (<>
         <div className="avst5-p3d-personagens" role="radiogroup" aria-label="Personagem da prévia 3D">
           <button type="button" role="radio" aria-checked={override === null}

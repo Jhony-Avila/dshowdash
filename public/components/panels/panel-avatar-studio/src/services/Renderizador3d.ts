@@ -36,6 +36,8 @@ import { montarPersonagem } from './Assembler3d'; // lote 621-630 (§406)
 import type { ResultadoMontagem } from './Assembler3d';
 import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
 import { aplicarPipelineCores, descartarMateriais } from './Materiais3d'; // lote 641-650 (§418-§421)
+import { MaquinaAnimacao, alvoOlhar, carregarPacoteAnimacoes } from './Animacoes3d'; // lote 661-670 (§432-§439)
+import type { PacoteAnimacoes } from './Animacoes3d';
 
 export interface OpcoesRenderizador3d {
   /** decide o SLUG publicado a partir do estado (DI — default: manequim) */
@@ -116,6 +118,16 @@ export class Renderizador3d implements RenderizadorAvatar {
   // lote 651–660 (§412–§414, flag as5.morfos3d no CALLER): morfos
   // estruturais via ESCALA do personagem — null/neutro = escala 1
   private corpo3d: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null } | null = null;
+  // ── lote 661–670 (§432–§439, flag as5.animacao3d no CALLER) ───────
+  // pacote de clipes EXTERNO (UAL §436 — mesmo rig = reuso direto);
+  // null = comportamento anterior byte a byte (clipes do GLB ou idle)
+  private pacoteAnim: PacoteAnimacoes | null = null;
+  private urlPacoteAnim: string | null = null;
+  /** máquina §433 — captura nunca é quebrada por emote */
+  readonly maquinaAnim = new MaquinaAnimacao();
+  // §439: olhar segue o cursor com amplitude limitada e SUAVIZAÇÃO
+  private olharAlvo: { guinada: number; arfagem: number } = { guinada: 0, arfagem: 0 };
+  private olharAtual: { guinada: number; arfagem: number } = { guinada: 0, arfagem: 0 };
   // mega 82 (§444): aura 3D — anel additive na cor do avatar
   private aura3d: THREE.Mesh | null = null;
   // lote 131–140 (§426–§431): SOCKETS — props procedurais presos aos
@@ -311,6 +323,9 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   async tocarAnimacao(pedido: PedidoAnimacao): Promise<void> {
+    // §433: a máquina controla a troca — durante a CAPTURA nada entra
+    // (emote não quebra o frame §508); recusa é silenciosa e segura
+    if (!this.maquinaAnim.ir(pedido.id === 'nenhum' ? 'pose' : 'emote')) return;
     this.idleAtivo = pedido.id !== 'nenhum';
     if (!this.mixer) return; // sem clipes no GLB → idle procedural decide
     if (pedido.id === 'nenhum') {
@@ -348,6 +363,9 @@ export class Renderizador3d implements RenderizadorAvatar {
     if (!this.renderer || !this.cena || !this.camera) throw new Error('capturar() antes de montar()');
     if (this.contextoPerdido) throw new Error('contexto WebGL perdido — aguarde a recuperação (mega 41)');
     const estava = this.pausado;
+    // §433: estado CAPTURA — emotes pedidos durante o frame são recusados
+    const estadoAntes = this.maquinaAnim.estado;
+    this.maquinaAnim.ir('captura');
     if (opcoes.deterministica !== false) this.pausado = true; // §508
     // mega 32: transparente HONRADO — só o personagem atravessa o frame
     // (background nulo + chão/grade ocultos; canvas nasceu com alpha:true)
@@ -379,6 +397,8 @@ export class Renderizador3d implements RenderizadorAvatar {
       this.renderer.render(this.cena, this.camera); // não deixa frame vazado
     }
     this.pausado = estava;
+    // §433: sai da captura de volta ao estado anterior (idle/pose)
+    this.maquinaAnim.ir(estadoAntes === 'pose' ? 'pose' : 'idle');
     return { dataUri, largura: opcoes.largura, altura: opcoes.altura };
   }
 
@@ -906,6 +926,7 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   private async carregarPersonagem(slug: string): Promise<void> {
+    this.maquinaAnim.ir('carregando'); // §433
     this.manifest = await carregarManifest3d(slug, this.opcoes.basePersonagens);
     const url = urlDoLod(this.manifest, this.tierEfetivo(), this.opcoes.basePersonagens);
     const gltf = await this.gltfDe(url); // parse fresco — cena exclusiva do palco
@@ -950,11 +971,64 @@ export class Renderizador3d implements RenderizadorAvatar {
     // megas 625-626 (§406): PARTES no esqueleto da base — só quando há
     // partes pedidas E a base é do rig ubc-v1; [] = zero mudança (§651)
     await this.montarPartes3d();
+    // lote 661-670 (§432): pacote externo entra DEPOIS do rebind — o
+    // esqueleto final é um só e o clipe move base+cabelo+barba+roupas
+    this.anexarPacoteExterno();
+    this.maquinaAnim.ir('idle'); // §433: personagem pronto
     this.atualizarSombras(); // mega 79: castShadow no personagem novo
     this.aplicarTinta();     // mega 81: tinta sobrevive à troca/LOD
     this.aplicarCorpo3d();   // lote 651-660: morfos §414 sobrevivem à troca/LOD
     this.aplicarProps();     // lote 131: props seguem o personagem novo
     this.definirCamera(this.cameraAtual); // preserva órbita/retrato no reload §528
+  }
+
+  /** lote 661–670 (§432/§436): pacote de clipes EXTERNO (UAL) — mesmo
+   *  rig ubc-v1, tracks por NOME de bone = reuso direto. null volta ao
+   *  comportamento anterior byte a byte. O CALLER decide a flag
+   *  (as5.animacao3d) — aqui é só o mecanismo. Erro degrada §481. */
+  async definirPacoteAnimacoes(url: string | null): Promise<void> {
+    if (url === this.urlPacoteAnim) return;
+    this.urlPacoteAnim = url;
+    if (!url) {
+      this.pacoteAnim = null;
+      if (this.slugAtual) await this.carregarPersonagem(this.slugAtual);
+      return;
+    }
+    try {
+      this.pacoteAnim = await carregarPacoteAnimacoes(url);
+    } catch {
+      this.pacoteAnim = null; // §481: pacote indisponível não derruba o palco
+      return;
+    }
+    this.anexarPacoteExterno();
+  }
+
+  /** Anexa os clipes do pacote quando o GLB do personagem NÃO traz os
+   *  próprios (§432 "mapear"): mixer novo na raiz montada — base e partes
+   *  compartilham o esqueleto pós-rebind, então o clipe veste tudo. */
+  private anexarPacoteExterno(): void {
+    if (!this.pacoteAnim || !this.personagem) return;
+    if (this.manifest?.rig !== 'ubc-v1') return; // pacote é do rig ubc-v1
+    if (this.clipes.size) return; // clipes do próprio GLB têm prioridade
+    this.mixer = new THREE.AnimationMixer(this.personagem);
+    for (const [nome, clipe] of this.pacoteAnim.clipes) this.clipes.set(nome, clipe);
+    const idle = this.clipes.get('Idle') ?? [...this.clipes.values()][0];
+    if (idle && this.idleAtivo) {
+      this.acaoAtual = this.mixer.clipAction(idle);
+      this.acaoAtual.play();
+    }
+  }
+
+  /** §439: cursor normalizado (-1..1) → alvo do olhar; null = centro.
+   *  O CALLER desliga em prefers-reduced-motion (flag as5.animacao3d). */
+  definirOlhar(nx: number | null, ny: number | null): void {
+    this.olharAlvo = alvoOlhar(nx, ny);
+  }
+
+  /** O clipe atual anima o Head? (sem isso o olhar acumularia rotação) */
+  private clipeAtualMoveHead(): boolean {
+    const c = this.acaoAtual?.getClip();
+    return !!c && c.tracks.some((t) => t.name.split('.')[0] === 'Head');
   }
 
   /** lote 621–630 (§406): define as partes 3D e remonta o personagem.
@@ -1091,7 +1165,32 @@ export class Renderizador3d implements RenderizadorAvatar {
       };
       soma('Spine', Math.sin(t * 1.4) * 0.02 * k, 0); // respiração §440
       soma('Chest', Math.sin(t * 1.4 + 0.4) * 0.016 * k, 0);
+      // lote 661-670 (§441): rig ubc-v1 respira de verdade — peito/ombros
+      // (nomes legados acima seguem cobrindo androide/manequim)
+      soma('spine_02', Math.sin(t * 1.4) * 0.02 * k, 0);
+      soma('spine_03', Math.sin(t * 1.4 + 0.4) * 0.016 * k, 0);
       soma('Head', Math.sin(t * 0.7) * 0.018 * k, Math.sin(t * 0.5) * 0.012 * k); // §441
+    }
+    // lote 661-670 (§439): OLHAR — suaviza rumo ao alvo do cursor e
+    // aplica no Head APÓS idle/mixer/vida. Só aplica quando alguém repõe
+    // o Head por frame (idle, vida, ou clipe com track de Head) ou quando
+    // ninguém anima (repõe aqui) — rotação nunca ACUMULA.
+    this.olharAtual.guinada += (this.olharAlvo.guinada - this.olharAtual.guinada) * 0.08;
+    this.olharAtual.arfagem += (this.olharAlvo.arfagem - this.olharAtual.arfagem) * 0.08;
+    if (Math.abs(this.olharAtual.guinada) > 0.001 || Math.abs(this.olharAtual.arfagem) > 0.001) {
+      const head = this.bones.get('Head');
+      const idleRepoe = this.idleAtivo && !this.mixer;
+      const vidaRepoe = !!this.vida && !this.mixer && !this.idleAtivo;
+      const clipeRepoe = !!this.mixer && !!this.acaoAtual && this.clipeAtualMoveHead();
+      const ninguemAnima = !this.mixer && !this.idleAtivo && !this.vida;
+      if (head && (idleRepoe || vidaRepoe || clipeRepoe || ninguemAnima)) {
+        if (ninguemAnima) {
+          const base = this.poseBase.get('Head');
+          if (base) head.quaternion.copy(base);
+        }
+        head.rotateY(this.olharAtual.guinada);
+        head.rotateX(this.olharAtual.arfagem);
+      }
     }
     // megas 264/269 (§444–§446): partículas em DERIVA ascendente com
     // reciclagem no topo — determinístico (base + relógio, nunca random)

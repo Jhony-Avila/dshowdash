@@ -67,6 +67,7 @@ const PADROES: Record<string, boolean> = {
   'as5.materiais3d': true,        // lote 641–650 — Material Manager §419 + canais §73→3D (§420–§421)
   'as5.cabelo3d': true,           // lote 651–660 — barba como slot próprio §425 + combinações cabelo+barba + famílias §423
   'as5.morfos3d': true,           // lote 651–660 — morfos estruturais §412–§414 via escala (tipo §102 + fino §102.2 no 3D)
+  'as5.animacao3d': true,         // lote 661–670 — animation manager §432 + máquina §433 + pacote UAL §436 + olhar §439
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

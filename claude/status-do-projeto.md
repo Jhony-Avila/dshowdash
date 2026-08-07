@@ -12,8 +12,10 @@
   §415.2) · 641–650 materiais §418–§421 (Material Manager §419, canais
   §73→3D §420–§421, decisão #65) · 651–660 cabelo/barba/morfos (barba
   combinável §425, famílias §423, morfos estruturais via escala §412–§414,
-  decisão #66). Flags: as5.assembler3d · as5.roupas3d · as5.materiais3d ·
-  as5.cabelo3d · as5.morfos3d. Suíte: **85 arquivos**.
+  decisão #66) · 661–670 animação (manager §432, máquina §433, pacote
+  UAL §436, olhar §439, decisão #67). Flags: as5.assembler3d ·
+  as5.roupas3d · as5.materiais3d · as5.cabelo3d · as5.morfos3d ·
+  as5.animacao3d. Suíte: **86 arquivos**.
 - Esta onda ESGOTA o trilho A: i18n cobertura §296 · foto entrada §321 ·
   foto pro2 §335–371 · conjuntos §72.1/.3 · criação fina §102.2 + borda
   §340–341 · palco/som v3 §176.1/§178.2/§157.4 · infra v3 §268/§277/
@@ -29,7 +31,9 @@
 3. Build DENTRO do dir do painel; harness da RAIZ; servidor 8901 de public/.
 4. Push: dry-run; 403 → bloco SSH (comprovado 11×). 5. Próximo: seguir o
    mapa da onda 611–710 (doc 18 do projeto Claude) a partir do lote
-   661–670 (animação §432–§436); decisões a partir de **#67**.
+   671–680 (LOD/progressivo §461–§478); decisões a partir de **#68**.
+   Pendente do bloco 669: publicar o pacote UAL (consulta de clipes sai
+   no próprio bloco).
 
 ## Pendências (Jhony)
 

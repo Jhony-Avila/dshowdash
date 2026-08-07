@@ -163,6 +163,23 @@
   idêntico; expressivos (piscar §440) ficam na animação, lote 661+.
   Sobrancelhas: já cobertas pelo canal cabelo (materiais MI_Hair da base).
 
+- **#67 (2026-08-07) — Animação 3D (lote 661–670)**: retargeting §436 é
+  REUSO DIRETO — a UAL usa o MESMO rig ubc-v1 das bases, então os tracks
+  aplicam por nome de bone, sem pipeline de conversão (validação §436.1 =
+  suíte). Pacotes de clipes = GLB SLIM (esqueleto+animações, sem malhas —
+  publicar-animacoes.mjs); root motion §437 removido no CARREGAMENTO
+  (fonte preservada). Máquina §433 com o estado restritivo na CAPTURA
+  (emote nunca quebra o frame §508); pose é persistente por construção.
+  §439 olhar IMPLEMENTADO (head bone segue o cursor: amplitude limitada,
+  suavizado, desliga em reduced-motion/flag off, volta ao centro; nunca
+  acumula rotação — só aplica quando idle/vida/clipe repõem o Head ou
+  repõe sozinho). PISCAR §440 fica como pendência de ASSET: o farm CC0
+  não tem morph targets nem eye bones — entra quando houver asset com
+  blendshapes (registrado no lugar de um fake). §441 completada no rig
+  ubc: spine_02/03 respiram (nomes legados seguem p/ androide/manequim).
+  Pacote UAL: publicação em bloco de servidor (consulta de clipes + 
+  curadoria) — o palco degrada §481 até lá.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
