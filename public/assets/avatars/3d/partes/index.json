@@ -1,0 +1,90 @@
+{
+  "versao": 1,
+  "gerado_por": "gerar-indice-3d.mjs",
+  "personagens": [
+    {
+      "slug": "cab_barba",
+      "nome": "Barba",
+      "tipo": "parte_barba",
+      "rig": "ubc-v1",
+      "thumb": "cab_barba/thumb.webp",
+      "preview": "cab_barba/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1034,
+        "lod1": 1034,
+        "lod2": 1034
+      }
+    },
+    {
+      "slug": "cab_coque",
+      "nome": "Coque",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "thumb": "cab_coque/thumb.webp",
+      "preview": "cab_coque/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 3284,
+        "lod1": 3284,
+        "lod2": 3284
+      }
+    },
+    {
+      "slug": "cab_longo",
+      "nome": "Longo",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "thumb": "cab_longo/thumb.webp",
+      "preview": "cab_longo/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 2906,
+        "lod1": 2906,
+        "lod2": 2906
+      }
+    },
+    {
+      "slug": "cab_raspado",
+      "nome": "Raspado",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "thumb": "cab_raspado/thumb.webp",
+      "preview": "cab_raspado/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 830,
+        "lod1": 830,
+        "lod2": 830
+      }
+    },
+    {
+      "slug": "cab_raspado_f",
+      "nome": "Raspado F",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "thumb": "cab_raspado_f/thumb.webp",
+      "preview": "cab_raspado_f/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 830,
+        "lod1": 830,
+        "lod2": 830
+      }
+    },
+    {
+      "slug": "cab_repartido",
+      "nome": "Repartido",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "thumb": "cab_repartido/thumb.webp",
+      "preview": "cab_repartido/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1301,
+        "lod1": 1301,
+        "lod2": 1301
+      }
+    }
+  ]
+}

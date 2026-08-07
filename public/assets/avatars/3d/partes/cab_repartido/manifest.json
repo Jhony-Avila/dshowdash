@@ -1,0 +1,30 @@
+{
+  "id": "cab_repartido",
+  "tipo": "parte_cabelo",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:818bed4c94956d1c28eead684efaaf5ff6ac922ac06061cb2df6d5dcb66ca73c",
+    "lod1": "sha256:3454f00184088c278ed88cee9f41bbb90a2db151ca9b9bbfb214778794558398",
+    "lod2": "sha256:f428ef7b2fbe2d12f65861efc733c90c2fe9ea8be245e325574ab4246d26c061"
+  },
+  "triangulos": {
+    "lod0": 1301,
+    "lod1": 1301,
+    "lod2": 1301
+  },
+  "animacoes": [],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "ubc-standard-v1",
+    "comprovante": "storage/assets-3d-fonte/ubc-standard-v1/extraido/Universal Base Characters[Standard]/License_Standard.txt"
+  },
+  "origem": "ubc-standard-v1",
+  "fonte_original": "Hair_SimpleParted.gltf",
+  "criado_em": "2026-08-07"
+}
