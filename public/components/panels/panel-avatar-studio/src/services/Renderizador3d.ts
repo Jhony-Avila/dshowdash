@@ -55,6 +55,15 @@ export interface OpcoesRenderizador3d {
 
 const FUNDO_ESTUDIO = '#0d1017';
 
+/** mega 693 (§483): passo SUAVE do DPR dinâmico — função PURA (testável).
+ *  FPS baixo contínuo → reduz 15% por janela (piso 70% da base); folga →
+ *  recupera gradualmente até a base. Nunca muda de forma abrupta. */
+export function passoDpr(fpsMedia: number, atual: number, base: number): number {
+  if (fpsMedia > 0 && fpsMedia < 28) return Math.max(base * 0.7, atual * 0.85);
+  if (fpsMedia > 50) return Math.min(base, atual / 0.85);
+  return atual;
+}
+
 export class Renderizador3d implements RenderizadorAvatar {
   readonly id = '3d' as const;
 
@@ -127,6 +136,11 @@ export class Renderizador3d implements RenderizadorAvatar {
   private geracaoCarga = 0;
   // §470/§462/§475: progressivo lod2-primeiro + LOD por tela + IndexedDB
   private progressivoAtivo = false;
+  // ── lote 691–700 (§482–§483, flag as5.quality3d_v2 no CALLER) ─────
+  // §483: DPR dinâmico — reduz suave quando o FPS cai contínuo
+  private dprDinamico = false;
+  private dprBase = 1;
+  private dprAtual = 1;
   // ── lote 661–670 (§432–§439, flag as5.animacao3d no CALLER) ───────
   // pacote de clipes EXTERNO (UAL §436 — mesmo rig = reuso direto);
   // null = comportamento anterior byte a byte (clipes do GLB ou idle)
@@ -200,7 +214,9 @@ export class Renderizador3d implements RenderizadorAvatar {
       throw new Error('Renderizador3d.montar exige um HTMLElement real (canvas WebGL não vive em innerHTML)');
     }
     this.renderer = new THREE.WebGLRenderer({ antialias: this.antialias, alpha: true, preserveDrawingBuffer: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.pixelRatioMax)); // §402
+    this.dprBase = Math.min(window.devicePixelRatio || 1, this.pixelRatioMax);
+    this.dprAtual = this.dprBase;
+    this.renderer.setPixelRatio(this.dprBase); // §402
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     // mega 78 (§458): tone mapping cinematográfico (exposição ajustável)
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -333,9 +349,12 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   async tocarAnimacao(pedido: PedidoAnimacao): Promise<void> {
-    // §433: a máquina controla a troca — durante a CAPTURA nada entra
-    // (emote não quebra o frame §508); recusa é silenciosa e segura
-    if (!this.maquinaAnim.ir(pedido.id === 'nenhum' ? 'pose' : 'emote')) return;
+    // §433: durante a CAPTURA nada muda (emote não quebra o frame §508)
+    if (this.maquinaAnim.estado === 'captura') return;
+    // fora da captura a intenção do usuário SEMPRE vale — em especial o
+    // 'nenhum' (§297): descartá-lo durante 'carregando' deixava o idle
+    // procedural ligado p/ sempre (bug pego pelo teste de reduced-motion)
+    this.maquinaAnim.ir(pedido.id === 'nenhum' ? 'pose' : 'emote');
     this.idleAtivo = pedido.id !== 'nenhum';
     if (!this.mixer) return; // sem clipes no GLB → idle procedural decide
     if (pedido.id === 'nenhum') {
@@ -389,16 +408,40 @@ export class Renderizador3d implements RenderizadorAvatar {
       if (this.grade) this.grade.visible = false;
       if (this.chaoSombra) this.chaoSombra.visible = false; // recorte limpo
     }
+    // lote 691-700 (§506): câmera ESPECÍFICA da captura (aplica/restaura)
+    const cameraAntes = this.cameraAtual;
+    if (opcoes.camera) this.definirCamera(opcoes.camera);
+    // §506 supersampling: renderiza no DOBRO e reduz — AA de captura
+    const fator = opcoes.superAmostra === 2 ? 2 : 1;
     const tamanhoAntes = new THREE.Vector2();
     this.renderer.getSize(tamanhoAntes);
-    this.renderer.setSize(opcoes.largura, opcoes.altura);
+    this.renderer.setSize(opcoes.largura * fator, opcoes.altura * fator);
     this.camera.aspect = opcoes.largura / opcoes.altura;
     this.camera.updateProjectionMatrix();
     this.renderer.render(this.cena, this.camera);
-    const dataUri = this.renderer.domElement.toDataURL('image/png');
+    // §506 múltiplos formatos (jpeg/webp p/ derivados §329.2)
+    const mime = opcoes.formato === 'jpeg' ? 'image/jpeg'
+      : opcoes.formato === 'webp' ? 'image/webp' : 'image/png';
+    const q = opcoes.qualidade ?? 0.92;
+    let dataUri: string;
+    if (fator === 2) {
+      const alvo = document.createElement('canvas');
+      alvo.width = opcoes.largura;
+      alvo.height = opcoes.altura;
+      const ctx = alvo.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(this.renderer.domElement, 0, 0, opcoes.largura, opcoes.altura);
+        dataUri = alvo.toDataURL(mime, q);
+      } else {
+        dataUri = this.renderer.domElement.toDataURL(mime, q);
+      }
+    } else {
+      dataUri = this.renderer.domElement.toDataURL(mime, q);
+    }
     this.renderer.setSize(tamanhoAntes.x, tamanhoAntes.y);
     this.camera.aspect = tamanhoAntes.x / Math.max(1, tamanhoAntes.y);
     this.camera.updateProjectionMatrix();
+    if (opcoes.camera) this.definirCamera(cameraAntes); // §506 restaura
     if (opcoes.transparente) {
       this.cena.background = fundoAntes;
       if (this.chao) this.chao.visible = chaoAntes;
@@ -938,6 +981,24 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.progressivoAtivo = v;
   }
 
+  /** mega 693 (§483): DPR dinâmico — caller decide (as5.quality3d_v2). */
+  definirDprDinamico(v: boolean): void {
+    this.dprDinamico = v;
+    if (!v && this.renderer && this.dprAtual !== this.dprBase) {
+      this.dprAtual = this.dprBase;
+      this.renderer.setPixelRatio(this.dprBase);
+    }
+  }
+
+  /** mega 692 (§482.1): teto de DPR do perfil (ultra=3, cine=3). */
+  definirDprMax(teto: number): void {
+    this.pixelRatioMax = Math.min(3, Math.max(1, teto));
+    if (!this.renderer) return;
+    this.dprBase = Math.min(window.devicePixelRatio || 1, this.pixelRatioMax);
+    this.dprAtual = this.dprBase;
+    this.renderer.setPixelRatio(this.dprBase);
+  }
+
   /** hash §477 do LOD efetivo (invalidação do cache §475 por conteúdo). */
   private hashDoLod(m: ManifestPersonagem3d): string | null {
     const lod = lodPorQualidade(this.tierEfetivo());
@@ -1214,6 +1275,17 @@ export class Renderizador3d implements RenderizadorAvatar {
         const media = this.fpsSoma / this.fpsN;
         this.fpsMedia = media;
         this.fpsSoma = 0; this.fpsN = 0;
+        // mega 693 (§483): DPR dinâmico SUAVE — último recurso quando o
+        // FPS cai contínuo (depois do tier); recupera gradualmente.
+        // SÓ em qualidade AUTO (mesma regra do tier adaptativo §528):
+        // qualidade fixa é escolha do usuário — determinística.
+        if (this.dprDinamico && this.renderer && this.qualidade === 'auto') {
+          const novo = passoDpr(media, this.dprAtual, this.dprBase);
+          if (Math.abs(novo - this.dprAtual) > 0.01) {
+            this.dprAtual = novo;
+            this.renderer.setPixelRatio(novo);
+          }
+        }
         if (this.qualidade === 'auto') {
           if (media < 30 && this.tierAuto !== 'economico') {
             this.tierAuto = 'economico';

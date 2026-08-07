@@ -175,6 +175,12 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number; drawCalls?: number } | null>(null);
   // lote 681-690 (§472, flag as5.progressivo3d): fase amigável da carga
   const [faseCarga, setFaseCarga] = useState<string | null>(null);
+  const refFaseCarga = useRef<string | null>(null);
+  refFaseCarga.current = faseCarga;
+  // lote 691-700 (§482.1, flag as5.quality3d_v2): perfis Ultra/Cine
+  const [perfil, setPerfil] = useState<'padrao' | 'ultra' | 'cine'>('padrao');
+  // lote 691-700 (§329.3, flag as5.captura3d_v2): indicador da captura
+  const [faseCaptura, setFaseCaptura] = useState<string | null>(null);
   const [sinalLocal, setSinalLocal] = useState(0);
   const sinalShowcase = sinalApresentar + sinalLocal;
   // megas 226–227 (§175): EDITOR DE SHOWCASE — roteiro ativo comanda a
@@ -507,7 +513,36 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     const r = refR.current;
     if (!r) return;
     try {
-      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true, transparente });
+      let foto;
+      if (flag('as5.captura3d_v2')) {
+        // lote 691-700 (§329.2): LOD ALTO + supersampling, com o
+        // indicador §329.3; tier volta ao que era no fim
+        const tierAntes = qualidade;
+        const precisaAlto = qualidade !== 'alto';
+        if (precisaAlto) {
+          setFaseCaptura('Preparando personagem…');
+          r.definirQualidade('alto');
+          const t0 = Date.now();
+          await new Promise<void>((res) => {
+            const iv = setInterval(() => {
+              const assentou = refFaseCarga.current === null || refFaseCarga.current === 'pronto';
+              if ((assentou && Date.now() - t0 > 1500) || Date.now() - t0 > 12000) {
+                clearInterval(iv);
+                res();
+              }
+            }, 200);
+          });
+        }
+        setFaseCaptura('Renderizando…');
+        foto = await r.capturar({
+          largura: 960, altura: 960, deterministica: true, transparente,
+          superAmostra: 2, // §506: AA de captura
+        });
+        setFaseCaptura('Finalizando imagem…');
+        if (precisaAlto) r.definirQualidade(tierAntes);
+      } else {
+        foto = await r.capturar({ largura: 960, altura: 960, deterministica: true, transparente });
+      }
       telemetria('p3d_capturou', { personagem: refPersonagem.current, transparente }); // §290
       const comM = await comMarca(foto.dataUri, 960);
       setCapturas((c2) => [comM, ...c2].slice(0, 6)); // mega 101: galeria local
@@ -515,8 +550,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
       a.href = comM;
       a.download = 'dshow-avatar-3d-960.png';
       a.click();
-    } catch { /* captura é cosmética — nunca derruba o palco */ }
-  }, [transparente, comMarca]);
+    } catch { /* captura é cosmética — nunca derruba o palco */ } finally {
+      setFaseCaptura(null);
+    }
+  }, [transparente, comMarca, qualidade]);
 
   // mega 33: TURNTABLE 360° — 8 azimutes §508 numa folha 4×2 (1920×960)
   const gerarTurntable = useCallback(async () => {
@@ -709,6 +746,17 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     if (qualidade !== 'auto') setTierAtual(qualidade);
     try { localStorage.setItem(CHAVE_QUALIDADE, qualidade); } catch { /* sem storage */ }
   }, [qualidade, fase]);
+
+  // lote 691-700 (§482–§483, flag as5.quality3d_v2): perfil → DPR máximo
+  // (ultra/cine = 3) + DPR DINÂMICO suave quando o FPS cai contínuo
+  useEffect(() => {
+    if (fase !== 'pronto' || !flag('as5.quality3d_v2')) return;
+    const r = refR.current as unknown as {
+      definirDprMax?: (t: number) => void; definirDprDinamico?: (v: boolean) => void;
+    };
+    r?.definirDprMax?.(perfil === 'padrao' ? 2 : 3); // §482.1
+    r?.definirDprDinamico?.(true); // §483
+  }, [perfil, fase, personagem]);
 
   // mega 31: CENAS do palco — salvar/aplicar/excluir o setup completo
   const salvarCenaAtual = useCallback(() => {
@@ -1109,10 +1157,25 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           </span>
           <span role="radiogroup" aria-label="Qualidade (§423)" data-teste="p3d-qualidade">
             {(['auto', 'alto', 'medio', 'economico'] as const).map((q2) => (
-              <button key={q2} type="button" role="radio" aria-checked={qualidade === q2}
-                className={`avst5-p3d-chip${qualidade === q2 ? ' avst5-p3d-chip-on' : ''}`}
-                onClick={() => setQualidade(q2)}>
+              <button key={q2} type="button" role="radio"
+                aria-checked={qualidade === q2 && perfil === 'padrao'}
+                className={`avst5-p3d-chip${qualidade === q2 && perfil === 'padrao' ? ' avst5-p3d-chip-on' : ''}`}
+                onClick={() => { setQualidade(q2); setPerfil('padrao'); }}>
                 {q2 === 'auto' ? 'Auto' : q2 === 'alto' ? 'Alta' : q2 === 'medio' ? 'Média' : 'Econ.'}
+              </button>
+            ))}
+            {/* lote 691-700 (§482.1): perfis ULTRA e CINEMATOGRÁFICO */}
+            {flag('as5.quality3d_v2') && (['ultra', 'cine'] as const).map((pf) => (
+              <button key={pf} type="button" role="radio" aria-checked={perfil === pf}
+                className={`avst5-p3d-chip${perfil === pf ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-perfil-${pf}`}
+                title={pf === 'ultra' ? 'LOD alto + DPR 3 (§482.1)' : 'Ultra + pós-processamento real (§482.1)'}
+                onClick={() => {
+                  setPerfil(pf);
+                  setQualidade('alto');
+                  if (pf === 'cine') setPosFx(true);
+                }}>
+                {pf === 'ultra' ? 'Ultra' : 'Cine'}
               </button>
             ))}
           </span>
@@ -1362,8 +1425,15 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             {typeof hud.drawCalls === 'number' && <> · {hud.drawCalls}dc</>}
           </div>
         )}
+        {/* mega 695 (§329.3): indicador de progresso da CAPTURA alta */}
+        {faseCaptura && (
+          <div className="avst5-p3d-carga" data-teste="p3d-captura-fase" role="status">
+            <LoaderCircle size={10} aria-hidden className="avst-girando" />
+            {faseCaptura}
+          </div>
+        )}
         {/* mega 685 (§472): estado REAL da carga, discreto e amigável */}
-        {faseCarga && faseCarga !== 'pronto' && (
+        {!faseCaptura && faseCarga && faseCarga !== 'pronto' && (
           <div className="avst5-p3d-carga" data-teste="p3d-carga" role="status">
             <LoaderCircle size={10} aria-hidden className="avst-girando" />
             {faseCarga === 'metadados' ? 'Buscando informações…'

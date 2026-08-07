@@ -18,10 +18,11 @@
   horizontal, cores junto ao canvas — decisão #68). Flags:
   as5.assembler3d · as5.roupas3d · as5.materiais3d · as5.cabelo3d ·
   as5.morfos3d · as5.animacao3d · as5.classico_aaa · as5.progressivo3d.
-  Suíte: **88 arquivos**. Onda 611–720: 681–690 LOD/progressivo ✅
-  (cancelamento §473, lod2-primeiro §470, LOD por tela §462, IndexedDB
-  §475, loading manager §472, draw calls §467 — decisão #69); restam
-  quality/captura (691), homologação (701) e validação (711).
+  Suíte: **89 arquivos**. Onda 611–720: 681–690 LOD/progressivo ✅
+  (decisão #69) · 691–700 quality/captura ✅ (perfis Ultra/Cine §482.1,
+  DPR dinâmico §483, captura v2 §506/§329 com LOD alto + supersampling +
+  indicador §329.3 — decisão #70; flags as5.quality3d_v2 +
+  as5.captura3d_v2); restam homologação (701) e validação (711).
 - Esta onda ESGOTA o trilho A: i18n cobertura §296 · foto entrada §321 ·
   foto pro2 §335–371 · conjuntos §72.1/.3 · criação fina §102.2 + borda
   §340–341 · palco/som v3 §176.1/§178.2/§157.4 · infra v3 §268/§277/
@@ -37,8 +38,8 @@
 3. Build DENTRO do dir do painel; harness da RAIZ; servidor 8901 de public/.
 4. Push: dry-run; 403 → bloco SSH (comprovado 11×). 5. Próximo: seguir o
    mapa da onda 611–720 (doc 18 do projeto Claude) a partir do lote
-   691–700 (quality/captura §482–§483+§506–§509); decisões a partir de
-   **#70**.
+   701–710 (homologação §487–§495 + gate §631); decisões a partir de
+   **#71**.
 
 ## Pendências (Jhony)
 

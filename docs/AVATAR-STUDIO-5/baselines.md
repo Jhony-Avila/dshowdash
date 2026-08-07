@@ -28,7 +28,7 @@ regenerar após cada build; o diff no git É o relatório de regressão).
 - Suíte de navegador/node: **72 arquivos** (rodar-todos) + nucleo.test.
 - Catálogo 2D: **344 itens** em 12 categorias · 30 títulos · 12 coleções.
 - Personagens 3D publicados: **8** (6 legados + base_superhero_m/f do UBC, megas 617-618).
-- Feature flags `as5.*`: **56** (§605 v2 — nova flag = diff aqui; onda 611–720: +assembler3d +roupas3d +materiais3d +cabelo3d +morfos3d +animacao3d +classico_aaa +progressivo3d).
+- Feature flags `as5.*`: **58** (§605 v2 — nova flag = diff aqui; onda 611–720: +assembler3d +roupas3d +materiais3d +cabelo3d +morfos3d +animacao3d +classico_aaa +progressivo3d +quality3d_v2 +captura3d_v2).
 - Chaves de storage conhecidas: **57** locais + IDB (§629):
   - `dshow.avatar.aro.v1`
   - `dshow.avatar.config.v1`

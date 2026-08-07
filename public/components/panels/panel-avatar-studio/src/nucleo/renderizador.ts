@@ -51,6 +51,15 @@ export interface OpcoesCaptura {
   transparente?: boolean;
   /** §508: captura DETERMINÍSTICA (pausa animações antes do frame) */
   deterministica?: boolean;
+  // ── lote 691-700 (§506/§329, flag as5.captura3d_v2 no caller) ──
+  /** §506 supersampling: 2 = renderiza no dobro e reduz (AA de captura) */
+  superAmostra?: 1 | 2;
+  /** §506 múltiplos formatos (padrão png; jpeg/webp p/ derivados §329.2) */
+  formato?: 'png' | 'jpeg' | 'webp';
+  /** qualidade do encoder p/ jpeg/webp (0–1; padrão 0.92) */
+  qualidade?: number;
+  /** §506 câmera específica DA CAPTURA (aplica e restaura) */
+  camera?: EstadoCamera;
 }
 
 export interface CapturaRender {

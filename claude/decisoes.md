@@ -215,6 +215,25 @@
   dev. §476 (CDN/URLs versionadas) é INFRA — pendência registrada p/ o
   Jhony decidir fora do painel. Flag do lote: `as5.progressivo3d`.
 
+- **#70 (2026-08-07) — Quality/Captura (lote 691–700)**: §482.1 perfis
+  ULTRA (LOD alto + DPR 3) e CINE (ultra + pós real) como camada sobre os
+  tiers existentes — perfil não vira tier novo (LODs continuam 0/1/2; o
+  perfil regula DPR/pós); §483 DPR DINÂMICO suave (passoDpr puro: -15%
+  por janela de FPS baixo, piso 70% da base, recuperação gradual — nunca
+  abrupto) como ÚLTIMO recurso depois do tier adaptativo; §506 captura
+  ganha supersampling 2×, formatos png/jpeg/webp, câmera específica com
+  restauração; §507 atendido pelo redimensiona-e-restaura (independe da
+  viewport — offscreen dedicado só se aparecer glitch real); §329.2 a
+  captura v2 FORÇA LOD alto (recarrega, captura com super 2×, devolve o
+  tier) com indicador §329.3; §509 thumbnails ficam no renderer
+  build-time (gerar-thumbs-3d §508 — determinístico, com cache no git);
+  §510 contratos de captura já suportam evolução server-side (dataUri →
+  §325 re-encode no servidor); §484/§485 monitor/painel = HUD dev
+  (fps/tier/△/dc) — suficiente p/ dev, painel completo se o Jhony pedir.
+  §421.1 emblemas/decals: CONTINUA pendência de arte/infra (decals reais
+  exigem UV/atlas; nada de fake). Flags: `as5.quality3d_v2` +
+  `as5.captura3d_v2`.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

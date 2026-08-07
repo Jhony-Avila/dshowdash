@@ -70,6 +70,8 @@ const PADROES: Record<string, boolean> = {
   'as5.animacao3d': true,         // lote 661–670 — animation manager §432 + máquina §433 + pacote UAL §436 + olhar §439
   'as5.classico_aaa': true,       // lote 671–680 — layout AAA do Modo Clássico (briefing complementar; decisão #68); off = layout anterior byte a byte
   'as5.progressivo3d': true,      // lote 681–690 — LOD por tela §462 + lod2-primeiro §470 + IndexedDB §475 + loading manager §472
+  'as5.quality3d_v2': true,       // lote 691–700 — perfis ultra/cine §482.1 + DPR dinâmico §483
+  'as5.captura3d_v2': true,       // lote 691–700 — captura §506/§329: LOD alto + supersampling + formatos + indicador §329.3
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';
