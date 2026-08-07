@@ -1,0 +1,30 @@
+{
+  "id": "rou3d_ranger_f_capuz",
+  "tipo": "parte_roupa",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:f4de1bb69cd0b5929e77aeafb8cded33da5be86479fc560f444a3ee9619bb4c2",
+    "lod1": "sha256:81cfc8d005ed5d7c524db2f94a058e4d09d609703f903f201f130cc9466b63e8",
+    "lod2": "sha256:9e8887da92cdbe1be119534327194b8e82e3facb543b6173d5dd540596796045"
+  },
+  "triangulos": {
+    "lod0": 2136,
+    "lod1": 2136,
+    "lod2": 2136
+  },
+  "animacoes": [],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "outfits-fantasy-v1",
+    "comprovante": "storage/assets-3d-fonte/outfits-fantasy-v1/extraido/Modular Character Outfits - Fantasy[Standard]/License_Standard.txt"
+  },
+  "origem": "outfits-fantasy-v1",
+  "fonte_original": "Female_Ranger_Head_Hood.gltf",
+  "criado_em": "2026-08-07"
+}

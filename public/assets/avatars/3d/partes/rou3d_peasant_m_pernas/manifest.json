@@ -1,0 +1,30 @@
+{
+  "id": "rou3d_peasant_m_pernas",
+  "tipo": "parte_roupa",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:4e919e70fcf0681e4182e8de9ba2c87462d5537a6eb2d03c8a1042a70159d0dc",
+    "lod1": "sha256:5f47b94b2844d9a9bfdfc1e261163d34a4a0197cadb64a9bf8a510b10b754616",
+    "lod2": "sha256:ebfde56fd388bb8aaba47a1a84824580f4eb0736c1de0857d2cfc463c3f2ab9d"
+  },
+  "triangulos": {
+    "lod0": 1112,
+    "lod1": 1112,
+    "lod2": 1112
+  },
+  "animacoes": [],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "outfits-fantasy-v1",
+    "comprovante": "storage/assets-3d-fonte/outfits-fantasy-v1/extraido/Modular Character Outfits - Fantasy[Standard]/License_Standard.txt"
+  },
+  "origem": "outfits-fantasy-v1",
+  "fonte_original": "Male_Peasant_Legs.gltf",
+  "criado_em": "2026-08-07"
+}

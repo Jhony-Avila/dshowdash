@@ -1,0 +1,30 @@
+{
+  "id": "rou3d_ranger_f_ombreira",
+  "tipo": "parte_roupa",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:0f86bc64668a028b286dbc2bd260fd562085df081ecf0bae3c6bb5583252db6e",
+    "lod1": "sha256:91ce59c49b9c50765f3af58f4ee90d67a2318e740932975c58875fadd5ff072d",
+    "lod2": "sha256:bf79dca8fc0506d033a4f6b1a1c5a6777c97d5208dee674002144c147fc8488e"
+  },
+  "triangulos": {
+    "lod0": 1376,
+    "lod1": 1376,
+    "lod2": 1376
+  },
+  "animacoes": [],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "outfits-fantasy-v1",
+    "comprovante": "storage/assets-3d-fonte/outfits-fantasy-v1/extraido/Modular Character Outfits - Fantasy[Standard]/License_Standard.txt"
+  },
+  "origem": "outfits-fantasy-v1",
+  "fonte_original": "Female_Ranger_Acc_Pauldrons.gltf",
+  "criado_em": "2026-08-07"
+}

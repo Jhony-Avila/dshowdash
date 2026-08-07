@@ -1,0 +1,30 @@
+{
+  "id": "rou3d_ranger_f_bracos",
+  "tipo": "parte_roupa",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:9c9366852e1bd9d01eabf17f35b1941dff9f033c70ef581c6d8ecb148de3e72d",
+    "lod1": "sha256:79610070fef5df086d42c82777c6c8599819716da2b5cba6725e78285ef23dd7",
+    "lod2": "sha256:241bcb1d30072d56ea2a493c84da72ac8dd954e779968339a44259523c663b8f"
+  },
+  "triangulos": {
+    "lod0": 8508,
+    "lod1": 8508,
+    "lod2": 7198
+  },
+  "animacoes": [],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "outfits-fantasy-v1",
+    "comprovante": "storage/assets-3d-fonte/outfits-fantasy-v1/extraido/Modular Character Outfits - Fantasy[Standard]/License_Standard.txt"
+  },
+  "origem": "outfits-fantasy-v1",
+  "fonte_original": "Female_Ranger_Arms.gltf",
+  "criado_em": "2026-08-07"
+}

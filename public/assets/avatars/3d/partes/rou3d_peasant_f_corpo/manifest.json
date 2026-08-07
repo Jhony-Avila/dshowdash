@@ -1,0 +1,32 @@
+{
+  "id": "rou3d_peasant_f_corpo",
+  "tipo": "parte_roupa",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:806f35a2ae3b0d6963dc0f49eafa101e02ee10845d657e70dcdf8cdb7dd0ef5f",
+    "lod1": "sha256:81fbe645cfd4d0d0933b58ef35e795c4bf76af3257240a390d4b37bdf3b972c7",
+    "lod2": "sha256:98b5b9b3c37e3c628d057e89784702f9054ed647c46546cb1fb5a52b82c5333d"
+  },
+  "triangulos": {
+    "lod0": 2188,
+    "lod1": 2188,
+    "lod2": 2188
+  },
+  "animacoes": [
+    "Jog_Fwd_Loop"
+  ],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "outfits-fantasy-v1",
+    "comprovante": "storage/assets-3d-fonte/outfits-fantasy-v1/extraido/Modular Character Outfits - Fantasy[Standard]/License_Standard.txt"
+  },
+  "origem": "outfits-fantasy-v1",
+  "fonte_original": "Female_Peasant_Body.gltf",
+  "criado_em": "2026-08-07"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "rou3d_ranger_f_corpo",
+  "tipo": "parte_roupa",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:c460c1c49d35ec1172aa9a7369147604e07761d9b3cad6e49ef4abaeae050a71",
+    "lod1": "sha256:7338f4371b692c44bde23642ded6a39de5071411780a9d33e85dc738350014aa",
+    "lod2": "sha256:5bf8dcfaf09fff8a6837599abc675eb634cd25e6d86528eff420d58dd77a8930"
+  },
+  "triangulos": {
+    "lod0": 4570,
+    "lod1": 4570,
+    "lod2": 4570
+  },
+  "animacoes": [],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "outfits-fantasy-v1",
+    "comprovante": "storage/assets-3d-fonte/outfits-fantasy-v1/extraido/Modular Character Outfits - Fantasy[Standard]/License_Standard.txt"
+  },
+  "origem": "outfits-fantasy-v1",
+  "fonte_original": "Female_Ranger_Body.gltf",
+  "criado_em": "2026-08-07"
+}
