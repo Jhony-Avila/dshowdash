@@ -84,6 +84,7 @@ export async function publicarAsset(opcoes) {
     licencaTipo = 'CC0',
     comprovante = 'storage/assets-3d-fonte/ubc-standard-v1/LICENSE.txt',
     animacoes = null, // null = EXTRAIR do GLB (mega 9); lista = override
+    mascara = null, // megas 631-633 (§415.2): regiões do corpo que a parte oculta
     data = null,
     validar = true,
     log = (m) => console.log(m),
@@ -185,6 +186,7 @@ export async function publicarAsset(opcoes) {
     triangulos: medidas,
     ...(Object.keys(excecoes).length ? { excecoes } : {}),
     animacoes: animacoesFinal,
+    ...(Array.isArray(mascara) && mascara.length ? { mascara } : {}), // §415.2
     licenca: { tipo: licencaTipo, fonte: origem, comprovante },
     origem,
     fonte_original: basename(String(fonte)),
@@ -225,6 +227,9 @@ if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
     animacoes: process.argv.includes('--animacoes')
       ? argumento('animacoes', '').split(',').map((s) => s.trim()).filter(Boolean)
       : null, // default: extrair do GLB
+    mascara: process.argv.includes('--mascara')
+      ? argumento('mascara', '').split(',').map((s) => s.trim()).filter(Boolean)
+      : null, // megas 631-633 (§415.2)
     data: argumento('data', null),
     validar: !process.argv.includes('--sem-validar'),
   }).then(({ pasta, medidas }) => {

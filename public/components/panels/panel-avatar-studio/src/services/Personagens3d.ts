@@ -18,6 +18,8 @@ export interface ManifestPersonagem3d {
   hashes: Record<string, string>;
   triangulos?: Record<string, number>;
   animacoes?: string[];
+  /** megas 631-633 (§415.2): regiões do corpo que a PARTE oculta */
+  mascara?: string[];
 }
 
 /** §423: tier → LOD (auto = medio, DETERMINÍSTICO — nada de sniffing aqui;

@@ -951,7 +951,10 @@ export class Renderizador3d implements RenderizadorAvatar {
       try {
         const m = await carregarManifestParte(slug);
         const gltf = await this.gltfDe(urlDaParte(m, this.tierEfetivo()));
-        partes.push({ id: slug, categoria: categoriaDaParte(m.tipo), cena: gltf.scene });
+        partes.push({
+          id: slug, categoria: categoriaDaParte(m.tipo), cena: gltf.scene,
+          ...(m.mascara?.length ? { mascara: m.mascara } : {}), // §415.2
+        });
       } catch { /* §481: parte indisponível não derruba o palco */ }
     }
     if (!partes.length) return;

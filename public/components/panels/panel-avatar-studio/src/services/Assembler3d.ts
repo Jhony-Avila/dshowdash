@@ -30,6 +30,81 @@ export interface ParteMontavel {
   id: string;
   categoria: 'cabelo' | 'barba' | 'roupa' | 'acessorio';
   cena: THREE.Object3D;
+  /** megas 634–636 (§415.2/§417): regiões do corpo que esta parte OCULTA
+   *  (declaradas no manifest §517) — o assembler mascara a base */
+  mascara?: string[];
+}
+
+// ── megas 634–636 (§415.2/§417): BODY MASKING ───────────────────────
+// A roupa declara as regiões que cobre; o assembler ESCONDE os triângulos
+// da base cuja pele é dominada pelos bones da região (clipping some na
+// raiz — nada de truque de render). Restauração = geometria original
+// guardada em userData (byte-stability: sem roupa, base intocada).
+
+/** Regiões §415.2 → bones do rig ubc-v1 que as dominam. */
+export const REGIOES_UBC: Record<string, string[]> = {
+  torso: ['spine_01', 'spine_02', 'spine_03', 'clavicle_l', 'clavicle_r', 'pelvis'],
+  bracos: ['upperarm_l', 'lowerarm_l', 'upperarm_r', 'lowerarm_r'],
+  maos: [
+    'hand_l', 'hand_r',
+    'index_01_l', 'index_02_l', 'index_03_l', 'middle_01_l', 'middle_02_l', 'middle_03_l',
+    'pinky_01_l', 'pinky_02_l', 'pinky_03_l', 'ring_01_l', 'ring_02_l', 'ring_03_l',
+    'thumb_01_l', 'thumb_02_l', 'thumb_03_l',
+    'index_01_r', 'index_02_r', 'index_03_r', 'middle_01_r', 'middle_02_r', 'middle_03_r',
+    'pinky_01_r', 'pinky_02_r', 'pinky_03_r', 'ring_01_r', 'ring_02_r', 'ring_03_r',
+    'thumb_01_r', 'thumb_02_r', 'thumb_03_r',
+  ],
+  pernas: ['thigh_l', 'calf_l', 'thigh_r', 'calf_r'],
+  pes: ['foot_l', 'ball_l', 'foot_r', 'ball_r'],
+  cabeca: ['Head', 'neck_01'],
+};
+
+/** Aplica as máscaras §415.2 na base: esconde faces cujo TRIO de vértices
+ *  é dominado por bones das regiões cobertas. Devolve faces escondidas.
+ *  Guarda o index original em userData p/ restaurar (idempotente). */
+export function mascararBase(
+  base: THREE.Object3D,
+  regioes: string[],
+  mapaRegioes: Record<string, string[]> = REGIOES_UBC,
+): number {
+  const bonesCobertos = new Set<string>();
+  for (const r of regioes) for (const b of mapaRegioes[r] ?? []) bonesCobertos.add(b);
+  let escondidas = 0;
+  base.traverse((n) => {
+    const malha = n as THREE.SkinnedMesh;
+    if (!malha.isSkinnedMesh) return;
+    const geo = malha.geometry;
+    // restaura o original antes de re-aplicar (troca de roupa = recomeça)
+    if (malha.userData.indexOriginal) geo.setIndex(malha.userData.indexOriginal as THREE.BufferAttribute);
+    if (!bonesCobertos.size) return;
+    const indice = geo.getIndex();
+    const skinIndex = geo.getAttribute('skinIndex') as THREE.BufferAttribute | undefined;
+    const skinWeight = geo.getAttribute('skinWeight') as THREE.BufferAttribute | undefined;
+    if (!indice || !skinIndex || !skinWeight) return;
+    if (!malha.userData.indexOriginal) malha.userData.indexOriginal = indice;
+    const nomes = malha.skeleton.bones.map((b) => b.name);
+    const dominante = (v: number): string => {
+      let melhor = 0;
+      let peso = -1;
+      for (let k = 0; k < 4; k++) {
+        const w = skinWeight.getComponent(v, k);
+        if (w > peso) { peso = w; melhor = skinIndex.getComponent(v, k); }
+      }
+      return nomes[melhor] ?? '';
+    };
+    const novo: number[] = [];
+    for (let i = 0; i < indice.count; i += 3) {
+      const a = indice.getX(i);
+      const b = indice.getX(i + 1);
+      const c = indice.getX(i + 2);
+      const coberta = bonesCobertos.has(dominante(a))
+        && bonesCobertos.has(dominante(b)) && bonesCobertos.has(dominante(c));
+      if (coberta) escondidas += 1;
+      else novo.push(a, b, c);
+    }
+    geo.setIndex(novo);
+  });
+  return escondidas;
 }
 
 export interface ReceitaMontagem {
@@ -200,8 +275,11 @@ export function montarPersonagem(receita: ReceitaMontagem): ResultadoMontagem {
     okFase('animacao', 'base sem clipes — idle procedural do renderer cobre');
   }
 
-  // 13. validar clipping — §417 body-masks entram com as roupas (631+);
-  //     aqui: sanidade de ESCALA (parte gigante/deslocada = algo errado)
+  // 13. validar clipping — §415.2/§417 REAL (megas 634-636): as máscaras
+  //     declaradas pelas partes ESCONDEM as regiões cobertas da base;
+  //     + sanidade de escala (parte gigante/deslocada = algo errado)
+  const regioesCobertas = [...new Set((receita.partes ?? []).flatMap((p) => p.mascara ?? []))];
+  const facesEscondidas = mascararBase(base, regioesCobertas);
   const caixaBase = new THREE.Box3().setFromObject(base);
   const tamBase = caixaBase.getSize(new THREE.Vector3()).length();
   let clippingOk = true;
@@ -213,7 +291,7 @@ export function montarPersonagem(receita: ReceitaMontagem): ResultadoMontagem {
       pendencias.push(`parte ${parte.id} maior que 1.5× a base — conferir escala/rig`);
     }
   }
-  okFase('clipping', clippingOk ? 'sanidade de escala ok (§417 real no lote de roupas)' : 'parte fora de escala (ver pendências)');
+  okFase('clipping', `${regioesCobertas.length ? `máscaras §415.2 [${regioesCobertas.join(',')}] → ${facesEscondidas} faces da base ocultas` : 'sem máscaras'}${clippingOk ? '' : ' · parte fora de escala (ver pendências)'}`);
 
   // 14. confirmar compatibilidade — resumo honesto (§481)
   okFase('compatibilidade', pendencias.length ? `${pendencias.length} pendência(s) declarada(s)` : 'sem pendências');

@@ -180,21 +180,35 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // ── lote 621–630 (§406/§423, flag as5.assembler3d): PARTES 3D ──────
   const [partesCabelo, setPartesCabelo] = useState<EntradaIndiceParte[]>([]);
   const [cabelo3d, setCabelo3d] = useState<string | null>(null);
+  // ── lote 631–640 (§415–§417, flag as5.roupas3d): ROUPAS por look ───
+  const [partesRoupa, setPartesRoupa] = useState<EntradaIndiceParte[]>([]);
+  const [roupa3d, setRoupa3d] = useState<'ranger' | 'peasant' | null>(null);
   const rigAtualEhUbc = useMemo(
     () => indice.find((x) => x.slug === personagem)?.rig === 'ubc-v1',
     [indice, personagem],
   );
+  const genero3d = personagem?.endsWith('_f') ? 'f' : 'm';
   useEffect(() => {
     if (!flag('as5.assembler3d')) return;
     void carregarIndicePartes().then((lista) => {
-      if (lista) setPartesCabelo(lista.filter((p) => categoriaDaParte(p.tipo) === 'cabelo' || categoriaDaParte(p.tipo) === 'barba'));
+      if (!lista) return;
+      setPartesCabelo(lista.filter((p) => categoriaDaParte(p.tipo) === 'cabelo' || categoriaDaParte(p.tipo) === 'barba'));
+      setPartesRoupa(lista.filter((p) => categoriaDaParte(p.tipo) === 'roupa'));
     });
   }, []);
   useEffect(() => {
     if (!flag('as5.assembler3d')) return;
+    const slugs: string[] = [];
+    if (cabelo3d && rigAtualEhUbc) slugs.push(cabelo3d);
+    // §416: o look veste TODAS as peças do gênero da base atual
+    if (flag('as5.roupas3d') && roupa3d && rigAtualEhUbc) {
+      slugs.push(...partesRoupa
+        .filter((p) => p.slug.startsWith(`rou3d_${roupa3d}_${genero3d}_`))
+        .map((p) => p.slug));
+    }
     (refR.current as unknown as { definirPartes3d?: (s: string[]) => Promise<void> })
-      ?.definirPartes3d?.(cabelo3d && rigAtualEhUbc ? [cabelo3d] : []);
-  }, [cabelo3d, rigAtualEhUbc, fase, personagem]);
+      ?.definirPartes3d?.(slugs);
+  }, [cabelo3d, roupa3d, partesRoupa, genero3d, rigAtualEhUbc, fase, personagem]);
   const refPersonagem = useRef(personagem);
   refPersonagem.current = personagem;
 
@@ -866,6 +880,25 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                 data-teste={`p3d-cabelo-${pc.slug}`}
                 onClick={() => setCabelo3d(pc.slug)}>
                 {pc.nome}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* megas 637-638 (§415–§417, flag as5.roupas3d): ROUPA por look —
+            veste todas as peças do gênero; §415.2 mascara a base coberta */}
+        {flag('as5.roupas3d') && partesRoupa.length > 0 && rigAtualEhUbc && (
+          <div className="avst5-p3d-personagens avst5-p3d-partes" role="radiogroup"
+            aria-label="Roupa (§415–§417 — body masking §415.2)" data-teste="p3d-roupas">
+            <button type="button" role="radio" aria-checked={roupa3d === null}
+              className={`avst5-p3d-chip${roupa3d === null ? ' avst5-p3d-chip-on' : ''}`}
+              data-teste="p3d-roupa-nenhuma"
+              onClick={() => setRoupa3d(null)}>Sem roupa</button>
+            {([['ranger', 'Ranger'], ['peasant', 'Camponês']] as const).map(([id2, nome]) => (
+              <button key={id2} type="button" role="radio" aria-checked={roupa3d === id2}
+                className={`avst5-p3d-chip${roupa3d === id2 ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-roupa-${id2}`}
+                onClick={() => setRoupa3d(id2)}>
+                {nome}
               </button>
             ))}
           </div>

@@ -19,6 +19,17 @@ const NOMES_AMIGAVEIS = {
   // megas 627-628 (partes de cabelo §423 — mesma ferramenta, pasta partes/)
   cab_longo: 'Longo', cab_coque: 'Coque', cab_repartido: 'Repartido',
   cab_raspado: 'Raspado', cab_raspado_f: 'Raspado F', cab_barba: 'Barba',
+  // megas 631-633 (roupas §415-§417 — nomes por peça)
+  rou3d_ranger_m_corpo: 'Ranger M · corpo', rou3d_ranger_m_bracos: 'Ranger M · braços',
+  rou3d_ranger_m_pernas: 'Ranger M · pernas', rou3d_ranger_m_botas: 'Ranger M · botas',
+  rou3d_ranger_m_capuz: 'Ranger M · capuz', rou3d_ranger_m_ombreira: 'Ranger M · ombreira',
+  rou3d_ranger_f_corpo: 'Ranger F · corpo', rou3d_ranger_f_bracos: 'Ranger F · braços',
+  rou3d_ranger_f_pernas: 'Ranger F · pernas', rou3d_ranger_f_botas: 'Ranger F · botas',
+  rou3d_ranger_f_capuz: 'Ranger F · capuz', rou3d_ranger_f_ombreira: 'Ranger F · ombreira',
+  rou3d_peasant_m_corpo: 'Camponês M · corpo', rou3d_peasant_m_bracos: 'Camponês M · braços',
+  rou3d_peasant_m_pernas: 'Camponês M · pernas', rou3d_peasant_m_botas: 'Camponês M · pés',
+  rou3d_peasant_f_corpo: 'Camponesa F · corpo', rou3d_peasant_f_bracos: 'Camponesa F · braços',
+  rou3d_peasant_f_pernas: 'Camponesa F · pernas', rou3d_peasant_f_botas: 'Camponesa F · pés',
 };
 
 export function gerarIndice3d(pastaPersonagens) {
