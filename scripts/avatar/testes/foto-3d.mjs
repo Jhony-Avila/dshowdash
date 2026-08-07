@@ -15,7 +15,7 @@ const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 await p.evaluate(() => { [...document.querySelectorAll('.avst-cat')].find((x) => x.textContent.includes('Vitrine'))?.click(); });
 await p.waitForTimeout(900);
 ok(await p.locator('[data-teste="vitrine-3d"]').count() === 1, 'seção Personagens 3D ausente na Vitrine');
-ok(await p.locator('[data-teste="vitrine-3d"] .avst-vt-card-3d').count() === 6, 'esperava 6 cards 3D na Vitrine');
+ok(await p.locator('[data-teste="vitrine-3d"] .avst-vt-card-3d').count() === 8, 'esperava 8 cards 3D na Vitrine (6 legados + 2 UBC)');
 
 // aba Foto (modo clássico) → origem "Personagem 3D"
 await p.evaluate(() => { [...document.querySelectorAll('.avst-cat')].find((x) => x.textContent.trim() === 'Foto')?.click(); });
@@ -26,7 +26,7 @@ await p.waitForSelector('[data-teste="galeria-3d"]', { timeout: 10000 });
 
 // cadeia registry(vazio no harness)→index.json serviu os 6 com thumbs
 const itens = await p.locator('.avst-foto-3d-item').count();
-ok(itens === 6, `esperava 6 personagens na galeria (${itens})`);
+ok(itens === 8, `esperava 8 personagens na galeria — 6 legados + 2 UBC (${itens})`);
 const thumbOk = await p.evaluate(async () => {
   const img = document.querySelector('.avst-foto-3d-item img');
   if (!img) return false;

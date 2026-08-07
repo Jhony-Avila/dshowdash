@@ -6,7 +6,7 @@
       "slug": "androide",
       "nome": "Androide",
       "tipo": "personagem_base",
-      "rig": "ubc-v1",
+      "rig": "robot-expressive",
       "thumb": "androide/thumb.webp",
       "preview": "androide/preview.webp",
       "animacoes": [
@@ -35,7 +35,7 @@
       "slug": "animal_pug",
       "nome": "Pug",
       "tipo": "personagem_base",
-      "rig": "ubc-v1",
+      "rig": "quad-pet",
       "thumb": "animal_pug/thumb.webp",
       "preview": "animal_pug/preview.webp",
       "animacoes": [
@@ -53,10 +53,38 @@
       }
     },
     {
+      "slug": "base_superhero_f",
+      "nome": "base_superhero_f",
+      "tipo": "personagem_base",
+      "rig": "ubc-v1",
+      "thumb": "base_superhero_f/thumb.webp",
+      "preview": "base_superhero_f/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 15060,
+        "lod1": 15060,
+        "lod2": 7196
+      }
+    },
+    {
+      "slug": "base_superhero_m",
+      "nome": "base_superhero_m",
+      "tipo": "personagem_base",
+      "rig": "ubc-v1",
+      "thumb": "base_superhero_m/thumb.webp",
+      "preview": "base_superhero_m/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 14318,
+        "lod1": 14318,
+        "lod2": 7198
+      }
+    },
+    {
       "slug": "humano_aventureiro",
       "nome": "Aventureiro",
       "tipo": "personagem_base",
-      "rig": "ubc-v1",
+      "rig": "quaternius-legado",
       "thumb": "humano_aventureiro/thumb.webp",
       "preview": "humano_aventureiro/preview.webp",
       "animacoes": [
@@ -80,7 +108,7 @@
       "slug": "humano_casual",
       "nome": "Casual",
       "tipo": "personagem_base",
-      "rig": "ubc-v1",
+      "rig": "quaternius-legado",
       "thumb": "humano_casual/thumb.webp",
       "preview": "humano_casual/preview.webp",
       "animacoes": [
@@ -101,7 +129,7 @@
       "slug": "humano_punk",
       "nome": "Punk",
       "tipo": "personagem_base",
-      "rig": "ubc-v1",
+      "rig": "quaternius-legado",
       "thumb": "humano_punk/thumb.webp",
       "preview": "humano_punk/preview.webp",
       "animacoes": [
@@ -122,7 +150,7 @@
       "slug": "humano_terno",
       "nome": "Executivo",
       "tipo": "personagem_base",
-      "rig": "ubc-v1",
+      "rig": "quaternius-legado",
       "thumb": "humano_terno/thumb.webp",
       "preview": "humano_terno/preview.webp",
       "animacoes": [

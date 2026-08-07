@@ -6,7 +6,7 @@
     "categorias": 12,
     "titulos": 30,
     "colecoes": 12,
-    "personagens3d": 6
+    "personagens3d": 8
   },
   "categorias": [
     "base",
@@ -1843,6 +1843,14 @@
     {
       "slug": "animal_pug",
       "animacoes": 6
+    },
+    {
+      "slug": "base_superhero_f",
+      "animacoes": 0
+    },
+    {
+      "slug": "base_superhero_m",
+      "animacoes": 0
     },
     {
       "slug": "humano_aventureiro",

@@ -30,6 +30,7 @@ await gerarManequim(fonte, { denso: true });
 const pastaPub = join(dir, 'personagens', 'manequim_dev');
 await publicarAsset({
   fonte, saida: pastaPub, id: 'manequim_dev', origem: 'manequim-procedural',
+  rig: 'manequim-dev', // megas 611-620: lista canônica é POR RIG
   comprovante: 'scripts/avatar/assets3d/gerar-manequim.mjs', data: '2026-08-03', log: () => {},
 });
 
