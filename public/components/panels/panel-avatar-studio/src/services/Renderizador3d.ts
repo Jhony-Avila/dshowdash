@@ -1012,7 +1012,8 @@ export class Renderizador3d implements RenderizadorAvatar {
     if (this.clipes.size) return; // clipes do próprio GLB têm prioridade
     this.mixer = new THREE.AnimationMixer(this.personagem);
     for (const [nome, clipe] of this.pacoteAnim.clipes) this.clipes.set(nome, clipe);
-    const idle = this.clipes.get('Idle') ?? [...this.clipes.values()][0];
+    // mega 670: convenções de nome da UAL entram no fallback do idle
+    const idle = this.clipes.get('Idle') ?? this.clipes.get('Idle_Loop') ?? [...this.clipes.values()][0];
     if (idle && this.idleAtivo) {
       this.acaoAtual = this.mixer.clipAction(idle);
       this.acaoAtual.play();

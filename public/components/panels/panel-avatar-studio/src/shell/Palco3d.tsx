@@ -49,7 +49,12 @@ const CURADOS_FALLBACK: EntradaIndice3d[] = [
 ];
 
 /** Animações em destaque no seletor (ordem de preferência §174-friendly). */
-const ANIMACOES_DESTAQUE = ['Idle', 'Walk', 'Walking', 'Running', 'Wave', 'Dance', 'Jump', 'Victory', 'ThumbsUp'];
+// mega 670: nomes da UAL (pacote ual_basico §436) somados aos legados
+const ANIMACOES_DESTAQUE = [
+  'Idle', 'Idle_Loop', 'Idle_Talking_Loop', 'Walk', 'Walking', 'Walk_Loop', 'Walk_Formal_Loop',
+  'Running', 'Jog_Fwd_Loop', 'Wave', 'Dance', 'Dance_Loop', 'Interact', 'Sitting_Idle_Loop',
+  'Jump', 'Victory', 'ThumbsUp',
+];
 
 const CHAVE_OVERRIDE = 'dshow.avst5.p3d.personagem.v1';
 const CHAVE_QUALIDADE = 'dshow.avst5.p3d.qualidade.v1';
