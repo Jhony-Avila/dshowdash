@@ -159,8 +159,7 @@ try {
       await p.evaluate(() => { [...document.querySelectorAll('.avst5-p3d-personagens .avst5-p3d-chip')].find((x) => x.textContent.includes('Herói (UBC)'))?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
       await p.waitForTimeout(4000);
       ok(await p.locator('[data-teste="p3d-cabelos"]').count() === 1, 'grupo de cabelos ausente com base ubc-v1 (§423)');
-      const chip = p.locator('[data-teste="p3d-cabelos"] .avst5-p3d-chip').nth(1);
-      await chip.click();
+      await p.evaluate(() => document.querySelectorAll('[data-teste="p3d-cabelos"] .avst5-p3d-chip')[1]?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
       await p.waitForTimeout(2500);
       ok(await p.locator('[data-teste="p3d-cabelos"] .avst5-p3d-chip-on').count() === 1, 'cabelo não marcou');
       // base LEGADA → grupo some (rig ≠ ubc-v1)

@@ -54,7 +54,7 @@
     },
     {
       "slug": "base_superhero_f",
-      "nome": "base_superhero_f",
+      "nome": "Heroína (UBC)",
       "tipo": "personagem_base",
       "rig": "ubc-v1",
       "thumb": "base_superhero_f/thumb.webp",
@@ -68,7 +68,7 @@
     },
     {
       "slug": "base_superhero_m",
-      "nome": "base_superhero_m",
+      "nome": "Herói (UBC)",
       "tipo": "personagem_base",
       "rig": "ubc-v1",
       "thumb": "base_superhero_m/thumb.webp",
