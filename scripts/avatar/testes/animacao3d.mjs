@@ -204,8 +204,16 @@ try {
     await p.waitForTimeout(1500);
     const depois = await canvas.screenshot();
     ok(antes.equals(depois), 'movimento reduzido mas o olhar mexeu no palco (§439/§297)');
-    // §481: sem pacote publicado o Herói segue sem chips de animação
-    ok(await p.locator('[data-teste="p3d-animacoes"]').count() === 0, 'chips de animação sem pacote publicado (§481)');
+    // com o pacote ual_basico PUBLICADO o Herói ganha os chips (§432);
+    // sem pacote (repo antes da publicação) o grupo fica ausente (§481)
+    const temPacote = existsSync(join(RAIZ, 'public/assets/avatars/3d/animacoes/ual_basico/manifest.json'));
+    if (temPacote) {
+      ok(await p.locator('[data-teste="p3d-animacoes"]').count() === 1, 'pacote publicado mas Herói sem chips de animação (§432)');
+      ok(await p.locator('[data-teste="p3d-animacoes"] .avst5-p3d-chip').count() >= 4, 'chips de destaque do pacote incompletos');
+    } else {
+      ok(await p.locator('[data-teste="p3d-animacoes"]').count() === 0, 'chips de animação sem pacote publicado (§481)');
+      console.log('[animacao3d] aviso: pacote ual_basico ainda não publicado — ramo completo roda após a publicação');
+    }
     // regressão: Androide (clipes PRÓPRIOS do GLB) mantém os chips
     await p.evaluate(() => { [...document.querySelectorAll('.avst5-p3d-personagens .avst5-p3d-chip')].find((x) => x.textContent.trim() === 'Androide')?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
     await p.waitForTimeout(5000);

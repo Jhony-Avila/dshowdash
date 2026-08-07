@@ -430,8 +430,13 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
     );
   }
 
+  // lote 671-680 (decisão #68, flag as5.classico_aaa): layout AAA do
+  // clássico — SÓ posição/estilo; funcionalidade intocada; off = anterior
+  const aaa = flag('as5.classico_aaa');
+  const aaaItens = aaa && aba === 'itens';
+
   return (
-    <div className="avst-shell">
+    <div className="avst-shell" data-aaa={aaa ? 'sim' : undefined}>
       {/* ── Topo ── */}
       <header className="avst-topo">
         <div className="avst-topo-titulo">
@@ -489,7 +494,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         </div>
       </header>
 
-      <div className="avst-corpo" ref={corpoRef}
+      <div className="avst-corpo" ref={corpoRef} data-aba={aba}
         style={{ '--avst-larg-painel': `${largPainel}px` } as React.CSSProperties}>
         {/* ── Coluna 1: categorias ── */}
         <nav className="avst-categorias" aria-label="Categorias">
@@ -618,6 +623,10 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           </section>
         ) : (
           <>
+        {/* lote 671-680 (#68): wrapper NEUTRO (display:contents sem a flag)
+            — com as5.classico_aaa na aba itens vira a coluna central AAA
+            (palco dominante em cima, carrossel de assets embaixo) */}
+        <div className="avst-centro" data-aaa-itens={aaaItens ? 'sim' : undefined}>
         {/* ── Coluna 2: palco ── */}
         <main className="avst-palco">
           {comparando && salvo ? (
@@ -646,16 +655,26 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
               </div>
             </div>
           ) : (
-            <div className="avst-palco-principal">
-              <PalcoCinema config={atual}
-                categoria={aba === 'itens' ? categoria : null}
-                celebracao={celebracao}
-                aoFimCelebracao={() => setCelebracao(null)} />
-              {/* feedback claro ao equipar (AS4 §39.18) */}
-              {toastEquipar && (
-                <div key={toastEquipar.chave} className="avst-toast-equipar" role="status"
-                  style={{ '--avst-rar': toastEquipar.cor } as React.CSSProperties}>
-                  <Check size={13} aria-hidden /> Equipado: <strong>{toastEquipar.nome}</strong>
+            /* wrapper NEUTRO (#68): sem a flag = display:contents */
+            <div className="avst-palco-linha">
+              <div className="avst-palco-principal">
+                <PalcoCinema config={atual}
+                  categoria={aba === 'itens' ? categoria : null}
+                  celebracao={celebracao}
+                  aoFimCelebracao={() => setCelebracao(null)} />
+                {/* feedback claro ao equipar (AS4 §39.18) */}
+                {toastEquipar && (
+                  <div key={toastEquipar.chave} className="avst-toast-equipar" role="status"
+                    style={{ '--avst-rar': toastEquipar.cor } as React.CSSProperties}>
+                    <Check size={13} aria-hidden /> Equipado: <strong>{toastEquipar.nome}</strong>
+                  </div>
+                )}
+              </div>
+              {/* #68: CORES junto do canvas (briefing: "jamais escondida
+                  no final") — a MESMA <Cores/>, só reposicionada */}
+              {aaaItens && (
+                <div className="avst-cores-lado" data-teste="aaa-cores">
+                  <Cores config={atual} aoMudar={aplicar} />
                 </div>
               )}
             </div>
@@ -687,6 +706,11 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           <div className="avst-previas">
             <figure><AvatarSvg config={atual} forma="circulo" uid="mini-h" /><figcaption>Header</figcaption></figure>
             <figure className="avst-previa-menor"><AvatarSvg config={atual} forma="circulo" uid="mini-m" /><figcaption>Menu</figcaption></figure>
+            {/* #68: prévias EM LINHA com mais contextos (o drawer segue) */}
+            {aaaItens && (<>
+              <figure><AvatarSvg config={atual} forma="circulo" uid="mini-p" /><figcaption>Perfil</figcaption></figure>
+              <figure className="avst-previa-menor"><AvatarSvg config={atual} forma="circulo" uid="mini-r" /><figcaption>Ranking</figcaption></figure>
+            </>)}
             <button type="button" className="avst-botao avst-previas-mais"
               title="Header, menu, perfil, ranking e mobile — nos temas claro e escuro"
               onClick={() => { setContextosAberto(true); telemetria('contextos_abriu'); }}>
@@ -695,7 +719,20 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           </div>
         </main>
 
-        {/* ── Coluna 3: itens/presets/histórico/foto + cores ── */}
+        {/* #68: TRILHO — carrossel horizontal de assets (a MESMA grade,
+            só reposicionada; busca/filtros/modos intocados) */}
+        {aaaItens && (
+          <div className="avst-trilho" data-teste="aaa-trilho">
+            <GradeItens config={atual} categoria={categoria}
+              desbloqueados={vida?.desbloqueados ?? new Set()} aoEscolher={aplicar} />
+          </div>
+        )}
+        </div>
+
+        {/* ── Coluna 3: itens/presets/histórico/foto + cores ──
+            (#68: na aba itens com AAA a grade vive no trilho e as cores
+            ao lado do canvas — a lateral sai de cena) */}
+        {!aaaItens && (
         <aside className="avst-lateral">
           {/* alça de redimensionamento (AS4 §23.3): arraste ou duplo clique */}
           <div className="avst-redim" role="separator" aria-orientation="vertical"
@@ -728,6 +765,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             </>
           )}
         </aside>
+        )}
           </>
         )}
       </div>

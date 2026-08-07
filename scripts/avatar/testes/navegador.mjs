@@ -32,7 +32,10 @@ export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = f
     // init (rollout-padrao.mjs); quem quer o shell declara as flags.
     try {
       if (!localStorage.getItem('dshow.avst.flags.v1')) {
-        localStorage.setItem('dshow.avst.flags.v1', '{"as5.novo_shell":false,"as5.palco3d":false}');
+        // lote 671-680 (#68): classico_aaa também é padrão ON no código —
+        // os testes legados seguem cobrindo o clássico PRÉ-AAA (fallback
+        // §651); o layout AAA tem teste próprio (classico-aaa.mjs)
+        localStorage.setItem('dshow.avst.flags.v1', '{"as5.novo_shell":false,"as5.palco3d":false,"as5.classico_aaa":false}');
       }
     } catch { /* sem storage */ }
   });

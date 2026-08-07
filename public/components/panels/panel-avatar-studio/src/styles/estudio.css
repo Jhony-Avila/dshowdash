@@ -2339,3 +2339,134 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   outline-offset: 2px;
   z-index: 1;
 }
+
+/* ══════════════════════════════════════════════════════════════════ */
+/* MODO CLÁSSICO AAA — lote 671-680 (briefing complementar, decisão   */
+/* #68, flag as5.classico_aaa). SÓ layout: componentes intocados.     */
+/* Wrappers .avst-centro/.avst-palco-linha são NEUTROS sem a flag     */
+/* (display: contents = layout byte a byte igual ao anterior).        */
+/* Grid de 8px em todos os espaçamentos novos.                        */
+/* ══════════════════════════════════════════════════════════════════ */
+.avst-centro { display: contents; }
+.avst-palco-linha { display: contents; }
+
+/* ── toolbar compacta (mais espaço vertical p/ o palco) ── */
+.avst-shell[data-aaa="sim"] .avst-topo { padding: 8px 16px; }
+.avst-shell[data-aaa="sim"] .avst-topo-titulo p { display: none; }
+.avst-shell[data-aaa="sim"] .avst-topo-titulo h1 { font-size: 15px; }
+
+/* ── sidebar compacta e agrupada ── */
+.avst-shell[data-aaa="sim"] .avst-categorias { padding: 8px; gap: 2px; }
+.avst-shell[data-aaa="sim"] .avst-cat { padding: 8px; font-size: 12.5px; border-radius: 8px; }
+.avst-shell[data-aaa="sim"] .avst-grupo-cab { padding: 8px 8px 4px; }
+.avst-shell[data-aaa="sim"] .avst-cat-separador { margin: 8px 0; }
+
+/* ── abas ≠ itens: palco maior (o painel segue redimensionável) ── */
+.avst-shell[data-aaa="sim"] .avst-palco-principal { width: min(560px, 100%); }
+
+/* ── aba ITENS: sidebar | centro (viewport dominante + trilho) ── */
+.avst-shell[data-aaa="sim"] .avst-corpo[data-aba="itens"] { grid-template-columns: 200px 1fr; }
+.avst-centro[data-aaa-itens="sim"] {
+  display: flex; flex-direction: column; min-width: 0; min-height: 0;
+}
+.avst-centro[data-aaa-itens="sim"] .avst-palco {
+  flex: 1 1 auto; min-height: 0; overflow: hidden;
+  padding: 8px 24px 0; gap: 8px;
+}
+/* o palco domina: a ALTURA útil dita o tamanho (75–85% na viewport) */
+.avst-centro[data-aaa-itens="sim"] .avst-palco-linha {
+  display: flex; flex: 1 1 auto; min-height: 0; width: 100%;
+  align-items: center; justify-content: center; gap: 24px;
+}
+.avst-shell[data-aaa="sim"] .avst-centro[data-aaa-itens="sim"] .avst-palco-principal {
+  width: auto; height: 100%; max-height: 100%;
+  aspect-ratio: 1; max-width: min(100%, 960px);
+}
+/* palco, não card: sombra vira luz de chão; cantos discretos */
+.avst-centro[data-aaa-itens="sim"] .avst-cine {
+  border-radius: 16px;
+  box-shadow: 0 48px 96px -64px rgba(0, 0, 0, 0.9);
+}
+/* comparação também aproveita a área grande */
+.avst-centro[data-aaa-itens="sim"] .avst-comparacao-area { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
+/* ── cores JUNTO do canvas (nunca escondidas no fim) ── */
+.avst-cores-lado {
+  flex: 0 0 224px; width: 224px; max-height: 100%; overflow-y: auto;
+  overscroll-behavior: contain; align-self: center;
+  padding: 16px; border: 1px solid var(--avst-borda); border-radius: 16px;
+  background: color-mix(in srgb, var(--avst-painel) 55%, transparent);
+}
+
+/* ── prévias em linha, miniaturas maiores ── */
+.avst-centro[data-aaa-itens="sim"] .avst-previas { margin: 0; gap: 24px; }
+.avst-centro[data-aaa-itens="sim"] .avst-previas figure { width: 72px; }
+.avst-centro[data-aaa-itens="sim"] .avst-previas .avst-previa-menor { width: 48px; }
+
+/* ── barra de status discreta ── */
+.avst-centro[data-aaa-itens="sim"] .avst-barra { padding: 4px 8px; font-size: 12px; }
+
+/* ── TRILHO: carrossel HORIZONTAL de assets (cards 220×248, thumb ~70%) ── */
+.avst-trilho {
+  flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px;
+  padding: 8px 24px; border-top: 1px solid var(--avst-borda);
+  background: color-mix(in srgb, var(--avst-painel) 40%, transparent);
+}
+.avst-trilho .avst-grade,
+.avst-trilho .avst-grade[data-modo="compacta"],
+.avst-trilho .avst-grade[data-modo="lista"] {
+  display: grid; grid-auto-flow: column;
+  grid-auto-columns: 220px; grid-template-columns: none;
+  gap: 16px; overflow-x: auto; overflow-y: hidden;
+  overscroll-behavior-x: contain; scroll-snap-type: x proximity;
+  padding: 8px 4px 12px;
+}
+.avst-trilho .avst-card {
+  height: 248px; scroll-snap-align: start;
+  contain-intrinsic-size: 220px 248px;
+}
+.avst-trilho .avst-card-thumb { aspect-ratio: auto; height: 70%; flex: 0 0 auto; }
+.avst-trilho .avst-card-nome { font-size: 13px; }
+/* hover AAA: cresce, levanta, sombra, brilho da raridade */
+.avst-trilho .avst-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  border-color: var(--avst-rar);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.55), 0 0 24px -10px var(--avst-rar);
+  z-index: 2;
+}
+/* seleção AAA: glow + elevação + escala (anel/check §39.5 continuam) */
+.avst-trilho .avst-card-ativo,
+.avst-trilho .avst-card-ativo:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.5), 0 0 28px -8px var(--avst-acento);
+}
+
+/* ── responsivo ── */
+@media (min-width: 1440px) {
+  .avst-shell[data-aaa="sim"] .avst-corpo[data-aba="itens"] { grid-template-columns: 208px 1fr; }
+  .avst-trilho .avst-grade,
+  .avst-trilho .avst-grade[data-modo="compacta"],
+  .avst-trilho .avst-grade[data-modo="lista"] { grid-auto-columns: 236px; }
+  .avst-trilho .avst-card { height: 264px; contain-intrinsic-size: 236px 264px; }
+}
+@media (max-width: 1023px) {
+  /* abaixo do alvo AAA: palco volta ao teto clássico e o trilho vira
+     grade rolável — funcionalidade sempre acessível */
+  .avst-shell[data-aaa="sim"] .avst-corpo[data-aba="itens"] { grid-template-columns: 56px 1fr; }
+  .avst-centro[data-aaa-itens="sim"] { overflow-y: auto; }
+  .avst-centro[data-aaa-itens="sim"] .avst-palco { overflow: visible; flex: 0 0 auto; }
+  .avst-centro[data-aaa-itens="sim"] .avst-palco-linha { flex-direction: column; align-items: center; }
+  .avst-shell[data-aaa="sim"] .avst-centro[data-aaa-itens="sim"] .avst-palco-principal {
+    width: min(470px, 100%); height: auto;
+  }
+  .avst-cores-lado { width: min(470px, 100%); flex: 0 0 auto; align-self: center; }
+  .avst-trilho .avst-grade,
+  .avst-trilho .avst-grade[data-modo="compacta"],
+  .avst-trilho .avst-grade[data-modo="lista"] {
+    grid-auto-flow: row; grid-auto-columns: unset;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    overflow-x: visible; overflow-y: visible;
+  }
+  .avst-trilho .avst-card { height: auto; contain-intrinsic-size: 150px 200px; }
+  .avst-trilho .avst-card-thumb { height: auto; aspect-ratio: 1; }
+}

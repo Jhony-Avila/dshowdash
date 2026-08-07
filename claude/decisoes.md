@@ -180,6 +180,22 @@
   Pacote UAL: publicação em bloco de servidor (consulta de clipes + 
   curadoria) — o palco degrada §481 até lá.
 
+- **#68 (2026-08-07) — Briefing complementar assume o lote 671–680**:
+  Jhony enviou o briefing "Reestruturação completa do layout do Avatar
+  Studio (Modo Clássico)" com prioridade imediata → o lote 671–680 vira
+  **CLÁSSICO AAA** (layout puro: viewport dominante, carrossel horizontal
+  de assets, sidebar compacta, cores junto ao canvas, prévias em linha,
+  toolbar/status discretos, grid 8px, hover/seleção ricos, scrolls
+  independentes). O restante do trilho UBC desliza: LOD/progressivo →
+  681–690 · quality/captura → 691–700 · homologação+gate → 701–710 ·
+  validação final da onda → 711–720 (onda estendida p/ 611–720).
+  Regras: flag `as5.classico_aaa` (ON por #50; off = layout anterior
+  byte a byte); ZERO mudança de funcionalidade (componentes mudam de
+  posição/estilo, nunca de código de comportamento); mobile ≤1023px
+  mantém o layout atual; modo 3D/shell novo intocados; arquitetura
+  (trilho/tokens) reutilizável pelo shell no futuro. Análise + proposta:
+  docs/AVATAR-STUDIO-5/classico-aaa.md.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
