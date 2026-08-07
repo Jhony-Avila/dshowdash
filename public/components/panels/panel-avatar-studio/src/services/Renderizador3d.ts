@@ -35,6 +35,7 @@ import type { ManifestPersonagem3d } from './Personagens3d';
 import { montarPersonagem } from './Assembler3d'; // lote 621-630 (§406)
 import type { ResultadoMontagem } from './Assembler3d';
 import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
+import { aplicarPipelineCores, descartarMateriais } from './Materiais3d'; // lote 641-650 (§418-§421)
 
 export interface OpcoesRenderizador3d {
   /** decide o SLUG publicado a partir do estado (DI — default: manequim) */
@@ -109,6 +110,9 @@ export class Renderizador3d implements RenderizadorAvatar {
   private sombrasLigadas = false;
   // mega 81 (§419): tinta de destaque nos materiais do personagem
   private tinta: { cor: string; forca: number } | null = null;
+  // lote 641–650 (§418–§421, flag as5.materiais3d no CALLER): cores §73
+  // PERSONALIZADAS por canal (§420) — null = arte original dos GLBs
+  private cores3d: Record<string, string> | null = null;
   // mega 82 (§444): aura 3D — anel additive na cor do avatar
   private aura3d: THREE.Mesh | null = null;
   // lote 131–140 (§426–§431): SOCKETS — props procedurais presos aos
@@ -679,19 +683,20 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.aplicarTinta();
   }
 
+  /** lote 641–650 (§420): cores §73 personalizadas por canal — a UI fala
+   *  canais, nunca nomes de mesh; null = arte original. O CALLER decide a
+   *  flag (as5.materiais3d) — aqui é só o mecanismo (padrão da casa). */
+  definirCores3d(cores: Record<string, string> | null): void {
+    if (JSON.stringify(cores) === JSON.stringify(this.cores3d)) return;
+    this.cores3d = cores ? { ...cores } : null;
+    this.aplicarTinta(); // re-tinge VIVO — sem recarregar o personagem
+  }
+
+  /** Pipeline ÚNICO de cor (megas 641-644): restaura originais → canais
+   *  §420 → tinta mega 81 → teto de emissivos §418.2 (Materiais3d). */
   private aplicarTinta(): void {
     if (!this.personagem) return;
-    this.personagem.traverse((o) => {
-      const bruto = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
-      const lista = Array.isArray(bruto) ? bruto : bruto ? [bruto] : [];
-      for (const mat of lista) {
-        const ms = mat as THREE.MeshStandardMaterial & { userData: { corOriginal?: number } };
-        if (!ms.color) continue;
-        if (ms.userData.corOriginal === undefined) ms.userData.corOriginal = ms.color.getHex();
-        ms.color.setHex(ms.userData.corOriginal);
-        if (this.tinta) ms.color.lerp(new THREE.Color(this.tinta.cor), this.tinta.forca);
-      }
-    });
+    aplicarPipelineCores(this.personagem, { cores: this.cores3d, tinta: this.tinta });
   }
 
   /** mega 82 (§444): AURA 3D — anel additive pulsante na cor do avatar. */
@@ -977,13 +982,12 @@ export class Renderizador3d implements RenderizadorAvatar {
   private removerPersonagem(): void {
     if (!this.personagem) return;
     this.cena?.remove(this.personagem);
+    // §419 "descartar recursos": materiais + TEXTURAS (parse fresco por
+    // GLB — nada compartilhado com outros donos) via Material Manager
+    descartarMateriais(this.personagem);
     this.personagem.traverse((n) => {
       const malha = n as THREE.Mesh;
-      if (malha.isMesh) {
-        malha.geometry?.dispose();
-        const mats = Array.isArray(malha.material) ? malha.material : [malha.material];
-        for (const m of mats) m?.dispose();
-      }
+      if (malha.isMesh) malha.geometry?.dispose();
     });
     this.personagem = null;
     this.slugAtual = null;

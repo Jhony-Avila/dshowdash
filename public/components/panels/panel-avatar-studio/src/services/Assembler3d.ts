@@ -13,6 +13,7 @@
 // seção que os cobre (tipo corporal §414/lote 631+, morphs §412/651+,
 // emblemas §421/641+) — o relatório diz a verdade sobre o que rodou.
 import * as THREE from 'three';
+import { canalDaCategoria, marcarCanal } from './Materiais3d';
 
 export type PassoAssembler =
   | 'carregar_base' | 'validar_rig' | 'tipo_corporal' | 'morphs' | 'pele'
@@ -258,10 +259,22 @@ export function montarPersonagem(receita: ReceitaMontagem): ResultadoMontagem {
     okFase(porCategoria[cat], contagem[cat] ? `${contagem[cat]} parte(s)` : 'nenhuma');
   }
 
-  // 10. materiais §418–§421 — canais/PBR próprios entram no lote 641+
-  okFase('materiais', 'materiais dos GLBs mantidos (canais §73-3D no lote 641+)');
-  // 11. emblemas §421.1 — pós-materiais
-  okFase('emblemas', 'n/a nesta fase (lote 641+)');
+  // 10. materiais §418–§421 (megas 641-644) — marca o CANAL §420 nos
+  //     materiais de cada parte pela CATEGORIA (§73: cabelo/roupa/
+  //     destaque). Tintura fica no pipeline central do Material Manager
+  //     (Materiais3d.aplicarPipelineCores) — o renderer converte canais.
+  const canaisMarcados: string[] = [];
+  for (const parte of receita.partes ?? []) {
+    const canal = canalDaCategoria(parte.categoria);
+    const n = marcarCanal(parte.cena, canal);
+    if (n) canaisMarcados.push(`${canal}×${n}`);
+  }
+  okFase('materiais', canaisMarcados.length
+    ? `canais §73 marcados: ${canaisMarcados.join(' ')}`
+    : 'sem partes — materiais dos GLBs mantidos');
+  // 11. emblemas §421.1 — decals sobre a roupa: precisam da infra de
+  //     captura/UV do Photo Studio 3D (§329, lote 681+) — n/a honesto
+  okFase('emblemas', 'n/a nesta fase (§421.1 — decals no lote 681+)');
 
   // 12. configurar animação — UM mixer na RAIZ move base + partes juntas
   //     (as partes compartilham os MESMOS Bones após o rebind)

@@ -64,6 +64,7 @@ const PADROES: Record<string, boolean> = {
   // ── onda 611–710 (decisão #64; padrão ON conforme #50) ──
   'as5.assembler3d': true,        // lote 621–630 — Character Assembler §406 + partes §423
   'as5.roupas3d': true,           // lote 631–640 — roupas §415–§417 (body masking §415.2)
+  'as5.materiais3d': true,        // lote 641–650 — Material Manager §419 + canais §73→3D (§420–§421)
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

@@ -125,6 +125,26 @@
   quando > 0 · conjuntos §72.1 = curadoria fixa sobre itens existentes
   (peças reais pedem arte → trilho B) · §60.6 mecanismo pronto porém
   inerte (nenhum item declara incompativelCom hoje).
+- **#64 (2026-08-07) — Onda 611–710 = trilho B (UBC)**: com o trilho A
+  esgotado e os 4 packs Quaternius CC0 no servidor, a onda ataca F5/P8
+  (§398–§537): pipeline de assets v2 (texturas por LOD) → bases UBC →
+  Character Assembler §406 → roupas §415–§417 → materiais §418–§421 →
+  cabelo/morphs → animação → LOD → captura → homologação. Mapa vivo:
+  doc 18 do projeto Claude.
+- **#65 (2026-08-07) — Canais de cor 3D = vocabulário §73 (lote 641–650)**:
+  §420 pede canais semânticos; em vez de inventar primary/secondary, o 3D
+  fala os MESMOS canais do 2D (pele/cabelo/roupa/destaque) — zero
+  tradução na UI. Regras: cor NO PADRÃO = arte original do asset (nada de
+  tingir por default — o visual publicado não muda com a flag ligada);
+  cor personalizada = tint multiplicativo em material.color (§421 — nunca
+  gerar textura nova; preserva o detalhe do albedo; não clareia base
+  escura — limite documentado); canal por categoria da parte (§406 passo
+  10) ou por NOME de material (hair/beard cobre o cabelo embutido das
+  bases; PELE só por nome explícito skin/pele — nunca chutar o material
+  do corpo); pipeline único no Material Manager (restaura → canais →
+  tinta mega 81 → teto de emissivo §418.2), idempotente por construção.
+  Bônus a11y: vida §440 agora respeita prefers-reduced-motion (§297) —
+  idle e câmera já respeitavam; o teste determinístico expôs o gap.
 
 ## Pendências do Jhony (herdadas — nunca autônomas)
 

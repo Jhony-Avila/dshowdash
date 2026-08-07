@@ -29,6 +29,7 @@ import { detectarCapacidade3d } from '../services/Capacidade3d';
 import { excluirPose, listarPoses, salvarPose } from '../services/Poses3d';
 import { log } from '../services/Log';
 import { paraLegado2d } from '../nucleo/adaptadores';
+import { CORES_PADRAO } from '../engine/cores'; // lote 641-650 (§420)
 import { tituloPorId, validarConfig } from '../services/AvatarCatalog';
 import { AvatarSvg } from '../components/AvatarSvg';
 // megas 226–227 (§175/§175.1): editor de showcase + modo automático
@@ -131,6 +132,15 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // mega 49: comparar 2D×3D lado a lado
   const [comparando2d, setComparando2d] = useState(false);
   const config2d = useMemo(() => validarConfig(paraLegado2d(estado)), [estado]);
+  // lote 641–650 (§420): só canais §73 PERSONALIZADOS viajam ao renderer —
+  // cor no padrão = arte original do asset (byte-stability do visual)
+  const coresPersonalizadas = useMemo(() => {
+    const d: Record<string, string> = {};
+    for (const [canal, cor] of Object.entries(config2d.cores)) {
+      if (cor && cor.toLowerCase() !== CORES_PADRAO[canal as keyof typeof CORES_PADRAO]?.toLowerCase()) d[canal] = cor;
+    }
+    return d;
+  }, [config2d]);
   // mega 78 (§458): exposição do tone mapping
   const [exposicao, setExposicao] = useState(1);
   // ── lote 261–270 (§440–§458, flag as5.palco3d_v2): CINEMA do palco ──
@@ -516,9 +526,11 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   }, [toneMapa, ambiente, fase, cinemaLigado]);
   useEffect(() => {
     if (fase !== 'pronto' || !cinemaLigado) return;
+    // mega 645 (§297×§440): movimento reduzido também DESLIGA a vida —
+    // idle e câmera já respeitavam; a respiração ficara de fora (gap a11y)
     (refR.current as unknown as { definirVida?: (v: number | null) => void })
-      ?.definirVida?.(vida ? 0.8 : null);
-  }, [vida, fase, cinemaLigado, personagem]);
+      ?.definirVida?.(vida && !movReduzido ? 0.8 : null);
+  }, [vida, fase, cinemaLigado, personagem, movReduzido]);
   useEffect(() => {
     if (fase !== 'pronto' || !cinemaLigado) return;
     const r = refR.current as unknown as {
@@ -548,6 +560,16 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     (refR.current as unknown as { definirTinta?: (c: string | null) => void })
       ?.definirTinta?.(tinta ? config2d.cores.destaque : null);
   }, [tinta, config2d, fase, personagem]);
+
+  // lote 641–650 (§418–§421, flag as5.materiais3d): canais de cor §73 do
+  // 2D recolorem os materiais 3D (cabelo/roupa/destaque — §420: a UI fala
+  // canais; o renderer converte). Vazio/flag off = arte original.
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    const tem = flag('as5.materiais3d') && Object.keys(coresPersonalizadas).length > 0;
+    (refR.current as unknown as { definirCores3d?: (c: Record<string, string> | null) => void })
+      ?.definirCores3d?.(tem ? coresPersonalizadas : null);
+  }, [coresPersonalizadas, fase, personagem]);
 
   // mega 82: aura equipada no 2D vira ANEL 3D na cor de destaque (§444)
   useEffect(() => {
