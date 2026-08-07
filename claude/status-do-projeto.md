@@ -1,7 +1,7 @@
 # Status do Projeto — Avatar Studio (no repo)
 
 > Fonte viva: docs do projeto Claude "Avatar Studio" (04-status-do-projeto).
-> Última atualização: **2026-08-07, onda 611–710 em curso (trilho B/UBC)**.
+> Última atualização: **2026-08-07 — ONDA 611–720 COMPLETA no main** (validação 1-por-1 no doc 19 do projeto Claude; produção segue no marco 610 até o deploy).
 
 ## Marco atual
 
@@ -32,6 +32,19 @@
 - Decisões **#61/#62/#63** registradas (projeto docs 16–17 + resumo aqui).
 - **Validação 1-por-1**: projeto doc `claude/17-validacao-onda-511-610.md`
   (por flag: §§ · teste · roteiro visual de 1 min).
+
+## Fechamento da onda 611–720 (megas 711–720)
+
+- **Validação 1-por-1**: doc `claude/19-validacao-onda-611-720.md` do
+  projeto Claude — §§ · teste · roteiro visual de 1 min POR FLAG (10
+  flags novas) + itens sem flag (bugfixes §473/§433 e homologação).
+- Suíte **90/90 verde** na árvore entregue; homologação: 34 assets, 0
+  reprovados; gate §631 1036KB ≤ 1180KB.
+- Bugs REAIS achados por teste na onda: esqueleto órfão (621) · vida ×
+  reduced-motion (641) · corrida de carga (681) · idle fantasma (691).
+- Próxima onda (721+, decisões a partir de #72): candidatos no doc 04
+  do projeto (F6 Photo Studio 3D · ual_extra · F8 IA · trilho C · polish
+  AAA com o veredito visual do Jhony).
 
 ## Como retomar (sessão nova)
 
