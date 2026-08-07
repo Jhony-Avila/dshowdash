@@ -32,6 +32,9 @@ import type {
 import type { EstadoAvatar, QualidadeTier } from '../nucleo/contratos';
 import { carregarManifest3d, urlDoLod } from './Personagens3d';
 import type { ManifestPersonagem3d } from './Personagens3d';
+import { montarPersonagem } from './Assembler3d'; // lote 621-630 (§406)
+import type { ResultadoMontagem } from './Assembler3d';
+import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
 
 export interface OpcoesRenderizador3d {
   /** decide o SLUG publicado a partir do estado (DI — default: manequim) */
@@ -137,6 +140,12 @@ export class Renderizador3d implements RenderizadorAvatar {
   // mega 45: nitidez responsiva — o canvas segue o contêiner de verdade
   private observadorTamanho: ResizeObserver | null = null;
   private alvoEl: HTMLElement | null = null;
+  // ── lote 621–630 (§406, flag as5.assembler3d no CALLER) ───────────
+  // megas 625-626: PARTES 3D (cabelo/barba/roupa) montadas no esqueleto
+  // da base pelo Character Assembler; [] = caminho legado byte a byte
+  private partes3d: string[] = [];
+  /** última montagem §406 — diagnóstico/testes (fases + pendências) */
+  ultimaMontagem: ResultadoMontagem | null = null;
 
   constructor(opcoes: OpcoesRenderizador3d = {}) {
     this.opcoes = {
@@ -904,10 +913,62 @@ export class Renderizador3d implements RenderizadorAvatar {
       const caixa = new THREE.Box3().setFromObject(this.personagem);
       this.controles.target.copy(caixa.getCenter(new THREE.Vector3()));
     }
+    // megas 625-626 (§406): PARTES no esqueleto da base — só quando há
+    // partes pedidas E a base é do rig ubc-v1; [] = zero mudança (§651)
+    await this.montarPartes3d();
     this.atualizarSombras(); // mega 79: castShadow no personagem novo
     this.aplicarTinta();     // mega 81: tinta sobrevive à troca/LOD
     this.aplicarProps();     // lote 131: props seguem o personagem novo
     this.definirCamera(this.cameraAtual); // preserva órbita/retrato no reload §528
+  }
+
+  /** lote 621–630 (§406): define as partes 3D e remonta o personagem.
+   *  O CALLER decide a flag (as5.assembler3d) — aqui é só o mecanismo. */
+  async definirPartes3d(slugs: string[]): Promise<void> {
+    const iguais = slugs.length === this.partes3d.length
+      && slugs.every((s, i) => s === this.partes3d[i]);
+    if (iguais) return;
+    this.partes3d = [...slugs];
+    if (this.slugAtual) await this.carregarPersonagem(this.slugAtual);
+  }
+
+  /** Monta as partes pedidas via Character Assembler §406 (14 passos). */
+  private async montarPartes3d(): Promise<void> {
+    this.ultimaMontagem = null;
+    if (!this.partes3d.length || !this.personagem) return;
+    if (this.manifest?.rig !== 'ubc-v1') {
+      // §481: base fora do rig — partes ignoradas com pendência declarada
+      this.ultimaMontagem = {
+        ok: false,
+        fases: [{ passo: 'validar_rig', ok: false, detalhe: `base "${this.slugAtual}" com rig ${this.manifest?.rig ?? '?'} — partes exigem ubc-v1` }],
+        raiz: null, mixer: null, clipes: new Map(),
+        pendencias: [`partes ignoradas: base não é ubc-v1`],
+      };
+      return;
+    }
+    const partes = [];
+    for (const slug of this.partes3d) {
+      try {
+        const m = await carregarManifestParte(slug);
+        const gltf = await this.gltfDe(urlDaParte(m, this.tierEfetivo()));
+        partes.push({ id: slug, categoria: categoriaDaParte(m.tipo), cena: gltf.scene });
+      } catch { /* §481: parte indisponível não derruba o palco */ }
+    }
+    if (!partes.length) return;
+    this.ultimaMontagem = montarPersonagem({
+      base: this.personagem,
+      partes,
+      bonesCanonicos: BONES_UBC_V1,
+    });
+    // rebind altera a hierarquia — re-mapeia bones/pose p/ o idle §440
+    this.bones.clear();
+    this.poseBase.clear();
+    this.personagem.traverse((n) => {
+      if ((n as THREE.Bone).isBone) {
+        this.bones.set(n.name, n as THREE.Bone);
+        this.poseBase.set(n.name, n.quaternion.clone());
+      }
+    });
   }
 
   private removerPersonagem(): void {

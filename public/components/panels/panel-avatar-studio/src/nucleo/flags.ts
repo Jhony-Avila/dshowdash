@@ -61,6 +61,8 @@ const PADROES: Record<string, boolean> = {
   'as5.palco_v3': true,           // lote 571–580 — §176.1/§178.2/§157 restos
   'as5.infra_v3': true,           // lote 581–590 — §268/§277/§299–300
   'as5.ux_final': true,           // lote 591–600 — §59.1/§60/§64.2/§545+
+  // ── onda 611–710 (decisão #64; padrão ON conforme #50) ──
+  'as5.assembler3d': true,        // lote 621–630 — Character Assembler §406 + partes §423
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

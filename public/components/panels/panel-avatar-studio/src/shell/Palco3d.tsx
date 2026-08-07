@@ -19,6 +19,8 @@ import { criarRenderizador } from '../services/FabricaRenderizador';
 import { compartilharBlob, compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { telemetria } from '../services/Telemetria';
 import { carregarIndice3d, personagemParaBase } from '../services/Personagens3d';
+import { carregarIndicePartes, categoriaDaParte } from '../services/Partes3d'; // lote 621-630 (§406)
+import type { EntradaIndiceParte } from '../services/Partes3d';
 import { flag } from '../nucleo/flags';
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { excluirCena, listarCenas, salvarCena } from '../services/Cenas3d';
@@ -175,6 +177,24 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const podeGravar = typeof MediaRecorder !== 'undefined';
 
   const personagem = override ?? personagemParaBase(estado.body.base);
+  // ── lote 621–630 (§406/§423, flag as5.assembler3d): PARTES 3D ──────
+  const [partesCabelo, setPartesCabelo] = useState<EntradaIndiceParte[]>([]);
+  const [cabelo3d, setCabelo3d] = useState<string | null>(null);
+  const rigAtualEhUbc = useMemo(
+    () => indice.find((x) => x.slug === personagem)?.rig === 'ubc-v1',
+    [indice, personagem],
+  );
+  useEffect(() => {
+    if (!flag('as5.assembler3d')) return;
+    void carregarIndicePartes().then((lista) => {
+      if (lista) setPartesCabelo(lista.filter((p) => categoriaDaParte(p.tipo) === 'cabelo' || categoriaDaParte(p.tipo) === 'barba'));
+    });
+  }, []);
+  useEffect(() => {
+    if (!flag('as5.assembler3d')) return;
+    (refR.current as unknown as { definirPartes3d?: (s: string[]) => Promise<void> })
+      ?.definirPartes3d?.(cabelo3d && rigAtualEhUbc ? [cabelo3d] : []);
+  }, [cabelo3d, rigAtualEhUbc, fase, personagem]);
   const refPersonagem = useRef(personagem);
   refPersonagem.current = personagem;
 
@@ -830,6 +850,26 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             </button>
           ))}
         </div>
+        {/* megas 625-626 (§406/§423, flag as5.assembler3d): CABELO montado
+            no esqueleto da base pelo Character Assembler — só aparece
+            quando há partes publicadas E a base atual é do rig ubc-v1 */}
+        {flag('as5.assembler3d') && partesCabelo.length > 0 && rigAtualEhUbc && (
+          <div className="avst5-p3d-personagens avst5-p3d-partes" role="radiogroup"
+            aria-label="Cabelo (§423 — assembler §406)" data-teste="p3d-cabelos">
+            <button type="button" role="radio" aria-checked={cabelo3d === null}
+              className={`avst5-p3d-chip${cabelo3d === null ? ' avst5-p3d-chip-on' : ''}`}
+              data-teste="p3d-cabelo-nenhum"
+              onClick={() => setCabelo3d(null)}>Sem cabelo</button>
+            {partesCabelo.map((pc) => (
+              <button key={pc.slug} type="button" role="radio" aria-checked={cabelo3d === pc.slug}
+                className={`avst5-p3d-chip${cabelo3d === pc.slug ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-cabelo-${pc.slug}`}
+                onClick={() => setCabelo3d(pc.slug)}>
+                {pc.nome}
+              </button>
+            ))}
+          </div>
+        )}
         {animacoesDoAtual.length > 0 && (
           <div className="avst5-p3d-animacoes" role="radiogroup" aria-label="Animação"
             data-teste="p3d-animacoes">

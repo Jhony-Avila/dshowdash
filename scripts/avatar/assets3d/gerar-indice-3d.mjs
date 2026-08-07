@@ -14,6 +14,11 @@ import { basename, join, resolve } from 'node:path';
 const NOMES_AMIGAVEIS = {
   androide: 'Androide', animal_pug: 'Pug', humano_aventureiro: 'Aventureiro',
   humano_casual: 'Casual', humano_punk: 'Punk', humano_terno: 'Executivo',
+  // megas 617-618 (UBC)
+  base_superhero_m: 'Herói (UBC)', base_superhero_f: 'Heroína (UBC)',
+  // megas 627-628 (partes de cabelo §423 — mesma ferramenta, pasta partes/)
+  cab_longo: 'Longo', cab_coque: 'Coque', cab_repartido: 'Repartido',
+  cab_raspado: 'Raspado', cab_raspado_f: 'Raspado F', cab_barba: 'Barba',
 };
 
 export function gerarIndice3d(pastaPersonagens) {
