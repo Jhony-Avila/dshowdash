@@ -188,6 +188,10 @@ const abrirPalcoNoHeroi = async (p) => {
   await p.waitForTimeout(3000);
   await p.evaluate(() => { [...document.querySelectorAll('.avst5-p3d-personagens .avst5-p3d-chip')].find((x) => x.textContent.includes('Herói (UBC)'))?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
   await p.waitForTimeout(5000);
+  // lote 681-690: espera a carga PROGRESSIVA assentar (badge §472 some;
+  // stand-in §470 já trocou pelo alvo) — screenshots ficam estáveis
+  await p.waitForFunction(() => !document.querySelector('[data-teste="p3d-carga"]'), { timeout: 20000 }).catch(() => {});
+  await p.waitForTimeout(1200);
 };
 const trocarCor = async (p, slot, hex) => {
   // painel "Cores e propriedades" do shell (§420: a UI fala canais §73)

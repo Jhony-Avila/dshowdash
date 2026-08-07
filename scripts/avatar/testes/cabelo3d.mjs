@@ -129,6 +129,9 @@ const abrirPalcoNoHeroi = async (p) => {
   await p.waitForTimeout(3000);
   await p.evaluate(() => { [...document.querySelectorAll('.avst5-p3d-personagens .avst5-p3d-chip')].find((x) => x.textContent.includes('Herói (UBC)'))?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
   await p.waitForTimeout(5000);
+  // lote 681-690: espera a carga progressiva assentar (badge §472/§470)
+  await p.waitForFunction(() => !document.querySelector('[data-teste="p3d-carga"]'), { timeout: 20000 }).catch(() => {});
+  await p.waitForTimeout(1200);
 };
 const clicar = (p, sel) => p.evaluate((s) => document.querySelector(s)?.dispatchEvent(new MouseEvent('click', { bubbles: true })), sel);
 const abrirCriacaoAvancada = async (p) => {

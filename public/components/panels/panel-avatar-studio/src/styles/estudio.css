@@ -2470,3 +2470,13 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   .avst-trilho .avst-card { height: auto; contain-intrinsic-size: 150px 200px; }
   .avst-trilho .avst-card-thumb { height: auto; aspect-ratio: 1; }
 }
+
+/* mega 685 (§472, flag as5.progressivo3d): badge de carga discreto */
+.avst5-p3d-carga {
+  position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  font-size: 11px; padding: 4px 12px; border-radius: 999px;
+  color: var(--avst-texto-2, #8a93a6); background: rgba(13, 16, 23, 0.82);
+  border: 1px solid var(--avst-borda, #232a38); pointer-events: none;
+  z-index: 3;
+}

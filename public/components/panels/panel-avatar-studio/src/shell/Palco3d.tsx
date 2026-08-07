@@ -12,7 +12,7 @@
 // continuam honestas; flag as5.palco3d fail-safe OFF; erro nunca derruba
 // o shell.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, BadgeCheck, BookmarkPlus, Box, Camera, CircleDot, Clapperboard, Columns2, Eraser, Grid3x3, LayoutPanelTop, Lightbulb, Maximize2, Minimize2, Pause, PersonStanding, Play, RefreshCcw, Rotate3d, RotateCw, Share2, SkipBack, SkipForward, SlidersHorizontal, Sparkles, UserRound, Wand2 } from 'lucide-react';
+import { Activity, BadgeCheck, BookmarkPlus, Box, Camera, CircleDot, Clapperboard, Columns2, Eraser, Grid3x3, LayoutPanelTop, Lightbulb, LoaderCircle, Maximize2, Minimize2, Pause, PersonStanding, Play, RefreshCcw, Rotate3d, RotateCw, Share2, SkipBack, SkipForward, SlidersHorizontal, Sparkles, UserRound, Wand2 } from 'lucide-react';
 import type { EstadoAvatar } from '../nucleo/contratos';
 import type { EstadoCamera, RenderizadorAvatar } from '../nucleo/renderizador';
 import { criarRenderizador } from '../services/FabricaRenderizador';
@@ -172,7 +172,9 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   });
   // mega 28: HUD de performance (flag dev)
   const hudLigado = flag('as5.hud3d');
-  const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number } | null>(null);
+  const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number; drawCalls?: number } | null>(null);
+  // lote 681-690 (§472, flag as5.progressivo3d): fase amigável da carga
+  const [faseCarga, setFaseCarga] = useState<string | null>(null);
   const [sinalLocal, setSinalLocal] = useState(0);
   const sinalShowcase = sinalApresentar + sinalLocal;
   // megas 226–227 (§175): EDITOR DE SHOWCASE — roteiro ativo comanda a
@@ -276,9 +278,16 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             setAnuncio(fase2 === 'perdido' ? 'Recuperando o 3D…' : 'Palco 3D recuperado');
             telemetria('p3d_contexto', { fase: fase2 }); // §290
           },
+          // lote 681-690 (§472): fases reais da carga → badge discreto
+          aoCarregamento: (f) => {
+            if (flag('as5.progressivo3d')) setFaseCarga(f);
+          },
         });
         if (!vivo) { void r.descartar(); return; }
         refR.current = r;
+        // §470/§475: progressivo ANTES da 1ª carga (o efeito mantém depois)
+        (r as unknown as { definirProgressivo?: (v: boolean) => void })
+          ?.definirProgressivo?.(flag('as5.progressivo3d'));
         await r.inicializar({
           qualidade: qualidadeGuardada(), pixelRatioMax: 2,
           dicaTier: capacidade.dicaTier, // mega 42 (§605-lite)
@@ -610,6 +619,14 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     (refR.current as unknown as { definirCores3d?: (c: Record<string, string> | null) => void })
       ?.definirCores3d?.(tem ? coresPersonalizadas : null);
   }, [coresPersonalizadas, fase, personagem]);
+
+  // lote 681-690 (§462/§470/§475, flag as5.progressivo3d): progressivo
+  // no renderer — LOD por tela, lod2-primeiro e cache IndexedDB por hash
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    (refR.current as unknown as { definirProgressivo?: (v: boolean) => void })
+      ?.definirProgressivo?.(flag('as5.progressivo3d'));
+  }, [fase]);
 
   // lote 651–660 (§412–§414, flag as5.morfos3d): tipo corporal §102 e
   // ajuste fino §102.2 do 2D moldam o personagem 3D (tabela única §102)
@@ -965,6 +982,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               <button key={pc.slug} type="button" role="radio" aria-checked={cabelo3d === pc.slug}
                 className={`avst5-p3d-chip${cabelo3d === pc.slug ? ' avst5-p3d-chip-on' : ''}`}
                 data-teste={`p3d-cabelo-${pc.slug}`}
+                onMouseEnter={() => (refR.current as unknown as { precarregarParte?: (s: string) => void })?.precarregarParte?.(pc.slug)}
                 onClick={() => setCabelo3d(pc.slug)}>
                 {pc.nome}
               </button>
@@ -984,6 +1002,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               <button key={pb.slug} type="button" role="radio" aria-checked={barba3d === pb.slug}
                 className={`avst5-p3d-chip${barba3d === pb.slug ? ' avst5-p3d-chip-on' : ''}`}
                 data-teste={`p3d-barba-${pb.slug}`}
+                onMouseEnter={() => (refR.current as unknown as { precarregarParte?: (s: string) => void })?.precarregarParte?.(pb.slug)}
                 onClick={() => setBarba3d(pb.slug)}>
                 {pb.nome}
               </button>
@@ -1340,6 +1359,16 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         {hudLigado && hud && (
           <div className="avst5-p3d-hud" data-teste="p3d-hud" role="note">
             <Activity size={10} aria-hidden /> {hud.fps}fps · {hud.tier} · {hud.triangulos.toLocaleString('pt-BR')}△
+            {typeof hud.drawCalls === 'number' && <> · {hud.drawCalls}dc</>}
+          </div>
+        )}
+        {/* mega 685 (§472): estado REAL da carga, discreto e amigável */}
+        {faseCarga && faseCarga !== 'pronto' && (
+          <div className="avst5-p3d-carga" data-teste="p3d-carga" role="status">
+            <LoaderCircle size={10} aria-hidden className="avst-girando" />
+            {faseCarga === 'metadados' ? 'Buscando informações…'
+              : faseCarga === 'modelo_rapido' ? 'Prévia rápida no palco — melhorando…'
+                : faseCarga === 'baixando' ? 'Baixando o modelo…' : 'Montando o personagem…'}
           </div>
         )}
         {congelado && (

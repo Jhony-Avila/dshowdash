@@ -196,6 +196,25 @@
   (trilho/tokens) reutilizável pelo shell no futuro. Análise + proposta:
   docs/AVATAR-STUDIO-5/classico-aaa.md.
 
+- **#69 (2026-08-07) — LOD/progressivo (lote 681–690)**: o que o pipeline
+  v2 JÁ cobria fica registrado como atendido (§461 LODs por asset · §463
+  hysteresis 30/55 + swap atômico · §464 meshopt (Draco descartado: carga
+  de decoder sem ganho no nosso tamanho de malha) · §465 WebP no lugar de
+  KTX2 (decisão de pipeline: sem decoder extra; revisita se a GPU pedir)
+  · §466 partículas já instanciadas (THREE.Points) · §468/§469 orçamentos
+  por LOD no gate §631 · §477 hashes sha256 · §478 manifests §517). O
+  lote entrega o que faltava no CLIENTE: §473 cancelamento por GERAÇÃO
+  de carga (bugfix de corrida, SEM flag — corretude não é feature); §470
+  progressivo lod2-primeiro (alvo baixa em paralelo; stand-in só se o
+  alvo não chegou); §462 LOD por TAMANHO DE TELA (canvas < 420px rebaixa
+  um tier); §471 preloader de PARTES no hover; §472 loading manager com
+  fases reais (metadados→baixando→modelo_rapido→montando→pronto) e badge
+  discreto; §474 LRU real com PIN do personagem atual; §475 IndexedDB
+  por hash (imutável com hash; sem hash expira em 7d; teto 96MB com
+  despejo LRU; qualquer erro degrada p/ rede); §467 draw calls no HUD
+  dev. §476 (CDN/URLs versionadas) é INFRA — pendência registrada p/ o
+  Jhony decidir fora do painel. Flag do lote: `as5.progressivo3d`.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
