@@ -1,13 +1,13 @@
 {
-  "comentario": "GATE de regressão de PESO (mega 8): máximos em KB por chunk do panel-avatar-studio (nome sem hash). Margem ~10% sobre o build 2026-08-05 (onda 231-260). Crescimento INTENCIONAL = atualizar aqui no MESMO commit da feature, com justificativa no commit.",
+  "comentario": "GATE de regressão de PESO (mega 8): máximos em KB por chunk do panel-avatar-studio (nome sem hash). Margem ~10% sobre o build 2026-08-08 (mega 840 — o gate abortou o deploy do marco 610→840 porque os tetos eram da onda 231-260; crescimento das ondas 611-840 é INTENCIONAL: assembler/materiais/animação/progressivo/captura no Renderizador3d e AS6 L0-L3 no entry). Crescimento novo = atualizar aqui no MESMO commit da feature, com justificativa no commit.",
   "panel-avatar-studio": {
-    "chunks/entry": 410,
+    "chunks/entry": 460,
     "chunks/catalogo-arte": 345,
     "chunks/react-vendor": 225,
     "chunks/vendor": 40,
     "chunks/motor3d": 1180,
     "chunks/Estudio3D": 50,
-    "chunks/Renderizador3d": 24,
+    "chunks/Renderizador3d": 42,
     "chunks/Atalhos": 4,
     "chunks/Consultor": 9,
     "chunks/DetalheAsset": 15,

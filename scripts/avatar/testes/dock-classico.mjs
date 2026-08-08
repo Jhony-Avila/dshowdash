@@ -29,6 +29,19 @@ const prepararItens = async (p) => {
     await prepararItens(p);
     ok(await p.locator('.avst-trilho[data-dock-v3]').count() === 1, 'trilho sem o escopo dock-v3 com a flag ON');
     ok(await p.locator('[data-teste="dock-v3"]').count() === 1, 'wrapper DockAssets ausente');
+    // ── PROVA GEOMÉTRICA (desktop 1440×900): a dock fica ABAIXO do
+    // preview, em largura total, e NÃO existe lateral de assets ──
+    const geo = await p.evaluate(() => {
+      const caixa = (sel) => { const el = document.querySelector(sel); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, bottom: r.bottom }; };
+      return { palco: caixa('.avst-palco'), trilho: caixa('.avst-trilho'), lateral: caixa('.avst-lateral') };
+    });
+    ok(geo.lateral === null, 'a lateral direita de assets NÃO deveria existir no DOM (aba de itens)');
+    ok(geo.trilho && geo.palco && geo.trilho.y >= geo.palco.bottom - 2,
+      `a dock deveria estar ABAIXO do preview (palco.bottom=${geo.palco?.bottom} · trilho.y=${geo.trilho?.y})`);
+    ok(geo.trilho && Math.abs(geo.trilho.w - geo.palco.w) < 4,
+      `a dock deveria ter a MESMA largura do preview (${geo.palco?.w} × ${geo.trilho?.w})`);
+    ok(geo.palco && geo.palco.h > geo.trilho.h,
+      'o preview deveria dominar a área vertical (palco > dock)');
     // wheel vertical → horizontal
     const antes = await p.evaluate(() => document.querySelector('.avst-trilho .avst-grade').scrollLeft);
     await p.locator('.avst-trilho .avst-grade').evaluate((el) => {
