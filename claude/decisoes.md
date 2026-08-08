@@ -349,6 +349,29 @@
   (lote 781–790, junto da câmera cinematográfica) e painel/aside →
   Inspector (lote 801–810).
 
+- **#80 (2026-08-08) — MEGA ONDA com entregas consolidadas (ordem do
+  Jhony)**: "vamos implementar um mega onde com 100 lotes de uma vez
+  para sermos mais produtivos". Interpretação registrada: o gargalo é a
+  colagem de um bloco SSH a cada lote — a partir do 781, os lotes são
+  produzidos em SEQUÊNCIA local (um commit temático por lote; suíte
+  verde e typecheck a cada lote — o rigor por lote NÃO relaxa) e
+  entregues em BLOCOS CONSOLIDADOS de ~5–10 lotes por colagem
+  (format-patch de série; git am aplica os commits um a um no worktree).
+  Mega onda alvo: 781+ contínua pelas camadas do doc 21 (L2 → L3 → QA
+  foundation), com o mapa rolando à frente. Tripwires do #45 seguem
+  valendo; qualquer vermelho para o trem no lote anterior.
+
+- **#81 (2026-08-08) — Presets de câmera 2D (lote 781–790, AS6 §52/§84,
+  flag as6.viewport)**: a auditoria previa "câmera 2D não viaja", mas o
+  shell JÁ tem enquadramento automático por categoria (R2) com transição
+  suave e idle §119 — o que faltava do AS6 eram os presets MANUAIS.
+  Entregue: chips Auto/Rosto/Busto/Corpo na viewport (preset sobrepõe o
+  auto; 'corpo' = quadro cheio; persiste em dshow.avst6.cam.v1 §84/§299).
+  Flag off = sem chips + enquadramento automático byte a byte (o preset
+  salvo NÃO vaza — testado). A fase 2 da componentização (extrair a
+  viewport) ficou para lote posterior — feature e cirurgia grande no
+  mesmo lote elevam o risco sem necessidade.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

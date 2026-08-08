@@ -77,6 +77,7 @@ const PADROES: Record<string, boolean> = {
   'as5.ual_extra': true,          // lote 731–740 — multi-pacote §432: ual_extra (emotes UAL2: Yes/FoldArms/TalkingPhone/Carry/ChestOpen) soma ao básico
   // ── programa AS6 (decisões #74–#76; numeração § do AVATAR_STUDIO_6.md) ──
   'as6.estado_vnext': true,       // lote 751–760 — L0: migrações de schema (§3393) + capability registry (§3396) + dependências de flags (§3398); off = flag() plano como antes
+  'as6.viewport': true,           // lote 781–790 — L2: presets manuais de câmera 2D §52/§84 (Auto/Rosto/Busto/Corpo persistidos); off = só o enquadramento automático R2, byte a byte
 };
 
 /**

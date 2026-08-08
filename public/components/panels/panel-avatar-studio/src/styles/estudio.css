@@ -2480,3 +2480,9 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   border: 1px solid var(--avst-borda, var(--as6-superficie-4)); pointer-events: none;
   z-index: 3;
 }
+
+/* ── AS6 §52 (lote 781–790, flag as6.viewport): presets de câmera 2D ──
+   Só existe no DOM com a flag ligada (rollback §651 = sem chips). */
+.avst6-cam { position: absolute; top: 150px; left: 12px; display: flex; gap: var(--t-espaco-1); z-index: 2; }
+.avst5-shell[data-modo="studio"] .avst6-cam { display: none; }
+.avst6-cam .avst-ft-chip[aria-pressed="true"] { border-color: var(--as6-acento); color: var(--as6-texto-forte); }

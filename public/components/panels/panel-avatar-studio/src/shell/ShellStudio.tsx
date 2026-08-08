@@ -95,6 +95,15 @@ const ENQUADRAMENTOS: Partial<Record<CategoriaId, [number, number, number, numbe
   emblema: [108, 162, 92, 92],
 };
 
+/** AS6 §52 (lote 781–790, flag as6.viewport): presets MANUAIS de câmera
+ *  — sobrepõem o enquadramento automático R2; 'corpo' = quadro cheio. */
+const PRESETS_CAM6: Record<'rosto' | 'busto' | 'corpo', [number, number, number, number] | undefined> = {
+  rosto: [56, 26, 128, 128],
+  busto: [40, 20, 168, 168],
+  corpo: undefined,
+};
+type Cam6 = 'auto' | 'rosto' | 'busto' | 'corpo';
+
 /** R1 (P1 §9.3) + mega 60 (§160): CENÁRIOS do palco — os 3 clássicos
  *  seguem intactos; dojo/neon/galáxia são os prioritários do briefing. */
 const FUNDOS_CLASSICOS = ['neutro', 'estudio', 'grade', 'dojo', 'neon', 'galaxia'] as const;
@@ -372,7 +381,19 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   }, [store]);
 
   // R2: câmera contextual — zoom suave via transform (viewBox não anima)
-  const enquadramento = ENQUADRAMENTOS[categoria];
+  // AS6 §52/§84 (as6.viewport): preset manual persiste e sobrepõe o auto
+  const [cam6, setCam6] = useState<Cam6>(() => {
+    try {
+      const v = localStorage.getItem('dshow.avst6.cam.v1');
+      return v === 'rosto' || v === 'busto' || v === 'corpo' ? v : 'auto';
+    } catch { return 'auto'; }
+  });
+  const escolherCam6 = useCallback((c: Cam6) => {
+    setCam6(c);
+    try { localStorage.setItem('dshow.avst6.cam.v1', c); } catch { /* sem storage */ }
+  }, []);
+  const flagViewport = flag('as6.viewport');
+  const enquadramento = flagViewport && cam6 !== 'auto' ? PRESETS_CAM6[cam6] : ENQUADRAMENTOS[categoria];
   // (zoomEstilo desceu p/ depois do estado do poder — mega 287 §154 passo 2)
 
   const trocarFundo = (f: FundoPalco) => {
@@ -1185,6 +1206,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                   </rect>
                 </>)}
               </svg>
+            )}
+            {/* AS6 §52 (as6.viewport): presets de câmera do palco 2D */}
+            {flagViewport && !palco3d && (
+              <div className="avst6-cam" role="group" aria-label="Câmera (§52)" data-teste="cam6-chips">
+                {([['auto', 'Auto'], ['rosto', 'Rosto'], ['busto', 'Busto'], ['corpo', 'Corpo']] as const).map(([id, nome]) => (
+                  <button key={id} type="button" className="avst-ft-chip" aria-pressed={cam6 === id}
+                    data-teste={`cam6-${id}`} onClick={() => escolherCam6(id)}>{nome}</button>
+                ))}
+              </div>
             )}
             {palco3d ? (
               <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d}
