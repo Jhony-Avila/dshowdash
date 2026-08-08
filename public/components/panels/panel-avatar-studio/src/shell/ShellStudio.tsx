@@ -8,13 +8,13 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Boxes, Camera, ChevronsLeft, ChevronsRight, Clapperboard, Dices, Eye, Flag, Focus, GitBranch, History, LayoutGrid, Lightbulb, Palette, Play, Redo2, ShieldAlert, Sparkles, Undo2, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUp, Camera, ChevronsLeft, ChevronsRight, Eye, LayoutGrid, Palette, ShieldAlert, Sparkles, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
-import { CATEGORIAS, COLECOES, RARIDADES, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, tituloPorId, validarConfig } from '../services/AvatarCatalog';
+import { COLECOES, RARIDADES, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, tituloPorId, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
-import { definirPrefSom, definirSom, pararAmbiente, prefsSom, somAtivo, tocarAmbiente, tocarCapturar, tocarEquipar, tocarPoder, tocarPreview, tocarSalvar } from '../services/Som';
+import { definirSom, pararAmbiente, somAtivo, tocarAmbiente, tocarCapturar, tocarEquipar, tocarPoder, tocarSalvar } from '../services/Som';
 import { AvatarStore } from '../nucleo/estado';
 import type { Comando } from '../nucleo/estado';
 import { checksumEstado } from '../nucleo/contratos';
@@ -31,9 +31,11 @@ import { incrementar } from '../services/Contadores'; // mega 246 (§221)
 import { avaliarMissoes } from '../services/Missoes';
 import { registrarMarco } from '../services/Evolucao';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
+import { BarraTopo } from '../workspace/BarraTopo';
+import { TrilhoCategorias } from '../workspace/TrilhoCategorias';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
-import { definirIdioma, idiomaAtual, t } from '../nucleo/i18n'; // lote 411-420 (§296)
+import { t } from '../nucleo/i18n'; // lote 411-420 (§296)
 import { ROTULO_FAMILIA, familiaDoPoder, svgRoteiroFamilia } from '../services/PoderesFamilia'; // lote 281-290 (§153/§156)
 import { svgParticulas } from '../engine/particulas'; // lote 351-360 (§157.3)
 import { instalarFocoPreso } from './foco'; // mega 301 (P10)
@@ -754,9 +756,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §90: aleatório inteligente — bloqueios §70.1 NUNCA são trocados.
   // Aplica direto (sem modal §69.1): a proteção já aconteceu no sorteio.
-  const [menuAleatorio, setMenuAleatorio] = useState(false);
   const rodarAleatorio = useCallback((modoAlea: ModoAleatorio) => {
-    setMenuAleatorio(false);
     const novo = aleatorioInteligente(paraLegado2d(store.estadoDraft), {
       semente: Date.now() % 2147483647,
       modo: modoAlea,
@@ -868,14 +868,6 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   }, []);
   const alternarSom = useCallback(() => {
     setSomLigado((v) => { definirSom(!v); return !v; });
-  }, []);
-  // megas 574–577 (§178.2, flag as5.palco_v3): preferências de som por
-  // CATEGORIA — volume geral + efeitos/ambiente/celebrações + preview
-  const [somPrefsAberto, setSomPrefsAberto] = useState(false);
-  const [somPrefs, setSomPrefs] = useState(prefsSom);
-  const mudarPrefSom = useCallback((patch: Parameters<typeof definirPrefSom>[0]) => {
-    definirPrefSom(patch);
-    setSomPrefs(prefsSom());
   }, []);
   // megas 578–579 (§157.4, flag as5.palco_v3): transição de ENTRADA do
   // avatar no palco 2D — one-shot por gesto; §297 nunca liga o data-attr
@@ -1115,126 +1107,21 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
         style={{ '--avst-acento': corTema, '--avst5-esq': `${larguras.esq}px`,
           '--avst5-dir': painelFechado ? '36px' : painelLargo ? '560px' : `${larguras.dir}px` } as React.CSSProperties}>
-        {/* header interno (§626) */}
-        <header className="avst5-header">
-          <strong>Avatar Studio</strong>
-          <span className="avst5-header-sub">5.0 · novo estúdio (prévia)</span>
-          <div className="avst5-header-acoes">
-            <div className="avst5-alea">
-              <button type="button" className="avst-botao" title="Aleatório inteligente (§90)"
-                aria-expanded={menuAleatorio} aria-haspopup="menu"
-                onClick={() => setMenuAleatorio((v) => !v)}>
-                <Dices size={14} aria-hidden /> Aleatório
-              </button>
-              {menuAleatorio && (<>
-                <button type="button" className="avst-fpop-fundo" aria-label="Fechar menu"
-                  onClick={() => setMenuAleatorio(false)} />
-                <div className="avst5-alea-menu" role="menu" aria-label="Modos de aleatório">
-                  <button type="button" role="menuitem" onClick={() => rodarAleatorio('completo')}>Completo <small>respeita bloqueios</small></button>
-                  <button type="button" role="menuitem" onClick={() => rodarAleatorio('categoria')}>Só esta categoria</button>
-                  <button type="button" role="menuitem" onClick={() => rodarAleatorio('cores')}>Só cores</button>
-                  <button type="button" role="menuitem" onClick={() => rodarAleatorio('favoritos')}>Dos favoritos</button>
-                </div>
-              </>)}
-            </div>
-            <button type="button" className="avst-botao" title={`${t('Modo foco')} (F)`}
-              aria-pressed={modo === 'foco'}
-              onClick={() => setModo((m) => (m === 'foco' ? 'edicao' : 'foco'))}>
-              <Focus size={14} aria-hidden /></button>
-            <button type="button" className="avst-botao" title={t('Modo Studio (apresentação)')}
-              aria-pressed={modo === 'studio'}
-              onClick={() => setModo((m) => (m === 'studio' ? 'edicao' : 'studio'))}>
-              <Clapperboard size={14} aria-hidden /></button>
-            <button type="button" className="avst-botao" title="Showcase — apresentação cinematográfica (§174)"
-              data-teste="showcase" disabled={apresentando}
-              onClick={() => { if (palco3d) setSinal3d((n) => n + 1); else void apresentar(); }}>
-              <Play size={14} aria-hidden /> {t('Apresentar')}</button>
-            {flagPalco3d && (
-              <button type="button" className="avst-botao" title={t('Prévia 3D (personagens curados)')}
-                aria-pressed={palco3d} data-teste="botao-3d"
-                onMouseEnter={prefetch3d} onFocus={prefetch3d}
-                onClick={() => setPalco3d((v) => !v)}>
-                <Boxes size={14} aria-hidden /> 3D</button>
-            )}
-            {flag('as5.consultor') && (
-              <button type="button" className="avst-botao" title="Consultor de estilo — sugestões por regras (§232)"
-                data-teste="consultor-abrir" onClick={() => setConsultor(true)}>
-                <Lightbulb size={14} aria-hidden /></button>
-            )}
-            <button type="button" className="avst-botao" title="Missões e desafio da semana (§250)"
-              data-teste="missoes-abrir" onClick={() => setMissoes(true)}>
-              <Flag size={14} aria-hidden /></button>
-            <button type="button" className="avst-botao" title="Evolução do avatar — linha do tempo (§241)"
-              data-teste="evolucao-abrir" onClick={() => setEvolucao(true)}>
-              <GitBranch size={14} aria-hidden /></button>
-            {flag('as5.timeline_shell') && (
-              <button type="button" className="avst-botao" title="Linha do tempo — sua jornada (§220)"
-                data-teste="timeline-abrir" onClick={() => setTimeline(true)}>
-                <History size={14} aria-hidden /></button>
-            )}
-            <button type="button" className="avst-botao" title="Versões do avatar no espelho (§619)"
-              data-teste="versoes-abrir" onClick={() => setVersoes619(true)}>
-              <ArrowUp size={14} aria-hidden style={{ transform: 'rotate(180deg)' }} /></button>
-            {/* mega 415 (§296, flag as5.i18n): seletor de idioma */}
-            {flag('as5.i18n') && (
-              <button type="button" className="avst-botao" data-teste="idioma-toggle"
-                title={idiomaAtual() === 'pt' ? 'Switch interface to English (§296)' : 'Voltar a interface para português (§296)'}
-                onClick={() => definirIdioma(idiomaAtual() === 'pt' ? 'en' : 'pt')}>
-                {idiomaAtual() === 'pt' ? 'EN' : 'PT'}
-              </button>
-            )}
-            <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
-              aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
-              {somLigado ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}</button>
-            {/* megas 574–577 (§178.2, flag as5.palco_v3): prefs por categoria */}
-            {flag('as5.palco_v3') && somLigado && (
-              <span style={{ position: 'relative' }}>
-                <button type="button" className="avst-botao" data-teste="som-prefs-abrir"
-                  aria-expanded={somPrefsAberto} title="Preferências de som por categoria (§178.2)"
-                  onClick={() => setSomPrefsAberto((v) => !v)}>♪</button>
-                {somPrefsAberto && (
-                  <div className="avst5-som-prefs" data-teste="som-prefs" role="group" aria-label="Preferências de som (§178.2)">
-                    <label className="avst5-som-linha">
-                      <span>{t('Volume geral')}</span>
-                      <input type="range" min={0} max={1} step={0.05} value={somPrefs.volume}
-                        data-teste="som-volume" aria-label={t('Volume geral')}
-                        onChange={(e) => mudarPrefSom({ volume: Number(e.target.value) })} />
-                    </label>
-                    {([['efeitos', 'Efeitos'], ['ambiente', 'Ambiente'], ['celebracoes', 'Celebrações']] as const).map(([cat, nome]) => (
-                      <button key={cat} type="button" className="avst-ft-chip"
-                        aria-pressed={somPrefs[cat]} data-teste={`som-cat-${cat}`}
-                        onClick={() => mudarPrefSom({ [cat]: !somPrefs[cat] })}>
-                        {somPrefs[cat] ? '✓ ' : ''}{t(nome)}</button>
-                    ))}
-                    <button type="button" className="avst-ft-chip" data-teste="som-preview"
-                      title="Tocar uma nota de teste (§178.2)"
-                      onClick={() => tocarPreview()}>{t('Testar som')}</button>
-                  </div>
-                )}
-              </span>
-            )}
-            <button type="button" className="avst-botao" disabled={!store.podeDesfazer}
-              title="Desfazer (Ctrl+Z)" onClick={() => store.desfazer()}><Undo2 size={14} aria-hidden /></button>
-            <button type="button" className="avst-botao" disabled={!store.podeRefazer}
-              title="Refazer" onClick={() => store.refazer()}><Redo2 size={14} aria-hidden /></button>
-            <button type="button" className="avst-botao" title="Rever o tour do estúdio (§569)"
-              data-teste="tour-abrir" onClick={() => setTour(true)}>?</button>
-            <button type="button" className="avst-botao" onClick={aoSairDoShell}>Modo clássico</button>
-          </div>
-        </header>
+        {/* header interno (§626) — extraído p/ workspace/BarraTopo (decisão #79) */}
+        <BarraTopo modo={modo} setModo={setModo} apresentando={apresentando}
+          aoApresentar={() => { if (palco3d) setSinal3d((n) => n + 1); else void apresentar(); }}
+          flagPalco3d={flagPalco3d} palco3d={palco3d}
+          aoAlternar3d={() => setPalco3d((v) => !v)} prefetch3d={prefetch3d}
+          rodarAleatorio={rodarAleatorio} somLigado={somLigado} alternarSom={alternarSom}
+          abrirConsultor={() => setConsultor(true)} abrirMissoes={() => setMissoes(true)}
+          abrirEvolucao={() => setEvolucao(true)} abrirTimeline={() => setTimeline(true)}
+          abrirVersoes={() => setVersoes619(true)} abrirTour={() => setTour(true)}
+          store={store} aoSairDoShell={aoSairDoShell} />
 
         <div className="avst5-corpo">
           {/* sidebar esquerda — scroll próprio (R5) */}
-          <nav className={`avst5-sidebar${compacta ? ' avst5-sidebar-compacta' : ''}`} aria-label="Categorias">
-            {CATEGORIAS.map((c) => (
-              <button key={c.id} type="button"
-                className={`avst5-cat${categoria === c.id ? ' avst5-cat-on' : ''}`}
-                title={c.nome} onClick={() => { setCategoria(c.id); setFiltroSlot('todos'); }}>
-                <span className="avst5-cat-inicial" aria-hidden>{c.nome.slice(0, 1)}</span>
-                {!compacta && <span>{c.nome}</span>}
-              </button>
-            ))}
-          </nav>
+          <TrilhoCategorias categoria={categoria} compacta={compacta}
+            aoEscolher={(id) => { setCategoria(id); setFiltroSlot('todos'); }} />
           <div className="avst5-alca" role="separator" aria-orientation="vertical" aria-label="Redimensionar navegação"
             onPointerDown={(e) => { arraste.current = { lado: 'esq', x0: e.clientX, w0: larguras.esq }; }} />
 

@@ -332,6 +332,23 @@
   hex soltos de hoje também não reagiam ao tema claro (comportamento
   preservado, lacuna já registrada na auditoria P8).
 
+- **#79 (2026-08-08) — Componentização do workspace em FASES (lote
+  771–780, AS6 L2 §32/§39)**: o ShellStudio (1.979 linhas, 58 useState)
+  não se componentiza de uma vez com segurança — extração VERBATIM por
+  região, uma fase por lote, DOM byte a byte (fronteira de componente
+  React não muda markup; refatoração sem flag conforme #78). FASE 1
+  (este lote): `workspace/BarraTopo.tsx` (header §626 inteiro, com os
+  estados que só ele usa — menu do aleatório §90 e prefs de som §178.2 —
+  morando no componente) + `workspace/TrilhoCategorias.tsx` (sidebar de
+  categorias). Módulos puros (t/flag/idioma/sons) importados direto pelo
+  componente; prop só para ESTADO do estúdio. ShellStudio: 1.979 → 1.866
+  linhas. Guardrails: teste workspace-fase1.mjs (fronteira sem
+  dependência circular §3470, markup extraído não volta inline, estado
+  migrado não sobra duplicado) + os testes de shell existentes que
+  exercitam cada data-teste do header/nav. FASES SEGUINTES: viewport
+  (lote 781–790, junto da câmera cinematográfica) e painel/aside →
+  Inspector (lote 801–810).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
