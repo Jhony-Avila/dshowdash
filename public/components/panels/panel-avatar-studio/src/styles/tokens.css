@@ -63,4 +63,29 @@
   --t-tipo-corpo: var(--t-fonte-13);
   --t-tipo-legenda: var(--t-fonte-11);
   --t-tipo-micro: var(--t-fonte-10);
+
+  /* ── AS6 L0 (lote 761–770 · §576–§586 do AVATAR_STUDIO_6): CAMADA
+     SEMÂNTICA DE COR — decisão #78. Valores COPIADOS byte a byte dos
+     hex que estavam soltos no estudio.css (zero mudança de pixel); a
+     regra passa a ser: NENHUM hex novo em CSS — só tokens. Estes
+     tokens são CONSTANTES de tema escuro por enquanto (os hex soltos
+     de hoje também não reagiam ao tema claro — comportamento
+     preservado); o light mode com direção própria é a Parte 8 §577 e
+     entra em lote futuro COM flag, porque aí muda pixel. */
+  --as6-superficie-0: #0a0d15;   /* fosso — palco profundo/vitrines */
+  --as6-superficie-1: #0d1017;   /* fundo do estúdio (par do --avst-fundo dark) */
+  --as6-superficie-2: #12151d;   /* faixas/trilhos */
+  --as6-superficie-3: #161b26;   /* cartões/controles */
+  --as6-superficie-4: #232a38;   /* bordas/realces de superfície */
+  --as6-texto-forte: #e6eaf2;    /* texto principal sobre superfícies */
+  --as6-texto-suave: #8a93a6;    /* texto secundário/legendas */
+  --as6-acento: #7c5cff;         /* violeta Dshow (par do --avst-acento) */
+  --as6-atencao: #e8b64c;        /* avisos/destaques quentes */
+  --as6-perigo: #ff5230;         /* erro/destrutivo */
+  --as6-sucesso: #39d98a;        /* ok/confirmação */
+
+  /* §561 (AS6): EASINGS nomeados do Motion System — valores em uso. */
+  --t-ease-suave: cubic-bezier(0.22, 0.9, 0.26, 1);   /* padrão de entrada/deslize */
+  --t-ease-elastico: cubic-bezier(0.3, 1.4, 0.5, 1);  /* pop com overshoot leve */
+  --t-ease-saida: cubic-bezier(0.2, 0.8, 0.3, 1);     /* desaceleração de saída */
 }

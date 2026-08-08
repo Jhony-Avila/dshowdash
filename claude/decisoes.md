@@ -315,6 +315,23 @@
   dependência errada na primeira rodada (fluxo da Foto roda com o palco
   desligado). Espelho PHP: sem mudança (nenhum campo novo trafega).
 
+- **#78 (2026-08-08) — Tokens semânticos SEM flag (lote 761–770, AS6
+  L0)**: §576–§586 (cor semântica) e §561 (motion registry) entraram
+  como REFATORAÇÃO BYTE-IDÊNTICA: 11 hex consolidados (~380 ocorrências
+  do estudio.css) viraram tokens `--as6-*` no tokens.css com os MESMOS
+  valores — pixel a pixel igual por construção, e CSS custom property
+  não é gateável por flag. Interpretação registrada da regra §651:
+  "toda FEATURE nova atrás de flag" — refatoração sem mudança de
+  comportamento não é feature; o rollback é `git revert` e o guardrail
+  é a suíte de screenshots + o teste tokens-as6.mjs (doutrina: hex
+  consolidado que voltar solto = vermelho; @keyframes sem entrada no
+  REGISTRO_ANIMACOES = vermelho, nos dois sentidos). A flag `as6.tokens`
+  prevista no doc 21 fica RESERVADA para quando tokens mudarem VALOR
+  (light mode com direção própria §577+, temas) — aí muda pixel e aí
+  tem flag. Os tokens são constantes de tema escuro por enquanto: os
+  hex soltos de hoje também não reagiam ao tema claro (comportamento
+  preservado, lacuna já registrada na auditoria P8).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

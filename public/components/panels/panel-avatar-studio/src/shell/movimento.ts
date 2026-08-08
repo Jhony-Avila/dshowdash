@@ -92,6 +92,51 @@ export const MOVIMENTOS = {
   ],
 } satisfies Record<string, Keyframe[]>;
 
+// ── AS6 L0 (lote 761–770 · §561): REGISTRY de animações CSS ─────────
+// Toda @keyframes do estudio.css tem entrada AQUI (nome → propósito +
+// categoria). O teste tokens-as6.mjs confere a paridade nos DOIS
+// sentidos: keyframe sem registro = suíte vermelha; registro sem
+// keyframe = suíte vermelha. É o que impede "animação solta" nova —
+// mesma doutrina dos tokens de cor (nenhum valor sem nome).
+
+export type CategoriaMovimento =
+  | 'feedback'      // confirmações/erros (curta, uma vez)
+  | 'estado'        // loading/skeleton/progresso (loop utilitário)
+  | 'vida'          // idle/respiração do palco (loop ambiente, §119)
+  | 'entrada'       // aparecer/materializar (uma vez, entrada de cena)
+  | 'celebracao';   // conquistas/raridade (uma vez, chamativa)
+
+export const REGISTRO_ANIMACOES: Record<string, { categoria: CategoriaMovimento; proposito: string }> = {
+  'avst-girar': { categoria: 'estado', proposito: 'spinner de carregamento' },
+  'avst-glow-respira': { categoria: 'vida', proposito: 'brilho respirando em destaque promovido' },
+  'avst-toast': { categoria: 'entrada', proposito: 'entrada do toast' },
+  'avst-flash': { categoria: 'feedback', proposito: 'flash de captura da foto' },
+  'avst-pt': { categoria: 'feedback', proposito: 'pulso de ponto de interesse (tour §545)' },
+  'avst-check-pop': { categoria: 'feedback', proposito: 'check de confirmação com pop' },
+  'avst-shimmer': { categoria: 'estado', proposito: 'varredura de shimmer (raridade/skeleton)' },
+  'avst-skel': { categoria: 'estado', proposito: 'pulso do skeleton §557' },
+  'avst-adiado': { categoria: 'estado', proposito: 'indicador de salvamento adiado' },
+  'avst5-fade': { categoria: 'entrada', proposito: 'fade genérico do shell' },
+  'avst5-selo': { categoria: 'feedback', proposito: 'selo (título/poder) assentando' },
+  'avst5-cele': { categoria: 'celebracao', proposito: 'celebração de equipar raro §158' },
+  'avst5-cen-desliza': { categoria: 'vida', proposito: 'cenário deslizando (parallax §160)' },
+  'avst5-cen-respira': { categoria: 'vida', proposito: 'cenário respirando (§160)' },
+  'avst5-cenfade': { categoria: 'entrada', proposito: 'crossfade de cenário §157.4' },
+  'avst5-climax': { categoria: 'celebracao', proposito: 'clímax do showcase §175' },
+  'avst5-ent-ascender': { categoria: 'entrada', proposito: 'entrada 2D: ascender (§157.2)' },
+  'avst5-ent-materializar': { categoria: 'entrada', proposito: 'entrada 2D: materializar (§157.2)' },
+  'avst5-ent-teleporte': { categoria: 'entrada', proposito: 'entrada 2D: teleporte (§157.2)' },
+  'avst5-idle-balancar': { categoria: 'vida', proposito: 'idle 2D: balanço sutil §119' },
+  'avst5-idle-flutuar': { categoria: 'vida', proposito: 'idle 2D: flutuação §119' },
+  'avst5-idle-respirar': { categoria: 'vida', proposito: 'idle 2D: respiração §119' },
+  'avst5-mold-energia': { categoria: 'vida', proposito: 'moldura viva: energia §167' },
+  'avst5-mold-pulso': { categoria: 'vida', proposito: 'moldura viva: pulso §167' },
+  'avst5-mold-reativa': { categoria: 'vida', proposito: 'moldura viva: reação §167' },
+  'avst5-poder-nome-entra': { categoria: 'entrada', proposito: 'nome do poder entrando §154' },
+  'avst5-presenca': { categoria: 'vida', proposito: 'presença de palco §157.5' },
+  'avst5-rec': { categoria: 'estado', proposito: 'ponto REC do modo captura' },
+};
+
 /** §174: a sequência cinematográfica do Showcase (fade → aproxima →
  *  gira → volta), ~6s no total — dado, não código, p/ evoluir fácil. */
 export const SHOWCASE_174: PassoMovimento[] = [
