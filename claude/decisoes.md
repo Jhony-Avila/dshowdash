@@ -262,6 +262,18 @@
   candidatos da onda: ual_extra multi-pacote · polish AAA pós-veredito ·
   F8 IA (com a chave).
 
+- **#73 (2026-08-07) — Multi-pacote e ual_extra (lote 731–740)**: o
+  renderer aceita LISTA de pacotes §432 (definirPacotesAnimacoes;
+  definirPacoteAnimacoes delega — Foto §329 intacta); a MESCLA é
+  first-wins (o básico define o Idle canônico; extras só SOMAM — função
+  pura mesclarClipes, testada); falha de um pacote degrada §481 sem
+  derrubar os demais. Curadoria do `ual_extra` (UAL2, CC0): Yes ·
+  Idle_FoldArms_Loop · Idle_TalkingPhone_Loop · Walk_Carry_Loop ·
+  Chest_Open (emotes neutros de escritório/apresentação; armas/zumbi
+  seguem fora do tom). Teto de chips de animação sobe p/ 9 SÓ com a flag
+  (`as5.ual_extra`; off = 6, byte). Publicação do pacote no MESMO bloco
+  de entrega (patch + npm i no worktree + publicar + push).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

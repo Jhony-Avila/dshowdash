@@ -35,6 +35,19 @@ export function removerRootMotion(clipe: THREE.AnimationClip): THREE.AnimationCl
   return clipe;
 }
 
+/** lote 731–740 (§432 "mapear"): MESCLA clipes de VÁRIOS pacotes numa
+ *  tabela única — o PRIMEIRO pacote vence conflito de nome (o básico
+ *  define o Idle canônico; extras só somam). Função pura (testável). */
+export function mesclarClipes(pacotes: PacoteAnimacoes[]): Map<string, THREE.AnimationClip> {
+  const tabela = new Map<string, THREE.AnimationClip>();
+  for (const p of pacotes) {
+    for (const [nome, clipe] of p.clipes) {
+      if (!tabela.has(nome)) tabela.set(nome, clipe);
+    }
+  }
+  return tabela;
+}
+
 const cachePacotes = new Map<string, Promise<PacoteAnimacoes>>();
 
 /** §432 "carregar clips": GLB slim → Map nome→clipe (root motion §437

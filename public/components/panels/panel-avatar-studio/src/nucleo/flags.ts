@@ -74,6 +74,7 @@ const PADROES: Record<string, boolean> = {
   'as5.captura3d_v2': true,       // lote 691–700 — captura §506/§329: LOD alto + supersampling + formatos + indicador §329.3
   // ── onda 721+ (decisão #72; padrão ON conforme #50) ──
   'as5.foto3d': true,             // lote 721–730 — Foto×3D §329: captura com o ESTADO do usuário (cores §420 + corpo §414 + pose Idle UAL) + super 2× + fases §329.3
+  'as5.ual_extra': true,          // lote 731–740 — multi-pacote §432: ual_extra (emotes UAL2: Yes/FoldArms/TalkingPhone/Carry/ChestOpen) soma ao básico
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

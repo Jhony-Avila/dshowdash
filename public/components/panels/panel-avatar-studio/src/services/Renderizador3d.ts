@@ -37,7 +37,7 @@ import { montarPersonagem } from './Assembler3d'; // lote 621-630 (§406)
 import type { ResultadoMontagem } from './Assembler3d';
 import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
 import { aplicarPipelineCores, descartarMateriais } from './Materiais3d'; // lote 641-650 (§418-§421)
-import { MaquinaAnimacao, alvoOlhar, carregarPacoteAnimacoes } from './Animacoes3d'; // lote 661-670 (§432-§439)
+import { MaquinaAnimacao, alvoOlhar, carregarPacoteAnimacoes, mesclarClipes } from './Animacoes3d'; // lotes 661-670/731-740 (§432-§439)
 import type { PacoteAnimacoes } from './Animacoes3d';
 
 export interface OpcoesRenderizador3d {
@@ -142,10 +142,10 @@ export class Renderizador3d implements RenderizadorAvatar {
   private dprBase = 1;
   private dprAtual = 1;
   // ── lote 661–670 (§432–§439, flag as5.animacao3d no CALLER) ───────
-  // pacote de clipes EXTERNO (UAL §436 — mesmo rig = reuso direto);
-  // null = comportamento anterior byte a byte (clipes do GLB ou idle)
-  private pacoteAnim: PacoteAnimacoes | null = null;
-  private urlPacoteAnim: string | null = null;
+  // pacotes de clipes EXTERNOS (UAL §436 — mesmo rig = reuso direto);
+  // lote 731-740: LISTA de pacotes (básico + extras); [] = anterior
+  private pacotesAnim: PacoteAnimacoes[] = [];
+  private urlsPacotesAnim: string[] = [];
   /** máquina §433 — captura nunca é quebrada por emote */
   readonly maquinaAnim = new MaquinaAnimacao();
   // §439: olhar segue o cursor com amplitude limitada e SUAVIZAÇÃO
@@ -1132,31 +1132,39 @@ export class Renderizador3d implements RenderizadorAvatar {
    *  comportamento anterior byte a byte. O CALLER decide a flag
    *  (as5.animacao3d) — aqui é só o mecanismo. Erro degrada §481. */
   async definirPacoteAnimacoes(url: string | null): Promise<void> {
-    if (url === this.urlPacoteAnim) return;
-    this.urlPacoteAnim = url;
-    if (!url) {
-      this.pacoteAnim = null;
+    await this.definirPacotesAnimacoes(url ? [url] : []);
+  }
+
+  /** lote 731-740 (§432): LISTA de pacotes — o básico define o Idle
+   *  canônico; extras SOMAM emotes (primeiro pacote vence conflito de
+   *  nome). Falha individual degrada §481 (os demais seguem). */
+  async definirPacotesAnimacoes(urls: string[]): Promise<void> {
+    const iguais = urls.length === this.urlsPacotesAnim.length
+      && urls.every((u, i) => u === this.urlsPacotesAnim[i]);
+    if (iguais) return;
+    this.urlsPacotesAnim = [...urls];
+    if (!urls.length) {
+      this.pacotesAnim = [];
       if (this.slugAtual) await this.carregarPersonagem(this.slugAtual);
       return;
     }
-    try {
-      this.pacoteAnim = await carregarPacoteAnimacoes(url);
-    } catch {
-      this.pacoteAnim = null; // §481: pacote indisponível não derruba o palco
-      return;
-    }
+    const resultados = await Promise.allSettled(urls.map((u) => carregarPacoteAnimacoes(u)));
+    this.pacotesAnim = resultados
+      .filter((r): r is PromiseFulfilledResult<PacoteAnimacoes> => r.status === 'fulfilled')
+      .map((r) => r.value);
+    if (!this.pacotesAnim.length) return; // §481: nada disponível — palco segue
     this.anexarPacoteExterno();
   }
 
-  /** Anexa os clipes do pacote quando o GLB do personagem NÃO traz os
+  /** Anexa os clipes dos pacotes quando o GLB do personagem NÃO traz os
    *  próprios (§432 "mapear"): mixer novo na raiz montada — base e partes
    *  compartilham o esqueleto pós-rebind, então o clipe veste tudo. */
   private anexarPacoteExterno(): void {
-    if (!this.pacoteAnim || !this.personagem) return;
-    if (this.manifest?.rig !== 'ubc-v1') return; // pacote é do rig ubc-v1
+    if (!this.pacotesAnim.length || !this.personagem) return;
+    if (this.manifest?.rig !== 'ubc-v1') return; // pacotes são do rig ubc-v1
     if (this.clipes.size) return; // clipes do próprio GLB têm prioridade
     this.mixer = new THREE.AnimationMixer(this.personagem);
-    for (const [nome, clipe] of this.pacoteAnim.clipes) this.clipes.set(nome, clipe);
+    for (const [nome, clipe] of mesclarClipes(this.pacotesAnim)) this.clipes.set(nome, clipe);
     // mega 670: convenções de nome da UAL entram no fallback do idle
     const idle = this.clipes.get('Idle') ?? this.clipes.get('Idle_Loop') ?? [...this.clipes.values()][0];
     if (idle && this.idleAtivo) {

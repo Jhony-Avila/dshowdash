@@ -49,10 +49,12 @@ const CURADOS_FALLBACK: EntradaIndice3d[] = [
 ];
 
 /** Animações em destaque no seletor (ordem de preferência §174-friendly). */
-// mega 670: nomes da UAL (pacote ual_basico §436) somados aos legados
+// mega 670: nomes da UAL (pacote ual_basico §436) somados aos legados;
+// lote 731-740: emotes do ual_extra (UAL2) entram no destaque
 const ANIMACOES_DESTAQUE = [
   'Idle', 'Idle_Loop', 'Idle_Talking_Loop', 'Walk', 'Walking', 'Walk_Loop', 'Walk_Formal_Loop',
-  'Running', 'Jog_Fwd_Loop', 'Wave', 'Dance', 'Dance_Loop', 'Interact', 'Sitting_Idle_Loop',
+  'Running', 'Jog_Fwd_Loop', 'Wave', 'Dance', 'Dance_Loop', 'Yes', 'Idle_FoldArms_Loop',
+  'Idle_TalkingPhone_Loop', 'Interact', 'Sitting_Idle_Loop', 'Walk_Carry_Loop', 'Chest_Open',
   'Jump', 'Victory', 'ThumbsUp',
 ];
 
@@ -355,20 +357,27 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // ubc-v1 — publicado por publicar-animacoes.mjs; 404 degrada §481
   useEffect(() => {
     if (fase !== 'pronto') return;
-    const url = flag('as5.animacao3d') && rigAtualEhUbc
-      ? '/assets/avatars/3d/animacoes/ual_basico/pacote.glb'
-      : null;
-    void (refR.current as unknown as { definirPacoteAnimacoes?: (u: string | null) => Promise<void> })
-      ?.definirPacoteAnimacoes?.(url)
+    // lote 731-740 (§432, flag as5.ual_extra): LISTA de pacotes — o
+    // básico define o Idle; o extra soma emotes (404 degrada por pacote)
+    const urls = flag('as5.animacao3d') && rigAtualEhUbc
+      ? [
+        '/assets/avatars/3d/animacoes/ual_basico/pacote.glb',
+        ...(flag('as5.ual_extra') ? ['/assets/avatars/3d/animacoes/ual_extra/pacote.glb'] : []),
+      ]
+      : [];
+    void (refR.current as unknown as { definirPacotesAnimacoes?: (u: string[]) => Promise<void> })
+      ?.definirPacotesAnimacoes?.(urls)
       ?.then(() => setSinalAnim((n) => n + 1)); // re-lê os clipes disponíveis
   }, [fase, personagem, rigAtualEhUbc]);
 
   const animacoesDoAtual = useMemo(() => {
     const doIndice = indice.find((p) => p.slug === personagem)?.animacoes ?? [];
-    // §432: clipes do renderer (pacote UAL anexado) somam ao índice
+    // §432: clipes do renderer (pacotes UAL anexados) somam ao índice
     const todos = [...new Set([...doIndice, ...animsRenderer])];
     const destaque = ANIMACOES_DESTAQUE.filter((a) => todos.includes(a));
-    return destaque.length ? destaque.slice(0, 6) : todos.slice(0, 6);
+    // lote 731-740: com o extra ligado cabem mais chips de emote
+    const teto = flag('as5.ual_extra') ? 9 : 6;
+    return destaque.length ? destaque.slice(0, teto) : todos.slice(0, teto);
   }, [indice, personagem, animsRenderer]);
 
   // mega 17: prefetch oportunista no hover do chip

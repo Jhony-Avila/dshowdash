@@ -16,17 +16,20 @@ const fluxo = async (p, { esperaFases }) => {
   await p.waitForTimeout(600);
   await p.locator('[data-teste="origem-3d"]').click();
   await p.waitForSelector('[data-teste="galeria-3d"]', { timeout: 10000 });
-  // escolhe o HERÓI (UBC): exercita rebind/cores/corpo/pose da onda 611+
-  const fases = [];
-  const sonda = setInterval(() => {
-    void p.evaluate(() => document.querySelector('[data-teste="foto-329-fase"]')?.textContent ?? null)
-      .then((t) => { if (t) fases.push(t); })
-      .catch(() => { /* página ocupada */ });
-  }, 350);
+  // escolhe o HERÓI (UBC): exercita rebind/cores/corpo/pose da onda 611+.
+  // As fases são gravadas POR DENTRO da página (MutationObserver) — o
+  // polling do driver morre de fome quando o SwiftShader ocupa a CPU.
+  await p.evaluate(() => {
+    window.__fases329 = [];
+    new MutationObserver(() => {
+      const t = document.querySelector('[data-teste="foto-329-fase"]')?.textContent?.trim();
+      const lista = window.__fases329;
+      if (t && lista[lista.length - 1] !== t) lista.push(t);
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
   await p.locator('.avst-foto-3d-item', { hasText: 'Herói (UBC)' }).click();
-  await p.waitForSelector('.avst-ft-preview svg', { timeout: 90000 });
-  clearInterval(sonda);
-  const texto = fases.join(' | ');
+  await p.waitForSelector('.avst-ft-preview svg', { timeout: 120000 });
+  const texto = (await p.evaluate(() => window.__fases329.join(' | '))) ?? '';
   if (esperaFases) {
     ok(/Preparando|Carregando|Ajustando|Renderizando|Finalizando/.test(texto),
       `fases §329.3 não apareceram (visto: "${texto.slice(0, 120)}")`);
