@@ -406,6 +406,14 @@
   visual (§207) fica p/ polish futuro — sliders entregam o valor
   funcional sem canvas novo. Flag off = swatches anteriores byte a byte.
 
+- **#85 (2026-08-08) — Componentização fase 2 (lote 821–830)**: o
+  <aside> do painel direito virou workspace/PainelCatalogo.tsx (extração
+  verbatim, DOM byte a byte, mesmo protocolo da #79). Estados exclusivos
+  (propriedades/mostrarTopo/refPainel) moram no componente; `aba` fica
+  no pai (PaletaComandos e DetalheAsset navegam por ela). ShellStudio:
+  1.866 → 1.730 linhas. Falta a fase 3 (viewport/main — a maior, junto
+  do lote de câmera avançada).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

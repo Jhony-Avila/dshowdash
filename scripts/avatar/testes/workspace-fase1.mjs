@@ -55,6 +55,15 @@ ok(shell.includes('<BarraTopo') && shell.includes('<TrilhoCategorias'),
 
 // ── C) estados migrados não sobram no pai ───────────────────────────
 ok(!shell.includes('menuAleatorio'), 'estado do menu aleatório duplicado no pai');
+// ── FASE 2 (lote 821–830, decisão #85): painel direito ──────────────
+const painel = readFileSync(join(PAINEL, 'src/workspace/PainelCatalogo.tsx'), 'utf8');
+ok(!importaMonolito(painel), 'PainelCatalogo importando o monólito (§3470)');
+ok(!shell.includes('avst5-painel-scroll'), 'o <aside> voltou inline no ShellStudio — pertence ao PainelCatalogo');
+ok(shell.includes('<PainelCatalogo'), 'ShellStudio deveria consumir o PainelCatalogo');
+ok(!shell.includes('const [propriedades') && !shell.includes('mostrarTopo'),
+  'estados do painel duplicados no pai (fase 2)');
+ok(painel.includes('mostrarTopo') && painel.includes('propriedades'),
+  'estados locais do painel deveriam morar no PainelCatalogo');
 ok(!shell.includes('somPrefsAberto') && !shell.includes('const [somPrefs'),
   'estado das prefs de som duplicado no pai');
 ok(barra.includes('somPrefsAberto') && barra.includes('menuAleatorio'),

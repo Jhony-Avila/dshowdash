@@ -8,7 +8,7 @@
 // (comandos + undo/redo); o catálogo reusa GradeItens (auditado MANTER).
 import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUp, Camera, ChevronsLeft, ChevronsRight, Eye, LayoutGrid, Palette, ShieldAlert, Sparkles, X } from 'lucide-react';
+import { Camera, Eye, LayoutGrid, ShieldAlert, Sparkles, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { COLECOES, RARIDADES, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, tituloPorId, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
@@ -20,19 +20,18 @@ import type { Comando } from '../nucleo/estado';
 import { checksumEstado } from '../nucleo/contratos';
 import { deLegado2d, paraLegado2d } from '../nucleo/adaptadores';
 import { AvatarSvg } from '../components/AvatarSvg';
-import { GradeItens, comItem } from '../components/GradeItens';
+import { comItem } from '../components/GradeItens';
 import type { AbaCatalogo } from '../components/GradeItens';
-import { Cores } from '../components/Cores';
-import { Equipados, alternarBloqueio, lerBloqueios } from './Equipados';
-import { PropriedadesAsset } from './PropriedadesAsset';
-import { PresetsShell } from './PresetsShell';
+import { lerBloqueios } from './Equipados';
 import { Evolucao } from './Evolucao';
 import { incrementar } from '../services/Contadores'; // mega 246 (§221)
 import { avaliarMissoes } from '../services/Missoes';
 import { registrarMarco } from '../services/Evolucao';
 import { TourGuiado, tourJaVisto } from './TourGuiado';
+import { useHistoricoSessao } from './HistoricoSessao';
 import { BarraTopo } from '../workspace/BarraTopo';
 import { TrilhoCategorias } from '../workspace/TrilhoCategorias';
+import { PainelCatalogo } from '../workspace/PainelCatalogo';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n'; // lote 411-420 (§296)
@@ -52,7 +51,6 @@ const VersoesAvatar = lazy(() => import('./VersoesAvatar').then((m) => ({ defaul
 const Atalhos = lazy(() => import('./Atalhos').then((m) => ({ default: m.Atalhos })));
 const TelemetriaDev = lazy(() => import('./TelemetriaDev').then((m) => ({ default: m.TelemetriaDev })));
 const DetalheAsset = lazy(() => import('./DetalheAsset').then((m) => ({ default: m.DetalheAsset })));
-import { HistoricoSessao, useHistoricoSessao } from './HistoricoSessao';
 import {
   CHAVE_RASCUNHO_STORAGE, gravarRascunho, idDaAba, lerRascunho, limparRascunho,
 } from '../services/PresetsPessoais';
@@ -64,12 +62,6 @@ import { BarraSalvamento } from './BarraSalvamento';
 import { MOVIMENTOS, SHOWCASE_174, animar, movimentoReduzido, sequencia } from './movimento';
 
 /** §68.3: chips de navegação por slot na categoria Acessórios. */
-const CHIPS_SLOT: Array<{ id: 'todos' | SlotAcessorio; nome: string }> = [
-  { id: 'todos', nome: 'Todos' },
-  { id: 'cabeca', nome: 'Cabeça' },
-  { id: 'rosto', nome: 'Rosto' },
-  { id: 'pescoco', nome: 'Pescoço' },
-];
 
 const CHAVE_LARGURAS = 'dshow.avst5.larguras.v1';
 const CHAVE_FUNDO = 'dshow.avst5.fundo.v1';
@@ -318,13 +310,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [modo, setModo] = useState<'edicao' | 'foco' | 'studio'>('edicao');
   const [painelLargo, setPainelLargo] = useState(false);
   const [painelFechado, setPainelFechado] = useState(false);
-  const [mostrarTopo, setMostrarTopo] = useState(false);
-  const [propriedades, setPropriedades] = useState(false);
   const [bloqueios, setBloqueios] = useState<Set<string>>(() => lerBloqueios());
   const [, setTicFavs] = useState(0); // re-render após favoritar no Equipados
   // §69.1: conflito pendente aguardando decisão do usuário
   const [conflito, setConflito] = useState<{ novo: AvatarConfig; slot: string; antes: string; depois: string } | null>(null);
-  const refPainel = useRef<HTMLDivElement>(null);
   // §590: tema de acento persistido
   const [tema, setTema] = useState<TemaId>(() => {
     try {
@@ -1600,172 +1589,17 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <div className="avst5-alca" role="separator" aria-orientation="vertical" aria-label="Redimensionar catálogo"
             onPointerDown={(e) => { arraste.current = { lado: 'dir', x0: e.clientX, w0: larguras.dir }; }} />
           {/* painel direito — workspace com scroll INTERNO (R4/R5) */}
-          <aside className={`avst5-painel${painelFechado ? ' avst5-painel-fechado' : ''}`} aria-label="Catálogo">
-            {/* cabeçalho FIXO do workspace (P1 §20–§22) */}
-            <div className="avst5-painel-topo">
-              <button type="button" className="avst5-painel-btn" title={painelFechado ? 'Abrir catálogo' : 'Recolher catálogo'}
-                onClick={() => setPainelFechado((v) => !v)}>
-                {painelFechado ? <ChevronsLeft size={14} aria-hidden /> : <ChevronsRight size={14} aria-hidden />}
-              </button>
-              {!painelFechado && (<>
-                <div className="avst5-abas" role="tablist" aria-label="Filtro do catálogo">
-                  {(['todos', 'equipados', 'favoritos', 'novos', 'bloqueados', 'presets'] as Array<AbaCatalogo | 'presets'>).map((a) => (
-                    <button key={a} type="button" role="tab" aria-selected={aba === a}
-                      className={aba === a ? 'avst5-aba-on' : ''} onClick={() => setAba(a)}>
-                      {/* megas 511-513 (§296): abas traduzíveis (PT = chave) */}
-                      {t(a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : a === 'bloqueados' ? 'Bloqueados' : 'Presets')}
-                    </button>
-                  ))}
-                </div>
-                <button type="button" className={`avst5-painel-btn${propriedades ? ' avst5-painel-btn-on' : ''}`}
-                  title="Cores e propriedades" aria-pressed={propriedades}
-                  onClick={() => setPropriedades((v) => !v)}><Palette size={14} aria-hidden /></button>
-                <button type="button" className="avst5-painel-btn" title={painelLargo ? 'Largura normal' : 'Expandir painel'}
-                  onClick={() => setPainelLargo((v) => !v)}>
-                  {painelLargo ? <ChevronsRight size={14} aria-hidden /> : <ChevronsLeft size={14} aria-hidden />}
-                </button>
-              </>)}
-            </div>
-            {!painelFechado && (
-              <div className="avst5-painel-scroll" ref={refPainel}
-                onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
-                {propriedades && (
-                  <section className="avst5-propriedades" aria-label="Cores e propriedades">
-                    <Cores config={configVisivel} aoMudar={aoEscolher} />
-                    {/* §71: sliders das camadas equipadas com propriedades */}
-                    <PropriedadesAsset config={configVisivel} aoAplicar={aoEscolher} aoPrever={aoPrever} />
-                  </section>
-                )}
-                {aba !== 'equipados' && categoria === 'acessorio' && (<>
-                  {/* §68.2/§68.3: resumo + navegação por slot */}
-                  <div className="avst5-resumo-slots" data-teste="resumo-acessorios">
-                    {resumoAcessorios.length
-                      ? <><strong>{resumoAcessorios.length} equipado{resumoAcessorios.length > 1 ? 's' : ''}</strong> · {resumoAcessorios.join(' · ')}</>
-                      : 'Nenhum acessório equipado'}
-                  </div>
-                  <div className="avst5-chips" role="radiogroup" aria-label="Filtrar por slot">
-                    {CHIPS_SLOT.map((s) => (
-                      <button key={s.id} type="button" role="radio" aria-checked={filtroSlot === s.id}
-                        className={`avst5-chip${filtroSlot === s.id ? ' avst5-chip-on' : ''}`}
-                        onClick={() => setFiltroSlot(s.id)}>{s.nome}</button>
-                    ))}
-                  </div>
-                </>)}
-                {aba === 'presets' ? (
-                  <PresetsShell configAtual={paraLegado2d(store.estadoDraft)}
-                    aoAplicar={(cfg) => aplicarComando(validarConfig(cfg))} />
-                ) : aba === 'equipados' ? (<>
-                  <Equipados config={paraLegado2d(store.estadoDraft)} bloqueios={bloqueios}
-                    aoRemover={(slot) => {
-                      const cfg = paraLegado2d(store.estadoDraft);
-                      const camadas = { ...cfg.camadas } as Record<string, string>;
-                      delete camadas[slot];
-                      aoEscolher({ ...cfg, camadas });
-                    }}
-                    aoTrocar={(cat) => { setCategoria(cat); setAba('todos'); }}
-                    aoBloquear={(slot) => setBloqueios(new Set(alternarBloqueio(slot)))}
-                    aoMudarFavs={() => setTicFavs((t) => t + 1)} />
-                  {/* §138: timeline granular da sessão junto da gestão do estado */}
-                  <HistoricoSessao entradas={historico.entradas} posicao={historico.posicao} irPara={historico.irPara} />
-                </>) : (
-                  <>
-                  {/* megas 254–256 (§102/§118/§105): CRIAÇÃO AVANÇADA — na
-                      categoria Base (identidade do corpo); tudo vira COMANDO
-                      com undo via aoEscolher; neutro = campo some */}
-                  {flag('as5.criacao_avancada') && categoria === 'base' && (
-                    <div className="avst5-cavancada" data-teste="criacao-avancada">
-                      <span className="avst-ft-rotulo">Tipo corporal (§102)</span>
-                      <div className="avst-ft-chips" role="radiogroup" aria-label="Tipo corporal (§102)">
-                        {([[null, 'Médio'], ['esbelto', 'Esbelto'], ['atletico', 'Atlético'], ['robusto', 'Robusto'], ['compacto', 'Compacto']] as const).map(([v, nome]) => (
-                          <button key={nome} type="button" role="radio"
-                            aria-checked={(configDraft.corpo ?? null) === v}
-                            className={`avst-ft-chip ${(configDraft.corpo ?? null) === v ? 'avst-ft-chip-ativo' : ''}`}
-                            data-teste={`corpo-${v ?? 'medio'}`}
-                            onClick={() => {
-                              const { corpo: _c, ...resto } = configDraft;
-                              aoEscolher(validarConfig(v ? { ...resto, corpo: v } : resto));
-                            }}>{nome}</button>
-                        ))}
-                      </div>
-                      <span className="avst-ft-rotulo">Postura (§118)</span>
-                      <div className="avst-ft-chips" role="radiogroup" aria-label="Postura (§118)">
-                        {([[null, 'Neutra'], ['confiante', 'Confiante'], ['relaxada', 'Relaxada'], ['executiva', 'Executiva'], ['heroica', 'Heroica'], ['misteriosa', 'Misteriosa']] as const).map(([v, nome]) => (
-                          <button key={nome} type="button" role="radio"
-                            aria-checked={(configDraft.postura ?? null) === v}
-                            className={`avst-ft-chip ${(configDraft.postura ?? null) === v ? 'avst-ft-chip-ativo' : ''}`}
-                            data-teste={`postura-${v ?? 'neutra'}`}
-                            onClick={() => {
-                              const { postura: _p, ...resto } = configDraft;
-                              aoEscolher(validarConfig(v ? { ...resto, postura: v } : resto));
-                            }}>{nome}</button>
-                        ))}
-                      </div>
-                      <span className="avst-ft-rotulo">Formato facial (§105)</span>
-                      <div className="avst-ft-chips" role="group" aria-label="Presets de formato facial (§105)">
-                        {([['classico', 'Clássico', null], ['suave', 'Suave', { olhos: 1.08, boca: 0.95 }],
-                          ['marcante', 'Marcante', { olhos: 0.9, boca: 1.1 }],
-                          ['expressivo', 'Expressivo', { olhos: 1.14, boca: 1.06 }]] as const).map(([id2, nome, esc]) => (
-                            <button key={id2} type="button" className="avst-ft-chip"
-                              data-teste={`facial-${id2}`}
-                              title={esc ? `Aplica a morfologia §108 (olhos ${esc.olhos}× · boca ${esc.boca}×)` : 'Volta a morfologia facial ao padrão'}
-                              onClick={() => {
-                                const params = { ...(configDraft.params ?? {}) };
-                                if (esc) {
-                                  params.olhos = { ...(params.olhos ?? {}), escala: esc.olhos };
-                                  params.boca = { ...(params.boca ?? {}), escala: esc.boca };
-                                } else {
-                                  if (params.olhos) { const { escala: _e, ...ro } = params.olhos; if (Object.keys(ro).length) params.olhos = ro; else delete params.olhos; }
-                                  if (params.boca) { const { escala: _e2, ...rb } = params.boca; if (Object.keys(rb).length) params.boca = rb; else delete params.boca; }
-                                }
-                                aoEscolher(validarConfig({ ...configDraft, ...(Object.keys(params).length ? { params } : { params: {} }) }));
-                              }}>{nome}</button>
-                        ))}
-                      </div>
-                      {/* megas 561–564 (§102.2, flag as5.criacao_fina): ajuste
-                          FINO — sliders multiplicam o preset; 1 = neutro e o
-                          campo SOME (byte-stability); undo via aoEscolher */}
-                      {flag('as5.criacao_fina') && (
-                        <>
-                          <span className="avst-ft-rotulo">{t('Ajuste fino (§102.2)')}</span>
-                          {([['largura', 'Largura', 0.92, 1.08], ['altura', 'Altura', 0.96, 1.04]] as const).map(([ch, nome, min, max]) => (
-                            <label key={ch} className="avst-ft-linha" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ minWidth: 56 }}>{t(nome)}</span>
-                              <input type="range" min={min} max={max} step={0.01}
-                                data-teste={`fino-${ch}`}
-                                value={configDraft.corpoFino?.[ch] ?? 1}
-                                aria-label={`${t(nome)} (§102.2)`}
-                                onChange={(e) => {
-                                  const v = Number(e.target.value);
-                                  const cf = { ...(configDraft.corpoFino ?? {}), [ch]: v };
-                                  const { corpoFino: _f, ...resto } = configDraft;
-                                  aoEscolher(validarConfig({ ...resto, corpoFino: cf }));
-                                }} />
-                              <span aria-hidden>{(configDraft.corpoFino?.[ch] ?? 1).toFixed(2)}×</span>
-                            </label>
-                          ))}
-                          <button type="button" className="avst-ft-chip" data-teste="fino-neutro"
-                            onClick={() => {
-                              const { corpoFino: _f, ...resto } = configDraft;
-                              aoEscolher(validarConfig(resto));
-                            }}>{t('Restaurar neutro')}</button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  <GradeItens config={configDraft} categoria={categoria}
-                    desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
-                    aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
-                  </>
-                )}
-              </div>
-            )}
-            {!painelFechado && mostrarTopo && (
-              <button type="button" className="avst5-topo" title="Voltar ao topo"
-                onClick={() => refPainel.current?.scrollTo({ top: 0, behavior: 'smooth' })}>
-                <ArrowUp size={14} aria-hidden /> Topo
-              </button>
-            )}
-          </aside>
+          {/* painel direito — extraído p/ workspace/PainelCatalogo (decisão #85) */}
+          <PainelCatalogo painelFechado={painelFechado} setPainelFechado={setPainelFechado}
+            painelLargo={painelLargo} setPainelLargo={setPainelLargo}
+            aba={aba} setAba={setAba} categoria={categoria} setCategoria={setCategoria}
+            filtroSlot={filtroSlot} setFiltroSlot={setFiltroSlot}
+            configVisivel={configVisivel} configDraft={configDraft}
+            aoEscolher={aoEscolher} aoPrever={aoPrever} resumoAcessorios={resumoAcessorios}
+            store={store} aplicarComando={aplicarComando}
+            bloqueios={bloqueios} setBloqueios={setBloqueios}
+            aoMudarFavs={() => setTicFavs((t) => t + 1)}
+            historico={historico} desbloqueados={desbloqueados} setDetalheId={setDetalheId} />
         </div>
         {tour && <TourGuiado aoFechar={() => setTour(false)} />}
         <Suspense fallback={null}>
