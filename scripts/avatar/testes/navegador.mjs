@@ -14,7 +14,7 @@ export const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:8901';
 export const SAIDA = resolve(import.meta.dirname, 'saida');
 mkdirSync(SAIDA, { recursive: true });
 
-export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = false, init } = {}) {
+export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = false, init, initArg } = {}) {
   const args = ['--no-sandbox'];
   if (webgl) args.push('--enable-unsafe-swiftshader'); // WebGL por software no headless
   const navegador = await chromium.launch({
@@ -39,7 +39,7 @@ export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = f
       }
     } catch { /* sem storage */ }
   });
-  if (init) await contexto.addInitScript(init);
+  if (init) await contexto.addInitScript(init, initArg); // initArg: dado serializável p/ o init (lote 801-810)
   const pagina = await contexto.newPage();
   const erros = [];
   pagina.on('pageerror', (e) => erros.push(e.message.slice(0, 160)));

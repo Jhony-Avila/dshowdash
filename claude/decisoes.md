@@ -381,6 +381,20 @@
   metadados de asset (§150–§153) ficam para lotes próprios — o selo era
   a ambiguidade FUNCIONAL apontada pela auditoria (P7–P8 top 4).
 
+- **#83 (2026-08-08) — Regressão de layout por baseline de GEOMETRIA
+  (lote 801–810, AS6 §2676–§2687)**: antecipação da QA foundation. Em
+  vez de baseline de pixels (binários no git + lib de diff), a suíte
+  ganha baseline de ASSINATURA DE LAYOUT: bounding box arredondada a
+  2px + visibilidade dos elementos ESTRUTURAIS de 4 estados canônicos
+  (shell edição/foco, clássico AAA itens, clássico foto) em
+  docs/AVATAR-STUDIO-6/baseline-layout.json — JSON textual cujo diff se
+  revisa no git. Pega a classe de defeito nominal do briefing (§3041:
+  componente sobreposto/deslocado/sumido). Desvio intencional = rodar
+  gerar-baseline-layout.mjs e revisar o diff no commit. Infra:
+  navegador.mjs ganhou initArg (dado serializável p/ o init).
+  Regressão de PIXELS de verdade fica para quando houver runner com GPU
+  (auditoria P16, infra com o Jhony).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
