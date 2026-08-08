@@ -298,6 +298,23 @@
   são renomeadas (byte-stability de storage/testes). O serviço de flags
   ganhará metadados de dependência (§3398 do AS6) na L0.
 
+- **#77 (2026-08-08) — Avatar State vNext (lote 751–760, AS6 L0)**:
+  §3390–§3392 mapeiam para o que JÁ existe (schemaVersion =
+  AvatarConfig.versao / EstadoAvatar.schemaVersion; avatarVersion =
+  base_version §619; updatedAt = atualizadoEm) — NENHUM campo novo
+  persistido (byte-stability). O que faltava virou
+  `nucleo/estado-vnext.ts`: motor de migrações de schema §3393 (cadeia
+  linear, pura, determinística, nunca lança; registros de config/estado
+  nascem VAZIOS na v1 — o gancho no validarConfig é identidade) +
+  Renderer Capability Registry §3396 (2d/3d/foto declaram 8
+  capacidades). Dependências de flags §3398 em `DEPENDENCIAS_FLAGS`:
+  filho desliga com o pai (rollback §651 transitivo), gated por
+  `as6.estado_vnext`. LIÇÃO DE TESTE: as flags de motor com DUPLA
+  entrada (as5.materiais3d/morfos3d/animacao3d/foto3d — palco E Foto
+  §329) NÃO podem depender de as5.palco3d — o foto329.mjs pegou a
+  dependência errada na primeira rodada (fluxo da Foto roda com o palco
+  desligado). Espelho PHP: sem mudança (nenhum campo novo trafega).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

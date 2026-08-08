@@ -75,6 +75,34 @@ const PADROES: Record<string, boolean> = {
   // ── onda 721+ (decisão #72; padrão ON conforme #50) ──
   'as5.foto3d': true,             // lote 721–730 — Foto×3D §329: captura com o ESTADO do usuário (cores §420 + corpo §414 + pose Idle UAL) + super 2× + fases §329.3
   'as5.ual_extra': true,          // lote 731–740 — multi-pacote §432: ual_extra (emotes UAL2: Yes/FoldArms/TalkingPhone/Carry/ChestOpen) soma ao básico
+  // ── programa AS6 (decisões #74–#76; numeração § do AVATAR_STUDIO_6.md) ──
+  'as6.estado_vnext': true,       // lote 751–760 — L0: migrações de schema (§3393) + capability registry (§3396) + dependências de flags (§3398); off = flag() plano como antes
+};
+
+/**
+ * DEPENDÊNCIAS entre flags (AS6 §3398): filho só é efetivo com TODOS os
+ * pais ligados. Formaliza o que o código já fazia por construção (ex.:
+ * as5.ual_extra só é consultada dentro do fluxo do palco 3D) e torna o
+ * rollback §651 transitivo: desligar `as5.palco3d` desliga a árvore 3D
+ * inteira de uma vez, sem estados órfãos. Grafo acíclico por revisão —
+ * cadeias curtas (≤2 níveis), sem ciclos.
+ */
+export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
+  // Consultadas SOMENTE em shell/Palco3d.tsx → filhas do palco. As flags
+  // de motor com DUPLA entrada (palco E Foto §329: as5.materiais3d,
+  // as5.morfos3d, as5.animacao3d, as5.foto3d) NÃO têm pai — o fluxo 3D
+  // da Foto funciona com o palco desligado (provado pelo foto329.mjs).
+  'as5.assembler3d': ['as5.palco3d'],
+  'as5.roupas3d': ['as5.assembler3d'],   // partes exigem o assembler §406
+  'as5.cabelo3d': ['as5.assembler3d'],
+  'as5.ual_extra': ['as5.animacao3d', 'as5.palco3d'], // extra soma ao pacote §432 e só existe no palco
+  'as5.progressivo3d': ['as5.palco3d'],
+  'as5.quality3d_v2': ['as5.palco3d'],
+  'as5.captura3d_v2': ['as5.palco3d'],
+  'as5.hud3d': ['as5.palco3d'],
+  'as5.palco3d_v2': ['as5.palco3d'],
+  'as5.palco3d_cine': ['as5.palco3d'],
+  'as5.pos3d_real': ['as5.palco3d'],
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';
@@ -91,11 +119,24 @@ export async function carregarFlags(): Promise<void> {
   } catch { /* sem endpoint → padrões */ }
 }
 
-export function flag(nome: keyof typeof PADROES | string): boolean {
+/** Valor "cru" da flag (local → remoto → padrão), sem dependências. */
+function flagCrua(nome: string): boolean {
   try {
     const local = JSON.parse(localStorage.getItem(CHAVE_LOCAL) ?? '{}') as Record<string, boolean>;
     if (nome in local) return !!local[nome];
   } catch { /* storage inválido */ }
   if (_remotas && nome in _remotas) return !!_remotas[nome];
   return PADROES[nome] ?? false; // desconhecida = desligada (fail-safe)
+}
+
+export function flag(nome: keyof typeof PADROES | string): boolean {
+  const cru = flagCrua(nome);
+  // AS6 §3398 (as6.estado_vnext): filho desliga junto com o pai — rollback
+  // §651 transitivo. Guarda de recursão: a própria as6.estado_vnext e
+  // flags sem dependência resolvem direto. Com a flag OFF, comportamento
+  // idêntico ao anterior (byte a byte).
+  if (!cru || nome === 'as6.estado_vnext') return cru;
+  const pais = DEPENDENCIAS_FLAGS[nome];
+  if (!pais || !flagCrua('as6.estado_vnext')) return cru;
+  return pais.every((p) => flag(p));
 }
