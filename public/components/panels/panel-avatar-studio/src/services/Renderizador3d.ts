@@ -30,8 +30,15 @@ import type {
   PedidoAnimacao, PedidoPoder, RenderizadorAvatar, ResultadoAplicarEstado,
 } from '../nucleo/renderizador';
 import type { EstadoAvatar, QualidadeTier } from '../nucleo/contratos';
-import { carregarManifest3d, urlDoLod } from './Personagens3d';
+import { carregarManifest3d, lodPorQualidade, urlDoLod } from './Personagens3d';
+import { buscarComCache } from './CacheAssets3d'; // lote 681-690 (§475)
 import type { ManifestPersonagem3d } from './Personagens3d';
+import { montarPersonagem } from './Assembler3d'; // lote 621-630 (§406)
+import type { ResultadoMontagem } from './Assembler3d';
+import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
+import { aplicarPipelineCores, descartarMateriais } from './Materiais3d'; // lote 641-650 (§418-§421)
+import { MaquinaAnimacao, alvoOlhar, carregarPacoteAnimacoes, mesclarClipes } from './Animacoes3d'; // lotes 661-670/731-740 (§432-§439)
+import type { PacoteAnimacoes } from './Animacoes3d';
 
 export interface OpcoesRenderizador3d {
   /** decide o SLUG publicado a partir do estado (DI — default: manequim) */
@@ -42,9 +49,20 @@ export interface OpcoesRenderizador3d {
   aoMudarQualidade?: (tier: QualidadeTier, motivo: 'fps_baixo' | 'fps_folga') => void;
   /** mega 41: watchdog — avisa a UI quando o contexto WebGL cai/volta */
   aoContexto?: (fase: 'perdido' | 'restaurado') => void;
+  /** mega 685 (§472): estados REAIS do carregamento p/ a UI amigável */
+  aoCarregamento?: (fase: 'metadados' | 'baixando' | 'modelo_rapido' | 'montando' | 'pronto') => void;
 }
 
 const FUNDO_ESTUDIO = '#0d1017';
+
+/** mega 693 (§483): passo SUAVE do DPR dinâmico — função PURA (testável).
+ *  FPS baixo contínuo → reduz 15% por janela (piso 70% da base); folga →
+ *  recupera gradualmente até a base. Nunca muda de forma abrupta. */
+export function passoDpr(fpsMedia: number, atual: number, base: number): number {
+  if (fpsMedia > 0 && fpsMedia < 28) return Math.max(base * 0.7, atual * 0.85);
+  if (fpsMedia > 50) return Math.min(base, atual / 0.85);
+  return atual;
+}
 
 export class Renderizador3d implements RenderizadorAvatar {
   readonly id = '3d' as const;
@@ -106,6 +124,33 @@ export class Renderizador3d implements RenderizadorAvatar {
   private sombrasLigadas = false;
   // mega 81 (§419): tinta de destaque nos materiais do personagem
   private tinta: { cor: string; forca: number } | null = null;
+  // lote 641–650 (§418–§421, flag as5.materiais3d no CALLER): cores §73
+  // PERSONALIZADAS por canal (§420) — null = arte original dos GLBs
+  private cores3d: Record<string, string> | null = null;
+  // lote 651–660 (§412–§414, flag as5.morfos3d no CALLER): morfos
+  // estruturais via ESCALA do personagem — null/neutro = escala 1
+  private corpo3d: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null } | null = null;
+  // ── lote 681–690 (§461–§478, flag as5.progressivo3d no CALLER) ────
+  // §473: geração de carga — resposta antiga NUNCA sobrescreve a nova
+  // (bugfix de corrida, SEM flag: corretude não é feature)
+  private geracaoCarga = 0;
+  // §470/§462/§475: progressivo lod2-primeiro + LOD por tela + IndexedDB
+  private progressivoAtivo = false;
+  // ── lote 691–700 (§482–§483, flag as5.quality3d_v2 no CALLER) ─────
+  // §483: DPR dinâmico — reduz suave quando o FPS cai contínuo
+  private dprDinamico = false;
+  private dprBase = 1;
+  private dprAtual = 1;
+  // ── lote 661–670 (§432–§439, flag as5.animacao3d no CALLER) ───────
+  // pacotes de clipes EXTERNOS (UAL §436 — mesmo rig = reuso direto);
+  // lote 731-740: LISTA de pacotes (básico + extras); [] = anterior
+  private pacotesAnim: PacoteAnimacoes[] = [];
+  private urlsPacotesAnim: string[] = [];
+  /** máquina §433 — captura nunca é quebrada por emote */
+  readonly maquinaAnim = new MaquinaAnimacao();
+  // §439: olhar segue o cursor com amplitude limitada e SUAVIZAÇÃO
+  private olharAlvo: { guinada: number; arfagem: number } = { guinada: 0, arfagem: 0 };
+  private olharAtual: { guinada: number; arfagem: number } = { guinada: 0, arfagem: 0 };
   // mega 82 (§444): aura 3D — anel additive na cor do avatar
   private aura3d: THREE.Mesh | null = null;
   // lote 131–140 (§426–§431): SOCKETS — props procedurais presos aos
@@ -137,6 +182,12 @@ export class Renderizador3d implements RenderizadorAvatar {
   // mega 45: nitidez responsiva — o canvas segue o contêiner de verdade
   private observadorTamanho: ResizeObserver | null = null;
   private alvoEl: HTMLElement | null = null;
+  // ── lote 621–630 (§406, flag as5.assembler3d no CALLER) ───────────
+  // megas 625-626: PARTES 3D (cabelo/barba/roupa) montadas no esqueleto
+  // da base pelo Character Assembler; [] = caminho legado byte a byte
+  private partes3d: string[] = [];
+  /** última montagem §406 — diagnóstico/testes (fases + pendências) */
+  ultimaMontagem: ResultadoMontagem | null = null;
 
   constructor(opcoes: OpcoesRenderizador3d = {}) {
     this.opcoes = {
@@ -144,6 +195,7 @@ export class Renderizador3d implements RenderizadorAvatar {
       basePersonagens: opcoes.basePersonagens ?? '/assets/avatars/3d/personagens',
       aoMudarQualidade: opcoes.aoMudarQualidade ?? (() => { /* opcional */ }),
       aoContexto: opcoes.aoContexto ?? (() => { /* opcional */ }),
+      aoCarregamento: opcoes.aoCarregamento ?? (() => { /* opcional */ }),
     };
   }
 
@@ -162,7 +214,9 @@ export class Renderizador3d implements RenderizadorAvatar {
       throw new Error('Renderizador3d.montar exige um HTMLElement real (canvas WebGL não vive em innerHTML)');
     }
     this.renderer = new THREE.WebGLRenderer({ antialias: this.antialias, alpha: true, preserveDrawingBuffer: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.pixelRatioMax)); // §402
+    this.dprBase = Math.min(window.devicePixelRatio || 1, this.pixelRatioMax);
+    this.dprAtual = this.dprBase;
+    this.renderer.setPixelRatio(this.dprBase); // §402
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     // mega 78 (§458): tone mapping cinematográfico (exposição ajustável)
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -295,6 +349,12 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   async tocarAnimacao(pedido: PedidoAnimacao): Promise<void> {
+    // §433: durante a CAPTURA nada muda (emote não quebra o frame §508)
+    if (this.maquinaAnim.estado === 'captura') return;
+    // fora da captura a intenção do usuário SEMPRE vale — em especial o
+    // 'nenhum' (§297): descartá-lo durante 'carregando' deixava o idle
+    // procedural ligado p/ sempre (bug pego pelo teste de reduced-motion)
+    this.maquinaAnim.ir(pedido.id === 'nenhum' ? 'pose' : 'emote');
     this.idleAtivo = pedido.id !== 'nenhum';
     if (!this.mixer) return; // sem clipes no GLB → idle procedural decide
     if (pedido.id === 'nenhum') {
@@ -332,6 +392,9 @@ export class Renderizador3d implements RenderizadorAvatar {
     if (!this.renderer || !this.cena || !this.camera) throw new Error('capturar() antes de montar()');
     if (this.contextoPerdido) throw new Error('contexto WebGL perdido — aguarde a recuperação (mega 41)');
     const estava = this.pausado;
+    // §433: estado CAPTURA — emotes pedidos durante o frame são recusados
+    const estadoAntes = this.maquinaAnim.estado;
+    this.maquinaAnim.ir('captura');
     if (opcoes.deterministica !== false) this.pausado = true; // §508
     // mega 32: transparente HONRADO — só o personagem atravessa o frame
     // (background nulo + chão/grade ocultos; canvas nasceu com alpha:true)
@@ -345,16 +408,40 @@ export class Renderizador3d implements RenderizadorAvatar {
       if (this.grade) this.grade.visible = false;
       if (this.chaoSombra) this.chaoSombra.visible = false; // recorte limpo
     }
+    // lote 691-700 (§506): câmera ESPECÍFICA da captura (aplica/restaura)
+    const cameraAntes = this.cameraAtual;
+    if (opcoes.camera) this.definirCamera(opcoes.camera);
+    // §506 supersampling: renderiza no DOBRO e reduz — AA de captura
+    const fator = opcoes.superAmostra === 2 ? 2 : 1;
     const tamanhoAntes = new THREE.Vector2();
     this.renderer.getSize(tamanhoAntes);
-    this.renderer.setSize(opcoes.largura, opcoes.altura);
+    this.renderer.setSize(opcoes.largura * fator, opcoes.altura * fator);
     this.camera.aspect = opcoes.largura / opcoes.altura;
     this.camera.updateProjectionMatrix();
     this.renderer.render(this.cena, this.camera);
-    const dataUri = this.renderer.domElement.toDataURL('image/png');
+    // §506 múltiplos formatos (jpeg/webp p/ derivados §329.2)
+    const mime = opcoes.formato === 'jpeg' ? 'image/jpeg'
+      : opcoes.formato === 'webp' ? 'image/webp' : 'image/png';
+    const q = opcoes.qualidade ?? 0.92;
+    let dataUri: string;
+    if (fator === 2) {
+      const alvo = document.createElement('canvas');
+      alvo.width = opcoes.largura;
+      alvo.height = opcoes.altura;
+      const ctx = alvo.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(this.renderer.domElement, 0, 0, opcoes.largura, opcoes.altura);
+        dataUri = alvo.toDataURL(mime, q);
+      } else {
+        dataUri = this.renderer.domElement.toDataURL(mime, q);
+      }
+    } else {
+      dataUri = this.renderer.domElement.toDataURL(mime, q);
+    }
     this.renderer.setSize(tamanhoAntes.x, tamanhoAntes.y);
     this.camera.aspect = tamanhoAntes.x / Math.max(1, tamanhoAntes.y);
     this.camera.updateProjectionMatrix();
+    if (opcoes.camera) this.definirCamera(cameraAntes); // §506 restaura
     if (opcoes.transparente) {
       this.cena.background = fundoAntes;
       if (this.chao) this.chao.visible = chaoAntes;
@@ -363,6 +450,8 @@ export class Renderizador3d implements RenderizadorAvatar {
       this.renderer.render(this.cena, this.camera); // não deixa frame vazado
     }
     this.pausado = estava;
+    // §433: sai da captura de volta ao estado anterior (idle/pose)
+    this.maquinaAnim.ir(estadoAntes === 'pose' ? 'pose' : 'idle');
     return { dataUri, largura: opcoes.largura, altura: opcoes.altura };
   }
 
@@ -486,7 +575,7 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   /** mega 28 (§290): números vivos p/ o HUD de dev (mega 79: + sombras). */
-  diagnostico(): { fps: number; tier: string; triangulos: number; sombras: boolean } {
+  diagnostico(): { fps: number; tier: string; triangulos: number; sombras: boolean; drawCalls: number } {
     return {
       fps: Math.round(this.fpsMedia),
       tier: this.tierEfetivo(),
@@ -494,6 +583,8 @@ export class Renderizador3d implements RenderizadorAvatar {
         { alto: 'lod0', medio: 'lod1', economico: 'lod2' }[this.tierEfetivo()] as 'lod0'
       ] ?? 0,
       sombras: this.sombrasLigadas,
+      // mega 687 (§467): draw calls REAIS do frame no painel de debug
+      drawCalls: this.renderer?.info.render.calls ?? 0,
     };
   }
 
@@ -670,19 +761,46 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.aplicarTinta();
   }
 
+  /** lote 641–650 (§420): cores §73 personalizadas por canal — a UI fala
+   *  canais, nunca nomes de mesh; null = arte original. O CALLER decide a
+   *  flag (as5.materiais3d) — aqui é só o mecanismo (padrão da casa). */
+  definirCores3d(cores: Record<string, string> | null): void {
+    if (JSON.stringify(cores) === JSON.stringify(this.cores3d)) return;
+    this.cores3d = cores ? { ...cores } : null;
+    this.aplicarTinta(); // re-tinge VIVO — sem recarregar o personagem
+  }
+
+  /** Pipeline ÚNICO de cor (megas 641-644): restaura originais → canais
+   *  §420 → tinta mega 81 → teto de emissivos §418.2 (Materiais3d). */
   private aplicarTinta(): void {
     if (!this.personagem) return;
-    this.personagem.traverse((o) => {
-      const bruto = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
-      const lista = Array.isArray(bruto) ? bruto : bruto ? [bruto] : [];
-      for (const mat of lista) {
-        const ms = mat as THREE.MeshStandardMaterial & { userData: { corOriginal?: number } };
-        if (!ms.color) continue;
-        if (ms.userData.corOriginal === undefined) ms.userData.corOriginal = ms.color.getHex();
-        ms.color.setHex(ms.userData.corOriginal);
-        if (this.tinta) ms.color.lerp(new THREE.Color(this.tinta.cor), this.tinta.forca);
-      }
-    });
+    aplicarPipelineCores(this.personagem, { cores: this.cores3d, tinta: this.tinta });
+  }
+
+  /** lote 651–660 (§412–§414): morfos ESTRUTURAIS de corpo — a MESMA
+   *  tabela §102 do 2D (engine/render) vira escala do personagem; o
+   *  ajuste fino §102.2 MULTIPLICA o preset (regra da decisão #63).
+   *  Escala no OBJETO raiz: base, cabelo, barba e roupas (mesmo esqueleto
+   *  pós-rebind) acompanham juntas — §413 "morphs respeitam roupas/rig".
+   *  Neutro = escala 1 = render idêntico (byte-stability do visual).
+   *  O CALLER decide a flag (as5.morfos3d) — aqui é só o mecanismo. */
+  definirCorpo3d(corpo: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null } | null): void {
+    if (JSON.stringify(corpo) === JSON.stringify(this.corpo3d)) return;
+    this.corpo3d = corpo ? { tipo: corpo.tipo ?? null, fino: corpo.fino ?? null } : null;
+    this.aplicarCorpo3d();
+  }
+
+  /** Tabela §102 (espelho de engine/render.ts — [largura, altura]). */
+  private static readonly CORPOS_3D: Record<string, [number, number]> = {
+    esbelto: [0.95, 1.02], atletico: [1.05, 1], robusto: [1.1, 0.98], compacto: [0.97, 0.94],
+  };
+
+  private aplicarCorpo3d(): void {
+    if (!this.personagem) return;
+    const preset = Renderizador3d.CORPOS_3D[this.corpo3d?.tipo ?? ''] ?? [1, 1];
+    const larg = Math.min(1.15, Math.max(0.88, preset[0] * (this.corpo3d?.fino?.largura ?? 1)));
+    const alt = Math.min(1.07, Math.max(0.9, preset[1] * (this.corpo3d?.fino?.altura ?? 1)));
+    this.personagem.scale.set(larg, alt, larg); // XZ = largura · Y = altura
   }
 
   /** mega 82 (§444): AURA 3D — anel additive pulsante na cor do avatar. */
@@ -824,9 +942,16 @@ export class Renderizador3d implements RenderizadorAvatar {
     return { clipe: nome, tempo: this.acaoAtual?.time ?? 0 };
   }
 
-  /** Tier EFETIVO: 'auto' delega ao adaptativo (mega 16). */
+  /** Tier EFETIVO: 'auto' delega ao adaptativo (mega 16) + §462 (mega
+   *  683): canvas PEQUENO rebaixa um nível — "painel menor → LOD2"
+   *  (§461); só com o progressivo ligado (flag no caller). */
   private tierEfetivo(): QualidadeTier {
-    return this.qualidade === 'auto' ? this.tierAuto : this.qualidade;
+    const t = this.qualidade === 'auto' ? this.tierAuto : this.qualidade;
+    if (this.progressivoAtivo) {
+      const larg = this.alvoEl?.clientWidth ?? Infinity;
+      if (larg > 0 && larg < 420) return t === 'alto' ? 'medio' : 'economico';
+    }
+    return t;
   }
 
   private lodDesejado(): string {
@@ -838,23 +963,71 @@ export class Renderizador3d implements RenderizadorAvatar {
   /** mega 17: pré-carrega manifest+GLB do personagem (hover no chip). */
   precarregar(slug: string): void {
     void carregarManifest3d(slug, this.opcoes.basePersonagens)
-      .then((m) => { void this.gltfDe(urlDoLod(m, this.tierEfetivo(), this.opcoes.basePersonagens)); })
+      .then((m) => { void this.gltfDe(urlDoLod(m, this.tierEfetivo(), this.opcoes.basePersonagens), this.hashDoLod(m)); })
       .catch(() => { /* prefetch é oportunista */ });
   }
 
-  /** Bytes do GLB com cache LRU (8) + parse fresco por uso (mega 17). */
-  private async gltfDe(url: string): Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }> {
+  /** mega 684 (§471): preloader contextual de PARTES (hover nos chips de
+   *  cabelo/barba/roupa) — nunca o catálogo inteiro. */
+  precarregarParte(slug: string): void {
+    void carregarManifestParte(slug)
+      .then((m) => { void this.gltfDe(urlDaParte(m, this.tierEfetivo()), this.hashDoLod(m)); })
+      .catch(() => { /* prefetch é oportunista */ });
+  }
+
+  /** lote 681–690: liga o progressivo §470/§462/§475 (caller decide a
+   *  flag as5.progressivo3d — aqui é só o mecanismo). */
+  definirProgressivo(v: boolean): void {
+    this.progressivoAtivo = v;
+  }
+
+  /** mega 693 (§483): DPR dinâmico — caller decide (as5.quality3d_v2). */
+  definirDprDinamico(v: boolean): void {
+    this.dprDinamico = v;
+    if (!v && this.renderer && this.dprAtual !== this.dprBase) {
+      this.dprAtual = this.dprBase;
+      this.renderer.setPixelRatio(this.dprBase);
+    }
+  }
+
+  /** mega 692 (§482.1): teto de DPR do perfil (ultra=3, cine=3). */
+  definirDprMax(teto: number): void {
+    this.pixelRatioMax = Math.min(3, Math.max(1, teto));
+    if (!this.renderer) return;
+    this.dprBase = Math.min(window.devicePixelRatio || 1, this.pixelRatioMax);
+    this.dprAtual = this.dprBase;
+    this.renderer.setPixelRatio(this.dprBase);
+  }
+
+  /** hash §477 do LOD efetivo (invalidação do cache §475 por conteúdo). */
+  private hashDoLod(m: ManifestPersonagem3d): string | null {
+    const lod = lodPorQualidade(this.tierEfetivo());
+    return m.hashes?.[lod] ?? null;
+  }
+
+  /** Bytes do GLB com cache LRU em memória + parse fresco por uso
+   *  (mega 17). Lote 681-690: LRU REAL com pin do personagem atual
+   *  (§474) e, com o progressivo ligado, IndexedDB por hash (§475). */
+  private async gltfDe(url: string, hash?: string | null): Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }> {
     let bytes = this.cacheGlb.get(url);
-    if (!bytes) {
-      bytes = fetch(url, { cache: 'default' }).then((r) => {
-        if (!r.ok) throw new Error(`GLB ${r.status}`);
-        return r.arrayBuffer();
-      });
+    if (bytes) {
+      // §474 LRU: uso recente vai pro fim da fila de despejo
+      this.cacheGlb.delete(url);
+      this.cacheGlb.set(url, bytes);
+    } else {
+      bytes = this.progressivoAtivo
+        ? buscarComCache(url, hash) // §475: IDB → rede (e grava)
+        : fetch(url, { cache: 'default' }).then((r) => {
+          if (!r.ok) throw new Error(`GLB ${r.status}`);
+          return r.arrayBuffer();
+        });
       this.cacheGlb.set(url, bytes);
       bytes.catch(() => this.cacheGlb.delete(url)); // erro não envenena
       if (this.cacheGlb.size > 8) {
-        const primeira = this.cacheGlb.keys().next().value;
-        if (primeira) this.cacheGlb.delete(primeira);
+        // §474: nunca despeja o personagem ATUAL (prioridade máxima)
+        for (const chave of this.cacheGlb.keys()) {
+          if (chave !== this.lodAtual) { this.cacheGlb.delete(chave); break; }
+        }
       }
     }
     const buf = await bytes;
@@ -863,9 +1036,44 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
 
   private async carregarPersonagem(slug: string): Promise<void> {
-    this.manifest = await carregarManifest3d(slug, this.opcoes.basePersonagens);
+    // §473 (mega 681): geração de carga — quem chegar DEPOIS manda;
+    // resposta antiga é descartada em silêncio (nunca sobrescreve)
+    const geracao = ++this.geracaoCarga;
+    const obsoleto = () => geracao !== this.geracaoCarga;
+    this.maquinaAnim.ir('carregando'); // §433
+    this.opcoes.aoCarregamento?.('metadados'); // §472
+    const manifest = await carregarManifest3d(slug, this.opcoes.basePersonagens);
+    if (obsoleto()) return;
+    this.manifest = manifest;
     const url = urlDoLod(this.manifest, this.tierEfetivo(), this.opcoes.basePersonagens);
-    const gltf = await this.gltfDe(url); // parse fresco — cena exclusiva do palco
+    // §470 (mega 682): PROGRESSIVO — alvo frio e pesado? o download do
+    // ALVO começa já; enquanto voa, o LOD2 (base simplificada) entra na
+    // cena como stand-in — "o usuário vê algo útil rapidamente"
+    this.opcoes.aoCarregamento?.('baixando'); // §472
+    const alvoFrio = !this.cacheGlb.has(url);
+    const alvoPromise = this.gltfDe(url, this.hashDoLod(this.manifest));
+    let alvoPronto = false;
+    alvoPromise.then(() => { alvoPronto = true; }).catch(() => { /* tratado no await */ });
+    const urlLod2 = urlDoLod(this.manifest, 'economico', this.opcoes.basePersonagens);
+    if (this.progressivoAtivo && url !== urlLod2 && alvoFrio) {
+      try {
+        const rapido = await this.gltfDe(urlLod2, this.manifest.hashes?.lod2 ?? null);
+        if (obsoleto()) return;
+        if (!alvoPronto) { // alvo ainda em voo → stand-in na cena
+          this.removerPersonagem();
+          this.personagem = rapido.scene;
+          this.personagem.traverse((n) => {
+            if ((n as THREE.SkinnedMesh).isSkinnedMesh) n.frustumCulled = false;
+          });
+          this.cena?.add(this.personagem);
+          this.definirCamera(this.cameraAtual);
+          this.opcoes.aoCarregamento?.('modelo_rapido'); // §472
+        }
+      } catch { /* §481: stand-in é acelerador, nunca dependência */ }
+    }
+    const gltf = await alvoPromise; // parse fresco — cena exclusiva do palco
+    if (obsoleto()) return;
+    this.opcoes.aoCarregamento?.('montando'); // §472
     this.removerPersonagem();
     this.personagem = gltf.scene;
     // SkinnedMesh clonado: a boundingSphere fica do BIND POSE original e o
@@ -904,22 +1112,140 @@ export class Renderizador3d implements RenderizadorAvatar {
       const caixa = new THREE.Box3().setFromObject(this.personagem);
       this.controles.target.copy(caixa.getCenter(new THREE.Vector3()));
     }
+    // megas 625-626 (§406): PARTES no esqueleto da base — só quando há
+    // partes pedidas E a base é do rig ubc-v1; [] = zero mudança (§651)
+    await this.montarPartes3d();
+    // lote 661-670 (§432): pacote externo entra DEPOIS do rebind — o
+    // esqueleto final é um só e o clipe move base+cabelo+barba+roupas
+    this.anexarPacoteExterno();
+    this.maquinaAnim.ir('idle'); // §433: personagem pronto
     this.atualizarSombras(); // mega 79: castShadow no personagem novo
     this.aplicarTinta();     // mega 81: tinta sobrevive à troca/LOD
+    this.aplicarCorpo3d();   // lote 651-660: morfos §414 sobrevivem à troca/LOD
     this.aplicarProps();     // lote 131: props seguem o personagem novo
     this.definirCamera(this.cameraAtual); // preserva órbita/retrato no reload §528
+    this.opcoes.aoCarregamento?.('pronto'); // §472
+  }
+
+  /** lote 661–670 (§432/§436): pacote de clipes EXTERNO (UAL) — mesmo
+   *  rig ubc-v1, tracks por NOME de bone = reuso direto. null volta ao
+   *  comportamento anterior byte a byte. O CALLER decide a flag
+   *  (as5.animacao3d) — aqui é só o mecanismo. Erro degrada §481. */
+  async definirPacoteAnimacoes(url: string | null): Promise<void> {
+    await this.definirPacotesAnimacoes(url ? [url] : []);
+  }
+
+  /** lote 731-740 (§432): LISTA de pacotes — o básico define o Idle
+   *  canônico; extras SOMAM emotes (primeiro pacote vence conflito de
+   *  nome). Falha individual degrada §481 (os demais seguem). */
+  async definirPacotesAnimacoes(urls: string[]): Promise<void> {
+    const iguais = urls.length === this.urlsPacotesAnim.length
+      && urls.every((u, i) => u === this.urlsPacotesAnim[i]);
+    if (iguais) return;
+    this.urlsPacotesAnim = [...urls];
+    if (!urls.length) {
+      this.pacotesAnim = [];
+      if (this.slugAtual) await this.carregarPersonagem(this.slugAtual);
+      return;
+    }
+    const resultados = await Promise.allSettled(urls.map((u) => carregarPacoteAnimacoes(u)));
+    this.pacotesAnim = resultados
+      .filter((r): r is PromiseFulfilledResult<PacoteAnimacoes> => r.status === 'fulfilled')
+      .map((r) => r.value);
+    if (!this.pacotesAnim.length) return; // §481: nada disponível — palco segue
+    this.anexarPacoteExterno();
+  }
+
+  /** Anexa os clipes dos pacotes quando o GLB do personagem NÃO traz os
+   *  próprios (§432 "mapear"): mixer novo na raiz montada — base e partes
+   *  compartilham o esqueleto pós-rebind, então o clipe veste tudo. */
+  private anexarPacoteExterno(): void {
+    if (!this.pacotesAnim.length || !this.personagem) return;
+    if (this.manifest?.rig !== 'ubc-v1') return; // pacotes são do rig ubc-v1
+    if (this.clipes.size) return; // clipes do próprio GLB têm prioridade
+    this.mixer = new THREE.AnimationMixer(this.personagem);
+    for (const [nome, clipe] of mesclarClipes(this.pacotesAnim)) this.clipes.set(nome, clipe);
+    // mega 670: convenções de nome da UAL entram no fallback do idle
+    const idle = this.clipes.get('Idle') ?? this.clipes.get('Idle_Loop') ?? [...this.clipes.values()][0];
+    if (idle && this.idleAtivo) {
+      this.acaoAtual = this.mixer.clipAction(idle);
+      this.acaoAtual.play();
+    }
+  }
+
+  /** §439: cursor normalizado (-1..1) → alvo do olhar; null = centro.
+   *  O CALLER desliga em prefers-reduced-motion (flag as5.animacao3d). */
+  definirOlhar(nx: number | null, ny: number | null): void {
+    this.olharAlvo = alvoOlhar(nx, ny);
+  }
+
+  /** O clipe atual anima o Head? (sem isso o olhar acumularia rotação) */
+  private clipeAtualMoveHead(): boolean {
+    const c = this.acaoAtual?.getClip();
+    return !!c && c.tracks.some((t) => t.name.split('.')[0] === 'Head');
+  }
+
+  /** lote 621–630 (§406): define as partes 3D e remonta o personagem.
+   *  O CALLER decide a flag (as5.assembler3d) — aqui é só o mecanismo. */
+  async definirPartes3d(slugs: string[]): Promise<void> {
+    const iguais = slugs.length === this.partes3d.length
+      && slugs.every((s, i) => s === this.partes3d[i]);
+    if (iguais) return;
+    this.partes3d = [...slugs];
+    if (this.slugAtual) await this.carregarPersonagem(this.slugAtual);
+  }
+
+  /** Monta as partes pedidas via Character Assembler §406 (14 passos). */
+  private async montarPartes3d(): Promise<void> {
+    this.ultimaMontagem = null;
+    if (!this.partes3d.length || !this.personagem) return;
+    if (this.manifest?.rig !== 'ubc-v1') {
+      // §481: base fora do rig — partes ignoradas com pendência declarada
+      this.ultimaMontagem = {
+        ok: false,
+        fases: [{ passo: 'validar_rig', ok: false, detalhe: `base "${this.slugAtual}" com rig ${this.manifest?.rig ?? '?'} — partes exigem ubc-v1` }],
+        raiz: null, mixer: null, clipes: new Map(),
+        pendencias: [`partes ignoradas: base não é ubc-v1`],
+      };
+      return;
+    }
+    const partes = [];
+    for (const slug of this.partes3d) {
+      try {
+        const m = await carregarManifestParte(slug);
+        const gltf = await this.gltfDe(urlDaParte(m, this.tierEfetivo()));
+        partes.push({
+          id: slug, categoria: categoriaDaParte(m.tipo), cena: gltf.scene,
+          ...(m.mascara?.length ? { mascara: m.mascara } : {}), // §415.2
+        });
+      } catch { /* §481: parte indisponível não derruba o palco */ }
+    }
+    if (!partes.length) return;
+    this.ultimaMontagem = montarPersonagem({
+      base: this.personagem,
+      partes,
+      bonesCanonicos: BONES_UBC_V1,
+    });
+    // rebind altera a hierarquia — re-mapeia bones/pose p/ o idle §440
+    this.bones.clear();
+    this.poseBase.clear();
+    this.personagem.traverse((n) => {
+      if ((n as THREE.Bone).isBone) {
+        this.bones.set(n.name, n as THREE.Bone);
+        this.poseBase.set(n.name, n.quaternion.clone());
+      }
+    });
   }
 
   private removerPersonagem(): void {
     if (!this.personagem) return;
     this.cena?.remove(this.personagem);
+    // §419 "descartar recursos": materiais + TEXTURAS (parse fresco por
+    // GLB — nada compartilhado com outros donos) via Material Manager
+    descartarMateriais(this.personagem);
     this.personagem.traverse((n) => {
       const malha = n as THREE.Mesh;
-      if (malha.isMesh) {
-        malha.geometry?.dispose();
-        const mats = Array.isArray(malha.material) ? malha.material : [malha.material];
-        for (const m of mats) m?.dispose();
-      }
+      if (malha.isMesh) malha.geometry?.dispose();
     });
     this.personagem = null;
     this.slugAtual = null;
@@ -957,6 +1283,17 @@ export class Renderizador3d implements RenderizadorAvatar {
         const media = this.fpsSoma / this.fpsN;
         this.fpsMedia = media;
         this.fpsSoma = 0; this.fpsN = 0;
+        // mega 693 (§483): DPR dinâmico SUAVE — último recurso quando o
+        // FPS cai contínuo (depois do tier); recupera gradualmente.
+        // SÓ em qualidade AUTO (mesma regra do tier adaptativo §528):
+        // qualidade fixa é escolha do usuário — determinística.
+        if (this.dprDinamico && this.renderer && this.qualidade === 'auto') {
+          const novo = passoDpr(media, this.dprAtual, this.dprBase);
+          if (Math.abs(novo - this.dprAtual) > 0.01) {
+            this.dprAtual = novo;
+            this.renderer.setPixelRatio(novo);
+          }
+        }
         if (this.qualidade === 'auto') {
           if (media < 30 && this.tierAuto !== 'economico') {
             this.tierAuto = 'economico';
@@ -993,7 +1330,32 @@ export class Renderizador3d implements RenderizadorAvatar {
       };
       soma('Spine', Math.sin(t * 1.4) * 0.02 * k, 0); // respiração §440
       soma('Chest', Math.sin(t * 1.4 + 0.4) * 0.016 * k, 0);
+      // lote 661-670 (§441): rig ubc-v1 respira de verdade — peito/ombros
+      // (nomes legados acima seguem cobrindo androide/manequim)
+      soma('spine_02', Math.sin(t * 1.4) * 0.02 * k, 0);
+      soma('spine_03', Math.sin(t * 1.4 + 0.4) * 0.016 * k, 0);
       soma('Head', Math.sin(t * 0.7) * 0.018 * k, Math.sin(t * 0.5) * 0.012 * k); // §441
+    }
+    // lote 661-670 (§439): OLHAR — suaviza rumo ao alvo do cursor e
+    // aplica no Head APÓS idle/mixer/vida. Só aplica quando alguém repõe
+    // o Head por frame (idle, vida, ou clipe com track de Head) ou quando
+    // ninguém anima (repõe aqui) — rotação nunca ACUMULA.
+    this.olharAtual.guinada += (this.olharAlvo.guinada - this.olharAtual.guinada) * 0.08;
+    this.olharAtual.arfagem += (this.olharAlvo.arfagem - this.olharAtual.arfagem) * 0.08;
+    if (Math.abs(this.olharAtual.guinada) > 0.001 || Math.abs(this.olharAtual.arfagem) > 0.001) {
+      const head = this.bones.get('Head');
+      const idleRepoe = this.idleAtivo && !this.mixer;
+      const vidaRepoe = !!this.vida && !this.mixer && !this.idleAtivo;
+      const clipeRepoe = !!this.mixer && !!this.acaoAtual && this.clipeAtualMoveHead();
+      const ninguemAnima = !this.mixer && !this.idleAtivo && !this.vida;
+      if (head && (idleRepoe || vidaRepoe || clipeRepoe || ninguemAnima)) {
+        if (ninguemAnima) {
+          const base = this.poseBase.get('Head');
+          if (base) head.quaternion.copy(base);
+        }
+        head.rotateY(this.olharAtual.guinada);
+        head.rotateX(this.olharAtual.arfagem);
+      }
     }
     // megas 264/269 (§444–§446): partículas em DERIVA ascendente com
     // reciclagem no topo — determinístico (base + relógio, nunca random)

@@ -61,6 +61,53 @@ const PADROES: Record<string, boolean> = {
   'as5.palco_v3': true,           // lote 571–580 — §176.1/§178.2/§157 restos
   'as5.infra_v3': true,           // lote 581–590 — §268/§277/§299–300
   'as5.ux_final': true,           // lote 591–600 — §59.1/§60/§64.2/§545+
+  // ── onda 611–710 (decisão #64; padrão ON conforme #50) ──
+  'as5.assembler3d': true,        // lote 621–630 — Character Assembler §406 + partes §423
+  'as5.roupas3d': true,           // lote 631–640 — roupas §415–§417 (body masking §415.2)
+  'as5.materiais3d': true,        // lote 641–650 — Material Manager §419 + canais §73→3D (§420–§421)
+  'as5.cabelo3d': true,           // lote 651–660 — barba como slot próprio §425 + combinações cabelo+barba + famílias §423
+  'as5.morfos3d': true,           // lote 651–660 — morfos estruturais §412–§414 via escala (tipo §102 + fino §102.2 no 3D)
+  'as5.animacao3d': true,         // lote 661–670 — animation manager §432 + máquina §433 + pacote UAL §436 + olhar §439
+  'as5.classico_aaa': true,       // lote 671–680 — layout AAA do Modo Clássico (briefing complementar; decisão #68); off = layout anterior byte a byte
+  'as5.progressivo3d': true,      // lote 681–690 — LOD por tela §462 + lod2-primeiro §470 + IndexedDB §475 + loading manager §472
+  'as5.quality3d_v2': true,       // lote 691–700 — perfis ultra/cine §482.1 + DPR dinâmico §483
+  'as5.captura3d_v2': true,       // lote 691–700 — captura §506/§329: LOD alto + supersampling + formatos + indicador §329.3
+  // ── onda 721+ (decisão #72; padrão ON conforme #50) ──
+  'as5.foto3d': true,             // lote 721–730 — Foto×3D §329: captura com o ESTADO do usuário (cores §420 + corpo §414 + pose Idle UAL) + super 2× + fases §329.3
+  'as5.ual_extra': true,          // lote 731–740 — multi-pacote §432: ual_extra (emotes UAL2: Yes/FoldArms/TalkingPhone/Carry/ChestOpen) soma ao básico
+  // ── programa AS6 (decisões #74–#76; numeração § do AVATAR_STUDIO_6.md) ──
+  'as6.estado_vnext': true,       // lote 751–760 — L0: migrações de schema (§3393) + capability registry (§3396) + dependências de flags (§3398); off = flag() plano como antes
+  'as6.viewport': true,           // lote 781–790 — L2: presets manuais de câmera 2D §52/§84 (Auto/Rosto/Busto/Corpo persistidos); off = só o enquadramento automático R2, byte a byte
+  'as6.dock': true,               // lote 791–800 — L2: estados de card v2 §644/§111 (selo EQUIPADO ≠ foco ≠ prévia, hover elevado por token); off = cards anteriores byte a byte
+  'as6.color_studio': true,       // lote 811–820 — L3: Color Studio §206–§212 (HSL por slot + harmonias derivadas); off = swatches anteriores byte a byte
+  'as6.dock_classico': true,      // lote 831–840 — Asset Dock v3 do clássico §103–§105 (wheel→horizontal, drag, setas, cards visuais); off = trilho anterior byte a byte
+};
+
+/**
+ * DEPENDÊNCIAS entre flags (AS6 §3398): filho só é efetivo com TODOS os
+ * pais ligados. Formaliza o que o código já fazia por construção (ex.:
+ * as5.ual_extra só é consultada dentro do fluxo do palco 3D) e torna o
+ * rollback §651 transitivo: desligar `as5.palco3d` desliga a árvore 3D
+ * inteira de uma vez, sem estados órfãos. Grafo acíclico por revisão —
+ * cadeias curtas (≤2 níveis), sem ciclos.
+ */
+export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
+  // Consultadas SOMENTE em shell/Palco3d.tsx → filhas do palco. As flags
+  // de motor com DUPLA entrada (palco E Foto §329: as5.materiais3d,
+  // as5.morfos3d, as5.animacao3d, as5.foto3d) NÃO têm pai — o fluxo 3D
+  // da Foto funciona com o palco desligado (provado pelo foto329.mjs).
+  'as5.assembler3d': ['as5.palco3d'],
+  'as5.roupas3d': ['as5.assembler3d'],   // partes exigem o assembler §406
+  'as5.cabelo3d': ['as5.assembler3d'],
+  'as5.ual_extra': ['as5.animacao3d', 'as5.palco3d'], // extra soma ao pacote §432 e só existe no palco
+  'as5.progressivo3d': ['as5.palco3d'],
+  'as5.quality3d_v2': ['as5.palco3d'],
+  'as5.captura3d_v2': ['as5.palco3d'],
+  'as5.hud3d': ['as5.palco3d'],
+  'as5.palco3d_v2': ['as5.palco3d'],
+  'as5.palco3d_cine': ['as5.palco3d'],
+  'as5.pos3d_real': ['as5.palco3d'],
+  'as6.dock_classico': ['as5.classico_aaa'], // a dock v3 refina o trilho AAA
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';
@@ -77,11 +124,24 @@ export async function carregarFlags(): Promise<void> {
   } catch { /* sem endpoint → padrões */ }
 }
 
-export function flag(nome: keyof typeof PADROES | string): boolean {
+/** Valor "cru" da flag (local → remoto → padrão), sem dependências. */
+function flagCrua(nome: string): boolean {
   try {
     const local = JSON.parse(localStorage.getItem(CHAVE_LOCAL) ?? '{}') as Record<string, boolean>;
     if (nome in local) return !!local[nome];
   } catch { /* storage inválido */ }
   if (_remotas && nome in _remotas) return !!_remotas[nome];
   return PADROES[nome] ?? false; // desconhecida = desligada (fail-safe)
+}
+
+export function flag(nome: keyof typeof PADROES | string): boolean {
+  const cru = flagCrua(nome);
+  // AS6 §3398 (as6.estado_vnext): filho desliga junto com o pai — rollback
+  // §651 transitivo. Guarda de recursão: a própria as6.estado_vnext e
+  // flags sem dependência resolvem direto. Com a flag OFF, comportamento
+  // idêntico ao anterior (byte a byte).
+  if (!cru || nome === 'as6.estado_vnext') return cru;
+  const pais = DEPENDENCIAS_FLAGS[nome];
+  if (!pais || !flagCrua('as6.estado_vnext')) return cru;
+  return pais.every((p) => flag(p));
 }

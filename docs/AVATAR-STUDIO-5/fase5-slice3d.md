@@ -2,13 +2,19 @@
 
 **Fontes lidas:** §630–§631 na íntegra · P8 completa via índice (§398–§537) + normativas §400–§402 (arquitetura/contrato), §406 (assembler), §481 (fallback).
 
-## Situação: PARCIALMENTE BLOQUEADA no UBC
+## Situação: DESBLOQUEADA (2026-08-07 — zips UBC no servidor)
 
-O slice do §630 exige personagem com **rosto/cabelo/barba/roupa/calçado** 3D
-— isso é o zip **UBC [Standard]** (quaternius.itch.io), item 3 da lista do
-Jhony. Sem ele, produzir "personagem vestível" seria inventar asset — fora
-de questão. Este turno entregou o que NÃO depende do zip (abaixo) e o ciclo
-segue para a F6 (Photo Studio, P7) sem travar.
+O Jhony entregou os 4 pacotes (CC0, comprovantes em LICENCAS.md):
+UBC Standard (bases Superhero M/F + 6 cabelos + 2 sobrancelhas) ·
+Modular Character Outfits - Fantasy (Ranger/Peasant M/F por PARTE:
+Body/Arms/Legs/Feet/Hood/Pauldrons) · Universal Animation Library 1 e 2
+(250+ clipes em GLB). Fontes em `storage/assets-3d-fonte/` (fora do git).
+**Rig verificado: 65 bones IDÊNTICOS em bases, cabelos e roupas** —
+rig-ubc-v1.json preenchido; o assembler §406 monta partes no MESMO
+esqueleto. Onda 611–710 em execução (mapa: doc 18 do projeto Claude).
+
+Histórico (situação até 2026-08-06): bloqueada no zip; este doc entregou
+o que não dependia dele (abaixo).
 
 ## Entregue AGORA (sem UBC)
 

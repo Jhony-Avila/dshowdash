@@ -1,0 +1,30 @@
+{
+  "id": "rou3d_peasant_m_bracos",
+  "tipo": "parte_roupa",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:24a0dc1628148d36899cae07091bd0ccce99592480217205edf4b4fbb08963f0",
+    "lod1": "sha256:a37783e16d505af3a878ee8aebb75285a2ec5d865a12a2b5ee911e33da3470ce",
+    "lod2": "sha256:ea67fae5301925d194b42ff6efccaf450caf9fcd2e4d3af80f04ff04f4799f76"
+  },
+  "triangulos": {
+    "lod0": 5338,
+    "lod1": 5338,
+    "lod2": 5338
+  },
+  "animacoes": [],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "outfits-fantasy-v1",
+    "comprovante": "storage/assets-3d-fonte/outfits-fantasy-v1/extraido/Modular Character Outfits - Fantasy[Standard]/License_Standard.txt"
+  },
+  "origem": "outfits-fantasy-v1",
+  "fonte_original": "Male_Peasant_Arms.gltf",
+  "criado_em": "2026-08-07"
+}

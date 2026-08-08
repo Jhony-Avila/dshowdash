@@ -1,0 +1,148 @@
+{
+ "formato": "dshow-baseline-layout",
+ "versao": 1,
+ "viewport": "1440x900",
+ "estados": {
+  "shell-edicao": {
+   ".avst5-header": {
+    "x": 0,
+    "y": 0,
+    "w": 1440,
+    "h": 52,
+    "visivel": true
+   },
+   ".avst5-sidebar": {
+    "x": 0,
+    "y": 52,
+    "w": 176,
+    "h": 750,
+    "visivel": true
+   },
+   ".avst5-viewport": {
+    "x": 182,
+    "y": 52,
+    "w": 872,
+    "h": 750,
+    "visivel": true
+   },
+   ".avst5-painel": {
+    "x": 1060,
+    "y": 52,
+    "w": 380,
+    "h": 750,
+    "visivel": true
+   },
+   ".avst5-fundos": {
+    "x": 194,
+    "y": 62,
+    "w": 670,
+    "h": 20,
+    "visivel": true
+   },
+   ".avst6-cam": {
+    "x": 194,
+    "y": 202,
+    "w": 274,
+    "h": 30,
+    "visivel": true
+   },
+   ".avst5-zoom": {
+    "x": 62,
+    "y": -128,
+    "w": 1112,
+    "h": 1112,
+    "visivel": true
+   }
+  },
+  "shell-foco": {
+   ".avst5-header": {
+    "x": 0,
+    "y": 0,
+    "w": 1440,
+    "h": 52,
+    "visivel": true
+   },
+   ".avst5-viewport": {
+    "x": 0,
+    "y": 52,
+    "w": 1440,
+    "h": 750,
+    "visivel": true
+   },
+   ".avst5-zoom": {
+    "x": 164,
+    "y": -128,
+    "w": 1112,
+    "h": 1112,
+    "visivel": true
+   }
+  },
+  "classico-aaa-itens": {
+   ".avst-topo": {
+    "x": 0,
+    "y": 0,
+    "w": 1440,
+    "h": 52,
+    "visivel": true
+   },
+   ".avst-centro": {
+    "x": 208,
+    "y": 52,
+    "w": 1232,
+    "h": 1108,
+    "visivel": true
+   },
+   ".avst-palco": {
+    "x": 208,
+    "y": 52,
+    "w": 1232,
+    "h": 716,
+    "visivel": true
+   },
+   ".avst-trilho": {
+    "x": 208,
+    "y": 768,
+    "w": 1232,
+    "h": 392,
+    "visivel": true
+   },
+   "[data-teste=\"aaa-cores\"]": {
+    "x": 1006,
+    "y": 102,
+    "w": 224,
+    "h": 480,
+    "visivel": true
+   },
+   ".avst-barra-estado": {
+    "x": 598,
+    "y": 644,
+    "w": 160,
+    "h": 16,
+    "visivel": true
+   }
+  },
+  "classico-foto": {
+   ".avst-topo": {
+    "x": 0,
+    "y": 0,
+    "w": 1440,
+    "h": 52,
+    "visivel": true
+   },
+   ".avst-foto": {
+    "x": 1038,
+    "y": 68,
+    "w": 388,
+    "h": 220,
+    "visivel": true
+   },
+   ".avst-categorias": {
+    "x": 0,
+    "y": 52,
+    "w": 148,
+    "h": 1120,
+    "visivel": true
+   }
+  }
+ }
+}

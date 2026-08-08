@@ -30,7 +30,7 @@ const pintou = await p.evaluate(() => {
 });
 ok(pintou > 2000, `canvas 3D não pintou (${pintou} bytes de dataURL)`);
 ok(await p.locator('[data-teste="p3d-pendencias"]').count() === 1, 'chip de pendências §481 ausente');
-ok(await p.locator('.avst5-p3d-personagens .avst5-p3d-chip').count() === 7, 'esperava Auto + 6 personagens (índice)');
+ok(await p.locator('.avst5-p3d-personagens .avst5-p3d-chip').count() === 9, 'esperava Auto + 8 personagens (índice; +2 UBC megas 617-618)');
 // mega 9: ANIMAÇÕES reais viram seletor; trocar seleção funciona
 ok(await p.locator('[data-teste="p3d-animacoes"] .avst5-p3d-chip').count() >= 2, 'seletor de animações ausente');
 await p.locator('[data-teste="p3d-animacoes"] .avst5-p3d-chip', { hasText: 'Wave' }).click();

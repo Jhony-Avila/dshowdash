@@ -1,0 +1,30 @@
+{
+  "id": "rou3d_peasant_f_botas",
+  "tipo": "parte_roupa",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:908832ebefdc32afa9a0f9d95f9d79dd37ed2eddd06a36c497f51c84b3c7a02b",
+    "lod1": "sha256:7a08b63afdf7f839bd82e8444c5b3331b8b4b57a8ed910b10ff5977449cc3047",
+    "lod2": "sha256:cd234af084eeb5e4b5040e8076e60601bb9b0a79848e107cc1319e6e5c3bf481"
+  },
+  "triangulos": {
+    "lod0": 2588,
+    "lod1": 2588,
+    "lod2": 2588
+  },
+  "animacoes": [],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "outfits-fantasy-v1",
+    "comprovante": "storage/assets-3d-fonte/outfits-fantasy-v1/extraido/Modular Character Outfits - Fantasy[Standard]/License_Standard.txt"
+  },
+  "origem": "outfits-fantasy-v1",
+  "fonte_original": "Female_Peasant_Feet.gltf",
+  "criado_em": "2026-08-07"
+}

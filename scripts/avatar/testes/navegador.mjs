@@ -14,7 +14,7 @@ export const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:8901';
 export const SAIDA = resolve(import.meta.dirname, 'saida');
 mkdirSync(SAIDA, { recursive: true });
 
-export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = false, init } = {}) {
+export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = false, init, initArg } = {}) {
   const args = ['--no-sandbox'];
   if (webgl) args.push('--enable-unsafe-swiftshader'); // WebGL por software no headless
   const navegador = await chromium.launch({
@@ -32,11 +32,14 @@ export async function abrir({ viewport = { width: 1440, height: 900 }, webgl = f
     // init (rollout-padrao.mjs); quem quer o shell declara as flags.
     try {
       if (!localStorage.getItem('dshow.avst.flags.v1')) {
-        localStorage.setItem('dshow.avst.flags.v1', '{"as5.novo_shell":false,"as5.palco3d":false}');
+        // lote 671-680 (#68): classico_aaa também é padrão ON no código —
+        // os testes legados seguem cobrindo o clássico PRÉ-AAA (fallback
+        // §651); o layout AAA tem teste próprio (classico-aaa.mjs)
+        localStorage.setItem('dshow.avst.flags.v1', '{"as5.novo_shell":false,"as5.palco3d":false,"as5.classico_aaa":false}');
       }
     } catch { /* sem storage */ }
   });
-  if (init) await contexto.addInitScript(init);
+  if (init) await contexto.addInitScript(init, initArg); // initArg: dado serializável p/ o init (lote 801-810)
   const pagina = await contexto.newPage();
   const erros = [];
   pagina.on('pageerror', (e) => erros.push(e.message.slice(0, 160)));

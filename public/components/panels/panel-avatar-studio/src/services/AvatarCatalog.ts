@@ -8,6 +8,8 @@ import type {
   AvatarConfig, CamadaId, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
 import { CORES_PADRAO, normalizarHex, paletaDe } from '../engine/cores';
+import { flag } from '../nucleo/flags';
+import { migrarConfigVNext } from '../nucleo/estado-vnext';
 import { sanitizarParams } from '../engine/params';
 import type { ParteDef } from '../engine/base-api';
 import { renderAvatar, renderDataUri, hashConfig } from '../engine/render';
@@ -331,6 +333,10 @@ const CATS_OPCIONAIS = CATEGORIAS.filter((c) => c.id !== 'base').map((c) => c.id
  * requerBase e incompativelCom; cores sempre hex normalizado.
  */
 export function validarConfig(bruto: unknown): AvatarConfig {
+  // AS6 L0 (§3393, as6.estado_vnext): migrações de schema ANTES da
+  // coerção. Registro hoje VAZIO → identidade (nenhum byte muda); o
+  // primeiro bump real entra em nucleo/estado-vnext.ts com teste.
+  if (flag('as6.estado_vnext')) bruto = migrarConfigVNext(bruto).dado;
   const b = (bruto ?? {}) as Partial<AvatarConfig>;
   const base = typeof b.base === 'string' && POR_ID.get(b.base)?.categoria === 'base'
     ? b.base

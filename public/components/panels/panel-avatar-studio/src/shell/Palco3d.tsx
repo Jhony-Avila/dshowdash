@@ -12,13 +12,15 @@
 // continuam honestas; flag as5.palco3d fail-safe OFF; erro nunca derruba
 // o shell.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, BadgeCheck, BookmarkPlus, Box, Camera, CircleDot, Clapperboard, Columns2, Eraser, Grid3x3, LayoutPanelTop, Lightbulb, Maximize2, Minimize2, Pause, PersonStanding, Play, RefreshCcw, Rotate3d, RotateCw, Share2, SkipBack, SkipForward, SlidersHorizontal, Sparkles, UserRound, Wand2 } from 'lucide-react';
+import { Activity, BadgeCheck, BookmarkPlus, Box, Camera, CircleDot, Clapperboard, Columns2, Eraser, Grid3x3, LayoutPanelTop, Lightbulb, LoaderCircle, Maximize2, Minimize2, Pause, PersonStanding, Play, RefreshCcw, Rotate3d, RotateCw, Share2, SkipBack, SkipForward, SlidersHorizontal, Sparkles, UserRound, Wand2 } from 'lucide-react';
 import type { EstadoAvatar } from '../nucleo/contratos';
 import type { EstadoCamera, RenderizadorAvatar } from '../nucleo/renderizador';
 import { criarRenderizador } from '../services/FabricaRenderizador';
 import { compartilharBlob, compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { telemetria } from '../services/Telemetria';
 import { carregarIndice3d, personagemParaBase } from '../services/Personagens3d';
+import { carregarIndicePartes, categoriaDaParte } from '../services/Partes3d'; // lote 621-630 (§406)
+import type { EntradaIndiceParte } from '../services/Partes3d';
 import { flag } from '../nucleo/flags';
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { excluirCena, listarCenas, salvarCena } from '../services/Cenas3d';
@@ -27,6 +29,7 @@ import { detectarCapacidade3d } from '../services/Capacidade3d';
 import { excluirPose, listarPoses, salvarPose } from '../services/Poses3d';
 import { log } from '../services/Log';
 import { paraLegado2d } from '../nucleo/adaptadores';
+import { CORES_PADRAO } from '../engine/cores'; // lote 641-650 (§420)
 import { tituloPorId, validarConfig } from '../services/AvatarCatalog';
 import { AvatarSvg } from '../components/AvatarSvg';
 // megas 226–227 (§175/§175.1): editor de showcase + modo automático
@@ -46,7 +49,14 @@ const CURADOS_FALLBACK: EntradaIndice3d[] = [
 ];
 
 /** Animações em destaque no seletor (ordem de preferência §174-friendly). */
-const ANIMACOES_DESTAQUE = ['Idle', 'Walk', 'Walking', 'Running', 'Wave', 'Dance', 'Jump', 'Victory', 'ThumbsUp'];
+// mega 670: nomes da UAL (pacote ual_basico §436) somados aos legados;
+// lote 731-740: emotes do ual_extra (UAL2) entram no destaque
+const ANIMACOES_DESTAQUE = [
+  'Idle', 'Idle_Loop', 'Idle_Talking_Loop', 'Walk', 'Walking', 'Walk_Loop', 'Walk_Formal_Loop',
+  'Running', 'Jog_Fwd_Loop', 'Wave', 'Dance', 'Dance_Loop', 'Yes', 'Idle_FoldArms_Loop',
+  'Idle_TalkingPhone_Loop', 'Interact', 'Sitting_Idle_Loop', 'Walk_Carry_Loop', 'Chest_Open',
+  'Jump', 'Victory', 'ThumbsUp',
+];
 
 const CHAVE_OVERRIDE = 'dshow.avst5.p3d.personagem.v1';
 const CHAVE_QUALIDADE = 'dshow.avst5.p3d.qualidade.v1';
@@ -129,6 +139,15 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // mega 49: comparar 2D×3D lado a lado
   const [comparando2d, setComparando2d] = useState(false);
   const config2d = useMemo(() => validarConfig(paraLegado2d(estado)), [estado]);
+  // lote 641–650 (§420): só canais §73 PERSONALIZADOS viajam ao renderer —
+  // cor no padrão = arte original do asset (byte-stability do visual)
+  const coresPersonalizadas = useMemo(() => {
+    const d: Record<string, string> = {};
+    for (const [canal, cor] of Object.entries(config2d.cores)) {
+      if (cor && cor.toLowerCase() !== CORES_PADRAO[canal as keyof typeof CORES_PADRAO]?.toLowerCase()) d[canal] = cor;
+    }
+    return d;
+  }, [config2d]);
   // mega 78 (§458): exposição do tone mapping
   const [exposicao, setExposicao] = useState(1);
   // ── lote 261–270 (§440–§458, flag as5.palco3d_v2): CINEMA do palco ──
@@ -155,7 +174,15 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   });
   // mega 28: HUD de performance (flag dev)
   const hudLigado = flag('as5.hud3d');
-  const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number } | null>(null);
+  const [hud, setHud] = useState<{ fps: number; tier: string; triangulos: number; drawCalls?: number } | null>(null);
+  // lote 681-690 (§472, flag as5.progressivo3d): fase amigável da carga
+  const [faseCarga, setFaseCarga] = useState<string | null>(null);
+  const refFaseCarga = useRef<string | null>(null);
+  refFaseCarga.current = faseCarga;
+  // lote 691-700 (§482.1, flag as5.quality3d_v2): perfis Ultra/Cine
+  const [perfil, setPerfil] = useState<'padrao' | 'ultra' | 'cine'>('padrao');
+  // lote 691-700 (§329.3, flag as5.captura3d_v2): indicador da captura
+  const [faseCaptura, setFaseCaptura] = useState<string | null>(null);
   const [sinalLocal, setSinalLocal] = useState(0);
   const sinalShowcase = sinalApresentar + sinalLocal;
   // megas 226–227 (§175): EDITOR DE SHOWCASE — roteiro ativo comanda a
@@ -175,6 +202,52 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const podeGravar = typeof MediaRecorder !== 'undefined';
 
   const personagem = override ?? personagemParaBase(estado.body.base);
+  // ── lote 621–630 (§406/§423, flag as5.assembler3d): PARTES 3D ──────
+  const [partesCabelo, setPartesCabelo] = useState<EntradaIndiceParte[]>([]);
+  const [cabelo3d, setCabelo3d] = useState<string | null>(null);
+  // ── lote 631–640 (§415–§417, flag as5.roupas3d): ROUPAS por look ───
+  const [partesRoupa, setPartesRoupa] = useState<EntradaIndiceParte[]>([]);
+  const [roupa3d, setRoupa3d] = useState<'ranger' | 'peasant' | null>(null);
+  // ── lote 651–660 (§425, flag as5.cabelo3d): BARBA como slot PRÓPRIO —
+  // combinações cabelo+barba montam JUNTAS no mesmo esqueleto §406
+  const [partesBarba, setPartesBarba] = useState<EntradaIndiceParte[]>([]);
+  const [barba3d, setBarba3d] = useState<string | null>(null);
+  const rigAtualEhUbc = useMemo(
+    () => indice.find((x) => x.slug === personagem)?.rig === 'ubc-v1',
+    [indice, personagem],
+  );
+  const genero3d = personagem?.endsWith('_f') ? 'f' : 'm';
+  useEffect(() => {
+    if (!flag('as5.assembler3d')) return;
+    // §425 (lote 651–660): com as5.cabelo3d a barba vira slot próprio;
+    // rollback §651 = barba volta para a lista de cabelos (comportamento
+    // do lote 621–630, byte a byte)
+    const barbaSeparada = flag('as5.cabelo3d');
+    void carregarIndicePartes().then((lista) => {
+      if (!lista) return;
+      setPartesCabelo(lista.filter((p) => {
+        const c = categoriaDaParte(p.tipo);
+        return c === 'cabelo' || (!barbaSeparada && c === 'barba');
+      }));
+      setPartesBarba(barbaSeparada ? lista.filter((p) => categoriaDaParte(p.tipo) === 'barba') : []);
+      setPartesRoupa(lista.filter((p) => categoriaDaParte(p.tipo) === 'roupa'));
+    });
+  }, []);
+  useEffect(() => {
+    if (!flag('as5.assembler3d')) return;
+    const slugs: string[] = [];
+    if (cabelo3d && rigAtualEhUbc) slugs.push(cabelo3d);
+    // §425: barba COMBINA com o cabelo (mesmo esqueleto pós-rebind §406)
+    if (flag('as5.cabelo3d') && barba3d && rigAtualEhUbc) slugs.push(barba3d);
+    // §416: o look veste TODAS as peças do gênero da base atual
+    if (flag('as5.roupas3d') && roupa3d && rigAtualEhUbc) {
+      slugs.push(...partesRoupa
+        .filter((p) => p.slug.startsWith(`rou3d_${roupa3d}_${genero3d}_`))
+        .map((p) => p.slug));
+    }
+    (refR.current as unknown as { definirPartes3d?: (s: string[]) => Promise<void> })
+      ?.definirPartes3d?.(slugs);
+  }, [cabelo3d, barba3d, roupa3d, partesRoupa, genero3d, rigAtualEhUbc, fase, personagem]);
   const refPersonagem = useRef(personagem);
   refPersonagem.current = personagem;
 
@@ -213,9 +286,16 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             setAnuncio(fase2 === 'perdido' ? 'Recuperando o 3D…' : 'Palco 3D recuperado');
             telemetria('p3d_contexto', { fase: fase2 }); // §290
           },
+          // lote 681-690 (§472): fases reais da carga → badge discreto
+          aoCarregamento: (f) => {
+            if (flag('as5.progressivo3d')) setFaseCarga(f);
+          },
         });
         if (!vivo) { void r.descartar(); return; }
         refR.current = r;
+        // §470/§475: progressivo ANTES da 1ª carga (o efeito mantém depois)
+        (r as unknown as { definirProgressivo?: (v: boolean) => void })
+          ?.definirProgressivo?.(flag('as5.progressivo3d'));
         await r.inicializar({
           qualidade: qualidadeGuardada(), pixelRatioMax: 2,
           dicaTier: capacidade.dicaTier, // mega 42 (§605-lite)
@@ -235,6 +315,11 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remontagens]);
+
+  // lote 661-670 (§432): sinais do pacote de animações (declarados antes
+  // do efeito de estado que os consome)
+  const [sinalAnim, setSinalAnim] = useState(0);
+  const [animsRenderer, setAnimsRenderer] = useState<string[]>([]);
 
   // estado do DRAFT + personagem (auto ou override) → renderer
   useEffect(() => {
@@ -259,18 +344,41 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
       refTentativa.current = 0;
       setPendencias(res.pendencias.length);
       telemetria('p3d_aplicou', { personagem, ms: Math.round(performance.now() - t0) }); // §290
+      // lote 661-670 (§432): clipes REAIS disponíveis (inclui o pacote UAL)
+      setAnimsRenderer((r as unknown as { animacoesDisponiveis?: () => string[] }).animacoesDisponiveis?.() ?? []);
       if (apresentando) return; // coreografia §174 no comando
       r.definirCamera({ modo: cameraModo, distancia: refCam.current.dist, elevacao: refCam.current.elev });
       // personagem novo pode não ter a animação atual → volta ao Idle
       void r.tocarAnimacao({ id: movReduzido ? 'nenhum' : animacao });
     });
-  }, [estado, personagem, fase, cameraModo, animacao, movReduzido, apresentando, sinalRetry]);
+  }, [estado, personagem, fase, cameraModo, animacao, movReduzido, apresentando, sinalRetry, sinalAnim]);
+
+  // lote 661-670 (§432/§436, flag as5.animacao3d): pacote UAL para bases
+  // ubc-v1 — publicado por publicar-animacoes.mjs; 404 degrada §481
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    // lote 731-740 (§432, flag as5.ual_extra): LISTA de pacotes — o
+    // básico define o Idle; o extra soma emotes (404 degrada por pacote)
+    const urls = flag('as5.animacao3d') && rigAtualEhUbc
+      ? [
+        '/assets/avatars/3d/animacoes/ual_basico/pacote.glb',
+        ...(flag('as5.ual_extra') ? ['/assets/avatars/3d/animacoes/ual_extra/pacote.glb'] : []),
+      ]
+      : [];
+    void (refR.current as unknown as { definirPacotesAnimacoes?: (u: string[]) => Promise<void> })
+      ?.definirPacotesAnimacoes?.(urls)
+      ?.then(() => setSinalAnim((n) => n + 1)); // re-lê os clipes disponíveis
+  }, [fase, personagem, rigAtualEhUbc]);
 
   const animacoesDoAtual = useMemo(() => {
     const doIndice = indice.find((p) => p.slug === personagem)?.animacoes ?? [];
-    const destaque = ANIMACOES_DESTAQUE.filter((a) => doIndice.includes(a));
-    return destaque.length ? destaque.slice(0, 6) : doIndice.slice(0, 6);
-  }, [indice, personagem]);
+    // §432: clipes do renderer (pacotes UAL anexados) somam ao índice
+    const todos = [...new Set([...doIndice, ...animsRenderer])];
+    const destaque = ANIMACOES_DESTAQUE.filter((a) => todos.includes(a));
+    // lote 731-740: com o extra ligado cabem mais chips de emote
+    const teto = flag('as5.ual_extra') ? 9 : 6;
+    return destaque.length ? destaque.slice(0, teto) : todos.slice(0, teto);
+  }, [indice, personagem, animsRenderer]);
 
   // mega 17: prefetch oportunista no hover do chip
   const precarregar = useCallback((slug: string) => {
@@ -414,7 +522,36 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     const r = refR.current;
     if (!r) return;
     try {
-      const foto = await r.capturar({ largura: 960, altura: 960, deterministica: true, transparente });
+      let foto;
+      if (flag('as5.captura3d_v2')) {
+        // lote 691-700 (§329.2): LOD ALTO + supersampling, com o
+        // indicador §329.3; tier volta ao que era no fim
+        const tierAntes = qualidade;
+        const precisaAlto = qualidade !== 'alto';
+        if (precisaAlto) {
+          setFaseCaptura('Preparando personagem…');
+          r.definirQualidade('alto');
+          const t0 = Date.now();
+          await new Promise<void>((res) => {
+            const iv = setInterval(() => {
+              const assentou = refFaseCarga.current === null || refFaseCarga.current === 'pronto';
+              if ((assentou && Date.now() - t0 > 1500) || Date.now() - t0 > 12000) {
+                clearInterval(iv);
+                res();
+              }
+            }, 200);
+          });
+        }
+        setFaseCaptura('Renderizando…');
+        foto = await r.capturar({
+          largura: 960, altura: 960, deterministica: true, transparente,
+          superAmostra: 2, // §506: AA de captura
+        });
+        setFaseCaptura('Finalizando imagem…');
+        if (precisaAlto) r.definirQualidade(tierAntes);
+      } else {
+        foto = await r.capturar({ largura: 960, altura: 960, deterministica: true, transparente });
+      }
       telemetria('p3d_capturou', { personagem: refPersonagem.current, transparente }); // §290
       const comM = await comMarca(foto.dataUri, 960);
       setCapturas((c2) => [comM, ...c2].slice(0, 6)); // mega 101: galeria local
@@ -422,8 +559,10 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
       a.href = comM;
       a.download = 'dshow-avatar-3d-960.png';
       a.click();
-    } catch { /* captura é cosmética — nunca derruba o palco */ }
-  }, [transparente, comMarca]);
+    } catch { /* captura é cosmética — nunca derruba o palco */ } finally {
+      setFaseCaptura(null);
+    }
+  }, [transparente, comMarca, qualidade]);
 
   // mega 33: TURNTABLE 360° — 8 azimutes §508 numa folha 4×2 (1920×960)
   const gerarTurntable = useCallback(async () => {
@@ -482,9 +621,11 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   }, [toneMapa, ambiente, fase, cinemaLigado]);
   useEffect(() => {
     if (fase !== 'pronto' || !cinemaLigado) return;
+    // mega 645 (§297×§440): movimento reduzido também DESLIGA a vida —
+    // idle e câmera já respeitavam; a respiração ficara de fora (gap a11y)
     (refR.current as unknown as { definirVida?: (v: number | null) => void })
-      ?.definirVida?.(vida ? 0.8 : null);
-  }, [vida, fase, cinemaLigado, personagem]);
+      ?.definirVida?.(vida && !movReduzido ? 0.8 : null);
+  }, [vida, fase, cinemaLigado, personagem, movReduzido]);
   useEffect(() => {
     if (fase !== 'pronto' || !cinemaLigado) return;
     const r = refR.current as unknown as {
@@ -514,6 +655,35 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     (refR.current as unknown as { definirTinta?: (c: string | null) => void })
       ?.definirTinta?.(tinta ? config2d.cores.destaque : null);
   }, [tinta, config2d, fase, personagem]);
+
+  // lote 641–650 (§418–§421, flag as5.materiais3d): canais de cor §73 do
+  // 2D recolorem os materiais 3D (cabelo/roupa/destaque — §420: a UI fala
+  // canais; o renderer converte). Vazio/flag off = arte original.
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    const tem = flag('as5.materiais3d') && Object.keys(coresPersonalizadas).length > 0;
+    (refR.current as unknown as { definirCores3d?: (c: Record<string, string> | null) => void })
+      ?.definirCores3d?.(tem ? coresPersonalizadas : null);
+  }, [coresPersonalizadas, fase, personagem]);
+
+  // lote 681-690 (§462/§470/§475, flag as5.progressivo3d): progressivo
+  // no renderer — LOD por tela, lod2-primeiro e cache IndexedDB por hash
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    (refR.current as unknown as { definirProgressivo?: (v: boolean) => void })
+      ?.definirProgressivo?.(flag('as5.progressivo3d'));
+  }, [fase]);
+
+  // lote 651–660 (§412–§414, flag as5.morfos3d): tipo corporal §102 e
+  // ajuste fino §102.2 do 2D moldam o personagem 3D (tabela única §102)
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    const corpo = flag('as5.morfos3d') && (estado.body.tipo || estado.body.fino)
+      ? { tipo: estado.body.tipo ?? null, fino: estado.body.fino ?? null }
+      : null;
+    (refR.current as unknown as { definirCorpo3d?: (c: typeof corpo) => void })
+      ?.definirCorpo3d?.(corpo);
+  }, [estado, fase, personagem]);
 
   // mega 82: aura equipada no 2D vira ANEL 3D na cor de destaque (§444)
   useEffect(() => {
@@ -585,6 +755,17 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     if (qualidade !== 'auto') setTierAtual(qualidade);
     try { localStorage.setItem(CHAVE_QUALIDADE, qualidade); } catch { /* sem storage */ }
   }, [qualidade, fase]);
+
+  // lote 691-700 (§482–§483, flag as5.quality3d_v2): perfil → DPR máximo
+  // (ultra/cine = 3) + DPR DINÂMICO suave quando o FPS cai contínuo
+  useEffect(() => {
+    if (fase !== 'pronto' || !flag('as5.quality3d_v2')) return;
+    const r = refR.current as unknown as {
+      definirDprMax?: (t: number) => void; definirDprDinamico?: (v: boolean) => void;
+    };
+    r?.definirDprMax?.(perfil === 'padrao' ? 2 : 3); // §482.1
+    r?.definirDprDinamico?.(true); // §483
+  }, [perfil, fase, personagem]);
 
   // mega 31: CENAS do palco — salvar/aplicar/excluir o setup completo
   const salvarCenaAtual = useCallback(() => {
@@ -811,7 +992,21 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   return (
     <div ref={refWrap} className="avst5-p3d" data-teste="palco-3d"
       data-apresentando={apresentando || undefined} data-tela-cheia={telaCheia || undefined}>
-      <div ref={refAlvo} className="avst5-p3d-tela" aria-label="Palco 3D (prévia)" />
+      {/* lote 661-670 (§439): olhar segue o cursor — amplitude limitada,
+          suave, desliga em movimento reduzido e volta ao centro ao sair */}
+      <div ref={refAlvo} className="avst5-p3d-tela" aria-label="Palco 3D (prévia)"
+        onMouseMove={(e) => {
+          if (!flag('as5.animacao3d') || movReduzido || fase !== 'pronto') return;
+          const caixa = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          const nx = ((e.clientX - caixa.left) / Math.max(1, caixa.width)) * 2 - 1;
+          const ny = ((e.clientY - caixa.top) / Math.max(1, caixa.height)) * 2 - 1;
+          (refR.current as unknown as { definirOlhar?: (x: number | null, y: number | null) => void })
+            ?.definirOlhar?.(nx, ny);
+        }}
+        onMouseLeave={() => {
+          (refR.current as unknown as { definirOlhar?: (x: number | null, y: number | null) => void })
+            ?.definirOlhar?.(null, null); // §439: retorna ao centro
+        }} />
       {fase === 'pronto' && (<>
         <div className="avst5-p3d-personagens" role="radiogroup" aria-label="Personagem da prévia 3D">
           <button type="button" role="radio" aria-checked={override === null}
@@ -830,6 +1025,66 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             </button>
           ))}
         </div>
+        {/* megas 625-626 (§406/§423, flag as5.assembler3d): CABELO montado
+            no esqueleto da base pelo Character Assembler — só aparece
+            quando há partes publicadas E a base atual é do rig ubc-v1 */}
+        {flag('as5.assembler3d') && partesCabelo.length > 0 && rigAtualEhUbc && (
+          <div className="avst5-p3d-personagens avst5-p3d-partes" role="radiogroup"
+            aria-label="Cabelo (§423 — assembler §406)" data-teste="p3d-cabelos">
+            <button type="button" role="radio" aria-checked={cabelo3d === null}
+              className={`avst5-p3d-chip${cabelo3d === null ? ' avst5-p3d-chip-on' : ''}`}
+              data-teste="p3d-cabelo-nenhum"
+              onClick={() => setCabelo3d(null)}>Sem cabelo</button>
+            {partesCabelo.map((pc) => (
+              <button key={pc.slug} type="button" role="radio" aria-checked={cabelo3d === pc.slug}
+                className={`avst5-p3d-chip${cabelo3d === pc.slug ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-cabelo-${pc.slug}`}
+                onMouseEnter={() => (refR.current as unknown as { precarregarParte?: (s: string) => void })?.precarregarParte?.(pc.slug)}
+                onClick={() => setCabelo3d(pc.slug)}>
+                {pc.nome}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* lote 651–660 (§425, flag as5.cabelo3d): BARBA como slot próprio —
+            combina com o cabelo no mesmo esqueleto; material = canal cabelo */}
+        {flag('as5.cabelo3d') && partesBarba.length > 0 && rigAtualEhUbc && (
+          <div className="avst5-p3d-personagens avst5-p3d-partes" role="radiogroup"
+            aria-label="Barba (§425 — combina com o cabelo)" data-teste="p3d-barbas">
+            <button type="button" role="radio" aria-checked={barba3d === null}
+              className={`avst5-p3d-chip${barba3d === null ? ' avst5-p3d-chip-on' : ''}`}
+              data-teste="p3d-barba-nenhuma"
+              onClick={() => setBarba3d(null)}>Sem barba</button>
+            {partesBarba.map((pb) => (
+              <button key={pb.slug} type="button" role="radio" aria-checked={barba3d === pb.slug}
+                className={`avst5-p3d-chip${barba3d === pb.slug ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-barba-${pb.slug}`}
+                onMouseEnter={() => (refR.current as unknown as { precarregarParte?: (s: string) => void })?.precarregarParte?.(pb.slug)}
+                onClick={() => setBarba3d(pb.slug)}>
+                {pb.nome}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* megas 637-638 (§415–§417, flag as5.roupas3d): ROUPA por look —
+            veste todas as peças do gênero; §415.2 mascara a base coberta */}
+        {flag('as5.roupas3d') && partesRoupa.length > 0 && rigAtualEhUbc && (
+          <div className="avst5-p3d-personagens avst5-p3d-partes" role="radiogroup"
+            aria-label="Roupa (§415–§417 — body masking §415.2)" data-teste="p3d-roupas">
+            <button type="button" role="radio" aria-checked={roupa3d === null}
+              className={`avst5-p3d-chip${roupa3d === null ? ' avst5-p3d-chip-on' : ''}`}
+              data-teste="p3d-roupa-nenhuma"
+              onClick={() => setRoupa3d(null)}>Sem roupa</button>
+            {([['ranger', 'Ranger'], ['peasant', 'Camponês']] as const).map(([id2, nome]) => (
+              <button key={id2} type="button" role="radio" aria-checked={roupa3d === id2}
+                className={`avst5-p3d-chip${roupa3d === id2 ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-roupa-${id2}`}
+                onClick={() => setRoupa3d(id2)}>
+                {nome}
+              </button>
+            ))}
+          </div>
+        )}
         {animacoesDoAtual.length > 0 && (
           <div className="avst5-p3d-animacoes" role="radiogroup" aria-label="Animação"
             data-teste="p3d-animacoes">
@@ -911,10 +1166,25 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           </span>
           <span role="radiogroup" aria-label="Qualidade (§423)" data-teste="p3d-qualidade">
             {(['auto', 'alto', 'medio', 'economico'] as const).map((q2) => (
-              <button key={q2} type="button" role="radio" aria-checked={qualidade === q2}
-                className={`avst5-p3d-chip${qualidade === q2 ? ' avst5-p3d-chip-on' : ''}`}
-                onClick={() => setQualidade(q2)}>
+              <button key={q2} type="button" role="radio"
+                aria-checked={qualidade === q2 && perfil === 'padrao'}
+                className={`avst5-p3d-chip${qualidade === q2 && perfil === 'padrao' ? ' avst5-p3d-chip-on' : ''}`}
+                onClick={() => { setQualidade(q2); setPerfil('padrao'); }}>
                 {q2 === 'auto' ? 'Auto' : q2 === 'alto' ? 'Alta' : q2 === 'medio' ? 'Média' : 'Econ.'}
+              </button>
+            ))}
+            {/* lote 691-700 (§482.1): perfis ULTRA e CINEMATOGRÁFICO */}
+            {flag('as5.quality3d_v2') && (['ultra', 'cine'] as const).map((pf) => (
+              <button key={pf} type="button" role="radio" aria-checked={perfil === pf}
+                className={`avst5-p3d-chip${perfil === pf ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-perfil-${pf}`}
+                title={pf === 'ultra' ? 'LOD alto + DPR 3 (§482.1)' : 'Ultra + pós-processamento real (§482.1)'}
+                onClick={() => {
+                  setPerfil(pf);
+                  setQualidade('alto');
+                  if (pf === 'cine') setPosFx(true);
+                }}>
+                {pf === 'ultra' ? 'Ultra' : 'Cine'}
               </button>
             ))}
           </span>
@@ -1161,6 +1431,23 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
         {hudLigado && hud && (
           <div className="avst5-p3d-hud" data-teste="p3d-hud" role="note">
             <Activity size={10} aria-hidden /> {hud.fps}fps · {hud.tier} · {hud.triangulos.toLocaleString('pt-BR')}△
+            {typeof hud.drawCalls === 'number' && <> · {hud.drawCalls}dc</>}
+          </div>
+        )}
+        {/* mega 695 (§329.3): indicador de progresso da CAPTURA alta */}
+        {faseCaptura && (
+          <div className="avst5-p3d-carga" data-teste="p3d-captura-fase" role="status">
+            <LoaderCircle size={10} aria-hidden className="avst-girando" />
+            {faseCaptura}
+          </div>
+        )}
+        {/* mega 685 (§472): estado REAL da carga, discreto e amigável */}
+        {!faseCaptura && faseCarga && faseCarga !== 'pronto' && (
+          <div className="avst5-p3d-carga" data-teste="p3d-carga" role="status">
+            <LoaderCircle size={10} aria-hidden className="avst-girando" />
+            {faseCarga === 'metadados' ? 'Buscando informações…'
+              : faseCarga === 'modelo_rapido' ? 'Prévia rápida no palco — melhorando…'
+                : faseCarga === 'baixando' ? 'Baixando o modelo…' : 'Montando o personagem…'}
           </div>
         )}
         {congelado && (

@@ -1,0 +1,378 @@
+{
+  "versao": 1,
+  "gerado_por": "gerar-indice-3d.mjs",
+  "personagens": [
+    {
+      "slug": "cab_barba",
+      "nome": "Barba",
+      "tipo": "parte_barba",
+      "rig": "ubc-v1",
+      "familia": "economico",
+      "thumb": "cab_barba/thumb.webp",
+      "preview": "cab_barba/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1034,
+        "lod1": 1034,
+        "lod2": 1034
+      }
+    },
+    {
+      "slug": "cab_coque",
+      "nome": "Coque",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "familia": "economico",
+      "thumb": "cab_coque/thumb.webp",
+      "preview": "cab_coque/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 3284,
+        "lod1": 3284,
+        "lod2": 3284
+      }
+    },
+    {
+      "slug": "cab_longo",
+      "nome": "Longo",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "familia": "economico",
+      "thumb": "cab_longo/thumb.webp",
+      "preview": "cab_longo/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 2906,
+        "lod1": 2906,
+        "lod2": 2906
+      }
+    },
+    {
+      "slug": "cab_raspado",
+      "nome": "Raspado",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "familia": "economico",
+      "thumb": "cab_raspado/thumb.webp",
+      "preview": "cab_raspado/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 830,
+        "lod1": 830,
+        "lod2": 830
+      }
+    },
+    {
+      "slug": "cab_raspado_f",
+      "nome": "Raspado F",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "familia": "economico",
+      "thumb": "cab_raspado_f/thumb.webp",
+      "preview": "cab_raspado_f/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 830,
+        "lod1": 830,
+        "lod2": 830
+      }
+    },
+    {
+      "slug": "cab_repartido",
+      "nome": "Repartido",
+      "tipo": "parte_cabelo",
+      "rig": "ubc-v1",
+      "familia": "economico",
+      "thumb": "cab_repartido/thumb.webp",
+      "preview": "cab_repartido/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1301,
+        "lod1": 1301,
+        "lod2": 1301
+      }
+    },
+    {
+      "slug": "rou3d_peasant_f_botas",
+      "nome": "Camponesa F · pés",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_peasant_f_botas/thumb.webp",
+      "preview": "rou3d_peasant_f_botas/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 2588,
+        "lod1": 2588,
+        "lod2": 2588
+      }
+    },
+    {
+      "slug": "rou3d_peasant_f_bracos",
+      "nome": "Camponesa F · braços",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_peasant_f_bracos/thumb.webp",
+      "preview": "rou3d_peasant_f_bracos/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 6848,
+        "lod1": 6848,
+        "lod2": 6848
+      }
+    },
+    {
+      "slug": "rou3d_peasant_f_corpo",
+      "nome": "Camponesa F · corpo",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_peasant_f_corpo/thumb.webp",
+      "preview": "rou3d_peasant_f_corpo/preview.webp",
+      "animacoes": [
+        "Jog_Fwd_Loop"
+      ],
+      "triangulos": {
+        "lod0": 2188,
+        "lod1": 2188,
+        "lod2": 2188
+      }
+    },
+    {
+      "slug": "rou3d_peasant_f_pernas",
+      "nome": "Camponesa F · pernas",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_peasant_f_pernas/thumb.webp",
+      "preview": "rou3d_peasant_f_pernas/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1944,
+        "lod1": 1944,
+        "lod2": 1944
+      }
+    },
+    {
+      "slug": "rou3d_peasant_m_botas",
+      "nome": "Camponês M · pés",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_peasant_m_botas/thumb.webp",
+      "preview": "rou3d_peasant_m_botas/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 2588,
+        "lod1": 2588,
+        "lod2": 2588
+      }
+    },
+    {
+      "slug": "rou3d_peasant_m_bracos",
+      "nome": "Camponês M · braços",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_peasant_m_bracos/thumb.webp",
+      "preview": "rou3d_peasant_m_bracos/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 5338,
+        "lod1": 5338,
+        "lod2": 5338
+      }
+    },
+    {
+      "slug": "rou3d_peasant_m_corpo",
+      "nome": "Camponês M · corpo",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_peasant_m_corpo/thumb.webp",
+      "preview": "rou3d_peasant_m_corpo/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 3856,
+        "lod1": 3856,
+        "lod2": 3856
+      }
+    },
+    {
+      "slug": "rou3d_peasant_m_pernas",
+      "nome": "Camponês M · pernas",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_peasant_m_pernas/thumb.webp",
+      "preview": "rou3d_peasant_m_pernas/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1112,
+        "lod1": 1112,
+        "lod2": 1112
+      }
+    },
+    {
+      "slug": "rou3d_ranger_f_botas",
+      "nome": "Ranger F · botas",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_f_botas/thumb.webp",
+      "preview": "rou3d_ranger_f_botas/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 9172,
+        "lod1": 9172,
+        "lod2": 7200
+      }
+    },
+    {
+      "slug": "rou3d_ranger_f_bracos",
+      "nome": "Ranger F · braços",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_f_bracos/thumb.webp",
+      "preview": "rou3d_ranger_f_bracos/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 8508,
+        "lod1": 8508,
+        "lod2": 7198
+      }
+    },
+    {
+      "slug": "rou3d_ranger_f_capuz",
+      "nome": "Ranger F · capuz",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_f_capuz/thumb.webp",
+      "preview": "rou3d_ranger_f_capuz/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 2136,
+        "lod1": 2136,
+        "lod2": 2136
+      }
+    },
+    {
+      "slug": "rou3d_ranger_f_corpo",
+      "nome": "Ranger F · corpo",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_f_corpo/thumb.webp",
+      "preview": "rou3d_ranger_f_corpo/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 4570,
+        "lod1": 4570,
+        "lod2": 4570
+      }
+    },
+    {
+      "slug": "rou3d_ranger_f_ombreira",
+      "nome": "Ranger F · ombreira",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_f_ombreira/thumb.webp",
+      "preview": "rou3d_ranger_f_ombreira/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1376,
+        "lod1": 1376,
+        "lod2": 1376
+      }
+    },
+    {
+      "slug": "rou3d_ranger_f_pernas",
+      "nome": "Ranger F · pernas",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_f_pernas/thumb.webp",
+      "preview": "rou3d_ranger_f_pernas/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1204,
+        "lod1": 1204,
+        "lod2": 1204
+      }
+    },
+    {
+      "slug": "rou3d_ranger_m_botas",
+      "nome": "Ranger M · botas",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_m_botas/thumb.webp",
+      "preview": "rou3d_ranger_m_botas/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 9172,
+        "lod1": 9172,
+        "lod2": 7200
+      }
+    },
+    {
+      "slug": "rou3d_ranger_m_bracos",
+      "nome": "Ranger M · braços",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_m_bracos/thumb.webp",
+      "preview": "rou3d_ranger_m_bracos/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 4928,
+        "lod1": 4928,
+        "lod2": 4928
+      }
+    },
+    {
+      "slug": "rou3d_ranger_m_capuz",
+      "nome": "Ranger M · capuz",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_m_capuz/thumb.webp",
+      "preview": "rou3d_ranger_m_capuz/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 2136,
+        "lod1": 2136,
+        "lod2": 2136
+      }
+    },
+    {
+      "slug": "rou3d_ranger_m_corpo",
+      "nome": "Ranger M · corpo",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_m_corpo/thumb.webp",
+      "preview": "rou3d_ranger_m_corpo/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 4606,
+        "lod1": 4606,
+        "lod2": 4606
+      }
+    },
+    {
+      "slug": "rou3d_ranger_m_ombreira",
+      "nome": "Ranger M · ombreira",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_m_ombreira/thumb.webp",
+      "preview": "rou3d_ranger_m_ombreira/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1376,
+        "lod1": 1376,
+        "lod2": 1376
+      }
+    },
+    {
+      "slug": "rou3d_ranger_m_pernas",
+      "nome": "Ranger M · pernas",
+      "tipo": "parte_roupa",
+      "rig": "ubc-v1",
+      "thumb": "rou3d_ranger_m_pernas/thumb.webp",
+      "preview": "rou3d_ranger_m_pernas/preview.webp",
+      "animacoes": [],
+      "triangulos": {
+        "lod0": 1128,
+        "lod1": 1128,
+        "lod2": 1128
+      }
+    }
+  ]
+}

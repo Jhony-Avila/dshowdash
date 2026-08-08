@@ -3,10 +3,13 @@
 //
 // Mostra apenas os slots que os itens EQUIPADOS realmente usam (briefing §11):
 // trocar para um androide sem cabelo esconde o slot 'cabelo' sozinho.
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Palette } from 'lucide-react';
 import type { AvatarConfig, SlotCor } from '../domain/types';
 import { CORES_SUGERIDAS, itemPorId } from '../services/AvatarCatalog';
+import { harmoniasDe, hexParaHsl, hslParaHex } from '../engine/cor-hsl';
+import { flag } from '../nucleo/flags';
+import { t } from '../nucleo/i18n';
 
 const NOMES: Record<SlotCor, string> = {
   pele: 'Pele', cabelo: 'Cabelo', roupa: 'Roupa', destaque: 'Destaque',
@@ -29,6 +32,9 @@ export function Cores({ config, aoMudar }: {
   aoMudar: (novo: AvatarConfig) => void;
 }) {
   const slots = useMemo(() => slotsAtivos(config), [config]);
+  // AS6 §206–§212 (as6.color_studio): slot EXPANDIDO com HSL + harmonias
+  const [estudio, setEstudio] = useState<SlotCor | null>(null);
+  const temEstudio = flag('as6.color_studio');
   if (slots.length === 0) return null;
 
   const trocar = (slot: SlotCor, hex: string) =>
@@ -55,7 +61,40 @@ export function Cores({ config, aoMudar }: {
                 aria-label={`Cor personalizada de ${NOMES[slot]}`} />
               <span aria-hidden>+</span>
             </label>
+            {/* AS6 §206 (as6.color_studio): abre o estúdio HSL do slot */}
+            {temEstudio && (
+              <button type="button" className="avst-ft-chip avst6-cs-abrir"
+                aria-expanded={estudio === slot} data-teste={`cs-abrir-${slot}`}
+                title="Color Studio — ajuste fino HSL e harmonias (§206)"
+                onClick={() => setEstudio((v) => (v === slot ? null : slot))}>HSL</button>
+            )}
           </div>
+          {temEstudio && estudio === slot && (() => {
+            const hsl = hexParaHsl(config.cores[slot]);
+            const mexer = (eixo: 'h' | 's' | 'l', valor: number) =>
+              trocar(slot, hslParaHex({ ...hsl, [eixo]: valor }));
+            return (
+              <div className="avst6-cs" data-teste={`cs-painel-${slot}`}>
+                {([['h', 'Matiz', 360], ['s', 'Saturação', 100], ['l', 'Luminosidade', 100]] as const).map(([eixo, nome, max]) => (
+                  <label key={eixo} className="avst6-cs-linha">
+                    <span>{t(nome)}</span>
+                    <input type="range" min={0} max={max} value={hsl[eixo]}
+                      data-teste={`cs-${eixo}-${slot}`} aria-label={`${t(nome)} de ${NOMES[slot]}`}
+                      onChange={(e) => mexer(eixo, Number(e.target.value))} />
+                    <output>{hsl[eixo]}</output>
+                  </label>
+                ))}
+                <div className="avst6-cs-harmonias" role="group" aria-label={t('Harmonias')}>
+                  {harmoniasDe(config.cores[slot]).map((h) => (
+                    <button key={h.id} type="button" className="avst-swatch"
+                      style={{ background: h.hex }} title={`${t(h.nome)} · ${h.hex}`}
+                      data-teste={`cs-harmonia-${h.id}-${slot}`}
+                      onClick={() => trocar(slot, h.hex)} />
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       ))}
     </section>

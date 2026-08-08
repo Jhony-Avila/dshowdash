@@ -16,6 +16,25 @@ asset interno da Dshow.
 | `animal_pug.glb` | Pug — Ultimate Animated Character Pack | Quaternius | CC0 1.0 (License.txt do pack) | https://quaternius.com/packs/ultimatedanimatedcharacter.html |
 | `androide.glb` | RobotExpressive (exemplos oficiais do Three.js) | Tomás Laulhé (design), Don McCurdy (modificações) | CC0 1.0 | https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/RobotExpressive |
 
+## Onda 611+ — pacotes UBC (megas 611-620, 2026-08-07)
+
+Fontes em `storage/assets-3d-fonte/` (fora do git); comprovantes = os
+próprios `License*.txt` dentro de cada zip extraído. Todos **CC0 1.0
+Universal** (verificados arquivo a arquivo em 2026-08-07 antes de qualquer
+publicação — regra §43/§511).
+
+| Pacote (zip) | Pasta fonte | Autor | Licença | Comprovante |
+|---|---|---|---|---|
+| Universal Base Characters [Standard] | `ubc-standard-v1/` | Quaternius | CC0 1.0 | `…/Universal Base Characters[Standard]/License_Standard.txt` |
+| Modular Character Outfits - Fantasy [Standard] | `outfits-fantasy-v1/` | Quaternius | CC0 1.0 | `…/Modular Character Outfits - Fantasy[Standard]/License_Standard.txt` |
+| Universal Animation Library [Standard] | `anim-lib-v1/` | Quaternius | CC0 1.0 | `…/Universal Animation Library[Standard]/License.txt` |
+| Universal Animation Library 2 [Standard] | `anim-lib2-v1/` | Quaternius | CC0 1.0 | `…/Universal Animation Library 2[Standard]/License.txt` |
+
+Personagens publicados desta origem trazem `licenca.comprovante` no
+manifest §517 apontando pro txt correspondente. Rig canônico: 65 bones
+(`scripts/avatar/assets3d/rig-ubc-v1.json`) — IDÊNTICO em bases, cabelos
+e roupas modulares (verificado; é o que viabiliza o assembler §406).
+
 Notas de conformidade:
 
 1. CC0 1.0 dispensa atribuição e permite uso comercial e modificação —

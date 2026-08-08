@@ -19,7 +19,7 @@ ok(a === b, 'manifest NÃO determinístico (2 gerações diferem)');
 const m = JSON.parse(a);
 ok(m.formato === 'dshow-avatar-manifest' && m.versao === 1, 'cabeçalho do manifest errado');
 ok(m.resumo.itens2d > 300, `itens 2D suspeitos (${m.resumo.itens2d})`);
-ok(m.resumo.personagens3d === 6, `personagens 3D deveriam ser 6 (${m.resumo.personagens3d})`);
+ok(m.resumo.personagens3d === 8, `personagens 3D deveriam ser 8 — 6 legados + 2 UBC (${m.resumo.personagens3d})`);
 ok(m.itens.length === m.resumo.itens2d, 'resumo × lista divergem');
 ok(!a.includes('"geradoEm"') && !/20\d\d-\d\d-\d\dT/.test(a.slice(0, 200)), 'timestamp vazou no manifest (§267 determinismo)');
 

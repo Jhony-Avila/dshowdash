@@ -113,6 +113,16 @@ const EN: Record<string, string> = {
   Ascender: 'Ascend',
   // lote 591-600 (§60.4/§64.2): ux final
   'Prévia': 'Preview',
+  'Equipado': 'Equipped', // lote 791-800 (§644, as6.dock)
+  'Matiz': 'Hue', // lote 811-820 (§206, as6.color_studio)
+  'Saturação': 'Saturation',
+  'Luminosidade': 'Lightness',
+  'Harmonias': 'Harmonies',
+  'Complementar': 'Complementary',
+  'Análoga −30°': 'Analogous −30°',
+  'Análoga +30°': 'Analogous +30°',
+  'Tríade −120°': 'Triad −120°',
+  'Tríade +120°': 'Triad +120°',
   'Prévia fixada': 'Preview pinned',
   'Fixar prévia': 'Pin preview',
   Soltar: 'Unpin',

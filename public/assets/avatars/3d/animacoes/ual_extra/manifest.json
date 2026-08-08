@@ -1,0 +1,25 @@
+{
+  "id": "ual_extra",
+  "tipo": "pacote_animacoes",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "arquivo": "pacote.glb",
+  "clipes": [
+    "Chest_Open",
+    "Idle_FoldArms_Loop",
+    "Idle_TalkingPhone_Loop",
+    "Walk_Carry_Loop",
+    "Yes"
+  ],
+  "hashes": {
+    "pacote": "7212751cc0d528bf7628c1811ddd8be7ac7cd8f6eae8f8a48e4b1cc523a4a5db"
+  },
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "ual2-v1",
+    "comprovante": "storage/assets-3d-fonte/anim-lib2-v1/extraido/Universal Animation Library 2[Standard]/License.txt"
+  },
+  "origem": "ual2-v1",
+  "fonte_original": "UAL2_Standard.glb",
+  "criado_em": "2026-08-08"
+}

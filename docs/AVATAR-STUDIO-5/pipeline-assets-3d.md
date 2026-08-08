@@ -89,6 +89,17 @@ lod0 ≤ 60k triângulos · lod1 ≤ 25k · lod2 ≤ 8k · textura ≤ 2048px (l
 / 1024px (lod1) / 512px (lod2) · nenhum material com mais de 4 mapas ·
 FPS alvo: 60 desktop / 30 mobile no palco com 1 personagem + cenário.
 
+**Megas 611-613 (2026-08-07)**: os limites de TEXTURA agora são executados
+— o publicador redimensiona por LOD e converte pra WebP (sharp +
+textureCompress; EXT_texture_webp é decodificado nativo pelo GLTFLoader),
+e o validador §487 MEDE as texturas embutidas (parser de header PNG/WebP/
+JPEG em node puro) e reprova acima do teto. Atenção: `prune()` converte
+textura de COR SÓLIDA em fator de material (keepSolidTextures=false) —
+correto e desejado. Lista canônica de bones é POR RIG (`rig-<nome>.json`);
+manifests legados corrigidos (quaternius-legado / robot-expressive /
+quad-pet) — o rig ubc-v1 REAL tem 65 bones, idênticos em bases, cabelos e
+roupas modulares do pacote.
+
 ## 7. FERRAMENTAS PRONTAS (mega 5 · 2026-08-03) — publicar é UM comando por asset
 
 Quando o zip UBC estiver em `storage/assets-3d-fonte/ubc-standard-v1/`:

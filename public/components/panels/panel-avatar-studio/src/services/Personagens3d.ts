@@ -18,6 +18,10 @@ export interface ManifestPersonagem3d {
   hashes: Record<string, string>;
   triangulos?: Record<string, number>;
   animacoes?: string[];
+  /** megas 631-633 (§415.2): regiões do corpo que a PARTE oculta */
+  mascara?: string[];
+  /** lote 651-660 (§423): família de complexidade (economico|padrao|premium) */
+  familia?: string;
 }
 
 /** §423: tier → LOD (auto = medio, DETERMINÍSTICO — nada de sniffing aqui;
@@ -63,6 +67,9 @@ export interface EntradaIndice3d {
   nome: string;
   thumb: string;
   animacoes: string[];
+  /** lote 621-630 (§406): rig declarado no manifest — o seletor de partes
+   *  só aparece em bases ubc-v1 (ausente nos curados embutidos = legado) */
+  rig?: string;
 }
 
 /** mega 11: CADEIA fail-safe de catálogo — REGISTRY §614 (API) →

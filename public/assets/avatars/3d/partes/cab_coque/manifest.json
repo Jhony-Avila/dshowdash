@@ -1,0 +1,31 @@
+{
+  "id": "cab_coque",
+  "tipo": "parte_cabelo",
+  "versao": 1,
+  "rig": "ubc-v1",
+  "familia": "economico",
+  "lods": {
+    "lod0": "modelo.lod0.glb",
+    "lod1": "modelo.lod1.glb",
+    "lod2": "modelo.lod2.glb"
+  },
+  "hashes": {
+    "lod0": "sha256:6b3af6f8f9d865e5d8118604f1d01b57cf1a9565fcfb692087fffe77689eb741",
+    "lod1": "sha256:3534af5aa1b5759e43b872e79bf61d048df7617471340a1ab75c164e7d92fd44",
+    "lod2": "sha256:7821aa7aa89ffd677e96bb1c48f958a098eff1df40987495b9566359649a23d1"
+  },
+  "triangulos": {
+    "lod0": 3284,
+    "lod1": 3284,
+    "lod2": 3284
+  },
+  "animacoes": [],
+  "licenca": {
+    "tipo": "CC0",
+    "fonte": "ubc-standard-v1",
+    "comprovante": "storage/assets-3d-fonte/ubc-standard-v1/extraido/Universal Base Characters[Standard]/License_Standard.txt"
+  },
+  "origem": "ubc-standard-v1",
+  "fonte_original": "Hair_Buns.gltf",
+  "criado_em": "2026-08-07"
+}

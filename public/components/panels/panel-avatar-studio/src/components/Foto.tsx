@@ -31,6 +31,9 @@ import type { DicaFoto, FormatoFotoId, TemplateFoto } from '../services/AvatarCa
 import { telemetria } from '../services/Telemetria';
 import { criarRenderizador } from '../services/FabricaRenderizador';
 import { BASE_PERSONAGENS_3D, carregarIndice3d } from '../services/Personagens3d';
+// lote 721-730 (§329, flag as5.foto3d): captura 3D com o ESTADO do usuário
+import { deLegado2d } from '../nucleo/adaptadores';
+import { CORES_PADRAO } from '../engine/cores';
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { estadoVazio } from '../nucleo/contratos';
 import { flag } from '../nucleo/flags';
@@ -143,6 +146,8 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
   // mega 12 (§21×§174.1): TERCEIRA origem — captura do personagem 3D
   const [galeria3d, setGaleria3d] = useState<EntradaIndice3d[] | null>(null);
   const [capturando3d, setCapturando3d] = useState(false);
+  // lote 721-730 (§329.3, flag as5.foto3d): fase amigável da captura 3D
+  const [fase329, setFase329] = useState<string | null>(null);
   // mega 47: captura 3D com fundo TRANSPARENTE (compõe limpa nos templates)
   const [transparente3d, setTransparente3d] = useState(false);
   const [estilo, setEstilo] = useState<EstiloFoto>(ESTILO_VAZIO);
@@ -779,29 +784,75 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
     palco.style.cssText = 'position:fixed;left:-99999px;top:0;width:960px;height:960px';
     document.body.appendChild(palco);
     let r: Awaited<ReturnType<typeof criarRenderizador>> | null = null;
+    // lote 721-730 (§329, flag as5.foto3d): a captura vira ALTA de verdade
+    // — estado do USUÁRIO (cores §420 + corpo §414), pose Idle do pacote
+    // UAL (§329.2 passo 4), DPR 2 + supersampling §506 e fases §329.3.
+    // Flag off = comportamento anterior byte a byte (mega 12/47).
+    const alta = flag('as5.foto3d');
     try {
-      r = await criarRenderizador('3d', { resolverPersonagem: () => slug });
-      await r.inicializar({ qualidade: 'alto', pixelRatioMax: 1 });
+      r = await criarRenderizador('3d', {
+        resolverPersonagem: () => slug,
+        ...(alta ? {
+          aoCarregamento: (f: string) => setFase329(
+            f === 'metadados' ? 'Preparando personagem…'
+              : f === 'baixando' || f === 'modelo_rapido' ? 'Carregando materiais…'
+                : f === 'montando' ? 'Ajustando iluminação…' : null),
+        } : {}),
+      } as Parameters<typeof criarRenderizador>[1]);
+      await r.inicializar({ qualidade: 'alto', pixelRatioMax: alta ? 2 : 1 });
       await r.montar(palco as unknown as { innerHTML: string });
-      const aplicado = await r.aplicarEstado(estadoVazio());
-      if (!aplicado.ok) throw new Error('personagem indisponível');
+      const rx = r as unknown as {
+        definirCores3d?: (c: Record<string, string> | null) => void;
+        definirCorpo3d?: (c: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null } | null) => void;
+        definirPacoteAnimacoes?: (u: string | null) => Promise<void>;
+      };
+      if (alta && configAtual) {
+        const estado = deLegado2d(validarConfig(configAtual));
+        // cores §420: só canais personalizados (mesma regra do palco)
+        if (flag('as5.materiais3d')) {
+          const cores: Record<string, string> = {};
+          for (const [canal, cor] of Object.entries(validarConfig(configAtual).cores)) {
+            if (cor && cor.toLowerCase() !== CORES_PADRAO[canal as keyof typeof CORES_PADRAO]?.toLowerCase()) cores[canal] = cor;
+          }
+          rx.definirCores3d?.(Object.keys(cores).length ? cores : null);
+        }
+        // corpo §414: tipo §102 + fino §102.2 do avatar
+        if (flag('as5.morfos3d') && (estado.body.tipo || estado.body.fino)) {
+          rx.definirCorpo3d?.({ tipo: estado.body.tipo ?? null, fino: estado.body.fino ?? null });
+        }
+        const aplicado = await r.aplicarEstado(estado);
+        if (!aplicado.ok) throw new Error('personagem indisponível');
+        // pose §329.2: Idle do pacote UAL tira o UBC do T-pose (404 degrada)
+        if (flag('as5.animacao3d')) {
+          await rx.definirPacoteAnimacoes?.('/assets/avatars/3d/animacoes/ual_basico/pacote.glb')?.catch(() => { /* §481 */ });
+          // §508 "estabilizar": alguns quadros p/ a pose Idle assentar
+          await new Promise((res) => setTimeout(res, 450));
+        }
+      } else {
+        const aplicado = await r.aplicarEstado(estadoVazio());
+        if (!aplicado.ok) throw new Error('personagem indisponível');
+      }
+      if (alta) setFase329('Renderizando…');
       // mega 47: transparente §21×§325 — o template compõe sem fundo escuro
       const foto = await r.capturar({
         largura: 960, altura: 960, deterministica: true, transparente: transparente3d,
+        ...(alta ? { superAmostra: 2 as const } : {}),
       });
+      if (alta) setFase329('Finalizando imagem…');
       setFotoEstilo(foto.dataUri);
       setGaleria3d(null);
       const salvo = lerEstiloSalvo();
       if (salvo) setEstilo(salvo);
-      telemetria('foto_estilo_abriu', { origem: '3d', personagem: slug, transparente: transparente3d });
+      telemetria('foto_estilo_abriu', { origem: '3d', personagem: slug, transparente: transparente3d, alta });
     } catch {
       setMensagem('Não consegui capturar o personagem 3D — tente outro.');
     } finally {
       await r?.descartar().catch(() => { /* efêmero */ });
       palco.remove();
       setCapturando3d(false);
+      setFase329(null);
     }
-  }, [transparente3d]);
+  }, [transparente3d, configAtual]);
 
   // §362: autosave do ESTILO enquanto o modo estilizada está aberto
   useEffect(() => {
@@ -1137,7 +1188,11 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
               <X size={14} aria-hidden /> Cancelar
             </button>
             {capturando3d && (
-              <span className="avst-foto-nota"><LoaderCircle className="avst-girando" size={13} aria-hidden /> Capturando personagem…</span>
+              <span className="avst-foto-nota" data-teste="foto-329-fase">
+                <LoaderCircle className="avst-girando" size={13} aria-hidden />{' '}
+                {/* §329.3: fases reais quando a captura ALTA está ligada */}
+                {fase329 ?? 'Capturando personagem…'}
+              </span>
             )}
           </div>
         </div>

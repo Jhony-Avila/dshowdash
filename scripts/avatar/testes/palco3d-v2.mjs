@@ -29,7 +29,7 @@ const fonte = join(dir, 'manequim.glb');
 await gerarManequim(fonte, { denso: true });
 await publicarAsset({
   fonte, saida: join(dir, 'personagens', 'manequim_dev'), id: 'manequim_dev',
-  origem: 'manequim-procedural', comprovante: 'scripts/avatar/assets3d/gerar-manequim.mjs',
+  origem: 'manequim-procedural', rig: 'manequim-dev', comprovante: 'scripts/avatar/assets3d/gerar-manequim.mjs',
   data: '2026-08-05', log: () => {},
 });
 writeFileSync(join(dir, 'entrada.ts'), `

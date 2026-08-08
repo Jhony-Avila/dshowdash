@@ -125,6 +125,314 @@
   quando > 0 · conjuntos §72.1 = curadoria fixa sobre itens existentes
   (peças reais pedem arte → trilho B) · §60.6 mecanismo pronto porém
   inerte (nenhum item declara incompativelCom hoje).
+- **#64 (2026-08-07) — Onda 611–710 = trilho B (UBC)**: com o trilho A
+  esgotado e os 4 packs Quaternius CC0 no servidor, a onda ataca F5/P8
+  (§398–§537): pipeline de assets v2 (texturas por LOD) → bases UBC →
+  Character Assembler §406 → roupas §415–§417 → materiais §418–§421 →
+  cabelo/morphs → animação → LOD → captura → homologação. Mapa vivo:
+  doc 18 do projeto Claude.
+- **#65 (2026-08-07) — Canais de cor 3D = vocabulário §73 (lote 641–650)**:
+  §420 pede canais semânticos; em vez de inventar primary/secondary, o 3D
+  fala os MESMOS canais do 2D (pele/cabelo/roupa/destaque) — zero
+  tradução na UI. Regras: cor NO PADRÃO = arte original do asset (nada de
+  tingir por default — o visual publicado não muda com a flag ligada);
+  cor personalizada = tint multiplicativo em material.color (§421 — nunca
+  gerar textura nova; preserva o detalhe do albedo; não clareia base
+  escura — limite documentado); canal por categoria da parte (§406 passo
+  10) ou por NOME de material (hair/beard cobre o cabelo embutido das
+  bases; PELE só por nome explícito skin/pele — nunca chutar o material
+  do corpo); pipeline único no Material Manager (restaura → canais →
+  tinta mega 81 → teto de emissivo §418.2), idempotente por construção.
+  Bônus a11y: vida §440 agora respeita prefers-reduced-motion (§297) —
+  idle e câmera já respeitavam; o teste determinístico expôs o gap.
+
+- **#66 (2026-08-07) — Cabelo/barba/morfos 3D (lote 651–660)**: barba vira
+  slot PRÓPRIO combinável com cabelo (§425 — mesmo esqueleto pós-rebind);
+  rollback §651 devolve a barba à lista de cabelos (comportamento 621–630
+  byte a byte). Famílias §423 DECLARADAS no manifest (`familia`) — todo o
+  farm CC0 é `economico` (hair cards rígidos); publicador estampa por
+  padrão em cabelo/barba. Física §424: os assets não trazem spring bones →
+  rígido no tier econômico ("responder a movimento" = ancoragem no head
+  bone); física real fica como pendência premium até assets com bones de
+  cabelo. §425 checklist: material da barba = canal cabelo (tinge junto);
+  mandíbula n/a (rig ubc-v1 sem jaw bone). Morfos §412–§414: GLBs sem
+  morph targets → ESTRUTURAIS via escala do objeto raiz com a MESMA
+  tabela §102 do 2D (engine/render), fino §102.2 MULTIPLICA o preset
+  (espelho da #63); base+cabelo+barba+roupas escalam JUNTAS (mesmo
+  esqueleto — §413 "respeita roupas/rig"); neutro = escala 1 = render
+  idêntico; expressivos (piscar §440) ficam na animação, lote 661+.
+  Sobrancelhas: já cobertas pelo canal cabelo (materiais MI_Hair da base).
+
+- **#67 (2026-08-07) — Animação 3D (lote 661–670)**: retargeting §436 é
+  REUSO DIRETO — a UAL usa o MESMO rig ubc-v1 das bases, então os tracks
+  aplicam por nome de bone, sem pipeline de conversão (validação §436.1 =
+  suíte). Pacotes de clipes = GLB SLIM (esqueleto+animações, sem malhas —
+  publicar-animacoes.mjs); root motion §437 removido no CARREGAMENTO
+  (fonte preservada). Máquina §433 com o estado restritivo na CAPTURA
+  (emote nunca quebra o frame §508); pose é persistente por construção.
+  §439 olhar IMPLEMENTADO (head bone segue o cursor: amplitude limitada,
+  suavizado, desliga em reduced-motion/flag off, volta ao centro; nunca
+  acumula rotação — só aplica quando idle/vida/clipe repõem o Head ou
+  repõe sozinho). PISCAR §440 fica como pendência de ASSET: o farm CC0
+  não tem morph targets nem eye bones — entra quando houver asset com
+  blendshapes (registrado no lugar de um fake). §441 completada no rig
+  ubc: spine_02/03 respiram (nomes legados seguem p/ androide/manequim).
+  Pacote UAL: publicação em bloco de servidor (consulta de clipes + 
+  curadoria) — o palco degrada §481 até lá.
+
+- **#68 (2026-08-07) — Briefing complementar assume o lote 671–680**:
+  Jhony enviou o briefing "Reestruturação completa do layout do Avatar
+  Studio (Modo Clássico)" com prioridade imediata → o lote 671–680 vira
+  **CLÁSSICO AAA** (layout puro: viewport dominante, carrossel horizontal
+  de assets, sidebar compacta, cores junto ao canvas, prévias em linha,
+  toolbar/status discretos, grid 8px, hover/seleção ricos, scrolls
+  independentes). O restante do trilho UBC desliza: LOD/progressivo →
+  681–690 · quality/captura → 691–700 · homologação+gate → 701–710 ·
+  validação final da onda → 711–720 (onda estendida p/ 611–720).
+  Regras: flag `as5.classico_aaa` (ON por #50; off = layout anterior
+  byte a byte); ZERO mudança de funcionalidade (componentes mudam de
+  posição/estilo, nunca de código de comportamento); mobile ≤1023px
+  mantém o layout atual; modo 3D/shell novo intocados; arquitetura
+  (trilho/tokens) reutilizável pelo shell no futuro. Análise + proposta:
+  docs/AVATAR-STUDIO-5/classico-aaa.md.
+
+- **#69 (2026-08-07) — LOD/progressivo (lote 681–690)**: o que o pipeline
+  v2 JÁ cobria fica registrado como atendido (§461 LODs por asset · §463
+  hysteresis 30/55 + swap atômico · §464 meshopt (Draco descartado: carga
+  de decoder sem ganho no nosso tamanho de malha) · §465 WebP no lugar de
+  KTX2 (decisão de pipeline: sem decoder extra; revisita se a GPU pedir)
+  · §466 partículas já instanciadas (THREE.Points) · §468/§469 orçamentos
+  por LOD no gate §631 · §477 hashes sha256 · §478 manifests §517). O
+  lote entrega o que faltava no CLIENTE: §473 cancelamento por GERAÇÃO
+  de carga (bugfix de corrida, SEM flag — corretude não é feature); §470
+  progressivo lod2-primeiro (alvo baixa em paralelo; stand-in só se o
+  alvo não chegou); §462 LOD por TAMANHO DE TELA (canvas < 420px rebaixa
+  um tier); §471 preloader de PARTES no hover; §472 loading manager com
+  fases reais (metadados→baixando→modelo_rapido→montando→pronto) e badge
+  discreto; §474 LRU real com PIN do personagem atual; §475 IndexedDB
+  por hash (imutável com hash; sem hash expira em 7d; teto 96MB com
+  despejo LRU; qualquer erro degrada p/ rede); §467 draw calls no HUD
+  dev. §476 (CDN/URLs versionadas) é INFRA — pendência registrada p/ o
+  Jhony decidir fora do painel. Flag do lote: `as5.progressivo3d`.
+
+- **#70 (2026-08-07) — Quality/Captura (lote 691–700)**: §482.1 perfis
+  ULTRA (LOD alto + DPR 3) e CINE (ultra + pós real) como camada sobre os
+  tiers existentes — perfil não vira tier novo (LODs continuam 0/1/2; o
+  perfil regula DPR/pós); §483 DPR DINÂMICO suave (passoDpr puro: -15%
+  por janela de FPS baixo, piso 70% da base, recuperação gradual — nunca
+  abrupto) como ÚLTIMO recurso depois do tier adaptativo; §506 captura
+  ganha supersampling 2×, formatos png/jpeg/webp, câmera específica com
+  restauração; §507 atendido pelo redimensiona-e-restaura (independe da
+  viewport — offscreen dedicado só se aparecer glitch real); §329.2 a
+  captura v2 FORÇA LOD alto (recarrega, captura com super 2×, devolve o
+  tier) com indicador §329.3; §509 thumbnails ficam no renderer
+  build-time (gerar-thumbs-3d §508 — determinístico, com cache no git);
+  §510 contratos de captura já suportam evolução server-side (dataUri →
+  §325 re-encode no servidor); §484/§485 monitor/painel = HUD dev
+  (fps/tier/△/dc) — suficiente p/ dev, painel completo se o Jhony pedir.
+  §421.1 emblemas/decals: CONTINUA pendência de arte/infra (decals reais
+  exigem UV/atlas; nada de fake). Flags: `as5.quality3d_v2` +
+  `as5.captura3d_v2`.
+
+- **#71 (2026-08-07) — Homologação (lote 701–710)**: sem flag — homologar
+  é VERIFICAR, não mudar comportamento (nada a desligar). Validador §487
+  ampliado com regras novas como RESSALVA (licença §511, UV, escala,
+  materiais) — nunca reprovação retroativa de asset publicado; relatório
+  §488 com três status (aprovado/com ressalvas/reprovado; reprovado nunca
+  publica). Homologação EXECUTÁVEL (homologacao.mjs na suíte): varre os
+  34 assets reais (0 reprovados; UBC obrigatoriamente LIMPO), confere o
+  pacote UAL por hash §477, mede o gate §631 no dist local e roda os
+  checklists §489/§490/§493 no palco com evidências. N/A honestos
+  registrados no doc (boné/capacete §491, acessórios §492, cenário §494 e
+  poder §495 = F9 com arte; origem/orientação §487 = preview visual).
+  Doc: docs/AVATAR-STUDIO-5/homologacao-onda-611.md.
+
+- **#72 (2026-08-07) — Onda 721+ abre pelo Photo Studio 3D**: "prossiga"
+  do Jhony sem escolha explícita → decisão minha pelo critério de
+  alavancagem: a captura v2 (lote 691) deixou o §329 pronto — o lote
+  721–730 transforma a entrada 3D da Foto (mega 12/47, que capturava o
+  personagem PELADO com estadoVazio) na captura ALTA §329: estado REAL
+  do usuário (cores personalizadas §420 + corpo §414 — mesma regra do
+  palco), pose Idle via pacote UAL (§329.2 passo 4, com estabilização
+  §508; 404 degrada §481), DPR 2 + supersampling §506 e fases §329.3 no
+  indicador. Partes 3D (cabelo/roupa do palco) NÃO entram: são seleção
+  efêmera de sessão do palco, não persistidas no estado — entram quando
+  a receita §407 for serializada (registrado como pendência de design).
+  Flag `as5.foto3d` (off = fluxo anterior byte a byte). Próximos
+  candidatos da onda: ual_extra multi-pacote · polish AAA pós-veredito ·
+  F8 IA (com a chave).
+
+- **#73 (2026-08-07) — Multi-pacote e ual_extra (lote 731–740)**: o
+  renderer aceita LISTA de pacotes §432 (definirPacotesAnimacoes;
+  definirPacoteAnimacoes delega — Foto §329 intacta); a MESCLA é
+  first-wins (o básico define o Idle canônico; extras só SOMAM — função
+  pura mesclarClipes, testada); falha de um pacote degrada §481 sem
+  derrubar os demais. Curadoria do `ual_extra` (UAL2, CC0): Yes ·
+  Idle_FoldArms_Loop · Idle_TalkingPhone_Loop · Walk_Carry_Loop ·
+  Chest_Open (emotes neutros de escritório/apresentação; armas/zumbi
+  seguem fora do tom). Teto de chips de animação sobe p/ 9 SÓ com a flag
+  (`as5.ual_extra`; off = 6, byte). Publicação do pacote no MESMO bloco
+  de entrega (patch + npm i no worktree + publicar + push).
+
+- **#74 (2026-08-08) — AS6 assume o programa (onda 741+)**: o briefing
+  AVATAR STUDIO 6.0 (`docs/AVATAR_STUDIO_6.md`, commit a9eecfbb, 44.303
+  linhas, 18 partes, §1–§3672 com numeração PRÓPRIA) é a fonte de
+  verdade das ondas 741+. O BRF AS5 (006a394b) segue como referência das
+  features existentes e das regras invioláveis (byte-stability, §651,
+  wrappers, espelho PHP), que continuam absolutas. Fila anterior
+  ABSORVIDA: polish AAA → Partes 1–3/7–8 · F8 IA → Parte 12 · trilho C
+  → Parte 15.
+
+- **#75 (2026-08-08) — Execução = roadmap mestre do próprio AS6 (Parte
+  18)**: camadas §3388 (L0 Fundação → L1 Core → L2 Workspace → L3
+  Conteúdo → L4 Photo/IA/Social → L5 Gamificação → L6 CMS/QA/Security →
+  L7 Escala), caminho crítico §3463 (State → Registry → Renderer →
+  Workspace → Creator), prioridades P0–P3 (§3450). Nada de "implementar
+  por tela" (§3387). FASE 0 (auditoria §3537) CONCLUÍDA no lote 741–750:
+  `docs/AVATAR-STUDIO-6/auditoria-fase0.md` (18 partes × 740 megas,
+  clusters § a § com veredito e peso). Mapa de ondas 741–840 no doc 21
+  do projeto Claude.
+
+- **#76 (2026-08-08) — Namespace `as6.*`**: features do AS6 nascem
+  atrás de flags `as6.*` (mesma mecânica §651). As 60 flags `as5.*` NÃO
+  são renomeadas (byte-stability de storage/testes). O serviço de flags
+  ganhará metadados de dependência (§3398 do AS6) na L0.
+
+- **#77 (2026-08-08) — Avatar State vNext (lote 751–760, AS6 L0)**:
+  §3390–§3392 mapeiam para o que JÁ existe (schemaVersion =
+  AvatarConfig.versao / EstadoAvatar.schemaVersion; avatarVersion =
+  base_version §619; updatedAt = atualizadoEm) — NENHUM campo novo
+  persistido (byte-stability). O que faltava virou
+  `nucleo/estado-vnext.ts`: motor de migrações de schema §3393 (cadeia
+  linear, pura, determinística, nunca lança; registros de config/estado
+  nascem VAZIOS na v1 — o gancho no validarConfig é identidade) +
+  Renderer Capability Registry §3396 (2d/3d/foto declaram 8
+  capacidades). Dependências de flags §3398 em `DEPENDENCIAS_FLAGS`:
+  filho desliga com o pai (rollback §651 transitivo), gated por
+  `as6.estado_vnext`. LIÇÃO DE TESTE: as flags de motor com DUPLA
+  entrada (as5.materiais3d/morfos3d/animacao3d/foto3d — palco E Foto
+  §329) NÃO podem depender de as5.palco3d — o foto329.mjs pegou a
+  dependência errada na primeira rodada (fluxo da Foto roda com o palco
+  desligado). Espelho PHP: sem mudança (nenhum campo novo trafega).
+
+- **#78 (2026-08-08) — Tokens semânticos SEM flag (lote 761–770, AS6
+  L0)**: §576–§586 (cor semântica) e §561 (motion registry) entraram
+  como REFATORAÇÃO BYTE-IDÊNTICA: 11 hex consolidados (~380 ocorrências
+  do estudio.css) viraram tokens `--as6-*` no tokens.css com os MESMOS
+  valores — pixel a pixel igual por construção, e CSS custom property
+  não é gateável por flag. Interpretação registrada da regra §651:
+  "toda FEATURE nova atrás de flag" — refatoração sem mudança de
+  comportamento não é feature; o rollback é `git revert` e o guardrail
+  é a suíte de screenshots + o teste tokens-as6.mjs (doutrina: hex
+  consolidado que voltar solto = vermelho; @keyframes sem entrada no
+  REGISTRO_ANIMACOES = vermelho, nos dois sentidos). A flag `as6.tokens`
+  prevista no doc 21 fica RESERVADA para quando tokens mudarem VALOR
+  (light mode com direção própria §577+, temas) — aí muda pixel e aí
+  tem flag. Os tokens são constantes de tema escuro por enquanto: os
+  hex soltos de hoje também não reagiam ao tema claro (comportamento
+  preservado, lacuna já registrada na auditoria P8).
+
+- **#79 (2026-08-08) — Componentização do workspace em FASES (lote
+  771–780, AS6 L2 §32/§39)**: o ShellStudio (1.979 linhas, 58 useState)
+  não se componentiza de uma vez com segurança — extração VERBATIM por
+  região, uma fase por lote, DOM byte a byte (fronteira de componente
+  React não muda markup; refatoração sem flag conforme #78). FASE 1
+  (este lote): `workspace/BarraTopo.tsx` (header §626 inteiro, com os
+  estados que só ele usa — menu do aleatório §90 e prefs de som §178.2 —
+  morando no componente) + `workspace/TrilhoCategorias.tsx` (sidebar de
+  categorias). Módulos puros (t/flag/idioma/sons) importados direto pelo
+  componente; prop só para ESTADO do estúdio. ShellStudio: 1.979 → 1.866
+  linhas. Guardrails: teste workspace-fase1.mjs (fronteira sem
+  dependência circular §3470, markup extraído não volta inline, estado
+  migrado não sobra duplicado) + os testes de shell existentes que
+  exercitam cada data-teste do header/nav. FASES SEGUINTES: viewport
+  (lote 781–790, junto da câmera cinematográfica) e painel/aside →
+  Inspector (lote 801–810).
+
+- **#80 (2026-08-08) — MEGA ONDA com entregas consolidadas (ordem do
+  Jhony)**: "vamos implementar um mega onde com 100 lotes de uma vez
+  para sermos mais produtivos". Interpretação registrada: o gargalo é a
+  colagem de um bloco SSH a cada lote — a partir do 781, os lotes são
+  produzidos em SEQUÊNCIA local (um commit temático por lote; suíte
+  verde e typecheck a cada lote — o rigor por lote NÃO relaxa) e
+  entregues em BLOCOS CONSOLIDADOS de ~5–10 lotes por colagem
+  (format-patch de série; git am aplica os commits um a um no worktree).
+  Mega onda alvo: 781+ contínua pelas camadas do doc 21 (L2 → L3 → QA
+  foundation), com o mapa rolando à frente. Tripwires do #45 seguem
+  valendo; qualquer vermelho para o trem no lote anterior.
+
+- **#81 (2026-08-08) — Presets de câmera 2D (lote 781–790, AS6 §52/§84,
+  flag as6.viewport)**: a auditoria previa "câmera 2D não viaja", mas o
+  shell JÁ tem enquadramento automático por categoria (R2) com transição
+  suave e idle §119 — o que faltava do AS6 eram os presets MANUAIS.
+  Entregue: chips Auto/Rosto/Busto/Corpo na viewport (preset sobrepõe o
+  auto; 'corpo' = quadro cheio; persiste em dshow.avst6.cam.v1 §84/§299).
+  Flag off = sem chips + enquadramento automático byte a byte (o preset
+  salvo NÃO vaza — testado). A fase 2 da componentização (extrair a
+  viewport) ficou para lote posterior — feature e cirurgia grande no
+  mesmo lote elevam o risco sem necessidade.
+
+- **#82 (2026-08-08) — Estados de card v2 (lote 791–800, AS6 §644/§111,
+  flag as6.dock)**: EQUIPADO deixa de depender só do anel+check — selo
+  textual próprio no card ativo (i18n PT/EN), hover com elevação por
+  token e foco de teclado com anel DISTINTO do anel de equipado, tudo
+  escopado em [data-dock6] (flag off = atributo ausente = visual
+  anterior byte a byte). Magnificação/momentum do dock (§104–§105) e
+  metadados de asset (§150–§153) ficam para lotes próprios — o selo era
+  a ambiguidade FUNCIONAL apontada pela auditoria (P7–P8 top 4).
+
+- **#83 (2026-08-08) — Regressão de layout por baseline de GEOMETRIA
+  (lote 801–810, AS6 §2676–§2687)**: antecipação da QA foundation. Em
+  vez de baseline de pixels (binários no git + lib de diff), a suíte
+  ganha baseline de ASSINATURA DE LAYOUT: bounding box arredondada a
+  2px + visibilidade dos elementos ESTRUTURAIS de 4 estados canônicos
+  (shell edição/foco, clássico AAA itens, clássico foto) em
+  docs/AVATAR-STUDIO-6/baseline-layout.json — JSON textual cujo diff se
+  revisa no git. Pega a classe de defeito nominal do briefing (§3041:
+  componente sobreposto/deslocado/sumido). Desvio intencional = rodar
+  gerar-baseline-layout.mjs e revisar o diff no commit. Infra:
+  navegador.mjs ganhou initArg (dado serializável p/ o init).
+  Regressão de PIXELS de verdade fica para quando houver runner com GPU
+  (auditoria P16, infra com o Jhony).
+
+- **#84 (2026-08-08) — Color Studio (lote 811–820, AS6 §206–§212, flag
+  as6.color_studio)**: ajuste fino HSL por slot de cor (Matiz/Saturação/
+  Luminosidade com output numérico) + 5 harmonias derivadas da cor atual
+  (complementar/análogas/tríades — sugestões de 1 clique, nunca
+  imposição). Matemática pura em engine/cor-hsl.ts (hex↔HSL clampado,
+  determinístico, hex canônico minúsculo — mesma normalização do
+  validarConfig, byte-estável). UI atrás do botão "HSL" em cada slot do
+  <Cores/> (shell E clássico usam o mesmo componente). Roda de cor
+  visual (§207) fica p/ polish futuro — sliders entregam o valor
+  funcional sem canvas novo. Flag off = swatches anteriores byte a byte.
+
+- **#85 (2026-08-08) — Componentização fase 2 (lote 821–830)**: o
+  <aside> do painel direito virou workspace/PainelCatalogo.tsx (extração
+  verbatim, DOM byte a byte, mesmo protocolo da #79). Estados exclusivos
+  (propriedades/mostrarTopo/refPainel) moram no componente; `aba` fica
+  no pai (PaletaComandos e DetalheAsset navegam por ela). ShellStudio:
+  1.866 → 1.730 linhas. Falta a fase 3 (viewport/main — a maior, junto
+  do lote de câmera avançada).
+
+- **#86 (2026-08-08) — Asset Dock v3 do clássico (lote 831–840, AS6
+  §103–§105, flag as6.dock_classico; briefing complementar do Jhony)**:
+  AUDITORIA respondida A–F antes de codar — a mudança ESTRUTURAL
+  (viewport dominante + trilho horizontal embaixo + lateral fora do DOM
+  na aba de itens + câmera contextual do PalcoCinema) EXISTE desde o
+  lote 671–680; o print do Jhony mostra a PRODUÇÃO no marco 610
+  (deploy-as5.sh pendente — o layout nunca foi deployado). O que
+  faltava de VERDADE virou este lote: workspace/DockAssets.tsx (wheel
+  vertical→rolagem horizontal com trackpad nativo passando direto ·
+  drag horizontal com threshold de 6px que preserva o clique · setas
+  nas extremidades só quando há conteúdo escondido, via
+  ResizeObserver+scroll) + cards mais VISUAIS no escopo [data-dock-v3]
+  (thumb 70%→78%, nome 1 linha ellipsis, texto de raridade some e os
+  pips ficam — prioridade imagem→nome→estado→metadata) + filtros da
+  grade em linha única compacta + alturas responsivas por faixa
+  (≤1439px: 190px · base: 220px · ≥1920px: 236px · ≥2400px: 250px —
+  NUNCA volta para a lateral, conforme ordem). Dependência §3398:
+  as6.dock_classico → as5.classico_aaa. Flag off = trilho anterior
+  byte a byte (wheel não interceptado — testado).
 
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
@@ -133,3 +441,10 @@ IA (Anexo B RUNBOOK-BANCO) · zip UBC Standard · rotação GitHub PAT ·
 rotação do secret do webhook · renovar nexatechs.com.br · item B
 `#/panel-pipedrive/produtos` · decisão do trilho C (P11/P12/P14/P17/P18) ·
 arte nova (peças de roupa §72, morfologia facial §108–111, fundos §335–336).
+
+Novas do AS6 (2026-08-08): **Parte 8 truncada no §645** (linha 10568 do
+briefing termina em "…tornar ileg" — reexportar o final se houver mais
+conteúdo) · decisão de produto §1527 (IA gerando imagem × decisão #24 —
+mantendo #24 até ordem contrária) · quando chegar a hora: tabelas novas
+(Partes 10/13/14) via RUNBOOK-BANCO · runner de CI · backup agendado
+com RPO/RTO · headers CSP no nginx.
