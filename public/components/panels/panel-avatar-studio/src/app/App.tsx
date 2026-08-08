@@ -29,6 +29,7 @@ import { registrarUso, sincronizarFavoritos } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
 import { carregarVida } from '../services/VidaService';
 import { flag } from '../nucleo/flags';
+import { DockAssets } from '../workspace/DockAssets';
 import { rodarMigracoes } from '../nucleo/migracoes'; // lote 581-590 (§299-§300)
 import { ShellStudio } from '../shell/ShellStudio';
 import type { Vida } from '../services/VidaService';
@@ -722,9 +723,14 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         {/* #68: TRILHO — carrossel horizontal de assets (a MESMA grade,
             só reposicionada; busca/filtros/modos intocados) */}
         {aaaItens && (
-          <div className="avst-trilho" data-teste="aaa-trilho">
-            <GradeItens config={atual} categoria={categoria}
-              desbloqueados={vida?.desbloqueados ?? new Set()} aoEscolher={aplicar} />
+          <div className="avst-trilho" data-teste="aaa-trilho"
+            data-dock-v3={flag('as6.dock_classico') ? '' : undefined}>
+            {/* lote 831-840 (#86): wheel→horizontal + drag + setas; flag
+                off = children direto (DOM byte a byte) */}
+            <DockAssets>
+              <GradeItens config={atual} categoria={categoria}
+                desbloqueados={vida?.desbloqueados ?? new Set()} aoEscolher={aplicar} />
+            </DockAssets>
           </div>
         )}
         </div>

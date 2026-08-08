@@ -80,6 +80,7 @@ const PADROES: Record<string, boolean> = {
   'as6.viewport': true,           // lote 781–790 — L2: presets manuais de câmera 2D §52/§84 (Auto/Rosto/Busto/Corpo persistidos); off = só o enquadramento automático R2, byte a byte
   'as6.dock': true,               // lote 791–800 — L2: estados de card v2 §644/§111 (selo EQUIPADO ≠ foco ≠ prévia, hover elevado por token); off = cards anteriores byte a byte
   'as6.color_studio': true,       // lote 811–820 — L3: Color Studio §206–§212 (HSL por slot + harmonias derivadas); off = swatches anteriores byte a byte
+  'as6.dock_classico': true,      // lote 831–840 — Asset Dock v3 do clássico §103–§105 (wheel→horizontal, drag, setas, cards visuais); off = trilho anterior byte a byte
 };
 
 /**
@@ -106,6 +107,7 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as5.palco3d_v2': ['as5.palco3d'],
   'as5.palco3d_cine': ['as5.palco3d'],
   'as5.pos3d_real': ['as5.palco3d'],
+  'as6.dock_classico': ['as5.classico_aaa'], // a dock v3 refina o trilho AAA
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

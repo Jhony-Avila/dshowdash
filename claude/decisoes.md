@@ -414,6 +414,26 @@
   1.866 → 1.730 linhas. Falta a fase 3 (viewport/main — a maior, junto
   do lote de câmera avançada).
 
+- **#86 (2026-08-08) — Asset Dock v3 do clássico (lote 831–840, AS6
+  §103–§105, flag as6.dock_classico; briefing complementar do Jhony)**:
+  AUDITORIA respondida A–F antes de codar — a mudança ESTRUTURAL
+  (viewport dominante + trilho horizontal embaixo + lateral fora do DOM
+  na aba de itens + câmera contextual do PalcoCinema) EXISTE desde o
+  lote 671–680; o print do Jhony mostra a PRODUÇÃO no marco 610
+  (deploy-as5.sh pendente — o layout nunca foi deployado). O que
+  faltava de VERDADE virou este lote: workspace/DockAssets.tsx (wheel
+  vertical→rolagem horizontal com trackpad nativo passando direto ·
+  drag horizontal com threshold de 6px que preserva o clique · setas
+  nas extremidades só quando há conteúdo escondido, via
+  ResizeObserver+scroll) + cards mais VISUAIS no escopo [data-dock-v3]
+  (thumb 70%→78%, nome 1 linha ellipsis, texto de raridade some e os
+  pips ficam — prioridade imagem→nome→estado→metadata) + filtros da
+  grade em linha única compacta + alturas responsivas por faixa
+  (≤1439px: 190px · base: 220px · ≥1920px: 236px · ≥2400px: 250px —
+  NUNCA volta para a lateral, conforme ordem). Dependência §3398:
+  as6.dock_classico → as5.classico_aaa. Flag off = trilho anterior
+  byte a byte (wheel não interceptado — testado).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

@@ -2503,3 +2503,25 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst6-cs-linha { display: grid; grid-template-columns: 72px 1fr 34px; align-items: center; gap: var(--t-espaco-2); font-size: var(--t-tipo-legenda); color: var(--as6-texto-suave); }
 .avst6-cs-linha output { text-align: right; font-variant-numeric: tabular-nums; color: var(--as6-texto-forte); }
 .avst6-cs-harmonias { display: flex; gap: var(--t-espaco-1); margin-top: 2px; }
+
+/* ── AS6 §103–§105 (lote 831–840, flag as6.dock_classico): DOCK v3 ───
+   Escopado em [data-dock-v3] (flag off = trilho anterior byte a byte).
+   Prioridade do card: 1. imagem → 2. nome → 3. estado/raridade →
+   4. metadata (menos "dashboard", mais Character Creator). */
+.avst6-dock { position: relative; display: contents; }
+.avst6-dock-seta { position: absolute; top: 50%; transform: translateY(-50%); z-index: 4; width: 34px; height: 64px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--as6-superficie-1) 82%, transparent); border: 1px solid var(--as6-superficie-4); color: var(--as6-texto-forte); border-radius: var(--t-raio-m); cursor: pointer; backdrop-filter: blur(4px); }
+.avst6-dock-seta:hover { border-color: var(--as6-acento); }
+.avst6-dock-seta-esq { left: 4px; }
+.avst6-dock-seta-dir { right: 4px; }
+.avst-trilho[data-dock-v3] { position: relative; }
+/* cards mais VISUAIS: thumb cresce, texto encolhe p/ 1 linha */
+.avst-trilho[data-dock-v3] .avst-card-thumb { height: 78%; }
+.avst-trilho[data-dock-v3] .avst-card-nome { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.avst-trilho[data-dock-v3] .avst-card-raridade { font-size: 0; gap: 0; } /* texto some; pips ficam */
+.avst-trilho[data-dock-v3] .avst-card-raridade .avst-card-pips { font-size: initial; }
+/* filtros/busca da grade em UMA linha compacta na dock */
+.avst-trilho[data-dock-v3] .avst-grade-topo, .avst-trilho[data-dock-v3] .avst-fbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+/* responsividade: alturas da dock por faixa (nunca volta p/ lateral) */
+@media (max-width: 1439px) { .avst-trilho[data-dock-v3] .avst-card { height: 216px; contain-intrinsic-size: 190px 216px; } .avst-trilho[data-dock-v3] .avst-grade { grid-auto-columns: 190px; } }
+@media (min-width: 1920px) { .avst-trilho[data-dock-v3] .avst-card { height: 264px; contain-intrinsic-size: 236px 264px; } .avst-trilho[data-dock-v3] .avst-grade { grid-auto-columns: 236px; } }
+@media (min-width: 2400px) { .avst-trilho[data-dock-v3] .avst-grade { grid-auto-columns: 250px; } }
