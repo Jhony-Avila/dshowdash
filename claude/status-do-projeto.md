@@ -46,14 +46,23 @@
   do projeto (F6 Photo Studio 3D · ual_extra · F8 IA · trilho C · polish
   AAA com o veredito visual do Jhony).
 
+## AS6 (2026-08-08)
+
+O Jhony subiu o briefing AVATAR STUDIO 6.0 (`docs/AVATAR_STUDIO_6.md`,
+a9eecfbb) — 18 partes, §1–§3672. Decisões #74–#76: AS6 assume o programa
+na onda 741+; execução por camadas (Parte 18); flags novas em `as6.*`.
+FASE 0 (auditoria) concluída: `docs/AVATAR-STUDIO-6/auditoria-fase0.md`.
+Ondas 721–740 entregues antes (as5.foto3d + as5.ual_extra, pacotes
+ual_basico/ual_extra publicados). Mapa de ondas 741–840 no doc 21 do
+projeto Claude. Produção segue no marco 610 (deploy-as5.sh pendente).
+
 ## Como retomar (sessão nova)
 
 1. Clonar; ler `claude/*.md`. 2. Briefing: `git show 006a394b:docs/BRF_AVATAR_STUDIO.md`.
 3. Build DENTRO do dir do painel; harness da RAIZ; servidor 8901 de public/.
-4. Push: dry-run; 403 → bloco SSH (comprovado 11×). 5. Próximo: seguir o
-   mapa da onda 611–720 (doc 18 do projeto Claude) a partir do lote
-   711–720 (validação 1-por-1 + entrega final da onda); decisões a
-   partir de **#72**.
+4. Push: dry-run; 403 → bloco SSH (comprovado 11×). 5. Briefing AS6: `docs/AVATAR_STUDIO_6.md`
+   na working tree. 6. Próximo: onda 751–760 (L0 — Avatar State vNext)
+   conforme doc 21 do projeto Claude; decisões a partir de **#77**.
 
 ## Pendências (Jhony)
 

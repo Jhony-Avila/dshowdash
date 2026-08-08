@@ -107,6 +107,7 @@ dist/
 !/docs/
 /docs/*
 !/docs/AVATAR-STUDIO-5/
+!/docs/AVATAR-STUDIO-6/
 
 # contexto versionado para sessões de IA (lote 221-230, decisão #45.6):
 # qualquer sessão futura se auto-abastece só de clonar

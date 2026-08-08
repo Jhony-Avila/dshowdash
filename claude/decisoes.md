@@ -274,6 +274,30 @@
   (`as5.ual_extra`; off = 6, byte). Publicação do pacote no MESMO bloco
   de entrega (patch + npm i no worktree + publicar + push).
 
+- **#74 (2026-08-08) — AS6 assume o programa (onda 741+)**: o briefing
+  AVATAR STUDIO 6.0 (`docs/AVATAR_STUDIO_6.md`, commit a9eecfbb, 44.303
+  linhas, 18 partes, §1–§3672 com numeração PRÓPRIA) é a fonte de
+  verdade das ondas 741+. O BRF AS5 (006a394b) segue como referência das
+  features existentes e das regras invioláveis (byte-stability, §651,
+  wrappers, espelho PHP), que continuam absolutas. Fila anterior
+  ABSORVIDA: polish AAA → Partes 1–3/7–8 · F8 IA → Parte 12 · trilho C
+  → Parte 15.
+
+- **#75 (2026-08-08) — Execução = roadmap mestre do próprio AS6 (Parte
+  18)**: camadas §3388 (L0 Fundação → L1 Core → L2 Workspace → L3
+  Conteúdo → L4 Photo/IA/Social → L5 Gamificação → L6 CMS/QA/Security →
+  L7 Escala), caminho crítico §3463 (State → Registry → Renderer →
+  Workspace → Creator), prioridades P0–P3 (§3450). Nada de "implementar
+  por tela" (§3387). FASE 0 (auditoria §3537) CONCLUÍDA no lote 741–750:
+  `docs/AVATAR-STUDIO-6/auditoria-fase0.md` (18 partes × 740 megas,
+  clusters § a § com veredito e peso). Mapa de ondas 741–840 no doc 21
+  do projeto Claude.
+
+- **#76 (2026-08-08) — Namespace `as6.*`**: features do AS6 nascem
+  atrás de flags `as6.*` (mesma mecânica §651). As 60 flags `as5.*` NÃO
+  são renomeadas (byte-stability de storage/testes). O serviço de flags
+  ganhará metadados de dependência (§3398 do AS6) na L0.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
@@ -281,3 +305,10 @@ IA (Anexo B RUNBOOK-BANCO) · zip UBC Standard · rotação GitHub PAT ·
 rotação do secret do webhook · renovar nexatechs.com.br · item B
 `#/panel-pipedrive/produtos` · decisão do trilho C (P11/P12/P14/P17/P18) ·
 arte nova (peças de roupa §72, morfologia facial §108–111, fundos §335–336).
+
+Novas do AS6 (2026-08-08): **Parte 8 truncada no §645** (linha 10568 do
+briefing termina em "…tornar ileg" — reexportar o final se houver mais
+conteúdo) · decisão de produto §1527 (IA gerando imagem × decisão #24 —
+mantendo #24 até ordem contrária) · quando chegar a hora: tabelas novas
+(Partes 10/13/14) via RUNBOOK-BANCO · runner de CI · backup agendado
+com RPO/RTO · headers CSP no nginx.
