@@ -435,6 +435,9 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   // clássico — SÓ posição/estilo; funcionalidade intocada; off = anterior
   const aaa = flag('as5.classico_aaa');
   const aaaItens = aaa && aba === 'itens';
+  // lote 841-850 (#87, as6.paineis_dock): abas de PAINEL também ganham a
+  // disposição dock — conteúdo ABAIXO do preview, lateral fora do DOM
+  const aaaPaineis = aaa && flag('as6.paineis_dock') && aba !== 'itens' && aba !== '3d';
 
   return (
     <div className="avst-shell" data-aaa={aaa ? 'sim' : undefined}>
@@ -496,6 +499,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
       </header>
 
       <div className="avst-corpo" ref={corpoRef} data-aba={aba}
+        data-paineis={aaaPaineis ? '' : undefined}
         style={{ '--avst-larg-painel': `${largPainel}px` } as React.CSSProperties}>
         {/* ── Coluna 1: categorias ── */}
         <nav className="avst-categorias" aria-label="Categorias">
@@ -627,7 +631,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         {/* lote 671-680 (#68): wrapper NEUTRO (display:contents sem a flag)
             — com as5.classico_aaa na aba itens vira a coluna central AAA
             (palco dominante em cima, carrossel de assets embaixo) */}
-        <div className="avst-centro" data-aaa-itens={aaaItens ? 'sim' : undefined}>
+        <div className="avst-centro" data-aaa-itens={aaaItens ? 'sim' : undefined}
+          data-aaa-paineis={aaaPaineis ? 'sim' : undefined}>
         {/* ── Coluna 2: palco ── */}
         <main className="avst-palco">
           {comparando && salvo ? (
@@ -733,17 +738,46 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             </DockAssets>
           </div>
         )}
+        {/* lote 841-850 (#87): PAINÉIS na área inferior — largura total,
+            altura limitada com scroll interno; preview segue dominante */}
+        {aaaPaineis && (
+          <div className="avst-inferior" data-teste="aaa-inferior">
+
+          {aba === 'arquetipo' && <Arquetipos config={atual} aoAplicar={aplicar} />}
+          {aba === 'titulo' && <Titulos config={atual} aoAplicar={aplicar} />}
+          {aba === 'presets' && <Presets aoAplicar={aplicar} />}
+          {aba === 'colecoes' && <Colecoes config={atual} aoAplicar={aplicar} />}
+          {aba === 'conquistas' && <Conquistas vida={vida} carregando={vidaCarregando} config={atual} />}
+          {aba === 'vitrine' && (
+            <Vitrine config={atual} desbloqueados={vida?.desbloqueados ?? new Set()}
+              aoAplicar={aplicar} aoAbrirColecoes={() => setAba('colecoes')} />
+          )}
+          {aba === 'ia' && <CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} desbloqueados={vida?.desbloqueados} />}
+          {aba === 'historico' && (
+            <Historico key={`h-${versao}`} versaoBase={versao}
+              aoAplicar={aplicar} aoReativar={aoReativarHistorico} />
+          )}
+          {aba === 'foto' && (
+            <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'}
+              desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto}
+              configAtual={atual} /* lote 531-540 (§321.1): avatar atual → foto */ />
+          )}
+          </div>
+        )}
         </div>
 
         {/* ── Coluna 3: itens/presets/histórico/foto + cores ──
             (#68: na aba itens com AAA a grade vive no trilho e as cores
             ao lado do canvas — a lateral sai de cena) */}
-        {!aaaItens && (
+        {/* lote 841-850 (#87): as abas de painel dividem o MESMO miolo —
+            na lateral (flag off) ou na área inferior (flag on, via centro) */}
+        {!aaaItens && !aaaPaineis && (
         <aside className="avst-lateral">
           {/* alça de redimensionamento (AS4 §23.3): arraste ou duplo clique */}
           <div className="avst-redim" role="separator" aria-orientation="vertical"
             title="Arraste para redimensionar · duplo clique alterna 320/420/560"
             onPointerDown={iniciarArrasto} onDoubleClick={ciclarLargura} />
+
           {aba === 'arquetipo' && <Arquetipos config={atual} aoAplicar={aplicar} />}
           {aba === 'titulo' && <Titulos config={atual} aoAplicar={aplicar} />}
           {aba === 'presets' && <Presets aoAplicar={aplicar} />}

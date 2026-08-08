@@ -81,6 +81,7 @@ const PADROES: Record<string, boolean> = {
   'as6.dock': true,               // lote 791–800 — L2: estados de card v2 §644/§111 (selo EQUIPADO ≠ foco ≠ prévia, hover elevado por token); off = cards anteriores byte a byte
   'as6.color_studio': true,       // lote 811–820 — L3: Color Studio §206–§212 (HSL por slot + harmonias derivadas); off = swatches anteriores byte a byte
   'as6.dock_classico': true,      // lote 831–840 — Asset Dock v3 do clássico §103–§105 (wheel→horizontal, drag, setas, cards visuais); off = trilho anterior byte a byte
+  'as6.paineis_dock': true,       // lote 841–850 — abas de PAINEL (arquétipo/título/presets/coleções/conquistas/vitrine/IA/histórico/foto) abaixo do preview (pedido visual do Jhony 2026-08-08); off = lateral anterior byte a byte
 };
 
 /**
@@ -108,6 +109,7 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as5.palco3d_cine': ['as5.palco3d'],
   'as5.pos3d_real': ['as5.palco3d'],
   'as6.dock_classico': ['as5.classico_aaa'], // a dock v3 refina o trilho AAA
+  'as6.paineis_dock': ['as5.classico_aaa'],  // painéis embaixo estendem o layout AAA
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

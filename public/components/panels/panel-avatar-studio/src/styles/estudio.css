@@ -2525,3 +2525,26 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 @media (max-width: 1439px) { .avst-trilho[data-dock-v3] .avst-card { height: 216px; contain-intrinsic-size: 190px 216px; } .avst-trilho[data-dock-v3] .avst-grade { grid-auto-columns: 190px; } }
 @media (min-width: 1920px) { .avst-trilho[data-dock-v3] .avst-card { height: 264px; contain-intrinsic-size: 236px 264px; } .avst-trilho[data-dock-v3] .avst-grade { grid-auto-columns: 236px; } }
 @media (min-width: 2400px) { .avst-trilho[data-dock-v3] .avst-grade { grid-auto-columns: 250px; } }
+
+/* ── lote 841–850 (flag as6.paineis_dock): PAINÉIS abaixo do preview ──
+   Mesma disposição da dock de assets para as abas de painel: preview
+   dominante em cima, conteúdo em LARGURA TOTAL embaixo com scroll
+   interno. Flag off = lateral direita anterior byte a byte. */
+.avst-shell[data-aaa="sim"] .avst-corpo[data-paineis] { grid-template-columns: 200px 1fr; }
+.avst-centro[data-aaa-paineis="sim"] { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.avst-centro[data-aaa-paineis="sim"] .avst-palco { flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 8px 24px 0; gap: 8px; }
+.avst-centro[data-aaa-paineis="sim"] .avst-palco-principal { width: min(560px, 100%); }
+.avst-inferior {
+  flex: 0 0 auto; max-height: 46%; min-height: 220px; overflow-y: auto; overscroll-behavior: contain;
+  padding: 12px 24px 16px; border-top: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  background: color-mix(in srgb, var(--avst-painel) 40%, transparent);
+}
+/* painéis de LISTA viram fileiras confortáveis na largura total */
+.avst-inferior > * { max-width: none; }
+
+/* ── polish de VISIBILIDADE (pedido do Jhony): cards mais legíveis ──
+   Vale para a dock de assets e para a área inferior. */
+.avst-trilho[data-dock-v3] .avst-card { background: var(--as6-superficie-3); border-color: color-mix(in srgb, var(--as6-superficie-4) 80%, white 6%); }
+.avst-trilho[data-dock-v3] .avst-card-nome { font-size: 13px; font-weight: var(--t-peso-medio); color: var(--as6-texto-forte); }
+.avst-trilho[data-dock-v3] .avst-card-ativo { box-shadow: 0 0 0 2px var(--as6-acento), 0 8px 24px rgba(0, 0, 0, .45); }
+.avst-inferior .avst-card, .avst-inferior [class*="-card"] { border-color: color-mix(in srgb, var(--as6-superficie-4) 80%, white 6%); }
