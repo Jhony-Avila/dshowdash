@@ -2495,3 +2495,11 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 [data-dock6] .avst-card:not([data-indisponivel]):not(.avst-card-ativo):hover { transform: translateY(-3px); box-shadow: var(--t-sombra-1); transition: transform var(--t-dur-rapida) var(--t-ease-suave), box-shadow var(--t-dur-rapida) var(--t-ease-suave); }
 [data-dock6] .avst-card:focus-visible { outline: 2px solid var(--as6-texto-forte); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { [data-dock6] .avst-card:hover { transform: none; } }
+
+/* ── AS6 §206–§212 (lote 811–820, flag as6.color_studio) ─────────────
+   Estúdio HSL por slot — só existe no DOM com a flag (rollback §651). */
+.avst6-cs-abrir { padding: 2px 8px; font-size: var(--t-tipo-micro); }
+.avst6-cs { display: flex; flex-direction: column; gap: var(--t-espaco-1); margin-top: var(--t-espaco-1); padding: var(--t-espaco-2); background: var(--as6-superficie-2); border: 1px solid var(--as6-superficie-4); border-radius: var(--t-raio-m); }
+.avst6-cs-linha { display: grid; grid-template-columns: 72px 1fr 34px; align-items: center; gap: var(--t-espaco-2); font-size: var(--t-tipo-legenda); color: var(--as6-texto-suave); }
+.avst6-cs-linha output { text-align: right; font-variant-numeric: tabular-nums; color: var(--as6-texto-forte); }
+.avst6-cs-harmonias { display: flex; gap: var(--t-espaco-1); margin-top: 2px; }

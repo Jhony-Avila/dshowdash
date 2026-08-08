@@ -108,9 +108,9 @@
    },
    "[data-teste=\"aaa-cores\"]": {
     "x": 1006,
-    "y": 134,
+    "y": 102,
     "w": 224,
-    "h": 416,
+    "h": 480,
     "visivel": true
    },
    ".avst-barra-estado": {

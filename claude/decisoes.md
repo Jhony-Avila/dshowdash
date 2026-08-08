@@ -395,6 +395,17 @@
   Regressão de PIXELS de verdade fica para quando houver runner com GPU
   (auditoria P16, infra com o Jhony).
 
+- **#84 (2026-08-08) — Color Studio (lote 811–820, AS6 §206–§212, flag
+  as6.color_studio)**: ajuste fino HSL por slot de cor (Matiz/Saturação/
+  Luminosidade com output numérico) + 5 harmonias derivadas da cor atual
+  (complementar/análogas/tríades — sugestões de 1 clique, nunca
+  imposição). Matemática pura em engine/cor-hsl.ts (hex↔HSL clampado,
+  determinístico, hex canônico minúsculo — mesma normalização do
+  validarConfig, byte-estável). UI atrás do botão "HSL" em cada slot do
+  <Cores/> (shell E clássico usam o mesmo componente). Roda de cor
+  visual (§207) fica p/ polish futuro — sliders entregam o valor
+  funcional sem canvas novo. Flag off = swatches anteriores byte a byte.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
