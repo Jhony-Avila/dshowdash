@@ -372,6 +372,15 @@
   viewport) ficou para lote posterior — feature e cirurgia grande no
   mesmo lote elevam o risco sem necessidade.
 
+- **#82 (2026-08-08) — Estados de card v2 (lote 791–800, AS6 §644/§111,
+  flag as6.dock)**: EQUIPADO deixa de depender só do anel+check — selo
+  textual próprio no card ativo (i18n PT/EN), hover com elevação por
+  token e foco de teclado com anel DISTINTO do anel de equipado, tudo
+  escopado em [data-dock6] (flag off = atributo ausente = visual
+  anterior byte a byte). Magnificação/momentum do dock (§104–§105) e
+  metadados de asset (§150–§153) ficam para lotes próprios — o selo era
+  a ambiguidade FUNCIONAL apontada pela auditoria (P7–P8 top 4).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

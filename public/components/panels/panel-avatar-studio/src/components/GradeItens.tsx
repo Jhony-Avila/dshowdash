@@ -510,6 +510,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       <div ref={refGrade} className="avst-grade" data-modo={modo}
         data-uxfinal={flag('as5.ux_final') ? '' : undefined} role="listbox"
         data-a11y={flag('as5.a11y_v2') ? '' : undefined}
+        data-dock6={flag('as6.dock') ? '' : undefined}
         aria-label={`Itens de ${meta?.nome ?? categoria}`}>
         {meta && !meta.obrigatoria && !filtrosAtivos && (
           <button type="button" role="option" aria-selected={equipados.size === 0}
@@ -782,6 +783,11 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
         <span className="avst-card-novo avst-card-sazonal">SAZONAL</span>
       )}
       {ativo && <span className="avst-card-check"><Check size={13} aria-hidden /></span>}
+      {/* AS6 §644 (lote 791–800, flag as6.dock): EQUIPADO tem selo textual
+          próprio — anel/check deixam de ser o único sinal (≠ foco/prévia) */}
+      {ativo && flag('as6.dock') && (
+        <span className="avst6-equipado" data-teste="dock6-equipado">{t('Equipado')}</span>
+      )}
       {bloqueado && <span className="avst-card-lock"><Lock size={15} aria-hidden /></span>}
       {/* mega 596 (§60.4, flag as5.ux_final): badge temporário sob preview */}
       {prevendo && <span className="avst-card-previa" data-teste="card-previa">{t('Prévia')}</span>}

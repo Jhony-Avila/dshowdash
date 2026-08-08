@@ -113,6 +113,7 @@ const EN: Record<string, string> = {
   Ascender: 'Ascend',
   // lote 591-600 (§60.4/§64.2): ux final
   'Prévia': 'Preview',
+  'Equipado': 'Equipped', // lote 791-800 (§644, as6.dock)
   'Prévia fixada': 'Preview pinned',
   'Fixar prévia': 'Pin preview',
   Soltar: 'Unpin',

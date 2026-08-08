@@ -2486,3 +2486,12 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst6-cam { position: absolute; top: 150px; left: 12px; display: flex; gap: var(--t-espaco-1); z-index: 2; }
 .avst5-shell[data-modo="studio"] .avst6-cam { display: none; }
 .avst6-cam .avst-ft-chip[aria-pressed="true"] { border-color: var(--as6-acento); color: var(--as6-texto-forte); }
+
+/* ── AS6 §644/§111 (lote 791–800, flag as6.dock): estados de card v2 ──
+   Escopado em [data-dock6] (a flag põe o atributo; off = visual anterior
+   byte a byte). Equipado ganha SELO textual; hover eleva com token;
+   foco de teclado ≠ anel de equipado (§644). */
+.avst6-equipado { position: absolute; bottom: 6px; left: 6px; z-index: 1; background: var(--as6-acento); color: #fff; border-radius: var(--t-raio-pill); padding: 2px 8px; font-size: var(--t-tipo-micro); font-weight: var(--t-peso-medio); letter-spacing: .04em; text-transform: uppercase; pointer-events: none; }
+[data-dock6] .avst-card:not([data-indisponivel]):not(.avst-card-ativo):hover { transform: translateY(-3px); box-shadow: var(--t-sombra-1); transition: transform var(--t-dur-rapida) var(--t-ease-suave), box-shadow var(--t-dur-rapida) var(--t-ease-suave); }
+[data-dock6] .avst-card:focus-visible { outline: 2px solid var(--as6-texto-forte); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { [data-dock6] .avst-card:hover { transform: none; } }
