@@ -289,7 +289,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     try { localStorage.setItem('dshow.avst6.cam.v1', c); } catch { /* sem storage */ }
   }, []);
   const flagViewport = flag('as6.viewport');
-  const enquadramento = flagViewport && cam6 !== 'auto' ? PRESETS_CAM6[cam6] : ENQUADRAMENTOS[categoria];
+  // decisão #112 (as6.dock_inferior): estrutura do clássico no shell —
+  // com a dock, o enquadramento AUTO vira FIT-TO-VIEW (avatar inteiro,
+  // margem segura; recalculado por CSS a cada resize de janela/dock).
+  // Os presets manuais (Rosto/Busto/Corpo) seguem mandando quando o
+  // usuário escolhe — o fit nunca sobrescreve zoom intencional.
+  const dockInferior = flag('as6.dock_inferior');
+  const enquadramento = flagViewport && cam6 !== 'auto'
+    ? PRESETS_CAM6[cam6]
+    : (dockInferior ? undefined : ENQUADRAMENTOS[categoria]);
   // (zoomEstilo desceu p/ depois do estado do poder — mega 287 §154 passo 2)
 
   const trocarFundo = (f: FundoPalco) => {
@@ -971,6 +979,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
+        data-dock-inferior={dockInferior ? '' : undefined} /* decisão #112 */
         data-qualidade={flag('as6.quality') ? qualidade().perfil : undefined} /* lote 1021-1030 (#104) */
         data-uxfinal={flag('as5.ux_final') ? '' : undefined} // megas 598-599 (§545-§546)
         data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
@@ -1270,7 +1279,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               propsCen={propsCen} mudarPropsCen={mudarPropsCen}
               dispararEntrada={dispararEntrada}
               palcoV2={palcoV2} palco3d={palco3d} sensorial={sensorial}
-              controlesTravados={controlesTravados} movReduzido={movReduzido} />
+              controlesTravados={controlesTravados} movReduzido={movReduzido}
+              compacto={dockInferior} /* decisão #112: toolbar recolhível */ />
             <BarraSalvamento store={store} aoSalvar={async () => {
               const r = await aoSalvarLegado(paraLegado2d(store.estadoDraft));
               if (r.ok) {
@@ -1292,8 +1302,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             }} />
           </main>
 
-          <div className="avst5-alca" role="separator" aria-orientation="vertical" aria-label="Redimensionar catálogo"
-            onPointerDown={(e) => { arraste.current = { lado: 'dir', x0: e.clientX, w0: larguras.dir }; }} />
+          {!dockInferior && (
+            <div className="avst5-alca" role="separator" aria-orientation="vertical" aria-label="Redimensionar catálogo"
+              onPointerDown={(e) => { arraste.current = { lado: 'dir', x0: e.clientX, w0: larguras.dir }; }} />
+          )}
           {/* painel direito — workspace com scroll INTERNO (R4/R5) */}
           {/* painel direito — extraído p/ workspace/PainelCatalogo (decisão #85) */}
           <PainelCatalogo painelFechado={painelFechado} setPainelFechado={setPainelFechado}
@@ -1305,7 +1317,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             store={store} aplicarComando={aplicarComando}
             bloqueios={bloqueios} setBloqueios={setBloqueios}
             aoMudarFavs={() => setTicFavs((t) => t + 1)}
-            historico={historico} desbloqueados={desbloqueados} setDetalheId={setDetalheId} />
+            historico={historico} desbloqueados={desbloqueados} setDetalheId={setDetalheId}
+            dockInferior={dockInferior} /* decisão #112 */ />
         </div>
         {tour && <TourGuiado aoFechar={() => setTour(false)} />}
         <Suspense fallback={null}>

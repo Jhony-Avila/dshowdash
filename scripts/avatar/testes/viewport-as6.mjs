@@ -10,7 +10,7 @@ import { SAIDA, abrir, irParaHarness } from './navegador.mjs';
 
 const falhas = [];
 const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
-const FLAGS_ON = { 'as5.novo_shell': true };
+const FLAGS_ON = { 'as5.novo_shell': true, 'as6.dock_inferior': false };
 
 const transformDoZoom = (p) => p.evaluate(() => document.querySelector('.avst5-zoom')?.getAttribute('style') ?? '');
 
@@ -18,7 +18,7 @@ const transformDoZoom = (p) => p.evaluate(() => document.querySelector('.avst5-z
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1440, height: 900 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false })); },
   });
   try {
     await irParaHarness(p, 'avst-harness.html', 1200);
@@ -48,7 +48,7 @@ const transformDoZoom = (p) => p.evaluate(() => document.querySelector('.avst5-z
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1440, height: 900 },
     init: () => {
-      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.viewport': false }));
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as6.viewport': false }));
       localStorage.setItem('dshow.avst6.cam.v1', 'rosto'); // preset salvo NÃO pode vazar com a flag off
     },
   });

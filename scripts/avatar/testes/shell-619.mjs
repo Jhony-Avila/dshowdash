@@ -5,7 +5,7 @@ import { SAIDA, abrir, irParaHarness, relatorio } from './navegador.mjs';
 
 const { navegador: b, pagina: p, erros } = await abrir({
   viewport: { width: 1500, height: 940 },
-  init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.estado_api': true })); },
+  init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.estado_api': true })); },
 });
 await irParaHarness(p, 'avst-harness.html', 1200);
 
@@ -48,7 +48,7 @@ await p.screenshot({ path: `${SAIDA}/s619-espelho.png` });
 // LOTE 141: desligar as5.estado_api EM TEMPO DE EXECUÇÃO não corta mais a
 // ESCRITA (best-effort sempre — alimenta o espelho p/ o corte futuro);
 // a flag passou a gatear só a LEITURA (GET de montagem/corte §647)
-await p.evaluate(() => localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true })));
+await p.evaluate(() => localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false })));
 const antesOff = (await chamadas()).length;
 await equipar();
 await p.waitForTimeout(1600);

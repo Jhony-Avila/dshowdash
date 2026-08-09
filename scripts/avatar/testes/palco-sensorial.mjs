@@ -18,7 +18,7 @@ const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 const { navegador: b, pagina: p, erros } = await abrir({
   viewport: { width: 1500, height: 940 },
   init: () => {
-    localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true }));
+    localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false }));
   },
 });
 try {
@@ -81,7 +81,7 @@ const { navegador: b2, pagina: p2, erros: erros2 } = await abrir({
   viewport: { width: 1500, height: 940 },
   init: () => {
     localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({
-      'as5.novo_shell': true, 'as5.palco_sensorial': false,
+      'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco_sensorial': false,
     }));
   },
 });

@@ -30,6 +30,17 @@
   --avst-borda: rgba(15, 23, 42, 0.1);
   --avst-texto: #1c2433;
   --avst-texto-2: #5b6578;
+  /* decisão #112 (bugfix de contraste, pedido do Jhony 2026-08-09): a
+     camada semântica AS6 (#78) nasceu como constantes ESCURAS — no tema
+     claro, cards/trilhos AS6 ficavam com fundo escuro E texto escuro
+     (ilegível). Rampa clara equivalente; acento/status não mudam. */
+  --as6-superficie-0: #dde3ef;
+  --as6-superficie-1: #eef1f7;
+  --as6-superficie-2: #e6eaf3;
+  --as6-superficie-3: #ffffff;
+  --as6-superficie-4: #c7cfdf;
+  --as6-texto-forte: #1c2433;
+  --as6-texto-suave: #5b6578;
 }
 
 /* ── AS4 Fase 0 (§22.5): escala OFICIAL de z-index — nunca valores soltos ── */
@@ -2784,3 +2795,174 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst6-cms-tabela th, .avst6-cms-tabela td { padding: 5px 8px; border-bottom: 1px solid var(--as6-superficie-4); text-align: left; white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
 .avst6-cms-tabela th { position: sticky; top: 0; background: var(--as6-superficie-1, #14161d); color: var(--as6-texto-suave); text-transform: uppercase; font-size: 10px; letter-spacing: .05em; }
 .avst6-cms-pag { display: flex; align-items: center; gap: 10px; padding-top: 8px; font-size: 11.5px; color: var(--as6-texto-suave); }
+
+/* ══════════════════════════════════════════════════════════════════
+   decisão #112 (onda 1111, flag as6.dock_inferior) — o SHELL adota a
+   estrutura consagrada do Modo Clássico AAA: navegação à esquerda,
+   preview central dominante (fit-to-view) e a biblioteca numa DOCK
+   horizontal abaixo do preview. A dock REUSA .avst-trilho + DockAssets
+   (mesmos componentes e folhas do clássico — zero duplicação).
+   ══════════════════════════════════════════════════════════════════ */
+.avst5-shell[data-dock-inferior] .avst5-corpo {
+  grid-template-columns: var(--avst5-esq, 176px) 6px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "nav alca main" "nav alca dock";
+}
+.avst5-shell[data-dock-inferior] .avst5-sidebar { grid-area: nav; }
+.avst5-shell[data-dock-inferior] .avst5-corpo > .avst5-alca { grid-area: alca; }
+.avst5-shell[data-dock-inferior] .avst5-viewport { grid-area: main; }
+.avst5-shell[data-dock-inferior] .avst5-painel {
+  grid-area: dock; border-left: 0;
+  border-top: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  background: color-mix(in srgb, var(--avst-painel) 40%, transparent);
+}
+/* fit-to-view (§ pedido 2): margem visual segura ao redor do avatar —
+   o enquadramento em si é o scale(1) do zoomEstilo (avatar inteiro) e
+   recalcula sozinho a cada resize (svg height:100% + flex) */
+.avst5-shell[data-dock-inferior] .avst5-palco { padding: 22px 16px; }
+
+/* alturas da dock — recolhida = painelFechado (mesmo botão de sempre);
+   cada estado dimensiona os cards p/ caber SEM corte vertical */
+.avst5-dock[data-dock-estado="compacta"] { height: 302px; }
+.avst5-dock[data-dock-estado="padrao"] { height: 384px; }
+.avst5-dock[data-dock-estado="expandida"] { height: min(56vh, 620px); }
+
+/* padrão: cards 200px (mais densos que o trilho clássico — a dock tem
+   cabeçalho próprio) e sem descrição; ela volta na expandida */
+.avst5-dock[data-dock-estado="padrao"] .avst-trilho .avst-grade,
+.avst5-dock[data-dock-estado="padrao"] .avst-trilho[data-dock-v3] .avst-grade { grid-auto-columns: 184px; }
+.avst5-dock[data-dock-estado="padrao"] .avst-trilho .avst-card,
+.avst5-dock[data-dock-estado="padrao"] .avst-trilho[data-dock-v3] .avst-card { height: 206px; contain-intrinsic-size: 184px 206px; }
+.avst5-dock[data-dock-estado="padrao"] .avst-card-desc { display: none; }
+.avst5-shell[data-dock-inferior] .avst5-painel-fechado {
+  height: 40px; width: auto; padding-top: 0;
+  flex-direction: row; transform: none;
+}
+.avst5-shell[data-dock-inferior] .avst5-painel-fechado .avst5-painel-topo { display: flex; }
+
+/* trilho dentro da dock: o wrapper .avst-trilho traz TODO o CSS do
+   clássico (cards AAA, snap, responsivo); aqui só tiramos a moldura
+   duplicada (a dock já tem borda própria) */
+.avst5-trilho-dock { border-top: 0; padding: 0; background: transparent; }
+.avst5-dock .avst5-painel-scroll { padding: 8px 12px 10px; }
+
+/* compacta: vitrine densa — só thumb + nome (desc/raridade/modos somem) */
+.avst5-dock[data-dock-estado="compacta"] .avst-trilho .avst-grade,
+.avst5-dock[data-dock-estado="compacta"] .avst-trilho[data-dock-v3] .avst-grade { grid-auto-columns: 132px; }
+.avst5-dock[data-dock-estado="compacta"] .avst-trilho .avst-card,
+.avst5-dock[data-dock-estado="compacta"] .avst-trilho[data-dock-v3] .avst-card { height: 148px; contain-intrinsic-size: 132px 148px; }
+.avst5-dock[data-dock-estado="compacta"] .avst-card-desc,
+.avst5-dock[data-dock-estado="compacta"] .avst-card-raridade,
+.avst5-dock[data-dock-estado="compacta"] .avst6-equipado,
+.avst5-dock[data-dock-estado="compacta"] .avst-biblioteca > header .avst-modos { display: none; }
+
+/* expandida: a grade volta a fluir em LINHAS com scroll vertical do
+   painel (o DockAssets desativa o pan neste estado) */
+.avst5-dock[data-dock-estado="expandida"] .avst-trilho .avst-grade,
+.avst5-dock[data-dock-estado="expandida"] .avst-trilho[data-dock-v3] .avst-grade {
+  grid-auto-flow: row; grid-auto-columns: unset;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  overflow-x: visible; overflow-y: visible; scroll-snap-type: none;
+}
+.avst5-dock[data-dock-estado="expandida"] .avst-trilho .avst-card,
+.avst5-dock[data-dock-estado="expandida"] .avst-trilho[data-dock-v3] .avst-card { height: auto; contain-intrinsic-size: 168px 216px; }
+
+/* cabeçalho da biblioteca (título da categoria + contagem + busca +
+   filtros) fica FIXO dentro da dock quando o conteúdo rola */
+.avst5-dock .avst-biblioteca > header,
+.avst5-dock .avst-biblioteca > .avst-filtros {
+  position: sticky; top: -8px; z-index: 3;
+  background: color-mix(in srgb, var(--avst-fundo) 92%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+/* drawer de Cores/Propriedades/criação avançada: flutua ACIMA da dock,
+   ancorado à direita — abrir não desloca o preview do centro */
+.avst5-shell[data-dock-inferior] .avst5-insp-drawer {
+  position: absolute; right: 10px; bottom: calc(100% + 8px); z-index: 6;
+  width: min(380px, 92vw); max-height: min(56vh, 520px); overflow-y: auto;
+  background: var(--avst-painel); border: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  border-radius: var(--t-raio-g, 12px); padding: 10px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  animation: avst5-fade .16s ease;
+}
+
+/* toolbar "Cenário" (#112 pedido 6): controles saem de cima do avatar */
+.avst6-cen-tool { position: absolute; top: 10px; left: 12px; z-index: 3; }
+.avst6-cen-abrir {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: color-mix(in srgb, var(--as6-superficie-1) 78%, transparent);
+  border: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  color: var(--avst-texto, var(--as6-texto-forte));
+  border-radius: 999px; padding: 5px 12px; font-size: 11px; cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.avst6-cen-abrir[aria-expanded="true"] { border-color: var(--avst-acento, var(--as6-acento)); }
+.avst6-cen-caixa {
+  position: absolute; top: 34px; left: 0; z-index: 4;
+  display: flex; flex-direction: column; gap: 8px;
+  width: min(600px, calc(100vw - 320px)); max-height: min(62vh, 500px); overflow-y: auto;
+  background: color-mix(in srgb, var(--avst-painel) 94%, transparent);
+  border: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  border-radius: var(--t-raio-g, 12px); padding: 12px;
+  backdrop-filter: blur(8px); box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  animation: avst5-fade .16s ease;
+}
+/* dentro da caixa, as linhas que eram absolutas viram fluxo normal */
+.avst6-cen-caixa .avst5-temas, .avst6-cen-caixa .avst5-fundos,
+.avst6-cen-caixa .avst5-fundos.avst5-horas, .avst6-cen-caixa .avst5-fundos.avst5-luzes,
+.avst6-cen-caixa .avst5-fundos.avst5-climas, .avst6-cen-caixa .avst5-fundos.avst5-cenprops {
+  position: static; display: flex; flex-wrap: wrap; gap: 4px; max-width: none;
+}
+
+/* presets de câmera: canto INFERIOR direito — longe do rosto (#112.6) */
+.avst5-shell[data-dock-inferior] .avst6-cam { top: auto; bottom: 10px; left: auto; right: 12px; }
+
+/* ── estados dos cards (#112.5): seleção legível nos DOIS temas ── */
+.avst-card:focus-visible { outline: 2px solid var(--avst-acento, var(--as6-acento)); outline-offset: 2px; }
+.avst5-shell[data-dock-inferior] .avst-card-ativo,
+.avst5-shell[data-dock-inferior] .avst-card-ativo:hover {
+  background: color-mix(in srgb, var(--avst-acento, var(--as6-acento)) 12%, var(--avst-painel));
+  border-color: var(--avst-acento, var(--as6-acento));
+  color: var(--avst-texto);
+}
+.avst5-shell[data-dock-inferior] .avst-card-ativo .avst-card-nome { color: var(--avst-texto); }
+
+/* ── responsivo da dock (#112.7): nenhuma largura restaura a coluna
+   lateral direita; o clássico já rebaixa o trilho p/ grade <1024px ── */
+@media (max-width: 1023px) {
+  .avst5-shell[data-dock-inferior] .avst5-corpo { grid-template-columns: 64px 6px minmax(0, 1fr); }
+  /* o drawer lateral LEGADO (fixed à direita) não vale na dock: aqui o
+     painel segue sendo o rodapé (bottom sheet) — nunca coluna direita */
+  .avst5-shell[data-dock-inferior] .avst5-painel {
+    position: static; top: auto; right: auto; bottom: auto;
+    width: auto; box-shadow: none; transform: none; transition: none;
+  }
+  .avst5-shell[data-dock-inferior] .avst5-painel-fechado { transform: none; }
+  .avst5-shell[data-dock-inferior] .avst5-painel-fechado .avst5-painel-topo { display: flex; }
+  .avst5-shell[data-dock-inferior] .avst5-drawer-abrir { display: none; }
+  .avst5-dock[data-dock-estado="compacta"],
+  .avst5-dock[data-dock-estado="padrao"] { height: min(44vh, 400px); }
+  .avst5-dock .avst-trilho .avst-grade,
+  .avst5-dock .avst-trilho[data-dock-v3] .avst-grade { scroll-snap-type: none; }
+}
+@media (max-width: 760px) {
+  .avst5-shell[data-dock-inferior] .avst5-corpo { grid-template-columns: 52px 4px minmax(0, 1fr); }
+  .avst5-dock[data-dock-estado] { height: min(48vh, 380px); }
+  .avst5-shell[data-dock-inferior] .avst5-insp-drawer { right: 4px; width: calc(100vw - 70px); }
+  .avst6-cen-caixa { width: calc(100vw - 90px); }
+}
+
+/* #112: cenário "estúdio" no tema claro — a vinheta central era um hex
+   escuro fixo; com a rampa clara dos tokens ela virava um borrão. No
+   claro a vinheta é clara (mesma geometria; cena coerente). */
+[data-theme="light"] [data-avst-react-root] .avst5-viewport[data-fundo="estudio"] .avst5-palco {
+  background: radial-gradient(ellipse 70% 60% at 50% 42%, #dfe4f2 0%, var(--as6-superficie-1) 78%);
+}
+
+/* QA onda 1111 (#112): o editor de showcase pintava ACIMA dos chips
+   absolutos do cenário 3D só por causa do stacking context ACIDENTAL
+   do backdrop-filter — o perfil ECO (as6.quality) zera backdrop-filter
+   e o painel afundava na ordem de pintura (cliques caíam no chip
+   errado). Ordem explícita, independente de perfil. */
+.avst5-p3d-editor { position: relative; z-index: 2; }

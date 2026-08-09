@@ -22,7 +22,7 @@ const { navegador: b, pagina: p, erros } = await abrir({
   viewport: { width: 1500, height: 940 },
   init: () => {
     localStorage.setItem('dshow.avst.flags.v1',
-      JSON.stringify({ 'as5.novo_shell': true, 'as5.telemetria_painel': true }));
+      JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.telemetria_painel': true }));
     localStorage.setItem('dshow.avatar.usados.v1', JSON.stringify(['cab_moicano', 'cab_curto', 'olh_estrela', 'rou_jersey']));
     localStorage.setItem('dshow.avst5.recentes.v1', JSON.stringify(['cab_moicano']));
   },
@@ -47,7 +47,7 @@ const { navegador: b2, pagina: p2, erros: erros2 } = await abrir({
   viewport: { width: 1500, height: 940 },
   init: () => {
     localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({
-      'as5.novo_shell': true, 'as5.telemetria_painel': true, 'as5.analytics_local': false,
+      'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.telemetria_painel': true, 'as5.analytics_local': false,
     }));
     localStorage.setItem('dshow.avatar.usados.v1', JSON.stringify(['cab_moicano']));
   },

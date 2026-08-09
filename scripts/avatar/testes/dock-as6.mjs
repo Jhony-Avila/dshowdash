@@ -14,7 +14,7 @@ const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1440, height: 900 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false })); },
   });
   try {
     await irParaHarness(p, 'avst-harness.html', 1200);
@@ -36,7 +36,7 @@ const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1440, height: 900 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock': false })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as6.dock': false })); },
   });
   try {
     await irParaHarness(p, 'avst-harness.html', 1200);

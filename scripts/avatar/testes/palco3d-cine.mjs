@@ -160,7 +160,7 @@ const { navegador: b, pagina: p2, erros } = await abrir({
     // as5.palco_v3 OFF: este teste cobre o lote 331–340 isolado (os chips
     // Órbita/Composto do lote 571–580 têm teste próprio em palco-v3.mjs)
     localStorage.setItem('dshow.avst.flags.v1',
-      JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true, 'as5.pos3d_real': false, 'as5.palco_v3': false }));
+      JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true, 'as5.pos3d_real': false, 'as5.palco_v3': false }));
   },
 });
 try {
@@ -210,7 +210,7 @@ const { navegador: b2, pagina: p3, erros: erros2 } = await abrir({
   viewport: { width: 1500, height: 940 }, webgl: true,
   init: () => {
     localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({
-      'as5.novo_shell': true, 'as5.palco3d': true, 'as5.palco3d_cine': false,
+      'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true, 'as5.palco3d_cine': false,
     }));
   },
 });

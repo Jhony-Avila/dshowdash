@@ -18,7 +18,7 @@ const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1500, height: 940 },
     init: () => {
-      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false }));
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': false }));
       localStorage.setItem('dshow.avatar.som.v1', '1'); // som LIGADO
     },
   });
@@ -61,7 +61,7 @@ const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1500, height: 940 }, webgl: true,
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true })); },
   });
   await irParaHarness(p, 'avst-harness.html', 1200);
   await p.locator('[data-teste="botao-3d"]').click();
@@ -88,7 +88,7 @@ const ok = (cond, msg) => { if (!cond) falhas.push(msg); };
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1500, height: 940 },
     init: () => {
-      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false, 'as5.palco_v3': false }));
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': false, 'as5.palco_v3': false }));
       localStorage.setItem('dshow.avatar.som.v1', '1');
     },
   });

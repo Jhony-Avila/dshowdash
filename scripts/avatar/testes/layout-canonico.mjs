@@ -14,10 +14,10 @@ const SHELL = ['.avst5-header', '.avst5-sidebar', '.avst5-viewport', '.avst5-pai
   '.avst5-fundos', '.avst6-cam', '.avst5-zoom'];
 
 export const ESTADOS_CANONICOS = [
-  { id: 'shell-edicao', flags: { 'as5.novo_shell': true }, seletores: SHELL },
+  { id: 'shell-edicao', flags: { 'as5.novo_shell': true, 'as6.dock_inferior': false }, seletores: SHELL },
   {
     id: 'shell-foco',
-    flags: { 'as5.novo_shell': true },
+    flags: { 'as5.novo_shell': true, 'as6.dock_inferior': false },
     preparar: async (p) => { await p.keyboard.press('f'); await p.waitForTimeout(400); },
     seletores: ['.avst5-header', '.avst5-viewport', '.avst5-zoom'],
   },

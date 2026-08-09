@@ -8,7 +8,7 @@ import { SAIDA, abrir, irParaHarness, relatorio } from './navegador.mjs';
 
 const { navegador: b, pagina: p, erros } = await abrir({
   viewport: { width: 1500, height: 940 },
-  init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true })); },
+  init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false })); },
 });
 await irParaHarness(p, 'avst-harness.html', 1200);
 

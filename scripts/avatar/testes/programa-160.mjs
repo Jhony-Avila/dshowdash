@@ -89,7 +89,7 @@ ok(await svgDe() === antes, 'neutro omitido quebrou: Zerar+sem legenda deveria v
 const ctxB = await b.newContext({ viewport: { width: 1500, height: 940 } });
 await ctxB.addInitScript(() => {
   localStorage.setItem('dshow.avst5.tour.v1', 'feito');
-  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true }));
+  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false }));
 });
 const pB = await ctxB.newPage();
 pB.on('pageerror', (e) => erros.push(e.message.slice(0, 160)));
@@ -135,7 +135,7 @@ await ctxB.close();
 const ctxD = await b.newContext({ viewport: { width: 1500, height: 940 } });
 await ctxD.addInitScript(() => {
   localStorage.setItem('dshow.avst5.tour.v1', 'feito');
-  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true }));
+  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true }));
 });
 const pD = await ctxD.newPage();
 pD.on('pageerror', (e) => erros.push(e.message.slice(0, 160)));

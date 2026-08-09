@@ -173,11 +173,11 @@ try {
 
 // ── helpers da UI (partes B e C) ─────────────────────────────────────
 const initShell = () => {
-  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true }));
+  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true }));
   localStorage.setItem('dshow.avst5.p3d.qualidade.v1', 'medio'); // tier fixo = sem troca de LOD no meio
 };
 const initShellOff = () => {
-  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true, 'as5.materiais3d': false }));
+  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true, 'as5.materiais3d': false }));
   localStorage.setItem('dshow.avst5.p3d.qualidade.v1', 'medio');
 };
 const abrirPalcoNoHeroi = async (p) => {

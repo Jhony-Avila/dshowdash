@@ -804,6 +804,49 @@
   OFF: zero workers e save idêntico §651); regressões foto-projeto/
   infra-v3/foto-f6 verdes.
 
+- **#112 (2026-08-09) — Dock inferior no shell novo (onda 1111, flag
+  `as6.dock_inferior` — pedido visual do Jhony)**: o shell adota a
+  estrutura consagrada do Modo Clássico AAA — nav esquerda → preview
+  central dominante → biblioteca em DOCK horizontal abaixo. REUSO, não
+  duplicação: o wrapper é o MESMO `.avst-trilho` + `DockAssets` do
+  clássico (wheel→horizontal, drag com momentum, setas, magnificação,
+  snap, responsivo <1024px) — `DockAssets` ganhou o prop `ativa` p/
+  gate explícito fora do clássico. Fit-to-view: com a dock, o
+  enquadramento AUTO passa a mostrar o avatar INTEIRO com margem
+  segura (scale 1 + padding; recálculo automático via CSS em qualquer
+  resize de janela/dock); presets manuais Rosto/Busto/Corpo seguem
+  mandando e nunca são sobrescritos. Alturas da dock: compacta/padrão/
+  expandida (ciclo persistido em `dshow.avst6.dockinf.v1`; recolhida =
+  o painelFechado de sempre); expandida volta a grade em linhas com
+  scroll vertical próprio. Controles de cenário saem de cima do avatar:
+  toolbar "Cenário" recolhível (mesmos radiogroups, mesmo JSX — o
+  cluster vira painel flutuante); câmera fica no canto inferior
+  direito. Cores/Propriedades/criação avançada viram DRAWER flutuante
+  (overlay — abrir não desloca o preview). BUGFIX de contraste SEM
+  flag (CSS-only, como §473): os tokens `--as6-*` eram constantes
+  escuras (limite registrado da #78) — no tema claro, superfícies AS6
+  ficavam com fundo escuro E texto escuro; agora `[data-theme=light]`
+  tem rampa clara equivalente (acento/status intocados) e a vinheta do
+  cenário "estúdio" ganhou par claro. Seleção de card: anel + fundo
+  acentuado + check + selo EQUIPADO, contraste ≥4.5:1 verificado por
+  teste nos DOIS temas. 82 testes legados do shell fixam a flag em
+  false (cobrem o fallback §651, mesmo padrão do classico_aaa); o novo
+  `dock-inferior.mjs` cobre layout, fit, estados, persistência,
+  equipar/busca na dock, drawer, toolbar, contraste e rollback.
+  Aprendizado: o drawer lateral responsivo legado (<1024px) precisou
+  ser neutralizado sob a dock — nenhuma largura restaura a coluna
+  direita. QA da onda pegou DOIS reds herdados que passaram batidos nas
+  suítes do Bloco B (o scan de log não via reds sem a linha "FALHAS:"):
+  (a) showcase-editor — o perfil ECO (as6.quality) zera backdrop-filter
+  com seletor universal e o painel do editor 3D perdia o stacking
+  context ACIDENTAL que o pintava acima dos chips absolutos do cenário
+  (clique caía no chip errado; bug real p/ usuários eco) → ordem
+  explícita `position: relative + z-index` no painel; (b) criacao-fina
+  — o modo palco (§608, vida) tem `scale(1.08)` legítimo no plano-fundo
+  e o match frouxo do teste dava falso positivo → assert no wrapper
+  fino de DOIS componentes. O runner agora imprime `VERMELHOS: <lista>`
+  no resumo (red por exceção nunca mais passa despercebido).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

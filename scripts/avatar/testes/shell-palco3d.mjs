@@ -9,7 +9,7 @@ const { navegador: b, pagina: p, erros } = await abrir({
   viewport: { width: 1500, height: 940 }, webgl: true,
   init: () => {
     localStorage.setItem('dshow.avst.flags.v1',
-      JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true, 'as5.hud3d': true }));
+      JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true, 'as5.hud3d': true }));
   },
 });
 await irParaHarness(p, 'avst-harness.html', 1200);
@@ -224,7 +224,7 @@ const ctx2 = await b.newContext({ viewport: { width: 1500, height: 940 } });
 await ctx2.addInitScript(() => {
   localStorage.setItem('dshow.avst5.tour.v1', 'feito');
   // §650: palco3d é padrão ON — o fail-safe agora se prova DESLIGANDO
-  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false }));
+  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': false }));
 });
 const p2 = await ctx2.newPage();
 await p2.goto('http://127.0.0.1:8901/avst-harness.html', { waitUntil: 'networkidle' });

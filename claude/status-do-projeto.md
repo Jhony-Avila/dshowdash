@@ -1,7 +1,18 @@
 # Status do Projeto — Avatar Studio (no repo)
 
 > Fonte viva: docs do projeto Claude "Avatar Studio" (04-status-do-projeto).
-> Última atualização: **2026-08-09 — MARCO 1110 MEGAS (onda 911–1110 completa, decisão #92)**.
+> Última atualização: **2026-08-09 — ONDA 1111: dock inferior no shell (decisão #112, pedido visual do Jhony)** · marco 1110 em produção (DEPLOY_1110_OK).
+
+## Onda 1111 (em entrega)
+
+- **#112 `as6.dock_inferior`**: shell novo com a estrutura do clássico
+  AAA — nav esquerda, preview central com fit-to-view, biblioteca em
+  dock horizontal inferior (reuso .avst-trilho + DockAssets), alturas
+  compacta/padrão/expandida, toolbar "Cenário", drawer de propriedades,
+  bugfix de contraste do tema claro (rampa --as6-* light), QA: eco ×
+  stacking do editor 3D + criacao-fina; runner imprime VERMELHOS.
+- Suíte: **121/121 verdes** (novo: dock-inferior.mjs; 82 legados fixam
+  a flag off = fallback §651).
 
 ## Marco atual
 

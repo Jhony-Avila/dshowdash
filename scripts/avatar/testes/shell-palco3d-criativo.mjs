@@ -10,7 +10,7 @@ const { navegador: b, pagina: p, erros } = await abrir({
     // lote 691-700: quality_v2 OFF aqui — este teste cobre o modo antigo
     // (4 chips §651); os perfis Ultra/Cine têm teste próprio
     localStorage.setItem('dshow.avst.flags.v1',
-      JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true, 'as5.quality3d_v2': false }));
+      JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true, 'as5.quality3d_v2': false }));
   },
 });
 await irParaHarness(p, 'avst-harness.html', 1200);

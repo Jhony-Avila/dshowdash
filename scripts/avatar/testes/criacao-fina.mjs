@@ -25,7 +25,7 @@ const setRange = (p, sel, valor) => p.evaluate(([s, v]) => {
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1500, height: 940 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': false })); },
   });
   await irParaHarness(p, 'avst-harness.html', 1000);
   const svgPalco = () => p.evaluate(() => document.querySelector('.avst5-zoom svg')?.outerHTML ?? '');
@@ -36,7 +36,10 @@ const setRange = (p, sel, valor) => p.evaluate(([s, v]) => {
   ok(await p.locator('[data-teste="fino-altura"]').count() === 1, 'slider Altura §102.2 ausente');
 
   const antes = await svgPalco();
-  ok(!antes.includes('scale(1.08'), 'palco não deveria ter wrapper fino antes');
+  // QA onda 1111: o modo PALCO (§608, vida lote 1071-1080) tem um
+  // scale(1.08) legítimo no plano-fundo — o wrapper FINO é o de DOIS
+  // componentes ('scale(1.08 1)'); o match antigo dava falso positivo
+  ok(!antes.includes('scale(1.08 1)'), 'palco não deveria ter wrapper fino antes');
   ok(await setRange(p, '[data-teste="fino-largura"]', 1.08), 'slider fino-largura não achado');
   await p.waitForTimeout(400);
   ok((await svgPalco()).includes('scale(1.08 1)'), 'largura 1.08 não entrou como wrapper no SVG (§102.2)');
@@ -104,7 +107,7 @@ const setRange = (p, sel, valor) => p.evaluate(([s, v]) => {
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1500, height: 940 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false, 'as5.criacao_fina': false })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': false, 'as5.criacao_fina': false })); },
   });
   await irParaHarness(p, 'avst-harness.html', 1000);
   await p.evaluate(() => { [...document.querySelectorAll('.avst5-cat')].find((x) => x.textContent.includes('Base'))?.click(); });

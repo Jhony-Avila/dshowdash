@@ -27,7 +27,7 @@ await b.close();
 const { navegador: b2, pagina: p2, erros: erros2 } = await abrir({
   viewport: { width: 1500, height: 940 },
   init: () => {
-    localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true }));
+    localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false }));
     localStorage.setItem('dshow.avst5.idioma.v1', 'en');
   },
 });
