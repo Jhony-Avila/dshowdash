@@ -210,6 +210,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [filtroSlot, setFiltroSlot] = useState<'todos' | SlotAcessorio>('todos');
   // §67: drawer de detalhes do asset (null = fechado)
   const [detalheId, setDetalheId] = useState<string | null>(null);
+  // lote 1031-1040 (#105, as6.touch): drag de card sobre o palco
+  const [arrastandoItem, setArrastandoItem] = useState(false);
   // R7/R8: modos do palco — edicao | foco (F/Esc) | studio (apresentação)
   const [modo, setModo] = useState<'edicao' | 'foco' | 'studio'>('edicao');
   const [painelLargo, setPainelLargo] = useState(false);
@@ -999,6 +1001,27 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* mega 75 (§132): EDIÇÃO tem luz neutra garantida — cor fiel;
               a iluminação §164 só vale nos modos studio/foco */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}
+            /* lote 1031-1040 (#105, as6.touch): soltar um card AQUI equipa —
+               §325 na prática (arrastou → vestiu); realce via data-soltavel */
+            data-soltavel={arrastandoItem ? '' : undefined}
+            onDragOver={flag('as6.touch') ? (e) => {
+              if (e.dataTransfer.types.includes('text/avst-item')) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                if (!arrastandoItem) setArrastandoItem(true);
+              }
+            } : undefined}
+            onDragLeave={flag('as6.touch') ? () => setArrastandoItem(false) : undefined}
+            onDrop={flag('as6.touch') ? (e) => {
+              const id = e.dataTransfer.getData('text/avst-item');
+              setArrastandoItem(false);
+              if (!id) return;
+              e.preventDefault();
+              const item = itemPorId(id);
+              if (!item) return;
+              aplicarComando(validarConfig(comItem(paraLegado2d(store.estadoDraft), item.categoria, id)));
+              telemetria('palco_drop_equipou', { id }); // §290
+            } : undefined}
             data-hora={hora}
             data-luz={modo === 'edicao' ? 'neutra'
               : (flag('as5.luz_contextual') && luzAuto ? LUZ_POR_HORA[hora] : luz)} data-clima={clima}

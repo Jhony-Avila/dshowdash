@@ -807,7 +807,13 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
   }, [uxFinal, ativo, item, config]);
 
   return (
-    <div ref={cardRef} role="option" aria-selected={ativo} aria-disabled={bloqueado || indisponivel || undefined}
+    <div ref={cardRef}
+      draggable={flag('as6.touch') && !bloqueado ? true : undefined}
+      onDragStart={flag('as6.touch') && !bloqueado ? (e) => {
+        // lote 1031-1040 (#105, as6.touch): arrastar o card ao PALCO equipa
+        e.dataTransfer.setData('text/avst-item', item.id);
+        e.dataTransfer.effectAllowed = 'copy';
+      } : undefined} role="option" aria-selected={ativo} aria-disabled={bloqueado || indisponivel || undefined}
       className={`avst-card ${modo === 'lista' ? 'avst-card-lista' : ''} ${ativo ? 'avst-card-ativo' : ''} ${bloqueado ? 'avst-card-bloqueado' : ''} ${indisponivel ? 'avst-card-indisponivel' : ''}`}
       data-raridade={item.raridade}
       data-indisponivel={indisponivel ? '' : undefined}

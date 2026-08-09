@@ -711,6 +711,18 @@
   (React bail-out) — usar contador. Off = decisões locais anteriores
   byte a byte. Teste quality-as6.mjs.
 
+- **#105 (2026-08-09) — Touch + drag&drop (lote 1031–1040, flag
+  `as6.touch`; AS6 Parte 6)**: arrastar um card da grade e SOLTAR no
+  palco equipa (§325 "uma ação prepara o ambiente"): HTML5 DnD com tipo
+  próprio text/avst-item; o drop vira COMANDO com undo (aplicarComando
+  — Ctrl+Z desfaz); viewport marca [data-soltavel] com realce + selo
+  "Solte para equipar" durante o arrasto. Gestos: a dock horizontal
+  declara touch-action: pan-y (vertical rola a página; horizontal é do
+  drag/momentum #96 — pointer events já cobrem touch). Off = sem
+  draggable/drop, byte a byte. Teste touch-as6.mjs (aprendizado: o
+  atributo de realce é estado React — conferir APÓS um frame, não
+  sincronamente no dispatch).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

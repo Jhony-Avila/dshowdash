@@ -98,6 +98,7 @@ const PADROES: Record<string, boolean> = {
   'as6.foto_camadas': true,       // lote 981–990 — Layer System da foto fase 1 §1215/§1217/§1219: ordem da pilha de fundo + lock + solo no painel de camadas; off = painel do lote 161-164 byte a byte
   'as6.virtual': true,          // lote 1011–1020 — virtualização REAL §276 v2: janela deslizante (card longe recicla p/ esqueleto; foco/hover/equipado nunca reciclam); off = promoção one-way anterior byte a byte
   'as6.quality': true,          // lote 1021–1030 — Quality Manager central (AS6 Parte 9): perfil Auto/Eco/Equilibrado/Alto consultado por 3D (dica de tier), shell ([data-qualidade] → CSS eco) e partículas; off = decisões locais anteriores byte a byte
+  'as6.touch': true,            // lote 1031–1040 — touch+dnd (AS6 Parte 6): arrastar card ao palco equipa (HTML5 DnD, realce de alvo) + touch-action na dock; off = sem draggable/drop byte a byte
 };
 
 /**
