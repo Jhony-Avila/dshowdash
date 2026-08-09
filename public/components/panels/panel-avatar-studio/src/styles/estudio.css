@@ -2548,3 +2548,93 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst-trilho[data-dock-v3] .avst-card-nome { font-size: 13px; font-weight: var(--t-peso-medio); color: var(--as6-texto-forte); }
 .avst-trilho[data-dock-v3] .avst-card-ativo { box-shadow: 0 0 0 2px var(--as6-acento), 0 8px 24px rgba(0, 0, 0, .45); }
 .avst-inferior .avst-card, .avst-inferior [class*="-card"] { border-color: color-mix(in srgb, var(--as6-superficie-4) 80%, white 6%); }
+
+/* ── lote 851–860 (as6.paineis_cards): PAINÉIS em grades de cards ────
+   Escopado no inferior com [data-cards] — flag off = listas verticais
+   anteriores. Largura total vira fileiras estilo seletor de game. */
+.avst-inferior[data-cards] .avst-presets {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--t-espaco-3); align-items: stretch;
+}
+.avst-inferior[data-cards] .avst-preset {
+  flex-direction: column; align-items: stretch; text-align: center;
+  padding: var(--t-espaco-3); gap: var(--t-espaco-2);
+  background: var(--as6-superficie-3);
+  border-color: color-mix(in srgb, var(--as6-superficie-4) 80%, white 6%);
+}
+.avst-inferior[data-cards] .avst-preset:hover { transform: translateY(-3px); box-shadow: var(--t-sombra-1); }
+.avst-inferior[data-cards] .avst-preset-thumb { width: 96px; height: 96px; margin: 0 auto; }
+.avst-inferior[data-cards] .avst-preset-thumb svg, .avst-inferior[data-cards] .avst-preset-thumb img { width: 100%; height: 100%; }
+.avst-inferior[data-cards] .avst-preset-info { align-items: center; }
+.avst-inferior[data-cards] .avst-titulos {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--t-espaco-2); align-items: stretch;
+}
+.avst-inferior[data-cards] .avst-titulo-card { height: 100%; }
+.avst-inferior[data-cards] .avst-col-galeria {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--t-espaco-3);
+}
+/* Conquistas/Vitrine: seções aproveitam a largura em colunas fluidas */
+.avst-inferior[data-cards] .avst-conquistas-grade,
+.avst-inferior[data-cards] .avst-vitrine-blocos {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--t-espaco-3);
+}
+
+/* ── lote 861–870 (as6.sidebar_pro): sidebar SÓ-ÍCONES persistida ────
+   [data-sicones] no corpo encolhe a coluna; labels somem; tooltips via
+   title; ativo ganha barra de acento. Flag off = sidebar anterior. */
+/* FLUTUANTE (sticky no topo da nav): não entra no fluxo — zero shift
+   de layout (a nav já é mais alta que a viewport; item em fluxo aqui
+   empurraria o grid inteiro — pego pela baseline #83). */
+.avst-shell[data-aaa="sim"] .avst-categorias { position: relative; }
+.avst-sb-toggle {
+  position: absolute; top: 6px; right: 6px; z-index: 3;
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--as6-superficie-3) 88%, transparent);
+  border: 1px solid var(--as6-superficie-4);
+  color: var(--as6-texto-suave); border-radius: var(--t-raio-s); cursor: pointer;
+  font-size: 12px; line-height: 1; backdrop-filter: blur(3px);
+}
+.avst-sb-toggle:hover { color: var(--as6-texto-forte); border-color: var(--as6-acento); }
+.avst-shell[data-aaa="sim"] .avst-corpo[data-sicones] { grid-template-columns: 64px 1fr; }
+.avst-shell[data-aaa="sim"] .avst-corpo[data-sicones][data-aba="itens"] { grid-template-columns: 64px 1fr; }
+.avst-corpo[data-sicones] .avst-cat span:not(.avst-cat-inicial),
+.avst-corpo[data-sicones] .avst-grupo-cab span { display: none; }
+.avst-corpo[data-sicones] .avst-grupo-cab { padding: 6px 8px 2px; justify-content: center; }
+.avst-corpo[data-sicones] .avst-grupo-cab .avst-grupo-seta { display: none; }
+.avst-corpo[data-sicones] .avst-cat { justify-content: center; padding: 10px 0; }
+.avst-corpo[data-sicones] .avst-cat-ativa { position: relative; }
+.avst-corpo[data-sicones] .avst-cat-ativa::before {
+  content: ''; position: absolute; left: 4px; top: 20%; bottom: 20%; width: 3px;
+  border-radius: 2px; background: var(--as6-acento);
+}
+
+/* ── lote 871–880 (as6.visual_v2): ELEVAÇÃO VISUAL do clássico ───────
+   [data-visual2] no shell: palco vira PALCO (sem cartão §29/§43) com
+   profundidade radial no workspace; transição suave ao trocar de aba;
+   topo mais limpo. Flag off = visual anterior. */
+.avst-shell[data-visual2] .avst-palco-principal .avst-cine,
+.avst-shell[data-visual2] .avst-palco-principal > .avst-svg {
+  border: none; box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+}
+.avst-shell[data-visual2] .avst-centro[data-aaa-itens="sim"] .avst-palco,
+.avst-shell[data-visual2] .avst-centro[data-aaa-paineis="sim"] .avst-palco {
+  background:
+    radial-gradient(ellipse 62% 52% at 50% 42%, color-mix(in srgb, var(--as6-acento) 9%, transparent), transparent 70%),
+    radial-gradient(ellipse 90% 80% at 50% 110%, color-mix(in srgb, var(--as6-superficie-0) 85%, transparent), transparent 60%);
+}
+.avst-shell[data-visual2] .avst-trilho,
+.avst-shell[data-visual2] .avst-inferior {
+  animation: avst6-sobe .28s var(--t-ease-suave);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--as6-superficie-1) 65%, transparent), color-mix(in srgb, var(--as6-superficie-0) 80%, transparent));
+  backdrop-filter: blur(6px);
+}
+@keyframes avst6-sobe { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .avst-shell[data-visual2] .avst-trilho, .avst-shell[data-visual2] .avst-inferior { animation: none; }
+}
+.avst-shell[data-visual2] .avst-topo { border-bottom: 1px solid color-mix(in srgb, var(--as6-superficie-4) 70%, transparent); background: color-mix(in srgb, var(--as6-superficie-1) 78%, transparent); backdrop-filter: blur(8px); }
+.avst-shell[data-visual2] .avst-categorias { border-right: 1px solid color-mix(in srgb, var(--as6-superficie-4) 60%, transparent); }

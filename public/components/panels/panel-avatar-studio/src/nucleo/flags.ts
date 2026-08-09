@@ -82,6 +82,10 @@ const PADROES: Record<string, boolean> = {
   'as6.color_studio': true,       // lote 811–820 — L3: Color Studio §206–§212 (HSL por slot + harmonias derivadas); off = swatches anteriores byte a byte
   'as6.dock_classico': true,      // lote 831–840 — Asset Dock v3 do clássico §103–§105 (wheel→horizontal, drag, setas, cards visuais); off = trilho anterior byte a byte
   'as6.paineis_dock': true,       // lote 841–850 — abas de PAINEL (arquétipo/título/presets/coleções/conquistas/vitrine/IA/histórico/foto) abaixo do preview (pedido visual do Jhony 2026-08-08); off = lateral anterior byte a byte
+  // ── MEGA ONDA VISUAL 851+ (decisão #88; ordem do Jhony: máximo de UI/UX, validação no final) ──
+  'as6.paineis_cards': true,      // lote 851–860 — painéis do inferior em GRADES de cards (game UI): presets/arquétipos/títulos/coleções lado a lado; off = listas verticais
+  'as6.sidebar_pro': true,        // lote 861–870 — sidebar do clássico com modo SÓ-ÍCONES persistido + tooltips + ativo mais claro; off = sidebar anterior
+  'as6.visual_v2': true,          // lote 871–880 — elevação visual: palco sem cartão (§29/§43), profundidade no workspace, transição suave de aba; off = visual anterior
 };
 
 /**
@@ -110,6 +114,9 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as5.pos3d_real': ['as5.palco3d'],
   'as6.dock_classico': ['as5.classico_aaa'], // a dock v3 refina o trilho AAA
   'as6.paineis_dock': ['as5.classico_aaa'],  // painéis embaixo estendem o layout AAA
+  'as6.paineis_cards': ['as6.paineis_dock'], // grades de cards refinam o inferior
+  'as6.sidebar_pro': ['as5.classico_aaa'],   // sidebar compacta/só-ícones do clássico
+  'as6.visual_v2': ['as5.classico_aaa'],     // elevação visual global do clássico
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';
