@@ -380,6 +380,18 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
     [atual, salvo],
   );
 
+  // lote 861-870 (#88, as6.sidebar_pro): modo SÓ-ÍCONES persistido —
+  // HOOKS antes do early-return do skeleton (regra dos hooks)
+  const [soIcones, setSoIcones] = useState(() => {
+    try { return localStorage.getItem('dshow.avst6.sidebar.v1') === 'icones'; } catch { return false; }
+  });
+  const alternarSidebar = useCallback(() => {
+    setSoIcones((v) => {
+      try { localStorage.setItem('dshow.avst6.sidebar.v1', v ? 'normal' : 'icones'); } catch { /* sem storage */ }
+      return !v;
+    });
+  }, []);
+
   if (carregando) {
     // §557.2: skeleton com a SILHUETA do estúdio (3 colunas) em vez de
     // spinner genérico — a página "já parece o produto" enquanto carrega
@@ -438,9 +450,11 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   // lote 841-850 (#87, as6.paineis_dock): abas de PAINEL também ganham a
   // disposição dock — conteúdo ABAIXO do preview, lateral fora do DOM
   const aaaPaineis = aaa && flag('as6.paineis_dock') && aba !== 'itens' && aba !== '3d';
+  const sidebarPro = aaa && flag('as6.sidebar_pro');
 
   return (
-    <div className="avst-shell" data-aaa={aaa ? 'sim' : undefined}>
+    <div className="avst-shell" data-aaa={aaa ? 'sim' : undefined}
+      data-visual2={aaa && flag('as6.visual_v2') ? '' : undefined}>
       {/* ── Topo ── */}
       <header className="avst-topo">
         <div className="avst-topo-titulo">
@@ -500,9 +514,18 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
 
       <div className="avst-corpo" ref={corpoRef} data-aba={aba}
         data-paineis={aaaPaineis ? '' : undefined}
+        data-sicones={sidebarPro && soIcones ? '' : undefined}
         style={{ '--avst-larg-painel': `${largPainel}px` } as React.CSSProperties}>
         {/* ── Coluna 1: categorias ── */}
         <nav className="avst-categorias" aria-label="Categorias">
+          {/* lote 861-870 (#88): alternador compacto/só-ícones */}
+          {sidebarPro && (
+            <button type="button" className="avst-sb-toggle" data-teste="sidebar-toggle"
+              title={soIcones ? 'Expandir navegação' : 'Recolher para ícones'}
+              aria-pressed={soIcones} onClick={alternarSidebar}>
+              {soIcones ? '»' : '«'}
+            </button>
+          )}
           {/* grupos colapsáveis dirigidos pela taxonomia (Expansão) */}
           {GRUPOS.map((g) => {
             const cats = CATEGORIAS.filter((c) => c.grupo === g.id);
@@ -536,6 +559,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
                       return (
                         <button key={c.id} type="button"
                           className={`avst-cat ${categoria === c.id && aba === 'itens' ? 'avst-cat-ativa' : ''}`}
+                          title={sidebarPro && soIcones ? c.nome : undefined}
                           onClick={() => { setCategoria(c.id); setAba('itens'); }}>
                           <Icone size={17} aria-hidden />
                           <span>{c.nome}</span>
@@ -741,7 +765,8 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         {/* lote 841-850 (#87): PAINÉIS na área inferior — largura total,
             altura limitada com scroll interno; preview segue dominante */}
         {aaaPaineis && (
-          <div className="avst-inferior" data-teste="aaa-inferior">
+          <div className="avst-inferior" data-teste="aaa-inferior"
+            data-cards={flag('as6.paineis_cards') ? '' : undefined}>
 
           {aba === 'arquetipo' && <Arquetipos config={atual} aoAplicar={aplicar} />}
           {aba === 'titulo' && <Titulos config={atual} aoAplicar={aplicar} />}

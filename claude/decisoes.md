@@ -449,6 +449,27 @@
   regenerada (diff de 12 linhas: a Foto mudou de lugar —
   intencional). Dependência §3398: as6.paineis_dock → as5.classico_aaa.
 
+- **#88 (2026-08-09) — MEGA ONDA VISUAL 851–880 (ordem do Jhony:
+  "máximo de melhorias gráficas/UX/UI, validação no final")**: três
+  lotes temáticos num único trem, cada um com flag própria:
+  `as6.paineis_cards` (851–860 — painéis do inferior viram GRADES de
+  cards estilo game UI: presets/arquétipos em cards verticais com thumb
+  96px, títulos/coleções em auto-fill; deps → as6.paineis_dock) ·
+  `as6.sidebar_pro` (861–870 — modo SÓ-ÍCONES persistido
+  dshow.avst6.sidebar.v1, toggle FLUTUANTE sticky no canto da nav,
+  tooltips, ativo com barra de acento; coluna 200→64px) ·
+  `as6.visual_v2` (871–880 — palco sem cartão §29/§43 com sombra
+  profunda + profundidade radial no workspace, trilho/inferior com
+  gradiente+blur e entrada suave reduced-motion-safe, topo com blur).
+  DOIS bugs pegos pelos guardrails ANTES da entrega: (1) hooks depois
+  do early-return do skeleton → React #310 no rollback (regra dos
+  hooks; teste visual-851 parte B); (2) toggle da sidebar EM FLUXO
+  empurrava o grid inteiro +32px (nav já é mais alta que a viewport) —
+  a baseline #83 acusou e o design virou flutuante com zero shift.
+  Regime do trem (produtividade, ordem do Jhony): testes dirigidos por
+  lote + SUÍTE COMPLETA no fechamento do bloco consolidado (gate da
+  entrega); validação visual de tudo pelo Jhony no final.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
