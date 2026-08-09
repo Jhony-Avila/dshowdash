@@ -934,6 +934,18 @@
   byte. Teste cms-ro2.mjs (mock de dados por wrap do fetch; download
   capturado por interceptação do click de âncora).
 
+- **#121 (2026-08-09) — IA apply parcial (lote 1191–1200, flag
+  `as6.ia_apply` — AS6 Parte 12)**: a sugestão da IA/compositor deixa
+  de ser tudo-ou-nada. `workspace/diff.ts` ganhou `camposAplicaveis`
+  (mudanças ENDEREÇÁVEIS: base/camadas/título/cores com chave estável
+  + rótulo do catálogo) e `aplicarSelecionados` (merge determinístico
+  puro). No CriarIA a sugestão vira checklist (tudo marcado por
+  padrão); "Aplicar selecionados (N/M)" aplica só o marcado, sempre
+  via validarConfig (§636 continua barrando o inválido); desmarcar
+  tudo desabilita. Funciona idêntico com ou sem chave de IA (o
+  compositor local passa pelo MESMO caminho). Off = botão "Aplicar no
+  editor" byte a byte. Teste ia-apply.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

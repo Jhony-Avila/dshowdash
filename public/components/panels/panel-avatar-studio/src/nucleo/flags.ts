@@ -112,6 +112,7 @@ const PADROES: Record<string, boolean> = {
   'as6.workers_v2': true,       // lote 1161–1170 — workers fase 2 (AS6 Parte 9): ENCODE de export de foto (PNG/JPEG grandes) fora da main thread via ImageBitmap transferido; timeout+fallback síncrono sempre; off = toDataURL de sempre
   'as6.perf_baseline': true,    // lote 1171–1180 — baseline de RUNTIME local (AS6 Parte 9): marks/measures das interações-chave (troca de categoria, equipar) fechadas pós-paint + long tasks; window.__avstPerf p/ suíte/dev; off = zero marks
   'as6.cms_ro2': true,          // lote 1181–1190 — CMS RO fase 2 (AS6 Parte 15): busca sanitizada + filtro de categoria + ficha de detalhe + export CSV client-side no drawer; segue GET-only/AdminGate; off = drawer do #108
+  'as6.ia_apply': true,         // lote 1191–1200 — IA apply PARCIAL (AS6 Parte 12): a sugestão vira lista de mudanças campo a campo com checkbox; aplica só o selecionado (merge determinístico + validarConfig + §636); off = botão "aplicar tudo" anterior
 };
 
 /**
