@@ -106,6 +106,7 @@ const PADROES: Record<string, boolean> = {
   'as6.dock_inferior': true,    // onda 1111 (pedido visual do Jhony 2026-08-09 — decisão #112): shell novo com a MESMA estrutura do clássico AAA — nav esquerda, preview central dominante com fit-to-view, biblioteca em DOCK HORIZONTAL inferior (reuso do DockAssets/trilho); off = coluna direita anterior byte a byte
   // ── onda 1121–1220 (decisão #113; padrão ON conforme #50) ──
   'as6.tour_v6': true,          // lote 1121–1130 — tour §568 v2 apresenta o layout do #112 (dock/alturas/Cenário/câmera); off = roteiro anterior byte a byte
+  'as6.motion_v2': true,        // lote 1131–1140 — aceites §568 da Parte 7: altura da dock ANIMADA, troca de categoria com fade curto, animações CSS pausadas com a aba oculta; reduced-motion desliga tudo; off = cortes secos anteriores
 };
 
 /**

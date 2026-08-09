@@ -7,7 +7,7 @@
 // + grade). DOM byte a byte o mesmo. Estados que só o painel usa
 // (toggle de propriedades, botão "Topo", ref do scroll) MORAM aqui;
 // `aba` fica no PAI (PaletaComandos e DetalheAsset navegam por ela).
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowUp, ChevronsLeft, ChevronsRight, Palette, Rows3 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { validarConfig } from '../services/AvatarCatalog';
@@ -90,6 +90,16 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     try { localStorage.setItem(CHAVE_DOCK, novo); } catch { /* sem storage */ }
   };
   const refPainel = useRef<HTMLDivElement>(null);
+  // lote 1131-1140 (#115, as6.motion_v2): trocar de categoria assenta a
+  // biblioteca com um fade curto (aceite §568: nada muda de posição
+  // abruptamente). Atributo temporário religa a animação CSS.
+  const [trocando, setTrocando] = useState(false);
+  useEffect(() => {
+    if (!flag('as6.motion_v2')) return undefined;
+    setTrocando(true);
+    const timer = window.setTimeout(() => setTrocando(false), 240);
+    return () => window.clearTimeout(timer);
+  }, [categoria]);
   // blocos compartilhados entre a lateral (flag off) e a dock (#112):
   // MESMO JSX — só o lugar muda (drawer flutuante × dentro do scroll)
   const blocoPropriedades = propriedades && (flag('as6.inspector') ? (
@@ -233,7 +243,7 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
         </div>
       )}
       {!painelFechado && (
-        <div className="avst5-painel-scroll" ref={refPainel}
+        <div className="avst5-painel-scroll" ref={refPainel} data-troca={trocando ? '' : undefined}
           onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
           {!dockInferior && blocoPropriedades}
           {aba !== 'equipados' && categoria === 'acessorio' && (<>

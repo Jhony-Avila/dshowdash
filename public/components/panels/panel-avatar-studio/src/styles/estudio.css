@@ -2966,3 +2966,20 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
    e o painel afundava na ordem de pintura (cliques caíam no chip
    errado). Ordem explícita, independente de perfil. */
 .avst5-p3d-editor { position: relative; z-index: 2; }
+
+/* ══ lote 1131–1140 (decisão #115, flag as6.motion_v2) — aceites §568
+   da Parte 7 AS6: transições estruturais coerentes ══ */
+/* altura da dock ANIMADA (compacta⇄padrão⇄expandida e recolher) */
+.avst5-shell[data-motion-v2] .avst5-painel {
+  transition: height var(--t-dur-media, 220ms) var(--t-ease-suave, ease);
+}
+/* troca de categoria: a biblioteca assenta com fade curto */
+@keyframes avst6-troca { from { opacity: .35; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.avst5-shell[data-motion-v2] .avst5-painel-scroll[data-troca] .avst-biblioteca {
+  animation: avst6-troca var(--t-dur-media, 220ms) var(--t-ease-suave, ease);
+}
+/* aba oculta: animações CSS pausam (não gastam frame nem bateria);
+   play-state não muda layout nem ordem de pintura (aprendizado do eco) */
+.avst5-shell[data-oculto] *,
+.avst5-shell[data-oculto] *::before,
+.avst5-shell[data-oculto] *::after { animation-play-state: paused; }

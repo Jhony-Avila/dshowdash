@@ -864,6 +864,17 @@
   passos, "Catálogo"). Aprendizado: o anel PULSA (scale) — asserts de
   posição comparam pelo centro, nunca pela borda.
 
+- **#115 (2026-08-09) — Motion v2 do workspace (lote 1131–1140, flag
+  `as6.motion_v2`)**: aceites §568 da Parte 7 AS6 que faltavam. Altura
+  da dock TRANSICIONA (nada estrutural corta seco); trocar de categoria
+  assenta a biblioteca com fade curto (`[data-troca]` + keyframe
+  `avst6-troca` REGISTRADO no REGISTRO_ANIMACOES — paridade guardada
+  pelo tokens-as6); aba oculta pausa TODAS as animações CSS
+  (`[data-oculto]` → animation-play-state: paused — sem custo de frame
+  em background; play-state não muda layout nem ordem de pintura,
+  aprendizado do bug do eco). §297: reduced-motion nem liga o atributo.
+  Off = cortes secos anteriores byte a byte. Teste motion-v2.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

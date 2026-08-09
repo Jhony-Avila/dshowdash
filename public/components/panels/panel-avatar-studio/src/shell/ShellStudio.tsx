@@ -357,6 +357,16 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // SMIL). Guard vem do Motion System §285 (fonte única). Declarado AQUI
   // porque o poder v2 (§154.1) depende dele.
   const [movReduzido] = useState(movimentoReduzido);
+  // lote 1131-1140 (#115, as6.motion_v2): com a ABA oculta, animações
+  // CSS param (animation-play-state via [data-oculto]) — aceite §568
+  // "animações fora da viewport pausadas"; volta ao vivo no retorno
+  const [abaOculta, setAbaOculta] = useState(false);
+  useEffect(() => {
+    if (!flag('as6.motion_v2')) return undefined;
+    const ao = () => setAbaOculta(document.visibilityState === 'hidden');
+    document.addEventListener('visibilitychange', ao);
+    return () => document.removeEventListener('visibilitychange', ao);
+  }, []);
 
   // mega 63 (§153–§155): ATIVAR PODER — efeito/aura equipado explode no
   // palco por ~2,6s (overlay isolado; nada muda no estado do avatar)
@@ -980,6 +990,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
         data-dock-inferior={dockInferior ? '' : undefined} /* decisão #112 */
+        data-motion-v2={flag('as6.motion_v2') && !movReduzido ? '' : undefined} /* lote 1131-1140 (#115, aceites §568 AS6) */
+        data-oculto={abaOculta ? '' : undefined} /* #115: aba oculta = animações CSS pausadas */
         data-qualidade={flag('as6.quality') ? qualidade().perfil : undefined} /* lote 1021-1030 (#104) */
         data-uxfinal={flag('as5.ux_final') ? '' : undefined} // megas 598-599 (§545-§546)
         data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
