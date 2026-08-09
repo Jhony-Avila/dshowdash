@@ -72,16 +72,19 @@ const ROTULO_CANAL: Record<SlotCor, string> = {
   roupa: 'Cor principal', destaque: 'Detalhes', pele: 'Pele', cabelo: 'Cabelo',
 };
 
-export function PropriedadesAsset({ config, aoAplicar, aoPrever }: {
+export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
   config: AvatarConfig;
   /** commit — entra na pilha de undo */
   aoAplicar: (novo: AvatarConfig) => void;
   /** ao vivo (arrastando/hover) — preview §608; null limpa */
   aoPrever: (novo: AvatarConfig | null) => void;
+  /** AS6 §181 (as6.inspector): recorte CONTEXTUAL de camadas — ausente =
+   *  todas as equipadas (comportamento anterior byte a byte). */
+  soCamadas?: CamadaId[];
 }) {
   const [canalAberto, setCanalAberto] = useState<string | null>(null);
-  const comProps = camadasComProps(config);
-  const comCanais = CAMADAS_COM_CANAIS.filter((c) => {
+  const comProps = camadasComProps(config).filter((c) => !soCamadas || soCamadas.includes(c));
+  const comCanais = CAMADAS_COM_CANAIS.filter((c) => !soCamadas || soCamadas.includes(c)).filter((c) => {
     const id = config.camadas[c];
     return id && id !== 'nenhum' && (itemPorId(id)?.usaCores?.length ?? 0) > 0;
   });

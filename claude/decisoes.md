@@ -540,6 +540,27 @@
   1394 linhas. workspace-fase1 ganhou a seção 3b; baseline #83
   intocada (regressao-layout verde = DOM idêntico).
 
+- **#94 (2026-08-09) — Inspector contextual (lote 921–930, flag
+  `as6.inspector`; AS6 §181–§189, Parte 4)**: painel de propriedades
+  vira INSPECTOR schema-driven — workspace/inspectorSchema.ts declara
+  por categoria os grupos (§181/§182: base sem compatibilidade; roupa
+  com cor antes de props), as camadas visíveis e a ordem; mudar uma
+  categoria = mudar uma linha de DADO. workspace/Inspector.tsx renderiza
+  o accordion (§184/§185) com memória local (§186,
+  dshow.avst6.inspector.v1): primeiro uso = COMPLETO (§189), usar um
+  grupo recolhe os demais (§186), fechar tudo = COMPACTO (§188);
+  largura §187 reusa a expansão/alça do painel. MIOLO 100% reusado
+  (padrão #87): Cores e PropriedadesAsset renderizam dentro dos grupos
+  — PropriedadesAsset ganhou recorte contextual opcional `soCamadas`
+  (ausente = tudo, byte a byte); CORES ficam globais no grupo (a paleta
+  é transversal no modelo AS5 §11 — recorte contextual vale p/ props
+  por camada, não p/ cores; materiais3d/shell-s3 dependem disso). A
+  seção mantém a classe .avst5-propriedades (mesma seção, evoluída) —
+  fluxos e testes existentes seguem passando SEM edição. Grupos
+  compatibilidade (requerBase/incompativelCom/slot/travas §69) e ações
+  (favoritar/detalhes/remover). Off = seção anterior byte a byte
+  (§651). Teste inspector-as6.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

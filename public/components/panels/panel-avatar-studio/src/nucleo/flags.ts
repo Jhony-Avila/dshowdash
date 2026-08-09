@@ -88,6 +88,8 @@ const PADROES: Record<string, boolean> = {
   'as6.visual_v2': true,          // lote 871–880 — elevação visual: palco sem cartão (§29/§43), profundidade no workspace, transição suave de aba; off = visual anterior
   'as6.workspace_fixo': true,     // lote 881–890 — workspace TRAVADO na viewport (zero scroll de página; nav e inferior com scroll próprio) + chips de filtro compactos no trilho; off = fluxo anterior
   'as6.meta_assets': true,        // lote 891–900 — METADADOS de asset §150–§153/§227: autor/origem/licença/versão + tags pesquisáveis (operador tag: e chips no drawer); off = ficha anterior byte a byte
+  // ── MEGA ONDA 911–1110 (decisão #92) ──
+  'as6.inspector': true,          // lote 921–930 — Inspector contextual §181–§189: accordion schema-driven por categoria (identidade/props/cores/compat/ações) com memória §186; off = seção Cores+Propriedades anterior byte a byte
 };
 
 /**
