@@ -518,6 +518,28 @@
   BarraCenas (§180/§185) — mapeados, ficam p/ a onda seguinte por
   serem clusters de ~25 props que merecem lote próprio.
 
+- **#92 (2026-08-09) — MEGA ONDA 911–1110 (ordem do Jhony: "Prossiga
+  com uma mega onda de 200 Lotes se possivel")**: 20 lotes front-first
+  mapeados no doc 22 do projeto; regime #45+#80+#88; entrega em DOIS
+  blocos consolidados (DEPLOY_1000_OK no marco 1000 e DEPLOY_1110_OK no
+  fim); validação visual de tudo pelo Jhony no final da onda.
+
+- **#93 (2026-08-09) — Componentização fase 3b (lote 911–920)**:
+  ComposicaoPalco (§160/§161/§162/§163/§164/§165/§590) e BarraCenas
+  (§180/§185) extraídos do ShellStudio p/ workspace/, DOM byte a byte;
+  o DOMÍNIO do palco (fundos/horas/luzes/climas/props/apresentações/
+  hist/coleção→cenário + chaves de storage e leitores) foi p/
+  workspace/palco.ts VERBATIM — componentes importam sem dependência
+  circular (§3470). Estados que só os componentes usam desceram
+  (cenAberto, apresentacoes, renomeandoAp) e os memos §179
+  (sugestaoCenario/sugestaoLuz) viraram locais; estados que o viewport/
+  PaletaComandos leem (fundo/hora/luz/clima/propsCen/luzAuto/luzInt/
+  tema) seguem no pai. A interface ComposicaoPalco (hist §185) foi
+  renomeada p/ Composicao — o NOME do cluster ficou p/ o componente
+  (tipo interno, zero impacto de serialização). ShellStudio: 1697 →
+  1394 linhas. workspace-fase1 ganhou a seção 3b; baseline #83
+  intocada (regressao-layout verde = DOM idêntico).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

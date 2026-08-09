@@ -10,7 +10,7 @@ import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react';
 import { Camera, Eye, LayoutGrid, ShieldAlert, Sparkles, X } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
-import { COLECOES, RARIDADES, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, tituloPorId, validarConfig } from '../services/AvatarCatalog';
+import { RARIDADES, aleatorioInteligente, itemPorId, nivelRaridade, svgEfeitoIsolado, tituloPorId, validarConfig } from '../services/AvatarCatalog';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { favoritos } from '../services/Progresso';
 import { conectarTelemetria } from '../services/ObservarNucleo';
@@ -33,6 +33,19 @@ import { BarraTopo } from '../workspace/BarraTopo';
 import { TrilhoCategorias } from '../workspace/TrilhoCategorias';
 import { PainelCatalogo } from '../workspace/PainelCatalogo';
 import { ClimaOverlay } from '../workspace/ClimaOverlay';
+import { ComposicaoPalco } from '../workspace/ComposicaoPalco';
+import { BarraCenas } from '../workspace/BarraCenas';
+// lote 911–920 (decisão #93): domínio da composição do palco movido
+// VERBATIM p/ workspace/palco.ts (fase 3b — sem dependência circular §3470)
+import {
+  CHAVE_CENARIO_PROPS, CHAVE_CLIMA, CHAVE_FUNDO, CHAVE_HIST_PALCO, CHAVE_HORA, CHAVE_LUZ,
+  CHAVE_TEMA, CLIMAS_PALCO, COR_AMBIENTE, FUNDOS_PALCO, HORAS_PALCO,
+  LUZES_PALCO, LUZ_POR_HORA, ROTULO_FUNDO, ROTULO_HORA, ROTULO_LUZ,
+  TEMAS, lerHistPalco, lerPropsCenario,
+} from '../workspace/palco';
+import type {
+  ClimaPalco, Composicao, FundoPalco, HoraPalco, LuzPalco, PropsCenario, TemaId,
+} from '../workspace/palco';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n'; // lote 411-420 (§296)
@@ -65,16 +78,6 @@ import { MOVIMENTOS, SHOWCASE_174, animar, movimentoReduzido, sequencia } from '
 /** §68.3: chips de navegação por slot na categoria Acessórios. */
 
 const CHAVE_LARGURAS = 'dshow.avst5.larguras.v1';
-const CHAVE_FUNDO = 'dshow.avst5.fundo.v1';
-// §590 (P9): TEMAS de acento do estúdio — preferência local, nunca flag
-const CHAVE_TEMA = 'dshow.avst5.tema.v1';
-const TEMAS = [
-  { id: 'roxo', nome: 'Roxo', cor: '#7c5cff' },
-  { id: 'verde', nome: 'Verde', cor: '#39d98a' },
-  { id: 'ambar', nome: 'Âmbar', cor: '#e8b64c' },
-  { id: 'ciano', nome: 'Ciano', cor: '#4cd9e8' },
-] as const;
-type TemaId = (typeof TEMAS)[number]['id'];
 
 /** R2 (P1 §9.4): enquadramento AUTOMÁTICO por categoria — retângulo do
  *  viewBox 240×240 que a câmera deve ocupar (FOCO_THUMB é a semente). */
@@ -97,77 +100,6 @@ const PRESETS_CAM6: Record<'rosto' | 'busto' | 'corpo', [number, number, number,
 };
 type Cam6 = 'auto' | 'rosto' | 'busto' | 'corpo';
 
-/** R1 (P1 §9.3) + mega 60 (§160): CENÁRIOS do palco — os 3 clássicos
- *  seguem intactos; dojo/neon/galáxia são os prioritários do briefing. */
-const FUNDOS_CLASSICOS = ['neutro', 'estudio', 'grade', 'dojo', 'neon', 'galaxia'] as const;
-// mega 231 (§160.1–.4): cenários PRIORITÁRIOS v2 (flag as5.palco_v2) —
-// um por família do briefing: Dshow/corporativo/gamer/sci-fi
-const FUNDOS_V2 = ['showroom', 'escritorio', 'arena', 'cyberpunk'] as const;
-const FUNDOS_PALCO = [...FUNDOS_CLASSICOS, ...FUNDOS_V2] as const;
-type FundoPalco = (typeof FUNDOS_PALCO)[number];
-const ROTULO_FUNDO: Record<FundoPalco, string> = {
-  neutro: 'Neutro', estudio: 'Estúdio', grade: 'Grade',
-  dojo: 'Dojo', neon: 'Neon', galaxia: 'Galáxia',
-  showroom: 'Showroom LED', escritorio: 'Escritório', arena: 'Arena', cyberpunk: 'Cyberpunk',
-};
-// mega 61 (§162): HORA DO DIA — modificador de luz do cenário
-const HORAS_CLASSICAS = ['dia', 'tarde', 'noite'] as const;
-// mega 232 (§162): horas v2 (flag as5.palco_v2)
-const HORAS_V2 = ['amanhecer', 'por-do-sol', 'madrugada'] as const;
-const HORAS_PALCO = [...HORAS_CLASSICAS, ...HORAS_V2] as const;
-type HoraPalco = (typeof HORAS_PALCO)[number];
-const ROTULO_HORA: Record<HoraPalco, string> = {
-  dia: 'Dia', tarde: 'Tarde', noite: 'Noite',
-  amanhecer: 'Amanhecer', 'por-do-sol': 'Pôr do sol', madrugada: 'Madrugada',
-};
-// mega 62 (§164): ILUMINAÇÃO 2D — presets de filtro sobre o avatar
-const LUZES_PALCO = ['neutra', 'quente', 'fria', 'dramatica'] as const;
-// lote 471-480 (§165, flag as5.luz_contextual): a LUZ segue a HORA no
-// modo AUTO — mapeamento fixo e transparente (nada muda sem o usuário
-// escolher Auto; presets manuais continuam mandando fora dele)
-const LUZ_POR_HORA: Record<HoraPalco, LuzPalco> = {
-  amanhecer: 'neutra', dia: 'neutra', tarde: 'quente',
-  'por-do-sol': 'quente', noite: 'dramatica', madrugada: 'fria',
-};
-type LuzPalco = (typeof LUZES_PALCO)[number];
-const ROTULO_LUZ: Record<LuzPalco, string> = { neutra: 'Neutra', quente: 'Quente', fria: 'Fria', dramatica: 'Dramática' };
-const CHAVE_HORA = 'dshow.avst5.palco.hora.v1';
-const CHAVE_LUZ = 'dshow.avst5.palco.luz.v1';
-// lote 201 (§163): CLIMA do palco — overlay determinístico sobre o cenário
-const CLIMAS_PALCO = ['limpo', 'chuva', 'neve', 'nevoa'] as const;
-type ClimaPalco = (typeof CLIMAS_PALCO)[number];
-const ROTULO_CLIMA: Record<ClimaPalco, string> = { limpo: 'Limpo', chuva: 'Chuva', neve: 'Neve', nevoa: 'Névoa' };
-const CHAVE_CLIMA = 'dshow.avst5.palco.clima.v1';
-
-// mega 233–234 (§161): PROPRIEDADES DO CENÁRIO — preferências LOCAIS do
-// palco (nunca tocam o avatar salvo): intensidade de luz, profundidade
-// (vinheta), cor ambiente (paleta aprovada) e movimento ("cenário vivo")
-const AMBIENTES_CENARIO = ['nenhuma', 'azul', 'ambar', 'violeta', 'verde'] as const;
-type AmbienteCenario = (typeof AMBIENTES_CENARIO)[number];
-const COR_AMBIENTE: Record<Exclude<AmbienteCenario, 'nenhuma'>, string> = {
-  azul: '#4c9de8', ambar: '#e8b64c', violeta: '#7c5cff', verde: '#39d98a',
-};
-// mega 257 (§119): IDLE 2D — respiração/flutuação/balanço do avatar no
-// palco (preferência local; o render salvo é sempre estático)
-const IDLES_2D = ['nenhum', 'respirar', 'flutuar', 'balancar'] as const;
-type Idle2d = (typeof IDLES_2D)[number];
-const ROTULO_IDLE: Record<Idle2d, string> = { nenhum: 'Parado', respirar: 'Respirar', flutuar: 'Flutuar', balancar: 'Balançar' };
-interface PropsCenario { luz: number; profundidade: number; ambiente: AmbienteCenario; vivo: boolean; idle: Idle2d }
-const CENARIO_NEUTRO: PropsCenario = { luz: 1, profundidade: 0, ambiente: 'nenhuma', vivo: false, idle: 'nenhum' };
-const CHAVE_CENARIO_PROPS = 'dshow.avst5.palco.cenario.v1';
-function lerPropsCenario(): PropsCenario {
-  try {
-    const b = JSON.parse(localStorage.getItem(CHAVE_CENARIO_PROPS) ?? 'null');
-    if (!b || typeof b !== 'object') return { ...CENARIO_NEUTRO };
-    return {
-      luz: typeof b.luz === 'number' ? Math.max(0.6, Math.min(1.4, b.luz)) : 1,
-      profundidade: typeof b.profundidade === 'number' ? Math.max(0, Math.min(1, b.profundidade)) : 0,
-      ambiente: (AMBIENTES_CENARIO as readonly string[]).includes(b.ambiente) ? b.ambiente : 'nenhuma',
-      vivo: b.vivo === true,
-      idle: (IDLES_2D as readonly string[]).includes(b.idle) ? b.idle : 'nenhum',
-    };
-  } catch { return { ...CENARIO_NEUTRO }; }
-}
 // mega 239 (§172): apresentação do TÍTULO no palco — preferências locais
 const CHAVE_TITULO_PALCO = 'dshow.avst5.palco.titulo.v1';
 interface TituloPalco { alinhamento: 'esquerda' | 'centro' | 'direita'; escala: 'p' | 'm' | 'g' }
@@ -180,41 +112,6 @@ function lerTituloPalco(): TituloPalco {
     };
   } catch { return { alinhamento: 'centro', escala: 'm' }; }
 }
-// mega 65 (§180): PRESETS DE APRESENTAÇÃO {fundo, hora, luz}
-const CHAVE_APRESENTACAO = 'dshow.avst5.apresentacao.v1';
-interface PresetApresentacao { id: string; nome: string; fundo: FundoPalco; hora: HoraPalco; luz: LuzPalco; clima?: ClimaPalco }
-function lerApresentacoes(): PresetApresentacao[] {
-  try {
-    const b = JSON.parse(localStorage.getItem(CHAVE_APRESENTACAO) ?? '[]');
-    return Array.isArray(b) ? b.filter((p): p is PresetApresentacao =>
-      !!p && typeof p.id === 'string' && typeof p.nome === 'string'
-      && (FUNDOS_PALCO as readonly string[]).includes(p.fundo)
-      && (HORAS_PALCO as readonly string[]).includes(p.hora)
-      && (LUZES_PALCO as readonly string[]).includes(p.luz)
-      && (p.clima === undefined || (CLIMAS_PALCO as readonly string[]).includes(p.clima))).slice(0, 6) : [];
-  } catch { return []; }
-}
-function gravarApresentacoes(l: PresetApresentacao[]): void {
-  try { localStorage.setItem(CHAVE_APRESENTACAO, JSON.stringify(l.slice(0, 6))); } catch { /* sem storage */ }
-}
-// lote 175–176 (§185): HISTÓRICO de apresentação — restaurar composição completa
-const CHAVE_HIST_PALCO = 'dshow.avst5.palco.hist.v1';
-interface ComposicaoPalco { fundo: FundoPalco; hora: HoraPalco; luz: LuzPalco; clima?: ClimaPalco }
-function lerHistPalco(): ComposicaoPalco[] {
-  try {
-    const b = JSON.parse(localStorage.getItem(CHAVE_HIST_PALCO) ?? '[]');
-    return Array.isArray(b) ? b.filter((h): h is ComposicaoPalco =>
-      !!h && (FUNDOS_PALCO as readonly string[]).includes(h.fundo)
-      && (HORAS_PALCO as readonly string[]).includes(h.hora)
-      && (LUZES_PALCO as readonly string[]).includes(h.luz)
-      && (h.clima === undefined || (CLIMAS_PALCO as readonly string[]).includes(h.clima))).slice(-10) : [];
-  } catch { return []; }
-}
-// lote 174 (§179): ponte Coleção → Cenário ("itens sugerem ambiente")
-const COLECAO_CENARIO: Partial<Record<string, FundoPalco>> = {
-  col_cyber_nexus: 'neon', col_neon_noturno: 'neon', col_dojo: 'dojo',
-  col_galaxia: 'galaxia', col_oito_bits: 'grade', col_executivo: 'estudio',
-};
 const DEGRAUS_ESQ = [64, 84, 176, 220, 280];
 
 // mega 71 (§117): PERSONALIDADE — combos curados de olhos+boca (1 clique)
@@ -436,23 +333,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     try { localStorage.setItem(CHAVE_CLIMA, c); } catch { /* sem storage */ }
   };
 
-  // lote 174 (§179): itens de coleção sugerem o AMBIENTE correspondente
-  const sugestaoCenario = useMemo(() => {
-    const equipados = new Set(Object.values(configVisivel.camadas).filter(Boolean) as string[]);
-    for (const [colId, fundoSug] of Object.entries(COLECAO_CENARIO)) {
-      const col = COLECOES.find((c) => c.id === colId);
-      if (!col || !fundoSug || fundo === fundoSug) continue;
-      if (col.itens.filter((i) => equipados.has(i)).length >= 2) return { col, fundoSug };
-    }
-    return null;
-  }, [configVisivel, fundo]);
-
-  // lote 205 (§179): ponte Clima→Iluminação (chuva pede luz fria; névoa, dramática)
-  const sugestaoLuz = useMemo(() => {
-    if (clima === 'chuva' && luz !== 'fria') return { luzSug: 'fria' as LuzPalco, motivo: 'a chuva' };
-    if (clima === 'nevoa' && luz !== 'dramatica') return { luzSug: 'dramatica' as LuzPalco, motivo: 'a névoa' };
-    return null;
-  }, [clima, luz]);
+  // (§179 sugestões Coleção→Cenário e Clima→Luz: memos locais de
+  // BarraCenas/ComposicaoPalco desde a fase 3b — decisão #93)
 
   // §297 (P6) + §151 (P4): redução de movimento — palco ESTÁTICO (congela
   // SMIL). Guard vem do Motion System §285 (fonte única). Declarado AQUI
@@ -513,9 +395,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     };
   }, [enquadramento, podFamilia, poderAtivo, movReduzido]);
 
-  // megas 233–234 (§161): propriedades do cenário (locais, flag v2)
+  // megas 233–234 (§161): propriedades do cenário (locais, flag v2) —
+  // o colapsável (cenAberto) mora no ComposicaoPalco desde a fase 3b
   const [propsCen, setPropsCen] = useState<PropsCenario>(lerPropsCenario);
-  const [cenAberto, setCenAberto] = useState(false);
   const mudarPropsCen = useCallback((patch: Partial<PropsCenario>) => {
     setPropsCen((p) => {
       const novo = { ...p, ...patch };
@@ -548,23 +430,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     return m.raridade === 'raro' ? 'pulso' : m.raridade === 'epico' ? 'energia' : m.raridade === 'lendario' ? 'reativa' : undefined;
   }, [palcoV2, movReduzido, configVisivel.camadas.moldura]);
 
-  // mega 65 (§180): presets de APRESENTAÇÃO (fundo+hora+luz num clique)
-  const [apresentacoes, setApresentacoes] = useState<PresetApresentacao[]>(lerApresentacoes);
-  const salvarApresentacao = useCallback(() => {
-    const atuais = lerApresentacoes();
-    if (atuais.length >= 6) return;
-    const nova: PresetApresentacao = {
-      id: `ap_${Date.now().toString(36)}`, nome: `Cena ${atuais.length + 1}`, fundo, hora, luz,
-      ...(clima !== 'limpo' ? { clima } : {}), // lote 204 (§180 v2 — compat)
-    };
-    gravarApresentacoes([...atuais, nova]);
-    setApresentacoes(lerApresentacoes());
-    telemetria('palco_apresentacao_salvou', { fundo, hora, luz, clima }); // §290
-  }, [fundo, hora, luz, clima]);
+  // (§180 presets de apresentação: estado/handlers locais da BarraCenas
+  // desde a fase 3b — decisão #93; o pai só guarda o RING do histórico)
   // lote 175–176 (§185): histórico do palco (ring ≤10, dedupe consecutivo)
-  const [histPalco, setHistPalco] = useState<ComposicaoPalco[]>(lerHistPalco);
+  const [histPalco, setHistPalco] = useState<Composicao[]>(lerHistPalco);
   useEffect(() => {
-    const atual: ComposicaoPalco = { fundo, hora, luz, ...(clima !== 'limpo' ? { clima } : {}) };
+    const atual: Composicao = { fundo, hora, luz, ...(clima !== 'limpo' ? { clima } : {}) };
     const t = setTimeout(() => {
       setHistPalco((h) => {
         const ult = h[h.length - 1];
@@ -577,35 +448,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     }, 700); // preset aplicado = 1 entrada só (não 3)
     return () => clearTimeout(t);
   }, [fundo, hora, luz, clima]);
-  const restaurarComposicao = useCallback((h: ComposicaoPalco) => {
+  const restaurarComposicao = useCallback((h: Composicao) => {
     trocarFundo(h.fundo); trocarHora(h.hora); trocarLuz(h.luz); trocarClima(h.clima ?? 'limpo');
     telemetria('palco_hist_restaurou', { fundo: h.fundo, hora: h.hora, luz: h.luz }); // §290
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // lote 177 (§180): RENOMEAR preset de apresentação (inline)
-  const [renomeandoAp, setRenomeandoAp] = useState<{ id: string; nome: string } | null>(null);
-  const confirmarRenomear = useCallback(() => {
-    if (!renomeandoAp) return;
-    const nome = renomeandoAp.nome.replace(/[^\p{L}\p{N} \-]/gu, '').slice(0, 18).trim();
-    if (nome) {
-      gravarApresentacoes(lerApresentacoes().map((x) => (x.id === renomeandoAp.id ? { ...x, nome } : x)));
-      setApresentacoes(lerApresentacoes());
-    }
-    setRenomeandoAp(null);
-  }, [renomeandoAp]);
-
-  const aplicarApresentacao = useCallback((p: PresetApresentacao) => {
-    trocarFundo(p.fundo);
-    trocarHora(p.hora);
-    trocarLuz(p.luz);
-    trocarClima(p.clima ?? 'limpo'); // lote 204
-    telemetria('palco_apresentacao_aplicou', { nome: p.nome }); // §290
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const excluirApresentacao = useCallback((id: string) => {
-    gravarApresentacoes(lerApresentacoes().filter((p) => p.id !== id));
-    setApresentacoes(lerApresentacoes());
   }, []);
 
   // GradeItens fala AvatarConfig — cada escolha vira COMANDO com inverso
@@ -1322,54 +1168,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 {palcoV2 && poderFase === 'cooldown' ? ' Recarregando…' : ' Poder'}
               </button>
             )}
+            {/* barra de cenas §180/§185 — extraída p/ workspace/BarraCenas (decisão #93) */}
             {modo === 'studio' && (
-              <div className="avst5-apresenta" data-teste="apresentacoes">
-                <span>Cenas:</span>
-                {apresentacoes.map((p) => (
-                  <span key={p.id} className="avst5-apresenta-item">
-                    {renomeandoAp?.id === p.id ? (
-                      <input autoFocus value={renomeandoAp.nome} maxLength={18}
-                        aria-label="Novo nome da cena" data-teste="ap-renomear-input"
-                        onChange={(ev) => setRenomeandoAp({ id: p.id, nome: ev.target.value })}
-                        onBlur={confirmarRenomear}
-                        onKeyDown={(ev) => { if (ev.key === 'Enter') confirmarRenomear(); if (ev.key === 'Escape') setRenomeandoAp(null); }} />
-                    ) : (
-                      <button type="button" title={`${ROTULO_FUNDO[p.fundo]} · ${ROTULO_HORA[p.hora]} · ${ROTULO_LUZ[p.luz]} — duplo clique renomeia (§180)`}
-                        data-teste="ap-aplicar"
-                        onDoubleClick={() => setRenomeandoAp({ id: p.id, nome: p.nome })}
-                        onClick={() => aplicarApresentacao(p)}>{p.nome}</button>
-                    )}
-                    <button type="button" aria-label={`Excluir ${p.nome}`}
-                      onClick={() => excluirApresentacao(p.id)}>×</button>
-                  </span>
-                ))}
-                <button type="button" data-teste="apresentacao-salvar" disabled={apresentacoes.length >= 6}
-                  title="Guardar fundo+hora+luz atuais como cena (§180)"
-                  onClick={salvarApresentacao}>+ salvar</button>
-                {ultimaCena && (ultimaCena.fundo !== fundo || ultimaCena.hora !== hora || ultimaCena.luz !== luz) && (
-                  <button type="button" data-teste="apresentacao-ultima"
-                    title="Voltar à cena da última apresentação (§185)"
-                    onClick={() => { trocarFundo(ultimaCena.fundo); trocarHora(ultimaCena.hora); trocarLuz(ultimaCena.luz); }}>
-                    ↺ última</button>
-                )}
-                {sugestaoCenario && (
-                  <button type="button" className="avst5-sugestao-cenario" data-teste="sugestao-cenario"
-                    title={`§179: ${sugestaoCenario.col.nome} combina com o cenário ${ROTULO_FUNDO[sugestaoCenario.fundoSug]}`}
-                    onClick={() => { trocarFundo(sugestaoCenario.fundoSug); telemetria('palco_sugestao_cenario', { col: sugestaoCenario.col.id }); }}>
-                    ✦ {ROTULO_FUNDO[sugestaoCenario.fundoSug]} combina com {sugestaoCenario.col.nome}</button>
-                )}
-                {histPalco.length > 1 && (
-                  <span className="avst5-hist-palco" data-teste="hist-palco">
-                    <span aria-hidden>·</span>
-                    {histPalco.slice(0, -1).slice(-3).reverse().map((h, i) => (
-                      <button key={`${h.fundo}-${h.hora}-${h.luz}-${i}`} type="button" data-teste="hist-restaurar"
-                        title={`Restaurar composição (§185): ${ROTULO_FUNDO[h.fundo]} · ${ROTULO_HORA[h.hora]} · ${ROTULO_LUZ[h.luz]}`}
-                        onClick={() => restaurarComposicao(h)}>
-                        ⤺ {ROTULO_FUNDO[h.fundo]}·{ROTULO_HORA[h.hora].slice(0, 3)}·{ROTULO_LUZ[h.luz].slice(0, 4)}{h.clima && h.clima !== 'limpo' ? `·${ROTULO_CLIMA[h.clima]}` : ''}</button>
-                    ))}
-                  </span>
-                )}
-              </div>
+              <BarraCenas
+                fundo={fundo} hora={hora} luz={luz} clima={clima}
+                trocarFundo={trocarFundo} trocarHora={trocarHora}
+                trocarLuz={trocarLuz} trocarClima={trocarClima}
+                ultimaCena={ultimaCena} configVisivel={configVisivel}
+                histPalco={histPalco} restaurarComposicao={restaurarComposicao} />
             )}
             {modo === 'studio' && (
               <div className="avst5-emotes" role="group" aria-label="Emotes (§120)" data-teste="emotes">
@@ -1409,129 +1215,20 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 )}
               </div>
             )}
-            <div className="avst5-temas" role="radiogroup" aria-label="Tema do estúdio (§590)">
-              {TEMAS.map((x) => (
-                <button key={x.id} type="button" role="radio" aria-checked={tema === x.id}
-                  className={`avst5-tema-bolinha${tema === x.id ? ' avst5-tema-on' : ''}`}
-                  title={`Tema ${x.nome}`} aria-label={`Tema ${x.nome}`}
-                  style={{ background: x.cor }}
-                  onClick={() => trocarTema(x.id)} />
-              ))}
-            </div>
-            <div className="avst5-fundos" role="radiogroup" aria-label="Cenário do palco (§160)" data-teste="cenarios-2d">
-              {(palcoV2 ? FUNDOS_PALCO : FUNDOS_CLASSICOS).map((f) => (
-                <button key={f} type="button" role="radio" aria-checked={fundo === f}
-                  className={fundo === f ? 'avst5-fundo-on' : ''}
-                  disabled={controlesTravados}
-                  onClick={() => trocarFundo(f)}>{ROTULO_FUNDO[f]}</button>
-              ))}
-            </div>
-            <div className="avst5-fundos avst5-horas" role="radiogroup" aria-label="Hora do dia (§162)" data-teste="horas-2d">
-              {(palcoV2 ? HORAS_PALCO : HORAS_CLASSICAS).map((h) => (
-                <button key={h} type="button" role="radio" aria-checked={hora === h}
-                  className={hora === h ? 'avst5-fundo-on' : ''}
-                  disabled={controlesTravados}
-                  onClick={() => trocarHora(h)}>{t(ROTULO_HORA[h])}</button>
-              ))}
-            </div>
-            <div className="avst5-fundos avst5-luzes" role="radiogroup" aria-label="Iluminação (§164)" data-teste="luzes-2d">
-              {LUZES_PALCO.map((l) => (
-                <button key={l} type="button" role="radio" aria-checked={luz === l}
-                  className={luz === l ? 'avst5-fundo-on' : ''}
-                  disabled={controlesTravados}
-                  onClick={() => trocarLuz(l)}>{t(ROTULO_LUZ[l])}</button>
-              ))}
-              {/* mega 471-473 (§165, flag as5.luz_contextual): AUTO */}
-              {flag('as5.luz_contextual') && (
-                <button type="button" role="radio" aria-checked={luzAuto}
-                  className={luzAuto ? 'avst5-fundo-on' : ''}
-                  data-teste="luz-auto" disabled={controlesTravados}
-                  title="A luz segue a hora do palco (§165): tarde=quente, noite=dramática, madrugada=fria"
-                  onClick={() => mudarLuzAuto(!luzAuto)}>{t('Auto')}</button>
-              )}
-              {/* mega 325 (§164.3, flag as5.palco_sensorial): INTENSIDADE —
-                  modo simples §164.4 = deixar em 1 (zero mudança visual) */}
-              {sensorial && !palco3d && (
-                <label className="avst5-p3d-slider" title="Intensidade da luz do palco (§164.3)">
-                  <input type="range" min="0.7" max="1.3" step="0.05" value={luzInt}
-                    aria-label="Intensidade da luz" data-teste="luz-intensidade"
-                    disabled={controlesTravados}
-                    onChange={(e) => mudarLuzInt(Number(e.target.value))} />
-                </label>
-              )}
-            </div>
-            {/* megas 233–234 (§161): propriedades do cenário — colapsável */}
-            {palcoV2 && !palco3d && (
-              <div className="avst5-fundos avst5-cenprops" data-teste="cenario-props">
-                <button type="button" aria-pressed={cenAberto} aria-expanded={cenAberto}
-                  className={cenAberto ? 'avst5-fundo-on' : ''} data-teste="cenario-abrir"
-                  title="Propriedades do cenário (§161)"
-                  onClick={() => setCenAberto((v) => !v)}>✧ Cenário</button>
-                {cenAberto && (<>
-                  <label className="avst5-cen-slider">Luz
-                    <input type="range" min={0.6} max={1.4} step={0.05} value={propsCen.luz}
-                      aria-label="Intensidade de luz do cenário (§161)" data-teste="cen-luz"
-                      onChange={(e) => mudarPropsCen({ luz: Number(e.target.value) })} />
-                  </label>
-                  <label className="avst5-cen-slider">Prof.
-                    <input type="range" min={0} max={1} step={0.05} value={propsCen.profundidade}
-                      aria-label="Profundidade do cenário (§161)" data-teste="cen-prof"
-                      onChange={(e) => mudarPropsCen({ profundidade: Number(e.target.value) })} />
-                  </label>
-                  {AMBIENTES_CENARIO.map((am) => (
-                    <button key={am} type="button" role="radio" aria-checked={propsCen.ambiente === am}
-                      className={propsCen.ambiente === am ? 'avst5-fundo-on' : ''}
-                      data-teste={`cen-amb-${am}`}
-                      title={am === 'nenhuma' ? 'Sem cor ambiente' : `Cor ambiente ${am} (§161)`}
-                      style={am !== 'nenhuma' ? { color: COR_AMBIENTE[am] } : undefined}
-                      onClick={() => mudarPropsCen({ ambiente: am })}>{am === 'nenhuma' ? 'Sem cor' : '●'}</button>
-                  ))}
-                  <button type="button" aria-pressed={propsCen.vivo}
-                    className={propsCen.vivo ? 'avst5-fundo-on' : ''} data-teste="cen-vivo"
-                    title={movReduzido ? 'Indisponível com redução de movimento (§297)' : 'Cenário vivo — movimento sutil (§161)'}
-                    disabled={movReduzido}
-                    onClick={() => mudarPropsCen({ vivo: !propsCen.vivo })}>Vivo</button>
-                  {/* mega 257 (§119): idle 2D do avatar */}
-                  {flag('as5.criacao_avancada') && IDLES_2D.map((idl) => (
-                    <button key={idl} type="button" role="radio" aria-checked={propsCen.idle === idl}
-                      className={propsCen.idle === idl ? 'avst5-fundo-on' : ''}
-                      data-teste={`idle-${idl}`}
-                      title={movReduzido ? 'Indisponível com redução de movimento (§297)' : `Idle ${ROTULO_IDLE[idl]} (§119)`}
-                      disabled={movReduzido && idl !== 'nenhum'}
-                      onClick={() => mudarPropsCen({ idle: idl })}>{ROTULO_IDLE[idl]}</button>
-                  ))}
-                  {/* megas 578–579 (§157.4, flag as5.palco_v3): transição de
-                      ENTRADA one-shot — apresentação pura, nada persiste */}
-                  {flag('as5.palco_v3') && ([['materializar', 'Materializar'], ['teleporte', 'Teleporte'], ['ascender', 'Ascender']] as const).map(([id2, nome]) => (
-                    <button key={id2} type="button" data-teste={`entrada-${id2}`}
-                      title={movReduzido ? 'Indisponível com redução de movimento (§297)' : `Entrada ${nome} (§157.4)`}
-                      disabled={movReduzido}
-                      onClick={() => dispararEntrada(id2)}>{t(nome)}</button>
-                  ))}
-                  <button type="button" data-teste="cen-zerar"
-                    title="Voltar o cenário ao padrão"
-                    onClick={() => mudarPropsCen({ ...CENARIO_NEUTRO })}>Zerar</button>
-                </>)}
-              </div>
-            )}
-            {/* clima é do palco 2D — no 3D o cenário próprio manda (evita
-                sobrepor os chips do p3d na mesma faixa do viewport) */}
-            {!palco3d && (
-            <div className="avst5-fundos avst5-climas" role="radiogroup" aria-label="Clima (§163)" data-teste="climas-2d">
-              {CLIMAS_PALCO.map((c) => (
-                <button key={c} type="button" role="radio" aria-checked={clima === c}
-                  className={clima === c ? 'avst5-fundo-on' : ''}
-                  disabled={controlesTravados}
-                  onClick={() => trocarClima(c)}>{ROTULO_CLIMA[c]}</button>
-              ))}
-              {sugestaoLuz && (
-                <button type="button" className="avst5-sugestao-cenario" data-teste="sugestao-luz"
-                  title={`§179: ${sugestaoLuz.motivo} combina com a luz ${ROTULO_LUZ[sugestaoLuz.luzSug]}`}
-                  onClick={() => { trocarLuz(sugestaoLuz.luzSug); telemetria('palco_sugestao_luz', { luz: sugestaoLuz.luzSug }); }}>
-                  ✦ Luz {ROTULO_LUZ[sugestaoLuz.luzSug]} combina com {sugestaoLuz.motivo}</button>
-              )}
-            </div>
-            )}
+            {/* composição do palco §160–§165/§590 — extraída p/
+                workspace/ComposicaoPalco (decisão #93, fase 3b) */}
+            <ComposicaoPalco
+              tema={tema} trocarTema={trocarTema}
+              fundo={fundo} trocarFundo={trocarFundo}
+              hora={hora} trocarHora={trocarHora}
+              luz={luz} trocarLuz={trocarLuz}
+              clima={clima} trocarClima={trocarClima}
+              luzAuto={luzAuto} mudarLuzAuto={mudarLuzAuto}
+              luzInt={luzInt} mudarLuzInt={mudarLuzInt}
+              propsCen={propsCen} mudarPropsCen={mudarPropsCen}
+              dispararEntrada={dispararEntrada}
+              palcoV2={palcoV2} palco3d={palco3d} sensorial={sensorial}
+              controlesTravados={controlesTravados} movReduzido={movReduzido} />
             <BarraSalvamento store={store} aoSalvar={async () => {
               const r = await aoSalvarLegado(paraLegado2d(store.estadoDraft));
               if (r.ok) {
