@@ -61,7 +61,9 @@ export function congelarSvg(svg: string): string {
 // baixo, chapéu sobre o cabelo, rosto por cima de tudo. A chave legada
 // 'acessorio' fica na sequência por robustez (configs antigos sem validar).
 const ORDEM_CAMADAS = [
-  'roupa', 'emblema', 'boca', 'olhos', 'cabelo',
+  // 'roupa_sobre' (§3393, decisão #95): SOBREPEÇA por cima da roupa —
+  // campo ausente ⇒ fragmento vazio ⇒ SVG byte a byte o de sempre
+  'roupa', 'roupa_sobre', 'emblema', 'boca', 'olhos', 'cabelo',
   'acessorio', 'acessorio_pescoco', 'acessorio_cabeca', 'acessorio_rosto',
 ] as const;
 
@@ -181,6 +183,11 @@ export function renderAvatar(
         ? resolver(config.camadas.roupa)
         : undefined;
       const roupaCorpo = roupaDef?.renderCorpo ? roupaDef.renderCorpo(paletaDa('roupa'), uid) : '';
+      // sobrepeça §3393 no corpo inteiro: fragmento direto (mesmas coords)
+      const sobreDef = config.camadas.roupa_sobre && config.camadas.roupa_sobre !== 'nenhum'
+        ? resolver(config.camadas.roupa_sobre)
+        : undefined;
+      const sobreCorpo = sobreDef?.renderCorpo ? sobreDef.renderCorpo(paletaDa('roupa_sobre'), uid) : '';
       // emblema no peito do corpo inteiro (mapeia (152,206) do busto → (145,145))
       const emblemaCorpo = config.camadas.emblema && config.camadas.emblema !== 'nenhum'
         ? `<g transform="translate(15.8 -30.1) scale(0.85)">${pintar(config.camadas.emblema, 'emblema')}</g>`
@@ -189,7 +196,7 @@ export function renderAvatar(
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
           envolverFigura(
-            corpoInteiro(paletaDa('roupa'), uid) + roupaCorpo + emblemaCorpo +
+            corpoInteiro(paletaDa('roupa'), uid) + roupaCorpo + sobreCorpo + emblemaCorpo +
             `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`,
             config, 396,
           ) +
@@ -201,7 +208,7 @@ export function renderAvatar(
         `<g data-anim="plano-fundo"><g transform="translate(120 120) scale(1.08) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
           envolverFigura(
-            pintar(config.base) + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.emblema, 'emblema') +
+            pintar(config.base) + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.roupa_sobre, 'roupa_sobre') + pintar(config.camadas.emblema, 'emblema') +
             pintar(config.camadas.boca, 'boca') +
             `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
             `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +

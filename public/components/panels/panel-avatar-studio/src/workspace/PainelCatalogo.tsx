@@ -18,6 +18,7 @@ import type { AbaCatalogo } from '../components/GradeItens';
 import { Cores } from '../components/Cores';
 import { Equipados, alternarBloqueio } from '../shell/Equipados';
 import { PropriedadesAsset } from '../shell/PropriedadesAsset';
+import { Inspector } from './Inspector';
 import { PresetsShell } from '../shell/PresetsShell';
 import { HistoricoSessao } from '../shell/HistoricoSessao';
 import { flag } from '../nucleo/flags';
@@ -94,13 +95,20 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
       {!painelFechado && (
         <div className="avst5-painel-scroll" ref={refPainel}
           onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
-          {propriedades && (
+          {propriedades && (flag('as6.inspector') ? (
+            /* AS6 §181–§189 (lote 921–930, decisão #94): Inspector
+               contextual schema-driven; off = seção anterior byte a byte */
+            <Inspector categoria={categoria} configVisivel={configVisivel}
+              aoEscolher={aoEscolher} aoPrever={aoPrever} bloqueios={bloqueios}
+              aoMudarFavs={aoMudarFavs} setDetalheId={setDetalheId}
+              painelLargo={painelLargo} setPainelLargo={setPainelLargo} />
+          ) : (
             <section className="avst5-propriedades" aria-label="Cores e propriedades">
               <Cores config={configVisivel} aoMudar={aoEscolher} />
               {/* §71: sliders das camadas equipadas com propriedades */}
               <PropriedadesAsset config={configVisivel} aoAplicar={aoEscolher} aoPrever={aoPrever} />
             </section>
-          )}
+          ))}
           {aba !== 'equipados' && categoria === 'acessorio' && (<>
             {/* §68.2/§68.3: resumo + navegação por slot */}
             <div className="avst5-resumo-slots" data-teste="resumo-acessorios">

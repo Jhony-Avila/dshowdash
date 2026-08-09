@@ -17,7 +17,10 @@ export type CategoriaId =
   | 'base' | 'cabelo' | 'olhos' | 'boca' | 'roupa'
   | 'acessorio' | 'fundo' | 'moldura' | 'efeito'
   // Expansão (decisão #33 — categorias 2D de baixo custo/alto valor):
-  | 'aura' | 'banner' | 'emblema';
+  | 'aura' | 'banner' | 'emblema'
+  // AS6 §3393 (lote 931–940, decisão #95): vestuário multi-peça — camada
+  // de SOBREPEÇA por cima da roupa (schema v2; ausente = omitido)
+  | 'roupa_sobre';
 
 export type Raridade =
   | 'comum' | 'incomum' | 'raro' | 'epico' | 'lendario' | 'mitico' | 'exclusivo';
@@ -202,6 +205,9 @@ export interface CamadaFotoCfg {
   blend?: BlendFoto;
   /** §339: SÓ o efeito pode trocar de plano (ordem protegida) */
   plano?: 'atras' | 'frente';
+  /** AS6 §1217 (lote 981–990, as6.foto_camadas): LOCK — controles da
+   *  camada travados no painel (não destrutivo; ausente = livre) */
+  travada?: boolean;
 }
 /** lote 166 (§343): tipografia CONTROLADA (fontes aprovadas, sem upload) */
 export interface TipografiaFoto {
@@ -246,6 +252,9 @@ export interface EstiloFoto {
   legenda?: string;
   /** lote 161–164 (§338): painel de camadas — ausente = render legado */
   camadasFoto?: Partial<Record<CamadaFotoId, CamadaFotoCfg>>;
+  /** AS6 §1215 (lote 981–990, as6.foto_camadas): ORDEM da pilha de fundo
+   *  do medalhão (fundo/banner/aura). Ausente = ordem legada byte a byte. */
+  ordemFundo?: Array<'fundo' | 'banner' | 'aura'>;
   /** lote 165 (§334): luz LOCAL no medalhão · intensidade -1…1 (0 = fora) */
   luzLocal?: { tipo: 'radial' | 'linear'; intensidade: number };
   /** lote 166 (§343) — ausente = tipografia legada byte a byte */

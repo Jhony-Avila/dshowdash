@@ -518,6 +518,158 @@
   BarraCenas (§180/§185) — mapeados, ficam p/ a onda seguinte por
   serem clusters de ~25 props que merecem lote próprio.
 
+- **#92 (2026-08-09) — MEGA ONDA 911–1110 (ordem do Jhony: "Prossiga
+  com uma mega onda de 200 Lotes se possivel")**: 20 lotes front-first
+  mapeados no doc 22 do projeto; regime #45+#80+#88; entrega em DOIS
+  blocos consolidados (DEPLOY_1000_OK no marco 1000 e DEPLOY_1110_OK no
+  fim); validação visual de tudo pelo Jhony no final da onda.
+
+- **#93 (2026-08-09) — Componentização fase 3b (lote 911–920)**:
+  ComposicaoPalco (§160/§161/§162/§163/§164/§165/§590) e BarraCenas
+  (§180/§185) extraídos do ShellStudio p/ workspace/, DOM byte a byte;
+  o DOMÍNIO do palco (fundos/horas/luzes/climas/props/apresentações/
+  hist/coleção→cenário + chaves de storage e leitores) foi p/
+  workspace/palco.ts VERBATIM — componentes importam sem dependência
+  circular (§3470). Estados que só os componentes usam desceram
+  (cenAberto, apresentacoes, renomeandoAp) e os memos §179
+  (sugestaoCenario/sugestaoLuz) viraram locais; estados que o viewport/
+  PaletaComandos leem (fundo/hora/luz/clima/propsCen/luzAuto/luzInt/
+  tema) seguem no pai. A interface ComposicaoPalco (hist §185) foi
+  renomeada p/ Composicao — o NOME do cluster ficou p/ o componente
+  (tipo interno, zero impacto de serialização). ShellStudio: 1697 →
+  1394 linhas. workspace-fase1 ganhou a seção 3b; baseline #83
+  intocada (regressao-layout verde = DOM idêntico).
+
+- **#94 (2026-08-09) — Inspector contextual (lote 921–930, flag
+  `as6.inspector`; AS6 §181–§189, Parte 4)**: painel de propriedades
+  vira INSPECTOR schema-driven — workspace/inspectorSchema.ts declara
+  por categoria os grupos (§181/§182: base sem compatibilidade; roupa
+  com cor antes de props), as camadas visíveis e a ordem; mudar uma
+  categoria = mudar uma linha de DADO. workspace/Inspector.tsx renderiza
+  o accordion (§184/§185) com memória local (§186,
+  dshow.avst6.inspector.v1): primeiro uso = COMPLETO (§189), usar um
+  grupo recolhe os demais (§186), fechar tudo = COMPACTO (§188);
+  largura §187 reusa a expansão/alça do painel. MIOLO 100% reusado
+  (padrão #87): Cores e PropriedadesAsset renderizam dentro dos grupos
+  — PropriedadesAsset ganhou recorte contextual opcional `soCamadas`
+  (ausente = tudo, byte a byte); CORES ficam globais no grupo (a paleta
+  é transversal no modelo AS5 §11 — recorte contextual vale p/ props
+  por camada, não p/ cores; materiais3d/shell-s3 dependem disso). A
+  seção mantém a classe .avst5-propriedades (mesma seção, evoluída) —
+  fluxos e testes existentes seguem passando SEM edição. Grupos
+  compatibilidade (requerBase/incompativelCom/slot/travas §69) e ações
+  (favoritar/detalhes/remover). Off = seção anterior byte a byte
+  (§651). Teste inspector-as6.mjs.
+
+- **#95 (2026-08-09) — Vestuário MULTI-PEÇA (lote 931–940, flag
+  `as6.creator_v6`; AS6 §3393, Parte 5)**: categoria nova `roupa_sobre`
+  (Sobrepeça, grupo vestuário) com 4 itens `sob_*` — WRAPPERS 100%
+  sobre arte existente (engine/sobrepecas.ts): o `renderCorpo` que cada
+  roupa já tem é ADITIVO por construção (detalhes sobre um torso), então
+  vira sobrepeça: direto no corpo inteiro (mesmas coords) e no busto
+  pela INVERSA do mapa busto→corpo do emblema
+  (translate(-18.588 35.412) scale(1.17647)) + clip da faixa do peito
+  (y≥176 — nunca invade o rosto). Curadoria: colete/jaqueta/kimono/
+  orbital (jersey etc. leem como estampa, ficam fora). Cada sobrepeça é
+  `incompativelCom` a peça de origem — 1º uso REAL do §35/§60.6 no
+  catálogo. SCHEMA v2: VERSAO_CONFIG 1→2 com a PRIMEIRA migração real
+  no motor §3393 (carimbo puro — v1 ⊂ v2; nenhum avatar salvo muda de
+  render); paraLegado2d/PHP espelhados (whitelist + versao). Rollback
+  §651: flag off ESCONDE a categoria (categoriasAtivas em trilho/
+  clássico/paleta) mas o dado salvo segue aceito e renderizando —
+  render engine permanece livre de flags (pureza > rollback de render,
+  precedente #63). Sem sorteio no aleatório (determinismo preservado).
+  Teste creator-v6.mjs; estado-vnext.mjs atualizado p/ a cadeia real.
+
+- **#96 (2026-08-09) — Dock com magnificação + momentum + snap (lote
+  941–950, flag `as6.dock_mag`; AS6 §104–§105)**: refina a Dock v3 do
+  clássico (dep §3398 → as6.dock_classico). Magnificação estilo dock do
+  macOS: queda gaussiana em torno do cursor via CSS **`scale:`** (não
+  briga com o transform de hover dos tokens; origem na base; teto
+  1.16×); §297 = o JS não põe a var com prefers-reduced-motion.
+  Momentum: velocidade suavizada no drag → rAF com atrito 0.94.
+  Aprendizados de implementação (registrados p/ não repetir): (1) o rAF
+  do momentum morre SÓ no unmount — o efeito de listeners re-roda a
+  cada children (hover preview) e cancelava a inércia; (2) a grade JÁ
+  tem scroll-snap CSS `x proximity` — cada set programático re-assentava
+  e congelava o voo: o snap é SUSPENSO durante a inércia e DEVOLVIDO no
+  pouso (scrollend + fallback 600ms), com assentamento suave no passo
+  do card; (3) passo medido por offsetWidth (layout), porque o
+  getBoundingClientRect vem inflado pela própria magnificação. Off =
+  interações do lote 831–840 byte a byte. Teste dock-mag.mjs.
+
+- **#97 (2026-08-09) — Workspace Context Engine (lote 951–960, flag
+  `as6.contexto`; AS6 §323–§325)**: trocar de categoria vira UMA
+  mudança de contexto coordenada. workspace/contexto.ts é a camada
+  DECLARATIVA (§324): CONTEXTOS por categoria (grupo default do
+  Inspector + dica) e `aplicarContexto()` disparando o evento
+  `avst6:contexto` + anúncio no aria-live existente. Reagem: GradeItens
+  (limpa a busca da categoria anterior), Inspector (abre o grupo
+  relevante — cabelo→Cores, acessório/sobrepeça→Compatibilidade,
+  efeito→Propriedades…), shell (aba volta a Todos). O que JÁ era
+  contextual por construção (câmera R2/§52, dock por categoria, filtros
+  §68.3, Color Studio por slots) fica nos módulos de origem — o engine
+  coordena, não duplica. Gate no DISPARO (shell): flag off = nenhum
+  evento = troca de categoria anterior byte a byte (listeners inertes).
+  inspector-as6.mjs ajustado (Roupa agora CHEGA com Cores aberta — a
+  coordenação §323 mudou o fluxo de propósito). Teste contexto-as6.mjs.
+
+- **#98 (2026-08-09) — Diff campo a campo no salvar (lote 961–970,
+  flag `as6.diff_v6`; AS6 §350/§322)**: workspace/diff.ts com
+  `diffCampos()` puro — base/camadas/título com NOMES do catálogo
+  (nunca id cru), cores por slot, corpo/postura/ajuste fino, params
+  param a param (§71) e canais por camada (§73); tipos
+  trocado/adicionado/removido/ajustado. Barra de salvamento ganha
+  "Detalhes" → popover com de → para legível; salvar grava HISTÓRICO
+  local (ring ≤10, dshow.avst6.diff.hist.v1 — diff computado ANTES do
+  save, senão o persistido já mudou) e o popover lista os salvamentos
+  anteriores. Off = barra anterior byte a byte, ring nem existe. Teste
+  diff-v6.mjs; shell-save/shell-619/shell-s4 verdes.
+
+- **#99 (2026-08-09) — Photo Project v2 (lote 971–980, flag
+  `as6.foto_projeto`; AS6 §1416–§1418/§1226/§1227)**: auditoria mostrou
+  que "projeto local-first com estilo serializado, reabrir/editar" JÁ
+  existia (mega 57/§364 + 252) — o lote entrega o DELTA do AS6:
+  (1) schema VERSIONADO §1417 (versao 2 + atualizadoEm) gravado só com
+  a flag (off = shape v1 byte a byte); (2) migração de LEITURA §1418 —
+  projeto de qualquer versão abre, formato desconhecido degrada p/
+  'perfil' sem derrubar o painel (endurecido após crash real no teste),
+  nada é regravado por abrir; (3) SNAPSHOT do avatar-fonte §1226 quando
+  a foto nasce do avatar/preset (câmera/arquivo zeram o rastro);
+  (4) ação "atualizar p/ avatar atual" §1227 no card do projeto — troca
+  foto-base+snapshot mantendo a estilização (re-render determinístico
+  via dataUriDe + miniaturizarFoto). Teste foto-projeto.mjs.
+
+- **#100 (2026-08-09) — Layer System da foto fase 1 (lote 981–990,
+  flag `as6.foto_camadas`; AS6 §1215/§1217/§1219)**: o painel de
+  camadas (lote 161–164) JÁ cobria nome/visibilidade/opacidade/blend —
+  o lote entrega o delta: (1) ORDEM §1215 da pilha de fundo do medalhão
+  (fundo/banner/aura) via ▲▼ — `estilo.ordemFundo` só persiste
+  permutação completa NÃO-neutra (neutra = campo some, byte-stability),
+  sanitizada no svgFotoDe (aprendizado: TODO campo novo do estilo passa
+  pela whitelist do serviço — sem isso o render nem vê) e no PHP;
+  render do medalhão compõe na ordem (wide mantém a âncora própria da
+  aura — fase 2); (2) LOCK §1217 (`travada` por camada — controles
+  desabilitados, não destrutivo); (3) SOLO §1219 — só no PREVIEW
+  (estiloPreview derivado; export/salvar usam o estilo real, nada
+  persiste). Off = painel anterior byte a byte. Teste foto-camadas.mjs
+  (inclui: mover sobre camada VAZIA não muda bytes — o teste cruza a
+  aura em 2 passos).
+
+- **#101 (2026-08-09) — QA do bloco A / marco 1000 (lote 991–1000)**:
+  suíte completa rodada no fechamento (regime #88) pegou 4 vermelhos e
+  todos foram tratados ANTES da entrega: (1) tokens §582 — os CSS das
+  ondas 921–970 tinham 4 hex soltos (acento/atenção/sucesso) → trocados
+  por var(--as6-*); (2) dock-mag — espera de snap virou poll de
+  ESTABILIZAÇÃO (o tempo fixo falhava sob carga da suíte);
+  (3–4) home-pessoal/home-compacto — falso vermelho: o runbook pede os
+  DOIS harnesses (avatar + ger) e a sessão só tinha gerado o do avatar;
+  registrado no runbook mental: `node scripts/avatar/gerar-harness.mjs`
+  SEM argumento gera ambos. Rota de entrega da sessão: SEM push direto
+  (proxy nega credencial p/ o repo) → bloco paste-safe consolidado no
+  padrão comprovado (format-patch → gzip → base64 → sha256 → worktree →
+  git am → push → deploy-as5.sh) p/ o Jhony colar no servidor.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

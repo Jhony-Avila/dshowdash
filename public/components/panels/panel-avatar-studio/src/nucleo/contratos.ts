@@ -22,8 +22,8 @@ export type PapelArquivo =
 
 /** Slots FORMAIS de equipamento (união do 2D atual + 14 sockets 3D). */
 export const SLOTS_EQUIPAMENTO = [
-  // 2D em camadas
-  'base', 'cabelo', 'olhos', 'boca', 'roupa',
+  // 2D em camadas ('roupa_sobre': multi-peça §3393 — decisão #95)
+  'base', 'cabelo', 'olhos', 'boca', 'roupa', 'roupa_sobre',
   'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco',
   'fundo', 'moldura', 'efeito', 'aura', 'banner', 'emblema', 'titulo',
   // 3D (decisão #41 — vocabulário fechado)

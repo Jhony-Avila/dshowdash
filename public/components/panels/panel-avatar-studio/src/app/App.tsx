@@ -19,7 +19,7 @@ import {
 const Estudio3D = lazy(() => import('../poc3d/Estudio3D'));
 import type { AvatarConfig, CategoriaId, EstadoSalvar, GrupoId, Raridade, ShellConfig } from '../domain/types';
 import {
-  CATEGORIAS, CONFIG_PADRAO, GRUPOS, RARIDADES, aleatorio, itemPorId, nivelRaridade,
+  CONFIG_PADRAO, GRUPOS, RARIDADES, aleatorio, categoriasAtivas, itemPorId, nivelRaridade,
   validarConfig,
 } from '../services/AvatarCatalog';
 import { carregarAvatar, salvarAvatar, salvarFoto } from '../services/AvatarService';
@@ -84,6 +84,7 @@ function raridadeDaMudanca(a: AvatarConfig, b: AvatarConfig): Raridade | null {
 
 const ICONES: Record<CategoriaId, React.ComponentType<{ size?: number }>> = {
   base: CircleUser, cabelo: Brush, olhos: Eye, boca: Smile, roupa: Shirt,
+  roupa_sobre: Layers, // §3393 (decisão #95): sobrepeça
   acessorio: Glasses, fundo: ImagemIcon, moldura: Frame, efeito: Sparkles,
   aura: Orbit, banner: Flag, emblema: BadgeCheck,
 };
@@ -548,7 +549,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           )}
           {/* grupos colapsáveis dirigidos pela taxonomia (Expansão) */}
           {GRUPOS.map((g) => {
-            const cats = CATEGORIAS.filter((c) => c.grupo === g.id);
+            const cats = categoriasAtivas().filter((c) => c.grupo === g.id); // §3393: Sobrepeça só com a flag
             const temTitulo = g.id === 'personalidade';
             if (cats.length === 0 && !temTitulo) return null;
             const aberto = gruposAbertos.has(g.id);

@@ -68,6 +68,27 @@ ok(!shell.includes('somPrefsAberto') && !shell.includes('const [somPrefs'),
   'estado das prefs de som duplicado no pai');
 ok(barra.includes('somPrefsAberto') && barra.includes('menuAleatorio'),
   'estados locais do header deveriam morar no BarraTopo');
+// ── FASE 3b (lote 911–920, decisão #93): ComposicaoPalco + BarraCenas ─
+const composicao = readFileSync(join(PAINEL, 'src/workspace/ComposicaoPalco.tsx'), 'utf8');
+const cenas = readFileSync(join(PAINEL, 'src/workspace/BarraCenas.tsx'), 'utf8');
+const dominio = readFileSync(join(PAINEL, 'src/workspace/palco.ts'), 'utf8');
+ok(!importaMonolito(composicao) && !importaMonolito(cenas) && !importaMonolito(dominio),
+  'componente da fase 3b importando o monólito (§3470)');
+ok(!shell.includes('data-teste="cenarios-2d"') && !shell.includes('avst5-cenprops'),
+  'a composição do palco voltou inline no ShellStudio — pertence ao ComposicaoPalco (§160–§165)');
+ok(!shell.includes('data-teste="apresentacoes"'),
+  'a barra de cenas voltou inline no ShellStudio — pertence à BarraCenas (§180/§185)');
+ok(shell.includes('<ComposicaoPalco') && shell.includes('<BarraCenas'),
+  'ShellStudio deveria consumir ComposicaoPalco e BarraCenas');
+ok(!shell.includes('const [cenAberto') && !shell.includes('const [renomeandoAp')
+  && !shell.includes('const [apresentacoes') && !shell.includes('sugestaoLuz')
+  && !shell.includes('sugestaoCenario'),
+  'estados/memos migrados na fase 3b sobrando no pai');
+ok(composicao.includes('cenAberto') && cenas.includes('renomeandoAp')
+  && cenas.includes('sugestaoCenario') && composicao.includes('sugestaoLuz'),
+  'estados locais da fase 3b deveriam morar nos componentes');
+ok(!shell.includes("const FUNDOS_PALCO") && dominio.includes('export const FUNDOS_PALCO'),
+  'domínio do palco deveria morar em workspace/palco.ts (fase 3b)');
 
 if (falhas.length) { console.error('FALHAS workspace-fase1:\n- ' + falhas.join('\n- ')); process.exit(1); }
 console.log('workspace-fase1 OK');

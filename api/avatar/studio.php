@@ -126,7 +126,8 @@ function avst_validar_config($bruto): array
     // aura/banner/emblema: Expansão (decisão #33 — categorias 2D imediatas)
     // acessorio_* : slots ADITIVOS (4.6 §20, decisão #41); 'acessorio'
     // legado segue aceito — o front canonicaliza para o slot do item
-    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'acessorio',
+    // roupa_sobre: vestuário multi-peça (AS6 §3393, decisão #95 — v2)
+    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'roupa_sobre', 'acessorio',
         'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco', 'fundo',
         'moldura', 'efeito', 'aura', 'banner', 'emblema'];
     $camadas = [];
@@ -329,6 +330,10 @@ function avst_validar_config_foto($bruto): ?array
             if ($cat === 'efeito' && in_array($c['plano'] ?? null, ['atras', 'frente'], true)) {
                 $item['plano'] = $c['plano'];
             }
+            // lote 981-990 (AS6 §1217, as6.foto_camadas): lock da camada
+            if (($c['travada'] ?? null) === true) {
+                $item['travada'] = true;
+            }
             if ($item !== []) {
                 $cfLimpo[$cat] = $item;
             }
@@ -336,6 +341,15 @@ function avst_validar_config_foto($bruto): ?array
         if ($cfLimpo !== []) {
             $saida['camadasFoto'] = $cfLimpo;
         }
+    }
+    // lote 981-990 (AS6 §1215, as6.foto_camadas): ordem da pilha de fundo
+    // — só uma permutação COMPLETA e única de fundo/banner/aura entra;
+    // a ordem legada (neutra) é omitida (byte-stability)
+    $of = $bruto['ordemFundo'] ?? null;
+    if (is_array($of) && count($of) === 3 && count(array_unique($of)) === 3
+        && array_diff($of, ['fundo', 'banner', 'aura']) === []
+        && array_values($of) !== ['fundo', 'banner', 'aura']) {
+        $saida['ordemFundo'] = array_values($of);
     }
     // lote 165 (§334): luz local — enum + clamp
     $luz = $bruto['luzLocal'] ?? null;

@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Aperture, BadgeCheck, BookmarkPlus, Box, Camera, Check, Crown, Download, FolderOpen, Grid3x3, ImageUp,
-  Images, Layers, Lightbulb, LoaderCircle, Maximize, Move, Redo2, RotateCcw, Share2, SlidersHorizontal, Sparkles, Star, Trash2, Undo2,
+  Images, Layers, Lightbulb, LoaderCircle, Maximize, Move, Redo2, RefreshCw, RotateCcw, Share2, SlidersHorizontal, Sparkles, Star, Trash2, Undo2,
   Video, Wand2, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
@@ -41,7 +41,7 @@ import { t } from '../nucleo/i18n'; // lote 521-530 (§296)
 import { semanaIso } from '../services/Missoes';
 import { alternarFavoritoTemplate, favoritosTemplate } from '../services/FavoritosTemplate';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
-import { excluirProjetoFoto, listarProjetosFoto, renomearProjetoFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
+import { atualizarFonteProjeto, excluirProjetoFoto, listarProjetosFoto, miniaturizarFoto, renomearProjetoFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
 // megas 253+258 (§369/§349): presets de exportação + compor pra mim
 import { excluirPresetExport, listarPresetsExport, salvarPresetExport } from '../services/PresetsExport';
 import { listarPresets } from '../services/PresetsPessoais'; // lote 531-540 (§321.2)
@@ -143,6 +143,10 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
   const [mensagem, setMensagem] = useState<string | null>(null);
   // 4.6 §21 — modo estilizada: foto base (data-url 480) + parâmetros
   const [fotoEstilo, setFotoEstilo] = useState<string | null>(null);
+  // lote 971-980 (AS6 §1226, as6.foto_projeto): SNAPSHOT do avatar
+  // quando ele é a FONTE da foto (entrada §321.1-.2); câmera/arquivo
+  // zeram — projeto salvo carrega o config p/ re-editar §1225/§1227
+  const [fonteAvatar, setFonteAvatar] = useState<AvatarConfig | null>(null);
   // mega 12 (§21×§174.1): TERCEIRA origem — captura do personagem 3D
   const [galeria3d, setGaleria3d] = useState<EntradaIndice3d[] | null>(null);
   const [capturando3d, setCapturando3d] = useState(false);
@@ -151,6 +155,9 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
   // mega 47: captura 3D com fundo TRANSPARENTE (compõe limpa nos templates)
   const [transparente3d, setTransparente3d] = useState(false);
   const [estilo, setEstilo] = useState<EstiloFoto>(ESTILO_VAZIO);
+  // lote 981-990 (AS6 §1219, as6.foto_camadas): SOLO — só a camada
+  // escolhida aparece no PREVIEW; export/salvar usam o estilo real
+  const [soloCamada, setSoloCamada] = useState<CamadaFotoId | null>(null);
   // §325: formato de saída — 'perfil' vai ao servidor; wide sai por download
   const [formato, setFormato] = useState<FormatoFotoId>('perfil');
   // §368: escala do export local (declarada AQUI — validação/lote usam)
@@ -247,6 +254,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
       if (typeof atual.opacidade !== 'number' || atual.opacidade >= 1) delete atual.opacidade;
       if (!atual.blend || atual.blend === 'normal') delete atual.blend;
       if (cat !== 'efeito' || (atual.plano !== 'atras' && atual.plano !== 'frente')) delete atual.plano;
+      if (atual.travada !== true) delete atual.travada; // §1217 (lote 981-990)
       const cfg = { ...(e.camadasFoto ?? {}) };
       if (Object.keys(atual).length) cfg[cat] = atual; else delete cfg[cat];
       if (!Object.keys(cfg).length) { const { camadasFoto: _c, ...resto } = e; return resto as EstiloFoto; }
@@ -485,15 +493,17 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
   }, [formato]);
   const guardarProjeto = useCallback(async () => {
     if (!fotoEstilo) return;
-    const p = await salvarProjetoFoto(fotoEstilo, estilo, formato);
+    const p = await salvarProjetoFoto(fotoEstilo, estilo, formato, '',
+      flag('as6.foto_projeto') && fonteAvatar ? fonteAvatar : undefined); // §1226
     setProjetos(listarProjetosFoto());
     setMensagem(p ? `Projeto "${p.nome}" guardado — reabra quando quiser.` : 'Limite de 6 projetos atingido.');
     if (p) telemetria('foto_projeto_salvou');
-  }, [fotoEstilo, estilo, formato]);
+  }, [fotoEstilo, estilo, formato, fonteAvatar]);
   const abrirProjeto = useCallback((p: ProjetoFoto) => {
     setFotoEstilo(p.foto);
     setEstilo(p.estilo);
     setFormato(p.formato);
+    setFonteAvatar(p.avatarFonte ?? null); // §1226 (v1 sem snapshot = null)
     zerarHistorico();
     setMensagem(`Projeto "${p.nome}" reaberto.`);
     telemetria('foto_projeto_abriu');
@@ -631,7 +641,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0);
     const img = new Image();
-    img.onload = () => { setRecorte({ img, zoom: 1, x: 0, y: 0 }); fecharCamera(); };
+    img.onload = () => { setFonteAvatar(null); setRecorte({ img, zoom: 1, x: 0, y: 0 }); fecharCamera(); }; // câmera ≠ avatar (§1226)
     img.src = quadro.toDataURL('image/png');
   }, [fecharCamera]);
 
@@ -656,6 +666,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
         return;
       }
       fecharCamera();
+      setFonteAvatar(null); // arquivo ≠ avatar (§1226)
       setRecorte({ img, zoom: 1, x: 0, y: 0 });
     };
     img.onerror = () => { setMensagem('Não consegui ler esta imagem.'); URL.revokeObjectURL(url); };
@@ -667,9 +678,10 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
   // recorte/estilização (nada novo depois daqui)
   const usarConfigComoFoto = useCallback((cfg: AvatarConfig) => {
     try {
-      const uri = dataUriDe(validarConfig(cfg), { estatico: true, tamanho: 480 });
+      const limpo = validarConfig(cfg);
+      const uri = dataUriDe(limpo, { estatico: true, tamanho: 480 });
       const img = new Image();
-      img.onload = () => setRecorte({ img, zoom: 1, x: 0, y: 0 });
+      img.onload = () => { setFonteAvatar(limpo); setRecorte({ img, zoom: 1, x: 0, y: 0 }); }; // §1226
       img.onerror = () => setMensagem('Não consegui renderizar o avatar como foto.');
       img.src = uri;
     } catch { setMensagem('Não consegui renderizar o avatar como foto.'); }
@@ -1037,14 +1049,39 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
 
   // preview vivo da estilização (animações ligadas — o PNG sai estático);
   // §325: o preview segue o FORMATO selecionado
+  // lote 981-990 (§1215, as6.foto_camadas): reordenar a pilha de fundo
+  const mudarOrdemFundo = useCallback((cat: 'fundo' | 'banner' | 'aura', direcao: -1 | 1) => {
+    mudarEstilo((e) => {
+      const atual: Array<'fundo' | 'banner' | 'aura'> = e.ordemFundo ?? ['fundo', 'banner', 'aura'];
+      const i = atual.indexOf(cat);
+      const j = i + direcao;
+      if (i < 0 || j < 0 || j >= atual.length) return e;
+      const nova = [...atual];
+      [nova[i], nova[j]] = [nova[j], nova[i]];
+      if (nova.join(',') === 'fundo,banner,aura') { const { ordemFundo: _o, ...resto } = e; return resto as EstiloFoto; }
+      return { ...e, ordemFundo: nova };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // §1219: preview com SOLO aplicado (nunca persiste; export usa `estilo`)
+  const estiloPreview = useMemo(() => {
+    if (!flag('as6.foto_camadas') || !soloCamada) return estilo;
+    const cfg = { ...(estilo.camadasFoto ?? {}) };
+    for (const cat of ['fundo', 'banner', 'aura', 'efeito', 'moldura', 'emblema'] as const) {
+      if (cat !== soloCamada) cfg[cat] = { ...(cfg[cat] ?? {}), oculta: true };
+      else if (cfg[cat]?.oculta) cfg[cat] = { ...cfg[cat], oculta: false };
+    }
+    return { ...estilo, camadasFoto: cfg };
+  }, [estilo, soloCamada]);
+
   const previewEstilo = useMemo(
     () => (fotoEstilo
-      ? svgFotoDe(fotoEstilo, estilo, {
+      ? svgFotoDe(fotoEstilo, estiloPreview, {
         uid: 'ftprev', formato,
         ...(formato !== 'perfil' ? { lado: ladoWide, semFundo: wideTransp } : {}),
       })
       : ''),
-    [fotoEstilo, estilo, formato, ladoWide, wideTransp]
+    [fotoEstilo, estiloPreview, formato, ladoWide, wideTransp]
   );
 
   const mudarCamada = (cat: (typeof CATEGORIAS_FOTO)[number], id: string | null) => {
@@ -1137,6 +1174,28 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
                   onClick={() => { excluirProjetoFoto(p2.id); setProjetos(listarProjetosFoto()); }}>
                   <Trash2 size={12} aria-hidden />
                 </button>
+                {/* lote 971-980 (§1227, as6.foto_projeto): a fonte era o
+                    avatar → dá p/ trocar pela versão ATUAL sem perder a
+                    estilização (snapshot §1226 continua no projeto) */}
+                {flag('as6.foto_projeto') && p2.avatarFonte && configAtual && (
+                  <button type="button" className="avst-foto-item-estilo avst6-fp-atualizar"
+                    data-teste="projeto-atualizar-fonte"
+                    title={`Atualizar ${p2.nome} para o avatar atual (§1227)`}
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          const uri = dataUriDe(validarConfig(configAtual), { estatico: true, tamanho: 480 });
+                          const jpeg = await miniaturizarFoto(uri);
+                          const novo = atualizarFonteProjeto(p2.id, jpeg, validarConfig(configAtual));
+                          setProjetos(listarProjetosFoto());
+                          setMensagem(novo ? `Projeto "${novo.nome}" atualizado para o avatar atual.` : 'Não consegui atualizar o projeto.');
+                          telemetria('foto_projeto_atualizou_fonte');
+                        } catch { setMensagem('Não consegui atualizar o projeto.'); }
+                      })();
+                    }}>
+                    <RefreshCw size={12} aria-hidden />
+                  </button>
+                )}
                 {/* mega 252 (§364 v2): nome visível + renomear inline */}
                 {renomeandoProj?.id === p2.id ? (
                   <input className="avst-foto-item-nome" autoFocus value={renomeandoProj.nome} maxLength={24}
@@ -1739,16 +1798,34 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
                   <div key={cat} className="avst-ft-camada" data-teste={`cf-${cat}`}>
                     <button type="button" className="avst-ft-chip avst-ft-olho" aria-pressed={!c?.oculta}
                       title={c?.oculta ? 'Mostrar camada' : 'Ocultar camada (não destrutivo — §338)'}
-                      data-teste={`cf-olho-${cat}`}
+                      data-teste={`cf-olho-${cat}`} disabled={flag('as6.foto_camadas') && c?.travada}
                       onClick={() => mudarCamadaFoto(cat, { oculta: !c?.oculta })}>
                       {c?.oculta ? '◌' : '●'}
                     </button>
                     <span className="avst-ft-camada-nome">{NOMES_CAMADA_FOTO[cat]}</span>
+                    {/* lote 981-990 (§1215, as6.foto_camadas): a pilha de
+                        fundo reordena; ▲ sobe na pilha (desenha depois) */}
+                    {flag('as6.foto_camadas') && (cat === 'fundo' || cat === 'banner' || cat === 'aura') && (() => {
+                      const ordem = estilo.ordemFundo ?? ['fundo', 'banner', 'aura'];
+                      const i = ordem.indexOf(cat);
+                      return (
+                        <span className="avst6-fc-ordem">
+                          <button type="button" className="avst-ft-chip" data-teste={`cf-sobe-${cat}`}
+                            title="Subir na pilha (§1215)" disabled={i >= ordem.length - 1 || c?.travada}
+                            onClick={() => mudarOrdemFundo(cat, 1)}>▲</button>
+                          <button type="button" className="avst-ft-chip" data-teste={`cf-desce-${cat}`}
+                            title="Descer na pilha (§1215)" disabled={i <= 0 || c?.travada}
+                            onClick={() => mudarOrdemFundo(cat, -1)}>▼</button>
+                        </span>
+                      );
+                    })()}
                     <input type="range" min={0.2} max={1} step={0.05} value={c?.opacidade ?? 1}
                       aria-label={`Opacidade de ${NOMES_CAMADA_FOTO[cat]}`} data-teste={`cf-op-${cat}`}
+                      disabled={flag('as6.foto_camadas') && c?.travada}
                       onChange={(ev) => mudarCamadaFoto(cat, { opacidade: Number(ev.target.value) })} />
                     <select className="avst-ft-select" value={c?.blend ?? 'normal'} data-teste={`cf-blend-${cat}`}
                       aria-label={`Blend de ${NOMES_CAMADA_FOTO[cat]} (§342)`}
+                      disabled={flag('as6.foto_camadas') && c?.travada}
                       onChange={(ev) => mudarCamadaFoto(cat, { blend: ev.target.value as BlendFoto })}>
                       {(Object.keys(NOMES_BLEND) as BlendFoto[]).map((b) => (
                         <option key={b} value={b}>{NOMES_BLEND[b]}</option>
@@ -1757,10 +1834,26 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
                     {cat === 'efeito' && (
                       <button type="button" className="avst-ft-chip" data-teste="cf-plano-efeito"
                         title="§339: trocar o plano do efeito (atrás ⇄ frente)"
+                        disabled={flag('as6.foto_camadas') && c?.travada}
                         onClick={() => mudarCamadaFoto('efeito', { plano: c?.plano === 'frente' ? 'atras' : 'frente' })}>
                         {c?.plano === 'frente' ? 'Frente' : c?.plano === 'atras' ? 'Atrás' : 'Plano auto'}
                       </button>
                     )}
+                    {/* lote 981-990 (as6.foto_camadas): LOCK §1217 + SOLO §1219 */}
+                    {flag('as6.foto_camadas') && (<>
+                      <button type="button" className="avst-ft-chip" data-teste={`cf-lock-${cat}`}
+                        aria-pressed={!!c?.travada}
+                        title={c?.travada ? 'Destravar camada (§1217)' : 'Travar camada — evita mudança acidental (§1217)'}
+                        onClick={() => mudarCamadaFoto(cat, { travada: !c?.travada })}>
+                        {c?.travada ? '🔒' : '🔓'}
+                      </button>
+                      <button type="button" className="avst-ft-chip" data-teste={`cf-solo-${cat}`}
+                        aria-pressed={soloCamada === cat}
+                        title="Solo — só esta camada no preview (§1219; nada persiste)"
+                        onClick={() => setSoloCamada((v) => (v === cat ? null : cat))}>
+                        S
+                      </button>
+                    </>)}
                   </div>
                 );
               })}

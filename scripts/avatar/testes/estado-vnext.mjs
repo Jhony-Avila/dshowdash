@@ -79,16 +79,24 @@ ok(r4.falhou && r4.dado === origem, 'falha deveria devolver o ORIGINAL');
 ok(migrarSchema(registro, null).dado === null, 'null foi tocado');
 ok((migrarSchema(registro, [1] as any).dado as any[])[0] === 1, 'array foi tocado');
 
-// ── B) registros reais são VAZIOS = identidade (byte-stability) ─────
-ok(MIGRACOES_CONFIG.migracoes.length === 0 && MIGRACOES_CONFIG.versaoAtual === 1,
-  'MIGRACOES_CONFIG deveria nascer vazio na v1 (bump exige teste novo)');
+// ── B) registros reais (lote 931–940, decisão #95: 1ª migração REAL) ─
+// CONFIG: v2 introduz camadas.roupa_sobre OPCIONAL (§3393) — a migração
+// 1→2 é carimbo puro: nenhuma camada muda, só a versão.
+ok(MIGRACOES_CONFIG.versaoAtual === 2 && MIGRACOES_CONFIG.migracoes.length === 1
+  && MIGRACOES_CONFIG.migracoes[0].de === 1 && MIGRACOES_CONFIG.migracoes[0].para === 2
+  && MIGRACOES_CONFIG.migracoes[0].motivo.includes('roupa_sobre'),
+  'MIGRACOES_CONFIG deveria ter exatamente a migração real 1→2 (§3393, #95)');
 ok(MIGRACOES_ESTADO.migracoes.length === 0 && MIGRACOES_ESTADO.versaoAtual === 1,
-  'MIGRACOES_ESTADO deveria nascer vazio na v1');
+  'MIGRACOES_ESTADO deveria seguir vazio na v1');
 const cfg = { formato: 'camadas', versao: 1, base: 'base_p1', camadas: { cabelo: 'cab_01' }, cores: { pele: '#e8b58c' } };
-const antes = JSON.stringify(cfg);
 const rc = migrarConfigVNext(cfg);
-ok(rc.dado === cfg && rc.aplicadas.length === 0 && JSON.stringify(rc.dado) === antes,
-  'migrarConfigVNext com registro vazio NÃO é identidade');
+ok(rc.aplicadas.join(',') === '1→2' && !rc.falhou, 'v1 deveria migrar 1→2');
+ok(rc.dado.versao === 2, 'migração 1→2 deveria carimbar versao 2');
+ok(JSON.stringify({ ...rc.dado, versao: 1 }) === JSON.stringify(cfg),
+  'migração 1→2 deveria ser carimbo PURO (nenhuma camada muda — byte-stability)');
+const jaV2 = { ...cfg, versao: 2 };
+ok(migrarConfigVNext(jaV2).dado === jaV2 && migrarConfigVNext(jaV2).aplicadas.length === 0,
+  'config v2 deveria passar intacto (identidade)');
 const est = { schemaVersion: 1, identity: { nome: null } };
 ok(migrarEstadoVNext(est).dado === est, 'migrarEstadoVNext com registro vazio NÃO é identidade');
 

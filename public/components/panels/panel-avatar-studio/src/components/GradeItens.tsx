@@ -235,6 +235,13 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     window.addEventListener('avst6:buscar-tag', ao);
     return () => window.removeEventListener('avst6:buscar-tag', ao);
   }, []);
+  // lote 951-960 (#97, as6.contexto — §323): mudança de contexto limpa
+  // a busca da categoria anterior (o shell só dispara com a flag ligada)
+  useEffect(() => {
+    const ao = () => setBusca('');
+    window.addEventListener('avst6:contexto', ao);
+    return () => window.removeEventListener('avst6:contexto', ao);
+  }, []);
   // megas 351-353 (§157): filtro por categoria FUNCIONAL (efeitos)
   const [filtroFx, setFiltroFx] = useState<'todos' | 'ambiental' | 'distorcao' | 'celebracao' | 'transicao' | 'presenca'>('todos');
 
