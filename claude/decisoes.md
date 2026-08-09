@@ -495,6 +495,29 @@
   compacto + rollback §651; baseline #83 regenerada (desvios revisados
   linha a linha: tudo compressão intencional da trava).
 
+- **#90 (2026-08-09) — Metadados de asset (lote 891–900, flag
+  `as6.meta_assets`; AS6 §150–§153/§227)**: lacuna transversal #6 do
+  plano. services/MetadadosAssets.ts deriva ficha COMPLETA e
+  determinística p/ 100% do catálogo (autor/origem/licença por
+  biblioteca — 'dshow' = estúdio interno, resto = curadoria CC0;
+  versão com mapa de curadoria; tags normalizadas de tema/categoria/
+  raridade/slot/funcional/família/coleção + extras por id). ZERO toque
+  em partes/*; nada entra na serialização (byte-stability por
+  definição). DetalheAsset ganha a ficha + tags CLICÁVEIS que disparam
+  a busca na grade (evento avst6:buscar-tag); GradeItens ganha operador
+  tag: exato e termos soltos casando com tags (off = busca anterior
+  byte a byte). Teste meta-assets.mjs.
+
+- **#91 (2026-08-09) — Componentização fase 3a (lote 901–910)**:
+  ClimaOverlay (§163) extraído do viewport do ShellStudio p/
+  workspace/ClimaOverlay.tsx — DOM byte a byte, puro
+  (clima, movReduzido) → SVG, mesma condição de render ('limpo' → null
+  no componente; !palco3d no pai). ShellStudio segue encolhendo
+  (fases 1–2: BarraTopo/TrilhoCategorias/PainelCatalogo). Próximos da
+  fase 3: ComposicaoPalco (temas/fundos/horas/luzes/cenário/clima) e
+  BarraCenas (§180/§185) — mapeados, ficam p/ a onda seguinte por
+  serem clusters de ~25 props que merecem lote próprio.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
