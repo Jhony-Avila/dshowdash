@@ -2709,14 +2709,14 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst6-insp-grupo { border: 1px solid var(--as6-superficie-4); border-radius: var(--t-raio-m); background: color-mix(in srgb, var(--as6-superficie-2) 60%, transparent); }
 .avst6-insp-cab { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; background: none; border: 0; color: inherit; font: inherit; font-size: 12.5px; cursor: pointer; }
 .avst6-insp-cab span { flex: 1; text-align: left; }
-.avst6-insp-aberto > .avst6-insp-cab { color: var(--avst-acento, #7c5cff); }
+.avst6-insp-aberto > .avst6-insp-cab { color: var(--avst-acento, var(--as6-acento)); }
 .avst6-insp-corpo { padding: 4px 10px 10px; display: flex; flex-direction: column; gap: 8px; }
 .avst6-insp-corpo .avst5-propriedades, .avst6-insp-corpo .avst5-props, .avst6-insp-corpo .avst-cores { border: 0; padding: 0; margin: 0; }
 .avst6-insp-item { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
 .avst6-insp-rar { font-size: 11px; font-weight: var(--t-peso-medio); }
 .avst6-insp-meta { font-size: 11px; color: var(--as6-texto-suave); }
-.avst6-insp-conflito { font-size: 11px; color: #e8b64c; }
-.avst6-insp-ok { font-size: 11px; color: #39d98a; }
+.avst6-insp-conflito { font-size: 11px; color: var(--as6-atencao); }
+.avst6-insp-ok { font-size: 11px; color: var(--as6-sucesso); }
 .avst6-insp-vazio { margin: 0; font-size: 11.5px; color: var(--as6-texto-suave); }
 .avst6-insp-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
 
@@ -2735,7 +2735,7 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst6-diff-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
 .avst6-diff-lista li { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
 .avst6-diff-lista li[data-tipo="removido"] .avst6-diff-valor { color: #e8927c; }
-.avst6-diff-lista li[data-tipo="adicionado"] .avst6-diff-valor { color: #39d98a; }
+.avst6-diff-lista li[data-tipo="adicionado"] .avst6-diff-valor { color: var(--as6-sucesso); }
 .avst6-diff-campo { color: var(--as6-texto-suave); white-space: nowrap; }
 .avst6-diff-valor { text-align: right; overflow-wrap: anywhere; }
 .avst6-diff-hist { border-top: 1px solid var(--as6-superficie-4); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }

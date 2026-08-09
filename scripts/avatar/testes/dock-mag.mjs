@@ -70,8 +70,13 @@ const arrastar = async (p, box, dist) => {
     await p.waitForTimeout(120);
     const s2 = await scrollDock(p);
     ok(s2 > s1 + 8, `sem momentum após soltar (${s1}→${s2})`);
-    // snap §104: assenta em múltiplo do passo do card
-    await p.waitForTimeout(1500);
+    // snap §104: assenta em múltiplo do passo do card — sob carga o
+    // momentum+smooth podem demorar; espera ATÉ estabilizar (máx ~6s)
+    for (let i = 0; i < 12; i++) {
+      const a = await scrollDock(p);
+      await p.waitForTimeout(500);
+      if (await scrollDock(p) === a && i >= 2) break;
+    }
     const fim = await p.evaluate(() => {
       const el = document.querySelector('[data-teste="dock-v3"] .avst-grade');
       const card = el?.querySelector('.avst-card');

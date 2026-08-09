@@ -1,71 +1,34 @@
 # Status do Projeto — Avatar Studio (no repo)
 
 > Fonte viva: docs do projeto Claude "Avatar Studio" (04-status-do-projeto).
-> Última atualização: **2026-08-07 — onda 721+ aberta (decisão #72)**: lote 721–730 Foto×3D §329 entregue; mapa no doc 20 do projeto Claude. Produção segue no marco 610 até o deploy.
+> Última atualização: **2026-08-09 — MARCO 1000 MEGAS (bloco A da onda 911–1110, decisão #92)**.
 
 ## Marco atual
 
-- **610 megas EM PRODUÇÃO** (deploy `525d326c → f25ea274`, 2026-08-07).
-- **Onda 611–710 EM CURSO (trilho B/UBC — decisão #64)**: 611–620 pipeline
-  v2 + bases Superhero M/F publicadas · 621–630 Character Assembler §406 +
-  6 cabelos/barba · 631–640 roupas §415–§417 (20 peças, body masking
-  §415.2) · 641–650 materiais §418–§421 (Material Manager §419, canais
-  §73→3D §420–§421, decisão #65) · 651–660 cabelo/barba/morfos (barba
-  combinável §425, famílias §423, morfos estruturais via escala §412–§414,
-  decisão #66) · 661–670 animação + pacote ual_basico PUBLICADO (10
-  clipes UAL1; Herói SAIU do T-pose — decisão #67) · 671–680 CLÁSSICO
-  AAA (briefing complementar; layout puro: viewport dominante, carrossel
-  horizontal, cores junto ao canvas — decisão #68). Flags:
-  as5.assembler3d · as5.roupas3d · as5.materiais3d · as5.cabelo3d ·
-  as5.morfos3d · as5.animacao3d · as5.classico_aaa · as5.progressivo3d.
-  Suíte: **90 arquivos** (inclui homologação §487–§495 executável —
-  lote 701–710, decisão #71: 34 assets 0 reprovados, gate §631 ok). Onda 611–720: 681–690 LOD/progressivo ✅
-  (decisão #69) · 691–700 quality/captura ✅ (perfis Ultra/Cine §482.1,
-  DPR dinâmico §483, captura v2 §506/§329 com LOD alto + supersampling +
-  indicador §329.3 — decisão #70; flags as5.quality3d_v2 +
-  as5.captura3d_v2); restam homologação (701) e validação (711).
-- Esta onda ESGOTA o trilho A: i18n cobertura §296 · foto entrada §321 ·
-  foto pro2 §335–371 · conjuntos §72.1/.3 · criação fina §102.2 + borda
-  §340–341 · palco/som v3 §176.1/§178.2/§157.4 · infra v3 §268/§277/
-  §299–300 · ux final §59.1/§60/§64.2/§545. O que resta do briefing está
-  no trilho B (Jhony) ou C (estratégico) — ver mapa de lacunas.
-- Decisões **#61/#62/#63** registradas (projeto docs 16–17 + resumo aqui).
-- **Validação 1-por-1**: projeto doc `claude/17-validacao-onda-511-610.md`
-  (por flag: §§ · teste · roteiro visual de 1 min).
+- **1000 megas** ao fim do bloco A da mega onda 911–1110 (mapa: doc 22
+  do projeto Claude; decisões #93–#101 em claude/decisoes.md).
+- Bloco A (911–1000, 9 commits temáticos):
+  911–920 componentização 3b (ComposicaoPalco + BarraCenas +
+  workspace/palco.ts — #93) · 921–930 Inspector contextual
+  schema-driven (`as6.inspector` — #94) · 931–940 vestuário multi-peça
+  (`as6.creator_v6`, categoria Sobrepeça + schema v2 com 1ª migração
+  real §3393 — #95) · 941–950 dock magnificação/momentum/snap
+  (`as6.dock_mag` — #96) · 951–960 Workspace Context Engine
+  (`as6.contexto` — #97) · 961–970 diff campo a campo no salvar
+  (`as6.diff_v6` — #98) · 971–980 Photo Project v2 (`as6.foto_projeto`
+  — #99) · 981–990 Layer System da foto fase 1 (`as6.foto_camadas` —
+  #100) · 991–1000 QA do bloco (tokens sem hex solto, robustez de
+  testes, harness duplo — #101).
+- Suíte: **116 arquivos** (5 novos: inspector-as6, creator-v6, dock-mag,
+  contexto-as6, diff-v6, foto-projeto, foto-camadas) — verde completa
+  antes da entrega.
+- 80 flags `as5.*`/`as6.*`; rollback por feature = desligar a flag (§651).
+- Próximo: lotes 1001–1110 (bloco B) — golden avatars, virtualização,
+  quality manager, touch/dnd, prompt registry, derivados, CMS RO, vida
+  no shell, a11y v3, workers → DEPLOY_1110_OK.
 
-## Fechamento da onda 611–720 (megas 711–720)
+## Validação visual
 
-- **Validação 1-por-1**: doc `claude/19-validacao-onda-611-720.md` do
-  projeto Claude — §§ · teste · roteiro visual de 1 min POR FLAG (10
-  flags novas) + itens sem flag (bugfixes §473/§433 e homologação).
-- Suíte **90/90 verde** na árvore entregue; homologação: 34 assets, 0
-  reprovados; gate §631 1036KB ≤ 1180KB.
-- Bugs REAIS achados por teste na onda: esqueleto órfão (621) · vida ×
-  reduced-motion (641) · corrida de carga (681) · idle fantasma (691).
-- Próxima onda (721+, decisões a partir de #72): candidatos no doc 04
-  do projeto (F6 Photo Studio 3D · ual_extra · F8 IA · trilho C · polish
-  AAA com o veredito visual do Jhony).
-
-## AS6 (2026-08-08)
-
-O Jhony subiu o briefing AVATAR STUDIO 6.0 (`docs/AVATAR_STUDIO_6.md`,
-a9eecfbb) — 18 partes, §1–§3672. Decisões #74–#76: AS6 assume o programa
-na onda 741+; execução por camadas (Parte 18); flags novas em `as6.*`.
-FASE 0 (auditoria) concluída: `docs/AVATAR-STUDIO-6/auditoria-fase0.md`.
-Ondas 721–740 entregues antes (as5.foto3d + as5.ual_extra, pacotes
-ual_basico/ual_extra publicados). Mapa de ondas 741–840 no doc 21 do
-projeto Claude. Produção segue no marco 610 (deploy-as5.sh pendente).
-
-## Como retomar (sessão nova)
-
-1. Clonar; ler `claude/*.md`. 2. Briefing: `git show 006a394b:docs/BRF_AVATAR_STUDIO.md`.
-3. Build DENTRO do dir do painel; harness da RAIZ; servidor 8901 de public/.
-4. Push: dry-run; 403 → bloco SSH (comprovado 11×). 5. Briefing AS6: `docs/AVATAR_STUDIO_6.md`
-   na working tree. 6. Próximo: onda 751–760 (L0 — Avatar State vNext)
-   conforme doc 21 do projeto Claude; decisões a partir de **#77**.
-
-## Pendências (Jhony)
-
-Validação visual 221–610 (roteiros no doc 17) · webhook (re-rotação do
-secret — entregas GitHub seguem 403) · chave IA · zip UBC · rotação PAT ·
-nexatechs.com.br · trilho C.
+Pendente do Jhony ao FIM da onda 911–1110 (pedido dele) — roteiros de
+1 min por flag serão consolidados no doc de validação da onda no
+projeto Claude.

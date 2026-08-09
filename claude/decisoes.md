@@ -656,6 +656,20 @@
   (inclui: mover sobre camada VAZIA não muda bytes — o teste cruza a
   aura em 2 passos).
 
+- **#101 (2026-08-09) — QA do bloco A / marco 1000 (lote 991–1000)**:
+  suíte completa rodada no fechamento (regime #88) pegou 4 vermelhos e
+  todos foram tratados ANTES da entrega: (1) tokens §582 — os CSS das
+  ondas 921–970 tinham 4 hex soltos (acento/atenção/sucesso) → trocados
+  por var(--as6-*); (2) dock-mag — espera de snap virou poll de
+  ESTABILIZAÇÃO (o tempo fixo falhava sob carga da suíte);
+  (3–4) home-pessoal/home-compacto — falso vermelho: o runbook pede os
+  DOIS harnesses (avatar + ger) e a sessão só tinha gerado o do avatar;
+  registrado no runbook mental: `node scripts/avatar/gerar-harness.mjs`
+  SEM argumento gera ambos. Rota de entrega da sessão: SEM push direto
+  (proxy nega credencial p/ o repo) → bloco paste-safe consolidado no
+  padrão comprovado (format-patch → gzip → base64 → sha256 → worktree →
+  git am → push → deploy-as5.sh) p/ o Jhony colar no servidor.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
