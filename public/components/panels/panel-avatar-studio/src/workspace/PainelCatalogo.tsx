@@ -89,6 +89,14 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     setEstadoDock(novo);
     try { localStorage.setItem(CHAVE_DOCK, novo); } catch { /* sem storage */ }
   };
+  // lote 1151-1160 (#117, as6.nav_dock): a tecla D (shell) cicla a
+  // altura por evento — o estado mora aqui
+  useEffect(() => {
+    if (!dockInferior || !flag('as6.nav_dock')) return undefined;
+    const ao = () => ciclarDock();
+    window.addEventListener('avst6:dock-altura', ao);
+    return () => window.removeEventListener('avst6:dock-altura', ao);
+  });
   const refPainel = useRef<HTMLDivElement>(null);
   // lote 1131-1140 (#115, as6.motion_v2): trocar de categoria assenta a
   // biblioteca com um fade curto (aceite §568: nada muda de posição

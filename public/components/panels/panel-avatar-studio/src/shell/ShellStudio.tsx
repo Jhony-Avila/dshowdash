@@ -800,6 +800,28 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // mega 228 (§220): LINHA DO TEMPO unificada (flag as5.timeline_shell)
   const [timeline, setTimeline] = useState(false);
 
+  // lote 1151-1160 (#117, as6.nav_dock): B foca a biblioteca (1º card
+  // navegável) e D cicla a altura da dock — fora de campos, sem
+  // modificador, só no layout novo (#112)
+  useEffect(() => {
+    if (!flag('as6.nav_dock') || !flag('as6.dock_inferior')) return undefined;
+    const ao = (e: KeyboardEvent) => {
+      const alvoEl = e.target as HTMLElement | null;
+      if (alvoEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvoEl.tagName)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'b' || e.key === 'B') {
+        const card = document.querySelector<HTMLElement>('.avst5-painel .avst-card[tabindex="0"]')
+          ?? document.querySelector<HTMLElement>('.avst5-painel .avst-card');
+        if (card) { e.preventDefault(); card.focus(); }
+      } else if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('avst6:dock-altura'));
+      }
+    };
+    window.addEventListener('keydown', ao);
+    return () => window.removeEventListener('keydown', ao);
+  }, []);
+
   // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
   const [atalhos, setAtalhos] = useState(false);
   useEffect(() => {

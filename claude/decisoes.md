@@ -886,6 +886,18 @@
   [data-light-v6] pela flag) — CSS-only, dark byte a byte intocado
   (testado). Off = claro funcional do #112. Teste light-v6.mjs.
 
+- **#117 (2026-08-09) — Dock operável por teclado (lote 1151–1160,
+  flag `as6.nav_dock` — AS6 Parte 6)**: B foca o 1º card navegável da
+  biblioteca; setas movem o roving (da a11y-v2) e o trilho ACOMPANHA
+  com rolagem suave (focus({preventScroll}) + scrollIntoView — focus()
+  puro salta seco e briga com o snap); PageUp/PageDown paginam com o
+  mesmo passo das setas da dock; D cicla a altura via CustomEvent
+  `avst6:dock-altura` (o estado mora no PainelCatalogo); a folha de
+  atalhos §548 ganha o grupo "Dock de assets" (condicional — a folha é
+  dado). Teclas só valem fora de campos, sem modificadores e no layout
+  novo (#112). Off = navegação anterior byte a byte. Teste
+  nav-dock.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
