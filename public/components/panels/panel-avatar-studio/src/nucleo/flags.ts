@@ -101,6 +101,7 @@ const PADROES: Record<string, boolean> = {
   'as6.touch': true,            // lote 1031–1040 — touch+dnd (AS6 Parte 6): arrastar card ao palco equipa (HTML5 DnD, realce de alvo) + touch-action na dock; off = sem draggable/drop byte a byte
   'as6.derivados': true,        // lote 1051–1060 — derivados com reflow (AS6 Parte 11): posições manuais refluem p/ a célula de texto dos formatos wide com clamp (via opcoes.reflowPos) + painel de derivados ao vivo na Foto; off = wide anterior byte a byte
   'as6.cms_ro': true,           // lote 1061–1070 — CMS read-only (AS6 Parte 15): drawer admin que LISTA assets/licenças/auditoria via cms.php (GET + AdminGate fail-closed; zero escrita); off = sem comando/drawer
+  'as6.vida_shell': true,       // lote 1071–1080 — VIDA no shell novo (regressão da auditoria FASE 0): respiração/piscada/balanço no viewport (receita do PalcoCinema); §297 respeitado; off = viewport estático anterior
 };
 
 /**

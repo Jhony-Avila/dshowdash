@@ -1077,7 +1077,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     }} />
                 )}
                 <div className="avst5-zoom" style={zoomEstilo}>
-                  <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido} />
+                  <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido}
+                    palco={flag('as6.vida_shell') && !palco3d && !movReduzido} />
                 </div>
               </div>
             )}

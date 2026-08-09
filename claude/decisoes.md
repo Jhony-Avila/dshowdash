@@ -760,6 +760,21 @@
   gate. Escritas continuam exclusivas do admin.php (POST+CSRF). Teste
   cms-ro.mjs.
 
+- **#109 (2026-08-09) — Vida do avatar no shell novo (lote 1071–1080,
+  flag `as6.vida_shell`)**: corrige a REGRESSÃO da auditoria FASE 0 —
+  o viewport do shell renderizava SEM palco:true, então os grupos
+  animáveis (personagem/cabelo/palpebras) nem existiam. Com a flag: o
+  AvatarSvg do viewport pede o modo palco (§608 — nunca em SVG salvo) e
+  workspace/vida.ts liga a MESMA receita comprovada do PalcoCinema
+  (respiração 4.2s, balanço do cabelo 3.4s, piscada 2.8–7s via WAAPI).
+  A vida mora NO AvatarSvg (acompanha o ciclo do markup) e um
+  MutationObserver religa quando o innerHTML é reescrito por fora do
+  React — visto na prática: o nó animado era substituído por um
+  idêntico e as animações evaporavam sem cleanup (aprendizado: dep no
+  string do svg não cobre reescritas de mesmo conteúdo). §297
+  (movReduzido) e palco 3D desligam. Off = viewport estático anterior.
+  Teste vida-shell.mjs; shell-show/palco-v2/clima/goldens verdes.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
