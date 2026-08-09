@@ -847,6 +847,23 @@
   fino de DOIS componentes. O runner agora imprime `VERMELHOS: <lista>`
   no resumo (red por exceção nunca mais passa despercebido).
 
+- **#113 (2026-08-09) — Onda 1121–1220 (mapa no doc 24 do projeto)**:
+  100 megas front-first do plano AS6 sem dependência de arte nova,
+  backend ou credencial: tour v2 · Motion Registry · light mode §577 ·
+  teclado na dock · workers fase 2 · baseline de runtime · CMS RO fase
+  2 · IA apply parcial · contextos reais · fechamento DEPLOY_1220_OK.
+  Megas 1111–1120 = onda do dock inferior (#112).
+
+- **#114 (2026-08-09) — Tour §568 v2 (lote 1121–1130, flag
+  `as6.tour_v6`)**: com o layout do #112 ativo, o roteiro do tour vira
+  PASSOS_V6 (7 passos): palco com fit-to-view e câmera manual, dock
+  inferior como vitrine (inércia/setas/rodinha), botão de ALTURA da
+  dock, toolbar Cenário, salvar com diff. Mesmo motor de coach marks
+  (anel/§570, pular sempre §568); off = roteiro anterior byte a byte.
+  Teste tour-v6.mjs (ON: 8 passos com poder, anel na dock; OFF: 6
+  passos, "Catálogo"). Aprendizado: o anel PULSA (scale) — asserts de
+  posição comparam pelo centro, nunca pela borda.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

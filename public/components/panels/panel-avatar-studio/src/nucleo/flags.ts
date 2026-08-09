@@ -104,6 +104,8 @@ const PADROES: Record<string, boolean> = {
   'as6.vida_shell': true,       // lote 1071–1080 — VIDA no shell novo (regressão da auditoria FASE 0): respiração/piscada/balanço no viewport (receita do PalcoCinema); §297 respeitado; off = viewport estático anterior
   'as6.workers': true,          // lote 1091–1100 — worker pool (AS6 Parte 9): thumbs/miniaturas re-encodadas fora da main thread com TIMEOUT e fallback síncrono sempre; off = caminho síncrono anterior byte a byte
   'as6.dock_inferior': true,    // onda 1111 (pedido visual do Jhony 2026-08-09 — decisão #112): shell novo com a MESMA estrutura do clássico AAA — nav esquerda, preview central dominante com fit-to-view, biblioteca em DOCK HORIZONTAL inferior (reuso do DockAssets/trilho); off = coluna direita anterior byte a byte
+  // ── onda 1121–1220 (decisão #113; padrão ON conforme #50) ──
+  'as6.tour_v6': true,          // lote 1121–1130 — tour §568 v2 apresenta o layout do #112 (dock/alturas/Cenário/câmera); off = roteiro anterior byte a byte
 };
 
 /**
