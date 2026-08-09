@@ -67,6 +67,7 @@ const VersoesAvatar = lazy(() => import('./VersoesAvatar').then((m) => ({ defaul
 const Atalhos = lazy(() => import('./Atalhos').then((m) => ({ default: m.Atalhos })));
 const TelemetriaDev = lazy(() => import('./TelemetriaDev').then((m) => ({ default: m.TelemetriaDev })));
 const DetalheAsset = lazy(() => import('./DetalheAsset').then((m) => ({ default: m.DetalheAsset })));
+const CmsRo = lazy(() => import('./CmsRo').then((m) => ({ default: m.CmsRo }))); // lote 1061-1070 (#108)
 import {
   CHAVE_RASCUNHO_STORAGE, gravarRascunho, idDaAba, lerRascunho, limparRascunho,
 } from '../services/PresetsPessoais';
@@ -767,6 +768,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // mega 46 (§290): viewer local de telemetria (flag dev)
   const [telemetriaDev, setTelemetriaDev] = useState(false);
+  // lote 1061-1070 (#108, as6.cms_ro): CMS somente-leitura (AdminGate)
+  const [cmsRo, setCmsRo] = useState(false);
 
   // lote 121–130 (§232): CONSULTOR de estilo (regras, flag as5.consultor)
   const [consultor, setConsultor] = useState(false);
@@ -1306,6 +1309,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         <Suspense fallback={null}>
         {atalhos && <Atalhos aoFechar={() => setAtalhos(false)} />}
         {telemetriaDev && <TelemetriaDev aoFechar={() => setTelemetriaDev(false)} />}
+        {cmsRo && <CmsRo aoFechar={() => setCmsRo(false)} />}
         {consultor && (
           <Consultor config={validarConfig(paraLegado2d(store.estadoDraft))}
             desbloqueados={desbloqueados}
@@ -1390,6 +1394,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               // mega 46: viewer de telemetria (só com a flag dev ligada)
               ...(flag('as5.telemetria_painel') ? [{
                 id: 'telemetria', rotulo: 'Telemetria local (dev)', executar: () => setTelemetriaDev(true),
+              }] : []),
+              ...(flag('as6.cms_ro') ? [{
+                id: 'cms-ro', rotulo: 'CMS do catálogo (admin, leitura)', executar: () => setCmsRo(true),
               }] : []),
               { id: 'classico', rotulo: 'Voltar ao modo clássico', executar: aoSairDoShell },
             ]} />

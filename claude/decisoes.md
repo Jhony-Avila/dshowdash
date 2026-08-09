@@ -747,6 +747,19 @@
   aplicado; clicar troca o formato de trabalho. Off = wide anterior
   byte a byte. Teste derivados.mjs (motor node-puro + UI).
 
+- **#108 (2026-08-09) — CMS read-only (lote 1061–1070, flag
+  `as6.cms_ro`; AS6 Parte 15)**: primeiro pedaço do CMS SEM esperar o
+  backend novo — api/avatar/cms.php é GET-only + AdminGate fail-closed
+  (mesma allowlist do admin.php; sem allowlist = 403 p/ todo mundo) e
+  LISTA o que o banco já tem: assets (joins categoria/raridade/
+  biblioteca/coleção, filtro por status, paginação ≤100), licenças e a
+  trilha avatar_catalog_audit. Zero escrita por construção (teste prova
+  estático: nenhum INSERT/UPDATE/DELETE). Front: shell/CmsRo.tsx (chunk
+  lazy §275) com 3 abas e tabela genérica, aberto pela Paleta de
+  Comandos; 401/403 → "restrito", erro → mensagem — nunca dados sem
+  gate. Escritas continuam exclusivas do admin.php (POST+CSRF). Teste
+  cms-ro.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
