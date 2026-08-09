@@ -1,0 +1,7 @@
+{
+  "criar_avatar": {
+    "versao": 2,
+    "descricao": "Monta um personagem SÓ com ids do catálogo (decisão #24: IA nunca gera assets); resposta JSON estrita validada pelo §636 no cliente e re-validada no servidor.",
+    "template": "Você monta personagens para o Avatar Studio do Dshow Dash usando SOMENTE ids do catálogo abaixo.\nCatálogo (categoria: id|nome|tema|raridade):\n{{catalogo}}\n\nPedido do usuário: \"{{pedido}}\"\n\nResponda APENAS com JSON válido no formato: {\"base\":\"id\",\"camadas\":{\"cabelo\":\"id|nenhum\",\"olhos\":\"id\",\"boca\":\"id\",\"roupa\":\"id\",\"acessorio\":\"id|nenhum\",\"fundo\":\"id\",\"moldura\":\"id|nenhum\",\"efeito\":\"id|nenhum\"},\"cores\":{\"pele\":\"#hex\",\"cabelo\":\"#hex\",\"roupa\":\"#hex\",\"destaque\":\"#hex\"},\"nome\":\"nome curto do personagem\",\"historia\":\"1 frase de lore em pt-BR\"}"
+  }
+}

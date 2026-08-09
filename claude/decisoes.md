@@ -723,6 +723,18 @@
   atributo de realce é estado React — conferir APÓS um frame, não
   sincronamente no dispatch).
 
+- **#106 (2026-08-09) — Prompt Registry da IA (lote 1041–1050, flag
+  `as6.ia_registry`; AS6 Parte 12)**: prompts deixam de ser string
+  hardcoded — api/avatar/ia/prompts.json é a FONTE ÚNICA do servidor
+  (id/versão/descrição/template {{placeholders}}); ProvedorAnthropic
+  monta dali com fallback embutido byte-idêntico (arquivo ausente nunca
+  quebra); services/PromptRegistry.ts é o ESPELHO tipado no front
+  (teste prova identidade byte a byte — mesma doutrina do espelho PHP)
+  com renderizarPrompt() puro (placeholder sem valor é PRESERVADO,
+  auditável; sem eval). VidaService envia prompt_versao no POST (audit,
+  gated). SEM chave e SEM chamada no front — decisões #24 (IA nunca
+  gera assets) e segredos-só-no-servidor intactas. Teste ia-registry.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

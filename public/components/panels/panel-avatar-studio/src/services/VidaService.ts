@@ -11,6 +11,8 @@ import {
 } from './AvatarCatalog';
 import { resumirAjustes, validarSugestaoIA } from './ValidadorIA';
 import { telemetria } from './Telemetria';
+import { versaoPrompt } from './PromptRegistry'; // lote 1041-1050 (#106)
+import { flag } from '../nucleo/flags';
 
 const URL_VIDA = '/api/avatar/vida.php';
 const URL_SESSAO = '/api/auth/check.php';
@@ -101,7 +103,12 @@ export async function criarComIA(pedido: string, base: AvatarConfig, desbloquead
     if (t) cab['X-CSRF-Token'] = t;
     const r = await fetch(URL_VIDA, {
       method: 'POST', credentials: 'include', headers: cab,
-      body: JSON.stringify({ pedido, catalogo: catalogoCompacto() }),
+      body: JSON.stringify({
+        pedido, catalogo: catalogoCompacto(),
+        // lote 1041-1050 (#106, as6.ia_registry): auditoria — qual versão
+        // de prompt o cliente ESPERA (o servidor ignora campo extra)
+        ...(flag('as6.ia_registry') ? { prompt_versao: versaoPrompt('criar_avatar') } : {}),
+      }),
     });
     if (r.ok) {
       const p = (await r.json())?.data?.personagem ?? {};
