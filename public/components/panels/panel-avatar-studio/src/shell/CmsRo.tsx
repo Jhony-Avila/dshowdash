@@ -43,6 +43,12 @@ export function CmsRo({ aoFechar }: { aoFechar: () => void }) {
   }, []);
 
   useEffect(() => { void carregar(aba, pagina); }, [aba, pagina, carregar]);
+  // lote 1081-1090 (#110): Escape fecha o diálogo (a11y §297)
+  useEffect(() => {
+    const ao = (e: KeyboardEvent) => { if (e.key === 'Escape') aoFechar(); };
+    window.addEventListener('keydown', ao);
+    return () => window.removeEventListener('keydown', ao);
+  }, [aoFechar]);
 
   const colunas = estado.itens.length ? Object.keys(estado.itens[0]) : [];
   return (

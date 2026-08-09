@@ -775,6 +775,18 @@
   (movReduzido) e palco 3D desligam. Off = viewport estático anterior.
   Teste vida-shell.mjs; shell-show/palco-v2/clima/goldens verdes.
 
+- **#110 (2026-08-09) — A11y v3 + i18n dos módulos novos (lote
+  1081–1090; sem flag própria — doutrina #62)**: cobertura dos módulos
+  AS6 das ondas 911–1080. A11y: Escape fecha o popover de diff §350 e o
+  drawer do CMS; corpos do Inspector viram role="region" nomeadas;
+  derivados ganham aria-pressed; drop no palco ANUNCIA no aria-live
+  ("<item> equipado pelo arrasto"). i18n: ~30 chaves EN novas
+  (Inspector/grupos/compatibilidade/diff/CMS) — PT segue canônico
+  (chave = texto; zero regressão por construção). Limite registrado: o
+  selo "Solte para equipar" é CSS ::after (i18n não alcança; fica PT
+  até o selo virar DOM). Sem flag: t() é inerte em PT e os ajustes de
+  a11y são aditivos.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

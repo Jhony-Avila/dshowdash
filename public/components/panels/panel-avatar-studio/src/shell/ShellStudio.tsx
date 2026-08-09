@@ -1023,6 +1023,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               const item = itemPorId(id);
               if (!item) return;
               aplicarComando(validarConfig(comItem(paraLegado2d(store.estadoDraft), item.categoria, id)));
+              setAnuncio(`${item.nome} equipado pelo arrasto.`); // a11y (#110)
               telemetria('palco_drop_equipou', { id }); // §290
             } : undefined}
             data-hora={hora}

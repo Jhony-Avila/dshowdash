@@ -115,7 +115,7 @@ export function Inspector(props: PropsInspector) {
               {estaAberto ? <ChevronDown size={12} aria-hidden /> : <ChevronRight size={12} aria-hidden />}
             </button>
             {estaAberto && (
-              <div className="avst6-insp-corpo" data-teste={`insp-corpo-${g}`}>
+              <div className="avst6-insp-corpo" role="region" aria-label={t(ROTULO_GRUPO[g])} data-teste={`insp-corpo-${g}`}>
                 {g === 'identidade' && (
                   equipados.length === 0
                     ? <p className="avst6-insp-vazio">{t('Nada equipado nesta categoria.')}</p>

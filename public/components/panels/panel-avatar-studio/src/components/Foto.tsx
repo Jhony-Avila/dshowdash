@@ -1414,6 +1414,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
               <div className="avst6-derivados">
                 {(Object.keys(FORMATOS_FOTO) as FormatoFotoId[]).map((id) => (
                   <button key={id} type="button" className={`avst6-derivado${formato === id ? ' avst6-derivado-on' : ''}`}
+                    aria-pressed={formato === id}
                     data-teste={`derivado-${id}`}
                     title={`${FORMATOS_FOTO[id].nome} · ${FORMATOS_FOTO[id].proporcao} — clique para editar neste formato`}
                     onClick={() => setFormato(id)}>
