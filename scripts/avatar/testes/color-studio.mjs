@@ -62,7 +62,7 @@ try {
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1440, height: 900 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false })); },
   });
   try {
     await irParaHarness(p, 'avst-harness.html', 1200);
@@ -98,7 +98,7 @@ try {
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1440, height: 900 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.color_studio': false })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as6.color_studio': false })); },
   });
   try {
     await irParaHarness(p, 'avst-harness.html', 1200);

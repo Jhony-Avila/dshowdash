@@ -181,7 +181,7 @@ try {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 1500, height: 940 }, webgl: true,
     init: () => {
-      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true }));
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true }));
       localStorage.setItem('dshow.avst5.p3d.qualidade.v1', 'medio');
     },
   });
@@ -230,7 +230,7 @@ try {
     viewport: { width: 1500, height: 940 }, webgl: true,
     init: () => {
       localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({
-        'as5.novo_shell': true, 'as5.palco3d': true, 'as5.animacao3d': false,
+        'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true, 'as5.animacao3d': false,
       }));
       localStorage.setItem('dshow.avst5.p3d.qualidade.v1', 'medio');
     },

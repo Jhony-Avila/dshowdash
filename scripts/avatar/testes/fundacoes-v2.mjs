@@ -146,7 +146,7 @@ try {
 const { navegador: b, pagina: p2, erros } = await abrir({
   viewport: { width: 1500, height: 940 },
   init: () => {
-    localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true }));
+    localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false }));
   },
 });
 try {

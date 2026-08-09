@@ -29,8 +29,11 @@ const reduzMovimento = () => {
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
 };
 
-export function DockAssets({ children }: { children: ReactNode }) {
-  const ligada = flag('as6.dock_classico');
+export function DockAssets({ children, ativa }: { children: ReactNode; ativa?: boolean }) {
+  // decisão #112 (dock inferior do shell): o MESMO componente serve os
+  // dois modos — `ativa` explícito (shell, gate as6.dock_inferior) ou o
+  // gate clássico de sempre quando o prop não vem (byte a byte)
+  const ligada = ativa ?? flag('as6.dock_classico');
   // §3398: dock_mag depende de dock_classico (flag() já resolve a árvore)
   const mag = ligada && flag('as6.dock_mag');
   const ref = useRef<HTMLDivElement>(null);

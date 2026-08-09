@@ -8,7 +8,7 @@
 // (toggle de propriedades, botão "Topo", ref do scroll) MORAM aqui;
 // `aba` fica no PAI (PaletaComandos e DetalheAsset navegam por ela).
 import { useRef, useState } from 'react';
-import { ArrowUp, ChevronsLeft, ChevronsRight, Palette } from 'lucide-react';
+import { ArrowUp, ChevronsLeft, ChevronsRight, Palette, Rows3 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, SlotAcessorio } from '../domain/types';
 import { validarConfig } from '../services/AvatarCatalog';
 import type { AvatarStore } from '../nucleo/estado';
@@ -21,8 +21,21 @@ import { PropriedadesAsset } from '../shell/PropriedadesAsset';
 import { Inspector } from './Inspector';
 import { PresetsShell } from '../shell/PresetsShell';
 import { HistoricoSessao } from '../shell/HistoricoSessao';
+import { DockAssets } from './DockAssets'; // decisão #112: MESMO trilho do clássico
 import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
+
+// decisão #112 (as6.dock_inferior): altura da dock — preferência local,
+// mesmo mecanismo canônico dos demais ajustes de workspace (§186 etc.)
+export type EstadoDock = 'compacta' | 'padrao' | 'expandida';
+const CHAVE_DOCK = 'dshow.avst6.dockinf.v1';
+const CICLO_DOCK: Record<EstadoDock, EstadoDock> = { compacta: 'padrao', padrao: 'expandida', expandida: 'compacta' };
+function lerEstadoDock(): EstadoDock {
+  try {
+    const v = localStorage.getItem(CHAVE_DOCK);
+    return v === 'compacta' || v === 'expandida' ? v : 'padrao';
+  } catch { return 'padrao'; }
+}
 
 const CHIPS_SLOT: Array<{ id: 'todos' | SlotAcessorio; nome: string }> = [
   { id: 'todos', nome: 'Todos' },
@@ -55,97 +68,47 @@ export interface PropsPainelCatalogo {
   historico: React.ComponentProps<typeof HistoricoSessao>;
   desbloqueados: React.ComponentProps<typeof GradeItens>['desbloqueados'];
   setDetalheId: (id: string) => void;
+  /** decisão #112 (as6.dock_inferior): painel vira DOCK horizontal
+   *  abaixo do preview (estrutura do clássico AAA); false = lateral. */
+  dockInferior?: boolean;
 }
 
 export function PainelCatalogo(props: PropsPainelCatalogo) {
   const { painelFechado, setPainelFechado, painelLargo, setPainelLargo, aba, setAba,
     categoria, setCategoria, filtroSlot, setFiltroSlot, configVisivel, configDraft,
     aoEscolher, aoPrever, resumoAcessorios, store, aplicarComando, bloqueios,
-    setBloqueios, aoMudarFavs, historico, desbloqueados, setDetalheId } = props;
+    setBloqueios, aoMudarFavs, historico, desbloqueados, setDetalheId,
+    dockInferior = false } = props;
   const [propriedades, setPropriedades] = useState(false);
   const [mostrarTopo, setMostrarTopo] = useState(false);
+  // decisão #112: altura da dock (compacta/padrão/expandida) persistida;
+  // "recolhida" = o painelFechado de sempre (mesmo botão, mesma semântica)
+  const [estadoDock, setEstadoDock] = useState<EstadoDock>(lerEstadoDock);
+  const ciclarDock = () => {
+    const novo = CICLO_DOCK[estadoDock];
+    setEstadoDock(novo);
+    try { localStorage.setItem(CHAVE_DOCK, novo); } catch { /* sem storage */ }
+  };
   const refPainel = useRef<HTMLDivElement>(null);
-  return (
-    <aside className={`avst5-painel${painelFechado ? ' avst5-painel-fechado' : ''}`} aria-label="Catálogo">
-      {/* cabeçalho FIXO do workspace (P1 §20–§22) */}
-      <div className="avst5-painel-topo">
-        <button type="button" className="avst5-painel-btn" title={painelFechado ? 'Abrir catálogo' : 'Recolher catálogo'}
-          onClick={() => setPainelFechado((v) => !v)}>
-          {painelFechado ? <ChevronsLeft size={14} aria-hidden /> : <ChevronsRight size={14} aria-hidden />}
-        </button>
-        {!painelFechado && (<>
-          <div className="avst5-abas" role="tablist" aria-label="Filtro do catálogo">
-            {(['todos', 'equipados', 'favoritos', 'novos', 'bloqueados', 'presets'] as Array<AbaCatalogo | 'presets'>).map((a) => (
-              <button key={a} type="button" role="tab" aria-selected={aba === a}
-                className={aba === a ? 'avst5-aba-on' : ''} onClick={() => setAba(a)}>
-                {/* megas 511-513 (§296): abas traduzíveis (PT = chave) */}
-                {t(a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : a === 'bloqueados' ? 'Bloqueados' : 'Presets')}
-              </button>
-            ))}
-          </div>
-          <button type="button" className={`avst5-painel-btn${propriedades ? ' avst5-painel-btn-on' : ''}`}
-            title="Cores e propriedades" aria-pressed={propriedades}
-            onClick={() => setPropriedades((v) => !v)}><Palette size={14} aria-hidden /></button>
-          <button type="button" className="avst5-painel-btn" title={painelLargo ? 'Largura normal' : 'Expandir painel'}
-            onClick={() => setPainelLargo((v) => !v)}>
-            {painelLargo ? <ChevronsRight size={14} aria-hidden /> : <ChevronsLeft size={14} aria-hidden />}
-          </button>
-        </>)}
-      </div>
-      {!painelFechado && (
-        <div className="avst5-painel-scroll" ref={refPainel}
-          onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
-          {propriedades && (flag('as6.inspector') ? (
-            /* AS6 §181–§189 (lote 921–930, decisão #94): Inspector
-               contextual schema-driven; off = seção anterior byte a byte */
-            <Inspector categoria={categoria} configVisivel={configVisivel}
-              aoEscolher={aoEscolher} aoPrever={aoPrever} bloqueios={bloqueios}
-              aoMudarFavs={aoMudarFavs} setDetalheId={setDetalheId}
-              painelLargo={painelLargo} setPainelLargo={setPainelLargo} />
-          ) : (
-            <section className="avst5-propriedades" aria-label="Cores e propriedades">
-              <Cores config={configVisivel} aoMudar={aoEscolher} />
-              {/* §71: sliders das camadas equipadas com propriedades */}
-              <PropriedadesAsset config={configVisivel} aoAplicar={aoEscolher} aoPrever={aoPrever} />
-            </section>
-          ))}
-          {aba !== 'equipados' && categoria === 'acessorio' && (<>
-            {/* §68.2/§68.3: resumo + navegação por slot */}
-            <div className="avst5-resumo-slots" data-teste="resumo-acessorios">
-              {resumoAcessorios.length
-                ? <><strong>{resumoAcessorios.length} equipado{resumoAcessorios.length > 1 ? 's' : ''}</strong> · {resumoAcessorios.join(' · ')}</>
-                : 'Nenhum acessório equipado'}
-            </div>
-            <div className="avst5-chips" role="radiogroup" aria-label="Filtrar por slot">
-              {CHIPS_SLOT.map((s) => (
-                <button key={s.id} type="button" role="radio" aria-checked={filtroSlot === s.id}
-                  className={`avst5-chip${filtroSlot === s.id ? ' avst5-chip-on' : ''}`}
-                  onClick={() => setFiltroSlot(s.id)}>{s.nome}</button>
-              ))}
-            </div>
-          </>)}
-          {aba === 'presets' ? (
-            <PresetsShell configAtual={paraLegado2d(store.estadoDraft)}
-              aoAplicar={(cfg) => aplicarComando(validarConfig(cfg))} />
-          ) : aba === 'equipados' ? (<>
-            <Equipados config={paraLegado2d(store.estadoDraft)} bloqueios={bloqueios}
-              aoRemover={(slot) => {
-                const cfg = paraLegado2d(store.estadoDraft);
-                const camadas = { ...cfg.camadas } as Record<string, string>;
-                delete camadas[slot];
-                aoEscolher({ ...cfg, camadas });
-              }}
-              aoTrocar={(cat) => { setCategoria(cat); setAba('todos'); }}
-              aoBloquear={(slot) => setBloqueios(new Set(alternarBloqueio(slot)))}
-              aoMudarFavs={aoMudarFavs} />
-            {/* §138: timeline granular da sessão junto da gestão do estado */}
-            <HistoricoSessao entradas={historico.entradas} posicao={historico.posicao} irPara={historico.irPara} />
-          </>) : (
-            <>
-            {/* megas 254–256 (§102/§118/§105): CRIAÇÃO AVANÇADA — na
-                categoria Base (identidade do corpo); tudo vira COMANDO
-                com undo via aoEscolher; neutro = campo some */}
-            {flag('as5.criacao_avancada') && categoria === 'base' && (
+  // blocos compartilhados entre a lateral (flag off) e a dock (#112):
+  // MESMO JSX — só o lugar muda (drawer flutuante × dentro do scroll)
+  const blocoPropriedades = propriedades && (flag('as6.inspector') ? (
+    /* AS6 §181–§189 (lote 921–930, decisão #94): Inspector
+       contextual schema-driven; off = seção anterior byte a byte */
+    <Inspector categoria={categoria} configVisivel={configVisivel}
+      aoEscolher={aoEscolher} aoPrever={aoPrever} bloqueios={bloqueios}
+      aoMudarFavs={aoMudarFavs} setDetalheId={setDetalheId}
+      painelLargo={painelLargo} setPainelLargo={setPainelLargo} />
+  ) : (
+    <section className="avst5-propriedades" aria-label="Cores e propriedades">
+      <Cores config={configVisivel} aoMudar={aoEscolher} />
+      {/* §71: sliders das camadas equipadas com propriedades */}
+      <PropriedadesAsset config={configVisivel} aoAplicar={aoEscolher} aoPrever={aoPrever} />
+    </section>
+  ));
+  // #112: criação avançada compartilhada — lateral (dentro do scroll)
+  // ou drawer da dock; MESMO JSX, mesmos data-teste
+  const blocoCriacao = flag('as5.criacao_avancada') && categoria === 'base' && (
               <div className="avst5-cavancada" data-teste="criacao-avancada">
                 <span className="avst-ft-rotulo">Tipo corporal (§102)</span>
                 <div className="avst-ft-chips" role="radiogroup" aria-label="Tipo corporal (§102)">
@@ -224,10 +187,114 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
                   </>
                 )}
               </div>
+  );
+  return (
+    <aside className={`avst5-painel${painelFechado ? ' avst5-painel-fechado' : ''}${dockInferior ? ' avst5-dock' : ''}`}
+      aria-label="Catálogo" data-dock-estado={dockInferior && !painelFechado ? estadoDock : undefined}>
+      {/* cabeçalho FIXO do workspace (P1 §20–§22) */}
+      <div className="avst5-painel-topo">
+        <button type="button" className="avst5-painel-btn" title={painelFechado ? 'Abrir catálogo' : 'Recolher catálogo'}
+          onClick={() => setPainelFechado((v) => !v)}>
+          {painelFechado ? <ChevronsLeft size={14} aria-hidden /> : <ChevronsRight size={14} aria-hidden />}
+        </button>
+        {!painelFechado && (<>
+          <div className="avst5-abas" role="tablist" aria-label="Filtro do catálogo">
+            {(['todos', 'equipados', 'favoritos', 'novos', 'bloqueados', 'presets'] as Array<AbaCatalogo | 'presets'>).map((a) => (
+              <button key={a} type="button" role="tab" aria-selected={aba === a}
+                className={aba === a ? 'avst5-aba-on' : ''} onClick={() => setAba(a)}>
+                {/* megas 511-513 (§296): abas traduzíveis (PT = chave) */}
+                {t(a === 'todos' ? 'Todos' : a === 'equipados' ? 'Equipados' : a === 'favoritos' ? 'Favoritos' : a === 'novos' ? 'Novos' : a === 'bloqueados' ? 'Bloqueados' : 'Presets')}
+              </button>
+            ))}
+          </div>
+          <button type="button" className={`avst5-painel-btn${propriedades ? ' avst5-painel-btn-on' : ''}`}
+            title="Cores e propriedades" aria-pressed={propriedades}
+            onClick={() => setPropriedades((v) => !v)}><Palette size={14} aria-hidden /></button>
+          {dockInferior ? (
+            /* decisão #112: altura da dock em 3 estados (recolhida = botão
+               de fechar de sempre); preferência persiste na sessão */
+            <button type="button" className="avst5-painel-btn" data-teste="dock-altura"
+              title={`Altura da dock: ${estadoDock} → ${CICLO_DOCK[estadoDock]}`}
+              onClick={ciclarDock}><Rows3 size={14} aria-hidden /></button>
+          ) : (
+            <button type="button" className="avst5-painel-btn" title={painelLargo ? 'Largura normal' : 'Expandir painel'}
+              onClick={() => setPainelLargo((v) => !v)}>
+              {painelLargo ? <ChevronsRight size={14} aria-hidden /> : <ChevronsLeft size={14} aria-hidden />}
+            </button>
+          )}
+        </>)}
+      </div>
+      {/* #112: na dock, Cores/Propriedades vira DRAWER flutuante acima da
+          dock (overlay — abrir NÃO desloca o preview do centro) */}
+      {!painelFechado && dockInferior && blocoPropriedades && (
+        <div className="avst5-insp-drawer" data-teste="insp-drawer" role="complementary" aria-label="Cores e propriedades">
+          {blocoPropriedades}
+          {blocoCriacao}
+        </div>
+      )}
+      {!painelFechado && (
+        <div className="avst5-painel-scroll" ref={refPainel}
+          onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
+          {!dockInferior && blocoPropriedades}
+          {aba !== 'equipados' && categoria === 'acessorio' && (<>
+            {/* §68.2/§68.3: resumo + navegação por slot */}
+            <div className="avst5-resumo-slots" data-teste="resumo-acessorios">
+              {resumoAcessorios.length
+                ? <><strong>{resumoAcessorios.length} equipado{resumoAcessorios.length > 1 ? 's' : ''}</strong> · {resumoAcessorios.join(' · ')}</>
+                : 'Nenhum acessório equipado'}
+            </div>
+            <div className="avst5-chips" role="radiogroup" aria-label="Filtrar por slot">
+              {CHIPS_SLOT.map((s) => (
+                <button key={s.id} type="button" role="radio" aria-checked={filtroSlot === s.id}
+                  className={`avst5-chip${filtroSlot === s.id ? ' avst5-chip-on' : ''}`}
+                  onClick={() => setFiltroSlot(s.id)}>{s.nome}</button>
+              ))}
+            </div>
+          </>)}
+          {aba === 'presets' ? (
+            <PresetsShell configAtual={paraLegado2d(store.estadoDraft)}
+              aoAplicar={(cfg) => aplicarComando(validarConfig(cfg))} />
+          ) : aba === 'equipados' ? (<>
+            <Equipados config={paraLegado2d(store.estadoDraft)} bloqueios={bloqueios}
+              aoRemover={(slot) => {
+                const cfg = paraLegado2d(store.estadoDraft);
+                const camadas = { ...cfg.camadas } as Record<string, string>;
+                delete camadas[slot];
+                aoEscolher({ ...cfg, camadas });
+              }}
+              aoTrocar={(cat) => { setCategoria(cat); setAba('todos'); }}
+              aoBloquear={(slot) => setBloqueios(new Set(alternarBloqueio(slot)))}
+              aoMudarFavs={aoMudarFavs} />
+            {/* §138: timeline granular da sessão junto da gestão do estado */}
+            <HistoricoSessao entradas={historico.entradas} posicao={historico.posicao} irPara={historico.irPara} />
+          </>) : (
+            <>
+            {/* megas 254–256 (§102/§118/§105): CRIAÇÃO AVANÇADA — na
+                categoria Base (identidade do corpo); tudo vira COMANDO
+                com undo via aoEscolher; neutro = campo some.
+                #112: na dock ela vive no drawer de propriedades (grupo
+                de avançados fora do trilho) — mesmo JSX, outro lugar */}
+            {!dockInferior && blocoCriacao}
+            {dockInferior ? (
+              /* decisão #112: a MESMA fundação do clássico AAA — wrapper
+                 .avst-trilho (CSS do trilho, cards AAA, responsivo) +
+                 DockAssets (wheel→horizontal, drag c/ momentum, setas,
+                 magnificação §104–§105). Zero duplicação: componente e
+                 folhas de estilo são os MESMOS do Modo Clássico. Na
+                 altura "expandida" a grade volta a fluir em linhas com
+                 scroll vertical (o trilho desativa o pan). */
+              <div className="avst-trilho avst5-trilho-dock" data-teste="dock-inferior" data-dock-v3="">
+                <DockAssets ativa={estadoDock !== 'expandida'}>
+                  <GradeItens config={configDraft} categoria={categoria}
+                    desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
+                    aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
+                </DockAssets>
+              </div>
+            ) : (
+              <GradeItens config={configDraft} categoria={categoria}
+                desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
+                aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
             )}
-            <GradeItens config={configDraft} categoria={categoria}
-              desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
-              aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
             </>
           )}
         </div>

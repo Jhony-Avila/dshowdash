@@ -120,7 +120,7 @@ const clicarChip = (p, texto) => p.evaluate((t) => {
     viewport: { width: 1500, height: 940 }, webgl: true,
     init: () => {
       indexedDB.deleteDatabase('dshow.avst3d.v1'); // começa limpo
-      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true }));
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true }));
       localStorage.setItem('dshow.avst5.p3d.qualidade.v1', 'medio');
     },
   });
@@ -167,7 +167,7 @@ const clicarChip = (p, texto) => p.evaluate((t) => {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 390, height: 760 }, webgl: true,
     init: () => {
-      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true, 'as5.hud3d': true }));
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true, 'as5.hud3d': true }));
       localStorage.setItem('dshow.avst5.p3d.qualidade.v1', 'medio');
     },
   });
@@ -188,7 +188,7 @@ const clicarChip = (p, texto) => p.evaluate((t) => {
     viewport: { width: 390, height: 760 }, webgl: true,
     init: () => {
       indexedDB.deleteDatabase('dshow.avst3d.v1');
-      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': true, 'as5.hud3d': true, 'as5.progressivo3d': false }));
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': true, 'as5.hud3d': true, 'as5.progressivo3d': false }));
       localStorage.setItem('dshow.avst5.p3d.qualidade.v1', 'medio');
     },
   });

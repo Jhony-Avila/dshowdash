@@ -18,7 +18,7 @@ const { navegador: b1, pagina: p1, erros: erros1 } = await abrir({
       camadas: { cabelo: 'cab_curto', olhos: 'olh_padrao', boca: 'boc_sorriso', roupa: 'rou_camiseta', fundo: 'fun_estudio' },
       cores: { pele: '#e8b88a', cabelo: '#3b2a1d', roupa: '#3c6df0', destaque: '#7c5cff' },
     };
-    localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false }));
+    localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.palco3d': false }));
     localStorage.setItem('dshow.avst5.evolucao.v1', JSON.stringify([
       { id: 'evo_a', quando: 1751328000000, origem: 'primeiro', config: cfg },
       { id: 'evo_b', quando: 1754179200000, origem: 'salvo', config: cfg, nota: 'Look da China' },

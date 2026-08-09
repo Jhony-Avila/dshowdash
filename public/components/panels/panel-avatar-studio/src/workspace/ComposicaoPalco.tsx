@@ -10,6 +10,7 @@
 // Estados compartilhados (fundo/hora/luz/clima/propsCen/luzAuto/luzInt)
 // seguem no PAI: o viewport e a PaletaComandos também leem.
 import { useMemo, useState } from 'react';
+import { Clapperboard, X } from 'lucide-react';
 import {
   AMBIENTES_CENARIO, CENARIO_NEUTRO, CLIMAS_PALCO, COR_AMBIENTE,
   FUNDOS_CLASSICOS, FUNDOS_PALCO, HORAS_CLASSICAS, HORAS_PALCO, IDLES_2D,
@@ -46,22 +47,28 @@ export interface PropsComposicaoPalco {
   sensorial: boolean;
   controlesTravados: boolean;
   movReduzido: boolean;
+  /** decisão #112 (as6.dock_inferior): TOOLBAR recolhível — os mesmos
+   *  controles saem de cima do avatar e vivem num painel sob demanda. */
+  compacto?: boolean;
 }
 
 export function ComposicaoPalco(props: PropsComposicaoPalco) {
   const { tema, trocarTema, fundo, trocarFundo, hora, trocarHora, luz, trocarLuz,
     clima, trocarClima, luzAuto, mudarLuzAuto, luzInt, mudarLuzInt,
     propsCen, mudarPropsCen, dispararEntrada,
-    palcoV2, palco3d, sensorial, controlesTravados, movReduzido } = props;
+    palcoV2, palco3d, sensorial, controlesTravados, movReduzido,
+    compacto = false } = props;
   // megas 233–234 (§161): painel colapsável — estado local do cluster
   const [cenAberto, setCenAberto] = useState(false);
+  // #112: no modo compacto tudo fica atrás de UM botão "Cenário"
+  const [toolAberta, setToolAberta] = useState(false);
   // lote 205 (§179): ponte Clima→Iluminação (chuva pede luz fria; névoa, dramática)
   const sugestaoLuz = useMemo(() => {
     if (clima === 'chuva' && luz !== 'fria') return { luzSug: 'fria' as LuzPalco, motivo: 'a chuva' };
     if (clima === 'nevoa' && luz !== 'dramatica') return { luzSug: 'dramatica' as LuzPalco, motivo: 'a névoa' };
     return null;
   }, [clima, luz]);
-  return (
+  const linhas = (
     <>
       <div className="avst5-temas" role="radiogroup" aria-label="Tema do estúdio (§590)">
         {TEMAS.map((x) => (
@@ -187,5 +194,22 @@ export function ComposicaoPalco(props: PropsComposicaoPalco) {
       </div>
       )}
     </>
+  );
+  if (!compacto) return linhas;
+  /* decisão #112: um botão só ("Cenário") no canto — o cluster inteiro
+     abre num painel flutuante e NUNCA cobre o avatar por padrão */
+  return (
+    <div className="avst6-cen-tool" data-teste="cen-tool">
+      <button type="button" className="avst6-cen-abrir" data-teste="cen-tool-abrir"
+        aria-expanded={toolAberta} title={t('Cenário, luz e clima')}
+        onClick={() => setToolAberta((v) => !v)}>
+        {toolAberta ? <X size={13} aria-hidden /> : <Clapperboard size={13} aria-hidden />} {t('Cenário')}
+      </button>
+      {toolAberta && (
+        <div className="avst6-cen-caixa" data-teste="cen-caixa" role="group" aria-label={t('Cenário, luz e clima')}>
+          {linhas}
+        </div>
+      )}
+    </div>
   );
 }

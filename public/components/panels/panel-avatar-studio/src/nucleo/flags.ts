@@ -103,6 +103,7 @@ const PADROES: Record<string, boolean> = {
   'as6.cms_ro': true,           // lote 1061–1070 — CMS read-only (AS6 Parte 15): drawer admin que LISTA assets/licenças/auditoria via cms.php (GET + AdminGate fail-closed; zero escrita); off = sem comando/drawer
   'as6.vida_shell': true,       // lote 1071–1080 — VIDA no shell novo (regressão da auditoria FASE 0): respiração/piscada/balanço no viewport (receita do PalcoCinema); §297 respeitado; off = viewport estático anterior
   'as6.workers': true,          // lote 1091–1100 — worker pool (AS6 Parte 9): thumbs/miniaturas re-encodadas fora da main thread com TIMEOUT e fallback síncrono sempre; off = caminho síncrono anterior byte a byte
+  'as6.dock_inferior': true,    // onda 1111 (pedido visual do Jhony 2026-08-09 — decisão #112): shell novo com a MESMA estrutura do clássico AAA — nav esquerda, preview central dominante com fit-to-view, biblioteca em DOCK HORIZONTAL inferior (reuso do DockAssets/trilho); off = coluna direita anterior byte a byte
 };
 
 /**

@@ -8,7 +8,7 @@ const { navegador: b, pagina: p, erros } = await abrir({
   viewport: { width: 1500, height: 940 },
   init: () => {
     localStorage.setItem('dshow.avst.flags.v1',
-      JSON.stringify({ 'as5.novo_shell': true, 'as5.telemetria_painel': true }));
+      JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false, 'as5.telemetria_painel': true }));
   },
 });
 await irParaHarness(p, 'avst-harness.html', 1000);
@@ -60,7 +60,7 @@ ok(await p.locator('[data-teste="telemetria-dev"]').count() === 0, 'Esc não fec
 const ctx2 = await b.newContext({ viewport: { width: 1500, height: 940 } });
 await ctx2.addInitScript(() => {
   localStorage.setItem('dshow.avst5.tour.v1', 'feito');
-  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true }));
+  localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as6.dock_inferior': false }));
 });
 const p2 = await ctx2.newPage();
 await p2.goto('http://127.0.0.1:8901/avst-harness.html', { waitUntil: 'networkidle' });
