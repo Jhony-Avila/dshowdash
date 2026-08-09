@@ -130,17 +130,17 @@
     "visivel": true
    },
    ".avst-foto": {
-    "x": 1038,
-    "y": 68,
-    "w": 388,
-    "h": 220,
+    "x": 224,
+    "y": 952,
+    "w": 1192,
+    "h": 178,
     "visivel": true
    },
    ".avst-categorias": {
     "x": 0,
     "y": 52,
-    "w": 148,
-    "h": 1120,
+    "w": 200,
+    "h": 1108,
     "visivel": true
    }
   }

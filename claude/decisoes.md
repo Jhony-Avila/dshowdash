@@ -434,6 +434,21 @@
   as6.dock_classico → as5.classico_aaa. Flag off = trilho anterior
   byte a byte (wheel não interceptado — testado).
 
+- **#87 (2026-08-08) — Painéis abaixo do preview (lote 841–850, flag
+  as6.paineis_dock; pedido visual do Jhony com prints de produção)**: as
+  abas de PAINEL (Arquétipo/Título/Presets/Coleções/Conquistas/Vitrine/
+  Criar com IA/Histórico/Foto) saem da lateral direita e abrem na ÁREA
+  INFERIOR de largura total abaixo do palco — mesma disposição da dock
+  de assets; preview segue dominante (inferior max-height 46% com
+  scroll interno). Implementação: miolo das abas COMPARTILHADO entre a
+  lateral (flag off) e o inferior (flag on) — zero duplicação de
+  lógica; grid do corpo vira 200px+1fr via [data-paineis]. Polish de
+  visibilidade incluído (fundo/borda/nome dos cards com mais contraste
+  na dock). classico-aaa.mjs atualizado (a asserção "Presets mantém a
+  lateral" ficou obsoleta por ordem do Jhony); baseline de layout
+  regenerada (diff de 12 linhas: a Foto mudou de lugar —
+  intencional). Dependência §3398: as6.paineis_dock → as5.classico_aaa.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

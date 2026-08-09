@@ -82,10 +82,15 @@ const initClassico = (extras = {}) => () => {
     await p.waitForTimeout(800);
     const b2 = await p.evaluate(() => ({
       lateral: !!document.querySelector('.avst-lateral'),
+      inferior: !!document.querySelector('[data-teste="aaa-inferior"]'),
       trilho: !!document.querySelector('.avst-trilho'),
       palcoW: Math.round(document.querySelector('.avst-palco-principal')?.getBoundingClientRect().width ?? 0),
     }));
-    ok(b2.lateral && !b2.trilho, 'aba Presets deveria manter a lateral (sem trilho)');
+    // lote 841-850 (as6.paineis_dock, padrão ON): o conteúdo das abas de
+    // painel vive na ÁREA INFERIOR — a lateral só volta com a flag off
+    // (coberto pelo paineis-dock.mjs); trilho segue exclusivo da aba itens
+    ok((b2.inferior || b2.lateral) && !b2.trilho,
+      'aba Presets sem conteúdo (nem inferior nem lateral) ou com trilho indevido');
     ok(b2.palcoW > 470, `palco das abas especiais não cresceu (${b2.palcoW}px)`);
     await p.screenshot({ path: `${SAIDA}/classico-aaa.png` });
     ok(erros.length === 0, `erros de página (AAA): ${erros.join(' | ')}`);
