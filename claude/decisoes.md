@@ -875,6 +875,17 @@
   aprendizado do bug do eco). §297: reduced-motion nem liga o atributo.
   Off = cortes secos anteriores byte a byte. Teste motion-v2.mjs.
 
+- **#116 (2026-08-09) — Light Mode real (lote 1141–1150, flag
+  `as6.light_v6` — AS6 §577/§578)**: direção PRÓPRIA do claro, não
+  "dark invertido". Rampa FRIA de estúdio (fundo #e9edf5, painéis
+  #f5f7fb, cards quase-brancos #f8fafd — nunca #fff, §578) com
+  profundidade por luminosidade (§577: flutuante > card > painel >
+  fundo — testada por luminância); sombras leves (a drop-shadow preta
+  é linguagem do dark); flutuantes na camada mais clara; vinheta do
+  estúdio afinada. Gate por ATRIBUTO no root (entry seta
+  [data-light-v6] pela flag) — CSS-only, dark byte a byte intocado
+  (testado). Off = claro funcional do #112. Teste light-v6.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

@@ -2983,3 +2983,47 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst5-shell[data-oculto] *,
 .avst5-shell[data-oculto] *::before,
 .avst5-shell[data-oculto] *::after { animation-play-state: paused; }
+
+/* ══ lote 1141–1150 (decisão #116, flag as6.light_v6) — LIGHT MODE
+   REAL (AS6 §578): direção própria — estúdio, precisão, limpeza.
+   Nada de branco puro em toda parte (§578) e profundidade por
+   luminosidade (§577: camada mais próxima = mais clara). Rampa FRIA
+   (azul-papel) em cima da correção funcional do #112. ══ */
+[data-theme="light"] [data-avst-react-root][data-light-v6] {
+  --avst-fundo: #e9edf5;         /* workspace — papel frio, não branco */
+  --avst-painel: #f5f7fb;        /* painéis */
+  --avst-painel-2: #eef1f8;
+  --avst-borda: rgba(31, 42, 66, 0.13);
+  --avst-texto: #17202f;
+  --avst-texto-2: #55617a;
+  --as6-superficie-0: #d9e0ec;   /* fosso */
+  --as6-superficie-1: #e9edf5;   /* fundo */
+  --as6-superficie-2: #e2e8f2;   /* trilhos */
+  --as6-superficie-3: #f8fafd;   /* cartões (quase-branco, nunca #fff) */
+  --as6-superficie-4: #c2ccdf;   /* bordas */
+  --as6-texto-forte: #17202f;
+  --as6-texto-suave: #55617a;
+}
+/* sombras LEVES no claro — drop-shadow preto pesado é linguagem do dark */
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst5-palco svg {
+  filter: drop-shadow(0 12px 26px rgba(23, 32, 47, 0.22));
+}
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst-card {
+  box-shadow: 0 1px 2px rgba(23, 32, 47, 0.05);
+}
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst-card:hover {
+  box-shadow: 0 8px 22px rgba(23, 32, 47, 0.16);
+}
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst-trilho[data-dock-v3] .avst-card-ativo {
+  box-shadow: 0 0 0 2px var(--as6-acento), 0 8px 24px rgba(23, 32, 47, 0.18);
+}
+/* flutuantes (drawer/caixa de cenário/popovers) = camada mais clara §577 */
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst5-insp-drawer,
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst6-cen-caixa {
+  background: #fdfdfe;
+  box-shadow: 0 18px 48px rgba(23, 32, 47, 0.22);
+}
+/* vinheta do estúdio no claro (par do #112, afinada p/ a rampa fria) */
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst5-viewport[data-fundo="estudio"] .avst5-palco {
+  background: radial-gradient(ellipse 70% 60% at 50% 42%, #dde4f2 0%, var(--as6-superficie-1) 78%);
+}

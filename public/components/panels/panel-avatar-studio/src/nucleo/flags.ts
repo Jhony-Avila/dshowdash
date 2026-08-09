@@ -107,6 +107,7 @@ const PADROES: Record<string, boolean> = {
   // ── onda 1121–1220 (decisão #113; padrão ON conforme #50) ──
   'as6.tour_v6': true,          // lote 1121–1130 — tour §568 v2 apresenta o layout do #112 (dock/alturas/Cenário/câmera); off = roteiro anterior byte a byte
   'as6.motion_v2': true,        // lote 1131–1140 — aceites §568 da Parte 7: altura da dock ANIMADA, troca de categoria com fade curto, animações CSS pausadas com a aba oculta; reduced-motion desliga tudo; off = cortes secos anteriores
+  'as6.light_v6': true,         // lote 1141–1150 — Light Mode REAL §578 (direção própria, não dark invertido): rampa fria de estúdio sem branco puro, profundidade por luminosidade §577, sombras leves; off = claro do #112 byte a byte
 };
 
 /**
