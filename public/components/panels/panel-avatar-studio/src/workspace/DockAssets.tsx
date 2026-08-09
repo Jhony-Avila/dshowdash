@@ -164,6 +164,14 @@ export function DockAssets({ children }: { children: ReactNode }) {
   return (
     <div ref={ref} className="avst6-dock" data-teste="dock-v3"
       data-dock-mag={mag ? '' : undefined}
+      onDragStart={(e) => {
+        // QA 1101-1110: as6.touch marcou os cards draggable e o drag
+        // NATIVO cancela os pointer events do pan (pointercancel) —
+        // matava momentum/snap §104. No trilho clássico não existe alvo
+        // de drop (o palco-drop é do shell novo), então aqui o pan vence
+        // e o drag nativo é suprimido SÓ dentro da dock.
+        e.preventDefault();
+      }}
       onPointerDown={(e) => {
         // drag só com botão principal e FORA de controles interativos
         if (e.button !== 0) return;

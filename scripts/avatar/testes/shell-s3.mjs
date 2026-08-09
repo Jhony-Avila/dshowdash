@@ -38,8 +38,15 @@ await p.locator('.avst5-painel-scroll').evaluate((el) => { el.scrollTop = 900; }
 await p.waitForTimeout(400);
 ok(await p.locator('.avst5-topo').count() === 1, 'voltar-ao-topo não apareceu');
 await p.locator('.avst5-topo').click();
-await p.waitForTimeout(700);
-ok((await p.locator('.avst5-painel-scroll').evaluate((el) => el.scrollTop)) < 50, 'voltar-ao-topo não rolou');
+// o scroll é smooth e o tempo varia com a carga (vida do avatar §608
+// ocupa frames) — espera ATÉ chegar ao topo em vez de tempo fixo
+let topoScroll = 9999;
+for (let i = 0; i < 10; i++) {
+  await p.waitForTimeout(300);
+  topoScroll = await p.locator('.avst5-painel-scroll').evaluate((el) => el.scrollTop);
+  if (topoScroll < 50) break;
+}
+ok(topoScroll < 50, `voltar-ao-topo não rolou (parou em ${topoScroll})`);
 
 await p.locator('.avst5-painel-btn[title="Recolher catálogo"]').click();
 await p.waitForTimeout(400);
