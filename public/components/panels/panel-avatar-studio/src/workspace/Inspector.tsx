@@ -11,7 +11,7 @@
 // §188 (só ícones+títulos). O MIOLO de Cores/Propriedades é o MESMO dos
 // componentes existentes (Cores/PropriedadesAsset com filtro contextual
 // opcional) — zero duplicação de lógica, padrão da decisão #87.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BadgeInfo, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight,
   Heart, Layers, Palette, ShieldCheck, Wand2,
@@ -72,6 +72,19 @@ export function Inspector(props: PropsInspector) {
     setAberto(novo);
     gravarGrupoAberto(novo);
   };
+  // lote 951-960 (#97, as6.contexto — §323/§324): a mudança de contexto
+  // chega com o grupo RELEVANTE da categoria; abrir = mesma semântica de
+  // uso do §186 (persiste). O shell só dispara com a flag ligada.
+  useEffect(() => {
+    const ao = (e: Event) => {
+      const g = (e as CustomEvent<{ grupoInspector?: GrupoInspectorId }>).detail?.grupoInspector;
+      if (!g) return;
+      setAberto(g);
+      gravarGrupoAberto(g);
+    };
+    window.addEventListener('avst6:contexto', ao);
+    return () => window.removeEventListener('avst6:contexto', ao);
+  }, []);
   const removerCamada = (camada: CamadaId) => {
     const camadas = { ...configVisivel.camadas } as Record<string, string>;
     delete camadas[camada];

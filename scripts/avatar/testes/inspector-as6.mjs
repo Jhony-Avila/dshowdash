@@ -41,28 +41,33 @@ const abrirPropriedades = async (p) => {
     // §189: primeiro uso = estado COMPLETO (todos os grupos abertos)
     ok(await p.locator('[data-teste="inspector"] [data-teste^="insp-corpo-"]').count() >= 3,
       'primeiro uso deveria abrir o inspector completo (§189)');
-    // troca de categoria → schema muda (§182)
+    // troca de categoria → schema muda (§182); o Context Engine §323
+    // (as6.contexto, lote 951–960) já chega com Cores aberta na Roupa
     await irCategoria(p, 'Roupa');
     ok(await p.locator('[data-teste="insp-grupo-compatibilidade"]').count() === 1,
       'roupa deveria ter grupo de compatibilidade (§182)');
-    // §185: accordion de UM aberto — abrir Cores fecha Identidade
-    await p.locator('[data-teste="insp-grupo-cores"]').click();
-    await p.waitForTimeout(250);
-    ok(await p.locator('[data-teste="insp-corpo-cores"]').count() === 1, 'grupo Cores não abriu');
+    ok(await p.locator('[data-teste="insp-corpo-cores"]').count() === 1, 'grupo Cores não chegou aberto (§323)');
     ok(await p.locator('[data-teste="insp-corpo-identidade"]').count() === 0,
-      'accordion deveria fechar a Identidade ao abrir Cores (§185)');
+      'accordion deveria manter UM grupo aberto (§185/§186)');
     ok(await p.locator('[data-teste="insp-corpo-cores"] .avst-cores').count() === 1,
       'miolo de Cores (componente existente) deveria renderizar no grupo (§182)');
+    // §188: fechar o grupo aberto = compacto (só cabeçalhos)
+    await p.locator('[data-teste="insp-grupo-cores"]').click();
+    await p.waitForTimeout(250);
+    ok(await p.locator('[data-teste="inspector"] [data-teste^="insp-corpo-"]').count() === 0,
+      'fechar o grupo aberto deveria deixar o inspector compacto (§188)');
+    // §185: reabrir só a Cores
+    await p.locator('[data-teste="insp-grupo-cores"]').click();
+    await p.waitForTimeout(250);
+    ok(await p.locator('[data-teste="insp-corpo-cores"]').count() === 1, 'grupo Cores não reabriu (§185)');
     // §186: memória — recarregar mantém Cores aberto
     await irParaHarness(p, 'avst-harness.html', 1200);
     await abrirPropriedades(p);
     ok(await p.locator('[data-teste="insp-corpo-cores"]').count() === 1,
       'grupo aberto não persistiu no reload (§186)');
-    // §188: fechar tudo = compacto (só cabeçalhos)
+    // compacto de novo p/ o fluxo de ações abaixo
     await p.locator('[data-teste="insp-grupo-cores"]').click();
     await p.waitForTimeout(250);
-    ok(await p.locator('[data-teste="inspector"] [data-teste^="insp-corpo-"]').count() === 0,
-      'fechar o grupo aberto deveria deixar o inspector compacto (§188)');
     // ações §183: detalhes abre o drawer do asset
     await p.locator('[data-teste="insp-grupo-acoes"]').click();
     await p.waitForTimeout(250);

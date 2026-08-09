@@ -35,6 +35,7 @@ import { PainelCatalogo } from '../workspace/PainelCatalogo';
 import { ClimaOverlay } from '../workspace/ClimaOverlay';
 import { ComposicaoPalco } from '../workspace/ComposicaoPalco';
 import { BarraCenas } from '../workspace/BarraCenas';
+import { aplicarContexto } from '../workspace/contexto';
 // lote 911–920 (decisão #93): domínio da composição do palco movido
 // VERBATIM p/ workspace/palco.ts (fase 3b — sem dependência circular §3470)
 import {
@@ -978,7 +979,13 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         <div className="avst5-corpo">
           {/* sidebar esquerda — scroll próprio (R5) */}
           <TrilhoCategorias categoria={categoria} compacta={compacta}
-            aoEscolher={(id) => { setCategoria(id); setFiltroSlot('todos'); }} />
+            aoEscolher={(id) => {
+              setCategoria(id); setFiltroSlot('todos');
+              // §323–§325 (as6.contexto): UMA ação prepara o ambiente —
+              // aba volta ao catálogo cheio, busca antiga limpa, grupo
+              // do inspector relevante abre, aria-live anuncia
+              if (flag('as6.contexto')) { setAba('todos'); aplicarContexto(id); }
+            }} />
           <div className="avst5-alca" role="separator" aria-orientation="vertical" aria-label="Redimensionar navegação"
             onPointerDown={(e) => { arraste.current = { lado: 'esq', x0: e.clientX, w0: larguras.esq }; }} />
 
@@ -1297,7 +1304,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         {paleta && (
           <PaletaComandos
             aoFechar={() => setPaleta(false)}
-            aoNavegar={(cat) => { setCategoria(cat as CategoriaId); setAba('todos'); setFiltroSlot('todos'); }}
+            aoNavegar={(cat) => {
+              setCategoria(cat as CategoriaId); setAba('todos'); setFiltroSlot('todos');
+              if (flag('as6.contexto')) aplicarContexto(cat as CategoriaId); // §324
+            }}
             aoEquipar={(id) => {
               const item = itemPorId(id);
               if (item) aoEscolher(comItem(paraLegado2d(store.estadoDraft), item.categoria, id));

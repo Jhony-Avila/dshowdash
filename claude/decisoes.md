@@ -598,6 +598,22 @@
   getBoundingClientRect vem inflado pela própria magnificação. Off =
   interações do lote 831–840 byte a byte. Teste dock-mag.mjs.
 
+- **#97 (2026-08-09) — Workspace Context Engine (lote 951–960, flag
+  `as6.contexto`; AS6 §323–§325)**: trocar de categoria vira UMA
+  mudança de contexto coordenada. workspace/contexto.ts é a camada
+  DECLARATIVA (§324): CONTEXTOS por categoria (grupo default do
+  Inspector + dica) e `aplicarContexto()` disparando o evento
+  `avst6:contexto` + anúncio no aria-live existente. Reagem: GradeItens
+  (limpa a busca da categoria anterior), Inspector (abre o grupo
+  relevante — cabelo→Cores, acessório/sobrepeça→Compatibilidade,
+  efeito→Propriedades…), shell (aba volta a Todos). O que JÁ era
+  contextual por construção (câmera R2/§52, dock por categoria, filtros
+  §68.3, Color Studio por slots) fica nos módulos de origem — o engine
+  coordena, não duplica. Gate no DISPARO (shell): flag off = nenhum
+  evento = troca de categoria anterior byte a byte (listeners inertes).
+  inspector-as6.mjs ajustado (Roupa agora CHEGA com Cores aberta — a
+  coordenação §323 mudou o fluxo de propósito). Teste contexto-as6.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

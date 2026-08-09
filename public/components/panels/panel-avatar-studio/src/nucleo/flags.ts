@@ -92,6 +92,7 @@ const PADROES: Record<string, boolean> = {
   'as6.inspector': true,          // lote 921–930 — Inspector contextual §181–§189: accordion schema-driven por categoria (identidade/props/cores/compat/ações) com memória §186; off = seção Cores+Propriedades anterior byte a byte
   'as6.creator_v6': true,         // lote 931–940 — vestuário multi-peça §3393: categoria Sobrepeça (wrappers sob_* de renderCorpo existente; schema v2 com migração real); off = categoria oculta (config salvo segue aceito e renderizando)
   'as6.dock_mag': true,           // lote 941–950 — dock §104–§105: magnificação gaussiana no hover (CSS scale), momentum com atrito no drag e snap no card; off = interações do lote 831–840 byte a byte
+  'as6.contexto': true,           // lote 951–960 — Workspace Context Engine §323–§325: trocar categoria coordena aba/busca/grupo do inspector/anúncio num evento só; off = troca de categoria anterior byte a byte
 };
 
 /**
