@@ -47,7 +47,11 @@ export interface EstiloFotoRender {
     oculta?: boolean; opacidade?: number;
     blend?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'soft-light';
     plano?: 'atras' | 'frente';
+    travada?: boolean; // §1217 (painel; o render ignora)
   }>>;
+  /** AS6 §1215 (lote 981–990): ordem da pilha de fundo do medalhão —
+   *  ausente = fundo→banner→aura legado byte a byte */
+  ordemFundo?: Array<'fundo' | 'banner' | 'aura'>;
   /** lote 165 (§334): luz local no medalhão (-1 escurece … 1 clareia) */
   luzLocal?: { tipo: 'radial' | 'linear'; intensidade: number };
   /** lote 166 (§343): tipografia aprovada (ausente = strings legadas) */
@@ -329,6 +333,7 @@ export function renderFotoEstilizada(
     + (estilo.ajustes ? JSON.stringify(estilo.ajustes) : '')
     // lote 161+ (§338/§334/§343): campos novos só entram no hash quando presentes
     + (estilo.camadasFoto ? JSON.stringify(estilo.camadasFoto) : '')
+    + (estilo.ordemFundo ? estilo.ordemFundo.join(',') : '') // §1215
     + (estilo.luzLocal ? JSON.stringify(estilo.luzLocal) : '')
     + (estilo.tipografia ? JSON.stringify(estilo.tipografia) : '')
     + (estilo.subtitulo ?? '')
@@ -352,9 +357,15 @@ export function renderFotoEstilizada(
 
   // lote 161–164 (§338): cada camada decorativa passa pelo envelope
   const cfgC = estilo.camadasFoto;
-  const fundo = envolverCamada('fundo', pintar(estilo.camadas.fundo), cfgC)
-    + envolverCamada('banner', pintar(estilo.camadas.banner), cfgC)
-    + envolverCamada('aura', pintar(estilo.camadas.aura), cfgC);
+  // §1215 (lote 981–990): pilha de fundo na ORDEM escolhida — só uma
+  // permutação completa e única é aceita; qualquer outra coisa = legado
+  const ordemF: Array<'fundo' | 'banner' | 'aura'> =
+    estilo.ordemFundo && estilo.ordemFundo.length === 3
+      && new Set(estilo.ordemFundo).size === 3
+      && estilo.ordemFundo.every((c) => c === 'fundo' || c === 'banner' || c === 'aura')
+      ? estilo.ordemFundo
+      : ['fundo', 'banner', 'aura'];
+  const fundo = ordemF.map((c) => envolverCamada(c, pintar(estilo.camadas[c]), cfgC)).join('');
   const efeitoDef = estilo.camadas.efeito && estilo.camadas.efeito !== 'nenhum'
     ? resolver(estilo.camadas.efeito)
     : undefined;

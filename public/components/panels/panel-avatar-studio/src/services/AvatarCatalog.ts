@@ -701,6 +701,13 @@ export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesR
     ...(estilo.subtitulo ? { subtitulo: sanitizarLegendaFoto(estilo.subtitulo) } : {}),
     ...(Object.keys(posLimpa).length ? { pos: posLimpa } : {}),
     ...(Object.keys(seloLimpo).length ? { seloCfg: seloLimpo } : {}),
+    // lote 981-990 (AS6 §1215, as6.foto_camadas): ordem da pilha de
+    // fundo — só permutação completa/única NÃO-neutra passa (byte-estável)
+    ...(estilo.ordemFundo && estilo.ordemFundo.length === 3
+      && new Set(estilo.ordemFundo).size === 3
+      && estilo.ordemFundo.every((c) => c === 'fundo' || c === 'banner' || c === 'aura')
+      && estilo.ordemFundo.join(',') !== 'fundo,banner,aura'
+      ? { ordemFundo: estilo.ordemFundo } : {}),
   }, itemPorId, opcoes);
 }
 

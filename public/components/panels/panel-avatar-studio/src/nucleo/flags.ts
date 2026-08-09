@@ -95,6 +95,7 @@ const PADROES: Record<string, boolean> = {
   'as6.contexto': true,           // lote 951–960 — Workspace Context Engine §323–§325: trocar categoria coordena aba/busca/grupo do inspector/anúncio num evento só; off = troca de categoria anterior byte a byte
   'as6.diff_v6': true,            // lote 961–970 — diff campo a campo §350/§322: "Detalhes" na barra de salvamento com de→para legível + histórico local de salvamentos (ring ≤10); off = barra anterior byte a byte
   'as6.foto_projeto': true,       // lote 971–980 — Photo Project v2 §1417/§1226/§1227: schema versionado + snapshot do avatar-fonte + "atualizar p/ avatar atual"; off = projetos v1 byte a byte (antigos abrem sempre §1418)
+  'as6.foto_camadas': true,       // lote 981–990 — Layer System da foto fase 1 §1215/§1217/§1219: ordem da pilha de fundo + lock + solo no painel de camadas; off = painel do lote 161-164 byte a byte
 };
 
 /**

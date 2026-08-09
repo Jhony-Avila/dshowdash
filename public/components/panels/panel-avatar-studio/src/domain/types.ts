@@ -205,6 +205,9 @@ export interface CamadaFotoCfg {
   blend?: BlendFoto;
   /** §339: SÓ o efeito pode trocar de plano (ordem protegida) */
   plano?: 'atras' | 'frente';
+  /** AS6 §1217 (lote 981–990, as6.foto_camadas): LOCK — controles da
+   *  camada travados no painel (não destrutivo; ausente = livre) */
+  travada?: boolean;
 }
 /** lote 166 (§343): tipografia CONTROLADA (fontes aprovadas, sem upload) */
 export interface TipografiaFoto {
@@ -249,6 +252,9 @@ export interface EstiloFoto {
   legenda?: string;
   /** lote 161–164 (§338): painel de camadas — ausente = render legado */
   camadasFoto?: Partial<Record<CamadaFotoId, CamadaFotoCfg>>;
+  /** AS6 §1215 (lote 981–990, as6.foto_camadas): ORDEM da pilha de fundo
+   *  do medalhão (fundo/banner/aura). Ausente = ordem legada byte a byte. */
+  ordemFundo?: Array<'fundo' | 'banner' | 'aura'>;
   /** lote 165 (§334): luz LOCAL no medalhão · intensidade -1…1 (0 = fora) */
   luzLocal?: { tipo: 'radial' | 'linear'; intensidade: number };
   /** lote 166 (§343) — ausente = tipografia legada byte a byte */

@@ -640,6 +640,22 @@
   foto-base+snapshot mantendo a estilização (re-render determinístico
   via dataUriDe + miniaturizarFoto). Teste foto-projeto.mjs.
 
+- **#100 (2026-08-09) — Layer System da foto fase 1 (lote 981–990,
+  flag `as6.foto_camadas`; AS6 §1215/§1217/§1219)**: o painel de
+  camadas (lote 161–164) JÁ cobria nome/visibilidade/opacidade/blend —
+  o lote entrega o delta: (1) ORDEM §1215 da pilha de fundo do medalhão
+  (fundo/banner/aura) via ▲▼ — `estilo.ordemFundo` só persiste
+  permutação completa NÃO-neutra (neutra = campo some, byte-stability),
+  sanitizada no svgFotoDe (aprendizado: TODO campo novo do estilo passa
+  pela whitelist do serviço — sem isso o render nem vê) e no PHP;
+  render do medalhão compõe na ordem (wide mantém a âncora própria da
+  aura — fase 2); (2) LOCK §1217 (`travada` por camada — controles
+  desabilitados, não destrutivo); (3) SOLO §1219 — só no PREVIEW
+  (estiloPreview derivado; export/salvar usam o estilo real, nada
+  persiste). Off = painel anterior byte a byte. Teste foto-camadas.mjs
+  (inclui: mover sobre camada VAZIA não muda bytes — o teste cruza a
+  aura em 2 passos).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

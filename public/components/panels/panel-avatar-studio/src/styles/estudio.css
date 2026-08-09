@@ -2743,3 +2743,7 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 
 /* ── lote 971–980 (as6.foto_projeto): atualizar fonte §1227 ── */
 .avst6-fp-atualizar { right: 34px; }
+
+/* ── lote 981–990 (as6.foto_camadas): ordem/lock/solo §1215/§1217/§1219 ── */
+.avst6-fc-ordem { display: inline-flex; gap: 2px; }
+.avst6-fc-ordem .avst-ft-chip { padding: 1px 5px; font-size: 9px; }
