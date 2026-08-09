@@ -109,6 +109,7 @@ const PADROES: Record<string, boolean> = {
   'as6.motion_v2': true,        // lote 1131–1140 — aceites §568 da Parte 7: altura da dock ANIMADA, troca de categoria com fade curto, animações CSS pausadas com a aba oculta; reduced-motion desliga tudo; off = cortes secos anteriores
   'as6.light_v6': true,         // lote 1141–1150 — Light Mode REAL §578 (direção própria, não dark invertido): rampa fria de estúdio sem branco puro, profundidade por luminosidade §577, sombras leves; off = claro do #112 byte a byte
   'as6.nav_dock': true,         // lote 1151–1160 — dock 100% operável por teclado (AS6 Parte 6): B foca a biblioteca, D cicla a altura, PageUp/Down paginam o trilho, foco navegado rola suave; off = navegação anterior
+  'as6.workers_v2': true,       // lote 1161–1170 — workers fase 2 (AS6 Parte 9): ENCODE de export de foto (PNG/JPEG grandes) fora da main thread via ImageBitmap transferido; timeout+fallback síncrono sempre; off = toDataURL de sempre
 };
 
 /**

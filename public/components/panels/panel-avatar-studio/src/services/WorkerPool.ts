@@ -37,6 +37,34 @@ function obterPool(): Worker[] | null {
   } catch { return null; }
 }
 
+/** lote 1161-1170 (#118, as6.workers_v2): ENCODA um ImageBitmap no
+ *  worker (PNG/JPEG grandes de export §368/§371 travavam a main no
+ *  toDataURL síncrono). Bitmap é TRANSFERIDO; null = fallback. */
+export function encodarNoWorker(
+  bitmap: ImageBitmap,
+  tipo: 'image/jpeg' | 'image/png',
+  qualidade?: number,
+  timeoutMs = 6000,
+): Promise<string | null> {
+  if (!flag('as6.workers_v2')) return Promise.resolve(null);
+  const pool = obterPool();
+  if (!pool) return Promise.resolve(null);
+  const id = proximoId++;
+  const w = pool[proximoWorker];
+  proximoWorker = (proximoWorker + 1) % pool.length;
+  return new Promise((res) => {
+    const timer = window.setTimeout(() => { pendentes.delete(id); res(null); }, timeoutMs);
+    pendentes.set(id, { res, timer });
+    try {
+      w.postMessage({ id, tarefa: 'encodar', bitmap, tipo, qualidade }, [bitmap]);
+    } catch {
+      pendentes.delete(id);
+      window.clearTimeout(timer);
+      res(null);
+    }
+  });
+}
+
 /** Redimensiona/re-encoda no worker; null = use o fallback síncrono. */
 export function redimensionarNoWorker(
   dataUri: string, lado: number,

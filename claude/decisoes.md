@@ -898,6 +898,19 @@
   novo (#112). Off = navegação anterior byte a byte. Teste
   nav-dock.mjs.
 
+- **#118 (2026-08-09) — Workers fase 2: encode de export off-thread
+  (lote 1161–1170, flag `as6.workers_v2` — AS6 Parte 9)**: o
+  `toDataURL` SÍNCRONO de PNG grande (wallpaper 1920×1080, lote §371,
+  escala §368) travava a main no export. Agora o raster do SVG segue
+  na main (worker não decodifica SVG — limitação do Chromium), mas o
+  ENCODE vai ao pool via `createImageBitmap(canvas)` TRANSFERIDO
+  (zero cópia) → OffscreenCanvas.convertToBlob no worker (tarefa
+  'encodar', timeout 6s). Mesma regra de ouro do #111: null em
+  qualquer falha → fallback síncrono byte a byte; bytes de export
+  podem diferir entre encoders — download/clipboard apenas, nunca
+  estado persistido de render. Off = toDataURL de sempre. Teste
+  workers-v2.mjs; regressões workers-as6/foto-f6/foto-projeto verdes.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

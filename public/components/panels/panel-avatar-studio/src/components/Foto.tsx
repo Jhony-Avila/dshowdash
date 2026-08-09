@@ -42,6 +42,7 @@ import { semanaIso } from '../services/Missoes';
 import { alternarFavoritoTemplate, favoritosTemplate } from '../services/FavoritosTemplate';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
 import { atualizarFonteProjeto, excluirProjetoFoto, listarProjetosFoto, miniaturizarFoto, renomearProjetoFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
+import { encodarNoWorker } from '../services/WorkerPool'; // lote 1161-1170 (#118)
 // megas 253+258 (§369/§349): presets de exportação + compor pra mim
 import { excluirPresetExport, listarPresetsExport, salvarPresetExport } from '../services/PresetsExport';
 import { listarPresets } from '../services/PresetsPessoais'; // lote 531-540 (§321.2)
@@ -82,6 +83,14 @@ async function rasterizarSvg(svg: string, largura: number = LADO_SAIDA, altura: 
     ctx.imageSmoothingQuality = 'high';
     if (tipo === 'jpeg') { ctx.fillStyle = '#0d1017'; ctx.fillRect(0, 0, largura, altura); } // JPEG sem alfa (§369)
     ctx.drawImage(img, 0, 0, largura, altura);
+    // lote 1161-1170 (#118, as6.workers_v2): o ENCODE (parte pesada em
+    // PNG grande) vai ao worker via bitmap transferido; qualquer falha
+    // cai no toDataURL síncrono de sempre (aceleração, nunca dependência)
+    try {
+      const bmp = await createImageBitmap(canvas);
+      const doWorker = await encodarNoWorker(bmp, tipo === 'jpeg' ? 'image/jpeg' : 'image/png', tipo === 'jpeg' ? 0.9 : undefined);
+      if (doWorker) return doWorker;
+    } catch { /* segue síncrono */ }
     return canvas.toDataURL(tipo === 'jpeg' ? 'image/jpeg' : 'image/png', tipo === 'jpeg' ? 0.9 : undefined);
   } finally {
     URL.revokeObjectURL(url);
