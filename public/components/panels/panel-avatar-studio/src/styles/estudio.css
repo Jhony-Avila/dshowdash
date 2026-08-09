@@ -2763,3 +2763,11 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst5-viewport[data-soltavel] { outline: 2px dashed var(--avst-acento, var(--as6-acento)); outline-offset: -6px; }
 .avst5-viewport[data-soltavel]::after { content: 'Solte para equipar'; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 9; padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--as6-superficie-1, #14161d) 88%, transparent); border: 1px solid var(--as6-superficie-4); font-size: 11.5px; color: var(--as6-texto-suave); pointer-events: none; }
 .avst6-dock[data-dock-mag] .avst-grade { touch-action: pan-y; }
+
+/* ── lote 1051–1060 (as6.derivados): derivados ao vivo §Parte 11 ── */
+.avst6-derivados { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.avst6-derivado { display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: var(--t-raio-m); border: 1px solid var(--as6-superficie-4); background: color-mix(in srgb, var(--as6-superficie-2) 60%, transparent); cursor: pointer; color: inherit; }
+.avst6-derivado-on { border-color: var(--avst-acento, var(--as6-acento)); }
+.avst6-derivado-thumb { display: block; overflow: hidden; border-radius: 6px; }
+.avst6-derivado-thumb svg { display: block; width: 100%; height: auto; }
+.avst6-derivado-nome { font-size: 10.5px; color: var(--as6-texto-suave); text-align: center; }

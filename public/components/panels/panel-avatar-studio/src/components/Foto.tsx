@@ -1405,6 +1405,26 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
           <div className="avst-ftp-esq">
 
           {/* §325: FORMATO de saída — perfil 1:1 + wide (header/banner/wallpaper) */}
+          {/* lote 1051-1060 (#107, as6.derivados): DERIVADOS ao vivo —
+              os 4 formatos renderizados JUNTOS com o reflow §Parte 11
+              aplicado; clicar troca o formato de trabalho */}
+          {flag('as6.derivados') && fotoEstilo && (
+            <div className="avst-ft-grupo" data-teste="derivados-foto">
+              <span className="avst-ft-rotulo"><Images size={11} aria-hidden /> Derivados (ao vivo)</span>
+              <div className="avst6-derivados">
+                {(Object.keys(FORMATOS_FOTO) as FormatoFotoId[]).map((id) => (
+                  <button key={id} type="button" className={`avst6-derivado${formato === id ? ' avst6-derivado-on' : ''}`}
+                    data-teste={`derivado-${id}`}
+                    title={`${FORMATOS_FOTO[id].nome} · ${FORMATOS_FOTO[id].proporcao} — clique para editar neste formato`}
+                    onClick={() => setFormato(id)}>
+                    <span className="avst6-derivado-thumb" aria-hidden
+                      dangerouslySetInnerHTML={{ __html: svgFotoDe(fotoEstilo, estilo, { estatico: true, uid: `ftder${id}`, ...(id !== 'perfil' ? { formato: id } : { tamanho: 96 }) }) }} />
+                    <span className="avst6-derivado-nome">{FORMATOS_FOTO[id].nome}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="avst-ft-grupo">
             <span className="avst-ft-rotulo"><Images size={11} aria-hidden /> Formato</span>
             <div className="avst-ft-chips" role="radiogroup" aria-label="Formato de saída" data-teste="formatos-foto">

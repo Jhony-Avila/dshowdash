@@ -735,6 +735,18 @@
   gated). SEM chave e SEM chamada no front — decisões #24 (IA nunca
   gera assets) e segredos-só-no-servidor intactas. Teste ia-registry.mjs.
 
+- **#107 (2026-08-09) — Derivados com reflow (lote 1051–1060, flag
+  `as6.derivados`; AS6 Parte 11)**: posições MANUAIS (§323.2) definidas
+  no quadro do PERFIL agora REFLUEM p/ a célula de texto dos formatos
+  wide com CONSTRAINTS (clamp na área segura) — antes a âncora crua
+  caía dentro da célula do medalhão e o derivado quebrava. Engine segue
+  LIVRE de flags: o reflow entra por opcoes.reflowPos, injetado pelo
+  svgFotoDe (camada de serviço) conforme a flag; estilo SEM pos rende
+  idêntico com/sem reflow (goldens intactos). Painel "Derivados (ao
+  vivo)" na Foto: os 4 formatos renderizados juntos com o reflow
+  aplicado; clicar troca o formato de trabalho. Off = wide anterior
+  byte a byte. Teste derivados.mjs (motor node-puro + UI).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

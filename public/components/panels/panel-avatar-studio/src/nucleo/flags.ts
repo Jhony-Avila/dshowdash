@@ -99,6 +99,7 @@ const PADROES: Record<string, boolean> = {
   'as6.virtual': true,          // lote 1011–1020 — virtualização REAL §276 v2: janela deslizante (card longe recicla p/ esqueleto; foco/hover/equipado nunca reciclam); off = promoção one-way anterior byte a byte
   'as6.quality': true,          // lote 1021–1030 — Quality Manager central (AS6 Parte 9): perfil Auto/Eco/Equilibrado/Alto consultado por 3D (dica de tier), shell ([data-qualidade] → CSS eco) e partículas; off = decisões locais anteriores byte a byte
   'as6.touch': true,            // lote 1031–1040 — touch+dnd (AS6 Parte 6): arrastar card ao palco equipa (HTML5 DnD, realce de alvo) + touch-action na dock; off = sem draggable/drop byte a byte
+  'as6.derivados': true,        // lote 1051–1060 — derivados com reflow (AS6 Parte 11): posições manuais refluem p/ a célula de texto dos formatos wide com clamp (via opcoes.reflowPos) + painel de derivados ao vivo na Foto; off = wide anterior byte a byte
 };
 
 /**
