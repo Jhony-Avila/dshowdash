@@ -787,6 +787,23 @@
   até o selo virar DOM). Sem flag: t() é inerte em PT e os ajustes de
   a11y são aditivos.
 
+- **#111 (2026-08-09) — Pool de workers p/ tarefas pesadas (lote
+  1091–1100, flag `as6.workers` — AS6 Parte 9)**: worker é ACELERAÇÃO,
+  nunca dependência. foto.worker.ts redimensiona/re-encoda fora da
+  main thread (createImageBitmap + OffscreenCanvas); WorkerPool mantém
+  pool preguiçoso de 2 workers reutilizados e `redimensionarNoWorker`
+  devolve **null em QUALQUER falha** (flag off, sem Worker, erro,
+  timeout 4s) — o caller mantém o caminho síncrono de sempre como
+  fallback byte a byte. Ponto de uso real: a fase de COMPRESSÃO do
+  pipeline §268 (processarFoto) e miniaturizarFoto tentam o worker
+  primeiro. Limite registrado: bytes do JPEG podem diferir entre o
+  encoder do worker e o canvas — por isso o worker só toca
+  cache/estado LOCAL (foto-base de projeto, thumbs TTL §277), nunca
+  estado persistido de render do avatar (byte-stability intocada).
+  Teste workers-as6.mjs (ON: constrói ≤2 workers e salva JPEG válido;
+  OFF: zero workers e save idêntico §651); regressões foto-projeto/
+  infra-v3/foto-f6 verdes.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
