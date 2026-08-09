@@ -86,6 +86,7 @@ const PADROES: Record<string, boolean> = {
   'as6.paineis_cards': true,      // lote 851–860 — painéis do inferior em GRADES de cards (game UI): presets/arquétipos/títulos/coleções lado a lado; off = listas verticais
   'as6.sidebar_pro': true,        // lote 861–870 — sidebar do clássico com modo SÓ-ÍCONES persistido + tooltips + ativo mais claro; off = sidebar anterior
   'as6.visual_v2': true,          // lote 871–880 — elevação visual: palco sem cartão (§29/§43), profundidade no workspace, transição suave de aba; off = visual anterior
+  'as6.workspace_fixo': true,     // lote 881–890 — workspace TRAVADO na viewport (zero scroll de página; nav e inferior com scroll próprio) + chips de filtro compactos no trilho; off = fluxo anterior
 };
 
 /**
@@ -117,6 +118,7 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.paineis_cards': ['as6.paineis_dock'], // grades de cards refinam o inferior
   'as6.sidebar_pro': ['as5.classico_aaa'],   // sidebar compacta/só-ícones do clássico
   'as6.visual_v2': ['as5.classico_aaa'],     // elevação visual global do clássico
+  'as6.workspace_fixo': ['as5.classico_aaa'], // trava de viewport estende o AAA
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

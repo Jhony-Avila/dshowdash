@@ -470,6 +470,31 @@
   lote + SUÍTE COMPLETA no fechamento do bloco consolidado (gate da
   entrega); validação visual de tudo pelo Jhony no final.
 
+- **#89 (2026-08-09) — Workspace TRAVADO na viewport (lote 881–890,
+  flag `as6.workspace_fixo`; ordem do Jhony: "o scroll vertical acaba
+  tirando o preview da tela e isso é inaceitável" + revisão geral dos
+  assets)**: o shell mede o próprio offset na página (CSS var
+  `--avst6-offset`, re-medida no resize E quando o shell real monta
+  após o skeleton — deps carregando/shellNovo no efeito) e trava em
+  `100dvh − offset` com overflow hidden; quem rola é cada região
+  (sidebar `scrollbar-width: thin`, inferior, lateral) — a PÁGINA
+  nunca. Escape hatch: `@media (max-height: 559px)` volta ao fluxo
+  (travar esmagaria o palco). Para o preview seguir DOMINANTE dentro
+  do budget fixo, o modo compacta as linhas auxiliares: título+filtros
+  do trilho na MESMA linha (biblioteca vira row-wrap), prévias 54px,
+  barra 2px, cards da dock 240px com thumb 80% (visual > texto §103) —
+  palco-principal 480px a 1680×960 (> cap antigo de 470). Inferior
+  perde o min-height de 220px sob a trava (aba curta tipo Histórico
+  não vira faixa escura vazia). BÔNUS da revisão geral: os filtros
+  dentro da grade (Conjuntos §72.1 / Recentes §88 / categorias de
+  Efeito §157) viravam colunas 220px com chips ESMAGADOS na dock
+  horizontal — agora são um RAIL vertical compacto no início da dock
+  (chips empilhados, legíveis, com scroll próprio; escopo dock-v3,
+  rollback junto com a dock). Teste novo workspace-fixo.mjs: zero
+  scroll de página + palco inteiro na viewport em 4 abas + rail
+  compacto + rollback §651; baseline #83 regenerada (desvios revisados
+  linha a linha: tudo compressão intencional da trava).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

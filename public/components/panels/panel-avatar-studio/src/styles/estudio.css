@@ -2637,4 +2637,62 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   .avst-shell[data-visual2] .avst-trilho, .avst-shell[data-visual2] .avst-inferior { animation: none; }
 }
 .avst-shell[data-visual2] .avst-topo { border-bottom: 1px solid color-mix(in srgb, var(--as6-superficie-4) 70%, transparent); background: color-mix(in srgb, var(--as6-superficie-1) 78%, transparent); backdrop-filter: blur(8px); }
+
+/* ── lote 881–890 (as6.workspace_fixo): workspace TRAVADO na viewport ──
+   Pedido do Jhony: "o scroll vertical acaba tirando o preview da tela e
+   isso é inaceitável". O shell mede o próprio offset (--avst6-offset,
+   publicado pelo App) e trava em 100dvh − offset: a PÁGINA nunca rola;
+   quem rola é cada região (sidebar, inferior, lateral) com scroll
+   próprio. Flag off = fluxo anterior byte a byte. */
+.avst-shell[data-fixo] {
+  height: calc(100dvh - var(--avst6-offset, 0px));
+  max-height: calc(100dvh - var(--avst6-offset, 0px));
+  overflow: hidden;
+}
+/* regiões com scroll PRÓPRIO (o corpo já é flex:1 + min-height:0) */
+.avst-shell[data-fixo] .avst-categorias { overflow-y: auto; scrollbar-width: thin; min-height: 0; }
+.avst-shell[data-fixo] .avst-inferior { min-height: 0; } /* aba curta (Histórico) não vira faixa vazia */
+/* viewport BAIXA demais p/ travar sem esmagar o palco: volta ao fluxo */
+@media (max-height: 559px) {
+  .avst-shell[data-fixo] { height: auto; max-height: none; overflow: visible; }
+}
+/* COMPACTAÇÃO vertical no modo fixo: cada linha auxiliar cede píxeis
+   pro PALCO (o preview segue dominante mesmo com tudo na viewport) */
+.avst-shell[data-fixo] .avst-centro[data-aaa-itens="sim"] .avst-palco { gap: 6px; padding-top: 4px; }
+.avst-shell[data-fixo] .avst-centro[data-aaa-itens="sim"] .avst-previas { gap: 14px; }
+.avst-shell[data-fixo] .avst-centro[data-aaa-itens="sim"] .avst-previas figure { width: 54px; }
+.avst-shell[data-fixo] .avst-centro[data-aaa-itens="sim"] .avst-previas .avst-previa-menor { width: 42px; }
+.avst-shell[data-fixo] .avst-centro[data-aaa-itens="sim"] .avst-barra { padding: 2px 8px; }
+/* trilho: título + contagem + filtros na MESMA linha; grade cola neles */
+.avst-shell[data-fixo] .avst-trilho { padding: 6px 24px; }
+.avst-shell[data-fixo] .avst-trilho .avst-biblioteca {
+  flex-direction: row; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 4px 16px;
+}
+.avst-shell[data-fixo] .avst-trilho .avst-biblioteca > .avst-grade { flex: 1 1 100%; }
+.avst-shell[data-fixo] .avst-trilho .avst-grade { padding: 4px 4px 8px; }
+.avst-shell[data-fixo] .avst-trilho[data-dock-v3] .avst-card { height: 240px; contain-intrinsic-size: 224px 240px; }
+/* card 24px mais baixo: o thumb ABSORVE o corte (visual > texto §103) */
+.avst-shell[data-fixo] .avst-trilho[data-dock-v3] .avst-card-thumb { height: 80%; }
+
+/* ── chips de filtro DENTRO da dock horizontal (revisão geral #89) ────
+   Conjuntos/Recentes/categorias de Efeito (.avst-conq-filtros) são
+   filhos da .avst-grade — no trilho viravam colunas 220px com chips
+   esmagados na horizontal. Aqui viram um RAIL vertical compacto no
+   início da dock (padrão de seletor de game), chips legíveis em coluna. */
+.avst-trilho[data-dock-v3] .avst-grade > .avst-conq-filtros {
+  display: flex; flex-direction: column; align-items: stretch; justify-content: center;
+  gap: 6px; margin: 0; padding: 10px;
+  background: color-mix(in srgb, var(--as6-superficie-2) 70%, transparent);
+  border: 1px solid var(--as6-superficie-4); border-radius: var(--t-raio-m);
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+}
+.avst-trilho[data-dock-v3] .avst-grade > .avst-conq-filtros > span {
+  text-align: center; text-transform: uppercase; letter-spacing: .06em;
+  font-weight: var(--t-peso-medio); color: var(--as6-texto-suave);
+}
+.avst-trilho[data-dock-v3] .avst-grade > .avst-conq-filtros .avst-ft-chip {
+  width: 100%; text-align: center; padding: 5px 10px; font-size: 11.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .avst-shell[data-visual2] .avst-categorias { border-right: 1px solid color-mix(in srgb, var(--as6-superficie-4) 60%, transparent); }
