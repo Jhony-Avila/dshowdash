@@ -946,6 +946,20 @@
   compositor local passa pelo MESMO caminho). Off = botão "Aplicar no
   editor" byte a byte. Teste ia-apply.mjs.
 
+- **#122 (2026-08-09) — Universal Avatar Component fase 1 (lote
+  1201–1210, flag `as6.contextos_v6` — AS6 Parte 13)**: nasce o
+  CONTRATO client-side que a Parte 13 pede: `montarAvatarUniversal(el,
+  {tamanho, forma, observar, rotulo})` renderiza o avatar SALVO (fonte
+  = espelho §619 `dshow.avatar.config.v1`), com placeholder neutro
+  determinístico sem espelho (nunca quebra), atualização AO VIVO nos
+  eventos de save + `storage` (outra aba), e devolve o desmontar.
+  Exposto em `window.AvatarStudioUniversal` (entry, com a flag) p/
+  painéis vanilla do dash. O drawer de contextos ganha o card "Como o
+  dash monta (produção)" consumindo o MESMO caminho — o mock morre
+  como caminho. A fase 2 (Identity Service, tabelas sociais,
+  permissões server) segue na fila com o Jhony. Off = sem API global e
+  sem card. Teste contextos-v6.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

@@ -4,11 +4,37 @@
 // Mostra o avatar ATUAL onde ele realmente vive: Header, Menu, Perfil,
 // Card de ranking e Mobile — nos temas escuro E claro. Tudo mock visual
 // determinístico (mesmo motor SVG do palco); nada é salvo por aqui.
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Crown, Moon, Sun, X } from 'lucide-react';
 import type { AvatarConfig } from '../domain/types';
 import { RARIDADES, tituloPorId } from '../services/AvatarCatalog';
+import { montarAvatarUniversal } from '../services/AvatarUniversal'; // lote 1201-1210 (#122)
+import { flag } from '../nucleo/flags';
 import { AvatarSvg } from './AvatarSvg';
+
+/** #122 (as6.contextos_v6): o card "como o dash monta" — usa o MESMO
+ *  componente universal que o header/menu reais usariam (avatar SALVO
+ *  do espelho §619; placeholder se nunca salvou). O mock morre como
+ *  CAMINHO: o que se vê aqui é o contrato de produção. */
+function CardUniversal() {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!ref.current) return undefined;
+    return montarAvatarUniversal(ref.current, { tamanho: 44, forma: 'circulo' });
+  }, []);
+  return (
+    <figure className="avst-ctx-item" data-teste="ctx-universal">
+      <div className="avst-ctx-menu">
+        <span ref={ref} className="avst-ctx-av avst-ctx-av-44" />
+        <span className="avst-ctx-menu-info">
+          <strong>Componente universal</strong>
+          <em>window.AvatarStudioUniversal — avatar SALVO (§619)</em>
+        </span>
+      </div>
+      <figcaption>Como o dash monta (produção)</figcaption>
+    </figure>
+  );
+}
 
 function Mocks({ config, tema }: { config: AvatarConfig; tema: 'escuro' | 'claro' }) {
   const titulo = tituloPorId(config.titulo);
@@ -109,6 +135,7 @@ export function Contextos({ config, aoFechar }: {
         <p className="avst-ctx-nota">
           Como o seu avatar aparece em cada canto do dash — antes de salvar.
         </p>
+        {flag('as6.contextos_v6') && <CardUniversal />}
         <h4 className="avst-ctx-secao"><Moon size={12} aria-hidden /> Tema escuro</h4>
         <Mocks config={config} tema="escuro" />
         <h4 className="avst-ctx-secao"><Sun size={12} aria-hidden /> Tema claro</h4>
