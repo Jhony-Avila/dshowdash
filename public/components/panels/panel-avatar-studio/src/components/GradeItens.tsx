@@ -27,6 +27,7 @@ import { arquivados } from '../services/ArquivoItens';
 import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // lote 351-360 (§157)
 import { lerRecentes, registrarRecente } from '../services/Recentes'; // lote 391-400 (§88)
 import { CONJUNTOS, aplicarConjunto } from '../services/Conjuntos'; // lote 551-560 (§72)
+import { temTag } from '../services/MetadadosAssets'; // lote 891-900 (§227)
 import type { ParteDef } from '../engine/base-api';
 import { AvatarSvg } from './AvatarSvg';
 import { Dica } from './Dica';
@@ -223,6 +224,17 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     window.addEventListener('keydown', ao);
     return () => window.removeEventListener('keydown', ao);
   }, []);
+  // lote 891-900 (#90, as6.meta_assets — §227 "pesquisar"): clicar numa
+  // tag no drawer de detalhes dispara a busca `tag:<t>` na grade
+  useEffect(() => {
+    if (!flag('as6.meta_assets')) return undefined;
+    const ao = (e: Event) => {
+      const tag = (e as CustomEvent<string>).detail;
+      if (typeof tag === 'string' && tag) setBusca(`tag:${tag}`);
+    };
+    window.addEventListener('avst6:buscar-tag', ao);
+    return () => window.removeEventListener('avst6:buscar-tag', ao);
+  }, []);
   // megas 351-353 (§157): filtro por categoria FUNCIONAL (efeitos)
   const [filtroFx, setFiltroFx] = useState<'todos' | 'ambiental' | 'distorcao' | 'celebracao' | 'transicao' | 'presenca'>('todos');
 
@@ -273,6 +285,12 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         return termos.every((t) => {
           if (t.startsWith('raridade:')) return normalizar(i.raridade) === t.slice(9);
           if (t.startsWith('tema:')) return normalizar(i.tema).includes(t.slice(5));
+          // lote 891-900 (#90, as6.meta_assets — §227): operador tag: exato
+          // e termos soltos também casam com as TAGS derivadas do item
+          if (flag('as6.meta_assets')) {
+            if (t.startsWith('tag:')) return temTag(i, t.slice(4));
+            if (temTag(i, t)) return true;
+          } // off = comportamento anterior byte a byte (cai no alvo)
           if (alvo.includes(t)) return true; // AND (§57)
           // mega 421 (§57.1, flag as5.busca_v2): TOLERANTE — termo ≥4
           // letras casa com distância de edição 1 em qualquer palavra
