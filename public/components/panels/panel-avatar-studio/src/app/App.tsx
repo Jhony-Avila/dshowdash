@@ -392,6 +392,25 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
     });
   }, []);
 
+  // lote 881-890 (#89, as6.workspace_fixo): o workspace trava na altura
+  // da viewport — mede o offset real do shell (header do dash acima) e
+  // publica como CSS var; zero scroll de página, preview SEMPRE visível.
+  // HOOKS antes dos early-returns (regra dos hooks — React #310).
+  const workspaceFixo = flag('as5.classico_aaa') && flag('as6.workspace_fixo');
+  const shellRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!workspaceFixo) return undefined;
+    const medir = () => {
+      const topo = shellRef.current?.getBoundingClientRect().top ?? 0;
+      shellRef.current?.style.setProperty('--avst6-offset', `${Math.max(0, Math.round(topo + window.scrollY))}px`);
+    };
+    medir();
+    window.addEventListener('resize', medir);
+    return () => window.removeEventListener('resize', medir);
+    // carregando/shellNovo nas deps: o shell REAL só monta depois do
+    // skeleton — sem re-medir aqui a var ficaria órfã (ref era null)
+  }, [workspaceFixo, carregando, shellNovo]);
+
   if (carregando) {
     // §557.2: skeleton com a SILHUETA do estúdio (3 colunas) em vez de
     // spinner genérico — a página "já parece o produto" enquanto carrega
@@ -453,8 +472,9 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const sidebarPro = aaa && flag('as6.sidebar_pro');
 
   return (
-    <div className="avst-shell" data-aaa={aaa ? 'sim' : undefined}
-      data-visual2={aaa && flag('as6.visual_v2') ? '' : undefined}>
+    <div ref={shellRef} className="avst-shell" data-aaa={aaa ? 'sim' : undefined}
+      data-visual2={aaa && flag('as6.visual_v2') ? '' : undefined}
+      data-fixo={workspaceFixo ? '' : undefined}>
       {/* ── Topo ── */}
       <header className="avst-topo">
         <div className="avst-topo-titulo">
