@@ -97,6 +97,7 @@ const PADROES: Record<string, boolean> = {
   'as6.foto_projeto': true,       // lote 971–980 — Photo Project v2 §1417/§1226/§1227: schema versionado + snapshot do avatar-fonte + "atualizar p/ avatar atual"; off = projetos v1 byte a byte (antigos abrem sempre §1418)
   'as6.foto_camadas': true,       // lote 981–990 — Layer System da foto fase 1 §1215/§1217/§1219: ordem da pilha de fundo + lock + solo no painel de camadas; off = painel do lote 161-164 byte a byte
   'as6.virtual': true,          // lote 1011–1020 — virtualização REAL §276 v2: janela deslizante (card longe recicla p/ esqueleto; foco/hover/equipado nunca reciclam); off = promoção one-way anterior byte a byte
+  'as6.quality': true,          // lote 1021–1030 — Quality Manager central (AS6 Parte 9): perfil Auto/Eco/Equilibrado/Alto consultado por 3D (dica de tier), shell ([data-qualidade] → CSS eco) e partículas; off = decisões locais anteriores byte a byte
 };
 
 /**

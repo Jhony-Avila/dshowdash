@@ -697,6 +697,20 @@
   (real no fim ⇄ esqueleto no topo). Off = one-way anterior byte a
   byte. Teste virtual-as6.mjs; shell-vgrid/a11y-v2/cards-v2 verdes.
 
+- **#104 (2026-08-09) — Quality Manager central (lote 1021–1030, flag
+  `as6.quality`; AS6 Parte 9)**: services/QualityManager.ts é a FONTE
+  ÚNICA de qualidade — perfil Auto/Eco/Equilibrado/Alto (persistido em
+  dshow.avst6.qualidade.v1; Auto resolve por deviceMemory/núcleos/
+  saveData, determinístico por device) + evento avst6:qualidade.
+  Consumidores: 3D recebe a DICA de tier (o adaptativo §528 continua
+  mandando por cima), o shell expõe [data-qualidade] e o CSS do ECO
+  derruba backdrop-filter/animação de card (efeitos caros), e as
+  partículas do gatilho §156 escalam densidade (×0.5 eco · ×1.25
+  alto — palco só, nunca render salvo). Seletor cíclico no BarraTopo.
+  Aprendizado: "tic" de re-render com setState(v => v) NÃO re-renderiza
+  (React bail-out) — usar contador. Off = decisões locais anteriores
+  byte a byte. Teste quality-as6.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

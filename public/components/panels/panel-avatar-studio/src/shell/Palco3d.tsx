@@ -22,6 +22,7 @@ import { carregarIndice3d, personagemParaBase } from '../services/Personagens3d'
 import { carregarIndicePartes, categoriaDaParte } from '../services/Partes3d'; // lote 621-630 (§406)
 import type { EntradaIndiceParte } from '../services/Partes3d';
 import { flag } from '../nucleo/flags';
+import { qualidade as qualidadeCentral } from '../services/QualityManager'; // lote 1021-1030 (#104)
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { excluirCena, listarCenas, salvarCena } from '../services/Cenas3d';
 import type { Cena3d } from '../services/Cenas3d';
@@ -298,7 +299,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           ?.definirProgressivo?.(flag('as5.progressivo3d'));
         await r.inicializar({
           qualidade: qualidadeGuardada(), pixelRatioMax: 2,
-          dicaTier: capacidade.dicaTier, // mega 42 (§605-lite)
+          dicaTier: flag('as6.quality') ? qualidadeCentral().tier3d : capacidade.dicaTier, // mega 42 (§605-lite) · #104: manager central manda com a flag
         }); // mega 34
         if (!refAlvo.current) throw new Error('alvo desmontado');
         await r.montar(refAlvo.current as unknown as { innerHTML: string });

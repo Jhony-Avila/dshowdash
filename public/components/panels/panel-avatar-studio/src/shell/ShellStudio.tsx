@@ -36,6 +36,7 @@ import { ClimaOverlay } from '../workspace/ClimaOverlay';
 import { ComposicaoPalco } from '../workspace/ComposicaoPalco';
 import { BarraCenas } from '../workspace/BarraCenas';
 import { aplicarContexto } from '../workspace/contexto';
+import { EVENTO_QUALIDADE, qualidade } from '../services/QualityManager'; // lote 1021-1030 (#104)
 // lote 911–920 (decisão #93): domínio da composição do palco movido
 // VERBATIM p/ workspace/palco.ts (fase 3b — sem dependência circular §3470)
 import {
@@ -183,7 +184,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   useEffect(() => {
     const ao = (e: Event) => setAnuncio(String((e as CustomEvent).detail ?? ''));
     window.addEventListener('avst5:anuncio', ao);
-    return () => window.removeEventListener('avst5:anuncio', ao);
+    // lote 1021-1030 (#104): perfil de qualidade mudou → re-render do shell
+    // (setTicFavs é o tic de re-render que o shell já usa p/ favoritos)
+    const aoQualidade = () => setTicFavs((v) => v + 1);
+    window.addEventListener(EVENTO_QUALIDADE, aoQualidade);
+    return () => { window.removeEventListener('avst5:anuncio', ao); window.removeEventListener(EVENTO_QUALIDADE, aoQualidade); };
   }, []);
   // mega 301 (P10/§548): focus trap delegado — prende o Tab no dialog aberto
   useEffect(() => instalarFocoPreso(), []);
@@ -961,6 +966,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
+        data-qualidade={flag('as6.quality') ? qualidade().perfil : undefined} /* lote 1021-1030 (#104) */
         data-uxfinal={flag('as5.ux_final') ? '' : undefined} // megas 598-599 (§545-§546)
         data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
         style={{ '--avst-acento': corTema, '--avst5-esq': `${larguras.esq}px`,
@@ -1082,7 +1088,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     if (!flag('as5.efeitos_v2') || tipoPref === 'legado') return svgEfeitoIsolado('efe_confete');
                     const tipo = (['pontos', 'estrelas', 'pixels', 'faiscas'].includes(tipoPref) ? tipoPref : 'pontos') as 'pontos' | 'estrelas' | 'pixels' | 'faiscas';
                     return svgParticulas(tipo, {
-                      quantidade: 34, tamanho: 6, velocidade: 1.3, direcao: 'explodir',
+                      // #104: densidade segue o Quality Manager (×1 sem a flag)
+                      quantidade: Math.max(8, Math.round(34 * qualidade().particulas)), tamanho: 6, velocidade: 1.3, direcao: 'explodir',
                       cor: configVisivel.cores.destaque, opacidade: 0.9, duracaoMs: 1600, turbulencia: 0.3,
                     }, 'medio', 5);
                   })(),

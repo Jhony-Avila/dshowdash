@@ -2747,3 +2747,11 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 /* ── lote 981–990 (as6.foto_camadas): ordem/lock/solo §1215/§1217/§1219 ── */
 .avst6-fc-ordem { display: inline-flex; gap: 2px; }
 .avst6-fc-ordem .avst-ft-chip { padding: 1px 5px; font-size: 9px; }
+
+
+/* ── lote 1021–1030 (as6.quality): perfil ECO desliga efeitos caros ──
+   [data-qualidade] só existe com a flag; eco mata blur (o maior custo
+   de composição) e o brilho animado dos cards — apresentação pura. */
+.avst5-shell[data-qualidade="eco"] *, .avst5-shell[data-qualidade="eco"] *::before, .avst5-shell[data-qualidade="eco"] *::after { backdrop-filter: none; }
+.avst5-shell[data-qualidade="eco"] .avst-card, .avst5-shell[data-qualidade="eco"] .avst-card * { animation-duration: 0s; }
+.avst6-qual-rotulo { font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em; }
