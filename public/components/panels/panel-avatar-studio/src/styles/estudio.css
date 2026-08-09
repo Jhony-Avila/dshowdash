@@ -2726,3 +2726,17 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
    var com prefers-reduced-motion (aqui é só o COMO, nunca o SE). */
 .avst6-dock[data-dock-mag] .avst-card { scale: var(--avst6-mag, 1); transform-origin: bottom center; transition: scale 110ms ease-out; }
 .avst6-dock[data-dock-mag] .avst-card:hover { z-index: 3; }
+
+/* ── lote 961–970 (as6.diff_v6): diff campo a campo §350 ──
+   Popover acima da barra de salvamento; só existe no DOM com a flag. */
+.avst5-salvar { position: relative; }
+.avst6-diff { position: absolute; right: 8px; bottom: calc(100% + 8px); z-index: 30; width: min(420px, 80vw); max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px; border-radius: var(--t-raio-m); border: 1px solid var(--as6-superficie-4); background: var(--as6-superficie-1, #14161d); box-shadow: 0 12px 32px rgba(0,0,0,.45); display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.avst6-diff-titulo { font-size: var(--t-tipo-legenda); text-transform: uppercase; letter-spacing: .06em; color: var(--as6-texto-suave); }
+.avst6-diff-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.avst6-diff-lista li { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+.avst6-diff-lista li[data-tipo="removido"] .avst6-diff-valor { color: #e8927c; }
+.avst6-diff-lista li[data-tipo="adicionado"] .avst6-diff-valor { color: #39d98a; }
+.avst6-diff-campo { color: var(--as6-texto-suave); white-space: nowrap; }
+.avst6-diff-valor { text-align: right; overflow-wrap: anywhere; }
+.avst6-diff-hist { border-top: 1px solid var(--as6-superficie-4); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.avst6-diff-hist-item { display: flex; flex-direction: column; gap: 1px; font-size: 11.5px; }

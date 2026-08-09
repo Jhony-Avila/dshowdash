@@ -614,6 +614,18 @@
   inspector-as6.mjs ajustado (Roupa agora CHEGA com Cores aberta — a
   coordenação §323 mudou o fluxo de propósito). Teste contexto-as6.mjs.
 
+- **#98 (2026-08-09) — Diff campo a campo no salvar (lote 961–970,
+  flag `as6.diff_v6`; AS6 §350/§322)**: workspace/diff.ts com
+  `diffCampos()` puro — base/camadas/título com NOMES do catálogo
+  (nunca id cru), cores por slot, corpo/postura/ajuste fino, params
+  param a param (§71) e canais por camada (§73); tipos
+  trocado/adicionado/removido/ajustado. Barra de salvamento ganha
+  "Detalhes" → popover com de → para legível; salvar grava HISTÓRICO
+  local (ring ≤10, dshow.avst6.diff.hist.v1 — diff computado ANTES do
+  save, senão o persistido já mudou) e o popover lista os salvamentos
+  anteriores. Off = barra anterior byte a byte, ring nem existe. Teste
+  diff-v6.mjs; shell-save/shell-619/shell-s4 verdes.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
