@@ -9,11 +9,12 @@
 // puros (t/flag/idioma/sons) são importados direto — prop só para o que
 // é ESTADO do estúdio.
 import { useCallback, useState } from 'react';
-import { ArrowUp, Boxes, Clapperboard, Dices, Flag, Focus, GitBranch, History, Lightbulb, Play, Redo2, Undo2, Volume2, VolumeX } from 'lucide-react';
+import { ArrowUp, Boxes, Clapperboard, Dices, Flag, Focus, Gauge, GitBranch, History, Lightbulb, Play, Redo2, Undo2, Volume2, VolumeX } from 'lucide-react';
 import type { ModoAleatorio } from '../services/AvatarCatalog';
 import { definirPrefSom, prefsSom, tocarPreview } from '../services/Som';
 import type { AvatarStore } from '../nucleo/estado';
 import { flag } from '../nucleo/flags';
+import { PERFIS_QUALIDADE, definirPerfil, perfilGuardado } from '../services/QualityManager'; // lote 1021-1030 (#104)
 import { definirIdioma, idiomaAtual, t } from '../nucleo/i18n';
 
 export type ModoShell = 'edicao' | 'foco' | 'studio';
@@ -128,6 +129,22 @@ export function BarraTopo(props: PropsBarraTopo) {
             {idiomaAtual() === 'pt' ? 'EN' : 'PT'}
           </button>
         )}
+        {/* lote 1021-1030 (#104, as6.quality): perfil de QUALIDADE central
+            (Auto→Eco→Equilibrado→Alto) — o shell/3D/partículas consultam */}
+        {flag('as6.quality') && (() => {
+          const atual = perfilGuardado();
+          const i = PERFIS_QUALIDADE.findIndex((x) => x.id === atual);
+          const proximo = PERFIS_QUALIDADE[(i + 1) % PERFIS_QUALIDADE.length];
+          const nome = PERFIS_QUALIDADE[i]?.nome ?? 'Auto';
+          return (
+            <button type="button" className="avst-botao" data-teste="qualidade-perfil"
+              title={`Qualidade: ${nome} — clicar muda para ${proximo.nome} (AS6 Parte 9)`}
+              onClick={() => definirPerfil(proximo.id)}>
+              <Gauge size={14} aria-hidden />
+              <span className="avst6-qual-rotulo" aria-hidden>{nome.slice(0, 3)}</span>
+            </button>
+          );
+        })()}
         <button type="button" className="avst-botao" title={somLigado ? 'Silenciar sons' : 'Ligar sons'}
           aria-pressed={somLigado} data-teste="som-toggle" onClick={alternarSom}>
           {somLigado ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}</button>

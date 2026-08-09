@@ -11,6 +11,7 @@ import type { FormatoFotoId } from '../engine/render-foto';
 import { flag } from '../nucleo/flags';
 import { processarFoto } from './PipelineAsset'; // lote 581-590 (§268)
 import { esquecer, guardar } from './CacheNiveis'; // lote 581-590 (§277)
+import { redimensionarNoWorker } from './WorkerPool'; // lote 1091-1100 (#111)
 
 const CHAVE = 'dshow.avst5.foto.projetos.v1';
 const LIMITE = 8; // mega 252 (§364 v2): 6→8
@@ -63,8 +64,12 @@ export function listarProjetosFoto(): ProjetoFoto[] {
   return lerTudo();
 }
 
-/** Recomprime a foto-base p/ caber no storage (JPEG 480, qualidade .85). */
+/** Recomprime a foto-base p/ caber no storage (JPEG 480, qualidade .85).
+ *  lote 1091-1100 (#111, as6.workers): tenta o WORKER primeiro (main
+ *  thread livre); null = cai no caminho síncrono de sempre. */
 export async function miniaturizarFoto(dataUri: string): Promise<string> {
+  const doWorker = await redimensionarNoWorker(dataUri, LADO_MINIATURA, 'image/jpeg', { qualidade: 0.85, fundo: '#0a0d15' });
+  if (doWorker) return doWorker;
   const img = new Image();
   await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = dataUri; });
   const lado = Math.min(LADO_MINIATURA, Math.max(img.width, img.height) || LADO_MINIATURA);

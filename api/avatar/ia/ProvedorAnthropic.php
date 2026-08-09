@@ -35,10 +35,30 @@ final class ProvedorAnthropic implements ProvedorIA
             throw new RuntimeException('IA_NAO_CONFIGURADA');
         }
 
-        $prompt = "Você monta personagens para o Avatar Studio do Dshow Dash usando SOMENTE ids do catálogo abaixo.\n"
-            . "Catálogo (categoria: id|nome|tema|raridade):\n" . json_encode($catalogo, JSON_UNESCAPED_UNICODE) . "\n\n"
-            . "Pedido do usuário: \"{$pedido}\"\n\n"
-            . 'Responda APENAS com JSON válido no formato: {"base":"id","camadas":{"cabelo":"id|nenhum","olhos":"id","boca":"id","roupa":"id","acessorio":"id|nenhum","fundo":"id","moldura":"id|nenhum","efeito":"id|nenhum"},"cores":{"pele":"#hex","cabelo":"#hex","roupa":"#hex","destaque":"#hex"},"nome":"nome curto do personagem","historia":"1 frase de lore em pt-BR"}';
+        // lote 1041-1050 (AS6 Parte 12, decisão #106): o prompt vem do
+        // REGISTRY versionado em dado (prompts.json — fonte única, espelhada
+        // no front por services/PromptRegistry.ts); arquivo ausente/ inválido
+        // = fallback no template embutido (byte-idêntico à v2 do registry).
+        $tpl = null;
+        $arq = __DIR__ . '/prompts.json';
+        if (is_readable($arq)) {
+            $reg = json_decode((string) file_get_contents($arq), true);
+            $t = $reg['criar_avatar']['template'] ?? null;
+            if (is_string($t) && str_contains($t, '{{catalogo}}') && str_contains($t, '{{pedido}}')) {
+                $tpl = $t;
+            }
+        }
+        if ($tpl === null) {
+            $tpl = "Você monta personagens para o Avatar Studio do Dshow Dash usando SOMENTE ids do catálogo abaixo.\n"
+                . "Catálogo (categoria: id|nome|tema|raridade):\n{{catalogo}}\n\n"
+                . "Pedido do usuário: \"{{pedido}}\"\n\n"
+                . 'Responda APENAS com JSON válido no formato: {"base":"id","camadas":{"cabelo":"id|nenhum","olhos":"id","boca":"id","roupa":"id","acessorio":"id|nenhum","fundo":"id","moldura":"id|nenhum","efeito":"id|nenhum"},"cores":{"pele":"#hex","cabelo":"#hex","roupa":"#hex","destaque":"#hex"},"nome":"nome curto do personagem","historia":"1 frase de lore em pt-BR"}';
+        }
+        $prompt = str_replace(
+            ['{{catalogo}}', '{{pedido}}'],
+            [json_encode($catalogo, JSON_UNESCAPED_UNICODE), $pedido],
+            $tpl
+        );
 
         $corpo = json_encode([
             'model' => $this->modelo,

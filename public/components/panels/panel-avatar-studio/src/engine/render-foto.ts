@@ -276,6 +276,8 @@ export interface OpcoesRenderFoto {
   tamanho?: number;
   /** §325: formato de saída — omitido/'perfil' = quadrado clássico */
   formato?: FormatoFotoId;
+  /** lote 1051-1060 (#107): reflow das posições manuais nos formatos wide */
+  reflowPos?: boolean;
   /** mega 96 (§350): lado do medalhão nos formatos WIDE (padrão esquerda) */
   lado?: 'esquerda' | 'direita';
   /** mega 103 (§372): wide SEM o retângulo de base — PNG com alpha */
@@ -539,17 +541,32 @@ function comporWide(
   const formaClipW = aj ? pathForma(aj.forma, 92) : null;
   const fclipW = formaClipW ? `${formaClipW}/>` : `<circle cx="120" cy="118" r="92"/>`;
   const cxTexto = opcoes.lado === 'direita' ? (W - 240) / 2 : (240 + W) / 2;
+  // lote 1051-1060 (AS6 Parte 11, decisão #107 — via opcoes.reflowPos, o
+  // engine segue livre de flags): posições MANUAIS definidas no PERFIL
+  // (quadro 240×240) REFLUEM p/ a célula de texto do formato wide com
+  // CONSTRAINTS (clamp na área segura da célula) — sem isso a âncora do
+  // perfil cai dentro da célula do medalhão e o derivado quebra.
+  const celulaX0 = opcoes.lado === 'direita' ? 0 : 240;
+  const reflow = (pos: { x: number; y: number }): { x: number; y: number } => {
+    if (!opcoes.reflowPos) return pos;
+    const x = celulaX0 + (pos.x / 240) * (W - 240);
+    const y = (pos.y / 240) * H;
+    return {
+      x: Math.min(celulaX0 + (W - 240) - 16, Math.max(celulaX0 + 16, x)),
+      y: Math.min(H - 14, Math.max(18, y)),
+    };
+  };
   // lote 166+167 (§343): tipografia + subtítulo (presente = legenda sobe);
   // mega 223: pos.legenda/pos.subtitulo movem a âncora (ausente = legado)
   const txW = atributosTexto(estilo.tipografia, 13, '#e6eaf2');
   const yLegenda = estilo.subtitulo ? 96 : 108;
-  const posLegW = estilo.pos?.legenda;
+  const posLegW = estilo.pos?.legenda ? reflow(estilo.pos.legenda) : undefined;
   const legendaW = estilo.legenda
     ? `<text x="${posLegW ? round1(posLegW.x) : cxTexto}" y="${posLegW ? round1(posLegW.y) : yLegenda}" text-anchor="middle" ${txW.attrs} opacity="0.92">` +
       `${escaparTexto(txW.caixaAlta ? estilo.legenda.toUpperCase() : estilo.legenda)}</text>`
     : '';
   const txSub = atributosTexto(estilo.tipografia, 10.5, '#8b93a7');
-  const posSubW = estilo.pos?.subtitulo;
+  const posSubW = estilo.pos?.subtitulo ? reflow(estilo.pos.subtitulo) : undefined;
   const subtituloW = estilo.subtitulo
     ? `<text x="${posSubW ? round1(posSubW.x) : cxTexto}" y="${posSubW ? round1(posSubW.y) : 118}" text-anchor="middle" ${txSub.attrs} opacity="0.9">` +
       `${escaparTexto(txSub.caixaAlta ? estilo.subtitulo.toUpperCase() : estilo.subtitulo)}</text>`
@@ -576,7 +593,7 @@ function comporWide(
   // célula do texto: oposta ao medalhão
   const cx2 = direita ? (W - 240) / 2 : (240 + W) / 2;
   // mega 223/§345.1: pos.emblema move o badge (ausente = translate legado)
-  const posEmbW = estilo.pos?.emblema;
+  const posEmbW = estilo.pos?.emblema ? reflow(estilo.pos.emblema) : undefined;
   const trEmbW = posEmbW
     ? `translate(${round1(posEmbW.x - 152)} ${round1(posEmbW.y - 206)}) scale(1)`
     : `translate(${cx2 - 152} -114) scale(1)`;
@@ -587,7 +604,7 @@ function comporWide(
   // mega 224 (§344) + 223: selo-componente quando configurado (senão legado)
   let selo = '';
   if (estilo.selo) {
-    const posSW = estilo.pos?.selo;
+    const posSW = estilo.pos?.selo ? reflow(estilo.pos.selo) : undefined;
     if (!estilo.seloCfg && !posSW) {
       const nome = estilo.selo.nome;
       const larg = Math.min(W - 240 - 24, Math.max(120, Math.round(nome.length * 10) + 34));

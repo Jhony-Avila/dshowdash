@@ -7,6 +7,11 @@
 // client publica hoje: a foto-base dos projetos do Photo Studio. Cada
 // fase reporta ok/detalhe — falha PARA o pipeline com o nome da fase
 // (nunca um erro anônimo). Determinístico: mesma entrada = mesma saída.
+//
+// lote 1091-1100 (#111, as6.workers): a COMPRESSÃO tenta o worker
+// primeiro (main thread livre p/ a UI); null = canvas síncrono de
+// sempre, byte a byte. O gate da flag vive em redimensionarNoWorker.
+import { redimensionarNoWorker } from './WorkerPool';
 
 export interface FasePipeline {
   fase: 'importacao' | 'validacao' | 'compressao' | 'thumbnail' | 'preview' | 'metadados';
@@ -62,11 +67,12 @@ export async function processarFoto(
   }
   fases.push({ fase: 'validacao', ok: true });
 
-  // 3) COMPRESSÃO — JPEG quadrado no lado alvo
+  // 3) COMPRESSÃO — JPEG quadrado no lado alvo (worker → sync, #111)
   const ladoReal = Math.min(lado, Math.max(largura, altura) || lado);
-  const foto = paraJpeg(img, ladoReal, 0.85);
+  const daWorker = await redimensionarNoWorker(dataUri, ladoReal, 'image/jpeg', { qualidade: 0.85, fundo: '#0a0d15' });
+  const foto = daWorker ?? paraJpeg(img, ladoReal, 0.85);
   if (!foto) return falhar('compressao', 'canvas indisponível');
-  fases.push({ fase: 'compressao', ok: true, detalhe: `${ladoReal}px` });
+  fases.push({ fase: 'compressao', ok: true, detalhe: `${ladoReal}px${daWorker ? ' · worker' : ''}` });
 
   // 4) THUMBNAIL — miniatura p/ listas (cacheada em IDB, §277)
   const thumb = paraJpeg(img, ladoThumb, 0.7);

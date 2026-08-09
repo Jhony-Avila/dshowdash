@@ -670,6 +670,140 @@
   padrão comprovado (format-patch → gzip → base64 → sha256 → worktree →
   git am → push → deploy-as5.sh) p/ o Jhony colar no servidor.
 
+- **#102 (2026-08-09) — Golden avatars (lote 1001–1010; AS6 Parte
+  16)**: regressão de RENDER executável em node puro — 12 configs
+  canônicas (busto padrão/completo, sobrepeça, params, canais, corpo/
+  postura/fino, título, palco, corpo inteiro + foto medalhão/ordem de
+  camadas/wide) → sha256 do SVG versionado em
+  docs/AVATAR-STUDIO-6/golden-avatars.json. Ids derivados = primeiro
+  id ORDENADO por categoria: mudança de catálogo muda o golden de
+  propósito (revisão consciente). Desvio intencional segue a doutrina
+  #83: `--gravar` + revisar o diff do JSON no MESMO commit. Zero
+  navegador (esbuild --platform=node; flags = defaults, determinístico).
+  golden-avatars.mjs na suíte.
+
+- **#103 (2026-08-09) — Virtualização REAL da grade (lote 1011–1020,
+  flag `as6.virtual`; AS6 Parte 9 · §276 v2)**: a virtualização §276
+  (esqueleto adiado + promoção one-way) vira JANELA DESLIZANTE — card
+  promovido que fica LONGE da viewport (observer de saída próprio,
+  margem 1600px ≫ 600px do pré-render = zero oscilação) volta a
+  esqueleto e devolve o DOM. Guardas: foco dentro, :hover e item
+  EQUIPADO nunca reciclam; os CARDS_IMEDIATOS (topo) nunca foram
+  preguiçosos e seguem fixos. Implementação: 2º IntersectionObserver
+  único e CONTÍNUO no GradeItens + `aoMontarRaiz` opcional no CardItem
+  (a raiz sobe p/ o observer sem wrapper — display:contents não mede).
+  Aprendizado de teste: numa janela de duas vias "rolar até o fim"
+  recicla o TOPO ao mesmo tempo — a prova correta é o ÚLTIMO card
+  (real no fim ⇄ esqueleto no topo). Off = one-way anterior byte a
+  byte. Teste virtual-as6.mjs; shell-vgrid/a11y-v2/cards-v2 verdes.
+
+- **#104 (2026-08-09) — Quality Manager central (lote 1021–1030, flag
+  `as6.quality`; AS6 Parte 9)**: services/QualityManager.ts é a FONTE
+  ÚNICA de qualidade — perfil Auto/Eco/Equilibrado/Alto (persistido em
+  dshow.avst6.qualidade.v1; Auto resolve por deviceMemory/núcleos/
+  saveData, determinístico por device) + evento avst6:qualidade.
+  Consumidores: 3D recebe a DICA de tier (o adaptativo §528 continua
+  mandando por cima), o shell expõe [data-qualidade] e o CSS do ECO
+  derruba backdrop-filter/animação de card (efeitos caros), e as
+  partículas do gatilho §156 escalam densidade (×0.5 eco · ×1.25
+  alto — palco só, nunca render salvo). Seletor cíclico no BarraTopo.
+  Aprendizado: "tic" de re-render com setState(v => v) NÃO re-renderiza
+  (React bail-out) — usar contador. Off = decisões locais anteriores
+  byte a byte. Teste quality-as6.mjs.
+
+- **#105 (2026-08-09) — Touch + drag&drop (lote 1031–1040, flag
+  `as6.touch`; AS6 Parte 6)**: arrastar um card da grade e SOLTAR no
+  palco equipa (§325 "uma ação prepara o ambiente"): HTML5 DnD com tipo
+  próprio text/avst-item; o drop vira COMANDO com undo (aplicarComando
+  — Ctrl+Z desfaz); viewport marca [data-soltavel] com realce + selo
+  "Solte para equipar" durante o arrasto. Gestos: a dock horizontal
+  declara touch-action: pan-y (vertical rola a página; horizontal é do
+  drag/momentum #96 — pointer events já cobrem touch). Off = sem
+  draggable/drop, byte a byte. Teste touch-as6.mjs (aprendizado: o
+  atributo de realce é estado React — conferir APÓS um frame, não
+  sincronamente no dispatch).
+
+- **#106 (2026-08-09) — Prompt Registry da IA (lote 1041–1050, flag
+  `as6.ia_registry`; AS6 Parte 12)**: prompts deixam de ser string
+  hardcoded — api/avatar/ia/prompts.json é a FONTE ÚNICA do servidor
+  (id/versão/descrição/template {{placeholders}}); ProvedorAnthropic
+  monta dali com fallback embutido byte-idêntico (arquivo ausente nunca
+  quebra); services/PromptRegistry.ts é o ESPELHO tipado no front
+  (teste prova identidade byte a byte — mesma doutrina do espelho PHP)
+  com renderizarPrompt() puro (placeholder sem valor é PRESERVADO,
+  auditável; sem eval). VidaService envia prompt_versao no POST (audit,
+  gated). SEM chave e SEM chamada no front — decisões #24 (IA nunca
+  gera assets) e segredos-só-no-servidor intactas. Teste ia-registry.mjs.
+
+- **#107 (2026-08-09) — Derivados com reflow (lote 1051–1060, flag
+  `as6.derivados`; AS6 Parte 11)**: posições MANUAIS (§323.2) definidas
+  no quadro do PERFIL agora REFLUEM p/ a célula de texto dos formatos
+  wide com CONSTRAINTS (clamp na área segura) — antes a âncora crua
+  caía dentro da célula do medalhão e o derivado quebrava. Engine segue
+  LIVRE de flags: o reflow entra por opcoes.reflowPos, injetado pelo
+  svgFotoDe (camada de serviço) conforme a flag; estilo SEM pos rende
+  idêntico com/sem reflow (goldens intactos). Painel "Derivados (ao
+  vivo)" na Foto: os 4 formatos renderizados juntos com o reflow
+  aplicado; clicar troca o formato de trabalho. Off = wide anterior
+  byte a byte. Teste derivados.mjs (motor node-puro + UI).
+
+- **#108 (2026-08-09) — CMS read-only (lote 1061–1070, flag
+  `as6.cms_ro`; AS6 Parte 15)**: primeiro pedaço do CMS SEM esperar o
+  backend novo — api/avatar/cms.php é GET-only + AdminGate fail-closed
+  (mesma allowlist do admin.php; sem allowlist = 403 p/ todo mundo) e
+  LISTA o que o banco já tem: assets (joins categoria/raridade/
+  biblioteca/coleção, filtro por status, paginação ≤100), licenças e a
+  trilha avatar_catalog_audit. Zero escrita por construção (teste prova
+  estático: nenhum INSERT/UPDATE/DELETE). Front: shell/CmsRo.tsx (chunk
+  lazy §275) com 3 abas e tabela genérica, aberto pela Paleta de
+  Comandos; 401/403 → "restrito", erro → mensagem — nunca dados sem
+  gate. Escritas continuam exclusivas do admin.php (POST+CSRF). Teste
+  cms-ro.mjs.
+
+- **#109 (2026-08-09) — Vida do avatar no shell novo (lote 1071–1080,
+  flag `as6.vida_shell`)**: corrige a REGRESSÃO da auditoria FASE 0 —
+  o viewport do shell renderizava SEM palco:true, então os grupos
+  animáveis (personagem/cabelo/palpebras) nem existiam. Com a flag: o
+  AvatarSvg do viewport pede o modo palco (§608 — nunca em SVG salvo) e
+  workspace/vida.ts liga a MESMA receita comprovada do PalcoCinema
+  (respiração 4.2s, balanço do cabelo 3.4s, piscada 2.8–7s via WAAPI).
+  A vida mora NO AvatarSvg (acompanha o ciclo do markup) e um
+  MutationObserver religa quando o innerHTML é reescrito por fora do
+  React — visto na prática: o nó animado era substituído por um
+  idêntico e as animações evaporavam sem cleanup (aprendizado: dep no
+  string do svg não cobre reescritas de mesmo conteúdo). §297
+  (movReduzido) e palco 3D desligam. Off = viewport estático anterior.
+  Teste vida-shell.mjs; shell-show/palco-v2/clima/goldens verdes.
+
+- **#110 (2026-08-09) — A11y v3 + i18n dos módulos novos (lote
+  1081–1090; sem flag própria — doutrina #62)**: cobertura dos módulos
+  AS6 das ondas 911–1080. A11y: Escape fecha o popover de diff §350 e o
+  drawer do CMS; corpos do Inspector viram role="region" nomeadas;
+  derivados ganham aria-pressed; drop no palco ANUNCIA no aria-live
+  ("<item> equipado pelo arrasto"). i18n: ~30 chaves EN novas
+  (Inspector/grupos/compatibilidade/diff/CMS) — PT segue canônico
+  (chave = texto; zero regressão por construção). Limite registrado: o
+  selo "Solte para equipar" é CSS ::after (i18n não alcança; fica PT
+  até o selo virar DOM). Sem flag: t() é inerte em PT e os ajustes de
+  a11y são aditivos.
+
+- **#111 (2026-08-09) — Pool de workers p/ tarefas pesadas (lote
+  1091–1100, flag `as6.workers` — AS6 Parte 9)**: worker é ACELERAÇÃO,
+  nunca dependência. foto.worker.ts redimensiona/re-encoda fora da
+  main thread (createImageBitmap + OffscreenCanvas); WorkerPool mantém
+  pool preguiçoso de 2 workers reutilizados e `redimensionarNoWorker`
+  devolve **null em QUALQUER falha** (flag off, sem Worker, erro,
+  timeout 4s) — o caller mantém o caminho síncrono de sempre como
+  fallback byte a byte. Ponto de uso real: a fase de COMPRESSÃO do
+  pipeline §268 (processarFoto) e miniaturizarFoto tentam o worker
+  primeiro. Limite registrado: bytes do JPEG podem diferir entre o
+  encoder do worker e o canvas — por isso o worker só toca
+  cache/estado LOCAL (foto-base de projeto, thumbs TTL §277), nunca
+  estado persistido de render do avatar (byte-stability intocada).
+  Teste workers-as6.mjs (ON: constrói ≤2 workers e salva JPEG válido;
+  OFF: zero workers e save idêntico §651); regressões foto-projeto/
+  infra-v3/foto-f6 verdes.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

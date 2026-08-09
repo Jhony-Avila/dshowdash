@@ -7,7 +7,7 @@
 // resumo grosso ganha um "ver detalhes" com o DIFF campo a campo
 // legível (nomes do catálogo, de → para) + histórico dos últimos
 // salvamentos (ring local). Off = barra anterior byte a byte.
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Check, ListTree, LoaderCircle, RotateCcw, Save, TriangleAlert } from 'lucide-react';
 import type { AvatarStore } from '../nucleo/estado';
 import { paraLegado2d } from '../nucleo/adaptadores';
@@ -40,6 +40,13 @@ export function BarraSalvamento({ store, aoSalvar }: {
   const [fase, setFase] = useState<'ocioso' | 'salvando' | 'erro'>('ocioso');
   const [salvoEm, setSalvoEm] = useState<string | null>(null);
   const [detalhes, setDetalhes] = useState(false); // §350 (as6.diff_v6)
+  // lote 1081-1090 (#110): Escape fecha o popover de diff (a11y §297)
+  useEffect(() => {
+    if (!detalhes) return undefined;
+    const ao = (e: KeyboardEvent) => { if (e.key === 'Escape') setDetalhes(false); };
+    window.addEventListener('keydown', ao);
+    return () => window.removeEventListener('keydown', ao);
+  }, [detalhes]);
   const temDiff = flag('as6.diff_v6');
 
   const salvar = async () => {

@@ -708,7 +708,7 @@ export function svgFotoDe(fotoHref: string, estilo: EstiloFoto, opcoes?: OpcoesR
       && estilo.ordemFundo.every((c) => c === 'fundo' || c === 'banner' || c === 'aura')
       && estilo.ordemFundo.join(',') !== 'fundo,banner,aura'
       ? { ordemFundo: estilo.ordemFundo } : {}),
-  }, itemPorId, opcoes);
+  }, itemPorId, { ...(flag('as6.derivados') ? { reflowPos: true } : {}), ...opcoes });
 }
 
 /** mega 115 (§344): legenda da foto — só letras/números/pontuação leve. */

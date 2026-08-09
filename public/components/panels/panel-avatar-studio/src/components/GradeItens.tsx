@@ -390,6 +390,28 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   }, []);
   useEffect(() => () => registroIO.current?.io?.disconnect(), []);
   const virtualizar = itens.length > LIMIAR_VIRTUALIZACAO;
+  // lote 1011-1020 (AS6 Parte 9, flag as6.virtual): VIRTUALIZAÇÃO REAL —
+  // janela deslizante: card promovido que fica LONGE da viewport (margem
+  // 1600px ≫ 600px de pré-render = zero oscilação) volta a esqueleto e
+  // devolve o DOM. Observer ÚNICO e contínuo; quem decide se pode
+  // desmontar é o card (foco/hover/equipado nunca reciclam).
+  const registroSaida = useRef<{ io: IntersectionObserver | null; alvos: Map<Element, () => void> } | null>(null);
+  const vigiarSaida = useCallback((el: Element, aoSair: () => void) => {
+    if (!registroSaida.current) {
+      const alvos = new Map<Element, () => void>();
+      const io = typeof IntersectionObserver === 'undefined' ? null
+        : new IntersectionObserver((entradas) => {
+          for (const e of entradas) if (!e.isIntersecting) alvos.get(e.target)?.();
+        }, { rootMargin: '1600px 0px' });
+      registroSaida.current = { io, alvos };
+    }
+    const r = registroSaida.current;
+    if (!r.io) return () => { /* sem IO = sem reciclagem (fail-safe) */ };
+    r.alvos.set(el, aoSair);
+    r.io.observe(el);
+    return () => { r.io?.unobserve(el); r.alvos.delete(el); };
+  }, []);
+  useEffect(() => () => registroSaida.current?.io?.disconnect(), []);
 
   return (
     <div className="avst-biblioteca" data-catv2={flag('as5.catalogo_v2') ? '' : undefined}>
@@ -618,7 +640,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             },
           };
           return virtualizar && idx >= CARDS_IMEDIATOS
-            ? <CardPreguicoso key={item.id} observar={observar} {...props} />
+            ? <CardPreguicoso key={item.id} observar={observar} vigiarSaida={vigiarSaida} {...props} />
             : <CardItem key={item.id} {...props} />;
         })}
         {/* mega 422 (§57.2, flag as5.busca_v2): "você quis dizer" — termo
@@ -683,6 +705,8 @@ type CardProps = {
   /** mega 434 (§60.9, flag as5.cards_v2): fora da base atual — visível
    *  mas não equipável (antes era simplesmente filtrado da grade) */
   indisponivel?: boolean;
+  /** lote 1011-1020 (as6.virtual): expõe a RAIZ ao pai (reciclagem) */
+  aoMontarRaiz?: (el: HTMLDivElement | null) => void;
   aoFavoritar: () => void;
   aoEscolher: () => void;
   aoPrever?: (novo: AvatarConfig | null) => void;
@@ -692,16 +716,34 @@ type CardProps = {
 /** §276: card ADIADO — esqueleto com as mesmas dimensões (nome + pips ficam
  *  legíveis p/ leitores de tela; só o AvatarSvg caro é diferido). Vira
  *  CardItem real quando o observer avisa que se aproximou do viewport. */
-function CardPreguicoso({ observar, ...props }: CardProps & {
+function CardPreguicoso({ observar, vigiarSaida, ...props }: CardProps & {
   observar: (el: Element, aoVer: () => void) => () => void;
+  vigiarSaida?: (el: Element, aoSair: () => void) => () => void;
 }) {
   const [visto, setVisto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const refReal = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (visto || !ref.current) return undefined;
     return observar(ref.current, () => setVisto(true));
   }, [visto, observar]);
-  if (visto) return <CardItem {...props} />;
+  // lote 1011-1020 (as6.virtual): saiu LONGE da janela → volta a esqueleto.
+  // Nunca recicla com foco dentro, hover ou item EQUIPADO (âncoras vivas).
+  const reciclavel = flag('as6.virtual') && !!vigiarSaida;
+  const equipado = props.ativo;
+  const aoMontarRaiz = useCallback((el: HTMLDivElement | null) => { refReal.current = el; }, []);
+  useEffect(() => {
+    if (!visto || !reciclavel) return undefined;
+    const el = refReal.current;
+    if (!el) return undefined;
+    return vigiarSaida(el, () => {
+      const raiz = refReal.current;
+      if (!raiz || equipado) return;
+      if (raiz.matches(':hover') || raiz.contains(document.activeElement)) return;
+      setVisto(false);
+    });
+  }, [visto, reciclavel, vigiarSaida, equipado]);
+  if (visto) return <CardItem {...props} {...(reciclavel ? { aoMontarRaiz } : {})} />;
   const { item, modo, ativo, bloqueado } = props;
   return (
     <div ref={ref} role="option" aria-selected={ativo} aria-disabled={bloqueado}
@@ -731,11 +773,17 @@ function CardPreguicoso({ observar, ...props }: CardProps & {
 const CardItem = memo(CardItemBase, (a, b) =>
   a.item === b.item && a.config === b.config && a.modo === b.modo
   && a.ativo === b.ativo && a.favorito === b.favorito && a.bloqueado === b.bloqueado
-  && a.aoPrever === b.aoPrever && a.aoDetalhes === b.aoDetalhes);
+  && a.aoPrever === b.aoPrever && a.aoDetalhes === b.aoDetalhes
+  && a.aoMontarRaiz === b.aoMontarRaiz);
 
-function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indisponivel, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: CardProps) {
+function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indisponivel, aoMontarRaiz, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: CardProps) {
   const rar = RARIDADES[item.raridade];
   const cardRef = useRef<HTMLDivElement>(null);
+  // lote 1011-1020 (as6.virtual): a raiz sobe p/ o observer de SAÍDA
+  useEffect(() => {
+    aoMontarRaiz?.(cardRef.current);
+    return () => aoMontarRaiz?.(null);
+  }, [aoMontarRaiz]);
   // valida o preview: trocar p/ uma espécie derruba o cabelo TAMBÉM no thumbnail
   const preview = useMemo(() => validarConfig(comItem(config, item.categoria, item.id)), [config, item]);
   const escolher = bloqueado ? undefined : aoEscolher;
@@ -759,7 +807,13 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
   }, [uxFinal, ativo, item, config]);
 
   return (
-    <div ref={cardRef} role="option" aria-selected={ativo} aria-disabled={bloqueado || indisponivel || undefined}
+    <div ref={cardRef}
+      draggable={flag('as6.touch') && !bloqueado ? true : undefined}
+      onDragStart={flag('as6.touch') && !bloqueado ? (e) => {
+        // lote 1031-1040 (#105, as6.touch): arrastar o card ao PALCO equipa
+        e.dataTransfer.setData('text/avst-item', item.id);
+        e.dataTransfer.effectAllowed = 'copy';
+      } : undefined} role="option" aria-selected={ativo} aria-disabled={bloqueado || indisponivel || undefined}
       className={`avst-card ${modo === 'lista' ? 'avst-card-lista' : ''} ${ativo ? 'avst-card-ativo' : ''} ${bloqueado ? 'avst-card-bloqueado' : ''} ${indisponivel ? 'avst-card-indisponivel' : ''}`}
       data-raridade={item.raridade}
       data-indisponivel={indisponivel ? '' : undefined}

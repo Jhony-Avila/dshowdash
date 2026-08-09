@@ -36,6 +36,7 @@ import { ClimaOverlay } from '../workspace/ClimaOverlay';
 import { ComposicaoPalco } from '../workspace/ComposicaoPalco';
 import { BarraCenas } from '../workspace/BarraCenas';
 import { aplicarContexto } from '../workspace/contexto';
+import { EVENTO_QUALIDADE, qualidade } from '../services/QualityManager'; // lote 1021-1030 (#104)
 // lote 911–920 (decisão #93): domínio da composição do palco movido
 // VERBATIM p/ workspace/palco.ts (fase 3b — sem dependência circular §3470)
 import {
@@ -66,6 +67,7 @@ const VersoesAvatar = lazy(() => import('./VersoesAvatar').then((m) => ({ defaul
 const Atalhos = lazy(() => import('./Atalhos').then((m) => ({ default: m.Atalhos })));
 const TelemetriaDev = lazy(() => import('./TelemetriaDev').then((m) => ({ default: m.TelemetriaDev })));
 const DetalheAsset = lazy(() => import('./DetalheAsset').then((m) => ({ default: m.DetalheAsset })));
+const CmsRo = lazy(() => import('./CmsRo').then((m) => ({ default: m.CmsRo }))); // lote 1061-1070 (#108)
 import {
   CHAVE_RASCUNHO_STORAGE, gravarRascunho, idDaAba, lerRascunho, limparRascunho,
 } from '../services/PresetsPessoais';
@@ -183,7 +185,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   useEffect(() => {
     const ao = (e: Event) => setAnuncio(String((e as CustomEvent).detail ?? ''));
     window.addEventListener('avst5:anuncio', ao);
-    return () => window.removeEventListener('avst5:anuncio', ao);
+    // lote 1021-1030 (#104): perfil de qualidade mudou → re-render do shell
+    // (setTicFavs é o tic de re-render que o shell já usa p/ favoritos)
+    const aoQualidade = () => setTicFavs((v) => v + 1);
+    window.addEventListener(EVENTO_QUALIDADE, aoQualidade);
+    return () => { window.removeEventListener('avst5:anuncio', ao); window.removeEventListener(EVENTO_QUALIDADE, aoQualidade); };
   }, []);
   // mega 301 (P10/§548): focus trap delegado — prende o Tab no dialog aberto
   useEffect(() => instalarFocoPreso(), []);
@@ -205,6 +211,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [filtroSlot, setFiltroSlot] = useState<'todos' | SlotAcessorio>('todos');
   // §67: drawer de detalhes do asset (null = fechado)
   const [detalheId, setDetalheId] = useState<string | null>(null);
+  // lote 1031-1040 (#105, as6.touch): drag de card sobre o palco
+  const [arrastandoItem, setArrastandoItem] = useState(false);
   // R7/R8: modos do palco — edicao | foco (F/Esc) | studio (apresentação)
   const [modo, setModo] = useState<'edicao' | 'foco' | 'studio'>('edicao');
   const [painelLargo, setPainelLargo] = useState(false);
@@ -760,6 +768,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // mega 46 (§290): viewer local de telemetria (flag dev)
   const [telemetriaDev, setTelemetriaDev] = useState(false);
+  // lote 1061-1070 (#108, as6.cms_ro): CMS somente-leitura (AdminGate)
+  const [cmsRo, setCmsRo] = useState(false);
 
   // lote 121–130 (§232): CONSULTOR de estilo (regras, flag as5.consultor)
   const [consultor, setConsultor] = useState(false);
@@ -961,6 +971,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
+        data-qualidade={flag('as6.quality') ? qualidade().perfil : undefined} /* lote 1021-1030 (#104) */
         data-uxfinal={flag('as5.ux_final') ? '' : undefined} // megas 598-599 (§545-§546)
         data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
         style={{ '--avst-acento': corTema, '--avst5-esq': `${larguras.esq}px`,
@@ -993,6 +1004,28 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* mega 75 (§132): EDIÇÃO tem luz neutra garantida — cor fiel;
               a iluminação §164 só vale nos modos studio/foco */}
           <main className="avst5-viewport" aria-label="Palco do avatar" data-fundo={fundo}
+            /* lote 1031-1040 (#105, as6.touch): soltar um card AQUI equipa —
+               §325 na prática (arrastou → vestiu); realce via data-soltavel */
+            data-soltavel={arrastandoItem ? '' : undefined}
+            onDragOver={flag('as6.touch') ? (e) => {
+              if (e.dataTransfer.types.includes('text/avst-item')) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                if (!arrastandoItem) setArrastandoItem(true);
+              }
+            } : undefined}
+            onDragLeave={flag('as6.touch') ? () => setArrastandoItem(false) : undefined}
+            onDrop={flag('as6.touch') ? (e) => {
+              const id = e.dataTransfer.getData('text/avst-item');
+              setArrastandoItem(false);
+              if (!id) return;
+              e.preventDefault();
+              const item = itemPorId(id);
+              if (!item) return;
+              aplicarComando(validarConfig(comItem(paraLegado2d(store.estadoDraft), item.categoria, id)));
+              setAnuncio(`${item.nome} equipado pelo arrasto.`); // a11y (#110)
+              telemetria('palco_drop_equipou', { id }); // §290
+            } : undefined}
             data-hora={hora}
             data-luz={modo === 'edicao' ? 'neutra'
               : (flag('as5.luz_contextual') && luzAuto ? LUZ_POR_HORA[hora] : luz)} data-clima={clima}
@@ -1045,7 +1078,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     }} />
                 )}
                 <div className="avst5-zoom" style={zoomEstilo}>
-                  <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido} />
+                  <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido}
+                    palco={flag('as6.vida_shell') && !palco3d && !movReduzido} />
                 </div>
               </div>
             )}
@@ -1082,7 +1116,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     if (!flag('as5.efeitos_v2') || tipoPref === 'legado') return svgEfeitoIsolado('efe_confete');
                     const tipo = (['pontos', 'estrelas', 'pixels', 'faiscas'].includes(tipoPref) ? tipoPref : 'pontos') as 'pontos' | 'estrelas' | 'pixels' | 'faiscas';
                     return svgParticulas(tipo, {
-                      quantidade: 34, tamanho: 6, velocidade: 1.3, direcao: 'explodir',
+                      // #104: densidade segue o Quality Manager (×1 sem a flag)
+                      quantidade: Math.max(8, Math.round(34 * qualidade().particulas)), tamanho: 6, velocidade: 1.3, direcao: 'explodir',
                       cor: configVisivel.cores.destaque, opacidade: 0.9, duracaoMs: 1600, turbulencia: 0.3,
                     }, 'medio', 5);
                   })(),
@@ -1276,6 +1311,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         <Suspense fallback={null}>
         {atalhos && <Atalhos aoFechar={() => setAtalhos(false)} />}
         {telemetriaDev && <TelemetriaDev aoFechar={() => setTelemetriaDev(false)} />}
+        {cmsRo && <CmsRo aoFechar={() => setCmsRo(false)} />}
         {consultor && (
           <Consultor config={validarConfig(paraLegado2d(store.estadoDraft))}
             desbloqueados={desbloqueados}
@@ -1360,6 +1396,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               // mega 46: viewer de telemetria (só com a flag dev ligada)
               ...(flag('as5.telemetria_painel') ? [{
                 id: 'telemetria', rotulo: 'Telemetria local (dev)', executar: () => setTelemetriaDev(true),
+              }] : []),
+              ...(flag('as6.cms_ro') ? [{
+                id: 'cms-ro', rotulo: 'CMS do catálogo (admin, leitura)', executar: () => setCmsRo(true),
               }] : []),
               { id: 'classico', rotulo: 'Voltar ao modo clássico', executar: aoSairDoShell },
             ]} />
