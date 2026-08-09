@@ -2695,4 +2695,9 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   width: 100%; text-align: center; padding: 5px 10px; font-size: 11.5px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+
+/* ── lote 891–900 (as6.meta_assets): tags do asset no drawer (§227) ──
+   Só existe no DOM com a flag ligada (rollback §651 = sem a ficha). */
+.avst5-det-tags { flex-wrap: wrap; overflow: visible; margin: 3px 0; }
+.avst5-det-tags .avst-ft-chip { font-size: 10.5px; padding: 2px 8px; }
 .avst-shell[data-visual2] .avst-categorias { border-right: 1px solid color-mix(in srgb, var(--as6-superficie-4) 60%, transparent); }

@@ -21,6 +21,7 @@ import { alternarNaLista, criarLista, excluirLista, listarListas } from '../serv
 import { alternarPermanente, favoritosPermanentes } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
 import { ROTULO_FAMILIA, familiaDoPoder } from '../services/PoderesFamilia'; // mega 288 (§153)
+import { metadadosDe } from '../services/MetadadosAssets'; // lote 891-900 (§151/§152/§227)
 import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // mega 353 (§157)
 // mega 248 (§228): estado ARQUIVADO (local-first, reversível)
 import { alternarArquivado, arquivados } from '../services/ArquivoItens';
@@ -207,6 +208,30 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
             <Layers size={12} aria-hidden /> Coleção <strong>{colecao.nome}</strong> · {prog.usados}/{prog.total}
           </button>
         )}
+        {/* lote 891-900 (#90, as6.meta_assets): FICHA do asset — autor/
+            origem/versão (§151), licença interna (§152) e TAGS clicáveis
+            que disparam a busca na grade (§227 "pesquisar") */}
+        {flag('as6.meta_assets') && (() => {
+          const md = metadadosDe(item);
+          return (
+            <>
+              <p className="avst5-det-meta" data-teste="det-metadados">
+                Autor: {md.autor} · Origem: {md.origem} · v{md.versao}
+                <br />Licença: {md.licenca}
+              </p>
+              <p className="avst-ft-chips avst5-det-tags" data-teste="det-tags" aria-label="Tags do asset (§227)">
+                {md.tags.map((tg) => (
+                  <button key={tg} type="button" className="avst-ft-chip" data-teste="det-tag"
+                    title={`Buscar tudo com a tag "${tg}" na grade (§227)`}
+                    onClick={() => {
+                      try { window.dispatchEvent(new CustomEvent('avst6:buscar-tag', { detail: tg })); } catch { /* busca é cosmética */ }
+                      aoFechar();
+                    }}>#{tg}</button>
+                ))}
+              </p>
+            </>
+          );
+        })()}
         {(item.usaCores?.length ?? 0) > 0 && (
           <p className="avst5-det-meta">Canais de cor: {item.usaCores!.map((c) => NOME_CANAL[c]).join(', ')}</p>
         )}
