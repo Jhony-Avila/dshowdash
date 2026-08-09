@@ -2740,3 +2740,6 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst6-diff-valor { text-align: right; overflow-wrap: anywhere; }
 .avst6-diff-hist { border-top: 1px solid var(--as6-superficie-4); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .avst6-diff-hist-item { display: flex; flex-direction: column; gap: 1px; font-size: 11.5px; }
+
+/* ── lote 971–980 (as6.foto_projeto): atualizar fonte §1227 ── */
+.avst6-fp-atualizar { right: 34px; }

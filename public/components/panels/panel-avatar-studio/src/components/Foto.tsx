@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Aperture, BadgeCheck, BookmarkPlus, Box, Camera, Check, Crown, Download, FolderOpen, Grid3x3, ImageUp,
-  Images, Layers, Lightbulb, LoaderCircle, Maximize, Move, Redo2, RotateCcw, Share2, SlidersHorizontal, Sparkles, Star, Trash2, Undo2,
+  Images, Layers, Lightbulb, LoaderCircle, Maximize, Move, Redo2, RefreshCw, RotateCcw, Share2, SlidersHorizontal, Sparkles, Star, Trash2, Undo2,
   Video, Wand2, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { carregarFotos, reativarVersao, salvarFoto } from '../services/AvatarService';
@@ -41,7 +41,7 @@ import { t } from '../nucleo/i18n'; // lote 521-530 (§296)
 import { semanaIso } from '../services/Missoes';
 import { alternarFavoritoTemplate, favoritosTemplate } from '../services/FavoritosTemplate';
 import { compartilharPng, podeCompartilhar } from '../services/Compartilhar';
-import { excluirProjetoFoto, listarProjetosFoto, renomearProjetoFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
+import { atualizarFonteProjeto, excluirProjetoFoto, listarProjetosFoto, miniaturizarFoto, renomearProjetoFoto, salvarProjetoFoto } from '../services/ProjetosFoto';
 // megas 253+258 (§369/§349): presets de exportação + compor pra mim
 import { excluirPresetExport, listarPresetsExport, salvarPresetExport } from '../services/PresetsExport';
 import { listarPresets } from '../services/PresetsPessoais'; // lote 531-540 (§321.2)
@@ -143,6 +143,10 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
   const [mensagem, setMensagem] = useState<string | null>(null);
   // 4.6 §21 — modo estilizada: foto base (data-url 480) + parâmetros
   const [fotoEstilo, setFotoEstilo] = useState<string | null>(null);
+  // lote 971-980 (AS6 §1226, as6.foto_projeto): SNAPSHOT do avatar
+  // quando ele é a FONTE da foto (entrada §321.1-.2); câmera/arquivo
+  // zeram — projeto salvo carrega o config p/ re-editar §1225/§1227
+  const [fonteAvatar, setFonteAvatar] = useState<AvatarConfig | null>(null);
   // mega 12 (§21×§174.1): TERCEIRA origem — captura do personagem 3D
   const [galeria3d, setGaleria3d] = useState<EntradaIndice3d[] | null>(null);
   const [capturando3d, setCapturando3d] = useState(false);
@@ -485,15 +489,17 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
   }, [formato]);
   const guardarProjeto = useCallback(async () => {
     if (!fotoEstilo) return;
-    const p = await salvarProjetoFoto(fotoEstilo, estilo, formato);
+    const p = await salvarProjetoFoto(fotoEstilo, estilo, formato, '',
+      flag('as6.foto_projeto') && fonteAvatar ? fonteAvatar : undefined); // §1226
     setProjetos(listarProjetosFoto());
     setMensagem(p ? `Projeto "${p.nome}" guardado — reabra quando quiser.` : 'Limite de 6 projetos atingido.');
     if (p) telemetria('foto_projeto_salvou');
-  }, [fotoEstilo, estilo, formato]);
+  }, [fotoEstilo, estilo, formato, fonteAvatar]);
   const abrirProjeto = useCallback((p: ProjetoFoto) => {
     setFotoEstilo(p.foto);
     setEstilo(p.estilo);
     setFormato(p.formato);
+    setFonteAvatar(p.avatarFonte ?? null); // §1226 (v1 sem snapshot = null)
     zerarHistorico();
     setMensagem(`Projeto "${p.nome}" reaberto.`);
     telemetria('foto_projeto_abriu');
@@ -631,7 +637,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0);
     const img = new Image();
-    img.onload = () => { setRecorte({ img, zoom: 1, x: 0, y: 0 }); fecharCamera(); };
+    img.onload = () => { setFonteAvatar(null); setRecorte({ img, zoom: 1, x: 0, y: 0 }); fecharCamera(); }; // câmera ≠ avatar (§1226)
     img.src = quadro.toDataURL('image/png');
   }, [fecharCamera]);
 
@@ -656,6 +662,7 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
         return;
       }
       fecharCamera();
+      setFonteAvatar(null); // arquivo ≠ avatar (§1226)
       setRecorte({ img, zoom: 1, x: 0, y: 0 });
     };
     img.onerror = () => { setMensagem('Não consegui ler esta imagem.'); URL.revokeObjectURL(url); };
@@ -667,9 +674,10 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
   // recorte/estilização (nada novo depois daqui)
   const usarConfigComoFoto = useCallback((cfg: AvatarConfig) => {
     try {
-      const uri = dataUriDe(validarConfig(cfg), { estatico: true, tamanho: 480 });
+      const limpo = validarConfig(cfg);
+      const uri = dataUriDe(limpo, { estatico: true, tamanho: 480 });
       const img = new Image();
-      img.onload = () => setRecorte({ img, zoom: 1, x: 0, y: 0 });
+      img.onload = () => { setFonteAvatar(limpo); setRecorte({ img, zoom: 1, x: 0, y: 0 }); }; // §1226
       img.onerror = () => setMensagem('Não consegui renderizar o avatar como foto.');
       img.src = uri;
     } catch { setMensagem('Não consegui renderizar o avatar como foto.'); }
@@ -1137,6 +1145,28 @@ export function Foto({ versao, fotoAtiva, desbloqueados, aoSalvar, configAtual }
                   onClick={() => { excluirProjetoFoto(p2.id); setProjetos(listarProjetosFoto()); }}>
                   <Trash2 size={12} aria-hidden />
                 </button>
+                {/* lote 971-980 (§1227, as6.foto_projeto): a fonte era o
+                    avatar → dá p/ trocar pela versão ATUAL sem perder a
+                    estilização (snapshot §1226 continua no projeto) */}
+                {flag('as6.foto_projeto') && p2.avatarFonte && configAtual && (
+                  <button type="button" className="avst-foto-item-estilo avst6-fp-atualizar"
+                    data-teste="projeto-atualizar-fonte"
+                    title={`Atualizar ${p2.nome} para o avatar atual (§1227)`}
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          const uri = dataUriDe(validarConfig(configAtual), { estatico: true, tamanho: 480 });
+                          const jpeg = await miniaturizarFoto(uri);
+                          const novo = atualizarFonteProjeto(p2.id, jpeg, validarConfig(configAtual));
+                          setProjetos(listarProjetosFoto());
+                          setMensagem(novo ? `Projeto "${novo.nome}" atualizado para o avatar atual.` : 'Não consegui atualizar o projeto.');
+                          telemetria('foto_projeto_atualizou_fonte');
+                        } catch { setMensagem('Não consegui atualizar o projeto.'); }
+                      })();
+                    }}>
+                    <RefreshCw size={12} aria-hidden />
+                  </button>
+                )}
                 {/* mega 252 (§364 v2): nome visível + renomear inline */}
                 {renomeandoProj?.id === p2.id ? (
                   <input className="avst-foto-item-nome" autoFocus value={renomeandoProj.nome} maxLength={24}

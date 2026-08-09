@@ -6,7 +6,7 @@
 // onde parou. Molde PresetsPessoais: storage versionado, limite explícito,
 // fail-safe. A foto é recomprimida a 480px JPEG (~40–80KB) — 6 projetos
 // cabem com folga na cota; o export final SEMPRE recompõe do estilo.
-import type { EstiloFoto } from '../domain/types';
+import type { AvatarConfig, EstiloFoto } from '../domain/types';
 import type { FormatoFotoId } from '../engine/render-foto';
 import { flag } from '../nucleo/flags';
 import { processarFoto } from './PipelineAsset'; // lote 581-590 (§268)
@@ -16,6 +16,11 @@ const CHAVE = 'dshow.avst5.foto.projetos.v1';
 const LIMITE = 8; // mega 252 (§364 v2): 6→8
 const LADO_MINIATURA = 480;
 const TTL_THUMB_MS = 90 * 24 * 60 * 60 * 1000; // §277: thumb vive 90 dias
+// lote 971–980 (AS6 §1417, flag as6.foto_projeto): versão do SCHEMA do
+// projeto. v1 = mega 57 (sem campo); v2 = + versao/atualizadoEm/
+// avatarFonte (§1226). Projeto antigo segue abrindo (§1418): a leitura
+// normaliza sem regravar (nenhum byte muda em disco por abrir).
+const VERSAO_PROJETO = 2;
 
 export interface ProjetoFoto {
   id: string;
@@ -24,7 +29,16 @@ export interface ProjetoFoto {
   foto: string;       // dataURI JPEG 480 (base do trabalho)
   estilo: EstiloFoto;
   formato: FormatoFotoId;
+  /** §1417 (v2): versão do schema — ausente = v1 (migração de leitura §1418) */
+  versao?: number;
+  /** §1202 (v2): último toque (salvar/renomear/atualizar fonte) */
+  atualizadoEm?: string;
+  /** §1226 (v2): SNAPSHOT do avatar usado como fonte — o projeto não
+   *  muda quando o avatar principal muda; §1227 atualiza sob demanda */
+  avatarFonte?: AvatarConfig;
 }
+
+const FORMATOS_VALIDOS = ['perfil', 'header', 'banner', 'wallpaper'];
 
 function lerTudo(): ProjetoFoto[] {
   try {
@@ -33,7 +47,11 @@ function lerTudo(): ProjetoFoto[] {
     return bruto.filter((p): p is ProjetoFoto =>
       !!p && typeof p.id === 'string' && typeof p.nome === 'string'
       && typeof p.foto === 'string' && p.foto.startsWith('data:image/')
-      && !!p.estilo && typeof p.estilo === 'object');
+      && !!p.estilo && typeof p.estilo === 'object')
+      // §1418 (lote 971–980): MIGRAÇÃO DE LEITURA — projeto de qualquer
+      // versão abre; formato desconhecido degrada p/ 'perfil' em vez de
+      // derrubar o painel (nada é regravado por abrir)
+      .map((p) => (FORMATOS_VALIDOS.includes(p.formato) ? p : { ...p, formato: 'perfil' as FormatoFotoId }));
   } catch { return []; }
 }
 
@@ -67,6 +85,7 @@ export async function miniaturizarFoto(dataUri: string): Promise<string> {
  *  flag off = caminho legado byte a byte (miniaturizarFoto direto). */
 export async function salvarProjetoFoto(
   fotoDataUri: string, estilo: EstiloFoto, formato: FormatoFotoId, nome = '',
+  avatarFonte?: AvatarConfig,
 ): Promise<ProjetoFoto | null> {
   const atuais = lerTudo();
   if (atuais.length >= LIMITE) return null;
@@ -90,9 +109,36 @@ export async function salvarProjetoFoto(
     foto,
     estilo,
     formato,
+    // §1417/§1226 (as6.foto_projeto): schema v2 SÓ com a flag — off
+    // grava o shape anterior byte a byte (§651)
+    ...(flag('as6.foto_projeto')
+      ? {
+        versao: VERSAO_PROJETO,
+        atualizadoEm: new Date().toISOString(),
+        ...(avatarFonte ? { avatarFonte } : {}),
+      }
+      : {}),
   };
   gravar([projeto, ...atuais]);
   return projeto;
+}
+
+/** §1227 (as6.foto_projeto): troca a FONTE do projeto pelo avatar atual —
+ *  a estilização fica; a base e o snapshot mudam juntos. */
+export function atualizarFonteProjeto(id: string, foto: string, avatarFonte: AvatarConfig): ProjetoFoto | null {
+  if (!flag('as6.foto_projeto')) return null;
+  let atualizado: ProjetoFoto | null = null;
+  const lista = lerTudo().map((p) => {
+    if (p.id !== id) return p;
+    atualizado = {
+      ...p, foto, avatarFonte,
+      versao: VERSAO_PROJETO,
+      atualizadoEm: new Date().toISOString(),
+    };
+    return atualizado;
+  });
+  if (atualizado) gravar(lista);
+  return atualizado;
 }
 
 /** mega 252 (§364 v2): renomear projeto (sanitizado; vazio = no-op). */

@@ -626,6 +626,20 @@
   anteriores. Off = barra anterior byte a byte, ring nem existe. Teste
   diff-v6.mjs; shell-save/shell-619/shell-s4 verdes.
 
+- **#99 (2026-08-09) — Photo Project v2 (lote 971–980, flag
+  `as6.foto_projeto`; AS6 §1416–§1418/§1226/§1227)**: auditoria mostrou
+  que "projeto local-first com estilo serializado, reabrir/editar" JÁ
+  existia (mega 57/§364 + 252) — o lote entrega o DELTA do AS6:
+  (1) schema VERSIONADO §1417 (versao 2 + atualizadoEm) gravado só com
+  a flag (off = shape v1 byte a byte); (2) migração de LEITURA §1418 —
+  projeto de qualquer versão abre, formato desconhecido degrada p/
+  'perfil' sem derrubar o painel (endurecido após crash real no teste),
+  nada é regravado por abrir; (3) SNAPSHOT do avatar-fonte §1226 quando
+  a foto nasce do avatar/preset (câmera/arquivo zeram o rastro);
+  (4) ação "atualizar p/ avatar atual" §1227 no card do projeto — troca
+  foto-base+snapshot mantendo a estilização (re-render determinístico
+  via dataUriDe + miniaturizarFoto). Teste foto-projeto.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
