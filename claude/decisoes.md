@@ -670,6 +670,18 @@
   padrão comprovado (format-patch → gzip → base64 → sha256 → worktree →
   git am → push → deploy-as5.sh) p/ o Jhony colar no servidor.
 
+- **#102 (2026-08-09) — Golden avatars (lote 1001–1010; AS6 Parte
+  16)**: regressão de RENDER executável em node puro — 12 configs
+  canônicas (busto padrão/completo, sobrepeça, params, canais, corpo/
+  postura/fino, título, palco, corpo inteiro + foto medalhão/ordem de
+  camadas/wide) → sha256 do SVG versionado em
+  docs/AVATAR-STUDIO-6/golden-avatars.json. Ids derivados = primeiro
+  id ORDENADO por categoria: mudança de catálogo muda o golden de
+  propósito (revisão consciente). Desvio intencional segue a doutrina
+  #83: `--gravar` + revisar o diff do JSON no MESMO commit. Zero
+  navegador (esbuild --platform=node; flags = defaults, determinístico).
+  golden-avatars.mjs na suíte.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
