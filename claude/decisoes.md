@@ -922,6 +922,18 @@
   perf-baseline.mjs vira o guarda permanente. Off = no-op absoluto
   (zero marks/observers/globals). 
 
+- **#120 (2026-08-09) — CMS RO fase 2 (lote 1181–1190, flag
+  `as6.cms_ro2` — AS6 Parte 15)**: o drawer admin ganha OPERAÇÃO de
+  leitura de verdade: busca por nome/key (whitelist unicode ≤40 no
+  endpoint — espelho §636), filtro por categoria, FICHA de detalhe
+  (endpoint `listar=detalhe&id=` com joins + contagens de arquivos/
+  versões; 404 p/ id inexistente) e export CSV client-side da página
+  visível (zero endpoint novo; escapa aspas). cms.php v1.1.0 segue
+  GET-only + AdminGate fail-closed — o teste prova por análise
+  estática que NENHUMA escrita entrou. Off = drawer do #108 byte a
+  byte. Teste cms-ro2.mjs (mock de dados por wrap do fetch; download
+  capturado por interceptação do click de âncora).
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

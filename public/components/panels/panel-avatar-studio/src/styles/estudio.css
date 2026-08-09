@@ -3027,3 +3027,14 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 [data-theme="light"] [data-avst-react-root][data-light-v6] .avst5-viewport[data-fundo="estudio"] .avst5-palco {
   background: radial-gradient(ellipse 70% 60% at 50% 42%, #dde4f2 0%, var(--as6-superficie-1) 78%);
 }
+
+/* lote 1181–1190 (#120, as6.cms_ro2): busca/detalhe do CMS RO */
+.avst6-cms-busca { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--as6-superficie-4); border-radius: 999px; background: var(--as6-superficie-2); color: var(--as6-texto-suave); }
+.avst6-cms-busca input { background: none; border: 0; outline: 0; color: var(--as6-texto-forte); font: inherit; width: 180px; }
+.avst6-cms-clicavel { cursor: pointer; }
+.avst6-cms-clicavel:hover td { background: color-mix(in srgb, var(--as6-acento) 8%, transparent); }
+.avst6-cms-detalhe { border-top: 1px solid var(--as6-superficie-4); padding: 10px 14px; max-height: 40%; overflow-y: auto; background: var(--as6-superficie-2); }
+.avst6-cms-detalhe header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.avst6-cms-detalhe dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; margin: 0; }
+.avst6-cms-detalhe dt { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--as6-texto-suave); }
+.avst6-cms-detalhe dd { margin: 0 0 6px; font-size: 12px; color: var(--as6-texto-forte); word-break: break-all; }

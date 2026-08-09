@@ -9,7 +9,8 @@
 // 403 e o drawer mostra "restrito" (nunca dados). Chunk lazy próprio
 // (§275) aberto pela Paleta de Comandos.
 import { useCallback, useEffect, useState } from 'react';
-import { Database, LoaderCircle, RefreshCw, ShieldAlert, X } from 'lucide-react';
+import { Database, Download, LoaderCircle, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
+import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
 
 type AbaCms = 'assets' | 'licencas' | 'auditoria';
@@ -30,11 +31,16 @@ export function CmsRo({ aoFechar }: { aoFechar: () => void }) {
   const [aba, setAba] = useState<AbaCms>('assets');
   const [pagina, setPagina] = useState(1);
   const [estado, setEstado] = useState<EstadoCms>({ fase: 'carregando', itens: [] });
+  // lote 1181-1190 (#120, as6.cms_ro2): busca + detalhe (segue leitura pura)
+  const fase2 = flag('as6.cms_ro2');
+  const [busca, setBusca] = useState('');
+  const [detalhe, setDetalhe] = useState<Linha | null>(null);
 
-  const carregar = useCallback(async (a: AbaCms, pag: number) => {
+  const carregar = useCallback(async (a: AbaCms, pag: number, filtro = '') => {
     setEstado({ fase: 'carregando', itens: [] });
     try {
-      const r = await fetch(`/api/avatar/cms.php?listar=${a}&pagina=${pag}`, { credentials: 'include' });
+      const extra = a === 'assets' && filtro ? `&busca=${encodeURIComponent(filtro)}` : '';
+      const r = await fetch(`/api/avatar/cms.php?listar=${a}&pagina=${pag}${extra}`, { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { setEstado({ fase: 'restrito', itens: [] }); return; }
       if (!r.ok) { setEstado({ fase: 'erro', itens: [] }); return; }
       const d = (await r.json())?.data ?? {};
@@ -42,7 +48,18 @@ export function CmsRo({ aoFechar }: { aoFechar: () => void }) {
     } catch { setEstado({ fase: 'erro', itens: [] }); }
   }, []);
 
-  useEffect(() => { void carregar(aba, pagina); }, [aba, pagina, carregar]);
+  useEffect(() => { void carregar(aba, pagina, busca); }, [aba, pagina, busca, carregar]);
+  // #120: export CSV do que está NA TELA (client-side, zero endpoint novo)
+  const exportarCsv = useCallback(() => {
+    const colunas2 = estado.itens.length ? Object.keys(estado.itens[0]) : [];
+    if (!colunas2.length) return;
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [colunas2.join(';'), ...estado.itens.map((l) => colunas2.map((c) => esc(l[c])).join(';'))].join('\n');
+    const a = document.createElement('a');
+    a.href = `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
+    a.download = `cms-${aba}-p${pagina}.csv`;
+    a.click();
+  }, [estado.itens, aba, pagina]);
   // lote 1081-1090 (#110): Escape fecha o diálogo (a11y §297)
   useEffect(() => {
     const ao = (e: KeyboardEvent) => { if (e.key === 'Escape') aoFechar(); };
@@ -63,8 +80,19 @@ export function CmsRo({ aoFechar }: { aoFechar: () => void }) {
                 onClick={() => { setAba(a.id); setPagina(1); }}>{t(a.nome)}</button>
             ))}
           </div>
+          {fase2 && aba === 'assets' && (
+            <label className="avst6-cms-busca" data-teste="cms-busca">
+              <Search size={12} aria-hidden />
+              <input type="search" placeholder={t('Buscar por nome ou key…')} value={busca}
+                onChange={(e) => { setPagina(1); setBusca(e.target.value); }} />
+            </label>
+          )}
+          {fase2 && (
+            <button type="button" className="avst5-painel-btn" title={t('Exportar CSV desta página')}
+              data-teste="cms-csv" onClick={exportarCsv}><Download size={13} aria-hidden /></button>
+          )}
           <button type="button" className="avst5-painel-btn" title={t('Recarregar')}
-            onClick={() => void carregar(aba, pagina)}><RefreshCw size={13} aria-hidden /></button>
+            onClick={() => void carregar(aba, pagina, busca)}><RefreshCw size={13} aria-hidden /></button>
           <button type="button" className="avst5-painel-btn" title={t('Fechar')} data-teste="cms-fechar"
             onClick={aoFechar}><X size={14} aria-hidden /></button>
         </header>
@@ -88,7 +116,9 @@ export function CmsRo({ aoFechar }: { aoFechar: () => void }) {
                   <thead><tr>{colunas.map((c) => <th key={c}>{c}</th>)}</tr></thead>
                   <tbody>
                     {estado.itens.map((linha, i) => (
-                      <tr key={String(linha.id ?? i)}>
+                      <tr key={String(linha.id ?? i)} data-teste="cms-linha"
+                        className={fase2 && aba === 'assets' ? 'avst6-cms-clicavel' : undefined}
+                        onClick={fase2 && aba === 'assets' ? () => setDetalhe(linha) : undefined}>
                         {colunas.map((c) => <td key={c}>{String(linha[c] ?? '—').slice(0, 80)}</td>)}
                       </tr>
                     ))}
@@ -104,6 +134,21 @@ export function CmsRo({ aoFechar }: { aoFechar: () => void }) {
                   onClick={() => setPagina((v) => v + 1)}>→</button>
               </div>
             )}
+          </div>
+        )}
+        {fase2 && detalhe && (
+          /* #120: FICHA do asset — leitura pura do que já veio na linha */
+          <div className="avst6-cms-detalhe" role="region" aria-label={t('Detalhe do asset')} data-teste="cms-detalhe">
+            <header>
+              <strong>{String(detalhe.name ?? detalhe.id)}</strong>
+              <button type="button" className="avst5-painel-btn" title={t('Fechar detalhe')}
+                data-teste="cms-detalhe-fechar" onClick={() => setDetalhe(null)}><X size={13} aria-hidden /></button>
+            </header>
+            <dl>
+              {Object.entries(detalhe).map(([k, v]) => (
+                <div key={k}><dt>{k}</dt><dd>{String(v ?? '—')}</dd></div>
+              ))}
+            </dl>
           </div>
         )}
       </div>

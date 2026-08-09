@@ -4,7 +4,9 @@ declare(strict_types=1);
 /**
  * api/avatar/cms.php — CMS READ-ONLY do catálogo (AS6 Parte 15,
  * lote 1061–1070, decisão #108, flag as6.cms_ro no front).
- * @version 1.0.0  @created 2026-08-09
+ * @version 1.1.0  @created 2026-08-09  @updated 2026-08-09 (lote
+ * 1181-1190, decisão #120, flag as6.cms_ro2 no front: busca sanitizada,
+ * filtro por categoria e DETALHE de asset — segue GET-only/AdminGate)
  *
  * SOMENTE LEITURA por construção: GET, zero escrita, AdminGate
  * fail-closed (mesma allowlist do admin.php). Lista o que o banco JÁ
@@ -12,7 +14,8 @@ declare(strict_types=1);
  * a trilha de auditoria do admin. Escritas continuam exclusivas do
  * admin.php (POST + CSRF). Paginação defensiva (≤100 por página).
  *
- *   GET ?listar=assets[&pagina=N][&status=x]
+ *   GET ?listar=assets[&pagina=N][&status=x][&busca=txt][&categoria=key]
+ *   GET ?listar=detalhe&id=N
  *   GET ?listar=licencas
  *   GET ?listar=auditoria[&pagina=N]
  */
@@ -69,16 +72,65 @@ try {
                 JOIN avatar_libraries b ON b.id = a.library_id
                 LEFT JOIN avatar_collections col ON col.id = a.collection_id";
         $par = [];
+        $onde = [];
         $status = (string) ($_GET['status'] ?? '');
         if ($status !== '' && preg_match('/^[a-z_]{1,20}$/', $status)) {
-            $sql .= ' WHERE a.status = :status';
+            $onde[] = 'a.status = :status';
             $par['status'] = $status;
+        }
+        // lote 1181-1190 (#120): busca e filtro de categoria — entrada
+        // SANITIZADA por whitelist (espelho da regra do front §636)
+        $busca = (string) ($_GET['busca'] ?? '');
+        if ($busca !== '' && preg_match('/^[\p{L}\p{N} _\-\.]{1,40}$/u', $busca)) {
+            $onde[] = '(a.name LIKE :busca OR a.`key` LIKE :busca)';
+            $par['busca'] = '%' . $busca . '%';
+        }
+        $categoria = (string) ($_GET['categoria'] ?? '');
+        if ($categoria !== '' && preg_match('/^[a-z0-9_\-]{1,30}$/', $categoria)) {
+            $onde[] = 'c.`key` = :categoria';
+            $par['categoria'] = $categoria;
+        }
+        if ($onde !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $onde);
         }
         $sql .= " ORDER BY a.id LIMIT $porPagina OFFSET $off";
         $st = $pdo->prepare($sql);
         $st->execute($par);
-        $total = (int) $pdo->query('SELECT COUNT(*) FROM avatar_assets')->fetchColumn();
+        $sqlTotal = 'SELECT COUNT(*) FROM avatar_assets a JOIN avatar_categories c ON c.id = a.category_id'
+            . ($onde !== [] ? ' WHERE ' . implode(' AND ', $onde) : '');
+        $stTotal = $pdo->prepare($sqlTotal);
+        $stTotal->execute($par);
+        $total = (int) $stTotal->fetchColumn();
         avcms_ok(['itens' => $st->fetchAll(PDO::FETCH_ASSOC), 'total' => $total, 'pagina' => $pagina, 'por_pagina' => $porPagina]);
+    }
+
+    if ($listar === 'detalhe') {
+        // #120: ficha completa de UM asset (ainda leitura pura)
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id < 1) {
+            ApiResponse::error('ID_INVALIDO', 422);
+        }
+        $st = $pdo->prepare(
+            "SELECT a.*, c.`key` AS categoria, r.`key` AS raridade, b.`key` AS biblioteca,
+                    col.`key` AS colecao, l.`key` AS licenca
+             FROM avatar_assets a
+             JOIN avatar_categories c ON c.id = a.category_id
+             JOIN avatar_rarities r ON r.id = a.rarity_id
+             JOIN avatar_libraries b ON b.id = a.library_id
+             LEFT JOIN avatar_collections col ON col.id = a.collection_id
+             LEFT JOIN avatar_licenses l ON l.id = a.license_id
+             WHERE a.id = :id"
+        );
+        $st->execute(['id' => $id]);
+        $asset = $st->fetch(PDO::FETCH_ASSOC);
+        if ($asset === false) {
+            ApiResponse::error('NAO_ENCONTRADO', 404);
+        }
+        $arquivos = $pdo->prepare('SELECT COUNT(*) FROM avatar_asset_files WHERE asset_id = :id');
+        $arquivos->execute(['id' => $id]);
+        $versoes = $pdo->prepare('SELECT COUNT(*) FROM avatar_asset_versions WHERE asset_id = :id');
+        $versoes->execute(['id' => $id]);
+        avcms_ok(['asset' => $asset, 'arquivos' => (int) $arquivos->fetchColumn(), 'versoes' => (int) $versoes->fetchColumn()]);
     }
 
     if ($listar === 'licencas') {
