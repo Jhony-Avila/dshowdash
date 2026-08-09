@@ -73,6 +73,7 @@ import {
 } from '../services/PresetsPessoais';
 import { carregarEstado, estadoApiAtivo, salvarDraft, salvarVersao } from '../services/EstadoService';
 import { telemetria } from '../services/Telemetria';
+import { iniciarBaseline, medirInteracao } from '../services/PerfBaseline'; // lote 1171-1180 (#119)
 import { log } from '../services/Log';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
@@ -361,6 +362,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // CSS param (animation-play-state via [data-oculto]) — aceite §568
   // "animações fora da viewport pausadas"; volta ao vivo no retorno
   const [abaOculta, setAbaOculta] = useState(false);
+  useEffect(() => { iniciarBaseline(); }, []); // #119 (no-op sem a flag)
   useEffect(() => {
     if (!flag('as6.motion_v2')) return undefined;
     const ao = () => setAbaOculta(document.visibilityState === 'hidden');
@@ -483,6 +485,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // GradeItens fala AvatarConfig — cada escolha vira COMANDO com inverso
   const aplicarComando = useCallback((novo: AvatarConfig) => {
+    medirInteracao('equipar'); // #119: comando -> paint
     const antesLegado = paraLegado2d(store.estadoDraft);
     const antes = store.estadoDraft;
     const depois = deLegado2d(novo);
@@ -1034,6 +1037,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* sidebar esquerda — scroll próprio (R5) */}
           <TrilhoCategorias categoria={categoria} compacta={compacta}
             aoEscolher={(id) => {
+              medirInteracao('troca-categoria'); // #119: fecha pós-paint
               setCategoria(id); setFiltroSlot('todos');
               // §323–§325 (as6.contexto): UMA ação prepara o ambiente —
               // aba volta ao catálogo cheio, busca antiga limpa, grupo

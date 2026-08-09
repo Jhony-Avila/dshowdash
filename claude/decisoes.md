@@ -911,6 +911,17 @@
   estado persistido de render. Off = toDataURL de sempre. Teste
   workers-v2.mjs; regressões workers-as6/foto-f6/foto-projeto verdes.
 
+- **#119 (2026-08-09) — Baseline de runtime local (lote 1171–1180,
+  flag `as6.perf_baseline` — AS6 Parte 9)**: PerfBaseline.ts mede as
+  interações-chave (troca de categoria, equipar) com
+  performance.mark/measure fechadas via DOUBLE-rAF (a medida é o que o
+  usuário sente: até o paint) + long tasks via PerformanceObserver.
+  Tudo local (nunca sai da aba, sem PII), exposto em window.__avstPerf
+  p/ suíte e dev. ORCAMENTO_MS generoso (troca 1200ms, equipar 1500ms
+  em headless) — estourar é regressão REAL de runtime, e o teste
+  perf-baseline.mjs vira o guarda permanente. Off = no-op absoluto
+  (zero marks/observers/globals). 
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
