@@ -91,6 +91,7 @@ const PADROES: Record<string, boolean> = {
   // ── MEGA ONDA 911–1110 (decisão #92) ──
   'as6.inspector': true,          // lote 921–930 — Inspector contextual §181–§189: accordion schema-driven por categoria (identidade/props/cores/compat/ações) com memória §186; off = seção Cores+Propriedades anterior byte a byte
   'as6.creator_v6': true,         // lote 931–940 — vestuário multi-peça §3393: categoria Sobrepeça (wrappers sob_* de renderCorpo existente; schema v2 com migração real); off = categoria oculta (config salvo segue aceito e renderizando)
+  'as6.dock_mag': true,           // lote 941–950 — dock §104–§105: magnificação gaussiana no hover (CSS scale), momentum com atrito no drag e snap no card; off = interações do lote 831–840 byte a byte
 };
 
 /**
@@ -123,6 +124,7 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.sidebar_pro': ['as5.classico_aaa'],   // sidebar compacta/só-ícones do clássico
   'as6.visual_v2': ['as5.classico_aaa'],     // elevação visual global do clássico
   'as6.workspace_fixo': ['as5.classico_aaa'], // trava de viewport estende o AAA
+  'as6.dock_mag': ['as6.dock_classico'],     // magnificação/momentum refinam a dock v3
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

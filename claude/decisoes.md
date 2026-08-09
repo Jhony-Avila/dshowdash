@@ -581,6 +581,23 @@
   precedente #63). Sem sorteio no aleatório (determinismo preservado).
   Teste creator-v6.mjs; estado-vnext.mjs atualizado p/ a cadeia real.
 
+- **#96 (2026-08-09) — Dock com magnificação + momentum + snap (lote
+  941–950, flag `as6.dock_mag`; AS6 §104–§105)**: refina a Dock v3 do
+  clássico (dep §3398 → as6.dock_classico). Magnificação estilo dock do
+  macOS: queda gaussiana em torno do cursor via CSS **`scale:`** (não
+  briga com o transform de hover dos tokens; origem na base; teto
+  1.16×); §297 = o JS não põe a var com prefers-reduced-motion.
+  Momentum: velocidade suavizada no drag → rAF com atrito 0.94.
+  Aprendizados de implementação (registrados p/ não repetir): (1) o rAF
+  do momentum morre SÓ no unmount — o efeito de listeners re-roda a
+  cada children (hover preview) e cancelava a inércia; (2) a grade JÁ
+  tem scroll-snap CSS `x proximity` — cada set programático re-assentava
+  e congelava o voo: o snap é SUSPENSO durante a inércia e DEVOLVIDO no
+  pouso (scrollend + fallback 600ms), com assentamento suave no passo
+  do card; (3) passo medido por offsetWidth (layout), porque o
+  getBoundingClientRect vem inflado pela própria magnificação. Off =
+  interações do lote 831–840 byte a byte. Teste dock-mag.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
