@@ -682,6 +682,21 @@
   navegador (esbuild --platform=node; flags = defaults, determinístico).
   golden-avatars.mjs na suíte.
 
+- **#103 (2026-08-09) — Virtualização REAL da grade (lote 1011–1020,
+  flag `as6.virtual`; AS6 Parte 9 · §276 v2)**: a virtualização §276
+  (esqueleto adiado + promoção one-way) vira JANELA DESLIZANTE — card
+  promovido que fica LONGE da viewport (observer de saída próprio,
+  margem 1600px ≫ 600px do pré-render = zero oscilação) volta a
+  esqueleto e devolve o DOM. Guardas: foco dentro, :hover e item
+  EQUIPADO nunca reciclam; os CARDS_IMEDIATOS (topo) nunca foram
+  preguiçosos e seguem fixos. Implementação: 2º IntersectionObserver
+  único e CONTÍNUO no GradeItens + `aoMontarRaiz` opcional no CardItem
+  (a raiz sobe p/ o observer sem wrapper — display:contents não mede).
+  Aprendizado de teste: numa janela de duas vias "rolar até o fim"
+  recicla o TOPO ao mesmo tempo — a prova correta é o ÚLTIMO card
+  (real no fim ⇄ esqueleto no topo). Off = one-way anterior byte a
+  byte. Teste virtual-as6.mjs; shell-vgrid/a11y-v2/cards-v2 verdes.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
