@@ -7,7 +7,7 @@
 // Teclado completo: ↑/↓ navega, Enter executa, Esc fecha (§583/§297).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Command, CornerDownLeft } from 'lucide-react';
-import { CATEGORIAS, PARTES, RARIDADES } from '../services/AvatarCatalog';
+import { PARTES, RARIDADES, categoriasAtivas } from '../services/AvatarCatalog';
 import { MOVIMENTOS, animar } from './movimento';
 
 export interface ComandoPaleta {
@@ -43,7 +43,7 @@ export function PaletaComandos({ acoes, aoNavegar, aoEquipar, aoFechar }: {
     for (const a of acoes) {
       if (bate(a.rotulo)) lista.push({ id: a.id, rotulo: a.rotulo, grupo: 'Ações', executar: a.executar });
     }
-    for (const c of CATEGORIAS) {
+    for (const c of categoriasAtivas()) { // §3393: Sobrepeça só com a flag
       const rotulo = `Abrir ${c.nome}`;
       if (bate(rotulo)) lista.push({ id: `nav-${c.id}`, rotulo, grupo: 'Navegação', executar: () => aoNavegar(c.id) });
     }

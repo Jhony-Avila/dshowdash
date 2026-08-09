@@ -2,8 +2,8 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 344,
-    "categorias": 12,
+    "itens2d": 348,
+    "categorias": 13,
     "titulos": 30,
     "colecoes": 12,
     "personagens3d": 8
@@ -14,6 +14,7 @@
     "olhos",
     "boca",
     "roupa",
+    "roupa_sobre",
     "acessorio",
     "fundo",
     "moldura",
@@ -1751,6 +1752,26 @@
       "id": "rou_tunica_arcana",
       "categoria": "roupa",
       "raridade": "epico"
+    },
+    {
+      "id": "sob_colete",
+      "categoria": "roupa_sobre",
+      "raridade": "raro"
+    },
+    {
+      "id": "sob_jaqueta",
+      "categoria": "roupa_sobre",
+      "raridade": "raro"
+    },
+    {
+      "id": "sob_kimono",
+      "categoria": "roupa_sobre",
+      "raridade": "epico"
+    },
+    {
+      "id": "sob_orbital",
+      "categoria": "roupa_sobre",
+      "raridade": "lendario"
     }
   ],
   "titulos": [

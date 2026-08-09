@@ -126,7 +126,8 @@ function avst_validar_config($bruto): array
     // aura/banner/emblema: Expansão (decisão #33 — categorias 2D imediatas)
     // acessorio_* : slots ADITIVOS (4.6 §20, decisão #41); 'acessorio'
     // legado segue aceito — o front canonicaliza para o slot do item
-    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'acessorio',
+    // roupa_sobre: vestuário multi-peça (AS6 §3393, decisão #95 — v2)
+    $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'roupa_sobre', 'acessorio',
         'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco', 'fundo',
         'moldura', 'efeito', 'aura', 'banner', 'emblema'];
     $camadas = [];

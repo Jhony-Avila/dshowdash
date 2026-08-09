@@ -93,15 +93,28 @@ export function migrarSchema(registro: RegistroMigracoes, bruto: unknown): Resul
 }
 
 /**
- * Registro de migrações do AvatarConfig (campo `versao`, atual = 1).
- * VAZIO por construção — ver cabeçalho. O VERSAO_CONFIG do catálogo é a
- * fonte da versão atual; espelhado aqui como literal para manter este
- * módulo na base da pirâmide (sem import de services/).
+ * Registro de migrações do AvatarConfig (campo `versao`, atual = 2).
+ * O VERSAO_CONFIG do catálogo é a fonte da versão atual; espelhado aqui
+ * como literal para manter este módulo na base da pirâmide (sem import
+ * de services/).
+ *
+ * v1→v2 (lote 931–940, decisão #95 — PRIMEIRA migração real): o schema
+ * v2 introduz a camada OPCIONAL `camadas.roupa_sobre` (vestuário
+ * multi-peça §3393). Um config v1 é um v2 válido sem o campo — a
+ * migração é o CARIMBO de versão (o motor grava `versao: 2`); nenhum
+ * byte de camada muda e nenhum avatar salvo muda de render.
  */
 export const MIGRACOES_CONFIG: RegistroMigracoes = {
   campoVersao: 'versao',
-  versaoAtual: 1,
-  migracoes: [],
+  versaoAtual: 2,
+  migracoes: [
+    {
+      de: 1,
+      para: 2,
+      migrar: (dado) => dado, // carimbo puro — v1 ⊂ v2 (campo novo opcional)
+      motivo: 'v2: camada opcional camadas.roupa_sobre (vestuário multi-peça §3393, decisão #95)',
+    },
+  ],
 };
 
 /** Registro de migrações do EstadoAvatar (campo `schemaVersion`, atual = 1). */

@@ -91,7 +91,9 @@ export function paraLegado2d(e: EstadoAvatar, baseFallback = 'bas_classica'): Co
   }
   return {
     formato: 'camadas',
-    versao: 1,
+    // v2 (§3393, decisão #95): schema com roupa_sobre opcional — literal
+    // espelhando VERSAO_CONFIG (nucleo não importa services/)
+    versao: 2,
     base: e.body.base ?? baseFallback,
     camadas,
     cores: { ...e.appearance.cores },

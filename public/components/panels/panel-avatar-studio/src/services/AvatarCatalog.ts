@@ -26,6 +26,7 @@ import { CABELOS } from '../engine/partes/cabelos';
 import { OLHOS } from '../engine/partes/olhos';
 import { BOCAS } from '../engine/partes/bocas';
 import { ROUPAS } from '../engine/partes/roupas';
+import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
 import { FUNDOS } from '../engine/partes/fundos';
 import { MOLDURAS } from '../engine/partes/molduras';
@@ -34,7 +35,10 @@ import { AURAS } from '../engine/partes/auras';
 import { BANNERS } from '../engine/partes/banners';
 import { EMBLEMAS } from '../engine/partes/emblemas';
 
-export const VERSAO_CONFIG = 1;
+// v2 (lote 931–940, decisão #95): camada OPCIONAL `roupa_sobre` (§3393).
+// v1 sem o campo é idêntico — a migração 1→2 (nucleo/estado-vnext.ts) só
+// carimba a versão; nenhum avatar salvo muda de render.
+export const VERSAO_CONFIG = 2;
 
 // ── Categorias (ordem = ordem da sidebar do studio) ─────────────────
 
@@ -58,6 +62,9 @@ export const CATEGORIAS: CategoriaMeta[] = [
   { id: 'olhos',     nome: 'Olhos',      obrigatoria: true,  grupo: 'corpo' },
   { id: 'boca',      nome: 'Boca',       obrigatoria: true,  grupo: 'corpo' },
   { id: 'roupa',     nome: 'Roupa',      obrigatoria: true,  grupo: 'vestuario' },
+  // AS6 §3393 (decisão #95): multi-peça — visível só com as6.creator_v6
+  // (categoriasAtivas); o validarConfig aceita o campo sempre (dado > UI)
+  { id: 'roupa_sobre', nome: 'Sobrepeça', obrigatoria: false, grupo: 'vestuario' },
   { id: 'acessorio', nome: 'Acessório',  obrigatoria: false, grupo: 'equipamentos' },
   { id: 'fundo',     nome: 'Fundo',      obrigatoria: true,  grupo: 'aparencia' },
   { id: 'moldura',   nome: 'Moldura',    obrigatoria: false, grupo: 'aparencia' },
@@ -274,6 +281,7 @@ const LORES: Record<string, string> = {
 
 export const PARTES: ParteDef[] = [
   ...BASES, ...ESPECIES, ...CABELOS, ...OLHOS, ...BOCAS, ...ROUPAS,
+  ...SOBREPECAS, // §3393 (decisão #95): wrappers — zero arte nova
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
   ...AURAS, ...BANNERS, ...EMBLEMAS,
 ].map((x) => ({
@@ -292,6 +300,13 @@ export function itemPorId(id: string): ParteDef | undefined {
 
 export function itensDe(categoria: CategoriaId): ParteDef[] {
   return PARTES.filter((x) => x.categoria === categoria);
+}
+
+/** Categorias VISÍVEIS na navegação (§3393 — decisão #95): `roupa_sobre`
+ *  só aparece com a flag; o dado salvo continua aceito com a flag em
+ *  qualquer posição (rollback §651 esconde a UI, nunca descarta config). */
+export function categoriasAtivas(): CategoriaMeta[] {
+  return CATEGORIAS.filter((c) => c.id !== 'roupa_sobre' || flag('as6.creator_v6'));
 }
 
 /** Itens sorteáveis (sem trava de conquista/evento) — usado pelo aleatório. */

@@ -3,7 +3,9 @@
 // @version 1.0.0  @created 2026-08-08
 //
 // Extração VERBATIM do <nav> do ShellStudio: DOM byte a byte o mesmo.
-import { CATEGORIAS } from '../services/AvatarCatalog';
+// (lote 931–940: categoriasAtivas esconde 'roupa_sobre' sem a flag —
+// com a flag off a lista é idêntica à CATEGORIAS de sempre)
+import { categoriasAtivas } from '../services/AvatarCatalog';
 import type { CategoriaId } from '../domain/types';
 
 export interface PropsTrilhoCategorias {
@@ -16,7 +18,7 @@ export interface PropsTrilhoCategorias {
 export function TrilhoCategorias({ categoria, compacta, aoEscolher }: PropsTrilhoCategorias) {
   return (
     <nav className={`avst5-sidebar${compacta ? ' avst5-sidebar-compacta' : ''}`} aria-label="Categorias">
-      {CATEGORIAS.map((c) => (
+      {categoriasAtivas().map((c) => (
         <button key={c.id} type="button"
           className={`avst5-cat${categoria === c.id ? ' avst5-cat-on' : ''}`}
           title={c.nome} onClick={() => aoEscolher(c.id)}>

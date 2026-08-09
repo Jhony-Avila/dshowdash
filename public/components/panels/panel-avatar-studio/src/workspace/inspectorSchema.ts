@@ -29,6 +29,8 @@ export const GRUPOS_POR_CATEGORIA: Record<CategoriaId, GrupoInspectorId[]> = {
   olhos: ['identidade', 'propriedades', 'cores', 'acoes'],
   boca: ['identidade', 'propriedades', 'cores', 'acoes'],
   roupa: ['identidade', 'cores', 'propriedades', 'compatibilidade', 'acoes'],
+  // §3393 (decisão #95): sobrepeça segue o schema da roupa
+  roupa_sobre: ['identidade', 'cores', 'propriedades', 'compatibilidade', 'acoes'],
   acessorio: ['identidade', 'propriedades', 'compatibilidade', 'acoes'],
   fundo: ['identidade', 'acoes'],
   moldura: ['identidade', 'propriedades', 'acoes'],

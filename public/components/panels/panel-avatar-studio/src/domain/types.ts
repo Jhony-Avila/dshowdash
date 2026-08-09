@@ -17,7 +17,10 @@ export type CategoriaId =
   | 'base' | 'cabelo' | 'olhos' | 'boca' | 'roupa'
   | 'acessorio' | 'fundo' | 'moldura' | 'efeito'
   // Expansão (decisão #33 — categorias 2D de baixo custo/alto valor):
-  | 'aura' | 'banner' | 'emblema';
+  | 'aura' | 'banner' | 'emblema'
+  // AS6 §3393 (lote 931–940, decisão #95): vestuário multi-peça — camada
+  // de SOBREPEÇA por cima da roupa (schema v2; ausente = omitido)
+  | 'roupa_sobre';
 
 export type Raridade =
   | 'comum' | 'incomum' | 'raro' | 'epico' | 'lendario' | 'mitico' | 'exclusivo';

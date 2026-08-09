@@ -90,6 +90,7 @@ const PADROES: Record<string, boolean> = {
   'as6.meta_assets': true,        // lote 891–900 — METADADOS de asset §150–§153/§227: autor/origem/licença/versão + tags pesquisáveis (operador tag: e chips no drawer); off = ficha anterior byte a byte
   // ── MEGA ONDA 911–1110 (decisão #92) ──
   'as6.inspector': true,          // lote 921–930 — Inspector contextual §181–§189: accordion schema-driven por categoria (identidade/props/cores/compat/ações) com memória §186; off = seção Cores+Propriedades anterior byte a byte
+  'as6.creator_v6': true,         // lote 931–940 — vestuário multi-peça §3393: categoria Sobrepeça (wrappers sob_* de renderCorpo existente; schema v2 com migração real); off = categoria oculta (config salvo segue aceito e renderizando)
 };
 
 /**

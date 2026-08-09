@@ -561,6 +561,26 @@
   (favoritar/detalhes/remover). Off = seção anterior byte a byte
   (§651). Teste inspector-as6.mjs.
 
+- **#95 (2026-08-09) — Vestuário MULTI-PEÇA (lote 931–940, flag
+  `as6.creator_v6`; AS6 §3393, Parte 5)**: categoria nova `roupa_sobre`
+  (Sobrepeça, grupo vestuário) com 4 itens `sob_*` — WRAPPERS 100%
+  sobre arte existente (engine/sobrepecas.ts): o `renderCorpo` que cada
+  roupa já tem é ADITIVO por construção (detalhes sobre um torso), então
+  vira sobrepeça: direto no corpo inteiro (mesmas coords) e no busto
+  pela INVERSA do mapa busto→corpo do emblema
+  (translate(-18.588 35.412) scale(1.17647)) + clip da faixa do peito
+  (y≥176 — nunca invade o rosto). Curadoria: colete/jaqueta/kimono/
+  orbital (jersey etc. leem como estampa, ficam fora). Cada sobrepeça é
+  `incompativelCom` a peça de origem — 1º uso REAL do §35/§60.6 no
+  catálogo. SCHEMA v2: VERSAO_CONFIG 1→2 com a PRIMEIRA migração real
+  no motor §3393 (carimbo puro — v1 ⊂ v2; nenhum avatar salvo muda de
+  render); paraLegado2d/PHP espelhados (whitelist + versao). Rollback
+  §651: flag off ESCONDE a categoria (categoriasAtivas em trilho/
+  clássico/paleta) mas o dado salvo segue aceito e renderizando —
+  render engine permanece livre de flags (pureza > rollback de render,
+  precedente #63). Sem sorteio no aleatório (determinismo preservado).
+  Teste creator-v6.mjs; estado-vnext.mjs atualizado p/ a cadeia real.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
