@@ -20,6 +20,9 @@
 | EB-013 | 2026-08-10 | **Status HTTP não é oráculo válido de smoke neste vhost**: o SPA faz `try_files … /index.html`, então qualquer caminho inexistente retorna 200 (shell). Verificação passa a usar **content-type/corpo** (HTML do shell × arquivo servido cru). O `patch=200` da Onda 4 era o shell, não o arquivo — a exposição já estava fechada desde a Onda 3 | Smoke Onda 4 (origem) |
 | EB-014 | 2026-08-10 | Rollback da Onda 4 (disparado pelo oráculo errado) também desfez a desativação — correta — do vhost órfão :8080. Refeito na Onda 5 com oráculo por content-type | Saída Onda 4 |
 | EB-015 | 2026-08-10 | **M1d aplicado (Onda 5, rc=0)**: `.patch` (BASAL-004b) e vhost órfão :8080 (BASAL-011) FECHADOS sem regressão. Restam no M1 dois P0 bloqueados pela decisão do sponsor: MySQL `0.0.0.0:3306` (BASAL-005) e phpMyAdmin público (BASAL-016). Consolidados na lista "precisa do Jhony" | Smoke m1d verde |
+| EB-016 | 2026-08-10 | **phpMyAdmin FECHADO ao público (Onda 6)**: restrito a `127.0.0.1` + `187.15.86.187`. UFW não está instalado no servidor; o firewall efetivo é iptables/nft ou do provedor | Recon m1e |
+| EB-017 | 2026-08-10 | **BASAL-005 rebaixado a P2 MITIGADO com prova**: teste externo (sandbox→72.60.8.101) mostra 3306/8080/22 com DROP (timeout 8s) e 443 aberto — firewall com allowlist de IPs ativo. **Bind do MySQL mantido `0.0.0.0` de propósito** (acesso do Jhony é allowlisted; mudar bind quebraria) | Probe externo |
+| EB-018 | 2026-08-10 | **M1 (Contenção P0) ENCERRADO**: todos os P0 fechados, mitigados-com-prova, ou adiados com plano (`.ts` → M5/M6). Novo item P2 BASAL-018 (origin 443 sem restrição a IPs do Cloudflare) para M12. Próximo: M2 (baseline funcional + characterization tests) | Síntese Ondas 2–6 |
 
 ## Formato de entrega de cada lote (obrigatório — briefing §34)
 

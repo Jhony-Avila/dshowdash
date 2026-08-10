@@ -3,13 +3,16 @@
 > Dúvidas que precisam de resposta com evidência. Uma questão só sai daqui com
 > resposta registrada no doc 05 (ou ADR correspondente) + fonte da evidência.
 
-## Bloqueantes para M1 (contenção P0)
+## Bloqueantes para M1 (contenção P0) — ENCERRADO
 
-1. **Quais fontes exatas respondem por HTTP hoje?** (`.ts`, `.tsx`, `.patch`, `.md`, configs) — lista completa via coletor + verificação de consumidores antes de bloquear.
-2. **O MySQL em `0.0.0.0:3306` está efetivamente exposto?** UFW/firewall externo bloqueia? Evidência: regras ativas + teste externo controlado.
-3. **O `.patch` público tem algum consumidor legítimo?** Se não, trilha rápida de bloqueio.
-4. **Qual backup de banco existe e quando foi o último restore comprovado?**
-5. **Que alterações manuais não reconciliadas existem hoje no servidor?** (`git status` do worktree de produção)
+1. ~~Quais fontes respondem por HTTP?~~ RESPONDIDA: `.ts/.tsx` servidos e importados em runtime (bootstrap-v2/core-runtime) → bloqueio adiado p/ M5/M6; `.patch` era resíduo, quarentenado.
+2. ~~MySQL `0.0.0.0:3306` exposto?~~ RESPONDIDA: NÃO — DROP externo por firewall com allowlist (prova em EB-017). Bind mantido de propósito.
+3. ~~`.patch` tem consumidor?~~ RESPONDIDA: não (resíduo); quarentenado + `deny .patch`.
+4. **Qual backup de banco existe e quando foi o último restore comprovado?** — segue aberta (M9).
+5. **Alterações manuais não reconciliadas no servidor?** — parcial: worktree de produção acompanha `feat/pipedrive-modulo-completo` (EB-009); reconciliar no M3.
+17. ~~phpMyAdmin sem controle?~~ RESPONDIDA: fechado a `127.0.0.1`+`187.15.86.187` (EB-016).
+19. ~~UFW/3306?~~ RESPONDIDA: UFW não instalado; firewall efetivo dropa 3306 externamente (EB-017).
+20. ~~Quem consome MySQL remotamente?~~ Parcial: o próprio Jhony (IP allowlisted); lista de hosts do MySQL não lida (root exige senha) — não bloqueante, bind inalterado.
 
 ## Bloqueantes para M2/M3 (baseline e governança)
 
