@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "base": "https://dshowdash.com.br",
+    "data": "2026-08-10",
+    "geradoEm": "2026-08-10T10:15:10.909Z"
+  },
+  "jornadas": {
+    "01_boot": {
+      "ok": true,
+      "httpStatus": 200,
+      "bootMs": 3726,
+      "naLoginAntesDeAuth": true,
+      "shell": {
+        "title": "DshowDash v3.0 - Enterprise",
+        "appShell": true,
+        "header": true,
+        "sidebar": true,
+        "navRail": true,
+        "footer": true,
+        "main": true
+      },
+      "errosConsoleBoot": 1,
+      "netFail4xx5xxBoot": []
+    },
+    "02_autenticacao": {
+      "ok": true,
+      "checkPhp": {
+        "status": 200,
+        "ok": true,
+        "temCsrf": true,
+        "temUser": true
+      },
+      "autenticado": true
+    },
+    "03_shell": {
+      "ok": true,
+      "navItens": 137,
+      "triggers": 10
+    },
+    "04_navegacao": {
+      "ok": false,
+      "paineis": [
+        {
+          "pid": "panel-dashboard",
+          "ok": false,
+          "marcador": {
+            "hash": "#/panel-dashboard",
+            "temConteudo": false,
+            "idAtivo": null
+          },
+          "novosErrosConsole": 0
+        },
+        {
+          "pid": "panel-observability",
+          "ok": false,
+          "marcador": {
+            "hash": "#/panel-observability",
+            "temConteudo": false,
+            "idAtivo": null
+          },
+          "novosErrosConsole": 0
+        },
+        {
+          "pid": "panel-datatables",
+          "ok": false,
+          "marcador": {
+            "hash": "#/panel-datatables",
+            "temConteudo": false,
+            "idAtivo": null
+          },
+          "novosErrosConsole": 0
+        }
+      ]
+    },
+    "05_api_autenticada": {
+      "ok": true,
+      "endpoints": [
+        {
+          "ep": "/api/health",
+          "status": 200,
+          "chavesTopo": [
+            "ok",
+            "data",
+            "error"
+          ]
+        },
+        {
+          "ep": "/api/auth/check.php",
+          "status": 200,
+          "chavesTopo": [
+            "ok",
+            "data",
+            "error"
+          ]
+        },
+        {
+          "ep": "/api/user/preferences",
+          "status": 200,
+          "chavesTopo": [
+            "ok",
+            "data",
+            "error",
+            "meta"
+          ]
+        }
+      ]
+    },
+    "06_persistencia_leitura": {
+      "ok": true,
+      "endpoints": {
+        "/api/user/preferences": 200,
+        "/api/user/layouts": 200
+      }
+    },
+    "07_recuperacao_erro": {
+      "ok": true,
+      "shellVivo": {
+        "appShell": true,
+        "errorBoundary": false,
+        "telaBranca": false
+      }
+    },
+    "08_logout": {
+      "ok": true,
+      "controlePresente": true,
+      "logoutExecutado": null
+    }
+  },
+  "resumo": {
+    "verdes": [
+      "01_boot",
+      "02_autenticacao",
+      "03_shell",
+      "05_api_autenticada",
+      "06_persistencia_leitura",
+      "07_recuperacao_erro",
+      "08_logout"
+    ],
+    "vermelhos": [
+      "04_navegacao"
+    ],
+    "totalErrosConsole": 2,
+    "amostraErrosConsole": [
+      "%c❌ 10/08/2026, 07:15:17 GMT-3 ERROR    [Fetch failed (non-fatal)] [cid-msn2s89o]%c color: #F44336; font-weight: bold; color: inherit; font-weight: normal; [header.weather-sp.api.fetch]",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "totalNetFail": 1,
+    "amostraNetFail": [
+      "404 /components/panels/panel-inexistente-zzz-basal/index.js"
+    ]
+  }
+}
