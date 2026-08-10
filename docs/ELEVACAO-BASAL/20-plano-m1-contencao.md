@@ -55,6 +55,28 @@ porta 8080                         → connection refused/timeout (era 404 HTTP)
 - **MySQL 3306**: mudança de `bind-address` só depois das questões 19–20 (quem consome remotamente?). Até lá, evidência de firewall (A4) documenta o risco real.
 - **phpMyAdmin**: tratamento definido após A3 (allowlist × auth extra × despublicar + túnel). Registrado como BASAL-016.
 
+## Resultado da 1ª execução (2026-08-10, rc=2) — Fase B corretamente bloqueada
+
+Pré-check A1 REPROVOU o bloqueio `.ts/.tsx` (comportamento correto): encontrou
+referências a `.ts` em `public/components/vite.components.config.js` (`keepExternal`,
+build) e em `public/koala/index.html` (DEV). A2 verde (0 consumidores do :8080). A6
+**encontrou o `.patch` do §3.7**: `public/components/footer/components/registry/index.js.patch`
+(9 linhas, resíduo, ignorado pelo Git). phpMyAdmin sem `allow/deny/auth_basic` visível
+(BASAL-016 mantém P0). Portas: 20241 = cloudflared, 37865 = VS Code Server (ambas locais,
+benignas — LL-07/questão 18 fechadas). UFW não legível pelo usuário do coletor (questão 19
+segue aberta).
+
+## Fase M1b (doc: este arquivo; script `scripts/basal/m1b-contencao.sh`) — refino
+
+Separa build de runtime e contém o que já é seguro:
+- **P1** — imports de `.ts/.tsx` em artefatos SERVIDOS (exclui `*.config.*` e `/src/` dev). Se vazio → bloqueio `.ts/.tsx` é seguro.
+- **P2** — os `*.bundle.js` de permissions realmente contêm os `.ts` do `keepExternal`? (a fonte `integration.ts` não os importa; confirmar no bundle servido).
+- **P3** — `/koala/` serve `dist/` compilado (o `/src/main.tsx` é só DEV) → o bloqueio não quebra o Koala.
+- **P4** — consumidores do `.patch` (esperado: nenhum).
+- **B0** (sempre): `deny .patch` + **quarentena do arquivo para `/backup`**.
+- **B1** (só com P1 verde): `deny .ts/.tsx`.
+Smoke inclui `patch=404` e (quando aplicável) `ts=404`; rollback automático.
+
 ## Critério de saída do M1 (briefing §1601)
 
 Exposições críticas contidas (B1) · estado inicial preservado (hashes Onda 1 + backups) ·
