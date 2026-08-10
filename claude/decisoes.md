@@ -1120,3 +1120,22 @@ com RPO/RTO · headers CSP no nginx.
   (geometria do screenshot) — shell nunca invade a taskbar, card
   inteiro, zero scroll concorrente. Cenários da 1291 permanecem
   idênticos (sem clip/overlay a v2 degenera na v1).
+
+- **#136 (2026-08-10) — Proporção da dock em monitores grandes (onda
+  1293, refinamento do as6.dock_fit)**: feedback visual do Jhony em
+  produção (2600×1575): a altura proporcional pura (44cqh) inflava a
+  dock (~560px) e esticava os cards com faixa cinza morta dentro da
+  thumbnail (svg width-bound ficava no topo do contêiner). Ajustes
+  CSS-only no gate [data-dock-fit]: (a) TETO ABSOLUTO nos presets
+  horizontais — padrão min(max(300px,34cqh),58cqh,384px), compacta
+  min(max(248px,26cqh),46cqh,312px); expandida segue proporcional
+  (modo grade); (b) cards mais estreitos no padrão/custom (184→164px);
+  (c) cadeia thumb→.avst-svg→svg com altura real: a arte REDUZ em card
+  baixo (nunca cropa) e centra em card alto — fim da faixa morta;
+  (d) alça do divisor mais visível (96px, contraste maior — o Jhony
+  não a encontrou no primeiro uso); (e) scrollbar horizontal da grade
+  fina e por token (a nativa vinha grossa/escura no claro). Resultado
+  medido (moldura real): 2600×1575 → dock 384/preview 959 (antes
+  ~560/~780); 1300×803 → inalterado no piso. O redimensionável já
+  existia (#133) e segue com clamp ≤74% do corpo — nunca extrapola a
+  tela.

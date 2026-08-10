@@ -3097,8 +3097,11 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 /* alturas da dock: presets RELATIVOS ao corpo com piso de conteúdo
    (cabeçalho + busca/filtros + 1 linha de cards inteira — §5 do
    briefing) e teto que preserva o preview como protagonista */
-.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="compacta"] { height: min(max(252px, 32cqh), 46cqh); }
-.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="padrao"] { height: min(max(300px, 44cqh), 58cqh); }
+/* onda 1293 (#136, feedback visual do Jhony em produção): TETO ABSOLUTO
+   nos presets horizontais — em monitores grandes a proporção pura (44cqh)
+   inflava a dock e esticava os cards; o preview é o protagonista */
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="compacta"] { height: min(max(248px, 26cqh), 46cqh, 312px); }
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="padrao"] { height: min(max(300px, 34cqh), 58cqh, 384px); }
 .avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="expandida"] { height: min(72cqh, 720px); }
 /* altura CUSTOM do divisor (#133): vence o preset, clamp final aqui —
    um valor restaurado nunca corta card nem esmaga o preview */
@@ -3124,8 +3127,37 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst5-shell[data-dock-fit] .avst5-dock[data-dock-custom] .avst-trilho .avst-card {
   height: auto; min-height: 96px;
 }
-/* custom em faixa horizontal usa a densidade do padrão */
-.avst5-shell[data-dock-fit] .avst5-dock[data-dock-custom]:not([data-dock-estado="expandida"]) .avst-trilho .avst-grade { grid-auto-columns: 184px; }
+/* onda 1293 (#136): cards um pouco mais estreitos no padrão/custom —
+   mais opções na faixa, preview maior */
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="padrao"] .avst-trilho .avst-grade,
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-custom]:not([data-dock-estado="expandida"]) .avst-trilho .avst-grade { grid-auto-columns: 164px; }
+/* thumb com a ARTE CENTRADA (#136): a cadeia thumb → .avst-svg → svg
+   dimensiona pela ALTURA REAL da thumb com teto na largura — a arte
+   REDUZ em card baixo (nunca cropa) e centra em card alto
+   (preserveAspectRatio); some a faixa morta embaixo do desenho */
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="compacta"] .avst-card-thumb .avst-svg,
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="padrao"] .avst-card-thumb .avst-svg,
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-custom] .avst-card-thumb .avst-svg {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+}
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="compacta"] .avst-card-thumb svg,
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="padrao"] .avst-card-thumb svg,
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-custom] .avst-card-thumb svg {
+  width: auto; height: 100%; max-width: 100%;
+}
+/* rolagem horizontal da grade: barra FINA e por token (a nativa vinha
+   grossa/escura no tema claro) */
+.avst5-shell[data-dock-fit] .avst5-dock .avst-trilho .avst-grade {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--avst-texto-2, #96a0b5) 45%, transparent) transparent;
+}
+.avst5-shell[data-dock-fit] .avst5-dock .avst-trilho .avst-grade::-webkit-scrollbar { height: 8px; }
+.avst5-shell[data-dock-fit] .avst5-dock .avst-trilho .avst-grade::-webkit-scrollbar-track { background: transparent; }
+.avst5-shell[data-dock-fit] .avst5-dock .avst-trilho .avst-grade::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--avst-texto-2, #96a0b5) 45%, transparent);
+  border-radius: 999px;
+}
 /* selo EQUIPADO é overlay (custo zero de altura) — volta na compacta */
 .avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="compacta"] .avst6-equipado { display: inline-block; }
 /* …e ancora no TOPO esquerdo: em card baixo o selo no rodapé cobria o
@@ -3143,11 +3175,13 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 }
 .avst6-dock-alca::after {
   content: ''; position: absolute; left: 50%; top: 3px; transform: translateX(-50%);
-  width: 64px; height: 4px; border-radius: 999px;
-  background: var(--avst-borda, var(--as6-superficie-4));
+  /* onda 1293 (#136): affordance mais visível — o Jhony não achou a
+     alça no primeiro uso; pill maior e com mais contraste */
+  width: 96px; height: 5px; border-radius: 999px;
+  background: color-mix(in srgb, var(--avst-texto-2, #96a0b5) 55%, transparent);
   transition: background .12s ease, width .12s ease;
 }
-.avst6-dock-alca:hover::after, .avst6-dock-alca:focus-visible::after { background: var(--avst-acento, var(--as6-acento)); width: 88px; }
+.avst6-dock-alca:hover::after, .avst6-dock-alca:focus-visible::after { background: var(--avst-acento, var(--as6-acento)); width: 128px; }
 .avst6-dock-alca:focus-visible { outline: 2px solid var(--avst-acento, var(--as6-acento)); outline-offset: -2px; border-radius: 6px; }
 
 /* barra de salvamento compacta no layout fit — o status continua
