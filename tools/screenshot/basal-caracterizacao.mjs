@@ -38,6 +38,9 @@ function reg(nome, ok, dados) { rel.jornadas[nome] = { ok, ...dados }; log(`${ok
 
 const browser = await chromium.launch({
   headless: true,
+  // Convenção da suíte do Avatar Studio (scripts/avatar/testes/*): Chromium fixo,
+  // override por PW_CHROME. Evita o download do chrome-headless-shell que falta.
+  executablePath: process.env.PW_CHROME ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
          '--host-resolver-rules=MAP dshowdash.com.br 127.0.0.1', '--ignore-certificate-errors'],
 });
