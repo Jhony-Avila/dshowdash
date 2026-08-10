@@ -847,6 +847,128 @@
   fino de DOIS componentes. O runner agora imprime `VERMELHOS: <lista>`
   no resumo (red por exceção nunca mais passa despercebido).
 
+- **#113 (2026-08-09) — Onda 1121–1220 (mapa no doc 24 do projeto)**:
+  100 megas front-first do plano AS6 sem dependência de arte nova,
+  backend ou credencial: tour v2 · Motion Registry · light mode §577 ·
+  teclado na dock · workers fase 2 · baseline de runtime · CMS RO fase
+  2 · IA apply parcial · contextos reais · fechamento DEPLOY_1220_OK.
+  Megas 1111–1120 = onda do dock inferior (#112).
+
+- **#114 (2026-08-09) — Tour §568 v2 (lote 1121–1130, flag
+  `as6.tour_v6`)**: com o layout do #112 ativo, o roteiro do tour vira
+  PASSOS_V6 (7 passos): palco com fit-to-view e câmera manual, dock
+  inferior como vitrine (inércia/setas/rodinha), botão de ALTURA da
+  dock, toolbar Cenário, salvar com diff. Mesmo motor de coach marks
+  (anel/§570, pular sempre §568); off = roteiro anterior byte a byte.
+  Teste tour-v6.mjs (ON: 8 passos com poder, anel na dock; OFF: 6
+  passos, "Catálogo"). Aprendizado: o anel PULSA (scale) — asserts de
+  posição comparam pelo centro, nunca pela borda.
+
+- **#115 (2026-08-09) — Motion v2 do workspace (lote 1131–1140, flag
+  `as6.motion_v2`)**: aceites §568 da Parte 7 AS6 que faltavam. Altura
+  da dock TRANSICIONA (nada estrutural corta seco); trocar de categoria
+  assenta a biblioteca com fade curto (`[data-troca]` + keyframe
+  `avst6-troca` REGISTRADO no REGISTRO_ANIMACOES — paridade guardada
+  pelo tokens-as6); aba oculta pausa TODAS as animações CSS
+  (`[data-oculto]` → animation-play-state: paused — sem custo de frame
+  em background; play-state não muda layout nem ordem de pintura,
+  aprendizado do bug do eco). §297: reduced-motion nem liga o atributo.
+  Off = cortes secos anteriores byte a byte. Teste motion-v2.mjs.
+
+- **#116 (2026-08-09) — Light Mode real (lote 1141–1150, flag
+  `as6.light_v6` — AS6 §577/§578)**: direção PRÓPRIA do claro, não
+  "dark invertido". Rampa FRIA de estúdio (fundo #e9edf5, painéis
+  #f5f7fb, cards quase-brancos #f8fafd — nunca #fff, §578) com
+  profundidade por luminosidade (§577: flutuante > card > painel >
+  fundo — testada por luminância); sombras leves (a drop-shadow preta
+  é linguagem do dark); flutuantes na camada mais clara; vinheta do
+  estúdio afinada. Gate por ATRIBUTO no root (entry seta
+  [data-light-v6] pela flag) — CSS-only, dark byte a byte intocado
+  (testado). Off = claro funcional do #112. Teste light-v6.mjs.
+
+- **#117 (2026-08-09) — Dock operável por teclado (lote 1151–1160,
+  flag `as6.nav_dock` — AS6 Parte 6)**: B foca o 1º card navegável da
+  biblioteca; setas movem o roving (da a11y-v2) e o trilho ACOMPANHA
+  com rolagem suave (focus({preventScroll}) + scrollIntoView — focus()
+  puro salta seco e briga com o snap); PageUp/PageDown paginam com o
+  mesmo passo das setas da dock; D cicla a altura via CustomEvent
+  `avst6:dock-altura` (o estado mora no PainelCatalogo); a folha de
+  atalhos §548 ganha o grupo "Dock de assets" (condicional — a folha é
+  dado). Teclas só valem fora de campos, sem modificadores e no layout
+  novo (#112). Off = navegação anterior byte a byte. Teste
+  nav-dock.mjs.
+
+- **#118 (2026-08-09) — Workers fase 2: encode de export off-thread
+  (lote 1161–1170, flag `as6.workers_v2` — AS6 Parte 9)**: o
+  `toDataURL` SÍNCRONO de PNG grande (wallpaper 1920×1080, lote §371,
+  escala §368) travava a main no export. Agora o raster do SVG segue
+  na main (worker não decodifica SVG — limitação do Chromium), mas o
+  ENCODE vai ao pool via `createImageBitmap(canvas)` TRANSFERIDO
+  (zero cópia) → OffscreenCanvas.convertToBlob no worker (tarefa
+  'encodar', timeout 6s). Mesma regra de ouro do #111: null em
+  qualquer falha → fallback síncrono byte a byte; bytes de export
+  podem diferir entre encoders — download/clipboard apenas, nunca
+  estado persistido de render. Off = toDataURL de sempre. Teste
+  workers-v2.mjs; regressões workers-as6/foto-f6/foto-projeto verdes.
+
+- **#119 (2026-08-09) — Baseline de runtime local (lote 1171–1180,
+  flag `as6.perf_baseline` — AS6 Parte 9)**: PerfBaseline.ts mede as
+  interações-chave (troca de categoria, equipar) com
+  performance.mark/measure fechadas via DOUBLE-rAF (a medida é o que o
+  usuário sente: até o paint) + long tasks via PerformanceObserver.
+  Tudo local (nunca sai da aba, sem PII), exposto em window.__avstPerf
+  p/ suíte e dev. ORCAMENTO_MS generoso (troca 1200ms, equipar 1500ms
+  em headless) — estourar é regressão REAL de runtime, e o teste
+  perf-baseline.mjs vira o guarda permanente. Off = no-op absoluto
+  (zero marks/observers/globals). 
+
+- **#120 (2026-08-09) — CMS RO fase 2 (lote 1181–1190, flag
+  `as6.cms_ro2` — AS6 Parte 15)**: o drawer admin ganha OPERAÇÃO de
+  leitura de verdade: busca por nome/key (whitelist unicode ≤40 no
+  endpoint — espelho §636), filtro por categoria, FICHA de detalhe
+  (endpoint `listar=detalhe&id=` com joins + contagens de arquivos/
+  versões; 404 p/ id inexistente) e export CSV client-side da página
+  visível (zero endpoint novo; escapa aspas). cms.php v1.1.0 segue
+  GET-only + AdminGate fail-closed — o teste prova por análise
+  estática que NENHUMA escrita entrou. Off = drawer do #108 byte a
+  byte. Teste cms-ro2.mjs (mock de dados por wrap do fetch; download
+  capturado por interceptação do click de âncora).
+
+- **#121 (2026-08-09) — IA apply parcial (lote 1191–1200, flag
+  `as6.ia_apply` — AS6 Parte 12)**: a sugestão da IA/compositor deixa
+  de ser tudo-ou-nada. `workspace/diff.ts` ganhou `camposAplicaveis`
+  (mudanças ENDEREÇÁVEIS: base/camadas/título/cores com chave estável
+  + rótulo do catálogo) e `aplicarSelecionados` (merge determinístico
+  puro). No CriarIA a sugestão vira checklist (tudo marcado por
+  padrão); "Aplicar selecionados (N/M)" aplica só o marcado, sempre
+  via validarConfig (§636 continua barrando o inválido); desmarcar
+  tudo desabilita. Funciona idêntico com ou sem chave de IA (o
+  compositor local passa pelo MESMO caminho). Off = botão "Aplicar no
+  editor" byte a byte. Teste ia-apply.mjs.
+
+- **#122 (2026-08-09) — Universal Avatar Component fase 1 (lote
+  1201–1210, flag `as6.contextos_v6` — AS6 Parte 13)**: nasce o
+  CONTRATO client-side que a Parte 13 pede: `montarAvatarUniversal(el,
+  {tamanho, forma, observar, rotulo})` renderiza o avatar SALVO (fonte
+  = espelho §619 `dshow.avatar.config.v1`), com placeholder neutro
+  determinístico sem espelho (nunca quebra), atualização AO VIVO nos
+  eventos de save + `storage` (outra aba), e devolve o desmontar.
+  Exposto em `window.AvatarStudioUniversal` (entry, com a flag) p/
+  painéis vanilla do dash. O drawer de contextos ganha o card "Como o
+  dash monta (produção)" consumindo o MESMO caminho — o mock morre
+  como caminho. A fase 2 (Identity Service, tabelas sociais,
+  permissões server) segue na fila com o Jhony. Off = sem API global e
+  sem card. Teste contextos-v6.mjs.
+
+- **#123 (2026-08-09) — Fechamento da onda 1121–1220 (lote
+  1211–1220)**: suíte completa 130 arquivos, 129/130 na rodada (único
+  vermelho dock-mag = flake de carga conhecido, verde isolado — teste
+  intocado na onda); 9 flags novas `as6.*` padrão ON com rollback
+  §651; 9 testes novos; entrega consolidada DEPLOY_1220_OK (bloco
+  paste-safe, 10 commits sobre `39b2f5e0`); roteiros de validação
+  visual no doc 25 do projeto. Fila que segue com o Jhony: rosto
+  modular (arte), backend Partes 10/13/14, CI runner, RBAC/audit.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

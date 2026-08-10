@@ -2966,3 +2966,81 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
    e o painel afundava na ordem de pintura (cliques caíam no chip
    errado). Ordem explícita, independente de perfil. */
 .avst5-p3d-editor { position: relative; z-index: 2; }
+
+/* ══ lote 1131–1140 (decisão #115, flag as6.motion_v2) — aceites §568
+   da Parte 7 AS6: transições estruturais coerentes ══ */
+/* altura da dock ANIMADA (compacta⇄padrão⇄expandida e recolher) */
+.avst5-shell[data-motion-v2] .avst5-painel {
+  transition: height var(--t-dur-media, 220ms) var(--t-ease-suave, ease);
+}
+/* troca de categoria: a biblioteca assenta com fade curto */
+@keyframes avst6-troca { from { opacity: .35; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.avst5-shell[data-motion-v2] .avst5-painel-scroll[data-troca] .avst-biblioteca {
+  animation: avst6-troca var(--t-dur-media, 220ms) var(--t-ease-suave, ease);
+}
+/* aba oculta: animações CSS pausam (não gastam frame nem bateria);
+   play-state não muda layout nem ordem de pintura (aprendizado do eco) */
+.avst5-shell[data-oculto] *,
+.avst5-shell[data-oculto] *::before,
+.avst5-shell[data-oculto] *::after { animation-play-state: paused; }
+
+/* ══ lote 1141–1150 (decisão #116, flag as6.light_v6) — LIGHT MODE
+   REAL (AS6 §578): direção própria — estúdio, precisão, limpeza.
+   Nada de branco puro em toda parte (§578) e profundidade por
+   luminosidade (§577: camada mais próxima = mais clara). Rampa FRIA
+   (azul-papel) em cima da correção funcional do #112. ══ */
+[data-theme="light"] [data-avst-react-root][data-light-v6] {
+  --avst-fundo: #e9edf5;         /* workspace — papel frio, não branco */
+  --avst-painel: #f5f7fb;        /* painéis */
+  --avst-painel-2: #eef1f8;
+  --avst-borda: rgba(31, 42, 66, 0.13);
+  --avst-texto: #17202f;
+  --avst-texto-2: #55617a;
+  --as6-superficie-0: #d9e0ec;   /* fosso */
+  --as6-superficie-1: #e9edf5;   /* fundo */
+  --as6-superficie-2: #e2e8f2;   /* trilhos */
+  --as6-superficie-3: #f8fafd;   /* cartões (quase-branco, nunca #fff) */
+  --as6-superficie-4: #c2ccdf;   /* bordas */
+  --as6-texto-forte: #17202f;
+  --as6-texto-suave: #55617a;
+}
+/* sombras LEVES no claro — drop-shadow preto pesado é linguagem do dark */
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst5-palco svg {
+  filter: drop-shadow(0 12px 26px rgba(23, 32, 47, 0.22));
+}
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst-card {
+  box-shadow: 0 1px 2px rgba(23, 32, 47, 0.05);
+}
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst-card:hover {
+  box-shadow: 0 8px 22px rgba(23, 32, 47, 0.16);
+}
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst-trilho[data-dock-v3] .avst-card-ativo {
+  box-shadow: 0 0 0 2px var(--as6-acento), 0 8px 24px rgba(23, 32, 47, 0.18);
+}
+/* flutuantes (drawer/caixa de cenário/popovers) = camada mais clara §577 */
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst5-insp-drawer,
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst6-cen-caixa {
+  background: #fdfdfe;
+  box-shadow: 0 18px 48px rgba(23, 32, 47, 0.22);
+}
+/* vinheta do estúdio no claro (par do #112, afinada p/ a rampa fria) */
+[data-theme="light"] [data-avst-react-root][data-light-v6] .avst5-viewport[data-fundo="estudio"] .avst5-palco {
+  background: radial-gradient(ellipse 70% 60% at 50% 42%, #dde4f2 0%, var(--as6-superficie-1) 78%);
+}
+
+/* lote 1181–1190 (#120, as6.cms_ro2): busca/detalhe do CMS RO */
+.avst6-cms-busca { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--as6-superficie-4); border-radius: 999px; background: var(--as6-superficie-2); color: var(--as6-texto-suave); }
+.avst6-cms-busca input { background: none; border: 0; outline: 0; color: var(--as6-texto-forte); font: inherit; width: 180px; }
+.avst6-cms-clicavel { cursor: pointer; }
+.avst6-cms-clicavel:hover td { background: color-mix(in srgb, var(--as6-acento) 8%, transparent); }
+.avst6-cms-detalhe { border-top: 1px solid var(--as6-superficie-4); padding: 10px 14px; max-height: 40%; overflow-y: auto; background: var(--as6-superficie-2); }
+.avst6-cms-detalhe header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.avst6-cms-detalhe dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; margin: 0; }
+.avst6-cms-detalhe dt { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--as6-texto-suave); }
+.avst6-cms-detalhe dd { margin: 0 0 6px; font-size: 12px; color: var(--as6-texto-forte); word-break: break-all; }
+
+/* lote 1191–1200 (#121, as6.ia_apply): lista de campos da sugestão */
+.avst-ia-campos { list-style: none; margin: 8px 0 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--avst-borda, var(--as6-superficie-4)); border-radius: var(--t-raio-m, 10px); background: color-mix(in srgb, var(--avst-painel) 60%, transparent); }
+.avst-ia-campos label { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+.avst-ia-campos strong { min-width: 90px; }
+.avst-ia-campos span { color: var(--avst-texto-2, var(--as6-texto-suave)); }

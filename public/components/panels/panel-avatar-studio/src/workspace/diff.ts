@@ -109,6 +109,70 @@ function resumoFino(f?: { largura?: number; altura?: number }): string {
   return [f.largura ? `largura ${f.largura}×` : '', f.altura ? `altura ${f.altura}×` : ''].filter(Boolean).join(' · ');
 }
 
+// ── lote 1191–1200 (#121, as6.ia_apply): APPLY PARCIAL ──────────────
+// A sugestão (IA/compositor) vira uma lista de mudanças ENDEREÇÁVEIS
+// (chave estável + rótulo legível) e um merge determinístico aplica só
+// as selecionadas. Puro; o caller passa o resultado no validarConfig.
+
+export interface CampoAplicavel {
+  chave: string;   // 'base' | 'titulo' | `camada:${id}` | `cor:${slot}`
+  rotulo: string;
+  de: string;
+  para: string;
+}
+
+export function camposAplicaveis(atual: AvatarConfig, sugestao: AvatarConfig): CampoAplicavel[] {
+  const saida: CampoAplicavel[] = [];
+  if (atual.base !== sugestao.base) {
+    saida.push({ chave: 'base', rotulo: 'Base', de: nomeItem(atual.base) || '—', para: nomeItem(sugestao.base) || '—' });
+  }
+  const chaves = [...new Set([...Object.keys(atual.camadas), ...Object.keys(sugestao.camadas)])] as CamadaId[];
+  for (const c of chaves.sort()) {
+    if ((atual.camadas[c] ?? '') !== (sugestao.camadas[c] ?? '')) {
+      saida.push({ chave: `camada:${c}`, rotulo: nomeCamada(c), de: nomeItem(atual.camadas[c]) || '—', para: nomeItem(sugestao.camadas[c]) || '—' });
+    }
+  }
+  if ((atual.titulo ?? '') !== (sugestao.titulo ?? '')) {
+    saida.push({
+      chave: 'titulo', rotulo: 'Título',
+      de: atual.titulo ? (tituloPorId(atual.titulo)?.nome ?? atual.titulo) : '—',
+      para: sugestao.titulo ? (tituloPorId(sugestao.titulo)?.nome ?? sugestao.titulo) : '—',
+    });
+  }
+  for (const s of Object.keys(NOME_SLOT_COR) as SlotCor[]) {
+    if (atual.cores[s] !== sugestao.cores[s]) {
+      saida.push({ chave: `cor:${s}`, rotulo: `Cor · ${NOME_SLOT_COR[s]}`, de: atual.cores[s], para: sugestao.cores[s] });
+    }
+  }
+  return saida;
+}
+
+/** Merge determinístico: só as chaves selecionadas saem da sugestão. */
+export function aplicarSelecionados(atual: AvatarConfig, sugestao: AvatarConfig, chaves: Set<string>): AvatarConfig {
+  const camadas = { ...atual.camadas } as Record<string, string>;
+  for (const chave of chaves) {
+    if (chave.startsWith('camada:')) {
+      const c = chave.slice(7);
+      const novo = (sugestao.camadas as Record<string, string>)[c];
+      if (novo && novo !== 'nenhum') camadas[c] = novo;
+      else delete camadas[c];
+    }
+  }
+  const saida: AvatarConfig = { ...atual, camadas: camadas as AvatarConfig['camadas'] };
+  if (chaves.has('base')) saida.base = sugestao.base;
+  if (chaves.has('titulo')) {
+    if (sugestao.titulo) saida.titulo = sugestao.titulo;
+    else delete saida.titulo;
+  }
+  const cores = { ...atual.cores };
+  let mudouCor = false;
+  for (const s of Object.keys(NOME_SLOT_COR) as SlotCor[]) {
+    if (chaves.has(`cor:${s}`)) { cores[s] = sugestao.cores[s]; mudouCor = true; }
+  }
+  if (mudouCor) saida.cores = cores;
+  return saida;
+}
+
 // ── Histórico local de salvamentos (§350 + "como volto atrás?" §322) ──
 export const CHAVE_HIST_DIFF = 'dshow.avst6.diff.hist.v1';
 export interface EntradaHistDiff { em: string; total: number; resumo: string[] }

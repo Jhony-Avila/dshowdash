@@ -191,6 +191,13 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     };
     armar();
     const aoTeclar = (e: KeyboardEvent) => {
+      // lote 1151-1160 (#117, as6.nav_dock): PageUp/Down paginam o
+      // trilho horizontal (mesmo passo das setas da dock)
+      if (flag('as6.nav_dock') && (e.key === 'PageDown' || e.key === 'PageUp')) {
+        e.preventDefault();
+        grade.scrollBy({ left: (e.key === 'PageDown' ? 1 : -1) * grade.clientWidth * 0.8, behavior: 'smooth' });
+        return;
+      }
       if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
       const lista = cards();
       const atual = (e.target as HTMLElement | null)?.closest?.('.avst-card') as HTMLElement | null;
@@ -201,7 +208,14 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         : e.key === 'End' ? lista.length - 1
           : e.key === 'ArrowRight' ? Math.min(lista.length - 1, idx + 1) : Math.max(0, idx - 1);
       lista.forEach((c, i) => { c.tabIndex = i === alvo ? 0 : -1; });
-      lista[alvo]?.focus();
+      // #117: no trilho, o foco navegado ROLA SUAVE até o card (focus()
+      // sozinho salta seco e briga com o snap)
+      if (flag('as6.nav_dock')) {
+        lista[alvo]?.focus({ preventScroll: true });
+        lista[alvo]?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+      } else {
+        lista[alvo]?.focus();
+      }
     };
     grade.addEventListener('keydown', aoTeclar);
     const mo = new MutationObserver(armar);

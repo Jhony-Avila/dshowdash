@@ -7,6 +7,7 @@
 import { useEffect, useRef } from 'react';
 import { Keyboard } from 'lucide-react';
 import { MOVIMENTOS, animar } from './movimento';
+import { flag } from '../nucleo/flags';
 
 interface GrupoAtalhos {
   grupo: string;
@@ -46,6 +47,19 @@ export const ATALHOS: GrupoAtalhos[] = [
   },
 ];
 
+// lote 1151-1160 (#117, as6.nav_dock): atalhos da dock — entram na
+// folha só com a flag (a folha é dado; §548 continua valendo)
+const GRUPO_DOCK: GrupoAtalhos = {
+  grupo: 'Dock de assets',
+  itens: [
+    { teclas: ['B'], faz: 'Focar a biblioteca (1º card navegável)' },
+    { teclas: ['D'], faz: 'Ciclar a altura da dock (compacta/padrão/expandida)' },
+    { teclas: ['←', '→'], faz: 'Navegar entre os cards (rola suave)' },
+    { teclas: ['PgUp', 'PgDn'], faz: 'Paginar o trilho' },
+    { teclas: ['Home', 'End'], faz: 'Primeiro / último card' },
+  ],
+};
+
 export function Atalhos({ aoFechar }: { aoFechar: () => void }) {
   const refCaixa = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -65,7 +79,7 @@ export function Atalhos({ aoFechar }: { aoFechar: () => void }) {
       <div ref={refCaixa} className="avst5-atalhos" data-teste="atalhos">
         <h3><Keyboard size={15} aria-hidden /> Atalhos do estúdio</h3>
         <div className="avst5-atalhos-grupos">
-          {ATALHOS.map((g) => (
+          {(flag('as6.nav_dock') ? [...ATALHOS, GRUPO_DOCK] : ATALHOS).map((g) => (
             <section key={g.grupo} aria-label={g.grupo}>
               <h4>{g.grupo}</h4>
               <ul>

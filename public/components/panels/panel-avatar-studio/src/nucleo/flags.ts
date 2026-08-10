@@ -104,6 +104,16 @@ const PADROES: Record<string, boolean> = {
   'as6.vida_shell': true,       // lote 1071–1080 — VIDA no shell novo (regressão da auditoria FASE 0): respiração/piscada/balanço no viewport (receita do PalcoCinema); §297 respeitado; off = viewport estático anterior
   'as6.workers': true,          // lote 1091–1100 — worker pool (AS6 Parte 9): thumbs/miniaturas re-encodadas fora da main thread com TIMEOUT e fallback síncrono sempre; off = caminho síncrono anterior byte a byte
   'as6.dock_inferior': true,    // onda 1111 (pedido visual do Jhony 2026-08-09 — decisão #112): shell novo com a MESMA estrutura do clássico AAA — nav esquerda, preview central dominante com fit-to-view, biblioteca em DOCK HORIZONTAL inferior (reuso do DockAssets/trilho); off = coluna direita anterior byte a byte
+  // ── onda 1121–1220 (decisão #113; padrão ON conforme #50) ──
+  'as6.tour_v6': true,          // lote 1121–1130 — tour §568 v2 apresenta o layout do #112 (dock/alturas/Cenário/câmera); off = roteiro anterior byte a byte
+  'as6.motion_v2': true,        // lote 1131–1140 — aceites §568 da Parte 7: altura da dock ANIMADA, troca de categoria com fade curto, animações CSS pausadas com a aba oculta; reduced-motion desliga tudo; off = cortes secos anteriores
+  'as6.light_v6': true,         // lote 1141–1150 — Light Mode REAL §578 (direção própria, não dark invertido): rampa fria de estúdio sem branco puro, profundidade por luminosidade §577, sombras leves; off = claro do #112 byte a byte
+  'as6.nav_dock': true,         // lote 1151–1160 — dock 100% operável por teclado (AS6 Parte 6): B foca a biblioteca, D cicla a altura, PageUp/Down paginam o trilho, foco navegado rola suave; off = navegação anterior
+  'as6.workers_v2': true,       // lote 1161–1170 — workers fase 2 (AS6 Parte 9): ENCODE de export de foto (PNG/JPEG grandes) fora da main thread via ImageBitmap transferido; timeout+fallback síncrono sempre; off = toDataURL de sempre
+  'as6.perf_baseline': true,    // lote 1171–1180 — baseline de RUNTIME local (AS6 Parte 9): marks/measures das interações-chave (troca de categoria, equipar) fechadas pós-paint + long tasks; window.__avstPerf p/ suíte/dev; off = zero marks
+  'as6.cms_ro2': true,          // lote 1181–1190 — CMS RO fase 2 (AS6 Parte 15): busca sanitizada + filtro de categoria + ficha de detalhe + export CSV client-side no drawer; segue GET-only/AdminGate; off = drawer do #108
+  'as6.ia_apply': true,         // lote 1191–1200 — IA apply PARCIAL (AS6 Parte 12): a sugestão vira lista de mudanças campo a campo com checkbox; aplica só o selecionado (merge determinístico + validarConfig + §636); off = botão "aplicar tudo" anterior
+  'as6.contextos_v6': true,     // lote 1201–1210 — Universal Avatar Component fase 1 (AS6 Parte 13): montarAvatarUniversal (espelho §619 + live update + placeholder) exposto em window.AvatarStudioUniversal; drawer de contextos consome o MESMO caminho; off = mocks anteriores
 };
 
 /**

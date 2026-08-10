@@ -136,6 +136,7 @@ export const REGISTRO_ANIMACOES: Record<string, { categoria: CategoriaMovimento;
   'avst5-presenca': { categoria: 'vida', proposito: 'presença de palco §157.5' },
   'avst5-rec': { categoria: 'estado', proposito: 'ponto REC do modo captura' },
   'avst6-sobe': { categoria: 'entrada', proposito: 'trilho/inferior subindo ao trocar de aba (as6.visual_v2)' },
+  'avst6-troca': { categoria: 'entrada', proposito: 'biblioteca assentando ao trocar de categoria (as6.motion_v2 — aceite §568 AS6)' },
 };
 
 /** §174: a sequência cinematográfica do Showcase (fade → aproxima →

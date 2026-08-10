@@ -73,6 +73,7 @@ import {
 } from '../services/PresetsPessoais';
 import { carregarEstado, estadoApiAtivo, salvarDraft, salvarVersao } from '../services/EstadoService';
 import { telemetria } from '../services/Telemetria';
+import { iniciarBaseline, medirInteracao } from '../services/PerfBaseline'; // lote 1171-1180 (#119)
 import { log } from '../services/Log';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
@@ -357,6 +358,17 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // SMIL). Guard vem do Motion System §285 (fonte única). Declarado AQUI
   // porque o poder v2 (§154.1) depende dele.
   const [movReduzido] = useState(movimentoReduzido);
+  // lote 1131-1140 (#115, as6.motion_v2): com a ABA oculta, animações
+  // CSS param (animation-play-state via [data-oculto]) — aceite §568
+  // "animações fora da viewport pausadas"; volta ao vivo no retorno
+  const [abaOculta, setAbaOculta] = useState(false);
+  useEffect(() => { iniciarBaseline(); }, []); // #119 (no-op sem a flag)
+  useEffect(() => {
+    if (!flag('as6.motion_v2')) return undefined;
+    const ao = () => setAbaOculta(document.visibilityState === 'hidden');
+    document.addEventListener('visibilitychange', ao);
+    return () => document.removeEventListener('visibilitychange', ao);
+  }, []);
 
   // mega 63 (§153–§155): ATIVAR PODER — efeito/aura equipado explode no
   // palco por ~2,6s (overlay isolado; nada muda no estado do avatar)
@@ -473,6 +485,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // GradeItens fala AvatarConfig — cada escolha vira COMANDO com inverso
   const aplicarComando = useCallback((novo: AvatarConfig) => {
+    medirInteracao('equipar'); // #119: comando -> paint
     const antesLegado = paraLegado2d(store.estadoDraft);
     const antes = store.estadoDraft;
     const depois = deLegado2d(novo);
@@ -790,6 +803,28 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // mega 228 (§220): LINHA DO TEMPO unificada (flag as5.timeline_shell)
   const [timeline, setTimeline] = useState(false);
 
+  // lote 1151-1160 (#117, as6.nav_dock): B foca a biblioteca (1º card
+  // navegável) e D cicla a altura da dock — fora de campos, sem
+  // modificador, só no layout novo (#112)
+  useEffect(() => {
+    if (!flag('as6.nav_dock') || !flag('as6.dock_inferior')) return undefined;
+    const ao = (e: KeyboardEvent) => {
+      const alvoEl = e.target as HTMLElement | null;
+      if (alvoEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvoEl.tagName)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'b' || e.key === 'B') {
+        const card = document.querySelector<HTMLElement>('.avst5-painel .avst-card[tabindex="0"]')
+          ?? document.querySelector<HTMLElement>('.avst5-painel .avst-card');
+        if (card) { e.preventDefault(); card.focus(); }
+      } else if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('avst6:dock-altura'));
+      }
+    };
+    window.addEventListener('keydown', ao);
+    return () => window.removeEventListener('keydown', ao);
+  }, []);
+
   // mega 37 (§548): folha de ATALHOS — "?" abre (fora de campos de texto)
   const [atalhos, setAtalhos] = useState(false);
   useEffect(() => {
@@ -980,6 +1015,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
         data-dock-inferior={dockInferior ? '' : undefined} /* decisão #112 */
+        data-motion-v2={flag('as6.motion_v2') && !movReduzido ? '' : undefined} /* lote 1131-1140 (#115, aceites §568 AS6) */
+        data-oculto={abaOculta ? '' : undefined} /* #115: aba oculta = animações CSS pausadas */
         data-qualidade={flag('as6.quality') ? qualidade().perfil : undefined} /* lote 1021-1030 (#104) */
         data-uxfinal={flag('as5.ux_final') ? '' : undefined} // megas 598-599 (§545-§546)
         data-micro={flag('as5.microinteracoes') && !movReduzido ? '' : undefined} /* mega 296 (P9/§285) */
@@ -1000,6 +1037,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* sidebar esquerda — scroll próprio (R5) */}
           <TrilhoCategorias categoria={categoria} compacta={compacta}
             aoEscolher={(id) => {
+              medirInteracao('troca-categoria'); // #119: fecha pós-paint
               setCategoria(id); setFiltroSlot('todos');
               // §323–§325 (as6.contexto): UMA ação prepara o ambiente —
               // aba volta ao catálogo cheio, busca antiga limpa, grupo

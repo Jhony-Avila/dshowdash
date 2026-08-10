@@ -29,6 +29,19 @@ const PASSOS: Passo[] = [
   { alvo: '.avst5-header-acoes', titulo: 'Extras', texto: 'Aleatório inteligente (respeita seus bloqueios), Apresentar (showcase cinematográfico) e o modo clássico a um clique.' },
 ];
 
+// lote 1121-1130 (decisão #114, flag as6.tour_v6 — §568 v2): o tour
+// APRESENTA o layout do #112 (dock inferior). Mesmo motor de coach
+// marks; só a LISTA muda — off = passos anteriores byte a byte.
+const PASSOS_V6: Passo[] = [
+  { alvo: '.avst5-viewport', titulo: 'Seu palco', texto: 'O avatar aparece INTEIRO e centralizado — e respira de verdade. Os botões Auto/Rosto/Busto/Corpo (canto de baixo) aproximam a câmera quando você quiser.' },
+  { alvo: '.avst5-sidebar', titulo: 'Categorias', texto: 'Rosto, cabelo, roupa, aura… navegue por aqui. Dica: Ctrl+K abre a paleta de comandos para ir a qualquer lugar.' },
+  { alvo: '.avst5-painel', titulo: 'Dock de assets', texto: 'A biblioteca virou uma VITRINE aqui embaixo: arraste para o lado (tem inércia!), use as setas nas pontas ou a rodinha do mouse. Clique num card para equipar.' },
+  { alvo: '[data-teste="dock-altura"]', titulo: 'Altura da dock', texto: 'Este botão cicla a dock entre compacta, padrão e expandida (grade completa com rolagem). Sua escolha fica salva.' },
+  { alvo: '[data-teste="cen-tool"]', titulo: 'Cenário', texto: 'Cenário, hora do dia, iluminação e clima moram neste botão — organizados num painel, longe do rosto do avatar.' },
+  { alvo: '.avst5-salvar', titulo: 'Salvar', texto: 'Suas mudanças ficam aqui até você salvar — com Desfazer/Refazer (Ctrl+Z), diff campo a campo em "Detalhes" e rascunho automático.' },
+  { alvo: '.avst5-header-acoes', titulo: 'Extras', texto: 'Aleatório inteligente, Apresentar (showcase cinematográfico), prévia 3D e o modo clássico a um clique.' },
+];
+
 // mega 299 (§568 v2): passo extra do poder — só com a flag do lote ligada
 // (o alvo .avst5-viewport sempre existe; o texto apresenta a novidade)
 const PASSO_PODER: Passo = {
@@ -41,9 +54,12 @@ export function TourGuiado({ aoFechar }: { aoFechar: () => void }) {
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const refCard = useRef<HTMLDivElement>(null);
-  // mega 299 (§568 v2): a lista cresce com a flag do lote 291-300
-  const passos = useMemo(
-    () => (flag('as5.microinteracoes') ? [...PASSOS, PASSO_PODER] : PASSOS), []);
+  // mega 299 (§568 v2): a lista cresce com a flag do lote 291-300;
+  // #114: com o layout novo (#112) o roteiro é o PASSOS_V6
+  const passos = useMemo(() => {
+    const base = flag('as6.tour_v6') && flag('as6.dock_inferior') ? PASSOS_V6 : PASSOS;
+    return flag('as5.microinteracoes') ? [...base, PASSO_PODER] : base;
+  }, []);
   const passo = passos[i];
 
   useEffect(() => {
