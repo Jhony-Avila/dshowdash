@@ -153,6 +153,14 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     window.addEventListener('avst6:dock-altura', ao);
     return () => window.removeEventListener('avst6:dock-altura', ao);
   });
+  // lote 1251-1260 (#128, as6.layouts): layout aplicado -> relê a
+  // altura canônica do storage
+  useEffect(() => {
+    if (!flag('as6.layouts')) return undefined;
+    const ao = () => setEstadoDock(lerEstadoDock());
+    window.addEventListener('avst6:dock-estado', ao);
+    return () => window.removeEventListener('avst6:dock-estado', ao);
+  }, []);
   const refPainel = useRef<HTMLDivElement>(null);
   // lote 1131-1140 (#115, as6.motion_v2): trocar de categoria assenta a
   // biblioteca com um fade curto (aceite §568: nada muda de posição

@@ -1002,6 +1002,17 @@
   threshold. Off = interações anteriores byte a byte. Teste
   mobile-v6.mjs.
 
+- **#128 (2026-08-10) — Layouts nomeados do workspace (lote 1251–1260,
+  flag `as6.layouts` — AS6 Parte 1)**: 3 slots fixos (A/B/C) na Paleta
+  de Comandos salvam/aplicam a GEOMETRIA do workspace — largura da
+  nav, largura da lateral, altura da dock e recolhimento. Storage puro
+  (`dshow.avst6.layouts.v1`); aplicar escreve as chaves CANÔNICAS
+  (larguras + dockinf) e o evento `avst6:dock-estado` faz o
+  PainelCatalogo reler a altura (o estado mora lá). Slot vazio anuncia
+  no aria-live sem quebrar. Geometria ≠ estado do avatar — nada aqui
+  toca config/serialização. Off = comandos ausentes. Teste
+  layouts-as6.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

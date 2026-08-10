@@ -74,6 +74,8 @@ import {
 import { carregarEstado, estadoApiAtivo, salvarDraft, salvarVersao } from '../services/EstadoService';
 import { telemetria } from '../services/Telemetria';
 import { iniciarBaseline, medirInteracao } from '../services/PerfBaseline'; // lote 1171-1180 (#119)
+import { EVENTO_DOCK_ESTADO, gravarLayout, lerLayout } from '../workspace/layouts'; // lote 1251-1260 (#128)
+import type { SlotLayout } from '../workspace/layouts';
 import { log } from '../services/Log';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
@@ -218,6 +220,28 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [modo, setModo] = useState<'edicao' | 'foco' | 'studio'>('edicao');
   const [painelLargo, setPainelLargo] = useState(false);
   const [painelFechado, setPainelFechado] = useState(false);
+  // lote 1251-1260 (#128, as6.layouts): salvar/aplicar a GEOMETRIA do
+  // workspace em 3 slots (paleta). Altura da dock viaja pela chave
+  // canônica + evento (o estado mora no PainelCatalogo).
+  const salvarLayout = useCallback((slot: SlotLayout) => {
+    let dock: 'compacta' | 'padrao' | 'expandida' = 'padrao';
+    try {
+      const v = localStorage.getItem('dshow.avst6.dockinf.v1');
+      if (v === 'compacta' || v === 'expandida') dock = v;
+    } catch { /* sem storage */ }
+    gravarLayout(slot, { esq: larguras.esq, dir: larguras.dir, dock, fechado: painelFechado });
+    setAnuncio(`Layout ${slot} salvo — aplique pela paleta quando quiser`);
+  }, [larguras, painelFechado]);
+  const aplicarLayout = useCallback((slot: SlotLayout) => {
+    const l = lerLayout(slot);
+    if (!l) { setAnuncio(`Layout ${slot} está vazio — salve o workspace atual nele primeiro`); return; }
+    setLarguras({ esq: l.esq, dir: l.dir });
+    try { localStorage.setItem(CHAVE_LARGURAS, JSON.stringify({ esq: l.esq, dir: l.dir })); } catch { /* sem storage */ }
+    setPainelFechado(l.fechado);
+    try { localStorage.setItem('dshow.avst6.dockinf.v1', l.dock); } catch { /* sem storage */ }
+    window.dispatchEvent(new CustomEvent(EVENTO_DOCK_ESTADO));
+    setAnuncio(`Layout ${slot} aplicado`);
+  }, []);
   const [bloqueios, setBloqueios] = useState<Set<string>>(() => lerBloqueios());
   const [, setTicFavs] = useState(0); // re-render após favoritar no Equipados
   // §69.1: conflito pendente aguardando decisão do usuário
@@ -1444,6 +1468,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 rotulo: `Celebração ao salvar: ${tp === 'legado' ? 'confete clássico' : tp} (§158.1)`,
                 executar: () => { try { localStorage.setItem('dshow.avst5.gatilho.v1', tp); } catch { /* sem storage */ } },
               })) : []),
+              // lote 1251-1260 (#128, as6.layouts): 3 slots de geometria
+              ...(flag('as6.layouts') ? (['A', 'B', 'C'] as const).flatMap((slot) => [
+                { id: `layout-salvar-${slot}`, rotulo: `Layout ${slot}: salvar o workspace atual`, executar: () => salvarLayout(slot) },
+                { id: `layout-aplicar-${slot}`, rotulo: `Layout ${slot}: aplicar`, executar: () => aplicarLayout(slot) },
+              ]) : []),
               { id: 'atalhos', rotulo: 'Atalhos do teclado (?)', executar: () => setAtalhos(true) },
               // mega 46: viewer de telemetria (só com a flag dev ligada)
               ...(flag('as5.telemetria_painel') ? [{

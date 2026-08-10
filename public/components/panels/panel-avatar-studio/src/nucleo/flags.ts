@@ -116,6 +116,7 @@ const PADROES: Record<string, boolean> = {
   'as6.contextos_v6': true,     // lote 1201–1210 — Universal Avatar Component fase 1 (AS6 Parte 13): montarAvatarUniversal (espelho §619 + live update + placeholder) exposto em window.AvatarStudioUniversal; drawer de contextos consome o MESMO caminho; off = mocks anteriores
   // ── onda 1221–1270 (decisão #124; padrão ON conforme #50) ──
   'as6.mobile_v6': true,        // lote 1241–1250 — telas estreitas: SWIPE vertical no topo da dock cicla altura/recolhe, alça visual, tooltips na nav estreita; off = interações anteriores byte a byte
+  'as6.layouts': true,          // lote 1251–1260 — layouts nomeados do workspace (AS6 Parte 1): 3 slots A/B/C na paleta salvam/aplicam a geometria (nav, painel/dock, recolhido); off = sem comandos
 };
 
 /**
