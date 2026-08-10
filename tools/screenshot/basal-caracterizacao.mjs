@@ -17,7 +17,29 @@
 import pkg from './node_modules/playwright/index.js';
 const { chromium } = pkg;
 import { getSessionCookies, isLoginPage, loginViaPage } from './auth.mjs';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync, readdirSync } from 'fs';
+
+// Resolve o Chromium do servidor sem depender de um caminho fixo. Ordem: PW_CHROME,
+// cache do Playwright (chromium-* e headless-shell), node_modules local, sistema.
+function resolveChrome() {
+  if (process.env.PW_CHROME && existsSync(process.env.PW_CHROME)) return process.env.PW_CHROME;
+  const globs = [
+    ['/root/.cache/ms-playwright', /^chromium-\d+$/, 'chrome-linux/chrome'],
+    ['/root/.cache/ms-playwright', /^chromium_headless_shell-\d+$/, 'chrome-headless-shell-linux64/chrome-headless-shell'],
+    ['./node_modules/playwright-core/.local-browsers', /^chromium-\d+$/, 'chrome-linux/chrome'],
+    ['./node_modules/playwright/.local-browsers', /^chromium-\d+$/, 'chrome-linux/chrome'],
+    ['/opt/pw-browsers', /^chromium-\d+$/, 'chrome-linux/chrome'],
+  ];
+  for (const [base, re, tail] of globs) {
+    try { for (const d of readdirSync(base).filter(x => re.test(x)).sort().reverse()) {
+      const p = `${base}/${d}/${tail}`; if (existsSync(p)) return p;
+    } } catch {}
+  }
+  for (const p of ['/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable']) if (existsSync(p)) return p;
+  return undefined; // deixa o Playwright tentar o default (e falhar com mensagem clara)
+}
+const CHROME = resolveChrome();
+console.log('[basal] Chromium:', CHROME || '(default do Playwright)');
 
 const BASE = 'https://dshowdash.com.br';
 const REPO = '/var/www/dshowdash';
@@ -38,9 +60,7 @@ function reg(nome, ok, dados) { rel.jornadas[nome] = { ok, ...dados }; log(`${ok
 
 const browser = await chromium.launch({
   headless: true,
-  // Convenção da suíte do Avatar Studio (scripts/avatar/testes/*): Chromium fixo,
-  // override por PW_CHROME. Evita o download do chrome-headless-shell que falta.
-  executablePath: process.env.PW_CHROME ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  ...(CHROME ? { executablePath: CHROME } : {}),
   args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
          '--host-resolver-rules=MAP dshowdash.com.br 127.0.0.1', '--ignore-certificate-errors'],
 });
