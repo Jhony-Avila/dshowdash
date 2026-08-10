@@ -119,24 +119,40 @@ try {
   reg('03_shell', inv.navItens > 0, inv);
 
   // ── Jornada 4 · NAVEGAÇÃO entre painéis (read-only) ──────────────────────
+  // O SPA roteia por clique em [data-panel-trigger], não por hash. Deriva a lista
+  // dos triggers REAIS presentes e detecta montagem por .panel-<id>-component
+  // (convenção do projeto) ou mudança de conteúdo do container principal.
+  const triggersDisp = await page.$$eval('[data-panel-trigger]',
+    els => els.map(e => e.getAttribute('data-panel-trigger')).filter(Boolean)).catch(() => []);
+  const alvo = (process.env.BASAL_PANELS ? PAINEIS.filter(p => triggersDisp.includes(p)) : [])
+    .concat(triggersDisp).filter((v, i, a) => a.indexOf(v) === i).slice(0, 4);
   const navRes = [];
-  for (const pid of PAINEIS) {
+  for (const pid of alvo) {
     const antes = errosConsole.length;
     let ok = false, marcador = null;
     try {
-      await page.evaluate((p) => { location.hash = `#/${p}`; }, pid);
-      await page.waitForTimeout(3500);
-      marcador = await page.evaluate((p) => {
-        const cont = document.querySelector('.dsd-container__content, [data-active-panel], main');
-        return { hash: location.hash, temConteudo: !!cont && cont.childElementCount > 0,
-          idAtivo: document.querySelector('[data-active-panel]')?.getAttribute('data-active-panel') || null };
+      const contAntes = await page.evaluate(() => document.querySelector('.dsd-container__content, main, .dsd-container')?.childElementCount ?? 0);
+      await page.evaluate((p) => {
+        const t = document.querySelector(`[data-panel-trigger="${p}"]`);
+        if (t) t.click(); else location.hash = `#/${p}`;
       }, pid);
-      ok = marcador.temConteudo;
+      await page.waitForTimeout(3500);
+      marcador = await page.evaluate((p, ca) => {
+        const comp = document.querySelector(`.panel-${p}-component, [data-panel-id="${p}"], [data-active-panel="${p}"]`);
+        const cont = document.querySelector('.dsd-container__content, main, .dsd-container');
+        return {
+          montouComponente: !!comp,
+          contChildAntes: ca, contChildDepois: cont?.childElementCount ?? 0,
+          idAtivo: document.querySelector('[data-active-panel]')?.getAttribute('data-active-panel') || null,
+          hash: location.hash,
+        };
+      }, pid, contAntes);
+      ok = marcador.montouComponente || marcador.contChildDepois > 0;
       await page.screenshot({ path: `${SHOTS}/basal-04-${pid}.png` }).catch(() => {});
     } catch (e) { marcador = { erro: String(e).slice(0, 150) }; }
     navRes.push({ pid, ok, marcador, novosErrosConsole: errosConsole.length - antes });
   }
-  reg('04_navegacao', navRes.some(r => r.ok), { paineis: navRes });
+  reg('04_navegacao', navRes.length > 0 && navRes.every(r => r.ok), { triggersDisponiveis: triggersDisp, paineis: navRes });
 
   // ── Jornada 5 · API autenticada (read-only) ──────────────────────────────
   const endpoints = ['/api/health', '/api/auth/check.php', '/api/user/preferences'];
