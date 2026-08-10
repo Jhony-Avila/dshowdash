@@ -1,7 +1,18 @@
 # Status do Projeto — Avatar Studio (no repo)
 
 > Fonte viva: docs do projeto Claude "Avatar Studio" (04-status-do-projeto).
-> Última atualização: **2026-08-09 — MARCO 1220: onda 1121–1220 completa no código** (decisões #113–#123). Em produção: 1111 (DEPLOY_1111_OK).
+> Última atualização: **2026-08-10 — MARCO 1270: onda 1221–1270 completa no código** (decisões #124–#129; suíte 133/133). Em produção: 1220 (DEPLOY_1220_OK).
+
+## Onda 1221–1270 (fechada — decisão #124, mapa no doc 26)
+
+- 1221–1230 code-splitting §275 v2: Foto/CriarIA/Contextos lazy, entry
+  466→400KB (#125, sem flag) · 1231–1240 cobertura i18n EN + a11y
+  (Escape aninhado no CMS, Escape na caixa do Cenário e no drawer,
+  linha do CMS por Enter — #126, doutrina #62) · 1241–1250 alça de
+  swipe da dock em telas estreitas (`as6.mobile_v6` #127) · 1251–1260
+  layouts nomeados A/B/C na paleta (`as6.layouts` #128) · 1261–1270
+  fechamento (#129).
+- Suíte: **133/133 verdes** na rodada completa (3 testes novos).
 
 ## Onda 1121–1220 (fechada — decisão #113, mapa no doc 24)
 

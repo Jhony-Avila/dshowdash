@@ -1013,6 +1013,13 @@
   toca config/serialização. Off = comandos ausentes. Teste
   layouts-as6.mjs.
 
+- **#129 (2026-08-10) — Fechamento da onda 1221–1270 (lote
+  1261–1270)**: suíte completa **133/133 verdes** (zero flakes na
+  rodada); 5 lotes: split §275 v2 (entry −13% gzip), cobertura
+  i18n/a11y, alça de swipe (`as6.mobile_v6`), layouts nomeados
+  (`as6.layouts`), fechamento. Entrega DEPLOY_1270_OK (5 commits sobre
+  `4a208eb9`). Roteiros de validação no doc 27 do projeto.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
