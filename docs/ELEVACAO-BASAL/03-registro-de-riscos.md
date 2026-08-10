@@ -9,14 +9,14 @@
 | BASAL-002 | Backend ativo parcialmente ignorado (~444 arquivos em `api/`) | **P0** | ABERTO | Classificação fonte×config×dado (M3) → versionar fonte ativa sem segredos | M3 |
 | BASAL-003 | Release não reproduzível por clone limpo | **P0** | ABERTO | Confirmado no clone em 2026-08-10 (0 dist). Build reproduzível no M5 | M5 |
 | BASAL-004 | Fontes `.ts/.tsx` acessíveis por HTTP | **P0** | **CONFIRMADO + RAIZ IDENTIFICADA**: o runtime IMPORTA `.ts` por ESM (31 arquivos de `bootstrap-v2/` + `core/runtime/_entry.js` — evidência m1b). Bloqueio adiado (quebraria o boot) | Empacotar `bootstrap-v2/`+`core/runtime/` (M5/M6) → depois bloquear `.ts` | M5/M6 |
-| BASAL-004b | `.patch` resíduo exposto (`footer/.../index.js.patch`) | P1 | **CONTIDO** (quarentenado p/ `/backup` na Onda 3); falta regra Nginx permanente + purge CF | Onda 4: deny `\.patch$` verificado na origem + purge Cloudflare | M1 |
+| BASAL-004b | `.patch` resíduo exposto (`footer/.../index.js.patch`) | P1 | **FECHADO** (Onda 5): arquivo quarentenado + `deny .patch` permanente, verificado por content-type + purge CF | — | ✔ |
 | BASAL-005 | MySQL escutando `0.0.0.0:3306` | **P0** até validação | **CONFIRMADO** em escuta (evidência §7); firewall a reconfirmar (questões 19–20) | Evidência de UFW + decisão bind × firewall com o sponsor | M1 |
 | BASAL-006 | Builds basais defasados (43/63 dist com fonte mais nova) | P1 | ABERTO | Confirmar por build+comparação (M5); nunca atualizar manualmente | M5 |
 | BASAL-007 | `app/` e `public/app/` divergentes (árvores concorrentes) | P1 | ABERTO | ADR-001; consolidação na Parte 8 (M6); até lá, regras transitórias doc 01 §4 | M6 |
 | BASAL-008 | TS e JS concorrentes (5.540 pares; 27 com TS mais novo) | P1 | ABERTO | ADR-004; verificação prioritária dos 27 (M4) | M4 |
 | BASAL-009 | Ausência de CI | P1 | ABERTO | Pipeline mínimo após scripts canônicos (M4) → CI/CD completo (M11) | M11 |
 | BASAL-010 | Testes basais insuficientes (~10 fora do Avatar Studio) | P1 | ABERTO | Characterization tests antes de refatorar (M2); metas no M10 | M2/M10 |
-| BASAL-011 | Nginx :8080 → root inexistente (config órfã) | P1 | **CONFIRMADO** (vhost `dshowdash-v3`, evidência §6) | Desativar após checagem de consumidores (LL-01, doc 20) | M1 |
+| BASAL-011 | Nginx :8080 → root inexistente (config órfã) | P1 | **FECHADO** (Onda 5): vhost `dshowdash-v3` desativado (symlink → `/backup`); conexão recusada | — | ✔ |
 | BASAL-012 | Migrations sem governança central comprovada | P1 | ABERTO | Inventário de schema (M2) → política de migrations (ADR-009, M9) | M9 |
 | BASAL-013 | Ciclos de importação | P2 | ABERTO | dependency-graph no M2; quebra progressiva M6+ | M6+ |
 | BASAL-014 | Dependências com versões divergentes (Vite 7×5, React patches, Sharp) | P2 | ABERTO | Alinhamento deliberado no M4 | M4 |

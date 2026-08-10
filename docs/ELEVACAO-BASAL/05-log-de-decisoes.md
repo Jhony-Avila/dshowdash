@@ -19,6 +19,7 @@
 | EB-012 | 2026-08-10 | `.patch` resíduo já quarentenado para `/backup` na Onda 3 (o move persistiu apesar do rollback do vhost — resultado desejado). Falta apenas a regra Nginx permanente + purge, na Onda 4 | Saída Onda 3 |
 | EB-013 | 2026-08-10 | **Status HTTP não é oráculo válido de smoke neste vhost**: o SPA faz `try_files … /index.html`, então qualquer caminho inexistente retorna 200 (shell). Verificação passa a usar **content-type/corpo** (HTML do shell × arquivo servido cru). O `patch=200` da Onda 4 era o shell, não o arquivo — a exposição já estava fechada desde a Onda 3 | Smoke Onda 4 (origem) |
 | EB-014 | 2026-08-10 | Rollback da Onda 4 (disparado pelo oráculo errado) também desfez a desativação — correta — do vhost órfão :8080. Refeito na Onda 5 com oráculo por content-type | Saída Onda 4 |
+| EB-015 | 2026-08-10 | **M1d aplicado (Onda 5, rc=0)**: `.patch` (BASAL-004b) e vhost órfão :8080 (BASAL-011) FECHADOS sem regressão. Restam no M1 dois P0 bloqueados pela decisão do sponsor: MySQL `0.0.0.0:3306` (BASAL-005) e phpMyAdmin público (BASAL-016). Consolidados na lista "precisa do Jhony" | Smoke m1d verde |
 
 ## Formato de entrega de cada lote (obrigatório — briefing §34)
 

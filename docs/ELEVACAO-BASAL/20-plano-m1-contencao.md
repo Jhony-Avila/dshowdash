@@ -77,6 +77,19 @@ Separa build de runtime e contém o que já é seguro:
 - **B1** (só com P1 verde): `deny .ts/.tsx`.
 Smoke inclui `patch=404` e (quando aplicável) `ts=404`; rollback automático.
 
+## Estado do M1 em 2026-08-10 (após Onda 5 / M1d, rc=0)
+
+| Item P0/P1 | Status | Evidência |
+|---|---|---|
+| `.patch` exposto (BASAL-004b) | **FECHADO** — arquivo quarentenado (Onda 3) + regra `deny .patch` permanente (Onda 5) | m1d: `patch=200|text/html` (shell, não serve bytes) |
+| Vhost órfão :8080 (BASAL-011) | **FECHADO** — symlink `sites-enabled` movido p/ `/backup`; conexão recusada | m1d: `8080=000000` |
+| Bloqueio `.ts/.tsx` (BASAL-004) | **ADIADO p/ M5/M6** (EB-010) — runtime importa `.ts` por ESM; bloquear quebra o boot | m1b P1 |
+| MySQL `0.0.0.0:3306` (BASAL-005) | **PENDENTE decisão do sponsor** — precisa `ufw status` + quem consome de fora | questões 19–20 |
+| phpMyAdmin público (BASAL-016) | **PENDENTE decisão do sponsor** — sem `allow/deny/auth_basic` visível | questão 17 / A3 |
+
+Fechados sem quebra: home/bundle/health intactos (`200|text/html`, `200|application/javascript`,
+`200|application/json`), oráculo por content-type (EB-013).
+
 ## Critério de saída do M1 (briefing §1601)
 
 Exposições críticas contidas (B1) · estado inicial preservado (hashes Onda 1 + backups) ·
