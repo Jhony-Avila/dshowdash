@@ -1478,7 +1478,11 @@
 .avst5-comp-lado strong { font-size: 11.5px; }
 .avst5-comp-lado em { font-style: normal; font-size: 10px; }
 .avst5-comp-alternar { grid-column: 1 / -1; justify-content: center; }
-.avst5-anuncio { position: absolute; top: 12px; right: 14px; z-index: 4; background: rgba(13,16,23,.82); border: 1px solid var(--avst-borda, var(--as6-superficie-4)); color: var(--avst-texto, var(--as6-texto-forte)); border-radius: 999px; padding: 5px 13px; font-size: 11px; backdrop-filter: blur(4px); animation: avst5-fade .2s ease; } @keyframes avst5-fade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+/* onda 1291 (bugfix de contraste SEM flag, precedente #112): o fundo era
+   um hex ESCURO fixo com texto por token — no tema claro virava texto
+   escuro sobre fundo escuro (ilegível). Superfície agora segue o token
+   do painel: legível nos dois temas, mesma aparência no escuro. */
+.avst5-anuncio { position: absolute; top: 12px; right: 14px; z-index: 4; background: color-mix(in srgb, var(--avst-painel, #171b26) 92%, transparent); border: 1px solid var(--avst-borda, var(--as6-superficie-4)); color: var(--avst-texto, var(--as6-texto-forte)); border-radius: 999px; padding: 5px 13px; font-size: 11px; backdrop-filter: blur(4px); animation: avst5-fade .2s ease; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); } @keyframes avst5-fade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
 
 /* AS5 §174 — Showcase cinematográfico */
 .avst5-capturar { bottom: 16px; left: auto; right: 14px; }
@@ -2209,13 +2213,19 @@
   display: grid; place-items: center; border-radius: 50%;
   background: rgba(255, 170, 40, 0.92); color: #201400; font-size: 11px; cursor: help;
 }
-/* §64.2: badge de prévia no PALCO com fixar/soltar */
+/* §64.2: badge de prévia no PALCO com fixar/soltar
+   (onda 1291, bugfix sem flag: superfície por token — o hex escuro fixo
+   era ilegível com o texto do tema claro) */
 .avst5-previa-badge {
   position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 9;
   display: flex; align-items: center; gap: 7px; padding: 4px 10px;
   border: 1px solid var(--avst-borda); border-radius: 999px;
-  background: rgba(10, 13, 21, 0.88); font-size: 11px; color: var(--avst-texto);
+  background: color-mix(in srgb, var(--avst-painel, #171b26) 92%, transparent);
+  font-size: 11px; color: var(--avst-texto);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .18); backdrop-filter: blur(4px);
 }
+/* com a barra contextual presente (#134), a prévia desce — nunca cobre */
+.avst5-viewport:has(.avst6-ctx-barra) .avst5-previa-badge { top: 50px; }
 .avst5-previa-badge button {
   border: 1px solid var(--avst-acento); border-radius: 999px; background: none;
   color: var(--avst-acento); font-size: 10.5px; padding: 1px 8px; cursor: pointer;
@@ -2487,7 +2497,9 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%);
   display: flex; align-items: center; gap: 6px; white-space: nowrap;
   font-size: 11px; padding: 4px 12px; border-radius: 999px;
-  color: var(--avst-texto-2, var(--as6-texto-suave)); background: rgba(13, 16, 23, 0.82);
+  /* onda 1291 (bugfix de contraste sem flag): superfície por token —
+     o hex escuro fixo era ilegível com o texto do tema claro */
+  color: var(--avst-texto-2, var(--as6-texto-suave)); background: color-mix(in srgb, var(--avst-painel, #171b26) 92%, transparent);
   border: 1px solid var(--avst-borda, var(--as6-superficie-4)); pointer-events: none;
   z-index: 3;
 }
@@ -3059,3 +3071,151 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   [data-mobile-v6] .avst5-abas { overflow-x: auto; scrollbar-width: none; }
   [data-mobile-v6] .avst6-cam { flex-wrap: wrap; justify-content: flex-end; max-width: 60vw; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   onda 1291 (decisão #133, flag as6.dock_fit) — GEOMETRIA CAUSAL do
+   workspace com dock inferior (briefing UX do Jhony 2026-08-10).
+
+   Causa raiz corrigida: `.avst5-corpo` era `calc(100vh − 150px)` — um
+   chute do chrome acima do shell. Agora existe UM dono da altura:
+   o shell mede o espaço real (workspace/altura.ts → --avst5-alt),
+   o corpo herda por flex e vira container de tamanho; preview ocupa
+   `minmax(0,1fr)` e a dock recebe altura RELATIVA ao corpo (cqh),
+   nunca maior que 74% dele. Os cards PREENCHEM a faixa da dock
+   (grid-template-rows: 100%) — qualquer altura mostra cards inteiros.
+   Flag OFF = geometria do #112 byte a byte (regras 100% gateadas).
+   ══════════════════════════════════════════════════════════════════ */
+.avst5-shell[data-dock-fit] {
+  height: var(--avst5-alt, 100%);
+  min-height: 430px; /* piso funcional: abaixo disso o scrollport manda */
+}
+.avst5-shell[data-dock-fit] .avst5-corpo {
+  height: auto; min-height: 0; flex: 1 1 0%;
+  container-type: size; container-name: corpo;
+}
+
+/* alturas da dock: presets RELATIVOS ao corpo com piso de conteúdo
+   (cabeçalho + busca/filtros + 1 linha de cards inteira — §5 do
+   briefing) e teto que preserva o preview como protagonista */
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="compacta"] { height: min(max(252px, 32cqh), 46cqh); }
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="padrao"] { height: min(max(300px, 44cqh), 58cqh); }
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="expandida"] { height: min(72cqh, 720px); }
+/* altura CUSTOM do divisor (#133): vence o preset, clamp final aqui —
+   um valor restaurado nunca corta card nem esmaga o preview */
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-custom] { height: clamp(160px, var(--avst6-dock-alt, 46cqh), 74cqh); }
+.avst5-shell[data-motion-v2] .avst5-dock[data-dock-custom] { transition: none; } /* drag 1:1, sem elástico */
+
+/* cards que PREENCHEM a faixa: a coluna do painel vira flex, a
+   biblioteca e o trilho ganham o espaço restante e a grade horizontal
+   tem UMA linha explícita de 100% — o card nunca é cortado embaixo,
+   ele DIMENSIONA (thumb 70–78% flexível já é do trilho AAA) */
+.avst5-shell[data-dock-fit] .avst5-dock .avst5-painel-scroll { display: flex; flex-direction: column; }
+/* cadeia real: painel-scroll → .avst5-trilho-dock (flex col) →
+   .avst6-dock (display:contents) → .avst-biblioteca (flex col) → grade */
+.avst5-shell[data-dock-fit] .avst5-dock .avst5-trilho-dock { flex: 1 1 auto; min-height: 0; }
+.avst5-shell[data-dock-fit] .avst5-dock .avst5-trilho-dock .avst-biblioteca { flex: 1 1 auto; min-height: 0; }
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="compacta"] .avst-trilho .avst-grade,
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="padrao"] .avst-trilho .avst-grade,
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-custom] .avst-trilho .avst-grade {
+  flex: 1 1 auto; min-height: 0; grid-template-rows: 100%;
+}
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="compacta"] .avst-trilho .avst-card,
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="padrao"] .avst-trilho .avst-card,
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-custom] .avst-trilho .avst-card {
+  height: auto; min-height: 96px;
+}
+/* custom em faixa horizontal usa a densidade do padrão */
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-custom]:not([data-dock-estado="expandida"]) .avst-trilho .avst-grade { grid-auto-columns: 184px; }
+/* selo EQUIPADO é overlay (custo zero de altura) — volta na compacta */
+.avst5-shell[data-dock-fit] .avst5-dock[data-dock-estado="compacta"] .avst6-equipado { display: inline-block; }
+/* …e ancora no TOPO esquerdo: em card baixo o selo no rodapé cobria o
+   NOME (§22 — badge nunca cobre info). No card ATIVO o check §39.5
+   também vai ao topo-esquerdo (L824) — o selo desliza p/ o lado, e os
+   DOIS estados (selecionado ≠ equipado, §23) ficam visíveis lado a lado */
+.avst5-shell[data-dock-fit] .avst5-dock .avst6-equipado { bottom: auto; top: 6px; left: 6px; }
+.avst5-shell[data-dock-fit] .avst5-dock .avst-card-ativo .avst6-equipado { left: 30px; }
+
+/* DIVISOR preview ↔ dock (#133): affordance visível, área confortável
+   de 10px, foco de teclado, cursor certo — nos limites o clamp segura */
+.avst6-dock-alca {
+  position: absolute; top: -5px; left: 0; right: 0; height: 10px;
+  cursor: row-resize; z-index: 7; touch-action: none; background: transparent;
+}
+.avst6-dock-alca::after {
+  content: ''; position: absolute; left: 50%; top: 3px; transform: translateX(-50%);
+  width: 64px; height: 4px; border-radius: 999px;
+  background: var(--avst-borda, var(--as6-superficie-4));
+  transition: background .12s ease, width .12s ease;
+}
+.avst6-dock-alca:hover::after, .avst6-dock-alca:focus-visible::after { background: var(--avst-acento, var(--as6-acento)); width: 88px; }
+.avst6-dock-alca:focus-visible { outline: 2px solid var(--avst-acento, var(--as6-acento)); outline-offset: -2px; border-radius: 6px; }
+
+/* barra de salvamento compacta no layout fit — o status continua
+   perceptível sem gastar uma linha alta do preview (§29 do briefing) */
+.avst5-shell[data-dock-fit] .avst5-salvar { padding: 5px 12px; font-size: 11.5px; }
+
+/* ── hierarquia do cabeçalho da dock (§16–§21 do briefing) ────────── */
+/* título da categoria: caixa alta discreta; contagem e equipado com
+   pesos distintos (OLHOS · 40 itens / Equipado: Fúria) */
+.avst5-shell[data-dock-fit] .avst5-dock .avst-painel-titulo h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+.avst5-shell[data-dock-fit] .avst5-dock .avst-painel-titulo p { font-size: 11.5px; }
+.avst5-shell[data-dock-fit] .avst5-dock .avst-painel-titulo p strong { color: var(--avst-acento, var(--as6-acento)); }
+/* tabs: estado ativo com peso e hit area maiores (não só borda fina) */
+.avst5-shell[data-dock-fit] .avst5-abas button { padding: 4px 11px; font-size: 11px; }
+.avst5-shell[data-dock-fit] .avst5-abas .avst5-aba-on { font-weight: 700; }
+/* busca protagonista; grupos com respiro */
+.avst5-shell[data-dock-fit] .avst5-dock .avst-filtros { gap: 8px; }
+.avst5-shell[data-dock-fit] .avst5-dock .avst-busca { flex: 1 1 220px; min-width: 160px; }
+
+/* controle segmentado Auto/Rosto/Busto/Corpo (§30): grupo único preso
+   ao preview, estado ativo sólido no acento */
+.avst5-shell[data-dock-fit] .avst6-cam {
+  gap: 0; border: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  border-radius: 999px; overflow: hidden;
+  background: color-mix(in srgb, var(--avst-painel, #171b26) 82%, transparent);
+  backdrop-filter: blur(4px);
+}
+.avst5-shell[data-dock-fit] .avst6-cam .avst-ft-chip { border: 0; border-radius: 0; padding: 5px 12px; }
+.avst5-shell[data-dock-fit] .avst6-cam .avst-ft-chip + .avst-ft-chip { border-left: 1px solid var(--avst-borda, var(--as6-superficie-4)); }
+.avst5-shell[data-dock-fit] .avst6-cam .avst-ft-chip[aria-pressed="true"] {
+  background: var(--avst-acento, var(--as6-acento)); color: #fff;
+}
+
+/* navegação lateral (§31): selecionado não depende só da borda fina */
+.avst5-shell[data-dock-fit] .avst5-cat-on { box-shadow: inset 2px 0 0 var(--avst-acento, var(--as6-acento)); font-weight: 600; }
+
+/* toolbar (§32/§10): em larguras menores as ações QUEBRAM linha —
+   nenhum controle sai da janela, zero scroll horizontal da aplicação */
+.avst5-shell[data-dock-fit] .avst5-header { flex-wrap: wrap; row-gap: 4px; }
+.avst5-shell[data-dock-fit] .avst5-header-acoes { flex-wrap: wrap; row-gap: 4px; justify-content: flex-end; min-width: 0; }
+
+/* ══ onda 1291 (decisão #134, flag as6.ctx_barra) — barra contextual
+   legível: superfície e texto por TOKENS (nunca cor fixa de um tema),
+   no FLUXO do viewport (abaixo da toolbar, entre "Cenário" e os temas,
+   sem cobrir o avatar), texto orientado à ação + dispensa ══ */
+.avst6-ctx-barra {
+  flex: 0 0 auto; align-self: center; z-index: 2;
+  display: flex; align-items: center; gap: 8px;
+  max-width: min(560px, calc(100% - 300px));
+  margin: 8px 0 0; padding: 5px 8px 5px 12px;
+  background: color-mix(in srgb, var(--avst-painel, #171b26) 90%, transparent);
+  border: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  border-radius: 999px; color: var(--avst-texto, var(--as6-texto-forte));
+  font-size: 12px; backdrop-filter: blur(6px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .14);
+  animation: avst5-fade .2s ease;
+}
+.avst6-ctx-barra > svg { flex: 0 0 auto; color: var(--avst-acento, var(--as6-acento)); }
+.avst6-ctx-barra strong { flex: 0 0 auto; font-size: 12px; }
+.avst6-ctx-barra span {
+  color: var(--avst-texto-2, var(--as6-texto-suave));
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.avst6-ctx-barra button {
+  flex: 0 0 auto; display: grid; place-items: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: none; border: 0; color: var(--avst-texto-2, var(--as6-texto-suave)); cursor: pointer;
+}
+.avst6-ctx-barra button:hover { color: var(--avst-texto, var(--as6-texto-forte)); background: color-mix(in srgb, var(--avst-texto, #fff) 12%, transparent); }
+@media (prefers-reduced-motion: reduce) { .avst6-ctx-barra { animation: none; } }
+@media (max-width: 1023px) { .avst6-ctx-barra { max-width: calc(100% - 32px); } }

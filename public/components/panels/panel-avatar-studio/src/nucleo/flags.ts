@@ -117,6 +117,9 @@ const PADROES: Record<string, boolean> = {
   // ── onda 1221–1270 (decisão #124; padrão ON conforme #50) ──
   'as6.mobile_v6': true,        // lote 1241–1250 — telas estreitas: SWIPE vertical no topo da dock cicla altura/recolhe, alça visual, tooltips na nav estreita; off = interações anteriores byte a byte
   'as6.layouts': true,          // lote 1251–1260 — layouts nomeados do workspace (AS6 Parte 1): 3 slots A/B/C na paleta salvam/aplicam a geometria (nav, painel/dock, recolhido); off = sem comandos
+  // ── onda 1291+ (decisões #133–#134; padrão ON conforme #50) ──
+  'as6.dock_fit': true,         // onda 1291 — dimensionamento CAUSAL do workspace (briefing UX do Jhony 2026-08-10): altura real disponível medida (nunca 100vh−150px fixo), dock com altura relativa ao corpo (cqh) e cards que PREENCHEM a faixa (nunca cortados), divisor redimensionável com teclado + persistência v2 validada; off = geometria do #112 byte a byte
+  'as6.ctx_barra': true,        // onda 1291 — a dica de contexto §323–§325 sai da pill de anúncio (fundo escuro fixo) e vira BARRA contextual legível por tokens, com título/texto orientado à ação e dispensa persistida; off = anúncio de sempre byte a byte
 };
 
 /**
@@ -150,6 +153,8 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.visual_v2': ['as5.classico_aaa'],     // elevação visual global do clássico
   'as6.workspace_fixo': ['as5.classico_aaa'], // trava de viewport estende o AAA
   'as6.dock_mag': ['as6.dock_classico'],     // magnificação/momentum refinam a dock v3
+  'as6.dock_fit': ['as6.dock_inferior'],     // o fit corrige a GEOMETRIA da dock inferior (#112)
+  'as6.ctx_barra': ['as6.contexto'],         // a barra apresenta a dica do Context Engine §323–§325
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

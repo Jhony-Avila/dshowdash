@@ -36,6 +36,8 @@ import { ClimaOverlay } from '../workspace/ClimaOverlay';
 import { ComposicaoPalco } from '../workspace/ComposicaoPalco';
 import { BarraCenas } from '../workspace/BarraCenas';
 import { aplicarContexto } from '../workspace/contexto';
+import { BarraContexto } from './BarraContexto'; // onda 1291 (#134, as6.ctx_barra)
+import { useAlturaDisponivel } from '../workspace/altura'; // onda 1291 (#133, as6.dock_fit)
 import { EVENTO_QUALIDADE, qualidade } from '../services/QualityManager'; // lote 1021-1030 (#104)
 // lote 911–920 (decisão #93): domínio da composição do palco movido
 // VERBATIM p/ workspace/palco.ts (fase 3b — sem dependência circular §3470)
@@ -320,6 +322,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // Os presets manuais (Rosto/Busto/Corpo) seguem mandando quando o
   // usuário escolhe — o fit nunca sobrescreve zoom intencional.
   const dockInferior = flag('as6.dock_inferior');
+  // onda 1291 (decisão #133, as6.dock_fit): o shell MEDE a altura real
+  // disponível (fim do calc(100vh − 150px) — causa raiz do corte da
+  // dock em produção); o CSS consome via --avst5-alt no gate
+  // [data-dock-fit]. Off = geometria do #112 byte a byte.
+  const dockFit = dockInferior && flag('as6.dock_fit');
+  const refShell = useRef<HTMLDivElement>(null);
+  useAlturaDisponivel(refShell, dockFit);
+  // #134 (as6.ctx_barra): dica de contexto vira barra legível no fluxo
+  const ctxBarra = flag('as6.contexto') && flag('as6.ctx_barra');
   const enquadramento = flagViewport && cam6 !== 'auto'
     ? PRESETS_CAM6[cam6]
     : (dockInferior ? undefined : ENQUADRAMENTOS[categoria]);
@@ -1037,8 +1048,9 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   return (
     <LimiteShell aoSair={aoSairDoShell}>
-      <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
+      <div className="avst5-shell" ref={refShell} data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
         data-dock-inferior={dockInferior ? '' : undefined} /* decisão #112 */
+        data-dock-fit={dockFit ? '' : undefined} /* onda 1291 (#133) */
         data-motion-v2={flag('as6.motion_v2') && !movReduzido ? '' : undefined} /* lote 1131-1140 (#115, aceites §568 AS6) */
         data-mobile-v6={flag('as6.mobile_v6') ? '' : undefined} /* lote 1241-1250 (#127) */
         data-oculto={abaOculta ? '' : undefined} /* #115: aba oculta = animações CSS pausadas */
@@ -1121,6 +1133,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 workspace/ClimaOverlay (decisão #91, fase 3); 'limpo'
                 devolve null lá (mesma condição de antes, byte a byte) */}
             {!palco3d && <ClimaOverlay clima={clima} movReduzido={movReduzido} />}
+            {/* onda 1291 (#134, as6.ctx_barra): barra contextual no FLUXO
+                do viewport — abaixo da toolbar, nunca cobre o avatar;
+                trocar categoria só troca o conteúdo (zero layout shift) */}
+            {ctxBarra && modo === 'edicao' && <BarraContexto categoria={categoria} />}
             {/* AS6 §52 (as6.viewport): presets de câmera do palco 2D */}
             {flagViewport && !palco3d && (
               <div className="avst6-cam" role="group" aria-label="Câmera (§52)" data-teste="cam6-chips">

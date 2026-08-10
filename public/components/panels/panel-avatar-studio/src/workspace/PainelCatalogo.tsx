@@ -37,6 +37,27 @@ function lerEstadoDock(): EstadoDock {
   } catch { return 'padrao'; }
 }
 
+// onda 1291 (decisão #133, as6.dock_fit): ALTURA CUSTOM do divisor —
+// preferência VERSIONADA (v:2) e validada; valor fora dos limites é
+// ignorado (nunca restaura uma dimensão que provoque corte — o CSS
+// ainda faz clamp final em cqh contra a altura real do corpo §186).
+const CHAVE_DOCK_ALT = 'dshow.avst6.dockalt.v2';
+const DOCK_ALT_MIN = 160;
+const DOCK_ALT_MAX = 1400;
+function lerAlturaCustom(): number | null {
+  try {
+    const b = JSON.parse(localStorage.getItem(CHAVE_DOCK_ALT) ?? 'null') as { v?: number; alt?: number } | null;
+    if (!b || b.v !== 2 || typeof b.alt !== 'number' || !Number.isFinite(b.alt)) return null;
+    return b.alt >= DOCK_ALT_MIN && b.alt <= DOCK_ALT_MAX ? Math.round(b.alt) : null;
+  } catch { return null; }
+}
+function gravarAlturaCustom(alt: number | null): void {
+  try {
+    if (alt === null) localStorage.removeItem(CHAVE_DOCK_ALT);
+    else localStorage.setItem(CHAVE_DOCK_ALT, JSON.stringify({ v: 2, alt: Math.round(alt) }));
+  } catch { /* sem storage */ }
+}
+
 const CHIPS_SLOT: Array<{ id: 'todos' | SlotAcessorio; nome: string }> = [
   { id: 'todos', nome: 'Todos' },
   { id: 'cabeca', nome: 'Cabeça' },
@@ -92,10 +113,30 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
   // decisão #112: altura da dock (compacta/padrão/expandida) persistida;
   // "recolhida" = o painelFechado de sempre (mesmo botão, mesma semântica)
   const [estadoDock, setEstadoDock] = useState<EstadoDock>(lerEstadoDock);
+  // onda 1291 (#133, as6.dock_fit): divisor arrastável — altura custom
+  // em px SOBREPÕE a altura do estado; escolher um estado nomeado (ou
+  // aplicar um layout #128) volta ao preset e limpa o custom
+  const dockFit = dockInferior && flag('as6.dock_fit');
+  const [altCustom, setAltCustom] = useState<number | null>(() => (dockFit ? lerAlturaCustom() : null));
+  const limparCustom = () => { setAltCustom(null); gravarAlturaCustom(null); };
   const ciclarDock = () => {
     const novo = CICLO_DOCK[estadoDock];
     setEstadoDock(novo);
+    if (dockFit) limparCustom();
     try { localStorage.setItem(CHAVE_DOCK, novo); } catch { /* sem storage */ }
+  };
+  // drag do divisor: pointer capture; teclado ±24px; duplo clique = padrão
+  const refAside = useRef<HTMLElement>(null);
+  const arrastoAlca = useRef<{ id: number } | null>(null);
+  const alturaAtual = () => refAside.current?.getBoundingClientRect().height ?? 0;
+  const maxAlca = () => {
+    const corpo = refAside.current?.parentElement;
+    return corpo ? Math.max(DOCK_ALT_MIN, Math.round(corpo.getBoundingClientRect().height * 0.74)) : DOCK_ALT_MAX;
+  };
+  const aplicarAltura = (bruta: number, persistir: boolean) => {
+    const alt = Math.round(Math.min(Math.min(maxAlca(), DOCK_ALT_MAX), Math.max(DOCK_ALT_MIN, bruta)));
+    setAltCustom(alt);
+    if (persistir) gravarAlturaCustom(alt);
   };
   // lote 1241-1250 (#127, as6.mobile_v6): o TOPO da dock é uma ALÇA —
   // swipe/arrasto vertical sobe um degrau (recolhida→compacta→padrão→
@@ -104,6 +145,7 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
   const ORDEM_DOCK: EstadoDock[] = ['compacta', 'padrao', 'expandida'];
   const definirEstadoDock = (v: EstadoDock) => {
     setEstadoDock(v);
+    if (dockFit) limparCustom(); // #133: estado nomeado limpa o custom
     try { localStorage.setItem(CHAVE_DOCK, v); } catch { /* sem storage */ }
   };
   const gesto = useRef<{ y0: number; id: number; capturado: boolean; consumiu: boolean } | null>(null);
@@ -157,10 +199,15 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
   // altura canônica do storage
   useEffect(() => {
     if (!flag('as6.layouts')) return undefined;
-    const ao = () => setEstadoDock(lerEstadoDock());
+    const ao = () => {
+      setEstadoDock(lerEstadoDock());
+      // #133: layout aplicado traz um estado NOMEADO — o custom sai junto
+      if (dockFit) { setAltCustom(null); gravarAlturaCustom(null); }
+    };
     window.addEventListener('avst6:dock-estado', ao);
     return () => window.removeEventListener('avst6:dock-estado', ao);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dockFit]);
   const refPainel = useRef<HTMLDivElement>(null);
   // lote 1131-1140 (#115, as6.motion_v2): trocar de categoria assenta a
   // biblioteca com um fade curto (aceite §568: nada muda de posição
@@ -271,8 +318,45 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
               </div>
   );
   return (
-    <aside className={`avst5-painel${painelFechado ? ' avst5-painel-fechado' : ''}${dockInferior ? ' avst5-dock' : ''}`}
-      aria-label="Catálogo" data-dock-estado={dockInferior && !painelFechado ? estadoDock : undefined}>
+    <aside ref={refAside}
+      className={`avst5-painel${painelFechado ? ' avst5-painel-fechado' : ''}${dockInferior ? ' avst5-dock' : ''}`}
+      aria-label="Catálogo" data-dock-estado={dockInferior && !painelFechado ? estadoDock : undefined}
+      data-dock-custom={dockFit && !painelFechado && altCustom !== null ? '' : undefined}
+      style={dockFit && altCustom !== null ? { '--avst6-dock-alt': `${altCustom}px` } as React.CSSProperties : undefined}>
+      {/* onda 1291 (#133, as6.dock_fit): DIVISOR preview ↔ dock —
+          arrasto contínuo (pointer capture), setas ±24px no teclado,
+          duplo clique volta ao preset "padrão"; limites reais no CSS
+          (clamp em cqh) + clamp local; preferência persistida v2 */}
+      {dockFit && !painelFechado && (
+        <div className="avst6-dock-alca" data-teste="dock-alca"
+          role="separator" aria-orientation="horizontal" tabIndex={0}
+          aria-label={t('Redimensionar biblioteca de assets')}
+          aria-valuemin={DOCK_ALT_MIN} aria-valuemax={maxAlca()}
+          aria-valuenow={Math.round(altCustom ?? alturaAtual())}
+          title={t('Arraste para redimensionar — duplo clique volta ao padrão')}
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            arrastoAlca.current = { id: e.pointerId };
+            try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* sem suporte */ }
+          }}
+          onPointerMove={(e) => {
+            if (!arrastoAlca.current) return;
+            const base = refAside.current?.getBoundingClientRect().bottom ?? 0;
+            aplicarAltura(base - e.clientY, false);
+          }}
+          onPointerUp={() => {
+            if (arrastoAlca.current && altCustom !== null) gravarAlturaCustom(altCustom);
+            arrastoAlca.current = null;
+          }}
+          onPointerCancel={() => { arrastoAlca.current = null; }}
+          onDoubleClick={() => { limparCustom(); definirEstadoDock('padrao'); }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+              e.preventDefault();
+              aplicarAltura(alturaAtual() + (e.key === 'ArrowUp' ? 24 : -24), true);
+            } else if (e.key === 'Enter') { limparCustom(); definirEstadoDock('padrao'); }
+          }} />
+      )}
       {/* cabeçalho FIXO do workspace (P1 §20–§22) */}
       <div className="avst5-painel-topo"
         onPointerDown={aoGestoDown} onPointerMove={aoGestoMove}

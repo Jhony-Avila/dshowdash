@@ -1064,3 +1064,39 @@ conteúdo) · decisão de produto §1527 (IA gerando imagem × decisão #24 —
 mantendo #24 até ordem contrária) · quando chegar a hora: tabelas novas
 (Partes 10/13/14) via RUNBOOK-BANCO · runner de CI · backup agendado
 com RPO/RTO · headers CSP no nginx.
+
+- **#133 (2026-08-10) — Geometria causal do workspace (onda 1291, flag
+  `as6.dock_fit`)**: briefing UX do Jhony (2026-08-10) reportou cards
+  cortados, biblioteca além do viewport e preview×dock disputando altura
+  no shell novo. Causa raiz DIAGNOSTICADA: `.avst5-corpo` usava
+  `calc(100vh − 150px)` (chute do chrome do dashboard) + alturas FIXAS
+  da dock (302/384px) + cards de altura fixa (148/206px). Correção
+  estrutural: (a) o shell MEDE a altura real disponível
+  (workspace/altura.ts — scrollport ancestral, paddings da cadeia,
+  visualViewport p/ zoom) e publica `--avst5-alt`; (b) o corpo vira
+  `flex:1` + `container-type:size` e a dock recebe alturas RELATIVAS
+  (cqh) com piso de conteúdo (§5 do briefing: cabeçalho + busca +
+  1 card inteiro) e teto de 58–74% do corpo; (c) os cards PREENCHEM a
+  faixa (`grid-template-rows:100%`) — em qualquer altura o card é
+  inteiro, nunca cortado; (d) DIVISOR arrastável preview↔dock (pointer
+  capture, teclado ±24px, duplo clique = padrão, aria-valuenow) com
+  persistência v2 VERSIONADA e validada (`dshow.avst6.dockalt.v2`;
+  valor inválido/fora de faixa = ignorado; estado nomeado ou layout
+  #128 limpa o custom); (e) toolbar quebra linha em larguras menores
+  (zero scroll horizontal). Piso funcional 430px: abaixo, degrade com
+  scroll interno único (cabeçalho sticky). Off = geometria #112 byte a
+  byte (comprovado por teste). Teste novo: dock-fit.mjs (6 blocos).
+- **#134 (2026-08-10) — Barra contextual legível (onda 1291, flag
+  `as6.ctx_barra`)**: a dica "Contexto: …" do Context Engine §323–§325
+  saía na pill de anúncio com FUNDO ESCURO FIXO (rgba 13,16,23) + texto
+  por token — ilegível no tema claro (mesma classe de bug do #112.5).
+  Agora: BarraContexto no FLUXO do viewport (abaixo da toolbar,
+  centrada entre "Cenário" e os temas, nunca cobre o avatar), superfície
+  e texto 100% por tokens, título + texto orientado à ação (novo copy
+  §14 do briefing p/ as 13 categorias), truncamento com tooltip,
+  aria-live próprio (o anúncio não duplica), X dispensa com
+  persistência (`dshow.avst6.ctxbar.v1`). BUGFIXES SEM FLAG (precedente
+  #112): `.avst5-anuncio`, `.avst5-p3d-carga` e `.avst5-previa-badge`
+  trocaram o hex escuro fixo por superfície de token (legíveis nos dois
+  temas); selo EQUIPADO ancorado no topo do card (não cobre mais o nome
+  em card baixo; convive com o check §39.5 lado a lado).
