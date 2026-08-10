@@ -95,6 +95,8 @@
 !/tools/screenshot/valida-pipedrive-*.php
 !/tools/screenshot/auth.mjs
 !/tools/screenshot/config.mjs
+# characterization tests do programa Elevação Basal (M2)
+!/tools/screenshot/basal-*.mjs
 
 # Configs de build e docs da raiz
 !/package.json

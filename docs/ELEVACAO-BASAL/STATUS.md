@@ -9,7 +9,7 @@
 |---|---|---|
 | M0 — Congelamento da dívida nova | **CONCLUÍDO** | Onda 1 |
 | M1 — Contenção P0 | **CONCLUÍDO** (EB-018) | Ondas 2–6 |
-| M2 — Baseline técnica + funcional | **EM ANDAMENTO** (mapas prontos; falta characterization tests) | Onda 2 (parcial) |
+| M2 — Baseline técnica + funcional | **EM ANDAMENTO** (mapas prontos; characterization tests escritos — falta 1º run do Jhony) | Ondas 2, 8 |
 | M3 — Fonte da verdade do repo | pendente | — |
 | M4 — Toolchain/workspaces | pendente | — |
 | M5 — Build reproduzível | pendente (destrava blindagem `.ts`) | — |
@@ -29,11 +29,15 @@
 Ver `03-registro-de-riscos.md`. Destaques: BASAL-001/002/003 (governança/reprodutibilidade)
 são o núcleo dos M3–M5; BASAL-004 (`.ts` em runtime) adiado para M5/M6 com causa-raiz provada.
 
-## Próximo passo — M2
+## Próximo passo — M2 (em andamento)
 
-1. **Characterization tests** das jornadas críticas (§1605): boot, login, navegação entre painéis, chamada de API autenticada, persistência, logout — reusando `tools/screenshot/auth.mjs` + Playwright/Chromium já no repo. Protegem o comportamento atual antes de qualquer refatoração (M3+).
-2. **Baseline funcional** registrada (comportamento observado por jornada).
-3. Fecha o Gate 2 (proteção) que autoriza os marcos de consolidação.
+1. **Characterization tests ESCRITOS** (Onda 8): `tools/screenshot/basal-caracterizacao.mjs`
+   — 8 jornadas read-only (boot, auth, shell, navegação, API, persistência-leitura,
+   recuperação de erro, logout). Doc: `30-baseline-funcional-m2.md`.
+2. **Falta**: Jhony rodar `node basal-caracterizacao.mjs` no servidor (precisa da
+   sessão autenticada do bot) → gera `evidencias/baseline-funcional-<data>.json` +
+   screenshots `basal-*.png` p/ validação visual. Ele cola a saída / commita o JSON.
+3. Com o baseline capturado, o M2 fecha e o Gate 3 (proteção) autoriza o M3.
 
 > Validação visual/autenticada das jornadas é sempre do Jhony.
 
