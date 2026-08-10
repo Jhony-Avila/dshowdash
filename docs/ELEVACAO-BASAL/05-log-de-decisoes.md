@@ -12,6 +12,8 @@
 | EB-005 | 2026-08-10 | Evidências do servidor coletadas por script read-only versionado, com saída commitada em `evidencias/`; proibido incluir segredos | Parte 1 §27/§33 |
 | EB-006 | 2026-08-10 | Interpretação provisória das fontes da verdade adotada (doc 01 §3); não autoriza exclusões | Parte 1 §16 |
 | EB-007 | 2026-08-10 | Dez ADRs pendentes abertos (adr/ADR-001..010) com decisão provisória explícita — nenhum finge decisão tomada | Parte 1 §29 |
+| EB-008 | 2026-08-10 | **Módulo Pipedrive + Google Analytics permanecem no `main`** (merge `e7b54fb7`, 429 arquivos). O merge foi concluído acidentalmente pelo commit de evidências da Onda 1 (worktree de produção estava em `feat/pipedrive-modulo-completo` com MERGE_HEAD pendente), mas ficou decidido mantê-lo: a produção já rodava esse conteúdo (o deploy faz merge de origin/main NA branch), o trabalho é autocontido (zero migrations SQL, segredos via getenv), e desfazer recriaria a divergência fonte≠runtime. Confirmado pelo sponsor | Análise do diff 867cc151..e7b54fb7 |
+| EB-009 | 2026-08-10 | O modelo "produção acompanha branch de longa duração (`feat/pipedrive-modulo-completo`), não o main" vira questão formal do programa (questão aberta 16) — candidato a consolidação no M3 | Evidência EB-008 |
 
 ## Formato de entrega de cada lote (obrigatório — briefing §34)
 
@@ -23,4 +25,4 @@ Validação · Riscos residuais · Rollback · Próximo gate.
 
 | Data | Arquivo | Diff preservado em | Correção na fonte | Status |
 |---|---|---|---|---|
-| — | — | — | — | — |
+| 2026-08-10 | Merge de `feat/pipedrive-modulo-completo` concluído sem intenção pelo commit de evidências (`e7b54fb7`) | Histórico Git (merge preservado) | Decisão EB-008 ratificou o estado | RECONCILIADO |

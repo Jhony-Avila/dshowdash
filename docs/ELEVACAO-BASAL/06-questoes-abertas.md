@@ -27,6 +27,15 @@
 14. **Quais builds internos (Vite 5) divergem do root (Vite 7) e por quê?**
 15. **Existe hoje algum comando que gere TODOS os bundles do boot? Ou cada dist tem processo próprio/perdido?**
 
+## Novas (Onda 2 — evidências do servidor de 2026-08-10)
+
+16. **Modelo de branch de produção**: o servidor acompanha `feat/pipedrive-modulo-completo` (deploy faz merge de origin/main NELA). Consolidar para `main` como branch única de produção? (EB-009; candidata ao M3)
+17. **`/phpmyadmin/` está publicado no vhost de produção** — qual controle de acesso existe (IP allowlist, auth_basic, Cloudflare Access)? Sem controle comprovado = P0 (BASAL-016).
+18. **Portas locais desconhecidas**: `127.0.0.1:20241` e `127.0.0.1:37865` — que processos são? (classificação exigida pelo M1)
+19. **UFW/firewall**: regras ativas que comprovem (ou não) o bloqueio externo do MySQL 3306 — a evidência de hardening é de dez/2025, precisa reconfirmação.
+20. **Quem consome MySQL remotamente?** (Mac do Jhony? agentes? integração?) — determina se `bind-address=127.0.0.1` é viável ou se fica só o firewall.
+21. **O `.patch` público do briefing §3.7 ainda existe?** O coletor não encontrou nenhum `.patch` em `public/` (find até profundidade 3) — pode já ter sido removido; confirmar com busca completa.
+
 ## Processo
 
 - Responder questão = anexar evidência (saída de comando, hash, config) — nunca memória.
