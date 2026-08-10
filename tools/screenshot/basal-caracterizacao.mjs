@@ -23,13 +23,19 @@ import { writeFileSync, mkdirSync, existsSync, readdirSync } from 'fs';
 // cache do Playwright (chromium-* e headless-shell), node_modules local, sistema.
 function resolveChrome() {
   if (process.env.PW_CHROME && existsSync(process.env.PW_CHROME)) return process.env.PW_CHROME;
-  const globs = [
-    ['/root/.cache/ms-playwright', /^chromium-\d+$/, 'chrome-linux/chrome'],
-    ['/root/.cache/ms-playwright', /^chromium_headless_shell-\d+$/, 'chrome-headless-shell-linux64/chrome-headless-shell'],
-    ['./node_modules/playwright-core/.local-browsers', /^chromium-\d+$/, 'chrome-linux/chrome'],
-    ['./node_modules/playwright/.local-browsers', /^chromium-\d+$/, 'chrome-linux/chrome'],
-    ['/opt/pw-browsers', /^chromium-\d+$/, 'chrome-linux/chrome'],
-  ];
+  const bases = [
+    process.env.PLAYWRIGHT_BROWSERS_PATH,
+    '/opt/ms-playwright',              // caminho compartilhado do servidor (PdfGenerationService)
+    '/root/.cache/ms-playwright',
+    './node_modules/playwright-core/.local-browsers',
+    './node_modules/playwright/.local-browsers',
+    '/opt/pw-browsers',
+  ].filter(Boolean);
+  const globs = [];
+  for (const b of bases) {
+    globs.push([b, /^chromium-\d+$/, 'chrome-linux/chrome']);
+    globs.push([b, /^chromium_headless_shell-\d+$/, 'chrome-headless-shell-linux64/chrome-headless-shell']);
+  }
   for (const [base, re, tail] of globs) {
     try { for (const d of readdirSync(base).filter(x => re.test(x)).sort().reverse()) {
       const p = `${base}/${d}/${tail}`; if (existsSync(p)) return p;
