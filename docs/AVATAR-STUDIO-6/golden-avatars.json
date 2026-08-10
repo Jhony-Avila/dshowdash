@@ -37,6 +37,10 @@
       "sha256": "a063bfd111b0a118b6284d57c1829ff48e0a95c1423a14cf4f5c40b2b3f20f48",
       "bytes": 10173
     },
+    "g16-palco-sobrepeca-corpo": {
+      "sha256": "c9a2fec678a020342d5f373cdb3584c6069f8f1c426ffe54f8e09766fc4ddd63",
+      "bytes": 7954
+    },
     "g10-foto-medalhao": {
       "sha256": "55f84e2ec3191d0861016323d31383c823748cd14f205a3b95062d6fbbe9fac7",
       "bytes": 4464
@@ -48,6 +52,18 @@
     "g12-foto-wide-header": {
       "sha256": "a7dc69e285d98e87530cea50b9cde229c22622b87b5b15d689ef8d171d1f0925",
       "bytes": 4377
+    },
+    "g13-foto-wide-banner-reflow": {
+      "sha256": "85e66de4b26a82afc816e0151764c3162420d1512e01b31d31ce4597360d1b50",
+      "bytes": 4358
+    },
+    "g14-foto-wide-wallpaper": {
+      "sha256": "1355bfc8dd179a3c6c47df1317cdc5c7ac0c41c34e1f86b1034f8218449f8444",
+      "bytes": 4399
+    },
+    "g15-foto-sombra-luz": {
+      "sha256": "e6302fe844af19dac41a0f12434aa76876db8aee7373c0f95da8ebaf453cd11b",
+      "bytes": 4619
     }
   }
 }

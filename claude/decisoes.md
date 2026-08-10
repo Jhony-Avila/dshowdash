@@ -1020,6 +1020,26 @@
   (`as6.layouts`), fechamento. Entrega DEPLOY_1270_OK (5 commits sobre
   `4a208eb9`). Roteiros de validação no doc 27 do projeto.
 
+- **#130 (2026-08-10) — Onda 1271–1290: garimpo com grep-first (mapa
+  doc 28)**: o "Prossiga" pós-1270 abriu o garimpo do Trilho A restante
+  — e o grep-first revelou que o doc 05 estava DEFASADO: §333–§334
+  (ajustes/luz local), §337 (sombra de contato) e §360–§361 (histórico
+  visual não destrutivo) JÁ existem desde as megas 51–56/165/251/311.
+  Aprendizado de processo: garimpo SEMPRE verifica o código antes de
+  planejar lote (o doc de lacunas é fotografia, não fonte). A onda
+  encolheu p/ o que é real: goldens v2 (#131) e auditoria v3 do mapa +
+  fechamento (#132). Entrega única DEPLOY_1290_OK SUBSTITUI o bloco
+  1270 não colado (mesma base `4a208eb9`).
+
+- **#131 (2026-08-10) — Goldens v2 (lote 1271–1280, sem flag)**: a rede
+  de regressão de render fecha os buracos que restavam — 4 casos
+  novos: banner wide com pos manual + reflow (`reflowPos`), wallpaper
+  wide, sombra §337 + luz local §334 + temperatura, e sobrepeça em
+  corpo inteiro no modo palco. Baseline regravada com REVISÃO do diff
+  no mesmo commit (doutrina #83): os 12 hashes antigos permaneceram
+  IDÊNTICOS (byte-stability confirmada por script no commit); 16 casos
+  no total.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
