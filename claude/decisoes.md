@@ -1100,3 +1100,23 @@ com RPO/RTO · headers CSP no nginx.
   trocaram o hex escuro fixo por superfície de token (legíveis nos dois
   temas); selo EQUIPADO ancorado no topo do card (não cobre mais o nome
   em card baixo; convive com o check §39.5 lado a lado).
+
+- **#135 (2026-08-10) — Medição de altura v2 (onda 1292, hotfix do
+  as6.dock_fit)**: o screenshot de produção pós-deploy da 1291 mostrou
+  cards ainda cortados. Causa: a v1 media pelo clientHeight do
+  scrollport ancestral e o dashboard real tem (a) janela maximizada
+  `height:100vh !important` que COMEÇA abaixo da barra superior (o
+  container é mais alto que o espaço visível) e (b) taskbar FIXA no
+  rodapé ("Central do sistema") — overlay que nenhum clientHeight de
+  ancestral revela. A v2 (workspace/altura.ts) mede em coordenadas
+  vivas: fundo visível = min(viewport visual, fundo de todo ancestral
+  que recorta [auto/scroll/hidden/clip], topo de barras fixed/sticky
+  sondadas na base via elementsFromPoint — só faixas ≤180px); topo em
+  estado de scroll zero (soma scrollTop dos ancestrais — rolar não
+  infla a medida); re-medições tardias 300/1200ms (chrome do dash monta
+  depois do shell) + listener de scroll em captura + ResizeObserver no
+  body. Teste novo no dock-fit.mjs: bloco "moldura" reproduz janela
+  100vh a partir de 48px + taskbar fixa 40px em 1440×900 e 1300×803
+  (geometria do screenshot) — shell nunca invade a taskbar, card
+  inteiro, zero scroll concorrente. Cenários da 1291 permanecem
+  idênticos (sem clip/overlay a v2 degenera na v1).

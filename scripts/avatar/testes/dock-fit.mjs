@@ -89,6 +89,54 @@ for (const vp of [
   await b.close();
 }
 
+// ── A2) moldura REAL do dashboard (onda 1292, #135): janela
+//    maximizada `height:100vh` começando abaixo da barra superior +
+//    TASKBAR FIXA no rodapé ("Central do sistema") — os dois estouros
+//    do screenshot de produção 2026-08-10 ────────────────────────────
+for (const vp of [{ width: 1440, height: 900 }, { width: 1300, height: 803 }]) {
+  const { navegador: b, pagina: p, erros } = await abrir({
+    viewport: vp,
+    init: () => {
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true }));
+      document.addEventListener('DOMContentLoaded', () => {
+        const s = document.createElement('style');
+        s.textContent = 'body{margin:0;padding:0}'
+          + '#host{position:relative;margin-top:48px;height:100vh !important;min-height:0 !important;overflow:hidden}';
+        document.head.appendChild(s);
+        const barra = document.createElement('div');
+        barra.id = 'taskbar-sim';
+        barra.style.cssText = 'position:fixed;left:0;right:0;bottom:0;height:40px;background:#111;z-index:50';
+        document.body.appendChild(barra);
+      });
+    },
+  });
+  try {
+    await irParaHarness(p, 'avst-harness.html', 1600);
+    const g = await p.evaluate(() => {
+      const shell = document.querySelector('.avst5-shell').getBoundingClientRect();
+      const card = document.querySelector('.avst5-painel .avst-card')?.getBoundingClientRect();
+      const taskTop = document.getElementById('taskbar-sim').getBoundingClientRect().top;
+      const ps = document.querySelector('.avst5-painel-scroll');
+      return {
+        shellBottom: shell.bottom, taskTop,
+        cardBottom: card?.bottom ?? -1,
+        psExtra: ps ? ps.scrollHeight - ps.clientHeight : -1,
+        alt: document.querySelector('.avst5-shell').style.getPropertyValue('--avst5-alt'),
+      };
+    });
+    const rot = `moldura ${vp.width}×${vp.height}`;
+    ok(g.alt !== '', `(${rot}) --avst5-alt não medida`);
+    ok(g.shellBottom <= g.taskTop + 1,
+      `(${rot}) shell invadiu a taskbar fixa (${Math.round(g.shellBottom)} > ${Math.round(g.taskTop)})`);
+    ok(g.cardBottom > 0 && g.cardBottom <= g.taskTop + 1,
+      `(${rot}) card CORTADO pela taskbar/janela (bottom=${Math.round(g.cardBottom)}, teto=${Math.round(g.taskTop)})`);
+    ok(g.psExtra <= 1, `(${rot}) scroll vertical concorrente (${g.psExtra}px)`);
+    ok(erros.length === 0, `(${rot}) erros de página: ${erros.join(' | ')}`);
+    if (vp.width === 1300) await p.screenshot({ path: `${SAIDA}/dock-fit-moldura.png` });
+  } catch (e) { falhas.push(`exceção (moldura ${vp.width}): ${e.message}`); }
+  await b.close();
+}
+
 // ── B) estados + C) divisor — 1440×900 com chrome ───────────────────
 {
   const { navegador: b, pagina: p, erros } = await abrir({ viewport: { width: 1440, height: 900 }, init: CHROME });
