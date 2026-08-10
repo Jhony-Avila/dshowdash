@@ -17,6 +17,8 @@
 | EB-010 | 2026-08-10 | **Bloqueio HTTP de `.ts/.tsx` fica atrelado ao build canônico (M5/M6)**, não ao M1: a sondagem M1b provou que `bootstrap-v2/` e `core/runtime/` importam fontes `.ts` por ESM em runtime. Bloquear agora quebraria o boot | Evidência m1b (P1) |
 | EB-011 | 2026-08-10 | **Todo smoke do programa passa a testar a ORIGEM diretamente** (`curl --resolve …:127.0.0.1`) e a purgar o Cloudflare após mudanças: o smoke da Onda 3 recebeu 200 de cache do CF e disparou rollback desnecessário. Purge fonteia `/root/.cloudflare.env` (segredo nunca impresso) | Recorrência conhecida de cache CF + smoke Onda 3 |
 | EB-012 | 2026-08-10 | `.patch` resíduo já quarentenado para `/backup` na Onda 3 (o move persistiu apesar do rollback do vhost — resultado desejado). Falta apenas a regra Nginx permanente + purge, na Onda 4 | Saída Onda 3 |
+| EB-013 | 2026-08-10 | **Status HTTP não é oráculo válido de smoke neste vhost**: o SPA faz `try_files … /index.html`, então qualquer caminho inexistente retorna 200 (shell). Verificação passa a usar **content-type/corpo** (HTML do shell × arquivo servido cru). O `patch=200` da Onda 4 era o shell, não o arquivo — a exposição já estava fechada desde a Onda 3 | Smoke Onda 4 (origem) |
+| EB-014 | 2026-08-10 | Rollback da Onda 4 (disparado pelo oráculo errado) também desfez a desativação — correta — do vhost órfão :8080. Refeito na Onda 5 com oráculo por content-type | Saída Onda 4 |
 
 ## Formato de entrega de cada lote (obrigatório — briefing §34)
 
