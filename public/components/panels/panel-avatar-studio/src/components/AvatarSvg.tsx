@@ -8,7 +8,7 @@ import type { AvatarConfig } from '../domain/types';
 import { svgDe } from '../services/AvatarCatalog';
 import { ligarVida } from '../workspace/vida'; // lote 1071-1080 (#109)
 
-export function AvatarSvg({ config, forma = 'quadrado', estatico = false, uid, foco, aoClicar, titulo, palco = false }: {
+export function AvatarSvg({ config, forma = 'quadrado', estatico = false, uid, foco, aoClicar, titulo, palco = false, corpo = false }: {
   config: AvatarConfig;
   forma?: 'quadrado' | 'circulo';
   /** congela animações SMIL (usar em thumbnails de grade) */
@@ -16,6 +16,10 @@ export function AvatarSvg({ config, forma = 'quadrado', estatico = false, uid, f
   /** lote 1071-1080 (#109): modo PALCO — grupos data-anim p/ a vida do
    *  shell (§608; nunca usado em SVG salvo). Ausente = render de sempre. */
   palco?: boolean;
+  /** onda 1294 (#137, as6.corpo_preview): CORPO INTEIRO 240×400 do motor
+   *  (exige palco no motor — apresentação pura, nunca no SVG salvo);
+   *  `foco` é ignorado neste modo (o quadro já é o corpo). */
+  corpo?: boolean;
   /** prefixo explícito de <defs> — obrigatório quando há N instâncias do MESMO config */
   uid?: string;
   /** viewBox de ENQUADRAMENTO (AS4 §39.19) — ex.: "64 56 112 112" foca nos olhos */
@@ -24,9 +28,13 @@ export function AvatarSvg({ config, forma = 'quadrado', estatico = false, uid, f
   titulo?: string;
 }) {
   const svg = useMemo(() => {
-    const bruto = svgDe(config, { forma, estatico, uid, ...(palco ? { palco: true } : {}) });
-    return foco ? bruto.replace('viewBox="0 0 240 240"', `viewBox="${foco}"`) : bruto;
-  }, [config, forma, estatico, uid, foco, palco]);
+    const bruto = svgDe(config, {
+      forma, estatico, uid,
+      ...(palco || corpo ? { palco: true } : {}),
+      ...(corpo ? { enquadramento: 'corpo' as const } : {}),
+    });
+    return foco && !corpo ? bruto.replace('viewBox="0 0 240 240"', `viewBox="${foco}"`) : bruto;
+  }, [config, forma, estatico, uid, foco, palco, corpo]);
   // #109: a VIDA acompanha o CICLO do markup — religa a cada svg novo
   // (efeito com dep no próprio svg; quem pede palco sem estatico ganha)
   const refHost = useRef<HTMLDivElement | HTMLButtonElement | null>(null);

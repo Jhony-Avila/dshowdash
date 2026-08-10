@@ -120,6 +120,7 @@ const PADROES: Record<string, boolean> = {
   // ── onda 1291+ (decisões #133–#134; padrão ON conforme #50) ──
   'as6.dock_fit': true,         // onda 1291 — dimensionamento CAUSAL do workspace (briefing UX do Jhony 2026-08-10): altura real disponível medida (nunca 100vh−150px fixo), dock com altura relativa ao corpo (cqh) e cards que PREENCHEM a faixa (nunca cortados), divisor redimensionável com teclado + persistência v2 validada; off = geometria do #112 byte a byte
   'as6.ctx_barra': true,        // onda 1291 — a dica de contexto §323–§325 sai da pill de anúncio (fundo escuro fixo) e vira BARRA contextual legível por tokens, com título/texto orientado à ação e dispensa persistida; off = anúncio de sempre byte a byte
+  'as6.corpo_preview': true,    // onda 1294 (pedido visual do Jhony 2026-08-10) — nas categorias Roupa/Sobrepeça (e no preset manual "Corpo") o PREVIEW e as THUMBS dos cards usam o render de CORPO INTEIRO 240×400 do motor (goldens g09/g16); off = busto de sempre byte a byte
 };
 
 /**

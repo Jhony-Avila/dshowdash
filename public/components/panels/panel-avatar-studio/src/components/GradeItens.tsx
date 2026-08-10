@@ -837,8 +837,14 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
       onMouseLeave={() => { aoPrever?.(null); setPrevendo(false); setPoderVivo(false); }}
       onKeyDown={(e) => { if (escolher && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); escolher(); } }}
       tabIndex={0}>
-      <span className="avst-card-thumb">
-        <AvatarSvg config={preview} estatico uid={`th-${item.id}`} foco={FOCO_THUMB[item.categoria]} />
+      <span className="avst-card-thumb"
+        data-corpo={flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? '' : undefined}>
+        {/* onda 1294 (#137, as6.corpo_preview): thumbs de VESTUÁRIO em
+            corpo inteiro 240×400 — a peça aparece de verdade no card;
+            off = foco §39.19 de sempre byte a byte */}
+        <AvatarSvg config={preview} estatico uid={`th-${item.id}`}
+          corpo={flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre')}
+          foco={FOCO_THUMB[item.categoria]} />
         {poderVivo && (
           <span className="avst-card-poder" aria-hidden data-teste="poder-preview"
             dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado(item.id, config.cores.destaque) }} />

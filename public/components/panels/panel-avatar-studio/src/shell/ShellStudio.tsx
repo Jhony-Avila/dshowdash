@@ -322,6 +322,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // Os presets manuais (Rosto/Busto/Corpo) seguem mandando quando o
   // usuário escolhe — o fit nunca sobrescreve zoom intencional.
   const dockInferior = flag('as6.dock_inferior');
+  // onda 1294 (decisão #137, as6.corpo_preview): nas categorias de
+  // VESTUÁRIO (e no preset manual "Corpo") o palco usa o render de
+  // CORPO INTEIRO 240×400 do motor — a peça aparece de verdade.
+  // Apresentação pura: o SVG salvo nunca muda (§608/byte-stability).
+  const corpoPreview = flag('as6.corpo_preview');
   // onda 1291 (decisão #133, as6.dock_fit): o shell MEDE a altura real
   // disponível (fim do calc(100vh − 150px) — causa raiz do corte da
   // dock em produção); o CSS consome via --avst5-alt no gate
@@ -331,9 +336,18 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   useAlturaDisponivel(refShell, dockFit);
   // #134 (as6.ctx_barra): dica de contexto vira barra legível no fluxo
   const ctxBarra = flag('as6.contexto') && flag('as6.ctx_barra');
-  const enquadramento = flagViewport && cam6 !== 'auto'
-    ? PRESETS_CAM6[cam6]
-    : (dockInferior ? undefined : ENQUADRAMENTOS[categoria]);
+  // #137: corpo inteiro quando a categoria é de vestuário no modo Auto,
+  // ou quando o usuário escolhe o preset "Corpo" — Rosto/Busto seguem
+  // mandando no busto (zoom intencional nunca é sobrescrito)
+  // escopo: só no layout novo (#112) — o fallback lateral §651 segue
+  // byte a byte (creator-v6 cobre o wrapper de busto lá)
+  const renderCorpo = corpoPreview && dockInferior
+    && ((flagViewport && cam6 === 'corpo')
+      || (cam6 === 'auto' && (categoria === 'roupa' || categoria === 'roupa_sobre')));
+  const enquadramento = renderCorpo ? undefined
+    : flagViewport && cam6 !== 'auto'
+      ? PRESETS_CAM6[cam6]
+      : (dockInferior ? undefined : ENQUADRAMENTOS[categoria]);
   // (zoomEstilo desceu p/ depois do estado do poder — mega 287 §154 passo 2)
 
   const trocarFundo = (f: FundoPalco) => {
@@ -1120,6 +1134,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             data-luzctx={flag('as5.luz_contextual') ? '' : undefined}
             data-presenca={presenca ? '' : undefined}
             data-entrada={flag('as5.palco_v3') && !palco3d && !movReduzido && entrada2d ? entrada2d : undefined}
+            data-corpo={renderCorpo && !palco3d ? '' : undefined} /* #137: retrato 240×400 */
             data-luzadv={sensorial && luzInt !== 1 && !palco3d ? '' : undefined}
             style={sensorial && luzInt !== 1 && !palco3d ? { '--avst5-luzint': luzInt } as React.CSSProperties : undefined}>
             {/* mega 323 (§157.4): o fundo ANTERIOR desvanece por cima do novo
@@ -1167,6 +1182,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 )}
                 <div className="avst5-zoom" style={zoomEstilo}>
                   <AvatarSvg config={configPalco} uid="avst5" estatico={movReduzido}
+                    corpo={renderCorpo} /* #137: corpo inteiro 240×400 */
                     palco={flag('as6.vida_shell') && !palco3d && !movReduzido} />
                 </div>
               </div>

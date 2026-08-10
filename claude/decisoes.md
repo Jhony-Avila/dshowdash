@@ -1139,3 +1139,22 @@ com RPO/RTO · headers CSP no nginx.
   ~560/~780); 1300×803 → inalterado no piso. O redimensionável já
   existia (#133) e segue com clamp ≤74% do corpo — nunca extrapola a
   tela.
+
+- **#137 (2026-08-10) — Corpo inteiro no preview e nas thumbs de
+  vestuário (onda 1294, flag `as6.corpo_preview`)**: feedback visual do
+  Jhony — em Roupa o retrato de busto cortava no peito e a peça mal
+  aparecia (preview e cards). O motor JÁ tinha o render de corpo
+  inteiro 240×400 (`enquadramento:'corpo'` + `palco`, goldens g09/g16,
+  "pedido do Jhony: avatares com o corpo inteiro") mas o shell nunca o
+  usava. Agora: (a) AvatarSvg ganha prop `corpo` (passa
+  palco+enquadramento ao motor; `foco` ignorado no modo); (b) no shell,
+  Auto em Roupa/Sobrepeça → corpo inteiro; preset manual "Corpo" →
+  corpo inteiro em QUALQUER categoria; Rosto/Busto seguem mandando no
+  busto (zoom intencional); atributo `data-corpo` no viewport p/ o CSS
+  (aspect-ratio 240/400); (c) GradeItens: thumbs de roupa/roupa_sobre
+  em corpo inteiro (data-corpo na thumb; grade clássica também — CSS
+  centra o retrato no contêiner 1:1); (d) o copy da barra contextual de
+  Roupa ("o corpo inteiro fica visível no preview", #134) agora é
+  literalmente verdade. Byte-stability: apresentação pura — o SVG salvo
+  nunca muda; off = busto byte a byte (teste corpo-preview.mjs cobre ON
+  em 4 categorias/3 presets e OFF byte a byte; no runner).

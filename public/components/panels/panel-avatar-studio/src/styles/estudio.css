@@ -3253,3 +3253,15 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst6-ctx-barra button:hover { color: var(--avst-texto, var(--as6-texto-forte)); background: color-mix(in srgb, var(--avst-texto, #fff) 12%, transparent); }
 @media (prefers-reduced-motion: reduce) { .avst6-ctx-barra { animation: none; } }
 @media (max-width: 1023px) { .avst6-ctx-barra { max-width: calc(100% - 32px); } }
+
+/* ══ onda 1294 (decisão #137, flag as6.corpo_preview) — CORPO INTEIRO
+   240×400 no preview e nas thumbs de Roupa/Sobrepeça (o motor já tinha
+   o render — goldens g09/g16; aqui só a APRESENTAÇÃO liga) ══ */
+/* palco: o quadro deixa de ser 1:1 — retrato proporcional, centrado */
+.avst5-viewport[data-corpo] .avst5-zoom .avst-svg,
+.avst5-viewport[data-corpo] .avst5-zoom svg { aspect-ratio: 240 / 400; }
+/* thumbs: o retrato dimensiona pela ALTURA da thumb e centra — vale no
+   trilho da dock E na grade clássica (contêiner 1:1 com corte lateral) */
+.avst-card-thumb[data-corpo] { display: flex; align-items: center; justify-content: center; }
+.avst-card-thumb[data-corpo] .avst-svg { height: 100%; width: auto; display: flex; justify-content: center; }
+.avst-card-thumb[data-corpo] svg { width: auto; height: 100%; max-width: none; }
