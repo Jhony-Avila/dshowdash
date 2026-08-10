@@ -1,9 +1,23 @@
 # Status do Projeto — Avatar Studio (no repo)
 
 > Fonte viva: docs do projeto Claude "Avatar Studio" (04-status-do-projeto).
-> Última atualização: **2026-08-09 — ONDA 1111: dock inferior no shell (decisão #112, pedido visual do Jhony)** · marco 1110 em produção (DEPLOY_1110_OK).
+> Última atualização: **2026-08-09 — MARCO 1220: onda 1121–1220 completa no código** (decisões #113–#123). Em produção: 1111 (DEPLOY_1111_OK).
 
-## Onda 1111 (em entrega)
+## Onda 1121–1220 (fechada — decisão #113, mapa no doc 24)
+
+- 1121–1130 tour v2 do layout novo (`as6.tour_v6` #114) · 1131–1140
+  motion v2 aceites §568 (`as6.motion_v2` #115) · 1141–1150 Light Mode
+  real §578 (`as6.light_v6` #116) · 1151–1160 dock por teclado
+  (`as6.nav_dock` #117) · 1161–1170 workers fase 2 export
+  (`as6.workers_v2` #118) · 1171–1180 baseline de runtime
+  (`as6.perf_baseline` #119) · 1181–1190 CMS RO fase 2 (`as6.cms_ro2`
+  #120) · 1191–1200 IA apply parcial (`as6.ia_apply` #121) · 1201–1210
+  Universal Avatar Component (`as6.contextos_v6` #122) · 1211–1220
+  fechamento (#123).
+- Suíte: **130 arquivos; 129/130 na rodada completa** (dock-mag flake
+  de carga, verde isolado; VERMELHOS: agora é impresso pelo runner).
+
+## Onda 1111 (entregue — DEPLOY_1111_OK)
 
 - **#112 `as6.dock_inferior`**: shell novo com a estrutura do clássico
   AAA — nav esquerda, preview central com fit-to-view, biblioteca em

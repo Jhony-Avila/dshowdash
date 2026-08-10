@@ -960,6 +960,15 @@
   permissões server) segue na fila com o Jhony. Off = sem API global e
   sem card. Teste contextos-v6.mjs.
 
+- **#123 (2026-08-09) — Fechamento da onda 1121–1220 (lote
+  1211–1220)**: suíte completa 130 arquivos, 129/130 na rodada (único
+  vermelho dock-mag = flake de carga conhecido, verde isolado — teste
+  intocado na onda); 9 flags novas `as6.*` padrão ON com rollback
+  §651; 9 testes novos; entrega consolidada DEPLOY_1220_OK (bloco
+  paste-safe, 10 commits sobre `39b2f5e0`); roteiros de validação
+  visual no doc 25 do projeto. Fila que segue com o Jhony: rosto
+  modular (arte), backend Partes 10/13/14, CI runner, RBAC/audit.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
