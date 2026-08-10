@@ -80,6 +80,14 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     setBloqueios, aoMudarFavs, historico, desbloqueados, setDetalheId,
     dockInferior = false } = props;
   const [propriedades, setPropriedades] = useState(false);
+  // lote 1231-1240 (#126, a11y §297): na DOCK o drawer flutuante de
+  // propriedades fecha no Escape (paridade com os demais flutuantes)
+  useEffect(() => {
+    if (!dockInferior || !propriedades) return undefined;
+    const ao = (e: KeyboardEvent) => { if (e.key === 'Escape') setPropriedades(false); };
+    window.addEventListener('keydown', ao);
+    return () => window.removeEventListener('keydown', ao);
+  }, [dockInferior, propriedades]);
   const [mostrarTopo, setMostrarTopo] = useState(false);
   // decisão #112: altura da dock (compacta/padrão/expandida) persistida;
   // "recolhida" = o painelFechado de sempre (mesmo botão, mesma semântica)
@@ -89,6 +97,54 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     setEstadoDock(novo);
     try { localStorage.setItem(CHAVE_DOCK, novo); } catch { /* sem storage */ }
   };
+  // lote 1241-1250 (#127, as6.mobile_v6): o TOPO da dock é uma ALÇA —
+  // swipe/arrasto vertical sobe um degrau (recolhida→compacta→padrão→
+  // expandida) ou desce (até recolher). Botões continuam clicáveis
+  // (gesto ignora pointerdown neles); threshold 36px.
+  const ORDEM_DOCK: EstadoDock[] = ['compacta', 'padrao', 'expandida'];
+  const definirEstadoDock = (v: EstadoDock) => {
+    setEstadoDock(v);
+    try { localStorage.setItem(CHAVE_DOCK, v); } catch { /* sem storage */ }
+  };
+  const gesto = useRef<{ y0: number; id: number; capturado: boolean; consumiu: boolean } | null>(null);
+  const suprimeClique = useRef(false);
+  const aoGestoDown = (e: React.PointerEvent) => {
+    if (!dockInferior || !flag('as6.mobile_v6')) return;
+    // arma em QUALQUER ponto do topo (o centro é coberto pelas abas —
+    // aprendizado #127: exigir área "vazia" matava o gesto); o clique
+    // dos botões sobrevive porque a captura só entra depois de VIRAR
+    // arrasto (>8px) e o clique fantasma é suprimido no fim
+    gesto.current = { y0: e.clientY, id: e.pointerId, capturado: false, consumiu: false };
+  };
+  const aoGestoMove = (e: React.PointerEvent) => {
+    const g = gesto.current;
+    if (!g) return;
+    const dy = e.clientY - g.y0;
+    if (!g.capturado && Math.abs(dy) > 8) {
+      try { (e.currentTarget as HTMLElement).setPointerCapture(g.id); } catch { /* sem suporte */ }
+      g.capturado = true;
+    }
+    if (Math.abs(dy) < 36) return;
+    g.consumiu = true;
+    g.y0 = e.clientY; // swipe longo pode subir mais de um degrau
+    if (dy < 0) { // p/ CIMA: abre/sobe um degrau
+      if (painelFechado) { setPainelFechado(false); return; }
+      const i = ORDEM_DOCK.indexOf(estadoDock);
+      if (i < ORDEM_DOCK.length - 1) definirEstadoDock(ORDEM_DOCK[i + 1]);
+    } else { // p/ BAIXO: desce um degrau até recolher
+      if (painelFechado) return;
+      const i = ORDEM_DOCK.indexOf(estadoDock);
+      if (i > 0) definirEstadoDock(ORDEM_DOCK[i - 1]);
+      else setPainelFechado(true);
+    }
+  };
+  const aoGestoFim = () => {
+    if (gesto.current?.consumiu) {
+      suprimeClique.current = true;
+      window.setTimeout(() => { suprimeClique.current = false; }, 250);
+    }
+    gesto.current = null;
+  };
   // lote 1151-1160 (#117, as6.nav_dock): a tecla D (shell) cicla a
   // altura por evento — o estado mora aqui
   useEffect(() => {
@@ -97,6 +153,14 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     window.addEventListener('avst6:dock-altura', ao);
     return () => window.removeEventListener('avst6:dock-altura', ao);
   });
+  // lote 1251-1260 (#128, as6.layouts): layout aplicado -> relê a
+  // altura canônica do storage
+  useEffect(() => {
+    if (!flag('as6.layouts')) return undefined;
+    const ao = () => setEstadoDock(lerEstadoDock());
+    window.addEventListener('avst6:dock-estado', ao);
+    return () => window.removeEventListener('avst6:dock-estado', ao);
+  }, []);
   const refPainel = useRef<HTMLDivElement>(null);
   // lote 1131-1140 (#115, as6.motion_v2): trocar de categoria assenta a
   // biblioteca com um fade curto (aceite §568: nada muda de posição
@@ -210,7 +274,12 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     <aside className={`avst5-painel${painelFechado ? ' avst5-painel-fechado' : ''}${dockInferior ? ' avst5-dock' : ''}`}
       aria-label="Catálogo" data-dock-estado={dockInferior && !painelFechado ? estadoDock : undefined}>
       {/* cabeçalho FIXO do workspace (P1 §20–§22) */}
-      <div className="avst5-painel-topo">
+      <div className="avst5-painel-topo"
+        onPointerDown={aoGestoDown} onPointerMove={aoGestoMove}
+        onPointerUp={aoGestoFim} onPointerCancel={aoGestoFim}
+        onClickCapture={(e) => {
+          if (suprimeClique.current) { e.preventDefault(); e.stopPropagation(); suprimeClique.current = false; }
+        }}>
         <button type="button" className="avst5-painel-btn" title={painelFechado ? 'Abrir catálogo' : 'Recolher catálogo'}
           onClick={() => setPainelFechado((v) => !v)}>
           {painelFechado ? <ChevronsLeft size={14} aria-hidden /> : <ChevronsRight size={14} aria-hidden />}

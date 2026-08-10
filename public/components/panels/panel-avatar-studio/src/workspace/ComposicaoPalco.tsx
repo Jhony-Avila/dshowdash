@@ -9,7 +9,7 @@
 // sugestão Clima→Luz (§179, memo LOCAL: só depende de clima+luz).
 // Estados compartilhados (fundo/hora/luz/clima/propsCen/luzAuto/luzInt)
 // seguem no PAI: o viewport e a PaletaComandos também leem.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Clapperboard, X } from 'lucide-react';
 import {
   AMBIENTES_CENARIO, CENARIO_NEUTRO, CLIMAS_PALCO, COR_AMBIENTE,
@@ -62,6 +62,13 @@ export function ComposicaoPalco(props: PropsComposicaoPalco) {
   const [cenAberto, setCenAberto] = useState(false);
   // #112: no modo compacto tudo fica atrás de UM botão "Cenário"
   const [toolAberta, setToolAberta] = useState(false);
+  // lote 1231-1240 (#126, a11y §297): Escape fecha a caixa do Cenário
+  useEffect(() => {
+    if (!toolAberta) return undefined;
+    const ao = (e: KeyboardEvent) => { if (e.key === 'Escape') setToolAberta(false); };
+    window.addEventListener('keydown', ao);
+    return () => window.removeEventListener('keydown', ao);
+  }, [toolAberta]);
   // lote 205 (§179): ponte Clima→Iluminação (chuva pede luz fria; névoa, dramática)
   const sugestaoLuz = useMemo(() => {
     if (clima === 'chuva' && luz !== 'fria') return { luzSug: 'fria' as LuzPalco, motivo: 'a chuva' };

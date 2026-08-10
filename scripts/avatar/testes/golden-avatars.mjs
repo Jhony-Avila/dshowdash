@@ -74,7 +74,22 @@ const CASOS_FOTO: Array<[string, () => string]> = [
   ['g12-foto-wide-header', () => svgFotoDe(FOTO, {
     ...estiloBase, subtitulo: 'Head of Golden', tipografia: { fonte: 'mono', peso: 800 },
   }, { estatico: true, uid: 'gold12', formato: 'header' })],
+  // ── goldens v2 (lote 1271–1280, decisão #131): formatos wide restantes
+  // + §337/§334 + sobrepeça de corpo — fecham a rede de render ──
+  ['g13-foto-wide-banner-reflow', () => svgFotoDe(FOTO, {
+    ...estiloBase, legenda: 'Golden', pos: { texto: { x: 30, y: 200 } },
+  }, { estatico: true, uid: 'gold13', formato: 'banner', reflowPos: true })],
+  ['g14-foto-wide-wallpaper', () => svgFotoDe(FOTO, {
+    ...estiloBase, subtitulo: 'Wallpaper Golden',
+  }, { estatico: true, uid: 'gold14', formato: 'wallpaper' })],
+  ['g15-foto-sombra-luz', () => svgFotoDe(FOTO, {
+    ...estiloBase,
+    ajustes: { sombra: true, luzLocal: { tipo: 'radial', intensidade: 0.5 }, temperatura: 0.4 },
+  }, { estatico: true, uid: 'gold15' })],
 ];
+CASOS.push(['g16-palco-sobrepeca-corpo', () => svgDe(cfg({
+  camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_gamer', roupa_sobre: 'sob_colete' },
+}), { palco: true, enquadramento: 'corpo' })]);
 
 const saida: Record<string, { sha256: string; bytes: number }> = {};
 const erros: string[] = [];

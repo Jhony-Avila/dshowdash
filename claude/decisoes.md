@@ -969,6 +969,87 @@
   visual no doc 25 do projeto. Fila que segue com o Jhony: rosto
   modular (arte), backend Partes 10/13/14, CI runner, RBAC/audit.
 
+- **#125 (2026-08-10) — Code-splitting §275 v2 (lote 1221–1230, sem
+  flag — estrutura de build; onda 1221–1270, mapa doc 26/#124)**: os 3
+  maiores módulos de ABA saem do entry p/ chunks lazy (mesma técnica
+  consagrada do Estudio3D/CmsRo): Foto (60KB), CriarIA e Contextos só
+  baixam no primeiro uso. Entry: 466→400KB (gzip 141→123KB, −13%).
+  Suspense com fallback "Carregando…" (role=status); flag não se
+  aplica a estrutura de build — rollback = revert do commit. Regressões
+  foto-f6/workers-v2/ia-apply/contextos-v6/foto-projeto/manifest/
+  orcamento verdes.
+
+- **#126 (2026-08-10) — Cobertura i18n + a11y da onda 1121–1220 (lote
+  1231–1240, sem flag própria — doutrina #62)**: EN novo p/ CMS fase 2
+  (busca/CSV/ficha), toolbar "Cenário" e "Aplicar selecionados"
+  (chave duplicada de Cenário deduplicada). A11y: Escape fecha a caixa
+  do Cenário e o drawer de propriedades da dock; no CMS o Escape é
+  ANINHADO (fecha a ficha primeiro, o drawer depois) e a linha é
+  operável por teclado (tabIndex + Enter). Limites que permanecem
+  registrados: tour e folha de atalhos seguem PT (nunca usaram t() —
+  migram quando a superfície inteira migrar). Teste cobertura-1240.mjs.
+
+- **#127 (2026-08-10) — Telas estreitas: alça de swipe na dock (lote
+  1241–1250, flag `as6.mobile_v6`)**: o TOPO da dock vira alça — swipe
+  vertical sobe um degrau (recolhida→compacta→padrão→expandida) ou
+  desce até recolher; swipe longo atravessa degraus; alça visual
+  (pill) e touch-action: none em <1024px; abas com scroll próprio e
+  chips de câmera com wrap no estreito. Aprendizados: (a) o centro do
+  topo é coberto pelas ABAS — exigir área "vazia" mata o gesto; o
+  gesto arma em qualquer ponto e a CAPTURA só entra depois de virar
+  arrasto (>8px), com o clique fantasma suprimido por clickCapture;
+  (b) sem setPointerCapture o swipe escapa da alça de 46px antes do
+  threshold. Off = interações anteriores byte a byte. Teste
+  mobile-v6.mjs.
+
+- **#128 (2026-08-10) — Layouts nomeados do workspace (lote 1251–1260,
+  flag `as6.layouts` — AS6 Parte 1)**: 3 slots fixos (A/B/C) na Paleta
+  de Comandos salvam/aplicam a GEOMETRIA do workspace — largura da
+  nav, largura da lateral, altura da dock e recolhimento. Storage puro
+  (`dshow.avst6.layouts.v1`); aplicar escreve as chaves CANÔNICAS
+  (larguras + dockinf) e o evento `avst6:dock-estado` faz o
+  PainelCatalogo reler a altura (o estado mora lá). Slot vazio anuncia
+  no aria-live sem quebrar. Geometria ≠ estado do avatar — nada aqui
+  toca config/serialização. Off = comandos ausentes. Teste
+  layouts-as6.mjs.
+
+- **#129 (2026-08-10) — Fechamento da onda 1221–1270 (lote
+  1261–1270)**: suíte completa **133/133 verdes** (zero flakes na
+  rodada); 5 lotes: split §275 v2 (entry −13% gzip), cobertura
+  i18n/a11y, alça de swipe (`as6.mobile_v6`), layouts nomeados
+  (`as6.layouts`), fechamento. Entrega DEPLOY_1270_OK (5 commits sobre
+  `4a208eb9`). Roteiros de validação no doc 27 do projeto.
+
+- **#130 (2026-08-10) — Onda 1271–1290: garimpo com grep-first (mapa
+  doc 28)**: o "Prossiga" pós-1270 abriu o garimpo do Trilho A restante
+  — e o grep-first revelou que o doc 05 estava DEFASADO: §333–§334
+  (ajustes/luz local), §337 (sombra de contato) e §360–§361 (histórico
+  visual não destrutivo) JÁ existem desde as megas 51–56/165/251/311.
+  Aprendizado de processo: garimpo SEMPRE verifica o código antes de
+  planejar lote (o doc de lacunas é fotografia, não fonte). A onda
+  encolheu p/ o que é real: goldens v2 (#131) e auditoria v3 do mapa +
+  fechamento (#132). Entrega única DEPLOY_1290_OK SUBSTITUI o bloco
+  1270 não colado (mesma base `4a208eb9`).
+
+- **#131 (2026-08-10) — Goldens v2 (lote 1271–1280, sem flag)**: a rede
+  de regressão de render fecha os buracos que restavam — 4 casos
+  novos: banner wide com pos manual + reflow (`reflowPos`), wallpaper
+  wide, sombra §337 + luz local §334 + temperatura, e sobrepeça em
+  corpo inteiro no modo palco. Baseline regravada com REVISÃO do diff
+  no mesmo commit (doutrina #83): os 12 hashes antigos permaneceram
+  IDÊNTICOS (byte-stability confirmada por script no commit); 16 casos
+  no total.
+
+- **#132 (2026-08-10) — Auditoria v3 do mapa + fechamento da onda
+  1271–1290 (lote 1281–1290)**: doc 05 do projeto REESCRITO (v3,
+  grep-first): o Trilho A client-side está ESGOTADO — A1–A6 e as
+  frentes AS6 client cobertos pelas ondas 51–1290; o que resta de real
+  é Trilho B/C (arte, banco, chave IA, CI, decisões de produto — tudo
+  com o Jhony). Suíte 133/133 verdes (a rodada 10/133 anterior foi o
+  servidor 8901 morto — ambiente; o resumo VERMELHOS entregou o
+  diagnóstico em segundos). Entrega única DEPLOY_1290_OK (7 commits
+  sobre `4a208eb9`) SUBSTITUI o bloco 1270 não colado.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
