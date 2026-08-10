@@ -17,6 +17,13 @@ import {
 
 // PoC 3D (AS4 Fase 1) — chunk separado: three/R3F só carregam nesta aba
 const Estudio3D = lazy(() => import('../poc3d/Estudio3D'));
+// lote 1221-1230 (decisão #125, §275 v2): os TRÊS maiores módulos de
+// aba saem do entry p/ chunks lazy — Foto (o maior), CriarIA e
+// Contextos só baixam quando o usuário abre; mesma técnica do 3D.
+const Foto = lazy(() => import('../components/Foto').then((m) => ({ default: m.Foto })));
+const CriarIA = lazy(() => import('../components/CriarIA').then((m) => ({ default: m.CriarIA })));
+const Contextos = lazy(() => import('../components/Contextos').then((m) => ({ default: m.Contextos })));
+const CarregandoAba = () => <p className="avst-foto-nota" role="status">Carregando…</p>;
 import type { AvatarConfig, CategoriaId, EstadoSalvar, GrupoId, Raridade, ShellConfig } from '../domain/types';
 import {
   CONFIG_PADRAO, GRUPOS, RARIDADES, aleatorio, categoriasAtivas, itemPorId, nivelRaridade,
@@ -35,9 +42,9 @@ import { ShellStudio } from '../shell/ShellStudio';
 import type { Vida } from '../services/VidaService';
 import { Colecoes } from '../components/Colecoes';
 import { Vitrine } from '../components/Vitrine';
-import { Contextos } from '../components/Contextos';
+
 import { Conquistas } from '../components/Conquistas';
-import { CriarIA } from '../components/CriarIA';
+
 import { AvatarSvg } from '../components/AvatarSvg';
 import { PalcoCinema } from '../components/PalcoCinema';
 import type { Celebracao } from '../components/PalcoCinema';
@@ -45,7 +52,7 @@ import { GradeItens } from '../components/GradeItens';
 import { Cores } from '../components/Cores';
 import { Presets } from '../components/Presets';
 import { Historico } from '../components/Historico';
-import { Foto } from '../components/Foto';
+
 import { Titulos } from '../components/Titulos';
 import { Arquetipos } from '../components/Arquetipos';
 import '../styles/estudio.css';
@@ -798,15 +805,17 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             <Vitrine config={atual} desbloqueados={vida?.desbloqueados ?? new Set()}
               aoAplicar={aplicar} aoAbrirColecoes={() => setAba('colecoes')} />
           )}
-          {aba === 'ia' && <CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} desbloqueados={vida?.desbloqueados} />}
+          {aba === 'ia' && <Suspense fallback={<CarregandoAba />}><CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} desbloqueados={vida?.desbloqueados} /></Suspense>}
           {aba === 'historico' && (
             <Historico key={`h-${versao}`} versaoBase={versao}
               aoAplicar={aplicar} aoReativar={aoReativarHistorico} />
           )}
           {aba === 'foto' && (
-            <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'}
-              desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto}
-              configAtual={atual} /* lote 531-540 (§321.1): avatar atual → foto */ />
+            <Suspense fallback={<CarregandoAba />}>
+              <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'}
+                desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto}
+                configAtual={atual} /* lote 531-540 (§321.1): avatar atual → foto */ />
+            </Suspense>
           )}
           </div>
         )}
@@ -833,15 +842,17 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
             <Vitrine config={atual} desbloqueados={vida?.desbloqueados ?? new Set()}
               aoAplicar={aplicar} aoAbrirColecoes={() => setAba('colecoes')} />
           )}
-          {aba === 'ia' && <CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} desbloqueados={vida?.desbloqueados} />}
+          {aba === 'ia' && <Suspense fallback={<CarregandoAba />}><CriarIA config={atual} iaDisponivel={vida?.iaDisponivel ?? false} aoAplicar={aplicar} desbloqueados={vida?.desbloqueados} /></Suspense>}
           {aba === 'historico' && (
             <Historico key={`h-${versao}`} versaoBase={versao}
               aoAplicar={aplicar} aoReativar={aoReativarHistorico} />
           )}
           {aba === 'foto' && (
-            <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'}
-              desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto}
-              configAtual={atual} /* lote 531-540 (§321.1): avatar atual → foto */ />
+            <Suspense fallback={<CarregandoAba />}>
+              <Foto versao={versao} fotoAtiva={tipoAtivo === 'foto'}
+                desbloqueados={vida?.desbloqueados ?? new Set()} aoSalvar={aoSalvarFoto}
+                configAtual={atual} /* lote 531-540 (§321.1): avatar atual → foto */ />
+            </Suspense>
           )}
           {aba === 'itens' && (
             <>
@@ -856,7 +867,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         )}
       </div>
       {/* drawer "Visualizar em contextos" (4.6, decisão #42) */}
-      {contextosAberto && <Contextos config={atual} aoFechar={() => setContextosAberto(false)} />}
+      {contextosAberto && <Suspense fallback={null}><Contextos config={atual} aoFechar={() => setContextosAberto(false)} /></Suspense>}
     </div>
   );
 }

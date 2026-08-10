@@ -969,6 +969,16 @@
   visual no doc 25 do projeto. Fila que segue com o Jhony: rosto
   modular (arte), backend Partes 10/13/14, CI runner, RBAC/audit.
 
+- **#125 (2026-08-10) — Code-splitting §275 v2 (lote 1221–1230, sem
+  flag — estrutura de build; onda 1221–1270, mapa doc 26/#124)**: os 3
+  maiores módulos de ABA saem do entry p/ chunks lazy (mesma técnica
+  consagrada do Estudio3D/CmsRo): Foto (60KB), CriarIA e Contextos só
+  baixam no primeiro uso. Entry: 466→400KB (gzip 141→123KB, −13%).
+  Suspense com fallback "Carregando…" (role=status); flag não se
+  aplica a estrutura de build — rollback = revert do commit. Regressões
+  foto-f6/workers-v2/ia-apply/contextos-v6/foto-projeto/manifest/
+  orcamento verdes.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
