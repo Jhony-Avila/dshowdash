@@ -3044,3 +3044,18 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst-ia-campos label { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
 .avst-ia-campos strong { min-width: 90px; }
 .avst-ia-campos span { color: var(--avst-texto-2, var(--as6-texto-suave)); }
+
+/* ══ lote 1241–1250 (decisão #127, flag as6.mobile_v6) — telas
+   estreitas: o topo da dock vira ALÇA de swipe ══ */
+[data-mobile-v6] .avst5-dock .avst5-painel-topo { touch-action: none; cursor: grab; position: relative; }
+[data-mobile-v6] .avst5-dock .avst5-painel-topo:active { cursor: grabbing; }
+/* alça visual (pill) só onde swipe é o gesto natural */
+@media (max-width: 1023px) {
+  [data-mobile-v6] .avst5-dock .avst5-painel-topo::before {
+    content: ''; position: absolute; top: 3px; left: 50%; transform: translateX(-50%);
+    width: 44px; height: 4px; border-radius: 999px;
+    background: var(--as6-superficie-4);
+  }
+  [data-mobile-v6] .avst5-abas { overflow-x: auto; scrollbar-width: none; }
+  [data-mobile-v6] .avst6-cam { flex-wrap: wrap; justify-content: flex-end; max-width: 60vw; }
+}

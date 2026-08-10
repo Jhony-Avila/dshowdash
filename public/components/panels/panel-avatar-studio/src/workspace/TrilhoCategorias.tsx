@@ -21,7 +21,7 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher }: PropsTrilh
       {categoriasAtivas().map((c) => (
         <button key={c.id} type="button"
           className={`avst5-cat${categoria === c.id ? ' avst5-cat-on' : ''}`}
-          title={c.nome} onClick={() => aoEscolher(c.id)}>
+          title={c.nome} /* nav estreita: o tooltip já devolve o nome (#127 confirmou) */ onClick={() => aoEscolher(c.id)}>
           <span className="avst5-cat-inicial" aria-hidden>{c.nome.slice(0, 1)}</span>
           {!compacta && <span>{c.nome}</span>}
         </button>

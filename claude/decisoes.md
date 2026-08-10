@@ -989,6 +989,19 @@
   registrados: tour e folha de atalhos seguem PT (nunca usaram t() —
   migram quando a superfície inteira migrar). Teste cobertura-1240.mjs.
 
+- **#127 (2026-08-10) — Telas estreitas: alça de swipe na dock (lote
+  1241–1250, flag `as6.mobile_v6`)**: o TOPO da dock vira alça — swipe
+  vertical sobe um degrau (recolhida→compacta→padrão→expandida) ou
+  desce até recolher; swipe longo atravessa degraus; alça visual
+  (pill) e touch-action: none em <1024px; abas com scroll próprio e
+  chips de câmera com wrap no estreito. Aprendizados: (a) o centro do
+  topo é coberto pelas ABAS — exigir área "vazia" mata o gesto; o
+  gesto arma em qualquer ponto e a CAPTURA só entra depois de virar
+  arrasto (>8px), com o clique fantasma suprimido por clickCapture;
+  (b) sem setPointerCapture o swipe escapa da alça de 46px antes do
+  threshold. Off = interações anteriores byte a byte. Teste
+  mobile-v6.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave

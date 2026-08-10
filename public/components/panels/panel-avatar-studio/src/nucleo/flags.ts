@@ -114,6 +114,8 @@ const PADROES: Record<string, boolean> = {
   'as6.cms_ro2': true,          // lote 1181–1190 — CMS RO fase 2 (AS6 Parte 15): busca sanitizada + filtro de categoria + ficha de detalhe + export CSV client-side no drawer; segue GET-only/AdminGate; off = drawer do #108
   'as6.ia_apply': true,         // lote 1191–1200 — IA apply PARCIAL (AS6 Parte 12): a sugestão vira lista de mudanças campo a campo com checkbox; aplica só o selecionado (merge determinístico + validarConfig + §636); off = botão "aplicar tudo" anterior
   'as6.contextos_v6': true,     // lote 1201–1210 — Universal Avatar Component fase 1 (AS6 Parte 13): montarAvatarUniversal (espelho §619 + live update + placeholder) exposto em window.AvatarStudioUniversal; drawer de contextos consome o MESMO caminho; off = mocks anteriores
+  // ── onda 1221–1270 (decisão #124; padrão ON conforme #50) ──
+  'as6.mobile_v6': true,        // lote 1241–1250 — telas estreitas: SWIPE vertical no topo da dock cicla altura/recolhe, alça visual, tooltips na nav estreita; off = interações anteriores byte a byte
 };
 
 /**

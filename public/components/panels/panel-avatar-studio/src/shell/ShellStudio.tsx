@@ -1016,6 +1016,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       <div className="avst5-shell" data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
         data-dock-inferior={dockInferior ? '' : undefined} /* decisão #112 */
         data-motion-v2={flag('as6.motion_v2') && !movReduzido ? '' : undefined} /* lote 1131-1140 (#115, aceites §568 AS6) */
+        data-mobile-v6={flag('as6.mobile_v6') ? '' : undefined} /* lote 1241-1250 (#127) */
         data-oculto={abaOculta ? '' : undefined} /* #115: aba oculta = animações CSS pausadas */
         data-qualidade={flag('as6.quality') ? qualidade().perfil : undefined} /* lote 1021-1030 (#104) */
         data-uxfinal={flag('as5.ux_final') ? '' : undefined} // megas 598-599 (§545-§546)
