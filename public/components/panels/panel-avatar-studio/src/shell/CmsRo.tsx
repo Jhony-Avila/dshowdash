@@ -60,12 +60,16 @@ export function CmsRo({ aoFechar }: { aoFechar: () => void }) {
     a.download = `cms-${aba}-p${pagina}.csv`;
     a.click();
   }, [estado.itens, aba, pagina]);
-  // lote 1081-1090 (#110): Escape fecha o diálogo (a11y §297)
+  // lote 1081-1090 (#110): Escape fecha o diálogo (a11y §297).
+  // #126: com a FICHA aberta, o primeiro Escape fecha só a ficha.
   useEffect(() => {
-    const ao = (e: KeyboardEvent) => { if (e.key === 'Escape') aoFechar(); };
+    const ao = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (detalhe) setDetalhe(null); else aoFechar();
+    };
     window.addEventListener('keydown', ao);
     return () => window.removeEventListener('keydown', ao);
-  }, [aoFechar]);
+  }, [aoFechar, detalhe]);
 
   const colunas = estado.itens.length ? Object.keys(estado.itens[0]) : [];
   return (
@@ -118,6 +122,8 @@ export function CmsRo({ aoFechar }: { aoFechar: () => void }) {
                     {estado.itens.map((linha, i) => (
                       <tr key={String(linha.id ?? i)} data-teste="cms-linha"
                         className={fase2 && aba === 'assets' ? 'avst6-cms-clicavel' : undefined}
+                        tabIndex={fase2 && aba === 'assets' ? 0 : undefined}
+                        onKeyDown={fase2 && aba === 'assets' ? (e) => { if (e.key === 'Enter') setDetalhe(linha); } : undefined}
                         onClick={fase2 && aba === 'assets' ? () => setDetalhe(linha) : undefined}>
                         {colunas.map((c) => <td key={c}>{String(linha[c] ?? '—').slice(0, 80)}</td>)}
                       </tr>

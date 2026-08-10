@@ -80,6 +80,14 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     setBloqueios, aoMudarFavs, historico, desbloqueados, setDetalheId,
     dockInferior = false } = props;
   const [propriedades, setPropriedades] = useState(false);
+  // lote 1231-1240 (#126, a11y §297): na DOCK o drawer flutuante de
+  // propriedades fecha no Escape (paridade com os demais flutuantes)
+  useEffect(() => {
+    if (!dockInferior || !propriedades) return undefined;
+    const ao = (e: KeyboardEvent) => { if (e.key === 'Escape') setPropriedades(false); };
+    window.addEventListener('keydown', ao);
+    return () => window.removeEventListener('keydown', ao);
+  }, [dockInferior, propriedades]);
   const [mostrarTopo, setMostrarTopo] = useState(false);
   // decisão #112: altura da dock (compacta/padrão/expandida) persistida;
   // "recolhida" = o painelFechado de sempre (mesmo botão, mesma semântica)

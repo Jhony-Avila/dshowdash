@@ -61,6 +61,13 @@ const EN: Record<string, string> = {
   Sair: 'Exit',
   Poder: 'Power',
   'Recarregando…': 'Recharging…',
+  // lote 1231-1240 (#126, cobertura da onda 1121-1220 — doutrina #62)
+  'Buscar por nome ou key…': 'Search by name or key…',
+  'Exportar CSV desta página': 'Export this page as CSV',
+  'Detalhe do asset': 'Asset details',
+  'Fechar detalhe': 'Close details',
+  'Cenário, luz e clima': 'Scene, light & weather',
+  'Aplicar selecionados': 'Apply selected',
   // catálogo
   Todos: 'All',
   Favoritos: 'Favorites',

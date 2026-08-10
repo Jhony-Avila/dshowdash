@@ -979,6 +979,16 @@
   foto-f6/workers-v2/ia-apply/contextos-v6/foto-projeto/manifest/
   orcamento verdes.
 
+- **#126 (2026-08-10) — Cobertura i18n + a11y da onda 1121–1220 (lote
+  1231–1240, sem flag própria — doutrina #62)**: EN novo p/ CMS fase 2
+  (busca/CSV/ficha), toolbar "Cenário" e "Aplicar selecionados"
+  (chave duplicada de Cenário deduplicada). A11y: Escape fecha a caixa
+  do Cenário e o drawer de propriedades da dock; no CMS o Escape é
+  ANINHADO (fecha a ficha primeiro, o drawer depois) e a linha é
+  operável por teclado (tabIndex + Enter). Limites que permanecem
+  registrados: tour e folha de atalhos seguem PT (nunca usaram t() —
+  migram quando a superfície inteira migrar). Teste cobertura-1240.mjs.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
