@@ -8,7 +8,8 @@
 | BASAL-001 | Runtime dependente de arquivos ignorados (74–76 deps do index; fundações inteiras sem tracking) | **P0** | ABERTO | Hashes preservados (Onda 1) → incorporação governada (M3) → build canônico (M5) | M3–M5 |
 | BASAL-002 | Backend ativo parcialmente ignorado (~444 arquivos em `api/`) | **P0** | ABERTO | Classificação fonte×config×dado (M3) → versionar fonte ativa sem segredos | M3 |
 | BASAL-003 | Release não reproduzível por clone limpo | **P0** | ABERTO | Confirmado no clone em 2026-08-10 (0 dist). Build reproduzível no M5 | M5 |
-| BASAL-004 | Fontes `.ts/.tsx` acessíveis por HTTP | **P0** | **CONFIRMADO** (7/7 amostras HTTP 200, evidência §8, 2026-08-10); nenhum `.patch` localizado | Bloqueio por extensão após prova de zero consumidores (doc 20) | M1 |
+| BASAL-004 | Fontes `.ts/.tsx` acessíveis por HTTP | **P0** | **CONFIRMADO + RAIZ IDENTIFICADA**: o runtime IMPORTA `.ts` por ESM (31 arquivos de `bootstrap-v2/` + `core/runtime/_entry.js` — evidência m1b). Bloqueio adiado (quebraria o boot) | Empacotar `bootstrap-v2/`+`core/runtime/` (M5/M6) → depois bloquear `.ts` | M5/M6 |
+| BASAL-004b | `.patch` resíduo exposto (`footer/.../index.js.patch`) | P1 | **CONTIDO** (quarentenado p/ `/backup` na Onda 3); falta regra Nginx permanente + purge CF | Onda 4: deny `\.patch$` verificado na origem + purge Cloudflare | M1 |
 | BASAL-005 | MySQL escutando `0.0.0.0:3306` | **P0** até validação | **CONFIRMADO** em escuta (evidência §7); firewall a reconfirmar (questões 19–20) | Evidência de UFW + decisão bind × firewall com o sponsor | M1 |
 | BASAL-006 | Builds basais defasados (43/63 dist com fonte mais nova) | P1 | ABERTO | Confirmar por build+comparação (M5); nunca atualizar manualmente | M5 |
 | BASAL-007 | `app/` e `public/app/` divergentes (árvores concorrentes) | P1 | ABERTO | ADR-001; consolidação na Parte 8 (M6); até lá, regras transitórias doc 01 §4 | M6 |

@@ -70,6 +70,33 @@ Classe: `COMPATIBILITY_LAYER`. Nota: o Nginx roteia `/api/*` majoritariamente po
 `alias /var/www/dshowdash/api/...` direto (sem passar pelo symlink) — o consumo real do
 symlink precisa ser medido antes de qualquer plano de remoção (ADR-008).
 
+## 5b. ACHADO CRÍTICO (Onda 3) — runtime importa fontes `.ts` por ESM
+
+A sondagem M1b (`evidencias/m1b-sondagem-2026-08-10.md`) provou que o runtime **não é
+totalmente empacotado**: `bootstrap-v2/` é servido como árvore ESM crua e importa fontes
+`.ts` literalmente:
+
+```text
+31 arquivos .js em public/bootstrap-v2/**  → import { … } from ".../contracts/health-contract.ts"
+public/core/runtime/_entry.js:83-84        → import ".../events/catalog/_entry.ts" e ".../enterprise/strict-mode.ts"
+```
+
+Consequências:
+1. **BASAL-004 tem raiz mais profunda que "arquivos só existem no disco":** o navegador
+   busca esses `.ts` porque o JS os importa. O Nginx serve `.ts` com MIME de JS hoje.
+2. **Bloquear `.ts/.tsx` quebraria o boot** — por isso o portão P1 corretamente adiou (§11).
+   O pré-requisito é empacotar `bootstrap-v2/` e `core/runtime/` (ou reescrever os imports
+   para os artefatos compilados) — trabalho de M5/M6.
+3. Os bundles `*/dist/*.bundle.js` do index podem ser **entrypoints parciais ou defasados**
+   convivendo com a árvore ESma crua — o que o navegador realmente executa precisa de prova
+   de rede (aba Network autenticada, validação do Jhony) no M2.
+4. P2 limpou o alarme das permissions: `integration.bundle.js` e `ui-feedback.bundle.js`
+   **não** contêm `.ts` — o `keepExternal` no `vite.components.config.js` está obsoleto
+   (candidato a limpeza P2/M4, sem urgência).
+
+Reframe do roadmap: **a blindagem `.ts` do M1 fica atrelada ao build canônico (M5/M6)**;
+o M1 fecha os P0 que não dependem disso (`.patch`, vhost órfão, e — com decisão — MySQL/phpMyAdmin).
+
 ## 6. Implicações imediatas
 
 1. Qualquer mudança nas fundações hoje NÃO chega ao runtime sem rebuild manual dos dists ignorados (BASAL-006).

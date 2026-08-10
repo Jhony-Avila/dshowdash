@@ -14,6 +14,9 @@
 | EB-007 | 2026-08-10 | Dez ADRs pendentes abertos (adr/ADR-001..010) com decisão provisória explícita — nenhum finge decisão tomada | Parte 1 §29 |
 | EB-008 | 2026-08-10 | **Módulo Pipedrive + Google Analytics permanecem no `main`** (merge `e7b54fb7`, 429 arquivos). O merge foi concluído acidentalmente pelo commit de evidências da Onda 1 (worktree de produção estava em `feat/pipedrive-modulo-completo` com MERGE_HEAD pendente), mas ficou decidido mantê-lo: a produção já rodava esse conteúdo (o deploy faz merge de origin/main NA branch), o trabalho é autocontido (zero migrations SQL, segredos via getenv), e desfazer recriaria a divergência fonte≠runtime. Confirmado pelo sponsor | Análise do diff 867cc151..e7b54fb7 |
 | EB-009 | 2026-08-10 | O modelo "produção acompanha branch de longa duração (`feat/pipedrive-modulo-completo`), não o main" vira questão formal do programa (questão aberta 16) — candidato a consolidação no M3 | Evidência EB-008 |
+| EB-010 | 2026-08-10 | **Bloqueio HTTP de `.ts/.tsx` fica atrelado ao build canônico (M5/M6)**, não ao M1: a sondagem M1b provou que `bootstrap-v2/` e `core/runtime/` importam fontes `.ts` por ESM em runtime. Bloquear agora quebraria o boot | Evidência m1b (P1) |
+| EB-011 | 2026-08-10 | **Todo smoke do programa passa a testar a ORIGEM diretamente** (`curl --resolve …:127.0.0.1`) e a purgar o Cloudflare após mudanças: o smoke da Onda 3 recebeu 200 de cache do CF e disparou rollback desnecessário. Purge fonteia `/root/.cloudflare.env` (segredo nunca impresso) | Recorrência conhecida de cache CF + smoke Onda 3 |
+| EB-012 | 2026-08-10 | `.patch` resíduo já quarentenado para `/backup` na Onda 3 (o move persistiu apesar do rollback do vhost — resultado desejado). Falta apenas a regra Nginx permanente + purge, na Onda 4 | Saída Onda 3 |
 
 ## Formato de entrega de cada lote (obrigatório — briefing §34)
 
