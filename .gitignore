@@ -58,6 +58,8 @@
 /scripts/*
 !/scripts/avatar/
 !/scripts/deploy/
+# scripts do programa Elevação Basal (docs/ELEVACAO-BASAL/)
+!/scripts/basal/
 !/scripts/koala-build.sh
 !/scripts/koala-smoke-all.sh
 !/scripts/koala-smoke-all.php
@@ -108,6 +110,8 @@ dist/
 /docs/*
 !/docs/AVATAR-STUDIO-5/
 !/docs/AVATAR-STUDIO-6/
+# docs do programa Elevação Basal (briefing Revisao_Dshowdash_01, 19 partes)
+!/docs/ELEVACAO-BASAL/
 
 # contexto versionado para sessões de IA (lote 221-230, decisão #45.6):
 # qualquer sessão futura se auto-abastece só de clonar
