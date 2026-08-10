@@ -1,7 +1,18 @@
 # Status do Projeto — Avatar Studio (no repo)
 
 > Fonte viva: docs do projeto Claude "Avatar Studio" (04-status-do-projeto).
-> Última atualização: **2026-08-10 — MARCO 1270: onda 1221–1270 completa no código** (decisões #124–#129; suíte 133/133). Em produção: 1220 (DEPLOY_1220_OK).
+> Última atualização: **2026-08-10 — MARCO 1290: ondas 1221–1270 e 1271–1290 completas no código** (decisões #124–#132; suíte 133/133). Em produção: 1220 (DEPLOY_1220_OK). **O bloco DEPLOY_1290_OK substitui o 1270 (não colado)**.
+
+## Onda 1271–1290 (fechada — decisões #130–#132, mapa no doc 28)
+
+- 1271–1280 goldens v2: 16 casos (4 novos — banner+reflow, wallpaper,
+  sombra §337 + luz §334, sobrepeça corpo no palco); 12 antigos
+  IDÊNTICOS (#131) · 1281–1290 auditoria v3 do mapa de lacunas (doc 05
+  REESCRITO: Trilho A esgotado; o que resta é Trilho B/C com o Jhony)
+  + fechamento (#132).
+- Aprendizados: garimpo é GREP-FIRST (#130 — o doc de lacunas é
+  fotografia, não fonte); rodada 10/133 = servidor 8901 morto (ambiente,
+  não regressão — o resumo VERMELHOS acusou o padrão na hora).
 
 ## Onda 1221–1270 (fechada — decisão #124, mapa no doc 26)
 

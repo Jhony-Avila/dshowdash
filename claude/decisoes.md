@@ -1040,6 +1040,16 @@
   IDÊNTICOS (byte-stability confirmada por script no commit); 16 casos
   no total.
 
+- **#132 (2026-08-10) — Auditoria v3 do mapa + fechamento da onda
+  1271–1290 (lote 1281–1290)**: doc 05 do projeto REESCRITO (v3,
+  grep-first): o Trilho A client-side está ESGOTADO — A1–A6 e as
+  frentes AS6 client cobertos pelas ondas 51–1290; o que resta de real
+  é Trilho B/C (arte, banco, chave IA, CI, decisões de produto — tudo
+  com o Jhony). Suíte 133/133 verdes (a rodada 10/133 anterior foi o
+  servidor 8901 morto — ambiente; o resumo VERMELHOS entregou o
+  diagnóstico em segundos). Entrega única DEPLOY_1290_OK (7 commits
+  sobre `4a208eb9`) SUBSTITUI o bloco 1270 não colado.
+
 ## Pendências do Jhony (herdadas — nunca autônomas)
 
 Validação visual 221–610 (roteiros de 1 min no doc 17 do projeto) · Chave
