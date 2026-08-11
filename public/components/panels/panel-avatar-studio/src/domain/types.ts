@@ -31,7 +31,14 @@ export type SlotCor = 'pele' | 'cabelo' | 'roupa' | 'destaque';
  * Slots ADITIVOS de acessórios no 2D (4.6 §20, decisão #41):
  * até 3 acessórios simultâneos — um por região. Cada item declara o seu.
  */
-export type SlotAcessorio = 'cabeca' | 'rosto' | 'pescoco';
+/** mega onda 1301+ (decisão #140, as6.acess_v2): slots FINOS aditivos —
+ *  extensão do vocabulário da decisão #41. Os 3 primeiros são os
+ *  legados (arte declara); os demais são posições semânticas novas.
+ *  A chave de camada `acessorio_<slot>` É o slot (nunca re-slota um
+ *  avatar salvo — byte-stability #141). */
+export type SlotAcessorio =
+  | 'cabeca' | 'rosto' | 'pescoco'
+  | 'olhos' | 'orelha' | 'costas' | 'flutuante' | 'companheiro';
 
 /** Chaves possíveis em AvatarConfig.camadas ('acessorio' legado migra no validarConfig). */
 export type CamadaId = Exclude<CategoriaId, 'base'> | `acessorio_${SlotAcessorio}`;

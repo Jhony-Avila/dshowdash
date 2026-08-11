@@ -65,6 +65,12 @@ const ORDEM_CAMADAS = [
   // campo ausente ⇒ fragmento vazio ⇒ SVG byte a byte o de sempre
   'roupa', 'roupa_sobre', 'emblema', 'boca', 'olhos', 'cabelo',
   'acessorio', 'acessorio_pescoco', 'acessorio_cabeca', 'acessorio_rosto',
+  // mega onda 1301+ (decisão #140, as6.acess_v2): slots FINOS aditivos
+  // logo após o bloco legado (a arte foi autorada p/ esta faixa de
+  // empilhamento); ausentes = SVG byte a byte o de sempre. Ordem entre
+  // eles: costas → olhos → orelha → flutuante → companheiro.
+  'acessorio_costas', 'acessorio_olhos', 'acessorio_orelha',
+  'acessorio_flutuante', 'acessorio_companheiro',
 ] as const;
 
 // ── megas 254–255 (§102/§118): TIPO CORPORAL e POSTURA ──────────────
@@ -154,10 +160,14 @@ export function renderAvatar(
 
   const corpoTodo = opcoes.enquadramento === 'corpo' && opcoes.palco;
 
-  // acessórios nos 3 slots aditivos (+ legado) — usado nos modos de palco
+  // acessórios nos slots aditivos (+ legado) — usado nos modos de palco
+  // (#140: slots finos após o bloco legado; ausentes = byte a byte)
   const acessorios =
     pintar(config.camadas.acessorio, 'acessorio') + pintar(config.camadas.acessorio_pescoco, 'acessorio_pescoco') +
-    pintar(config.camadas.acessorio_cabeca, 'acessorio_cabeca') + pintar(config.camadas.acessorio_rosto, 'acessorio_rosto');
+    pintar(config.camadas.acessorio_cabeca, 'acessorio_cabeca') + pintar(config.camadas.acessorio_rosto, 'acessorio_rosto') +
+    pintar(config.camadas.acessorio_costas, 'acessorio_costas') + pintar(config.camadas.acessorio_olhos, 'acessorio_olhos') +
+    pintar(config.camadas.acessorio_orelha, 'acessorio_orelha') + pintar(config.camadas.acessorio_flutuante, 'acessorio_flutuante') +
+    pintar(config.camadas.acessorio_companheiro, 'acessorio_companheiro');
 
   let conteudo: string;
   if (opcoes.palco) {

@@ -28,6 +28,7 @@ import { BOCAS } from '../engine/partes/bocas';
 import { ROUPAS } from '../engine/partes/roupas';
 import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
+import { slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2)
 import { FUNDOS } from '../engine/partes/fundos';
 import { MOLDURAS } from '../engine/partes/molduras';
 import { EFEITOS } from '../engine/partes/efeitos';
@@ -373,6 +374,18 @@ export function validarConfig(bruto: unknown): AvatarConfig {
     if (cat === 'acessorio') continue; // slots aditivos tratados abaixo
     colocar(cat, b.camadas?.[cat]);
   }
+  // mega onda 1301+ (decisão #140/#141, as6.acess_v2): slots FINOS —
+  // a CHAVE é o slot (nunca re-slota um avatar salvo; aceitação é
+  // INCONDICIONAL p/ forward-compat, a escrita é que fica atrás da flag)
+  for (const s of ['olhos', 'orelha', 'costas', 'flutuante', 'companheiro'] as const) {
+    const idFino = (b.camadas as Record<string, unknown> | undefined)?.[`acessorio_${s}`];
+    if (typeof idFino !== 'string') continue;
+    const item = POR_ID.get(idFino);
+    if (item?.categoria === 'acessorio' && !equipados.includes(idFino)
+      && slotFinoDoAsset(idFino, item.slot ?? 'cabeca') === s) {
+      colocar(`acessorio_${s}`, idFino);
+    }
+  }
   // Acessórios (4.6 §20, decisão #41): 3 slots ADITIVOS — o item SEMPRE
   // pousa no slot que ele declara (chave de chegada é só transporte).
   // A chave legada 'acessorio' migra para o slot do item e nunca persiste.
@@ -383,7 +396,7 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   for (const id of candidatos) {
     if (typeof id !== 'string') continue;
     const item = POR_ID.get(id);
-    if (item?.categoria === 'acessorio') {
+    if (item?.categoria === 'acessorio' && !equipados.includes(id)) {
       colocar(`acessorio_${item.slot ?? 'cabeca'}`, id);
     }
   }
@@ -951,13 +964,15 @@ export function aleatorio(semente: number): AvatarConfig {
   };
   if (rnd() < 0.85) camadas.cabelo = sortearPorRaridade(rnd, sorteaveis('cabelo')).id;
   // acessórios por SLOT (decisão #41): 1º sorteio comum, 2º menos provável
+  // (#140, as6.acess_v2: o item pousa no slot FINO do registry — mais
+  // slots livres = combinações naturais; flag off = 3 slots de sempre)
   if (rnd() < 0.55) {
     const a = sortearPorRaridade(rnd, sorteaveis('acessorio'));
-    camadas[`acessorio_${a.slot ?? 'cabeca'}`] = a.id;
+    camadas[chaveAcessorioSorteio(a)] = a.id;
   }
   if (rnd() < 0.22) {
     const a = sortearPorRaridade(rnd, sorteaveis('acessorio'));
-    const chave = `acessorio_${a.slot ?? 'cabeca'}` as const;
+    const chave = chaveAcessorioSorteio(a);
     if (!camadas[chave]) camadas[chave] = a.id;
   }
   if (rnd() < 0.6) camadas.moldura = sortearPorRaridade(rnd, sorteaveis('moldura')).id;
@@ -997,6 +1012,15 @@ export interface OpcoesAleatorio {
 }
 
 const SLOTS_ACESSORIO_ALEATORIO = ['acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco'] as const;
+// #140 (as6.acess_v2): sorteio pousa no slot FINO do registry
+function chaveAcessorioSorteio(a: ParteDef): CamadaId {
+  const legado = a.slot ?? 'cabeca';
+  return `acessorio_${flag('as6.acess_v2') ? slotFinoDoAsset(a.id, legado) : legado}`;
+}
+const SLOTS_ACESSORIO_TODOS_ALEATORIO = [
+  'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco', 'acessorio_olhos',
+  'acessorio_orelha', 'acessorio_costas', 'acessorio_flutuante', 'acessorio_companheiro',
+] as const;
 
 /**
  * §90: aleatório que respeita o que o usuário PROTEGEU e mantém coerência.
@@ -1033,9 +1057,10 @@ export function aleatorioInteligente(atual: AvatarConfig, o: OpcoesAleatorio): A
         if (!baseSeguraParaBloqueados(novo)) novo.base = atual.base; // §90
       }
     } else if (o.categoria === 'acessorio') {
-      for (const s of SLOTS_ACESSORIO_ALEATORIO) if (!bloq.has(s)) delete novo.camadas[s];
+      const slotsLimpar = flag('as6.acess_v2') ? SLOTS_ACESSORIO_TODOS_ALEATORIO : SLOTS_ACESSORIO_ALEATORIO;
+      for (const s of slotsLimpar) if (!bloq.has(s)) delete novo.camadas[s];
       const a = sortearPorRaridade(rnd, sorteaveis('acessorio'));
-      const chave = `acessorio_${a.slot ?? 'cabeca'}` as const;
+      const chave = chaveAcessorioSorteio(a);
       if (!bloq.has(chave)) novo.camadas[chave] = a.id;
     } else if (!bloq.has(o.categoria)) {
       novo.camadas[o.categoria] = sortearPorRaridade(rnd, sorteaveis(o.categoria)).id;

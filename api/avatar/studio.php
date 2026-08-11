@@ -127,8 +127,13 @@ function avst_validar_config($bruto): array
     // acessorio_* : slots ADITIVOS (4.6 §20, decisão #41); 'acessorio'
     // legado segue aceito — o front canonicaliza para o slot do item
     // roupa_sobre: vestuário multi-peça (AS6 §3393, decisão #95 — v2)
+    // acessorio_{olhos,orelha,costas,flutuante,companheiro}: slots FINOS
+    // aditivos (mega onda 1301+, decisão #140, flag as6.acess_v2) —
+    // espelho da lista canônica do front (nucleo/contratos.ts)
     $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'roupa_sobre', 'acessorio',
-        'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco', 'fundo',
+        'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco',
+        'acessorio_olhos', 'acessorio_orelha', 'acessorio_costas',
+        'acessorio_flutuante', 'acessorio_companheiro', 'fundo',
         'moldura', 'efeito', 'aura', 'banner', 'emblema'];
     $camadas = [];
     foreach ($categorias as $cat) {

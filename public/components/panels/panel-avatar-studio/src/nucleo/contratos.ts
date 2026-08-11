@@ -25,6 +25,10 @@ export const SLOTS_EQUIPAMENTO = [
   // 2D em camadas ('roupa_sobre': multi-peça §3393 — decisão #95)
   'base', 'cabelo', 'olhos', 'boca', 'roupa', 'roupa_sobre',
   'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco',
+  // mega onda 1301+ (decisão #140, as6.acess_v2): slots FINOS aditivos —
+  // ausentes = serialização canônica idêntica (checksum §619 estável)
+  'acessorio_olhos', 'acessorio_orelha', 'acessorio_costas',
+  'acessorio_flutuante', 'acessorio_companheiro',
   'fundo', 'moldura', 'efeito', 'aura', 'banner', 'emblema', 'titulo',
   // 3D (decisão #41 — vocabulário fechado)
   'head', 'face', 'eyes', 'ears', 'neck', 'shoulders', 'back', 'waist',

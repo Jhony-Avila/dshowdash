@@ -121,6 +121,10 @@ const PADROES: Record<string, boolean> = {
   'as6.dock_fit': true,         // onda 1291 — dimensionamento CAUSAL do workspace (briefing UX do Jhony 2026-08-10): altura real disponível medida (nunca 100vh−150px fixo), dock com altura relativa ao corpo (cqh) e cards que PREENCHEM a faixa (nunca cortados), divisor redimensionável com teclado + persistência v2 validada; off = geometria do #112 byte a byte
   'as6.ctx_barra': true,        // onda 1291 — a dica de contexto §323–§325 sai da pill de anúncio (fundo escuro fixo) e vira BARRA contextual legível por tokens, com título/texto orientado à ação e dispensa persistida; off = anúncio de sempre byte a byte
   'as6.corpo_preview': true,    // onda 1294 (pedido visual do Jhony 2026-08-10) — nas categorias Roupa/Sobrepeça (e no preset manual "Corpo") o PREVIEW e as THUMBS dos cards usam o render de CORPO INTEIRO 240×400 do motor (goldens g09/g16); off = busto de sempre byte a byte
+  // ── mega onda 1301+ (briefings do Jhony 2026-08-11; decisões #140+) ──
+  'as6.acess_v2': true,         // lote 1301–1310 — ACESSÓRIOS multi-slot: slots finos aditivos (olhos/orelha/costas/flutuante/companheiro) + registry de subcategorias em dados + conflitos declarados; equipar usa o slot fino do registry; off = 3 slots da decisão #41 byte a byte
+  'as6.acess_hub': true,        // lote 1311–1330 — categoria-mãe: hub de subcategorias por região (contagens/equipados), breadcrumb, dock filtrada por subcategoria, equipados agrupado + resumo; off = grade única anterior byte a byte
+  'as6.nav_grupos': true,       // lote 1331–1340 — navegação em MACROGRUPOS (Personagem/Vestuário/Expressão/Ambiente/Identidade) mapeando conteúdo existente; off = lista plana anterior byte a byte
 };
 
 /**
@@ -156,6 +160,7 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.dock_mag': ['as6.dock_classico'],     // magnificação/momentum refinam a dock v3
   'as6.dock_fit': ['as6.dock_inferior'],     // o fit corrige a GEOMETRIA da dock inferior (#112)
   'as6.ctx_barra': ['as6.contexto'],         // a barra apresenta a dica do Context Engine §323–§325
+  'as6.acess_hub': ['as6.acess_v2'],         // o hub navega o registry de subcategorias (#140)
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';
