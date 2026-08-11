@@ -228,6 +228,9 @@ const slotsAcessorio = (r) => Object.fromEntries(
     await irPrincipal('cabeca-rosto', 'visao');
     const chips = await p.evaluate(() => [...document.querySelectorAll('[data-teste="dock-subcats"] .avst5-chip')].map((c) => c.textContent.trim()));
     ok(chips[0] === 'Todos' && chips.includes('Óculos'), `chips da dock errados: ${chips.join(',')}`);
+    // #147 (onda 1371): breadcrumb §16 com caminho completo
+    ok((await p.evaluate(() => document.querySelector('[data-teste="bc-grade"]')?.textContent))?.includes('Cabeça e Rosto ›'),
+      'breadcrumb §16 ausente ou sem caminho');
     const nomesVisao = await p.evaluate(() => [...document.querySelectorAll('.avst5-painel .avst-card .avst-card-nome')].map((n) => n.textContent.trim()));
     ok(nomesVisao.includes('Óculos de Grau') && !nomesVisao.includes('Boné Snapback'),
       `grade de Visão deveria conter só visão (veio ${nomesVisao.join(',')})`);
@@ -257,6 +260,16 @@ const slotsAcessorio = (r) => Object.fromEntries(
     await p.waitForTimeout(400);
     ok(await p.evaluate(() => [...document.querySelectorAll('button')].some((x) => x.textContent.trim() === 'Presets' && (x.getAttribute('aria-selected') === 'true' || x.className.includes('on')))),
       'ferramenta Presets não abriu a aba');
+    // chips por TEMA (P4/P5): Roupa filtra por tema com dados reais
+    await irPrincipal('vestuario', 'roupa');
+    const nTodos = await p.locator('.avst5-painel .avst-card').count();
+    await p.evaluate(() => { [...document.querySelectorAll('[data-teste="dock-temas"] .avst5-chip')].find((c) => c.textContent.trim() === 'Casual')?.click(); });
+    await p.waitForTimeout(500);
+    const nTema = await p.locator('.avst5-painel .avst-card').count();
+    ok(nTema > 0 && nTema < nTodos, `chip de tema não filtrou (${nTema}/${nTodos})`);
+    // Expressão e Movimento publicada honesta (Em breve, desabilitada)
+    ok(await p.evaluate(() => document.querySelector('[data-teste="tax-cab-expressao"]')?.disabled === true),
+      'Expressão e Movimento deveria estar Em breve');
     await p.screenshot({ path: `${SAIDA}/acessorios-v2-taxv2.png` });
     ok(erros.length === 0, `erros de página (tax v2): ${erros.join(' | ')}`);
   } catch (e) { falhas.push(`exceção (tax v2): ${e.message}`); }

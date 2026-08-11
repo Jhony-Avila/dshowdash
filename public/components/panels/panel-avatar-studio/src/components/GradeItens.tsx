@@ -157,7 +157,7 @@ function idsEquipados(config: AvatarConfig, categoria: CategoriaId): string[] {
 
 export type AbaCatalogo = 'todos' | 'equipados' | 'favoritos' | 'novos' | 'bloqueados';
 
-export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever, filtroSlot = 'todos', aoDetalhes, filtroSubcategoria, filtroConjunto }: {
+export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever, filtroSlot = 'todos', aoDetalhes, filtroSubcategoria, filtroConjunto, filtroTema, caminho }: {
   config: AvatarConfig;
   categoria: CategoriaId;
   /** ids liberados por conquistas/eventos (vem do /api/avatar/vida.php) */
@@ -177,6 +177,10 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   /** #146 (as6.tax_v2): conjunto da categoria principal — limita a
    *  grade mesmo sem subcategoria única escolhida */
   filtroConjunto?: string[] | null;
+  /** #147: chip de TEMA (subcategorias genéricas por dados reais) */
+  filtroTema?: string | null;
+  /** #147: breadcrumb §16 — vive NA LINHA do título (zero altura extra) */
+  caminho?: string | null;
 }) {
   const meta = CATEGORIAS.find((c) => c.id === categoria);
   const [busca, setBusca] = useState('');
@@ -337,6 +341,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         || subcategoriaDoAsset(i.id)?.id === filtroSubcategoria)
       .filter((i) => categoria !== 'acessorio' || !filtroConjunto
         || filtroConjunto.includes(subcategoriaDoAsset(i.id)?.id ?? ''))
+      .filter((i) => !filtroTema || i.tema === filtroTema)
       // megas 351-353 (§157.1-.5, flag as5.efeitos_v2): filtro FUNCIONAL
       .filter((i) => categoria !== 'efeito' || filtroFx === 'todos'
         || categoriaFuncional(i.id) === filtroFx)
@@ -364,7 +369,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot, filtroFx, filtroSubcategoria, filtroConjunto]);
+  }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot, filtroFx, filtroSubcategoria, filtroConjunto, filtroTema]);
 
   // §56.2: contagem por raridade no CONTEXTO atual (mostrada no popover)
   const contagem = useMemo(() => {
@@ -476,6 +481,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         <div>
           <h2>{meta?.nome ?? categoria}</h2>
           <p>
+            {caminho && <span data-teste="bc-grade">{caminho} · </span>}
             {itens.length} {itens.length === 1 ? 'item' : 'itens'}
             {nomesEquipados ? <> · equipado: <strong>{nomesEquipados}</strong></> : ' · nada equipado'}
             {categoria === 'acessorio' && (flag('as6.acess_v2')

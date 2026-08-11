@@ -26,6 +26,11 @@ export interface CategoriaPrincipal {
   /** para principais de acessório: subcategorias (workspace/acessorios
    *  .ts) que a compõem — viram chips na dock; ausente = grade cheia */
   subcats?: string[];
+  /** P4/P5/P7/P8 do mega programa: subcategorias GENÉRICAS por TEMA —
+   *  chips na dock derivados do campo `tema` que os assets JÁ têm
+   *  (dados reais, zero reclassificação manual); subcategorias nomeadas
+   *  finas (Camisetas, Botas…) entram quando a arte for subdividida */
+  chipsTema?: boolean;
   estado: EstadoTax;
 }
 
@@ -47,7 +52,7 @@ export const TAXONOMIA: CategoriaMae[] = [
     id: 'personagem', nome: 'Personagem', estado: 'ativa',
     principais: [
       { id: 'rosto', nome: 'Rosto', categoria: 'base', estado: 'ativa' },
-      { id: 'cabelo', nome: 'Cabelo', categoria: 'cabelo', estado: 'ativa' },
+      { id: 'cabelo', nome: 'Cabelo', categoria: 'cabelo', chipsTema: true, estado: 'ativa' },
       { id: 'olhos', nome: 'Olhos', categoria: 'olhos', estado: 'ativa' },
       { id: 'boca', nome: 'Boca', categoria: 'boca', estado: 'ativa' },
     ],
@@ -55,7 +60,7 @@ export const TAXONOMIA: CategoriaMae[] = [
   {
     id: 'vestuario', nome: 'Vestuário', estado: 'ativa',
     principais: [
-      { id: 'roupa', nome: 'Roupa', categoria: 'roupa', estado: 'ativa' },
+      { id: 'roupa', nome: 'Roupa', categoria: 'roupa', chipsTema: true, estado: 'ativa' },
       { id: 'sobrepeca', nome: 'Sobrepeça', categoria: 'roupa_sobre', estado: 'ativa' },
       { id: 'calcados', nome: 'Calçados', categoria: 'roupa', estado: 'em_breve' },
     ],
@@ -114,22 +119,31 @@ export const TAXONOMIA: CategoriaMae[] = [
       { id: 'efeitos', nome: 'Efeitos', categoria: 'efeito', estado: 'ativa' },
       // rótulo "Aura" preservado (conceito consagrado na UI/testes); o
       // briefing agrupa como energia corporal — é a MESMA coisa aqui
-      { id: 'energia', nome: 'Aura', categoria: 'aura', estado: 'ativa' },
+      { id: 'energia', nome: 'Aura', categoria: 'aura', chipsTema: true, estado: 'ativa' },
       { id: 'runas', nome: 'Runas e círculos', categoria: 'efeito', estado: 'em_breve' },
     ],
   },
   {
+    // P6 do mega programa: emotes/personalidades/posturas/idles vivem
+    // no palco/paleta (studio) e ainda não são destino de grade — a mãe
+    // nasce Em breve (§16: selo honesto) e ganha principais quando a
+    // arquitetura de animação (contrato próprio, §8 do briefing mestre)
+    // virar navegável
+    id: 'expressao', nome: 'Expressão e Movimento', estado: 'em_breve',
+    principais: [],
+  },
+  {
     id: 'ambiente', nome: 'Ambiente e Cenário', estado: 'ativa',
     principais: [
-      { id: 'fundo', nome: 'Fundo', categoria: 'fundo', estado: 'ativa' },
+      { id: 'fundo', nome: 'Fundo', categoria: 'fundo', chipsTema: true, estado: 'ativa' },
     ],
   },
   {
     id: 'identidade', nome: 'Identidade Visual', estado: 'ativa',
     principais: [
-      { id: 'moldura', nome: 'Moldura', categoria: 'moldura', estado: 'ativa' },
-      { id: 'banner', nome: 'Banner', categoria: 'banner', estado: 'ativa' },
-      { id: 'emblema', nome: 'Emblema', categoria: 'emblema', estado: 'ativa' },
+      { id: 'moldura', nome: 'Moldura', categoria: 'moldura', chipsTema: true, estado: 'ativa' },
+      { id: 'banner', nome: 'Banner', categoria: 'banner', chipsTema: true, estado: 'ativa' },
+      { id: 'emblema', nome: 'Emblema', categoria: 'emblema', chipsTema: true, estado: 'ativa' },
     ],
   },
 ];
@@ -156,6 +170,14 @@ export function principalPorId(id: string): { mae: CategoriaMae; principal: Cate
 }
 
 /** principal "casa" da categoria técnica (fallback p/ estado inicial) */
+/** Caminho legível "Mãe › Principal[ › Sub]" (breadcrumb §16 / busca §17) */
+export function caminhoDaPrincipal(id: string, sub?: string): string {
+  const alvo = POR_ID.get(id);
+  if (!alvo) return '';
+  const base = `${alvo.mae.nome} › ${alvo.principal.nome}`;
+  return sub ? `${base} › ${sub}` : base;
+}
+
 export function principalDaCategoria(categoria: CategoriaId): CategoriaPrincipal | undefined {
   for (const mae of TAXONOMIA) {
     const p = mae.principais.find((x) => x.categoria === categoria && x.estado === 'ativa');

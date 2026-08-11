@@ -24,6 +24,7 @@ import { HistoricoSessao } from '../shell/HistoricoSessao';
 import { DockAssets } from './DockAssets'; // decisão #112: MESMO trilho do clássico
 import { ResumoAcessorios } from './HubAcessorios'; // mega onda 1301+ (#142/#144, as6.acess_hub)
 import { SUBCATEGORIAS_ACESSORIO } from './acessorios'; // #146 (as6.tax_v2)
+import { itensDe } from '../services/AvatarCatalog'; // #147: chips por tema
 import { comItem } from '../components/GradeItens';
 import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
@@ -102,6 +103,9 @@ export interface PropsPainelCatalogo {
    *  PRINCIPAL ativa — vira chips na dock e limita a grade */
   conjuntoSubcats?: string[] | null;
   aoEscolherSub?: (id: string | null) => void;
+  /** #147 (onda 1371): principal com chips por TEMA + breadcrumb §16 */
+  chipsTema?: boolean;
+  caminhoTax?: string | null;
 }
 
 export function PainelCatalogo(props: PropsPainelCatalogo) {
@@ -109,7 +113,8 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     categoria, setCategoria, filtroSlot, setFiltroSlot, configVisivel, configDraft,
     aoEscolher, aoPrever, resumoAcessorios, store, aplicarComando, bloqueios,
     setBloqueios, aoMudarFavs, historico, desbloqueados, setDetalheId,
-    dockInferior = false, subAcess = null, conjuntoSubcats = null, aoEscolherSub } = props;
+    dockInferior = false, subAcess = null, conjuntoSubcats = null, aoEscolherSub,
+    chipsTema = false, caminhoTax = null } = props;
   const [propriedades, setPropriedades] = useState(false);
   // #142/#144 (as6.acess_hub): as subcategorias moram na ÁRVORE da
   // sidebar (estado no shell); aqui fica só o resumo/limpar e o filtro
@@ -422,10 +427,35 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
         <div className="avst5-painel-scroll" ref={refPainel} data-troca={trocando ? '' : undefined}
           onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
           {!dockInferior && blocoPropriedades}
+          {/* #147 (P4/P5/P7/P8): breadcrumb §16 + chips por TEMA — dados
+              reais do catálogo; subcategorias nomeadas finas chegam com
+              a arte (Em breve no registry) */}
+          {aba !== 'equipados' && flag('as6.tax_v2') && chipsTema && aoEscolherSub
+            && estadoDock !== 'compacta' && (() => {
+            const temas = [...new Set(itensDe(categoria).map((i) => i.tema).filter(Boolean))];
+            if (temas.length < 2) return null;
+            return (
+              <div className="avst6-dockchips" role="radiogroup" data-teste="dock-temas"
+                aria-label={t('Subcategorias')}>
+                <button type="button" role="radio" aria-checked={subAcess === null}
+                  className={`avst5-chip${subAcess === null ? ' avst5-chip-on' : ''}`}
+                  data-teste="dock-tema-todos"
+                  onClick={() => aoEscolherSub(null)}>{t('Todos')}</button>
+                {temas.map((tema) => (
+                  <button key={tema} type="button" role="radio" aria-checked={subAcess === tema}
+                    className={`avst5-chip${subAcess === tema ? ' avst5-chip-on' : ''}`}
+                    data-teste={`dock-tema-${tema}`}
+                    onClick={() => aoEscolherSub(subAcess === tema ? null : tema)}>
+                    {tema.charAt(0).toUpperCase() + tema.slice(1)}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
           {aba !== 'equipados' && categoria === 'acessorio' && (hubAcess ? (<>
             {/* #146 (as6.tax_v2, briefing corretivo §4): SUBCATEGORIAS
                NA DOCK — chips da categoria principal ativa */}
-            {taxV2 && conjuntoSubcats && conjuntoSubcats.length > 1 && aoEscolherSub && (
+            {taxV2 && conjuntoSubcats && conjuntoSubcats.length > 1 && aoEscolherSub && estadoDock !== 'compacta' && (
               <div className="avst6-dockchips" role="radiogroup" data-teste="dock-subcats"
                 aria-label={t('Subcategorias')}>
                 <button type="button" role="radio" aria-checked={subAcess === null}
@@ -501,13 +531,13 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
                  scroll vertical (o trilho desativa o pan). */
               <div className="avst-trilho avst5-trilho-dock" data-teste="dock-inferior" data-dock-v3="">
                 <DockAssets ativa={estadoDock !== 'expandida'}>
-                  <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null} filtroConjunto={taxV2 ? conjuntoSubcats : null}
+                  <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null} filtroConjunto={taxV2 ? conjuntoSubcats : null} filtroTema={chipsTema ? subAcess : null} caminho={caminhoTax}
                     desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                     aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
                 </DockAssets>
               </div>
             ) : (
-              <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null} filtroConjunto={taxV2 ? conjuntoSubcats : null}
+              <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null} filtroConjunto={taxV2 ? conjuntoSubcats : null} filtroTema={chipsTema ? subAcess : null} caminho={caminhoTax}
                 desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                 aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
             )}

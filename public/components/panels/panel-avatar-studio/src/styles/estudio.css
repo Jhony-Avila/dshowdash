@@ -3368,6 +3368,12 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst6-tax-ferr { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--avst-borda, var(--as6-superficie-4)); }
 .avst6-tax-ferr .avst6-navg-cab { display: flex; align-items: center; gap: 5px; cursor: default; }
 .avst6-dockchips {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px;
-  padding: 2px 0 6px;
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 6px;
+  padding: 2px 0 6px; overflow-x: auto; scrollbar-width: none;
+}
+.avst6-dockchips::-webkit-scrollbar { display: none; }
+.avst6-dockchips .avst5-chip { flex: none; }
+.avst6-bc-grade {
+  display: block; padding: 2px 0 4px;
+  color: var(--avst-texto-2, var(--as6-texto-suave)); font-size: 10.5px;
 }

@@ -31,7 +31,8 @@ import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { useHistoricoSessao } from './HistoricoSessao';
 import { BarraTopo } from '../workspace/BarraTopo';
 import { TrilhoCategorias } from '../workspace/TrilhoCategorias';
-import { principalDaCategoria, principalPorId } from '../workspace/taxonomia'; // #145/#146 (as6.tax_v2)
+import { FERRAMENTAS_NAV, TAXONOMIA, caminhoDaPrincipal, principalDaCategoria, principalPorId } from '../workspace/taxonomia'; // #145-#147 (as6.tax_v2)
+import { SUBCATEGORIAS_ACESSORIO } from '../workspace/acessorios';
 import { PainelCatalogo } from '../workspace/PainelCatalogo';
 import { ClimaOverlay } from '../workspace/ClimaOverlay';
 import { ComposicaoPalco } from '../workspace/ComposicaoPalco';
@@ -232,6 +233,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const conjuntoSubcats = flag('as6.tax_v2')
     ? principalPorId(principalAtiva)?.principal.subcats ?? null
     : null;
+  // #147: breadcrumb §16 — caminho completo Mãe › Principal › Sub
+  const principalMeta = flag('as6.tax_v2') ? principalPorId(principalAtiva)?.principal : undefined;
+  const subNome = subAcess
+    ? (principalMeta?.subcats
+      ? SUBCATEGORIAS_ACESSORIO.find((s) => s.id === subAcess)?.nome
+      : subAcess.charAt(0).toUpperCase() + subAcess.slice(1))
+    : undefined;
+  const caminhoTax = principalMeta ? caminhoDaPrincipal(principalAtiva, subNome) : null;
   // categoria trocada por OUTRO caminho (paleta, Equipados, DockAssets):
   // re-sincroniza a principal para a "casa" da categoria técnica
   useEffect(() => {
@@ -1453,6 +1462,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             aoEscolher={aoEscolher} aoPrever={aoPrever} resumoAcessorios={resumoAcessorios}
             subAcess={subAcess} /* #144: árvore na sidebar filtra a grade */
             conjuntoSubcats={conjuntoSubcats} aoEscolherSub={setSubAcess} /* #146 */
+            chipsTema={!!principalMeta?.chipsTema} caminhoTax={caminhoTax} /* #147 */
             store={store} aplicarComando={aplicarComando}
             bloqueios={bloqueios} setBloqueios={setBloqueios}
             aoMudarFavs={() => setTicFavs((t) => t + 1)}
@@ -1509,6 +1519,27 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               { id: 'foco', rotulo: 'Alternar modo Foco', executar: () => setModo((m) => (m === 'foco' ? 'edicao' : 'foco')) },
               { id: 'studio', rotulo: 'Alternar modo Studio', executar: () => setModo((m) => (m === 'studio' ? 'edicao' : 'studio')) },
               { id: 'presets', rotulo: 'Abrir meus Presets', executar: () => setAba('presets') },
+              // #147 (busca global §17): taxonomia navegável com CAMINHO
+              ...(flag('as6.tax_v2') ? TAXONOMIA.flatMap((mae) => mae.estado !== 'ativa' ? [] : mae.principais
+                .filter((pp) => pp.estado === 'ativa')
+                .flatMap((pp) => [
+                  { id: `tax-${pp.id}`, rotulo: `${mae.nome} › ${pp.nome}`, executar: () => escolherPrincipal(pp.id) },
+                  ...(pp.subcats ?? []).flatMap((sc) => {
+                    const sub = SUBCATEGORIAS_ACESSORIO.find((s) => s.id === sc);
+                    return sub && sub.estado === 'ativa'
+                      ? [{ id: `tax-${pp.id}-${sc}`, rotulo: `${mae.nome} › ${pp.nome} › ${sub.nome}`, executar: () => { escolherPrincipal(pp.id); setSubAcess(sc); } }]
+                      : [];
+                  }),
+                ])) : []),
+              ...(flag('as6.tax_v2') ? FERRAMENTAS_NAV.map((f) => ({
+                id: `tax-f-${f.id}`, rotulo: `Ferramenta: ${f.nome}`, executar: () => {
+                  if (f.id === 'estudio3d') setPalco3d((v) => !v);
+                  else if (f.id === 'presets') setAba('presets');
+                  else if (f.id === 'historico') setAba('equipados');
+                  else if (f.id === 'missoes') setMissoes(true);
+                  else if (f.id === 'evolucao') setEvolucao(true);
+                },
+              })) : []),
               { id: 'equipados', rotulo: 'Abrir Equipados', executar: () => setAba('equipados') },
               // mega 35: o 3D e a folha de atalhos entram na paleta §566
               ...(flagPalco3d ? [{

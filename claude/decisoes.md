@@ -1280,3 +1280,21 @@ com RPO/RTO · headers CSP no nginx.
   Especiais. Correções §12: scrollbar fina, contadores tabulares, selo
   "Em breve". Camadas de rollback: tax_v2 off → #143+#144; acess_hub
   off → chips §68.3; acess_v2 off → 3 slots #41.
+
+- **#147 (2026-08-11) — Mega programa em uma onda (1371): as 10 partes
+  no limite do executável client-side**: (P1) contrato de preservação
+  versionado no repo (docs/AVATAR-STUDIO-6/taxonomia-v2.md) com
+  inventário e mapa; (P2) breadcrumb §16 na grade (Mãe › Principal ›
+  Sub) + busca global §17 na paleta Ctrl+K com caminho completo e
+  ferramentas rotuladas "Ferramenta:"; (P3) registry ganha chipsTema e
+  caminhoDaPrincipal; (P4/P5/P7/P8) subcategorias GENÉRICAS por TEMA —
+  chips derivados do campo `tema` que os assets já têm (dados reais,
+  zero reclassificação manual; Cabelo/Roupa/Fundo/Moldura/Banner/
+  Emblema/Aura), com as subcategorias nomeadas finas (Camisetas, Botas,
+  corpo modular…) aguardando ARTE em em_breve; (P6) mãe "Expressão e
+  Movimento" publicada Em breve (emotes/personalidades seguem no
+  palco/paleta; animação = contrato próprio, nunca o renderer de
+  roupas); (P9) preservação comprovada pela suíte; (P10) testes novos
+  na seção E + rollout por flag. O que NÃO é client-side fica
+  registrado como dependência: arte nova (Partes 4–8 finas) e CMS
+  (RUNBOOK-BANCO) para hidratar o registry do banco.
