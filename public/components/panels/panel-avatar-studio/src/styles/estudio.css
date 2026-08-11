@@ -3265,3 +3265,7 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst-card-thumb[data-corpo] { display: flex; align-items: center; justify-content: center; }
 .avst-card-thumb[data-corpo] .avst-svg { height: 100%; width: auto; display: flex; justify-content: center; }
 .avst-card-thumb[data-corpo] svg { width: auto; height: 100%; max-width: none; }
+
+/* onda 1295 (#138, briefing §26): seta no LIMITE fica visível e
+   desabilitada (só na dock do shell novo — o JSX gateia) */
+.avst6-dock-seta:disabled { opacity: .35; cursor: default; pointer-events: none; }

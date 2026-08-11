@@ -1158,3 +1158,24 @@ com RPO/RTO · headers CSP no nginx.
   literalmente verdade. Byte-stability: apresentação pura — o SVG salvo
   nunca muda; off = busto byte a byte (teste corpo-preview.mjs cobre ON
   em 4 categorias/3 presets e OFF byte a byte; no runner).
+
+- **#138 (2026-08-10) — Garimpo do briefing UX + i18n (onda 1295)**:
+  varredura das pendências restantes do briefing UX de 2026-08-10 que
+  não dependem do Jhony. (a) i18n EN das strings das ondas 1291–1294:
+  barra contextual (13 títulos + 13 textos), divisor da dock, câmera
+  (Auto/Rosto/Busto/Corpo agora com t()), card "Nenhum" — ~30 entradas
+  novas no dicionário (§296, precedente #126). (b) Briefing §26: na
+  dock do shell novo as SETAS do carrossel ficam sempre presentes e
+  DESABILITAM no limite (opacity .35) — affordance estável, sem pop;
+  trilho clássico byte a byte (gate: prop `ativa` explícita +
+  as6.dock_fit). (c) Briefing §25: card "Nenhum" ganha tooltip
+  ("Remover o item desta categoria"). (d) Briefing §38 auditado: os
+  estados vazios JÁ existiam (vazio com ação "limpar filtros", "você
+  quis dizer", mensagens por contexto) — nada a fazer. (e) Parte 8 do
+  AS6 verificada: o arquivo docs/AVATAR_STUDIO_6.md tem 44.303 linhas e
+  termina COMPLETO na Parte 18; o corte é só o FINAL do §645 (linha
+  10568, "…tornar ileg") até o fim da Parte 8 — reexportar apenas esse
+  trecho. (f) Webhook #47: endpoint de produção VIVO com secret
+  presente (403 'assinatura' p/ requisição não assinada, verificado por
+  fora); defeito está no lado GitHub (secret divergente/desativado) ou
+  no consumo da fila — bloco de diagnóstico entregue ao Jhony.

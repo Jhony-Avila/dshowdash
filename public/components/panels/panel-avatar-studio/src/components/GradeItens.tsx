@@ -576,6 +576,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         {meta && !meta.obrigatoria && !filtrosAtivos && (
           <button type="button" role="option" aria-selected={equipados.size === 0}
             className={`avst-card avst-card-nenhum ${equipados.size === 0 ? 'avst-card-ativo' : ''}`}
+            title={t('Remover o item desta categoria')} /* onda 1295 (#138, briefing §25) */
             onClick={() => aoEscolher(comItem(config, categoria, null))}>
             <span className="avst-card-vazio"><Ban size={26} aria-hidden /></span>
             <span className="avst-card-nome">Nenhum</span>

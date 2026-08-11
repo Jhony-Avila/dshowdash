@@ -1157,7 +1157,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               <div className="avst6-cam" role="group" aria-label="Câmera (§52)" data-teste="cam6-chips">
                 {([['auto', 'Auto'], ['rosto', 'Rosto'], ['busto', 'Busto'], ['corpo', 'Corpo']] as const).map(([id, nome]) => (
                   <button key={id} type="button" className="avst-ft-chip" aria-pressed={cam6 === id}
-                    data-teste={`cam6-${id}`} onClick={() => escolherCam6(id)}>{nome}</button>
+                    data-teste={`cam6-${id}`} onClick={() => escolherCam6(id)}>{t(nome)}</button>
                 ))}
               </div>
             )}

@@ -209,15 +209,21 @@ export function DockAssets({ children, ativa }: { children: ReactNode; ativa?: b
         arrasto.current = null;
         if (mag) magnificar(null); // §105: sair = tudo volta ao natural
       }}>
-      {pontas.esq && (
+      {/* onda 1295 (#138, briefing §26): na DOCK do shell novo (ativa
+          explícito + as6.dock_fit) as setas ficam SEMPRE presentes e
+          DESABILITAM no limite — affordance estável, sem "pop" ao rolar.
+          No trilho clássico, comportamento anterior byte a byte. */}
+      {(ativa !== undefined && flag('as6.dock_fit') ? true : pontas.esq) && (
         <button type="button" className="avst6-dock-seta avst6-dock-seta-esq"
           aria-label="Assets anteriores" data-teste="dock-seta-esq"
+          disabled={ativa !== undefined && flag('as6.dock_fit') && !pontas.esq}
           onClick={() => pular(-1)}><ChevronLeft size={18} aria-hidden /></button>
       )}
       {children}
-      {pontas.dir && (
+      {(ativa !== undefined && flag('as6.dock_fit') ? true : pontas.dir) && (
         <button type="button" className="avst6-dock-seta avst6-dock-seta-dir"
           aria-label="Mais assets" data-teste="dock-seta-dir"
+          disabled={ativa !== undefined && flag('as6.dock_fit') && !pontas.dir}
           onClick={() => pular(1)}><ChevronRight size={18} aria-hidden /></button>
       )}
     </div>
