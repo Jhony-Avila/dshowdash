@@ -1251,3 +1251,32 @@ com RPO/RTO · headers CSP no nginx.
   não mostra a árvore — a grade fica em "Todos" e o usuário alarga a
   nav. Mesma flag as6.acess_hub (é a forma do hub, não outra feature);
   off = chips §68.3 byte a byte.
+
+- **#145 (2026-08-11) — Mega programa de expansão da taxonomia:
+  resposta §23 + estratégia (briefing mestre de 10 partes)**: auditoria
+  completa registrada (docs claude/32/33 do projeto): 304 assets
+  client-side, 49 categorias/398 assets no banco, ferramentas do modo
+  clássico e do shell inventariadas. Estratégia central: taxonomia é
+  CAMADA DE METADADOS sobre os assets — engine/partes intocado, IDs
+  imutáveis, record `camadas` e serialização §619 intocados; registry
+  em DADOS (molde comprovado do workspace/acessorios.ts); categorias
+  sem arte nascem Em breve/ocultas; rollout por flag com rollback.
+
+- **#146 (2026-08-11) — Taxonomia v2: várias categorias-mãe, acordeão
+  na sidebar, subcategorias na DOCK (briefing corretivo — onda 1361+,
+  flag as6.tax_v2, dependente de acess_hub)**: substitui a árvore única
+  de Acessórios (#144) conforme correção explícita do Jhony. Registry
+  novo (workspace/taxonomia.ts): 10 categorias-mãe (Personagem,
+  Vestuário, Cabeça e Rosto, Joias e Adornos, Equipamentos [Em breve],
+  Costas e Mobilidade, Companheiros, Elementos Especiais, Ambiente e
+  Cenário, Identidade Visual) + seção Ferramentas e gestão (só handlers
+  EXISTENTES do shell). Principais mapeiam {categoria técnica +
+  conjunto de subcategorias}; subcategorias viram CHIPS na dock; grade
+  limitada ao conjunto; multi-slot/conflitos/modal §69.1 intocados
+  (accessory segue tipo técnico — §9 do briefing). ace_coroa migra de
+  navegação p/ Adornos (§8; slot intacto). Acordeão: uma mãe aberta,
+  principais de mãe fechada ficam hidden no DOM (paleta/atalhos/testes
+  seguem funcionando). Rótulo "Aura" preservado dentro de Elementos
+  Especiais. Correções §12: scrollbar fina, contadores tabulares, selo
+  "Em breve". Camadas de rollback: tax_v2 off → #143+#144; acess_hub
+  off → chips §68.3; acess_v2 off → 3 slots #41.

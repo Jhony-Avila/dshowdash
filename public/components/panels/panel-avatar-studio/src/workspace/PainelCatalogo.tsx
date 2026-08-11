@@ -23,6 +23,7 @@ import { PresetsShell } from '../shell/PresetsShell';
 import { HistoricoSessao } from '../shell/HistoricoSessao';
 import { DockAssets } from './DockAssets'; // decisão #112: MESMO trilho do clássico
 import { ResumoAcessorios } from './HubAcessorios'; // mega onda 1301+ (#142/#144, as6.acess_hub)
+import { SUBCATEGORIAS_ACESSORIO } from './acessorios'; // #146 (as6.tax_v2)
 import { comItem } from '../components/GradeItens';
 import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
@@ -97,6 +98,10 @@ export interface PropsPainelCatalogo {
   /** #144 (as6.acess_hub): subcategoria ativa da árvore da SIDEBAR —
    *  o estado mora no shell; aqui só filtra a grade */
   subAcess?: string | null;
+  /** #146 (as6.tax_v2): conjunto de subcategorias da categoria
+   *  PRINCIPAL ativa — vira chips na dock e limita a grade */
+  conjuntoSubcats?: string[] | null;
+  aoEscolherSub?: (id: string | null) => void;
 }
 
 export function PainelCatalogo(props: PropsPainelCatalogo) {
@@ -104,11 +109,13 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     categoria, setCategoria, filtroSlot, setFiltroSlot, configVisivel, configDraft,
     aoEscolher, aoPrever, resumoAcessorios, store, aplicarComando, bloqueios,
     setBloqueios, aoMudarFavs, historico, desbloqueados, setDetalheId,
-    dockInferior = false, subAcess = null } = props;
+    dockInferior = false, subAcess = null, conjuntoSubcats = null, aoEscolherSub } = props;
   const [propriedades, setPropriedades] = useState(false);
   // #142/#144 (as6.acess_hub): as subcategorias moram na ÁRVORE da
   // sidebar (estado no shell); aqui fica só o resumo/limpar e o filtro
   const hubAcess = flag('as6.acess_hub') && categoria === 'acessorio';
+  // #146 (as6.tax_v2): a principal ativa limita a grade ao seu conjunto
+  const taxV2 = flag('as6.tax_v2') && categoria === 'acessorio' && !!conjuntoSubcats;
   // lote 1231-1240 (#126, a11y §297): na DOCK o drawer flutuante de
   // propriedades fecha no Escape (paridade com os demais flutuantes)
   useEffect(() => {
@@ -415,12 +422,36 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
         <div className="avst5-painel-scroll" ref={refPainel} data-troca={trocando ? '' : undefined}
           onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
           {!dockInferior && blocoPropriedades}
-          {aba !== 'equipados' && categoria === 'acessorio' && (hubAcess ? (
-            /* #142/#144 (as6.acess_hub): as subcategorias viraram ÁRVORE
-               na sidebar (feedback visual do Jhony) — aqui fica só o
-               resumo §21 + "Limpar tudo" §22; off = chips de sempre */
+          {aba !== 'equipados' && categoria === 'acessorio' && (hubAcess ? (<>
+            {/* #146 (as6.tax_v2, briefing corretivo §4): SUBCATEGORIAS
+               NA DOCK — chips da categoria principal ativa */}
+            {taxV2 && conjuntoSubcats && conjuntoSubcats.length > 1 && aoEscolherSub && (
+              <div className="avst6-dockchips" role="radiogroup" data-teste="dock-subcats"
+                aria-label={t('Subcategorias')}>
+                <button type="button" role="radio" aria-checked={subAcess === null}
+                  className={`avst5-chip${subAcess === null ? ' avst5-chip-on' : ''}`}
+                  data-teste="dock-sub-todos"
+                  onClick={() => aoEscolherSub(null)}>{t('Todos')}</button>
+                {conjuntoSubcats.map((id) => {
+                  const sub = SUBCATEGORIAS_ACESSORIO.find((s) => s.id === id);
+                  if (!sub || sub.estado === 'oculta') return null;
+                  const prep = sub.estado === 'em_preparacao';
+                  return (
+                    <button key={id} type="button" role="radio" aria-checked={subAcess === id}
+                      className={`avst5-chip${subAcess === id ? ' avst5-chip-on' : ''}`}
+                      data-teste={`dock-sub-${id}`} disabled={prep}
+                      title={prep ? t('Em preparação — novos assets em breve') : sub.nome}
+                      onClick={() => aoEscolherSub(subAcess === id ? null : id)}>
+                      {t(sub.nome)}{prep && <small aria-hidden>…</small>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {/* #142/#144: resumo §21 + "Limpar tudo" §22 */}
             <ResumoAcessorios config={configDraft}
               aoLimparTudo={() => aoEscolher(comItem(paraLegado2d(store.estadoDraft), 'acessorio', null))} />
+          </>
           ) : (<>
             {/* §68.2/§68.3: resumo + navegação por slot */}
             <div className="avst5-resumo-slots" data-teste="resumo-acessorios">
@@ -470,13 +501,13 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
                  scroll vertical (o trilho desativa o pan). */
               <div className="avst-trilho avst5-trilho-dock" data-teste="dock-inferior" data-dock-v3="">
                 <DockAssets ativa={estadoDock !== 'expandida'}>
-                  <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null}
+                  <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null} filtroConjunto={taxV2 ? conjuntoSubcats : null}
                     desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                     aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
                 </DockAssets>
               </div>
             ) : (
-              <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null}
+              <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null} filtroConjunto={taxV2 ? conjuntoSubcats : null}
                 desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                 aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
             )}

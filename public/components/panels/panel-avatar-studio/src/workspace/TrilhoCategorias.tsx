@@ -20,12 +20,14 @@
 // - colapso persistido por grupo em localStorage (não-essencial e
 //   reversível — limpar a chave volta ao padrão tudo aberto).
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { categoriasAtivas } from '../services/AvatarCatalog';
+import { ChevronDown, Wrench } from 'lucide-react';
+import { categoriasAtivas, itensDe } from '../services/AvatarCatalog';
 import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
 import { ArvoreAcessorios } from './HubAcessorios';
+import { FERRAMENTAS_NAV, TAXONOMIA } from './taxonomia';
+import { subcategoriaDoAsset } from './acessorios';
 
 export interface PropsTrilhoCategorias {
   categoria: CategoriaId;
@@ -37,6 +39,10 @@ export interface PropsTrilhoCategorias {
   config?: AvatarConfig;
   subAcess?: string | null;
   aoEscolherSub?: (id: string | null) => void;
+  /** #145/#146 (as6.tax_v2): taxonomia v2 — principal ativa + handlers */
+  principalAtiva?: string | null;
+  aoEscolherPrincipal?: (id: string) => void;
+  aoAbrirFerramenta?: (id: string) => void;
 }
 
 /** Macrogrupos (briefing de navegação 2026-08-11, §2): taxonomia por
@@ -57,10 +63,101 @@ function lerColapsados(): Set<string> {
   } catch { return new Set(); }
 }
 
-export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subAcess, aoEscolherSub }: PropsTrilhoCategorias) {
+const CHAVE_TAXV2 = 'dshow.avst6.taxv2.aberta.v1';
+
+/** nº de assets alcançáveis por uma principal (contador do briefing §4) */
+function contarAssets(categoria: CategoriaId, subcats?: string[]): number {
+  const itens = itensDe(categoria);
+  if (!subcats) return itens.length;
+  const alvo = new Set(subcats);
+  return itens.filter((i) => { const s = subcategoriaDoAsset(i.id); return s && alvo.has(s.id); }).length;
+}
+
+export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subAcess, aoEscolherSub, principalAtiva, aoEscolherPrincipal, aoAbrirFerramenta }: PropsTrilhoCategorias) {
   const grupos = flag('as6.nav_grupos');
+  const taxV2 = flag('as6.tax_v2') && !!aoEscolherPrincipal;
   const [colapsados, setColapsados] = useState<Set<string>>(lerColapsados);
+  // taxonomia v2: ACORDEÃO — uma mãe aberta por vez (briefing §6/§7);
+  // a seleção sobrevive ao recolhimento (o estado ativo mora no shell)
+  const [maeAberta, setMaeAberta] = useState<string>(() => {
+    try { return localStorage.getItem(CHAVE_TAXV2) ?? 'personagem'; } catch { return 'personagem'; }
+  });
   const ativas = categoriasAtivas();
+
+  if (taxV2) {
+    const abrirMae = (id: string) => {
+      setMaeAberta((atual) => {
+        const prox = atual === id ? '' : id;
+        try { localStorage.setItem(CHAVE_TAXV2, prox); } catch { /* sem storage */ }
+        return prox;
+      });
+    };
+    return (
+      <nav className={`avst5-sidebar avst6-tax${compacta ? ' avst5-sidebar-compacta' : ''}`}
+        aria-label="Categorias" data-teste="tax-v2">
+        {TAXONOMIA.filter((m) => m.estado !== 'oculta').map((mae) => {
+          const emBreve = mae.estado === 'em_breve';
+          // respeita gates de categoria técnica (ex.: Sobrepeça só com
+          // as6.creator_v6 — mesma regra da lista clássica §3393)
+          const visiveis = mae.principais.filter((p) => p.estado !== 'oculta'
+            && ativas.some((c) => c.id === p.categoria));
+          // colapsar a mãe da principal ativa não esconde onde você está
+          const aberto = !emBreve && (maeAberta === mae.id || visiveis.some((p) => p.id === principalAtiva));
+          return (
+            <section key={mae.id} className="avst6-navg-grupo" data-teste={`tax-${mae.id}`}>
+              {compacta
+                ? <hr className="avst6-navg-sep" aria-hidden />
+                : (
+                  <button type="button" className="avst6-navg-cab" aria-expanded={aberto}
+                    disabled={emBreve} data-teste={`tax-cab-${mae.id}`}
+                    title={emBreve ? t('Em breve — novas categorias em preparação') : mae.nome}
+                    onClick={() => abrirMae(mae.id)}>
+                    <ChevronDown size={12} aria-hidden data-aberto={aberto ? '' : undefined} />
+                    {t(mae.nome)}
+                    {emBreve && <small className="avst6-tax-breve">{t('Em breve')}</small>}
+                  </button>
+                )}
+              {/* principais de mãe FECHADA ficam no DOM com hidden:
+                  visual idêntico ao acordeão e a paleta/atalhos/testes
+                  seguem alcançando os botões por texto */}
+              {visiveis.map((p) => {
+                const pBreve = p.estado === 'em_breve';
+                const n = pBreve ? 0 : contarAssets(p.categoria, p.subcats);
+                return (
+                  <button key={p.id} type="button" hidden={!aberto && !compacta}
+                    className={`avst5-cat${principalAtiva === p.id ? ' avst5-cat-on' : ''}`}
+                    disabled={pBreve}
+                    title={pBreve ? t('Em breve — novos assets em preparação') : p.nome}
+                    data-teste={`tax-p-${p.id}`}
+                    onClick={() => aoEscolherPrincipal?.(p.id)}>
+                    <span className="avst5-cat-inicial" aria-hidden>{p.nome.slice(0, 1)}</span>
+                    {!compacta && <span className="avst6-tax-nome">{t(p.nome)}</span>}
+                    {!compacta && (pBreve
+                      ? <small className="avst6-tax-breve">{t('Em breve')}</small>
+                      : n > 0 && <small className="avst6-tax-n">{n}</small>)}
+                  </button>
+                );
+              })}
+            </section>
+          );
+        })}
+        {/* ─ §5.11: ferramentas e gestão — NUNCA viram assets ─ */}
+        <section className="avst6-navg-grupo avst6-tax-ferr" data-teste="tax-ferramentas">
+          {compacta
+            ? <hr className="avst6-navg-sep" aria-hidden />
+            : <span className="avst6-navg-cab" role="presentation"><Wrench size={11} aria-hidden /> {t('Ferramentas e gestão')}</span>}
+          {FERRAMENTAS_NAV.map((f) => (
+            <button key={f.id} type="button" className="avst5-cat"
+              title={f.nome} data-teste={`tax-f-${f.id}`}
+              onClick={() => aoAbrirFerramenta?.(f.id)}>
+              <span className="avst5-cat-inicial" aria-hidden>{f.nome.slice(0, 1)}</span>
+              {!compacta && <span className="avst6-tax-nome">{t(f.nome)}</span>}
+            </button>
+          ))}
+        </section>
+      </nav>
+    );
+  }
 
   // #144: a árvore de subcategorias aparece ABAIXO do botão Acessório
   // quando a categoria-mãe está ativa (accordion convencional). Na

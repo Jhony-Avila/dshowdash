@@ -125,6 +125,7 @@ const PADROES: Record<string, boolean> = {
   'as6.acess_v2': true,         // lote 1301–1310 — ACESSÓRIOS multi-slot: slots finos aditivos (olhos/orelha/costas/flutuante/companheiro) + registry de subcategorias em dados + conflitos declarados; equipar usa o slot fino do registry; off = 3 slots da decisão #41 byte a byte
   'as6.acess_hub': true,        // lote 1311–1330 — categoria-mãe: hub de subcategorias por região (contagens/equipados), breadcrumb, dock filtrada por subcategoria, equipados agrupado + resumo; off = grade única anterior byte a byte
   'as6.nav_grupos': true,       // lote 1331–1340 — navegação em MACROGRUPOS (Personagem/Vestuário/Expressão/Ambiente/Identidade) mapeando conteúdo existente; off = lista plana anterior byte a byte
+  'as6.tax_v2': true,           // onda 1361+ (#145/#146) — TAXONOMIA v2: várias categorias-mãe (acordeão) + principais na sidebar, subcategorias na dock; "Acessório" deixa de ser botão único (segue como tipo técnico); off = navegação #143/#144 byte a byte
 };
 
 /**
@@ -161,6 +162,7 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.dock_fit': ['as6.dock_inferior'],     // o fit corrige a GEOMETRIA da dock inferior (#112)
   'as6.ctx_barra': ['as6.contexto'],         // a barra apresenta a dica do Context Engine §323–§325
   'as6.acess_hub': ['as6.acess_v2'],         // o hub navega o registry de subcategorias (#140)
+  'as6.tax_v2': ['as6.acess_hub'],           // a taxonomia v2 filtra pela mesma infra de subcategorias (#146)
 };
 
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';

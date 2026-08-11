@@ -24,7 +24,9 @@ try {
   ok(await p.evaluate(() => document.querySelector('input[type="search"]')?.placeholder.includes('Search')),
     'busca não traduziu');
   // ordenar
-  await p.evaluate(() => { [...document.querySelectorAll('.avst5-cat')].find((x) => x.textContent.includes('Efeito'))?.click(); });
+  // onda 1361+ (#146): a árvore da taxonomia v2 TRADUZ os nomes das
+  // categorias (a lista antiga ficava sempre em PT) — aceitar os dois
+  await p.evaluate(() => { [...document.querySelectorAll('.avst5-cat')].find((x) => x.textContent.includes('Efeito') || x.textContent.includes('Effects'))?.click(); });
   await p.waitForTimeout(500);
   ok((await p.locator('[data-teste="fx-funcional"]').textContent())?.includes('Distortion'),
     'chips §157 não traduziram');

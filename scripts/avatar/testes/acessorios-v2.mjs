@@ -50,7 +50,7 @@ const slotsAcessorio = (r) => Object.fromEntries(
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 2000, height: 1200 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false, 'as6.tax_v2': false })); },
   });
   try {
     await irParaHarness(p, 'avst-harness.html', 1200);
@@ -118,7 +118,7 @@ const slotsAcessorio = (r) => Object.fromEntries(
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 2000, height: 1200 },
     init: () => {
-      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false }));
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false, 'as6.tax_v2': false }));
       // rascunho como o modelo ANTIGO gravava: auréola no slot cabeça
       localStorage.setItem('dshow.avst5.rascunho.v1', JSON.stringify({
         config: { versao: 2, base: 'b01', paleta: {}, camadas: { olhos: 'olh_padrao', boca: 'boc_sorriso', roupa: 'rou_camiseta', fundo: 'fun_estudio', acessorio_cabeca: 'ace_aureola' } },
@@ -144,11 +144,11 @@ const slotsAcessorio = (r) => Object.fromEntries(
   await b.close();
 }
 
-// ── C) macrogrupos (as6.nav_grupos) ─────────────────────────────────
+// ── C) macrogrupos (as6.nav_grupos; tax_v2 OFF = camada #143) ───────
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 2000, height: 1200 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false, 'as6.tax_v2': false })); },
   });
   try {
     await irParaHarness(p, 'avst-harness.html', 1200);
@@ -172,7 +172,7 @@ const slotsAcessorio = (r) => Object.fromEntries(
 {
   const { navegador: b, pagina: p, erros } = await abrir({
     viewport: { width: 2000, height: 1200 },
-    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false, 'as6.acess_v2': false, 'as6.acess_hub': false, 'as6.nav_grupos': false })); },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false, 'as6.acess_v2': false, 'as6.acess_hub': false, 'as6.nav_grupos': false, 'as6.tax_v2': false })); },
   });
   try {
     await irParaHarness(p, 'avst-harness.html', 1200);
@@ -186,6 +186,80 @@ const slotsAcessorio = (r) => Object.fromEntries(
       `flag OFF não equipou no slot legado (${JSON.stringify(slots)})`);
     ok(erros.length === 0, `erros de página (OFF): ${erros.join(' | ')}`);
   } catch (e) { falhas.push(`exceção (OFF): ${e.message}`); }
+  await b.close();
+}
+
+// ── E) TAXONOMIA v2 (#145/#146, as6.tax_v2 — padrão ON): várias
+//     categorias-mãe (acordeão), principais na sidebar, subcategorias
+//     na DOCK; multi-equip através da navegação nova; coroa em Adornos;
+//     ferramentas §5.11 acessíveis ─────────────────────────────────────
+{
+  const { navegador: b, pagina: p, erros } = await abrir({
+    viewport: { width: 2000, height: 1200 },
+    init: () => { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify({ 'as5.novo_shell': true, 'as5.palco3d': false })); },
+  });
+  const irPrincipal = async (mae, pr) => {
+    await p.evaluate((m) => { document.querySelector(`[data-teste="tax-cab-${m}"]`)?.click(); }, mae);
+    await p.waitForTimeout(250);
+    await p.evaluate((x) => { document.querySelector(`[data-teste="tax-p-${x}"]`)?.click(); }, pr);
+    await p.waitForTimeout(500);
+  };
+  const equipar = async (nome) => {
+    await p.evaluate((n) => {
+      const card = [...document.querySelectorAll('.avst5-painel .avst-card')]
+        .find((x) => x.querySelector('.avst-card-nome')?.textContent?.trim() === n);
+      card?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }, nome);
+    await p.waitForTimeout(400);
+  };
+  try {
+    await irParaHarness(p, 'avst-harness.html', 1200);
+    // árvore v2: mães presentes; "Acessório" NÃO existe mais como botão
+    // único (critério de aceite 1); Equipamentos desabilitada Em breve
+    ok(await p.locator('[data-teste="tax-v2"]').count() === 1, 'árvore tax v2 ausente');
+    const maes = await p.evaluate(() => [...document.querySelectorAll('[data-teste="tax-v2"] .avst6-navg-cab')].map((c) => c.textContent.trim()));
+    for (const m of ['Personagem', 'Vestuário', 'Cabeça e Rosto', 'Joias e Adornos', 'Costas e Mobilidade', 'Companheiros', 'Elementos Especiais'])
+      ok(maes.some((x) => x.startsWith(m)), `mãe ausente: ${m}`);
+    ok(await p.evaluate(() => ![...document.querySelectorAll('.avst5-cat')].some((c) => c.textContent.trim().endsWith('Acessório'))),
+      'botão único "Acessório" ainda existe (critério 1)');
+    ok(await p.evaluate(() => document.querySelector('[data-teste="tax-cab-equipamentos"]')?.disabled === true),
+      'Equipamentos (zero assets) deveria estar Em breve/desabilitada');
+    // Visão → chips na dock (Todos + subcategorias) e grade limitada
+    await irPrincipal('cabeca-rosto', 'visao');
+    const chips = await p.evaluate(() => [...document.querySelectorAll('[data-teste="dock-subcats"] .avst5-chip')].map((c) => c.textContent.trim()));
+    ok(chips[0] === 'Todos' && chips.includes('Óculos'), `chips da dock errados: ${chips.join(',')}`);
+    const nomesVisao = await p.evaluate(() => [...document.querySelectorAll('.avst5-painel .avst-card .avst-card-nome')].map((n) => n.textContent.trim()));
+    ok(nomesVisao.includes('Óculos de Grau') && !nomesVisao.includes('Boné Snapback'),
+      `grade de Visão deveria conter só visão (veio ${nomesVisao.join(',')})`);
+    // chip filtra dentro do conjunto
+    await p.evaluate(() => document.querySelector('[data-teste="dock-sub-oculos"]')?.click());
+    await p.waitForTimeout(400);
+    const soOculos = await p.evaluate(() => [...document.querySelectorAll('.avst5-painel .avst-card .avst-card-nome')].map((n) => n.textContent.trim()));
+    ok(soOculos.length === 5 && !soOculos.includes('Tapa-olho'), `chip Óculos não isolou (${soOculos.join(',')})`);
+    // multi-equip ATRAVÉS da navegação nova (4 mães diferentes)
+    await equipar('Óculos de Grau');
+    await irPrincipal('joias', 'pescoco');
+    await equipar('Colar de Pérolas');
+    await irPrincipal('costas', 'propulsores');
+    await equipar('Mochila a Jato');
+    await irPrincipal('especiais', 'aureolas');
+    await equipar('Auréola');
+    const r = await lerRascunho(p);
+    const slots = slotsAcessorio(r);
+    ok(Object.keys(slots).length === 4, `esperava 4 slots via navegação nova (${JSON.stringify(slots)})`);
+    // coroa migrou de navegação (Adornos), continua slot cabeca
+    await irPrincipal('cabeca-rosto', 'adornos-cab');
+    const adornos = await p.evaluate(() => [...document.querySelectorAll('.avst5-painel .avst-card .avst-card-nome')].map((n) => n.textContent.trim()));
+    ok(adornos.includes('Coroa do Top 1'), 'Coroa deveria estar em Adornos de cabeça (§8)');
+    // ferramentas §5.11: presentes e funcionais (Presets abre a aba)
+    ok(await p.locator('[data-teste="tax-ferramentas"] .avst5-cat').count() >= 5, 'seção de ferramentas ausente');
+    await p.evaluate(() => document.querySelector('[data-teste="tax-f-presets"]')?.click());
+    await p.waitForTimeout(400);
+    ok(await p.evaluate(() => [...document.querySelectorAll('button')].some((x) => x.textContent.trim() === 'Presets' && (x.getAttribute('aria-selected') === 'true' || x.className.includes('on')))),
+      'ferramenta Presets não abriu a aba');
+    await p.screenshot({ path: `${SAIDA}/acessorios-v2-taxv2.png` });
+    ok(erros.length === 0, `erros de página (tax v2): ${erros.join(' | ')}`);
+  } catch (e) { falhas.push(`exceção (tax v2): ${e.message}`); }
   await b.close();
 }
 

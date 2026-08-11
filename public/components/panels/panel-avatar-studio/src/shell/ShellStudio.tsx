@@ -31,6 +31,7 @@ import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { useHistoricoSessao } from './HistoricoSessao';
 import { BarraTopo } from '../workspace/BarraTopo';
 import { TrilhoCategorias } from '../workspace/TrilhoCategorias';
+import { principalDaCategoria, principalPorId } from '../workspace/taxonomia'; // #145/#146 (as6.tax_v2)
 import { PainelCatalogo } from '../workspace/PainelCatalogo';
 import { ClimaOverlay } from '../workspace/ClimaOverlay';
 import { ComposicaoPalco } from '../workspace/ComposicaoPalco';
@@ -214,6 +215,31 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // sidebar — trocar de categoria volta ao "Todos" (busca global §18)
   const [subAcess, setSubAcess] = useState<string | null>(null);
   useEffect(() => { setSubAcess(null); }, [categoria]);
+  // #145/#146 (as6.tax_v2): categoria PRINCIPAL ativa da taxonomia v2 —
+  // resolve para {categoria técnica + conjunto de subcategorias}; o
+  // contrato de camadas/slots NÃO muda (navegação é metadado)
+  const [principalAtiva, setPrincipalAtiva] = useState<string>('rosto');
+  const escolherPrincipal = useCallback((id: string) => {
+    const alvo = principalPorId(id)?.principal;
+    if (!alvo || alvo.estado !== 'ativa') return;
+    setPrincipalAtiva(id);
+    setSubAcess(null);
+    medirInteracao('troca-categoria');
+    setCategoria(alvo.categoria);
+    setFiltroSlot('todos');
+    if (flag('as6.contexto')) { setAba('todos'); aplicarContexto(alvo.categoria); }
+  }, []);
+  const conjuntoSubcats = flag('as6.tax_v2')
+    ? principalPorId(principalAtiva)?.principal.subcats ?? null
+    : null;
+  // categoria trocada por OUTRO caminho (paleta, Equipados, DockAssets):
+  // re-sincroniza a principal para a "casa" da categoria técnica
+  useEffect(() => {
+    if (!flag('as6.tax_v2')) return;
+    if (principalPorId(principalAtiva)?.principal.categoria === categoria) return;
+    const casa = principalDaCategoria(categoria);
+    if (casa) setPrincipalAtiva(casa.id);
+  }, [categoria, principalAtiva]);
   const [larguras, setLarguras] = useState(lerLarguras);
   const [aba, setAba] = useState<AbaCatalogo | 'presets'>('todos');
   // §68.3: chip de slot ativo (só em Acessórios; troca de categoria zera)
@@ -1095,6 +1121,14 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           {/* sidebar esquerda — scroll próprio (R5) */}
           <TrilhoCategorias categoria={categoria} compacta={compacta}
             config={configDraft} subAcess={subAcess} aoEscolherSub={setSubAcess}
+            principalAtiva={principalAtiva} aoEscolherPrincipal={escolherPrincipal}
+            aoAbrirFerramenta={(id) => { /* §5.11: só handlers EXISTENTES */
+              if (id === 'estudio3d') setPalco3d((v) => !v);
+              else if (id === 'presets') setAba('presets');
+              else if (id === 'historico') setAba('equipados');
+              else if (id === 'missoes') setMissoes(true);
+              else if (id === 'evolucao') setEvolucao(true);
+            }}
             aoEscolher={(id) => {
               medirInteracao('troca-categoria'); // #119: fecha pós-paint
               setCategoria(id); setFiltroSlot('todos');
@@ -1418,6 +1452,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             configVisivel={configVisivel} configDraft={configDraft}
             aoEscolher={aoEscolher} aoPrever={aoPrever} resumoAcessorios={resumoAcessorios}
             subAcess={subAcess} /* #144: árvore na sidebar filtra a grade */
+            conjuntoSubcats={conjuntoSubcats} aoEscolherSub={setSubAcess} /* #146 */
             store={store} aplicarComando={aplicarComando}
             bloqueios={bloqueios} setBloqueios={setBloqueios}
             aoMudarFavs={() => setTicFavs((t) => t + 1)}

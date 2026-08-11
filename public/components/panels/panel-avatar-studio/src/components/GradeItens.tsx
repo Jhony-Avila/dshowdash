@@ -157,7 +157,7 @@ function idsEquipados(config: AvatarConfig, categoria: CategoriaId): string[] {
 
 export type AbaCatalogo = 'todos' | 'equipados' | 'favoritos' | 'novos' | 'bloqueados';
 
-export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever, filtroSlot = 'todos', aoDetalhes, filtroSubcategoria }: {
+export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever, filtroSlot = 'todos', aoDetalhes, filtroSubcategoria, filtroConjunto }: {
   config: AvatarConfig;
   categoria: CategoriaId;
   /** ids liberados por conquistas/eventos (vem do /api/avatar/vida.php) */
@@ -174,6 +174,9 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   /** mega onda 1301+ (#140, as6.acess_hub): subcategoria ativa do hub —
    *  filtra os assets pelo registry (só age em 'acessorio') */
   filtroSubcategoria?: string | null;
+  /** #146 (as6.tax_v2): conjunto da categoria principal — limita a
+   *  grade mesmo sem subcategoria única escolhida */
+  filtroConjunto?: string[] | null;
 }) {
   const meta = CATEGORIAS.find((c) => c.id === categoria);
   const [busca, setBusca] = useState('');
@@ -332,6 +335,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       // #140 (as6.acess_hub): subcategoria ativa do hub filtra pelo registry
       .filter((i) => categoria !== 'acessorio' || !filtroSubcategoria
         || subcategoriaDoAsset(i.id)?.id === filtroSubcategoria)
+      .filter((i) => categoria !== 'acessorio' || !filtroConjunto
+        || filtroConjunto.includes(subcategoriaDoAsset(i.id)?.id ?? ''))
       // megas 351-353 (§157.1-.5, flag as5.efeitos_v2): filtro FUNCIONAL
       .filter((i) => categoria !== 'efeito' || filtroFx === 'todos'
         || categoriaFuncional(i.id) === filtroFx)
@@ -359,7 +364,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot, filtroFx, filtroSubcategoria]);
+  }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot, filtroFx, filtroSubcategoria, filtroConjunto]);
 
   // §56.2: contagem por raridade no CONTEXTO atual (mostrada no popover)
   const contagem = useMemo(() => {

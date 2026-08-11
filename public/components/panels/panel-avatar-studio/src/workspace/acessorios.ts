@@ -84,7 +84,9 @@ export const SUBCATEGORIAS_ACESSORIO: SubcategoriaAcessorio[] = [
  *  duplicar registro; a arte e o item.slot legado ficam intocados). */
 export const SUBCATEGORIA_POR_ASSET: Record<string, string> = {
   ace_bone: 'chapeus', ace_chapeu_mago: 'chapeus', ace_gorro_natal: 'chapeus',
-  ace_chapeu_bruxa: 'chapeus', ace_coroa: 'chapeus', ace_boina: 'chapeus',
+  // taxonomia v2 (#146/§8 do briefing corretivo): coroa é ADORNO, não
+  // cobertura — muda só a navegação; slot continua 'cabeca'
+  ace_chapeu_bruxa: 'chapeus', ace_coroa: 'adornos-cabeca', ace_boina: 'chapeus',
   ace_chifres_oni: 'adornos-cabeca', ace_antena: 'adornos-cabeca', ace_tiara_led: 'adornos-cabeca',
   ace_oculos: 'oculos', ace_oculos_sol: 'oculos', ace_oculos_3d: 'oculos', ace_monoculo: 'oculos',
   ace_tapa_olho: 'tapa-olhos',
