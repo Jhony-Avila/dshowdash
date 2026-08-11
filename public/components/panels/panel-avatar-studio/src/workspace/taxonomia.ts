@@ -71,7 +71,7 @@ export const TAXONOMIA: CategoriaMae[] = [
       { id: 'coberturas', nome: 'Coberturas de cabeça', categoria: 'acessorio', subcats: ['chapeus', 'capuzes'], estado: 'ativa' },
       { id: 'adornos-cab', nome: 'Adornos de cabeça', categoria: 'acessorio', subcats: ['adornos-cabeca'], estado: 'ativa' },
       { id: 'visao', nome: 'Visão', categoria: 'acessorio', subcats: ['oculos', 'tapa-olhos', 'headsets-vr'], estado: 'ativa' },
-      { id: 'protecao-facial', nome: 'Proteção facial', categoria: 'acessorio', subcats: ['mascaras'], estado: 'em_breve' },
+      { id: 'protecao-facial', nome: 'Proteção facial', categoria: 'acessorio', subcats: ['mascaras'], estado: 'ativa' }, // 1381
       { id: 'mod-faciais', nome: 'Modificações faciais', categoria: 'acessorio', subcats: ['rosto-marcas'], estado: 'ativa' },
       { id: 'audio-com', nome: 'Áudio e comunicação', categoria: 'acessorio', subcats: ['fones'], estado: 'ativa' },
     ],
@@ -100,14 +100,14 @@ export const TAXONOMIA: CategoriaMae[] = [
       { id: 'capas', nome: 'Capas', categoria: 'acessorio', subcats: ['capas'], estado: 'ativa' },
       { id: 'propulsores', nome: 'Propulsores', categoria: 'acessorio', subcats: ['mochilas'], estado: 'ativa' },
       { id: 'mochilas-bolsas', nome: 'Mochilas e bolsas', categoria: 'acessorio', estado: 'em_breve' },
-      { id: 'asas', nome: 'Asas', categoria: 'acessorio', subcats: ['asas'], estado: 'em_breve' },
+      { id: 'asas', nome: 'Asas', categoria: 'acessorio', subcats: ['asas'], estado: 'ativa' }, // 1381
     ],
   },
   {
     id: 'companheiros', nome: 'Companheiros', estado: 'ativa',
     principais: [
       { id: 'drones', nome: 'Drones', categoria: 'acessorio', subcats: ['companheiros'], estado: 'ativa' },
-      { id: 'pets', nome: 'Pets', categoria: 'acessorio', estado: 'em_breve' },
+      { id: 'pets', nome: 'Pets', categoria: 'acessorio', subcats: ['pets'], estado: 'ativa' }, // 1381
       { id: 'robos', nome: 'Robôs', categoria: 'acessorio', estado: 'em_breve' },
       { id: 'espiritos', nome: 'Espíritos', categoria: 'acessorio', estado: 'em_breve' },
     ],
@@ -170,6 +170,35 @@ export function principalPorId(id: string): { mae: CategoriaMae; principal: Cate
 }
 
 /** principal "casa" da categoria técnica (fallback p/ estado inicial) */
+/** P3/CMS (onda 1381, #148): hidratação OPCIONAL do banco — o CMS pode
+ *  renomear/reordenar/ocultar nós por id (slug), mas NUNCA muda a
+ *  categoria técnica nem os subcats (contrato de camadas intocado).
+ *  Falha/204/flag off = registry estático byte a byte. */
+export async function hidratarDoCms(): Promise<CategoriaMae[] | null> {
+  try {
+    const r = await fetch('/api/avatar/taxonomia.php', { credentials: 'same-origin' });
+    if (r.status !== 200) return null;
+    const bruto = await r.json() as { v?: number; taxonomia?: Array<{ id: string; nome: string; estado: string; principais: Array<{ id: string; nome: string; estado: string }> }> };
+    if (bruto?.v !== 1 || !Array.isArray(bruto.taxonomia)) return null;
+    const porId = new Map(bruto.taxonomia.map((m) => [m.id, m]));
+    const valido = (e: string): EstadoTax => (e === 'ativa' || e === 'em_breve' || e === 'oculta' ? e : 'ativa');
+    return TAXONOMIA.map((mae) => {
+      const cms = porId.get(mae.id);
+      if (!cms) return mae;
+      const pCms = new Map(cms.principais.map((p) => [p.id, p]));
+      return {
+        ...mae,
+        nome: cms.nome || mae.nome,
+        estado: valido(cms.estado),
+        principais: mae.principais.map((p) => {
+          const c = pCms.get(p.id);
+          return c ? { ...p, nome: c.nome || p.nome, estado: valido(c.estado) } : p;
+        }),
+      };
+    });
+  } catch { return null; }
+}
+
 /** Caminho legível "Mãe › Principal[ › Sub]" (breadcrumb §16 / busca §17) */
 export function caminhoDaPrincipal(id: string, sub?: string): string {
   const alvo = POR_ID.get(id);

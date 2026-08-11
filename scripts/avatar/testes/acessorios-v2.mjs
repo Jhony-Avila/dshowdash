@@ -60,7 +60,7 @@ const slotsAcessorio = (r) => Object.fromEntries(
     // convencional sob a categoria-mãe — feedback visual do Jhony)
     ok(await p.locator('.avst5-sidebar [data-teste="arv-acessorios"]').count() === 1, 'árvore de subcategorias ausente da sidebar com a flag ON');
     const nDesab = await p.locator('[data-teste="arv-acessorios"] button:disabled').count();
-    ok(nDesab >= 3, `esperava ≥3 subcategorias em preparação desabilitadas (veio ${nDesab})`);
+    ok(nDesab >= 1, `esperava ≥1 subcategoria em preparação desabilitada (veio ${nDesab})`); // 1381: máscaras/gravatas/asas ATIVARAM com arte nova
     // filtro por subcategoria + breadcrumb (§17–§18)
     await p.evaluate(() => document.querySelector('[data-teste="arv-aureolas"]')?.click());
     await p.waitForTimeout(400);

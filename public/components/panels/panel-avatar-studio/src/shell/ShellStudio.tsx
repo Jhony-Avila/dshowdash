@@ -31,7 +31,8 @@ import { TourGuiado, tourJaVisto } from './TourGuiado';
 import { useHistoricoSessao } from './HistoricoSessao';
 import { BarraTopo } from '../workspace/BarraTopo';
 import { TrilhoCategorias } from '../workspace/TrilhoCategorias';
-import { FERRAMENTAS_NAV, TAXONOMIA, caminhoDaPrincipal, principalDaCategoria, principalPorId } from '../workspace/taxonomia'; // #145-#147 (as6.tax_v2)
+import { FERRAMENTAS_NAV, TAXONOMIA, caminhoDaPrincipal, hidratarDoCms, principalDaCategoria, principalPorId } from '../workspace/taxonomia'; // #145-#148 (as6.tax_v2)
+import type { CategoriaMae } from '../workspace/taxonomia';
 import { SUBCATEGORIAS_ACESSORIO } from '../workspace/acessorios';
 import { PainelCatalogo } from '../workspace/PainelCatalogo';
 import { ClimaOverlay } from '../workspace/ClimaOverlay';
@@ -233,6 +234,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const conjuntoSubcats = flag('as6.tax_v2')
     ? principalPorId(principalAtiva)?.principal.subcats ?? null
     : null;
+  // #148 (as6.tax_cms, default OFF): hidrata nomes/estados do CMS —
+  // estrutura técnica nunca muda; falha/204 = registry estático
+  const [taxCms, setTaxCms] = useState<CategoriaMae[] | null>(null);
+  useEffect(() => {
+    if (!flag('as6.tax_cms')) return;
+    let vivo = true;
+    void hidratarDoCms().then((tx) => { if (vivo && tx) setTaxCms(tx); });
+    return () => { vivo = false; };
+  }, []);
   // #147: breadcrumb §16 — caminho completo Mãe › Principal › Sub
   const principalMeta = flag('as6.tax_v2') ? principalPorId(principalAtiva)?.principal : undefined;
   const subNome = subAcess
@@ -1131,6 +1141,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <TrilhoCategorias categoria={categoria} compacta={compacta}
             config={configDraft} subAcess={subAcess} aoEscolherSub={setSubAcess}
             principalAtiva={principalAtiva} aoEscolherPrincipal={escolherPrincipal}
+            taxonomia={taxCms} /* #148 */
             aoAbrirFerramenta={(id) => { /* §5.11: só handlers EXISTENTES */
               if (id === 'estudio3d') setPalco3d((v) => !v);
               else if (id === 'presets') setAba('presets');

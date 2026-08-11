@@ -3354,6 +3354,10 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 .avst6-tax::-webkit-scrollbar-track { background: transparent; }
 .avst6-tax .avst6-navg-cab:disabled { cursor: default; opacity: .55; }
 .avst6-tax .avst5-cat:disabled { opacity: .5; cursor: default; }
+/* onda 1381 (#148): o atributo hidden PERDE para display:flex da classe —
+   o acordeão nunca recolhia (feedback do Jhony: "menu gigante"). O
+   display:none precisa vencer a classe. */
+.avst6-tax .avst5-cat[hidden] { display: none !important; }
 .avst6-tax-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .avst6-tax-n {
   font-size: 9.5px; opacity: .65; flex: none;

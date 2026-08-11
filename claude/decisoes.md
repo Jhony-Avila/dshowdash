@@ -1298,3 +1298,23 @@ com RPO/RTO · headers CSP no nginx.
   na seção E + rollout por flag. O que NÃO é client-side fica
   registrado como dependência: arte nova (Partes 4–8 finas) e CMS
   (RUNBOOK-BANCO) para hidratar o registry do banco.
+
+- **#148 (2026-08-11) — Onda 1381: acordeão de verdade + arte nova +
+  CMS read-only + contrato de animação**: (a) BUG do menu gigante — o
+  atributo hidden perdia para display:flex da classe .avst5-cat; CSS
+  [hidden]{display:none!important} escopado corrige; acordeão passa a
+  recolher de fato (uma mãe aberta; a mãe da principal ativa nunca se
+  esconde). (b) ARTE NOVA (4 assets SVG novos, ADICIONADOS em partes/*,
+  nunca editando arte existente): Máscara Neon (rosto, conflita com
+  olhos), Gravata-borboleta (pescoço), Asas de Energia (costas), Gato
+  Sombra (companheiro) — destravam as subcategorias mascaras/gravatas/
+  asas/pets e as principais Proteção facial/Asas/Pets (catálogo 30→34
+  acessórios). (c) CMS read-only: api/avatar/taxonomia.php serve
+  avatar_category_groups/avatar_categories; client hidrata NOMES/
+  ESTADOS por id atrás da flag as6.tax_cms (default OFF até o
+  RUNBOOK-BANCO popular; 204/falha = registry estático byte a byte;
+  estrutura técnica nunca vem do banco). (d) Contrato de animação P6
+  (domain/animacao.ts): tipos para expressão/pose/gesto/locomoção/
+  emote/entrada/saída, alvos data-anim, loop, conflitos, reduced
+  motion — registry vazio até a arte de movimento; animação NUNCA
+  entra em camadas (byte-stability).

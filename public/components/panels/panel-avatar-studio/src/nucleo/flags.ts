@@ -125,7 +125,8 @@ const PADROES: Record<string, boolean> = {
   'as6.acess_v2': true,         // lote 1301–1310 — ACESSÓRIOS multi-slot: slots finos aditivos (olhos/orelha/costas/flutuante/companheiro) + registry de subcategorias em dados + conflitos declarados; equipar usa o slot fino do registry; off = 3 slots da decisão #41 byte a byte
   'as6.acess_hub': true,        // lote 1311–1330 — categoria-mãe: hub de subcategorias por região (contagens/equipados), breadcrumb, dock filtrada por subcategoria, equipados agrupado + resumo; off = grade única anterior byte a byte
   'as6.nav_grupos': true,       // lote 1331–1340 — navegação em MACROGRUPOS (Personagem/Vestuário/Expressão/Ambiente/Identidade) mapeando conteúdo existente; off = lista plana anterior byte a byte
-  'as6.tax_v2': true,           // onda 1361+ (#145/#146) — TAXONOMIA v2: várias categorias-mãe (acordeão) + principais na sidebar, subcategorias na dock; "Acessório" deixa de ser botão único (segue como tipo técnico); off = navegação #143/#144 byte a byte
+  'as6.tax_v2': true,
+  'as6.tax_cms': false,         // onda 1381 (#148) — hidrata a taxonomia do CMS (api/avatar/taxonomia.php); OFF até o RUNBOOK-BANCO popular avatar_category_groups; off/204 = registry estático byte a byte           // onda 1361+ (#145/#146) — TAXONOMIA v2: várias categorias-mãe (acordeão) + principais na sidebar, subcategorias na dock; "Acessório" deixa de ser botão único (segue como tipo técnico); off = navegação #143/#144 byte a byte
 };
 
 /**

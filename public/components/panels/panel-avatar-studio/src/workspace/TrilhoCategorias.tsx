@@ -27,6 +27,7 @@ import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
 import { ArvoreAcessorios } from './HubAcessorios';
 import { FERRAMENTAS_NAV, TAXONOMIA } from './taxonomia';
+import type { CategoriaMae } from './taxonomia';
 import { subcategoriaDoAsset } from './acessorios';
 
 export interface PropsTrilhoCategorias {
@@ -43,6 +44,8 @@ export interface PropsTrilhoCategorias {
   principalAtiva?: string | null;
   aoEscolherPrincipal?: (id: string) => void;
   aoAbrirFerramenta?: (id: string) => void;
+  /** #148 (as6.tax_cms): taxonomia hidratada do CMS; ausente = estática */
+  taxonomia?: CategoriaMae[] | null;
 }
 
 /** Macrogrupos (briefing de navegação 2026-08-11, §2): taxonomia por
@@ -73,7 +76,7 @@ function contarAssets(categoria: CategoriaId, subcats?: string[]): number {
   return itens.filter((i) => { const s = subcategoriaDoAsset(i.id); return s && alvo.has(s.id); }).length;
 }
 
-export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subAcess, aoEscolherSub, principalAtiva, aoEscolherPrincipal, aoAbrirFerramenta }: PropsTrilhoCategorias) {
+export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subAcess, aoEscolherSub, principalAtiva, aoEscolherPrincipal, aoAbrirFerramenta, taxonomia }: PropsTrilhoCategorias) {
   const grupos = flag('as6.nav_grupos');
   const taxV2 = flag('as6.tax_v2') && !!aoEscolherPrincipal;
   const [colapsados, setColapsados] = useState<Set<string>>(lerColapsados);
@@ -95,7 +98,7 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subA
     return (
       <nav className={`avst5-sidebar avst6-tax${compacta ? ' avst5-sidebar-compacta' : ''}`}
         aria-label="Categorias" data-teste="tax-v2">
-        {TAXONOMIA.filter((m) => m.estado !== 'oculta').map((mae) => {
+        {(taxonomia ?? TAXONOMIA).filter((m) => m.estado !== 'oculta').map((mae) => {
           const emBreve = mae.estado === 'em_breve';
           // respeita gates de categoria técnica (ex.: Sobrepeça só com
           // as6.creator_v6 — mesma regra da lista clássica §3393)

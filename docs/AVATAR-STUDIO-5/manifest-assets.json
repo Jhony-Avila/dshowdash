@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 348,
+    "itens2d": 352,
     "categorias": 13,
     "titulos": 30,
     "colecoes": 12,
@@ -37,6 +37,11 @@
       "id": "ace_antena",
       "categoria": "acessorio",
       "raridade": "incomum"
+    },
+    {
+      "id": "ace_asas_energia",
+      "categoria": "acessorio",
+      "raridade": "epico"
     },
     {
       "id": "ace_aureola",
@@ -114,9 +119,19 @@
       "raridade": "incomum"
     },
     {
+      "id": "ace_gato_sombra",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
       "id": "ace_gorro_natal",
       "categoria": "acessorio",
       "raridade": "raro"
+    },
+    {
+      "id": "ace_gravata_borboleta",
+      "categoria": "acessorio",
+      "raridade": "incomum"
     },
     {
       "id": "ace_headset",
@@ -127,6 +142,11 @@
       "id": "ace_lenco_bandana",
       "categoria": "acessorio",
       "raridade": "incomum"
+    },
+    {
+      "id": "ace_mascara_neon",
+      "categoria": "acessorio",
+      "raridade": "raro"
     },
     {
       "id": "ace_medalha",

@@ -60,7 +60,7 @@ export const SUBCATEGORIAS_ACESSORIO: SubcategoriaAcessorio[] = [
   { id: 'tapa-olhos', nome: 'Tapa-olhos', regiao: 'rosto-olhos', slot: 'olhos', estado: 'ativa' },
   { id: 'headsets-vr', nome: 'Headsets VR', regiao: 'rosto-olhos', slot: 'cabeca', estado: 'ativa', conflitaComSlots: ['olhos'] },
   { id: 'rosto-marcas', nome: 'Pinturas e piercings', regiao: 'rosto-olhos', slot: 'rosto', estado: 'ativa' },
-  { id: 'mascaras', nome: 'Máscaras', regiao: 'rosto-olhos', slot: 'rosto', estado: 'em_preparacao', conflitaComSlots: ['olhos'] },
+  { id: 'mascaras', nome: 'Máscaras', regiao: 'rosto-olhos', slot: 'rosto', estado: 'ativa', conflitaComSlots: ['olhos'] }, // 1381: arte nova
   // Orelhas e áudio
   { id: 'brincos', nome: 'Brincos', regiao: 'orelhas', slot: 'orelha', estado: 'ativa' },
   { id: 'fones', nome: 'Fones e headsets', regiao: 'orelhas', slot: 'orelha', estado: 'ativa' },
@@ -68,14 +68,15 @@ export const SUBCATEGORIAS_ACESSORIO: SubcategoriaAcessorio[] = [
   { id: 'colares', nome: 'Colares e correntes', regiao: 'pescoco', slot: 'pescoco', estado: 'ativa' },
   { id: 'lencos', nome: 'Cachecóis e lenços', regiao: 'pescoco', slot: 'pescoco', estado: 'ativa' },
   { id: 'insignias', nome: 'Medalhas e crachás', regiao: 'pescoco', slot: 'pescoco', estado: 'ativa' },
-  { id: 'gravatas', nome: 'Gravatas', regiao: 'pescoco', slot: 'pescoco', estado: 'em_preparacao' },
+  { id: 'gravatas', nome: 'Gravatas', regiao: 'pescoco', slot: 'pescoco', estado: 'ativa' }, // 1381: arte nova
   // Costas e bolsas
   { id: 'capas', nome: 'Capas', regiao: 'costas', slot: 'costas', estado: 'ativa' },
   { id: 'mochilas', nome: 'Mochilas', regiao: 'costas', slot: 'costas', estado: 'ativa' },
-  { id: 'asas', nome: 'Asas', regiao: 'costas', slot: 'costas', estado: 'em_preparacao' },
+  { id: 'asas', nome: 'Asas', regiao: 'costas', slot: 'costas', estado: 'ativa' }, // 1381: arte nova
   // Especiais
   { id: 'aureolas', nome: 'Auréolas', regiao: 'especiais', slot: 'flutuante', estado: 'ativa' },
   { id: 'companheiros', nome: 'Companheiros', regiao: 'especiais', slot: 'companheiro', estado: 'ativa' },
+  { id: 'pets', nome: 'Pets', regiao: 'especiais', slot: 'companheiro', estado: 'ativa' }, // 1381: arte nova
   // Braços/mãos/pernas/pés (briefing §4): aguardando arte (§72)
   { id: 'pulseiras', nome: 'Pulseiras e relógios', regiao: 'especiais', slot: 'flutuante', estado: 'oculta' },
 ];
@@ -91,6 +92,9 @@ export const SUBCATEGORIA_POR_ASSET: Record<string, string> = {
   ace_oculos: 'oculos', ace_oculos_sol: 'oculos', ace_oculos_3d: 'oculos', ace_monoculo: 'oculos',
   ace_tapa_olho: 'tapa-olhos',
   ace_viseira_vr: 'headsets-vr',
+  // onda 1381 (#148): arte nova
+  ace_mascara_neon: 'mascaras', ace_gravata_borboleta: 'gravatas',
+  ace_asas_energia: 'asas', ace_gato_sombra: 'pets',
   ace_pintura_guerra: 'rosto-marcas', ace_piercing: 'rosto-marcas',
   ace_brinco: 'brincos',
   ace_fone: 'fones', ace_headset: 'fones',

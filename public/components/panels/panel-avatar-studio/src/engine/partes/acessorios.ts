@@ -608,4 +608,80 @@ export const ACESSORIOS: ParteDef[] = [
         <animate attributeName="opacity" values="0.6;0.25;0.6" dur="3s" repeatCount="indefinite"/>
       </ellipse>`,
   },
+  // ── onda 1381 (decisão #148): ARTE NOVA destravando subcategorias
+  //    "Em breve" da taxonomia v2 (mega programa, partes 4–8) ──
+  {
+    id: 'ace_mascara_neon',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Máscara Neon',
+    descricao: 'Meia-máscara com traçado de luz — anonimato com estilo.',
+    raridade: 'raro',
+    tema: 'cyberpunk',
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}masc" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#232838"/>
+          <stop offset="1" stop-color="#141824"/>
+        </linearGradient>
+      </defs>
+      <path d="M78 128 q 42 26 84 0 l -4 30 q -38 22 -76 0 z" fill="url(#${u}masc)" stroke="#0d1018" stroke-width="2"/>
+      <path d="M84 140 q 36 20 72 0" fill="none" stroke="#4ce0c3" stroke-width="2.4" stroke-linecap="round">
+        <animate attributeName="opacity" values="1;0.5;1" dur="2.2s" repeatCount="indefinite"/>
+      </path>`,
+  },
+  {
+    id: 'ace_gravata_borboleta',
+    categoria: 'acessorio',
+    slot: 'pescoco',
+    nome: 'Gravata-borboleta',
+    descricao: 'O nó perfeito para demo day e casamento no mesmo dia.',
+    raridade: 'incomum',
+    tema: 'executivo',
+    render: (p) => `
+      <path d="M120 196 l -26 -12 v 24 z" fill="${p.destaque.base}" stroke="#14171f" stroke-width="2"/>
+      <path d="M120 196 l 26 -12 v 24 z" fill="${p.destaque.base}" stroke="#14171f" stroke-width="2"/>
+      <rect x="113" y="189" width="14" height="14" rx="4" fill="${p.destaque.escuro}" stroke="#14171f" stroke-width="2"/>`,
+  },
+  {
+    id: 'ace_asas_energia',
+    categoria: 'acessorio',
+    slot: 'costas',
+    nome: 'Asas de Energia',
+    descricao: 'Pura luz coerente. Não voam — pairam com intenção.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    render: (_p, u) => `
+      <defs>
+        <linearGradient id="${u}asa" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="rgba(124,208,255,0.9)"/>
+          <stop offset="1" stop-color="rgba(124,208,255,0.15)"/>
+        </linearGradient>
+      </defs>
+      <g>
+        <path d="M92 168 q -52 -34 -64 -86 q 44 18 60 58 q -18 -4 -30 -14 q 14 26 34 42 z" fill="url(#${u}asa)"/>
+        <path d="M148 168 q 52 -34 64 -86 q -44 18 -60 58 q 18 -4 30 -14 q -14 26 -34 42 z" fill="url(#${u}asa)"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -3;0 0" dur="3.4s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'ace_gato_sombra',
+    categoria: 'acessorio',
+    slot: 'companheiro',
+    nome: 'Gato Sombra',
+    descricao: 'Aparece nas reuniões certas. Ignora as erradas.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    render: () => `
+      <g>
+        <ellipse cx="196" cy="150" rx="16" ry="12" fill="#1c1f2b"/>
+        <circle cx="196" cy="132" r="10" fill="#1c1f2b"/>
+        <path d="M189 126 l -3 -8 l 7 4 z" fill="#1c1f2b"/>
+        <path d="M203 126 l 3 -8 l -7 4 z" fill="#1c1f2b"/>
+        <circle cx="192.5" cy="131" r="1.8" fill="#4ce0c3"/>
+        <circle cx="199.5" cy="131" r="1.8" fill="#4ce0c3"/>
+        <path d="M210 152 q 10 -4 8 -14" fill="none" stroke="#1c1f2b" stroke-width="4" stroke-linecap="round"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -5;0 0" dur="4s" repeatCount="indefinite"/>
+      </g>`,
+  },
 ];
