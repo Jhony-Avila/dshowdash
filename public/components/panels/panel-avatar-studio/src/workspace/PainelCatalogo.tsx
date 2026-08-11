@@ -22,6 +22,8 @@ import { Inspector } from './Inspector';
 import { PresetsShell } from '../shell/PresetsShell';
 import { HistoricoSessao } from '../shell/HistoricoSessao';
 import { DockAssets } from './DockAssets'; // decisão #112: MESMO trilho do clássico
+import { HubAcessorios } from './HubAcessorios'; // mega onda 1301+ (#142, as6.acess_hub)
+import { comItem } from '../components/GradeItens';
 import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
 
@@ -101,6 +103,11 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     setBloqueios, aoMudarFavs, historico, desbloqueados, setDetalheId,
     dockInferior = false } = props;
   const [propriedades, setPropriedades] = useState(false);
+  // mega onda 1301+ (#142, as6.acess_hub): subcategoria ativa do hub de
+  // Acessórios — trocar de categoria volta ao "Todos" (busca global §18)
+  const [subAcess, setSubAcess] = useState<string | null>(null);
+  useEffect(() => { setSubAcess(null); }, [categoria]);
+  const hubAcess = flag('as6.acess_hub') && categoria === 'acessorio';
   // lote 1231-1240 (#126, a11y §297): na DOCK o drawer flutuante de
   // propriedades fecha no Escape (paridade com os demais flutuantes)
   useEffect(() => {
@@ -407,7 +414,14 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
         <div className="avst5-painel-scroll" ref={refPainel} data-troca={trocando ? '' : undefined}
           onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
           {!dockInferior && blocoPropriedades}
-          {aba !== 'equipados' && categoria === 'acessorio' && (<>
+          {aba !== 'equipados' && categoria === 'acessorio' && (hubAcess ? (
+            /* mega onda 1301+ (#142, as6.acess_hub): HUB de subcategorias
+               por região (contagens, equipados, breadcrumb §17, limpar §22)
+               — substitui os chips de slot §68.3; off = chips de sempre */
+            <HubAcessorios config={configDraft} subAtiva={subAcess}
+              aoEscolherSub={setSubAcess}
+              aoLimparTudo={() => aoEscolher(comItem(paraLegado2d(store.estadoDraft), 'acessorio', null))} />
+          ) : (<>
             {/* §68.2/§68.3: resumo + navegação por slot */}
             <div className="avst5-resumo-slots" data-teste="resumo-acessorios">
               {resumoAcessorios.length
@@ -421,7 +435,7 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
                   onClick={() => setFiltroSlot(s.id)}>{s.nome}</button>
               ))}
             </div>
-          </>)}
+          </>))}
           {aba === 'presets' ? (
             <PresetsShell configAtual={paraLegado2d(store.estadoDraft)}
               aoAplicar={(cfg) => aplicarComando(validarConfig(cfg))} />
@@ -456,13 +470,13 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
                  scroll vertical (o trilho desativa o pan). */
               <div className="avst-trilho avst5-trilho-dock" data-teste="dock-inferior" data-dock-v3="">
                 <DockAssets ativa={estadoDock !== 'expandida'}>
-                  <GradeItens config={configDraft} categoria={categoria}
+                  <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null}
                     desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                     aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
                 </DockAssets>
               </div>
             ) : (
-              <GradeItens config={configDraft} categoria={categoria}
+              <GradeItens config={configDraft} categoria={categoria} filtroSubcategoria={hubAcess ? subAcess : null}
                 desbloqueados={desbloqueados} aoEscolher={aoEscolher} filtroAba={aba as AbaCatalogo}
                 aoPrever={aoPrever} filtroSlot={filtroSlot} aoDetalhes={setDetalheId} />
             )}

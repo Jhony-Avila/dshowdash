@@ -33,7 +33,8 @@ export function AvatarSvg({ config, forma = 'quadrado', estatico = false, uid, f
       ...(palco || corpo ? { palco: true } : {}),
       ...(corpo ? { enquadramento: 'corpo' as const } : {}),
     });
-    return foco && !corpo ? bruto.replace('viewBox="0 0 240 240"', `viewBox="${foco}"`) : bruto;
+    // onda 1296 (#139): `foco` também vale no modo corpo (crop 240×400)
+    return foco ? bruto.replace(corpo ? 'viewBox="0 0 240 400"' : 'viewBox="0 0 240 240"', `viewBox="${foco}"`) : bruto;
   }, [config, forma, estatico, uid, foco, palco, corpo]);
   // #109: a VIDA acompanha o CICLO do markup — religa a cada svg novo
   // (efeito com dep no próprio svg; quem pede palco sem estatico ganha)

@@ -22,7 +22,7 @@ import { deLegado2d, paraLegado2d } from '../nucleo/adaptadores';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { comItem } from '../components/GradeItens';
 import type { AbaCatalogo } from '../components/GradeItens';
-import { lerBloqueios } from './Equipados';
+import { ROTULOS, lerBloqueios } from './Equipados';
 import { Evolucao } from './Evolucao';
 import { incrementar } from '../services/Contadores'; // mega 246 (§221)
 import { avaliarMissoes } from '../services/Missoes';
@@ -957,9 +957,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
       clearTimeout(timer);
       timer = setTimeout(() => setAnuncio(null), 1800);
     };
-    const p1 = store.bus.em('comando:executado', (d) => mostrar(`Aplicado: ${d.nome.replace('equipar:', '')}`));
-    const p2 = store.bus.em('comando:desfeito', (d) => mostrar(`Desfeito: ${d.nome.replace('equipar:', '')}`));
-    const p3 = store.bus.em('comando:refeito', (d) => mostrar(`Refeito: ${d.nome.replace('equipar:', '')}`));
+    // mega onda 1301+: chave técnica (ex.: acessorio_companheiro) vira o
+    // rótulo humano dos Equipados — o toast fala a língua da interface
+    const rotulo = (nome: string) => { const s = nome.replace('equipar:', ''); return ROTULOS[s] ?? s; };
+    const p1 = store.bus.em('comando:executado', (d) => mostrar(`Aplicado: ${rotulo(d.nome)}`));
+    const p2 = store.bus.em('comando:desfeito', (d) => mostrar(`Desfeito: ${rotulo(d.nome)}`));
+    const p3 = store.bus.em('comando:refeito', (d) => mostrar(`Refeito: ${rotulo(d.nome)}`));
     return () => { clearTimeout(timer); p1(); p2(); p3(); };
   }, [store]);
 
@@ -1028,10 +1031,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // §68.2: resumo dos acessórios equipados no topo da categoria
   const resumoAcessorios = useMemo(() => {
-    const nomes = (['acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco'] as const)
-      .map((s) => configVisivel.camadas[s])
-      .filter((id): id is string => Boolean(id))
-      .map((id) => itemPorId(id)?.nome ?? id);
+    // #140 (as6.acess_v2): varre TODOS os slots acessorio_* (finos inclusos)
+    const nomes = Object.entries(configVisivel.camadas)
+      .filter(([k, id]) => k.startsWith('acessorio') && Boolean(id))
+      .map(([, id]) => itemPorId(id as string)?.nome ?? (id as string));
     return nomes;
   }, [configVisivel]);
 

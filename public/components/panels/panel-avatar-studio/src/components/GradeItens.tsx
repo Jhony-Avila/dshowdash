@@ -21,6 +21,7 @@ import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso'
 // mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
 import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
+import { slotFinoDoAsset, subcategoriaDoAsset, subcategoriasConflitam } from '../workspace/acessorios'; // #140
 import { t } from '../nucleo/i18n'; // lote 511-520 (§296)
 // mega 248 (§228): itens ARQUIVADOS saem da grade padrão (reversível)
 import { arquivados } from '../services/ArquivoItens';
@@ -46,6 +47,10 @@ type Ordem = 'padrao' | 'raridade' | 'nome' | 'recentes' | 'novos'; // +novos (�
 
 /** Enquadramento do thumbnail por categoria (AS4 §39.19 — foco na diferença).
  *  Exportado: a Vitrine (4.6 §23) usa o MESMO enquadramento nos cards. */
+/** onda 1296 (#139, as6.corpo_preview): crop do THUMB de corpo inteiro
+ *  (240×400) — enquadra a FIGURA, cortando as margens do palco. */
+export const FOCO_CORPO_THUMB = '38 20 164 372';
+
 export const FOCO_THUMB: Partial<Record<CategoriaId, string>> = {
   base: '45 36 150 150',
   cabelo: '38 6 164 164',
@@ -56,7 +61,11 @@ export const FOCO_THUMB: Partial<Record<CategoriaId, string>> = {
   emblema: '108 162 92 92', // foco no peito — o pino aparece de verdade (§39.19)
 };
 
-const SLOTS_ACESSORIO = ['cabeca', 'rosto', 'pescoco'] as const;
+// mega onda 1301+ (decisão #140, as6.acess_v2): TODOS os slots (legados
+// + finos) — limpeza e varredura genéricas
+const SLOTS_ACESSORIO_TODOS = [
+  'cabeca', 'rosto', 'pescoco', 'olhos', 'orelha', 'costas', 'flutuante', 'companheiro',
+] as const;
 
 // ── §276: parâmetros da virtualização ───────────────────────────────────
 // O plano citava limiar 60, mas a MAIOR categoria do catálogo hoje tem 50
@@ -98,11 +107,33 @@ export function comItem(config: AvatarConfig, categoria: CategoriaId, id: string
   if (categoria === 'acessorio') {
     delete camadas.acessorio; // chave legada nunca persiste
     if (id) {
-      const chave = `acessorio_${itemPorId(id)?.slot ?? 'cabeca'}` as const;
-      if (camadas[chave] === id) delete camadas[chave]; // toggle no mesmo slot
-      else camadas[chave] = id;
+      const legado = itemPorId(id)?.slot ?? 'cabeca';
+      // #140 (as6.acess_v2): equipa no slot FINO do registry; conflitos
+      // por DADOS — remove ocupantes de subcategoria conflitante ONDE
+      // QUER que morem (slot legado incluso). Flag off = 3 slots #41.
+      if (flag('as6.acess_v2')) {
+        const chave = `acessorio_${slotFinoDoAsset(id, legado)}` as const;
+        const minha = subcategoriaDoAsset(id);
+        const jaEquipado = camadas[chave] === id;
+        for (const s of SLOTS_ACESSORIO_TODOS) {
+          const k = `acessorio_${s}` as const;
+          const outro = camadas[k];
+          if (!outro) continue;
+          if (outro === id) { delete camadas[k]; continue; } // re-equipar migra
+          const dele = subcategoriaDoAsset(outro);
+          const conflita = minha && dele
+            ? subcategoriasConflitam(minha, dele)
+            : slotFinoDoAsset(outro, itemPorId(outro)?.slot ?? 'cabeca') === slotFinoDoAsset(id, legado);
+          if (conflita) delete camadas[k];
+        }
+        if (!jaEquipado) camadas[chave] = id; // toggle: re-clique remove
+      } else {
+        const chave = `acessorio_${legado}` as const;
+        if (camadas[chave] === id) delete camadas[chave]; // toggle no mesmo slot
+        else camadas[chave] = id;
+      }
     } else {
-      for (const s of SLOTS_ACESSORIO) delete camadas[`acessorio_${s}`];
+      for (const s of SLOTS_ACESSORIO_TODOS) delete camadas[`acessorio_${s}`];
     }
     return { ...config, camadas };
   }
@@ -116,8 +147,8 @@ function idsEquipados(config: AvatarConfig, categoria: CategoriaId): string[] {
   if (categoria === 'base') return [config.base];
   if (categoria === 'acessorio') {
     return [
-      config.camadas.acessorio, config.camadas.acessorio_cabeca,
-      config.camadas.acessorio_rosto, config.camadas.acessorio_pescoco,
+      config.camadas.acessorio,
+      ...SLOTS_ACESSORIO_TODOS.map((s) => config.camadas[`acessorio_${s}`]),
     ].filter((x): x is string => typeof x === 'string');
   }
   const id = config.camadas[categoria];
@@ -126,7 +157,7 @@ function idsEquipados(config: AvatarConfig, categoria: CategoriaId): string[] {
 
 export type AbaCatalogo = 'todos' | 'equipados' | 'favoritos' | 'novos' | 'bloqueados';
 
-export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever, filtroSlot = 'todos', aoDetalhes }: {
+export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtroAba = 'todos', aoPrever, filtroSlot = 'todos', aoDetalhes, filtroSubcategoria }: {
   config: AvatarConfig;
   categoria: CategoriaId;
   /** ids liberados por conquistas/eventos (vem do /api/avatar/vida.php) */
@@ -140,6 +171,9 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
   filtroSlot?: 'todos' | SlotAcessorio;
   /** AS5 §67: abre o DRAWER DE DETALHES do asset (shell novo) */
   aoDetalhes?: (id: string) => void;
+  /** mega onda 1301+ (#140, as6.acess_hub): subcategoria ativa do hub —
+   *  filtra os assets pelo registry (só age em 'acessorio') */
+  filtroSubcategoria?: string | null;
 }) {
   const meta = CATEGORIAS.find((c) => c.id === categoria);
   const [busca, setBusca] = useState('');
@@ -295,6 +329,9 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
       })
       .filter((i) => categoria !== 'acessorio' || filtroSlot === 'todos'
         || (i.slot ?? 'cabeca') === filtroSlot) // §68.3
+      // #140 (as6.acess_hub): subcategoria ativa do hub filtra pelo registry
+      .filter((i) => categoria !== 'acessorio' || !filtroSubcategoria
+        || subcategoriaDoAsset(i.id)?.id === filtroSubcategoria)
       // megas 351-353 (§157.1-.5, flag as5.efeitos_v2): filtro FUNCIONAL
       .filter((i) => categoria !== 'efeito' || filtroFx === 'todos'
         || categoriaFuncional(i.id) === filtroFx)
@@ -322,7 +359,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot, filtroFx]);
+  }, [categoria, config.base, busca, favs, desbloqueados, filtroAba, filtroSlot, filtroFx, filtroSubcategoria]);
 
   // §56.2: contagem por raridade no CONTEXTO atual (mostrada no popover)
   const contagem = useMemo(() => {
@@ -436,7 +473,9 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           <p>
             {itens.length} {itens.length === 1 ? 'item' : 'itens'}
             {nomesEquipados ? <> · equipado: <strong>{nomesEquipados}</strong></> : ' · nada equipado'}
-            {categoria === 'acessorio' && <> · até 3 ao mesmo tempo (cabeça, rosto, pescoço)</>}
+            {categoria === 'acessorio' && (flag('as6.acess_v2')
+              ? <> · {t('vários ao mesmo tempo — um por slot')}</>
+              : <> · até 3 ao mesmo tempo (cabeça, rosto, pescoço)</>)}
           </p>
         </div>
         <div className="avst-modos" role="radiogroup" aria-label="Modo de visualização">
@@ -842,10 +881,19 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
         data-corpo={flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? '' : undefined}>
         {/* onda 1294 (#137, as6.corpo_preview): thumbs de VESTUÁRIO em
             corpo inteiro 240×400 — a peça aparece de verdade no card;
+            onda 1296 (#139): figura LIMPA (sem fundo/moldura/efeito/
+            aura) + crop no corpo — a peça fica grande e legível;
             off = foco §39.19 de sempre byte a byte */}
-        <AvatarSvg config={preview} estatico uid={`th-${item.id}`}
-          corpo={flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre')}
-          foco={FOCO_THUMB[item.categoria]} />
+        {flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? (
+          <AvatarSvg estatico uid={`th-${item.id}`} corpo foco={FOCO_CORPO_THUMB}
+            config={{ ...preview, camadas: (() => {
+              const { fundo: _f, moldura: _m, efeito: _e, aura: _a, ...soFigura } = preview.camadas;
+              return soFigura;
+            })() }} />
+        ) : (
+          <AvatarSvg config={preview} estatico uid={`th-${item.id}`}
+            foco={FOCO_THUMB[item.categoria]} />
+        )}
         {poderVivo && (
           <span className="avst-card-poder" aria-hidden data-teste="poder-preview"
             dangerouslySetInnerHTML={{ __html: svgEfeitoIsolado(item.id, config.cores.destaque) }} />

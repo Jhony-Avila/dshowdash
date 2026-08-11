@@ -18,7 +18,13 @@ import { useState } from 'react';
 import { Info, X } from 'lucide-react';
 import type { CategoriaId } from '../domain/types';
 import { CONTEXTOS } from '../workspace/contexto';
+import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
+
+// mega onda 1301+ (#140/#142): com o modelo multi-slot ligado, o texto
+// da categoria Acessórios muda — a tabela CONTEXTOS segue com o texto
+// do modelo legado (flag off ⇒ limite de 3 volta a valer de verdade).
+const TEXTO_ACESS_V2 = 'Vários ao mesmo tempo — um por slot; conflitos aparecem antes de equipar.';
 
 const CHAVE_CTXBAR = 'dshow.avst6.ctxbar.v1';
 
@@ -31,11 +37,12 @@ export function BarraContexto({ categoria }: { categoria: CategoriaId }) {
   if (oculta) return null;
   const ctx = CONTEXTOS[categoria];
   if (!ctx) return null;
+  const texto = categoria === 'acessorio' && flag('as6.acess_v2') ? TEXTO_ACESS_V2 : ctx.texto;
   return (
     <div className="avst6-ctx-barra" data-teste="ctx-barra" role="status" aria-live="polite">
       <Info size={13} aria-hidden />
       <strong>{t(ctx.titulo)}</strong>
-      <span title={ctx.texto}>{t(ctx.texto)}</span>
+      <span title={texto}>{t(texto)}</span>
       <button type="button" data-teste="ctx-barra-fechar"
         title={t('Dispensar dicas de contexto')} aria-label={t('Dispensar dicas de contexto')}
         onClick={() => {

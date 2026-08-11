@@ -3269,3 +3269,67 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 /* onda 1295 (#138, briefing §26): seta no LIMITE fica visível e
    desabilitada (só na dock do shell novo — o JSX gateia) */
 .avst6-dock-seta:disabled { opacity: .35; cursor: default; pointer-events: none; }
+
+/* ══ mega onda 1301+ (decisão #142, flag as6.acess_hub) — HUB da
+   categoria-mãe Acessórios: faixa de subcategorias por região ══ */
+.avst6-hub {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px;
+  padding: 2px 0 6px; font-size: 11px;
+}
+.avst6-hub-regiao { display: inline-flex; align-items: center; gap: 4px; }
+.avst6-hub-regiao > em {
+  font-style: normal; font-size: 9.5px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--avst-texto-2, var(--as6-texto-suave));
+  margin: 0 2px 0 8px;
+}
+.avst6-hub-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  color: var(--avst-texto-2, var(--as6-texto-suave));
+  border-radius: 999px; padding: 3px 9px; font-size: 11px; cursor: pointer;
+}
+.avst6-hub-chip:hover { color: var(--avst-texto, var(--as6-texto-forte)); border-color: var(--avst-acento, var(--as6-acento)); }
+.avst6-hub-chip:disabled { opacity: .45; cursor: default; }
+.avst6-hub-chip small { font-size: 9.5px; opacity: .75; }
+.avst6-hub-on {
+  color: var(--avst-texto, var(--as6-texto-forte)); font-weight: 700;
+  border-color: var(--avst-acento, var(--as6-acento));
+  background: color-mix(in srgb, var(--avst-acento, var(--as6-acento)) 12%, transparent);
+}
+.avst6-hub-eq {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--avst-acento, var(--as6-acento));
+}
+.avst6-hub-bc {
+  margin-left: 8px; color: var(--avst-texto-2, var(--as6-texto-suave));
+  font-size: 10.5px;
+}
+.avst6-hub-resumo { margin-left: auto; color: var(--avst-texto-2, var(--as6-texto-suave)); font-size: 10.5px; }
+.avst6-hub-limpar { border-style: dashed; }
+.avst6-hub-confirma {
+  color: #fff; border-color: transparent;
+  background: var(--avst-erro, #ff5f6e);
+}
+
+/* ── mega onda 1301+ · lote 1331–1340 (decisão #143, flag as6.nav_grupos):
+   MACROGRUPOS na sidebar — cabeçalhos colapsáveis por intenção
+   (Personagem/Vestuário/Ambiente/Identidade). Tokens dos dois temas;
+   flag off ⇒ nada disto renderiza (DOM anterior byte a byte). ── */
+.avst6-navg { gap: 2px; }
+.avst6-navg-grupo { display: flex; flex-direction: column; gap: 2px; }
+.avst6-navg-cab {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: 0; cursor: pointer;
+  padding: 7px 10px 3px; margin-top: 2px;
+  color: var(--avst-texto-2, var(--as6-texto-suave));
+  font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; text-align: left;
+}
+.avst6-navg-cab:hover { color: var(--avst-texto, var(--as6-texto-forte)); }
+.avst6-navg-cab svg { transition: transform .15s ease; transform: rotate(-90deg); }
+.avst6-navg-cab svg[data-aberto] { transform: none; }
+.avst6-navg-sep {
+  border: 0; border-top: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  margin: 5px 8px; width: auto;
+}
+@media (prefers-reduced-motion: reduce) { .avst6-navg-cab svg { transition: none; } }

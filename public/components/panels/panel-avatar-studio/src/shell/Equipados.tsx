@@ -22,10 +22,14 @@ export function alternarBloqueio(slot: string): Set<string> {
   return s;
 }
 
-const ROTULOS: Record<string, string> = {
+export const ROTULOS: Record<string, string> = {
   base: 'Base', cabelo: 'Cabelo', olhos: 'Olhos', boca: 'Boca', roupa: 'Roupa',
   acessorio_cabeca: 'Acessório · cabeça', acessorio_rosto: 'Acessório · rosto',
-  acessorio_pescoco: 'Acessório · pescoço', fundo: 'Fundo', moldura: 'Moldura',
+  acessorio_pescoco: 'Acessório · pescoço',
+  // mega onda 1301+ (#140, as6.acess_v2): slots finos aditivos
+  acessorio_olhos: 'Acessório · olhos', acessorio_orelha: 'Acessório · orelha',
+  acessorio_costas: 'Acessório · costas', acessorio_flutuante: 'Acessório · flutuante',
+  acessorio_companheiro: 'Acessório · companheiro', fundo: 'Fundo', moldura: 'Moldura',
   efeito: 'Efeito', aura: 'Aura', banner: 'Banner', emblema: 'Emblema',
 };
 

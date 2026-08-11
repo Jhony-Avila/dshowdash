@@ -198,6 +198,15 @@ const EN: Record<string, string> = {
   'Vista a peça e ajuste as cores dela — o corpo inteiro fica visível no preview.': 'Wear the piece and tune its colors — the full body stays visible in the preview.',
   'Adicione uma camada por cima da roupa e veja na hora como combina com o conjunto.': 'Add a layer over the outfit and see instantly how it matches the set.',
   'Até 3 ao mesmo tempo (cabeça, rosto e pescoço) — conflitos de slot aparecem antes de equipar.': 'Up to 3 at once (head, face and neck) — slot conflicts show up before equipping.',
+  'Vários ao mesmo tempo — um por slot; conflitos aparecem antes de equipar.': 'Several at once — one per slot; conflicts show up before equipping.',
+  'vários ao mesmo tempo — um por slot': 'several at once — one per slot',
+  // lote 1331–1340 (as6.nav_grupos): macrogrupos da navegação
+  'Personagem': 'Character',
+  'Vestuário': 'Wardrobe',
+  // 'Ambiente' já existe acima (mixer de som = 'Ambience'); o macrogrupo
+  // usa um rótulo próprio para não colidir chave PT
+  'Ambiente e cenário': 'Environment & scene',
+  'Identidade visual': 'Visual identity',
   'Altere o cenário mantendo o avatar visível no centro.': 'Change the backdrop while the avatar stays centered and visible.',
   'Compare molduras ao redor do avatar e visualize o resultado imediatamente.': 'Compare frames around the avatar and see the result immediately.',
   'Equipe um efeito e regule a intensidade — ative o poder no modo Studio para vê-lo em ação.': 'Equip an effect and tune its intensity — trigger the power in Studio mode to see it in action.',
