@@ -56,16 +56,19 @@ const slotsAcessorio = (r) => Object.fromEntries(
     await irParaHarness(p, 'avst-harness.html', 1200);
     await irCategoria(p, 'Acess');
     // hub presente, com contagens e em_preparacao desabilitada (§32)
-    ok(await p.locator('[data-teste="hub-acessorios"]').count() === 1, 'hub ausente com a flag ON');
-    const nDesab = await p.locator('[data-teste="hub-acessorios"] button:disabled').count();
+    // #144: as subcategorias moram na ÁRVORE da sidebar (hierarquia
+    // convencional sob a categoria-mãe — feedback visual do Jhony)
+    ok(await p.locator('.avst5-sidebar [data-teste="arv-acessorios"]').count() === 1, 'árvore de subcategorias ausente da sidebar com a flag ON');
+    const nDesab = await p.locator('[data-teste="arv-acessorios"] button:disabled').count();
     ok(nDesab >= 3, `esperava ≥3 subcategorias em preparação desabilitadas (veio ${nDesab})`);
     // filtro por subcategoria + breadcrumb (§17–§18)
-    await p.evaluate(() => document.querySelector('[data-teste="hub-aureolas"]')?.click());
+    await p.evaluate(() => document.querySelector('[data-teste="arv-aureolas"]')?.click());
     await p.waitForTimeout(400);
     const soAureola = await p.evaluate(() => [...document.querySelectorAll('.avst5-painel .avst-card .avst-card-nome')].map((n) => n.textContent.trim()));
     ok(soAureola.length === 2 && soAureola.includes('Auréola'), `filtro Auréolas deveria isolar 1 item + Nenhum (veio ${soAureola.join(',')})`);
-    ok((await p.locator('[data-teste="hub-breadcrumb"]').textContent())?.includes('Especiais'), 'breadcrumb sem a região');
-    await p.evaluate(() => document.querySelector('[data-teste="hub-todos"]')?.click());
+    ok(await p.evaluate(() => [...document.querySelectorAll('[data-teste="arv-acessorios"] .avst6-arv-regiao > em')].some((e) => e.textContent.includes('Especiais'))),
+      'região Especiais ausente da árvore (hierarquia visível substitui o breadcrumb §17)');
+    await p.evaluate(() => document.querySelector('[data-teste="arv-todos"]')?.click());
     await p.waitForTimeout(400);
     // §36/§37: 8 acessórios SIMULTÂNEOS — um por slot fino
     for (const nome of ['Boné Snapback', 'Pintura de Guerra', 'Óculos de Grau', 'Brinco de Argola',
@@ -74,7 +77,7 @@ const slotsAcessorio = (r) => Object.fromEntries(
     ok(Object.keys(slots).length === 8, `esperava 8 slots preenchidos (veio ${Object.keys(slots).length}: ${JSON.stringify(slots)})`);
     ok(slots.acessorio_flutuante === 'ace_aureola', 'auréola fora do slot flutuante');
     ok(slots.acessorio_costas === 'ace_mochila_jato', 'mochila fora do slot costas');
-    ok((await p.locator('[data-teste="hub-resumo"]').textContent())?.startsWith('8 '), 'resumo do hub não conta 8');
+    ok((await p.locator('[data-teste="hub-resumo"]').textContent())?.startsWith('8 '), 'resumo (na grade) não conta 8');
     await p.screenshot({ path: `${SAIDA}/acessorios-v2-multi.png` });
     // substituição no MESMO slot (§36): abre o modal §69.1 ("nada de
     // troca silenciosa") — confirmar aplica Coroa e remove o Boné
@@ -175,7 +178,7 @@ const slotsAcessorio = (r) => Object.fromEntries(
     await irParaHarness(p, 'avst-harness.html', 1200);
     ok(await p.locator('.avst6-navg-cab').count() === 0, 'flag OFF ainda mostra macrogrupos');
     await irCategoria(p, 'Acess');
-    ok(await p.locator('[data-teste="hub-acessorios"]').count() === 0, 'flag OFF ainda mostra o hub');
+    ok(await p.locator('[data-teste="arv-acessorios"]').count() === 0, 'flag OFF ainda mostra a árvore de subcategorias');
     // equipar volta ao SLOT LEGADO (decisão #41 byte a byte)
     await equiparCard(p, 'Auréola');
     const slots = slotsAcessorio(await lerRascunho(p));

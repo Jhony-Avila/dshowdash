@@ -22,7 +22,7 @@ import { Inspector } from './Inspector';
 import { PresetsShell } from '../shell/PresetsShell';
 import { HistoricoSessao } from '../shell/HistoricoSessao';
 import { DockAssets } from './DockAssets'; // decisão #112: MESMO trilho do clássico
-import { HubAcessorios } from './HubAcessorios'; // mega onda 1301+ (#142, as6.acess_hub)
+import { ResumoAcessorios } from './HubAcessorios'; // mega onda 1301+ (#142/#144, as6.acess_hub)
 import { comItem } from '../components/GradeItens';
 import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
@@ -94,6 +94,9 @@ export interface PropsPainelCatalogo {
   /** decisão #112 (as6.dock_inferior): painel vira DOCK horizontal
    *  abaixo do preview (estrutura do clássico AAA); false = lateral. */
   dockInferior?: boolean;
+  /** #144 (as6.acess_hub): subcategoria ativa da árvore da SIDEBAR —
+   *  o estado mora no shell; aqui só filtra a grade */
+  subAcess?: string | null;
 }
 
 export function PainelCatalogo(props: PropsPainelCatalogo) {
@@ -101,12 +104,10 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
     categoria, setCategoria, filtroSlot, setFiltroSlot, configVisivel, configDraft,
     aoEscolher, aoPrever, resumoAcessorios, store, aplicarComando, bloqueios,
     setBloqueios, aoMudarFavs, historico, desbloqueados, setDetalheId,
-    dockInferior = false } = props;
+    dockInferior = false, subAcess = null } = props;
   const [propriedades, setPropriedades] = useState(false);
-  // mega onda 1301+ (#142, as6.acess_hub): subcategoria ativa do hub de
-  // Acessórios — trocar de categoria volta ao "Todos" (busca global §18)
-  const [subAcess, setSubAcess] = useState<string | null>(null);
-  useEffect(() => { setSubAcess(null); }, [categoria]);
+  // #142/#144 (as6.acess_hub): as subcategorias moram na ÁRVORE da
+  // sidebar (estado no shell); aqui fica só o resumo/limpar e o filtro
   const hubAcess = flag('as6.acess_hub') && categoria === 'acessorio';
   // lote 1231-1240 (#126, a11y §297): na DOCK o drawer flutuante de
   // propriedades fecha no Escape (paridade com os demais flutuantes)
@@ -415,11 +416,10 @@ export function PainelCatalogo(props: PropsPainelCatalogo) {
           onScroll={(e) => setMostrarTopo((e.target as HTMLElement).scrollTop > 400)}>
           {!dockInferior && blocoPropriedades}
           {aba !== 'equipados' && categoria === 'acessorio' && (hubAcess ? (
-            /* mega onda 1301+ (#142, as6.acess_hub): HUB de subcategorias
-               por região (contagens, equipados, breadcrumb §17, limpar §22)
-               — substitui os chips de slot §68.3; off = chips de sempre */
-            <HubAcessorios config={configDraft} subAtiva={subAcess}
-              aoEscolherSub={setSubAcess}
+            /* #142/#144 (as6.acess_hub): as subcategorias viraram ÁRVORE
+               na sidebar (feedback visual do Jhony) — aqui fica só o
+               resumo §21 + "Limpar tudo" §22; off = chips de sempre */
+            <ResumoAcessorios config={configDraft}
               aoLimparTudo={() => aoEscolher(comItem(paraLegado2d(store.estadoDraft), 'acessorio', null))} />
           ) : (<>
             {/* §68.2/§68.3: resumo + navegação por slot */}

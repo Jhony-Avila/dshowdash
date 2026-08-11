@@ -22,15 +22,21 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { categoriasAtivas } from '../services/AvatarCatalog';
-import type { CategoriaId } from '../domain/types';
+import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { flag } from '../nucleo/flags';
 import { t } from '../nucleo/i18n';
+import { ArvoreAcessorios } from './HubAcessorios';
 
 export interface PropsTrilhoCategorias {
   categoria: CategoriaId;
   /** ≤84px: só a inicial (o pai calcula a partir da largura arrastável) */
   compacta: boolean;
   aoEscolher: (id: CategoriaId) => void;
+  /** #144 (as6.acess_hub): árvore de subcategorias sob a categoria-mãe
+   *  Acessório — hierarquia convencional na própria sidebar */
+  config?: AvatarConfig;
+  subAcess?: string | null;
+  aoEscolherSub?: (id: string | null) => void;
 }
 
 /** Macrogrupos (briefing de navegação 2026-08-11, §2): taxonomia por
@@ -51,10 +57,21 @@ function lerColapsados(): Set<string> {
   } catch { return new Set(); }
 }
 
-export function TrilhoCategorias({ categoria, compacta, aoEscolher }: PropsTrilhoCategorias) {
+export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subAcess, aoEscolherSub }: PropsTrilhoCategorias) {
   const grupos = flag('as6.nav_grupos');
   const [colapsados, setColapsados] = useState<Set<string>>(lerColapsados);
   const ativas = categoriasAtivas();
+
+  // #144: a árvore de subcategorias aparece ABAIXO do botão Acessório
+  // quando a categoria-mãe está ativa (accordion convencional). Na
+  // sidebar compacta não cabe — a grade mostra tudo ("Todos") e o
+  // usuário alarga a nav para navegar por subcategoria.
+  const arvoreAcess = (c: (typeof ativas)[number]) => (
+    flag('as6.acess_hub') && !compacta && c.id === 'acessorio' && categoria === 'acessorio'
+      && config && aoEscolherSub
+      ? <ArvoreAcessorios key="arv-acess" config={config} subAtiva={subAcess ?? null} aoEscolherSub={aoEscolherSub} />
+      : null
+  );
 
   const botao = (c: (typeof ativas)[number]) => (
     <button key={c.id} type="button"
@@ -64,11 +81,12 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher }: PropsTrilh
       {!compacta && <span>{c.nome}</span>}
     </button>
   );
+  const botaoComFilhos = (c: (typeof ativas)[number]) => [botao(c), arvoreAcess(c)];
 
   if (!grupos) {
     return (
       <nav className={`avst5-sidebar${compacta ? ' avst5-sidebar-compacta' : ''}`} aria-label="Categorias">
-        {ativas.map(botao)}
+        {ativas.map(botaoComFilhos)}
       </nav>
     );
   }
@@ -103,13 +121,13 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher }: PropsTrilh
                   {t(g.nome)}
                 </button>
               )}
-            {(aberto || compacta) && cats.map(botao)}
+            {(aberto || compacta) && cats.map(botaoComFilhos)}
           </section>
         );
       })}
       {/* rede de segurança: categoria futura fora do mapa NUNCA some da
           navegação — aparece solta no fim até ganhar grupo */}
-      {ativas.filter((c) => !MACROGRUPOS.some((g) => g.categorias.includes(c.id))).map(botao)}
+      {ativas.filter((c) => !MACROGRUPOS.some((g) => g.categorias.includes(c.id))).map(botaoComFilhos)}
     </nav>
   );
 }

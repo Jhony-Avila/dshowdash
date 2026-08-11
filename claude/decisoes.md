@@ -1236,3 +1236,18 @@ com RPO/RTO · headers CSP no nginx.
   destino de navegação próprio — grupo vazio violaria o §32; entra
   quando houver destino real. Rótulo "Ambiente e cenário" (não
   "Ambiente") para não colidir com a chave i18n do mixer de som.
+
+- **#144 (2026-08-11) — Subcategorias de Acessórios como ÁRVORE na
+  sidebar (onda 1351, correção visual do Jhony sobre o #142)**: a faixa
+  horizontal de chips acima da grade confundiu — feedback direto com
+  print. As subcategorias agora aparecem UM NÍVEL ABAIXO da
+  categoria-mãe "Acessório" na própria sidebar (hierarquia
+  convencional): "Todos" + regiões como micro-rótulos + subcategorias
+  indentadas com contagem e ponto de equipado, accordion pela categoria
+  ativa. O breadcrumb §17 saiu (a hierarquia visível o torna
+  redundante); o resumo §21 + "Limpar tudo" §22 moram numa linha
+  compacta acima da grade (ResumoAcessorios). Estado da subcategoria
+  içado para o shell (sidebar filtra a grade). Sidebar compacta (≤84px)
+  não mostra a árvore — a grade fica em "Todos" e o usuário alarga a
+  nav. Mesma flag as6.acess_hub (é a forma do hub, não outra feature);
+  off = chips §68.3 byte a byte.

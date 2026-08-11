@@ -210,6 +210,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 
   // estados locais de UI (§607.2/§607.3 — nunca entram no AvatarStore)
   const [categoria, setCategoria] = useState<CategoriaId>('base');
+  // #144 (as6.acess_hub): subcategoria ativa da ÁRVORE de Acessórios na
+  // sidebar — trocar de categoria volta ao "Todos" (busca global §18)
+  const [subAcess, setSubAcess] = useState<string | null>(null);
+  useEffect(() => { setSubAcess(null); }, [categoria]);
   const [larguras, setLarguras] = useState(lerLarguras);
   const [aba, setAba] = useState<AbaCatalogo | 'presets'>('todos');
   // §68.3: chip de slot ativo (só em Acessórios; troca de categoria zera)
@@ -1090,6 +1094,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
         <div className="avst5-corpo">
           {/* sidebar esquerda — scroll próprio (R5) */}
           <TrilhoCategorias categoria={categoria} compacta={compacta}
+            config={configDraft} subAcess={subAcess} aoEscolherSub={setSubAcess}
             aoEscolher={(id) => {
               medirInteracao('troca-categoria'); // #119: fecha pós-paint
               setCategoria(id); setFiltroSlot('todos');
@@ -1412,6 +1417,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             filtroSlot={filtroSlot} setFiltroSlot={setFiltroSlot}
             configVisivel={configVisivel} configDraft={configDraft}
             aoEscolher={aoEscolher} aoPrever={aoPrever} resumoAcessorios={resumoAcessorios}
+            subAcess={subAcess} /* #144: árvore na sidebar filtra a grade */
             store={store} aplicarComando={aplicarComando}
             bloqueios={bloqueios} setBloqueios={setBloqueios}
             aoMudarFavs={() => setTicFavs((t) => t + 1)}
