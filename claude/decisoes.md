@@ -1179,3 +1179,60 @@ com RPO/RTO · headers CSP no nginx.
   presente (403 'assinatura' p/ requisição não assinada, verificado por
   fora); defeito está no lado GitHub (secret divergente/desativado) ou
   no consumo da fila — bloco de diagnóstico entregue ao Jhony.
+
+- **#139 (2026-08-11) — Thumbs de vestuário legíveis (onda 1296,
+  refinamento do as6.corpo_preview)**: feedback do Jhony pós-1294 — os
+  cards de Roupa mostravam o retrato COMPLETO (fundo + banner) e a
+  figura virava um grão: a peça continuava indistinguível. Correção:
+  a thumb de roupa/roupa_sobre renderiza a figura LIMPA (config do
+  preview sem fundo/moldura/efeito/aura — o corpoTodo já exclui
+  moldura) com CROP na figura (FOCO_CORPO_THUMB '38 20 164 372';
+  AvatarSvg passou a aceitar `foco` também no modo corpo). O palco
+  grande mantém o cenário (faz parte do palco). Off = busto byte a
+  byte. corpo-preview.mjs atualizado (thumb cropada).
+
+- **#140 (2026-08-11) — Acessórios multi-slot por EXTENSÃO dos slots
+  aditivos (mega onda 1301+, flag as6.acess_v2)**: o briefing pedia
+  acessórios simultâneos sem conflito artificial. Alternativa "array de
+  equipamentos" foi REJEITADA (§38 do briefing: nada de segunda
+  arquitetura; checksum §619, espelho PHP, undo e presets operam sobre
+  o record `camadas`). Em vez disso, os 3 slots da decisão #41 ganharam
+  5 slots FINOS (`acessorio_olhos/orelha/costas/flutuante/companheiro`)
+  — mesma mecânica consagrada, ordem de camadas estável (costas ATRÁS
+  da figura, flutuante/companheiro por cima), allowlist PHP espelhada.
+  Subcategorias/regiões são REGISTRY EM DADOS (workspace/acessorios.ts:
+  6 regiões, ~20 subcategorias com estado ativa/em_preparacao/oculta,
+  conflitos declarados via conflitaComSlots, classificação dos 30
+  assets). Conflito = mesmo slot OU bloqueio declarado (headsets-vr ×
+  olhos). Aleatório sorteia por slot fino sem duplicar asset.
+
+- **#141 (2026-08-11) — Byte-stability na migração: salvo legado NUNCA
+  re-slota**: avatar salvo com auréola em `acessorio_cabeca` continua
+  rendendo DAQUELA chave para sempre (validarConfig aceita as chaves
+  finas incondicionalmente — forward-compat — mas não move nada
+  sozinho). A migração acontece apenas como COMANDO do usuário: ao
+  re-equipar o mesmo asset, comItem remove a ocorrência antiga (onde
+  quer que more) e grava no slot fino — com undo. Campo novo neutro =
+  omitido na serialização (§619 intacto; goldens intactos).
+
+- **#142 (2026-08-11) — Hub de subcategorias como FAIXA, não como
+  navegação profunda (flag as6.acess_hub, dependente de acess_v2)**:
+  regiões viram separadores e subcategorias viram chips com contagem e
+  ponto de equipado — um clique filtra a grade, "Todos" volta à busca
+  global, breadcrumb §17, resumo "N equipados" §21, "Limpar tudo" com
+  confirmação em 2 cliques §22 (um comando, undo). Subcategoria sem
+  arte nasce EM_PREPARACAO desabilitada com aviso honesto (§32 — nada
+  vazio publicado como completo). A substituição em slot ocupado segue
+  o modal §69.1 já existente (nada de troca silenciosa).
+
+- **#143 (2026-08-11) — Navegação em MACROGRUPOS (flag
+  as6.nav_grupos)**: sidebar deixa de ser lista plana — cabeçalhos
+  colapsáveis Personagem / Vestuário / Ambiente e cenário / Identidade
+  visual (colapso persistido; colapsar o grupo da categoria ATIVA
+  reabre sozinho — nunca esconder onde o usuário está; categoria futura
+  fora do mapa aparece solta no fim como rede de segurança). O
+  macrogrupo "Expressão e movimento" NÃO foi publicado: emotes,
+  personalidades e posturas vivem no palco/paleta e ainda não têm
+  destino de navegação próprio — grupo vazio violaria o §32; entra
+  quando houver destino real. Rótulo "Ambiente e cenário" (não
+  "Ambiente") para não colidir com a chave i18n do mixer de som.

@@ -39,7 +39,8 @@ const clicarCat = (p, nome) => p.evaluate((n) => {
       };
     });
     ok(roupa.palcoVB === '0 0 240 400', `Roupa: palco deveria ser corpo 240×400 (veio ${roupa.palcoVB})`);
-    ok(roupa.thumbVB === '0 0 240 400', `Roupa: thumb deveria ser corpo 240×400 (veio ${roupa.thumbVB})`);
+    // onda 1296 (#139): thumb de vestuário CROPADA na figura (peça legível)
+    ok(roupa.thumbVB === '38 20 164 372', `Roupa: thumb deveria cropar a figura (veio ${roupa.thumbVB})`);
     ok(roupa.attr && roupa.thumbAttr, 'Roupa: atributos data-corpo ausentes');
     ok(roupa.cardDentro, 'Roupa: card de corpo inteiro CORTADO na dock');
     // Sobrepeça também é vestuário
