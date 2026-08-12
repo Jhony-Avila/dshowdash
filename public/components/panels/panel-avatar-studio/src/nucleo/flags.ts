@@ -127,6 +127,9 @@ const PADROES: Record<string, boolean> = {
   'as6.nav_grupos': true,       // lote 1331–1340 — navegação em MACROGRUPOS (Personagem/Vestuário/Expressão/Ambiente/Identidade) mapeando conteúdo existente; off = lista plana anterior byte a byte
   'as6.tax_v2': true,
   'as6.tax_cms': false,         // onda 1381 (#148) — hidrata a taxonomia do CMS (api/avatar/taxonomia.php); OFF até o RUNBOOK-BANCO popular avatar_category_groups; off/204 = registry estático byte a byte           // onda 1361+ (#145/#146) — TAXONOMIA v2: várias categorias-mãe (acordeão) + principais na sidebar, subcategorias na dock; "Acessório" deixa de ser botão único (segue como tipo técnico); off = navegação #143/#144 byte a byte
+  // ── mega programa 1401+ (POPULAÇÃO + ELEVAÇÃO; decisões #150+; padrão ON conforme #50) ──
+  'as6.thumb_item': true,       // onda 1401 — thumbnails MODO ITEM (elevação §12): card de acessório mostra o ASSET isolado (viewBox por bounds MEDIDOS baked em modoItem.ts, fundo neutro, ocupação ~78%); hover/toggle = Modo Aplicado; off = avatar com foco §39.19 byte a byte
+  'as6.variantes': true,        // onda 1401 — VARIANTES DE COR por asset (registry em DADOS; aplicar = coresCamada §73 via comPaleta §74 — NADA novo persiste, §619/PHP intocados): seletor no detalhe + contagem no card; off = sem UI byte a byte
 };
 
 /**

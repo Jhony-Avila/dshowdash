@@ -15,6 +15,9 @@ import {
   COLECOES, RARIDADES, itemPorId, itensDe, progressoColecao, validarConfig,
 } from '../services/AvatarCatalog';
 import { comItem, FOCO_THUMB } from '../components/GradeItens';
+// onda 1401 (#150): variantes de cor — presets §73 aplicados via comPaleta §74
+import { comPaleta } from './PropriedadesAsset';
+import { camadaDoAsset, varianteAtiva, variantesDe } from '../services/VariantesAssets';
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 import { alternarNaLista, criarLista, excluirLista, listarListas } from '../services/Listas';
 // mega 229 (§229): favoritos que crescem — marca de permanente
@@ -235,6 +238,47 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
         {(item.usaCores?.length ?? 0) > 0 && (
           <p className="avst5-det-meta">Canais de cor: {item.usaCores!.map((c) => NOME_CANAL[c]).join(', ')}</p>
         )}
+        {/* onda 1401 (#150, as6.variantes — elevação): VARIANTES DE COR
+            curadas do asset. Clicar equipa (se preciso) e preenche os
+            canais §73 via comPaleta §74 — NADA novo persiste; "Original"
+            remove o override. Hover = preview §608 no palco. */}
+        {flag('as6.variantes') && (() => {
+          const vars = variantesDe(item.id);
+          const camada = camadaDoAsset(item);
+          if (!vars.length || !camada) return null;
+          const equipadoAqui = config.camadas[camada] === item.id;
+          const base = equipadoAqui ? config : comItem(config, item.categoria, item.id);
+          const ativa = equipadoAqui ? varianteAtiva(item.id, camada, config) : null;
+          const aplicar = (canais: (typeof vars)[number]['canais'] | null) => {
+            aoPrever(null);
+            aoEscolher(validarConfig(comPaleta(base, camada, canais)));
+            setTic((t) => t + 1);
+          };
+          return (
+            <div className="avst-ft-chips avst5-det-variantes" role="group"
+              aria-label="Variantes de cor (§73)" data-teste="det-variantes">
+              <button type="button" className="avst-ft-chip"
+                aria-pressed={equipadoAqui && !ativa} data-teste="var-original"
+                title="Cores originais — remove a variante (nada persiste)"
+                onClick={() => aplicar(null)}>Original</button>
+              {vars.map((v) => (
+                <button key={v.id} type="button" className="avst-ft-chip avst5-var-chip"
+                  aria-pressed={ativa === v.id} data-teste={`var-${v.id}`}
+                  title={`Variante ${v.nome}`}
+                  onMouseEnter={() => aoPrever(validarConfig(comPaleta(base, camada, v.canais)))}
+                  onMouseLeave={() => aoPrever(null)}
+                  onClick={() => aplicar(v.canais)}>
+                  <span className="avst5-var-swatch" aria-hidden>
+                    {Object.values(v.canais).map((hex) => (
+                      <i key={hex} style={{ background: hex }} />
+                    ))}
+                  </span>
+                  {v.nome}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
         {item.slot && <p className="avst5-det-meta">Slot: {item.slot}</p>}
         {bases.length > 0 && <p className="avst5-det-meta">Só combina com: {bases.join(', ')}</p>}
         {incompativeis.length > 0 && <p className="avst5-det-meta">Incompatível com: {incompativeis.join(', ')}</p>}

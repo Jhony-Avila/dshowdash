@@ -13,10 +13,12 @@
 // IntersectionObserver no ambiente, tudo renderiza direto.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowDownUp, Ban, Check, Grid2x2, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal, Star, X,
+  ArrowDownUp, Ban, Box, Check, Grid2x2, Info, LayoutGrid, List, Lock, Paintbrush, Search, SlidersHorizontal, Star, User, X,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId, Raridade, SlotAcessorio } from '../domain/types';
-import { COLECOES, CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, svgEfeitoIsolado, validarConfig } from '../services/AvatarCatalog';
+import { COLECOES, CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, svgEfeitoIsolado, svgItemIsolado, validarConfig } from '../services/AvatarCatalog';
+import { focoItemDe } from './modoItem'; // onda 1401 (#150): thumbs Modo Item
+import { variantesDe } from '../services/VariantesAssets'; // onda 1401 (#150)
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 // mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
 import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
@@ -305,6 +307,13 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     try { localStorage.setItem(CHAVE_MODO, novo); } catch { /* sem storage */ }
   };
 
+  // onda 1401 (#150, as6.thumb_item — elevação §12): MODO DO THUMBNAIL
+  // nos acessórios — Item (asset isolado, protagonista) × Aplicado (avatar
+  // com o item, o de sempre). Hover no card SEMPRE mostra o Aplicado.
+  const thumbItemDisponivel = flag('as6.thumb_item') && categoria === 'acessorio';
+  const [modoThumb, setModoThumb] = useState<'item' | 'aplicado'>('item');
+  const thumbItem = thumbItemDisponivel && modoThumb === 'item';
+
   // §56: popover de filtros secundários + contagem de ativos p/ o badge
   const [popoverAberto, setPopoverAberto] = useState(false);
   const nFiltros = (tier ? 1 : 0) + (soFavoritos ? 1 : 0) + (ocultarBloqueados ? 1 : 0);
@@ -497,6 +506,22 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
             </button>
           ))}
         </div>
+        {/* onda 1401 (#150, elevação §12): toggle Item × Aplicado */}
+        {thumbItemDisponivel && (
+          <div className="avst-modos" role="radiogroup" aria-label="Modo do thumbnail (§12)"
+            data-teste="modo-thumb">
+            <button type="button" role="radio" aria-checked={modoThumb === 'item'}
+              title={t('Modo Item — o asset em destaque, isolado')}
+              data-teste="modo-thumb-item" onClick={() => setModoThumb('item')}>
+              <Box size={14} aria-hidden />
+            </button>
+            <button type="button" role="radio" aria-checked={modoThumb === 'aplicado'}
+              title={t('Modo Aplicado — o item no seu avatar')}
+              data-teste="modo-thumb-aplicado" onClick={() => setModoThumb('aplicado')}>
+              <User size={14} aria-hidden />
+            </button>
+          </div>
+        )}
       </header>
 
       {/* §56: busca sempre visível; filtros secundários no POPOVER "Filtros" */}
@@ -692,6 +717,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         {itens.map((item, idx) => {
           const props = {
             item, config, modo, aoPrever, aoDetalhes,
+            thumbItem, // onda 1401 (#150): Modo Item nos acessórios
             ativo: equipados.has(item.id),
             favorito: favs.has(item.id),
             bloqueado: bloqueado(item),
@@ -770,6 +796,8 @@ type CardProps = {
   /** mega 434 (§60.9, flag as5.cards_v2): fora da base atual — visível
    *  mas não equipável (antes era simplesmente filtrado da grade) */
   indisponivel?: boolean;
+  /** onda 1401 (#150, as6.thumb_item): thumb = ASSET isolado (elevação §12) */
+  thumbItem?: boolean;
   /** lote 1011-1020 (as6.virtual): expõe a RAIZ ao pai (reciclagem) */
   aoMontarRaiz?: (el: HTMLDivElement | null) => void;
   aoFavoritar: () => void;
@@ -838,10 +866,11 @@ function CardPreguicoso({ observar, vigiarSaida, ...props }: CardProps & {
 const CardItem = memo(CardItemBase, (a, b) =>
   a.item === b.item && a.config === b.config && a.modo === b.modo
   && a.ativo === b.ativo && a.favorito === b.favorito && a.bloqueado === b.bloqueado
+  && a.thumbItem === b.thumbItem // onda 1401 (#150)
   && a.aoPrever === b.aoPrever && a.aoDetalhes === b.aoDetalhes
   && a.aoMontarRaiz === b.aoMontarRaiz);
 
-function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indisponivel, aoMontarRaiz, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: CardProps) {
+function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indisponivel, thumbItem, aoMontarRaiz, aoFavoritar, aoEscolher, aoPrever, aoDetalhes }: CardProps) {
   const rar = RARIDADES[item.raridade];
   const cardRef = useRef<HTMLDivElement>(null);
   // lote 1011-1020 (as6.virtual): a raiz sobe p/ o observer de SAÍDA
@@ -865,6 +894,10 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
   // sob hover-preview e sinal de CONFLITO com o que está equipado
   const uxFinal = flag('as5.ux_final');
   const [prevendo, setPrevendo] = useState(false);
+  // onda 1401 (#150, as6.thumb_item): hover no Modo Item vira Modo
+  // APLICADO (elevação §12 — "aplicado no hover/detalhe")
+  const [pairando, setPairando] = useState(false);
+  const nVariantes = flag('as6.variantes') ? variantesDe(item.id).length : 0;
   const conflitos = useMemo(() => {
     if (!uxFinal || ativo || !item.incompativelCom?.length) return [];
     const equipadosIds = Object.values(config.camadas).filter(Boolean) as string[];
@@ -884,18 +917,25 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
       data-indisponivel={indisponivel ? '' : undefined}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
       onClick={escolher}
-      onMouseEnter={() => { if (aoPrever && !bloqueado) { aoPrever(preview); if (uxFinal) setPrevendo(true); } if (podePoderVivo) setPoderVivo(true); }}
-      onMouseLeave={() => { aoPrever?.(null); setPrevendo(false); setPoderVivo(false); }}
+      onMouseEnter={() => { if (aoPrever && !bloqueado) { aoPrever(preview); if (uxFinal) setPrevendo(true); } if (podePoderVivo) setPoderVivo(true); if (thumbItem) setPairando(true); }}
+      onMouseLeave={() => { aoPrever?.(null); setPrevendo(false); setPoderVivo(false); setPairando(false); }}
       onKeyDown={(e) => { if (escolher && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); escolher(); } }}
       tabIndex={0}>
       <span className="avst-card-thumb"
+        data-thumb-item={thumbItem && !pairando ? '' : undefined}
         data-corpo={flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? '' : undefined}>
         {/* onda 1294 (#137, as6.corpo_preview): thumbs de VESTUÁRIO em
             corpo inteiro 240×400 — a peça aparece de verdade no card;
             onda 1296 (#139): figura LIMPA (sem fundo/moldura/efeito/
             aura) + crop no corpo — a peça fica grande e legível;
             off = foco §39.19 de sempre byte a byte */}
-        {flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? (
+        {/* onda 1401 (#150, as6.thumb_item — elevação §12): MODO ITEM —
+            o asset ISOLADO, protagonista, no viewBox medido (~78% de
+            ocupação, fundo neutro via CSS); hover troca pro Aplicado */}
+        {thumbItem && !pairando ? (
+          <span className="avst-thumb-item" data-teste="thumb-item" aria-hidden
+            dangerouslySetInnerHTML={{ __html: svgItemIsolado(item.id, { uid: `ti-${item.id}`, foco: focoItemDe(item.id) }) }} />
+        ) : flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? (
           <AvatarSvg estatico uid={`th-${item.id}`} corpo foco={FOCO_CORPO_THUMB}
             config={{ ...preview, camadas: (() => {
               const { fundo: _f, moldura: _m, efeito: _e, aura: _a, ...soFigura } = preview.camadas;
@@ -904,6 +944,13 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
         ) : (
           <AvatarSvg config={preview} estatico uid={`th-${item.id}`}
             foco={FOCO_THUMB[item.categoria]} />
+        )}
+        {/* onda 1401 (#150, as6.variantes): o card AVISA que há variantes */}
+        {nVariantes > 0 && (
+          <span className="avst-card-vars" data-teste="card-variantes"
+            title={`${nVariantes} variantes de cor — veja no detalhe`}>
+            <Paintbrush size={9} aria-hidden /> {nVariantes}
+          </span>
         )}
         {poderVivo && (
           <span className="avst-card-poder" aria-hidden data-teste="poder-preview"

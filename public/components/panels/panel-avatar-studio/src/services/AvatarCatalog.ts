@@ -678,6 +678,24 @@ export function svgEfeitoIsolado(id: string, destaque?: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="presentation">${parte.render(paleta, 'fx')}</svg>`;
 }
 
+/** onda 1401 (decisão #150, elevação §12): SVG de UM asset ISOLADO —
+ *  thumbnail "Modo Item" (asset protagonista). Só a camada do item,
+ *  viewBox por bounds baked (components/modoItem.ts, medidos por
+ *  scripts/avatar/medir-foco-item.mjs), uid ÚNICO por card (gradientes
+ *  de N cards na mesma página não colidem — lição do svgEfeitoIsolado).
+ *  Cores: globais padrão + override opcional (preview de variante). */
+export function svgItemIsolado(
+  id: string,
+  opcoes?: { uid?: string; cores?: Partial<Record<SlotCor, string>>; foco?: string },
+): string {
+  const parte = POR_ID.get(id);
+  if (!parte) return '';
+  const paleta = paletaDe({ ...CONFIG_PADRAO.cores, ...(opcoes?.cores ?? {}) });
+  const uid = opcoes?.uid ?? `it-${id}`;
+  const foco = opcoes?.foco ?? '0 0 240 240';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${foco}" role="presentation">${parte.render(paleta, uid)}</svg>`;
+}
+
 export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
   return renderAvatar(config, itemPorId, opcoes);
 }

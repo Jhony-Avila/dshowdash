@@ -28,6 +28,22 @@ export type Raridade =
 export type SlotCor = 'pele' | 'cabelo' | 'roupa' | 'destaque';
 
 /**
+ * onda 1401 (decisão #150, briefing de elevação): VARIANTE DE COR curada
+ * de um asset — preset NOMEADO que preenche os canais §73 (`coresCamada`)
+ * da camada onde o item está equipado. NÃO é campo persistido: o que
+ * persiste é o próprio `coresCamada` de sempre (byte-stability grátis;
+ * §619 e PHP intocados). A variante ativa é DERIVADA comparando os
+ * canais efetivos — nunca gravada. Registry em dados:
+ * services/VariantesAssets.ts (arte em partes/* intocada).
+ */
+export interface VarianteCor {
+  id: string;
+  nome: string;
+  /** canais ⊆ usaCores do asset (validarConfig já garante isso no §73) */
+  canais: Partial<Record<SlotCor, string>>;
+}
+
+/**
  * Slots ADITIVOS de acessórios no 2D (4.6 §20, decisão #41):
  * até 3 acessórios simultâneos — um por região. Cada item declara o seu.
  */
