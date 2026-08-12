@@ -20,7 +20,7 @@
 // - colapso persistido por grupo em localStorage (não-essencial e
 //   reversível — limpar a chave volta ao padrão tudo aberto).
 import { useState } from 'react';
-import { ChevronDown, Wrench } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { categoriasAtivas, itensDe } from '../services/AvatarCatalog';
 import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { flag } from '../nucleo/flags';
@@ -82,6 +82,7 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subA
   const [colapsados, setColapsados] = useState<Set<string>>(lerColapsados);
   // taxonomia v2: ACORDEÃO — uma mãe aberta por vez (briefing §6/§7);
   // a seleção sobrevive ao recolhimento (o estado ativo mora no shell)
+  const [ferrAberta, setFerrAberta] = useState(true); // #149 §16
   const [maeAberta, setMaeAberta] = useState<string>(() => {
     try { return localStorage.getItem(CHAVE_TAXV2) ?? 'personagem'; } catch { return 'personagem'; }
   });
@@ -95,65 +96,72 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subA
         return prox;
       });
     };
+    // #149 (briefing de padronização visual): indisponíveis saem da
+    // navegação comum — UMA entrada discreta "Novidades" concentra o
+    // que está em preparação (§7 do briefing)
+    const futuras = TAXONOMIA.flatMap((m) => m.estado === 'em_breve'
+      ? [m.nome]
+      : m.principais.filter((p) => p.estado === 'em_breve').map((p) => p.nome));
     return (
       <nav className={`avst5-sidebar avst6-tax${compacta ? ' avst5-sidebar-compacta' : ''}`}
         aria-label="Categorias" data-teste="tax-v2">
-        {(taxonomia ?? TAXONOMIA).filter((m) => m.estado !== 'oculta').map((mae) => {
-          const emBreve = mae.estado === 'em_breve';
-          // respeita gates de categoria técnica (ex.: Sobrepeça só com
-          // as6.creator_v6 — mesma regra da lista clássica §3393)
-          const visiveis = mae.principais.filter((p) => p.estado !== 'oculta'
+        {(taxonomia ?? TAXONOMIA).filter((m) => m.estado === 'ativa').map((mae) => {
+          const visiveis = mae.principais.filter((p) => p.estado === 'ativa'
             && ativas.some((c) => c.id === p.categoria));
-          // colapsar a mãe da principal ativa não esconde onde você está
-          const aberto = !emBreve && (maeAberta === mae.id || visiveis.some((p) => p.id === principalAtiva));
+          if (!visiveis.length) return null;
+          const aberto = maeAberta === mae.id || visiveis.some((p) => p.id === principalAtiva);
           return (
             <section key={mae.id} className="avst6-navg-grupo" data-teste={`tax-${mae.id}`}>
               {compacta
                 ? <hr className="avst6-navg-sep" aria-hidden />
                 : (
                   <button type="button" className="avst6-navg-cab" aria-expanded={aberto}
-                    disabled={emBreve} data-teste={`tax-cab-${mae.id}`}
-                    title={emBreve ? t('Em breve — novas categorias em preparação') : mae.nome}
-                    onClick={() => abrirMae(mae.id)}>
-                    <ChevronDown size={12} aria-hidden data-aberto={aberto ? '' : undefined} />
-                    {t(mae.nome)}
-                    {emBreve && <small className="avst6-tax-breve">{t('Em breve')}</small>}
+                    data-teste={`tax-cab-${mae.id}`} onClick={() => abrirMae(mae.id)}>
+                    <ChevronDown size={13} aria-hidden data-aberto={aberto ? '' : undefined} />
+                    <span className="avst6-tax-nome">{t(mae.nome)}</span>
                   </button>
                 )}
-              {/* principais de mãe FECHADA ficam no DOM com hidden:
-                  visual idêntico ao acordeão e a paleta/atalhos/testes
-                  seguem alcançando os botões por texto */}
               {visiveis.map((p) => {
-                const pBreve = p.estado === 'em_breve';
-                const n = pBreve ? 0 : contarAssets(p.categoria, p.subcats);
+                const n = contarAssets(p.categoria, p.subcats);
                 return (
                   <button key={p.id} type="button" hidden={!aberto && !compacta}
                     className={`avst5-cat${principalAtiva === p.id ? ' avst5-cat-on' : ''}`}
-                    disabled={pBreve}
-                    title={pBreve ? t('Em breve — novos assets em preparação') : p.nome}
+                    aria-current={principalAtiva === p.id ? 'true' : undefined}
                     data-teste={`tax-p-${p.id}`}
+                    title={compacta ? p.nome : undefined}
                     onClick={() => aoEscolherPrincipal?.(p.id)}>
-                    <span className="avst5-cat-inicial" aria-hidden>{p.nome.slice(0, 1)}</span>
+                    {compacta && <span className="avst5-cat-inicial" aria-hidden>{p.nome.slice(0, 1)}</span>}
                     {!compacta && <span className="avst6-tax-nome">{t(p.nome)}</span>}
-                    {!compacta && (pBreve
-                      ? <small className="avst6-tax-breve">{t('Em breve')}</small>
-                      : n > 0 && <small className="avst6-tax-n">{n}</small>)}
+                    {!compacta && n > 0 && <small className="avst6-tax-n">{n}</small>}
                   </button>
                 );
               })}
             </section>
           );
         })}
-        {/* ─ §5.11: ferramentas e gestão — NUNCA viram assets ─ */}
+        {/* §7: entrada ÚNICA e discreta para o que está em preparação */}
+        {!compacta && futuras.length > 0 && (
+          <details className="avst6-tax-novidades" data-teste="tax-novidades">
+            <summary>{t('Novidades em preparação')}</summary>
+            <ul>{futuras.map((nome) => <li key={nome}>{t(nome)}</li>)}</ul>
+          </details>
+        )}
+        {/* §16: ferramentas — mesma linguagem, seção recolhível */}
         <section className="avst6-navg-grupo avst6-tax-ferr" data-teste="tax-ferramentas">
           {compacta
             ? <hr className="avst6-navg-sep" aria-hidden />
-            : <span className="avst6-navg-cab" role="presentation"><Wrench size={11} aria-hidden /> {t('Ferramentas e gestão')}</span>}
+            : (
+              <button type="button" className="avst6-navg-cab" aria-expanded={ferrAberta}
+                data-teste="tax-cab-ferramentas" onClick={() => setFerrAberta((v) => !v)}>
+                <ChevronDown size={13} aria-hidden data-aberto={ferrAberta ? '' : undefined} />
+                <span className="avst6-tax-nome">{t('Ferramentas e gestão')}</span>
+              </button>
+            )}
           {FERRAMENTAS_NAV.map((f) => (
-            <button key={f.id} type="button" className="avst5-cat"
-              title={f.nome} data-teste={`tax-f-${f.id}`}
+            <button key={f.id} type="button" className="avst5-cat" hidden={!ferrAberta && !compacta}
+              data-teste={`tax-f-${f.id}`} title={compacta ? f.nome : undefined}
               onClick={() => aoAbrirFerramenta?.(f.id)}>
-              <span className="avst5-cat-inicial" aria-hidden>{f.nome.slice(0, 1)}</span>
+              {compacta && <span className="avst5-cat-inicial" aria-hidden>{f.nome.slice(0, 1)}</span>}
               {!compacta && <span className="avst6-tax-nome">{t(f.nome)}</span>}
             </button>
           ))}
@@ -162,21 +170,17 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subA
     );
   }
 
-  // #144: a árvore de subcategorias aparece ABAIXO do botão Acessório
-  // quando a categoria-mãe está ativa (accordion convencional). Na
-  // sidebar compacta não cabe — a grade mostra tudo ("Todos") e o
-  // usuário alarga a nav para navegar por subcategoria.
+  // ── caminhos LEGADOS (tax_v2 off): #143 macrogrupos e #144 árvore ──
   const arvoreAcess = (c: (typeof ativas)[number]) => (
     flag('as6.acess_hub') && !compacta && c.id === 'acessorio' && categoria === 'acessorio'
       && config && aoEscolherSub
       ? <ArvoreAcessorios key="arv-acess" config={config} subAtiva={subAcess ?? null} aoEscolherSub={aoEscolherSub} />
       : null
   );
-
   const botao = (c: (typeof ativas)[number]) => (
     <button key={c.id} type="button"
       className={`avst5-cat${categoria === c.id ? ' avst5-cat-on' : ''}`}
-      title={c.nome} /* nav estreita: o tooltip já devolve o nome (#127 confirmou) */ onClick={() => aoEscolher(c.id)}>
+      title={c.nome} onClick={() => aoEscolher(c.id)}>
       <span className="avst5-cat-inicial" aria-hidden>{c.nome.slice(0, 1)}</span>
       {!compacta && <span>{c.nome}</span>}
     </button>

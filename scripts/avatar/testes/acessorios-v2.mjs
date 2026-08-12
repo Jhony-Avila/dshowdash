@@ -222,8 +222,10 @@ const slotsAcessorio = (r) => Object.fromEntries(
       ok(maes.some((x) => x.startsWith(m)), `mãe ausente: ${m}`);
     ok(await p.evaluate(() => ![...document.querySelectorAll('.avst5-cat')].some((c) => c.textContent.trim().endsWith('Acessório'))),
       'botão único "Acessório" ainda existe (critério 1)');
-    ok(await p.evaluate(() => document.querySelector('[data-teste="tax-cab-equipamentos"]')?.disabled === true),
-      'Equipamentos (zero assets) deveria estar Em breve/desabilitada');
+    // #149: indisponíveis OCULTOS; entrada única "Novidades" no fim
+    ok(await p.locator('[data-teste="tax-cab-equipamentos"]').count() === 0,
+      'Equipamentos (zero assets) deveria estar OCULTA (§7 da padronização)');
+    ok(await p.locator('[data-teste="tax-novidades"]').count() === 1, 'entrada única "Novidades em preparação" ausente');
     // Visão → chips na dock (Todos + subcategorias) e grade limitada
     await irPrincipal('cabeca-rosto', 'visao');
     const chips = await p.evaluate(() => [...document.querySelectorAll('[data-teste="dock-subcats"] .avst5-chip')].map((c) => c.textContent.trim()));
@@ -267,9 +269,13 @@ const slotsAcessorio = (r) => Object.fromEntries(
     await p.waitForTimeout(500);
     const nTema = await p.locator('.avst5-painel .avst-card').count();
     ok(nTema > 0 && nTema < nTodos, `chip de tema não filtrou (${nTema}/${nTodos})`);
-    // Expressão e Movimento publicada honesta (Em breve, desabilitada)
-    ok(await p.evaluate(() => document.querySelector('[data-teste="tax-cab-expressao"]')?.disabled === true),
-      'Expressão e Movimento deveria estar Em breve');
+    // #149: Expressão e Movimento oculta da navegação (vive em Novidades)
+    ok(await p.locator('[data-teste="tax-cab-expressao"]').count() === 0,
+      'Expressão e Movimento deveria estar oculta (§7)');
+    ok(await p.evaluate(() => {
+      const on = document.querySelector('.avst6-tax .avst5-cat-on .avst6-tax-nome') ?? document.querySelector('.avst6-tax .avst5-cat-on');
+      return on ? parseInt(getComputedStyle(on).fontWeight, 10) < 600 : false;
+    }), 'item selecionado não pode usar negrito (§28.2)');
     await p.screenshot({ path: `${SAIDA}/acessorios-v2-taxv2.png` });
     ok(erros.length === 0, `erros de página (tax v2): ${erros.join(' | ')}`);
   } catch (e) { falhas.push(`exceção (tax v2): ${e.message}`); }

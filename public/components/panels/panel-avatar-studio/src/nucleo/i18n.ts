@@ -247,6 +247,7 @@ const EN: Record<string, string> = {
   'Missões': 'Missions',
   'Evolução': 'Evolution',
   'Subcategorias': 'Subcategories',
+  'Novidades em preparação': 'Coming soon',
   'Altere o cenário mantendo o avatar visível no centro.': 'Change the backdrop while the avatar stays centered and visible.',
   'Compare molduras ao redor do avatar e visualize o resultado imediatamente.': 'Compare frames around the avatar and see the result immediately.',
   'Equipe um efeito e regule a intensidade — ative o poder no modo Studio para vê-lo em ação.': 'Equip an effect and tune its intensity — trigger the power in Studio mode to see it in action.',

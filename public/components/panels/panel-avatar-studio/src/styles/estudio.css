@@ -3381,3 +3381,55 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
   display: block; padding: 2px 0 4px;
   color: var(--avst-texto-2, var(--as6-texto-suave)); font-size: 10.5px;
 }
+
+/* ── onda 1391 (decisão #149, briefing de padronização visual): a
+   sidebar da taxonomia vira UMA linguagem — fonte única, peso regular,
+   escrita natural, sem iniciais decorativas, seleção discreta (fundo
+   suave + barra lateral), foco só por teclado, contadores em coluna,
+   indisponíveis fora da navegação (entrada única "Novidades"). ── */
+.avst6-tax {
+  --sb-fonte: 14px;
+  --sb-fonte-2: 12px;
+  --sb-alt-item: 36px;
+  --sb-recuo: 24px;
+  --sb-sel-fundo: color-mix(in srgb, var(--avst-acento, var(--as6-acento)) 10%, transparent);
+  --sb-sel-barra: var(--avst-acento, var(--as6-acento));
+  gap: 2px;
+}
+.avst6-tax .avst6-navg-cab {
+  text-transform: none; letter-spacing: normal;
+  font-size: var(--sb-fonte); font-weight: 400;
+  color: var(--avst-texto, var(--as6-texto-forte));
+  min-height: var(--sb-alt-item); padding: 6px 10px 6px 8px;
+  margin-top: 0; border-radius: 8px; width: 100%;
+}
+.avst6-tax .avst6-navg-cab:hover { background: color-mix(in srgb, var(--avst-texto, #888) 7%, transparent); }
+.avst6-tax .avst5-cat {
+  font-size: var(--sb-fonte); font-weight: 400;
+  min-height: var(--sb-alt-item);
+  padding: 6px 10px 6px var(--sb-recuo);
+  border: 0; border-left: 2px solid transparent; border-radius: 8px;
+  white-space: nowrap;
+}
+.avst6-tax .avst5-cat span, .avst6-tax .avst5-cat .avst6-tax-nome { font-weight: 400; }
+.avst6-tax .avst5-cat-on {
+  background: var(--sb-sel-fundo);
+  border-left-color: var(--sb-sel-barra);
+  border-radius: 0 8px 8px 0;
+  font-weight: 400; box-shadow: none; outline: none;
+}
+.avst6-tax .avst5-cat-on .avst6-tax-nome { font-weight: 400; }
+.avst6-tax:not(.avst5-sidebar-compacta) .avst5-cat .avst5-cat-inicial { display: none; }
+.avst6-tax .avst6-tax-n { font-size: var(--sb-fonte-2); opacity: .6; min-width: 22px; text-align: right; }
+.avst6-tax button:focus:not(:focus-visible) { outline: none; box-shadow: none; }
+.avst6-tax button:focus-visible {
+  outline: 2px solid var(--avst-acento, var(--as6-acento)); outline-offset: 2px;
+}
+.avst6-tax-novidades {
+  margin: 8px 8px 0; font-size: var(--sb-fonte-2);
+  color: var(--avst-texto-2, var(--as6-texto-suave));
+}
+.avst6-tax-novidades summary { cursor: pointer; padding: 4px 2px; list-style-position: inside; }
+.avst6-tax-novidades ul { margin: 2px 0 4px; padding-left: 18px; opacity: .8; }
+.avst6-tax-novidades li { padding: 1px 0; }
+.avst6-tax-ferr { margin-top: 8px; padding-top: 8px; }

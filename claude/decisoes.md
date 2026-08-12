@@ -1318,3 +1318,23 @@ com RPO/RTO · headers CSP no nginx.
   emote/entrada/saída, alvos data-anim, loop, conflitos, reduced
   motion — registry vazio até a arte de movimento; animação NUNCA
   entra em camadas (byte-stability).
+
+- **#149 (2026-08-12) — Onda 1391: padronização visual da barra
+  (briefing de tipografia/densidade/estados)**: causa das
+  inconsistências = 8 sinais simultâneos de hierarquia. Correção por
+  tokens (--sb-*): fonte única 14px peso 400 (inclusive selecionado —
+  §28.2), escrita natural (sem caixa alta), iniciais decorativas
+  REMOVIDAS no modo largo (ficam só na sidebar compacta, com tooltip),
+  title/tooltips redundantes removidos, seleção discreta (fundo suave +
+  barra lateral 2px, sem negrito/borda grossa), foco só por teclado
+  (:focus-visible), contadores em coluna à direita tabular, nomes em
+  UMA linha com ellipsis, espaçamentos constantes (item 36px, recuo
+  24px). Indisponíveis: mães/principais em_breve saem da navegação
+  comum — entrada ÚNICA "Novidades em preparação" (details discreto) no
+  fim lista o que vem por aí (§7); Ferramentas e gestão vira seção
+  recolhível com a mesma linguagem (§16). Estrutura da taxonomia
+  INTOCADA (é só apresentação). Segundo briefing (POPULAÇÃO de todas as
+  categorias vazias com 6+ assets reais cada) registrado como PRÓXIMO
+  mega programa — exige dezenas de artes SVG novas; auditoria e plano
+  nos docs do projeto; começa com "prossiga" em sessão com contexto
+  cheio.
