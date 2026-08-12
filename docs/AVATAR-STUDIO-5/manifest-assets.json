@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 372,
+    "itens2d": 386,
     "categorias": 13,
     "titulos": 30,
     "colecoes": 12,
@@ -55,6 +55,21 @@
     },
     {
       "id": "ace_boina",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_bolsa_couro",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_bolsa_mensageiro",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
+      "id": "ace_bolsa_tatica",
       "categoria": "acessorio",
       "raridade": "incomum"
     },
@@ -147,6 +162,21 @@
       "id": "ace_drone",
       "categoria": "acessorio",
       "raridade": "raro"
+    },
+    {
+      "id": "ace_espirito_agua",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_espirito_chama",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_espirito_estelar",
+      "categoria": "acessorio",
+      "raridade": "epico"
     },
     {
       "id": "ace_fedora",
@@ -277,6 +307,46 @@
       "id": "ace_pintura_guerra",
       "categoria": "acessorio",
       "raridade": "incomum"
+    },
+    {
+      "id": "ace_robo_aranha",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_robo_assistente",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_robo_bit",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
+      "id": "ace_robo_guardiao",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_runa_circulo",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_runa_glifo",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_runa_orbital",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_runa_protecao",
+      "categoria": "acessorio",
+      "raridade": "raro"
     },
     {
       "id": "ace_tapa_olho",

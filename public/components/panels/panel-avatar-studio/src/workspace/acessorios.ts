@@ -74,11 +74,17 @@ export const SUBCATEGORIAS_ACESSORIO: SubcategoriaAcessorio[] = [
   // Costas e bolsas
   { id: 'capas', nome: 'Capas', regiao: 'costas', slot: 'costas', estado: 'ativa' },
   { id: 'mochilas', nome: 'Mochilas', regiao: 'costas', slot: 'costas', estado: 'ativa' },
+  // onda 1403 (#153): população das subcategorias vazias (pedido do Jhony)
+  { id: 'bolsas', nome: 'Mochilas e bolsas', regiao: 'costas', slot: 'costas', estado: 'ativa' },
   { id: 'asas', nome: 'Asas', regiao: 'costas', slot: 'costas', estado: 'ativa' }, // 1381: arte nova
   // Especiais
   { id: 'aureolas', nome: 'Auréolas', regiao: 'especiais', slot: 'flutuante', estado: 'ativa' },
   { id: 'companheiros', nome: 'Companheiros', regiao: 'especiais', slot: 'companheiro', estado: 'ativa' },
   { id: 'pets', nome: 'Pets', regiao: 'especiais', slot: 'companheiro', estado: 'ativa' }, // 1381: arte nova
+  // onda 1403 (#153): população das subcategorias vazias
+  { id: 'robos', nome: 'Robôs', regiao: 'especiais', slot: 'companheiro', estado: 'ativa' },
+  { id: 'espiritos', nome: 'Espíritos', regiao: 'especiais', slot: 'companheiro', estado: 'ativa' },
+  { id: 'runas', nome: 'Runas e círculos', regiao: 'especiais', slot: 'flutuante', estado: 'ativa' },
   // Braços/mãos/pernas/pés (briefing §4): aguardando arte (§72)
   { id: 'pulseiras', nome: 'Pulseiras e relógios', regiao: 'especiais', slot: 'flutuante', estado: 'oculta' },
 ];
@@ -117,6 +123,13 @@ export const SUBCATEGORIA_POR_ASSET: Record<string, string> = {
   ace_capuz_sombrio: 'capuzes', ace_capuz_ninja: 'capuzes', ace_veu_mistico: 'capuzes',
   ace_mascara_oni: 'mascaras', ace_mascara_kitsune: 'mascaras',
   ace_mascara_teatro: 'mascaras', ace_medico_peste: 'mascaras', ace_mascara_hoquei: 'mascaras',
+  // onda 1403 (#153): bolsas + robôs + espíritos + runas — 14 artes novas
+  ace_bolsa_mensageiro: 'bolsas', ace_bolsa_tatica: 'bolsas', ace_bolsa_couro: 'bolsas',
+  ace_robo_assistente: 'robos', ace_robo_bit: 'robos',
+  ace_robo_aranha: 'robos', ace_robo_guardiao: 'robos',
+  ace_espirito_chama: 'espiritos', ace_espirito_agua: 'espiritos', ace_espirito_estelar: 'espiritos',
+  ace_runa_circulo: 'runas', ace_runa_protecao: 'runas',
+  ace_runa_glifo: 'runas', ace_runa_orbital: 'runas',
 };
 
 const POR_ID = new Map(SUBCATEGORIAS_ACESSORIO.map((s) => [s.id, s]));

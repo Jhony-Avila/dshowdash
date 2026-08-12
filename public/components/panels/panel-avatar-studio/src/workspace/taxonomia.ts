@@ -99,7 +99,7 @@ export const TAXONOMIA: CategoriaMae[] = [
     principais: [
       { id: 'capas', nome: 'Capas', categoria: 'acessorio', subcats: ['capas'], estado: 'ativa' },
       { id: 'propulsores', nome: 'Propulsores', categoria: 'acessorio', subcats: ['mochilas'], estado: 'ativa' },
-      { id: 'mochilas-bolsas', nome: 'Mochilas e bolsas', categoria: 'acessorio', estado: 'em_breve' },
+      { id: 'mochilas-bolsas', nome: 'Mochilas e bolsas', categoria: 'acessorio', subcats: ['bolsas'], estado: 'ativa' }, // 1403 (#153): arte real
       { id: 'asas', nome: 'Asas', categoria: 'acessorio', subcats: ['asas'], estado: 'ativa' }, // 1381
     ],
   },
@@ -108,8 +108,8 @@ export const TAXONOMIA: CategoriaMae[] = [
     principais: [
       { id: 'drones', nome: 'Drones', categoria: 'acessorio', subcats: ['companheiros'], estado: 'ativa' },
       { id: 'pets', nome: 'Pets', categoria: 'acessorio', subcats: ['pets'], estado: 'ativa' }, // 1381
-      { id: 'robos', nome: 'Robôs', categoria: 'acessorio', estado: 'em_breve' },
-      { id: 'espiritos', nome: 'Espíritos', categoria: 'acessorio', estado: 'em_breve' },
+      { id: 'robos', nome: 'Robôs', categoria: 'acessorio', subcats: ['robos'], estado: 'ativa' }, // 1403 (#153): arte real
+      { id: 'espiritos', nome: 'Espíritos', categoria: 'acessorio', subcats: ['espiritos'], estado: 'ativa' }, // 1403 (#153): arte real
     ],
   },
   {
@@ -120,7 +120,10 @@ export const TAXONOMIA: CategoriaMae[] = [
       // rótulo "Aura" preservado (conceito consagrado na UI/testes); o
       // briefing agrupa como energia corporal — é a MESMA coisa aqui
       { id: 'energia', nome: 'Aura', categoria: 'aura', chipsTema: true, estado: 'ativa' },
-      { id: 'runas', nome: 'Runas e círculos', categoria: 'efeito', estado: 'em_breve' },
+      // 1403 (#153): runas viram ACESSÓRIO flutuante (arte própria orbitando o
+      // personagem, como auréolas) — a principal nunca ativou como efeito, então
+      // a mudança é navegação pura (contrato §1 da taxonomia intocado)
+      { id: 'runas', nome: 'Runas e círculos', categoria: 'acessorio', subcats: ['runas'], estado: 'ativa' },
     ],
   },
   {

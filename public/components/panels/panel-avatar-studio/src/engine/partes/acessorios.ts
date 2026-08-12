@@ -1132,4 +1132,371 @@ export const ACESSORIOS: ParteDef[] = [
       </g>
       <path d="M88 100 l 20 60 M152 100 l -20 60" stroke="${p.destaque.base}" stroke-width="2.4" opacity="0.7"/>`,
   },
+  // ── onda 1403 (decisão #153): POPULAÇÃO das subcategorias vazias ────
+  // Mochilas e bolsas (slot costas — alça cruza o busto, corpo da bolsa
+  // aparece na lateral, como a mochila a jato faz)
+  {
+    id: 'ace_bolsa_mensageiro',
+    categoria: 'acessorio',
+    slot: 'costas',
+    nome: 'Bolsa Mensageiro',
+    descricao: 'Carrega o notebook e três ideias por hora.',
+    raridade: 'comum',
+    tema: 'executivo',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}bmsg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5a6474"/>
+          <stop offset="1" stop-color="#3a4150"/>
+        </linearGradient>
+      </defs>
+      <path d="M86 176 l 62 -32" stroke="url(#${u}bmsg)" stroke-width="9" stroke-linecap="round"/>
+      <path d="M40 168 h 52 a 6 6 0 0 1 6 6 v 30 a 8 8 0 0 1 -8 8 h -48 a 8 8 0 0 1 -8 -8 v -30 a 6 6 0 0 1 6 -6 z" fill="url(#${u}bmsg)"/>
+      <path d="M36 170 h 60 l 0 12 c -20 6 -40 6 -60 0 z" fill="#2b303c"/>
+      <rect x="58" y="182" width="16" height="10" rx="2.4" fill="${p.destaque.base}"/>
+      <path d="M40 172 h 10 v 34" stroke="${alfa('#ffffff', 0.14)}" stroke-width="3" fill="none"/>`,
+  },
+  {
+    id: 'ace_bolsa_tatica',
+    categoria: 'acessorio',
+    slot: 'costas',
+    nome: 'Mochila Tática',
+    descricao: 'Um bolso para cada plano B.',
+    raridade: 'incomum',
+    tema: 'gamer',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}btat" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4433"/>
+          <stop offset="1" stop-color="#252a1e"/>
+        </linearGradient>
+      </defs>
+      <path d="M62 150 c -18 4 -28 18 -28 38 l 0 20 c 0 8 6 14 14 14 l 24 0 c 8 0 14 -6 14 -14 l 0 -20 c 0 -20 -8 -34 -24 -38 z" fill="url(#${u}btat)"/>
+      <rect x="44" y="176" width="34" height="18" rx="4" fill="#2b3024"/>
+      <rect x="50" y="200" width="22" height="12" rx="3" fill="#2b3024"/>
+      <path d="M46 168 h 30 M46 216 h 30" stroke="${p.destaque.base}" stroke-width="3" stroke-linecap="round"/>
+      <path d="M92 152 l 40 24" stroke="#2b3024" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="61" cy="185" r="3" fill="${p.destaque.claro}"/>`,
+  },
+  {
+    id: 'ace_bolsa_couro',
+    categoria: 'acessorio',
+    slot: 'costas',
+    nome: 'Bolsa de Couro',
+    descricao: 'Envelhece melhor que a maioria dos roadmaps.',
+    raridade: 'raro',
+    tema: 'casual',
+    lore: 'Costura reforçada por três gerações de artesãos. Já viu mais reuniões do que muito diretor.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}bcou" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a9713b"/>
+          <stop offset="1" stop-color="#6e451e"/>
+        </linearGradient>
+      </defs>
+      <path d="M150 174 l 46 -24" stroke="url(#${u}bcou)" stroke-width="9" stroke-linecap="round"/>
+      <path d="M156 168 h 46 a 7 7 0 0 1 7 7 v 28 a 9 9 0 0 1 -9 9 h -42 a 9 9 0 0 1 -9 -9 v -28 a 7 7 0 0 1 7 -7 z" fill="url(#${u}bcou)"/>
+      <path d="M151 170 h 56 l 0 14 c -18 7 -38 7 -56 0 z" fill="#5a3517"/>
+      <path d="M172 184 a 7 7 0 0 1 14 0 l 0 8 a 7 7 0 0 1 -14 0 z" fill="${p.destaque.base}"/>
+      <circle cx="179" cy="188" r="2.2" fill="${p.destaque.claro}"/>`,
+  },
+  // Robôs (slot companheiro — flutuam na lateral direita, como o drone)
+  {
+    id: 'ace_robo_assistente',
+    categoria: 'acessorio',
+    slot: 'companheiro',
+    nome: 'Robô Assistente',
+    descricao: 'Anota tudo. Julga silenciosamente as suas planilhas.',
+    raridade: 'incomum',
+    tema: 'tecnologia',
+    piscar: false,
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}rass" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e4e8f2"/>
+          <stop offset="1" stop-color="#aab2c4"/>
+        </linearGradient>
+      </defs>
+      <g>
+        <rect x="180" y="120" width="34" height="40" rx="10" fill="url(#${u}rass)"/>
+        <rect x="186" y="128" width="22" height="12" rx="6" fill="#1d2130"/>
+        <circle cx="193" cy="134" r="2.6" fill="${p.destaque.base}"/>
+        <circle cx="201" cy="134" r="2.6" fill="${p.destaque.base}"/>
+        <path d="M190 148 q 7 4 14 0" stroke="${p.destaque.base}" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <line x1="197" y1="112" x2="197" y2="120" stroke="#aab2c4" stroke-width="3"/>
+        <circle cx="197" cy="109" r="3.4" fill="${p.destaque.claro}"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -5;0 0" dur="3.6s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'ace_robo_bit',
+    categoria: 'acessorio',
+    slot: 'companheiro',
+    nome: 'Bit',
+    descricao: 'Um byte de companhia. Dois quando está feliz.',
+    raridade: 'comum',
+    tema: 'gamer',
+    piscar: false,
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <radialGradient id="${u}rbit" cx="0.35" cy="0.3" r="1">
+          <stop offset="0" stop-color="#3a4150"/>
+          <stop offset="1" stop-color="#20242e"/>
+        </radialGradient>
+      </defs>
+      <g>
+        <circle cx="196" cy="140" r="17" fill="url(#${u}rbit)"/>
+        <path d="M186 136 a 13 13 0 0 1 20 0 l 0 8 a 13 13 0 0 1 -20 0 z" fill="#141720"/>
+        <rect x="189" y="136" width="5" height="7" rx="2" fill="${p.destaque.base}"/>
+        <rect x="198" y="136" width="5" height="7" rx="2" fill="${p.destaque.base}"/>
+        <path d="M181 126 l -5 -6 M211 126 l 5 -6" stroke="#3a4150" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="175" cy="118" r="2.4" fill="${p.destaque.claro}"/>
+        <circle cx="217" cy="118" r="2.4" fill="${p.destaque.claro}"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0" dur="3s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'ace_robo_aranha',
+    categoria: 'acessorio',
+    slot: 'companheiro',
+    nome: 'Robô Aranha',
+    descricao: 'Oito patas, zero bugs — ele resolve os dele sozinho.',
+    raridade: 'raro',
+    tema: 'tecnologia',
+    lore: 'Protótipo de manutenção que se recusou a ser desligado. Hoje conserta o que ninguém viu quebrar.',
+    piscar: false,
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}rara" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#4a5162"/>
+          <stop offset="1" stop-color="#2b303c"/>
+        </linearGradient>
+      </defs>
+      <g>
+        <ellipse cx="198" cy="176" rx="15" ry="11" fill="url(#${u}rara)"/>
+        <circle cx="198" cy="170" r="6" fill="#141720"/>
+        <circle cx="196" cy="169" r="1.8" fill="${p.destaque.base}"/>
+        <circle cx="201" cy="169" r="1.8" fill="${p.destaque.base}"/>
+        <path d="M186 176 q -10 -4 -12 -14 M186 180 q -12 2 -16 10 M210 176 q 10 -4 12 -14 M210 180 q 12 2 16 10" stroke="#2b303c" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M190 186 q -4 8 -10 10 M206 186 q 4 8 10 10" stroke="#2b303c" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="198" cy="160" r="2" fill="${p.destaque.claro}"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -3;0 0" dur="2.6s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'ace_robo_guardiao',
+    categoria: 'acessorio',
+    slot: 'companheiro',
+    nome: 'Robô Guardião',
+    descricao: 'Firewall com personalidade. E escudo.',
+    raridade: 'epico',
+    tema: 'tecnologia',
+    lore: 'Sentinela aposentado dos servidores de produção. Nunca perdeu um deploy no seu turno — e não pretende começar.',
+    piscar: false,
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}rgua" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3a4150"/>
+          <stop offset="1" stop-color="#20242e"/>
+        </linearGradient>
+      </defs>
+      <g>
+        <path d="M182 118 l 16 -8 l 16 8 l 0 22 q 0 18 -16 26 q -16 -8 -16 -26 z" fill="url(#${u}rgua)"/>
+        <path d="M186 121 l 12 -6 l 12 6 l 0 18 q 0 14 -12 21 q -12 -7 -12 -21 z" fill="none" stroke="${p.destaque.base}" stroke-width="2"/>
+        <rect x="192" y="128" width="12" height="7" rx="3.5" fill="#141720"/>
+        <circle cx="196" cy="131.5" r="1.8" fill="${p.destaque.claro}"/>
+        <circle cx="200" cy="131.5" r="1.8" fill="${p.destaque.claro}"/>
+        <path d="M192 146 l 6 4 l 6 -4" stroke="${p.destaque.base}" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur="4.2s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  // Espíritos (slot companheiro — presenças etéreas com alfa)
+  {
+    id: 'ace_espirito_chama',
+    categoria: 'acessorio',
+    slot: 'companheiro',
+    nome: 'Espírito de Chama',
+    descricao: 'Esquenta o café e as discussões de arquitetura.',
+    raridade: 'raro',
+    tema: 'mistico',
+    lore: 'Nasceu da primeira vela de uma virada de ano fiscal. Aquece quem entrega e chamusca quem enrola.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}echa" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="${alfa('#ff8a3d', 0.9)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.claro, 0.75)}"/>
+        </linearGradient>
+      </defs>
+      <g>
+        <path d="M198 116 c 10 10 16 20 16 30 c 0 12 -8 20 -16 20 c -8 0 -16 -8 -16 -20 c 0 -6 3 -10 6 -14 c 1 5 3 8 6 9 c -2 -8 -1 -17 4 -25 z" fill="url(#${u}echa)"/>
+        <circle cx="194" cy="148" r="2.2" fill="#2b1608"/>
+        <circle cx="202" cy="148" r="2.2" fill="#2b1608"/>
+        <path d="M195 155 q 3 2 6 0" stroke="#2b1608" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0" dur="3.2s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'ace_espirito_agua',
+    categoria: 'acessorio',
+    slot: 'companheiro',
+    nome: 'Espírito de Água',
+    descricao: 'Flui pelos bloqueios. Literalmente.',
+    raridade: 'raro',
+    tema: 'mistico',
+    lore: 'Gota que escapou do primeiro gráfico de burndown. Desde então, só desce suave.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}eagu" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${alfa('#9fd8ff', 0.85)}"/>
+          <stop offset="1" stop-color="${alfa('#3d7dd6', 0.85)}"/>
+        </linearGradient>
+      </defs>
+      <g>
+        <path d="M198 114 c 12 14 18 24 18 34 a 18 18 0 0 1 -36 0 c 0 -10 6 -20 18 -34 z" fill="url(#${u}eagu)"/>
+        <circle cx="193" cy="146" r="2.2" fill="#12365e"/>
+        <circle cx="203" cy="146" r="2.2" fill="#12365e"/>
+        <path d="M194 153 q 4 3 8 0" stroke="#12365e" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M189 132 a 12 12 0 0 1 5 -8" stroke="${alfa('#ffffff', 0.7)}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <circle cx="212" cy="122" r="2.4" fill="${alfa(p.destaque.claro, 0.8)}"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -5;0 0" dur="3.8s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'ace_espirito_estelar',
+    categoria: 'acessorio',
+    slot: 'companheiro',
+    nome: 'Wisp Estelar',
+    descricao: 'Poeira de estrela com opinião própria sobre KPIs.',
+    raridade: 'epico',
+    tema: 'mistico',
+    lore: 'Fragmento de uma constelação que só aparece para quem bate a meta anual. Ele escolheu ficar.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <radialGradient id="${u}eest" cx="0.5" cy="0.5" r="0.9">
+          <stop offset="0" stop-color="${alfa('#ffffff', 0.95)}"/>
+          <stop offset="0.55" stop-color="${alfa(p.destaque.claro, 0.7)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.profundo, 0.12)}"/>
+        </radialGradient>
+      </defs>
+      <g>
+        <circle cx="198" cy="140" r="19" fill="url(#${u}eest)"/>
+        <circle cx="193" cy="138" r="2" fill="#2b2450"/>
+        <circle cx="203" cy="138" r="2" fill="#2b2450"/>
+        <path d="M195 145 q 3 2 6 0" stroke="#2b2450" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        <path d="M212 118 l 1.6 4 l 4 1.6 l -4 1.6 l -1.6 4 l -1.6 -4 l -4 -1.6 l 4 -1.6 z" fill="${alfa('#ffffff', 0.9)}"/>
+        <circle cx="182" cy="158" r="1.6" fill="${alfa('#ffffff', 0.8)}"/>
+        <circle cx="214" cy="152" r="1.3" fill="${alfa('#ffffff', 0.7)}"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -7;0 0" dur="4.4s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  // Runas e círculos (slot flutuante — glifos orbitando, como a auréola)
+  {
+    id: 'ace_runa_circulo',
+    categoria: 'acessorio',
+    slot: 'flutuante',
+    nome: 'Círculo Rúnico',
+    descricao: 'Um anel de símbolos que aprova PRs dignos.',
+    raridade: 'raro',
+    tema: 'mistico',
+    lore: 'Inscrição circular achada no rodapé de um contrato antigo. Ninguém traduziu; todos respeitam.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}rcir" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="${alfa(p.destaque.claro, 0.9)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.base, 0.7)}"/>
+        </linearGradient>
+      </defs>
+      <g>
+        <ellipse cx="120" cy="52" rx="46" ry="10" fill="none" stroke="url(#${u}rcir)" stroke-width="3"/>
+        <g fill="${p.destaque.claro}" font-size="0">
+          <rect x="78" y="46" width="5" height="7" rx="1"/>
+          <rect x="100" y="40" width="5" height="7" rx="1" transform="rotate(-12 102 43)"/>
+          <rect x="134" y="40" width="5" height="7" rx="1" transform="rotate(12 136 43)"/>
+          <rect x="157" y="46" width="5" height="7" rx="1"/>
+          <rect x="118" y="60" width="5" height="7" rx="1"/>
+        </g>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur="5s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'ace_runa_protecao',
+    categoria: 'acessorio',
+    slot: 'flutuante',
+    nome: 'Runa de Proteção',
+    descricao: 'Escudo antigo contra hotfix de sexta-feira.',
+    raridade: 'raro',
+    tema: 'mistico',
+    lore: 'Gravada na porta da primeira sala de servidores da Dshow. Migrou para a nuvem junto com todo o resto.',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <g>
+        <path d="M64 96 l 0 26 M56 104 l 16 10 M72 104 l -16 10" stroke="${p.destaque.base}" stroke-width="3.6" stroke-linecap="round"/>
+        <circle cx="64" cy="109" r="16" fill="none" stroke="${alfa(p.destaque.claro, 0.55)}" stroke-width="2"/>
+        <circle cx="64" cy="88" r="1.8" fill="${p.destaque.claro}"/>
+        <circle cx="64" cy="130" r="1.8" fill="${p.destaque.claro}"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -5;0 0" dur="4.6s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'ace_runa_glifo',
+    categoria: 'acessorio',
+    slot: 'flutuante',
+    nome: 'Glifo Arcano',
+    descricao: 'Compila intenção em resultado. Sem warnings.',
+    raridade: 'epico',
+    tema: 'mistico',
+    lore: 'O único glifo que aceita acento agudo. Escreve o futuro em UTF-8.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}rgli" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${alfa(p.destaque.claro, 0.95)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.base, 0.75)}"/>
+        </linearGradient>
+      </defs>
+      <g>
+        <path d="M176 84 l 12 -20 l 12 20 l -12 8 z" fill="none" stroke="url(#${u}rgli)" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M188 92 l 0 14" stroke="url(#${u}rgli)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="188" cy="110" r="2.2" fill="${p.destaque.claro}"/>
+        <path d="M172 72 l -6 -2 M204 72 l 6 -2" stroke="${alfa(p.destaque.claro, 0.6)}" stroke-width="2" stroke-linecap="round"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0" dur="4s" repeatCount="indefinite"/>
+      </g>`,
+  },
+  {
+    id: 'ace_runa_orbital',
+    categoria: 'acessorio',
+    slot: 'flutuante',
+    nome: 'Anel Orbital',
+    descricao: 'Satélites pessoais em rota de brainstorm.',
+    raridade: 'epico',
+    tema: 'tecnologia',
+    lore: 'Três núcleos de dados orbitando em sincronia perfeita. O backup do backup tem backup.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}rorb" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="${alfa(p.destaque.claro, 0.8)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.profundo, 0.5)}"/>
+        </linearGradient>
+      </defs>
+      <g>
+        <ellipse cx="120" cy="118" rx="78" ry="20" fill="none" stroke="url(#${u}rorb)" stroke-width="2.4"/>
+        <circle cx="44" cy="122" r="5" fill="${p.destaque.base}"/>
+        <circle cx="196" cy="112" r="4" fill="${p.destaque.claro}"/>
+        <circle cx="132" cy="137" r="3.2" fill="${p.destaque.escuro}"/>
+        <circle cx="44" cy="120" r="1.6" fill="#ffffff" opacity="0.8"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur="5.4s" repeatCount="indefinite"/>
+      </g>`,
+  },
 ];

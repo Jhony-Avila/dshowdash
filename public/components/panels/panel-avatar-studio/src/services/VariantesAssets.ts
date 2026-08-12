@@ -189,6 +189,77 @@ export const VARIANTES_POR_ASSET: Record<string, VarianteCor[]> = {
     { id: 'var_ciano', nome: 'Riscos ciano', canais: { destaque: '#4cd9e8' } },
     { id: 'var_violeta', nome: 'Riscos violeta', canais: { destaque: '#7c5cff' } },
   ],
+  // ── onda 1403 (#153): variantes da população de subcategorias vazias ──
+  ace_bolsa_mensageiro: [
+    { id: 'var_laranja', nome: 'Fecho laranja', canais: { destaque: '#e8843d' } },
+    { id: 'var_ciano', nome: 'Fecho ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_lima', nome: 'Fecho lima', canais: { destaque: '#39d98a' } },
+  ],
+  ace_bolsa_tatica: [
+    { id: 'var_areia', nome: 'Faixas areia', canais: { destaque: '#c9b27a' } },
+    { id: 'var_rubi', nome: 'Faixas rubi', canais: { destaque: '#c93a3a' } },
+    { id: 'var_ciano', nome: 'Faixas ciano', canais: { destaque: '#4cd9e8' } },
+  ],
+  ace_bolsa_couro: [
+    { id: 'var_ouro', nome: 'Fivela ouro', canais: { destaque: '#c9a75a' } },
+    { id: 'var_prata', nome: 'Fivela prata', canais: { destaque: '#aeb6c4' } },
+    { id: 'var_bronze', nome: 'Fivela bronze', canais: { destaque: '#b0793d' } },
+  ],
+  ace_robo_assistente: [
+    { id: 'var_ciano', nome: 'Olhos ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_lima', nome: 'Olhos lima', canais: { destaque: '#39d98a' } },
+    { id: 'var_ambar', nome: 'Olhos âmbar', canais: { destaque: '#e8b64c' } },
+  ],
+  ace_robo_bit: [
+    { id: 'var_verde', nome: 'Visor verde', canais: { destaque: '#39d98a' } },
+    { id: 'var_magenta', nome: 'Visor magenta', canais: { destaque: '#ff5f8f' } },
+    { id: 'var_ambar', nome: 'Visor âmbar', canais: { destaque: '#e8b64c' } },
+  ],
+  ace_robo_aranha: [
+    { id: 'var_rubi', nome: 'Sensores rubi', canais: { destaque: '#ff5f5f' } },
+    { id: 'var_ciano', nome: 'Sensores ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_lima', nome: 'Sensores lima', canais: { destaque: '#39d98a' } },
+  ],
+  ace_robo_guardiao: [
+    { id: 'var_violeta', nome: 'Núcleo violeta', canais: { destaque: '#7c5cff' } },
+    { id: 'var_ciano', nome: 'Núcleo ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_ouro', nome: 'Núcleo ouro', canais: { destaque: '#e8b64c' } },
+  ],
+  ace_espirito_chama: [
+    { id: 'var_dourada', nome: 'Chama dourada', canais: { destaque: '#ffd75e' } },
+    { id: 'var_azul', nome: 'Chama azul', canais: { destaque: '#4c9de8' } },
+    { id: 'var_esmeralda', nome: 'Chama esmeralda', canais: { destaque: '#39d98a' } },
+  ],
+  ace_espirito_agua: [
+    { id: 'var_gelo', nome: 'Brilho gelo', canais: { destaque: '#bcd9ee' } },
+    { id: 'var_lavanda', nome: 'Brilho lavanda', canais: { destaque: '#a98fe8' } },
+    { id: 'var_verde', nome: 'Brilho verde-mar', canais: { destaque: '#4cd9c8' } },
+  ],
+  ace_espirito_estelar: [
+    { id: 'var_violeta', nome: 'Nebulosa violeta', canais: { destaque: '#a98fe8' } },
+    { id: 'var_ciano', nome: 'Nebulosa ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_rosa', nome: 'Nebulosa rosa', canais: { destaque: '#ff8fb3' } },
+  ],
+  ace_runa_circulo: [
+    { id: 'var_ouro', nome: 'Runas ouro', canais: { destaque: '#e8b64c' } },
+    { id: 'var_ciano', nome: 'Runas ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_carmesim', nome: 'Runas carmesim', canais: { destaque: '#ff5f5f' } },
+  ],
+  ace_runa_protecao: [
+    { id: 'var_ouro', nome: 'Traço ouro', canais: { destaque: '#e8b64c' } },
+    { id: 'var_gelo', nome: 'Traço gelo', canais: { destaque: '#4c9de8' } },
+    { id: 'var_lima', nome: 'Traço lima', canais: { destaque: '#39d98a' } },
+  ],
+  ace_runa_glifo: [
+    { id: 'var_violeta', nome: 'Arcano violeta', canais: { destaque: '#7c5cff' } },
+    { id: 'var_ambar', nome: 'Arcano âmbar', canais: { destaque: '#e8b64c' } },
+    { id: 'var_rosa', nome: 'Arcano rosa', canais: { destaque: '#ff5f8f' } },
+  ],
+  ace_runa_orbital: [
+    { id: 'var_ciano', nome: 'Órbita ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_violeta', nome: 'Órbita violeta', canais: { destaque: '#7c5cff' } },
+    { id: 'var_lima', nome: 'Órbita lima', canais: { destaque: '#39d98a' } },
+  ],
 };
 
 /** Variantes de um asset (vazio = asset sem variantes; UI não mostra nada). */
