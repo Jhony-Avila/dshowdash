@@ -92,6 +92,103 @@ export const VARIANTES_POR_ASSET: Record<string, VarianteCor[]> = {
     { id: 'var_magenta', nome: 'Magenta', canais: { destaque: '#ff5f8f' } },
     { id: 'var_lima', nome: 'Lima', canais: { destaque: '#39d98a' } },
   ],
+  // ── onda 1402 (#151): variantes da população Cabeça e Rosto ──
+  ace_fedora: [
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a', destaque: '#8a93a6' } },
+    { id: 'var_caramelo', nome: 'Caramelo', canais: { roupa: '#7a5a34', destaque: '#e8b64c' } },
+    { id: 'var_meianoite', nome: 'Meia-noite', canais: { roupa: '#1a1035', destaque: '#7c5cff' } },
+  ],
+  ace_cartola: [
+    { id: 'var_ouro', nome: 'Faixa ouro', canais: { destaque: '#c9a75a' } },
+    { id: 'var_vinho', nome: 'Faixa vinho', canais: { destaque: '#8a2d3d' } },
+    { id: 'var_esmeralda', nome: 'Faixa esmeralda', canais: { destaque: '#2d8a5e' } },
+  ],
+  ace_chapeu_cowboy: [
+    { id: 'var_ouro', nome: 'Fivela ouro', canais: { destaque: '#e8b64c' } },
+    { id: 'var_turquesa', nome: 'Turquesa', canais: { destaque: '#4cd9c8' } },
+    { id: 'var_couro', nome: 'Couro cru', canais: { destaque: '#b0793d' } },
+  ],
+  ace_bandana_testa: [
+    { id: 'var_rubi', nome: 'Rubi', canais: { destaque: '#c93a3a' } },
+    { id: 'var_lima', nome: 'Lima', canais: { destaque: '#39d98a' } },
+    { id: 'var_ciano', nome: 'Ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_ambar', nome: 'Âmbar', canais: { destaque: '#e8b64c' } },
+  ],
+  ace_flor_lotus: [
+    { id: 'var_rosa', nome: 'Rosa', canais: { destaque: '#ff8fb3' } },
+    { id: 'var_lavanda', nome: 'Lavanda', canais: { destaque: '#a98fe8' } },
+    { id: 'var_gelo', nome: 'Gelo', canais: { destaque: '#bcd9ee' } },
+  ],
+  ace_laco_fita: [
+    { id: 'var_rosa', nome: 'Rosa', canais: { destaque: '#ff8fb3' } },
+    { id: 'var_vinho', nome: 'Vinho', canais: { destaque: '#8a2d3d' } },
+    { id: 'var_marinho', nome: 'Marinho', canais: { destaque: '#2d4a8a' } },
+  ],
+  ace_diadema_perolas: [
+    { id: 'var_ouro', nome: 'Ouro', canais: { destaque: '#c9a75a' } },
+    { id: 'var_prata', nome: 'Prata', canais: { destaque: '#aeb6c4' } },
+    { id: 'var_rose', nome: 'Rosê', canais: { destaque: '#d69a8e' } },
+  ],
+  ace_oculos_redondos: [
+    { id: 'var_ouro', nome: 'Ouro', canais: { destaque: '#c9a75a' } },
+    { id: 'var_prata', nome: 'Prata', canais: { destaque: '#aeb6c4' } },
+    { id: 'var_grafite', nome: 'Grafite', canais: { destaque: '#3a3f4c' } },
+  ],
+  ace_oculos_gatinho: [
+    { id: 'var_noite', nome: 'Noite', canais: { destaque: '#20242e' } },
+    { id: 'var_rosa', nome: 'Rosa', canais: { destaque: '#ff5f8f' } },
+    { id: 'var_tartaruga', nome: 'Tartaruga', canais: { destaque: '#8a5a2d' } },
+  ],
+  ace_viseira_esporte: [
+    { id: 'var_ciano', nome: 'Ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_magenta', nome: 'Magenta', canais: { destaque: '#ff5f8f' } },
+    { id: 'var_lima', nome: 'Lima', canais: { destaque: '#39d98a' } },
+  ],
+  ace_oculos_pixel: [
+    { id: 'var_noite', nome: 'Noite', canais: { destaque: '#20242e' } },
+    { id: 'var_violeta', nome: 'Violeta', canais: { destaque: '#7c5cff' } },
+    { id: 'var_verde', nome: 'Verde fósforo', canais: { destaque: '#39d98a' } },
+  ],
+  ace_capuz_sombrio: [
+    { id: 'var_abismo', nome: 'Abismo', canais: { roupa: '#14161d', destaque: '#5b3d8a' } },
+    { id: 'var_sangue', nome: 'Sangue', canais: { roupa: '#2a1216', destaque: '#c93a3a' } },
+    { id: 'var_floresta', nome: 'Floresta', canais: { roupa: '#16241c', destaque: '#39d98a' } },
+  ],
+  ace_capuz_ninja: [
+    { id: 'var_noturno', nome: 'Noturno', canais: { roupa: '#1a1e2a', destaque: '#4c9de8' } },
+    { id: 'var_carmesim', nome: 'Carmesim', canais: { roupa: '#3a1418', destaque: '#ff5f8f' } },
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#242a18', destaque: '#a8b84c' } },
+  ],
+  ace_veu_mistico: [
+    { id: 'var_lavanda', nome: 'Lavanda', canais: { destaque: '#a98fe8' } },
+    { id: 'var_ciano', nome: 'Ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_rosa', nome: 'Rosa', canais: { destaque: '#ff8fb3' } },
+  ],
+  ace_mascara_oni: [
+    { id: 'var_ouro', nome: 'Chifres ouro', canais: { destaque: '#e8b64c' } },
+    { id: 'var_osso', nome: 'Chifres osso', canais: { destaque: '#e8e2d0' } },
+    { id: 'var_turquesa', nome: 'Chifres turquesa', canais: { destaque: '#4cd9c8' } },
+  ],
+  ace_mascara_kitsune: [
+    { id: 'var_vermelho', nome: 'Marcas vermelhas', canais: { destaque: '#c93a3a' } },
+    { id: 'var_azul', nome: 'Marcas azuis', canais: { destaque: '#4c9de8' } },
+    { id: 'var_violeta', nome: 'Marcas violetas', canais: { destaque: '#7c5cff' } },
+  ],
+  ace_mascara_teatro: [
+    { id: 'var_ouro', nome: 'Ouro', canais: { destaque: '#c9a75a' } },
+    { id: 'var_prata', nome: 'Prata', canais: { destaque: '#aeb6c4' } },
+    { id: 'var_jade', nome: 'Jade', canais: { destaque: '#2d8a5e' } },
+  ],
+  ace_medico_peste: [
+    { id: 'var_ambar', nome: 'Lentes âmbar', canais: { destaque: '#e8b64c' } },
+    { id: 'var_verde', nome: 'Lentes verdes', canais: { destaque: '#39d98a' } },
+    { id: 'var_rubi', nome: 'Lentes rubi', canais: { destaque: '#c93a3a' } },
+  ],
+  ace_mascara_hoquei: [
+    { id: 'var_rubi', nome: 'Riscos rubi', canais: { destaque: '#c93a3a' } },
+    { id: 'var_ciano', nome: 'Riscos ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_violeta', nome: 'Riscos violeta', canais: { destaque: '#7c5cff' } },
+  ],
 };
 
 /** Variantes de um asset (vazio = asset sem variantes; UI não mostra nada). */

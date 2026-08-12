@@ -684,4 +684,452 @@ export const ACESSORIOS: ParteDef[] = [
         <animateTransform attributeName="transform" type="translate" values="0 0;0 -5;0 0" dur="4s" repeatCount="indefinite"/>
       </g>`,
   },
+  // ── onda 1402 (decisão #151): POPULAÇÃO Cabeça e Rosto — chapéus ────
+  {
+    id: 'ace_fedora',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Fedora Clássica',
+    descricao: 'O acordo fecha antes do café esfriar.',
+    raridade: 'incomum',
+    tema: 'executivo',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}fed" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${p.roupa.claro}"/>
+          <stop offset="1" stop-color="${p.roupa.escuro}"/>
+        </linearGradient>
+      </defs>
+      <path d="M58 82 c 40 -14 84 -14 124 0 c 6 2 5 9 -2 10 c -40 7 -80 7 -120 0 c -7 -1 -8 -8 -2 -10 z" fill="url(#${u}fed)"/>
+      <path d="M84 80 c 0 -22 14 -36 36 -36 s 36 14 36 36 c -12 5 -24 7 -36 7 s -24 -2 -36 -7 z" fill="url(#${u}fed)"/>
+      <path d="M112 45 q 8 -4 16 0 q -4 18 -8 34 q -4 -16 -8 -34 z" fill="${p.roupa.escuro}" opacity="0.55"/>
+      <path d="M85 74 c 12 5 58 5 70 0 l 0 8 c -12 5 -58 5 -70 0 z" fill="${p.destaque.base}"/>
+      <path d="M88 60 a 30 26 0 0 1 12 -12" stroke="${alfa('#ffffff', 0.35)}" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'ace_cartola',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Cartola de Gala',
+    descricao: 'Para apresentações em que o gráfico sobe sozinho.',
+    raridade: 'raro',
+    tema: 'executivo',
+    lore: 'Herdada de um mágico que fazia métricas ruins desaparecerem. O truque nunca foi revelado.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}car" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2b2f3a"/>
+          <stop offset="1" stop-color="#14161d"/>
+        </linearGradient>
+      </defs>
+      <path d="M62 82 c 38 -10 78 -10 116 0 c 6 2 5 8 -1 9 c -38 6 -76 6 -114 0 c -6 -1 -7 -7 -1 -9 z" fill="url(#${u}car)"/>
+      <path d="M88 80 l 2 -46 c 0 -4 3 -6 7 -6 l 46 0 c 4 0 7 2 7 6 l 2 46 c -20 5 -44 5 -64 0 z" fill="url(#${u}car)"/>
+      <path d="M89 70 c 20 5 42 5 62 0 l 0 9 c -20 5 -42 5 -62 0 z" fill="${p.destaque.base}"/>
+      <path d="M94 34 l 6 0 l -2 40 l -5 -1 z" fill="${alfa('#ffffff', 0.14)}"/>`,
+  },
+  {
+    id: 'ace_chapeu_cowboy',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Chapéu de Boiadeiro',
+    descricao: 'Laça os leads mais arredios do funil.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}cow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a9713b"/>
+          <stop offset="1" stop-color="#71481f"/>
+        </linearGradient>
+      </defs>
+      <path d="M50 84 c 10 -12 26 -14 34 -8 c 22 6 50 6 72 0 c 8 -6 24 -4 34 8 c 4 5 -1 10 -8 9 c -42 12 -82 12 -124 0 c -7 1 -12 -4 -8 -9 z" fill="url(#${u}cow)"/>
+      <path d="M86 80 c -2 -20 12 -36 34 -36 s 36 16 34 36 c -22 7 -46 7 -68 0 z" fill="url(#${u}cow)"/>
+      <path d="M104 46 q 16 -6 32 0 q -6 10 -16 10 q -10 0 -16 -10 z" fill="#71481f" opacity="0.6"/>
+      <path d="M87 74 c 22 6 44 6 66 0 l 0 7 c -22 6 -44 6 -66 0 z" fill="${p.destaque.base}"/>
+      <circle cx="120" cy="77.5" r="3" fill="${p.destaque.claro}"/>`,
+  },
+  {
+    id: 'ace_chapeu_chef',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Chapéu de Chef',
+    descricao: 'Hoje o cardápio é dashboard no capricho.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}chef" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/>
+          <stop offset="1" stop-color="#d9dde8"/>
+        </linearGradient>
+      </defs>
+      <path d="M88 78 l 0 -14 c -10 2 -18 -6 -14 -15 c 3 -8 12 -10 18 -6 c 1 -10 11 -16 20 -12 c 3 -8 15 -8 18 0 c 9 -4 19 2 20 12 c 6 -4 15 -2 18 6 c 4 9 -4 17 -14 15 l 0 14 c -22 6 -44 6 -66 0 z" fill="url(#${u}chef)"/>
+      <path d="M88 76 c 22 6 44 6 66 0 l 0 10 c -22 6 -44 6 -66 0 z" fill="#c8cdda"/>
+      <path d="M100 42 q 4 -6 12 -6" stroke="${alfa('#ffffff', 0.9)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M154 84 l 0 -5" stroke="${p.destaque.base}" stroke-width="3" stroke-linecap="round"/>`,
+  },
+  // ── onda 1402: adornos de cabeça ────────────────────────────────────
+  {
+    id: 'ace_bandana_testa',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Bandana de Foco',
+    descricao: 'Amarrou, entrou em deep work. Ninguém interrompe.',
+    raridade: 'comum',
+    tema: 'gamer',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <path d="M72 84 c 30 -12 66 -12 96 0 l -2 12 c -30 -11 -62 -11 -92 0 z" fill="${p.destaque.base}"/>
+      <path d="M72 84 c 30 -12 66 -12 96 0 l -1 5 c -30 -11 -64 -11 -94 0 z" fill="${p.destaque.claro}" opacity="0.5"/>
+      <path d="M166 88 q 14 2 18 12 q -10 0 -14 8 q -2 -8 -8 -12 z" fill="${p.destaque.escuro}"/>
+      <path d="M170 92 q 10 4 10 14" stroke="${p.destaque.profundo}" stroke-width="2" fill="none"/>`,
+  },
+  {
+    id: 'ace_flor_lotus',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Flor de Lótus',
+    descricao: 'Serenidade acima do prazo de entrega.',
+    raridade: 'incomum',
+    tema: 'mistico',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <g transform="translate(158 72) rotate(14)">
+        <ellipse cx="0" cy="-8" rx="5" ry="10" fill="${p.destaque.claro}"/>
+        <ellipse cx="-8" cy="-4" rx="5" ry="9" fill="${p.destaque.base}" transform="rotate(-40)"/>
+        <ellipse cx="8" cy="-4" rx="5" ry="9" fill="${p.destaque.base}" transform="rotate(40)"/>
+        <ellipse cx="-12" cy="2" rx="4" ry="8" fill="${p.destaque.escuro}" transform="rotate(-70)"/>
+        <ellipse cx="12" cy="2" rx="4" ry="8" fill="${p.destaque.escuro}" transform="rotate(70)"/>
+        <circle cx="0" cy="0" r="3.4" fill="#ffd75e"/>
+      </g>`,
+  },
+  {
+    id: 'ace_laco_fita',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Laço de Fita',
+    descricao: 'Um toque de charme resolve reunião difícil.',
+    raridade: 'comum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <g transform="translate(152 62) rotate(18)">
+        <path d="M0 0 c -14 -10 -24 -6 -22 4 c 2 8 14 6 22 -4 z" fill="${p.destaque.base}"/>
+        <path d="M0 0 c 14 -10 24 -6 22 4 c -2 8 -14 6 -22 -4 z" fill="${p.destaque.base}"/>
+        <path d="M-4 2 c -8 8 -8 14 -3 16 c 4 1 7 -6 3 -16 z" fill="${p.destaque.escuro}"/>
+        <path d="M4 2 c 8 8 8 14 3 16 c -4 1 -7 -6 -3 -16 z" fill="${p.destaque.escuro}"/>
+        <circle cx="0" cy="1" r="4.4" fill="${p.destaque.claro}"/>
+      </g>`,
+  },
+  {
+    id: 'ace_diadema_perolas',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Diadema de Pérolas',
+    descricao: 'Elegância que não precisa levantar a voz.',
+    raridade: 'raro',
+    tema: 'executivo',
+    lore: 'Cada pérola marca um trimestre fechado acima da meta. A fileira ainda tem espaço.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <radialGradient id="${u}per" cx="0.35" cy="0.3" r="1">
+          <stop offset="0" stop-color="#ffffff"/>
+          <stop offset="1" stop-color="#c3c9dd"/>
+        </radialGradient>
+      </defs>
+      <path d="M74 78 c 28 -18 64 -18 92 0" stroke="${p.destaque.base}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="84" cy="72" r="4.6" fill="url(#${u}per)"/>
+      <circle cx="98" cy="64.5" r="4.6" fill="url(#${u}per)"/>
+      <circle cx="113" cy="60.5" r="4.6" fill="url(#${u}per)"/>
+      <circle cx="128" cy="60.5" r="4.6" fill="url(#${u}per)"/>
+      <circle cx="143" cy="64.5" r="4.6" fill="url(#${u}per)"/>
+      <circle cx="157" cy="72" r="4.6" fill="url(#${u}per)"/>`,
+  },
+  // ── onda 1402: óculos ───────────────────────────────────────────────
+  {
+    id: 'ace_oculos_redondos',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Óculos Redondos',
+    descricao: 'Aro fino de quem lê a documentação inteira.',
+    raridade: 'comum',
+    tema: 'executivo',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}lred" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${alfa('#dce8ff', 0.3)}"/>
+          <stop offset="1" stop-color="${alfa('#dce8ff', 0.06)}"/>
+        </linearGradient>
+      </defs>
+      <circle cx="100" cy="108" r="13" fill="url(#${u}lred)" stroke="${p.destaque.base}" stroke-width="2.2"/>
+      <circle cx="140" cy="108" r="13" fill="url(#${u}lred)" stroke="${p.destaque.base}" stroke-width="2.2"/>
+      <path d="M113 106 q 7 -5 14 0" stroke="${p.destaque.base}" stroke-width="2.2" fill="none"/>
+      <line x1="87" y1="105" x2="73" y2="101" stroke="${p.destaque.base}" stroke-width="2.2"/>
+      <line x1="153" y1="105" x2="167" y2="101" stroke="${p.destaque.base}" stroke-width="2.2"/>`,
+  },
+  {
+    id: 'ace_oculos_gatinho',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Óculos Gatinho',
+    descricao: 'O canto levantado enxerga tendência antes de todo mundo.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}gat" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${alfa('#ffd9ec', 0.3)}"/>
+          <stop offset="1" stop-color="${alfa('#ffd9ec', 0.06)}"/>
+        </linearGradient>
+      </defs>
+      <path d="M85 100 l 4 -7 l 6 5 c 8 -3 15 -3 21 0 l 1 8 a 13 11 0 0 1 -13 10 l -7 0 a 13 12 0 0 1 -12 -16 z" fill="url(#${u}gat)" stroke="${p.destaque.base}" stroke-width="2.4"/>
+      <path d="M155 100 l -4 -7 l -6 5 c -8 -3 -15 -3 -21 0 l -1 8 a 13 11 0 0 0 13 10 l 7 0 a 13 12 0 0 0 12 -16 z" fill="url(#${u}gat)" stroke="${p.destaque.base}" stroke-width="2.4"/>
+      <path d="M114 104 q 6 -4 12 0" stroke="${p.destaque.base}" stroke-width="2.4" fill="none"/>
+      <line x1="86" y1="99" x2="73" y2="97" stroke="${p.destaque.base}" stroke-width="2.4"/>
+      <line x1="154" y1="99" x2="167" y2="97" stroke="${p.destaque.base}" stroke-width="2.4"/>`,
+  },
+  {
+    id: 'ace_viseira_esporte',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Viseira Esportiva',
+    descricao: 'Aerodinâmica até no scroll do backlog.',
+    raridade: 'incomum',
+    tema: 'gamer',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}esp" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${alfa(p.destaque.claro, 0.75)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.profundo, 0.85)}"/>
+        </linearGradient>
+      </defs>
+      <path d="M78 98 c 28 -8 56 -8 84 0 c 4 1 5 5 4 9 c -3 12 -14 18 -28 17 l -36 0 c -14 1 -25 -5 -28 -17 c -1 -4 0 -8 4 -9 z" fill="url(#${u}esp)" stroke="#1a1e2a" stroke-width="2.4"/>
+      <path d="M82 101 c 24 -6 52 -6 76 0" stroke="${alfa('#ffffff', 0.45)}" stroke-width="2.4" fill="none"/>
+      <line x1="79" y1="100" x2="71" y2="97" stroke="#1a1e2a" stroke-width="3"/>
+      <line x1="161" y1="100" x2="169" y2="97" stroke="#1a1e2a" stroke-width="3"/>`,
+  },
+  {
+    id: 'ace_oculos_pixel',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Óculos Pixel',
+    descricao: 'Deal with it — em 8 bits, como manda a tradição.',
+    raridade: 'raro',
+    tema: 'gamer',
+    lore: 'Renderizados numa era em que cada pixel custava caro. Sobreviveram a todos os upgrades por puro estilo.',
+    usaCores: ['destaque'],
+    render: (p) => `
+      <g fill="${p.destaque.profundo}">
+        <rect x="84" y="100" width="32" height="6"/><rect x="124" y="100" width="32" height="6"/>
+        <rect x="84" y="106" width="6" height="10"/><rect x="110" y="106" width="6" height="10"/>
+        <rect x="124" y="106" width="6" height="10"/><rect x="150" y="106" width="6" height="10"/>
+        <rect x="90" y="112" width="20" height="6"/><rect x="130" y="112" width="20" height="6"/>
+        <rect x="116" y="102" width="8" height="4"/>
+        <rect x="72" y="98" width="12" height="5"/><rect x="156" y="98" width="12" height="5"/>
+      </g>
+      <rect x="90" y="106" width="20" height="6" fill="${p.destaque.base}"/>
+      <rect x="130" y="106" width="20" height="6" fill="${p.destaque.base}"/>
+      <rect x="90" y="106" width="7" height="3" fill="${p.destaque.claro}"/>
+      <rect x="130" y="106" width="7" height="3" fill="${p.destaque.claro}"/>`,
+  },
+  // ── onda 1402: capuzes e véus (destrava a subcategoria) ─────────────
+  {
+    id: 'ace_capuz_sombrio',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Capuz Sombrio',
+    descricao: 'Commit às 3h da manhã pede vestimenta adequada.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    lore: 'Tecido que absorve luz de monitor. Quem o veste aparece no git log, nunca nas fotos.',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}cpz" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${p.roupa.escuro}"/>
+          <stop offset="1" stop-color="${p.roupa.profundo}"/>
+        </linearGradient>
+      </defs>
+      <path d="M120 40 c -36 0 -58 26 -58 62 c 0 22 6 40 16 52 l 10 -6 c -7 -12 -11 -28 -11 -44 c 0 -30 17 -50 43 -50 s 43 20 43 50 c 0 16 -4 32 -11 44 l 10 6 c 10 -12 16 -30 16 -52 c 0 -36 -22 -62 -58 -62 z" fill="url(#${u}cpz)"/>
+      <path d="M120 44 c -30 0 -50 22 -50 56 l -6 2 c -1 -38 22 -64 56 -64 s 57 26 56 64 l -6 -2 c 0 -34 -20 -56 -50 -56 z" fill="${p.roupa.base}" opacity="0.5"/>
+      <path d="M78 148 q 42 16 84 0 l -4 10 q -38 14 -76 0 z" fill="url(#${u}cpz)"/>
+      <path d="M96 58 q 24 -12 48 0" stroke="${p.destaque.base}" stroke-width="2.6" fill="none" opacity="0.85"/>`,
+  },
+  {
+    id: 'ace_capuz_ninja',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Capuz Ninja',
+    descricao: 'Entrou no sprint, ninguém viu. Entregou, todos souberam.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    lore: 'Do clã que remove blockers em silêncio. A faixa só é concedida a quem nunca quebrou a main.',
+    usaCores: ['roupa', 'destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}nin" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${p.roupa.base}"/>
+          <stop offset="1" stop-color="${p.roupa.profundo}"/>
+        </linearGradient>
+      </defs>
+      <path d="M120 46 c -30 0 -48 20 -48 52 c 0 12 2 22 6 30 l 12 -4 c -3 -8 -5 -16 -5 -26 c 0 -26 14 -42 35 -42 s 35 16 35 42 c 0 10 -2 18 -5 26 l 12 4 c 4 -8 6 -18 6 -30 c 0 -32 -18 -52 -48 -52 z" fill="url(#${u}nin)"/>
+      <path d="M84 124 q 36 -10 72 0 l 0 22 q -36 12 -72 0 z" fill="url(#${u}nin)"/>
+      <path d="M86 96 q 34 -8 68 0 l 0 10 q -34 -8 -68 0 z" fill="${p.roupa.profundo}"/>
+      <path d="M88 90 c 22 -6 42 -6 64 0 l -1 6 c -20 -5 -42 -5 -62 0 z" fill="${p.destaque.base}"/>
+      <path d="M152 92 q 16 4 20 16 q -8 -2 -12 4 q -4 -10 -8 -14 z" fill="${p.destaque.escuro}"/>`,
+  },
+  {
+    id: 'ace_veu_mistico',
+    categoria: 'acessorio',
+    slot: 'cabeca',
+    nome: 'Véu Místico',
+    descricao: 'As previsões do roadmap ficam nítidas sob o véu.',
+    raridade: 'epico',
+    tema: 'mistico',
+    lore: 'Tecido com fios de madrugadas estreladas. Quem o usa enxerga o backlog do próximo trimestre.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}veu" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${alfa(p.destaque.claro, 0.5)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.profundo, 0.16)}"/>
+        </linearGradient>
+      </defs>
+      <path d="M70 76 c 8 -28 26 -42 50 -42 s 42 14 50 42 c 4 30 2 58 -10 82 q -6 -4 -8 -10 c 8 -22 9 -46 6 -68 c -6 -22 -20 -34 -38 -34 s -32 12 -38 34 c -3 22 -2 46 6 68 q -2 6 -8 10 c -12 -24 -14 -52 -10 -82 z" fill="url(#${u}veu)"/>
+      <path d="M74 74 c 28 -12 64 -12 92 0" stroke="${p.destaque.base}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="120" cy="52" r="3" fill="#ffd75e"/>
+      <circle cx="82" cy="112" r="1.6" fill="${alfa('#ffffff', 0.85)}"/>
+      <circle cx="158" cy="104" r="1.6" fill="${alfa('#ffffff', 0.85)}"/>
+      <circle cx="76" cy="140" r="1.3" fill="${alfa('#ffffff', 0.7)}"/>
+      <circle cx="163" cy="136" r="1.3" fill="${alfa('#ffffff', 0.7)}"/>`,
+  },
+  // ── onda 1402: máscaras (proteção facial) ───────────────────────────
+  {
+    id: 'ace_mascara_oni',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Máscara Oni',
+    descricao: 'Negociação difícil? O oni entra primeiro.',
+    raridade: 'raro',
+    tema: 'fantasia',
+    lore: 'Esculpida para assustar bugs de produção. Dizem que os críticos fecham sozinhos quando ela aparece.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}oni" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#c9403a"/>
+          <stop offset="1" stop-color="#8a2420"/>
+        </linearGradient>
+      </defs>
+      <path d="M84 118 c 24 10 48 10 72 0 c 4 16 -2 34 -14 42 c -14 9 -30 9 -44 0 c -12 -8 -18 -26 -14 -42 z" fill="url(#${u}oni)"/>
+      <path d="M94 132 q 8 6 16 2 M130 134 q 8 4 16 -2" stroke="#3a0f0d" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M104 150 l 5 10 l 5 -10 z M126 150 l 5 10 l 5 -10 z" fill="#fff3e0"/>
+      <path d="M100 142 q 20 8 40 0" stroke="#3a0f0d" stroke-width="2.6" fill="none"/>
+      <path d="M92 122 q -6 -10 -2 -18 q 8 4 8 14 z M148 122 q 6 -10 2 -18 q -8 4 -8 14 z" fill="${p.destaque.base}"/>`,
+  },
+  {
+    id: 'ace_mascara_kitsune',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Máscara Kitsune',
+    descricao: 'Nove caudas, nove sprints sem retrabalho.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    lore: 'A raposa guardiã dos deploys de sexta-feira. Sorri porque sabe que o rollback está pronto.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}kit" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/>
+          <stop offset="1" stop-color="#e4e6f2"/>
+        </linearGradient>
+      </defs>
+      <path d="M82 96 c 24 -12 52 -12 76 0 c 6 22 0 46 -16 58 c -8 -14 -14 -14 -22 -2 c -8 -12 -14 -12 -22 2 c -16 -12 -22 -36 -16 -58 z" fill="url(#${u}kit)"/>
+      <path d="M96 112 l 16 6 l -14 6 z M144 112 l -16 6 l 14 6 z" fill="${p.destaque.base}"/>
+      <path d="M112 142 q 8 6 16 0 l -8 8 z" fill="${p.destaque.escuro}"/>
+      <path d="M90 100 q 10 -6 20 -4 M150 100 q -10 -6 -20 -4" stroke="${p.destaque.base}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M118 96 l 2 -6 l 2 6 z" fill="${p.destaque.base}"/>`,
+  },
+  {
+    id: 'ace_mascara_teatro',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Máscara de Teatro',
+    descricao: 'Sorriso de demo funcionando na primeira tentativa.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}tea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${p.destaque.claro}"/>
+          <stop offset="1" stop-color="${p.destaque.escuro}"/>
+        </linearGradient>
+      </defs>
+      <path d="M86 96 c 22 -10 46 -10 68 0 c 5 20 0 42 -13 54 c -12 10 -30 10 -42 0 c -13 -12 -18 -34 -13 -54 z" fill="url(#${u}tea)"/>
+      <path d="M97 116 a 8 5 0 0 0 14 0 z M129 116 a 8 5 0 0 0 14 0 z" fill="#1d2130"/>
+      <path d="M102 138 q 18 16 36 0 q -8 20 -18 20 q -10 0 -18 -20 z" fill="#1d2130"/>
+      <path d="M92 100 a 30 20 0 0 1 16 -8" stroke="${alfa('#ffffff', 0.5)}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'ace_medico_peste',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Médico da Peste',
+    descricao: 'Especialista em epidemias de bug. Faz visita de código.',
+    raridade: 'epico',
+    tema: 'fantasia',
+    lore: 'O bico guarda ervas contra código legado. O diagnóstico é sempre o mesmo: precisa de testes.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}pes" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3a3630"/>
+          <stop offset="1" stop-color="#211e1a"/>
+        </linearGradient>
+        <radialGradient id="${u}olh" cx="0.35" cy="0.35" r="1">
+          <stop offset="0" stop-color="${alfa(p.destaque.claro, 0.9)}"/>
+          <stop offset="1" stop-color="${alfa(p.destaque.profundo, 0.9)}"/>
+        </radialGradient>
+      </defs>
+      <path d="M84 98 c 24 -10 48 -10 72 0 c 3 10 3 20 0 28 l -34 44 c -1 2 -3 2 -4 0 l -34 -44 c -3 -8 -3 -18 0 -28 z" fill="url(#${u}pes)"/>
+      <path d="M110 126 l 10 38 l 10 -38 c 8 -10 8 -20 2 -24 q -12 6 -24 0 c -6 4 -6 14 2 24 z" fill="#2b2822"/>
+      <circle cx="100" cy="110" r="9" fill="url(#${u}olh)" stroke="#151310" stroke-width="2.6"/>
+      <circle cx="140" cy="110" r="9" fill="url(#${u}olh)" stroke="#151310" stroke-width="2.6"/>
+      <path d="M116 132 l 3 8 M124 132 l -3 8" stroke="#151310" stroke-width="2" stroke-linecap="round"/>
+      <path d="M86 100 c 22 -8 46 -8 68 0" stroke="#4a453c" stroke-width="2" fill="none"/>`,
+  },
+  {
+    id: 'ace_mascara_hoquei',
+    categoria: 'acessorio',
+    slot: 'rosto',
+    nome: 'Máscara de Hóquei',
+    descricao: 'Sexta-feira 13 é só mais um dia de deploy.',
+    raridade: 'raro',
+    tema: 'gamer',
+    lore: 'Veterana de mil incidentes sev-1. As marcas são de gelo, não de medo.',
+    usaCores: ['destaque'],
+    render: (p, u) => `
+      <defs>
+        <linearGradient id="${u}hoq" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f2f3f8"/>
+          <stop offset="1" stop-color="#c9cdda"/>
+        </linearGradient>
+      </defs>
+      <path d="M85 92 c 22 -10 48 -10 70 0 c 6 22 1 48 -14 62 c -12 11 -30 11 -42 0 c -15 -14 -20 -40 -14 -62 z" fill="url(#${u}hoq)"/>
+      <path d="M95 112 a 9 6 0 0 0 14 0 z M131 112 a 9 6 0 0 0 14 0 z" fill="#1d2130"/>
+      <g fill="#1d2130">
+        <circle cx="107" cy="132" r="2.2"/><circle cx="120" cy="136" r="2.2"/><circle cx="133" cy="132" r="2.2"/>
+        <circle cx="112" cy="148" r="2.2"/><circle cx="128" cy="148" r="2.2"/><circle cx="120" cy="158" r="2.2"/>
+      </g>
+      <path d="M88 100 l 20 60 M152 100 l -20 60" stroke="${p.destaque.base}" stroke-width="2.4" opacity="0.7"/>`,
+  },
 ];

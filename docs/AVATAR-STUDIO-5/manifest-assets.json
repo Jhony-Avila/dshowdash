@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 352,
+    "itens2d": 372,
     "categorias": 13,
     "titulos": 30,
     "colecoes": 12,
@@ -49,6 +49,11 @@
       "raridade": "lendario"
     },
     {
+      "id": "ace_bandana_testa",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
       "id": "ace_boina",
       "categoria": "acessorio",
       "raridade": "incomum"
@@ -74,9 +79,34 @@
       "raridade": "lendario"
     },
     {
+      "id": "ace_capuz_ninja",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_capuz_sombrio",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_cartola",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
       "id": "ace_chapeu_bruxa",
       "categoria": "acessorio",
       "raridade": "raro"
+    },
+    {
+      "id": "ace_chapeu_chef",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
+      "id": "ace_chapeu_cowboy",
+      "categoria": "acessorio",
+      "raridade": "incomum"
     },
     {
       "id": "ace_chapeu_mago",
@@ -109,9 +139,24 @@
       "raridade": "exclusivo"
     },
     {
+      "id": "ace_diadema_perolas",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
       "id": "ace_drone",
       "categoria": "acessorio",
       "raridade": "raro"
+    },
+    {
+      "id": "ace_fedora",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_flor_lotus",
+      "categoria": "acessorio",
+      "raridade": "incomum"
     },
     {
       "id": "ace_fone",
@@ -139,9 +184,24 @@
       "raridade": "epico"
     },
     {
+      "id": "ace_laco_fita",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
       "id": "ace_lenco_bandana",
       "categoria": "acessorio",
       "raridade": "incomum"
+    },
+    {
+      "id": "ace_mascara_hoquei",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_mascara_kitsune",
+      "categoria": "acessorio",
+      "raridade": "epico"
     },
     {
       "id": "ace_mascara_neon",
@@ -149,7 +209,22 @@
       "raridade": "raro"
     },
     {
+      "id": "ace_mascara_oni",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_mascara_teatro",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
       "id": "ace_medalha",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_medico_peste",
       "categoria": "acessorio",
       "raridade": "epico"
     },
@@ -172,6 +247,21 @@
       "id": "ace_oculos_3d",
       "categoria": "acessorio",
       "raridade": "raro"
+    },
+    {
+      "id": "ace_oculos_gatinho",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_oculos_pixel",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_oculos_redondos",
+      "categoria": "acessorio",
+      "raridade": "comum"
     },
     {
       "id": "ace_oculos_sol",
@@ -197,6 +287,16 @@
       "id": "ace_tiara_led",
       "categoria": "acessorio",
       "raridade": "raro"
+    },
+    {
+      "id": "ace_veu_mistico",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
+      "id": "ace_viseira_esporte",
+      "categoria": "acessorio",
+      "raridade": "incomum"
     },
     {
       "id": "ace_viseira_vr",

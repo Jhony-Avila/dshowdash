@@ -54,7 +54,9 @@ export const SUBCATEGORIAS_ACESSORIO: SubcategoriaAcessorio[] = [
   // Cabeça
   { id: 'chapeus', nome: 'Chapéus e bonés', regiao: 'cabeca', slot: 'cabeca', estado: 'ativa' },
   { id: 'adornos-cabeca', nome: 'Adornos de cabeça', regiao: 'cabeca', slot: 'cabeca', estado: 'ativa' },
-  { id: 'capuzes', nome: 'Capuzes e véus', regiao: 'cabeca', slot: 'cabeca', estado: 'em_preparacao' },
+  // onda 1402 (#151): ATIVA — 3 artes reais chegaram (população §11: só
+  // esvazia "em preparação" quando a subcategoria está REALMENTE pronta)
+  { id: 'capuzes', nome: 'Capuzes e véus', regiao: 'cabeca', slot: 'cabeca', estado: 'ativa' },
   // Rosto e olhos
   { id: 'oculos', nome: 'Óculos', regiao: 'rosto-olhos', slot: 'olhos', estado: 'ativa' },
   { id: 'tapa-olhos', nome: 'Tapa-olhos', regiao: 'rosto-olhos', slot: 'olhos', estado: 'ativa' },
@@ -105,6 +107,16 @@ export const SUBCATEGORIA_POR_ASSET: Record<string, string> = {
   ace_mochila_jato: 'mochilas',
   ace_aureola: 'aureolas',
   ace_drone: 'companheiros',
+  // onda 1402 (#151): população Cabeça e Rosto — 20 artes novas
+  ace_fedora: 'chapeus', ace_cartola: 'chapeus',
+  ace_chapeu_cowboy: 'chapeus', ace_chapeu_chef: 'chapeus',
+  ace_bandana_testa: 'adornos-cabeca', ace_flor_lotus: 'adornos-cabeca',
+  ace_laco_fita: 'adornos-cabeca', ace_diadema_perolas: 'adornos-cabeca',
+  ace_oculos_redondos: 'oculos', ace_oculos_gatinho: 'oculos',
+  ace_viseira_esporte: 'oculos', ace_oculos_pixel: 'oculos',
+  ace_capuz_sombrio: 'capuzes', ace_capuz_ninja: 'capuzes', ace_veu_mistico: 'capuzes',
+  ace_mascara_oni: 'mascaras', ace_mascara_kitsune: 'mascaras',
+  ace_mascara_teatro: 'mascaras', ace_medico_peste: 'mascaras', ace_mascara_hoquei: 'mascaras',
 };
 
 const POR_ID = new Map(SUBCATEGORIAS_ACESSORIO.map((s) => [s.id, s]));

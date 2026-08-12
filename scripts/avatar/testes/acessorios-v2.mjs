@@ -59,8 +59,12 @@ const slotsAcessorio = (r) => Object.fromEntries(
     // #144: as subcategorias moram na ÁRVORE da sidebar (hierarquia
     // convencional sob a categoria-mãe — feedback visual do Jhony)
     ok(await p.locator('.avst5-sidebar [data-teste="arv-acessorios"]').count() === 1, 'árvore de subcategorias ausente da sidebar com a flag ON');
-    const nDesab = await p.locator('[data-teste="arv-acessorios"] button:disabled').count();
-    ok(nDesab >= 1, `esperava ≥1 subcategoria em preparação desabilitada (veio ${nDesab})`); // 1381: máscaras/gravatas/asas ATIVARAM com arte nova
+    // onda 1402 (#151): capuzes ATIVOU com arte real — não sobrou nenhuma
+    // em_preparacao; o invariante que fica é o §32 de sempre: subcategoria
+    // ATIVA nunca aparece desabilitada (0 desabilitadas entre as ativas)
+    const nAtivasDesab = await p.evaluate(() => [...document.querySelectorAll('[data-teste="arv-acessorios"] button:disabled')]
+      .filter((b) => !b.textContent.includes('breve') && !b.textContent.includes('preparação')).length);
+    ok(nAtivasDesab === 0, `subcategoria ATIVA desabilitada na árvore (veio ${nAtivasDesab})`);
     // filtro por subcategoria + breadcrumb (§17–§18)
     await p.evaluate(() => document.querySelector('[data-teste="arv-aureolas"]')?.click());
     await p.waitForTimeout(400);
@@ -240,7 +244,10 @@ const slotsAcessorio = (r) => Object.fromEntries(
     await p.evaluate(() => document.querySelector('[data-teste="dock-sub-oculos"]')?.click());
     await p.waitForTimeout(400);
     const soOculos = await p.evaluate(() => [...document.querySelectorAll('.avst5-painel .avst-card .avst-card-nome')].map((n) => n.textContent.trim()));
-    ok(soOculos.length === 5 && !soOculos.includes('Tapa-olho'), `chip Óculos não isolou (${soOculos.join(',')})`);
+    // onda 1402 (#151): população levou Óculos de 4→8 itens (9 cards com
+    // "Nenhum"); o invariante é ISOLAR a subcategoria, não a contagem fixa
+    ok(soOculos.length >= 5 && !soOculos.includes('Tapa-olho') && soOculos.includes('Óculos de Grau'),
+      `chip Óculos não isolou (${soOculos.join(',')})`);
     // multi-equip ATRAVÉS da navegação nova (4 mães diferentes)
     await equipar('Óculos de Grau');
     await irPrincipal('joias', 'pescoco');
