@@ -23,7 +23,7 @@ import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso'
 // mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
 import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
-import { slotFinoDoAsset, subcategoriaDoAsset, subcategoriasConflitam } from '../workspace/acessorios'; // #140
+import { slotCorporal, slotFinoDoAsset, subcategoriaDoAsset, subcategoriasConflitam } from '../workspace/acessorios'; // #140 · #154
 import { t } from '../nucleo/i18n'; // lote 511-520 (§296)
 // mega 248 (§228): itens ARQUIVADOS saem da grade padrão (reversível)
 import { arquivados } from '../services/ArquivoItens';
@@ -67,6 +67,8 @@ export const FOCO_THUMB: Partial<Record<CategoriaId, string>> = {
 // + finos) — limpeza e varredura genéricas
 const SLOTS_ACESSORIO_TODOS = [
   'cabeca', 'rosto', 'pescoco', 'olhos', 'orelha', 'costas', 'flutuante', 'companheiro',
+  // onda 1404 (#154, as6.slots_corpo): corporais — limpeza/varredura genéricas
+  'pulso_e', 'pulso_d', 'mao_e', 'mao_d', 'cintura', 'pernas', 'pes',
 ] as const;
 
 // ── §276: parâmetros da virtualização ───────────────────────────────────
@@ -110,6 +112,9 @@ export function comItem(config: AvatarConfig, categoria: CategoriaId, id: string
     delete camadas.acessorio; // chave legada nunca persiste
     if (id) {
       const legado = itemPorId(id)?.slot ?? 'cabeca';
+      // onda 1404 (#154): sem a flag, item CORPORAL não equipa (no-op —
+      // a grade nem o mostra; defesa em profundidade p/ presets/aleatório)
+      if (slotCorporal(legado) && !flag('as6.slots_corpo')) return config;
       // #140 (as6.acess_v2): equipa no slot FINO do registry; conflitos
       // por DADOS — remove ocupantes de subcategoria conflitante ONDE
       // QUER que morem (slot legado incluso). Flag off = 3 slots #41.
@@ -123,9 +128,14 @@ export function comItem(config: AvatarConfig, categoria: CategoriaId, id: string
           if (!outro) continue;
           if (outro === id) { delete camadas[k]; continue; } // re-equipar migra
           const dele = subcategoriaDoAsset(outro);
-          const conflita = minha && dele
-            ? subcategoriasConflitam(minha, dele)
-            : slotFinoDoAsset(outro, itemPorId(outro)?.slot ?? 'cabeca') === slotFinoDoAsset(id, legado);
+          const slotDele = slotFinoDoAsset(outro, itemPorId(outro)?.slot ?? 'cabeca');
+          const slotMeu = slotFinoDoAsset(id, legado);
+          // onda 1404 (#154): entre CORPORAIS o conflito é pelo SLOT EFETIVO
+          // do item (pulso_e ≠ pulso_d — pares L/R da mesma subcategoria
+          // coexistem, §15/§16); nos demais vale a regra de subcategoria
+          const conflita = (slotCorporal(slotMeu) || slotCorporal(slotDele))
+            ? slotDele === slotMeu
+            : (minha && dele ? subcategoriasConflitam(minha, dele) : slotDele === slotMeu);
           if (conflita) delete camadas[k];
         }
         if (!jaEquipado) camadas[chave] = id; // toggle: re-clique remove
@@ -334,6 +344,8 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     return itensDe(categoria)
       .filter((i) => !i.requerBase || i.requerBase.includes(config.base)
         || flag('as5.cards_v2')) // §60.9: visível como INDISPONÍVEL
+      // onda 1404 (#154, as6.slots_corpo): itens CORPORAIS só com a flag
+      .filter((i) => i.categoria !== 'acessorio' || flag('as6.slots_corpo') || !slotCorporal(i.slot ?? 'cabeca'))
       .filter((i) => {
         switch (filtroAba) {
           case 'equipados': return equipadosAba.has(i.id);
@@ -932,7 +944,16 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
         {/* onda 1401 (#150, as6.thumb_item — elevação §12): MODO ITEM —
             o asset ISOLADO, protagonista, no viewBox medido (~78% de
             ocupação, fundo neutro via CSS); hover troca pro Aplicado */}
-        {thumbItem && !pairando ? (
+        {thumbItem && !pairando && item.categoria === 'acessorio' && slotCorporal(item.slot ?? 'cabeca') ? (
+          // onda 1404 (#154): CORPORAL — o item só existe no corpo inteiro;
+          // Modo Item = corpo inteiro com o item aplicado, RECORTADO na
+          // região (figura limpa, sem fundo/moldura/efeito/aura)
+          <AvatarSvg estatico uid={`ti-${item.id}`} corpo foco={focoItemDe(item.id)}
+            config={{ ...preview, camadas: (() => {
+              const { fundo: _f, moldura: _m, efeito: _e, aura: _a, ...soFigura } = preview.camadas;
+              return soFigura;
+            })() }} />
+        ) : thumbItem && !pairando ? (
           <span className="avst-thumb-item" data-teste="thumb-item" aria-hidden
             dangerouslySetInnerHTML={{ __html: svgItemIsolado(item.id, { uid: `ti-${item.id}`, foco: focoItemDe(item.id) }) }} />
         ) : flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? (

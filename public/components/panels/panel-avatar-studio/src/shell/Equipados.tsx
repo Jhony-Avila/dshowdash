@@ -29,7 +29,12 @@ export const ROTULOS: Record<string, string> = {
   // mega onda 1301+ (#140, as6.acess_v2): slots finos aditivos
   acessorio_olhos: 'Acessório · olhos', acessorio_orelha: 'Acessório · orelha',
   acessorio_costas: 'Acessório · costas', acessorio_flutuante: 'Acessório · flutuante',
-  acessorio_companheiro: 'Acessório · companheiro', fundo: 'Fundo', moldura: 'Moldura',
+  acessorio_companheiro: 'Acessório · companheiro',
+  // onda 1404 (#154): slots corporais
+  acessorio_pulso_e: 'Acessório · pulso esq.', acessorio_pulso_d: 'Acessório · pulso dir.',
+  acessorio_mao_e: 'Acessório · mão esq.', acessorio_mao_d: 'Acessório · mão dir.',
+  acessorio_cintura: 'Acessório · cintura', acessorio_pernas: 'Acessório · pernas',
+  acessorio_pes: 'Acessório · pés', fundo: 'Fundo', moldura: 'Moldura',
   efeito: 'Efeito', aura: 'Aura', banner: 'Banner', emblema: 'Emblema',
 };
 

@@ -13,6 +13,7 @@ import { subcategoriaDoAsset } from '../workspace/acessorios';
 
 // gerado por scripts/avatar/medir-foco-item.mjs — revisar o diff no mesmo commit
 export const FOCO_ITEM_ASSET: Record<string, string> = {
+  ace_anel_sinete: '128 170 80 80',
   ace_antena: '124 4 64 64',
   ace_asas_energia: '2 7 236 236',
   ace_aureola: '82 -8 77 77',
@@ -33,6 +34,7 @@ export const FOCO_ITEM_ASSET: Record<string, string> = {
   ace_chapeu_cowboy: '28 -19 183 183',
   ace_chapeu_mago: '45 -22 151 151',
   ace_chifres_oni: '69 -6 101 101',
+  ace_cinto_couro: '70 172 100 100',
   ace_colar_perolas: '79 161 81 81',
   ace_coroa: '76 2 87 87',
   ace_corrente: '74 163 92 92',
@@ -49,8 +51,10 @@ export const FOCO_ITEM_ASSET: Record<string, string> = {
   ace_gorro_natal: '52 6 145 145',
   ace_gravata_borboleta: '87 163 67 67',
   ace_headset: '30 18 179 179',
+  ace_joelheiras: '70 236 100 100',
   ace_laco_fita: '118 36 64 64',
   ace_lenco_bandana: '79 171 82 82',
+  ace_luva_couro: '32 166 80 80',
   ace_mascara_hoquei: '70 74 100 100',
   ace_mascara_kitsune: '68 69 103 103',
   ace_mascara_neon: '66 95 108 108',
@@ -68,6 +72,8 @@ export const FOCO_ITEM_ASSET: Record<string, string> = {
   ace_oculos_sol: '56 45 128 128',
   ace_piercing: '128 73 40 40',
   ace_pintura_guerra: '71 76 97 97',
+  ace_pulseira_led: '128 146 80 80',
+  ace_relogio_pulso: '32 146 80 80',
   ace_robo_aranha: '162 141 72 72',
   ace_robo_assistente: '162 98 70 70',
   ace_robo_bit: '166 106 60 60',
@@ -77,6 +83,7 @@ export const FOCO_ITEM_ASSET: Record<string, string> = {
   ace_runa_orbital: '16 16 206 206',
   ace_runa_protecao: '35 80 58 58',
   ace_tapa_olho: '46 22 149 149',
+  ace_tenis_neon: '60 290 120 120',
   ace_tiara_led: '53 4 134 134',
   ace_veu_mistico: '41 17 159 159',
   ace_viseira_esporte: '57 45 126 126',
@@ -106,11 +113,17 @@ export const FOCO_ITEM_SUBCATEGORIA: Record<string, string> = {
   aureolas: '80 -10 80 80',
   companheiros: '145 15 95 95',
   pets: '160 100 70 70',
-  pulseiras: '60 60 120 120',
   bolsas: '20 110 150 150',
   robos: '160 100 75 75',
   espiritos: '162 105 65 65',
   runas: '30 10 190 190',
+  // onda 1404 (#154): CORPORAIS — recorte da REGIÃO no corpo inteiro 240×400
+  // (o Modo Item mostra o asset SOBRE o corpo: sozinho ele não comunica)
+  pulseiras: '32 146 80 80',
+  'luvas-aneis': '32 166 80 80',
+  cintos: '70 172 100 100',
+  tornozeleiras: '70 236 100 100',
+  calcados: '60 290 120 120',
 };
 
 /** viewBox do Modo Item: medição do asset → preset da subcategoria →

@@ -29,6 +29,9 @@ export const SLOTS_EQUIPAMENTO = [
   // ausentes = serialização canônica idêntica (checksum §619 estável)
   'acessorio_olhos', 'acessorio_orelha', 'acessorio_costas',
   'acessorio_flutuante', 'acessorio_companheiro',
+  // onda 1404 (decisão #154, as6.slots_corpo): slots CORPORAIS aditivos
+  'acessorio_pulso_e', 'acessorio_pulso_d', 'acessorio_mao_e', 'acessorio_mao_d',
+  'acessorio_cintura', 'acessorio_pernas', 'acessorio_pes',
   'fundo', 'moldura', 'efeito', 'aura', 'banner', 'emblema', 'titulo',
   // 3D (decisão #41 — vocabulário fechado)
   'head', 'face', 'eyes', 'ears', 'neck', 'shoulders', 'back', 'waist',

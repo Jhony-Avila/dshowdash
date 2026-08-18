@@ -1499,4 +1499,131 @@ export const ACESSORIOS: ParteDef[] = [
         <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur="5.4s" repeatCount="indefinite"/>
       </g>`,
   },
+  // ── onda 1404 (decisão #154, as6.slots_corpo): ACESSÓRIOS CORPORAIS ──
+  // Contrato: `render` (busto 240×240) devolve '' — o busto não tem braços/
+  // pernas, então header/publicação ficam byte a byte; a arte vive em
+  // `renderCorpo` (corpo inteiro 240×400, coordenadas do partes/corpo.ts):
+  // mãos em (72,206)/(168,206) · pulsos y≈186 · cintura y 206–222 ·
+  // pernas 216–330 · pés 328–370. Uma arte-prova por slot; população
+  // plena das regiões é a onda 1405.
+  {
+    id: 'ace_relogio_pulso',
+    categoria: 'acessorio',
+    slot: 'pulso_e',
+    nome: 'Relógio de Pulso',
+    descricao: 'Marca a hora do deploy — e a do café.',
+    raridade: 'incomum',
+    tema: 'executivo',
+    usaCores: ['destaque'],
+    render: () => '',
+    renderCorpo: (p, u) => `
+      <defs>
+        <radialGradient id="${u}rel" cx="0.4" cy="0.35" r="0.9">
+          <stop offset="0" stop-color="#e8ecf5"/>
+          <stop offset="1" stop-color="#9aa3b5"/>
+        </radialGradient>
+      </defs>
+      <path d="M62 182 h 20 v 8 h -20 z" fill="${p.destaque.escuro}"/>
+      <circle cx="72" cy="186" r="7.5" fill="url(#${u}rel)" stroke="${p.destaque.base}" stroke-width="2"/>
+      <path d="M72 186 l 0 -4.5 M72 186 l 3 2" stroke="#1d2130" stroke-width="1.4" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'ace_pulseira_led',
+    categoria: 'acessorio',
+    slot: 'pulso_d',
+    nome: 'Pulseira LED',
+    descricao: 'Pisca no ritmo do sprint.',
+    raridade: 'comum',
+    tema: 'gamer',
+    usaCores: ['destaque'],
+    render: () => '',
+    renderCorpo: (p) => `
+      <path d="M158 182 h 20 v 8 h -20 z" fill="#20242e" rx="2"/>
+      <path d="M160 186 h 16" stroke="${p.destaque.base}" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="168" cy="186" r="1.6" fill="${p.destaque.claro}"/>`,
+  },
+  {
+    id: 'ace_luva_couro',
+    categoria: 'acessorio',
+    slot: 'mao_e',
+    nome: 'Luva de Couro',
+    descricao: 'Aperto de mão firme fecha contrato.',
+    raridade: 'incomum',
+    tema: 'casual',
+    usaCores: ['destaque'],
+    render: () => '',
+    renderCorpo: (p) => `
+      <circle cx="72" cy="206" r="10.5" fill="#6e451e"/>
+      <circle cx="72" cy="206" r="10.5" fill="none" stroke="${p.destaque.base}" stroke-width="1.6"/>
+      <path d="M64 200 q 8 -4 16 0" stroke="#4a2d12" stroke-width="1.6" fill="none"/>`,
+  },
+  {
+    id: 'ace_anel_sinete',
+    categoria: 'acessorio',
+    slot: 'mao_d',
+    nome: 'Anel Sinete',
+    descricao: 'Sela decisões. Sem cera, com estilo.',
+    raridade: 'raro',
+    tema: 'executivo',
+    lore: 'Brasão de uma dinastia de fechadores de trimestre. Passa de mão em mão a cada recorde batido.',
+    usaCores: ['destaque'],
+    render: () => '',
+    renderCorpo: (p) => `
+      <path d="M163 210 h 10 v 3 h -10 z" fill="${p.destaque.base}"/>
+      <rect x="165" y="205.5" width="6" height="5.5" rx="1.4" fill="${p.destaque.claro}"/>
+      <circle cx="168" cy="208.2" r="1.3" fill="${p.destaque.escuro}"/>`,
+  },
+  {
+    id: 'ace_cinto_couro',
+    categoria: 'acessorio',
+    slot: 'cintura',
+    nome: 'Cinto de Couro',
+    descricao: 'Segura a calça e as expectativas.',
+    raridade: 'comum',
+    tema: 'executivo',
+    usaCores: ['destaque'],
+    render: () => '',
+    renderCorpo: (p) => `
+      <path d="M90 208 h 60 v 9 h -60 z" fill="#4a2d12"/>
+      <rect x="113" y="206" width="14" height="13" rx="2.5" fill="none" stroke="${p.destaque.base}" stroke-width="2.6"/>
+      <path d="M120 208 v 9" stroke="${p.destaque.base}" stroke-width="2"/>`,
+  },
+  {
+    id: 'ace_joelheiras',
+    categoria: 'acessorio',
+    slot: 'pernas',
+    nome: 'Joelheiras Táticas',
+    descricao: 'Para as horas de joelho no chão debugando.',
+    raridade: 'incomum',
+    tema: 'gamer',
+    usaCores: ['destaque'],
+    render: () => '',
+    renderCorpo: (p) => `
+      <path d="M94 268 h 22 a 4 4 0 0 1 4 4 v 12 a 4 4 0 0 1 -4 4 h -22 a 4 4 0 0 1 -4 -4 v -12 a 4 4 0 0 1 4 -4 z" fill="#2b303c"/>
+      <path d="M124 268 h 22 a 4 4 0 0 1 4 4 v 12 a 4 4 0 0 1 -4 4 h -22 a 4 4 0 0 1 -4 -4 v -12 a 4 4 0 0 1 4 -4 z" fill="#2b303c"/>
+      <path d="M96 276 h 18 M126 276 h 18" stroke="${p.destaque.base}" stroke-width="2" stroke-linecap="round"/>`,
+  },
+  {
+    id: 'ace_tenis_neon',
+    categoria: 'acessorio',
+    slot: 'pes',
+    nome: 'Tênis Neon',
+    descricao: 'Sola que acende quando a métrica sobe.',
+    raridade: 'raro',
+    tema: 'gamer',
+    lore: 'Edição limitada da maratona de features. Quem correu, ganhou; quem ganhou, brilha.',
+    usaCores: ['destaque'],
+    render: () => '',
+    renderCorpo: (p, u) => `
+      <defs>
+        <linearGradient id="${u}ten" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f2f3f8"/>
+          <stop offset="1" stop-color="#c9cdda"/>
+        </linearGradient>
+      </defs>
+      <path d="M90 330 h 28 v 30 c 0 6 -4 10 -10 10 h -24 c -8 0 -10 -10 -2 -14 l 8 -5 z" fill="url(#${u}ten)"/>
+      <path d="M122 330 h 28 l 0 21 l 8 5 c 8 4 6 14 -2 14 h -24 c -6 0 -10 -4 -10 -10 z" fill="url(#${u}ten)"/>
+      <path d="M82 367 h 36 M122 367 h 36" stroke="${p.destaque.base}" stroke-width="4" stroke-linecap="round"/>
+      <path d="M96 340 l 8 6 M126 340 l 8 6" stroke="${p.destaque.escuro}" stroke-width="2" stroke-linecap="round"/>`,
+  },
 ];

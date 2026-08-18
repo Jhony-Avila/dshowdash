@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 386,
+    "itens2d": 393,
     "categorias": 13,
     "titulos": 30,
     "colecoes": 12,
@@ -33,6 +33,11 @@
     "exclusivo"
   ],
   "itens": [
+    {
+      "id": "ace_anel_sinete",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
     {
       "id": "ace_antena",
       "categoria": "acessorio",
@@ -134,6 +139,11 @@
       "raridade": "epico"
     },
     {
+      "id": "ace_cinto_couro",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
       "id": "ace_colar_perolas",
       "categoria": "acessorio",
       "raridade": "raro"
@@ -214,12 +224,22 @@
       "raridade": "epico"
     },
     {
+      "id": "ace_joelheiras",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
       "id": "ace_laco_fita",
       "categoria": "acessorio",
       "raridade": "comum"
     },
     {
       "id": "ace_lenco_bandana",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_luva_couro",
       "categoria": "acessorio",
       "raridade": "incomum"
     },
@@ -309,6 +329,16 @@
       "raridade": "incomum"
     },
     {
+      "id": "ace_pulseira_led",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
+      "id": "ace_relogio_pulso",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
       "id": "ace_robo_aranha",
       "categoria": "acessorio",
       "raridade": "raro"
@@ -350,6 +380,11 @@
     },
     {
       "id": "ace_tapa_olho",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_tenis_neon",
       "categoria": "acessorio",
       "raridade": "raro"
     },

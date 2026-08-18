@@ -28,7 +28,7 @@ import { BOCAS } from '../engine/partes/bocas';
 import { ROUPAS } from '../engine/partes/roupas';
 import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
-import { slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2)
+import { slotCorporal, slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2) · #154
 import { FUNDOS } from '../engine/partes/fundos';
 import { MOLDURAS } from '../engine/partes/molduras';
 import { EFEITOS } from '../engine/partes/efeitos';
@@ -312,7 +312,10 @@ export function categoriasAtivas(): CategoriaMeta[] {
 
 /** Itens sorteáveis (sem trava de conquista/evento) — usado pelo aleatório. */
 function sorteaveis(categoria: CategoriaId): ParteDef[] {
-  return itensDe(categoria).filter((x) => !x.bloqueadoPor);
+  return itensDe(categoria).filter((x) => !x.bloqueadoPor
+    // onda 1404 (#154): sem a flag, acessórios CORPORAIS não entram no
+    // sorteio (arte só no corpo inteiro; off = catálogo anterior byte a byte)
+    && !(categoria === 'acessorio' && !flag('as6.slots_corpo') && slotCorporal(x.slot ?? 'cabeca')));
 }
 
 // ── Cores sugeridas por slot (paleta curada; picker livre continua valendo) ──
@@ -377,7 +380,9 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   // mega onda 1301+ (decisão #140/#141, as6.acess_v2): slots FINOS —
   // a CHAVE é o slot (nunca re-slota um avatar salvo; aceitação é
   // INCONDICIONAL p/ forward-compat, a escrita é que fica atrás da flag)
-  for (const s of ['olhos', 'orelha', 'costas', 'flutuante', 'companheiro'] as const) {
+  // onda 1404 (#154): + slots CORPORAIS (mesma regra: chave = slot)
+  for (const s of ['olhos', 'orelha', 'costas', 'flutuante', 'companheiro',
+    'pulso_e', 'pulso_d', 'mao_e', 'mao_d', 'cintura', 'pernas', 'pes'] as const) {
     const idFino = (b.camadas as Record<string, unknown> | undefined)?.[`acessorio_${s}`];
     if (typeof idFino !== 'string') continue;
     const item = POR_ID.get(idFino);
@@ -692,8 +697,12 @@ export function svgItemIsolado(
   if (!parte) return '';
   const paleta = paletaDe({ ...CONFIG_PADRAO.cores, ...(opcoes?.cores ?? {}) });
   const uid = opcoes?.uid ?? `it-${id}`;
-  const foco = opcoes?.foco ?? '0 0 240 240';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${foco}" role="presentation">${parte.render(paleta, uid)}</svg>`;
+  // onda 1404 (#154): acessório CORPORAL — arte só em renderCorpo (corpo
+  // inteiro 240×400); o busto devolve '' por contrato
+  const corporal = parte.categoria === 'acessorio' && slotCorporal(parte.slot ?? 'cabeca') && !!parte.renderCorpo;
+  const foco = opcoes?.foco ?? (corporal ? '0 0 240 400' : '0 0 240 240');
+  const frag = corporal ? parte.renderCorpo!(paleta, uid) : parte.render(paleta, uid);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${foco}" role="presentation">${frag}</svg>`;
 }
 
 export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
@@ -1038,6 +1047,10 @@ function chaveAcessorioSorteio(a: ParteDef): CamadaId {
 const SLOTS_ACESSORIO_TODOS_ALEATORIO = [
   'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco', 'acessorio_olhos',
   'acessorio_orelha', 'acessorio_costas', 'acessorio_flutuante', 'acessorio_companheiro',
+  // onda 1404 (#154, as6.slots_corpo): corporais entram no sorteio (a
+  // lista é filtrada pela flag no uso — off = 8 slots byte a byte)
+  'acessorio_pulso_e', 'acessorio_pulso_d', 'acessorio_mao_e', 'acessorio_mao_d',
+  'acessorio_cintura', 'acessorio_pernas', 'acessorio_pes',
 ] as const;
 
 /**

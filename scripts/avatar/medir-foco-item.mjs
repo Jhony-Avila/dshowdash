@@ -37,10 +37,14 @@ import { CONFIG_PADRAO } from '${PAINEL}/src/services/AvatarCatalog';
 const paleta = paletaDe(CONFIG_PADRAO.cores);
 const saida: Array<{ id: string; svg: string }> = [];
 for (const parte of ACESSORIOS) {
+  // onda 1404 (#154): corporais medem o renderCorpo (canvas 240×400)
+  const corporal = !!parte.renderCorpo && parte.render(paleta, 'medir') === '';
+  const frag = corporal ? parte.renderCorpo!(paleta, 'medir') : parte.render(paleta, 'medir');
+  const alt = corporal ? 400 : ${LADO_CANVAS};
   saida.push({
     id: parte.id,
-    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LADO_CANVAS} ${LADO_CANVAS}" width="${LADO_CANVAS}" height="${LADO_CANVAS}">'
-      + parte.render(paleta, 'medir') + '</svg>',
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LADO_CANVAS} ' + alt + '" width="${LADO_CANVAS}" height="' + alt + '">'
+      + frag + '</svg>',
   });
 }
 console.log(JSON.stringify(saida));

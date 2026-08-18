@@ -19,6 +19,7 @@
 //   EM_PREPARACAO = infra pronta aguardando arte do Jhony (§72 etc.);
 //   OCULTA = não aparece. Nada vazio é publicado como completo.
 import type { SlotAcessorio } from '../domain/types';
+import { flag } from '../nucleo/flags'; // onda 1404 (#154): gate dos slots corporais
 
 export type EstadoSubcategoria = 'ativa' | 'em_preparacao' | 'oculta';
 
@@ -47,6 +48,9 @@ export const REGIOES_ACESSORIO: RegiaoAcessorio[] = [
   { id: 'pescoco', nome: 'Pescoço' },
   { id: 'costas', nome: 'Costas e bolsas' },
   { id: 'especiais', nome: 'Especiais' },
+  // onda 1404 (#154, as6.slots_corpo): regiões CORPORAIS (só corpo inteiro)
+  { id: 'bracos', nome: 'Braços e mãos' },
+  { id: 'corpo-baixo', nome: 'Cintura, pernas e pés' },
 ];
 
 /** Subcategorias (briefing §4) — só DADOS; ordem = ordem de exibição. */
@@ -85,8 +89,15 @@ export const SUBCATEGORIAS_ACESSORIO: SubcategoriaAcessorio[] = [
   { id: 'robos', nome: 'Robôs', regiao: 'especiais', slot: 'companheiro', estado: 'ativa' },
   { id: 'espiritos', nome: 'Espíritos', regiao: 'especiais', slot: 'companheiro', estado: 'ativa' },
   { id: 'runas', nome: 'Runas e círculos', regiao: 'especiais', slot: 'flutuante', estado: 'ativa' },
-  // Braços/mãos/pernas/pés (briefing §4): aguardando arte (§72)
-  { id: 'pulseiras', nome: 'Pulseiras e relógios', regiao: 'especiais', slot: 'flutuante', estado: 'oculta' },
+  // onda 1404 (#154, as6.slots_corpo): regiões CORPORAIS — subcategorias
+  // ATIVAS com o gate da flag (subcategoriasCorporaisAtivas); a arte só
+  // desenha no corpo inteiro (renderCorpo). Pares L/R: a subcategoria
+  // pousa no lado ESQUERDO por padrão; o item declara o slot exato.
+  { id: 'pulseiras', nome: 'Pulseiras e relógios', regiao: 'bracos', slot: 'pulso_e', estado: 'ativa' },
+  { id: 'luvas-aneis', nome: 'Luvas e anéis', regiao: 'bracos', slot: 'mao_e', estado: 'ativa' },
+  { id: 'cintos', nome: 'Cintos e faixas', regiao: 'corpo-baixo', slot: 'cintura', estado: 'ativa' },
+  { id: 'tornozeleiras', nome: 'Pernas e tornozelos', regiao: 'corpo-baixo', slot: 'pernas', estado: 'ativa' },
+  { id: 'calcados', nome: 'Calçados', regiao: 'corpo-baixo', slot: 'pes', estado: 'ativa' },
 ];
 
 /** Classificação FINA dos 30 assets existentes (briefing §5 — sem
@@ -130,6 +141,10 @@ export const SUBCATEGORIA_POR_ASSET: Record<string, string> = {
   ace_espirito_chama: 'espiritos', ace_espirito_agua: 'espiritos', ace_espirito_estelar: 'espiritos',
   ace_runa_circulo: 'runas', ace_runa_protecao: 'runas',
   ace_runa_glifo: 'runas', ace_runa_orbital: 'runas',
+  // onda 1404 (#154): artes-prova dos slots CORPORAIS (1 por slot)
+  ace_relogio_pulso: 'pulseiras', ace_pulseira_led: 'pulseiras',
+  ace_luva_couro: 'luvas-aneis', ace_anel_sinete: 'luvas-aneis',
+  ace_cinto_couro: 'cintos', ace_joelheiras: 'tornozeleiras', ace_tenis_neon: 'calcados',
 };
 
 const POR_ID = new Map(SUBCATEGORIAS_ACESSORIO.map((s) => [s.id, s]));
@@ -139,13 +154,26 @@ export function subcategoriaDoAsset(assetId: string): SubcategoriaAcessorio | un
   return sub ? POR_ID.get(sub) : undefined;
 }
 
-/** Slot fino de um asset (fallback: slot legado declarado pela arte). */
+/** onda 1404 (#154): slots que só existem com as6.slots_corpo ligada. */
+export const SLOTS_CORPORAIS: readonly SlotAcessorio[] = [
+  'pulso_e', 'pulso_d', 'mao_e', 'mao_d', 'cintura', 'pernas', 'pes',
+];
+export function slotCorporal(s: SlotAcessorio): boolean {
+  return (SLOTS_CORPORAIS as readonly string[]).includes(s);
+}
+
+/** Slot fino de um asset (fallback: slot legado declarado pela arte).
+ *  onda 1404: a arte corporal declara o slot exato (pulso_d, mao_e…) —
+ *  o registry só define o padrão da subcategoria. */
 export function slotFinoDoAsset(assetId: string, slotLegado: SlotAcessorio): SlotAcessorio {
+  if (slotCorporal(slotLegado)) return slotLegado; // arte manda no lado L/R
   return subcategoriaDoAsset(assetId)?.slot ?? slotLegado;
 }
 
 export function subcategoriasDaRegiao(regiao: string): SubcategoriaAcessorio[] {
-  return SUBCATEGORIAS_ACESSORIO.filter((s) => s.regiao === regiao && s.estado !== 'oculta');
+  return SUBCATEGORIAS_ACESSORIO.filter((s) => s.regiao === regiao && s.estado !== 'oculta'
+    // onda 1404 (#154): corporais somem sem a flag (rollback = navegação anterior)
+    && (!slotCorporal(s.slot) || flag('as6.slots_corpo')));
 }
 
 /** Conflito entre duas subcategorias: mesmo slot OU bloqueio declarado. */

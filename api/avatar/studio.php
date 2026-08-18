@@ -133,7 +133,12 @@ function avst_validar_config($bruto): array
     $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'roupa_sobre', 'acessorio',
         'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco',
         'acessorio_olhos', 'acessorio_orelha', 'acessorio_costas',
-        'acessorio_flutuante', 'acessorio_companheiro', 'fundo',
+        'acessorio_flutuante', 'acessorio_companheiro',
+        // acessorio_{pulso_e,pulso_d,mao_e,mao_d,cintura,pernas,pes}: slots
+        // CORPORAIS (onda 1404, decisão #154, flag as6.slots_corpo) — espelho
+        // da lista canônica do front (nucleo/contratos.ts)
+        'acessorio_pulso_e', 'acessorio_pulso_d', 'acessorio_mao_e', 'acessorio_mao_d',
+        'acessorio_cintura', 'acessorio_pernas', 'acessorio_pes', 'fundo',
         'moldura', 'efeito', 'aura', 'banner', 'emblema'];
     $camadas = [];
     foreach ($categorias as $cat) {

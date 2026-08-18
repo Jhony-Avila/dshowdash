@@ -54,7 +54,13 @@ export interface VarianteCor {
  *  avatar salvo — byte-stability #141). */
 export type SlotAcessorio =
   | 'cabeca' | 'rosto' | 'pescoco'
-  | 'olhos' | 'orelha' | 'costas' | 'flutuante' | 'companheiro';
+  | 'olhos' | 'orelha' | 'costas' | 'flutuante' | 'companheiro'
+  // onda 1404 (decisão #154, as6.slots_corpo): slots CORPORAIS — regiões
+  // que só existem no render de CORPO INTEIRO (240×400). No busto (header/
+  // publicação) o item não desenha nada (byte-stability trivial); no palco
+  // 'corpo' entra via ParteDef.renderCorpo (precedente da roupa). Pares
+  // laterais L/R (§15/§16 da elevação): _e = esquerdo DELE, _d = direito.
+  | 'pulso_e' | 'pulso_d' | 'mao_e' | 'mao_d' | 'cintura' | 'pernas' | 'pes';
 
 /** Chaves possíveis em AvatarConfig.camadas ('acessorio' legado migra no validarConfig). */
 export type CamadaId = Exclude<CategoriaId, 'base'> | `acessorio_${SlotAcessorio}`;

@@ -62,7 +62,9 @@ export const TAXONOMIA: CategoriaMae[] = [
     principais: [
       { id: 'roupa', nome: 'Roupa', categoria: 'roupa', chipsTema: true, estado: 'ativa' },
       { id: 'sobrepeca', nome: 'Sobrepeça', categoria: 'roupa_sobre', estado: 'ativa' },
-      { id: 'calcados', nome: 'Calçados', categoria: 'roupa', estado: 'em_breve' },
+      // onda 1404 (#154, as6.slots_corpo): calçados viram ACESSÓRIO no slot pés
+      // (nunca ativou como roupa; navegação pura, contrato §1). Corpo inteiro só.
+      { id: 'calcados', nome: 'Calçados', categoria: 'acessorio', subcats: ['calcados'], estado: 'ativa' },
     ],
   },
   {
@@ -82,10 +84,10 @@ export const TAXONOMIA: CategoriaMae[] = [
       { id: 'orelhas', nome: 'Orelhas', categoria: 'acessorio', subcats: ['brincos'], estado: 'ativa' },
       { id: 'pescoco', nome: 'Pescoço', categoria: 'acessorio', subcats: ['colares', 'lencos', 'gravatas'], estado: 'ativa' },
       { id: 'peito', nome: 'Peito', categoria: 'acessorio', subcats: ['insignias'], estado: 'ativa' },
-      { id: 'bracos-pulsos', nome: 'Braços e pulsos', categoria: 'acessorio', subcats: ['pulseiras'], estado: 'em_breve' },
-      { id: 'maos-dedos', nome: 'Mãos e dedos', categoria: 'acessorio', estado: 'em_breve' },
-      { id: 'cintura', nome: 'Cintura e quadril', categoria: 'acessorio', estado: 'em_breve' },
-      { id: 'pernas-torn', nome: 'Pernas e tornozelos', categoria: 'acessorio', estado: 'em_breve' },
+      { id: 'bracos-pulsos', nome: 'Braços e pulsos', categoria: 'acessorio', subcats: ['pulseiras'], estado: 'ativa' }, // 1404 (#154)
+      { id: 'maos-dedos', nome: 'Mãos e dedos', categoria: 'acessorio', subcats: ['luvas-aneis'], estado: 'ativa' }, // 1404 (#154)
+      { id: 'cintura', nome: 'Cintura e quadril', categoria: 'acessorio', subcats: ['cintos'], estado: 'ativa' }, // 1404 (#154)
+      { id: 'pernas-torn', nome: 'Pernas e tornozelos', categoria: 'acessorio', subcats: ['tornozeleiras'], estado: 'ativa' }, // 1404 (#154)
     ],
   },
   {

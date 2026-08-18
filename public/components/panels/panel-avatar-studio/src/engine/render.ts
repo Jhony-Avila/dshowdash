@@ -71,6 +71,19 @@ const ORDEM_CAMADAS = [
   // eles: costas → olhos → orelha → flutuante → companheiro.
   'acessorio_costas', 'acessorio_olhos', 'acessorio_orelha',
   'acessorio_flutuante', 'acessorio_companheiro',
+  // onda 1404 (decisão #154, as6.slots_corpo): slots CORPORAIS — no busto
+  // a arte NÃO desenha (render vazio por contrato; só renderCorpo existe),
+  // então a presença aqui é forward-compat: fragmento vazio = SVG byte a
+  // byte. Ordem: pernas → pés → cintura → pulsos → mãos (mãos por cima).
+  'acessorio_pernas', 'acessorio_pes', 'acessorio_cintura',
+  'acessorio_pulso_e', 'acessorio_pulso_d', 'acessorio_mao_e', 'acessorio_mao_d',
+] as const;
+
+/** onda 1404 (#154): slots corporais — ordem de pintura no CORPO INTEIRO
+ *  (por cima do scaffold do corpo, por baixo da cabeça). */
+const SLOTS_CORPO = [
+  'acessorio_pernas', 'acessorio_pes', 'acessorio_cintura',
+  'acessorio_pulso_e', 'acessorio_pulso_d', 'acessorio_mao_e', 'acessorio_mao_d',
 ] as const;
 
 // ── megas 254–255 (§102/§118): TIPO CORPORAL e POSTURA ──────────────
@@ -198,6 +211,17 @@ export function renderAvatar(
         ? resolver(config.camadas.roupa_sobre)
         : undefined;
       const sobreCorpo = sobreDef?.renderCorpo ? sobreDef.renderCorpo(paletaDa('roupa_sobre'), uid) : '';
+      // onda 1404 (#154, as6.slots_corpo): acessórios CORPORAIS — arte em
+      // coordenadas do corpo inteiro via renderCorpo (contrato da roupa);
+      // params §71 aplicados como em qualquer camada; slot ausente = ''
+      let acessCorpo = '';
+      for (const s of SLOTS_CORPO) {
+        const idc = config.camadas[s];
+        if (!idc || idc === 'nenhum') continue;
+        const def = resolver(idc);
+        if (!def?.renderCorpo) continue;
+        acessCorpo += aplicarParamsSvg(s, def.renderCorpo(paletaDa(s), uid), config.params?.[s]);
+      }
       // emblema no peito do corpo inteiro (mapeia (152,206) do busto → (145,145))
       const emblemaCorpo = config.camadas.emblema && config.camadas.emblema !== 'nenhum'
         ? `<g transform="translate(15.8 -30.1) scale(0.85)">${pintar(config.camadas.emblema, 'emblema')}</g>`
@@ -206,7 +230,7 @@ export function renderAvatar(
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem"><g data-anim="personagem">` +
           envolverFigura(
-            corpoInteiro(paletaDa('roupa'), uid) + roupaCorpo + sobreCorpo + emblemaCorpo +
+            corpoInteiro(paletaDa('roupa'), uid) + roupaCorpo + sobreCorpo + emblemaCorpo + acessCorpo +
             `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`,
             config, 396,
           ) +

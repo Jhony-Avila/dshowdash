@@ -260,6 +260,42 @@ export const VARIANTES_POR_ASSET: Record<string, VarianteCor[]> = {
     { id: 'var_violeta', nome: 'Órbita violeta', canais: { destaque: '#7c5cff' } },
     { id: 'var_lima', nome: 'Órbita lima', canais: { destaque: '#39d98a' } },
   ],
+  // ── onda 1404 (#154): artes-prova dos slots corporais ──
+  ace_relogio_pulso: [
+    { id: 'var_ouro', nome: 'Caixa ouro', canais: { destaque: '#c9a75a' } },
+    { id: 'var_prata', nome: 'Caixa prata', canais: { destaque: '#aeb6c4' } },
+    { id: 'var_preto', nome: 'Caixa preta', canais: { destaque: '#20242e' } },
+  ],
+  ace_pulseira_led: [
+    { id: 'var_ciano', nome: 'Ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_magenta', nome: 'Magenta', canais: { destaque: '#ff5f8f' } },
+    { id: 'var_lima', nome: 'Lima', canais: { destaque: '#39d98a' } },
+  ],
+  ace_luva_couro: [
+    { id: 'var_ouro', nome: 'Costura ouro', canais: { destaque: '#c9a75a' } },
+    { id: 'var_rubi', nome: 'Costura rubi', canais: { destaque: '#c93a3a' } },
+    { id: 'var_gelo', nome: 'Costura gelo', canais: { destaque: '#bcd9ee' } },
+  ],
+  ace_anel_sinete: [
+    { id: 'var_ouro', nome: 'Ouro', canais: { destaque: '#e8b64c' } },
+    { id: 'var_prata', nome: 'Prata', canais: { destaque: '#aeb6c4' } },
+    { id: 'var_rubi', nome: 'Rubi', canais: { destaque: '#c93a3a' } },
+  ],
+  ace_cinto_couro: [
+    { id: 'var_ouro', nome: 'Fivela ouro', canais: { destaque: '#c9a75a' } },
+    { id: 'var_prata', nome: 'Fivela prata', canais: { destaque: '#aeb6c4' } },
+    { id: 'var_bronze', nome: 'Fivela bronze', canais: { destaque: '#b0793d' } },
+  ],
+  ace_joelheiras: [
+    { id: 'var_ciano', nome: 'Faixa ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_laranja', nome: 'Faixa laranja', canais: { destaque: '#e8843d' } },
+    { id: 'var_lima', nome: 'Faixa lima', canais: { destaque: '#39d98a' } },
+  ],
+  ace_tenis_neon: [
+    { id: 'var_ciano', nome: 'Sola ciano', canais: { destaque: '#4cd9e8' } },
+    { id: 'var_magenta', nome: 'Sola magenta', canais: { destaque: '#ff5f8f' } },
+    { id: 'var_lima', nome: 'Sola lima', canais: { destaque: '#39d98a' } },
+  ],
 };
 
 /** Variantes de um asset (vazio = asset sem variantes; UI não mostra nada). */
