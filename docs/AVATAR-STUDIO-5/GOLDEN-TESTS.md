@@ -20,16 +20,16 @@
 
 Regras: novos campos/camadas = goldens **novos** (p01+, g17+) gravados no mesmo commit com `--gravar` e diff revisado (doutrina #83); os 16 nunca são regravados por causa de feature nova. Comparações de byte-stability usam `uid: 'fixo'` (o `uid` deriva de `hashConfig`).
 
-## 2. Goldens visuais (onda 1407) — contrato de captura
+## 2. Goldens visuais (onda 1407 ✅) — contrato de captura
 
-- Viewport 1440×900, DPR 1, `prefers-reduced-motion: reduce`, relógio congelado (`page.clock`), `requestAnimationFrame` determinístico, seed fixa de partículas (`as6.seed_determinista`), Chromium fixo (`PW_CHROME`), SwiftShader para WebGL.
-- Matriz 2D: 16 goldens × {busto, palco, corpo, foto} + 6 looks de palco (clima/luz/hora) + Modo Item por acessório (ocupação 70–85%).
-- Matriz 3D: 8 personagens publicados × {front, ¾, profile} × LOD{0,1,2}, pose idle congelada; cabelos/roupas modulares sobre `base_superhero_m/f`; looks estudio/portrait (+hero/neon após 1420).
-- Nome: `<caso>_<angulo>[_lod].png` (ex.: `g01-padrao_busto.png`, `base_superhero_m_34_lod1.png`).
-- Diff: `comparar-visual.mjs` (sharp, raw RGB, ΔE por pixel, % acima do limiar + bbox); tolerância por caso em `golden-visual.json`; classificação `expected | unexpected | needs_review` (humano decide `needs_review`).
-- Baseline: PNGs em `scripts/avatar/testes/saida/baseline-visual/` (gitignored) + cópia `/backup/visual-baselines/<commit>/` (servidor, passo opcional do deploy); no git só `docs/AVATAR-STUDIO-6/golden-visual.json` (sha256 + métricas + viewport + chrome build + notas de aprovação).
-- Aprovação: `--aprovar <caso>` regrava e exige nota; nunca automático (§2975).
-- Seleção "affected" (§2793): `rodar-visual.mjs --desde <commit>` mapeia diff git → matriz (engine/render.ts → tudo 2D; poc3d/services 3D → tudo 3D; partes/<cat> → só a categoria).
+Implementação: `scripts/avatar/testes/regressao-visual.mjs` (runner/teste na suíte) + `visual/captura.mjs` (determinismo) + `visual/comparar-visual.mjs` (diff perceptual ΔE CIE76 via `sharp`) + `visual/golden-casos.ts` (definição ÚNICA dos 16 casos, compartilhada com `golden-avatars.mjs`).
+
+- Determinismo: viewport 1440×900 (2D/UI) e 1500×940 (3D), DPR 1, Chromium fixo (`PW_CHROME`), `prefers-reduced-motion: reduce`, **SMIL pausado em t=0 + Web Animations pausadas** antes de cada captura; SVG do motor renderizado fora da UI (documento mínimo, fundo `#0b0d14`, busto 480², corpo 480×800, foto 960w); 3D via `canvas.toDataURL` com double-RAF e pose congelada (`p3d-pose`).
+- Matriz v1: `svg_<gNN>` (16 goldens de bytes como imagem) · `item_<ace_*>` (ocupação do Modo Item — métrica, faixa §12 0,70–0,85, exceções declaradas: corporais = recorte da região no corpo §154; minúsculos = clamp 40 do medidor) · `ui2d_{rosto,busto,corpo,dock}` (shell novo, config padrão) · `3d_<slug>_{corpo,retrato}` (8 personagens publicados). Próximos: ¾/profile/LOD e looks (1408/1409/1419), goldens Classic p01+ (1411+).
+- Nome do caso = `<grupo>_<id>_<variante>`; diff: % de pixels com ΔE > 6, ΔE médio, bbox da mudança, PNG de diff (magenta) em `saida/visual-diff/`; tolerâncias padrão 2D 0,5 % · UI 1,0 % · 3D 2,0 % (por caso em `golden-visual.json`).
+- Classes: `identico` (sha igual) · `expected` (≤ tolerância) · `unexpected` · `needs_review` (baseline PNG ausente/tamanho diferente — humano decide) · `novo`. **Tripwire** = `unexpected` em `svg_/ui2d_/item_`; 3D `unexpected` e `needs_review` = aviso (decisão #158).
+- Baseline: `docs/AVATAR-STUDIO-6/golden-visual.json` no git (sha256 + bytes + tamanho + métricas + tolerância + nota + viewport/chromium/commit); PNGs em `scripts/avatar/testes/saida/baseline-visual/` (gitignored) + cópia `/backup/visual-baselines/<commit>/` no servidor (passo manual até o deploy copiar). Aprovação: `--aprovar <caso|todos> --nota "motivo"` (nota obrigatória, §2695/§2975); `--gravar` só na 1ª baseline. Nunca automático.
+- Seleção "affected" (§2793): `--desde <commit>` mapeia o diff git → grupos (`engine/render|partes|AvatarCatalog` → svg+item+ui2d; `modoItem|acessorios|VariantesAssets` → item; `shell|components|workspace|styles` → ui2d; `poc3d|Renderizador3d|Assembler3d|…|assets/3d` → 3d; mudança no próprio runner → tudo). `--sem-3d` pula o palco.
 
 ## 3. Golden Sets de conteúdo (gates)
 

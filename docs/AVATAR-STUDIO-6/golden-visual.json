@@ -1,0 +1,655 @@
+{
+  "casos": {
+    "3d_androide_corpo": {
+      "renderer": "3d",
+      "sha256": "29de0125019d09583b96846352e42a2e5b341307798d855dcbeb53fe1a920f9a",
+      "bytes": 83468,
+      "tolerancia": 2
+    },
+    "3d_androide_retrato": {
+      "renderer": "3d",
+      "sha256": "b850c6ab43b2bcc9a411a4de19c0f35e7bb9ed64afad1941e60b9018ebbc4160",
+      "bytes": 61654,
+      "tolerancia": 2
+    },
+    "3d_aventureiro_corpo": {
+      "renderer": "3d",
+      "sha256": "5702d0fa20ca6cd2f0137e6572e8fe490bf98a1ec7409b8adf4a5a94d3be0d36",
+      "bytes": 103093,
+      "tolerancia": 2
+    },
+    "3d_aventureiro_retrato": {
+      "renderer": "3d",
+      "sha256": "ffc6b967d3426969830ef2f6120ac780e53dd19882c8ef151bd13e486115112d",
+      "bytes": 133893,
+      "tolerancia": 2
+    },
+    "3d_casual_corpo": {
+      "renderer": "3d",
+      "sha256": "c6ac41984407a320e68c52e037a454c2643a5da3c1810d7d2c399e79af46d51a",
+      "bytes": 92959,
+      "tolerancia": 2
+    },
+    "3d_casual_retrato": {
+      "renderer": "3d",
+      "sha256": "5ee97689f21ac1a89ac848e16cd15f8d452545f76fa9141324e5d1311e1bd847",
+      "bytes": 116466,
+      "tolerancia": 2
+    },
+    "3d_executivo_corpo": {
+      "renderer": "3d",
+      "sha256": "7fff1764066e139aef6663e282b264cb1df7078fd0362bb30aebcca7941e85de",
+      "bytes": 88921,
+      "tolerancia": 2
+    },
+    "3d_executivo_retrato": {
+      "renderer": "3d",
+      "sha256": "3b2e748fae0fd409df0b567e467ff6385f0a26b40630aad89ca3ea4d5f7547d0",
+      "bytes": 109763,
+      "tolerancia": 2
+    },
+    "3d_hero_i_ubc_corpo": {
+      "renderer": "3d",
+      "sha256": "49665b7fd8ae9eab8a90d5f5aadd55efc742c129caf9ff773da9d0dd6739930c",
+      "bytes": 146286,
+      "tolerancia": 2
+    },
+    "3d_hero_i_ubc_retrato": {
+      "renderer": "3d",
+      "sha256": "e881e2db623b4ca1b19f8a57a3506ceb5d53de999f2464f2dccf5e84d6326d6c",
+      "bytes": 251904,
+      "tolerancia": 2
+    },
+    "3d_heroi_na_ubc_corpo": {
+      "renderer": "3d",
+      "sha256": "c736cea6ae7284c097d07440635657b56339e2fa0d32bebb19a7921b0284cd18",
+      "bytes": 138257,
+      "tolerancia": 2
+    },
+    "3d_heroi_na_ubc_retrato": {
+      "renderer": "3d",
+      "sha256": "9f099945a0c433435fefc807d22c285d00a22d1bec71ef78d59ef77dc7c79030",
+      "bytes": 227669,
+      "tolerancia": 2
+    },
+    "3d_pug_corpo": {
+      "renderer": "3d",
+      "sha256": "844199e885193289dca7ff9aaa0b6fbe68840ad0dbe543dbdbc2e127398acb69",
+      "bytes": 88965,
+      "tolerancia": 2
+    },
+    "3d_pug_retrato": {
+      "renderer": "3d",
+      "sha256": "39f487655d71010ddd97626cf52d07998749e43599b89381d03d7e15c7ada31d",
+      "bytes": 92095,
+      "tolerancia": 2
+    },
+    "3d_punk_corpo": {
+      "renderer": "3d",
+      "sha256": "1f381808fabdca8396df0b45be22d5d5d37c0fd66c077aa8c3ff3615b81ec103",
+      "bytes": 80727,
+      "tolerancia": 2
+    },
+    "3d_punk_retrato": {
+      "renderer": "3d",
+      "sha256": "41010d337f81b88731c1170eef27289af879fc7ae5b75ea8c313032dbf4dfd6f",
+      "bytes": 84917,
+      "tolerancia": 2
+    },
+    "item_ace_anel_sinete": {
+      "renderer": "item",
+      "ocupacao": 0.13,
+      "viewBox": "128 170 80 80",
+      "excecao": "corporal: recorte da região no corpo (§154)"
+    },
+    "item_ace_antena": {
+      "renderer": "item",
+      "ocupacao": 0.75,
+      "viewBox": "124 4 64 64"
+    },
+    "item_ace_asas_energia": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "2 7 236 236"
+    },
+    "item_ace_aureola": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "82 -8 77 77"
+    },
+    "item_ace_bandana_testa": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "56 20 144 144"
+    },
+    "item_ace_boina": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "56 0 126 126"
+    },
+    "item_ace_bolsa_couro": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "139 141 79 79"
+    },
+    "item_ace_bolsa_mensageiro": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "18 105 146 146"
+    },
+    "item_ace_bolsa_tatica": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "20 123 126 126"
+    },
+    "item_ace_bone": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "49 -15 172 172"
+    },
+    "item_ace_brinco": {
+      "renderer": "item",
+      "ocupacao": 0.25,
+      "viewBox": "150 104 40 40",
+      "excecao": "item minúsculo: clamp 40 do medidor (§12)"
+    },
+    "item_ace_cachecol": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "78 153 90 90"
+    },
+    "item_ace_capa_heroica": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "25 119 191 191"
+    },
+    "item_ace_capuz_ninja": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "54 31 136 136"
+    },
+    "item_ace_capuz_sombrio": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "39 20 163 163"
+    },
+    "item_ace_cartola": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "40 -18 159 159"
+    },
+    "item_ace_chapeu_bruxa": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "38 -24 163 163"
+    },
+    "item_ace_chapeu_chef": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "59 -4 123 123"
+    },
+    "item_ace_chapeu_cowboy": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "28 -19 183 183"
+    },
+    "item_ace_chapeu_mago": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "45 -22 151 151"
+    },
+    "item_ace_chifres_oni": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "69 -6 101 101"
+    },
+    "item_ace_cinto_couro": {
+      "renderer": "item",
+      "ocupacao": 0.6,
+      "viewBox": "70 172 100 100",
+      "excecao": "corporal: recorte da região no corpo (§154)"
+    },
+    "item_ace_colar_perolas": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "79 161 81 81"
+    },
+    "item_ace_coroa": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "76 2 87 87"
+    },
+    "item_ace_corrente": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "74 163 92 92"
+    },
+    "item_ace_cracha_dshow": {
+      "renderer": "item",
+      "ocupacao": 0.79,
+      "viewBox": "92 180 56 56"
+    },
+    "item_ace_diadema_perolas": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "61 8 118 118"
+    },
+    "item_ace_drone": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "154 18 85 85"
+    },
+    "item_ace_espirito_agua": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "165 107 67 67"
+    },
+    "item_ace_espirito_chama": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "166 109 64 64"
+    },
+    "item_ace_espirito_estelar": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "172 112 53 53"
+    },
+    "item_ace_fedora": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "35 -14 169 169"
+    },
+    "item_ace_flor_lotus": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "130 44 57 57"
+    },
+    "item_ace_fone": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "41 11 159 159"
+    },
+    "item_ace_gato_sombra": {
+      "renderer": "item",
+      "ocupacao": 0.79,
+      "viewBox": "171 112 56 56"
+    },
+    "item_ace_gorro_natal": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "52 6 145 145"
+    },
+    "item_ace_gravata_borboleta": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "87 163 67 67"
+    },
+    "item_ace_headset": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "30 18 179 179"
+    },
+    "item_ace_joelheiras": {
+      "renderer": "item",
+      "ocupacao": 0.6,
+      "viewBox": "70 236 100 100",
+      "excecao": "corporal: recorte da região no corpo (§154)"
+    },
+    "item_ace_laco_fita": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "118 36 64 64"
+    },
+    "item_ace_lenco_bandana": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "79 171 82 82"
+    },
+    "item_ace_luva_couro": {
+      "renderer": "item",
+      "ocupacao": 0.26,
+      "viewBox": "32 166 80 80",
+      "excecao": "corporal: recorte da região no corpo (§154)"
+    },
+    "item_ace_mascara_hoquei": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "70 74 100 100"
+    },
+    "item_ace_mascara_kitsune": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "68 69 103 103"
+    },
+    "item_ace_mascara_neon": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "66 95 108 108"
+    },
+    "item_ace_mascara_oni": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "72 88 95 95"
+    },
+    "item_ace_mascara_teatro": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "74 77 92 92"
+    },
+    "item_ace_medalha": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "81 175 60 60"
+    },
+    "item_ace_medico_peste": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "68 79 104 104"
+    },
+    "item_ace_mochila_jato": {
+      "renderer": "item",
+      "ocupacao": 0.8,
+      "viewBox": "33 122 174 174"
+    },
+    "item_ace_monoculo": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "102 83 81 81"
+    },
+    "item_ace_oculos": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "58 46 123 123"
+    },
+    "item_ace_oculos_3d": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "53 44 133 133"
+    },
+    "item_ace_oculos_gatinho": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "60 44 121 121"
+    },
+    "item_ace_oculos_pixel": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "58 46 123 123"
+    },
+    "item_ace_oculos_redondos": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "60 48 121 121"
+    },
+    "item_ace_oculos_sol": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "56 45 128 128"
+    },
+    "item_ace_piercing": {
+      "renderer": "item",
+      "ocupacao": 0.23,
+      "viewBox": "128 73 40 40",
+      "excecao": "item minúsculo: clamp 40 do medidor (§12)"
+    },
+    "item_ace_pintura_guerra": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "71 76 97 97"
+    },
+    "item_ace_pulseira_led": {
+      "renderer": "item",
+      "ocupacao": 0.25,
+      "viewBox": "128 146 80 80",
+      "excecao": "corporal: recorte da região no corpo (§154)"
+    },
+    "item_ace_relogio_pulso": {
+      "renderer": "item",
+      "ocupacao": 0.25,
+      "viewBox": "32 146 80 80",
+      "excecao": "corporal: recorte da região no corpo (§154)"
+    },
+    "item_ace_robo_aranha": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "162 141 72 72"
+    },
+    "item_ace_robo_assistente": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "162 98 70 70"
+    },
+    "item_ace_robo_bit": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "166 106 60 60"
+    },
+    "item_ace_robo_guardiao": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "162 102 72 72"
+    },
+    "item_ace_runa_circulo": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "61 -6 118 118"
+    },
+    "item_ace_runa_glifo": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "157 57 62 62"
+    },
+    "item_ace_runa_orbital": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "16 16 206 206"
+    },
+    "item_ace_runa_protecao": {
+      "renderer": "item",
+      "ocupacao": 0.79,
+      "viewBox": "35 80 58 58"
+    },
+    "item_ace_tapa_olho": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "46 22 149 149"
+    },
+    "item_ace_tenis_neon": {
+      "renderer": "item",
+      "ocupacao": 0.72,
+      "viewBox": "60 290 120 120",
+      "excecao": "corporal: recorte da região no corpo (§154)"
+    },
+    "item_ace_tiara_led": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "53 4 134 134"
+    },
+    "item_ace_veu_mistico": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "41 17 159 159"
+    },
+    "item_ace_viseira_esporte": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "57 45 126 126"
+    },
+    "item_ace_viseira_vr": {
+      "renderer": "item",
+      "ocupacao": 0.78,
+      "viewBox": "38 27 164 164"
+    },
+    "svg_g01-padrao-busto": {
+      "renderer": "2d",
+      "sha256": "e913d29f9db849d3060f5f79f4944affecf390a5da3519b642aaf2aaef972d4e",
+      "bytes": 124562,
+      "largura": 480,
+      "altura": 480,
+      "tolerancia": 0.5
+    },
+    "svg_g02-completo-busto": {
+      "renderer": "2d",
+      "sha256": "081c90bafeca546890f06f613afd31696016843c5fab01b43dd9aaec4e7cfdc8",
+      "bytes": 172752,
+      "largura": 480,
+      "altura": 480,
+      "tolerancia": 0.5
+    },
+    "svg_g03-sobrepeca": {
+      "renderer": "2d",
+      "sha256": "49382b33f8b740efed8f9d825bd4e12af0b2df459b8437c7011d43c22db05ed9",
+      "bytes": 128514,
+      "largura": 480,
+      "altura": 480,
+      "tolerancia": 0.5
+    },
+    "svg_g04-params-aura": {
+      "renderer": "2d",
+      "sha256": "7c35e7e067ef79b1d357d3fb1ca83be24d0180928fdc5413d57a212ecc8d36db",
+      "bytes": 131573,
+      "largura": 480,
+      "altura": 480,
+      "tolerancia": 0.5
+    },
+    "svg_g05-canais-roupa": {
+      "renderer": "2d",
+      "sha256": "30c8c07c537a2890d62ffc64781dd5e807f8f2232e399bd9a439a29235c1e558",
+      "bytes": 124299,
+      "largura": 480,
+      "altura": 480,
+      "tolerancia": 0.5
+    },
+    "svg_g06-corpo-postura-fino": {
+      "renderer": "2d",
+      "sha256": "3523f409a44d9a9d5cbeefc1990acfb4d5b352ad4b1ace6f97e7904141ebe006",
+      "bytes": 125009,
+      "largura": 480,
+      "altura": 480,
+      "tolerancia": 0.5
+    },
+    "svg_g07-titulo-cores": {
+      "renderer": "2d",
+      "sha256": "565b156c76c581712a60101eabdcac9fbd1f98f2fdad74318807cc9ccbf8dd9f",
+      "bytes": 115919,
+      "largura": 480,
+      "altura": 480,
+      "tolerancia": 0.5
+    },
+    "svg_g08-palco": {
+      "renderer": "2d",
+      "sha256": "1836206cfa8f5c8acbdf52d549ee7ba538a4d7330bc777b05e7278a1858f4994",
+      "bytes": 124027,
+      "largura": 480,
+      "altura": 480,
+      "tolerancia": 0.5
+    },
+    "svg_g09-corpo-inteiro": {
+      "renderer": "2d",
+      "sha256": "caee1e834b6a6a6bd424d5131652e5e78cb675e4ef737135e3b32934ba618440",
+      "bytes": 244602,
+      "largura": 480,
+      "altura": 800,
+      "tolerancia": 0.5
+    },
+    "svg_g10-foto-medalhao": {
+      "renderer": "2d",
+      "sha256": "6b7a840e3d48fced10e52112fbd06f75c8fa478ce743c9c4a0bc06516fb8a729",
+      "bytes": 259385,
+      "largura": 960,
+      "altura": 960,
+      "tolerancia": 0.5
+    },
+    "svg_g11-foto-ordem-camadas": {
+      "renderer": "2d",
+      "sha256": "1444e536abae852419411881ade01ac4efb08ab0dfc59b97b36bfc999fdcb9c1",
+      "bytes": 121202,
+      "largura": 960,
+      "altura": 960,
+      "tolerancia": 0.5
+    },
+    "svg_g12-foto-wide-header": {
+      "renderer": "2d",
+      "sha256": "df2a7f05342568c328a4c4841011d09961fe343f7506a0f3e9154e4dc52b1ab4",
+      "bytes": 59939,
+      "largura": 960,
+      "altura": 320,
+      "tolerancia": 0.5
+    },
+    "svg_g13-foto-wide-banner-reflow": {
+      "renderer": "2d",
+      "sha256": "50bfa8139330ee1a412cdc13f20fd627b36755a7464cccc01929f84aeaaed267",
+      "bytes": 45485,
+      "largura": 960,
+      "altura": 240,
+      "tolerancia": 0.5
+    },
+    "svg_g14-foto-wide-wallpaper": {
+      "renderer": "2d",
+      "sha256": "a9b1236e7f125b1c7ec1f0f759a817daf96f044acfe58fea37afe68b53fdf0ea",
+      "bytes": 96028,
+      "largura": 960,
+      "altura": 540,
+      "tolerancia": 0.5
+    },
+    "svg_g15-foto-sombra-luz": {
+      "renderer": "2d",
+      "sha256": "0adc94c0acdea313c527ad7aa4dd68de2781d7da75986832f486199d1871d0a8",
+      "bytes": 140563,
+      "largura": 960,
+      "altura": 960,
+      "tolerancia": 0.5
+    },
+    "svg_g16-palco-sobrepeca-corpo": {
+      "renderer": "2d",
+      "sha256": "fcafe5f13bf2d5b04e0feaa27f165943c019300871533a9d02170e4b5bebb97a",
+      "bytes": 169499,
+      "largura": 480,
+      "altura": 800,
+      "tolerancia": 0.5
+    },
+    "ui2d_busto": {
+      "renderer": "ui",
+      "sha256": "7ade3814b95a5f0ce9ed0cb3d44e92cce8b6811059ed74206375b9d0214e5080",
+      "bytes": 169713,
+      "tolerancia": 1
+    },
+    "ui2d_corpo": {
+      "renderer": "ui",
+      "sha256": "73b59e3e57c014661f5085c9c5c35c132d56593409bbdc616e51325c28bc5cd8",
+      "bytes": 309659,
+      "tolerancia": 1
+    },
+    "ui2d_dock": {
+      "renderer": "ui",
+      "sha256": "47724dbf0a98572292e2a1ea60bb3fe6efb0900e7abb319edd640ac3e22f24a7",
+      "bytes": 140751,
+      "tolerancia": 1
+    },
+    "ui2d_rosto": {
+      "renderer": "ui",
+      "sha256": "8e85016af525b82ea85ce1a88f80b2728a35a03e8b6d3838dddea457f05fd7ca",
+      "bytes": 163285,
+      "tolerancia": 1
+    }
+  },
+  "descricao": "GOLDEN VISUAL (onda 1407, decisão #158) — sha256/tamanho/métricas por caso de screenshot determinístico; PNGs FORA do git (scripts/avatar/testes/saida/baseline-visual/ + /backup/visual-baselines/<commit>/). Regravar: --gravar (1ª vez) ou --aprovar <caso> --nota \"motivo\" (revisar o diff no MESMO commit — doutrina #83).",
+  "viewport2d": {
+    "width": 1440,
+    "height": 900
+  },
+  "viewport3d": {
+    "width": 1500,
+    "height": 940
+  },
+  "reducedMotion": true,
+  "chromium": "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+  "ocupacaoItem": {
+    "min": 0.7,
+    "max": 0.85
+  },
+  "ultimaGravacao": {
+    "commit": "38912be8",
+    "casos": 111
+  }
+}

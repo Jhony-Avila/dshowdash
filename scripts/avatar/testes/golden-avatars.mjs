@@ -29,83 +29,26 @@ const tmp = mkdtempSync(join(tmpdir(), 'avst-golden-'));
 
 writeFileSync(join(tmp, 'prova.ts'), `
 import { createHash } from 'node:crypto';
-import { CONFIG_PADRAO, itensDe, svgDe, svgFotoDe, validarConfig } from '${PAINEL}/src/services/AvatarCatalog';
-import type { AvatarConfig, EstiloFoto } from '${PAINEL}/src/domain/types';
-
-// primeiro id (ordenado) de cada categoria — muda de catálogo ⇒ muda o
-// golden ⇒ revisão consciente (é o comportamento DESEJADO)
-const primeiro = (cat: string): string => itensDe(cat as never).map((x) => x.id).sort()[0];
+// onda 1407 (decisão #158): os CASOS vivem em visual/golden-casos.ts —
+// fonte ÚNICA compartilhada com a regressão visual (o PNG golden é a
+// imagem do MESMO SVG cujo sha256 é conferido aqui). Ids/saídas idênticos
+// aos de antes do refactor (provado pelos 16 hashes inalterados).
+import { casosGolden } from '${join(RAIZ, 'scripts', 'avatar', 'testes', 'visual', 'golden-casos')}';
 const sha = (s: string): string => createHash('sha256').update(s).digest('hex');
-
-const cfg = (extra: Partial<AvatarConfig>): AvatarConfig => validarConfig({ ...CONFIG_PADRAO, ...extra });
-
-const completo = cfg({
-  camadas: {
-    ...CONFIG_PADRAO.camadas,
-    moldura: primeiro('moldura'), efeito: primeiro('efeito'),
-    aura: primeiro('aura'), banner: primeiro('banner'), emblema: primeiro('emblema'),
-    acessorio_cabeca: itensDe('acessorio').filter((x) => (x.slot ?? 'cabeca') === 'cabeca').map((x) => x.id).sort()[0],
-  },
-});
-
-const CASOS: Array<[string, () => string]> = [
-  ['g01-padrao-busto', () => svgDe(cfg({}))],
-  ['g02-completo-busto', () => svgDe(completo)],
-  ['g03-sobrepeca', () => svgDe(cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_gamer', roupa_sobre: 'sob_colete' } }))],
-  ['g04-params-aura', () => svgDe(cfg({ camadas: { ...CONFIG_PADRAO.camadas, aura: primeiro('aura') }, params: { aura: { intensidade: 0.5 } } }))],
-  ['g05-canais-roupa', () => svgDe(cfg({ coresCamada: { roupa: { roupa: '#123456' } } }))],
-  ['g06-corpo-postura-fino', () => svgDe(cfg({ corpo: 'robusto', postura: 'heroica', corpoFino: { largura: 1.05 } }))],
-  ['g07-titulo-cores', () => svgDe(cfg({ titulo: 'tit_lenda_dshow', cores: { pele: '#e8b58c', cabelo: '#3d2b1f', roupa: '#2d4a8a', destaque: '#39d98a' } }))],
-  ['g08-palco', () => svgDe(cfg({}), { palco: true })],
-  ['g09-corpo-inteiro', () => svgDe(completo, { palco: true, enquadramento: 'corpo' })],
-];
-
-const FOTO = 'data:image/png;base64,GOLDENSTUB';
-const estiloBase: EstiloFoto = {
-  camadas: { fundo: primeiro('fundo'), aura: primeiro('aura') },
-  cores: { destaque: '#7c5cff' },
-};
-const CASOS_FOTO: Array<[string, () => string]> = [
-  ['g10-foto-medalhao', () => svgFotoDe(FOTO, { ...estiloBase, legenda: 'Golden', ajustes: { vinheta: 0.4 } }, { estatico: true, uid: 'gold10' })],
-  ['g11-foto-ordem-camadas', () => svgFotoDe(FOTO, {
-    ...estiloBase, ordemFundo: ['aura', 'fundo', 'banner'],
-    camadasFoto: { aura: { opacidade: 0.6, blend: 'screen' } },
-  }, { estatico: true, uid: 'gold11' })],
-  ['g12-foto-wide-header', () => svgFotoDe(FOTO, {
-    ...estiloBase, subtitulo: 'Head of Golden', tipografia: { fonte: 'mono', peso: 800 },
-  }, { estatico: true, uid: 'gold12', formato: 'header' })],
-  // ── goldens v2 (lote 1271–1280, decisão #131): formatos wide restantes
-  // + §337/§334 + sobrepeça de corpo — fecham a rede de render ──
-  ['g13-foto-wide-banner-reflow', () => svgFotoDe(FOTO, {
-    ...estiloBase, legenda: 'Golden', pos: { texto: { x: 30, y: 200 } },
-  }, { estatico: true, uid: 'gold13', formato: 'banner', reflowPos: true })],
-  ['g14-foto-wide-wallpaper', () => svgFotoDe(FOTO, {
-    ...estiloBase, subtitulo: 'Wallpaper Golden',
-  }, { estatico: true, uid: 'gold14', formato: 'wallpaper' })],
-  ['g15-foto-sombra-luz', () => svgFotoDe(FOTO, {
-    ...estiloBase,
-    ajustes: { sombra: true, luzLocal: { tipo: 'radial', intensidade: 0.5 }, temperatura: 0.4 },
-  }, { estatico: true, uid: 'gold15' })],
-];
-CASOS.push(['g16-palco-sobrepeca-corpo', () => svgDe(cfg({
-  camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_gamer', roupa_sobre: 'sob_colete' },
-}), { palco: true, enquadramento: 'corpo' })]);
-
 const saida: Record<string, { sha256: string; bytes: number }> = {};
 const erros: string[] = [];
-for (const [id, gerar] of [...CASOS, ...CASOS_FOTO]) {
-  try {
-    const svg = gerar();
-    if (!svg || !svg.includes('<svg')) erros.push(id + ': saida sem <svg>');
-    saida[id] = { sha256: sha(svg), bytes: svg.length };
-  } catch (e) { erros.push(id + ': ' + String((e as Error).message).slice(0, 120)); }
+let casos: Array<{ id: string; svg: string }> = [];
+try { casos = casosGolden(); } catch (e) { erros.push('casosGolden falhou: ' + String((e as Error).message).slice(0, 160)); }
+for (const { id, svg } of casos) {
+  if (!svg || !svg.includes('<svg')) erros.push(id + ': saida sem <svg>');
+  saida[id] = { sha256: sha(svg), bytes: svg.length };
 }
 console.log(JSON.stringify({ erros, hashes: saida }));
 `);
 
 const esbuild = [join(PAINEL, 'node_modules', '.bin', 'esbuild'), join(RAIZ, 'node_modules', '.bin', 'esbuild')]
   .find((c) => existsSync(c)) ?? 'esbuild';
-execSync(`"${esbuild}" "${join(tmp, 'prova.ts')}" --bundle --format=esm --platform=node --outfile="${join(tmp, 'prova.mjs')}"`, { stdio: ['ignore', 'ignore', 'inherit'] });
+execSync(`"${esbuild}" "${join(tmp, 'prova.ts')}" --bundle --format=esm --platform=node --alias:@painel="${join(PAINEL, 'src')}" --outfile="${join(tmp, 'prova.mjs')}"`, { stdio: ['ignore', 'ignore', 'inherit'] });
 const bruto = execSync(`node "${join(tmp, 'prova.mjs')}"`, { encoding: 'utf8' });
 rmSync(tmp, { recursive: true, force: true });
 const { erros, hashes } = JSON.parse(bruto.trim().split('\n').pop());
