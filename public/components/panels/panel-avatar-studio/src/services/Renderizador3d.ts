@@ -36,7 +36,8 @@ import type { ManifestPersonagem3d } from './Personagens3d';
 import { montarPersonagem } from './Assembler3d'; // lote 621-630 (§406)
 import type { ResultadoMontagem } from './Assembler3d';
 import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
-import { aplicarPipelineCores, descartarMateriais } from './Materiais3d'; // lote 641-650 (§418-§421)
+import { aplicarFamilias, aplicarPipelineCores, descartarMateriais, marcarMateriaisPorManifest } from './Materiais3d'; // lote 641-650 (§418-§421) + onda 1408 (#160)
+import { LOOKS, etiquetaLook, lookDe, type LookId } from './Looks3d'; // onda 1408 (#161): registry de looks
 import { MaquinaAnimacao, alvoOlhar, carregarPacoteAnimacoes, mesclarClipes } from './Animacoes3d'; // lotes 661-670/731-740 (§432-§439)
 import type { PacoteAnimacoes } from './Animacoes3d';
 
@@ -167,6 +168,21 @@ export class Renderizador3d implements RenderizadorAvatar {
   private particulasBase: Float32Array | null = null;
   // mega 268 (§452): RIM LIGHT (luz de aro) atrás do personagem
   private rim: THREE.DirectionalLight | null = null;
+  // onda 1408 (MEGA_BRIEFING_01 §1756–§1767, #161): LOOK ativo (registry
+  // Looks3d), rim PRÓPRIO do look (≠ aro do usuário), exposição = base do
+  // look × slider do usuário, ambiente do usuário (null = o do look).
+  private lookAtual: LookId = 'estudio';
+  // onda 1408 (#160, as6.material_v2 — o CALLER decide a flag): metadados
+  // de material do manifest v2 (canal/naoTingir/familia) entram no pipeline
+  private materiaisV2 = false;
+  private rimLook: THREE.DirectionalLight | null = null;
+  private exposicaoUsuario = 1.0;
+  private ambienteUsuario: number | null = null;
+  // onda 1408 (§105, §141–§146, #156 as6.qa_visual): overlay de QA e
+  // laboratório de calibração — dev-only; restauração EXATA.
+  private overlayAtual: 'nenhum' | 'clay' | 'normals' | 'wireframe' | 'silhueta' | 'grayscale' = 'nenhum';
+  private overlayMaterial: THREE.Material | null = null;
+  private laboratorio: { fundoAntes: 'neutro' | 'estudio' | 'grade'; lookAntes: LookId; checker: THREE.Group | null } | null = null;
   // ── lote 331–340 (§176/§457, flag as5.palco3d_cine) ────────────────
   // mega 331 (§176): MOVIMENTO cinematográfico contínuo da câmera
   private movCamera: 'nenhum' | 'dolly' | 'panoramica' | 'orbita' | 'composto' = 'nenhum';
@@ -590,7 +606,15 @@ export class Renderizador3d implements RenderizadorAvatar {
 
   /** mega 78 (§458): exposição do tone mapping (0.6–1.6; 1 = neutro). */
   definirExposicao(v: number): void {
-    if (this.renderer) this.renderer.toneMappingExposure = Math.min(1.6, Math.max(0.6, v));
+    this.exposicaoUsuario = v;
+    this.aplicarExposicao();
+  }
+  /** onda 1408 (#161): exposição efetiva = base do look × slider (clamp
+   *  0.6–1.6). Look estudio (base 1.0) ⇒ idêntico ao comportamento anterior. */
+  private aplicarExposicao(): void {
+    if (!this.renderer) return;
+    const base = LOOKS[this.lookAtual]?.exposicao ?? 1.0;
+    this.renderer.toneMappingExposure = Math.min(1.6, Math.max(0.6, base * this.exposicaoUsuario));
   }
 
   // ── onda 261–270 (§440–§458): A5 sem UBC ──────────────────────────
@@ -614,9 +638,136 @@ export class Renderizador3d implements RenderizadorAvatar {
 
   /** mega 262 (§449): intensidade do ENVIRONMENT map (0 = desliga). */
   definirAmbiente(intensidade: number): void {
+    this.ambienteUsuario = intensidade; // onda 1408: o usuário vence o look
     if (!this.cena) return;
     (this.cena as THREE.Scene & { environmentIntensity?: number }).environmentIntensity =
       Math.min(1.2, Math.max(0, intensidade));
+  }
+
+  // ── onda 1408 (MEGA_BRIEFING_01 Parte 8 §1756–§1767/§2001–§2006, #161):
+  //    LOOKS — registry Looks3d como fonte única de luz ────────────────
+
+  /** Aplica um look do registry: key/fill/ambiente/env/rim do look/exposição
+   *  base. `estudio` = valores canônicos de montar() byte a byte (contrato
+   *  testado). NÃO toca fundo, câmera, aro do usuário nem partículas. */
+  aplicarLook(id: LookId | string): void {
+    const look = lookDe(id);
+    this.lookAtual = look.id;
+    if (this.luzes) {
+      const { chave, preencher, ambiente } = this.luzes;
+      chave.color.setHex(look.key.cor); chave.intensity = look.key.intensidade; chave.position.set(...look.key.pos);
+      preencher.color.setHex(look.fill.cor); preencher.intensity = look.fill.intensidade; preencher.position.set(...look.fill.pos);
+      ambiente.intensity = look.ambiente;
+    }
+    if (this.cena && this.ambienteUsuario === null) {
+      (this.cena as THREE.Scene & { environmentIntensity?: number }).environmentIntensity = look.env;
+    }
+    if (this.rimLook) { this.cena?.remove(this.rimLook); this.rimLook.dispose(); this.rimLook = null; }
+    if (look.rim && this.cena) {
+      this.rimLook = new THREE.DirectionalLight(look.rim.cor, look.rim.intensidade);
+      this.rimLook.position.set(...look.rim.pos);
+      this.cena.add(this.rimLook);
+    }
+    this.aplicarExposicao();
+  }
+  lookAtivo(): LookId { return this.lookAtual; }
+
+  // ── onda 1408 (§105, §141–§146; flag as6.qa_visual — dev): OVERLAYS ──
+
+  /** Overlay de QA sobre a cena inteira via scene.overrideMaterial (zero
+   *  dependência nova): clay (cinza neutro), normals, wireframe, silhueta
+   *  (preto sobre branco), grayscale (filtro CSS no canvas). 'nenhum'
+   *  restaura EXATAMENTE (materiais originais intocados). */
+  definirOverlay(modo: 'nenhum' | 'clay' | 'normals' | 'wireframe' | 'silhueta' | 'grayscale'): void {
+    if (!this.cena || !this.renderer) return;
+    this.overlayAtual = modo;
+    if (this.overlayMaterial) { this.overlayMaterial.dispose(); this.overlayMaterial = null; }
+    this.cena.overrideMaterial = null;
+    this.renderer.domElement.style.filter = '';
+    if (modo === 'clay') this.overlayMaterial = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, roughness: 0.85, metalness: 0 });
+    else if (modo === 'normals') this.overlayMaterial = new THREE.MeshNormalMaterial();
+    else if (modo === 'wireframe') this.overlayMaterial = new THREE.MeshBasicMaterial({ color: 0x7c9cff, wireframe: true });
+    else if (modo === 'silhueta') this.overlayMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    else if (modo === 'grayscale') this.renderer.domElement.style.filter = 'grayscale(1)';
+    if (this.overlayMaterial) this.cena.overrideMaterial = this.overlayMaterial;
+  }
+  overlayAtivo(): string { return this.overlayAtual; }
+
+  /** Cena de CALIBRAÇÃO visual (§107–§109): fundo cinza 18 % neutro, look
+   *  estudio, exposição base, color checker opcional (6 esferas: branco,
+   *  preto, cinza 18 %, metal, pele de referência, emissivo). Desligar
+   *  restaura fundo/look anteriores. Tudo gerado em código (sem asset). */
+  definirLaboratorio(ligado: boolean, comChecker = true): void {
+    if (!this.cena) return;
+    if (ligado && !this.laboratorio) {
+      this.laboratorio = { fundoAntes: this.fundoAtual, lookAntes: this.lookAtual, checker: null };
+      this.aplicarLook('estudio');
+      this.cena.background = new THREE.Color(0x2e2e2e); // 18 % em sRGB ≈ #2e2e2e
+      if (comChecker) {
+        const g = new THREE.Group();
+        g.name = 'avst-color-checker';
+        const amostras: Array<[number, Partial<THREE.MeshStandardMaterialParameters>]> = [
+          [0xffffff, { roughness: 0.6, metalness: 0 }],
+          [0x000000, { roughness: 0.6, metalness: 0 }],
+          [0x777777, { roughness: 0.6, metalness: 0 }],
+          [0xd8d8d8, { roughness: 0.25, metalness: 1 }],
+          [0xe8b58c, { roughness: 0.55, metalness: 0 }],
+          [0x000000, { emissive: new THREE.Color(0x39d98a), emissiveIntensity: 1.5, roughness: 0.6 }],
+        ];
+        amostras.forEach(([cor, params], i) => {
+          const m = new THREE.Mesh(new THREE.SphereGeometry(0.09, 32, 16), new THREE.MeshStandardMaterial({ color: cor, ...params }));
+          m.position.set(-0.75 + i * 0.3, 0.1, 0.9);
+          m.castShadow = true;
+          g.add(m);
+        });
+        this.cena.add(g);
+        this.laboratorio.checker = g;
+      }
+    } else if (!ligado && this.laboratorio) {
+      const lab = this.laboratorio;
+      this.laboratorio = null;
+      if (lab.checker) {
+        this.cena.remove(lab.checker);
+        lab.checker.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose?.(); (m.material as THREE.Material)?.dispose?.(); });
+      }
+      this.aplicarLook(lab.lookAntes);
+      this.definirFundo(lab.fundoAntes);
+    }
+  }
+  laboratorioAtivo(): boolean { return this.laboratorio !== null; }
+
+  /** onda 1408 (§2010, §1686–§1690): SNAPSHOT de métricas para goldens de
+   *  luz/câmera e HUD — look, exposição efetiva, fov, posição da câmera,
+   *  luzes, texturas/programas/geometrias do renderer.info. */
+  snapshotMetricas(): {
+    look: string; exposicao: number; toneMapping: number; env: number; fov: number;
+    camera: [number, number, number]; luzes: Array<{ tipo: string; cor: string; intensidade: number; pos: [number, number, number] }>;
+    texturas: number; programas: number; geometrias: number; drawCalls: number; triangulos: number; overlay: string; laboratorio: boolean;
+  } {
+    const r3 = (v: THREE.Vector3): [number, number, number] => [Math.round(v.x * 1000) / 1000, Math.round(v.y * 1000) / 1000, Math.round(v.z * 1000) / 1000];
+    const luzes: Array<{ tipo: string; cor: string; intensidade: number; pos: [number, number, number] }> = [];
+    this.cena?.traverse((o) => {
+      const l = o as THREE.Light;
+      if (!(l as THREE.Light).isLight) return;
+      luzes.push({ tipo: l.type, cor: `#${l.color.getHexString()}`, intensidade: Math.round(l.intensity * 1000) / 1000, pos: r3(l.position) });
+    });
+    const info = this.renderer?.info;
+    return {
+      look: etiquetaLook(this.lookAtual),
+      exposicao: Math.round((this.renderer?.toneMappingExposure ?? 1) * 1000) / 1000,
+      toneMapping: this.renderer?.toneMapping ?? 0,
+      env: Math.round((((this.cena as THREE.Scene & { environmentIntensity?: number } | null)?.environmentIntensity ?? 0) * 1000)) / 1000,
+      fov: this.camera?.fov ?? 0,
+      camera: this.camera ? r3(this.camera.position) : [0, 0, 0],
+      luzes,
+      texturas: info?.memory.textures ?? 0,
+      programas: info?.programs?.length ?? 0,
+      geometrias: info?.memory.geometries ?? 0,
+      drawCalls: info?.render.calls ?? 0,
+      triangulos: info?.render.triangles ?? 0,
+      overlay: this.overlayAtual,
+      laboratorio: this.laboratorio !== null,
+    };
   }
 
   /** megas 261/267 (§440–§441): VIDA procedural (null = desliga). */
@@ -774,7 +925,21 @@ export class Renderizador3d implements RenderizadorAvatar {
    *  §420 → tinta mega 81 → teto de emissivos §418.2 (Materiais3d). */
   private aplicarTinta(): void {
     if (!this.personagem) return;
+    if (this.materiaisV2) {
+      // onda 1408 (#160/#165a): marcas do manifest (canal pele das bases UBC,
+      // naoTingir) e famílias declaradas ANTES do tint — idempotente
+      marcarMateriaisPorManifest(this.personagem, this.manifest?.materiais ?? null);
+      aplicarFamilias(this.personagem, this.tierEfetivo());
+    }
     aplicarPipelineCores(this.personagem, { cores: this.cores3d, tinta: this.tinta });
+  }
+  /** onda 1408 (#160): liga/desliga o uso dos metadados de material do
+   *  manifest v2 (as6.material_v2). OFF = pipeline anterior byte a byte. */
+  definirMateriaisV2(v: boolean): void {
+    if (this.materiaisV2 === v) return;
+    this.materiaisV2 = v;
+    if (v) this.aplicarTinta();
+    else if (this.slugAtual) void this.carregarPersonagem(this.slugAtual); // restaura materiais do GLB (parse fresco)
   }
 
   /** lote 651–660 (§412–§414): morfos ESTRUTURAIS de corpo — a MESMA
@@ -1085,6 +1250,9 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.cena?.add(this.personagem);
     this.slugAtual = slug;
     this.lodAtual = url;
+    // onda 1408 (#165a): marcas de material do manifest v2 ANTES do
+    // assembler — o passo "pele" reconhece a pele das bases UBC por metadado
+    if (this.materiaisV2) marcarMateriaisPorManifest(this.personagem, manifest.materiais ?? null);
     // clipes REAIS do GLB (mega 9): mixer + mapa por nome; toca Idle já
     this.mixer?.stopAllAction();
     this.mixer = null;

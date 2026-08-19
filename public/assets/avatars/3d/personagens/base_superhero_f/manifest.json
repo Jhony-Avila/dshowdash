@@ -36,5 +36,16 @@
   "renderers": [
     "3d"
   ],
-  "deprecated": false
+  "deprecated": false,
+  "materiais": {
+    "MI_Superhero_Female": {
+      "canal": "pele"
+    },
+    "MI_Eyes": {
+      "naoTingir": true
+    },
+    "MI_Hair_2": {
+      "canal": "cabelo"
+    }
+  }
 }

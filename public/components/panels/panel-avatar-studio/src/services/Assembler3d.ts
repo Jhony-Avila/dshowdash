@@ -224,6 +224,7 @@ export function montarPersonagem(receita: ReceitaMontagem): ResultadoMontagem {
   // 5. pele §411/§418 — tinge materiais de PELE (nome contém skin/pele)
   if (receita.pele) {
     let tingidos = 0;
+    let porMetadado = 0;
     const cor = new THREE.Color(receita.pele);
     base.traverse((n) => {
       const malha = n as THREE.Mesh;
@@ -231,14 +232,19 @@ export function montarPersonagem(receita: ReceitaMontagem): ResultadoMontagem {
       const mats = Array.isArray(malha.material) ? malha.material : [malha.material];
       for (const m of mats) {
         const nome = (m?.name ?? '').toLowerCase();
+        // onda 1408 (#165a, MEGA_BRIEFING_01 §695–§697): pele marcada pelo
+        // MANIFEST v2 (bases UBC: MI_Superhero_*) — o tint multiplicativo
+        // fica com o pipeline de cores (Materiais3d); aqui só reconhecemos
+        if (m?.userData?.canal3d === 'pele') { porMetadado += 1; continue; }
         if ((nome.includes('skin') || nome.includes('pele')) && (m as THREE.MeshStandardMaterial).color) {
           (m as THREE.MeshStandardMaterial).color.copy(cor);
           tingidos += 1;
         }
       }
     });
-    okFase('pele', tingidos ? `${tingidos} material(is) de pele` : 'nenhum material de pele nomeado');
-    if (!tingidos) pendencias.push('pele pedida mas a base não nomeia material de pele');
+    if (porMetadado && !tingidos) okFase('pele', `${porMetadado} material(is) de pele via metadados do manifest (pipeline §420)`);
+    else okFase('pele', tingidos ? `${tingidos} material(is) de pele` : 'nenhum material de pele nomeado');
+    if (!tingidos && !porMetadado) pendencias.push('pele pedida mas a base não nomeia material de pele');
   } else {
     okFase('pele', 'sem cor pedida');
   }

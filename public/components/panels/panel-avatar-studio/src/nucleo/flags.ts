@@ -131,6 +131,9 @@ const PADROES: Record<string, boolean> = {
   'as6.thumb_item': true,       // onda 1401 — thumbnails MODO ITEM (elevação §12): card de acessório mostra o ASSET isolado (viewBox por bounds MEDIDOS baked em modoItem.ts, fundo neutro, ocupação ~78%); hover/toggle = Modo Aplicado; off = avatar com foco §39.19 byte a byte
   'as6.variantes': true,
   // ── frente AAA — MEGA_BRIEFING_01 (decisão #156: pai da árvore; cada filha nasce na onda que a consome) ──
+  'as6.looks': false,           // onda 1408 — LOOKS do registry Looks3d (§1756–§1767, #161): luz do palco vem do registry (estudio@1 byte-idêntico; aliases quente→soft, fria→cool), chips Retrato/Dramática, tone mapping vira dev-only; OFF até validação visual; off = definirLuz legado byte a byte
+  'as6.material_v2': false,     // onda 1408 — METADADOS de material do manifest v2 no pipeline (Parte 7, #160/#165a): canal pele das bases UBC por metadado (skin tint passa a valer), naoTingir, famílias declaradas; OFF até before/after aprovado; off = pipeline anterior byte a byte
+  'as6.qa_visual': false,       // onda 1408 — LABORATÓRIO de QA visual (§105, §107–§109, §141–§146): overlays clay/normals/wireframe/silhueta/grayscale + cena de calibração com color checker no palco 3D (dev); off = sem UI, render intocado
   'as6.avatar_visual_v2': false, // onda 1406 — QUALIDADE VISUAL como dado (§68–§69, #157): tag/ficha de qualidade no drawer, filtro "nunca prototype" no Estúdio 3D (PoC) e destaque; OFF até validação visual do Jhony (§2920); off = UI byte a byte (a derivação em dados existe sempre)
   'as6.slots_corpo': true,      // onda 1404 — SLOTS CORPORAIS (elevação §15/§16, decisão #154): pulso_e/d, mao_e/d, cintura, pernas, pes como extensão do #140; arte via renderCorpo (só no corpo inteiro; busto intocado); off = 8 slots do #140 byte a byte (aceitação de leitura segue incondicional p/ forward-compat)        // onda 1401 — VARIANTES DE COR por asset (registry em DADOS; aplicar = coresCamada §73 via comPaleta §74 — NADA novo persiste, §619/PHP intocados): seletor no detalhe + contagem no card; off = sem UI byte a byte
 };
@@ -159,6 +162,10 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as5.palco3d_v2': ['as5.palco3d'],
   'as5.palco3d_cine': ['as5.palco3d'],
   'as5.pos3d_real': ['as5.palco3d'],
+  // onda 1408 (frente AAA): tudo que fala com o Renderizador3d é filho do palco
+  'as6.looks': ['as5.palco3d'],
+  'as6.material_v2': ['as5.palco3d'],
+  'as6.qa_visual': ['as5.palco3d'],
   'as6.dock_classico': ['as5.classico_aaa'], // a dock v3 refina o trilho AAA
   'as6.paineis_dock': ['as5.classico_aaa'],  // painéis embaixo estendem o layout AAA
   'as6.paineis_cards': ['as6.paineis_dock'], // grades de cards refinam o inferior

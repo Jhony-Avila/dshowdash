@@ -18,6 +18,8 @@ import { tmpdir } from 'node:os';
 import { mkdtempSync, rmSync } from 'node:fs';
 
 const RAIZ = resolve(import.meta.dirname, '..', '..', '..');
+/** onda 1408: etiqueta do look usado nas thumbs (Looks3d.estudio v1). */
+export const LOOK_THUMBS = 'estudio@1';
 
 const PAGINA = `<!doctype html><html><head><meta charset="utf-8">
 <script type="importmap">{"imports":{
@@ -28,6 +30,7 @@ const PAGINA = `<!doctype html><html><head><meta charset="utf-8">
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 // §508: TUDO canônico — nada de aleatório, nada de relógio
 const LADO = 512;
@@ -35,10 +38,20 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffe
 renderer.setSize(LADO, LADO);
 renderer.setPixelRatio(1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+// onda 1408 (MEGA_BRIEFING_01 §1625, §1880, #165c): thumb = palco — mesmo
+// tone mapping ACES (exposição 1.0) e mesmo RoomEnvironment (0.55) do look
+// estudio@1 (services/Looks3d.ts CANONICO). Antes a thumb era sem tone
+// mapping/ambiente (cores/contraste diferentes do palco).
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
 document.body.appendChild(renderer.domElement);
 
 const cena = new THREE.Scene();
 cena.background = new THREE.Color('#0d1017'); // fundo do estúdio
+const pmrem = new THREE.PMREMGenerator(renderer);
+cena.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+cena.environmentIntensity = 0.55;
+// luzes canônicas = Looks3d.CANONICO (estudio@1)
 const luzChave = new THREE.DirectionalLight(0xffffff, 2.6); luzChave.position.set(2.2, 3.0, 2.6);
 const luzPreencher = new THREE.DirectionalLight(0x9db4ff, 1.1); luzPreencher.position.set(-2.4, 1.2, -1.6);
 cena.add(luzChave, luzPreencher, new THREE.AmbientLight(0xffffff, 0.55));
@@ -127,7 +140,15 @@ export async function gerarThumbs(pastaPublicada, { porta = 8907 } = {}) {
     }
     await pngParaWebp(pagina, png512, join(pasta, 'preview.webp'), 512);
     await pngParaWebp(pagina, png128, join(pasta, 'thumb.webp'), 128);
-    return { thumb: join(pasta, 'thumb.webp'), preview: join(pasta, 'preview.webp') };
+    // onda 1408 (§2001–§2003): o manifest registra com que look a thumb foi
+    // gerada (look@versao) — regenerar thumbs antigas é commit próprio (★)
+    try {
+      const arqManifest = join(pasta, 'manifest.json');
+      const { readFileSync } = await import('node:fs');
+      const m = JSON.parse(readFileSync(arqManifest, 'utf8'));
+      if (m.look !== LOOK_THUMBS) { m.look = LOOK_THUMBS; writeFileSync(arqManifest, `${JSON.stringify(m, null, 2)}\n`); }
+    } catch { /* pasta sem manifest (fixture) — segue */ }
+    return { thumb: join(pasta, 'thumb.webp'), preview: join(pasta, 'preview.webp'), look: LOOK_THUMBS };
   } finally {
     await navegador?.close().catch(() => {});
     srv.close();

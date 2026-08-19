@@ -17,6 +17,7 @@
 //   · emissivos limitados ao teto §418.2;
 //   · descarte de materiais E texturas (§419 "descartar recursos").
 import * as THREE from 'three';
+import { familiaDe, type FamiliaMaterialId } from './FamiliasMaterial'; // onda 1408 (#160)
 
 /** Canais §420 = vocabulário §73 do 2D. */
 export type Canal3d = 'pele' | 'cabelo' | 'roupa' | 'destaque';
@@ -62,6 +63,60 @@ export function canalDoMaterial(m: THREE.Material): Canal3d | null {
   return null;
 }
 
+/** onda 1408 (MEGA_BRIEFING_01 §695–§697, §1512, §1516–§1518; #160/#165a):
+ *  METADADOS DE MATERIAL vindos do manifest §517 v2 (`materiais`): canal
+ *  §73 explícito (resolve o skin tint das bases UBC cujo material se chama
+ *  MI_Superhero_* — nunca por regex mais agressiva), `naoTingir` (olhos,
+ *  dentes, logos, metais nobres) e `familia` (FamiliasMaterial, aplicada
+ *  só por aplicarFamilias). Marca em userData (fora da serialização). */
+export interface MetadadoMaterialManifest {
+  canal?: Canal3d;
+  naoTingir?: boolean;
+  familia?: FamiliaMaterialId | string;
+  overrides?: Partial<Record<'roughness' | 'metalness' | 'env' | 'normalScale' | 'emissive', number>>;
+}
+export function marcarMateriaisPorManifest(
+  raiz: THREE.Object3D,
+  materiais: Record<string, MetadadoMaterialManifest> | null | undefined,
+): { marcados: number; naoTingir: number; comFamilia: number } {
+  const r = { marcados: 0, naoTingir: 0, comFamilia: 0 };
+  if (!materiais) return r;
+  for (const m of materiaisDe(raiz)) {
+    const meta = materiais[m.name];
+    if (!meta) continue;
+    if (meta.canal) { m.userData.canal3d = meta.canal; r.marcados += 1; }
+    if (meta.naoTingir) { m.userData.naoTingir = true; r.naoTingir += 1; }
+    if (meta.familia) { m.userData.familia = meta.familia; m.userData.familiaOverrides = meta.overrides ?? null; r.comFamilia += 1; }
+  }
+  return r;
+}
+
+/** onda 1408 (#160): aplica a FAMÍLIA marcada (userData.familia) nos
+ *  parâmetros PBR do material — só materiais com família declarada (o
+ *  resto fica byte a byte). Guarda os valores originais uma vez
+ *  (userData.pbrOriginal) para restauração exata. Idempotente. */
+export function aplicarFamilias(raiz: THREE.Object3D, tier: 'economico' | 'medio' | 'alto' = 'medio'): number {
+  let aplicados = 0;
+  for (const m of materiaisDe(raiz)) {
+    const fam = familiaDe(m.userData?.familia as string | undefined);
+    const ms = m as THREE.MeshStandardMaterial;
+    if (!fam || typeof ms.roughness !== 'number') continue;
+    if (!ms.userData.pbrOriginal) {
+      ms.userData.pbrOriginal = { roughness: ms.roughness, metalness: ms.metalness, envMapIntensity: ms.envMapIntensity, normalScaleX: ms.normalScale?.x ?? 1, emissiveIntensity: ms.emissiveIntensity };
+    }
+    const o = ms.userData.pbrOriginal as { roughness: number; metalness: number; envMapIntensity: number; normalScaleX: number; emissiveIntensity: number };
+    ms.roughness = o.roughness; ms.metalness = o.metalness; ms.envMapIntensity = o.envMapIntensity; ms.emissiveIntensity = o.emissiveIntensity;
+    if (ms.normalScale) ms.normalScale.set(o.normalScaleX, o.normalScaleX);
+    const p = { ...fam.padrao, ...(tier === 'alto' ? fam.ultra ?? {} : {}), ...(ms.userData.familiaOverrides ?? {}) } as typeof fam.padrao;
+    ms.roughness = p.roughness; ms.metalness = p.metalness; ms.envMapIntensity = p.env;
+    if (ms.normalMap && ms.normalScale && p.normalScale !== undefined) ms.normalScale.set(p.normalScale, p.normalScale);
+    if (p.emissive !== undefined) ms.emissiveIntensity = Math.min(TETO_EMISSIVO, p.emissive);
+    ms.needsUpdate = true;
+    aplicados += 1;
+  }
+  return aplicados;
+}
+
 export interface OpcoesPipelineCores {
   /** cores §73 PERSONALIZADAS por canal (ausente/null = arte original) */
   cores?: Partial<Record<Canal3d, string>> | null;
@@ -87,7 +142,9 @@ export function aplicarPipelineCores(
       ms.emissiveIntensity = TETO_EMISSIVO; // §418.2
     }
     const canal = canalDoMaterial(ms);
-    const cor = canal ? opcoes.cores?.[canal] : undefined;
+    // onda 1408 (§1516, #160): naoTingir (olhos/dentes/logos/metais nobres)
+    // marcado pelo manifest — a cor do canal NÃO se aplica
+    const cor = canal && !ms.userData.naoTingir ? opcoes.cores?.[canal] : undefined;
     if (canal && cor) {
       ms.color.multiply(new THREE.Color(cor));
       tingidos += 1;

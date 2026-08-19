@@ -11,7 +11,10 @@ export const CHAVE_CENAS = 'dshow.avst5.p3d.cenas.v1';
 const LIMITE = 8;
 
 export const FUNDOS_3D = ['neutro', 'estudio', 'grade'] as const;
-export const LUZES_3D = ['estudio', 'quente', 'fria', 'neon'] as const;
+// onda 1408 (#161): enum só CRESCE — 'portrait'/'dramatic' são looks do
+// registry Looks3d (só aparecem na UI com as6.looks); cena antiga continua
+// válida byte a byte (sanitizar mantém 'estudio' como padrão)
+export const LUZES_3D = ['estudio', 'quente', 'fria', 'neon', 'portrait', 'dramatic'] as const;
 export const CAMERAS_3D = ['retrato', 'corpo', 'orbita', 'cinematica'] as const;
 export const QUALIDADES_3D = ['auto', 'alto', 'medio', 'economico'] as const;
 

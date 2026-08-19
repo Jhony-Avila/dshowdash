@@ -24,7 +24,8 @@ import type { EntradaIndiceParte } from '../services/Partes3d';
 import { flag } from '../nucleo/flags';
 import { qualidade as qualidadeCentral } from '../services/QualityManager'; // lote 1021-1030 (#104)
 import type { EntradaIndice3d } from '../services/Personagens3d';
-import { excluirCena, listarCenas, salvarCena } from '../services/Cenas3d';
+import { LUZES_3D, excluirCena, listarCenas, salvarCena } from '../services/Cenas3d';
+import { LOOKS, lookDaLuzLegada, looksDisponiveis } from '../services/Looks3d'; // onda 1408 (#161)
 import type { Cena3d } from '../services/Cenas3d';
 import { detectarCapacidade3d } from '../services/Capacidade3d';
 import { excluirPose, listarPoses, salvarPose } from '../services/Poses3d';
@@ -104,7 +105,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const [anuncio, setAnuncio] = useState('');
   // megas 21/22: fundo e luz do palco 3D
   const [fundo3d, setFundo3d] = useState<'neutro' | 'estudio' | 'grade'>('estudio');
-  const [luz3d, setLuz3d] = useState<'estudio' | 'quente' | 'fria' | 'neon'>('estudio');
+  const [luz3d, setLuz3d] = useState<(typeof LUZES_3D)[number]>('estudio');
   // mega 226: leitura fresca dentro do showcase (restauro pós-roteiro)
   const refCena3d = useRef({ fundo: fundo3d, luz: luz3d });
   refCena3d.current = { fundo: fundo3d, luz: luz3d };
@@ -155,6 +156,9 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const cinemaLigado = flag('as5.palco3d_v2');
   const [cinemaAberto, setCinemaAberto] = useState(false);
   const [toneMapa, setToneMapa] = useState<'aces' | 'agx' | 'neutro' | 'reinhard'>('aces');
+  // onda 1408 (as6.qa_visual — dev): overlay de QA + laboratório de calibração
+  const [overlayQa, setOverlayQa] = useState<'nenhum' | 'clay' | 'normals' | 'wireframe' | 'silhueta' | 'grayscale'>('nenhum');
+  const [laboratorio, setLaboratorio] = useState(false);
   const [vida, setVida] = useState(true); // §440: o palco nasce VIVO
   const [particulas, setParticulas] = useState(false);
   const [rim, setRim] = useState(false);
@@ -867,6 +871,24 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     return () => document.removeEventListener('fullscreenchange', ao);
   }, []);
 
+  // onda 1408 (as6.qa_visual): overlay/laboratório → renderer (dev)
+  useEffect(() => {
+    if (fase !== 'pronto' || !flag('as6.qa_visual')) return;
+    const r = refR.current as unknown as { definirOverlay?: (m: string) => void; definirLaboratorio?: (v: boolean) => void };
+    r?.definirOverlay?.(overlayQa);
+    r?.definirLaboratorio?.(laboratorio);
+  }, [overlayQa, laboratorio, fase, personagem]);
+
+  // onda 1408 (#160, as6.material_v2): metadados de material do manifest
+  // v2 (pele das bases UBC por metadado, naoTingir, famílias) no pipeline
+  useEffect(() => {
+    if (fase !== 'pronto') return;
+    (refR.current as unknown as { definirMateriaisV2?: (v: boolean) => void })?.definirMateriaisV2?.(flag('as6.material_v2'));
+    // onda 1408 (§2010, dev): handle do renderer p/ HUD/testes/QaStudio —
+    // só em modo dev (as5.hud3d); nunca em produção
+    if (flag('as5.hud3d')) (window as unknown as { __avst3d?: unknown }).__avst3d = refR.current;
+  }, [fase, personagem]);
+
   // megas 21/22: fundo e luz refletem no renderer
   useEffect(() => {
     if (fase !== 'pronto') return;
@@ -874,7 +896,12 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   }, [fundo3d, fase, personagem]);
   useEffect(() => {
     if (fase !== 'pronto') return;
-    (refR.current as unknown as { definirLuz?: (l: string) => void })?.definirLuz?.(luz3d);
+    // onda 1408 (MEGA_BRIEFING_01 §1756–§1767, #161): com as6.looks a luz
+    // vem do REGISTRY (aliases quente→soft, fria→cool; estudio = canônico
+    // byte a byte); sem a flag, o caminho legado definirLuz — idêntico
+    const r = refR.current as unknown as { definirLuz?: (l: string) => void; aplicarLook?: (l: string) => void };
+    if (flag('as6.looks') && r?.aplicarLook) r.aplicarLook(lookDaLuzLegada(luz3d).id);
+    else r?.definirLuz?.(luz3d);
   }, [luz3d, fase]);
 
   // mega 29: pose congelada — pausa/retoma o renderer
@@ -1188,6 +1215,16 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                 {pf === 'ultra' ? 'Ultra' : 'Cine'}
               </button>
             ))}
+            {/* onda 1408 (#161, as6.looks): looks NOVOS do registry (portrait,
+                dramatic) — só com a flag; os 4 legados ficam como estão */}
+            {flag('as6.looks') && looksDisponiveis(true).filter((l) => !l.legado).map((l) => (
+              <button key={l.id} type="button" role="radio" aria-checked={luz3d === l.id}
+                className={`avst5-p3d-chip${luz3d === l.id ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-look-${l.id}`} title={`Look ${l.nome} (registry Looks3d)`}
+                onClick={() => setLuz3d(l.id as (typeof LUZES_3D)[number])}>
+                {LOOKS[l.id].nome}
+              </button>
+            ))}
           </span>
           <span role="group" aria-label="Ajuste fino da câmera" data-teste="p3d-ajuste-grupo">
             <button type="button" className="avst5-p3d-chip" aria-pressed={ajusteAberto}
@@ -1242,6 +1279,27 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                   aria-pressed={particulas} data-teste="p3d-part"
                   title="Partículas na cor de destaque (§444–§446)"
                   onClick={() => setParticulas((v) => !v)}>Partículas</button>
+                {/* onda 1408 (§105/§107/§141–§146, as6.qa_visual — dev): overlays
+                    de QA e laboratório de calibração; restauração exata */}
+                {flag('as6.qa_visual') && (
+                  <span role="group" aria-label="Laboratório de QA visual (MEGA_BRIEFING_01 §105/§107)" data-teste="p3d-qa">
+                    {(['nenhum', 'clay', 'normals', 'wireframe', 'silhueta', 'grayscale'] as const).map((o) => (
+                      <button key={o} type="button" data-teste={`p3d-overlay-${o}`}
+                        className={`avst5-p3d-chip${overlayQa === o ? ' avst5-p3d-chip-on' : ''}`}
+                        aria-pressed={overlayQa === o} title={`Overlay de QA: ${o}`}
+                        onClick={() => setOverlayQa(o)}>
+                        {o === 'nenhum' ? 'Sem overlay' : o === 'clay' ? 'Clay' : o === 'normals' ? 'Normais' : o === 'wireframe' ? 'Wire' : o === 'silhueta' ? 'Silhueta' : 'Cinza'}
+                      </button>
+                    ))}
+                    <button type="button" data-teste="p3d-lab" aria-pressed={laboratorio}
+                      className={`avst5-p3d-chip${laboratorio ? ' avst5-p3d-chip-on' : ''}`}
+                      title="Cena de calibração (§107): fundo 18 %, look estúdio, color checker"
+                      onClick={() => setLaboratorio((v) => !v)}>Calibração</button>
+                  </span>
+                )}
+                {/* onda 1408 (§1872, #161): com as6.looks os modos de tone
+                    mapping viram DEV-only (as5.hud3d) — ACES é a baseline */}
+                {(!flag('as6.looks') || flag('as5.hud3d')) && (
                 <span role="group" aria-label="Tone mapping (§457)" data-teste="p3d-tone">
                   {(['aces', 'agx', 'neutro', 'reinhard'] as const).map((m) => (
                     <button key={m} type="button" data-teste={`p3d-tone-${m}`}
@@ -1251,6 +1309,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                     </button>
                   ))}
                 </span>
+                )}
                 <label className="avst5-p3d-slider">Ambiente
                   <input type="range" min="0" max="1.2" step="0.05" value={ambiente} data-teste="p3d-amb"
                     aria-label="Intensidade da luz ambiente (§449)"

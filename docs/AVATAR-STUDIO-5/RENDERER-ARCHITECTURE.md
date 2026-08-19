@@ -23,7 +23,7 @@ Regra §3050: nenhum "componente gigante" novo — renderer, UI, catálogo, mate
 
 **3D**: `EstadoAvatar` + `Config3D` → `Renderizador3d.montar()` (renderer sRGB + ACES exposição 1.0 + PCFSoft 1024 + PMREM RoomEnvironment 0.55 + luzes canônicas + chão disco 0.34) → `carregarPersonagem` (manifest §517 → LOD por tier/tela, progressivo lod2-primeiro) → `Assembler3d.montarPersonagem` (rebind partes no rig ubc-v1, body masking §415.2, pendências) → `Materiais3d.aplicarPipelineCores` (tint por canal, teto emissivo) → `aplicarCorpo3d` (escala) → animações/vida → `definirCamera`/`enquadrar` → `definirPos` (composer bloom 0.32/0.5/0.85 + vinheta fora do econômico) → laço com tier adaptativo/DPR → `capturar()` determinístico. Watchdog de contexto reaplica estado.
 
-## 3. Auditoria de iluminação (§2030.1) — TRÊS vocabulários hoje
+## 3. Auditoria de iluminação (§2030.1) — TRÊS vocabulários hoje (onda 1408: registry `services/Looks3d.ts` criado — `estudio@1` = canônico byte-idêntico, `soft/cool/neon` = aliases de quente/fria/neon, `portrait/dramatic` novos sob `as6.looks`; tabela abaixo = estado ANTES)
 
 | Caminho | Preset(s) | Valores | Problema |
 |---|---|---|---|
