@@ -10,7 +10,7 @@
 //
 // Uso: node scripts/avatar/assets3d/gerar-thumbs-3d.mjs <pasta-publicada>
 //   [--porta 8907]  (o servidor estático efêmero sobe e cai sozinho)
-import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { basename, extname, join, resolve } from 'node:path';
@@ -157,9 +157,33 @@ export async function gerarThumbs(pastaPublicada, { porta = 8907 } = {}) {
 
 // ── CLI ─────────────────────────────────────────────────────────────
 if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
-  const pasta = process.argv[2];
   const porta = Number(process.argv[process.argv.indexOf('--porta') + 1]) || 8907;
-  if (!pasta) { console.error('uso: gerar-thumbs-3d.mjs <pasta-publicada> [--porta N]'); process.exit(2); }
+  // onda 1409 (§1880): --tipo <tipo> regenera TODAS as thumbs publicadas
+  // daquele tipo (ex.: parte_cabelo) — republicação em lote ★ (imagens do
+  // catálogo mudam: commit próprio após ok do Jhony)
+  const iTipo = process.argv.indexOf('--tipo');
+  const pasta = iTipo > 0 ? null : process.argv[2];
+  if (!pasta && iTipo < 0) { console.error('uso: gerar-thumbs-3d.mjs <pasta-publicada> [--porta N]  |  --tipo <tipo> [--porta N]'); process.exit(2); }
+  if (iTipo > 0) {
+    const tipo = process.argv[iTipo + 1];
+    const { readdirSync } = await import('node:fs');
+    const raiz = resolve(import.meta.dirname, '..', '..', '..', 'public', 'assets', 'avatars', '3d');
+    const pastas = [];
+    for (const sub of ['personagens', 'partes']) {
+      for (const d of readdirSync(join(raiz, sub), { withFileTypes: true })) {
+        if (!d.isDirectory()) continue;
+        const mf = join(raiz, sub, d.name, 'manifest.json');
+        try { if (JSON.parse(readFileSync(mf, 'utf8')).tipo === tipo) pastas.push(join(raiz, sub, d.name)); } catch { /* sem manifest */ }
+      }
+    }
+    if (!pastas.length) { console.error(`✗ nenhum asset publicado com tipo "${tipo}"`); process.exit(1); }
+    let n = 0;
+    for (const p of pastas) {
+      try { const r = await gerarThumbs(p, { porta }); n += 1; console.log(`THUMBS_OK ${r.thumb}`); } catch (e) { console.error(`✗ ${p}: ${e.message}`); }
+    }
+    console.log(`THUMBS_TIPO_OK ${n}/${pastas.length} (${tipo})`);
+    process.exit(n === pastas.length ? 0 : 1);
+  }
   gerarThumbs(pasta, { porta })
     .then((r) => console.log(`THUMBS_OK ${r.thumb} + ${r.preview}`))
     .catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });

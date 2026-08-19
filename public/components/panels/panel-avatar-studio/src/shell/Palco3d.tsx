@@ -90,6 +90,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
 }) {
   const refAlvo = useRef<HTMLDivElement>(null);
   const refR = useRef<RenderizadorAvatar | null>(null);
+  const refLimiteAsset = useRef<Map<string, number[]>>(new Map()); // onda 1409: rate limit da telemetria de asset
   // mega 9: override manual (null = AUTO — segue a base 2D do estado)
   const [override, setOverride] = useState<string | null>(overrideGuardado);
   const [indice, setIndice] = useState<EntradaIndice3d[]>(CURADOS_FALLBACK);
@@ -294,6 +295,25 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           // lote 681-690 (§472): fases reais da carga → badge discreto
           aoCarregamento: (f) => {
             if (flag('as5.progressivo3d')) setFaseCarga(f);
+          },
+          // onda 1409 (§2804): eventos de asset → telemetria local (sem PII,
+          // rate limit: ≤ 6 eventos/slug/min); flag OFF = callback inerte
+          aoEventoAsset: (ev) => {
+            if (!flag('as6.telemetria_assets')) return;
+            const chave = `${ev.tipo}:${ev.slug}`;
+            const agora = Date.now();
+            const lim = refLimiteAsset.current;
+            const fila = (lim.get(chave) ?? []).filter((t) => agora - t < 60_000);
+            if (fila.length >= 6) return;
+            fila.push(agora); lim.set(chave, fila);
+            telemetria(ev.tipo, {
+              slug: ev.slug,
+              ...(ev.lod ? { lod: ev.lod } : {}),
+              ...(ev.lodAnterior ? { lodAnterior: ev.lodAnterior } : {}),
+              ...(typeof ev.ms === 'number' ? { ms: ev.ms } : {}),
+              ...(ev.motivo ? { motivo: ev.motivo } : {}),
+              ...(ev.erro ? { erro: ev.erro.slice(0, 80) } : {}),
+            });
           },
         });
         if (!vivo) { void r.descartar(); return; }
@@ -1191,6 +1211,16 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                 {l2 === 'estudio' ? 'Estúdio' : l2 === 'quente' ? 'Quente' : l2 === 'fria' ? 'Fria' : 'Neon'}
               </button>
             ))}
+            {/* onda 1408 (#161, as6.looks): looks NOVOS do registry (portrait,
+                dramatic) — só com a flag; os 4 legados ficam como estão */}
+            {flag('as6.looks') && looksDisponiveis(true).filter((l) => !l.legado).map((l) => (
+              <button key={l.id} type="button" role="radio" aria-checked={luz3d === l.id}
+                className={`avst5-p3d-chip${luz3d === l.id ? ' avst5-p3d-chip-on' : ''}`}
+                data-teste={`p3d-look-${l.id}`} title={`Look ${l.nome} (registry Looks3d)`}
+                onClick={() => setLuz3d(l.id as (typeof LUZES_3D)[number])}>
+                {LOOKS[l.id].nome}
+              </button>
+            ))}
           </span>
           <span role="radiogroup" aria-label="Qualidade (§423)" data-teste="p3d-qualidade">
             {(['auto', 'alto', 'medio', 'economico'] as const).map((q2) => (
@@ -1213,16 +1243,6 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
                   if (pf === 'cine') setPosFx(true);
                 }}>
                 {pf === 'ultra' ? 'Ultra' : 'Cine'}
-              </button>
-            ))}
-            {/* onda 1408 (#161, as6.looks): looks NOVOS do registry (portrait,
-                dramatic) — só com a flag; os 4 legados ficam como estão */}
-            {flag('as6.looks') && looksDisponiveis(true).filter((l) => !l.legado).map((l) => (
-              <button key={l.id} type="button" role="radio" aria-checked={luz3d === l.id}
-                className={`avst5-p3d-chip${luz3d === l.id ? ' avst5-p3d-chip-on' : ''}`}
-                data-teste={`p3d-look-${l.id}`} title={`Look ${l.nome} (registry Looks3d)`}
-                onClick={() => setLuz3d(l.id as (typeof LUZES_3D)[number])}>
-                {LOOKS[l.id].nome}
               </button>
             ))}
           </span>

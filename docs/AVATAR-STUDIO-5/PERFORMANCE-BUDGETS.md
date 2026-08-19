@@ -1,7 +1,7 @@
 # PERFORMANCE BUDGETS — orçamentos por cena, asset, tier e bundle (v1 · onda 1405 · MEGA_BRIEFING_01 §28–§30, §147–§153, §2716–§2732, §2937–§2961)
 
 > Regra: **scene budget, não apenas asset budget** (§2946). Identidade visual não muda por tier (§28, §2939); o que degrada é, nesta ordem (§150, §1926–§1935, §2939): partículas → sombras (resolução → contato só) → pós (bloom/grading) → secondary motion → DPR → detalhe de textura/LOD → materiais avançados (physical/shader) → DOF nunca no editor.
-> Números marcados **(medir)** são estimativas iniciais a consolidar na onda 1409 (`medir-perf-asset.mjs`, `budgets.json`, histórico `perf-assets.json`). Aceite dos thresholds como política = Jhony (lista "precisa do Jhony" #4).
+> Números marcados **(medir)** são estimativas iniciais; a onda 1409 os tornou **executáveis** (`scripts/avatar/assets3d/budgets.json` → `medir-perf-asset.mjs` → `docs/AVATAR-STUDIO-5/evidencias/perf-assets.json`, histórico determinístico; teste `bundle-assets.mjs`). Aceite dos thresholds como política = Jhony (lista "precisa do Jhony" #4).
 
 ## 1. Tiers (§2937–§2944) ↔ código existente
 
@@ -27,7 +27,7 @@ Fonte de verdade: `scripts/deploy/pesos-esperados.json` (KB por chunk; `deploy-a
 | Textura máx. (`publicar-asset.mjs`) | 2048 | 1024 | 512 |
 | Emissive (`Materiais3d.TETO_EMISSIVO`) | 2 | 2 | 2 |
 
-Budgets por **classe** (onda 1409 → `scripts/avatar/assets3d/budgets.json`; Hero com exceção justificada no manifest `excecoes.perf`) **(medir)**:
+Budgets por **classe** (onda 1409: `scripts/avatar/assets3d/budgets.json` v1 — fonte de verdade; classe = `tipo` do manifest ou `tipo:perfClasse`; lod1/lod2 herdam por `fatorLod` (tri 50 %/20 %) e `fatorVramLod` (¼/¹⁄₁₆); VRAM = RGBA8 ×1,33 estimada; Hero com exceção justificada no manifest `excecoes.perf`):
 
 | Classe | tri lod0 | materiais | texturas lod0 | peso lod0 | draw calls | nota |
 |---|---|---|---|---|---|---|
@@ -42,7 +42,9 @@ Budgets por **classe** (onda 1409 → `scripts/avatar/assets3d/budgets.json`; He
 | companion (drone/orb) | ≤ 5 000 | ≤ 3 | ≤ 512² | ≤ 400 KB | ≤ 3 | emissive ≤ teto |
 | cenário (por camada) | ≤ 20 000 | ≤ 6 | ≤ 1024² ×4 | ≤ 1,5 MB gzip total | ≤ 10 | procedural primeiro |
 
-Regressão por asset (histórico): FPS −15% · load +40% · texture memory +50% → aviso no validador (§2804). Paths com `?v=<hash8>` (cache-busting) atrás de `as6.cache_bust_assets`.
+Regressão por asset (histórico): FPS −15% · load +40% · texture memory +50% → aviso no validador (§2804; `medir-perf-asset.mjs` compara com o `perf-assets.json` anterior). Política: acima do teto = **aviso** em `production/legacy` (nunca reprovação retroativa) e **erro** em `premium/hero` (gate do pacote premium). Paths com `?v=<hash8>` (cache-busting) atrás de `as6.cache_bust_assets`.
+
+**Medição 1409 (34 assets publicados, `evidencias/perf-assets.json`): 0/34 dentro dos budgets** — todos são `production/legacy` anteriores à política: bases Quaternius com 7–11 materiais/10–19 primitivas; UBC com 7 texturas 2048² (VRAM est. 107 MB > 90); cabelos/roupas UBC com texturas 2048² (classe pede 1024²) e LOD2 acima de 20 % (LODs sem decimação, #165b). Nada reprova (aviso); a republicação com decimação/redimensionamento é ★ (imagens/hashes mudam) — lista "precisa do Jhony".
 
 ## 4. Cena (worst-case oficial §2947) **(medir na 1409)**
 
@@ -68,7 +70,7 @@ Durante `capturar()`: LOD0 + DPR alto + sombras ↑ + pós só na captura; deter
 
 ## 7. Robustez (§2962–§2971)
 
-Context loss: rehidratar avatar, materiais, LOD, environment, VFX, câmera e **composer** (onda 1420). Error boundaries por asset (cabelo falha → avatar continua, fallback). Telemetria: `asset_load_failed`, `texture_load_failed`, `renderer_context_lost/restored`, `shader_failed`, `fallback_used`, `quality_downgraded` (onda 1409, flag `as6.telemetria_assets`), com rate limiting e sem PII.
+Context loss: rehidratar avatar, materiais, LOD, environment, VFX, câmera e **composer** (onda 1420). Error boundaries por asset (cabelo falha → avatar continua, fallback). Telemetria (onda 1409, flag `as6.telemetria_assets`, ON): `Renderizador3d` emite via `opcoes.aoEventoAsset` os eventos `asset_carregou` (slug/lod/ms), `asset_falhou` (erro ≤ 80 chars), `lod_transicao` (lodAnterior→lod), `fallback_ativado` (`standin_lod2` §470 / `rig_incompativel` §481), `parte_carregou/parte_falhou`; o Palco3d aplica rate limit (≤ 6 eventos/slug/min) e publica `avst:<evento>` (ring local + EventBus, sem URL/PII); `TelemetriaDev` agrega no bloco "Assets 3D" (carregou/média ms, lod_transicao, fallback, falhas + últimas falhas). `renderer_context_lost/restored` e `quality_downgraded` já existem como `p3d_contexto`/`p3d_qualidade`.
 
 ## 8. QA de performance (§2984)
 

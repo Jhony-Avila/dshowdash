@@ -11,14 +11,14 @@
 | 2 | INGEST (report, limites, URIs externas, licença) | `lerJsonDoGlb` valida magic; licença hard gate | report.json/diff 1406 · ingestão segura 1410 |
 | 3 | NORMALIZATION (escala 1u=1m, eixo +Y up/+Z forward, pivot por categoria, transform freeze) | altura 0,8–3 m (aviso) | bounds/pivot 1406 |
 | 4 | OPTIMIZATION (dedup/prune/weld/meshopt/webp) | `publicar-asset.mjs` | — |
-| 5 | LOD (lod0/1/2 + gates + silhueta) | gates §631; LODs **iguais** em vários assets (#165b) | auditoria 1409 · silhueta IoU 1407 |
+| 5 | LOD (lod0/1/2 + gates + silhueta) | gates §631; `auditar-lods.mjs` (1409: 27 idênticos + 7 lod1=lod0, 22,4 MB redundantes → `evidencias/lods-3d.json`); validador: LODs sem decimação = aviso em production, **erro** em premium+ (`excecoes.lod` vira aviso); IoU silhueta lod0×lod2 ≥ 0,92 (`gerar-renders-homologacao.mjs`) | republicação com decimação ★ |
 | 6 | TECH VALIDATION (schema, rig, morphs, texturas) | `validar-asset.mjs` | schema v2 1406 · texturas/morphs 1406/1421 |
 | 7 | MATERIAL (família, mapas, naoTingir) | tint por canal | `FamiliasMaterial` + manifest `materiais` 1408 |
 | 8 | FIT (socket/ancora/bounds/occupancy/hairMask/mascara) | `mascara` só nas bases (0 roupas declaram) | 1416/1423/1424 |
 | 9 | VISUAL QA (ficha, evidências, status) | — | 1410 (`VISUAL-QA.md`) |
 | 10 | GOLDEN REGRESSION (matriz de screenshots) | só bytes 2D | 1407 (`GOLDEN-TESTS.md`) |
 | 11 | PUBLISH (gates por nível, dry-run, versões, registro §614) | `publicar-asset.mjs` + `gerar-registro-sql.mjs` | CLI/dry-run/gates 1410 |
-| 12 | MONITOR (telemetria por asset, health) | `Telemetria.ts` sem assetId | 1409 |
+| 12 | MONITOR (telemetria por asset, health) | 1409: eventos `asset_carregou/asset_falhou/lod_transicao/fallback_ativado/parte_*` (flag `as6.telemetria_assets`) + bloco "Assets 3D" no TelemetriaDev | health score no index.json (1410) |
 
 ## 2. Naming (decisão #166; §2571–§2575, §935–§938)
 
@@ -75,7 +75,7 @@ Baseline PNG fora do git + `golden-visual.json`; diff perceptual; aprovação hu
 
 ## 7. Performance e telemetria (§2716–§2742) — ver `PERFORMANCE-BUDGETS.md`
 
-`medir-perf-asset.mjs` → `perf.json` por pasta; `budgets.json` por classe; histórico determinístico; eventos `asset_falhou/asset_carregou/lod_transicao/fallback_ativado` com `assetId/versao/renderer/tier` (sem PII); health score no `index.json` (só QaStudio).
+Onda 1409: `medir-perf-asset.mjs [<pasta>|--json|--render]` (estático/determinístico; `--render` acrescenta draw calls reais via renders) → `evidencias/perf-assets.json`; `budgets.json` por classe (`tipo` ou `tipo:perfClasse`); regressão histórica +40 % bytes / +50 % VRAM; eventos `asset_carregou/asset_falhou/lod_transicao/fallback_ativado/parte_*` com `slug/lod/ms/motivo` (sem URL/PII, rate limit por slug) — flag `as6.telemetria_assets`; health score no `index.json` (só QaStudio, 1410). Homologação: `gerar-renders-homologacao.mjs <pasta> [--angulos front,34,profile,back] [--modos normal,clay,silhueta,wireframe] [--lods 0,1,2]` → PNGs + `metricas.json` (IoU por LOD, landmarks do rig, drawCalls/triângulos); `corpo-benchmark.mjs` (bases: clay/silhueta front+profile + landmarks vs faixas por estilo → `evidencias/corpo-benchmark.json`, 8/8 dentro da faixa calibrada); `gerar-thumbs-3d.mjs --tipo <tipo>` regenera thumbs por tipo (★). Validador de cabelo/roupa: ≤ 3 materiais, BLEND exige `alpha: 'blend'` no manifest, MASK/BLEND sem baseColorTexture = alpha sem mapa (aviso production / erro premium+).
 
 ## 8. Publish, rollback, deprecação, canary (§2743–§2767)
 
@@ -97,7 +97,10 @@ node scripts/avatar/assets3d/publicar-asset.mjs --fonte storage/assets-3d-fonte/
   --saida public/assets/avatars/3d/<tipo>/<id> --id <id> --data $(date +%F) [--mascara torso,bracos] [--materiais …]
 node scripts/avatar/assets3d/gerar-thumbs-3d.mjs public/assets/avatars/3d/<tipo>/<id>
 node scripts/avatar/assets3d/validar-asset.mjs public/assets/avatars/3d/<tipo>/<id>
+node scripts/avatar/assets3d/medir-perf-asset.mjs public/assets/avatars/3d/<tipo>/<id>      # 1409: orçamento da classe
+node scripts/avatar/assets3d/gerar-renders-homologacao.mjs public/assets/avatars/3d/<tipo>/<id>  # 1409: renders + IoU + landmarks
 node scripts/avatar/assets3d/gerar-indice-3d.mjs
+node scripts/avatar/assets3d/auditar-lods.mjs && node scripts/avatar/assets3d/medir-perf-asset.mjs   # 1409: evidências (o diff é o relatório)
 # (onda 1410) node scripts/avatar/assets3d/cli.mjs publish <pasta> --dry-run
 
 # 2D — arte nova (ondas 1411+)

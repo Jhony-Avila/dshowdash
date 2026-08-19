@@ -52,6 +52,25 @@ export interface OpcoesRenderizador3d {
   aoContexto?: (fase: 'perdido' | 'restaurado') => void;
   /** mega 685 (§472): estados REAIS do carregamento p/ a UI amigável */
   aoCarregamento?: (fase: 'metadados' | 'baixando' | 'modelo_rapido' | 'montando' | 'pronto') => void;
+  /** onda 1409 (MEGA_BRIEFING_01 §2804, §2968–§2972): EVENTOS DE ASSET p/
+   *  telemetria (sem PII: slug/lod/ms/erro curto). O caller decide flag,
+   *  rate limit e destino; sem callback = zero custo. */
+  aoEventoAsset?: (ev: EventoAsset3d) => void;
+}
+
+/** onda 1409: evento de ciclo de vida de asset 3D (observabilidade §2804). */
+export interface EventoAsset3d {
+  tipo: 'asset_carregou' | 'asset_falhou' | 'lod_transicao' | 'fallback_ativado' | 'parte_falhou' | 'parte_carregou';
+  slug: string;
+  /** 'lod0'|'lod1'|'lod2' quando conhecido */
+  lod?: string;
+  lodAnterior?: string;
+  /** tempo de carga em ms (arredondado) */
+  ms?: number;
+  /** mensagem de erro CURTA (≤ 80 chars, sem URL completa) */
+  erro?: string;
+  /** 'standin_lod2' (progressivo §470) | 'parte_ignorada' (§481) | 'rig_incompativel' */
+  motivo?: string;
 }
 
 const FUNDO_ESTUDIO = '#0d1017';
@@ -212,6 +231,7 @@ export class Renderizador3d implements RenderizadorAvatar {
       aoMudarQualidade: opcoes.aoMudarQualidade ?? (() => { /* opcional */ }),
       aoContexto: opcoes.aoContexto ?? (() => { /* opcional */ }),
       aoCarregamento: opcoes.aoCarregamento ?? (() => { /* opcional */ }),
+      aoEventoAsset: opcoes.aoEventoAsset ?? (() => { /* opcional — onda 1409 */ }),
     };
   }
 
@@ -1200,11 +1220,34 @@ export class Renderizador3d implements RenderizadorAvatar {
     return { scene: g.scene, animations: g.animations ?? [] };
   }
 
+  /** onda 1409: emite evento de asset (nunca lança; sem callback = no-op). */
+  private eventoAsset(ev: EventoAsset3d): void {
+    try { this.opcoes.aoEventoAsset?.(ev); } catch { /* observador quebrado não derruba o palco */ }
+  }
+
+  /** onda 1409: nome do LOD ('lod0'…) a partir da URL publicada. */
+  private static lodDaUrl(url: string | null): string | undefined {
+    const m = url ? /\.(lod[0-9])\.glb/.exec(url) : null;
+    return m ? m[1] : undefined;
+  }
+
   private async carregarPersonagem(slug: string): Promise<void> {
+    try {
+      await this.carregarPersonagemInterno(slug);
+    } catch (e) {
+      this.eventoAsset({ tipo: 'asset_falhou', slug, lod: Renderizador3d.lodDaUrl(this.manifest ? urlDoLod(this.manifest, this.tierEfetivo(), this.opcoes.basePersonagens) : null), erro: String((e as Error)?.message ?? e).slice(0, 80) });
+      throw e;
+    }
+  }
+
+  private async carregarPersonagemInterno(slug: string): Promise<void> {
     // §473 (mega 681): geração de carga — quem chegar DEPOIS manda;
     // resposta antiga é descartada em silêncio (nunca sobrescreve)
     const geracao = ++this.geracaoCarga;
     const obsoleto = () => geracao !== this.geracaoCarga;
+    const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const slugAntes = this.slugAtual;
+    const lodAntes = Renderizador3d.lodDaUrl(this.lodAtual);
     this.maquinaAnim.ir('carregando'); // §433
     this.opcoes.aoCarregamento?.('metadados'); // §472
     const manifest = await carregarManifest3d(slug, this.opcoes.basePersonagens);
@@ -1233,6 +1276,7 @@ export class Renderizador3d implements RenderizadorAvatar {
           this.cena?.add(this.personagem);
           this.definirCamera(this.cameraAtual);
           this.opcoes.aoCarregamento?.('modelo_rapido'); // §472
+          this.eventoAsset({ tipo: 'fallback_ativado', slug, lod: 'lod2', motivo: 'standin_lod2' }); // onda 1409
         }
       } catch { /* §481: stand-in é acelerador, nunca dependência */ }
     }
@@ -1293,6 +1337,14 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.aplicarProps();     // lote 131: props seguem o personagem novo
     this.definirCamera(this.cameraAtual); // preserva órbita/retrato no reload §528
     this.opcoes.aoCarregamento?.('pronto'); // §472
+    // onda 1409: observabilidade — carga concluída / transição de LOD
+    const lodNovo = Renderizador3d.lodDaUrl(url);
+    const ms = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0);
+    if (slugAntes === slug && lodAntes && lodNovo && lodAntes !== lodNovo) {
+      this.eventoAsset({ tipo: 'lod_transicao', slug, lod: lodNovo, lodAnterior: lodAntes, ms });
+    } else {
+      this.eventoAsset({ tipo: 'asset_carregou', slug, lod: lodNovo, ms });
+    }
   }
 
   /** lote 661–670 (§432/§436): pacote de clipes EXTERNO (UAL) — mesmo
@@ -1369,6 +1421,7 @@ export class Renderizador3d implements RenderizadorAvatar {
     if (!this.partes3d.length || !this.personagem) return;
     if (this.manifest?.rig !== 'ubc-v1') {
       // §481: base fora do rig — partes ignoradas com pendência declarada
+      this.eventoAsset({ tipo: 'fallback_ativado', slug: this.slugAtual ?? '?', motivo: 'rig_incompativel' }); // onda 1409
       this.ultimaMontagem = {
         ok: false,
         fases: [{ passo: 'validar_rig', ok: false, detalhe: `base "${this.slugAtual}" com rig ${this.manifest?.rig ?? '?'} — partes exigem ubc-v1` }],
@@ -1386,7 +1439,11 @@ export class Renderizador3d implements RenderizadorAvatar {
           id: slug, categoria: categoriaDaParte(m.tipo), cena: gltf.scene,
           ...(m.mascara?.length ? { mascara: m.mascara } : {}), // §415.2
         });
-      } catch { /* §481: parte indisponível não derruba o palco */ }
+        this.eventoAsset({ tipo: 'parte_carregou', slug }); // onda 1409
+      } catch (e) {
+        /* §481: parte indisponível não derruba o palco */
+        this.eventoAsset({ tipo: 'parte_falhou', slug, motivo: 'parte_ignorada', erro: String((e as Error)?.message ?? e).slice(0, 80) }); // onda 1409
+      }
     }
     if (!partes.length) return;
     this.ultimaMontagem = montarPersonagem({

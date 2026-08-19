@@ -1,0 +1,1074 @@
+{
+  "gerado_por": "scripts/avatar/assets3d/auditar-lods.mjs",
+  "resumo": {
+    "total": 34,
+    "porClasse": {
+      "identicos": 27,
+      "lod1=lod0": 7
+    },
+    "identicos": [
+      "androide",
+      "animal_pug",
+      "cab_barba",
+      "cab_coque",
+      "cab_longo",
+      "cab_raspado",
+      "cab_raspado_f",
+      "cab_repartido",
+      "humano_casual",
+      "humano_punk",
+      "rou3d_peasant_f_botas",
+      "rou3d_peasant_f_bracos",
+      "rou3d_peasant_f_corpo",
+      "rou3d_peasant_f_pernas",
+      "rou3d_peasant_m_botas",
+      "rou3d_peasant_m_bracos",
+      "rou3d_peasant_m_corpo",
+      "rou3d_peasant_m_pernas",
+      "rou3d_ranger_f_capuz",
+      "rou3d_ranger_f_corpo",
+      "rou3d_ranger_f_ombreira",
+      "rou3d_ranger_f_pernas",
+      "rou3d_ranger_m_bracos",
+      "rou3d_ranger_m_capuz",
+      "rou3d_ranger_m_corpo",
+      "rou3d_ranger_m_ombreira",
+      "rou3d_ranger_m_pernas"
+    ],
+    "lod1IgualLod0": [
+      "base_superhero_f",
+      "base_superhero_m",
+      "humano_aventureiro",
+      "humano_terno",
+      "rou3d_ranger_f_botas",
+      "rou3d_ranger_f_bracos",
+      "rou3d_ranger_m_botas"
+    ],
+    "comDecimacaoReal": [],
+    "bytesTotais": 54803740,
+    "bytesRedundantes": 23510968,
+    "iouMinimo": 0.92
+  },
+  "assets": [
+    {
+      "pasta": "personagens",
+      "id": "androide",
+      "tipo": "personagem_base",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 325792,
+          "sha256": "8375797e00aec7d8",
+          "triangulos": 3237
+        },
+        "lod1": {
+          "bytes": 325792,
+          "sha256": "8375797e00aec7d8",
+          "triangulos": 3237
+        },
+        "lod2": {
+          "bytes": 325792,
+          "sha256": "8375797e00aec7d8",
+          "triangulos": 3237
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": true,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "personagens",
+      "id": "animal_pug",
+      "tipo": "personagem_base",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 271608,
+          "sha256": "df853146f137a09e",
+          "triangulos": 2124
+        },
+        "lod1": {
+          "bytes": 271608,
+          "sha256": "df853146f137a09e",
+          "triangulos": 2124
+        },
+        "lod2": {
+          "bytes": 271608,
+          "sha256": "df853146f137a09e",
+          "triangulos": 2124
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": true,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "personagens",
+      "id": "base_superhero_f",
+      "tipo": "personagem_base",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 1553492,
+          "sha256": "4530931fd18caa9e",
+          "triangulos": 15060
+        },
+        "lod1": {
+          "bytes": 961112,
+          "sha256": "a2a8f5c66a574025",
+          "triangulos": 15060
+        },
+        "lod2": {
+          "bytes": 436348,
+          "sha256": "5d1695bc97993b12",
+          "triangulos": 7196
+        }
+      },
+      "classe": "lod1=lod0",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 0.478
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "personagens",
+      "id": "base_superhero_m",
+      "tipo": "personagem_base",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 1435628,
+          "sha256": "c1c4ed4b028522cf",
+          "triangulos": 14318
+        },
+        "lod1": {
+          "bytes": 905100,
+          "sha256": "501f60da543f4536",
+          "triangulos": 14318
+        },
+        "lod2": {
+          "bytes": 430848,
+          "sha256": "99d81c595bc33957",
+          "triangulos": 7198
+        }
+      },
+      "classe": "lod1=lod0",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 0.503
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "cab_barba",
+      "tipo": "parte_barba",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 451968,
+          "sha256": "ceae3dc6924f8b1f",
+          "triangulos": 1034
+        },
+        "lod1": {
+          "bytes": 211248,
+          "sha256": "faba8e54d763d5cf",
+          "triangulos": 1034
+        },
+        "lod2": {
+          "bytes": 116420,
+          "sha256": "74adc95e008b9c16",
+          "triangulos": 1034
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "cab_coque",
+      "tipo": "parte_cabelo",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 730852,
+          "sha256": "6b3af6f8f9d865e5",
+          "triangulos": 3284
+        },
+        "lod1": {
+          "bytes": 417112,
+          "sha256": "3534af5aa1b5759e",
+          "triangulos": 3284
+        },
+        "lod2": {
+          "bytes": 294920,
+          "sha256": "7821aa7aa89ffd67",
+          "triangulos": 3284
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "cab_longo",
+      "tipo": "parte_cabelo",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 706696,
+          "sha256": "f6b7ea1ae2fd1e2d",
+          "triangulos": 2906
+        },
+        "lod1": {
+          "bytes": 392960,
+          "sha256": "863e2fd524ce0faa",
+          "triangulos": 2906
+        },
+        "lod2": {
+          "bytes": 270768,
+          "sha256": "fb43b5fd270938f0",
+          "triangulos": 2906
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "cab_raspado",
+      "tipo": "parte_cabelo",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 443988,
+          "sha256": "50f1d43baac6769f",
+          "triangulos": 830
+        },
+        "lod1": {
+          "bytes": 203268,
+          "sha256": "66e65e2786a16054",
+          "triangulos": 830
+        },
+        "lod2": {
+          "bytes": 108440,
+          "sha256": "4d09b73c658d0827",
+          "triangulos": 830
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "cab_raspado_f",
+      "tipo": "parte_cabelo",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 444516,
+          "sha256": "737db6ba26c2f969",
+          "triangulos": 830
+        },
+        "lod1": {
+          "bytes": 203792,
+          "sha256": "d4a89e3572c5f5c2",
+          "triangulos": 830
+        },
+        "lod2": {
+          "bytes": 108968,
+          "sha256": "67e1c4aa3d8d73cb",
+          "triangulos": 830
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "cab_repartido",
+      "tipo": "parte_cabelo",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 461948,
+          "sha256": "818bed4c94956d1c",
+          "triangulos": 1301
+        },
+        "lod1": {
+          "bytes": 221224,
+          "sha256": "3454f00184088c27",
+          "triangulos": 1301
+        },
+        "lod2": {
+          "bytes": 126400,
+          "sha256": "f428ef7b2fbe2d12",
+          "triangulos": 1301
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "personagens",
+      "id": "humano_aventureiro",
+      "tipo": "personagem_base",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 808880,
+          "sha256": "6541df9f50e9e0e1",
+          "triangulos": 10202
+        },
+        "lod1": {
+          "bytes": 808880,
+          "sha256": "6541df9f50e9e0e1",
+          "triangulos": 10202
+        },
+        "lod2": {
+          "bytes": 798384,
+          "sha256": "14a82545399f3369",
+          "triangulos": 9997
+        }
+      },
+      "classe": "lod1=lod0",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 0.98
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "personagens",
+      "id": "humano_casual",
+      "tipo": "personagem_base",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 582116,
+          "sha256": "286b63e3ecc044ea",
+          "triangulos": 6206
+        },
+        "lod1": {
+          "bytes": 582116,
+          "sha256": "286b63e3ecc044ea",
+          "triangulos": 6206
+        },
+        "lod2": {
+          "bytes": 582116,
+          "sha256": "286b63e3ecc044ea",
+          "triangulos": 6206
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": true,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "personagens",
+      "id": "humano_punk",
+      "tipo": "personagem_base",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 545484,
+          "sha256": "60c231d028592a9d",
+          "triangulos": 5500
+        },
+        "lod1": {
+          "bytes": 545484,
+          "sha256": "60c231d028592a9d",
+          "triangulos": 5500
+        },
+        "lod2": {
+          "bytes": 545484,
+          "sha256": "60c231d028592a9d",
+          "triangulos": 5500
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": true,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "personagens",
+      "id": "humano_terno",
+      "tipo": "personagem_base",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 672804,
+          "sha256": "21aa2221b6c19ef9",
+          "triangulos": 7674
+        },
+        "lod1": {
+          "bytes": 672804,
+          "sha256": "21aa2221b6c19ef9",
+          "triangulos": 7674
+        },
+        "lod2": {
+          "bytes": 665244,
+          "sha256": "b3e622f2fc8f1b45",
+          "triangulos": 7542
+        }
+      },
+      "classe": "lod1=lod0",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 0.983
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_peasant_f_botas",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 652816,
+          "sha256": "908832ebefdc32af",
+          "triangulos": 2588
+        },
+        "lod1": {
+          "bytes": 347512,
+          "sha256": "7a08b63afdf7f839",
+          "triangulos": 2588
+        },
+        "lod2": {
+          "bytes": 221548,
+          "sha256": "cd234af084eeb5e4",
+          "triangulos": 2588
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_peasant_f_bracos",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 854984,
+          "sha256": "d6df127dba275d4d",
+          "triangulos": 6848
+        },
+        "lod1": {
+          "bytes": 549680,
+          "sha256": "4967dcb6736678b4",
+          "triangulos": 6848
+        },
+        "lod2": {
+          "bytes": 423720,
+          "sha256": "b869f2b9f7a2ca1f",
+          "triangulos": 6848
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_peasant_f_corpo",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 732476,
+          "sha256": "806f35a2ae3b0d69",
+          "triangulos": 2188
+        },
+        "lod1": {
+          "bytes": 427168,
+          "sha256": "81fbe645cfd4d0d0",
+          "triangulos": 2188
+        },
+        "lod2": {
+          "bytes": 301208,
+          "sha256": "98b5b9b3c37e3c62",
+          "triangulos": 2188
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_peasant_f_pernas",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 601436,
+          "sha256": "a65cda954f17bf34",
+          "triangulos": 1944
+        },
+        "lod1": {
+          "bytes": 296132,
+          "sha256": "0f64fc88b96d14b9",
+          "triangulos": 1944
+        },
+        "lod2": {
+          "bytes": 170172,
+          "sha256": "2021bc67326335d8",
+          "triangulos": 1944
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_peasant_m_botas",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 651516,
+          "sha256": "ba29fc895b829572",
+          "triangulos": 2588
+        },
+        "lod1": {
+          "bytes": 346208,
+          "sha256": "50492ab87b85fcf5",
+          "triangulos": 2588
+        },
+        "lod2": {
+          "bytes": 220248,
+          "sha256": "99b60e8ca270e301",
+          "triangulos": 2588
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_peasant_m_bracos",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 1162808,
+          "sha256": "24a0dc1628148d36",
+          "triangulos": 5338
+        },
+        "lod1": {
+          "bytes": 593436,
+          "sha256": "a37783e16d505af3",
+          "triangulos": 5338
+        },
+        "lod2": {
+          "bytes": 372884,
+          "sha256": "ea67fae5301925d1",
+          "triangulos": 5338
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_peasant_m_corpo",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 722284,
+          "sha256": "4b37c4b2ab27033b",
+          "triangulos": 3856
+        },
+        "lod1": {
+          "bytes": 416980,
+          "sha256": "8ea125a200e40432",
+          "triangulos": 3856
+        },
+        "lod2": {
+          "bytes": 291016,
+          "sha256": "fcfd6cf41915b66e",
+          "triangulos": 3856
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_peasant_m_pernas",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 574212,
+          "sha256": "4e919e70fcf0681e",
+          "triangulos": 1112
+        },
+        "lod1": {
+          "bytes": 268908,
+          "sha256": "5f47b94b2844d9a9",
+          "triangulos": 1112
+        },
+        "lod2": {
+          "bytes": 142944,
+          "sha256": "ebfde56fd388bb8a",
+          "triangulos": 1112
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_f_botas",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 1292844,
+          "sha256": "5fa679e7f2c6c47c",
+          "triangulos": 9172
+        },
+        "lod1": {
+          "bytes": 891768,
+          "sha256": "7772fce2bb3a7dcd",
+          "triangulos": 9172
+        },
+        "lod2": {
+          "bytes": 642792,
+          "sha256": "8d077e81d9428fd9",
+          "triangulos": 7200
+        }
+      },
+      "classe": "lod1=lod0",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 0.785
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_f_bracos",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 1541168,
+          "sha256": "9c9366852e1bd9d0",
+          "triangulos": 8508
+        },
+        "lod1": {
+          "bytes": 865304,
+          "sha256": "79610070fef5df08",
+          "triangulos": 8508
+        },
+        "lod2": {
+          "bytes": 556036,
+          "sha256": "241bcb1d30072d56",
+          "triangulos": 7198
+        }
+      },
+      "classe": "lod1=lod0",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 0.846
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_f_capuz",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 750320,
+          "sha256": "f4de1bb69cd0b592",
+          "triangulos": 2136
+        },
+        "lod1": {
+          "bytes": 349248,
+          "sha256": "81cfc8d005ed5d7c",
+          "triangulos": 2136
+        },
+        "lod2": {
+          "bytes": 196948,
+          "sha256": "9e8887da92cdbe1b",
+          "triangulos": 2136
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_f_corpo",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 990828,
+          "sha256": "c460c1c49d35ec11",
+          "triangulos": 4570
+        },
+        "lod1": {
+          "bytes": 589756,
+          "sha256": "7338f4371b692c44",
+          "triangulos": 4570
+        },
+        "lod2": {
+          "bytes": 437456,
+          "sha256": "5bf8dcfaf09fff8a",
+          "triangulos": 4570
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_f_ombreira",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 737476,
+          "sha256": "0f86bc64668a028b",
+          "triangulos": 1376
+        },
+        "lod1": {
+          "bytes": 336404,
+          "sha256": "91ce59c49b9c5076",
+          "triangulos": 1376
+        },
+        "lod2": {
+          "bytes": 184108,
+          "sha256": "bf79dca8fc0506d0",
+          "triangulos": 1376
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_f_pernas",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 727516,
+          "sha256": "12e2034cfb64d76b",
+          "triangulos": 1204
+        },
+        "lod1": {
+          "bytes": 326440,
+          "sha256": "579f360162dbce6e",
+          "triangulos": 1204
+        },
+        "lod2": {
+          "bytes": 174152,
+          "sha256": "56681423f1635659",
+          "triangulos": 1204
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_m_botas",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 1292332,
+          "sha256": "e637ffa7c2114c1b",
+          "triangulos": 9172
+        },
+        "lod1": {
+          "bytes": 891256,
+          "sha256": "f63ddbdbe0349078",
+          "triangulos": 9172
+        },
+        "lod2": {
+          "bytes": 642392,
+          "sha256": "74187ea6f71a9145",
+          "triangulos": 7200
+        }
+      },
+      "classe": "lod1=lod0",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 0.785
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_m_bracos",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 1281784,
+          "sha256": "44d67dffd6d4f74e",
+          "triangulos": 4928
+        },
+        "lod1": {
+          "bytes": 616644,
+          "sha256": "925523fa9542f78b",
+          "triangulos": 4928
+        },
+        "lod2": {
+          "bytes": 369752,
+          "sha256": "872a7a649974c842",
+          "triangulos": 4928
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_m_capuz",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 749800,
+          "sha256": "2b9b3d75ba6204e0",
+          "triangulos": 2136
+        },
+        "lod1": {
+          "bytes": 348728,
+          "sha256": "310629e0a92cc4f4",
+          "triangulos": 2136
+        },
+        "lod2": {
+          "bytes": 196428,
+          "sha256": "1b9917a5d9552168",
+          "triangulos": 2136
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_m_corpo",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 925520,
+          "sha256": "5f2fb65890ae2326",
+          "triangulos": 4606
+        },
+        "lod1": {
+          "bytes": 524448,
+          "sha256": "50625479651386ae",
+          "triangulos": 4606
+        },
+        "lod2": {
+          "bytes": 372160,
+          "sha256": "7d7b1667a9d8499a",
+          "triangulos": 4606
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_m_ombreira",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 732476,
+          "sha256": "6d9f0d256b6814be",
+          "triangulos": 1376
+        },
+        "lod1": {
+          "bytes": 331404,
+          "sha256": "c895420188e485df",
+          "triangulos": 1376
+        },
+        "lod2": {
+          "bytes": 179108,
+          "sha256": "687cb4ac6b754f83",
+          "triangulos": 1376
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    },
+    {
+      "pasta": "partes",
+      "id": "rou3d_ranger_m_pernas",
+      "tipo": "parte_roupa",
+      "qualidadeVisual": "production",
+      "lods": {
+        "lod0": {
+          "bytes": 710360,
+          "sha256": "3b0013e3a69175cd",
+          "triangulos": 1128
+        },
+        "lod1": {
+          "bytes": 309288,
+          "sha256": "e779b972654a4488",
+          "triangulos": 1128
+        },
+        "lod2": {
+          "bytes": 156988,
+          "sha256": "a02527efa5dc1df3",
+          "triangulos": 1128
+        }
+      },
+      "classe": "identicos",
+      "bytesIguais": false,
+      "reducao": {
+        "lod1": 1,
+        "lod2": 1
+      },
+      "excecaoDeclarada": null
+    }
+  ]
+}

@@ -93,6 +93,18 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
     return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
   })();
 
+  // onda 1409 (§2804): agregação da telemetria de ASSET (flag as6.telemetria_assets)
+  const assets = (() => {
+    if (!flag('as6.telemetria_assets')) return null;
+    const ev = eventos.filter((e) => /^(asset_|lod_transicao|fallback_ativado|parte_)/.test(e.evento));
+    if (!ev.length) return null;
+    const n = (t: string) => ev.filter((e) => e.evento === t).length;
+    const ms = ev.filter((e) => e.evento === 'asset_carregou' && typeof e.dados.ms === 'number').map((e) => Number(e.dados.ms));
+    const mediaMs = ms.length ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length) : null;
+    const falhas = ev.filter((e) => e.evento === 'asset_falhou' || e.evento === 'parte_falhou').slice(-5).reverse();
+    return { total: ev.length, carregou: n('asset_carregou'), falhou: n('asset_falhou') + n('parte_falhou'), lod: n('lod_transicao'), fallback: n('fallback_ativado'), mediaMs, falhas };
+  })();
+
   const exportar = () => {
     const blob = new Blob([JSON.stringify(eventos, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -163,6 +175,20 @@ export function TelemetriaDev({ aoFechar }: { aoFechar: () => void }) {
             </ul>
             {heatmap.topRecentes.length > 0 && (
               <p className="avst5-tlm-nota" data-teste="heatmap-recentes">Últimos usados: {heatmap.topRecentes.join(' · ')}</p>
+            )}
+          </div>
+        )}
+        {assets && (
+          <div className="avst5-tlm-storage" data-teste="tlm-assets">
+            <h4>Assets 3D (§2804) · {assets.total} eventos</h4>
+            <ul>
+              <li><code>carregou</code><em data-teste="tlm-assets-carregou">×{assets.carregou}{assets.mediaMs !== null ? ` · média ${assets.mediaMs} ms` : ''}</em></li>
+              <li><code>lod_transicao</code><em>×{assets.lod}</em></li>
+              <li><code>fallback_ativado</code><em>×{assets.fallback}</em></li>
+              <li><code>falhou</code><em data-teste="tlm-assets-falhou">×{assets.falhou}</em></li>
+            </ul>
+            {assets.falhas.length > 0 && (
+              <p className="avst5-tlm-nota" data-teste="tlm-assets-falhas">Últimas falhas: {assets.falhas.map((f) => `${f.dados.slug}${f.dados.erro ? ` (${f.dados.erro})` : ''}`).join(' · ')}</p>
             )}
           </div>
         )}

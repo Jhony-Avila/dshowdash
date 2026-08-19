@@ -187,6 +187,21 @@ export function maiorTexturaDoGlb(caminho) {
   return { maior, texturas: total };
 }
 
+/** onda 1409: lista das texturas embutidas (dimensões + bytes codificados) —
+ * base da estimativa de VRAM em medir-perf-asset.mjs. */
+export function texturasDoGlb(caminho) {
+  const buf = readFileSync(caminho);
+  const gltf = lerJsonDoGlb(caminho);
+  const lista = [];
+  (gltf.images ?? []).forEach((img, i) => {
+    if (img.bufferView === undefined) return;
+    const bytes = bytesDoBufferView(buf, gltf, img.bufferView);
+    const dim = dimensoesDaImagem(bytes);
+    if (dim) lista.push({ indice: i, nome: img.name ?? null, mime: img.mimeType ?? null, largura: dim.largura, altura: dim.altura, bytes: bytes.length });
+  });
+  return lista;
+}
+
 /** Nomes dos bones (joints de todos os skins, sem repetição). */
 export function nomesDosBones(gltf) {
   const nomes = new Set();
@@ -298,6 +313,61 @@ export function validarAsset(pasta, opcoes = {}) {
     }
   }
 
+  // ── onda 1409 (MEGA_BRIEFING_01 §148–§151, §2625–§2636; decisão #165b):
+  // LODs devem ser DECRESCENTES em geometria. LODs idênticos (ou lod1=lod0)
+  // em asset `production`/legacy/prototype = NOTA informativa (não é ressalva:
+  // o contrato "UBC sai limpo" da onda 611+ segue valendo e nada reprova
+  // retroativo); em `premium`/`hero` = ERRO (o pacote premium exige decimação
+  // real; a republicação ★ muda hashes e é decisão do Jhony). Exceção
+  // declarada (`excecoes.lod`) vira nota em qualquer nível.
+  const notas = [];
+  {
+    const t = medidas.triangulos;
+    if (t.lod0 > 0 && t.lod1 > 0 && t.lod2 > 0) {
+      const classe = t.lod0 === t.lod1 && t.lod1 === t.lod2 ? 'identicos' : t.lod0 === t.lod1 ? 'lod1=lod0' : t.lod1 === t.lod2 ? 'lod2=lod1' : 'decrescente';
+      medidas.classeLod = classe;
+      if (classe !== 'decrescente') {
+        const nivel = String(manifest.qualidadeVisual ?? 'production');
+        const premiumOuMais = (ESCADA_QV[nivel] ?? 2) >= ESCADA_QV.premium;
+        const excecao = manifest.excecoes?.lod ?? manifest.excecoes?.lods;
+        const msg = `LODs sem decimação real (${classe}: ${t.lod0}/${t.lod1}/${t.lod2} triângulos) — §2625–§2636, #165b`;
+        if (excecao) notas.push(`${msg} — EXCEÇÃO declarada: ${excecao}`);
+        else if (premiumOuMais) erros.push(`${msg}; qualidadeVisual=${nivel} exige LOD1 ≤ 50 % e LOD2 ≤ 20 % do LOD0 (republicar com decimação)`);
+        else notas.push(`${msg} — bytes redundantes; republicação com decimação pendente (★ ok do Jhony)`);
+      } else {
+        const nivel = String(manifest.qualidadeVisual ?? 'production');
+        if ((ESCADA_QV[nivel] ?? 2) >= ESCADA_QV.premium && (t.lod1 > t.lod0 * 0.5 || t.lod2 > t.lod0 * 0.2)) {
+          notas.push(`redução de LOD aquém do alvo premium (lod1 ${(t.lod1 / t.lod0 * 100).toFixed(0)} % / lod2 ${(t.lod2 / t.lod0 * 100).toFixed(0)} % do lod0; alvo ≤ 50 % / ≤ 20 %) — §2630`);
+        }
+      }
+    }
+  }
+
+  // ── onda 1409 (MEGA_BRIEFING_01 §1597–§1599, §1631–§1635, §2783):
+  // VALIDADOR DE CABELO/ROUPA — ≤ 3 materiais, alpha COERENTE (BLEND só com
+  // `alpha: 'blend'` declarado no manifest; MASK/BLEND sem textura de cor =
+  // alpha sem mapa), doubleSided em cabelo informado. Aviso em production,
+  // erro em premium+ (gate do pacote premium).
+  if (/^parte_(cabelo|barba|roupa|sobrancelha)$/.test(String(manifest.tipo))) {
+    try {
+      const g0 = lerJsonDoGlb(join(dir, 'modelo.lod0.glb'));
+      const nivel = String(manifest.qualidadeVisual ?? 'production');
+      const premiumOuMais = (ESCADA_QV[nivel] ?? 2) >= ESCADA_QV.premium;
+      const alvo = premiumOuMais ? erros : avisos;
+      const mats = g0.materials ?? [];
+      medidas.alpha = mats.map((m) => m.alphaMode ?? 'OPAQUE');
+      if (mats.length > 3) alvo.push(`${manifest.tipo} com ${mats.length} materiais (máx 3 — PERFORMANCE-BUDGETS §3 / §1635)`);
+      const blend = mats.filter((m) => m.alphaMode === 'BLEND');
+      const declarado = manifest.alpha ?? null; // 'blend' | 'mask' | 'opaque' | null
+      if (blend.length && declarado !== 'blend') alvo.push(`${blend.length} material(is) BLEND sem "alpha": "blend" no manifest (§1631 — ordenação/sombra de cabelo dependem disso)`);
+      if (declarado === 'blend' && !blend.length) avisos.push('manifest declara alpha blend mas nenhum material é BLEND (§1631)');
+      for (const m of mats) {
+        if ((m.alphaMode === 'MASK' || m.alphaMode === 'BLEND') && !m.pbrMetallicRoughness?.baseColorTexture) alvo.push(`material "${m.name ?? '?'}" ${m.alphaMode} sem baseColorTexture (alpha sem mapa — §1631)`);
+      }
+      if (/^parte_(cabelo|barba)$/.test(String(manifest.tipo)) && mats.some((m) => m.doubleSided) && !manifest.doubleSided && premiumOuMais) avisos.push('cabelo doubleSided — declare "doubleSided": true no manifest (informativo §1631)');
+    } catch { /* lod0 ilegível já reportado acima */ }
+  }
+
   // ── lote 701-710 (§487): checagens ampliadas — RESSALVAS, nunca
   // reprovação retroativa de asset já publicado ──
   if (!manifest.licenca) {
@@ -337,7 +407,7 @@ export function validarAsset(pasta, opcoes = {}) {
     }
   } catch { /* lod0 ilegível já reportado acima */ }
 
-  return { aprovado: erros.length === 0, erros, avisos, medidas };
+  return { aprovado: erros.length === 0, erros, avisos, notas, medidas };
 }
 
 /** §488: RELATÓRIO de validação — status + linhas humanas por item. */
@@ -354,6 +424,7 @@ export function relatorioDeValidacao(pasta) {
     ...(r.medidas.alturaM !== undefined ? [`Altura: ${r.medidas.alturaM}m`] : []),
     ...r.erros.map((e) => `ERRO: ${e}`),
     ...r.avisos.map((a) => `Ressalva: ${a}`),
+    ...(r.notas ?? []).map((n) => `Nota: ${n}`), // onda 1409: informativo, não muda o status
   ];
   return { status, linhas, ...r };
 }
