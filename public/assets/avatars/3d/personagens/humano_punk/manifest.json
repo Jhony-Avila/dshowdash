@@ -33,5 +33,15 @@
   },
   "origem": "as4-curados",
   "fonte_original": "humano_punk.glb",
-  "criado_em": "2026-08-03"
+  "criado_em": "2026-08-03",
+  "schemaVersion": 2,
+  "qualidadeVisual": "production",
+  "qaVisual": {
+    "status": "pending"
+  },
+  "visibility": "production",
+  "renderers": [
+    "3d"
+  ],
+  "deprecated": false
 }

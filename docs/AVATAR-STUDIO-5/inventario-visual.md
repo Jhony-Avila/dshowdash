@@ -36,7 +36,7 @@ Observações 2D: nenhum item é DEV_ONLY/DEPRECATE hoje; `sob_` já é prefixo 
 | Cenários procedurais (`vazio/grade/estrelas/dojo` PoC; `neutro/estudio/grade` shell) | 7 | cor sólida/grid/estrelas | **KEEP** `estudio/neutro` como Studio v1 (QA); demais **UPGRADE** (S01–S06, 1426) | |
 | Animações UAL (básico + extra) | pacotes | clipes reais | **KEEP** | |
 
-Achados quantitativos (de `inventario-visual.json`): **27/34** assets 3D com lod0=lod1=lod2 (auditoria #165b — gate §631 nunca forçou decimação real); 7 com lod1=lod0; **34/34 sem `qualidadeVisual`** (entra na 1406 com padrão `production` para publicados e `prototype` para `soc_*`).
+Achados quantitativos (de `inventario-visual.json`): **27/34** assets 3D com lod0=lod1=lod2 (auditoria #165b — gate §631 nunca forçou decimação real); 7 com lod1=lod0; 34/34 estavam sem `qualidadeVisual` na 1405 → **onda 1406: carimbados com schema v2 (`qualidadeVisual: production`, `qaVisual.status: pending`, `visibility: production`)** via `migrar-manifest-v2.mjs`; `soc_*` = `prototype` por prefixo em `services/QualidadeVisual.ts`.
 
 ## 3. Resumo da dívida visual por área (alimenta `VISUAL-QA.md` §9 e o KPI de burn-down)
 

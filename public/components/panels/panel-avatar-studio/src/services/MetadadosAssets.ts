@@ -14,6 +14,8 @@ import type { ItemCatalogo } from '../domain/types';
 import { COLECOES } from './AvatarCatalog';
 import { categoriaFuncional, ROTULO_FUNCIONAL } from './EfeitosFuncionais';
 import { familiaDoPoder, ROTULO_FAMILIA } from './PoderesFamilia';
+import { flag } from '../nucleo/flags';
+import { fichaQualidadeDe, type NivelQualidadeVisual, type StatusQaVisual } from './QualidadeVisual';
 
 export interface MetadadosAsset {
   /** §151: quem criou (biblioteca 'dshow' = estúdio interno) */
@@ -26,6 +28,12 @@ export interface MetadadosAsset {
   versao: string;
   /** §227: tags normalizadas (minúsculas, sem acento) p/ busca e filtro */
   tags: string[];
+  /** onda 1406 (MEGA_BRIEFING_01 §68–§69, decisão #157): escada Q0–Q4 */
+  qualidadeVisual: NivelQualidadeVisual;
+  /** estado do Visual QA (VISUAL-QA.md §5) */
+  statusQaVisual: StatusQaVisual;
+  /** versão da representação visual (≠ identidade lógica §70–§71) */
+  versaoVisual: string;
 }
 
 /** Curadoria: versões de assets que já evoluíram depois do lançamento
@@ -74,10 +82,17 @@ export function metadadosDe(item: ItemCatalogo): MetadadosAsset {
   const colecao = COLECOES.find((c) => c.itens.includes(item.id));
   if (colecao) tags.add(normalizar(colecao.nome));
   for (const extra of TAGS_EXTRA[item.id] ?? []) tags.add(normalizar(extra));
+  // onda 1406 (#157): a qualidade visual vira tag pesquisável também
+  // (`tag:premium`, `tag:prototype`) — derivada, nunca persistida; a TAG
+  // (visível no drawer) só com a flag da frente AAA; os CAMPOS da ficha
+  // são dados e existem sempre
+  const ficha = fichaQualidadeDe(item.id);
+  if (flag('as6.avatar_visual_v2')) tags.add(ficha.qualidadeVisual);
   return {
     ...proveniencia(item.biblioteca),
     versao: VERSOES[item.id] ?? '1.0',
     tags: [...tags].sort(),
+    ...ficha,
   };
 }
 

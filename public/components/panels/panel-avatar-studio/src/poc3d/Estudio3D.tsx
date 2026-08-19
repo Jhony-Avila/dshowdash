@@ -16,6 +16,8 @@ import {
   PersonStanding, RotateCcw, Save, ShieldAlert, Sparkles, Zap,
 } from 'lucide-react';
 import { telemetria } from '../services/Telemetria';
+import { flag } from '../nucleo/flags';
+import { qualidadeVisualDe } from '../services/QualidadeVisual'; // onda 1406 (#157)
 import { salvar3D } from '../services/AvatarService';
 import {
   CONFIG3D_PADRAO, CORES_3D, ITENS_SOCKET, ROTULOS_SOCKET, ROTULOS_VARIANTE,
@@ -323,7 +325,13 @@ export default function Estudio3D({ corDestaque, versaoBase = 0, config3dInicial
         <section>
           <h3><Gem size={13} aria-hidden /> Acessórios · sockets</h3>
           {SOCKETS_LEVA1.map((socket) => {
-            const itens = ITENS_SOCKET.filter((i) => i.socket === socket);
+            // onda 1406 (MEGA_BRIEFING_01 §1419–§1421, #157): placeholders
+            // procedurais (qualidadeVisual=prototype) só aparecem em modo
+            // Dev (as5.hud3d) quando a frente AAA está ligada; um item já
+            // equipado em config salvo segue válido (validarConfig3d aceita)
+            const esconderPrototipos = flag('as6.avatar_visual_v2') && !flag('as5.hud3d');
+            const itens = ITENS_SOCKET.filter((i) => i.socket === socket
+              && (!esconderPrototipos || qualidadeVisualDe(i.id) !== 'prototype' || config.sockets?.[socket] === i.id));
             return (
               <div key={socket} className="avst-3d-socket">
                 <span className="avst-3d-socket-nome">{ROTULOS_SOCKET[socket] ?? socket}</span>

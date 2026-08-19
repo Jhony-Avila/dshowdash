@@ -22,6 +22,16 @@ export interface ManifestPersonagem3d {
   mascara?: string[];
   /** lote 651-660 (§423): família de complexidade (economico|padrao|premium) */
   familia?: string;
+  /** onda 1406 (MEGA_BRIEFING_01 §2576–§2590, #157): manifest v2 — tudo
+   *  OPCIONAL (v1 continua válido); a qualidade visual é dado de catálogo */
+  schemaVersion?: number;
+  qualidadeVisual?: 'prototype' | 'legacy' | 'production' | 'premium' | 'hero';
+  qaVisual?: { status: string; reviewer?: string; data?: string; versao?: string; notas?: string; evidencias?: string[] };
+  visibility?: 'internal' | 'dev' | 'production' | 'hero';
+  deprecated?: boolean;
+  successorId?: string | null;
+  /** família de material por nome de material do GLB (Parte 7, onda 1408) */
+  materiais?: Record<string, { familia: string; overrides?: Record<string, number>; naoTingir?: boolean }>;
 }
 
 /** §423: tier → LOD (auto = medio, DETERMINÍSTICO — nada de sniffing aqui;
@@ -70,6 +80,11 @@ export interface EntradaIndice3d {
   /** lote 621-630 (§406): rig declarado no manifest — o seletor de partes
    *  só aparece em bases ubc-v1 (ausente nos curados embutidos = legado) */
   rig?: string;
+  /** onda 1406 (#157): propagados do manifest v2 pelo gerar-indice-3d */
+  qualidadeVisual?: 'prototype' | 'legacy' | 'production' | 'premium' | 'hero';
+  visibility?: 'internal' | 'dev' | 'production' | 'hero';
+  deprecated?: boolean;
+  successorId?: string;
 }
 
 /** mega 11: CADEIA fail-safe de catálogo — REGISTRY §614 (API) →

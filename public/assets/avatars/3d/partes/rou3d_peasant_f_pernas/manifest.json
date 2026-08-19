@@ -26,5 +26,15 @@
   },
   "origem": "outfits-fantasy-v1",
   "fonte_original": "Female_Peasant_Legs.gltf",
-  "criado_em": "2026-08-07"
+  "criado_em": "2026-08-07",
+  "schemaVersion": 2,
+  "qualidadeVisual": "production",
+  "qaVisual": {
+    "status": "pending"
+  },
+  "visibility": "production",
+  "renderers": [
+    "3d"
+  ],
+  "deprecated": false
 }

@@ -130,6 +130,8 @@ const PADROES: Record<string, boolean> = {
   // ── mega programa 1401+ (POPULAÇÃO + ELEVAÇÃO; decisões #150+; padrão ON conforme #50) ──
   'as6.thumb_item': true,       // onda 1401 — thumbnails MODO ITEM (elevação §12): card de acessório mostra o ASSET isolado (viewBox por bounds MEDIDOS baked em modoItem.ts, fundo neutro, ocupação ~78%); hover/toggle = Modo Aplicado; off = avatar com foco §39.19 byte a byte
   'as6.variantes': true,
+  // ── frente AAA — MEGA_BRIEFING_01 (decisão #156: pai da árvore; cada filha nasce na onda que a consome) ──
+  'as6.avatar_visual_v2': false, // onda 1406 — QUALIDADE VISUAL como dado (§68–§69, #157): tag/ficha de qualidade no drawer, filtro "nunca prototype" no Estúdio 3D (PoC) e destaque; OFF até validação visual do Jhony (§2920); off = UI byte a byte (a derivação em dados existe sempre)
   'as6.slots_corpo': true,      // onda 1404 — SLOTS CORPORAIS (elevação §15/§16, decisão #154): pulso_e/d, mao_e/d, cintura, pernas, pes como extensão do #140; arte via renderCorpo (só no corpo inteiro; busto intocado); off = 8 slots do #140 byte a byte (aceitação de leitura segue incondicional p/ forward-compat)        // onda 1401 — VARIANTES DE COR por asset (registry em DADOS; aplicar = coresCamada §73 via comPaleta §74 — NADA novo persiste, §619/PHP intocados): seletor no detalhe + contagem no card; off = sem UI byte a byte
 };
 

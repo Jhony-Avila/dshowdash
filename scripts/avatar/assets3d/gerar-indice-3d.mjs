@@ -46,12 +46,25 @@ export function gerarIndice3d(pastaPersonagens) {
       rig: m.rig,
       // §423 (lote 651-660): família de complexidade declarada no manifest
       ...(m.familia ? { familia: m.familia } : {}),
+      // onda 1406 (MEGA_BRIEFING_01 §68–§69/§2759–§2764, #157): qualidade
+      // visual, visibilidade e sucessor PROPAGADOS do manifest v2 — o front
+      // filtra destaque/canary sem abrir cada manifest
+      ...(m.qualidadeVisual ? { qualidadeVisual: m.qualidadeVisual } : {}),
+      ...(m.visibility ? { visibility: m.visibility } : {}),
+      ...(m.deprecated ? { deprecated: true } : {}),
+      ...(m.successorId ? { successorId: m.successorId } : {}),
       thumb: `${m.id}/thumb.webp`,
       preview: `${m.id}/preview.webp`,
       animacoes: m.animacoes ?? [],
       triangulos: m.triangulos ?? {},
       ...(m.excecoes ? { excecoes: m.excecoes } : {}),
     });
+  }
+  // onda 1406 (§2585): ID duplicado entre pastas = FAIL (nunca índice ambíguo)
+  const vistos = new Set();
+  for (const p of personagens) {
+    if (vistos.has(p.slug)) throw new Error(`ID duplicado no índice: ${p.slug} (§2585 — dois manifests com o mesmo id)`);
+    vistos.add(p.slug);
   }
   const indice = { versao: 1, gerado_por: 'gerar-indice-3d.mjs', personagens };
   writeFileSync(join(dir, 'index.json'), `${JSON.stringify(indice, null, 2)}\n`);

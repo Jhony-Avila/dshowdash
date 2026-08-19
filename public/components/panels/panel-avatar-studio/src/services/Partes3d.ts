@@ -42,6 +42,11 @@ export interface EntradaIndiceParte {
   /** lote 651-660 (§423): família de complexidade declarada no manifest
    *  (economico | padrao | premium) — hoje todo o farm CC0 é econômico */
   familia?: string;
+  /** onda 1406 (#157): propagados do manifest v2 pelo gerar-indice-3d */
+  qualidadeVisual?: 'prototype' | 'legacy' | 'production' | 'premium' | 'hero';
+  visibility?: 'internal' | 'dev' | 'production' | 'hero';
+  deprecated?: boolean;
+  successorId?: string;
   thumb: string;
 }
 

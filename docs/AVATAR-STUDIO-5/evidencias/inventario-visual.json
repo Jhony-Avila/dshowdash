@@ -453,8 +453,8 @@
           "licenca": "CC0",
           "origem": "as4-curados",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "animal_pug",
@@ -472,8 +472,8 @@
           "licenca": "CC0",
           "origem": "as4-curados",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "base_superhero_f",
@@ -491,8 +491,8 @@
           "licenca": "CC0",
           "origem": "ubc-standard-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "base_superhero_m",
@@ -510,8 +510,8 @@
           "licenca": "CC0",
           "origem": "ubc-standard-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "humano_aventureiro",
@@ -529,8 +529,8 @@
           "licenca": "CC0",
           "origem": "as4-curados",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "humano_casual",
@@ -548,8 +548,8 @@
           "licenca": "CC0",
           "origem": "as4-curados",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "humano_punk",
@@ -567,8 +567,8 @@
           "licenca": "CC0",
           "origem": "as4-curados",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "humano_terno",
@@ -586,8 +586,8 @@
           "licenca": "CC0",
           "origem": "as4-curados",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         }
       ]
     },
@@ -610,8 +610,8 @@
           "licenca": "CC0",
           "origem": "ubc-standard-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "cab_coque",
@@ -629,8 +629,8 @@
           "licenca": "CC0",
           "origem": "ubc-standard-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "cab_longo",
@@ -648,8 +648,8 @@
           "licenca": "CC0",
           "origem": "ubc-standard-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "cab_raspado",
@@ -667,8 +667,8 @@
           "licenca": "CC0",
           "origem": "ubc-standard-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "cab_raspado_f",
@@ -686,8 +686,8 @@
           "licenca": "CC0",
           "origem": "ubc-standard-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "cab_repartido",
@@ -705,8 +705,8 @@
           "licenca": "CC0",
           "origem": "ubc-standard-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_peasant_f_botas",
@@ -724,8 +724,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_peasant_f_bracos",
@@ -743,8 +743,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_peasant_f_corpo",
@@ -762,8 +762,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_peasant_f_pernas",
@@ -781,8 +781,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_peasant_m_botas",
@@ -800,8 +800,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_peasant_m_bracos",
@@ -819,8 +819,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_peasant_m_corpo",
@@ -838,8 +838,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_peasant_m_pernas",
@@ -857,8 +857,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_f_botas",
@@ -876,8 +876,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_f_bracos",
@@ -895,8 +895,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_f_capuz",
@@ -914,8 +914,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_f_corpo",
@@ -933,8 +933,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_f_ombreira",
@@ -952,8 +952,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_f_pernas",
@@ -971,8 +971,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_m_botas",
@@ -990,8 +990,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_m_bracos",
@@ -1009,8 +1009,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_m_capuz",
@@ -1028,8 +1028,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_m_corpo",
@@ -1047,8 +1047,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_m_ombreira",
@@ -1066,8 +1066,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         },
         {
           "id": "rou3d_ranger_m_pernas",
@@ -1085,8 +1085,8 @@
           "licenca": "CC0",
           "origem": "outfits-fantasy-v1",
           "mascara": null,
-          "qualidadeVisual": null,
-          "schemaVersion": 1
+          "qualidadeVisual": "production",
+          "schemaVersion": 2
         }
       ]
     },
@@ -1128,6 +1128,6 @@
       "rou3d_ranger_f_bracos",
       "rou3d_ranger_m_botas"
     ],
-    "semQualidadeVisual": 34
+    "semQualidadeVisual": 0
   }
 }

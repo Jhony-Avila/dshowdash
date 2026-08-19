@@ -7,6 +7,8 @@
       "nome": "Androide",
       "tipo": "personagem_base",
       "rig": "robot-expressive",
+      "qualidadeVisual": "production",
+      "visibility": "production",
       "thumb": "androide/thumb.webp",
       "preview": "androide/preview.webp",
       "animacoes": [
@@ -36,6 +38,8 @@
       "nome": "Pug",
       "tipo": "personagem_base",
       "rig": "quad-pet",
+      "qualidadeVisual": "production",
+      "visibility": "production",
       "thumb": "animal_pug/thumb.webp",
       "preview": "animal_pug/preview.webp",
       "animacoes": [
@@ -57,6 +61,8 @@
       "nome": "Heroína (UBC)",
       "tipo": "personagem_base",
       "rig": "ubc-v1",
+      "qualidadeVisual": "production",
+      "visibility": "production",
       "thumb": "base_superhero_f/thumb.webp",
       "preview": "base_superhero_f/preview.webp",
       "animacoes": [],
@@ -71,6 +77,8 @@
       "nome": "Herói (UBC)",
       "tipo": "personagem_base",
       "rig": "ubc-v1",
+      "qualidadeVisual": "production",
+      "visibility": "production",
       "thumb": "base_superhero_m/thumb.webp",
       "preview": "base_superhero_m/preview.webp",
       "animacoes": [],
@@ -85,6 +93,8 @@
       "nome": "Aventureiro",
       "tipo": "personagem_base",
       "rig": "quaternius-legado",
+      "qualidadeVisual": "production",
+      "visibility": "production",
       "thumb": "humano_aventureiro/thumb.webp",
       "preview": "humano_aventureiro/preview.webp",
       "animacoes": [
@@ -109,6 +119,8 @@
       "nome": "Casual",
       "tipo": "personagem_base",
       "rig": "quaternius-legado",
+      "qualidadeVisual": "production",
+      "visibility": "production",
       "thumb": "humano_casual/thumb.webp",
       "preview": "humano_casual/preview.webp",
       "animacoes": [
@@ -130,6 +142,8 @@
       "nome": "Punk",
       "tipo": "personagem_base",
       "rig": "quaternius-legado",
+      "qualidadeVisual": "production",
+      "visibility": "production",
       "thumb": "humano_punk/thumb.webp",
       "preview": "humano_punk/preview.webp",
       "animacoes": [
@@ -151,6 +165,8 @@
       "nome": "Executivo",
       "tipo": "personagem_base",
       "rig": "quaternius-legado",
+      "qualidadeVisual": "production",
+      "visibility": "production",
       "thumb": "humano_terno/thumb.webp",
       "preview": "humano_terno/preview.webp",
       "animacoes": [

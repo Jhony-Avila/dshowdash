@@ -162,6 +162,27 @@ export function slotCorporal(s: SlotAcessorio): boolean {
   return (SLOTS_CORPORAIS as readonly string[]).includes(s);
 }
 
+/** onda 1406 (MEGA_BRIEFING_01 §1227–§1228, decisão #157/Parte 6): ponte
+ *  SEMÂNTICA entre os 15 slots finos 2D e os 14 sockets 3D (vocabulário
+ *  fechado de nucleo/contratos.ts). Só DADOS — nada persiste; quem consome
+ *  (paridade 2D↔3D, câmera por categoria, registry de acessórios) lê
+ *  daqui em vez de inventar um terceiro mapa. `flutuante` não tem socket
+ *  (orbita o personagem → companion é o mais próximo). Pares L/R: _e =
+ *  esquerdo DELE = *_l. */
+export const SOCKET_3D_POR_SLOT: Record<SlotAcessorio, string> = {
+  cabeca: 'head', rosto: 'face', olhos: 'eyes', orelha: 'ears', pescoco: 'neck',
+  costas: 'back', flutuante: 'companion', companheiro: 'pet',
+  pulso_e: 'wrist_l', pulso_d: 'wrist_r', mao_e: 'hand_l', mao_d: 'hand_r',
+  cintura: 'waist', pernas: 'waist', pes: 'waist',
+};
+/** Sockets 3D SEM slot 2D dedicado hoje (shoulders) — candidatos a slot
+ *  fino futuro; pernas/pes compartilham `waist` até haver socket próprio. */
+export const SOCKETS_SEM_SLOT_2D: readonly string[] = ['shoulders'];
+export function slotPorSocket3d(socket: string): SlotAcessorio | null {
+  const par = (Object.entries(SOCKET_3D_POR_SLOT) as Array<[SlotAcessorio, string]>).find(([, s]) => s === socket);
+  return par ? par[0] : null;
+}
+
 /** Slot fino de um asset (fallback: slot legado declarado pela arte).
  *  onda 1404: a arte corporal declara o slot exato (pulso_d, mao_e…) —
  *  o registry só define o padrão da subcategoria. */

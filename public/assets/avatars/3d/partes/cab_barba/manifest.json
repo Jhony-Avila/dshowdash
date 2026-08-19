@@ -27,5 +27,15 @@
   },
   "origem": "ubc-standard-v1",
   "fonte_original": "Hair_Beard.gltf",
-  "criado_em": "2026-08-07"
+  "criado_em": "2026-08-07",
+  "schemaVersion": 2,
+  "qualidadeVisual": "production",
+  "qaVisual": {
+    "status": "pending"
+  },
+  "visibility": "production",
+  "renderers": [
+    "3d"
+  ],
+  "deprecated": false
 }

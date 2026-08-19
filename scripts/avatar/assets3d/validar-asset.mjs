@@ -34,6 +34,64 @@ const ARQUIVOS_OBRIGATORIOS = [
 ];
 const CAMPOS_MANIFEST = ['id', 'tipo', 'versao', 'rig', 'lods', 'hashes', 'licenca', 'origem'];
 
+// onda 1406 (MEGA_BRIEFING_01 §2576–§2590, decisão #157): SCHEMA v2 do
+// manifest — formato próprio e mínimo em schema-manifest-v2.json (sem lib).
+// v1 (sem schemaVersion) continua válido; desconhecido = AVISO (§2583);
+// tipo/enum errado = ERRO; campos `premium` obrigatórios só a partir de
+// qualidadeVisual ≥ premium (§2589); naming #166 só para assets v2.
+let _schemaV2 = null;
+export function schemaManifestV2() {
+  if (!_schemaV2) _schemaV2 = JSON.parse(readFileSync(join(import.meta.dirname, 'schema-manifest-v2.json'), 'utf8'));
+  return _schemaV2;
+}
+const ESCADA_QV = { prototype: 0, legacy: 1, production: 2, premium: 3, hero: 4 };
+function tipoDe(v) {
+  if (v === null) return 'null';
+  if (Array.isArray(v)) return 'array';
+  return typeof v;
+}
+/** Valida o manifest contra o schema v2 → { erros, avisos } (puro). */
+export function validarSchemaV2(manifest) {
+  const schema = schemaManifestV2();
+  const erros = [];
+  const avisos = [];
+  const v2 = Number(manifest.schemaVersion ?? 1) >= 2;
+  const nivel = manifest.qualidadeVisual;
+  const premiumOuMais = nivel && (ESCADA_QV[nivel] ?? 0) >= ESCADA_QV.premium;
+  for (const [campo, def] of Object.entries(schema.campos)) {
+    const v = manifest[campo];
+    if (v === undefined) {
+      if (def.obrigatorio) erros.push(`manifest sem o campo obrigatório "${campo}" (§517)`);
+      else if (def.premium && premiumOuMais) erros.push(`qualidadeVisual=${nivel} exige o campo "${campo}" (§2589 — schema v2)`);
+      continue;
+    }
+    if (v === null && def.nulo) continue;
+    const t = tipoDe(v);
+    if (t !== def.tipo) { erros.push(`campo "${campo}" com tipo ${t} (esperado ${def.tipo}) — schema v2`); continue; }
+    if (def.enum && !def.enum.includes(v)) erros.push(`campo "${campo}" = "${v}" fora do enum [${def.enum.join('|')}] — schema v2`);
+  }
+  for (const campo of Object.keys(manifest)) {
+    if (!(campo in schema.campos)) avisos.push(`campo desconhecido "${campo}" no manifest (schema v2 §2583 — ignorado pelo runtime)`);
+  }
+  if (manifest.qaVisual && typeof manifest.qaVisual === 'object') {
+    for (const [campo, def] of Object.entries(schema.qaVisual)) {
+      const v = manifest.qaVisual[campo];
+      if (v === undefined) { if (def.obrigatorio) erros.push(`qaVisual sem "${campo}" (VISUAL-QA.md §5)`); continue; }
+      if (tipoDe(v) !== def.tipo) erros.push(`qaVisual.${campo} com tipo ${tipoDe(v)} (esperado ${def.tipo})`);
+      else if (def.enum && !def.enum.includes(v)) erros.push(`qaVisual.${campo} = "${v}" fora do enum`);
+    }
+  }
+  if (premiumOuMais && manifest.qaVisual?.status && manifest.qaVisual.status !== 'approved' && manifest.qaVisual.status !== 'approved_with_notes') {
+    avisos.push(`qualidadeVisual=${nivel} com qaVisual.status=${manifest.qaVisual.status} — não pode ser PUBLICADO como premium sem aprovação (gate §2677; onda 1410 transforma em erro no publicador)`);
+  }
+  if (v2 && manifest.tipo && schema.naming[manifest.tipo] && manifest.id) {
+    const re = new RegExp(schema.naming[manifest.tipo]);
+    if (!re.test(manifest.id)) avisos.push(`id "${manifest.id}" fora da convenção de naming #166 para ${manifest.tipo} (${schema.naming[manifest.tipo]}) — obrigatório para assets novos`);
+  }
+  if (manifest.deprecated === true && !manifest.successorId) avisos.push('deprecated=true sem successorId (§2762) — informe o sucessor ou null explícito');
+  return { erros, avisos, v2 };
+}
+
 /** Lê o chunk JSON de um GLB (glTF Binary v2) sem dependências. */
 export function lerJsonDoGlb(caminho) {
   const buf = readFileSync(caminho);
@@ -173,6 +231,13 @@ export function validarAsset(pasta, opcoes = {}) {
   }
   if (manifest.id && !/^[a-z0-9_]+$/.test(manifest.id)) {
     erros.push(`id "${manifest.id}" fora do padrão snake_case ASCII (§ nomenclatura)`);
+  }
+  // onda 1406: schema v2 (tipos/enums/desconhecidos/premium/naming)
+  {
+    const sv = validarSchemaV2(manifest);
+    erros.push(...sv.erros.filter((e) => !e.includes('campo obrigatório'))); // obrigatórios v1 já cobertos acima
+    avisos.push(...sv.avisos);
+    medidas.schemaVersion = sv.v2 ? 2 : 1;
   }
 
   // 3–4. por LOD: hash confere + triângulos dentro do gate §631

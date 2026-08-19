@@ -25,6 +25,7 @@ import { alternarPermanente, favoritosPermanentes } from '../services/FavoritosC
 import { flag } from '../nucleo/flags';
 import { ROTULO_FAMILIA, familiaDoPoder } from '../services/PoderesFamilia'; // mega 288 (§153)
 import { metadadosDe } from '../services/MetadadosAssets'; // lote 891-900 (§151/§152/§227)
+import { ROTULO_QUALIDADE_VISUAL, ROTULO_STATUS_QA } from '../services/QualidadeVisual'; // onda 1406 (#157)
 import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // mega 353 (§157)
 // mega 248 (§228): estado ARQUIVADO (local-first, reversível)
 import { alternarArquivado, arquivados } from '../services/ArquivoItens';
@@ -221,6 +222,16 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
               <p className="avst5-det-meta" data-teste="det-metadados">
                 Autor: {md.autor} · Origem: {md.origem} · v{md.versao}
                 <br />Licença: {md.licenca}
+                {/* onda 1406 (MEGA_BRIEFING_01 §69/§102, #157): nível da
+                    escada Q0–Q4 + estado do Visual QA — só com a flag AAA */}
+                {flag('as6.avatar_visual_v2') && (
+                  <>
+                    <br />
+                    <span data-teste="det-qualidade" data-nivel={md.qualidadeVisual}>
+                      Qualidade: {ROTULO_QUALIDADE_VISUAL[md.qualidadeVisual]} · {ROTULO_STATUS_QA[md.statusQaVisual]} · visual v{md.versaoVisual}
+                    </span>
+                  </>
+                )}
               </p>
               <p className="avst-ft-chips avst5-det-tags" data-teste="det-tags" aria-label="Tags do asset (§227)">
                 {md.tags.map((tg) => (

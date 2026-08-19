@@ -1,0 +1,321 @@
+{
+  "gerado_por": "scripts/avatar/qa-visual/relatorio.mjs",
+  "artBibleVersion": "1.0",
+  "kpiPrincipal": {
+    "nome": "Premium Coverage %",
+    "catalogo2d": 0,
+    "assets3d": 0
+  },
+  "catalogo2d": {
+    "geral": {
+      "total": 393,
+      "prototype": 0,
+      "legacy": 0,
+      "production": 393,
+      "premium": 0,
+      "hero": 0,
+      "premiumCoveragePct": 0,
+      "productionReadyPct": 100,
+      "qaAprovadoPct": 0,
+      "qa": {
+        "pending": 393
+      }
+    },
+    "porCategoria": {
+      "acessorio": {
+        "total": 75,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 75,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 75
+        }
+      },
+      "aura": {
+        "total": 15,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 15,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 15
+        }
+      },
+      "banner": {
+        "total": 15,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 15,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 15
+        }
+      },
+      "base": {
+        "total": 36,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 36,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 36
+        }
+      },
+      "boca": {
+        "total": 40,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 40,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 40
+        }
+      },
+      "cabelo": {
+        "total": 50,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 50,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 50
+        }
+      },
+      "efeito": {
+        "total": 24,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 24,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 24
+        }
+      },
+      "emblema": {
+        "total": 20,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 20,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 20
+        }
+      },
+      "fundo": {
+        "total": 20,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 20,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 20
+        }
+      },
+      "moldura": {
+        "total": 24,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 24,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 24
+        }
+      },
+      "olhos": {
+        "total": 40,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 40,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 40
+        }
+      },
+      "roupa": {
+        "total": 30,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 30,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 30
+        }
+      },
+      "roupa_sobre": {
+        "total": 4,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 4,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 4
+        }
+      }
+    },
+    "naoDestacaveis": []
+  },
+  "assets3d": {
+    "geral": {
+      "total": 34,
+      "prototype": 0,
+      "legacy": 0,
+      "production": 34,
+      "premium": 0,
+      "hero": 0,
+      "premiumCoveragePct": 0,
+      "productionReadyPct": 100,
+      "qaAprovadoPct": 0,
+      "qa": {
+        "pending": 34
+      }
+    },
+    "porTipo": {
+      "parte_barba": {
+        "total": 1,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 1,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 1
+        }
+      },
+      "parte_cabelo": {
+        "total": 5,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 5,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 5
+        }
+      },
+      "parte_roupa": {
+        "total": 20,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 20,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 20
+        }
+      },
+      "personagem_base": {
+        "total": 8,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 8,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 8
+        }
+      }
+    },
+    "placeholdersPoc": {
+      "total": 9,
+      "prototype": 9,
+      "legacy": 0,
+      "production": 0,
+      "premium": 0,
+      "hero": 0,
+      "premiumCoveragePct": 0,
+      "productionReadyPct": 0,
+      "qaAprovadoPct": 0,
+      "qa": {
+        "pending": 9
+      }
+    }
+  },
+  "visualDebt": {
+    "catalogo2d": {
+      "acessorio": 75,
+      "aura": 15,
+      "banner": 15,
+      "base": 36,
+      "boca": 40,
+      "cabelo": 50,
+      "efeito": 24,
+      "emblema": 20,
+      "fundo": 20,
+      "moldura": 24,
+      "olhos": 40,
+      "roupa": 30,
+      "roupa_sobre": 4
+    },
+    "assets3d": {
+      "parte_barba": 1,
+      "parte_cabelo": 5,
+      "parte_roupa": 20,
+      "personagem_base": 8
+    }
+  }
+}
