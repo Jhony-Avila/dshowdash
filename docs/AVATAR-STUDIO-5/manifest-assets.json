@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 395,
+    "itens2d": 419,
     "categorias": 13,
     "titulos": 30,
     "colecoes": 12,
@@ -684,6 +684,46 @@
       "raridade": "raro"
     },
     {
+      "id": "bas_px_alongada",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_px_angular",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_px_coracao",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_px_diamante",
+      "categoria": "base",
+      "raridade": "epico"
+    },
+    {
+      "id": "bas_px_oval",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_px_quadrada",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_px_redonda",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
+      "id": "bas_px_suave",
+      "categoria": "base",
+      "raridade": "raro"
+    },
+    {
       "id": "bas_quadrada",
       "categoria": "base",
       "raridade": "incomum"
@@ -897,6 +937,46 @@
       "id": "boc_presas",
       "categoria": "boca",
       "raridade": "epico"
+    },
+    {
+      "id": "boc_px_determinada",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_px_meio",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_px_neutra",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_px_pensativa",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_px_riso",
+      "categoria": "boca",
+      "raridade": "epico"
+    },
+    {
+      "id": "boc_px_seria",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_px_sorriso",
+      "categoria": "boca",
+      "raridade": "raro"
+    },
+    {
+      "id": "boc_px_suave",
+      "categoria": "boca",
+      "raridade": "raro"
     },
     {
       "id": "boc_riso_nervoso",
@@ -1782,6 +1862,46 @@
       "id": "olh_prisma",
       "categoria": "olhos",
       "raridade": "lendario"
+    },
+    {
+      "id": "olh_px_amendoado",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_px_confiante",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_px_determinado",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_px_felino",
+      "categoria": "olhos",
+      "raridade": "epico"
+    },
+    {
+      "id": "olh_px_focado",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_px_gentil",
+      "categoria": "olhos",
+      "raridade": "raro"
+    },
+    {
+      "id": "olh_px_intenso",
+      "categoria": "olhos",
+      "raridade": "epico"
+    },
+    {
+      "id": "olh_px_sereno",
+      "categoria": "olhos",
+      "raridade": "raro"
     },
     {
       "id": "olh_relogio",

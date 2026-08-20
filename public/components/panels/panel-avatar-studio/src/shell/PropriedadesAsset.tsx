@@ -60,7 +60,7 @@ export function comPaleta(
 /** Camadas equipadas COM propriedades (§71) — na ordem do config. */
 function camadasComProps(config: AvatarConfig): CamadaId[] {
   return (Object.keys(config.camadas) as CamadaId[])
-    .filter((c) => config.camadas[c] && config.camadas[c] !== 'nenhum' && paramsDaCamada(c))
+    .filter((c) => config.camadas[c] && config.camadas[c] !== 'nenhum' && paramsDaCamada(c, config.camadas[c]))
     // mega 444 (§158, §651): editor do EFEITO só com a flag do lote
     .filter((c) => c !== 'efeito' || flag('as5.editor_efeitos'));
 }
@@ -100,7 +100,7 @@ export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
           {comProps.map((chave) => {
             const id = config.camadas[chave]!;
             const item = itemPorId(id);
-            const defs = paramsDaCamada(chave)!;
+            const defs = paramsDaCamada(chave, config.camadas[chave])!;
             const regulada = !!config.params?.[chave];
             return (
               <div key={chave} className="avst5-props-item">

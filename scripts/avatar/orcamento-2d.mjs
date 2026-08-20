@@ -44,6 +44,9 @@ for (const id of todas) {
   casos['roupa-' + id] = { premium: ehPremium, corpo: false, m: medir(svgDe(c, { uid: 'orc', ...(ehPremium ? { premium: true } : {}) })) };
 }
 casos['premium-p01-corpo'] = { premium: true, corpo: true, m: medir(svgDe(cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_terno' }, acabamento: 'premium' }), { uid: 'orc', premium: true, palco: true, enquadramento: 'corpo' })) };
+// onda 1412: goldens de ROSTO premium (base+olhos+boca _px_ + coresFace)
+casos['premium-golden-m-busto'] = { premium: true, corpo: false, m: medir(svgDe(cfg({ base: 'bas_px_angular', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_confiante', boca: 'boc_px_sorriso', roupa: 'rou_px_terno' }, coresFace: { iris: '#4a3626' }, acabamento: 'premium' }), { uid: 'orc', premium: true })) };
+casos['premium-golden-f-busto'] = { premium: true, corpo: false, m: medir(svgDe(cfg({ base: 'bas_px_coracao', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_amendoado', boca: 'boc_px_suave', roupa: 'rou_px_jaqueta' }, coresFace: { iris: '#2f5d43' }, acabamento: 'premium' }), { uid: 'orc', premium: true })) };
 console.log(JSON.stringify(casos));
 `);
 

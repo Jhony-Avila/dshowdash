@@ -1,7 +1,7 @@
 {
   "gerado_por": "scripts/avatar/inventario-visual.mjs",
   "catalogo2d": {
-    "total": 395,
+    "total": 419,
     "categorias": [
       "base",
       "cabelo",
@@ -17,33 +17,33 @@
       "banner",
       "emblema"
     ],
-    "presets": 24,
+    "presets": 26,
     "colecoes": 12,
     "porCategoria": {
       "base": {
-        "total": 36,
+        "total": 44,
         "temas": {
           "animais": 9,
           "aventura": 1,
-          "casual": 5,
+          "casual": 7,
           "clima": 1,
-          "clássico": 5,
+          "clássico": 10,
           "cyberpunk": 1,
           "dshow": 1,
           "esportivo": 2,
-          "executivo": 2,
+          "executivo": 3,
           "fantasia": 6,
           "sci-fi": 1,
           "tecnologia": 2
         },
         "raridades": {
           "comum": 5,
-          "epico": 7,
+          "epico": 8,
           "exclusivo": 1,
           "incomum": 7,
           "lendario": 4,
           "mitico": 1,
-          "raro": 11
+          "raro": 18
         },
         "slots": {},
         "subcategorias": {},
@@ -79,26 +79,27 @@
         "semFoco": []
       },
       "olhos": {
-        "total": 40,
+        "total": 48,
         "temas": {
-          "casual": 11,
+          "casual": 12,
           "clima": 1,
-          "clássico": 2,
+          "clássico": 6,
           "cyberpunk": 1,
           "espaço": 1,
-          "executivo": 6,
+          "executivo": 7,
           "fantasia": 10,
-          "gamer": 4,
+          "gamer": 5,
+          "místico": 1,
           "sci-fi": 1,
           "tecnologia": 3
         },
         "raridades": {
           "comum": 9,
-          "epico": 7,
+          "epico": 9,
           "incomum": 9,
           "lendario": 2,
           "mitico": 2,
-          "raro": 11
+          "raro": 17
         },
         "slots": {},
         "subcategorias": {},
@@ -107,25 +108,25 @@
         "semFoco": []
       },
       "boca": {
-        "total": 40,
+        "total": 48,
         "temas": {
           "aventura": 2,
-          "casual": 15,
-          "clássico": 6,
+          "casual": 18,
+          "clássico": 8,
           "cyberpunk": 1,
           "esportivo": 2,
-          "executivo": 3,
+          "executivo": 5,
           "fantasia": 3,
-          "gamer": 2,
+          "gamer": 3,
           "tecnologia": 3,
           "urbano": 3
         },
         "raridades": {
           "comum": 10,
-          "epico": 5,
+          "epico": 6,
           "incomum": 14,
           "lendario": 1,
-          "raro": 10
+          "raro": 17
         },
         "slots": {},
         "subcategorias": {},

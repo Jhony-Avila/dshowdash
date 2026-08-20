@@ -7,7 +7,7 @@
     "corpoBytes": 81920
   },
   "resumo": {
-    "casos": 35,
+    "casos": 37,
     "erros": [],
     "avisos": []
   },
@@ -221,6 +221,18 @@
       "nos": 151,
       "filtros": 0,
       "gradientes": 9
+    },
+    "premium-golden-m-busto": {
+      "bytes": 8835,
+      "nos": 129,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "premium-golden-f-busto": {
+      "bytes": 8399,
+      "nos": 121,
+      "filtros": 0,
+      "gradientes": 5
     }
   }
 }

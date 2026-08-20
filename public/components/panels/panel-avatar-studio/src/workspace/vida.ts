@@ -9,7 +9,7 @@
 // como função pura de DOM: ligar → devolve o desligador. §297: quem
 // chama decide (o shell não liga com movimento reduzido). Nada disso
 // toca o SVG salvo — grupos data-anim só existem com palco:true.
-export function ligarVida(host: Element, corpo = false): () => void {
+export function ligarVida(host: Element, corpo = false, premium = false): () => void {
   const buscar = (nome: string): SVGGElement | null =>
     host.querySelector(`[data-anim="${nome}"]`);
   const anims: Animation[] = [];
@@ -38,19 +38,25 @@ export function ligarVida(host: Element, corpo = false): () => void {
     ));
   }
 
-  // piscada natural (2,8s–7s) — pálpebras sintéticas do motor
+  // piscada natural (2,8s–7s) — pálpebras sintéticas do motor.
+  // onda 1412 (§707, as6.classico_premium): piscada PREMIUM — intervalo
+  // mais variável (2,2–7,6s) e DOUBLE-BLINK ocasional (~28%), como gente
+  // de verdade; premium=false = curva anterior byte a byte
   const palpebras = buscar('palpebras');
+  const umaPiscada = () => palpebras?.animate(
+    [
+      { opacity: 0 },
+      { opacity: 1, offset: 0.4 },
+      { opacity: 1, offset: 0.62 },
+      { opacity: 0 },
+    ],
+    { duration: premium ? 150 : 170, easing: 'ease-in-out' },
+  );
   const piscar = () => {
-    palpebras?.animate(
-      [
-        { opacity: 0 },
-        { opacity: 1, offset: 0.4 },
-        { opacity: 1, offset: 0.62 },
-        { opacity: 0 },
-      ],
-      { duration: 170, easing: 'ease-in-out' },
-    );
-    cronometros.push(window.setTimeout(piscar, 2800 + Math.random() * 4200));
+    umaPiscada();
+    if (premium && Math.random() < 0.28) cronometros.push(window.setTimeout(umaPiscada, 230));
+    const proximo = premium ? 2200 + Math.random() * 5400 : 2800 + Math.random() * 4200;
+    cronometros.push(window.setTimeout(piscar, proximo));
   };
   if (palpebras) cronometros.push(window.setTimeout(piscar, 1200 + Math.random() * 2000));
 

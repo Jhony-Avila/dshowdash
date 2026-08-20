@@ -36,6 +36,42 @@
       "bytes": 8567,
       "nos": 149,
       "filtros": 0
+    },
+    "p03-busto": {
+      "sha256": "b5e32c6de2b75b4cdafab6bd7af395a7f016254a2e8a69dff012405a0f006eee",
+      "bytes": 8915,
+      "nos": 129,
+      "filtros": 0
+    },
+    "p04-busto": {
+      "sha256": "477c6a0cc0b2ce2ac7924cf56c4502e14d419436fd1022ca673f52f1217955b6",
+      "bytes": 8489,
+      "nos": 121,
+      "filtros": 0
+    },
+    "p05-busto": {
+      "sha256": "16423ca2a8deb5aa7bc49b980192ba9d86707016aba203bd76807636cba9e508",
+      "bytes": 7818,
+      "nos": 109,
+      "filtros": 0
+    },
+    "p06-busto": {
+      "sha256": "7f6b7f464b8bacdeea32edd41e945ff28d9930bbf77de81e9a8f768c6ce7797c",
+      "bytes": 7640,
+      "nos": 106,
+      "filtros": 0
+    },
+    "c01-golden-m-palco": {
+      "sha256": "68544f852d876f03d59a11f911b7153b88e651e6830c5dbf6c13906e626a1d04",
+      "bytes": 9433,
+      "nos": 149,
+      "filtros": 0
+    },
+    "c02-golden-f-palco": {
+      "sha256": "0051da34639d92bdeb47fa1f083c5922df8fe858f07656f137d248cb4e67602b",
+      "bytes": 8985,
+      "nos": 141,
+      "filtros": 0
     }
   }
 }

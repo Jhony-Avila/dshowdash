@@ -27,6 +27,7 @@ import { OLHOS } from '../engine/partes/olhos';
 import { BOCAS } from '../engine/partes/bocas';
 import { ROUPAS } from '../engine/partes/roupas';
 import { ROUPAS_PREMIUM } from '../engine/partes/premium/roupas'; // onda 1411 (#159/#166)
+import { BASES_PREMIUM, OLHOS_PREMIUM, BOCAS_PREMIUM } from '../engine/partes/premium/faces'; // onda 1412 (#162)
 import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
 import { slotCorporal, slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2) · #154
@@ -282,7 +283,8 @@ const LORES: Record<string, string> = {
 // ── Índices ─────────────────────────────────────────────────────────
 
 export const PARTES: ParteDef[] = [
-  ...BASES, ...ESPECIES, ...CABELOS, ...OLHOS, ...BOCAS, ...ROUPAS, ...ROUPAS_PREMIUM,
+  ...BASES, ...BASES_PREMIUM, ...ESPECIES, ...CABELOS, ...OLHOS, ...OLHOS_PREMIUM,
+  ...BOCAS, ...BOCAS_PREMIUM, ...ROUPAS, ...ROUPAS_PREMIUM,
   ...SOBREPECAS, // §3393 (decisão #95): wrappers — zero arte nova
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
   ...AURAS, ...BANNERS, ...EMBLEMAS,
@@ -314,6 +316,14 @@ export function itensDe(categoria: CategoriaId): ParteDef[] {
 export function categoriasAtivas(): CategoriaMeta[] {
   return CATEGORIAS.filter((c) => c.id !== 'roupa_sobre' || flag('as6.creator_v6'));
 }
+
+/** onda 1412: presets VISÍVEIS — os golden premium só com a flag (#176). */
+export function presetsAtivos(): Preset[] {
+  return PRESETS.filter((pr) => pr.config.acabamento !== 'premium' || flag('as6.classico_premium'));
+}
+
+/** onda 1412 (§744): expressões premium (pares olhos+boca) — dados p/ UI. */
+export { EXPRESSOES_PREMIUM } from '../engine/partes/premium/faces';
 
 /** Itens sorteáveis (sem trava de conquista/evento) — usado pelo aleatório. */
 function sorteaveis(categoria: CategoriaId): ParteDef[] {
@@ -435,7 +445,8 @@ export function validarConfig(bruto: unknown): AvatarConfig {
     const params: NonNullable<AvatarConfig['params']> = {};
     for (const [chave, bruto] of Object.entries(b.params)) {
       if (!camadas[chave as CamadaId]) continue;
-      const limpo = sanitizarParams(chave, bruto);
+      // onda 1412: o item equipado decide os params disponíveis (soV2)
+      const limpo = sanitizarParams(chave, bruto, camadas[chave as CamadaId]);
       if (limpo) params[chave as CamadaId] = limpo;
     }
     if (Object.keys(params).length) saida.params = params;
@@ -480,6 +491,14 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   }
   // onda 1411 (#159): acabamento — enum FECHADO de 1 valor; neutro omitido
   if (b.acabamento === 'premium') saida.acabamento = 'premium';
+  // onda 1412 (#162): canais de ROSTO — hoje só íris; hex válido persiste,
+  // resto cai; objeto vazio some (byte-estável)
+  if (b.coresFace && typeof b.coresFace === 'object') {
+    const irisBruta = (b.coresFace as { iris?: unknown }).iris;
+    if (typeof irisBruta === 'string' && /^#[0-9a-f]{6}$/i.test(irisBruta)) {
+      saida.coresFace = { iris: irisBruta.toLowerCase() };
+    }
+  }
   return saida;
 }
 
@@ -1169,6 +1188,34 @@ export function aleatorioInteligente(atual: AvatarConfig, o: OpcoesAleatorio): A
 // ── Presets curados (briefing §12) ──────────────────────────────────
 
 export const PRESETS: Preset[] = [
+  // onda 1412 (§707–§708): GOLDEN CLASSIC male/female — vitrine do trilho
+  // premium (só aparecem com as6.classico_premium: presetsAtivos filtra)
+  {
+    id: 'pre_golden_m',
+    nome: 'Golden Classic — Ele',
+    descricao: 'O padrão-ouro do estúdio: estrutura angular, olhar confiante, terno premium.',
+    raridade: 'lendario',
+    config: {
+      base: 'bas_px_angular',
+      camadas: { cabelo: 'cab_curto', olhos: 'olh_px_confiante', boca: 'boc_px_sorriso', roupa: 'rou_px_terno', fundo: 'fun_estudio' },
+      cores: { pele: '#d29e6f', cabelo: '#14100c', roupa: '#20242e', destaque: '#c9a75a' },
+      coresFace: { iris: '#4a3626' },
+      acabamento: 'premium',
+    },
+  },
+  {
+    id: 'pre_golden_f',
+    nome: 'Golden Classic — Ela',
+    descricao: 'Rosto coração, olhar amendoado e jaqueta premium com presença.',
+    raridade: 'lendario',
+    config: {
+      base: 'bas_px_coracao',
+      camadas: { cabelo: 'cab_ondulado', olhos: 'olh_px_amendoado', boca: 'boc_px_suave', roupa: 'rou_px_jaqueta', fundo: 'fun_estudio' },
+      cores: { pele: '#e8b58c', cabelo: '#6b4a2a', roupa: '#7a2d3c', destaque: '#e8b64c' },
+      coresFace: { iris: '#2f5d43' },
+      acabamento: 'premium',
+    },
+  },
   {
     id: 'pre_executivo',
     nome: 'Executivo de Elite',

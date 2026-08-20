@@ -160,6 +160,10 @@ export interface AvatarConfig {
    *  neutro (clássico) NUNCA persiste — validarConfig omite (byte-estável;
    *  flag OFF ignora o campo no render = rollback §651). */
   acabamento?: 'premium';
+  /** onda 1412 (#162): CANAIS DE ROSTO — hoje só `iris` (cor da íris dos
+   *  olhos premium `olh_px_*`; aplicada apenas no modo premium). Campo
+   *  AUSENTE quando nada foi escolhido — byte-estável. */
+  coresFace?: { iris?: string };
 }
 
 // ── lote 251–260 (§102/§118): criação avançada 2D ───────────────────

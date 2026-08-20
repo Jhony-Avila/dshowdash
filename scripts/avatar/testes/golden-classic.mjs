@@ -34,7 +34,9 @@ const tmp = mkdtempSync(join(tmpdir(), 'avst-classic-'));
 writeFileSync(join(tmp, 'prova.ts'), `
 import { createHash } from 'node:crypto';
 import { CAMADAS_Z, ORDEM_CAMADAS } from '@painel/engine/camadas';
-import { CONFIG_PADRAO, itensDe, itemPorId, svgDe, validarConfig } from '@painel/services/AvatarCatalog';
+import { CONFIG_PADRAO, itensDe, itemPorId, svgDe, validarConfig, configDePreset as _cdp } from '@painel/services/AvatarCatalog';
+import { paletaDe } from '@painel/engine/cores';
+const paletaFake = () => paletaDe(undefined);
 import { tintaPremium, luminanciaDe } from '@painel/engine/cores';
 import { material2d, MATERIAIS_2D } from '@painel/engine/materiais2d';
 import { SUCESSOR_PREMIUM, qualidadeVisualDe, ehDestacavel, rendererSupport } from '@painel/services/QualidadeVisual';
@@ -96,15 +98,70 @@ ok(qualidadeVisualDe('rou_terno') === 'legacy' && !ehDestacavel('rou_terno') && 
 ok(SUCESSOR_PREMIUM.rou_terno === 'rou_px_terno', '[C] SUCESSOR_PREMIUM sem rou_terno');
 ok(JSON.stringify(rendererSupport('rou_px_terno')) === '["2d"]' && JSON.stringify(rendererSupport('base_superhero_m')) === '["3d"]' && rendererSupport('cab_longo').length === 2, '[C] rendererSupport');
 
-// D) goldens p01-p02 (2 configs x busto/palco/corpo = 6 casos)
+// F) onda 1412 — FACES PREMIUM (§595–§597, §701–§708, #162)
+import { BASES_PREMIUM, OLHOS_PREMIUM, BOCAS_PREMIUM } from '@painel/engine/partes/premium/faces';
+import { EXPRESSOES_PREMIUM, PRESETS, presetsAtivos } from '@painel/services/AvatarCatalog';
+const configDePreset = _cdp;
+import { paramsDaCamada, sanitizarParams } from '@painel/engine/params';
+ok(BASES_PREMIUM.length === 8 && OLHOS_PREMIUM.length === 8 && BOCAS_PREMIUM.length === 8, '[F] 8 bases + 8 olhos + 8 bocas premium');
+ok(BASES_PREMIUM.every((x) => /^bas_px_/.test(x.id)) && OLHOS_PREMIUM.every((x) => /^olh_px_/.test(x.id)) && BOCAS_PREMIUM.every((x) => /^boc_px_/.test(x.id)), '[F] naming #166');
+ok(!itensDe('base').some((x) => x.id.includes('_px_')) && !itensDe('olhos').some((x) => x.id.includes('_px_')) && !itensDe('boca').some((x) => x.id.includes('_px_')), '[F] flag OFF: catalogo sem faces _px_');
+// olhos premium SEM sobrancelha (§703): nada acima de y~96 no fragmento
+const olhosSvg = OLHOS_PREMIUM[0].render({ ...paletaFake(), iris: undefined } as never, 'uF');
+ok(!/M8\d 9[0-3]|q 11 -6/.test(olhosSvg), '[F] olh_px_ nao pode ter sobrancelha');
+ok(olhosSvg.includes('uFpxcatchL') && olhosSvg.includes('uFpxcatchR'), '[F] catchlights sem os ids pxcatchL/R (luz do palco §707)');
+ok((olhosSvg.match(/circle/g) ?? []).length >= 8, '[F] olho premium raso demais (iris 2 tons + 2 catchlights)');
+// coresFace: valida/persiste/injeta so premium
+const cIris = cfg({ camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_confiante' }, coresFace: { iris: '#3D7A5B' }, acabamento: 'premium' });
+ok(cIris.coresFace?.iris === '#3d7a5b', '[F] coresFace.iris deveria normalizar/persistir');
+ok(!('coresFace' in cfg({ coresFace: { iris: 'verde' } as never })), '[F] iris invalida deveria cair');
+ok(!('coresFace' in cfg({ coresFace: {} })), '[F] coresFace vazio deveria sumir');
+const svgIrisOn = svgDe(cIris, { uid: 'ir', premium: true });
+const svgIrisOff = svgDe(cIris, { uid: 'ir', premium: false });
+const svgSemIris = svgDe(cfg({ camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_confiante' }, acabamento: 'premium' }), { uid: 'ir', premium: false });
+ok(svgIrisOn.includes('#3d7a5b') || svgIrisOn.includes('3d7a5b'), '[F] premium deveria pintar a iris escolhida');
+ok(svgIrisOff === svgSemIris, '[F] sem premium a iris NAO pode aplicar (rollback §651)');
+// params olhos v2: soV2 gating
+ok((paramsDaCamada('olhos') ?? []).every((d) => !d.soV2) && (paramsDaCamada('olhos', 'olh_padrao') ?? []).every((d) => !d.soV2), '[F] legado nao pode ver params soV2');
+ok((paramsDaCamada('olhos', 'olh_px_confiante') ?? []).some((d) => d.id === 'espacamento'), '[F] olh_px_ deveria ganhar espacamento/altura/inclinacao');
+ok(sanitizarParams('olhos', { espacamento: 1.1 }, 'olh_padrao') === undefined, '[F] validarConfig nao pode aceitar soV2 em arte legada');
+ok(sanitizarParams('olhos', { espacamento: 1.1 }, 'olh_px_confiante')?.espacamento === 1.1, '[F] soV2 valido em arte v2');
+const cParams = cfg({ camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_confiante' }, params: { olhos: { espacamento: 1.08, inclinacao: 4 } }, acabamento: 'premium' });
+ok(cParams.params?.olhos?.espacamento === 1.08, '[F] params v2 deveriam persistir no config');
+const svgP = svgDe(cParams, { uid: 'pp', premium: true });
+ok(svgP.includes('scale(1.08 1)') && svgP.includes('rotate(4 120 108)'), '[F] wrappers de espacamento/inclinacao ausentes');
+// expressoes = presets de par olhos+boca (sem campo novo)
+ok(EXPRESSOES_PREMIUM.length === 8 && EXPRESSOES_PREMIUM.every((e) => itemPorId(e.olhos)?.acabamento === 'premium' && itemPorId(e.boca)?.acabamento === 'premium'), '[F] expressoes premium invalidas');
+ok(!('expressao' in cfg({})), '[F] expressao NAO pode virar campo do config');
+// presets golden gated
+ok(PRESETS.some((x) => x.id === 'pre_golden_m') && PRESETS.some((x) => x.id === 'pre_golden_f'), '[F] presets golden ausentes');
+ok(!presetsAtivos().some((x) => x.id.startsWith('pre_golden_')), '[F] flag OFF: presetsAtivos nao pode listar os golden');
+const cfgM = validarConfig({ formato: 'camadas', versao: 2, ...configDePreset(PRESETS.find((x) => x.id === 'pre_golden_m')!) } as never);
+ok(cfgM.base === 'bas_px_angular' && cfgM.acabamento === 'premium' && cfgM.coresFace?.iris === '#4a3626', '[F] configDePreset do golden male: ' + JSON.stringify({ base: cfgM.base, ac: cfgM.acabamento }));
+
+// D) goldens p01-p06 + c01-c02
 const p01 = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_terno' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, destaque: '#c9a75a' } });
 const p02 = cfg({ base: 'bas_redonda', camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_jaqueta', cabelo: 'cab_ondulado' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, cabelo: '#d9b166', roupa: '#7a2d3c' } });
+// onda 1412: p03/p04 = golden faces male/female; p05 = iris + params v2;
+// p06 = expressao (par olhos+boca); c01/c02 = presets golden completos
+const p03 = cfg({ base: 'bas_px_angular', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_confiante', boca: 'boc_px_sorriso', roupa: 'rou_px_terno' }, coresFace: { iris: '#4a3626' }, acabamento: 'premium' });
+const p04 = cfg({ base: 'bas_px_coracao', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_amendoado', boca: 'boc_px_suave', roupa: 'rou_px_jaqueta' }, coresFace: { iris: '#2f5d43' }, acabamento: 'premium' });
+const p05 = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_intenso', boca: 'boc_px_riso' }, coresFace: { iris: '#3a6ea8' }, params: { olhos: { espacamento: 1.06, altura: -1.5, inclinacao: 3 } }, acabamento: 'premium' });
+const exp = EXPRESSOES_PREMIUM[6]; // misterio
+const p06 = cfg({ base: 'bas_px_diamante', camadas: { ...CONFIG_PADRAO.camadas, olhos: exp.olhos, boca: exp.boca }, acabamento: 'premium' });
+const c01 = validarConfig({ formato: 'camadas', versao: 2, ...configDePreset(PRESETS.find((x) => x.id === 'pre_golden_m')!) } as never);
+const c02 = validarConfig({ formato: 'camadas', versao: 2, ...configDePreset(PRESETS.find((x) => x.id === 'pre_golden_f')!) } as never);
 const casos: Record<string, string> = {};
 for (const [nome, c] of [['p01', p01], ['p02', p02]] as const) {
   casos[nome + '-busto'] = svgDe(c, { premium: true });
   casos[nome + '-palco'] = svgDe(c, { premium: true, palco: true });
   casos[nome + '-corpo'] = svgDe(c, { premium: true, palco: true, enquadramento: 'corpo' });
 }
+for (const [nome, c] of [['p03', p03], ['p04', p04], ['p05', p05], ['p06', p06]] as const) {
+  casos[nome + '-busto'] = svgDe(c, { premium: true });
+}
+casos['c01-golden-m-palco'] = svgDe(c01, { premium: true, palco: true });
+casos['c02-golden-f-palco'] = svgDe(c02, { premium: true, palco: true });
 const hashes: Record<string, { sha256: string; bytes: number; nos: number; filtros: number }> = {};
 for (const [id, svg] of Object.entries(casos)) {
   hashes[id] = { sha256: sha(svg), bytes: svg.length, nos: (svg.match(/</g) ?? []).length, filtros: (svg.match(/<filter/g) ?? []).length };

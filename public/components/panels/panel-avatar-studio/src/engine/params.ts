@@ -25,6 +25,8 @@ export interface ParamDef {
   max: number;
   passo: number;
   padrao: number;
+  /** onda 1412 (#159): parâmetro disponível SÓ em artes v2 (`_px_`). */
+  soV2?: boolean;
 }
 
 /** §71 — primeiras entregas: aura (intensidade/velocidade) e emblema (escala).
@@ -74,6 +76,12 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
   // centro geométrico de cada feição (mesmo wrapper de escala do emblema)
   olhos: [
     { id: 'escala', nome: 'Tamanho', min: 0.8, max: 1.2, passo: 0.02, padrao: 1 },
+    // onda 1412 (§705–§706, #159): OLHOS v2 — espaçamento/altura/inclinação
+    // como WRAPPERS; `soV2` = só existem para artes premium `olh_px_*`
+    // (paramsDaCamada filtra pelo idItem; legado segue byte a byte)
+    { id: 'espacamento', nome: 'Espaçamento', min: 0.88, max: 1.12, passo: 0.02, padrao: 1, soV2: true },
+    { id: 'altura', nome: 'Altura', min: -4, max: 4, passo: 0.5, padrao: 0, soV2: true },
+    { id: 'inclinacao', nome: 'Inclinação', min: -8, max: 8, passo: 1, padrao: 0, soV2: true },
   ],
   boca: [
     { id: 'escala', nome: 'Tamanho', min: 0.8, max: 1.2, passo: 0.02, padrao: 1 },
@@ -99,9 +107,15 @@ export function categoriaDaCamada(chave: string): CategoriaId {
   return (chave.startsWith('acessorio') ? 'acessorio' : chave) as CategoriaId;
 }
 
-/** Defs de propriedades de uma camada (undefined = camada sem propriedades). */
-export function paramsDaCamada(chave: string): ParamDef[] | undefined {
-  return PARAMS_POR_CATEGORIA[categoriaDaCamada(chave)];
+/** Defs de propriedades de uma camada (undefined = camada sem propriedades).
+ *  onda 1412: defs com `soV2` só aparecem quando o item equipado é arte
+ *  premium (`_px_` no id) — sem o idItem, o comportamento LEGADO vale. */
+export function paramsDaCamada(chave: string, idItem?: string): ParamDef[] | undefined {
+  const defs = PARAMS_POR_CATEGORIA[categoriaDaCamada(chave)];
+  if (!defs) return undefined;
+  if (/_px_/.test(idItem ?? '')) return defs;
+  const semV2 = defs.filter((d) => !d.soV2);
+  return semV2.length ? semV2 : undefined;
 }
 
 const clamp = (v: number, min: number, max: number): number =>
@@ -112,8 +126,8 @@ const clamp = (v: number, min: number, max: number): number =>
  * chave desconhecida cai; valor não-numérico cai; numérico é grampeado
  * ao [min,max]; valor PADRÃO cai (não persiste). undefined = nada sobrou.
  */
-export function sanitizarParams(chave: string, bruto: unknown): ParamsAsset | undefined {
-  const defs = paramsDaCamada(chave);
+export function sanitizarParams(chave: string, bruto: unknown, idItem?: string): ParamsAsset | undefined {
+  const defs = paramsDaCamada(chave, idItem);
   if (!defs || typeof bruto !== 'object' || bruto === null) return undefined;
   const saida: ParamsAsset = {};
   for (const def of defs) {
@@ -139,9 +153,9 @@ function reescalarDur(svg: string, velocidade: number): string {
  * Grampeia na aplicação também (defesa em profundidade: o config pode
  * chegar aqui sem passar pelo validarConfig).
  */
-export function aplicarParamsSvg(chave: CamadaId | string, svg: string, params?: ParamsAsset): string {
+export function aplicarParamsSvg(chave: CamadaId | string, svg: string, params?: ParamsAsset, idItem?: string): string {
   if (!svg || !params) return svg;
-  const defs = paramsDaCamada(chave);
+  const defs = paramsDaCamada(chave, idItem);
   if (!defs) return svg;
   const valor = (id: string): number | undefined => {
     const def = defs.find((d) => d.id === id);
@@ -178,6 +192,20 @@ export function aplicarParamsSvg(chave: CamadaId | string, svg: string, params?:
       sombra !== undefined ? `drop-shadow(0 5px ${Math.round(sombra * 7 * 10) / 10}px rgba(0,0,0,${Math.round(sombra * 0.65 * 100) / 100}))` : '',
     ].filter(Boolean).join(' ');
     saida = `<g filter="${fns}">${saida}</g>`;
+  }
+  // onda 1412 (§705–§706): olhos v2 — espaçamento (scaleX ancorado no
+  // centro dos olhos 120,108), altura (translateY) e inclinação (rotate);
+  // uma cadeia só de wrappers, arte intocada
+  const espacamento = valor('espacamento');
+  const alturaOlhos = valor('altura');
+  const inclinacao = valor('inclinacao');
+  if (espacamento !== undefined || alturaOlhos !== undefined || inclinacao !== undefined) {
+    const ts = [
+      alturaOlhos !== undefined ? `translate(0 ${alturaOlhos})` : '',
+      inclinacao !== undefined ? `rotate(${inclinacao} 120 108)` : '',
+      espacamento !== undefined ? `translate(120 108) scale(${espacamento} 1) translate(-120 -108)` : '',
+    ].filter(Boolean).join(' ');
+    saida = `<g transform="${ts}">${saida}</g>`;
   }
   // mega 239 (§170/§170.1): deslocamento HORIZONTAL do banner
   const deslocamento = valor('deslocamento');

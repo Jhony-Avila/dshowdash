@@ -190,6 +190,16 @@ function avst_validar_config($bruto): array
     if (($bruto['acabamento'] ?? null) === 'premium') {
         $saida['acabamento'] = 'premium';
     }
+
+    // onda 1412 (decisao #162): canais de ROSTO — hoje so `iris` (hex
+    // valido persiste em minusculas; resto cai; vazio some)
+    $coresFace = $bruto['coresFace'] ?? null;
+    if (is_array($coresFace)) {
+        $iris = $coresFace['iris'] ?? null;
+        if (is_string($iris) && preg_match('/^#[0-9a-f]{6}$/i', $iris)) {
+            $saida['coresFace'] = ['iris' => strtolower($iris)];
+        }
+    }
     // megas 561–564 (§102.2): ajuste FINO do corpo — clamps espelhando o
     // validarConfig do front; 1 = neutro OMITIDO; objeto vazio omitido
     $fino = $bruto['corpoFino'] ?? null;

@@ -125,6 +125,9 @@ export interface Paleta {
   cabelo: Tinta;
   roupa: Tinta;
   destaque: Tinta;
+  /** onda 1412 (#162): ÍRIS — canal de rosto (coresFace.iris), injetado
+   *  pelo render SÓ no modo premium; ausente = artes usam o padrão. */
+  iris?: Tinta;
 }
 
 export const CORES_PADRAO: Record<SlotCor, string> = {

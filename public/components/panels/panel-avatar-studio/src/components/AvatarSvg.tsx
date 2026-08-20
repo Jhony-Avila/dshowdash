@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import type { AvatarConfig } from '../domain/types';
 import { svgDe } from '../services/AvatarCatalog';
 import { ligarVida } from '../workspace/vida'; // lote 1071-1080 (#109)
+import { flag } from '../nucleo/flags'; // onda 1412 (§707)
 
 export function AvatarSvg({ config, forma = 'quadrado', estatico = false, uid, foco, aoClicar, titulo, palco = false, corpo = false }: {
   config: AvatarConfig;
@@ -43,10 +44,11 @@ export function AvatarSvg({ config, forma = 'quadrado', estatico = false, uid, f
     if (!palco || estatico) return undefined;
     const host = refHost.current;
     if (!host) return undefined;
-    let desligar = ligarVida(host);
+    const premiumVida = flag('as6.classico_premium') && config.acabamento === 'premium'; // §707
+    let desligar = ligarVida(host, false, premiumVida);
     // o markup pode ser reescrito por fora do React (mesma string ⇒ dep
     // não muda) — o observer religa a vida no DOM novo, sempre
-    const mo = new MutationObserver(() => { desligar(); desligar = ligarVida(host); });
+    const mo = new MutationObserver(() => { desligar(); desligar = ligarVida(host, false, premiumVida); });
     mo.observe(host, { childList: true });
     return () => { mo.disconnect(); desligar(); };
   }, [svg, palco, estatico]);

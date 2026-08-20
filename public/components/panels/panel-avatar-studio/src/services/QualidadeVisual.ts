@@ -68,6 +68,15 @@ export const SUCESSOR_PREMIUM: Record<string, string> = {
   // O legado segue renderizando PARA SEMPRE; só sai do destaque (§163).
   rou_terno: 'rou_px_terno',
   rou_jaqueta: 'rou_px_jaqueta',
+  // onda 1412 (#162): faces premium. Os itens DEFAULT do config
+  // (bas_classica/olh_padrao/boc_sorriso) NÃO entram enquanto a flag está
+  // OFF — rebaixá-los a legacy tiraria o kit padrão do destaque com o
+  // sucessor ainda invisível; entram no gate da 1418 junto com a flag.
+  bas_angular: 'bas_px_angular',
+  bas_redonda: 'bas_px_redonda',
+  olh_focado: 'olh_px_focado',
+  olh_serio: 'olh_px_determinado',
+  boc_neutra: 'boc_px_neutra',
 };
 
 export function qualidadeVisualDe(id: string): NivelQualidadeVisual {

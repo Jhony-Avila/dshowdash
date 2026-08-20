@@ -10,7 +10,7 @@
 //   → olhos → cabelo → acessório → moldura → efeito(frente)
 //   (banner/aura/emblema — Expansão, decisão #33: categorias 2D de baixo custo)
 import type { AvatarConfig, CamadaId } from '../domain/types';
-import { paletaDe } from './cores';
+import { paletaDe, tinta } from './cores';
 import { aplicarParamsSvg } from './params';
 import type { ParteDef } from './base-api';
 import { G } from './base-api';
@@ -129,9 +129,15 @@ export function renderAvatar(
   // (a arte não muda: recebe outra Paleta pela MESMA injeção de sempre).
   const paletaDa = (chave?: CamadaId) => {
     const canais = chave ? config.coresCamada?.[chave] : undefined;
-    return canais && Object.keys(canais).length
+    const base = canais && Object.keys(canais).length
       ? paletaDe({ ...config.cores, ...canais })
       : p;
+    // onda 1412 (#162): ÍRIS (coresFace) entra na paleta dos OLHOS só no
+    // modo premium — sem premium/sem canal, paleta idêntica à de sempre
+    if (chave === 'olhos' && opcoes.premium && config.coresFace?.iris) {
+      return { ...base, iris: tinta(config.coresFace.iris) };
+    }
+    return base;
   };
 
   // §71: `chave` liga as PROPRIEDADES da camada (config.params) ao fragmento
@@ -140,7 +146,8 @@ export function renderAvatar(
     if (!id || id === 'nenhum') return '';
     const parte = resolver(id);
     const svg = parte ? parte.render(paletaDa(chave), uid) : '';
-    return chave ? aplicarParamsSvg(chave, svg, config.params?.[chave]) : svg;
+    // onda 1412: o id do item decide params v2 (soV2) — legado byte a byte
+    return chave ? aplicarParamsSvg(chave, svg, config.params?.[chave], id) : svg;
   };
 
   // "fundo" composto: fundo → banner → aura (tudo atrás do personagem)

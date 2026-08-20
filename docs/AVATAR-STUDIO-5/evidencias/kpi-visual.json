@@ -3,22 +3,22 @@
   "artBibleVersion": "1.0",
   "kpiPrincipal": {
     "nome": "Premium Coverage %",
-    "catalogo2d": 0.5,
+    "catalogo2d": 6.2,
     "assets3d": 0
   },
   "catalogo2d": {
     "geral": {
-      "total": 395,
+      "total": 419,
       "prototype": 0,
-      "legacy": 2,
-      "production": 391,
-      "premium": 2,
+      "legacy": 7,
+      "production": 386,
+      "premium": 26,
       "hero": 0,
-      "premiumCoveragePct": 0.5,
-      "productionReadyPct": 99.5,
+      "premiumCoveragePct": 6.2,
+      "productionReadyPct": 98.3,
       "qaAprovadoPct": 0,
       "qa": {
-        "pending": 395
+        "pending": 419
       }
     },
     "porCategoria": {
@@ -65,31 +65,31 @@
         }
       },
       "base": {
-        "total": 36,
+        "total": 44,
         "prototype": 0,
-        "legacy": 0,
-        "production": 36,
-        "premium": 0,
+        "legacy": 2,
+        "production": 34,
+        "premium": 8,
         "hero": 0,
-        "premiumCoveragePct": 0,
-        "productionReadyPct": 100,
+        "premiumCoveragePct": 18.2,
+        "productionReadyPct": 95.5,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 36
+          "pending": 44
         }
       },
       "boca": {
-        "total": 40,
+        "total": 48,
         "prototype": 0,
-        "legacy": 0,
-        "production": 40,
-        "premium": 0,
+        "legacy": 1,
+        "production": 39,
+        "premium": 8,
         "hero": 0,
-        "premiumCoveragePct": 0,
-        "productionReadyPct": 100,
+        "premiumCoveragePct": 16.7,
+        "productionReadyPct": 97.9,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 40
+          "pending": 48
         }
       },
       "cabelo": {
@@ -163,17 +163,17 @@
         }
       },
       "olhos": {
-        "total": 40,
+        "total": 48,
         "prototype": 0,
-        "legacy": 0,
-        "production": 40,
-        "premium": 0,
+        "legacy": 2,
+        "production": 38,
+        "premium": 8,
         "hero": 0,
-        "premiumCoveragePct": 0,
-        "productionReadyPct": 100,
+        "premiumCoveragePct": 16.7,
+        "productionReadyPct": 95.8,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 40
+          "pending": 48
         }
       },
       "roupa": {
@@ -206,6 +206,11 @@
       }
     },
     "naoDestacaveis": [
+      "bas_angular",
+      "bas_redonda",
+      "boc_neutra",
+      "olh_focado",
+      "olh_serio",
       "rou_jaqueta",
       "rou_terno"
     ]
