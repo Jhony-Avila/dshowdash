@@ -29,7 +29,8 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { compactPrimitive, dedup, prune, simplify, textureCompress, weld } from '@gltf-transform/functions';
 import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
-import { validarAsset } from './validar-asset.mjs';
+import { validarAsset, lerJsonDoGlb } from './validar-asset.mjs';
+import { appendFileSync, existsSync, statSync } from 'node:fs';
 
 const LIMITES = { lod1: 25_000, lod2: 8_000 }; // gate §631 (lod0 só confere)
 const MARGEM = 0.9; // alvo = 90% do limite (folga p/ variação do simplify)
@@ -50,6 +51,45 @@ async function ajustarTexturas(doc, lod, log) {
     resize: [teto, teto], // "contain": só ENCOLHE o que passa do teto
   }));
   log?.(`${lod}: texturas → webp ≤ ${teto}px`);
+}
+
+// ── onda 1410 (MEGA_BRIEFING_01 §2743–§2758; ASSET-PIPELINE §4/§8) ──
+export const LIMITE_FONTE_MB = 200; // ingestão segura: teto do GLB fonte
+const ESCADA_QV = { prototype: 0, legacy: 1, production: 2, premium: 3, hero: 4 };
+
+/** Ingestão segura (§2748): tamanho, magic GLB e URIs EXTERNAS (imagens/
+ *  buffers apontando pra fora do binário = supply chain risk + quebra
+ *  offline). Puro; throw = fonte recusada. */
+export function validarFonteSegura(caminho, { limiteMB = LIMITE_FONTE_MB } = {}) {
+  const abs = resolve(caminho);
+  if (!existsSync(abs)) throw new Error(`fonte inexistente: ${caminho}`);
+  const mb = statSync(abs).size / 1024 / 1024;
+  if (mb > limiteMB) throw new Error(`fonte com ${mb.toFixed(1)} MB — acima do limite de ingestão ${limiteMB} MB (§2748)`);
+  const gltf = lerJsonDoGlb(abs); // valida magic/versão/chunk JSON
+  const externas = [];
+  for (const img of gltf.images ?? []) if (img.uri && !String(img.uri).startsWith('data:')) externas.push(`image:${img.uri}`);
+  for (const buf of gltf.buffers ?? []) if (buf.uri && !String(buf.uri).startsWith('data:')) externas.push(`buffer:${buf.uri}`);
+  if (externas.length) throw new Error(`fonte com URI externa (${externas.slice(0, 3).join(', ')}${externas.length > 3 ? '…' : ''}) — só GLB autocontido entra no pipeline (§2748)`);
+  return { mb: +mb.toFixed(2), imagens: (gltf.images ?? []).length };
+}
+
+/** Gate de publicação premium (§2677/§2748): premium/hero SÓ publica com
+ *  qaVisual.status approved/approved_with_notes. --override --motivo pula o
+ *  gate mas fica LOGADO em storage/visual-qa/overrides.log (auditável).
+ *  Puro exceto o log. throw = recusado. */
+export function verificarGatePublicacao(manifest, { override = false, motivo = null, log = (m) => console.log(m), raiz = resolve(import.meta.dirname, '..', '..', '..') } = {}) {
+  const nivel = String(manifest.qualidadeVisual ?? 'production');
+  if ((ESCADA_QV[nivel] ?? 2) < ESCADA_QV.premium) return { gate: 'nao_se_aplica', nivel };
+  const status = manifest.qaVisual?.status ?? 'pending';
+  if (status === 'approved' || status === 'approved_with_notes') return { gate: 'aprovado', nivel, status };
+  if (!override) throw new Error(`gate §2677: qualidadeVisual=${nivel} com qaVisual.status=${status} — premium só publica APROVADO pelo Jhony (ou --override --motivo "…", logado)`);
+  if (!motivo) throw new Error('override sem --motivo — o log de auditoria exige justificativa');
+  const dirLog = join(raiz, 'storage', 'visual-qa');
+  mkdirSync(dirLog, { recursive: true });
+  appendFileSync(join(dirLog, 'overrides.log'), `${JSON.stringify({ assetId: manifest.id, versao: manifest.versao ?? 1, nivel, status, motivo })}
+`);
+  log(`⚠ OVERRIDE do gate §2677 logado (${manifest.id}: ${motivo})`);
+  return { gate: 'override', nivel, status, motivo };
 }
 
 function argumento(nome, padrao) {
@@ -92,6 +132,15 @@ export async function publicarAsset(opcoes) {
   } = opcoes;
   if (!fonte || !saida || !id) throw new Error('obrigatórios: fonte, saida, id');
   if (!/^[a-z0-9_]+$/.test(id)) throw new Error(`id "${id}" fora do snake_case ASCII`);
+
+  // onda 1410: ingestão segura (§2748) — antes de qualquer transform
+  const seg = validarFonteSegura(fonte, opcoes.limiteFonteMB ? { limiteMB: opcoes.limiteFonteMB } : {});
+  log(`fonte ok (§2748): ${seg.mb} MB, ${seg.imagens} imagem(ns) embutida(s)`);
+  // onda 1410: gate premium (§2677) — se a pasta destino JÁ é premium/hero,
+  // republicar exige aprovação (ou override logado)
+  const manifestAnterior = existsSync(join(resolve(saida), 'manifest.json'))
+    ? JSON.parse(readFileSync(join(resolve(saida), 'manifest.json'), 'utf8')) : null;
+  if (manifestAnterior) verificarGatePublicacao(manifestAnterior, { override: opcoes.override ?? false, motivo: opcoes.motivo ?? null, log });
 
   // extensões registradas (fontes AS4 usam EXT_meshopt_compression); a
   // SAÍDA é sempre GLB PLANO — o palco carrega sem decoder (§423 universal)
@@ -238,6 +287,8 @@ if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
     familia: argumento('familia', null), // lote 651-660 (§423)
     data: argumento('data', null),
     validar: !process.argv.includes('--sem-validar'),
+    override: process.argv.includes('--override'), // onda 1410: gate §2677
+    motivo: argumento('motivo', null),
   }).then(({ pasta, medidas }) => {
     console.log(`PUBLICADO em ${pasta} · triângulos ${JSON.stringify(medidas)}`);
     console.log('próximo passo: gerar-thumbs-3d.mjs (§508) e gerar-registro-sql.mjs (§614)');

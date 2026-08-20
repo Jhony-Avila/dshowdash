@@ -74,6 +74,13 @@ new GLTFLoader().load('/alvo/modelo.lod0.glb', (gltf) => {
   renderer.setSize(128, 128);
   renderer.render(cena, camera);
   window.__png128 = renderer.domElement.toDataURL('image/png');
+  // onda 1410 (herdado 1409): thumb de COSTAS (mesma altura/dist, azimute
+  // espelhado p/ trás) — só é GRAVADA com --costas (cabelos/roupas §1880)
+  renderer.setSize(LADO, LADO);
+  camera.position.set(centro.x - d * 0.62, centro.y + d * 0.34, centro.z - d * 0.72);
+  camera.lookAt(centro);
+  renderer.render(cena, camera);
+  window.__png512costas = renderer.domElement.toDataURL('image/png');
   window.__pronto = true;
 }, undefined, (e) => { window.__erro = String(e && e.message || e); window.__pronto = true; });
 </script></body></html>`;
@@ -118,7 +125,7 @@ async function pngParaWebp(pagina, dataUrl, destino, lado) {
 }
 
 /** Gera thumb+preview na pasta publicada. Exportado p/ o teste. */
-export async function gerarThumbs(pastaPublicada, { porta = 8907 } = {}) {
+export async function gerarThumbs(pastaPublicada, { porta = 8907, costas = false } = {}) {
   const pasta = resolve(pastaPublicada);
   const { chromium } = await import('playwright-core');
   const srv = await servir(pasta, porta);
@@ -140,6 +147,11 @@ export async function gerarThumbs(pastaPublicada, { porta = 8907 } = {}) {
     }
     await pngParaWebp(pagina, png512, join(pasta, 'preview.webp'), 512);
     await pngParaWebp(pagina, png128, join(pasta, 'thumb.webp'), 128);
+    // onda 1410: costas OPT-IN (--costas) — arquivo NOVO, aditivo (thumb/preview intocadas sem a opção)
+    if (costas) {
+      const pngCostas = await pagina.evaluate(() => window.__png512costas);
+      if (pngCostas && pngCostas.length > 2000) await pngParaWebp(pagina, pngCostas, join(pasta, 'costas.webp'), 512);
+    }
     // onda 1408 (§2001–§2003): o manifest registra com que look a thumb foi
     // gerada (look@versao) — regenerar thumbs antigas é commit próprio (★)
     try {
@@ -179,12 +191,12 @@ if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
     if (!pastas.length) { console.error(`✗ nenhum asset publicado com tipo "${tipo}"`); process.exit(1); }
     let n = 0;
     for (const p of pastas) {
-      try { const r = await gerarThumbs(p, { porta }); n += 1; console.log(`THUMBS_OK ${r.thumb}`); } catch (e) { console.error(`✗ ${p}: ${e.message}`); }
+      try { const r = await gerarThumbs(p, { porta, costas: process.argv.includes('--costas') }); n += 1; console.log(`THUMBS_OK ${r.thumb}`); } catch (e) { console.error(`✗ ${p}: ${e.message}`); }
     }
     console.log(`THUMBS_TIPO_OK ${n}/${pastas.length} (${tipo})`);
     process.exit(n === pastas.length ? 0 : 1);
   }
-  gerarThumbs(pasta, { porta })
+  gerarThumbs(pasta, { porta, costas: process.argv.includes('--costas') })
     .then((r) => console.log(`THUMBS_OK ${r.thumb} + ${r.preview}`))
     .catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });
 }

@@ -1,0 +1,565 @@
+{
+  "gerado_por": "scripts/avatar/assets3d/corpo-deformacao.mjs",
+  "bases": {
+    "base_superhero_m": {
+      "rig": "ubc-v1",
+      "clipe": "Idle_Loop",
+      "poses": [
+        {
+          "pose": "A",
+          "t": 0,
+          "pixels": 16574,
+          "minY": -0.0088,
+          "altura": 1.7412
+        },
+        {
+          "pose": "B",
+          "t": 0.313,
+          "pixels": 16564,
+          "minY": -0.0088,
+          "altura": 1.7403
+        },
+        {
+          "pose": "C",
+          "t": 0.625,
+          "pixels": 16551,
+          "minY": -0.0088,
+          "altura": 1.7313
+        },
+        {
+          "pose": "D",
+          "t": 0.938,
+          "pixels": 16572,
+          "minY": -0.0088,
+          "altura": 1.7322
+        },
+        {
+          "pose": "E",
+          "t": 1.25,
+          "pixels": 16572,
+          "minY": -0.0088,
+          "altura": 1.7412
+        },
+        {
+          "pose": "F",
+          "t": 1.563,
+          "pixels": 16570,
+          "minY": -0.0088,
+          "altura": 1.7406
+        },
+        {
+          "pose": "G",
+          "t": 1.875,
+          "pixels": 16555,
+          "minY": -0.0088,
+          "altura": 1.7313
+        },
+        {
+          "pose": "H",
+          "t": 2.188,
+          "pixels": 16569,
+          "minY": -0.0088,
+          "altura": 1.7318
+        }
+      ],
+      "movimento": {
+        "clipe": "Idle_Loop",
+        "duracao": 2.5,
+        "iou_A_D": 0.9018,
+        "iou_A_G": 0.8787
+      },
+      "flags": [],
+      "ok": true
+    },
+    "humano_casual": {
+      "rig": "quaternius-legado",
+      "clipe": "Idle",
+      "poses": [
+        {
+          "pose": "A",
+          "t": 0,
+          "pixels": 16967,
+          "minY": -0.0043,
+          "altura": 1.8282
+        },
+        {
+          "pose": "B",
+          "t": 0.208,
+          "pixels": 16987,
+          "minY": -0.0043,
+          "altura": 1.8294
+        },
+        {
+          "pose": "C",
+          "t": 0.417,
+          "pixels": 16993,
+          "minY": -0.0043,
+          "altura": 1.8322
+        },
+        {
+          "pose": "D",
+          "t": 0.625,
+          "pixels": 17013,
+          "minY": -0.0044,
+          "altura": 1.8354
+        },
+        {
+          "pose": "E",
+          "t": 0.833,
+          "pixels": 17046,
+          "minY": -0.0044,
+          "altura": 1.8366
+        },
+        {
+          "pose": "F",
+          "t": 1.042,
+          "pixels": 17026,
+          "minY": -0.0044,
+          "altura": 1.8353
+        },
+        {
+          "pose": "G",
+          "t": 1.25,
+          "pixels": 16989,
+          "minY": -0.0043,
+          "altura": 1.8322
+        },
+        {
+          "pose": "H",
+          "t": 1.458,
+          "pixels": 16971,
+          "minY": -0.0043,
+          "altura": 1.8293
+        }
+      ],
+      "movimento": {
+        "clipe": "Idle",
+        "duracao": 1.667,
+        "iou_A_D": 0.9203,
+        "iou_A_G": 0.9639
+      },
+      "flags": [],
+      "ok": true
+    },
+    "base_superhero_f": {
+      "rig": "ubc-v1",
+      "clipe": "Idle_Loop",
+      "poses": [
+        {
+          "pose": "A",
+          "t": 0,
+          "pixels": 16758,
+          "minY": -0.005,
+          "altura": 1.7466
+        },
+        {
+          "pose": "B",
+          "t": 0.313,
+          "pixels": 16743,
+          "minY": -0.005,
+          "altura": 1.7451
+        },
+        {
+          "pose": "C",
+          "t": 0.625,
+          "pixels": 16751,
+          "minY": -0.005,
+          "altura": 1.7363
+        },
+        {
+          "pose": "D",
+          "t": 0.938,
+          "pixels": 16731,
+          "minY": -0.005,
+          "altura": 1.7376
+        },
+        {
+          "pose": "E",
+          "t": 1.25,
+          "pixels": 16736,
+          "minY": -0.005,
+          "altura": 1.7466
+        },
+        {
+          "pose": "F",
+          "t": 1.563,
+          "pixels": 16719,
+          "minY": -0.005,
+          "altura": 1.7455
+        },
+        {
+          "pose": "G",
+          "t": 1.875,
+          "pixels": 16750,
+          "minY": -0.005,
+          "altura": 1.7362
+        },
+        {
+          "pose": "H",
+          "t": 2.188,
+          "pixels": 16741,
+          "minY": -0.005,
+          "altura": 1.7373
+        }
+      ],
+      "movimento": {
+        "clipe": "Idle_Loop",
+        "duracao": 2.5,
+        "iou_A_D": 0.8879,
+        "iou_A_G": 0.8642
+      },
+      "flags": [],
+      "ok": true
+    },
+    "androide": {
+      "rig": "robot-expressive",
+      "clipe": "Idle",
+      "poses": [
+        {
+          "pose": "A",
+          "t": 0,
+          "pixels": 37778,
+          "minY": 0.2589,
+          "altura": 1.5819
+        },
+        {
+          "pose": "B",
+          "t": 0.417,
+          "pixels": 38221,
+          "minY": 0.2589,
+          "altura": 1.5819
+        },
+        {
+          "pose": "C",
+          "t": 0.833,
+          "pixels": 38311,
+          "minY": 0.2589,
+          "altura": 1.5819
+        },
+        {
+          "pose": "D",
+          "t": 1.25,
+          "pixels": 37796,
+          "minY": 0.2589,
+          "altura": 1.5819
+        },
+        {
+          "pose": "E",
+          "t": 1.667,
+          "pixels": 37777,
+          "minY": 0.2589,
+          "altura": 1.5819
+        },
+        {
+          "pose": "F",
+          "t": 2.083,
+          "pixels": 37792,
+          "minY": 0.2589,
+          "altura": 1.5819
+        },
+        {
+          "pose": "G",
+          "t": 2.5,
+          "pixels": 38111,
+          "minY": 0.2589,
+          "altura": 1.5819
+        },
+        {
+          "pose": "H",
+          "t": 2.917,
+          "pixels": 38198,
+          "minY": 0.2589,
+          "altura": 1.5819
+        }
+      ],
+      "movimento": {
+        "clipe": "Idle",
+        "duracao": 3.333,
+        "iou_A_D": 0.9939,
+        "iou_A_G": 0.9499
+      },
+      "flags": [],
+      "ok": true
+    },
+    "animal_pug": {
+      "rig": "quad-pet",
+      "clipe": "Idle",
+      "poses": [
+        {
+          "pose": "A",
+          "t": 0,
+          "pixels": 30059,
+          "minY": -0.0194,
+          "altura": 2.7858
+        },
+        {
+          "pose": "B",
+          "t": 0.521,
+          "pixels": 30177,
+          "minY": -0.0196,
+          "altura": 2.7915
+        },
+        {
+          "pose": "C",
+          "t": 1.042,
+          "pixels": 30077,
+          "minY": -0.0193,
+          "altura": 2.8029
+        },
+        {
+          "pose": "D",
+          "t": 1.562,
+          "pixels": 29791,
+          "minY": -0.019,
+          "altura": 2.8145
+        },
+        {
+          "pose": "E",
+          "t": 2.083,
+          "pixels": 29495,
+          "minY": -0.0188,
+          "altura": 2.8212
+        },
+        {
+          "pose": "F",
+          "t": 2.604,
+          "pixels": 29555,
+          "minY": -0.0189,
+          "altura": 2.8201
+        },
+        {
+          "pose": "G",
+          "t": 3.125,
+          "pixels": 29919,
+          "minY": -0.019,
+          "altura": 2.8118
+        },
+        {
+          "pose": "H",
+          "t": 3.646,
+          "pixels": 30056,
+          "minY": -0.0192,
+          "altura": 2.7994
+        }
+      ],
+      "movimento": {
+        "clipe": "Idle",
+        "duracao": 4.167,
+        "iou_A_D": 0.9503,
+        "iou_A_G": 0.9523
+      },
+      "flags": [],
+      "ok": true
+    },
+    "humano_aventureiro": {
+      "rig": "quaternius-legado",
+      "clipe": "Idle",
+      "poses": [
+        {
+          "pose": "A",
+          "t": 0,
+          "pixels": 18529,
+          "minY": -0.0026,
+          "altura": 1.8184
+        },
+        {
+          "pose": "B",
+          "t": 0.208,
+          "pixels": 18519,
+          "minY": -0.0025,
+          "altura": 1.8197
+        },
+        {
+          "pose": "C",
+          "t": 0.417,
+          "pixels": 18549,
+          "minY": -0.0025,
+          "altura": 1.8228
+        },
+        {
+          "pose": "D",
+          "t": 0.625,
+          "pixels": 18582,
+          "minY": -0.0025,
+          "altura": 1.826
+        },
+        {
+          "pose": "E",
+          "t": 0.833,
+          "pixels": 18588,
+          "minY": -0.0025,
+          "altura": 1.8272
+        },
+        {
+          "pose": "F",
+          "t": 1.042,
+          "pixels": 18580,
+          "minY": -0.0025,
+          "altura": 1.8259
+        },
+        {
+          "pose": "G",
+          "t": 1.25,
+          "pixels": 18551,
+          "minY": -0.0025,
+          "altura": 1.8228
+        },
+        {
+          "pose": "H",
+          "t": 1.458,
+          "pixels": 18529,
+          "minY": -0.0025,
+          "altura": 1.8197
+        }
+      ],
+      "movimento": {
+        "clipe": "Idle",
+        "duracao": 1.667,
+        "iou_A_D": 0.9306,
+        "iou_A_G": 0.9707
+      },
+      "flags": [],
+      "ok": true
+    },
+    "humano_punk": {
+      "rig": "quaternius-legado",
+      "clipe": "Idle",
+      "poses": [
+        {
+          "pose": "A",
+          "t": 0,
+          "pixels": 14754,
+          "minY": -0.0043,
+          "altura": 1.9285
+        },
+        {
+          "pose": "B",
+          "t": 0.208,
+          "pixels": 14757,
+          "minY": -0.0043,
+          "altura": 1.9298
+        },
+        {
+          "pose": "C",
+          "t": 0.417,
+          "pixels": 14774,
+          "minY": -0.0043,
+          "altura": 1.9325
+        },
+        {
+          "pose": "D",
+          "t": 0.625,
+          "pixels": 14774,
+          "minY": -0.0044,
+          "altura": 1.9353
+        },
+        {
+          "pose": "E",
+          "t": 0.833,
+          "pixels": 14797,
+          "minY": -0.0044,
+          "altura": 1.9364
+        },
+        {
+          "pose": "F",
+          "t": 1.042,
+          "pixels": 14784,
+          "minY": -0.0044,
+          "altura": 1.9353
+        },
+        {
+          "pose": "G",
+          "t": 1.25,
+          "pixels": 14771,
+          "minY": -0.0043,
+          "altura": 1.9325
+        },
+        {
+          "pose": "H",
+          "t": 1.458,
+          "pixels": 14764,
+          "minY": -0.0043,
+          "altura": 1.9297
+        }
+      ],
+      "movimento": {
+        "clipe": "Idle",
+        "duracao": 1.667,
+        "iou_A_D": 0.9198,
+        "iou_A_G": 0.9653
+      },
+      "flags": [],
+      "ok": true
+    },
+    "humano_terno": {
+      "rig": "quaternius-legado",
+      "clipe": "Idle",
+      "poses": [
+        {
+          "pose": "A",
+          "t": 0,
+          "pixels": 16882,
+          "minY": -0.0015,
+          "altura": 1.8165
+        },
+        {
+          "pose": "B",
+          "t": 0.208,
+          "pixels": 16938,
+          "minY": -0.0015,
+          "altura": 1.8179
+        },
+        {
+          "pose": "C",
+          "t": 0.417,
+          "pixels": 16953,
+          "minY": -0.0015,
+          "altura": 1.8209
+        },
+        {
+          "pose": "D",
+          "t": 0.625,
+          "pixels": 16960,
+          "minY": -0.0015,
+          "altura": 1.8241
+        },
+        {
+          "pose": "E",
+          "t": 0.833,
+          "pixels": 16972,
+          "minY": -0.0015,
+          "altura": 1.8253
+        },
+        {
+          "pose": "F",
+          "t": 1.042,
+          "pixels": 16962,
+          "minY": -0.0015,
+          "altura": 1.824
+        },
+        {
+          "pose": "G",
+          "t": 1.25,
+          "pixels": 16928,
+          "minY": -0.0015,
+          "altura": 1.8209
+        },
+        {
+          "pose": "H",
+          "t": 1.458,
+          "pixels": 16886,
+          "minY": -0.0015,
+          "altura": 1.8177
+        }
+      ],
+      "movimento": {
+        "clipe": "Idle",
+        "duracao": 1.667,
+        "iou_A_D": 0.9166,
+        "iou_A_G": 0.964
+      },
+      "flags": [],
+      "ok": true
+    }
+  }
+}

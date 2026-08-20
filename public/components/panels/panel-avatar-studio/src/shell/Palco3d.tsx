@@ -906,7 +906,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
     (refR.current as unknown as { definirMateriaisV2?: (v: boolean) => void })?.definirMateriaisV2?.(flag('as6.material_v2'));
     // onda 1408 (§2010, dev): handle do renderer p/ HUD/testes/QaStudio —
     // só em modo dev (as5.hud3d); nunca em produção
-    if (flag('as5.hud3d')) (window as unknown as { __avst3d?: unknown }).__avst3d = refR.current;
+    // onda 1410: o QaStudio (as6.qa_route) também usa o handle dev
+    if (flag('as5.hud3d') || flag('as6.qa_route')) (window as unknown as { __avst3d?: unknown }).__avst3d = refR.current;
   }, [fase, personagem]);
 
   // megas 21/22: fundo e luz refletem no renderer

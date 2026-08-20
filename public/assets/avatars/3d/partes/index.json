@@ -17,7 +17,8 @@
         "lod0": 1034,
         "lod1": 1034,
         "lod2": 1034
-      }
+      },
+      "health": 85
     },
     {
       "slug": "cab_coque",
@@ -34,7 +35,8 @@
         "lod0": 3284,
         "lod1": 3284,
         "lod2": 3284
-      }
+      },
+      "health": 85
     },
     {
       "slug": "cab_longo",
@@ -51,7 +53,8 @@
         "lod0": 2906,
         "lod1": 2906,
         "lod2": 2906
-      }
+      },
+      "health": 85
     },
     {
       "slug": "cab_raspado",
@@ -68,7 +71,8 @@
         "lod0": 830,
         "lod1": 830,
         "lod2": 830
-      }
+      },
+      "health": 85
     },
     {
       "slug": "cab_raspado_f",
@@ -85,7 +89,8 @@
         "lod0": 830,
         "lod1": 830,
         "lod2": 830
-      }
+      },
+      "health": 85
     },
     {
       "slug": "cab_repartido",
@@ -102,7 +107,8 @@
         "lod0": 1301,
         "lod1": 1301,
         "lod2": 1301
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_peasant_f_botas",
@@ -118,7 +124,8 @@
         "lod0": 2588,
         "lod1": 2588,
         "lod2": 2588
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_peasant_f_bracos",
@@ -134,7 +141,8 @@
         "lod0": 6848,
         "lod1": 6848,
         "lod2": 6848
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_peasant_f_corpo",
@@ -152,7 +160,8 @@
         "lod0": 2188,
         "lod1": 2188,
         "lod2": 2188
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_peasant_f_pernas",
@@ -168,7 +177,8 @@
         "lod0": 1944,
         "lod1": 1944,
         "lod2": 1944
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_peasant_m_botas",
@@ -184,7 +194,8 @@
         "lod0": 2588,
         "lod1": 2588,
         "lod2": 2588
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_peasant_m_bracos",
@@ -200,7 +211,8 @@
         "lod0": 5338,
         "lod1": 5338,
         "lod2": 5338
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_peasant_m_corpo",
@@ -216,7 +228,8 @@
         "lod0": 3856,
         "lod1": 3856,
         "lod2": 3856
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_peasant_m_pernas",
@@ -232,7 +245,8 @@
         "lod0": 1112,
         "lod1": 1112,
         "lod2": 1112
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_f_botas",
@@ -248,7 +262,8 @@
         "lod0": 9172,
         "lod1": 9172,
         "lod2": 7200
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_f_bracos",
@@ -264,7 +279,8 @@
         "lod0": 8508,
         "lod1": 8508,
         "lod2": 7198
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_f_capuz",
@@ -280,7 +296,8 @@
         "lod0": 2136,
         "lod1": 2136,
         "lod2": 2136
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_f_corpo",
@@ -296,7 +313,8 @@
         "lod0": 4570,
         "lod1": 4570,
         "lod2": 4570
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_f_ombreira",
@@ -312,7 +330,8 @@
         "lod0": 1376,
         "lod1": 1376,
         "lod2": 1376
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_f_pernas",
@@ -328,7 +347,8 @@
         "lod0": 1204,
         "lod1": 1204,
         "lod2": 1204
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_m_botas",
@@ -344,7 +364,8 @@
         "lod0": 9172,
         "lod1": 9172,
         "lod2": 7200
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_m_bracos",
@@ -360,7 +381,8 @@
         "lod0": 4928,
         "lod1": 4928,
         "lod2": 4928
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_m_capuz",
@@ -376,7 +398,8 @@
         "lod0": 2136,
         "lod1": 2136,
         "lod2": 2136
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_m_corpo",
@@ -392,7 +415,8 @@
         "lod0": 4606,
         "lod1": 4606,
         "lod2": 4606
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_m_ombreira",
@@ -408,7 +432,8 @@
         "lod0": 1376,
         "lod1": 1376,
         "lod2": 1376
-      }
+      },
+      "health": 85
     },
     {
       "slug": "rou3d_ranger_m_pernas",
@@ -424,7 +449,8 @@
         "lod0": 1128,
         "lod1": 1128,
         "lod2": 1128
-      }
+      },
+      "health": 85
     }
   ]
 }

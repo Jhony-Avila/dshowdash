@@ -10,6 +10,24 @@
 // Uso: node scripts/avatar/assets3d/gerar-indice-3d.mjs [pasta-personagens]
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
+import { validarAsset } from './validar-asset.mjs';
+
+// onda 1410 (MEGA_BRIEFING_01 §2735–§2742): HEALTH SCORE por asset (0–100),
+// derivado e determinístico — consumo SÓ pelo QaStudio/tooling (campo extra
+// no index.json; o runtime ignora campos desconhecidos). Penalidades:
+// erro do validador −40 cada · ressalva −10 · nota (LODs etc.) −5 ·
+// qaVisual rejected −50 / rework −30 / pending −10 · deprecated −20.
+export function healthDe(pasta, manifest) {
+  let score = 100;
+  try {
+    const r = validarAsset(pasta, { rigCanonico: undefined });
+    score -= 40 * r.erros.length + 10 * r.avisos.length + 5 * (r.notas?.length ?? 0);
+  } catch { score -= 60; }
+  const qa = manifest.qaVisual?.status ?? null;
+  if (qa === 'rejected') score -= 50; else if (qa === 'rework') score -= 30; else if (qa === 'pending') score -= 10;
+  if (manifest.deprecated) score -= 20;
+  return Math.max(0, Math.min(100, score));
+}
 
 const NOMES_AMIGAVEIS = {
   androide: 'Androide', animal_pug: 'Pug', humano_aventureiro: 'Aventureiro',
@@ -58,6 +76,8 @@ export function gerarIndice3d(pastaPersonagens) {
       animacoes: m.animacoes ?? [],
       triangulos: m.triangulos ?? {},
       ...(m.excecoes ? { excecoes: m.excecoes } : {}),
+      // onda 1410 (§2735): health 0–100 (QaStudio/tooling; runtime ignora)
+      health: healthDe(join(dir, slug), m),
     });
   }
   // onda 1406 (§2585): ID duplicado entre pastas = FAIL (nunca índice ambíguo)

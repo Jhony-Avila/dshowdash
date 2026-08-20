@@ -39,7 +39,7 @@ Highlight plástico; gradiente genérico; sombra de contato fraca; thumb com ocu
 
 ## 5. Estados de QA (§2675) e ficha
 
-`pending` → `approved` | `approved_with_notes` | `rework` | `rejected`. Ficha (JSON, um por asset/versão; salva fora do público em `storage/visual-qa/<id>/` e resumida no manifest `qa`):
+`pending` → `approved` | `approved_with_notes` | `rework` | `rejected`; `rework` → `pending` (nova rodada); approved* é terminal na versão. **Executável desde a onda 1410**: `scripts/avatar/assets3d/ficha-qa.mjs` valida transições, exige reviewer humano, todos os eixos aplicáveis avaliados, 0 hard fails e evidências antes de aprovar; issue rastreada (§3082) para cada soft fail em `approved_with_notes`; resumo espelhado no manifest `qaVisual`. Ficha (JSON, um por asset/versão; salva fora do público em `storage/visual-qa/<id>/`):
 
 ```json
 {
@@ -71,8 +71,8 @@ Highlight plástico; gradiente genérico; sombra de contato fraca; thumb com ocu
 
 ## 7. Fluxo (§34, §2974–§2976, §3055)
 
-1. Gate técnico (`validar-asset.mjs` / lint 2D / suíte) verde.
-2. Renders de homologação padronizados (`gerar-renders-homologacao.mjs`, onda 1409) + regressão visual (`regressao-visual.mjs`, onda 1407).
+1. Gate técnico (`validar-asset.mjs` / lint 2D / suíte) verde; gate de PUBLICAÇÃO premium (§2677, onda 1410): `publicar-asset`/`cli.mjs publish` recusam premium/hero sem aprovação (`--override --motivo` logado em `storage/visual-qa/overrides.log`).
+2. Renders de homologação padronizados (`gerar-renders-homologacao.mjs`, 1409) + evidências por categoria anexadas à ficha (`gerar-evidencias.mjs`, 1410) + regressão visual (`regressao-visual.mjs`, 1407) + deformação/poses A–H (`corpo-deformacao.mjs`, 1410) + clipping bind pose (`clipping-qa.mjs`, 1410) + inspeção interativa no shell (`QaStudio`, flag `as6.qa_route`, 1410).
 3. Ficha preenchida (auto: hard fails mensuráveis; humano: notas) → estado.
 4. **Aprovação humana do Jhony** para premium/hero e para todo Golden (gates §183, §400, §701, §897, §1220, §1495, §1751, §2032, §2286, §2560).
 5. Baseline só muda após aprovação (`--aprovar` + nota no mesmo commit, doutrina #83). Nunca atualizar baseline automaticamente.

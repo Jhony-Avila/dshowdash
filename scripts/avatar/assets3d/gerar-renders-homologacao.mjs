@@ -157,7 +157,7 @@ export async function gerarRendersHomologacao(pastaPublicada, { angulos = ['fron
     navegador = await chromium.launch({ executablePath: process.env.PW_CHROME ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
     const pagina = await (await navegador.newContext({ viewport: { width: lado + 64, height: lado + 64 } })).newPage();
     await pagina.goto(`http://127.0.0.1:${porta}/`, { waitUntil: 'networkidle' });
-    await pagina.waitForFunction(() => window.__pronto === true, { timeout: 120000 });
+    await pagina.waitForFunction(() => window.__pronto === true, undefined, { timeout: 300000 });
     const erro = await pagina.evaluate(() => window.__erro ?? null);
     if (erro) throw new Error(`render falhou: ${erro}`);
     const res = await pagina.evaluate(() => window.__saida);

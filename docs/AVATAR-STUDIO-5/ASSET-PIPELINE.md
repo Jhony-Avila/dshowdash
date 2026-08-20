@@ -63,9 +63,11 @@ Política: unknown field → warn; campo crítico inválido → fail; thumb/prev
 | premium | technical + `qaVisual.status = approved` + famílias de material declaradas + bounds/fit + regressão visual sem `unexpected` |
 | hero | premium + perf dentro do budget da classe (`PERFORMANCE-BUDGETS.md`) + preview/turntable + golden dedicado |
 
-`--override --motivo "<texto>"` logado em `storage/assets-3d-fonte/_publicacoes.log`; `--sem-validar` deixa de ser silencioso.
+Implementado na onda 1410: `publicar-asset.mjs`/`cli.mjs publish` recusam premium/hero sem `qaVisual.status ∈ {approved, approved_with_notes}` (gate §2677); `--override --motivo "<texto>"` é aceito e **logado** em `storage/visual-qa/overrides.log` (auditável). Ingestão segura §2748 (`validarFonteSegura`): fonte ≤ 200 MB, magic GLB v2, **URI externa recusada** (imagens/buffers fora do binário). Versões **sempre preservadas** (`cli.mjs publish` → snapshot completo em `storage/assets-3d-versoes/<id>/vN/`; `cli.mjs rollback [--para vN]` restaura byte a byte + regenera índice). Canary §2759: `cli.mjs publish --visibility internal`.
 
 ## 5. Visual QA e evidências (§2663–§2677) — ver `VISUAL-QA.md`
+
+Onda 1410: **ficha executável** `ficha-qa.mjs criar|status|ver` — status machine §2675 (`pending → approved | approved_with_notes | rework | rejected`, `rework → pending`; approved* terminal na versão), checklist de eixos POR CATEGORIA (não-aplicáveis = null), aprovar exige todos os eixos avaliados + 0 hard fails + evidências; `approved_with_notes` exige issue com texto+owner+severidade+prazo (§3082). Ficha completa em `storage/visual-qa/<id>/ficha-vN.json` (fora do git); RESUMO espelhado no manifest `qaVisual`. Evidências padronizadas: `gerar-evidencias.mjs <pasta>` (matriz de renders por categoria → `storage/visual-qa/<id>/evidencias/`, anexadas à ficha). Rota visual no shell: **QaStudio** (`as6.qa_route`, chunk lazy) — LOD forçado, looks, overlays, calibração, screenshot 1-click, inspector técnico (manifest/health §2735/renderer.info), debug de materiais (`as6.material_debug`). Quem aprova é o Jhony.
 
 `gerar-evidencias.mjs <pasta>` → `storage/visual-qa/<id>/<id>_vNN_{front,34,profile,back,closeup}.png` (fora do público); ficha JSON; status no manifest; checklist por categoria; hard fails automáticos consolidados no validador.
 
@@ -101,6 +103,17 @@ node scripts/avatar/assets3d/medir-perf-asset.mjs public/assets/avatars/3d/<tipo
 node scripts/avatar/assets3d/gerar-renders-homologacao.mjs public/assets/avatars/3d/<tipo>/<id>  # 1409: renders + IoU + landmarks
 node scripts/avatar/assets3d/gerar-indice-3d.mjs
 node scripts/avatar/assets3d/auditar-lods.mjs && node scripts/avatar/assets3d/medir-perf-asset.mjs   # 1409: evidências (o diff é o relatório)
+
+# 1410 — CLI única (wrapper; --dry-run em tudo)
+node scripts/avatar/assets3d/cli.mjs validate public/assets/avatars/3d/<tipo>/<id>
+node scripts/avatar/assets3d/cli.mjs qa public/assets/avatars/3d/<tipo>/<id> criar        # ficha pending
+node scripts/avatar/assets3d/gerar-evidencias.mjs public/assets/avatars/3d/<tipo>/<id>    # renders → ficha
+node scripts/avatar/assets3d/ficha-qa.mjs status <pasta> approved --reviewer jhony --data AAAA-MM-DD --nota silhueta=9 …
+node scripts/avatar/assets3d/cli.mjs publish <pasta> [--visibility internal] [--dry-run]  # snapshot + gate §2677 + índice
+node scripts/avatar/assets3d/cli.mjs rollback <pasta> [--para vN]
+node scripts/avatar/assets3d/cli.mjs report <pasta>                                       # validador+perf+LODs+health+ficha
+node scripts/avatar/assets3d/corpo-deformacao.mjs <base> [--pacote …/animacoes/ual_basico] # poses A–H + 3 frames §432
+node scripts/avatar/assets3d/clipping-qa.mjs [--so <peça>]                                # raycast bind pose §415.2
 # (onda 1410) node scripts/avatar/assets3d/cli.mjs publish <pasta> --dry-run
 
 # 2D — arte nova (ondas 1411+)
