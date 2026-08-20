@@ -154,6 +154,12 @@ export interface AvatarConfig {
    *  largura/altura sutis; 1 = neutro (campo/objeto omitidos) */
   corpoFino?: { largura?: number; altura?: number };
   postura?: PosturaAvatar;
+  /** onda 1411 (decisão #159): ACABAMENTO do render 2D — 'premium' liga o
+   *  trilho Classic Premium (sombra de contato, hooks das partes `_px_`,
+   *  materiais 2D) quando a flag `as6.classico_premium` está ON. Valor
+   *  neutro (clássico) NUNCA persiste — validarConfig omite (byte-estável;
+   *  flag OFF ignora o campo no render = rollback §651). */
+  acabamento?: 'premium';
 }
 
 // ── lote 251–260 (§102/§118): criação avançada 2D ───────────────────

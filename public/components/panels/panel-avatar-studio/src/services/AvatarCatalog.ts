@@ -26,6 +26,7 @@ import { CABELOS } from '../engine/partes/cabelos';
 import { OLHOS } from '../engine/partes/olhos';
 import { BOCAS } from '../engine/partes/bocas';
 import { ROUPAS } from '../engine/partes/roupas';
+import { ROUPAS_PREMIUM } from '../engine/partes/premium/roupas'; // onda 1411 (#159/#166)
 import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
 import { slotCorporal, slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2) · #154
@@ -281,7 +282,7 @@ const LORES: Record<string, string> = {
 // ── Índices ─────────────────────────────────────────────────────────
 
 export const PARTES: ParteDef[] = [
-  ...BASES, ...ESPECIES, ...CABELOS, ...OLHOS, ...BOCAS, ...ROUPAS,
+  ...BASES, ...ESPECIES, ...CABELOS, ...OLHOS, ...BOCAS, ...ROUPAS, ...ROUPAS_PREMIUM,
   ...SOBREPECAS, // §3393 (decisão #95): wrappers — zero arte nova
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
   ...AURAS, ...BANNERS, ...EMBLEMAS,
@@ -300,7 +301,11 @@ export function itemPorId(id: string): ParteDef | undefined {
 }
 
 export function itensDe(categoria: CategoriaId): ParteDef[] {
-  return PARTES.filter((x) => x.categoria === categoria);
+  // onda 1411 (#159): partes `_px_` (acabamento premium) só APARECEM no
+  // catálogo com a flag; o resolver POR_ID segue aceitando configs salvos
+  // (rollback §651 esconde a UI, nunca descarta dado)
+  return PARTES.filter((x) => x.categoria === categoria
+    && (x.acabamento !== 'premium' || flag('as6.classico_premium')));
 }
 
 /** Categorias VISÍVEIS na navegação (§3393 — decisão #95): `roupa_sobre`
@@ -473,6 +478,8 @@ export function validarConfig(bruto: unknown): AvatarConfig {
     || b.postura === 'heroica' || b.postura === 'misteriosa') {
     saida.postura = b.postura;
   }
+  // onda 1411 (#159): acabamento — enum FECHADO de 1 valor; neutro omitido
+  if (b.acabamento === 'premium') saida.acabamento = 'premium';
   return saida;
 }
 
@@ -706,7 +713,10 @@ export function svgItemIsolado(
 }
 
 export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
-  return renderAvatar(config, itemPorId, opcoes);
+  // onda 1411 (#159): o modo premium é decidido AQUI (flag + acabamento) —
+  // o motor continua puro; flag OFF ⇒ premium false ⇒ SVG byte a byte
+  const premium = opcoes?.premium ?? (config.acabamento === 'premium' && flag('as6.classico_premium'));
+  return renderAvatar(config, itemPorId, premium ? { ...opcoes, premium } : opcoes);
 }
 
 export function dataUriDe(config: AvatarConfig, opcoes?: OpcoesRender): string {

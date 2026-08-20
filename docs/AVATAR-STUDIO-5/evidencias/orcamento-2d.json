@@ -1,0 +1,226 @@
+{
+  "gerado_por": "scripts/avatar/orcamento-2d.mjs",
+  "tetos": {
+    "bustoBytes": 40960,
+    "bustoNos": 600,
+    "bustoFiltros": 4,
+    "corpoBytes": 81920
+  },
+  "resumo": {
+    "casos": 35,
+    "erros": [],
+    "avisos": []
+  },
+  "casos": {
+    "classico-padrao-busto": {
+      "bytes": 4017,
+      "nos": 70,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "classico-padrao-corpo": {
+      "bytes": 7303,
+      "nos": 131,
+      "filtros": 0,
+      "gradientes": 7
+    },
+    "roupa-rou_camiseta": {
+      "bytes": 4017,
+      "nos": 70,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_regata": {
+      "bytes": 3957,
+      "nos": 70,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_social": {
+      "bytes": 4113,
+      "nos": 73,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_hoodie": {
+      "bytes": 4496,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_jaqueta": {
+      "bytes": 4232,
+      "nos": 73,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_gamer": {
+      "bytes": 4187,
+      "nos": 72,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_terno": {
+      "bytes": 4508,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_kimono": {
+      "bytes": 4301,
+      "nos": 74,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_astronauta": {
+      "bytes": 4599,
+      "nos": 79,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_moletom_dshow": {
+      "bytes": 4177,
+      "nos": 72,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_armadura": {
+      "bytes": 4839,
+      "nos": 83,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "roupa-rou_polo": {
+      "bytes": 4054,
+      "nos": 72,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_flanela": {
+      "bytes": 4878,
+      "nos": 84,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_colete": {
+      "bytes": 4350,
+      "nos": 74,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_smoking": {
+      "bytes": 4314,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_jersey": {
+      "bytes": 4191,
+      "nos": 73,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_sobretudo": {
+      "bytes": 4348,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_jaleco": {
+      "bytes": 4251,
+      "nos": 73,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_neon_racer": {
+      "bytes": 4364,
+      "nos": 75,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_havaiana": {
+      "bytes": 6993,
+      "nos": 130,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_suspensorios": {
+      "bytes": 4128,
+      "nos": 73,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_tricot": {
+      "bytes": 4736,
+      "nos": 79,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_capa_chuva": {
+      "bytes": 4211,
+      "nos": 73,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_chef": {
+      "bytes": 4310,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_blazer_power": {
+      "bytes": 4157,
+      "nos": 72,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_regata_quadra": {
+      "bytes": 4239,
+      "nos": 73,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_tunica_arcana": {
+      "bytes": 4342,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_exoesqueleto": {
+      "bytes": 4619,
+      "nos": 80,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "roupa-rou_pijama": {
+      "bytes": 4917,
+      "nos": 85,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_gala_dshow": {
+      "bytes": 4433,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_px_terno": {
+      "bytes": 5435,
+      "nos": 95,
+      "filtros": 0,
+      "gradientes": 7
+    },
+    "roupa-rou_px_jaqueta": {
+      "bytes": 5032,
+      "nos": 87,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "premium-p01-corpo": {
+      "bytes": 8266,
+      "nos": 151,
+      "filtros": 0,
+      "gradientes": 9
+    }
+  }
+}

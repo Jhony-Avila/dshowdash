@@ -1,0 +1,41 @@
+{
+  "descricao": "GOLDEN CLASSIC PREMIUM (onda 1411, decisão #159) — sha256 do SVG premium por caso p01/p02 × busto/palco/corpo. Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).",
+  "casos": {
+    "p01-busto": {
+      "sha256": "c61820bf7cc115c860649fd9477ce31f68376a4daa186ff17ec24764544bfb72",
+      "bytes": 5515,
+      "nos": 95,
+      "filtros": 0
+    },
+    "p01-palco": {
+      "sha256": "05b2791324634d8e526b5442d58b765fd1c498c01346acf346ba6ea7ea9923be",
+      "bytes": 6026,
+      "nos": 115,
+      "filtros": 0
+    },
+    "p01-corpo": {
+      "sha256": "bf5d6be30ed62858cb700b36d34091f91d1805a07bc63b42fc2e63ad972b2c21",
+      "bytes": 8381,
+      "nos": 151,
+      "filtros": 0
+    },
+    "p02-busto": {
+      "sha256": "41c1c2b83f488abf6132f22d04103fb5b93addc5d81dae64cf3600d327c29f3c",
+      "bytes": 5600,
+      "nos": 91,
+      "filtros": 0
+    },
+    "p02-palco": {
+      "sha256": "f2ece70c55e66a946e683d34842048f27d3ec9df701f59b81832290b8d7c5b91",
+      "bytes": 6111,
+      "nos": 111,
+      "filtros": 0
+    },
+    "p02-corpo": {
+      "sha256": "f925823b978d1176fd79e8de98edc6555d6c009ff30615894f3f1ec69e8abeeb",
+      "bytes": 8567,
+      "nos": 149,
+      "filtros": 0
+    }
+  }
+}

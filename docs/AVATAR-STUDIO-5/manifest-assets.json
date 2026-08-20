@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 393,
+    "itens2d": 395,
     "categorias": 13,
     "titulos": 30,
     "colecoes": 12,
@@ -1932,6 +1932,16 @@
       "id": "rou_polo",
       "categoria": "roupa",
       "raridade": "comum"
+    },
+    {
+      "id": "rou_px_jaqueta",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_px_terno",
+      "categoria": "roupa",
+      "raridade": "epico"
     },
     {
       "id": "rou_regata",

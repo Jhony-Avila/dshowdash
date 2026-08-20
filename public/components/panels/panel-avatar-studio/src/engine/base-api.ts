@@ -27,6 +27,23 @@ export interface ParteDef extends ItemCatalogo {
    * Região útil do torso: x 86–154, y 108–218 (braços são grupos à parte).
    */
   renderCorpo?: ParteRender;
+
+  // ── onda 1411 (MEGA_BRIEFING_01 §2381–§2427, decisão #159): trilho
+  // CLASSIC PREMIUM — hooks OPCIONAIS consumidos SÓ com opcoes.premium
+  // (flag as6.classico_premium + config.acabamento === 'premium').
+  // Parte sem os hooks / premium desligado ⇒ SVG byte a byte o de sempre. ──
+  /** Marca de trilho: asset autorado no padrão premium (IDs `_px_`, #166). */
+  acabamento?: 'premium';
+  /** Fragmento ATRÁS da figura inteira (halo de luz, volume de fundo). */
+  renderAtras?: ParteRender;
+  /** Fragmento NA FRENTE de todas as camadas (fios soltos, brilho de lente). */
+  renderFrente?: ParteRender;
+  /** SOMBRA DE CONTATO própria (pintada antes da figura, por cima do fundo);
+   *  ausente + premium ⇒ o motor pinta a sombra de contato PADRÃO. */
+  renderSombra?: ParteRender;
+  /** Planos extras no CORPO INTEIRO/palco (parallax §2427): atrás do
+   *  personagem e à frente dele — mesmas coordenadas dos planos do render. */
+  renderPlanos?: { atras?: ParteRender; frente?: ParteRender };
 }
 
 // ── Geometria compartilhada (todas as partes se ancoram aqui) ───────

@@ -24,6 +24,8 @@ export interface ConfigLegado2d {
   postura?: 'confiante' | 'relaxada' | 'executiva' | 'heroica' | 'misteriosa';
   /** megas 561–564 (§102.2): ajuste FINO do corpo — roundtrip sem perda. */
   corpoFino?: { largura?: number; altura?: number };
+  /** onda 1411 (#159): acabamento premium — roundtrip sem perda. */
+  acabamento?: 'premium';
   /** §71: propriedades por camada (F3 C2) — roundtrip sem perda. */
   params?: Partial<Record<string, Record<string, number>>>;
   /** §73: canais de cor por camada (F3 C3) — roundtrip sem perda. */
@@ -62,6 +64,7 @@ export function deLegado2d(cfg: ConfigLegado2d): EstadoAvatar {
   if (cfg.postura) e.body.postura = cfg.postura;
   // megas 561–564 (§102.2): fino só entra com conteúdo (checksum estável)
   if (cfg.corpoFino && Object.keys(cfg.corpoFino).length) e.body.fino = { ...cfg.corpoFino };
+  if (cfg.acabamento === 'premium') e.appearance.acabamento = 'premium'; // onda 1411 (#159)
   e.renderer.preferido = '2d';
   return e;
 }
@@ -101,6 +104,7 @@ export function paraLegado2d(e: EstadoAvatar, baseFallback = 'bas_classica'): Co
     ...(e.body.tipo ? { corpo: e.body.tipo as ConfigLegado2d['corpo'] } : {}),
     ...(e.body.postura ? { postura: e.body.postura as ConfigLegado2d['postura'] } : {}),
     ...(e.body.fino && Object.keys(e.body.fino).length ? { corpoFino: { ...e.body.fino } } : {}),
+    ...(e.appearance.acabamento === 'premium' ? { acabamento: 'premium' as const } : {}),
     ...(Object.keys(params).length ? { params } : {}),
     ...(Object.keys(coresCamada).length ? { coresCamada } : {}),
   };

@@ -1229,7 +1229,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               <Palco3d estado={estadoDraft} movReduzido={movReduzido} sinalApresentar={sinal3d}
                 aoUsarComoAvatar={aoSalvarFotoLegado} />
             ) : (
-              <div className={`avst5-palco${poderAtivo ? ' avst5-palco-climax' : ''}`}
+              <div className={`avst5-palco${poderAtivo ? ' avst5-palco-climax' : ''}${flag('as6.classico_premium') && configDraft.acabamento === 'premium' ? ' avst5-palco-premium' : ''}`}
                 style={palcoV2 && propsCen.luz !== 1 ? { filter: `brightness(${propsCen.luz})` } : undefined}>
                 {/* mega 233 (§161): profundidade (vinheta) + cor ambiente —
                     overlay do CENÁRIO, nunca serializado no avatar */}

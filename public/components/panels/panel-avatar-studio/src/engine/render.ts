@@ -15,6 +15,7 @@ import { aplicarParamsSvg } from './params';
 import type { ParteDef } from './base-api';
 import { G } from './base-api';
 import { corpoInteiro } from './partes/corpo';
+import { ORDEM_CAMADAS } from './camadas';
 
 export interface OpcoesRender {
   /** Tamanho CSS do SVG (width/height). Default: responsivo (100%). */
@@ -38,6 +39,10 @@ export interface OpcoesRender {
    * exige palco:true). Pedido do Jhony: "avatares com o corpo inteiro".
    */
   enquadramento?: 'busto' | 'corpo';
+  /** onda 1411 (decisão #159): modo CLASSIC PREMIUM — o caller liga quando
+   *  flag('as6.classico_premium') && config.acabamento === 'premium'
+   *  (svgDe faz isso). false/ausente = motor clássico byte a byte. */
+  premium?: boolean;
 }
 
 /** Hash djb2 → base36. Estável entre execuções (nada de Math.random). */
@@ -60,24 +65,10 @@ export function congelarSvg(svg: string): string {
 // Slots ADITIVOS de acessórios (4.6 §20, decisão #41): pescoço/costas por
 // baixo, chapéu sobre o cabelo, rosto por cima de tudo. A chave legada
 // 'acessorio' fica na sequência por robustez (configs antigos sem validar).
-const ORDEM_CAMADAS = [
-  // 'roupa_sobre' (§3393, decisão #95): SOBREPEÇA por cima da roupa —
-  // campo ausente ⇒ fragmento vazio ⇒ SVG byte a byte o de sempre
-  'roupa', 'roupa_sobre', 'emblema', 'boca', 'olhos', 'cabelo',
-  'acessorio', 'acessorio_pescoco', 'acessorio_cabeca', 'acessorio_rosto',
-  // mega onda 1301+ (decisão #140, as6.acess_v2): slots FINOS aditivos
-  // logo após o bloco legado (a arte foi autorada p/ esta faixa de
-  // empilhamento); ausentes = SVG byte a byte o de sempre. Ordem entre
-  // eles: costas → olhos → orelha → flutuante → companheiro.
-  'acessorio_costas', 'acessorio_olhos', 'acessorio_orelha',
-  'acessorio_flutuante', 'acessorio_companheiro',
-  // onda 1404 (decisão #154, as6.slots_corpo): slots CORPORAIS — no busto
-  // a arte NÃO desenha (render vazio por contrato; só renderCorpo existe),
-  // então a presença aqui é forward-compat: fragmento vazio = SVG byte a
-  // byte. Ordem: pernas → pés → cintura → pulsos → mãos (mãos por cima).
-  'acessorio_pernas', 'acessorio_pes', 'acessorio_cintura',
-  'acessorio_pulso_e', 'acessorio_pulso_d', 'acessorio_mao_e', 'acessorio_mao_d',
-] as const;
+// onda 1411 (decisão #159): a lista literal virou CAMADAS_Z (engine/
+// camadas.ts) e a ordem é DERIVADA — golden-classic [A] prova a igualdade
+// byte a byte com a lista histórica; g01–g16 intactos.
+// (comentários de origem de cada faixa: ver camadas.ts)
 
 /** onda 1404 (#154): slots corporais — ordem de pintura no CORPO INTEIRO
  *  (por cima do scaffold do corpo, por baixo da cabeça). */
@@ -182,6 +173,36 @@ export function renderAvatar(
     pintar(config.camadas.acessorio_orelha, 'acessorio_orelha') + pintar(config.camadas.acessorio_flutuante, 'acessorio_flutuante') +
     pintar(config.camadas.acessorio_companheiro, 'acessorio_companheiro');
 
+  // ── onda 1411 (§2414–§2427, #159): fragmentos do trilho PREMIUM ──
+  // Consumidos SÓ com opcoes.premium; sem premium tudo aqui é '' e o SVG
+  // sai byte a byte o de sempre (regra inviolável de byte-stability).
+  let premiumSombra = '';
+  let premiumAtras = '';
+  let premiumFrente = '';
+  let premiumPlanoAtras = '';
+  let premiumPlanoFrente = '';
+  if (opcoes.premium) {
+    let temSombraPropria = false;
+    for (const chave of ORDEM_CAMADAS) {
+      const idc = config.camadas[chave];
+      if (!idc || idc === 'nenhum') continue;
+      const def = resolver(idc);
+      if (!def) continue;
+      const pal = paletaDa(chave);
+      if (def.renderSombra) { premiumSombra += def.renderSombra(pal, uid); temSombraPropria = true; }
+      if (def.renderAtras) premiumAtras += def.renderAtras(pal, uid);
+      if (def.renderFrente) premiumFrente += def.renderFrente(pal, uid);
+      if (def.renderPlanos?.atras) premiumPlanoAtras += def.renderPlanos.atras(pal, uid);
+      if (def.renderPlanos?.frente) premiumPlanoFrente += def.renderPlanos.frente(pal, uid);
+    }
+    // sombra de contato PADRÃO (§2418): nenhuma parte declarou a própria
+    if (!temSombraPropria) {
+      const cyS = opcoes.enquadramento === 'corpo' && opcoes.palco ? 394 : 236;
+      premiumSombra = `<ellipse cx="120" cy="${cyS}" rx="58" ry="6" fill="rgba(0,0,0,0.25)"/>`
+        + `<ellipse cx="120" cy="${cyS}" rx="36" ry="3.6" fill="rgba(0,0,0,0.18)"/>`;
+    }
+  }
+
   let conteudo: string;
   if (opcoes.palco) {
     // Grupos animáveis do palco (idle/parallax) — só no preview do estúdio.
@@ -228,19 +249,19 @@ export function renderAvatar(
         : '';
       conteudo =
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
-        `<g data-anim="plano-personagem"><g data-anim="personagem">` +
+        `<g data-anim="plano-personagem">${premiumPlanoAtras}${premiumSombra}${premiumAtras}<g data-anim="personagem">` +
           envolverFigura(
             corpoInteiro(paletaDa('roupa'), uid) + roupaCorpo + sobreCorpo + emblemaCorpo + acessCorpo +
             `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`,
             config, 396,
           ) +
-        `</g></g>` +
-        `<g data-anim="plano-frente"><g transform="translate(120 200) scale(1.8) translate(-120 -120)">${efeitoFrente}</g></g>`;
+        `${premiumFrente}</g></g>` +
+        `<g data-anim="plano-frente"><g transform="translate(120 200) scale(1.8) translate(-120 -120)">${efeitoFrente}</g>${premiumPlanoFrente}</g>`;
     } else {
       // planos com sobre-escala: o parallax translada sem expor a borda do clip
       conteudo =
         `<g data-anim="plano-fundo"><g transform="translate(120 120) scale(1.08) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
-        `<g data-anim="plano-personagem"><g data-anim="personagem">` +
+        `<g data-anim="plano-personagem">${premiumSombra}${premiumAtras}<g data-anim="personagem">` +
           envolverFigura(
             pintar(config.base) + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.roupa_sobre, 'roupa_sobre') + pintar(config.camadas.emblema, 'emblema') +
             pintar(config.camadas.boca, 'boca') +
@@ -249,7 +270,7 @@ export function renderAvatar(
             acessorios + palpebras,
             config, 236,
           ) +
-        `</g></g>` +
+        `${premiumFrente}</g></g>` +
         `<g data-anim="plano-frente"><g transform="translate(120 120) scale(1.1) translate(-120 -120)">${efeitoFrente}</g></g>`;
     }
   } else {
@@ -257,7 +278,7 @@ export function renderAvatar(
       pintar(config.base) + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c], c)).join(''),
       config, 236,
     );
-    conteudo = `${fundo}${efeitoAtras}${personagem}${efeitoFrente}`;
+    conteudo = `${fundo}${efeitoAtras}${premiumSombra}${premiumAtras}${personagem}${premiumFrente}${efeitoFrente}`;
   }
 
   // mega 237 (§167): no modo PALCO a moldura ganha um grupo animável

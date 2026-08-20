@@ -103,6 +103,9 @@ export interface EstadoAvatar {
     materiais: Record<string, number>;
     params?: Record<string, Record<string, number>>;
     coresCamada?: Record<string, Record<string, string>>;
+    /** onda 1411 (#159): acabamento do render 2D — OPCIONAL (ausente
+     *  preserva o checksum de estados anteriores; 'premium' único valor). */
+    acabamento?: string;
   };
   equipment: Partial<Record<SlotId, AssetId>>;
   presentation: { titulo: AssetId | null; poderId: AssetId | null; pose: string | null; expressao: string | null };

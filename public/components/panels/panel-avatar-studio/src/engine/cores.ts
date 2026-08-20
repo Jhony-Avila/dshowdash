@@ -77,6 +77,49 @@ export function tinta(hex: string): Tinta {
   };
 }
 
+// ── onda 1411 (§2402–§2410, decisão #159): TINTA PREMIUM por luminância ──
+// A rampa clássica (claro/escuro/profundo) usa fatores FIXOS — em cores
+// muito claras ela estoura pro branco e em muito escuras vira preto chapado.
+// A premium ESCALA os passos pela luminância relativa da base: cores claras
+// ganham sombras mais presentes (e realce contido), cores escuras ganham
+// realce mais presente (e sombra contida) — leitura de volume estável em
+// TODA a gama (§2404: "materiais leem em preto, branco e saturado").
+export interface TintaPremium extends Tinta {
+  /** realce especular (acima do claro) */
+  brilho: string;
+  /** meio-tom entre base e escuro (oclusão suave) */
+  meio: string;
+  /** luminância relativa (0–1) da base — decide highlights nos materiais */
+  luminancia: number;
+}
+
+/** Luminância relativa sRGB (WCAG) — determinística. */
+export function luminanciaDe(hex: string): number {
+  const n = normalizarHex(hex, '#000000').slice(1);
+  const c = [0, 2, 4].map((i) => {
+    const v = parseInt(n.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+export function tintaPremium(hex: string): TintaPremium {
+  const base = normalizarHex(hex, '#000000');
+  const lum = luminanciaDe(base);
+  // pesos por luminância: claro↑ quando escuro; escuro↑ quando claro
+  const kClaro = 0.18 + 0.30 * (1 - lum); // 0.18 (branco) … 0.48 (preto)
+  const kEscuro = 0.14 + 0.26 * lum;      // 0.14 (preto) … 0.40 (branco)
+  return {
+    base,
+    brilho: clarear(base, Math.min(0.9, kClaro + 0.28)),
+    claro: clarear(base, kClaro),
+    meio: escurecer(base, kEscuro * 0.5),
+    escuro: escurecer(base, kEscuro),
+    profundo: escurecer(base, Math.min(0.9, kEscuro + 0.24)),
+    luminancia: Math.round(lum * 1000) / 1000,
+  };
+}
+
 export interface Paleta {
   pele: Tinta;
   cabelo: Tinta;

@@ -63,7 +63,12 @@ const POR_PREFIXO: Array<[RegExp, Partial<FichaQualidadeVisual>]> = [
 /** Sucessores premium por id legado (§163–§167): preenchido nas ondas
  *  1411+; quando um id está aqui, o legado vira `legacy` (fora do destaque)
  *  mas continua renderizando para sempre. */
-export const SUCESSOR_PREMIUM: Record<string, string> = {};
+export const SUCESSOR_PREMIUM: Record<string, string> = {
+  // onda 1411 (#159/#166): primeiras partes do trilho Classic Premium.
+  // O legado segue renderizando PARA SEMPRE; só sai do destaque (§163).
+  rou_terno: 'rou_px_terno',
+  rou_jaqueta: 'rou_px_jaqueta',
+};
 
 export function qualidadeVisualDe(id: string): NivelQualidadeVisual {
   const porId = POR_ID[id]?.qualidadeVisual;
@@ -93,6 +98,16 @@ export function ehDestacavel(id: string): boolean {
   if (n === 'prototype') return false;
   if (n === 'legacy' && SUCESSOR_PREMIUM[id]) return false;
   return true;
+}
+
+/** onda 1411 (#159): em que RENDERERS o item existe — dado derivável
+ *  (2D = catálogo do Creator; 3D = sockets/partes 3D publicadas). Usado
+ *  pelo QaStudio/ficha p/ saber ONDE homologar; nunca muda render. */
+export function rendererSupport(id: string): Array<'2d' | '3d'> {
+  if (/^(cab3d_|brb3d_|rou3d_|ace3d_|cen3d_|base_|humano_|animal_|androide)/.test(id)) return ['3d'];
+  // partes 2D com espelho 3D publicado (cabelos cab_* têm par cab_* em partes/)
+  if (/^cab_(longo|coque|repartido|raspado|raspado_f|barba)$/.test(id)) return ['2d', '3d'];
+  return ['2d'];
 }
 
 /** Comparação legível: nível do item ≥ mínimo? */

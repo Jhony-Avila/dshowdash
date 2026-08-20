@@ -3,22 +3,22 @@
   "artBibleVersion": "1.0",
   "kpiPrincipal": {
     "nome": "Premium Coverage %",
-    "catalogo2d": 0,
+    "catalogo2d": 0.5,
     "assets3d": 0
   },
   "catalogo2d": {
     "geral": {
-      "total": 393,
+      "total": 395,
       "prototype": 0,
-      "legacy": 0,
-      "production": 393,
-      "premium": 0,
+      "legacy": 2,
+      "production": 391,
+      "premium": 2,
       "hero": 0,
-      "premiumCoveragePct": 0,
-      "productionReadyPct": 100,
+      "premiumCoveragePct": 0.5,
+      "productionReadyPct": 99.5,
       "qaAprovadoPct": 0,
       "qa": {
-        "pending": 393
+        "pending": 395
       }
     },
     "porCategoria": {
@@ -177,17 +177,17 @@
         }
       },
       "roupa": {
-        "total": 30,
+        "total": 32,
         "prototype": 0,
-        "legacy": 0,
-        "production": 30,
-        "premium": 0,
+        "legacy": 2,
+        "production": 28,
+        "premium": 2,
         "hero": 0,
-        "premiumCoveragePct": 0,
-        "productionReadyPct": 100,
+        "premiumCoveragePct": 6.3,
+        "productionReadyPct": 93.8,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 30
+          "pending": 32
         }
       },
       "roupa_sobre": {
@@ -205,7 +205,10 @@
         }
       }
     },
-    "naoDestacaveis": []
+    "naoDestacaveis": [
+      "rou_jaqueta",
+      "rou_terno"
+    ]
   },
   "assets3d": {
     "geral": {

@@ -1,7 +1,7 @@
 {
   "gerado_por": "scripts/avatar/inventario-visual.mjs",
   "catalogo2d": {
-    "total": 393,
+    "total": 395,
     "categorias": [
       "base",
       "cabelo",
@@ -134,7 +134,7 @@
         "semFoco": []
       },
       "roupa": {
-        "total": 30,
+        "total": 32,
         "temas": {
           "aventura": 2,
           "casual": 8,
@@ -145,24 +145,25 @@
           "espaço": 1,
           "esporte": 1,
           "esportivo": 1,
-          "executivo": 4,
+          "executivo": 5,
           "fantasia": 1,
           "gamer": 3,
           "oriental": 1,
           "retrô": 1,
-          "sci-fi": 2
+          "sci-fi": 2,
+          "urbano": 1
         },
         "raridades": {
           "comum": 5,
-          "epico": 5,
+          "epico": 6,
           "exclusivo": 2,
           "incomum": 7,
           "lendario": 4,
-          "raro": 7
+          "raro": 8
         },
         "slots": {},
         "subcategorias": {},
-        "renderCorpo": 30,
+        "renderCorpo": 32,
         "atras": 0,
         "semFoco": []
       },

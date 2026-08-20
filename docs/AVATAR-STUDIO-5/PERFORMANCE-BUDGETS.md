@@ -60,7 +60,7 @@ Métricas a registrar (§2950–§2955, `diagnostico()` + `PerfBaseline`): FPS, 
 
 ## 5. 2D Clássico
 
-- `SvgSanitizer.php MAX_BYTES = 300 000` (teto duro). Orçamento de avatar (onda 1411 `orcamento-2d.mjs`): busto ≤ 40 KB / ≤ 600 nós / ≤ 4 filtros; corpo inteiro ≤ 80 KB; foto conforme `render-foto`. Premium (6 camadas de cabelo + materiais) obrigatoriamente dentro — defs compartilhados por `uid`.
+- `SvgSanitizer.php MAX_BYTES = 300 000` (teto duro). Orçamento de avatar **executável desde a onda 1411** (`scripts/avatar/orcamento-2d.mjs` → `evidencias/orcamento-2d.json`; todas as roupas do catálogo + goldens premium): busto ≤ 40 KB / ≤ 600 nós / ≤ 4 filtros; corpo inteiro ≤ 80 KB; acima do teto = aviso em item clássico, **erro** em premium (`_px_`). Medição 1411: 35 casos, 0 erros/0 avisos. Premium (materiais 2D + hooks) obrigatoriamente dentro — `materiais2d.ts` não emite NENHUM filtro (gradientes + strokes; SvgSanitizer intocado); defs compartilhados por `uid`. Foto conforme `render-foto`.
 - Animações: WAAPI/SMIL só no palco; `prefers-reduced-motion` desliga; partículas por tier (`TierParticulas` economico/medio/alto/cinematico).
 - Cards: `content-visibility` (§59.1); thumbs determinísticos (Modo Item).
 

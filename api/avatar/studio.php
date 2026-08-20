@@ -185,6 +185,11 @@ function avst_validar_config($bruto): array
     if (in_array($postura, ['confiante', 'relaxada', 'executiva', 'heroica', 'misteriosa'], true)) {
         $saida['postura'] = $postura;
     }
+    // onda 1411 (decisao #159): acabamento premium — enum fechado de 1
+    // valor; neutro (classico) NUNCA persiste (espelho do validarConfig)
+    if (($bruto['acabamento'] ?? null) === 'premium') {
+        $saida['acabamento'] = 'premium';
+    }
     // megas 561–564 (§102.2): ajuste FINO do corpo — clamps espelhando o
     // validarConfig do front; 1 = neutro OMITIDO; objeto vazio omitido
     $fino = $bruto['corpoFino'] ?? null;

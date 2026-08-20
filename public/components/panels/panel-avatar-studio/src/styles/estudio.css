@@ -1215,6 +1215,9 @@
 .avst5-alca:hover { background: var(--avst-acento, var(--as6-acento)); opacity: 0.4; }
 .avst5-viewport { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; position: relative; }
 .avst5-palco { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 12px; }
+/* onda 1411 (#159, as6.classico_premium): sombra de contato do PALCO —
+   ancora o busto premium no chão do estúdio (wrapper; SVG salvo intocado) */
+.avst5-palco-premium > svg, .avst5-palco-premium > div > svg { filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.38)); }
 .avst5-palco { overflow: hidden; position: relative; }
 .avst5-palco svg { filter: drop-shadow(0 18px 40px rgba(0,0,0,.45)); }
 .avst5-salvar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--avst-borda, var(--as6-superficie-4)); font-size: 12px; }
