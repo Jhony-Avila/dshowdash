@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 419,
+    "itens2d": 429,
     "categorias": 13,
     "titulos": 30,
     "colecoes": 12,
@@ -1205,6 +1205,56 @@
     },
     {
       "id": "cab_pompadour",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_px_afro",
+      "categoria": "cabelo",
+      "raridade": "epico"
+    },
+    {
+      "id": "cab_px_cacheado",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_px_coque",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_px_curto",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_px_franja",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_px_lateral",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_px_longo_liso",
+      "categoria": "cabelo",
+      "raridade": "epico"
+    },
+    {
+      "id": "cab_px_ondulado",
+      "categoria": "cabelo",
+      "raridade": "epico"
+    },
+    {
+      "id": "cab_px_rabo",
+      "categoria": "cabelo",
+      "raridade": "raro"
+    },
+    {
+      "id": "cab_px_undercut",
       "categoria": "cabelo",
       "raridade": "raro"
     },

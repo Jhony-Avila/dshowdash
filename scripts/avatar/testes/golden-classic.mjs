@@ -139,7 +139,45 @@ ok(!presetsAtivos().some((x) => x.id.startsWith('pre_golden_')), '[F] flag OFF: 
 const cfgM = validarConfig({ formato: 'camadas', versao: 2, ...configDePreset(PRESETS.find((x) => x.id === 'pre_golden_m')!) } as never);
 ok(cfgM.base === 'bas_px_angular' && cfgM.acabamento === 'premium' && cfgM.coresFace?.iris === '#4a3626', '[F] configDePreset do golden male: ' + JSON.stringify({ base: cfgM.base, ac: cfgM.acabamento }));
 
-// D) goldens p01-p06 + c01-c02
+// G) onda 1413 — CABELOS PREMIUM (§881–§897, #181)
+import { CABELOS_PREMIUM } from '@painel/engine/partes/premium/cabelos';
+import { HUMANOIDES } from '@painel/engine/partes/cabelos';
+import { PERFIL_HEADWEAR, PERFIL_CABELO_PX, resolverEstadoCabelo, profundidadeRecorte } from '@painel/engine/compat-cabelo';
+ok(CABELOS_PREMIUM.length === 10 && CABELOS_PREMIUM.every((x) => /^cab_px_/.test(x.id)), '[G] 10 cabelos cab_px_* (naming #166)');
+ok(!itensDe('cabelo').some((x) => x.id.includes('_px_')), '[G] flag OFF: catalogo sem cabelos _px_');
+ok(itemPorId('cab_px_curto')?.acabamento === 'premium' && itemPorId('cab_px_afro') !== undefined, '[G] resolver POR_ID aceita cabelos premium (dado salvo)');
+ok(HUMANOIDES.includes('bas_px_oval') && HUMANOIDES.includes('bas_px_suave') && CABELOS_PREMIUM.every((x) => x.requerBase === HUMANOIDES), '[G] requerBase precisa incluir as bases _px_ (compat 1412)');
+const LONGOS = ['cab_px_longo_liso', 'cab_px_ondulado', 'cab_px_rabo'];
+ok(CABELOS_PREMIUM.every((x) => LONGOS.includes(x.id) === (x.renderAtras !== undefined)), '[G] renderAtras: exatamente os 3 longos (massa atras dos ombros §889)');
+ok(['cab_px_longo_liso', 'cab_px_ondulado', 'cab_px_cacheado'].every((id) => itemPorId(id)?.usaCores?.includes('destaque')), '[G] canal destaque declarado nas mechas §891');
+ok(CABELOS_PREMIUM.every((x) => x.id in PERFIL_CABELO_PX), '[G] todo cab_px_ precisa de perfil §897');
+// matriz §897 (spot checks das 4 combinacoes-chave)
+ok(resolverEstadoCabelo('cab_px_coque', null) === 'visible' && resolverEstadoCabelo(null, 'ace_bone') === 'hidden', '[G] §897 basicos');
+ok(resolverEstadoCabelo('cab_px_coque', 'ace_coroa') === 'visible', '[G] §897 aberto = visible');
+ok(resolverEstadoCabelo('cab_px_coque', 'ace_bone') === 'masked' && resolverEstadoCabelo('cab_px_curto', 'ace_bone') === 'visible', '[G] §897 justo: alto=masked, baixo=visible');
+ok(resolverEstadoCabelo('cab_px_longo_liso', 'ace_bone') === 'variant' && resolverEstadoCabelo('cab_px_longo_liso', 'ace_viseira_vr') === 'variant', '[G] §897 longo vence o chapeu (variant)');
+ok(resolverEstadoCabelo('cab_px_curto', 'ace_viseira_vr') === 'hidden', '[G] §897 fechado engole o curto');
+ok(resolverEstadoCabelo('cab_inexistente', 'ace_inexistente') === 'visible', '[G] fallback conservador fora dos registries');
+ok(profundidadeRecorte('masked') === 14 && profundidadeRecorte('variant') === 8 && profundidadeRecorte('visible') === 0, '[G] profundidades §897');
+ok(profundidadeRecorte('masked', 1) === 22 && profundidadeRecorte('visible', 0.5) === 11, '[G] encaixe manual escala 0..22px');
+// clip no render: SO premium + _px_ + prof>0
+const comBone = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, cabelo: 'cab_px_coque', acessorio: 'ace_bone' }, acabamento: 'premium' });
+ok(svgDe(comBone, { uid: 'hc', premium: true }).includes('hchclip'), '[G] clip §897 ausente (premium + coque + bone)');
+ok(!svgDe(comBone, { uid: 'hc' }).includes('hchclip'), '[G] clip NAO pode existir sem premium (rollback §651)');
+const classicoBone = cfg({ camadas: { ...CONFIG_PADRAO.camadas, cabelo: 'cab_coque', acessorio: 'ace_bone' }, acabamento: 'premium' });
+ok(!svgDe(classicoBone, { uid: 'hc', premium: true }).includes('hchclip'), '[G] arte classica NUNCA e recortada (nao editar partes/*)');
+ok(!svgDe(cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, cabelo: 'cab_px_coque' }, acabamento: 'premium' }), { uid: 'hc', premium: true }).includes('hchclip'), '[G] sem chapeu = sem clip');
+// param encaixe: soV2, consumido pelo motor
+ok((paramsDaCamada('cabelo') ?? []).every((d) => d.id !== 'encaixe'), '[G] legado nao pode ver o encaixe');
+ok((paramsDaCamada('cabelo', 'cab_px_curto') ?? []).some((d) => d.id === 'encaixe'), '[G] cab_px_ deveria ganhar o param encaixe');
+ok(sanitizarParams('cabelo', { encaixe: 0.5 }, 'cab_curto') === undefined && sanitizarParams('cabelo', { encaixe: 0.5 }, 'cab_px_curto')?.encaixe === 0.5, '[G] encaixe gated por soV2');
+const comEncaixe = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, cabelo: 'cab_px_curto' }, params: { cabelo: { encaixe: 0.5 } }, acabamento: 'premium' });
+ok(svgDe(comEncaixe, { uid: 'hc', premium: true }).includes('y="60"'), '[G] encaixe 0.5 deveria recortar em y=49+11');
+// byte-stability: config com cabelo premium + acabamento, FLAG OFF = classico
+const cabOff = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, cabelo: 'cab_px_lateral' }, acabamento: 'premium' });
+ok(svgDe(cabOff, { uid: 'bs' }) === svgDe({ ...cabOff, acabamento: undefined } as never, { uid: 'bs' }), '[G] FLAG OFF: cabelo premium equipado nao muda o render');
+
+// D) goldens p01-p06 + c01-c02 (1411/1412) + h01-h06 + p07-p08 (1413)
 const p01 = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_terno' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, destaque: '#c9a75a' } });
 const p02 = cfg({ base: 'bas_redonda', camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_jaqueta', cabelo: 'cab_ondulado' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, cabelo: '#d9b166', roupa: '#7a2d3c' } });
 // onda 1412: p03/p04 = golden faces male/female; p05 = iris + params v2;
@@ -162,6 +200,21 @@ for (const [nome, c] of [['p03', p03], ['p04', p04], ['p05', p05], ['p06', p06]]
 }
 casos['c01-golden-m-palco'] = svgDe(c01, { premium: true, palco: true });
 casos['c02-golden-f-palco'] = svgDe(c02, { premium: true, palco: true });
+// onda 1413: h01-h06 = Golden Hair (2 estilos x escuro/loiro/branco sobre a
+// base golden); p07/p08 = goldens completos com cabelo premium
+const CORES_HAIR: [string, string][] = [['escuro', '#14100c'], ['loiro', '#d9b166'], ['branco', '#e8e6e0']];
+let h = 0;
+for (const estilo of ['cab_px_lateral', 'cab_px_longo_liso']) {
+  for (const [, hex] of CORES_HAIR) {
+    h += 1;
+    const c = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, cabelo: estilo }, cores: { ...CONFIG_PADRAO.cores, cabelo: hex, destaque: '#c9a75a' }, acabamento: 'premium' });
+    casos['h0' + h + '-' + estilo.replace('cab_px_', '') + '-busto'] = svgDe(c, { premium: true });
+  }
+}
+const p07 = cfg({ ...c01, camadas: { ...c01.camadas, cabelo: 'cab_px_lateral' }, cores: { ...c01.cores, cabelo: '#14100c' } });
+const p08 = cfg({ ...c02, camadas: { ...c02.camadas, cabelo: 'cab_px_longo_liso' }, cores: { ...c02.cores, cabelo: '#3d2b1f', destaque: '#c9a75a' } });
+casos['p07-golden-m-cabelo-busto'] = svgDe(p07, { premium: true });
+casos['p08-golden-f-cabelo-busto'] = svgDe(p08, { premium: true });
 const hashes: Record<string, { sha256: string; bytes: number; nos: number; filtros: number }> = {};
 for (const [id, svg] of Object.entries(casos)) {
   hashes[id] = { sha256: sha(svg), bytes: svg.length, nos: (svg.match(/</g) ?? []).length, filtros: (svg.match(/<filter/g) ?? []).length };
@@ -185,7 +238,7 @@ const { falhas, hashes } = JSON.parse(bruto.trim().split('\n').pop());
 
 if (GRAVAR) {
   writeFileSync(BASELINE, `${JSON.stringify({
-    descricao: 'GOLDEN CLASSIC PREMIUM (onda 1411, decisão #159) — sha256 do SVG premium por caso p01/p02 × busto/palco/corpo. Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
+    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1413, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
     casos: hashes,
   }, null, 2)}\n`);
   console.log(`[golden-classic] baseline gravada (${Object.keys(hashes).length} casos)`);

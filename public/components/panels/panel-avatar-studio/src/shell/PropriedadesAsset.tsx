@@ -66,8 +66,10 @@ function camadasComProps(config: AvatarConfig): CamadaId[] {
 }
 
 /** §73 v1: canais expostos só na ROUPA (infra é genérica — qualquer camada
- *  funciona via config; a UI cresce quando houver mais peças de vestuário). */
-const CAMADAS_COM_CANAIS: CamadaId[] = ['roupa'];
+ *  funciona via config; a UI cresce quando houver mais peças de vestuário).
+ *  onda 1413 (§893): CABELO entra quando a peça equipada é premium (a
+ *  checagem por item fica no componente — flag + `_px_`). */
+const CAMADAS_COM_CANAIS: CamadaId[] = ['roupa', 'cabelo'];
 const ROTULO_CANAL: Record<SlotCor, string> = {
   roupa: 'Cor principal', destaque: 'Detalhes', pele: 'Pele', cabelo: 'Cabelo',
 };
@@ -86,7 +88,10 @@ export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
   const comProps = camadasComProps(config).filter((c) => !soCamadas || soCamadas.includes(c));
   const comCanais = CAMADAS_COM_CANAIS.filter((c) => !soCamadas || soCamadas.includes(c)).filter((c) => {
     const id = config.camadas[c];
-    return id && id !== 'nenhum' && (itemPorId(id)?.usaCores?.length ?? 0) > 0;
+    if (!id || id === 'nenhum' || (itemPorId(id)?.usaCores?.length ?? 0) === 0) return false;
+    // onda 1413: cabelo só expõe canais no trilho premium (§651)
+    if (c === 'cabelo') return flag('as6.classico_premium') && /_px_/.test(id);
+    return true;
   });
   if (!comProps.length && !comCanais.length) return null;
 
@@ -163,7 +168,7 @@ export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
       {comCanais.map((chave) => {
         const id = config.camadas[chave]!;
         const item = itemPorId(id);
-        const canais = (item?.usaCores ?? []).filter((c) => c === 'roupa' || c === 'destaque');
+        const canais = (item?.usaCores ?? []).filter((c) => (chave === 'cabelo' ? (c === 'cabelo' || c === 'destaque') : (c === 'roupa' || c === 'destaque')));
         if (!canais.length) return null;
         const override = config.coresCamada?.[chave];
         return (
@@ -171,7 +176,30 @@ export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
             <h4 className="avst5-props-titulo">
               <Paintbrush size={13} aria-hidden /> Cores da peça · {item?.nome ?? id}
             </h4>
-            {/* §74: paletas prontas + Original */}
+            {/* onda 1413 (§893): CABELO premium — cor PRINCIPAL global
+                (sobrancelhas legadas seguem juntas: usam p.cabelo) +
+                "Sincronizar" que remove overrides da peça (zero schema) */}
+            {chave === 'cabelo' && (
+              <div className="avst5-canal-cores" role="radiogroup" aria-label="Cor principal do cabelo" data-teste="cab-cor-principal">
+                {CORES_SUGERIDAS.cabelo.map((hex) => (
+                  <button key={hex} type="button" role="radio" aria-checked={config.cores.cabelo === hex}
+                    className={`avst-swatch${config.cores.cabelo === hex ? ' avst-swatch-ativo' : ''}`}
+                    style={{ background: hex }} title={hex}
+                    onMouseEnter={() => aoPrever({ ...config, cores: { ...config.cores, cabelo: hex } })}
+                    onMouseLeave={() => aoPrever(null)}
+                    onClick={() => { aoPrever(null); aoAplicar({ ...config, cores: { ...config.cores, cabelo: hex } }); }} />
+                ))}
+                {override && (
+                  <button type="button" className="avst5-props-reset" data-teste="cab-sincronizar"
+                    title="Sincronizar: a peça volta a seguir a cor principal (e as sobrancelhas)"
+                    onClick={() => { aoPrever(null); aoAplicar(comPaleta(config, chave, null)); }}>
+                    <RotateCcw size={12} aria-hidden /> Sincronizar
+                  </button>
+                )}
+              </div>
+            )}
+            {/* §74: paletas prontas + Original — só vestuário */}
+            {chave !== 'cabelo' && (
             <div className="avst5-paletas" role="group" aria-label="Paletas de roupa">
               <button type="button" className={`avst5-paleta${!override ? ' avst5-paleta-on' : ''}`}
                 title="Original — sem cores próprias da peça"
@@ -191,6 +219,7 @@ export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
                 </button>
               ))}
             </div>
+            )}
             {/* §73.1: um chip por canal declarado pela arte */}
             {canais.map((canal) => {
               const efetiva = override?.[canal] ?? config.cores[canal];

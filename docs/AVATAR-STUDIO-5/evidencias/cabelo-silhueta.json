@@ -1,0 +1,1776 @@
+{
+  "versao": 1,
+  "onda": 1413,
+  "cores": {
+    "escuro": "#14100c",
+    "loiro": "#d9b166",
+    "branco": "#e8e6e0"
+  },
+  "casos": {
+    "cab_curto/escuro": {
+      "premium": false,
+      "bytes": 4017,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_curto/loiro": {
+      "premium": false,
+      "bytes": 4017,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_curto/branco": {
+      "premium": false,
+      "bytes": 4017,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_topete/escuro": {
+      "premium": false,
+      "bytes": 4091,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_topete/loiro": {
+      "premium": false,
+      "bytes": 4091,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_topete/branco": {
+      "premium": false,
+      "bytes": 4091,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_franja/escuro": {
+      "premium": false,
+      "bytes": 4034,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_franja/loiro": {
+      "premium": false,
+      "bytes": 4034,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_franja/branco": {
+      "premium": false,
+      "bytes": 4034,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_ondulado/escuro": {
+      "premium": false,
+      "bytes": 4359,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_ondulado/loiro": {
+      "premium": false,
+      "bytes": 4359,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_ondulado/branco": {
+      "premium": false,
+      "bytes": 4359,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_coque/escuro": {
+      "premium": false,
+      "bytes": 4151,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_coque/loiro": {
+      "premium": false,
+      "bytes": 4151,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_coque/branco": {
+      "premium": false,
+      "bytes": 4151,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cacheado/escuro": {
+      "premium": false,
+      "bytes": 4570,
+      "nos": 82,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cacheado/loiro": {
+      "premium": false,
+      "bytes": 4570,
+      "nos": 82,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cacheado/branco": {
+      "premium": false,
+      "bytes": 4570,
+      "nos": 82,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_longo/escuro": {
+      "premium": false,
+      "bytes": 4426,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_longo/loiro": {
+      "premium": false,
+      "bytes": 4427,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_longo/branco": {
+      "premium": false,
+      "bytes": 4429,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_moicano/escuro": {
+      "premium": false,
+      "bytes": 4231,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_moicano/loiro": {
+      "premium": false,
+      "bytes": 4233,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_moicano/branco": {
+      "premium": false,
+      "bytes": 4237,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cyber/escuro": {
+      "premium": false,
+      "bytes": 4409,
+      "nos": 77,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cyber/loiro": {
+      "premium": false,
+      "bytes": 4410,
+      "nos": 77,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cyber/branco": {
+      "premium": false,
+      "bytes": 4412,
+      "nos": 77,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_rabo/escuro": {
+      "premium": false,
+      "bytes": 4200,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_rabo/loiro": {
+      "premium": false,
+      "bytes": 4201,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_rabo/branco": {
+      "premium": false,
+      "bytes": 4203,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_lateral/escuro": {
+      "premium": false,
+      "bytes": 4220,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_lateral/loiro": {
+      "premium": false,
+      "bytes": 4224,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_lateral/branco": {
+      "premium": false,
+      "bytes": 4226,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_buzz/escuro": {
+      "premium": false,
+      "bytes": 4131,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_buzz/loiro": {
+      "premium": false,
+      "bytes": 4135,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_buzz/branco": {
+      "premium": false,
+      "bytes": 4137,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_afro/escuro": {
+      "premium": false,
+      "bytes": 4355,
+      "nos": 77,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_afro/loiro": {
+      "premium": false,
+      "bytes": 4355,
+      "nos": 77,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_afro/branco": {
+      "premium": false,
+      "bytes": 4355,
+      "nos": 77,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_trancas/escuro": {
+      "premium": false,
+      "bytes": 6208,
+      "nos": 95,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_trancas/loiro": {
+      "premium": false,
+      "bytes": 6225,
+      "nos": 95,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_trancas/branco": {
+      "premium": false,
+      "bytes": 6259,
+      "nos": 95,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_medio/escuro": {
+      "premium": false,
+      "bytes": 4250,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_medio/loiro": {
+      "premium": false,
+      "bytes": 4250,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_medio/branco": {
+      "premium": false,
+      "bytes": 4250,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_franja_longa/escuro": {
+      "premium": false,
+      "bytes": 4159,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_franja_longa/loiro": {
+      "premium": false,
+      "bytes": 4159,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_franja_longa/branco": {
+      "premium": false,
+      "bytes": 4159,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_meio_coque/escuro": {
+      "premium": false,
+      "bytes": 4308,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_meio_coque/loiro": {
+      "premium": false,
+      "bytes": 4309,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_meio_coque/branco": {
+      "premium": false,
+      "bytes": 4311,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_ondas_curtas/escuro": {
+      "premium": false,
+      "bytes": 4345,
+      "nos": 77,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_ondas_curtas/loiro": {
+      "premium": false,
+      "bytes": 4346,
+      "nos": 77,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_ondas_curtas/branco": {
+      "premium": false,
+      "bytes": 4348,
+      "nos": 77,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_picos_neon/escuro": {
+      "premium": false,
+      "bytes": 4461,
+      "nos": 76,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_picos_neon/loiro": {
+      "premium": false,
+      "bytes": 4461,
+      "nos": 76,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_picos_neon/branco": {
+      "premium": false,
+      "bytes": 4461,
+      "nos": 76,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_pixie/escuro": {
+      "premium": false,
+      "bytes": 4234,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_pixie/loiro": {
+      "premium": false,
+      "bytes": 4235,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_pixie/branco": {
+      "premium": false,
+      "bytes": 4237,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_repicado_longo/escuro": {
+      "premium": false,
+      "bytes": 4196,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_repicado_longo/loiro": {
+      "premium": false,
+      "bytes": 4196,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_repicado_longo/branco": {
+      "premium": false,
+      "bytes": 4196,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_dreads/escuro": {
+      "premium": false,
+      "bytes": 5327,
+      "nos": 84,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_dreads/loiro": {
+      "premium": false,
+      "bytes": 5334,
+      "nos": 84,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_dreads/branco": {
+      "premium": false,
+      "bytes": 5348,
+      "nos": 84,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_mullet/escuro": {
+      "premium": false,
+      "bytes": 4318,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_mullet/loiro": {
+      "premium": false,
+      "bytes": 4318,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_mullet/branco": {
+      "premium": false,
+      "bytes": 4318,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_pompadour/escuro": {
+      "premium": false,
+      "bytes": 4226,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_pompadour/loiro": {
+      "premium": false,
+      "bytes": 4227,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_pompadour/branco": {
+      "premium": false,
+      "bytes": 4229,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_chanel/escuro": {
+      "premium": false,
+      "bytes": 4168,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_chanel/loiro": {
+      "premium": false,
+      "bytes": 4169,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_chanel/branco": {
+      "premium": false,
+      "bytes": 4171,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_coques_duplos/escuro": {
+      "premium": false,
+      "bytes": 4254,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_coques_duplos/loiro": {
+      "premium": false,
+      "bytes": 4255,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_coques_duplos/branco": {
+      "premium": false,
+      "bytes": 4257,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_grisalho/escuro": {
+      "premium": false,
+      "bytes": 4274,
+      "nos": 76,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_grisalho/loiro": {
+      "premium": false,
+      "bytes": 4274,
+      "nos": 76,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_grisalho/branco": {
+      "premium": false,
+      "bytes": 4274,
+      "nos": 76,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_emo/escuro": {
+      "premium": false,
+      "bytes": 4294,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_emo/loiro": {
+      "premium": false,
+      "bytes": 4295,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_emo/branco": {
+      "premium": false,
+      "bytes": 4297,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_lambido/escuro": {
+      "premium": false,
+      "bytes": 4218,
+      "nos": 75,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_lambido/loiro": {
+      "premium": false,
+      "bytes": 4219,
+      "nos": 75,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_lambido/branco": {
+      "premium": false,
+      "bytes": 4221,
+      "nos": 75,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cachos_soltos/escuro": {
+      "premium": false,
+      "bytes": 5448,
+      "nos": 89,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cachos_soltos/loiro": {
+      "premium": false,
+      "bytes": 5456,
+      "nos": 89,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cachos_soltos/branco": {
+      "premium": false,
+      "bytes": 5472,
+      "nos": 89,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_viking/escuro": {
+      "premium": false,
+      "bytes": 4603,
+      "nos": 80,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_viking/loiro": {
+      "premium": false,
+      "bytes": 4607,
+      "nos": 80,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_viking/branco": {
+      "premium": false,
+      "bytes": 4609,
+      "nos": 80,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_holo_gradiente/escuro": {
+      "premium": false,
+      "bytes": 4264,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_holo_gradiente/loiro": {
+      "premium": false,
+      "bytes": 4264,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_holo_gradiente/branco": {
+      "premium": false,
+      "bytes": 4264,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_tigela/escuro": {
+      "premium": false,
+      "bytes": 4007,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_tigela/loiro": {
+      "premium": false,
+      "bytes": 4008,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_tigela/branco": {
+      "premium": false,
+      "bytes": 4010,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_rabo_baixo/escuro": {
+      "premium": false,
+      "bytes": 4199,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_rabo_baixo/loiro": {
+      "premium": false,
+      "bytes": 4200,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_rabo_baixo/branco": {
+      "premium": false,
+      "bytes": 4202,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_franjinha/escuro": {
+      "premium": false,
+      "bytes": 4232,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_franjinha/loiro": {
+      "premium": false,
+      "bytes": 4233,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_franjinha/branco": {
+      "premium": false,
+      "bytes": 4235,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_ondas_longas/escuro": {
+      "premium": false,
+      "bytes": 4236,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_ondas_longas/loiro": {
+      "premium": false,
+      "bytes": 4236,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_ondas_longas/branco": {
+      "premium": false,
+      "bytes": 4236,
+      "nos": 71,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_sidecut/escuro": {
+      "premium": false,
+      "bytes": 4315,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_sidecut/loiro": {
+      "premium": false,
+      "bytes": 4319,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_sidecut/branco": {
+      "premium": false,
+      "bytes": 4321,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_juba/escuro": {
+      "premium": false,
+      "bytes": 4881,
+      "nos": 79,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_juba/loiro": {
+      "premium": false,
+      "bytes": 4881,
+      "nos": 79,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_juba/branco": {
+      "premium": false,
+      "bytes": 4881,
+      "nos": 79,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_sabio/escuro": {
+      "premium": false,
+      "bytes": 4162,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_sabio/loiro": {
+      "premium": false,
+      "bytes": 4168,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_sabio/branco": {
+      "premium": false,
+      "bytes": 4168,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_tranca_unica/escuro": {
+      "premium": false,
+      "bytes": 4486,
+      "nos": 78,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_tranca_unica/loiro": {
+      "premium": false,
+      "bytes": 4487,
+      "nos": 78,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_tranca_unica/branco": {
+      "premium": false,
+      "bytes": 4489,
+      "nos": 78,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_babyliss/escuro": {
+      "premium": false,
+      "bytes": 4265,
+      "nos": 74,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_babyliss/loiro": {
+      "premium": false,
+      "bytes": 4266,
+      "nos": 74,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_babyliss/branco": {
+      "premium": false,
+      "bytes": 4268,
+      "nos": 74,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_espetadinho/escuro": {
+      "premium": false,
+      "bytes": 4065,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_espetadinho/loiro": {
+      "premium": false,
+      "bytes": 4065,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_espetadinho/branco": {
+      "premium": false,
+      "bytes": 4065,
+      "nos": 70,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_permanente80/escuro": {
+      "premium": false,
+      "bytes": 4597,
+      "nos": 81,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_permanente80/loiro": {
+      "premium": false,
+      "bytes": 4597,
+      "nos": 81,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_permanente80/branco": {
+      "premium": false,
+      "bytes": 4597,
+      "nos": 81,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_wolf/escuro": {
+      "premium": false,
+      "bytes": 4383,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_wolf/loiro": {
+      "premium": false,
+      "bytes": 4383,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_wolf/branco": {
+      "premium": false,
+      "bytes": 4383,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_slick_rabo/escuro": {
+      "premium": false,
+      "bytes": 4237,
+      "nos": 75,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_slick_rabo/loiro": {
+      "premium": false,
+      "bytes": 4241,
+      "nos": 75,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_slick_rabo/branco": {
+      "premium": false,
+      "bytes": 4243,
+      "nos": 75,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cortina/escuro": {
+      "premium": false,
+      "bytes": 4330,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cortina/loiro": {
+      "premium": false,
+      "bytes": 4331,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_cortina/branco": {
+      "premium": false,
+      "bytes": 4333,
+      "nos": 73,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_estrela_raspada/escuro": {
+      "premium": false,
+      "bytes": 4268,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_estrela_raspada/loiro": {
+      "premium": false,
+      "bytes": 4271,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_estrela_raspada/branco": {
+      "premium": false,
+      "bytes": 4271,
+      "nos": 72,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_flamejante/escuro": {
+      "premium": false,
+      "bytes": 4418,
+      "nos": 74,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_flamejante/loiro": {
+      "premium": false,
+      "bytes": 4418,
+      "nos": 74,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": false
+    },
+    "cab_flamejante/branco": {
+      "premium": false,
+      "bytes": 4418,
+      "nos": 74,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": false
+    },
+    "cab_fibra_otica/escuro": {
+      "premium": false,
+      "bytes": 6204,
+      "nos": 102,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_fibra_otica/loiro": {
+      "premium": false,
+      "bytes": 6204,
+      "nos": 102,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_fibra_otica/branco": {
+      "premium": false,
+      "bytes": 6204,
+      "nos": 102,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_algodao/escuro": {
+      "premium": false,
+      "bytes": 4485,
+      "nos": 78,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_algodao/loiro": {
+      "premium": false,
+      "bytes": 4485,
+      "nos": 78,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_algodao/branco": {
+      "premium": false,
+      "bytes": 4485,
+      "nos": 78,
+      "gradientes": 5,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_curto/escuro": {
+      "premium": true,
+      "bytes": 7758,
+      "nos": 107,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_curto/loiro": {
+      "premium": true,
+      "bytes": 7764,
+      "nos": 107,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_curto/branco": {
+      "premium": true,
+      "bytes": 7770,
+      "nos": 107,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_franja/escuro": {
+      "premium": true,
+      "bytes": 7811,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_franja/loiro": {
+      "premium": true,
+      "bytes": 7814,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_franja/branco": {
+      "premium": true,
+      "bytes": 7817,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_lateral/escuro": {
+      "premium": true,
+      "bytes": 7652,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_lateral/loiro": {
+      "premium": true,
+      "bytes": 7658,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_lateral/branco": {
+      "premium": true,
+      "bytes": 7664,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_undercut/escuro": {
+      "premium": true,
+      "bytes": 7457,
+      "nos": 104,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_undercut/loiro": {
+      "premium": true,
+      "bytes": 7459,
+      "nos": 104,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_undercut/branco": {
+      "premium": true,
+      "bytes": 7463,
+      "nos": 104,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_longo_liso/escuro": {
+      "premium": true,
+      "bytes": 8123,
+      "nos": 114,
+      "gradientes": 7,
+      "filtros": 0,
+      "atras": true,
+      "corAplicada": true
+    },
+    "cab_px_longo_liso/loiro": {
+      "premium": true,
+      "bytes": 8128,
+      "nos": 114,
+      "gradientes": 7,
+      "filtros": 0,
+      "atras": true,
+      "corAplicada": true
+    },
+    "cab_px_longo_liso/branco": {
+      "premium": true,
+      "bytes": 8132,
+      "nos": 114,
+      "gradientes": 7,
+      "filtros": 0,
+      "atras": true,
+      "corAplicada": true
+    },
+    "cab_px_ondulado/escuro": {
+      "premium": true,
+      "bytes": 8166,
+      "nos": 113,
+      "gradientes": 7,
+      "filtros": 0,
+      "atras": true,
+      "corAplicada": true
+    },
+    "cab_px_ondulado/loiro": {
+      "premium": true,
+      "bytes": 8171,
+      "nos": 113,
+      "gradientes": 7,
+      "filtros": 0,
+      "atras": true,
+      "corAplicada": true
+    },
+    "cab_px_ondulado/branco": {
+      "premium": true,
+      "bytes": 8175,
+      "nos": 113,
+      "gradientes": 7,
+      "filtros": 0,
+      "atras": true,
+      "corAplicada": true
+    },
+    "cab_px_rabo/escuro": {
+      "premium": true,
+      "bytes": 7919,
+      "nos": 112,
+      "gradientes": 7,
+      "filtros": 0,
+      "atras": true,
+      "corAplicada": true
+    },
+    "cab_px_rabo/loiro": {
+      "premium": true,
+      "bytes": 7924,
+      "nos": 112,
+      "gradientes": 7,
+      "filtros": 0,
+      "atras": true,
+      "corAplicada": true
+    },
+    "cab_px_rabo/branco": {
+      "premium": true,
+      "bytes": 7928,
+      "nos": 112,
+      "gradientes": 7,
+      "filtros": 0,
+      "atras": true,
+      "corAplicada": true
+    },
+    "cab_px_coque/escuro": {
+      "premium": true,
+      "bytes": 7681,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_coque/loiro": {
+      "premium": true,
+      "bytes": 7687,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_coque/branco": {
+      "premium": true,
+      "bytes": 7693,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_afro/escuro": {
+      "premium": true,
+      "bytes": 7702,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_afro/loiro": {
+      "premium": true,
+      "bytes": 7704,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_afro/branco": {
+      "premium": true,
+      "bytes": 7708,
+      "nos": 106,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_cacheado/escuro": {
+      "premium": true,
+      "bytes": 7890,
+      "nos": 107,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_cacheado/loiro": {
+      "premium": true,
+      "bytes": 7895,
+      "nos": 107,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    },
+    "cab_px_cacheado/branco": {
+      "premium": true,
+      "bytes": 7899,
+      "nos": 107,
+      "gradientes": 6,
+      "filtros": 0,
+      "atras": false,
+      "corAplicada": true
+    }
+  },
+  "matriz": {
+    "cab_px_curto": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "visible:0",
+      "ace_boina": "visible:0",
+      "ace_gorro_natal": "visible:0",
+      "ace_chapeu_mago": "visible:0",
+      "ace_chapeu_bruxa": "visible:0",
+      "ace_viseira_vr": "hidden:0"
+    },
+    "cab_px_franja": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "masked:14",
+      "ace_boina": "masked:14",
+      "ace_gorro_natal": "masked:14",
+      "ace_chapeu_mago": "masked:14",
+      "ace_chapeu_bruxa": "masked:14",
+      "ace_viseira_vr": "hidden:0"
+    },
+    "cab_px_lateral": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "masked:14",
+      "ace_boina": "masked:14",
+      "ace_gorro_natal": "masked:14",
+      "ace_chapeu_mago": "masked:14",
+      "ace_chapeu_bruxa": "masked:14",
+      "ace_viseira_vr": "hidden:0"
+    },
+    "cab_px_undercut": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "visible:0",
+      "ace_boina": "visible:0",
+      "ace_gorro_natal": "visible:0",
+      "ace_chapeu_mago": "visible:0",
+      "ace_chapeu_bruxa": "visible:0",
+      "ace_viseira_vr": "hidden:0"
+    },
+    "cab_px_longo_liso": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "variant:8",
+      "ace_boina": "variant:8",
+      "ace_gorro_natal": "variant:8",
+      "ace_chapeu_mago": "variant:8",
+      "ace_chapeu_bruxa": "variant:8",
+      "ace_viseira_vr": "variant:8"
+    },
+    "cab_px_ondulado": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "variant:8",
+      "ace_boina": "variant:8",
+      "ace_gorro_natal": "variant:8",
+      "ace_chapeu_mago": "variant:8",
+      "ace_chapeu_bruxa": "variant:8",
+      "ace_viseira_vr": "variant:8"
+    },
+    "cab_px_rabo": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "variant:8",
+      "ace_boina": "variant:8",
+      "ace_gorro_natal": "variant:8",
+      "ace_chapeu_mago": "variant:8",
+      "ace_chapeu_bruxa": "variant:8",
+      "ace_viseira_vr": "variant:8"
+    },
+    "cab_px_coque": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "masked:14",
+      "ace_boina": "masked:14",
+      "ace_gorro_natal": "masked:14",
+      "ace_chapeu_mago": "masked:14",
+      "ace_chapeu_bruxa": "masked:14",
+      "ace_viseira_vr": "hidden:0"
+    },
+    "cab_px_afro": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "masked:14",
+      "ace_boina": "masked:14",
+      "ace_gorro_natal": "masked:14",
+      "ace_chapeu_mago": "masked:14",
+      "ace_chapeu_bruxa": "masked:14",
+      "ace_viseira_vr": "hidden:0"
+    },
+    "cab_px_cacheado": {
+      "nenhum": "visible:0",
+      "ace_fone": "visible:0",
+      "ace_headset": "visible:0",
+      "ace_coroa": "visible:0",
+      "ace_chifres_oni": "visible:0",
+      "ace_tiara_led": "visible:0",
+      "ace_bone": "masked:14",
+      "ace_boina": "masked:14",
+      "ace_gorro_natal": "masked:14",
+      "ace_chapeu_mago": "masked:14",
+      "ace_chapeu_bruxa": "masked:14",
+      "ace_viseira_vr": "hidden:0"
+    }
+  },
+  "clipPremium": true,
+  "clipSemPremium": false,
+  "problemas": []
+}

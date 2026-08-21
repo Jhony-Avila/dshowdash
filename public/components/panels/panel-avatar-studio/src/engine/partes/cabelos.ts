@@ -18,13 +18,18 @@ function defsCabelo(u: string, claro: string, base: string, profundo: string): s
 /** Cabelos exigem cabeça humanoide (§35) — espécies/robôs têm o próprio topo.
  *  4.6 F2 Onda 1: os 6 rostos novos entram aqui (a lista É compartilhada —
  *  atualizar aqui atualiza requerBase de TODOS os cabelos). */
-const HUMANOIDES = [
+export const HUMANOIDES = [
   'bas_classica', 'bas_angular', 'bas_holo',
   'bas_redonda', 'bas_coracao', 'bas_quadrada', 'bas_longa', 'bas_marcada', 'bas_sardas',
   // Onda 7
   'bas_triangular', 'bas_bochechudo', 'bas_diamante', 'bas_veterano', 'bas_juvenil', 'bas_meio_cyborg',
   // Onda 8
   'bas_madura', 'bas_sereno', 'bas_gotico', 'bas_estatua',
+  // onda 1413 (#159): bases PREMIUM (bas_px_*) também recebem cabelo —
+  // lista COMPARTILHADA (dado de compat, não arte); com a flag OFF as
+  // bases premium nem aparecem no catálogo, então nada muda no legado
+  'bas_px_oval', 'bas_px_angular', 'bas_px_coracao', 'bas_px_quadrada',
+  'bas_px_redonda', 'bas_px_alongada', 'bas_px_diamante', 'bas_px_suave',
 ];
 
 const BRILHO = `<path d="M88 66 a 46 40 0 0 1 34 -12" stroke="${alfa('#ffffff', 0.3)}" stroke-width="4" stroke-linecap="round" fill="none"/>`;

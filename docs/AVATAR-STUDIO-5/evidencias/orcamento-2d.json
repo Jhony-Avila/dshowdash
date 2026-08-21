@@ -7,7 +7,7 @@
     "corpoBytes": 81920
   },
   "resumo": {
-    "casos": 37,
+    "casos": 48,
     "erros": [],
     "avisos": []
   },
@@ -223,16 +223,82 @@
       "gradientes": 9
     },
     "premium-golden-m-busto": {
-      "bytes": 8835,
-      "nos": 129,
+      "bytes": 9378,
+      "nos": 138,
+      "filtros": 0,
+      "gradientes": 7
+    },
+    "premium-golden-f-busto": {
+      "bytes": 8942,
+      "nos": 130,
       "filtros": 0,
       "gradientes": 6
     },
-    "premium-golden-f-busto": {
-      "bytes": 8399,
-      "nos": 121,
+    "cabelo-cab_px_curto": {
+      "bytes": 7758,
+      "nos": 107,
       "filtros": 0,
-      "gradientes": 5
+      "gradientes": 6
+    },
+    "cabelo-cab_px_franja": {
+      "bytes": 7811,
+      "nos": 106,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "cabelo-cab_px_lateral": {
+      "bytes": 7652,
+      "nos": 106,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "cabelo-cab_px_undercut": {
+      "bytes": 7457,
+      "nos": 104,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "cabelo-cab_px_longo_liso": {
+      "bytes": 8123,
+      "nos": 114,
+      "filtros": 0,
+      "gradientes": 7
+    },
+    "cabelo-cab_px_ondulado": {
+      "bytes": 8166,
+      "nos": 113,
+      "filtros": 0,
+      "gradientes": 7
+    },
+    "cabelo-cab_px_rabo": {
+      "bytes": 7919,
+      "nos": 112,
+      "filtros": 0,
+      "gradientes": 7
+    },
+    "cabelo-cab_px_coque": {
+      "bytes": 7681,
+      "nos": 106,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "cabelo-cab_px_afro": {
+      "bytes": 7702,
+      "nos": 106,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "cabelo-cab_px_cacheado": {
+      "bytes": 7890,
+      "nos": 107,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "premium-golden-f-cabelo-corpo": {
+      "bytes": 13581,
+      "nos": 209,
+      "filtros": 0,
+      "gradientes": 10
     }
   }
 }

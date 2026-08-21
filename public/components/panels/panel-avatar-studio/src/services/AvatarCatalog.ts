@@ -28,6 +28,7 @@ import { BOCAS } from '../engine/partes/bocas';
 import { ROUPAS } from '../engine/partes/roupas';
 import { ROUPAS_PREMIUM } from '../engine/partes/premium/roupas'; // onda 1411 (#159/#166)
 import { BASES_PREMIUM, OLHOS_PREMIUM, BOCAS_PREMIUM } from '../engine/partes/premium/faces'; // onda 1412 (#162)
+import { CABELOS_PREMIUM } from '../engine/partes/premium/cabelos'; // onda 1413 (§881–§897)
 import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
 import { slotCorporal, slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2) · #154
@@ -283,7 +284,7 @@ const LORES: Record<string, string> = {
 // ── Índices ─────────────────────────────────────────────────────────
 
 export const PARTES: ParteDef[] = [
-  ...BASES, ...BASES_PREMIUM, ...ESPECIES, ...CABELOS, ...OLHOS, ...OLHOS_PREMIUM,
+  ...BASES, ...BASES_PREMIUM, ...ESPECIES, ...CABELOS, ...CABELOS_PREMIUM, ...OLHOS, ...OLHOS_PREMIUM,
   ...BOCAS, ...BOCAS_PREMIUM, ...ROUPAS, ...ROUPAS_PREMIUM,
   ...SOBREPECAS, // §3393 (decisão #95): wrappers — zero arte nova
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,

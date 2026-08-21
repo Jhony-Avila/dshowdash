@@ -3,22 +3,22 @@
   "artBibleVersion": "1.0",
   "kpiPrincipal": {
     "nome": "Premium Coverage %",
-    "catalogo2d": 6.2,
+    "catalogo2d": 8.4,
     "assets3d": 0
   },
   "catalogo2d": {
     "geral": {
-      "total": 419,
+      "total": 429,
       "prototype": 0,
       "legacy": 7,
       "production": 386,
-      "premium": 26,
+      "premium": 36,
       "hero": 0,
-      "premiumCoveragePct": 6.2,
-      "productionReadyPct": 98.3,
+      "premiumCoveragePct": 8.4,
+      "productionReadyPct": 98.4,
       "qaAprovadoPct": 0,
       "qa": {
-        "pending": 419
+        "pending": 429
       }
     },
     "porCategoria": {
@@ -93,17 +93,17 @@
         }
       },
       "cabelo": {
-        "total": 50,
+        "total": 60,
         "prototype": 0,
         "legacy": 0,
         "production": 50,
-        "premium": 0,
+        "premium": 10,
         "hero": 0,
-        "premiumCoveragePct": 0,
+        "premiumCoveragePct": 16.7,
         "productionReadyPct": 100,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 50
+          "pending": 60
         }
       },
       "efeito": {

@@ -88,6 +88,10 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
   ],
   cabelo: [
     { id: 'escala', nome: 'Volume', min: 0.9, max: 1.12, passo: 0.02, padrao: 1 },
+    // onda 1413 (§897): ENCAIXE com headwear — profundidade do recorte da
+    // calota (0 = automático pelo estado; >0 força). Consumido pelo MOTOR
+    // (clipPath), não é wrapper; só artes v2 (`_px_`)
+    { id: 'encaixe', nome: 'Encaixe com chapéu', min: 0, max: 1, passo: 0.05, padrao: 0, soV2: true },
   ],
 };
 

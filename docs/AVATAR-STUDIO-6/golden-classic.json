@@ -1,5 +1,5 @@
 {
-  "descricao": "GOLDEN CLASSIC PREMIUM (onda 1411, decisão #159) — sha256 do SVG premium por caso p01/p02 × busto/palco/corpo. Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).",
+  "descricao": "GOLDEN CLASSIC PREMIUM (ondas 1411–1413, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).",
   "casos": {
     "p01-busto": {
       "sha256": "c61820bf7cc115c860649fd9477ce31f68376a4daa186ff17ec24764544bfb72",
@@ -38,39 +38,87 @@
       "filtros": 0
     },
     "p03-busto": {
-      "sha256": "b5e32c6de2b75b4cdafab6bd7af395a7f016254a2e8a69dff012405a0f006eee",
-      "bytes": 8915,
-      "nos": 129,
+      "sha256": "57e113b0c5e543c1fc01f82f1bf6271b66764e5f605b43cdaca8c4dd34646346",
+      "bytes": 9468,
+      "nos": 138,
       "filtros": 0
     },
     "p04-busto": {
-      "sha256": "477c6a0cc0b2ce2ac7924cf56c4502e14d419436fd1022ca673f52f1217955b6",
-      "bytes": 8489,
-      "nos": 121,
+      "sha256": "f94ec465a95481187f534da173898a20b9c911c4e71b316431f2ec06e84a0e9d",
+      "bytes": 9044,
+      "nos": 130,
       "filtros": 0
     },
     "p05-busto": {
-      "sha256": "16423ca2a8deb5aa7bc49b980192ba9d86707016aba203bd76807636cba9e508",
-      "bytes": 7818,
-      "nos": 109,
+      "sha256": "1f5e0b8852ddbfbbeb77a243366846ccd14e06c1e65e13d5cbaf1aa6d859d410",
+      "bytes": 8385,
+      "nos": 118,
       "filtros": 0
     },
     "p06-busto": {
-      "sha256": "7f6b7f464b8bacdeea32edd41e945ff28d9930bbf77de81e9a8f768c6ce7797c",
-      "bytes": 7640,
-      "nos": 106,
+      "sha256": "f78343a9e2737506b593e8c8d5b6468755f97c69d6e527852a77cca0a88dda5b",
+      "bytes": 8207,
+      "nos": 115,
       "filtros": 0
     },
     "c01-golden-m-palco": {
-      "sha256": "68544f852d876f03d59a11f911b7153b88e651e6830c5dbf6c13906e626a1d04",
-      "bytes": 9433,
-      "nos": 149,
+      "sha256": "e421a06ed3f322fd45107e9526e530c1e5ae9fb4ddec5b0e82a159bb75307569",
+      "bytes": 9988,
+      "nos": 158,
       "filtros": 0
     },
     "c02-golden-f-palco": {
-      "sha256": "0051da34639d92bdeb47fa1f083c5922df8fe858f07656f137d248cb4e67602b",
-      "bytes": 8985,
-      "nos": 141,
+      "sha256": "ebe0f340a31e1df63a26bd655389759015f04bd675d40600ac139d47be846ce1",
+      "bytes": 9880,
+      "nos": 152,
+      "filtros": 0
+    },
+    "h01-lateral-busto": {
+      "sha256": "fc7c3f98ef0dd3795a5611191de27d4a045634b395c8adecb4bece86904aec3e",
+      "bytes": 7730,
+      "nos": 106,
+      "filtros": 0
+    },
+    "h02-lateral-busto": {
+      "sha256": "b4323e016f5b8278d5f30e89e22ac02b6ec0637ffc990839dd9c49383558c992",
+      "bytes": 7736,
+      "nos": 106,
+      "filtros": 0
+    },
+    "h03-lateral-busto": {
+      "sha256": "37a913cf1f0a37760e3365e2428b7f188e0125363cf59d6d3ddfdc301cb2da9b",
+      "bytes": 7742,
+      "nos": 106,
+      "filtros": 0
+    },
+    "h04-longo_liso-busto": {
+      "sha256": "13d49bb867ce3e8e05520c0073d02081972d4fa85aa0be7ac0c109a7436ddc5b",
+      "bytes": 8213,
+      "nos": 114,
+      "filtros": 0
+    },
+    "h05-longo_liso-busto": {
+      "sha256": "ed97844680117be34b5440bedac2790cef09969359cd9bbe3b8a73355f0fc6a5",
+      "bytes": 8218,
+      "nos": 114,
+      "filtros": 0
+    },
+    "h06-longo_liso-busto": {
+      "sha256": "1b4b146005a7dea36d99b30074a9aaa22808d771bf931acfdd7f1faa322ebe03",
+      "bytes": 8222,
+      "nos": 114,
+      "filtros": 0
+    },
+    "p07-golden-m-cabelo-busto": {
+      "sha256": "8ea2497fb59da89693b5b3a46b0282a8a89f8dd6cc27ccdc59d6c07236e17beb",
+      "bytes": 10714,
+      "nos": 151,
+      "filtros": 0
+    },
+    "p08-golden-f-cabelo-busto": {
+      "sha256": "827f66d007330f82ece04219972e09bf72c1df9e79050f59fcbf15c9d4d0a85f",
+      "bytes": 10764,
+      "nos": 151,
       "filtros": 0
     }
   }

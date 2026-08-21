@@ -16,6 +16,7 @@ import type { ParteDef } from './base-api';
 import { G } from './base-api';
 import { corpoInteiro } from './partes/corpo';
 import { ORDEM_CAMADAS } from './camadas';
+import { profundidadeRecorte, resolverEstadoCabelo } from './compat-cabelo';
 
 export interface OpcoesRender {
   /** Tamanho CSS do SVG (width/height). Default: responsivo (100%). */
@@ -145,9 +146,22 @@ export function renderAvatar(
   const pintar = (id: string | undefined, chave?: CamadaId): string => {
     if (!id || id === 'nenhum') return '';
     const parte = resolver(id);
-    const svg = parte ? parte.render(paletaDa(chave), uid) : '';
+    let svg = parte ? parte.render(paletaDa(chave), uid) : '';
     // onda 1412: o id do item decide params v2 (soV2) — legado byte a byte
-    return chave ? aplicarParamsSvg(chave, svg, config.params?.[chave], id) : svg;
+    if (chave) svg = aplicarParamsSvg(chave, svg, config.params?.[chave], id);
+    // onda 1413 (§897): ENCAIXE cabelo × headwear — recorte da calota por
+    // clipPath, SÓ em artes `_px_` e SÓ no modo premium (estado masked/
+    // variant automático ou params.cabelo.encaixe opt-in). Sem premium/
+    // sem _px_/prof 0 ⇒ fragmento intocado (byte-estável §651).
+    if (chave === 'cabelo' && opcoes.premium && /_px_/.test(id)) {
+      const chapeu = config.camadas.acessorio_cabeca ?? config.camadas.acessorio;
+      const prof = profundidadeRecorte(resolverEstadoCabelo(id, chapeu), config.params?.cabelo?.encaixe);
+      if (prof > 0) {
+        svg = `<clipPath id="${uid}hclip"><rect x="0" y="${49 + prof}" width="240" height="400"/></clipPath>`
+          + `<g clip-path="url(#${uid}hclip)">${svg}</g>`;
+      }
+    }
+    return svg;
   };
 
   // "fundo" composto: fundo → banner → aura (tudo atrás do personagem)
