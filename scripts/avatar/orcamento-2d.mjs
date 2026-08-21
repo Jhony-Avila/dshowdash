@@ -10,7 +10,7 @@
 // (o diff é o relatório). Acima do teto: aviso em item clássico (nunca
 // reprovação retroativa), ERRO em item premium (`_px_`/acabamento).
 // Uso (da raiz): node scripts/avatar/orcamento-2d.mjs [--json]
-// @version 1.1.0  @created 2026-08-20  @updated 2026-08-21 (ondas 1413–1417)
+// @version 1.1.0  @created 2026-08-20  @updated 2026-08-21 (ondas 1413–1418)
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -90,6 +90,15 @@ for (const [cat, lista] of [['fundo', FUNDOS_PREMIUM], ['aura', AURAS_PREMIUM], 
     casos[cat + '-' + item.id] = { premium: true, corpo: false, m: medir(svgDe(c, { uid: 'orc', premium: true, ...(cat === 'fundo' ? { palco: true } : {}) })) };
   }
 }
+// onda 1418: presets C03-C06 no busto e o gala no corpo (pior caso do gate)
+import { PRESETS, configDePreset } from '@painel/services/AvatarCatalog';
+for (const id of ['pre_cp_boardroom', 'pre_cp_offduty', 'pre_cp_neon', 'pre_cp_gala']) {
+  const pr = PRESETS.find((x) => x.id === id)!;
+  const c = validarConfig({ formato: 'camadas', versao: 2, ...configDePreset(pr) } as never);
+  casos['preset-' + id] = { premium: true, corpo: false, m: medir(svgDe(c, { uid: 'orc', premium: true, faceV2: true })) };
+}
+const gala = validarConfig({ formato: 'camadas', versao: 2, ...configDePreset(PRESETS.find((x) => x.id === 'pre_cp_gala')!) } as never);
+casos['preset-gala-corpo'] = { premium: true, corpo: true, m: medir(svgDe(gala, { uid: 'orc', premium: true, faceV2: true, palco: true, enquadramento: 'corpo' })) };
 console.log(JSON.stringify(casos));
 `);
 

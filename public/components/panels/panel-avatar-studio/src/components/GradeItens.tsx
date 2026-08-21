@@ -25,6 +25,7 @@ import { favoritosPermanentes, favoritosPorColecao } from '../services/Favoritos
 import { flag } from '../nucleo/flags';
 import { slotCorporal, slotFinoDoAsset, subcategoriaDoAsset, subcategoriasConflitam } from '../workspace/acessorios'; // #140 · #154
 import { conflitoNomeado } from '../services/AcessoriosRegistry'; // onda 1416 (#196)
+import { LOOKS_FACE, aplicarLookFace, randomizeFacial } from '../services/LookFace'; // onda 1418 (#203)
 import { t } from '../nucleo/i18n'; // lote 511-520 (§296)
 // mega 248 (§228): itens ARQUIVADOS saem da grade padrão (reversível)
 import { arquivados } from '../services/ArquivoItens';
@@ -653,6 +654,25 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           {subFav === 'colecao' && colecoesFav.length === 0 && (
             <span className="avst-foto-nota" data-teste="fav-col-vazio">Nenhum favorito pertence a uma coleção ainda.</span>
           )}
+        </div>
+      )}
+
+      {/* onda 1418 (#203, as6.face_v2 + classico_premium): TABS FACIAIS —
+          Looks Face curados + randomize facial HOMOLOGADO (§2559) */}
+      {categoria === 'base' && flag('as6.face_v2') && flag('as6.classico_premium') && (
+        <div className="avst-foto-filtros" data-teste="look-face-bar">
+          {LOOKS_FACE.map((lf) => (
+            <button key={lf.id} type="button" className="avst-fchip" data-teste={`look-face-${lf.id}`}
+              onMouseEnter={() => aoPrever?.(aplicarLookFace(config, lf))}
+              onMouseLeave={() => aoPrever?.(null)}
+              onClick={() => { aoPrever?.(null); aoEscolher(aplicarLookFace(config, lf)); }}>
+              {lf.nome}
+            </button>
+          ))}
+          <button type="button" className="avst-fchip" data-teste="look-face-random"
+            onClick={() => { aoPrever?.(null); aoEscolher(randomizeFacial(config, Date.now() % 2147483647)); }}>
+            🎲 Rosto aleatório
+          </button>
         </div>
       )}
 

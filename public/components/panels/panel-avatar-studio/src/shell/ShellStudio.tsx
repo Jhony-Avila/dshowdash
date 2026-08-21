@@ -55,6 +55,8 @@ import type {
 } from '../workspace/palco';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
+import { LOOKS_2D } from '../services/RegistroEfeitos'; // onda 1418 (#203)
+import { FRAMINGS_EXPORT, nomeExport, rasterizarExport, svgExport } from '../services/ExportAvatar'; // onda 1418 (#202)
 import { t } from '../nucleo/i18n'; // lote 411-420 (§296)
 import { ROTULO_FAMILIA, familiaDoPoder, svgRoteiroFamilia } from '../services/PoderesFamilia'; // lote 281-290 (§153/§156)
 import { svgParticulas } from '../engine/particulas'; // lote 351-360 (§157.3)
@@ -424,6 +426,15 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     try { localStorage.setItem(CHAVE_HORA, h); } catch { /* sem storage */ }
   };
   // mega 471 (§165): modo AUTO persistido; escolher preset manual desliga
+  // onda 1418 (#203, P8-F): LOOK 2D do palco — APRESENTAÇÃO pura
+  // (localStorage; nunca serializa no avatar). '' = sem look.
+  const [look2d, setLook2d] = useState<string>(() => {
+    try { return localStorage.getItem('dshow.avst.look2d') ?? ''; } catch { return ''; }
+  });
+  const trocarLook2d = useCallback((l: string) => {
+    setLook2d(l);
+    try { localStorage.setItem('dshow.avst.look2d', l); } catch { /* melhor esforço */ }
+  }, []);
   const [luzAuto, setLuzAuto] = useState<boolean>(() => {
     try { return localStorage.getItem('dshow.avst5.palco.luzauto.v1') === '1'; } catch { return false; }
   });
@@ -1230,6 +1241,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 aoUsarComoAvatar={aoSalvarFotoLegado} />
             ) : (
               <div className={`avst5-palco${poderAtivo ? ' avst5-palco-climax' : ''}${flag('as6.classico_premium') && configDraft.acabamento === 'premium' ? ' avst5-palco-premium' : ''}`}
+                data-look={flag('as6.classico_premium') && configDraft.acabamento === 'premium' && look2d ? look2d : undefined}
                 style={palcoV2 && propsCen.luz !== 1 ? { filter: `brightness(${propsCen.luz})` } : undefined}>
                 {/* mega 233 (§161): profundidade (vinheta) + cor ambiente —
                     overlay do CENÁRIO, nunca serializado no avatar */}
@@ -1249,6 +1261,44 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                     corpo={renderCorpo} /* #137: corpo inteiro 240×400 */
                     palco={flag('as6.vida_shell') && !palco3d && !movReduzido} />
                 </div>
+              </div>
+            )}
+            {/* onda 1418 (#202/#203, gate ★): barra PREMIUM — toggle de
+                acabamento, looks 2D (apresentação) e export do avatar */}
+            {flag('as6.classico_premium') && !palco3d && (
+              <div className="avst5-premium-bar" data-teste="premium-bar" role="group" aria-label="Classic Premium">
+                <button type="button" className={`avst-fchip${configDraft.acabamento === 'premium' ? ' avst-fchip-on' : ''}`}
+                  data-teste="toggle-acabamento"
+                  onClick={() => {
+                    const { acabamento: _a, ...resto } = configDraft;
+                    aplicarComando(validarConfig(configDraft.acabamento === 'premium' ? resto as typeof configDraft : { ...configDraft, acabamento: 'premium' }));
+                  }}>
+                  ✦ Premium
+                </button>
+                {configDraft.acabamento === 'premium' && LOOKS_2D.map((l) => (
+                  <button key={l.id} type="button" className={`avst-fchip${look2d === l.id ? ' avst-fchip-on' : ''}`}
+                    data-teste={`look-${l.id}`} title={l.portraitSafe ? `${l.nome} (portrait-safe)` : l.nome}
+                    onClick={() => trocarLook2d(look2d === l.id ? '' : l.id)}>
+                    {l.nome}
+                  </button>
+                ))}
+                {flag('as6.cp_foto') && (
+                  <button type="button" className="avst-fchip" data-teste="export-avatar"
+                    onClick={() => {
+                      const o = { framing: 'bust' as const, transparente: false };
+                      const svg = svgExport(configDraft, o);
+                      const f = FRAMINGS_EXPORT.find((x) => x.id === o.framing)!;
+                      rasterizarExport(svg, f.largura, f.altura, 'png').then((blob) => {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = nomeExport(o, 'png');
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                      }).catch(() => { /* export é conveniência — nunca derruba o shell */ });
+                    }}>
+                    Exportar PNG
+                  </button>
+                )}
               </div>
             )}
             {comparando && (

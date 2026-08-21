@@ -344,6 +344,15 @@ export function categoriasAtivas(): CategoriaMeta[] {
 }
 
 /** onda 1412: presets VISÍVEIS — os golden premium só com a flag (#176). */
+/** onda 1418 (#203): CONFIG INICIAL de novos avatares — com o trilho
+ *  premium LIGADO, quem chega começa no golden (§2560); flag OFF = o
+ *  CONFIG_PADRAO de sempre (byte a byte). Nunca altera avatar existente. */
+export function configInicial(): AvatarConfig {
+  if (!flag('as6.classico_premium')) return CONFIG_PADRAO;
+  const golden = PRESETS.find((x) => x.id === 'pre_golden_m');
+  return golden ? validarConfig({ ...configDePreset(golden), formato: 'camadas', versao: VERSAO_CONFIG } as never) : CONFIG_PADRAO;
+}
+
 export function presetsAtivos(): Preset[] {
   return PRESETS.filter((pr) => pr.config.acabamento !== 'premium' || flag('as6.classico_premium'));
 }
@@ -1277,6 +1286,59 @@ export const PRESETS: Preset[] = [
       acabamento: 'premium',
     },
   },
+  // onda 1418 (#202): presets C03–C06 — coleção "Classic Premium" completa
+  {
+    id: 'pre_cp_boardroom',
+    nome: 'Classic Premium — Boardroom',
+    descricao: 'C03: blazer com forro de cetim, social e sapato polido.',
+    raridade: 'lendario',
+    config: {
+      base: 'bas_px_quadrada',
+      camadas: { cabelo: 'cab_px_lateral', barba: 'brb_aparada', olhos: 'olh_px_determinado', boca: 'boc_px_neutra', roupa: 'rou_px_blazer', roupa_inferior: 'rin_social', acessorio_pes: 'ace_px_social', fundo: 'fun_px_estudio' },
+      cores: { pele: '#c98e5f', cabelo: '#14100c', roupa: '#20242e', destaque: '#c9a75a' },
+      coresFace: { iris: '#3a2a1e' },
+      acabamento: 'premium',
+    },
+  },
+  {
+    id: 'pre_cp_offduty',
+    nome: 'Classic Premium — Off-duty',
+    descricao: 'C04: cardigã sobre camiseta, jeans e tênis premium.',
+    raridade: 'epico',
+    config: {
+      base: 'bas_px_suave',
+      camadas: { cabelo: 'cab_px_ondulado', olhos: 'olh_px_gentil', boca: 'boc_px_sorriso', roupa: 'rou_px_camiseta', roupa_sobre: 'sob_px_cardiga', roupa_inferior: 'rin_jeans', acessorio_pes: 'ace_px_tenis', fundo: 'fun_px_horizonte' },
+      cores: { pele: '#e8b58c', cabelo: '#a06a30', roupa: '#7a2d3c', destaque: '#e8b64c' },
+      coresFace: { iris: '#2f5d43' },
+      acabamento: 'premium',
+    },
+  },
+  {
+    id: 'pre_cp_neon',
+    nome: 'Classic Premium — Neon',
+    descricao: 'C05: hoodie técnico, jogger, beco neon e aura de fluxo.',
+    raridade: 'epico',
+    config: {
+      base: 'bas_px_oval',
+      camadas: { cabelo: 'cab_px_undercut', olhos: 'olh_px_intenso', boca: 'boc_px_meio', roupa: 'rou_px_hoodie', roupa_inferior: 'rin_jogger', acessorio_pes: 'ace_px_tenis', acessorio_rosto: 'ace_px_oculos', fundo: 'fun_px_neon', aura: 'aur_px_fluxo' },
+      cores: { pele: '#b07a4e', cabelo: '#e84c6f', roupa: '#20242e', destaque: '#4cd9e8' },
+      coresFace: { iris: '#3a6ea8' },
+      acabamento: 'premium',
+    },
+  },
+  {
+    id: 'pre_cp_gala',
+    nome: 'Classic Premium — Gala',
+    descricao: 'C06: cetim de noite, coroa e a nebulosa inteira de fundo.',
+    raridade: 'lendario',
+    config: {
+      base: 'bas_px_diamante',
+      camadas: { cabelo: 'cab_px_longo_liso', olhos: 'olh_px_felino', boca: 'boc_px_suave', roupa: 'rou_px_gala', roupa_inferior: 'rin_social', acessorio_pes: 'ace_px_social', acessorio_cabeca: 'ace_px_coroa', fundo: 'fun_px_nebulosa', aura: 'aur_px_estelar', moldura: 'mol_px_eclipse' },
+      cores: { pele: '#8a5a35', cabelo: '#14100c', roupa: '#2c2050', destaque: '#c9a75a' },
+      coresFace: { iris: '#5b3d8a' },
+      acabamento: 'premium',
+    },
+  },
   {
     id: 'pre_executivo',
     nome: 'Executivo de Elite',
@@ -1567,6 +1629,17 @@ export interface Colecao {
 }
 
 export const COLECOES: Colecao[] = [
+  // onda 1418 (#202): a coleção do trilho premium — só aparece com a flag
+  // (colecoesAtivas filtra); itens sao os goldens do gate §2560
+  {
+    id: 'col_classic_premium',
+    nome: 'Classic Premium',
+    descricao: 'A primeira leva do padrão-ouro 2D: rosto, cabelo, alfaiataria e palco.',
+    raridade: 'lendario',
+    itens: ['bas_px_angular', 'cab_px_lateral', 'olh_px_confiante', 'boc_px_sorriso', 'rou_px_blazer', 'rin_social', 'ace_px_social', 'fun_px_estudio', 'aur_px_fluxo', 'mol_px_ouro'],
+    cores: { roupa: '#20242e', destaque: '#c9a75a' },
+    lore: 'Quando o estúdio decidiu que “bom o bastante” não bastava, nasceu esta prateleira. Cada peça passou por goldens, orçamento e um par de olhos exigente.',
+  },
   {
     id: 'col_cyber_nexus',
     nome: 'Cyber Nexus',
@@ -1668,6 +1741,11 @@ export const COLECOES: Colecao[] = [
     cores: { destaque: '#e8b64c' },
   },
 ];
+
+/** onda 1418 (#202): coleções visíveis — premium só com a flag (§651). */
+export function colecoesAtivas(): Colecao[] {
+  return COLECOES.filter((c) => c.id !== 'col_classic_premium' || flag('as6.classico_premium'));
+}
 
 /** Progresso da coleção dado o conjunto de itens já usados. */
 export function progressoColecao(colecao: Colecao, usados: Set<string>): { usados: number; total: number } {

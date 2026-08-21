@@ -14,6 +14,8 @@ import {
   TriangleAlert, Users,
 } from 'lucide-react';
 import type { AvatarConfig, Raridade } from '../domain/types';
+import { ehDestacavel } from '../services/QualidadeVisual'; // onda 1418 (#202)
+import { flag } from '../nucleo/flags';
 import {
   ARQUETIPOS, COLECOES, RARIDADES, aplicarArquetipo, itemPorId, progressoColecao,
   tituloPorId, validarConfig,
@@ -247,7 +249,10 @@ export function Vitrine({ config, desbloqueados, aoAplicar, aoAbrirColecoes }: {
             <p>{s.descricao}</p>
           </header>
           <div className="avst-vt-fila" role="list">
-            {s.itens.map((item) => (
+            {/* onda 1418 (#202, as6.avatar_visual_v2): a Vitrine NUNCA
+                destaca Legacy — item com sucessor premium some das
+                prateleiras (o catálogo segue com ele; §163) */}
+            {s.itens.filter((item) => !flag('as6.avatar_visual_v2') || ehDestacavel(item.key)).map((item) => (
               <CardVitrine key={`${s.id}-${item.key}`} item={item} secao={s.id} config={config}
                 desbloqueados={desbloqueados}
                 favorito={favs.has(item.key)}

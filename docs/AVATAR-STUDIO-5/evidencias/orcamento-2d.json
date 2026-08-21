@@ -7,7 +7,7 @@
     "corpoBytes": 81920
   },
   "resumo": {
-    "casos": 110,
+    "casos": 115,
     "erros": [],
     "avisos": []
   },
@@ -671,6 +671,36 @@
       "nos": 75,
       "filtros": 0,
       "gradientes": 5
+    },
+    "preset-pre_cp_boardroom": {
+      "bytes": 11071,
+      "nos": 162,
+      "filtros": 0,
+      "gradientes": 8
+    },
+    "preset-pre_cp_offduty": {
+      "bytes": 11068,
+      "nos": 163,
+      "filtros": 0,
+      "gradientes": 8
+    },
+    "preset-pre_cp_neon": {
+      "bytes": 11750,
+      "nos": 179,
+      "filtros": 0,
+      "gradientes": 8
+    },
+    "preset-pre_cp_gala": {
+      "bytes": 13181,
+      "nos": 206,
+      "filtros": 0,
+      "gradientes": 9
+    },
+    "preset-gala-corpo": {
+      "bytes": 18702,
+      "nos": 307,
+      "filtros": 0,
+      "gradientes": 15
     }
   }
 }

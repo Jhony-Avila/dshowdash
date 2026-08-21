@@ -5,7 +5,7 @@
     "itens2d": 495,
     "categorias": 17,
     "titulos": 30,
-    "colecoes": 12,
+    "colecoes": 13,
     "personagens3d": 8
   },
   "categorias": [
@@ -2546,6 +2546,10 @@
     "tit_visionario"
   ],
   "colecoes": [
+    {
+      "id": "col_classic_premium",
+      "itens": 10
+    },
     {
       "id": "col_cyber_nexus",
       "itens": 7

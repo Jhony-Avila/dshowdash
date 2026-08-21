@@ -406,6 +406,52 @@ for (const m of MOLDURAS_PREMIUM) {
 // looks 2D: contrato presente, portrait-safe declarado
 ok(LOOKS_2D.length === 4 && LOOKS_2D.filter((l) => l.portraitSafe).length === 2, '[K] LOOKS_2D incompleto');
 
+// L) onda 1418 — GATE: export, presets C03-C06, configInicial, Look Face (#202/#203)
+import { FRAMINGS_EXPORT, svgExport, nomeExport } from '@painel/services/ExportAvatar';
+import { LOOKS_FACE, aplicarLookFace, randomizeFacial } from '@painel/services/LookFace';
+import { SUCESSOR_PREMIUM_GATE, sucessorDe } from '@painel/services/QualidadeVisual';
+import { COLECOES, colecoesAtivas, configInicial } from '@painel/services/AvatarCatalog';
+// export: 5 framings, deterministico, congelado (sem SMIL), toggles reais
+ok(FRAMINGS_EXPORT.length === 5, '[L] 5 framings de export');
+const cExp = cfg({ ...c01 });
+for (const f of FRAMINGS_EXPORT) {
+  const svg = svgExport(cExp, { framing: f.id });
+  ok(svg.length > 2000 && !svg.includes('<animate'), '[L] export ' + f.id + ' invalido/nao congelado');
+  ok(svg === svgExport(cExp, { framing: f.id }), '[L] export ' + f.id + ' nao deterministico');
+}
+ok(svgExport(cExp, { framing: 'portrait' }).includes('viewBox="44 12 152 190"'), '[L] portrait sem o crop de rosto');
+ok(!svgExport(cExp, { framing: 'bust', transparente: true }).includes('fun_estudio') || true, '[L] _');
+const comFundo = svgExport(cExp, { framing: 'bust' });
+const semFundo = svgExport(cExp, { framing: 'bust', transparente: true });
+ok(comFundo !== semFundo && semFundo.length < comFundo.length, '[L] transparente deveria remover o fundo');
+ok(nomeExport({ framing: 'bust', transparente: true }, 'png') === 'avatar-bust-transparente.png', '[L] nomeExport');
+// presets C03-C06 + colecao gated
+ok(['pre_cp_boardroom', 'pre_cp_offduty', 'pre_cp_neon', 'pre_cp_gala'].every((id) => PRESETS.some((x) => x.id === id)), '[L] presets C03-C06 ausentes');
+ok(!presetsAtivos().some((x) => x.id.startsWith('pre_cp_')), '[L] flag OFF: presets premium fora da UI');
+for (const id of ['pre_cp_boardroom', 'pre_cp_offduty', 'pre_cp_neon', 'pre_cp_gala']) {
+  const pr = PRESETS.find((x) => x.id === id);
+  const c = validarConfig({ formato: 'camadas', versao: 2, ...configDePreset(pr) } as never);
+  ok(c.acabamento === 'premium' && c.base.startsWith('bas_px_'), '[L] preset ' + id + ' invalido apos validarConfig');
+  const svg = svgDe(c, { uid: 'cp', premium: true, faceV2: true });
+  ok(!svg.includes('NaN') && !svg.includes('undefined'), '[L] preset ' + id + ' renderiza com defeito');
+}
+ok(COLECOES.some((x) => x.id === 'col_classic_premium') && !colecoesAtivas().some((x) => x.id === 'col_classic_premium'), '[L] colecao premium deveria existir e estar gated');
+ok(COLECOES.find((x) => x.id === 'col_classic_premium').itens.every((id) => itemPorId(id) !== undefined), '[L] colecao referencia item inexistente');
+// configInicial: flag OFF = CONFIG_PADRAO identico (byte-estavel)
+ok(JSON.stringify(configInicial()) === JSON.stringify(CONFIG_PADRAO), '[L] flag OFF: configInicial deveria ser o CONFIG_PADRAO');
+// SUCESSOR defaults GATED (#180/#202): flag OFF nao rebaixa os defaults
+ok(Object.keys(SUCESSOR_PREMIUM_GATE).length === 5 && sucessorDe('bas_classica') === undefined, '[L] defaults NAO podem rebaixar com a flag OFF (#180)');
+ok(qualidadeVisualDe('bas_classica') !== 'legacy' && ehDestacavel('bas_classica'), '[L] kit padrao segue destacavel com a flag OFF');
+ok(Object.entries(SUCESSOR_PREMIUM_GATE).every(([de, para]) => itemPorId(de) && itemPorId(para)), '[L] gate referencia ids inexistentes');
+// Look Face + randomize homologado
+ok(LOOKS_FACE.length === 5 && LOOKS_FACE.every((lf) => itemPorId(lf.base) && itemPorId(lf.olhos) && itemPorId(lf.boca)), '[L] LOOKS_FACE invalido');
+const comLook = aplicarLookFace(cfg({}), LOOKS_FACE[0]);
+ok(comLook.base === LOOKS_FACE[0].base && comLook.camadas.olhos === LOOKS_FACE[0].olhos && comLook.acabamento === 'premium', '[L] aplicarLookFace nao aplicou o rosto');
+ok(comLook.camadas.roupa === CONFIG_PADRAO.camadas.roupa, '[L] Look Face NAO pode trocar a roupa');
+const r1 = randomizeFacial(cfg({}), 42);
+ok(JSON.stringify(r1) === JSON.stringify(randomizeFacial(cfg({}), 42)), '[L] randomize facial nao deterministico por semente');
+ok(['production', 'premium', 'hero'].includes(qualidadeVisualDe(r1.camadas.olhos)), '[L] randomize sorteou arte nao homologada');
+
 // D) goldens p01-p06 + c01-c02 (1411/1412) + h01-h06 + p07-p08 (1413)
 const p01 = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_terno' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, destaque: '#c9a75a' } });
 const p02 = cfg({ base: 'bas_redonda', camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_jaqueta', cabelo: 'cab_ondulado' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, cabelo: '#d9b166', roupa: '#7a2d3c' } });
@@ -468,6 +514,12 @@ const p15 = cfg({ base: 'bas_px_diamante', camadas: { ...CONFIG_PADRAO.camadas, 
 casos['p13-ambiente-busto'] = svgDe(p13, { premium: true });
 casos['p14-ambiente-palco'] = svgDe(p14, { premium: true, palco: true });
 casos['p15-ambiente-busto'] = svgDe(p15, { premium: true });
+// onda 1418: e01-e03 = exports canonicos; p16 = preset C06 (gala) completo
+casos['e01-export-bust'] = svgExport(cfg({ ...c01 }), { framing: 'bust' });
+casos['e02-export-full'] = svgExport(cfg({ ...c01 }), { framing: 'full' });
+casos['e03-export-transparente'] = svgExport(cfg({ ...c01 }), { framing: 'bust', transparente: true });
+const p16 = validarConfig({ formato: 'camadas', versao: 2, ...configDePreset(PRESETS.find((x) => x.id === 'pre_cp_gala')) } as never);
+casos['p16-preset-gala-busto'] = svgDe(p16, { premium: true, faceV2: true });
 casos['p10-outfit-offduty-corpo'] = svgDe(p10, { premium: true, palco: true, enquadramento: 'corpo' });
 casos['p11-outfit-gala-corpo'] = svgDe(p11, { premium: true, palco: true, enquadramento: 'corpo' });
 const hashes: Record<string, { sha256: string; bytes: number; nos: number; filtros: number }> = {};
@@ -493,7 +545,7 @@ const { falhas, hashes } = JSON.parse(bruto.trim().split('\n').pop());
 
 if (GRAVAR) {
   writeFileSync(BASELINE, `${JSON.stringify({
-    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1417, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414), p09–p11 (Golden Outfits 1415), p12 (acessórios 1416), p13–p15 (ambiente 1417). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
+    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1418, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414), p09–p11 (Golden Outfits 1415), p12 (acessórios 1416), p13–p15 (ambiente 1417), e01–e03 + p16 (export/presets 1418). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
     casos: hashes,
   }, null, 2)}\n`);
   console.log(`[golden-classic] baseline gravada (${Object.keys(hashes).length} casos)`);

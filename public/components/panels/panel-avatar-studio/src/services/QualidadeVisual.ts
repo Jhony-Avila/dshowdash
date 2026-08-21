@@ -1,6 +1,8 @@
 // services/QualidadeVisual.ts — QUALIDADE VISUAL COMO DADO DE CATÁLOGO
 // (onda 1406, MEGA_BRIEFING_01 §13, §62, §68–§69, §161, §1419–§1421,
 // §2292, §3022–§3023; decisão #157).
+import { flag } from '../nucleo/flags';
+
 // @version 1.0.0  @created 2026-08-19
 //
 // A escada Q0–Q4 do Art Bible (docs/AVATAR-STUDIO-5/ART-BIBLE.md §2) vira
@@ -79,11 +81,28 @@ export const SUCESSOR_PREMIUM: Record<string, string> = {
   boc_neutra: 'boc_px_neutra',
 };
 
+// onda 1418 (#180/#202): sucessores dos DEFAULTS do config — entram SÓ
+// quando a flag liga (gate §2560): com o catálogo premium invisível,
+// rebaixar o kit padrão tiraria o destaque sem alternativa visível.
+export const SUCESSOR_PREMIUM_GATE: Record<string, string> = {
+  bas_classica: 'bas_px_oval',
+  olh_padrao: 'olh_px_confiante',
+  boc_sorriso: 'boc_px_sorriso',
+  cab_curto: 'cab_px_curto',
+  rou_social: 'rou_px_camisa',
+};
+
+/** Sucessor efetivo (#202): a tabela do gate só vale com a flag ON. */
+export function sucessorDe(id: string): string | undefined {
+  return SUCESSOR_PREMIUM[id]
+    ?? (flag('as6.classico_premium') ? SUCESSOR_PREMIUM_GATE[id] : undefined);
+}
+
 export function qualidadeVisualDe(id: string): NivelQualidadeVisual {
   const porId = POR_ID[id]?.qualidadeVisual;
   if (porId) return porId;
   for (const [re, ficha] of POR_PREFIXO) if (re.test(id) && ficha.qualidadeVisual) return ficha.qualidadeVisual;
-  if (SUCESSOR_PREMIUM[id]) return 'legacy';
+  if (sucessorDe(id)) return 'legacy';
   return 'production';
 }
 
@@ -105,7 +124,7 @@ export function fichaQualidadeDe(id: string): FichaQualidadeVisual {
 export function ehDestacavel(id: string): boolean {
   const n = qualidadeVisualDe(id);
   if (n === 'prototype') return false;
-  if (n === 'legacy' && SUCESSOR_PREMIUM[id]) return false;
+  if (n === 'legacy' && sucessorDe(id)) return false;
   return true;
 }
 

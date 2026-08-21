@@ -10,7 +10,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Crown, FolderHeart, Images, Sparkles, Star, Trophy, User } from 'lucide-react';
 import type { AvatarConfig, Conquista } from '../domain/types';
-import { COLECOES, dataUriDe, progressoColecao, tituloPorId } from '../services/AvatarCatalog';
+import { colecoesAtivas, dataUriDe, progressoColecao, tituloPorId } from '../services/AvatarCatalog';
 import { itensUsados } from '../services/Progresso';
 import { listarPresets } from '../services/PresetsPessoais';
 import { listarProjetosFoto } from '../services/ProjetosFoto';
@@ -37,7 +37,7 @@ export function MinhaVitrine({ config, conquistas }: {
 
   const colecaoPreferida = useMemo(() => {
     const usados = itensUsados();
-    return COLECOES
+    return colecoesAtivas()
       .map((col) => ({ col, p: progressoColecao(col, usados) }))
       .filter(({ p }) => p.usados > 0)
       .sort((a, b) => (b.p.usados / b.p.total) - (a.p.usados / a.p.total))[0] ?? null;

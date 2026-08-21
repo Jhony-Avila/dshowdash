@@ -26,7 +26,7 @@ const Contextos = lazy(() => import('../components/Contextos').then((m) => ({ de
 const CarregandoAba = () => <p className="avst-foto-nota" role="status">Carregando…</p>;
 import type { AvatarConfig, CategoriaId, EstadoSalvar, GrupoId, Raridade, ShellConfig } from '../domain/types';
 import {
-  CONFIG_PADRAO, GRUPOS, RARIDADES, aleatorio, categoriasAtivas, itemPorId, nivelRaridade,
+  GRUPOS, RARIDADES, aleatorio, categoriasAtivas, configInicial, itemPorId, nivelRaridade,
   validarConfig,
 } from '../services/AvatarCatalog';
 import { carregarAvatar, salvarAvatar, salvarFoto } from '../services/AvatarService';
@@ -134,7 +134,8 @@ function largGuardada(): number {
 
 export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [carregando, setCarregando] = useState(true);
-  const [atual, setAtual] = useState<AvatarConfig>(CONFIG_PADRAO);
+  // onda 1418 (#203): novos avatares nascem no golden com o trilho ligado
+  const [atual, setAtual] = useState<AvatarConfig>(configInicial());
   const [salvo, setSalvo] = useState<AvatarConfig | null>(null);
   const [estado, setEstado] = useState<EstadoSalvar>('sem_alteracoes');
   const [origem, setOrigem] = useState<OrigemDado>('padrao');
@@ -211,7 +212,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   // ── Carga inicial ─────────────────────────────────────────────────
   const aplicarCarga = useCallback((r: ResultadoCarga) => {
     // com foto/legado ativo, recupera o último trabalho em CAMADAS no editor
-    setAtual(r.config ?? r.configCamadasRecente ?? CONFIG_PADRAO);
+    setAtual(r.config ?? r.configCamadasRecente ?? configInicial()); // #203
     setSalvo(r.config); // null quando foto/legado ativo → salvar volta às camadas
     setOrigem(r.origem);
     setVersao(r.versao);

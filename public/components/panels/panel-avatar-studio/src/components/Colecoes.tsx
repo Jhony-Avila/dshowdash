@@ -5,12 +5,13 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, BookOpen, Check, Eye, Layers, Trophy } from 'lucide-react';
 import type { AvatarConfig } from '../domain/types';
 import {
-  COLECOES, RARIDADES, aplicarColecao, itemPorId, progressoColecao, validarConfig,
+  colecoesAtivas, COLECOES, RARIDADES, aplicarColecao, itemPorId, progressoColecao, svgItemIsolado, validarConfig,
 } from '../services/AvatarCatalog';
 import type { Colecao } from '../services/AvatarCatalog';
 import { itensUsados } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
 import { AvatarSvg } from './AvatarSvg';
+import { focoItemDe } from './modoItem'; // onda 1418 (#203)
 // megas 241–242 (§208/§209/§214): hero v2 + galeria (flag as5.progressao_v2)
 import { comItem, FOCO_THUMB } from './GradeItens';
 import { flag } from '../nucleo/flags';
@@ -131,6 +132,19 @@ function PaginaColecao({ col, config, usados, aoAplicar, aoVoltar }: {
   );
 }
 
+// onda 1418 (#203): miniatura POR PEÇA da coleção — o avatar da coleção
+// com a câmera no FOCO do item (crop §68); determinístico e cacheável.
+const cacheThumbCol = new Map<string, string>();
+function thumbItemColecao(_config: AvatarConfig, col: Colecao, id: string): string {
+  const chave = `${col.id}:${id}`;
+  const memo = cacheThumbCol.get(chave);
+  if (memo) return memo;
+  const svg = svgItemIsolado(id, { uid: `colp-${col.id}-${id}`, foco: focoItemDe(id), cores: col.cores });
+  const uri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  cacheThumbCol.set(chave, uri);
+  return uri;
+}
+
 export function Colecoes({ config, aoAplicar }: {
   config: AvatarConfig;
   aoAplicar: (novo: AvatarConfig) => void;
@@ -149,7 +163,7 @@ export function Colecoes({ config, aoAplicar }: {
 
   return (
     <div className="avst-colecoes" role="list" aria-label="Coleções">
-      {COLECOES.map((col) => {
+      {colecoesAtivas().map((col) => {
         const rar = RARIDADES[col.raridade];
         const prog = progressoColecao(col, usados);
         const completa = prog.usados === prog.total;
@@ -167,6 +181,21 @@ export function Colecoes({ config, aoAplicar }: {
                 {completa && <span className="avst-colecao-completa"><Check size={11} aria-hidden /> Completa</span>}
               </header>
               <p>{col.descricao}</p>
+              {/* onda 1418 (#203): THUMBS POR CATEGORIA — cada peça da
+                  coleção com a sua miniatura focada (dataUriDe §68) */}
+              {flag('as6.classico_premium') && (
+                <div className="avst-colecao-pecas" data-teste="colecao-pecas">
+                  {col.itens.map((id) => {
+                    const it = itemPorId(id);
+                    if (!it) return null;
+                    return (
+                      <span key={id} className="avst-colecao-peca" title={`${it.nome} (${it.categoria})`}>
+                        <img src={thumbItemColecao(config, col, id)} alt={it.nome} loading="lazy" />
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
               <div className="avst-colecao-progresso" role="progressbar"
                 aria-valuenow={prog.usados} aria-valuemax={prog.total}
                 aria-label={`Progresso da coleção ${col.nome}`}>

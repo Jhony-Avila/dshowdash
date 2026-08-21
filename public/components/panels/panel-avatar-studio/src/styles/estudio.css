@@ -1253,6 +1253,14 @@
 .avst5-palco-premium[data-look="neon"] { box-shadow: inset 0 0 80px rgba(124, 92, 255, 0.28); }
 .avst5-palco-premium[data-look="neon"] g[data-anim="personagem"] { filter: drop-shadow(0 0 8px rgba(76, 217, 232, 0.4)); }
 
+/* onda 1418 (#203): thumbs por categoria nos cards de coleção */
+.avst-colecao-pecas { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 2px; }
+.avst-colecao-pecas .avst-colecao-peca { width: 26px; height: 26px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.05); }
+.avst-colecao-pecas img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* onda 1418 (#203): barra premium do palco (acabamento/looks/export) */
+.avst5-premium-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 2px; }
+
 .avst5-palco { overflow: hidden; position: relative; }
 .avst5-palco svg { filter: drop-shadow(0 18px 40px rgba(0,0,0,.45)); }
 .avst5-salvar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--avst-borda, var(--as6-superficie-4)); font-size: 12px; }
