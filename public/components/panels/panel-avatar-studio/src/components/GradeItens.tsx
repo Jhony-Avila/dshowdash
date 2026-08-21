@@ -29,7 +29,7 @@ import { t } from '../nucleo/i18n'; // lote 511-520 (§296)
 import { arquivados } from '../services/ArquivoItens';
 import { ROTULO_FUNCIONAL, categoriaFuncional } from '../services/EfeitosFuncionais'; // lote 351-360 (§157)
 import { lerRecentes, registrarRecente } from '../services/Recentes'; // lote 391-400 (§88)
-import { CONJUNTOS, aplicarConjunto } from '../services/Conjuntos'; // lote 551-560 (§72)
+import { conjuntosAtivos, aplicarConjunto } from '../services/Conjuntos'; // lote 551-560 (§72) · onda 1415 (#191): premium gated
 import { temTag } from '../services/MetadadosAssets'; // lote 891-900 (§227)
 import type { ParteDef } from '../engine/base-api';
 import { AvatarSvg } from './AvatarSvg';
@@ -674,7 +674,7 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
         {categoria === 'roupa' && flag('as5.roupas_camada') && (
           <div className="avst-conq-filtros" role="group" aria-label="Conjuntos (§72.1)" data-teste="conjuntos">
             <span style={{ fontSize: 11, opacity: 0.7 }}>{t('Conjuntos:')}</span>
-            {CONJUNTOS.map((cj) => (
+            {conjuntosAtivos().map((cj) => (
               <button key={cj.id} type="button" className="avst-ft-chip" data-teste={`conjunto-${cj.id}`}
                 title={`Aplica roupa + acessórios${cj.paleta ? ' + paleta' : ''} de uma vez; slots bloqueados são preservados (§72.3)`}
                 onClick={() => {

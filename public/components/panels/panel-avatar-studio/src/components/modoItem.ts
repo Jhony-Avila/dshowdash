@@ -84,6 +84,10 @@ export const FOCO_ITEM_ASSET: Record<string, string> = {
   ace_runa_protecao: '35 80 58 58',
   ace_tapa_olho: '46 22 149 149',
   ace_tenis_neon: '60 290 120 120',
+  // onda 1415 (#191): calçados premium (slot pes — foco no corpo inteiro)
+  ace_px_tenis: '60 300 120 120',
+  ace_px_social: '60 302 120 120',
+  ace_px_bota: '60 284 120 120',
   ace_tiara_led: '53 4 134 134',
   ace_veu_mistico: '41 17 159 159',
   ace_viseira_esporte: '57 45 126 126',

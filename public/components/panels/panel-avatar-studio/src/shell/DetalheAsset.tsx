@@ -10,7 +10,7 @@
 // coleção. Itens relacionados: mesmo tema, navegáveis dentro do drawer.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeftRight, BookmarkPlus, Check, Eye, Layers, Lock, Pause, Pin, Play, Star, X } from 'lucide-react';
-import type { AvatarConfig, SlotCor } from '../domain/types';
+import type { CanalCor, AvatarConfig } from '../domain/types';
 import {
   COLECOES, RARIDADES, itemPorId, itensDe, progressoColecao, validarConfig,
 } from '../services/AvatarCatalog';
@@ -33,7 +33,8 @@ import { salvarPreset } from '../services/PresetsPessoais';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { MOVIMENTOS, animar } from './movimento';
 
-const NOME_CANAL: Record<SlotCor, string> = {
+const NOME_CANAL: Record<CanalCor, string> = {
+  secundario: 'Secundário', // onda 1415 (#191)
   pele: 'Pele', cabelo: 'Cabelo', roupa: 'Cor principal', destaque: 'Detalhes',
 };
 

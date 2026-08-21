@@ -73,7 +73,7 @@ if (existsSync(INV)) {
   const inv = JSON.parse(antes);
   ok(inv.catalogo2d.total >= 393, `catálogo 2D com ${inv.catalogo2d.total} itens (< 393)`);
   // onda 1414 (#162): 13 → 16 (+ barba, sobrancelha, nariz)
-  ok(inv.catalogo2d.categorias.length === 16, `esperava 16 categorias, achei ${inv.catalogo2d.categorias.length}`);
+  ok(inv.catalogo2d.categorias.length === 17, `esperava 17 categorias, achei ${inv.catalogo2d.categorias.length}`);
   ok(inv.assets3d.personagens.total === 8 && inv.assets3d.partes.total === 26, 'contagem de assets 3D divergente (8 personagens + 26 partes)');
   ok(inv.catalogo2d.porCategoria.acessorio.semFoco.length === 0, `acessórios sem FOCO_ITEM_ASSET: ${inv.catalogo2d.porCategoria.acessorio.semFoco.join(', ')}`);
   // achado #165b registrado: LODs idênticos existem (auditoria da 1409 vai zerar)

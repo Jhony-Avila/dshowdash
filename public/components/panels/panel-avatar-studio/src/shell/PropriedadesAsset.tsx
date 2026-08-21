@@ -13,8 +13,9 @@
 // mesmo no backend do config) — publicação byte-estável.
 import { useState } from 'react';
 import { Paintbrush, RotateCcw, SlidersHorizontal } from 'lucide-react';
-import type { AvatarConfig, CamadaId, SlotCor } from '../domain/types';
+import type { CanalCor, AvatarConfig, CamadaId } from '../domain/types';
 import { CORES_SUGERIDAS, PALETAS_ROUPA, itemPorId, paramsDaCamada } from '../services/AvatarCatalog';
+import { secundarioPadraoDe } from '../engine/cores'; // onda 1415 (#191)
 import { flag } from '../nucleo/flags';
 import type { ParamDef } from '../services/AvatarCatalog';
 
@@ -34,11 +35,15 @@ export function comParam(
 
 /** Config com UM canal da camada trocado (null/igual ao global → remove). */
 export function comCanal(
-  config: AvatarConfig, chave: CamadaId, canal: SlotCor, hex: string | null,
+  config: AvatarConfig, chave: CamadaId, canal: CanalCor, hex: string | null,
 ): AvatarConfig {
   const cores = { ...(config.coresCamada ?? {}) };
   const daCamada = { ...(cores[chave] ?? {}) };
-  if (!hex || hex.toLowerCase() === config.cores[canal]) delete daCamada[canal];
+  // onda 1415 (#191): global efetivo do secundário é derivado da roupa
+  const global = canal === 'secundario'
+    ? (config.cores.secundario ?? secundarioPadraoDe(config.cores.roupa))
+    : config.cores[canal];
+  if (!hex || hex.toLowerCase() === global) delete daCamada[canal];
   else daCamada[canal] = hex.toLowerCase();
   if (Object.keys(daCamada).length) cores[chave] = daCamada;
   else delete cores[chave];
@@ -48,7 +53,7 @@ export function comCanal(
 
 /** Config com a paleta §74 aplicada à camada (null = Original: sem override). */
 export function comPaleta(
-  config: AvatarConfig, chave: CamadaId, canais: Partial<Record<SlotCor, string>> | null,
+  config: AvatarConfig, chave: CamadaId, canais: Partial<Record<CanalCor, string>> | null,
 ): AvatarConfig {
   const cores = { ...(config.coresCamada ?? {}) };
   if (canais) cores[chave] = { ...canais };
@@ -69,9 +74,16 @@ function camadasComProps(config: AvatarConfig): CamadaId[] {
  *  funciona via config; a UI cresce quando houver mais peças de vestuário).
  *  onda 1413 (§893): CABELO entra quando a peça equipada é premium (a
  *  checagem por item fica no componente — flag + `_px_`). */
-const CAMADAS_COM_CANAIS: CamadaId[] = ['roupa', 'cabelo'];
-const ROTULO_CANAL: Record<SlotCor, string> = {
+// onda 1415 (#191): sobrepeça/roupa inferior entram no trilho premium
+const CAMADAS_COM_CANAIS: CamadaId[] = ['roupa', 'roupa_sobre', 'roupa_inferior', 'cabelo'];
+// onda 1415 (#191): nomes PT dos tokens de material (swatch na UI)
+const NOME_MATERIAL: Record<string, string> = {
+  cotton: 'Algodão', denim: 'Denim', wool: 'Lã', leather: 'Couro', metal: 'Metal',
+  technical: 'Técnico', satin: 'Cetim', silk: 'Seda', glass: 'Vidro', emissive: 'Emissivo',
+};
+const ROTULO_CANAL: Record<CanalCor, string> = {
   roupa: 'Cor principal', destaque: 'Detalhes', pele: 'Pele', cabelo: 'Cabelo',
+  secundario: 'Secundário', // onda 1415 (#191): forro/camada interna
 };
 
 export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
@@ -91,6 +103,10 @@ export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
     if (!id || id === 'nenhum' || (itemPorId(id)?.usaCores?.length ?? 0) === 0) return false;
     // onda 1413: cabelo só expõe canais no trilho premium (§651)
     if (c === 'cabelo') return flag('as6.classico_premium') && /_px_/.test(id);
+    // onda 1415 (#191): sobrepeça/inferior idem — só peças do trilho novo
+    if (c === 'roupa_sobre' || c === 'roupa_inferior') {
+      return flag('as6.classico_premium') && /_px_|^rin_/.test(id);
+    }
     return true;
   });
   if (!comProps.length && !comCanais.length) return null;
@@ -168,13 +184,21 @@ export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
       {comCanais.map((chave) => {
         const id = config.camadas[chave]!;
         const item = itemPorId(id);
-        const canais = (item?.usaCores ?? []).filter((c) => (chave === 'cabelo' ? (c === 'cabelo' || c === 'destaque') : (c === 'roupa' || c === 'destaque')));
+        // onda 1415 (#191): canais ADAPTATIVOS — vestuário expõe roupa/
+        // destaque/secundário (o que a peça declarar); cabelo, cabelo/destaque
+        const canais = (item?.usaCores ?? []).filter((c) => (chave === 'cabelo'
+          ? (c === 'cabelo' || c === 'destaque')
+          : (c === 'roupa' || c === 'destaque' || (c === 'secundario' && flag('as6.roupa_premium')))));
         if (!canais.length) return null;
         const override = config.coresCamada?.[chave];
         return (
           <section key={chave} className="avst5-canais" aria-label={`Cores da peça ${item?.nome ?? id}`}>
             <h4 className="avst5-props-titulo">
               <Paintbrush size={13} aria-hidden /> Cores da peça · {item?.nome ?? id}
+              {/* onda 1415 (#191): swatch de MATERIAL da peça premium */}
+              {flag('as6.roupa_premium') && item?.materialToken && (
+                <span className="avst5-chip" data-teste="chip-material">{NOME_MATERIAL[item.materialToken] ?? item.materialToken}</span>
+              )}
             </h4>
             {/* onda 1413 (§893): CABELO premium — cor PRINCIPAL global
                 (sobrancelhas legadas seguem juntas: usam p.cabelo) +

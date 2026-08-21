@@ -1,7 +1,7 @@
 {
   "gerado_por": "scripts/avatar/inventario-visual.mjs",
   "catalogo2d": {
-    "total": 455,
+    "total": 471,
     "categorias": [
       "base",
       "cabelo",
@@ -11,6 +11,7 @@
       "nariz",
       "barba",
       "roupa",
+      "roupa_inferior",
       "roupa_sobre",
       "acessorio",
       "fundo",
@@ -139,32 +140,33 @@
         "semFoco": []
       },
       "roupa": {
-        "total": 32,
+        "total": 40,
         "temas": {
           "aventura": 2,
-          "casual": 8,
+          "casual": 10,
           "ciência": 1,
           "clima": 1,
+          "clássico": 2,
           "cyberpunk": 1,
           "dshow": 2,
           "espaço": 1,
           "esporte": 1,
           "esportivo": 1,
-          "executivo": 5,
+          "executivo": 7,
           "fantasia": 1,
           "gamer": 3,
           "oriental": 1,
           "retrô": 1,
           "sci-fi": 2,
-          "urbano": 1
+          "urbano": 3
         },
         "raridades": {
-          "comum": 5,
-          "epico": 6,
+          "comum": 7,
+          "epico": 7,
           "exclusivo": 2,
-          "incomum": 7,
+          "incomum": 10,
           "lendario": 4,
-          "raro": 8
+          "raro": 10
         },
         "slots": {},
         "subcategorias": {},
@@ -228,17 +230,20 @@
         "semFoco": []
       },
       "roupa_sobre": {
-        "total": 4,
+        "total": 6,
         "temas": {
           "aventura": 1,
+          "casual": 1,
           "espaço": 1,
           "esporte": 1,
+          "fantasia": 1,
           "oriental": 1
         },
         "raridades": {
           "epico": 1,
+          "incomum": 1,
           "lendario": 1,
-          "raro": 2
+          "raro": 3
         },
         "slots": {},
         "subcategorias": {},
@@ -246,8 +251,24 @@
         "atras": 0,
         "semFoco": []
       },
+      "roupa_inferior": {
+        "total": 3,
+        "temas": {
+          "casual": 1,
+          "executivo": 1,
+          "urbano": 1
+        },
+        "raridades": {
+          "comum": 3
+        },
+        "slots": {},
+        "subcategorias": {},
+        "renderCorpo": 3,
+        "atras": 0,
+        "semFoco": []
+      },
       "acessorio": {
-        "total": 75,
+        "total": 78,
         "temas": {
           "aventura": 2,
           "casual": 12,
@@ -256,19 +277,19 @@
           "cyberpunk": 2,
           "esportivo": 1,
           "evento": 2,
-          "executivo": 10,
-          "fantasia": 12,
+          "executivo": 11,
+          "fantasia": 13,
           "gamer": 11,
           "mistico": 8,
           "sci-fi": 2,
           "tecnologia": 7,
-          "urbano": 2
+          "urbano": 3
         },
         "raridades": {
           "comum": 12,
           "epico": 15,
           "exclusivo": 1,
-          "incomum": 18,
+          "incomum": 21,
           "lendario": 3,
           "raro": 26
         },
@@ -281,7 +302,7 @@
           "mao_d": 1,
           "mao_e": 1,
           "pernas": 1,
-          "pes": 1,
+          "pes": 4,
           "pescoco": 10,
           "pulso_d": 1,
           "pulso_e": 1,
@@ -318,7 +339,7 @@
           "tapa-olhos": 1,
           "tornozeleiras": 1
         },
-        "renderCorpo": 7,
+        "renderCorpo": 10,
         "atras": 0,
         "semFoco": []
       },

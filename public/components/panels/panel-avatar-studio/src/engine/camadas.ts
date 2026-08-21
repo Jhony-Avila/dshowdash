@@ -14,6 +14,9 @@ import type { CamadaId } from '../domain/types';
 
 /** Z de pintura por camada do BUSTO (depois da base; menor = mais atrás). */
 export const CAMADAS_Z = {
+  // onda 1415 (#191): roupa INFERIOR atrás da roupa de cima (a barra da
+  // camisa cobre o cós) — só desenha no corpo inteiro (renderCorpo)
+  roupa_inferior: 8,
   // bloco clássico (AS3/AS4) — decisão #41
   roupa: 10,
   roupa_sobre: 20, // §3393 (decisão #95): sobrepeça por cima da roupa

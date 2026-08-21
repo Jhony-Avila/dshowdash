@@ -134,6 +134,16 @@ export interface Paleta {
   barba?: Tinta;
   sobrancelha?: Tinta;
   labios?: Tinta;
+  /** onda 1415 (#191): canal SECUNDÁRIO (forros/camadas internas das peças
+   *  novas) — presente só quando escolhido (global opcional ou canal §73);
+   *  ausente = artes derivam da roupa (`secundarioPadraoDe`). */
+  secundario?: Tinta;
+}
+
+/** onda 1415 (#191): secundário DERIVADO quando ninguém escolheu — tom
+ *  frio-escuro da roupa (determinístico; as artes usam como fallback). */
+export function secundarioPadraoDe(roupaHex: string): string {
+  return misturar(escurecer(roupaHex, 0.35), '#2b2f3a', 0.3);
 }
 
 export const CORES_PADRAO: Record<SlotCor, string> = {
@@ -143,12 +153,16 @@ export const CORES_PADRAO: Record<SlotCor, string> = {
   destaque: '#7c5cff',
 };
 
-export function paletaDe(cores: Partial<Record<SlotCor, string>> | undefined): Paleta {
+export function paletaDe(cores: (Partial<Record<SlotCor, string>> & { secundario?: string }) | undefined): Paleta {
   const c = cores ?? {};
-  return {
+  const p: Paleta = {
     pele: tinta(normalizarHex(c.pele, CORES_PADRAO.pele)),
     cabelo: tinta(normalizarHex(c.cabelo, CORES_PADRAO.cabelo)),
     roupa: tinta(normalizarHex(c.roupa, CORES_PADRAO.roupa)),
     destaque: tinta(normalizarHex(c.destaque, CORES_PADRAO.destaque)),
   };
+  // onda 1415 (#191): secundário só entra quando presente na entrada —
+  // paleta de configs antigos permanece com as MESMAS chaves (byte-estável)
+  if (hexValido(c.secundario)) p.secundario = tinta(c.secundario);
+  return p;
 }

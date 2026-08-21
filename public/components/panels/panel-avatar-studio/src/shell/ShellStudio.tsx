@@ -1639,7 +1639,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
 }
 
 /** rótulo curto do comando: qual categoria mudou. */
-function novoDiff(antes: AvatarConfig, depois: AvatarConfig): string {
+// onda 1415 (#191): aceita o shape mínimo — Legado2d e AvatarConfig servem
+function novoDiff(antes: { base: string; camadas: object }, depois: { base: string; camadas: object }): string {
   if (antes.base !== depois.base) return 'base';
   const chaves = new Set([...Object.keys(antes.camadas), ...Object.keys(depois.camadas)]);
   for (const k of chaves) {

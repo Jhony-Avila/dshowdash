@@ -3,37 +3,37 @@
   "artBibleVersion": "1.0",
   "kpiPrincipal": {
     "nome": "Premium Coverage %",
-    "catalogo2d": 7.9,
+    "catalogo2d": 10.4,
     "assets3d": 0
   },
   "catalogo2d": {
     "geral": {
-      "total": 455,
+      "total": 471,
       "prototype": 0,
       "legacy": 7,
-      "production": 412,
-      "premium": 36,
+      "production": 415,
+      "premium": 49,
       "hero": 0,
-      "premiumCoveragePct": 7.9,
+      "premiumCoveragePct": 10.4,
       "productionReadyPct": 98.5,
       "qaAprovadoPct": 0,
       "qa": {
-        "pending": 455
+        "pending": 471
       }
     },
     "porCategoria": {
       "acessorio": {
-        "total": 75,
+        "total": 78,
         "prototype": 0,
         "legacy": 0,
         "production": 75,
-        "premium": 0,
+        "premium": 3,
         "hero": 0,
-        "premiumCoveragePct": 0,
+        "premiumCoveragePct": 3.8,
         "productionReadyPct": 100,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 75
+          "pending": 78
         }
       },
       "aura": {
@@ -205,31 +205,45 @@
         }
       },
       "roupa": {
-        "total": 32,
+        "total": 40,
         "prototype": 0,
         "legacy": 2,
         "production": 28,
-        "premium": 2,
+        "premium": 10,
         "hero": 0,
-        "premiumCoveragePct": 6.3,
-        "productionReadyPct": 93.8,
+        "premiumCoveragePct": 25,
+        "productionReadyPct": 95,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 32
+          "pending": 40
         }
       },
-      "roupa_sobre": {
-        "total": 4,
+      "roupa_inferior": {
+        "total": 3,
         "prototype": 0,
         "legacy": 0,
-        "production": 4,
+        "production": 3,
         "premium": 0,
         "hero": 0,
         "premiumCoveragePct": 0,
         "productionReadyPct": 100,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 4
+          "pending": 3
+        }
+      },
+      "roupa_sobre": {
+        "total": 6,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 4,
+        "premium": 2,
+        "hero": 0,
+        "premiumCoveragePct": 33.3,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 6
         }
       },
       "sobrancelha": {
@@ -361,6 +375,7 @@
       "nariz": 8,
       "olhos": 40,
       "roupa": 30,
+      "roupa_inferior": 3,
       "roupa_sobre": 4,
       "sobrancelha": 10
     },

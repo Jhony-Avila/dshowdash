@@ -10,7 +10,7 @@
 // (o diff é o relatório). Acima do teto: aviso em item clássico (nunca
 // reprovação retroativa), ERRO em item premium (`_px_`/acabamento).
 // Uso (da raiz): node scripts/avatar/orcamento-2d.mjs [--json]
-// @version 1.1.0  @created 2026-08-20  @updated 2026-08-21 (onda 1413: cabelos premium)
+// @version 1.1.0  @created 2026-08-20  @updated 2026-08-21 (ondas 1413–1415)
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -37,7 +37,9 @@ const casos: Record<string, { premium: boolean; corpo: boolean; m: ReturnType<ty
 casos['classico-padrao-busto'] = { premium: false, corpo: false, m: medir(svgDe(cfg({}), { uid: 'orc' })) };
 casos['classico-padrao-corpo'] = { premium: false, corpo: true, m: medir(svgDe(cfg({}), { uid: 'orc', palco: true, enquadramento: 'corpo' })) };
 // TODAS as roupas (clássicas E premium) no busto — a peça mais pesada manda
-const todas = [...new Set([...itensDe('roupa').map((x) => x.id), 'rou_px_terno', 'rou_px_jaqueta'])];
+// onda 1415: as 8 rou_px_ novas entram pela lista do próprio módulo
+import { ROUPAS_PREMIUM_1415, SOBREPECAS_PREMIUM, ROUPAS_INFERIORES, CALCADOS_PREMIUM } from '@painel/engine/partes/premium/vestuario';
+const todas = [...new Set([...itensDe('roupa').map((x) => x.id), 'rou_px_terno', 'rou_px_jaqueta', ...ROUPAS_PREMIUM_1415.map((x) => x.id)])];
 for (const id of todas) {
   const ehPremium = itemPorId(id)?.acabamento === 'premium';
   const c = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: id }, ...(ehPremium ? { acabamento: 'premium' as const } : {}) });
@@ -64,6 +66,13 @@ for (const [cat, lista] of [['barba', BARBAS_PREMIUM], ['sobrancelha', SOBRANCEL
   }
 }
 casos['premium-face-v2-completa'] = { premium: true, corpo: false, m: medir(svgDe(cfg({ base: 'bas_px_redonda', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_gentil', boca: 'boc_px_riso', cabelo: 'cab_px_lateral', barba: 'brb_lenhador', sobrancelha: 'sbr_cheia', nariz: 'nar_forte' }, coresFace: { iris: '#3a6ea8', barba: '#14100c' }, expressao: { preset: 'feliz' }, idade: 'mature', acabamento: 'premium' }), { uid: 'orc', premium: true, faceV2: true })) };
+// onda 1415: outfit completo no CORPO INTEIRO (pior caso do vestuário) +
+// sobrepeças premium no busto
+for (const it of SOBREPECAS_PREMIUM) {
+  const c = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa_sobre: it.id }, acabamento: 'premium' as const });
+  casos['sobrepeca-' + it.id] = { premium: true, corpo: false, m: medir(svgDe(c, { uid: 'orc', premium: true })) };
+}
+casos['premium-outfit-corpo'] = { premium: true, corpo: true, m: medir(svgDe(cfg({ base: 'bas_px_quadrada', camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_blazer', roupa_sobre: 'sob_px_capa', roupa_inferior: 'rin_jeans', acessorio_pes: 'ace_px_bota', cabelo: 'cab_px_lateral', barba: 'brb_cheia', olhos: 'olh_px_determinado', boca: 'boc_px_determinada' }, acabamento: 'premium' }), { uid: 'orc', premium: true, faceV2: true, palco: true, enquadramento: 'corpo' })) };
 console.log(JSON.stringify(casos));
 `);
 

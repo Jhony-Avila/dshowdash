@@ -2,8 +2,8 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 455,
-    "categorias": 16,
+    "itens2d": 471,
+    "categorias": 17,
     "titulos": 30,
     "colecoes": 12,
     "personagens3d": 8
@@ -17,6 +17,7 @@
     "nariz",
     "barba",
     "roupa",
+    "roupa_inferior",
     "roupa_sobre",
     "acessorio",
     "fundo",
@@ -335,6 +336,21 @@
       "id": "ace_pulseira_led",
       "categoria": "acessorio",
       "raridade": "comum"
+    },
+    {
+      "id": "ace_px_bota",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_px_social",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_px_tenis",
+      "categoria": "acessorio",
+      "raridade": "incomum"
     },
     {
       "id": "ace_relogio_pulso",
@@ -2082,6 +2098,21 @@
       "raridade": "comum"
     },
     {
+      "id": "rin_jeans",
+      "categoria": "roupa_inferior",
+      "raridade": "comum"
+    },
+    {
+      "id": "rin_jogger",
+      "categoria": "roupa_inferior",
+      "raridade": "comum"
+    },
+    {
+      "id": "rin_social",
+      "categoria": "roupa_inferior",
+      "raridade": "comum"
+    },
+    {
       "id": "rou_armadura",
       "categoria": "roupa",
       "raridade": "lendario"
@@ -2187,7 +2218,47 @@
       "raridade": "comum"
     },
     {
+      "id": "rou_px_blazer",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_px_camisa",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
+      "id": "rou_px_camiseta",
+      "categoria": "roupa",
+      "raridade": "comum"
+    },
+    {
+      "id": "rou_px_colete",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
+      "id": "rou_px_gala",
+      "categoria": "roupa",
+      "raridade": "epico"
+    },
+    {
+      "id": "rou_px_hoodie",
+      "categoria": "roupa",
+      "raridade": "incomum"
+    },
+    {
       "id": "rou_px_jaqueta",
+      "categoria": "roupa",
+      "raridade": "raro"
+    },
+    {
+      "id": "rou_px_polo",
+      "categoria": "roupa",
+      "raridade": "comum"
+    },
+    {
+      "id": "rou_px_sobretudo",
       "categoria": "roupa",
       "raridade": "raro"
     },
@@ -2310,6 +2381,16 @@
       "id": "sob_orbital",
       "categoria": "roupa_sobre",
       "raridade": "lendario"
+    },
+    {
+      "id": "sob_px_capa",
+      "categoria": "roupa_sobre",
+      "raridade": "raro"
+    },
+    {
+      "id": "sob_px_cardiga",
+      "categoria": "roupa_sobre",
+      "raridade": "incomum"
     }
   ],
   "titulos": [

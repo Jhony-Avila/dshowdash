@@ -20,6 +20,7 @@ import { profundidadeRecorte, resolverEstadoCabelo } from './compat-cabelo';
 import { fatorBarba, resolverEstadoBarba } from './compat-rosto';
 import { transformExpressao } from '../domain/expressoes';
 import { overlayIdade } from './partes/premium/rosto';
+import { corpoPremium } from './partes/premium/corpo';
 
 export interface OpcoesRender {
   /** Tamanho CSS do SVG (width/height). Default: responsivo (100%). */
@@ -301,7 +302,20 @@ export function renderAvatar(
       const roupaDef = config.camadas.roupa && config.camadas.roupa !== 'nenhum'
         ? resolver(config.camadas.roupa)
         : undefined;
-      const roupaCorpo = roupaDef?.renderCorpo ? roupaDef.renderCorpo(paletaDa('roupa'), uid) : '';
+      // onda 1415 (#191): renderCorpoV2 = SILHUETA própria da peça premium
+      // pintada por cima do torso do scaffold — SÓ com opcoes.premium;
+      // sem premium/sem hook = renderCorpo de sempre (byte-estável §651)
+      const hookRoupa = opcoes.premium && roupaDef?.renderCorpoV2 ? roupaDef.renderCorpoV2 : roupaDef?.renderCorpo;
+      const roupaCorpo = hookRoupa ? hookRoupa(paletaDa('roupa'), uid) : '';
+      // onda 1415 (#191): ROUPA INFERIOR (rin_*) — camada z=8, atrás da
+      // roupa de cima; ausente = scaffold atual byte a byte
+      const infDef = config.camadas.roupa_inferior && config.camadas.roupa_inferior !== 'nenhum'
+        ? resolver(config.camadas.roupa_inferior)
+        : undefined;
+      const infCorpo = infDef?.renderCorpo ? infDef.renderCorpo(paletaDa('roupa_inferior'), uid) : '';
+      // onda 1415 (#191): scaffold v2 — sombreamento premium do corpo por
+      // cima do scaffold clássico (corpoInteiro intocado); SÓ premium
+      const corpoV2 = opcoes.premium ? corpoPremium(paletaDa('roupa'), uid) : '';
       // sobrepeça §3393 no corpo inteiro: fragmento direto (mesmas coords)
       const sobreDef = config.camadas.roupa_sobre && config.camadas.roupa_sobre !== 'nenhum'
         ? resolver(config.camadas.roupa_sobre)
@@ -326,7 +340,7 @@ export function renderAvatar(
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem">${premiumPlanoAtras}${premiumSombra}${premiumAtras}<g data-anim="personagem">` +
           envolverFigura(
-            corpoInteiro(paletaDa('roupa'), uid) + roupaCorpo + sobreCorpo + emblemaCorpo + acessCorpo +
+            corpoInteiro(paletaDa('roupa'), uid) + corpoV2 + infCorpo + roupaCorpo + sobreCorpo + emblemaCorpo + acessCorpo +
             `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`,
             config, 396,
           ) +

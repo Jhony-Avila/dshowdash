@@ -5,7 +5,7 @@
 // presets e validação de config. O motor (engine/render) recebe o resolvedor
 // daqui — nenhum outro módulo importa as partes diretamente.
 import type {
-  AvatarConfig, CamadaId, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
+  AvatarConfig, CamadaId, CanalCor, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
 import { CORES_PADRAO, normalizarHex, paletaDe } from '../engine/cores';
 import { flag } from '../nucleo/flags';
@@ -30,6 +30,7 @@ import { ROUPAS_PREMIUM } from '../engine/partes/premium/roupas'; // onda 1411 (
 import { BASES_PREMIUM, OLHOS_PREMIUM, BOCAS_PREMIUM } from '../engine/partes/premium/faces'; // onda 1412 (#162)
 import { CABELOS_PREMIUM } from '../engine/partes/premium/cabelos'; // onda 1413 (§881–§897)
 import { BARBAS_PREMIUM, SOBRANCELHAS_PREMIUM, NARIZES_PREMIUM } from '../engine/partes/premium/rosto'; // onda 1414 (#162)
+import { ROUPAS_PREMIUM_1415, SOBREPECAS_PREMIUM, ROUPAS_INFERIORES, CALCADOS_PREMIUM } from '../engine/partes/premium/vestuario'; // onda 1415 (#191)
 import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
 import { slotCorporal, slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2) · #154
@@ -40,6 +41,7 @@ import { AURAS } from '../engine/partes/auras';
 import { BANNERS } from '../engine/partes/banners';
 import { EMBLEMAS } from '../engine/partes/emblemas';
 import { expressaoPorId } from '../domain/expressoes'; // onda 1414 (#162)
+import { secundarioPadraoDe } from '../engine/cores'; // onda 1415 (#191)
 
 // v2 (lote 931–940, decisão #95): camada OPCIONAL `roupa_sobre` (§3393).
 // v1 sem o campo é idêntico — a migração 1→2 (nucleo/estado-vnext.ts) só
@@ -73,6 +75,8 @@ export const CATEGORIAS: CategoriaMeta[] = [
   { id: 'nariz',       nome: 'Nariz',       obrigatoria: false, grupo: 'corpo' },
   { id: 'barba',       nome: 'Barba',       obrigatoria: false, grupo: 'cabelo' },
   { id: 'roupa',     nome: 'Roupa',      obrigatoria: true,  grupo: 'vestuario' },
+  // onda 1415 (#191): roupa INFERIOR (rin_*) — visível só com as6.roupa_premium
+  { id: 'roupa_inferior', nome: 'Calça', obrigatoria: false, grupo: 'vestuario' },
   // AS6 §3393 (decisão #95): multi-peça — visível só com as6.creator_v6
   // (categoriasAtivas); o validarConfig aceita o campo sempre (dado > UI)
   { id: 'roupa_sobre', nome: 'Sobrepeça', obrigatoria: false, grupo: 'vestuario' },
@@ -294,6 +298,7 @@ export const PARTES: ParteDef[] = [
   ...BASES, ...BASES_PREMIUM, ...ESPECIES, ...CABELOS, ...CABELOS_PREMIUM, ...OLHOS, ...OLHOS_PREMIUM,
   ...BOCAS, ...BOCAS_PREMIUM, ...ROUPAS, ...ROUPAS_PREMIUM,
   ...BARBAS_PREMIUM, ...SOBRANCELHAS_PREMIUM, ...NARIZES_PREMIUM, // onda 1414 (#162)
+  ...ROUPAS_PREMIUM_1415, ...SOBREPECAS_PREMIUM, ...ROUPAS_INFERIORES, ...CALCADOS_PREMIUM, // onda 1415 (#191)
   ...SOBREPECAS, // §3393 (decisão #95): wrappers — zero arte nova
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
   ...AURAS, ...BANNERS, ...EMBLEMAS,
@@ -329,6 +334,7 @@ export function categoriasAtivas(): CategoriaMeta[] {
     barba: 'as6.barba_slot',
     sobrancelha: 'as6.brow_slot',
     nariz: 'as6.face_v2',
+    roupa_inferior: 'as6.roupa_premium', // onda 1415 (#191)
   };
   return CATEGORIAS.filter((c) => { const f = gate[c.id]; return !f || flag(f); });
 }
@@ -351,7 +357,9 @@ function sorteaveis(categoria: CategoriaId): ParteDef[] {
 
 // ── Cores sugeridas por slot (paleta curada; picker livre continua valendo) ──
 
-export const CORES_SUGERIDAS: Record<SlotCor, string[]> = {
+export const CORES_SUGERIDAS: Record<CanalCor, string[]> = {
+  // onda 1415 (#191): canal secundário — forros/camadas internas
+  secundario: ['#2b2f3a', '#8a93a6', '#c4c9d6', '#5b3d8a', '#1f6e5a', '#7a2d3c', '#c9a75a', '#e8e6e0'],
   pele: ['#f5d0a9', '#e8b58c', '#d29e6f', '#b07a4e', '#8a5a35', '#5f3d23', '#c8d4e8', '#9fe8c8'],
   cabelo: ['#14100c', '#3d2b1f', '#6b4a2a', '#a06a30', '#d9b166', '#b8bcc8', '#e84c6f', '#4c9de8', '#7c5cff', '#39d98a'],
   roupa: ['#20242e', '#2d4a8a', '#1f6e5a', '#7a2d3c', '#5b3d8a', '#8a6a1f', '#c4c9d6', '#e85c3a'],
@@ -450,6 +458,12 @@ export function validarConfig(bruto: unknown): AvatarConfig {
       destaque: normalizarHex(c.destaque, CORES_PADRAO.destaque),
     },
   };
+  // onda 1415 (#191): SECUNDÁRIO global OPCIONAL — só persiste hex válido
+  // (ausente/inválido = omitido; configs antigos byte-estáveis)
+  const sec = (b.cores as { secundario?: unknown } | undefined)?.secundario;
+  if (typeof sec === 'string' && /^#[0-9a-f]{6}$/i.test(sec)) {
+    saida.cores.secundario = sec.toLowerCase();
+  }
   // título (Expansão §27): só entra se existir no catálogo — campo OPCIONAL
   // (ausente no JSON quando não escolhido → hash/publicação byte-estáveis)
   if (typeof b.titulo === 'string' && TITULOS_POR_ID.has(b.titulo)) {
@@ -476,12 +490,17 @@ export function validarConfig(bruto: unknown): AvatarConfig {
       const idItem = camadas[chave as CamadaId];
       if (!idItem || !canais || typeof canais !== 'object') continue;
       const declarados = POR_ID.get(idItem)?.usaCores ?? [];
-      const limpos: Partial<Record<SlotCor, string>> = {};
+      const limpos: Partial<Record<CanalCor, string>> = {};
       for (const canal of declarados) {
         const hex = (canais as Record<string, unknown>)[canal];
         if (typeof hex !== 'string') continue;
-        const norm = normalizarHex(hex, saida.cores[canal]);
-        if (norm !== saida.cores[canal]) limpos[canal] = norm;
+        // onda 1415 (#191): global efetivo do secundário = escolhido OU
+        // derivado da roupa (secundarioPadraoDe) — igual ao global não persiste
+        const global = canal === 'secundario'
+          ? (saida.cores.secundario ?? secundarioPadraoDe(saida.cores.roupa))
+          : saida.cores[canal];
+        const norm = normalizarHex(hex, global);
+        if (norm !== global) limpos[canal] = norm;
       }
       if (Object.keys(limpos).length) coresCamada[chave as CamadaId] = limpos;
     }

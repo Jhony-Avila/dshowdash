@@ -296,6 +296,154 @@ export const VARIANTES_POR_ASSET: Record<string, VarianteCor[]> = {
     { id: 'var_magenta', nome: 'Sola magenta', canais: { destaque: '#ff5f8f' } },
     { id: 'var_lima', nome: 'Sola lima', canais: { destaque: '#39d98a' } },
   ],
+  // ── onda 1415 (#191): variantes curadas das 30 ROUPAS clássicas —
+  // canais ⊆ usaCores de cada peça (teste do registry confere); 'pele'
+  // NUNCA entra em variante (cor de pele não é look) ──
+  rou_camiseta: [
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a' } },
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423' } },
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050' } },
+  ],
+  rou_regata: [
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c' } },
+    { id: 'var_areia', nome: 'Areia', canais: { roupa: '#8a6a3f' } },
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6' } },
+  ],
+  rou_social: [
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624' } },
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a' } },
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a' } },
+  ],
+  rou_hoodie: [
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423', destaque: '#c9d94c' } },
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050', destaque: '#7c5cff' } },
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c', destaque: '#4c9de8' } },
+  ],
+  rou_jaqueta: [
+    { id: 'var_areia', nome: 'Areia', canais: { roupa: '#8a6a3f', destaque: '#e8b64c' } },
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624', destaque: '#ff5f8f' } },
+  ],
+  rou_gamer: [
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a', destaque: '#39d98a' } },
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a', destaque: '#8a93a6' } },
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423', destaque: '#c9d94c' } },
+  ],
+  rou_terno: [
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050', destaque: '#7c5cff' } },
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c', destaque: '#4c9de8' } },
+    { id: 'var_areia', nome: 'Areia', canais: { roupa: '#8a6a3f', destaque: '#e8b64c' } },
+  ],
+  rou_kimono: [
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624', destaque: '#ff5f8f' } },
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a', destaque: '#39d98a' } },
+  ],
+  rou_astronauta: [
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a', destaque: '#8a93a6' } },
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423', destaque: '#c9d94c' } },
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050', destaque: '#7c5cff' } },
+  ],
+  rou_moletom_dshow: [
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c', destaque: '#4c9de8' } },
+    { id: 'var_areia', nome: 'Areia', canais: { roupa: '#8a6a3f', destaque: '#e8b64c' } },
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+  ],
+  rou_armadura: [
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624', destaque: '#ff5f8f' } },
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a', destaque: '#39d98a' } },
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a', destaque: '#8a93a6' } },
+  ],
+  rou_polo: [
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423' } },
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050' } },
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c' } },
+  ],
+  rou_flanela: [
+    { id: 'var_areia', nome: 'Areia', canais: { roupa: '#8a6a3f', destaque: '#e8b64c' } },
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624', destaque: '#ff5f8f' } },
+  ],
+  rou_colete: [
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a', destaque: '#39d98a' } },
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a', destaque: '#8a93a6' } },
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423', destaque: '#c9d94c' } },
+  ],
+  rou_smoking: [
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050' } },
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c' } },
+    { id: 'var_areia', nome: 'Areia', canais: { roupa: '#8a6a3f' } },
+  ],
+  rou_jersey: [
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624', destaque: '#ff5f8f' } },
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a', destaque: '#39d98a' } },
+  ],
+  rou_sobretudo: [
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a' } },
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423' } },
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050' } },
+  ],
+  rou_jaleco: [
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c', destaque: '#4c9de8' } },
+    { id: 'var_areia', nome: 'Areia', canais: { roupa: '#8a6a3f', destaque: '#e8b64c' } },
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+  ],
+  rou_neon_racer: [
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624', destaque: '#ff5f8f' } },
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a', destaque: '#39d98a' } },
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a', destaque: '#8a93a6' } },
+  ],
+  rou_havaiana: [
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423', destaque: '#c9d94c' } },
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050', destaque: '#7c5cff' } },
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c', destaque: '#4c9de8' } },
+  ],
+  rou_suspensorios: [
+    { id: 'var_areia', nome: 'Areia', canais: { roupa: '#8a6a3f', destaque: '#e8b64c' } },
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624', destaque: '#ff5f8f' } },
+  ],
+  rou_tricot: [
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a' } },
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a' } },
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423' } },
+  ],
+  rou_chef: [
+    { id: 'var_violeta', nome: 'Violeta', canais: { destaque: '#7c5cff' } },
+    { id: 'var_marinho', nome: 'Marinho', canais: { destaque: '#4c9de8' } },
+    { id: 'var_areia', nome: 'Areia', canais: { destaque: '#e8b64c' } },
+  ],
+  rou_blazer_power: [
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624', destaque: '#ff5f8f' } },
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a', destaque: '#39d98a' } },
+  ],
+  rou_regata_quadra: [
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a', destaque: '#8a93a6' } },
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423', destaque: '#c9d94c' } },
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050', destaque: '#7c5cff' } },
+  ],
+  rou_tunica_arcana: [
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c', destaque: '#4c9de8' } },
+    { id: 'var_areia', nome: 'Areia', canais: { roupa: '#8a6a3f', destaque: '#e8b64c' } },
+    { id: 'var_gelo', nome: 'Gelo', canais: { roupa: '#c4c9d6', destaque: '#4c9de8' } },
+  ],
+  rou_exoesqueleto: [
+    { id: 'var_vinho', nome: 'Vinho', canais: { roupa: '#521624', destaque: '#ff5f8f' } },
+    { id: 'var_esmeralda', nome: 'Esmeralda', canais: { roupa: '#16342a', destaque: '#39d98a' } },
+    { id: 'var_grafite', nome: 'Grafite', canais: { roupa: '#2b2f3a', destaque: '#8a93a6' } },
+  ],
+  rou_pijama: [
+    { id: 'var_oliva', nome: 'Oliva', canais: { roupa: '#3a4423' } },
+    { id: 'var_violeta', nome: 'Violeta', canais: { roupa: '#2c2050' } },
+    { id: 'var_marinho', nome: 'Marinho', canais: { roupa: '#22345c' } },
+  ],
+  rou_gala_dshow: [
+    { id: 'var_areia', nome: 'Areia', canais: { destaque: '#e8b64c' } },
+    { id: 'var_gelo', nome: 'Gelo', canais: { destaque: '#4c9de8' } },
+    { id: 'var_vinho', nome: 'Vinho', canais: { destaque: '#ff5f8f' } },
+  ],
 };
 
 /** Variantes de um asset (vazio = asset sem variantes; UI não mostra nada). */

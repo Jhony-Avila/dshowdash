@@ -10,6 +10,7 @@
 // que preservou — o chamador anuncia, nada é silencioso.
 import type { AvatarConfig } from '../domain/types';
 import { PALETAS_ROUPA, itemPorId, validarConfig } from './AvatarCatalog';
+import { flag } from '../nucleo/flags'; // onda 1415 (#191)
 
 export interface Conjunto {
   id: string;
@@ -19,6 +20,12 @@ export interface Conjunto {
   acessorios: string[];
   /** paleta §74 aplicada junto (opcional) */
   paleta?: string;
+  // onda 1415 (#191): OUTFITS premium — campos ADITIVOS (conjuntos antigos
+  // byte a byte); aparecem na UI só com as6.roupa_premium (conjuntosAtivos)
+  roupaSobre?: string;
+  roupaInferior?: string;
+  calcado?: string;
+  acabamento?: 'premium';
 }
 
 /** Curadoria FIXA sobre itens existentes do catálogo (zero arte nova). */
@@ -28,7 +35,19 @@ export const CONJUNTOS: Conjunto[] = [
   { id: 'cj_gala', nome: 'Noite de gala', roupa: 'rou_gala_dshow', acessorios: ['ace_brinco'], paleta: 'pal_dshow' },
   { id: 'cj_heroi', nome: 'Herói de plantão', roupa: 'rou_armadura', acessorios: ['ace_capa_heroica'] },
   { id: 'cj_casual', nome: 'Sexta casual', roupa: 'rou_flanela', acessorios: ['ace_bone'] },
+  // onda 1415 (#191): Golden Outfits O01–O06 — looks premium completos
+  { id: 'cj_o01_boardroom', nome: 'O01 · Boardroom', roupa: 'rou_px_blazer', roupaInferior: 'rin_social', calcado: 'ace_px_social', acessorios: [], acabamento: 'premium' },
+  { id: 'cj_o02_offduty', nome: 'O02 · Off-duty', roupa: 'rou_px_camiseta', roupaSobre: 'sob_px_cardiga', roupaInferior: 'rin_jeans', calcado: 'ace_px_tenis', acessorios: [], acabamento: 'premium' },
+  { id: 'cj_o03_street', nome: 'O03 · Street', roupa: 'rou_px_hoodie', roupaInferior: 'rin_jogger', calcado: 'ace_px_tenis', acessorios: ['ace_bone'], acabamento: 'premium' },
+  { id: 'cj_o04_smart', nome: 'O04 · Smart casual', roupa: 'rou_px_camisa', roupaInferior: 'rin_jeans', calcado: 'ace_px_social', acessorios: [], acabamento: 'premium' },
+  { id: 'cj_o05_inverno', nome: 'O05 · Inverno', roupa: 'rou_px_sobretudo', roupaInferior: 'rin_social', calcado: 'ace_px_bota', acessorios: ['ace_cachecol'], acabamento: 'premium' },
+  { id: 'cj_o06_noite', nome: 'O06 · Noite de gala', roupa: 'rou_px_gala', roupaInferior: 'rin_social', calcado: 'ace_px_social', acessorios: [], acabamento: 'premium' },
 ];
+
+/** onda 1415 (#191): conjuntos VISÍVEIS — premium só com a flag (§651). */
+export function conjuntosAtivos(): Conjunto[] {
+  return CONJUNTOS.filter((c) => c.acabamento !== 'premium' || flag('as6.roupa_premium'));
+}
 
 const CHAVE_BLOQUEIOS = 'dshow.avst5.bloqueios.v1';
 
@@ -61,6 +80,10 @@ export function aplicarConjunto(atual: AvatarConfig, conjunto: Conjunto): Result
   };
 
   aplicar('roupa', conjunto.roupa);
+  // onda 1415 (#191): outfits premium — camadas extras aditivas
+  if (conjunto.roupaSobre) aplicar('roupa_sobre', conjunto.roupaSobre);
+  if (conjunto.roupaInferior) aplicar('roupa_inferior', conjunto.roupaInferior);
+  if (conjunto.calcado) aplicar('acessorio_pes', conjunto.calcado);
   for (const ac of conjunto.acessorios) {
     const slot = `acessorio_${itemPorId(ac)?.slot ?? 'cabeca'}`;
     aplicar(slot, ac);
@@ -70,7 +93,8 @@ export function aplicarConjunto(atual: AvatarConfig, conjunto: Conjunto): Result
   const cores = paleta ? { ...atual.cores, ...paleta.canais } : atual.cores;
 
   return {
-    config: validarConfig({ ...atual, camadas, cores }),
+    // outfit premium marca o acabamento (a flag decide o render §651)
+    config: validarConfig({ ...atual, camadas, cores, ...(conjunto.acabamento === 'premium' ? { acabamento: 'premium' as const } : {}) }),
     substituidos,
     preservados,
   };

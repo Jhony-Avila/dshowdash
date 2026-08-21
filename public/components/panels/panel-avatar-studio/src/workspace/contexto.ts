@@ -33,6 +33,10 @@ export interface ContextoCategoria {
 
 export const CONTEXTOS: Record<CategoriaId, ContextoCategoria> = {
   // onda 1414 (#162): categorias faciais novas (só aparecem com as flags)
+  roupa_inferior: {
+    grupoInspector: 'cores', dica: 'Contexto: Calça — câmera no corpo inteiro.',
+    titulo: 'Calça', texto: 'Peça inferior independente. Aparece no corpo inteiro; o busto continua igual.',
+  },
   sobrancelha: {
     grupoInspector: 'cores', dica: 'Contexto: Sobrancelha — câmera no rosto.',
     titulo: 'Sobrancelha', texto: 'Traço vivo por cima do cozido da base. A cor acompanha o cabelo, com canal próprio em coresFace.',

@@ -27,6 +27,8 @@ export const SLOTS_EQUIPAMENTO = [
   // onda 1414 (decisão #162): camadas FACIAIS novas — aditivas (ausentes
   // = serialização canônica idêntica; espelho no PHP $categorias)
   'barba', 'sobrancelha', 'nariz',
+  // onda 1415 (#191): roupa inferior independente (rin_*)
+  'roupa_inferior',
   'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco',
   // mega onda 1301+ (decisão #140, as6.acess_v2): slots FINOS aditivos —
   // ausentes = serialização canônica idêntica (checksum §619 estável)

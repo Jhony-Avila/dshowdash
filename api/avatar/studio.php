@@ -134,6 +134,7 @@ function avst_validar_config($bruto): array
     // decisao #162) — espelho do CategoriaId do front
     $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'roupa_sobre', 'acessorio',
         'barba', 'sobrancelha', 'nariz',
+        'roupa_inferior',
         'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco',
         'acessorio_olhos', 'acessorio_orelha', 'acessorio_costas',
         'acessorio_flutuante', 'acessorio_companheiro',
@@ -162,6 +163,13 @@ function avst_validar_config($bruto): array
             throw new InvalidArgumentException("CONFIG_COR_INVALIDA:$slot");
         }
         $cores[$slot] = strtolower($hex);
+    }
+
+    // onda 1415 (decisao #191): SECUNDARIO global OPCIONAL — hex valido
+    // persiste; ausente/invalido e omitido (byte-estavel)
+    $sec = $bruto['cores']['secundario'] ?? null;
+    if (is_string($sec) && preg_match('/^#[0-9a-f]{6}$/i', $sec)) {
+        $cores['secundario'] = strtolower($sec);
     }
 
     $versao = $bruto['versao'] ?? 1;

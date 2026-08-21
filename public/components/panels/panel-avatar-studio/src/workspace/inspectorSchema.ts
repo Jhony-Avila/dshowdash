@@ -25,6 +25,7 @@ export const ROTULO_GRUPO: Record<GrupoInspectorId, string> = {
  *  frente; categorias sem params não ganham grupo de propriedades). */
 export const GRUPOS_POR_CATEGORIA: Record<CategoriaId, GrupoInspectorId[]> = {
   // onda 1414 (#162): categorias faciais novas
+  roupa_inferior: ['identidade', 'cores', 'acoes'], // onda 1415 (#191)
   sobrancelha: ['identidade', 'cores', 'acoes'],
   nariz: ['identidade', 'acoes'],
   barba: ['identidade', 'cores', 'compatibilidade', 'acoes'],

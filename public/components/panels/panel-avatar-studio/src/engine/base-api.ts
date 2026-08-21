@@ -44,6 +44,16 @@ export interface ParteDef extends ItemCatalogo {
   /** Planos extras no CORPO INTEIRO/palco (parallax §2427): atrás do
    *  personagem e à frente dele — mesmas coordenadas dos planos do render. */
   renderPlanos?: { atras?: ParteRender; frente?: ParteRender };
+
+  // ── onda 1415 (#191): vestuário premium no CORPO INTEIRO ──
+  /** SILHUETA PRÓPRIA no corpo inteiro (240×400): desenhada POR CIMA do
+   *  torso do scaffold, cobrindo-o (o `corpoInteiro` continua intocado —
+   *  a peça é quem tem a forma). Consumido SÓ com opcoes.premium no lugar
+   *  do `renderCorpo`; sem o hook / sem premium ⇒ caminho de sempre. */
+  renderCorpoV2?: ParteRender;
+  /** onda 1415 (#191): TOKEN de material dominante da peça (metadado para
+   *  a UI — swatch de material; a arte já consome via materiais2d). */
+  materialToken?: import('./materiais2d').MaterialToken2d;
 }
 
 // ── Geometria compartilhada (todas as partes se ancoram aqui) ───────

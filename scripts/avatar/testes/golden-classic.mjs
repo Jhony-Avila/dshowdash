@@ -51,7 +51,7 @@ const cfg = (extra: Partial<AvatarConfig>): AvatarConfig => validarConfig({ ...C
 // onda 1414 (#186): camadas faciais novas entram nos VAOS (barba=34,
 // nariz=44, sobrancelha=54) — fundadoras seguem multiplas de 10; o
 // contrato passa a ser z INTEIRO estritamente crescente + snapshot.
-const HISTORICA = ['roupa','roupa_sobre','emblema','barba','boca','nariz','olhos','sobrancelha','cabelo','acessorio','acessorio_pescoco','acessorio_cabeca','acessorio_rosto','acessorio_costas','acessorio_olhos','acessorio_orelha','acessorio_flutuante','acessorio_companheiro','acessorio_pernas','acessorio_pes','acessorio_cintura','acessorio_pulso_e','acessorio_pulso_d','acessorio_mao_e','acessorio_mao_d'];
+const HISTORICA = ['roupa_inferior','roupa','roupa_sobre','emblema','barba','boca','nariz','olhos','sobrancelha','cabelo','acessorio','acessorio_pescoco','acessorio_cabeca','acessorio_rosto','acessorio_costas','acessorio_olhos','acessorio_orelha','acessorio_flutuante','acessorio_companheiro','acessorio_pernas','acessorio_pes','acessorio_cintura','acessorio_pulso_e','acessorio_pulso_d','acessorio_mao_e','acessorio_mao_d'];
 ok(JSON.stringify(ORDEM_CAMADAS) === JSON.stringify(HISTORICA), '[A] ORDEM_CAMADAS derivada difere da lista historica: ' + JSON.stringify(ORDEM_CAMADAS));
 const zs = HISTORICA.map((c) => (CAMADAS_Z as Record<string, number>)[c]);
 ok(zs.every((z, i) => i === 0 || z > zs[i - 1]), '[A] CAMADAS_Z nao estritamente crescente');
@@ -245,6 +245,75 @@ ok(svgDe(cFit, { uid: 'fx' }).includes('scale(1.1 1)'), '[H] fit da barba aplica
 const svgAssim = svgDe(cExpr, { uid: 'fx', premium: true, faceV2: true });
 ok(svgAssim === svgDe(cExpr, { uid: 'fx', premium: true, faceV2: true }), '[H] assimetria precisa ser deterministica');
 
+// I) onda 1415 — VESTUARIO PREMIUM (#191)
+import { ROUPAS_PREMIUM_1415, SOBREPECAS_PREMIUM, ROUPAS_INFERIORES, CALCADOS_PREMIUM } from '@painel/engine/partes/premium/vestuario';
+import { corpoPremium } from '@painel/engine/partes/premium/corpo';
+import { secundarioPadraoDe } from '@painel/engine/cores';
+import { CONJUNTOS, conjuntosAtivos, aplicarConjunto } from '@painel/services/Conjuntos';
+import { VARIANTES_POR_ASSET } from '@painel/services/VariantesAssets';
+ok(ROUPAS_PREMIUM_1415.length === 8 && SOBREPECAS_PREMIUM.length === 2 && ROUPAS_INFERIORES.length === 3 && CALCADOS_PREMIUM.length === 3, '[I] 8 roupas + 2 sobrepecas + 3 rin_ + 3 calcados');
+ok(ROUPAS_PREMIUM_1415.every((x) => /^rou_px_/.test(x.id)) && ROUPAS_INFERIORES.every((x) => /^rin_/.test(x.id)) && CALCADOS_PREMIUM.every((x) => /^ace_px_/.test(x.id) && x.slot === 'pes'), '[I] naming #166 + slot pes');
+ok([...ROUPAS_PREMIUM_1415, ...SOBREPECAS_PREMIUM, ...ROUPAS_INFERIORES, ...CALCADOS_PREMIUM].every((x) => x.materialToken), '[I] toda peca declara materialToken');
+ok(ROUPAS_INFERIORES.every((x) => x.render(paletaFake(), 'x') === '' && x.renderCorpo) && CALCADOS_PREMIUM.every((x) => x.render(paletaFake(), 'x') === ''), '[I] rin_/calcado: busto vazio, arte no renderCorpo (#154)');
+ok(!itensDe('roupa_inferior').length && itemPorId('rin_jeans') !== undefined, '[I] flag OFF: catalogo vazio, POR_ID resolve');
+ok(!categoriasAtivas().some((c) => c.id === 'roupa_inferior'), '[I] flag OFF: categoria Calca fora da sidebar');
+// cores.secundario: opcional, hex valido persiste, invalido/ausente some
+ok(cfg({ cores: { ...CONFIG_PADRAO.cores, secundario: '#8A93A6' } as never }).cores.secundario === '#8a93a6', '[I] secundario global valido persiste');
+ok(!('secundario' in cfg({}).cores) && !('secundario' in cfg({ cores: { ...CONFIG_PADRAO.cores, secundario: 'azul' } as never }).cores), '[I] secundario ausente/invalido e OMITIDO');
+ok(typeof secundarioPadraoDe('#2d4a8a') === 'string' && secundarioPadraoDe('#2d4a8a') === secundarioPadraoDe('#2d4a8a'), '[I] secundarioPadraoDe deterministico');
+// coresCamada aceita canal secundario SO em peca que o declara
+const cSec = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_camisa' }, coresCamada: { roupa: { secundario: '#e84c6f' } }, acabamento: 'premium' });
+ok(cSec.coresCamada?.roupa?.secundario === '#e84c6f', '[I] canal secundario persiste na peca que declara');
+ok(!cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_camiseta' }, coresCamada: { roupa: { secundario: '#e84c6f' } } }).coresCamada, '[I] canal secundario CAI em peca que nao declara');
+// byte-stability: secundario global em config classico nao muda o render
+const cSemSec = cfg({});
+const cComSec = cfg({ cores: { ...CONFIG_PADRAO.cores, secundario: '#8a93a6' } as never });
+ok(svgDe(cSemSec, { uid: 'bs' }) === svgDe(cComSec, { uid: 'bs' }), '[I] FLAG OFF/classico: secundario global nao muda o render');
+// canal secundario muda a peca premium (forro)
+const cCamisa = (hex) => cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_camisa' }, ...(hex ? { coresCamada: { roupa: { secundario: hex } } } : {}), acabamento: 'premium' });
+ok(svgDe(cCamisa('#e84c6f'), { uid: 'sc', premium: true }) !== svgDe(cCamisa(null), { uid: 'sc', premium: true }), '[I] canal secundario muda o forro da peca');
+// renderCorpoV2: SO premium, corpo inteiro
+const cBlazer = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_blazer' }, acabamento: 'premium' });
+const corpoPrem = svgDe(cBlazer, { uid: 'cv', premium: true, palco: true, enquadramento: 'corpo' });
+const corpoClas = svgDe(cBlazer, { uid: 'cv', palco: true, enquadramento: 'corpo' });
+ok(corpoPrem.includes('l -12 3 l 4 -70'), '[I] renderCorpoV2 (silhueta do blazer) ausente no premium');
+ok(!corpoClas.includes('l -12 3 l 4 -70'), '[I] renderCorpoV2 NAO pode vazar sem premium (§651)');
+ok(corpoPrem.includes('cvpxcv2l'), '[I] scaffold v2 (corpoPremium) ausente');
+ok(!corpoClas.includes('cvpxcv2l'), '[I] scaffold v2 NAO pode vazar sem premium');
+ok(corpoPremium(paletaFake(), 'k') === corpoPremium(paletaFake(), 'k') && !/<filter/.test(corpoPremium(paletaFake(), 'k')), '[I] corpoPremium deterministico e sem filtros');
+// roupa_inferior: renderiza no corpo inteiro, invisivel no busto
+const cJeans = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa_inferior: 'rin_jeans' }, acabamento: 'premium' });
+ok(cJeans.camadas.roupa_inferior === 'rin_jeans', '[I] camada roupa_inferior persiste');
+ok(svgDe(cJeans, { uid: 'rj', premium: true, palco: true, enquadramento: 'corpo' }).includes('rjm2_denim'), '[I] rin_jeans (denim) ausente no corpo inteiro');
+const cSemJeans = cfg({ acabamento: 'premium' });
+ok(svgDe(cJeans, { uid: 'rj', premium: true }) === svgDe(cSemJeans, { uid: 'rj', premium: true }), '[I] rin_ nao muda o BUSTO (byte-estavel)');
+// calcado premium no slot pes (corpo inteiro)
+const cBota = cfg({ camadas: { ...CONFIG_PADRAO.camadas, acessorio_pes: 'ace_px_bota' }, acabamento: 'premium' });
+ok(cBota.camadas.acessorio_pes === 'ace_px_bota' && svgDe(cBota, { uid: 'bt', premium: true, palco: true, enquadramento: 'corpo' }).includes('btm2_leather'), '[I] calcado premium no corpo inteiro');
+// variantes: canais ⊆ usaCores e SEM pele; roupas classicas cobertas
+const rouComVar = Object.keys(VARIANTES_POR_ASSET).filter((k) => k.startsWith('rou_'));
+ok(rouComVar.length >= 29, '[I] variantes de cor para as roupas classicas (' + rouComVar.length + ')');
+for (const [aid, vars] of Object.entries(VARIANTES_POR_ASSET)) {
+  const declarados = itemPorId(aid)?.usaCores ?? [];
+  ok(vars.every((v) => Object.keys(v.canais).every((c) => declarados.includes(c))), '[I] variante fora do usaCores em ' + aid);
+  ok(vars.every((v) => !('pele' in v.canais)), '[I] variante de PELE proibida em ' + aid);
+}
+// conjuntos O01-O06 gated
+ok(CONJUNTOS.filter((c) => c.acabamento === 'premium').length === 6, '[I] 6 Golden Outfits');
+ok(!conjuntosAtivos().some((c) => c.acabamento === 'premium'), '[I] flag OFF: outfits premium fora da UI');
+const o02 = CONJUNTOS.find((c) => c.id === 'cj_o02_offduty');
+const aplicado = aplicarConjunto(cfg({}), o02);
+ok(aplicado.config.camadas.roupa === 'rou_px_camiseta' && aplicado.config.camadas.roupa_sobre === 'sob_px_cardiga' && aplicado.config.camadas.roupa_inferior === 'rin_jeans' && aplicado.config.camadas.acessorio_pes === 'ace_px_tenis' && aplicado.config.acabamento === 'premium', '[I] aplicarConjunto premium completo: ' + JSON.stringify(aplicado.config.camadas));
+// cor extrema (§2404): preto puro e branco puro nas pecas novas — render
+// valido (sem NaN/undefined) e deterministico
+for (const hex of ['#000000', '#ffffff']) {
+  for (const it of [...ROUPAS_PREMIUM_1415, ...SOBREPECAS_PREMIUM]) {
+    const c = cfg({ camadas: { ...CONFIG_PADRAO.camadas, [it.categoria]: it.id }, cores: { ...CONFIG_PADRAO.cores, roupa: hex }, acabamento: 'premium' });
+    const svg = svgDe(c, { uid: 'xt', premium: true });
+    ok(!svg.includes('NaN') && !svg.includes('undefined'), '[I] cor extrema quebrou ' + it.id + ' em ' + hex);
+  }
+}
+
 // D) goldens p01-p06 + c01-c02 (1411/1412) + h01-h06 + p07-p08 (1413)
 const p01 = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_terno' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, destaque: '#c9a75a' } });
 const p02 = cfg({ base: 'bas_redonda', camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_jaqueta', cabelo: 'cab_ondulado' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, cabelo: '#d9b166', roupa: '#7a2d3c' } });
@@ -292,6 +361,13 @@ const f04 = cfg({ base: 'bas_px_redonda', camadas: { ...CONFIG_PADRAO.camadas, o
 for (const [nome, c] of [['f01', f01], ['f02', f02], ['f03', f03], ['f04', f04]] as const) {
   casos[nome + '-facev2-busto'] = svgDe(c, { premium: true, faceV2: true });
 }
+// onda 1415: p09-p11 = Golden Outfits no CORPO INTEIRO premium
+const p09 = aplicarConjunto(c01, CONJUNTOS.find((x) => x.id === 'cj_o01_boardroom')).config;
+const p10 = aplicarConjunto(c02, CONJUNTOS.find((x) => x.id === 'cj_o02_offduty')).config;
+const p11 = aplicarConjunto(cfg({ base: 'bas_px_quadrada', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_determinado', boca: 'boc_px_determinada' }, acabamento: 'premium' }), CONJUNTOS.find((x) => x.id === 'cj_o06_noite')).config;
+casos['p09-outfit-boardroom-corpo'] = svgDe(p09, { premium: true, palco: true, enquadramento: 'corpo' });
+casos['p10-outfit-offduty-corpo'] = svgDe(p10, { premium: true, palco: true, enquadramento: 'corpo' });
+casos['p11-outfit-gala-corpo'] = svgDe(p11, { premium: true, palco: true, enquadramento: 'corpo' });
 const hashes: Record<string, { sha256: string; bytes: number; nos: number; filtros: number }> = {};
 for (const [id, svg] of Object.entries(casos)) {
   hashes[id] = { sha256: sha(svg), bytes: svg.length, nos: (svg.match(/</g) ?? []).length, filtros: (svg.match(/<filter/g) ?? []).length };
@@ -315,7 +391,7 @@ const { falhas, hashes } = JSON.parse(bruto.trim().split('\n').pop());
 
 if (GRAVAR) {
   writeFileSync(BASELINE, `${JSON.stringify({
-    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1414, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414: barba/sobrancelha/nariz + expressão/idade/assimetria). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
+    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1415, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414), p09–p11 (Golden Outfits 1415 no corpo inteiro). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
     casos: hashes,
   }, null, 2)}\n`);
   console.log(`[golden-classic] baseline gravada (${Object.keys(hashes).length} casos)`);

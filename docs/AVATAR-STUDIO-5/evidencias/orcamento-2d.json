@@ -7,7 +7,7 @@
     "corpoBytes": 81920
   },
   "resumo": {
-    "casos": 75,
+    "casos": 86,
     "erros": [],
     "avisos": []
   },
@@ -216,11 +216,59 @@
       "filtros": 0,
       "gradientes": 6
     },
-    "premium-p01-corpo": {
-      "bytes": 8266,
-      "nos": 151,
+    "roupa-rou_px_camiseta": {
+      "bytes": 4264,
+      "nos": 74,
       "filtros": 0,
-      "gradientes": 9
+      "gradientes": 5
+    },
+    "roupa-rou_px_camisa": {
+      "bytes": 4328,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_px_hoodie": {
+      "bytes": 4435,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_px_blazer": {
+      "bytes": 4444,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_px_polo": {
+      "bytes": 4319,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_px_colete": {
+      "bytes": 4441,
+      "nos": 75,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_px_sobretudo": {
+      "bytes": 4383,
+      "nos": 75,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "roupa-rou_px_gala": {
+      "bytes": 4453,
+      "nos": 77,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "premium-p01-corpo": {
+      "bytes": 9472,
+      "nos": 167,
+      "filtros": 0,
+      "gradientes": 11
     },
     "premium-golden-m-busto": {
       "bytes": 9378,
@@ -295,10 +343,10 @@
       "gradientes": 6
     },
     "premium-golden-f-cabelo-corpo": {
-      "bytes": 13581,
-      "nos": 209,
+      "bytes": 14787,
+      "nos": 225,
       "filtros": 0,
-      "gradientes": 10
+      "gradientes": 12
     },
     "barba-brb_rala": {
       "bytes": 9775,
@@ -461,6 +509,24 @@
       "nos": 169,
       "filtros": 0,
       "gradientes": 7
+    },
+    "sobrepeca-sob_px_cardiga": {
+      "bytes": 4854,
+      "nos": 83,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "sobrepeca-sob_px_capa": {
+      "bytes": 4950,
+      "nos": 86,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "premium-outfit-corpo": {
+      "bytes": 18065,
+      "nos": 273,
+      "filtros": 0,
+      "gradientes": 16
     }
   }
 }

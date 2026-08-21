@@ -24,12 +24,21 @@ export type CategoriaId =
   // onda 1414 (#162): categorias FACIAIS novas como camadas próprias
   // (artes `brb_/sbr_/nar_` #166; ausentes = omitidas — byte-estável;
   // legado como `boc_barba` permanece intocado na categoria antiga)
-  | 'barba' | 'sobrancelha' | 'nariz';
+  | 'barba' | 'sobrancelha' | 'nariz'
+  // onda 1415 (#162/#191): ROUPA INFERIOR (`rin_*` #166) — calça/saia
+  // independente no corpo inteiro; omitida = scaffold atual (byte-estável)
+  | 'roupa_inferior';
 
 export type Raridade =
   | 'comum' | 'incomum' | 'raro' | 'epico' | 'lendario' | 'mitico' | 'exclusivo';
 
 export type SlotCor = 'pele' | 'cabelo' | 'roupa' | 'destaque';
+
+/** onda 1415 (#191): CANAL de cor de uma peça — os 4 slots globais +
+ *  'secundario' (forros/camadas internas das peças NOVAS). O secundário
+ *  NÃO vira slot global obrigatório: existe como cor global OPCIONAL
+ *  (`cores.secundario`, omitida = derivada da roupa) e como canal §73. */
+export type CanalCor = SlotCor | 'secundario';
 
 /**
  * onda 1401 (decisão #150, briefing de elevação): VARIANTE DE COR curada
@@ -44,7 +53,7 @@ export interface VarianteCor {
   id: string;
   nome: string;
   /** canais ⊆ usaCores do asset (validarConfig já garante isso no §73) */
-  canais: Partial<Record<SlotCor, string>>;
+  canais: Partial<Record<CanalCor, string>>;
 }
 
 /**
@@ -101,7 +110,7 @@ export interface ItemCatalogo {
    */
   bloqueadoPor?: string;
   /** slots de cor que este item usa (mostra o seletor correspondente) */
-  usaCores?: SlotCor[];
+  usaCores?: CanalCor[];
   /** só compatível com estas bases (vazio = todas) — briefing §35 */
   requerBase?: string[];
   /** itens que não podem estar equipados junto — briefing §35 */
@@ -132,7 +141,11 @@ export interface AvatarConfig {
   versao: number;
   base: string;                    // id do item de base
   camadas: Partial<Record<CamadaId, string>>; // id por camada ('nenhum' = ausente)
-  cores: Record<SlotCor, string>;
+  cores: Record<SlotCor, string> & {
+    /** onda 1415 (#191): SECUNDÁRIO global OPCIONAL — só persiste quando o
+     *  usuário escolhe (ausente = derivado da roupa; byte-estável). */
+    secundario?: string;
+  };
   /** Título do personagem (Expansão §27) — exibido como selo, fora do SVG. */
   titulo?: string;
   /**
@@ -149,7 +162,7 @@ export interface AvatarConfig {
    * Sanitizado no validarConfig (só camadas equipadas, só canais que o
    * item declara, hex normalizado, valor igual ao global não persiste).
    */
-  coresCamada?: Partial<Record<CamadaId, Partial<Record<SlotCor, string>>>>;
+  coresCamada?: Partial<Record<CamadaId, Partial<Record<CanalCor, string>>>>;
   /** mega 254 (§102): TIPO CORPORAL — transform de wrapper na figura;
    *  'medio' é o neutro e NUNCA persiste (byte-estável). */
   corpo?: TipoCorporal;

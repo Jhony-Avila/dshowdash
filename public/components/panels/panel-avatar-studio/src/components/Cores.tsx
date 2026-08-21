@@ -19,9 +19,11 @@ const NOMES: Record<SlotCor, string> = {
 export function slotsAtivos(config: AvatarConfig): SlotCor[] {
   const ids = [config.base, ...Object.values(config.camadas)];
   const usados = new Set<SlotCor>();
+  const GLOBAIS: SlotCor[] = ['pele', 'cabelo', 'roupa', 'destaque'];
   for (const id of ids) {
     const item = id ? itemPorId(id) : undefined;
-    item?.usaCores?.forEach((s) => usados.add(s));
+    // onda 1415 (#191): 'secundario' e canal de PECA (§73), nao slot global
+    item?.usaCores?.forEach((s) => { if ((GLOBAIS as string[]).includes(s)) usados.add(s as SlotCor); });
   }
   const ordem: SlotCor[] = ['pele', 'cabelo', 'roupa', 'destaque'];
   return ordem.filter((s) => usados.has(s));

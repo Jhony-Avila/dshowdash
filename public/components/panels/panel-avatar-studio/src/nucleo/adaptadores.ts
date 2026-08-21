@@ -16,7 +16,9 @@ export interface ConfigLegado2d {
   versao: number;
   base: string;
   camadas: Partial<Record<string, string>>;
-  cores: Record<string, string>;
+  // onda 1415 (#191): tipa os 4 slots explicitamente para continuar
+  // atribuível a AvatarConfig['cores'] (que agora tem secundario opcional)
+  cores: Record<string, string> & Record<'pele' | 'cabelo' | 'roupa' | 'destaque', string>;
   titulo?: string;
   /** megas 254–255 (§102/§118): tipo corporal e postura — roundtrip sem
    *  perda (mesmos literais do domain/types; o validarConfig re-sanitiza). */
@@ -99,7 +101,7 @@ export function paraLegado2d(e: EstadoAvatar, baseFallback = 'bas_classica'): Co
     versao: 2,
     base: e.body.base ?? baseFallback,
     camadas,
-    cores: { ...e.appearance.cores },
+    cores: { ...e.appearance.cores } as ConfigLegado2d['cores'], // §607: o estado carrega os 4 slots sempre
     ...(e.presentation.titulo ? { titulo: e.presentation.titulo } : {}),
     ...(e.body.tipo ? { corpo: e.body.tipo as ConfigLegado2d['corpo'] } : {}),
     ...(e.body.postura ? { postura: e.body.postura as ConfigLegado2d['postura'] } : {}),
