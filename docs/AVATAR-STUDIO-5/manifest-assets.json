@@ -2,8 +2,8 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 429,
-    "categorias": 13,
+    "itens2d": 455,
+    "categorias": 16,
     "titulos": 30,
     "colecoes": 12,
     "personagens3d": 8
@@ -13,6 +13,9 @@
     "cabelo",
     "olhos",
     "boca",
+    "sobrancelha",
+    "nariz",
+    "barba",
     "roupa",
     "roupa_sobre",
     "acessorio",
@@ -1019,6 +1022,46 @@
       "raridade": "raro"
     },
     {
+      "id": "brb_aparada",
+      "categoria": "barba",
+      "raridade": "comum"
+    },
+    {
+      "id": "brb_bigode",
+      "categoria": "barba",
+      "raridade": "comum"
+    },
+    {
+      "id": "brb_cavanhaque",
+      "categoria": "barba",
+      "raridade": "comum"
+    },
+    {
+      "id": "brb_cheia",
+      "categoria": "barba",
+      "raridade": "comum"
+    },
+    {
+      "id": "brb_costeleta",
+      "categoria": "barba",
+      "raridade": "comum"
+    },
+    {
+      "id": "brb_lenhador",
+      "categoria": "barba",
+      "raridade": "comum"
+    },
+    {
+      "id": "brb_longa",
+      "categoria": "barba",
+      "raridade": "comum"
+    },
+    {
+      "id": "brb_rala",
+      "categoria": "barba",
+      "raridade": "comum"
+    },
+    {
       "id": "cab_afro",
       "categoria": "cabelo",
       "raridade": "incomum"
@@ -1759,6 +1802,46 @@
       "raridade": "raro"
     },
     {
+      "id": "nar_aquilino",
+      "categoria": "nariz",
+      "raridade": "comum"
+    },
+    {
+      "id": "nar_arrebitado",
+      "categoria": "nariz",
+      "raridade": "comum"
+    },
+    {
+      "id": "nar_botao",
+      "categoria": "nariz",
+      "raridade": "comum"
+    },
+    {
+      "id": "nar_fino",
+      "categoria": "nariz",
+      "raridade": "comum"
+    },
+    {
+      "id": "nar_forte",
+      "categoria": "nariz",
+      "raridade": "comum"
+    },
+    {
+      "id": "nar_largo",
+      "categoria": "nariz",
+      "raridade": "comum"
+    },
+    {
+      "id": "nar_reto",
+      "categoria": "nariz",
+      "raridade": "comum"
+    },
+    {
+      "id": "nar_suave",
+      "categoria": "nariz",
+      "raridade": "comum"
+    },
+    {
       "id": "olh_anime",
       "categoria": "olhos",
       "raridade": "raro"
@@ -2157,6 +2240,56 @@
       "id": "rou_tunica_arcana",
       "categoria": "roupa",
       "raridade": "epico"
+    },
+    {
+      "id": "sbr_angular",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
+    },
+    {
+      "id": "sbr_arqueada",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
+    },
+    {
+      "id": "sbr_cheia",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
+    },
+    {
+      "id": "sbr_fina",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
+    },
+    {
+      "id": "sbr_grossa",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
+    },
+    {
+      "id": "sbr_marcada",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
+    },
+    {
+      "id": "sbr_reta",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
+    },
+    {
+      "id": "sbr_serena",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
+    },
+    {
+      "id": "sbr_suave",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
+    },
+    {
+      "id": "sbr_unida",
+      "categoria": "sobrancelha",
+      "raridade": "comum"
     },
     {
       "id": "sob_colete",

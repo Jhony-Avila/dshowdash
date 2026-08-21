@@ -17,6 +17,9 @@ import { G } from './base-api';
 import { corpoInteiro } from './partes/corpo';
 import { ORDEM_CAMADAS } from './camadas';
 import { profundidadeRecorte, resolverEstadoCabelo } from './compat-cabelo';
+import { fatorBarba, resolverEstadoBarba } from './compat-rosto';
+import { transformExpressao } from '../domain/expressoes';
+import { overlayIdade } from './partes/premium/rosto';
 
 export interface OpcoesRender {
   /** Tamanho CSS do SVG (width/height). Default: responsivo (100%). */
@@ -44,6 +47,12 @@ export interface OpcoesRender {
    *  flag('as6.classico_premium') && config.acabamento === 'premium'
    *  (svgDe faz isso). false/ausente = motor clássico byte a byte. */
   premium?: boolean;
+  /** onda 1414 (#162/#186): modo ROSTO V2 — o caller liga com
+   *  flag('as6.face_v2') (svgDe faz isso). Liga expressão semântica,
+   *  overlay de idade, assimetria determinística e os canais
+   *  coresFace.sobrancelha/barba/labios na paleta — tudo SÓ em artes v2.
+   *  false/ausente = motor byte a byte (rollback §651). */
+  faceV2?: boolean;
 }
 
 /** Hash djb2 → base36. Estável entre execuções (nada de Math.random). */
@@ -138,8 +147,21 @@ export function renderAvatar(
     if (chave === 'olhos' && opcoes.premium && config.coresFace?.iris) {
       return { ...base, iris: tinta(config.coresFace.iris) };
     }
+    // onda 1414 (#162): demais canais de rosto — cada um SÓ na camada dona
+    // e SÓ com faceV2 (sem a flag, paleta idêntica à de sempre §651)
+    if (opcoes.faceV2 && config.coresFace) {
+      if (chave === 'barba' && config.coresFace.barba) return { ...base, barba: tinta(config.coresFace.barba) };
+      if (chave === 'sobrancelha' && config.coresFace.sobrancelha) return { ...base, sobrancelha: tinta(config.coresFace.sobrancelha) };
+      if (chave === 'boca' && config.coresFace.labios) return { ...base, labios: tinta(config.coresFace.labios) };
+    }
     return base;
   };
+
+  // onda 1414 (#186): ASSIMETRIA determinística — desvio minúsculo por
+  // hashConfig (nunca uid — o override de uid não pode mudar a arte),
+  // aplicado como wrapper SÓ em artes v2 e SÓ com faceV2. Faixa ±0.3.
+  const semente = opcoes.faceV2 ? parseInt(hashConfig(config).slice(2), 36) : 0;
+  const desvio = (n: number): number => (((semente >>> n) % 7) - 3) / 10;
 
   // §71: `chave` liga as PROPRIEDADES da camada (config.params) ao fragmento
   // — sem params o retorno é byte-idêntico ao de antes da feature.
@@ -161,8 +183,38 @@ export function renderAvatar(
           + `<g clip-path="url(#${uid}hclip)">${svg}</g>`;
       }
     }
+    // onda 1414 (#162/#186): BARBA — camada nova (nenhum avatar salvo a
+    // tem), então compat máscara/cachecol e o fit por família valem SEMPRE
+    // para artes brb_ (dado, não flag; a flag só esconde a UI)
+    if (chave === 'barba' && /^brb_/.test(id)) {
+      const rosto = config.camadas.acessorio_rosto ?? config.camadas.acessorio;
+      if (resolverEstadoBarba(id, rosto, config.camadas.acessorio_pescoco) === 'hidden') return '';
+      const fx = fatorBarba(config.base);
+      if (fx !== 1) svg = `<g transform="translate(120 150) scale(${fx} 1) translate(-120 -150)">${svg}</g>`;
+    }
+    // onda 1414 (#162/#186): EXPRESSÃO + ASSIMETRIA — wrappers SÓ em artes
+    // v2 das camadas faciais e SÓ com faceV2 (rollback §651 = sem wrapper)
+    if (opcoes.faceV2 && (chave === 'olhos' || chave === 'boca' || chave === 'sobrancelha')
+      && (/_px_/.test(id) || /^sbr_/.test(id))) {
+      const partes: string[] = [];
+      if (config.expressao) {
+        const te = transformExpressao(chave, config.expressao.preset, config.expressao.intensidade ?? 1);
+        if (te) partes.push(te);
+      }
+      if (chave === 'olhos' && desvio(2)) partes.push(`rotate(${desvio(2)} 120 108)`);
+      if (chave === 'boca' && desvio(5)) partes.push(`translate(${desvio(5)} 0)`);
+      if (chave === 'sobrancelha' && desvio(9)) partes.push(`rotate(${-desvio(9)} 120 96)`);
+      if (partes.length) svg = `<g transform="${partes.join(' ')}">${svg}</g>`;
+    }
     return svg;
   };
+
+  // onda 1414 (#162): overlay de IDADE logo sobre a base — só faceV2 + arte
+  // de base v2 (o overlay é desenhado para a anatomia _px_); 'adult' = ''
+  const idadeSvg = opcoes.faceV2 && config.idade && config.idade !== 'adult'
+    && /_px_/.test(config.base ?? '')
+    ? overlayIdade(p, config.idade)
+    : '';
 
   // "fundo" composto: fundo → banner → aura (tudo atrás do personagem)
   const fundo = pintar(config.camadas.fundo, 'fundo') + pintar(config.camadas.banner, 'banner')
@@ -238,8 +290,10 @@ export function renderAvatar(
       // CORPO INTEIRO (240×400): corpo novo + cabeça do busto (sem a roupa
       // de busto) reaproveitada em escala no topo — arte 100% compartilhada.
       const cabeca =
-        pintar(config.base) + pintar(config.camadas.boca, 'boca') +
+        pintar(config.base) + idadeSvg + pintar(config.camadas.barba, 'barba') + pintar(config.camadas.boca, 'boca') +
+        pintar(config.camadas.nariz, 'nariz') +
         `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
+        pintar(config.camadas.sobrancelha, 'sobrancelha') +
         `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
         acessorios + palpebras;
       // roupa no CORPO INTEIRO: detalhes da peça sobre o scaffold (gola,
@@ -284,9 +338,11 @@ export function renderAvatar(
         `<g data-anim="plano-fundo"><g transform="translate(120 120) scale(1.08) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem">${premiumSombra}${premiumAtras}<g data-anim="personagem">` +
           envolverFigura(
-            pintar(config.base) + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.roupa_sobre, 'roupa_sobre') + pintar(config.camadas.emblema, 'emblema') +
-            pintar(config.camadas.boca, 'boca') +
+            pintar(config.base) + idadeSvg + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.roupa_sobre, 'roupa_sobre') + pintar(config.camadas.emblema, 'emblema') +
+            pintar(config.camadas.barba, 'barba') + pintar(config.camadas.boca, 'boca') +
+            pintar(config.camadas.nariz, 'nariz') +
             `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
+            pintar(config.camadas.sobrancelha, 'sobrancelha') +
             `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
             acessorios + palpebras,
             config, 236,
@@ -296,7 +352,7 @@ export function renderAvatar(
     }
   } else {
     const personagem = envolverFigura(
-      pintar(config.base) + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c], c)).join(''),
+      pintar(config.base) + idadeSvg + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c], c)).join(''),
       config, 236,
     );
     conteudo = `${fundo}${efeitoAtras}${premiumSombra}${premiumAtras}${personagem}${premiumFrente}${efeitoFrente}`;

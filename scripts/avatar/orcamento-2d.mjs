@@ -54,6 +54,16 @@ for (const cab of CABELOS_PREMIUM.map((x) => x.id)) {
   casos['cabelo-' + cab] = { premium: true, corpo: false, m: medir(svgDe(c, { uid: 'orc', premium: true })) };
 }
 casos['premium-golden-f-cabelo-corpo'] = { premium: true, corpo: true, m: medir(svgDe(cfg({ base: 'bas_px_coracao', camadas: { ...CONFIG_PADRAO.camadas, cabelo: 'cab_px_longo_liso', olhos: 'olh_px_amendoado', boca: 'boc_px_suave', roupa: 'rou_px_jaqueta' }, coresFace: { iris: '#2f5d43' }, acabamento: 'premium' }), { uid: 'orc', premium: true, palco: true, enquadramento: 'corpo' })) };
+// onda 1414: categorias faciais novas — cada barba/sobrancelha/nariz no
+// busto golden com faceV2 (o recorte fino e o orcamento valem para elas)
+import { BARBAS_PREMIUM, SOBRANCELHAS_PREMIUM, NARIZES_PREMIUM } from '@painel/engine/partes/premium/rosto';
+for (const [cat, lista] of [['barba', BARBAS_PREMIUM], ['sobrancelha', SOBRANCELHAS_PREMIUM], ['nariz', NARIZES_PREMIUM]] as const) {
+  for (const item of lista) {
+    const c = cfg({ base: 'bas_px_oval' as any, camadas: { ...CONFIG_PADRAO.camadas, [cat]: item.id }, acabamento: 'premium' as const });
+    casos[cat + '-' + item.id] = { premium: true, corpo: false, m: medir(svgDe(c, { uid: 'orc', premium: true, faceV2: true })) };
+  }
+}
+casos['premium-face-v2-completa'] = { premium: true, corpo: false, m: medir(svgDe(cfg({ base: 'bas_px_redonda', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_gentil', boca: 'boc_px_riso', cabelo: 'cab_px_lateral', barba: 'brb_lenhador', sobrancelha: 'sbr_cheia', nariz: 'nar_forte' }, coresFace: { iris: '#3a6ea8', barba: '#14100c' }, expressao: { preset: 'feliz' }, idade: 'mature', acabamento: 'premium' }), { uid: 'orc', premium: true, faceV2: true })) };
 console.log(JSON.stringify(casos));
 `);
 

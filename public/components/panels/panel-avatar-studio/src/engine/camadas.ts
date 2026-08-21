@@ -5,10 +5,11 @@
 // golden-classic [A] compara com o snapshot literal) — nenhum avatar salvo
 // muda de render por causa desta refatoração.
 //
-// Regras: z só CRESCE em incrementos de 10 (espaço p/ camadas futuras entre
-// vizinhas sem reordenar nada); nunca renumerar camada existente; camada
-// nova = z novo + entrada no snapshot do teste no MESMO commit.
-// @version 1.0.0  @created 2026-08-20
+// Regras: camadas FUNDADORAS em incrementos de 10 (espaço p/ camadas
+// futuras ENTRE vizinhas — onda 1414/#186: camada nova entra no meio do
+// vão com z inteiro, ex. barba=34); nunca renumerar camada existente;
+// camada nova = z novo + entrada no snapshot do teste no MESMO commit.
+// @version 1.1.0  @created 2026-08-20  @updated 2026-08-21 (onda 1414)
 import type { CamadaId } from '../domain/types';
 
 /** Z de pintura por camada do BUSTO (depois da base; menor = mais atrás). */
@@ -17,8 +18,14 @@ export const CAMADAS_Z = {
   roupa: 10,
   roupa_sobre: 20, // §3393 (decisão #95): sobrepeça por cima da roupa
   emblema: 30,
+  // onda 1414 (#162/#186): camadas FACIAIS novas nos vãos — barba sob a
+  // boca (a boca fica visível dentro da barba), nariz sobre a boca e sob
+  // os olhos, sobrancelha sobre os olhos e sob o cabelo (franja cobre)
+  barba: 34,
   boca: 40,
+  nariz: 44,
   olhos: 50,
+  sobrancelha: 54,
   cabelo: 60,
   acessorio: 70, // chave legada (configs antigos sem validar)
   acessorio_pescoco: 80,

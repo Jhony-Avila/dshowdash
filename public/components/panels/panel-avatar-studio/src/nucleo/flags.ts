@@ -135,6 +135,9 @@ const PADROES: Record<string, boolean> = {
   'as6.material_v2': false,     // onda 1408 — METADADOS de material do manifest v2 no pipeline (Parte 7, #160/#165a): canal pele das bases UBC por metadado (skin tint passa a valer), naoTingir, famílias declaradas; OFF até before/after aprovado; off = pipeline anterior byte a byte
   'as6.telemetria_assets': true, // onda 1409 — TELEMETRIA DE ASSET 3D (§2804, §2968–§2972): eventos avst:asset_* (carregou/falhou/lod_transicao/fallback/parte) no ring local + EventBus, com rate limit por slug e sem PII; dado/observabilidade (#156: tooling ON); off = zero eventos (callback ausente)
   'as6.classico_premium': false, // onda 1411 — trilho CLASSIC PREMIUM 2D (decisão #159, §2381–§2427): acabamento 'premium' no config liga sombra de contato + hooks das partes `_px_` (renderAtras/renderFrente/renderSombra/renderPlanos) + materiais2d; catálogo passa a listar as partes premium; off = motor clássico e catálogo byte a byte
+  'as6.face_v2': false,         // onda 1414 — ROSTO V2 (#162, Partes 3/5): categoria nariz na sidebar, expressão semântica + idade + assimetria determinística aplicadas por wrappers SÓ nas artes v2, canais coresFace.sobrancelha/barba/labios na paleta, Face Idle Profiles; off = render/UI byte a byte (dados salvos seguem aceitos)
+  'as6.barba_slot': false,      // onda 1414 — categoria BARBA visível (artes brb_*; compat máscara/cachecol em engine/compat-rosto.ts); off = seção oculta, config salvo segue renderizando
+  'as6.brow_slot': false,       // onda 1414 — categoria SOBRANCELHA visível (artes sbr_* como overlay sobre o traço cozido); off = seção oculta, config salvo segue renderizando
   'as6.qa_route': false,        // onda 1410 — ROTA DE QA VISUAL (§2707–§2742): QaStudio (chunk lazy) na paleta — LOD forçado, looks, overlays, calibração, screenshot 1-click, inspector técnico (manifest/health/renderer.info); dev, nada persiste; off = sem comando/chunk, render intocado
   'as6.material_debug': false,  // onda 1410 — DEBUG DE MATERIAIS no QaStudio (§1686–§1690): lista materiais do personagem (tipo, roughness/metalness, mapas); off = bloco ausente
   'as6.qa_visual': false,       // onda 1408 — LABORATÓRIO de QA visual (§105, §107–§109, §141–§146): overlays clay/normals/wireframe/silhueta/grayscale + cena de calibração com color checker no palco 3D (dev); off = sem UI, render intocado
@@ -173,6 +176,10 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.telemetria_assets': ['as5.palco3d'],
   'as6.qa_route': ['as5.palco3d'],
   'as6.material_debug': ['as6.qa_route'],
+  // onda 1414 (#186): slots faciais são filhos do rosto v2 — ligar/desligar
+  // a família inteira de uma vez (§2917–§2926)
+  'as6.barba_slot': ['as6.face_v2'],
+  'as6.brow_slot': ['as6.face_v2'],
   'as6.dock_classico': ['as5.classico_aaa'], // a dock v3 refina o trilho AAA
   'as6.paineis_dock': ['as5.classico_aaa'],  // painéis embaixo estendem o layout AAA
   'as6.paineis_cards': ['as6.paineis_dock'], // grades de cards refinam o inferior

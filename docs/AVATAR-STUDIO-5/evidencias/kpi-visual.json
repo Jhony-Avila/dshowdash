@@ -3,22 +3,22 @@
   "artBibleVersion": "1.0",
   "kpiPrincipal": {
     "nome": "Premium Coverage %",
-    "catalogo2d": 8.4,
+    "catalogo2d": 7.9,
     "assets3d": 0
   },
   "catalogo2d": {
     "geral": {
-      "total": 429,
+      "total": 455,
       "prototype": 0,
       "legacy": 7,
-      "production": 386,
+      "production": 412,
       "premium": 36,
       "hero": 0,
-      "premiumCoveragePct": 8.4,
-      "productionReadyPct": 98.4,
+      "premiumCoveragePct": 7.9,
+      "productionReadyPct": 98.5,
       "qaAprovadoPct": 0,
       "qa": {
-        "pending": 429
+        "pending": 455
       }
     },
     "porCategoria": {
@@ -62,6 +62,20 @@
         "qaAprovadoPct": 0,
         "qa": {
           "pending": 15
+        }
+      },
+      "barba": {
+        "total": 8,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 8,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 8
         }
       },
       "base": {
@@ -162,6 +176,20 @@
           "pending": 24
         }
       },
+      "nariz": {
+        "total": 8,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 8,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 8
+        }
+      },
       "olhos": {
         "total": 48,
         "prototype": 0,
@@ -202,6 +230,20 @@
         "qaAprovadoPct": 0,
         "qa": {
           "pending": 4
+        }
+      },
+      "sobrancelha": {
+        "total": 10,
+        "prototype": 0,
+        "legacy": 0,
+        "production": 10,
+        "premium": 0,
+        "hero": 0,
+        "premiumCoveragePct": 0,
+        "productionReadyPct": 100,
+        "qaAprovadoPct": 0,
+        "qa": {
+          "pending": 10
         }
       }
     },
@@ -308,6 +350,7 @@
       "acessorio": 75,
       "aura": 15,
       "banner": 15,
+      "barba": 8,
       "base": 36,
       "boca": 40,
       "cabelo": 50,
@@ -315,9 +358,11 @@
       "emblema": 20,
       "fundo": 20,
       "moldura": 24,
+      "nariz": 8,
       "olhos": 40,
       "roupa": 30,
-      "roupa_sobre": 4
+      "roupa_sobre": 4,
+      "sobrancelha": 10
     },
     "assets3d": {
       "parte_barba": 1,

@@ -29,6 +29,7 @@ import { ROUPAS } from '../engine/partes/roupas';
 import { ROUPAS_PREMIUM } from '../engine/partes/premium/roupas'; // onda 1411 (#159/#166)
 import { BASES_PREMIUM, OLHOS_PREMIUM, BOCAS_PREMIUM } from '../engine/partes/premium/faces'; // onda 1412 (#162)
 import { CABELOS_PREMIUM } from '../engine/partes/premium/cabelos'; // onda 1413 (§881–§897)
+import { BARBAS_PREMIUM, SOBRANCELHAS_PREMIUM, NARIZES_PREMIUM } from '../engine/partes/premium/rosto'; // onda 1414 (#162)
 import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
 import { slotCorporal, slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2) · #154
@@ -38,6 +39,7 @@ import { EFEITOS } from '../engine/partes/efeitos';
 import { AURAS } from '../engine/partes/auras';
 import { BANNERS } from '../engine/partes/banners';
 import { EMBLEMAS } from '../engine/partes/emblemas';
+import { expressaoPorId } from '../domain/expressoes'; // onda 1414 (#162)
 
 // v2 (lote 931–940, decisão #95): camada OPCIONAL `roupa_sobre` (§3393).
 // v1 sem o campo é idêntico — a migração 1→2 (nucleo/estado-vnext.ts) só
@@ -65,6 +67,11 @@ export const CATEGORIAS: CategoriaMeta[] = [
   { id: 'cabelo',    nome: 'Cabelo',     obrigatoria: false, grupo: 'cabelo' },
   { id: 'olhos',     nome: 'Olhos',      obrigatoria: true,  grupo: 'corpo' },
   { id: 'boca',      nome: 'Boca',       obrigatoria: true,  grupo: 'corpo' },
+  // onda 1414 (#162): categorias FACIAIS novas — visíveis só com as flags
+  // (categoriasAtivas); validarConfig aceita o campo sempre (dado > UI)
+  { id: 'sobrancelha', nome: 'Sobrancelha', obrigatoria: false, grupo: 'corpo' },
+  { id: 'nariz',       nome: 'Nariz',       obrigatoria: false, grupo: 'corpo' },
+  { id: 'barba',       nome: 'Barba',       obrigatoria: false, grupo: 'cabelo' },
   { id: 'roupa',     nome: 'Roupa',      obrigatoria: true,  grupo: 'vestuario' },
   // AS6 §3393 (decisão #95): multi-peça — visível só com as6.creator_v6
   // (categoriasAtivas); o validarConfig aceita o campo sempre (dado > UI)
@@ -286,6 +293,7 @@ const LORES: Record<string, string> = {
 export const PARTES: ParteDef[] = [
   ...BASES, ...BASES_PREMIUM, ...ESPECIES, ...CABELOS, ...CABELOS_PREMIUM, ...OLHOS, ...OLHOS_PREMIUM,
   ...BOCAS, ...BOCAS_PREMIUM, ...ROUPAS, ...ROUPAS_PREMIUM,
+  ...BARBAS_PREMIUM, ...SOBRANCELHAS_PREMIUM, ...NARIZES_PREMIUM, // onda 1414 (#162)
   ...SOBREPECAS, // §3393 (decisão #95): wrappers — zero arte nova
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
   ...AURAS, ...BANNERS, ...EMBLEMAS,
@@ -315,7 +323,14 @@ export function itensDe(categoria: CategoriaId): ParteDef[] {
  *  só aparece com a flag; o dado salvo continua aceito com a flag em
  *  qualquer posição (rollback §651 esconde a UI, nunca descarta config). */
 export function categoriasAtivas(): CategoriaMeta[] {
-  return CATEGORIAS.filter((c) => c.id !== 'roupa_sobre' || flag('as6.creator_v6'));
+  // onda 1414 (#162/#186): slots faciais atrás das próprias flags
+  const gate: Partial<Record<CategoriaId, string>> = {
+    roupa_sobre: 'as6.creator_v6',
+    barba: 'as6.barba_slot',
+    sobrancelha: 'as6.brow_slot',
+    nariz: 'as6.face_v2',
+  };
+  return CATEGORIAS.filter((c) => { const f = gate[c.id]; return !f || flag(f); });
 }
 
 /** onda 1412: presets VISÍVEIS — os golden premium só com a flag (#176). */
@@ -492,14 +507,31 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   }
   // onda 1411 (#159): acabamento — enum FECHADO de 1 valor; neutro omitido
   if (b.acabamento === 'premium') saida.acabamento = 'premium';
-  // onda 1412 (#162): canais de ROSTO — hoje só íris; hex válido persiste,
-  // resto cai; objeto vazio some (byte-estável)
+  // onda 1412 (#162): canais de ROSTO — hex válido persiste, resto cai;
+  // objeto vazio some (byte-estável). onda 1414: + sobrancelha/barba/labios
   if (b.coresFace && typeof b.coresFace === 'object') {
-    const irisBruta = (b.coresFace as { iris?: unknown }).iris;
-    if (typeof irisBruta === 'string' && /^#[0-9a-f]{6}$/i.test(irisBruta)) {
-      saida.coresFace = { iris: irisBruta.toLowerCase() };
+    const cf: Record<string, string> = {};
+    for (const canal of ['iris', 'sobrancelha', 'barba', 'labios'] as const) {
+      const bruto = (b.coresFace as Record<string, unknown>)[canal];
+      if (typeof bruto === 'string' && /^#[0-9a-f]{6}$/i.test(bruto)) cf[canal] = bruto.toLowerCase();
+    }
+    if (Object.keys(cf).length) saida.coresFace = cf;
+  }
+  // onda 1414 (#162): EXPRESSÃO semântica — preset do registry persiste
+  // ('neutra'/desconhecido caem); intensidade 0<k<1 persiste arredondada,
+  // 1 (padrão) e fora da faixa são omitidas — byte-estável
+  if (b.expressao && typeof b.expressao === 'object') {
+    const preset = (b.expressao as { preset?: unknown }).preset;
+    if (typeof preset === 'string' && expressaoPorId(preset)) {
+      const kBruto = (b.expressao as { intensidade?: unknown }).intensidade;
+      const k = typeof kBruto === 'number' && kBruto > 0 && kBruto < 1
+        ? Math.round(kBruto * 100) / 100
+        : undefined;
+      saida.expressao = k !== undefined ? { preset, intensidade: k } : { preset };
     }
   }
+  // onda 1414 (#162): IDADE — 'adult' é o neutro e NUNCA persiste
+  if (b.idade === 'young_adult' || b.idade === 'mature') saida.idade = b.idade;
   return saida;
 }
 
@@ -736,7 +768,12 @@ export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
   // onda 1411 (#159): o modo premium é decidido AQUI (flag + acabamento) —
   // o motor continua puro; flag OFF ⇒ premium false ⇒ SVG byte a byte
   const premium = opcoes?.premium ?? (config.acabamento === 'premium' && flag('as6.classico_premium'));
-  return renderAvatar(config, itemPorId, premium ? { ...opcoes, premium } : opcoes);
+  // onda 1414 (#162/#186): rosto v2 decidido AQUI (flag) — motor puro;
+  // flag OFF ⇒ faceV2 false ⇒ SVG byte a byte (rollback §651)
+  const faceV2 = opcoes?.faceV2 ?? flag('as6.face_v2');
+  const extras = (premium ? { premium } : {}) as OpcoesRender;
+  if (faceV2) extras.faceV2 = true;
+  return renderAvatar(config, itemPorId, Object.keys(extras).length ? { ...opcoes, ...extras } : opcoes);
 }
 
 export function dataUriDe(config: AvatarConfig, opcoes?: OpcoesRender): string {

@@ -169,7 +169,9 @@ export const OLHOS_PREMIUM: ParteDef[] = [
 function labios(dSuperior: string, dInferior: string, dLuz: string, extra = ''): ParteRender {
   return (p: Paleta) => {
     const t = tintaPremium(p.pele.base);
-    const labio = tintaPremium('#8a4a3e');
+    // onda 1414 (#162): canal coresFace.labios (injetado só com as6.face_v2)
+    // — ausente cai no tom padrão de sempre, byte a byte
+    const labio = tintaPremium(p.labios?.base ?? '#8a4a3e');
     return `
       <path d="${dSuperior}" fill="${labio.escuro}"/>
       <path d="${dInferior}" fill="${labio.base}"/>

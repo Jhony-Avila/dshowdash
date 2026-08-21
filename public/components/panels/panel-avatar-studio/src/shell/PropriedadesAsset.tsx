@@ -264,6 +264,46 @@ export function PropriedadesAsset({ config, aoAplicar, aoPrever, soCamadas }: {
           </section>
         );
       })}
+
+      {/* onda 1414 (#162, as6.face_v2): cor de BARBA/SOBRANCELHA — canal
+          coresFace próprio (padrão = segue o cabelo global); swatches da
+          família do cabelo + "Seguir cabelo" remove o canal */}
+      {flag('as6.face_v2') && (['barba', 'sobrancelha'] as const)
+        .filter((c) => (!soCamadas || soCamadas.includes(c)) && !!config.camadas[c] && config.camadas[c] !== 'nenhum')
+        .map((c) => {
+          const item = itemPorId(config.camadas[c]!);
+          const atual = config.coresFace?.[c];
+          const definir = (hex: string | null): AvatarConfig => {
+            const cf = { ...(config.coresFace ?? {}) };
+            if (hex) cf[c] = hex; else delete cf[c];
+            const { coresFace: _cf, ...resto } = config;
+            return Object.keys(cf).length ? { ...resto, coresFace: cf } : resto;
+          };
+          return (
+            <section key={c} className="avst5-canais" aria-label={`Cor de ${c}`}>
+              <h4 className="avst5-props-titulo">
+                <Paintbrush size={13} aria-hidden /> Cor · {item?.nome ?? c}
+              </h4>
+              <div className="avst5-canal-cores" role="radiogroup" aria-label={`Cor de ${c}`} data-teste={`face-cor-${c}`}>
+                {CORES_SUGERIDAS.cabelo.map((hex) => (
+                  <button key={hex} type="button" role="radio" aria-checked={atual === hex}
+                    className={`avst-swatch${atual === hex ? ' avst-swatch-ativo' : ''}`}
+                    style={{ background: hex }} title={hex}
+                    onMouseEnter={() => aoPrever(definir(hex))}
+                    onMouseLeave={() => aoPrever(null)}
+                    onClick={() => { aoPrever(null); aoAplicar(definir(hex)); }} />
+                ))}
+                {atual && (
+                  <button type="button" className="avst5-props-reset" data-teste={`face-seguir-${c}`}
+                    title="Voltar a seguir a cor do cabelo"
+                    onClick={() => { aoPrever(null); aoAplicar(definir(null)); }}>
+                    <RotateCcw size={12} aria-hidden /> Seguir cabelo
+                  </button>
+                )}
+              </div>
+            </section>
+          );
+        })}
     </>
   );
 }

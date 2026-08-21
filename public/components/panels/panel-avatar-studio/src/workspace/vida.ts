@@ -9,7 +9,34 @@
 // como função pura de DOM: ligar → devolve o desligador. §297: quem
 // chama decide (o shell não liga com movimento reduzido). Nada disso
 // toca o SVG salvo — grupos data-anim só existem com palco:true.
-export function ligarVida(host: Element, corpo = false, premium = false): () => void {
+// onda 1414 (#162/#186): FACE IDLE PROFILES — o ritmo de piscada segue a
+// EXPRESSÃO semântica (as6.face_v2): cansado pisca devagar e pesado,
+// surpreso quase não pisca, bravo pisca seco. Dados puros; sem perfil
+// (flag OFF / sem expressão) = curvas anteriores byte a byte.
+export interface PerfilIdleFace {
+  /** multiplicador do intervalo entre piscadas (1 = neutro) */
+  intervalo: number;
+  /** multiplicador da duração da piscada (1 = neutro) */
+  duracao: number;
+  /** chance de double-blink no premium (padrão 0.28) */
+  doubleBlink?: number;
+}
+
+export const PERFIS_IDLE_FACE: Record<string, PerfilIdleFace> = {
+  feliz: { intervalo: 0.9, duracao: 1 },
+  serio: { intervalo: 1.2, duracao: 0.9, doubleBlink: 0.12 },
+  surpreso: { intervalo: 1.8, duracao: 0.8, doubleBlink: 0.05 },
+  bravo: { intervalo: 1.35, duracao: 0.75, doubleBlink: 0.1 },
+  triste: { intervalo: 1.1, duracao: 1.25 },
+  cansado: { intervalo: 0.7, duracao: 1.5, doubleBlink: 0.4 },
+  confiante: { intervalo: 1.15, duracao: 0.9 },
+};
+
+export function perfilIdleDe(preset: string | undefined): PerfilIdleFace | undefined {
+  return preset ? PERFIS_IDLE_FACE[preset] : undefined;
+}
+
+export function ligarVida(host: Element, corpo = false, premium = false, perfil?: PerfilIdleFace): () => void {
   const buscar = (nome: string): SVGGElement | null =>
     host.querySelector(`[data-anim="${nome}"]`);
   const anims: Animation[] = [];
@@ -50,12 +77,12 @@ export function ligarVida(host: Element, corpo = false, premium = false): () => 
       { opacity: 1, offset: 0.62 },
       { opacity: 0 },
     ],
-    { duration: premium ? 150 : 170, easing: 'ease-in-out' },
+    { duration: (premium ? 150 : 170) * (perfil?.duracao ?? 1), easing: 'ease-in-out' },
   );
   const piscar = () => {
     umaPiscada();
-    if (premium && Math.random() < 0.28) cronometros.push(window.setTimeout(umaPiscada, 230));
-    const proximo = premium ? 2200 + Math.random() * 5400 : 2800 + Math.random() * 4200;
+    if (premium && Math.random() < (perfil?.doubleBlink ?? 0.28)) cronometros.push(window.setTimeout(umaPiscada, 230));
+    const proximo = (premium ? 2200 + Math.random() * 5400 : 2800 + Math.random() * 4200) * (perfil?.intervalo ?? 1);
     cronometros.push(window.setTimeout(piscar, proximo));
   };
   if (palpebras) cronometros.push(window.setTimeout(piscar, 1200 + Math.random() * 2000));

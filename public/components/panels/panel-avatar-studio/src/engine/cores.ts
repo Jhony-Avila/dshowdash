@@ -128,6 +128,12 @@ export interface Paleta {
   /** onda 1412 (#162): ÍRIS — canal de rosto (coresFace.iris), injetado
    *  pelo render SÓ no modo premium; ausente = artes usam o padrão. */
   iris?: Tinta;
+  /** onda 1414 (#162): demais canais de coresFace — injetados pelo render
+   *  SÓ com as6.face_v2 e SÓ na camada dona (barba/sobrancelha/boca);
+   *  ausentes = artes caem no fallback (cabelo global / tom da pele). */
+  barba?: Tinta;
+  sobrancelha?: Tinta;
+  labios?: Tinta;
 }
 
 export const CORES_PADRAO: Record<SlotCor, string> = {

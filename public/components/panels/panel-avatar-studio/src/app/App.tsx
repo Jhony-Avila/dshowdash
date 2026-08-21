@@ -92,6 +92,8 @@ function raridadeDaMudanca(a: AvatarConfig, b: AvatarConfig): Raridade | null {
 const ICONES: Record<CategoriaId, React.ComponentType<{ size?: number }>> = {
   base: CircleUser, cabelo: Brush, olhos: Eye, boca: Smile, roupa: Shirt,
   roupa_sobre: Layers, // §3393 (decisão #95): sobrepeça
+  // onda 1414 (#162): categorias faciais novas (visíveis só com as flags)
+  barba: Brush, sobrancelha: Eye, nariz: CircleUser,
   acessorio: Glasses, fundo: ImagemIcon, moldura: Frame, efeito: Sparkles,
   aura: Orbit, banner: Flag, emblema: BadgeCheck,
 };

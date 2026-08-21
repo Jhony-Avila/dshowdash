@@ -24,6 +24,9 @@ export type PapelArquivo =
 export const SLOTS_EQUIPAMENTO = [
   // 2D em camadas ('roupa_sobre': multi-peça §3393 — decisão #95)
   'base', 'cabelo', 'olhos', 'boca', 'roupa', 'roupa_sobre',
+  // onda 1414 (decisão #162): camadas FACIAIS novas — aditivas (ausentes
+  // = serialização canônica idêntica; espelho no PHP $categorias)
+  'barba', 'sobrancelha', 'nariz',
   'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco',
   // mega onda 1301+ (decisão #140, as6.acess_v2): slots FINOS aditivos —
   // ausentes = serialização canônica idêntica (checksum §619 estável)
@@ -106,6 +109,11 @@ export interface EstadoAvatar {
     /** onda 1411 (#159): acabamento do render 2D — OPCIONAL (ausente
      *  preserva o checksum de estados anteriores; 'premium' único valor). */
     acabamento?: string;
+    /** onda 1414 (#162): canais de rosto, expressão semântica e idade —
+     *  OPCIONAIS (ausentes preservam o checksum; neutros nunca persistem). */
+    coresFace?: Record<string, string>;
+    expressao?: { preset: string; intensidade?: number };
+    idade?: string;
   };
   equipment: Partial<Record<SlotId, AssetId>>;
   presentation: { titulo: AssetId | null; poderId: AssetId | null; pose: string | null; expressao: string | null };

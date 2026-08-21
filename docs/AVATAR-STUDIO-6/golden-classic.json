@@ -1,5 +1,5 @@
 {
-  "descricao": "GOLDEN CLASSIC PREMIUM (ondas 1411–1413, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).",
+  "descricao": "GOLDEN CLASSIC PREMIUM (ondas 1411–1414, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414: barba/sobrancelha/nariz + expressão/idade/assimetria). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).",
   "casos": {
     "p01-busto": {
       "sha256": "c61820bf7cc115c860649fd9477ce31f68376a4daa186ff17ec24764544bfb72",
@@ -119,6 +119,30 @@
       "sha256": "827f66d007330f82ece04219972e09bf72c1df9e79050f59fcbf15c9d4d0a85f",
       "bytes": 10764,
       "nos": 151,
+      "filtros": 0
+    },
+    "f01-facev2-busto": {
+      "sha256": "520020e3ff4f341ff3a890a36fe7a0d520113301e062cd1a14eff40e6fe0bf21",
+      "bytes": 12813,
+      "nos": 182,
+      "filtros": 0
+    },
+    "f02-facev2-busto": {
+      "sha256": "8f6f964658600ae67046d94d471ada08c0e0fe990ef0bd3e7d8998ea0a906bad",
+      "bytes": 11832,
+      "nos": 170,
+      "filtros": 0
+    },
+    "f03-facev2-busto": {
+      "sha256": "495d27308aa89a66ea8dd6ee880d2929f3f52af0835ee6db2ef28b52ae1b43c7",
+      "bytes": 10024,
+      "nos": 148,
+      "filtros": 0
+    },
+    "f04-facev2-busto": {
+      "sha256": "29f499db771182e1ededfdbb97308177b8378db5915da087dfb6779b10ffbcfd",
+      "bytes": 10670,
+      "nos": 150,
       "filtros": 0
     }
   }

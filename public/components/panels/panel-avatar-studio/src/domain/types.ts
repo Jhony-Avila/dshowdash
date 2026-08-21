@@ -20,7 +20,11 @@ export type CategoriaId =
   | 'aura' | 'banner' | 'emblema'
   // AS6 §3393 (lote 931–940, decisão #95): vestuário multi-peça — camada
   // de SOBREPEÇA por cima da roupa (schema v2; ausente = omitido)
-  | 'roupa_sobre';
+  | 'roupa_sobre'
+  // onda 1414 (#162): categorias FACIAIS novas como camadas próprias
+  // (artes `brb_/sbr_/nar_` #166; ausentes = omitidas — byte-estável;
+  // legado como `boc_barba` permanece intocado na categoria antiga)
+  | 'barba' | 'sobrancelha' | 'nariz';
 
 export type Raridade =
   | 'comum' | 'incomum' | 'raro' | 'epico' | 'lendario' | 'mitico' | 'exclusivo';
@@ -160,10 +164,19 @@ export interface AvatarConfig {
    *  neutro (clássico) NUNCA persiste — validarConfig omite (byte-estável;
    *  flag OFF ignora o campo no render = rollback §651). */
   acabamento?: 'premium';
-  /** onda 1412 (#162): CANAIS DE ROSTO — hoje só `iris` (cor da íris dos
-   *  olhos premium `olh_px_*`; aplicada apenas no modo premium). Campo
-   *  AUSENTE quando nada foi escolhido — byte-estável. */
-  coresFace?: { iris?: string };
+  /** onda 1412 (#162): CANAIS DE ROSTO — `iris` (olhos premium, modo
+   *  premium); onda 1414: + `sobrancelha`/`barba`/`labios` (artes faciais
+   *  v2, só com `as6.face_v2`). Campo AUSENTE quando nada foi escolhido —
+   *  byte-estável; validarConfig derruba hex inválido e omite objeto vazio. */
+  coresFace?: { iris?: string; sobrancelha?: string; barba?: string; labios?: string };
+  /** onda 1414 (#162): EXPRESSÃO SEMÂNTICA — preset do registry
+   *  `domain/expressoes.ts` aplicado por WRAPPERS só nas artes v2 e só com
+   *  `as6.face_v2` (rollback §651). `neutra` NUNCA persiste; `intensidade`
+   *  1 (padrão) é omitida. */
+  expressao?: { preset: string; intensidade?: number };
+  /** onda 1414 (#162): FAIXA ETÁRIA via overlay v2 (`as6.face_v2`).
+   *  'adult' é o neutro e NUNCA persiste — byte-estável. */
+  idade?: 'young_adult' | 'adult' | 'mature';
 }
 
 // ── lote 251–260 (§102/§118): criação avançada 2D ───────────────────

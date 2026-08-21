@@ -130,7 +130,10 @@ function avst_validar_config($bruto): array
     // acessorio_{olhos,orelha,costas,flutuante,companheiro}: slots FINOS
     // aditivos (mega onda 1301+, decisão #140, flag as6.acess_v2) —
     // espelho da lista canônica do front (nucleo/contratos.ts)
+    // barba/sobrancelha/nariz: categorias FACIAIS novas (onda 1414,
+    // decisao #162) — espelho do CategoriaId do front
     $categorias = ['cabelo', 'olhos', 'boca', 'roupa', 'roupa_sobre', 'acessorio',
+        'barba', 'sobrancelha', 'nariz',
         'acessorio_cabeca', 'acessorio_rosto', 'acessorio_pescoco',
         'acessorio_olhos', 'acessorio_orelha', 'acessorio_costas',
         'acessorio_flutuante', 'acessorio_companheiro',
@@ -191,14 +194,40 @@ function avst_validar_config($bruto): array
         $saida['acabamento'] = 'premium';
     }
 
-    // onda 1412 (decisao #162): canais de ROSTO — hoje so `iris` (hex
-    // valido persiste em minusculas; resto cai; vazio some)
+    // onda 1412 (decisao #162): canais de ROSTO — hex valido persiste em
+    // minusculas; resto cai; vazio some. onda 1414: + sobrancelha/barba/labios
     $coresFace = $bruto['coresFace'] ?? null;
     if (is_array($coresFace)) {
-        $iris = $coresFace['iris'] ?? null;
-        if (is_string($iris) && preg_match('/^#[0-9a-f]{6}$/i', $iris)) {
-            $saida['coresFace'] = ['iris' => strtolower($iris)];
+        $cf = [];
+        foreach (['iris', 'sobrancelha', 'barba', 'labios'] as $canal) {
+            $hex = $coresFace[$canal] ?? null;
+            if (is_string($hex) && preg_match('/^#[0-9a-f]{6}$/i', $hex)) {
+                $cf[$canal] = strtolower($hex);
+            }
         }
+        if ($cf !== []) {
+            $saida['coresFace'] = $cf;
+        }
+    }
+    // onda 1414 (decisao #162): EXPRESSAO semantica — preset do registry
+    // (espelho de domain/expressoes.ts); 'neutra'/desconhecido caem;
+    // intensidade so persiste em (0,1) arredondada; 1 (padrao) e omitida
+    $expressao = $bruto['expressao'] ?? null;
+    if (is_array($expressao)) {
+        $presets = ['feliz', 'serio', 'surpreso', 'bravo', 'triste', 'cansado', 'confiante'];
+        $preset = $expressao['preset'] ?? null;
+        if (is_string($preset) && in_array($preset, $presets, true)) {
+            $saida['expressao'] = ['preset' => $preset];
+            $k = $expressao['intensidade'] ?? null;
+            if (is_numeric($k) && (float) $k > 0 && (float) $k < 1) {
+                $saida['expressao']['intensidade'] = round((float) $k, 2);
+            }
+        }
+    }
+    // onda 1414 (decisao #162): IDADE — 'adult' e o neutro e NUNCA persiste
+    $idade = $bruto['idade'] ?? null;
+    if ($idade === 'young_adult' || $idade === 'mature') {
+        $saida['idade'] = $idade;
     }
     // megas 561–564 (§102.2): ajuste FINO do corpo — clamps espelhando o
     // validarConfig do front; 1 = neutro OMITIDO; objeto vazio omitido

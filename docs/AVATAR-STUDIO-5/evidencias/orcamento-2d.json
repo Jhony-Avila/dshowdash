@@ -7,7 +7,7 @@
     "corpoBytes": 81920
   },
   "resumo": {
-    "casos": 48,
+    "casos": 75,
     "erros": [],
     "avisos": []
   },
@@ -299,6 +299,168 @@
       "nos": 209,
       "filtros": 0,
       "gradientes": 10
+    },
+    "barba-brb_rala": {
+      "bytes": 9775,
+      "nos": 120,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "barba-brb_aparada": {
+      "bytes": 7172,
+      "nos": 103,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "barba-brb_cheia": {
+      "bytes": 7416,
+      "nos": 105,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "barba-brb_cavanhaque": {
+      "bytes": 7230,
+      "nos": 104,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "barba-brb_bigode": {
+      "bytes": 6762,
+      "nos": 95,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "barba-brb_costeleta": {
+      "bytes": 6862,
+      "nos": 102,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "barba-brb_longa": {
+      "bytes": 7553,
+      "nos": 106,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "barba-brb_lenhador": {
+      "bytes": 7601,
+      "nos": 106,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "sobrancelha-sbr_reta": {
+      "bytes": 6929,
+      "nos": 103,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_arqueada": {
+      "bytes": 6956,
+      "nos": 103,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_grossa": {
+      "bytes": 6957,
+      "nos": 103,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_fina": {
+      "bytes": 6922,
+      "nos": 101,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_angular": {
+      "bytes": 6980,
+      "nos": 103,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_suave": {
+      "bytes": 6972,
+      "nos": 103,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_cheia": {
+      "bytes": 6988,
+      "nos": 101,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_serena": {
+      "bytes": 6948,
+      "nos": 103,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_marcada": {
+      "bytes": 6994,
+      "nos": 103,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_unida": {
+      "bytes": 7087,
+      "nos": 104,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_reto": {
+      "bytes": 6867,
+      "nos": 98,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_fino": {
+      "bytes": 6878,
+      "nos": 98,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_largo": {
+      "bytes": 6915,
+      "nos": 98,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_arrebitado": {
+      "bytes": 6959,
+      "nos": 99,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_aquilino": {
+      "bytes": 6896,
+      "nos": 98,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_botao": {
+      "bytes": 6817,
+      "nos": 98,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_forte": {
+      "bytes": 6911,
+      "nos": 98,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_suave": {
+      "bytes": 6896,
+      "nos": 98,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "premium-face-v2-completa": {
+      "bytes": 12391,
+      "nos": 169,
+      "filtros": 0,
+      "gradientes": 7
     }
   }
 }

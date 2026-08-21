@@ -1,12 +1,15 @@
 {
   "gerado_por": "scripts/avatar/inventario-visual.mjs",
   "catalogo2d": {
-    "total": 429,
+    "total": 455,
     "categorias": [
       "base",
       "cabelo",
       "olhos",
       "boca",
+      "sobrancelha",
+      "nariz",
+      "barba",
       "roupa",
       "roupa_sobre",
       "acessorio",
@@ -166,6 +169,61 @@
         "slots": {},
         "subcategorias": {},
         "renderCorpo": 32,
+        "atras": 0,
+        "semFoco": []
+      },
+      "barba": {
+        "total": 8,
+        "temas": {
+          "casual": 3,
+          "clássico": 1,
+          "executivo": 1,
+          "fantasia": 1,
+          "urbano": 2
+        },
+        "raridades": {
+          "comum": 8
+        },
+        "slots": {},
+        "subcategorias": {},
+        "renderCorpo": 0,
+        "atras": 0,
+        "semFoco": []
+      },
+      "sobrancelha": {
+        "total": 10,
+        "temas": {
+          "casual": 2,
+          "clássico": 3,
+          "executivo": 1,
+          "fantasia": 1,
+          "gamer": 1,
+          "urbano": 2
+        },
+        "raridades": {
+          "comum": 10
+        },
+        "slots": {},
+        "subcategorias": {},
+        "renderCorpo": 0,
+        "atras": 0,
+        "semFoco": []
+      },
+      "nariz": {
+        "total": 8,
+        "temas": {
+          "casual": 3,
+          "clássico": 2,
+          "executivo": 1,
+          "fantasia": 1,
+          "urbano": 1
+        },
+        "raridades": {
+          "comum": 8
+        },
+        "slots": {},
+        "subcategorias": {},
+        "renderCorpo": 0,
         "atras": 0,
         "semFoco": []
       },

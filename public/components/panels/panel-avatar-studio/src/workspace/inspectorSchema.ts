@@ -24,6 +24,10 @@ export const ROTULO_GRUPO: Record<GrupoInspectorId, string> = {
 /** §182: grupos POR CATEGORIA, na ordem do briefing (Roupa põe cor na
  *  frente; categorias sem params não ganham grupo de propriedades). */
 export const GRUPOS_POR_CATEGORIA: Record<CategoriaId, GrupoInspectorId[]> = {
+  // onda 1414 (#162): categorias faciais novas
+  sobrancelha: ['identidade', 'cores', 'acoes'],
+  nariz: ['identidade', 'acoes'],
+  barba: ['identidade', 'cores', 'compatibilidade', 'acoes'],
   base: ['identidade', 'propriedades', 'cores', 'acoes'],
   cabelo: ['identidade', 'propriedades', 'cores', 'acoes'],
   olhos: ['identidade', 'propriedades', 'cores', 'acoes'],

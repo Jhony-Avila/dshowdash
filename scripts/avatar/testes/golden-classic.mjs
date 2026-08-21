@@ -48,11 +48,15 @@ const ok = (c: boolean, m: string): void => { if (!c) falhas.push(m); };
 const cfg = (extra: Partial<AvatarConfig>): AvatarConfig => validarConfig({ ...CONFIG_PADRAO, ...extra });
 
 // A) ordem derivada == lista histórica (snapshot literal)
-const HISTORICA = ['roupa','roupa_sobre','emblema','boca','olhos','cabelo','acessorio','acessorio_pescoco','acessorio_cabeca','acessorio_rosto','acessorio_costas','acessorio_olhos','acessorio_orelha','acessorio_flutuante','acessorio_companheiro','acessorio_pernas','acessorio_pes','acessorio_cintura','acessorio_pulso_e','acessorio_pulso_d','acessorio_mao_e','acessorio_mao_d'];
+// onda 1414 (#186): camadas faciais novas entram nos VAOS (barba=34,
+// nariz=44, sobrancelha=54) — fundadoras seguem multiplas de 10; o
+// contrato passa a ser z INTEIRO estritamente crescente + snapshot.
+const HISTORICA = ['roupa','roupa_sobre','emblema','barba','boca','nariz','olhos','sobrancelha','cabelo','acessorio','acessorio_pescoco','acessorio_cabeca','acessorio_rosto','acessorio_costas','acessorio_olhos','acessorio_orelha','acessorio_flutuante','acessorio_companheiro','acessorio_pernas','acessorio_pes','acessorio_cintura','acessorio_pulso_e','acessorio_pulso_d','acessorio_mao_e','acessorio_mao_d'];
 ok(JSON.stringify(ORDEM_CAMADAS) === JSON.stringify(HISTORICA), '[A] ORDEM_CAMADAS derivada difere da lista historica: ' + JSON.stringify(ORDEM_CAMADAS));
 const zs = HISTORICA.map((c) => (CAMADAS_Z as Record<string, number>)[c]);
 ok(zs.every((z, i) => i === 0 || z > zs[i - 1]), '[A] CAMADAS_Z nao estritamente crescente');
-ok(zs.every((z) => z % 10 === 0), '[A] z fora dos multiplos de 10');
+ok(zs.every((z) => Number.isInteger(z)), '[A] z nao inteiro');
+ok(['roupa','boca','olhos','cabelo'].every((c) => (CAMADAS_Z as Record<string, number>)[c] % 10 === 0), '[A] camada fundadora fora do multiplo de 10');
 
 // B) byte-stability com flag OFF (defaults do PADROES no node)
 const classico = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_terno' } });
@@ -177,6 +181,70 @@ ok(svgDe(comEncaixe, { uid: 'hc', premium: true }).includes('y="60"'), '[G] enca
 const cabOff = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, cabelo: 'cab_px_lateral' }, acabamento: 'premium' });
 ok(svgDe(cabOff, { uid: 'bs' }) === svgDe({ ...cabOff, acabamento: undefined } as never, { uid: 'bs' }), '[G] FLAG OFF: cabelo premium equipado nao muda o render');
 
+// H) onda 1414 — BARBA/SOBRANCELHA/NARIZ + expressao/idade (#162, #186+)
+import { BARBAS_PREMIUM, SOBRANCELHAS_PREMIUM, NARIZES_PREMIUM } from '@painel/engine/partes/premium/rosto';
+import { resolverEstadoBarba, fatorBarba, PERFIL_BARBA, MASCARAS_ROSTO_FECHADAS } from '@painel/engine/compat-rosto';
+import { EXPRESSOES_FACE, expressaoPorId, transformExpressao } from '@painel/domain/expressoes';
+import { PERFIS_IDLE_FACE, perfilIdleDe } from '@painel/workspace/vida';
+import { categoriasAtivas } from '@painel/services/AvatarCatalog';
+ok(BARBAS_PREMIUM.length === 8 && SOBRANCELHAS_PREMIUM.length === 10 && NARIZES_PREMIUM.length === 8, '[H] 8 barbas + 10 sobrancelhas + 8 narizes');
+ok(BARBAS_PREMIUM.every((x) => /^brb_/.test(x.id)) && SOBRANCELHAS_PREMIUM.every((x) => /^sbr_/.test(x.id)) && NARIZES_PREMIUM.every((x) => /^nar_/.test(x.id)), '[H] naming #166');
+ok([...BARBAS_PREMIUM, ...SOBRANCELHAS_PREMIUM, ...NARIZES_PREMIUM].every((x) => x.raridade === 'comum'), '[H] item facial novo = raridade comum (#162)');
+ok(!categoriasAtivas().some((c) => c.id === 'barba' || c.id === 'sobrancelha' || c.id === 'nariz'), '[H] flags OFF: categorias faciais fora da sidebar');
+ok(itensDe('barba').length === 0 && itemPorId('brb_cheia') !== undefined && itemPorId('sbr_reta') !== undefined && itemPorId('nar_reto') !== undefined, '[H] flag OFF: catalogo vazio, POR_ID resolve (dado salvo)');
+// validarConfig: camadas novas + coresFace 4 canais + expressao + idade
+const cFace = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, barba: 'brb_cheia', sobrancelha: 'sbr_grossa', nariz: 'nar_reto' }, coresFace: { iris: '#3A6EA8', barba: '#14100C', sobrancelha: '#3D2B1F', labios: '#8A4A3E' }, expressao: { preset: 'feliz', intensidade: 0.5 }, idade: 'mature', acabamento: 'premium' });
+ok(cFace.camadas.barba === 'brb_cheia' && cFace.camadas.sobrancelha === 'sbr_grossa' && cFace.camadas.nariz === 'nar_reto', '[H] camadas faciais deveriam persistir');
+ok(cFace.coresFace?.barba === '#14100c' && cFace.coresFace?.labios === '#8a4a3e' && cFace.coresFace?.sobrancelha === '#3d2b1f', '[H] coresFace novos canais normalizam');
+ok(cFace.expressao?.preset === 'feliz' && cFace.expressao?.intensidade === 0.5, '[H] expressao persiste');
+ok(cFace.idade === 'mature', '[H] idade persiste');
+ok(!('expressao' in cfg({ expressao: { preset: 'neutra' } as never })), '[H] neutra NUNCA persiste');
+ok(!('expressao' in cfg({ expressao: { preset: 'zzz' } as never })), '[H] preset desconhecido cai');
+ok(cfg({ expressao: { preset: 'serio', intensidade: 1 } }).expressao?.intensidade === undefined, '[H] intensidade 1 (padrao) omitida');
+ok(!('idade' in cfg({ idade: 'adult' })), '[H] adult NUNCA persiste');
+ok(!('coresFace' in cfg({ coresFace: { barba: 'ruivo' } as never })), '[H] hex invalido cai e objeto vazio some');
+// registry de expressoes
+ok(EXPRESSOES_FACE.length === 7 && !expressaoPorId('neutra') && EXPRESSOES_FACE.every((e) => e.olhos || e.boca || e.sobrancelha), '[H] registry semantico');
+ok(transformExpressao('boca', 'feliz', 0) === '' && transformExpressao('boca', 'feliz', 1) !== '' && transformExpressao('boca', undefined) === '', '[H] transformExpressao escala por intensidade');
+ok(Object.keys(PERFIS_IDLE_FACE).sort().join(',') === EXPRESSOES_FACE.map((e) => e.id).sort().join(',') && perfilIdleDe('zzz') === undefined, '[H] Face Idle Profiles cobrem o registry');
+// byte-stability: flags OFF (default node) — campos novos NAO mudam o render
+const cSo = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, barba: 'brb_cheia' }, acabamento: 'premium' });
+const cTudo = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, barba: 'brb_cheia' }, coresFace: { barba: '#e84c6f', labios: '#8a2a3e' }, expressao: { preset: 'bravo' }, idade: 'mature', acabamento: 'premium' });
+ok(svgDe(cSo, { uid: 'bs' }) === svgDe(cTudo, { uid: 'bs' }), '[H] FLAG OFF: expressao/idade/coresFace NAO podem mudar o render (§651)');
+// faceV2 explicito: wrappers/overlay/canais entram — e SO em artes v2
+const cExpr = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_confiante', boca: 'boc_px_sorriso' }, expressao: { preset: 'feliz' }, acabamento: 'premium' });
+const svgExpr = svgDe(cExpr, { uid: 'fx', premium: true, faceV2: true });
+ok(svgExpr !== svgDe(cExpr, { uid: 'fx', premium: true }), '[H] faceV2 deveria aplicar a expressao');
+ok(svgDe(cExpr, { uid: 'fx', premium: true, faceV2: true }) === svgExpr, '[H] faceV2 nao deterministico');
+const cLegado = cfg({ camadas: { ...CONFIG_PADRAO.camadas }, expressao: { preset: 'feliz' } });
+ok(svgDe(cLegado, { uid: 'fx', faceV2: true }) === svgDe(cLegado, { uid: 'fx' }), '[H] expressao NAO pode tocar arte legada');
+// idade: overlay so em base _px_
+const cIdade = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas }, idade: 'mature', acabamento: 'premium' });
+ok(svgDe(cIdade, { uid: 'fx', premium: true, faceV2: true }) !== svgDe(cIdade, { uid: 'fx', premium: true }), '[H] idade mature deveria desenhar o overlay');
+const cIdadeLegada = cfg({ camadas: { ...CONFIG_PADRAO.camadas }, idade: 'mature' });
+ok(svgDe(cIdadeLegada, { uid: 'fx', faceV2: true }) === svgDe(cIdadeLegada, { uid: 'fx' }), '[H] overlay de idade NAO entra em base classica');
+// coresFace.barba pinta a barba com faceV2
+const cBarbaCor = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, barba: 'brb_cheia' }, coresFace: { barba: '#e84c6f' }, acabamento: 'premium' });
+const cBarbaSem = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, barba: 'brb_cheia' }, acabamento: 'premium' });
+ok(svgDe(cBarbaCor, { uid: 'fx', premium: true, faceV2: true }) !== svgDe(cBarbaSem, { uid: 'fx', premium: true, faceV2: true }), '[H] coresFace.barba deveria mudar a barba');
+ok(svgDe(cBarbaCor, { uid: 'fx', premium: true }) === svgDe(cBarbaSem, { uid: 'fx', premium: true }), '[H] sem faceV2 o canal barba NAO aplica (§651)');
+// compat barba x mascara/cachecol (sempre para brb_ — dado novo)
+ok(resolverEstadoBarba(null, null, null) === 'hidden' && resolverEstadoBarba('brb_cheia', null, null) === 'visible', '[H] estados basicos da barba');
+ok(MASCARAS_ROSTO_FECHADAS.every((m) => resolverEstadoBarba('brb_cheia', m, null) === 'hidden'), '[H] mascara fechada engole a barba');
+ok(resolverEstadoBarba('brb_longa', null, 'ace_cachecol') === 'hidden' && resolverEstadoBarba('brb_rala', null, 'ace_cachecol') === 'visible', '[H] cachecol so conflita com barba longa');
+ok(resolverEstadoBarba('brb_inexistente', 'ace_inexistente', null) === 'visible', '[H] fallback conservador');
+ok(BARBAS_PREMIUM.every((x) => x.id in PERFIL_BARBA), '[H] toda barba precisa de perfil');
+const cMask = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, barba: 'brb_cheia', acessorio: 'ace_mascara_oni' } });
+const cSemMask = cfg({ base: 'bas_px_oval', camadas: { ...CONFIG_PADRAO.camadas, barba: 'brb_cheia' } });
+ok(!svgDe(cMask, { uid: 'fx' }).includes('fxpxbrb') && svgDe(cSemMask, { uid: 'fx' }).includes('fxpxbrb'), '[H] render: mascara equipada esconde a barba');
+// beard fit por familia (#162): base angulosa escala a barba
+ok(fatorBarba('bas_px_angular') === 1.05 && fatorBarba('bas_px_redonda') === 1.1 && fatorBarba('bas_classica') === 1, '[H] fatorBarba por familia');
+const cFit = cfg({ base: 'bas_px_redonda', camadas: { ...CONFIG_PADRAO.camadas, barba: 'brb_cheia' } });
+ok(svgDe(cFit, { uid: 'fx' }).includes('scale(1.1 1)'), '[H] fit da barba aplicado no render');
+// assimetria: deterministica e presente com faceV2 em arte v2
+const svgAssim = svgDe(cExpr, { uid: 'fx', premium: true, faceV2: true });
+ok(svgAssim === svgDe(cExpr, { uid: 'fx', premium: true, faceV2: true }), '[H] assimetria precisa ser deterministica');
+
 // D) goldens p01-p06 + c01-c02 (1411/1412) + h01-h06 + p07-p08 (1413)
 const p01 = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_terno' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, destaque: '#c9a75a' } });
 const p02 = cfg({ base: 'bas_redonda', camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_jaqueta', cabelo: 'cab_ondulado' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, cabelo: '#d9b166', roupa: '#7a2d3c' } });
@@ -215,6 +283,15 @@ const p07 = cfg({ ...c01, camadas: { ...c01.camadas, cabelo: 'cab_px_lateral' },
 const p08 = cfg({ ...c02, camadas: { ...c02.camadas, cabelo: 'cab_px_longo_liso' }, cores: { ...c02.cores, cabelo: '#3d2b1f', destaque: '#c9a75a' } });
 casos['p07-golden-m-cabelo-busto'] = svgDe(p07, { premium: true });
 casos['p08-golden-f-cabelo-busto'] = svgDe(p08, { premium: true });
+// onda 1414: f01-f04 = Golden Face v2 (barba/sobrancelha/nariz + expressao/
+// idade/assimetria com faceV2 explicito — flags OFF nao mudam nada [H])
+const f01 = cfg({ ...c01, camadas: { ...c01.camadas, cabelo: 'cab_px_lateral', barba: 'brb_cheia', sobrancelha: 'sbr_grossa', nariz: 'nar_reto' }, coresFace: { ...c01.coresFace, barba: '#14100c', sobrancelha: '#14100c' } });
+const f02 = cfg({ ...c02, camadas: { ...c02.camadas, cabelo: 'cab_px_longo_liso', sobrancelha: 'sbr_arqueada', nariz: 'nar_fino' }, coresFace: { ...c02.coresFace, sobrancelha: '#3d2b1f', labios: '#a04a5e' } });
+const f03 = cfg({ ...c01, expressao: { preset: 'confiante' }, idade: 'mature' });
+const f04 = cfg({ base: 'bas_px_redonda', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_gentil', boca: 'boc_px_riso', barba: 'brb_lenhador', sobrancelha: 'sbr_cheia' }, expressao: { preset: 'feliz', intensidade: 0.6 }, idade: 'young_adult', acabamento: 'premium' });
+for (const [nome, c] of [['f01', f01], ['f02', f02], ['f03', f03], ['f04', f04]] as const) {
+  casos[nome + '-facev2-busto'] = svgDe(c, { premium: true, faceV2: true });
+}
 const hashes: Record<string, { sha256: string; bytes: number; nos: number; filtros: number }> = {};
 for (const [id, svg] of Object.entries(casos)) {
   hashes[id] = { sha256: sha(svg), bytes: svg.length, nos: (svg.match(/</g) ?? []).length, filtros: (svg.match(/<filter/g) ?? []).length };
@@ -238,7 +315,7 @@ const { falhas, hashes } = JSON.parse(bruto.trim().split('\n').pop());
 
 if (GRAVAR) {
   writeFileSync(BASELINE, `${JSON.stringify({
-    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1413, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
+    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1414, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414: barba/sobrancelha/nariz + expressão/idade/assimetria). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
     casos: hashes,
   }, null, 2)}\n`);
   console.log(`[golden-classic] baseline gravada (${Object.keys(hashes).length} casos)`);

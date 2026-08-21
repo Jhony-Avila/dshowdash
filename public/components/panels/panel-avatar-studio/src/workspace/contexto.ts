@@ -32,6 +32,19 @@ export interface ContextoCategoria {
 }
 
 export const CONTEXTOS: Record<CategoriaId, ContextoCategoria> = {
+  // onda 1414 (#162): categorias faciais novas (só aparecem com as flags)
+  sobrancelha: {
+    grupoInspector: 'cores', dica: 'Contexto: Sobrancelha — câmera no rosto.',
+    titulo: 'Sobrancelha', texto: 'Traço vivo por cima do cozido da base. A cor acompanha o cabelo, com canal próprio em coresFace.',
+  },
+  nariz: {
+    grupoInspector: 'identidade', dica: 'Contexto: Nariz — câmera no rosto.',
+    titulo: 'Nariz', texto: 'Perfil do nariz assentado sobre a base. O tom segue a pele automaticamente.',
+  },
+  barba: {
+    grupoInspector: 'cores', dica: 'Contexto: Barba — câmera no rosto.',
+    titulo: 'Barba', texto: 'Barbas com fit pela família do rosto. Máscaras fechadas escondem a barba automaticamente.',
+  },
   // `dica` INALTERADA: é o caminho com a flag as6.ctx_barra OFF (§651)
   base: {
     grupoInspector: 'identidade', dica: 'Contexto: Rosto — câmera no rosto, catálogo de bases.',
