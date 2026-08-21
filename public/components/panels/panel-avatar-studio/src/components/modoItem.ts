@@ -84,6 +84,17 @@ export const FOCO_ITEM_ASSET: Record<string, string> = {
   ace_runa_protecao: '35 80 58 58',
   ace_tapa_olho: '46 22 149 149',
   ace_tenis_neon: '60 290 120 120',
+  // onda 1416 (#196): acessórios premium
+  ace_px_oculos: '74 87 92 92',
+  ace_px_coroa: '72 26 96 96',
+  ace_px_colar: '92 180 56 56',
+  ace_px_mochila: '60 160 120 120',
+  ace_px_asas: '2 60 236 180',
+  ace_px_brinco: '146 108 40 40',
+  ace_px_relogio: '52 164 44 44',
+  ace_px_cetro: '150 100 60 100',
+  ace_px_drone: '168 44 60 60',
+  ace_px_gato: '16 178 60 60',
   // onda 1415 (#191): calçados premium (slot pes — foco no corpo inteiro)
   ace_px_tenis: '60 300 120 120',
   ace_px_social: '60 302 120 120',

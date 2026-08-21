@@ -1,7 +1,7 @@
 {
   "gerado_por": "scripts/avatar/inventario-visual.mjs",
   "catalogo2d": {
-    "total": 471,
+    "total": 481,
     "categorias": [
       "base",
       "cabelo",
@@ -268,45 +268,46 @@
         "semFoco": []
       },
       "acessorio": {
-        "total": 78,
+        "total": 88,
         "temas": {
           "aventura": 2,
-          "casual": 12,
-          "clássico": 3,
+          "casual": 13,
+          "clássico": 5,
           "conquista": 1,
           "cyberpunk": 2,
           "esportivo": 1,
           "evento": 2,
-          "executivo": 11,
-          "fantasia": 13,
-          "gamer": 11,
+          "executivo": 13,
+          "fantasia": 16,
+          "gamer": 12,
           "mistico": 8,
           "sci-fi": 2,
           "tecnologia": 7,
-          "urbano": 3
+          "urbano": 4
         },
         "raridades": {
-          "comum": 12,
-          "epico": 15,
+          "comum": 13,
+          "epico": 16,
           "exclusivo": 1,
-          "incomum": 21,
+          "incomum": 25,
           "lendario": 3,
-          "raro": 26
+          "raro": 30
         },
         "slots": {
-          "cabeca": 24,
+          "cabeca": 25,
           "cintura": 1,
-          "companheiro": 8,
-          "costas": 4,
-          "flutuante": 4,
-          "mao_d": 1,
+          "companheiro": 9,
+          "costas": 6,
+          "flutuante": 5,
+          "mao_d": 2,
           "mao_e": 1,
+          "orelha": 1,
           "pernas": 1,
           "pes": 4,
-          "pescoco": 10,
+          "pescoco": 11,
           "pulso_d": 1,
-          "pulso_e": 1,
-          "rosto": 18
+          "pulso_e": 2,
+          "rosto": 19
         },
         "subcategorias": {
           "adornos-cabeca": 8,
@@ -339,7 +340,7 @@
           "tapa-olhos": 1,
           "tornozeleiras": 1
         },
-        "renderCorpo": 10,
+        "renderCorpo": 12,
         "atras": 0,
         "semFoco": []
       },

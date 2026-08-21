@@ -24,6 +24,7 @@ import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso'
 import { favoritosPermanentes, favoritosPorColecao } from '../services/FavoritosCategorias';
 import { flag } from '../nucleo/flags';
 import { slotCorporal, slotFinoDoAsset, subcategoriaDoAsset, subcategoriasConflitam } from '../workspace/acessorios'; // #140 · #154
+import { conflitoNomeado } from '../services/AcessoriosRegistry'; // onda 1416 (#196)
 import { t } from '../nucleo/i18n'; // lote 511-520 (§296)
 // mega 248 (§228): itens ARQUIVADOS saem da grade padrão (reversível)
 import { arquivados } from '../services/ArquivoItens';
@@ -654,6 +655,32 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
           )}
         </div>
       )}
+
+      {/* onda 1416 (#196, as6.acess_2d_premium): contador + Remover todos +
+          conflito NOMEADO do último equipado (AcessoriosRegistry §617) */}
+      {categoria === 'acessorio' && flag('as6.acess_2d_premium') && (() => {
+        const equipados = (Object.entries(config.camadas) as Array<[string, string | undefined]>)
+          .filter(([k, v]) => k.startsWith('acessorio') && v && v !== 'nenhum')
+          .map(([, v]) => v as string);
+        if (!equipados.length) return null;
+        const nomeDe = (id: string) => itemPorId(id)?.nome ?? id;
+        let conflito: string | null = null;
+        for (let i = 0; i < equipados.length && !conflito; i += 1) {
+          for (let j = i + 1; j < equipados.length && !conflito; j += 1) {
+            conflito = conflitoNomeado(equipados[i], equipados[j], nomeDe);
+          }
+        }
+        return (
+          <div className="avst-foto-filtros" data-teste="acess-contador">
+            <span className="avst-foto-nota">{equipados.length} acessório{equipados.length > 1 ? 's' : ''} equipado{equipados.length > 1 ? 's' : ''}</span>
+            {conflito && <span className="avst-foto-nota" data-teste="acess-conflito">⚠ {conflito}</span>}
+            <button type="button" className="avst-fchip" data-teste="acess-remover-todos"
+              onClick={() => aoEscolher(comItem(config, 'acessorio', null))}>
+              Remover todos
+            </button>
+          </div>
+        );
+      })()}
 
       <div ref={refGrade} className="avst-grade" data-modo={modo}
         data-uxfinal={flag('as5.ux_final') ? '' : undefined} role="listbox"

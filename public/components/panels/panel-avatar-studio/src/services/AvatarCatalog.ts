@@ -31,6 +31,7 @@ import { BASES_PREMIUM, OLHOS_PREMIUM, BOCAS_PREMIUM } from '../engine/partes/pr
 import { CABELOS_PREMIUM } from '../engine/partes/premium/cabelos'; // onda 1413 (§881–§897)
 import { BARBAS_PREMIUM, SOBRANCELHAS_PREMIUM, NARIZES_PREMIUM } from '../engine/partes/premium/rosto'; // onda 1414 (#162)
 import { ROUPAS_PREMIUM_1415, SOBREPECAS_PREMIUM, ROUPAS_INFERIORES, CALCADOS_PREMIUM } from '../engine/partes/premium/vestuario'; // onda 1415 (#191)
+import { ACESSORIOS_PREMIUM } from '../engine/partes/premium/acessorios'; // onda 1416 (#196)
 import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
 import { slotCorporal, slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2) · #154
@@ -299,6 +300,7 @@ export const PARTES: ParteDef[] = [
   ...BOCAS, ...BOCAS_PREMIUM, ...ROUPAS, ...ROUPAS_PREMIUM,
   ...BARBAS_PREMIUM, ...SOBRANCELHAS_PREMIUM, ...NARIZES_PREMIUM, // onda 1414 (#162)
   ...ROUPAS_PREMIUM_1415, ...SOBREPECAS_PREMIUM, ...ROUPAS_INFERIORES, ...CALCADOS_PREMIUM, // onda 1415 (#191)
+  ...ACESSORIOS_PREMIUM, // onda 1416 (#196)
   ...SOBREPECAS, // §3393 (decisão #95): wrappers — zero arte nova
   ...ACESSORIOS, ...FUNDOS, ...MOLDURAS, ...EFEITOS,
   ...AURAS, ...BANNERS, ...EMBLEMAS,

@@ -1,5 +1,5 @@
 {
-  "descricao": "GOLDEN CLASSIC PREMIUM (ondas 1411–1415, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414), p09–p11 (Golden Outfits 1415 no corpo inteiro). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).",
+  "descricao": "GOLDEN CLASSIC PREMIUM (ondas 1411–1416, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414), p09–p11 (Golden Outfits 1415), p12 (acessórios premium 1416). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).",
   "casos": {
     "p01-busto": {
       "sha256": "c61820bf7cc115c860649fd9477ce31f68376a4daa186ff17ec24764544bfb72",
@@ -149,6 +149,12 @@
       "sha256": "81c21442131e6b2f4f423e0493555dd2f8a44ea708e650103db373904fdec78a",
       "bytes": 14857,
       "nos": 228,
+      "filtros": 0
+    },
+    "p12-acessorios-busto": {
+      "sha256": "1b3ebe6d1368e3c29aa19feaf105dc26cdf8db786b180f3bea3ad293fb8730f7",
+      "bytes": 12884,
+      "nos": 194,
       "filtros": 0
     },
     "p10-outfit-offduty-corpo": {

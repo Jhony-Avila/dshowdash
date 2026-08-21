@@ -329,7 +329,9 @@ export default function Estudio3D({ corDestaque, versaoBase = 0, config3dInicial
             // procedurais (qualidadeVisual=prototype) só aparecem em modo
             // Dev (as5.hud3d) quando a frente AAA está ligada; um item já
             // equipado em config salvo segue válido (validarConfig3d aceita)
-            const esconderPrototipos = flag('as6.avatar_visual_v2') && !flag('as5.hud3d');
+            // onda 1416 (#196): filtro DEV — a rota de QA também revela
+            // protótipos (hud3d e qa_route são as duas portas de dev)
+            const esconderPrototipos = flag('as6.avatar_visual_v2') && !flag('as5.hud3d') && !flag('as6.qa_route');
             const itens = ITENS_SOCKET.filter((i) => i.socket === socket
               && (!esconderPrototipos || qualidadeVisualDe(i.id) !== 'prototype' || config.sockets?.[socket] === i.id));
             return (

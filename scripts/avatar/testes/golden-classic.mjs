@@ -314,6 +314,57 @@ for (const hex of ['#000000', '#ffffff']) {
   }
 }
 
+// J) onda 1416 — ACESSORIOS PREMIUM + fit + paridade (#196/#197)
+import { ACESSORIOS_PREMIUM } from '@painel/engine/partes/premium/acessorios';
+import { ACESSORIOS_REGISTRY, fichaDe, conflitoNomeado, regrasDe, podeEquipar } from '@painel/services/AcessoriosRegistry';
+import { PARIDADE_RENDERER, idLogicoDe, avisoParidade } from '@painel/services/ParidadeRenderer';
+import { estadoVazio } from '@painel/nucleo/contratos';
+import { congelarSvg } from '@painel/engine/render';
+ok(ACESSORIOS_PREMIUM.length === 10 && ACESSORIOS_PREMIUM.every((x) => /^ace_px_/.test(x.id) && x.acabamento === 'premium' && x.materialToken), '[J] 10 ace_px_ premium com materialToken');
+ok(!itensDe('acessorio').some((x) => x.id.includes('_px_')) && itemPorId('ace_px_asas') !== undefined, '[J] flag OFF: catalogo sem ace_px_, POR_ID resolve');
+// registry cobre TODOS os acessorios do catalogo (75 + premium)
+const todosAce = PRESETS ? [] : [];
+const idsAce = new Set([...(itensDe('acessorio').map((x) => x.id)), ...ACESSORIOS_PREMIUM.map((x) => x.id)]);
+const semFicha = [...idsAce].filter((id) => !fichaDe(id));
+ok(semFicha.length === 0, '[J] acessorios sem ficha no registry: ' + semFicha.join(','));
+ok(Object.keys(ACESSORIOS_REGISTRY).length >= 85, '[J] registry com ' + Object.keys(ACESSORIOS_REGISTRY).length + ' fichas (< 85)');
+// referencias das regras existem no catalogo
+for (const [id, f] of Object.entries(ACESSORIOS_REGISTRY)) {
+  for (const ref of [...(f.requires ?? []), ...(f.incompatibleWith ?? [])]) {
+    ok(itemPorId(ref) !== undefined, '[J] regra de ' + id + ' referencia id inexistente: ' + ref);
+  }
+}
+// conflito nomeado (P6-A): mascaras cobrem oculos; orbita nunca conflita
+const nomeDe = (id) => itemPorId(id)?.nome ?? id;
+ok(conflitoNomeado('ace_mascara_oni', 'ace_oculos', nomeDe) !== null, '[J] mascara x oculos deveria conflitar (regiao olhos)');
+ok(conflitoNomeado('ace_viseira_vr', 'ace_px_oculos', nomeDe) !== null, '[J] viseira x oculos premium deveria conflitar');
+ok(conflitoNomeado('ace_px_drone', 'ace_px_gato', nomeDe) === null, '[J] orbita NUNCA conflita');
+ok(conflitoNomeado('ace_bone', 'ace_px_colar', nomeDe) === null, '[J] cabeca x pescoco convivem');
+ok((conflitoNomeado('ace_px_asas', 'ace_px_mochila', nomeDe) ?? '').includes('substituem'), '[J] "Asas substituem Mochila" (verbo por classe)');
+// mascaras que escondem barba estao alinhadas ao compat-rosto (1414)
+ok(MASCARAS_ROSTO_FECHADAS.every((m) => fichaDe(m)?.hides?.includes('barba')), '[J] registry desalinhado do compat-rosto (hides barba)');
+// regras §617 alimentam o motor avaliarRegras
+ok(regrasDe('ace_mascara_oni').some((r) => r.rule === 'hide_body_region') && podeEquipar('ace_px_asas', estadoVazio()).ok, '[J] regrasDe/podeEquipar via §617');
+// renderAtras nos itens de COSTAS premium; frente presente
+ok(['ace_px_mochila', 'ace_px_asas', 'ace_px_coroa'].every((id) => itemPorId(id)?.renderAtras), '[J] renderAtras ausente nos itens de costas/coroa');
+const cAsas = cfg({ camadas: { ...CONFIG_PADRAO.camadas, acessorio: 'ace_px_asas' }, acabamento: 'premium' });
+ok(svgDe(cAsas, { uid: 'as', premium: true }).includes('aspxasa'), '[J] asas premium sem a massa atras');
+ok(!svgDe(cAsas, { uid: 'as' }).includes('aspxasa'), '[J] renderAtras NAO pode vazar sem premium (§651)');
+// pets/drones com MOTION SMIL que o congelarSvg remove (thumbs estaticas)
+const cPet = cfg({ camadas: { ...CONFIG_PADRAO.camadas, acessorio: 'ace_px_gato' }, acabamento: 'premium' });
+const svgPet = svgDe(cPet, { uid: 'pt', premium: true });
+ok(svgPet.includes('<animate'), '[J] pet premium sem motion SMIL');
+ok(!congelarSvg(svgPet).includes('<animate'), '[J] congelarSvg deveria remover o motion');
+// props na mao (corpo inteiro) e relogio no pulso
+const cProp = cfg({ camadas: { ...CONFIG_PADRAO.camadas, acessorio_mao_d: 'ace_px_cetro', acessorio_pulso_e: 'ace_px_relogio' }, acabamento: 'premium' });
+const svgProp = svgDe(cProp, { uid: 'pr', premium: true, palco: true, enquadramento: 'corpo' });
+ok(svgProp.includes('l 16 -64') && svgProp.includes('184.5'), '[J] cetro/relogio ausentes no corpo inteiro');
+ok(svgDe(cProp, { uid: 'pr', premium: true }) === svgDe(cfg({ acabamento: 'premium' }), { uid: 'pr', premium: true }), '[J] props corporais nao tocam o busto');
+// paridade semantica (#197)
+ok(Object.values(PARIDADE_RENDERER).every((v) => !v.classic || itemPorId(v.classic) !== undefined), '[J] paridade referencia 2D inexistente');
+ok(idLogicoDe('ace_px_coroa') === 'coroa' && idLogicoDe('rou_terno') === null, '[J] idLogicoDe');
+ok(avisoParidade('ace_px_coroa') === null, '[J] item com par 3D nao pode gerar aviso');
+
 // D) goldens p01-p06 + c01-c02 (1411/1412) + h01-h06 + p07-p08 (1413)
 const p01 = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_terno' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, destaque: '#c9a75a' } });
 const p02 = cfg({ base: 'bas_redonda', camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_jaqueta', cabelo: 'cab_ondulado' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, cabelo: '#d9b166', roupa: '#7a2d3c' } });
@@ -366,6 +417,9 @@ const p09 = aplicarConjunto(c01, CONJUNTOS.find((x) => x.id === 'cj_o01_boardroo
 const p10 = aplicarConjunto(c02, CONJUNTOS.find((x) => x.id === 'cj_o02_offduty')).config;
 const p11 = aplicarConjunto(cfg({ base: 'bas_px_quadrada', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_determinado', boca: 'boc_px_determinada' }, acabamento: 'premium' }), CONJUNTOS.find((x) => x.id === 'cj_o06_noite')).config;
 casos['p09-outfit-boardroom-corpo'] = svgDe(p09, { premium: true, palco: true, enquadramento: 'corpo' });
+// onda 1416: p12 = golden de acessorios premium (oculos+coroa+colar+asas)
+const p12 = cfg({ ...c01, camadas: { ...c01.camadas, acessorio_rosto: 'ace_px_oculos', acessorio_cabeca: 'ace_px_coroa', acessorio_pescoco: 'ace_px_colar', acessorio_costas: 'ace_px_asas' } });
+casos['p12-acessorios-busto'] = svgDe(p12, { premium: true });
 casos['p10-outfit-offduty-corpo'] = svgDe(p10, { premium: true, palco: true, enquadramento: 'corpo' });
 casos['p11-outfit-gala-corpo'] = svgDe(p11, { premium: true, palco: true, enquadramento: 'corpo' });
 const hashes: Record<string, { sha256: string; bytes: number; nos: number; filtros: number }> = {};
@@ -391,7 +445,7 @@ const { falhas, hashes } = JSON.parse(bruto.trim().split('\n').pop());
 
 if (GRAVAR) {
   writeFileSync(BASELINE, `${JSON.stringify({
-    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1415, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414), p09–p11 (Golden Outfits 1415 no corpo inteiro). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
+    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1416, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414), p09–p11 (Golden Outfits 1415), p12 (acessórios premium 1416). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
     casos: hashes,
   }, null, 2)}\n`);
   console.log(`[golden-classic] baseline gravada (${Object.keys(hashes).length} casos)`);

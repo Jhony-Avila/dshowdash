@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeftRight, BookmarkPlus, Check, Eye, Layers, Lock, Pause, Pin, Play, Star, X } from 'lucide-react';
 import type { CanalCor, AvatarConfig } from '../domain/types';
+import { avisoParidade } from '../services/ParidadeRenderer'; // onda 1416 (#197)
 import {
   COLECOES, RARIDADES, itemPorId, itensDe, progressoColecao, validarConfig,
 } from '../services/AvatarCatalog';
@@ -249,6 +250,11 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
         })()}
         {(item.usaCores?.length ?? 0) > 0 && (
           <p className="avst5-det-meta">Canais de cor: {item.usaCores!.map((c) => NOME_CANAL[c]).join(', ')}</p>
+        )}
+        {/* onda 1416 (#197, as6.acess_2d_premium): aviso de PARIDADE entre
+            renderers — só quando o item não tem par no outro mundo */}
+        {flag('as6.acess_2d_premium') && avisoParidade(item.id) && (
+          <p className="avst5-det-meta" data-teste="det-paridade">{avisoParidade(item.id)}</p>
         )}
         {/* onda 1401 (#150, as6.variantes — elevação): VARIANTES DE COR
             curadas do asset. Clicar equipa (se preciso) e preenche os

@@ -7,7 +7,7 @@
     "corpoBytes": 81920
   },
   "resumo": {
-    "casos": 86,
+    "casos": 96,
     "erros": [],
     "avisos": []
   },
@@ -527,6 +527,66 @@
       "nos": 273,
       "filtros": 0,
       "gradientes": 16
+    },
+    "acess-ace_px_oculos": {
+      "bytes": 4905,
+      "nos": 83,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "acess-ace_px_coroa": {
+      "bytes": 5144,
+      "nos": 90,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "acess-ace_px_colar": {
+      "bytes": 4894,
+      "nos": 86,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "acess-ace_px_mochila": {
+      "bytes": 5092,
+      "nos": 87,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "acess-ace_px_asas": {
+      "bytes": 5038,
+      "nos": 85,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "acess-ace_px_brinco": {
+      "bytes": 4403,
+      "nos": 75,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "acess-ace_px_relogio": {
+      "bytes": 4153,
+      "nos": 72,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "acess-ace_px_cetro": {
+      "bytes": 4153,
+      "nos": 72,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "acess-ace_px_drone": {
+      "bytes": 4980,
+      "nos": 88,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "acess-ace_px_gato": {
+      "bytes": 5189,
+      "nos": 90,
+      "filtros": 0,
+      "gradientes": 6
     }
   }
 }

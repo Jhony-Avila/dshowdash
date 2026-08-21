@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 471,
+    "itens2d": 481,
     "categorias": 17,
     "titulos": 30,
     "colecoes": 12,
@@ -338,7 +338,57 @@
       "raridade": "comum"
     },
     {
+      "id": "ace_px_asas",
+      "categoria": "acessorio",
+      "raridade": "epico"
+    },
+    {
       "id": "ace_px_bota",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_px_brinco",
+      "categoria": "acessorio",
+      "raridade": "comum"
+    },
+    {
+      "id": "ace_px_cetro",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_px_colar",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_px_coroa",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_px_drone",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_px_gato",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_px_mochila",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_px_oculos",
+      "categoria": "acessorio",
+      "raridade": "incomum"
+    },
+    {
+      "id": "ace_px_relogio",
       "categoria": "acessorio",
       "raridade": "incomum"
     },

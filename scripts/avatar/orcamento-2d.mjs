@@ -10,7 +10,7 @@
 // (o diff é o relatório). Acima do teto: aviso em item clássico (nunca
 // reprovação retroativa), ERRO em item premium (`_px_`/acabamento).
 // Uso (da raiz): node scripts/avatar/orcamento-2d.mjs [--json]
-// @version 1.1.0  @created 2026-08-20  @updated 2026-08-21 (ondas 1413–1415)
+// @version 1.1.0  @created 2026-08-20  @updated 2026-08-21 (ondas 1413–1416)
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -73,6 +73,14 @@ for (const it of SOBREPECAS_PREMIUM) {
   casos['sobrepeca-' + it.id] = { premium: true, corpo: false, m: medir(svgDe(c, { uid: 'orc', premium: true })) };
 }
 casos['premium-outfit-corpo'] = { premium: true, corpo: true, m: medir(svgDe(cfg({ base: 'bas_px_quadrada', camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_blazer', roupa_sobre: 'sob_px_capa', roupa_inferior: 'rin_jeans', acessorio_pes: 'ace_px_bota', cabelo: 'cab_px_lateral', barba: 'brb_cheia', olhos: 'olh_px_determinado', boca: 'boc_px_determinada' }, acabamento: 'premium' }), { uid: 'orc', premium: true, faceV2: true, palco: true, enquadramento: 'corpo' })) };
+// onda 1416: acessorios premium — cada um no busto golden (asas/mochila com
+// renderAtras contam no peso do busto premium)
+import { ACESSORIOS_PREMIUM } from '@painel/engine/partes/premium/acessorios';
+for (const item of ACESSORIOS_PREMIUM) {
+  const chave = 'acessorio_' + (item.slot ?? 'cabeca');
+  const c = cfg({ camadas: { ...CONFIG_PADRAO.camadas, [chave]: item.id }, acabamento: 'premium' as const });
+  casos['acess-' + item.id] = { premium: true, corpo: false, m: medir(svgDe(c, { uid: 'orc', premium: true })) };
+}
 console.log(JSON.stringify(casos));
 `);
 

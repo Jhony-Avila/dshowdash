@@ -3,37 +3,37 @@
   "artBibleVersion": "1.0",
   "kpiPrincipal": {
     "nome": "Premium Coverage %",
-    "catalogo2d": 10.4,
+    "catalogo2d": 12.3,
     "assets3d": 0
   },
   "catalogo2d": {
     "geral": {
-      "total": 471,
+      "total": 481,
       "prototype": 0,
       "legacy": 7,
       "production": 415,
-      "premium": 49,
+      "premium": 59,
       "hero": 0,
-      "premiumCoveragePct": 10.4,
+      "premiumCoveragePct": 12.3,
       "productionReadyPct": 98.5,
       "qaAprovadoPct": 0,
       "qa": {
-        "pending": 471
+        "pending": 481
       }
     },
     "porCategoria": {
       "acessorio": {
-        "total": 78,
+        "total": 88,
         "prototype": 0,
         "legacy": 0,
         "production": 75,
-        "premium": 3,
+        "premium": 13,
         "hero": 0,
-        "premiumCoveragePct": 3.8,
+        "premiumCoveragePct": 14.8,
         "productionReadyPct": 100,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 78
+          "pending": 88
         }
       },
       "aura": {
