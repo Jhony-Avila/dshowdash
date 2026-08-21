@@ -365,6 +365,47 @@ ok(Object.values(PARIDADE_RENDERER).every((v) => !v.classic || itemPorId(v.class
 ok(idLogicoDe('ace_px_coroa') === 'coroa' && idLogicoDe('rou_terno') === null, '[J] idLogicoDe');
 ok(avisoParidade('ace_px_coroa') === null, '[J] item com par 3D nao pode gerar aviso');
 
+// K) onda 1417 — AMBIENTE PREMIUM: fundos em planos, auras, molduras (#199/#200)
+import { FUNDOS_PREMIUM, AURAS_PREMIUM, MOLDURAS_PREMIUM } from '@painel/engine/partes/premium/ambiente';
+import { FICHAS_AURA, fichaAuraDe, cobreRosto, LOOKS_2D } from '@painel/services/RegistroEfeitos';
+ok(FUNDOS_PREMIUM.length === 6 && AURAS_PREMIUM.length === 4 && MOLDURAS_PREMIUM.length === 4, '[K] 6 fundos + 4 auras + 4 molduras premium');
+ok(FUNDOS_PREMIUM.every((x) => /^fun_px_/.test(x.id)) && AURAS_PREMIUM.every((x) => /^aur_px_/.test(x.id)) && MOLDURAS_PREMIUM.every((x) => /^mol_px_/.test(x.id)), '[K] naming #166');
+ok(!itensDe('fundo').some((x) => x.id.includes('_px_')) && !itensDe('aura').some((x) => x.id.includes('_px_')) && itemPorId('fun_px_estudio') !== undefined, '[K] flag OFF: catalogo sem _px_, POR_ID resolve');
+// registro de auras: ficha p/ TODAS + cobreRosto HARD FAIL
+const idsAura = [...itensDe('aura').map((x) => x.id), ...AURAS_PREMIUM.map((x) => x.id)];
+ok(idsAura.every((id) => fichaAuraDe(id) !== undefined), '[K] aura sem ficha no RegistroEfeitos: ' + idsAura.filter((id) => !fichaAuraDe(id)).join(','));
+ok(idsAura.every((id) => cobreRosto(id) === false), '[K] HARD FAIL: aura com cobreRosto=true');
+ok(Object.keys(FICHAS_AURA).length >= 19, '[K] registro com ' + Object.keys(FICHAS_AURA).length + ' fichas');
+// fundos em PLANOS: far/mid/floor no render; fg no renderPlanos.frente
+for (const f of FUNDOS_PREMIUM) {
+  const svg = f.render(paletaFake(), 'k');
+  ok(svg.includes('data-plano="far"') && svg.includes('data-plano="mid"') && svg.includes('data-plano="floor"'), '[K] ' + f.id + ' sem os 3 planos');
+  ok(!!f.renderPlanos?.frente && f.renderPlanos.frente(paletaFake(), 'k').includes('data-plano="fg"'), '[K] ' + f.id + ' sem atmosfera fg');
+}
+// planos consumidos no BUSTO PALCO premium; ausentes sem premium (§651)
+const cBg = cfg({ camadas: { ...CONFIG_PADRAO.camadas, fundo: 'fun_px_estudio' }, acabamento: 'premium' });
+ok(svgDe(cBg, { uid: 'bg', premium: true, palco: true }).includes('data-plano="fg"'), '[K] atmosfera premium ausente no palco');
+ok(!svgDe(cBg, { uid: 'bg', palco: true }).includes('data-plano="fg"'), '[K] atmosfera NAO pode vazar sem premium');
+// auras premium: rear glow + main (data-nucleo) + particulas na frente
+ok(AURAS_PREMIUM.every((a) => a.renderAtras && a.renderFrente && a.render(paletaFake(), 'k').includes('data-nucleo')), '[K] aura premium sem os 3 fragmentos/data-nucleo');
+const cAura = cfg({ camadas: { ...CONFIG_PADRAO.camadas, aura: 'aur_px_fluxo' }, acabamento: 'premium' });
+ok(svgDe(cAura, { uid: 'au', premium: true }).includes('aupxag'), '[K] rear glow da aura ausente no premium');
+ok(!svgDe(cAura, { uid: 'au' }).includes('aupxag'), '[K] rear glow NAO pode vazar sem premium (§651)');
+// param nucleo: soV2 (so aur_px_), consumido via data-nucleo
+ok((paramsDaCamada('aura') ?? []).every((d) => d.id !== 'nucleo'), '[K] aura legada nao pode ver nucleo');
+ok((paramsDaCamada('aura', 'aur_px_fluxo') ?? []).some((d) => d.id === 'nucleo'), '[K] aur_px_ deveria ganhar nucleo');
+ok(sanitizarParams('aura', { nucleo: 1 }, 'aur_neon') === undefined && sanitizarParams('aura', { nucleo: 1 }, 'aur_px_fluxo')?.nucleo === 1, '[K] nucleo gated por soV2');
+const cNuc = cfg({ camadas: { ...CONFIG_PADRAO.camadas, aura: 'aur_px_fluxo' }, params: { aura: { nucleo: 1 } }, acabamento: 'premium' });
+ok(svgDe(cNuc, { uid: 'au', premium: true }).includes('data-nucleo opacity="0.95"'), '[K] nucleo 1 deveria abrir o miolo a 0.95');
+// molduras: centro SEMPRE livre (nenhum rect grande com fill solido)
+for (const m of MOLDURAS_PREMIUM) {
+  const svg = m.render(paletaFake(), 'k');
+  const grandes = [...svg.matchAll(/<rect[^>]*width="2[0-3][0-9]"[^>]*>/g)].map((x) => x[0]);
+  ok(grandes.length > 0 && grandes.every((r) => r.includes('fill="none"')), '[K] ' + m.id + ' cobre o centro (rect solido)');
+}
+// looks 2D: contrato presente, portrait-safe declarado
+ok(LOOKS_2D.length === 4 && LOOKS_2D.filter((l) => l.portraitSafe).length === 2, '[K] LOOKS_2D incompleto');
+
 // D) goldens p01-p06 + c01-c02 (1411/1412) + h01-h06 + p07-p08 (1413)
 const p01 = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_terno' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, destaque: '#c9a75a' } });
 const p02 = cfg({ base: 'bas_redonda', camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_jaqueta', cabelo: 'cab_ondulado' }, acabamento: 'premium', cores: { ...CONFIG_PADRAO.cores, cabelo: '#d9b166', roupa: '#7a2d3c' } });
@@ -420,6 +461,13 @@ casos['p09-outfit-boardroom-corpo'] = svgDe(p09, { premium: true, palco: true, e
 // onda 1416: p12 = golden de acessorios premium (oculos+coroa+colar+asas)
 const p12 = cfg({ ...c01, camadas: { ...c01.camadas, acessorio_rosto: 'ace_px_oculos', acessorio_cabeca: 'ace_px_coroa', acessorio_pescoco: 'ace_px_colar', acessorio_costas: 'ace_px_asas' } });
 casos['p12-acessorios-busto'] = svgDe(p12, { premium: true });
+// onda 1417: p13-p15 = ambiente premium (fundo em planos + aura + moldura)
+const p13 = cfg({ ...c01, camadas: { ...c01.camadas, fundo: 'fun_px_estudio', aura: 'aur_px_fluxo', moldura: 'mol_px_ouro' } });
+const p14 = cfg({ ...c02, camadas: { ...c02.camadas, fundo: 'fun_px_neon', aura: 'aur_px_chama' } });
+const p15 = cfg({ base: 'bas_px_diamante', camadas: { ...CONFIG_PADRAO.camadas, olhos: 'olh_px_felino', boca: 'boc_px_pensativa', fundo: 'fun_px_nebulosa', aura: 'aur_px_estelar', moldura: 'mol_px_eclipse' }, params: { aura: { nucleo: 1 } }, coresCamada: { aura: { secundario: '#4cd9e8' } }, acabamento: 'premium' });
+casos['p13-ambiente-busto'] = svgDe(p13, { premium: true });
+casos['p14-ambiente-palco'] = svgDe(p14, { premium: true, palco: true });
+casos['p15-ambiente-busto'] = svgDe(p15, { premium: true });
 casos['p10-outfit-offduty-corpo'] = svgDe(p10, { premium: true, palco: true, enquadramento: 'corpo' });
 casos['p11-outfit-gala-corpo'] = svgDe(p11, { premium: true, palco: true, enquadramento: 'corpo' });
 const hashes: Record<string, { sha256: string; bytes: number; nos: number; filtros: number }> = {};
@@ -445,7 +493,7 @@ const { falhas, hashes } = JSON.parse(bruto.trim().split('\n').pop());
 
 if (GRAVAR) {
   writeFileSync(BASELINE, `${JSON.stringify({
-    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1416, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414), p09–p11 (Golden Outfits 1415), p12 (acessórios premium 1416). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
+    descricao: 'GOLDEN CLASSIC PREMIUM (ondas 1411–1417, decisão #159) — sha256 do SVG premium por caso: p01/p02 (roupas × busto/palco/corpo), p03–p06 (faces 1412), c01/c02 (presets golden no palco), h01–h06 (Golden Hair 1413: 2 estilos × 3 cores), p07/p08 (goldens completos com cabelo premium), f01–f04 (Golden Face v2 1414), p09–p11 (Golden Outfits 1415), p12 (acessórios 1416), p13–p15 (ambiente 1417). Regenerar: node scripts/avatar/testes/golden-classic.mjs --gravar (revisar o diff no MESMO commit — doutrina #83; mudança visual premium exige validação do Jhony antes de ligar a flag).',
     casos: hashes,
   }, null, 2)}\n`);
   console.log(`[golden-classic] baseline gravada (${Object.keys(hashes).length} casos)`);

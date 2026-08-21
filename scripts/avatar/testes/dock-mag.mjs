@@ -67,8 +67,13 @@ const arrastar = async (p, box, dist) => {
     await arrastar(p, box, 260);
     const s1 = await scrollDock(p);
     ok(s1 > s0 + 150, `drag não rolou o esperado (${s0}→${s1})`);
-    await p.waitForTimeout(120);
-    const s2 = await scrollDock(p);
+    // onda 1417: sob carga o rAF do momentum pode atrasar — AMOSTRA até
+    // ~1,2s procurando o avanço (qualquer amostra > s1+8 prova o momentum)
+    let s2 = s1;
+    for (let i = 0; i < 10 && s2 <= s1 + 8; i++) {
+      await p.waitForTimeout(120);
+      s2 = Math.max(s2, await scrollDock(p));
+    }
     ok(s2 > s1 + 8, `sem momentum após soltar (${s1}→${s2})`);
     // snap §104: assenta em múltiplo do passo do card — sob carga o
     // momentum+smooth podem demorar; espera ATÉ estabilizar (máx ~6s)

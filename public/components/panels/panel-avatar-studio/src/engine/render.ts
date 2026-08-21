@@ -257,7 +257,10 @@ export function renderAvatar(
   let premiumPlanoFrente = '';
   if (opcoes.premium) {
     let temSombraPropria = false;
-    for (const chave of ORDEM_CAMADAS) {
+    // onda 1417 (#200): camadas de AMBIENTE também têm hooks premium
+    // (fundo/banner/aura/moldura) — fora do ORDEM_CAMADAS do busto
+    const chavesHooks: CamadaId[] = [...ORDEM_CAMADAS, 'fundo', 'banner', 'aura', 'moldura'];
+    for (const chave of chavesHooks) {
       const idc = config.camadas[chave];
       if (!idc || idc === 'nenhum') continue;
       const def = resolver(idc);
@@ -349,7 +352,7 @@ export function renderAvatar(
     } else {
       // planos com sobre-escala: o parallax translada sem expor a borda do clip
       conteudo =
-        `<g data-anim="plano-fundo"><g transform="translate(120 120) scale(1.08) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
+        `<g data-anim="plano-fundo"><g transform="translate(120 120) scale(1.08) translate(-120 -120)">${fundo}${efeitoAtras}</g>${premiumPlanoAtras}</g>` +
         `<g data-anim="plano-personagem">${premiumSombra}${premiumAtras}<g data-anim="personagem">` +
           envolverFigura(
             pintar(config.base) + idadeSvg + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.roupa_sobre, 'roupa_sobre') + pintar(config.camadas.emblema, 'emblema') +
@@ -362,7 +365,7 @@ export function renderAvatar(
             config, 236,
           ) +
         `${premiumFrente}</g></g>` +
-        `<g data-anim="plano-frente"><g transform="translate(120 120) scale(1.1) translate(-120 -120)">${efeitoFrente}</g></g>`;
+        `<g data-anim="plano-frente"><g transform="translate(120 120) scale(1.1) translate(-120 -120)">${efeitoFrente}</g>${premiumPlanoFrente}</g>`;
     }
   } else {
     const personagem = envolverFigura(

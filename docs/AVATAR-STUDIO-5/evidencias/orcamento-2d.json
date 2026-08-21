@@ -7,7 +7,7 @@
     "corpoBytes": 81920
   },
   "resumo": {
-    "casos": 96,
+    "casos": 110,
     "erros": [],
     "avisos": []
   },
@@ -587,6 +587,90 @@
       "nos": 90,
       "filtros": 0,
       "gradientes": 6
+    },
+    "fundo-fun_px_estudio": {
+      "bytes": 5461,
+      "nos": 111,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "fundo-fun_px_metropole": {
+      "bytes": 5459,
+      "nos": 113,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "fundo-fun_px_horizonte": {
+      "bytes": 5126,
+      "nos": 106,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "fundo-fun_px_neon": {
+      "bytes": 5353,
+      "nos": 107,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "fundo-fun_px_biblioteca": {
+      "bytes": 5988,
+      "nos": 128,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "fundo-fun_px_nebulosa": {
+      "bytes": 5550,
+      "nos": 117,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "aura-aur_px_fluxo": {
+      "bytes": 5149,
+      "nos": 94,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "aura-aur_px_cristal": {
+      "bytes": 5010,
+      "nos": 93,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "aura-aur_px_chama": {
+      "bytes": 5445,
+      "nos": 97,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "aura-aur_px_estelar": {
+      "bytes": 5286,
+      "nos": 95,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "moldura-mol_px_ouro": {
+      "bytes": 4528,
+      "nos": 75,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "moldura-mol_px_holo": {
+      "bytes": 4555,
+      "nos": 76,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "moldura-mol_px_laurel": {
+      "bytes": 5126,
+      "nos": 86,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "moldura-mol_px_eclipse": {
+      "bytes": 4504,
+      "nos": 75,
+      "filtros": 0,
+      "gradientes": 5
     }
   }
 }

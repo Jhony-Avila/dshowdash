@@ -3,22 +3,22 @@
   "artBibleVersion": "1.0",
   "kpiPrincipal": {
     "nome": "Premium Coverage %",
-    "catalogo2d": 12.3,
+    "catalogo2d": 14.7,
     "assets3d": 0
   },
   "catalogo2d": {
     "geral": {
-      "total": 481,
+      "total": 495,
       "prototype": 0,
       "legacy": 7,
       "production": 415,
-      "premium": 59,
+      "premium": 73,
       "hero": 0,
-      "premiumCoveragePct": 12.3,
-      "productionReadyPct": 98.5,
+      "premiumCoveragePct": 14.7,
+      "productionReadyPct": 98.6,
       "qaAprovadoPct": 0,
       "qa": {
-        "pending": 481
+        "pending": 495
       }
     },
     "porCategoria": {
@@ -37,17 +37,17 @@
         }
       },
       "aura": {
-        "total": 15,
+        "total": 19,
         "prototype": 0,
         "legacy": 0,
         "production": 15,
-        "premium": 0,
+        "premium": 4,
         "hero": 0,
-        "premiumCoveragePct": 0,
+        "premiumCoveragePct": 21.1,
         "productionReadyPct": 100,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 15
+          "pending": 19
         }
       },
       "banner": {
@@ -149,31 +149,31 @@
         }
       },
       "fundo": {
-        "total": 20,
+        "total": 26,
         "prototype": 0,
         "legacy": 0,
         "production": 20,
-        "premium": 0,
+        "premium": 6,
         "hero": 0,
-        "premiumCoveragePct": 0,
+        "premiumCoveragePct": 23.1,
         "productionReadyPct": 100,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 20
+          "pending": 26
         }
       },
       "moldura": {
-        "total": 24,
+        "total": 28,
         "prototype": 0,
         "legacy": 0,
         "production": 24,
-        "premium": 0,
+        "premium": 4,
         "hero": 0,
-        "premiumCoveragePct": 0,
+        "premiumCoveragePct": 14.3,
         "productionReadyPct": 100,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 24
+          "pending": 28
         }
       },
       "nariz": {

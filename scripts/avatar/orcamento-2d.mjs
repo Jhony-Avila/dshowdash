@@ -10,7 +10,7 @@
 // (o diff é o relatório). Acima do teto: aviso em item clássico (nunca
 // reprovação retroativa), ERRO em item premium (`_px_`/acabamento).
 // Uso (da raiz): node scripts/avatar/orcamento-2d.mjs [--json]
-// @version 1.1.0  @created 2026-08-20  @updated 2026-08-21 (ondas 1413–1416)
+// @version 1.1.0  @created 2026-08-20  @updated 2026-08-21 (ondas 1413–1417)
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -80,6 +80,15 @@ for (const item of ACESSORIOS_PREMIUM) {
   const chave = 'acessorio_' + (item.slot ?? 'cabeca');
   const c = cfg({ camadas: { ...CONFIG_PADRAO.camadas, [chave]: item.id }, acabamento: 'premium' as const });
   casos['acess-' + item.id] = { premium: true, corpo: false, m: medir(svgDe(c, { uid: 'orc', premium: true })) };
+}
+// onda 1417: ambiente premium — fundos (palco, com atmosfera), auras e
+// molduras no busto
+import { FUNDOS_PREMIUM, AURAS_PREMIUM, MOLDURAS_PREMIUM } from '@painel/engine/partes/premium/ambiente';
+for (const [cat, lista] of [['fundo', FUNDOS_PREMIUM], ['aura', AURAS_PREMIUM], ['moldura', MOLDURAS_PREMIUM]] as const) {
+  for (const item of lista) {
+    const c = cfg({ camadas: { ...CONFIG_PADRAO.camadas, [cat]: item.id }, acabamento: 'premium' as const });
+    casos[cat + '-' + item.id] = { premium: true, corpo: false, m: medir(svgDe(c, { uid: 'orc', premium: true, ...(cat === 'fundo' ? { palco: true } : {}) })) };
+  }
 }
 console.log(JSON.stringify(casos));
 `);

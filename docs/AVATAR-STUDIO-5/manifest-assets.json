@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 481,
+    "itens2d": 495,
     "categorias": 17,
     "titulos": 30,
     "colecoes": 12,
@@ -524,6 +524,26 @@
     },
     {
       "id": "aur_prisma",
+      "categoria": "aura",
+      "raridade": "epico"
+    },
+    {
+      "id": "aur_px_chama",
+      "categoria": "aura",
+      "raridade": "epico"
+    },
+    {
+      "id": "aur_px_cristal",
+      "categoria": "aura",
+      "raridade": "epico"
+    },
+    {
+      "id": "aur_px_estelar",
+      "categoria": "aura",
+      "raridade": "epico"
+    },
+    {
+      "id": "aur_px_fluxo",
       "categoria": "aura",
       "raridade": "epico"
     },
@@ -1743,6 +1763,36 @@
       "raridade": "incomum"
     },
     {
+      "id": "fun_px_biblioteca",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_px_estudio",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_px_horizonte",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_px_metropole",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_px_nebulosa",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
+      "id": "fun_px_neon",
+      "categoria": "fundo",
+      "raridade": "raro"
+    },
+    {
       "id": "fun_synthwave",
       "categoria": "fundo",
       "raridade": "raro"
@@ -1841,6 +1891,26 @@
       "id": "mol_pontilhada",
       "categoria": "moldura",
       "raridade": "comum"
+    },
+    {
+      "id": "mol_px_eclipse",
+      "categoria": "moldura",
+      "raridade": "raro"
+    },
+    {
+      "id": "mol_px_holo",
+      "categoria": "moldura",
+      "raridade": "raro"
+    },
+    {
+      "id": "mol_px_laurel",
+      "categoria": "moldura",
+      "raridade": "raro"
+    },
+    {
+      "id": "mol_px_ouro",
+      "categoria": "moldura",
+      "raridade": "raro"
     },
     {
       "id": "mol_rgb",

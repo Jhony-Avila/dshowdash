@@ -1,7 +1,7 @@
 {
   "gerado_por": "scripts/avatar/inventario-visual.mjs",
   "catalogo2d": {
-    "total": 481,
+    "total": 495,
     "categorias": [
       "base",
       "cabelo",
@@ -345,27 +345,55 @@
         "semFoco": []
       },
       "fundo": {
-        "total": 20,
+        "total": 26,
         "temas": {
           "aventura": 1,
           "casual": 1,
-          "clássico": 2,
+          "clássico": 4,
+          "cyberpunk": 1,
           "dshow": 1,
+          "espacial": 1,
           "espaço": 3,
-          "executivo": 1,
+          "executivo": 2,
           "fantasia": 1,
           "gamer": 1,
           "natureza": 1,
           "oriental": 1,
           "retrô": 1,
           "tecnologia": 5,
-          "urbano": 1
+          "urbano": 2
         },
         "raridades": {
           "comum": 4,
           "epico": 4,
           "incomum": 5,
           "lendario": 2,
+          "raro": 11
+        },
+        "slots": {},
+        "subcategorias": {},
+        "renderCorpo": 0,
+        "atras": 0,
+        "semFoco": []
+      },
+      "aura": {
+        "total": 19,
+        "temas": {
+          "cyberpunk": 1,
+          "dshow": 1,
+          "espacial": 1,
+          "espaço": 2,
+          "fantasia": 9,
+          "natureza": 1,
+          "sci-fi": 2,
+          "tecnologia": 2
+        },
+        "raridades": {
+          "epico": 8,
+          "exclusivo": 1,
+          "incomum": 2,
+          "lendario": 2,
+          "mitico": 1,
           "raro": 5
         },
         "slots": {},
@@ -375,20 +403,21 @@
         "semFoco": []
       },
       "moldura": {
-        "total": 24,
+        "total": 28,
         "temas": {
           "casual": 2,
           "clima": 1,
-          "clássico": 4,
+          "clássico": 6,
           "conquista": 1,
           "cyberpunk": 2,
           "dshow": 1,
+          "espacial": 1,
           "espaço": 1,
           "esportivo": 1,
           "executivo": 1,
           "fantasia": 5,
           "gamer": 1,
-          "tecnologia": 4
+          "tecnologia": 5
         },
         "raridades": {
           "comum": 4,
@@ -397,7 +426,7 @@
           "incomum": 3,
           "lendario": 4,
           "mitico": 2,
-          "raro": 5
+          "raro": 9
         },
         "slots": {},
         "subcategorias": {},
@@ -431,31 +460,6 @@
         "subcategorias": {},
         "renderCorpo": 0,
         "atras": 12,
-        "semFoco": []
-      },
-      "aura": {
-        "total": 15,
-        "temas": {
-          "cyberpunk": 1,
-          "dshow": 1,
-          "espaço": 2,
-          "fantasia": 7,
-          "natureza": 1,
-          "sci-fi": 2,
-          "tecnologia": 1
-        },
-        "raridades": {
-          "epico": 4,
-          "exclusivo": 1,
-          "incomum": 2,
-          "lendario": 2,
-          "mitico": 1,
-          "raro": 5
-        },
-        "slots": {},
-        "subcategorias": {},
-        "renderCorpo": 0,
-        "atras": 0,
         "semFoco": []
       },
       "banner": {

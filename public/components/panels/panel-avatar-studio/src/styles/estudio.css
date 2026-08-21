@@ -1228,6 +1228,31 @@
 .avst5-viewport[data-luz="fria"] .avst5-palco-premium g[id$="pxcatchR"] { transform: translate(-1.4px, -0.4px); }
 .avst5-viewport[data-luz="dramatica"] .avst5-palco-premium g[id$="pxcatchL"],
 .avst5-viewport[data-luz="dramatica"] .avst5-palco-premium g[id$="pxcatchR"] { transform: translate(0, 1px) scale(0.85); }
+/* ─ onda 1417 (#200, as6.classico_premium): PLANOS DE PROFUNDIDADE dos
+   fundos premium — parallax sutil + blur do plano FAR por CSS (apresentação;
+   o SVG salvo é estático). reduced-motion desliga o movimento. */
+.avst5-palco-premium g[data-plano] { transition: transform 0.6s ease; }
+.avst5-palco-premium g[data-plano="far"] { filter: blur(1.2px); }
+.avst5-palco-premium g[data-plano="fg"] { filter: blur(0.4px); }
+@media (prefers-reduced-motion: no-preference) {
+  .avst5-viewport[data-luz="quente"] .avst5-palco-premium g[data-plano="far"] { transform: translateX(1.6px); }
+  .avst5-viewport[data-luz="fria"] .avst5-palco-premium g[data-plano="far"] { transform: translateX(-1.6px); }
+  .avst5-viewport[data-luz="quente"] .avst5-palco-premium g[data-plano="fg"] { transform: translateX(-2.2px); }
+  .avst5-viewport[data-luz="fria"] .avst5-palco-premium g[data-plano="fg"] { transform: translateX(2.2px); }
+}
+
+/* ─ onda 1417 (#199, P8-F): LOOKS 2D como APRESENTAÇÃO — [data-look] no
+   palco muda luz/vinheta/rim por CSS vars; transição suave entre looks;
+   variantes portrait-safe (studio/portrait) não tocam o rosto. A UI de
+   seleção chega na 1418; o contrato vive em RegistroEfeitos.LOOKS_2D. */
+.avst5-palco-premium { transition: box-shadow 0.6s ease, background 0.6s ease; }
+.avst5-palco-premium[data-look="studio"] { box-shadow: inset 0 0 60px rgba(10, 12, 20, 0.35); }
+.avst5-palco-premium[data-look="portrait"] { box-shadow: inset 0 -30px 70px rgba(10, 12, 20, 0.45); }
+.avst5-palco-premium[data-look="hero"] { box-shadow: inset 0 -60px 90px rgba(6, 8, 14, 0.65); }
+.avst5-palco-premium[data-look="hero"] g[data-anim="personagem"] { filter: drop-shadow(0 0 10px rgba(160, 180, 255, 0.35)); }
+.avst5-palco-premium[data-look="neon"] { box-shadow: inset 0 0 80px rgba(124, 92, 255, 0.28); }
+.avst5-palco-premium[data-look="neon"] g[data-anim="personagem"] { filter: drop-shadow(0 0 8px rgba(76, 217, 232, 0.4)); }
+
 .avst5-palco { overflow: hidden; position: relative; }
 .avst5-palco svg { filter: drop-shadow(0 18px 40px rgba(0,0,0,.45)); }
 .avst5-salvar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--avst-borda, var(--as6-superficie-4)); font-size: 12px; }

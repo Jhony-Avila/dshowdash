@@ -36,6 +36,9 @@ export const PARAMS_POR_CATEGORIA: Partial<Record<CategoriaId, ParamDef[]>> = {
     { id: 'intensidade', nome: 'Intensidade', min: 0.25, max: 1, passo: 0.05, padrao: 1 },
     { id: 'velocidade', nome: 'Velocidade', min: 0.5, max: 2, passo: 0.1, padrao: 1 },
     { id: 'raio', nome: 'Raio', min: 0.7, max: 1.3, passo: 0.05, padrao: 1 }, // §150.1 (P4)
+      // onda 1417 (#199): NÚCLEO da aura premium — opacidade do miolo
+    // (marcador data-nucleo); soV2 = só artes aur_px_ (mesmo trilho #179)
+    { id: 'nucleo', nome: 'Núcleo', min: 0, max: 1, passo: 0.05, padrao: 0.5, soV2: true },
   ],
   // megas 441-443 (§158, lote 441-450, flag as5.editor_efeitos na UI):
   // EDITOR do efeito equipado — intensidade (<g opacity>) e velocidade
@@ -176,6 +179,13 @@ export function aplicarParamsSvg(chave: CamadaId | string, svg: string, params?:
   if (escala !== undefined) {
     const [cx, cy] = CENTRO_ESCALA[categoriaDaCamada(chave)] ?? [120, 120];
     saida = `<g transform="translate(${cx} ${cy}) scale(${escala}) translate(${-cx} ${-cy})">${saida}</g>`;
+  }
+  // onda 1417 (#199): núcleo — regula a opacidade do miolo marcado com
+  // data-nucleo na arte premium (sem o param, fragmento intocado)
+  const nucleo = valor('nucleo');
+  if (nucleo !== undefined) {
+    const op = Math.round((0.15 + nucleo * 0.8) * 100) / 100;
+    saida = saida.replace(/(<g data-nucleo opacity=")[0-9.]+(")/g, `$1${op}$2`);
   }
   const intensidade = valor('intensidade');
   if (intensidade !== undefined) {
