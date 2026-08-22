@@ -17,7 +17,7 @@
 //   · emissivos limitados ao teto §418.2;
 //   · descarte de materiais E texturas (§419 "descartar recursos").
 import * as THREE from 'three';
-import { familiaDe, type FamiliaMaterialId } from './FamiliasMaterial'; // onda 1408 (#160)
+import { ALBEDO_METAL, corPbrSegura, familiaDe, paramsFamiliaPorTier, tetoEmissivo, type FamiliaMaterialId } from './FamiliasMaterial'; // onda 1408 (#160) + onda 1421 (#208)
 
 /** Canais §420 = vocabulário §73 do 2D. */
 export type Canal3d = 'pele' | 'cabelo' | 'roupa' | 'destaque';
@@ -91,11 +91,23 @@ export function marcarMateriaisPorManifest(
   return r;
 }
 
-/** onda 1408 (#160): aplica a FAMÍLIA marcada (userData.familia) nos
- *  parâmetros PBR do material — só materiais com família declarada (o
- *  resto fica byte a byte). Guarda os valores originais uma vez
- *  (userData.pbrOriginal) para restauração exata. Idempotente. */
-export function aplicarFamilias(raiz: THREE.Object3D, tier: 'economico' | 'medio' | 'alto' = 'medio'): number {
+/** onda 1408 (#160) + onda 1421 (#208): aplica a FAMÍLIA marcada
+ *  (userData.familia) nos parâmetros PBR do material — só materiais com
+ *  família declarada (o resto fica byte a byte). Guarda os valores
+ *  originais uma vez (userData.pbrOriginal) para restauração exata.
+ *  Idempotente. Onda 1421: parâmetros por TIER via paramsFamiliaPorTier
+ *  (econômico sem extras físicos — "material por LOD"), extras physical
+ *  (transmission/sheen/clearcoat/anisotropy) SÓ quando o material é
+ *  MeshPhysicalMaterial, naoTingir herdado da FAMÍLIA (olhos/dentes/
+ *  metais nobres), albedo PBR-safe dos metais (via pipeline de cores),
+ *  política de alpha declarada (mask/blend) e teto emissivo por
+ *  RARIDADE (§1636); holograma/energia = fallback EMISSIVO em todos os
+ *  tiers (shader custom fica p/ onda com assets — registrado). */
+export function aplicarFamilias(
+  raiz: THREE.Object3D,
+  tier: 'economico' | 'medio' | 'alto' = 'medio',
+  opcoes: { raridade?: string | null } = {},
+): number {
   let aplicados = 0;
   for (const m of materiaisDe(raiz)) {
     const fam = familiaDe(m.userData?.familia as string | undefined);
@@ -107,10 +119,30 @@ export function aplicarFamilias(raiz: THREE.Object3D, tier: 'economico' | 'medio
     const o = ms.userData.pbrOriginal as { roughness: number; metalness: number; envMapIntensity: number; normalScaleX: number; emissiveIntensity: number };
     ms.roughness = o.roughness; ms.metalness = o.metalness; ms.envMapIntensity = o.envMapIntensity; ms.emissiveIntensity = o.emissiveIntensity;
     if (ms.normalScale) ms.normalScale.set(o.normalScaleX, o.normalScaleX);
-    const p = { ...fam.padrao, ...(tier === 'alto' ? fam.ultra ?? {} : {}), ...(ms.userData.familiaOverrides ?? {}) } as typeof fam.padrao;
+    const p = { ...paramsFamiliaPorTier(fam, tier), ...(ms.userData.familiaOverrides ?? {}) } as typeof fam.padrao;
     ms.roughness = p.roughness; ms.metalness = p.metalness; ms.envMapIntensity = p.env;
     if (ms.normalMap && ms.normalScale && p.normalScale !== undefined) ms.normalScale.set(p.normalScale, p.normalScale);
-    if (p.emissive !== undefined) ms.emissiveIntensity = Math.min(TETO_EMISSIVO, p.emissive);
+    if (p.emissive !== undefined) ms.emissiveIntensity = Math.min(tetoEmissivo(opcoes.raridade), p.emissive);
+    // onda 1421 (#208): naoTingir da FAMÍLIA (olhos/dentes/gold/silver/
+    // bronze) vale como o do manifest; albedo físico dos metais nobres
+    // marcado p/ o pipeline de cores aplicar (§1549 — hex salvo intocado)
+    if (fam.naoTingir) ms.userData.naoTingir = true;
+    const albedo = ALBEDO_METAL[fam.id];
+    if (albedo !== undefined) ms.userData.albedoForcado = albedo;
+    // extras PHYSICAL só quando o material suporta (GLTF pode entregar
+    // MeshPhysicalMaterial via KHR_materials_*) — nunca troca a classe
+    const mp = ms as unknown as THREE.MeshPhysicalMaterial;
+    if ((mp as { isMeshPhysicalMaterial?: boolean }).isMeshPhysicalMaterial) {
+      if (p.transmission !== undefined) mp.transmission = p.transmission;
+      if (p.ior !== undefined) mp.ior = p.ior;
+      if (p.thickness !== undefined) mp.thickness = p.thickness;
+      if (p.sheen !== undefined) mp.sheen = p.sheen;
+      if (p.clearcoat !== undefined) mp.clearcoat = p.clearcoat;
+      if (p.anisotropy !== undefined) mp.anisotropy = p.anisotropy;
+    }
+    // política de alpha da família (§899 cabelo 'mask'; vidro/holo 'blend')
+    if (p.alpha === 'mask') { ms.alphaTest = Math.max(ms.alphaTest, 0.5); ms.transparent = false; }
+    else if (p.alpha === 'blend') { ms.transparent = true; if (fam.id === 'hologram' || fam.id === 'energy') ms.opacity = Math.min(ms.opacity, 0.85); }
     ms.needsUpdate = true;
     aplicados += 1;
   }
@@ -138,6 +170,10 @@ export function aplicarPipelineCores(
     if (!ms.color) continue;
     if (ms.userData.corOriginal === undefined) ms.userData.corOriginal = ms.color.getHex();
     ms.color.setHex(ms.userData.corOriginal as number);
+    // onda 1421 (#208, §1549–§1554): ALBEDO físico dos metais nobres
+    // (marcado por aplicarFamilias) substitui a base ANTES do canal —
+    // ouro nunca é #FFD700 no render; o hex salvo segue intocado
+    if (typeof ms.userData.albedoForcado === 'number') ms.color.setHex(ms.userData.albedoForcado);
     if (typeof ms.emissiveIntensity === 'number' && ms.emissiveIntensity > TETO_EMISSIVO) {
       ms.emissiveIntensity = TETO_EMISSIVO; // §418.2
     }
@@ -146,7 +182,13 @@ export function aplicarPipelineCores(
     // marcado pelo manifest — a cor do canal NÃO se aplica
     const cor = canal && !ms.userData.naoTingir ? opcoes.cores?.[canal] : undefined;
     if (canal && cor) {
-      ms.color.multiply(new THREE.Color(cor));
+      // onda 1421 (#208, §1631–§1634): clamp PBR-safe SÓ no caminho de
+      // render das famílias pele/metal — evita #000/#FFF puros; o hex
+      // persistido nunca muda (a cópia clampada morre aqui)
+      const fam = familiaDe(ms.userData?.familia as string | undefined);
+      const clampar = fam && (fam.id === 'skin' || fam.padrao.metalness >= 0.5);
+      const corFinal = clampar ? `#${corPbrSegura(new THREE.Color(cor).getHex()).toString(16).padStart(6, '0')}` : cor;
+      ms.color.multiply(new THREE.Color(corFinal));
       tingidos += 1;
       porCanal[canal] = (porCanal[canal] ?? 0) + 1;
     }

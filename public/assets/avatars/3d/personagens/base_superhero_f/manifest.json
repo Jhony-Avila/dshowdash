@@ -39,13 +39,16 @@
   "deprecated": false,
   "materiais": {
     "MI_Superhero_Female": {
-      "canal": "pele"
+      "canal": "pele",
+      "familia": "skin"
     },
     "MI_Eyes": {
-      "naoTingir": true
+      "naoTingir": true,
+      "familia": "eyes"
     },
     "MI_Hair_2": {
-      "canal": "cabelo"
+      "canal": "cabelo",
+      "familia": "hair"
     }
   }
 }

@@ -38,6 +38,8 @@ export interface ParamsFamilia {
   sheen?: number;
   /** clearcoat p/ polidos — standard/ultra */
   clearcoat?: number;
+  /** onda 1421 (#208): anisotropia de cabelo (MeshPhysicalMaterial) — ULTRA */
+  anisotropy?: number;
   /** política de alpha p/ cabelo/vidro (publicador/Parte 4) */
   alpha?: 'opaque' | 'mask' | 'blend';
 }
@@ -50,6 +52,9 @@ export interface FamiliaMaterial {
   padrao: ParamsFamilia;
   /** override opcional p/ ultra (sheen/clearcoat/anisotropy) */
   ultra?: Partial<ParamsFamilia>;
+  /** onda 1421 (#208): override opcional p/ o tier ECONÔMICO (skin 3 tiers
+   *  §1521 — resposta próxima da standard; ΔE visual validado no gate ★) */
+  economico?: Partial<Pick<ParamsFamilia, 'roughness' | 'metalness' | 'env' | 'emissive'>>;
   /** nunca tingir pela cor do canal (olhos, dentes, metais nobres, logos) */
   naoTingir?: boolean;
   /** canal §73 sugerido quando o asset não declara */
@@ -62,12 +67,14 @@ const F = (id: FamiliaMaterialId, nome: string, padrao: ParamsFamilia, extra: Pa
 /** Registry v1 — valores iniciais curados (Parte 7 §1519–§1566); refinados
  *  com o Golden Material Set (onda 1421) e before/after aprovado. */
 export const FAMILIAS_MATERIAL: Record<FamiliaMaterialId, FamiliaMaterial> = {
-  skin: F('skin', 'Pele', { roughness: 0.55, metalness: 0, env: 0.6, normalScale: 0.6 }, { ultra: { sheen: 0.15 }, canalSugerido: 'pele' }),
+  // onda 1421 (#208): SKIN em 3 TIERS (§1521–§1526) — o econômico fica
+  // PERTO do standard (deltas travados por teste; ΔE visual no gate ★)
+  skin: F('skin', 'Pele', { roughness: 0.55, metalness: 0, env: 0.6, normalScale: 0.6 }, { ultra: { sheen: 0.15 }, economico: { roughness: 0.6, env: 0.5 }, canalSugerido: 'pele' }),
   eyes: F('eyes', 'Olhos', { roughness: 0.15, metalness: 0, env: 1.0, clearcoat: 0.3 }, { naoTingir: true }),
   teeth: F('teeth', 'Dentes', { roughness: 0.35, metalness: 0, env: 0.8 }, { naoTingir: true }),
-  hair: F('hair', 'Cabelo', { roughness: 0.7, metalness: 0, env: 0.7, alpha: 'mask' }, { canalSugerido: 'cabelo' }),
+  hair: F('hair', 'Cabelo', { roughness: 0.7, metalness: 0, env: 0.7, alpha: 'mask' }, { ultra: { anisotropy: 0.35 }, economico: { roughness: 0.75, env: 0.6 }, canalSugerido: 'cabelo' }),
   hair_soft: F('hair_soft', 'Cabelo macio', { roughness: 0.75, metalness: 0, env: 0.6, alpha: 'mask' }, { canalSugerido: 'cabelo' }),
-  hair_gloss: F('hair_gloss', 'Cabelo brilhante', { roughness: 0.45, metalness: 0, env: 0.9, alpha: 'mask' }, { ultra: { clearcoat: 0.2 }, canalSugerido: 'cabelo' }),
+  hair_gloss: F('hair_gloss', 'Cabelo brilhante', { roughness: 0.45, metalness: 0, env: 0.9, alpha: 'mask' }, { ultra: { clearcoat: 0.2, anisotropy: 0.45 }, canalSugerido: 'cabelo' }),
   hair_coarse: F('hair_coarse', 'Cabelo áspero', { roughness: 0.85, metalness: 0, env: 0.5, alpha: 'mask' }, { canalSugerido: 'cabelo' }),
   cotton: F('cotton', 'Algodão', { roughness: 0.9, metalness: 0, env: 0.4 }, { canalSugerido: 'roupa' }),
   denim: F('denim', 'Denim', { roughness: 0.85, metalness: 0, env: 0.45, normalScale: 1.0 }, { canalSugerido: 'roupa' }),
@@ -119,3 +126,60 @@ export function corPbrSegura(hex: number, min = 0x18, max = 0xf4): number {
   const b = Math.min(max, Math.max(min, hex & 0xff));
   return (r << 16) | (g << 8) | b;
 }
+
+// ── onda 1421 (MEGA_BRIEFING_01 P7-C..F §1519–§1566, §1631–§1651;
+//    decisão #208): TIERS, TETO EMISSIVO POR RARIDADE e GOLDEN SET ────
+
+/** Extras "physical" que o tier ECONÔMICO nunca paga (material standard
+ *  plano; §1526 — material por LOD/tier). */
+const EXTRAS_FISICOS = ['transmission', 'ior', 'thickness', 'sheen', 'clearcoat', 'anisotropy'] as const;
+
+/** Resolve os parâmetros EFETIVOS da família no tier (#208, fonte única):
+ *  econômico = padrao + economico, SEM extras físicos e SEM normalScale;
+ *  medio = padrao; alto = padrao + ultra. Puro e determinístico. */
+export function paramsFamiliaPorTier(
+  fam: FamiliaMaterial,
+  tier: 'economico' | 'medio' | 'alto',
+): ParamsFamilia {
+  if (tier === 'alto') return { ...fam.padrao, ...(fam.ultra ?? {}) };
+  if (tier === 'medio') return { ...fam.padrao };
+  const p: ParamsFamilia = { ...fam.padrao, ...(fam.economico ?? {}) };
+  for (const k of EXTRAS_FISICOS) delete (p as unknown as Record<string, unknown>)[k];
+  delete (p as unknown as Record<string, unknown>).normalScale;
+  return p;
+}
+
+/** Deltas MÁXIMOS entre tiers p/ famílias orgânicas (§1521 — proxy de
+ *  dado do "ΔE entre tiers < limiar"; o ΔE visual é do gate ★). */
+export const DELTA_MAX_TIER = { roughness: 0.2, env: 0.4 } as const;
+
+/** §1636–§1642 (#208): teto de EMISSÃO por raridade — o budget emissivo
+ *  cresce com a raridade e NUNCA passa o teto global §418.2 (2.0). O
+ *  bloom seletivo vem daí: o limiar alto dos looks (1420) só estoura o
+ *  que a raridade permitiu emitir. */
+export const TETO_EMISSIVO_POR_RARIDADE: Record<'comum' | 'raro' | 'epico' | 'lendario' | 'mitico', number> = {
+  comum: 1.2, raro: 1.4, epico: 1.6, lendario: 1.8, mitico: 2.0,
+};
+
+export function tetoEmissivo(raridade?: string | null): number {
+  return (raridade && TETO_EMISSIVO_POR_RARIDADE[raridade as keyof typeof TETO_EMISSIVO_POR_RARIDADE]) || 2;
+}
+
+/** GOLDEN MATERIAL SET M01–M12 (§1751, #208): 12 casos travados como
+ *  DADO — família × tier × parâmetros ESPERADOS (snapshot literal;
+ *  mudou o registry sem decisão = teste quebra, doutrina #83). A cena
+ *  de calibração (montarCenaMateriais) monta 1 esfera por caso. */
+export const GOLDEN_MATERIAIS: ReadonlyArray<{ id: string; familia: FamiliaMaterialId; tier: 'economico' | 'medio' | 'alto'; esperado: { roughness: number; metalness: number; env: number } }> = [
+  { id: 'M01', familia: 'skin', tier: 'medio', esperado: { roughness: 0.55, metalness: 0, env: 0.6 } },
+  { id: 'M02', familia: 'skin', tier: 'economico', esperado: { roughness: 0.6, metalness: 0, env: 0.5 } },
+  { id: 'M03', familia: 'skin', tier: 'alto', esperado: { roughness: 0.55, metalness: 0, env: 0.6 } },
+  { id: 'M04', familia: 'hair', tier: 'alto', esperado: { roughness: 0.7, metalness: 0, env: 0.7 } },
+  { id: 'M05', familia: 'cotton', tier: 'medio', esperado: { roughness: 0.9, metalness: 0, env: 0.4 } },
+  { id: 'M06', familia: 'leather_polished', tier: 'alto', esperado: { roughness: 0.35, metalness: 0, env: 0.9 } },
+  { id: 'M07', familia: 'gold', tier: 'medio', esperado: { roughness: 0.3, metalness: 1, env: 1.2 } },
+  { id: 'M08', familia: 'silver', tier: 'alto', esperado: { roughness: 0.25, metalness: 1, env: 1.2 } },
+  { id: 'M09', familia: 'glass_clear', tier: 'alto', esperado: { roughness: 0.05, metalness: 0, env: 1.2 } },
+  { id: 'M10', familia: 'crystal', tier: 'alto', esperado: { roughness: 0.08, metalness: 0, env: 1.3 } },
+  { id: 'M11', familia: 'emissive', tier: 'medio', esperado: { roughness: 0.6, metalness: 0, env: 0.5 } },
+  { id: 'M12', familia: 'hologram', tier: 'alto', esperado: { roughness: 0.3, metalness: 0, env: 0.8 } },
+];

@@ -37,6 +37,7 @@ import { montarPersonagem } from './Assembler3d'; // lote 621-630 (§406)
 import type { ResultadoMontagem } from './Assembler3d';
 import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
 import { aplicarFamilias, aplicarPipelineCores, descartarMateriais, marcarMateriaisPorManifest } from './Materiais3d'; // lote 641-650 (§418-§421) + onda 1408 (#160)
+import { GOLDEN_MATERIAIS } from './FamiliasMaterial'; // onda 1421 (#208): cena de calibração
 import { LOOKS, etiquetaLook, lookDe, type LookId } from './Looks3d'; // onda 1408 (#161): registry de looks
 import { passesPos } from './QualityManager'; // onda 1420 (#206): degradação por pass
 import { LENTES_FOTO, dimensoesLente, nomeFotoLente, type LenteFotoId } from './LentesFoto'; // onda 1420 (#207)
@@ -700,6 +701,7 @@ export class Renderizador3d implements RenderizadorAvatar {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
     this.derrubarPosV2(); // onda 1420 (#206): render targets do pós v2
+    this.desmontarCenaMateriais(); // onda 1421 (#208)
     this.mixer?.stopAllAction();
     this.mixer = null;
     this.acaoAtual = null;
@@ -1106,6 +1108,64 @@ export class Renderizador3d implements RenderizadorAvatar {
   }
   laboratorioAtivo(): boolean { return this.laboratorio !== null; }
 
+  // ── onda 1421 (MEGA_BRIEFING_01 §1751, #208; as6.qa_visual — o gate é
+  //    do caller): CENA DE CALIBRAÇÃO DE MATERIAIS (Golden Set) ────────
+  private cenaMateriais: THREE.Group | null = null;
+
+  /** Monta 1 esfera por caso do GOLDEN_MATERIAIS (grade 4×3 na frente do
+   *  palco), cada uma com a FAMÍLIA aplicada via o MESMO pipeline
+   *  (marcar userData.familia + aplicarFamilias) — QA visual/testes.
+   *  Devolve o nº de esferas; desmontarCenaMateriais() restaura tudo. */
+  montarCenaMateriais(tier?: 'economico' | 'medio' | 'alto'): number {
+    if (!this.cena) return 0;
+    this.desmontarCenaMateriais();
+    const g = new THREE.Group();
+    g.name = 'avst-cena-materiais';
+    GOLDEN_MATERIAIS.forEach((caso, i) => {
+      const mat = new THREE.MeshPhysicalMaterial({ color: 0xb9bec9 });
+      mat.name = `golden-${caso.id}`;
+      mat.userData.familia = caso.familia;
+      const esfera = new THREE.Mesh(new THREE.SphereGeometry(0.11, 32, 16), mat);
+      esfera.name = caso.id;
+      esfera.position.set(-0.66 + (i % 4) * 0.44, 1.5 - Math.floor(i / 4) * 0.34, 0.85);
+      esfera.castShadow = true;
+      g.add(esfera);
+    });
+    this.cena.add(g);
+    this.cenaMateriais = g;
+    aplicarFamilias(g, tier ?? this.tierEfetivo());
+    aplicarPipelineCores(g, {}); // albedo dos metais entra aqui (#208)
+    return GOLDEN_MATERIAIS.length;
+  }
+
+  desmontarCenaMateriais(): void {
+    if (!this.cenaMateriais || !this.cena) { this.cenaMateriais = null; return; }
+    this.cena.remove(this.cenaMateriais);
+    this.cenaMateriais.traverse((o) => {
+      const m = o as THREE.Mesh;
+      m.geometry?.dispose?.();
+      (m.material as THREE.Material)?.dispose?.();
+    });
+    this.cenaMateriais = null;
+  }
+
+  /** Métricas da cena de materiais p/ testes/QA (id → params efetivos). */
+  cenaMateriaisInfo(): Array<{ id: string; familia: string; roughness: number; metalness: number; env: number; naoTingir: boolean; cor: number }> | null {
+    if (!this.cenaMateriais) return null;
+    const saida: Array<{ id: string; familia: string; roughness: number; metalness: number; env: number; naoTingir: boolean; cor: number }> = [];
+    this.cenaMateriais.traverse((o) => {
+      const m = o as THREE.Mesh;
+      const mat = m.material as THREE.MeshPhysicalMaterial | undefined;
+      if (!mat || !m.name.startsWith('M')) return;
+      saida.push({
+        id: m.name, familia: String(mat.userData.familia ?? ''),
+        roughness: mat.roughness, metalness: mat.metalness, env: mat.envMapIntensity,
+        naoTingir: mat.userData.naoTingir === true, cor: mat.color.getHex(),
+      });
+    });
+    return saida.sort((a, b) => a.id.localeCompare(b.id));
+  }
+
   /** onda 1408 (§2010, §1686–§1690): SNAPSHOT de métricas para goldens de
    *  luz/câmera e HUD — look, exposição efetiva, fov, posição da câmera,
    *  luzes, texturas/programas/geometrias do renderer.info. */
@@ -1340,7 +1400,9 @@ export class Renderizador3d implements RenderizadorAvatar {
       // onda 1408 (#160/#165a): marcas do manifest (canal pele das bases UBC,
       // naoTingir) e famílias declaradas ANTES do tint — idempotente
       marcarMateriaisPorManifest(this.personagem, this.manifest?.materiais ?? null);
-      aplicarFamilias(this.personagem, this.tierEfetivo());
+      // onda 1421 (#208): tier resolve extras physical/econômico; a
+      // raridade do manifest (quando declarada) limita o teto emissivo
+      aplicarFamilias(this.personagem, this.tierEfetivo(), { raridade: (this.manifest as unknown as { raridade?: string } | null)?.raridade ?? null });
     }
     aplicarPipelineCores(this.personagem, { cores: this.cores3d, tinta: this.tinta });
   }
