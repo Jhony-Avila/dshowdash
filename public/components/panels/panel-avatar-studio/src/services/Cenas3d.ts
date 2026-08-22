@@ -15,7 +15,7 @@ export const FUNDOS_3D = ['neutro', 'estudio', 'grade'] as const;
 // registry Looks3d (só aparecem na UI com as6.looks); cena antiga continua
 // válida byte a byte (sanitizar mantém 'estudio' como padrão)
 export const LUZES_3D = ['estudio', 'quente', 'fria', 'neon', 'portrait', 'dramatic'] as const;
-export const CAMERAS_3D = ['retrato', 'corpo', 'orbita', 'cinematica'] as const;
+export const CAMERAS_3D = ['retrato', 'corpo', 'orbita', 'cinematica', 'busto', 'face', 'costas'] as const; // onda 1419 (#204): presets novos aditivos (enum só cresce)
 export const QUALIDADES_3D = ['auto', 'alto', 'medio', 'economico'] as const;
 
 export interface Cena3d {

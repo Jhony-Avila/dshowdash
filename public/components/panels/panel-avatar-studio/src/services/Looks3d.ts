@@ -40,6 +40,12 @@ export interface Look {
   cameraSugerida: 'corpo' | 'retrato';
   /** novo na frente AAA (só com as6.looks) ou legado (sempre disponível) */
   legado: boolean;
+  /** onda 1419 (#205, as6.sombras_v2): sombra da KEY por look — bias
+   *  contra acne/peter-panning e raio (softness PCFSoft). Consumido SÓ
+   *  com a flag; sem ela o renderer usa os defaults do three. */
+  sombra: { bias: number; raio: number };
+  /** onda 1419 (#205): FOG por look (null = sem névoa) — só com a flag. */
+  fog: { cor: number; near: number; far: number } | null;
 }
 
 /** Valores CANÔNICOS de Renderizador3d.montar() — não mudar sem decisão
@@ -57,22 +63,26 @@ export const LOOKS: Record<LookId, Look> = {
     id: 'estudio', versao: 1, nome: 'Estúdio',
     key: { ...CANONICO.key }, fill: { ...CANONICO.fill }, ambiente: CANONICO.ambiente, env: CANONICO.env,
     rim: null, exposicao: CANONICO.exposicao, cameraSugerida: 'corpo', legado: true,
+    sombra: { bias: -0.00015, raio: 4 }, fog: null,
   },
   // alias de definirLuz('quente') — mesmos números (posições = canônicas)
   soft: {
     id: 'soft', versao: 1, nome: 'Quente',
     key: { cor: 0xffd9a0, intensidade: 2.9, pos: [...CANONICO.key.pos] }, fill: { cor: 0xff9d5c, intensidade: 0.9, pos: [...CANONICO.fill.pos] },
     ambiente: 0.5, env: CANONICO.env, rim: null, exposicao: 1.0, cameraSugerida: 'corpo', legado: true,
+    sombra: { bias: -0.00015, raio: 5 }, fog: null,
   },
   cool: {
     id: 'cool', versao: 1, nome: 'Fria',
     key: { cor: 0xcfe4ff, intensidade: 2.7, pos: [...CANONICO.key.pos] }, fill: { cor: 0x6c8cff, intensidade: 1.2, pos: [...CANONICO.fill.pos] },
     ambiente: 0.45, env: CANONICO.env, rim: null, exposicao: 1.0, cameraSugerida: 'corpo', legado: true,
+    sombra: { bias: -0.00015, raio: 4 }, fog: null,
   },
   neon: {
     id: 'neon', versao: 1, nome: 'Neon',
     key: { cor: 0xff5f8f, intensidade: 2.4, pos: [...CANONICO.key.pos] }, fill: { cor: 0x4cd9e8, intensidade: 1.6, pos: [...CANONICO.fill.pos] },
     ambiente: 0.35, env: CANONICO.env, rim: null, exposicao: 1.0, cameraSugerida: 'corpo', legado: true,
+    sombra: { bias: -0.0002, raio: 3 }, fog: { cor: 0x0a0d18, near: 6, far: 14 },
   },
   // §50/§1759/§1825: retrato — fill mais alto (rosto sem sombras duras),
   // key mais frontal e suave, rim branco discreto no contorno do cabelo,
@@ -82,6 +92,7 @@ export const LOOKS: Record<LookId, Look> = {
     key: { cor: 0xfff1e6, intensidade: 2.3, pos: [1.6, 2.6, 2.8] }, fill: { cor: 0xbfcfff, intensidade: 1.5, pos: [-2.0, 1.4, 1.2] },
     ambiente: 0.6, env: 0.6, rim: { cor: 0xffffff, intensidade: 1.6, pos: [-1.2, 2.2, -2.4] },
     exposicao: 1.05, cameraSugerida: 'retrato', legado: false,
+    sombra: { bias: -0.0001, raio: 6 }, fog: null,
   },
   // PoC Cena3D.LUZES.dramatica adaptado ao rig do shell (sem hemisphere):
   // key forte e lateral, fill baixo e azulado, rim forte
@@ -90,6 +101,7 @@ export const LOOKS: Record<LookId, Look> = {
     key: { cor: 0xffe6c4, intensidade: 3.4, pos: [3.4, 3.4, 1.2] }, fill: { cor: 0x31406e, intensidade: 0.35, pos: [-2.8, 1.4, 2.2] },
     ambiente: 0.22, env: 0.35, rim: { cor: 0xffffff, intensidade: 3.2, pos: [-2.2, 3.2, -2.4] },
     exposicao: 1.0, cameraSugerida: 'corpo', legado: false,
+    sombra: { bias: -0.00025, raio: 2 }, fog: { cor: 0x05060c, near: 5, far: 12 },
   },
 };
 

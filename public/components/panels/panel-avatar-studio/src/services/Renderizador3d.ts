@@ -38,8 +38,29 @@ import type { ResultadoMontagem } from './Assembler3d';
 import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
 import { aplicarFamilias, aplicarPipelineCores, descartarMateriais, marcarMateriaisPorManifest } from './Materiais3d'; // lote 641-650 (§418-§421) + onda 1408 (#160)
 import { LOOKS, etiquetaLook, lookDe, type LookId } from './Looks3d'; // onda 1408 (#161): registry de looks
+import { BOOKMARKS_CAMERA, LIMITES_ORBITA, TRANSICAO_CAMERA_MS, enquadrar, presetDe } from './Camera3d'; // onda 1419 (#204)
+import { flag } from '../nucleo/flags'; // onda 1419 (#204/#205): camera_v2/sombras_v2
 import { MaquinaAnimacao, alvoOlhar, carregarPacoteAnimacoes, mesclarClipes } from './Animacoes3d'; // lotes 661-670/731-740 (§432-§439)
 import type { PacoteAnimacoes } from './Animacoes3d';
+
+/** onda 1419 (#205): CONTACT SHADOW procedural — gradiente radial num
+ *  CanvasTexture (zero download, determinístico o suficiente p/ palco). */
+function criarTexturaContato(): THREE.Texture {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const ctx = c.getContext('2d');
+  if (ctx) {
+    const g = ctx.createRadialGradient(64, 64, 6, 64, 64, 62);
+    g.addColorStop(0, 'rgba(0,0,0,0.9)');
+    g.addColorStop(0.55, 'rgba(0,0,0,0.45)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
 
 export interface OpcoesRenderizador3d {
   /** decide o SLUG publicado a partir do estado (DI — default: manequim) */
@@ -108,6 +129,13 @@ export class Renderizador3d implements RenderizadorAvatar {
   private orbitaAuto = false;
   // câmera ATUAL memorizada — reload adaptativo (§528) não pode resetá-la
   private cameraAtual: EstadoCamera = { modo: 'corpo' };
+  // onda 1419 (#204): transição 300ms interromível + guard #165d
+  private transicaoCam: { de: { pos: THREE.Vector3; alvo: THREE.Vector3; fov: number }; para: { pos: THREE.Vector3; alvo: THREE.Vector3; fov: number }; inicio: number } | null = null;
+  private alvoCam = new THREE.Vector3(0, 1, 0);
+  private modoCamAplicado: string | null = null;
+  // onda 1419 (#205): chão v2 (studio_matte = atual) + environment por URL
+  private chaoTipo: 'studio_matte' | 'gloss' | 'platform' | 'grid' = 'studio_matte';
+  private chaoExtra: THREE.Object3D | null = null;
   // mega 21/22: fundo e luz do palco (paridade §9.3 / presets §163-lite)
   private fundoAtual: 'neutro' | 'estudio' | 'grade' = 'estudio';
   private grade: THREE.GridHelper | null = null;
@@ -354,6 +382,14 @@ export class Renderizador3d implements RenderizadorAvatar {
         this.controles.dampingFactor = 0.08;
         this.controles.minDistance = 0.6;
         this.controles.maxDistance = 8;
+        // onda 1419 (#204, as6.camera_v2): limites duros da órbita —
+        // nunca sob o chão, nunca dentro do personagem
+        if (flag('as6.camera_v2')) {
+          this.controles.minPolarAngle = LIMITES_ORBITA.minPolar;
+          this.controles.maxPolarAngle = LIMITES_ORBITA.maxPolar;
+          this.controles.minDistance = LIMITES_ORBITA.minDistance;
+          this.controles.maxDistance = LIMITES_ORBITA.maxDistance;
+        }
       }
       this.controles.enabled = true;
     } else if (this.controles) {
@@ -364,6 +400,42 @@ export class Renderizador3d implements RenderizadorAvatar {
     const tamanho = caixa.getSize(new THREE.Vector3());
     const maior = Math.max(tamanho.x, tamanho.y, tamanho.z);
     this.orbitaAuto = camera.modo === 'cinematica';
+
+    // onda 1419 (#204, as6.camera_v2): presets do Camera3d com FOV próprio,
+    // bounds-aware (Box3 ∪ partes/props já montados no personagem),
+    // transição 300ms interromível e guard #165d (não resetar câmera:
+    // mesmo modo já aplicado ⇒ nada muda, salvo `forcar` dos bookmarks)
+    if (flag('as6.camera_v2') && presetDe(camera.modo)) {
+      if (this.modoCamAplicado === camera.modo && !camera.forcar) return;
+      // props FORA do personagem (pet §131) entram na caixa (accessory-aware)
+      for (const [, prop] of this.props3d) caixa.expandByObject(prop);
+      const enq = enquadrar(
+        { min: [caixa.min.x, caixa.min.y, caixa.min.z], max: [caixa.max.x, caixa.max.y, caixa.max.z] },
+        camera.modo as Parameters<typeof enquadrar>[1],
+      );
+      const primeira = this.modoCamAplicado === null;
+      this.modoCamAplicado = camera.modo;
+      const para = {
+        pos: new THREE.Vector3(...enq.posicao),
+        alvo: new THREE.Vector3(...enq.alvo),
+        fov: enq.fov,
+      };
+      // primeira posição: corte seco (nada de animar a partir do nada)
+      if (primeira) {
+        this.camera.position.copy(para.pos);
+        this.alvoCam.copy(para.alvo);
+        this.camera.fov = para.fov;
+        this.camera.updateProjectionMatrix();
+        this.camera.lookAt(this.alvoCam);
+        return;
+      }
+      this.transicaoCam = {
+        de: { pos: this.camera.position.clone(), alvo: this.alvoCam.clone(), fov: this.camera.fov },
+        para,
+        inicio: performance.now(),
+      };
+      return;
+    }
 
     if (camera.modo === 'retrato') {
       const alvoY = caixa.max.y - tamanho.y * 0.18; // altura da cabeça
@@ -580,6 +652,69 @@ export class Renderizador3d implements RenderizadorAvatar {
 
   // ── privados ────────────────────────────────────────────────────
   /** mega 21 (§9.3): fundo do palco 3D — paridade com o 2D. */
+  /** onda 1419 (#204): BOOKMARKS Full/Bust/Face/Back — furam o guard
+   *  #165d de propósito (gesto explícito do usuário). */
+  irParaBookmark(id: keyof typeof BOOKMARKS_CAMERA): void {
+    this.definirCamera({ modo: BOOKMARKS_CAMERA[id], forcar: true });
+  }
+
+  /** onda 1419 (#205): CHÃO do palco — 'studio_matte' é o visual atual
+   *  (nada muda sem chamada); gloss/platform/grid são aditivos. */
+  definirChao(tipo: 'studio_matte' | 'gloss' | 'platform' | 'grid'): void {
+    this.chaoTipo = tipo;
+    if (!this.cena) return;
+    if (this.chaoExtra) {
+      this.cena.remove(this.chaoExtra);
+      this.chaoExtra.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (m.isMesh) { m.geometry.dispose(); (m.material as THREE.Material).dispose(); }
+      });
+      this.chaoExtra = null;
+    }
+    if (tipo === 'gloss') {
+      const disco = new THREE.Mesh(
+        new THREE.CircleGeometry(1.1, 64).rotateX(-Math.PI / 2),
+        new THREE.MeshStandardMaterial({ color: 0x0d1018, roughness: 0.12, metalness: 0.55, envMapIntensity: 1.1 }),
+      );
+      disco.position.y = 0.003;
+      disco.receiveShadow = true;
+      this.chaoExtra = disco;
+    } else if (tipo === 'platform') {
+      const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.95, 1.02, 0.07, 48),
+        new THREE.MeshStandardMaterial({ color: 0x1a1f2c, roughness: 0.5, metalness: 0.25 }),
+      );
+      base.position.y = -0.035;
+      base.receiveShadow = true;
+      this.chaoExtra = base;
+    } else if (tipo === 'grid') {
+      this.chaoExtra = new THREE.GridHelper(6, 30, 0x2c3550, 0x161c2c);
+      this.chaoExtra.position.y = 0.002;
+    }
+    if (this.chaoExtra) this.cena.add(this.chaoExtra);
+  }
+
+  chaoAtivo(): 'studio_matte' | 'gloss' | 'platform' | 'grid' { return this.chaoTipo; }
+
+  /** onda 1419 (#205): ENVIRONMENT por URL preparado (§449 — SEM HDRIs
+   *  no repo hoje): null volta ao RoomEnvironment procedural canônico. */
+  definirEnvironment(url: string | null): void {
+    if (!this.cena || !this.renderer) return;
+    if (!url) {
+      try {
+        const pmrem = new THREE.PMREMGenerator(this.renderer);
+        this.cena.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        pmrem.dispose();
+      } catch { /* fallback: 3 luzes canônicas */ }
+      return;
+    }
+    new THREE.TextureLoader().load(url, (tex) => {
+      tex.mapping = THREE.EquirectangularReflectionMapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      if (this.cena) this.cena.environment = tex;
+    }, undefined, () => { /* URL inválida: environment atual permanece */ });
+  }
+
   definirFundo(fundo: 'neutro' | 'estudio' | 'grade'): void {
     this.fundoAtual = fundo;
     if (!this.cena) return;
@@ -687,6 +822,20 @@ export class Renderizador3d implements RenderizadorAvatar {
       this.rimLook = new THREE.DirectionalLight(look.rim.cor, look.rim.intensidade);
       this.rimLook.position.set(...look.rim.pos);
       this.cena.add(this.rimLook);
+    }
+    // onda 1419 (#205, as6.sombras_v2): bias/softness da sombra e FOG
+    // seguem o LOOK — sem a flag, defaults do three e sem névoa (byte a
+    // byte o comportamento anterior)
+    if (flag('as6.sombras_v2')) {
+      if (this.luzes) {
+        this.luzes.chave.shadow.bias = look.sombra.bias;
+        this.luzes.chave.shadow.radius = look.sombra.raio;
+      }
+      if (this.cena) {
+        this.cena.fog = look.fog
+          ? new THREE.Fog(look.fog.cor, look.fog.near, look.fog.far)
+          : null;
+      }
     }
     this.aplicarExposicao();
   }
@@ -916,6 +1065,30 @@ export class Renderizador3d implements RenderizadorAvatar {
     if (this.luzes) this.luzes.chave.castShadow = reais;
     if (this.chaoSombra) this.chaoSombra.visible = reais;
     if (this.chao) this.chao.visible = !reais; // fake só quando a real está fora
+    // onda 1419 (#205, as6.sombras_v2): shadow map POR TIER (512/1024/2048),
+    // contact shadow SEMPRE (gradiente radial procedural — ancora mesmo com
+    // a sombra real ligada) e shadow camera justa no personagem
+    if (flag('as6.sombras_v2')) {
+      if (this.luzes) {
+        const tam = { economico: 512, medio: 1024, alto: 2048 }[this.tierEfetivo()] ?? 1024;
+        if (this.luzes.chave.shadow.mapSize.x !== tam) {
+          this.luzes.chave.shadow.mapSize.set(tam, tam);
+          this.luzes.chave.shadow.map?.dispose();
+          (this.luzes.chave.shadow as unknown as { map: null }).map = null; // força rebuild
+        }
+      }
+      if (this.chao) {
+        this.chao.visible = true; // contact shadow sempre (§P8-C)
+        const mat = this.chao.material as THREE.MeshBasicMaterial;
+        if (!mat.map) {
+          mat.map = criarTexturaContato();
+          mat.color.set(0xffffff);
+          mat.needsUpdate = true;
+        }
+        mat.opacity = reais ? 0.22 : 0.34; // com a real ligada, só ancora
+      }
+      this.ajustarCameraSombra();
+    }
     this.personagem?.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).castShadow = reais;
     });
@@ -923,6 +1096,21 @@ export class Renderizador3d implements RenderizadorAvatar {
     for (const [, prop] of this.props3d) {
       prop.traverse((o) => { if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).castShadow = reais; });
     }
+  }
+
+  /** onda 1419 (#205): SHADOW CAMERA justa no Box3 do personagem —
+   *  resolução do mapa concentrada onde importa (menos serrilhado). */
+  private ajustarCameraSombra(): void {
+    if (!this.luzes || !this.personagem) return;
+    const caixa = new THREE.Box3().setFromObject(this.personagem);
+    for (const [, prop] of this.props3d) caixa.expandByObject(prop);
+    if (caixa.isEmpty()) return;
+    const tam = caixa.getSize(new THREE.Vector3());
+    const meio = Math.max(tam.x, tam.y, tam.z) * 0.75;
+    const cam = this.luzes.chave.shadow.camera as THREE.OrthographicCamera;
+    cam.left = -meio; cam.right = meio; cam.top = meio; cam.bottom = -meio;
+    cam.near = 0.5; cam.far = 12;
+    cam.updateProjectionMatrix();
   }
 
   /** mega 81 (§419–§420): TINTA de destaque nos materiais (null = original).
@@ -1499,6 +1687,19 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.raf = requestAnimationFrame(this.laço);
     if (this.pausado || this.contextoPerdido || !this.renderer || !this.cena || !this.camera) return;
     this.relogio += 1 / 60; // passo FIXO: idle igual em qualquer refresh
+    // onda 1419 (#204): TRANSIÇÃO de câmera 300ms — interromível (um novo
+    // definirCamera substitui this.transicaoCam; easing suave)
+    if (this.transicaoCam) {
+      const t = Math.min(1, (performance.now() - this.transicaoCam.inicio) / TRANSICAO_CAMERA_MS);
+      const k = t * t * (3 - 2 * t); // smoothstep
+      const { de, para } = this.transicaoCam;
+      this.camera.position.lerpVectors(de.pos, para.pos, k);
+      this.alvoCam.lerpVectors(de.alvo, para.alvo, k);
+      this.camera.fov = de.fov + (para.fov - de.fov) * k;
+      this.camera.updateProjectionMatrix();
+      this.camera.lookAt(this.alvoCam);
+      if (t >= 1) this.transicaoCam = null;
+    }
     // mega 16: FPS real (média móvel de 90 quadros) → tier adaptativo
     const agora = performance.now();
     if (this.fpsUltimo > 0) {

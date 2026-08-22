@@ -135,6 +135,8 @@ const PADROES: Record<string, boolean> = {
   'as6.material_v2': false,     // onda 1408 — METADADOS de material do manifest v2 no pipeline (Parte 7, #160/#165a): canal pele das bases UBC por metadado (skin tint passa a valer), naoTingir, famílias declaradas; OFF até before/after aprovado; off = pipeline anterior byte a byte
   'as6.telemetria_assets': true, // onda 1409 — TELEMETRIA DE ASSET 3D (§2804, §2968–§2972): eventos avst:asset_* (carregou/falhou/lod_transicao/fallback/parte) no ring local + EventBus, com rate limit por slug e sem PII; dado/observabilidade (#156: tooling ON); off = zero eventos (callback ausente)
   'as6.classico_premium': false, // onda 1411 — trilho CLASSIC PREMIUM 2D (decisão #159, §2381–§2427): acabamento 'premium' no config liga sombra de contato + hooks das partes `_px_` (renderAtras/renderFrente/renderSombra/renderPlanos) + materiais2d; catálogo passa a listar as partes premium; off = motor clássico e catálogo byte a byte
+  'as6.camera_v2': false,       // onda 1419 — CÂMERA V2 do palco 3D (#204, P8-B): presets Camera3d (FOV 24/28/33, headroom/eye-line), bookmarks Full/Bust/Face/Back, bounds-aware, transição 300ms interromível, guard #165d (nunca reseta) e limites de órbita; off = câmera anterior byte a byte
+  'as6.sombras_v2': false,      // onda 1419 — SOMBRAS/AMBIENTE V2 (#205, P8-C): shadow map por tier (512/1024/2048), shadow camera justa no Box3, bias/softness e FOG por look, contact shadow procedural sempre; chão gloss/platform/grid e definirEnvironment(url) são APIs opt-in; off = sombras anteriores byte a byte
   'as6.cp_foto': false,         // onda 1418 — PHOTO MODE 2D do avatar (#202, P10-G): export em framings (full/bust/portrait/square/vertical) PNG/WebP/transparente com toggles de fundo/moldura/efeito; off = sem UI de export, render intocado
   'as6.acess_2d_premium': false, // onda 1416 — ACESSÓRIOS PREMIUM 2D (#196, P10-E/P6-A/P6-E): contador + "Remover todos" + conflito nomeado (AcessoriosRegistry §617) + aviso de paridade na UI; catálogo ace_px_ já é gated por classico_premium; off = UI anterior byte a byte
   'as6.roupa_premium': false,   // onda 1415 — VESTUÁRIO PREMIUM (#191, P10-D/P5-B/P5-C): categoria roupa_inferior (rin_*) na sidebar, conjuntos premium O01+ e swatch de material na UI; off = seção/outfits ocultos, configs salvos seguem renderizando (dado > UI)
@@ -179,6 +181,9 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.telemetria_assets': ['as5.palco3d'],
   'as6.qa_route': ['as5.palco3d'],
   'as6.material_debug': ['as6.qa_route'],
+  // onda 1419 (#204/#205): câmera/sombras v2 são do palco 3D
+  'as6.camera_v2': ['as5.palco3d'],
+  'as6.sombras_v2': ['as5.palco3d'],
   // onda 1414 (#186): slots faciais são filhos do rosto v2 — ligar/desligar
   // a família inteira de uma vez (§2917–§2926)
   'as6.barba_slot': ['as6.face_v2'],

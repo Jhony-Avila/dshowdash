@@ -1564,6 +1564,12 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             data-teste="p3d-orbita" onClick={() => trocarCamera('orbita')}><Rotate3d size={13} aria-hidden /></button>
           <button type="button" role="radio" aria-checked={cameraModo === 'cinematica'} title="Cinemática (órbita automática)"
             onClick={() => trocarCamera('cinematica')}><Clapperboard size={13} aria-hidden /></button>
+          {/* onda 1419 (#204, as6.camera_v2): BOOKMARKS do Camera3d —
+              Busto/Rosto/Costas (Full = o 'corpo' de sempre) */}
+          {flag('as6.camera_v2') && ([['busto', 'Busto'], ['face', 'Rosto'], ['costas', 'Costas']] as const).map(([m, nome]) => (
+            <button key={m} type="button" role="radio" aria-checked={cameraModo === m} title={nome}
+              data-teste={`p3d-cam-${m}`} onClick={() => trocarCamera(m)}>{nome[0]}</button>
+          ))}
         </div>
         {capturas.length > 0 && (
           <div className="avst5-p3d-capturas" data-teste="p3d-capturas" role="list"

@@ -28,7 +28,10 @@ export interface InicializacaoRenderer {
 
 /** §453.1 — estados de câmera; o renderer 2D ignora o que não se aplica. */
 export interface EstadoCamera {
-  modo: 'retrato' | 'corpo' | 'orbita' | 'cinematica';
+  // onda 1419 (#204, as6.camera_v2): modos NOVOS aditivos (busto/face/
+  // costas — presets do Camera3d); `forcar` fura o guard #165d (bookmarks)
+  modo: 'retrato' | 'corpo' | 'orbita' | 'cinematica' | 'busto' | 'face' | 'costas';
+  forcar?: boolean;
   alvo?: [number, number, number];
   distancia?: number;
   azimute?: number;

@@ -11,6 +11,8 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { CAMERAS } from './catalogo3d';
+import { PRESETS_CAMERA_3D } from '../services/Camera3d'; // onda 1419 (#204)
+import { flag } from '../nucleo/flags';
 import type { ArquetipoId, CameraId } from './catalogo3d';
 
 export function CameraRig3D({ preset, arquetipo, aoOrbitar }: {
@@ -30,7 +32,18 @@ export function CameraRig3D({ preset, arquetipo, aoOrbitar }: {
     destinoPos.current.set(...alvo.pos);
     destinoAlvo.current.set(...alvo.alvo);
     animando.current = true;
-  }, [preset, arquetipo]);
+    // onda 1419 (#204, as6.camera_v2): a PoC passa a LER o registry —
+    // FOV do preset equivalente do Camera3d (fonte única §P8-B)
+    if (flag('as6.camera_v2')) {
+      const mapa: Record<string, keyof typeof PRESETS_CAMERA_3D> = { corpo: 'corpo', busto: 'busto', rosto: 'face', tresquartos: 'retrato' };
+      const px = PRESETS_CAMERA_3D[mapa[preset] ?? 'corpo'];
+      const cam = camera as THREE.PerspectiveCamera;
+      if (px && cam.isPerspectiveCamera && cam.fov !== px.fov) {
+        cam.fov = px.fov;
+        cam.updateProjectionMatrix();
+      }
+    }
+  }, [preset, arquetipo, camera]);
 
   useFrame(() => {
     if (!animando.current || !controles.current) return;
