@@ -271,242 +271,242 @@
       "gradientes": 11
     },
     "premium-golden-m-busto": {
-      "bytes": 9378,
-      "nos": 138,
+      "bytes": 11112,
+      "nos": 152,
       "filtros": 0,
       "gradientes": 7
     },
     "premium-golden-f-busto": {
-      "bytes": 8942,
-      "nos": 130,
+      "bytes": 10239,
+      "nos": 141,
       "filtros": 0,
       "gradientes": 6
     },
     "cabelo-cab_px_curto": {
-      "bytes": 7758,
-      "nos": 107,
+      "bytes": 8246,
+      "nos": 111,
       "filtros": 0,
       "gradientes": 6
     },
     "cabelo-cab_px_franja": {
-      "bytes": 7811,
-      "nos": 106,
-      "filtros": 0,
-      "gradientes": 6
-    },
-    "cabelo-cab_px_lateral": {
-      "bytes": 7652,
-      "nos": 106,
-      "filtros": 0,
-      "gradientes": 6
-    },
-    "cabelo-cab_px_undercut": {
-      "bytes": 7457,
-      "nos": 104,
-      "filtros": 0,
-      "gradientes": 6
-    },
-    "cabelo-cab_px_longo_liso": {
-      "bytes": 8123,
-      "nos": 114,
-      "filtros": 0,
-      "gradientes": 7
-    },
-    "cabelo-cab_px_ondulado": {
-      "bytes": 8166,
-      "nos": 113,
-      "filtros": 0,
-      "gradientes": 7
-    },
-    "cabelo-cab_px_rabo": {
-      "bytes": 7919,
-      "nos": 112,
-      "filtros": 0,
-      "gradientes": 7
-    },
-    "cabelo-cab_px_coque": {
-      "bytes": 7681,
-      "nos": 106,
-      "filtros": 0,
-      "gradientes": 6
-    },
-    "cabelo-cab_px_afro": {
-      "bytes": 7702,
-      "nos": 106,
-      "filtros": 0,
-      "gradientes": 6
-    },
-    "cabelo-cab_px_cacheado": {
-      "bytes": 7890,
+      "bytes": 7918,
       "nos": 107,
       "filtros": 0,
       "gradientes": 6
     },
+    "cabelo-cab_px_lateral": {
+      "bytes": 8002,
+      "nos": 109,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "cabelo-cab_px_undercut": {
+      "bytes": 8094,
+      "nos": 109,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "cabelo-cab_px_longo_liso": {
+      "bytes": 8230,
+      "nos": 115,
+      "filtros": 0,
+      "gradientes": 7
+    },
+    "cabelo-cab_px_ondulado": {
+      "bytes": 8273,
+      "nos": 114,
+      "filtros": 0,
+      "gradientes": 7
+    },
+    "cabelo-cab_px_rabo": {
+      "bytes": 8228,
+      "nos": 115,
+      "filtros": 0,
+      "gradientes": 7
+    },
+    "cabelo-cab_px_coque": {
+      "bytes": 7788,
+      "nos": 107,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "cabelo-cab_px_afro": {
+      "bytes": 7917,
+      "nos": 107,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "cabelo-cab_px_cacheado": {
+      "bytes": 7997,
+      "nos": 108,
+      "filtros": 0,
+      "gradientes": 6
+    },
     "premium-golden-f-cabelo-corpo": {
-      "bytes": 14787,
-      "nos": 225,
+      "bytes": 16084,
+      "nos": 236,
       "filtros": 0,
       "gradientes": 12
     },
     "barba-brb_rala": {
-      "bytes": 9775,
-      "nos": 120,
+      "bytes": 9882,
+      "nos": 121,
       "filtros": 0,
       "gradientes": 5
     },
     "barba-brb_aparada": {
-      "bytes": 7172,
-      "nos": 103,
-      "filtros": 0,
-      "gradientes": 6
-    },
-    "barba-brb_cheia": {
-      "bytes": 7416,
-      "nos": 105,
-      "filtros": 0,
-      "gradientes": 6
-    },
-    "barba-brb_cavanhaque": {
-      "bytes": 7230,
+      "bytes": 7279,
       "nos": 104,
       "filtros": 0,
       "gradientes": 6
     },
+    "barba-brb_cheia": {
+      "bytes": 7523,
+      "nos": 106,
+      "filtros": 0,
+      "gradientes": 6
+    },
+    "barba-brb_cavanhaque": {
+      "bytes": 7337,
+      "nos": 105,
+      "filtros": 0,
+      "gradientes": 6
+    },
     "barba-brb_bigode": {
-      "bytes": 6762,
-      "nos": 95,
+      "bytes": 6869,
+      "nos": 96,
       "filtros": 0,
       "gradientes": 5
     },
     "barba-brb_costeleta": {
-      "bytes": 6862,
-      "nos": 102,
+      "bytes": 6969,
+      "nos": 103,
       "filtros": 0,
       "gradientes": 6
     },
     "barba-brb_longa": {
-      "bytes": 7553,
-      "nos": 106,
+      "bytes": 7660,
+      "nos": 107,
       "filtros": 0,
       "gradientes": 6
     },
     "barba-brb_lenhador": {
-      "bytes": 7601,
-      "nos": 106,
+      "bytes": 7708,
+      "nos": 107,
       "filtros": 0,
       "gradientes": 6
     },
     "sobrancelha-sbr_reta": {
-      "bytes": 6929,
-      "nos": 103,
+      "bytes": 7036,
+      "nos": 104,
       "filtros": 0,
       "gradientes": 5
     },
     "sobrancelha-sbr_arqueada": {
-      "bytes": 6956,
-      "nos": 103,
+      "bytes": 7063,
+      "nos": 104,
       "filtros": 0,
       "gradientes": 5
     },
     "sobrancelha-sbr_grossa": {
-      "bytes": 6957,
-      "nos": 103,
+      "bytes": 7064,
+      "nos": 104,
       "filtros": 0,
       "gradientes": 5
     },
     "sobrancelha-sbr_fina": {
-      "bytes": 6922,
-      "nos": 101,
+      "bytes": 7029,
+      "nos": 102,
       "filtros": 0,
       "gradientes": 5
     },
     "sobrancelha-sbr_angular": {
-      "bytes": 6980,
-      "nos": 103,
-      "filtros": 0,
-      "gradientes": 5
-    },
-    "sobrancelha-sbr_suave": {
-      "bytes": 6972,
-      "nos": 103,
-      "filtros": 0,
-      "gradientes": 5
-    },
-    "sobrancelha-sbr_cheia": {
-      "bytes": 6988,
-      "nos": 101,
-      "filtros": 0,
-      "gradientes": 5
-    },
-    "sobrancelha-sbr_serena": {
-      "bytes": 6948,
-      "nos": 103,
-      "filtros": 0,
-      "gradientes": 5
-    },
-    "sobrancelha-sbr_marcada": {
-      "bytes": 6994,
-      "nos": 103,
-      "filtros": 0,
-      "gradientes": 5
-    },
-    "sobrancelha-sbr_unida": {
       "bytes": 7087,
       "nos": 104,
       "filtros": 0,
       "gradientes": 5
     },
+    "sobrancelha-sbr_suave": {
+      "bytes": 7079,
+      "nos": 104,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_cheia": {
+      "bytes": 7095,
+      "nos": 102,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_serena": {
+      "bytes": 7055,
+      "nos": 104,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_marcada": {
+      "bytes": 7101,
+      "nos": 104,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "sobrancelha-sbr_unida": {
+      "bytes": 7194,
+      "nos": 105,
+      "filtros": 0,
+      "gradientes": 5
+    },
     "nariz-nar_reto": {
-      "bytes": 6867,
-      "nos": 98,
-      "filtros": 0,
-      "gradientes": 5
-    },
-    "nariz-nar_fino": {
-      "bytes": 6878,
-      "nos": 98,
-      "filtros": 0,
-      "gradientes": 5
-    },
-    "nariz-nar_largo": {
-      "bytes": 6915,
-      "nos": 98,
-      "filtros": 0,
-      "gradientes": 5
-    },
-    "nariz-nar_arrebitado": {
-      "bytes": 6959,
+      "bytes": 6974,
       "nos": 99,
       "filtros": 0,
       "gradientes": 5
     },
+    "nariz-nar_fino": {
+      "bytes": 6985,
+      "nos": 99,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_largo": {
+      "bytes": 7022,
+      "nos": 99,
+      "filtros": 0,
+      "gradientes": 5
+    },
+    "nariz-nar_arrebitado": {
+      "bytes": 7066,
+      "nos": 100,
+      "filtros": 0,
+      "gradientes": 5
+    },
     "nariz-nar_aquilino": {
-      "bytes": 6896,
-      "nos": 98,
+      "bytes": 7003,
+      "nos": 99,
       "filtros": 0,
       "gradientes": 5
     },
     "nariz-nar_botao": {
-      "bytes": 6817,
-      "nos": 98,
+      "bytes": 6924,
+      "nos": 99,
       "filtros": 0,
       "gradientes": 5
     },
     "nariz-nar_forte": {
-      "bytes": 6911,
-      "nos": 98,
+      "bytes": 7018,
+      "nos": 99,
       "filtros": 0,
       "gradientes": 5
     },
     "nariz-nar_suave": {
-      "bytes": 6896,
-      "nos": 98,
+      "bytes": 7003,
+      "nos": 99,
       "filtros": 0,
       "gradientes": 5
     },
     "premium-face-v2-completa": {
-      "bytes": 12391,
-      "nos": 169,
+      "bytes": 14055,
+      "nos": 183,
       "filtros": 0,
       "gradientes": 7
     },
@@ -523,8 +523,8 @@
       "gradientes": 6
     },
     "premium-outfit-corpo": {
-      "bytes": 18065,
-      "nos": 273,
+      "bytes": 19991,
+      "nos": 289,
       "filtros": 0,
       "gradientes": 16
     },
@@ -673,32 +673,32 @@
       "gradientes": 5
     },
     "preset-pre_cp_boardroom": {
-      "bytes": 11071,
-      "nos": 162,
+      "bytes": 12993,
+      "nos": 178,
       "filtros": 0,
       "gradientes": 8
     },
     "preset-pre_cp_offduty": {
-      "bytes": 11068,
-      "nos": 163,
+      "bytes": 12365,
+      "nos": 174,
       "filtros": 0,
       "gradientes": 8
     },
     "preset-pre_cp_neon": {
-      "bytes": 11754,
-      "nos": 179,
+      "bytes": 13614,
+      "nos": 194,
       "filtros": 0,
       "gradientes": 8
     },
     "preset-pre_cp_gala": {
-      "bytes": 13185,
-      "nos": 206,
+      "bytes": 14872,
+      "nos": 219,
       "filtros": 0,
       "gradientes": 9
     },
     "preset-gala-corpo": {
-      "bytes": 18706,
-      "nos": 307,
+      "bytes": 20393,
+      "nos": 320,
       "filtros": 0,
       "gradientes": 15
     }

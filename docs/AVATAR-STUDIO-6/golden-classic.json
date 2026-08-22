@@ -38,177 +38,177 @@
       "filtros": 0
     },
     "p03-busto": {
-      "sha256": "57e113b0c5e543c1fc01f82f1bf6271b66764e5f605b43cdaca8c4dd34646346",
-      "bytes": 9468,
-      "nos": 138,
-      "filtros": 0
-    },
-    "p04-busto": {
-      "sha256": "f94ec465a95481187f534da173898a20b9c911c4e71b316431f2ec06e84a0e9d",
-      "bytes": 9044,
-      "nos": 130,
-      "filtros": 0
-    },
-    "p05-busto": {
-      "sha256": "1f5e0b8852ddbfbbeb77a243366846ccd14e06c1e65e13d5cbaf1aa6d859d410",
-      "bytes": 8385,
-      "nos": 118,
-      "filtros": 0
-    },
-    "p06-busto": {
-      "sha256": "f78343a9e2737506b593e8c8d5b6468755f97c69d6e527852a77cca0a88dda5b",
-      "bytes": 8207,
-      "nos": 115,
-      "filtros": 0
-    },
-    "c01-golden-m-palco": {
-      "sha256": "e421a06ed3f322fd45107e9526e530c1e5ae9fb4ddec5b0e82a159bb75307569",
-      "bytes": 9988,
-      "nos": 158,
-      "filtros": 0
-    },
-    "c02-golden-f-palco": {
-      "sha256": "ebe0f340a31e1df63a26bd655389759015f04bd675d40600ac139d47be846ce1",
-      "bytes": 9880,
+      "sha256": "9d56faf72e1123c027ea763ff16381801704c2ad9ec0a1ff08ecf39b389f1f5c",
+      "bytes": 11202,
       "nos": 152,
       "filtros": 0
     },
-    "h01-lateral-busto": {
-      "sha256": "fc7c3f98ef0dd3795a5611191de27d4a045634b395c8adecb4bece86904aec3e",
-      "bytes": 7730,
-      "nos": 106,
+    "p04-busto": {
+      "sha256": "d9ba3b862cd4d9ed57ed54f368c23117b78fb279c18e31a642c88dbbef7e5b7b",
+      "bytes": 10341,
+      "nos": 141,
       "filtros": 0
     },
-    "h02-lateral-busto": {
-      "sha256": "b4323e016f5b8278d5f30e89e22ac02b6ec0637ffc990839dd9c49383558c992",
-      "bytes": 7736,
-      "nos": 106,
-      "filtros": 0
-    },
-    "h03-lateral-busto": {
-      "sha256": "37a913cf1f0a37760e3365e2428b7f188e0125363cf59d6d3ddfdc301cb2da9b",
-      "bytes": 7742,
-      "nos": 106,
-      "filtros": 0
-    },
-    "h04-longo_liso-busto": {
-      "sha256": "13d49bb867ce3e8e05520c0073d02081972d4fa85aa0be7ac0c109a7436ddc5b",
-      "bytes": 8213,
-      "nos": 114,
-      "filtros": 0
-    },
-    "h05-longo_liso-busto": {
-      "sha256": "ed97844680117be34b5440bedac2790cef09969359cd9bbe3b8a73355f0fc6a5",
-      "bytes": 8218,
-      "nos": 114,
-      "filtros": 0
-    },
-    "h06-longo_liso-busto": {
-      "sha256": "1b4b146005a7dea36d99b30074a9aaa22808d771bf931acfdd7f1faa322ebe03",
-      "bytes": 8222,
-      "nos": 114,
-      "filtros": 0
-    },
-    "p07-golden-m-cabelo-busto": {
-      "sha256": "8ea2497fb59da89693b5b3a46b0282a8a89f8dd6cc27ccdc59d6c07236e17beb",
-      "bytes": 10714,
-      "nos": 151,
-      "filtros": 0
-    },
-    "p08-golden-f-cabelo-busto": {
-      "sha256": "827f66d007330f82ece04219972e09bf72c1df9e79050f59fcbf15c9d4d0a85f",
-      "bytes": 10764,
-      "nos": 151,
-      "filtros": 0
-    },
-    "f01-facev2-busto": {
-      "sha256": "520020e3ff4f341ff3a890a36fe7a0d520113301e062cd1a14eff40e6fe0bf21",
-      "bytes": 12813,
-      "nos": 182,
-      "filtros": 0
-    },
-    "f02-facev2-busto": {
-      "sha256": "8f6f964658600ae67046d94d471ada08c0e0fe990ef0bd3e7d8998ea0a906bad",
-      "bytes": 11832,
-      "nos": 170,
-      "filtros": 0
-    },
-    "f03-facev2-busto": {
-      "sha256": "495d27308aa89a66ea8dd6ee880d2929f3f52af0835ee6db2ef28b52ae1b43c7",
-      "bytes": 10024,
-      "nos": 148,
-      "filtros": 0
-    },
-    "f04-facev2-busto": {
-      "sha256": "29f499db771182e1ededfdbb97308177b8378db5915da087dfb6779b10ffbcfd",
-      "bytes": 10670,
-      "nos": 150,
-      "filtros": 0
-    },
-    "p09-outfit-boardroom-corpo": {
-      "sha256": "81c21442131e6b2f4f423e0493555dd2f8a44ea708e650103db373904fdec78a",
-      "bytes": 14857,
-      "nos": 228,
-      "filtros": 0
-    },
-    "p12-acessorios-busto": {
-      "sha256": "1b3ebe6d1368e3c29aa19feaf105dc26cdf8db786b180f3bea3ad293fb8730f7",
-      "bytes": 12884,
-      "nos": 194,
-      "filtros": 0
-    },
-    "p13-ambiente-busto": {
-      "sha256": "f4cb421ae754eca9ef958630b714d44b2f09ea51a4ae2d49605b317d04616401",
-      "bytes": 11360,
-      "nos": 177,
-      "filtros": 0
-    },
-    "p14-ambiente-palco": {
-      "sha256": "cf08a41fd4a9ddd60710a8fafecce4d2ecb2701b49c08061e3e980241d736b03",
-      "bytes": 11875,
-      "nos": 192,
-      "filtros": 0
-    },
-    "p15-ambiente-busto": {
-      "sha256": "461c5fc6944f4bc43115392ee4a3e74381e715e011fed3516bb97483ad70f451",
-      "bytes": 10244,
-      "nos": 158,
-      "filtros": 0
-    },
-    "e01-export-bust": {
-      "sha256": "6ce191fdbbfc6312e2f6c78fd5c7b676d7ce71b0e9c1b66d072aa1b47f834845",
-      "bytes": 8919,
+    "p05-busto": {
+      "sha256": "05f2c9fd28ca421d57951c3726eb4d005510e26c61d419fe0d3d74e35ce5519b",
+      "bytes": 9713,
       "nos": 129,
       "filtros": 0
     },
+    "p06-busto": {
+      "sha256": "f1b7216889c9aad60961bbb679e2dfde925b2ef0b9ffbd7985d7b0e3e639ed20",
+      "bytes": 9899,
+      "nos": 128,
+      "filtros": 0
+    },
+    "c01-golden-m-palco": {
+      "sha256": "3a14d782c0cc18bec27dec0f410044601770066631d63ec64954e7eb73b8b1e5",
+      "bytes": 11719,
+      "nos": 172,
+      "filtros": 0
+    },
+    "c02-golden-f-palco": {
+      "sha256": "a5ebada4a0c24c2d9d3a2f7443e09e35cabe161d64af197980fd27ded9a30d8b",
+      "bytes": 11177,
+      "nos": 163,
+      "filtros": 0
+    },
+    "h01-lateral-busto": {
+      "sha256": "ff3616c1bbced0f3794e39902bda5848268363c3093f338082e004e987eee8f6",
+      "bytes": 8080,
+      "nos": 109,
+      "filtros": 0
+    },
+    "h02-lateral-busto": {
+      "sha256": "e712e82c23aa7e4ca84045631ba8680aa90f5191436d23cd35715b6568bb70e8",
+      "bytes": 8086,
+      "nos": 109,
+      "filtros": 0
+    },
+    "h03-lateral-busto": {
+      "sha256": "7882d54b17faa08f93dd0273d497e22279b994e1f72d857167e505df8150eaef",
+      "bytes": 8092,
+      "nos": 109,
+      "filtros": 0
+    },
+    "h04-longo_liso-busto": {
+      "sha256": "17eabcfface33130d97c998deef3e5177e2c362061650244bd60df374f1e9fe7",
+      "bytes": 8320,
+      "nos": 115,
+      "filtros": 0
+    },
+    "h05-longo_liso-busto": {
+      "sha256": "2772686a6c354530c1004c2de30e5546b184a3ecf63b1f8177908f3e1d3d3634",
+      "bytes": 8325,
+      "nos": 115,
+      "filtros": 0
+    },
+    "h06-longo_liso-busto": {
+      "sha256": "43e7f274f488213d916381e16e946b7c84c340421dad65af019c233bf3bd31ba",
+      "bytes": 8329,
+      "nos": 115,
+      "filtros": 0
+    },
+    "p07-golden-m-cabelo-busto": {
+      "sha256": "514f4c22d64da17ce8bb4fafe0f95dc08c036d877ae557ce01081f3c4a3915e6",
+      "bytes": 12688,
+      "nos": 167,
+      "filtros": 0
+    },
+    "p08-golden-f-cabelo-busto": {
+      "sha256": "63581aba14350a103c21b2d3cda513e3138d5f5751b5ca1c41093398b68ce4ba",
+      "bytes": 12061,
+      "nos": 162,
+      "filtros": 0
+    },
+    "f01-facev2-busto": {
+      "sha256": "ee9171f4d5cf45ecf4c3c62062eea3bdea6c1fe5a77ea83a6103963c830c7ff8",
+      "bytes": 14787,
+      "nos": 198,
+      "filtros": 0
+    },
+    "f02-facev2-busto": {
+      "sha256": "3fba6c953762535a7e109438d037013ff352e5734efa4b4c3d7d1378175d85d1",
+      "bytes": 13129,
+      "nos": 181,
+      "filtros": 0
+    },
+    "f03-facev2-busto": {
+      "sha256": "b728cef2922afa0ccfce564b0d6b51dff6fd6014608ccf9862752f098e426fd7",
+      "bytes": 11755,
+      "nos": 162,
+      "filtros": 0
+    },
+    "f04-facev2-busto": {
+      "sha256": "ae2e7f7342b830ec858faf6dc4e372656cc5b78c4430cde4d2451ce6c8f631af",
+      "bytes": 12091,
+      "nos": 162,
+      "filtros": 0
+    },
+    "p09-outfit-boardroom-corpo": {
+      "sha256": "3266fb46de2325e3cabab794a61bcb42209efbc7c9db0a2f1c34f8c15aa8babb",
+      "bytes": 16588,
+      "nos": 242,
+      "filtros": 0
+    },
+    "p12-acessorios-busto": {
+      "sha256": "65135b0033ce7573ac0ea0f1ec84464cca8da73b52521135dbfa20564bb5f847",
+      "bytes": 14615,
+      "nos": 208,
+      "filtros": 0
+    },
+    "p13-ambiente-busto": {
+      "sha256": "ad3a69f1e004c54e7445d6f9c017e0b0cf70686ec4fc8a7fca930ea0aba23420",
+      "bytes": 13091,
+      "nos": 191,
+      "filtros": 0
+    },
+    "p14-ambiente-palco": {
+      "sha256": "a6b9190ddb4089886df8eba5301423019c5fc847c5ac056b02d2c124723c41c1",
+      "bytes": 13172,
+      "nos": 203,
+      "filtros": 0
+    },
+    "p15-ambiente-busto": {
+      "sha256": "2bdec3b3ddead60c0d916d6872dfd8a07ed13c57ff7dcc212b025a3134aad88b",
+      "bytes": 11936,
+      "nos": 171,
+      "filtros": 0
+    },
+    "e01-export-bust": {
+      "sha256": "4e667554793be9708c242032ad8338fac89b4addd83e7bb80f1529dd862d60af",
+      "bytes": 10650,
+      "nos": 143,
+      "filtros": 0
+    },
     "e02-export-full": {
-      "sha256": "7688c07cb52d5d427a6bcdf02724b89f3e6776def2e6c33283aaf209828d0590",
-      "bytes": 11750,
-      "nos": 185,
+      "sha256": "b2699e66ac1f517d5daeaddfb1c6c5a26a76f1c19ee440700546b744877efdf0",
+      "bytes": 13481,
+      "nos": 199,
       "filtros": 0
     },
     "e03-export-transparente": {
-      "sha256": "0e272c85232721ffe63ac8c94fbcff71e1d4722c607ffc13a1855b0def21eef4",
-      "bytes": 8571,
-      "nos": 121,
+      "sha256": "e39024be81c3b3fd7afe1f1b449600011ae9822a3d7f07f40c4dc6db36a26dda",
+      "bytes": 10302,
+      "nos": 135,
       "filtros": 0
     },
     "p16-preset-gala-busto": {
-      "sha256": "6572759b271bd0007983bf2716efca5f38ff9a7848a5e841ce9f30d49239ce4c",
-      "bytes": 13290,
-      "nos": 206,
+      "sha256": "7179b4e7680a6e05a8d737c2220c62e7b8b8227cf528d1b4e34dabb50d203d95",
+      "bytes": 14977,
+      "nos": 219,
       "filtros": 0
     },
     "p10-outfit-offduty-corpo": {
-      "sha256": "605140821d2a6adcb38e3194c82ea5ea8ead7c5f5899ac8398417a6bb0829228",
-      "bytes": 14714,
-      "nos": 221,
+      "sha256": "c0f0fc34dc92a6cee5f171615631b99f5bf1cc049b0a70499e988ac1de27cccc",
+      "bytes": 16011,
+      "nos": 232,
       "filtros": 0
     },
     "p11-outfit-gala-corpo": {
-      "sha256": "073d13d428eb35a04515262f7cf38ea552f65218cedf0f8196437a6524690093",
-      "bytes": 14157,
-      "nos": 216,
+      "sha256": "44ce77f55c860f333e4fe01ebe2d1fad6a7e12ed3d610a8e425aa451d0cafaa0",
+      "bytes": 15840,
+      "nos": 230,
       "filtros": 0
     }
   }

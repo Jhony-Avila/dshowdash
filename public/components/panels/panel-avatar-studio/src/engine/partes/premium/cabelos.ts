@@ -96,15 +96,17 @@ const comum = { categoria: 'cabelo' as const, requerBase: HUMANOIDES, acabamento
 export const CABELOS_PREMIUM: ParteDef[] = [
   {
     ...comum, id: 'cab_px_curto', nome: 'Curto Premium', tema: 'executivo',
-    descricao: 'Corte baixo texturizado com fluxo real de mechas.', usaCores: ['cabelo'],
+    descricao: 'Corte baixo texturizado — calota cheia, hairline masculina.', usaCores: ['cabelo'],
     render: cabeloPremium({
-      massa: 'M70 104 c -2 -38 22 -57 50 -57 s 52 19 50 57 c -1 -7 -4 -13 -8 -17 c 2 -22 -18 -32 -42 -32 s -44 10 -42 32 c -4 4 -7 10 -8 17 z',
-      sombraTesta: 'M78 88 c 10 -8 26 -12 42 -12 s 32 4 42 12 c -2 4 -4 6 -8 7 c -9 -6 -21 -9 -34 -9 s -25 3 -34 9 c -4 -1 -6 -3 -8 -7 z',
-      sombraInterna: 'M74 96 c 0 -10 4 -18 10 -24 c -4 8 -5 16 -4 24 z',
-      mechas: ['M84 70 q 10 -9 22 -11', 'M112 56 q 12 -1 22 3', 'M142 64 q 8 5 12 12', 'M78 84 q 6 -8 14 -12'],
-      fios: ['M70 92 q -3 -6 -1 -12', 'M170 92 q 3 -6 1 -12'],
+      // onda 1424 (Fase B §23): calota SÓLIDA fechada na hairline (~y86) —
+      // sem vazado. Hairline masculina reta com entradas curtas; textura
+      // por mechas curtas por cima.
+      massa: 'M72 88 c -4 -41 22 -61 48 -61 s 52 20 48 61 c -8 -6 -16 -9 -26 -10 c -1 -3 -2 -6 -2 -9 c -6 4 -13 6 -20 6 s -14 -2 -20 -6 c 0 3 -1 6 -2 9 c -10 1 -18 4 -26 10 z',
+      sombraTesta: 'M80 86 c 11 -7 26 -10 40 -10 s 29 3 40 10 c -2 4 -4 6 -8 7 c -9 -5 -20 -8 -32 -8 s -23 3 -32 8 c -4 -1 -6 -3 -8 -7 z',
+      sombraInterna: 'M74 84 c 0 -16 5 -29 14 -37 c -7 11 -10 24 -9 37 z',
+      mechas: ['M84 68 q 12 -12 28 -13', 'M112 52 q 12 -2 26 2', 'M144 62 q 8 5 12 15', 'M92 58 q 10 -6 20 -7', 'M122 50 q 9 0 16 4', 'M78 80 q 6 -10 14 -15'],
+      fios: ['M70 82 q -3 -7 -1 -13', 'M170 82 q 3 -7 1 -13', 'M96 46 q 2 -5 6 -7'],
     }),
- 
   },
   {
     ...comum, id: 'cab_px_franja', nome: 'Franja Premium', tema: 'casual',
@@ -120,26 +122,31 @@ export const CABELOS_PREMIUM: ParteDef[] = [
   },
   {
     ...comum, id: 'cab_px_lateral', nome: 'Lateral Premium', tema: 'executivo',
-    descricao: 'Repartido de lado com queda suave e brilho de pente.', usaCores: ['cabelo'],
+    descricao: 'Repartido de lado, volume cheio caindo p/ a direita.', usaCores: ['cabelo'],
     render: cabeloPremium({
-      massa: 'M68 108 c -4 -40 20 -61 52 -61 c 34 0 56 23 52 61 c -2 -8 -5 -14 -9 -18 c 2 -16 -6 -28 -18 -33 c 8 10 10 20 6 28 c -10 -14 -28 -20 -46 -16 c -14 3 -24 13 -28 25 c -4 4 -7 8 -9 14 z',
-      sombraTesta: 'M84 86 c 12 -7 28 -10 44 -8 c -14 1 -28 5 -38 12 c -3 -1 -5 -2 -6 -4 z',
-      sombraInterna: 'M126 55 c 8 4 13 11 14 19 c -5 -8 -11 -14 -19 -17 z',
-      mechas: ['M88 72 q 16 -12 36 -12', 'M100 62 q 18 -6 34 0', 'M140 66 q 8 6 11 14'],
-      fios: ['M66 98 q -3 -7 -1 -13', 'M172 96 q 2 -6 0 -12'],
+      // onda 1424 (Fase B §23): calota SÓLIDA com risca lateral — antes
+      // mostrava couro. Hairline mais baixa à esquerda (repartido).
+      massa: 'M68 110 c -4 -42 20 -63 52 -63 s 56 21 52 63 c -3 -18 -6 -28 -12 -35 c -8 6 -18 9 -30 9 c -6 0 -11 -1 -16 -3 c -2 4 -5 7 -9 9 c -6 3 -13 4 -20 5 c -3 5 -6 10 -9 16 z',
+      franja: 'M78 76 c 6 -12 18 -18 34 -18 c 12 0 22 4 30 11 c -6 -2 -12 -2 -18 -1 c -10 5 -22 9 -34 12 c -5 1 -9 -1 -12 -4 z',
+      sombraTesta: 'M80 88 c 12 -7 28 -10 42 -8 c -14 1 -28 5 -38 12 c -2 -1 -4 -2 -4 -4 z',
+      sombraInterna: 'M100 54 c -10 6 -18 15 -22 26 c 0 -14 8 -26 22 -30 z',
+      mechas: ['M84 74 q 20 -14 42 -12', 'M92 64 q 22 -8 40 -2', 'M140 68 q 8 6 12 15', 'M100 82 q 16 -6 32 -4'],
+      fios: ['M66 100 q -3 -7 -1 -13', 'M172 98 q 2 -6 0 -12'],
     }),
- 
   },
   {
     ...comum, id: 'cab_px_undercut', nome: 'Undercut Premium', tema: 'urbano',
-    descricao: 'Laterais raspadas em meia-sombra, topo com movimento.', usaCores: ['cabelo'],
+    descricao: 'Bloco cheio no topo, laterais raspadas em meia-sombra.', usaCores: ['cabelo'],
     render: cabeloPremium({
-      massa: 'M84 92 c -2 -28 12 -45 36 -45 s 38 17 36 45 c -3 -6 -6 -10 -10 -12 c 2 -16 -10 -24 -26 -24 s -28 8 -26 24 c -4 2 -7 6 -10 12 z',
-      sombraTesta: 'M92 84 c 8 -5 18 -7 28 -7 s 20 2 28 7 c -2 3 -4 5 -7 6 c -6 -3 -13 -5 -21 -5 s -15 2 -21 5 c -3 -1 -5 -3 -7 -6 z',
-      sombraInterna: 'M70 104 c 0 -12 4 -22 10 -30 c -2 10 -2 20 0 30 z M170 104 c 0 -12 -4 -22 -10 -30 c 2 10 2 20 0 30 z',
-      mechas: ['M100 60 q 10 -7 22 -6', 'M128 55 q 8 3 12 9', 'M96 70 q 6 -6 14 -8'],
+      // onda 1424 (Fase B §23): TOPO cheio até a hairline (bloco sólido,
+      // sem recuo) + laterais em meia-sombra. Fecha na testa ~y84.
+      massa: 'M76 86 c -4 -38 18 -55 44 -55 s 48 17 44 55 c -8 -6 -16 -9 -24 -10 c -1 -2 -1 -5 -1 -7 c -6 4 -12 6 -19 6 s -13 -2 -19 -6 c 0 2 0 5 -1 7 c -8 1 -16 4 -24 10 z',
+      sombraTesta: 'M84 84 c 10 -6 22 -9 36 -9 s 26 3 36 9 c -2 4 -4 6 -8 7 c -8 -4 -18 -7 -28 -7 s -20 3 -28 7 c -4 -1 -6 -3 -8 -7 z',
+      // laterais raspadas: faixa de sombra suave nas têmporas (§urbano)
+      sombraInterna: 'M72 104 c 2 -12 6 -22 14 -28 c -6 3 -11 9 -13 17 c -1 4 -1 8 -1 11 z M168 104 c -2 -12 -6 -22 -14 -28 c 6 3 11 9 13 17 c 1 4 1 8 1 11 z',
+      mechas: ['M92 62 q 14 -12 30 -12', 'M122 48 q 12 0 20 7', 'M96 74 q 8 -9 18 -11', 'M118 54 q 12 0 20 5', 'M84 68 q 8 -9 16 -12'],
+      fios: ['M106 40 q 3 -5 8 -6', 'M132 42 q 3 -4 7 -4'],
     }),
- 
   },
   {
     ...comum, id: 'cab_px_longo_liso', nome: 'Longo Liso Premium', tema: 'clássico', raridade: 'epico',
@@ -169,12 +176,15 @@ export const CABELOS_PREMIUM: ParteDef[] = [
   },
   {
     ...comum, id: 'cab_px_rabo', nome: 'Rabo de Cavalo Premium', tema: 'gamer',
-    descricao: 'Preso alto com rabo em movimento atrás da figura.', usaCores: ['cabelo'],
+    descricao: 'Preso alto e puxado, superfície lisa, rabo atrás.', usaCores: ['cabelo'],
     render: cabeloPremium({
-      massa: 'M70 102 c -2 -36 20 -55 50 -55 s 52 19 50 55 c -2 -7 -5 -12 -9 -15 c 2 -20 -16 -30 -41 -30 s -43 10 -41 30 c -4 3 -7 8 -9 15 z',
+      // onda 1424 (Fase B §23): topo SÓLIDO e liso (puxado p/ trás) — antes
+      // era anel mostrando couro. Mechas horizontais dão o "penteado".
+      massa: 'M70 104 c -2 -38 20 -57 50 -57 s 52 19 50 57 c -3 -14 -6 -22 -12 -28 c -10 4 -22 6 -38 6 s -28 -2 -38 -6 c -6 6 -9 14 -12 28 z',
       sombraTesta: 'M84 86 c 10 -6 22 -9 36 -9 s 26 3 36 9 c -2 4 -4 6 -7 7 c -8 -4 -18 -7 -29 -7 s -21 3 -29 7 c -3 -1 -5 -3 -7 -7 z',
-      mechas: ['M92 62 q 12 -9 28 -10', 'M130 54 q 10 3 16 10', 'M86 76 q 6 -9 16 -13'],
-      fios: ['M120 44 q 2 -5 6 -7', 'M128 44 q 3 -4 7 -5'],
+      sombraInterna: 'M74 96 c 2 -12 8 -22 18 -28 c -8 8 -13 18 -14 30 z',
+      mechas: ['M80 78 q 40 -14 80 0', 'M84 68 q 36 -12 72 0', 'M90 58 q 30 -8 60 0', 'M96 88 q 24 -6 48 0'],
+      fios: ['M118 44 q 2 -5 6 -7', 'M128 44 q 3 -4 7 -5'],
     }),
     renderAtras: massaAtras('M132 52 c 18 4 30 22 30 44 c 0 28 -10 54 -28 72 c 8 -24 12 -48 8 -70 c -3 12 -8 22 -16 30 c 8 -26 10 -52 -4 -70 c 4 -3 7 -5 10 -6 z'),
  
@@ -193,14 +203,18 @@ export const CABELOS_PREMIUM: ParteDef[] = [
   },
   {
     ...comum, id: 'cab_px_afro', nome: 'Afro Premium', tema: 'urbano', raridade: 'epico',
-    descricao: 'Coroa cheia com volume esférico e luz pontilhada.', usaCores: ['cabelo'],
+    descricao: 'Coroa esférica CHEIA com borda em nuvem e luz pontilhada.', usaCores: ['cabelo'],
     render: cabeloPremium({
-      massa: 'M60 96 a 60 52 0 1 1 120 0 c -2 -6 -5 -10 -9 -13 a 14 12 0 0 0 -10 -18 a 15 13 0 0 0 -18 -12 a 16 13 0 0 0 -23 -6 a 16 13 0 0 0 -23 6 a 15 13 0 0 0 -18 12 a 14 12 0 0 0 -10 18 c -4 3 -7 7 -9 13 z',
-      sombraTesta: 'M82 84 c 12 -6 25 -9 38 -9 s 26 3 38 9 c -2 4 -5 6 -8 7 c -9 -4 -19 -6 -30 -6 s -21 2 -30 6 c -3 -1 -6 -3 -8 -7 z',
-      sombraInterna: 'M64 92 a 56 48 0 0 1 12 -30 a 66 56 0 0 0 -8 30 z',
-      mechas: ['M84 56 q 5 -3 10 -3', 'M118 42 q 5 -1 10 1', 'M148 54 q 5 3 8 7', 'M72 76 q 3 -5 8 -8', 'M162 74 q 4 4 6 9'],
+      // onda 1424 (Fase B §23): DOMO sólido + bordas em nuvem PREENCHIDAS
+      // (círculos de subpath no mesmo fill do gradiente — não traços).
+      massa: 'M78 90 a 58 56 0 1 1 84 0 z'
+        + ' M74 74 a 11 11 0 1 0 0.1 0 z M80 52 a 12 12 0 1 0 0.1 0 z M98 40 a 12 12 0 1 0 0.1 0 z'
+        + ' M120 35 a 12 12 0 1 0 0.1 0 z M142 40 a 12 12 0 1 0 0.1 0 z M160 52 a 12 12 0 1 0 0.1 0 z M166 74 a 11 11 0 1 0 0.1 0 z',
+      sombraTesta: 'M82 86 c 12 -6 25 -9 38 -9 s 26 3 38 9 c -2 4 -5 6 -8 7 c -9 -4 -19 -6 -30 -6 s -21 2 -30 6 c -3 -1 -6 -3 -8 -7 z',
+      sombraInterna: 'M120 54 a 50 48 0 0 0 -38 22 a 52 50 0 0 1 38 -28 a 52 50 0 0 1 38 28 a 50 48 0 0 0 -38 -22 z',
+      // pontilhado de luz (§afro) — pequenos realces sobre a coroa
+      mechas: ['M96 60 a 4 4 0 0 1 5 -2', 'M120 52 a 4 4 0 0 1 5 0', 'M144 60 a 4 4 0 0 1 4 4', 'M84 78 a 4 4 0 0 1 4 -4', 'M156 78 a 4 4 0 0 1 4 4'],
     }),
- 
   },
   {
     ...comum, id: 'cab_px_cacheado', nome: 'Cacheado Premium', tema: 'casual',
