@@ -38,10 +38,52 @@ import type { ResultadoMontagem } from './Assembler3d';
 import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
 import { aplicarFamilias, aplicarPipelineCores, descartarMateriais, marcarMateriaisPorManifest } from './Materiais3d'; // lote 641-650 (§418-§421) + onda 1408 (#160)
 import { LOOKS, etiquetaLook, lookDe, type LookId } from './Looks3d'; // onda 1408 (#161): registry de looks
+import { passesPos } from './QualityManager'; // onda 1420 (#206): degradação por pass
+import { LENTES_FOTO, dimensoesLente, nomeFotoLente, type LenteFotoId } from './LentesFoto'; // onda 1420 (#207)
+import { telemetria } from './Telemetria'; // onda 1420 (#206): p3d_pos_fallback
 import { BOOKMARKS_CAMERA, LIMITES_ORBITA, TRANSICAO_CAMERA_MS, enquadrar, presetDe } from './Camera3d'; // onda 1419 (#204)
 import { flag } from '../nucleo/flags'; // onda 1419 (#204/#205): camera_v2/sombras_v2
 import { MaquinaAnimacao, alvoOlhar, carregarPacoteAnimacoes, mesclarClipes } from './Animacoes3d'; // lotes 661-670/731-740 (§432-§439)
 import type { PacoteAnimacoes } from './Animacoes3d';
+
+// ── onda 1420 (#206, as6.pos_v2): shaders da cadeia de pós v2 ──────────
+/** GRADE paramétrico com PROTEÇÃO DE PELE (§1969): saturação/temperatura/
+ *  contraste sobre o frame tone-mapped; a máscara de pele (razão R>G>B
+ *  típica de tons de pele em sRGB) ATENUA o grading onde o pixel "parece
+ *  rosto" — o look nunca cozinha a pele (uPele 0 desliga a proteção). */
+const SHADER_GRADE = {
+  uniforms: { tDiffuse: { value: null }, uSat: { value: 1 }, uTemp: { value: 0 }, uCon: { value: 1 }, uPele: { value: 1 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: `
+    uniform sampler2D tDiffuse; uniform float uSat; uniform float uTemp; uniform float uCon; uniform float uPele;
+    varying vec2 vUv;
+    void main(){
+      vec4 c = texture2D(tDiffuse, vUv);
+      vec3 rgb = c.rgb;
+      vec3 quente = clamp(rgb + vec3(uTemp, uTemp * 0.25, -uTemp), 0.0, 1.0);
+      float l = dot(quente, vec3(0.2126, 0.7152, 0.0722));
+      vec3 sat = mix(vec3(l), quente, uSat);
+      vec3 grad = (sat - 0.5) * uCon + 0.5;
+      float pele = smoothstep(0.02, 0.12, rgb.r - rgb.g) * smoothstep(0.0, 0.15, rgb.g - rgb.b) * smoothstep(0.15, 0.35, rgb.r);
+      vec3 fin = mix(grad, rgb, clamp(pele, 0.0, 1.0) * uPele * 0.65);
+      gl_FragColor = vec4(clamp(fin, 0.0, 1.0), c.a);
+    }`,
+};
+/** VINHETA paramétrica (força/suavidade por look — §1971). */
+const SHADER_VINHETA = {
+  uniforms: { tDiffuse: { value: null }, uForca: { value: 0 }, uSuav: { value: 0.5 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: `
+    uniform sampler2D tDiffuse; uniform float uForca; uniform float uSuav;
+    varying vec2 vUv;
+    void main(){
+      vec4 c = texture2D(tDiffuse, vUv);
+      float d = distance(vUv, vec2(0.5));
+      float v = smoothstep(0.72, 0.72 - uSuav * 0.6, d);
+      c.rgb *= mix(1.0 - uForca, 1.0, v);
+      gl_FragColor = c;
+    }`,
+};
 
 /** onda 1419 (#205): CONTACT SHADOW procedural — gradiente radial num
  *  CanvasTexture (zero download, determinístico o suficiente p/ palco). */
@@ -242,6 +284,15 @@ export class Renderizador3d implements RenderizadorAvatar {
   // sob demanda no 1º uso; null = caminho de render 100% legado
   private composer: EffectComposer | null = null;
   private composerReal = false;
+  private posReal = false; // onda 1420: guarda o `real` p/ recriar pós context loss
+  // onda 1420 (#206, as6.pos_v2): COMPOSER V2 por look — cadeia
+  // Render→Bloom→Grade→Vignette declarada em Look.pos, degradada por
+  // pass via QualityManager.passesPos; null = caminho legado byte a byte
+  private composerV2: EffectComposer | null = null;
+  private passesV2: { bloom: UnrealBloomPass | null; grade: ShaderPass | null; vinheta: ShaderPass | null } = { bloom: null, grade: null, vinheta: null };
+  private geracaoPosV2 = 0; // cresce a cada (re)construção — teste de context loss
+  // onda 1420 (#206, as6.dev_iluminacao): multiplicadores dev sobre o look
+  private devLuz: { key: number; fill: number; rim: number; bloom: number } | null = null;
   // mega 45: nitidez responsiva — o canvas segue o contêiner de verdade
   private observadorTamanho: ResizeObserver | null = null;
   private alvoEl: HTMLElement | null = null;
@@ -519,6 +570,17 @@ export class Renderizador3d implements RenderizadorAvatar {
     // lote 691-700 (§506): câmera ESPECÍFICA da captura (aplica/restaura)
     const cameraAntes = this.cameraAtual;
     if (opcoes.camera) this.definirCamera(opcoes.camera);
+    // onda 1420 (#207): transição 300ms pendente (as6.camera_v2) é
+    // CORTADA a seco — a captura é um frame só e precisa ser
+    // determinística (o laço não roda durante o capturar)
+    if (this.transicaoCam) {
+      const { para } = this.transicaoCam;
+      this.camera.position.copy(para.pos);
+      this.alvoCam.copy(para.alvo);
+      this.camera.fov = para.fov;
+      this.camera.lookAt(this.alvoCam);
+      this.transicaoCam = null;
+    }
     // §506 supersampling: renderiza no DOBRO e reduz — AA de captura
     const fator = opcoes.superAmostra === 2 ? 2 : 1;
     const tamanhoAntes = new THREE.Vector2();
@@ -526,7 +588,14 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.renderer.setSize(opcoes.largura * fator, opcoes.altura * fator);
     this.camera.aspect = opcoes.largura / opcoes.altura;
     this.camera.updateProjectionMatrix();
-    this.renderer.render(this.cena, this.camera);
+    // onda 1420 (#206): a captura passa pela MESMA cadeia de pós do
+    // palco (composer v2 quando ativo) — "o que vê é o que sai"
+    if (this.composerV2) {
+      this.composerV2.setSize(opcoes.largura * fator, opcoes.altura * fator);
+      this.composerV2.render();
+    } else {
+      this.renderer.render(this.cena, this.camera);
+    }
     // §506 múltiplos formatos (jpeg/webp p/ derivados §329.2)
     const mime = opcoes.formato === 'jpeg' ? 'image/jpeg'
       : opcoes.formato === 'webp' ? 'image/webp' : 'image/png';
@@ -547,6 +616,7 @@ export class Renderizador3d implements RenderizadorAvatar {
       dataUri = this.renderer.domElement.toDataURL(mime, q);
     }
     this.renderer.setSize(tamanhoAntes.x, tamanhoAntes.y);
+    this.composerV2?.setSize(tamanhoAntes.x, tamanhoAntes.y); // onda 1420: restaura
     this.camera.aspect = tamanhoAntes.x / Math.max(1, tamanhoAntes.y);
     this.camera.updateProjectionMatrix();
     if (opcoes.camera) this.definirCamera(cameraAntes); // §506 restaura
@@ -561,6 +631,42 @@ export class Renderizador3d implements RenderizadorAvatar {
     // §433: sai da captura de volta ao estado anterior (idle/pose)
     this.maquinaAnim.ir(estadoAntes === 'pose' ? 'pose' : 'idle');
     return { dataUri, largura: opcoes.largura, altura: opcoes.altura };
+  }
+
+  /** onda 1420 (MEGA_BRIEFING_01 P8-E §2007–§2027, #207; as6.foto_lentes):
+   *  captura com LENTE do registry LentesFoto — aplica look + preset de
+   *  câmera + shadow map ↑ SÓ durante a captura e RESTAURA tudo (o palco
+   *  volta byte a byte). Determinística: mesma cena ⇒ mesmos bytes
+   *  (teste com hash de 2 capturas). Pós v2 entra pelo capturar(). */
+  async capturarComLente(id: LenteFotoId, opcoes: { transparente?: boolean } = {}): Promise<CapturaRender & { nome: string }> {
+    const lente = LENTES_FOTO[id];
+    if (!lente) throw new Error(`lente desconhecida: ${id}`);
+    const { largura, altura } = dimensoesLente(id);
+    const lookAntes = this.lookAtual;
+    // shadow ↑ só na captura (§2019): mapa 2048 na key, sem mexer em
+    // tier/LOD (nada de rede no meio da foto); restaurado no finally
+    const mapaAntes = this.luzes ? this.luzes.chave.shadow.mapSize.x : 0;
+    const subirSombra = this.luzes !== null && this.luzes.chave.castShadow && mapaAntes > 0 && mapaAntes < 2048;
+    const trocarMapa = (tam: number): void => {
+      if (!this.luzes) return;
+      this.luzes.chave.shadow.mapSize.set(tam, tam);
+      this.luzes.chave.shadow.map?.dispose();
+      (this.luzes.chave.shadow as unknown as { map: null }).map = null; // rebuild
+    };
+    if (subirSombra) trocarMapa(2048);
+    this.aplicarLook(lente.look); // luz + pós da lente (restaurado abaixo)
+    try {
+      const foto = await this.capturar({
+        largura, altura, deterministica: true, transparente: opcoes.transparente,
+        superAmostra: 2,
+        camera: { modo: lente.camera, forcar: true } as EstadoCamera,
+      });
+      telemetria('p3d_foto_lente', { lente: id, look: lente.look, aspecto: lente.aspecto });
+      return { ...foto, nome: nomeFotoLente(id) };
+    } finally {
+      this.aplicarLook(lookAntes);
+      if (subirSombra) trocarMapa(mapaAntes);
+    }
   }
 
   definirQualidade(perfil: QualidadeTier | 'auto'): void {
@@ -585,13 +691,15 @@ export class Renderizador3d implements RenderizadorAvatar {
       this.relogio += delta;
       this.animarIdle();
     }
-    if (this.composerReal && this.composer) this.composer.render();
+    if (this.composerV2) this.composerV2.render(); // onda 1420 (#206): pós v2 do look
+    else if (this.composerReal && this.composer) this.composer.render();
     else this.renderer.render(this.cena, this.camera);
   }
 
   async descartar(): Promise<void> {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
+    this.derrubarPosV2(); // onda 1420 (#206): render targets do pós v2
     this.mixer?.stopAllAction();
     this.mixer = null;
     this.acaoAtual = null;
@@ -634,6 +742,16 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.contextoPerdido = false;
     // o three re-sobe o estado GL; reaplicar o estado garante texturas/LOD
     if (this.ultimoEstado) void this.aplicarEstado(this.ultimoEstado);
+    // onda 1420 (#206): os render targets dos COMPOSERS morreram junto
+    // com o contexto — recriar evita frame preto p/ sempre. Legado: solta
+    // a referência e o definirPos refaz; v2: derruba + reconstrói já.
+    if (this.composer) {
+      this.composer = null;
+      this.composerReal = false;
+      this.definirPos(this.posAtivo, this.posReal);
+    }
+    this.derrubarPosV2();
+    this.aplicarPosV2();
     this.opcoes.aoContexto('restaurado');
   };
 
@@ -646,6 +764,7 @@ export class Renderizador3d implements RenderizadorAvatar {
     this.renderer.getSize(atual);
     if (atual.x === l && atual.y === a) return;
     this.renderer.setSize(l, a);
+    this.composerV2?.setSize(l, a); // onda 1420 (#206): pós v2 acompanha
     this.camera.aspect = l / a;
     this.camera.updateProjectionMatrix();
   }
@@ -808,10 +927,13 @@ export class Renderizador3d implements RenderizadorAvatar {
   aplicarLook(id: LookId | string): void {
     const look = lookDe(id);
     this.lookAtual = look.id;
+    // onda 1420 (#206, as6.dev_iluminacao): multiplicadores dev — null
+    // (o caminho normal) multiplica por 1 = byte a byte
+    const m = this.devLuz;
     if (this.luzes) {
       const { chave, preencher, ambiente } = this.luzes;
-      chave.color.setHex(look.key.cor); chave.intensity = look.key.intensidade; chave.position.set(...look.key.pos);
-      preencher.color.setHex(look.fill.cor); preencher.intensity = look.fill.intensidade; preencher.position.set(...look.fill.pos);
+      chave.color.setHex(look.key.cor); chave.intensity = look.key.intensidade * (m?.key ?? 1); chave.position.set(...look.key.pos);
+      preencher.color.setHex(look.fill.cor); preencher.intensity = look.fill.intensidade * (m?.fill ?? 1); preencher.position.set(...look.fill.pos);
       ambiente.intensity = look.ambiente;
     }
     if (this.cena && this.ambienteUsuario === null) {
@@ -819,7 +941,7 @@ export class Renderizador3d implements RenderizadorAvatar {
     }
     if (this.rimLook) { this.cena?.remove(this.rimLook); this.rimLook.dispose(); this.rimLook = null; }
     if (look.rim && this.cena) {
-      this.rimLook = new THREE.DirectionalLight(look.rim.cor, look.rim.intensidade);
+      this.rimLook = new THREE.DirectionalLight(look.rim.cor, look.rim.intensidade * (m?.rim ?? 1));
       this.rimLook.position.set(...look.rim.pos);
       this.cena.add(this.rimLook);
     }
@@ -838,8 +960,87 @@ export class Renderizador3d implements RenderizadorAvatar {
       }
     }
     this.aplicarExposicao();
+    this.aplicarPosV2(); // onda 1420 (#206): a cadeia de pós segue o look
   }
   lookAtivo(): LookId { return this.lookAtual; }
+
+  // ── onda 1420 (MEGA_BRIEFING_01 P8-D §1965–§1977, #206): PÓS V2 ─────
+
+  /** (Re)aplica a cadeia de pós do LOOK atual × passes permitidos no
+   *  tier (QualityManager.passesPos). Cadeia vazia (estudio, tier
+   *  econômico, flag off) = composer DERRUBADO — render 100% legado.
+   *  Falha de construção = fallback silencioso + `p3d_pos_fallback`. */
+  private aplicarPosV2(): void {
+    if (!flag('as6.pos_v2')) { this.derrubarPosV2(); return; }
+    if (!this.renderer || !this.cena || !this.camera) return;
+    const look = LOOKS[this.lookAtual];
+    const permitidos = passesPos(this.tierEfetivo());
+    const bloom = look.pos.bloom && permitidos.bloom ? look.pos.bloom : null;
+    const grade = look.pos.grade && permitidos.grade ? look.pos.grade : null;
+    const vinheta = look.pos.vinheta && permitidos.vinheta ? look.pos.vinheta : null;
+    if (!bloom && !grade && !vinheta) { this.derrubarPosV2(); return; }
+    try {
+      if (!this.composerV2) {
+        const tam = this.renderer.getSize(new THREE.Vector2());
+        const composer = new EffectComposer(this.renderer);
+        composer.addPass(new RenderPass(this.cena, this.camera));
+        const pb = new UnrealBloomPass(tam, 0, 0.4, 1);
+        const pg = new ShaderPass(SHADER_GRADE);
+        const pv = new ShaderPass(SHADER_VINHETA);
+        composer.addPass(pb); composer.addPass(pg); composer.addPass(pv);
+        this.passesV2 = { bloom: pb, grade: pg, vinheta: pv };
+        this.composerV2 = composer;
+        this.geracaoPosV2 += 1;
+      }
+      const { bloom: pb, grade: pg, vinheta: pv } = this.passesV2;
+      if (pb) {
+        pb.enabled = bloom !== null;
+        if (bloom) { pb.strength = bloom.forca * (this.devLuz?.bloom ?? 1); pb.radius = bloom.raio; pb.threshold = bloom.limiar; }
+      }
+      if (pg) {
+        pg.enabled = grade !== null;
+        if (grade) {
+          pg.uniforms.uSat.value = grade.saturacao;
+          pg.uniforms.uTemp.value = grade.temperatura;
+          pg.uniforms.uCon.value = grade.contraste;
+          pg.uniforms.uPele.value = grade.protegerPele ? 1 : 0;
+        }
+      }
+      if (pv) {
+        pv.enabled = vinheta !== null;
+        if (vinheta) { pv.uniforms.uForca.value = vinheta.forca; pv.uniforms.uSuav.value = vinheta.suavidade; }
+      }
+    } catch (e) {
+      this.derrubarPosV2();
+      telemetria('p3d_pos_fallback', { look: this.lookAtual, motivo: e instanceof Error ? e.message.slice(0, 80) : 'erro' });
+    }
+  }
+
+  private derrubarPosV2(): void {
+    try { this.composerV2?.dispose(); } catch { /* contexto pode já ter morrido */ }
+    this.composerV2 = null;
+    this.passesV2 = { bloom: null, grade: null, vinheta: null };
+  }
+
+  /** Diagnóstico do pós v2 (testes/HUD): passes ativos + geração do
+   *  composer (cresce a cada reconstrução — prova o context loss). */
+  posInfo(): { v2: boolean; passes: string[]; geracao: number } {
+    const p: string[] = [];
+    if (this.composerV2) {
+      if (this.passesV2.bloom?.enabled) p.push('bloom');
+      if (this.passesV2.grade?.enabled) p.push('grade');
+      if (this.passesV2.vinheta?.enabled) p.push('vinheta');
+    }
+    return { v2: this.composerV2 !== null, passes: p, geracao: this.geracaoPosV2 };
+  }
+
+  /** onda 1420 (#206, as6.dev_iluminacao — DEV): multiplicadores sobre o
+   *  look atual (key/fill/rim/bloom). NUNCA persiste; null = restaura o
+   *  look puro byte a byte (o gate da flag é do caller/UI). */
+  ajustarLuzDev(m: { key?: number; fill?: number; rim?: number; bloom?: number } | null): void {
+    this.devLuz = m ? { key: m.key ?? 1, fill: m.fill ?? 1, rim: m.rim ?? 1, bloom: m.bloom ?? 1 } : null;
+    this.aplicarLook(this.lookAtual);
+  }
 
   // ── onda 1408 (§105, §141–§146; flag as6.qa_visual — dev): OVERLAYS ──
 
@@ -1031,6 +1232,7 @@ export class Renderizador3d implements RenderizadorAvatar {
    *  §177.1: NUNCA no tier econômico; false = canvas 100% legado. */
   definirPos(ligado: boolean, real = false): void {
     this.posAtivo = ligado;
+    this.posReal = real; // onda 1420: p/ recriar o composer pós context loss
     const canvas = this.renderer?.domElement;
     if (!canvas) return;
     const aplicar = ligado && this.tierEfetivo() !== 'economico';
@@ -1061,6 +1263,7 @@ export class Renderizador3d implements RenderizadorAvatar {
   private atualizarSombras(): void {
     const reais = this.tierEfetivo() !== 'economico';
     this.definirPos(this.posAtivo); // §177.1: pós segue o tier a quente
+    this.aplicarPosV2(); // onda 1420 (#206): degradação POR PASS segue o tier
     this.sombrasLigadas = reais;
     if (this.luzes) this.luzes.chave.castShadow = reais;
     if (this.chaoSombra) this.chaoSombra.visible = reais;
@@ -1863,7 +2066,8 @@ export class Renderizador3d implements RenderizadorAvatar {
       );
       this.camera.lookAt(centro);
     }
-    if (this.composerReal && this.composer) this.composer.render();
+    if (this.composerV2) this.composerV2.render(); // onda 1420 (#206): pós v2 do look
+    else if (this.composerReal && this.composer) this.composer.render();
     else this.renderer.render(this.cena, this.camera);
   };
 }

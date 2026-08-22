@@ -26,6 +26,7 @@ import { qualidade as qualidadeCentral } from '../services/QualityManager'; // l
 import type { EntradaIndice3d } from '../services/Personagens3d';
 import { LUZES_3D, excluirCena, listarCenas, salvarCena } from '../services/Cenas3d';
 import { LOOKS, lookDaLuzLegada, looksDisponiveis } from '../services/Looks3d'; // onda 1408 (#161)
+import { LENTES_FOTO, type LenteFotoId } from '../services/LentesFoto'; // onda 1420 (#207)
 import type { Cena3d } from '../services/Cenas3d';
 import { detectarCapacidade3d } from '../services/Capacidade3d';
 import { excluirPose, listarPoses, salvarPose } from '../services/Poses3d';
@@ -588,6 +589,42 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
       setFaseCaptura(null);
     }
   }, [transparente, comMarca, qualidade]);
+
+  // onda 1420 (#207, as6.foto_lentes): captura com LENTE — o renderer
+  // aplica look/câmera/shadow↑ da lente e RESTAURA (capturarComLente)
+  const capturarLente = useCallback(async (id: LenteFotoId) => {
+    const r = refR.current as unknown as {
+      capturarComLente?: (id: LenteFotoId, o: { transparente?: boolean }) => Promise<{ dataUri: string; largura: number; nome: string }>;
+    } | null;
+    if (!r?.capturarComLente) return;
+    try {
+      setFaseCaptura(`Foto ${LENTES_FOTO[id].nome}…`);
+      const foto = await r.capturarComLente(id, { transparente });
+      const comM = await comMarca(foto.dataUri, foto.largura);
+      setCapturas((c2) => [comM, ...c2].slice(0, 6));
+      const a = document.createElement('a');
+      a.href = comM;
+      a.download = foto.nome;
+      a.click();
+    } catch { /* captura é cosmética — nunca derruba o palco */ } finally {
+      setFaseCaptura(null);
+    }
+  }, [transparente, comMarca]);
+
+  // onda 1420 (#206, as6.dev_iluminacao): multiplicadores DEV sobre o
+  // look (nunca persistem; Reset ou reaplicar o look restaura)
+  const [devLuz, setDevLuz] = useState({ key: 1, fill: 1, rim: 1, bloom: 1 });
+  const ajustarDev = useCallback((canal: 'key' | 'fill' | 'rim' | 'bloom', v: number) => {
+    setDevLuz((atual) => {
+      const prox = { ...atual, [canal]: v };
+      (refR.current as unknown as { ajustarLuzDev?: (m: typeof prox | null) => void })?.ajustarLuzDev?.(prox);
+      return prox;
+    });
+  }, []);
+  const resetDev = useCallback(() => {
+    setDevLuz({ key: 1, fill: 1, rim: 1, bloom: 1 });
+    (refR.current as unknown as { ajustarLuzDev?: (m: null) => void })?.ajustarLuzDev?.(null);
+  }, []);
 
   // mega 33: TURNTABLE 360° — 8 azimutes §508 numa folha 4×2 (1920×960)
   const gerarTurntable = useCallback(async () => {
@@ -1193,6 +1230,36 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               onClick={gravarShowcase}><CircleDot size={13} aria-hidden /></button>
           )}
         </div>
+        {/* onda 1420 (#207, as6.foto_lentes): LENTES do Photo 3D (§P8-E) */}
+        {flag('as6.foto_lentes') && (
+          <div className="avst5-p3d-cenario" data-teste="p3d-lentes">
+            <Camera size={11} aria-hidden />
+            {Object.values(LENTES_FOTO).map((l) => (
+              <button key={l.id} type="button" className="avst5-p3d-chip"
+                data-teste={`p3d-lente-${l.id}`} disabled={faseCaptura !== null}
+                title={`Foto ${l.nome} — ${l.aspecto}, look ${LOOKS[l.look].nome} (captura alta, restaura o palco)`}
+                onClick={() => void capturarLente(l.id)}>
+                {l.nome}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* onda 1420 (#206, as6.dev_iluminacao): painel DEV de iluminação */}
+        {flag('as6.dev_iluminacao') && (
+          <div className="avst5-p3d-cenario" data-teste="p3d-dev-luz">
+            <Lightbulb size={11} aria-hidden />
+            {(['key', 'fill', 'rim', 'bloom'] as const).map((c2) => (
+              <label key={c2} className="avst5-p3d-chip" title={`Multiplicador dev de ${c2} (não persiste)`}>
+                {c2}
+                <input type="range" min={0} max={2} step={0.05} value={devLuz[c2]}
+                  data-teste={`p3d-dev-${c2}`} style={{ width: 56, verticalAlign: 'middle' }}
+                  onChange={(e) => ajustarDev(c2, Number(e.target.value))} />
+              </label>
+            ))}
+            <button type="button" className="avst5-p3d-chip" data-teste="p3d-dev-reset"
+              onClick={resetDev}>Reset</button>
+          </div>
+        )}
         <div className="avst5-p3d-cenario">
           <span role="radiogroup" aria-label="Fundo do palco 3D" data-teste="p3d-fundos">
             {(['neutro', 'estudio', 'grade'] as const).map((f2) => (

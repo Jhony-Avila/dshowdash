@@ -14,7 +14,7 @@ export const FUNDOS_3D = ['neutro', 'estudio', 'grade'] as const;
 // onda 1408 (#161): enum só CRESCE — 'portrait'/'dramatic' são looks do
 // registry Looks3d (só aparecem na UI com as6.looks); cena antiga continua
 // válida byte a byte (sanitizar mantém 'estudio' como padrão)
-export const LUZES_3D = ['estudio', 'quente', 'fria', 'neon', 'portrait', 'dramatic'] as const;
+export const LUZES_3D = ['estudio', 'quente', 'fria', 'neon', 'portrait', 'dramatic', 'hero', 'product'] as const; // onda 1420 (#206): looks novos — enum só cresce
 export const CAMERAS_3D = ['retrato', 'corpo', 'orbita', 'cinematica', 'busto', 'face', 'costas'] as const; // onda 1419 (#204): presets novos aditivos (enum só cresce)
 export const QUALIDADES_3D = ['auto', 'alto', 'medio', 'economico'] as const;
 

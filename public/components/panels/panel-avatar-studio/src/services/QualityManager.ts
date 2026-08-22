@@ -73,3 +73,22 @@ export function qualidade(): Qualidade {
     efeitosCaros: perfil !== 'eco',
   };
 }
+
+// ── onda 1420 (MEGA_BRIEFING_01 §1973–§1977, #206): DEGRADAÇÃO POR
+//    PASS da cadeia de pós v2 (as6.pos_v2) — mapeada AQUI (fonte única
+//    de qualidade), consumida pelo Renderizador3d. Regra §1975: o passo
+//    mais caro (bloom, render target extra) cai primeiro; grade e
+//    vinheta são shaders full-screen baratos e sobrevivem no médio; o
+//    econômico não paga composer nenhum (cadeia inteira fora). ─────────
+export interface PassesPos { bloom: boolean; grade: boolean; vinheta: boolean }
+
+export const PASSES_POR_TIER: Record<QualidadeTier, PassesPos> = {
+  economico: { bloom: false, grade: false, vinheta: false },
+  medio: { bloom: false, grade: true, vinheta: true },
+  alto: { bloom: true, grade: true, vinheta: true },
+};
+
+/** Passes de pós permitidos no tier (fail-safe: tier desconhecido = médio). */
+export function passesPos(tier: QualidadeTier | string): PassesPos {
+  return PASSES_POR_TIER[tier as QualidadeTier] ?? PASSES_POR_TIER.medio;
+}

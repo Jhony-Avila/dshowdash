@@ -17,9 +17,25 @@
 //     (§1999); Cenas3d guarda o id (enum só cresce); captura registra
 //     `look@versao` nos metadados (§2001–§2003);
 //   · nada aqui toca o renderer: Renderizador3d.aplicarLook() consome.
-export type LookId = 'estudio' | 'soft' | 'cool' | 'neon' | 'portrait' | 'dramatic';
+export type LookId = 'estudio' | 'soft' | 'cool' | 'neon' | 'portrait' | 'dramatic' | 'hero' | 'product';
 
 export interface LuzLook { cor: number; intensidade: number; pos: [number, number, number] }
+
+/** onda 1420 (#206, as6.pos_v2): CADEIA DE PÓS por look como DADO —
+ *  Render→Bloom→ColorGrade→Vignette (§1965–§1972). null em cada passo =
+ *  passo ausente. O renderer consome SÓ com a flag; a degradação por
+ *  tier vem do QualityManager (passesPos). `estudio` é NEUTRO por
+ *  contrato (todos null — teste trava): ligar a flag não muda 1 pixel
+ *  do benchmark de QA. */
+export interface PosLook {
+  /** UnrealBloom {força, raio, limiar}; null = sem bloom */
+  bloom: { forca: number; raio: number; limiar: number } | null;
+  /** grading paramétrico; protegerPele preserva a banda de tons de pele
+   *  (§1969 — grading nunca "cozinha" o rosto) */
+  grade: { saturacao: number; temperatura: number; contraste: number; protegerPele: boolean } | null;
+  /** vinheta paramétrica {força 0–1, suavidade 0–1}; null = sem */
+  vinheta: { forca: number; suavidade: number } | null;
+}
 export interface Look {
   id: LookId;
   versao: number;
@@ -46,7 +62,12 @@ export interface Look {
   sombra: { bias: number; raio: number };
   /** onda 1419 (#205): FOG por look (null = sem névoa) — só com a flag. */
   fog: { cor: number; near: number; far: number } | null;
+  /** onda 1420 (#206, as6.pos_v2): cadeia de pós do look. */
+  pos: PosLook;
 }
+
+/** Pós NEUTRO (nenhum passo) — `estudio`/legados usam por contrato. */
+export const POS_NEUTRO: PosLook = { bloom: null, grade: null, vinheta: null };
 
 /** Valores CANÔNICOS de Renderizador3d.montar() — não mudar sem decisão
  *  numerada: são o Studio v1 byte-idêntico (baseline golden-visual). */
@@ -63,26 +84,28 @@ export const LOOKS: Record<LookId, Look> = {
     id: 'estudio', versao: 1, nome: 'Estúdio',
     key: { ...CANONICO.key }, fill: { ...CANONICO.fill }, ambiente: CANONICO.ambiente, env: CANONICO.env,
     rim: null, exposicao: CANONICO.exposicao, cameraSugerida: 'corpo', legado: true,
-    sombra: { bias: -0.00015, raio: 4 }, fog: null,
+    sombra: { bias: -0.00015, raio: 4 }, fog: null, pos: POS_NEUTRO,
   },
   // alias de definirLuz('quente') — mesmos números (posições = canônicas)
   soft: {
     id: 'soft', versao: 1, nome: 'Quente',
     key: { cor: 0xffd9a0, intensidade: 2.9, pos: [...CANONICO.key.pos] }, fill: { cor: 0xff9d5c, intensidade: 0.9, pos: [...CANONICO.fill.pos] },
     ambiente: 0.5, env: CANONICO.env, rim: null, exposicao: 1.0, cameraSugerida: 'corpo', legado: true,
-    sombra: { bias: -0.00015, raio: 5 }, fog: null,
+    sombra: { bias: -0.00015, raio: 5 }, fog: null, pos: POS_NEUTRO,
   },
   cool: {
     id: 'cool', versao: 1, nome: 'Fria',
     key: { cor: 0xcfe4ff, intensidade: 2.7, pos: [...CANONICO.key.pos] }, fill: { cor: 0x6c8cff, intensidade: 1.2, pos: [...CANONICO.fill.pos] },
     ambiente: 0.45, env: CANONICO.env, rim: null, exposicao: 1.0, cameraSugerida: 'corpo', legado: true,
-    sombra: { bias: -0.00015, raio: 4 }, fog: null,
+    sombra: { bias: -0.00015, raio: 4 }, fog: null, pos: POS_NEUTRO,
   },
   neon: {
     id: 'neon', versao: 1, nome: 'Neon',
     key: { cor: 0xff5f8f, intensidade: 2.4, pos: [...CANONICO.key.pos] }, fill: { cor: 0x4cd9e8, intensidade: 1.6, pos: [...CANONICO.fill.pos] },
     ambiente: 0.35, env: CANONICO.env, rim: null, exposicao: 1.0, cameraSugerida: 'corpo', legado: true,
     sombra: { bias: -0.0002, raio: 3 }, fog: { cor: 0x0a0d18, near: 6, far: 14 },
+    // §1965: neon é o look "de vitrine" do bloom — emissivos ganham glow
+    pos: { bloom: { forca: 0.55, raio: 0.6, limiar: 0.72 }, grade: { saturacao: 1.14, temperatura: -0.04, contraste: 1.05, protegerPele: true }, vinheta: { forca: 0.32, suavidade: 0.55 } },
   },
   // §50/§1759/§1825: retrato — fill mais alto (rosto sem sombras duras),
   // key mais frontal e suave, rim branco discreto no contorno do cabelo,
@@ -93,6 +116,9 @@ export const LOOKS: Record<LookId, Look> = {
     ambiente: 0.6, env: 0.6, rim: { cor: 0xffffff, intensidade: 1.6, pos: [-1.2, 2.2, -2.4] },
     exposicao: 1.05, cameraSugerida: 'retrato', legado: false,
     sombra: { bias: -0.0001, raio: 6 }, fog: null,
+    // retrato: zero bloom (pele nunca "brilha"), grade suave protegendo
+    // a pele, vinheta leve puxando o olho ao rosto (§1969)
+    pos: { bloom: null, grade: { saturacao: 1.04, temperatura: 0.03, contraste: 1.02, protegerPele: true }, vinheta: { forca: 0.22, suavidade: 0.65 } },
   },
   // PoC Cena3D.LUZES.dramatica adaptado ao rig do shell (sem hemisphere):
   // key forte e lateral, fill baixo e azulado, rim forte
@@ -102,6 +128,29 @@ export const LOOKS: Record<LookId, Look> = {
     ambiente: 0.22, env: 0.35, rim: { cor: 0xffffff, intensidade: 3.2, pos: [-2.2, 3.2, -2.4] },
     exposicao: 1.0, cameraSugerida: 'corpo', legado: false,
     sombra: { bias: -0.00025, raio: 2 }, fog: { cor: 0x05060c, near: 5, far: 12 },
+    pos: { bloom: { forca: 0.28, raio: 0.4, limiar: 0.85 }, grade: { saturacao: 0.94, temperatura: -0.02, contraste: 1.12, protegerPele: true }, vinheta: { forca: 0.42, suavidade: 0.5 } },
+  },
+  // ── onda 1420 (#206, §1962–§1965): looks NOVOS — só com as6.looks ──
+  // hero: apresentação de banner — key alta e quente, rim forte, bloom
+  // presente mas contido (limiar alto: só speculars/emissivos estouram)
+  hero: {
+    id: 'hero', versao: 1, nome: 'Hero',
+    key: { cor: 0xffedd6, intensidade: 3.1, pos: [2.6, 3.6, 2.2] }, fill: { cor: 0x8fa8ff, intensidade: 0.9, pos: [-2.6, 1.6, 0.8] },
+    ambiente: 0.4, env: 0.5, rim: { cor: 0xdfe9ff, intensidade: 2.6, pos: [-1.8, 2.8, -2.6] },
+    exposicao: 1.05, cameraSugerida: 'corpo', legado: false,
+    sombra: { bias: -0.0002, raio: 3 }, fog: null,
+    pos: { bloom: { forca: 0.35, raio: 0.5, limiar: 0.8 }, grade: { saturacao: 1.1, temperatura: 0.05, contraste: 1.08, protegerPele: true }, vinheta: { forca: 0.3, suavidade: 0.6 } },
+  },
+  // product: neutro de catálogo — luz limpa e uniforme, ZERO bloom e
+  // ZERO vinheta (a foto de produto não esconde nada nas bordas); só um
+  // grade discreto de contraste/saturação para o item "saltar"
+  product: {
+    id: 'product', versao: 1, nome: 'Produto',
+    key: { cor: 0xffffff, intensidade: 2.7, pos: [2.0, 3.2, 2.8] }, fill: { cor: 0xdfe6f5, intensidade: 1.5, pos: [-2.4, 1.8, 1.6] },
+    ambiente: 0.65, env: 0.7, rim: { cor: 0xffffff, intensidade: 1.2, pos: [0, 2.6, -2.8] },
+    exposicao: 1.0, cameraSugerida: 'corpo', legado: false,
+    sombra: { bias: -0.00015, raio: 5 }, fog: null,
+    pos: { bloom: null, grade: { saturacao: 1.06, temperatura: 0, contraste: 1.05, protegerPele: true }, vinheta: null },
   },
 };
 
