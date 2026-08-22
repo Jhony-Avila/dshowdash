@@ -69,7 +69,7 @@ const F = (id: FamiliaMaterialId, nome: string, padrao: ParamsFamilia, extra: Pa
 export const FAMILIAS_MATERIAL: Record<FamiliaMaterialId, FamiliaMaterial> = {
   // onda 1421 (#208): SKIN em 3 TIERS (§1521–§1526) — o econômico fica
   // PERTO do standard (deltas travados por teste; ΔE visual no gate ★)
-  skin: F('skin', 'Pele', { roughness: 0.55, metalness: 0, env: 0.6, normalScale: 0.6 }, { ultra: { sheen: 0.15 }, economico: { roughness: 0.6, env: 0.5 }, canalSugerido: 'pele' }),
+  skin: F('skin', 'Pele', { roughness: 0.55, metalness: 0, env: 0.6, normalScale: 0.6 }, { ultra: { sheen: 0.06 }, economico: { roughness: 0.6, env: 0.5 }, canalSugerido: 'pele' }), // sheen 0.15→0.06: calibrado no Before×After 1423 (pele molhada)
   eyes: F('eyes', 'Olhos', { roughness: 0.15, metalness: 0, env: 1.0, clearcoat: 0.3 }, { naoTingir: true }),
   teeth: F('teeth', 'Dentes', { roughness: 0.35, metalness: 0, env: 0.8 }, { naoTingir: true }),
   hair: F('hair', 'Cabelo', { roughness: 0.7, metalness: 0, env: 0.7, alpha: 'mask' }, { ultra: { anisotropy: 0.35 }, economico: { roughness: 0.75, env: 0.6 }, canalSugerido: 'cabelo' }),

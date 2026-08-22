@@ -14,7 +14,7 @@ if (!base.includes('config_3d_recente: null')) {
   process.exit(1);
 }
 writeFileSync(resolve(RAIZ, 'public', 'avst-harness-retomada.html'),
-  base.replace('config_3d_recente: null', `config_3d_recente: ${MOCK}`));
+  base.replaceAll('config_3d_recente: null', `config_3d_recente: ${MOCK}`)); // onda 1423: mock studio.php tem 2 ramos (seed avst.harness.config)
 
 const { navegador: b, pagina: p, erros } = await abrir({ webgl: true });
 await irParaHarness(p, 'avst-harness-retomada.html', 600);

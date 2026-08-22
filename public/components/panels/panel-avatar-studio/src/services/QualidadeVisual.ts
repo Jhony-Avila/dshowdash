@@ -151,3 +151,37 @@ export function coberturaQualidade(itens: Array<Pick<ItemCatalogo, 'id'>>): Reco
   const premiumCoveragePct = total ? Math.round(((c.premium + c.hero) / total) * 1000) / 10 : 0;
   return { ...c, total, premiumCoveragePct };
 }
+
+// ── onda 1423 (BRIEFING_CORRETIVO_01 §5–§6, decisão #214): UPGRADE
+//    LEGACY → PREMIUM com PREVIEW — nunca migração silenciosa ──────────
+
+export interface CandidatoPremium {
+  /** config candidata (acabamento premium + IDs sucessores) — NÃO salva */
+  candidato: import('../domain/types').AvatarConfig;
+  /** trocas de id aplicadas (transparência p/ a comparação) */
+  trocas: Array<{ de: string; para: string }>;
+}
+
+/** Monta a versão PREMIUM candidata de um config legado SEM salvar
+ *  (§6): acabamento 'premium' + IDs trocados pelos sucessores do
+ *  registry. Devolve null quando o avatar já é premium OU quando não há
+ *  nenhum ganho (sem sucessores e sem trilho premium a ligar). O caller
+ *  mostra Before × After e SÓ aplica com aprovação explícita (§5). */
+export function montarCandidatoPremium(config: import('../domain/types').AvatarConfig): CandidatoPremium | null {
+  if (config.acabamento === 'premium') return null;
+  const candidato = JSON.parse(JSON.stringify(config)) as import('../domain/types').AvatarConfig;
+  candidato.acabamento = 'premium';
+  const trocas: CandidatoPremium['trocas'] = [];
+  const trocar = (id: string): string => {
+    const s = sucessorDe(id);
+    if (s && s !== id) { trocas.push({ de: id, para: s }); return s; }
+    return id;
+  };
+  candidato.base = trocar(candidato.base);
+  for (const [camada, id] of Object.entries(candidato.camadas ?? {})) {
+    if (typeof id === 'string' && id !== 'nenhum') {
+      (candidato.camadas as Record<string, string>)[camada] = trocar(id);
+    }
+  }
+  return { candidato, trocas };
+}

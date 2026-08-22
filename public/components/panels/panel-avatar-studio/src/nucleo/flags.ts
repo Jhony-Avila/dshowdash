@@ -142,6 +142,7 @@ const PADROES: Record<string, boolean> = {
   'as6.foto_lentes': false,     // onda 1420 — LENTES do Photo 3D (#207, P8-E §2007–§2027): registry LentesFoto (Portrait/Full/Fashion/WideHero/Profile/Close-up, aspectos 4:5 e 9:16, look por lente, regra dos terços), captura alta com shadow↑ + pós só na captura e RESTAURO total, determinística; off = captura 960×960 anterior byte a byte
   'as6.corpo_v2': false,        // onda 1422 — BODY API v2 (#210/#211, P2-B/C/E): corpoV2 {preset, morfos} consumido no 3D (morph targets `corpo_*` quando o asset tiver, senão bone scaling por segmento clampado ao envelope) + perfis de postura 3D; o dado corpoV2 é aceito/persistido SEMPRE (forward-compat); off = escala §412 anterior byte a byte
   'as6.corpo_grounding': false, // onda 1422 — GROUNDING (#211, §P2-E): re-ancora os pés no chão (Box3.min.y → 0) após escala/morfos; off = posição anterior byte a byte
+  'as6.ux3d_simples': false,    // onda 1423 — UI 3D SIMPLIFICADA (BRIEFING_CORRETIVO_01 §52–§70, #213): controles técnicos (qualidade, pós, tinta, turntable/ficha, exposição, movimento de câmera, dev) saem do fluxo principal p/ "Avançado"; o palco vira Character Creator (§53); off = UI anterior byte a byte; entra no Candidate Mode
   'as6.cp_foto': false,         // onda 1418 — PHOTO MODE 2D do avatar (#202, P10-G): export em framings (full/bust/portrait/square/vertical) PNG/WebP/transparente com toggles de fundo/moldura/efeito; off = sem UI de export, render intocado
   'as6.acess_2d_premium': false, // onda 1416 — ACESSÓRIOS PREMIUM 2D (#196, P10-E/P6-A/P6-E): contador + "Remover todos" + conflito nomeado (AcessoriosRegistry §617) + aviso de paridade na UI; catálogo ace_px_ já é gated por classico_premium; off = UI anterior byte a byte
   'as6.roupa_premium': false,   // onda 1415 — VESTUÁRIO PREMIUM (#191, P10-D/P5-B/P5-C): categoria roupa_inferior (rin_*) na sidebar, conjuntos premium O01+ e swatch de material na UI; off = seção/outfits ocultos, configs salvos seguem renderizando (dado > UI)
@@ -196,6 +197,8 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   // onda 1422 (#210/#211): corpo v2/grounding são do palco 3D
   'as6.corpo_v2': ['as5.palco3d'],
   'as6.corpo_grounding': ['as5.palco3d'],
+  // onda 1423 (#213): UX simples é do palco 3D
+  'as6.ux3d_simples': ['as5.palco3d'],
   // onda 1414 (#186): slots faciais são filhos do rosto v2 — ligar/desligar
   // a família inteira de uma vez (§2917–§2926)
   'as6.barba_slot': ['as6.face_v2'],
@@ -251,4 +254,85 @@ export function flag(nome: keyof typeof PADROES | string): boolean {
   const pais = DEPENDENCIAS_FLAGS[nome];
   if (!pais || !flagCrua('as6.estado_vnext')) return cru;
   return pais.every((p) => flag(p));
+}
+
+// ── BRIEFING_CORRETIVO_01 §11–§16/§112–§113 (decisão #212): VISUAL
+//    CANDIDATE MODE + MATRIZ DE FLAGS EFETIVAS ─────────────────────────
+// Candidate Mode = PRESET do mecanismo de flags existente (nada de
+// arquitetura nova — §12): liga a experiência candidata INTEIRA (2D
+// premium + stack 3D v2 + UX simplificada) via override local, p/ QA e
+// homologação. Interno: usuário final nunca vê (§13); flags DEV ficam
+// de fora (§12). Desligar remove SÓ os overrides do preset (outros
+// overrides locais do dev sobrevivem).
+
+/** Flags da experiência CANDIDATA (§12 + UX §87.5). */
+export const FLAGS_CANDIDATE: readonly string[] = [
+  // 2D
+  'as6.classico_premium', 'as6.face_v2', 'as6.barba_slot', 'as6.brow_slot',
+  'as6.roupa_premium', 'as6.acess_2d_premium', 'as6.cp_foto',
+  // 3D
+  'as6.looks', 'as6.material_v2', 'as6.camera_v2', 'as6.sombras_v2',
+  'as6.pos_v2', 'as6.foto_lentes',
+  // UX (simplificação provisória da UI 3D — §87.5/#213)
+  'as6.ux3d_simples',
+];
+
+export function candidateAtivo(): boolean {
+  return FLAGS_CANDIDATE.every((f) => flag(f));
+}
+
+/** Liga/desliga o preset no override LOCAL (QA da própria máquina). */
+export function definirCandidate(ligado: boolean): void {
+  try {
+    const local = JSON.parse(localStorage.getItem(CHAVE_LOCAL) ?? '{}') as Record<string, boolean>;
+    for (const f of FLAGS_CANDIDATE) {
+      if (ligado) local[f] = true;
+      else delete local[f];
+    }
+    localStorage.setItem(CHAVE_LOCAL, JSON.stringify(local));
+  } catch { /* storage indisponível — sem candidate */ }
+}
+
+/** Boot (§112): `?avst_candidate=1|0` na URL aplica/remove o preset ANTES
+ *  do 1º render — jeito mais simples de homologar em produção logado,
+ *  sem UI nova. Devolve true se mexeu (caller pode logar). */
+export function aplicarCandidateDaUrl(): boolean {
+  try {
+    const v = new URLSearchParams(window.location.search).get('avst_candidate');
+    if (v === '1' || v === '0') {
+      definirCandidate(v === '1');
+      return true;
+    }
+  } catch { /* sem URL/DOM */ }
+  return false;
+}
+
+/** Linha da MATRIZ de flags efetivas (§16/§113 — Dev Mode). */
+export interface LinhaFlagEfetiva {
+  nome: string;
+  padrao: boolean;
+  remota: boolean | null;
+  local: boolean | null;
+  efetiva: boolean;
+  origem: 'local' | 'remota' | 'padrao';
+  dependencias: string[];
+  candidate: boolean;
+}
+
+/** Matriz completa default/remote/local/efetiva/origem/dependências —
+ *  consumida pelo QaStudio (dev). Nunca exposta no produto normal. */
+export function matrizFlags(): LinhaFlagEfetiva[] {
+  let local: Record<string, boolean> = {};
+  try { local = JSON.parse(localStorage.getItem(CHAVE_LOCAL) ?? '{}') as Record<string, boolean>; } catch { /* ok */ }
+  const nomes = new Set<string>([...Object.keys(PADROES), ...Object.keys(local), ...Object.keys(_remotas ?? {})]);
+  return [...nomes].sort().map((nome) => ({
+    nome,
+    padrao: PADROES[nome] ?? false,
+    remota: _remotas && nome in _remotas ? !!_remotas[nome] : null,
+    local: nome in local ? !!local[nome] : null,
+    efetiva: flag(nome),
+    origem: nome in local ? 'local' : _remotas && nome in _remotas ? 'remota' : 'padrao',
+    dependencias: DEPENDENCIAS_FLAGS[nome] ?? [],
+    candidate: FLAGS_CANDIDATE.includes(nome),
+  }));
 }

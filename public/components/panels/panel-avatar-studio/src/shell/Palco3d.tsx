@@ -121,6 +121,12 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   const [cenas, setCenas] = useState<Cena3d[]>(listarCenas);
   // mega 32: captura com fundo TRANSPARENTE (compor no Photo Studio)
   const [transparente, setTransparente] = useState(false);
+  // onda 1423 (BRIEFING_CORRETIVO_01 §52–§70, #213; as6.ux3d_simples):
+  // UI SIMPLES — controles técnicos só aparecem com "Avançado" aberto;
+  // flag OFF = tecnico() sempre true = UI anterior byte a byte
+  const uxSimples = flag('as6.ux3d_simples');
+  const [avancadoAberto, setAvancadoAberto] = useState(false);
+  const tecnico = !uxSimples || avancadoAberto;
   // mega 34: qualidade manual (auto = adaptativa §528) — persistida
   const [qualidade, setQualidade] = useState<Qualidade3d>(qualidadeGuardada);
   // mega 39: modo apresentação (fullscreen no contêiner do palco)
@@ -1202,16 +1208,18 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
           <button type="button" title={transparente ? 'Captura com fundo TRANSPARENTE (PNG alpha)' : 'Captura com o fundo do palco'}
             aria-pressed={transparente} data-teste="p3d-transparente"
             onClick={() => setTransparente((v) => !v)}><Eraser size={13} aria-hidden /></button>
-          <button type="button" title="Turntable 360° — 8 ângulos (§508)" data-teste="p3d-turntable"
-            onClick={() => void gerarTurntable()}><RotateCw size={13} aria-hidden /></button>
-          <button type="button" title="Ficha do personagem — 4 ângulos (§508)" data-teste="p3d-ficha"
-            onClick={() => void gerarFicha()}><LayoutPanelTop size={13} aria-hidden /></button>
-          <button type="button" title={marca ? 'Marca Dshow LIGADA nas capturas' : 'Marca Dshow desligada'}
-            aria-pressed={marca} data-teste="p3d-marca"
-            onClick={() => setMarca((v) => !v)}><Grid3x3 size={13} aria-hidden /></button>
-          <button type="button" title="Cores do avatar nos materiais 3D (§419)"
-            aria-pressed={tinta} data-teste="p3d-tinta"
-            onClick={() => setTinta((v) => !v)}><Sparkles size={13} aria-hidden /></button>
+          {tecnico && (<>
+            <button type="button" title="Turntable 360° — 8 ângulos (§508)" data-teste="p3d-turntable"
+              onClick={() => void gerarTurntable()}><RotateCw size={13} aria-hidden /></button>
+            <button type="button" title="Ficha do personagem — 4 ângulos (§508)" data-teste="p3d-ficha"
+              onClick={() => void gerarFicha()}><LayoutPanelTop size={13} aria-hidden /></button>
+            <button type="button" title={marca ? 'Marca Dshow LIGADA nas capturas' : 'Marca Dshow desligada'}
+              aria-pressed={marca} data-teste="p3d-marca"
+              onClick={() => setMarca((v) => !v)}><Grid3x3 size={13} aria-hidden /></button>
+            <button type="button" title="Cores do avatar nos materiais 3D (§419)"
+              aria-pressed={tinta} data-teste="p3d-tinta"
+              onClick={() => setTinta((v) => !v)}><Sparkles size={13} aria-hidden /></button>
+          </>)}
           {aoUsarComoAvatar && (
             <button type="button" title="Usar como meu AVATAR (header/perfil)" data-teste="p3d-usar-avatar"
               disabled={salvandoAvatar}
@@ -1221,9 +1229,11 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
             <button type="button" title="Compartilhar a captura" data-teste="p3d-compartilhar"
               onClick={() => void compartilhar3d()}><Share2 size={13} aria-hidden /></button>
           )}
-          <button type="button" title="Comparar com o 2D lado a lado" aria-pressed={comparando2d}
-            data-teste="p3d-comparar" onClick={() => setComparando2d((v) => !v)}>
-            <Columns2 size={13} aria-hidden /></button>
+          {tecnico && (
+            <button type="button" title="Comparar com o 2D lado a lado" aria-pressed={comparando2d}
+              data-teste="p3d-comparar" onClick={() => setComparando2d((v) => !v)}>
+              <Columns2 size={13} aria-hidden /></button>
+          )}
           <button type="button" title={telaCheia ? 'Sair da tela cheia (Esc)' : 'Modo apresentação — tela cheia'}
             aria-pressed={telaCheia} data-teste="p3d-tela-cheia"
             onClick={alternarTelaCheia}>
@@ -1298,6 +1308,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               </button>
             ))}
           </span>
+          {tecnico && (
           <span role="radiogroup" aria-label="Qualidade (§423)" data-teste="p3d-qualidade">
             {(['auto', 'alto', 'medio', 'economico'] as const).map((q2) => (
               <button key={q2} type="button" role="radio"
@@ -1322,6 +1333,16 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               </button>
             ))}
           </span>
+          )}
+          {/* onda 1423 (#213): entrada ÚNICA do modo Avançado na UI simples */}
+          {uxSimples && (
+            <button type="button" className="avst5-p3d-chip" aria-pressed={avancadoAberto}
+              data-teste="p3d-avancado" title="Controles avançados (qualidade, ajuste fino, cinema, poses, cenas)"
+              onClick={() => setAvancadoAberto((v) => !v)}>
+              <SlidersHorizontal size={11} aria-hidden /> Avançado
+            </button>
+          )}
+          {tecnico && (
           <span role="group" aria-label="Ajuste fino da câmera" data-teste="p3d-ajuste-grupo">
             <button type="button" className="avst5-p3d-chip" aria-pressed={ajusteAberto}
               data-teste="p3d-ajuste" title="Zoom e altura da câmera (§453)"
@@ -1354,7 +1375,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               </label>
             </>)}
           </span>
-          {cinemaLigado && (
+          )}
+          {tecnico && cinemaLigado && (
             <span role="group" aria-label="Cinema do palco (§440–§458)" data-teste="p3d-cinema-grupo">
               <button type="button" className={`avst5-p3d-chip${cinemaAberto ? ' avst5-p3d-chip-on' : ''}`}
                 aria-pressed={cinemaAberto} data-teste="p3d-cinema"
@@ -1443,7 +1465,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               </>)}
             </span>
           )}
-          {poses.filter((p3) => p3.personagem === personagem).length > 0 && (
+          {tecnico && poses.filter((p3) => p3.personagem === personagem).length > 0 && (
             <span role="group" aria-label="Poses salvas (§442)" data-teste="p3d-poses">
               {poses.filter((p3) => p3.personagem === personagem).map((p3) => (
                 <span key={p3.id} className="avst5-p3d-cena">
@@ -1460,6 +1482,7 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               ))}
             </span>
           )}
+          {tecnico && (
           <span role="group" aria-label="Cenas salvas do palco" data-teste="p3d-cenas">
             <button type="button" className="avst5-p3d-chip" data-teste="p3d-cena-salvar"
               title="Salvar o setup atual (personagem, fundo, luz, câmera, animação)"
@@ -1475,7 +1498,8 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
               </span>
             ))}
           </span>
-          {editorLigado && (
+          )}
+          {tecnico && editorLigado && (
             <span role="group" aria-label="Editor de showcase (§175)">
               <button type="button" className={`avst5-p3d-chip${editorAberto ? ' avst5-p3d-chip-on' : ''}`}
                 aria-pressed={editorAberto} data-teste="p3d-editor"

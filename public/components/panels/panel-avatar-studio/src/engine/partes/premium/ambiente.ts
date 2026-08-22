@@ -167,7 +167,7 @@ export const FUNDOS_PREMIUM: ParteDef[] = [
 /** Massa principal com `data-nucleo` (param §71 `nucleo` regula a opacidade
  *  do miolo — aplicarParamsSvg substitui o valor marcado). */
 function auraMain(cor: string, corNucleo: string, anel: string): string {
-  return `<g data-nucleo opacity="0.55"><ellipse cx="120" cy="120" rx="64" ry="72" fill="${alfa(corNucleo, 0.3)}"/></g>${anel}
+  return `<g data-nucleo="1" opacity="0.55"><ellipse cx="120" cy="120" rx="64" ry="72" fill="${alfa(corNucleo, 0.3)}"/></g>${anel}
     <ellipse cx="120" cy="120" rx="92" ry="100" fill="none" stroke="${alfa(cor, 0.5)}" stroke-width="2"/>`;
 }
 

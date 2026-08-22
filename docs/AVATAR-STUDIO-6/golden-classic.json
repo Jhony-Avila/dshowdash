@@ -158,20 +158,20 @@
       "filtros": 0
     },
     "p13-ambiente-busto": {
-      "sha256": "fdfe97d0657cbdc48529d9a85b989d41a13e472223664c59179143b1ddf312f4",
-      "bytes": 11356,
+      "sha256": "f4cb421ae754eca9ef958630b714d44b2f09ea51a4ae2d49605b317d04616401",
+      "bytes": 11360,
       "nos": 177,
       "filtros": 0
     },
     "p14-ambiente-palco": {
-      "sha256": "51f9b8666603ffeb46dd3e673dbb5cd9f2b2071cda152ccf068a4400678024bb",
-      "bytes": 11871,
+      "sha256": "cf08a41fd4a9ddd60710a8fafecce4d2ecb2701b49c08061e3e980241d736b03",
+      "bytes": 11875,
       "nos": 192,
       "filtros": 0
     },
     "p15-ambiente-busto": {
-      "sha256": "9a1c7ec376a43b752df8b3c83a08d9821cddc4b3efdcec8ba028d49859fcdfaa",
-      "bytes": 10240,
+      "sha256": "461c5fc6944f4bc43115392ee4a3e74381e715e011fed3516bb97483ad70f451",
+      "bytes": 10244,
       "nos": 158,
       "filtros": 0
     },
@@ -194,8 +194,8 @@
       "filtros": 0
     },
     "p16-preset-gala-busto": {
-      "sha256": "9905ff1b1c710bb186fd871363c170f60876d0f8274e6b0bc6fd078183dcdcdc",
-      "bytes": 13286,
+      "sha256": "6572759b271bd0007983bf2716efca5f38ff9a7848a5e841ce9f30d49239ce4c",
+      "bytes": 13290,
       "nos": 206,
       "filtros": 0
     },

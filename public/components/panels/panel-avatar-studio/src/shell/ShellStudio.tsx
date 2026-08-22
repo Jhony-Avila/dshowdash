@@ -55,6 +55,7 @@ import type {
 } from '../workspace/palco';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
+import { montarCandidatoPremium } from '../services/QualidadeVisual'; // onda 1423 (#214)
 import { LOOKS_2D } from '../services/RegistroEfeitos'; // onda 1418 (#203)
 import { FRAMINGS_EXPORT, nomeExport, rasterizarExport, svgExport } from '../services/ExportAvatar'; // onda 1418 (#202)
 import { t } from '../nucleo/i18n'; // lote 411-420 (§296)
@@ -428,6 +429,12 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // mega 471 (§165): modo AUTO persistido; escolher preset manual desliga
   // onda 1418 (#203, P8-F): LOOK 2D do palco — APRESENTAÇÃO pura
   // (localStorage; nunca serializa no avatar). '' = sem look.
+  // onda 1423 (BRIEFING_CORRETIVO_01 §5–§6, #214): UPGRADE Legacy→Premium
+  // com PREVIEW — banner quando o avatar atual e legado e ha candidato
+  const [upgradeAberto, setUpgradeAberto] = useState(false);
+  const [upgradeDispensado, setUpgradeDispensado] = useState<boolean>(() => {
+    try { return localStorage.getItem('dshow.avst.upgrade-premium.v1') === 'dispensado'; } catch { return false; }
+  });
   const [look2d, setLook2d] = useState<string>(() => {
     try { return localStorage.getItem('dshow.avst.look2d') ?? ''; } catch { return ''; }
   });
@@ -1301,6 +1308,44 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
                 )}
               </div>
             )}
+            {/* onda 1423 (#214, §5–§6): banner + preview do UPGRADE
+                Legacy→Premium — nunca migra sozinho; "Manter" dispensa */}
+            {flag('as6.classico_premium') && !palco3d && !upgradeDispensado
+              && configDraft.acabamento !== 'premium' && (() => {
+                const cand = montarCandidatoPremium(configDraft);
+                if (!cand || !cand.trocas.length) return null;
+                return (
+                  <div className="avst5-premium-bar" data-teste="upgrade-premium" role="group"
+                    aria-label="Atualização premium disponível">
+                    <span>✨ Seu avatar tem uma versão visual aprimorada.</span>
+                    <button type="button" className="avst-fchip" data-teste="upgrade-comparar"
+                      onClick={() => setUpgradeAberto((v) => !v)}>Ver comparação</button>
+                    <button type="button" className="avst-fchip" data-teste="upgrade-aplicar"
+                      onClick={() => {
+                        aplicarComando(validarConfig(cand.candidato));
+                        setUpgradeAberto(false);
+                      }}>Atualizar para Premium</button>
+                    <button type="button" className="avst-fchip" data-teste="upgrade-manter"
+                      onClick={() => {
+                        setUpgradeDispensado(true);
+                        setUpgradeAberto(false);
+                        try { localStorage.setItem('dshow.avst.upgrade-premium.v1', 'dispensado'); } catch { /* ok */ }
+                      }}>Manter versão atual</button>
+                    {upgradeAberto && (
+                      <div className="avst5-p3d-cmp" data-teste="upgrade-preview" aria-label="Antes e depois">
+                        <div>
+                          <AvatarSvg config={configDraft} uid="avst5-up-antes" estatico />
+                          <p style={{ textAlign: 'center', margin: 2, fontSize: 11 }}>Atual</p>
+                        </div>
+                        <div>
+                          <AvatarSvg config={validarConfig(cand.candidato)} uid="avst5-up-depois" estatico />
+                          <p style={{ textAlign: 'center', margin: 2, fontSize: 11 }}>Premium ({cand.trocas.length} peças)</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             {comparando && (
               <div className="avst5-comparando" role="status">Original salvo · solte para voltar</div>
             )}

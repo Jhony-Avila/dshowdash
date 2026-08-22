@@ -43,7 +43,8 @@ const PAGINA = `<!doctype html><html><head><meta charset="utf-8">
   "three/examples/jsm/postprocessing/EffectComposer.js": "/three/examples/jsm/postprocessing/EffectComposer.js",
   "three/examples/jsm/postprocessing/RenderPass.js": "/three/examples/jsm/postprocessing/RenderPass.js",
   "three/examples/jsm/postprocessing/ShaderPass.js": "/three/examples/jsm/postprocessing/ShaderPass.js",
-  "three/examples/jsm/postprocessing/UnrealBloomPass.js": "/three/examples/jsm/postprocessing/UnrealBloomPass.js"
+  "three/examples/jsm/postprocessing/UnrealBloomPass.js": "/three/examples/jsm/postprocessing/UnrealBloomPass.js",
+  "three/examples/jsm/postprocessing/OutputPass.js": "/three/examples/jsm/postprocessing/OutputPass.js"
 }}</script></head><body><script type="module" src="/bundle.js"></script></body></html>`;
 const MIME = { '.js': 'text/javascript' };
 const srv = createServer(async (req, res) => {

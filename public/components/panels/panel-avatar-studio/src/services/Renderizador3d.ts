@@ -25,6 +25,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'; // onda 1423 (#215): tone mapping + sRGB no fim da cadeia v2
 import type {
   CapturaRender, EstadoCamera, InicializacaoRenderer, OpcoesCaptura,
   PedidoAnimacao, PedidoPoder, RenderizadorAvatar, ResultadoAplicarEstado,
@@ -993,6 +994,10 @@ export class Renderizador3d implements RenderizadorAvatar {
         const pg = new ShaderPass(SHADER_GRADE);
         const pv = new ShaderPass(SHADER_VINHETA);
         composer.addPass(pb); composer.addPass(pg); composer.addPass(pv);
+        // onda 1423 (#215, achado do Before×After): SEM OutputPass a saída
+        // ficava LINEAR (sem tone mapping/sRGB) — pele virava bronze; o
+        // OutputPass aplica ACES + conversão no FIM da cadeia (padrão three)
+        composer.addPass(new OutputPass());
         this.passesV2 = { bloom: pb, grade: pg, vinheta: pv };
         this.composerV2 = composer;
         this.geracaoPosV2 += 1;

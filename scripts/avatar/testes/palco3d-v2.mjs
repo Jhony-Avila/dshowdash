@@ -59,7 +59,9 @@ const PAGINA = `<!doctype html><html><head><meta charset="utf-8">
   "three/examples/jsm/postprocessing/Pass.js": "/three/examples/jsm/postprocessing/Pass.js",
   "three/examples/jsm/postprocessing/MaskPass.js": "/three/examples/jsm/postprocessing/MaskPass.js",
   "three/examples/jsm/shaders/CopyShader.js": "/three/examples/jsm/shaders/CopyShader.js",
-  "three/examples/jsm/shaders/LuminosityHighPassShader.js": "/three/examples/jsm/shaders/LuminosityHighPassShader.js"
+  "three/examples/jsm/shaders/LuminosityHighPassShader.js": "/three/examples/jsm/shaders/LuminosityHighPassShader.js",
+  "three/examples/jsm/postprocessing/OutputPass.js": "/three/examples/jsm/postprocessing/OutputPass.js",
+  "three/examples/jsm/shaders/OutputShader.js": "/three/examples/jsm/shaders/OutputShader.js"
 }}</script></head><body style="margin:0">
 <div id="palco" style="width:480px;height:480px"></div>
 <script type="module" src="/bundle.js"></script></body></html>`;

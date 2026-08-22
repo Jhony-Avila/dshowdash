@@ -12,7 +12,7 @@
 // `as6.material_debug` (OFF). Nada persiste; fechar restaura overlay/lab.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, FlaskConical, X } from 'lucide-react';
-import { flag } from '../nucleo/flags';
+import { candidateAtivo, definirCandidate, flag, matrizFlags } from '../nucleo/flags'; // onda 1423 (#212)
 import { MOVIMENTOS, animar } from './movimento';
 
 interface Renderizador3dDev {
@@ -161,6 +161,34 @@ export function QaStudio({ aoFechar }: { aoFechar: () => void }) {
             <p className="avst5-tlm-nota">Nada aqui persiste — fechar restaura overlay e calibração. Ficha/gates: <code>scripts/avatar/assets3d/cli.mjs</code>.</p>
           </>
         )}
+        {/* onda 1423 (BRIEFING_CORRETIVO_01 §11–§16, #212): CANDIDATE MODE
+            + MATRIZ DE FLAGS EFETIVAS (default/remote/local/efetiva/deps) —
+            dev/QA; recarregar aplica o preset no estúdio inteiro */}
+        <div className="avst5-tlm-storage" data-teste="qa-flags">
+          <h4>
+            Visual Candidate · {candidateAtivo() ? 'ATIVO' : 'inativo'}
+            <button type="button" className="avst-botao" data-teste="qa-candidate"
+              style={{ marginLeft: 8 }}
+              onClick={() => { definirCandidate(!candidateAtivo()); window.location.reload(); }}>
+              {candidateAtivo() ? 'Desligar e recarregar' : 'Ligar e recarregar'}
+            </button>
+          </h4>
+          <ul data-teste="qa-flags-matriz">
+            {matrizFlags().filter((f) => f.candidate || f.local !== null || f.remota !== null).map((f) => (
+              <li key={f.nome}>
+                <code>{f.nome}{f.candidate ? ' ◆' : ''}</code>
+                <em>
+                  {f.efetiva ? 'ON' : 'off'} · origem {f.origem}
+                  {f.local !== null ? ` · local ${f.local ? 'on' : 'off'}` : ''}
+                  {f.remota !== null ? ` · remota ${f.remota ? 'on' : 'off'}` : ''}
+                  {` · padrão ${f.padrao ? 'on' : 'off'}`}
+                  {f.dependencias.length ? ` · dep ${f.dependencias.join(',')}` : ''}
+                </em>
+              </li>
+            ))}
+          </ul>
+          <p className="avst5-tlm-nota">◆ = faz parte do preset Candidate. URL: <code>?avst_candidate=1|0</code>.</p>
+        </div>
         <div className="avst5-tlm-acoes">
           <button type="button" className="avst-botao" data-teste="qa-fechar" onClick={aoFechar}><X size={12} aria-hidden /> Fechar</button>
         </div>

@@ -625,25 +625,25 @@
       "gradientes": 5
     },
     "aura-aur_px_fluxo": {
-      "bytes": 5149,
+      "bytes": 5153,
       "nos": 94,
       "filtros": 0,
       "gradientes": 6
     },
     "aura-aur_px_cristal": {
-      "bytes": 5010,
+      "bytes": 5014,
       "nos": 93,
       "filtros": 0,
       "gradientes": 6
     },
     "aura-aur_px_chama": {
-      "bytes": 5445,
+      "bytes": 5449,
       "nos": 97,
       "filtros": 0,
       "gradientes": 6
     },
     "aura-aur_px_estelar": {
-      "bytes": 5286,
+      "bytes": 5290,
       "nos": 95,
       "filtros": 0,
       "gradientes": 6
@@ -685,19 +685,19 @@
       "gradientes": 8
     },
     "preset-pre_cp_neon": {
-      "bytes": 11750,
+      "bytes": 11754,
       "nos": 179,
       "filtros": 0,
       "gradientes": 8
     },
     "preset-pre_cp_gala": {
-      "bytes": 13181,
+      "bytes": 13185,
       "nos": 206,
       "filtros": 0,
       "gradientes": 9
     },
     "preset-gala-corpo": {
-      "bytes": 18702,
+      "bytes": 18706,
       "nos": 307,
       "filtros": 0,
       "gradientes": 15

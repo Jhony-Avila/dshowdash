@@ -185,7 +185,7 @@ export function aplicarParamsSvg(chave: CamadaId | string, svg: string, params?:
   const nucleo = valor('nucleo');
   if (nucleo !== undefined) {
     const op = Math.round((0.15 + nucleo * 0.8) * 100) / 100;
-    saida = saida.replace(/(<g data-nucleo opacity=")[0-9.]+(")/g, `$1${op}$2`);
+    saida = saida.replace(/(<g data-nucleo(?:="1")? opacity=")[0-9.]+(")/g, `$1${op}$2`);
   }
   const intensidade = valor('intensidade');
   if (intensidade !== undefined) {

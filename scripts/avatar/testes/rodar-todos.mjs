@@ -15,6 +15,7 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'posfoto.mjs', // onda 1420 (#206/#207)
   'materiais-familias.mjs', // onda 1421 (#208/#209)
   'corpo3d-v2.mjs', // onda 1422 (#210/#211)
+  'corretivo-a.mjs', // onda 1423 (BRIEFING_CORRETIVO_01 Fase A; #212–#215)
   'looks3d.mjs', 'bundle-assets.mjs', 'homologacao-3d.mjs', 'qa-pipeline.mjs', 'qa-studio.mjs', 'golden-classic.mjs'];
 let falhas = 0;
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red

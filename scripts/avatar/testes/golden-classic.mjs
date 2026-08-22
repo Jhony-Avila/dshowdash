@@ -396,7 +396,7 @@ ok((paramsDaCamada('aura') ?? []).every((d) => d.id !== 'nucleo'), '[K] aura leg
 ok((paramsDaCamada('aura', 'aur_px_fluxo') ?? []).some((d) => d.id === 'nucleo'), '[K] aur_px_ deveria ganhar nucleo');
 ok(sanitizarParams('aura', { nucleo: 1 }, 'aur_neon') === undefined && sanitizarParams('aura', { nucleo: 1 }, 'aur_px_fluxo')?.nucleo === 1, '[K] nucleo gated por soV2');
 const cNuc = cfg({ camadas: { ...CONFIG_PADRAO.camadas, aura: 'aur_px_fluxo' }, params: { aura: { nucleo: 1 } }, acabamento: 'premium' });
-ok(svgDe(cNuc, { uid: 'au', premium: true }).includes('data-nucleo opacity="0.95"'), '[K] nucleo 1 deveria abrir o miolo a 0.95');
+ok(svgDe(cNuc, { uid: 'au', premium: true }).includes('data-nucleo="1" opacity="0.95"'), '[K] nucleo 1 deveria abrir o miolo a 0.95');
 // molduras: centro SEMPRE livre (nenhum rect grande com fill solido)
 for (const m of MOLDURAS_PREMIUM) {
   const svg = m.render(paletaFake(), 'k');

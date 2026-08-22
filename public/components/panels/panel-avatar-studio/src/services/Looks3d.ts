@@ -134,12 +134,15 @@ export const LOOKS: Record<LookId, Look> = {
   // hero: apresentação de banner — key alta e quente, rim forte, bloom
   // presente mas contido (limiar alto: só speculars/emissivos estouram)
   hero: {
-    id: 'hero', versao: 1, nome: 'Hero',
-    key: { cor: 0xffedd6, intensidade: 3.1, pos: [2.6, 3.6, 2.2] }, fill: { cor: 0x8fa8ff, intensidade: 0.9, pos: [-2.6, 1.6, 0.8] },
-    ambiente: 0.4, env: 0.5, rim: { cor: 0xdfe9ff, intensidade: 2.6, pos: [-1.8, 2.8, -2.6] },
-    exposicao: 1.05, cameraSugerida: 'corpo', legado: false,
+    id: 'hero', versao: 2, nome: 'Hero',
+    // onda 1423 (#215, BRIEFING_CORRETIVO_01 §78/§83): CALIBRADO no
+    // Before×After — v1 (key 3.1 quente + temp 0.05) virava bronze;
+    // key mais neutra, ambiente/fill sobem, grade quase neutro
+    key: { cor: 0xfff4e8, intensidade: 2.7, pos: [2.6, 3.6, 2.2] }, fill: { cor: 0x9db4ff, intensidade: 1.2, pos: [-2.6, 1.6, 0.8] },
+    ambiente: 0.5, env: 0.55, rim: { cor: 0xdfe9ff, intensidade: 2.2, pos: [-1.8, 2.8, -2.6] },
+    exposicao: 1.0, cameraSugerida: 'corpo', legado: false,
     sombra: { bias: -0.0002, raio: 3 }, fog: null,
-    pos: { bloom: { forca: 0.35, raio: 0.5, limiar: 0.8 }, grade: { saturacao: 1.1, temperatura: 0.05, contraste: 1.08, protegerPele: true }, vinheta: { forca: 0.3, suavidade: 0.6 } },
+    pos: { bloom: { forca: 0.3, raio: 0.5, limiar: 0.85 }, grade: { saturacao: 1.05, temperatura: 0.02, contraste: 1.05, protegerPele: true }, vinheta: { forca: 0.28, suavidade: 0.6 } },
   },
   // product: neutro de catálogo — luz limpa e uniforme, ZERO bloom e
   // ZERO vinheta (a foto de produto não esconde nada nas bordas); só um
