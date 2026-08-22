@@ -26,6 +26,8 @@ export interface ConfigLegado2d {
   postura?: 'confiante' | 'relaxada' | 'executiva' | 'heroica' | 'misteriosa';
   /** megas 561–564 (§102.2): ajuste FINO do corpo — roundtrip sem perda. */
   corpoFino?: { largura?: number; altura?: number };
+  /** onda 1422 (#210, body.v2): preset + morfos — roundtrip sem perda. */
+  corpoV2?: { preset?: 'esbelto' | 'atletico' | 'robusto' | 'compacto'; morfos?: Record<string, number> };
   /** onda 1411 (#159): acabamento premium — roundtrip sem perda. */
   acabamento?: 'premium';
   /** §71: propriedades por camada (F3 C2) — roundtrip sem perda. */
@@ -66,6 +68,8 @@ export function deLegado2d(cfg: ConfigLegado2d): EstadoAvatar {
   if (cfg.postura) e.body.postura = cfg.postura;
   // megas 561–564 (§102.2): fino só entra com conteúdo (checksum estável)
   if (cfg.corpoFino && Object.keys(cfg.corpoFino).length) e.body.fino = { ...cfg.corpoFino };
+  // onda 1422 (#210): body.v2 — roundtrip sem perda (validarConfig sanitiza)
+  if (cfg.corpoV2 && Object.keys(cfg.corpoV2).length) e.body.v2 = JSON.parse(JSON.stringify(cfg.corpoV2)) as typeof e.body.v2;
   if (cfg.acabamento === 'premium') e.appearance.acabamento = 'premium'; // onda 1411 (#159)
   e.renderer.preferido = '2d';
   return e;
@@ -106,6 +110,7 @@ export function paraLegado2d(e: EstadoAvatar, baseFallback = 'bas_classica'): Co
     ...(e.body.tipo ? { corpo: e.body.tipo as ConfigLegado2d['corpo'] } : {}),
     ...(e.body.postura ? { postura: e.body.postura as ConfigLegado2d['postura'] } : {}),
     ...(e.body.fino && Object.keys(e.body.fino).length ? { corpoFino: { ...e.body.fino } } : {}),
+    ...(e.body.v2 && Object.keys(e.body.v2).length ? { corpoV2: JSON.parse(JSON.stringify(e.body.v2)) as ConfigLegado2d['corpoV2'] } : {}),
     ...(e.appearance.acabamento === 'premium' ? { acabamento: 'premium' as const } : {}),
     ...(Object.keys(params).length ? { params } : {}),
     ...(Object.keys(coresCamada).length ? { coresCamada } : {}),

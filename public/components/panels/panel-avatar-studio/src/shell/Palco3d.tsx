@@ -740,11 +740,19 @@ export function Palco3d({ estado, movReduzido, sinalApresentar = 0, aoUsarComoAv
   // ajuste fino §102.2 do 2D moldam o personagem 3D (tabela única §102)
   useEffect(() => {
     if (fase !== 'pronto') return;
-    const corpo = flag('as5.morfos3d') && (estado.body.tipo || estado.body.fino)
-      ? { tipo: estado.body.tipo ?? null, fino: estado.body.fino ?? null }
+    // onda 1422 (#210, as6.corpo_v2): body.v2 entra junto (o renderer só
+    // consome com a flag; sem v2/flag = caminho §412 byte a byte)
+    const v2 = flag('as6.corpo_v2') ? (estado.body as { v2?: unknown }).v2 ?? null : null;
+    const corpo = (flag('as5.morfos3d') && (estado.body.tipo || estado.body.fino)) || v2
+      ? { tipo: estado.body.tipo ?? null, fino: estado.body.fino ?? null, v2 }
       : null;
     (refR.current as unknown as { definirCorpo3d?: (c: typeof corpo) => void })
       ?.definirCorpo3d?.(corpo);
+    // onda 1422 (#211): perfil de postura 3D (dado Corpo3d) — só com a flag
+    if (flag('as6.corpo_v2')) {
+      (refR.current as unknown as { definirPostura3d?: (p: string | null) => void })
+        ?.definirPostura3d?.(estado.body.postura ?? null);
+    }
   }, [estado, fase, personagem]);
 
   // mega 82: aura equipada no 2D vira ANEL 3D na cor de destaque (§444)

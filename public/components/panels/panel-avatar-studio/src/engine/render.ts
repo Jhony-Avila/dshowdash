@@ -10,6 +10,7 @@
 //   → olhos → cabelo → acessório → moldura → efeito(frente)
 //   (banner/aura/emblema — Expansão, decisão #33: categorias 2D de baixo custo)
 import type { AvatarConfig, CamadaId } from '../domain/types';
+import { PRESETS_CORPO } from '../domain/corpo102'; // onda 1422 (#210)
 import { paletaDe, tinta } from './cores';
 import { aplicarParamsSvg } from './params';
 import type { ParteDef } from './base-api';
@@ -92,9 +93,9 @@ const SLOTS_CORPO = [
 // Transforms de WRAPPER na figura (arte 100% intocada — regra da F2);
 // ancorados na BASE da figura (cy) para os pés não "flutuarem". Campo
 // ausente = wrapper ausente = SVG byte a byte o de sempre.
-const TIPOS_CORPO: Record<string, [number, number]> = {
-  esbelto: [0.95, 1.02], atletico: [1.05, 1], robusto: [1.1, 0.98], compacto: [0.97, 0.94],
-};
+// onda 1422 (#210): tabela §102 vem da FONTE ÚNICA (domain/corpo102) —
+// números idênticos (goldens 16/16 travam); alias local preserva o nome
+const TIPOS_CORPO: Record<string, [number, number]> = PRESETS_CORPO;
 const POSTURAS_FIG: Record<string, string> = {
   confiante: 'rotate(-2 120 __CY__)',
   relaxada: 'rotate(2.5 120 __CY__)',

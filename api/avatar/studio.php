@@ -258,6 +258,35 @@ function avst_validar_config($bruto): array
             $saida['corpoFino'] = $cf;
         }
     }
+    // onda 1422 (#210, body.v2 §333): corpoV2 {preset, morfos} — espelho
+    // de Corpo3d.sanitizarCorpoV2: preset no enum §102, morfos conhecidos
+    // clampados a [-1, 1] (2 casas), 0 omitido; vazio NUNCA persiste
+    $cv2 = $bruto['corpoV2'] ?? null;
+    if (is_array($cv2)) {
+        $v2 = [];
+        $preset = $cv2['preset'] ?? null;
+        if (in_array($preset, ['esbelto', 'atletico', 'robusto', 'compacto'], true)) {
+            $v2['preset'] = $preset;
+        }
+        $morfosBrutos = $cv2['morfos'] ?? null;
+        if (is_array($morfosBrutos)) {
+            $morfos = [];
+            foreach (['ombros', 'torax', 'cintura', 'bracos', 'pernas'] as $mid) {
+                if (isset($morfosBrutos[$mid]) && is_numeric($morfosBrutos[$mid])) {
+                    $v = round(min(1.0, max(-1.0, (float) $morfosBrutos[$mid])), 2);
+                    if ($v != 0.0) {
+                        $morfos[$mid] = $v;
+                    }
+                }
+            }
+            if ($morfos !== []) {
+                $v2['morfos'] = $morfos;
+            }
+        }
+        if ($v2 !== []) {
+            $saida['corpoV2'] = $v2;
+        }
+    }
     return $saida;
 }
 

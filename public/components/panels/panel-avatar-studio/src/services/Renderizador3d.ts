@@ -38,6 +38,9 @@ import type { ResultadoMontagem } from './Assembler3d';
 import { BONES_UBC_V1, carregarManifestParte, categoriaDaParte, urlDaParte } from './Partes3d';
 import { aplicarFamilias, aplicarPipelineCores, descartarMateriais, marcarMateriaisPorManifest } from './Materiais3d'; // lote 641-650 (§418-§421) + onda 1408 (#160)
 import { GOLDEN_MATERIAIS } from './FamiliasMaterial'; // onda 1421 (#208): cena de calibração
+import { MORPHS_CORPO, POSTURAS_3D, SOCKETS_CORPO, normalizarBone, resolverCorpo } from './Corpo3d'; // onda 1422 (#210/#211)
+import type { CorpoV2, Postura3d, SocketCorpoId } from './Corpo3d';
+import type { PosturaAvatar } from '../domain/types';
 import { LOOKS, etiquetaLook, lookDe, type LookId } from './Looks3d'; // onda 1408 (#161): registry de looks
 import { passesPos } from './QualityManager'; // onda 1420 (#206): degradação por pass
 import { LENTES_FOTO, dimensoesLente, nomeFotoLente, type LenteFotoId } from './LentesFoto'; // onda 1420 (#207)
@@ -220,7 +223,7 @@ export class Renderizador3d implements RenderizadorAvatar {
   private cores3d: Record<string, string> | null = null;
   // lote 651–660 (§412–§414, flag as5.morfos3d no CALLER): morfos
   // estruturais via ESCALA do personagem — null/neutro = escala 1
-  private corpo3d: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null } | null = null;
+  private corpo3d: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null; v2?: CorpoV2 | null } | null = null;
   // ── lote 681–690 (§461–§478, flag as5.progressivo3d no CALLER) ────
   // §473: geração de carga — resposta antiga NUNCA sobrescreve a nova
   // (bugfix de corrida, SEM flag: corretude não é feature)
@@ -1422,24 +1425,100 @@ export class Renderizador3d implements RenderizadorAvatar {
    *  pós-rebind) acompanham juntas — §413 "morphs respeitam roupas/rig".
    *  Neutro = escala 1 = render idêntico (byte-stability do visual).
    *  O CALLER decide a flag (as5.morfos3d) — aqui é só o mecanismo. */
-  definirCorpo3d(corpo: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null } | null): void {
+  definirCorpo3d(corpo: { tipo?: string | null; fino?: { largura?: number; altura?: number } | null; v2?: CorpoV2 | null } | null): void {
     if (JSON.stringify(corpo) === JSON.stringify(this.corpo3d)) return;
-    this.corpo3d = corpo ? { tipo: corpo.tipo ?? null, fino: corpo.fino ?? null } : null;
+    this.corpo3d = corpo ? { tipo: corpo.tipo ?? null, fino: corpo.fino ?? null, v2: corpo.v2 ?? null } : null;
     this.aplicarCorpo3d();
   }
 
-  /** Tabela §102 (espelho de engine/render.ts — [largura, altura]). */
-  private static readonly CORPOS_3D: Record<string, [number, number]> = {
-    esbelto: [0.95, 1.02], atletico: [1.05, 1], robusto: [1.1, 0.98], compacto: [0.97, 0.94],
-  };
-
+  /** onda 1422 (#210): a matemática do corpo vem da BODY API
+   *  (Corpo3d.resolverCorpo — números do caminho anterior preservados).
+   *  Com as6.corpo_v2: morphTargetInfluences `corpo_<id>` quando o asset
+   *  os tiver (⛔ assets hoje), senão BONE SCALING por segmento (§318);
+   *  as6.corpo_grounding re-ancora os pés no chão após a escala. */
   private aplicarCorpo3d(): void {
     if (!this.personagem) return;
-    const preset = Renderizador3d.CORPOS_3D[this.corpo3d?.tipo ?? ''] ?? [1, 1];
-    const larg = Math.min(1.15, Math.max(0.88, preset[0] * (this.corpo3d?.fino?.largura ?? 1)));
-    const alt = Math.min(1.07, Math.max(0.9, preset[1] * (this.corpo3d?.fino?.altura ?? 1)));
-    this.personagem.scale.set(larg, alt, larg); // XZ = largura · Y = altura
+    const r = resolverCorpo(this.corpo3d?.tipo, this.corpo3d?.fino, flag('as6.corpo_v2') ? this.corpo3d?.v2 : null);
+    this.personagem.scale.set(r.escala[0], r.escala[1], r.escala[0]); // XZ = largura · Y = altura
+    if (flag('as6.corpo_v2')) {
+      // restaura escalas de segmento anteriores (idempotente)
+      for (const [bone, original] of this.bonesEscalados) bone.scale.copy(original);
+      this.bonesEscalados.clear();
+      for (const [nome, seg] of Object.entries(r.segmentos)) {
+        // morph real do asset vence o bone scaling (§315)
+        let usouMorph = false;
+        this.personagem.traverse((o) => {
+          const m = o as THREE.SkinnedMesh;
+          const dict = m.morphTargetDictionary as Record<string, number> | undefined;
+          const idMorfo = Object.entries(MORPHS_CORPO).find(([, mm]) => mm.bones.includes(nome))?.[0];
+          if (m.isSkinnedMesh && dict && idMorfo && dict[`corpo_${idMorfo}`] !== undefined && m.morphTargetInfluences) {
+            m.morphTargetInfluences[dict[`corpo_${idMorfo}`]] = Math.abs(seg.escala - 1) / 0.1;
+            usouMorph = true;
+          }
+        });
+        if (usouMorph) continue;
+        const bone = this.boneVivo(nome);
+        if (!bone) continue;
+        if (!this.bonesEscalados.has(bone)) this.bonesEscalados.set(bone, bone.scale.clone());
+        if (seg.eixo === 'xyz') bone.scale.multiplyScalar(seg.escala);
+        else bone.scale.set(bone.scale.x * seg.escala, bone.scale.y, bone.scale.z * seg.escala);
+      }
+    }
+    if (flag('as6.corpo_grounding')) {
+      this.personagem.position.y = 0; // idempotente: re-mede do zero
+      this.personagem.updateMatrixWorld(true);
+      const caixa = new THREE.Box3().setFromObject(this.personagem);
+      if (Number.isFinite(caixa.min.y) && Math.abs(caixa.min.y) > 1e-4) {
+        this.personagem.position.y = -caixa.min.y;
+      }
+    }
   }
+
+  // onda 1422 (#211): escalas de segmento aplicadas (restauração exata)
+  private bonesEscalados = new Map<THREE.Object3D, THREE.Vector3>();
+
+  /** Bone VIVO do esqueleto do personagem pelo nome canônico ubc-v1
+   *  (aliases mixamo/Quaternius resolvem via normalizarBone). */
+  private boneVivo(nomeCanonico: string): THREE.Object3D | null {
+    if (!this.personagem) return null;
+    let achado: THREE.Object3D | null = null;
+    const alvo = nomeCanonico.toLowerCase();
+    this.personagem.traverse((o) => {
+      // comparação case-insensitive: o rig ubc-v1 real usa 'Head' com
+      // maiúscula ao lado de hand_l/pelvis minúsculos
+      if (!achado && (o as THREE.Bone).isBone && normalizarBone(o.name).toLowerCase() === alvo) achado = o;
+    });
+    return achado;
+  }
+
+  /** onda 1422 (#211, §426): SOCKET corporal REAL — anexa o objeto ao
+   *  bone do rig com o grip do registry (props "na mão"). Devolve false
+   *  quando o rig não tem o bone (caller decide fallback). */
+  anexarNoSocket(objeto: THREE.Object3D, socket: SocketCorpoId): boolean {
+    const s = SOCKETS_CORPO[socket];
+    if (!s) return false;
+    const bone = this.boneVivo(s.bone);
+    if (!bone) return false;
+    bone.add(objeto);
+    objeto.position.set(...s.grip.pos);
+    objeto.rotation.set(...s.grip.rot);
+    return true;
+  }
+
+  boneDoSocket(socket: SocketCorpoId): string | null {
+    const s = SOCKETS_CORPO[socket];
+    if (!s) return null;
+    return this.boneVivo(s.bone)?.name ?? null;
+  }
+
+  /** onda 1422 (#211, §P2-E): PERFIL DE POSTURA 3D (dado do Corpo3d) —
+   *  inclinação do tronco + amplitude do idle; null restaura. O caller
+   *  decide a flag (as6.corpo_v2). */
+  definirPostura3d(id: PosturaAvatar | null): void {
+    this.postura3d = id ? POSTURAS_3D[id] ?? null : null;
+    if (this.personagem) this.personagem.rotation.z = this.postura3d?.inclinacao ?? 0;
+  }
+  private postura3d: Postura3d | null = null;
 
   /** mega 82 (§444): AURA 3D — anel additive pulsante na cor do avatar. */
   definirAura3d(cor: string | null): void {
@@ -1934,13 +2013,16 @@ export class Renderizador3d implements RenderizadorAvatar {
   private animarIdle(): void {
     if (!this.idleAtivo || this.mixer) return;
     const t = this.relogio;
+    // onda 1422 (#211): perfil de postura multiplica a amplitude do idle
+    // (null = 1 = idle byte a byte)
+    const amp = this.postura3d?.amplitudeIdle ?? 1;
     const girar = (nome: string, eixoX: number, eixoZ: number) => {
       const bone = this.bones.get(nome);
       const base = this.poseBase.get(nome);
       if (!bone || !base) return;
       bone.quaternion.copy(base);
-      bone.rotateX(eixoX);
-      bone.rotateZ(eixoZ);
+      bone.rotateX(eixoX * amp);
+      bone.rotateZ(eixoZ * amp);
     };
     girar('Spine', Math.sin(t * 1.7) * 0.028, Math.sin(t * 0.9) * 0.012);
     girar('Chest', Math.sin(t * 1.7 + 0.5) * 0.022, 0);

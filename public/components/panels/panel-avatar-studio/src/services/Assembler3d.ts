@@ -14,6 +14,7 @@
 // emblemas §421/641+) — o relatório diz a verdade sobre o que rodou.
 import * as THREE from 'three';
 import { canalDaCategoria, marcarCanal } from './Materiais3d';
+import { normalizarBone } from './Corpo3d'; // onda 1422 (#211): aliases de rig
 
 export type PassoAssembler =
   | 'carregar_base' | 'validar_rig' | 'tipo_corporal' | 'morphs' | 'pele'
@@ -91,7 +92,9 @@ export function mascararBase(
         const w = skinWeight.getComponent(v, k);
         if (w > peso) { peso = w; melhor = skinIndex.getComponent(v, k); }
       }
-      return nomes[melhor] ?? '';
+      // onda 1422 (#211): aliases de bone (mixamo/Quaternius → ubc-v1)
+      // resolvem p/ o nome canônico — nome já canônico volta intocado
+      return normalizarBone(nomes[melhor] ?? '');
     };
     const novo: number[] = [];
     for (let i = 0; i < indice.count; i += 3) {

@@ -140,6 +140,8 @@ const PADROES: Record<string, boolean> = {
   'as6.pos_v2': false,          // onda 1420 — PÓS V2 por look (#206, P8-D §1965–§1977): cadeia Render→Bloom→ColorGrade(proteção de pele)→Vignette declarada em Look.pos, degradação por pass via QualityManager.passesPos, composer recriado em context loss, telemetria p3d_pos_fallback; estudio = pós NEUTRO (contrato); off = composer/CSS antigos byte a byte
   'as6.dev_iluminacao': false,  // onda 1420 — PAINEL DEV de iluminação (#206, §2015): sliders key/fill/rim/bloom sobre o look atual no palco 3D (ajustarLuzDev — nunca persiste, reaplicar o look restaura); dev-only; off = sem UI, render intocado
   'as6.foto_lentes': false,     // onda 1420 — LENTES do Photo 3D (#207, P8-E §2007–§2027): registry LentesFoto (Portrait/Full/Fashion/WideHero/Profile/Close-up, aspectos 4:5 e 9:16, look por lente, regra dos terços), captura alta com shadow↑ + pós só na captura e RESTAURO total, determinística; off = captura 960×960 anterior byte a byte
+  'as6.corpo_v2': false,        // onda 1422 — BODY API v2 (#210/#211, P2-B/C/E): corpoV2 {preset, morfos} consumido no 3D (morph targets `corpo_*` quando o asset tiver, senão bone scaling por segmento clampado ao envelope) + perfis de postura 3D; o dado corpoV2 é aceito/persistido SEMPRE (forward-compat); off = escala §412 anterior byte a byte
+  'as6.corpo_grounding': false, // onda 1422 — GROUNDING (#211, §P2-E): re-ancora os pés no chão (Box3.min.y → 0) após escala/morfos; off = posição anterior byte a byte
   'as6.cp_foto': false,         // onda 1418 — PHOTO MODE 2D do avatar (#202, P10-G): export em framings (full/bust/portrait/square/vertical) PNG/WebP/transparente com toggles de fundo/moldura/efeito; off = sem UI de export, render intocado
   'as6.acess_2d_premium': false, // onda 1416 — ACESSÓRIOS PREMIUM 2D (#196, P10-E/P6-A/P6-E): contador + "Remover todos" + conflito nomeado (AcessoriosRegistry §617) + aviso de paridade na UI; catálogo ace_px_ já é gated por classico_premium; off = UI anterior byte a byte
   'as6.roupa_premium': false,   // onda 1415 — VESTUÁRIO PREMIUM (#191, P10-D/P5-B/P5-C): categoria roupa_inferior (rin_*) na sidebar, conjuntos premium O01+ e swatch de material na UI; off = seção/outfits ocultos, configs salvos seguem renderizando (dado > UI)
@@ -191,6 +193,9 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.pos_v2': ['as5.palco3d'],
   'as6.dev_iluminacao': ['as5.palco3d'],
   'as6.foto_lentes': ['as5.palco3d'],
+  // onda 1422 (#210/#211): corpo v2/grounding são do palco 3D
+  'as6.corpo_v2': ['as5.palco3d'],
+  'as6.corpo_grounding': ['as5.palco3d'],
   // onda 1414 (#186): slots faciais são filhos do rosto v2 — ligar/desligar
   // a família inteira de uma vez (§2917–§2926)
   'as6.barba_slot': ['as6.face_v2'],

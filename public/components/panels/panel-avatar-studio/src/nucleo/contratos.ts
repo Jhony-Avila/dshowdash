@@ -99,6 +99,9 @@ export interface EstadoAvatar {
     postura?: string;
     /** megas 561–564 (§102.2): ajuste FINO — mesma regra de opcionais. */
     fino?: { largura?: number; altura?: number };
+    /** onda 1422 (#210, body.v2 §333): preset + morfos por segmento —
+     *  OPCIONAL (ausente preserva o checksum de estados anteriores). */
+    v2?: { preset?: string; morfos?: Record<string, number> };
   };
   /** `params` (§71) e `coresCamada` (§73): regulagens por slot equipado —
    *  campos OPCIONAIS: ausentes quando nada foi regulado, preservando o

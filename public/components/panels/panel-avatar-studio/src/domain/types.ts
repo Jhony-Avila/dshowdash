@@ -170,6 +170,10 @@ export interface AvatarConfig {
   /** megas 561-564 (§102.2, lote 561-570): ajuste FINO do corpo —
    *  largura/altura sutis; 1 = neutro (campo/objeto omitidos) */
   corpoFino?: { largura?: number; altura?: number };
+  /** onda 1422 (#210, schema body.v2 §333): preset + morfos por segmento
+   *  (−1…1; 0/vazio NUNCA persiste). Consumo 3D atrás de as6.corpo_v2;
+   *  o legado corpo/corpoFino segue válido (v2 vence quando presente). */
+  corpoV2?: { preset?: TipoCorporal; morfos?: Partial<Record<'ombros' | 'torax' | 'cintura' | 'bracos' | 'pernas', number>> };
   postura?: PosturaAvatar;
   /** onda 1411 (decisão #159): ACABAMENTO do render 2D — 'premium' liga o
    *  trilho Classic Premium (sombra de contato, hooks das partes `_px_`,

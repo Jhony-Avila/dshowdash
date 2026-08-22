@@ -8,6 +8,7 @@ import type {
   AvatarConfig, CamadaId, CanalCor, CategoriaId, CategoriaMeta, EstiloFoto, GrupoId, Preset, Raridade, SlotCor,
 } from '../domain/types';
 import { CORES_PADRAO, normalizarHex, paletaDe } from '../engine/cores';
+import { sanitizarCorpoV2 } from './Corpo3d'; // onda 1422 (#210)
 import { flag } from '../nucleo/flags';
 import { migrarConfigVNext } from '../nucleo/estado-vnext';
 import { sanitizarParams } from '../engine/params';
@@ -532,6 +533,12 @@ export function validarConfig(bruto: unknown): AvatarConfig {
   }
   if (b.corpo === 'esbelto' || b.corpo === 'atletico' || b.corpo === 'robusto' || b.corpo === 'compacto') {
     saida.corpo = b.corpo;
+  }
+  // onda 1422 (#210, body.v2 §333): sanitização na BODY API (Corpo3d) —
+  // preset no enum, morfos clampados, neutro OMITIDO (espelho no PHP)
+  {
+    const v2 = sanitizarCorpoV2((b as { corpoV2?: unknown }).corpoV2);
+    if (v2) saida.corpoV2 = v2;
   }
   if (b.postura === 'confiante' || b.postura === 'relaxada' || b.postura === 'executiva'
     || b.postura === 'heroica' || b.postura === 'misteriosa') {
