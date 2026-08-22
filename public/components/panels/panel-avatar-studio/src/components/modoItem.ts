@@ -141,11 +141,38 @@ export const FOCO_ITEM_SUBCATEGORIA: Record<string, string> = {
   calcados: '60 290 120 120',
 };
 
-/** viewBox do Modo Item: medição do asset → preset da subcategoria →
- *  canvas inteiro (nunca falha; ocupação só degrada com aviso visual). */
-export function focoItemDe(assetId: string): string {
+/** onda 1425 (BRIEFING_COMPLEMENTAR_02 §12–§17/§44, #217): presets de
+ *  foco por CATEGORIA — o Modo Item deixa de ser só de acessório.
+ *  Enquadram a camada isolada com ~78% de ocupação (§46). Arte medida
+ *  individualmente (FOCO_ITEM_ASSET, via medir-foco-item.mjs) tem
+ *  precedência; sem medição, cai aqui pela categoria. */
+export const FOCO_ITEM_CATEGORIA: Record<string, string> = {
+  base: '52 40 136 136',        // §17 cabeça neutra (crânio + queixo)
+  olhos: '78 82 84 52',         // §12 par de olhos grande e centralizado
+  boca: '92 128 56 40',         // §13 só a boca + área neutra mínima
+  nariz: '98 104 44 44',        // §14
+  sobrancelha: '82 86 76 26',   // §15 par de sobrancelhas
+  barba: '78 118 84 72',        // §16 contorno da mandíbula (jaw ghost)
+  cabelo: '58 30 124 110',      // §4/§6 massa do cabelo (back+front) sem rosto
+  roupa: '48 176 144 180',      // §7/§8 torso da peça no corpo (cintura p/ cima)
+  roupa_sobre: '44 172 152 184',
+  roupa_inferior: '60 300 120 100', // §9 cintura aos pés
+  fundo: '0 0 240 240',         // §25/§48 a arte preenche 100%
+  moldura: '0 0 240 240',       // §26 moldura + campo vazio
+  aura: '20 20 200 200',        // §27 aura com escala (ghost)
+  efeito: '20 20 200 200',      // §28
+  banner: '20 150 200 80',
+  emblema: '150 20 70 70',
+};
+
+/** viewBox do Modo Item: medição do asset → preset da CATEGORIA →
+ *  preset da subcategoria (acessórios) → canvas inteiro (nunca falha). */
+export function focoItemDe(assetId: string, categoria?: string): string {
   const medido = FOCO_ITEM_ASSET[assetId];
   if (medido) return medido;
+  // acessórios continuam pela subcategoria (medições finas por região)
   const sub = subcategoriaDoAsset(assetId);
-  return (sub && FOCO_ITEM_SUBCATEGORIA[sub.id]) || '0 0 240 240';
+  if (sub && FOCO_ITEM_SUBCATEGORIA[sub.id]) return FOCO_ITEM_SUBCATEGORIA[sub.id];
+  if (categoria && FOCO_ITEM_CATEGORIA[categoria]) return FOCO_ITEM_CATEGORIA[categoria];
+  return '0 0 240 240';
 }

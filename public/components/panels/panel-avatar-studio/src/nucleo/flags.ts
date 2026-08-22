@@ -143,6 +143,7 @@ const PADROES: Record<string, boolean> = {
   'as6.corpo_v2': false,        // onda 1422 — BODY API v2 (#210/#211, P2-B/C/E): corpoV2 {preset, morfos} consumido no 3D (morph targets `corpo_*` quando o asset tiver, senão bone scaling por segmento clampado ao envelope) + perfis de postura 3D; o dado corpoV2 é aceito/persistido SEMPRE (forward-compat); off = escala §412 anterior byte a byte
   'as6.corpo_grounding': false, // onda 1422 — GROUNDING (#211, §P2-E): re-ancora os pés no chão (Box3.min.y → 0) após escala/morfos; off = posição anterior byte a byte
   'as6.ux3d_simples': false,    // onda 1423 — UI 3D SIMPLIFICADA (BRIEFING_CORRETIVO_01 §52–§70, #213): controles técnicos (qualidade, pós, tinta, turntable/ficha, exposição, movimento de câmera, dev) saem do fluxo principal p/ "Avançado"; o palco vira Character Creator (§53); off = UI anterior byte a byte; entra no Candidate Mode
+  'as6.thumb_item_v2': false,   // onda 1425 — ASSET CLARITY (BRIEFING_COMPLEMENTAR_02, #217): card = peça ISOLADA em TODA categoria (não só acessório), fundo=environment, camadas do cabelo montadas (back+front), card NÃO troca no hover (só o palco recebe o preview), DetalheAsset com hero isolado + "no seu avatar"; off = thumbs anteriores byte a byte; entra no Candidate Mode
   'as6.cp_foto': false,         // onda 1418 — PHOTO MODE 2D do avatar (#202, P10-G): export em framings (full/bust/portrait/square/vertical) PNG/WebP/transparente com toggles de fundo/moldura/efeito; off = sem UI de export, render intocado
   'as6.acess_2d_premium': false, // onda 1416 — ACESSÓRIOS PREMIUM 2D (#196, P10-E/P6-A/P6-E): contador + "Remover todos" + conflito nomeado (AcessoriosRegistry §617) + aviso de paridade na UI; catálogo ace_px_ já é gated por classico_premium; off = UI anterior byte a byte
   'as6.roupa_premium': false,   // onda 1415 — VESTUÁRIO PREMIUM (#191, P10-D/P5-B/P5-C): categoria roupa_inferior (rin_*) na sidebar, conjuntos premium O01+ e swatch de material na UI; off = seção/outfits ocultos, configs salvos seguem renderizando (dado > UI)
@@ -275,6 +276,8 @@ export const FLAGS_CANDIDATE: readonly string[] = [
   'as6.pos_v2', 'as6.foto_lentes',
   // UX (simplificação provisória da UI 3D — §87.5/#213)
   'as6.ux3d_simples',
+  // Asset Clarity (BRIEFING_COMPLEMENTAR_02 #217): cards = peças isoladas
+  'as6.thumb_item_v2',
 ];
 
 export function candidateAtivo(): boolean {

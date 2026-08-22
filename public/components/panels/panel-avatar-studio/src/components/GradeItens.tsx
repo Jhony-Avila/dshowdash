@@ -18,6 +18,7 @@ import {
 import type { AvatarConfig, CategoriaId, Raridade, SlotAcessorio } from '../domain/types';
 import { COLECOES, CATEGORIAS, RARIDADES, itemPorId, itensDe, nivelRaridade, svgEfeitoIsolado, svgItemIsolado, validarConfig } from '../services/AvatarCatalog';
 import { focoItemDe } from './modoItem'; // onda 1401 (#150): thumbs Modo Item
+import { apresentacaoDe, usaThumbIsolado } from '../services/ApresentacaoAsset'; // onda 1425 (#217)
 import { variantesDe } from '../services/VariantesAssets'; // onda 1401 (#150)
 import { alternarFavorito, favoritos, itensUsados } from '../services/Progresso';
 // mega 229 (§229): favoritos que crescem — rápidos/permanentes/por coleção
@@ -319,10 +320,16 @@ export function GradeItens({ config, categoria, desbloqueados, aoEscolher, filtr
     try { localStorage.setItem(CHAVE_MODO, novo); } catch { /* sem storage */ }
   };
 
-  // onda 1401 (#150, as6.thumb_item — elevação §12): MODO DO THUMBNAIL
-  // nos acessórios — Item (asset isolado, protagonista) × Aplicado (avatar
-  // com o item, o de sempre). Hover no card SEMPRE mostra o Aplicado.
-  const thumbItemDisponivel = flag('as6.thumb_item') && categoria === 'acessorio';
+  // onda 1401 (#150, as6.thumb_item — elevação §12): MODO DO THUMBNAIL —
+  // Item (asset isolado, protagonista) × Aplicado (avatar com o item).
+  // onda 1425 (BRIEFING_COMPLEMENTAR_02 §3, #217, as6.thumb_item_v2):
+  // GENERALIZADO — card = peça isolada em TODA categoria de item (não só
+  // acessório); a política vem do registry ApresentacaoAsset (fonte
+  // única §41–§43). Fundo/moldura usam a própria arte (environment).
+  const thumbV2 = flag('as6.thumb_item_v2');
+  const thumbItemDisponivel = thumbV2
+    ? usaThumbIsolado(categoria)
+    : (flag('as6.thumb_item') && categoria === 'acessorio');
   const [modoThumb, setModoThumb] = useState<'item' | 'aplicado'>('item');
   const thumbItem = thumbItemDisponivel && modoThumb === 'item';
 
@@ -955,6 +962,10 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
   const [prevendo, setPrevendo] = useState(false);
   // onda 1401 (#150, as6.thumb_item): hover no Modo Item vira Modo
   // APLICADO (elevação §12 — "aplicado no hover/detalhe")
+  // onda 1425 (BRIEFING_COMPLEMENTAR_02 §29–§32, #217): com thumb_item_v2
+  // o card NÃO troca no hover — só o palco recebe o preview (card = ref
+  // estável do asset p/ comparar lado a lado).
+  const thumbV2 = flag('as6.thumb_item_v2');
   const [pairando, setPairando] = useState(false);
   const nVariantes = flag('as6.variantes') ? variantesDe(item.id).length : 0;
   const conflitos = useMemo(() => {
@@ -976,13 +987,13 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
       data-indisponivel={indisponivel ? '' : undefined}
       style={{ '--avst-rar': rar.cor } as React.CSSProperties}
       onClick={escolher}
-      onMouseEnter={() => { if (aoPrever && !bloqueado) { aoPrever(preview); if (uxFinal) setPrevendo(true); } if (podePoderVivo) setPoderVivo(true); if (thumbItem) setPairando(true); }}
+      onMouseEnter={() => { if (aoPrever && !bloqueado) { aoPrever(preview); if (uxFinal) setPrevendo(true); } if (podePoderVivo) setPoderVivo(true); if (thumbItem && !thumbV2) setPairando(true); }}
       onMouseLeave={() => { aoPrever?.(null); setPrevendo(false); setPoderVivo(false); setPairando(false); }}
       onKeyDown={(e) => { if (escolher && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); escolher(); } }}
       tabIndex={0}>
       <span className="avst-card-thumb"
-        data-thumb-item={thumbItem && !pairando ? '' : undefined}
-        data-corpo={flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? '' : undefined}>
+        data-thumb-item={thumbItem && (thumbV2 || !pairando) ? '' : undefined}
+        data-corpo={!thumbV2 && flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? '' : undefined}>
         {/* onda 1294 (#137, as6.corpo_preview): thumbs de VESTUÁRIO em
             corpo inteiro 240×400 — a peça aparece de verdade no card;
             onda 1296 (#139): figura LIMPA (sem fundo/moldura/efeito/
@@ -990,20 +1001,24 @@ function CardItemBase({ item, config, modo, ativo, favorito, bloqueado, indispon
             off = foco §39.19 de sempre byte a byte */}
         {/* onda 1401 (#150, as6.thumb_item — elevação §12): MODO ITEM —
             o asset ISOLADO, protagonista, no viewBox medido (~78% de
-            ocupação, fundo neutro via CSS); hover troca pro Aplicado */}
-        {thumbItem && !pairando && item.categoria === 'acessorio' && slotCorporal(item.slot ?? 'cabeca') ? (
+            ocupação, fundo neutro via CSS); hover troca pro Aplicado.
+            onda 1425 (§7–§10, #217): com thumb_item_v2 o ISOLADO vale p/
+            TODA categoria e o card NÃO troca no hover (thumbV2 || !pairando). */}
+        {thumbItem && (thumbV2 || !pairando) && item.categoria === 'acessorio' && slotCorporal(item.slot ?? 'cabeca') && !thumbV2 ? (
           // onda 1404 (#154): CORPORAL — o item só existe no corpo inteiro;
           // Modo Item = corpo inteiro com o item aplicado, RECORTADO na
-          // região (figura limpa, sem fundo/moldura/efeito/aura)
-          <AvatarSvg estatico uid={`ti-${item.id}`} corpo foco={focoItemDe(item.id)}
+          // região (figura limpa, sem fundo/moldura/efeito/aura).
+          // onda 1425 (§10): com v2, calçados também vão isolados (abaixo).
+          <AvatarSvg estatico uid={`ti-${item.id}`} corpo foco={focoItemDe(item.id, item.categoria)}
             config={{ ...preview, camadas: (() => {
               const { fundo: _f, moldura: _m, efeito: _e, aura: _a, ...soFigura } = preview.camadas;
               return soFigura;
             })() }} />
-        ) : thumbItem && !pairando ? (
-          <span className="avst-thumb-item" data-teste="thumb-item" aria-hidden
-            dangerouslySetInnerHTML={{ __html: svgItemIsolado(item.id, { uid: `ti-${item.id}`, foco: focoItemDe(item.id) }) }} />
-        ) : flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? (
+        ) : thumbItem && (thumbV2 || !pairando) ? (
+          <span className={`avst-thumb-item${apresentacaoDe(item.categoria).thumbnail === 'ghost-context' ? ' avst-thumb-ghost' : ''}`}
+            data-teste="thumb-item" data-cat={item.categoria} aria-hidden
+            dangerouslySetInnerHTML={{ __html: svgItemIsolado(item.id, { uid: `ti-${item.id}`, foco: focoItemDe(item.id, item.categoria), premium: flag('as6.classico_premium'), faceV2: flag('as6.face_v2') }) }} />
+        ) : !thumbV2 && flag('as6.corpo_preview') && (item.categoria === 'roupa' || item.categoria === 'roupa_sobre') ? (
           <AvatarSvg estatico uid={`th-${item.id}`} corpo foco={FOCO_CORPO_THUMB}
             config={{ ...preview, camadas: (() => {
               const { fundo: _f, moldura: _m, efeito: _e, aura: _a, ...soFigura } = preview.camadas;

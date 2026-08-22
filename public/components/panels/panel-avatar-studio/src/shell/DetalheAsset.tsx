@@ -13,9 +13,11 @@ import { ArrowLeftRight, BookmarkPlus, Check, Eye, Layers, Lock, Pause, Pin, Pla
 import type { CanalCor, AvatarConfig } from '../domain/types';
 import { avisoParidade } from '../services/ParidadeRenderer'; // onda 1416 (#197)
 import {
-  COLECOES, RARIDADES, itemPorId, itensDe, progressoColecao, validarConfig,
+  COLECOES, RARIDADES, itemPorId, itensDe, progressoColecao, svgItemIsolado, validarConfig,
 } from '../services/AvatarCatalog';
 import { comItem, FOCO_THUMB } from '../components/GradeItens';
+import { focoItemDe } from '../components/modoItem'; // onda 1425 (#217)
+import { usaThumbIsolado } from '../services/ApresentacaoAsset'; // onda 1425 (#217)
 // onda 1401 (#150): variantes de cor — presets §73 aplicados via comPaleta §74
 import { comPaleta } from './PropriedadesAsset';
 import { camadaDoAsset, varianteAtiva, variantesDe } from '../services/VariantesAssets';
@@ -120,10 +122,27 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
           <strong>{item.nome}</strong>
           <button type="button" className="avst5-painel-btn" title="Fechar" onClick={aoFechar}><X size={14} aria-hidden /></button>
         </header>
-        {/* hero: o item aplicado AO SEU avatar, animado (§67.1) */}
-        <div className={`avst5-det-hero avst5-ctx-${contexto}`}>
-          <AvatarSvg config={preview} uid={`det-${item.id}`} foco={FOCO_THUMB[item.categoria]} />
-        </div>
+        {/* hero: o item aplicado AO SEU avatar, animado (§67.1).
+            onda 1425 (BRIEFING_COMPLEMENTAR_02 §33–§35, #217): com
+            thumb_item_v2 o TOPO vira o ASSET isolado (§34 "ASSET") e o
+            aplicado desce como "No seu avatar" (§35 — não some, só deixa
+            de ser confundido com a identidade do asset). */}
+        {flag('as6.thumb_item_v2') && usaThumbIsolado(item.categoria) ? (
+          <>
+            <div className="avst5-det-hero avst5-det-hero-iso" data-teste="det-hero-iso">
+              <span className="avst-thumb-item" aria-hidden
+                dangerouslySetInnerHTML={{ __html: svgItemIsolado(item.id, { uid: `det-iso-${item.id}`, foco: focoItemDe(item.id, item.categoria), premium: flag('as6.classico_premium'), faceV2: flag('as6.face_v2') }) }} />
+            </div>
+            <p className="avst5-det-familia" data-teste="det-no-avatar">No seu avatar</p>
+            <div className={`avst5-det-aplicado avst5-ctx-${contexto}`}>
+              <AvatarSvg config={preview} uid={`det-${item.id}`} foco={FOCO_THUMB[item.categoria]} />
+            </div>
+          </>
+        ) : (
+          <div className={`avst5-det-hero avst5-ctx-${contexto}`}>
+            <AvatarSvg config={preview} uid={`det-${item.id}`} foco={FOCO_THUMB[item.categoria]} />
+          </div>
+        )}
         {/* mega 353 (§157.1–.5): categoria FUNCIONAL do efeito */}
         {flag('as5.efeitos_v2') && item.categoria === 'efeito' && (
           <p className="avst5-det-familia" data-teste="det-funcional">
@@ -399,8 +418,14 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
             <div className="avst5-det-rel-lista">
               {relacionados.map((r) => (
                 <button key={r.id} type="button" title={r.nome} onClick={() => { setAtual(r.id); setSalvo(false); setComparando(false); setAlternando(false); }}>
-                  <AvatarSvg config={validarConfig(comItem(config, r.categoria, r.id))} estatico
-                    uid={`rel-${r.id}`} foco={FOCO_THUMB[r.categoria]} />
+                  {/* onda 1425 (§36, #217): relacionados também ISOLADOS */}
+                  {flag('as6.thumb_item_v2') && usaThumbIsolado(r.categoria) ? (
+                    <span className="avst-thumb-item" aria-hidden
+                      dangerouslySetInnerHTML={{ __html: svgItemIsolado(r.id, { uid: `rel-iso-${r.id}`, foco: focoItemDe(r.id, r.categoria), premium: flag('as6.classico_premium'), faceV2: flag('as6.face_v2') }) }} />
+                  ) : (
+                    <AvatarSvg config={validarConfig(comItem(config, r.categoria, r.id))} estatico
+                      uid={`rel-${r.id}`} foco={FOCO_THUMB[r.categoria]} />
+                  )}
                   <span>{r.nome}</span>
                 </button>
               ))}

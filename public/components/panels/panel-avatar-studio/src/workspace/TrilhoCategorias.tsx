@@ -178,7 +178,7 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subA
       : null
   );
   const botao = (c: (typeof ativas)[number]) => (
-    <button key={c.id} type="button"
+    <button key={c.id} type="button" data-teste={`cat-${c.id}`}
       className={`avst5-cat${categoria === c.id ? ' avst5-cat-on' : ''}`}
       title={c.nome} onClick={() => aoEscolher(c.id)}>
       <span className="avst5-cat-inicial" aria-hidden>{c.nome.slice(0, 1)}</span>

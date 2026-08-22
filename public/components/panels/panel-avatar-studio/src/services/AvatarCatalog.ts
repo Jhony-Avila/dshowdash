@@ -12,7 +12,7 @@ import { sanitizarCorpoV2 } from './Corpo3d'; // onda 1422 (#210)
 import { flag } from '../nucleo/flags';
 import { migrarConfigVNext } from '../nucleo/estado-vnext';
 import { sanitizarParams } from '../engine/params';
-import type { ParteDef } from '../engine/base-api';
+import type { ParteDef, ParteRender } from '../engine/base-api';
 import { renderAvatar, renderDataUri, hashConfig } from '../engine/render';
 import type { OpcoesRender } from '../engine/render';
 import { FORMATOS_FOTO, renderFotoEstilizada } from '../engine/render-foto';
@@ -789,7 +789,7 @@ export function svgEfeitoIsolado(id: string, destaque?: string): string {
  *  Cores: globais padrão + override opcional (preview de variante). */
 export function svgItemIsolado(
   id: string,
-  opcoes?: { uid?: string; cores?: Partial<Record<SlotCor, string>>; foco?: string },
+  opcoes?: { uid?: string; cores?: Partial<Record<SlotCor, string>>; foco?: string; premium?: boolean; faceV2?: boolean },
 ): string {
   const parte = POR_ID.get(id);
   if (!parte) return '';
@@ -799,7 +799,15 @@ export function svgItemIsolado(
   // inteiro 240×400); o busto devolve '' por contrato
   const corporal = parte.categoria === 'acessorio' && slotCorporal(parte.slot ?? 'cabeca') && !!parte.renderCorpo;
   const foco = opcoes?.foco ?? (corporal ? '0 0 240 400' : '0 0 240 240');
-  const frag = corporal ? parte.renderCorpo!(paleta, uid) : parte.render(paleta, uid);
+  // onda 1425 (BRIEFING_COMPLEMENTAR_02 §6, #217): monta TODAS as camadas
+  // do asset (renderAtras + render + renderFrente + planos) — antes só a
+  // frontal, o que cortava a massa traseira do cabelo premium. As artes
+  // premium (bas_px_/cab_px_/…) já são partes próprias: chamar o render
+  // delas devolve a arte premium (premium/faceV2 não precisam ser passados).
+  const arte = (r?: ParteRender): string => (r ? r(paleta, uid) : '');
+  const frag = corporal
+    ? parte.renderCorpo!(paleta, uid)
+    : arte(parte.renderPlanos?.atras) + arte(parte.renderAtras) + arte(parte.render) + arte(parte.renderFrente) + arte(parte.renderPlanos?.frente);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${foco}" role="presentation">${frag}</svg>`;
 }
 

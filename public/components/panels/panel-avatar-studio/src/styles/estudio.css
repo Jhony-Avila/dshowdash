@@ -3492,6 +3492,18 @@ input.avst-foto-item-nome { border: 1px solid var(--avst-acento); border-radius:
 }
 .avst-thumb-item { display: block; width: 100%; height: 100%; }
 .avst-thumb-item svg { display: block; width: 100%; height: 100%; }
+/* onda 1425 (BRIEFING_COMPLEMENTAR_02 §11/§16/§27, #217): ghost-context —
+   o asset é protagonista; o contexto anatômico fica bem discreto */
+.avst-thumb-ghost { opacity: 0.96; }
+/* onda 1425 (§34): detalhe com hero ISOLADO no topo + aplicado embaixo */
+.avst5-det-hero-iso { aspect-ratio: 16 / 11; }
+.avst5-det-hero-iso .avst-thumb-item svg { object-fit: contain; }
+.avst5-det-aplicado {
+  border: 1px solid var(--avst-borda, var(--as6-superficie-4)); border-radius: 12px;
+  overflow: hidden; background: var(--avst-fundo, var(--as6-superficie-1));
+  aspect-ratio: 1; margin-top: 4px;
+}
+.avst5-det-aplicado svg { width: 100%; height: 100%; display: block; }
 /* contagem de variantes no canto do thumb (as6.variantes) */
 .avst-card-vars {
   position: absolute; right: 4px; bottom: 4px; z-index: 1;
