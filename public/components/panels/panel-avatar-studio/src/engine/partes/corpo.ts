@@ -185,18 +185,23 @@ export function corpoInteiroPremium(p: Paleta, uid: string, perfil: PerfilCorpo2
     const yCot = 200, yPun = 250;
     const ex = cx + s * (D.cintura + 8); // cotovelo p/ fora → abre vão na silhueta
     const wx = cx + s * (D.quadril + 3); // punho junto ao quadril, mas com folga
-    const hy = yPun + 22;                 // fim da mão
     return `<g data-anim="${anim}" style="transform-box: view-box; transform-origin: ${sx}px ${yOmb + 4}px">
       <path d="M${sx - s * 6} ${yOmb - 2}
         C ${sx + s * (b + 5)} ${yOmb + 6} ${sx + s * (b + 4)} ${yOmb + 26} ${ex + s * (b - 3)} ${yCot}
         C ${ex + s * (a + 1)} ${yCot + 16} ${wx + s * (a + 1)} ${yPun - 18} ${wx + s * a} ${yPun}
-        C ${wx + s * (a + 2)} ${yPun + 8} ${wx + s * (a + 2)} ${yPun + 16} ${wx + s * (a - 1)} ${hy}
-        C ${wx + s} ${hy + 5} ${wx - s * (a - 1)} ${hy + 5} ${wx - s * a} ${hy}
-        C ${wx - s * (a + 1)} ${yPun + 14} ${wx - s * (a + 1)} ${yPun} ${wx - s * a} ${yPun}
+        C ${wx + s * a} ${yPun + 2} ${wx - s * a} ${yPun + 2} ${wx - s * a} ${yPun}
         C ${wx - s * (a + 1)} ${yPun - 18} ${ex - s * (a - 1)} ${yCot + 16} ${ex - s * (b - 7)} ${yCot}
         C ${ex - s * (b - 5)} ${yCot - 22} ${sx - s * 2} ${yOmb + 18} ${sx - s * 8} ${yOmb + 6} Z" fill="url(#${d}sk)"/>
-      <!-- polegar --><path d="M${wx - s * a} ${yPun + 6} c ${-s * 5} 1 ${-s * 5} 9 ${-s * 1} 11" fill="url(#${d}sk)"/>
-      <!-- dedos (sulcos) --><path d="M${wx - s * 2} ${yPun + 10} l ${s * 6} 0 M${wx - s * 2} ${hy - 3} l ${s * 6} 0" stroke="${alfa(pele.escuro, 0.35)}" stroke-width="0.9" stroke-linecap="round"/>
+      <!-- Golden V3.1: MÃO com palma + wedge do polegar + DEDOS na silhueta -->
+      <path d="M${wx - s * a} ${yPun}
+        C ${wx - s * (a + 1)} ${yPun + 6} ${wx - s * a} ${yPun + 11} ${wx - s * (a - 1)} ${yPun + 15}
+        q ${s * 2.2} 3 ${s * 3.6} 0 q ${s * 1.4} 2.6 ${s * 3} 0 q ${s * 1.4} 2.2 ${s * 2.6} -0.6
+        C ${wx + s * (a + 1)} ${yPun + 11} ${wx + s * (a + 1)} ${yPun + 6} ${wx + s * a} ${yPun} Z" fill="${pele.base}"/>
+      <!-- polegar (wedge do lado do corpo) -->
+      <path d="M${wx - s * (a - 1)} ${yPun + 3} q ${-s * 4.6} 0.6 ${-s * 4.6} 5 q 0 2.6 ${s * 3.6} 1.4 z" fill="${pele.base}"/>
+      <path d="M${wx - s * (a - 3)} ${yPun + 5} q ${-s * 2.4} 1 ${-s * 2.4} 3" fill="none" stroke="${alfa(pele.escuro, 0.28)}" stroke-width="0.7"/>
+      <!-- vinco dos nós dos dedos (suave, curvo) -->
+      <path d="M${wx - s * 3} ${yPun + 11.5} q ${s * 3} 1.6 ${s * 6} 0" stroke="${alfa(pele.escuro, 0.22)}" stroke-width="0.7" fill="none"/>
       <!-- cotovelo --><path d="M${ex - s * (b - 9)} ${yCot - 3} q ${s * 5} 5 ${s * 1} 13" fill="none" stroke="${alfa(pele.escuro, 0.28)}" stroke-width="1.3"/>
       </g>`;
   };
@@ -214,13 +219,23 @@ export function corpoInteiroPremium(p: Paleta, uid: string, perfil: PerfilCorpo2
       C ${ax + s * 5} ${yJoe - 30} ${hx + s * 3} ${yQua + 44} ${hx + s * 2} ${yEnt - 6} Z" fill="url(#${d}cal)"/>
       <!-- vinco/prega da calça --><path d="M${ax - s * (pa - 5)} ${yJoe + 6} C ${ax - s * (pa - 6)} ${yTor - 40} ${ax - s * (pa - 6)} ${yTor - 20} ${ax - s * (pa - 5)} ${yTor - 8}" fill="none" stroke="${alfa('#000000', 0.18)}" stroke-width="1.4"/>
       <!-- vinco do joelho --><path d="M${ax - s * (pa - 2)} ${yJoe - 2} q ${-s * 5} 6 ${-s * 1} 12" fill="none" stroke="${alfa('#000000', 0.2)}" stroke-width="1.2"/>
-      <!-- SAPATO (bico p/ fora) -->
-      <path d="M${ax - s * (pa - 3)} ${yTor - 5}
-        C ${ax - s * (pa - 1)} ${yPe - 2} ${ax - s * (pa + 1)} ${yPe + 4} ${ax - s * (pa + 12)} ${yPe + 5}
-        C ${ax - s * (pa + 22)} ${yPe + 6} ${ax - s * (pa + 21)} ${yTor + 1} ${ax - s * (pa + 8)} ${yTor - 3}
-        C ${ax - s * (pa - 2)} ${yTor - 6} ${ax + s * (pa - 4)} ${yTor - 7} ${ax + s * (pa - 4)} ${yTor - 5} Z" fill="${SAP.base}"/>
-      <path d="M${ax - s * (pa + 12)} ${yPe + 5} C ${ax - s * (pa + 20)} ${yPe + 6} ${ax - s * (pa + 21)} ${yPe + 8} ${ax - s * (pa + 8)} ${yPe + 8} L ${ax + s * (pa - 4)} ${yPe + 7} l 0 ${-s * 0 - 2} Z" fill="${SAP.sola}"/>
-      <path d="M${ax - s * (pa - 2)} ${yTor} q ${-s * 6} 4 ${-s * 12} 4" fill="none" stroke="${alfa(SAP.luz, 0.7)}" stroke-width="1.3" stroke-linecap="round"/>`;
+      <!-- Golden V3.1: SAPATO 3/4 — calcanhar (trás) + peito do pé (instep) +
+           toe box (bico p/ FORA); L/R separados pela direção do bico. -->
+      ${(() => {
+        const toe = s * (pa + 15), heel = -s * (pa + 1);
+        const yA = yTor - 4, yS = yPe + 4;
+        return `<path d="M${ax + heel} ${yA - 2}
+          C ${ax + heel - s * 2} ${yS - 4} ${ax + heel} ${yS + 1} ${ax + heel + s * 4} ${yS + 2}
+          L ${ax + toe - s * 5} ${yS + 2}
+          C ${ax + toe} ${yS + 2} ${ax + toe + s * 2} ${yS} ${ax + toe} ${yS - 3}
+          C ${ax + toe - s * 3} ${yS - 8} ${ax + s * 2} ${yS - 9} ${ax - s * (pa - 4)} ${yA - 5}
+          C ${ax - s * (pa - 2)} ${yA - 1} ${ax + heel + s * 3} ${yA - 3} ${ax + heel} ${yA - 2} Z" fill="${SAP.base}"/>
+        <!-- sola -->
+        <path d="M${ax + heel + s * 2} ${yS + 1} L ${ax + toe - s * 4} ${yS + 1}" stroke="${SAP.sola}" stroke-width="2.4" stroke-linecap="round"/>
+        <!-- peito do pé (instep) + toe box seam -->
+        <path d="M${ax - s * (pa - 4)} ${yA - 3} C ${ax + s * 2} ${yS - 7} ${ax + toe - s * 6} ${yS - 5} ${ax + toe - s * 3} ${yS - 3}" fill="none" stroke="${alfa(SAP.luz, 0.55)}" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M${ax + toe - s * 8} ${yS - 4} q ${s * 1} 4 ${-s * 1} 6" fill="none" stroke="${alfa('#000000', 0.25)}" stroke-width="1"/>`;
+      })()}`;
   };
 
   return `
