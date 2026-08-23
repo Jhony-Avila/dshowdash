@@ -39,8 +39,10 @@ function fiosBarba(t: TP, ys: number, densidade: number): string {
   for (let i = 0; i < densidade; i += 1) {
     const x = 84 + (72 / (densidade - 1)) * i;
     const y = ys + Math.abs(x - 120) * -0.28 + (i % 3) * 2.2;
+    // §46: cada cluster mistura fleck ESCURO + um CLARO (pelo pegando luz) —
+    // a textura lê mesmo em barba preta (contraste, não cor).
     g.push(`<circle cx="${x}" cy="${y}" r="0.95" fill="${alfa(t.escuro, 0.6)}"/>`);
-    g.push(`<circle cx="${x + 1.5}" cy="${y + 1.7}" r="0.7" fill="${alfa(t.escuro, 0.5)}"/>`);
+    g.push(`<circle cx="${x + 1.5}" cy="${y + 1.7}" r="0.6" fill="${alfa('#ffffff', 0.22)}"/>`);
     g.push(`<circle cx="${x - 1.3}" cy="${y + 2.5}" r="0.6" fill="${alfa(t.profundo, 0.45)}"/>`);
   }
   return g.join('');
@@ -63,7 +65,18 @@ function bordaBarba(t: TP, ys: number): string {
 function massaBarba(u: string, t: TP, queixoY: number, extra = ''): string {
   // §45 barba CHEIA = massa que PREENCHE a face inferior (bochechas+mandíbula+
   // queixo), com recorte da boca, borda superior seguindo a linha dos pelos.
-  return `<path d="M74 114 C 74 ${queixoY - 24} 88 ${queixoY - 2} 120 ${queixoY + 8} C 152 ${queixoY - 2} 166 ${queixoY - 24} 166 114 C 158 126 146 132 134 133 C 128 134 124 134 120 134 C 116 134 112 134 106 133 C 94 132 82 126 74 114 Z" fill="url(#${u}pxbrb)"/>
+  const massa = `M74 114 C 74 ${queixoY - 24} 88 ${queixoY - 2} 120 ${queixoY + 8} C 152 ${queixoY - 2} 166 ${queixoY - 24} 166 114 C 158 126 146 132 134 133 C 128 134 124 134 120 134 C 116 134 112 134 106 133 C 94 132 82 126 74 114 Z`;
+  const clip = `${u}pxbclip`;
+  // Golden V2 §46: VOLUME da barba por sheen/oclusão recortados na massa —
+  // dá forma à mandíbula mesmo em barba preta (antes: blob chapado).
+  return `<defs><clipPath id="${clip}"><path d="${massa}"/></clipPath>
+      <radialGradient id="${u}pxbsh" cx="0.5" cy="0.15" r="0.7">
+        <stop offset="0" stop-color="${alfa('#ffffff', 0.4)}"/><stop offset="0.55" stop-color="${alfa('#ffffff', 0.1)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/></radialGradient></defs>
+    <path d="${massa}" fill="url(#${u}pxbrb)"/>
+    <g clip-path="url(#${clip})">
+      <path d="M78 118 C 92 132 148 132 162 118 C 150 128 138 132 120 132 C 102 132 90 128 78 118 Z" fill="url(#${u}pxbsh)"/>
+      <path d="M74 ${queixoY - 6} C 96 ${queixoY + 10} 144 ${queixoY + 10} 166 ${queixoY - 6} L 166 ${queixoY + 16} L 74 ${queixoY + 16} Z" fill="${alfa(t.profundo, 0.5)}"/>
+    </g>
     ${bordaBarba(t, queixoY + 6)}
     <path d="M105 148 Q 120 154 135 148 Q 131 143 120 143 Q 109 143 105 148 Z" fill="${alfa(t.profundo, 0.4)}"/>${extra}`;
 }

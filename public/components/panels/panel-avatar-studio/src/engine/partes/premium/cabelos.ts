@@ -36,9 +36,11 @@ function defsCab(u: string, t: TP): string {
 const SOMBRA_TESTA = (t: TP, d: string): string =>
   `<path d="${d}" fill="${alfa(t.profundo, 0.22)}"/>`;
 
-/** Mechas de brilho (§890): strokes finos seguindo o fluxo da massa. */
-function mechas(t: TP, paths: string[], intensidade = 0.32): string {
-  return paths.map((d, i) => `<path d="${d}" stroke="${alfa(i % 2 ? t.claro : t.brilho, intensidade)}" stroke-width="${2.1 - (i % 3) * 0.5}" stroke-linecap="round" fill="none"/>`).join('');
+/** Mechas de brilho (§890): strokes finos seguindo o fluxo da massa. Golden V2
+ *  §39: o realce vivo é BRANCO-alfa (sheen) — LÊ em cabelo preto/loiro/branco
+ *  (§2404), pois não depende da cor (que no preto é escura demais p/ brilhar). */
+function mechas(t: TP, paths: string[], intensidade = 0.34): string {
+  return paths.map((d, i) => `<path d="${d}" stroke="${alfa(i % 2 ? '#ffffff' : t.claro, intensidade * (i % 2 ? 0.8 : 1))}" stroke-width="${2.1 - (i % 3) * 0.5}" stroke-linecap="round" fill="none"/>`).join('');
 }
 
 /** Fios soltos (§891): 2–3 strokes de 1px fora da silhueta. */
@@ -64,10 +66,24 @@ interface CamadasCabelo {
 function cabeloPremium(c: CamadasCabelo): ParteRender {
   return (p: Paleta, u: string) => {
     const t = tintaPremium(p.cabelo.base);
+    // Golden V2 §39-40: VOLUME por sheen/oclusão RECORTADOS na massa — dá
+    // forma 3D a qualquer cor de cabelo (o preto deixava de ler como massa).
+    const clip = `${u}pxhclip`;
     return `
-      <defs>${defsCab(u, t)}</defs>
+      <defs>${defsCab(u, t)}
+        <clipPath id="${clip}"><path d="${c.massa}"/></clipPath>
+        <radialGradient id="${u}pxsh" cx="0.4" cy="0.28" r="0.55">
+          <stop offset="0" stop-color="${alfa('#ffffff', 0.6)}"/><stop offset="0.5" stop-color="${alfa('#ffffff', 0.16)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/></radialGradient>
+        <radialGradient id="${u}pxoc" cx="0.5" cy="0.42" r="0.62">
+          <stop offset="0.45" stop-color="${alfa(t.profundo, 0)}"/><stop offset="1" stop-color="${alfa(t.profundo, 0.7)}"/></radialGradient>
+      </defs>
       ${SOMBRA_TESTA(t, c.sombraTesta)}
       <path d="${c.massa}" fill="url(#${u}pxc)"/>
+      <g clip-path="url(#${clip})">
+        <rect x="36" y="18" width="168" height="160" fill="url(#${u}pxoc)"/>
+        <ellipse cx="100" cy="62" rx="60" ry="54" fill="url(#${u}pxsh)"/>
+        <ellipse cx="150" cy="78" rx="18" ry="30" fill="${alfa('#ffffff', 0.1)}"/>
+      </g>
       ${c.franja ? `<path d="${c.franja}" fill="${t.meio}"/>` : ''}
       ${c.sombraInterna ? `<path d="${c.sombraInterna}" fill="${alfa(t.profundo, 0.4)}"/>` : ''}
       ${mechas(t, c.mechas)}
