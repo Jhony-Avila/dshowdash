@@ -16,6 +16,7 @@ import { aplicarParamsSvg } from './params';
 import type { ParteDef } from './base-api';
 import { G } from './base-api';
 import { corpoInteiro, corpoInteiroPremium, perfilCorpoDe } from './partes/corpo';
+import { narizPremiumDefaultDaBase } from './partes/premium/faces'; // §5: fonte única de nariz
 import { ORDEM_CAMADAS } from './camadas';
 import { profundidadeRecorte, resolverEstadoCabelo } from './compat-cabelo';
 import { fatorBarba, resolverEstadoBarba } from './compat-rosto';
@@ -281,6 +282,14 @@ export function renderAvatar(
     }
   }
 
+  // Golden V3.2 §5: NARIZ FONTE ÚNICA. Slot nar_* = autoritativo; sem slot +
+  // premium ⇒ default por-base (mesmo narizPremium). A base não desenha mais
+  // nariz ⇒ nunca há duas geometrias empilhadas (fim da cápsula). Não-premium
+  // (clássico) mantém a base clássica desenhando o próprio nariz — byte a byte.
+  const narizSvg = (config.camadas.nariz && config.camadas.nariz !== 'nenhum')
+    ? pintar(config.camadas.nariz, 'nariz')
+    : (opcoes.premium ? narizPremiumDefaultDaBase(config.base, p.pele.base) : '');
+
   let conteudo: string;
   if (opcoes.palco) {
     // Grupos animáveis do palco (idle/parallax) — só no preview do estúdio.
@@ -296,7 +305,7 @@ export function renderAvatar(
       // de busto) reaproveitada em escala no topo — arte 100% compartilhada.
       const cabeca =
         pintar(config.base) + idadeSvg + pintar(config.camadas.barba, 'barba') + pintar(config.camadas.boca, 'boca') +
-        pintar(config.camadas.nariz, 'nariz') +
+        narizSvg +
         `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
         pintar(config.camadas.sobrancelha, 'sobrancelha') +
         `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
@@ -367,7 +376,7 @@ export function renderAvatar(
           envolverFigura(
             pintar(config.base) + idadeSvg + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.roupa_sobre, 'roupa_sobre') + pintar(config.camadas.emblema, 'emblema') +
             pintar(config.camadas.barba, 'barba') + pintar(config.camadas.boca, 'boca') +
-            pintar(config.camadas.nariz, 'nariz') +
+            narizSvg +
             `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
             pintar(config.camadas.sobrancelha, 'sobrancelha') +
             `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
@@ -379,7 +388,10 @@ export function renderAvatar(
     }
   } else {
     const personagem = envolverFigura(
-      pintar(config.base) + idadeSvg + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c], c)).join(''),
+      // §5: no z-order do nariz, usa narizSvg (slot autoritativo OU default
+      // por-base em premium) — a base não desenha mais nariz. Demais camadas
+      // seguem byte a byte.
+      pintar(config.base) + idadeSvg + ORDEM_CAMADAS.map((c) => c === 'nariz' ? narizSvg : pintar(config.camadas[c], c)).join(''),
       config, 236,
     );
     conteudo = `${fundo}${efeitoAtras}${premiumSombra}${premiumAtras}${personagem}${premiumFrente}${efeitoFrente}`;

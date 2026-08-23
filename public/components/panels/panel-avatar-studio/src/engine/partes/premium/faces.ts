@@ -56,34 +56,57 @@ type TP = ReturnType<typeof tintaPremium>;
 // com leve luz; base/septo em sombra; asas (alar) como formas; narinas
 // pequenas SOB as asas (não bolinhas na frente). `larg`=meia-largura da ponta,
 // `comprimento` desloca a base. Reto é o default.
-function narizPremium(t: TP, estilo: 'reto' | 'largo' | 'fino' | 'arrebitado' | 'aquilino' | 'curto', comprimento = 0): string {
+// Golden V3.2 §5: FONTE ÚNICA. narizPremium é o ÚNICO renderizador de nariz
+// (a base NÃO desenha mais nariz; o slot nar_* e o default por-base chamam
+// AQUI). Sem coluna translúcida (removida a tira de highlight vertical do V3
+// que lia como cápsula): forma por VALOR — plano lateral em sombra, ball
+// compacto arredondado, sombra de septo, asas e narinas SOB as asas.
+export function narizPremium(t: TP, estilo: 'reto' | 'largo' | 'fino' | 'arrebitado' | 'aquilino' | 'curto', comprimento = 0): string {
   const yB = 132 + comprimento;            // base do nariz
-  const yTip = yB - 4;                      // ponta
-  const yBridge = 108;                      // raiz (entre os olhos)
+  const yTip = yB - 3;                      // ponta
+  const yBridge = 110;                      // raiz (entre os olhos)
   const cfg: Record<string, { larg: number; sombra: number }> = {
-    reto: { larg: 6, sombra: 0.2 }, largo: { larg: 8.5, sombra: 0.22 },
+    reto: { larg: 6, sombra: 0.2 }, largo: { larg: 8.4, sombra: 0.22 },
     fino: { larg: 4.6, sombra: 0.24 }, arrebitado: { larg: 6, sombra: 0.18 },
     aquilino: { larg: 5.6, sombra: 0.26 }, curto: { larg: 5.6, sombra: 0.18 },
   };
   const { larg, sombra } = cfg[estilo] ?? cfg.reto;
-  const bump = estilo === 'aquilino' ? -1.5 : estilo === 'arrebitado' ? 1.5 : 0; // perfil do dorso
-  // PLANO LATERAL EM SOMBRA (direito do dorso, lado oposto à luz) — define o
-  // nariz por valor, não por linha. Vai da raiz à asa direita.
-  const planoSombra = `M121 ${yBridge} C ${123 + bump} ${yBridge + 10} ${122 + larg * 0.5} ${yTip - 4} ${120 + larg} ${yTip}`
-    + ` C ${120 + larg + 1} ${yB - 1} ${120 + larg - 2} ${yB + 2} ${118} ${yB + 1}`
-    + ` C ${120} ${yTip + 1} ${120} ${yBridge + 12} ${121} ${yBridge} Z`;
-  // BALL DA PONTA (leve luz à esquerda) + base/septo em sombra
+  const bump = estilo === 'aquilino' ? -1.6 : estilo === 'arrebitado' ? 1.6 : 0; // perfil do dorso
+  // PLANO LATERAL EM SOMBRA (lado direito do dorso, oposto à luz key sup-esq):
+  // da raiz à asa direita — nariz por VALOR, não por linha/coluna.
+  const planoSombra = `M122 ${yBridge} C ${124 + bump} ${yBridge + 12} ${121 + larg * 0.55} ${yTip - 3} ${120 + larg} ${yTip}`
+    + ` C ${120 + larg + 1.2} ${yB} ${118 + larg} ${yB + 2.4} ${119} ${yB + 2}`
+    + ` C ${120.5} ${yTip} ${121.5} ${yBridge + 13} ${122} ${yBridge} Z`;
   return `
     <path d="${planoSombra}" fill="${alfa(t.escuro, sombra)}"/>
-    <path d="M${120 - larg + 1} ${yTip - 1} C ${120 - larg} ${yB} ${120 - larg + 3} ${yB + 2} ${120} ${yB + 2} C ${117} ${yB + 1} ${118} ${yTip} ${120 - larg + 1} ${yTip - 1} Z" fill="${alfa(t.claro, 0.22)}"/>
-    <ellipse cx="119.5" cy="${yTip}" rx="${larg * 0.5}" ry="2.4" fill="${alfa(t.claro, 0.16)}"/>
-    <!-- base sob a ponta (sombra do septo/underside) -->
-    <path d="M${120 - larg} ${yB} C ${120 - larg + 2} ${yB + 3.4} ${120 + larg - 2} ${yB + 3.4} ${120 + larg} ${yB}" fill="none" stroke="${alfa(t.profundo, 0.34)}" stroke-width="1.4" stroke-linecap="round"/>
-    <!-- asas (alar) como pequenas formas + narinas SOB elas -->
-    <path d="M${120 - larg} ${yB - 1} q ${-2.4} 3 ${-0.6} 4.4 q 2 1.2 3 -0.6" fill="${alfa(t.meio, 0.4)}"/>
-    <path d="M${120 + larg} ${yB - 1} q ${2.4} 3 ${0.6} 4.4 q -2 1.2 -3 -0.6" fill="${alfa(t.meio, 0.4)}"/>
-    <ellipse cx="${120 - larg + 1.6}" cy="${yB + 2.2}" rx="1.3" ry="0.9" fill="${alfa(t.profundo, 0.55)}" transform="rotate(-18 ${120 - larg + 1.6} ${yB + 2.2})"/>
-    <ellipse cx="${120 + larg - 1.6}" cy="${yB + 2.2}" rx="1.3" ry="0.9" fill="${alfa(t.profundo, 0.55)}" transform="rotate(18 ${120 + larg - 1.6} ${yB + 2.2})"/>`;
+    <!-- BALL da ponta: highlight COMPACTO e arredondado (não coluna) -->
+    <path d="M${120 - larg * 0.68} ${yTip + 0.4} Q ${120} ${yTip - 2.4} ${120 + larg * 0.68} ${yTip + 0.4} Q ${120} ${yTip + 3.4} ${120 - larg * 0.68} ${yTip + 0.4} Z" fill="${alfa(t.claro, 0.2)}"/>
+    <!-- sombra do septo/underside SOB a ponta -->
+    <path d="M${120 - larg * 0.82} ${yB} Q 120 ${yB + 3.6} ${120 + larg * 0.82} ${yB}" fill="none" stroke="${alfa(t.profundo, 0.3)}" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- asas (alar) como formas + narinas SOB elas -->
+    <path d="M${120 - larg} ${yB - 1.4} q -2.2 3 -0.4 4.6 q 1.9 1.1 2.9 -0.7" fill="${alfa(t.meio, 0.34)}"/>
+    <path d="M${120 + larg} ${yB - 1.4} q 2.2 3 0.4 4.6 q -1.9 1.1 -2.9 -0.7" fill="${alfa(t.meio, 0.34)}"/>
+    <ellipse cx="${120 - larg + 1.5}" cy="${yB + 2.3}" rx="1.3" ry="0.85" fill="${alfa(t.profundo, 0.5)}" transform="rotate(-16 ${120 - larg + 1.5} ${yB + 2.3})"/>
+    <ellipse cx="${120 + larg - 1.5}" cy="${yB + 2.3}" rx="1.3" ry="0.85" fill="${alfa(t.profundo, 0.5)}" transform="rotate(16 ${120 + larg - 1.5} ${yB + 2.3})"/>`;
+}
+
+// Golden V3.2 §5: default de nariz POR BASE (identidade preservada quando não
+// há slot nar_* explícito). Espelha o perfil.nariz de cada base premium.
+const NARIZ_DEFAULT_DA_BASE: Record<string, { estilo: Parameters<typeof narizPremium>[1]; comprimento: number }> = {
+  bas_px_oval: { estilo: 'reto', comprimento: 0 },
+  bas_px_angular: { estilo: 'aquilino', comprimento: 1 },
+  bas_px_coracao: { estilo: 'arrebitado', comprimento: -2 },
+  bas_px_quadrada: { estilo: 'largo', comprimento: 1 },
+  bas_px_redonda: { estilo: 'curto', comprimento: -1 },
+  bas_px_alongada: { estilo: 'fino', comprimento: 4 },
+  bas_px_diamante: { estilo: 'fino', comprimento: 1 },
+  bas_px_suave: { estilo: 'curto', comprimento: 0 },
+};
+/** §5: nariz DEFAULT da base — usado pelo render quando não há slot nar_*
+ *  (só premium). Fonte única: chama o mesmo narizPremium. */
+export function narizPremiumDefaultDaBase(baseId: string, peleBaseHex: string): string {
+  const d = NARIZ_DEFAULT_DA_BASE[baseId] ?? NARIZ_DEFAULT_DA_BASE.bas_px_oval;
+  return narizPremium(tintaPremium(peleBaseHex), d.estilo, d.comprimento);
 }
 
 // onda 1427/Golden: bochechas/arcada como ELIPSE saíram (§19). O volume da
@@ -144,7 +167,9 @@ function basePremium(perfil: PerfilRosto): ParteRender {
         <path d="M101 158 C 111 168 129 168 139 158 C 137 170 103 170 101 158 Z" fill="${alfa(t.profundo, 0.11)}"/>
       </g>
       ${orelhaPremium(70, t, 1)}${orelhaPremium(170, t, -1)}
-      ${narizPremium(t, perfil.nariz.estilo, perfil.nariz.comprimento ?? 0)}
+      <!-- Golden V3.2 §5: a BASE NÃO desenha mais nariz (fonte única). O nariz
+           vem do slot nar_* ou do default por-base (narizPremiumDefaultDaBase),
+           injetado no render.ts. Fim da cápsula/nariz duplicado. -->
       <path d="${perfil.jawline}" fill="none" stroke="${alfa(t.escuro, 0.24)}" stroke-width="2.2" stroke-linecap="round"/>
       ${perfil.queixo ? perfil.queixo(t) : ''}
       ${perfil.extras ? perfil.extras(t) : ''}`;

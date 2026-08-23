@@ -146,3 +146,6 @@ dist/
 # suíte de testes headless: artefatos locais nunca entram
 /scripts/avatar/testes/saida/
 /scripts/avatar/testes/node_modules
+
+# Golden art render harness (efêmero, reconstruído por reset)
+tools-golden/
