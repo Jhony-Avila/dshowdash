@@ -222,19 +222,21 @@ export function corpoInteiroPremium(p: Paleta, uid: string, perfil: PerfilCorpo2
       <!-- Golden V3.1: SAPATO 3/4 — calcanhar (trás) + peito do pé (instep) +
            toe box (bico p/ FORA); L/R separados pela direção do bico. -->
       ${(() => {
-        const toe = s * (pa + 15), heel = -s * (pa + 1);
+        const toe = s * (pa + 7), heel = -s * (pa + 2);
         const yA = yTor - 4, yS = yPe + 4;
-        return `<path d="M${ax + heel} ${yA - 2}
-          C ${ax + heel - s * 2} ${yS - 4} ${ax + heel} ${yS + 1} ${ax + heel + s * 4} ${yS + 2}
-          L ${ax + toe - s * 5} ${yS + 2}
-          C ${ax + toe} ${yS + 2} ${ax + toe + s * 2} ${yS} ${ax + toe} ${yS - 3}
-          C ${ax + toe - s * 3} ${yS - 8} ${ax + s * 2} ${yS - 9} ${ax - s * (pa - 4)} ${yA - 5}
-          C ${ax - s * (pa - 2)} ${yA - 1} ${ax + heel + s * 3} ${yA - 3} ${ax + heel} ${yA - 2} Z" fill="${SAP.base}"/>
-        <!-- sola -->
-        <path d="M${ax + heel + s * 2} ${yS + 1} L ${ax + toe - s * 4} ${yS + 1}" stroke="${SAP.sola}" stroke-width="2.4" stroke-linecap="round"/>
-        <!-- peito do pé (instep) + toe box seam -->
-        <path d="M${ax - s * (pa - 4)} ${yA - 3} C ${ax + s * 2} ${yS - 7} ${ax + toe - s * 6} ${yS - 5} ${ax + toe - s * 3} ${yS - 3}" fill="none" stroke="${alfa(SAP.luz, 0.55)}" stroke-width="1.2" stroke-linecap="round"/>
-        <path d="M${ax + toe - s * 8} ${yS - 4} q ${s * 1} 4 ${-s * 1} 6" fill="none" stroke="${alfa('#000000', 0.25)}" stroke-width="1"/>`;
+        return `<!-- corpo do sapato (chunky) -->
+        <path d="M${ax + heel} ${yA - 3}
+          C ${ax + heel - s * 3} ${yS - 6} ${ax + heel - s * 1} ${yS} ${ax + heel + s * 4} ${yS + 1}
+          L ${ax + toe - s * 6} ${yS + 1}
+          C ${ax + toe} ${yS + 1} ${ax + toe + s * 3} ${yS - 2} ${ax + toe} ${yS - 6}
+          C ${ax + toe - s * 4} ${yS - 12} ${ax + s * 2} ${yS - 13} ${ax - s * (pa - 5)} ${yA - 6}
+          C ${ax - s * (pa - 2)} ${yA - 1} ${ax + heel + s * 3} ${yA - 4} ${ax + heel} ${yA - 3} Z" fill="${SAP.base}"/>
+        <!-- sola clara (separa do piso) -->
+        <path d="M${ax + heel - s * 1} ${yS + 1} L ${ax + toe + s * 1} ${yS - 1}" fill="none" stroke="${alfa(SAP.luz, 0.8)}" stroke-width="2" stroke-linecap="round"/>
+        <path d="M${ax + heel + s * 1} ${yS + 2.5} L ${ax + toe - s * 3} ${yS + 2}" fill="none" stroke="${SAP.sola}" stroke-width="2" stroke-linecap="round"/>
+        <!-- peito do pé (instep) em luz + toe box seam -->
+        <path d="M${ax - s * (pa - 5)} ${yA - 4} C ${ax + s * 2} ${yS - 10} ${ax + toe - s * 7} ${yS - 8} ${ax + toe - s * 4} ${yS - 5}" fill="none" stroke="${alfa(SAP.luz, 0.6)}" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M${ax + toe - s * 8} ${yS - 6} q ${s * 1.5} 5 ${-s * 1} 7" fill="none" stroke="${alfa('#000000', 0.28)}" stroke-width="1"/>`;
       })()}`;
   };
 
