@@ -76,6 +76,34 @@ function mangaLonga(A: AnatomiaCorpo, s: 1 | -1, folgaOmb = 5, folga = 3): strin
     C ${cx + s * (elX - he - 1)} ${yCot - 16} ${cx + s * (shX - hu + 4)} ${yOmb + 10} ${cx + s * (shX - hu + 2)} ${yOmb - 3} Z`;
 }
 
+// Golden V3 (#219 §52-65): DOBRAS autorais — o que separa "polígono" de
+// "tecido". Poucas dobras PRINCIPAIS seguindo o corpo (tensão ombro→esterno,
+// recolhimento na cintura, quebra na barra), recortadas na peça. `tens` = força
+// da tensão de ombro; `barra` = y da barra p/ a quebra inferior.
+function dobras(A: AnatomiaCorpo, torso: string, u: string, o: { tens?: number; barra: number; w?: number } = { barra: 0 }): string {
+  const { cx, yOmb, yPei, yCin } = A; const clip = `${u}fold`;
+  const w = o.w ?? A.peito, tens = o.tens ?? 1, by = o.barra || A.yQua;
+  const S = (a: number) => `rgba(0,0,0,${a})`, L = (a: number) => `rgba(255,255,255,${a})`;
+  return `<defs><clipPath id="${clip}"><path d="${torso}"/></clipPath></defs>
+    <g clip-path="url(#${clip})">
+      <!-- tensão ombro→esterno (as duas grandes dobras diagonais) -->
+      <path d="M${cx - w + 8} ${yOmb + 5} C ${cx - 16} ${yPei - 6} ${cx - 10} ${yPei + 8} ${cx - 3} ${yCin - 2}" fill="none" stroke="${S(0.11 * tens)}" stroke-width="4" stroke-linecap="round"/>
+      <path d="M${cx + w - 8} ${yOmb + 5} C ${cx + 16} ${yPei - 6} ${cx + 10} ${yPei + 8} ${cx + 3} ${yCin - 2}" fill="none" stroke="${S(0.11 * tens)}" stroke-width="4" stroke-linecap="round"/>
+      <path d="M${cx - w + 12} ${yOmb + 7} C ${cx - 14} ${yPei - 4} ${cx - 8} ${yPei + 8} ${cx - 2} ${yCin - 2}" fill="none" stroke="${L(0.06)}" stroke-width="2" stroke-linecap="round"/>
+      <!-- recolhimento na cintura -->
+      <path d="M${cx - w * 0.6} ${yCin} C ${cx - 10} ${yCin + 6} ${cx + 10} ${yCin + 6} ${cx + w * 0.6} ${yCin}" fill="none" stroke="${S(0.09)}" stroke-width="3"/>
+      <!-- quebra na barra -->
+      <path d="M${cx - w * 0.5} ${by - 6} q ${w * 0.5} 8 ${w} 0" fill="none" stroke="${S(0.1)}" stroke-width="3"/>
+      <!-- centro (leve) -->
+      <path d="M${cx} ${yPei + 4} C ${cx - 2} ${yCin - 8} ${cx + 2} ${yCin + 4} ${cx} ${by - 8}" fill="none" stroke="${S(0.06)}" stroke-width="2"/>
+    </g>`;
+}
+// dobras de MANGA longa (cotovelo) — 1-2 rugas no interior do cotovelo
+function dobrasManga(A: AnatomiaCorpo, s: 1 | -1): string {
+  const { cx, yCot } = A; const ex = A.armEl;
+  return `<path d="M${cx + s * (ex - 4)} ${yCot - 4} q ${s * 8} 6 ${s * 4} 14" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="2.4" stroke-linecap="round"/>`;
+}
+
 // ── 8 ROUPAS PREMIUM NOVAS (busto) ──────────────────────────────────────
 
 export const ROUPAS_PREMIUM_1415: ParteDef[] = [
@@ -106,6 +134,9 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       <path d="${sl}" fill="${m.fill(u)}"/>
       <path d="${torso}" fill="${m.fill(u)}"/>
       ${m.realce(u, torso)}
+      ${dobras(A, torso, u, { tens: 1.1, barra: A.yQua + 4 })}
+      <!-- costura de ombro + bainha da manga curta -->
+      <path d="M${A.cx - A.ombro + 2} ${A.yOmb + 2} q ${A.ombro - 6} -4 ${A.ombro * 2 - 10} 0 M${A.cx - A.peito - 2} ${A.yPei + 14} q 3 -3 5 -8 M${A.cx + A.peito + 2} ${A.yPei + 14} q -3 -3 -5 -8" fill="none" stroke="${alfa(m.tinta.profundo, 0.35)}" stroke-width="1.2" stroke-linecap="round"/>
       <path d="M${A.cx - 14} ${A.yOmb + 2} q 14 12 28 0 q -3 10 -14 10 q -11 0 -14 -10 z" fill="${m.tinta.escuro}"/>
       <path d="M${A.cx - 13} ${A.yOmb + 3} q 13 10 26 0" stroke="${alfa(m.tinta.brilho, 0.5)}" stroke-width="1.5" fill="none"/>`;
     },
@@ -160,8 +191,10 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       <path d="M${cx - A.ombro - 2} ${yOmb - 6} C ${cx - 22} ${yOmb - 30} ${cx + 22} ${yOmb - 30} ${cx + A.ombro + 2} ${yOmb - 6} C ${cx + A.ombro - 6} ${yOmb + 12} ${cx + 16} ${yOmb + 20} ${cx} ${yOmb + 20} C ${cx - 16} ${yOmb + 20} ${cx - A.ombro + 6} ${yOmb + 12} ${cx - A.ombro - 2} ${yOmb - 6} Z" fill="${m.tinta.escuro}"/>
       <path d="M${cx - 24} ${yOmb + 2} q 24 18 48 0 q -3 -10 -24 -10 q -21 0 -24 10 z" fill="${forro.base}"/>
       <path d="${sl}" fill="${m.fill(u)}"/>
+      ${dobrasManga(A, -1)}${dobrasManga(A, 1)}
       <path d="${torso}" fill="${m.fill(u)}"/>
       ${m.realce(u, torso)}
+      ${dobras(A, torso, u, { tens: 0.7, barra: A.yEnt - 2, w: A.peito + 8 })}
       <!-- cuffs + hem band -->
       <path d="M${cx - wx - 3} ${cuffY} l 12 2 -2 10 -12 -2 z M${cx + wx + 3} ${cuffY} l -12 2 2 10 12 -2 z" fill="${m.tinta.profundo}"/>
       <path d="M${cx - A.quadril - 10} ${hemY} h${(A.quadril + 10) * 2} v10 h-${(A.quadril + 10) * 2} z" fill="${alfa(m.tinta.profundo, 0.5)}"/>
@@ -201,8 +234,15 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       const nk = 11;                       // meia-abertura do decote/colarinho
       return `<defs>${la.defs(u)}</defs>
       <path d="${sl}" fill="${la.fill(u)}"/>
+      ${dobrasManga(A, -1)}${dobrasManga(A, 1)}
       <path d="${torso}" fill="${la.fill(u)}"/>
       ${la.realce(u, torso)}
+      ${dobras(A, torso, u, { tens: 0.6, barra: yHem, w: A.peito })}
+      <!-- bolso no peito + bolso lateral (construção) -->
+      <path d="M${cx - A.peito + 6} ${yPei + 4} h 12 v 3 h -12 z" fill="none" stroke="${alfa(la.tinta.profundo, 0.5)}" stroke-width="1.2"/>
+      <path d="M${cx - A.cintura} ${yCin + 10} h 16 M${cx + A.cintura - 16} ${yCin + 10} h 16" stroke="${alfa(la.tinta.profundo, 0.5)}" stroke-width="1.4" stroke-linecap="round"/>
+      <!-- punho (cuff) -->
+      <path d="M${cx - A.armWr - 7} 246 q 8 3 15 0 M${cx + A.armWr + 7} 246 q -8 3 -15 0" stroke="${alfa(la.tinta.profundo, 0.55)}" stroke-width="1.4" fill="none" stroke-linecap="round"/>
       <!-- camisa + gravata no V -->
       <path d="M${cx - nk} ${yOmb + 2} L ${cx} ${yPei + 6} L ${cx + nk} ${yOmb + 2} L ${cx + 5} ${yHem} L ${cx - 5} ${yHem} Z" fill="${alfa('#eef1f5', 0.9)}"/>
       <path d="M${cx - 4} ${yPei + 2} L ${cx + 4} ${yPei + 2} L ${cx + 6} ${yHem - 6} L ${cx} ${yHem - 1} L ${cx - 6} ${yHem - 6} Z" fill="${p.destaque.base}"/>
@@ -277,8 +317,17 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       const sl = mangaLonga(A, -1, 6, 5) + mangaLonga(A, 1, 6, 5);
       return `<defs>${la.defs(u)}</defs>
       <path d="${sl}" fill="${la.fill(u)}"/>
+      ${dobrasManga(A, -1)}${dobrasManga(A, 1)}
       <path d="${torso}" fill="${la.fill(u)}"/>
       ${la.realce(u, torso)}
+      ${dobras(A, torso, u, { tens: 0.7, barra: yHem, w: A.peito + 6 })}
+      <!-- quedas verticais longas do sobretudo -->
+      <g clip-path="url(#${u}fold)">
+        <path d="M${cx - A.cintura + 4} ${yCin + 6} C ${cx - A.cintura} ${yCin + 60} ${cx - A.quadril + 6} ${yHem - 40} ${cx - A.quadril + 8} ${yHem - 6}" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M${cx + A.cintura - 4} ${yCin + 6} C ${cx + A.cintura} ${yCin + 60} ${cx + A.quadril - 6} ${yHem - 40} ${cx + A.quadril - 8} ${yHem - 6}" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M${cx - 16} ${yCin + 20} C ${cx - 14} ${yHem - 60} ${cx - 12} ${yHem - 30} ${cx - 12} ${yHem - 6}" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="2.6"/>
+        <path d="M${cx + 16} ${yCin + 20} C ${cx + 14} ${yHem - 60} ${cx + 12} ${yHem - 30} ${cx + 12} ${yHem - 6}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2.4"/>
+      </g>
       <!-- overlap frontal (sombra da aba) -->
       <path d="M${cx} ${yOmb + 6} L ${cx} ${yHem - 2} L ${cx + A.cintura + 2} ${yHem - 6} C ${cx + A.cintura + 6} ${yCin} ${cx + A.peito} ${yPei} ${cx + 6} ${yOmb + 8} Z" fill="${alfa(la.tinta.profundo, 0.4)}"/>
       <!-- lapela alta + forro em V -->
