@@ -180,12 +180,16 @@ export const BARBAS_PREMIUM: ParteDef[] = [
 /** Par espelhado: `d` desenha a sobrancelha ESQUERDA (olho em 100,108);
  *  a direita é espelhada em x=120. Leve luz no topo. */
 function parSobrancelha(t: TP, d: string, espessura: number): string {
+  // §6.2: acompanha o brow ridge, menos "faixa preta chapada" — traço principal
+  // com leve transparência (não preto puro) e ~10% mais fino.
+  const esp = espessura * 0.9;
+  const corPrinc = alfa(t.escuro, 0.9);
   return `<g stroke-linecap="round" fill="none">
-    <path d="${d}" stroke="${t.escuro}" stroke-width="${espessura}"/>
-    <path d="${d}" stroke="${alfa(t.claro, 0.35)}" stroke-width="${Math.max(0.8, espessura - 2)}" transform="translate(0 -0.7)"/>
+    <path d="${d}" stroke="${corPrinc}" stroke-width="${esp}"/>
+    <path d="${d}" stroke="${alfa(t.claro, 0.32)}" stroke-width="${Math.max(0.7, esp - 2)}" transform="translate(0 -0.7)"/>
     <g transform="translate(240 0) scale(-1 1)">
-      <path d="${d}" stroke="${t.escuro}" stroke-width="${espessura}"/>
-      <path d="${d}" stroke="${alfa(t.claro, 0.35)}" stroke-width="${Math.max(0.8, espessura - 2)}" transform="translate(0 -0.7)"/>
+      <path d="${d}" stroke="${corPrinc}" stroke-width="${esp}"/>
+      <path d="${d}" stroke="${alfa(t.claro, 0.32)}" stroke-width="${Math.max(0.7, esp - 2)}" transform="translate(0 -0.7)"/>
     </g>
   </g>`;
 }

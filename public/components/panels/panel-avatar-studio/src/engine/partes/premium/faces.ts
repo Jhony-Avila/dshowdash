@@ -38,12 +38,22 @@ function defsPelePremium(u: string, hexPele: string): string {
 }
 
 /** Orelha premium: concha + hélice + sombra interna (x espelhável). */
+// Golden V3.2 §6.4: ORELHA com hélice + anti-hélice + concha + lóbulo (sem
+// excesso de detalhe). Antes: elipse + 1 curva. dir aponta p/ fora da cabeça.
 function orelhaPremium(x: number, t: ReturnType<typeof tintaPremium>, dir: 1 | -1): string {
+  const y = G.orelhaY;
   return `
-    <ellipse cx="${x}" cy="${G.orelhaY}" rx="9.5" ry="13.5" fill="${t.base}"/>
-    <path d="M${x + 3 * dir} ${G.orelhaY - 9} a 8 11 0 0 0 ${-2 * dir} 18" fill="none" stroke="${alfa(t.escuro, 0.65)}" stroke-width="2.2" stroke-linecap="round"/>
-    <ellipse cx="${x + 1.5 * dir}" cy="${G.orelhaY + 2}" rx="3.4" ry="5.6" fill="${alfa(t.profundo, 0.5)}"/>
-    <path d="M${x - 4 * dir} ${G.orelhaY - 10} a 9 12 0 0 1 ${6 * dir} -2" fill="none" stroke="${alfa('#ffffff', 0.28)}" stroke-width="1.6" stroke-linecap="round"/>`;
+    <ellipse cx="${x}" cy="${y}" rx="9.5" ry="13.5" fill="${t.base}"/>
+    <!-- concha (sombra funda central) -->
+    <ellipse cx="${x + 1.5 * dir}" cy="${y + 1.5}" rx="3.2" ry="5.4" fill="${alfa(t.profundo, 0.5)}"/>
+    <!-- anti-hélice (crus interno em C, entre concha e hélice) -->
+    <path d="M${x + 2 * dir} ${y - 7} a 6 9 0 0 ${dir > 0 ? 0 : 1} ${-1.5 * dir} 15" fill="none" stroke="${alfa(t.escuro, 0.5)}" stroke-width="1.6" stroke-linecap="round"/>
+    <!-- hélice (borda externa enrolada) -->
+    <path d="M${x + 5.5 * dir} ${y - 10} a 9 13 0 0 ${dir > 0 ? 0 : 1} ${-3 * dir} 23" fill="none" stroke="${alfa(t.escuro, 0.42)}" stroke-width="2" stroke-linecap="round"/>
+    <!-- lóbulo (base arredondada) -->
+    <path d="M${x - 3 * dir} ${y + 9.5} q ${3.5 * dir} 4.5 ${6 * dir} 0.5" fill="none" stroke="${alfa(t.escuro, 0.3)}" stroke-width="1.4" stroke-linecap="round"/>
+    <!-- luz na hélice superior -->
+    <path d="M${x - 3.5 * dir} ${y - 10} a 9 12 0 0 1 ${6 * dir} -2" fill="none" stroke="${alfa('#ffffff', 0.24)}" stroke-width="1.4" stroke-linecap="round"/>`;
 }
 
 type TP = ReturnType<typeof tintaPremium>;
@@ -170,7 +180,9 @@ function basePremium(perfil: PerfilRosto): ParteRender {
       <!-- Golden V3.2 §5: a BASE NÃO desenha mais nariz (fonte única). O nariz
            vem do slot nar_* ou do default por-base (narizPremiumDefaultDaBase),
            injetado no render.ts. Fim da cápsula/nariz duplicado. -->
-      <path d="${perfil.jawline}" fill="none" stroke="${alfa(t.escuro, 0.24)}" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- §6.3: jawline quase imperceptível (a mandíbula vem de silhueta/
+           valor/oclusão, não de uma linha contornando) -->
+      <path d="${perfil.jawline}" fill="none" stroke="${alfa(t.escuro, 0.12)}" stroke-width="1.5" stroke-linecap="round"/>
       ${perfil.queixo ? perfil.queixo(t) : ''}
       ${perfil.extras ? perfil.extras(t) : ''}`;
   };
@@ -312,11 +324,11 @@ interface OpcoesOlho { ry?: number; tilt?: number; irisR?: number; palpebra?: nu
  *  pálpebra superior (recorte na abertura). 1 catchlight. Canto lacrimal
  *  interno + cílio no canto externo. dir: lado interno aponta p/ o nariz. */
 export function olhoPremium(x: number, y: number, iris: Tinta, u: string, lado: 'L' | 'R', o: OpcoesOlho = {}): string {
-  const hu = (o.ry ?? 7) - (o.palpebra ?? 0);   // subida da pálpebra sup (abertura)
+  const hu = (o.ry ?? 6.4) - (o.palpebra ?? 0);   // §6.1: olho ~8% menor (adulto, não Disney)
   const hl = Math.max(3, hu * 0.55);            // descida da pálpebra inf
-  const W = 10.4;                                // meia-largura da fenda
+  const W = 9.6;                                // §6.1: meia-largura da fenda (~8% menor)
   const tilt = o.tilt ?? 0;
-  const irisR = o.irisR ?? 4.7;
+  const irisR = o.irisR ?? 4.3;                 // §6.1: íris ~8% menor
   const dir = lado === 'L' ? -1 : 1;             // canto interno (nariz)
   const clip = `${u}eye${lado}`;
   // fenda amendoada: canto interno mais baixo/pontudo, externo levemente erguido

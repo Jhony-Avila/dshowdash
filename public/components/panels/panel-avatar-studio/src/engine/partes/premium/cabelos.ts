@@ -147,6 +147,23 @@ function afroClumps(): { dark: string[]; light: string[] } {
 }
 const AFRO = afroClumps();
 
+// Golden V3.2 §18: a SILHUETA do afro vem dos CLUMPS MAIORES (lobos), não de
+// um domo liso decorado. Massa central + anel de lobos sobrepostos (união
+// nonzero) cuja borda SOBE/DESCE/PROJETA/RECUA organicamente — lê como cabelo
+// no SILHOUETTE BLACK TEST (não gorro). Aberto embaixo (rosto).
+function afroMassa(): string {
+  const central = 'M70 106 a 50 56 0 1 1 100 0 z';       // corpo (metade superior)
+  const lobos: [number, number, number][] = [
+    [120, 27, 18], [99, 32, 15], [143, 31, 16], [78, 46, 15], [161, 45, 15],
+    [65, 70, 14], [176, 68, 14], [62, 93, 13], [178, 92, 13],
+    [69, 105, 12], [172, 106, 12], [108, 24, 12], [152, 39, 11],
+  ];
+  const circ = ([x, y, r]: [number, number, number]): string =>
+    `M${x - r} ${y} a ${r} ${r} 0 1 1 ${2 * r} 0 a ${r} ${r} 0 1 1 ${-2 * r} 0 z`;
+  return central + ' ' + lobos.map(circ).join(' ');
+}
+const AFRO_MASSA = afroMassa();
+
 export const CABELOS_PREMIUM: ParteDef[] = [
   {
     ...comum, id: 'cab_px_curto', nome: 'Curto Premium', tema: 'executivo',
@@ -261,13 +278,9 @@ export const CABELOS_PREMIUM: ParteDef[] = [
     ...comum, id: 'cab_px_afro', nome: 'Afro Premium', tema: 'urbano', raridade: 'epico',
     descricao: 'Coroa esférica CHEIA com borda em nuvem e luz pontilhada.', usaCores: ['cabelo'],
     render: cabeloPremium({
-      // onda 1427/Golden §40: DOMO CHEIO (coroa esférica) + bumps de nuvem
-      // PREENCHIDOS (sweep-flag 1 = união no nonzero, não furo). Bug 1424: os
-      // bumps tinham winding oposto → viravam BURACOS brancos. Agora somam.
-      massa: 'M72 96 a 62 60 0 1 1 96 0 z'
-        + ' M70 70 a 15 15 0 1 1 0.1 0 z M80 46 a 16 16 0 1 1 0.1 0 z M102 33 a 16 16 0 1 1 0.1 0 z'
-        + ' M120 28 a 16 16 0 1 1 0.1 0 z M138 33 a 16 16 0 1 1 0.1 0 z M160 46 a 16 16 0 1 1 0.1 0 z M170 70 a 15 15 0 1 1 0.1 0 z'
-        + ' M64 90 a 12 12 0 1 1 0.1 0 z M176 90 a 12 12 0 1 1 0.1 0 z',
+      // Golden V3.2 §18: silhueta CONSTRUÍDA pelos lobos (afroMassa) — borda
+      // orgânica que sobe/desce/projeta/recua, não domo liso + decoração.
+      massa: AFRO_MASSA,
       sombraTesta: 'M82 92 c 12 -6 25 -9 38 -9 s 26 3 38 9 c -2 4 -5 6 -8 7 c -9 -4 -19 -6 -30 -6 s -21 2 -30 6 c -3 -1 -6 -3 -8 -7 z',
       // Golden V3 §40: CAMPO DE COILS autoral (não sheen) — quebra o "capacete".
       clumpsDark: AFRO.dark,
