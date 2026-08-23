@@ -9,4 +9,7 @@ import type { TipoCorporal } from './types';
 
 export const PRESETS_CORPO: Record<TipoCorporal, [number, number]> = {
   esbelto: [0.95, 1.02], atletico: [1.05, 1], robusto: [1.1, 0.98], compacto: [0.97, 0.94],
+  // Golden V3.1 (#219): perfil FEMININO explícito — sobrevive validarConfig
+  // (bug V3: 'feminino' era descartado por não estar no enum). Escala 3D suave.
+  feminino: [0.94, 1.0],
 };

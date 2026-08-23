@@ -248,6 +248,7 @@ ok(svgAssim === svgDe(cExpr, { uid: 'fx', premium: true, faceV2: true }), '[H] a
 // I) onda 1415 — VESTUARIO PREMIUM (#191)
 import { ROUPAS_PREMIUM_1415, SOBREPECAS_PREMIUM, ROUPAS_INFERIORES, CALCADOS_PREMIUM } from '@painel/engine/partes/premium/vestuario';
 import { corpoPremium } from '@painel/engine/partes/premium/corpo';
+import { perfilCorpoDe } from '@painel/engine/partes/corpo';
 import { secundarioPadraoDe } from '@painel/engine/cores';
 import { CONJUNTOS, conjuntosAtivos, aplicarConjunto } from '@painel/services/Conjuntos';
 import { VARIANTES_POR_ASSET } from '@painel/services/VariantesAssets';
@@ -286,6 +287,16 @@ ok(!corpoClas.includes('cvfold'), '[I] renderCorpoV2 NAO pode vazar sem premium 
 ok(corpoPrem.includes('cvcpxcal'), '[I] scaffold ANATOMICO V3 (corpoInteiroPremium) ausente no premium');
 ok(!corpoClas.includes('cvcpxcal'), '[I] scaffold anatomico NAO pode vazar sem premium (§651)');
 ok(corpoPremium(paletaFake(), 'k') === corpoPremium(paletaFake(), 'k') && !/<filter/.test(corpoPremium(paletaFake(), 'k')), '[I] corpoPremium (fallback historico) deterministico e sem filtros');
+// Golden V3.1 (#219): PROFILE FEMININO explicito sobrevive a cadeia REAL
+// (bug V3: 'feminino' era descartado por sanitizarCorpoV2 -> perfil standard).
+// Prova raw config -> validarConfig -> svgDe -> perfil feminino (nao unit de perfilCorpoDe).
+const femRaw = { formato: 'camadas', versao: CONFIG_PADRAO.versao, base: 'bas_px_coracao', acabamento: 'premium', cores: CONFIG_PADRAO.cores, camadas: { ...CONFIG_PADRAO.camadas }, corpoV2: { preset: 'feminino' } };
+const femVal = validarConfig(femRaw);
+ok(femVal.corpoV2 && femVal.corpoV2.preset === 'feminino', '[I] preset feminino DEVE sobreviver validarConfig (nao virar null)');
+ok(perfilCorpoDe(femVal) === 'feminino', '[I] perfilCorpoDe(config validado) DEVE resolver feminino');
+const femBody = svgDe(femVal, { uid: 'fz', premium: true, palco: true, enquadramento: 'corpo' });
+const stdBody = svgDe(validarConfig({ ...femRaw, corpoV2: undefined }), { uid: 'fz', premium: true, palco: true, enquadramento: 'corpo' });
+ok(femBody !== stdBody, '[I] svgDe do perfil feminino DEVE diferir do standard (perfil chegou ao render)');
 // roupa_inferior: renderiza no corpo inteiro, invisivel no busto
 const cJeans = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa_inferior: 'rin_jeans' }, acabamento: 'premium' });
 ok(cJeans.camadas.roupa_inferior === 'rin_jeans', '[I] camada roupa_inferior persiste');

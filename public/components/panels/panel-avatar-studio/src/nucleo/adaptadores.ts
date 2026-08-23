@@ -22,12 +22,12 @@ export interface ConfigLegado2d {
   titulo?: string;
   /** megas 254–255 (§102/§118): tipo corporal e postura — roundtrip sem
    *  perda (mesmos literais do domain/types; o validarConfig re-sanitiza). */
-  corpo?: 'esbelto' | 'atletico' | 'robusto' | 'compacto';
+  corpo?: 'esbelto' | 'atletico' | 'robusto' | 'compacto' | 'feminino';
   postura?: 'confiante' | 'relaxada' | 'executiva' | 'heroica' | 'misteriosa';
   /** megas 561–564 (§102.2): ajuste FINO do corpo — roundtrip sem perda. */
   corpoFino?: { largura?: number; altura?: number };
   /** onda 1422 (#210, body.v2): preset + morfos — roundtrip sem perda. */
-  corpoV2?: { preset?: 'esbelto' | 'atletico' | 'robusto' | 'compacto'; morfos?: Record<string, number> };
+  corpoV2?: { preset?: 'esbelto' | 'atletico' | 'robusto' | 'compacto' | 'feminino'; morfos?: Record<string, number> };
   /** onda 1411 (#159): acabamento premium — roundtrip sem perda. */
   acabamento?: 'premium';
   /** §71: propriedades por camada (F3 C2) — roundtrip sem perda. */
