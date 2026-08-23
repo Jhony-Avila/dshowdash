@@ -276,11 +276,16 @@ ok(svgDe(cCamisa('#e84c6f'), { uid: 'sc', premium: true }) !== svgDe(cCamisa(nul
 const cBlazer = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_blazer' }, acabamento: 'premium' });
 const corpoPrem = svgDe(cBlazer, { uid: 'cv', premium: true, palco: true, enquadramento: 'corpo' });
 const corpoClas = svgDe(cBlazer, { uid: 'cv', palco: true, enquadramento: 'corpo' });
-ok(corpoPrem.includes('l -12 3 l 4 -70'), '[I] renderCorpoV2 (silhueta do blazer) ausente no premium');
-ok(!corpoClas.includes('l -12 3 l 4 -70'), '[I] renderCorpoV2 NAO pode vazar sem premium (§651)');
-ok(corpoPrem.includes('cvpxcv2l'), '[I] scaffold v2 (corpoPremium) ausente');
-ok(!corpoClas.includes('cvpxcv2l'), '[I] scaffold v2 NAO pode vazar sem premium');
-ok(corpoPremium(paletaFake(), 'k') === corpoPremium(paletaFake(), 'k') && !/<filter/.test(corpoPremium(paletaFake(), 'k')), '[I] corpoPremium deterministico e sem filtros');
+// Golden V3 (#219): asserts de CONTRATO (nao geometria antiga). O blazer V3
+// desenha via renderCorpoV2 que chama dobras (clipPath uid+fold); o corpo
+// premium e o scaffold ANATOMICO corpoInteiroPremium (gradiente da calca
+// uid+cpxcal). Ambos SO no premium. Nao validar por hash aqui: mudanca de
+// hash Premium e needs-human-review enquanto Gate A = REWORK.
+ok(corpoPrem.includes('cvfold'), '[I] renderCorpoV2 V3 (dobras da peca) ausente no premium');
+ok(!corpoClas.includes('cvfold'), '[I] renderCorpoV2 NAO pode vazar sem premium (§651)');
+ok(corpoPrem.includes('cvcpxcal'), '[I] scaffold ANATOMICO V3 (corpoInteiroPremium) ausente no premium');
+ok(!corpoClas.includes('cvcpxcal'), '[I] scaffold anatomico NAO pode vazar sem premium (§651)');
+ok(corpoPremium(paletaFake(), 'k') === corpoPremium(paletaFake(), 'k') && !/<filter/.test(corpoPremium(paletaFake(), 'k')), '[I] corpoPremium (fallback historico) deterministico e sem filtros');
 // roupa_inferior: renderiza no corpo inteiro, invisivel no busto
 const cJeans = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa_inferior: 'rin_jeans' }, acabamento: 'premium' });
 ok(cJeans.camadas.roupa_inferior === 'rin_jeans', '[I] camada roupa_inferior persiste');
