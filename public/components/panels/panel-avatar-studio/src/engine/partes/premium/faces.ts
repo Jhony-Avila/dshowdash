@@ -99,19 +99,8 @@ function narizPremium(t: TP, estilo: 'reto' | 'largo' | 'fino' | 'arrebitado' | 
   }
 }
 
-/** Bochechas (§740) com ALTURA/volume por rosto — maçãs altas ≠ cheias. */
-function bochechas(t: TP, y = 127, rx = 10, forca = 1): string {
-  return `
-    <ellipse cx="${120 - 23}" cy="${y}" rx="${rx}" ry="${rx * 0.62}" fill="${alfa(t.claro, 0.15 * forca)}"/>
-    <ellipse cx="${120 + 23}" cy="${y}" rx="${rx}" ry="${rx * 0.62}" fill="${alfa(t.meio, 0.13 * forca)}"/>`;
-}
-
-/** Arcada superciliar com PESO por rosto (§703 — ossatura, não pelo). */
-function arcada(t: TP, peso = 0.2, quebra = 0): string {
-  return `
-    <path d="M89 ${95 + quebra} q 11 -4.5 22 -1.5" stroke="${alfa(t.escuro, peso)}" stroke-width="${3 + quebra}" stroke-linecap="round" fill="none"/>
-    <path d="M129 ${93.5 + quebra} q 11 -3 22 1.5" stroke="${alfa(t.escuro, peso)}" stroke-width="${3 + quebra}" stroke-linecap="round" fill="none"/>`;
-}
+// onda 1427/Golden: bochechas/arcada como ELIPSE saíram (§19). O volume da
+// maçã e da órbita agora vem dos PLANOS recortados em basePremium.
 
 /** onda 1424 (Fase B §19): PERFIL facial — cada base declara a PRÓPRIA
  *  combinação de crânio, maxilar, queixo, nariz, maçãs, testa e arcada.
@@ -131,25 +120,42 @@ interface PerfilRosto {
   extras?: (t: TP) => string;
 }
 
+// onda 1427/Golden (BRIEFING_COMPLEMENTAR_03 §17–§27; #219): FACE FORM PLANES.
+// Método NOVO — o volume vem de GRANDES PLANOS (forehead/temple/cheekbone/
+// mid-face/jaw/chin) recortados na silhueta do crânio (clipPath), com a luz
+// KEY superior-esquerda (§21): lado direito em sombra de núcleo, sombra de
+// bochecha seguindo zigomático→mandíbula (§20, não elipse §19). Fills CHAPADOS
+// (alfa) → a forma LÊ no Flat Face Test (§23). Nariz integrado (§26/§27), sem
+// patch de elipse de pele. Sobrancelha/olhos/boca vêm das categorias próprias.
 function basePremium(perfil: PerfilRosto): ParteRender {
   return (p: Paleta, u: string) => {
     const t = tintaPremium(p.pele.base);
+    const cid = `${u}pxclip`;
     return `
-      <defs>${defsPelePremium(u, p.pele.base)}</defs>
+      <defs>${defsPelePremium(u, p.pele.base)}
+        <clipPath id="${cid}"><path d="${perfil.cabeca}"/></clipPath>
+      </defs>
       <path d="${PATH_PESCOCO}" fill="url(#${u}pxpesc)"/>
-      <path d="M103 176 q 17 6 34 0 l -2 6 q -15 5 -30 0 z" fill="${alfa(t.profundo, 0.18)}"/>
+      <path d="M103 176 q 17 6 34 0 l -2 6 q -15 5 -30 0 z" fill="${alfa(t.profundo, 0.16)}"/>
       <path d="${perfil.cabeca}" fill="url(#${u}pxpele)"/>
-      <path d="${perfil.jawline}" fill="none" stroke="${alfa(t.escuro, 0.35)}" stroke-width="2.6" stroke-linecap="round"/>
-      ${perfil.maxilar ? `<path d="${perfil.maxilar}" fill="${alfa(t.meio, 0.4)}"/>` : ''}
+      <g clip-path="url(#${cid})">
+        <!-- PLANO DE NÚCLEO (lado direito, oposto à luz §21) -->
+        <path d="M124 46 C 166 60 176 128 154 178 L 210 178 L 210 44 Z" fill="${alfa(t.escuro, 0.15)}"/>
+        <!-- TÊMPORA/MAÇÃ→MANDÍBULA esquerda (meia-sombra seguindo a forma §20) -->
+        <path d="M92 112 C 86 132 92 152 112 162 C 100 150 96 134 100 118 Z" fill="${alfa(t.meio, 0.12)}"/>
+        <!-- MAÇÃ→MANDÍBULA direita (sombra mais forte) -->
+        <path d="M148 110 C 156 132 148 156 122 166 C 138 152 142 134 140 116 Z" fill="${alfa(t.escuro, 0.16)}"/>
+        <!-- PLANO DA TESTA + MID-FACE em luz (superior-esquerda) -->
+        <path d="M74 64 C 98 46 122 46 ${perfil.testa.rx + 96} ${perfil.testa.cy - 2} C 108 60 90 80 84 104 C 78 90 74 76 74 64 Z" fill="${alfa('#ffffff', (perfil.testa.op ?? 0.1) * 0.9)}"/>
+        <!-- SOMBRA DAS ÓRBITAS (socket) -->
+        <path d="M86 101 C 104 94 136 94 154 101 C 148 110 138 106 120 105 C 102 106 92 110 86 101 Z" fill="${alfa(t.escuro, 0.10)}"/>
+        <!-- SOMBRA SOB O QUEIXO/MANDÍBULA -->
+        <path d="M99 156 C 110 168 130 168 141 156 C 139 172 101 172 99 156 Z" fill="${alfa(t.profundo, 0.13)}"/>
+      </g>
       ${orelhaPremium(70, t, 1)}${orelhaPremium(170, t, -1)}
-      ${bochechas(t, perfil.macas.y, perfil.macas.rx, perfil.macas.forca)}
       ${narizPremium(t, perfil.nariz.estilo, perfil.nariz.comprimento ?? 0)}
-      ${arcada(t, perfil.arcada.peso, perfil.arcada.quebra)}
-      ${perfil.queixo ? perfil.queixo(t) : `<ellipse cx="120" cy="152" rx="19" ry="6.4" fill="${alfa(t.profundo, 0.26)}"/>
-      <path d="M120 156 q 4 2 0 4 q -4 -2 0 -4" fill="${alfa('#ffffff', 0.16)}"/>`}
-      <ellipse cx="120" cy="${perfil.testa.cy}" rx="${perfil.testa.rx}" ry="${perfil.testa.ry}" fill="${alfa('#ffffff', (perfil.testa.op ?? 0.1) * 0.55)}"/>
-      <path d="M80 72 a 52 58 0 0 1 44 -22" stroke="${alfa('#ffffff', 0.2)}" stroke-width="3.4" stroke-linecap="round" fill="none"/>
-      <path d="M158 78 a 52 58 0 0 1 8 26" stroke="${alfa(t.escuro, 0.16)}" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="${perfil.jawline}" fill="none" stroke="${alfa(t.escuro, 0.24)}" stroke-width="2.2" stroke-linecap="round"/>
+      ${perfil.queixo ? perfil.queixo(t) : ''}
       ${perfil.extras ? perfil.extras(t) : ''}`;
   };
 }
