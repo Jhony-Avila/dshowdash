@@ -13,6 +13,7 @@
 import { alfa, secundarioPadraoDe, tintaPremium } from '../../cores';
 import type { Paleta } from '../../cores';
 import { material2d } from '../../materiais2d';
+import type { Material2d } from '../../materiais2d';
 import { PATH_OMBROS } from '../../base-api';
 import type { ParteDef } from '../../base-api';
 import { anatomiaCorpo } from '../corpo';
@@ -90,23 +91,25 @@ function mangaLonga(A: AnatomiaCorpo, s: 1 | -1, folgaOmb = 5, folga = 3): strin
 // "tecido". Poucas dobras PRINCIPAIS seguindo o corpo (tensão ombro→esterno,
 // recolhimento na cintura, quebra na barra), recortadas na peça. `tens` = força
 // da tensão de ombro; `barra` = y da barra p/ a quebra inferior.
-function dobras(A: AnatomiaCorpo, torso: string, u: string, o: { tens?: number; barra: number; w?: number } = { barra: 0 }): string {
+function dobras(A: AnatomiaCorpo, torso: string, u: string, o: { tens?: number; barra: number; w?: number } = { barra: 0 }, m?: Material2d): string {
   const { cx, yOmb, yPei, yCin } = A; const clip = `${u}fold`;
-  const w = o.w ?? A.peito, tens = o.tens ?? 1, by = o.barra || A.yQua;
-  const S = (a: number) => `rgba(0,0,0,${a})`, L = (a: number) => `rgba(255,255,255,${a})`;
-  return `<defs><clipPath id="${clip}"><path d="${torso}"/></clipPath></defs>
-    <g clip-path="url(#${clip})">
-      <!-- tensão ombro→esterno (as duas grandes dobras diagonais) -->
-      <path d="M${cx - w + 8} ${yOmb + 5} C ${cx - 16} ${yPei - 6} ${cx - 10} ${yPei + 8} ${cx - 3} ${yCin - 2}" fill="none" stroke="${S(0.11 * tens)}" stroke-width="4" stroke-linecap="round"/>
-      <path d="M${cx + w - 8} ${yOmb + 5} C ${cx + 16} ${yPei - 6} ${cx + 10} ${yPei + 8} ${cx + 3} ${yCin - 2}" fill="none" stroke="${S(0.11 * tens)}" stroke-width="4" stroke-linecap="round"/>
-      <path d="M${cx - w + 12} ${yOmb + 7} C ${cx - 14} ${yPei - 4} ${cx - 8} ${yPei + 8} ${cx - 2} ${yCin - 2}" fill="none" stroke="${L(0.06)}" stroke-width="2" stroke-linecap="round"/>
-      <!-- recolhimento na cintura -->
-      <path d="M${cx - w * 0.6} ${yCin} C ${cx - 10} ${yCin + 6} ${cx + 10} ${yCin + 6} ${cx + w * 0.6} ${yCin}" fill="none" stroke="${S(0.09)}" stroke-width="3"/>
-      <!-- quebra na barra -->
-      <path d="M${cx - w * 0.5} ${by - 6} q ${w * 0.5} 8 ${w} 0" fill="none" stroke="${S(0.1)}" stroke-width="3"/>
-      <!-- centro (leve) -->
-      <path d="M${cx} ${yPei + 4} C ${cx - 2} ${yCin - 8} ${cx + 2} ${yCin + 4} ${cx} ${by - 8}" fill="none" stroke="${S(0.06)}" stroke-width="2"/>
-    </g>`;
+  const w = o.w ?? A.peito, by = o.barra || A.yQua;
+  // VALES (fundo da dobra, sombra) e CRISTAS (topo, pega luz) — geometria; a
+  // RESPOSTA à luz vem do material (m.dobra): couro brilha, lã não (§79).
+  const vales = [
+    `M${cx - w + 8} ${yOmb + 5} C ${cx - 16} ${yPei - 6} ${cx - 10} ${yPei + 8} ${cx - 3} ${yCin - 2}`,
+    `M${cx + w - 8} ${yOmb + 5} C ${cx + 16} ${yPei - 6} ${cx + 10} ${yPei + 8} ${cx + 3} ${yCin - 2}`,
+    `M${cx - w * 0.6} ${yCin} C ${cx - 10} ${yCin + 6} ${cx + 10} ${yCin + 6} ${cx + w * 0.6} ${yCin}`,
+    `M${cx - w * 0.5} ${by - 6} q ${w * 0.5} 8 ${w} 0`,
+  ];
+  const cristas = [
+    `M${cx - w + 12} ${yOmb + 7} C ${cx - 14} ${yPei - 4} ${cx - 8} ${yPei + 8} ${cx - 2} ${yCin - 2}`,
+    `M${cx + w - 12} ${yOmb + 7} C ${cx + 14} ${yPei - 4} ${cx + 8} ${yPei + 8} ${cx + 2} ${yCin - 2}`,
+  ];
+  const resp = m ? m.dobra(u, cristas, vales)
+    : vales.map((d) => `<path d="${d}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="4" stroke-linecap="round"/>`).join('')
+    + cristas.map((d) => `<path d="${d}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2" stroke-linecap="round"/>`).join('');
+  return `<defs><clipPath id="${clip}"><path d="${torso}"/></clipPath></defs><g clip-path="url(#${clip})">${resp}</g>`;
 }
 // dobras de MANGA longa (cotovelo) — 1-2 rugas no interior do cotovelo
 function dobrasManga(A: AnatomiaCorpo, s: 1 | -1): string {
@@ -144,7 +147,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       <path d="${sl}" fill="${m.fill(u)}"/>
       <path d="${torso}" fill="${m.fill(u)}"/>
       ${m.realce(u, torso)}
-      ${dobras(A, torso, u, { tens: 1.1, barra: A.yQua + 4 })}
+      ${dobras(A, torso, u, { tens: 1.1, barra: A.yQua + 4 }, m)}
       <!-- costura de ombro + bainha da manga curta -->
       <path d="M${A.cx - A.ombro + 2} ${A.yOmb + 2} q ${A.ombro - 6} -4 ${A.ombro * 2 - 10} 0 M${A.cx - A.peito - 2} ${A.yPei + 14} q 3 -3 5 -8 M${A.cx + A.peito + 2} ${A.yPei + 14} q -3 -3 -5 -8" fill="none" stroke="${alfa(m.tinta.profundo, 0.35)}" stroke-width="1.2" stroke-linecap="round"/>
       <path d="M${A.cx - 14} ${A.yOmb + 2} q 14 12 28 0 q -3 10 -14 10 q -11 0 -14 -10 z" fill="${m.tinta.escuro}"/>
@@ -204,7 +207,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       ${dobrasManga(A, -1)}${dobrasManga(A, 1)}
       <path d="${torso}" fill="${m.fill(u)}"/>
       ${m.realce(u, torso)}
-      ${dobras(A, torso, u, { tens: 0.7, barra: A.yEnt - 2, w: A.peito + 8 })}
+      ${dobras(A, torso, u, { tens: 0.7, barra: A.yEnt - 2, w: A.peito + 8 }, m)}
       <!-- cuffs + hem band -->
       <path d="M${cx - wx - 3} ${cuffY} l 12 2 -2 10 -12 -2 z M${cx + wx + 3} ${cuffY} l -12 2 2 10 12 -2 z" fill="${m.tinta.profundo}"/>
       <path d="M${cx - A.quadril - 10} ${hemY} h${(A.quadril + 10) * 2} v10 h-${(A.quadril + 10) * 2} z" fill="${alfa(m.tinta.profundo, 0.5)}"/>
@@ -247,7 +250,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       ${dobrasManga(A, -1)}${dobrasManga(A, 1)}
       <path d="${torso}" fill="${la.fill(u)}"/>
       ${la.realce(u, torso)}
-      ${dobras(A, torso, u, { tens: 0.6, barra: yHem, w: A.peito })}
+      ${dobras(A, torso, u, { tens: 0.6, barra: yHem, w: A.peito }, la)}
       <!-- bolso no peito + bolso lateral (construção) -->
       <path d="M${cx - A.peito + 6} ${yPei + 4} h 12 v 3 h -12 z" fill="none" stroke="${alfa(la.tinta.profundo, 0.5)}" stroke-width="1.2"/>
       <path d="M${cx - A.cintura} ${yCin + 10} h 16 M${cx + A.cintura - 16} ${yCin + 10} h 16" stroke="${alfa(la.tinta.profundo, 0.5)}" stroke-width="1.4" stroke-linecap="round"/>
@@ -341,7 +344,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       ${dobrasManga(A, -1)}${dobrasManga(A, 1)}
       <path d="${torso}" fill="${la.fill(u)}"/>
       ${la.realce(u, torso)}
-      ${dobras(A, torso, u, { tens: 0.7, barra: yHem, w: A.peito + 6 })}
+      ${dobras(A, torso, u, { tens: 0.7, barra: yHem, w: A.peito + 6 }, la)}
       <!-- quedas verticais longas do sobretudo -->
       <g clip-path="url(#${u}fold)">
         <path d="M${cx - A.cintura + 4} ${yCin + 6} C ${cx - A.cintura} ${yCin + 60} ${cx - A.quadril + 6} ${yHem - 40} ${cx - A.quadril + 8} ${yHem - 6}" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="3.4" stroke-linecap="round"/>

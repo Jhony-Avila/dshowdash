@@ -32,9 +32,30 @@ export interface Material2d {
   fill: (uid: string) => string;
   /** fragmento de REALCE por cima do shape (recebe o path/geom alvo) */
   realce: (uid: string, path: string) => string;
+  /** Golden V3.1 (#219 §66-79): RESPOSTA À DOBRA — dada a geometria das dobras
+   *  (cristas iluminadas + vales), cada material responde à LUZ de forma
+   *  própria: couro = specular fino e forte na crista + vinco escuro; algodão =
+   *  realce largo e fraco (matte); lã = quase sem specular; metal = banda dura.
+   *  É isto que diferencia o material NA MESMA geometria (§79), não só o pattern. */
+  dobra: (uid: string, cristas: string[], vales: string[]) => string;
 }
 
 const gid = (uid: string, token: string) => `${uid}m2_${token}`;
+
+// resposta de luz por material na DOBRA (crista/vale): cor+alfa+largura do
+// stroke. crista: 'w'=branco | 'brilho'/'claro'=tinta do material. vale: preto.
+const FOLD_RESP: Record<MaterialToken2d, { rC: 'w' | 'brilho' | 'claro'; rA: number; rW: number; vA: number; vW: number }> = {
+  cotton: { rC: 'w', rA: 0.10, rW: 6, vA: 0.12, vW: 6 },
+  wool: { rC: 'w', rA: 0.05, rW: 8, vA: 0.16, vW: 8 },
+  leather: { rC: 'w', rA: 0.6, rW: 2.2, vA: 0.42, vW: 4 },
+  technical: { rC: 'brilho', rA: 0.42, rW: 3, vA: 0.22, vW: 4 },
+  satin: { rC: 'w', rA: 0.34, rW: 8, vA: 0.16, vW: 6 },
+  silk: { rC: 'w', rA: 0.38, rW: 7, vA: 0.16, vW: 6 },
+  metal: { rC: 'w', rA: 0.72, rW: 2, vA: 0.5, vW: 3 },
+  denim: { rC: 'claro', rA: 0.16, rW: 4, vA: 0.28, vW: 4 },
+  glass: { rC: 'w', rA: 0.42, rW: 3, vA: 0.2, vW: 5 },
+  emissive: { rC: 'brilho', rA: 0.3, rW: 5, vA: 0.1, vW: 4 },
+};
 
 /** Gradiente base 3 paradas (suave) — a maioria dos tecidos. */
 function gradTecido(id: string, t: TintaPremium, y2 = 1): string {
@@ -47,7 +68,12 @@ function gradTecido(id: string, t: TintaPremium, y2 = 1): string {
 /** Fábrica de material — determinística; cada token tem defs próprios. */
 export function material2d(token: MaterialToken2d, hexBase: string): Material2d {
   const t = tintaPremium(hexBase);
-  const comum = { token, tinta: t, fill: (u: string) => `url(#${gid(u, token)})` };
+  const fr = FOLD_RESP[token];
+  const rCor = fr.rC === 'w' ? '#ffffff' : t[fr.rC];
+  const dobra = (_u: string, cristas: string[], vales: string[]): string =>
+    vales.map((d) => `<path d="${d}" fill="none" stroke="${alfa('#000000', fr.vA)}" stroke-width="${fr.vW}" stroke-linecap="round"/>`).join('')
+    + cristas.map((d) => `<path d="${d}" fill="none" stroke="${alfa(rCor, fr.rA)}" stroke-width="${fr.rW}" stroke-linecap="round"/>`).join('');
+  const comum = { token, tinta: t, fill: (u: string) => `url(#${gid(u, token)})`, dobra };
   switch (token) {
     case 'cotton':
       // §69: MATTE — highlight amplo e fraco, pouca especularidade, liso.
