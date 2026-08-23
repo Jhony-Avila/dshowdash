@@ -122,21 +122,27 @@ const comum = { categoria: 'cabelo' as const, requerBase: HUMANOIDES, acabamento
 // Determinístico (grid hex dentro do domo), recortado pela massa no render.
 function afroClumps(): { dark: string[]; light: string[] } {
   const dark: string[] = [], light: string[] = [];
-  const cxx = 120, cyy = 92, RX = 60, RY = 64;
-  const rows = [{ y: 42, n: 3 }, { y: 58, n: 5 }, { y: 74, n: 6 }, { y: 90, n: 6 }, { y: 106, n: 6 }, { y: 122, n: 5 }, { y: 137, n: 4 }];
-  for (let r = 0; r < rows.length; r++) {
-    const { y, n } = rows[r]; const off = r % 2 ? 9 : 0;
-    for (let i = 0; i < n; i++) {
-      const x = cxx + (i - (n - 1) / 2) * (110 / (n + 0.2)) + off;
-      if (((x - cxx) ** 2) / (RX * RX) + ((y - cyy) ** 2) / (RY * RY) > 0.9) continue;
-      const s = 6.4;
-      const lit = x < cxx + 8;  // coils do lado da luz (esq) brilham mais
-      // separação: crescente ESCURA entre coils (embaixo-direita)
-      dark.push(`M${x - s + 1} ${y + s - 2} a ${s} ${s} 0 0 0 ${2 * s - 2} 1 a ${s + 1} ${s + 1} 0 0 1 ${-2 * s + 2} -2.5 z`);
-      // topo do coil pegando luz (arco superior-esquerdo)
-      light.push(`M${x - s + 1} ${y - 1} a ${s - 1} ${s - 1} 0 0 1 ${2 * s - 3} ${lit ? -2 : -1} l -1.5 2.6 a ${s - 2.5} ${s - 2.5} 0 0 0 ${-2 * s + 6} ${lit ? 1 : 0.5} z`);
+  // Golden V3.1 §40: clumps IRREGULARES autorais (não grade — grade lê como
+  // gorro). ~13 major clumps de tamanhos variados, sobrepostos e assimétricos;
+  // + alguns secondary só em áreas escolhidas. [x, y, r]. cxx=120.
+  const major: [number, number, number][] = [
+    [96, 46, 9], [122, 40, 8], [146, 50, 8.5], [74, 66, 8], [104, 62, 7],
+    [128, 66, 9], [156, 70, 7.5], [86, 88, 8.5], [116, 86, 7], [142, 90, 8],
+    [72, 104, 7], [100, 108, 8], [134, 110, 7.5], [158, 100, 6.5], [92, 126, 7.5],
+    [124, 128, 7], [150, 122, 6.5], [108, 142, 6.5], [136, 140, 6],
+  ];
+  const secondary: [number, number, number][] = [
+    [110, 52, 4], [138, 78, 4.5], [90, 74, 4], [128, 98, 4], [104, 120, 4], [146, 108, 3.6],
+  ];
+  const push = (arr: typeof major, litBias: number) => {
+    for (const [x, y, s] of arr) {
+      const lit = x < 116 ? litBias + 0.5 : litBias; // lado da luz (esq) brilha +
+      // vale (sombra) embaixo-direita do coil + crista (luz) topo-esquerda
+      dark.push(`M${x - s + 1} ${y + s - 3} a ${s} ${s} 0 0 0 ${2 * s - 2} 1.5 a ${s + 1.5} ${s + 1.5} 0 0 1 ${-2 * s + 2} -3 z`);
+      light.push(`M${x - s + 1.5} ${y - 1.5} a ${s - 1} ${s - 1} 0 0 1 ${2 * s - 4} ${-1 - lit} l -1.6 2.8 a ${s - 2.6} ${s - 2.6} 0 0 0 ${-2 * s + 7} ${1 + lit * 0.5} z`);
     }
-  }
+  };
+  push(major, 1); push(secondary, 0.3);
   return { dark, light };
 }
 const AFRO = afroClumps();

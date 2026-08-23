@@ -121,23 +121,27 @@ function basePremium(perfil: PerfilRosto): ParteRender {
     return `
       <defs>${defsPelePremium(u, p.pele.base)}
         <clipPath id="${cid}"><path d="${perfil.cabeca}"/></clipPath>
+        <!-- Golden V3.1: sombreamento por GRADIENTES (transições naturais, não
+             tiras chapadas): núcleo à direita, luz superior-esquerda -->
+        <linearGradient id="${u}pxcore" x1="0.42" y1="0" x2="1" y2="0.1">
+          <stop offset="0" stop-color="${alfa(t.escuro, 0)}"/><stop offset="0.6" stop-color="${alfa(t.escuro, 0.1)}"/><stop offset="1" stop-color="${alfa(t.escuro, 0.22)}"/></linearGradient>
+        <radialGradient id="${u}pxlit" cx="0.38" cy="0.34" r="0.5">
+          <stop offset="0" stop-color="${alfa('#ffffff', (perfil.testa.op ?? 0.1) + 0.04)}"/><stop offset="0.7" stop-color="${alfa('#ffffff', 0.03)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/></radialGradient>
       </defs>
       <path d="${PATH_PESCOCO}" fill="url(#${u}pxpesc)"/>
       <path d="M103 176 q 17 6 34 0 l -2 6 q -15 5 -30 0 z" fill="${alfa(t.profundo, 0.16)}"/>
       <path d="${perfil.cabeca}" fill="url(#${u}pxpele)"/>
       <g clip-path="url(#${cid})">
-        <!-- PLANO DE NÚCLEO (lado direito, oposto à luz §21) -->
-        <path d="M124 46 C 166 60 176 128 154 178 L 210 178 L 210 44 Z" fill="${alfa(t.escuro, 0.15)}"/>
-        <!-- TÊMPORA/MAÇÃ→MANDÍBULA esquerda (meia-sombra seguindo a forma §20) -->
-        <path d="M92 112 C 86 132 92 152 112 162 C 100 150 96 134 100 118 Z" fill="${alfa(t.meio, 0.12)}"/>
-        <!-- MAÇÃ→MANDÍBULA direita (sombra mais forte) -->
-        <path d="M148 110 C 156 132 148 156 122 166 C 138 152 142 134 140 116 Z" fill="${alfa(t.escuro, 0.16)}"/>
-        <!-- PLANO DA TESTA + MID-FACE em luz (superior-esquerda) -->
-        <path d="M74 64 C 98 46 122 46 ${perfil.testa.rx + 96} ${perfil.testa.cy - 2} C 108 60 90 80 84 104 C 78 90 74 76 74 64 Z" fill="${alfa('#ffffff', (perfil.testa.op ?? 0.1) * 0.9)}"/>
-        <!-- SOMBRA DAS ÓRBITAS (socket) -->
-        <path d="M86 101 C 104 94 136 94 154 101 C 148 110 138 106 120 105 C 102 106 92 110 86 101 Z" fill="${alfa(t.escuro, 0.10)}"/>
-        <!-- SOMBRA SOB O QUEIXO/MANDÍBULA -->
-        <path d="M99 156 C 110 168 130 168 141 156 C 139 172 101 172 99 156 Z" fill="${alfa(t.profundo, 0.13)}"/>
+        <!-- NÚCLEO (lado direito) — gradiente suave, sem borda de tira -->
+        <rect x="60" y="40" width="150" height="150" fill="url(#${u}pxcore)"/>
+        <!-- LUZ do plano frontal (testa→maçã esq) — gradiente radial suave -->
+        <rect x="60" y="40" width="150" height="130" fill="url(#${u}pxlit)"/>
+        <!-- 1 sombra ampla sob a maçã/mandíbula (una, grande, suave) -->
+        <path d="M84 118 C 92 140 104 156 120 160 C 136 156 148 140 156 118 C 150 150 138 168 120 170 C 102 168 90 150 84 118 Z" fill="${alfa(t.escuro, 0.07)}"/>
+        <!-- órbita (socket) suave -->
+        <path d="M88 100 C 104 95 136 95 152 100 C 146 108 136 105 120 104 C 104 105 94 108 88 100 Z" fill="${alfa(t.escuro, 0.08)}"/>
+        <!-- oclusão sob o queixo -->
+        <path d="M101 158 C 111 168 129 168 139 158 C 137 170 103 170 101 158 Z" fill="${alfa(t.profundo, 0.11)}"/>
       </g>
       ${orelhaPremium(70, t, 1)}${orelhaPremium(170, t, -1)}
       ${narizPremium(t, perfil.nariz.estilo, perfil.nariz.comprimento ?? 0)}
@@ -348,11 +352,19 @@ function labios(dSuperior: string, dInferior: string, dLuz: string, extra = ''):
     // onda 1414 (#162): canal coresFace.labios (injetado só com as6.face_v2)
     // — ausente cai no tom padrão de sempre, byte a byte
     const labio = tintaPremium(p.labios?.base ?? '#8a4a3e');
+    // Golden V3.1 §face: BOCA construída — lábio superior (em sombra) + lábio
+    // inferior (cheio, com luz) + OCLUSÃO (a fenda, o mais escuro) + comissuras
+    // nos cantos + sombra sob o lábio. Menos linhas decorativas.
     return `
       <path d="${dSuperior}" fill="${labio.escuro}"/>
       <path d="${dInferior}" fill="${labio.base}"/>
-      <path d="${dLuz}" fill="${alfa('#ffffff', 0.28)}"/>
-      <path d="M104 152 q 16 8 32 0" stroke="${alfa(t.escuro, 0.25)}" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      <path d="${dLuz}" fill="${alfa('#ffffff', 0.22)}"/>
+      <!-- oclusão (a fenda entre os lábios — a "boca") -->
+      <path d="M107 145.4 q 13 2.6 26 0" stroke="${alfa('#38201a', 0.6)}" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+      <!-- comissuras (cantos, pequena sombra) -->
+      <path d="M106.4 145.2 q -1.4 0.6 -2 -0.6 M133.6 145.2 q 1.4 0.6 2 -0.6" stroke="${alfa('#38201a', 0.5)}" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+      <!-- sombra sob o lábio inferior (volume, não sorriso decorativo) -->
+      <path d="M111 151.2 q 9 2.4 18 0" stroke="${alfa(t.escuro, 0.16)}" stroke-width="1.6" fill="none" stroke-linecap="round"/>
       ${extra}`;
   };
 }
