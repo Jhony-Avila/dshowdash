@@ -46,7 +46,8 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'corretivo-a.mjs', // onda 1423 (BRIEFING_CORRETIVO_01 Fase A; #212–#215)
   'asset-clarity.mjs', // onda 1425 (BRIEFING_COMPLEMENTAR_02; #217)
   'looks3d.mjs', 'bundle-assets.mjs', 'homologacao-3d.mjs', 'qa-pipeline.mjs', 'qa-studio.mjs', 'golden-classic.mjs',
-  'feminino-save-reload.mjs', 'flag-matrix.mjs' /* V4 §73/§74 */];
+  'feminino-save-reload.mjs', 'flag-matrix.mjs', /* V4 §73/§74 */
+  'hero-import.mjs' /* A+ §5/§6/§23: pipeline de ativo autorado */];
 let falhas = 0;
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red
 // que só estoura exceção (sem linha "FALHAS:") não passa mais batido
