@@ -51,52 +51,39 @@ type TP = ReturnType<typeof tintaPremium>;
 /** onda 1424 (Fase B §19–§21): NARIZ com FORMA própria por rosto — não é
  *  mais um traço único compartilhado. Cada estilo muda dorso, ponta,
  *  asas e sombra (identidade real, não detalhe). */
+// Golden V3 (#219): NARIZ por PLANOS (não coluna translúcida). Luz key
+// superior-esquerda → plano-lateral em SOMBRA à direita do dorso; ponta (ball)
+// com leve luz; base/septo em sombra; asas (alar) como formas; narinas
+// pequenas SOB as asas (não bolinhas na frente). `larg`=meia-largura da ponta,
+// `comprimento` desloca a base. Reto é o default.
 function narizPremium(t: TP, estilo: 'reto' | 'largo' | 'fino' | 'arrebitado' | 'aquilino' | 'curto', comprimento = 0): string {
-  const yBase = 132 + comprimento;
-  const asa = (rx: number, alfaAsa: number) => `
-    <path d="M${120 - rx - 2} ${yBase - 1} q 2.4 3.6 ${rx / 2} 4" fill="none" stroke="${alfa(t.escuro, alfaAsa)}" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M${120 + rx + 2} ${yBase - 1} q -2.4 3.6 ${-rx / 2} 4" fill="none" stroke="${alfa(t.escuro, alfaAsa)}" stroke-width="1.8" stroke-linecap="round"/>`;
-  const narinas = (dx: number, r: number) => `
-    <ellipse cx="${120 - dx}" cy="${yBase + 0.6}" rx="${r}" ry="${r * 0.62}" fill="${alfa(t.profundo, 0.5)}"/>
-    <ellipse cx="${120 + dx}" cy="${yBase + 0.6}" rx="${r}" ry="${r * 0.62}" fill="${alfa(t.profundo, 0.5)}"/>`;
-  const dorso = (curva: string, luz: string) => `
-    <path d="${curva}" stroke="${alfa(t.escuro, 0.34)}" stroke-width="2.4" stroke-linecap="round" fill="none"/>
-    <path d="${luz}" stroke="${alfa('#ffffff', 0.24)}" stroke-width="2" stroke-linecap="round" fill="none"/>`;
-  switch (estilo) {
-    case 'largo': return `
-      ${dorso(`M117 112 q -3.4 ${12 + comprimento} -6 ${16 + comprimento}`, `M121 110 q 3 ${10 + comprimento} 3.6 ${15 + comprimento}`)}
-      <ellipse cx="120" cy="${yBase - 2}" rx="8.6" ry="4.6" fill="${alfa(t.meio, 0.5)}"/>
-      <path d="M110 ${yBase} q 10 6.4 20 0" stroke="${alfa(t.escuro, 0.44)}" stroke-width="2.4" stroke-linecap="round" fill="none"/>
-      ${narinas(6.4, 2.1)}${asa(9, 0.34)}
-      <ellipse cx="120" cy="${yBase - 4}" rx="4" ry="2.2" fill="${alfa('#ffffff', 0.16)}"/>`;
-    case 'fino': return `
-      ${dorso(`M119.4 108 q -1.6 ${14 + comprimento} -3 ${20 + comprimento}`, `M120.6 107 q 1.8 ${13 + comprimento} 2 ${19 + comprimento}`)}
-      <path d="M115 ${yBase} q 5 3.8 10 0" stroke="${alfa(t.escuro, 0.42)}" stroke-width="2" stroke-linecap="round" fill="none"/>
-      ${narinas(4.2, 1.4)}
-      <ellipse cx="120" cy="${yBase - 3.2}" rx="2.4" ry="1.7" fill="${alfa('#ffffff', 0.18)}"/>`;
-    case 'arrebitado': return `
-      ${dorso(`M119 112 q -2 ${9 + comprimento} -2.6 ${12 + comprimento}`, `M121 111 q 2 ${8 + comprimento} 2 ${11 + comprimento}`)}
-      <ellipse cx="120" cy="${yBase - 3.4}" rx="5.2" ry="3.6" fill="${alfa(t.claro, 0.5)}"/>
-      <path d="M114 ${yBase - 1.6} q 6 4.6 12 0" stroke="${alfa(t.escuro, 0.4)}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      ${narinas(4.6, 1.8)}
-      <ellipse cx="119" cy="${yBase - 5.6}" rx="3" ry="2" fill="${alfa('#ffffff', 0.24)}"/>`;
-    case 'aquilino': return `
-      <path d="M118.6 106 q -4 ${8 + comprimento} -1.6 ${12 + comprimento} q -2.4 5 -3.6 7.4" stroke="${alfa(t.escuro, 0.4)}" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-      <path d="M121 105 q 3.4 ${9 + comprimento} 2.6 ${14 + comprimento}" stroke="${alfa('#ffffff', 0.2)}" stroke-width="2" stroke-linecap="round" fill="none"/>
-      <path d="M113.6 ${yBase} q 6.4 4.6 12.8 0" stroke="${alfa(t.escuro, 0.44)}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      ${narinas(5, 1.7)}${asa(7, 0.3)}
-      <ellipse cx="121.6" cy="${yBase - 8}" rx="2.4" ry="3.4" fill="${alfa('#ffffff', 0.16)}"/>`;
-    case 'curto': return `
-      ${dorso(`M119 116 q -1.8 ${8 + comprimento} -3 ${11 + comprimento}`, `M120.8 115 q 2 ${7 + comprimento} 2.2 ${10 + comprimento}`)}
-      <path d="M114.6 ${yBase - 2} q 5.4 4.2 10.8 0" stroke="${alfa(t.escuro, 0.4)}" stroke-width="2.1" stroke-linecap="round" fill="none"/>
-      ${narinas(4.4, 1.6)}
-      <ellipse cx="120" cy="${yBase - 5}" rx="3" ry="1.9" fill="${alfa('#ffffff', 0.15)}"/>`;
-    default: return `
-      ${dorso(`M120 112 q -2.4 ${12 + comprimento} -4.6 ${17 + comprimento}`, `M118 110 q 3 ${10 + comprimento} 3.4 ${16 + comprimento}`)}
-      <path d="M113 ${yBase} q 7 5 14 0" stroke="${alfa(t.escuro, 0.42)}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      ${narinas(5.4, 1.7)}
-      <ellipse cx="120" cy="${yBase - 3.4}" rx="3.2" ry="2" fill="${alfa('#ffffff', 0.14)}"/>`;
-  }
+  const yB = 132 + comprimento;            // base do nariz
+  const yTip = yB - 4;                      // ponta
+  const yBridge = 108;                      // raiz (entre os olhos)
+  const cfg: Record<string, { larg: number; sombra: number }> = {
+    reto: { larg: 6, sombra: 0.2 }, largo: { larg: 8.5, sombra: 0.22 },
+    fino: { larg: 4.6, sombra: 0.24 }, arrebitado: { larg: 6, sombra: 0.18 },
+    aquilino: { larg: 5.6, sombra: 0.26 }, curto: { larg: 5.6, sombra: 0.18 },
+  };
+  const { larg, sombra } = cfg[estilo] ?? cfg.reto;
+  const bump = estilo === 'aquilino' ? -1.5 : estilo === 'arrebitado' ? 1.5 : 0; // perfil do dorso
+  // PLANO LATERAL EM SOMBRA (direito do dorso, lado oposto à luz) — define o
+  // nariz por valor, não por linha. Vai da raiz à asa direita.
+  const planoSombra = `M121 ${yBridge} C ${123 + bump} ${yBridge + 10} ${122 + larg * 0.5} ${yTip - 4} ${120 + larg} ${yTip}`
+    + ` C ${120 + larg + 1} ${yB - 1} ${120 + larg - 2} ${yB + 2} ${118} ${yB + 1}`
+    + ` C ${120} ${yTip + 1} ${120} ${yBridge + 12} ${121} ${yBridge} Z`;
+  // BALL DA PONTA (leve luz à esquerda) + base/septo em sombra
+  return `
+    <path d="${planoSombra}" fill="${alfa(t.escuro, sombra)}"/>
+    <path d="M${120 - larg + 1} ${yTip - 1} C ${120 - larg} ${yB} ${120 - larg + 3} ${yB + 2} ${120} ${yB + 2} C ${117} ${yB + 1} ${118} ${yTip} ${120 - larg + 1} ${yTip - 1} Z" fill="${alfa(t.claro, 0.22)}"/>
+    <ellipse cx="119.5" cy="${yTip}" rx="${larg * 0.5}" ry="2.4" fill="${alfa(t.claro, 0.16)}"/>
+    <!-- base sob a ponta (sombra do septo/underside) -->
+    <path d="M${120 - larg} ${yB} C ${120 - larg + 2} ${yB + 3.4} ${120 + larg - 2} ${yB + 3.4} ${120 + larg} ${yB}" fill="none" stroke="${alfa(t.profundo, 0.34)}" stroke-width="1.4" stroke-linecap="round"/>
+    <!-- asas (alar) como pequenas formas + narinas SOB elas -->
+    <path d="M${120 - larg} ${yB - 1} q ${-2.4} 3 ${-0.6} 4.4 q 2 1.2 3 -0.6" fill="${alfa(t.meio, 0.4)}"/>
+    <path d="M${120 + larg} ${yB - 1} q ${2.4} 3 ${0.6} 4.4 q -2 1.2 -3 -0.6" fill="${alfa(t.meio, 0.4)}"/>
+    <ellipse cx="${120 - larg + 1.6}" cy="${yB + 2.2}" rx="1.3" ry="0.9" fill="${alfa(t.profundo, 0.55)}" transform="rotate(-18 ${120 - larg + 1.6} ${yB + 2.2})"/>
+    <ellipse cx="${120 + larg - 1.6}" cy="${yB + 2.2}" rx="1.3" ry="0.9" fill="${alfa(t.profundo, 0.55)}" transform="rotate(18 ${120 + larg - 1.6} ${yB + 2.2})"/>`;
 }
 
 // onda 1427/Golden: bochechas/arcada como ELIPSE saíram (§19). O volume da
@@ -291,38 +278,47 @@ export const BASES_PREMIUM: ParteDef[] = [
 
 interface OpcoesOlho { ry?: number; tilt?: number; irisR?: number; palpebra?: number }
 
-/** Olho premium (x espelha em dir): esclera quente + íris 2 tons + 2
- *  catchlights (id `${u}pxcatch<L|R>` p/ a luz do palco §707) + pálpebra. */
+/** Golden V3 (#219): OLHO construído por PÁLPEBRAS (fenda amendoada), não por
+ *  elipse+anéis. Íris MENOR, ALOJADA na órbita e PARCIALMENTE OCLUÍDA pela
+ *  pálpebra superior (recorte na abertura). 1 catchlight. Canto lacrimal
+ *  interno + cílio no canto externo. dir: lado interno aponta p/ o nariz. */
 export function olhoPremium(x: number, y: number, iris: Tinta, u: string, lado: 'L' | 'R', o: OpcoesOlho = {}): string {
-  const ry = o.ry ?? 8;
+  const hu = (o.ry ?? 7) - (o.palpebra ?? 0);   // subida da pálpebra sup (abertura)
+  const hl = Math.max(3, hu * 0.55);            // descida da pálpebra inf
+  const W = 10.4;                                // meia-largura da fenda
   const tilt = o.tilt ?? 0;
-  const irisR = o.irisR ?? 5.4;
-  const palp = o.palpebra ?? 0;
-  const dir = lado === 'L' ? -1 : 1; // canto interno (lacrimal) aponta p/ o nariz
-  // onda 1424 (Fase B §20): CAVIDADE ocular (sombra superior), canto
-  // lacrimal, linha d'água inferior, íris com raios + limbo escuro e
-  // catchlight principal em GOTA — volume de ilustração, não clipart
+  const irisR = o.irisR ?? 4.7;
+  const dir = lado === 'L' ? -1 : 1;             // canto interno (nariz)
+  const clip = `${u}eye${lado}`;
+  // fenda amendoada: canto interno mais baixo/pontudo, externo levemente erguido
+  const xi = x + W * dir, xo = x - W * dir;      // interno / externo
+  const abertura = `M${xi} ${y + 1}`
+    + ` C ${x + W * 0.4 * dir} ${y - hu} ${x - W * 0.4 * dir} ${y - hu} ${xo} ${y - 0.5}`
+    + ` C ${x - W * 0.5 * dir} ${y + hl} ${x + W * 0.5 * dir} ${y + hl} ${xi} ${y + 1} Z`;
+  const iy = y - 1.6;                            // íris um pouco alta (toca a pálpebra sup)
   return `
     <g transform="rotate(${tilt} ${x} ${y})">
-      <ellipse cx="${x}" cy="${y - ry + 0.6}" rx="12.4" ry="4.2" fill="${alfa('#1a120a', 0.13)}"/>
-      <ellipse cx="${x}" cy="${y}" rx="10.8" ry="${ry}" fill="#f8f3ea"/>
-      <path d="M${x - 10.4} ${y - 1} a 10.8 ${ry} 0 0 1 21.6 0" fill="${alfa('#c9b8a4', 0.35)}"/>
-      <ellipse cx="${x - 10.2 * dir}" cy="${y + 0.8}" rx="1.7" ry="1.2" fill="${alfa('#c96b5a', 0.55)}"/>
-      <circle cx="${x}" cy="${y + 0.4}" r="${irisR}" fill="${iris.escuro}"/>
-      <circle cx="${x}" cy="${y + 0.4}" r="${irisR - 1.2}" fill="${iris.base}"/>
-      <path d="M${x} ${y + 0.4 - irisR + 1.4} v 1.7 M${x + irisR - 1.5} ${y + 0.4} h -1.7 M${x - irisR + 1.5} ${y + 0.4} h 1.7 M${x - 2.6} ${y + irisR - 1.4} l 0.7 -1.5 M${x + 2.6} ${y + irisR - 1.4} l -0.7 -1.5" stroke="${iris.claro}" stroke-width="0.9" opacity="0.6"/>
-      <path d="M${x - irisR + 2.1} ${y + 1.8} a ${irisR - 1.7} ${irisR - 1.7} 0 0 0 ${2 * (irisR - 1.7) - 0.8} 0" fill="none" stroke="${iris.claro}" stroke-width="1.1" opacity="0.75"/>
-      <circle cx="${x}" cy="${y + 0.4}" r="${irisR}" fill="none" stroke="${alfa('#0d0906', 0.55)}" stroke-width="0.9"/>
-      <circle cx="${x}" cy="${y + 0.4}" r="2.3" fill="#100c08"/>
-      <g id="${u}pxcatch${lado}">
-        <path d="M${x + 1.2} ${y - 2.8} a 1.9 1.9 0 1 1 1.6 3.1 q -1.8 -0.6 -1.6 -3.1" fill="#ffffff" opacity="0.95"/>
-        <circle cx="${x - 2.4}" cy="${y + 2.2}" r="0.8" fill="#ffffff" opacity="0.55"/>
+      <defs><clipPath id="${clip}"><path d="${abertura}"/></clipPath></defs>
+      <!-- sombra da órbita (acima da pálpebra) -->
+      <path d="M${xo} ${y - 1} C ${x - W * 0.4 * dir} ${y - hu - 3} ${x + W * 0.4 * dir} ${y - hu - 3} ${xi} ${y - 0.5}" fill="none" stroke="${alfa('#1a120a', 0.14)}" stroke-width="3.2" stroke-linecap="round"/>
+      <!-- globo (esclera levemente sombreada em cima) -->
+      <path d="${abertura}" fill="#f6f1e8"/>
+      <g clip-path="url(#${clip})">
+        <rect x="${x - 12}" y="${y - hu - 2}" width="24" height="6" fill="${alfa('#c9b8a4', 0.4)}"/>
+        <circle cx="${x}" cy="${iy}" r="${irisR}" fill="${iris.base}"/>
+        <path d="M${x - irisR} ${iy} a ${irisR} ${irisR} 0 0 1 ${2 * irisR} 0 Z" fill="${alfa(iris.escuro, 0.55)}"/>
+        <circle cx="${x}" cy="${iy}" r="${irisR}" fill="none" stroke="${alfa('#0d0906', 0.5)}" stroke-width="0.9"/>
+        <circle cx="${x}" cy="${iy}" r="2" fill="#0d0906"/>
+        <circle id="${u}pxcatch${lado}" cx="${x + 1.6}" cy="${iy - 1.8}" r="1.5" fill="#ffffff" opacity="0.95"/>
       </g>
-      <path d="M${x - 10.6} ${y - 2 - palp} a 10.8 ${ry} 0 0 1 21.2 0" fill="none" stroke="${alfa('#141008', 0.55)}" stroke-width="1.8" stroke-linecap="round"/>
-      <path d="M${x - 11} ${y - 4.6 - palp} a 12 ${ry + 1} 0 0 1 22 -0.6" fill="none" stroke="${alfa('#141008', 0.2)}" stroke-width="1.2" stroke-linecap="round"/>
-      <path d="M${x + 9.4} ${y - 4.2} l 2.6 -1.8 M${x + 10.6} ${y - 1.6} l 2.8 -0.8" stroke="${alfa('#141008', 0.5)}" stroke-width="1.1" stroke-linecap="round"/>
-      <path d="M${x - 9.8} ${y + ry - 2.4} a 11 ${ry} 0 0 0 19.6 0" fill="none" stroke="${alfa('#ffffff', 0.3)}" stroke-width="1.2"/>
-      <path d="M${x - 8.6} ${y + ry - 1.2} a 10 ${ry} 0 0 0 17.2 0" fill="none" stroke="${alfa('#8a6a52', 0.28)}" stroke-width="1"/>
+      <!-- pálpebra superior (linha grossa) + vinco -->
+      <path d="M${xi} ${y + 1} C ${x + W * 0.4 * dir} ${y - hu} ${x - W * 0.4 * dir} ${y - hu} ${xo} ${y - 0.5}" fill="none" stroke="${alfa('#141008', 0.62)}" stroke-width="1.9" stroke-linecap="round"/>
+      <path d="M${x + W * 0.7 * dir} ${y - hu * 0.7} C ${x + W * 0.3 * dir} ${y - hu - 1.6} ${x - W * 0.3 * dir} ${y - hu - 1.6} ${x - W * 0.8 * dir} ${y - hu * 0.55}" fill="none" stroke="${alfa('#141008', 0.16)}" stroke-width="1" stroke-linecap="round"/>
+      <!-- cílio no canto externo -->
+      <path d="M${xo} ${y - 0.5} l ${-2.6 * dir} -2 M${xo + 1 * dir} ${y + 0.4} l ${-2.8 * dir} -1" stroke="${alfa('#141008', 0.5)}" stroke-width="1.1" stroke-linecap="round"/>
+      <!-- pálpebra inferior (sutil) + canto lacrimal interno -->
+      <path d="M${xo} ${y - 0.5} C ${x - W * 0.5 * dir} ${y + hl} ${x + W * 0.5 * dir} ${y + hl} ${xi} ${y + 1}" fill="none" stroke="${alfa('#8a6a52', 0.4)}" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M${xi} ${y + 1} l ${1.6 * dir} -1.2" stroke="${alfa('#c96b5a', 0.5)}" stroke-width="1.4" stroke-linecap="round"/>
     </g>`;
 }
 
