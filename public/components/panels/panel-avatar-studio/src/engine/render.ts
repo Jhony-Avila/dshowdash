@@ -15,7 +15,7 @@ import { paletaDe, tinta } from './cores';
 import { aplicarParamsSvg } from './params';
 import type { ParteDef } from './base-api';
 import { G } from './base-api';
-import { corpoInteiro } from './partes/corpo';
+import { corpoInteiro, corpoInteiroPremium, perfilCorpoDe } from './partes/corpo';
 import { ORDEM_CAMADAS } from './camadas';
 import { profundidadeRecorte, resolverEstadoCabelo } from './compat-cabelo';
 import { fatorBarba, resolverEstadoBarba } from './compat-rosto';
@@ -317,9 +317,12 @@ export function renderAvatar(
         ? resolver(config.camadas.roupa_inferior)
         : undefined;
       const infCorpo = infDef?.renderCorpo ? infDef.renderCorpo(paletaDa('roupa_inferior'), uid) : '';
-      // onda 1415 (#191): scaffold v2 — sombreamento premium do corpo por
-      // cima do scaffold clássico (corpoInteiro intocado); SÓ premium
-      const corpoV2 = opcoes.premium ? corpoPremium(paletaDa('roupa'), uid) : '';
+      // onda 1427/Golden V2 (#219): no premium o CORPO passa a ser o scaffold
+      // ANATÔMICO (corpoInteiroPremium) — substitui o corpo-tubo clássico +
+      // overlay. Sem premium, segue corpoInteiro byte-idêntico (§651). O
+      // corpoPremium (overlay antigo) fica só como fallback histórico.
+      void corpoPremium;
+      const corpoV2 = '';
       // sobrepeça §3393 no corpo inteiro: fragmento direto (mesmas coords)
       const sobreDef = config.camadas.roupa_sobre && config.camadas.roupa_sobre !== 'nenhum'
         ? resolver(config.camadas.roupa_sobre)
@@ -344,7 +347,7 @@ export function renderAvatar(
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem">${premiumPlanoAtras}${premiumSombra}${premiumAtras}<g data-anim="personagem">` +
           envolverFigura(
-            corpoInteiro(paletaDa('roupa'), uid) + corpoV2 + infCorpo + roupaCorpo + sobreCorpo + emblemaCorpo + acessCorpo +
+            (opcoes.premium ? corpoInteiroPremium(paletaDa('roupa'), uid, perfilCorpoDe(config)) : corpoInteiro(paletaDa('roupa'), uid)) + corpoV2 + infCorpo + roupaCorpo + sobreCorpo + emblemaCorpo + acessCorpo +
             `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`,
             config, 396,
           ) +

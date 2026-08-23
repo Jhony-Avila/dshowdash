@@ -8,6 +8,7 @@
 // Roupa/pele vêm da paleta — o visual acompanha as cores escolhidas.
 import { alfa } from '../cores';
 import type { Paleta } from '../cores';
+import type { AvatarConfig } from '../../domain/types';
 
 /** Geometria do corpo (viewBox 0 0 240 400). Cabeça ocupa y≈14–100. */
 export const CORPO = {
@@ -94,84 +95,110 @@ export function corpoInteiro(p: Paleta, uid: string): string {
 export type PerfilCorpo2D = 'slim' | 'standard' | 'athletic' | 'robust' | 'feminino';
 interface DimsCorpo { ombro: number; peito: number; cintura: number; quadril: number; coxa: number; braco: number; anta: number; }
 const DIMS_CORPO: Record<PerfilCorpo2D, DimsCorpo> = {
-  //          ombro peito cint quad coxa braço antebraço
-  slim:     { ombro: 46, peito: 40, cintura: 28, quadril: 34, coxa: 17, braco: 12, anta: 9 },
-  standard: { ombro: 52, peito: 45, cintura: 32, quadril: 39, coxa: 20, braco: 14, anta: 10 },
-  athletic: { ombro: 58, peito: 50, cintura: 33, quadril: 41, coxa: 23, braco: 16, anta: 12 },
-  robust:   { ombro: 57, peito: 54, cintura: 45, quadril: 50, coxa: 27, braco: 18, anta: 13 },
-  feminino: { ombro: 44, peito: 38, cintura: 27, quadril: 44, coxa: 21, braco: 11, anta: 8 },
+  //          ombro peito cint quad coxa braço antebraço  (half-widths; V2 slimmer)
+  slim:     { ombro: 44, peito: 37, cintura: 25, quadril: 30, coxa: 13, braco: 11, anta: 8 },
+  standard: { ombro: 50, peito: 43, cintura: 29, quadril: 34, coxa: 15, braco: 13, anta: 9 },
+  athletic: { ombro: 56, peito: 48, cintura: 31, quadril: 36, coxa: 17, braco: 15, anta: 10 },
+  robust:   { ombro: 57, peito: 53, cintura: 42, quadril: 45, coxa: 21, braco: 17, anta: 12 },
+  feminino: { ombro: 42, peito: 36, cintura: 24, quadril: 39, coxa: 16, braco: 10, anta: 7 },
 };
 
-// §9–§16: PREMIUM BODY (só opcoes.premium). Membros em pele; short base neutro.
-// Cada segmento é um path anatômico (deltóide, taper, cotovelo, punho, mão com
-// polegar; coxa, joelho, panturrilha, tornozelo, pé com direção). A luz é
-// aplicada por overlays SUAVES — a FORMA precisa ler no FLAT/SILHOUETTE sem eles.
+// Golden V2 (#219): mapeia o AvatarConfig → PerfilCorpo2D do scaffold premium.
+// corpoV2.preset vence; depois corpo (TipoCorporal legado); 'feminino' quando
+// a base é 'coracao' (rosto/silhueta mais suaves). Default 'standard'.
+export function perfilCorpoDe(config: AvatarConfig): PerfilCorpo2D {
+  const preset = config.corpoV2?.preset ?? config.corpo;
+  const porTipo: Record<string, PerfilCorpo2D> = {
+    esbelto: 'slim', atletico: 'athletic', robusto: 'robust', compacto: 'standard',
+  };
+  if (preset && porTipo[preset]) return porTipo[preset];
+  if (/coracao|suave|oval/.test(config.base ?? '') && /longo|rabo|coque|franja|ondulado|cacheado/.test(config.camadas?.cabelo ?? '')) {
+    return 'feminino';
+  }
+  return 'standard';
+}
+
+// ── Golden V2 (#219 §9–§16): PREMIUM BODY = FIGURA VESTIDA estilizada
+// (não "top+short" nu — a arte anterior deixava pernas de pele à mostra sob a
+// roupa de torso). Contrato de camadas do render: corpoInteiroPremium desenha
+// a base VESTIDA (calça neutra + sapato + top neutro) e PELE só onde aparece
+// (pescoço, braços, mãos); a peça de torso (renderCorpoV2) pinta POR CIMA do
+// top e das mangas. FORMA lê no SILHOUETTE/FLAT sem depender dos overlays.
+// Neutros derivados da paleta p/ coesão, mas independentes da cor da roupa
+// (calça charcoal) — evita "pernas roxas" quando a camiseta é roxa.
 export function corpoInteiroPremium(p: Paleta, uid: string, perfil: PerfilCorpo2D = 'standard'): string {
   const d = uid + 'cpx';
   const D = DIMS_CORPO[perfil] ?? DIMS_CORPO.standard;
   const cx = 120;
   const pele = p.pele;
-  const wear = p.roupa; // short base + pés (neutro)
-  // âncoras verticais
-  const yOmb = 126, yPei = 156, yCin = 198, yQua = 224;
-  const yJoe = 300, yTor = 356, yPe = 372;
+  const fem = perfil === 'feminino';
+  // neutros da FIGURA VESTIDA (independentes da cor da peça de torso)
+  const CAL = { claro: '#3d4453', base: '#333a47', escuro: '#272d38', prof: '#1e232c' }; // calça charcoal
+  const SAP = { base: '#20242e', sola: '#111318', luz: '#3a4150' };                        // sapato
+  const TOP = { claro: '#5a6474', base: '#4b5464', escuro: '#3a4250' };                     // top neutro (coberto)
 
-  // ── TORSO: pescoço→trapézio→ombro→tórax→cintura→quadril (V ou ampulheta)
-  const torso = `M${cx - 11} 108
-    C ${cx - 13} 116 ${cx - 20} 120 ${cx - D.ombro + 4} ${yOmb}
-    C ${cx - D.ombro} ${yOmb + 3} ${cx - D.ombro + 2} ${yOmb + 12} ${cx - D.peito} ${yPei}
-    C ${cx - D.cintura - 3} ${yPei + 20} ${cx - D.cintura} ${yCin - 8} ${cx - D.cintura} ${yCin}
-    C ${cx - D.cintura} ${yCin + 10} ${cx - D.quadril + 2} ${yQua - 10} ${cx - D.quadril} ${yQua}
-    C ${cx - D.quadril} ${yQua + 8} ${cx - D.quadril + 6} ${yQua + 12} ${cx - D.quadril + 10} ${yQua + 14}
-    L ${cx + D.quadril - 10} ${yQua + 14}
-    C ${cx + D.quadril - 6} ${yQua + 12} ${cx + D.quadril} ${yQua + 8} ${cx + D.quadril} ${yQua}
-    C ${cx + D.quadril - 2} ${yQua - 10} ${cx + D.cintura} ${yCin + 10} ${cx + D.cintura} ${yCin}
-    C ${cx + D.cintura} ${yCin - 8} ${cx + D.cintura + 3} ${yPei + 20} ${cx + D.peito} ${yPei}
-    C ${cx + D.ombro - 2} ${yOmb + 12} ${cx + D.ombro} ${yOmb + 3} ${cx + D.ombro - 4} ${yOmb}
-    C ${cx + 20} 120 ${cx + 13} 116 ${cx + 11} 108 Z`;
+  // âncoras verticais (240×396): cabeça acima ~y14–104
+  const yNuc = 104, yOmb = 122, yPei = 150, yCin = 192, yQua = 220, yEnt = 236;
+  const yJoe = 298, yTor = 356, yPe = 372;
 
-  // ── BRAÇO: deltóide → braço (taper) → cotovelo → antebraço → punho → mão.
-  //   pende com leve abertura; separado do torso (gap lê na silhueta). s: lado.
+  // ══ TORSO (top neutro): pescoço→ombro→tórax→cintura→quadril
+  const torso = `M${cx - 12} ${yNuc}
+    C ${cx - 15} ${yOmb - 4} ${cx - 24} ${yOmb - 2} ${cx - D.ombro} ${yOmb + 4}
+    C ${cx - D.ombro - 2} ${yOmb + 8} ${cx - D.peito - 2} ${yPei - 8} ${cx - D.peito} ${yPei}
+    C ${cx - D.peito + 1} ${yPei + 18} ${cx - D.cintura - 2} ${yCin - 10} ${cx - D.cintura} ${yCin}
+    C ${cx - D.cintura + 1} ${yCin + 12} ${cx - D.quadril} ${yQua - 12} ${cx - D.quadril} ${yQua}
+    C ${cx - D.quadril} ${yQua + 6} ${cx - D.quadril + 4} ${yEnt - 2} ${cx - D.quadril + 8} ${yEnt}
+    L ${cx + D.quadril - 8} ${yEnt}
+    C ${cx + D.quadril - 4} ${yEnt - 2} ${cx + D.quadril} ${yQua + 6} ${cx + D.quadril} ${yQua}
+    C ${cx + D.quadril} ${yQua - 12} ${cx + D.cintura - 1} ${yCin + 12} ${cx + D.cintura} ${yCin}
+    C ${cx + D.cintura + 2} ${yCin - 10} ${cx + D.peito - 1} ${yPei + 18} ${cx + D.peito} ${yPei}
+    C ${cx + D.peito + 2} ${yPei - 8} ${cx + D.ombro + 2} ${yOmb + 8} ${cx + D.ombro} ${yOmb + 4}
+    C ${cx + 24} ${yOmb - 2} ${cx + 15} ${yOmb - 4} ${cx + 12} ${yNuc} Z`;
+
+  // ══ BRAÇO em pele: deltóide→bíceps(taper)→cotovelo→antebraço→punho→MÃO.
+  //    Pende junto ao corpo (silhueta limpa). A manga da peça pinta por cima.
   const braco = (s: 1 | -1, anim: string): string => {
-    const sx = cx + s * (D.ombro - 6);      // raiz no ombro
     const b = D.braco, a = D.anta;
-    const yCot = 196, yPun = 250;
-    const ex = cx + s * (D.cintura + 6);     // cotovelo (levemente p/ fora da cintura)
-    const wx = cx + s * (D.quadril - 2);     // punho ~ na altura do quadril
-    return `<g data-anim="${anim}" style="transform-box: view-box; transform-origin: ${sx}px ${yOmb}px">
-      <path d="M${sx - s * 4} ${yOmb - 2}
-        C ${sx + s * (b + 4)} ${yOmb + 4} ${sx + s * (b + 6)} ${yOmb + 22} ${ex + s * (b - 2)} ${yCot}
-        C ${ex + s * (a + 2)} ${yCot + 14} ${wx + s * (a + 1)} ${yPun - 16} ${wx + s * a} ${yPun}
-        C ${wx + s * a} ${yPun + 4} ${wx - s * a} ${yPun + 4} ${wx - s * a} ${yPun}
-        C ${wx - s * (a + 1)} ${yPun - 16} ${ex - s * (a - 1)} ${yCot + 16} ${ex - s * (b - 6)} ${yCot}
-        C ${ex - s * (b - 4)} ${yCot - 20} ${sx - s * 2} ${yOmb + 16} ${sx - s * 6} ${yOmb + 6} Z" fill="url(#${d}sk)"/>
-      <!-- cotovelo (dobra suave) --><path d="M${ex - s * (b - 8)} ${yCot - 2} q ${s * 6} 4 ${s * 2} 12" fill="none" stroke="${alfa(pele.escuro, 0.3)}" stroke-width="1.4"/>
-      <!-- MÃO: palma + polegar + direção -->
-      <path d="M${wx - s * a} ${yPun}
-        C ${wx - s * (a + 3)} ${yPun + 10} ${wx - s * (a - 2)} ${yPun + 22} ${wx + s * 2} ${yPun + 22}
-        C ${wx + s * (a + 4)} ${yPun + 22} ${wx + s * (a + 4)} ${yPun + 8} ${wx + s * a} ${yPun} Z" fill="${pele.base}"/>
-      <path d="M${wx + s * (a + 1)} ${yPun + 4} c ${s * 5} 0 ${s * 6} 6 ${s * 1} 9" fill="none" stroke="${pele.base}" stroke-width="4" stroke-linecap="round"/>
-      <path d="M${wx - s * 1} ${yPun + 10} q ${s * 3} 5 0 10" fill="none" stroke="${alfa(pele.escuro, 0.3)}" stroke-width="1"/>`
-      + `</g>`;
+    const sx = cx + s * (D.ombro - 3);   // raiz ombro
+    const yCot = 200, yPun = 250;
+    const ex = cx + s * (D.cintura + 8); // cotovelo p/ fora → abre vão na silhueta
+    const wx = cx + s * (D.quadril + 3); // punho junto ao quadril, mas com folga
+    const hy = yPun + 22;                 // fim da mão
+    return `<g data-anim="${anim}" style="transform-box: view-box; transform-origin: ${sx}px ${yOmb + 4}px">
+      <path d="M${sx - s * 6} ${yOmb - 2}
+        C ${sx + s * (b + 5)} ${yOmb + 6} ${sx + s * (b + 4)} ${yOmb + 26} ${ex + s * (b - 3)} ${yCot}
+        C ${ex + s * (a + 1)} ${yCot + 16} ${wx + s * (a + 1)} ${yPun - 18} ${wx + s * a} ${yPun}
+        C ${wx + s * (a + 2)} ${yPun + 8} ${wx + s * (a + 2)} ${yPun + 16} ${wx + s * (a - 1)} ${hy}
+        C ${wx + s} ${hy + 5} ${wx - s * (a - 1)} ${hy + 5} ${wx - s * a} ${hy}
+        C ${wx - s * (a + 1)} ${yPun + 14} ${wx - s * (a + 1)} ${yPun} ${wx - s * a} ${yPun}
+        C ${wx - s * (a + 1)} ${yPun - 18} ${ex - s * (a - 1)} ${yCot + 16} ${ex - s * (b - 7)} ${yCot}
+        C ${ex - s * (b - 5)} ${yCot - 22} ${sx - s * 2} ${yOmb + 18} ${sx - s * 8} ${yOmb + 6} Z" fill="url(#${d}sk)"/>
+      <!-- polegar --><path d="M${wx - s * a} ${yPun + 6} c ${-s * 5} 1 ${-s * 5} 9 ${-s * 1} 11" fill="url(#${d}sk)"/>
+      <!-- dedos (sulcos) --><path d="M${wx - s * 2} ${yPun + 10} l ${s * 6} 0 M${wx - s * 2} ${hy - 3} l ${s * 6} 0" stroke="${alfa(pele.escuro, 0.35)}" stroke-width="0.9" stroke-linecap="round"/>
+      <!-- cotovelo --><path d="M${ex - s * (b - 9)} ${yCot - 3} q ${s * 5} 5 ${s * 1} 13" fill="none" stroke="${alfa(pele.escuro, 0.28)}" stroke-width="1.3"/>
+      </g>`;
   };
 
-  // ── PERNA: quadril → coxa → joelho (estreita) → panturrilha → tornozelo → pé
+  // ══ PERNA CALÇADA (charcoal): quadril→coxa→joelho→panturrilha→tornozelo + SAPATO
   const perna = (s: 1 | -1): string => {
-    const hx = cx + s * (D.quadril * 0.5);   // centro da coxa
-    const c = D.coxa;
-    return `<path d="M${hx - s * c} ${yQua + 8}
-      C ${hx - s * (c + 1)} ${yQua + 40} ${hx - s * (c - 2)} ${yJoe - 34} ${hx - s * (c - 7)} ${yJoe}
-      C ${hx - s * (c - 3)} ${yJoe + 18} ${hx - s * (c - 2)} ${yTor - 34} ${hx - s * (c - 8)} ${yTor - 6}
-      C ${hx - s * (c - 9)} ${yTor - 2} ${hx - s * (c - 6)} ${yTor} ${hx - s * (c - 8)} ${yTor + 2}
-      L ${hx + s * 3} ${yTor + 2}
-      C ${hx + s * 5} ${yTor - 6} ${hx + s * 4} ${yJoe + 16} ${hx + s * 2} ${yJoe}
-      C ${hx + s * 5} ${yJoe - 34} ${hx + s * 3} ${yQua + 44} ${hx + s * 2} ${yQua + 8} Z" fill="url(#${d}sk)"/>
-      <!-- joelho --><path d="M${hx - s * (c - 7)} ${yJoe - 4} q ${-s * 5} 5 ${-s * 1} 11" fill="none" stroke="${alfa(pele.escuro, 0.3)}" stroke-width="1.3"/>
-      <!-- PÉ (com direção do dedo) -->
-      <path d="M${hx - s * (c - 8)} ${yTor}
-        C ${hx - s * (c - 6)} ${yPe} ${hx - s * (c - 2)} ${yPe + 2} ${hx - s * (c - 20)} ${yPe + 4}
-        C ${hx - s * (c - 30)} ${yPe + 4} ${hx - s * (c - 30)} ${yTor + 4} ${hx - s * (c - 22)} ${yTor + 2}
-        C ${hx - s * (c - 14)} ${yTor} ${hx - s * (c - 10)} ${yTor} ${hx + s * 2} ${yTor + 1} Z" fill="${wear.escuro}"/>`;
+    const hx = cx + s * (D.quadril * 0.5);
+    const co = D.coxa, pa = Math.max(8, D.coxa - 4); // coxa / panturrilha
+    const ax = hx - s * 1;                                // eixo tornozelo
+    return `<path d="M${hx - s * co} ${yEnt - 6}
+      C ${hx - s * (co + 1)} ${yQua + 44} ${hx - s * (co - 1)} ${yJoe - 30} ${ax - s * pa} ${yJoe}
+      C ${ax - s * (pa + 1)} ${yJoe + 22} ${ax - s * (pa - 1)} ${yTor - 30} ${ax - s * (pa - 3)} ${yTor - 4}
+      L ${ax + s * (pa - 4)} ${yTor - 4}
+      C ${ax + s * (pa - 2)} ${yTor - 30} ${ax + s * 4} ${yJoe + 20} ${ax + s * 3} ${yJoe}
+      C ${ax + s * 5} ${yJoe - 30} ${hx + s * 3} ${yQua + 44} ${hx + s * 2} ${yEnt - 6} Z" fill="url(#${d}cal)"/>
+      <!-- vinco/prega da calça --><path d="M${ax - s * (pa - 5)} ${yJoe + 6} C ${ax - s * (pa - 6)} ${yTor - 40} ${ax - s * (pa - 6)} ${yTor - 20} ${ax - s * (pa - 5)} ${yTor - 8}" fill="none" stroke="${alfa('#000000', 0.18)}" stroke-width="1.4"/>
+      <!-- vinco do joelho --><path d="M${ax - s * (pa - 2)} ${yJoe - 2} q ${-s * 5} 6 ${-s * 1} 12" fill="none" stroke="${alfa('#000000', 0.2)}" stroke-width="1.2"/>
+      <!-- SAPATO (bico p/ fora) -->
+      <path d="M${ax - s * (pa - 3)} ${yTor - 5}
+        C ${ax - s * (pa - 1)} ${yPe - 2} ${ax - s * (pa + 1)} ${yPe + 4} ${ax - s * (pa + 12)} ${yPe + 5}
+        C ${ax - s * (pa + 22)} ${yPe + 6} ${ax - s * (pa + 21)} ${yTor + 1} ${ax - s * (pa + 8)} ${yTor - 3}
+        C ${ax - s * (pa - 2)} ${yTor - 6} ${ax + s * (pa - 4)} ${yTor - 7} ${ax + s * (pa - 4)} ${yTor - 5} Z" fill="${SAP.base}"/>
+      <path d="M${ax - s * (pa + 12)} ${yPe + 5} C ${ax - s * (pa + 20)} ${yPe + 6} ${ax - s * (pa + 21)} ${yPe + 8} ${ax - s * (pa + 8)} ${yPe + 8} L ${ax + s * (pa - 4)} ${yPe + 7} l 0 ${-s * 0 - 2} Z" fill="${SAP.sola}"/>
+      <path d="M${ax - s * (pa - 2)} ${yTor} q ${-s * 6} 4 ${-s * 12} 4" fill="none" stroke="${alfa(SAP.luz, 0.7)}" stroke-width="1.3" stroke-linecap="round"/>`;
   };
 
   return `
@@ -179,21 +206,32 @@ export function corpoInteiroPremium(p: Paleta, uid: string, perfil: PerfilCorpo2
       <linearGradient id="${d}sk" x1="0.28" y1="0.05" x2="0.72" y2="0.95">
         <stop offset="0" stop-color="${pele.claro}"/><stop offset="0.55" stop-color="${pele.base}"/><stop offset="1" stop-color="${pele.escuro}"/>
       </linearGradient>
-      <linearGradient id="${d}w" x1="0.3" y1="0" x2="0.7" y2="1">
-        <stop offset="0" stop-color="${wear.base}"/><stop offset="1" stop-color="${wear.profundo}"/>
+      <linearGradient id="${d}cal" x1="0.3" y1="0" x2="0.7" y2="1">
+        <stop offset="0" stop-color="${CAL.base}"/><stop offset="0.6" stop-color="${CAL.escuro}"/><stop offset="1" stop-color="${CAL.prof}"/>
+      </linearGradient>
+      <linearGradient id="${d}top" x1="0.28" y1="0" x2="0.66" y2="1">
+        <stop offset="0" stop-color="${TOP.claro}"/><stop offset="0.5" stop-color="${TOP.base}"/><stop offset="1" stop-color="${TOP.escuro}"/>
       </linearGradient>
     </defs>
-    <ellipse cx="120" cy="${yPe + 8}" rx="50" ry="8" fill="${alfa('#000000', 0.26)}"/>
+    <ellipse cx="${cx}" cy="${yPe + 8}" rx="48" ry="8" fill="${alfa('#000000', 0.28)}"/>
+    <!-- PESCOÇO (pele) atrás do top -->
+    <path d="M${cx - 12} ${yNuc - 16} q ${12} 8 ${24} 0 l 1 14 q ${-13} 8 ${-26} 0 Z" fill="url(#${d}sk)"/>
+    <path d="M${cx - 12} ${yNuc - 3} q 12 7 24 0 l 0 4 q -12 7 -24 0 Z" fill="${alfa('#000000', 0.22)}"/>
     ${perna(-1)}${perna(1)}
+    <!-- cós/cintura da calça sob o top -->
+    <path d="M${cx - D.quadril + 4} ${yQua - 2} C ${cx - 12} ${yEnt - 2} ${cx + 12} ${yEnt - 2} ${cx + D.quadril - 4} ${yQua - 2} L ${cx + D.quadril - 8} ${yEnt + 4} C ${cx + 8} ${yEnt + 10} ${cx - 8} ${yEnt + 10} ${cx - D.quadril + 8} ${yEnt + 4} Z" fill="url(#${d}cal)"/>
     ${braco(-1, 'braco-dir')}${braco(1, 'braco-esq')}
-    <path d="${torso}" fill="url(#${d}sk)"/>
-    <!-- short base (quadril → coxa alta), neutro -->
-    <path d="M${cx - D.quadril + 4} ${yQua - 4} C ${cx - 16} ${yQua + 2} ${cx + 16} ${yQua + 2} ${cx + D.quadril - 4} ${yQua - 4} L ${cx + D.quadril - 8} ${yQua + 22} C ${cx + 10} ${yQua + 30} ${cx - 10} ${yQua + 30} ${cx - D.quadril + 8} ${yQua + 22} Z" fill="url(#${d}w)"/>
-    <path d="M${cx} ${yQua + 2} v 24" stroke="${alfa('#000000', 0.22)}" stroke-width="2"/>
-    <!-- VOLUME (overlays suaves; a forma já lê sem eles) -->
-    <path d="M${cx - D.peito + 8} ${yPei - 6} C ${cx - 14} ${yPei + 4} ${cx + 14} ${yPei + 4} ${cx + D.peito - 8} ${yPei - 6}" fill="none" stroke="${alfa(pele.escuro, 0.28)}" stroke-width="2" stroke-linecap="round"/>
-    <path d="M${cx} ${yPei + 4} v ${yCin - yPei - 4}" stroke="${alfa(pele.escuro, 0.22)}" stroke-width="1.5"/>
-    <path d="M${cx - D.ombro + 10} ${yOmb + 4} C ${cx - 18} ${yOmb - 3} ${cx + 4} ${yOmb - 3} ${cx + 10} ${yOmb + 2}" fill="none" stroke="${alfa('#ffffff', 0.16)}" stroke-width="2.6" stroke-linecap="round"/>
-    <path d="M${cx - 11} 110 C ${cx - 6} 118 ${cx + 6} 118 ${cx + 11} 110" fill="none" stroke="${alfa(pele.escuro, 0.25)}" stroke-width="1.6"/>`;
+    <!-- TORSO (top neutro) por cima das raízes dos braços -->
+    <path d="${torso}" fill="url(#${d}top)"/>
+    <!-- mangas curtas do top (cobrem o ombro nu) -->
+    <path d="M${cx - D.ombro + 2} ${yOmb + 2} C ${cx - D.ombro - 4} ${yOmb + 12} ${cx - D.ombro - 3} ${yOmb + 24} ${cx - D.peito + 2} ${yOmb + 30} C ${cx - D.peito - 2} ${yOmb + 16} ${cx - D.ombro - 2} ${yOmb + 6} ${cx - D.ombro + 6} ${yOmb - 2} Z" fill="url(#${d}top)"/>
+    <path d="M${cx + D.ombro - 2} ${yOmb + 2} C ${cx + D.ombro + 4} ${yOmb + 12} ${cx + D.ombro + 3} ${yOmb + 24} ${cx + D.peito - 2} ${yOmb + 30} C ${cx + D.peito + 2} ${yOmb + 16} ${cx + D.ombro + 2} ${yOmb + 6} ${cx + D.ombro - 6} ${yOmb - 2} Z" fill="url(#${d}top)"/>
+    <!-- VOLUME do top (a forma já lê sem estes overlays) -->
+    <path d="M${cx - D.ombro + 6} ${yOmb + 2} C ${cx - 20} ${yOmb - 6} ${cx + 20} ${yOmb - 6} ${cx + D.ombro - 6} ${yOmb + 2}" fill="none" stroke="${alfa('#ffffff', 0.14)}" stroke-width="3" stroke-linecap="round"/>
+    <path d="M${cx - D.peito + 6} ${yPei + 2} C ${cx - 10} ${yPei + 14} ${cx + 10} ${yPei + 14} ${cx + D.peito - 6} ${yPei + 2}" fill="none" stroke="${alfa('#000000', 0.14)}" stroke-width="2"/>
+    ${fem
+      ? `<path d="M${cx - 15} ${yPei - 2} q 8 12 0 20 M${cx + 15} ${yPei - 2} q -8 12 0 20" fill="none" stroke="${alfa('#000000', 0.12)}" stroke-width="1.6"/>`
+      : `<path d="M${cx} ${yPei + 4} v ${yCin - yPei - 6}" stroke="${alfa('#000000', 0.13)}" stroke-width="1.4"/>`}
+    <path d="M${cx - D.cintura + 2} ${yCin} C ${cx - 8} ${yCin + 8} ${cx + 8} ${yCin + 8} ${cx + D.cintura - 2} ${yCin}" fill="none" stroke="${alfa('#000000', 0.12)}" stroke-width="1.6"/>`;
 }
 
