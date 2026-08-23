@@ -39,6 +39,19 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       <circle cx="146" cy="226" r="3.4" fill="${p.destaque.base}"/>
       ${SOMBRA_PESCOCO}`;
     },
+    // §56 CAMISETA: manga curta, ombro suave, chest drape, cintura, barra.
+    // Silhueta FITTED (a mais justa das 4).
+    renderCorpoV2: (p, u) => {
+      const m = material2d('cotton', p.roupa.base);
+      const sleeves = `M${120 - 46} 130 C ${120 - 58} 140 ${120 - 58} 158 ${120 - 50} 166 L ${120 - 34} 162 C ${120 - 38} 150 ${120 - 40} 138 ${120 - 40} 132 Z`
+        + ` M${120 + 46} 130 C ${120 + 58} 140 ${120 + 58} 158 ${120 + 50} 166 L ${120 + 34} 162 C ${120 + 38} 150 ${120 + 40} 138 ${120 + 40} 132 Z`;
+      const torso = 'M80 130 C 74 158 76 196 84 228 L 156 228 C 164 196 166 158 160 130 C 146 122 94 122 80 130 Z';
+      return `<defs>${m.defs(u)}</defs>
+      <path d="${sleeves}" fill="${m.fill(u)}"/>
+      <path d="${torso}" fill="${m.fill(u)}"/>
+      ${m.realce(u, torso)}
+      <path d="M104 128 q 16 14 32 0 q -3 11 -16 11 q -13 0 -16 -11 z" fill="${m.tinta.escuro}"/>`;
+    },
   },
   {
     id: 'rou_px_camisa', materialToken: 'cotton', categoria: 'roupa', nome: 'Camisa Premium',
@@ -72,6 +85,27 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       <circle cx="113" cy="232" r="2" fill="${p.destaque.escuro}"/><circle cx="127" cy="232" r="2" fill="${p.destaque.escuro}"/>
       <path d="M92 226 h 18 q 2 8 -2 12 h -14 z M148 226 h -18 q -2 8 2 12 h 14 z" fill="${alfa(mol.tinta.profundo, 0.5)}"/>`;
     },
+    // §58 HOODIE: dropped shoulder, manga GROSSA/longa, capuz com volume
+    // traseiro, torso LARGO (menos ajustado), cuff, hem. Silhueta mais BOJUDA.
+    renderCorpoV2: (p, u) => {
+      const m = material2d('wool', p.roupa.base);
+      const forro = sec(p);
+      const sleeve = (s: 1 | -1) => `M${120 + s * 52} 132 C ${120 + s * 72} 148 ${120 + s * 74} 210 ${120 + s * 62} 250 L ${120 + s * 40} 248 C ${120 + s * 46} 210 ${120 + s * 44} 168 ${120 + s * 42} 138 Z`;
+      const torso = 'M74 136 C 64 172 66 210 76 240 L 164 240 C 174 210 176 172 166 136 C 150 122 90 122 74 136 Z';
+      return `<defs>${m.defs(u)}</defs>
+      <!-- capuz (volume traseiro) atrás dos ombros -->
+      <path d="M86 116 C 98 96 142 96 154 116 C 150 132 138 140 120 140 C 102 140 90 132 86 116 Z" fill="${m.tinta.escuro}"/>
+      <path d="${sleeve(-1)}${sleeve(1)}" fill="${m.fill(u)}"/>
+      <path d="${torso}" fill="${m.fill(u)}"/>
+      ${m.realce(u, torso)}
+      <!-- cuffs + hem band -->
+      <path d="M${120 - 62} 246 l 22 3 -2 10 -22 -3 z M${120 + 62} 246 l -22 3 2 10 22 -3 z" fill="${m.tinta.profundo}"/>
+      <path d="M76 232 h88 v10 H76 z" fill="${alfa(m.tinta.profundo, 0.55)}"/>
+      <!-- bolso central + cordões -->
+      <path d="M96 196 h48 v22 h-48 z" fill="${alfa(m.tinta.profundo, 0.4)}"/>
+      <path d="M112 150 q -1 16 1 26 M128 150 q 1 16 -1 26" stroke="${p.destaque.base}" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+      <path d="M96 140 q 24 16 48 0 q -2 -8 -24 -8 q -22 0 -24 8 z" fill="${forro.base}"/>`;
+    },
   },
   {
     id: 'rou_px_blazer', materialToken: 'wool', categoria: 'roupa', nome: 'Blazer Premium',
@@ -90,15 +124,23 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       <circle cx="118" cy="228" r="1.8" fill="${p.destaque.base}"/>
       ${SOMBRA_PESCOCO}`;
     },
+    // §60 BLAZER: ombro PADDED quadrado, lapela, chest taper, manga, cintura
+    // marcada, abertura frontal. Silhueta ESTRUTURADA (ombros retos).
     renderCorpoV2: (p, u) => {
       const la = material2d('wool', p.roupa.base);
       const forro = sec(p);
+      const sleeve = (s: 1 | -1) => `M${120 + s * 54} 124 C ${120 + s * 66} 150 ${120 + s * 60} 210 ${120 + s * 52} 244 L ${120 + s * 34} 240 C ${120 + s * 40} 200 ${120 + s * 42} 156 ${120 + s * 44} 130 Z`;
+      const torso = 'M74 122 L 168 122 C 170 150 166 158 160 176 C 156 196 152 214 150 234 L 90 234 C 88 214 84 196 80 176 C 74 158 70 150 74 122 Z';
       return `<defs>${la.defs(u)}</defs>
-      <path d="M84 110 c 12 -10 60 -10 72 0 c 9 7 13 28 13 54 c 0 22 -4 40 -10 54 l -12 3 l 4 -70 l -6 -30 l -50 0 l -6 30 l 4 70 l -12 -3 c -6 -14 -10 -32 -10 -54 c 0 -26 4 -47 13 -54 z" fill="${la.fill(u)}"/>
-      <path d="M104 112 l 16 16 l 16 -16 l 4 96 h -40 z" fill="${forro.escuro}"/>
-      <path d="M104 112 l -10 14 l 16 24 l 10 -14 z M136 112 l 10 14 l -16 24 l -10 -14 z" fill="${la.tinta.profundo}"/>
-      <path d="M96 124 l 13 20 M144 124 l -13 20" stroke="${alfa(la.tinta.brilho, 0.35)}" stroke-width="1.6" fill="none"/>
-      <circle cx="117" cy="180" r="2" fill="${p.destaque.base}"/>`;
+      <path d="${sleeve(-1)}${sleeve(1)}" fill="${la.fill(u)}"/>
+      <path d="M66 118 h30 l -4 14 h-30 z M174 118 h-30 l 4 14 h30 z" fill="${la.fill(u)}"/>
+      <path d="${torso}" fill="${la.fill(u)}"/>
+      ${la.realce(u, torso)}
+      <!-- abertura + lapela -->
+      <path d="M106 124 l 14 20 l 14 -20 l 6 106 h -40 z" fill="${forro.escuro}"/>
+      <path d="M106 124 l -12 16 l 18 24 l 10 -16 z M134 124 l 12 16 l -18 24 l -10 -16 z" fill="${la.tinta.profundo}"/>
+      <path d="M96 138 l 15 22 M144 138 l -15 22" stroke="${alfa(la.tinta.brilho, 0.4)}" stroke-width="1.5" fill="none"/>
+      <circle cx="118" cy="196" r="2.2" fill="${p.destaque.base}"/><circle cx="118" cy="214" r="2.2" fill="${p.destaque.base}"/>`;
     },
   },
   {
@@ -149,6 +191,24 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       <path d="M104 189 q 8 12 16 15 M136 189 q -8 12 -16 15" stroke="${alfa(la.tinta.brilho, 0.4)}" stroke-width="1.5" fill="none"/>
       <path d="M112 226 h 4 M124 226 h 4" stroke="${p.destaque.base}" stroke-width="2.4" stroke-linecap="round"/>
       ${SOMBRA_PESCOCO}`;
+    },
+    // §61 SOBRETUDO: LONGO de verdade (desce além do quadril ~y318), volume
+    // próprio, lapela alta, abertura inferior/overlap, mangas longas.
+    renderCorpoV2: (p, u) => {
+      const la = material2d('wool', p.roupa.base);
+      const forro = sec(p);
+      const sleeve = (s: 1 | -1) => `M${120 + s * 54} 124 C ${120 + s * 66} 152 ${120 + s * 60} 220 ${120 + s * 54} 258 L ${120 + s * 36} 254 C ${120 + s * 42} 210 ${120 + s * 44} 156 ${120 + s * 44} 130 Z`;
+      const torso = 'M72 122 C 66 150 70 160 68 190 C 66 230 66 280 74 318 L 120 322 L 166 318 C 174 280 174 230 172 190 C 170 160 174 150 168 122 C 150 116 90 116 72 122 Z';
+      return `<defs>${la.defs(u)}</defs>
+      <path d="${sleeve(-1)}${sleeve(1)}" fill="${la.fill(u)}"/>
+      <path d="${torso}" fill="${la.fill(u)}"/>
+      ${la.realce(u, torso)}
+      <!-- overlap frontal + lapela alta -->
+      <path d="M120 128 L 120 320 L 150 316 C 156 250 156 180 150 130 Z" fill="${alfa(la.tinta.profundo, 0.45)}"/>
+      <path d="M106 122 l 14 22 l 14 -22 l 8 60 l -22 16 l -22 -16 z" fill="${forro.escuro}"/>
+      <path d="M106 122 l -12 18 l 20 26 l 10 -18 z M134 122 l 12 18 l -20 26 l -10 -18 z" fill="${la.tinta.profundo}"/>
+      <path d="M120 150 v 168" stroke="${alfa(la.tinta.profundo, 0.5)}" stroke-width="1.6"/>
+      <circle cx="132" cy="196" r="2.4" fill="${p.destaque.base}"/><circle cx="132" cy="230" r="2.4" fill="${p.destaque.base}"/>`;
     },
   },
   {
