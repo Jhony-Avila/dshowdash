@@ -348,7 +348,13 @@ export function renderAvatar(
         `<g data-anim="plano-personagem">${premiumPlanoAtras}${premiumSombra}${premiumAtras}<g data-anim="personagem">` +
           envolverFigura(
             (opcoes.premium ? corpoInteiroPremium(paletaDa('roupa'), uid, perfilCorpoDe(config)) : corpoInteiro(paletaDa('roupa'), uid)) + corpoV2 + infCorpo + roupaCorpo + sobreCorpo + emblemaCorpo + acessCorpo +
-            `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`,
+            // Golden V3 (#219): cabeça premium MENOR → figura ~5.5-6 cabeças de
+            // altura (adulto estilizado; antes 0.62 ≈ 4 cabeças/chibi). Âncora
+            // do pescoço mantida (busto by≈193 → y≈104). Legado (não-premium)
+            // segue 0.62. tx=120-S*120, ty=104-193*S.
+            (opcoes.premium
+              ? `<g transform="translate(55.2 -0.2) scale(0.54)">${cabeca}</g>`
+              : `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`),
             config, 396,
           ) +
         `${premiumFrente}</g></g>` +

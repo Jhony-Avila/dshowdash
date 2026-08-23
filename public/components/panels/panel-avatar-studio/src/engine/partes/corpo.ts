@@ -95,12 +95,13 @@ export function corpoInteiro(p: Paleta, uid: string): string {
 export type PerfilCorpo2D = 'slim' | 'standard' | 'athletic' | 'robust' | 'feminino';
 interface DimsCorpo { ombro: number; peito: number; cintura: number; quadril: number; coxa: number; braco: number; anta: number; }
 const DIMS_CORPO: Record<PerfilCorpo2D, DimsCorpo> = {
-  //          ombro peito cint quad coxa braço antebraço  (half-widths; V2 slimmer)
-  slim:     { ombro: 44, peito: 37, cintura: 25, quadril: 30, coxa: 13, braco: 11, anta: 8 },
-  standard: { ombro: 50, peito: 43, cintura: 29, quadril: 34, coxa: 15, braco: 13, anta: 9 },
-  athletic: { ombro: 56, peito: 48, cintura: 31, quadril: 36, coxa: 17, braco: 15, anta: 10 },
-  robust:   { ombro: 57, peito: 53, cintura: 42, quadril: 45, coxa: 21, braco: 17, anta: 12 },
-  feminino: { ombro: 42, peito: 36, cintura: 24, quadril: 39, coxa: 16, braco: 10, anta: 7 },
+  //          ombro peito cint quad coxa braço antebraço  (V3: pernas mais
+  //          grossas, ombro um tico menor — menos "torso-slab + pernas-tubo")
+  slim:     { ombro: 42, peito: 36, cintura: 25, quadril: 31, coxa: 16, braco: 12, anta: 9 },
+  standard: { ombro: 47, peito: 42, cintura: 30, quadril: 36, coxa: 19, braco: 14, anta: 10 },
+  athletic: { ombro: 54, peito: 47, cintura: 32, quadril: 38, coxa: 21, braco: 16, anta: 11 },
+  robust:   { ombro: 55, peito: 53, cintura: 44, quadril: 47, coxa: 25, braco: 18, anta: 13 },
+  feminino: { ombro: 41, peito: 36, cintura: 26, quadril: 41, coxa: 19, braco: 11, anta: 8 },
 };
 
 // Golden V2 (#219): ANATOMIA COMPARTILHADA — âncoras (x meia-largura por
