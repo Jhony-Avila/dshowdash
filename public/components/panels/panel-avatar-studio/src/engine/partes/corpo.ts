@@ -83,3 +83,117 @@ export function corpoInteiro(p: Paleta, uid: string): string {
     <!-- gola/base do pescoço (encaixe da cabeça do busto) -->
     <path d="M100 104 c 12 8 28 8 40 0 l 2 10 c -14 8 -30 8 -44 0 z" fill="${p.roupa.profundo}"/>`;
 }
+
+// ── onda 1427/Golden (BRIEFING_COMPLEMENTAR_03 §9–§16; #219): PREMIUM BODY
+// SCAFFOLD. Anatomia ESTILIZADA real (não tubos) — só quando opcoes.premium.
+// Legacy segue corpoInteiro() acima, byte-idêntico. FORMA→VOLUME→MATERIAL:
+// silhueta com clavícula/ombro, tórax, cintura, quadril, braço com taper+
+// cotovelo+punho, mão com palma/polegar, coxa/joelho/panturrilha/tornozelo/pé.
+// Luz key superior-esquerda (§21). Pele nos membros; base neutra fitness
+// (top+short) p/ a roupa premium (renderCorpoV2) sobrepor.
+export type PerfilCorpo2D = 'slim' | 'standard' | 'athletic' | 'robust' | 'feminino';
+interface DimsCorpo { ombro: number; peito: number; cintura: number; quadril: number; coxa: number; braco: number; anta: number; }
+const DIMS_CORPO: Record<PerfilCorpo2D, DimsCorpo> = {
+  //          ombro peito cint quad coxa braço antebraço
+  slim:     { ombro: 46, peito: 40, cintura: 28, quadril: 34, coxa: 17, braco: 12, anta: 9 },
+  standard: { ombro: 52, peito: 45, cintura: 32, quadril: 39, coxa: 20, braco: 14, anta: 10 },
+  athletic: { ombro: 58, peito: 50, cintura: 33, quadril: 41, coxa: 23, braco: 16, anta: 12 },
+  robust:   { ombro: 57, peito: 54, cintura: 45, quadril: 50, coxa: 27, braco: 18, anta: 13 },
+  feminino: { ombro: 44, peito: 38, cintura: 27, quadril: 44, coxa: 21, braco: 11, anta: 8 },
+};
+
+// §9–§16: PREMIUM BODY (só opcoes.premium). Membros em pele; short base neutro.
+// Cada segmento é um path anatômico (deltóide, taper, cotovelo, punho, mão com
+// polegar; coxa, joelho, panturrilha, tornozelo, pé com direção). A luz é
+// aplicada por overlays SUAVES — a FORMA precisa ler no FLAT/SILHOUETTE sem eles.
+export function corpoInteiroPremium(p: Paleta, uid: string, perfil: PerfilCorpo2D = 'standard'): string {
+  const d = uid + 'cpx';
+  const D = DIMS_CORPO[perfil] ?? DIMS_CORPO.standard;
+  const cx = 120;
+  const pele = p.pele;
+  const wear = p.roupa; // short base + pés (neutro)
+  // âncoras verticais
+  const yOmb = 126, yPei = 156, yCin = 198, yQua = 224;
+  const yJoe = 300, yTor = 356, yPe = 372;
+
+  // ── TORSO: pescoço→trapézio→ombro→tórax→cintura→quadril (V ou ampulheta)
+  const torso = `M${cx - 11} 108
+    C ${cx - 13} 116 ${cx - 20} 120 ${cx - D.ombro + 4} ${yOmb}
+    C ${cx - D.ombro} ${yOmb + 3} ${cx - D.ombro + 2} ${yOmb + 12} ${cx - D.peito} ${yPei}
+    C ${cx - D.cintura - 3} ${yPei + 20} ${cx - D.cintura} ${yCin - 8} ${cx - D.cintura} ${yCin}
+    C ${cx - D.cintura} ${yCin + 10} ${cx - D.quadril + 2} ${yQua - 10} ${cx - D.quadril} ${yQua}
+    C ${cx - D.quadril} ${yQua + 8} ${cx - D.quadril + 6} ${yQua + 12} ${cx - D.quadril + 10} ${yQua + 14}
+    L ${cx + D.quadril - 10} ${yQua + 14}
+    C ${cx + D.quadril - 6} ${yQua + 12} ${cx + D.quadril} ${yQua + 8} ${cx + D.quadril} ${yQua}
+    C ${cx + D.quadril - 2} ${yQua - 10} ${cx + D.cintura} ${yCin + 10} ${cx + D.cintura} ${yCin}
+    C ${cx + D.cintura} ${yCin - 8} ${cx + D.cintura + 3} ${yPei + 20} ${cx + D.peito} ${yPei}
+    C ${cx + D.ombro - 2} ${yOmb + 12} ${cx + D.ombro} ${yOmb + 3} ${cx + D.ombro - 4} ${yOmb}
+    C ${cx + 20} 120 ${cx + 13} 116 ${cx + 11} 108 Z`;
+
+  // ── BRAÇO: deltóide → braço (taper) → cotovelo → antebraço → punho → mão.
+  //   pende com leve abertura; separado do torso (gap lê na silhueta). s: lado.
+  const braco = (s: 1 | -1, anim: string): string => {
+    const sx = cx + s * (D.ombro - 6);      // raiz no ombro
+    const b = D.braco, a = D.anta;
+    const yCot = 196, yPun = 250;
+    const ex = cx + s * (D.cintura + 6);     // cotovelo (levemente p/ fora da cintura)
+    const wx = cx + s * (D.quadril - 2);     // punho ~ na altura do quadril
+    return `<g data-anim="${anim}" style="transform-box: view-box; transform-origin: ${sx}px ${yOmb}px">
+      <path d="M${sx - s * 4} ${yOmb - 2}
+        C ${sx + s * (b + 4)} ${yOmb + 4} ${sx + s * (b + 6)} ${yOmb + 22} ${ex + s * (b - 2)} ${yCot}
+        C ${ex + s * (a + 2)} ${yCot + 14} ${wx + s * (a + 1)} ${yPun - 16} ${wx + s * a} ${yPun}
+        C ${wx + s * a} ${yPun + 4} ${wx - s * a} ${yPun + 4} ${wx - s * a} ${yPun}
+        C ${wx - s * (a + 1)} ${yPun - 16} ${ex - s * (a - 1)} ${yCot + 16} ${ex - s * (b - 6)} ${yCot}
+        C ${ex - s * (b - 4)} ${yCot - 20} ${sx - s * 2} ${yOmb + 16} ${sx - s * 6} ${yOmb + 6} Z" fill="url(#${d}sk)"/>
+      <!-- cotovelo (dobra suave) --><path d="M${ex - s * (b - 8)} ${yCot - 2} q ${s * 6} 4 ${s * 2} 12" fill="none" stroke="${alfa(pele.escuro, 0.3)}" stroke-width="1.4"/>
+      <!-- MÃO: palma + polegar + direção -->
+      <path d="M${wx - s * a} ${yPun}
+        C ${wx - s * (a + 3)} ${yPun + 10} ${wx - s * (a - 2)} ${yPun + 22} ${wx + s * 2} ${yPun + 22}
+        C ${wx + s * (a + 4)} ${yPun + 22} ${wx + s * (a + 4)} ${yPun + 8} ${wx + s * a} ${yPun} Z" fill="${pele.base}"/>
+      <path d="M${wx + s * (a + 1)} ${yPun + 4} c ${s * 5} 0 ${s * 6} 6 ${s * 1} 9" fill="none" stroke="${pele.base}" stroke-width="4" stroke-linecap="round"/>
+      <path d="M${wx - s * 1} ${yPun + 10} q ${s * 3} 5 0 10" fill="none" stroke="${alfa(pele.escuro, 0.3)}" stroke-width="1"/>`
+      + `</g>`;
+  };
+
+  // ── PERNA: quadril → coxa → joelho (estreita) → panturrilha → tornozelo → pé
+  const perna = (s: 1 | -1): string => {
+    const hx = cx + s * (D.quadril * 0.5);   // centro da coxa
+    const c = D.coxa;
+    return `<path d="M${hx - s * c} ${yQua + 8}
+      C ${hx - s * (c + 1)} ${yQua + 40} ${hx - s * (c - 2)} ${yJoe - 34} ${hx - s * (c - 7)} ${yJoe}
+      C ${hx - s * (c - 3)} ${yJoe + 18} ${hx - s * (c - 2)} ${yTor - 34} ${hx - s * (c - 8)} ${yTor - 6}
+      C ${hx - s * (c - 9)} ${yTor - 2} ${hx - s * (c - 6)} ${yTor} ${hx - s * (c - 8)} ${yTor + 2}
+      L ${hx + s * 3} ${yTor + 2}
+      C ${hx + s * 5} ${yTor - 6} ${hx + s * 4} ${yJoe + 16} ${hx + s * 2} ${yJoe}
+      C ${hx + s * 5} ${yJoe - 34} ${hx + s * 3} ${yQua + 44} ${hx + s * 2} ${yQua + 8} Z" fill="url(#${d}sk)"/>
+      <!-- joelho --><path d="M${hx - s * (c - 7)} ${yJoe - 4} q ${-s * 5} 5 ${-s * 1} 11" fill="none" stroke="${alfa(pele.escuro, 0.3)}" stroke-width="1.3"/>
+      <!-- PÉ (com direção do dedo) -->
+      <path d="M${hx - s * (c - 8)} ${yTor}
+        C ${hx - s * (c - 6)} ${yPe} ${hx - s * (c - 2)} ${yPe + 2} ${hx - s * (c - 20)} ${yPe + 4}
+        C ${hx - s * (c - 30)} ${yPe + 4} ${hx - s * (c - 30)} ${yTor + 4} ${hx - s * (c - 22)} ${yTor + 2}
+        C ${hx - s * (c - 14)} ${yTor} ${hx - s * (c - 10)} ${yTor} ${hx + s * 2} ${yTor + 1} Z" fill="${wear.escuro}"/>`;
+  };
+
+  return `
+    <defs>
+      <linearGradient id="${d}sk" x1="0.28" y1="0.05" x2="0.72" y2="0.95">
+        <stop offset="0" stop-color="${pele.claro}"/><stop offset="0.55" stop-color="${pele.base}"/><stop offset="1" stop-color="${pele.escuro}"/>
+      </linearGradient>
+      <linearGradient id="${d}w" x1="0.3" y1="0" x2="0.7" y2="1">
+        <stop offset="0" stop-color="${wear.base}"/><stop offset="1" stop-color="${wear.profundo}"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="120" cy="${yPe + 8}" rx="50" ry="8" fill="${alfa('#000000', 0.26)}"/>
+    ${perna(-1)}${perna(1)}
+    ${braco(-1, 'braco-dir')}${braco(1, 'braco-esq')}
+    <path d="${torso}" fill="url(#${d}sk)"/>
+    <!-- short base (quadril → coxa alta), neutro -->
+    <path d="M${cx - D.quadril + 4} ${yQua - 4} C ${cx - 16} ${yQua + 2} ${cx + 16} ${yQua + 2} ${cx + D.quadril - 4} ${yQua - 4} L ${cx + D.quadril - 8} ${yQua + 22} C ${cx + 10} ${yQua + 30} ${cx - 10} ${yQua + 30} ${cx - D.quadril + 8} ${yQua + 22} Z" fill="url(#${d}w)"/>
+    <path d="M${cx} ${yQua + 2} v 24" stroke="${alfa('#000000', 0.22)}" stroke-width="2"/>
+    <!-- VOLUME (overlays suaves; a forma já lê sem eles) -->
+    <path d="M${cx - D.peito + 8} ${yPei - 6} C ${cx - 14} ${yPei + 4} ${cx + 14} ${yPei + 4} ${cx + D.peito - 8} ${yPei - 6}" fill="none" stroke="${alfa(pele.escuro, 0.28)}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M${cx} ${yPei + 4} v ${yCin - yPei - 4}" stroke="${alfa(pele.escuro, 0.22)}" stroke-width="1.5"/>
+    <path d="M${cx - D.ombro + 10} ${yOmb + 4} C ${cx - 18} ${yOmb - 3} ${cx + 4} ${yOmb - 3} ${cx + 10} ${yOmb + 2}" fill="none" stroke="${alfa('#ffffff', 0.16)}" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M${cx - 11} 110 C ${cx - 6} 118 ${cx + 6} 118 ${cx + 11} 110" fill="none" stroke="${alfa(pele.escuro, 0.25)}" stroke-width="1.6"/>`;
+}
+
