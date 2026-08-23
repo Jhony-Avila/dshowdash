@@ -47,6 +47,34 @@ function torsoRoupa(A: AnatomiaCorpo, e: RoupaEase, decote = 12): string {
     C ${cx - decote} ${yOmb - 3} ${cx - sx + 6} ${yOmb - 4} ${cx - sx} ${yOmb} Z`;
 }
 
+// Golden V3.1 (#219 §52-65): SILHUETAS AUTORAIS por peça (a FORMA PRIMÁRIA é
+// desenhada peça a peça; anatomiaCorpo só posiciona; dobras NÃO são a autoria).
+// `suave` = spline fechada Catmull-Rom por pontos → contorno orgânico (ombro
+// arredondado, cintura, flare) sem trapézio genérico.
+type Pt = [number, number];
+function suave(pts: Pt[]): string {
+  const n = pts.length; let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d + ' Z';
+}
+// contorno simétrico: metade direita (de neck→ombro→lado→hem) espelhada.
+function sil(A: AnatomiaCorpo, o: { sh: number; ch: number; wa: number; hip: number; yHem: number; hemHalf: number; neck?: number; dropOmb?: number; flareY?: number }): string {
+  const { cx, yOmb, yPei, yCin, yQua } = A;
+  const nk = o.neck ?? 11, dO = o.dropOmb ?? 0;
+  const yFl = o.flareY ?? yQua + 8;
+  const R: Pt[] = [
+    [cx + nk, yOmb + 2], [cx + o.sh, yOmb + 2 + dO], [cx + o.ch, yPei + 4],
+    [cx + o.wa, yCin + 2], [cx + o.hip, yFl], [cx + o.hemHalf, o.yHem],
+  ];
+  const L: Pt[] = [[cx - o.hemHalf, o.yHem], [cx - o.hip, yFl], [cx - o.wa, yCin + 2], [cx - o.ch, yPei + 4], [cx - o.sh, yOmb + 2 + dO], [cx - nk, yOmb + 2]];
+  return suave([...R, ...L, [cx, yOmb + 9]]);
+}
+
 // As mangas seguem o EIXO REAL do braço (anatomiaCorpo.arm*) como tubo cônico
 // levemente mais largo que o membro (folga) — assim SEMPRE cobrem o braço, em
 // qualquer perfil, em vez de flutuar ao lado. Ombro→cotovelo→punho; mão de fora.
@@ -128,7 +156,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
     renderCorpoV2: (p, u, perfil) => {
       const A = anatomiaCorpo(perfil as PerfilCorpo2D);
       const m = material2d('cotton', p.roupa.base);
-      const torso = torsoRoupa(A, { omb: 3, pei: 4, cin: 5, hemHalf: A.quadril + 1, yHem: A.yQua + 4 }, 12);
+      const torso = sil(A, { sh: A.ombro + 3, ch: A.peito + 3, wa: A.cintura + 5, hip: A.quadril + 1, hemHalf: A.quadril + 1, yHem: A.yQua + 6, neck: 10 });
       const sl = mangaCurta(A, -1, 5, 3) + mangaCurta(A, 1, 5, 3);
       return `<defs>${m.defs(u)}</defs>
       <path d="${sl}" fill="${m.fill(u)}"/>
@@ -182,7 +210,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       const m = material2d('wool', p.roupa.base);
       const forro = sec(p);
       const { cx, yOmb, yPei } = A;
-      const torso = torsoRoupa(A, { omb: 8, pei: 10, cin: 12, hemHalf: A.quadril + 10, yHem: A.yEnt + 2 }, 14);
+      const torso = sil(A, { sh: A.ombro + 9, ch: A.peito + 9, wa: A.cintura + 12, hip: A.quadril + 6, hemHalf: A.quadril - 1, yHem: A.yEnt, dropOmb: 5, neck: 13 });
       const sl = mangaLonga(A, -1, 8, 6) + mangaLonga(A, 1, 8, 6);
       const cuffY = 244, hemY = A.yEnt - 4, pkTop = A.yCin + 6;
       const wx = A.quadril + 9;
@@ -229,7 +257,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       const la = material2d('wool', p.roupa.base);
       const { cx, yOmb, yPei, yCin } = A;
       const yHem = A.yEnt;                 // blazer desce até o quadril
-      const torso = torsoRoupa(A, { omb: 3, pei: 3, cin: 3, hemHalf: A.quadril, yHem }, 10);
+      const torso = sil(A, { sh: A.ombro + 1, ch: A.peito + 1, wa: A.cintura - 1, hip: A.quadril + 3, hemHalf: A.quadril + 3, yHem, neck: 11 });
       const sl = mangaLonga(A, -1, 5, 4) + mangaLonga(A, 1, 5, 4);
       const nk = 11;                       // meia-abertura do decote/colarinho
       return `<defs>${la.defs(u)}</defs>
@@ -243,14 +271,25 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       <path d="M${cx - A.cintura} ${yCin + 10} h 16 M${cx + A.cintura - 16} ${yCin + 10} h 16" stroke="${alfa(la.tinta.profundo, 0.5)}" stroke-width="1.4" stroke-linecap="round"/>
       <!-- punho (cuff) -->
       <path d="M${cx - A.armWr - 7} 246 q 8 3 15 0 M${cx + A.armWr + 7} 246 q -8 3 -15 0" stroke="${alfa(la.tinta.profundo, 0.55)}" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-      <!-- camisa + gravata no V -->
-      <path d="M${cx - nk} ${yOmb + 2} L ${cx} ${yPei + 6} L ${cx + nk} ${yOmb + 2} L ${cx + 5} ${yHem} L ${cx - 5} ${yHem} Z" fill="${alfa('#eef1f5', 0.9)}"/>
-      <path d="M${cx - 4} ${yPei + 2} L ${cx + 4} ${yPei + 2} L ${cx + 6} ${yHem - 6} L ${cx} ${yHem - 1} L ${cx - 6} ${yHem - 6} Z" fill="${p.destaque.base}"/>
-      <!-- lapelas (fecham sobre a camisa) -->
-      <path d="M${cx - nk} ${yOmb + 1} L ${cx - 26} ${yOmb + 14} L ${cx - 6} ${yPei + 8} L ${cx - 2} ${yPei - 2} Z" fill="${la.tinta.profundo}"/>
-      <path d="M${cx + nk} ${yOmb + 1} L ${cx + 26} ${yOmb + 14} L ${cx + 6} ${yPei + 8} L ${cx + 2} ${yPei - 2} Z" fill="${la.tinta.profundo}"/>
-      <path d="M${cx - 24} ${yOmb + 15} l 17 ${yPei - yOmb - 6} M${cx + 24} ${yOmb + 15} l -17 ${yPei - yOmb - 6}" stroke="${alfa(la.tinta.brilho, 0.35)}" stroke-width="1.2" fill="none"/>
-      <circle cx="${cx - 8}" cy="${yCin + 6}" r="2" fill="${p.destaque.escuro}"/><circle cx="${cx - 8}" cy="${yCin + 22}" r="2" fill="${p.destaque.escuro}"/>`;
+      <!-- V da CAMISA só no peito superior (fecha no botão ~cintura) -->
+      ${(() => {
+        const yBtn = yCin + 4; const tie = tintaPremium(p.destaque.base);
+        return `<path d="M${cx - nk} ${yOmb + 3} C ${cx - nk + 1} ${yPei - 8} ${cx - 7} ${yPei} ${cx} ${yBtn - 2} C ${cx + 7} ${yPei} ${cx + nk - 1} ${yPei - 8} ${cx + nk} ${yOmb + 3} Z" fill="#eef1f5"/>
+        <path d="M${cx - nk + 2} ${yOmb + 5} C ${cx - 5} ${yPei - 6} ${cx - 4} ${yPei} ${cx} ${yBtn - 4}" fill="none" stroke="${alfa('#c7cdd6', 0.7)}" stroke-width="1"/>
+        <!-- nó + lâmina da gravata que AFUNILA (não bloco) -->
+        <path d="M${cx - 4.5} ${yOmb + 7} L ${cx + 4.5} ${yOmb + 7} L ${cx + 3.4} ${yOmb + 14} L ${cx - 3.4} ${yOmb + 14} Z" fill="${tie.escuro}"/>
+        <path d="M${cx - 3.4} ${yOmb + 14} L ${cx + 3.4} ${yOmb + 14} L ${cx + 5.4} ${yPei + 6} L ${cx} ${yBtn - 3} L ${cx - 5.4} ${yPei + 6} Z" fill="${tie.base}"/>
+        <path d="M${cx} ${yOmb + 15} L ${cx} ${yBtn - 5}" stroke="${alfa(tie.escuro, 0.5)}" stroke-width="0.8"/>
+        <path d="M${cx - 1.5} ${yOmb + 10} l 1 3 l 2 -2 z" fill="${alfa('#ffffff', 0.25)}"/>
+        <!-- LAPELAS ROLADAS (curvas, não triângulos) -->
+        <path d="M${cx - nk} ${yOmb + 3} C ${cx - nk - 9} ${yOmb + 11} ${cx - 24} ${yOmb + 22} ${cx - 19} ${yPei + 2} C ${cx - 17} ${yPei + 8} ${cx - 10} ${yPei + 8} ${cx - 6} ${yPei + 4} C ${cx - 3} ${yPei} ${cx - 2} ${yPei - 6} ${cx - nk} ${yOmb + 3} Z" fill="${la.tinta.profundo}"/>
+        <path d="M${cx + nk} ${yOmb + 3} C ${cx + nk + 9} ${yOmb + 11} ${cx + 24} ${yOmb + 22} ${cx + 19} ${yPei + 2} C ${cx + 17} ${yPei + 8} ${cx + 10} ${yPei + 8} ${cx + 6} ${yPei + 4} C ${cx + 3} ${yPei} ${cx + 2} ${yPei - 6} ${cx + nk} ${yOmb + 3} Z" fill="${la.tinta.profundo}"/>
+        <path d="M${cx - nk - 3} ${yOmb + 10} C ${cx - 20} ${yOmb + 20} ${cx - 18} ${yPei} ${cx - 15} ${yPei + 2}" fill="none" stroke="${alfa(la.tinta.brilho, 0.3)}" stroke-width="1"/>
+        <path d="M${cx + nk + 3} ${yOmb + 10} C ${cx + 20} ${yOmb + 20} ${cx + 18} ${yPei} ${cx + 15} ${yPei + 2}" fill="none" stroke="${alfa(la.tinta.brilho, 0.3)}" stroke-width="1"/>
+        <!-- fecho central (botão→barra) + botões -->
+        <path d="M${cx} ${yBtn} L ${cx} ${yHem - 2}" stroke="${alfa(la.tinta.profundo, 0.55)}" stroke-width="1.2"/>
+        <circle cx="${cx}" cy="${yBtn}" r="1.8" fill="${la.tinta.brilho}"/><circle cx="${cx}" cy="${yBtn + 16}" r="1.8" fill="${la.tinta.brilho}"/>`;
+      })()}`;
     },
   },
   {
@@ -313,7 +352,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
       const { cx, yOmb, yPei, yCin } = A;
       const yHem = 322;
       // torso longo: reaproveita torsoRoupa mas com barra baixa
-      const torso = torsoRoupa(A, { omb: 6, pei: 8, cin: 8, hemHalf: A.quadril + 8, yHem }, 8);
+      const torso = sil(A, { sh: A.ombro + 5, ch: A.peito + 4, wa: A.cintura + 4, hip: A.quadril + 8, hemHalf: A.quadril + 16, yHem, flareY: A.yQua + 30, neck: 12 });
       const sl = mangaLonga(A, -1, 6, 5) + mangaLonga(A, 1, 6, 5);
       return `<defs>${la.defs(u)}</defs>
       <path d="${sl}" fill="${la.fill(u)}"/>
