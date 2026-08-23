@@ -110,6 +110,7 @@ const DIMS_CORPO: Record<PerfilCorpo2D, DimsCorpo> = {
 // slim/feminino). Fonte única de verdade da proporção premium.
 export interface AnatomiaCorpo {
   cx: number; ombro: number; peito: number; cintura: number; quadril: number;
+  coxa: number;                                // meia-largura da coxa (§12 pé/perna)
   braco: number; anta: number;                 // meias-larguras do braço/antebraço
   armSh: number; armEl: number; armWr: number;  // meia-largura do EIXO do braço por altura
   yNuc: number; yOmb: number; yPei: number; yCin: number; yQua: number; yEnt: number;
@@ -136,7 +137,7 @@ export function anatomiaCorpo(perfil: PerfilCorpo2D = 'standard'): AnatomiaCorpo
   const V = PROP_V[perfil] ?? PROP_V.standard;
   return {
     cx: 120, ombro: D.ombro, peito: D.peito, cintura: D.cintura, quadril: D.quadril,
-    braco: D.braco, anta: D.anta,
+    coxa: D.coxa, braco: D.braco, anta: D.anta,
     armSh: D.ombro - 3, armEl: D.cintura + 8, armWr: D.quadril + 3,
     yNuc: 104, yOmb: 122, yPei: V.yPei, yCin: V.yCin, yQua: V.yQua, yEnt: V.yEnt,
     yCot: 200, yPun: 250, yJoe: V.yJoe, yTor: 356, yPe: 372,
