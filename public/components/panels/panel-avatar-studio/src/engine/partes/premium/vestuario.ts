@@ -29,24 +29,6 @@ const sec = (p: Paleta): ReturnType<typeof tintaPremium> =>
 // perfil, com "ease" (folga) por peça. Assim a MESMA peça veste slim, standard,
 // atlético e feminino sem sobrar/faltar tecido. Só usado no premium.
 
-interface RoupaEase { omb: number; pei: number; cin: number; hemHalf: number; yHem: number; }
-
-/** Torso da peça: linha de ombro (com decote) → tórax → cintura → barra. */
-function torsoRoupa(A: AnatomiaCorpo, e: RoupaEase, decote = 12): string {
-  const { cx, yOmb, yPei, yCin } = A;
-  const sx = A.ombro + e.omb, px = A.peito + e.pei, wx = A.cintura + e.cin, hx = e.hemHalf;
-  return `M${cx - sx} ${yOmb}
-    C ${cx - px - 2} ${yPei - 8} ${cx - px} ${yPei - 2} ${cx - px} ${yPei + 2}
-    C ${cx - wx - 2} ${yCin - 12} ${cx - wx} ${yCin - 4} ${cx - wx} ${yCin}
-    C ${cx - hx - 1} ${e.yHem - 16} ${cx - hx} ${e.yHem - 6} ${cx - hx} ${e.yHem}
-    C ${cx - hx + 4} ${e.yHem + 4} ${cx + hx - 4} ${e.yHem + 4} ${cx + hx} ${e.yHem}
-    C ${cx + hx} ${e.yHem - 6} ${cx + wx + 1} ${yCin - 4} ${cx + wx} ${yCin}
-    C ${cx + px} ${yPei - 2} ${cx + px + 2} ${yPei - 8} ${cx + sx} ${yOmb}
-    C ${cx + sx - 6} ${yOmb - 4} ${cx + decote} ${yOmb - 3} ${cx + decote - 2} ${yOmb + 2}
-    C ${cx} ${yOmb + decote - 4} ${cx} ${yOmb + decote - 4} ${cx - decote + 2} ${yOmb + 2}
-    C ${cx - decote} ${yOmb - 3} ${cx - sx + 6} ${yOmb - 4} ${cx - sx} ${yOmb} Z`;
-}
-
 // Golden V3.1 (#219 §52-65): SILHUETAS AUTORAIS por peça (a FORMA PRIMÁRIA é
 // desenhada peça a peça; anatomiaCorpo só posiciona; dobras NÃO são a autoria).
 // `suave` = spline fechada Catmull-Rom por pontos → contorno orgânico (ombro
