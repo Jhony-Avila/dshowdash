@@ -167,8 +167,8 @@ export const FUNDOS_PREMIUM: ParteDef[] = [
 /** Massa principal com `data-nucleo` (param §71 `nucleo` regula a opacidade
  *  do miolo — aplicarParamsSvg substitui o valor marcado). */
 function auraMain(cor: string, corNucleo: string, anel: string): string {
-  return `<g data-nucleo="1" opacity="0.55"><ellipse cx="120" cy="120" rx="64" ry="72" fill="${alfa(corNucleo, 0.3)}"/></g>${anel}
-    <ellipse cx="120" cy="120" rx="92" ry="100" fill="none" stroke="${alfa(cor, 0.5)}" stroke-width="2"/>`;
+  return `<g data-nucleo="1" opacity="0.4"><ellipse cx="120" cy="120" rx="60" ry="68" fill="${alfa(corNucleo, 0.24)}"/></g>${anel}
+    <ellipse cx="120" cy="120" rx="94" ry="102" fill="none" stroke="${alfa(cor, 0.26)}" stroke-width="1.5"/>`;
 }
 
 const comumAura = {
@@ -188,7 +188,7 @@ export const AURAS_PREMIUM: ParteDef[] = [
     descricao: 'Corrente de energia com núcleo regulável e faíscas vivas.',
     lore: 'Um circuito fechado entre intenção e execução.',
     render: (p) => auraMain(p.destaque.base, sec(p).base,
-      `<path d="M46 150 q 74 -84 148 0" stroke="${alfa(p.destaque.claro, 0.6)}" stroke-width="2.4" fill="none"><animate attributeName="opacity" values="0.8;0.35;0.8" dur="3.4s" repeatCount="indefinite"/></path>`),
+      `<path d="M58 148 q 62 -64 124 0" stroke="${alfa(p.destaque.claro, 0.38)}" stroke-width="1.8" fill="none"><animate attributeName="opacity" values="0.5;0.24;0.5" dur="3.4s" repeatCount="indefinite"/></path>`),
     renderAtras: (p, u) => glowAtras(u, p.destaque.base),
     renderFrente: (p) => `<g opacity="0.85">
       <circle cx="70" cy="176" r="2" fill="${p.destaque.claro}"><animate attributeName="cy" values="176;158;176" dur="3.8s" repeatCount="indefinite"/></circle>

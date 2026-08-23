@@ -37,6 +37,7 @@ import { FUNDOS_PREMIUM, AURAS_PREMIUM, MOLDURAS_PREMIUM } from '../engine/parte
 import { SOBREPECAS } from '../engine/sobrepecas';
 import { ACESSORIOS } from '../engine/partes/acessorios';
 import { slotCorporal, slotFinoDoAsset } from '../workspace/acessorios'; // #140 (as6.acess_v2) · #154
+import { corpoInteiro } from '../engine/partes/corpo'; // onda 1426 (#218 §7/§10/§16): contexto de corpo p/ vestuário e ghost
 import { FUNDOS } from '../engine/partes/fundos';
 import { MOLDURAS } from '../engine/partes/molduras';
 import { EFEITOS } from '../engine/partes/efeitos';
@@ -795,19 +796,60 @@ export function svgItemIsolado(
   if (!parte) return '';
   const paleta = paletaDe({ ...CONFIG_PADRAO.cores, ...(opcoes?.cores ?? {}) });
   const uid = opcoes?.uid ?? `it-${id}`;
-  // onda 1404 (#154): acessório CORPORAL — arte só em renderCorpo (corpo
-  // inteiro 240×400); o busto devolve '' por contrato
-  const corporal = parte.categoria === 'acessorio' && slotCorporal(parte.slot ?? 'cabeca') && !!parte.renderCorpo;
-  const foco = opcoes?.foco ?? (corporal ? '0 0 240 400' : '0 0 240 240');
-  // onda 1425 (BRIEFING_COMPLEMENTAR_02 §6, #217): monta TODAS as camadas
-  // do asset (renderAtras + render + renderFrente + planos) — antes só a
-  // frontal, o que cortava a massa traseira do cabelo premium. As artes
-  // premium (bas_px_/cab_px_/…) já são partes próprias: chamar o render
-  // delas devolve a arte premium (premium/faceV2 não precisam ser passados).
-  const arte = (r?: ParteRender): string => (r ? r(paleta, uid) : '');
-  const frag = corporal
-    ? parte.renderCorpo!(paleta, uid)
-    : arte(parte.renderPlanos?.atras) + arte(parte.renderAtras) + arte(parte.render) + arte(parte.renderFrente) + arte(parte.renderPlanos?.frente);
+  const arte = (r?: ParteRender, pal = paleta): string => (r ? r(pal, uid) : '');
+  const cat = parte.categoria;
+  const slot = parte.slot ?? 'cabeca';
+
+  // onda 1426 (#218 — BRIEFING_COMPLEMENTAR_02 §7/§9/§10/§16, veredito 23/08):
+  // VESTUÁRIO precisa de um CORPO por baixo p/ ler como peça vestida (a arte
+  // da roupa é overlay do torso — sozinha vira só um capuz de ombro §7). E o
+  // GHOST-CONTEXT (§10/§16) deixa de ser "classe CSS vazia": aqui existe uma
+  // silhueta anatômica NEUTRA (cinza, sem identidade) atrás do asset, na
+  // escala certa (relógio no pulso, brinco no lóbulo, barba no maxilar,
+  // aura/efeito na silhueta). Nada disso toca o avatar SALVO (byte-estável):
+  // svgItemIsolado é só o THUMBNAIL de reconhecimento.
+  const vestido = cat === 'roupa' || cat === 'roupa_sobre' || cat === 'roupa_inferior';
+  const corporalAcess = cat === 'acessorio' && slotCorporal(slot) && !!parte.renderCorpo;
+  const ghostCat = cat === 'barba' || cat === 'aura' || cat === 'efeito';
+
+  // paleta NEUTRA do ghost (sem cor de identidade — §10 "neutro e discreto")
+  const palGhost = paletaDe({ pele: '#9aa0aa', cabelo: '#7c828c', roupa: '#7c828c', destaque: '#8b919b' });
+  // silhueta de corpo neutra p/ escala (cabeça + tronco + membros) — discreta
+  const cabecaGhost = `<ellipse cx="120" cy="72" rx="46" ry="52" fill="${palGhost.pele.base}"/><path d="M103 118 h34 v22 c0 8 -34 8 -34 0 z" fill="${palGhost.pele.escuro}"/>`;
+  const ghostCorpo = (comCabeca: boolean): string => `<g opacity="0.5">${comCabeca ? cabecaGhost : ''}${corpoInteiro(palGhost, uid + 'gh')}</g>`;
+  // busto neutro em coords 240 (pescoço + ombros) p/ peças premium que só
+  // têm `render` de sobreposição de busto (sem renderCorpo) — §7
+  const bustoGhost240 = `<g opacity="0.5"><path d="M103 146 h34 v40 c0 9 -34 9 -34 0 z" fill="${palGhost.pele.escuro}"/><path d="M36 240 v-12 c0 -28 36 -46 84 -46 s84 18 84 46 v12 z" fill="${palGhost.pele.base}"/></g>`;
+
+  // arte composta do asset (todas as camadas — onda 1425 §6)
+  const camadasAsset = (pal = paleta): string =>
+    arte(parte.renderPlanos?.atras, pal) + arte(parte.renderAtras, pal) + arte(parte.render, pal) + arte(parte.renderFrente, pal) + arte(parte.renderPlanos?.frente, pal);
+
+  let frag: string;
+  let focoPadrao: string;
+  if (vestido && parte.renderCorpo) {
+    // corpo NA COR da peça (é a própria roupa vestida, não "ghost") + detalhes
+    frag = corpoInteiro(paleta, uid) + arte(parte.renderCorpo);
+    focoPadrao = cat === 'roupa_inferior' ? '48 196 144 152' : '34 98 172 138';
+  } else if (vestido) {
+    // peça premium só com `render` (sobreposição de busto): busto neutro +
+    // arte da peça, enquadrado na gola/ombros — §7 (recon sem corpo inteiro)
+    frag = bustoGhost240 + camadasAsset();
+    focoPadrao = '40 150 160 92';
+  } else if (corporalAcess) {
+    // acessório no corpo (relógio/tênis/etc.) SOBRE silhueta neutra p/ escala
+    frag = ghostCorpo(true) + arte(parte.renderCorpo);
+    focoPadrao = '0 0 240 400';
+  } else if (ghostCat) {
+    // §10/§16: contexto anatômico neutro real atrás do asset
+    frag = ghostCorpo(cat === 'barba' ? true : true) + camadasAsset();
+    focoPadrao = cat === 'barba' ? '58 40 124 118' : '18 26 204 348';
+  } else {
+    // isolado puro (cabelo/olhos/base/boca/fundo/…) — APROVADO pelo Jhony (§4/§6/§12/§25)
+    frag = camadasAsset();
+    focoPadrao = '0 0 240 240';
+  }
+  const foco = opcoes?.foco ?? focoPadrao;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${foco}" role="presentation">${frag}</svg>`;
 }
 

@@ -25,12 +25,11 @@ export const IRIS_PADRAO = '#4a3626';
 function defsPelePremium(u: string, hexPele: string): string {
   const t = tintaPremium(hexPele);
   return `
-    <radialGradient id="${u}pxpele" cx="0.36" cy="0.26" r="1.05">
-      <stop offset="0" stop-color="${t.brilho}"/>
-      <stop offset="0.32" stop-color="${t.claro}"/>
-      <stop offset="0.62" stop-color="${t.base}"/>
-      <stop offset="0.86" stop-color="${t.meio}"/>
-      <stop offset="1" stop-color="${t.escuro}"/>
+    <radialGradient id="${u}pxpele" cx="0.47" cy="0.46" r="0.96">
+      <stop offset="0" stop-color="${t.claro}"/>
+      <stop offset="0.55" stop-color="${t.base}"/>
+      <stop offset="0.85" stop-color="${t.base}"/>
+      <stop offset="1" stop-color="${t.meio}"/>
     </radialGradient>
     <linearGradient id="${u}pxpesc" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="${t.escuro}"/>
@@ -103,8 +102,8 @@ function narizPremium(t: TP, estilo: 'reto' | 'largo' | 'fino' | 'arrebitado' | 
 /** Bochechas (§740) com ALTURA/volume por rosto — maçãs altas ≠ cheias. */
 function bochechas(t: TP, y = 127, rx = 10, forca = 1): string {
   return `
-    <ellipse cx="${120 - 23}" cy="${y}" rx="${rx}" ry="${rx * 0.65}" fill="${alfa(t.claro, 0.28 * forca)}"/>
-    <ellipse cx="${120 + 23}" cy="${y}" rx="${rx}" ry="${rx * 0.65}" fill="${alfa(t.meio, 0.24 * forca)}"/>`;
+    <ellipse cx="${120 - 23}" cy="${y}" rx="${rx}" ry="${rx * 0.62}" fill="${alfa(t.claro, 0.15 * forca)}"/>
+    <ellipse cx="${120 + 23}" cy="${y}" rx="${rx}" ry="${rx * 0.62}" fill="${alfa(t.meio, 0.13 * forca)}"/>`;
 }
 
 /** Arcada superciliar com PESO por rosto (§703 — ossatura, não pelo). */
@@ -138,7 +137,7 @@ function basePremium(perfil: PerfilRosto): ParteRender {
     return `
       <defs>${defsPelePremium(u, p.pele.base)}</defs>
       <path d="${PATH_PESCOCO}" fill="url(#${u}pxpesc)"/>
-      <path d="M103 176 q 17 6 34 0 l -2 6 q -15 5 -30 0 z" fill="${alfa(t.profundo, 0.32)}"/>
+      <path d="M103 176 q 17 6 34 0 l -2 6 q -15 5 -30 0 z" fill="${alfa(t.profundo, 0.18)}"/>
       <path d="${perfil.cabeca}" fill="url(#${u}pxpele)"/>
       <path d="${perfil.jawline}" fill="none" stroke="${alfa(t.escuro, 0.35)}" stroke-width="2.6" stroke-linecap="round"/>
       ${perfil.maxilar ? `<path d="${perfil.maxilar}" fill="${alfa(t.meio, 0.4)}"/>` : ''}
@@ -148,9 +147,9 @@ function basePremium(perfil: PerfilRosto): ParteRender {
       ${arcada(t, perfil.arcada.peso, perfil.arcada.quebra)}
       ${perfil.queixo ? perfil.queixo(t) : `<ellipse cx="120" cy="152" rx="19" ry="6.4" fill="${alfa(t.profundo, 0.26)}"/>
       <path d="M120 156 q 4 2 0 4 q -4 -2 0 -4" fill="${alfa('#ffffff', 0.16)}"/>`}
-      <ellipse cx="120" cy="${perfil.testa.cy}" rx="${perfil.testa.rx}" ry="${perfil.testa.ry}" fill="${alfa('#ffffff', perfil.testa.op ?? 0.1)}"/>
-      <path d="M80 72 a 52 58 0 0 1 44 -22" stroke="${alfa('#ffffff', 0.4)}" stroke-width="5" stroke-linecap="round" fill="none"/>
-      <path d="M158 78 a 52 58 0 0 1 8 26" stroke="${alfa(t.escuro, 0.3)}" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <ellipse cx="120" cy="${perfil.testa.cy}" rx="${perfil.testa.rx}" ry="${perfil.testa.ry}" fill="${alfa('#ffffff', (perfil.testa.op ?? 0.1) * 0.55)}"/>
+      <path d="M80 72 a 52 58 0 0 1 44 -22" stroke="${alfa('#ffffff', 0.2)}" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+      <path d="M158 78 a 52 58 0 0 1 8 26" stroke="${alfa(t.escuro, 0.16)}" stroke-width="3" stroke-linecap="round" fill="none"/>
       ${perfil.extras ? perfil.extras(t) : ''}`;
   };
 }

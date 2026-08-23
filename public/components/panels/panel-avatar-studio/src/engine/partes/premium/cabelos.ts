@@ -37,8 +37,8 @@ const SOMBRA_TESTA = (t: TP, d: string): string =>
   `<path d="${d}" fill="${alfa(t.profundo, 0.22)}"/>`;
 
 /** Mechas de brilho (§890): strokes finos seguindo o fluxo da massa. */
-function mechas(t: TP, paths: string[], intensidade = 0.5): string {
-  return paths.map((d, i) => `<path d="${d}" stroke="${alfa(i % 2 ? t.claro : t.brilho, intensidade)}" stroke-width="${2.4 - (i % 3) * 0.5}" stroke-linecap="round" fill="none"/>`).join('');
+function mechas(t: TP, paths: string[], intensidade = 0.32): string {
+  return paths.map((d, i) => `<path d="${d}" stroke="${alfa(i % 2 ? t.claro : t.brilho, intensidade)}" stroke-width="${2.1 - (i % 3) * 0.5}" stroke-linecap="round" fill="none"/>`).join('');
 }
 
 /** Fios soltos (§891): 2–3 strokes de 1px fora da silhueta. */
@@ -48,8 +48,8 @@ function fios(t: TP, paths: string[]): string {
 
 /** Rim light no topo (§892) — mesma âncora do BRILHO clássico. */
 const RIM = (t: TP): string =>
-  `<path d="M86 64 a 48 42 0 0 1 36 -13" stroke="${alfa('#ffffff', 0.34)}" stroke-width="3.6" stroke-linecap="round" fill="none"/>
-   <path d="M128 52 a 44 40 0 0 1 20 10" stroke="${alfa(t.brilho, 0.5)}" stroke-width="2.2" stroke-linecap="round" fill="none"/>`;
+  `<path d="M86 64 a 48 42 0 0 1 36 -13" stroke="${alfa('#ffffff', 0.18)}" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+   <path d="M128 52 a 44 40 0 0 1 20 10" stroke="${alfa(t.brilho, 0.3)}" stroke-width="1.8" stroke-linecap="round" fill="none"/>`;
 
 interface CamadasCabelo {
   massa: string;                    // path da massa principal (fill gradiente)

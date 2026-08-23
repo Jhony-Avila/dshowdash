@@ -4,9 +4,11 @@
 
 | Gate | Estado | Desde | Evidência | Observações honestas (ENGINE/ART/UX) |
 |---|---|---|---|---|
-| **A — 2D PREMIUM VISUAL** | `CANDIDATE` | 2026-08-22 (onda 1423) | 8 pranchas §88 | ENGINE: READY. ART: PARTIAL — rostos premium ainda "parecem irmãos" (§18: identidade por crânio/mandíbula pende); `cab_px_curto` afinou demais (rework); roupas/full/ambiente com salto claro. |
-| **B — 3D PREMIUM VISUAL** | `CANDIDATE` | 2026-08-22 (onda 1423) | 8 pranchas §89 | ENGINE: READY (câmera v2 é o maior ganho; 2 bugs achados E corrigidos pelo próprio Before×After: OutputPass ausente na cadeia de pós → pele bronze; look Hero estourado → recalibrado v2). ART: **BLOCKED** (§38 — sem morphs faciais, hair cards, outfits modernos e GLBs hero, o teto é o asset CC0 atual). Pele ainda ~1 ponto acima no brilho. |
-| **C — 3D UX SIMPLICITY** | `CANDIDATE` | 2026-08-22 (onda 1423) | prancha §90 | Simplificação PROVISÓRIA via `as6.ux3d_simples` (técnicos atrás de "Avançado"); a IA definitiva (§54: PERSONAGEM/ROSTO/CABELO/ROUPA/ACESSÓRIOS/CENA/FOTO) é a Fase E. |
+| **A — 2D PREMIUM VISUAL** | `REWORK` | 2026-08-23 (veredito Jhony) | 8 pranchas §88 | Veredito humano REWORK. **Onda 1426 atacou**: #1 cabelo feminino (era ID errado no gerador, não a arte), #2 hairline colada, #3 manchas/overlays faciais (pele integrada), #4 aura competindo. Regerar B×A 2D → novo veredito. |
+| **B — 3D PREMIUM VISUAL** | `REWORK` | 2026-08-23 (veredito Jhony) | 8 pranchas §89 | ENGINE: câmera v2 preservada (ganho real). ART: **BLOCKED** (§38). Pendências onda **1427**: #5 pele plástica (recalibrar material v2), #7 bloom do Hero, #6-3D validade semântica (FAIL se a prancha não tiver cabelo/roupa/pele reais). |
+| **C — 3D UX SIMPLICITY** | `REWORK` | 2026-08-23 (veredito Jhony) | prancha §90 | "Esconder em Avançado" não encerra. Onda **1427**: arquitetura de informação (PERSONAGEM→ROSTO→CABELO→ROUPA→ACESSÓRIOS→CENA→FOTO; menos chips; avatar domina o viewport). |
+| **Thumbnail Clarity** | `REWORK PARCIAL` | 2026-08-23 (veredito Jhony) | 5 contact sheets | Cabelo/olhos/base/fundo APROVADOS p/ clareza. **Onda 1426**: #9 roupa vestida no corpo (~78%, sem cortar) + #10 ghost-context REAL (silhueta neutra p/ barba/aura/efeito/acess corporal — não mais só CSS). |
+| **Asset Distinctiveness** | `REWORK` | 2026-08-23 (veredito Jhony) | contact sheets + shortlists | Classificação humana registrada (claude/62). Execução na onda **1427** (variantes §59, legacy §79/§80). Fundos = KEEP (falsos positivos da heurística). |
 
 ## Tabela de assets 3D (§38)
 

@@ -38,177 +38,177 @@
       "filtros": 0
     },
     "p03-busto": {
-      "sha256": "9d56faf72e1123c027ea763ff16381801704c2ad9ec0a1ff08ecf39b389f1f5c",
-      "bytes": 11202,
-      "nos": 152,
+      "sha256": "71815aab2c1a43609df5572891a6f91365b1102c0c17c7103d0c4f5575dbbc41",
+      "bytes": 11160,
+      "nos": 151,
       "filtros": 0
     },
     "p04-busto": {
-      "sha256": "d9ba3b862cd4d9ed57ed54f368c23117b78fb279c18e31a642c88dbbef7e5b7b",
-      "bytes": 10341,
-      "nos": 141,
+      "sha256": "7220a77aa9264765c59c66a8fdf67c242a8eeeca8ad72e7e0a86e9bf9ba8549e",
+      "bytes": 10298,
+      "nos": 140,
       "filtros": 0
     },
     "p05-busto": {
-      "sha256": "05f2c9fd28ca421d57951c3726eb4d005510e26c61d419fe0d3d74e35ce5519b",
-      "bytes": 9713,
-      "nos": 129,
-      "filtros": 0
-    },
-    "p06-busto": {
-      "sha256": "f1b7216889c9aad60961bbb679e2dfde925b2ef0b9ffbd7985d7b0e3e639ed20",
-      "bytes": 9899,
+      "sha256": "67e2fba6fdd37cfee09a0191e985e8a92ec7f3afca78fdb85c91f2a99fba46e9",
+      "bytes": 9683,
       "nos": 128,
       "filtros": 0
     },
+    "p06-busto": {
+      "sha256": "f10682b3d14d14e72185a2764d611073e85d2e50d10726f3060858bb43d19e7d",
+      "bytes": 9868,
+      "nos": 127,
+      "filtros": 0
+    },
     "c01-golden-m-palco": {
-      "sha256": "3a14d782c0cc18bec27dec0f410044601770066631d63ec64954e7eb73b8b1e5",
-      "bytes": 11719,
-      "nos": 172,
-      "filtros": 0
-    },
-    "c02-golden-f-palco": {
-      "sha256": "a5ebada4a0c24c2d9d3a2f7443e09e35cabe161d64af197980fd27ded9a30d8b",
-      "bytes": 11177,
-      "nos": 163,
-      "filtros": 0
-    },
-    "h01-lateral-busto": {
-      "sha256": "ff3616c1bbced0f3794e39902bda5848268363c3093f338082e004e987eee8f6",
-      "bytes": 8080,
-      "nos": 109,
-      "filtros": 0
-    },
-    "h02-lateral-busto": {
-      "sha256": "e712e82c23aa7e4ca84045631ba8680aa90f5191436d23cd35715b6568bb70e8",
-      "bytes": 8086,
-      "nos": 109,
-      "filtros": 0
-    },
-    "h03-lateral-busto": {
-      "sha256": "7882d54b17faa08f93dd0273d497e22279b994e1f72d857167e505df8150eaef",
-      "bytes": 8092,
-      "nos": 109,
-      "filtros": 0
-    },
-    "h04-longo_liso-busto": {
-      "sha256": "17eabcfface33130d97c998deef3e5177e2c362061650244bd60df374f1e9fe7",
-      "bytes": 8320,
-      "nos": 115,
-      "filtros": 0
-    },
-    "h05-longo_liso-busto": {
-      "sha256": "2772686a6c354530c1004c2de30e5546b184a3ecf63b1f8177908f3e1d3d3634",
-      "bytes": 8325,
-      "nos": 115,
-      "filtros": 0
-    },
-    "h06-longo_liso-busto": {
-      "sha256": "43e7f274f488213d916381e16e946b7c84c340421dad65af019c233bf3bd31ba",
-      "bytes": 8329,
-      "nos": 115,
-      "filtros": 0
-    },
-    "p07-golden-m-cabelo-busto": {
-      "sha256": "514f4c22d64da17ce8bb4fafe0f95dc08c036d877ae557ce01081f3c4a3915e6",
-      "bytes": 12688,
-      "nos": 167,
-      "filtros": 0
-    },
-    "p08-golden-f-cabelo-busto": {
-      "sha256": "63581aba14350a103c21b2d3cda513e3138d5f5751b5ca1c41093398b68ce4ba",
-      "bytes": 12061,
-      "nos": 162,
-      "filtros": 0
-    },
-    "f01-facev2-busto": {
-      "sha256": "ee9171f4d5cf45ecf4c3c62062eea3bdea6c1fe5a77ea83a6103963c830c7ff8",
-      "bytes": 14787,
-      "nos": 198,
-      "filtros": 0
-    },
-    "f02-facev2-busto": {
-      "sha256": "3fba6c953762535a7e109438d037013ff352e5734efa4b4c3d7d1378175d85d1",
-      "bytes": 13129,
-      "nos": 181,
-      "filtros": 0
-    },
-    "f03-facev2-busto": {
-      "sha256": "b728cef2922afa0ccfce564b0d6b51dff6fd6014608ccf9862752f098e426fd7",
-      "bytes": 11755,
-      "nos": 162,
-      "filtros": 0
-    },
-    "f04-facev2-busto": {
-      "sha256": "ae2e7f7342b830ec858faf6dc4e372656cc5b78c4430cde4d2451ce6c8f631af",
-      "bytes": 12091,
-      "nos": 162,
-      "filtros": 0
-    },
-    "p09-outfit-boardroom-corpo": {
-      "sha256": "3266fb46de2325e3cabab794a61bcb42209efbc7c9db0a2f1c34f8c15aa8babb",
-      "bytes": 16588,
-      "nos": 242,
-      "filtros": 0
-    },
-    "p12-acessorios-busto": {
-      "sha256": "65135b0033ce7573ac0ea0f1ec84464cca8da73b52521135dbfa20564bb5f847",
-      "bytes": 14615,
-      "nos": 208,
-      "filtros": 0
-    },
-    "p13-ambiente-busto": {
-      "sha256": "ad3a69f1e004c54e7445d6f9c017e0b0cf70686ec4fc8a7fca930ea0aba23420",
-      "bytes": 13091,
-      "nos": 191,
-      "filtros": 0
-    },
-    "p14-ambiente-palco": {
-      "sha256": "a6b9190ddb4089886df8eba5301423019c5fc847c5ac056b02d2c124723c41c1",
-      "bytes": 13172,
-      "nos": 203,
-      "filtros": 0
-    },
-    "p15-ambiente-busto": {
-      "sha256": "2bdec3b3ddead60c0d916d6872dfd8a07ed13c57ff7dcc212b025a3134aad88b",
-      "bytes": 11936,
+      "sha256": "39ef50a0076e1432b01928ad544b70c72e35dc81d45982d25ae3afb1fa3ad5e4",
+      "bytes": 11677,
       "nos": 171,
       "filtros": 0
     },
+    "c02-golden-f-palco": {
+      "sha256": "2e1030db1292674cfa376531738a15e56e3c46d3e71302ac582d1e8c5da8cc2a",
+      "bytes": 11134,
+      "nos": 162,
+      "filtros": 0
+    },
+    "h01-lateral-busto": {
+      "sha256": "1b1e644e07ac64def40a13b6d1d8a658e7090e889c98e5067e4fb67f8350b176",
+      "bytes": 8054,
+      "nos": 108,
+      "filtros": 0
+    },
+    "h02-lateral-busto": {
+      "sha256": "93fae9507a65dabd738e60a3bc4eca9907dfdafc577b96d55fc90408d0a9c322",
+      "bytes": 8060,
+      "nos": 108,
+      "filtros": 0
+    },
+    "h03-lateral-busto": {
+      "sha256": "c6cd9e2c182b3683ef90952fb404c4f6c0606bbf9e53e73f38ddfbee4b8fa6c2",
+      "bytes": 8066,
+      "nos": 108,
+      "filtros": 0
+    },
+    "h04-longo_liso-busto": {
+      "sha256": "6f611928ea3c3e96a0d02e6a2526f61988b1195cc418e4f2ec680366cb6be4a0",
+      "bytes": 8293,
+      "nos": 114,
+      "filtros": 0
+    },
+    "h05-longo_liso-busto": {
+      "sha256": "3ce18ed7aa9633e7987a2f7373fa82024fad460626f1e0485b801b276693a450",
+      "bytes": 8298,
+      "nos": 114,
+      "filtros": 0
+    },
+    "h06-longo_liso-busto": {
+      "sha256": "38b88314bc84c83477e77077db5888b6bb02c7c200cf5c9ee3ec6dde8dd7942a",
+      "bytes": 8302,
+      "nos": 114,
+      "filtros": 0
+    },
+    "p07-golden-m-cabelo-busto": {
+      "sha256": "d845689af4f3cdf0aefb2946cf311f98440524af09bb96ab30bac38efb19d70d",
+      "bytes": 12650,
+      "nos": 166,
+      "filtros": 0
+    },
+    "p08-golden-f-cabelo-busto": {
+      "sha256": "e4a996e8a4573d35e6e1c537d54b9f899b318cd0ff585f48b6cdc78557db87b2",
+      "bytes": 12021,
+      "nos": 161,
+      "filtros": 0
+    },
+    "f01-facev2-busto": {
+      "sha256": "f4ebfe412afef0081a1e6dd231524e7ee31c5abf76b2f5422f7ca0f97deacd73",
+      "bytes": 14749,
+      "nos": 197,
+      "filtros": 0
+    },
+    "f02-facev2-busto": {
+      "sha256": "0469152052e0e9e52dd2899e98d20b3412d33dda6c724fe8126e82ec974f582e",
+      "bytes": 13089,
+      "nos": 180,
+      "filtros": 0
+    },
+    "f03-facev2-busto": {
+      "sha256": "7cc83cacbe7885eef3628486ab65f19ce8e358ddf240f3c4d73bd1cd78b6e939",
+      "bytes": 11713,
+      "nos": 161,
+      "filtros": 0
+    },
+    "f04-facev2-busto": {
+      "sha256": "85807351724a4707f2478894e9ebd86ae74bab1ca84cb7dc465f839549c14336",
+      "bytes": 12036,
+      "nos": 161,
+      "filtros": 0
+    },
+    "p09-outfit-boardroom-corpo": {
+      "sha256": "20b1b749a45106b24f7e93a3ad704963852c8972678b2f9983b1c2131db76ef9",
+      "bytes": 16546,
+      "nos": 241,
+      "filtros": 0
+    },
+    "p12-acessorios-busto": {
+      "sha256": "0fe2decd463c4940170115ba687253692636042fbfb3fdea9b69ef3742da3fc0",
+      "bytes": 14573,
+      "nos": 207,
+      "filtros": 0
+    },
+    "p13-ambiente-busto": {
+      "sha256": "16a7e3b0f1f205be2c345637d2e46242231c04dac0ef59a5dc511788f3b6a523",
+      "bytes": 13053,
+      "nos": 190,
+      "filtros": 0
+    },
+    "p14-ambiente-palco": {
+      "sha256": "0f5da7e4cf2b6011ea8d0980c285cf37c1fc300617eea2a00a88bb06d278ccca",
+      "bytes": 13132,
+      "nos": 202,
+      "filtros": 0
+    },
+    "p15-ambiente-busto": {
+      "sha256": "63938d97736b925df238fdac1eb7f7fae277874385f3251891f8388a3fa086c4",
+      "bytes": 11909,
+      "nos": 170,
+      "filtros": 0
+    },
     "e01-export-bust": {
-      "sha256": "4e667554793be9708c242032ad8338fac89b4addd83e7bb80f1529dd862d60af",
-      "bytes": 10650,
-      "nos": 143,
+      "sha256": "1cd1afccea7c0b4379042d374a833bf73f59fb07d1545bb9ef9c5e7e2aeb35ff",
+      "bytes": 10608,
+      "nos": 142,
       "filtros": 0
     },
     "e02-export-full": {
-      "sha256": "b2699e66ac1f517d5daeaddfb1c6c5a26a76f1c19ee440700546b744877efdf0",
-      "bytes": 13481,
-      "nos": 199,
+      "sha256": "3d87fe4ab134989c6f232683171880d1d2ad126f8a29b3223b4e72af2e5d68d1",
+      "bytes": 13439,
+      "nos": 198,
       "filtros": 0
     },
     "e03-export-transparente": {
-      "sha256": "e39024be81c3b3fd7afe1f1b449600011ae9822a3d7f07f40c4dc6db36a26dda",
-      "bytes": 10302,
-      "nos": 135,
+      "sha256": "09f31d062e654fbe197e94b0728303b2e9a2b7fe663c60b5bac57e0af1f59111",
+      "bytes": 10260,
+      "nos": 134,
       "filtros": 0
     },
     "p16-preset-gala-busto": {
-      "sha256": "7179b4e7680a6e05a8d737c2220c62e7b8b8227cf528d1b4e34dabb50d203d95",
-      "bytes": 14977,
-      "nos": 219,
+      "sha256": "34f32ea18f8a8a6934dbe868ade9d5184c96b7a36cf7ecaeb4d45be8ee592d7a",
+      "bytes": 14952,
+      "nos": 218,
       "filtros": 0
     },
     "p10-outfit-offduty-corpo": {
-      "sha256": "c0f0fc34dc92a6cee5f171615631b99f5bf1cc049b0a70499e988ac1de27cccc",
-      "bytes": 16011,
-      "nos": 232,
+      "sha256": "112ccb63674bf81834dc80e4470459e58cb62c978030d72cad48da7d8090689f",
+      "bytes": 15968,
+      "nos": 231,
       "filtros": 0
     },
     "p11-outfit-gala-corpo": {
-      "sha256": "44ce77f55c860f333e4fe01ebe2d1fad6a7e12ed3d610a8e425aa451d0cafaa0",
-      "bytes": 15840,
-      "nos": 230,
+      "sha256": "b405e967d78ef9522d20c9faaa2d166167fc5b444c03bd13401632f4a962515b",
+      "bytes": 15767,
+      "nos": 229,
       "filtros": 0
     }
   }

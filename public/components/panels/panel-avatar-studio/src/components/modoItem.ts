@@ -13,6 +13,10 @@ import { subcategoriaDoAsset } from '../workspace/acessorios';
 
 // gerado por scripts/avatar/medir-foco-item.mjs — revisar o diff no mesmo commit
 export const FOCO_ITEM_ASSET: Record<string, string> = {
+  // onda 1426 (#218 §7): peças premium (só render de busto) — enquadra gola/ombros
+  rou_px_camiseta: '40 150 160 92', rou_px_camisa: '40 150 160 92', rou_px_hoodie: '40 150 160 92',
+  rou_px_blazer: '40 150 160 92', rou_px_polo: '40 150 160 92', rou_px_colete: '40 150 160 92',
+  rou_px_sobretudo: '40 150 160 92', rou_px_gala: '40 150 160 92',
   ace_anel_sinete: '128 170 80 80',
   ace_antena: '124 4 64 64',
   ace_asas_energia: '2 7 236 236',
@@ -152,15 +156,15 @@ export const FOCO_ITEM_CATEGORIA: Record<string, string> = {
   boca: '92 128 56 40',         // §13 só a boca + área neutra mínima
   nariz: '98 104 44 44',        // §14
   sobrancelha: '82 86 76 26',   // §15 par de sobrancelhas
-  barba: '78 118 84 72',        // §16 contorno da mandíbula (jaw ghost)
+  barba: '58 40 124 118',       // §16 maxilar sobre silhueta neutra (ghost real, coords do CORPO)
   cabelo: '58 30 124 110',      // §4/§6 massa do cabelo (back+front) sem rosto
-  roupa: '48 176 144 180',      // §7/§8 torso da peça no corpo (cintura p/ cima)
-  roupa_sobre: '44 172 152 184',
-  roupa_inferior: '60 300 120 100', // §9 cintura aos pés
+  roupa: '34 98 172 138',       // onda 1426 §7: torso vestido (corpo por baixo) ~78% ocupação
+  roupa_sobre: '34 98 172 138',
+  roupa_inferior: '48 196 144 152', // §9 quadril→pés sobre o corpo
   fundo: '0 0 240 240',         // §25/§48 a arte preenche 100%
   moldura: '0 0 240 240',       // §26 moldura + campo vazio
-  aura: '20 20 200 200',        // §27 aura com escala (ghost)
-  efeito: '20 20 200 200',      // §28
+  aura: '18 26 204 348',        // §27 silhueta ghost inteira p/ escala
+  efeito: '18 26 204 348',      // §28
   banner: '20 150 200 80',
   emblema: '150 20 70 70',
 };

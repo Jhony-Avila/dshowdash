@@ -61,9 +61,20 @@ async function gerar2d() {
   const tmp = mkdtempSync(join(tmpdir(), 'avst-ba-'));
   try {
     writeFileSync(join(tmp, 'prova.ts'), `
-import { svgDe, validarConfig } from '@painel/services/AvatarCatalog';
+import { svgDe, validarConfig, itemPorId } from '@painel/services/AvatarCatalog';
 const B = { pele: '#e8b58c', cabelo: '#4a3527', roupa: '#2b5f8f', destaque: '#c9a227' };
-const cfg = (extra: Record<string, unknown>) => validarConfig({ formato: 'camadas', versao: 3, cores: B, ...extra });
+// §6/§88 (veredito 23/08): uma prancha NÃO é válida só porque foi gerada.
+// Todo ID referenciado (base + camadas) precisa RESOLVER no catálogo; se um
+// asset esperado não existir, FALHA em vez de produzir um AFTER "careca".
+const exigirAssets = (extra: Record<string, unknown>, ctx: string) => {
+  const ids: string[] = [];
+  if (typeof extra.base === 'string') ids.push(extra.base as string);
+  const cam = (extra.camadas ?? {}) as Record<string, unknown>;
+  for (const v of Object.values(cam)) if (typeof v === 'string') ids.push(v);
+  const faltando = ids.filter((id) => !itemPorId(id));
+  if (faltando.length) throw new Error('ASSET_AUSENTE em ' + ctx + ': ' + faltando.join(', '));
+};
+const cfg = (extra: Record<string, unknown>, ctx = '?') => { exigirAssets(extra, ctx); return validarConfig({ formato: 'camadas', versao: 3, cores: B, ...extra }); };
 type Caso = { id: string; titulo: string; antes: Record<string, unknown>; depois: Record<string, unknown>; corpo?: boolean };
 const CASOS: Caso[] = [
   { id: '01_face_male', titulo: 'Rosto masculino — Legacy vs Premium (base+olhos+boca+faceV2)',
@@ -75,9 +86,9 @@ const CASOS: Caso[] = [
   { id: '03_hair_male', titulo: 'Cabelo masculino — cab_curto vs cab_px_curto',
     antes: { base: 'bas_classica', camadas: { olhos: 'olh_padrao', boca: 'boc_sorriso', cabelo: 'cab_curto' } },
     depois: { base: 'bas_px_oval', camadas: { olhos: 'olh_px_confiante', boca: 'boc_px_sorriso', cabelo: 'cab_px_curto' }, acabamento: 'premium' } },
-  { id: '04_hair_female', titulo: 'Cabelo feminino — cab_longo vs cab_px_longo',
+  { id: '04_hair_female', titulo: 'Cabelo feminino — cab_longo vs cab_px_longo_liso',
     antes: { base: 'bas_redonda', camadas: { olhos: 'olh_focado', boca: 'boc_neutra', cabelo: 'cab_longo' } },
-    depois: { base: 'bas_px_redonda', camadas: { olhos: 'olh_px_focado', boca: 'boc_px_neutra', cabelo: 'cab_px_longo' }, acabamento: 'premium' } },
+    depois: { base: 'bas_px_redonda', camadas: { olhos: 'olh_px_focado', boca: 'boc_px_neutra', cabelo: 'cab_px_longo_liso' }, acabamento: 'premium' } },
   { id: '05_outfit', titulo: 'Roupa — rou_social vs rou_px_camisa',
     antes: { base: 'bas_classica', camadas: { olhos: 'olh_padrao', boca: 'boc_sorriso', roupa: 'rou_social' } },
     depois: { base: 'bas_px_oval', camadas: { olhos: 'olh_px_confiante', boca: 'boc_px_sorriso', roupa: 'rou_px_camisa' }, acabamento: 'premium' } },
@@ -86,7 +97,7 @@ const CASOS: Caso[] = [
     depois: { base: 'bas_px_oval', camadas: { olhos: 'olh_px_confiante', boca: 'boc_px_sorriso', cabelo: 'cab_px_curto', roupa: 'rou_px_camisa', roupa_inferior: 'rin_social' }, acabamento: 'premium' } },
   { id: '07_full_female', titulo: 'Corpo inteiro feminino — Legacy vs Premium', corpo: true,
     antes: { base: 'bas_redonda', camadas: { olhos: 'olh_focado', boca: 'boc_neutra', cabelo: 'cab_longo', roupa: 'rou_camiseta' } },
-    depois: { base: 'bas_px_redonda', camadas: { olhos: 'olh_px_focado', boca: 'boc_px_neutra', cabelo: 'cab_px_longo', roupa: 'rou_px_blazer', roupa_inferior: 'rin_social' }, acabamento: 'premium' } },
+    depois: { base: 'bas_px_redonda', camadas: { olhos: 'olh_px_focado', boca: 'boc_px_neutra', cabelo: 'cab_px_longo_liso', roupa: 'rou_px_blazer', roupa_inferior: 'rin_social' }, acabamento: 'premium' } },
   { id: '08_environment', titulo: 'Ambiente — fun_estudio vs fun_px_estudio (+aura premium)', corpo: true,
     antes: { base: 'bas_classica', camadas: { olhos: 'olh_padrao', boca: 'boc_sorriso', cabelo: 'cab_curto', roupa: 'rou_social', fundo: 'fun_estudio' } },
     depois: { base: 'bas_px_oval', camadas: { olhos: 'olh_px_confiante', boca: 'boc_px_sorriso', cabelo: 'cab_px_curto', roupa: 'rou_px_camisa', fundo: 'fun_px_estudio', aura: 'aur_px_fluxo' }, acabamento: 'premium' } },
@@ -94,7 +105,7 @@ const CASOS: Caso[] = [
 const saida = CASOS.map((c) => {
   const opAntes = { estatico: true, tamanho: 480, ...(c.corpo ? { palco: true, enquadramento: 'corpo' as const } : {}), premium: false, faceV2: false };
   const opDepois = { estatico: true, tamanho: 480, ...(c.corpo ? { palco: true, enquadramento: 'corpo' as const } : {}), premium: true, faceV2: true };
-  return { id: c.id, titulo: c.titulo, antes: svgDe(cfg(c.antes), opAntes), depois: svgDe(cfg(c.depois), opDepois) };
+  return { id: c.id, titulo: c.titulo, antes: svgDe(cfg(c.antes, c.id + '/antes'), opAntes), depois: svgDe(cfg(c.depois, c.id + '/depois'), opDepois) };
 });
 console.log(JSON.stringify(saida));
 `);
