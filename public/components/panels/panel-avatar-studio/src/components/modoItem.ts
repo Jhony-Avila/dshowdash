@@ -156,7 +156,7 @@ export const FOCO_ITEM_CATEGORIA: Record<string, string> = {
   boca: '92 128 56 40',         // §13 só a boca + área neutra mínima
   nariz: '98 104 44 44',        // §14
   sobrancelha: '82 86 76 26',   // §15 par de sobrancelhas
-  barba: '58 40 124 118',       // §16 maxilar sobre silhueta neutra (ghost real, coords do CORPO)
+  barba: '60 100 120 108',      // §49-51 crop nariz→queixo, mandíbula ghost discreta
   cabelo: '58 30 124 110',      // §4/§6 massa do cabelo (back+front) sem rosto
   roupa: '34 98 172 138',       // onda 1426 §7: torso vestido (corpo por baixo) ~78% ocupação
   roupa_sobre: '34 98 172 138',

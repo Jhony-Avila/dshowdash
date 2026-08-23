@@ -31,21 +31,41 @@ function defsPelo(u: string, t: TP): string {
     </linearGradient>`;
 }
 
-/** Fios de textura determinísticos ao longo de um arco da mandíbula. */
+/** onda 1427/Golden §46: STUBBLE = pequenos GRUPOS determinísticos de pelo
+ *  acompanhando a mandíbula (não linhas verticais repetidas). Cada ponto é um
+ *  cluster de 3 flecks; a pele aparece nos vãos (skin reveal §45). */
 function fiosBarba(t: TP, ys: number, densidade: number): string {
-  const fios: string[] = [];
+  const g: string[] = [];
   for (let i = 0; i < densidade; i += 1) {
     const x = 84 + (72 / (densidade - 1)) * i;
     const y = ys + Math.abs(x - 120) * -0.28 + (i % 3) * 2.2;
-    fios.push(`<path d="M${x} ${y} q ${(i % 2 ? 1 : -1) * 1.4} 5 0 8" stroke="${alfa(t.escuro, 0.55)}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
+    g.push(`<circle cx="${x}" cy="${y}" r="0.95" fill="${alfa(t.escuro, 0.6)}"/>`);
+    g.push(`<circle cx="${x + 1.5}" cy="${y + 1.7}" r="0.7" fill="${alfa(t.escuro, 0.5)}"/>`);
+    g.push(`<circle cx="${x - 1.3}" cy="${y + 2.5}" r="0.6" fill="${alfa(t.profundo, 0.45)}"/>`);
   }
-  return fios.join('');
+  return g.join('');
+}
+
+/** onda 1427/Golden §47: quebra de borda inferior — flecks irregulares no
+ *  contorno da barba cheia (não shape geométrico perfeito). */
+function bordaBarba(t: TP, ys: number): string {
+  const g: string[] = [];
+  const xs = [92, 102, 112, 120, 128, 138, 148];
+  for (let i = 0; i < xs.length; i += 1) {
+    const x = xs[i]; const dy = (i % 2 ? 3 : 6) + (i % 3);
+    const y = ys + Math.abs(x - 120) * -0.18;
+    g.push(`<path d="M${x - 2} ${y} q 2 ${dy} 4 0 z" fill="${alfa(t.escuro, 0.55)}"/>`);
+  }
+  return g.join('');
 }
 
 /** Massa de barba cheia: contorno da mandíbula com recorte da boca. */
 function massaBarba(u: string, t: TP, queixoY: number, extra = ''): string {
-  return `<path d="M78 116 Q 82 ${queixoY - 10} 96 ${queixoY} Q 120 ${queixoY + 10} 144 ${queixoY} Q 158 ${queixoY - 10} 162 116 L 162 128 Q 150 ${queixoY + 4} 132 ${queixoY + 7} L 120 ${queixoY + 8} L 108 ${queixoY + 7} Q 90 ${queixoY + 4} 78 128 Z" fill="url(#${u}pxbrb)"/>
-    <path d="M104 150 Q 120 156 136 150 Q 132 144 120 144 Q 108 144 104 150 Z" fill="${alfa(t.profundo, 0.35)}"/>${extra}`;
+  // §45 barba CHEIA = massa que PREENCHE a face inferior (bochechas+mandíbula+
+  // queixo), com recorte da boca, borda superior seguindo a linha dos pelos.
+  return `<path d="M74 114 C 74 ${queixoY - 24} 88 ${queixoY - 2} 120 ${queixoY + 8} C 152 ${queixoY - 2} 166 ${queixoY - 24} 166 114 C 158 126 146 132 134 133 C 128 134 124 134 120 134 C 116 134 112 134 106 133 C 94 132 82 126 74 114 Z" fill="url(#${u}pxbrb)"/>
+    ${bordaBarba(t, queixoY + 6)}
+    <path d="M105 148 Q 120 154 135 148 Q 131 143 120 143 Q 109 143 105 148 Z" fill="${alfa(t.profundo, 0.4)}"/>${extra}`;
 }
 
 const bigodePath = (t: TP): string =>

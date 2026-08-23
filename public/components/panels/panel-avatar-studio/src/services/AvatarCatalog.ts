@@ -840,10 +840,16 @@ export function svgItemIsolado(
     // acessório no corpo (relógio/tênis/etc.) SOBRE silhueta neutra p/ escala
     frag = ghostCorpo(true) + arte(parte.renderCorpo);
     focoPadrao = '0 0 240 400';
+  } else if (cat === 'barba') {
+    // §49-51: SÓ mandíbula ghost, MUITO discreta (10-20%), sem torso; a barba
+    // é a protagonista. Crop nariz inferior → queixo (não corpo inteiro).
+    const jaw = `<g opacity="0.14"><path d="M74 98 C 76 140 96 176 120 182 C 144 176 164 140 166 98 C 150 122 90 122 74 98 Z" fill="${palGhost.pele.base}"/></g>`;
+    frag = jaw + camadasAsset();
+    focoPadrao = '60 100 120 108';
   } else if (ghostCat) {
-    // §10/§16: contexto anatômico neutro real atrás do asset
-    frag = ghostCorpo(cat === 'barba' ? true : true) + camadasAsset();
-    focoPadrao = cat === 'barba' ? '58 40 124 118' : '18 26 204 348';
+    // §10/§16: silhueta neutra p/ escala (aura/efeito)
+    frag = ghostCorpo(true) + camadasAsset();
+    focoPadrao = '18 26 204 348';
   } else {
     // isolado puro (cabelo/olhos/base/boca/fundo/…) — APROVADO pelo Jhony (§4/§6/§12/§25)
     frag = camadasAsset();
