@@ -36,19 +36,20 @@ function defsPelo(u: string, t: TP): string {
  *  acompanhando a mandíbula (não linhas verticais repetidas). Cada ponto é um
  *  cluster de 3 flecks; a pele aparece nos vãos (skin reveal §45). */
 function fiosBarba(t: TP, ys: number, densidade: number): string {
-  // Golden V3.1 §46: stubble = PELOS TAPERED (slivers finos) em ângulos
-  // IRREGULARES (pseudo-aleatório determinístico por índice — sem grade/dots).
+  // Golden V3.2 §20: stubble MENOR, baixo contraste, AGRUPADO e growth-directed
+  // (cresce p/ BAIXO, ±12° — não spikes/cuts). Sem branco puro; slivers finos e
+  // curtos que somam num CAMPO (não pelos isolados espetados).
   const g: string[] = [];
   const rad = Math.PI / 180;
   for (let i = 0; i < densidade; i += 1) {
-    const jx = Math.sin(i * 12.9) * 3.4, jy = Math.cos(i * 7.7) * 2.2;
+    const jx = Math.sin(i * 12.9) * 4.2, jy = Math.cos(i * 7.7) * 2.6;
     const x = 84 + (72 / (densidade - 1)) * i + jx;
-    const y = ys + Math.abs(x - 120) * -0.28 + jy;
-    const ang = (92 + Math.sin(i * 2.1) * 26) * rad;         // quase p/ baixo, variado
-    const len = 2.4 + (i % 4) * 0.9;
+    const y = ys + Math.abs(x - 120) * -0.26 + jy;
+    const ang = (96 + Math.sin(i * 2.1) * 12) * rad;         // cresce p/ baixo (±12°)
+    const len = 1.5 + (i % 3) * 0.5;                          // CURTO (1.5–2.5)
     const dx = Math.cos(ang) * len, dy = Math.sin(ang) * len;
-    const nx = -Math.sin(ang) * 0.65, ny = Math.cos(ang) * 0.65;
-    const col = i % 5 === 0 ? alfa('#ffffff', 0.2) : (i % 3 === 0 ? alfa(t.profundo, 0.5) : alfa(t.escuro, 0.62));
+    const nx = -Math.sin(ang) * 0.5, ny = Math.cos(ang) * 0.5; // fino
+    const col = i % 4 === 0 ? alfa(t.profundo, 0.32) : alfa(t.escuro, 0.44); // baixo contraste
     g.push(`<path d="M${(x + nx).toFixed(1)} ${(y + ny).toFixed(1)} L ${(x - nx).toFixed(1)} ${(y - ny).toFixed(1)} L ${(x + dx).toFixed(1)} ${(y + dy).toFixed(1)} Z" fill="${col}"/>`);
   }
   return g.join('');
