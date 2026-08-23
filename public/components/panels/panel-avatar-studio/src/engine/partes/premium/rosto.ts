@@ -61,24 +61,44 @@ function bordaBarba(t: TP, ys: number): string {
   return g.join('');
 }
 
-/** Massa de barba cheia: contorno da mandíbula com recorte da boca. */
+/** Golden V3 (#219 §45-51): BARBA CHEIA reconstruída — massa densa no
+ *  queixo/mandíbula que FADE (dissolve em pele) subindo pelas bochechas, com
+ *  costeleta conectando à têmpora, stubble na zona de fade (skin reveal) e
+ *  borda quebrada. SEM banda especular horizontal (§48). Bigode entra separado
+ *  (extra). Oclusão sob o queixo dá o volume. */
 function massaBarba(u: string, t: TP, queixoY: number, extra = ''): string {
-  // §45 barba CHEIA = massa que PREENCHE a face inferior (bochechas+mandíbula+
-  // queixo), com recorte da boca, borda superior seguindo a linha dos pelos.
-  const massa = `M74 114 C 74 ${queixoY - 24} 88 ${queixoY - 2} 120 ${queixoY + 8} C 152 ${queixoY - 2} 166 ${queixoY - 24} 166 114 C 158 126 146 132 134 133 C 128 134 124 134 120 134 C 116 134 112 134 106 133 C 94 132 82 126 74 114 Z`;
+  // massa PLENA só do meio da mandíbula p/ baixo (queixo cheio); as bochechas
+  // recebem só a zona de fade (stubble → pele).
+  const nucleo = `M84 128 C 80 ${queixoY - 10} 92 ${queixoY - 2} 120 ${queixoY + 8}`
+    + ` C 148 ${queixoY - 2} 160 ${queixoY - 10} 156 128`
+    + ` C 148 138 134 142 120 142 C 106 142 92 138 84 128 Z`;
   const clip = `${u}pxbclip`;
-  // Golden V2 §46: VOLUME da barba por sheen/oclusão recortados na massa —
-  // dá forma à mandíbula mesmo em barba preta (antes: blob chapado).
-  return `<defs><clipPath id="${clip}"><path d="${massa}"/></clipPath>
-      <radialGradient id="${u}pxbsh" cx="0.5" cy="0.15" r="0.7">
-        <stop offset="0" stop-color="${alfa('#ffffff', 0.4)}"/><stop offset="0.55" stop-color="${alfa('#ffffff', 0.1)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/></radialGradient></defs>
-    <path d="${massa}" fill="url(#${u}pxbrb)"/>
+  const cheekFade = `${u}pxbfade`;
+  // costeletas (sideburn) conectando à têmpora
+  const costeleta = `M80 108 C 78 120 80 130 86 136 L 92 134 C 88 126 86 118 86 110 Z`
+    + ` M160 108 C 162 120 160 130 154 136 L 148 134 C 152 126 154 118 154 110 Z`;
+  return `<defs>
+      <clipPath id="${clip}"><path d="${nucleo}"/></clipPath>
+      <linearGradient id="${cheekFade}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${alfa(t.base, 0)}"/><stop offset="0.55" stop-color="${alfa(t.base, 0.5)}"/><stop offset="1" stop-color="${t.base}"/></linearGradient>
+    </defs>
+    <!-- costeletas -->
+    <path d="${costeleta}" fill="url(#${u}pxbrb)"/>
+    <!-- zona de fade nas bochechas (barba dissolve em pele subindo) -->
+    <path d="M86 112 C 84 124 88 134 96 140 C 110 146 130 146 144 140 C 152 134 156 124 154 112 C 150 128 138 136 120 136 C 102 136 90 128 86 112 Z" fill="url(#${cheekFade})"/>
+    <!-- núcleo denso do queixo/mandíbula -->
+    <path d="${nucleo}" fill="url(#${u}pxbrb)"/>
     <g clip-path="url(#${clip})">
-      <path d="M78 118 C 92 132 148 132 162 118 C 150 128 138 132 120 132 C 102 132 90 128 78 118 Z" fill="url(#${u}pxbsh)"/>
-      <path d="M74 ${queixoY - 6} C 96 ${queixoY + 10} 144 ${queixoY + 10} 166 ${queixoY - 6} L 166 ${queixoY + 16} L 74 ${queixoY + 16} Z" fill="${alfa(t.profundo, 0.5)}"/>
+      <!-- densidade: queixo mais cheio (centro-baixo), mandíbula mais rala nas pontas -->
+      <path d="M100 ${queixoY - 2} C 108 ${queixoY + 10} 132 ${queixoY + 10} 140 ${queixoY - 2} C 136 ${queixoY + 12} 104 ${queixoY + 12} 100 ${queixoY - 2} Z" fill="${alfa(t.profundo, 0.45)}"/>
+      <!-- leve luz no queixo (não banda horizontal): pontinhos §46 -->
+      ${fiosBarba(t, queixoY - 6, 9)}
     </g>
+    <!-- stubble na zona de fade (skin reveal) + borda quebrada -->
+    <g opacity="0.85">${fiosBarba(t, 122, 11)}${fiosBarba(t, 130, 10)}</g>
     ${bordaBarba(t, queixoY + 6)}
-    <path d="M105 148 Q 120 154 135 148 Q 131 143 120 143 Q 109 143 105 148 Z" fill="${alfa(t.profundo, 0.4)}"/>${extra}`;
+    <!-- oclusão sob o lábio inferior (recorte da boca) -->
+    <path d="M107 149 Q 120 154 133 149 Q 129 145 120 145 Q 111 145 107 149 Z" fill="${alfa(t.profundo, 0.4)}"/>${extra}`;
 }
 
 const bigodePath = (t: TP): string =>
