@@ -392,16 +392,26 @@ const idsAura = [...itensDe('aura').map((x) => x.id), ...AURAS_PREMIUM.map((x) =
 ok(idsAura.every((id) => fichaAuraDe(id) !== undefined), '[K] aura sem ficha no RegistroEfeitos: ' + idsAura.filter((id) => !fichaAuraDe(id)).join(','));
 ok(idsAura.every((id) => cobreRosto(id) === false), '[K] HARD FAIL: aura com cobreRosto=true');
 ok(Object.keys(FICHAS_AURA).length >= 19, '[K] registro com ' + Object.keys(FICHAS_AURA).length + ' fichas');
-// fundos em PLANOS: far/mid/floor no render; fg no renderPlanos.frente
+// fundos em PLANOS: far/mid/floor no render; fg no renderPlanos.frente.
+// Golden V3.1 (#219): fun_px_estudio é o STUDIO QA NEUTRO — FG VAZIO de
+// propósito (nada na frente do personagem); os DEMAIS ambientes mantêm fg.
 for (const f of FUNDOS_PREMIUM) {
   const svg = f.render(paletaFake(), 'k');
   ok(svg.includes('data-plano="far"') && svg.includes('data-plano="mid"') && svg.includes('data-plano="floor"'), '[K] ' + f.id + ' sem os 3 planos');
-  ok(!!f.renderPlanos?.frente && f.renderPlanos.frente(paletaFake(), 'k').includes('data-plano="fg"'), '[K] ' + f.id + ' sem atmosfera fg');
+  if (f.id === 'fun_px_estudio') {
+    ok(!f.renderPlanos?.frente, '[K] STUDIO QA (fun_px_estudio) NAO pode ter atmosfera fg na frente do personagem');
+  } else {
+    ok(!!f.renderPlanos?.frente && f.renderPlanos.frente(paletaFake(), 'k').includes('data-plano="fg"'), '[K] ' + f.id + ' sem atmosfera fg');
+  }
 }
-// planos consumidos no BUSTO PALCO premium; ausentes sem premium (§651)
-const cBg = cfg({ camadas: { ...CONFIG_PADRAO.camadas, fundo: 'fun_px_estudio' }, acabamento: 'premium' });
+// planos consumidos no BUSTO PALCO premium; ausentes sem premium (§651).
+// Usa um ambiente COM atmosfera (metropole), não o studio neutro.
+const cBg = cfg({ camadas: { ...CONFIG_PADRAO.camadas, fundo: 'fun_px_metropole' }, acabamento: 'premium' });
 ok(svgDe(cBg, { uid: 'bg', premium: true, palco: true }).includes('data-plano="fg"'), '[K] atmosfera premium ausente no palco');
 ok(!svgDe(cBg, { uid: 'bg', palco: true }).includes('data-plano="fg"'), '[K] atmosfera NAO pode vazar sem premium');
+// e o STUDIO neutro NUNCA coloca fg na frente (nem no palco premium)
+const cStudio = cfg({ camadas: { ...CONFIG_PADRAO.camadas, fundo: 'fun_px_estudio' }, acabamento: 'premium' });
+ok(!svgDe(cStudio, { uid: 'st', premium: true, palco: true }).includes('data-plano="fg"'), '[K] STUDIO QA sem fg na frente do personagem (palco premium)');
 // auras premium: rear glow + main (data-nucleo) + particulas na frente
 ok(AURAS_PREMIUM.every((a) => a.renderAtras && a.renderFrente && a.render(paletaFake(), 'k').includes('data-nucleo')), '[K] aura premium sem os 3 fragmentos/data-nucleo');
 const cAura = cfg({ camadas: { ...CONFIG_PADRAO.camadas, aura: 'aur_px_fluxo' }, acabamento: 'premium' });

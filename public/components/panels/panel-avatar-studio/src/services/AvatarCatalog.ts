@@ -862,7 +862,12 @@ export function svgItemIsolado(
 export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
   // onda 1411 (#159): o modo premium é decidido AQUI (flag + acabamento) —
   // o motor continua puro; flag OFF ⇒ premium false ⇒ SVG byte a byte
-  const premium = opcoes?.premium ?? (config.acabamento === 'premium' && flag('as6.classico_premium'));
+  // Golden V3.1 (#219-R1): a ARTE ELEVADA (v2/v3) fica atrás de `as6.arte_v2`
+  // (decisão do Jhony: sem rollout global até aprovação humana do Gate A). Só
+  // liga o trilho premium quando classico_premium E arte_v2 estão ON; flag OFF
+  // ⇒ premium false ⇒ motor CLÁSSICO byte a byte (§651). Opções explícitas
+  // (opcoes.premium) seguem valendo p/ a prova headless.
+  const premium = opcoes?.premium ?? (config.acabamento === 'premium' && flag('as6.classico_premium') && flag('as6.arte_v2'));
   // onda 1414 (#162/#186): rosto v2 decidido AQUI (flag) — motor puro;
   // flag OFF ⇒ faceV2 false ⇒ SVG byte a byte (rollback §651)
   const faceV2 = opcoes?.faceV2 ?? flag('as6.face_v2');
