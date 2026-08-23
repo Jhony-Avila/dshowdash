@@ -46,10 +46,9 @@ function fios(t: TP, paths: string[]): string {
   return paths.map((d) => `<path d="${d}" stroke="${alfa(t.escuro, 0.6)}" stroke-width="1.1" stroke-linecap="round" fill="none"/>`).join('');
 }
 
-/** Rim light no topo (§892) — mesma âncora do BRILHO clássico. */
-const RIM = (t: TP): string =>
-  `<path d="M86 64 a 48 42 0 0 1 36 -13" stroke="${alfa('#ffffff', 0.18)}" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-   <path d="M128 52 a 44 40 0 0 1 20 10" stroke="${alfa(t.brilho, 0.3)}" stroke-width="1.8" stroke-linecap="round" fill="none"/>`;
+// onda 1427/Golden §38: RIM light GLOBAL removido — era uma assinatura
+// artificial repetida em todos os cabelos. O brilho agora é por-cabelo,
+// fragmentado, seguindo o fluxo da massa (mechasDestaque/mechas de cada um).
 
 interface CamadasCabelo {
   massa: string;                    // path da massa principal (fill gradiente)
@@ -73,8 +72,7 @@ function cabeloPremium(c: CamadasCabelo): ParteRender {
       ${c.sombraInterna ? `<path d="${c.sombraInterna}" fill="${alfa(t.profundo, 0.4)}"/>` : ''}
       ${mechas(t, c.mechas)}
       ${c.mechasDestaque ? c.mechasDestaque.map((d) => `<path d="${d}" stroke="${alfa(p.destaque.claro, 0.6)}" stroke-width="2" stroke-linecap="round" fill="none"/>`).join('') : ''}
-      ${c.fios ? fios(t, c.fios) : ''}
-      ${RIM(t)}`;
+      ${c.fios ? fios(t, c.fios) : ''}`;
   };
 }
 
@@ -158,7 +156,8 @@ export const CABELOS_PREMIUM: ParteDef[] = [
       mechasDestaque: ['M104 58 q -2 14 -2 28'],
       fios: ['M64 120 q -3 -10 -2 -18', 'M176 120 q 3 -10 2 -18'],
     }),
-    renderAtras: massaAtras('M70 100 c -8 40 -8 74 -2 100 h 104 c 6 -26 6 -60 -2 -100 c -6 22 -8 48 -6 74 h -88 c 2 -26 0 -52 -6 -74 z', 'M78 172 h 84 c 0 3 0 6 -1 8 h -82 c -1 -2 -1 -5 -1 -8 z'),
+    // §44 LONGO LISO: queda RETA e sleeker, pontas arredondadas (não bloco).
+    renderAtras: massaAtras('M74 100 c -10 42 -10 80 -2 106 c 5 6 14 5 18 -2 c -5 -32 -5 -68 1 -100 c 4 24 6 50 5 76 h 48 c -1 -26 1 -52 5 -76 c 6 32 6 68 1 100 c 4 7 13 8 18 2 c 8 -26 8 -64 -2 -106 z'),
  
   },
   {
@@ -171,7 +170,8 @@ export const CABELOS_PREMIUM: ParteDef[] = [
       mechasDestaque: ['M142 62 q 6 9 2 18'],
       fios: ['M63 116 q -4 -8 -2 -16', 'M177 116 q 4 -8 2 -16'],
     }),
-    renderAtras: massaAtras('M72 98 c -12 36 -14 70 -4 102 c 6 -8 8 -18 6 -28 c 8 10 10 22 6 34 h 80 c -4 -12 -2 -24 6 -34 c -2 10 0 20 6 28 c 10 -32 8 -66 -4 -102 c -8 20 -10 44 -8 68 h -80 c 2 -24 0 -48 -8 -68 z'),
+    // §44 ONDULADO: silhueta externa mais LARGA e ONDULADA (não igual ao liso).
+    renderAtras: massaAtras('M66 96 c -18 40 -20 82 -8 116 c 5 -5 7 -13 5 -21 c 5 9 5 19 1 28 c 6 3 13 1 17 -4 c -6 -12 -4 -26 2 -38 c -5 -26 -5 -54 3 -80 c 3 26 4 54 2 80 h 44 c -2 -26 -1 -54 2 -80 c 8 26 8 54 3 80 c 6 12 8 26 2 38 c 4 5 11 7 17 4 c -4 -9 -4 -19 1 -28 c -2 8 0 16 5 21 c 12 -34 10 -76 -8 -116 z'),
  
   },
   {
@@ -205,15 +205,18 @@ export const CABELOS_PREMIUM: ParteDef[] = [
     ...comum, id: 'cab_px_afro', nome: 'Afro Premium', tema: 'urbano', raridade: 'epico',
     descricao: 'Coroa esférica CHEIA com borda em nuvem e luz pontilhada.', usaCores: ['cabelo'],
     render: cabeloPremium({
-      // onda 1424 (Fase B §23): DOMO sólido + bordas em nuvem PREENCHIDAS
-      // (círculos de subpath no mesmo fill do gradiente — não traços).
-      massa: 'M78 90 a 58 56 0 1 1 84 0 z'
-        + ' M74 74 a 11 11 0 1 0 0.1 0 z M80 52 a 12 12 0 1 0 0.1 0 z M98 40 a 12 12 0 1 0 0.1 0 z'
-        + ' M120 35 a 12 12 0 1 0 0.1 0 z M142 40 a 12 12 0 1 0 0.1 0 z M160 52 a 12 12 0 1 0 0.1 0 z M166 74 a 11 11 0 1 0 0.1 0 z',
-      sombraTesta: 'M82 86 c 12 -6 25 -9 38 -9 s 26 3 38 9 c -2 4 -5 6 -8 7 c -9 -4 -19 -6 -30 -6 s -21 2 -30 6 c -3 -1 -6 -3 -8 -7 z',
-      sombraInterna: 'M120 54 a 50 48 0 0 0 -38 22 a 52 50 0 0 1 38 -28 a 52 50 0 0 1 38 28 a 50 48 0 0 0 -38 -22 z',
-      // pontilhado de luz (§afro) — pequenos realces sobre a coroa
-      mechas: ['M96 60 a 4 4 0 0 1 5 -2', 'M120 52 a 4 4 0 0 1 5 0', 'M144 60 a 4 4 0 0 1 4 4', 'M84 78 a 4 4 0 0 1 4 -4', 'M156 78 a 4 4 0 0 1 4 4'],
+      // onda 1427/Golden §40: DOMO CHEIO (coroa esférica) + bumps de nuvem
+      // PREENCHIDOS (sweep-flag 1 = união no nonzero, não furo). Bug 1424: os
+      // bumps tinham winding oposto → viravam BURACOS brancos. Agora somam.
+      massa: 'M72 96 a 62 60 0 1 1 96 0 z'
+        + ' M70 70 a 15 15 0 1 1 0.1 0 z M80 46 a 16 16 0 1 1 0.1 0 z M102 33 a 16 16 0 1 1 0.1 0 z'
+        + ' M120 28 a 16 16 0 1 1 0.1 0 z M138 33 a 16 16 0 1 1 0.1 0 z M160 46 a 16 16 0 1 1 0.1 0 z M170 70 a 15 15 0 1 1 0.1 0 z'
+        + ' M64 90 a 12 12 0 1 1 0.1 0 z M176 90 a 12 12 0 1 1 0.1 0 z',
+      sombraTesta: 'M82 92 c 12 -6 25 -9 38 -9 s 26 3 38 9 c -2 4 -5 6 -8 7 c -9 -4 -19 -6 -30 -6 s -21 2 -30 6 c -3 -1 -6 -3 -8 -7 z',
+      // separação de clumps (§40): sombras internas que dividem a coroa em massas
+      sombraInterna: 'M120 40 c -14 8 -22 22 -24 40 c -6 -18 0 -38 14 -50 c 3 4 7 7 10 10 z M120 40 c 14 8 22 22 24 40 c 6 -18 0 -38 -14 -50 c -3 4 -7 7 -10 10 z M120 62 c -8 6 -12 16 -12 28 c -6 -12 -3 -26 6 -34 c 2 2 4 4 6 6 z',
+      // realces pontilhados soft seguindo a curvatura (não faixa reta §43)
+      mechas: ['M92 56 q 6 -4 12 -3', 'M120 48 q 8 -1 14 2', 'M150 60 q 5 4 7 10', 'M74 82 q 4 -6 10 -7', 'M164 84 q 3 6 3 12', 'M106 44 q 5 -3 10 -2'],
     }),
   },
   {
