@@ -87,7 +87,7 @@ function cabeloPremium(c: CamadasCabelo): ParteRender {
       ${c.franja ? `<path d="${c.franja}" fill="${t.meio}"/>` : ''}
       ${c.sombraInterna ? `<path d="${c.sombraInterna}" fill="${alfa(t.profundo, 0.4)}"/>` : ''}
       ${mechas(t, c.mechas)}
-      ${c.mechasDestaque ? c.mechasDestaque.map((d) => `<path d="${d}" stroke="${alfa(p.destaque.claro, 0.6)}" stroke-width="2" stroke-linecap="round" fill="none"/>`).join('') : ''}
+      ${c.mechasDestaque ? c.mechasDestaque.map((d) => `<path d="${d}" stroke="${alfa(t.claro, 0.7)}" stroke-width="2" stroke-linecap="round" fill="none"/>`).join('') : ''}
       ${c.fios ? fios(t, c.fios) : ''}`;
   };
 }

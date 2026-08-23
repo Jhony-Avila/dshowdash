@@ -57,13 +57,9 @@ export const FUNDOS_PREMIUM: ParteDef[] = [
     + `<ellipse cx="120" cy="230" rx="70" ry="18" fill="${alfa('#ffffff', 0.04)}"/>`)}` // reflexo sutil no piso
     + `<rect width="240" height="240" fill="url(#${u}pxbg1v)"/>`; // VIGNETTE por valor
     },
-    renderPlanos: {
-      frente: (p) => `<g data-plano="fg">
-        <ellipse cx="30" cy="234" rx="60" ry="10" fill="${alfa('#0b0e1a', 0.35)}"/>
-        <ellipse cx="214" cy="236" rx="52" ry="9" fill="${alfa('#0b0e1a', 0.3)}"/>
-        <path d="M0 214 q 120 -14 240 0" stroke="${alfa(p.destaque.claro, 0.1)}" stroke-width="1.4" fill="none"/>
-      </g>`,
-    },
+    // Golden V3 (#219): STUDIO QA neutro NÃO desenha nada na FRENTE do
+    // personagem (o FG anterior — elipses + arco — atravessava a roupa e dava
+    // aparência de transparência). BG + piso + contato bastam. FG vazio.
   },
   {
     ...comumFun, id: 'fun_px_metropole', nome: 'Metrópole Premium', tema: 'urbano',

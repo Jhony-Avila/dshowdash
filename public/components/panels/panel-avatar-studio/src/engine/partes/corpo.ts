@@ -125,18 +125,17 @@ export function anatomiaCorpo(perfil: PerfilCorpo2D = 'standard'): AnatomiaCorpo
   };
 }
 
-// Golden V2 (#219): mapeia o AvatarConfig → PerfilCorpo2D do scaffold premium.
-// corpoV2.preset vence; depois corpo (TipoCorporal legado); 'feminino' quando
-// a base é 'coracao' (rosto/silhueta mais suaves). Default 'standard'.
+// Golden V3 (#219): mapeia o AvatarConfig → PerfilCorpo2D. Body é ESCOLHA
+// EXPLÍCITA (corpoV2.preset > corpo legado). Sem preset → 'standard'. NÃO se
+// infere mais 'feminino' por rosto/cabelo (cabelo comprido não define corpo —
+// veredito V2). 'feminino' vem só de um preset corporal explícito.
 export function perfilCorpoDe(config: AvatarConfig): PerfilCorpo2D {
   const preset = config.corpoV2?.preset ?? config.corpo;
   const porTipo: Record<string, PerfilCorpo2D> = {
     esbelto: 'slim', atletico: 'athletic', robusto: 'robust', compacto: 'standard',
+    feminino: 'feminino', feminina: 'feminino', soft: 'feminino',
   };
   if (preset && porTipo[preset]) return porTipo[preset];
-  if (/coracao|suave|oval/.test(config.base ?? '') && /longo|rabo|coque|franja|ondulado|cacheado/.test(config.camadas?.cabelo ?? '')) {
-    return 'feminino';
-  }
   return 'standard';
 }
 
