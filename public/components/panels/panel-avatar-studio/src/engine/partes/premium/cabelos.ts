@@ -59,33 +59,43 @@ interface CamadasCabelo {
   sombraTesta: string;              // path da sombra projetada na testa
   mechas: string[];
   fios?: string[];
+  /** Golden V3 §37-44: CLUMPS AUTORAIS — mechas ESCURAS (separação de locks) e
+   *  CLARAS (topo do lock pegando luz). Cada penteado tem os seus. */
+  clumpsDark?: string[];
+  clumpsLight?: string[];
+  /** intensidade do brilho claro dos clumps (afro pontilhado ≠ liso sedoso) */
+  luzClump?: number;
   /** mechas coloridas pelo canal `destaque` (estilos que o declaram) */
   mechasDestaque?: string[];
 }
 
+// Golden V3 (#219 §37-44): o volume do cabelo vem de CLUMPS AUTORAIS (não de um
+// sheen radial genérico — que deixava tudo com cara de plástico/capacete). Só
+// resta uma luz de coroa MUITO suave e ampla (giro do topo) + oclusão de borda;
+// a identidade mora nos clumps escuros/claros desenhados por penteado.
 function cabeloPremium(c: CamadasCabelo): ParteRender {
   return (p: Paleta, u: string) => {
     const t = tintaPremium(p.cabelo.base);
-    // Golden V2 §39-40: VOLUME por sheen/oclusão RECORTADOS na massa — dá
-    // forma 3D a qualquer cor de cabelo (o preto deixava de ler como massa).
     const clip = `${u}pxhclip`;
+    const lz = c.luzClump ?? 0.16;
     return `
       <defs>${defsCab(u, t)}
         <clipPath id="${clip}"><path d="${c.massa}"/></clipPath>
-        <radialGradient id="${u}pxsh" cx="0.4" cy="0.28" r="0.55">
-          <stop offset="0" stop-color="${alfa('#ffffff', 0.6)}"/><stop offset="0.5" stop-color="${alfa('#ffffff', 0.16)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/></radialGradient>
-        <radialGradient id="${u}pxoc" cx="0.5" cy="0.42" r="0.62">
-          <stop offset="0.45" stop-color="${alfa(t.profundo, 0)}"/><stop offset="1" stop-color="${alfa(t.profundo, 0.7)}"/></radialGradient>
+        <radialGradient id="${u}pxtl" cx="0.42" cy="0.24" r="0.62">
+          <stop offset="0" stop-color="${alfa('#ffffff', 0.2)}"/><stop offset="0.7" stop-color="${alfa('#ffffff', 0.04)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/></radialGradient>
+        <radialGradient id="${u}pxoc" cx="0.5" cy="0.44" r="0.6">
+          <stop offset="0.5" stop-color="${alfa(t.profundo, 0)}"/><stop offset="1" stop-color="${alfa(t.profundo, 0.6)}"/></radialGradient>
       </defs>
       ${SOMBRA_TESTA(t, c.sombraTesta)}
       <path d="${c.massa}" fill="url(#${u}pxc)"/>
       <g clip-path="url(#${clip})">
-        <rect x="36" y="18" width="168" height="160" fill="url(#${u}pxoc)"/>
-        <ellipse cx="100" cy="62" rx="60" ry="54" fill="url(#${u}pxsh)"/>
-        <ellipse cx="150" cy="78" rx="18" ry="30" fill="${alfa('#ffffff', 0.1)}"/>
+        <rect x="34" y="16" width="172" height="164" fill="url(#${u}pxoc)"/>
+        ${c.clumpsDark ? c.clumpsDark.map((d) => `<path d="${d}" fill="${alfa(t.profundo, 0.5)}"/>`).join('') : ''}
+        ${c.sombraInterna ? `<path d="${c.sombraInterna}" fill="${alfa(t.profundo, 0.4)}"/>` : ''}
+        <rect x="34" y="16" width="172" height="120" fill="url(#${u}pxtl)"/>
+        ${c.clumpsLight ? c.clumpsLight.map((d) => `<path d="${d}" fill="${alfa('#ffffff', lz)}"/>`).join('') : ''}
       </g>
       ${c.franja ? `<path d="${c.franja}" fill="${t.meio}"/>` : ''}
-      ${c.sombraInterna ? `<path d="${c.sombraInterna}" fill="${alfa(t.profundo, 0.4)}"/>` : ''}
       ${mechas(t, c.mechas)}
       ${c.mechasDestaque ? c.mechasDestaque.map((d) => `<path d="${d}" stroke="${alfa(t.claro, 0.7)}" stroke-width="2" stroke-linecap="round" fill="none"/>`).join('') : ''}
       ${c.fios ? fios(t, c.fios) : ''}`;
@@ -106,6 +116,30 @@ function massaAtras(d: string, dSombra?: string): ParteRender {
 }
 
 const comum = { categoria: 'cabelo' as const, requerBase: HUMANOIDES, acabamento: 'premium' as const, raridade: 'raro' as const };
+
+// Golden V3 §40: CAMPO DE COILS do afro — em vez de sheen radial (capacete),
+// muitos clumps pequenos: sombra ENTRE coils (escura) + topo do coil em luz.
+// Determinístico (grid hex dentro do domo), recortado pela massa no render.
+function afroClumps(): { dark: string[]; light: string[] } {
+  const dark: string[] = [], light: string[] = [];
+  const cxx = 120, cyy = 92, RX = 60, RY = 64;
+  const rows = [{ y: 42, n: 3 }, { y: 58, n: 5 }, { y: 74, n: 6 }, { y: 90, n: 6 }, { y: 106, n: 6 }, { y: 122, n: 5 }, { y: 137, n: 4 }];
+  for (let r = 0; r < rows.length; r++) {
+    const { y, n } = rows[r]; const off = r % 2 ? 9 : 0;
+    for (let i = 0; i < n; i++) {
+      const x = cxx + (i - (n - 1) / 2) * (110 / (n + 0.2)) + off;
+      if (((x - cxx) ** 2) / (RX * RX) + ((y - cyy) ** 2) / (RY * RY) > 0.9) continue;
+      const s = 6.4;
+      const lit = x < cxx + 8;  // coils do lado da luz (esq) brilham mais
+      // separação: crescente ESCURA entre coils (embaixo-direita)
+      dark.push(`M${x - s + 1} ${y + s - 2} a ${s} ${s} 0 0 0 ${2 * s - 2} 1 a ${s + 1} ${s + 1} 0 0 1 ${-2 * s + 2} -2.5 z`);
+      // topo do coil pegando luz (arco superior-esquerdo)
+      light.push(`M${x - s + 1} ${y - 1} a ${s - 1} ${s - 1} 0 0 1 ${2 * s - 3} ${lit ? -2 : -1} l -1.5 2.6 a ${s - 2.5} ${s - 2.5} 0 0 0 ${-2 * s + 6} ${lit ? 1 : 0.5} z`);
+    }
+  }
+  return { dark, light };
+}
+const AFRO = afroClumps();
 
 export const CABELOS_PREMIUM: ParteDef[] = [
   {
@@ -229,10 +263,11 @@ export const CABELOS_PREMIUM: ParteDef[] = [
         + ' M120 28 a 16 16 0 1 1 0.1 0 z M138 33 a 16 16 0 1 1 0.1 0 z M160 46 a 16 16 0 1 1 0.1 0 z M170 70 a 15 15 0 1 1 0.1 0 z'
         + ' M64 90 a 12 12 0 1 1 0.1 0 z M176 90 a 12 12 0 1 1 0.1 0 z',
       sombraTesta: 'M82 92 c 12 -6 25 -9 38 -9 s 26 3 38 9 c -2 4 -5 6 -8 7 c -9 -4 -19 -6 -30 -6 s -21 2 -30 6 c -3 -1 -6 -3 -8 -7 z',
-      // separação de clumps (§40): sombras internas que dividem a coroa em massas
-      sombraInterna: 'M120 40 c -14 8 -22 22 -24 40 c -6 -18 0 -38 14 -50 c 3 4 7 7 10 10 z M120 40 c 14 8 22 22 24 40 c 6 -18 0 -38 -14 -50 c -3 4 -7 7 -10 10 z M120 62 c -8 6 -12 16 -12 28 c -6 -12 -3 -26 6 -34 c 2 2 4 4 6 6 z',
-      // realces pontilhados soft seguindo a curvatura (não faixa reta §43)
-      mechas: ['M92 56 q 6 -4 12 -3', 'M120 48 q 8 -1 14 2', 'M150 60 q 5 4 7 10', 'M74 82 q 4 -6 10 -7', 'M164 84 q 3 6 3 12', 'M106 44 q 5 -3 10 -2'],
+      // Golden V3 §40: CAMPO DE COILS autoral (não sheen) — quebra o "capacete".
+      clumpsDark: AFRO.dark,
+      clumpsLight: AFRO.light,
+      luzClump: 0.2,
+      mechas: [],
     }),
   },
   {
