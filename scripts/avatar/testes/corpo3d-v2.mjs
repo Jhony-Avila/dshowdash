@@ -40,8 +40,11 @@ import { PRESETS_CORPO as TABELA_DOMINIO } from '@painel/domain/corpo102';
 import { REGIOES_UBC } from '@painel/services/Assembler3d';
 import { validarConfig } from '@painel/services/AvatarCatalog';
 const p: string[] = [];
-// snapshot literal §102 (mudou = decisão numerada)
-if (JSON.stringify(PRESETS_CORPO) !== JSON.stringify({ esbelto: [0.95, 1.02], atletico: [1.05, 1], robusto: [1.1, 0.98], compacto: [0.97, 0.94] })) p.push('tabela §102 divergiu do snapshot');
+// snapshot literal §102 (mudou = decisão numerada). Golden A+ #57: snapshot
+// atualizado p/ incluir 'feminino' [0.94,1.0] — preset introduzido no #219
+// (commit 3b0ebf42, PRESETS_CORPO += feminino) sem atualizar este snapshot; o
+// código estava certo, o teste é que ficou defasado. Ordem = a do objeto fonte.
+if (JSON.stringify(PRESETS_CORPO) !== JSON.stringify({ esbelto: [0.95, 1.02], atletico: [1.05, 1], robusto: [1.1, 0.98], compacto: [0.97, 0.94], feminino: [0.94, 1.0] })) p.push('tabela §102 divergiu do snapshot');
 if (PRESETS_CORPO !== TABELA_DOMINIO) p.push('services e domain nao compartilham o MESMO objeto (triplicacao voltou)');
 // paridade EXATA com a matemática anterior (clamps antigos)
 const antigo = (tipo: string, fino: { largura?: number; altura?: number } | null) => {
