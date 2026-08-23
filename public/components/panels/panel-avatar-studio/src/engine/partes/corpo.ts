@@ -115,14 +115,31 @@ export interface AnatomiaCorpo {
   yNuc: number; yOmb: number; yPei: number; yCin: number; yQua: number; yEnt: number;
   yCot: number; yPun: number; yJoe: number; yTor: number; yPe: number;
 }
+// Golden A+ (§13/§14): PROPORÇÃO VERTICAL REAL por perfil — a diferença entre
+// corpos deixa de ser só "escala X" (mesmo boneco esticado). Cada perfil tem
+// landmarks verticais próprios: comprimento do torso, ALTURA DA CINTURA (a
+// razão ombro↔cintura↔quadril), posição do joelho. `standard` = os valores
+// históricos EXATOS (byte-stable — o corpo/roupas do perfil padrão não mudam
+// um pixel). Cabeça (yNuc/yOmb) e chão (yPe) ficam ancorados; varia o MIOLO.
+interface ProporcaoV { yPei: number; yCin: number; yQua: number; yEnt: number; yJoe: number; }
+const PROP_V: Record<PerfilCorpo2D, ProporcaoV> = {
+  //           tórax  cintura quadril entrep. joelho   (cintura ALTA = feminino/
+  //           atlético; BAIXA/pesada = robusto; pernas + longas = atlético/fem)
+  standard: { yPei: 150, yCin: 192, yQua: 220, yEnt: 236, yJoe: 298 },
+  slim:     { yPei: 150, yCin: 194, yQua: 222, yEnt: 238, yJoe: 301 }, // torso longo/leve, perna longa
+  athletic: { yPei: 147, yCin: 187, yQua: 217, yEnt: 233, yJoe: 301 }, // cintura alta, V-taper, perna longa
+  robust:   { yPei: 153, yCin: 201, yQua: 227, yEnt: 243, yJoe: 302 }, // miolo pesado, cintura BAIXA, perna curta
+  feminino: { yPei: 149, yCin: 185, yQua: 221, yEnt: 237, yJoe: 301 }, // cintura marcada alta, quadril baixo/largo
+};
 export function anatomiaCorpo(perfil: PerfilCorpo2D = 'standard'): AnatomiaCorpo {
   const D = DIMS_CORPO[perfil] ?? DIMS_CORPO.standard;
+  const V = PROP_V[perfil] ?? PROP_V.standard;
   return {
     cx: 120, ombro: D.ombro, peito: D.peito, cintura: D.cintura, quadril: D.quadril,
     braco: D.braco, anta: D.anta,
     armSh: D.ombro - 3, armEl: D.cintura + 8, armWr: D.quadril + 3,
-    yNuc: 104, yOmb: 122, yPei: 150, yCin: 192, yQua: 220, yEnt: 236,
-    yCot: 200, yPun: 250, yJoe: 298, yTor: 356, yPe: 372,
+    yNuc: 104, yOmb: 122, yPei: V.yPei, yCin: V.yCin, yQua: V.yQua, yEnt: V.yEnt,
+    yCot: 200, yPun: 250, yJoe: V.yJoe, yTor: 356, yPe: 372,
   };
 }
 
@@ -159,9 +176,11 @@ export function corpoInteiroPremium(p: Paleta, uid: string, perfil: PerfilCorpo2
   const SAP = { base: '#20242e', sola: '#111318', luz: '#3a4150' };                        // sapato
   const TOP = { claro: '#5a6474', base: '#4b5464', escuro: '#3a4250' };                     // top neutro (coberto)
 
-  // âncoras verticais (240×396): cabeça acima ~y14–104
-  const yNuc = 104, yOmb = 122, yPei = 150, yCin = 192, yQua = 220, yEnt = 236;
-  const yJoe = 298, yTor = 356, yPe = 372;
+  // âncoras verticais — FONTE ÚNICA anatomiaCorpo (Golden A+ §13): o scaffold
+  // e as roupas (renderCorpoV2) leem a MESMA proporção por perfil. standard =
+  // valores históricos (byte-stable); demais perfis têm proporção real própria.
+  const A = anatomiaCorpo(perfil);
+  const { yNuc, yOmb, yPei, yCin, yQua, yEnt, yJoe, yTor, yPe } = A;
 
   // ══ TORSO (top neutro): pescoço→ombro→tórax→cintura→quadril
   const torso = `M${cx - 12} ${yNuc}
