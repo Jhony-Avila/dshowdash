@@ -228,11 +228,11 @@ export function corpoInteiroPremium(p: Paleta, uid: string, perfil: PerfilCorpo2
     const co = D.coxa, pa = Math.max(8, D.coxa - 4); // coxa / panturrilha
     const ax = hx - s * 1;                                // eixo tornozelo
     return `<path d="M${hx - s * co} ${yEnt - 6}
-      C ${hx - s * (co + 1)} ${yQua + 44} ${hx - s * (co - 1)} ${yJoe - 30} ${ax - s * pa} ${yJoe}
-      C ${ax - s * (pa + 1)} ${yJoe + 22} ${ax - s * (pa - 1)} ${yTor - 30} ${ax - s * (pa - 3)} ${yTor - 4}
+      C ${hx - s * (co + 1)} ${yQua + 44} ${hx - s * (co - 2)} ${yJoe - 26} ${ax - s * (pa - 1)} ${yJoe}
+      C ${ax - s * (pa + 2.5)} ${yJoe + 20} ${ax - s * (pa - 1)} ${yTor - 26} ${ax - s * (pa - 4)} ${yTor - 4}
       L ${ax + s * (pa - 4)} ${yTor - 4}
-      C ${ax + s * (pa - 2)} ${yTor - 30} ${ax + s * 4} ${yJoe + 20} ${ax + s * 3} ${yJoe}
-      C ${ax + s * 5} ${yJoe - 30} ${hx + s * 3} ${yQua + 44} ${hx + s * 2} ${yEnt - 6} Z" fill="url(#${d}cal)"/>
+      C ${ax + s * (pa - 3)} ${yTor - 26} ${ax + s * 5} ${yJoe + 20} ${ax + s * 3} ${yJoe}
+      C ${ax + s * 5} ${yJoe - 26} ${hx + s * 3} ${yQua + 44} ${hx + s * 2} ${yEnt - 6} Z" fill="url(#${d}cal)"/>
       <!-- vinco/prega da calça --><path d="M${ax - s * (pa - 5)} ${yJoe + 6} C ${ax - s * (pa - 6)} ${yTor - 40} ${ax - s * (pa - 6)} ${yTor - 20} ${ax - s * (pa - 5)} ${yTor - 8}" fill="none" stroke="${alfa('#000000', 0.18)}" stroke-width="1.4"/>
       <!-- vinco do joelho --><path d="M${ax - s * (pa - 2)} ${yJoe - 2} q ${-s * 5} 6 ${-s * 1} 12" fill="none" stroke="${alfa('#000000', 0.2)}" stroke-width="1.2"/>
       <!-- Golden V3.2 §14: SAPATO FRONTAL estilizado — bico ~5–8° p/ fora,
