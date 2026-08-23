@@ -103,6 +103,28 @@ const DIMS_CORPO: Record<PerfilCorpo2D, DimsCorpo> = {
   feminino: { ombro: 42, peito: 36, cintura: 24, quadril: 39, coxa: 16, braco: 10, anta: 7 },
 };
 
+// Golden V2 (#219): ANATOMIA COMPARTILHADA — âncoras (x meia-largura por
+// altura + y) que o corpo E as roupas premium (renderCorpoV2) usam, para a
+// peça SEMPRE vestir a silhueta certa (evita "roupa larga demais" nos perfis
+// slim/feminino). Fonte única de verdade da proporção premium.
+export interface AnatomiaCorpo {
+  cx: number; ombro: number; peito: number; cintura: number; quadril: number;
+  braco: number; anta: number;                 // meias-larguras do braço/antebraço
+  armSh: number; armEl: number; armWr: number;  // meia-largura do EIXO do braço por altura
+  yNuc: number; yOmb: number; yPei: number; yCin: number; yQua: number; yEnt: number;
+  yCot: number; yPun: number; yJoe: number; yTor: number; yPe: number;
+}
+export function anatomiaCorpo(perfil: PerfilCorpo2D = 'standard'): AnatomiaCorpo {
+  const D = DIMS_CORPO[perfil] ?? DIMS_CORPO.standard;
+  return {
+    cx: 120, ombro: D.ombro, peito: D.peito, cintura: D.cintura, quadril: D.quadril,
+    braco: D.braco, anta: D.anta,
+    armSh: D.ombro - 3, armEl: D.cintura + 8, armWr: D.quadril + 3,
+    yNuc: 104, yOmb: 122, yPei: 150, yCin: 192, yQua: 220, yEnt: 236,
+    yCot: 200, yPun: 250, yJoe: 298, yTor: 356, yPe: 372,
+  };
+}
+
 // Golden V2 (#219): mapeia o AvatarConfig → PerfilCorpo2D do scaffold premium.
 // corpoV2.preset vence; depois corpo (TipoCorporal legado); 'feminino' quando
 // a base é 'coracao' (rosto/silhueta mais suaves). Default 'standard'.

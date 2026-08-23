@@ -6,9 +6,12 @@
 // (preview, comparação, presets) não podem colidir gradientes.
 import type { ItemCatalogo, PoseId } from '../domain/types';
 import type { Paleta } from './cores';
+import type { PerfilCorpo2D } from './partes/corpo';
 
-/** Gera o markup SVG da parte. Determinístico: mesma entrada → mesmo SVG. */
-export type ParteRender = (p: Paleta, uid: string) => string;
+/** Gera o markup SVG da parte. Determinístico: mesma entrada → mesmo SVG.
+ *  Golden V2 (#219): 3º arg OPCIONAL `perfil` — só o corpo-inteiro premium o
+ *  passa (renderCorpoV2 veste a anatomia certa); busto/legado ignoram. */
+export type ParteRender = (p: Paleta, uid: string, perfil?: PerfilCorpo2D) => string;
 
 export interface ParteDef extends ItemCatalogo {
   /** Efeitos com atras=true renderizam ATRÁS do personagem (aura, chuva digital). */

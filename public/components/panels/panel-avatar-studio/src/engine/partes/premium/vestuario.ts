@@ -15,12 +15,66 @@ import type { Paleta } from '../../cores';
 import { material2d } from '../../materiais2d';
 import { PATH_OMBROS } from '../../base-api';
 import type { ParteDef } from '../../base-api';
+import { anatomiaCorpo } from '../corpo';
+import type { AnatomiaCorpo, PerfilCorpo2D } from '../corpo';
 
 const SOMBRA_PESCOCO = `<path d="M96 186 c 6 10 42 10 48 0 c -2 12 -46 12 -48 0 z" fill="rgba(0,0,0,0.25)"/>`;
 
 /** Canal secundário efetivo (#191): escolhido OU derivado da roupa. */
 const sec = (p: Paleta): ReturnType<typeof tintaPremium> =>
   tintaPremium(p.secundario?.base ?? secundarioPadraoDe(p.roupa.base));
+
+// ── Golden V2 (#219 §52-65): GEOMETRIA DE ROUPA PARAMÉTRICA — as peças de
+// corpo inteiro (renderCorpoV2) são construídas sobre a AnatomiaCorpo do
+// perfil, com "ease" (folga) por peça. Assim a MESMA peça veste slim, standard,
+// atlético e feminino sem sobrar/faltar tecido. Só usado no premium.
+
+interface RoupaEase { omb: number; pei: number; cin: number; hemHalf: number; yHem: number; }
+
+/** Torso da peça: linha de ombro (com decote) → tórax → cintura → barra. */
+function torsoRoupa(A: AnatomiaCorpo, e: RoupaEase, decote = 12): string {
+  const { cx, yOmb, yPei, yCin } = A;
+  const sx = A.ombro + e.omb, px = A.peito + e.pei, wx = A.cintura + e.cin, hx = e.hemHalf;
+  return `M${cx - sx} ${yOmb}
+    C ${cx - px - 2} ${yPei - 8} ${cx - px} ${yPei - 2} ${cx - px} ${yPei + 2}
+    C ${cx - wx - 2} ${yCin - 12} ${cx - wx} ${yCin - 4} ${cx - wx} ${yCin}
+    C ${cx - hx - 1} ${e.yHem - 16} ${cx - hx} ${e.yHem - 6} ${cx - hx} ${e.yHem}
+    C ${cx - hx + 4} ${e.yHem + 4} ${cx + hx - 4} ${e.yHem + 4} ${cx + hx} ${e.yHem}
+    C ${cx + hx} ${e.yHem - 6} ${cx + wx + 1} ${yCin - 4} ${cx + wx} ${yCin}
+    C ${cx + px} ${yPei - 2} ${cx + px + 2} ${yPei - 8} ${cx + sx} ${yOmb}
+    C ${cx + sx - 6} ${yOmb - 4} ${cx + decote} ${yOmb - 3} ${cx + decote - 2} ${yOmb + 2}
+    C ${cx} ${yOmb + decote - 4} ${cx} ${yOmb + decote - 4} ${cx - decote + 2} ${yOmb + 2}
+    C ${cx - decote} ${yOmb - 3} ${cx - sx + 6} ${yOmb - 4} ${cx - sx} ${yOmb} Z`;
+}
+
+// As mangas seguem o EIXO REAL do braço (anatomiaCorpo.arm*) como tubo cônico
+// levemente mais largo que o membro (folga) — assim SEMPRE cobrem o braço, em
+// qualquer perfil, em vez de flutuar ao lado. Ombro→cotovelo→punho; mão de fora.
+
+/** Manga curta: capa do deltóide que termina acima do cotovelo. */
+function mangaCurta(A: AnatomiaCorpo, s: 1 | -1, folgaOmb = 5, folga = 3): string {
+  const { cx, yOmb, yCot } = A;
+  const shX = A.armSh, elX = A.armEl, yEnd = yOmb + (yCot - yOmb) * 0.55;
+  const hu = A.braco + folgaOmb, he = A.braco + folga;
+  const midX = shX + (elX - shX) * 0.55;
+  return `M${cx + s * (shX - 3)} ${yOmb - 2}
+    C ${cx + s * (shX + hu)} ${yOmb + 4} ${cx + s * (midX + he + 2)} ${yEnd - 8} ${cx + s * (midX + he)} ${yEnd}
+    C ${cx + s * (midX + he - 1)} ${yEnd + 4} ${cx + s * (midX - he + 1)} ${yEnd + 4} ${cx + s * (midX - he)} ${yEnd}
+    C ${cx + s * (midX - he)} ${yEnd - 10} ${cx + s * (shX - hu + 2)} ${yOmb + 6} ${cx + s * (shX - 4)} ${yOmb - 2} Z`;
+}
+
+/** Manga longa: tubo cônico ombro→punho, sempre cobrindo o braço; mão de fora. */
+function mangaLonga(A: AnatomiaCorpo, s: 1 | -1, folgaOmb = 5, folga = 3): string {
+  const { cx, yOmb, yCot, yPun } = A;
+  const shX = A.armSh, elX = A.armEl, wrX = A.armWr;
+  const hu = A.braco + folgaOmb, he = A.braco + folga, hw = A.anta + folga;
+  return `M${cx + s * (shX + hu - 2)} ${yOmb - 3}
+    C ${cx + s * (shX + hu + 2)} ${yOmb + 12} ${cx + s * (elX + he + 1)} ${yCot - 16} ${cx + s * (elX + he)} ${yCot}
+    C ${cx + s * (elX + he)} ${yCot + 14} ${cx + s * (wrX + hw + 1)} ${yPun - 16} ${cx + s * (wrX + hw)} ${yPun}
+    C ${cx + s * (wrX + hw)} ${yPun + 5} ${cx + s * (wrX - hw)} ${yPun + 5} ${cx + s * (wrX - hw)} ${yPun}
+    C ${cx + s * (wrX - hw - 1)} ${yPun - 16} ${cx + s * (elX - he)} ${yCot + 14} ${cx + s * (elX - he)} ${yCot}
+    C ${cx + s * (elX - he - 1)} ${yCot - 16} ${cx + s * (shX - hu + 4)} ${yOmb + 10} ${cx + s * (shX - hu + 2)} ${yOmb - 3} Z`;
+}
 
 // ── 8 ROUPAS PREMIUM NOVAS (busto) ──────────────────────────────────────
 
@@ -41,16 +95,19 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
     },
     // §56 CAMISETA: manga curta, ombro suave, chest drape, cintura, barra.
     // Silhueta FITTED (a mais justa das 4).
-    renderCorpoV2: (p, u) => {
+    // §56 CAMISETA: FITTED (menor ease), manga curta, decote redondo, barra
+    // na cintura. Veste a anatomia do perfil.
+    renderCorpoV2: (p, u, perfil) => {
+      const A = anatomiaCorpo(perfil as PerfilCorpo2D);
       const m = material2d('cotton', p.roupa.base);
-      const sleeves = `M${120 - 46} 130 C ${120 - 58} 140 ${120 - 58} 158 ${120 - 50} 166 L ${120 - 34} 162 C ${120 - 38} 150 ${120 - 40} 138 ${120 - 40} 132 Z`
-        + ` M${120 + 46} 130 C ${120 + 58} 140 ${120 + 58} 158 ${120 + 50} 166 L ${120 + 34} 162 C ${120 + 38} 150 ${120 + 40} 138 ${120 + 40} 132 Z`;
-      const torso = 'M80 130 C 74 158 76 196 84 228 L 156 228 C 164 196 166 158 160 130 C 146 122 94 122 80 130 Z';
+      const torso = torsoRoupa(A, { omb: 3, pei: 4, cin: 5, hemHalf: A.quadril + 1, yHem: A.yQua + 4 }, 12);
+      const sl = mangaCurta(A, -1, 5, 3) + mangaCurta(A, 1, 5, 3);
       return `<defs>${m.defs(u)}</defs>
-      <path d="${sleeves}" fill="${m.fill(u)}"/>
+      <path d="${sl}" fill="${m.fill(u)}"/>
       <path d="${torso}" fill="${m.fill(u)}"/>
       ${m.realce(u, torso)}
-      <path d="M104 128 q 16 14 32 0 q -3 11 -16 11 q -13 0 -16 -11 z" fill="${m.tinta.escuro}"/>`;
+      <path d="M${A.cx - 14} ${A.yOmb + 2} q 14 12 28 0 q -3 10 -14 10 q -11 0 -14 -10 z" fill="${m.tinta.escuro}"/>
+      <path d="M${A.cx - 13} ${A.yOmb + 3} q 13 10 26 0" stroke="${alfa(m.tinta.brilho, 0.5)}" stroke-width="1.5" fill="none"/>`;
     },
   },
   {
@@ -87,24 +144,30 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
     },
     // §58 HOODIE: dropped shoulder, manga GROSSA/longa, capuz com volume
     // traseiro, torso LARGO (menos ajustado), cuff, hem. Silhueta mais BOJUDA.
-    renderCorpoV2: (p, u) => {
+    // §58 HOODIE: RELAXED (ease maior), ombro caído, manga longa e grossa,
+    // capuz com volume traseiro, cuff + hem band, bolso canguru, cordões.
+    renderCorpoV2: (p, u, perfil) => {
+      const A = anatomiaCorpo(perfil as PerfilCorpo2D);
       const m = material2d('wool', p.roupa.base);
       const forro = sec(p);
-      const sleeve = (s: 1 | -1) => `M${120 + s * 52} 132 C ${120 + s * 72} 148 ${120 + s * 74} 210 ${120 + s * 62} 250 L ${120 + s * 40} 248 C ${120 + s * 46} 210 ${120 + s * 44} 168 ${120 + s * 42} 138 Z`;
-      const torso = 'M74 136 C 64 172 66 210 76 240 L 164 240 C 174 210 176 172 166 136 C 150 122 90 122 74 136 Z';
+      const { cx, yOmb, yPei } = A;
+      const torso = torsoRoupa(A, { omb: 8, pei: 10, cin: 12, hemHalf: A.quadril + 10, yHem: A.yEnt + 2 }, 14);
+      const sl = mangaLonga(A, -1, 8, 6) + mangaLonga(A, 1, 8, 6);
+      const cuffY = 244, hemY = A.yEnt - 4, pkTop = A.yCin + 6;
+      const wx = A.quadril + 9;
       return `<defs>${m.defs(u)}</defs>
       <!-- capuz (volume traseiro) atrás dos ombros -->
-      <path d="M86 116 C 98 96 142 96 154 116 C 150 132 138 140 120 140 C 102 140 90 132 86 116 Z" fill="${m.tinta.escuro}"/>
-      <path d="${sleeve(-1)}${sleeve(1)}" fill="${m.fill(u)}"/>
+      <path d="M${cx - A.ombro - 2} ${yOmb - 6} C ${cx - 22} ${yOmb - 30} ${cx + 22} ${yOmb - 30} ${cx + A.ombro + 2} ${yOmb - 6} C ${cx + A.ombro - 6} ${yOmb + 12} ${cx + 16} ${yOmb + 20} ${cx} ${yOmb + 20} C ${cx - 16} ${yOmb + 20} ${cx - A.ombro + 6} ${yOmb + 12} ${cx - A.ombro - 2} ${yOmb - 6} Z" fill="${m.tinta.escuro}"/>
+      <path d="M${cx - 24} ${yOmb + 2} q 24 18 48 0 q -3 -10 -24 -10 q -21 0 -24 10 z" fill="${forro.base}"/>
+      <path d="${sl}" fill="${m.fill(u)}"/>
       <path d="${torso}" fill="${m.fill(u)}"/>
       ${m.realce(u, torso)}
       <!-- cuffs + hem band -->
-      <path d="M${120 - 62} 246 l 22 3 -2 10 -22 -3 z M${120 + 62} 246 l -22 3 2 10 22 -3 z" fill="${m.tinta.profundo}"/>
-      <path d="M76 232 h88 v10 H76 z" fill="${alfa(m.tinta.profundo, 0.55)}"/>
-      <!-- bolso central + cordões -->
-      <path d="M96 196 h48 v22 h-48 z" fill="${alfa(m.tinta.profundo, 0.4)}"/>
-      <path d="M112 150 q -1 16 1 26 M128 150 q 1 16 -1 26" stroke="${p.destaque.base}" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-      <path d="M96 140 q 24 16 48 0 q -2 -8 -24 -8 q -22 0 -24 8 z" fill="${forro.base}"/>`;
+      <path d="M${cx - wx - 3} ${cuffY} l 12 2 -2 10 -12 -2 z M${cx + wx + 3} ${cuffY} l -12 2 2 10 12 -2 z" fill="${m.tinta.profundo}"/>
+      <path d="M${cx - A.quadril - 10} ${hemY} h${(A.quadril + 10) * 2} v10 h-${(A.quadril + 10) * 2} z" fill="${alfa(m.tinta.profundo, 0.5)}"/>
+      <!-- bolso canguru + cordões -->
+      <path d="M${cx - 26} ${pkTop} q 26 10 52 0 l -4 20 q -22 8 -44 0 z" fill="${alfa(m.tinta.profundo, 0.38)}"/>
+      <path d="M${cx - 8} ${yPei + 6} q -1 16 1 26 M${cx + 8} ${yPei + 6} q 1 16 -1 26" stroke="${p.destaque.base}" stroke-width="2.6" stroke-linecap="round" fill="none"/>`;
     },
   },
   {
@@ -126,21 +189,28 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
     },
     // §60 BLAZER: ombro PADDED quadrado, lapela, chest taper, manga, cintura
     // marcada, abertura frontal. Silhueta ESTRUTURADA (ombros retos).
-    renderCorpoV2: (p, u) => {
+    // §60 BLAZER: ESTRUTURADO — ombro reto (padded), manga longa, cintura
+    // marcada, lapela + abertura frontal com forro, botões.
+    renderCorpoV2: (p, u, perfil) => {
+      const A = anatomiaCorpo(perfil as PerfilCorpo2D);
       const la = material2d('wool', p.roupa.base);
-      const forro = sec(p);
-      const sleeve = (s: 1 | -1) => `M${120 + s * 54} 124 C ${120 + s * 66} 150 ${120 + s * 60} 210 ${120 + s * 52} 244 L ${120 + s * 34} 240 C ${120 + s * 40} 200 ${120 + s * 42} 156 ${120 + s * 44} 130 Z`;
-      const torso = 'M74 122 L 168 122 C 170 150 166 158 160 176 C 156 196 152 214 150 234 L 90 234 C 88 214 84 196 80 176 C 74 158 70 150 74 122 Z';
+      const { cx, yOmb, yPei, yCin } = A;
+      const yHem = A.yEnt;                 // blazer desce até o quadril
+      const torso = torsoRoupa(A, { omb: 3, pei: 3, cin: 3, hemHalf: A.quadril, yHem }, 10);
+      const sl = mangaLonga(A, -1, 5, 4) + mangaLonga(A, 1, 5, 4);
+      const nk = 11;                       // meia-abertura do decote/colarinho
       return `<defs>${la.defs(u)}</defs>
-      <path d="${sleeve(-1)}${sleeve(1)}" fill="${la.fill(u)}"/>
-      <path d="M66 118 h30 l -4 14 h-30 z M174 118 h-30 l 4 14 h30 z" fill="${la.fill(u)}"/>
+      <path d="${sl}" fill="${la.fill(u)}"/>
       <path d="${torso}" fill="${la.fill(u)}"/>
       ${la.realce(u, torso)}
-      <!-- abertura + lapela -->
-      <path d="M106 124 l 14 20 l 14 -20 l 6 106 h -40 z" fill="${forro.escuro}"/>
-      <path d="M106 124 l -12 16 l 18 24 l 10 -16 z M134 124 l 12 16 l -18 24 l -10 -16 z" fill="${la.tinta.profundo}"/>
-      <path d="M96 138 l 15 22 M144 138 l -15 22" stroke="${alfa(la.tinta.brilho, 0.4)}" stroke-width="1.5" fill="none"/>
-      <circle cx="118" cy="196" r="2.2" fill="${p.destaque.base}"/><circle cx="118" cy="214" r="2.2" fill="${p.destaque.base}"/>`;
+      <!-- camisa + gravata no V -->
+      <path d="M${cx - nk} ${yOmb + 2} L ${cx} ${yPei + 6} L ${cx + nk} ${yOmb + 2} L ${cx + 5} ${yHem} L ${cx - 5} ${yHem} Z" fill="${alfa('#eef1f5', 0.9)}"/>
+      <path d="M${cx - 4} ${yPei + 2} L ${cx + 4} ${yPei + 2} L ${cx + 6} ${yHem - 6} L ${cx} ${yHem - 1} L ${cx - 6} ${yHem - 6} Z" fill="${p.destaque.base}"/>
+      <!-- lapelas (fecham sobre a camisa) -->
+      <path d="M${cx - nk} ${yOmb + 1} L ${cx - 26} ${yOmb + 14} L ${cx - 6} ${yPei + 8} L ${cx - 2} ${yPei - 2} Z" fill="${la.tinta.profundo}"/>
+      <path d="M${cx + nk} ${yOmb + 1} L ${cx + 26} ${yOmb + 14} L ${cx + 6} ${yPei + 8} L ${cx + 2} ${yPei - 2} Z" fill="${la.tinta.profundo}"/>
+      <path d="M${cx - 24} ${yOmb + 15} l 17 ${yPei - yOmb - 6} M${cx + 24} ${yOmb + 15} l -17 ${yPei - yOmb - 6}" stroke="${alfa(la.tinta.brilho, 0.35)}" stroke-width="1.2" fill="none"/>
+      <circle cx="${cx - 8}" cy="${yCin + 6}" r="2" fill="${p.destaque.escuro}"/><circle cx="${cx - 8}" cy="${yCin + 22}" r="2" fill="${p.destaque.escuro}"/>`;
     },
   },
   {
@@ -194,21 +264,28 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
     },
     // §61 SOBRETUDO: LONGO de verdade (desce além do quadril ~y318), volume
     // próprio, lapela alta, abertura inferior/overlap, mangas longas.
-    renderCorpoV2: (p, u) => {
+    // §61 SOBRETUDO: LONGO (desce além do quadril ~y322), lapela alta, overlap
+    // frontal, mangas longas. Ease médio; barra bem abaixo do quadril.
+    renderCorpoV2: (p, u, perfil) => {
+      const A = anatomiaCorpo(perfil as PerfilCorpo2D);
       const la = material2d('wool', p.roupa.base);
       const forro = sec(p);
-      const sleeve = (s: 1 | -1) => `M${120 + s * 54} 124 C ${120 + s * 66} 152 ${120 + s * 60} 220 ${120 + s * 54} 258 L ${120 + s * 36} 254 C ${120 + s * 42} 210 ${120 + s * 44} 156 ${120 + s * 44} 130 Z`;
-      const torso = 'M72 122 C 66 150 70 160 68 190 C 66 230 66 280 74 318 L 120 322 L 166 318 C 174 280 174 230 172 190 C 170 160 174 150 168 122 C 150 116 90 116 72 122 Z';
+      const { cx, yOmb, yPei, yCin } = A;
+      const yHem = 322;
+      // torso longo: reaproveita torsoRoupa mas com barra baixa
+      const torso = torsoRoupa(A, { omb: 6, pei: 8, cin: 8, hemHalf: A.quadril + 8, yHem }, 8);
+      const sl = mangaLonga(A, -1, 6, 5) + mangaLonga(A, 1, 6, 5);
       return `<defs>${la.defs(u)}</defs>
-      <path d="${sleeve(-1)}${sleeve(1)}" fill="${la.fill(u)}"/>
+      <path d="${sl}" fill="${la.fill(u)}"/>
       <path d="${torso}" fill="${la.fill(u)}"/>
       ${la.realce(u, torso)}
-      <!-- overlap frontal + lapela alta -->
-      <path d="M120 128 L 120 320 L 150 316 C 156 250 156 180 150 130 Z" fill="${alfa(la.tinta.profundo, 0.45)}"/>
-      <path d="M106 122 l 14 22 l 14 -22 l 8 60 l -22 16 l -22 -16 z" fill="${forro.escuro}"/>
-      <path d="M106 122 l -12 18 l 20 26 l 10 -18 z M134 122 l 12 18 l -20 26 l -10 -18 z" fill="${la.tinta.profundo}"/>
-      <path d="M120 150 v 168" stroke="${alfa(la.tinta.profundo, 0.5)}" stroke-width="1.6"/>
-      <circle cx="132" cy="196" r="2.4" fill="${p.destaque.base}"/><circle cx="132" cy="230" r="2.4" fill="${p.destaque.base}"/>`;
+      <!-- overlap frontal (sombra da aba) -->
+      <path d="M${cx} ${yOmb + 6} L ${cx} ${yHem - 2} L ${cx + A.cintura + 2} ${yHem - 6} C ${cx + A.cintura + 6} ${yCin} ${cx + A.peito} ${yPei} ${cx + 6} ${yOmb + 8} Z" fill="${alfa(la.tinta.profundo, 0.4)}"/>
+      <!-- lapela alta + forro em V -->
+      <path d="M${cx - 15} ${yOmb} l 15 22 l 15 -22 l 8 56 l -23 16 l -23 -16 z" fill="${forro.escuro}"/>
+      <path d="M${cx - 15} ${yOmb} l -13 18 l 21 26 l 10 -18 z M${cx + 15} ${yOmb} l 13 18 l -21 26 l -10 -18 z" fill="${la.tinta.profundo}"/>
+      <path d="M${cx} ${yPei} v ${yHem - yPei - 6}" stroke="${alfa(la.tinta.profundo, 0.5)}" stroke-width="1.6"/>
+      <circle cx="${cx + 12}" cy="${yCin + 4}" r="2.4" fill="${p.destaque.base}"/><circle cx="${cx + 12}" cy="${yCin + 38}" r="2.4" fill="${p.destaque.base}"/>`;
     },
   },
   {

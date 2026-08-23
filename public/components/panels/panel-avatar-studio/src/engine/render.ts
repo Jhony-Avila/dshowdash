@@ -310,7 +310,7 @@ export function renderAvatar(
       // pintada por cima do torso do scaffold — SÓ com opcoes.premium;
       // sem premium/sem hook = renderCorpo de sempre (byte-estável §651)
       const hookRoupa = opcoes.premium && roupaDef?.renderCorpoV2 ? roupaDef.renderCorpoV2 : roupaDef?.renderCorpo;
-      const roupaCorpo = hookRoupa ? hookRoupa(paletaDa('roupa'), uid) : '';
+      const roupaCorpo = hookRoupa ? hookRoupa(paletaDa('roupa'), uid, perfilCorpoDe(config)) : '';
       // onda 1415 (#191): ROUPA INFERIOR (rin_*) — camada z=8, atrás da
       // roupa de cima; ausente = scaffold atual byte a byte
       const infDef = config.camadas.roupa_inferior && config.camadas.roupa_inferior !== 'nenhum'
