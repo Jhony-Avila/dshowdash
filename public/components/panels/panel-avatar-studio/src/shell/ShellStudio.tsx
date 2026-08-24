@@ -1701,7 +1701,13 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               ...(flag('as6.qa_route') ? [{
                 id: 'qa-studio', rotulo: 'QA Studio (homologação visual, dev)', executar: () => setQaStudio(true),
               }] : []),
-              { id: 'classico', rotulo: 'Voltar ao modo clássico', executar: aoSairDoShell },
+              // GOLDEN V4.2 (§1/§36/§58, #64): PRODUTO 2D ÚNICO — a saída para o clássico
+              // some da paleta principal; sob QA (as6.qa_route) permanece como compat/dev (§37).
+              ...(!flag('as6.single_2d') || flag('as6.qa_route') ? [{
+                id: 'classico',
+                rotulo: flag('as6.single_2d') ? 'Compat clássico (QA/dev)' : 'Voltar ao modo clássico',
+                executar: aoSairDoShell,
+              }] : []),
             ]} />
         )}
         {detalheId && (

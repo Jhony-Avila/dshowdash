@@ -181,7 +181,13 @@ export function BarraTopo(props: PropsBarraTopo) {
           title="Refazer" onClick={() => store.refazer()}><Redo2 size={14} aria-hidden /></button>
         <button type="button" className="avst-botao" title="Rever o tour do estúdio (§569)"
           data-teste="tour-abrir" onClick={abrirTour}>?</button>
-        <button type="button" className="avst-botao" onClick={aoSairDoShell}>Modo clássico</button>
+        {/* GOLDEN V4.2 (§1/§36/§58, #64): PRODUTO 2D ÚNICO — a troca de modo some
+            da experiência principal; sob QA (as6.qa_route) permanece para compat/dev (§37). */}
+        {(!flag('as6.single_2d') || flag('as6.qa_route')) && (
+          <button type="button" className="avst-botao" onClick={aoSairDoShell}>
+            {flag('as6.single_2d') ? 'Compat clássico (QA)' : 'Modo clássico'}
+          </button>
+        )}
       </div>
     </header>
   );

@@ -53,7 +53,8 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'footwear.mjs', /* A+ §12/§71-73: calçado como domínio (âncora do pé + zonas) */
   'gates.mjs', /* A+ §17/§18: apresentação ≠ arte (gates independentes) */
   'hero-catalog.mjs', /* A+2: heroes autorados no catálogo (flag as6.hero_2d) */
-  'fit-garment.mjs' /* A+2: silhueta do blazer dirigida pelo fit engine (as6.fit_v2) */];
+  'fit-garment.mjs', /* A+2: silhueta do blazer dirigida pelo fit engine (as6.fit_v2) */
+  'v42-single2d.mjs' /* V4.2 §1/§36/§58 (#64): produto 2D único — troca de modo some da experiência principal */];
 let falhas = 0;
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red
 // que só estoura exceção (sem linha "FALHAS:") não passa mais batido
