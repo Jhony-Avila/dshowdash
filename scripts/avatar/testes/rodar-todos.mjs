@@ -51,7 +51,8 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'enquadramento.mjs', /* A+ §8/§110: CATEGORY_FOCUS_MAP fonte única */
   'corpo-fit.mjs', /* A+ §13-16: anatomia real por perfil + classes de fit */
   'footwear.mjs', /* A+ §12/§71-73: calçado como domínio (âncora do pé + zonas) */
-  'gates.mjs' /* A+ §17/§18: apresentação ≠ arte (gates independentes) */];
+  'gates.mjs', /* A+ §17/§18: apresentação ≠ arte (gates independentes) */
+  'hero-catalog.mjs' /* A+2: heroes autorados no catálogo (flag as6.hero_2d) */];
 let falhas = 0;
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red
 // que só estoura exceção (sem linha "FALHAS:") não passa mais batido

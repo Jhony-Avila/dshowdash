@@ -28,6 +28,7 @@ import { OLHOS } from '../engine/partes/olhos';
 import { BOCAS } from '../engine/partes/bocas';
 import { ROUPAS } from '../engine/partes/roupas';
 import { ROUPAS_PREMIUM } from '../engine/partes/premium/roupas'; // onda 1411 (#159/#166)
+import { HEROES_2D } from '../engine/partes/heroes'; // Golden A+2: heroes autorados (importarHeroAsset), gated por as6.hero_2d
 import { BASES_PREMIUM, OLHOS_PREMIUM, BOCAS_PREMIUM } from '../engine/partes/premium/faces'; // onda 1412 (#162)
 import { CABELOS_PREMIUM } from '../engine/partes/premium/cabelos'; // onda 1413 (§881–§897)
 import { BARBAS_PREMIUM, SOBRANCELHAS_PREMIUM, NARIZES_PREMIUM } from '../engine/partes/premium/rosto'; // onda 1414 (#162)
@@ -303,6 +304,8 @@ export const PARTES: ParteDef[] = [
   ...BOCAS, ...BOCAS_PREMIUM, ...ROUPAS, ...ROUPAS_PREMIUM,
   ...BARBAS_PREMIUM, ...SOBRANCELHAS_PREMIUM, ...NARIZES_PREMIUM, // onda 1414 (#162)
   ...ROUPAS_PREMIUM_1415, ...SOBREPECAS_PREMIUM, ...ROUPAS_INFERIORES, ...CALCADOS_PREMIUM, // onda 1415 (#191)
+  ...HEROES_2D, // Golden A+2: heroes autorados (id `_hx_`), listados só com as6.hero_2d
+
   ...ACESSORIOS_PREMIUM, // onda 1416 (#196)
   ...FUNDOS_PREMIUM, ...AURAS_PREMIUM, ...MOLDURAS_PREMIUM, // onda 1417 (#199)
   ...SOBREPECAS, // §3393 (decisão #95): wrappers — zero arte nova
@@ -327,7 +330,10 @@ export function itensDe(categoria: CategoriaId): ParteDef[] {
   // catálogo com a flag; o resolver POR_ID segue aceitando configs salvos
   // (rollback §651 esconde a UI, nunca descarta dado)
   return PARTES.filter((x) => x.categoria === categoria
-    && (x.acabamento !== 'premium' || flag('as6.classico_premium')));
+    && (x.acabamento !== 'premium' || flag('as6.classico_premium'))
+    // Golden A+2: heroes autorados (`_hx_`) exigem a flag própria as6.hero_2d
+    // (mais restrita); o resolver POR_ID segue aceitando configs salvos.
+    && (!/_hx_/.test(x.id) || flag('as6.hero_2d')));
 }
 
 /** Categorias VISÍVEIS na navegação (§3393 — decisão #95): `roupa_sobre`

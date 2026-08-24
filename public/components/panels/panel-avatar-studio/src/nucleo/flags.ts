@@ -136,6 +136,7 @@ const PADROES: Record<string, boolean> = {
   'as6.telemetria_assets': true, // onda 1409 — TELEMETRIA DE ASSET 3D (§2804, §2968–§2972): eventos avst:asset_* (carregou/falhou/lod_transicao/fallback/parte) no ring local + EventBus, com rate limit por slug e sem PII; dado/observabilidade (#156: tooling ON); off = zero eventos (callback ausente)
   'as6.classico_premium': false, // onda 1411 — trilho CLASSIC PREMIUM 2D (decisão #159, §2381–§2427): acabamento 'premium' no config liga sombra de contato + hooks das partes `_px_` (renderAtras/renderFrente/renderSombra/renderPlanos) + materiais2d; catálogo passa a listar as partes premium; off = motor clássico e catálogo byte a byte
   'as6.arte_v2': false,          // Golden V3.1 (#219-R1) — ARTE ELEVADA 2D (Golden V2/V3): corpo anatômico + rosto/olhos/nariz reconstruídos + cabelo por clumps + barba c/ fade + roupa autoral + material por dobra + estúdio FG vazio. svgDe só liga o premium quando classico_premium E arte_v2 ON; off = motor CLÁSSICO byte a byte. SEM rollout global até aprovação humana do Gate A (veredito 2026-08-23)
+  'as6.hero_2d': false,          // Golden A+2 — HEROES 2D AUTORADOS: itens `_hx_` (engine/partes/heroes.ts) importados de SVG autorado (importarHeroAsset) entram no catálogo SÓ com esta flag (mais restrita que classico_premium); render elevado quando o trilho premium está ON. off = catálogo sem heroes, byte a byte. SEM rollout até veredito humano
   'as6.camera_v2': false,       // onda 1419 — CÂMERA V2 do palco 3D (#204, P8-B): presets Camera3d (FOV 24/28/33, headroom/eye-line), bookmarks Full/Bust/Face/Back, bounds-aware, transição 300ms interromível, guard #165d (nunca reseta) e limites de órbita; off = câmera anterior byte a byte
   'as6.sombras_v2': false,      // onda 1419 — SOMBRAS/AMBIENTE V2 (#205, P8-C): shadow map por tier (512/1024/2048), shadow camera justa no Box3, bias/softness e FOG por look, contact shadow procedural sempre; chão gloss/platform/grid e definirEnvironment(url) são APIs opt-in; off = sombras anteriores byte a byte
   'as6.pos_v2': false,          // onda 1420 — PÓS V2 por look (#206, P8-D §1965–§1977): cadeia Render→Bloom→ColorGrade(proteção de pele)→Vignette declarada em Look.pos, degradação por pass via QualityManager.passesPos, composer recriado em context loss, telemetria p3d_pos_fallback; estudio = pós NEUTRO (contrato); off = composer/CSS antigos byte a byte
@@ -208,6 +209,7 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   // onda 1415 (#191): vestuário premium refina o trilho Classic Premium
   'as6.roupa_premium': ['as6.classico_premium'],
   'as6.arte_v2': ['as6.classico_premium'], // Golden V3.1 (#219-R1): arte v2 refina o trilho premium
+  'as6.hero_2d': ['as6.classico_premium', 'as6.arte_v2'], // Golden A+2: heroes autorados exigem o trilho premium elevado
   'as6.acess_2d_premium': ['as6.classico_premium'], // onda 1416 (#196)
   'as6.cp_foto': ['as6.classico_premium'], // onda 1418 (#202)
   'as6.dock_classico': ['as5.classico_aaa'], // a dock v3 refina o trilho AAA
