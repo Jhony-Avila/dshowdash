@@ -18,6 +18,8 @@ import { PATH_OMBROS } from '../../base-api';
 import type { ParteDef } from '../../base-api';
 import { anatomiaCorpo } from '../corpo';
 import type { AnatomiaCorpo, PerfilCorpo2D } from '../corpo';
+import { silhuetaFit } from '../../fit'; // Golden A+2: silhueta dirigida por classe de caimento
+import { flag } from '../../../nucleo/flags';
 
 const SOMBRA_PESCOCO = `<path d="M96 186 c 6 10 42 10 48 0 c -2 12 -46 12 -48 0 z" fill="rgba(0,0,0,0.25)"/>`;
 
@@ -116,7 +118,14 @@ function pathHoodieGolden(A: AnatomiaCorpo): { torso: string; capuz: string; bar
  *  SUPRIMIDA, front quarters no quadril, barra. Lapela vem em função à parte. */
 function pathBlazerGolden(A: AnatomiaCorpo): { torso: string } {
   const { cx, yOmb, yPei, yCin, yQua, yEnt } = A;
-  const sh = A.ombro + 2, ch = A.peito + 1, wa = A.cintura - 2, hip = A.quadril + 4;
+  // Golden A+2 (§16): com as6.fit_v2, as meias-larguras vêm do FIT ENGINE
+  // (silhuetaFit STRUCTURED — alfaiataria) e o body-follow veste qualquer perfil
+  // por dados; sem a flag, as folgas hand-tuned de sempre (byte a byte §651).
+  let sh = A.ombro + 2, ch = A.peito + 1, wa = A.cintura - 2, hip = A.quadril + 4;
+  if (flag('as6.fit_v2')) {
+    const s = silhuetaFit(A, 'STRUCTURED');
+    sh = s.ombroW; ch = s.peitoW; wa = s.cinturaW; hip = s.quadrilW;
+  }
   const yHem = yEnt;
   const R: Pt[] = [[cx + 11, yOmb - 2], [cx + sh, yOmb - 2], [cx + sh - 1, yPei - 8], [cx + ch, yPei + 4], [cx + wa, yCin + 2], [cx + hip, yQua + 10], [cx + hip - 5, yHem]];
   const L: Pt[] = [[cx - hip + 5, yHem + 1], [cx - hip, yQua + 10], [cx - wa, yCin + 2], [cx - ch, yPei + 4], [cx - sh + 1, yPei - 8], [cx - sh, yOmb - 2], [cx - 11, yOmb - 2]];
