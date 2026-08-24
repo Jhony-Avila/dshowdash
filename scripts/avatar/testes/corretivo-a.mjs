@@ -49,7 +49,10 @@ const p: string[] = [];
 // incluído — o modo candidate é o PREVIEW premium do revisor, e arte_v2 foi
 // adicionado a FLAGS_CANDIDATE no #219-R1 (commit cf2ecdaa) sem atualizar este
 // ESPERADAS; o código estava certo, o snapshot é que ficou defasado.
-const ESPERADAS = ['as6.classico_premium', 'as6.arte_v2', 'as6.face_v2', 'as6.barba_slot', 'as6.brow_slot', 'as6.roupa_premium', 'as6.acess_2d_premium', 'as6.cp_foto', 'as6.looks', 'as6.material_v2', 'as6.camera_v2', 'as6.sombras_v2', 'as6.pos_v2', 'as6.foto_lentes', 'as6.ux3d_simples', 'as6.thumb_item_v2'];
+// GOLDEN V4.3 §20/§21 (#66): single_2d/hero_2d/fit_v2 ADICIONADOS ao candidate —
+// o preset de homologação precisa REPRESENTAR o V4 (produto 2D único + heroes +
+// fit engine). Lista esperada atualizada junto (§18: teste acompanha a mudança).
+const ESPERADAS = ['as6.classico_premium', 'as6.arte_v2', 'as6.face_v2', 'as6.barba_slot', 'as6.brow_slot', 'as6.roupa_premium', 'as6.acess_2d_premium', 'as6.cp_foto', 'as6.single_2d', 'as6.hero_2d', 'as6.fit_v2', 'as6.looks', 'as6.material_v2', 'as6.camera_v2', 'as6.sombras_v2', 'as6.pos_v2', 'as6.foto_lentes', 'as6.ux3d_simples', 'as6.thumb_item_v2'];
 if (JSON.stringify([...FLAGS_CANDIDATE].sort()) !== JSON.stringify([...ESPERADAS].sort())) p.push('preset candidate divergiu do §12: ' + FLAGS_CANDIDATE.join(','));
 for (const dev of ['as6.qa_route', 'as6.material_debug', 'as6.dev_iluminacao', 'as5.hud3d', 'as6.qa_visual']) {
   if (FLAGS_CANDIDATE.includes(dev)) p.push('flag DEV no candidate (§12 proibe): ' + dev);

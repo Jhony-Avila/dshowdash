@@ -45,6 +45,8 @@ export interface CategoriaMae {
 export interface FerramentaNav {
   id: string;
   nome: string;
+  /** V4.3 §5-10: ferramenta absorvida do clássico — só aparece com as6.single_2d ON. */
+  single2d?: boolean;
 }
 
 export const TAXONOMIA: CategoriaMae[] = [
@@ -162,9 +164,18 @@ export const FERRAMENTAS_NAV: FerramentaNav[] = [
   { id: 'historico', nome: 'Histórico' },
   { id: 'missoes', nome: 'Missões' },
   { id: 'evolucao', nome: 'Evolução' },
-  // Coleções/Conquistas/Criar com IA/Vitrine/Foto vivem no Modo
-  // clássico (app/App.tsx) — preservadas LÁ; entram aqui quando o
-  // shell novo ganhar os destinos (nada é inventado)
+  // GOLDEN V4.3 §5-10 (#66): as ferramentas que só existiam no Modo clássico
+  // agora têm DESTINO no shell único (FerramentasClassicas reusa components/*).
+  // Só aparecem com as6.single_2d ON — produção (flag OFF) intocada.
+  { id: 'arquetipos', nome: 'Arquétipos', single2d: true },
+  { id: 'titulos', nome: 'Títulos', single2d: true },
+  { id: 'presets_prontos', nome: 'Presets prontos', single2d: true },
+  { id: 'colecoes', nome: 'Coleções', single2d: true },
+  { id: 'conquistas', nome: 'Conquistas', single2d: true },
+  { id: 'ia', nome: 'Criar com IA', single2d: true },
+  { id: 'vitrine', nome: 'Vitrine', single2d: true },
+  { id: 'foto', nome: 'Foto', single2d: true },
+  { id: 'historico_srv', nome: 'Histórico', single2d: true },
 ];
 
 const POR_ID = new Map<string, { mae: CategoriaMae; principal: CategoriaPrincipal }>();

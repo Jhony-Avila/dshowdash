@@ -279,6 +279,9 @@ export const FLAGS_CANDIDATE: readonly string[] = [
   // 2D
   'as6.classico_premium', 'as6.arte_v2', 'as6.face_v2', 'as6.barba_slot', 'as6.brow_slot',
   'as6.roupa_premium', 'as6.acess_2d_premium', 'as6.cp_foto',
+  // GOLDEN V4.3 §20/§21 (#66): o Candidate precisa REPRESENTAR o V4 atual —
+  // produto 2D único + heroes autorados + fit engine na câmera de homologação
+  'as6.single_2d', 'as6.hero_2d', 'as6.fit_v2',
   // 3D
   'as6.looks', 'as6.material_v2', 'as6.camera_v2', 'as6.sombras_v2',
   'as6.pos_v2', 'as6.foto_lentes',

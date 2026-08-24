@@ -157,7 +157,7 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subA
                 <span className="avst6-tax-nome">{t('Ferramentas e gestão')}</span>
               </button>
             )}
-          {FERRAMENTAS_NAV.map((f) => (
+          {FERRAMENTAS_NAV.filter((f) => !f.single2d || flag('as6.single_2d')).map((f) => (
             <button key={f.id} type="button" className="avst5-cat" hidden={!ferrAberta && !compacta}
               data-teste={`tax-f-${f.id}`} title={compacta ? f.nome : undefined}
               onClick={() => aoAbrirFerramenta?.(f.id)}>

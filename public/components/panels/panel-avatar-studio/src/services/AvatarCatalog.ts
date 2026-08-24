@@ -1366,7 +1366,7 @@ export const PRESETS: Preset[] = [
   // onda 1418 (#202): presets C03–C06 — coleção "Classic Premium" completa
   {
     id: 'pre_cp_boardroom',
-    nome: 'Classic Premium — Boardroom',
+    nome: 'Boardroom',
     descricao: 'C03: blazer com forro de cetim, social e sapato polido.',
     raridade: 'lendario',
     config: {
@@ -1379,7 +1379,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'pre_cp_offduty',
-    nome: 'Classic Premium — Off-duty',
+    nome: 'Off-duty',
     descricao: 'C04: cardigã sobre camiseta, jeans e tênis premium.',
     raridade: 'epico',
     config: {
@@ -1392,7 +1392,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'pre_cp_neon',
-    nome: 'Classic Premium — Neon',
+    nome: 'Neon',
     descricao: 'C05: hoodie técnico, jogger, beco neon e aura de fluxo.',
     raridade: 'epico',
     config: {
@@ -1405,7 +1405,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'pre_cp_gala',
-    nome: 'Classic Premium — Gala',
+    nome: 'Gala',
     descricao: 'C06: cetim de noite, coroa e a nebulosa inteira de fundo.',
     raridade: 'lendario',
     config: {
@@ -1710,7 +1710,7 @@ export const COLECOES: Colecao[] = [
   // (colecoesAtivas filtra); itens sao os goldens do gate §2560
   {
     id: 'col_classic_premium',
-    nome: 'Classic Premium',
+    nome: 'Coleção Premium',
     descricao: 'A primeira leva do padrão-ouro 2D: rosto, cabelo, alfaiataria e palco.',
     raridade: 'lendario',
     itens: ['bas_px_angular', 'cab_px_lateral', 'olh_px_confiante', 'boc_px_sorriso', 'rou_px_blazer', 'rin_social', 'ace_px_social', 'fun_px_estudio', 'aur_px_fluxo', 'mol_px_ouro'],

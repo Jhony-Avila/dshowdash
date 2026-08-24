@@ -457,6 +457,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
     return (
       <ShellStudio configInicial={atual} versaoBase={versao}
         desbloqueados={vida?.desbloqueados ?? new Set()}
+        vida={vida} vidaCarregando={vidaCarregando}
         aoSalvarLegado={async (cfg) => {
           const r = await salvarAvatar(cfg, versao);
           if (r.ok && typeof r.versao === 'number') setVersao(r.versao);

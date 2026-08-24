@@ -88,6 +88,9 @@ import type { SlotLayout } from '../workspace/layouts';
 import { log } from '../services/Log';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
+import { FerramentasClassicas } from './FerramentasClassicas'; // V4.3 §5-10: ferramentas clássicas no shell único
+import type { FerramentaClassica } from './FerramentasClassicas';
+import type { Vida } from '../services/VidaService';
 import { MOVIMENTOS, SHOWCASE_174, animar, movimentoReduzido, sequencia } from './movimento';
 
 /** §68.3: chips de navegação por slot na categoria Acessórios. */
@@ -177,10 +180,13 @@ class LimiteShell extends Component<{ aoSair: () => void; children: ReactNode },
   }
 }
 
-export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvarLegado, aoSalvarFotoLegado, aoSairDoShell }: {
+export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = null, vidaCarregando = false, aoSalvarLegado, aoSalvarFotoLegado, aoSairDoShell }: {
   configInicial: AvatarConfig;
   versaoBase: number;
   desbloqueados: Set<string>;
+  /** V4.3 §7/§8: progressão/IA para as ferramentas clássicas absorvidas (Conquistas, Criar com IA). */
+  vida?: Vida | null;
+  vidaCarregando?: boolean;
   /** salva pelo caminho legado (studio.php) até o corte do §619 */
   aoSalvarLegado: (config: AvatarConfig) => Promise<{ ok: boolean; versao?: number }>;
   /** mega 24: captura 3D vira o AVATAR OFICIAL (pipeline salvarFoto do App) */
@@ -394,8 +400,13 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   // mandando no busto (zoom intencional nunca é sobrescrito)
   // escopo: só no layout novo (#112) — o fallback lateral §651 segue
   // byte a byte (creator-v6 cobre o wrapper de busto lá)
+  // GOLDEN V4.3 §22-24 (#66): CALÇADOS foca os PÉS — corpo inteiro + zoom no
+  // tornozelo/pé (o que edito domina o viewport). Gate por as6.single_2d.
+  const focoCalcado = flag('as6.single_2d') && corpoPreview && dockInferior
+    && cam6 === 'auto' && principalAtiva === 'calcados';
   const renderCorpo = corpoPreview && dockInferior
     && ((flagViewport && cam6 === 'corpo')
+      || focoCalcado
       || (cam6 === 'auto' && (categoria === 'roupa' || categoria === 'roupa_sobre')));
   const enquadramento = renderCorpo ? undefined
     : flagViewport && cam6 !== 'auto'
@@ -533,13 +544,16 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
     // mega 287 (§154 passo 2): a "câmera" aproxima de leve DURANTE o poder
     // (multiplica o zoom contextual; ×1 fora do poder = bytes idênticos)
     const cam = podFamilia && poderAtivo && !movReduzido ? 1.05 : 1;
+    // GOLDEN V4.3 §22-24: CALÇADOS — corpo 240×400 aproximado nos pés (tornozelo→chão).
+    // origem y em % de 400 (não 240): pés ~ y 356/400 ≈ 89%.
+    if (focoCalcado) return { transform: `scale(${1.6 * cam})`, transformOrigin: '50% 84%' };
     if (!enquadramento) return { transform: `scale(${cam})`, transformOrigin: '50% 50%' };
     const [x, y, w, h] = enquadramento;
     return {
       transform: `scale(${Math.min(2.4, 240 / Math.max(w, h)) * cam})`,
       transformOrigin: `${((x + w / 2) / 240) * 100}% ${((y + h / 2) / 240) * 100}%`,
     };
-  }, [enquadramento, podFamilia, poderAtivo, movReduzido]);
+  }, [enquadramento, focoCalcado, podFamilia, poderAtivo, movReduzido]);
 
   // megas 233–234 (§161): propriedades do cenário (locais, flag v2) —
   // o colapsável (cenAberto) mora no ComposicaoPalco desde a fase 3b
@@ -918,6 +932,8 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
   const [evolucao, setEvolucao] = useState(false);
   // lote 196–198 (§250/§251): drawer de MISSÕES
   const [missoes, setMissoes] = useState(false);
+  // V4.3 §5-10 (#66): ferramenta clássica absorvida ativa (overlay reusando components/*)
+  const [ferramenta2d, setFerramenta2d] = useState<FerramentaClassica | null>(null);
   // mega 228 (§220): LINHA DO TEMPO unificada (flag as5.timeline_shell)
   const [timeline, setTimeline] = useState(false);
 
@@ -1168,6 +1184,10 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
               else if (id === 'historico') setAba('equipados');
               else if (id === 'missoes') setMissoes(true);
               else if (id === 'evolucao') setEvolucao(true);
+              // V4.3 §5-10: ferramentas clássicas absorvidas — overlay reusando components/*
+              else if (id === 'presets_prontos') setFerramenta2d('presets');
+              else if (id === 'historico_srv') setFerramenta2d('historico');
+              else if (id === 'colecoes' || id === 'conquistas' || id === 'ia' || id === 'vitrine' || id === 'arquetipos' || id === 'titulos' || id === 'foto') setFerramenta2d(id);
             }}
             aoEscolher={(id) => {
               medirInteracao('troca-categoria'); // #119: fecha pós-paint
@@ -1273,7 +1293,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
             {/* onda 1418 (#202/#203, gate ★): barra PREMIUM — toggle de
                 acabamento, looks 2D (apresentação) e export do avatar */}
             {flag('as6.classico_premium') && !palco3d && (
-              <div className="avst5-premium-bar" data-teste="premium-bar" role="group" aria-label="Classic Premium">
+              <div className="avst5-premium-bar" data-teste="premium-bar" role="group" aria-label="Estilo">
                 <button type="button" className={`avst-fchip${configDraft.acabamento === 'premium' ? ' avst-fchip-on' : ''}`}
                   data-teste="toggle-acabamento"
                   onClick={() => {
@@ -1604,6 +1624,20 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, aoSalvar
           <Missoes config={validarConfig(paraLegado2d(store.estadoDraft))}
             aoFechar={() => setMissoes(false)} />
         )}
+        {/* V4.3 §5-10: ferramentas clássicas absorvidas no shell único (reuso, mesmo store) */}
+        <FerramentasClassicas
+          aberta={ferramenta2d}
+          config={validarConfig(paraLegado2d(store.estadoDraft))}
+          desbloqueados={desbloqueados}
+          vida={vida}
+          vidaCarregando={vidaCarregando}
+          versao={store.versao}
+          fotoAtiva={false}
+          aoAplicar={(novo) => aplicarComando(validarConfig(novo))}
+          aoAbrirColecoes={() => setFerramenta2d('colecoes')}
+          aoSalvarFoto={(v) => { store.confirmarPersistencia(v); void espelhar619(true); }}
+          aoReativarHistorico={(v) => { store.confirmarPersistencia(v); void espelhar619(true); }}
+          aoFechar={() => setFerramenta2d(null)} />
         {timeline && (
           <TimelineShell aoFechar={() => setTimeline(false)}
             aoAbrirEvolucao={() => setEvolucao(true)} />
