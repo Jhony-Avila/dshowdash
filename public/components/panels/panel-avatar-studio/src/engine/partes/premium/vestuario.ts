@@ -18,8 +18,27 @@ import { PATH_OMBROS } from '../../base-api';
 import type { ParteDef } from '../../base-api';
 import { anatomiaCorpo } from '../corpo';
 import type { AnatomiaCorpo, PerfilCorpo2D } from '../corpo';
-import { silhuetaFit } from '../../fit'; // Golden A+2: silhueta dirigida por classe de caimento
+import { silhuetaFit } from '../../fit'; // Golden A+2/A+3: silhueta dirigida por classe de caimento
+import type { FitClass } from '../../fit';
 import { flag } from '../../../nucleo/flags';
+
+// Golden A+3: CLASSE DE CAIMENTO por peça — FONTE ÚNICA (usada no metadado
+// fitClass do ParteDef E na silhueta quando as6.fit_v2). Cada arquétipo tem
+// seu caráter: camiseta regular, hoodie oversized, blazer alfaiatado, sobretudo
+// relaxado/A-line. O fit engine (silhuetaFit) veste qualquer perfil por dado.
+const CLASSE_PECA = {
+  camiseta: 'REGULAR', camisa: 'REGULAR', hoodie: 'OVERSIZED', blazer: 'STRUCTURED',
+  polo: 'REGULAR', colete: 'FITTED', sobretudo: 'RELAXED', gala: 'STRUCTURED',
+} as const satisfies Record<string, FitClass>;
+
+/** Meias-larguras da silhueta: hand-tuned (default) OU do FIT ENGINE quando
+ *  as6.fit_v2 (silhuetaFit pela classe da peça). flag OFF ⇒ retorna `hand`
+ *  intacto ⇒ SVG byte a byte de sempre (§651). */
+function largurasFit(A: AnatomiaCorpo, classe: FitClass, hand: { sh: number; ch: number; wa: number; hip: number }): { sh: number; ch: number; wa: number; hip: number } {
+  if (!flag('as6.fit_v2')) return hand;
+  const s = silhuetaFit(A, classe);
+  return { sh: s.ombroW, ch: s.peitoW, wa: s.cinturaW, hip: s.quadrilW };
+}
 
 const SOMBRA_PESCOCO = `<path d="M96 186 c 6 10 42 10 48 0 c -2 12 -46 12 -48 0 z" fill="rgba(0,0,0,0.25)"/>`;
 
@@ -90,7 +109,7 @@ function mangaLonga(A: AnatomiaCorpo, s: 1 | -1, folgaOmb = 5, folga = 3): strin
  *  microassimetria controlada (lado direito levemente mais cheio). */
 function pathCamisetaGolden(A: AnatomiaCorpo): { torso: string } {
   const { cx, yOmb, yPei, yCin, yQua } = A;
-  const sh = A.ombro + 2, ch = A.peito + 2, wa = A.cintura + 4, hip = A.quadril + 2;
+  const { sh, ch, wa, hip } = largurasFit(A, CLASSE_PECA.camiseta, { sh: A.ombro + 2, ch: A.peito + 2, wa: A.cintura + 4, hip: A.quadril + 2 });
   const yHem = yQua + 12;
   const R: Pt[] = [[cx + 9, yOmb + 1], [cx + sh, yOmb + 4], [cx + ch, yPei + 3], [cx + wa + 0.8, yCin + 2], [cx + hip, yHem - 6], [cx + hip - 4, yHem]];
   const L: Pt[] = [[cx - hip + 4, yHem + 1], [cx - hip, yHem - 6], [cx - wa, yCin + 2], [cx - ch, yPei + 3], [cx - sh, yOmb + 4], [cx - 9, yOmb + 1]];
@@ -103,7 +122,8 @@ function pathHoodieGolden(A: AnatomiaCorpo): { torso: string; capuz: string; bar
   const { cx, yOmb, yPei, yCin, yQua, yEnt } = A;
   // massa superior (ombro/peito) larga → drape na cintura → RECOLHE na barra:
   // taper progressivo (não caixa). ch é o ponto mais largo; wa e hem recolhem.
-  const sh = A.ombro + 9, ch = A.peito + 10, wa = A.cintura + 8, hipW = A.quadril + 3, hemW = A.quadril - 3;
+  const { sh, ch, wa, hip: hipW } = largurasFit(A, CLASSE_PECA.hoodie, { sh: A.ombro + 9, ch: A.peito + 10, wa: A.cintura + 8, hip: A.quadril + 3 });
+  const hemW = hipW - 6; // RECOLHE na barra (rib < quadril) — assinatura do hoodie
   const dy = yOmb + 8;                    // ombro caído
   const yHem = yEnt + 5;
   const R: Pt[] = [[cx + 15, dy - 6], [cx + sh, dy + 1], [cx + ch, yPei + 10], [cx + wa, yCin + 8], [cx + hipW, yQua + 10], [cx + hemW, yHem]];
@@ -118,14 +138,10 @@ function pathHoodieGolden(A: AnatomiaCorpo): { torso: string; capuz: string; bar
  *  SUPRIMIDA, front quarters no quadril, barra. Lapela vem em função à parte. */
 function pathBlazerGolden(A: AnatomiaCorpo): { torso: string } {
   const { cx, yOmb, yPei, yCin, yQua, yEnt } = A;
-  // Golden A+2 (§16): com as6.fit_v2, as meias-larguras vêm do FIT ENGINE
-  // (silhuetaFit STRUCTURED — alfaiataria) e o body-follow veste qualquer perfil
-  // por dados; sem a flag, as folgas hand-tuned de sempre (byte a byte §651).
-  let sh = A.ombro + 2, ch = A.peito + 1, wa = A.cintura - 2, hip = A.quadril + 4;
-  if (flag('as6.fit_v2')) {
-    const s = silhuetaFit(A, 'STRUCTURED');
-    sh = s.ombroW; ch = s.peitoW; wa = s.cinturaW; hip = s.quadrilW;
-  }
+  // Golden A+2/A+3 (§16): com as6.fit_v2, as meias-larguras vêm do FIT ENGINE
+  // (silhuetaFit pela classe da peça) e o body-follow veste qualquer perfil por
+  // dados; sem a flag, as folgas hand-tuned de sempre (byte a byte §651).
+  const { sh, ch, wa, hip } = largurasFit(A, CLASSE_PECA.blazer, { sh: A.ombro + 2, ch: A.peito + 1, wa: A.cintura - 2, hip: A.quadril + 4 });
   const yHem = yEnt;
   const R: Pt[] = [[cx + 11, yOmb - 2], [cx + sh, yOmb - 2], [cx + sh - 1, yPei - 8], [cx + ch, yPei + 4], [cx + wa, yCin + 2], [cx + hip, yQua + 10], [cx + hip - 5, yHem]];
   const L: Pt[] = [[cx - hip + 5, yHem + 1], [cx - hip, yQua + 10], [cx - wa, yCin + 2], [cx - ch, yPei + 4], [cx - sh + 1, yPei - 8], [cx - sh, yOmb - 2], [cx - 11, yOmb - 2]];
@@ -136,7 +152,8 @@ function pathBlazerGolden(A: AnatomiaCorpo): { torso: string } {
  *  A-line MODERADA (alfaiataria, não sino/robe), gola alta em função à parte. */
 function pathSobretudoGolden(A: AnatomiaCorpo): { torso: string; gola: string; yHem: number } {
   const { cx, yOmb, yPei, yCin, yQua } = A;
-  const sh = A.ombro + 4, ch = A.peito + 4, wa = A.cintura + 3, hip = A.quadril + 7, hemW = A.quadril + 12;
+  const { sh, ch, wa, hip } = largurasFit(A, CLASSE_PECA.sobretudo, { sh: A.ombro + 4, ch: A.peito + 4, wa: A.cintura + 3, hip: A.quadril + 7 });
+  const hemW = hip + 5;                   // A-line moderada (flare > quadril)
   const yHem = 316;                       // LONGO — mid-coxa (yJoe≈298). Assinatura.
   const R: Pt[] = [[cx + 12, yOmb - 1], [cx + sh, yOmb + 1], [cx + ch, yPei + 4], [cx + wa, yCin + 4], [cx + hip, yQua + 26], [cx + hemW, yHem]];
   const L: Pt[] = [[cx - hemW, yHem + 1], [cx - hip, yQua + 26], [cx - wa, yCin + 4], [cx - ch, yPei + 4], [cx - sh, yOmb + 1], [cx - 12, yOmb - 1]];
@@ -179,7 +196,7 @@ function dobrasManga(A: AnatomiaCorpo, s: 1 | -1): string {
 
 export const ROUPAS_PREMIUM_1415: ParteDef[] = [
   {
-    id: 'rou_px_camiseta', materialToken: 'cotton', categoria: 'roupa', nome: 'Camiseta Premium',
+    id: 'rou_px_camiseta', materialToken: 'cotton', fitClass: CLASSE_PECA.camiseta, categoria: 'roupa', nome: 'Camiseta Premium',
     descricao: 'Algodão com caimento real e gola viva.', raridade: 'comum',
     tema: 'casual', usaCores: ['roupa', 'destaque'], acabamento: 'premium',
     render: (p, u) => {
@@ -229,7 +246,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
     },
   },
   {
-    id: 'rou_px_hoodie', materialToken: 'wool', categoria: 'roupa', nome: 'Hoodie Premium',
+    id: 'rou_px_hoodie', materialToken: 'wool', fitClass: CLASSE_PECA.hoodie, categoria: 'roupa', nome: 'Hoodie Premium',
     descricao: 'Moletom com capuz de forro vivo e cordões.', raridade: 'incomum',
     tema: 'urbano', usaCores: ['roupa', 'destaque', 'secundario'], acabamento: 'premium',
     render: (p, u) => {
@@ -277,7 +294,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
     },
   },
   {
-    id: 'rou_px_blazer', materialToken: 'wool', categoria: 'roupa', nome: 'Blazer Premium',
+    id: 'rou_px_blazer', materialToken: 'wool', fitClass: CLASSE_PECA.blazer, categoria: 'roupa', nome: 'Blazer Premium',
     descricao: 'Estrutura de ombro e forro de cetim — poder silencioso.', raridade: 'raro',
     tema: 'executivo', usaCores: ['roupa', 'destaque', 'secundario'], acabamento: 'premium',
     render: (p, u) => {
@@ -382,7 +399,7 @@ export const ROUPAS_PREMIUM_1415: ParteDef[] = [
     },
   },
   {
-    id: 'rou_px_sobretudo', materialToken: 'wool', categoria: 'roupa', nome: 'Sobretudo Premium',
+    id: 'rou_px_sobretudo', materialToken: 'wool', fitClass: CLASSE_PECA.sobretudo, categoria: 'roupa', nome: 'Sobretudo Premium',
     descricao: 'Lã longa com forro profundo e lapela alta.', raridade: 'raro',
     tema: 'clássico', usaCores: ['roupa', 'destaque', 'secundario'], acabamento: 'premium',
     render: (p, u) => {

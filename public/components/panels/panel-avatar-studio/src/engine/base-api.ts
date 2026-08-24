@@ -57,6 +57,10 @@ export interface ParteDef extends ItemCatalogo {
   /** onda 1415 (#191): TOKEN de material dominante da peça (metadado para
    *  a UI — swatch de material; a arte já consome via materiais2d). */
   materialToken?: import('./materiais2d').MaterialToken2d;
+  /** Golden A+3: CLASSE DE CAIMENTO da peça (FITTED/REGULAR/RELAXED/OVERSIZED/
+   *  STRUCTURED). Metadado para a UI (chip de fit) E fonte da silhueta quando
+   *  as6.fit_v2: a peça veste qualquer perfil por silhuetaFit(anatomia, fitClass). */
+  fitClass?: import('./fit').FitClass;
 }
 
 // ── Geometria compartilhada (todas as partes se ancoram aqui) ───────
