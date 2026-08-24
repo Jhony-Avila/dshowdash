@@ -877,8 +877,11 @@ export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
   // onda 1414 (#162/#186): rosto v2 decidido AQUI (flag) — motor puro;
   // flag OFF ⇒ faceV2 false ⇒ SVG byte a byte (rollback §651)
   const faceV2 = opcoes?.faceV2 ?? flag('as6.face_v2');
+  // Golden A+2: fit engine (silhueta blazer + calçado ao pé) atrás de as6.fit_v2
+  const fitV2 = opcoes?.fitV2 ?? flag('as6.fit_v2');
   const extras = (premium ? { premium } : {}) as OpcoesRender;
   if (faceV2) extras.faceV2 = true;
+  if (fitV2) extras.fitV2 = true;
   return renderAvatar(config, itemPorId, Object.keys(extras).length ? { ...opcoes, ...extras } : opcoes);
 }
 

@@ -42,7 +42,7 @@ out.fator = { slim:+fatorSpreadCalcado('slim').toFixed(3), standard:+fatorSpread
 // [6] render: standard SEM wrapper de calçado (byte-stable); robusto COM
 const sha = (s:string)=>createHash('sha256').update(s).digest('hex').slice(0,12);
 const mkCfg = (preset:string) => validarConfig({ formato:'camadas', versao:CONFIG_PADRAO.versao, base:'bas_px_oval', acabamento:'premium', cores:{...CONFIG_PADRAO.cores}, corpoV2:{preset}, camadas:{ cabelo:'cab_px_curto', olhos:'olh_px_confiante', boca:'boc_px_seria', roupa:'rou_px_blazer', acessorio_pes:'ace_px_tenis', fundo:'fun_px_estudio' } } as any);
-const rndPrem = (c:any) => renderAvatar(c, itemPorId, { estatico:true, palco:true, enquadramento:'corpo', uid:'ftFIX', premium:true } as any);
+const rndPrem = (c:any) => renderAvatar(c, itemPorId, { estatico:true, palco:true, enquadramento:'corpo', uid:'ftFIX', premium:true, fitV2:true } as any);
 const svgStd = rndPrem(mkCfg('compacto'));   // standard
 const svgRob = rndPrem(mkCfg('robusto'));
 const PES_MARK = 'translate(120 0) scale('; // prefixo único do wrapper de calçado (pes)

@@ -57,6 +57,11 @@ export interface OpcoesRender {
    *  coresFace.sobrancelha/barba/labios na paleta — tudo SÓ em artes v2.
    *  false/ausente = motor byte a byte (rollback §651). */
   faceV2?: boolean;
+  /** Golden A+2: fit engine dirige a geometria — silhueta do blazer por
+   *  silhuetaFit e CALÇADO ancorado ao pé por perfil. Decidido por
+   *  flag('as6.fit_v2') no svgDe. false/ausente = geometria hand-tuned de
+   *  sempre (rollback §651 = desligar a flag). */
+  fitV2?: boolean;
 }
 
 /** Hash djb2 → base36. Estável entre execuções (nada de Math.random). */
@@ -352,7 +357,7 @@ export function renderAvatar(
         // arte (centrada no standard) é reposicionada/ajustada em X em torno de
         // cx pela separação real dos pés. standard → fator 1 (sem wrapper, byte
         // a byte); demais perfis reposicionam. Legacy/sem premium = intocado.
-        if (opcoes.premium && s === 'acessorio_pes') {
+        if (opcoes.premium && opcoes.fitV2 && s === 'acessorio_pes') {
           const f = fatorSpreadCalcado(perfilCorpoDe(config));
           if (Math.abs(f - 1) > 1e-6) artC = `<g transform="translate(120 0) scale(${+f.toFixed(4)} 1) translate(-120 0)">${artC}</g>`;
         }
