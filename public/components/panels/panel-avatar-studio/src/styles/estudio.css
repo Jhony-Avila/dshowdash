@@ -1371,6 +1371,9 @@
 .avst5-ferr-fechar { padding: 6px; line-height: 0; }
 .avst5-ferr-corpo { overflow: auto; padding: 16px 18px; flex: 1 1 auto; min-height: 0; }
 .avst5-ferr-carregando { padding: 40px; text-align: center; color: var(--as6-texto-2, #9fb0c8); }
+
+/* V4.3 §11: sub-rótulo de grupo na navegação única (Criar / Perfil) */
+.avst6-tax-subrotulo { padding: 8px 8px 2px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--as6-texto-3, #6b7688); }
 .avst5-modal-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 
 /* AS5 F3 C2 — navegação por slot (§68.2/§68.3) + propriedades por asset (§71) */

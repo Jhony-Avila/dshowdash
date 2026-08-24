@@ -102,6 +102,18 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subA
     const futuras = TAXONOMIA.flatMap((m) => m.estado === 'em_breve'
       ? [m.nome]
       : m.principais.filter((p) => p.estado === 'em_breve').map((p) => p.nome));
+    // V4.3 §11: navegação única agrupada — botão de ferramenta reusável.
+    const single2d = flag('as6.single_2d');
+    const botaoFerr = (f: typeof FERRAMENTAS_NAV[number]) => (
+      <button key={f.id} type="button" className="avst5-cat" hidden={!ferrAberta && !compacta}
+        data-teste={`tax-f-${f.id}`} title={compacta ? f.nome : undefined}
+        onClick={() => aoAbrirFerramenta?.(f.id)}>
+        {compacta && <span className="avst5-cat-inicial" aria-hidden>{f.nome.slice(0, 1)}</span>}
+        {!compacta && <span className="avst6-tax-nome">{t(f.nome)}</span>}
+      </button>
+    );
+    const subRotulo = (txt: string) => (!compacta && single2d && ferrAberta
+      ? <div className="avst6-tax-subrotulo" aria-hidden>{t(txt)}</div> : null);
     return (
       <nav className={`avst5-sidebar avst6-tax${compacta ? ' avst5-sidebar-compacta' : ''}`}
         aria-label="Categorias" data-teste="tax-v2">
@@ -157,14 +169,15 @@ export function TrilhoCategorias({ categoria, compacta, aoEscolher, config, subA
                 <span className="avst6-tax-nome">{t('Ferramentas e gestão')}</span>
               </button>
             )}
-          {FERRAMENTAS_NAV.filter((f) => !f.single2d || flag('as6.single_2d')).map((f) => (
-            <button key={f.id} type="button" className="avst5-cat" hidden={!ferrAberta && !compacta}
-              data-teste={`tax-f-${f.id}`} title={compacta ? f.nome : undefined}
-              onClick={() => aoAbrirFerramenta?.(f.id)}>
-              {compacta && <span className="avst5-cat-inicial" aria-hidden>{f.nome.slice(0, 1)}</span>}
-              {!compacta && <span className="avst6-tax-nome">{t(f.nome)}</span>}
-            </button>
-          ))}
+          {/* gestão (sempre): 3D, presets pessoais, equipados, missões, evolução */}
+          {FERRAMENTAS_NAV.filter((f) => !f.single2d).map(botaoFerr)}
+          {/* V4.3 §11: com single_2d, as ferramentas absorvidas vêm agrupadas */}
+          {single2d && <>
+            {subRotulo('Criar')}
+            {FERRAMENTAS_NAV.filter((f) => f.single2d && f.grupo === 'criar').map(botaoFerr)}
+            {subRotulo('Perfil')}
+            {FERRAMENTAS_NAV.filter((f) => f.single2d && f.grupo === 'perfil').map(botaoFerr)}
+          </>}
         </section>
       </nav>
     );
