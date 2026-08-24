@@ -55,6 +55,19 @@ export function pontosPe(perfil: PerfilCorpo2D, s: 1 | -1): PontosPe {
   return { s, ax, yTornozelo: A.yTor - 4, yChao: A.yPe + 5, larguraPe: pa - 1, drift: s * 3 };
 }
 
+/**
+ * FATOR de espalhamento do par de calçados por perfil (Golden A+2): a arte de
+ * calçado é autorada centrada em cx=120 com os pés na separação do STANDARD
+ * (âncora ax=137, offset 17). Este fator reposiciona/ajusta a largura do par
+ * para a separação REAL dos pés do perfil, escalando em X em torno de cx — sem
+ * reescrever a arte. standard → 1 (byte-idêntico); robusto > 1; slim < 1.
+ */
+export function fatorSpreadCalcado(perfil: PerfilCorpo2D): number {
+  const off = pontosPe(perfil, 1).ax - 120;
+  const offStd = pontosPe('standard', 1).ax - 120;
+  return offStd === 0 ? 1 : off / offStd;
+}
+
 /** Parâmetros de FIT de um calçado (declarados pelo asset). */
 export interface EstruturaCalcado {
   /** altura do salto em px (0 = raso; social ~4; bota ~6). */

@@ -17,8 +17,11 @@ const PAINEL = join(RAIZ, 'public', 'components', 'panels', 'panel-avatar-studio
 const tmp = mkdtempSync(join(tmpdir(), 'avst-foot-'));
 
 writeFileSync(join(tmp, 'prova.ts'), `
-import { pontosPe, FOOTWEAR_ZONES, ESTRUTURA_PRESET } from '@painel/engine/footwear';
+import { createHash } from 'node:crypto';
+import { pontosPe, FOOTWEAR_ZONES, ESTRUTURA_PRESET, fatorSpreadCalcado } from '@painel/engine/footwear';
 import { anatomiaCorpo } from '@painel/engine/partes/corpo';
+import { renderAvatar } from '@painel/engine/render';
+import { itemPorId, validarConfig, CONFIG_PADRAO } from '@painel/services/AvatarCatalog';
 const perfis = ['slim','standard','athletic','robust','feminino'] as const;
 // referência: matemática do pé de corpo.perna() reimplementada aqui p/ casar
 const pernaFoot = (perfil:any, s:1|-1) => { const A=anatomiaCorpo(perfil); const hx=A.cx+s*(A.quadril*0.5); const ax=hx-s*1; const pa=Math.max(8,A.coxa-4); return { ax, yTornozelo:A.yTor-4, yChao:A.yPe+5, larguraPe:pa-1, drift:s*3 }; };
@@ -33,6 +36,19 @@ for (const pf of perfis) {
   out.porPerfil[pf] = { ax: Rr.ax, larguraPe: Rr.larguraPe, yTornozelo: Rr.yTornozelo };
 }
 for (const k of ['tenis','social','bota'] as const) { const e = ESTRUTURA_PRESET[k]; out.presets[k] = { salto: e.salto, cano: e.cano, zonas: e.zonas.length }; }
+
+// [5] fator de spread: standard=1 (byte-idêntico), robusto>1, slim<1
+out.fator = { slim:+fatorSpreadCalcado('slim').toFixed(3), standard:+fatorSpreadCalcado('standard').toFixed(3), robust:+fatorSpreadCalcado('robust').toFixed(3) };
+// [6] render: standard SEM wrapper de calçado (byte-stable); robusto COM
+const sha = (s:string)=>createHash('sha256').update(s).digest('hex').slice(0,12);
+const mkCfg = (preset:string) => validarConfig({ formato:'camadas', versao:CONFIG_PADRAO.versao, base:'bas_px_oval', acabamento:'premium', cores:{...CONFIG_PADRAO.cores}, corpoV2:{preset}, camadas:{ cabelo:'cab_px_curto', olhos:'olh_px_confiante', boca:'boc_px_seria', roupa:'rou_px_blazer', acessorio_pes:'ace_px_tenis', fundo:'fun_px_estudio' } } as any);
+const rndPrem = (c:any) => renderAvatar(c, itemPorId, { estatico:true, palco:true, enquadramento:'corpo', uid:'ftFIX', premium:true } as any);
+const svgStd = rndPrem(mkCfg('compacto'));   // standard
+const svgRob = rndPrem(mkCfg('robusto'));
+const PES_MARK = 'translate(120 0) scale('; // prefixo único do wrapper de calçado (pes)
+out.stdSemWrapper = !svgStd.includes(PES_MARK);
+out.robComWrapper = svgRob.includes(PES_MARK);
+out.difStdRob = sha(svgStd) !== sha(svgRob);
 process.stdout.write(JSON.stringify(out));
 `);
 
@@ -52,5 +68,10 @@ ok(new Set(axs).size > 1, `[3] posição do pé (ax) varia por perfil: ${axs.joi
 ok(r.zonas === 9, `[4] 9 zonas estruturais nomeadas`);
 ok(r.presets.bota.cano > r.presets.tenis.cano && r.presets.social.salto >= r.presets.tenis.salto,
   `[4] presets coerentes (bota cano=${r.presets.bota.cano} > tênis; social salto=${r.presets.social.salto})`);
+ok(r.fator.standard === 1 && r.fator.robust > 1 && r.fator.slim < 1,
+  `[5] fatorSpreadCalcado: slim=${r.fator.slim} < std=${r.fator.standard} < rob=${r.fator.robust}`);
+ok(r.stdSemWrapper, `[6] render standard SEM wrapper de calçado (byte-stable, fator=1)`);
+ok(r.robComWrapper, `[6] render robusto COM wrapper (calçado ancora ao pé)`);
+ok(r.difStdRob, `[6] calçado difere entre standard e robusto`);
 console.log(falhas ? `\n✗ FOOTWEAR: ${falhas} falha(s)` : '\n✓ footwear verde');
 process.exit(falhas ? 1 : 0);

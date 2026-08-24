@@ -16,6 +16,7 @@ import { aplicarParamsSvg } from './params';
 import type { ParteDef } from './base-api';
 import { G } from './base-api';
 import { corpoInteiro, corpoInteiroPremium, perfilCorpoDe } from './partes/corpo';
+import { fatorSpreadCalcado } from './footwear'; // Golden A+2: calçado ancora ao pé por perfil
 import { narizPremiumDefaultDaBase } from './partes/premium/faces'; // §5: fonte única de nariz
 import { ORDEM_CAMADAS } from './camadas';
 import { profundidadeRecorte, resolverEstadoCabelo } from './compat-cabelo';
@@ -346,7 +347,16 @@ export function renderAvatar(
         if (!idc || idc === 'nenhum') continue;
         const def = resolver(idc);
         if (!def?.renderCorpo) continue;
-        acessCorpo += aplicarParamsSvg(s, def.renderCorpo(paletaDa(s), uid), config.params?.[s]);
+        let artC = aplicarParamsSvg(s, def.renderCorpo(paletaDa(s), uid), config.params?.[s]);
+        // Golden A+2 (§12): no premium, o CALÇADO ancora ao pé do perfil — a
+        // arte (centrada no standard) é reposicionada/ajustada em X em torno de
+        // cx pela separação real dos pés. standard → fator 1 (sem wrapper, byte
+        // a byte); demais perfis reposicionam. Legacy/sem premium = intocado.
+        if (opcoes.premium && s === 'acessorio_pes') {
+          const f = fatorSpreadCalcado(perfilCorpoDe(config));
+          if (Math.abs(f - 1) > 1e-6) artC = `<g transform="translate(120 0) scale(${+f.toFixed(4)} 1) translate(-120 0)">${artC}</g>`;
+        }
+        acessCorpo += artC;
       }
       // emblema no peito do corpo inteiro (mapeia (152,206) do busto → (145,145))
       const emblemaCorpo = config.camadas.emblema && config.camadas.emblema !== 'nenhum'
