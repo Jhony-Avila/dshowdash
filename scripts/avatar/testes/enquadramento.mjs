@@ -18,7 +18,8 @@ const PAINEL = join(RAIZ, 'public', 'components', 'panels', 'panel-avatar-studio
 const tmp = mkdtempSync(join(tmpdir(), 'avst-enq-'));
 
 writeFileSync(join(tmp, 'prova.ts'), `
-import { focoDe, viewBoxDe, caixaPx, DIM_FONTE } from '@painel/engine/enquadramento';
+import { focoDe, viewBoxDe, caixaPx, DIM_FONTE, focoCardCategoria, FOCO_CARD_CATEGORIA } from '@painel/engine/enquadramento';
+import { focoItemDe } from '@painel/components/modoItem';
 import { CATEGORIAS } from '@painel/services/AvatarCatalog';
 
 const cats = (CATEGORIAS as any[]).map((c) => c.id);
@@ -47,6 +48,21 @@ out.roupaArea = +areaNorm(roupa.box).toFixed(3);
 out.determinista = JSON.stringify(focoDe('acessorio','pes')) === JSON.stringify(focoDe('acessorio','pes'));
 // px sanity
 out.pxPes = caixaPx(calc);
+
+// A+2: consolidação do CARD framing em enquadramento (single source) — a UI
+// (focoItemDe) deve devolver EXATAMENTE o preset de categoria, byte a byte.
+const BASE_CARD:Record<string,string> = {
+  base:'52 40 136 136', olhos:'78 82 84 52', boca:'92 128 56 40', nariz:'98 104 44 44',
+  sobrancelha:'82 86 76 26', barba:'60 100 120 108', cabelo:'58 30 124 110',
+  roupa:'34 98 172 138', roupa_sobre:'34 98 172 138', roupa_inferior:'48 196 144 152',
+  fundo:'0 0 240 240', moldura:'0 0 240 240', aura:'18 26 204 348', efeito:'18 26 204 348',
+  banner:'20 150 200 80', emblema:'150 20 70 70',
+};
+out.cardByteId = Object.keys(BASE_CARD).every((c)=> focoCardCategoria(c) === BASE_CARD[c]);
+// focoItemDe (UI) usa o single source no fallback de categoria: um asset SEM
+// medição/subcategoria (id inexistente) cai no preset da categoria.
+out.uiUsaSource = focoItemDe('___sem_medida___', 'roupa') === FOCO_CARD_CATEGORIA['roupa']
+  && focoItemDe('___sem_medida___', 'cabelo') === FOCO_CARD_CATEGORIA['cabelo'];
 process.stdout.write(JSON.stringify(out));
 `);
 
@@ -63,5 +79,7 @@ ok(r.vbInBounds, `[2] viewBox absoluto cai dentro da fonte (busto/corpo)`);
 ok(r.slotRefina, `[3] slot refina a câmera coarse (acessorio+pes → ${r.pxPes})`);
 ok(r.dominaViewport, `[4] §110: item (roupa area=${r.roupaArea}) domina viewport vs quadro cheio`);
 ok(r.determinista, `[5] focoDe determinístico`);
+ok(r.cardByteId, `[6] CARD framing consolidado em enquadramento — byte a byte`);
+ok(r.uiUsaSource, `[6] UI (focoItemDe) lê o single source no fallback de categoria`);
 console.log(falhas ? `\n✗ ENQUADRAMENTO: ${falhas} falha(s)` : '\n✓ enquadramento verde');
 process.exit(falhas ? 1 : 0);

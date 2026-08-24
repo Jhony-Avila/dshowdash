@@ -115,5 +115,39 @@ export function caixaPx(foco: Enquadramento): [number, number, number, number] {
   return [x, y, w, h];
 }
 
+// ── CARD (Modo Item): viewBox por CATEGORIA da CAMADA ISOLADA ────────
+// Golden A+2: FONTE ÚNICA do enquadramento do CARD por categoria (o card mostra
+// o ASSET isolado, não o avatar — política em ApresentacaoAsset). Estes viewBox
+// são o preset de CATEGORIA do Modo Item (medição por asset via
+// scripts/avatar/medir-foco-item.mjs tem precedência; sem medição cai aqui).
+// Movido de components/modoItem para cá para unificar a origem do foco — a UI
+// (modoItem/GradeItens) passa a ler daqui. Enquadram a camada com ~78% de
+// ocupação (§46). Coordenadas no canvas do render isolado do asset (busto 240×
+// 240 p/ rosto/torso; corpo 240×400 p/ inferior/aura). Complementa focoDe(),
+// que dá a geometria NORMALIZADA de card+palco sobre o avatar montado.
+export const FOCO_CARD_CATEGORIA: Record<string, string> = {
+  base: '52 40 136 136',        // §17 cabeça neutra (crânio + queixo)
+  olhos: '78 82 84 52',         // §12 par de olhos grande e centralizado
+  boca: '92 128 56 40',         // §13 só a boca + área neutra mínima
+  nariz: '98 104 44 44',        // §14
+  sobrancelha: '82 86 76 26',   // §15 par de sobrancelhas
+  barba: '60 100 120 108',      // §49-51 crop nariz→queixo, mandíbula ghost discreta
+  cabelo: '58 30 124 110',      // §4/§6 massa do cabelo (back+front) sem rosto
+  roupa: '34 98 172 138',       // onda 1426 §7: torso vestido (corpo por baixo) ~78% ocupação
+  roupa_sobre: '34 98 172 138',
+  roupa_inferior: '48 196 144 152', // §9 quadril→pés sobre o corpo
+  fundo: '0 0 240 240',         // §25/§48 a arte preenche 100%
+  moldura: '0 0 240 240',       // §26 moldura + campo vazio
+  aura: '18 26 204 348',        // §27 silhueta ghost inteira p/ escala
+  efeito: '18 26 204 348',      // §28
+  banner: '20 150 200 80',
+  emblema: '150 20 70 70',
+};
+
+/** viewBox do CARD por categoria (single source; '' se categoria sem preset). */
+export function focoCardCategoria(categoria: string): string {
+  return FOCO_CARD_CATEGORIA[categoria] ?? '';
+}
+
 /** Todas as categorias conhecidas (p/ provas de cobertura). */
 export { FOCO_CAMERA, FOCO_FINO };
