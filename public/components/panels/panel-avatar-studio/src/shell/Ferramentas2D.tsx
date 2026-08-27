@@ -1,4 +1,4 @@
-// shell/FerramentasClassicas.tsx — GOLDEN V4.3 TRACK A (§5/§6-10): absorve no
+// shell/Ferramentas2D.tsx — GOLDEN V4.3 TRACK A (§5/§6-10): absorve no
 // SHELL ÚNICO as ferramentas que só existiam no App clássico (Coleções,
 // Conquistas, Criar com IA, Vitrine, Arquétipos, Títulos, Presets prontos, Foto,
 // Histórico). REUSA os componentes de components/* (não duplica, não cria outro
@@ -21,17 +21,17 @@ const Presets = lazy(() => import('../components/Presets').then((m) => ({ defaul
 const Foto = lazy(() => import('../components/Foto').then((m) => ({ default: m.Foto })));
 const Historico = lazy(() => import('../components/Historico').then((m) => ({ default: m.Historico })));
 
-export type FerramentaClassica =
+export type Ferramenta2D =
   | 'colecoes' | 'conquistas' | 'ia' | 'vitrine'
   | 'arquetipos' | 'titulos' | 'presets' | 'foto' | 'historico';
 
-const TITULOS: Record<FerramentaClassica, string> = {
+const TITULOS: Record<Ferramenta2D, string> = {
   colecoes: 'Coleções', conquistas: 'Conquistas', ia: 'Criar com IA', vitrine: 'Vitrine',
   arquetipos: 'Arquétipos', titulos: 'Títulos', presets: 'Presets prontos', foto: 'Foto', historico: 'Histórico',
 };
 
 interface Props {
-  aberta: FerramentaClassica | null;
+  aberta: Ferramenta2D | null;
   config: AvatarConfig;
   desbloqueados: Set<string>;
   vida: Vida | null;
@@ -46,7 +46,7 @@ interface Props {
 }
 
 /** Roteia a ferramenta clássica ativa para o componente REUSADO, dentro do shell. */
-export function FerramentasClassicas(props: Props) {
+export function Ferramentas2D(props: Props) {
   const { aberta, config, desbloqueados, vida, vidaCarregando, versao, fotoAtiva, aoAplicar, aoAbrirColecoes, aoSalvarFoto, aoReativarHistorico, aoFechar } = props;
   if (!aberta) return null;
   return (

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <radialGradient id="glow_fm" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse data-hero-layer="back" cx="120" cy="112" rx="96" ry="100" fill="url(#glow_fm)"/>
+
+  <!-- cabelo curto atrás -->
+  <path data-hero-layer="back" data-channel="cabelo" data-tone="escuro"
+    d="M58 96 C 58 42 98 26 120 26 C 142 26 182 42 182 96 L 176 112 C 176 70 150 52 120 52 C 90 52 64 70 64 112 Z"/>
+
+  <!-- rosto: mandíbula larga e angular (masculino) -->
+  <path data-hero-layer="base" data-channel="pele" data-tone="base"
+    d="M74 96 C 74 62 94 48 120 48 C 146 48 166 62 166 96 L 162 140 C 160 172 142 196 120 196 C 98 196 80 172 78 140 Z"/>
+
+  <!-- meios-tons: têmpora/bochecha -->
+  <path data-hero-layer="mid" data-channel="pele" data-tone="escuro"
+    d="M78 118 C 84 150 96 172 108 180 L 100 150 Z"/>
+
+  <!-- cabelo frente (topete reto) -->
+  <path data-hero-layer="detail" data-channel="cabelo" data-tone="base"
+    d="M66 96 C 66 58 92 48 120 48 C 148 48 174 58 174 96 L 168 84 C 150 66 90 66 72 84 Z"/>
+
+  <!-- sobrancelhas retas -->
+  <rect data-hero-layer="detail" data-channel="cabelo" data-tone="profundo" x="88" y="104" width="26" height="5" rx="2"/>
+  <rect data-hero-layer="detail" data-channel="cabelo" data-tone="profundo" x="126" y="104" width="26" height="5" rx="2"/>
+
+  <!-- olhos -->
+  <ellipse data-hero-layer="detail" data-channel="destaque" data-tone="escuro" cx="101" cy="118" rx="9" ry="6"/>
+  <ellipse data-hero-layer="detail" data-channel="destaque" data-tone="escuro" cx="139" cy="118" rx="9" ry="6"/>
+  <circle data-hero-layer="detail" fill="#1a1a22" cx="101" cy="118" r="3"/>
+  <circle data-hero-layer="detail" fill="#1a1a22" cx="139" cy="118" r="3"/>
+
+  <!-- nariz reto -->
+  <path data-hero-layer="detail" data-channel="pele" data-tone="escuro" data-paint="stroke" fill="none" stroke-width="2"
+    d="M120 122 L 120 146 L 130 152"/>
+
+  <!-- boca -->
+  <path data-hero-layer="detail" data-channel="destaque" data-tone="profundo" data-paint="stroke" fill="none" stroke-width="3"
+    d="M104 166 Q 120 174 136 166"/>
+
+  <g data-hero="anchors">
+    <circle data-anchor="coroa" cx="120" cy="30"/>
+    <circle data-anchor="testa" cx="120" cy="92"/>
+    <circle data-anchor="olhoE" cx="101" cy="118"/>
+    <circle data-anchor="olhoD" cx="139" cy="118"/>
+    <circle data-anchor="boca" cx="120" cy="168"/>
+  </g>
+</svg>

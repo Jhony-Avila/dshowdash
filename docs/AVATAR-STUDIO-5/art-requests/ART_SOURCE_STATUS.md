@@ -4,6 +4,16 @@
 > não houver arquivo real produzido visualmente (§33), o status não muda e nada
 > de arte antiga é reapresentado como nova (§49). O diagnóstico já terminou
 > (§50/§58) — não se gasta rodada reprovando de novo o que já é reprovado.
+>
+> **INTAKE STATUS = `ART_INTAKE_TECHNICALLY_READY` (decisão #68).** O portão de
+> recepção do ativo autorado está construído e verde: `scripts/avatar/art-intake.mjs`
+> (+ `validador-svg`, `validador-contrato`, `resolver` pelo motor REAL,
+> `identity.mjs`). Quando o `.svg` do artista chegar, é só rodar — segurança P0 +
+> contrato + integração pelo `importarHeroAsset` de produção, com renders
+> FINAL/TARGET/BLACK/GRAYSCALE/APPLIED para a **nota humana**. O gate **não**
+> aprova arte: emite só `TECHNICAL_FAIL` / `TECHNICAL_PASS_AWAITING_HUMAN_ART_REVIEW`.
+> Ver `ART_INTAKE_SAMPLE_REPORT.md`. **Isto NÃO destrava Track B** — arte real
+> continua faltando; o gate só deixa de ser gargalo quando ela chegar.
 
 ## Freeze das especificações (§32)
 Os ART REQUESTS V4.2 são **SPEC BASE congelada**. Só mudam se um ilustrador

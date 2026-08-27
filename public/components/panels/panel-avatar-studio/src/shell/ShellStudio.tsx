@@ -88,9 +88,10 @@ import type { SlotLayout } from '../workspace/layouts';
 import { log } from '../services/Log';
 import type { Rascunho } from '../services/PresetsPessoais';
 import { BarraSalvamento } from './BarraSalvamento';
-import { FerramentasClassicas } from './FerramentasClassicas'; // V4.3 §5-10: ferramentas clássicas no shell único
-import type { FerramentaClassica } from './FerramentasClassicas';
+import { Ferramentas2D } from './Ferramentas2D'; // V4.3 §5-12: ferramentas do 2D único (reuso de components/*)
+import type { Ferramenta2D as FerramentaId2D } from './Ferramentas2D';
 import type { Vida } from '../services/VidaService';
+import { focoDe } from '../engine/enquadramento'; // V4.3 FINAL §5: fonte única do foco de categoria (FOCO_FINO)
 import { MOVIMENTOS, SHOWCASE_174, animar, movimentoReduzido, sequencia } from './movimento';
 
 /** §68.3: chips de navegação por slot na categoria Acessórios. */
@@ -400,15 +401,21 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
   // mandando no busto (zoom intencional nunca é sobrescrito)
   // escopo: só no layout novo (#112) — o fallback lateral §651 segue
   // byte a byte (creator-v6 cobre o wrapper de busto lá)
-  // GOLDEN V4.3 §22-24 (#66): CALÇADOS foca os PÉS — corpo inteiro + zoom no
-  // tornozelo/pé (o que edito domina o viewport). Gate por as6.single_2d.
-  const focoCalcado = flag('as6.single_2d') && corpoPreview && dockInferior
-    && cam6 === 'auto' && principalAtiva === 'calcados';
-  const renderCorpo = corpoPreview && dockInferior
+  // GOLDEN V4.3 FINAL §5/§9 (#66): FOCO DE CATEGORIA = FONTE ÚNICA (focoDe /
+  // FOCO_FINO). No modo automático (cam6=auto), o palco deriva enquadramento E
+  // render corpo/busto do MESMO Enquadramento — sem valores mágicos, sem mapa
+  // paralelo. Calçados foca os pés (slot 'pes'); Olhos amplia mais que Rosto;
+  // etc. Gate por as6.single_2d (produção com a flag OFF fica byte-idêntica).
+  // Câmera manual (cam6≠auto) permanece soberana (§6).
+  const focoAuto = (flag('as6.single_2d') && corpoPreview && dockInferior && cam6 === 'auto')
+    ? focoDe(categoria, principalAtiva === 'calcados' ? 'pes' : subAcess)
+    : null;
+  const renderCorpo = focoAuto
+    ? focoAuto.src === 'corpo'
+    : corpoPreview && dockInferior
     && ((flagViewport && cam6 === 'corpo')
-      || focoCalcado
       || (cam6 === 'auto' && (categoria === 'roupa' || categoria === 'roupa_sobre')));
-  const enquadramento = renderCorpo ? undefined
+  const enquadramento = focoAuto || renderCorpo ? undefined
     : flagViewport && cam6 !== 'auto'
       ? PRESETS_CAM6[cam6]
       : (dockInferior ? undefined : ENQUADRAMENTOS[categoria]);
@@ -544,16 +551,22 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
     // mega 287 (§154 passo 2): a "câmera" aproxima de leve DURANTE o poder
     // (multiplica o zoom contextual; ×1 fora do poder = bytes idênticos)
     const cam = podFamilia && poderAtivo && !movReduzido ? 1.05 : 1;
-    // GOLDEN V4.3 §22-24: CALÇADOS — corpo 240×400 aproximado nos pés (tornozelo→chão).
-    // origem y em % de 400 (não 240): pés ~ y 356/400 ≈ 89%.
-    if (focoCalcado) return { transform: `scale(${1.6 * cam})`, transformOrigin: '50% 84%' };
+    // GOLDEN V4.3 FINAL §5/§9: foco de categoria DERIVADO da FONTE ÚNICA
+    // (focoDe/FOCO_FINO) — scale/origin calculados da MESMA caixa normalizada,
+    // sem valores mágicos. Se a caixa mudar em enquadramento.ts, o palco segue.
+    if (focoAuto) {
+      const [nx, ny, nw, nh] = focoAuto.box; // normalizada no src (busto 240² / corpo 240×400)
+      const s = Math.min(2.4, 1 / Math.max(nw, nh)) * cam;
+      const cx = (nx + nw / 2) * 100, cy = (ny + nh / 2) * 100;
+      return { transform: `scale(${+s.toFixed(4)})`, transformOrigin: `${+cx.toFixed(2)}% ${+cy.toFixed(2)}%` };
+    }
     if (!enquadramento) return { transform: `scale(${cam})`, transformOrigin: '50% 50%' };
     const [x, y, w, h] = enquadramento;
     return {
       transform: `scale(${Math.min(2.4, 240 / Math.max(w, h)) * cam})`,
       transformOrigin: `${((x + w / 2) / 240) * 100}% ${((y + h / 2) / 240) * 100}%`,
     };
-  }, [enquadramento, focoCalcado, podFamilia, poderAtivo, movReduzido]);
+  }, [enquadramento, focoAuto, podFamilia, poderAtivo, movReduzido]);
 
   // megas 233–234 (§161): propriedades do cenário (locais, flag v2) —
   // o colapsável (cenAberto) mora no ComposicaoPalco desde a fase 3b
@@ -933,7 +946,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
   // lote 196–198 (§250/§251): drawer de MISSÕES
   const [missoes, setMissoes] = useState(false);
   // V4.3 §5-10 (#66): ferramenta clássica absorvida ativa (overlay reusando components/*)
-  const [ferramenta2d, setFerramenta2d] = useState<FerramentaClassica | null>(null);
+  const [ferramenta2d, setFerramenta2d] = useState<FerramentaId2D | null>(null);
   // mega 228 (§220): LINHA DO TEMPO unificada (flag as5.timeline_shell)
   const [timeline, setTimeline] = useState(false);
 
@@ -1625,7 +1638,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
             aoFechar={() => setMissoes(false)} />
         )}
         {/* V4.3 §5-10: ferramentas clássicas absorvidas no shell único (reuso, mesmo store) */}
-        <FerramentasClassicas
+        <Ferramentas2D
           aberta={ferramenta2d}
           config={validarConfig(paraLegado2d(store.estadoDraft))}
           desbloqueados={desbloqueados}

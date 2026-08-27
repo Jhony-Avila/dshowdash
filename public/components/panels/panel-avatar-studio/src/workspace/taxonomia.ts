@@ -158,8 +158,9 @@ export const TAXONOMIA: CategoriaMae[] = [
 ];
 
 /** §5.11 — ferramentas do shell NOVO; cada id mapeia um handler que JÁ
- *  existe no ShellStudio (nada é inventado; Coleções/Conquistas/Criar
- *  com IA vivem no Modo clássico e seguem lá, preservadas). */
+ *  existe no ShellStudio. GOLDEN V4.3 (#66): Coleções/Conquistas/Criar com
+ *  IA/Vitrine/Foto/Histórico agora VIVEM no shell único (Ferramentas2D reusa
+ *  components/*), atrás de as6.single_2d — não são mais exclusivas do clássico. */
 export const FERRAMENTAS_NAV: FerramentaNav[] = [
   { id: 'estudio3d', nome: 'Estúdio 3D' },
   { id: 'presets', nome: 'Presets' },
