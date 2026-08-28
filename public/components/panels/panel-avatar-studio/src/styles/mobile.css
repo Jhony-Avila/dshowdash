@@ -238,6 +238,60 @@
   max-width: 100%;
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+ * MARCO 4 — controles de edição, cores e assets
+ * ───────────────────────────────────────────────────────────────────── */
+
+/* ── grade de assets: 2 colunas legíveis no celular ──────────────── */
+.avst5-shell[data-mobile] .avst-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.avst5-shell[data-mobile] .avst-grade[data-modo="compacta"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.avst5-shell[data-mobile] .avst-grade[data-modo="lista"] { grid-template-columns: 1fr; }
+.avst5-shell[data-mobile] .avst-card { padding: 8px; }
+.avst5-shell[data-mobile] .avst-card-nome { font-size: 12px; }
+.avst5-shell[data-mobile] .avst-card:hover { transform: none; } /* sem depender de hover no toque */
+
+/* ── swatches de cor: alvo de toque confortável ──────────────────── */
+.avst5-shell[data-mobile] .avst-cores-lista { gap: 10px; }
+.avst5-shell[data-mobile] .avst-swatch {
+  width: 34px; height: 34px;
+  touch-action: manipulation;
+}
+.avst5-shell[data-mobile] .avst-swatch:hover { transform: none; }       /* estado ativo é o box-shadow, não o hover */
+.avst5-shell[data-mobile] .avst-swatch-ativo { box-shadow: 0 0 0 3px var(--avst-acento); }
+.avst5-shell[data-mobile] .avst-cores-slot { gap: 12px; flex-wrap: wrap; }
+
+/* ── sliders: manipuláveis por toque (trilho alto + thumb grande) ── */
+.avst5-shell[data-mobile] input[type="range"] {
+  width: 100%;
+  height: 44px;                    /* área de toque generosa */
+  touch-action: pan-y;             /* arrastar o slider não rola a página */
+  background: transparent;
+  accent-color: var(--avst-acento, var(--as6-acento));
+}
+.avst5-shell[data-mobile] input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--as6-superficie-4); }
+.avst5-shell[data-mobile] input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%; background: var(--avst-acento, var(--as6-acento)); border: 2px solid #fff; }
+.avst5-shell[data-mobile] input[type="range"]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: var(--avst-acento, var(--as6-acento)); border: 2px solid #fff; }
+/* larguras fixas de slider desktop → 100% no celular */
+.avst5-shell[data-mobile] .avst-ft-ajuste input[type="range"],
+.avst5-shell[data-mobile] .avst5-p3d-slider input[type="range"] { width: 100%; }
+
+/* ── chips (filtros, tipo corporal, presets) + ações ─────────────── */
+.avst5-shell[data-mobile] .avst-ft-chip,
+.avst5-shell[data-mobile] .avst-fchip,
+.avst5-shell[data-mobile] .avst-ft-chip-ativo { min-height: 40px; padding: 8px 12px; touch-action: manipulation; }
+.avst5-shell[data-mobile] .avst-botao,
+.avst5-shell[data-mobile] .avst-botao-primario { min-height: 44px; touch-action: manipulation; }
+.avst5-shell[data-mobile] .avst-botao:hover:not(:disabled),
+.avst5-shell[data-mobile] .avst-botao-primario:hover:not(:disabled) { transform: none; }
+
+/* ── estados vazio/carregando/erro: legíveis, com respiro ────────── */
+.avst5-shell[data-mobile] .avst-vazio,
+.avst5-shell[data-mobile] .avst-carregando,
+.avst5-shell[data-mobile] .avst-erro { padding: 20px 14px; text-align: center; font-size: 13px; }
+
+/* ── nada colado na borda inferior (barra do navegador/gesto) ────── */
+.avst5-shell[data-mobile] .avst5-propriedades { padding-bottom: calc(12px + var(--sa-bottom)); }
+
 /* ── reduced-motion respeitado (além do já existente no estudio.css) ─ */
 @media (prefers-reduced-motion: reduce) {
   .avst5-shell[data-mobile] * { scroll-behavior: auto; }
