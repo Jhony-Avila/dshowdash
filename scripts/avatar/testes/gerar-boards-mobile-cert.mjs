@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // testes/gerar-boards-mobile-cert.mjs — TRACK C FINAL CERTIFICATION: os 15
-// boards com o esquema de nomes da certificação. Cada board carrega viewport,
-// flag e critério no banner. Salva em OUTPKG (default /tmp/trackc-cert/boards).
-import { abrir, irParaHarness } from './navegador.mjs';
+// boards com o esquema de nomes da certificação. REUSA UM ÚNICO navegador/página
+// (menos pressão de recursos, mais rápido, encerramento garantido). Cada board
+// carrega viewport, flag e critério no banner. Salva em OUTPKG (default
+// /tmp/trackc-cert/boards).
+import { chromium } from 'playwright-core';
+import { acharChromium, BASE } from './navegador.mjs';
 import sharp from 'sharp';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,8 +14,6 @@ const OUT = process.env.OUTPKG || '/tmp/trackc-cert/boards';
 mkdirSync(OUT, { recursive: true });
 const FLAGS = { 'as5.novo_shell': true, 'as6.single_2d': true, 'as6.dock_inferior': true, 'as6.mobile_studio': true };
 const FLAGS_OFF = { 'as5.novo_shell': true, 'as6.single_2d': true, 'as6.dock_inferior': true };
-const seed = (f) => { try { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify(f)); } catch {} };
-const seedLegado = (f) => { try { localStorage.setItem('dshow.avst.flags.v1', JSON.stringify(f)); localStorage.setItem('avst.harness.config', JSON.stringify({ formato: 'camadas', versao: 1, base: 'bas_classica', camadas: {}, cores: {} })); } catch {} };
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 async function rotular(buf, titulo, sub) {
@@ -32,44 +33,70 @@ async function grade(cels, cols, cw, ch, titulo, sub) {
   return sharp({ create: { width: W, height: H, channels: 3, background: { r: 15, g: 16, b: 21 } } }).composite(L).png().toBuffer();
 }
 const salvar = (n, b) => { writeFileSync(join(OUT, n), b); console.log(`  board → ${n}`); };
-async function cap(viewport, prep, flags = FLAGS, init = seed) {
-  const { navegador, pagina } = await abrir({ viewport, init, initArg: flags });
-  try { await irParaHarness(pagina, 'avst-harness.html', 1000); if (prep) await prep(pagina); await pagina.waitForTimeout(300); return await pagina.screenshot(); } finally { await navegador.close(); }
+
+// ── UM navegador/contexto/página reutilizados ─────────────────────────
+const navegador = await chromium.launch({ executablePath: acharChromium(), args: ['--no-sandbox'] });
+const contexto = await navegador.newContext({ viewport: { width: 390, height: 844 } });
+const pagina = await contexto.newPage();
+
+// Sem addInitScript acumulável: 1º load (defaults) → grava localStorage
+// (limpando o legado quando NÃO é o caso, p/ não contaminar boards seguintes)
+// → reload que aplica as flags. Estado limpo e determinístico por board.
+async function render(viewport, prep, { flags = FLAGS, legado = false } = {}) {
+  await pagina.setViewportSize(viewport);
+  await pagina.goto(`${BASE}/avst-harness.html`, { waitUntil: 'domcontentloaded' });
+  await pagina.evaluate((cfg) => {
+    try {
+      localStorage.setItem('dshow.avst5.tour.v1', 'feito');
+      localStorage.setItem('dshow.avst.flags.v1', JSON.stringify(cfg.flags));
+      if (cfg.legado) localStorage.setItem('avst.harness.config', JSON.stringify({ formato: 'camadas', versao: 1, base: 'bas_classica', camadas: {}, cores: {} }));
+      else localStorage.removeItem('avst.harness.config');
+    } catch {}
+  }, { flags, legado });
+  await pagina.reload({ waitUntil: 'networkidle' });
+  await pagina.waitForFunction(() => window.__pronto === true, { timeout: 20000 });
+  await pagina.waitForTimeout(700);
+  if (prep) await prep(pagina);
+  await pagina.waitForTimeout(300);
+  return await pagina.screenshot();
 }
 const cat = (n) => async (p) => { await p.evaluate((x) => { const b = [...document.querySelectorAll('.avst5-sidebar .avst5-cat, button.avst6-navg-cab')].find((e) => (e.textContent || '').trim().startsWith(x)); b?.scrollIntoView({ inline: 'center' }); b?.click(); }, n); await p.waitForTimeout(500); };
 const ferr = (n) => async (p) => { await p.evaluate((x) => { const b = [...document.querySelectorAll('button')].find((e) => (e.textContent || '').trim().startsWith(x)); b?.click(); }, n); await p.waitForTimeout(700); };
 
-console.log('Boards de certificação em', OUT);
+console.log('Boards de certificação em', OUT, '(navegador único reutilizado)');
+try {
+  const M = [[320, 568, 'iPhone SE'], [375, 667, 'iPhone 8'], [390, 844, 'iPhone 12/13'], [412, 915, 'Android'], [430, 932, 'iPhone 15 PM'], [768, 1024, 'tablet']];
+  { const cels = []; for (const [w, h, nome] of M) cels.push({ buf: await render({ width: w, height: h }), rot: `${w}×${h} ${nome}` }); salvar('01_MOBILE_VIEWPORT_MATRIX.png', await grade(cels, 3, 190, 300, '01 · VIEWPORT MATRIX', 'flag as6.mobile_studio ON · mobile-viewport-matrix · sem overflow, palco visível')); }
 
-const M = [[320, 568, 'iPhone SE'], [375, 667, 'iPhone 8'], [390, 844, 'iPhone 12/13'], [412, 915, 'Android'], [430, 932, 'iPhone 15 PM'], [768, 1024, 'tablet']];
-{ const cels = []; for (const [w, h, nome] of M) cels.push({ buf: await cap({ width: w, height: h }), rot: `${w}×${h} ${nome}` }); salvar('01_MOBILE_VIEWPORT_MATRIX.png', await grade(cels, 3, 190, 300, '01 · VIEWPORT MATRIX', 'flag as6.mobile_studio ON · teste mobile-viewport-matrix · critério: sem overflow, palco visível')); }
+  salvar('02_MOBILE_ENTRY_AND_SHELL.png', await rotular(await render({ width: 390, height: 844 }), '02 · ENTRY & SHELL', '390×844 · flag ON · mobile-shell-layout · grid 5col → stack, palco sticky topo'));
+  salvar('03_MOBILE_CATEGORY_NAVIGATION.png', await rotular(await render({ width: 390, height: 844 }, cat('Cabelo')), '03 · CATEGORY NAVIGATION', '390×844 · flag ON · mobile-touch-navigation · trilho horizontal fino, ativa marcada'));
+  salvar('04_MOBILE_ASSET_BOTTOM_SHEET.png', await rotular(await render({ width: 390, height: 844 }, async (p) => { await cat('Roupa')(p); await p.evaluate(() => { const s = document.querySelector('.avst5-shell[data-mobile]'); if (s) s.style.setProperty('--palco-mobile-h', '200px'); const el = document.querySelector('.avst5-shell[data-mobile] .avst5-painel'); if (el) el.scrollTop = 360; }); await p.waitForTimeout(400); }), '04 · ASSET GRID / BOTTOM SHEET', '390×844 · flag ON · mobile-asset-selection · palco no piso do clamp (200px) + catálogo com abas/filtros/busca e topo da grade'));
+  { const cels = [
+    { buf: await render({ width: 390, height: 844 }, cat('Rosto')), rot: 'Rosto (busto)' },
+    { buf: await render({ width: 390, height: 844 }, cat('Cabelo')), rot: 'Cabelo (busto)' },
+    { buf: await render({ width: 390, height: 844 }, cat('Roupa')), rot: 'Roupa (corpo)' },
+    { buf: await render({ width: 390, height: 844 }, cat('Calçados')), rot: 'Calçados (pés)' },
+  ]; salvar('05_MOBILE_FACE_HAIR_CLOTHING_FOOTWEAR.png', await grade(cels, 4, 175, 320, '05 · FACE · HAIR · CLOTHING · FOOTWEAR', '390×844 · flag ON · mobile-category-flow · palco reenquadra pelo motor real')); }
+  salvar('06_MOBILE_TOOLS_OVERLAYS.png', await rotular(await render({ width: 390, height: 844 }, ferr('Coleções')), '06 · TOOLS / OVERLAYS', '390×844 · flag ON · mobile-tools-overlays · full-screen sheet (role=dialog, aria-modal)'));
+  salvar('07_MOBILE_SAVE_FLOW.png', await rotular(await render({ width: 390, height: 844 }, cat('Rosto')), '07 · SAVE FLOW', '390×844 · flag ON · mobile-save-flow · barra fixa inferior, POST estado.php'));
+  salvar('08_MOBILE_KEYBOARD_AND_FORMS.png', await rotular(await render({ width: 390, height: 844 }, ferr('Títulos')), '08 · KEYBOARD & FORMS', '390×844 · flag ON · mobile-keyboard-viewport · campos 16px, barra sai do teclado'));
+  salvar('09_MOBILE_SAFE_AREAS.png', await rotular(await render({ width: 390, height: 844 }), '09 · SAFE AREAS', '390×844 · flag ON · mobile-safe-area · env(safe-area-inset-*) header/barra'));
+  salvar('10_MOBILE_LANDSCAPE.png', await rotular(await render({ width: 844, height: 390 }, cat('Rosto')), '10 · LANDSCAPE', '844×390 · flag ON · mobile-landscape · altura baixa, palco menor, sem overflow'));
+  salvar('11_MOBILE_LEGACY_COMPAT.png', await rotular(await render({ width: 390, height: 844 }, null, { legado: true }), '11 · LEGACY COMPAT', '390×844 · flag ON · mobile-legacy-compat · avatar legado (camadas) renderiza/salva'));
+  salvar('12_MOBILE_TABLET.png', await rotular(await render({ width: 768, height: 1024 }, cat('Rosto')), '12 · TABLET', '768×1024 · flag ON · mobile-tablet-layout · fronteira: 768 = stack mobile'));
+  { const cels = [
+    { buf: await render({ width: 1280, height: 900 }, cat('Rosto'), { flags: FLAGS_OFF }), rot: 'flag OFF (produção)' },
+    { buf: await render({ width: 1280, height: 900 }, cat('Rosto'), { flags: FLAGS }), rot: 'flag ON (mesmo desktop)' },
+  ]; salvar('13_DESKTOP_BEFORE_AFTER_PARITY.png', await grade(cels, 2, 380, 300, '13 · DESKTOP BEFORE/AFTER PARITY', '1280×900 · desktop-responsive-regression · grid 5col idêntico com flag OFF e ON (mobile não vaza)')); }
+  salvar('14_MOBILE_ACCESSIBILITY_TOUCH_TARGETS.png', await rotular(await render({ width: 390, height: 844 }, cat('Olhos')), '14 · ACCESSIBILITY / TOUCH TARGETS', '390×844 · flag ON · mobile-touch-inventory · alvos ≥44×44 em todos os eixos'));
+  { const cels = [
+    { buf: await render({ width: 390, height: 844 }), rot: '1. entrada' },
+    { buf: await render({ width: 390, height: 844 }, cat('Roupa')), rot: '2. editar' },
+    { buf: await render({ width: 390, height: 844 }, ferr('Coleções')), rot: '3. ferramentas' },
+    { buf: await render({ width: 390, height: 844 }, cat('Rosto')), rot: '4. salvar' },
+  ]; salvar('15_MOBILE_FINAL_PRODUCT_FLOW.png', await grade(cels, 4, 175, 320, '15 · FINAL PRODUCT FLOW', '390×844 · flag ON · entry → edit → tools → save, sem sair do 2D único')); }
 
-salvar('02_MOBILE_ENTRY_AND_SHELL.png', await rotular(await cap({ width: 390, height: 844 }), '02 · ENTRY & SHELL', '390×844 · flag ON · mobile-shell-layout · grid 5col → stack, palco sticky topo'));
-salvar('03_MOBILE_CATEGORY_NAVIGATION.png', await rotular(await cap({ width: 390, height: 844 }, cat('Cabelo')), '03 · CATEGORY NAVIGATION', '390×844 · flag ON · mobile-touch-navigation · trilho horizontal fino, ativa marcada'));
-salvar('04_MOBILE_ASSET_BOTTOM_SHEET.png', await rotular(await cap({ width: 390, height: 844 }, cat('Roupa')), '04 · ASSET GRID / BOTTOM SHEET', '390×844 · flag ON · mobile-asset-selection · grade 2col por toque'));
-{ const cels = [
-  { buf: await cap({ width: 390, height: 844 }, cat('Rosto')), rot: 'Rosto (busto)' },
-  { buf: await cap({ width: 390, height: 844 }, cat('Cabelo')), rot: 'Cabelo (busto)' },
-  { buf: await cap({ width: 390, height: 844 }, cat('Roupa')), rot: 'Roupa (corpo)' },
-  { buf: await cap({ width: 390, height: 844 }, cat('Calçados')), rot: 'Calçados (pés)' },
-]; salvar('05_MOBILE_FACE_HAIR_CLOTHING_FOOTWEAR.png', await grade(cels, 4, 175, 320, '05 · FACE · HAIR · CLOTHING · FOOTWEAR', '390×844 · flag ON · mobile-category-flow · palco reenquadra pelo motor real')); }
-salvar('06_MOBILE_TOOLS_OVERLAYS.png', await rotular(await cap({ width: 390, height: 844 }, ferr('Coleções')), '06 · TOOLS / OVERLAYS', '390×844 · flag ON · mobile-tools-overlays · full-screen sheet (role=dialog, aria-modal)'));
-salvar('07_MOBILE_SAVE_FLOW.png', await rotular(await cap({ width: 390, height: 844 }, cat('Rosto')), '07 · SAVE FLOW', '390×844 · flag ON · mobile-save-flow · barra fixa inferior, POST estado.php'));
-salvar('08_MOBILE_KEYBOARD_AND_FORMS.png', await rotular(await cap({ width: 390, height: 844 }, ferr('Títulos')), '08 · KEYBOARD & FORMS', '390×844 · flag ON · mobile-keyboard-viewport · campos 16px, barra sai do teclado'));
-salvar('09_MOBILE_SAFE_AREAS.png', await rotular(await cap({ width: 390, height: 844 }), '09 · SAFE AREAS', '390×844 · flag ON · mobile-safe-area · env(safe-area-inset-*) header/barra'));
-salvar('10_MOBILE_LANDSCAPE.png', await rotular(await cap({ width: 844, height: 390 }, cat('Rosto')), '10 · LANDSCAPE', '844×390 · flag ON · mobile-landscape · altura baixa, palco menor, sem overflow'));
-salvar('11_MOBILE_LEGACY_COMPAT.png', await rotular(await cap({ width: 390, height: 844 }, null, FLAGS, seedLegado), '11 · LEGACY COMPAT', '390×844 · flag ON · mobile-legacy-compat · avatar legado (camadas) renderiza/salva'));
-salvar('12_MOBILE_TABLET.png', await rotular(await cap({ width: 768, height: 1024 }, cat('Rosto')), '12 · TABLET', '768×1024 · flag ON · mobile-tablet-layout · fronteira: 768 = stack mobile'));
-{ const cels = [
-  { buf: await cap({ width: 1280, height: 900 }, cat('Rosto'), FLAGS_OFF), rot: 'flag OFF (produção)' },
-  { buf: await cap({ width: 1280, height: 900 }, cat('Rosto'), FLAGS), rot: 'flag ON (mesmo desktop)' },
-]; salvar('13_DESKTOP_BEFORE_AFTER_PARITY.png', await grade(cels, 2, 380, 300, '13 · DESKTOP BEFORE/AFTER PARITY', '1280×900 · desktop-responsive-regression · grid 5col idêntico com flag OFF e ON (mobile não vaza)')); }
-salvar('14_MOBILE_ACCESSIBILITY_TOUCH_TARGETS.png', await rotular(await cap({ width: 390, height: 844 }, cat('Olhos')), '14 · ACCESSIBILITY / TOUCH TARGETS', '390×844 · flag ON · mobile-accessibility-smoke · alvos ≥44, aria-current, zoom livre'));
-{ const cels = [
-  { buf: await cap({ width: 390, height: 844 }), rot: '1. entrada' },
-  { buf: await cap({ width: 390, height: 844 }, cat('Roupa')), rot: '2. editar' },
-  { buf: await cap({ width: 390, height: 844 }, ferr('Coleções')), rot: '3. ferramentas' },
-  { buf: await cap({ width: 390, height: 844 }, cat('Rosto')), rot: '4. salvar' },
-]; salvar('15_MOBILE_FINAL_PRODUCT_FLOW.png', await grade(cels, 4, 175, 320, '15 · FINAL PRODUCT FLOW', '390×844 · flag ON · entry → edit → tools → save, sem sair do 2D único')); }
-
-console.log('\n✓ 15 boards de certificação gerados em', OUT);
+  console.log('\n✓ 15 boards de certificação gerados em', OUT);
+} finally {
+  await pagina.close().catch(() => {}); await contexto.close().catch(() => {}); await navegador.close().catch(() => {});
+}
