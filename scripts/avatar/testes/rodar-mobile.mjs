@@ -38,7 +38,7 @@ const MOBILE = [
   'mobile-color-flow.mjs',          // cert corretiva: fluxo de cor (loop+CSS; variantes §73 = device)
   'mobile-catalog-density.mjs',     // cert corretiva: densidade — ≥1 linha de assets acima da dobra
   'mobile-adverse-states.mjs',      // cert corretiva: resiliência (save rejeitado/lento/inválido)
-  'mobile-back-navigation.mjs',     // cert corretiva: voltar fecha camada interna
+  'mobile-back-navigation.mjs', 'mobile-extreme-data.mjs', 'mobile-ios-fallback.mjs', 'mobile-a11y-keyboard.mjs',     // cert corretiva: voltar fecha camada interna
   'desktop-responsive-regression.mjs', // cert: flag ON não vaza p/ desktop (1280/1440/1600)
 ];
 // Regressões do desktop aprovado (Track A / V4.3) — flag OFF, byte-estabilidade

@@ -70,7 +70,7 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'mobile-accessibility-smoke.mjs', 'mobile-performance-smoke.mjs',
   'mobile-small-screen-320.mjs', 'mobile-tablet-layout.mjs', 'mobile-viewport-matrix.mjs',
   'mobile-touch-inventory.mjs', 'mobile-contrast-audit.mjs', 'mobile-color-flow.mjs',
-  'mobile-catalog-density.mjs', 'mobile-adverse-states.mjs', 'mobile-back-navigation.mjs',
+  'mobile-catalog-density.mjs', 'mobile-adverse-states.mjs', 'mobile-back-navigation.mjs', 'mobile-extreme-data.mjs', 'mobile-ios-fallback.mjs', 'mobile-a11y-keyboard.mjs',
   'desktop-responsive-regression.mjs'];
 let falhas = 0;
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red

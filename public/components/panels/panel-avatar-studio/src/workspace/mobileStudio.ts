@@ -80,6 +80,41 @@ export function useBackGuard(ativo: boolean): void {
   }, [ativo]);
 }
 
+/** Gestão de FOCO de diálogo no celular (cert corretiva, a11y). Enquanto a
+ *  composição mobile está ativa: ao abrir uma camada modal (sheet de ferramenta,
+ *  drawer, modal), leva o foco p/ dentro dela se ainda não estiver; ao fechar,
+ *  RESTAURA o foco para o elemento que a abriu — sem tocar os componentes
+ *  Track A (é um observador de DOM escopado no mobile). No-op quando inativo. */
+export function useFocoDialogo(ativo: boolean): void {
+  useEffect(() => {
+    if (!ativo) return;
+    const SEL = '.avst5-ferr-fundo, .avst5-detalhe, .avst5-modal-fundo:not(.avst5-ferr-fundo)';
+    const focavel = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    let anterior: HTMLElement | null = null;
+    let dialogoAberto = false;
+    const ao = () => {
+      const d = document.querySelector<HTMLElement>(SEL);
+      if (d && !dialogoAberto) {
+        dialogoAberto = true;
+        anterior = document.activeElement as HTMLElement;
+        if (!d.contains(document.activeElement)) {
+          const alvo = d.querySelector<HTMLElement>('[autofocus]') || d.querySelector<HTMLElement>(focavel);
+          try { alvo?.focus(); } catch { /* ignore */ }
+        }
+      } else if (!d && dialogoAberto) {
+        dialogoAberto = false;
+        // restaura o foco ao elemento de origem (se ainda no DOM e visível)
+        if (anterior && document.contains(anterior) && anterior.offsetParent !== null) { try { anterior.focus(); } catch { /* ignore */ } }
+        anterior = null;
+      }
+    };
+    const mo = new MutationObserver(ao);
+    try { mo.observe(document.body, { childList: true, subtree: true }); } catch { /* sem DOM */ }
+    ao();
+    return () => mo.disconnect();
+  }, [ativo]);
+}
+
 /** Teclado virtual: usa VisualViewport (evento confiável, sem timeout arbitrário)
  *  p/ (a) marcar data-avst-kb no <html> quando o teclado abre e (b) publicar a
  *  altura ocupada em --avst-kb. O CSS mobile usa isso p/ tirar a barra de salvar
