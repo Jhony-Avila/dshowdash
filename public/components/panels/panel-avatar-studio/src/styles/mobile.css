@@ -91,9 +91,13 @@
 .avst5-shell[data-mobile] button,
 .avst5-shell[data-mobile] [role="button"],
 .avst5-shell[data-mobile] a[href] {
+  min-width: 44px;               /* alvo de toque nos DOIS eixos (cert corretiva): botões-ícone (favoritar, setas, macrogrupo, grade/lista, recolher, cores) não caem abaixo de 44px de largura */
   min-height: 44px;
   touch-action: manipulation;    /* sem delay de 300ms, sem double-tap-zoom acidental */
 }
+/* alças de redimensionar (arraste) não fazem sentido no toque e são finas
+ * demais p/ alvo — some no mobile (como a .avst5-alca). */
+.avst5-shell[data-mobile] .avst6-dock-alca { display: none; }
 
 /* ── hover-independência: sem depender de :hover no toque ─────────── */
 @media (hover: none) {
@@ -127,7 +131,7 @@
 }
 .avst5-shell[data-mobile] .avst5-header-acoes::-webkit-scrollbar { display: none; }
 .avst5-shell[data-mobile] .avst5-header-acoes > * { flex: 0 0 auto; }
-.avst5-shell[data-mobile] .avst5-header-acoes .avst-botao { min-width: 44px; min-height: 40px; }
+.avst5-shell[data-mobile] .avst5-header-acoes .avst-botao { min-width: 44px; min-height: 44px; }
 
 /* ── palco: altura já é var(--palco-mobile-h) (M1). Proporção preservada
  *    pelo motor (.avst5-zoom svg aspect-ratio:1). Fundo edge-to-edge. ── */
@@ -281,7 +285,7 @@
 /* ── chips (filtros, tipo corporal, presets) + ações ─────────────── */
 .avst5-shell[data-mobile] .avst-ft-chip,
 .avst5-shell[data-mobile] .avst-fchip,
-.avst5-shell[data-mobile] .avst-ft-chip-ativo { min-height: 40px; padding: 8px 12px; touch-action: manipulation; }
+.avst5-shell[data-mobile] .avst-ft-chip-ativo { min-height: 44px; padding: 10px 12px; touch-action: manipulation; }
 .avst5-shell[data-mobile] .avst-botao,
 .avst5-shell[data-mobile] .avst-botao-primario { min-height: 44px; touch-action: manipulation; }
 .avst5-shell[data-mobile] .avst-botao:hover:not(:disabled),
