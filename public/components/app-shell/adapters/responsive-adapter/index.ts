@@ -43,14 +43,19 @@ export { subscribe } from './subscription.js';
 // Health
 export { getMetrics, healthCheck, info } from './health.js';
 
+// Track D — marcador central de mobile do shell (inerte com a flag OFF)
+export { initMobileMarker, applyMobileMarker, computeViewport, isMobileShellEnabled } from './mobile-marker.js';
+
 // Auto-init
 import { init } from './lifecycle.js';
+import { initMobileMarker } from './mobile-marker.js';
 
 if (typeof document !== 'undefined') {
+    const boot = () => { init(); try { initMobileMarker(); } catch { /* fail-safe: nunca quebra o shell */ } };
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => { init(); });
+        document.addEventListener('DOMContentLoaded', boot);
     } else {
-        init();
+        boot();
     }
 }
 
