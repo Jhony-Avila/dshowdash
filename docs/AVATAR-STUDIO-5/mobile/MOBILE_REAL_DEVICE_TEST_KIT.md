@@ -94,3 +94,26 @@ Notch/safe-area:   [ APROVADO / REPROVADO ]  obs:
 VEREDITO FINAL:    [ APROVADO / REPROVADO ]
 Assinatura/data:
 ```
+
+## 11. Verificação de porta e firewall
+```bash
+PORTA=8901; (exec 3<>/dev/tcp/127.0.0.1/$PORTA) 2>/dev/null && echo "porta ocupada, escolha outra" || echo "porta livre"
+```
+Se o celular não abrir a URL LAN: liberar a porta no firewall do host
+(ex.: `sudo ufw allow 8901/tcp`) e garantir host+celular na MESMA rede Wi-Fi.
+
+## 12. HTTPS local (se algum recurso exigir contexto seguro)
+Alguns recursos (ex.: certos sensores) exigem HTTPS. Opção local SEM publicar:
+`mkcert` para um certificado de dev + servir com um proxy TLS local
+(`http-server -S -C cert.pem -K key.pem`), ou túnel local confinado à LAN.
+Não publicar o ambiente na internet.
+
+## 13. Exportação de evidências
+- Screenshots: retrato + paisagem por device.
+- Gravação de tela do fluxo entry→save.
+- Console/rede: Safari Web Inspector (iOS) / chrome://inspect (Android).
+- Consolidar num zip por device com o formulário de aprovação preenchido.
+
+## 14. Roteiro Tablet
+- [ ] 768×1024 retrato = stack mobile; 1024×768 paisagem = grid desktop.
+- [ ] Sem overflow; palco e catálogo confortáveis.

@@ -1,31 +1,26 @@
-# Track C Mobile — Auditoria de Contraste (automatizada)
+# Track C Mobile — Auditoria de Contraste (0 violações)
 
-Teste: `mobile-contrast-audit.mjs` (razão WCAG de fg/bg efetivo, 390×844, flag
-ON). Limiar: 4.5 texto normal; 3.0 texto grande (≥18px ou ≥14px bold).
+Teste: `mobile-contrast-audit.mjs`. Após o Marco 12, superfícies de preenchimento
+acento com texto branco usam rgb(116,84,224)=5.14:1 (isolado data-mobile).
 
-## Resultado por estado
+| Estado | razão | limiar | veredito |
+|---|---|---|---|
+| shell texto base | 16.08 | 4.5 | ✓ |
+| categoria / ativa | 14.56 | 4.5 | ✓ |
+| card nome | 16.08 | 4.5 | ✓ |
+| texto secundário | 14.56 | 4.5 | ✓ |
+| seção catálogo (bold) | 16.08 | 3.0 | ✓ |
+| filtro chip (fill) | 5.14 | 4.5 | ✓ (era 4.35) |
+| botão primário (fill) | 5.14 | 4.5 | ✓ |
+| chip pressionado (fill) | 5.14 | 4.5 | ✓ |
 
-| Estado | fg | bg | razão | limiar | veredito |
-|---|---|---|---|---|---|
-| shell texto base | branco-gelo | superfície-1 | 16.08 | 4.5 | ✓ |
-| categoria | branco-gelo | superfície-3 | 14.56 | 4.5 | ✓ |
-| categoria ativa | branco-gelo | superfície-3 | 14.56 | 4.5 | ✓ |
-| card nome | branco-gelo | superfície-1 | 16.08 | 4.5 | ✓ |
-| texto secundário | branco-gelo | superfície-3 | 14.56 | 4.5 | ✓ |
-| seção catálogo (bold) | branco-gelo | superfície-1 | 16.08 | 4.5 | ✓ |
-| filtro chip (ativo) | branco | acento rgb(124,92,255) | 4.35 | 4.5 | ≈ HERDADO |
+```
+MOBILE_CONTRAST_VIOLATIONS=0
+MIN_NORMAL_TEXT_CONTRAST=5.14 (>=4.5)
+MIN_LARGE_TEXT_CONTRAST=16.08 (>=3.0)
+FOCUS_INDICATOR_VISIBLE=YES (:focus-visible outline 3px rgb(150,170,255))
+```
 
-## Classificação
-
-- **CONTRAST_VIOLATIONS introduzidas pelo Track C: 0.** A composição mobile só
-  reflui LAYOUT; não define cores de texto próprias.
-- **1 herdada do tema Track A:** o chip de filtro ativo (texto branco sobre o
-  acento roxo) mede 4.35:1 — 0.15 abaixo do limiar de texto normal. É **idêntico
-  no desktop** (flag OFF), confirmado. É decisão de **token de tema (Track A)**,
-  fora do escopo do Track C; ajustá-la afetaria o desktop aprovado. Registrada
-  como P2.
-
-## Pendente de device/leitor de tela
-
-Contraste percebido em telas OLED/brilho real, modo de alto contraste do SO e
-daltonismo → validação humana (kit de device).
+Fix isolado no mobile (bordas/sombras/tints seguem o token aprovado → sem
+divergência de forma; desktop intocado). Contraste percebido em OLED/alto
+contraste/daltonismo = device real (kit).
