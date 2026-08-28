@@ -163,6 +163,7 @@
 .avst5-shell[data-mobile] .avst5-sidebar .avst5-cat {
   flex: 0 0 auto;
   width: auto;
+  min-width: 44px;                 /* alvo de toque nos dois eixos (M7): rótulos curtos ("Boca") não caem abaixo de 44px */
   min-height: 44px;                /* alvo de toque */
   white-space: nowrap;
   scroll-snap-align: center;
@@ -319,9 +320,12 @@
 /* botão salvar não pode ser tocado 2× por acidente */
 .avst5-shell[data-mobile] .avst5-salvar .avst-botao-primario { min-height: 44px; touch-action: manipulation; flex: 1 1 auto; }
 .avst5-shell[data-mobile] .avst5-salvar .avst-botao { min-height: 44px; }
-/* o catálogo não fica atrás da barra de salvar fixa */
+/* o catálogo não fica atrás da barra de salvar fixa. O trilho de categorias
+ * (.avst5-sidebar) é EXCLUÍDO: é uma faixa horizontal fina que não rola no
+ * eixo vertical, então não precisa reservar a altura da barra de salvar —
+ * senão vira uma faixa de ~148px comendo o palco (M7: manter faixa fina). */
 .avst5-shell[data-mobile] .avst5-painel,
-.avst5-shell[data-mobile] .avst5-corpo > *:not(.avst5-viewport):not(.avst5-alca) {
+.avst5-shell[data-mobile] .avst5-corpo > *:not(.avst5-viewport):not(.avst5-alca):not(.avst5-sidebar) {
   padding-bottom: calc(72px + var(--sa-bottom));
 }
 

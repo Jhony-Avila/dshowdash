@@ -47,6 +47,7 @@ function html({ titulo, base, js, css, mocks, monta }) {
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${titulo}</title>
 ${css.map((c) => `<link rel="stylesheet" href="${base}${c}">`).join('\n')}
 <style>html,body{margin:0;height:100%;background:#0d1017}#host{min-height:100vh}</style>
