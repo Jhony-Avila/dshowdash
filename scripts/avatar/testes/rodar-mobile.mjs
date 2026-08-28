@@ -37,7 +37,7 @@ const MOBILE = [
   'mobile-contrast-audit.mjs',      // cert corretiva: contraste WCAG (0 introduzido pelo mobile)
   'mobile-color-flow.mjs', 'mobile-color-variants-real.mjs',          // cert corretiva: fluxo de cor (loop+CSS; variantes §73 = device)
   'mobile-catalog-density.mjs',     // cert corretiva: densidade — ≥1 linha de assets acima da dobra
-  'mobile-adverse-states.mjs',      // cert corretiva: resiliência (save rejeitado/lento/inválido)
+  'mobile-adverse-states.mjs', 'mobile-save-error-matrix.mjs',      // cert corretiva: resiliência (save rejeitado/lento/inválido)
   'mobile-back-navigation.mjs', 'mobile-extreme-data.mjs', 'mobile-ios-fallback.mjs', 'mobile-a11y-keyboard.mjs',     // cert corretiva: voltar fecha camada interna
   'desktop-responsive-regression.mjs', // cert: flag ON não vaza p/ desktop (1280/1440/1600)
 ];
