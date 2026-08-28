@@ -46,7 +46,7 @@ SRV=$!; sleep 2
 if curl -sf "http://127.0.0.1:$PORTA/avst-harness.html" >/dev/null; then echo "   servido"; else echo "   INFRA-FAIL http"; FAILED_STAGES=$((FAILED_STAGES+1)); fi
 export BASE_URL="http://127.0.0.1:$PORTA"
 
-MOBILE="mobile-shell-layout mobile-touch-navigation mobile-category-flow mobile-asset-selection mobile-color-controls mobile-tools-overlays mobile-save-flow mobile-legacy-compat mobile-keyboard-viewport mobile-safe-area mobile-orientation-change mobile-landscape mobile-small-screen-320 mobile-tablet-layout mobile-accessibility-smoke mobile-performance-smoke mobile-viewport-matrix mobile-touch-inventory desktop-responsive-regression"
+MOBILE="mobile-shell-layout mobile-touch-navigation mobile-category-flow mobile-asset-selection mobile-color-controls mobile-tools-overlays mobile-save-flow mobile-legacy-compat mobile-keyboard-viewport mobile-safe-area mobile-orientation-change mobile-landscape mobile-small-screen-320 mobile-tablet-layout mobile-accessibility-smoke mobile-performance-smoke mobile-viewport-matrix mobile-touch-inventory mobile-contrast-audit mobile-color-flow desktop-responsive-regression"
 V43="v43-single2d-parity v43-single2d-flow v43-legacy-compat v43-category-focus"
 
 log "[6/9] testes definidos — sequenciais, timeout ${TEST_TIMEOUT}s, sem suite completa"
@@ -59,7 +59,7 @@ for t in $MOBILE $V43; do
   else echo "   TEST/PRODUTO-FAIL $t (rc=$rc)"; REDS+=("$t:rc$rc"); FAILED_STAGES=$((FAILED_STAGES+1)); fi
   pkill -f "chrome-linux/chrome" 2>/dev/null   # reaproveita recursos: reap de qualquer straggler
 done
-echo "   verdes: $PASS de 23 · $(mem)"
+echo "   verdes: $PASS de 25 · $(mem)"
 
 log "[7/9] boards (navegador único reutilizado)"
 if OUTPKG="$CERT/boards" BASE_URL="http://127.0.0.1:$PORTA" timeout 200 node scripts/avatar/testes/gerar-boards-mobile-cert.mjs >"$CERT/logs/boards.log" 2>&1; then echo "   $(ls "$CERT/boards" | wc -l) boards"; else echo "   INFRA-FAIL boards"; FAILED_STAGES=$((FAILED_STAGES+1)); fi
@@ -80,7 +80,7 @@ DIRTY=$(git status --porcelain | wc -l | tr -d ' ')
 echo ""
 echo "==================== RESUMO ===================="
 echo "HEAD tree            : $TREE"
-echo "TESTES verdes        : $PASS de 23"
+echo "TESTES verdes        : $PASS de 25"
 echo "FAILED_STAGES        : $FAILED_STAGES"
 [ ${#REDS[@]} -gt 0 ] && echo "VERMELHOS            : ${REDS[*]}" || echo "VERMELHOS            : nenhum"
 echo "boards               : $(ls "$CERT/boards" 2>/dev/null | wc -l)"

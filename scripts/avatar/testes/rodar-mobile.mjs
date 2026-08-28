@@ -34,6 +34,8 @@ const MOBILE = [
   'mobile-tablet-layout.mjs',       // cert: fronteira tablet (768 mobile / 1024 desktop)
   'mobile-viewport-matrix.mjs',     // cert: 14 viewports + varredura progressiva 300→1600
   'mobile-touch-inventory.mjs',     // cert corretiva: alvos ≥44×44 em 14 viewports
+  'mobile-contrast-audit.mjs',      // cert corretiva: contraste WCAG (0 introduzido pelo mobile)
+  'mobile-color-flow.mjs',          // cert corretiva: fluxo de cor (loop+CSS; variantes §73 = device)
   'desktop-responsive-regression.mjs', // cert: flag ON não vaza p/ desktop (1280/1440/1600)
 ];
 // Regressões do desktop aprovado (Track A / V4.3) — flag OFF, byte-estabilidade

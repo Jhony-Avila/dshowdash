@@ -1,45 +1,42 @@
-# Track C Mobile — Resultados de Performance/Estabilidade
+# Track C Mobile — Resultados de Performance/Estabilidade (reprodutível)
 
-Instrumentação headless (Playwright/Chromium, 390×844, flag ON) +
-`mobile-performance-smoke.mjs`. Headless não é fiel a FPS de device; mede tempos
-de interação e estabilidade estrutural.
+Benchmark: `perf-bench` (12 repetições, 2 de warmup, 390×844, flag ON,
+Playwright/Chromium headless em sandbox cloud). Estatística por métrica.
+Estabilidade: `mobile-performance-smoke`.
 
-## Tempos (390×844)
+## 1. Tempos (ms) — mediana / p95 / min / max, 12 reps + 2 warmup
 
-| Métrica | Valor |
-|---|---|
-| Shell utilizável | ~600ms líquido (1519ms com espera de harness) |
-| Troca de categoria | 98ms |
-| Abertura de catálogo | 101ms |
-| Abertura de ferramenta | 131ms |
-| Recursos carregados | 7 |
+| Métrica | mediana | p95 | min | max |
+|---|---|---|---|---|
+| shell utilizável (goto→__pronto) | 190 | 236 | 170 | 236 |
+| troca de categoria | 69 | 97 | 58 | 97 |
+| abertura de ferramenta | 31 | 43 | 22 | 43 |
 
-## Estabilidade (10 ciclos abrir/fechar ferramenta + trocar categoria)
+Ambiente: headless não é fiel a FPS de device; estes números medem o custo de
+interação da composição, reprodutíveis pelo benchmark. FPS de scroll/3G/bateria
+= validação de device real (kit).
 
-| Métrica | Início | Fim | Δ |
+## 2. Estabilidade (10 ciclos abrir/fechar ferramenta + trocar categoria)
+
+| Métrica | início | fim | Δ |
 |---|---|---|---|
-| Heap JS usado | 12.2 MB | 12.2 MB | **0 MB** (sem leak) |
-| Nós de DOM | 4049 | 3097 | −952 (sem crescimento) |
-| Erros JS | — | — | **0** |
+| heap JS | 12.2 MB | 12.2 MB | 0 (sem leak) |
+| nós DOM | 4049 | 3097 | −952 (sem crescimento) |
+| erros JS | — | — | 0 |
+| listeners | pareados no cleanup (mobileStudio.ts) | | sem acúmulo |
 
-O Δ negativo de nós reflete categorias com menos cards, não vazamento. Sem
-crescimento de listeners (hooks removem no cleanup — `mobileStudio.ts`).
+## 3. Bundle e o aviso de chunk-size
 
-## Bundle
+| Chunk | bruto | gzip | Dono |
+|---|---|---|---|
+| `motor3d.js` | 1039 KB | 286 KB | **engine 3D (Three.js) — Track A** |
+| `entry.js` | 503 KB | 156 KB | app (Track A) + Track C (~1.3KB) |
+| `catalogo-arte.js` | 454 KB | 102 KB | catálogo (Track A) |
+| CSS bundle | 184 KB | 31 KB | inclui mobile.css (~5 KB gzip) |
 
-| Item | Valor |
-|---|---|
-| CSS bundle total | 184 KB (gzip ~31 KB) |
-| Regras `data-mobile` no bundle | 96 |
-| Delta mobile aproximado | `mobile.css` 357 linhas, ~5 KB gzip |
-
-## Por que é barato
-
-Só layout: nenhuma cópia de store/motor/save; troca mobile↔desktop muda apenas
-o atributo `data-mobile`. Palco 2D (não WebGL). Sticky/fixed em vez de JS de
-scroll; `overscroll-behavior: contain`; `touch-action` sem delay de 300ms.
-
-## Pendente de device real
-
-FPS de scroll, tempo em 3G, consumo de bateria, layout shifts em Safari/Chrome
-mobile — validação humana.
+**Aviso "Some chunks are larger than 600 kB":** disparado pelo `motor3d.js`
+(1 MB, engine 3D), **pré-existente e alheio ao Track C**. Contribuição do
+Track C: **~1.3 KB JS** (`mobileStudio.ts` + hooks) no `entry` + **~5 KB gzip
+CSS** (`mobile.css`) no bundle de estilo. Delta pequeno e justificado (só
+layout); **nenhuma otimização artificial** foi feita. O Track C **não criou nem
+agravou** o aviso.
