@@ -43,6 +43,43 @@ export function useMobileStudio(): boolean {
   return flag('as6.mobile_studio') && estreito;
 }
 
+/** Guard do botão VOLTAR no celular (cert corretiva). Enquanto a composição
+ *  mobile está ativa, um "voltar" (popstate) fecha primeiro a camada interna
+ *  aberta — sheet de ferramenta, drawer de detalhes, modal genérico — em vez de
+ *  sair do módulo. Reusa o handler de Escape já existente no shell (dispara um
+ *  keydown Escape), então não duplica lógica de fechamento. Se nada estiver
+ *  aberto, deixa o voltar propagar para o host. No-op quando inativo. */
+export function useBackGuard(ativo: boolean): void {
+  useEffect(() => {
+    if (!ativo) return;
+    // camadas internas em ordem de prioridade + seletor do respectivo fechar
+    const OVERLAYS: Array<[string, string]> = [
+      ['.avst5-ferr-fundo', '.avst5-ferr-fechar'],
+      ['.avst5-detalhe', '.avst5-det-fechar, .avst5-detalhe [aria-label*="echar"], .avst5-detalhe button'],
+      ['.avst5-modal-fundo:not(.avst5-ferr-fundo)', '.avst5-modal-fechar, .avst5-modal-fundo [aria-label*="echar"]'],
+      ['.avst5-paleta-cmd', '.avst5-paleta-fechar'],
+    ];
+    const overlayAberto = () => OVERLAYS.find(([sel]) => document.querySelector(sel));
+    let armado = false;
+    const armar = () => { if (!armado) { try { history.pushState({ avstBackGuard: true }, ''); armado = true; } catch { /* sem history */ } } };
+    const mo = new MutationObserver(() => { if (overlayAberto()) armar(); });
+    try { mo.observe(document.body, { childList: true, subtree: true }); } catch { /* sem DOM */ }
+    const aoVoltar = () => {
+      const aberto = overlayAberto();
+      if (aberto) {
+        // fecha a camada de cima: clica o botão de fechar (fallback: Escape)
+        const fechar = document.querySelector<HTMLElement>(aberto[1]);
+        if (fechar) fechar.click();
+        else { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); }
+        armado = false; if (overlayAberto()) armar();
+      }
+      // sem overlay: não re-arma → o voltar segue para o host
+    };
+    window.addEventListener('popstate', aoVoltar);
+    return () => { mo.disconnect(); window.removeEventListener('popstate', aoVoltar); };
+  }, [ativo]);
+}
+
 /** Teclado virtual: usa VisualViewport (evento confiável, sem timeout arbitrário)
  *  p/ (a) marcar data-avst-kb no <html> quando o teclado abre e (b) publicar a
  *  altura ocupada em --avst-kb. O CSS mobile usa isso p/ tirar a barra de salvar

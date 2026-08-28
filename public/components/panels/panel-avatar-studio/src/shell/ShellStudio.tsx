@@ -55,7 +55,7 @@ import type {
 } from '../workspace/palco';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
-import { useMobileStudio, useTecladoVirtual } from '../workspace/mobileStudio'; // Track C: composição mobile
+import { useMobileStudio, useTecladoVirtual, useBackGuard } from '../workspace/mobileStudio'; // Track C: composição mobile
 import { montarCandidatoPremium } from '../services/QualidadeVisual'; // onda 1423 (#214)
 import { LOOKS_2D } from '../services/RegistroEfeitos'; // onda 1418 (#203)
 import { FRAMINGS_EXPORT, nomeExport, rasterizarExport, svgExport } from '../services/ExportAvatar'; // onda 1418 (#202)
@@ -385,6 +385,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
   const dockInferior = flag('as6.dock_inferior');
   const mobileStudio = useMobileStudio(); // Track C: reflow mobile quando flag ON + viewport estreito
   useTecladoVirtual(mobileStudio); // Track C: teclado virtual via VisualViewport
+  useBackGuard(mobileStudio); // Track C: voltar fecha a camada interna antes de sair do módulo
   // onda 1294 (decisão #137, as6.corpo_preview): nas categorias de
   // VESTUÁRIO (e no preset manual "Corpo") o palco usa o render de
   // CORPO INTEIRO 240×400 do motor — a peça aparece de verdade.
