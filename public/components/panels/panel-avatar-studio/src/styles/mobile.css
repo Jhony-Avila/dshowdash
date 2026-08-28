@@ -359,3 +359,54 @@
   .avst5-shell[data-mobile] * { scroll-behavior: auto; }
   .avst5-shell[data-mobile] .avst5-salvar { transition: none; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ * MARCO 11 (cert corretiva) — DENSIDADE do catálogo: pelo menos uma linha de
+ * assets acima da dobra em 360/390/430. Só LAYOUT; sem remover controle nem
+ * reduzir alvo de toque; desktop intocado (escopo data-mobile). Estratégia:
+ * (a) palco um pouco menor; (b) cabeçalho do catálogo compacto; (c) linhas de
+ * chips que QUEBRAVAM em várias linhas viram UMA linha rolável na horizontal
+ * (achável por scroll, alvo ≥44 mantido). Filtros/busca continuam acessíveis.
+ * ───────────────────────────────────────────────────────────────────── */
+.avst5-shell[data-mobile] { --palco-mobile-h: clamp(180px, 36dvh, 44dvh); }
+
+/* cabeçalho do catálogo: menos respiro vertical, sem apertar toque */
+.avst5-shell[data-mobile] .avst5-painel-topo { padding: 6px 8px; gap: 6px; }
+.avst5-shell[data-mobile] .avst5-painel-topo > * { margin: 0; }
+
+/* linhas de chips (tabs de filtro, temas/subcats, slots, tipo corporal) →
+ * UMA faixa horizontal rolável em vez de quebrar em 3-4 linhas */
+.avst5-shell[data-mobile] .avst5-abas,
+.avst5-shell[data-mobile] .avst6-dockchips,
+.avst5-shell[data-mobile] .avst5-chips,
+.avst5-shell[data-mobile] .avst-ft-chips {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 6px;
+  scroll-snap-type: x proximity;
+}
+.avst5-shell[data-mobile] .avst5-abas::-webkit-scrollbar,
+.avst5-shell[data-mobile] .avst6-dockchips::-webkit-scrollbar,
+.avst5-shell[data-mobile] .avst5-chips::-webkit-scrollbar,
+.avst5-shell[data-mobile] .avst-ft-chips::-webkit-scrollbar { display: none; }
+.avst5-shell[data-mobile] .avst5-abas > *,
+.avst5-shell[data-mobile] .avst6-dockchips > *,
+.avst5-shell[data-mobile] .avst5-chips > *,
+.avst5-shell[data-mobile] .avst-ft-chips > * { flex: 0 0 auto; scroll-snap-align: start; }
+/* affordance de "tem mais": leve máscara nas bordas das faixas de chip */
+.avst5-shell[data-mobile] .avst6-dockchips,
+.avst5-shell[data-mobile] .avst5-chips {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+}
+/* grade começa mais cedo: menos respiro acima dos cards */
+.avst5-shell[data-mobile] .avst-grade { margin-top: 4px; }
+
+/* telas BAIXAS em retrato (ex.: 360×640): palco ainda menor p/ garantir uma
+ * linha de assets acima da dobra sem exigir rolagem longa */
+@media (max-height: 680px) and (orientation: portrait) {
+  .avst5-shell[data-mobile] { --palco-mobile-h: clamp(150px, 28dvh, 34dvh); }
+}
