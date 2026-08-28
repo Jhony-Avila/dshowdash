@@ -60,7 +60,14 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'v43-legacy-compat.mjs', /* V4.3 §16/§54 (#66): COMPATIBILITY E2E — avatar legado abre/renderiza/salva no shell único */
   'v43-category-focus.mjs', /* V4.3 FINAL §7-10 (#67): prova SEMÂNTICA — Calçados deriva de FOCO_FINO.pes (fonte única), pés dominam o palco */
   'art-intake.mjs', /* V4.3 FINAL Track B (#68): ART INTAKE GATE — segurança P0 + contrato + motor real; veredito só FAIL/AWAITING_HUMAN */
-  'art-intake-hardening.mjs' /* rodada 3 (readiness hardening): segurança ampliada + enum/âncoras canônicas/roupa_inferior + qualidade de mensagens */];
+  'art-intake-hardening.mjs', /* rodada 3 (readiness hardening): segurança ampliada + enum/âncoras canônicas/roupa_inferior + qualidade de mensagens */
+  // TRACK C — AVATAR STUDIO MOBILE (flag as6.mobile_studio, default OFF). E2E da
+  // composição responsiva; desktop aprovado segue coberto pelos v43-* (flag OFF).
+  'mobile-shell-layout.mjs', 'mobile-touch-navigation.mjs', 'mobile-category-flow.mjs',
+  'mobile-tools-overlays.mjs', 'mobile-asset-selection.mjs', 'mobile-color-controls.mjs',
+  'mobile-save-flow.mjs', 'mobile-safe-area.mjs', 'mobile-orientation-change.mjs',
+  'mobile-landscape.mjs', 'mobile-keyboard-viewport.mjs', 'mobile-legacy-compat.mjs',
+  'mobile-accessibility-smoke.mjs', 'mobile-performance-smoke.mjs'];
 let falhas = 0;
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red
 // que só estoura exceção (sem linha "FALHAS:") não passa mais batido
