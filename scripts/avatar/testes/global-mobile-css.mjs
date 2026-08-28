@@ -8,7 +8,10 @@ import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 const CHROME = process.env.PW_CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-const ROOT = '/home/claude/dshowdash/public';
+import { fileURLToPath } from 'node:url';
+// PORTÁTIL: public/ = 3 níveis acima de scripts/avatar/testes/, com fallback p/ cwd.
+const _viaScript = fileURLToPath(new URL('../../../public', import.meta.url));
+const ROOT = existsSync(_viaScript) ? _viaScript : `${process.cwd()}/public`;
 const MIME = { '.html':'text/html', '.css':'text/css', '.js':'text/javascript', '.mjs':'text/javascript', '.json':'application/json' };
 // servidor estático embutido (mesmo processo → o governador gerencia 1 coisa só)
 const server = http.createServer((req, res) => {

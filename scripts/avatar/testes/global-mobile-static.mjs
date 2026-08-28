@@ -2,8 +2,14 @@
 // garantia mais crítica: TODO seletor de global-mobile.css exige #app-shell[data-mobile]
 // → com o marcador ausente (flag OFF) NENHUMA regra casa → desktop BYTE A BYTE.
 // Também confere que cada correção de causa-raiz está presente.
-import { readFileSync } from 'node:fs';
-const css = readFileSync('/home/claude/dshowdash/public/components/app-shell/styles/global-mobile.css', 'utf8');
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+// caminho PORTÁTIL: relativo ao próprio script (repo root = 3 níveis acima de
+// scripts/avatar/testes/), com fallback p/ cwd — roda em qualquer checkout.
+const REL = 'public/components/app-shell/styles/global-mobile.css';
+const viaScript = fileURLToPath(new URL('../../../' + REL, import.meta.url));
+const CSS_PATH = existsSync(viaScript) ? viaScript : REL;
+const css = readFileSync(CSS_PATH, 'utf8');
 let falhas = 0; const ok = (c, m) => { console.log(`${c ? '  \u2713' : '  \u2717 FALHA:'} ${m}`); if (!c) falhas++; };
 
 // remove comentários; extrai seletores de regra (ignora headers de @media/@supports)
