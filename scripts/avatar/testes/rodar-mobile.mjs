@@ -30,6 +30,10 @@ const MOBILE = [
   'mobile-legacy-compat.mjs',       // M6: avatar legado abre/renderiza/salva no mobile
   'mobile-accessibility-smoke.mjs', // M7: alvos ≥44, aria, zoom livre, reduced-motion
   'mobile-performance-smoke.mjs',   // M8: estabilidade (sem vazamento) + churn de resize
+  'mobile-small-screen-320.mjs',    // cert: menor viewport (320×568) sem overflow/inalcançável
+  'mobile-tablet-layout.mjs',       // cert: fronteira tablet (768 mobile / 1024 desktop)
+  'mobile-viewport-matrix.mjs',     // cert: 14 viewports + varredura progressiva 300→1600
+  'desktop-responsive-regression.mjs', // cert: flag ON não vaza p/ desktop (1280/1440/1600)
 ];
 // Regressões do desktop aprovado (Track A / V4.3) — flag OFF, byte-estabilidade
 const REGRESSAO_V43 = [

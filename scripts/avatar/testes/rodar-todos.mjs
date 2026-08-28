@@ -67,7 +67,9 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'mobile-tools-overlays.mjs', 'mobile-asset-selection.mjs', 'mobile-color-controls.mjs',
   'mobile-save-flow.mjs', 'mobile-safe-area.mjs', 'mobile-orientation-change.mjs',
   'mobile-landscape.mjs', 'mobile-keyboard-viewport.mjs', 'mobile-legacy-compat.mjs',
-  'mobile-accessibility-smoke.mjs', 'mobile-performance-smoke.mjs'];
+  'mobile-accessibility-smoke.mjs', 'mobile-performance-smoke.mjs',
+  'mobile-small-screen-320.mjs', 'mobile-tablet-layout.mjs', 'mobile-viewport-matrix.mjs',
+  'desktop-responsive-regression.mjs'];
 let falhas = 0;
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red
 // que só estoura exceção (sem linha "FALHAS:") não passa mais batido
