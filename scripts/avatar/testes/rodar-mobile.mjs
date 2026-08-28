@@ -35,7 +35,7 @@ const MOBILE = [
   'mobile-viewport-matrix.mjs',     // cert: 14 viewports + varredura progressiva 300→1600
   'mobile-touch-inventory.mjs',     // cert corretiva: alvos ≥44×44 em 14 viewports
   'mobile-contrast-audit.mjs',      // cert corretiva: contraste WCAG (0 introduzido pelo mobile)
-  'mobile-color-flow.mjs',          // cert corretiva: fluxo de cor (loop+CSS; variantes §73 = device)
+  'mobile-color-flow.mjs', 'mobile-color-variants-real.mjs',          // cert corretiva: fluxo de cor (loop+CSS; variantes §73 = device)
   'mobile-catalog-density.mjs',     // cert corretiva: densidade — ≥1 linha de assets acima da dobra
   'mobile-adverse-states.mjs',      // cert corretiva: resiliência (save rejeitado/lento/inválido)
   'mobile-back-navigation.mjs', 'mobile-extreme-data.mjs', 'mobile-ios-fallback.mjs', 'mobile-a11y-keyboard.mjs',     // cert corretiva: voltar fecha camada interna
