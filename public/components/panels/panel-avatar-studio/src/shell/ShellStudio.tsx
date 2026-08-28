@@ -55,6 +55,7 @@ import type {
 } from '../workspace/palco';
 import { Palco3d } from './Palco3d';
 import { flag } from '../nucleo/flags';
+import { useMobileStudio } from '../workspace/mobileStudio'; // Track C: composição mobile
 import { montarCandidatoPremium } from '../services/QualidadeVisual'; // onda 1423 (#214)
 import { LOOKS_2D } from '../services/RegistroEfeitos'; // onda 1418 (#203)
 import { FRAMINGS_EXPORT, nomeExport, rasterizarExport, svgExport } from '../services/ExportAvatar'; // onda 1418 (#202)
@@ -382,6 +383,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
   // Os presets manuais (Rosto/Busto/Corpo) seguem mandando quando o
   // usuário escolhe — o fit nunca sobrescreve zoom intencional.
   const dockInferior = flag('as6.dock_inferior');
+  const mobileStudio = useMobileStudio(); // Track C: reflow mobile quando flag ON + viewport estreito
   // onda 1294 (decisão #137, as6.corpo_preview): nas categorias de
   // VESTUÁRIO (e no preset manual "Corpo") o palco usa o render de
   // CORPO INTEIRO 240×400 do motor — a peça aparece de verdade.
@@ -1164,6 +1166,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" ref={refShell} data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
+        data-mobile={mobileStudio ? '1' : undefined} /* Track C: composição responsiva (flag as6.mobile_studio + viewport estreito) */
         data-dock-inferior={dockInferior ? '' : undefined} /* decisão #112 */
         data-dock-fit={dockFit ? '' : undefined} /* onda 1291 (#133) */
         data-motion-v2={flag('as6.motion_v2') && !movReduzido ? '' : undefined} /* lote 1131-1140 (#115, aceites §568 AS6) */

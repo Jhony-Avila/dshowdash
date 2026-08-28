@@ -153,6 +153,7 @@ const PADROES: Record<string, boolean> = {
   'as6.face_v2': false,         // onda 1414 — ROSTO V2 (#162, Partes 3/5): categoria nariz na sidebar, expressão semântica + idade + assimetria determinística aplicadas por wrappers SÓ nas artes v2, canais coresFace.sobrancelha/barba/labios na paleta, Face Idle Profiles; off = render/UI byte a byte (dados salvos seguem aceitos)
   'as6.barba_slot': false,      // onda 1414 — categoria BARBA visível (artes brb_*; compat máscara/cachecol em engine/compat-rosto.ts); off = seção oculta, config salvo segue renderizando
   'as6.brow_slot': false,       // onda 1414 — categoria SOBRANCELHA visível (artes sbr_* como overlay sobre o traço cozido); off = seção oculta, config salvo segue renderizando
+  'as6.mobile_studio': false,   // TRACK C (mobile adaptation) — composição RESPONSIVA do shell 2D único p/ celular/tablet: reflow do grid p/ stack (palco sticky com dvh/safe-area, trilho horizontal com alvos ≥44px, catálogo em bottom sheet, ferramentas full-screen sheet, barra de salvar inferior sticky). Decisão de layout CENTRALIZADA (data-mobile no shell); zero duplicação de lógica/store/motor/save. off = desktop aprovado byte a byte (Track A intocado). Ativa só quando o viewport é estreito (sem user-agent).
   'as6.single_2d': false,       // GOLDEN V4.2 (§1/§36/§58, decisão #64) — PRODUTO 2D ÚNICO: esconde da experiência principal as ações de troca de modo ("Modo clássico" na BarraTopo + "Voltar ao modo clássico" na paleta). Compat/QA continua acessível só sob as6.qa_route (§37); o error-boundary de recuperação permanece sempre (segurança §2). off = experiência atual byte a byte (produção intocada). Puro conditional render — sem campo serializado novo, sem mirror PHP.
   'as6.qa_route': false,        // onda 1410 — ROTA DE QA VISUAL (§2707–§2742): QaStudio (chunk lazy) na paleta — LOD forçado, looks, overlays, calibração, screenshot 1-click, inspector técnico (manifest/health/renderer.info); dev, nada persiste; off = sem comando/chunk, render intocado
   'as6.material_debug': false,  // onda 1410 — DEBUG DE MATERIAIS no QaStudio (§1686–§1690): lista materiais do personagem (tipo, roughness/metalness, mapas); off = bloco ausente
@@ -212,6 +213,7 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.roupa_premium': ['as6.classico_premium'],
   'as6.arte_v2': ['as6.classico_premium'], // Golden V3.1 (#219-R1): arte v2 refina o trilho premium
   'as6.single_2d': ['as5.novo_shell'], // Golden V4.2 #64: a convergência 2D-único só faz sentido dentro do shell novo
+  'as6.mobile_studio': ['as5.novo_shell'], // Track C: a composição mobile refina o shell novo
   'as6.hero_2d': ['as6.classico_premium', 'as6.arte_v2'], // Golden A+2: heroes autorados exigem o trilho premium elevado
   'as6.fit_v2': ['as6.classico_premium', 'as6.arte_v2'], // Golden A+2: silhueta por fit engine refina o trilho premium
   'as6.acess_2d_premium': ['as6.classico_premium'], // onda 1416 (#196)

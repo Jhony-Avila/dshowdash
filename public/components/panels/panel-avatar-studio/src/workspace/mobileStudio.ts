@@ -1,0 +1,44 @@
+// workspace/mobileStudio.ts — TRACK C: decisão CENTRALIZADA de layout mobile.
+//
+// Uma única fonte de verdade: a composição mobile ativa quando a flag
+// `as6.mobile_studio` está ON **e** o viewport é estreito/baixo — derivado do
+// CONTEÚDO, não de user-agent. O grid desktop de 5 colunas (nav 176 + palco 1fr
+// + catálogo 380 + alças) precisa de ~928px p/ respirar; abaixo disso ele degrada
+// e no celular fica inutilizável (a 375px sobra ~11px p/ o palco). Por isso o
+// stack vertical entra em telas ESTREITAS (≤768) ou BAIXAS (≤520 — celular em
+// paisagem). Tablet em paisagem (1024×768) e desktop seguem no grid aprovado.
+//
+// NÃO usa navigator.userAgent (§2: sem UA-sniffing). Reage a resize/orientação
+// via matchMedia. Retorna false quando a flag está OFF → desktop byte a byte.
+// @version 1.0.0  @created 2026-08-28 (Track C — Marco 1)
+import { useEffect, useState } from 'react';
+import { flag } from '../nucleo/flags';
+
+/** Breakpoints derivados do conteúdo (ver AVATAR_STUDIO_MOBILE_DESIGN_SPEC). */
+export const MOBILE_MAX_W = 768; // ≤ tablet-portrait: grid de 5 col não cabe
+export const MOBILE_MAX_H = 520; // celular em paisagem (altura baixa)
+export const MOBILE_MEDIA = `(max-width: ${MOBILE_MAX_W}px), (max-height: ${MOBILE_MAX_H}px)`;
+
+function medirEstreito(): boolean {
+  try { return window.matchMedia(MOBILE_MEDIA).matches; } catch { return false; }
+}
+
+/** True quando a composição mobile deve valer (flag ON + viewport estreito/baixo). */
+export function useMobileStudio(): boolean {
+  const [estreito, setEstreito] = useState<boolean>(medirEstreito);
+  useEffect(() => {
+    let mq: MediaQueryList | null = null;
+    try { mq = window.matchMedia(MOBILE_MEDIA); } catch { mq = null; }
+    const ao = () => setEstreito(medirEstreito());
+    ao(); // sincroniza no mount (SSR/hidratação)
+    mq?.addEventListener?.('change', ao);
+    window.addEventListener('resize', ao, { passive: true });
+    window.addEventListener('orientationchange', ao);
+    return () => {
+      mq?.removeEventListener?.('change', ao);
+      window.removeEventListener('resize', ao);
+      window.removeEventListener('orientationchange', ao);
+    };
+  }, []);
+  return flag('as6.mobile_studio') && estreito;
+}

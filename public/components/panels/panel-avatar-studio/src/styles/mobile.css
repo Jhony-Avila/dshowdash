@@ -1,0 +1,104 @@
+/* styles/mobile.css — TRACK C: composição RESPONSIVA do Avatar Studio.
+ *
+ * REGRA DE OURO: tudo aqui é escopado em `.avst5-shell[data-mobile]`. Sem o
+ * atributo (desktop aprovado), NADA deste arquivo aplica — Track A byte a byte.
+ * O atributo `data-mobile` é ligado por ShellStudio via useMobileStudio()
+ * (flag as6.mobile_studio + viewport estreito). Zero user-agent, zero !important
+ * em cascata, zero duplicação de lógica: só LAYOUT.
+ *
+ * Marco 1 (fundação): reflow do grid de 5 colunas → STACK vertical; palco no topo
+ * e visível; catálogo/nav abaixo; sem overflow horizontal; 100dvh/svh; safe-area.
+ * Marcos seguintes refinam nav (trilho), catálogo (bottom sheet), ferramentas,
+ * save, teclado, a11y e perf.
+ *
+ * @created 2026-08-28 (Track C)
+ */
+
+/* ── variáveis de safe-area (fallback 0) ──────────────────────────── */
+.avst5-shell[data-mobile] {
+  --sa-top: env(safe-area-inset-top, 0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left: env(safe-area-inset-left, 0px);
+  --sa-right: env(safe-area-inset-right, 0px);
+  /* altura do palco mobile: faixa útil que mantém o catálogo à vista */
+  --palco-mobile-h: clamp(200px, 42dvh, 52dvh);
+}
+
+/* ── shell: coluna, altura dinâmica, sem overflow horizontal ──────── */
+.avst5-shell[data-mobile] {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;          /* fallback p/ navegadores sem dvh */
+  height: 100svh;         /* small viewport (barra do navegador presente) */
+  min-height: 0;
+  max-width: 100%;
+  overflow-x: hidden;     /* NENHUM overflow horizontal de página (§2) */
+  box-sizing: border-box;
+}
+@supports (height: 100dvh) {
+  .avst5-shell[data-mobile] { height: 100dvh; }
+}
+.avst5-shell[data-mobile] *,
+.avst5-shell[data-mobile] *::before,
+.avst5-shell[data-mobile] *::after { box-sizing: border-box; }
+/* nada estoura a largura da tela */
+.avst5-shell[data-mobile] * { min-width: 0; max-width: 100%; }
+.avst5-shell[data-mobile] img,
+.avst5-shell[data-mobile] svg,
+.avst5-shell[data-mobile] canvas { max-width: 100%; }
+
+/* ── corpo: de GRID(5col) → FLEX coluna ───────────────────────────── */
+.avst5-shell[data-mobile] .avst5-corpo {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;   /* anula o grid desktop */
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  width: 100%;
+  overflow: hidden;              /* o scroll é INTERNO de cada região */
+}
+/* cada região ocupa a largura toda (o catálogo de 380px não estoura mais) */
+.avst5-shell[data-mobile] .avst5-corpo > * { width: 100%; max-width: 100%; flex: 0 0 auto; }
+
+/* ── palco: PRIMEIRO no fluxo, visível e com altura própria ───────── */
+.avst5-shell[data-mobile] .avst5-viewport {
+  order: -1;                     /* palco no topo, antes de nav/catálogo */
+  flex: 0 0 auto;
+  height: var(--palco-mobile-h);
+  min-height: 200px;
+  position: sticky;              /* permanece visível ao rolar as regiões abaixo */
+  top: 0;
+  z-index: 2;
+}
+.avst5-shell[data-mobile] .avst5-palco { padding: 8px; }
+
+/* alças de redimensionar (col-resize) somem no toque */
+.avst5-shell[data-mobile] .avst5-alca { display: none; }
+
+/* ── região de nav/catálogo abaixo do palco: scroll próprio ───────── */
+.avst5-shell[data-mobile] .avst5-corpo > *:not(.avst5-viewport):not(.avst5-alca) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;  /* evita scroll da página por trás */
+}
+
+/* ── alvos de toque base (refinado nos marcos 2/7): ≥44px ─────────── */
+.avst5-shell[data-mobile] button,
+.avst5-shell[data-mobile] [role="button"],
+.avst5-shell[data-mobile] a[href] {
+  min-height: 44px;
+  touch-action: manipulation;    /* sem delay de 300ms, sem double-tap-zoom acidental */
+}
+
+/* ── hover-independência: sem depender de :hover no toque ─────────── */
+@media (hover: none) {
+  .avst5-shell[data-mobile] .avst5-cat:hover { border-color: transparent; }
+}
+
+/* ── reduced-motion respeitado (além do já existente no estudio.css) ─ */
+@media (prefers-reduced-motion: reduce) {
+  .avst5-shell[data-mobile] * { scroll-behavior: auto; }
+}

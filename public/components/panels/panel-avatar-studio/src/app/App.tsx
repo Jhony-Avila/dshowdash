@@ -56,6 +56,7 @@ import { Historico } from '../components/Historico';
 import { Titulos } from '../components/Titulos';
 import { Arquetipos } from '../components/Arquetipos';
 import '../styles/estudio.css';
+import '../styles/mobile.css'; // Track C: composição responsiva (escopada em [data-mobile])
 
 /** Itens que mudaram de a→b (comparação rica §21). */
 function listarMudancas(a: AvatarConfig, b: AvatarConfig): Array<{ id: string; nome: string; raridade: Raridade }> {
