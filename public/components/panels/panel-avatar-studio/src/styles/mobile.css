@@ -292,7 +292,60 @@
 /* ── nada colado na borda inferior (barra do navegador/gesto) ────── */
 .avst5-shell[data-mobile] .avst5-propriedades { padding-bottom: calc(12px + var(--sa-bottom)); }
 
+/* ─────────────────────────────────────────────────────────────────────
+ * MARCO 5 — save, teclado virtual, safe areas, orientação
+ * ───────────────────────────────────────────────────────────────────── */
+
+/* ── barra de salvar → BARRA DE AÇÃO INFERIOR fixa e sempre alcançável ─ */
+.avst5-shell[data-mobile] .avst5-salvar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  padding-bottom: calc(10px + var(--sa-bottom));   /* respeita o gesto/safe-area inferior */
+  border-top: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  background: var(--avst-fundo, var(--as6-superficie-1));
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+/* visível mesmo no modo studio (desktop esconde) — especificidade maior */
+.avst5-shell[data-mobile][data-modo="studio"] .avst5-salvar { display: flex; }
+/* botão salvar não pode ser tocado 2× por acidente */
+.avst5-shell[data-mobile] .avst5-salvar .avst-botao-primario { min-height: 44px; touch-action: manipulation; flex: 1 1 auto; }
+.avst5-shell[data-mobile] .avst5-salvar .avst-botao { min-height: 44px; }
+/* o catálogo não fica atrás da barra de salvar fixa */
+.avst5-shell[data-mobile] .avst5-painel,
+.avst5-shell[data-mobile] .avst5-corpo > *:not(.avst5-viewport):not(.avst5-alca) {
+  padding-bottom: calc(72px + var(--sa-bottom));
+}
+
+/* ── teclado virtual: some com a barra de salvar (não cobre o campo) e
+ *    rola o campo focado p/ a área visível ─────────────────────────── */
+:root[data-avst-kb] .avst5-shell[data-mobile] .avst5-salvar { transform: translateY(140%); }
+.avst5-shell[data-mobile] input,
+.avst5-shell[data-mobile] textarea,
+.avst5-shell[data-mobile] [contenteditable] {
+  scroll-margin-top: 72px;          /* abaixo do header/palco sticky */
+  scroll-margin-bottom: 120px;      /* acima da barra/teclado */
+  font-size: 16px;                  /* iOS não dá zoom automático em campo <16px */
+}
+/* campos ocupam a largura e têm alvo confortável */
+.avst5-shell[data-mobile] input[type="text"],
+.avst5-shell[data-mobile] input[type="search"],
+.avst5-shell[data-mobile] textarea { min-height: 44px; width: 100%; max-width: 100%; }
+
+/* ── orientação PAISAGEM de celular (altura baixa): palco menor p/ caber ─ */
+@media (max-height: 520px) {
+  .avst5-shell[data-mobile] { --palco-mobile-h: clamp(140px, 46dvh, 60dvh); }
+  .avst5-shell[data-mobile] .avst5-header { padding-top: calc(4px + var(--sa-top)); }
+}
+
 /* ── reduced-motion respeitado (além do já existente no estudio.css) ─ */
 @media (prefers-reduced-motion: reduce) {
   .avst5-shell[data-mobile] * { scroll-behavior: auto; }
+  .avst5-shell[data-mobile] .avst5-salvar { transition: none; }
 }

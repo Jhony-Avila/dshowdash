@@ -42,3 +42,32 @@ export function useMobileStudio(): boolean {
   }, []);
   return flag('as6.mobile_studio') && estreito;
 }
+
+/** Teclado virtual: usa VisualViewport (evento confiável, sem timeout arbitrário)
+ *  p/ (a) marcar data-avst-kb no <html> quando o teclado abre e (b) publicar a
+ *  altura ocupada em --avst-kb. O CSS mobile usa isso p/ tirar a barra de salvar
+ *  de cima do teclado e o browser rola o campo focado (scroll-margin). No-op se
+ *  a composição mobile não está ativa ou não há VisualViewport. */
+export function useTecladoVirtual(ativo: boolean): void {
+  useEffect(() => {
+    if (!ativo) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const raiz = document.documentElement;
+    const ao = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      raiz.style.setProperty('--avst-kb', `${Math.round(kb)}px`);
+      if (kb > 80) raiz.setAttribute('data-avst-kb', '1');
+      else raiz.removeAttribute('data-avst-kb');
+    };
+    vv.addEventListener('resize', ao);
+    vv.addEventListener('scroll', ao);
+    ao();
+    return () => {
+      vv.removeEventListener('resize', ao);
+      vv.removeEventListener('scroll', ao);
+      raiz.removeAttribute('data-avst-kb');
+      raiz.style.removeProperty('--avst-kb');
+    };
+  }, [ativo]);
+}
