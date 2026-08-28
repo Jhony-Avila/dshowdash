@@ -1,9 +1,11 @@
-# V4.3 TRACK A — FINAL REPORT & FREEZE
+# V4.3 TRACK A — REPORT & FREEZE PROPOSTO (pendente de revisão humana)
 
 > **Status: `TRACK_A_READY_FOR_HUMAN_REVIEW`.** Track A (PRODUTO — o "2D único"
-> real) está fechado e congelado. Track B (ARTE) permanece
-> `BLOCKED_ON_ART_SOURCE`. Os dois são independentes (§52/§53): o produto pode
-> estar READY com a arte BLOCKED. Nada aqui aprova ARTE.
+> real) está **PRONTO para revisão humana — NÃO fechado nem congelado ainda**. O
+> freeze é uma **proposta** (§3) que só passa a valer **após a validação visual
+> do Jhony**. Track B (ARTE) permanece `BLOCKED_ON_ART_SOURCE`. Os dois são
+> independentes (§52/§53): o produto pode estar READY com a arte BLOCKED. Nada
+> aqui aprova ARTE nem se auto-aprova como produto.
 
 Decisão associada: **#68** (GOLDEN V4.3 FINAL). Base: `origin/golden/art-wip`.
 Produção (`origin/main`) **intocada** — tudo atrás de flag `as6.single_2d`
@@ -50,7 +52,7 @@ medidos contra a altura de LAYOUT) e afirma:
 | Navegação agrupada (§11) | ✅ `taxonomia.ts` + `TrilhoCategorias.tsx` |
 | Comentários obsoletos atualizados | ✅ `taxonomia.ts`, `DetalheAsset.tsx` |
 | Byte-stability produção (flag OFF) | ✅ toda mudança gated em `as6.single_2d` (default OFF) |
-| Suíte verde | ✅ (ver §4) |
+| Suíte verde | ✅ 170/171 · único vermelho `golden-classic` é PRÉ-EXISTENTE (drift premium ondas 1411–1424 sem `--gravar`), NÃO regressão desta entrega (ver §4) |
 
 ### 2.1 PRODUCT vs COMPAT E2E (§13) — separação
 São **testes distintos** com responsabilidades distintas, e assim permanecem na
@@ -60,12 +62,15 @@ avatar salvo antes abre, renderiza e volta a salvar no shell único, sem
 regressão de bytes). Um cobre "o novo caminho funciona"; o outro, "o caminho
 antigo não quebrou".
 
-## 3. FREEZE de Track A
-As responsabilidades de PRODUTO do 2D único estão **congeladas** nesta base. A
-partir daqui, mudança no comportamento de produto exige nova decisão numerada.
-O motor de enquadramento (`engine/enquadramento.ts`) e o de importação de arte
-(`engine/heroAssetImport.ts`) são a **fonte única** — não se cria mecanismo
-paralelo de foco nem parser paralelo de arte.
+## 3. FREEZE de Track A — PROPOSTO (não vigente até aprovação)
+Proponho congelar as responsabilidades de PRODUTO do 2D único nesta base. **Este
+freeze NÃO está em vigor**: ele só passa a valer quando o Jhony der o veredito
+visual do Track A. Até lá o status é `TRACK_A_READY_FOR_HUMAN_REVIEW` e nada é
+tratado como aprovado. Uma vez congelado (pós-aprovação), mudança no comportamento
+de produto exigiria nova decisão numerada; o motor de enquadramento
+(`engine/enquadramento.ts`) e o de importação de arte (`engine/heroAssetImport.ts`)
+seguem sendo a **fonte única** — sem mecanismo paralelo de foco nem parser
+paralelo de arte.
 
 ## 4. Verificação (headless)
 `node scripts/avatar/testes/rodar-todos.mjs` — suíte completa. Testes novos/tocados

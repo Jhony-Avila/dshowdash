@@ -30,8 +30,10 @@
 | QA / dev | — | ✅ QaStudio/Telemetria/CmsRo | não (dev) | sim | DEV/QA (as6.qa_route) | já ✅ (§37) |
 
 ## Como foi feito (§5/§12 — reuso, não duplicação, sem novo shell)
-`shell/FerramentasClassicas.tsx` (sub-componente do shell, NÃO um shell novo)
-lazy-roteia os componentes `components/*` EXISTENTES num overlay modal, alimentando
+`shell/Ferramentas2D.tsx` (sub-componente do shell, NÃO um shell novo; renomeado
+de `FerramentasClassicas.tsx` na V4.3 FINAL / §12 — o arquivo entregue é
+`Ferramentas2D.tsx`) lazy-roteia os componentes `components/*` EXISTENTES num
+overlay modal, alimentando
 `config` do store e aplicando pelo mesmo adaptador `aoAplicar → aplicarComando`
 (o mesmo padrão de Consultor/Evolucao/VersoesAvatar). Foto/Histórico salvam
 internamente e reportam a versão → `store.confirmarPersistencia` + `espelhar619`.
