@@ -190,7 +190,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
   vida?: Vida | null;
   vidaCarregando?: boolean;
   /** salva pelo caminho legado (studio.php) até o corte do §619 */
-  aoSalvarLegado: (config: AvatarConfig) => Promise<{ ok: boolean; versao?: number }>;
+  aoSalvarLegado: (config: AvatarConfig) => Promise<{ ok: boolean; versao?: number; origem?: 'api' | 'local' | 'padrao' }>;
   /** mega 24: captura 3D vira o AVATAR OFICIAL (pipeline salvarFoto do App) */
   aoSalvarFotoLegado?: (png960: string) => Promise<boolean>;
   /** flag off / erro → App clássico */
@@ -1574,9 +1574,27 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
               palcoV2={palcoV2} palco3d={palco3d} sensorial={sensorial}
               controlesTravados={controlesTravados} movReduzido={movReduzido}
               compacto={dockInferior} /* decisão #112: toolbar recolhível */ />
-            <BarraSalvamento store={store} aoSalvar={async () => {
-              const r = await aoSalvarLegado(paraLegado2d(store.estadoDraft));
-              if (r.ok) {
+            <BarraSalvamento store={store} mobileStrito={mobileStudio} aoSalvar={async () => {
+              // Track C (mobile): timeout client-side — um save que não responde
+              // não pode ficar preso em "Salvando…". Vence o timeout → falha
+              // (erro + retry), mantendo a edição. Desktop (flag OFF) não corre.
+              const salvarBase = aoSalvarLegado(paraLegado2d(store.estadoDraft));
+              const r = mobileStudio
+                ? await Promise.race([
+                    salvarBase,
+                    new Promise<{ ok: boolean; origem?: 'api' | 'local' | 'padrao' }>((res) => {
+                      const ms = (typeof window !== 'undefined' && (window as unknown as { __avstSaveTimeoutMs?: number }).__avstSaveTimeoutMs) || 12000;
+                      setTimeout(() => res({ ok: false, origem: 'padrao' }), ms);
+                    }),
+                  ])
+                : await salvarBase;
+              // Track C (correção de save mobile): no celular, "salvo só neste
+              // aparelho" (fallback local, servidor indisponível) NÃO conta como
+              // sucesso de persistência — mantém pendente + erro + retry, sem
+              // confirmação visual falsa. No desktop (flag OFF) o comportamento é
+              // EXATAMENTE o atual: sucesso = r.ok (byte a byte inalterado).
+              const sucessoReal = mobileStudio ? (r.ok && r.origem !== 'local') : r.ok;
+              if (sucessoReal) {
                 store.confirmarPersistencia(r.versao ?? store.versao + 1);
                 void espelhar619(true); // §619: versão publicada no espelho
                 registrarMarco(paraLegado2d(store.estadoDraft), 'salvo'); // §241
@@ -1591,7 +1609,7 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
                 tocarSalvar(); // §584: acorde de salvamento
                 telemetria('funil', { etapa: 'salvou' }); // mega 106 (§294)
               }
-              return r.ok;
+              return sucessoReal;
             }} />
           </main>
 

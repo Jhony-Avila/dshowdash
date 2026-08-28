@@ -462,7 +462,9 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         aoSalvarLegado={async (cfg) => {
           const r = await salvarAvatar(cfg, versao);
           if (r.ok && typeof r.versao === 'number') setVersao(r.versao);
-          return { ok: r.ok, versao: r.versao };
+          // Track C: propaga a ORIGEM (api/local) p/ a composição mobile
+          // distinguir "salvo no servidor" de "salvo só neste aparelho".
+          return { ok: r.ok, versao: r.versao, origem: r.origem };
         }}
         aoSalvarFotoLegado={async (png960) => {
           // mega 24: captura do palco 3D vira o avatar oficial (mesmo

@@ -7,7 +7,7 @@
 // resumo grosso ganha um "ver detalhes" com o DIFF campo a campo
 // legível (nomes do catálogo, de → para) + histórico dos últimos
 // salvamentos (ring local). Off = barra anterior byte a byte.
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Check, ListTree, LoaderCircle, RotateCcw, Save, TriangleAlert } from 'lucide-react';
 import type { AvatarStore } from '../nucleo/estado';
 import { paraLegado2d } from '../nucleo/adaptadores';
@@ -32,13 +32,21 @@ function categoriasAlteradas(store: AvatarStore): string[] {
   return [...mudou];
 }
 
-export function BarraSalvamento({ store, aoSalvar }: {
+export function BarraSalvamento({ store, aoSalvar, mobileStrito = false }: {
   store: AvatarStore;
   aoSalvar: () => Promise<boolean>;
+  /** Track C: no celular (as6.mobile_studio), o save é ESTRITO — sem confirmação
+   *  falsa em salvamento só-local, guarda contra duplo-envio e foco no retry.
+   *  Default false = desktop aprovado byte a byte. */
+  mobileStrito?: boolean;
 }) {
   useSyncExternalStore(store.assinar, () => store.estadoDraft);
   const [fase, setFase] = useState<'ocioso' | 'salvando' | 'erro'>('ocioso');
   const [salvoEm, setSalvoEm] = useState<string | null>(null);
+  const emVoo = useRef(false); // evita submissão duplicada durante request (mobile)
+  const refRetry = useRef<HTMLButtonElement | null>(null);
+  // a11y (mobile): ao entrar em erro, leva o foco ao "Tentar de novo"
+  useEffect(() => { if (mobileStrito && fase === 'erro') { try { refRetry.current?.focus(); } catch { /* ignore */ } } }, [fase, mobileStrito]);
   const [detalhes, setDetalhes] = useState(false); // §350 (as6.diff_v6)
   // lote 1081-1090 (#110): Escape fecha o popover de diff (a11y §297)
   useEffect(() => {
@@ -50,18 +58,23 @@ export function BarraSalvamento({ store, aoSalvar }: {
   const temDiff = flag('as6.diff_v6');
 
   const salvar = async () => {
+    // Track C (mobile): impede submissão duplicada enquanto um save está em voo.
+    if (mobileStrito && emVoo.current) return;
+    emVoo.current = true;
     // §350: o diff é computado ANTES do save (depois o persistido muda)
     const diffs = temDiff
       ? diffCampos(validarConfig(paraLegado2d(store.estadoPersistido)), validarConfig(paraLegado2d(store.estadoDraft)))
       : [];
     setFase('salvando');
     setDetalhes(false);
-    const ok = await aoSalvar();
-    if (ok) {
-      if (temDiff) gravarHistoricoDiff(diffs); // histórico local (ring ≤10)
-      setFase('ocioso');
-      setSalvoEm(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-    } else setFase('erro');
+    try {
+      const ok = await aoSalvar();
+      if (ok) {
+        if (temDiff) gravarHistoricoDiff(diffs); // histórico local (ring ≤10)
+        setFase('ocioso');
+        setSalvoEm(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+      } else setFase('erro');
+    } finally { emVoo.current = false; }
   };
 
   if (fase === 'salvando') {
@@ -74,8 +87,8 @@ export function BarraSalvamento({ store, aoSalvar }: {
   if (fase === 'erro') {
     return (
       <div className="avst5-salvar avst5-salvar-erro" role="alert">
-        <TriangleAlert size={14} aria-hidden /> Não foi possível salvar.
-        <button type="button" className="avst-botao" onClick={() => void salvar()}>Tentar de novo</button>
+        <TriangleAlert size={14} aria-hidden /> {mobileStrito ? 'Não salvo no servidor — suas mudanças continuam aqui.' : 'Não foi possível salvar.'}
+        <button ref={refRetry} type="button" className="avst-botao" onClick={() => void salvar()}>Tentar de novo</button>
       </div>
     );
   }
