@@ -1,0 +1,13 @@
+{
+  "id": "rin_hx_pants_intake",
+  "categoria": "roupa_inferior",
+  "nome": "Calça (intake fixture) — NOT_ART / PIPELINE_TEST_ONLY",
+  "descricao": "Fixture técnica do ART INTAKE (roupa_inferior). NÃO é arte final.",
+  "raridade": "epico",
+  "tema": "casual",
+  "frame": "corpo",
+  "viewBox": [240, 400],
+  "canais": [{ "canal": "roupa", "rotulo": "Tecido" }],
+  "zonasMaterial": [{ "id": "perna", "material": "denim", "canal": "roupa" }],
+  "fit": "REGULAR"
+}

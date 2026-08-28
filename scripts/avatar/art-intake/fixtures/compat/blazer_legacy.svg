@@ -33,8 +33,8 @@
   <g data-hero="anchors">
     <circle data-anchor="gola" cx="120" cy="128"/>
     <circle data-anchor="cintura" cx="120" cy="250"/>
-    <circle data-anchor="bainha" cx="120" cy="372"/>
-    <circle data-anchor="ombroL" cx="71" cy="150"/>
-    <circle data-anchor="ombroR" cx="169" cy="150"/>
+    <circle data-anchor="barra" cx="120" cy="372"/>
+    <circle data-anchor="ombroE" cx="71" cy="150"/>
+    <circle data-anchor="ombroD" cx="169" cy="150"/>
   </g>
 </svg>

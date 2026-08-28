@@ -76,6 +76,27 @@ function temUrlExterna(valor) {
 
 function ehId(v) { return typeof v === 'string' && v.trim().length > 0; }
 
+/** Devolve o conteúdo INTERNO do elemento que declara id="alvo" (subárvore), ou
+ *  null se não achar. Respeita aninhamento do mesmo nome de tag. */
+function subtreeDeId(svg, alvo) {
+  const re = new RegExp(`<([\\w:-]+)\\b[^>]*\\bid="${alvo}"[^>]*?(\\/?)>`);
+  const m = re.exec(svg);
+  if (!m) return null;
+  if (m[2] === '/') return ''; // self-close: sem subárvore
+  const nome = m[1]; const inicio = m.index + m[0].length;
+  const abre = new RegExp(`<${nome}\\b[^>]*?(\\/?)>`, 'g');
+  const fecha = new RegExp(`</${nome}>`, 'g');
+  let depth = 1; let j = inicio; const n = svg.length;
+  while (depth > 0 && j < n) {
+    abre.lastIndex = j; fecha.lastIndex = j;
+    const a = abre.exec(svg); const f = fecha.exec(svg);
+    if (!f) return svg.slice(inicio); // sem fechamento — devolve o resto
+    if (a && a.index < f.index) { if (a[1] !== '/') depth++; j = a.index + a[0].length; }
+    else { depth--; if (depth === 0) return svg.slice(inicio, f.index); j = f.index + f[0].length; }
+  }
+  return svg.slice(inicio);
+}
+
 /**
  * Valida a SEGURANÇA de um SVG autorado.
  * @param {string} svg   — conteúdo SVG (arquivo inteiro ou fragmento).
@@ -93,6 +114,10 @@ export function validarSeguranca(svg, arquivo = '(svg)') {
   // @import em CSS embutido
   if (/@import\b/i.test(svg)) {
     add('style/@import', 'CSS @import (folha de estilo externa)', 'Remova @import; toda a pintura vem de fill/stroke/data-channel, sem CSS externo.');
+  }
+  // 0b) DOCTYPE / ENTIDADES / declarações de markup (XXE / billion-laughs)
+  if (/<!DOCTYPE/i.test(svg) || /<!ENTITY/i.test(svg) || /<!\[CDATA\[[\s\S]*<!/i.test(svg)) {
+    add('<!DOCTYPE|<!ENTITY>', 'declaração de markup (DOCTYPE/ENTITY) presente', 'Remova <!DOCTYPE> e <!ENTITY>. Arte é um fragmento SVG puro, sem entidades XML (evita expansão/XXE).');
   }
 
   // 1) varredura de TAGS
@@ -151,6 +176,78 @@ export function validarSeguranca(svg, arquivo = '(svg)') {
     if (alvo) add('<style>', `url("${alvo}") externa em <style>`, 'Só url(#id) interno; sem recursos externos no CSS embutido.');
     if (/@import|expression\s*\(/i.test(css)) add('<style>', 'CSS externo/executável em <style> (@import/expression)', 'Remova @import/expression do <style>.');
     if (/@font-face/i.test(css) && temUrlExterna(css)) add('<style>@font-face', 'fonte externa via @font-face', 'Converta textos em contornos (<path>) ou use apenas fontes do sistema; sem fonte externa.');
+  }
+
+  // 3) HARDENING: limites de complexidade / dimensão / conteúdo oculto ─
+  const LIM = { bytes: 512 * 1024, elementos: 4000, profundidade: 40, usos: 64, dim: 4096, fora: 4096 };
+
+  // 3a) tamanho total
+  const nBytes = Buffer.byteLength(svg, 'utf8');
+  if (nBytes > LIM.bytes) add('documento', `SVG grande demais: ${nBytes} bytes (> ${LIM.bytes})`, `Reduza o arquivo para ≤ ${LIM.bytes} bytes (simplifique curvas/defs).`);
+
+  // 3b) walker: contagem de elementos, profundidade, ciclo de <use>
+  const RE_ANY = /<(!--[\s\S]*?--|!\[CDATA\[[\s\S]*?\]\]|![^>]*|\?[^>]*\?|(\/?)([\w:-]+)((?:[^>"']|"[^"]*"|'[^']*')*?)(\/?))>/g;
+  let elementos = 0; let profundidade = 0; let usos = 0; let maxProf = 0; const pilha = [];
+  let t;
+  while ((t = RE_ANY.exec(svg))) {
+    const corpo = t[1];
+    if (corpo.startsWith('!') || corpo.startsWith('?')) continue; // comentário/CDATA/decl
+    const fechando = t[2] === '/'; const nome = t[3]; const attrs = t[4] || ''; const selfClose = t[5] === '/';
+    if (fechando) { if (pilha.length) pilha.pop(); continue; }
+    elementos++;
+    if (nome === 'use') {
+      usos++;
+      const ref = (attrs.match(/\b(?:xlink:href|href)="#([\w-]+)"/) || [])[1];
+      if (ref && pilha.some((p) => p.id === ref)) {
+        add('<use>', `<use href="#${ref}"> referencia um ANCESTRAL de mesmo id — ciclo de expansão`, 'Remova a auto-referência de <use> (billion-laughs). <use> só pode apontar p/ um id irmão/def, nunca um ancestral.');
+      }
+    }
+    if (!selfClose) {
+      const id = (attrs.match(/\bid="([\w-]+)"/) || [])[1] || null;
+      pilha.push({ nome, id });
+      if (pilha.length > maxProf) maxProf = pilha.length;
+    } else if (pilha.length + 1 > maxProf) maxProf = pilha.length + 1;
+  }
+  profundidade = maxProf;
+  if (elementos > LIM.elementos) add('documento', `elementos demais: ${elementos} (> ${LIM.elementos})`, `Reduza a contagem de elementos para ≤ ${LIM.elementos}.`);
+  if (profundidade > LIM.profundidade) add('documento', `aninhamento profundo demais: ${profundidade} níveis (> ${LIM.profundidade})`, `Achate a árvore para ≤ ${LIM.profundidade} níveis.`);
+  if (usos > LIM.usos) add('documento', `<use> em excesso: ${usos} (> ${LIM.usos})`, `Reduza o número de <use> para ≤ ${LIM.usos}.`);
+
+  // 3b') EXPANSÃO de <use>: rejeita <use> cujo ALVO tem outro <use> dentro
+  //   (cobre cadeia e ciclo — inclusive mútuo — sem quebrar <use> de 1 nível).
+  const refs = [...svg.matchAll(/<use\b[^>]*\b(?:xlink:href|href)="#([\w-]+)"/g)].map((mm) => mm[1]);
+  for (const id of new Set(refs)) {
+    const sub = subtreeDeId(svg, id);
+    if (sub !== null && /<use\b/.test(sub)) {
+      add('<use>', `<use href="#${id}"> aponta p/ um alvo que CONTÉM outro <use> (expansão em cadeia/ciclo)`, 'Só é permitido <use> de 1 nível (alvo sem <use> dentro). Achate a referência — evita billion-laughs.');
+      break;
+    }
+  }
+
+  // 3c) dimensões / viewBox
+  const svgTag = (svg.match(/<svg\b[^>]*>/i) || [''])[0];
+  const at = (n) => { const mm = svgTag.match(new RegExp(`\\b${n}="([^"]*)"`)); return mm ? mm[1] : null; };
+  const w = parseFloat(at('width')); const h = parseFloat(at('height'));
+  if ((Number.isFinite(w) && w > LIM.dim) || (Number.isFinite(h) && h > LIM.dim)) add('<svg width/height>', `dimensão excessiva: ${w}×${h} (> ${LIM.dim})`, `width/height devem ≤ ${LIM.dim} (o contrato fixa 240×240/240×400).`);
+  const vb = at('viewBox');
+  if (vb) { const p = vb.trim().split(/[ ,]+/).map(Number); if (p.length === 4 && (p[2] > LIM.dim || p[3] > LIM.dim)) add('<svg viewBox>', `viewBox excessivo: ${p[2]}×${p[3]} (> ${LIM.dim})`, `viewBox deve ≤ ${LIM.dim} (o contrato fixa 240 240 / 240 400).`); }
+
+  // 3d) conteúdo integralmente invisível (shape desenhável com opacity 0 / display:none)
+  const DESENHAVEIS = /^(path|rect|circle|ellipse|polygon|polyline|line|use)$/;
+  RE_TAG.lastIndex = 0; let d;
+  while ((d = RE_TAG.exec(svg))) {
+    const nome = d[1]; const attrs = d[2] || '';
+    if (!DESENHAVEIS.test(nome)) continue;
+    const op = attrs.match(/\bopacity="([^"]*)"/); const fo = attrs.match(/\bfill-opacity="([^"]*)"/);
+    const invis = (op && parseFloat(op[1]) === 0) || /display\s*:\s*none/i.test(attrs) || /visibility\s*:\s*hidden/i.test(attrs);
+    if (invis) add(`<${nome}>`, 'elemento desenhável integralmente INVISÍVEL (opacity:0/display:none)', 'Remova conteúdo invisível — arte não pode carregar payload oculto. Se é decorativo, torne visível ou apague.');
+    // 3e) conteúdo relevante FORA do quadro (coords muito além do viewBox)
+    const cx = parseFloat((attrs.match(/\bcx="([^"]*)"/) || [])[1]); const cy = parseFloat((attrs.match(/\bcy="([^"]*)"/) || [])[1]);
+    const x = parseFloat((attrs.match(/\bx="([^"]*)"/) || [])[1]); const y = parseFloat((attrs.match(/\by="([^"]*)"/) || [])[1]);
+    const px = Number.isFinite(cx) ? cx : x; const py = Number.isFinite(cy) ? cy : y;
+    if ((Number.isFinite(px) && (px > LIM.fora || px < -LIM.fora)) || (Number.isFinite(py) && (py > LIM.fora || py < -LIM.fora))) {
+      add(`<${nome}>`, `conteúdo muito fora do quadro (${px},${py})`, 'Mantenha a arte dentro do viewBox (240×240/240×400). Remova geometria fora do quadro.');
+    }
   }
 
   return { ok: violacoes.length === 0, violacoes };

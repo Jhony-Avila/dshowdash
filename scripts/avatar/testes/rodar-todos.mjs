@@ -59,7 +59,8 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'v43-single2d-flow.mjs', /* V4.3 §25/§53 (#66): PRODUCT E2E — fluxo entry→edit→tools→SAVE sem sair do shell */
   'v43-legacy-compat.mjs', /* V4.3 §16/§54 (#66): COMPATIBILITY E2E — avatar legado abre/renderiza/salva no shell único */
   'v43-category-focus.mjs', /* V4.3 FINAL §7-10 (#67): prova SEMÂNTICA — Calçados deriva de FOCO_FINO.pes (fonte única), pés dominam o palco */
-  'art-intake.mjs' /* V4.3 FINAL Track B (#68): ART INTAKE GATE — segurança P0 + contrato + motor real; veredito só FAIL/AWAITING_HUMAN */];
+  'art-intake.mjs', /* V4.3 FINAL Track B (#68): ART INTAKE GATE — segurança P0 + contrato + motor real; veredito só FAIL/AWAITING_HUMAN */
+  'art-intake-hardening.mjs' /* rodada 3 (readiness hardening): segurança ampliada + enum/âncoras canônicas/roupa_inferior + qualidade de mensagens */];
 let falhas = 0;
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red
 // que só estoura exceção (sem linha "FALHAS:") não passa mais batido

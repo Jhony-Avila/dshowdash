@@ -47,22 +47,41 @@ const FUNDO_PALCO = { r: 11, g: 13, b: 20 }; // #0b0d14 (tokens do palco)
 
 const STATUS = { FAIL: 'TECHNICAL_FAIL', PASS: 'TECHNICAL_PASS_AWAITING_HUMAN_ART_REVIEW' };
 
+// IDs de hero JÁ no catálogo (para G-03: colisão de id). Lê heroes.ts (não
+// importa TS: só extrai os ids `_hx_` declarados). Best-effort; vazio se não achar.
+function idsCatalogo() {
+  try {
+    const p = resolve(RAIZ, 'public/components/panels/panel-avatar-studio/src/engine/partes/heroes.ts');
+    const txt = readFileSync(p, 'utf8');
+    return new Set([...txt.matchAll(/id:\s*'([a-z]+_hx_[a-z0-9_]+)'/gi)].map((m) => m[1]));
+  } catch { return new Set(); }
+}
+const CATALOGO_IDS = idsCatalogo();
+
 // ── descoberta de pacotes <nome>.svg + <nome>.json ───────────────────
+//   Indexa .svg E .json. G-01: um .json SEM .svg par = SVG declarado e ausente
+//   (FAIL explícito, nunca ignorado). Ordenação por code-point (determinístico,
+//   independente de locale — D-08).
 function descobrir(dir) {
   if (!existsSync(dir)) return [];
-  const svgs = readdirSync(dir).filter((f) => f.toLowerCase().endsWith('.svg'));
+  const arquivos = readdirSync(dir);
+  const bases = new Map(); // base → { temSvg, temJson }
+  for (const f of arquivos) {
+    const mSvg = f.match(/^(.*)\.svg$/i); const mJson = f.match(/^(.*)\.json$/i);
+    if (mSvg) { const b = mSvg[1]; bases.set(b, { ...(bases.get(b) || {}), temSvg: true }); }
+    else if (mJson) { const b = mJson[1]; bases.set(b, { ...(bases.get(b) || {}), temJson: true }); }
+  }
   const pacotes = [];
-  for (const s of svgs) {
-    const base = s.replace(/\.svg$/i, '');
-    const manPath = join(dir, `${base}.json`);
+  for (const [base, { temSvg, temJson }] of bases) {
     pacotes.push({
       nome: base,
-      svgPath: join(dir, s),
-      manPath,
-      temMan: existsSync(manPath),
+      svgPath: join(dir, `${base}.svg`),
+      manPath: join(dir, `${base}.json`),
+      temMan: !!temJson,
+      svgAusente: !temSvg && !!temJson, // G-01: manifesto sem SVG
     });
   }
-  return pacotes.sort((a, b) => a.nome.localeCompare(b.nome));
+  return pacotes.sort((a, b) => (a.nome < b.nome ? -1 : a.nome > b.nome ? 1 : 0));
 }
 
 // ── render determinístico (reusa captura): transparente → derivados ──
@@ -95,6 +114,14 @@ async function processar() {
   try {
     for (const p of pacotes) {
       const item = { nome: p.nome, status: STATUS.FAIL, violacoes: [], renders: {}, motor: null };
+
+      // G-01: manifesto declarado SEM .svg par → FAIL explícito (nunca ignorado)
+      if (p.svgAusente) {
+        item.violacoes.push({ arquivo: `${p.nome}.svg`, elemento: 'arquivo', problema: `SVG declarado (existe ${p.nome}.json) mas ${p.nome}.svg está AUSENTE`, como: `Entregue ${p.nome}.svg junto do manifesto, ou remova ${p.nome}.json do batch.`, gate: 'CONTRACT' });
+        relatorio.assets.push(item);
+        console.log(`  ✗ ${p.nome}: TECHNICAL_FAIL (SVG ausente)`);
+        continue;
+      }
       const svgTexto = readFileSync(p.svgPath, 'utf8');
 
       // 0) manifesto presente e parseável
@@ -115,9 +142,18 @@ async function processar() {
       if (man) {
         const con = validarContrato(svgTexto, man, `${p.nome}.svg`);
         item.violacoes.push(...con.violacoes);
+        if (con.avisos && con.avisos.length) item.avisos = con.avisos;
         familia = con.familia;
         item.familia = familia;
         item.frame = man.frame;
+
+        // G-03: colisão de id com o catálogo. id novo que bate com um `_hx_` já
+        // registrado só passa se declarar substituição INTENCIONAL (substitui:true).
+        if (man.id && CATALOGO_IDS.has(man.id) && man.substitui !== true) {
+          item.violacoes.push({ arquivo: `${p.nome}.json`, elemento: 'manifesto.id', problema: `id "${man.id}" JÁ EXISTE no catálogo (colisão incompatível)`, como: `Use um id novo, OU (se for substituição intencional do asset existente) declare "substitui": true no manifesto.`, gate: 'CONTRACT' });
+        } else if (man.id && CATALOGO_IDS.has(man.id) && man.substitui === true) {
+          item.substituicao = man.id; // substituição declarada (equivalente/intencional)
+        }
       }
 
       // 3) tripwire: qualquer violação ⇒ TECHNICAL_FAIL, sem render (§30/§38)

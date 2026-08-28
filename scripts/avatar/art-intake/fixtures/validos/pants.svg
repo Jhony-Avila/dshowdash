@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 400" width="240" height="400">
+  <defs>
+    <linearGradient id="denim_p" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.14"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse data-hero-layer="shadow" cx="120" cy="388" rx="70" ry="8" fill="#000000" opacity="0.26"/>
+
+  <!-- cós + duas pernas afuniladas -->
+  <path data-hero-layer="base" data-channel="roupa" data-material="denim"
+    d="M78 208 L 162 208 L 158 250 L 150 250 L 138 380 L 108 380 L 100 250 L 90 250 Z"/>
+  <path data-hero-layer="base" data-channel="roupa" data-material="denim"
+    d="M112 250 L 128 250 L 132 380 L 108 380 Z"/>
+
+  <rect data-hero-layer="detail" data-channel="roupa" data-tone="escuro" x="78" y="206" width="84" height="10" rx="2"/>
+
+  <path data-hero-layer="mid" data-channel="roupa" data-tone="escuro" data-paint="stroke" fill="none" stroke-width="2"
+    d="M96 300 q 8 6 0 14"/>
+  <path data-hero-layer="mid" data-channel="roupa" data-tone="escuro" data-paint="stroke" fill="none" stroke-width="2"
+    d="M144 300 q -8 6 0 14"/>
+
+  <path data-hero-layer="light" data-channel="roupa" data-tone="claro" fill="url(#denim_p)"
+    d="M100 216 L 108 216 L 104 360 L 100 360 Z"/>
+
+  <g data-hero="anchors">
+    <circle data-anchor="cos" cx="120" cy="210"/>
+    <circle data-anchor="quadrilL" cx="92" cy="230"/>
+    <circle data-anchor="quadrilR" cx="148" cy="230"/>
+    <circle data-anchor="bainhaL" cx="112" cy="380"/>
+    <circle data-anchor="bainhaR" cx="128" cy="380"/>
+  </g>
+</svg>

@@ -49,8 +49,8 @@
   <g data-hero="anchors">
     <circle data-anchor="coroa" cx="120" cy="26"/>
     <circle data-anchor="testa" cx="120" cy="96"/>
-    <circle data-anchor="olhoE" cx="102" cy="124"/>
-    <circle data-anchor="olhoD" cx="138" cy="124"/>
+    <circle data-anchor="olhoL" cx="102" cy="124"/>
+    <circle data-anchor="olhoR" cx="138" cy="124"/>
     <circle data-anchor="boca" cx="120" cy="170"/>
   </g>
 </svg>
