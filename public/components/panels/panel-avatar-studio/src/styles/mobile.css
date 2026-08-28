@@ -410,3 +410,26 @@
 @media (max-height: 680px) and (orientation: portrait) {
   .avst5-shell[data-mobile] { --palco-mobile-h: clamp(150px, 28dvh, 34dvh); }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ * MARCO 12 (cert corretiva) — CONTRASTE mobile: superfícies de PREENCHIMENTO
+ * acento com texto branco tinham 4.35:1 (0.15 abaixo de AA). Fix ISOLADO no
+ * mobile: um acento levemente mais escuro (rgb(116,84,224) = 5.14:1 com branco)
+ * SÓ no fundo dessas superfícies. Bordas/sombras/tints seguem o token aprovado,
+ * então NÃO há divergência de forma com o desktop — só o fundo do preenchimento
+ * escurece o suficiente p/ passar AA. Escopo data-mobile: desktop intocado.
+ * ───────────────────────────────────────────────────────────────────── */
+.avst5-shell[data-mobile] .avst-botao-primario,
+.avst5-shell[data-mobile] .avst5-p3d-chip-on,
+.avst5-shell[data-mobile] .avst-ft-chip[aria-pressed="true"]:not([class*="ativo"]),
+.avst5-shell[data-mobile] [data-acento-fill] {
+  background-color: rgb(116, 84, 224);
+  color: #fff;
+}
+/* foco visível forte no mobile (switch/teclado externo): contorno claro em
+ * qualquer controle, além do :focus-visible herdado do estudio.css */
+.avst5-shell[data-mobile] :focus-visible {
+  outline: 3px solid rgb(150, 170, 255);
+  outline-offset: 2px;
+  border-radius: 6px;
+}

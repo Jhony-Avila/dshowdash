@@ -32,16 +32,20 @@ try {
       ['seção catálogo', '.avst5-shell[data-mobile] .avst-grade-cab, .avst5-shell[data-mobile] .avst5-painel h2, .avst5-shell[data-mobile] .avst5-painel h3'],
     ];
     const out = [];
-    for (const [nome, sel] of alvos) {
-      const el = document.querySelector(sel); if (!el) { out.push({ nome, presente: false }); continue; }
-      const cs = getComputedStyle(el); const fg = parseRGB(cs.color); if (!fg) { out.push({ nome, presente: false }); continue; }
+    const medir = (nome, el) => {
+      const cs = getComputedStyle(el); const fg = parseRGB(cs.color); if (!fg) { out.push({ nome, presente: false }); return; }
       const bg = bgEfetivo(el);
       const px = parseFloat(cs.fontSize) || 14; const bold = (parseInt(cs.fontWeight) || 400) >= 700;
       const grande = px >= 18 || (px >= 14 && bold);
       const limiar = grande ? 3.0 : 4.5;
       const r = ratio(fg, bg);
       out.push({ nome, presente: true, fg: `rgb(${Math.round(fg.r)},${Math.round(fg.g)},${Math.round(fg.b)})`, bg: `rgb(${Math.round(bg.r)},${Math.round(bg.g)},${Math.round(bg.b)})`, px, bold, razao: +r.toFixed(2), limiar, passa: r >= limiar });
-    }
+    };
+    for (const [nome, sel] of alvos) { const el = document.querySelector(sel); if (!el) { out.push({ nome, presente: false }); continue; } medir(nome, el); }
+    // superfícies de PREENCHIMENTO acento (não presentes no load): instancia sob data-mobile
+    const shell = document.querySelector('.avst5-shell[data-mobile]') || document.body;
+    const primario = document.createElement('button'); primario.className = 'avst-botao avst-botao-primario'; primario.textContent = 'Salvar'; shell.appendChild(primario); medir('botão primário (fill acento)', primario); primario.remove();
+    const chipP = document.createElement('button'); chipP.className = 'avst-ft-chip'; chipP.setAttribute('aria-pressed', 'true'); chipP.textContent = 'Filtro'; shell.appendChild(chipP); medir('chip pressionado', chipP); chipP.remove();
     return out;
   });
   const presentes = laudo.filter((l) => l.presente);
