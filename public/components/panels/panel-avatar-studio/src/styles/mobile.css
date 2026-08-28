@@ -98,6 +98,95 @@
   .avst5-shell[data-mobile] .avst5-cat:hover { border-color: transparent; }
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+ * MARCO 2 — shell/palco/navegação/catálogo
+ * ───────────────────────────────────────────────────────────────────── */
+
+/* ── header COMPACTO: 1 linha, sem quebra que estica a barra ──────── */
+.avst5-shell[data-mobile] .avst5-header {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;               /* NÃO quebrar em várias linhas (era o que empurrava o palco p/ 228px) */
+  padding: 6px 10px;
+  padding-top: calc(6px + var(--sa-top));   /* safe-area do notch */
+  padding-left: calc(10px + var(--sa-left));
+  padding-right: calc(10px + var(--sa-right));
+  gap: 6px;
+  min-height: 0;
+  overflow: hidden;
+}
+.avst5-shell[data-mobile] .avst5-header-sub { display: none; }  /* subtítulo "5.0 · prévia" some no celular */
+.avst5-shell[data-mobile] .avst5-header-acoes {
+  flex-wrap: nowrap;
+  overflow-x: auto;                /* ações em UMA linha rolável, não empilhadas */
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  gap: 4px;
+  scrollbar-width: none;
+}
+.avst5-shell[data-mobile] .avst5-header-acoes::-webkit-scrollbar { display: none; }
+.avst5-shell[data-mobile] .avst5-header-acoes > * { flex: 0 0 auto; }
+.avst5-shell[data-mobile] .avst5-header-acoes .avst-botao { min-width: 44px; min-height: 40px; }
+
+/* ── palco: altura já é var(--palco-mobile-h) (M1). Proporção preservada
+ *    pelo motor (.avst5-zoom svg aspect-ratio:1). Fundo edge-to-edge. ── */
+.avst5-shell[data-mobile] .avst5-viewport { padding: 0; }
+
+/* ── navegação de categorias → TRILHO HORIZONTAL sticky ───────────── */
+.avst5-shell[data-mobile] .avst5-sidebar {
+  order: 0;                        /* logo abaixo do palco */
+  flex: 0 0 auto;
+  flex-direction: row;             /* de coluna → linha */
+  align-items: stretch;
+  gap: 6px;
+  overflow-x: auto;                /* rola na horizontal */
+  overflow-y: hidden;
+  border-right: 0;
+  border-bottom: 1px solid var(--avst-borda, var(--as6-superficie-4));
+  padding: 6px 10px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  /* affordance de "tem mais" — fade nas bordas */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  position: sticky;
+  top: var(--palco-mobile-h);      /* gruda logo abaixo do palco sticky */
+  z-index: 2;
+  background: var(--avst-fundo, var(--as6-superficie-1));
+}
+/* macrogrupos e categorias fluem inline no trilho */
+.avst5-shell[data-mobile] .avst5-sidebar .avst6-navg-grupo { flex-direction: row; align-items: center; gap: 6px; }
+.avst5-shell[data-mobile] .avst5-sidebar .avst6-navg-sep,
+.avst5-shell[data-mobile] .avst5-sidebar .avst6-tax-subrotulo { display: none; }  /* separadores/rótulos de seção somem no trilho */
+.avst5-shell[data-mobile] .avst5-sidebar .avst6-navg-cab { flex: 0 0 auto; white-space: nowrap; padding: 0 8px; min-height: 44px; }
+.avst5-shell[data-mobile] .avst5-sidebar .avst5-cat {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 44px;                /* alvo de toque */
+  white-space: nowrap;
+  scroll-snap-align: center;
+  padding: 8px 12px;
+}
+.avst5-shell[data-mobile] .avst5-sidebar .avst6-tax-nome { display: inline; }  /* nome sempre visível no trilho */
+/* categoria ativa BEM marcada */
+.avst5-shell[data-mobile] .avst5-cat-on {
+  background: var(--avst-superficie, var(--as6-superficie-3));
+  border-color: var(--avst-acento, var(--as6-acento));
+  box-shadow: inset 0 -3px 0 var(--avst-acento, var(--as6-acento));
+  font-weight: 600;
+}
+
+/* ── catálogo (painel): região inferior com scroll próprio ────────── */
+.avst5-shell[data-mobile] .avst5-painel {
+  order: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-left: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(12px + var(--sa-bottom));   /* nada colado no gesto inferior */
+}
+
 /* ── reduced-motion respeitado (além do já existente no estudio.css) ─ */
 @media (prefers-reduced-motion: reduce) {
   .avst5-shell[data-mobile] * { scroll-behavior: auto; }
