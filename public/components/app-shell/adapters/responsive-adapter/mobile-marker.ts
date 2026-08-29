@@ -92,6 +92,11 @@ export function applyMobileMarker(): void {
   else root.removeAttribute('data-mobile');
   root.setAttribute('data-viewport', info.viewport);
   root.setAttribute('data-orientation', info.orientation);
+  // Track D onda 2: liga/desliga o COMPORTAMENTO mobile (drawer/Mais/ticker).
+  // Import dinâmico p/ não acoplar o marcador ao enhancer; falha nunca quebra o shell.
+  try {
+    void import('./mobile-shell.js').then((m) => { if (info.mobile) m.enhanceMobileShell(); else m.teardownMobileShell(); }).catch(() => { /* ok */ });
+  } catch { /* ok */ }
 }
 
 let _wired = false;

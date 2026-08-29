@@ -193,3 +193,35 @@
 
 /* ── 8) GUARDA GERAL — sem overflow horizontal do documento ───────────────────*/
 #app-shell[data-mobile] { max-width: 100vw; }
+
+/* ── 9) ONDA 2 — header "Mais" (sheet) + controles do ticker (só sob o marcador) ─*/
+#app-shell[data-mobile] .avst6-mais-btn {
+  flex: 0 0 auto;
+  min-width: var(--gm-tap); min-height: var(--gm-tap);
+  border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer;
+}
+#app-shell[data-mobile] .avst6-mais-backdrop {
+  position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.35);
+}
+#app-shell[data-mobile] .avst6-mais-sheet {
+  position: fixed; z-index: 1001;
+  left: var(--gm-safe-left); right: var(--gm-safe-right);
+  bottom: calc(var(--gm-bottomnav-h) + var(--gm-safe-bottom));
+  max-height: calc(100dvh - var(--gm-top) - var(--gm-bottomnav-h) - var(--gm-safe-bottom));
+  overflow: auto; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: max(8px, var(--gm-safe-bottom)) 8px;
+  background: #12141b; border-top-left-radius: 12px; border-top-right-radius: 12px;
+  box-shadow: 0 -8px 24px rgba(0,0,0,.4);
+}
+#app-shell[data-mobile] .avst6-mais-sheet .header-component-wrapper {
+  width: 100%; min-height: var(--gm-tap); display: flex; align-items: center;
+}
+#app-shell[data-mobile] .avst6-ticker-ctrl {
+  display: inline-flex; gap: 2px; margin-left: 8px; vertical-align: middle;
+}
+#app-shell[data-mobile] .avst6-ticker-ctrl .avst6-tk {
+  min-width: var(--gm-tap); min-height: var(--gm-tap);
+  border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
