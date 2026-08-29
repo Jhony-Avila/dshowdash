@@ -13,14 +13,37 @@
 // Segredos (cookies/storage-state) NUNCA vão ao log nem ao pacote — só via env.
 import { chromium } from 'playwright-core';
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
-const BASE = process.env.BASE_URL; // ex.: https://dshowdash.com.br
+const BASE = process.env.BASE_URL; // preview do candidato em 127.0.0.1 (NÃO produção)
 const STORAGE = process.env.STORAGE_STATE; // json de sessão autenticada (fora do Git)
 const CHROME = process.env.PW_CHROME;
 const OUT = process.env.OUTBOARDS || '/tmp/trackd-w2-boards';
 const FAZER_BOARDS = process.argv.includes('--boards');
-if (!BASE || !CHROME) { console.error('defina BASE_URL e PW_CHROME (e STORAGE_STATE p/ rotas autenticadas)'); process.exit(2); }
+// Track D onda 3.1 (item 3): IDENTIDADE DO CÓDIGO SERVIDO. Sem provar que o BASE
+// serve o candidato (e não main@bf655221), o teste seria contra produção antiga.
+// Fail-closed: exige que um arquivo SÓ-do-candidato bata o sha256 esperado.
+const MARKER_PATH = process.env.MARKER_PATH || '/components/app-shell/styles/global-mobile.css';
+const EXPECTED_MARKER = process.env.EXPECTED_MARKER_SHA256; // passado pelo server-gate (do worktree candidato)
+const EXPECTED_TREE = process.env.EXPECTED_CANDIDATE_TREE || '937b3874';
+const SKIP_IDENTITY = process.env.SKIP_IDENTITY === '1';
+if (!BASE || !CHROME) { console.error('defina BASE_URL (preview 127.0.0.1) e PW_CHROME'); process.exit(2); }
 mkdirSync(OUT, { recursive: true });
+
+async function provarIdentidadeServida() {
+  if (SKIP_IDENTITY) { console.log('SERVED_CODE_IDENTITY=SKIPPED (SKIP_IDENTITY=1)'); return 'SKIPPED'; }
+  if (!EXPECTED_MARKER) { console.error('SERVED_CODE_IDENTITY=FAILED — defina EXPECTED_MARKER_SHA256 (sha256 do', MARKER_PATH, 'no worktree candidato) ou SKIP_IDENTITY=1'); process.exit(3); }
+  let corpo;
+  try {
+    const r = await fetch(BASE.replace(/\/$/, '') + MARKER_PATH + '?identity_probe');
+    if (!r.ok) { console.error(`SERVED_CODE_IDENTITY=FAILED — ${MARKER_PATH} devolveu ${r.status} (o preview NÃO serve o candidato Track D — 404 = provável produção antiga)`); process.exit(3); }
+    corpo = Buffer.from(await r.arrayBuffer());
+  } catch (e) { console.error('SERVED_CODE_IDENTITY=FAILED — não consegui buscar o marcador:', String(e).slice(0, 100)); process.exit(3); }
+  const got = createHash('sha256').update(corpo).digest('hex');
+  if (got !== EXPECTED_MARKER) { console.error(`SERVED_CODE_IDENTITY=FAILED — sha256 do marcador difere (servido ${got.slice(0, 12)} × esperado ${EXPECTED_MARKER.slice(0, 12)})`); process.exit(3); }
+  console.log(`SERVED_CODE_IDENTITY=CONFIRMED (tree ${EXPECTED_TREE}; marcador ${MARKER_PATH} bate o sha256 do candidato)`);
+  return 'CONFIRMED';
+}
 
 // rotas derivadas do registro real (ver nav-registry-contract). Ajuste conforme as permissões da conta.
 const ROTAS = [
@@ -35,6 +58,8 @@ const VIEWPORTS = [
 ];
 
 const resumo = { rotasValidadas: 0, rotasBloqueadas: 0, servicoIndisponivel: 0, erroNav: 0, erroApi: 0, viewportsOk: 0, boards: 0, casos: [] };
+// item 3: prova de identidade ANTES de qualquer coisa (fail-closed)
+resumo.servedCodeIdentity = await provarIdentidadeServida();
 const nav = await chromium.launch({ executablePath: CHROME, args: ['--no-sandbox'] });
 try {
   const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, ...(STORAGE && existsSync(STORAGE) ? { storageState: STORAGE } : {}) });
