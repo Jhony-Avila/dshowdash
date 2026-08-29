@@ -134,13 +134,20 @@ export function createSetupCoordinator(options: DynObj) {
       }
 
       try {
+        // Track D onda 2 (#D-m15 — fix de WIRING, causa-raiz): passar o SHAPE
+        // correto. Antes: setupMobileDetect recebia {onMobileChange,onCloseMobile}
+        // (o handler só lê {container,eventBus,breakpoint} → callbacks IGNORADOS e
+        // container undefined → classes mobile nunca aplicadas); setupOverlayClick
+        // recebia a FUNÇÃO onCloseMobile (o handler desestrutura {container,onClose}
+        // → onClose undefined → backdrop escondia mas o engine NUNCA fechava).
         const cleanup3 = setupMobileDetect({
-          onMobileChange(isMobile: boolean) { engine.setMobile(isMobile); },
-          onCloseMobile
+          container: sidebar,
+          breakpoint: 768,
+          onMobileChange(isMobile: boolean) { engine.setMobile(isMobile); }
         });
         _cleanups.push(cleanup3);
 
-        const cleanup4 = setupOverlayClick(onCloseMobile);
+        const cleanup4 = setupOverlayClick({ container: sidebar, onClose: onCloseMobile });
         _cleanups.push((cleanup4 as DynObj));
       } catch (error: any) {
         emitDegraded('mobile-detect', error.message);

@@ -81,11 +81,14 @@ export function init(eventBus: DynObj, container: HTMLElement) {
 }
 
 export function setupMobileHandler(dependencies: DynObj) {
-  const { container, eventBus, breakpoint = 768 } = dependencies || {};
+  // Track D onda 2 (#D-m15): aceita onMobileChange (o coordenador precisa levar
+  // isMobile ao engine) — antes o callback era ignorado (o coordenador passava
+  // o shape errado). container é a raiz da sidebar; breakpoint default 768.
+  const { container, eventBus, breakpoint = 768, onMobileChange } = dependencies || {};
   if (eventBus) Ports.inject({ eventBus });
   _initPorts();
   if (container && !_container) _container = container;
-  
+
   const checkMobile = () => {
     const wasMobile = _isMobile;
     _isMobile = window.innerWidth < breakpoint;
@@ -95,6 +98,7 @@ export function setupMobileHandler(dependencies: DynObj) {
       if (eb && eb.emit) eb.emit(SIDEBAR_EVENTS.MOBILE_CHANGED, { isMobile: _isMobile });
       if (_isMobile) { if (container) container.classList.add(C.MOD_MOBILE); document.body.classList.add('has-mobile-sidebar'); }
       else { if (container) container.classList.remove(C.MOD_MOBILE, C.MOD_MOBILE_OPEN); document.body.classList.remove('has-mobile-sidebar', 'sidebar-mobile-open'); _isOpen = false; }
+      if (typeof onMobileChange === 'function') { try { onMobileChange(_isMobile); } catch { /* nunca quebra o resize */ } }
     }
   };
   
