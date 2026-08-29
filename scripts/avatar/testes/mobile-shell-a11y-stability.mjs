@@ -1,6 +1,7 @@
 // mobile-shell-a11y-stability.mjs — Track D onda 3 (itens 8/9): acessibilidade e
 // estabilidade do enhancer mobile-shell em jsdom. Determinístico, sem browser/auth.
-import { JSDOM } from '/tmp/jsdmroot/node_modules/jsdom/lib/api.js';
+import { getJSDOM } from './_jsdom.mjs';
+const JSDOM = await getJSDOM();
 import { pathToFileURL } from 'node:url';
 
 const HTML = `<!DOCTYPE html><html><body>
@@ -30,7 +31,7 @@ const $$ = (s) => [...window.document.querySelectorAll(s)];
 const click = (el) => el && el.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 const key = (k) => window.document.dispatchEvent(new window.KeyboardEvent('keydown', { key: k, bubbles: true }));
 
-const mod = await import(pathToFileURL('/home/claude/dshowdash/public/components/app-shell/adapters/responsive-adapter/mobile-shell.ts').href);
+const mod = await import(new URL('../../../public/components/app-shell/adapters/responsive-adapter/mobile-shell.ts', import.meta.url).href);
 const nodesBase = window.document.querySelectorAll('*').length;
 mod.enhanceMobileShell();
 

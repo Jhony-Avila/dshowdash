@@ -3,7 +3,8 @@
 // mobile-shell.ts NÃO tem imports → node --experimental-strip-types o importa direto
 // sobre o DOM do jsdom. Prova: header "Mais", drawer a11y (Escape/foco/inert/
 // scroll-lock/retorno), ticker (pausa), idempotência e teardown limpo.
-import { JSDOM } from '/tmp/jsdmroot/node_modules/jsdom/lib/api.js';
+import { getJSDOM } from './_jsdom.mjs';
+const JSDOM = await getJSDOM();
 import { pathToFileURL } from 'node:url';
 
 const HTML = `<!DOCTYPE html><html><body>
@@ -40,7 +41,7 @@ const $ = (s) => window.document.querySelector(s);
 const click = (el) => el && el.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 const key = (k, opts = {}) => window.document.dispatchEvent(new window.KeyboardEvent('keydown', { key: k, bubbles: true, ...opts }));
 
-const mod = await import(pathToFileURL('/home/claude/dshowdash/public/components/app-shell/adapters/responsive-adapter/mobile-shell.ts').href);
+const mod = await import(new URL('../../../public/components/app-shell/adapters/responsive-adapter/mobile-shell.ts', import.meta.url).href);
 
 // ── ENHANCE ──
 mod.enhanceMobileShell();

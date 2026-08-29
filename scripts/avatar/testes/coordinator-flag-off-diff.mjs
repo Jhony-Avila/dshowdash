@@ -3,7 +3,8 @@
 // baseline A (742c55e1), enquanto o caminho ON leva o fix (#D-m15).
 // Exercita o handler REAL (mobile-handler.ts) em jsdom, com os 3 imports não-DOM
 // shimados (SIDEBAR_EVENTS/createUiPorts/CSS_CLASSES). Sem browser, sem auth.
-import { JSDOM } from '/tmp/jsdmroot/node_modules/jsdom/lib/api.js';
+import { getJSDOM } from './_jsdom.mjs';
+const JSDOM = await getJSDOM();
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,7 +12,7 @@ import { pathToFileURL } from 'node:url';
 let falhas = 0; const ok = (c, m) => { console.log(`${c ? '  ✓' : '  ✗ FALHA:'} ${m}`); if (!c) falhas++; };
 
 // ── shim: substitui os imports absolutos por stubs locais ──
-const SRC = '/home/claude/dshowdash/public/components/sidebar/features/mobile-handler.ts';
+const SRC = new URL('../../../public/components/sidebar/features/mobile-handler.ts', import.meta.url).pathname;
 let code = readFileSync(SRC, 'utf8')
   .replace(/import \{ SIDEBAR_EVENTS \} from '[^']*';/, "const SIDEBAR_EVENTS = { MOBILE_CHANGED:'mc', MOBILE_CLOSED:'mcl', MOBILE_OPENED:'mo', MOBILE_HANDLER_INITIALIZED:'mi' };")
   .replace(/import \{ createUiPorts \} from '[^']*';/, "const createUiPorts = () => { let s = {}; return { init(){}, get(k){return s[k];}, inject(p){Object.assign(s,p);}, snapshot(){return {...s};} }; };")
@@ -68,7 +69,7 @@ ok(rodarOverlay(() => {}) === 0, 'FLAG OFF: setupOverlayClick(função) → onCl
 ok(rodarOverlay({ container: container() }) === 1, 'FLAG ON: setupOverlayClick({container,onClose}) → clique fecha (fix ativo)');
 
 // ── prova de origem: o caminho OFF do coordenador reproduz a baseline A ──
-const COORD = readFileSync('/home/claude/dshowdash/public/components/sidebar/lifecycle/setup-coordinator.ts', 'utf8');
+const COORD = readFileSync(new URL('../../../public/components/sidebar/lifecycle/setup-coordinator.ts', import.meta.url).pathname, 'utf8');
 ok(/_mobileShellAutorizado\(\)/.test(COORD), 'coordenador: decide caminho ON/OFF por _mobileShellAutorizado() (flag as6.mobile_shell)');
 ok(/else\s*\{[\s\S]*?setupMobileDetect\(\s*\{\s*onCloseMobile\s*\}\s*\)[\s\S]*?setupOverlayClick\(onCloseMobile\)/.test(COORD), 'coordenador: caminho OFF = setupMobileDetect({onCloseMobile}) + setupOverlayClick(onCloseMobile) (baseline A)');
 
