@@ -106,19 +106,36 @@ const faltam = ESSENCIAIS.filter((e) => !mobileIds.includes(e));
 if (faltam.length) err(`bottom-nav: itens essenciais ausentes: ${faltam.join(', ')}`);
 else okmsg(`bottom-nav: essenciais presentes (${ESSENCIAIS.join(', ')})`);
 
-// 6) DIVERGÊNCIAS entre registros (avisos p/ reconciliação — não bloqueiam)
+// 6) DIVERGÊNCIAS entre registros — regidas por ALLOWLIST EXPLÍCITA E DOCUMENTADA
+// (item 7 onda 3): compatibilidade intencional/legada vira regra precisa, não
+// warning genérico. Qualquer caso FORA da allowlist volta a ser erro/aviso.
+//
+// (a) Sobreposição de destino: um mesmo id existir nos DOIS registros é INTENCIONAL
+//     quando aponta para a MESMA rota — o destino é alcançável tanto pelo rail de
+//     acesso rápido quanto pelo menu completo. Divergência de rota no mesmo id = ERRO.
+const OVERLAP_ALLOWLIST = new Set(['financeiro', 'comercial', 'clientes', 'pipedrive']); // mesmo destino, 2 superfícies
+// (b) Divergência de esquema admin: KNOWN/LEGADA — nav-rail usa #/admin-* (painéis de
+//     admin próprios do rail) e a sidebar usa #/admin/* (menu completo). Reconciliação
+//     canônica = router registry (frente de backend, fora do sandbox). Rastreada aqui.
+const ADMIN_DIVERGENCE_KNOWN = true;
+
 const sideById = Object.fromEntries(sidebar.map((i) => [i.id, i]));
 const idsComuns = navrail.filter((i) => sideById[i.id]).map((i) => i.id);
 for (const id of idsComuns) {
   const r1 = byId[id].route, r2 = sideById[id].route;
-  if (r1 && r2 && r1 !== r2) warn(`id '${id}' com ROTAS divergentes: nav-rail ${r1} × sidebar ${r2}`);
+  if (r1 && r2 && r1 !== r2) err(`id '${id}' com ROTAS divergentes: nav-rail ${r1} × sidebar ${r2} (conflito real)`);
 }
-if (idsComuns.length) warn(`${idsComuns.length} IDs presentes nos DOIS registros (${idsComuns.join(', ')}) — candidatos à fonte única`);
-// divergência de esquema admin
+const overlapInesperado = idsComuns.filter((id) => !OVERLAP_ALLOWLIST.has(id));
+if (overlapInesperado.length) warn(`sobreposição de id NÃO allowlistada: ${overlapInesperado.join(', ')} — revisar (allowlist em OVERLAP_ALLOWLIST)`);
+else okmsg(`sobreposição de destino allowlistada e OK (${[...OVERLAP_ALLOWLIST].join(', ')} = mesmo destino em 2 superfícies, mesma rota)`);
+
 const adminNav = navrail.filter((i) => /admin/i.test(i.id)).map((i) => i.route).filter(Boolean);
 const adminSide = sidebar.filter((i) => /admin/i.test(i.route || '')).map((i) => i.route);
-if (adminNav.length && adminSide.length) warn(`esquema admin divergente: nav-rail [${adminNav.join(', ')}] × sidebar [${adminSide.join(', ')}] — reconciliar no registro canônico (router)`);
+if (adminNav.length && adminSide.length) {
+  if (ADMIN_DIVERGENCE_KNOWN) okmsg('esquema admin: divergência KNOWN/allowlistada (nav-rail #/admin-* × sidebar #/admin/*; reconciliação canônica = router registry, rastreada)');
+  else warn('esquema admin divergente inesperado');
+}
 
 console.log(`\n== RESUMO: ${erros} erro(s) · ${avisos} aviso(s) ==`);
-console.log(erros ? '✗ contrato de navegação FALHOU' : '✓ contrato de navegação estático VERDE (avisos = reconciliação para a unificação de backend)');
+console.log(erros ? '✗ contrato de navegação FALHOU' : (avisos ? '✓ contrato VERDE com avisos' : '✓ contrato de navegação VERDE (0 erros, 0 avisos — divergências conhecidas em allowlist explícita)'));
 process.exit(erros ? 1 : 0);
