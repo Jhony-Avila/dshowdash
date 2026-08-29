@@ -39,6 +39,23 @@ type DynObj = any;
 export const VERSION = '7.4.0-P2-ENTERPRISE';
 export const MODULE_ID = 'sidebar.lifecycle.setup-coordinator';
 
+// Track D onda 3 (#D-m22 — ISOLAMENTO flag OFF): o fix de wiring do #D-m15 SÓ vale
+// no modo mobile AUTORIZADO (as6.mobile_shell ON). Com a flag OFF, o caminho legado
+// da sidebar (faixa 501–767) permanece BYTE A BYTE como antes da onda 2. Leitura
+// síncrona e fail-closed (default OFF) — sem acoplar ao runtime de flags.
+function _mobileShellAutorizado(): boolean {
+  try {
+    const g = (globalThis as Record<string, unknown>);
+    const snap = (g.__DSHOW_FLAGS__ || (g.DshowFlags as Record<string, unknown> | undefined)?.snapshot) as Record<string, unknown> | undefined;
+    if (snap && typeof snap === 'object' && 'as6.mobile_shell' in snap) return snap['as6.mobile_shell'] === true;
+    if (typeof localStorage !== 'undefined') {
+      const local = JSON.parse(localStorage.getItem('dshow.shell.flags.v1') || '{}') as Record<string, unknown>;
+      if ('as6.mobile_shell' in local) return local['as6.mobile_shell'] === true;
+    }
+  } catch { /* fail-closed */ }
+  return false;
+}
+
 export function createSetupCoordinator(options: DynObj) {
   if (options === undefined) options = {};
   
@@ -134,21 +151,35 @@ export function createSetupCoordinator(options: DynObj) {
       }
 
       try {
-        // Track D onda 2 (#D-m15 — fix de WIRING, causa-raiz): passar o SHAPE
-        // correto. Antes: setupMobileDetect recebia {onMobileChange,onCloseMobile}
-        // (o handler só lê {container,eventBus,breakpoint} → callbacks IGNORADOS e
-        // container undefined → classes mobile nunca aplicadas); setupOverlayClick
-        // recebia a FUNÇÃO onCloseMobile (o handler desestrutura {container,onClose}
-        // → onClose undefined → backdrop escondia mas o engine NUNCA fechava).
-        const cleanup3 = setupMobileDetect({
-          container: sidebar,
-          breakpoint: 768,
-          onMobileChange(isMobile: boolean) { engine.setMobile(isMobile); }
-        });
-        _cleanups.push(cleanup3);
-
-        const cleanup4 = setupOverlayClick({ container: sidebar, onClose: onCloseMobile });
-        _cleanups.push((cleanup4 as DynObj));
+        // #D-m15 fix de WIRING (shape correto) — mas SÓ no modo mobile autorizado
+        // (#D-m22). Com a flag OFF, mantém EXATAMENTE as chamadas legadas (mesmo
+        // com o bug histórico) → caminho flag-OFF byte a byte com a baseline A.
+        if (_mobileShellAutorizado()) {
+          // caminho ON (corrigido): setupMobileDetect recebia {onMobileChange,
+          // onCloseMobile} (o handler só lê {container,eventBus,breakpoint} →
+          // callbacks IGNORADOS); setupOverlayClick recebia a FUNÇÃO onCloseMobile
+          // (handler desestrutura {container,onClose} → onClose undefined → backdrop
+          // escondia mas o engine NUNCA fechava). Agora com o shape certo:
+          const cleanup3 = setupMobileDetect({
+            container: sidebar,
+            breakpoint: 768,
+            onMobileChange(isMobile: boolean) { engine.setMobile(isMobile); }
+          });
+          _cleanups.push(cleanup3);
+          const cleanup4 = setupOverlayClick({ container: sidebar, onClose: onCloseMobile });
+          _cleanups.push((cleanup4 as DynObj));
+        } else {
+          // caminho OFF (legado APROVADO, byte a byte com a baseline A): na A o
+          // handler NÃO lia onMobileChange (o callback era ignorado → engine.setMobile
+          // nunca era chamado por aqui). Como o handler agora LÊ onMobileChange, o
+          // caminho OFF OMITE onMobileChange → guarda `typeof===function` falha →
+          // engine.setMobile NÃO é chamado = comportamento idêntico à A. setupOverlayClick
+          // recebe a função crua (onClose undefined), reproduzindo a A exatamente.
+          const cleanup3 = setupMobileDetect({ onCloseMobile });
+          _cleanups.push(cleanup3);
+          const cleanup4 = setupOverlayClick(onCloseMobile);
+          _cleanups.push((cleanup4 as DynObj));
+        }
       } catch (error: any) {
         emitDegraded('mobile-detect', error.message);
       }

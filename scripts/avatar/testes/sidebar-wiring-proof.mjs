@@ -24,12 +24,14 @@ ok(/if\s*\(\s*typeof\s+onMobileChange\s*===\s*'function'\s*\)\s*\{\s*try\s*\{\s*
   'handler: setupMobileHandler CHAMA onMobileChange(_isMobile) ao cruzar o breakpoint');
 
 // contrato do coordenador (o que ele passa) — DEVE bater com o handler
+// #D-m22: o fix agora é GATED — caminho ON tem o shape correto; caminho OFF mantém
+// o legado (baseline A). Ver coordinator-flag-off-diff.mjs para a prova diferencial.
 ok(/setupOverlayClick\(\s*\{\s*container:\s*sidebar\s*,\s*onClose:\s*onCloseMobile\s*\}\s*\)/.test(COORD),
-  'coordenador: setupOverlayClick recebe {container: sidebar, onClose: onCloseMobile} (correto)');
-ok(!/setupOverlayClick\(\s*onCloseMobile\s*\)/.test(COORD),
-  'coordenador: NÃO passa mais a função crua a setupOverlayClick (bug removido)');
+  'coordenador (caminho ON): setupOverlayClick recebe {container: sidebar, onClose: onCloseMobile} (fix)');
+ok(/if\s*\(\s*_mobileShellAutorizado\(\)\s*\)/.test(COORD),
+  'coordenador: fix gated por _mobileShellAutorizado() (flag as6.mobile_shell) — flag OFF = baseline A');
 ok(/setupMobileDetect\(\s*\{[\s\S]*?container:\s*sidebar[\s\S]*?onMobileChange/.test(COORD),
-  'coordenador: setupMobileDetect recebe {container: sidebar, ..., onMobileChange} (correto)');
+  'coordenador (caminho ON): setupMobileDetect recebe {container: sidebar, ..., onMobileChange} (fix)');
 
 // prova lógica do bug antigo: uma função não tem propriedade .onClose
 const fn = () => {}; ok(fn.onClose === undefined,
