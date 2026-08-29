@@ -8,6 +8,7 @@ export async function getJSDOM() {
     'jsdom',
     new URL('../../../node_modules/jsdom/lib/api.js', import.meta.url).href,
     new URL('../../../public/react/node_modules/jsdom/lib/api.js', import.meta.url).href,
+    '/tmp/testdeps/node_modules/jsdom/lib/api.js',
     '/tmp/jsdmroot/node_modules/jsdom/lib/api.js',
   ].filter(Boolean);
   for (const t of tentativas) {

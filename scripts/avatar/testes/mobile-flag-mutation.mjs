@@ -3,6 +3,7 @@
 // e ON ⇒ marcador + enhancer. Sem browser; stubs mínimos de DOM.
 import { getJSDOM } from './_jsdom.mjs';
 const JSDOM = await getJSDOM();
+import { importTs } from './_ts.mjs';
 const dom = new JSDOM('<!DOCTYPE html><body><div id="app-shell"></div></body>', { pretendToBeVisual: true });
 const { window } = dom;
 for (const k of ['document', 'window', 'Node', 'Comment', 'HTMLElement']) globalThis[k] = window[k] ?? window;
@@ -12,8 +13,8 @@ let store = {};
 globalThis.localStorage = { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = v; }, removeItem: (k) => { delete store[k]; } };
 
 let falhas = 0; const ok = (c, m) => { console.log(`${c ? '  ✓' : '  ✗ FALHA:'} ${m}`); if (!c) falhas++; };
-const marker = await import(new URL('../../../public/components/app-shell/adapters/responsive-adapter/mobile-marker.ts', import.meta.url).href);
-const shell = await import(new URL('../../../public/components/app-shell/adapters/responsive-adapter/mobile-shell.ts', import.meta.url).href);
+const marker = await importTs(new URL('../../../public/components/app-shell/adapters/responsive-adapter/mobile-marker.ts', import.meta.url).href);
+const shell = await importTs(new URL('../../../public/components/app-shell/adapters/responsive-adapter/mobile-shell.ts', import.meta.url).href);
 const root = () => window.document.getElementById('app-shell');
 
 // ── DEFAULT OFF (sem store / sem localStorage) ──

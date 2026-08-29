@@ -2,7 +2,7 @@
 // estabilidade do enhancer mobile-shell em jsdom. Determinístico, sem browser/auth.
 import { getJSDOM } from './_jsdom.mjs';
 const JSDOM = await getJSDOM();
-import { pathToFileURL } from 'node:url';
+import { importTs } from './_ts.mjs';
 
 const HTML = `<!DOCTYPE html><html><body>
 <div id="app-shell" data-mobile="1">
@@ -31,7 +31,7 @@ const $$ = (s) => [...window.document.querySelectorAll(s)];
 const click = (el) => el && el.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 const key = (k) => window.document.dispatchEvent(new window.KeyboardEvent('keydown', { key: k, bubbles: true }));
 
-const mod = await import(new URL('../../../public/components/app-shell/adapters/responsive-adapter/mobile-shell.ts', import.meta.url).href);
+const mod = await importTs(new URL('../../../public/components/app-shell/adapters/responsive-adapter/mobile-shell.ts', import.meta.url).href);
 const nodesBase = window.document.querySelectorAll('*').length;
 mod.enhanceMobileShell();
 

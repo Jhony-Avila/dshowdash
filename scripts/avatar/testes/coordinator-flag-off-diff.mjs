@@ -5,10 +5,8 @@
 // shimados (SIDEBAR_EVENTS/createUiPorts/CSS_CLASSES). Sem browser, sem auth.
 import { getJSDOM } from './_jsdom.mjs';
 const JSDOM = await getJSDOM();
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { importTs } from './_ts.mjs';
 let falhas = 0; const ok = (c, m) => { console.log(`${c ? '  ✓' : '  ✗ FALHA:'} ${m}`); if (!c) falhas++; };
 
 // ── shim: substitui os imports absolutos por stubs locais ──
@@ -17,9 +15,6 @@ let code = readFileSync(SRC, 'utf8')
   .replace(/import \{ SIDEBAR_EVENTS \} from '[^']*';/, "const SIDEBAR_EVENTS = { MOBILE_CHANGED:'mc', MOBILE_CLOSED:'mcl', MOBILE_OPENED:'mo', MOBILE_HANDLER_INITIALIZED:'mi' };")
   .replace(/import \{ createUiPorts \} from '[^']*';/, "const createUiPorts = () => { let s = {}; return { init(){}, get(k){return s[k];}, inject(p){Object.assign(s,p);}, snapshot(){return {...s};} }; };")
   .replace(/import \{ CSS_CLASSES as C \} from '[^']*';/, "const C = { MOD_MOBILE:'is-mobile', MOD_MOBILE_OPEN:'is-mobile-open' };");
-const dir = mkdtempSync(join(tmpdir(), 'mh-'));
-const shim = join(dir, 'mobile-handler.ts');
-writeFileSync(shim, code);
 
 // ── DOM (jsdom) ──
 const dom = new JSDOM('<!DOCTYPE html><body></body>', { pretendToBeVisual: true });
@@ -28,7 +23,7 @@ for (const k of ['document', 'window', 'Node']) globalThis[k] = window[k] ?? win
 globalThis.window = window; globalThis.document = window.document;
 window.HTMLElement.prototype.scrollBy = function () {};
 
-const mod = await import(pathToFileURL(shim).href);
+const mod = await importTs(new URL('../../../public/components/sidebar/features/mobile-handler.ts', import.meta.url).href, code);
 const { setupMobileHandler, setupOverlayClick } = mod;
 const container = () => { const d = window.document.createElement('div'); return d; };
 
