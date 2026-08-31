@@ -16,7 +16,7 @@ de infraestrutura de auditoria.
     PRODUCT_REF     = origin/golden/art-wip@dd0f00ec  (FROZEN, tree 5ba31bbd5e526714b0bf110ffd3878d410e54755)
     AUDIT_TOOL_REF  = infra/trackd-audit@<sha do commit — ver: git rev-parse infra/trackd-audit>
     EXECUTOR_PATH   = scripts/avatar/testes/07-trackd-wave3-server-gate.sh   (nesta branch de infra)
-    EXECUTOR_SHA256 = 1a65cdc3fa75940f84cfa837559f4983de30b20ac8d8087a431e0a4f5cd87ae3
+    EXECUTOR_SHA256 = c52cbf0bbf1287ceac71b419eaa444a2c27ec1fbb44cf79d836d604a67860f6f
 
 O executor NAO pertence a arvore do produto congelado. Ele VIVE no ref de infra e AUDITA o
 candidato externo `dd0f00ec` (via git archive), abortando se o candidato remoto deixar de apontar
@@ -32,3 +32,9 @@ Os dois auditam o MESMO candidato congelado por caminhos distintos; nao sao inte
 BASH_SYNTAX=OK · DRY_RUN=PASS (served-identity CONFIRMED, MARKER_IN_MAIN=NO) · FAIL_CLOSED_WRONG_SHA=PASS ·
 FAIL_CLOSED_WRONG_HASH=PASS · CLEANUP_TEST=PASS · PRODUCTION_SIDE_EFFECTS=NONE.
 PENDENTE (nao comprovado por dry-run): AUTH_SESSION_REAL, GOLDEN_REAL_ROUTE, FLAG_OFF/ON_REAL, BOARDS_REAL.
+
+## Correcao 2026-08-31 (v2)
+gate07-proofs.mjs: corrigido argumento de page.evaluate (era `surfaces=SURFACES`, atribuicao a
+variavel nao declarada em modulo ESM -> ReferenceError "surfaces is not defined", que abortava as
+provas antes de gerar boards). Agora passa `SURFACES` direto. Novo EXECUTOR_SHA256 acima.
+Identidade servida e freeze do produto permanecem inalterados.
