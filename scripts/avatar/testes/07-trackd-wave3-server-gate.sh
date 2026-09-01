@@ -502,6 +502,9 @@ for base in "${REPO}/public/components/panels/panel-avatar-studio" "${REPO}/publ
 done
 [ -n "${DEPS}" ] || abort "playwright-core nao encontrado no servidor."
 export NODE_PATH="${DEPS}"
+# proxy usa fetch() p/ o backend loopback (cert self-signed) — audit tool confia no backend local.
+# NAO enfraquece atributo de cookie; so a verificacao de cert do backend 127.0.0.1 (padrao do 10-gate).
+export NODE_TLS_REJECT_UNAUTHORIZED=0
 ln -sfn "${DEPS}" "${TOOLS}/node_modules" 2>/dev/null || true
 printf 'DEPS=%s\n' "${DEPS}"
 
@@ -569,15 +572,15 @@ printf 'MAIN_BASELINE_READY=%s\n' "${MAIN_READY}"
 
 # ── 10) reescopo seguro + gate de AUTH REAL + provas OFF/ON ───────────────────
 log "10) reescopo (cópia) + gate de auth real + provas (main/OFF + golden/OFF + golden/ON)"
-GARG=""; [ "${MAIN_READY}" = "1" ] && GARG="${MAIN_URL}"
-set +e
+if [ "${MAIN_READY}" = "1" ]; then GARG="${MAIN_URL}"; else GARG=""; fi
+set +e   # relatorio/gate/pacote = best-effort; exit code explicito no fim (fail-closed via FINAL_RC)
 PW_CHROME="${PW_CHROME}" STORAGE_STATE="${STORAGE_TMP}" OUTDIR="${EVID}" \
   GOLDEN_URL="${GOLDEN_URL}" MAIN_URL="${GARG}" COMMIT="${EXPECTED_COMMIT}" TREE="${EXPECTED_TREE}" \
   NODE_PATH="${DEPS}" node "${TOOLS}/gate07-proofs.mjs" > >(red > "${EVID}/proofs.log") 2>&1
 PROOFS_RC=$?
-set -e
+# (set +e permanece ligado até o fim — evita landmines de [ ] && sob set -e)
 AUTH_SESSION_REAL="$(grep -o '"AUTH_SESSION_REAL":"[A-Z]*"' "${EVID}/gate07-proofs.json" 2>/dev/null | head -1 | cut -d'"' -f4)"
-[ -z "${AUTH_SESSION_REAL}" ] && AUTH_SESSION_REAL="UNKNOWN"
+AUTH_SESSION_REAL="${AUTH_SESSION_REAL:-UNKNOWN}"
 RESCOPE_LINE="$(grep -o '"RESCOPED_COOKIE_COUNT":[0-9]*,"RESCOPED_ORIGIN_COUNT":[0-9]*,"UNRELATED_COOKIES_DROPPED":[0-9]*' "${EVID}/gate07-proofs.json" 2>/dev/null | head -1)"
 SEC_PRES="$(grep -o '"SECURE_PRESERVED":[a-z]*' "${EVID}/gate07-proofs.json" 2>/dev/null | head -1 | cut -d: -f2)"
 HTTPONLY_PRES="$(grep -o '"HTTPONLY_PRESERVED":[a-z]*' "${EVID}/gate07-proofs.json" 2>/dev/null | head -1 | cut -d: -f2)"
