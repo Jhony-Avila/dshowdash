@@ -68,3 +68,12 @@ loopback https://127.0.0.1 tem cert self-signed; sem isso /api virava 502 e o ap
 - FINAL_EXIT permanece 6 enquanto a sessão real falhar; pacote/boards diagnósticos NÃO convertem o resultado global em sucesso.
 - AUTH_CAUSE conclusivo (Caso A-E) é fixado pela execução Opção 2 e registrado no GATE-07 da run (campos RUN_*/BOARDS_* espelhados).
 - Segredos NUNCA em evidência: nome do cookie de sessão mantido interno; expõe apenas presença booleana.
+
+## v6 — auth depende de sessionStorage (Fase 0/1) + injecao no gate (infra/trackd-audit)
+- EXECUTOR_SHA256: 794f1e2bd482c4cc0deb1721fa90d936409ce02e68be4b01dceb6e9d4978c9b1
+- Fase 0 (Mac, replay efemero controlado): cookie+localStorage NAO autenticam; unica diferenca = sessionStorage (3 chaves). storageState nao captura sessionStorage.
+- Fase 1 (backend read-only): check.php gate = cookie DSHOWSESS + sessao PHP (check.php:55). Origin/IP/UA/Host NAO sao gate (so CORS/logging/cookie-params). session_regenerate_id(true) rotaciona DSHOWSESS.
+- Conclusao: matriz de proxy Host/Origin DESNECESSARIA. Fix = bundle aumentado (storageState + _sessionStorage) + injecao de sessionStorage via addInitScript em todos os contextos do gate.
+- Segredo: sessionStorage tratado como storage-state (600, nunca impresso, fora do pacote/git). Evidencia so contagem/booleanos (SESSIONSTORAGE_KEYS_IN_SOURCE, SESSIONSTORAGE_INJECTED).
+- FINAL_EXIT permanece 6 enquanto AUTH_SESSION_REAL != PASS. Se golden preview autenticar com injecao -> causa provada e segue p/ matriz/boards.
+- MAIN/GOLDEN/backend/produto intactos; TLS mantido; cookies nao enfraquecidos.
