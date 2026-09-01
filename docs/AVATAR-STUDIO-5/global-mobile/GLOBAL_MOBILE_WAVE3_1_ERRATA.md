@@ -54,3 +54,17 @@ loopback https://127.0.0.1 tem cert self-signed; sem isso /api virava 502 e o ap
 "initializing"). Padrao do 10-gate (rejectUnauthorized:false); NAO enfraquece atributo de cookie.
 (2) secao de relatorio/gate/pacote passa a rodar com set +e + exit code explicito (evita landmine de
 "[ ] && ..." sob set -e que abortava antes do GATE). Novo sha acima.
+
+## v5 — Opção 2: instrumentação redigida (3 pontos) + parser JSON real (infra/trackd-audit)
+- EXECUTOR_SHA256: 8ff20c87609d596b7e75abafb22323a63d081a42d66ced5b6e55bd2e6c601abd
+- SELFTEST_SHA256: 246ff0bd81a8c06160d428f13f3a55c81baa28acd1411b2d259a626a08bb0865
+- RUN_INFRA_STATUS=PASS
+- RUN_AUTH_STATUS=FAILED
+- RUN_VISUAL_STATUS=INCONCLUSIVE
+- BOARDS_CLASS=UNAUTHENTICATED_DIAGNOSTIC
+- BOARDS_USED_FOR_APPROVAL=NO
+- Telemetria REDIGIDA (booleanos/classes) em 3 pontos de observação independentes: (1/3) storage de origem, (2/3) browser->proxy local, (3/3) proxy->backend; não derivada de variável única.
+- Classificação determinística da causa de auth: Casos A (cookie ausente do storage), B (não chega ao proxy — escopo/Secure/transporte), C (chega ao proxy, não encaminhado), D (encaminhado + backend authenticated=false => sessão inválida/expirada), E (autenticado).
+- FINAL_EXIT permanece 6 enquanto a sessão real falhar; pacote/boards diagnósticos NÃO convertem o resultado global em sucesso.
+- AUTH_CAUSE conclusivo (Caso A-E) é fixado pela execução Opção 2 e registrado no GATE-07 da run (campos RUN_*/BOARDS_* espelhados).
+- Segredos NUNCA em evidência: nome do cookie de sessão mantido interno; expõe apenas presença booleana.

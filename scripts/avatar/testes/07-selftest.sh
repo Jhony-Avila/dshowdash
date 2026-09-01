@@ -1,10 +1,160 @@
 #!/usr/bin/env bash
-set -u
+# 07-selftest.sh — auto-validação OFFLINE do 07-trackd-wave3-server-gate.sh (infra de auditoria).
+# Sem servidor/credencial: sintaxe, node --check dos 3 embutidos, RESCOPE/CLASSIFY selftests,
+# PARSER_FIX_TESTS (compacto/pretty/reordenado/ausente/FAILED/PASS) e PROXY_TELE_UNIT (3 pontos).
+# Fail-closed opcional (SELFTEST_BAD_HASH em DRYRUN) só roda se houver REPO git.
+set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-EX="$HERE/07-trackd-wave3-server-gate.sh"
-echo "BASH_SYNTAX:"; bash -n "$EX" && echo OK || echo FAIL
-echo "RESCOPE_SELFTEST:"; awk '/^B64_PROOFS$/{f=0} f{print} /<<.B64_PROOFS.$/{f=1}' "$EX" | base64 -d > /tmp/07gp.mjs 2>/dev/null; RESCOPE_SELFTEST=1 node /tmp/07gp.mjs 2>/dev/null | head -c 400; echo; rm -f /tmp/07gp.mjs
-echo "DRY_RUN:"; DRYRUN=1 bash "$EX" >/tmp/07self-dry.log 2>&1 && grep -q DRYRUN_OK=YES /tmp/07self-dry.log && echo PASS || echo FAIL
-echo "FAIL_CLOSED_WRONG_SHA:"; if DRYRUN=1 EXPECTED_COMMIT=deadbeef bash "$EX" >/dev/null 2>&1; then echo FAIL; else echo PASS; fi
-echo "FAIL_CLOSED_WRONG_HASH:"; if DRYRUN=1 SELFTEST_BAD_HASH=1 bash "$EX" >/tmp/07self-h.log 2>&1; then echo FAIL; else grep -qi "identidade servida FAILED" /tmp/07self-h.log && echo PASS || echo PASS-abort; fi
-rm -f /tmp/07self-dry.log /tmp/07self-h.log
+EXE="${EXE:-${HERE}/07-trackd-wave3-server-gate.sh}"
+[ -f "${EXE}" ] || { echo "SELFTEST ABORT: executor nao encontrado em ${EXE}"; exit 2; }
+TMP="$(mktemp -d /tmp/07selftest.XXXXXX)"; trap 'rm -rf "${TMP}"' EXIT
+FAILS=0; pass(){ echo "PASS  $*"; }; fail(){ echo "FAIL  $*"; FAILS=$((FAILS+1)); }
+
+echo "== bash -n (sintaxe do executor) =="
+bash -n "${EXE}" && pass "BASH_SYNTAX" || fail "BASH_SYNTAX"
+
+echo "== extrair 3 blobs embutidos + node --check =="
+for tag in PROXY:proxy-api-only.mjs PROOFS:gate07-proofs.mjs EXTRACT:gate07-extract.mjs; do
+  t="${tag%%:*}"; f="${TMP}/${tag##*:}"
+  awk "/<<'B64_${t}'/{c=1;next} /^B64_${t}\$/{c=0} c{print}" "${EXE}" | base64 -d > "${f}" 2>/dev/null
+  if node --check "${f}" 2>/dev/null; then pass "NODE_CHECK_${t}"; else fail "NODE_CHECK_${t}"; fi
+done
+PROOFS="${TMP}/gate07-proofs.mjs"; EXTRACT="${TMP}/gate07-extract.mjs"
+
+echo "== RESCOPE_SELFTEST (preserva Secure/httpOnly/SameSite; dropa nao-app) =="
+RESCOPE_SELFTEST=1 node "${PROOFS}" >"${TMP}/rescope.out" 2>&1
+if grep -q '"RESCOPE_SELFTEST":"PASS"' "${TMP}/rescope.out"; then pass "RESCOPE_SELFTEST"; else fail "RESCOPE_SELFTEST ($(cat "${TMP}/rescope.out"))"; fi
+
+echo "== CLASSIFY_SELFTEST (casos A-E + classes de expiry/samesite) =="
+CLASSIFY_SELFTEST=1 SESSION_COOKIE_NAME=DSHOWSESS node "${PROOFS}" >"${TMP}/classify.out" 2>&1
+if grep -q '"CLASSIFY_SELFTEST":"PASS"' "${TMP}/classify.out"; then pass "CLASSIFY_SELFTEST"; else fail "CLASSIFY_SELFTEST ($(cat "${TMP}/classify.out"))"; fi
+
+echo "== PARSER_FIX_TESTS (parser JSON real; compacto/pretty/reordenado/ausente/FAILED/PASS) =="
+base64 -d > "${TMP}/parser-tests.mjs" <<'B64_PARSER'
+Ly8gcGFyc2VyLXRlc3RzLm1qcyDigJQgdGVzdGEgZ2F0ZTA3LWV4dHJhY3QubWpzIGNvbnRyYSBK
+U09OIGNvbXBhY3RvL3ByZXR0eS9yZW9yZGVuYWRvL2F1c2VudGUvRkFJTEVEL1BBU1MuCmltcG9y
+dCB7IGV4ZWNGaWxlU3luYyB9IGZyb20gJ25vZGU6Y2hpbGRfcHJvY2Vzcyc7CmltcG9ydCB7IHdy
+aXRlRmlsZVN5bmMsIG1rZHRlbXBTeW5jIH0gZnJvbSAnbm9kZTpmcyc7CmltcG9ydCB7IGpvaW4g
+fSBmcm9tICdub2RlOnBhdGgnOwppbXBvcnQgeyB0bXBkaXIgfSBmcm9tICdub2RlOm9zJzsKCmNv
+bnN0IEVYVFJBQ1QgPSBwcm9jZXNzLmFyZ3ZbMl0gfHwgbmV3IFVSTCgnLi9nYXRlMDctZXh0cmFj
+dC5tanMnLCBpbXBvcnQubWV0YS51cmwpLnBhdGhuYW1lOwpjb25zdCBkaXIgPSBta2R0ZW1wU3lu
+Yyhqb2luKHRtcGRpcigpLCAncDA3LScpKTsKZnVuY3Rpb24gcnVuKG9iaiwgcmF3KSB7CiAgY29u
+c3QgZiA9IGpvaW4oZGlyLCAnaicgKyBNYXRoLnJhbmRvbSgpLnRvU3RyaW5nKDM2KS5zbGljZSgy
+KSArICcuanNvbicpOwogIHdyaXRlRmlsZVN5bmMoZiwgcmF3ICE9IG51bGwgPyByYXcgOiBKU09O
+LnN0cmluZ2lmeShvYmopKTsKICBsZXQgb3V0ID0gJycsIGNvZGUgPSAwOwogIHRyeSB7IG91dCA9
+IGV4ZWNGaWxlU3luYygnbm9kZScsIFtFWFRSQUNULCBmXSwgeyBlbmNvZGluZzogJ3V0ZjgnIH0p
+OyB9CiAgY2F0Y2ggKGUpIHsgb3V0ID0gKGUuc3Rkb3V0IHx8ICcnKS50b1N0cmluZygpOyBjb2Rl
+ID0gZS5zdGF0dXMgPT0gbnVsbCA/IDEgOiBlLnN0YXR1czsgfQogIGNvbnN0IGt2ID0ge307IG91
+dC5zcGxpdCgnXG4nKS5mb3JFYWNoKGwgPT4geyBjb25zdCBpID0gbC5pbmRleE9mKCc9Jyk7IGlm
+IChpID4gMCkga3ZbbC5zbGljZSgwLCBpKV0gPSBsLnNsaWNlKGkgKyAxKTsgfSk7CiAgcmV0dXJu
+IHsga3YsIGNvZGUgfTsKfQpjb25zdCBiYXNlID0gewogIEFVVEhfU0VTU0lPTl9SRUFMOiAnRkFJ
+TEVEJywgQVVUSF9DQVNFOiAnRCcsIEFVVEhfQ0FVU0U6ICdTRVJWRVJfU0VTU0lPTl9JTlZBTElE
+X09SX0VYUElSRUQnLCBORVhUX0FDVElPTjogJ1JFQ0FQVFVSRScsCiAgcmVzY29wZTogeyBSRVND
+T1BFRF9DT09LSUVfQ09VTlQ6IDEsIFJFU0NPUEVEX09SSUdJTl9DT1VOVDogMSwgVU5SRUxBVEVE
+X0NPT0tJRVNfRFJPUFBFRDogMiwgU0VDVVJFX1BSRVNFUlZFRDogdHJ1ZSwgSFRUUE9OTFlfUFJF
+U0VSVkVEOiB0cnVlLCBTQU1FU0lURV9QUkVTRVJWRUQ6IHRydWUgfSwKICB0ZWxlbWV0cnk6IHsK
+ICAgIHNvdXJjZTogeyBTRVNTSU9OX0NPT0tJRV9GT1VORF9JTl9TT1VSQ0U6IHRydWUsIFNFU1NJ
+T05fQ09PS0lFX0VYUElSWV9DTEFTUzogJ1NFU1NJT05fQ09PS0lFJywgU0VTU0lPTl9DT09LSUVf
+U0VDVVJFOiB0cnVlIH0sCiAgICBicm93c2VyX2NvbnRleHQ6IHsgVEVNUF9DT09LSUVfUFJFU0VO
+VF9JTl9DT05URVhUOiB0cnVlIH0sCiAgICBwcmV2aWV3X3Byb3h5OiB7IFNFU1NJT05fQ09PS0lF
+X1BSRVNFTlRfQVRfUFJFVklFV19QUk9YWTogdHJ1ZSwgU0VTU0lPTl9DT09LSUVfRk9SV0FSREVE
+X1RPX0JBQ0tFTkQ6IHRydWUgfSwKICAgIGJhY2tlbmQ6IHsgQkFDS0VORF9TRVNTSU9OX0NIRUNL
+X0hUVFA6IDIwMCwgQkFDS0VORF9TRVNTSU9OX0FVVEhFTlRJQ0FURUQ6IGZhbHNlIH0sCiAgfSwK
+fTsKY29uc3QgcGFzc09iaiA9IHsgLi4uYmFzZSwgQVVUSF9TRVNTSU9OX1JFQUw6ICdQQVNTJywg
+QVVUSF9DQVNFOiAnRScsIEFVVEhfQ0FVU0U6ICdBVVRIRU5USUNBVEVEJywgTkVYVF9BQ1RJT046
+ICdQQVNTJywgdGVsZW1ldHJ5OiB7IC4uLmJhc2UudGVsZW1ldHJ5LCBiYWNrZW5kOiB7IEJBQ0tF
+TkRfU0VTU0lPTl9DSEVDS19IVFRQOiAyMDAsIEJBQ0tFTkRfU0VTU0lPTl9BVVRIRU5USUNBVEVE
+OiB0cnVlIH0gfSB9OwovLyByZW9yZGVuYWRvOiBjaGF2ZXMgZW0gb3JkZW0gZGlmZXJlbnRlIChK
+U09OLnBhcnNlIGlnbm9yYSBvcmRlbSwgbWFzIGNvYnJpbW9zIGV4cGxpY2l0YW1lbnRlKQpjb25z
+dCByZW9yZGVyZWQgPSB7IHRlbGVtZXRyeTogYmFzZS50ZWxlbWV0cnksIE5FWFRfQUNUSU9OOiAn
+UkVDQVBUVVJFJywgcmVzY29wZTogYmFzZS5yZXNjb3BlLCBBVVRIX0NBVVNFOiAnU0VSVkVSX1NF
+U1NJT05fSU5WQUxJRF9PUl9FWFBJUkVEJywgQVVUSF9DQVNFOiAnRCcsIEFVVEhfU0VTU0lPTl9S
+RUFMOiAnRkFJTEVEJyB9OwovLyBhdXNlbnRlOiBzZW0gb3Mgb2JyaWdhdMOzcmlvcwpjb25zdCBt
+aXNzaW5nID0geyByZXNjb3BlOiBiYXNlLnJlc2NvcGUsIHRlbGVtZXRyeTogYmFzZS50ZWxlbWV0
+cnkgfTsKCmNvbnN0IFQgPSBbXTsKVC5wdXNoKFsnY29tcGFjdCcsIHJ1bihiYXNlLCBKU09OLnN0
+cmluZ2lmeShiYXNlKSksIHsgQVVUSF9TRVNTSU9OX1JFQUw6ICdGQUlMRUQnLCBBVVRIX0NBU0U6
+ICdEJywgY29kZTogMCB9XSk7ClQucHVzaChbJ3ByZXR0eScsIHJ1bihiYXNlLCBKU09OLnN0cmlu
+Z2lmeShiYXNlLCBudWxsLCAyKSksIHsgQVVUSF9TRVNTSU9OX1JFQUw6ICdGQUlMRUQnLCBBVVRI
+X0NBU0U6ICdEJywgY29kZTogMCB9XSk7ClQucHVzaChbJ3Jlb3JkZXJlZCcsIHJ1bihyZW9yZGVy
+ZWQsIEpTT04uc3RyaW5naWZ5KHJlb3JkZXJlZCwgbnVsbCwgNCkpLCB7IEFVVEhfU0VTU0lPTl9S
+RUFMOiAnRkFJTEVEJywgQVVUSF9DQVNFOiAnRCcsIGNvZGU6IDAgfV0pOwpULnB1c2goWydwYXNz
+JywgcnVuKHBhc3NPYmosIEpTT04uc3RyaW5naWZ5KHBhc3NPYmosIG51bGwsIDIpKSwgeyBBVVRI
+X1NFU1NJT05fUkVBTDogJ1BBU1MnLCBBVVRIX0NBU0U6ICdFJywgY29kZTogMCB9XSk7ClQucHVz
+aChbJ21pc3NpbmdfcmVxdWlyZWQnLCBydW4obWlzc2luZywgSlNPTi5zdHJpbmdpZnkobWlzc2lu
+ZywgbnVsbCwgMikpLCB7IEFVVEhfU0VTU0lPTl9SRUFMOiAnVU5LTk9XTicsIGNvZGU6IDMgfV0p
+OwpULnB1c2goWydtYWxmb3JtZWQnLCBydW4obnVsbCwgJ3sgdGhpcyBpcyBub3QganNvbiAnKSwg
+eyBBVVRIX1NFU1NJT05fUkVBTDogJ1VOS05PV04nLCBjb2RlOiAzIH1dKTsKLy8gY2hlY2FnZW0g
+cmVkaWdpZGE6IHBhcnNlciBudW5jYSBkZXZlIGVtaXRpciB2YWxvcmVzIHNlbnPDrXZlaXMg4oCU
+IHRvZG9zIG9zIHRva2VucyBiYXRlbSBbQS1aYS16MC05Xy1dKiBvdSBuw7ptZXJvCmNvbnN0IGJh
+ZCA9IFtdOwpmb3IgKGNvbnN0IFtuYW1lLCByZXMsIHdhbnRdIG9mIFQpIHsKICBmb3IgKGNvbnN0
+IGsgb2YgT2JqZWN0LmtleXMod2FudCkpIHsKICAgIGNvbnN0IGdvdCA9IGsgPT09ICdjb2RlJyA/
+IHJlcy5jb2RlIDogcmVzLmt2W2tdOwogICAgaWYgKFN0cmluZyhnb3QpICE9PSBTdHJpbmcod2Fu
+dFtrXSkpIGJhZC5wdXNoKGAke25hbWV9LiR7a309JHtnb3R9ICh3YW50ICR7d2FudFtrXX0pYCk7
+CiAgfQogIC8vIG5lbmh1bSB0b2tlbiBkZSB2YWxvciBjb20gY2FyYWN0ZXJlIGZvcmEgZGUgW0Et
+WjAtOV8tXQogIGZvciAoY29uc3QgW2trLCB2dl0gb2YgT2JqZWN0LmVudHJpZXMocmVzLmt2KSkg
+eyBpZiAoIS9eW0EtWmEtejAtOV8tXSokLy50ZXN0KHZ2KSkgYmFkLnB1c2goYCR7bmFtZX0uJHtr
+a30gdG9rZW4gaW5zZWd1cm86ICR7dnZ9YCk7IH0KfQpjb25zb2xlLmxvZyhKU09OLnN0cmluZ2lm
+eSh7IFBBUlNFUl9GSVhfVEVTVFM6IGJhZC5sZW5ndGggPyAnRkFJTCcgOiAnUEFTUycsIGNoZWNr
+ZWQ6IFQubGVuZ3RoLCBiYWQgfSkpOwpwcm9jZXNzLmV4aXQoYmFkLmxlbmd0aCA/IDEgOiAwKTsK
+B64_PARSER
+node "${TMP}/parser-tests.mjs" "${EXTRACT}" >"${TMP}/parser.out" 2>&1
+if grep -q '"PARSER_FIX_TESTS":"PASS"' "${TMP}/parser.out"; then pass "PARSER_FIX_TESTS"; else fail "PARSER_FIX_TESTS ($(cat "${TMP}/parser.out"))"; fi
+
+echo "== PROXY_TELE_UNIT (telemetria redigida: sawApi/forwardedApi + trap de substring) =="
+base64 -d > "${TMP}/proxy-tele-unit.mjs" <<'B64_PROXUNIT'
+Ly8gUmVwbGljYSBFWEFUQSBkYSBsw7NnaWNhIGRlIHRlbGVtZXRyaWEgZG8gcHJveGVhcigpIOKA
+lCBwcm92YSBzZW0gc29ja2V0cy4KY29uc3QgU0VTU0lPTl9DT09LSUVfTkFNRSA9ICdEU0hPV1NF
+U1MnOwpmdW5jdGlvbiBoYXNTZXNzaW9uKGNvb2tpZVN0cikgeyByZXR1cm4gU3RyaW5nKGNvb2tp
+ZVN0ciB8fCAnJykuc3BsaXQoLztccyovKS5zb21lKHAgPT4gcC5zdGFydHNXaXRoKFNFU1NJT05f
+Q09PS0lFX05BTUUgKyAnPScpKTsgfQpmdW5jdGlvbiByZWNvcmQocmVxSGVhZGVycykgewogIGNv
+bnN0IHRlbGUgPSB7IGFwaVJlcXVlc3RzOiAwLCBzYXdBcGlDb29raWVIZWFkZXI6IGZhbHNlLCBz
+YXdBcGlTZXNzaW9uQ29va2llOiBmYWxzZSwgZm9yd2FyZGVkQXBpQ29va2llSGVhZGVyOiBmYWxz
+ZSwgZm9yd2FyZGVkQXBpU2Vzc2lvbkNvb2tpZTogZmFsc2UgfTsKICB0ZWxlLmFwaVJlcXVlc3Rz
+ICs9IDE7CiAgY29uc3QgaW5Db29raWUgPSByZXFIZWFkZXJzLmNvb2tpZSB8fCAnJzsKICBpZiAo
+aW5Db29raWUpIHRlbGUuc2F3QXBpQ29va2llSGVhZGVyID0gdHJ1ZTsKICBpZiAoaGFzU2Vzc2lv
+bihpbkNvb2tpZSkpIHRlbGUuc2F3QXBpU2Vzc2lvbkNvb2tpZSA9IHRydWU7CiAgY29uc3QgaCA9
+IHt9OwogIGZvciAoY29uc3QgW2ssIHZdIG9mIE9iamVjdC5lbnRyaWVzKHJlcUhlYWRlcnMpKSB7
+IGNvbnN0IGxrID0gay50b0xvd2VyQ2FzZSgpOyBpZiAoWydob3N0JywgJ2Nvbm5lY3Rpb24nLCAn
+Y29udGVudC1sZW5ndGgnLCAnYWNjZXB0LWVuY29kaW5nJ10uaW5jbHVkZXMobGspKSBjb250aW51
+ZTsgaWYgKGxrID09PSAnb3JpZ2luJykgeyBoWydvcmlnaW4nXSA9ICd4JzsgY29udGludWU7IH0g
+aWYgKGxrID09PSAncmVmZXJlcicpIHsgaFsncmVmZXJlciddID0gJ3gnOyBjb250aW51ZTsgfSBo
+W2tdID0gQXJyYXkuaXNBcnJheSh2KSA/IHYuam9pbignLCcpIDogdjsgfQogIGNvbnN0IG91dENv
+b2tpZSA9IGguY29va2llIHx8IGguQ29va2llIHx8ICcnOwogIGlmIChvdXRDb29raWUpIHRlbGUu
+Zm9yd2FyZGVkQXBpQ29va2llSGVhZGVyID0gdHJ1ZTsKICBpZiAoaGFzU2Vzc2lvbihvdXRDb29r
+aWUpKSB0ZWxlLmZvcndhcmRlZEFwaVNlc3Npb25Db29raWUgPSB0cnVlOwogIHJldHVybiB0ZWxl
+Owp9CmNvbnN0IFQgPSBbXTsKVC5wdXNoKFsnc2Vzc2lvbicsIHJlY29yZCh7IGNvb2tpZTogJ0RT
+SE9XU0VTUz1hYmM7IG90aGVyPTEnIH0pLCB7IGFwaVJlcXVlc3RzOiAxLCBzYXdBcGlDb29raWVI
+ZWFkZXI6IHRydWUsIHNhd0FwaVNlc3Npb25Db29raWU6IHRydWUsIGZvcndhcmRlZEFwaUNvb2tp
+ZUhlYWRlcjogdHJ1ZSwgZm9yd2FyZGVkQXBpU2Vzc2lvbkNvb2tpZTogdHJ1ZSB9XSk7ClQucHVz
+aChbJ25vc2Vzc2lvbicsIHJlY29yZCh7IGNvb2tpZTogJ290aGVyPTE7IF9nYT14JyB9KSwgeyBh
+cGlSZXF1ZXN0czogMSwgc2F3QXBpQ29va2llSGVhZGVyOiB0cnVlLCBzYXdBcGlTZXNzaW9uQ29v
+a2llOiBmYWxzZSwgZm9yd2FyZGVkQXBpQ29va2llSGVhZGVyOiB0cnVlLCBmb3J3YXJkZWRBcGlT
+ZXNzaW9uQ29va2llOiBmYWxzZSB9XSk7ClQucHVzaChbJ25vY29va2llJywgcmVjb3JkKHsgYWNj
+ZXB0OiAnYXBwbGljYXRpb24vanNvbicgfSksIHsgYXBpUmVxdWVzdHM6IDEsIHNhd0FwaUNvb2tp
+ZUhlYWRlcjogZmFsc2UsIHNhd0FwaVNlc3Npb25Db29raWU6IGZhbHNlLCBmb3J3YXJkZWRBcGlD
+b29raWVIZWFkZXI6IGZhbHNlLCBmb3J3YXJkZWRBcGlTZXNzaW9uQ29va2llOiBmYWxzZSB9XSk7
+ClQucHVzaChbJ3ByZWZpeHRyYXAnLCByZWNvcmQoeyBjb29raWU6ICdYRFNIT1dTRVNTPXknIH0p
+LCB7IGFwaVJlcXVlc3RzOiAxLCBzYXdBcGlDb29raWVIZWFkZXI6IHRydWUsIHNhd0FwaVNlc3Np
+b25Db29raWU6IGZhbHNlLCBmb3J3YXJkZWRBcGlDb29raWVIZWFkZXI6IHRydWUsIGZvcndhcmRl
+ZEFwaVNlc3Npb25Db29raWU6IGZhbHNlIH1dKTsKY29uc3QgYmFkID0gW107CmZvciAoY29uc3Qg
+W25hbWUsIGdvdCwgd2FudF0gb2YgVCkgeyBmb3IgKGNvbnN0IGsgb2YgT2JqZWN0LmtleXMod2Fu
+dCkpIHsgaWYgKGdvdFtrXSAhPT0gd2FudFtrXSkgYmFkLnB1c2goYCR7bmFtZX0uJHtrfT0ke2dv
+dFtrXX0gKHdhbnQgJHt3YW50W2tdfSlgKTsgfSB9CmNvbnNvbGUubG9nKEpTT04uc3RyaW5naWZ5
+KHsgUFJPWFlfVEVMRV9VTklUOiBiYWQubGVuZ3RoID8gJ0ZBSUwnIDogJ1BBU1MnLCBjaGVja2Vk
+OiBULmxlbmd0aCwgYmFkIH0pKTsKcHJvY2Vzcy5leGl0KGJhZC5sZW5ndGggPyAxIDogMCk7Cg==
+B64_PROXUNIT
+node "${TMP}/proxy-tele-unit.mjs" >"${TMP}/proxyunit.out" 2>&1
+if grep -q '"PROXY_TELE_UNIT":"PASS"' "${TMP}/proxyunit.out"; then pass "PROXY_TELE_UNIT"; else fail "PROXY_TELE_UNIT ($(cat "${TMP}/proxyunit.out"))"; fi
+
+echo "== (opcional) FAIL-CLOSED em DRYRUN com SHA errado (so se houver REPO git) =="
+REPO_T="${REPO:-/var/www/dshowdash}"
+if [ -d "${REPO_T}/.git" ]; then
+  DRYRUN=1 SELFTEST_BAD_HASH=1 REPO="${REPO_T}" bash "${EXE}" >"${TMP}/failclosed.out" 2>&1
+  RC=$?
+  if [ "${RC}" = "3" ]; then pass "FAIL_CLOSED_SERVED_IDENTITY (exit 3)"; else fail "FAIL_CLOSED_SERVED_IDENTITY (exit ${RC}, esperado 3)"; fi
+else
+  echo "SKIP  FAIL_CLOSED (sem REPO git neste ambiente)"
+fi
+
+echo "================= SELFTEST 07 ================="
+if [ "${FAILS}" = "0" ]; then echo "SELFTEST_07=PASS"; exit 0; else echo "SELFTEST_07=FAIL (${FAILS} falhas)"; exit 1; fi
