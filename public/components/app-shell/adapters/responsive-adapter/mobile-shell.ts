@@ -78,41 +78,77 @@ function wireDrawer() {
   _cleanups.push(() => { if (drawerAberto()) fecharDrawer(); });
 }
 
-// ────────────────────────────── ITEM 1: HEADER "MAIS" ────────────────────────
-const ESSENCIAIS_MAX = 3; // identidade fica no header-left; mantém só N ações essenciais visíveis
-function wireHeaderMais() {
-  const right = q('.site-header .header-right'); if (!right) return;
-  const itens = qa(':scope > .header-component-wrapper', right);
-  if (itens.length <= ESSENCIAIS_MAX + 1) return; // não precisa de "Mais"
-  const secundarios = itens.slice(ESSENCIAIS_MAX);
-  // sheet
-  const sheet = document.createElement('div');
-  sheet.className = 'avst6-mais-sheet'; sheet.setAttribute('role', 'dialog');
-  sheet.setAttribute('aria-label', 'Mais ações'); sheet.hidden = true;
-  const backdrop = document.createElement('div'); backdrop.className = 'avst6-mais-backdrop'; backdrop.hidden = true;
-  // botão "Mais"
-  const btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'avst6-mais-btn'; btn.setAttribute('aria-haspopup', 'dialog');
-  btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-controls', 'avst6-mais-sheet');
-  btn.textContent = 'Mais';
-  sheet.id = 'avst6-mais-sheet';
-  const marcadores: Array<{ node: HTMLElement; anchor: Comment }> = [];
-  secundarios.forEach((n) => { const anchor = document.createComment('mais'); n.parentNode?.insertBefore(anchor, n); sheet.appendChild(n); marcadores.push({ node: n, anchor }); });
-  // sheet/backdrop DENTRO do #app-shell (não no body) → o CSS fica 100% sob o
-  // marcador #app-shell[data-mobile] (mantém a prova estática) e some no teardown.
+// ────────────────────────────── ITEM 1: HEADER COMPACTO 2 FAIXAS (v3) ─────────
+// Faixa 1: ☰ (drawer) · identidade (user-menu, já no header-left) · sino · Mais(⋯).
+// Faixa 2: indicadores de status (relógio/saúde/câmbio/clima).
+// Integrações e demais ações secundárias → sheet "Mais". Tudo reversível no teardown.
+const STRIP_KEYS = ['real-time-clock', 'weather-sp', 'currency-rotator', 'errors-status'];
+const BAND1_KEEP = ['notifications']; // sino permanece visível na faixa 1
+const WRAP_SEL = '.header-component-wrapper,.header-component-fallback';
+const keyOf = (w: HTMLElement): string => w.getAttribute('data-component-key') || w.getAttribute('data-component') || '';
+function wireCompactHeader() {
+  const header = q('.site-header'); if (!header) return;
+  const inner = q('.header-inner', header) || header;
+  const right = q('.header-right', header);
   const host = q('#app-shell') || document.body;
-  right.appendChild(btn); host.appendChild(backdrop); host.appendChild(sheet);
+  const moved: Array<{ node: HTMLElement; anchor: Comment }> = [];
+  const restaurar = (list: typeof moved) => list.forEach(({ node, anchor }) => { anchor.parentNode?.insertBefore(node, anchor); anchor.remove(); });
+
+  // (a) ☰ — abre o drawer via delegação já existente (wireDrawer / data-action)
+  const menuBtn = document.createElement('button');
+  menuBtn.type = 'button'; menuBtn.className = 'avst6-hdr-menu';
+  menuBtn.setAttribute('data-action', 'sidebar.toggle');
+  menuBtn.setAttribute('aria-controls', 'sidebar'); menuBtn.setAttribute('aria-haspopup', 'dialog');
+  menuBtn.setAttribute('aria-expanded', 'false'); menuBtn.setAttribute('aria-label', 'Abrir menu de navegação');
+  menuBtn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>';
+  inner.insertBefore(menuBtn, inner.firstChild);
+
+  // (b) faixa 2 (status strip) — move indicadores por data-component-key
+  const strip = document.createElement('div');
+  strip.className = 'avst6-hdr-strip'; strip.setAttribute('role', 'group'); strip.setAttribute('aria-label', 'Indicadores de status');
+  if (right) STRIP_KEYS.forEach((k) => {
+    qa(`.header-component-wrapper[data-component-key="${k}"],.header-component-fallback[data-component="${k}"]`, right).forEach((n) => {
+      const anchor = document.createComment('strip'); n.parentNode?.insertBefore(anchor, n); strip.appendChild(n); moved.push({ node: n, anchor });
+    });
+  });
+  const hasStrip = strip.childElementCount > 0;
+  if (hasStrip) { header.appendChild(strip); host.setAttribute('data-hdr-strip', '1'); }
+
+  // (c) sheet "Mais" — move o resto do header-right (integrações etc.); sino fica
+  const sheet = document.createElement('div');
+  sheet.className = 'avst6-mais-sheet'; sheet.id = 'avst6-mais-sheet';
+  sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-label', 'Mais opções'); sheet.hidden = true;
+  const backdrop = document.createElement('div'); backdrop.className = 'avst6-mais-backdrop'; backdrop.hidden = true;
+  const maisBtn = document.createElement('button');
+  maisBtn.type = 'button'; maisBtn.className = 'avst6-mais-btn'; maisBtn.setAttribute('aria-haspopup', 'dialog');
+  maisBtn.setAttribute('aria-expanded', 'false'); maisBtn.setAttribute('aria-controls', 'avst6-mais-sheet'); maisBtn.setAttribute('aria-label', 'Mais opções');
+  maisBtn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
+  const movedSheet: Array<{ node: HTMLElement; anchor: Comment }> = [];
+  if (right) qa(`:scope > ${WRAP_SEL}`, right).forEach((n) => {
+    if (BAND1_KEEP.includes(keyOf(n))) return; // sino permanece
+    const anchor = document.createComment('mais'); n.parentNode?.insertBefore(anchor, n); sheet.appendChild(n); movedSheet.push({ node: n, anchor });
+  });
+  const hasMais = movedSheet.length > 0;
+  if (right && hasMais) { right.appendChild(maisBtn); host.appendChild(backdrop); host.appendChild(sheet); }
+
   let origem: HTMLElement | null = null;
-  const abrir = () => { origem = document.activeElement as HTMLElement; sheet.hidden = false; backdrop.hidden = false; btn.setAttribute('aria-expanded', 'true'); const f = q<HTMLElement>(FOCAVEIS, sheet); try { (f || sheet).focus(); } catch { /* ok */ } };
-  const fechar = () => { sheet.hidden = true; backdrop.hidden = true; btn.setAttribute('aria-expanded', 'false'); try { origem?.focus(); } catch { /* ok */ } };
-  on(btn, 'click', () => (sheet.hidden ? abrir() : fechar()));
-  on(backdrop, 'click', () => fechar());
-  on(sheet, 'keydown', (e: Event) => { if ((e as KeyboardEvent).key === 'Escape') { e.preventDefault(); fechar(); } });
-  on(document, 'click', (e: Event) => { const a = (e.target as HTMLElement)?.closest?.('.avst6-mais-sheet .header-component-wrapper'); if (a) fechar(); });
-  // teardown: devolve os nós ao header e remove sheet/btn/backdrop
+  const fechar = () => { sheet.hidden = true; backdrop.hidden = true; maisBtn.setAttribute('aria-expanded', 'false'); try { origem?.focus(); } catch { /* ok */ } };
+  const abrir = () => { origem = document.activeElement as HTMLElement; sheet.hidden = false; backdrop.hidden = false; maisBtn.setAttribute('aria-expanded', 'true'); const f = q<HTMLElement>(FOCAVEIS, sheet); try { (f || sheet).focus(); } catch { /* ok */ } };
+  if (hasMais) {
+    on(maisBtn, 'click', () => (sheet.hidden ? abrir() : fechar()));
+    on(backdrop, 'click', () => fechar());
+    on(sheet, 'keydown', (e: Event) => { if ((e as KeyboardEvent).key === 'Escape') { e.preventDefault(); fechar(); } });
+    on(document, 'click', (e: Event) => { const a = (e.target as HTMLElement)?.closest?.('.avst6-mais-sheet .header-component-wrapper,.avst6-mais-sheet .header-component-fallback'); if (a) fechar(); });
+  }
+
+  // (d) sinal de overflow da faixa de status
+  const checkOverflow = () => { try { header.setAttribute('data-strip-overflow', hasStrip && strip.scrollWidth > strip.clientWidth + 2 ? '1' : '0'); } catch { /* ok */ } };
+  if (hasStrip) { checkOverflow(); on(window, 'resize', checkOverflow); }
+
   _cleanups.push(() => {
-    marcadores.forEach(({ node, anchor }) => { anchor.parentNode?.insertBefore(node, anchor); anchor.remove(); });
-    btn.remove(); sheet.remove(); backdrop.remove();
+    restaurar(moved); restaurar(movedSheet);
+    menuBtn.remove(); maisBtn.remove(); strip.remove(); sheet.remove(); backdrop.remove();
+    host.removeAttribute('data-hdr-strip'); header.removeAttribute('data-strip-overflow');
   });
 }
 
@@ -142,7 +178,7 @@ export function enhanceMobileShell(): void {
   if (!q('#app-shell[data-mobile]')) return; // só com o marcador (flag ON)
   _ligado = true;
   try { wireDrawer(); } catch { /* isola */ }
-  try { wireHeaderMais(); } catch { /* isola */ }
+  try { wireCompactHeader(); } catch { /* isola */ }
   try { wireTicker(); } catch { /* isola */ }
 }
 export function teardownMobileShell(): void {

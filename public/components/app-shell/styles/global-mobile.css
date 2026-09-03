@@ -20,9 +20,11 @@
  * regiões leem (--sidebar-width, --nav-rail-width, --header-ticker-total,
  * --footer-height-total), zerando a divergência 72/100/116 vs 56/92/76. */
 #app-shell[data-mobile] {
-  --gm-header-h: 56px;
+  --gm-header-band1: 52px;         /* faixa 1 do header (☰ · identidade · sino · Mais) */
+  --gm-header-strip: 34px;         /* faixa 2 (indicadores de status) */
+  --gm-header-h: var(--gm-header-band1);
   --gm-ticker-h: 36px;
-  --gm-top: 92px;                 /* header + ticker mobile */
+  --gm-top: calc(var(--gm-header-h) + var(--gm-ticker-h));   /* header + ticker mobile */
   --gm-bottomnav-h: 64px;
   --gm-safe-top: env(safe-area-inset-top, 0px);
   --gm-safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -37,6 +39,10 @@
   --sidebar-width: var(--gm-drawer-w);
   --footer-height-total: 0px;            /* footer entra no fluxo (não fixo) no mobile */
   --shell-nav-rail-width: 0px;
+}
+/* quando a faixa 2 (status strip) está presente, o header ganha a altura dela */
+#app-shell[data-mobile][data-hdr-strip="1"] {
+  --gm-header-h: calc(var(--gm-header-band1) + var(--gm-header-strip));
 }
 
 /* ── 2) SUPERFÍCIE PRINCIPAL DE SCROLL ÚNICA ─────────────────────────────────
@@ -58,37 +64,77 @@
   max-width: 100vw;
 }
 
-/* ── 3) HEADER — contém o clip de ~1238px sem cortar a viewport ───────────────
- * A .header-right é flex sem wrap e os filhos não encolhem (audit). Em vez de
- * quebrar linha (cresceria a altura), contém as ações num scroller horizontal
- * próprio → o DOCUMENTO nunca estoura na horizontal. Alvos ≥44px. */
+/* ── 3) HEADER — COMPACTO EM 2 FAIXAS (v3 aprovada) ───────────────────────────
+ * Substitui o antigo scroller horizontal do cluster direito (rejeitado: rolagem
+ * sem sinalização). Agora: faixa 1 = ☰ (drawer) · identidade (user-menu) · sino ·
+ * Mais(⋯); faixa 2 = indicadores de status (relógio/saúde/câmbio/clima), com
+ * sinalização de overflow. Ações secundárias (integrações) vão para o sheet "Mais".
+ * O comportamento (injeção do ☰, mover indicadores/integrações) é do mobile-shell.ts. */
 #app-shell[data-mobile] .dsd-shell__region--header {
   height: calc(var(--gm-header-h) + var(--gm-safe-top));
   padding-top: var(--gm-safe-top);
-  overflow: hidden;
+  overflow: visible;
 }
 #app-shell[data-mobile] .site-header {
   min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
-#app-shell[data-mobile] .site-header .header-right {
+/* logo redundante no mobile (a marca já aparece no topo do drawer) */
+#app-shell[data-mobile] .site-header .header-left .header-component-wrapper[data-component-key="logo"],
+#app-shell[data-mobile] .site-header .header-left .header-component-fallback[data-component="logo"] {
+  display: none;
+}
+/* FAIXA 1 (.header-inner) */
+#app-shell[data-mobile] .site-header .header-inner {
+  min-height: var(--gm-header-band1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  flex-wrap: nowrap;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x proximity;
-  padding-right: max(12px, var(--gm-safe-right));
+  padding-left: max(6px, var(--gm-safe-left));
+  padding-right: max(6px, var(--gm-safe-right));
 }
-#app-shell[data-mobile] .site-header .header-right::-webkit-scrollbar { display: none; }
-#app-shell[data-mobile] .site-header .header-right > * { flex: 0 0 auto; scroll-snap-align: start; }
-/* alvos de toque do header ≥44px (ícones eram ~30-32px) */
+/* ☰ injetado (abre o drawer) */
+#app-shell[data-mobile] .avst6-hdr-menu {
+  flex: 0 0 auto;
+  width: var(--gm-tap); height: var(--gm-tap);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; color: inherit; cursor: pointer; border-radius: 10px;
+}
+/* identidade (user-menu vive no header-left) ocupa o meio e trunca */
+#app-shell[data-mobile] .site-header .header-left {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden;
+}
+#app-shell[data-mobile] .site-header .header-center { display: none; }
+/* header-right na faixa 1: só sino + Mais, sem scroller */
+#app-shell[data-mobile] .site-header .header-right {
+  flex: 0 0 auto; min-width: 0; display: flex; align-items: center; gap: 2px; overflow: visible;
+}
+/* alvos de toque acionáveis ≥44px */
 #app-shell[data-mobile] .site-header .header-right button,
 #app-shell[data-mobile] .site-header .header-right [role="button"],
-#app-shell[data-mobile] .site-header .header-component-wrapper > * {
-  min-width: var(--gm-tap);
-  min-height: var(--gm-tap);
+#app-shell[data-mobile] .site-header .header-right .header-component-wrapper > * {
+  min-width: var(--gm-tap); min-height: var(--gm-tap);
+}
+/* FAIXA 2 (status strip) */
+#app-shell[data-mobile] .avst6-hdr-strip {
+  position: relative;
+  display: flex; align-items: center; gap: 7px;
+  height: var(--gm-header-strip);
+  padding: 0 max(8px, var(--gm-safe-right)) 4px max(8px, var(--gm-safe-left));
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+#app-shell[data-mobile] .avst6-hdr-strip::-webkit-scrollbar { display: none; }
+#app-shell[data-mobile] .avst6-hdr-strip > * { flex: 0 0 auto; }
+/* sinalização de overflow: nada some silenciosamente */
+#app-shell[data-mobile] .site-header[data-strip-overflow="1"] .avst6-hdr-strip::after {
+  content: ""; position: sticky; right: 0; flex: 0 0 auto;
+  width: 26px; align-self: stretch; margin-left: -18px;
+  background: linear-gradient(90deg, rgba(10,10,12,0), rgba(10,10,12,.96));
+  pointer-events: none;
 }
 /* menus/popovers do header presos dentro da viewport + safe-area */
 #app-shell[data-mobile] .site-header .header-dropdown,
@@ -147,6 +193,12 @@
 #app-shell[data-mobile] .nav-rail--mobile .nav-rail__item {
   min-width: var(--gm-tap);
   min-height: var(--gm-tap);
+}
+/* v3: com ☰ e sino já no header, a bottom-nav é só atalho complementar —
+ * esconde toggle-sidebar e notificações DAQUI (só sob o marcador; flag OFF intacto). */
+#app-shell[data-mobile] .nav-rail--mobile .nav-rail__item[data-navrail-id="toggle-sidebar"],
+#app-shell[data-mobile] .nav-rail--mobile .nav-rail__item[data-navrail-id="bell"] {
+  display: none;
 }
 
 /* ── 6) TICKER — respeitar reduced-motion e permitir leitura sem animação ─────
