@@ -1,18 +1,100 @@
 {
-  "candidate": { "expectedSha": "c6318ccab12dd0d6f3425c5ab50c07879e2bdc72", "expectedTree": "c2116dc0a5ff09f3d9a9c09e4b492822b81c6ade" },
+  "candidate": {
+    "expectedSha": "c6318ccab12dd0d6f3425c5ab50c07879e2bdc72",
+    "expectedTree": "c2116dc0a5ff09f3d9a9c09e4b492822b81c6ade"
+  },
   "shell": {
     "expectedSha": "c6318ccab12dd0d6f3425c5ab50c07879e2bdc72",
-    "header":  ["[data-region='header']", "header", "[role='banner']", "#header", ".app-header", ".shell-header"],
-    "sidebar": ["[data-region='sidebar']", "aside[role='navigation']", ".shell-sidebar", ".sidebar", "#sidebar", ".drawer"],
-    "navrail": ["[data-region='navrail']", "nav[aria-label]", ".nav-rail", ".navrail", ".rail"],
-    "footer":  ["[data-region='footer']", "footer", "[role='contentinfo']", ".app-footer"],
-    "main":    ["[data-region='main']", "main", "[role='main']", "#main", "#app-main", ".content-main", "#shell-main-region"]
+    "header": [
+      "[data-region='header']",
+      "header",
+      "[role='banner']",
+      "#header",
+      ".app-header",
+      ".shell-header"
+    ],
+    "sidebar": [
+      "[data-region='sidebar']",
+      "aside[role='navigation']",
+      ".shell-sidebar",
+      ".sidebar",
+      "#sidebar",
+      ".drawer"
+    ],
+    "navrail": [
+      "[data-region='navrail']",
+      "nav[aria-label]",
+      ".nav-rail",
+      ".navrail",
+      ".rail"
+    ],
+    "footer": [
+      "[data-region='footer']",
+      "footer",
+      "[role='contentinfo']",
+      ".app-footer"
+    ],
+    "main": [
+      "[data-region='main']",
+      "main",
+      "[role='main']",
+      "#main",
+      "#app-main",
+      ".content-main",
+      "#shell-main-region"
+    ]
   },
   "scope": "full",
-  "allowlist": ["dshowdash.com.br", "127.0.0.1", "localhost"],
+  "allowlist": [
+    "dshowdash.com.br",
+    "127.0.0.1",
+    "localhost"
+  ],
   "avatarRoute": "/#/panel-avatar-studio",
-  "avatarTriggers": ["[data-route='#/panel-avatar-studio']", "a[href='#/panel-avatar-studio']", "a[href*='avatar-studio']", "a[href*='avatar']", "[data-app-id='avatar-studio']", "Avatar Studio"],
-  "navigation": { "preferRouter": true, "routerGlobals": ["__router", "app.router", "window.router", "__dsd.router"], "routeHash": "#/panel-avatar-studio" },
-  "identity": { "vcSourceTree": "cf133d9913497222197c79b5f150fe33114bc9a0", "indexServedHash": null, "vcBundleHash": null },
-  "viewports": ["320x568", "390x844", "412x915", "844x390", "1280x720"]
+  "avatarTriggers": [
+    "[data-route='#/panel-avatar-studio']",
+    "a[href='#/panel-avatar-studio']",
+    "a[href*='avatar-studio']",
+    "a[href*='avatar']",
+    "[data-app-id='avatar-studio']",
+    "Avatar Studio"
+  ],
+  "navigation": {
+    "preferRouter": true,
+    "routerGlobals": [
+      "__router",
+      "app.router",
+      "window.router",
+      "__dsd.router"
+    ],
+    "routeHash": "#/panel-avatar-studio"
+  },
+  "identity": {
+    "vcSourceTree": "cf133d9913497222197c79b5f150fe33114bc9a0",
+    "indexServedHash": null,
+    "vcBundleHash": null,
+    "identityKind": "deterministic-rebuild",
+    "vcBundleIdentity": "4b47ac8294745ce35b0a01a927f16749fec5098fc8088f1e6fd2dac85142648a",
+    "vcDistFileCount": 27,
+    "vcEntryJs": {
+      "file": "chunks/react-vendor.BIZlozNo.js",
+      "sha256": "092b56ce04cc4270e531b17b5e05074aea85a04cbcb8e8031ce11873aa6bd7a1"
+    },
+    "vcEntryCss": {
+      "file": "assets/entry.DVqXI_WM.css",
+      "sha256": "ad01319d4141458534b37ed3a60715e6a26c12ef7305e85aefffe8864da11810"
+    },
+    "distMapFile": "vc-dist.sha256",
+    "builtFrom": {
+      "commit": "c6318ccab12dd0d6f3425c5ab50c07879e2bdc72",
+      "tree": "c2116dc0a5ff09f3d9a9c09e4b492822b81c6ade"
+    }
+  },
+  "viewports": [
+    "320x568",
+    "390x844",
+    "412x915",
+    "844x390",
+    "1280x720"
+  ]
 }
