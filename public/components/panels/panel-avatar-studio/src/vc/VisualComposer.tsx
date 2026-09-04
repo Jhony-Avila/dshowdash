@@ -14,6 +14,7 @@ import { comItem } from '../components/GradeItens';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { salvarAvatar } from '../services/AvatarService';
 import { favoritos, alternarFavorito } from '../services/Progresso';
+import { lerBloqueios } from '../shell/Equipados';
 import { GRUPOS, grupoPorId } from './grupos';
 import type { GrupoVisual } from './grupos';
 import '../styles/visual-composer.css';
@@ -26,20 +27,32 @@ export interface PropsVisualComposer {
   versaoBase: number;
   desbloqueados?: Set<string>;
   aoVoltar?: () => void;
-  aoModoClassico?: () => void;
+  aoModoClassico?: (cfg: AvatarConfig) => void;
 }
 
-interface ItemView { it: { id: string; nome: string; tema?: string; novo?: boolean; bloqueadoPor?: string }; cat: CategoriaId; }
+interface ItemView { it: { id: string; nome: string; tema?: string; novo?: boolean; bloqueadoPor?: string; slot?: string }; cat: CategoriaId; }
 
 export default function VisualComposer({ configInicial, versaoBase, desbloqueados, aoVoltar, aoModoClassico }: PropsVisualComposer) {
   const store = useMemo(() => new AvatarStore(deLegado2d(validarConfig(configInicial)), versaoBase), [configInicial, versaoBase]);
   const estadoVisivel = useSyncExternalStore(store.assinar, () => store.estadoVisivel);
   const config = useMemo(() => validarConfig(paraLegado2d(estadoVisivel)), [estadoVisivel]);
   const desbloq = desbloqueados ?? new Set<string>();
+  // Bloqueio: fonte única = lerBloqueios() (slots travados, §70.1) + disponibilidade por conquista (bloqueadoPor).
+  const bloqSlots = useMemo(() => { try { return lerBloqueios(); } catch { return new Set<string>(); } }, []);
+
+  // Grupos dinâmicos: só entram no trilho os que têm conteúdo real (ex.: Companheiros só se houver itens com slot próprio).
+  const gruposVisiveis = useMemo(() => GRUPOS.filter((g) => {
+    if (!g.dinamico) return true;
+    const inSet = g.slotsIn && g.slotsIn.length ? new Set(g.slotsIn) : null;
+    return g.cats.some((c) => itensDe(c).some((it) => {
+      const sl = (it as { slot?: string }).slot;
+      return inSet ? (!!sl && inSet.has(sl)) : true;
+    }));
+  }), []);
 
   const [modo, setModo] = useState<'visual' | 'guiado'>('visual');
   const [grupoId, setGrupoId] = useState('base');
-  const grupo = grupoPorId(grupoId);
+  const grupo = grupoPorId(grupoId, gruposVisiveis);
   const [subId, setSubId] = useState<string | null>(null);
   const [aba, setAba] = useState<'catalogo' | 'favoritos' | 'atual'>('catalogo');
   const [filtroNovos, setFiltroNovos] = useState(false);
@@ -54,7 +67,11 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
   const [favs, setFavs] = useState<Set<string>>(() => { try { return favoritos(); } catch { return new Set(); } });
   const [avisoSaida, setAvisoSaida] = useState<null | (() => void)>(null);
 
-  function bloqueado(it: { id: string; bloqueadoPor?: string }): boolean { return !!it.bloqueadoPor && !desbloq.has(it.id); }
+  function bloqueado(it: { id: string; bloqueadoPor?: string; slot?: string }): boolean {
+    const porSlot = !!it.slot && bloqSlots.has(it.slot);            // slot travado (lerBloqueios)
+    const porConquista = !!it.bloqueadoPor && !desbloq.has(it.id);  // ainda não desbloqueado
+    return porSlot || porConquista;
+  }
   const camadas = config.camadas as Record<string, string | undefined>;
   function equipadoDe(cat: CategoriaId, id: string): boolean { return cat === 'base' ? config.base === id : camadas?.[cat] === id; }
 
@@ -99,8 +116,16 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
     return grupo.cats;
   }, [grupo, subId]);
 
+  // Enquadramento: sub tem prioridade sobre o grupo (rosto->olhos, cabelo->barba, etc.).
+  const focoAtivo = useMemo(() => {
+    if (grupo.subs && subId) { const s = grupo.subs.find((x) => x.id === subId); if (s?.foco) return s.foco; }
+    return grupo.foco;
+  }, [grupo, subId]);
+
   const itens: ItemView[] = useMemo(() => {
     let lista: ItemView[] = cats.flatMap((c) => itensDe(c).map((it) => ({ it: it as ItemView['it'], cat: c })));
+    if (grupo.slotsIn && grupo.slotsIn.length) { const s = new Set(grupo.slotsIn); lista = lista.filter(({ it }) => !!it.slot && s.has(it.slot)); }
+    if (grupo.slotsOut && grupo.slotsOut.length) { const s = new Set(grupo.slotsOut); lista = lista.filter(({ it }) => !it.slot || !s.has(it.slot)); }
     if (aba === 'favoritos') lista = lista.filter(({ it }) => favs.has(it.id));
     if (aba === 'atual') lista = lista.filter(({ it, cat }) => equipadoDe(cat, it.id));
     if (filtroNovos) lista = lista.filter(({ it }) => !!it.novo);
@@ -108,12 +133,12 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
     const q = busca.trim().toLowerCase();
     if (q) lista = lista.filter(({ it }) => it.nome.toLowerCase().includes(q) || (it.tema ?? '').toLowerCase().includes(q));
     return lista;
-  }, [cats, aba, favs, filtroNovos, filtroDispon, busca, config]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [grupo, cats, aba, favs, filtroNovos, filtroDispon, busca, config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFav = useCallback((id: string) => { try { setFavs(new Set(alternarFavorito(id))); } catch { /* ok */ } }, []);
 
   // ---------- CRIAÇÃO GUIADA ----------
-  const passos = useMemo(() => GRUPOS.filter((g) => g.id !== 'estilo').concat(GRUPOS.filter((g) => g.id === 'estilo')), []);
+  const passos = useMemo(() => gruposVisiveis.filter((g) => g.id !== 'estilo').concat(gruposVisiveis.filter((g) => g.id === 'estilo')), [gruposVisiveis]);
   const [passo, setPasso] = useState(0);
   const totalPassos = passos.length + 1; // +1 = revisar
   const emRevisao = passo >= passos.length;
@@ -191,7 +216,7 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
 
       <div className="vc-corpo">
         <nav className="vc-trilho" aria-label="Categorias">
-          {GRUPOS.map((g) => { const Ic = g.Icone; return (
+          {gruposVisiveis.map((g) => { const Ic = g.Icone; return (
             <button key={g.id} type="button" className={`vc-cat ${g.id === grupoId ? 'vc-cat-ativa' : ''}`} aria-pressed={g.id === grupoId} onClick={() => selecionarGrupo(g)}>
               <Ic size={22} aria-hidden /><span>{g.nome}</span>
             </button>); })}
@@ -199,8 +224,8 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
 
         <main className="vc-palco">
           <div className="vc-palco-wrap">
-            <AvatarSvg config={config} uid="vc-palco" palco={!grupo.corpo} corpo={grupo.corpo} foco={grupo.foco} estatico={reduzido()} />
-            {GRUPOS.filter((g) => g.hot).map((g) => (
+            <AvatarSvg config={config} uid="vc-palco" palco={!grupo.corpo} corpo={grupo.corpo} foco={focoAtivo} estatico={reduzido()} />
+            {gruposVisiveis.filter((g) => g.hot).map((g) => (
               <button key={g.id} type="button" className={`vc-hot ${g.id === grupoId ? 'vc-hot-on' : ''}`}
                 style={{ top: g.hot!.top, left: g.hot!.left, width: g.hot!.width, height: g.hot!.height }}
                 data-fundo={g.id === 'cenario' ? 'true' : undefined}
@@ -265,7 +290,7 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
                 <button role="menuitem" onClick={() => { setMais(null); setModo('guiado'); setPasso(0); }}><Wand2 size={16} aria-hidden /> Criar passo a passo</button>
                 <button role="menuitem" onClick={() => setMais('looks')}><Sparkles size={16} aria-hidden /> Looks</button>
                 <div className="vc-sheet-grp">Avançado</div>
-                <button role="menuitem" onClick={() => { setMais(null); aoModoClassico?.(); }}>Ferramentas avançadas (3D, foto, coleções, importar/exportar…)</button>
+                <button role="menuitem" onClick={() => { setMais(null); aoModoClassico?.(config); }}>Ferramentas avançadas (3D, foto, coleções, importar/exportar…)</button>
               </div>
             ) : (
               <div className="vc-looks">

@@ -151,6 +151,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [shellNovo, setShellNovo] = useState<boolean>(() => flag('as5.novo_shell'));
   const [vcFalhou, setVcFalhou] = useState(false);
   const [vcModoClassico, setVcModoClassico] = useState(false);
+  const [vcConfigPonte, setVcConfigPonte] = useState<AvatarConfig | null>(null);
   const [aba, setAba] = useState<'itens' | 'arquetipo' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [vidaCarregando, setVidaCarregando] = useState(true); // §557
@@ -461,16 +462,16 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
     return (
       <LimiteVC aoErro={() => setVcFalhou(true)}>
         <Suspense fallback={<div className="vc-boot" />}>
-          <VisualComposerLazy configInicial={atual} versaoBase={versao}
+          <VisualComposerLazy configInicial={vcConfigPonte ?? atual} versaoBase={versao}
             desbloqueados={vida?.desbloqueados ?? new Set()}
-            aoModoClassico={() => setVcModoClassico(true)} />
+            aoModoClassico={(cfg) => { setVcConfigPonte(cfg); setVcModoClassico(true); }} />
         </Suspense>
       </LimiteVC>
     );
   }
   if (shellNovo) {
     return (
-      <ShellStudio configInicial={atual} versaoBase={versao}
+      <ShellStudio configInicial={vcModoClassico ? (vcConfigPonte ?? (atual)) : (atual)} versaoBase={versao}
         desbloqueados={vida?.desbloqueados ?? new Set()}
         vida={vida} vidaCarregando={vidaCarregando}
         aoSalvarLegado={async (cfg) => {
@@ -485,7 +486,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           if (r.ok && typeof r.versao === 'number') setVersao(r.versao);
           return r.ok;
         }}
-        aoSairDoShell={() => setShellNovo(false)} />
+        aoSairDoShell={vcModoClassico ? () => setVcModoClassico(false) : (() => setShellNovo(false))} />
     );
   }
 
