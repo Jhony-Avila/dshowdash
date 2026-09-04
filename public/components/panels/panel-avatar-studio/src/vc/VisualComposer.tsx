@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, Search, Heart, Lock, Check, X, Sparkles,
-  PanelRightClose, PanelRightOpen, ArrowLeft, ArrowRight, SkipForward,
+  PanelRightClose, PanelRightOpen, ArrowLeft, ArrowRight, SkipForward, Palette,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { AvatarStore } from '../nucleo/estado';
@@ -16,6 +16,7 @@ import { salvarAvatar } from '../services/AvatarService';
 import { favoritos, alternarFavorito } from '../services/Progresso';
 import { lerBloqueios } from '../shell/Equipados';
 import MaisPainel from './MaisPainel';
+import { Cores } from '../components/Cores';
 import { GRUPOS, grupoPorId } from './grupos';
 import type { GrupoVisual } from './grupos';
 import '../styles/visual-composer.css';
@@ -80,6 +81,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [painelRecolhido, setPainelRecolhido] = useState(false);
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
   const [mais, setMais] = useState(false);
+  const [coresAberto, setCoresAberto] = useState(false);
   const [salv, setSalv] = useState<'idle' | 'salvando' | 'salvo' | 'erro'>('idle');
   const [favs, setFavs] = useState<Set<string>>(() => { try { return favoritos(); } catch { return new Set(); } });
   const [avisoSaida, setAvisoSaida] = useState<null | (() => void)>(null);
@@ -237,7 +239,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
       <div className="vc-corpo">
         <nav className="vc-trilho" aria-label="Categorias">
           {gruposVisiveis.map((g) => { const Ic = g.Icone; return (
-            <button key={g.id} type="button" className={`vc-cat ${g.id === grupoId ? 'vc-cat-ativa' : ''}`} aria-pressed={g.id === grupoId} onClick={() => selecionarGrupo(g)}>
+            <button key={g.id} type="button" title={g.nome} className={`vc-cat ${g.id === grupoId ? 'vc-cat-ativa' : ''}`} aria-pressed={g.id === grupoId} aria-label={g.nome} onClick={() => selecionarGrupo(g)}>
               <Ic size={22} aria-hidden /><span>{g.nome}</span>
             </button>); })}
         </nav>
@@ -270,7 +272,8 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
             <button role="tab" aria-selected={aba === 'catalogo'} className={aba === 'catalogo' ? 'on' : ''} onClick={() => setAba('catalogo')}>Catálogo</button>
             <button role="tab" aria-selected={aba === 'favoritos'} className={aba === 'favoritos' ? 'on' : ''} onClick={() => setAba('favoritos')}>Favoritos</button>
             <button role="tab" aria-selected={aba === 'atual'} className={aba === 'atual' ? 'on' : ''} onClick={() => setAba('atual')}>Visual atual</button>
-            <button className="vc-filtro-btn" aria-pressed={buscaAberta} onClick={() => setBuscaAberta((v) => !v)} aria-label="Buscar e filtrar"><Search size={16} aria-hidden /></button>
+            <button className="vc-filtro-btn" onClick={() => setCoresAberto(true)} aria-label="Cores"><Palette size={16} aria-hidden /></button>
+            <button className="vc-icone-nav" aria-pressed={buscaAberta} onClick={() => setBuscaAberta((v) => !v)} aria-label="Buscar e filtrar"><Search size={16} aria-hidden /></button>
           </div>
           {buscaAberta && (
             <div className="vc-buscabox">
@@ -307,6 +310,15 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
           aoGuiada={() => { setMais(false); setModo('guiado'); setPasso(0); }}
           aoDiagnostico={() => { setMais(false); aoModoClassico?.(config); }}
           aoFechar={() => setMais(false)} />
+      )}
+
+      {coresAberto && (
+        <div className="vc-back" onClick={() => setCoresAberto(false)}>
+          <div className="vc-sheet vc-cores-sheet" role="dialog" aria-modal="true" aria-label="Cores" onClick={(e) => e.stopPropagation()}>
+            <div className="vc-sheet-cab"><span>Cores</span><button onClick={() => setCoresAberto(false)} aria-label="Fechar"><X size={18} aria-hidden /></button></div>
+            <div className="vc-cores-corpo"><Cores config={config} aoMudar={aplicar} /></div>
+          </div>
+        </div>
       )}
 
       {avisoSaida && (
