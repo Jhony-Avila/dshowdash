@@ -6,7 +6,7 @@ import { Suspense, lazy, useMemo, useState, useCallback, useEffect, useRef } fro
 import {
   X, ChevronRight, ArrowLeft, Sparkles, Dices, Wand2, Bot, Layers, History, Columns2, ListTree,
   Camera, Presentation, Users, Box, Upload, Download, Archive, Code2, Languages, Volume2, VolumeX,
-  Accessibility, Stethoscope, Check, Lock, Heart,
+  Accessibility, Stethoscope, Trophy, HelpCircle,
 } from 'lucide-react';
 import type { AvatarConfig } from '../domain/types';
 import type { AvatarStore } from '../nucleo/estado';
@@ -22,13 +22,14 @@ const Vitrine = lazy(() => import('../components/Vitrine').then((m) => ({ defaul
 const CriarIA = lazy(() => import('../components/CriarIA').then((m) => ({ default: m.CriarIA })));
 const Foto = lazy(() => import('../components/Foto').then((m) => ({ default: m.Foto })));
 const Contextos = lazy(() => import('../components/Contextos').then((m) => ({ default: m.Contextos })));
+const Conquistas = lazy(() => import('../components/Conquistas').then((m) => ({ default: m.Conquistas })));
 const Estudio3D = lazy(() => import('../poc3d/Estudio3D'));
 
 type Tool =
   | 'aleatorio' | 'looks' | 'colecoes' | 'ia' | 'vitrine'
-  | 'historico' | 'comparar' | 'detalhes'
+  | 'historico' | 'conquistas' | 'comparar' | 'detalhes'
   | 'importar' | 'exportar' | 'backup' | 'codigo'
-  | 'idioma' | 'som' | 'a11y' | 'diagnostico';
+  | 'idioma' | 'som' | 'a11y' | 'ajuda' | 'diagnostico';
 type Imersivo = 'foto' | '3d' | 'apresentar' | 'contextos';
 
 export interface PropsMaisPainel {
@@ -37,7 +38,7 @@ export interface PropsMaisPainel {
   aplicar: (novo: AvatarConfig) => void;
   versao: number;
   desbloqueados: Set<string>;
-  vida?: { iaDisponivel?: boolean } | null;
+  vida?: { iaDisponivel?: boolean } | Record<string, unknown> | null;
   reduzido: boolean;
   aoGuiada: () => void;        // abre a Criação Guiada (modo do próprio VC)
   aoDiagnostico: () => void;   // abre a interface clássica (fallback técnico)
@@ -66,6 +67,7 @@ export default function MaisPainel({ store, config, aplicar, versao, desbloquead
     ] },
     { id: 'revisar', nome: 'Revisar', itens: [
       { id: 'historico', nome: 'Histórico', Icone: History },
+      { id: 'conquistas', nome: 'Conquistas', Icone: Trophy },
       { id: 'comparar', nome: 'Comparar com original', Icone: Columns2 },
       { id: 'detalhes', nome: 'Detalhes da composição', Icone: ListTree },
     ] },
@@ -85,6 +87,7 @@ export default function MaisPainel({ store, config, aplicar, versao, desbloquead
       { id: 'idioma', nome: 'Idioma', Icone: Languages },
       { id: 'som', nome: 'Som', Icone: Volume2 },
       { id: 'a11y', nome: 'Acessibilidade', Icone: Accessibility },
+      { id: 'ajuda', nome: 'Ajuda', Icone: HelpCircle },
       { id: 'diagnostico', nome: 'Diagnóstico', Icone: Stethoscope },
     ] },
   ], []);
@@ -185,8 +188,10 @@ export default function MaisPainel({ store, config, aplicar, versao, desbloquead
               {tool === 'idioma' && <ToolIdioma />}
               {tool === 'som' && <ToolSom />}
               {tool === 'a11y' && <ToolA11y reduzido={reduzido} />}
+              {tool === 'ajuda' && <ToolAjuda aoGuiada={aoGuiada} />}
               {tool === 'diagnostico' && <ToolDiagnostico aoDiagnostico={aoDiagnostico} />}
               {tool === 'historico' && <Suspense fallback={carregando}><Historico versaoBase={versao} aoAplicar={aplicar} aoReativar={(nv) => { try { store.confirmarPersistencia(nv); } catch { /* ok */ } }} /></Suspense>}
+              {tool === 'conquistas' && <Suspense fallback={carregando}><Conquistas vida={(vida as never) ?? null} carregando={!vida} config={config} /></Suspense>}
               {tool === 'colecoes' && <Suspense fallback={carregando}><Colecoes config={config} aoAplicar={aplicar} /></Suspense>}
               {tool === 'vitrine' && <Suspense fallback={carregando}><Vitrine config={config} desbloqueados={desbloqueados} aoAplicar={aplicar} aoAbrirColecoes={() => setTool('colecoes')} /></Suspense>}
               {tool === 'ia' && <Suspense fallback={carregando}><CriarIA config={config} iaDisponivel={iaDisponivel} aoAplicar={aplicar} desbloqueados={desbloqueados} /></Suspense>}
@@ -388,6 +393,23 @@ function ToolA11y({ reduzido }: { reduzido: boolean }) {
         <li><span className="vc-mp-nome">Atalhos</span><span className="vc-mp-rar">Ctrl+Z / Ctrl+Shift+Z / Ctrl+S / Esc</span></li>
         <li><span className="vc-mp-nome">Navegação</span><span className="vc-mp-rar">Tab + foco visível</span></li>
       </ul>
+    </div>
+  );
+}
+
+function ToolAjuda({ aoGuiada }: { aoGuiada: () => void }) {
+  return (
+    <div className="vc-mp-sec">
+      <p className="vc-mp-ajuda">Monte seu avatar direto no palco: toque numa região (cabelo, rosto, roupa…) ou escolha uma categoria no trilho e clique num item — a mudança aparece na hora e é reversível pelo desfazer.</p>
+      <ul className="vc-mp-lista">
+        <li><span className="vc-mp-nome">Aplicar</span><span className="vc-mp-rar">clique no card</span></li>
+        <li><span className="vc-mp-nome">Cores</span><span className="vc-mp-rar">botão paleta no catálogo</span></li>
+        <li><span className="vc-mp-nome">Favoritar</span><span className="vc-mp-rar">coração no card</span></li>
+        <li><span className="vc-mp-nome">Desfazer / Refazer</span><span className="vc-mp-rar">Ctrl+Z / Ctrl+Shift+Z</span></li>
+        <li><span className="vc-mp-nome">Salvar</span><span className="vc-mp-rar">Ctrl+S</span></li>
+        <li><span className="vc-mp-nome">Fechar painéis</span><span className="vc-mp-rar">Esc</span></li>
+      </ul>
+      <button className="vc-acao vc-bloco" onClick={aoGuiada}><Wand2 size={16} aria-hidden /> Criar passo a passo</button>
     </div>
   );
 }

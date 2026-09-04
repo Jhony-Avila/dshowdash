@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, Search, Heart, Lock, Check, X, Sparkles,
-  PanelRightClose, PanelRightOpen, ArrowLeft, ArrowRight, SkipForward, Palette,
+  PanelRightClose, PanelRightOpen, ArrowLeft, ArrowRight, SkipForward, Palette, Plus,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { AvatarStore } from '../nucleo/estado';
@@ -16,7 +16,9 @@ import { salvarAvatar } from '../services/AvatarService';
 import { favoritos, alternarFavorito } from '../services/Progresso';
 import { lerBloqueios } from '../shell/Equipados';
 import MaisPainel from './MaisPainel';
-import { Cores } from '../components/Cores';
+import { slotsAtivos } from '../components/Cores';
+import { CORES_SUGERIDAS } from '../services/AvatarCatalog';
+import type { SlotCor } from '../domain/types';
 import { GRUPOS, grupoPorId } from './grupos';
 import type { GrupoVisual } from './grupos';
 import '../styles/visual-composer.css';
@@ -43,6 +45,36 @@ function itensPorCats(cats: CategoriaId[], grupo: GrupoVisual): ItemView[] {
   if (grupo.slotsIn && grupo.slotsIn.length) { const s = new Set(grupo.slotsIn); lista = lista.filter(({ it }) => !!it.slot && s.has(it.slot)); }
   if (grupo.slotsOut && grupo.slotsOut.length) { const s = new Set(grupo.slotsOut); lista = lista.filter(({ it }) => !it.slot || !s.has(it.slot)); }
   return lista;
+}
+
+// Editor de cores NATIVO do VC (reusa o contrato config.cores + slotsAtivos + CORES_SUGERIDAS).
+// Sem HSL técnico na superfície principal: swatches alinhados + "Cor personalizada" (seletor nativo).
+const NOMES_COR: Record<SlotCor, string> = { pele: 'Pele', cabelo: 'Cabelo', roupa: 'Roupa', destaque: 'Destaque' };
+function EditorCores({ config, aplicar }: { config: AvatarConfig; aplicar: (c: AvatarConfig) => void }) {
+  const slots = slotsAtivos(config);
+  if (!slots.length) return <div className="vc-vazio">Este visual não tem cores editáveis.</div>;
+  const trocar = (slot: SlotCor, hex: string) => aplicar(validarConfig({ ...config, cores: { ...config.cores, [slot]: hex } }));
+  return (
+    <div className="vc-cores">
+      {slots.map((slot) => (
+        <div key={slot} className="vc-cor-slot">
+          <div className="vc-cor-nome">{NOMES_COR[slot]}</div>
+          <div className="vc-cor-sws" role="radiogroup" aria-label={`Cor de ${NOMES_COR[slot]}`}>
+            {CORES_SUGERIDAS[slot].map((hex) => { const sel = config.cores[slot] === hex; return (
+              <button key={hex} type="button" role="radio" aria-checked={sel} aria-label={hex}
+                className={`vc-cor-sw ${sel ? 'vc-cor-sw-on' : ''}`} style={{ background: hex }} onClick={() => trocar(slot, hex)}>
+                {sel && <Check size={13} aria-hidden />}
+              </button>
+            ); })}
+            <label className="vc-cor-custom" title="Cor personalizada">
+              <input type="color" value={config.cores[slot]} onChange={(e) => trocar(slot, e.target.value)} aria-label={`Cor personalizada de ${NOMES_COR[slot]}`} />
+              <Plus size={15} aria-hidden />
+            </label>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function VisualComposer({ store: storeProp, configInicial, versaoBase, desbloqueados, vida, aoVoltar, aoModoClassico }: PropsVisualComposer) {
@@ -131,10 +163,10 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
       if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) store.refazer(); else store.desfazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); store.refazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 's') { e.preventDefault(); void salvar(); }
-      else if (k === 'escape') { setBuscaAberta(false); setAvisoSaida(null); }
+      else if (k === 'escape') { setBuscaAberta(false); setAvisoSaida(null); if (coresAberto) fecharComFoco(() => setCoresAberto(false)); }
     };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
-  }, [store, salvar]);
+  }, [store, salvar, coresAberto, fecharComFoco]);
 
   const cats: CategoriaId[] = useMemo(() => {
     if (grupo.subs && subId) { const s = grupo.subs.find((x) => x.id === subId); return s ? [s.cat] : grupo.cats; }
@@ -302,7 +334,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
                 </div>
               );
             })}
-            {itens.length === 0 && <div className="vc-vazio">{aba === 'favoritos' ? 'Nenhum favorito aqui.' : aba === 'atual' ? 'Nada equipado nesta categoria.' : 'Sem itens.'}</div>}
+            {itens.length === 0 && <div className="vc-vazio">{aba === 'favoritos' ? 'Nenhum favorito ainda. Explore o catálogo e toque no coração para salvar.' : aba === 'atual' ? 'Nada equipado nesta categoria.' : 'Sem itens nesta categoria.'}</div>}
           </div>
         </aside>
       </div>
@@ -319,7 +351,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
         <div className="vc-back" onClick={() => fecharComFoco(() => setCoresAberto(false))}>
           <div className="vc-sheet vc-cores-sheet" role="dialog" aria-modal="true" aria-label="Cores" onClick={(e) => e.stopPropagation()}>
             <div className="vc-sheet-cab"><span>Cores</span><button onClick={() => fecharComFoco(() => setCoresAberto(false))} aria-label="Fechar"><X size={18} aria-hidden /></button></div>
-            <div className="vc-cores-corpo"><Cores config={config} aoMudar={aplicar} /></div>
+            <div className="vc-cores-corpo"><EditorCores config={config} aplicar={aplicar} /></div>
           </div>
         </div>
       )}
