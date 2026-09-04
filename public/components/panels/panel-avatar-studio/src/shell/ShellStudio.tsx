@@ -181,7 +181,7 @@ class LimiteShell extends Component<{ aoSair: () => void; children: ReactNode },
   }
 }
 
-export function ShellStudio({ store: storeExterno, configInicial, versaoBase, desbloqueados, vida = null, vidaCarregando = false, aoSalvarLegado, aoSalvarFotoLegado, aoSairDoShell }: {
+export function ShellStudio({ store: storeExterno, configInicial, versaoBase, desbloqueados, vida = null, vidaCarregando = false, aoSalvarLegado, aoSalvarFotoLegado, aoSairDoShell, rotuloSair }: {
   store?: AvatarStore;
   configInicial: AvatarConfig;
   versaoBase: number;
@@ -195,6 +195,7 @@ export function ShellStudio({ store: storeExterno, configInicial, versaoBase, de
   aoSalvarFotoLegado?: (png960: string) => Promise<boolean>;
   /** flag off / erro → App clássico */
   aoSairDoShell: () => void;
+  rotuloSair?: string;
 }) {
   const storeLocal = useMemo(() => {
     const s = new AvatarStore(deLegado2d(configInicial), versaoBase);
@@ -1185,7 +1186,7 @@ export function ShellStudio({ store: storeExterno, configInicial, versaoBase, de
           abrirConsultor={() => setConsultor(true)} abrirMissoes={() => setMissoes(true)}
           abrirEvolucao={() => setEvolucao(true)} abrirTimeline={() => setTimeline(true)}
           abrirVersoes={() => setVersoes619(true)} abrirTour={() => setTour(true)}
-          store={store} aoSairDoShell={aoSairDoShell} />
+          store={store} aoSairDoShell={aoSairDoShell} rotuloSair={rotuloSair} />
 
         <div className="avst5-corpo">
           {/* sidebar esquerda — scroll próprio (R5) */}

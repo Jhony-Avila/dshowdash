@@ -41,13 +41,14 @@ export interface PropsBarraTopo {
   abrirTour: () => void;
   store: AvatarStore;
   aoSairDoShell: () => void;
+  rotuloSair?: string;
 }
 
 export function BarraTopo(props: PropsBarraTopo) {
   const { modo, setModo, apresentando, aoApresentar, flagPalco3d, palco3d,
     aoAlternar3d, prefetch3d, rodarAleatorio, somLigado, alternarSom,
     abrirConsultor, abrirMissoes, abrirEvolucao, abrirTimeline,
-    abrirVersoes, abrirTour, store, aoSairDoShell } = props;
+    abrirVersoes, abrirTour, store, aoSairDoShell, rotuloSair } = props;
   const [menuAleatorio, setMenuAleatorio] = useState(false);
   // megas 574–577 (§178.2, flag as5.palco_v3): preferências de som por
   // CATEGORIA — volume geral + efeitos/ambiente/celebrações + preview
@@ -185,7 +186,7 @@ export function BarraTopo(props: PropsBarraTopo) {
             da experiência principal; sob QA (as6.qa_route) permanece para compat/dev (§37). */}
         {(!flag('as6.single_2d') || flag('as6.qa_route')) && (
           <button type="button" className="avst-botao" onClick={aoSairDoShell}>
-            {flag('as6.single_2d') ? 'Compat clássico (QA)' : 'Modo clássico'}
+            {rotuloSair ?? (flag('as6.single_2d') ? 'Compat clássico (QA)' : 'Modo clássico')}
           </button>
         )}
       </div>

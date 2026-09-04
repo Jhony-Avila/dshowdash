@@ -3,18 +3,19 @@
 // Reusa AvatarStore, catálogo, favoritos, presets, save (zero store novo, zero 2ª fonte, motor intocado).
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
-  ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, Search, Heart, Lock, Check, X, Wand2, Sparkles,
+  ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, Search, Heart, Lock, Check, X, Sparkles,
   PanelRightClose, PanelRightOpen, ArrowLeft, ArrowRight, SkipForward,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { AvatarStore } from '../nucleo/estado';
 import { deLegado2d, paraLegado2d } from '../nucleo/adaptadores';
-import { validarConfig, itensDe, svgItemIsolado, dataUriDe, presetsAtivos } from '../services/AvatarCatalog';
+import { validarConfig, itensDe, svgItemIsolado } from '../services/AvatarCatalog';
 import { comItem } from '../components/GradeItens';
 import { AvatarSvg } from '../components/AvatarSvg';
 import { salvarAvatar } from '../services/AvatarService';
 import { favoritos, alternarFavorito } from '../services/Progresso';
 import { lerBloqueios } from '../shell/Equipados';
+import MaisPainel from './MaisPainel';
 import { GRUPOS, grupoPorId } from './grupos';
 import type { GrupoVisual } from './grupos';
 import '../styles/visual-composer.css';
@@ -27,6 +28,7 @@ export interface PropsVisualComposer {
   configInicial: AvatarConfig;
   versaoBase: number;
   desbloqueados?: Set<string>;
+  vida?: { iaDisponivel?: boolean } | null;
   aoVoltar?: () => void;
   aoModoClassico?: (cfg: AvatarConfig) => void;
 }
@@ -42,7 +44,7 @@ function itensPorCats(cats: CategoriaId[], grupo: GrupoVisual): ItemView[] {
   return lista;
 }
 
-export default function VisualComposer({ store: storeProp, configInicial, versaoBase, desbloqueados, aoVoltar, aoModoClassico }: PropsVisualComposer) {
+export default function VisualComposer({ store: storeProp, configInicial, versaoBase, desbloqueados, vida, aoVoltar, aoModoClassico }: PropsVisualComposer) {
   // Store canônico: se o App injetou um (ponte Visual↔clássico), ele é a fonte única e SOBREVIVE à troca de modo.
   const storeLocal = useMemo(() => new AvatarStore(deLegado2d(validarConfig(configInicial)), versaoBase), [configInicial, versaoBase]);
   const store = storeProp ?? storeLocal;
@@ -77,7 +79,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [painelRecolhido, setPainelRecolhido] = useState(false);
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
-  const [mais, setMais] = useState<null | 'menu' | 'looks'>(null);
+  const [mais, setMais] = useState(false);
   const [salv, setSalv] = useState<'idle' | 'salvando' | 'salvo' | 'erro'>('idle');
   const [favs, setFavs] = useState<Set<string>>(() => { try { return favoritos(); } catch { return new Set(); } });
   const [avisoSaida, setAvisoSaida] = useState<null | (() => void)>(null);
@@ -124,7 +126,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
       if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) store.refazer(); else store.desfazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); store.refazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 's') { e.preventDefault(); void salvar(); }
-      else if (k === 'escape') { setMais(null); setBuscaAberta(false); setAvisoSaida(null); }
+      else if (k === 'escape') { setBuscaAberta(false); setAvisoSaida(null); }
     };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }, [store, salvar]);
@@ -158,9 +160,6 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [passo, setPasso] = useState(0);
   const totalPassos = passos.length + 1; // +1 = revisar
   const emRevisao = passo >= passos.length;
-  // TODOS os hooks devem ser chamados ANTES de qualquer return condicional (regra dos hooks):
-  // 'looks' vive aqui para que o modo guiado e o visual chamem exatamente os mesmos hooks.
-  const looks = useMemo(() => { try { return presetsAtivos(); } catch { return []; } }, []);
 
   if (modo === 'guiado') {
     const g = passos[Math.min(passo, passos.length - 1)];
@@ -231,7 +230,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
             <Save size={16} aria-hidden /><span className="vc-lbl">{salv === 'salvando' ? 'Salvando…' : salv === 'salvo' ? 'Salvo' : salv === 'erro' ? 'Repetir' : 'Salvar'}</span>
             {pendente && salv !== 'salvo' && <span className="vc-ponto" aria-hidden />}
           </button>
-          <button className="vc-acao vc-icone" onClick={() => setMais('menu')} aria-label="Mais" aria-haspopup="menu"><MoreHorizontal size={18} aria-hidden /></button>
+          <button className="vc-acao vc-icone" onClick={() => setMais(true)} aria-label="Mais" aria-haspopup="menu"><MoreHorizontal size={18} aria-hidden /></button>
         </div>
       </header>
 
@@ -303,33 +302,11 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
       </div>
 
       {mais && (
-        <div className="vc-back" onClick={() => setMais(null)}>
-          <div className="vc-sheet" role="menu" aria-label="Mais" onClick={(e) => e.stopPropagation()}>
-            <div className="vc-sheet-cab"><span>{mais === 'looks' ? 'Looks' : 'Mais'}</span><button onClick={() => setMais(null)} aria-label="Fechar"><X size={18} aria-hidden /></button></div>
-            {mais === 'menu' ? (
-              <div className="vc-sheet-lista">
-                <button role="menuitem" onClick={() => { setMais(null); setModo('guiado'); setPasso(0); }}><Wand2 size={16} aria-hidden /> Criar passo a passo</button>
-                <button role="menuitem" onClick={() => setMais('looks')}><Sparkles size={16} aria-hidden /> Looks</button>
-                <div className="vc-sheet-grp">Ferramentas avançadas</div>
-                <button role="menuitem" className="vc-mi-2l" onClick={() => { setMais(null); aoModoClassico?.(config); }}>
-                  <span className="vc-mi-tit">Abrir ferramentas clássicas</span>
-                  <span className="vc-mi-sub">3D, foto, coleções, importar/exportar abrem a interface clássica. Você volta ao Modo Visual sem recarregar e sem perder o estado.</span>
-                </button>
-              </div>
-            ) : (
-              <div className="vc-looks">
-                {looks.map((p) => (
-                  <button key={p.id} type="button" className="vc-look" title={p.nome}
-                    onClick={() => { aplicar(validarConfig({ ...p.config, formato: 'camadas', versao: config.versao } as AvatarConfig)); setMais(null); }}>
-                    <img className="vc-look-img" alt="" src={dataUriDe(validarConfig({ ...p.config, formato: 'camadas', versao: 0 } as AvatarConfig))} />
-                    <span className="vc-card-nome">{p.nome}</span>
-                  </button>
-                ))}
-                {looks.length === 0 && <div className="vc-vazio">Sem looks disponíveis.</div>}
-              </div>
-            )}
-          </div>
-        </div>
+        <MaisPainel store={store} config={config} aplicar={aplicar} versao={store.versao}
+          desbloqueados={desbloq} vida={vida} reduzido={reduzido()}
+          aoGuiada={() => { setMais(false); setModo('guiado'); setPasso(0); }}
+          aoDiagnostico={() => { setMais(false); aoModoClassico?.(config); }}
+          aoFechar={() => setMais(false)} />
       )}
 
       {avisoSaida && (

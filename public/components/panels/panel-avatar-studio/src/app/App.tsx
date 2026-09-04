@@ -470,6 +470,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
         <Suspense fallback={<div className="vc-boot" />}>
           <VisualComposerLazy store={storeCanon ?? undefined} configInicial={atual} versaoBase={versao}
             desbloqueados={vida?.desbloqueados ?? new Set()}
+            vida={vida}
             aoModoClassico={() => setVcModoClassico(true)} />
         </Suspense>
       </LimiteVC>
@@ -492,6 +493,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
           if (r.ok && typeof r.versao === 'number') setVersao(r.versao);
           return r.ok;
         }}
+        rotuloSair={vcMundo ? 'Voltar ao estúdio' : undefined}
         aoSairDoShell={vcModoClassico ? () => setVcModoClassico(false) : (() => setShellNovo(false))} />
     );
   }
