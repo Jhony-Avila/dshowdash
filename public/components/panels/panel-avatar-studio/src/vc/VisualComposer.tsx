@@ -23,6 +23,7 @@ const reduzido = (): boolean => { try { return window.matchMedia('(prefers-reduc
 const ehMobile = (): boolean => { try { return window.matchMedia('(max-width: 768px)').matches; } catch { return false; } };
 
 export interface PropsVisualComposer {
+  store?: AvatarStore;            // §608: quando o App eleva o store canônico, ele é a fonte única
   configInicial: AvatarConfig;
   versaoBase: number;
   desbloqueados?: Set<string>;
@@ -32,10 +33,25 @@ export interface PropsVisualComposer {
 
 interface ItemView { it: { id: string; nome: string; tema?: string; novo?: boolean; bloqueadoPor?: string; slot?: string }; cat: CategoriaId; }
 
-export default function VisualComposer({ configInicial, versaoBase, desbloqueados, aoVoltar, aoModoClassico }: PropsVisualComposer) {
-  const store = useMemo(() => new AvatarStore(deLegado2d(validarConfig(configInicial)), versaoBase), [configInicial, versaoBase]);
+// Resolutor único de itens por slot/categoria — usado pelo catálogo visual E pela guiada.
+// Nunca mistura slots: honra grupo.slotsIn (só estes) e grupo.slotsOut (exclui estes).
+function itensPorCats(cats: CategoriaId[], grupo: GrupoVisual): ItemView[] {
+  let lista: ItemView[] = cats.flatMap((c) => itensDe(c).map((it) => ({ it: it as ItemView['it'], cat: c })));
+  if (grupo.slotsIn && grupo.slotsIn.length) { const s = new Set(grupo.slotsIn); lista = lista.filter(({ it }) => !!it.slot && s.has(it.slot)); }
+  if (grupo.slotsOut && grupo.slotsOut.length) { const s = new Set(grupo.slotsOut); lista = lista.filter(({ it }) => !it.slot || !s.has(it.slot)); }
+  return lista;
+}
+
+export default function VisualComposer({ store: storeProp, configInicial, versaoBase, desbloqueados, aoVoltar, aoModoClassico }: PropsVisualComposer) {
+  // Store canônico: se o App injetou um (ponte Visual↔clássico), ele é a fonte única e SOBREVIVE à troca de modo.
+  const storeLocal = useMemo(() => new AvatarStore(deLegado2d(validarConfig(configInicial)), versaoBase), [configInicial, versaoBase]);
+  const store = storeProp ?? storeLocal;
   const estadoVisivel = useSyncExternalStore(store.assinar, () => store.estadoVisivel);
   const config = useMemo(() => validarConfig(paraLegado2d(estadoVisivel)), [estadoVisivel]);
+  // Pendência e pilhas derivadas do store (não recriadas por comparação visual): persistem no round-trip.
+  const pendente = useSyncExternalStore(store.assinar, () => store.temMudancas);
+  const podeDesfazer = useSyncExternalStore(store.assinar, () => store.podeDesfazer);
+  const podeRefazer = useSyncExternalStore(store.assinar, () => store.podeRefazer);
   const desbloq = desbloqueados ?? new Set<string>();
   // Bloqueio: fonte única = lerBloqueios() (slots travados, §70.1) + disponibilidade por conquista (bloqueadoPor).
   const bloqSlots = useMemo(() => { try { return lerBloqueios(); } catch { return new Set<string>(); } }, []);
@@ -63,7 +79,6 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
   const [mais, setMais] = useState<null | 'menu' | 'looks'>(null);
   const [salv, setSalv] = useState<'idle' | 'salvando' | 'salvo' | 'erro'>('idle');
-  const [pendente, setPendente] = useState(false);
   const [favs, setFavs] = useState<Set<string>>(() => { try { return favoritos(); } catch { return new Set(); } });
   const [avisoSaida, setAvisoSaida] = useState<null | (() => void)>(null);
 
@@ -79,14 +94,17 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
     const antes = store.estadoDraft;
     const alvo = deLegado2d(validarConfig(novo));
     store.executar({ nome: 'vc:aplicar', executar: () => alvo, desfazer: () => antes });
-    setPendente(true); setSalv('idle');
+    setSalv('idle');
   }, [store]);
 
   const salvar = useCallback(async () => {
     setSalv('salvando');
-    try { const r = await salvarAvatar(config, versaoBase); if (r.ok) { setSalv('salvo'); setPendente(false); } else setSalv('erro'); }
-    catch { setSalv('erro'); }
-  }, [config, versaoBase]);
+    try {
+      const r = await salvarAvatar(config, store.versao);
+      if (r.ok) { setSalv('salvo'); store.confirmarPersistencia(typeof r.versao === 'number' ? r.versao : store.versao); }
+      else setSalv('erro');
+    } catch { setSalv('erro'); }
+  }, [config, store]);
 
   const selecionarGrupo = useCallback((g: GrupoVisual) => {
     setGrupoId(g.id); setSubId(g.subs && g.subs.length ? g.subs[0].id : null); setAba('catalogo');
@@ -103,8 +121,8 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) store.refazer(); else store.desfazer(); setPendente(true); }
-      else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); store.refazer(); setPendente(true); }
+      if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) store.refazer(); else store.desfazer(); }
+      else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); store.refazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 's') { e.preventDefault(); void salvar(); }
       else if (k === 'escape') { setMais(null); setBuscaAberta(false); setAvisoSaida(null); }
     };
@@ -123,9 +141,7 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
   }, [grupo, subId]);
 
   const itens: ItemView[] = useMemo(() => {
-    let lista: ItemView[] = cats.flatMap((c) => itensDe(c).map((it) => ({ it: it as ItemView['it'], cat: c })));
-    if (grupo.slotsIn && grupo.slotsIn.length) { const s = new Set(grupo.slotsIn); lista = lista.filter(({ it }) => !!it.slot && s.has(it.slot)); }
-    if (grupo.slotsOut && grupo.slotsOut.length) { const s = new Set(grupo.slotsOut); lista = lista.filter(({ it }) => !it.slot || !s.has(it.slot)); }
+    let lista: ItemView[] = itensPorCats(cats, grupo);
     if (aba === 'favoritos') lista = lista.filter(({ it }) => favs.has(it.id));
     if (aba === 'atual') lista = lista.filter(({ it, cat }) => equipadoDe(cat, it.id));
     if (filtroNovos) lista = lista.filter(({ it }) => !!it.novo);
@@ -142,11 +158,14 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
   const [passo, setPasso] = useState(0);
   const totalPassos = passos.length + 1; // +1 = revisar
   const emRevisao = passo >= passos.length;
+  // TODOS os hooks devem ser chamados ANTES de qualquer return condicional (regra dos hooks):
+  // 'looks' vive aqui para que o modo guiado e o visual chamem exatamente os mesmos hooks.
+  const looks = useMemo(() => { try { return presetsAtivos(); } catch { return []; } }, []);
 
   if (modo === 'guiado') {
     const g = passos[Math.min(passo, passos.length - 1)];
-    const cat0 = g.cats[0];
-    const itensPasso = emRevisao ? [] : itensDe(cat0).map((it) => ({ it: it as ItemView['it'], cat: cat0 }));
+    // Guiada: cada etapa consulta SOMENTE os slots compatíveis do grupo (mesmo resolutor do visual).
+    const itensPasso = emRevisao ? [] : itensPorCats(g.cats, g);
     return (
       <div className="vc-root" data-vc data-modo="guiado">
         <header className="vc-barra">
@@ -173,14 +192,17 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
               </div>
             ) : (
               <div className="vc-grade">
-                {itensPasso.map(({ it, cat }) => (
-                  <button key={it.id} type="button" className={`vc-card-btn ${equipadoDe(cat, it.id) ? 'vc-card-on' : ''}`} title={it.nome}
-                    onClick={() => aplicar(validarConfig(comItem(config, cat, it.id)))}>
+                {itensPasso.map(({ it, cat }) => { const bl = bloqueado(it); return (
+                  <button key={`${cat}:${it.id}`} type="button" disabled={bl} data-slot={it.slot || undefined} data-cat={cat}
+                    className={`vc-card-btn ${equipadoDe(cat, it.id) ? 'vc-card-on' : ''} ${bl ? 'vc-card-bl' : ''}`}
+                    title={bl ? `${it.nome} — bloqueado` : it.nome}
+                    onClick={() => { if (!bl) aplicar(validarConfig(comItem(config, cat, it.id))); }}>
                     <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: svgItemIsolado(it.id) }} />
+                    {bl && <span className="vc-badge vc-badge-bl" aria-hidden><Lock size={13} /></span>}
                     <span className="vc-card-nome">{it.nome}</span>
                   </button>
-                ))}
-                {itensPasso.length === 0 && <div className="vc-vazio">Sem opções nesta etapa.</div>}
+                ); })}
+                {itensPasso.length === 0 && <div className="vc-vazio">Nenhum item compatível nesta etapa.</div>}
               </div>
             )}
           </aside>
@@ -197,15 +219,14 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
   }
 
   // ---------- MODO VISUAL ----------
-  const looks = useMemo(() => { try { return presetsAtivos(); } catch { return []; } }, []);
   return (
     <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta}>
       <header className="vc-barra">
         <button className="vc-acao" onClick={sair} aria-label="Voltar"><ChevronLeft size={18} aria-hidden /><span className="vc-lbl">Voltar</span></button>
         <div className="vc-titulo">Avatar Studio</div>
         <div className="vc-globais">
-          <button className="vc-acao vc-icone" onClick={() => { store.desfazer(); setPendente(true); }} aria-label="Desfazer"><Undo2 size={18} aria-hidden /></button>
-          <button className="vc-acao vc-icone" onClick={() => { store.refazer(); setPendente(true); }} aria-label="Refazer"><Redo2 size={18} aria-hidden /></button>
+          <button className="vc-acao vc-icone" onClick={() => store.desfazer()} disabled={!podeDesfazer} aria-label="Desfazer"><Undo2 size={18} aria-hidden /></button>
+          <button className="vc-acao vc-icone" onClick={() => store.refazer()} disabled={!podeRefazer} aria-label="Refazer"><Redo2 size={18} aria-hidden /></button>
           <button className="vc-salvar" onClick={() => void salvar()} data-estado={salv} aria-label="Salvar">
             <Save size={16} aria-hidden /><span className="vc-lbl">{salv === 'salvando' ? 'Salvando…' : salv === 'salvo' ? 'Salvo' : salv === 'erro' ? 'Repetir' : 'Salvar'}</span>
             {pendente && salv !== 'salvo' && <span className="vc-ponto" aria-hidden />}
@@ -264,7 +285,7 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
               const eq = equipadoDe(cat, it.id); const bl = bloqueado(it); const fav = favs.has(it.id);
               return (
                 <div key={`${cat}:${it.id}`} className={`vc-card ${eq ? 'vc-card-on' : ''} ${bl ? 'vc-card-bl' : ''}`}>
-                  <button type="button" className="vc-card-btn" aria-pressed={eq} title={bl ? `${it.nome} — bloqueado` : it.nome}
+                  <button type="button" className="vc-card-btn" aria-pressed={eq} data-slot={it.slot || undefined} data-cat={cat} title={bl ? `${it.nome} — bloqueado` : it.nome}
                     onClick={() => { if (!bl) aplicar(validarConfig(comItem(config, cat, it.id))); }}>
                     <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: svgItemIsolado(it.id) }} />
                     {eq && <span className="vc-badge vc-badge-eq" aria-hidden><Check size={13} /></span>}
@@ -289,8 +310,11 @@ export default function VisualComposer({ configInicial, versaoBase, desbloqueado
               <div className="vc-sheet-lista">
                 <button role="menuitem" onClick={() => { setMais(null); setModo('guiado'); setPasso(0); }}><Wand2 size={16} aria-hidden /> Criar passo a passo</button>
                 <button role="menuitem" onClick={() => setMais('looks')}><Sparkles size={16} aria-hidden /> Looks</button>
-                <div className="vc-sheet-grp">Avançado</div>
-                <button role="menuitem" onClick={() => { setMais(null); aoModoClassico?.(config); }}>Ferramentas avançadas (3D, foto, coleções, importar/exportar…)</button>
+                <div className="vc-sheet-grp">Ferramentas avançadas</div>
+                <button role="menuitem" className="vc-mi-2l" onClick={() => { setMais(null); aoModoClassico?.(config); }}>
+                  <span className="vc-mi-tit">Abrir ferramentas clássicas</span>
+                  <span className="vc-mi-sub">3D, foto, coleções, importar/exportar abrem a interface clássica. Você volta ao Modo Visual sem recarregar e sem perder o estado.</span>
+                </button>
               </div>
             ) : (
               <div className="vc-looks">

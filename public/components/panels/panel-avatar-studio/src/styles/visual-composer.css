@@ -84,6 +84,9 @@
 .vc-sheet-lista{ display:flex; flex-direction:column; padding:8px; }
 .vc-sheet-lista button{ display:flex; align-items:center; gap:10px; background:transparent; border:0; border-radius:10px; padding:12px 14px; text-align:left; min-height:48px; }
 .vc-sheet-lista button:hover{ background:var(--vc-surf2); }
+.vc-mi-2l{ flex-direction:column; align-items:flex-start; gap:2px; }
+.vc-mi-tit{ font-weight:600; }
+.vc-mi-sub{ font-size:11px; color:var(--vc-txt2); line-height:1.35; }
 .vc-sheet-grp{ color:var(--vc-txt2); font-size:11px; text-transform:uppercase; letter-spacing:.5px; padding:12px 14px 4px; }
 .vc-looks{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; padding:12px; }
 .vc-look{ background:var(--vc-surf2); border:2px solid transparent; border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:6px; }

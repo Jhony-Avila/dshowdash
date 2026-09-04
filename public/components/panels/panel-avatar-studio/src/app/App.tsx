@@ -36,6 +36,8 @@ import { registrarUso, sincronizarFavoritos } from '../services/Progresso';
 import { telemetria } from '../services/Telemetria';
 import { carregarVida } from '../services/VidaService';
 import { flag } from '../nucleo/flags';
+import { AvatarStore } from '../nucleo/estado';
+import { deLegado2d, paraLegado2d } from '../nucleo/adaptadores';
 import { DockAssets } from '../workspace/DockAssets';
 import { rodarMigracoes } from '../nucleo/migracoes'; // lote 581-590 (§299-§300)
 import { ShellStudio } from '../shell/ShellStudio';
@@ -151,7 +153,6 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [shellNovo, setShellNovo] = useState<boolean>(() => flag('as5.novo_shell'));
   const [vcFalhou, setVcFalhou] = useState(false);
   const [vcModoClassico, setVcModoClassico] = useState(false);
-  const [vcConfigPonte, setVcConfigPonte] = useState<AvatarConfig | null>(null);
   const [aba, setAba] = useState<'itens' | 'arquetipo' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [vidaCarregando, setVidaCarregando] = useState(true); // §557
@@ -175,6 +176,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
 
   const desfazerPilha = useRef<AvatarConfig[]>([]);
   const refazerPilha = useRef<AvatarConfig[]>([]);
+  const storeCanonRef = useRef<AvatarStore | null>(null);
   const sementeRef = useRef(Date.now() % 2147483647);
   const corpoRef = useRef<HTMLDivElement>(null);
 
@@ -458,25 +460,29 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
 
 
   // ── AS5: novo shell (F2) — flag as5.novo_shell ──────────────────
-  if (flag('as6.visual_composer') && !vcFalhou && !vcModoClassico) {
+  // §608: store canonico UNICO elevado ao App — sobrevive a troca Visual<->classico (uma fonte de verdade).
+  const vcMundo = flag('as6.visual_composer');
+  if (vcMundo && !storeCanonRef.current) storeCanonRef.current = new AvatarStore(deLegado2d(atual), versao);
+  const storeCanon = storeCanonRef.current;
+  if (vcMundo && !vcFalhou && !vcModoClassico) {
     return (
       <LimiteVC aoErro={() => setVcFalhou(true)}>
         <Suspense fallback={<div className="vc-boot" />}>
-          <VisualComposerLazy configInicial={vcConfigPonte ?? atual} versaoBase={versao}
+          <VisualComposerLazy store={storeCanon ?? undefined} configInicial={atual} versaoBase={versao}
             desbloqueados={vida?.desbloqueados ?? new Set()}
-            aoModoClassico={(cfg) => { setVcConfigPonte(cfg); setVcModoClassico(true); }} />
+            aoModoClassico={() => setVcModoClassico(true)} />
         </Suspense>
       </LimiteVC>
     );
   }
   if (shellNovo) {
     return (
-      <ShellStudio configInicial={vcModoClassico ? (vcConfigPonte ?? (atual)) : (atual)} versaoBase={versao}
+      <ShellStudio store={vcMundo ? (storeCanon ?? undefined) : undefined} configInicial={vcMundo && storeCanon ? validarConfig(paraLegado2d(storeCanon.estadoDraft)) : atual} versaoBase={vcMundo && storeCanon ? storeCanon.versao : versao}
         desbloqueados={vida?.desbloqueados ?? new Set()}
         vida={vida} vidaCarregando={vidaCarregando}
         aoSalvarLegado={async (cfg) => {
-          const r = await salvarAvatar(cfg, versao);
-          if (r.ok && typeof r.versao === 'number') setVersao(r.versao);
+          const r = await salvarAvatar(cfg, vcMundo && storeCanon ? storeCanon.versao : versao);
+          if (r.ok && typeof r.versao === 'number') { setVersao(r.versao); storeCanon?.confirmarPersistencia(r.versao); }
           return { ok: r.ok, versao: r.versao };
         }}
         aoSalvarFotoLegado={async (png960) => {

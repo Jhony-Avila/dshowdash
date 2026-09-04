@@ -181,7 +181,8 @@ class LimiteShell extends Component<{ aoSair: () => void; children: ReactNode },
   }
 }
 
-export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = null, vidaCarregando = false, aoSalvarLegado, aoSalvarFotoLegado, aoSairDoShell }: {
+export function ShellStudio({ store: storeExterno, configInicial, versaoBase, desbloqueados, vida = null, vidaCarregando = false, aoSalvarLegado, aoSalvarFotoLegado, aoSairDoShell }: {
+  store?: AvatarStore;
   configInicial: AvatarConfig;
   versaoBase: number;
   desbloqueados: Set<string>;
@@ -195,10 +196,11 @@ export function ShellStudio({ configInicial, versaoBase, desbloqueados, vida = n
   /** flag off / erro → App clássico */
   aoSairDoShell: () => void;
 }) {
-  const store = useMemo(() => {
+  const storeLocal = useMemo(() => {
     const s = new AvatarStore(deLegado2d(configInicial), versaoBase);
     return s;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const store = storeExterno ?? storeLocal;
   useEffect(() => conectarTelemetria(store), [store]);
   // megas 555-556 (§72.3): anúncio de conjunto → aria-live do shell
   useEffect(() => {

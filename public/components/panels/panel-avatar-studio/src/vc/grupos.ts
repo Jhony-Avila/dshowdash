@@ -18,9 +18,17 @@ export interface GrupoVisual {
   dinamico?: boolean;    // só entra no trilho se tiver itens reais
 }
 
+// Cobertura hotspot×grupo (§ ver doc): 6 hotspots físicos + 2 grupos só-trilho.
+//  base     -> SEM hotspot (a face é de Rosto e o corpo de Roupa; evita ambiguidade) -> trilho
+//  cabelo   -> topo da cabeça
+//  rosto    -> região facial (olhos/boca/sobrancelha/nariz)
+//  roupa    -> tronco/corpo inteiro
+//  acessorios-> lateral do corpo (exclui companheiro/flutuante)
+//  companheiros-> lateral inferior direita (dinâmico; some sem itens)
+//  cenario  -> fundo do palco (z-index atrás; nunca intercepta)
+//  estilo   -> SEM hotspot (efeito/aura/moldura/emblema/banner não têm região física) -> trilho
 export const GRUPOS: GrupoVisual[] = [
-  { id: 'base', nome: 'Base', Icone: User, cats: ['base'], foco: '0 0 240 240',
-    hot: { top: '22%', left: '30%', width: '40%', height: '34%' } },
+  { id: 'base', nome: 'Base', Icone: User, cats: ['base'], foco: '0 0 240 240' },
   { id: 'cabelo', nome: 'Cabelo', Icone: Scissors, cats: ['cabelo', 'barba'], foco: '46 6 148 130',
     subs: [ { id: 'cabelo', nome: 'Cabelo', cat: 'cabelo', foco: '46 6 148 120' },
             { id: 'barba', nome: 'Barba', cat: 'barba', foco: '60 100 120 108' } ],
