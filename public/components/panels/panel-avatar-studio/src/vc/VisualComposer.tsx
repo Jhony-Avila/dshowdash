@@ -1,7 +1,7 @@
 // vc/VisualComposer.tsx — Avatar Studio Visual Composer (frente ux, flag as6.visual_composer).
 // Experiência completa: Modo Visual (palco+hotspots+catálogo) + Criação Guiada + Mais (Looks/avançado).
 // Reusa AvatarStore, catálogo, favoritos, presets, save (zero store novo, zero 2ª fonte, motor intocado).
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, Search, Heart, Lock, Check, X, Sparkles,
   PanelRightClose, PanelRightOpen, ArrowLeft, ArrowRight, SkipForward, Palette,
@@ -82,6 +82,9 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
   const [mais, setMais] = useState(false);
   const [coresAberto, setCoresAberto] = useState(false);
+  const focoAntesRef = useRef<HTMLElement | null>(null);
+  const abrirComFoco = useCallback((abrir: () => void) => { focoAntesRef.current = (document.activeElement as HTMLElement) ?? null; abrir(); }, []);
+  const fecharComFoco = useCallback((fechar: () => void) => { fechar(); const t = focoAntesRef.current; if (t && typeof t.focus === 'function') setTimeout(() => t.focus(), 0); }, []);
   const [salv, setSalv] = useState<'idle' | 'salvando' | 'salvo' | 'erro'>('idle');
   const [favs, setFavs] = useState<Set<string>>(() => { try { return favoritos(); } catch { return new Set(); } });
   const [avisoSaida, setAvisoSaida] = useState<null | (() => void)>(null);
@@ -232,7 +235,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
             <Save size={16} aria-hidden /><span className="vc-lbl">{salv === 'salvando' ? 'Salvando…' : salv === 'salvo' ? 'Salvo' : salv === 'erro' ? 'Repetir' : 'Salvar'}</span>
             {pendente && salv !== 'salvo' && <span className="vc-ponto" aria-hidden />}
           </button>
-          <button className="vc-acao vc-icone" onClick={() => setMais(true)} aria-label="Mais" aria-haspopup="menu"><MoreHorizontal size={18} aria-hidden /></button>
+          <button className="vc-acao vc-icone" onClick={() => abrirComFoco(() => setMais(true))} aria-label="Mais" aria-haspopup="menu" aria-expanded={mais}><MoreHorizontal size={18} aria-hidden /></button>
         </div>
       </header>
 
@@ -254,13 +257,13 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
                 onClick={() => selecionarGrupo(g)} aria-label={`Editar ${g.nome}`} title={g.nome} />
             ))}
           </div>
-          <button className="vc-recolhe" onClick={() => setPainelRecolhido((v) => !v)} aria-label={painelRecolhido ? 'Mostrar catálogo' : 'Ocultar catálogo'}>
+          <button className="vc-recolhe" onClick={() => setPainelRecolhido((v) => !v)} aria-expanded={!painelRecolhido} aria-controls="vc-painel-cat" aria-label={painelRecolhido ? 'Mostrar catálogo' : 'Ocultar catálogo'}>
             {painelRecolhido ? <PanelRightOpen size={18} aria-hidden /> : <PanelRightClose size={18} aria-hidden />}
           </button>
         </main>
 
-        <aside className="vc-painel" aria-label={`Catálogo: ${grupo.nome}`}>
-          <button className="vc-gaveta-alca" aria-label="Ajustar altura" onClick={() => setGaveta((s) => s === 'expandida' ? 'meio' : s === 'meio' ? 'recolhida' : 'expandida')}><span /></button>
+        <aside className="vc-painel" id="vc-painel-cat" aria-label={`Catálogo: ${grupo.nome}`}>
+          <button className="vc-gaveta-alca" aria-label={`Altura do catálogo: ${gaveta}. Toque para alternar (recolhida, meio, expandida).`} aria-expanded={gaveta === 'expandida'} onClick={() => setGaveta((s) => s === 'expandida' ? 'meio' : s === 'meio' ? 'recolhida' : 'expandida')}><span /></button>
           {grupo.subs && (
             <div className="vc-subs" role="tablist" aria-label="Subcategorias">
               {grupo.subs.map((s) => (
@@ -272,7 +275,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
             <button role="tab" aria-selected={aba === 'catalogo'} className={aba === 'catalogo' ? 'on' : ''} onClick={() => setAba('catalogo')}>Catálogo</button>
             <button role="tab" aria-selected={aba === 'favoritos'} className={aba === 'favoritos' ? 'on' : ''} onClick={() => setAba('favoritos')}>Favoritos</button>
             <button role="tab" aria-selected={aba === 'atual'} className={aba === 'atual' ? 'on' : ''} onClick={() => setAba('atual')}>Visual atual</button>
-            <button className="vc-filtro-btn" onClick={() => setCoresAberto(true)} aria-label="Cores"><Palette size={16} aria-hidden /></button>
+            <button className="vc-filtro-btn" onClick={() => abrirComFoco(() => setCoresAberto(true))} aria-label="Cores" aria-expanded={coresAberto}><Palette size={16} aria-hidden /></button>
             <button className="vc-icone-nav" aria-pressed={buscaAberta} onClick={() => setBuscaAberta((v) => !v)} aria-label="Buscar e filtrar"><Search size={16} aria-hidden /></button>
           </div>
           {buscaAberta && (
@@ -309,13 +312,13 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
           desbloqueados={desbloq} vida={vida} reduzido={reduzido()}
           aoGuiada={() => { setMais(false); setModo('guiado'); setPasso(0); }}
           aoDiagnostico={() => { setMais(false); aoModoClassico?.(config); }}
-          aoFechar={() => setMais(false)} />
+          aoFechar={() => fecharComFoco(() => setMais(false))} />
       )}
 
       {coresAberto && (
-        <div className="vc-back" onClick={() => setCoresAberto(false)}>
+        <div className="vc-back" onClick={() => fecharComFoco(() => setCoresAberto(false))}>
           <div className="vc-sheet vc-cores-sheet" role="dialog" aria-modal="true" aria-label="Cores" onClick={(e) => e.stopPropagation()}>
-            <div className="vc-sheet-cab"><span>Cores</span><button onClick={() => setCoresAberto(false)} aria-label="Fechar"><X size={18} aria-hidden /></button></div>
+            <div className="vc-sheet-cab"><span>Cores</span><button onClick={() => fecharComFoco(() => setCoresAberto(false))} aria-label="Fechar"><X size={18} aria-hidden /></button></div>
             <div className="vc-cores-corpo"><Cores config={config} aoMudar={aplicar} /></div>
           </div>
         </div>
