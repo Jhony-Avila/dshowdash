@@ -77,18 +77,17 @@
     "vcBundleIdentity": "4b47ac8294745ce35b0a01a927f16749fec5098fc8088f1e6fd2dac85142648a",
     "vcDistFileCount": 27,
     "vcEntryJs": {
-      "file": "chunks/react-vendor.BIZlozNo.js",
-      "sha256": "092b56ce04cc4270e531b17b5e05074aea85a04cbcb8e8031ce11873aa6bd7a1"
+      "file": "avst.D603CyEo.js",
+      "sha256": "23c034af23dea8d7e31bc491860e38954279935d8a4dfc36a06b6bb93eeeeafa"
     },
-    "vcEntryCss": {
-      "file": "assets/entry.DVqXI_WM.css",
-      "sha256": "ad01319d4141458534b37ed3a60715e6a26c12ef7305e85aefffe8864da11810"
-    },
+    "vcEntryCss": null,
     "distMapFile": "vc-dist.sha256",
     "builtFrom": {
       "commit": "c6318ccab12dd0d6f3425c5ab50c07879e2bdc72",
       "tree": "c2116dc0a5ff09f3d9a9c09e4b492822b81c6ade"
-    }
+    },
+    "vcEntryCssAll": [],
+    "entrySource": "manifest(.vite/manifest.json).isEntry"
   },
   "viewports": [
     "320x568",
