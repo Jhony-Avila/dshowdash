@@ -1,7 +1,0 @@
-.dsd-icon--status { --icon-size-xs: 12px; --icon-size-sm: 14px; --icon-size-md: 16px; --icon-size-lg: 20px; --icon-size-xl: 24px; }
-.dsd-icon--status { display: inline-flex; align-items: center; justify-content: center; line-height: 1; transition: all 0.2s ease; }
-.dsd-icon--status.dsd-icon--clickable { cursor: pointer; }
-.dsd-icon--status.dsd-icon--state-default { opacity: 1; }
-.dsd-icon--status.dsd-icon--state-active { color: var(--color-success, #22c55e); }
-.dsd-icon--status.dsd-icon--state-disabled { opacity: 0.4; pointer-events: none; }
-@media (max-width: 640px) { .dsd-icon--status.dsd-icon--size-xl { width: var(--icon-size-lg); height: var(--icon-size-lg); } }

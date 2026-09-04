@@ -1,8 +1,0 @@
-{
-  "name": "language-selector",
-  "version": "1.0.0",
-  "type": "selector",
-  "description": "Language selector dropdown",
-  "dependencies": [],
-  "config": { "defaultLanguage": "pt-BR", "availableLanguages": ["pt-BR", "en-US", "es-ES"] }
-}

@@ -1,9 +1,0 @@
-.raiz { display: flex; flex-direction: column; gap: 6px; }
-.topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.metaBanco { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 650;
-  color: var(--dt-text-secondary, #a9a9c0); font-family: var(--dt-font-mono, ui-monospace, monospace); }
-.metaAgora { font-size: 12px; color: var(--dt-text-tertiary, #7a7a95); }
-.nota { display: flex; align-items: center; gap: 6px; font-size: 11px; line-height: 1.4;
-  color: var(--dt-text-tertiary, #7a7a95); background: var(--dt-bg-subtle, rgba(255,255,255,.04));
-  border: 1px solid var(--dt-border, rgba(255,255,255,.08)); border-radius: 8px; padding: 6px 9px; }
-.nota svg { flex-shrink: 0; color: var(--dt-info, #6366f1); }

@@ -1,4 +1,0 @@
-/* Analytics - Base Styles */
-/* @version 1.0.0-ENTERPRISE-AAA */
-.panel-analytics { box-sizing: border-box; }
-.panel-analytics *, .panel-analytics *::before, .panel-analytics *::after { box-sizing: inherit; }

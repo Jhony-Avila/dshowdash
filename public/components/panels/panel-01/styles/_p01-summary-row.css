@@ -1,5 +1,0 @@
-/* Panel-01 - Summary Row */
-.p01-summary-row { background: linear-gradient(to right, var(--p01-bg-secondary, #f9fafb), var(--p01-bg, #fff)); border-top: 2px solid var(--p01-border, #e5e7eb); font-weight: 600; position: sticky; bottom: 0; z-index: 5; }
-.p01-summary-cell { padding: 12px 16px; vertical-align: middle; }
-.p01-summary-label { display: block; font-size: 10px; text-transform: uppercase; color: var(--p01-text-muted, #9ca3af); margin-bottom: 2px; font-weight: 500; }
-.p01-summary-value { font-size: 14px; color: var(--p01-text, #111827); }

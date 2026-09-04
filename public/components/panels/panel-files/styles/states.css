@@ -1,4 +1,0 @@
-/* Arquivos - State Styles */
-/* @version 1.0.0-ENTERPRISE-AAA */
-.panel-files[data-loading="true"] { opacity: 0.7; pointer-events: none; }
-.panel-files[data-error="true"] { border-color: var(--color-error, #dc2626); }

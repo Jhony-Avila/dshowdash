@@ -1,8 +1,0 @@
-{
-  "name": "wechat-integration",
-  "version": "1.0.0",
-  "type": "integration",
-  "description": "WeChat notifications integration",
-  "dependencies": [],
-  "config": { "pollInterval": 60000 }
-}

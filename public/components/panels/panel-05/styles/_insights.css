@@ -1,9 +1,0 @@
-/* Panel-05 Insights - Master
- * @version 7.0.0-MODULAR
- * Modularizado em 4 partials
- */
-
-@import '_insights.badges.css';
-@import '_insights.cards.css';
-@import '_insights.comparativo.css';
-@import '_insights.recentes.css';

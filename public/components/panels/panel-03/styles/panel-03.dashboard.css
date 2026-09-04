@@ -1,9 +1,0 @@
-/* panel-03 Dashboard Styles - Enterprise Premium AAA */
-/* @version 7.0.0-ENTERPRISE-MODULAR */
-/* @changelog 7.0.0 - Modularizado em 5 arquivos especializados */
-
-@import './dashboard/layout.css';
-@import './dashboard/kpi.css';
-@import './dashboard/alerts.css';
-@import './dashboard/table.css';
-@import './dashboard/components.css';

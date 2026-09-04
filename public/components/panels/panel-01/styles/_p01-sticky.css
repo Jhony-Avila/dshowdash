@@ -1,9 +1,0 @@
-/* Panel-01 - Sticky Columns CSS */
-/* @version 2.0.0-ENTERPRISE */
-
-.p01-sticky { position: sticky; background: var(--bg-card); }
-.p01-sticky--left { left: 0; border-right: 1px solid var(--border-color); }
-.p01-sticky--right { right: 0; border-left: 1px solid var(--border-color); }
-.p01-sticky::after { content: ''; position: absolute; top: 0; bottom: 0; width: 10px; pointer-events: none; }
-.p01-sticky--left::after { right: -10px; background: linear-gradient(to right, rgba(0,0,0,0.1), transparent); }
-.p01-sticky--right::after { left: -10px; background: linear-gradient(to left, rgba(0,0,0,0.1), transparent); }

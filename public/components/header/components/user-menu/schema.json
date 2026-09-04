@@ -1,8 +1,0 @@
-{
-  "name": "user-menu",
-  "version": "1.0.0",
-  "type": "menu",
-  "description": "User account menu",
-  "dependencies": [],
-  "config": { "showAvatar": true, "showName": true }
-}

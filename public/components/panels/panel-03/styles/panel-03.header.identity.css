@@ -1,6 +1,0 @@
-/* panel-03 Header Identity - @version 1.0.0-ENTERPRISE */
-.p03-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: linear-gradient(to bottom, var(--p03-layer-from, rgba(15,15,18,0.95)), var(--p03-layer-to, rgba(15,15,18,0.75))); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--p03-layer-border, rgba(255,255,255,0.06)); flex-shrink: 0; min-height: 56px; }
-.p03-identity { display: flex; align-items: center; gap: 12px; }
-.p03-identity-icon { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 6px; background: var(--p03-accent-soft, rgba(124,58,237,0.15)); color: var(--p03-accent, #7C3AED); flex-shrink: 0; }
-.p03-identity-icon svg { width: 20px; height: 20px; }
-.p03-title { font-size: 16px; font-weight: 600; color: var(--p03-text-primary, rgba(255,255,255,0.92)); margin: 0; white-space: nowrap; }

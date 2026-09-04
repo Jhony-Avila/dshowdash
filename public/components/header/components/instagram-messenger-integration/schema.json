@@ -1,8 +1,0 @@
-{
-  "name": "instagram-messenger-integration",
-  "version": "1.0.0",
-  "type": "integration",
-  "description": "Instagram Messenger notifications",
-  "dependencies": [],
-  "config": { "pollInterval": 60000 }
-}

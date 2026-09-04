@@ -1,4 +1,0 @@
-/* Status  - State Styles */
-/* @version 1.0.0-ENTERPRISE-AAA */
-.panel-status-instagram-messenger[data-loading="true"] { opacity: 0.7; pointer-events: none; }
-.panel-status-instagram-messenger[data-error="true"] { border-color: var(--color-error, #dc2626); }

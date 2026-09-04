@@ -1,8 +1,0 @@
-.badge, .compacto {
-  display: inline-flex; align-items: center; gap: 6px;
-  color: var(--cor); background: var(--fundo);
-  border: 1px solid color-mix(in srgb, var(--cor) 30%, transparent);
-  border-radius: 999px; white-space: nowrap; font-weight: 550;
-}
-.badge   { padding: 3px 10px 3px 8px; font-size: 12px; }
-.compacto { padding: 1px 7px 1px 6px; font-size: 11px; }

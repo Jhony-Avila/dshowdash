@@ -1,9 +1,0 @@
-/* Ticker Features CSS - Enterprise
- * @version 2.0.0-ENTERPRISE
- * @changelog 2.0.0 - Modularizado em 4 arquivos especializados
- */
-
-@import './styles/skeleton.css';
-@import './styles/modal.css';
-@import './styles/components.css';
-@import './styles/accessibility.css';

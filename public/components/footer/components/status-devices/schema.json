@@ -1,8 +1,0 @@
-{
-  "name": "webcam-mic-status",
-  "version": "1.0.0",
-  "type": "status-indicator",
-  "description": "Webcam and microphone status",
-  "dependencies": [],
-  "config": { "pollInterval": 5000 }
-}

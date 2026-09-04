@@ -1,9 +1,0 @@
-/* Panel-16 Advanced - Master
- * @version 6.2.0-ENTERPRISE
- * Modularizado em 4 partials
- */
-
-@import '_advanced.period.css';
-@import '_advanced.charts.css';
-@import '_advanced.timeline.css';
-@import '_advanced.widgets.css';

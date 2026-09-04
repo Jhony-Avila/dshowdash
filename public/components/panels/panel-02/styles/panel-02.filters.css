@@ -1,9 +1,0 @@
-/* Panel-02 Filters - Master
- * @version 6.0.0-MODULAR
- * Modularizado em 4 partials
- */
-
-@import 'panel-02.filters.chips.css';
-@import 'panel-02.filters.search.css';
-@import 'panel-02.filters.controls.css';
-@import 'panel-02.filters.dropdown.css';

@@ -1,8 +1,0 @@
-/* Panel-16 Responsive - Master
- * @version 6.2.0-ENTERPRISE
- * Modularizado em 3 partials
- */
-
-@import '_responsive.desktop.css';
-@import '_responsive.tablet.css';
-@import '_responsive.mobile.css';

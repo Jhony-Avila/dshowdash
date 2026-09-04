@@ -1,7 +1,0 @@
-/* panel-13 Dashboard Styles - Enterprise Premium AAA */
-/* @version 7.0.0-ENTERPRISE-MODULAR */
-@import './dashboard/layout.css';
-@import './dashboard/kpi.css';
-@import './dashboard/alerts.css';
-@import './dashboard/table.css';
-@import './dashboard/components.css';

@@ -1,8 +1,0 @@
-/* Panel-02 States - Master
- * @version 5.0.0-MODULAR
- * Modularizado em 3 partials
- */
-
-@import 'panel-02.states.skeleton.css';
-@import 'panel-02.states.density.css';
-@import 'panel-02.states.feedback.css';

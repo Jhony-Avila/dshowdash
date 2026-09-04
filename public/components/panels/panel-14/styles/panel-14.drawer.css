@@ -1,8 +1,0 @@
-/* Panel-14 Drawer - Master
- * @version 5.0.0-MODULAR
- * Modularizado em 3 partials
- */
-
-@import 'panel-14.drawer.container.css';
-@import 'panel-14.drawer.content.css';
-@import 'panel-14.drawer.footer.css';

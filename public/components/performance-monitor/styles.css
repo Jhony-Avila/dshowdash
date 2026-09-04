@@ -1,8 +1,0 @@
-/* Performance Monitor Styles v1.0.0 */
-.perf-monitor-overlay { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; font-size: 11px; border-radius: 4px; z-index: 99999; min-width: 150px; display: none; }
-.perf-monitor-overlay.visible { display: block; }
-.perf-monitor-fps { font-size: 18px; font-weight: bold; }
-.perf-monitor-fps.good { color: #0f0; }
-.perf-monitor-fps.warning { color: #ff0; }
-.perf-monitor-fps.bad { color: #f00; }
-.perf-monitor-metric { margin-top: 4px; }

@@ -1,8 +1,0 @@
-{
-  "name": "whatsapp-integration",
-  "version": "1.0.0",
-  "type": "integration",
-  "description": "WhatsApp notifications integration",
-  "dependencies": [],
-  "config": { "pollInterval": 60000 }
-}

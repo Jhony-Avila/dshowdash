@@ -1,8 +1,0 @@
-{
-  "name": "real-time-clock",
-  "version": "1.0.0",
-  "type": "time-display",
-  "description": "Real-time clock display",
-  "dependencies": [],
-  "config": { "format": "24h", "showSeconds": false }
-}

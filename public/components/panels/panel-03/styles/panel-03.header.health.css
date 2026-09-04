@@ -1,7 +1,0 @@
-/* panel-03 Header Health - @version 1.0.0-ENTERPRISE */
-.p03-health-indicator { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
-.p03-health-indicator--healthy { background: var(--p03-ok-bg, rgba(34,197,94,0.12)); color: var(--p03-ok, #22C55E); }
-.p03-health-indicator--degraded { background: var(--p03-warning-bg, rgba(234,179,8,0.12)); color: var(--p03-warning, #EAB308); }
-.p03-health-indicator--unhealthy { background: var(--p03-error-bg, rgba(239,68,68,0.12)); color: var(--p03-error, #EF4444); }
-.p03-health-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: p03-pulse 2s ease-in-out infinite; }
-@keyframes p03-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }

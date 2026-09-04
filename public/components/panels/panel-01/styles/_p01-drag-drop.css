@@ -1,7 +1,0 @@
-/* Panel-01 - Drag & Drop CSS */
-/* @version 2.0.0-ENTERPRISE */
-
-.p01-dragging { opacity: 0.5; background: var(--accent-color-10) !important; }
-.p01-drag-over { background: var(--accent-color-20) !important; border-left: 3px solid var(--accent-color) !important; }
-th[draggable="true"] { cursor: grab; }
-th[draggable="true"]:active { cursor: grabbing; }

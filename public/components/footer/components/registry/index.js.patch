@@ -1,9 +1,0 @@
-FooterComponentsRegistry.prototype._mountLinksUseful = function(container, integrations) {
-  var self = this;
-  return Promise.resolve().then(function() {
-    self._linksUseful = new FooterLinksUseful();
-    if (self._linksUseful.mount) return self._linksUseful.mount(container, {}, integrations);
-  }).then(function() {
-    _log('info', 'Links useful mounted');
-  }).catch(function(err) { _log('warn', 'Failed to mount links-useful', err.message); });
-};

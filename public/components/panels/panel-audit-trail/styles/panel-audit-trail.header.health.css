@@ -1,7 +1,0 @@
-/* panel-audit-trail Header Health - @version 1.0.0-ENTERPRISE */
-.pat-health-indicator { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
-.pat-health-indicator--healthy { background: var(--pat-ok-bg, rgba(34,197,94,0.12)); color: var(--pat-ok, #22C55E); }
-.pat-health-indicator--degraded { background: var(--pat-warning-bg, rgba(234,179,8,0.12)); color: var(--pat-warning, #EAB308); }
-.pat-health-indicator--unhealthy { background: var(--pat-error-bg, rgba(239,68,68,0.12)); color: var(--pat-error, #EF4444); }
-.pat-health-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pat-pulse 2s ease-in-out infinite; }
-@keyframes pat-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }

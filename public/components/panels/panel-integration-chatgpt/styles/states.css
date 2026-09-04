@@ -1,4 +1,0 @@
-/* Integração  - State Styles */
-/* @version 1.0.0-ENTERPRISE-AAA */
-.panel-integration-chatgpt[data-loading="true"] { opacity: 0.7; pointer-events: none; }
-.panel-integration-chatgpt[data-error="true"] { border-color: var(--color-error, #dc2626); }
