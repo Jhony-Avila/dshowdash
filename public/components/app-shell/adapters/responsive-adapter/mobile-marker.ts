@@ -27,17 +27,17 @@ const H_LANDSCAPE_MAX = 520; // altura ≤520 em paisagem = mobile mesmo em larg
  *  Nunca lança. */
 export function isMobileShellEnabled(): boolean {
   try {
-    // 1) store global de flags, se a app expôs um snapshot síncrono
+    // 1) override local (QA) AUTORITATIVO
+    if (typeof localStorage !== 'undefined') {
+      const local = JSON.parse(localStorage.getItem(LS_KEY) || '{}') as Record<string, unknown>;
+      if (FLAG in local) return local[FLAG] === true;
+    }
+    // 2) store global
     const g = (globalThis as Record<string, unknown>);
     const snap = (g.__DSHOW_FLAGS__ || (g.DshowFlags as Record<string, unknown> | undefined)?.snapshot) as
       | Record<string, unknown>
       | undefined;
     if (snap && typeof snap === 'object' && FLAG in snap) return snap[FLAG] === true;
-    // 2) override local (QA na própria máquina / validação do Jhony)
-    if (typeof localStorage !== 'undefined') {
-      const local = JSON.parse(localStorage.getItem(LS_KEY) || '{}') as Record<string, unknown>;
-      if (FLAG in local) return local[FLAG] === true;
-    }
   } catch {
     /* fail-closed */
   }
@@ -101,20 +101,47 @@ export function applyMobileMarker(): void {
 
 let _wired = false;
 let _handler: (() => void) | null = null;
-
-/** Liga o marcador. Se a flag estiver OFF, NÃO instala listeners (inerte). */
+let _mo: MutationObserver | null = null;
+let _timers: ReturnType<typeof setTimeout>[] = [];
+let _pending = false;
+let _hardStop: ReturnType<typeof setTimeout> | null = null;
+function estaMontado(): boolean {
+  try {
+    const root = shellRoot();
+    if (!root || root.getAttribute('data-mobile') == null) return false;
+    return !!document.querySelector('.avst6-hdr-menu') && !!document.querySelector('.avst6-bottomnav');
+  } catch { return false; }
+}
+function pararCuradores(): void {
+  if (_mo) { try { _mo.disconnect(); } catch { /* ok */ } _mo = null; }
+  _timers.forEach((t) => clearTimeout(t)); _timers = [];
+  if (_hardStop) { clearTimeout(_hardStop); _hardStop = null; }
+}
+function curar(): void {
+  applyMobileMarker();
+  // NÃO parar em estaMontado(): ☰+bottomnav surgem cedo, mas os componentes
+  // secundários do header (relógio/clima/integrações) carregam TARDE. Manter o
+  // curador vivo até o hardStop garante que a faixa (strip) e o botão Mais sejam
+  // montados quando esses componentes aparecerem. Só encerra se a flag desligar.
+  if (!isMobileShellEnabled()) pararCuradores();
+}
 export function initMobileMarker(): void {
   if (_wired) return;
-  // aplica uma vez (também limpa resíduo se OFF)
   applyMobileMarker();
-  if (!isMobileShellEnabled()) return; // OFF → não instala listeners → custo zero
+  if (!isMobileShellEnabled()) return; // OFF → nada → desktop byte-a-byte
+  _wired = true;
   _handler = () => applyMobileMarker();
   window.addEventListener('resize', _handler, { passive: true });
   window.addEventListener('orientationchange', _handler, { passive: true });
-  _wired = true;
+  const agenda = () => { if (_pending) return; _pending = true; setTimeout(() => { _pending = false; curar(); }, 120); };
+  try { _mo = new MutationObserver(agenda); _mo.observe(document.documentElement || document, { childList: true, subtree: true }); } catch { /* ok */ }
+  [0, 150, 400, 900, 1800, 3500].forEach((ms) => _timers.push(setTimeout(curar, ms)));
+  try { window.addEventListener('load', curar, { once: true }); } catch { /* ok */ }
+  try { document.addEventListener('shell:ready', curar as EventListener, { once: true }); } catch { /* ok */ }
+  _hardStop = setTimeout(pararCuradores, 16000);
 }
-
 export function teardownMobileMarker(): void {
+  pararCuradores();
   if (_handler) {
     window.removeEventListener('resize', _handler);
     window.removeEventListener('orientationchange', _handler);
