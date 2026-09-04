@@ -59,11 +59,23 @@ HEAD_SHA="$(git -C "$WT" rev-parse HEAD)"; HEAD_TREE="$(git -C "$WT" rev-parse H
 echo "WT_HEAD=$HEAD_SHA  WT_TREE=$HEAD_TREE"
 [ "$HEAD_SHA" = "$EXPECTED_SHA" ] && [ "$HEAD_TREE" = "$EXPECTED_TREE" ] || { echo "ERRO: identidade nao confere"; exit 3; }
 echo "IDENTIDADE_CANDIDATO=OK ($EXPECTED_SHA / $EXPECTED_TREE)"
-[ -e "$WT/public/react/node_modules/.bin/vite" ] || { [ -e "$REPO/public/react" ] && ln -s "$REPO/public/react" "$WT/public/react" 2>/dev/null || true; }
-VITE="$WT/public/react/node_modules/.bin/vite"; [ -x "$VITE" ] || VITE="$REPO/public/react/node_modules/.bin/vite"
+# config full (tem o bloco identity + vc-dist.sha256) para os gates; AUDIT_CONFIG (panel) so para o escopo
+IDCFG="$(dirname "$AUDIT_CONFIG")/audit.config.json"
+# GATE 1: SOURCE_IDENTITY_MATCH — subtree git do painel no worktree == identity.vcSourceTree
+VC_SRC_ESPERADO="$(python3 -c "import json;print(json.load(open('$IDCFG')).get('identity',{}).get('vcSourceTree',''))" 2>/dev/null)"
+VC_SRC_ATUAL="$(git -C "$WT" rev-parse "HEAD:public/components/panels/panel-avatar-studio" 2>/dev/null)"
+echo "SOURCE_IDENTITY: esperado=$VC_SRC_ESPERADO atual=$VC_SRC_ATUAL"
+[ -n "$VC_SRC_ESPERADO" ] && [ "$VC_SRC_ESPERADO" = "$VC_SRC_ATUAL" ] && echo "SOURCE_IDENTITY_MATCH=YES" || { echo "SOURCE_IDENTITY_MATCH=NO — abortando"; exit 7; }
+# WIRING de build: node_modules da RAIZ (resolve vite/@vitejs no vite.config) + public/react
+[ -e "$WT/node_modules" ] || ln -s "$REPO/node_modules" "$WT/node_modules" 2>/dev/null || true
+[ -e "$WT/public/react" ] || ln -s "$REPO/public/react" "$WT/public/react" 2>/dev/null || true
+VITE="$WT/node_modules/.bin/vite"; [ -x "$VITE" ] || VITE="$REPO/node_modules/.bin/vite"
 
 echo ""; echo "== 2) BUILD + harness SEM mocks (usa /api real via proxy) =="
-( cd "$PANEL" && "$VITE" build ) >/tmp/auth-build.log 2>&1 || { echo "ERRO build"; tail -30 /tmp/auth-build.log; exit 4; }
+( cd "$PANEL" && rm -rf dist && "$VITE" build ) >/tmp/auth-build.log 2>&1 || { echo "ERRO build"; tail -30 /tmp/auth-build.log; exit 4; }
+# GATE 2: BUILD_IDENTITY_MATCH — dist reconstruido == identidade versionada
+echo "-- GATE BUILD_IDENTITY --"
+node "$HOME/verificar-identidade.mjs" build --config "$IDCFG" --dist "$PANEL/dist" || { echo "BUILD_IDENTITY_MATCH=NO — abortando"; exit 7; }
 ( cd "$WT" && node scripts/avatar/gerar-harness.mjs avatar ) >/tmp/auth-harness.log 2>&1 || { echo "ERRO harness"; exit 4; }
 python3 - "$WT/public/avst-harness.html" "$WT/public/avst-vc-auth.html" "$EXPECTED_SHA" "$EXPECTED_TREE" <<'PY'
 import sys, re
@@ -82,6 +94,11 @@ fuser -k "$PORT"/tcp 2>/dev/null || true; sleep 1
 PUBLIC_DIR="$WT/public" PORT="$PORT" API_BASE="$API_BASE" STORAGE_STATE="$STORAGE_STATE" setsid nohup node "$HOME/proxy-auth.mjs" >/tmp/auth-proxy.log 2>&1 & echo $! >/tmp/auth-proxy.pid
 sleep 1.5; head -3 /tmp/auth-proxy.log
 curl -s -o /dev/null -w "harness_http=%{http_code}\n" "http://127.0.0.1:$PORT/avst-vc-auth.html" || true
+# GATE 3: SERVED_IDENTITY_MATCH — o que o HTTP ENTREGA == identidade versionada (rejeita bundle velho)
+echo "-- GATE SERVED_IDENTITY --"
+if ! node "$HOME/verificar-identidade.mjs" served --config "$IDCFG" --base "http://127.0.0.1:$PORT" --prefix "/components/panels/panel-avatar-studio/dist"; then
+  echo "SERVED_IDENTITY_MATCH=NO — abortando"; kill "$(cat /tmp/auth-proxy.pid 2>/dev/null)" 2>/dev/null || true; exit 7
+fi
 
 echo ""; echo "== 4) AUDITORIA autenticada (zero-edit, scope=panel) =="
 OUTA="$HOME/auth-out"; rm -rf "$OUTA"; mkdir -p "$OUTA"
@@ -96,7 +113,12 @@ kill "$(cat /tmp/auth-proxy.pid 2>/dev/null)" 2>/dev/null || true
 echo ""; echo "== 5) PACOTE (SEM storage-state) =="
 cp /tmp/auth-run.log "$OUTA/AUTH_RUN_LOG.txt" 2>/dev/null || true
 cp /tmp/auth-build.log "$OUTA/AUTH_BUILD_LOG.txt" 2>/dev/null || true
-{ echo "candidate_sha=$EXPECTED_SHA"; echo "candidate_tree=$EXPECTED_TREE"; echo "api_base=$API_BASE"; echo "scope=panel"; echo "classificacao=AUTHENTICATED_PANEL_PREVIEW"; echo "resultado=$([ $AST -eq 0 ] && echo PASS || echo FAIL)"; } > "$OUTA/AUTH_MANIFESTO.txt"
+{ echo "candidate_sha=$EXPECTED_SHA"; echo "candidate_tree=$EXPECTED_TREE"; echo "api_base=$API_BASE"; echo "scope=panel";
+  echo "classificacao=AUTHENTICATED_PANEL_PREVIEW"; echo "full_shell_integration=NOT_TESTED";
+  echo "source_identity_match=YES"; echo "build_identity_match=YES"; echo "served_identity_match=YES";
+  echo "vc_bundle_identity=$(python3 -c "import json;print(json.load(open('$IDCFG')).get('identity',{}).get('vcBundleIdentity',''))" 2>/dev/null)";
+  echo "resultado=$([ $AST -eq 0 ] && echo PASS || echo FAIL)"; } > "$OUTA/AUTH_MANIFESTO.txt"
+cp "$IDCFG" "$OUTA/audit.config.json" 2>/dev/null || true; cp "$(dirname "$AUDIT_CONFIG")/vc-dist.sha256" "$OUTA/vc-dist.sha256" 2>/dev/null || true
 find "$OUTA" -iname '*storage*state*' -delete 2>/dev/null || true
 PKG="$HOME/auth-candidato-$(date +%Y%m%d-%H%M%S).tar.gz"; tar -czf "$PKG" -C "$OUTA" .
 tar -tzf "$PKG" | grep -qiE 'storage.?state|cookie|token' && { echo "ERRO: possivel segredo no pacote"; rm -f "$PKG"; exit 6; }
