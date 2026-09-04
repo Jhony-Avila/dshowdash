@@ -157,8 +157,13 @@
   left: var(--gm-safe-left) !important;
   top: var(--gm-top) !important;
   bottom: calc(var(--gm-bottomnav-h) + var(--gm-safe-bottom)) !important;
+  height: auto !important;
+  max-height: none !important;
   width: var(--gm-drawer-w) !important;
   max-width: 86vw !important;
+  background: var(--dsd-sidebar-bg, var(--dsd-surface-1, #14141a)) !important;
+  box-shadow: 2px 0 18px rgba(0,0,0,.42) !important;
+  overflow-y: auto !important;
   transform: translateX(-100%);
   transition: transform var(--shell-transition, 300ms cubic-bezier(0.4,0,0.2,1));
   z-index: 1001; /* acima do backdrop central do overlay-layer quando usado */
@@ -199,6 +204,32 @@
 #app-shell[data-mobile] .nav-rail--mobile .nav-rail__item[data-navrail-id="toggle-sidebar"],
 #app-shell[data-mobile] .nav-rail--mobile .nav-rail__item[data-navrail-id="bell"] {
   display: none;
+}
+#app-shell[data-mobile] .avst6-bottomnav {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 999;
+  display: flex; align-items: stretch; justify-content: space-around;
+  height: calc(var(--gm-bottomnav-h) + var(--gm-safe-bottom));
+  padding: 0 var(--gm-safe-right) var(--gm-safe-bottom) var(--gm-safe-left);
+  background: var(--dsd-surface-1, #14141a);
+  border-top: 1px solid var(--dsd-border, rgba(255,255,255,.10));
+  box-shadow: 0 -2px 14px rgba(0,0,0,.30);
+}
+#app-shell[data-mobile] .avst6-bottomnav .avst6-bn-item {
+  flex: 1 1 0; min-width: var(--gm-tap);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 4px 2px; text-decoration: none;
+  color: var(--dsd-text-muted, rgba(255,255,255,.66)); font-size: 10px; line-height: 1.1;
+  overflow: hidden;
+}
+#app-shell[data-mobile] .avst6-bottomnav .avst6-bn-item--active { color: var(--dsd-accent, #4da3ff); }
+#app-shell[data-mobile] .avst6-bottomnav .avst6-bn-icon {
+  width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+}
+#app-shell[data-mobile] .avst6-bottomnav .avst6-bn-icon svg { width: 20px; height: 20px; }
+#app-shell[data-mobile] .avst6-bottomnav .avst6-bn-label {
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;
 }
 
 /* ── 6) TICKER — respeitar reduced-motion e permitir leitura sem animação ─────
@@ -256,7 +287,7 @@
   position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.35);
 }
 #app-shell[data-mobile] .avst6-mais-sheet {
-  position: fixed; z-index: 1001;
+  position: fixed; z-index: 1002;
   left: var(--gm-safe-left); right: var(--gm-safe-right);
   bottom: calc(var(--gm-bottomnav-h) + var(--gm-safe-bottom));
   max-height: calc(100dvh - var(--gm-top) - var(--gm-bottomnav-h) - var(--gm-safe-bottom));
@@ -266,6 +297,8 @@
   background: #12141b; border-top-left-radius: 12px; border-top-right-radius: 12px;
   box-shadow: 0 -8px 24px rgba(0,0,0,.4);
 }
+#app-shell[data-mobile] .avst6-mais-sheet[hidden],
+#app-shell[data-mobile] .avst6-mais-backdrop[hidden] { display: none !important; }
 #app-shell[data-mobile] .avst6-mais-sheet .header-component-wrapper {
   width: 100%; min-height: var(--gm-tap); display: flex; align-items: center;
 }
@@ -276,4 +309,85 @@
   min-width: var(--gm-tap); min-height: var(--gm-tap);
   border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* ── 10) V10 — limpeza da faixa 1 + rótulos no "Mais" + nós movidos em fluxo ─────────
+ * Cobre os defeitos vistos nos screenshots reais: logo (blob roxo) na header-left,
+ * controles soltos (car pill / toggle) flutuando, itens do "Mais" só com ícone. */
+
+/* logo/brand escondido em QUALQUER slot no mobile (era só header-left antes) */
+#app-shell[data-mobile] .site-header .header-component-wrapper[data-component-key="logo"],
+#app-shell[data-mobile] .site-header .header-component-fallback[data-component="logo"],
+#app-shell[data-mobile] .site-header .logo-component {
+  display: none !important;
+}
+
+/* nós MOVIDOS para strip/sheet entram no FLUXO do novo contêiner
+ * (mata posicionamento fixed/absolute herdado que fazia pills/toggle flutuarem) */
+#app-shell[data-mobile] .avst6-hdr-strip > *,
+#app-shell[data-mobile] .avst6-mais-sheet > * {
+  position: static !important;
+  inset: auto !important;
+  top: auto !important; right: auto !important; bottom: auto !important; left: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  float: none !important;
+}
+
+/* IDENTIDADE (user-menu) ocupa o meio da faixa 1 e trunca com elegância */
+#app-shell[data-mobile] .site-header .header-inner > .header-component-wrapper[data-component-key="user-menu"] {
+  flex: 1 1 auto; min-width: 0; overflow: hidden;
+}
+
+/* "Mais" como LISTA rotulada (não só ícones): cada linha = ícone + rótulo */
+#app-shell[data-mobile] .avst6-mais-sheet .header-component-wrapper,
+#app-shell[data-mobile] .avst6-mais-sheet .header-component-fallback {
+  width: 100% !important; min-height: var(--gm-tap);
+  display: flex !important; align-items: center; justify-content: flex-start !important;
+  gap: 12px; padding: 6px 10px; border-radius: 10px;
+}
+#app-shell[data-mobile] .avst6-mais-sheet .header-component-wrapper:hover,
+#app-shell[data-mobile] .avst6-mais-sheet .header-component-fallback:hover {
+  background: rgba(255,255,255,.06);
+}
+#app-shell[data-mobile] .avst6-mais-sheet .header-component-wrapper[data-component-label]::after {
+  content: attr(data-component-label);
+  font-size: 14px; color: var(--dsd-text, rgba(255,255,255,.92)); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+/* controles não-wrapper soltos (ex.: #hie-trigger-btn) também ganham rótulo via aria-label */
+#app-shell[data-mobile] .avst6-mais-sheet > button[aria-label]::after,
+#app-shell[data-mobile] .avst6-mais-sheet > a[aria-label]::after {
+  content: attr(aria-label);
+  margin-left: 12px; font-size: 14px; color: var(--dsd-text, rgba(255,255,255,.92));
+}
+#app-shell[data-mobile] .avst6-mais-sheet > button,
+#app-shell[data-mobile] .avst6-mais-sheet > a {
+  width: 100%; min-height: var(--gm-tap); display: flex; align-items: center; justify-content: flex-start;
+  gap: 0; padding: 6px 10px; border-radius: 10px; border: 0; background: transparent; color: inherit; cursor: pointer;
+}
+
+/* ── 11) V11 — controles gerenciados pelo app: ESCONDER no mobile (não mover) ─────────
+ * O HEADER_AUDIT do V10 revelou que mover esses botões faz o app recriá-los no header e o
+ * curador os move de novo → duplicação (7× "Mudar para tema escuro", editor de header, e
+ * 6× indicador de tráfego). Esconder EM POSIÇÃO mantém-nos no DOM (o app os encontra e não
+ * recria) e some com o ruído. Tema é acessível pela paleta de comandos / drawer; o editor
+ * de header e os indicadores de tráfego são desktop. Só sob o marcador (flag OFF = intacto). */
+#app-shell[data-mobile] .site-header .dsd-theme-toggle,
+#app-shell[data-mobile] .site-header #hie-trigger-btn,
+#app-shell[data-mobile] .site-header .hie-trigger-btn,
+#app-shell[data-mobile] .site-header .hie-done-btn,
+#app-shell[data-mobile] .site-header .hie-reset-btn,
+#app-shell[data-mobile] .site-header .hie-edit-banner,
+#app-shell[data-mobile] .site-header .traffic-indicator {
+  display: none !important;
+}
+/* rede de segurança: se algum desses tiver escapado para a sheet/strip numa aplicação
+ * anterior, continua escondido (a lista canônica na faixa 2/Mais é só wrappers). */
+#app-shell[data-mobile] .avst6-hdr-strip > .traffic-indicator,
+#app-shell[data-mobile] .avst6-mais-sheet > .dsd-theme-toggle,
+#app-shell[data-mobile] .avst6-mais-sheet > .hie-trigger-btn,
+#app-shell[data-mobile] .avst6-mais-sheet > .hie-done-btn,
+#app-shell[data-mobile] .avst6-mais-sheet > .hie-reset-btn {
+  display: none !important;
 }
