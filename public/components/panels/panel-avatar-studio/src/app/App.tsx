@@ -39,6 +39,8 @@ import { flag } from '../nucleo/flags';
 import { DockAssets } from '../workspace/DockAssets';
 import { rodarMigracoes } from '../nucleo/migracoes'; // lote 581-590 (§299-§300)
 import { ShellStudio } from '../shell/ShellStudio';
+import { LimiteVC } from '../vc/LimiteVC';
+const VisualComposerLazy = lazy(() => import('../vc/VisualComposer'));
 import type { Vida } from '../services/VidaService';
 import { Colecoes } from '../components/Colecoes';
 import { Vitrine } from '../components/Vitrine';
@@ -147,6 +149,7 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
   const [categoria, setCategoria] = useState<CategoriaId>('base');
   // AS5 F2 (decisão #47): novo shell atrás da flag; sair volta ao clássico
   const [shellNovo, setShellNovo] = useState<boolean>(() => flag('as5.novo_shell'));
+  const [vcFalhou, setVcFalhou] = useState(false);
   const [aba, setAba] = useState<'itens' | 'arquetipo' | 'titulo' | 'presets' | 'colecoes' | 'conquistas' | 'ia' | 'vitrine' | 'historico' | 'foto' | '3d'>('itens');
   const [vida, setVida] = useState<Vida | null>(null);
   const [vidaCarregando, setVidaCarregando] = useState(true); // §557
@@ -453,6 +456,15 @@ export function App({ config: shellConfig }: { config: ShellConfig }) {
 
 
   // ── AS5: novo shell (F2) — flag as5.novo_shell ──────────────────
+  if (flag('as6.visual_composer') && !vcFalhou) {
+    return (
+      <LimiteVC aoErro={() => setVcFalhou(true)}>
+        <Suspense fallback={<div className="vc-boot" />}>
+          <VisualComposerLazy configInicial={atual} versaoBase={versao} />
+        </Suspense>
+      </LimiteVC>
+    );
+  }
   if (shellNovo) {
     return (
       <ShellStudio configInicial={atual} versaoBase={versao}
