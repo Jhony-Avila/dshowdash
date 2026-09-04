@@ -1,0 +1,10 @@
+{
+  "candidate": { "expectedSha": "c6318ccab12dd0d6f3425c5ab50c07879e2bdc72", "expectedTree": "c2116dc0a5ff09f3d9a9c09e4b492822b81c6ade" },
+  "shell": { "main": ["main", "[data-region='main']", "#host"] },
+  "scope": "panel",
+  "allowlist": ["dshowdash.com.br", "127.0.0.1", "localhost"],
+  "avatarRoute": "/avst-vc-auth.html",
+  "avatarTriggers": [],
+  "navigation": { "preferRouter": false, "routerGlobals": [] },
+  "viewports": ["320x568", "390x844", "412x915", "844x390", "1280x720"]
+}
