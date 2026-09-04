@@ -5,14 +5,21 @@ import { isMobile, isTablet, isDesktop } from "./device.js";
 import { setUserOverride, clearUserOverride, clearAllOverrides, getUserOverrides, setAutoApply } from "./overrides.js";
 import { subscribe } from "./subscription.js";
 import { getMetrics, healthCheck, info } from "./health.js";
+import { initMobileMarker, applyMobileMarker, computeViewport, isMobileShellEnabled } from "./mobile-marker.js";
 import { init as init2 } from "./lifecycle.js";
+import { initMobileMarker as initMobileMarker2 } from "./mobile-marker.js";
 if (typeof document !== "undefined") {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      init2();
-    });
-  } else {
+  const boot = () => {
     init2();
+    try {
+      initMobileMarker2();
+    } catch {
+    }
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
   }
 }
 import { VERSION as VERSION2, MODULE_ID as MODULE_ID2 } from "./constants.js";
@@ -51,8 +58,10 @@ var responsive_adapter_default = {
 export {
   MODULE_ID,
   VERSION,
+  applyMobileMarker,
   clearAllOverrides,
   clearUserOverride,
+  computeViewport,
   responsive_adapter_default as default,
   destroy,
   disable,
@@ -66,9 +75,11 @@ export {
   healthCheck,
   info,
   init,
+  initMobileMarker,
   isDesktop,
   isEnabled,
   isMobile,
+  isMobileShellEnabled,
   isTablet,
   reapplyPolicy,
   setAutoApply,
