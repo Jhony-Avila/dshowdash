@@ -1,6 +1,8 @@
 // vc/VisualComposer.tsx — Avatar Studio Visual Composer (frente ux, flag as6.visual_composer).
 // Experiência completa: Modo Visual (palco+hotspots+catálogo) + Criação Guiada + Mais (Looks/avançado).
 // Reusa AvatarStore, catálogo, favoritos, presets, save (zero store novo, zero 2ª fonte, motor intocado).
+// VC-H (Briefing 1): trilho curto de 6 (§3), subs por contexto (Rosto/Roupa/Acessórios, Calçados),
+//   hotspots diretos por sub (olhos/boca/nariz/sobrancelha/barba/pés — §2/§18) e dica descartável (§7).
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, Search, Heart, Lock, Check, X, Sparkles,
@@ -19,12 +21,13 @@ import MaisPainel from './MaisPainel';
 import { slotsAtivos } from '../components/Cores';
 import { CORES_SUGERIDAS } from '../services/AvatarCatalog';
 import type { SlotCor } from '../domain/types';
-import { GRUPOS, grupoPorId } from './grupos';
-import type { GrupoVisual } from './grupos';
+import { GRUPOS, grupoPorId, slotsCobertos, IconeMais } from './grupos';
+import type { GrupoVisual, SubCat } from './grupos';
 import '../styles/visual-composer.css';
 
 const reduzido = (): boolean => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
 const ehMobile = (): boolean => { try { return window.matchMedia('(max-width: 768px)').matches; } catch { return false; } };
+const CHAVE_ONBOARD = 'avst.vc.onboarded';
 
 export interface PropsVisualComposer {
   store?: AvatarStore;            // §608: quando o App eleva o store canônico, ele é a fonte única
@@ -46,6 +49,34 @@ function itensPorCats(cats: CategoriaId[], grupo: GrupoVisual): ItemView[] {
   if (grupo.slotsOut && grupo.slotsOut.length) { const s = new Set(grupo.slotsOut); lista = lista.filter(({ it }) => !it.slot || !s.has(it.slot)); }
   return lista;
 }
+
+// Itens de UMA sub — aplica o filtro da sub (slots nomeados OU catch-all "Outros").
+function itensDaSub(grupo: GrupoVisual, sub: SubCat): ItemView[] {
+  let lista = itensPorCats([sub.cat], grupo);
+  if (sub.outros) { const cob = slotsCobertos(grupo); lista = lista.filter(({ it }) => !it.slot || !cob.has(it.slot)); }
+  else if (sub.slots && sub.slots.length) { const s = new Set(sub.slots); lista = lista.filter(({ it }) => !!it.slot && s.has(it.slot)); }
+  return lista;
+}
+
+// Subs efetivas de um grupo: estáticas + "Outros" (coverage de acessórios) — só as NÃO vazias.
+function subsEfetivasDe(grupo: GrupoVisual): SubCat[] | null {
+  const base = grupo.subs ? grupo.subs.slice() : null;
+  if (grupo.subsDerivadas === 'acessorio' && base) {
+    const cobertos = slotsCobertos(grupo);
+    const todos = itensPorCats(grupo.cats, grupo);
+    const outros = Array.from(new Set(todos.map(({ it }) => it.slot).filter((s): s is string => !!s && !cobertos.has(s))));
+    const temSemSlot = todos.some(({ it }) => !it.slot);
+    if (outros.length || temSemSlot) base.push({ id: 'a_outros', nome: 'Outros', cat: 'acessorio', slots: outros.length ? outros : undefined, outros: true });
+  }
+  if (!base) return null;
+  const visiveis = base.filter((s) => itensDaSub(grupo, s).length > 0);
+  return visiveis.length ? visiveis : null;
+}
+function primeiraSubId(grupo: GrupoVisual): string | null { const s = subsEfetivasDe(grupo); return s && s.length ? s[0].id : null; }
+
+// Todas as subs (de todos os grupos) com hotspot próprio — camada de clique direto no palco.
+const SUBS_COM_HOTSPOT: { g: GrupoVisual; s: SubCat }[] =
+  GRUPOS.flatMap((g) => (g.subs ?? []).filter((s) => s.hot).map((s) => ({ g, s })));
 
 // Editor de cores NATIVO do VC (reusa o contrato config.cores + slotsAtivos + CORES_SUGERIDAS).
 // Sem HSL técnico na superfície principal: swatches alinhados + "Cor personalizada" (seletor nativo).
@@ -91,19 +122,13 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   // Bloqueio: fonte única = lerBloqueios() (slots travados, §70.1) + disponibilidade por conquista (bloqueadoPor).
   const bloqSlots = useMemo(() => { try { return lerBloqueios(); } catch { return new Set<string>(); } }, []);
 
-  // Grupos dinâmicos: só entram no trilho os que têm conteúdo real (ex.: Companheiros só se houver itens com slot próprio).
-  const gruposVisiveis = useMemo(() => GRUPOS.filter((g) => {
-    if (!g.dinamico) return true;
-    const inSet = g.slotsIn && g.slotsIn.length ? new Set(g.slotsIn) : null;
-    return g.cats.some((c) => itensDe(c).some((it) => {
-      const sl = (it as { slot?: string }).slot;
-      return inSet ? (!!sl && inSet.has(sl)) : true;
-    }));
-  }), []);
+  // Trilho curto (§3): categorias humanas no trilho; baixa frequência no overflow "Mais".
+  const gruposRail = useMemo(() => GRUPOS.filter((g) => !g.overflow), []);
+  const gruposOverflow = useMemo(() => GRUPOS.filter((g) => g.overflow), []);
 
   const [modo, setModo] = useState<'visual' | 'guiado'>('visual');
   const [grupoId, setGrupoId] = useState('base');
-  const grupo = grupoPorId(grupoId, gruposVisiveis);
+  const grupo = grupoPorId(grupoId, GRUPOS);
   const [subId, setSubId] = useState<string | null>(null);
   const [aba, setAba] = useState<'catalogo' | 'favoritos' | 'atual'>('catalogo');
   const [filtroNovos, setFiltroNovos] = useState(false);
@@ -113,6 +138,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [painelRecolhido, setPainelRecolhido] = useState(false);
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
   const [mais, setMais] = useState(false);
+  const [maisCat, setMaisCat] = useState(false);   // overflow de categorias do trilho
   const [coresAberto, setCoresAberto] = useState(false);
   const focoAntesRef = useRef<HTMLElement | null>(null);
   const abrirComFoco = useCallback((abrir: () => void) => { focoAntesRef.current = (document.activeElement as HTMLElement) ?? null; abrir(); }, []);
@@ -120,6 +146,21 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [salv, setSalv] = useState<'idle' | 'salvando' | 'salvo' | 'erro'>('idle');
   const [favs, setFavs] = useState<Set<string>>(() => { try { return favoritos(); } catch { return new Set(); } });
   const [avisoSaida, setAvisoSaida] = useState<null | (() => void)>(null);
+  // Onboarding (§7): dica descartável na 1ª abertura + pulso único (respeita prefers-reduced-motion).
+  const [onboard, setOnboard] = useState(() => { try { return !localStorage.getItem(CHAVE_ONBOARD); } catch { return false; } });
+  const [pulso, setPulso] = useState(false);
+  const [anuncio, setAnuncio] = useState('');
+
+  const encerrarOnboarding = useCallback(() => {
+    setOnboard(false); setPulso(false);
+    try { localStorage.setItem(CHAVE_ONBOARD, '1'); } catch { /* ok */ }
+  }, []);
+  useEffect(() => {
+    if (!onboard || reduzido()) return;
+    setPulso(true);
+    const t = setTimeout(() => setPulso(false), 2600);
+    return () => clearTimeout(t);
+  }, [onboard]);
 
   function bloqueado(it: { id: string; bloqueadoPor?: string; slot?: string }): boolean {
     const porSlot = !!it.slot && bloqSlots.has(it.slot);            // slot travado (lerBloqueios)
@@ -146,9 +187,19 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   }, [config, store]);
 
   const selecionarGrupo = useCallback((g: GrupoVisual) => {
-    setGrupoId(g.id); setSubId(g.subs && g.subs.length ? g.subs[0].id : null); setAba('catalogo');
+    setGrupoId(g.id); setSubId(primeiraSubId(g)); setAba('catalogo');
+    setMaisCat(false); encerrarOnboarding();
+    setAnuncio(`Categoria ${g.nome}`);
     if (ehMobile()) setGaveta('meio');
-  }, []);
+  }, [encerrarOnboarding]);
+
+  // Clique direto numa sub com hotspot (olhos/boca/pés…): abre o grupo já no contexto da sub.
+  const selecionarSub = useCallback((g: GrupoVisual, s: SubCat) => {
+    setGrupoId(g.id); setSubId(s.id); setAba('catalogo');
+    setMaisCat(false); encerrarOnboarding();
+    setAnuncio(`Editar ${s.nome}`);
+    if (ehMobile()) setGaveta('meio');
+  }, [encerrarOnboarding]);
 
   const sair = useCallback(() => { if (pendente) setAvisoSaida(() => () => aoVoltar?.()); else aoVoltar?.(); }, [pendente, aoVoltar]);
 
@@ -163,24 +214,27 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
       if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) store.refazer(); else store.desfazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); store.refazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 's') { e.preventDefault(); void salvar(); }
-      else if (k === 'escape') { setBuscaAberta(false); setAvisoSaida(null); if (coresAberto) fecharComFoco(() => setCoresAberto(false)); }
+      else if (k === 'escape') { setBuscaAberta(false); setAvisoSaida(null); setMaisCat(false); if (coresAberto) fecharComFoco(() => setCoresAberto(false)); }
     };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }, [store, salvar, coresAberto, fecharComFoco]);
 
-  const cats: CategoriaId[] = useMemo(() => {
-    if (grupo.subs && subId) { const s = grupo.subs.find((x) => x.id === subId); return s ? [s.cat] : grupo.cats; }
-    return grupo.cats;
-  }, [grupo, subId]);
+  // Subs efetivas do grupo atual (estáticas + Outros, só não-vazias) e sub ativa.
+  const subsVisiveis = useMemo(() => subsEfetivasDe(grupo), [grupo]);
+  const subAtiva = useMemo(() => subsVisiveis?.find((s) => s.id === subId) ?? null, [subsVisiveis, subId]);
 
-  // Enquadramento: sub tem prioridade sobre o grupo (rosto->olhos, cabelo->barba, etc.).
-  const focoAtivo = useMemo(() => {
-    if (grupo.subs && subId) { const s = grupo.subs.find((x) => x.id === subId); if (s?.foco) return s.foco; }
-    return grupo.foco;
-  }, [grupo, subId]);
+  const cats: CategoriaId[] = useMemo(() => (subAtiva ? [subAtiva.cat] : grupo.cats), [subAtiva, grupo]);
+
+  // Enquadramento e corpo: a sub tem prioridade sobre o grupo (rosto->olhos, roupa->calçados…).
+  const focoAtivo = useMemo(() => subAtiva?.foco ?? grupo.foco, [subAtiva, grupo]);
+  const corpoAtivo = useMemo(() => !!(subAtiva?.corpo ?? grupo.corpo), [subAtiva, grupo]);
 
   const itens: ItemView[] = useMemo(() => {
     let lista: ItemView[] = itensPorCats(cats, grupo);
+    if (subAtiva) {
+      if (subAtiva.outros) { const cob = slotsCobertos(grupo); lista = lista.filter(({ it }) => !it.slot || !cob.has(it.slot)); }
+      else if (subAtiva.slots && subAtiva.slots.length) { const s = new Set(subAtiva.slots); lista = lista.filter(({ it }) => !!it.slot && s.has(it.slot)); }
+    }
     if (aba === 'favoritos') lista = lista.filter(({ it }) => favs.has(it.id));
     if (aba === 'atual') lista = lista.filter(({ it, cat }) => equipadoDe(cat, it.id));
     if (filtroNovos) lista = lista.filter(({ it }) => !!it.novo);
@@ -188,12 +242,12 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     const q = busca.trim().toLowerCase();
     if (q) lista = lista.filter(({ it }) => it.nome.toLowerCase().includes(q) || (it.tema ?? '').toLowerCase().includes(q));
     return lista;
-  }, [grupo, cats, aba, favs, filtroNovos, filtroDispon, busca, config]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [grupo, cats, subAtiva, aba, favs, filtroNovos, filtroDispon, busca, config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFav = useCallback((id: string) => { try { setFavs(new Set(alternarFavorito(id))); } catch { /* ok */ } }, []);
 
   // ---------- CRIAÇÃO GUIADA ----------
-  const passos = useMemo(() => gruposVisiveis.filter((g) => g.id !== 'estilo').concat(gruposVisiveis.filter((g) => g.id === 'estilo')), [gruposVisiveis]);
+  const passos = useMemo(() => GRUPOS.filter((g) => g.id !== 'estilo').concat(GRUPOS.filter((g) => g.id === 'estilo')), []);
   const [passo, setPasso] = useState(0);
   const totalPassos = passos.length + 1; // +1 = revisar
   const emRevisao = passo >= passos.length;
@@ -255,6 +309,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   }
 
   // ---------- MODO VISUAL ----------
+  const overflowAtivo = gruposOverflow.some((g) => g.id === grupoId);
   return (
     <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta}>
       <header className="vc-barra">
@@ -273,21 +328,42 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
 
       <div className="vc-corpo">
         <nav className="vc-trilho" aria-label="Categorias">
-          {gruposVisiveis.map((g) => { const Ic = g.Icone; return (
-            <button key={g.id} type="button" title={g.nome} className={`vc-cat ${g.id === grupoId ? 'vc-cat-ativa' : ''}`} aria-pressed={g.id === grupoId} aria-label={g.nome} onClick={() => selecionarGrupo(g)}>
+          {gruposRail.map((g) => { const Ic = g.Icone; const on = g.id === grupoId; return (
+            <button key={g.id} type="button" title={g.nome} className={`vc-cat ${on ? 'vc-cat-ativa' : ''}`} aria-pressed={on} aria-label={g.nome} onClick={() => selecionarGrupo(g)}>
               <Ic size={22} aria-hidden /><span>{g.nome}</span>
             </button>); })}
+          {gruposOverflow.length > 0 && (
+            <button type="button" title="Mais" className={`vc-cat ${overflowAtivo ? 'vc-cat-ativa' : ''}`} aria-pressed={overflowAtivo} aria-haspopup="menu" aria-expanded={maisCat} aria-label="Mais categorias" onClick={() => setMaisCat((v) => !v)}>
+              <IconeMais size={22} aria-hidden /><span>Mais</span>
+            </button>
+          )}
         </nav>
 
         <main className="vc-palco">
           <div className="vc-palco-wrap">
-            <AvatarSvg config={config} uid="vc-palco" palco={!grupo.corpo} corpo={grupo.corpo} foco={focoAtivo} estatico={reduzido()} />
-            {gruposVisiveis.filter((g) => g.hot).map((g) => (
-              <button key={g.id} type="button" className={`vc-hot ${g.id === grupoId ? 'vc-hot-on' : ''}`}
+            <AvatarSvg config={config} uid="vc-palco" palco={!corpoAtivo} corpo={corpoAtivo} foco={focoAtivo} estatico={reduzido()} />
+            {/* hotspots de grupo (§2): regiões grandes do corpo */}
+            {GRUPOS.filter((g) => g.hot).map((g) => (
+              <button key={g.id} type="button" className={`vc-hot ${g.id === grupoId && !subId ? 'vc-hot-on' : ''} ${pulso ? 'vc-hot-pulso' : ''}`}
                 style={{ top: g.hot!.top, left: g.hot!.left, width: g.hot!.width, height: g.hot!.height }}
                 data-fundo={g.id === 'cenario' ? 'true' : undefined}
                 onClick={() => selecionarGrupo(g)} aria-label={`Editar ${g.nome}`} title={g.nome} />
             ))}
+            {/* hotspots de sub (§2/§18): clique direto em olhos/boca/nariz/sobrancelha/barba (busto) e pés (corpo) */}
+            {SUBS_COM_HOTSPOT.filter(({ s }) => !!s.corpo === corpoAtivo).map(({ g, s }) => {
+              const ativo = g.id === grupoId && s.id === subId;
+              return (
+                <button key={`${g.id}:${s.id}`} type="button" className={`vc-hot vc-subhot ${ativo ? 'vc-hot-on' : ''} ${pulso ? 'vc-hot-pulso' : ''}`}
+                  style={{ top: s.hot!.top, left: s.hot!.left, width: s.hot!.width, height: s.hot!.height }}
+                  onClick={() => selecionarSub(g, s)} aria-label={`Editar ${s.nome}`} title={s.nome} />
+              );
+            })}
+            {onboard && (
+              <div className="vc-onboard" role="status">
+                <span>{ehMobile() ? 'Toque em uma parte do avatar para personalizar.' : 'Clique em uma parte do avatar para personalizar.'}</span>
+                <button type="button" className="vc-onboard-x" aria-label="Entendi" onClick={encerrarOnboarding}><X size={14} aria-hidden /></button>
+              </div>
+            )}
           </div>
           <button className="vc-recolhe" onClick={() => setPainelRecolhido((v) => !v)} aria-expanded={!painelRecolhido} aria-controls="vc-painel-cat" aria-label={painelRecolhido ? 'Mostrar catálogo' : 'Ocultar catálogo'}>
             {painelRecolhido ? <PanelRightOpen size={18} aria-hidden /> : <PanelRightClose size={18} aria-hidden />}
@@ -296,10 +372,10 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
 
         <aside className="vc-painel" id="vc-painel-cat" aria-label={`Catálogo: ${grupo.nome}`}>
           <button className="vc-gaveta-alca" aria-label={`Altura do catálogo: ${gaveta}. Toque para alternar (recolhida, meio, expandida).`} aria-expanded={gaveta === 'expandida'} onClick={() => setGaveta((s) => s === 'expandida' ? 'meio' : s === 'meio' ? 'recolhida' : 'expandida')}><span /></button>
-          {grupo.subs && (
+          {subsVisiveis && subsVisiveis.length > 0 && (
             <div className="vc-subs" role="tablist" aria-label="Subcategorias">
-              {grupo.subs.map((s) => (
-                <button key={s.id} role="tab" aria-selected={s.id === subId} className={`vc-sub ${s.id === subId ? 'vc-sub-on' : ''}`} onClick={() => setSubId(s.id)}>{s.nome}</button>
+              {subsVisiveis.map((s) => (
+                <button key={s.id} role="tab" aria-selected={s.id === subId} className={`vc-sub ${s.id === subId ? 'vc-sub-on' : ''}`} onClick={() => { setSubId(s.id); setAnuncio(`Editar ${s.nome}`); }}>{s.nome}</button>
               ))}
             </div>
           )}
@@ -339,6 +415,20 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
         </aside>
       </div>
 
+      {/* overflow de categorias (§3): Cenário, Estilo… */}
+      {maisCat && (
+        <div className="vc-back" onClick={() => setMaisCat(false)}>
+          <div className="vc-sheet vc-mais-sheet" role="dialog" aria-modal="true" aria-label="Mais categorias" onClick={(e) => e.stopPropagation()}>
+            <div className="vc-sheet-cab"><span>Mais categorias</span><button onClick={() => setMaisCat(false)} aria-label="Fechar"><X size={18} aria-hidden /></button></div>
+            <div className="vc-sheet-lista">
+              {gruposOverflow.map((g) => { const Ic = g.Icone; return (
+                <button key={g.id} onClick={() => selecionarGrupo(g)}><Ic size={18} aria-hidden /><span>{g.nome}</span></button>
+              ); })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {mais && (
         <MaisPainel store={store} config={config} aplicar={aplicar} versao={store.versao}
           desbloqueados={desbloq} vida={vida} reduzido={reduzido()}
@@ -368,6 +458,8 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
           </div>
         </div>
       )}
+
+      <div className="vc-sr-live" role="status" aria-live="polite">{anuncio}</div>
     </div>
   );
 }

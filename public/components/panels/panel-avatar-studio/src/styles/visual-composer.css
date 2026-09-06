@@ -219,3 +219,35 @@
 .vc-cor-custom input[type=color]{ position:absolute; inset:0; opacity:0; width:100%; height:100%; border:0; padding:0; cursor:pointer; }
 /* fechar dos sheets com alvo de toque adequado */
 .vc-sheet-cab button,.vc-mp-cab button{ min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+
+/* ===== VC-H (Briefing 1): sub-hotspots diretos, onboarding descartável, pulso único, overflow de categorias ===== */
+
+/* sub-hotspots (olhos/boca/nariz/sobrancelha/barba/pés): acima dos hotspots de grupo */
+.vc-subhot{ z-index:3; border-radius:10px; }
+
+/* pulso ÚNICO de ensino (§7) — aplicado por ~2.6s na 1ª abertura; nunca sob prefers-reduced-motion */
+@keyframes vc-pulso{
+  0%,100%{ border-color:color-mix(in srgb,var(--vc-acc) 24%,transparent); background:color-mix(in srgb,var(--vc-acc) 6%,transparent); }
+  50%{ border-color:color-mix(in srgb,var(--vc-acc) 72%,transparent); background:color-mix(in srgb,var(--vc-acc) 16%,transparent); }
+}
+.vc-hot-pulso{ animation:vc-pulso 1.3s ease-in-out 2; }
+
+/* dica descartável de 1ª abertura (§7) — não é modal, não bloqueia */
+.vc-onboard{ position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:6;
+  display:inline-flex; align-items:center; gap:8px; max-width:92%;
+  background:color-mix(in srgb,var(--vc-surf) 92%,transparent); color:var(--vc-txt);
+  border:1px solid var(--vc-linha); border-radius:999px; padding:8px 8px 8px 14px;
+  font-size:12.5px; line-height:1.3; box-shadow:0 6px 20px #0005; backdrop-filter:blur(3px); }
+.vc-onboard span{ overflow:hidden; text-overflow:ellipsis; }
+.vc-onboard-x{ flex:0 0 auto; background:var(--vc-surf2); border:0; border-radius:999px;
+  width:28px; height:28px; min-width:28px; display:inline-flex; align-items:center; justify-content:center; color:var(--vc-txt2); }
+.vc-onboard-x:hover{ color:var(--vc-txt); }
+@media (max-width:768px){ .vc-onboard{ top:8px; font-size:12px; } }
+
+/* overflow de categorias do trilho (Cenário/Estilo/…) — reusa .vc-sheet + .vc-sheet-lista */
+.vc-mais-sheet{ width:min(360px,100%); }
+.vc-mais-sheet .vc-sheet-lista button{ gap:12px; }
+
+/* região viva para leitores de tela (mudança de categoria / asset) — sem ruído visual */
+.vc-sr-live{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
