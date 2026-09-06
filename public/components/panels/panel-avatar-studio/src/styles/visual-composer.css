@@ -251,3 +251,46 @@
 /* região viva para leitores de tela (mudança de categoria / asset) — sem ruído visual */
 .vc-sr-live{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
   clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* ===== VC-3D (Briefing 2): modo 3D limpo dentro do VC (escopo .vc-root[data-modo="3d"]) ===== */
+.vc-root[data-vc][data-modo="3d"]{ grid-template-rows:auto 1fr; }
+.vc3d-palco{ position:relative; padding:0; place-items:stretch; overflow:hidden; background:var(--vc-bg); }
+.vc3d-palco canvas{ display:block; width:100% !important; height:100% !important; touch-action:none; }
+.vc3d-hud{ position:absolute; left:10px; bottom:10px; z-index:4; font-size:11px; color:var(--vc-txt2);
+  background:color-mix(in srgb,var(--vc-surf) 78%,transparent); border:1px solid var(--vc-linha); border-radius:8px; padding:3px 8px; pointer-events:none; }
+.vc3d-camera{ position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:5; display:flex; gap:6px; flex-wrap:wrap; justify-content:center;
+  background:color-mix(in srgb,var(--vc-surf) 86%,transparent); border:1px solid var(--vc-linha); border-radius:999px; padding:5px 8px; backdrop-filter:blur(3px); max-width:94%; }
+.vc3d-cam-btn{ display:inline-flex; align-items:center; gap:4px; background:transparent; border:0; border-radius:999px; padding:6px 10px; min-height:32px; color:var(--vc-txt2); font-size:12px; }
+.vc3d-cam-btn:hover{ background:var(--vc-surf2); color:var(--vc-txt); }
+.vc3d-cam-btn.on{ background:color-mix(in srgb,var(--vc-acc) 24%,var(--vc-surf2)); color:var(--vc-txt); }
+
+.vc3d-corpo-painel{ display:flex; flex-direction:column; gap:6px; padding:12px; overflow-y:auto; min-height:0; }
+.vc3d-grupo-nome{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--vc-txt2); margin:8px 2px 2px; }
+.vc3d-cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:8px; }
+.vc3d-card{ min-height:52px; gap:6px; }
+.vc3d-card .vc-card-nome{ font-size:11px; }
+.vc3d-swatch{ width:100%; height:22px; border-radius:6px; border:1px solid var(--vc-linha); }
+.vc3d-cor-linha{ display:flex; flex-wrap:wrap; gap:8px; padding:2px 2px 6px; }
+.vc3d-slider{ display:flex; align-items:center; gap:10px; font-size:12px; color:var(--vc-txt); padding:4px 2px; }
+.vc3d-slider span{ min-width:74px; } .vc3d-slider input{ flex:1; }
+.vc3d-toggle{ display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--vc-txt); padding:8px 2px; min-height:40px; }
+.vc3d-avancado-cab{ margin-top:12px; align-self:flex-start; background:var(--vc-surf2); border:1px solid var(--vc-linha); border-radius:8px; padding:8px 14px; min-height:40px; color:var(--vc-txt); font-size:12px; }
+.vc3d-avancado{ display:flex; flex-direction:column; gap:6px; margin-top:6px; border-top:1px solid var(--vc-linha); padding-top:8px; }
+
+.vc3d-erro{ position:absolute; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+  text-align:center; padding:24px; color:var(--vc-txt); background:var(--vc-bg); }
+.vc3d-erro p{ max-width:34ch; color:var(--vc-txt2); margin:0; }
+.vc3d-sem-webgl{ position:static; min-height:60vh; }
+
+@media (max-width:768px){
+  /* palco em cima, painel vira gaveta inferior (mesma linguagem do 2D) */
+  .vc-root[data-vc][data-modo="3d"] .vc-corpo{ grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); position:relative; }
+  .vc-root[data-vc][data-modo="3d"] .vc-trilho{ flex-direction:row; border-right:0; border-bottom:1px solid var(--vc-linha); overflow-x:auto; padding:6px 8px; gap:6px; }
+  .vc-root[data-vc][data-modo="3d"] .vc-cat{ min-width:56px; flex:0 0 auto; min-height:52px; }
+  .vc3d-palco{ order:1; min-height:42dvh; }
+  .vc-root[data-vc][data-modo="3d"] .vc-painel{ position:absolute; left:0; right:0; bottom:0; z-index:15; border-left:0; border-top:1px solid var(--vc-linha);
+    border-radius:16px 16px 0 0; height:40dvh; box-shadow:var(--vc-sombra); padding-bottom:env(safe-area-inset-bottom); }
+  .vc-root[data-vc][data-modo="3d"][data-gaveta="recolhida"] .vc-painel{ height:104px; }
+  .vc-root[data-vc][data-modo="3d"][data-gaveta="expandida"] .vc-painel{ height:82dvh; }
+  .vc3d-cards{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+}

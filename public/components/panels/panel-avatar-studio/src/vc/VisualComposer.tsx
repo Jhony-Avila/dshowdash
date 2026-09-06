@@ -3,7 +3,7 @@
 // Reusa AvatarStore, catálogo, favoritos, presets, save (zero store novo, zero 2ª fonte, motor intocado).
 // VC-H (Briefing 1): trilho curto de 6 (§3), subs por contexto (Rosto/Roupa/Acessórios, Calçados),
 //   hotspots diretos por sub (olhos/boca/nariz/sobrancelha/barba/pés — §2/§18) e dica descartável (§7).
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, Search, Heart, Lock, Check, X, Sparkles,
   PanelRightClose, PanelRightOpen, ArrowLeft, ArrowRight, SkipForward, Palette, Plus,
@@ -23,7 +23,13 @@ import { CORES_SUGERIDAS } from '../services/AvatarCatalog';
 import type { SlotCor } from '../domain/types';
 import { GRUPOS, grupoPorId, slotsCobertos, IconeMais } from './grupos';
 import type { GrupoVisual, SubCat } from './grupos';
+import { flag } from '../nucleo/flags';
+import { CONFIG3D_PADRAO, validarConfig3d } from '../poc3d/catalogo3d';
+import type { Config3D } from '../poc3d/catalogo3d';
 import '../styles/visual-composer.css';
+
+// Modo 3D (Briefing 2, flag as6.vc_3d) — chunk lazy: three/R3F/drei só carregam ao abrir.
+const VisualComposer3DLazy = lazy(() => import('./VisualComposer3D'));
 
 const reduzido = (): boolean => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
 const ehMobile = (): boolean => { try { return window.matchMedia('(max-width: 768px)').matches; } catch { return false; } };
@@ -126,7 +132,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const gruposRail = useMemo(() => GRUPOS.filter((g) => !g.overflow), []);
   const gruposOverflow = useMemo(() => GRUPOS.filter((g) => g.overflow), []);
 
-  const [modo, setModo] = useState<'visual' | 'guiado'>('visual');
+  const [modo, setModo] = useState<'visual' | 'guiado' | '3d'>('visual');
   const [grupoId, setGrupoId] = useState('base');
   const grupo = grupoPorId(grupoId, GRUPOS);
   const [subId, setSubId] = useState<string | null>(null);
@@ -138,6 +144,25 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [painelRecolhido, setPainelRecolhido] = useState(false);
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
   const [mais, setMais] = useState(false);
+  // Modo 3D (Briefing 2, flag as6.vc_3d) — histórico Config3D próprio (undo/redo do 3D),
+  // levantado aqui para SOBREVIVER ao roundtrip 2D↔3D (decisão #54).
+  const vc3dOn = flag('as6.vc_3d');
+  const [c3dHist, setC3dHist] = useState<{ p: Config3D[]; atual: Config3D; f: Config3D[] }>(() => ({ p: [], atual: CONFIG3D_PADRAO, f: [] }));
+  const semear3dRef = useRef(false);
+  const mudar3d = useCallback((c: Config3D) => setC3dHist((h) => ({ p: [...h.p, h.atual].slice(-50), atual: c, f: [] })), []);
+  const desfazer3d = useCallback(() => setC3dHist((h) => (h.p.length ? { p: h.p.slice(0, -1), atual: h.p[h.p.length - 1], f: [h.atual, ...h.f] } : h)), []);
+  const refazer3d = useCallback(() => setC3dHist((h) => (h.f.length ? { p: [...h.p, h.atual], atual: h.f[0], f: h.f.slice(1) } : h)), []);
+  const abrir3d = useCallback(() => {
+    if (!semear3dRef.current) { // bridge de cores 2D→3D só na 1ª abertura (o que mapeia)
+      semear3dRef.current = true;
+      setC3dHist((h) => {
+        const c2 = config.cores as Record<string, string | undefined>;
+        const cores = { ...h.atual.cores, pele: c2.pele ?? h.atual.cores.pele, cabelo: c2.cabelo ?? h.atual.cores.cabelo, roupa: c2.roupa ?? h.atual.cores.roupa, detalhe: c2.destaque ?? h.atual.cores.detalhe };
+        return { ...h, atual: validarConfig3d({ ...h.atual, cores }) };
+      });
+    }
+    setMais(false); setModo('3d');
+  }, [config]);
   const [maisCat, setMaisCat] = useState(false);   // overflow de categorias do trilho
   const [coresAberto, setCoresAberto] = useState(false);
   const focoAntesRef = useRef<HTMLElement | null>(null);
@@ -251,6 +276,17 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [passo, setPasso] = useState(0);
   const totalPassos = passos.length + 1; // +1 = revisar
   const emRevisao = passo >= passos.length;
+
+  if (modo === '3d' && vc3dOn) {
+    return (
+      <Suspense fallback={<div className="vc-boot" />}>
+        <VisualComposer3DLazy store={store} config3d={c3dHist.atual} aoMudar3d={mudar3d}
+          podeDesfazer={c3dHist.p.length > 0} podeRefazer={c3dHist.f.length > 0}
+          desfazer={desfazer3d} refazer={refazer3d} versaoBase={store.versao}
+          aoVoltar2D={() => setModo('visual')} aoMais={() => abrirComFoco(() => setMais(true))} reduzido={reduzido()} />
+      </Suspense>
+    );
+  }
 
   if (modo === 'guiado') {
     const g = passos[Math.min(passo, passos.length - 1)];
@@ -434,6 +470,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
           desbloqueados={desbloq} vida={vida} reduzido={reduzido()}
           aoGuiada={() => { setMais(false); setModo('guiado'); setPasso(0); }}
           aoDiagnostico={() => { setMais(false); aoModoClassico?.(config); }}
+          ao3d={vc3dOn ? abrir3d : undefined}
           aoFechar={() => fecharComFoco(() => setMais(false))} />
       )}
 

@@ -6,6 +6,7 @@
 // não inventa infraestrutura: consome /api/feature-flags se existir
 // (INVESTIGAR na F2 a integração com o panel-feature-flags-admin do dash).
 const PADROES: Record<string, boolean> = {
+  'as6.vc_3d': false,             // Briefing 2 — modo 3D dentro do VC (motor 3D reusado); default OFF (§651); requer as6.visual_composer
   'as6.visual_composer': false,   // frente VC — compositor visual (modos internos Visual/Guiado/Avancado); default OFF, fail-closed; OFF = shell atual byte a byte
   'as5.novo_shell': true,        // F2 — LIGADA no rollout §650 (2026-08-04, veredito visual do Jhony); rollback §651 = voltar p/ false
   'as5.registry_api': false,     // F1 — catálogo servido pelo registry
@@ -171,6 +172,7 @@ const PADROES: Record<string, boolean> = {
  * cadeias curtas (≤2 níveis), sem ciclos.
  */
 export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
+  'as6.vc_3d': ['as6.visual_composer'],
   'as6.visual_composer': ['as5.novo_shell'], // VC so faz sentido no shell novo (como as6.single_2d)
   // Consultadas SOMENTE em shell/Palco3d.tsx → filhas do palco. As flags
   // de motor com DUPLA entrada (palco E Foto §329: as5.materiais3d,

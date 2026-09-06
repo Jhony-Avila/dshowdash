@@ -23,6 +23,7 @@ const CriarIA = lazy(() => import('../components/CriarIA').then((m) => ({ defaul
 const Foto = lazy(() => import('../components/Foto').then((m) => ({ default: m.Foto })));
 const Contextos = lazy(() => import('../components/Contextos').then((m) => ({ default: m.Contextos })));
 const Conquistas = lazy(() => import('../components/Conquistas').then((m) => ({ default: m.Conquistas })));
+import { flag } from '../nucleo/flags';
 const Estudio3D = lazy(() => import('../poc3d/Estudio3D'));
 
 type Tool =
@@ -41,7 +42,8 @@ export interface PropsMaisPainel {
   vida?: { iaDisponivel?: boolean } | Record<string, unknown> | null;
   reduzido: boolean;
   aoGuiada: () => void;        // abre a Criação Guiada (modo do próprio VC)
-  aoDiagnostico: () => void;   // abre a interface clássica (fallback técnico)
+  aoDiagnostico: () => void;
+  ao3d?: () => void;          // Briefing 2: abre o modo 3D do VC (flag as6.vc_3d)   // abre a interface clássica (fallback técnico)
   aoFechar: () => void;
 }
 
@@ -50,7 +52,7 @@ interface GrupoMenu { id: string; nome: string; itens: ItemMenu[]; }
 
 const carregando = <div className="vc-mp-carregando" role="status">Carregando…</div>;
 
-export default function MaisPainel({ store, config, aplicar, versao, desbloqueados, vida, reduzido, aoGuiada, aoDiagnostico, aoFechar }: PropsMaisPainel) {
+export default function MaisPainel({ store, config, aplicar, versao, desbloqueados, vida, reduzido, aoGuiada, aoDiagnostico, ao3d, aoFechar }: PropsMaisPainel) {
   const [tool, setTool] = useState<Tool | null>(null);
   const [imersivo, setImersivo] = useState<Imersivo | null>(null);
   const [grupoAberto, setGrupoAberto] = useState<string>('criar');
@@ -94,6 +96,7 @@ export default function MaisPainel({ store, config, aplicar, versao, desbloquead
 
   const abrir = useCallback((it: ItemMenu) => {
     if (it.id === 'guiada') { aoGuiada(); return; }
+    if (it.id === '3d' && ao3d && flag('as6.vc_3d')) { ao3d(); return; }
     if (it.imersivo) setImersivo(it.id as Imersivo);
     else setTool(it.id as Tool);
   }, [aoGuiada]);
