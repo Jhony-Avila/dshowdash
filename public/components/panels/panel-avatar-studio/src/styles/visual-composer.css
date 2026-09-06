@@ -294,3 +294,20 @@
   .vc-root[data-vc][data-modo="3d"][data-gaveta="expandida"] .vc-painel{ height:82dvh; }
   .vc3d-cards{ grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
+
+/* ===== VC-3D consolidação visual (Briefing 2 — rodada de limpeza) ===== */
+/* badge de classificação do asset no próprio card (§5) */
+.vc3d-card{ position:relative; padding-bottom:20px; }
+.vc3d-classe{ position:absolute; left:6px; right:6px; bottom:4px; font-size:9px; line-height:1.1; text-align:center;
+  color:var(--vc-txt2); text-transform:uppercase; letter-spacing:.3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vc3d-classe[data-c="nativo"]{ color:var(--vc-on); }
+.vc3d-classe[data-c="simplificado"]{ color:#f0b429; }
+.vc3d-classe[data-c="necessario"]{ color:var(--vc-txt2); }
+.vc3d-classe[data-c="so2d"]{ color:#8aa0ff; }
+.vc3d-card-off{ opacity:.5; cursor:default; }
+.vc3d-card-off:hover{ border-color:transparent; }
+
+/* sheet "Mais" do 3D (secundários fora do palco) */
+.vc3d-mais{ width:min(460px,100%); max-height:82vh; }
+.vc3d-mais-corpo{ padding:10px 14px 16px; max-height:72vh; overflow:auto; display:flex; flex-direction:column; gap:4px; }
+@media (max-width:768px){ .vc3d-mais{ width:100%; max-height:86dvh; } }

@@ -281,7 +281,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     return (
       <Suspense fallback={<div className="vc-boot" />}>
         <VisualComposer3DLazy store={store} config3d={c3dHist.atual} aoMudar3d={mudar3d}
-          podeDesfazer={c3dHist.p.length > 0} podeRefazer={c3dHist.f.length > 0}
+          podeDesfazer={c3dHist.p.length > 0} podeRefazer={c3dHist.f.length > 0} mudancas={c3dHist.p.length}
           desfazer={desfazer3d} refazer={refazer3d} versaoBase={store.versao}
           aoVoltar2D={() => setModo('visual')} aoMais={() => abrirComFoco(() => setMais(true))} reduzido={reduzido()} />
       </Suspense>

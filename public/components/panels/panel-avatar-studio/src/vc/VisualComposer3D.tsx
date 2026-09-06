@@ -1,10 +1,10 @@
-// vc/VisualComposer3D.tsx — MODO 3D do Visual Composer (Briefing 2, flag as6.vc_3d).
-// Reusa o MOTOR 3D existente (Canvas/Cena3D/Clima3D/Personagem3D/CameraRig3D/Poder3D/Hud3D)
-// — nenhum renderer novo — dentro do shell limpo do VC: palco dominante, barra reduzida,
-// painel contextual à direita (gaveta no mobile), cards no lugar de chips, seleção direta
-// de mesh por raycasting, câmera órbita/zoom/pan/reset e save canônico (salvar3D).
-// O modelo 3D (Config3D, arquétipos/sockets) é DISJUNTO do avatar 2D em camadas (decisão #54):
-// bridge apenas do que mapeia (cores). Assets classificados com honestidade (NATIVE/MISSING).
+// vc/VisualComposer3D.tsx — MODO 3D do Visual Composer (Briefing 2 + consolidação visual).
+// Reusa o MOTOR 3D existente (Canvas/Cena3D/Clima3D/Personagem3D/CameraRig3D/Poder3D/Hud3D) —
+// nenhum renderer/câmera/histórico/save novo — no shell limpo: palco dominante SEM relatórios
+// textuais, barra reduzida (Voltar/Desfazer/Refazer/Salvar/Mais), rail só de partes do corpo,
+// catálogo contextual em cards (nomes amigáveis, sem slugs, sem "Equipar", classificação no card),
+// seleção direta de mesh com auto-enquadramento, e secundários (Cena/Luz/Animação/Qualidade) em "Mais".
+// Modelo 3D (arquétipos/sockets) é DISJUNTO do avatar 2D (decisão #54): bridge só de cores.
 import { Component, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
@@ -12,12 +12,12 @@ import type { ThreeEvent } from '@react-three/fiber';
 import type * as THREE from 'three';
 import {
   ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, RotateCcw, Move, PersonStanding,
-  Scissors, Smile, Shirt, Glasses, Image as ImageIcon, ShieldAlert, MonitorX, Check,
+  Scissors, Smile, Shirt, Glasses, ShieldAlert, MonitorX, Check, X,
 } from 'lucide-react';
 import { salvar3D } from '../services/AvatarService';
 import type { AvatarStore } from '../nucleo/estado';
 import {
-  CORES_3D, ITENS_SOCKET, ROTULOS_SOCKET, ROTULOS_VARIANTE, SOCKETS_LEVA1,
+  CORES_3D, ITENS_SOCKET, ROTULOS_VARIANTE, SOCKETS_3D,
 } from '../poc3d/catalogo3d';
 import type {
   ArquetipoId, CameraId, CenarioId, ClimaId, Config3D, HoraId, IluminacaoId, SlotMaterial, Socket3D, VarianteHumanoId,
@@ -37,19 +37,18 @@ type Qualidade = 'alto' | 'medio' | 'economico';
 const DPR: Record<Qualidade, number | [number, number]> = { alto: [1, 2], medio: 1, economico: 0.75 };
 const VARIANTES: VarianteHumanoId[] = ['casual', 'terno', 'punk', 'aventureiro'];
 
-// Rail de categorias humanas (§3-equivalente do 3D) — sem termos técnicos.
-type Cat3D = 'personagem' | 'cabelo' | 'rosto' | 'roupa' | 'acessorios' | 'cena';
+// Rail = SÓ partes do corpo (§3). Cena/Luz/Animação/Qualidade vão para "Mais".
+type Cat3D = 'personagem' | 'cabelo' | 'rosto' | 'roupa' | 'acessorios';
 const CATS: { id: Cat3D; nome: string; Icone: typeof PersonStanding }[] = [
   { id: 'personagem', nome: 'Personagem', Icone: PersonStanding },
   { id: 'cabelo', nome: 'Cabelo', Icone: Scissors },
   { id: 'rosto', nome: 'Rosto', Icone: Smile },
   { id: 'roupa', nome: 'Roupa', Icone: Shirt },
   { id: 'acessorios', nome: 'Acessórios', Icone: Glasses },
-  { id: 'cena', nome: 'Cena', Icone: ImageIcon },
 ];
+// auto-enquadramento por categoria (§4): o que edito domina o viewport.
+const FOCO_CAT: Record<Cat3D, CameraId> = { personagem: 'corpo', cabelo: 'rosto', rosto: 'rosto', roupa: 'corpo', acessorios: 'busto' };
 
-// mesh clicado → categoria (raycasting): nomes reais dos GLBs (prefixo_Head/_Body/_Legs/_Feet,
-// materiais Hair/Skin/Suit…) e nós de socket. Best-effort determinístico (decisão #54).
 function categoriaDoMesh(nome: string): Cat3D {
   const n = nome.toLowerCase();
   if (/_head$|hair|eyebrow|face|head/.test(n)) return 'cabelo';
@@ -65,12 +64,18 @@ const ROTULO_CEN: Record<CenarioId, string> = { vazio: 'Palco vazio', grade: 'Gr
 const ROTULO_HORA: Record<HoraId, string> = { estudio: 'Luz de estúdio', dia: 'Dia', entardecer: 'Entardecer', noite: 'Noite' };
 const ROTULO_CLIMA: Record<ClimaId, string> = { limpo: 'Céu limpo', chuva: 'Chuva', neve: 'Neve', vagalumes: 'Vagalumes' };
 const NOME_COR: Record<SlotMaterial, string> = { pele: 'Pele', cabelo: 'Cabelo', roupa: 'Roupa', detalhe: 'Detalhe' };
+// nomes amigáveis dos 14 sockets (sem slugs)
+const NOME_SOCKET: Record<Socket3D, string> = {
+  head: 'Cabeça', face: 'Rosto', eyes: 'Olhos', ears: 'Orelhas', neck: 'Pescoço', shoulders: 'Ombros',
+  back: 'Costas', waist: 'Cintura', wrist_l: 'Pulso esq.', wrist_r: 'Pulso dir.', hand_l: 'Mão esq.', hand_r: 'Mão dir.',
+  companion: 'Companheiro', pet: 'Pet',
+};
+// classificação contextual dos assets (§5)
+type Classe3D = 'nativo' | 'simplificado' | 'necessario' | 'so2d';
+const ROTULO_CLASSE: Record<Classe3D, string> = { nativo: 'Disponível em 3D', simplificado: 'Representação simplificada', necessario: 'Modelo 3D necessário', so2d: 'Somente 2D' };
 
-function temWebGL2(): boolean {
-  try { const c = document.createElement('canvas'); return Boolean(c.getContext('webgl2')); } catch { return false; }
-}
+function temWebGL2(): boolean { try { const c = document.createElement('canvas'); return Boolean(c.getContext('webgl2')); } catch { return false; } }
 
-/** Falha de asset NÃO derruba o modo (§43). */
 class GuardaErro extends Component<{ aoTentar: () => void; children: ReactNode }, { erro: boolean }> {
   state = { erro: false };
   static getDerivedStateFromError() { return { erro: true }; }
@@ -89,25 +94,27 @@ class GuardaErro extends Component<{ aoTentar: () => void; children: ReactNode }
 export interface PropsVisualComposer3D {
   store: AvatarStore;
   config3d: Config3D;
-  aoMudar3d: (c: Config3D) => void;      // registra no histórico do pai (undo/redo do 3D)
+  aoMudar3d: (c: Config3D) => void;
   podeDesfazer: boolean; podeRefazer: boolean; desfazer: () => void; refazer: () => void;
+  mudancas?: number;
   versaoBase: number;
-  aoVoltar2D: () => void;                 // retorno ao 2D sem reload
-  aoMais: () => void;
-  reduzido: boolean;
+  aoVoltar2D: () => void;
+  aoMais?: () => void;      // menu completo 2D (opcional; o 3D usa sheet próprio)
+  reduzido?: boolean;
 }
 
-function CardOpcao({ nome, ativo, onClick, cor }: { nome: string; ativo: boolean; onClick: () => void; cor?: string }) {
+function CardOpcao({ nome, ativo, onClick, cor, classe, desativado }: { nome: string; ativo: boolean; onClick?: () => void; cor?: string; classe?: Classe3D; desativado?: boolean }) {
   return (
-    <button type="button" className={`vc-card-btn vc3d-card ${ativo ? 'vc-card-on' : ''}`} aria-pressed={ativo} onClick={onClick} title={nome}>
+    <button type="button" className={`vc-card-btn vc3d-card ${ativo ? 'vc-card-on' : ''} ${desativado ? 'vc3d-card-off' : ''}`} aria-pressed={ativo} disabled={desativado} onClick={onClick} title={nome}>
       {cor && <span className="vc3d-swatch" style={{ background: cor }} aria-hidden />}
       {ativo && <span className="vc-badge vc-badge-eq" aria-hidden><Check size={13} /></span>}
       <span className="vc-card-nome">{nome}</span>
+      {classe && <span className="vc3d-classe" data-c={classe}>{ROTULO_CLASSE[classe]}</span>}
     </button>
   );
 }
 
-export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfazer, podeRefazer, desfazer, refazer, versaoBase, aoVoltar2D, aoMais }: PropsVisualComposer3D) {
+export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfazer, podeRefazer, desfazer, refazer, mudancas = 0, versaoBase, aoVoltar2D }: PropsVisualComposer3D) {
   const suportado = useRef(temWebGL2());
   const [cat, setCat] = useState<Cat3D>('personagem');
   const [gesto, setGesto] = useState<Gesto>(null);
@@ -118,9 +125,10 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
   const [chaveCena, setChaveCena] = useState(0);
   const [pan, setPan] = useState(false);
   const [resetToken, setResetToken] = useState(0);
+  const [cam, setCam] = useState<CameraId>(config3d.camera);   // enquadramento = VIEW (fora do histórico)
   const [salv, setSalv] = useState<'idle' | 'salvando' | 'salvo' | 'erro'>('idle');
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
-  const [avancado, setAvancado] = useState(false);
+  const [mais3d, setMais3d] = useState(false);
   const [anuncio, setAnuncio] = useState('');
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
   const quedas = useRef(0);
@@ -133,29 +141,28 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
     aoMudar3d({ ...config, sockets }); setSalv('idle');
   }, [config, aoMudar3d]);
 
+  // troca de categoria (rail OU mesh) reenquadra a câmera automaticamente
+  const irPara = useCallback((c: Cat3D) => { setCat(c); setCam(FOCO_CAT[c]); setAnuncio(`Editar ${CATS.find((x) => x.id === c)?.nome ?? c}`); if (window.matchMedia?.('(max-width: 768px)').matches) setGaveta('meio'); }, []);
+
   const aoMedir = useCallback((m: Metricas) => {
-    setMetricas(m);
-    if (!autoQualidade) return;
+    setMetricas(m); if (!autoQualidade) return;
     quedas.current = m.fps < 28 ? quedas.current + 1 : 0;
     if (quedas.current >= 3) { quedas.current = 0; setQualidade((q) => (q === 'alto' ? 'medio' : 'economico')); }
   }, [autoQualidade]);
 
-  // seleção direta de mesh (raycasting via R3F) → abre a categoria da região.
   const aoClicarMesh = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    const nome = (e.object?.name || '');
-    const c = categoriaDoMesh(nome);
-    setCat(c); setAnuncio(`Editar ${CATS.find((x) => x.id === c)?.nome ?? c}`);
-  }, []);
+    irPara(categoriaDoMesh(e.object?.name || ''));
+  }, [irPara]);
 
-  // hook de teste determinístico (probe headless): roteia um nome de mesh sem depender do raycast.
+  // hooks de teste determinístico (probe headless)
   useEffect(() => {
-    const w = window as unknown as { __vc3dRota?: (n: string) => Cat3D; __vc3dPronto?: boolean; __vc3dEstado?: () => Config3D };
-    w.__vc3dRota = (n: string) => { const c = categoriaDoMesh(n); setCat(c); return c; };
-    w.__vc3dEstado = () => config;
+    const w = window as unknown as { __vc3dRota?: (n: string) => Cat3D; __vc3dPronto?: boolean; __vc3dEstado?: () => Config3D & { camera: CameraId } };
+    w.__vc3dRota = (n: string) => { const c = categoriaDoMesh(n); irPara(c); return c; };
+    w.__vc3dEstado = () => ({ ...config, camera: cam });
     w.__vc3dPronto = suportado.current;
     return () => { try { delete w.__vc3dRota; delete w.__vc3dEstado; } catch { /* ok */ } };
-  }, [config]);
+  }, [config, cam, irPara]);
 
   const capturaQuadrada = useCallback((): string | null => {
     const gl = glRef.current; if (!gl) return null;
@@ -174,21 +181,21 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
     const png = capturaQuadrada();
     if (!png) { setSalv('erro'); return; }
     try {
-      const r = await salvar3D(config, png, versaoBase, config.cores.detalhe);
+      const r = await salvar3D({ ...config, camera: cam }, png, versaoBase, config.cores.detalhe);
       if (r.ok) { setSalv('salvo'); if (typeof r.versao === 'number') { try { store.confirmarPersistencia(r.versao); } catch { /* ok */ } } }
       else setSalv('erro');
     } catch { setSalv('erro'); }
-  }, [salv, capturaQuadrada, config, versaoBase, store]);
+  }, [salv, capturaQuadrada, config, cam, versaoBase, store]);
 
-  const resetarCamera = useCallback(() => { setResetToken((t) => t + 1); mudar({ camera: 'corpo' }); }, [mudar]);
+  const resetarCamera = useCallback(() => { setResetToken((t) => t + 1); setCam(FOCO_CAT[cat]); }, [cat]);
 
-  // atalhos de teclado (mesma linguagem do VC 2D)
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) refazer(); else desfazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); refazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 's') { e.preventDefault(); void salvar(); }
+      else if (k === 'escape') setMais3d(false);
     };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }, [desfazer, refazer, salvar]);
@@ -210,19 +217,6 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
   }
 
   const arqueHumano = config.arquetipo === 'humano';
-  const cardsCena = (
-    <>
-      <div className="vc3d-grupo-nome">Iluminação</div>
-      <div className="vc3d-cards">{(['estudio', 'dramatica', 'neon'] as IluminacaoId[]).map((l) => <CardOpcao key={l} nome={ROTULO_ILUM[l]} ativo={config.iluminacao === l} onClick={() => mudar({ iluminacao: l })} />)}</div>
-      <div className="vc3d-grupo-nome">Cenário</div>
-      <div className="vc3d-cards">{(['vazio', 'grade', 'estrelas', 'dojo'] as CenarioId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CEN[c]} ativo={config.cenario === c} onClick={() => mudar({ cenario: c })} />)}</div>
-      <div className="vc3d-grupo-nome">Hora</div>
-      <div className="vc3d-cards">{(['estudio', 'dia', 'entardecer', 'noite'] as HoraId[]).map((h) => <CardOpcao key={h} nome={ROTULO_HORA[h]} ativo={config.hora === h} onClick={() => mudar({ hora: h })} />)}</div>
-      <div className="vc3d-grupo-nome">Clima</div>
-      <div className="vc3d-cards">{(['limpo', 'chuva', 'neve', 'vagalumes'] as ClimaId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CLIMA[c]} ativo={config.clima === c} onClick={() => mudar({ clima: c })} />)}</div>
-    </>
-  );
-
   const cardsCor = (slot: SlotMaterial) => (
     <div className="vc3d-cor-linha" role="radiogroup" aria-label={`Cor de ${NOME_COR[slot]}`}>
       {CORES_3D[slot].map((cor) => (
@@ -243,15 +237,16 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
           <button className="vc-acao vc-icone" onClick={refazer} disabled={!podeRefazer} aria-label="Refazer"><Redo2 size={18} aria-hidden /></button>
           <button className="vc-salvar" onClick={() => void salvar()} data-estado={salv} aria-label="Salvar">
             <Save size={16} aria-hidden /><span className="vc-lbl">{salv === 'salvando' ? 'Salvando…' : salv === 'salvo' ? 'Salvo' : salv === 'erro' ? 'Repetir' : 'Salvar'}</span>
+            {mudancas > 0 && salv !== 'salvo' && <span className="vc-ponto" aria-hidden title={`${mudancas} alterações`} />}
           </button>
-          <button className="vc-acao vc-icone" onClick={aoMais} aria-label="Mais" aria-haspopup="menu"><MoreHorizontal size={18} aria-hidden /></button>
+          <button className="vc-acao vc-icone" onClick={() => setMais3d(true)} aria-label="Mais" aria-haspopup="menu" aria-expanded={mais3d}><MoreHorizontal size={18} aria-hidden /></button>
         </div>
       </header>
 
       <div className="vc-corpo">
-        <nav className="vc-trilho" aria-label="Categorias 3D">
+        <nav className="vc-trilho" aria-label="Partes do avatar">
           {CATS.map((c) => { const Ic = c.Icone; const on = c.id === cat; return (
-            <button key={c.id} type="button" title={c.nome} className={`vc-cat ${on ? 'vc-cat-ativa' : ''}`} aria-pressed={on} aria-label={c.nome} onClick={() => setCat(c.id)}>
+            <button key={c.id} type="button" title={c.nome} className={`vc-cat ${on ? 'vc-cat-ativa' : ''}`} aria-pressed={on} aria-label={c.nome} onClick={() => irPara(c.id)}>
               <Ic size={22} aria-hidden /><span>{c.nome}</span>
             </button>); })}
         </nav>
@@ -270,20 +265,15 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
                 </group>
               </Suspense>
               <Poder3D fase={fasePoder} cor={config.cores.detalhe} aoAvancar={setFasePoder} />
-              <CameraRig3D preset={config.camera} arquetipo={config.arquetipo} pan={pan} resetToken={resetToken} />
+              <CameraRig3D preset={cam} arquetipo={config.arquetipo} pan={pan} resetToken={resetToken} />
               <Hud3D aoMedir={aoMedir} />
             </Canvas>
           </GuardaErro>
-
-          {/* controles de câmera sobre o palco (órbita = arraste; aqui: enquadramento, pan, reset) */}
+          {/* palco limpo: só controles icônicos de câmera (órbita/zoom = gesto; sem texto/relatório) */}
           <div className="vc3d-camera" role="group" aria-label="Câmera">
-            {(['corpo', 'busto', 'rosto', 'tresquartos'] as CameraId[]).map((c) => (
-              <button key={c} type="button" className={`vc3d-cam-btn ${config.camera === c ? 'on' : ''}`} onClick={() => mudar({ camera: c })} aria-pressed={config.camera === c}>{ROTULO_CAM[c]}</button>
-            ))}
-            <button type="button" className={`vc3d-cam-btn ${pan ? 'on' : ''}`} onClick={() => setPan((v) => !v)} aria-pressed={pan} aria-label="Mover (pan)"><Move size={14} aria-hidden /></button>
-            <button type="button" className="vc3d-cam-btn" onClick={resetarCamera} aria-label="Recentralizar câmera"><RotateCcw size={14} aria-hidden /></button>
+            <button type="button" className={`vc3d-cam-btn ${pan ? 'on' : ''}`} onClick={() => setPan((v) => !v)} aria-pressed={pan} aria-label="Mover a câmera (pan)"><Move size={15} aria-hidden /></button>
+            <button type="button" className="vc3d-cam-btn" onClick={resetarCamera} aria-label="Recentralizar câmera"><RotateCcw size={15} aria-hidden /></button>
           </div>
-          <div className="vc3d-hud" role="status" aria-hidden>{metricas ? `${metricas.fps} fps · ${autoQualidade ? 'auto·' : ''}${qualidade}` : '…'}</div>
         </main>
 
         <aside className="vc-painel" id="vc3d-painel" aria-label={`Editar: ${CATS.find((c) => c.id === cat)?.nome}`}>
@@ -291,58 +281,80 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
           <div className="vc3d-corpo-painel">
             {cat === 'personagem' && (<>
               <div className="vc3d-grupo-nome">Arquétipo</div>
-              <div className="vc3d-cards">{(['humano', 'androide', 'animal'] as ArquetipoId[]).map((a) => <CardOpcao key={a} nome={ROTULO_ARQ[a]} ativo={config.arquetipo === a} onClick={() => { setGesto(null); setFasePoder('inativo'); mudar({ arquetipo: a }); }} />)}</div>
+              <div className="vc3d-cards">{(['humano', 'androide', 'animal'] as ArquetipoId[]).map((a) => <CardOpcao key={a} nome={ROTULO_ARQ[a]} classe="nativo" ativo={config.arquetipo === a} onClick={() => { setGesto(null); setFasePoder('inativo'); mudar({ arquetipo: a }); }} />)}</div>
               <div className="vc3d-grupo-nome">Pele</div>{cardsCor('pele')}
               <div className="vc3d-grupo-nome">Detalhe</div>{cardsCor('detalhe')}
             </>)}
             {cat === 'cabelo' && (arqueHumano ? (<>
               <div className="vc3d-grupo-nome">Cabeça e cabelo</div>
-              <div className="vc3d-cards">{VARIANTES.map((v) => <CardOpcao key={v} nome={ROTULOS_VARIANTE[v]} ativo={config.cabeca === v} onClick={() => mudar({ cabeca: v })} />)}</div>
+              <div className="vc3d-cards">{VARIANTES.map((v) => <CardOpcao key={v} nome={ROTULOS_VARIANTE[v]} classe="nativo" ativo={config.cabeca === v} onClick={() => mudar({ cabeca: v })} />)}</div>
               <div className="vc3d-grupo-nome">Cor do cabelo</div>{cardsCor('cabelo')}
             </>) : <p className="vc-vazio">Este arquétipo não tem cabelo editável.</p>)}
             {cat === 'rosto' && (config.arquetipo === 'androide' ? (<>
               <div className="vc3d-grupo-nome">Expressão</div>
               {(['bravo', 'surpreso', 'triste'] as Array<keyof Config3D['morfos']>).map((m) => (
-                <label key={m} className="vc3d-slider"><span>{m === 'bravo' ? 'Bravo' : m === 'surpreso' ? 'Surpreso' : 'Triste'}</span>
+                <label key={String(m)} className="vc3d-slider"><span>{m === 'bravo' ? 'Bravo' : m === 'surpreso' ? 'Surpreso' : 'Triste'}</span>
                   <input type="range" min={0} max={1} step={0.01} value={config.morfos[m]} onChange={(e) => mudar({ morfos: { ...config.morfos, [m]: Number(e.target.value) } })} /></label>
               ))}
             </>) : <p className="vc-vazio">Edição fina de rosto disponível no arquétipo Androide.</p>)}
             {cat === 'roupa' && (arqueHumano ? (<>
               <div className="vc3d-grupo-nome">Traje</div>
-              <div className="vc3d-cards">{VARIANTES.map((v) => <CardOpcao key={v} nome={ROTULOS_VARIANTE[v]} ativo={config.roupa === v} onClick={() => mudar({ roupa: v, mochila: v === 'aventureiro' ? config.mochila : false })} />)}</div>
+              <div className="vc3d-cards">{VARIANTES.map((v) => <CardOpcao key={v} nome={ROTULOS_VARIANTE[v]} classe="nativo" ativo={config.roupa === v} onClick={() => mudar({ roupa: v, mochila: v === 'aventureiro' ? config.mochila : false })} />)}</div>
               <div className="vc3d-grupo-nome">Cor da roupa</div>{cardsCor('roupa')}
               {config.roupa === 'aventureiro' && <label className="vc3d-toggle"><input type="checkbox" checked={config.mochila} onChange={(e) => mudar({ mochila: e.target.checked })} /> Mochila</label>}
             </>) : (<><div className="vc3d-grupo-nome">Cor</div>{cardsCor('roupa')}</>))}
             {cat === 'acessorios' && (<>
-              {SOCKETS_LEVA1.map((socket) => { const itens = ITENS_SOCKET.filter((i) => i.socket === socket); return (
-                <div key={socket}><div className="vc3d-grupo-nome">{ROTULOS_SOCKET[socket] ?? socket}</div>
-                  <div className="vc3d-cards">
-                    <CardOpcao nome="Nenhum" ativo={!config.sockets?.[socket]} onClick={() => mudarSocket(socket, null)} />
-                    {itens.map((it) => <CardOpcao key={it.id} nome={it.nome} ativo={config.sockets?.[socket] === it.id} onClick={() => mudarSocket(socket, it.id)} />)}
+              {SOCKETS_3D.map((socket) => {
+                const itens = ITENS_SOCKET.filter((i) => i.socket === socket);
+                if (itens.length === 0) return (
+                  <div key={socket}><div className="vc3d-grupo-nome">{NOME_SOCKET[socket]}</div>
+                    <div className="vc3d-cards"><CardOpcao nome="Sem modelo 3D" classe="necessario" ativo={false} desativado /></div></div>
+                );
+                return (
+                  <div key={socket}><div className="vc3d-grupo-nome">{NOME_SOCKET[socket]}</div>
+                    <div className="vc3d-cards">
+                      <CardOpcao nome="Nenhum" ativo={!config.sockets?.[socket]} onClick={() => mudarSocket(socket, null)} />
+                      {itens.map((it) => <CardOpcao key={it.id} nome={it.nome} classe="simplificado" ativo={config.sockets?.[socket] === it.id} onClick={() => mudarSocket(socket, it.id)} />)}
+                    </div>
                   </div>
-                </div>); })}
+                );
+              })}
             </>)}
-            {cat === 'cena' && cardsCena}
-
-            <button type="button" className="vc3d-avancado-cab" aria-expanded={avancado} onClick={() => setAvancado((v) => !v)}>Avançado</button>
-            {avancado && (
-              <div className="vc3d-avancado">
-                <div className="vc3d-grupo-nome">Ações</div>
-                <div className="vc3d-cards">
-                  <CardOpcao nome="Acenar" ativo={false} onClick={() => setGesto('acenar')} />
-                  <CardOpcao nome="Extra" ativo={false} onClick={() => setGesto('extra')} />
-                  <CardOpcao nome="Poder" ativo={fasePoder !== 'inativo'} onClick={() => { if (fasePoder === 'inativo') { setFasePoder('carga'); setGesto('poder'); } }} />
-                </div>
-                <div className="vc3d-grupo-nome">Qualidade</div>
-                <div className="vc3d-cards">
-                  <CardOpcao nome="Auto" ativo={autoQualidade} onClick={() => setAutoQualidade((v) => !v)} />
-                  {(['alto', 'medio', 'economico'] as Qualidade[]).map((q) => <CardOpcao key={q} nome={q === 'alto' ? 'Alto' : q === 'medio' ? 'Médio' : 'Econômico'} ativo={!autoQualidade && qualidade === q} onClick={() => { setAutoQualidade(false); setQualidade(q); }} />)}
-                </div>
-              </div>
-            )}
           </div>
         </aside>
       </div>
+
+      {/* "Mais" do 3D: secundários (Cena/Iluminação/Animação/Qualidade/Câmera) — nunca no palco */}
+      {mais3d && (
+        <div className="vc-back" onClick={() => setMais3d(false)}>
+          <div className="vc-sheet vc3d-mais" role="dialog" aria-modal="true" aria-label="Mais" onClick={(e) => e.stopPropagation()}>
+            <div className="vc-sheet-cab"><span>Mais</span><button onClick={() => setMais3d(false)} aria-label="Fechar"><X size={18} aria-hidden /></button></div>
+            <div className="vc3d-mais-corpo">
+              <div className="vc3d-grupo-nome">Câmera</div>
+              <div className="vc3d-cards">{(['corpo', 'busto', 'rosto', 'tresquartos'] as CameraId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CAM[c]} ativo={cam === c} onClick={() => setCam(c)} />)}</div>
+              <div className="vc3d-grupo-nome">Cenário</div>
+              <div className="vc3d-cards">{(['vazio', 'grade', 'estrelas', 'dojo'] as CenarioId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CEN[c]} ativo={config.cenario === c} onClick={() => mudar({ cenario: c })} />)}</div>
+              <div className="vc3d-grupo-nome">Iluminação</div>
+              <div className="vc3d-cards">{(['estudio', 'dramatica', 'neon'] as IluminacaoId[]).map((l) => <CardOpcao key={l} nome={ROTULO_ILUM[l]} ativo={config.iluminacao === l} onClick={() => mudar({ iluminacao: l })} />)}</div>
+              <div className="vc3d-grupo-nome">Hora e clima</div>
+              <div className="vc3d-cards">{(['estudio', 'dia', 'entardecer', 'noite'] as HoraId[]).map((h) => <CardOpcao key={h} nome={ROTULO_HORA[h]} ativo={config.hora === h} onClick={() => mudar({ hora: h })} />)}</div>
+              <div className="vc3d-cards">{(['limpo', 'chuva', 'neve', 'vagalumes'] as ClimaId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CLIMA[c]} ativo={config.clima === c} onClick={() => mudar({ clima: c })} />)}</div>
+              <div className="vc3d-grupo-nome">Animações</div>
+              <div className="vc3d-cards">
+                <CardOpcao nome="Acenar" ativo={false} onClick={() => { setGesto('acenar'); setMais3d(false); }} />
+                <CardOpcao nome="Extra" ativo={false} onClick={() => { setGesto('extra'); setMais3d(false); }} />
+                <CardOpcao nome="Poder" ativo={fasePoder !== 'inativo'} onClick={() => { if (fasePoder === 'inativo') { setFasePoder('carga'); setGesto('poder'); } setMais3d(false); }} />
+              </div>
+              <div className="vc3d-grupo-nome">Qualidade {metricas ? `· ${metricas.fps} fps` : ''}</div>
+              <div className="vc3d-cards">
+                <CardOpcao nome="Automática" ativo={autoQualidade} onClick={() => setAutoQualidade((v) => !v)} />
+                {(['alto', 'medio', 'economico'] as Qualidade[]).map((q) => <CardOpcao key={q} nome={q === 'alto' ? 'Alto' : q === 'medio' ? 'Médio' : 'Econômico'} ativo={!autoQualidade && qualidade === q} onClick={() => { setAutoQualidade(false); setQualidade(q); }} />)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="vc-sr-live" role="status" aria-live="polite">{anuncio}</div>
     </div>
   );
