@@ -311,3 +311,21 @@
 .vc3d-mais{ width:min(460px,100%); max-height:82vh; }
 .vc3d-mais-corpo{ padding:10px 14px 16px; max-height:72vh; overflow:auto; display:flex; flex-direction:column; gap:4px; }
 @media (max-width:768px){ .vc3d-mais{ width:100%; max-height:86dvh; } }
+
+/* ===== VC-3D secundários no "Mais" + captura (rodada final) ===== */
+.vc3d-mais-tool{ width:min(560px,100%); }
+.vc3d-mais-tool .vc-sheet-cab{ justify-content:space-between; }
+.vc3d-tool{ padding:8px 10px 14px; max-height:74vh; overflow:auto; }
+.vc3d-carregando{ padding:24px; text-align:center; color:var(--vc-txt2); }
+/* menu de ferramentas secundárias dentro do Mais */
+.vc3d-menu{ display:flex; flex-direction:column; gap:2px; margin-top:2px; }
+.vc3d-mi{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; border-radius:10px; padding:11px 12px; min-height:44px; color:var(--vc-txt); text-align:left; }
+.vc3d-mi:hover{ background:var(--vc-surf2); }
+.vc3d-mi-sec{ font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--vc-txt2); padding:8px 12px 2px; }
+/* captura: oculta controles do palco durante a geração */
+.vc-root[data-capturando] .vc3d-camera{ display:none; }
+.vc3d-captura{ width:min(520px,100%); }
+.vc3d-captura-corpo{ padding:14px; display:flex; flex-direction:column; gap:12px; align-items:center; }
+.vc3d-captura-corpo img{ width:min(360px,80vw); aspect-ratio:1/1; object-fit:contain; border-radius:12px; background:var(--vc-thumb-bg); border:1px solid var(--vc-linha); }
+.vc3d-captura-acoes{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.vc3d-captura-acoes a.vc-acao{ text-decoration:none; }

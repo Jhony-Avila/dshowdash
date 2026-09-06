@@ -79,11 +79,22 @@ try {
   ok(R.NATIVE_GLB_APPLIED, 'GLB (Executivo/terno) não aplicou');
   await capturar(p, '3-desktop-catalogo');
 
-  // painel "Mais" (secundários)
+  // painel "Mais" + ferramentas secundárias (Histórico/Captura/Missões/Evolução/Diagnóstico)
   await p.click('[aria-label="Mais"]'); await p.waitForTimeout(500);
   R.MAIS_SHEET = !!(await p.$('.vc3d-mais'));
-  ok(R.MAIS_SHEET, 'sheet Mais 3D ausente');
+  const menu = await p.evaluate(() => { const t = [...document.querySelectorAll('.vc3d-mi')].map((b3) => (b3.textContent || '').trim()); const secs = [...document.querySelectorAll('.vc3d-mi-sec')].map((s3) => (s3.textContent || '').trim()); return { hist: t.some((x) => /Histórico/i.test(x)), capt: t.some((x) => /Captura/i.test(x)), miss: t.some((x) => /Missões/i.test(x)), evo: t.some((x) => /Evolução/i.test(x)), classic: t.some((x) => /clássica/i.test(x)), diag: secs.includes('Diagnóstico') }; });
+  R.HISTORY_IN_3D_MORE = menu.hist; R.CAPTURE_IN_3D_MORE = menu.capt; R.MISSIONS_IN_3D_MORE = menu.miss; R.EVOLUTION_IN_3D_MORE = menu.evo; R.CLASSIC_ONLY_IN_DIAGNOSTICS = menu.classic && menu.diag;
+  ok(R.MAIS_SHEET, 'sheet Mais 3D ausente'); ok(menu.hist && menu.capt && menu.miss && menu.evo, `menu 3D incompleto ${JSON.stringify(menu)}`); ok(R.CLASSIC_ONLY_IN_DIAGNOSTICS, 'Interface clássica não está sob Diagnóstico');
   await capturar(p, '4-desktop-mais');
+  // abrir/fechar cada tool; personagem NÃO desmonta (Canvas segue montado)
+  const abrirTool = async (nome) => { await p.evaluate((n) => { const b3 = [...document.querySelectorAll('.vc3d-mi')].find((x) => new RegExp(n, 'i').test(x.textContent || '')); if (b3) b3.click(); }, nome); await p.waitForTimeout(800); const aberto = !!(await p.$('.vc3d-tool')); const canvas = !!(await p.$('[data-modo="3d"] canvas')); await p.evaluate(() => { const v = document.querySelector('.vc3d-mais .vc-sheet-cab [aria-label="Voltar"]'); if (v) v.click(); }); await p.waitForTimeout(300); return aberto && canvas; };
+  R.TOOL_HISTORICO = await abrirTool('Histórico'); R.TOOL_MISSOES = await abrirTool('Missões'); R.TOOL_EVOLUCAO = await abrirTool('Evolução');
+  R.STAGE_REMAINS_CLEAN = R.TOOL_HISTORICO && R.TOOL_MISSOES && R.TOOL_EVOLUCAO;
+  ok(R.STAGE_REMAINS_CLEAN, 'tool não abriu ou personagem desmontou');
+  // Captura: oculta controles e gera imagem só do canvas
+  await p.evaluate(() => { const b3 = [...document.querySelectorAll('.vc3d-mi')].find((x) => /Captura/i.test(x.textContent || '')); if (b3) b3.click(); }); await p.waitForTimeout(1400);
+  R.CAPTURE_PRODUCED = !!(await p.$('.vc3d-captura img'));
+  ok(R.CAPTURE_PRODUCED, 'captura sem controles não gerou imagem');
   await p.keyboard.press('Escape').catch(() => {}); await p.waitForTimeout(300);
 
   // undo 3D + roundtrip

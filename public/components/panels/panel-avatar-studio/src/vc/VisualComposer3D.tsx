@@ -5,7 +5,7 @@
 // catálogo contextual em cards (nomes amigáveis, sem slugs, sem "Equipar", classificação no card),
 // seleção direta de mesh com auto-enquadramento, e secundários (Cena/Luz/Animação/Qualidade) em "Mais".
 // Modelo 3D (arquétipos/sockets) é DISJUNTO do avatar 2D (decisão #54): bridge só de cores.
-import { Component, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Component, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
@@ -13,9 +13,17 @@ import type * as THREE from 'three';
 import {
   ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, RotateCcw, Move, PersonStanding,
   Scissors, Smile, Shirt, Glasses, ShieldAlert, MonitorX, Check, X,
+  History, Camera, Target, Trophy, Stethoscope, ArrowLeft, Download,
 } from 'lucide-react';
 import { salvar3D } from '../services/AvatarService';
 import type { AvatarStore } from '../nucleo/estado';
+import type { AvatarConfig } from '../domain/types';
+// Reuso DIRETO dos componentes 2D (mesmos contratos/store — sem duplicar lógica): as
+// ferramentas secundárias vivem no "Mais" do 3D como overlays; o Canvas fica montado por baixo.
+const Historico3D = lazy(() => import('../components/Historico').then((m) => ({ default: m.Historico })));
+const Conquistas3D = lazy(() => import('../components/Conquistas').then((m) => ({ default: m.Conquistas })));
+const Missoes3D = lazy(() => import('../shell/Missoes').then((m) => ({ default: m.Missoes })));
+const carregando3d = <div className="vc3d-carregando" role="status">Carregando…</div>;
 import {
   CORES_3D, ITENS_SOCKET, ROTULOS_VARIANTE, SOCKETS_3D,
 } from '../poc3d/catalogo3d';
@@ -101,6 +109,11 @@ export interface PropsVisualComposer3D {
   aoVoltar2D: () => void;
   aoMais?: () => void;      // menu completo 2D (opcional; o 3D usa sheet próprio)
   reduzido?: boolean;
+  // reuso dos secundários 2D dentro do "Mais" do 3D (mesmos contratos/store):
+  config2d?: AvatarConfig;
+  aplicar2d?: (c: AvatarConfig) => void;
+  vida?: unknown;
+  aoClassico?: () => void;  // Diagnóstico → Interface clássica (escape hatch)
 }
 
 function CardOpcao({ nome, ativo, onClick, cor, classe, desativado }: { nome: string; ativo: boolean; onClick?: () => void; cor?: string; classe?: Classe3D; desativado?: boolean }) {
@@ -114,7 +127,7 @@ function CardOpcao({ nome, ativo, onClick, cor, classe, desativado }: { nome: st
   );
 }
 
-export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfazer, podeRefazer, desfazer, refazer, mudancas = 0, versaoBase, aoVoltar2D }: PropsVisualComposer3D) {
+export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfazer, podeRefazer, desfazer, refazer, mudancas = 0, versaoBase, aoVoltar2D, config2d, aplicar2d, vida, aoClassico }: PropsVisualComposer3D) {
   const suportado = useRef(temWebGL2());
   const [cat, setCat] = useState<Cat3D>('personagem');
   const [gesto, setGesto] = useState<Gesto>(null);
@@ -129,9 +142,15 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
   const [salv, setSalv] = useState<'idle' | 'salvando' | 'salvo' | 'erro'>('idle');
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
   const [mais3d, setMais3d] = useState(false);
+  const [tool3d, setTool3d] = useState<null | 'historico' | 'missoes' | 'evolucao'>(null);
+  const [capturando, setCapturando] = useState(false);
+  const [capturaImg, setCapturaImg] = useState<string | null>(null);
   const [anuncio, setAnuncio] = useState('');
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
   const quedas = useRef(0);
+  const focoRef = useRef<HTMLElement | null>(null);
+  const abrirMais = useCallback(() => { focoRef.current = (document.activeElement as HTMLElement) ?? null; setMais3d(true); }, []);
+  const fecharMais = useCallback(() => { setMais3d(false); setTool3d(null); const t = focoRef.current; if (t && typeof t.focus === 'function') setTimeout(() => t.focus(), 0); }, []);
 
   const config = config3d;
   const mudar = useCallback((parcial: Partial<Config3D>) => { aoMudar3d({ ...config, ...parcial }); setSalv('idle'); }, [config, aoMudar3d]);
@@ -189,16 +208,26 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
 
   const resetarCamera = useCallback(() => { setResetToken((t) => t + 1); setCam(FOCO_CAT[cat]); }, [cat]);
 
+  // Captura: oculta os controles do palco, deixa 1 frame limpo e captura o CANVAS (sem overlays).
+  const capturarPalco = useCallback(async () => {
+    setMais3d(false); setTool3d(null); setCapturando(true);
+    await new Promise((r) => setTimeout(r, 380));
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const png = capturaQuadrada();
+    setCapturando(false);
+    setCapturaImg(png);
+  }, [capturaQuadrada]);
+
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) refazer(); else desfazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); refazer(); }
       else if ((e.ctrlKey || e.metaKey) && k === 's') { e.preventDefault(); void salvar(); }
-      else if (k === 'escape') setMais3d(false);
+      else if (k === 'escape') { if (capturaImg) setCapturaImg(null); else if (tool3d) setTool3d(null); else if (mais3d) fecharMais(); }
     };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
-  }, [desfazer, refazer, salvar]);
+  }, [desfazer, refazer, salvar, capturaImg, tool3d, mais3d, fecharMais]);
 
   if (!suportado.current) {
     return (
@@ -228,7 +257,7 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
   );
 
   return (
-    <div className="vc-root" data-vc data-modo="3d" data-gaveta={gaveta}>
+    <div className="vc-root" data-vc data-modo="3d" data-gaveta={gaveta} data-capturando={capturando ? '' : undefined}>
       <header className="vc-barra">
         <button className="vc-acao" onClick={aoVoltar2D} aria-label="Voltar ao 2D"><ChevronLeft size={18} aria-hidden /><span className="vc-lbl">Voltar</span></button>
         <div className="vc-titulo">Avatar Studio · 3D</div>
@@ -239,7 +268,7 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
             <Save size={16} aria-hidden /><span className="vc-lbl">{salv === 'salvando' ? 'Salvando…' : salv === 'salvo' ? 'Salvo' : salv === 'erro' ? 'Repetir' : 'Salvar'}</span>
             {mudancas > 0 && salv !== 'salvo' && <span className="vc-ponto" aria-hidden title={`${mudancas} alterações`} />}
           </button>
-          <button className="vc-acao vc-icone" onClick={() => setMais3d(true)} aria-label="Mais" aria-haspopup="menu" aria-expanded={mais3d}><MoreHorizontal size={18} aria-hidden /></button>
+          <button className="vc-acao vc-icone" onClick={abrirMais} aria-label="Mais" aria-haspopup="menu" aria-expanded={mais3d}><MoreHorizontal size={18} aria-hidden /></button>
         </div>
       </header>
 
@@ -324,31 +353,72 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
         </aside>
       </div>
 
-      {/* "Mais" do 3D: secundários (Cena/Iluminação/Animação/Qualidade/Câmera) — nunca no palco */}
+      {/* "Mais" do 3D: cena/câmera/animação/qualidade + ferramentas secundárias (Histórico/Captura/
+          Progresso/Diagnóstico) — nunca no palco; o Canvas do personagem fica montado por baixo. */}
       {mais3d && (
-        <div className="vc-back" onClick={() => setMais3d(false)}>
-          <div className="vc-sheet vc3d-mais" role="dialog" aria-modal="true" aria-label="Mais" onClick={(e) => e.stopPropagation()}>
-            <div className="vc-sheet-cab"><span>Mais</span><button onClick={() => setMais3d(false)} aria-label="Fechar"><X size={18} aria-hidden /></button></div>
-            <div className="vc3d-mais-corpo">
-              <div className="vc3d-grupo-nome">Câmera</div>
-              <div className="vc3d-cards">{(['corpo', 'busto', 'rosto', 'tresquartos'] as CameraId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CAM[c]} ativo={cam === c} onClick={() => setCam(c)} />)}</div>
-              <div className="vc3d-grupo-nome">Cenário</div>
-              <div className="vc3d-cards">{(['vazio', 'grade', 'estrelas', 'dojo'] as CenarioId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CEN[c]} ativo={config.cenario === c} onClick={() => mudar({ cenario: c })} />)}</div>
-              <div className="vc3d-grupo-nome">Iluminação</div>
-              <div className="vc3d-cards">{(['estudio', 'dramatica', 'neon'] as IluminacaoId[]).map((l) => <CardOpcao key={l} nome={ROTULO_ILUM[l]} ativo={config.iluminacao === l} onClick={() => mudar({ iluminacao: l })} />)}</div>
-              <div className="vc3d-grupo-nome">Hora e clima</div>
-              <div className="vc3d-cards">{(['estudio', 'dia', 'entardecer', 'noite'] as HoraId[]).map((h) => <CardOpcao key={h} nome={ROTULO_HORA[h]} ativo={config.hora === h} onClick={() => mudar({ hora: h })} />)}</div>
-              <div className="vc3d-cards">{(['limpo', 'chuva', 'neve', 'vagalumes'] as ClimaId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CLIMA[c]} ativo={config.clima === c} onClick={() => mudar({ clima: c })} />)}</div>
-              <div className="vc3d-grupo-nome">Animações</div>
-              <div className="vc3d-cards">
-                <CardOpcao nome="Acenar" ativo={false} onClick={() => { setGesto('acenar'); setMais3d(false); }} />
-                <CardOpcao nome="Extra" ativo={false} onClick={() => { setGesto('extra'); setMais3d(false); }} />
-                <CardOpcao nome="Poder" ativo={fasePoder !== 'inativo'} onClick={() => { if (fasePoder === 'inativo') { setFasePoder('carga'); setGesto('poder'); } setMais3d(false); }} />
+        <div className="vc-back" onClick={fecharMais}>
+          <div className={`vc-sheet vc3d-mais ${tool3d ? 'vc3d-mais-tool' : ''}`} role="dialog" aria-modal="true" aria-label="Mais" onClick={(e) => e.stopPropagation()}>
+            <div className="vc-sheet-cab">
+              {tool3d ? <button className="vc-acao vc-icone" onClick={() => setTool3d(null)} aria-label="Voltar"><ArrowLeft size={18} aria-hidden /></button> : <span />}
+              <span>{tool3d === 'historico' ? 'Histórico' : tool3d === 'missoes' ? 'Missões' : tool3d === 'evolucao' ? 'Evolução' : 'Mais'}</span>
+              <button onClick={fecharMais} aria-label="Fechar"><X size={18} aria-hidden /></button>
+            </div>
+            {tool3d ? (
+              <div className="vc3d-tool">
+                {tool3d === 'historico' && <Suspense fallback={carregando3d}><Historico3D versaoBase={versaoBase} aoAplicar={aplicar2d ?? (() => {})} aoReativar={(nv: number) => { try { store.confirmarPersistencia(nv); } catch { /* ok */ } }} /></Suspense>}
+                {tool3d === 'missoes' && config2d && <Suspense fallback={carregando3d}><Missoes3D config={config2d} aoFechar={() => setTool3d(null)} /></Suspense>}
+                {tool3d === 'evolucao' && <Suspense fallback={carregando3d}><Conquistas3D vida={(vida as never) ?? null} carregando={!vida} config={config2d} /></Suspense>}
               </div>
-              <div className="vc3d-grupo-nome">Qualidade {metricas ? `· ${metricas.fps} fps` : ''}</div>
-              <div className="vc3d-cards">
-                <CardOpcao nome="Automática" ativo={autoQualidade} onClick={() => setAutoQualidade((v) => !v)} />
-                {(['alto', 'medio', 'economico'] as Qualidade[]).map((q) => <CardOpcao key={q} nome={q === 'alto' ? 'Alto' : q === 'medio' ? 'Médio' : 'Econômico'} ativo={!autoQualidade && qualidade === q} onClick={() => { setAutoQualidade(false); setQualidade(q); }} />)}
+            ) : (
+              <div className="vc3d-mais-corpo">
+                <div className="vc3d-grupo-nome">Câmera</div>
+                <div className="vc3d-cards">{(['corpo', 'busto', 'rosto', 'tresquartos'] as CameraId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CAM[c]} ativo={cam === c} onClick={() => setCam(c)} />)}</div>
+                <div className="vc3d-grupo-nome">Cenário</div>
+                <div className="vc3d-cards">{(['vazio', 'grade', 'estrelas', 'dojo'] as CenarioId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CEN[c]} ativo={config.cenario === c} onClick={() => mudar({ cenario: c })} />)}</div>
+                <div className="vc3d-grupo-nome">Iluminação</div>
+                <div className="vc3d-cards">{(['estudio', 'dramatica', 'neon'] as IluminacaoId[]).map((l) => <CardOpcao key={l} nome={ROTULO_ILUM[l]} ativo={config.iluminacao === l} onClick={() => mudar({ iluminacao: l })} />)}</div>
+                <div className="vc3d-grupo-nome">Hora e clima</div>
+                <div className="vc3d-cards">{(['estudio', 'dia', 'entardecer', 'noite'] as HoraId[]).map((h) => <CardOpcao key={h} nome={ROTULO_HORA[h]} ativo={config.hora === h} onClick={() => mudar({ hora: h })} />)}</div>
+                <div className="vc3d-cards">{(['limpo', 'chuva', 'neve', 'vagalumes'] as ClimaId[]).map((c) => <CardOpcao key={c} nome={ROTULO_CLIMA[c]} ativo={config.clima === c} onClick={() => mudar({ clima: c })} />)}</div>
+                <div className="vc3d-grupo-nome">Animações</div>
+                <div className="vc3d-cards">
+                  <CardOpcao nome="Acenar" ativo={false} onClick={() => { setGesto('acenar'); fecharMais(); }} />
+                  <CardOpcao nome="Extra" ativo={false} onClick={() => { setGesto('extra'); fecharMais(); }} />
+                  <CardOpcao nome="Poder" ativo={fasePoder !== 'inativo'} onClick={() => { if (fasePoder === 'inativo') { setFasePoder('carga'); setGesto('poder'); } fecharMais(); }} />
+                </div>
+                <div className="vc3d-grupo-nome">Qualidade {metricas ? `· ${metricas.fps} fps` : ''}</div>
+                <div className="vc3d-cards">
+                  <CardOpcao nome="Automática" ativo={autoQualidade} onClick={() => setAutoQualidade((v) => !v)} />
+                  {(['alto', 'medio', 'economico'] as Qualidade[]).map((q) => <CardOpcao key={q} nome={q === 'alto' ? 'Alto' : q === 'medio' ? 'Médio' : 'Econômico'} ativo={!autoQualidade && qualidade === q} onClick={() => { setAutoQualidade(false); setQualidade(q); }} />)}
+                </div>
+                {/* Ferramentas secundárias — reuso dos componentes 2D; sem poluir o palco */}
+                <div className="vc3d-grupo-nome">Ferramentas</div>
+                <div className="vc3d-menu">
+                  <button type="button" className="vc3d-mi" onClick={() => setTool3d('historico')}><History size={16} aria-hidden /><span>Histórico</span></button>
+                  <button type="button" className="vc3d-mi" onClick={() => void capturarPalco()}><Camera size={16} aria-hidden /><span>Captura</span></button>
+                  <div className="vc3d-mi-sec">Progresso</div>
+                  <button type="button" className="vc3d-mi" onClick={() => setTool3d('missoes')}><Target size={16} aria-hidden /><span>Missões</span></button>
+                  <button type="button" className="vc3d-mi" onClick={() => setTool3d('evolucao')}><Trophy size={16} aria-hidden /><span>Evolução</span></button>
+                  <div className="vc3d-mi-sec">Diagnóstico</div>
+                  <button type="button" className="vc3d-mi" onClick={() => { fecharMais(); aoClassico?.(); }}><Stethoscope size={16} aria-hidden /><span>Interface clássica</span></button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* resultado da captura (controles ocultos durante a geração) */}
+      {capturaImg && (
+        <div className="vc-back" onClick={() => setCapturaImg(null)}>
+          <div className="vc-sheet vc3d-captura" role="dialog" aria-modal="true" aria-label="Captura" onClick={(e) => e.stopPropagation()}>
+            <div className="vc-sheet-cab"><span>Captura</span><button onClick={() => setCapturaImg(null)} aria-label="Fechar"><X size={18} aria-hidden /></button></div>
+            <div className="vc3d-captura-corpo">
+              <img src={capturaImg} alt="Captura do palco 3D" />
+              <div className="vc3d-captura-acoes">
+                <button className="vc-salvar" onClick={() => { void salvar(); setCapturaImg(null); }}><Save size={15} aria-hidden /> Salvar como avatar</button>
+                <a className="vc-acao" href={capturaImg} download="avatar-3d.png"><Download size={15} aria-hidden /> Baixar</a>
+                <button className="vc-acao" onClick={() => void capturarPalco()}>Nova captura</button>
               </div>
             </div>
           </div>
