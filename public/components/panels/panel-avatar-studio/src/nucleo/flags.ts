@@ -238,15 +238,36 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
 const CHAVE_LOCAL = 'dshow.avst.flags.v1';
 let _remotas: Record<string, boolean> | null = null;
 
+// Canário server-side por usuário autenticado (onda feature-flags-per-user).
+// ORDEM DE RESOLUÇÃO (flagCrua), SÓ para as FLAGS_REMOTAS abaixo:
+//   1) localStorage (override de dev)  2) remota (autenticada, por usuário)
+//   3) PADRÃO do código (OFF, fail-closed).
+// A remota usa o endpoint EXISTENTE ?action=resolve&flag= (per-user, credentials
+// include). Erro/timeout/resposta inválida/não-autenticado => as três ficam OFF.
+// Funciona SEM qualquer valor no localStorage.
+export const FLAGS_REMOTAS = ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d'] as const;
+
 export async function carregarFlags(): Promise<void> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 1500);
   try {
-    const r = await fetch('/api/feature-flags', { credentials: 'include', cache: 'no-store' });
-    if (r.ok) {
-      const corpo = await r.json();
-      const dados = corpo?.data?.flags ?? corpo?.flags;
-      if (dados && typeof dados === 'object') _remotas = dados as Record<string, boolean>;
-    }
-  } catch { /* sem endpoint → padrões */ }
+    const pares = await Promise.all(FLAGS_REMOTAS.map(async (k) => {
+      try {
+        const r = await fetch(`/api/feature-flags?action=resolve&flag=${encodeURIComponent(k)}`, {
+          credentials: 'include', cache: 'no-store', signal: ctrl.signal,
+          headers: { Accept: 'application/json' },
+        });
+        if (!r.ok) return [k, false] as const;
+        const corpo = await r.json();
+        const f = corpo?.data?.flag ?? corpo?.flag;
+        return [k, !!(f && (f as { enabled?: unknown }).enabled === true)] as const;
+      } catch { return [k, false] as const; }
+    }));
+    const norm: Record<string, boolean> = {};
+    for (const [k, v] of pares) norm[k] = v;
+    _remotas = norm;
+  } catch { /* timeout/abort geral → PADRÕES (fail-closed OFF) */ }
+  finally { clearTimeout(t); }
 }
 
 /** Valor "cru" da flag (local → remoto → padrão), sem dependências. */

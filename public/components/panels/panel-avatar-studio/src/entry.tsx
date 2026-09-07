@@ -7,7 +7,7 @@
 import { StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { App } from './app/App';
-import { aplicarCandidateDaUrl, flag } from './nucleo/flags';
+import { aplicarCandidateDaUrl, carregarFlags, flag } from './nucleo/flags';
 import { montarAvatarUniversal } from './services/AvatarUniversal'; // lote 1201-1210 (#122)
 import type { ShellConfig } from './domain/types';
 
@@ -21,6 +21,9 @@ export async function mountReact(contentEl: HTMLElement, config: ShellConfig = {
   // onda 1423 (BRIEFING_CORRETIVO_01 §11–§13, #212): Candidate Mode via
   // URL (?avst_candidate=1|0) aplicado ANTES do 1º render — QA interno
   aplicarCandidateDaUrl();
+  // Canário server-side (onda feature-flags-per-user): resolve as flags remotas
+  // por usuário autenticado ANTES do 1º render — zero flicker; fail-closed OFF.
+  await carregarFlags();
   _host = document.createElement('div');
   _host.setAttribute('data-avst-react-root', '');
   // lote 1141-1150 (#116, as6.light_v6): direção PRÓPRIA do tema claro
