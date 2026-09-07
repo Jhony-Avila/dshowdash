@@ -6,7 +6,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   ChevronLeft, Undo2, Redo2, Save, MoreHorizontal, Search, Heart, Lock, Check, X, Sparkles,
-  PanelRightClose, PanelRightOpen, ArrowLeft, ArrowRight, SkipForward, Palette, Plus,
+  PanelRightClose, PanelRightOpen, ArrowLeft, ArrowRight, SkipForward, Palette, Plus, Maximize2,
 } from 'lucide-react';
 import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { AvatarStore } from '../nucleo/estado';
@@ -24,6 +24,8 @@ import type { SlotCor } from '../domain/types';
 import { GRUPOS, grupoPorId, slotsCobertos, IconeMais } from './grupos';
 import type { GrupoVisual, SubCat } from './grupos';
 import { flag } from '../nucleo/flags';
+import * as EnqDin from './enquadramentoDinamico';
+import type { ParteId } from './enquadramentoDinamico';
 import { CONFIG3D_PADRAO, validarConfig3d } from '../poc3d/catalogo3d';
 import type { Config3D } from '../poc3d/catalogo3d';
 import '../styles/visual-composer.css';
@@ -80,9 +82,8 @@ function subsEfetivasDe(grupo: GrupoVisual): SubCat[] | null {
 }
 function primeiraSubId(grupo: GrupoVisual): string | null { const s = subsEfetivasDe(grupo); return s && s.length ? s[0].id : null; }
 
-// Todas as subs (de todos os grupos) com hotspot próprio — camada de clique direto no palco.
-const SUBS_COM_HOTSPOT: { g: GrupoVisual; s: SubCat }[] =
-  GRUPOS.flatMap((g) => (g.subs ?? []).filter((s) => s.hot).map((s) => ({ g, s })));
+// (Camada de clique direto por hotspots de % fixo REMOVIDA — o palco agora usa
+//  hit-testing dinamico geometrico: ver enquadramentoDinamico.ts + efeito no palco.)
 
 // Editor de cores NATIVO do VC (reusa o contrato config.cores + slotsAtivos + CORES_SUGERIDAS).
 // Sem HSL técnico na superfície principal: swatches alinhados + "Cor personalizada" (seletor nativo).
@@ -170,6 +171,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [maisCat, setMaisCat] = useState(false);   // overflow de categorias do trilho
   const [coresAberto, setCoresAberto] = useState(false);
   const focoAntesRef = useRef<HTMLElement | null>(null);
+  const palcoWrapRef = useRef<HTMLDivElement | null>(null);
   const abrirComFoco = useCallback((abrir: () => void) => { focoAntesRef.current = (document.activeElement as HTMLElement) ?? null; abrir(); }, []);
   const fecharComFoco = useCallback((fechar: () => void) => { fechar(); const t = focoAntesRef.current; if (t && typeof t.focus === 'function') setTimeout(() => t.focus(), 0); }, []);
   const [salv, setSalv] = useState<'idle' | 'salvando' | 'salvo' | 'erro'>('idle');
@@ -254,9 +256,85 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
 
   const cats: CategoriaId[] = useMemo(() => (subAtiva ? [subAtiva.cat] : grupo.cats), [subAtiva, grupo]);
 
-  // Enquadramento e corpo: a sub tem prioridade sobre o grupo (rosto->olhos, roupa->calçados…).
-  const focoAtivo = useMemo(() => subAtiva?.foco ?? grupo.foco, [subAtiva, grupo]);
+  // Corpo: a sub tem prioridade sobre o grupo (roupa->calcados). O enquadramento NAO
+  // usa mais preset fixo (foco): e dinamico pelos limites visuais reais (decisao #48/#49),
+  // para que rosto/corpo NUNCA sejam cortados e o hit-testing use a MESMA transformacao.
   const corpoAtivo = useMemo(() => !!(subAtiva?.corpo ?? grupo.corpo), [subAtiva, grupo]);
+
+  // ---------- ENQUADRAMENTO + HOTSPOTS DINAMICOS (decisao #48/#49) ----------
+  const abrirParte = useCallback((pid: ParteId) => {
+    const g = (id: string) => grupoPorId(id, GRUPOS);
+    const sub = (gid: string, sid: string) => (grupoPorId(gid, GRUPOS).subs ?? []).find((s) => s.id === sid) ?? null;
+    switch (pid) {
+      case 'cabelo': selecionarGrupo(g('cabelo')); break;
+      case 'rosto': selecionarGrupo(g('rosto')); break;
+      case 'roupa': selecionarGrupo(g('roupa')); break;
+      case 'olhos': { const s = sub('rosto', 'olhos'); if (s) selecionarSub(g('rosto'), s); else selecionarGrupo(g('rosto')); break; }
+      case 'boca': { const s = sub('rosto', 'boca'); if (s) selecionarSub(g('rosto'), s); else selecionarGrupo(g('rosto')); break; }
+      case 'calcados': { const s = sub('roupa', 'calcados'); if (s) selecionarSub(g('roupa'), s); else selecionarGrupo(g('roupa')); break; }
+      case 'acessorio_cabeca': { const s = sub('acessorios', 'a_cabeca'); if (s) selecionarSub(g('acessorios'), s); else selecionarGrupo(g('acessorios')); break; }
+    }
+  }, [selecionarGrupo, selecionarSub]);
+
+  const parteAtivaId = useCallback((): ParteId | null => {
+    if (grupoId === 'cabelo') return 'cabelo';
+    if (grupoId === 'rosto') return subId === 'olhos' ? 'olhos' : subId === 'boca' ? 'boca' : 'rosto';
+    if (grupoId === 'roupa') return subId === 'calcados' ? 'calcados' : 'roupa';
+    if (grupoId === 'acessorios' && subId === 'a_cabeca') return 'acessorio_cabeca';
+    return null;
+  }, [grupoId, subId]);
+
+  const svgDoPalco = useCallback((): SVGSVGElement | null => {
+    const wrap = palcoWrapRef.current; return wrap ? wrap.querySelector('svg') : null;
+  }, []);
+
+  const reenquadrar = useCallback(() => {
+    const svg = svgDoPalco(); if (!svg) return;
+    EnqDin.enquadrar(svg, { corpo: corpoAtivo });
+    EnqDin.garantirRealce(svg);
+    const pid = parteAtivaId();
+    EnqDin.marcarRealce(svg, pid ? EnqDin.caixaDaParte(svg, pid, corpoAtivo) : null);
+  }, [svgDoPalco, corpoAtivo, parteAtivaId]);
+
+  useEffect(() => {
+    const wrap = palcoWrapRef.current; if (!wrap) return;
+    let raf = 0;
+    const mo = new MutationObserver(() => agenda());
+    const rodar = () => { mo.disconnect(); reenquadrar(); mo.observe(wrap, { childList: true, subtree: true }); };
+    function agenda() { cancelAnimationFrame(raf); raf = requestAnimationFrame(rodar); }
+    mo.observe(wrap, { childList: true, subtree: true });
+    const ro = new ResizeObserver(() => agenda());
+    ro.observe(wrap);
+    agenda();
+    const onMove = (ev: PointerEvent) => {
+      const svg = svgDoPalco(); if (!svg) return;
+      const pid = EnqDin.acertar(svg, ev.clientX, ev.clientY, corpoAtivo);
+      wrap.style.cursor = pid ? 'pointer' : '';
+      const alvo = pid ?? parteAtivaId();
+      EnqDin.marcarRealce(svg, alvo ? EnqDin.caixaDaParte(svg, alvo, corpoAtivo) : null);
+    };
+    const onLeave = () => {
+      const svg = svgDoPalco(); if (!svg) return;
+      wrap.style.cursor = '';
+      const pid = parteAtivaId();
+      EnqDin.marcarRealce(svg, pid ? EnqDin.caixaDaParte(svg, pid, corpoAtivo) : null);
+    };
+    const onClick = (ev: MouseEvent) => {
+      const svg = svgDoPalco(); if (!svg) return;
+      const pid = EnqDin.acertar(svg, ev.clientX, ev.clientY, corpoAtivo);
+      if (pid) { ev.preventDefault(); abrirParte(pid); encerrarOnboarding(); }
+    };
+    wrap.addEventListener('pointermove', onMove);
+    wrap.addEventListener('pointerleave', onLeave);
+    wrap.addEventListener('click', onClick);
+    return () => {
+      cancelAnimationFrame(raf);
+      mo.disconnect(); ro.disconnect();
+      wrap.removeEventListener('pointermove', onMove);
+      wrap.removeEventListener('pointerleave', onLeave);
+      wrap.removeEventListener('click', onClick);
+    };
+  }, [reenquadrar, svgDoPalco, corpoAtivo, parteAtivaId, abrirParte, encerrarOnboarding, modo]);
 
   const itens: ItemView[] = useMemo(() => {
     let lista: ItemView[] = itensPorCats(cats, grupo);
@@ -356,6 +434,12 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
       <header className="vc-barra">
         <button className="vc-acao" onClick={sair} aria-label="Voltar"><ChevronLeft size={18} aria-hidden /><span className="vc-lbl">Voltar</span></button>
         <div className="vc-titulo">Avatar Studio</div>
+        {vc3dOn && (
+          <div className="vc-modo-seg" role="group" aria-label="Modo de edição">
+            <button type="button" className="vc-modo-op vc-modo-on" aria-pressed={true} title="Editor 2D">2D</button>
+            <button type="button" className="vc-modo-op" aria-pressed={false} onClick={abrir3d} title="Abrir editor 3D">3D</button>
+          </div>
+        )}
         <div className="vc-globais">
           <button className="vc-acao vc-icone" onClick={() => store.desfazer()} disabled={!podeDesfazer} aria-label="Desfazer"><Undo2 size={18} aria-hidden /></button>
           <button className="vc-acao vc-icone" onClick={() => store.refazer()} disabled={!podeRefazer} aria-label="Refazer"><Redo2 size={18} aria-hidden /></button>
@@ -381,24 +465,12 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
         </nav>
 
         <main className="vc-palco">
-          <div className="vc-palco-wrap">
-            <AvatarSvg config={config} uid="vc-palco" palco={!corpoAtivo} corpo={corpoAtivo} foco={focoAtivo} estatico={reduzido()} />
-            {/* hotspots de grupo (§2): regiões grandes do corpo */}
-            {GRUPOS.filter((g) => g.hot).map((g) => (
-              <button key={g.id} type="button" className={`vc-hot ${g.id === grupoId && !subId ? 'vc-hot-on' : ''} ${pulso ? 'vc-hot-pulso' : ''}`}
-                style={{ top: g.hot!.top, left: g.hot!.left, width: g.hot!.width, height: g.hot!.height }}
-                data-fundo={g.id === 'cenario' ? 'true' : undefined}
-                onClick={() => selecionarGrupo(g)} aria-label={`Editar ${g.nome}`} title={g.nome} />
-            ))}
-            {/* hotspots de sub (§2/§18): clique direto em olhos/boca/nariz/sobrancelha/barba (busto) e pés (corpo) */}
-            {SUBS_COM_HOTSPOT.filter(({ s }) => !!s.corpo === corpoAtivo).map(({ g, s }) => {
-              const ativo = g.id === grupoId && s.id === subId;
-              return (
-                <button key={`${g.id}:${s.id}`} type="button" className={`vc-hot vc-subhot ${ativo ? 'vc-hot-on' : ''} ${pulso ? 'vc-hot-pulso' : ''}`}
-                  style={{ top: s.hot!.top, left: s.hot!.left, width: s.hot!.width, height: s.hot!.height }}
-                  onClick={() => selecionarSub(g, s)} aria-label={`Editar ${s.nome}`} title={s.nome} />
-              );
-            })}
+          <div className={`vc-palco-wrap ${pulso ? 'vc-palco-pulso' : ''}`} ref={palcoWrapRef} data-vc-palco>
+            {/* Palco SEM crop fixo: o enquadramento dinamico define o viewBox pelos
+                limites visuais reais (rosto/corpo NUNCA cortados). foco={undefined}. */}
+            <AvatarSvg config={config} uid="vc-palco" palco={!corpoAtivo} corpo={corpoAtivo} estatico={reduzido()} />
+            {/* Hotspots dinamicos: clique direto + realce sutil tratados pelo efeito
+                (getScreenCTM/getBBox) no proprio <svg>. Sem botoes de % fixo, sem retangulo tecnico. */}
             {onboard && (
               <div className="vc-onboard" role="status">
                 <span>{ehMobile() ? 'Toque em uma parte do avatar para personalizar.' : 'Clique em uma parte do avatar para personalizar.'}</span>
@@ -409,6 +481,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
           {(() => { const GIcone = grupo.Icone; return (
             <div className="vc-catchip" aria-hidden><GIcone size={15} /><span>{grupo.nome}</span></div>
           ); })()}
+          <button className="vc-reframe" onClick={reenquadrar} aria-label="Reenquadrar" title="Reenquadrar (mostrar tudo)"><Maximize2 size={16} aria-hidden /></button>
           <button className="vc-recolhe" onClick={() => setPainelRecolhido((v) => !v)} aria-expanded={!painelRecolhido} aria-controls="vc-painel-cat" aria-label={painelRecolhido ? 'Mostrar catálogo' : 'Ocultar catálogo'}>
             {painelRecolhido ? <PanelRightOpen size={18} aria-hidden /> : <PanelRightClose size={18} aria-hidden />}
           </button>
