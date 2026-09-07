@@ -10,6 +10,18 @@ PROCEDURAIS (geometria em código), **não** GLBs nativos — ficam preservados 
 identificado, nunca apresentados como "Disponível em 3D". Nada de nova arte procedural para
 simular arte ausente. O catálogo 2D inteiro **não** é forçado no 3D (modelos disjuntos).
 
+**Decisão #55 (reprovação visual do Jhony — acessórios flutuantes):** nos prints, os
+acessórios procedurais apareciam FLUTUANDO sobre o pescoço e o rosto (o alinhamento
+socket→osso dos procedurais não tem fidelidade suficiente). Conforme a diretriz — "se o
+modelo correto não existir, não criar aproximação visual enganosa; omitir do catálogo 3D e
+registrar no manifesto" — **todos os itens procedurais foram REMOVIDOS do catálogo 3D**. O
+código de anexação (`Acessorios3D`, tabelas OSSOS/DESLOC/ROT/AJUSTE/ESCALA_ARQ) permanece
+como legado desativado para quando os GLBs nativos chegarem; a UI 3D não expõe nenhum item de
+socket. Cada socket mostra somente o card desativado "Modelo 3D necessário". Os acessórios
+seguem 100% funcionais no modo 2D (modelos disjuntos, decisão #54). Nenhum campo de
+serialização mudou (byte-stability preservada; `config.sockets` continua vazio por padrão e
+OMITIDO quando neutro).
+
 ## Escala e orientação (comuns a todos os sockets)
 
 - Escala global por arquétipo (`ESCALA_ARQ`): humano `1.0` · androide `1.25` · animal `1.1`.
@@ -42,10 +54,13 @@ simular arte ausente. O catálogo 2D inteiro **não** é forçado no 3D (modelos
 
 - **NATIVE_3D (GLB real):** 6 personagens — `humano_casual/terno/punk/aventureiro.glb`,
   `androide.glb`, `animal_pug.glb` (não são sockets; são os arquétipos/variantes).
-- **Legado procedural (não nativo):** 9 itens em 7 sockets (head, face, neck, back, hand_r,
-  companion, pet).
-- **Sockets aguardando arte 3D (MISSING_MODEL):** eyes, ears, shoulders, waist, wrist_l,
-  hand_l — e substituição dos procedurais por GLB nativo nos 7 acima.
-- **Bloqueio:** cada GLB por socket precisa ser autorado/curado (CC0 ou próprio) seguindo a
-  convenção de escala/orientação/pivô acima; sem o arquivo, o card mostra "Modelo 3D necessário"
-  (desativado), sem simular.
+- **Sockets no catálogo 3D:** NENHUM item exposto (decisão #55). Todos os 14 sockets
+  aparecem como "Modelo 3D necessário" (card desativado) até existir GLB alinhado.
+- **Legado procedural (removido da UI, código preservado):** 9 itens em 7 sockets (head,
+  face, neck, back, hand_r, companion, pet) — flutuavam sobre pescoço/rosto; retirados do
+  catálogo, sem substituição por aproximação.
+- **Sockets sem nenhuma arte (nem procedural):** eyes, ears, shoulders, waist, wrist_l, hand_l.
+- **Bloqueio (MISSING_MODEL para os 14):** cada GLB por socket precisa ser autorado/curado
+  (CC0 ou próprio) seguindo a convenção de escala/orientação/pivô acima; sem o arquivo, o card
+  mostra "Modelo 3D necessário" (desativado), sem simular. Reativar um socket na UI =
+  reintroduzir seu item no catálogo 3D somente após validar o alinhamento com o GLB real.

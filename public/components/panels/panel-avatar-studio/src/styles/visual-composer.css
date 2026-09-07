@@ -329,3 +329,129 @@
 .vc3d-captura-corpo img{ width:min(360px,80vw); aspect-ratio:1/1; object-fit:contain; border-radius:12px; background:var(--vc-thumb-bg); border:1px solid var(--vc-linha); }
 .vc3d-captura-acoes{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
 .vc3d-captura-acoes a.vc-acao{ text-decoration:none; }
+
+/* ===== VC-3D rodada unificada: nota de acessórios ausentes + cenário no rail ===== */
+.vc3d-nota{ margin:2px 2px 10px; padding:10px 12px; font-size:12px; line-height:1.45; color:var(--vc-txt2); background:var(--vc-surf2); border:1px solid var(--vc-linha); border-radius:10px; }
+
+/* ==========================================================================
+   RODADA DESIGN OVERHAUL (reprovação visual do Jhony) — ferramenta visual:
+   clicar no avatar → escolher visualmente → aplicar. Texto vira apoio.
+   Aditivo/override no fim do arquivo (mesma especificidade → estas vencem).
+   ========================================================================== */
+
+/* 0) Estúdio é SEMPRE escuro — painel integra com o palco 3D (que é escuro por
+   natureza). Anula o tema claro dentro do VC (fim do "formulário branco"). */
+[data-light-v6] .vc-root[data-vc]{
+  --vc-bg:#0e1014; --vc-surf:#171a21; --vc-surf2:#1e222b; --vc-linha:#2a2f3a;
+  --vc-txt:#e6eaf2; --vc-txt2:#9aa3b2; --vc-acc:#7c3aed; --vc-on:#22c55e; --vc-err:#dc2626;
+  --vc-thumb-bg:#0b0d11; --vc-sombra:0 -8px 24px #0006;
+}
+
+/* 1) TRILHO só de ícones (2D e 3D compartilham .vc-cat) — sem quebra de palavra.
+   Nome vive no tooltip (title) e no título do painel; rótulo só na categoria ativa. */
+.vc-root[data-vc] .vc-trilho{ width:64px; padding:10px 0; gap:6px; align-items:center; }
+.vc-root[data-vc] .vc-cat{ width:48px; min-height:48px; padding:0; border-radius:12px; gap:0;
+  justify-content:center; align-items:center; position:relative; overflow:visible; }
+.vc-root[data-vc] .vc-cat svg{ width:23px; height:23px; }
+.vc-root[data-vc] .vc-cat span{ display:none; }
+.vc-root[data-vc] .vc-cat-ativa{ box-shadow:inset 3px 0 0 var(--vc-acc); }
+/* rótulo flutuante só na ativa (desktop), fora do fluxo — nunca empurra/enfileira */
+@media (min-width:769px){
+  .vc-root[data-vc] .vc-cat-ativa::after{ content:attr(aria-label); position:absolute; left:56px; top:50%;
+    transform:translateY(-50%); background:var(--vc-surf2); color:var(--vc-txt); border:1px solid var(--vc-linha);
+    border-radius:8px; padding:4px 9px; font-size:11px; white-space:nowrap; pointer-events:none; z-index:9;
+    box-shadow:0 4px 12px #0005; }
+}
+
+/* 2) AVATAR protagonista — palco domina, painel 340px integrado e recolhível. */
+.vc-root[data-vc] .vc-corpo{ grid-template-columns:64px minmax(0,1fr) 344px; }
+.vc-root[data-vc].vc-painel-off .vc-corpo{ grid-template-columns:64px minmax(0,1fr) 0; }
+.vc-root[data-vc] .vc-palco{ padding:16px; }
+.vc-root[data-vc] .vc-palco-wrap{ width:min(100%,78vh); }
+/* botão recolher/expandir painel no palco (desktop) */
+.vc-recolhe-painel{ position:absolute; top:12px; right:12px; z-index:6; background:color-mix(in srgb,var(--vc-surf) 86%,transparent);
+  border:1px solid var(--vc-linha); border-radius:10px; padding:8px; min-height:36px; min-width:36px; color:var(--vc-txt2);
+  display:inline-flex; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+.vc-recolhe-painel:hover{ color:var(--vc-txt); background:var(--vc-surf2); }
+@media (max-width:768px){ .vc-recolhe-painel{ display:none; } }
+
+/* indicador de categoria selecionada, junto ao modelo (2D e 3D) */
+.vc-catchip{ position:absolute; top:12px; left:12px; z-index:6; display:inline-flex; align-items:center; gap:7px;
+  background:color-mix(in srgb,var(--vc-surf) 86%,transparent); border:1px solid var(--vc-linha); border-radius:999px;
+  padding:6px 12px 6px 10px; font-size:12px; font-weight:600; color:var(--vc-txt); backdrop-filter:blur(3px);
+  box-shadow:0 4px 12px #0004; pointer-events:none; }
+.vc-catchip svg{ width:15px; height:15px; color:var(--vc-acc); }
+
+/* 3) PAINEL contextual enxuto e integrado — título + cards + cores (nada de form). */
+.vc-painel-cab{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:14px 14px 8px;
+  font-weight:600; font-size:15px; color:var(--vc-txt); }
+.vc-painel-cab .vc-painel-x{ background:transparent; border:0; color:var(--vc-txt2); width:36px; height:36px; border-radius:8px;
+  display:inline-flex; align-items:center; justify-content:center; }
+.vc-painel-cab .vc-painel-x:hover{ background:var(--vc-surf2); color:var(--vc-txt); }
+.vc-painel-dica{ padding:0 14px 8px; color:var(--vc-txt2); font-size:12px; line-height:1.4; }
+
+/* 4) CARDS visuais no 3D (miniatura real do renderer) — sem card de texto. */
+.vc3d-corpo-painel{ padding:6px 12px 16px; gap:4px; }
+.vc3d-cards{ grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; }
+.vc3d-card{ display:flex; flex-direction:column; gap:6px; align-items:stretch; padding:6px; min-height:auto;
+  background:var(--vc-surf2); border:2px solid transparent; border-radius:12px; position:relative; }
+.vc3d-card:hover{ border-color:var(--vc-linha); }
+.vc3d-card.vc-card-on{ border-color:var(--vc-acc); }
+.vc3d-thumb{ width:100%; aspect-ratio:1/1; border-radius:8px; background:var(--vc-thumb-bg) center/cover no-repeat;
+  display:flex; align-items:flex-end; justify-content:flex-start; position:relative; overflow:hidden; }
+.vc3d-thumb-vazio{ display:grid; place-items:center; color:var(--vc-txt2); }
+.vc3d-thumb-load{ position:absolute; inset:0; display:grid; place-items:center; color:var(--vc-txt2);
+  background:repeating-linear-gradient(135deg,#0000,#0000 8px,color-mix(in srgb,var(--vc-txt2) 8%,transparent) 8px,color-mix(in srgb,var(--vc-txt2) 8%,transparent) 16px); }
+.vc3d-card .vc-card-nome{ font-size:11px; text-align:center; color:var(--vc-txt); line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* selecionado: check no CANTO da miniatura (nunca sobre o texto) */
+.vc3d-card .vc-badge-eq{ top:6px; right:6px; left:auto; width:22px; height:22px; box-shadow:0 2px 6px #0007; }
+.vc3d-swatch{ height:20px; }
+/* classe do asset: só quando NÃO é "disponível"; abaixo, sem sobrepor, sem repetir */
+.vc3d-card .vc3d-classe{ position:static; margin-top:1px; font-size:9px; }
+.vc3d-card[data-classe="nativo"] .vc3d-classe{ display:none; }   /* disponível = sem selo */
+
+/* estado vazio compacto e honesto (sem preencher com item incorreto) */
+.vc3d-vazio{ grid-column:1/-1; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
+  padding:22px 16px; color:var(--vc-txt2); background:var(--vc-surf2); border:1px dashed var(--vc-linha); border-radius:12px; }
+.vc3d-vazio svg{ width:26px; height:26px; opacity:.7; }
+.vc3d-vazio strong{ color:var(--vc-txt); font-size:13px; font-weight:600; }
+.vc3d-vazio span{ font-size:12px; line-height:1.4; max-width:30ch; }
+
+/* forja de miniaturas 3D (offscreen, fora de tela mas renderizável) */
+.vc3d-forja{ position:absolute; width:200px; height:200px; left:-9999px; top:0; pointer-events:none; opacity:0; }
+
+/* 5) Câmera do palco: ícones sem texto sobreposto (nunca corta o modelo) */
+.vc3d-camera{ gap:6px; padding:5px 8px; }
+
+/* 6) "MAIS" reorganizado: menu → subpainel (nunca tudo de uma vez) */
+.vc3d-mais{ width:min(420px,100%); max-height:82vh; }
+.vc3d-mais-menu{ display:flex; flex-direction:column; gap:2px; padding:8px; }
+.vc3d-mais-mi{ display:flex; align-items:center; gap:12px; width:100%; background:transparent; border:0; border-radius:10px;
+  padding:14px 12px; min-height:52px; color:var(--vc-txt); text-align:left; }
+.vc3d-mais-mi:hover{ background:var(--vc-surf2); }
+.vc3d-mais-mi svg:first-child{ color:var(--vc-txt2); }
+.vc3d-mais-mi .vc3d-mais-mi-tit{ flex:1; font-weight:500; }
+.vc3d-mais-mi .vc3d-mais-mi-val{ font-size:12px; color:var(--vc-txt2); }
+.vc3d-sub{ padding:8px 14px 16px; display:flex; flex-direction:column; gap:4px; max-height:72vh; overflow:auto; }
+.vc3d-sub-grade{ display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; }
+.vc3d-cam4{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.vc3d-cam4 .vc3d-card{ align-items:center; }
+
+/* miniatura de CENA/ambiente (procedural → prévia por gradiente representativo) */
+.vc3d-cena-thumb{ width:100%; aspect-ratio:16/10; border-radius:8px; border:1px solid var(--vc-linha); }
+
+/* 9) MOBILE: gaveta com avatar SEMPRE visível (meio ~42dvh; palco ≥46dvh) */
+@media (max-width:768px){
+  .vc-root[data-vc] .vc-palco-wrap{ width:min(86vw,44vh); }
+  .vc-root[data-vc][data-modo="3d"] .vc3d-palco{ min-height:46dvh; }
+  .vc-root[data-vc] .vc-palco{ min-height:46dvh; }
+  .vc-root[data-vc][data-gaveta="meio"] .vc-painel{ height:42dvh; }
+  .vc-root[data-vc][data-modo="3d"][data-gaveta="meio"] .vc-painel{ height:42dvh; }
+  .vc-root[data-vc][data-gaveta="recolhida"] .vc-painel{ height:64px; }
+  .vc-root[data-vc][data-modo="3d"][data-gaveta="recolhida"] .vc-painel{ height:64px; }
+  .vc3d-cards{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .vc-catchip{ top:8px; left:8px; font-size:11px; }
+  /* alça sempre visível como afordância da gaveta */
+  .vc3d-corpo-painel{ padding-top:2px; }
+}

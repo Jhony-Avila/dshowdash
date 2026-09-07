@@ -38,7 +38,7 @@ export const SLOTS_ACESS_ALHURES: string[] = ['pes'];
 // Cobertura de hotspots (§2): cabelo, rosto(+olhos/sobrancelha/nariz/boca/barba), roupa,
 // acessórios (lateral), calçados (pés, modo corpo), cenário (fundo). Base/Estilo só-trilho.
 export const GRUPOS: GrupoVisual[] = [
-  { id: 'base', nome: 'Base', Icone: User, cats: ['base'], foco: '0 0 240 240' },
+  { id: 'base', nome: 'Personagem', Icone: User, cats: ['base'], foco: '0 0 240 240' },
 
   { id: 'cabelo', nome: 'Cabelo', Icone: Scissors, cats: ['cabelo'], foco: '46 6 148 130',
     hot: { top: '3%', left: '27%', width: '46%', height: '20%' } },
@@ -76,7 +76,7 @@ export const GRUPOS: GrupoVisual[] = [
     ],
     hot: { top: '46%', left: '6%', width: '22%', height: '24%' } },
 
-  { id: 'cenario', nome: 'Cenário', Icone: ImageIcon, cats: ['fundo'], foco: '0 0 240 240', overflow: true,
+  { id: 'cenario', nome: 'Cenário', Icone: ImageIcon, cats: ['fundo'], foco: '0 0 240 240',
     hot: { top: '2%', left: '2%', width: '96%', height: '96%' } },
 
   { id: 'estilo', nome: 'Estilo', Icone: Sparkles, cats: ['efeito', 'aura', 'moldura', 'emblema', 'banner'], foco: '0 0 240 240', overflow: true,

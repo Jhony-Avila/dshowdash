@@ -132,7 +132,11 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const gruposRail = useMemo(() => GRUPOS.filter((g) => !g.overflow), []);
   const gruposOverflow = useMemo(() => GRUPOS.filter((g) => g.overflow), []);
 
-  const [modo, setModo] = useState<'visual' | 'guiado' | '3d'>('visual');
+  const [modo, setModo] = useState<'visual' | 'guiado' | '3d'>(() => {
+    // preview de revisão pode pedir abertura direta em 3D (sessionStorage; nunca setado no produto)
+    try { if (flag('as6.vc_3d') && sessionStorage.getItem('avst.vc.abrir3d') === '1') return '3d'; } catch { /* ok */ }
+    return 'visual';
+  });
   const [grupoId, setGrupoId] = useState('base');
   const grupo = grupoPorId(grupoId, GRUPOS);
   const [subId, setSubId] = useState<string | null>(null);
@@ -402,6 +406,9 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
               </div>
             )}
           </div>
+          {(() => { const GIcone = grupo.Icone; return (
+            <div className="vc-catchip" aria-hidden><GIcone size={15} /><span>{grupo.nome}</span></div>
+          ); })()}
           <button className="vc-recolhe" onClick={() => setPainelRecolhido((v) => !v)} aria-expanded={!painelRecolhido} aria-controls="vc-painel-cat" aria-label={painelRecolhido ? 'Mostrar catálogo' : 'Ocultar catálogo'}>
             {painelRecolhido ? <PanelRightOpen size={18} aria-hidden /> : <PanelRightClose size={18} aria-hidden />}
           </button>
@@ -452,7 +459,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
         </aside>
       </div>
 
-      {/* overflow de categorias (§3): Cenário, Estilo… */}
+      {/* overflow de categorias (§3): Estilo (Cenário foi promovido ao trilho na rodada unificada). */}
       {maisCat && (
         <div className="vc-back" onClick={() => setMaisCat(false)}>
           <div className="vc-sheet vc-mais-sheet" role="dialog" aria-modal="true" aria-label="Mais categorias" onClick={(e) => e.stopPropagation()}>
