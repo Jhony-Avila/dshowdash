@@ -54,6 +54,12 @@ import type {
   ClimaPalco, Composicao, FundoPalco, HoraPalco, LuzPalco, PropsCenario, TemaId,
 } from '../workspace/palco';
 import { Palco3d } from './Palco3d';
+// rodada unificacao 3D (as6.shell_vc3d, decisao #160): o botao 3D abre o
+// VisualComposer3D COMPARTILHADO em tela cheia (2D desmontado); Palco3d fica
+// so no fallback flag OFF (rollback §651).
+const VisualComposer3D = lazy(() => import('../vc/VisualComposer3D'));
+import { CONFIG3D_PADRAO } from '../poc3d/catalogo3d';
+import type { Config3D } from '../poc3d/catalogo3d';
 import { flag } from '../nucleo/flags';
 import { montarCandidatoPremium } from '../services/QualidadeVisual'; // onda 1423 (#214)
 import { LOOKS_2D } from '../services/RegistroEfeitos'; // onda 1418 (#203)
@@ -845,6 +851,34 @@ export function ShellStudio({ store: storeExterno, configInicial, versaoBase, de
     void import('../services/Renderizador3d').catch(() => { refPrefetch3d.current = false; });
   }, []);
   const [palco3d, setPalco3d] = useState(false);
+  // rodada unificacao 3D (as6.shell_vc3d): o botao 3D abre o VisualComposer3D
+  // em TELA CHEIA; o shell 2D fica DESMONTADO (early return). Estado 2D
+  // preservado no store p/ o roundtrip. Palco3d so no fallback (flag OFF).
+  const shellVc3d = flag('as6.shell_vc3d');
+  const [modo3d, setModo3d] = useState(false);
+  const c3dHistRef = useRef<{ pilha: Config3D[]; i: number }>({ pilha: [{ ...CONFIG3D_PADRAO }], i: 0 });
+  const [, setC3dTick] = useState(0);
+  const c3d = c3dHistRef.current.pilha[c3dHistRef.current.i];
+  const podeDesfazer3d = c3dHistRef.current.i > 0;
+  const podeRefazer3d = c3dHistRef.current.i < c3dHistRef.current.pilha.length - 1;
+  const mudar3d = useCallback((c: Config3D) => {
+    const h = c3dHistRef.current;
+    h.pilha = h.pilha.slice(0, h.i + 1); h.pilha.push(c); h.i = h.pilha.length - 1;
+    setC3dTick((v) => v + 1);
+  }, []);
+  const desfazer3d = useCallback(() => { const h = c3dHistRef.current; if (h.i > 0) { h.i -= 1; setC3dTick((v) => v + 1); } }, []);
+  const refazer3d = useCallback(() => { const h = c3dHistRef.current; if (h.i < h.pilha.length - 1) { h.i += 1; setC3dTick((v) => v + 1); } }, []);
+  const abrir3dShell = useCallback(() => {
+    const cv = configVisivel.cores as unknown as Record<string, string> | undefined;
+    c3dHistRef.current = { pilha: [{ ...CONFIG3D_PADRAO, cores: {
+      pele: cv?.pele ?? CONFIG3D_PADRAO.cores.pele,
+      cabelo: cv?.cabelo ?? CONFIG3D_PADRAO.cores.cabelo,
+      roupa: cv?.roupa ?? CONFIG3D_PADRAO.cores.roupa,
+      detalhe: cv?.destaque ?? CONFIG3D_PADRAO.cores.detalhe,
+    } }], i: 0 };
+    setC3dTick((v) => v + 1); setModo3d(true);
+  }, [configVisivel]);
+  const alternar3d = useCallback(() => { if (shellVc3d) abrir3dShell(); else setPalco3d((v) => !v); }, [shellVc3d, abrir3dShell]);
   // mega 10: Apresentar delega ao showcase 3D quando o palco 3D está ativo
   const [sinal3d, setSinal3d] = useState(0);
 
@@ -1164,6 +1198,22 @@ export function ShellStudio({ store: storeExterno, configInicial, versaoBase, de
 
   const compacta = larguras.esq <= 84;
 
+  // rodada unificacao 3D: TELA CHEIA do VisualComposer3D — o shell 2D inteiro
+  // (sidebar, dock, catalogo, barra) NAO e renderizado; estado 2D vive no store.
+  if (modo3d && shellVc3d) {
+    return (
+      <LimiteShell aoSair={aoSairDoShell}>
+        <Suspense fallback={<div className="avst5-carregando" role="status">Carregando 3D…</div>}>
+          <VisualComposer3D store={store} config3d={c3d} aoMudar3d={mudar3d}
+            podeDesfazer={podeDesfazer3d} podeRefazer={podeRefazer3d} desfazer={desfazer3d} refazer={refazer3d}
+            versaoBase={versaoBase} aoVoltar2D={() => setModo3d(false)}
+            config2d={configVisivel} aplicar2d={(cfg) => aplicarComando(validarConfig(cfg))}
+            vida={vida} aoClassico={aoSairDoShell} />
+        </Suspense>
+      </LimiteShell>
+    );
+  }
+
   return (
     <LimiteShell aoSair={aoSairDoShell}>
       <div className="avst5-shell" ref={refShell} data-avst5="1" data-modo={modo} data-apresentando={apresentando ? "1" : undefined}
@@ -1181,7 +1231,7 @@ export function ShellStudio({ store: storeExterno, configInicial, versaoBase, de
         <BarraTopo modo={modo} setModo={setModo} apresentando={apresentando}
           aoApresentar={() => { if (palco3d) setSinal3d((n) => n + 1); else void apresentar(); }}
           flagPalco3d={flagPalco3d} palco3d={palco3d}
-          aoAlternar3d={() => setPalco3d((v) => !v)} prefetch3d={prefetch3d}
+          aoAlternar3d={alternar3d} prefetch3d={prefetch3d}
           rodarAleatorio={rodarAleatorio} somLigado={somLigado} alternarSom={alternarSom}
           abrirConsultor={() => setConsultor(true)} abrirMissoes={() => setMissoes(true)}
           abrirEvolucao={() => setEvolucao(true)} abrirTimeline={() => setTimeline(true)}
@@ -1195,7 +1245,7 @@ export function ShellStudio({ store: storeExterno, configInicial, versaoBase, de
             principalAtiva={principalAtiva} aoEscolherPrincipal={escolherPrincipal}
             taxonomia={taxCms} /* #148 */
             aoAbrirFerramenta={(id) => { /* §5.11: só handlers EXISTENTES */
-              if (id === 'estudio3d') setPalco3d((v) => !v);
+              if (id === 'estudio3d') alternar3d();
               else if (id === 'presets') setAba('presets');
               else if (id === 'historico') setAba('equipados');
               else if (id === 'missoes') setMissoes(true);
@@ -1692,7 +1742,7 @@ export function ShellStudio({ store: storeExterno, configInicial, versaoBase, de
                 ])) : []),
               ...(flag('as6.tax_v2') ? FERRAMENTAS_NAV.map((f) => ({
                 id: `tax-f-${f.id}`, rotulo: `Ferramenta: ${f.nome}`, executar: () => {
-                  if (f.id === 'estudio3d') setPalco3d((v) => !v);
+                  if (f.id === 'estudio3d') alternar3d();
                   else if (f.id === 'presets') setAba('presets');
                   else if (f.id === 'historico') setAba('equipados');
                   else if (f.id === 'missoes') setMissoes(true);
@@ -1704,7 +1754,7 @@ export function ShellStudio({ store: storeExterno, configInicial, versaoBase, de
               ...(flagPalco3d ? [{
                 id: 'palco3d',
                 rotulo: palco3d ? 'Desligar a prévia 3D' : 'Ligar a prévia 3D',
-                executar: () => setPalco3d((v) => !v),
+                executar: alternar3d,
               }] : []),
               // mega 71 (§117): personalidades na paleta
               ...PERSONALIDADES.map((p) => ({

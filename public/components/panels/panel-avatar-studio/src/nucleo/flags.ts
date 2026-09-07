@@ -7,6 +7,7 @@
 // (INVESTIGAR na F2 a integração com o panel-feature-flags-admin do dash).
 const PADROES: Record<string, boolean> = {
   'as6.vc_3d': false,             // Briefing 2 — modo 3D dentro do VC (motor 3D reusado); default OFF (§651); requer as6.visual_composer
+  'as6.shell_vc3d': false,        // rodada unificacao 3D (decisao #160) — o botao 3D do ShellStudio abre o VisualComposer3D COMPARTILHADO em tela cheia (2D desmontado), aposentando Palco3d/Estudio3D do caminho do usuario; default OFF (§651); requer as5.novo_shell
   'as6.visual_composer': false,   // frente VC — compositor visual (modos internos Visual/Guiado/Avancado); default OFF, fail-closed; OFF = shell atual byte a byte
   'as5.novo_shell': true,        // F2 — LIGADA no rollout §650 (2026-08-04, veredito visual do Jhony); rollback §651 = voltar p/ false
   'as5.registry_api': false,     // F1 — catálogo servido pelo registry
@@ -173,6 +174,7 @@ const PADROES: Record<string, boolean> = {
  */
 export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.vc_3d': ['as6.visual_composer'],
+  'as6.shell_vc3d': ['as5.novo_shell'],
   'as6.visual_composer': ['as5.novo_shell'], // VC so faz sentido no shell novo (como as6.single_2d)
   // Consultadas SOMENTE em shell/Palco3d.tsx → filhas do palco. As flags
   // de motor com DUPLA entrada (palco E Foto §329: as5.materiais3d,
