@@ -1363,6 +1363,17 @@
 .avst5-eq-acoes button:hover, .avst5-eq-acoes .avst5-eq-on { color: var(--avst-texto, var(--as6-texto-forte)); border-color: var(--avst-acento, var(--as6-acento)); }
 .avst5-modal-fundo { position: fixed; inset: 0; background: rgba(5,7,12,.6); display: flex; align-items: center; justify-content: center; z-index: 60; backdrop-filter: blur(3px); }
 .avst5-modal { background: var(--avst-superficie, var(--as6-superficie-3)); border: 1px solid var(--avst-borda, var(--as6-superficie-4)); border-radius: 12px; padding: 18px 20px; max-width: 380px; font-size: 13px; line-height: 1.55; }
+
+/* V4.3 §5-10: overlay das ferramentas clássicas absorvidas no shell único */
+.avst5-ferr-modal { max-width: min(920px, 94vw); width: 920px; max-height: 90vh; padding: 0; display: flex; flex-direction: column; }
+.avst5-ferr-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--avst-borda, var(--as6-superficie-4)); }
+.avst5-ferr-titulo { margin: 0; font-size: 16px; font-weight: 800; }
+.avst5-ferr-fechar { padding: 6px; line-height: 0; }
+.avst5-ferr-corpo { overflow: auto; padding: 16px 18px; flex: 1 1 auto; min-height: 0; }
+.avst5-ferr-carregando { padding: 40px; text-align: center; color: var(--as6-texto-2, #9fb0c8); }
+
+/* V4.3 §11: sub-rótulo de grupo na navegação única (Criar / Perfil) */
+.avst6-tax-subrotulo { padding: 8px 8px 2px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--as6-texto-3, #6b7688); }
 .avst5-modal-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 
 /* AS5 F3 C2 — navegação por slot (§68.2/§68.3) + propriedades por asset (§71) */

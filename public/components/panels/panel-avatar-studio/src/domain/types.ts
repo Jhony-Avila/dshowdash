@@ -197,7 +197,7 @@ export interface AvatarConfig {
 }
 
 // ── lote 251–260 (§102/§118): criação avançada 2D ───────────────────
-export type TipoCorporal = 'esbelto' | 'atletico' | 'robusto' | 'compacto';
+export type TipoCorporal = 'esbelto' | 'atletico' | 'robusto' | 'compacto' | 'feminino';
 export type PosturaAvatar = 'confiante' | 'relaxada' | 'executiva' | 'heroica' | 'misteriosa';
 
 export interface AvatarDoUsuario {

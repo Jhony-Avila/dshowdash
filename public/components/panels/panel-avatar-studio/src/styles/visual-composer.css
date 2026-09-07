@@ -1,0 +1,457 @@
+/* visual-composer.css — Avatar Studio Visual Composer (escopo .vc-root[data-vc]).
+   Aditivo e isolado; flag OFF = arquivo nem carrega. Dark por padrão; claro sob [data-light-v6]. */
+.vc-root[data-vc]{
+  --vc-bg:#0e1014; --vc-surf:#171a21; --vc-surf2:#1e222b; --vc-linha:#2a2f3a;
+  --vc-txt:#e6eaf2; --vc-txt2:#9aa3b2; --vc-acc:#7c3aed; --vc-on:#22c55e; --vc-err:#dc2626;
+  --vc-thumb-bg:#0b0d11; --vc-sombra:0 -8px 24px #0006;
+  position:absolute; inset:0; display:grid; grid-template-rows:auto 1fr; height:100%;
+  background:var(--vc-bg); color:var(--vc-txt); font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  overflow:hidden;
+}
+[data-light-v6] .vc-root[data-vc]{ --vc-bg:#f3f5f9; --vc-surf:#ffffff; --vc-surf2:#eef1f6; --vc-linha:#d8dee8; --vc-txt:#1a2030; --vc-txt2:#556074; --vc-acc:#6d28d9; --vc-thumb-bg:#e9edf4; --vc-sombra:0 -8px 24px #1a20301f; }
+.vc-root[data-vc] *{ box-sizing:border-box; }
+.vc-root[data-vc] button{ font:inherit; color:inherit; cursor:pointer; }
+.vc-root[data-vc] :focus-visible{ outline:2px solid var(--vc-acc); outline-offset:2px; border-radius:8px; }
+
+/* barra global */
+.vc-barra{ display:flex; align-items:center; gap:12px; padding:10px 14px; padding-top:max(10px,env(safe-area-inset-top)); background:var(--vc-surf); border-bottom:1px solid var(--vc-linha); }
+.vc-titulo{ font-weight:600; letter-spacing:.2px; }
+.vc-globais{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+.vc-acao{ display:inline-flex; align-items:center; gap:6px; background:transparent; border:1px solid var(--vc-linha); border-radius:10px; padding:8px 12px; min-height:40px; min-width:40px; justify-content:center; }
+.vc-acao:hover{ background:var(--vc-surf2); }
+.vc-acao:disabled{ opacity:.4; cursor:default; }
+.vc-icone{ padding:8px; }
+.vc-salvar{ display:inline-flex; align-items:center; gap:6px; background:var(--vc-acc); color:#fff; border:0; border-radius:10px; padding:8px 16px; min-height:40px; font-weight:600; position:relative; }
+.vc-salvar[data-estado="salvo"]{ background:var(--vc-on); }
+.vc-salvar[data-estado="erro"]{ background:var(--vc-err); }
+.vc-ponto{ position:absolute; top:5px; right:5px; width:8px; height:8px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px var(--vc-acc); }
+
+/* corpo desktop: trilho | palco | painel */
+.vc-corpo{ display:grid; grid-template-columns:68px minmax(0,1fr) 340px; min-height:0; }
+.vc-root.vc-painel-off .vc-corpo{ grid-template-columns:68px minmax(0,1fr) 0; }
+.vc-root.vc-painel-off .vc-painel{ display:none; }
+
+.vc-trilho{ display:flex; flex-direction:column; gap:4px; padding:10px 6px; background:var(--vc-surf); border-right:1px solid var(--vc-linha); overflow-y:auto; }
+.vc-cat{ display:flex; flex-direction:column; align-items:center; gap:4px; background:transparent; color:var(--vc-txt2); border:0; border-radius:12px; padding:9px 2px; min-height:58px; font-size:9px; line-height:1.05; text-align:center; }
+.vc-cat span{ max-width:100%; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
+.vc-cat:hover{ background:var(--vc-surf2); color:var(--vc-txt); }
+.vc-cat-ativa{ background:color-mix(in srgb,var(--vc-acc) 20%,var(--vc-surf2)); color:var(--vc-txt); box-shadow:inset 3px 0 0 var(--vc-acc); font-weight:600; }
+
+.vc-palco{ position:relative; display:grid; place-items:center; padding:24px; min-height:0; overflow:hidden; }
+.vc-palco-wrap{ position:relative; width:min(100%,64vh); max-height:100%; aspect-ratio:1/1; }
+.vc-palco-wrap .avst-svg{ width:100%; height:100%; }
+.vc-palco-wrap .avst-svg svg{ width:100%; height:100%; display:block; }
+.vc-hot{ position:absolute; z-index:2; background:transparent; border:2px solid transparent; border-radius:14px; transition:border-color .15s, background .15s; }
+.vc-hot[data-fundo="true"]{ z-index:1; }
+.vc-hot:hover,.vc-hot:focus-visible{ border-color:color-mix(in srgb,var(--vc-acc) 70%,transparent); background:color-mix(in srgb,var(--vc-acc) 12%,transparent); outline:none; }
+.vc-hot-on{ border-color:color-mix(in srgb,var(--vc-acc) 55%,transparent); }
+.vc-recolhe{ position:absolute; top:12px; right:12px; background:var(--vc-surf); border:1px solid var(--vc-linha); border-radius:10px; padding:8px; min-height:36px; min-width:36px; }
+
+.vc-painel{ display:flex; flex-direction:column; min-height:0; background:var(--vc-surf); border-left:1px solid var(--vc-linha); }
+.vc-gaveta-alca{ display:none; }
+.vc-subs{ display:flex; gap:6px; padding:10px 12px 0; overflow-x:auto; }
+.vc-sub{ background:var(--vc-surf2); border:1px solid transparent; border-radius:999px; padding:6px 12px; font-size:12px; color:var(--vc-txt2); white-space:nowrap; min-height:34px; }
+.vc-sub-on{ color:var(--vc-txt); border-color:var(--vc-acc); }
+.vc-catnav{ display:flex; align-items:center; gap:4px; padding:10px 12px; border-bottom:1px solid var(--vc-linha); }
+.vc-catnav button{ background:transparent; border:0; border-radius:8px; padding:6px 10px; color:var(--vc-txt2); font-size:13px; min-height:34px; }
+.vc-catnav button.on{ color:var(--vc-txt); background:var(--vc-surf2); }
+.vc-filtro-btn{ margin-left:auto; background:transparent; border:0; border-radius:8px; padding:6px; color:var(--vc-txt2); min-height:34px; }
+.vc-icone-nav{ background:transparent; border:0; border-radius:8px; padding:6px; color:var(--vc-txt2); min-height:34px; }
+.vc-icone-nav[aria-pressed="true"]{ color:var(--vc-txt); background:var(--vc-surf2); }
+.vc-buscabox{ display:flex; align-items:center; gap:10px; padding:8px 12px; border-bottom:1px solid var(--vc-linha); flex-wrap:wrap; }
+.vc-buscabox input[type=text],.vc-buscabox input:not([type]){ flex:1; min-width:120px; background:var(--vc-bg); border:1px solid var(--vc-linha); border-radius:8px; padding:8px 10px; color:var(--vc-txt); min-height:38px; }
+.vc-chk{ display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--vc-txt2); }
+
+.vc-grade{ display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; padding:12px; overflow-y:auto; align-content:start; min-height:0; }
+.vc-card{ position:relative; }
+.vc-card-btn{ display:flex; flex-direction:column; gap:6px; align-items:center; width:100%; background:var(--vc-surf2); border:2px solid transparent; border-radius:12px; padding:8px; min-height:44px; position:relative; }
+.vc-card-btn:hover{ border-color:var(--vc-linha); }
+.vc-card-on .vc-card-btn{ border-color:var(--vc-acc); }
+.vc-card-bl .vc-card-btn{ opacity:.62; }
+.vc-thumb{ width:100%; aspect-ratio:1/1; display:block; overflow:hidden; border-radius:8px; background:var(--vc-thumb-bg); }
+.vc-thumb svg{ width:100%; height:100%; display:block; }
+.vc-card-nome{ font-size:11px; color:var(--vc-txt); text-align:center; max-width:100%; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+.vc-badge{ position:absolute; top:6px; left:6px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; font-size:10px; font-weight:700; }
+.vc-badge-eq{ background:var(--vc-acc); color:#fff; width:20px; height:20px; }
+.vc-badge-bl{ background:#0009; color:#fff; width:20px; height:20px; left:auto; right:6px; }
+.vc-badge-novo{ background:var(--vc-on); color:#04210f; padding:2px 6px; left:6px; }
+.vc-fav{ position:absolute; bottom:34px; right:6px; background:#0008; border:0; border-radius:999px; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; color:#fff; }
+.vc-fav-on{ color:#ff5a7a; }
+.vc-vazio{ grid-column:1/-1; color:var(--vc-txt2); padding:24px; text-align:center; }
+
+/* sheets / dialogs */
+.vc-back{ position:absolute; inset:0; background:#0008; display:grid; place-items:center; z-index:20; padding:16px; }
+.vc-sheet{ width:min(460px,100%); max-height:80%; overflow:auto; background:var(--vc-surf); border:1px solid var(--vc-linha); border-radius:16px; }
+.vc-sheet-cab{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--vc-linha); font-weight:600; }
+.vc-sheet-cab button{ background:transparent; border:0; }
+.vc-sheet-lista{ display:flex; flex-direction:column; padding:8px; }
+.vc-sheet-lista button{ display:flex; align-items:center; gap:10px; background:transparent; border:0; border-radius:10px; padding:12px 14px; text-align:left; min-height:48px; }
+.vc-sheet-lista button:hover{ background:var(--vc-surf2); }
+.vc-mi-2l{ flex-direction:column; align-items:flex-start; gap:2px; }
+.vc-mi-tit{ font-weight:600; }
+.vc-mi-sub{ font-size:11px; color:var(--vc-txt2); line-height:1.35; }
+.vc-sheet-grp{ color:var(--vc-txt2); font-size:11px; text-transform:uppercase; letter-spacing:.5px; padding:12px 14px 4px; }
+.vc-looks{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; padding:12px; }
+.vc-look{ background:var(--vc-surf2); border:2px solid transparent; border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:6px; }
+.vc-look:hover{ border-color:var(--vc-acc); }
+.vc-look-img{ width:100%; aspect-ratio:1/1; border-radius:8px; background:var(--vc-thumb-bg); object-fit:contain; }
+.vc-dialog{ width:min(420px,100%); background:var(--vc-surf); border:1px solid var(--vc-linha); border-radius:16px; padding:20px; }
+.vc-dialog p{ margin:0 0 16px; }
+.vc-dialog-acoes{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
+
+/* criação guiada */
+.vc-root[data-modo="guiado"]{ grid-template-rows:auto auto 1fr auto; }
+.vc-guia-prog{ display:flex; gap:6px; justify-content:center; padding:10px; background:var(--vc-surf); }
+.vc-dot{ width:8px; height:8px; border-radius:999px; background:var(--vc-linha); }
+.vc-dot.on{ background:var(--vc-acc); } .vc-dot.ok{ background:var(--vc-on); }
+.vc-guia-corpo{ display:grid; grid-template-columns:minmax(0,1fr) 340px; min-height:0; }
+.vc-guia-nav{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 16px; padding-bottom:max(12px,env(safe-area-inset-bottom)); background:var(--vc-surf); border-top:1px solid var(--vc-linha); }
+.vc-revisao{ padding:16px; display:flex; flex-direction:column; gap:10px; }
+.vc-ajuda{ color:var(--vc-txt2); margin:0 0 6px; }
+.vc-bloco{ width:100%; justify-content:center; }
+.vc-lbl{ } /* rótulo textual (some no mobile estreito) */
+
+/* MOBILE — palco em cima, catálogo em gaveta inferior (3 alturas), trilho horizontal */
+@media (max-width:768px){
+  /* rail SEMPRE no topo (nunca coberta pela sheet); palco logo abaixo (sem vazio) */
+  .vc-corpo{ grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); position:relative; }
+  .vc-trilho{ order:0; flex-direction:row; border-right:0; border-bottom:1px solid var(--vc-linha); overflow-x:auto; overflow-y:hidden; padding:6px 8px; gap:6px; scroll-snap-type:x proximity; }
+  .vc-cat{ min-width:56px; flex:0 0 auto; scroll-snap-align:start; min-height:52px; padding:6px 4px; }
+  .vc-palco{ order:1; padding:8px 8px 0; place-items:start center; }
+  .vc-palco-wrap{ width:min(88vw,46vh); }
+  .vc-recolhe{ display:none; }
+  .vc-painel{ position:absolute; left:0; right:0; bottom:0; z-index:15; border-left:0; border-top:1px solid var(--vc-linha); border-radius:16px 16px 0 0;
+    height:40dvh; transition:height .2s ease; padding-bottom:env(safe-area-inset-bottom); box-shadow:var(--vc-sombra); }
+  .vc-root[data-gaveta="recolhida"] .vc-painel{ height:96px; }
+  .vc-root[data-gaveta="meio"] .vc-painel{ height:40dvh; }
+  .vc-root[data-gaveta="expandida"] .vc-painel{ height:82dvh; }
+  .vc-gaveta-alca{ display:flex; align-items:center; justify-content:center; width:100%; background:transparent; border:0; min-height:44px; padding:6px 0 2px; }
+  .vc-gaveta-alca span{ width:44px; height:5px; border-radius:999px; background:var(--vc-linha); display:block; }
+  /* catálogo mais denso no mobile (3 col compactas) */
+  .vc-grade{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:8px; }
+  .vc-card-btn{ padding:6px; }
+  .vc-card-nome{ font-size:10px; }
+  .vc-guia-corpo{ grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) auto; }
+  .vc-lbl{ display:none; }
+  .vc-root.vc-painel-off .vc-corpo{ grid-template-columns:1fr; }
+}
+@media (max-width:768px) and (orientation:landscape){
+  .vc-corpo{ grid-template-columns:auto minmax(0,1fr); grid-template-rows:1fr; }
+  .vc-trilho{ order:0; flex-direction:column; border-bottom:0; border-right:1px solid var(--vc-linha); }
+  .vc-palco{ order:1; }
+  .vc-palco-wrap{ width:min(56vw,86vh); }
+  .vc-root[data-gaveta="meio"] .vc-painel{ height:64dvh; }
+}
+
+@media (prefers-reduced-motion:reduce){ .vc-root[data-vc] *{ transition:none !important; animation:none !important; } }
+
+/* ===== Mais: painel estruturado + ferramentas nativas (VC-D) ===== */
+.vc-mp-back{ justify-items:end; }
+.vc-mp{ display:flex; flex-direction:column; width:min(400px,100%); height:100%; max-height:100%; background:var(--vc-surf); border-left:1px solid var(--vc-linha); box-shadow:-8px 0 24px #0004; }
+.vc-mp-cab{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--vc-linha); }
+.vc-mp-marca{ display:inline-flex; }
+.vc-mp-tit{ font-weight:600; flex:1; }
+.vc-mp-corpo{ flex:1; overflow-y:auto; min-height:0; padding:8px; }
+.vc-mp-grupo{ border-bottom:1px solid var(--vc-linha); }
+.vc-mp-grupo:last-child{ border-bottom:0; }
+.vc-mp-grupo-cab{ display:flex; align-items:center; justify-content:space-between; width:100%; background:transparent; border:0; color:var(--vc-txt); padding:12px 8px; font-weight:600; font-size:13px; min-height:44px; }
+.vc-mp-grupo-cab .vc-mp-rot{ transform:rotate(90deg); transition:transform .15s; }
+.vc-mp-itens{ display:flex; flex-direction:column; padding:2px 0 8px; }
+.vc-mp-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; color:var(--vc-txt); border-radius:10px; padding:10px 12px; text-align:left; min-height:44px; }
+.vc-mp-item:hover{ background:var(--vc-surf2); }
+.vc-mp-item span{ flex:1; }
+.vc-mp-ext{ color:var(--vc-txt2); flex:0; }
+.vc-mp-tool{ padding:6px 4px; }
+.vc-mp-sec{ display:flex; flex-direction:column; gap:10px; padding:6px 8px; }
+.vc-mp-ajuda{ color:var(--vc-txt2); font-size:12px; margin:0; line-height:1.4; }
+.vc-mp-nota{ color:var(--vc-txt2); font-size:11px; margin:0; }
+.vc-mp-erro{ color:var(--vc-err); font-size:12px; margin:0; }
+.vc-mp-lbl{ font-size:11px; color:var(--vc-txt2); text-transform:uppercase; letter-spacing:.4px; }
+.vc-mp-ta{ width:100%; background:var(--vc-bg); border:1px solid var(--vc-linha); border-radius:8px; padding:8px 10px; color:var(--vc-txt); font:12px/1.4 ui-monospace,monospace; resize:vertical; }
+.vc-mp-botoes{ display:flex; flex-direction:column; gap:8px; }
+.vc-bloco{ width:100%; justify-content:center; }
+.vc-mp-on{ border-color:var(--vc-acc); color:var(--vc-txt); }
+.vc-mp-confirma{ display:flex; flex-direction:column; gap:8px; background:var(--vc-surf2); border:1px solid var(--vc-linha); border-radius:10px; padding:12px; }
+.vc-mp-lista{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+.vc-mp-lista li{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; background:var(--vc-surf2); }
+.vc-mp-cat{ font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--vc-txt2); min-width:64px; }
+.vc-mp-nome{ flex:1; }
+.vc-mp-rar{ font-size:11px; color:var(--vc-txt2); }
+.vc-mp-comparar{ display:flex; gap:10px; justify-content:center; }
+.vc-mp-comparar figure{ margin:0; text-align:center; }
+.vc-mp-comparar figcaption{ font-size:11px; color:var(--vc-txt2); margin-top:4px; }
+.vc-mp-cmp{ width:min(220px,60vw); aspect-ratio:1/1; background:var(--vc-thumb-bg); border-radius:12px; overflow:hidden; }
+.vc-mp-cmp .avst-svg,.vc-mp-cmp .avst-svg svg{ width:100%; height:100%; display:block; }
+.vc-mp-det{ border-top:1px solid var(--vc-linha); padding-top:8px; }
+.vc-mp-det summary{ cursor:pointer; font-size:13px; color:var(--vc-txt2); }
+.vc-mp-carregando{ padding:24px; text-align:center; color:var(--vc-txt2); }
+.vc-mp input[type=file]{ font-size:12px; color:var(--vc-txt2); }
+
+/* imersivo: foto / 3D / apresentação / showcase — palco dominante, sem shell clássica */
+.vc-imersivo{ position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; background:var(--vc-bg); }
+.vc-imersivo-barra{ display:flex; align-items:center; gap:12px; padding:10px 14px; padding-top:max(10px,env(safe-area-inset-top)); background:var(--vc-surf); border-bottom:1px solid var(--vc-linha); }
+.vc-imersivo-tit{ font-weight:600; }
+.vc-imersivo-corpo{ flex:1; min-height:0; position:relative; overflow:auto; }
+.vc-apresentar{ position:absolute; inset:0; display:grid; place-items:center; padding:24px; }
+.vc-apresentar-palco{ width:min(90vw,80vh); aspect-ratio:1/1; }
+.vc-apresentar-palco .avst-svg,.vc-apresentar-palco .avst-svg svg{ width:100%; height:100%; display:block; }
+
+/* MOBILE: Mais vira bottom-sheet; imersivo ocupa tudo */
+@media (max-width:768px){
+  .vc-mp-back{ align-items:end; justify-items:stretch; }
+  .vc-mp{ width:100%; height:86dvh; max-height:86dvh; border-left:0; border-top:1px solid var(--vc-linha); border-radius:16px 16px 0 0; box-shadow:var(--vc-sombra); padding-bottom:env(safe-area-inset-bottom); }
+}
+
+/* Cores contextual (sheet, nunca permanente) */
+.vc-cores-sheet{ width:min(460px,100%); }
+.vc-cores-corpo{ padding:12px 14px; max-height:70vh; overflow:auto; }
+
+/* ===== Editor de cores nativo (contextual; sem HSL técnico na superfície) ===== */
+.vc-cores{ display:flex; flex-direction:column; gap:14px; }
+.vc-cor-slot{ display:flex; flex-direction:column; gap:8px; }
+.vc-cor-nome{ font-size:12px; font-weight:600; color:var(--vc-txt); }
+.vc-cor-sws{ display:flex; flex-wrap:wrap; gap:8px; }
+.vc-cor-sw{ position:relative; width:34px; height:34px; border-radius:9px; border:2px solid var(--vc-linha); padding:0; display:inline-flex; align-items:center; justify-content:center; color:#fff; box-shadow:inset 0 0 0 1px #0003; }
+.vc-cor-sw-on{ border-color:var(--vc-txt); box-shadow:0 0 0 2px var(--vc-acc); }
+.vc-cor-sw svg{ filter:drop-shadow(0 0 1px #000a); }
+.vc-cor-custom{ width:34px; height:34px; border-radius:9px; border:2px dashed var(--vc-linha); display:inline-flex; align-items:center; justify-content:center; color:var(--vc-txt2); cursor:pointer; position:relative; overflow:hidden; }
+.vc-cor-custom:hover{ border-color:var(--vc-acc); color:var(--vc-txt); }
+.vc-cor-custom input[type=color]{ position:absolute; inset:0; opacity:0; width:100%; height:100%; border:0; padding:0; cursor:pointer; }
+/* fechar dos sheets com alvo de toque adequado */
+.vc-sheet-cab button,.vc-mp-cab button{ min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+
+/* ===== VC-H (Briefing 1): sub-hotspots diretos, onboarding descartável, pulso único, overflow de categorias ===== */
+
+/* sub-hotspots (olhos/boca/nariz/sobrancelha/barba/pés): acima dos hotspots de grupo */
+.vc-subhot{ z-index:3; border-radius:10px; }
+
+/* pulso ÚNICO de ensino (§7) — aplicado por ~2.6s na 1ª abertura; nunca sob prefers-reduced-motion */
+@keyframes vc-pulso{
+  0%,100%{ border-color:color-mix(in srgb,var(--vc-acc) 24%,transparent); background:color-mix(in srgb,var(--vc-acc) 6%,transparent); }
+  50%{ border-color:color-mix(in srgb,var(--vc-acc) 72%,transparent); background:color-mix(in srgb,var(--vc-acc) 16%,transparent); }
+}
+.vc-hot-pulso{ animation:vc-pulso 1.3s ease-in-out 2; }
+
+/* dica descartável de 1ª abertura (§7) — não é modal, não bloqueia */
+.vc-onboard{ position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:6;
+  display:inline-flex; align-items:center; gap:8px; max-width:92%;
+  background:color-mix(in srgb,var(--vc-surf) 92%,transparent); color:var(--vc-txt);
+  border:1px solid var(--vc-linha); border-radius:999px; padding:8px 8px 8px 14px;
+  font-size:12.5px; line-height:1.3; box-shadow:0 6px 20px #0005; backdrop-filter:blur(3px); }
+.vc-onboard span{ overflow:hidden; text-overflow:ellipsis; }
+.vc-onboard-x{ flex:0 0 auto; background:var(--vc-surf2); border:0; border-radius:999px;
+  width:28px; height:28px; min-width:28px; display:inline-flex; align-items:center; justify-content:center; color:var(--vc-txt2); }
+.vc-onboard-x:hover{ color:var(--vc-txt); }
+@media (max-width:768px){ .vc-onboard{ top:8px; font-size:12px; } }
+
+/* overflow de categorias do trilho (Cenário/Estilo/…) — reusa .vc-sheet + .vc-sheet-lista */
+.vc-mais-sheet{ width:min(360px,100%); }
+.vc-mais-sheet .vc-sheet-lista button{ gap:12px; }
+
+/* região viva para leitores de tela (mudança de categoria / asset) — sem ruído visual */
+.vc-sr-live{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* ===== VC-3D (Briefing 2): modo 3D limpo dentro do VC (escopo .vc-root[data-modo="3d"]) ===== */
+.vc-root[data-vc][data-modo="3d"]{ grid-template-rows:auto 1fr; }
+.vc3d-palco{ position:relative; padding:0; place-items:stretch; overflow:hidden; background:var(--vc-bg); }
+.vc3d-palco canvas{ display:block; width:100% !important; height:100% !important; touch-action:none; }
+.vc3d-hud{ position:absolute; left:10px; bottom:10px; z-index:4; font-size:11px; color:var(--vc-txt2);
+  background:color-mix(in srgb,var(--vc-surf) 78%,transparent); border:1px solid var(--vc-linha); border-radius:8px; padding:3px 8px; pointer-events:none; }
+.vc3d-camera{ position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:5; display:flex; gap:6px; flex-wrap:wrap; justify-content:center;
+  background:color-mix(in srgb,var(--vc-surf) 86%,transparent); border:1px solid var(--vc-linha); border-radius:999px; padding:5px 8px; backdrop-filter:blur(3px); max-width:94%; }
+.vc3d-cam-btn{ display:inline-flex; align-items:center; gap:4px; background:transparent; border:0; border-radius:999px; padding:6px 10px; min-height:32px; color:var(--vc-txt2); font-size:12px; }
+.vc3d-cam-btn:hover{ background:var(--vc-surf2); color:var(--vc-txt); }
+.vc3d-cam-btn.on{ background:color-mix(in srgb,var(--vc-acc) 24%,var(--vc-surf2)); color:var(--vc-txt); }
+
+.vc3d-corpo-painel{ display:flex; flex-direction:column; gap:6px; padding:12px; overflow-y:auto; min-height:0; }
+.vc3d-grupo-nome{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--vc-txt2); margin:8px 2px 2px; }
+.vc3d-cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:8px; }
+.vc3d-card{ min-height:52px; gap:6px; }
+.vc3d-card .vc-card-nome{ font-size:11px; }
+.vc3d-swatch{ width:100%; height:22px; border-radius:6px; border:1px solid var(--vc-linha); }
+.vc3d-cor-linha{ display:flex; flex-wrap:wrap; gap:8px; padding:2px 2px 6px; }
+.vc3d-slider{ display:flex; align-items:center; gap:10px; font-size:12px; color:var(--vc-txt); padding:4px 2px; }
+.vc3d-slider span{ min-width:74px; } .vc3d-slider input{ flex:1; }
+.vc3d-toggle{ display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--vc-txt); padding:8px 2px; min-height:40px; }
+.vc3d-avancado-cab{ margin-top:12px; align-self:flex-start; background:var(--vc-surf2); border:1px solid var(--vc-linha); border-radius:8px; padding:8px 14px; min-height:40px; color:var(--vc-txt); font-size:12px; }
+.vc3d-avancado{ display:flex; flex-direction:column; gap:6px; margin-top:6px; border-top:1px solid var(--vc-linha); padding-top:8px; }
+
+.vc3d-erro{ position:absolute; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+  text-align:center; padding:24px; color:var(--vc-txt); background:var(--vc-bg); }
+.vc3d-erro p{ max-width:34ch; color:var(--vc-txt2); margin:0; }
+.vc3d-sem-webgl{ position:static; min-height:60vh; }
+
+@media (max-width:768px){
+  /* palco em cima, painel vira gaveta inferior (mesma linguagem do 2D) */
+  .vc-root[data-vc][data-modo="3d"] .vc-corpo{ grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); position:relative; }
+  .vc-root[data-vc][data-modo="3d"] .vc-trilho{ flex-direction:row; border-right:0; border-bottom:1px solid var(--vc-linha); overflow-x:auto; padding:6px 8px; gap:6px; }
+  .vc-root[data-vc][data-modo="3d"] .vc-cat{ min-width:56px; flex:0 0 auto; min-height:52px; }
+  .vc3d-palco{ order:1; min-height:42dvh; }
+  .vc-root[data-vc][data-modo="3d"] .vc-painel{ position:absolute; left:0; right:0; bottom:0; z-index:15; border-left:0; border-top:1px solid var(--vc-linha);
+    border-radius:16px 16px 0 0; height:40dvh; box-shadow:var(--vc-sombra); padding-bottom:env(safe-area-inset-bottom); }
+  .vc-root[data-vc][data-modo="3d"][data-gaveta="recolhida"] .vc-painel{ height:104px; }
+  .vc-root[data-vc][data-modo="3d"][data-gaveta="expandida"] .vc-painel{ height:82dvh; }
+  .vc3d-cards{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+
+/* ===== VC-3D consolidação visual (Briefing 2 — rodada de limpeza) ===== */
+/* badge de classificação do asset no próprio card (§5) */
+.vc3d-card{ position:relative; padding-bottom:20px; }
+.vc3d-classe{ position:absolute; left:6px; right:6px; bottom:4px; font-size:9px; line-height:1.1; text-align:center;
+  color:var(--vc-txt2); text-transform:uppercase; letter-spacing:.3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vc3d-classe[data-c="nativo"]{ color:var(--vc-on); }
+.vc3d-classe[data-c="simplificado"]{ color:#f0b429; }
+.vc3d-classe[data-c="necessario"]{ color:var(--vc-txt2); }
+.vc3d-classe[data-c="so2d"]{ color:#8aa0ff; }
+.vc3d-card-off{ opacity:.5; cursor:default; }
+.vc3d-card-off:hover{ border-color:transparent; }
+
+/* sheet "Mais" do 3D (secundários fora do palco) */
+.vc3d-mais{ width:min(460px,100%); max-height:82vh; }
+.vc3d-mais-corpo{ padding:10px 14px 16px; max-height:72vh; overflow:auto; display:flex; flex-direction:column; gap:4px; }
+@media (max-width:768px){ .vc3d-mais{ width:100%; max-height:86dvh; } }
+
+/* ===== VC-3D secundários no "Mais" + captura (rodada final) ===== */
+.vc3d-mais-tool{ width:min(560px,100%); }
+.vc3d-mais-tool .vc-sheet-cab{ justify-content:space-between; }
+.vc3d-tool{ padding:8px 10px 14px; max-height:74vh; overflow:auto; }
+.vc3d-carregando{ padding:24px; text-align:center; color:var(--vc-txt2); }
+/* menu de ferramentas secundárias dentro do Mais */
+.vc3d-menu{ display:flex; flex-direction:column; gap:2px; margin-top:2px; }
+.vc3d-mi{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; border-radius:10px; padding:11px 12px; min-height:44px; color:var(--vc-txt); text-align:left; }
+.vc3d-mi:hover{ background:var(--vc-surf2); }
+.vc3d-mi-sec{ font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--vc-txt2); padding:8px 12px 2px; }
+/* captura: oculta controles do palco durante a geração */
+.vc-root[data-capturando] .vc3d-camera{ display:none; }
+.vc3d-captura{ width:min(520px,100%); }
+.vc3d-captura-corpo{ padding:14px; display:flex; flex-direction:column; gap:12px; align-items:center; }
+.vc3d-captura-corpo img{ width:min(360px,80vw); aspect-ratio:1/1; object-fit:contain; border-radius:12px; background:var(--vc-thumb-bg); border:1px solid var(--vc-linha); }
+.vc3d-captura-acoes{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.vc3d-captura-acoes a.vc-acao{ text-decoration:none; }
+
+/* ===== VC-3D rodada unificada: nota de acessórios ausentes + cenário no rail ===== */
+.vc3d-nota{ margin:2px 2px 10px; padding:10px 12px; font-size:12px; line-height:1.45; color:var(--vc-txt2); background:var(--vc-surf2); border:1px solid var(--vc-linha); border-radius:10px; }
+
+/* ==========================================================================
+   RODADA DESIGN OVERHAUL (reprovação visual do Jhony) — ferramenta visual:
+   clicar no avatar → escolher visualmente → aplicar. Texto vira apoio.
+   Aditivo/override no fim do arquivo (mesma especificidade → estas vencem).
+   ========================================================================== */
+
+/* 0) Estúdio é SEMPRE escuro — painel integra com o palco 3D (que é escuro por
+   natureza). Anula o tema claro dentro do VC (fim do "formulário branco"). */
+[data-light-v6] .vc-root[data-vc]{
+  --vc-bg:#0e1014; --vc-surf:#171a21; --vc-surf2:#1e222b; --vc-linha:#2a2f3a;
+  --vc-txt:#e6eaf2; --vc-txt2:#9aa3b2; --vc-acc:#7c3aed; --vc-on:#22c55e; --vc-err:#dc2626;
+  --vc-thumb-bg:#0b0d11; --vc-sombra:0 -8px 24px #0006;
+}
+
+/* 1) TRILHO só de ícones (2D e 3D compartilham .vc-cat) — sem quebra de palavra.
+   Nome vive no tooltip (title) e no título do painel; rótulo só na categoria ativa. */
+.vc-root[data-vc] .vc-trilho{ width:64px; padding:10px 0; gap:6px; align-items:center; }
+.vc-root[data-vc] .vc-cat{ width:48px; min-height:48px; padding:0; border-radius:12px; gap:0;
+  justify-content:center; align-items:center; position:relative; overflow:visible; }
+.vc-root[data-vc] .vc-cat svg{ width:23px; height:23px; }
+.vc-root[data-vc] .vc-cat span{ display:none; }
+.vc-root[data-vc] .vc-cat-ativa{ box-shadow:inset 3px 0 0 var(--vc-acc); }
+/* rótulo flutuante só na ativa (desktop), fora do fluxo — nunca empurra/enfileira */
+@media (min-width:769px){
+  .vc-root[data-vc] .vc-cat-ativa::after{ content:attr(aria-label); position:absolute; left:56px; top:50%;
+    transform:translateY(-50%); background:var(--vc-surf2); color:var(--vc-txt); border:1px solid var(--vc-linha);
+    border-radius:8px; padding:4px 9px; font-size:11px; white-space:nowrap; pointer-events:none; z-index:9;
+    box-shadow:0 4px 12px #0005; }
+}
+
+/* 2) AVATAR protagonista — palco domina, painel 340px integrado e recolhível. */
+.vc-root[data-vc] .vc-corpo{ grid-template-columns:64px minmax(0,1fr) 344px; }
+.vc-root[data-vc].vc-painel-off .vc-corpo{ grid-template-columns:64px minmax(0,1fr) 0; }
+.vc-root[data-vc] .vc-palco{ padding:16px; }
+.vc-root[data-vc] .vc-palco-wrap{ width:min(100%,78vh); }
+/* botão recolher/expandir painel no palco (desktop) */
+.vc-recolhe-painel{ position:absolute; top:12px; right:12px; z-index:6; background:color-mix(in srgb,var(--vc-surf) 86%,transparent);
+  border:1px solid var(--vc-linha); border-radius:10px; padding:8px; min-height:36px; min-width:36px; color:var(--vc-txt2);
+  display:inline-flex; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+.vc-recolhe-painel:hover{ color:var(--vc-txt); background:var(--vc-surf2); }
+@media (max-width:768px){ .vc-recolhe-painel{ display:none; } }
+
+/* indicador de categoria selecionada, junto ao modelo (2D e 3D) */
+.vc-catchip{ position:absolute; top:12px; left:12px; z-index:6; display:inline-flex; align-items:center; gap:7px;
+  background:color-mix(in srgb,var(--vc-surf) 86%,transparent); border:1px solid var(--vc-linha); border-radius:999px;
+  padding:6px 12px 6px 10px; font-size:12px; font-weight:600; color:var(--vc-txt); backdrop-filter:blur(3px);
+  box-shadow:0 4px 12px #0004; pointer-events:none; }
+.vc-catchip svg{ width:15px; height:15px; color:var(--vc-acc); }
+
+/* 3) PAINEL contextual enxuto e integrado — título + cards + cores (nada de form). */
+.vc-painel-cab{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:14px 14px 8px;
+  font-weight:600; font-size:15px; color:var(--vc-txt); }
+.vc-painel-cab .vc-painel-x{ background:transparent; border:0; color:var(--vc-txt2); width:36px; height:36px; border-radius:8px;
+  display:inline-flex; align-items:center; justify-content:center; }
+.vc-painel-cab .vc-painel-x:hover{ background:var(--vc-surf2); color:var(--vc-txt); }
+.vc-painel-dica{ padding:0 14px 8px; color:var(--vc-txt2); font-size:12px; line-height:1.4; }
+
+/* 4) CARDS visuais no 3D (miniatura real do renderer) — sem card de texto. */
+.vc3d-corpo-painel{ padding:6px 12px 16px; gap:4px; }
+.vc3d-cards{ grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; }
+.vc3d-card{ display:flex; flex-direction:column; gap:6px; align-items:stretch; padding:6px; min-height:auto;
+  background:var(--vc-surf2); border:2px solid transparent; border-radius:12px; position:relative; }
+.vc3d-card:hover{ border-color:var(--vc-linha); }
+.vc3d-card.vc-card-on{ border-color:var(--vc-acc); }
+.vc3d-thumb{ width:100%; aspect-ratio:1/1; border-radius:8px; background:var(--vc-thumb-bg) center/cover no-repeat;
+  display:flex; align-items:flex-end; justify-content:flex-start; position:relative; overflow:hidden; }
+.vc3d-thumb-vazio{ display:grid; place-items:center; color:var(--vc-txt2); }
+.vc3d-thumb-load{ position:absolute; inset:0; display:grid; place-items:center; color:var(--vc-txt2);
+  background:repeating-linear-gradient(135deg,#0000,#0000 8px,color-mix(in srgb,var(--vc-txt2) 8%,transparent) 8px,color-mix(in srgb,var(--vc-txt2) 8%,transparent) 16px); }
+.vc3d-card .vc-card-nome{ font-size:11px; text-align:center; color:var(--vc-txt); line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* selecionado: check no CANTO da miniatura (nunca sobre o texto) */
+.vc3d-card .vc-badge-eq{ top:6px; right:6px; left:auto; width:22px; height:22px; box-shadow:0 2px 6px #0007; }
+.vc3d-swatch{ height:20px; }
+/* classe do asset: só quando NÃO é "disponível"; abaixo, sem sobrepor, sem repetir */
+.vc3d-card .vc3d-classe{ position:static; margin-top:1px; font-size:9px; }
+.vc3d-card[data-classe="nativo"] .vc3d-classe{ display:none; }   /* disponível = sem selo */
+
+/* estado vazio compacto e honesto (sem preencher com item incorreto) */
+.vc3d-vazio{ grid-column:1/-1; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
+  padding:22px 16px; color:var(--vc-txt2); background:var(--vc-surf2); border:1px dashed var(--vc-linha); border-radius:12px; }
+.vc3d-vazio svg{ width:26px; height:26px; opacity:.7; }
+.vc3d-vazio strong{ color:var(--vc-txt); font-size:13px; font-weight:600; }
+.vc3d-vazio span{ font-size:12px; line-height:1.4; max-width:30ch; }
+
+/* forja de miniaturas 3D (offscreen, fora de tela mas renderizável) */
+.vc3d-forja{ position:absolute; width:200px; height:200px; left:-9999px; top:0; pointer-events:none; opacity:0; }
+
+/* 5) Câmera do palco: ícones sem texto sobreposto (nunca corta o modelo) */
+.vc3d-camera{ gap:6px; padding:5px 8px; }
+
+/* 6) "MAIS" reorganizado: menu → subpainel (nunca tudo de uma vez) */
+.vc3d-mais{ width:min(420px,100%); max-height:82vh; }
+.vc3d-mais-menu{ display:flex; flex-direction:column; gap:2px; padding:8px; }
+.vc3d-mais-mi{ display:flex; align-items:center; gap:12px; width:100%; background:transparent; border:0; border-radius:10px;
+  padding:14px 12px; min-height:52px; color:var(--vc-txt); text-align:left; }
+.vc3d-mais-mi:hover{ background:var(--vc-surf2); }
+.vc3d-mais-mi svg:first-child{ color:var(--vc-txt2); }
+.vc3d-mais-mi .vc3d-mais-mi-tit{ flex:1; font-weight:500; }
+.vc3d-mais-mi .vc3d-mais-mi-val{ font-size:12px; color:var(--vc-txt2); }
+.vc3d-sub{ padding:8px 14px 16px; display:flex; flex-direction:column; gap:4px; max-height:72vh; overflow:auto; }
+.vc3d-sub-grade{ display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; }
+.vc3d-cam4{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.vc3d-cam4 .vc3d-card{ align-items:center; }
+
+/* miniatura de CENA/ambiente (procedural → prévia por gradiente representativo) */
+.vc3d-cena-thumb{ width:100%; aspect-ratio:16/10; border-radius:8px; border:1px solid var(--vc-linha); }
+
+/* 9) MOBILE: gaveta com avatar SEMPRE visível (meio ~42dvh; palco ≥46dvh) */
+@media (max-width:768px){
+  .vc-root[data-vc] .vc-palco-wrap{ width:min(86vw,44vh); }
+  .vc-root[data-vc][data-modo="3d"] .vc3d-palco{ min-height:46dvh; }
+  .vc-root[data-vc] .vc-palco{ min-height:46dvh; }
+  .vc-root[data-vc][data-gaveta="meio"] .vc-painel{ height:42dvh; }
+  .vc-root[data-vc][data-modo="3d"][data-gaveta="meio"] .vc-painel{ height:42dvh; }
+  .vc-root[data-vc][data-gaveta="recolhida"] .vc-painel{ height:64px; }
+  .vc-root[data-vc][data-modo="3d"][data-gaveta="recolhida"] .vc-painel{ height:64px; }
+  .vc3d-cards{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .vc-catchip{ top:8px; left:8px; font-size:11px; }
+  /* alça sempre visível como afordância da gaveta */
+  .vc3d-corpo-painel{ padding-top:2px; }
+}

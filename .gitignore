@@ -65,6 +65,8 @@
 !/scripts/deploy/
 # scripts do programa Elevação Basal (docs/ELEVACAO-BASAL/)
 !/scripts/basal/
+# scripts de seguranca do programa Golden (preflight git, decisao A+ §30)
+!/scripts/golden/
 !/scripts/koala-build.sh
 !/scripts/koala-smoke-all.sh
 !/scripts/koala-smoke-all.php
@@ -146,3 +148,6 @@ dist/
 # suíte de testes headless: artefatos locais nunca entram
 /scripts/avatar/testes/saida/
 /scripts/avatar/testes/node_modules
+
+# Golden art render harness (efêmero, reconstruído por reset)
+tools-golden/

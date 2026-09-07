@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  V4_HERO_ASSET_TEMPLATE.svg — decisão A+ §7/§21/§22: MOLDE do ativo autorado
+  (HeroAsset2D). É o "idioma" que o ilustrador segue no Illustrator/Figma para
+  que engine/heroAssetImport.ts consuma o desenho SEM reconstruí-lo.
+
+  Este arquivo é ao mesmo tempo (a) a especificação viva da convenção e (b) o
+  ativo de PROVA importado por 13_V4_HERO_IMPORT_PROOF. NÃO é um hero final —
+  a barra de qualidade artística (≥8) permanece REWORK (§20/§27); aqui o que se
+  prova é o PIPELINE e a legibilidade da convenção, não a fatura da arte.
+
+  CANVAS: 240×400 (corpo). Origem 0,0. Fundo transparente.
+  ÂNCORAS DO CORPO PADRÃO (para alinhar a peça): cx=120; yOmb=122; yPei=150;
+    yCin=192; yQua=220. Ombro±49, peito±45, cintura±35, bainha±40.
+
+  CONVENÇÃO (atributos data-* — o resto é SVG comum):
+    data-hero-layer = back | shadow | base | mid | light | detail | occlusion | front
+        → bucket de composição (mapeado p/ hook do ParteDef pelo import).
+    data-channel = pele | cabelo | roupa | destaque   → cor vem da PALETA (customizável).
+    data-tone    = base | claro | escuro | profundo | brilho | meio   (default base).
+    data-paint   = fill | stroke | both   (default fill).
+    data-material = wool|silk|denim|leather|metal|technical|satin|cotton|glass|emissive
+        → preenche via materiais2d usando o hex do data-channel como base.
+    <g data-hero="anchors"> <circle data-anchor="nome" cx cy/> … </g>
+        → âncoras nomeadas (não pintadas; viram o mapa `anchors`).
+  IDs de <defs>/gradiente: livres — o import prefixa TODOS por uid.
+
+  O import consome o CONTEÚDO INTERNO deste <svg> (sem esta casca externa).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 400" width="240" height="400">
+
+  <!-- defs do ATIVO: ids livres, prefixados por uid no import -->
+  <defs>
+    <radialGradient id="halo" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- BACK: volume/halo atrás da figura (→ renderAtras) -->
+  <ellipse data-hero-layer="back" cx="120" cy="196" rx="108" ry="150" fill="url(#halo)"/>
+
+  <!-- SHADOW: sombra de contato no chão (→ renderSombra) -->
+  <ellipse data-hero-layer="shadow" cx="120" cy="386" rx="74" ry="9" fill="#000000" opacity="0.30"/>
+  <ellipse data-hero-layer="shadow" cx="120" cy="386" rx="46" ry="5" fill="#000000" opacity="0.22"/>
+
+  <!-- BASE: silhueta do blazer (canal roupa + material wool). Estrutura fechada
+       ombro→tórax→cintura→bainha; gola em V no topo. -->
+  <path data-hero-layer="base" data-channel="roupa" data-material="wool" fill="#3a4256"
+        d="M107 108
+           C 103 112 98 116 71 124
+           C 74 138 76 146 75 160
+           C 74 178 72 186 85 200
+           C 82 214 82 220 82 230
+           L 158 230
+           C 158 220 158 214 155 200
+           C 168 186 166 178 165 160
+           C 164 146 166 138 169 124
+           C 142 116 137 112 133 108
+           C 128 130 112 130 107 108 Z"/>
+
+  <!-- MID: dobras/meios-tons (canal roupa tom escuro, traço) -->
+  <path data-hero-layer="mid" data-channel="roupa" data-tone="escuro" data-paint="stroke"
+        fill="none" stroke="#232833" stroke-width="3" stroke-linecap="round" opacity="0.55"
+        d="M92 150 C 90 176 92 198 96 224"/>
+  <path data-hero-layer="mid" data-channel="roupa" data-tone="escuro" data-paint="stroke"
+        fill="none" stroke="#232833" stroke-width="3" stroke-linecap="round" opacity="0.55"
+        d="M148 150 C 150 176 148 198 144 224"/>
+
+  <!-- LIGHT: realce de crista (canal roupa tom claro) -->
+  <path data-hero-layer="light" data-channel="roupa" data-tone="claro" data-paint="stroke"
+        fill="none" stroke="#6b7488" stroke-width="2.4" stroke-linecap="round" opacity="0.5"
+        d="M80 132 C 78 150 78 168 80 190"/>
+
+  <!-- DETAIL: lapelas (canal destaque) + botões (canal destaque tom brilho) -->
+  <path data-hero-layer="detail" data-channel="destaque" data-tone="escuro" fill="#8a5e1e"
+        d="M107 108 C 112 130 118 150 120 176 L 120 150 C 118 130 114 118 107 108 Z"/>
+  <path data-hero-layer="detail" data-channel="destaque" data-tone="escuro" fill="#8a5e1e"
+        d="M133 108 C 128 130 122 150 120 176 L 120 150 C 122 130 126 118 133 108 Z"/>
+  <circle data-hero-layer="detail" data-channel="destaque" data-tone="brilho" cx="120" cy="188" r="2.4"/>
+  <circle data-hero-layer="detail" data-channel="destaque" data-tone="brilho" cx="120" cy="206" r="2.4"/>
+
+  <!-- OCCLUSION: sombra do colarinho sobre o peito (→ render, por cima) -->
+  <path data-hero-layer="occlusion" fill="#000000" opacity="0.18"
+        d="M104 120 C 112 128 128 128 136 120 C 132 132 108 132 104 120 Z"/>
+
+  <!-- FRONT: brilho de lapela / fio de luz (→ renderFrente) -->
+  <path data-hero-layer="front" fill="#ffffff" opacity="0.14"
+        d="M112 118 C 116 134 118 150 119 170 C 116 150 113 132 112 118 Z"/>
+
+  <!-- ÂNCORAS (não pintadas): pontos de referência p/ fit/foco -->
+  <g data-hero="anchors">
+    <circle data-anchor="gola"    cx="120" cy="112"/>
+    <circle data-anchor="ombroL"  cx="71"  cy="124"/>
+    <circle data-anchor="ombroR"  cx="169" cy="124"/>
+    <circle data-anchor="cintura" cx="120" cy="192"/>
+    <circle data-anchor="bainha"  cx="120" cy="230"/>
+  </g>
+
+</svg>

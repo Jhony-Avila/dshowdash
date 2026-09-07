@@ -28,6 +28,7 @@ import { OLHOS } from '../engine/partes/olhos';
 import { BOCAS } from '../engine/partes/bocas';
 import { ROUPAS } from '../engine/partes/roupas';
 import { ROUPAS_PREMIUM } from '../engine/partes/premium/roupas'; // onda 1411 (#159/#166)
+import { HEROES_2D } from '../engine/partes/heroes'; // Golden A+2: heroes autorados (importarHeroAsset), gated por as6.hero_2d
 import { BASES_PREMIUM, OLHOS_PREMIUM, BOCAS_PREMIUM } from '../engine/partes/premium/faces'; // onda 1412 (#162)
 import { CABELOS_PREMIUM } from '../engine/partes/premium/cabelos'; // onda 1413 (§881–§897)
 import { BARBAS_PREMIUM, SOBRANCELHAS_PREMIUM, NARIZES_PREMIUM } from '../engine/partes/premium/rosto'; // onda 1414 (#162)
@@ -303,6 +304,8 @@ export const PARTES: ParteDef[] = [
   ...BOCAS, ...BOCAS_PREMIUM, ...ROUPAS, ...ROUPAS_PREMIUM,
   ...BARBAS_PREMIUM, ...SOBRANCELHAS_PREMIUM, ...NARIZES_PREMIUM, // onda 1414 (#162)
   ...ROUPAS_PREMIUM_1415, ...SOBREPECAS_PREMIUM, ...ROUPAS_INFERIORES, ...CALCADOS_PREMIUM, // onda 1415 (#191)
+  ...HEROES_2D, // Golden A+2: heroes autorados (id `_hx_`), listados só com as6.hero_2d
+
   ...ACESSORIOS_PREMIUM, // onda 1416 (#196)
   ...FUNDOS_PREMIUM, ...AURAS_PREMIUM, ...MOLDURAS_PREMIUM, // onda 1417 (#199)
   ...SOBREPECAS, // §3393 (decisão #95): wrappers — zero arte nova
@@ -327,7 +330,10 @@ export function itensDe(categoria: CategoriaId): ParteDef[] {
   // catálogo com a flag; o resolver POR_ID segue aceitando configs salvos
   // (rollback §651 esconde a UI, nunca descarta dado)
   return PARTES.filter((x) => x.categoria === categoria
-    && (x.acabamento !== 'premium' || flag('as6.classico_premium')));
+    && (x.acabamento !== 'premium' || flag('as6.classico_premium'))
+    // Golden A+2: heroes autorados (`_hx_`) exigem a flag própria as6.hero_2d
+    // (mais restrita); o resolver POR_ID segue aceitando configs salvos.
+    && (!/_hx_/.test(x.id) || flag('as6.hero_2d')));
 }
 
 /** Categorias VISÍVEIS na navegação (§3393 — decisão #95): `roupa_sobre`
@@ -840,10 +846,16 @@ export function svgItemIsolado(
     // acessório no corpo (relógio/tênis/etc.) SOBRE silhueta neutra p/ escala
     frag = ghostCorpo(true) + arte(parte.renderCorpo);
     focoPadrao = '0 0 240 400';
+  } else if (cat === 'barba') {
+    // §49-51: SÓ mandíbula ghost, MUITO discreta (10-20%), sem torso; a barba
+    // é a protagonista. Crop nariz inferior → queixo (não corpo inteiro).
+    const jaw = `<g opacity="0.14"><path d="M74 98 C 76 140 96 176 120 182 C 144 176 164 140 166 98 C 150 122 90 122 74 98 Z" fill="${palGhost.pele.base}"/></g>`;
+    frag = jaw + camadasAsset();
+    focoPadrao = '60 100 120 108';
   } else if (ghostCat) {
-    // §10/§16: contexto anatômico neutro real atrás do asset
-    frag = ghostCorpo(cat === 'barba' ? true : true) + camadasAsset();
-    focoPadrao = cat === 'barba' ? '58 40 124 118' : '18 26 204 348';
+    // §10/§16: silhueta neutra p/ escala (aura/efeito)
+    frag = ghostCorpo(true) + camadasAsset();
+    focoPadrao = '18 26 204 348';
   } else {
     // isolado puro (cabelo/olhos/base/boca/fundo/…) — APROVADO pelo Jhony (§4/§6/§12/§25)
     frag = camadasAsset();
@@ -856,12 +868,20 @@ export function svgItemIsolado(
 export function svgDe(config: AvatarConfig, opcoes?: OpcoesRender): string {
   // onda 1411 (#159): o modo premium é decidido AQUI (flag + acabamento) —
   // o motor continua puro; flag OFF ⇒ premium false ⇒ SVG byte a byte
-  const premium = opcoes?.premium ?? (config.acabamento === 'premium' && flag('as6.classico_premium'));
+  // Golden V3.1 (#219-R1): a ARTE ELEVADA (v2/v3) fica atrás de `as6.arte_v2`
+  // (decisão do Jhony: sem rollout global até aprovação humana do Gate A). Só
+  // liga o trilho premium quando classico_premium E arte_v2 estão ON; flag OFF
+  // ⇒ premium false ⇒ motor CLÁSSICO byte a byte (§651). Opções explícitas
+  // (opcoes.premium) seguem valendo p/ a prova headless.
+  const premium = opcoes?.premium ?? (config.acabamento === 'premium' && flag('as6.classico_premium') && flag('as6.arte_v2'));
   // onda 1414 (#162/#186): rosto v2 decidido AQUI (flag) — motor puro;
   // flag OFF ⇒ faceV2 false ⇒ SVG byte a byte (rollback §651)
   const faceV2 = opcoes?.faceV2 ?? flag('as6.face_v2');
+  // Golden A+2: fit engine (silhueta blazer + calçado ao pé) atrás de as6.fit_v2
+  const fitV2 = opcoes?.fitV2 ?? flag('as6.fit_v2');
   const extras = (premium ? { premium } : {}) as OpcoesRender;
   if (faceV2) extras.faceV2 = true;
+  if (fitV2) extras.fitV2 = true;
   return renderAvatar(config, itemPorId, Object.keys(extras).length ? { ...opcoes, ...extras } : opcoes);
 }
 
@@ -1346,7 +1366,7 @@ export const PRESETS: Preset[] = [
   // onda 1418 (#202): presets C03–C06 — coleção "Classic Premium" completa
   {
     id: 'pre_cp_boardroom',
-    nome: 'Classic Premium — Boardroom',
+    nome: 'Boardroom',
     descricao: 'C03: blazer com forro de cetim, social e sapato polido.',
     raridade: 'lendario',
     config: {
@@ -1359,7 +1379,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'pre_cp_offduty',
-    nome: 'Classic Premium — Off-duty',
+    nome: 'Off-duty',
     descricao: 'C04: cardigã sobre camiseta, jeans e tênis premium.',
     raridade: 'epico',
     config: {
@@ -1372,7 +1392,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'pre_cp_neon',
-    nome: 'Classic Premium — Neon',
+    nome: 'Neon',
     descricao: 'C05: hoodie técnico, jogger, beco neon e aura de fluxo.',
     raridade: 'epico',
     config: {
@@ -1385,7 +1405,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'pre_cp_gala',
-    nome: 'Classic Premium — Gala',
+    nome: 'Gala',
     descricao: 'C06: cetim de noite, coroa e a nebulosa inteira de fundo.',
     raridade: 'lendario',
     config: {
@@ -1690,7 +1710,7 @@ export const COLECOES: Colecao[] = [
   // (colecoesAtivas filtra); itens sao os goldens do gate §2560
   {
     id: 'col_classic_premium',
-    nome: 'Classic Premium',
+    nome: 'Coleção Premium',
     descricao: 'A primeira leva do padrão-ouro 2D: rosto, cabelo, alfaiataria e palco.',
     raridade: 'lendario',
     itens: ['bas_px_angular', 'cab_px_lateral', 'olh_px_confiante', 'boc_px_sorriso', 'rou_px_blazer', 'rin_social', 'ace_px_social', 'fun_px_estudio', 'aur_px_fluxo', 'mol_px_ouro'],

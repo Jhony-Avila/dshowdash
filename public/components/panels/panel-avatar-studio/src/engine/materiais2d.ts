@@ -32,9 +32,30 @@ export interface Material2d {
   fill: (uid: string) => string;
   /** fragmento de REALCE por cima do shape (recebe o path/geom alvo) */
   realce: (uid: string, path: string) => string;
+  /** Golden V3.1 (#219 §66-79): RESPOSTA À DOBRA — dada a geometria das dobras
+   *  (cristas iluminadas + vales), cada material responde à LUZ de forma
+   *  própria: couro = specular fino e forte na crista + vinco escuro; algodão =
+   *  realce largo e fraco (matte); lã = quase sem specular; metal = banda dura.
+   *  É isto que diferencia o material NA MESMA geometria (§79), não só o pattern. */
+  dobra: (uid: string, cristas: string[], vales: string[]) => string;
 }
 
 const gid = (uid: string, token: string) => `${uid}m2_${token}`;
+
+// resposta de luz por material na DOBRA (crista/vale): cor+alfa+largura do
+// stroke. crista: 'w'=branco | 'brilho'/'claro'=tinta do material. vale: preto.
+const FOLD_RESP: Record<MaterialToken2d, { rC: 'w' | 'brilho' | 'claro'; rA: number; rW: number; vA: number; vW: number }> = {
+  cotton: { rC: 'w', rA: 0.10, rW: 6, vA: 0.12, vW: 6 },
+  wool: { rC: 'w', rA: 0.05, rW: 8, vA: 0.16, vW: 8 },
+  leather: { rC: 'w', rA: 0.6, rW: 2.2, vA: 0.42, vW: 4 },
+  technical: { rC: 'brilho', rA: 0.42, rW: 3, vA: 0.22, vW: 4 },
+  satin: { rC: 'w', rA: 0.34, rW: 8, vA: 0.16, vW: 6 },
+  silk: { rC: 'w', rA: 0.38, rW: 7, vA: 0.16, vW: 6 },
+  metal: { rC: 'w', rA: 0.72, rW: 2, vA: 0.5, vW: 3 },
+  denim: { rC: 'claro', rA: 0.16, rW: 4, vA: 0.28, vW: 4 },
+  glass: { rC: 'w', rA: 0.42, rW: 3, vA: 0.2, vW: 5 },
+  emissive: { rC: 'brilho', rA: 0.3, rW: 5, vA: 0.1, vW: 4 },
+};
 
 /** Gradiente base 3 paradas (suave) — a maioria dos tecidos. */
 function gradTecido(id: string, t: TintaPremium, y2 = 1): string {
@@ -47,33 +68,56 @@ function gradTecido(id: string, t: TintaPremium, y2 = 1): string {
 /** Fábrica de material — determinística; cada token tem defs próprios. */
 export function material2d(token: MaterialToken2d, hexBase: string): Material2d {
   const t = tintaPremium(hexBase);
-  const comum = { token, tinta: t, fill: (u: string) => `url(#${gid(u, token)})` };
+  const fr = FOLD_RESP[token];
+  const rCor = fr.rC === 'w' ? '#ffffff' : t[fr.rC];
+  const dobra = (_u: string, cristas: string[], vales: string[]): string =>
+    vales.map((d) => `<path d="${d}" fill="none" stroke="${alfa('#000000', fr.vA)}" stroke-width="${fr.vW}" stroke-linecap="round"/>`).join('')
+    + cristas.map((d) => `<path d="${d}" fill="none" stroke="${alfa(rCor, fr.rA)}" stroke-width="${fr.rW}" stroke-linecap="round"/>`).join('');
+  const comum = { token, tinta: t, fill: (u: string) => `url(#${gid(u, token)})`, dobra };
   switch (token) {
     case 'cotton':
-      return { ...comum, defs: (u) => gradTecido(gid(u, token), t), realce: () => '' };
-    case 'wool':
+      // §69: MATTE — highlight amplo e fraco, pouca especularidade, liso.
       return {
         ...comum,
-        defs: (u) => gradTecido(gid(u, token), t),
-        // tramas horizontais discretas (lã) — strokes, sem filtro
-        realce: (_u, d) => `<g clip-path="none">${''}<path d="${d}" fill="none" stroke="${alfa(t.escuro, 0.22)}" stroke-width="0.8" stroke-dasharray="1.5 3"/></g>`,
+        defs: (u) => `<linearGradient id="${gid(u, token)}" x1="0.3" y1="0" x2="0.5" y2="1">`
+          + `<stop offset="0" stop-color="${t.claro}"/><stop offset="0.5" stop-color="${t.base}"/><stop offset="1" stop-color="${t.meio}"/></linearGradient>`
+          + `<radialGradient id="${gid(u, token)}h" cx="0.4" cy="0.3" r="0.7">`
+          + `<stop offset="0" stop-color="${alfa('#ffffff', 0.14)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/></radialGradient>`,
+        realce: (u, d) => `<path d="${d}" fill="url(#${gid(u, token)}h)"/>`,
+      };
+    case 'wool':
+      // §70: difuso, contraste baixo, TRAMA visível, borda macia, sombra rica.
+      return {
+        ...comum,
+        defs: (u) => `<linearGradient id="${gid(u, token)}" x1="0.2" y1="0" x2="0.5" y2="1">`
+          + `<stop offset="0" stop-color="${t.base}"/><stop offset="0.5" stop-color="${t.base}"/><stop offset="1" stop-color="${t.escuro}"/></linearGradient>`
+          + `<pattern id="${gid(u, token)}p" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(12)">`
+          + `<path d="M0 2.5 h5 M2.5 0 v5" stroke="${alfa(t.escuro, 0.16)}" stroke-width="0.7"/></pattern>`,
+        realce: (u, d) => `<path d="${d}" fill="url(#${gid(u, token)}p)"/>`,
       };
     case 'denim':
+      // §71: twill DIAGONAL + seams + stitching + highlight localizado.
       return {
         ...comum,
         defs: (u) => gradTecido(gid(u, token), t)
-          + `<linearGradient id="${gid(u, token)}c" x1="0" y1="0" x2="1" y2="0.2">`
-          + `<stop offset="0" stop-color="${alfa(t.brilho, 0.16)}"/><stop offset="1" stop-color="${alfa(t.brilho, 0)}"/></linearGradient>`,
-        realce: (u, d) => `<path d="${d}" fill="url(#${gid(u, token)}c)"/>`
-          + `<path d="${d}" fill="none" stroke="${alfa(t.profundo, 0.35)}" stroke-width="1.4"/>`,
+          + `<pattern id="${gid(u, token)}p" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">`
+          + `<path d="M0 0 v4" stroke="${alfa(t.claro, 0.25)}" stroke-width="0.8"/><path d="M2 0 v4" stroke="${alfa(t.profundo, 0.2)}" stroke-width="0.8"/></pattern>`,
+        realce: (u, d) => `<path d="${d}" fill="url(#${gid(u, token)}p)"/>`
+          + `<path d="${d}" fill="none" stroke="${alfa(t.profundo, 0.4)}" stroke-width="1.6" stroke-dasharray="5 3" stroke-linecap="round"/>`,
       };
     case 'leather':
+      // §72: specular strip + bordas escuras + creases + NÃO plástico.
       return {
         ...comum,
         defs: (u) => `<linearGradient id="${gid(u, token)}" x1="0.1" y1="0" x2="0.6" y2="1">`
-          + `<stop offset="0" stop-color="${t.brilho}"/><stop offset="0.18" stop-color="${t.claro}"/>`
-          + `<stop offset="0.55" stop-color="${t.base}"/><stop offset="1" stop-color="${t.profundo}"/></linearGradient>`,
-        realce: (_u, d) => `<path d="${d}" fill="none" stroke="${alfa('#ffffff', 0.30)}" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="10 26"/>`,
+          + `<stop offset="0" stop-color="${t.claro}"/><stop offset="0.3" stop-color="${t.base}"/>`
+          + `<stop offset="0.7" stop-color="${t.escuro}"/><stop offset="1" stop-color="${t.profundo}"/></linearGradient>`
+          + `<linearGradient id="${gid(u, token)}s" x1="0" y1="0" x2="0" y2="1">`
+          + `<stop offset="0.32" stop-color="${alfa('#ffffff', 0)}"/><stop offset="0.42" stop-color="${alfa('#ffffff', 0.5)}"/><stop offset="0.52" stop-color="${alfa('#ffffff', 0)}"/></linearGradient>`,
+        // specular strip (banda larga) + bordas escuras + creases finas
+        realce: (u, d) => `<path d="${d}" fill="url(#${gid(u, token)}s)"/>`
+          + `<path d="${d}" fill="none" stroke="${alfa(t.profundo, 0.55)}" stroke-width="2.4"/>`
+          + `<path d="${d}" fill="none" stroke="${alfa(t.profundo, 0.3)}" stroke-width="0.9" stroke-dasharray="3 14" stroke-dashoffset="7"/>`,
       };
     case 'metal':
       return {
@@ -86,10 +130,15 @@ export function material2d(token: MaterialToken2d, hexBase: string): Material2d 
         realce: (_u, d) => `<path d="${d}" fill="none" stroke="${alfa('#ffffff', 0.5)}" stroke-width="1" stroke-dasharray="4 40"/>`,
       };
     case 'technical':
+      // §73: painéis + seams + edge crisp + sheen moderado + detalhes funcionais.
       return {
         ...comum,
-        defs: (u) => gradTecido(gid(u, token), t, 0.9),
-        realce: (_u, d) => `<path d="${d}" fill="none" stroke="${alfa(t.brilho, 0.4)}" stroke-width="0.9" stroke-dasharray="6 6"/>`,
+        defs: (u) => gradTecido(gid(u, token), t, 0.9)
+          + `<pattern id="${gid(u, token)}p" width="16" height="16" patternUnits="userSpaceOnUse">`
+          + `<path d="M0 0 h16 M0 0 v16" stroke="${alfa(t.escuro, 0.28)}" stroke-width="0.8"/>`
+          + `<path d="M0 15.4 h16" stroke="${alfa(t.brilho, 0.22)}" stroke-width="0.6"/></pattern>`,
+        realce: (u, d) => `<path d="${d}" fill="url(#${gid(u, token)}p)"/>`
+          + `<path d="${d}" fill="none" stroke="${alfa(t.brilho, 0.45)}" stroke-width="1.4"/>`,
       };
     case 'satin':
       return {

@@ -15,7 +15,9 @@ import { paletaDe, tinta } from './cores';
 import { aplicarParamsSvg } from './params';
 import type { ParteDef } from './base-api';
 import { G } from './base-api';
-import { corpoInteiro } from './partes/corpo';
+import { corpoInteiro, corpoInteiroPremium, perfilCorpoDe } from './partes/corpo';
+import { fatorSpreadCalcado } from './footwear'; // Golden A+2: calçado ancora ao pé por perfil
+import { narizPremiumDefaultDaBase } from './partes/premium/faces'; // §5: fonte única de nariz
 import { ORDEM_CAMADAS } from './camadas';
 import { profundidadeRecorte, resolverEstadoCabelo } from './compat-cabelo';
 import { fatorBarba, resolverEstadoBarba } from './compat-rosto';
@@ -55,6 +57,11 @@ export interface OpcoesRender {
    *  coresFace.sobrancelha/barba/labios na paleta — tudo SÓ em artes v2.
    *  false/ausente = motor byte a byte (rollback §651). */
   faceV2?: boolean;
+  /** Golden A+2: fit engine dirige a geometria — silhueta do blazer por
+   *  silhuetaFit e CALÇADO ancorado ao pé por perfil. Decidido por
+   *  flag('as6.fit_v2') no svgDe. false/ausente = geometria hand-tuned de
+   *  sempre (rollback §651 = desligar a flag). */
+  fitV2?: boolean;
 }
 
 /** Hash djb2 → base36. Estável entre execuções (nada de Math.random). */
@@ -281,6 +288,14 @@ export function renderAvatar(
     }
   }
 
+  // Golden V3.2 §5: NARIZ FONTE ÚNICA. Slot nar_* = autoritativo; sem slot +
+  // premium ⇒ default por-base (mesmo narizPremium). A base não desenha mais
+  // nariz ⇒ nunca há duas geometrias empilhadas (fim da cápsula). Não-premium
+  // (clássico) mantém a base clássica desenhando o próprio nariz — byte a byte.
+  const narizSvg = (config.camadas.nariz && config.camadas.nariz !== 'nenhum')
+    ? pintar(config.camadas.nariz, 'nariz')
+    : (opcoes.premium ? narizPremiumDefaultDaBase(config.base, p.pele.base) : '');
+
   let conteudo: string;
   if (opcoes.palco) {
     // Grupos animáveis do palco (idle/parallax) — só no preview do estúdio.
@@ -296,7 +311,7 @@ export function renderAvatar(
       // de busto) reaproveitada em escala no topo — arte 100% compartilhada.
       const cabeca =
         pintar(config.base) + idadeSvg + pintar(config.camadas.barba, 'barba') + pintar(config.camadas.boca, 'boca') +
-        pintar(config.camadas.nariz, 'nariz') +
+        narizSvg +
         `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
         pintar(config.camadas.sobrancelha, 'sobrancelha') +
         `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
@@ -310,16 +325,19 @@ export function renderAvatar(
       // pintada por cima do torso do scaffold — SÓ com opcoes.premium;
       // sem premium/sem hook = renderCorpo de sempre (byte-estável §651)
       const hookRoupa = opcoes.premium && roupaDef?.renderCorpoV2 ? roupaDef.renderCorpoV2 : roupaDef?.renderCorpo;
-      const roupaCorpo = hookRoupa ? hookRoupa(paletaDa('roupa'), uid) : '';
+      const roupaCorpo = hookRoupa ? hookRoupa(paletaDa('roupa'), uid, perfilCorpoDe(config)) : '';
       // onda 1415 (#191): ROUPA INFERIOR (rin_*) — camada z=8, atrás da
       // roupa de cima; ausente = scaffold atual byte a byte
       const infDef = config.camadas.roupa_inferior && config.camadas.roupa_inferior !== 'nenhum'
         ? resolver(config.camadas.roupa_inferior)
         : undefined;
       const infCorpo = infDef?.renderCorpo ? infDef.renderCorpo(paletaDa('roupa_inferior'), uid) : '';
-      // onda 1415 (#191): scaffold v2 — sombreamento premium do corpo por
-      // cima do scaffold clássico (corpoInteiro intocado); SÓ premium
-      const corpoV2 = opcoes.premium ? corpoPremium(paletaDa('roupa'), uid) : '';
+      // onda 1427/Golden V2 (#219): no premium o CORPO passa a ser o scaffold
+      // ANATÔMICO (corpoInteiroPremium) — substitui o corpo-tubo clássico +
+      // overlay. Sem premium, segue corpoInteiro byte-idêntico (§651). O
+      // corpoPremium (overlay antigo) fica só como fallback histórico.
+      void corpoPremium;
+      const corpoV2 = '';
       // sobrepeça §3393 no corpo inteiro: fragmento direto (mesmas coords)
       const sobreDef = config.camadas.roupa_sobre && config.camadas.roupa_sobre !== 'nenhum'
         ? resolver(config.camadas.roupa_sobre)
@@ -334,7 +352,16 @@ export function renderAvatar(
         if (!idc || idc === 'nenhum') continue;
         const def = resolver(idc);
         if (!def?.renderCorpo) continue;
-        acessCorpo += aplicarParamsSvg(s, def.renderCorpo(paletaDa(s), uid), config.params?.[s]);
+        let artC = aplicarParamsSvg(s, def.renderCorpo(paletaDa(s), uid), config.params?.[s]);
+        // Golden A+2 (§12): no premium, o CALÇADO ancora ao pé do perfil — a
+        // arte (centrada no standard) é reposicionada/ajustada em X em torno de
+        // cx pela separação real dos pés. standard → fator 1 (sem wrapper, byte
+        // a byte); demais perfis reposicionam. Legacy/sem premium = intocado.
+        if (opcoes.premium && opcoes.fitV2 && s === 'acessorio_pes') {
+          const f = fatorSpreadCalcado(perfilCorpoDe(config));
+          if (Math.abs(f - 1) > 1e-6) artC = `<g transform="translate(120 0) scale(${+f.toFixed(4)} 1) translate(-120 0)">${artC}</g>`;
+        }
+        acessCorpo += artC;
       }
       // emblema no peito do corpo inteiro (mapeia (152,206) do busto → (145,145))
       const emblemaCorpo = config.camadas.emblema && config.camadas.emblema !== 'nenhum'
@@ -344,8 +371,14 @@ export function renderAvatar(
         `<g data-anim="plano-fundo"><g transform="translate(120 200) scale(1.78) translate(-120 -120)">${fundo}${efeitoAtras}</g></g>` +
         `<g data-anim="plano-personagem">${premiumPlanoAtras}${premiumSombra}${premiumAtras}<g data-anim="personagem">` +
           envolverFigura(
-            corpoInteiro(paletaDa('roupa'), uid) + corpoV2 + infCorpo + roupaCorpo + sobreCorpo + emblemaCorpo + acessCorpo +
-            `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`,
+            (opcoes.premium ? corpoInteiroPremium(paletaDa('roupa'), uid, perfilCorpoDe(config)) : corpoInteiro(paletaDa('roupa'), uid)) + corpoV2 + infCorpo + roupaCorpo + sobreCorpo + emblemaCorpo + acessCorpo +
+            // Golden V3 (#219): cabeça premium MENOR → figura ~5.5-6 cabeças de
+            // altura (adulto estilizado; antes 0.62 ≈ 4 cabeças/chibi). Âncora
+            // do pescoço mantida (busto by≈193 → y≈104). Legado (não-premium)
+            // segue 0.62. tx=120-S*120, ty=104-193*S.
+            (opcoes.premium
+              ? `<g transform="translate(55.2 -0.2) scale(0.54)">${cabeca}</g>`
+              : `<g transform="translate(45.6 -16) scale(0.62)">${cabeca}</g>`),
             config, 396,
           ) +
         `${premiumFrente}</g></g>` +
@@ -358,7 +391,7 @@ export function renderAvatar(
           envolverFigura(
             pintar(config.base) + idadeSvg + pintar(config.camadas.roupa, 'roupa') + pintar(config.camadas.roupa_sobre, 'roupa_sobre') + pintar(config.camadas.emblema, 'emblema') +
             pintar(config.camadas.barba, 'barba') + pintar(config.camadas.boca, 'boca') +
-            pintar(config.camadas.nariz, 'nariz') +
+            narizSvg +
             `<g data-anim="olhos">${pintar(config.camadas.olhos, 'olhos')}</g>` +
             pintar(config.camadas.sobrancelha, 'sobrancelha') +
             `<g data-anim="cabelo">${pintar(config.camadas.cabelo, 'cabelo')}</g>` +
@@ -370,7 +403,10 @@ export function renderAvatar(
     }
   } else {
     const personagem = envolverFigura(
-      pintar(config.base) + idadeSvg + ORDEM_CAMADAS.map((c) => pintar(config.camadas[c], c)).join(''),
+      // §5: no z-order do nariz, usa narizSvg (slot autoritativo OU default
+      // por-base em premium) — a base não desenha mais nariz. Demais camadas
+      // seguem byte a byte.
+      pintar(config.base) + idadeSvg + ORDEM_CAMADAS.map((c) => c === 'nariz' ? narizSvg : pintar(config.camadas[c], c)).join(''),
       config, 236,
     );
     conteudo = `${fundo}${efeitoAtras}${premiumSombra}${premiumAtras}${personagem}${premiumFrente}${efeitoFrente}`;

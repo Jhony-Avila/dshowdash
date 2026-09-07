@@ -38,12 +38,22 @@ function defsPelePremium(u: string, hexPele: string): string {
 }
 
 /** Orelha premium: concha + hélice + sombra interna (x espelhável). */
+// Golden V3.2 §6.4: ORELHA com hélice + anti-hélice + concha + lóbulo (sem
+// excesso de detalhe). Antes: elipse + 1 curva. dir aponta p/ fora da cabeça.
 function orelhaPremium(x: number, t: ReturnType<typeof tintaPremium>, dir: 1 | -1): string {
+  const y = G.orelhaY;
   return `
-    <ellipse cx="${x}" cy="${G.orelhaY}" rx="9.5" ry="13.5" fill="${t.base}"/>
-    <path d="M${x + 3 * dir} ${G.orelhaY - 9} a 8 11 0 0 0 ${-2 * dir} 18" fill="none" stroke="${alfa(t.escuro, 0.65)}" stroke-width="2.2" stroke-linecap="round"/>
-    <ellipse cx="${x + 1.5 * dir}" cy="${G.orelhaY + 2}" rx="3.4" ry="5.6" fill="${alfa(t.profundo, 0.5)}"/>
-    <path d="M${x - 4 * dir} ${G.orelhaY - 10} a 9 12 0 0 1 ${6 * dir} -2" fill="none" stroke="${alfa('#ffffff', 0.28)}" stroke-width="1.6" stroke-linecap="round"/>`;
+    <ellipse cx="${x}" cy="${y}" rx="9.5" ry="13.5" fill="${t.base}"/>
+    <!-- concha (sombra funda central) -->
+    <ellipse cx="${x + 1.5 * dir}" cy="${y + 1.5}" rx="3.2" ry="5.4" fill="${alfa(t.profundo, 0.5)}"/>
+    <!-- anti-hélice (crus interno em C, entre concha e hélice) -->
+    <path d="M${x + 2 * dir} ${y - 7} a 6 9 0 0 ${dir > 0 ? 0 : 1} ${-1.5 * dir} 15" fill="none" stroke="${alfa(t.escuro, 0.5)}" stroke-width="1.6" stroke-linecap="round"/>
+    <!-- hélice (borda externa enrolada) -->
+    <path d="M${x + 5.5 * dir} ${y - 10} a 9 13 0 0 ${dir > 0 ? 0 : 1} ${-3 * dir} 23" fill="none" stroke="${alfa(t.escuro, 0.42)}" stroke-width="2" stroke-linecap="round"/>
+    <!-- lóbulo (base arredondada) -->
+    <path d="M${x - 3 * dir} ${y + 9.5} q ${3.5 * dir} 4.5 ${6 * dir} 0.5" fill="none" stroke="${alfa(t.escuro, 0.3)}" stroke-width="1.4" stroke-linecap="round"/>
+    <!-- luz na hélice superior -->
+    <path d="M${x - 3.5 * dir} ${y - 10} a 9 12 0 0 1 ${6 * dir} -2" fill="none" stroke="${alfa('#ffffff', 0.24)}" stroke-width="1.4" stroke-linecap="round"/>`;
 }
 
 type TP = ReturnType<typeof tintaPremium>;
@@ -51,67 +61,66 @@ type TP = ReturnType<typeof tintaPremium>;
 /** onda 1424 (Fase B §19–§21): NARIZ com FORMA própria por rosto — não é
  *  mais um traço único compartilhado. Cada estilo muda dorso, ponta,
  *  asas e sombra (identidade real, não detalhe). */
-function narizPremium(t: TP, estilo: 'reto' | 'largo' | 'fino' | 'arrebitado' | 'aquilino' | 'curto', comprimento = 0): string {
-  const yBase = 132 + comprimento;
-  const asa = (rx: number, alfaAsa: number) => `
-    <path d="M${120 - rx - 2} ${yBase - 1} q 2.4 3.6 ${rx / 2} 4" fill="none" stroke="${alfa(t.escuro, alfaAsa)}" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M${120 + rx + 2} ${yBase - 1} q -2.4 3.6 ${-rx / 2} 4" fill="none" stroke="${alfa(t.escuro, alfaAsa)}" stroke-width="1.8" stroke-linecap="round"/>`;
-  const narinas = (dx: number, r: number) => `
-    <ellipse cx="${120 - dx}" cy="${yBase + 0.6}" rx="${r}" ry="${r * 0.62}" fill="${alfa(t.profundo, 0.5)}"/>
-    <ellipse cx="${120 + dx}" cy="${yBase + 0.6}" rx="${r}" ry="${r * 0.62}" fill="${alfa(t.profundo, 0.5)}"/>`;
-  const dorso = (curva: string, luz: string) => `
-    <path d="${curva}" stroke="${alfa(t.escuro, 0.34)}" stroke-width="2.4" stroke-linecap="round" fill="none"/>
-    <path d="${luz}" stroke="${alfa('#ffffff', 0.24)}" stroke-width="2" stroke-linecap="round" fill="none"/>`;
-  switch (estilo) {
-    case 'largo': return `
-      ${dorso(`M117 112 q -3.4 ${12 + comprimento} -6 ${16 + comprimento}`, `M121 110 q 3 ${10 + comprimento} 3.6 ${15 + comprimento}`)}
-      <ellipse cx="120" cy="${yBase - 2}" rx="8.6" ry="4.6" fill="${alfa(t.meio, 0.5)}"/>
-      <path d="M110 ${yBase} q 10 6.4 20 0" stroke="${alfa(t.escuro, 0.44)}" stroke-width="2.4" stroke-linecap="round" fill="none"/>
-      ${narinas(6.4, 2.1)}${asa(9, 0.34)}
-      <ellipse cx="120" cy="${yBase - 4}" rx="4" ry="2.2" fill="${alfa('#ffffff', 0.16)}"/>`;
-    case 'fino': return `
-      ${dorso(`M119.4 108 q -1.6 ${14 + comprimento} -3 ${20 + comprimento}`, `M120.6 107 q 1.8 ${13 + comprimento} 2 ${19 + comprimento}`)}
-      <path d="M115 ${yBase} q 5 3.8 10 0" stroke="${alfa(t.escuro, 0.42)}" stroke-width="2" stroke-linecap="round" fill="none"/>
-      ${narinas(4.2, 1.4)}
-      <ellipse cx="120" cy="${yBase - 3.2}" rx="2.4" ry="1.7" fill="${alfa('#ffffff', 0.18)}"/>`;
-    case 'arrebitado': return `
-      ${dorso(`M119 112 q -2 ${9 + comprimento} -2.6 ${12 + comprimento}`, `M121 111 q 2 ${8 + comprimento} 2 ${11 + comprimento}`)}
-      <ellipse cx="120" cy="${yBase - 3.4}" rx="5.2" ry="3.6" fill="${alfa(t.claro, 0.5)}"/>
-      <path d="M114 ${yBase - 1.6} q 6 4.6 12 0" stroke="${alfa(t.escuro, 0.4)}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      ${narinas(4.6, 1.8)}
-      <ellipse cx="119" cy="${yBase - 5.6}" rx="3" ry="2" fill="${alfa('#ffffff', 0.24)}"/>`;
-    case 'aquilino': return `
-      <path d="M118.6 106 q -4 ${8 + comprimento} -1.6 ${12 + comprimento} q -2.4 5 -3.6 7.4" stroke="${alfa(t.escuro, 0.4)}" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-      <path d="M121 105 q 3.4 ${9 + comprimento} 2.6 ${14 + comprimento}" stroke="${alfa('#ffffff', 0.2)}" stroke-width="2" stroke-linecap="round" fill="none"/>
-      <path d="M113.6 ${yBase} q 6.4 4.6 12.8 0" stroke="${alfa(t.escuro, 0.44)}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      ${narinas(5, 1.7)}${asa(7, 0.3)}
-      <ellipse cx="121.6" cy="${yBase - 8}" rx="2.4" ry="3.4" fill="${alfa('#ffffff', 0.16)}"/>`;
-    case 'curto': return `
-      ${dorso(`M119 116 q -1.8 ${8 + comprimento} -3 ${11 + comprimento}`, `M120.8 115 q 2 ${7 + comprimento} 2.2 ${10 + comprimento}`)}
-      <path d="M114.6 ${yBase - 2} q 5.4 4.2 10.8 0" stroke="${alfa(t.escuro, 0.4)}" stroke-width="2.1" stroke-linecap="round" fill="none"/>
-      ${narinas(4.4, 1.6)}
-      <ellipse cx="120" cy="${yBase - 5}" rx="3" ry="1.9" fill="${alfa('#ffffff', 0.15)}"/>`;
-    default: return `
-      ${dorso(`M120 112 q -2.4 ${12 + comprimento} -4.6 ${17 + comprimento}`, `M118 110 q 3 ${10 + comprimento} 3.4 ${16 + comprimento}`)}
-      <path d="M113 ${yBase} q 7 5 14 0" stroke="${alfa(t.escuro, 0.42)}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      ${narinas(5.4, 1.7)}
-      <ellipse cx="120" cy="${yBase - 3.4}" rx="3.2" ry="2" fill="${alfa('#ffffff', 0.14)}"/>`;
-  }
+// Golden V3 (#219): NARIZ por PLANOS (não coluna translúcida). Luz key
+// superior-esquerda → plano-lateral em SOMBRA à direita do dorso; ponta (ball)
+// com leve luz; base/septo em sombra; asas (alar) como formas; narinas
+// pequenas SOB as asas (não bolinhas na frente). `larg`=meia-largura da ponta,
+// `comprimento` desloca a base. Reto é o default.
+// Golden V3.2 §5: FONTE ÚNICA. narizPremium é o ÚNICO renderizador de nariz
+// (a base NÃO desenha mais nariz; o slot nar_* e o default por-base chamam
+// AQUI). Sem coluna translúcida (removida a tira de highlight vertical do V3
+// que lia como cápsula): forma por VALOR — plano lateral em sombra, ball
+// compacto arredondado, sombra de septo, asas e narinas SOB as asas.
+export function narizPremium(t: TP, estilo: 'reto' | 'largo' | 'fino' | 'arrebitado' | 'aquilino' | 'curto', comprimento = 0): string {
+  const yB = 132 + comprimento;            // base do nariz
+  const yTip = yB - 3;                      // ponta
+  const yBridge = 110;                      // raiz (entre os olhos)
+  const cfg: Record<string, { larg: number; sombra: number }> = {
+    reto: { larg: 6, sombra: 0.2 }, largo: { larg: 8.4, sombra: 0.22 },
+    fino: { larg: 4.6, sombra: 0.24 }, arrebitado: { larg: 6, sombra: 0.18 },
+    aquilino: { larg: 5.6, sombra: 0.26 }, curto: { larg: 5.6, sombra: 0.18 },
+  };
+  const { larg, sombra } = cfg[estilo] ?? cfg.reto;
+  const bump = estilo === 'aquilino' ? -1.6 : estilo === 'arrebitado' ? 1.6 : 0; // perfil do dorso
+  // PLANO LATERAL EM SOMBRA (lado direito do dorso, oposto à luz key sup-esq):
+  // da raiz à asa direita — nariz por VALOR, não por linha/coluna.
+  const planoSombra = `M122 ${yBridge} C ${124 + bump} ${yBridge + 12} ${121 + larg * 0.55} ${yTip - 3} ${120 + larg} ${yTip}`
+    + ` C ${120 + larg + 1.2} ${yB} ${118 + larg} ${yB + 2.4} ${119} ${yB + 2}`
+    + ` C ${120.5} ${yTip} ${121.5} ${yBridge + 13} ${122} ${yBridge} Z`;
+  return `
+    <path d="${planoSombra}" fill="${alfa(t.escuro, sombra)}"/>
+    <!-- BALL da ponta: highlight COMPACTO e arredondado (não coluna) -->
+    <path d="M${120 - larg * 0.68} ${yTip + 0.4} Q ${120} ${yTip - 2.4} ${120 + larg * 0.68} ${yTip + 0.4} Q ${120} ${yTip + 3.4} ${120 - larg * 0.68} ${yTip + 0.4} Z" fill="${alfa(t.claro, 0.2)}"/>
+    <!-- sombra do septo/underside SOB a ponta -->
+    <path d="M${120 - larg * 0.82} ${yB} Q 120 ${yB + 3.6} ${120 + larg * 0.82} ${yB}" fill="none" stroke="${alfa(t.profundo, 0.3)}" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- asas (alar) como formas + narinas SOB elas -->
+    <path d="M${120 - larg} ${yB - 1.4} q -2.2 3 -0.4 4.6 q 1.9 1.1 2.9 -0.7" fill="${alfa(t.meio, 0.34)}"/>
+    <path d="M${120 + larg} ${yB - 1.4} q 2.2 3 0.4 4.6 q -1.9 1.1 -2.9 -0.7" fill="${alfa(t.meio, 0.34)}"/>
+    <ellipse cx="${120 - larg + 1.5}" cy="${yB + 2.3}" rx="1.3" ry="0.85" fill="${alfa(t.profundo, 0.5)}" transform="rotate(-16 ${120 - larg + 1.5} ${yB + 2.3})"/>
+    <ellipse cx="${120 + larg - 1.5}" cy="${yB + 2.3}" rx="1.3" ry="0.85" fill="${alfa(t.profundo, 0.5)}" transform="rotate(16 ${120 + larg - 1.5} ${yB + 2.3})"/>`;
 }
 
-/** Bochechas (§740) com ALTURA/volume por rosto — maçãs altas ≠ cheias. */
-function bochechas(t: TP, y = 127, rx = 10, forca = 1): string {
-  return `
-    <ellipse cx="${120 - 23}" cy="${y}" rx="${rx}" ry="${rx * 0.62}" fill="${alfa(t.claro, 0.15 * forca)}"/>
-    <ellipse cx="${120 + 23}" cy="${y}" rx="${rx}" ry="${rx * 0.62}" fill="${alfa(t.meio, 0.13 * forca)}"/>`;
+// Golden V3.2 §5: default de nariz POR BASE (identidade preservada quando não
+// há slot nar_* explícito). Espelha o perfil.nariz de cada base premium.
+const NARIZ_DEFAULT_DA_BASE: Record<string, { estilo: Parameters<typeof narizPremium>[1]; comprimento: number }> = {
+  bas_px_oval: { estilo: 'reto', comprimento: 0 },
+  bas_px_angular: { estilo: 'aquilino', comprimento: 1 },
+  bas_px_coracao: { estilo: 'arrebitado', comprimento: -2 },
+  bas_px_quadrada: { estilo: 'largo', comprimento: 1 },
+  bas_px_redonda: { estilo: 'curto', comprimento: -1 },
+  bas_px_alongada: { estilo: 'fino', comprimento: 4 },
+  bas_px_diamante: { estilo: 'fino', comprimento: 1 },
+  bas_px_suave: { estilo: 'curto', comprimento: 0 },
+};
+/** §5: nariz DEFAULT da base — usado pelo render quando não há slot nar_*
+ *  (só premium). Fonte única: chama o mesmo narizPremium. */
+export function narizPremiumDefaultDaBase(baseId: string, peleBaseHex: string): string {
+  const d = NARIZ_DEFAULT_DA_BASE[baseId] ?? NARIZ_DEFAULT_DA_BASE.bas_px_oval;
+  return narizPremium(tintaPremium(peleBaseHex), d.estilo, d.comprimento);
 }
 
-/** Arcada superciliar com PESO por rosto (§703 — ossatura, não pelo). */
-function arcada(t: TP, peso = 0.2, quebra = 0): string {
-  return `
-    <path d="M89 ${95 + quebra} q 11 -4.5 22 -1.5" stroke="${alfa(t.escuro, peso)}" stroke-width="${3 + quebra}" stroke-linecap="round" fill="none"/>
-    <path d="M129 ${93.5 + quebra} q 11 -3 22 1.5" stroke="${alfa(t.escuro, peso)}" stroke-width="${3 + quebra}" stroke-linecap="round" fill="none"/>`;
-}
+// onda 1427/Golden: bochechas/arcada como ELIPSE saíram (§19). O volume da
+// maçã e da órbita agora vem dos PLANOS recortados em basePremium.
 
 /** onda 1424 (Fase B §19): PERFIL facial — cada base declara a PRÓPRIA
  *  combinação de crânio, maxilar, queixo, nariz, maçãs, testa e arcada.
@@ -131,25 +140,50 @@ interface PerfilRosto {
   extras?: (t: TP) => string;
 }
 
+// onda 1427/Golden (BRIEFING_COMPLEMENTAR_03 §17–§27; #219): FACE FORM PLANES.
+// Método NOVO — o volume vem de GRANDES PLANOS (forehead/temple/cheekbone/
+// mid-face/jaw/chin) recortados na silhueta do crânio (clipPath), com a luz
+// KEY superior-esquerda (§21): lado direito em sombra de núcleo, sombra de
+// bochecha seguindo zigomático→mandíbula (§20, não elipse §19). Fills CHAPADOS
+// (alfa) → a forma LÊ no Flat Face Test (§23). Nariz integrado (§26/§27), sem
+// patch de elipse de pele. Sobrancelha/olhos/boca vêm das categorias próprias.
 function basePremium(perfil: PerfilRosto): ParteRender {
   return (p: Paleta, u: string) => {
     const t = tintaPremium(p.pele.base);
+    const cid = `${u}pxclip`;
     return `
-      <defs>${defsPelePremium(u, p.pele.base)}</defs>
+      <defs>${defsPelePremium(u, p.pele.base)}
+        <clipPath id="${cid}"><path d="${perfil.cabeca}"/></clipPath>
+        <!-- Golden V3.1: sombreamento por GRADIENTES (transições naturais, não
+             tiras chapadas): núcleo à direita, luz superior-esquerda -->
+        <linearGradient id="${u}pxcore" x1="0.42" y1="0" x2="1" y2="0.1">
+          <stop offset="0" stop-color="${alfa(t.escuro, 0)}"/><stop offset="0.6" stop-color="${alfa(t.escuro, 0.1)}"/><stop offset="1" stop-color="${alfa(t.escuro, 0.22)}"/></linearGradient>
+        <radialGradient id="${u}pxlit" cx="0.38" cy="0.34" r="0.5">
+          <stop offset="0" stop-color="${alfa('#ffffff', (perfil.testa.op ?? 0.1) + 0.04)}"/><stop offset="0.7" stop-color="${alfa('#ffffff', 0.03)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/></radialGradient>
+      </defs>
       <path d="${PATH_PESCOCO}" fill="url(#${u}pxpesc)"/>
-      <path d="M103 176 q 17 6 34 0 l -2 6 q -15 5 -30 0 z" fill="${alfa(t.profundo, 0.18)}"/>
+      <path d="M103 176 q 17 6 34 0 l -2 6 q -15 5 -30 0 z" fill="${alfa(t.profundo, 0.16)}"/>
       <path d="${perfil.cabeca}" fill="url(#${u}pxpele)"/>
-      <path d="${perfil.jawline}" fill="none" stroke="${alfa(t.escuro, 0.35)}" stroke-width="2.6" stroke-linecap="round"/>
-      ${perfil.maxilar ? `<path d="${perfil.maxilar}" fill="${alfa(t.meio, 0.4)}"/>` : ''}
+      <g clip-path="url(#${cid})">
+        <!-- NÚCLEO (lado direito) — gradiente suave, sem borda de tira -->
+        <rect x="60" y="40" width="150" height="150" fill="url(#${u}pxcore)"/>
+        <!-- LUZ do plano frontal (testa→maçã esq) — gradiente radial suave -->
+        <rect x="60" y="40" width="150" height="130" fill="url(#${u}pxlit)"/>
+        <!-- 1 sombra ampla sob a maçã/mandíbula (una, grande, suave) -->
+        <path d="M84 118 C 92 140 104 156 120 160 C 136 156 148 140 156 118 C 150 150 138 168 120 170 C 102 168 90 150 84 118 Z" fill="${alfa(t.escuro, 0.07)}"/>
+        <!-- órbita (socket) suave -->
+        <path d="M88 100 C 104 95 136 95 152 100 C 146 108 136 105 120 104 C 104 105 94 108 88 100 Z" fill="${alfa(t.escuro, 0.08)}"/>
+        <!-- oclusão sob o queixo -->
+        <path d="M101 158 C 111 168 129 168 139 158 C 137 170 103 170 101 158 Z" fill="${alfa(t.profundo, 0.11)}"/>
+      </g>
       ${orelhaPremium(70, t, 1)}${orelhaPremium(170, t, -1)}
-      ${bochechas(t, perfil.macas.y, perfil.macas.rx, perfil.macas.forca)}
-      ${narizPremium(t, perfil.nariz.estilo, perfil.nariz.comprimento ?? 0)}
-      ${arcada(t, perfil.arcada.peso, perfil.arcada.quebra)}
-      ${perfil.queixo ? perfil.queixo(t) : `<ellipse cx="120" cy="152" rx="19" ry="6.4" fill="${alfa(t.profundo, 0.26)}"/>
-      <path d="M120 156 q 4 2 0 4 q -4 -2 0 -4" fill="${alfa('#ffffff', 0.16)}"/>`}
-      <ellipse cx="120" cy="${perfil.testa.cy}" rx="${perfil.testa.rx}" ry="${perfil.testa.ry}" fill="${alfa('#ffffff', (perfil.testa.op ?? 0.1) * 0.55)}"/>
-      <path d="M80 72 a 52 58 0 0 1 44 -22" stroke="${alfa('#ffffff', 0.2)}" stroke-width="3.4" stroke-linecap="round" fill="none"/>
-      <path d="M158 78 a 52 58 0 0 1 8 26" stroke="${alfa(t.escuro, 0.16)}" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <!-- Golden V3.2 §5: a BASE NÃO desenha mais nariz (fonte única). O nariz
+           vem do slot nar_* ou do default por-base (narizPremiumDefaultDaBase),
+           injetado no render.ts. Fim da cápsula/nariz duplicado. -->
+      <!-- §6.3: jawline quase imperceptível (a mandíbula vem de silhueta/
+           valor/oclusão, não de uma linha contornando) -->
+      <path d="${perfil.jawline}" fill="none" stroke="${alfa(t.escuro, 0.12)}" stroke-width="1.5" stroke-linecap="round"/>
+      ${perfil.queixo ? perfil.queixo(t) : ''}
       ${perfil.extras ? perfil.extras(t) : ''}`;
   };
 }
@@ -285,38 +319,47 @@ export const BASES_PREMIUM: ParteDef[] = [
 
 interface OpcoesOlho { ry?: number; tilt?: number; irisR?: number; palpebra?: number }
 
-/** Olho premium (x espelha em dir): esclera quente + íris 2 tons + 2
- *  catchlights (id `${u}pxcatch<L|R>` p/ a luz do palco §707) + pálpebra. */
+/** Golden V3 (#219): OLHO construído por PÁLPEBRAS (fenda amendoada), não por
+ *  elipse+anéis. Íris MENOR, ALOJADA na órbita e PARCIALMENTE OCLUÍDA pela
+ *  pálpebra superior (recorte na abertura). 1 catchlight. Canto lacrimal
+ *  interno + cílio no canto externo. dir: lado interno aponta p/ o nariz. */
 export function olhoPremium(x: number, y: number, iris: Tinta, u: string, lado: 'L' | 'R', o: OpcoesOlho = {}): string {
-  const ry = o.ry ?? 8;
+  const hu = (o.ry ?? 6.4) - (o.palpebra ?? 0);   // §6.1: olho ~8% menor (adulto, não Disney)
+  const hl = Math.max(3, hu * 0.55);            // descida da pálpebra inf
+  const W = 9.6;                                // §6.1: meia-largura da fenda (~8% menor)
   const tilt = o.tilt ?? 0;
-  const irisR = o.irisR ?? 5.4;
-  const palp = o.palpebra ?? 0;
-  const dir = lado === 'L' ? -1 : 1; // canto interno (lacrimal) aponta p/ o nariz
-  // onda 1424 (Fase B §20): CAVIDADE ocular (sombra superior), canto
-  // lacrimal, linha d'água inferior, íris com raios + limbo escuro e
-  // catchlight principal em GOTA — volume de ilustração, não clipart
+  const irisR = o.irisR ?? 4.3;                 // §6.1: íris ~8% menor
+  const dir = lado === 'L' ? -1 : 1;             // canto interno (nariz)
+  const clip = `${u}eye${lado}`;
+  // fenda amendoada: canto interno mais baixo/pontudo, externo levemente erguido
+  const xi = x + W * dir, xo = x - W * dir;      // interno / externo
+  const abertura = `M${xi} ${y + 1}`
+    + ` C ${x + W * 0.4 * dir} ${y - hu} ${x - W * 0.4 * dir} ${y - hu} ${xo} ${y - 0.5}`
+    + ` C ${x - W * 0.5 * dir} ${y + hl} ${x + W * 0.5 * dir} ${y + hl} ${xi} ${y + 1} Z`;
+  const iy = y - 1.6;                            // íris um pouco alta (toca a pálpebra sup)
   return `
     <g transform="rotate(${tilt} ${x} ${y})">
-      <ellipse cx="${x}" cy="${y - ry + 0.6}" rx="12.4" ry="4.2" fill="${alfa('#1a120a', 0.13)}"/>
-      <ellipse cx="${x}" cy="${y}" rx="10.8" ry="${ry}" fill="#f8f3ea"/>
-      <path d="M${x - 10.4} ${y - 1} a 10.8 ${ry} 0 0 1 21.6 0" fill="${alfa('#c9b8a4', 0.35)}"/>
-      <ellipse cx="${x - 10.2 * dir}" cy="${y + 0.8}" rx="1.7" ry="1.2" fill="${alfa('#c96b5a', 0.55)}"/>
-      <circle cx="${x}" cy="${y + 0.4}" r="${irisR}" fill="${iris.escuro}"/>
-      <circle cx="${x}" cy="${y + 0.4}" r="${irisR - 1.2}" fill="${iris.base}"/>
-      <path d="M${x} ${y + 0.4 - irisR + 1.4} v 1.7 M${x + irisR - 1.5} ${y + 0.4} h -1.7 M${x - irisR + 1.5} ${y + 0.4} h 1.7 M${x - 2.6} ${y + irisR - 1.4} l 0.7 -1.5 M${x + 2.6} ${y + irisR - 1.4} l -0.7 -1.5" stroke="${iris.claro}" stroke-width="0.9" opacity="0.6"/>
-      <path d="M${x - irisR + 2.1} ${y + 1.8} a ${irisR - 1.7} ${irisR - 1.7} 0 0 0 ${2 * (irisR - 1.7) - 0.8} 0" fill="none" stroke="${iris.claro}" stroke-width="1.1" opacity="0.75"/>
-      <circle cx="${x}" cy="${y + 0.4}" r="${irisR}" fill="none" stroke="${alfa('#0d0906', 0.55)}" stroke-width="0.9"/>
-      <circle cx="${x}" cy="${y + 0.4}" r="2.3" fill="#100c08"/>
-      <g id="${u}pxcatch${lado}">
-        <path d="M${x + 1.2} ${y - 2.8} a 1.9 1.9 0 1 1 1.6 3.1 q -1.8 -0.6 -1.6 -3.1" fill="#ffffff" opacity="0.95"/>
-        <circle cx="${x - 2.4}" cy="${y + 2.2}" r="0.8" fill="#ffffff" opacity="0.55"/>
+      <defs><clipPath id="${clip}"><path d="${abertura}"/></clipPath></defs>
+      <!-- sombra da órbita (acima da pálpebra) -->
+      <path d="M${xo} ${y - 1} C ${x - W * 0.4 * dir} ${y - hu - 3} ${x + W * 0.4 * dir} ${y - hu - 3} ${xi} ${y - 0.5}" fill="none" stroke="${alfa('#1a120a', 0.14)}" stroke-width="3.2" stroke-linecap="round"/>
+      <!-- globo (esclera levemente sombreada em cima) -->
+      <path d="${abertura}" fill="#f6f1e8"/>
+      <g clip-path="url(#${clip})">
+        <rect x="${x - 12}" y="${y - hu - 2}" width="24" height="6" fill="${alfa('#c9b8a4', 0.4)}"/>
+        <circle cx="${x}" cy="${iy}" r="${irisR}" fill="${iris.base}"/>
+        <path d="M${x - irisR} ${iy} a ${irisR} ${irisR} 0 0 1 ${2 * irisR} 0 Z" fill="${alfa(iris.escuro, 0.55)}"/>
+        <circle cx="${x}" cy="${iy}" r="${irisR}" fill="none" stroke="${alfa('#0d0906', 0.5)}" stroke-width="0.9"/>
+        <circle cx="${x}" cy="${iy}" r="2" fill="#0d0906"/>
+        <circle id="${u}pxcatch${lado}" cx="${x + 1.6}" cy="${iy - 1.8}" r="1.5" fill="#ffffff" opacity="0.95"/>
       </g>
-      <path d="M${x - 10.6} ${y - 2 - palp} a 10.8 ${ry} 0 0 1 21.2 0" fill="none" stroke="${alfa('#141008', 0.55)}" stroke-width="1.8" stroke-linecap="round"/>
-      <path d="M${x - 11} ${y - 4.6 - palp} a 12 ${ry + 1} 0 0 1 22 -0.6" fill="none" stroke="${alfa('#141008', 0.2)}" stroke-width="1.2" stroke-linecap="round"/>
-      <path d="M${x + 9.4} ${y - 4.2} l 2.6 -1.8 M${x + 10.6} ${y - 1.6} l 2.8 -0.8" stroke="${alfa('#141008', 0.5)}" stroke-width="1.1" stroke-linecap="round"/>
-      <path d="M${x - 9.8} ${y + ry - 2.4} a 11 ${ry} 0 0 0 19.6 0" fill="none" stroke="${alfa('#ffffff', 0.3)}" stroke-width="1.2"/>
-      <path d="M${x - 8.6} ${y + ry - 1.2} a 10 ${ry} 0 0 0 17.2 0" fill="none" stroke="${alfa('#8a6a52', 0.28)}" stroke-width="1"/>
+      <!-- pálpebra superior (linha grossa) + vinco -->
+      <path d="M${xi} ${y + 1} C ${x + W * 0.4 * dir} ${y - hu} ${x - W * 0.4 * dir} ${y - hu} ${xo} ${y - 0.5}" fill="none" stroke="${alfa('#141008', 0.62)}" stroke-width="1.9" stroke-linecap="round"/>
+      <path d="M${x + W * 0.7 * dir} ${y - hu * 0.7} C ${x + W * 0.3 * dir} ${y - hu - 1.6} ${x - W * 0.3 * dir} ${y - hu - 1.6} ${x - W * 0.8 * dir} ${y - hu * 0.55}" fill="none" stroke="${alfa('#141008', 0.16)}" stroke-width="1" stroke-linecap="round"/>
+      <!-- cílio no canto externo -->
+      <path d="M${xo} ${y - 0.5} l ${-2.6 * dir} -2 M${xo + 1 * dir} ${y + 0.4} l ${-2.8 * dir} -1" stroke="${alfa('#141008', 0.5)}" stroke-width="1.1" stroke-linecap="round"/>
+      <!-- pálpebra inferior (sutil) + canto lacrimal interno -->
+      <path d="M${xo} ${y - 0.5} C ${x - W * 0.5 * dir} ${y + hl} ${x + W * 0.5 * dir} ${y + hl} ${xi} ${y + 1}" fill="none" stroke="${alfa('#8a6a52', 0.4)}" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M${xi} ${y + 1} l ${1.6 * dir} -1.2" stroke="${alfa('#c96b5a', 0.5)}" stroke-width="1.4" stroke-linecap="round"/>
     </g>`;
 }
 
@@ -346,11 +389,19 @@ function labios(dSuperior: string, dInferior: string, dLuz: string, extra = ''):
     // onda 1414 (#162): canal coresFace.labios (injetado só com as6.face_v2)
     // — ausente cai no tom padrão de sempre, byte a byte
     const labio = tintaPremium(p.labios?.base ?? '#8a4a3e');
+    // Golden V3.1 §face: BOCA construída — lábio superior (em sombra) + lábio
+    // inferior (cheio, com luz) + OCLUSÃO (a fenda, o mais escuro) + comissuras
+    // nos cantos + sombra sob o lábio. Menos linhas decorativas.
     return `
       <path d="${dSuperior}" fill="${labio.escuro}"/>
       <path d="${dInferior}" fill="${labio.base}"/>
-      <path d="${dLuz}" fill="${alfa('#ffffff', 0.28)}"/>
-      <path d="M104 152 q 16 8 32 0" stroke="${alfa(t.escuro, 0.25)}" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      <path d="${dLuz}" fill="${alfa('#ffffff', 0.22)}"/>
+      <!-- oclusão (a fenda entre os lábios — a "boca") -->
+      <path d="M107 145.4 q 13 2.6 26 0" stroke="${alfa('#38201a', 0.6)}" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+      <!-- comissuras (cantos, pequena sombra) -->
+      <path d="M106.4 145.2 q -1.4 0.6 -2 -0.6 M133.6 145.2 q 1.4 0.6 2 -0.6" stroke="${alfa('#38201a', 0.5)}" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+      <!-- sombra sob o lábio inferior (volume, não sorriso decorativo) -->
+      <path d="M111 151.2 q 9 2.4 18 0" stroke="${alfa(t.escuro, 0.16)}" stroke-width="1.6" fill="none" stroke-linecap="round"/>
       ${extra}`;
   };
 }

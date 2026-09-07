@@ -123,9 +123,16 @@ function gerarDashboard() {
 }
 
 const alvo = process.argv[2] ?? 'todos';
-if (alvo === 'avatar' || alvo === 'todos') gerarAvatar();
-if (alvo === 'dashboard' || alvo === 'todos') gerarDashboard();
 if (!['avatar', 'dashboard', 'todos'].includes(alvo)) {
   console.error(`alvo desconhecido: ${alvo} (use avatar | dashboard | todos)`);
   process.exit(1);
+}
+if (alvo === 'avatar' || alvo === 'todos') gerarAvatar();
+// Golden V3 (#219): em 'todos', se o build do panel-dashboard não existir, NÃO
+// derruba a geração do avatar (que é o alvo do Avatar Studio) — apenas avisa.
+// 'dashboard' explícito ainda falha (o operador pediu o dashboard).
+if (alvo === 'dashboard') gerarDashboard();
+if (alvo === 'todos') {
+  try { gerarDashboard(); }
+  catch (e) { console.warn(`aviso: harness do dashboard pulado (${e.message}). avst-harness.html já foi gerado.`); }
 }

@@ -6,6 +6,9 @@
 // não inventa infraestrutura: consome /api/feature-flags se existir
 // (INVESTIGAR na F2 a integração com o panel-feature-flags-admin do dash).
 const PADROES: Record<string, boolean> = {
+  'as6.vc_3d': false,             // Briefing 2 — modo 3D dentro do VC (motor 3D reusado); default OFF (§651); requer as6.visual_composer
+  'as6.shell_vc3d': false,        // rodada unificacao 3D (decisao #160) — o botao 3D do ShellStudio abre o VisualComposer3D COMPARTILHADO em tela cheia (2D desmontado), aposentando Palco3d/Estudio3D do caminho do usuario; default OFF (§651); requer as5.novo_shell
+  'as6.visual_composer': false,   // frente VC — compositor visual (modos internos Visual/Guiado/Avancado); default OFF, fail-closed; OFF = shell atual byte a byte
   'as5.novo_shell': true,        // F2 — LIGADA no rollout §650 (2026-08-04, veredito visual do Jhony); rollback §651 = voltar p/ false
   'as5.registry_api': false,     // F1 — catálogo servido pelo registry
   'as5.estado_api': false,       // F1 — persistência via §619 (leitura dual)
@@ -135,6 +138,9 @@ const PADROES: Record<string, boolean> = {
   'as6.material_v2': false,     // onda 1408 — METADADOS de material do manifest v2 no pipeline (Parte 7, #160/#165a): canal pele das bases UBC por metadado (skin tint passa a valer), naoTingir, famílias declaradas; OFF até before/after aprovado; off = pipeline anterior byte a byte
   'as6.telemetria_assets': true, // onda 1409 — TELEMETRIA DE ASSET 3D (§2804, §2968–§2972): eventos avst:asset_* (carregou/falhou/lod_transicao/fallback/parte) no ring local + EventBus, com rate limit por slug e sem PII; dado/observabilidade (#156: tooling ON); off = zero eventos (callback ausente)
   'as6.classico_premium': false, // onda 1411 — trilho CLASSIC PREMIUM 2D (decisão #159, §2381–§2427): acabamento 'premium' no config liga sombra de contato + hooks das partes `_px_` (renderAtras/renderFrente/renderSombra/renderPlanos) + materiais2d; catálogo passa a listar as partes premium; off = motor clássico e catálogo byte a byte
+  'as6.arte_v2': false,          // Golden V3.1 (#219-R1) — ARTE ELEVADA 2D (Golden V2/V3): corpo anatômico + rosto/olhos/nariz reconstruídos + cabelo por clumps + barba c/ fade + roupa autoral + material por dobra + estúdio FG vazio. svgDe só liga o premium quando classico_premium E arte_v2 ON; off = motor CLÁSSICO byte a byte. SEM rollout global até aprovação humana do Gate A (veredito 2026-08-23)
+  'as6.hero_2d': false,          // Golden A+2 — HEROES 2D AUTORADOS: itens `_hx_` (engine/partes/heroes.ts) importados de SVG autorado (importarHeroAsset) entram no catálogo SÓ com esta flag (mais restrita que classico_premium); render elevado quando o trilho premium está ON. off = catálogo sem heroes, byte a byte. SEM rollout até veredito humano
+  'as6.fit_v2': false,           // Golden A+2 — FIT ENGINE dirige a GEOMETRIA: (a) silhueta do blazer premium por engine/fit.silhuetaFit(anatomia, classe) em vez de folga hard-coded, e (b) CALÇADO ancorado ao pé por perfil (fatorSpreadCalcado). off = geometria hand-tuned atual byte a byte (A/B reversível, §651). Depende de arte_v2
   'as6.camera_v2': false,       // onda 1419 — CÂMERA V2 do palco 3D (#204, P8-B): presets Camera3d (FOV 24/28/33, headroom/eye-line), bookmarks Full/Bust/Face/Back, bounds-aware, transição 300ms interromível, guard #165d (nunca reseta) e limites de órbita; off = câmera anterior byte a byte
   'as6.sombras_v2': false,      // onda 1419 — SOMBRAS/AMBIENTE V2 (#205, P8-C): shadow map por tier (512/1024/2048), shadow camera justa no Box3, bias/softness e FOG por look, contact shadow procedural sempre; chão gloss/platform/grid e definirEnvironment(url) são APIs opt-in; off = sombras anteriores byte a byte
   'as6.pos_v2': false,          // onda 1420 — PÓS V2 por look (#206, P8-D §1965–§1977): cadeia Render→Bloom→ColorGrade(proteção de pele)→Vignette declarada em Look.pos, degradação por pass via QualityManager.passesPos, composer recriado em context loss, telemetria p3d_pos_fallback; estudio = pós NEUTRO (contrato); off = composer/CSS antigos byte a byte
@@ -150,6 +156,7 @@ const PADROES: Record<string, boolean> = {
   'as6.face_v2': false,         // onda 1414 — ROSTO V2 (#162, Partes 3/5): categoria nariz na sidebar, expressão semântica + idade + assimetria determinística aplicadas por wrappers SÓ nas artes v2, canais coresFace.sobrancelha/barba/labios na paleta, Face Idle Profiles; off = render/UI byte a byte (dados salvos seguem aceitos)
   'as6.barba_slot': false,      // onda 1414 — categoria BARBA visível (artes brb_*; compat máscara/cachecol em engine/compat-rosto.ts); off = seção oculta, config salvo segue renderizando
   'as6.brow_slot': false,       // onda 1414 — categoria SOBRANCELHA visível (artes sbr_* como overlay sobre o traço cozido); off = seção oculta, config salvo segue renderizando
+  'as6.single_2d': false,       // GOLDEN V4.2 (§1/§36/§58, decisão #64) — PRODUTO 2D ÚNICO: esconde da experiência principal as ações de troca de modo ("Modo clássico" na BarraTopo + "Voltar ao modo clássico" na paleta). Compat/QA continua acessível só sob as6.qa_route (§37); o error-boundary de recuperação permanece sempre (segurança §2). off = experiência atual byte a byte (produção intocada). Puro conditional render — sem campo serializado novo, sem mirror PHP.
   'as6.qa_route': false,        // onda 1410 — ROTA DE QA VISUAL (§2707–§2742): QaStudio (chunk lazy) na paleta — LOD forçado, looks, overlays, calibração, screenshot 1-click, inspector técnico (manifest/health/renderer.info); dev, nada persiste; off = sem comando/chunk, render intocado
   'as6.material_debug': false,  // onda 1410 — DEBUG DE MATERIAIS no QaStudio (§1686–§1690): lista materiais do personagem (tipo, roughness/metalness, mapas); off = bloco ausente
   'as6.qa_visual': false,       // onda 1408 — LABORATÓRIO de QA visual (§105, §107–§109, §141–§146): overlays clay/normals/wireframe/silhueta/grayscale + cena de calibração com color checker no palco 3D (dev); off = sem UI, render intocado
@@ -166,6 +173,9 @@ const PADROES: Record<string, boolean> = {
  * cadeias curtas (≤2 níveis), sem ciclos.
  */
 export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
+  'as6.vc_3d': ['as6.visual_composer'],
+  'as6.shell_vc3d': ['as5.novo_shell'],
+  'as6.visual_composer': ['as5.novo_shell'], // VC so faz sentido no shell novo (como as6.single_2d)
   // Consultadas SOMENTE em shell/Palco3d.tsx → filhas do palco. As flags
   // de motor com DUPLA entrada (palco E Foto §329: as5.materiais3d,
   // as5.morfos3d, as5.animacao3d, as5.foto3d) NÃO têm pai — o fluxo 3D
@@ -206,6 +216,10 @@ export const DEPENDENCIAS_FLAGS: Record<string, string[]> = {
   'as6.brow_slot': ['as6.face_v2'],
   // onda 1415 (#191): vestuário premium refina o trilho Classic Premium
   'as6.roupa_premium': ['as6.classico_premium'],
+  'as6.arte_v2': ['as6.classico_premium'], // Golden V3.1 (#219-R1): arte v2 refina o trilho premium
+  'as6.single_2d': ['as5.novo_shell'], // Golden V4.2 #64: a convergência 2D-único só faz sentido dentro do shell novo
+  'as6.hero_2d': ['as6.classico_premium', 'as6.arte_v2'], // Golden A+2: heroes autorados exigem o trilho premium elevado
+  'as6.fit_v2': ['as6.classico_premium', 'as6.arte_v2'], // Golden A+2: silhueta por fit engine refina o trilho premium
   'as6.acess_2d_premium': ['as6.classico_premium'], // onda 1416 (#196)
   'as6.cp_foto': ['as6.classico_premium'], // onda 1418 (#202)
   'as6.dock_classico': ['as5.classico_aaa'], // a dock v3 refina o trilho AAA
@@ -269,8 +283,11 @@ export function flag(nome: keyof typeof PADROES | string): boolean {
 /** Flags da experiência CANDIDATA (§12 + UX §87.5). */
 export const FLAGS_CANDIDATE: readonly string[] = [
   // 2D
-  'as6.classico_premium', 'as6.face_v2', 'as6.barba_slot', 'as6.brow_slot',
+  'as6.classico_premium', 'as6.arte_v2', 'as6.face_v2', 'as6.barba_slot', 'as6.brow_slot',
   'as6.roupa_premium', 'as6.acess_2d_premium', 'as6.cp_foto',
+  // GOLDEN V4.3 §20/§21 (#66): o Candidate precisa REPRESENTAR o V4 atual —
+  // produto 2D único + heroes autorados + fit engine na câmera de homologação
+  'as6.single_2d', 'as6.hero_2d', 'as6.fit_v2',
   // 3D
   'as6.looks', 'as6.material_v2', 'as6.camera_v2', 'as6.sombras_v2',
   'as6.pos_v2', 'as6.foto_lentes',

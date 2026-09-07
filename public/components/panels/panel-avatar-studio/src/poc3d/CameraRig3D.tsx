@@ -1,10 +1,13 @@
 // poc3d/CameraRig3D.tsx — presets cinematográficos + órbita manual (AS4).
-// @version 1.1.0  @created 2026-07-30
+// @version 1.2.0  @created 2026-07-30
 //
 // Presets (corpo/busto/rosto/três-quartos) POR ARQUÉTIPO — humano, androide
 // e animal têm proporções muito diferentes — com transição suave (lerp).
 // A órbita manual (OrbitControls) continua SEMPRE disponível — trocar de
 // preset apenas re-alveja; o usuário retoma o controle a qualquer momento.
+// VC-3D (Briefing 2): props OPCIONAIS `pan` (habilita pan) e `resetToken`
+// (recentraliza no preset ao mudar) — ambas com default que preserva o
+// comportamento anterior byte a byte (Estudio3D clássico intocado).
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -15,11 +18,15 @@ import { PRESETS_CAMERA_3D } from '../services/Camera3d'; // onda 1419 (#204)
 import { flag } from '../nucleo/flags';
 import type { ArquetipoId, CameraId } from './catalogo3d';
 
-export function CameraRig3D({ preset, arquetipo, aoOrbitar }: {
+export function CameraRig3D({ preset, arquetipo, aoOrbitar, pan = false, resetToken = 0 }: {
   preset: CameraId;
   arquetipo: ArquetipoId;
   /** avisa o pai quando o usuário assume a órbita manualmente */
   aoOrbitar?: () => void;
+  /** VC-3D: habilita pan (arrastar o alvo). Default false = comportamento anterior. */
+  pan?: boolean;
+  /** VC-3D: mudar este número recentraliza a câmera no preset atual. */
+  resetToken?: number;
 }) {
   const controles = useRef<OrbitControlsImpl>(null);
   const destinoPos = useRef(new THREE.Vector3(...CAMERAS.humano.corpo.pos));
@@ -43,7 +50,7 @@ export function CameraRig3D({ preset, arquetipo, aoOrbitar }: {
         cam.updateProjectionMatrix();
       }
     }
-  }, [preset, arquetipo, camera]);
+  }, [preset, arquetipo, camera, resetToken]);
 
   useFrame(() => {
     if (!animando.current || !controles.current) return;
@@ -64,7 +71,7 @@ export function CameraRig3D({ preset, arquetipo, aoOrbitar }: {
       makeDefault
       enableDamping
       dampingFactor={0.08}
-      enablePan={false}
+      enablePan={pan}
       minDistance={0.7}
       maxDistance={8}
       minPolarAngle={0.15}

@@ -32,27 +32,34 @@ export const FUNDOS_PREMIUM: ParteDef[] = [
   {
     ...comumFun, id: 'fun_px_estudio', nome: 'Estúdio Premium', tema: 'executivo',
     descricao: 'BG01 — ciclorama com luz de recorte e piso refletivo.',
-    render: (p, u) => {
+    // §87-89 STUDIO neutro: ciclorama + piso + contato + falloff + VIGNETTE por
+    // valor + grounding. Sem anel/aura/HUD/partículas. Valor MENOR atrás do
+    // rosto (§89) p/ não competir com olhos/cabelo/contorno.
+    render: (_p, u) => {
       const t = tintaPremium('#232836');
       return `<defs>
         <linearGradient id="${u}pxbg1" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="${t.claro}"/><stop offset="0.62" stop-color="${t.base}"/><stop offset="1" stop-color="${t.profundo}"/>
+          <stop offset="0" stop-color="${t.base}"/><stop offset="0.5" stop-color="${t.meio}"/><stop offset="0.72" stop-color="${t.escuro}"/><stop offset="1" stop-color="${t.profundo}"/>
         </linearGradient>
-        <radialGradient id="${u}pxbg1k" cx="0.3" cy="0.2" r="0.9">
-          <stop offset="0" stop-color="${alfa(p.destaque.claro, 0.22)}"/><stop offset="1" stop-color="${alfa(p.destaque.claro, 0)}"/>
+        <radialGradient id="${u}pxbg1k" cx="0.32" cy="0.26" r="0.7">
+          <stop offset="0" stop-color="${alfa('#ffffff', 0.10)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/>
+        </radialGradient>
+        <radialGradient id="${u}pxbg1v" cx="0.5" cy="0.44" r="0.75">
+          <stop offset="0.55" stop-color="${alfa('#000000', 0)}"/><stop offset="1" stop-color="${alfa('#05070d', 0.5)}"/>
         </radialGradient></defs>
       ${fundoPlanos(
-    `<rect width="240" height="240" fill="url(#${u}pxbg1)"/><rect width="240" height="240" fill="url(#${u}pxbg1k)"/>`,
-    `<path d="M0 178 q 120 -22 240 0 v 62 h -240 z" fill="${alfa(t.profundo, 0.8)}"/>`,
-    `<ellipse cx="120" cy="228" rx="150" ry="26" fill="${alfa('#0b0e1a', 0.5)}"/><ellipse cx="120" cy="224" rx="96" ry="14" fill="${alfa(p.destaque.base, 0.06)}"/>`)}`;
+    `<rect width="240" height="240" fill="url(#${u}pxbg1)"/>`
+    + `<path d="M0 150 q 120 -30 240 0 v 90 h -240 z" fill="${alfa(t.profundo, 0.35)}"/>` // horizonte suave (parede→piso)
+    + `<rect width="240" height="240" fill="url(#${u}pxbg1k)"/>`,
+    `<path d="M0 176 q 120 -20 240 0 v 64 h -240 z" fill="${alfa(t.profundo, 0.85)}"/>`
+    + `<path d="M0 176 q 120 -20 240 0" stroke="${alfa('#ffffff', 0.06)}" stroke-width="1.4" fill="none"/>`, // linha do piso
+    `<ellipse cx="120" cy="228" rx="150" ry="26" fill="${alfa('#0b0e1a', 0.5)}"/>` // contato
+    + `<ellipse cx="120" cy="230" rx="70" ry="18" fill="${alfa('#ffffff', 0.04)}"/>`)}` // reflexo sutil no piso
+    + `<rect width="240" height="240" fill="url(#${u}pxbg1v)"/>`; // VIGNETTE por valor
     },
-    renderPlanos: {
-      frente: (p) => `<g data-plano="fg">
-        <ellipse cx="30" cy="234" rx="60" ry="10" fill="${alfa('#0b0e1a', 0.35)}"/>
-        <ellipse cx="214" cy="236" rx="52" ry="9" fill="${alfa('#0b0e1a', 0.3)}"/>
-        <path d="M0 214 q 120 -14 240 0" stroke="${alfa(p.destaque.claro, 0.1)}" stroke-width="1.4" fill="none"/>
-      </g>`,
-    },
+    // Golden V3 (#219): STUDIO QA neutro NÃO desenha nada na FRENTE do
+    // personagem (o FG anterior — elipses + arco — atravessava a roupa e dava
+    // aparência de transparência). BG + piso + contato bastam. FG vazio.
   },
   {
     ...comumFun, id: 'fun_px_metropole', nome: 'Metrópole Premium', tema: 'urbano',
