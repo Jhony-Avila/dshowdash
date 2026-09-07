@@ -261,11 +261,17 @@ function avst_validar_config($bruto): array
     // onda 1422 (#210, body.v2 §333): corpoV2 {preset, morfos} — espelho
     // de Corpo3d.sanitizarCorpoV2: preset no enum §102, morfos conhecidos
     // clampados a [-1, 1] (2 casas), 0 omitido; vazio NUNCA persiste
+    //
+    // Golden V3.2 §4 (#219-R2): 'feminino' é caminho CANÔNICO MODERNO —
+    // migrarTipoParaPreset(TS) o aceita pois é chave de PRESETS_CORPO
+    // [0.94,1.0]. Espelho ADICIONA aqui (só no corpoV2.preset). O `corpo`
+    // legado (linha ~192) NÃO recebe 'feminino': validarConfig TS (l.535)
+    // também não o aceita ali → contrato permanece espelhado nos DOIS lados.
     $cv2 = $bruto['corpoV2'] ?? null;
     if (is_array($cv2)) {
         $v2 = [];
         $preset = $cv2['preset'] ?? null;
-        if (in_array($preset, ['esbelto', 'atletico', 'robusto', 'compacto'], true)) {
+        if (in_array($preset, ['esbelto', 'atletico', 'robusto', 'compacto', 'feminino'], true)) {
             $v2['preset'] = $preset;
         }
         $morfosBrutos = $cv2['morfos'] ?? null;

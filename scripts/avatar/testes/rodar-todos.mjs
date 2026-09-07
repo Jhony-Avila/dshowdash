@@ -45,7 +45,21 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'corpo3d-v2.mjs', // onda 1422 (#210/#211)
   'corretivo-a.mjs', // onda 1423 (BRIEFING_CORRETIVO_01 Fase A; #212–#215)
   'asset-clarity.mjs', // onda 1425 (BRIEFING_COMPLEMENTAR_02; #217)
-  'looks3d.mjs', 'bundle-assets.mjs', 'homologacao-3d.mjs', 'qa-pipeline.mjs', 'qa-studio.mjs', 'golden-classic.mjs'];
+  'looks3d.mjs', 'bundle-assets.mjs', 'homologacao-3d.mjs', 'qa-pipeline.mjs', 'qa-studio.mjs', 'golden-classic.mjs',
+  'feminino-save-reload.mjs', 'flag-matrix.mjs', /* V4 §73/§74 */
+  'hero-import.mjs', /* A+ §5/§6/§23: pipeline de ativo autorado */
+  'enquadramento.mjs', /* A+ §8/§110: CATEGORY_FOCUS_MAP fonte única */
+  'corpo-fit.mjs', /* A+ §13-16: anatomia real por perfil + classes de fit */
+  'footwear.mjs', /* A+ §12/§71-73: calçado como domínio (âncora do pé + zonas) */
+  'gates.mjs', /* A+ §17/§18: apresentação ≠ arte (gates independentes) */
+  'hero-catalog.mjs', /* A+2: heroes autorados no catálogo (flag as6.hero_2d) */
+  'fit-garment.mjs', /* A+2: silhueta do blazer dirigida pelo fit engine (as6.fit_v2) */
+  'v42-single2d.mjs', /* V4.2 §1/§36/§58 (#64): produto 2D único — troca de modo some da experiência principal */
+  'v43-single2d-parity.mjs', /* V4.3 §25/§26 (#66): paridade — ferramentas clássicas absorvidas abrem DENTRO do shell único */
+  'v43-single2d-flow.mjs', /* V4.3 §25/§53 (#66): PRODUCT E2E — fluxo entry→edit→tools→SAVE sem sair do shell */
+  'v43-legacy-compat.mjs', /* V4.3 §16/§54 (#66): COMPATIBILITY E2E — avatar legado abre/renderiza/salva no shell único */
+  'v43-category-focus.mjs', /* V4.3 FINAL §7-10 (#67): prova SEMÂNTICA — Calçados deriva de FOCO_FINO.pes (fonte única), pés dominam o palco */
+  'art-intake.mjs' /* V4.3 FINAL Track B (#68): ART INTAKE GATE — segurança P0 + contrato + motor real; veredito só FAIL/AWAITING_HUMAN */];
 let falhas = 0;
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red
 // que só estoura exceção (sem linha "FALHAS:") não passa mais batido

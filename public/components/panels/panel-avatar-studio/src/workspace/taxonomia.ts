@@ -45,6 +45,10 @@ export interface CategoriaMae {
 export interface FerramentaNav {
   id: string;
   nome: string;
+  /** V4.3 §5-10: ferramenta absorvida do clássico — só aparece com as6.single_2d ON. */
+  single2d?: boolean;
+  /** V4.3 §11: agrupamento semântico da navegação única (criar × perfil/conteúdo). */
+  grupo?: 'criar' | 'perfil';
 }
 
 export const TAXONOMIA: CategoriaMae[] = [
@@ -154,17 +158,27 @@ export const TAXONOMIA: CategoriaMae[] = [
 ];
 
 /** §5.11 — ferramentas do shell NOVO; cada id mapeia um handler que JÁ
- *  existe no ShellStudio (nada é inventado; Coleções/Conquistas/Criar
- *  com IA vivem no Modo clássico e seguem lá, preservadas). */
+ *  existe no ShellStudio. GOLDEN V4.3 (#66): Coleções/Conquistas/Criar com
+ *  IA/Vitrine/Foto/Histórico agora VIVEM no shell único (Ferramentas2D reusa
+ *  components/*), atrás de as6.single_2d — não são mais exclusivas do clássico. */
 export const FERRAMENTAS_NAV: FerramentaNav[] = [
   { id: 'estudio3d', nome: 'Estúdio 3D' },
   { id: 'presets', nome: 'Presets' },
   { id: 'historico', nome: 'Histórico' },
   { id: 'missoes', nome: 'Missões' },
   { id: 'evolucao', nome: 'Evolução' },
-  // Coleções/Conquistas/Criar com IA/Vitrine/Foto vivem no Modo
-  // clássico (app/App.tsx) — preservadas LÁ; entram aqui quando o
-  // shell novo ganhar os destinos (nada é inventado)
+  // GOLDEN V4.3 §5-10 (#66): as ferramentas que só existiam no Modo clássico
+  // agora têm DESTINO no shell único (FerramentasClassicas reusa components/*).
+  // Só aparecem com as6.single_2d ON — produção (flag OFF) intocada.
+  { id: 'arquetipos', nome: 'Arquétipos', single2d: true, grupo: 'criar' },
+  { id: 'titulos', nome: 'Títulos', single2d: true, grupo: 'criar' },
+  { id: 'presets_prontos', nome: 'Presets prontos', single2d: true, grupo: 'criar' },
+  { id: 'colecoes', nome: 'Coleções', single2d: true, grupo: 'criar' },
+  { id: 'ia', nome: 'Criar com IA', single2d: true, grupo: 'criar' },
+  { id: 'foto', nome: 'Foto', single2d: true, grupo: 'criar' },
+  { id: 'conquistas', nome: 'Conquistas', single2d: true, grupo: 'perfil' },
+  { id: 'vitrine', nome: 'Vitrine', single2d: true, grupo: 'perfil' },
+  { id: 'historico_srv', nome: 'Histórico', single2d: true, grupo: 'perfil' },
 ];
 
 const POR_ID = new Map<string, { mae: CategoriaMae; principal: CategoriaPrincipal }>();

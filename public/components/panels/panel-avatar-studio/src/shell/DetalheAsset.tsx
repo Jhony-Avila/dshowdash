@@ -48,7 +48,7 @@ export function DetalheAsset({ id, config, desbloqueados, aoEscolher, aoPrever, 
   aoEscolher: (novo: AvatarConfig) => void;
   aoPrever: (novo: AvatarConfig | null) => void;
   aoFechar: () => void;
-  /** leva à aba Coleções do modo clássico não existe no shell — rola p/ a categoria */
+  /** rola para a categoria do asset (Coleções também existem no shell único via Ferramentas2D, #66) */
   aoVerColecao?: (colecaoId: string) => void;
 }) {
   const [atual, setAtual] = useState(id);

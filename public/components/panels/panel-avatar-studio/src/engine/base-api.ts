@@ -6,9 +6,12 @@
 // (preview, comparação, presets) não podem colidir gradientes.
 import type { ItemCatalogo, PoseId } from '../domain/types';
 import type { Paleta } from './cores';
+import type { PerfilCorpo2D } from './partes/corpo';
 
-/** Gera o markup SVG da parte. Determinístico: mesma entrada → mesmo SVG. */
-export type ParteRender = (p: Paleta, uid: string) => string;
+/** Gera o markup SVG da parte. Determinístico: mesma entrada → mesmo SVG.
+ *  Golden V2 (#219): 3º arg OPCIONAL `perfil` — só o corpo-inteiro premium o
+ *  passa (renderCorpoV2 veste a anatomia certa); busto/legado ignoram. */
+export type ParteRender = (p: Paleta, uid: string, perfil?: PerfilCorpo2D) => string;
 
 export interface ParteDef extends ItemCatalogo {
   /** Efeitos com atras=true renderizam ATRÁS do personagem (aura, chuva digital). */
@@ -54,6 +57,10 @@ export interface ParteDef extends ItemCatalogo {
   /** onda 1415 (#191): TOKEN de material dominante da peça (metadado para
    *  a UI — swatch de material; a arte já consome via materiais2d). */
   materialToken?: import('./materiais2d').MaterialToken2d;
+  /** Golden A+3: CLASSE DE CAIMENTO da peça (FITTED/REGULAR/RELAXED/OVERSIZED/
+   *  STRUCTURED). Metadado para a UI (chip de fit) E fonte da silhueta quando
+   *  as6.fit_v2: a peça veste qualquer perfil por silhuetaFit(anatomia, fitClass). */
+  fitClass?: import('./fit').FitClass;
 }
 
 // ── Geometria compartilhada (todas as partes se ancoram aqui) ───────

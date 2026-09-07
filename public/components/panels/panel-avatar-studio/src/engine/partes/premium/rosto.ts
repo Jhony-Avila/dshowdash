@@ -15,6 +15,7 @@ import { alfa, tintaPremium } from '../../cores';
 import type { Paleta } from '../../cores';
 import type { ParteDef } from '../../base-api';
 import { HUMANOIDES } from '../cabelos';
+import { narizPremium } from './faces'; // Golden V3.2 §5: FONTE ÚNICA de nariz
 
 type TP = ReturnType<typeof tintaPremium>;
 const tpBarba = (p: Paleta): TP => tintaPremium((p.barba ?? p.cabelo).base);
@@ -31,21 +32,80 @@ function defsPelo(u: string, t: TP): string {
     </linearGradient>`;
 }
 
-/** Fios de textura determinísticos ao longo de um arco da mandíbula. */
+/** onda 1427/Golden §46: STUBBLE = pequenos GRUPOS determinísticos de pelo
+ *  acompanhando a mandíbula (não linhas verticais repetidas). Cada ponto é um
+ *  cluster de 3 flecks; a pele aparece nos vãos (skin reveal §45). */
 function fiosBarba(t: TP, ys: number, densidade: number): string {
-  const fios: string[] = [];
+  // Golden V3.2 §20: stubble MENOR, baixo contraste, AGRUPADO e growth-directed
+  // (cresce p/ BAIXO, ±12° — não spikes/cuts). Sem branco puro; slivers finos e
+  // curtos que somam num CAMPO (não pelos isolados espetados).
+  const g: string[] = [];
+  const rad = Math.PI / 180;
   for (let i = 0; i < densidade; i += 1) {
-    const x = 84 + (72 / (densidade - 1)) * i;
-    const y = ys + Math.abs(x - 120) * -0.28 + (i % 3) * 2.2;
-    fios.push(`<path d="M${x} ${y} q ${(i % 2 ? 1 : -1) * 1.4} 5 0 8" stroke="${alfa(t.escuro, 0.55)}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
+    const jx = Math.sin(i * 12.9) * 4.2, jy = Math.cos(i * 7.7) * 2.6;
+    const x = 84 + (72 / (densidade - 1)) * i + jx;
+    const y = ys + Math.abs(x - 120) * -0.26 + jy;
+    const ang = (96 + Math.sin(i * 2.1) * 12) * rad;         // cresce p/ baixo (±12°)
+    const len = 1.5 + (i % 3) * 0.5;                          // CURTO (1.5–2.5)
+    const dx = Math.cos(ang) * len, dy = Math.sin(ang) * len;
+    const nx = -Math.sin(ang) * 0.5, ny = Math.cos(ang) * 0.5; // fino
+    const col = i % 4 === 0 ? alfa(t.profundo, 0.32) : alfa(t.escuro, 0.44); // baixo contraste
+    g.push(`<path d="M${(x + nx).toFixed(1)} ${(y + ny).toFixed(1)} L ${(x - nx).toFixed(1)} ${(y - ny).toFixed(1)} L ${(x + dx).toFixed(1)} ${(y + dy).toFixed(1)} Z" fill="${col}"/>`);
   }
-  return fios.join('');
+  return g.join('');
 }
 
-/** Massa de barba cheia: contorno da mandíbula com recorte da boca. */
+/** onda 1427/Golden §47: quebra de borda inferior — flecks irregulares no
+ *  contorno da barba cheia (não shape geométrico perfeito). */
+function bordaBarba(t: TP, ys: number): string {
+  const g: string[] = [];
+  const xs = [92, 102, 112, 120, 128, 138, 148];
+  for (let i = 0; i < xs.length; i += 1) {
+    const x = xs[i]; const dy = (i % 2 ? 3 : 6) + (i % 3);
+    const y = ys + Math.abs(x - 120) * -0.18;
+    g.push(`<path d="M${x - 2} ${y} q 2 ${dy} 4 0 z" fill="${alfa(t.escuro, 0.55)}"/>`);
+  }
+  return g.join('');
+}
+
+/** Golden V3 (#219 §45-51): BARBA CHEIA reconstruída — massa densa no
+ *  queixo/mandíbula que FADE (dissolve em pele) subindo pelas bochechas, com
+ *  costeleta conectando à têmpora, stubble na zona de fade (skin reveal) e
+ *  borda quebrada. SEM banda especular horizontal (§48). Bigode entra separado
+ *  (extra). Oclusão sob o queixo dá o volume. */
 function massaBarba(u: string, t: TP, queixoY: number, extra = ''): string {
-  return `<path d="M78 116 Q 82 ${queixoY - 10} 96 ${queixoY} Q 120 ${queixoY + 10} 144 ${queixoY} Q 158 ${queixoY - 10} 162 116 L 162 128 Q 150 ${queixoY + 4} 132 ${queixoY + 7} L 120 ${queixoY + 8} L 108 ${queixoY + 7} Q 90 ${queixoY + 4} 78 128 Z" fill="url(#${u}pxbrb)"/>
-    <path d="M104 150 Q 120 156 136 150 Q 132 144 120 144 Q 108 144 104 150 Z" fill="${alfa(t.profundo, 0.35)}"/>${extra}`;
+  // massa PLENA só do meio da mandíbula p/ baixo (queixo cheio); as bochechas
+  // recebem só a zona de fade (stubble → pele).
+  const nucleo = `M84 128 C 80 ${queixoY - 10} 92 ${queixoY - 2} 120 ${queixoY + 8}`
+    + ` C 148 ${queixoY - 2} 160 ${queixoY - 10} 156 128`
+    + ` C 148 138 134 142 120 142 C 106 142 92 138 84 128 Z`;
+  const clip = `${u}pxbclip`;
+  const cheekFade = `${u}pxbfade`;
+  // costeletas (sideburn) conectando à têmpora
+  const costeleta = `M80 108 C 78 120 80 130 86 136 L 92 134 C 88 126 86 118 86 110 Z`
+    + ` M160 108 C 162 120 160 130 154 136 L 148 134 C 152 126 154 118 154 110 Z`;
+  return `<defs>
+      <clipPath id="${clip}"><path d="${nucleo}"/></clipPath>
+      <linearGradient id="${cheekFade}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${alfa(t.base, 0)}"/><stop offset="0.55" stop-color="${alfa(t.base, 0.5)}"/><stop offset="1" stop-color="${t.base}"/></linearGradient>
+    </defs>
+    <!-- costeletas -->
+    <path d="${costeleta}" fill="url(#${u}pxbrb)"/>
+    <!-- zona de fade nas bochechas (barba dissolve em pele subindo) -->
+    <path d="M86 112 C 84 124 88 134 96 140 C 110 146 130 146 144 140 C 152 134 156 124 154 112 C 150 128 138 136 120 136 C 102 136 90 128 86 112 Z" fill="url(#${cheekFade})"/>
+    <!-- núcleo denso do queixo/mandíbula -->
+    <path d="${nucleo}" fill="url(#${u}pxbrb)"/>
+    <g clip-path="url(#${clip})">
+      <!-- densidade: queixo mais cheio (centro-baixo), mandíbula mais rala nas pontas -->
+      <path d="M100 ${queixoY - 2} C 108 ${queixoY + 10} 132 ${queixoY + 10} 140 ${queixoY - 2} C 136 ${queixoY + 12} 104 ${queixoY + 12} 100 ${queixoY - 2} Z" fill="${alfa(t.profundo, 0.45)}"/>
+      <!-- leve luz no queixo (não banda horizontal): pontinhos §46 -->
+      ${fiosBarba(t, queixoY - 6, 9)}
+    </g>
+    <!-- stubble na zona de fade (skin reveal) + borda quebrada -->
+    <g opacity="0.85">${fiosBarba(t, 122, 11)}${fiosBarba(t, 130, 10)}</g>
+    ${bordaBarba(t, queixoY + 6)}
+    <!-- oclusão sob o lábio inferior (recorte da boca) -->
+    <path d="M107 149 Q 120 154 133 149 Q 129 145 120 145 Q 111 145 107 149 Z" fill="${alfa(t.profundo, 0.4)}"/>${extra}`;
 }
 
 const bigodePath = (t: TP): string =>
@@ -121,12 +181,16 @@ export const BARBAS_PREMIUM: ParteDef[] = [
 /** Par espelhado: `d` desenha a sobrancelha ESQUERDA (olho em 100,108);
  *  a direita é espelhada em x=120. Leve luz no topo. */
 function parSobrancelha(t: TP, d: string, espessura: number): string {
+  // §6.2: acompanha o brow ridge, menos "faixa preta chapada" — traço principal
+  // com leve transparência (não preto puro) e ~10% mais fino.
+  const esp = espessura * 0.9;
+  const corPrinc = alfa(t.escuro, 0.9);
   return `<g stroke-linecap="round" fill="none">
-    <path d="${d}" stroke="${t.escuro}" stroke-width="${espessura}"/>
-    <path d="${d}" stroke="${alfa(t.claro, 0.35)}" stroke-width="${Math.max(0.8, espessura - 2)}" transform="translate(0 -0.7)"/>
+    <path d="${d}" stroke="${corPrinc}" stroke-width="${esp}"/>
+    <path d="${d}" stroke="${alfa(t.claro, 0.32)}" stroke-width="${Math.max(0.7, esp - 2)}" transform="translate(0 -0.7)"/>
     <g transform="translate(240 0) scale(-1 1)">
-      <path d="${d}" stroke="${t.escuro}" stroke-width="${espessura}"/>
-      <path d="${d}" stroke="${alfa(t.claro, 0.35)}" stroke-width="${Math.max(0.8, espessura - 2)}" transform="translate(0 -0.7)"/>
+      <path d="${d}" stroke="${corPrinc}" stroke-width="${esp}"/>
+      <path d="${d}" stroke="${alfa(t.claro, 0.32)}" stroke-width="${Math.max(0.7, esp - 2)}" transform="translate(0 -0.7)"/>
     </g>
   </g>`;
 }
@@ -163,19 +227,11 @@ export const SOBRANCELHAS_PREMIUM: ParteDef[] = [
   },
 ];
 
-// ── NARIZES (nar_*) — overlay de pele sobre o nariz integrado ───────────
-
-/** Patch de pele que assenta o overlay sobre o nariz cozido da base. */
-function baseNariz(t: TP): string {
-  return `<ellipse cx="120" cy="127" rx="10" ry="13" fill="${alfa(t.base, 0.9)}"/>
-    <ellipse cx="117" cy="122" rx="4.5" ry="7" fill="${alfa(t.claro, 0.5)}"/>`;
-}
-
-function narinas(t: TP, dx: number, y: number, r: number): string {
-  return `<ellipse cx="${120 - dx}" cy="${y}" rx="${r}" ry="${r * 0.62}" fill="${alfa(t.profundo, 0.42)}"/>
-    <ellipse cx="${120 + dx}" cy="${y}" rx="${r}" ry="${r * 0.62}" fill="${alfa(t.profundo, 0.42)}"/>`;
-}
-
+// ── NARIZES (nar_*) — Golden V3.2 §5: FONTE ÚNICA ──────────────────────
+// Cada nar_* é o nariz AUTORITATIVO (único) via narizPremium — a base não
+// desenha mais nariz. Fim do `baseNariz` (cápsula de pele opaca) e das
+// `narinas` duplicadas: narizPremium já traz asas+narinas integradas. Cada
+// id mapeia para um estilo/comprimento; sem geometria empilhada, sem patch.
 const comumNar = {
   categoria: 'nariz' as const, raridade: 'comum' as const,
   requerBase: HUMANOIDES, acabamento: 'premium' as const,
@@ -183,24 +239,14 @@ const comumNar = {
 };
 
 const NAR_DEFS: Array<[string, string, string, (t: TP) => string]> = [
-  ['nar_reto', 'Reto', 'executivo', (t) => `${baseNariz(t)}
-    <path d="M117 114 L 116.5 130 Q 118 134 121 134" stroke="${alfa(t.escuro, 0.5)}" stroke-width="1.6" fill="none" stroke-linecap="round"/>${narinas(t, 5.5, 133, 2)}`],
-  ['nar_fino', 'Fino', 'clássico', (t) => `${baseNariz(t)}
-    <path d="M118 113 L 117.5 131 Q 119 133.5 121 133.5" stroke="${alfa(t.escuro, 0.45)}" stroke-width="1.2" fill="none" stroke-linecap="round"/>${narinas(t, 4.2, 133, 1.6)}`],
-  ['nar_largo', 'Largo', 'casual', (t) => `${baseNariz(t)}
-    <path d="M116 116 Q 113 128 112 132 Q 116 136 120 136 Q 124 136 128 132 Q 127 128 124 116" stroke="${alfa(t.escuro, 0.4)}" stroke-width="1.4" fill="none" stroke-linecap="round"/>${narinas(t, 7, 133.5, 2.6)}`],
-  ['nar_arrebitado', 'Arrebitado', 'casual', (t) => `${baseNariz(t)}
-    <path d="M117 115 Q 115 127 117 130 Q 119 132.5 122.5 131.5" stroke="${alfa(t.escuro, 0.45)}" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-    <ellipse cx="120" cy="129" rx="4.6" ry="3" fill="${alfa(t.claro, 0.55)}"/>${narinas(t, 5.2, 132, 2)}`],
-  ['nar_aquilino', 'Aquilino', 'fantasia', (t) => `${baseNariz(t)}
-    <path d="M117 113 Q 121 121 119 127 L 117.5 131 Q 119.5 134 122 133.5" stroke="${alfa(t.escuro, 0.55)}" stroke-width="1.7" fill="none" stroke-linecap="round"/>${narinas(t, 5.4, 133, 1.9)}`],
-  ['nar_botao', 'Botão', 'casual', (t) => `<ellipse cx="120" cy="128" rx="7.5" ry="8.5" fill="${alfa(t.base, 0.9)}"/>
-    <ellipse cx="118" cy="125" rx="3.4" ry="4" fill="${alfa(t.claro, 0.6)}"/>
-    <ellipse cx="120" cy="131" rx="5.4" ry="4" fill="${alfa(t.meio, 0.5)}"/>${narinas(t, 4.4, 132.5, 1.7)}`],
-  ['nar_forte', 'Forte', 'urbano', (t) => `${baseNariz(t)}
-    <path d="M116 113 L 114.5 129 Q 116 134.5 120 135 Q 124 134.5 125.5 129 L 124 113" stroke="${alfa(t.escuro, 0.5)}" stroke-width="1.9" fill="none" stroke-linecap="round"/>${narinas(t, 6.2, 133.5, 2.4)}`],
-  ['nar_suave', 'Suave', 'clássico', (t) => `${baseNariz(t)}
-    <path d="M117.5 116 Q 116.5 127 118 131.5 Q 119.5 133.5 121.5 133" stroke="${alfa(t.escuro, 0.35)}" stroke-width="1.3" fill="none" stroke-linecap="round"/>${narinas(t, 4.8, 132.8, 1.7)}`],
+  ['nar_reto', 'Reto', 'executivo', (t) => narizPremium(t, 'reto', 0)],
+  ['nar_fino', 'Fino', 'clássico', (t) => narizPremium(t, 'fino', 0)],
+  ['nar_largo', 'Largo', 'casual', (t) => narizPremium(t, 'largo', 0)],
+  ['nar_arrebitado', 'Arrebitado', 'casual', (t) => narizPremium(t, 'arrebitado', -1)],
+  ['nar_aquilino', 'Aquilino', 'fantasia', (t) => narizPremium(t, 'aquilino', 1)],
+  ['nar_botao', 'Botão', 'casual', (t) => narizPremium(t, 'curto', -1)],
+  ['nar_forte', 'Forte', 'urbano', (t) => narizPremium(t, 'largo', 1)],
+  ['nar_suave', 'Suave', 'clássico', (t) => narizPremium(t, 'fino', -1)],
 ];
 
 export const NARIZES_PREMIUM: ParteDef[] = NAR_DEFS.map(([id, nome, tema, corpo]): ParteDef => ({

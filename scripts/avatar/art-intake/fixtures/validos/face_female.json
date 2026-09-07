@@ -1,0 +1,16 @@
+{
+  "id": "bas_hx_face_female",
+  "categoria": "base",
+  "nome": "Face Hero Feminino (intake fixture)",
+  "descricao": "Fixture técnica do ART INTAKE GATE — rosto (busto).",
+  "raridade": "epico",
+  "tema": "retrato",
+  "familia": "rosto",
+  "frame": "busto",
+  "viewBox": [240, 240],
+  "canais": [
+    { "canal": "pele", "rotulo": "Pele" },
+    { "canal": "cabelo", "rotulo": "Cabelo" },
+    { "canal": "destaque", "rotulo": "Olhos / boca" }
+  ]
+}

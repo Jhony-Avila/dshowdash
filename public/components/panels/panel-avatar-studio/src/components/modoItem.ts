@@ -149,25 +149,11 @@ export const FOCO_ITEM_SUBCATEGORIA: Record<string, string> = {
  *  foco por CATEGORIA — o Modo Item deixa de ser só de acessório.
  *  Enquadram a camada isolada com ~78% de ocupação (§46). Arte medida
  *  individualmente (FOCO_ITEM_ASSET, via medir-foco-item.mjs) tem
- *  precedência; sem medição, cai aqui pela categoria. */
-export const FOCO_ITEM_CATEGORIA: Record<string, string> = {
-  base: '52 40 136 136',        // §17 cabeça neutra (crânio + queixo)
-  olhos: '78 82 84 52',         // §12 par de olhos grande e centralizado
-  boca: '92 128 56 40',         // §13 só a boca + área neutra mínima
-  nariz: '98 104 44 44',        // §14
-  sobrancelha: '82 86 76 26',   // §15 par de sobrancelhas
-  barba: '58 40 124 118',       // §16 maxilar sobre silhueta neutra (ghost real, coords do CORPO)
-  cabelo: '58 30 124 110',      // §4/§6 massa do cabelo (back+front) sem rosto
-  roupa: '34 98 172 138',       // onda 1426 §7: torso vestido (corpo por baixo) ~78% ocupação
-  roupa_sobre: '34 98 172 138',
-  roupa_inferior: '48 196 144 152', // §9 quadril→pés sobre o corpo
-  fundo: '0 0 240 240',         // §25/§48 a arte preenche 100%
-  moldura: '0 0 240 240',       // §26 moldura + campo vazio
-  aura: '18 26 204 348',        // §27 silhueta ghost inteira p/ escala
-  efeito: '18 26 204 348',      // §28
-  banner: '20 150 200 80',
-  emblema: '150 20 70 70',
-};
+ *  precedência; sem medição, cai aqui pela categoria.
+ *  Golden A+2: a FONTE ÚNICA passou a ser engine/enquadramento
+ *  (FOCO_CARD_CATEGORIA) — aqui só re-exporta, mesmos bytes. */
+export { FOCO_CARD_CATEGORIA as FOCO_ITEM_CATEGORIA } from '../engine/enquadramento';
+import { FOCO_CARD_CATEGORIA } from '../engine/enquadramento';
 
 /** viewBox do Modo Item: medição do asset → preset da CATEGORIA →
  *  preset da subcategoria (acessórios) → canvas inteiro (nunca falha). */
@@ -177,6 +163,6 @@ export function focoItemDe(assetId: string, categoria?: string): string {
   // acessórios continuam pela subcategoria (medições finas por região)
   const sub = subcategoriaDoAsset(assetId);
   if (sub && FOCO_ITEM_SUBCATEGORIA[sub.id]) return FOCO_ITEM_SUBCATEGORIA[sub.id];
-  if (categoria && FOCO_ITEM_CATEGORIA[categoria]) return FOCO_ITEM_CATEGORIA[categoria];
+  if (categoria && FOCO_CARD_CATEGORIA[categoria]) return FOCO_CARD_CATEGORIA[categoria];
   return '0 0 240 240';
 }

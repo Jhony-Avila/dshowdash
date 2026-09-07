@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 495,
+    "itens2d": 496,
     "categorias": 17,
     "titulos": 30,
     "colecoes": 13,
@@ -2296,6 +2296,11 @@
       "id": "rou_hoodie",
       "categoria": "roupa",
       "raridade": "incomum"
+    },
+    {
+      "id": "rou_hx_blazer",
+      "categoria": "roupa",
+      "raridade": "epico"
     },
     {
       "id": "rou_jaleco",

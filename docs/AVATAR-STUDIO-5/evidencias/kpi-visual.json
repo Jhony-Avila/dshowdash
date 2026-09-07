@@ -8,17 +8,17 @@
   },
   "catalogo2d": {
     "geral": {
-      "total": 495,
+      "total": 496,
       "prototype": 0,
       "legacy": 7,
-      "production": 415,
+      "production": 416,
       "premium": 73,
       "hero": 0,
       "premiumCoveragePct": 14.7,
       "productionReadyPct": 98.6,
       "qaAprovadoPct": 0,
       "qa": {
-        "pending": 495
+        "pending": 496
       }
     },
     "porCategoria": {
@@ -205,17 +205,17 @@
         }
       },
       "roupa": {
-        "total": 40,
+        "total": 41,
         "prototype": 0,
         "legacy": 2,
-        "production": 28,
+        "production": 29,
         "premium": 10,
         "hero": 0,
-        "premiumCoveragePct": 25,
-        "productionReadyPct": 95,
+        "premiumCoveragePct": 24.4,
+        "productionReadyPct": 95.1,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 40
+          "pending": 41
         }
       },
       "roupa_inferior": {
@@ -374,7 +374,7 @@
       "moldura": 24,
       "nariz": 8,
       "olhos": 40,
-      "roupa": 30,
+      "roupa": 31,
       "roupa_inferior": 3,
       "roupa_sobre": 4,
       "sobrancelha": 10

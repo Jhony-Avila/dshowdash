@@ -36,9 +36,11 @@ function defsCab(u: string, t: TP): string {
 const SOMBRA_TESTA = (t: TP, d: string): string =>
   `<path d="${d}" fill="${alfa(t.profundo, 0.22)}"/>`;
 
-/** Mechas de brilho (§890): strokes finos seguindo o fluxo da massa. */
-function mechas(t: TP, paths: string[], intensidade = 0.32): string {
-  return paths.map((d, i) => `<path d="${d}" stroke="${alfa(i % 2 ? t.claro : t.brilho, intensidade)}" stroke-width="${2.1 - (i % 3) * 0.5}" stroke-linecap="round" fill="none"/>`).join('');
+/** Mechas de brilho (§890): strokes finos seguindo o fluxo da massa. Golden V2
+ *  §39: o realce vivo é BRANCO-alfa (sheen) — LÊ em cabelo preto/loiro/branco
+ *  (§2404), pois não depende da cor (que no preto é escura demais p/ brilhar). */
+function mechas(t: TP, paths: string[], intensidade = 0.34): string {
+  return paths.map((d, i) => `<path d="${d}" stroke="${alfa(i % 2 ? '#ffffff' : t.claro, intensidade * (i % 2 ? 0.8 : 1))}" stroke-width="${2.1 - (i % 3) * 0.5}" stroke-linecap="round" fill="none"/>`).join('');
 }
 
 /** Fios soltos (§891): 2–3 strokes de 1px fora da silhueta. */
@@ -46,10 +48,9 @@ function fios(t: TP, paths: string[]): string {
   return paths.map((d) => `<path d="${d}" stroke="${alfa(t.escuro, 0.6)}" stroke-width="1.1" stroke-linecap="round" fill="none"/>`).join('');
 }
 
-/** Rim light no topo (§892) — mesma âncora do BRILHO clássico. */
-const RIM = (t: TP): string =>
-  `<path d="M86 64 a 48 42 0 0 1 36 -13" stroke="${alfa('#ffffff', 0.18)}" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-   <path d="M128 52 a 44 40 0 0 1 20 10" stroke="${alfa(t.brilho, 0.3)}" stroke-width="1.8" stroke-linecap="round" fill="none"/>`;
+// onda 1427/Golden §38: RIM light GLOBAL removido — era uma assinatura
+// artificial repetida em todos os cabelos. O brilho agora é por-cabelo,
+// fragmentado, seguindo o fluxo da massa (mechasDestaque/mechas de cada um).
 
 interface CamadasCabelo {
   massa: string;                    // path da massa principal (fill gradiente)
@@ -58,23 +59,46 @@ interface CamadasCabelo {
   sombraTesta: string;              // path da sombra projetada na testa
   mechas: string[];
   fios?: string[];
+  /** Golden V3 §37-44: CLUMPS AUTORAIS — mechas ESCURAS (separação de locks) e
+   *  CLARAS (topo do lock pegando luz). Cada penteado tem os seus. */
+  clumpsDark?: string[];
+  clumpsLight?: string[];
+  /** intensidade do brilho claro dos clumps (afro pontilhado ≠ liso sedoso) */
+  luzClump?: number;
   /** mechas coloridas pelo canal `destaque` (estilos que o declaram) */
   mechasDestaque?: string[];
 }
 
+// Golden V3 (#219 §37-44): o volume do cabelo vem de CLUMPS AUTORAIS (não de um
+// sheen radial genérico — que deixava tudo com cara de plástico/capacete). Só
+// resta uma luz de coroa MUITO suave e ampla (giro do topo) + oclusão de borda;
+// a identidade mora nos clumps escuros/claros desenhados por penteado.
 function cabeloPremium(c: CamadasCabelo): ParteRender {
   return (p: Paleta, u: string) => {
     const t = tintaPremium(p.cabelo.base);
+    const clip = `${u}pxhclip`;
+    const lz = c.luzClump ?? 0.16;
     return `
-      <defs>${defsCab(u, t)}</defs>
+      <defs>${defsCab(u, t)}
+        <clipPath id="${clip}"><path d="${c.massa}"/></clipPath>
+        <radialGradient id="${u}pxtl" cx="0.42" cy="0.24" r="0.62">
+          <stop offset="0" stop-color="${alfa('#ffffff', 0.2)}"/><stop offset="0.7" stop-color="${alfa('#ffffff', 0.04)}"/><stop offset="1" stop-color="${alfa('#ffffff', 0)}"/></radialGradient>
+        <radialGradient id="${u}pxoc" cx="0.5" cy="0.44" r="0.6">
+          <stop offset="0.5" stop-color="${alfa(t.profundo, 0)}"/><stop offset="1" stop-color="${alfa(t.profundo, 0.6)}"/></radialGradient>
+      </defs>
       ${SOMBRA_TESTA(t, c.sombraTesta)}
       <path d="${c.massa}" fill="url(#${u}pxc)"/>
+      <g clip-path="url(#${clip})">
+        <rect x="34" y="16" width="172" height="164" fill="url(#${u}pxoc)"/>
+        ${c.clumpsDark ? c.clumpsDark.map((d) => `<path d="${d}" fill="${alfa(t.profundo, 0.5)}"/>`).join('') : ''}
+        ${c.sombraInterna ? `<path d="${c.sombraInterna}" fill="${alfa(t.profundo, 0.4)}"/>` : ''}
+        <rect x="34" y="16" width="172" height="120" fill="url(#${u}pxtl)"/>
+        ${c.clumpsLight ? c.clumpsLight.map((d) => `<path d="${d}" fill="${alfa('#ffffff', lz)}"/>`).join('') : ''}
+      </g>
       ${c.franja ? `<path d="${c.franja}" fill="${t.meio}"/>` : ''}
-      ${c.sombraInterna ? `<path d="${c.sombraInterna}" fill="${alfa(t.profundo, 0.4)}"/>` : ''}
       ${mechas(t, c.mechas)}
-      ${c.mechasDestaque ? c.mechasDestaque.map((d) => `<path d="${d}" stroke="${alfa(p.destaque.claro, 0.6)}" stroke-width="2" stroke-linecap="round" fill="none"/>`).join('') : ''}
-      ${c.fios ? fios(t, c.fios) : ''}
-      ${RIM(t)}`;
+      ${c.mechasDestaque ? c.mechasDestaque.map((d) => `<path d="${d}" stroke="${alfa(t.claro, 0.7)}" stroke-width="2" stroke-linecap="round" fill="none"/>`).join('') : ''}
+      ${c.fios ? fios(t, c.fios) : ''}`;
   };
 }
 
@@ -92,6 +116,53 @@ function massaAtras(d: string, dSombra?: string): ParteRender {
 }
 
 const comum = { categoria: 'cabelo' as const, requerBase: HUMANOIDES, acabamento: 'premium' as const, raridade: 'raro' as const };
+
+// Golden V3 §40: CAMPO DE COILS do afro — em vez de sheen radial (capacete),
+// muitos clumps pequenos: sombra ENTRE coils (escura) + topo do coil em luz.
+// Determinístico (grid hex dentro do domo), recortado pela massa no render.
+function afroClumps(): { dark: string[]; light: string[] } {
+  const dark: string[] = [], light: string[] = [];
+  // Golden V3.1 §40: clumps IRREGULARES autorais (não grade — grade lê como
+  // gorro). ~13 major clumps de tamanhos variados, sobrepostos e assimétricos;
+  // + alguns secondary só em áreas escolhidas. [x, y, r]. cxx=120.
+  const major: [number, number, number][] = [
+    [96, 46, 9], [122, 40, 8], [146, 50, 8.5], [74, 66, 8], [104, 62, 7],
+    [128, 66, 9], [156, 70, 7.5], [86, 88, 8.5], [116, 86, 7], [142, 90, 8],
+    [72, 104, 7], [100, 108, 8], [134, 110, 7.5], [158, 100, 6.5], [92, 126, 7.5],
+    [124, 128, 7], [150, 122, 6.5], [108, 142, 6.5], [136, 140, 6],
+  ];
+  const secondary: [number, number, number][] = [
+    [110, 52, 4], [138, 78, 4.5], [90, 74, 4], [128, 98, 4], [104, 120, 4], [146, 108, 3.6],
+  ];
+  const push = (arr: typeof major, litBias: number) => {
+    for (const [x, y, s] of arr) {
+      const lit = x < 116 ? litBias + 0.5 : litBias; // lado da luz (esq) brilha +
+      // vale (sombra) embaixo-direita do coil + crista (luz) topo-esquerda
+      dark.push(`M${x - s + 1} ${y + s - 3} a ${s} ${s} 0 0 0 ${2 * s - 2} 1.5 a ${s + 1.5} ${s + 1.5} 0 0 1 ${-2 * s + 2} -3 z`);
+      light.push(`M${x - s + 1.5} ${y - 1.5} a ${s - 1} ${s - 1} 0 0 1 ${2 * s - 4} ${-1 - lit} l -1.6 2.8 a ${s - 2.6} ${s - 2.6} 0 0 0 ${-2 * s + 7} ${1 + lit * 0.5} z`);
+    }
+  };
+  push(major, 1); push(secondary, 0.3);
+  return { dark, light };
+}
+const AFRO = afroClumps();
+
+// Golden V3.2 §18: a SILHUETA do afro vem dos CLUMPS MAIORES (lobos), não de
+// um domo liso decorado. Massa central + anel de lobos sobrepostos (união
+// nonzero) cuja borda SOBE/DESCE/PROJETA/RECUA organicamente — lê como cabelo
+// no SILHOUETTE BLACK TEST (não gorro). Aberto embaixo (rosto).
+function afroMassa(): string {
+  const central = 'M70 106 a 50 56 0 1 1 100 0 z';       // corpo (metade superior)
+  const lobos: [number, number, number][] = [
+    [120, 27, 18], [99, 32, 15], [143, 31, 16], [78, 46, 15], [161, 45, 15],
+    [65, 70, 14], [176, 68, 14], [62, 93, 13], [178, 92, 13],
+    [69, 105, 12], [172, 106, 12], [108, 24, 12], [152, 39, 11],
+  ];
+  const circ = ([x, y, r]: [number, number, number]): string =>
+    `M${x - r} ${y} a ${r} ${r} 0 1 1 ${2 * r} 0 a ${r} ${r} 0 1 1 ${-2 * r} 0 z`;
+  return central + ' ' + lobos.map(circ).join(' ');
+}
+const AFRO_MASSA = afroMassa();
 
 export const CABELOS_PREMIUM: ParteDef[] = [
   {
@@ -158,7 +229,8 @@ export const CABELOS_PREMIUM: ParteDef[] = [
       mechasDestaque: ['M104 58 q -2 14 -2 28'],
       fios: ['M64 120 q -3 -10 -2 -18', 'M176 120 q 3 -10 2 -18'],
     }),
-    renderAtras: massaAtras('M70 100 c -8 40 -8 74 -2 100 h 104 c 6 -26 6 -60 -2 -100 c -6 22 -8 48 -6 74 h -88 c 2 -26 0 -52 -6 -74 z', 'M78 172 h 84 c 0 3 0 6 -1 8 h -82 c -1 -2 -1 -5 -1 -8 z'),
+    // §44 LONGO LISO: queda RETA e sleeker, pontas arredondadas (não bloco).
+    renderAtras: massaAtras('M74 100 c -10 42 -10 80 -2 106 c 5 6 14 5 18 -2 c -5 -32 -5 -68 1 -100 c 4 24 6 50 5 76 h 48 c -1 -26 1 -52 5 -76 c 6 32 6 68 1 100 c 4 7 13 8 18 2 c 8 -26 8 -64 -2 -106 z'),
  
   },
   {
@@ -171,7 +243,8 @@ export const CABELOS_PREMIUM: ParteDef[] = [
       mechasDestaque: ['M142 62 q 6 9 2 18'],
       fios: ['M63 116 q -4 -8 -2 -16', 'M177 116 q 4 -8 2 -16'],
     }),
-    renderAtras: massaAtras('M72 98 c -12 36 -14 70 -4 102 c 6 -8 8 -18 6 -28 c 8 10 10 22 6 34 h 80 c -4 -12 -2 -24 6 -34 c -2 10 0 20 6 28 c 10 -32 8 -66 -4 -102 c -8 20 -10 44 -8 68 h -80 c 2 -24 0 -48 -8 -68 z'),
+    // §44 ONDULADO: silhueta externa mais LARGA e ONDULADA (não igual ao liso).
+    renderAtras: massaAtras('M66 96 c -18 40 -20 82 -8 116 c 5 -5 7 -13 5 -21 c 5 9 5 19 1 28 c 6 3 13 1 17 -4 c -6 -12 -4 -26 2 -38 c -5 -26 -5 -54 3 -80 c 3 26 4 54 2 80 h 44 c -2 -26 -1 -54 2 -80 c 8 26 8 54 3 80 c 6 12 8 26 2 38 c 4 5 11 7 17 4 c -4 -9 -4 -19 1 -28 c -2 8 0 16 5 21 c 12 -34 10 -76 -8 -116 z'),
  
   },
   {
@@ -205,15 +278,15 @@ export const CABELOS_PREMIUM: ParteDef[] = [
     ...comum, id: 'cab_px_afro', nome: 'Afro Premium', tema: 'urbano', raridade: 'epico',
     descricao: 'Coroa esférica CHEIA com borda em nuvem e luz pontilhada.', usaCores: ['cabelo'],
     render: cabeloPremium({
-      // onda 1424 (Fase B §23): DOMO sólido + bordas em nuvem PREENCHIDAS
-      // (círculos de subpath no mesmo fill do gradiente — não traços).
-      massa: 'M78 90 a 58 56 0 1 1 84 0 z'
-        + ' M74 74 a 11 11 0 1 0 0.1 0 z M80 52 a 12 12 0 1 0 0.1 0 z M98 40 a 12 12 0 1 0 0.1 0 z'
-        + ' M120 35 a 12 12 0 1 0 0.1 0 z M142 40 a 12 12 0 1 0 0.1 0 z M160 52 a 12 12 0 1 0 0.1 0 z M166 74 a 11 11 0 1 0 0.1 0 z',
-      sombraTesta: 'M82 86 c 12 -6 25 -9 38 -9 s 26 3 38 9 c -2 4 -5 6 -8 7 c -9 -4 -19 -6 -30 -6 s -21 2 -30 6 c -3 -1 -6 -3 -8 -7 z',
-      sombraInterna: 'M120 54 a 50 48 0 0 0 -38 22 a 52 50 0 0 1 38 -28 a 52 50 0 0 1 38 28 a 50 48 0 0 0 -38 -22 z',
-      // pontilhado de luz (§afro) — pequenos realces sobre a coroa
-      mechas: ['M96 60 a 4 4 0 0 1 5 -2', 'M120 52 a 4 4 0 0 1 5 0', 'M144 60 a 4 4 0 0 1 4 4', 'M84 78 a 4 4 0 0 1 4 -4', 'M156 78 a 4 4 0 0 1 4 4'],
+      // Golden V3.2 §18: silhueta CONSTRUÍDA pelos lobos (afroMassa) — borda
+      // orgânica que sobe/desce/projeta/recua, não domo liso + decoração.
+      massa: AFRO_MASSA,
+      sombraTesta: 'M82 92 c 12 -6 25 -9 38 -9 s 26 3 38 9 c -2 4 -5 6 -8 7 c -9 -4 -19 -6 -30 -6 s -21 2 -30 6 c -3 -1 -6 -3 -8 -7 z',
+      // Golden V3 §40: CAMPO DE COILS autoral (não sheen) — quebra o "capacete".
+      clumpsDark: AFRO.dark,
+      clumpsLight: AFRO.light,
+      luzClump: 0.2,
+      mechas: [],
     }),
   },
   {

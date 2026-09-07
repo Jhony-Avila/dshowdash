@@ -248,6 +248,7 @@ ok(svgAssim === svgDe(cExpr, { uid: 'fx', premium: true, faceV2: true }), '[H] a
 // I) onda 1415 — VESTUARIO PREMIUM (#191)
 import { ROUPAS_PREMIUM_1415, SOBREPECAS_PREMIUM, ROUPAS_INFERIORES, CALCADOS_PREMIUM } from '@painel/engine/partes/premium/vestuario';
 import { corpoPremium } from '@painel/engine/partes/premium/corpo';
+import { perfilCorpoDe } from '@painel/engine/partes/corpo';
 import { secundarioPadraoDe } from '@painel/engine/cores';
 import { CONJUNTOS, conjuntosAtivos, aplicarConjunto } from '@painel/services/Conjuntos';
 import { VARIANTES_POR_ASSET } from '@painel/services/VariantesAssets';
@@ -276,11 +277,26 @@ ok(svgDe(cCamisa('#e84c6f'), { uid: 'sc', premium: true }) !== svgDe(cCamisa(nul
 const cBlazer = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa: 'rou_px_blazer' }, acabamento: 'premium' });
 const corpoPrem = svgDe(cBlazer, { uid: 'cv', premium: true, palco: true, enquadramento: 'corpo' });
 const corpoClas = svgDe(cBlazer, { uid: 'cv', palco: true, enquadramento: 'corpo' });
-ok(corpoPrem.includes('l -12 3 l 4 -70'), '[I] renderCorpoV2 (silhueta do blazer) ausente no premium');
-ok(!corpoClas.includes('l -12 3 l 4 -70'), '[I] renderCorpoV2 NAO pode vazar sem premium (§651)');
-ok(corpoPrem.includes('cvpxcv2l'), '[I] scaffold v2 (corpoPremium) ausente');
-ok(!corpoClas.includes('cvpxcv2l'), '[I] scaffold v2 NAO pode vazar sem premium');
-ok(corpoPremium(paletaFake(), 'k') === corpoPremium(paletaFake(), 'k') && !/<filter/.test(corpoPremium(paletaFake(), 'k')), '[I] corpoPremium deterministico e sem filtros');
+// Golden V3 (#219): asserts de CONTRATO (nao geometria antiga). O blazer V3
+// desenha via renderCorpoV2 que chama dobras (clipPath uid+fold); o corpo
+// premium e o scaffold ANATOMICO corpoInteiroPremium (gradiente da calca
+// uid+cpxcal). Ambos SO no premium. Nao validar por hash aqui: mudanca de
+// hash Premium e needs-human-review enquanto Gate A = REWORK.
+ok(corpoPrem.includes('cvfold'), '[I] renderCorpoV2 V3 (dobras da peca) ausente no premium');
+ok(!corpoClas.includes('cvfold'), '[I] renderCorpoV2 NAO pode vazar sem premium (§651)');
+ok(corpoPrem.includes('cvcpxcal'), '[I] scaffold ANATOMICO V3 (corpoInteiroPremium) ausente no premium');
+ok(!corpoClas.includes('cvcpxcal'), '[I] scaffold anatomico NAO pode vazar sem premium (§651)');
+ok(corpoPremium(paletaFake(), 'k') === corpoPremium(paletaFake(), 'k') && !/<filter/.test(corpoPremium(paletaFake(), 'k')), '[I] corpoPremium (fallback historico) deterministico e sem filtros');
+// Golden V3.1 (#219): PROFILE FEMININO explicito sobrevive a cadeia REAL
+// (bug V3: 'feminino' era descartado por sanitizarCorpoV2 -> perfil standard).
+// Prova raw config -> validarConfig -> svgDe -> perfil feminino (nao unit de perfilCorpoDe).
+const femRaw = { formato: 'camadas', versao: CONFIG_PADRAO.versao, base: 'bas_px_coracao', acabamento: 'premium', cores: CONFIG_PADRAO.cores, camadas: { ...CONFIG_PADRAO.camadas }, corpoV2: { preset: 'feminino' } };
+const femVal = validarConfig(femRaw);
+ok(femVal.corpoV2 && femVal.corpoV2.preset === 'feminino', '[I] preset feminino DEVE sobreviver validarConfig (nao virar null)');
+ok(perfilCorpoDe(femVal) === 'feminino', '[I] perfilCorpoDe(config validado) DEVE resolver feminino');
+const femBody = svgDe(femVal, { uid: 'fz', premium: true, palco: true, enquadramento: 'corpo' });
+const stdBody = svgDe(validarConfig({ ...femRaw, corpoV2: undefined }), { uid: 'fz', premium: true, palco: true, enquadramento: 'corpo' });
+ok(femBody !== stdBody, '[I] svgDe do perfil feminino DEVE diferir do standard (perfil chegou ao render)');
 // roupa_inferior: renderiza no corpo inteiro, invisivel no busto
 const cJeans = cfg({ camadas: { ...CONFIG_PADRAO.camadas, roupa_inferior: 'rin_jeans' }, acabamento: 'premium' });
 ok(cJeans.camadas.roupa_inferior === 'rin_jeans', '[I] camada roupa_inferior persiste');
@@ -376,16 +392,26 @@ const idsAura = [...itensDe('aura').map((x) => x.id), ...AURAS_PREMIUM.map((x) =
 ok(idsAura.every((id) => fichaAuraDe(id) !== undefined), '[K] aura sem ficha no RegistroEfeitos: ' + idsAura.filter((id) => !fichaAuraDe(id)).join(','));
 ok(idsAura.every((id) => cobreRosto(id) === false), '[K] HARD FAIL: aura com cobreRosto=true');
 ok(Object.keys(FICHAS_AURA).length >= 19, '[K] registro com ' + Object.keys(FICHAS_AURA).length + ' fichas');
-// fundos em PLANOS: far/mid/floor no render; fg no renderPlanos.frente
+// fundos em PLANOS: far/mid/floor no render; fg no renderPlanos.frente.
+// Golden V3.1 (#219): fun_px_estudio é o STUDIO QA NEUTRO — FG VAZIO de
+// propósito (nada na frente do personagem); os DEMAIS ambientes mantêm fg.
 for (const f of FUNDOS_PREMIUM) {
   const svg = f.render(paletaFake(), 'k');
   ok(svg.includes('data-plano="far"') && svg.includes('data-plano="mid"') && svg.includes('data-plano="floor"'), '[K] ' + f.id + ' sem os 3 planos');
-  ok(!!f.renderPlanos?.frente && f.renderPlanos.frente(paletaFake(), 'k').includes('data-plano="fg"'), '[K] ' + f.id + ' sem atmosfera fg');
+  if (f.id === 'fun_px_estudio') {
+    ok(!f.renderPlanos?.frente, '[K] STUDIO QA (fun_px_estudio) NAO pode ter atmosfera fg na frente do personagem');
+  } else {
+    ok(!!f.renderPlanos?.frente && f.renderPlanos.frente(paletaFake(), 'k').includes('data-plano="fg"'), '[K] ' + f.id + ' sem atmosfera fg');
+  }
 }
-// planos consumidos no BUSTO PALCO premium; ausentes sem premium (§651)
-const cBg = cfg({ camadas: { ...CONFIG_PADRAO.camadas, fundo: 'fun_px_estudio' }, acabamento: 'premium' });
+// planos consumidos no BUSTO PALCO premium; ausentes sem premium (§651).
+// Usa um ambiente COM atmosfera (metropole), não o studio neutro.
+const cBg = cfg({ camadas: { ...CONFIG_PADRAO.camadas, fundo: 'fun_px_metropole' }, acabamento: 'premium' });
 ok(svgDe(cBg, { uid: 'bg', premium: true, palco: true }).includes('data-plano="fg"'), '[K] atmosfera premium ausente no palco');
 ok(!svgDe(cBg, { uid: 'bg', palco: true }).includes('data-plano="fg"'), '[K] atmosfera NAO pode vazar sem premium');
+// e o STUDIO neutro NUNCA coloca fg na frente (nem no palco premium)
+const cStudio = cfg({ camadas: { ...CONFIG_PADRAO.camadas, fundo: 'fun_px_estudio' }, acabamento: 'premium' });
+ok(!svgDe(cStudio, { uid: 'st', premium: true, palco: true }).includes('data-plano="fg"'), '[K] STUDIO QA sem fg na frente do personagem (palco premium)');
 // auras premium: rear glow + main (data-nucleo) + particulas na frente
 ok(AURAS_PREMIUM.every((a) => a.renderAtras && a.renderFrente && a.render(paletaFake(), 'k').includes('data-nucleo')), '[K] aura premium sem os 3 fragmentos/data-nucleo');
 const cAura = cfg({ camadas: { ...CONFIG_PADRAO.camadas, aura: 'aur_px_fluxo' }, acabamento: 'premium' });

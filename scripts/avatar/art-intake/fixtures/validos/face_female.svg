@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <radialGradient id="glow_ff" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse data-hero-layer="back" cx="120" cy="116" rx="98" ry="104" fill="url(#glow_ff)"/>
+
+  <!-- cabelo longo atrás (moldura larga até os ombros) -->
+  <path data-hero-layer="back" data-channel="cabelo" data-tone="base"
+    d="M52 108 C 44 50 88 22 120 22 C 152 22 196 50 188 108 L 196 212 L 168 212 L 164 120 C 164 78 146 54 120 54 C 94 54 76 78 76 120 L 72 212 L 44 212 Z"/>
+
+  <!-- rosto: oval suave, queixo afilado (feminino) -->
+  <path data-hero-layer="base" data-channel="pele" data-tone="base"
+    d="M80 104 C 80 70 98 54 120 54 C 142 54 160 70 160 104 C 160 150 142 190 120 198 C 98 190 80 150 80 104 Z"/>
+
+  <!-- blush/meios-tons -->
+  <ellipse data-hero-layer="mid" data-channel="pele" data-tone="claro" cx="98" cy="140" rx="10" ry="7" opacity="0.5"/>
+  <ellipse data-hero-layer="mid" data-channel="pele" data-tone="claro" cx="142" cy="140" rx="10" ry="7" opacity="0.5"/>
+
+  <!-- franja lateral (frente) -->
+  <path data-hero-layer="detail" data-channel="cabelo" data-tone="escuro"
+    d="M76 100 C 78 66 100 54 120 54 C 108 66 92 82 88 112 Z"/>
+  <path data-hero-layer="detail" data-channel="cabelo" data-tone="escuro"
+    d="M164 100 C 162 66 140 54 120 54 C 132 66 148 82 152 112 Z"/>
+
+  <!-- sobrancelhas arqueadas -->
+  <path data-hero-layer="detail" data-channel="cabelo" data-tone="profundo" data-paint="stroke" fill="none" stroke-width="3"
+    d="M90 112 Q 102 106 116 111"/>
+  <path data-hero-layer="detail" data-channel="cabelo" data-tone="profundo" data-paint="stroke" fill="none" stroke-width="3"
+    d="M124 111 Q 138 106 150 112"/>
+
+  <!-- olhos amendoados grandes -->
+  <ellipse data-hero-layer="detail" data-channel="destaque" data-tone="escuro" cx="102" cy="124" rx="11" ry="8"/>
+  <ellipse data-hero-layer="detail" data-channel="destaque" data-tone="escuro" cx="138" cy="124" rx="11" ry="8"/>
+  <circle data-hero-layer="detail" fill="#22141a" cx="102" cy="124" r="4"/>
+  <circle data-hero-layer="detail" fill="#22141a" cx="138" cy="124" r="4"/>
+
+  <!-- nariz delicado -->
+  <path data-hero-layer="detail" data-channel="pele" data-tone="escuro" data-paint="stroke" fill="none" stroke-width="1.6"
+    d="M120 128 L 118 150 L 126 154"/>
+
+  <!-- boca cheia -->
+  <path data-hero-layer="detail" data-channel="destaque" data-tone="base"
+    d="M104 168 Q 120 160 136 168 Q 120 182 104 168 Z"/>
+
+  <g data-hero="anchors">
+    <circle data-anchor="coroa" cx="120" cy="26"/>
+    <circle data-anchor="testa" cx="120" cy="96"/>
+    <circle data-anchor="olhoE" cx="102" cy="124"/>
+    <circle data-anchor="olhoD" cx="138" cy="124"/>
+    <circle data-anchor="boca" cx="120" cy="170"/>
+  </g>
+</svg>
