@@ -718,3 +718,8 @@
 [data-catalogo-v2] .vc-card .vc-fav svg{ position:relative; z-index:1; }
 [data-catalogo-v2] .vc-card .vc-fav:focus-visible{ outline:2px solid var(--vc-acc,#7c3aed); outline-offset:2px; }
 /* fim VC-CAT-V2-A11Y */
+/* marcador VC-CAT-V2-A11Y-SQ — #57 refino pos hit-test: a AREA DE TOQUE do favorito e um
+   quadrado 44x44 real (todos os pontos, cantos inclusive, acionam o fav); o visual continua
+   circulo compacto (::before). Escopado [data-catalogo-v2]. */
+[data-catalogo-v2] .vc-card .vc-fav{ border-radius:0; }
+/* fim VC-CAT-V2-A11Y-SQ */
