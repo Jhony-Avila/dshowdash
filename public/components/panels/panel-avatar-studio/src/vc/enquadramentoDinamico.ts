@@ -26,7 +26,8 @@ export const MARGEM_PADRAO = 0.10;
 // Identificadores estáveis de parte (independem do crop). Cada um resolve a região
 // clicável por: 1) grupo semântico data-anim (se existir no render); 2) caixa canônica.
 export type ParteId =
-  | 'acessorio_cabeca' | 'cabelo' | 'olhos' | 'boca' | 'rosto' | 'roupa' | 'calcados';
+  | 'acessorio_cabeca' | 'cabelo' | 'olhos' | 'boca' | 'rosto'
+  | 'roupa' | 'calca' | 'calcados';
 
 interface DefParte {
   id: ParteId;
@@ -49,16 +50,18 @@ const DEFS: DefParte[] = [
   { id: 'rosto', seletores: ['[data-anim="rosto"]', '[data-parte="rosto"]'],
     canonBusto: { x: 58, y: 46, w: 124, h: 120 }, canonCorpo: { x: 88, y: 30, w: 64, h: 90 } },
   { id: 'roupa', seletores: ['[data-anim="roupa"]', '[data-parte="roupa"]'],
-    canonCorpo: { x: 30, y: 150, w: 180, h: 150 } },
+    canonCorpo: { x: 30, y: 150, w: 180, h: 100 } },      // torso (superior)
+  { id: 'calca', seletores: ['[data-anim="roupa_inferior"]', '[data-parte="roupa_inferior"]'],
+    canonCorpo: { x: 40, y: 250, w: 160, h: 92 } },        // quadril→canela (calça)
   { id: 'calcados', seletores: ['[data-anim="calcados"]', '[data-parte="pes"]', '[data-parte="calcados"]'],
-    canonCorpo: { x: 40, y: 315, w: 160, h: 85 } },
+    canonCorpo: { x: 40, y: 338, w: 160, h: 62 } },        // pés (calçado)
 ];
 
 // Prioridade de sobreposição: o topo VISUAL recebe o clique. Uma caixa grande (rosto)
 // NÃO pode bloquear cabelo/olhos/boca. 'acessorio_cabeca' NÃO entra como região de clique
 // sintética: o render não expõe grupo próprio de acessório e uma caixa derivada do topo do
 // cabelo apenas roubaria o clique do cabelo; acessórios de cabeça são editáveis pelo trilho.
-const PRIORIDADE: ParteId[] = ['cabelo', 'olhos', 'boca', 'rosto', 'roupa', 'calcados'];
+const PRIORIDADE: ParteId[] = ['cabelo', 'olhos', 'boca', 'rosto', 'roupa', 'calca', 'calcados'];
 
 const ID_REALCE = 'vc-realce-dinamico';
 

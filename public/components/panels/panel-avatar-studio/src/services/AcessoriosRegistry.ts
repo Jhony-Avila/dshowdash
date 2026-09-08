@@ -94,6 +94,7 @@ export const ACESSORIOS_REGISTRY: Record<string, FichaAcessorio> = {
   ace_luva_couro: d('funcional', ['maos'], 'justo'), ace_anel_sinete: d('decorativo', ['maos'], 'justo'),
   ace_cinto_couro: d('funcional', ['cintura'], 'justo'), ace_joelheiras: d('funcional', ['pernas'], 'justo'),
   ace_tenis_neon: d('funcional', ['pes'], 'justo'),
+  ace_tenis_futuro: d('funcional', ['pes'], 'justo'), // decisao #50/#55: calcado seed do vestuario separado
   // ── onda 1416: premium (#196) ──
   ace_px_oculos: d('oculos', ['olhos'], 'justo'),
   ace_px_coroa: d('decorativo', ['topo_cabeca']),

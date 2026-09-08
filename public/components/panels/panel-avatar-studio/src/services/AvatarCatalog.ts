@@ -27,6 +27,7 @@ import { CABELOS } from '../engine/partes/cabelos';
 import { OLHOS } from '../engine/partes/olhos';
 import { BOCAS } from '../engine/partes/bocas';
 import { ROUPAS } from '../engine/partes/roupas';
+import { ROUPAS_INFERIORES_SEED, CALCADOS_SEED, VESTUARIO_SEED_IDS } from '../engine/partes/vestuario_seed'; // decisao #50 (seed complementar de vestuario)
 import { ROUPAS_PREMIUM } from '../engine/partes/premium/roupas'; // onda 1411 (#159/#166)
 import { HEROES_2D } from '../engine/partes/heroes'; // Golden A+2: heroes autorados (importarHeroAsset), gated por as6.hero_2d
 import { BASES_PREMIUM, OLHOS_PREMIUM, BOCAS_PREMIUM } from '../engine/partes/premium/faces'; // onda 1412 (#162)
@@ -304,6 +305,7 @@ export const PARTES: ParteDef[] = [
   ...BOCAS, ...BOCAS_PREMIUM, ...ROUPAS, ...ROUPAS_PREMIUM,
   ...BARBAS_PREMIUM, ...SOBRANCELHAS_PREMIUM, ...NARIZES_PREMIUM, // onda 1414 (#162)
   ...ROUPAS_PREMIUM_1415, ...SOBREPECAS_PREMIUM, ...ROUPAS_INFERIORES, ...CALCADOS_PREMIUM, // onda 1415 (#191)
+  ...ROUPAS_INFERIORES_SEED, ...CALCADOS_SEED, // decisao #50 (seed complementar de vestuario)
   ...HEROES_2D, // Golden A+2: heroes autorados (id `_hx_`), listados só com as6.hero_2d
 
   ...ACESSORIOS_PREMIUM, // onda 1416 (#196)
@@ -333,7 +335,20 @@ export function itensDe(categoria: CategoriaId): ParteDef[] {
     && (x.acabamento !== 'premium' || flag('as6.classico_premium'))
     // Golden A+2: heroes autorados (`_hx_`) exigem a flag própria as6.hero_2d
     // (mais restrita); o resolver POR_ID segue aceitando configs salvos.
-    && (!/_hx_/.test(x.id) || flag('as6.hero_2d')));
+    && (!/_hx_/.test(x.id) || flag('as6.hero_2d'))
+    // decisão #55 (§651): peças SEED do vestuário separado (rin_shorts/rin_futurista/
+    // ace_tenis_futuro) só entram no catálogo CLÁSSICO com a flag as6.vestuario_separado;
+    // itemPorId segue resolvendo o dado salvo (rollback esconde a UI, nunca descarta).
+    && (!VESTUARIO_SEED_IDS.includes(x.id) || flag('as6.vestuario_separado')));
+}
+
+/** decisão #51: itens de vestuário para o VC SEPARADO — inclui a arte premium
+ *  (rin_ e ace_px_) e o seed, IGNORANDO o filtro premium do itensDe (quem gateia
+ *  a UI é a flag as6.vestuario_separado). So exclui heroes autorais. O filtro por
+ *  slot (ex.: calçados = slot pes) fica com o chamador (grupo.slotsIn).
+ */
+export function itensVestuario(categoria: CategoriaId): ParteDef[] {
+  return PARTES.filter((x) => x.categoria === categoria && !/_hx_/.test(x.id));
 }
 
 /** Categorias VISÍVEIS na navegação (§3393 — decisão #95): `roupa_sobre`

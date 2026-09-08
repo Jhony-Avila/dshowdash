@@ -153,6 +153,7 @@ const PADROES: Record<string, boolean> = {
   'as6.cp_foto': false,         // onda 1418 — PHOTO MODE 2D do avatar (#202, P10-G): export em framings (full/bust/portrait/square/vertical) PNG/WebP/transparente com toggles de fundo/moldura/efeito; off = sem UI de export, render intocado
   'as6.acess_2d_premium': false, // onda 1416 — ACESSÓRIOS PREMIUM 2D (#196, P10-E/P6-A/P6-E): contador + "Remover todos" + conflito nomeado (AcessoriosRegistry §617) + aviso de paridade na UI; catálogo ace_px_ já é gated por classico_premium; off = UI anterior byte a byte
   'as6.roupa_premium': false,   // onda 1415 — VESTUÁRIO PREMIUM (#191, P10-D/P5-B/P5-C): categoria roupa_inferior (rin_*) na sidebar, conjuntos premium O01+ e swatch de material na UI; off = seção/outfits ocultos, configs salvos seguem renderizando (dado > UI)
+  'as6.vestuario_separado': false, // decisao #51 — vestuario 2D separado (superior/calca/calcado) no VC; canario u75; off = grupo Roupa unico byte a byte
   'as6.face_v2': false,         // onda 1414 — ROSTO V2 (#162, Partes 3/5): categoria nariz na sidebar, expressão semântica + idade + assimetria determinística aplicadas por wrappers SÓ nas artes v2, canais coresFace.sobrancelha/barba/labios na paleta, Face Idle Profiles; off = render/UI byte a byte (dados salvos seguem aceitos)
   'as6.barba_slot': false,      // onda 1414 — categoria BARBA visível (artes brb_*; compat máscara/cachecol em engine/compat-rosto.ts); off = seção oculta, config salvo segue renderizando
   'as6.brow_slot': false,       // onda 1414 — categoria SOBRANCELHA visível (artes sbr_* como overlay sobre o traço cozido); off = seção oculta, config salvo segue renderizando
@@ -245,7 +246,7 @@ let _remotas: Record<string, boolean> | null = null;
 // A remota usa o endpoint EXISTENTE ?action=resolve&flag= (per-user, credentials
 // include). Erro/timeout/resposta inválida/não-autenticado => as três ficam OFF.
 // Funciona SEM qualquer valor no localStorage.
-export const FLAGS_REMOTAS = ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d'] as const;
+export const FLAGS_REMOTAS = ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d', 'as6.vestuario_separado'] as const;
 
 export async function carregarFlags(): Promise<void> {
   const ctrl = new AbortController();
