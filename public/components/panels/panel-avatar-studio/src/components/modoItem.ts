@@ -13,6 +13,8 @@ import { subcategoriaDoAsset } from '../workspace/acessorios';
 
 // gerado por scripts/avatar/medir-foco-item.mjs — revisar o diff no mesmo commit
 export const FOCO_ITEM_ASSET: Record<string, string> = {
+  // seed vestuario (#54): calcado do seed enquadra a regiao dos pes (como subcat 'calcados')
+  ace_tenis_futuro: '60 290 120 120',
   // onda 1426 (#218 §7): peças premium (só render de busto) — enquadra gola/ombros
   rou_px_camiseta: '40 150 160 92', rou_px_camisa: '40 150 160 92', rou_px_hoodie: '40 150 160 92',
   rou_px_blazer: '40 150 160 92', rou_px_polo: '40 150 160 92', rou_px_colete: '40 150 160 92',

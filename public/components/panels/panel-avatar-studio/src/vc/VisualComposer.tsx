@@ -13,6 +13,7 @@ import { AvatarStore } from '../nucleo/estado';
 import { deLegado2d, paraLegado2d } from '../nucleo/adaptadores';
 import { validarConfig, itensDe, itensVestuario, svgItemIsolado } from '../services/AvatarCatalog';
 import { comItem } from '../components/GradeItens';
+import { focoItemDe } from '../components/modoItem'; // #54 catalogo_v2: reuso do enquadramento medido
 import { AvatarSvg } from '../components/AvatarSvg';
 import { salvarAvatar } from '../services/AvatarService';
 import { favoritos, alternarFavorito } from '../services/Progresso';
@@ -140,6 +141,14 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   // "Roupa" vira 3 categorias de trilho (Camisetas e blusas / Calças / Calçados).
   const vestSep = flag('as6.vestuario_separado');
   const gruposAtivos = useMemo(() => gruposVisuais(vestSep), [vestSep]);
+  // #54 catalogo_v2: thumbnail do card reusa o foco MEDIDO (focoItemDe / FOCO_CARD_CATEGORIA,
+  // §12 ~78%). Flag OFF = svgItemIsolado cru (byte a byte). Sem hardcode de foco.
+  const catalogoV2 = flag('as6.catalogo_v2');
+  const thumbHtml = useCallback((id: string, cat: string): string => (
+    catalogoV2
+      ? svgItemIsolado(id, { foco: focoItemDe(id, cat), premium: flag('as6.classico_premium'), faceV2: flag('as6.face_v2') })
+      : svgItemIsolado(id)
+  ), [catalogoV2]);
   // Trilho curto (§3): categorias humanas no trilho; baixa frequência no overflow "Mais".
   const gruposRail = useMemo(() => gruposAtivos.filter((g) => !g.overflow), [gruposAtivos]);
   const gruposOverflow = useMemo(() => gruposAtivos.filter((g) => g.overflow), [gruposAtivos]);
@@ -416,7 +425,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     // Guiada: cada etapa consulta SOMENTE os slots compatíveis do grupo (mesmo resolutor do visual).
     const itensPasso = emRevisao ? [] : itensPorCats(g.cats, g);
     return (
-      <div className="vc-root" data-vc data-modo="guiado">
+      <div className="vc-root" data-vc data-modo="guiado" data-catalogo-v2={catalogoV2 ? '' : undefined}>
         <header className="vc-barra">
           <button className="vc-acao" onClick={() => setModo('visual')} aria-label="Sair do passo a passo"><X size={18} aria-hidden /><span className="vc-lbl">Sair</span></button>
           <div className="vc-titulo">Criar passo a passo</div>
@@ -446,7 +455,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
                     className={`vc-card-btn ${equipadoDe(cat, it.id) ? 'vc-card-on' : ''} ${bl ? 'vc-card-bl' : ''}`}
                     title={bl ? `${it.nome} — bloqueado` : it.nome}
                     onClick={() => { if (!bl) aplicarPeca(cat, it.id); }}>
-                    <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: svgItemIsolado(it.id) }} />
+                    <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: thumbHtml(it.id, cat) }} />
                     {bl && <span className="vc-badge vc-badge-bl" aria-hidden><Lock size={13} /></span>}
                     <span className="vc-card-nome">{it.nome}</span>
                   </button>
@@ -470,7 +479,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   // ---------- MODO VISUAL ----------
   const overflowAtivo = gruposOverflow.some((g) => g.id === grupoId);
   return (
-    <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta}>
+    <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta} data-catalogo-v2={catalogoV2 ? '' : undefined}>
       <header className="vc-barra">
         <button className="vc-acao" onClick={sair} aria-label="Voltar"><ChevronLeft size={18} aria-hidden /><span className="vc-lbl">Voltar</span></button>
         <div className="vc-titulo">Avatar Studio</div>
@@ -555,12 +564,13 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
               const eq = equipadoDe(cat, it.id); const bl = bloqueado(it); const fav = favs.has(it.id);
               return (
                 <div key={`${cat}:${it.id}`} className={`vc-card ${eq ? 'vc-card-on' : ''} ${bl ? 'vc-card-bl' : ''}`}>
-                  <button type="button" className="vc-card-btn" aria-pressed={eq} data-slot={it.slot || undefined} data-cat={cat} title={bl ? `${it.nome} — bloqueado` : it.nome}
+                  <button type="button" className="vc-card-btn" aria-pressed={eq} aria-selected={catalogoV2 ? eq : undefined} data-slot={it.slot || undefined} data-cat={cat} title={bl ? `${it.nome} — bloqueado` : it.nome}
                     onClick={() => { if (!bl) aplicarPeca(cat, it.id); }}>
-                    <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: svgItemIsolado(it.id) }} />
+                    <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: thumbHtml(it.id, cat) }} />
                     {eq && <span className="vc-badge vc-badge-eq" aria-hidden><Check size={13} /></span>}
                     {bl && <span className="vc-badge vc-badge-bl" aria-hidden><Lock size={13} /></span>}
                     {it.novo && !eq && !bl && <span className="vc-badge vc-badge-novo">novo</span>}
+                    {catalogoV2 && eq && <span className="vc-emuso" aria-hidden>Em uso</span>}
                     <span className="vc-card-nome">{it.nome}</span>
                   </button>
                   <button type="button" className={`vc-fav ${fav ? 'vc-fav-on' : ''}`} aria-label={fav ? 'Desfavoritar' : 'Favoritar'} aria-pressed={fav} onClick={() => toggleFav(it.id)}><Heart size={13} aria-hidden /></button>

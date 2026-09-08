@@ -609,3 +609,92 @@
   .vc-root[data-vc] .vc-palco-wrap { width: min(56vw, 86vh); }
 }
 /* ==== fim VC-VEST-MOBILE ==== */
+
+/* ==== AVST5 · Catálogo visual V2 (decisão #54) — escopo .vc-root[data-catalogo-v2] ==========
+   Galeria: grid confortável 2-col, preview grande com foco canônico (focoItemDe/
+   FOCO_CARD_CATEGORIA), fundo translúcido adaptativo (sem bloco branco), equipado inequívoco,
+   favorito fora da geometria, estados claros. TODO o CSS abaixo é gated por [data-catalogo-v2]
+   (flag as6.catalogo_v2 ON) — com a flag OFF o atributo não existe e o caminho clássico é
+   byte-a-byte. Sem !important; usa as variáveis do tema (--vc-*). Marcador VC-CATALOGO-V2. */
+
+/* grade confortável: 2 colunas por padrão (desktop e mobile). 3-col fica só p/ o modo compacto. */
+.vc-root[data-catalogo-v2] .vc-grade {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px; padding: 12px; align-content: start;
+}
+.vc-root[data-catalogo-v2][data-grade="compacto"] .vc-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+
+/* card: superfície translúcida (não branca), borda sutil, área inteira clicável */
+.vc-root[data-catalogo-v2] .vc-card { position: relative; }
+.vc-root[data-catalogo-v2] .vc-card-btn {
+  gap: 8px; padding: 10px; border-radius: 14px;
+  background: color-mix(in srgb, var(--vc-surf2) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vc-linha) 60%, transparent);
+  transition: border-color .12s, box-shadow .12s, background .12s;
+}
+.vc-root[data-catalogo-v2] .vc-card-btn:hover { border-color: var(--vc-linha); background: var(--vc-surf2); }
+.vc-root[data-catalogo-v2] .vc-card-btn:focus-visible { outline: 2px solid var(--vc-acc); outline-offset: 2px; }
+
+/* thumbnail: fundo translúcido adaptativo + halo radial discreto atrás do asset (sem branco
+   sólido; não altera a cor percebida da peça). Preview grande (asset ~78% via foco canônico). */
+.vc-root[data-catalogo-v2] .vc-thumb {
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--vc-txt) 12%, transparent), transparent 68%),
+    color-mix(in srgb, var(--vc-surf) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vc-linha) 45%, transparent);
+}
+[data-light-v6] .vc-root[data-catalogo-v2] .vc-thumb {
+  background:
+    radial-gradient(circle at 50% 46%, #00000010, transparent 68%),
+    color-mix(in srgb, var(--vc-surf) 70%, transparent);
+}
+
+/* nome: informação secundária (uma linha, 2 no máximo, com tooltip via title do botão) */
+.vc-root[data-catalogo-v2] .vc-card-nome { font-size: 11px; color: var(--vc-txt2); -webkit-line-clamp: 2; }
+
+/* EQUIPADO inequívoco: halo roxo + check no canto sup. esquerdo + etiqueta "Em uso".
+   Hierarquia: TL=seleção/equipado · TR=favorito · centro=asset · rodapé=nome. */
+.vc-root[data-catalogo-v2] .vc-card-on .vc-card-btn {
+  border-color: var(--vc-acc);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vc-acc) 55%, transparent), 0 0 14px color-mix(in srgb, var(--vc-acc) 30%, transparent);
+  background: color-mix(in srgb, var(--vc-acc) 12%, var(--vc-surf2));
+}
+.vc-root[data-catalogo-v2] .vc-badge-eq {
+  left: 6px; right: auto; top: 6px; bottom: auto;
+  background: var(--vc-acc); color: #fff; border-radius: 999px; width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.vc-root[data-catalogo-v2] .vc-emuso {
+  position: absolute; left: 6px; top: 32px; z-index: 3;
+  background: color-mix(in srgb, var(--vc-acc) 90%, #000); color: #fff;
+  font-size: 9px; font-weight: 600; letter-spacing: .3px; line-height: 1;
+  padding: 3px 6px; border-radius: 999px; pointer-events: none;
+}
+
+/* FAVORITO no canto superior direito, fora da geometria útil (não cobre o asset) */
+.vc-root[data-catalogo-v2] .vc-fav {
+  top: 6px; right: 6px; bottom: auto;
+  background: color-mix(in srgb, #000 55%, transparent); width: 28px; height: 28px;
+}
+.vc-root[data-catalogo-v2] .vc-fav:hover { background: color-mix(in srgb, #000 72%, transparent); }
+.vc-root[data-catalogo-v2] .vc-fav-on { color: #ff5f8f; }
+
+/* bloqueado / indisponível */
+.vc-root[data-catalogo-v2] .vc-card-bl .vc-card-btn { opacity: .55; }
+.vc-root[data-catalogo-v2] .vc-badge-bl { left: 6px; top: 6px; right: auto; }
+
+/* estado vazio */
+.vc-root[data-catalogo-v2] .vc-vazio { padding: 28px 16px; color: var(--vc-txt2); }
+
+/* alvos de toque ≥44px no card (o botão já tem min-height; garante o favorito) */
+.vc-root[data-catalogo-v2] .vc-fav { min-width: 28px; min-height: 28px; }
+
+/* MOBILE: mantém 2 colunas (herda a restauração #53 sem overflow). */
+@media (max-width: 768px) {
+  .vc-root[data-catalogo-v2] .vc-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+  .vc-root[data-catalogo-v2][data-grade="compacto"] .vc-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* favorito e badges com alvo confortável no toque */
+  .vc-root[data-catalogo-v2] .vc-fav { width: 32px; height: 32px; }
+}
+/* ==== fim VC-CATALOGO-V2 ==== */
