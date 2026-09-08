@@ -532,3 +532,80 @@
 [data-vc] .vc-palco-pulso { animation: vcPalcoPulso 2.2s ease-in-out 2; border-radius: 14px; }
 @media (prefers-reduced-motion: reduce) { [data-vc] .vc-palco-pulso { animation: none; } }
 /* ==== fim VC-ENQ-DINAMICO ==== */
+
+/* ==== AVST5 · VC mobile — restauração do bottom-sheet (decisão #53) =============
+   Append idempotente (marcador VC-VEST-MOBILE). SEM !important. Todo o escopo é
+   .vc-root[data-vc] dentro de @media (max-width:768px) / landscape — desktop (>=769px)
+   fica byte-a-byte idêntico (nenhuma regra fora de @media).
+
+   CAUSA-RAIZ (bug PRÉ-EXISTENTE, afeta inclusive flag OFF): a rodada "design overhaul"
+   adicionou regras .vc-root[data-vc] <el> SEM @media (linhas ~352/367/368) que vazam o
+   layout de DESKTOP para o mobile, com especificidade (0,3,0) maior que as regras mobile
+   originais (linhas 115-144, seletores nus 0,1,0). Isso reimpunha no celular: o grid de 3
+   colunas 64px/·/344px (=408 fixo) na .vc-corpo, o padding:16 do palco e a .vc-palco-wrap
+   com width:min(100%,78vh) (que, com aspect-ratio 1/1, força a coluna ~325px). Resultado:
+   conteúdo interno > viewport (overflow horizontal medido pelo audit).
+
+   CORREÇÃO: reafirmar a INTENÇÃO mobile original (linhas 118-121 portrait, 139-142
+   landscape) com a MESMA especificidade .vc-root[data-vc], depois no arquivo, vencendo
+   só dentro de @media. Elimina a causa geométrica — não mascara com overflow-x:hidden. */
+
+/* ---- MOBILE (retrato e default ≤768px): palco em cima, gaveta (bottom sheet) embaixo ---- */
+@media (max-width: 768px) {
+  /* trava a track do grid RAIZ à viewport (o .vc-root é grid sem colunas explícitas → a
+     coluna implícita 'auto' crescia até o max-content do trilho; minmax(0,1fr) a prende
+     à largura útil e deixa o trilho rolar por dentro). Correção geométrica, não máscara. */
+  .vc-root[data-vc] { grid-template-columns: minmax(0, 1fr); }
+  /* cabeçalho pode quebrar linha em telas estreitas em vez de estourar (min-content dos
+     controles > viewport em ≤390). Sem overflow/scroll no header — só reflow. */
+  .vc-root[data-vc] .vc-barra { flex-wrap: wrap; }
+  /* coluna única — desfaz o grid 3-col do overhaul (linha 367/368) */
+  .vc-root[data-vc] .vc-corpo { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .vc-root[data-vc].vc-painel-off .vc-corpo { grid-template-columns: 1fr; }
+
+  /* trilho de categorias: horizontal no topo, rolável por toque, contido (não empurra o doc) */
+  .vc-root[data-vc] .vc-trilho {
+    width: auto; flex-direction: row; align-items: center;
+    border-right: 0; border-bottom: 1px solid var(--vc-linha);
+    overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+    padding: 6px 8px; gap: 6px; scroll-snap-type: x proximity;
+  }
+  .vc-root[data-vc] .vc-cat { flex: 0 0 auto; scroll-snap-align: start; min-width: 48px; min-height: 48px; }
+
+  /* palco central dominante — desfaz padding:16 e width:min(100%,78vh) vazados (linha 368) */
+  .vc-root[data-vc] .vc-palco { padding: 8px 8px 0; place-items: start center; }
+  .vc-root[data-vc] .vc-palco-wrap { width: min(88vw, 46vh); }
+
+  /* deixa os filhos de flex/grid encolherem abaixo do min-content (correção, não máscara) */
+  .vc-root[data-vc] .vc-corpo,
+  .vc-root[data-vc] .vc-painel,
+  .vc-root[data-vc] .vc-grade,
+  .vc-root[data-vc] .vc-catnav,
+  .vc-root[data-vc] .vc-subs { min-width: 0; }
+
+  /* cabeçalho compacto: rótulos viram só ícone (aria-label preservado), título com elipse */
+  .vc-root[data-vc] .vc-barra { gap: 6px; padding: 8px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .vc-root[data-vc] .vc-barra .vc-lbl { display: none; }
+  .vc-root[data-vc] .vc-titulo { min-width: 0; flex: 0 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+  .vc-root[data-vc] .vc-globais { gap: 4px; min-width: 0; }
+  .vc-root[data-vc] .vc-modo-seg { margin: 0 4px; flex: 0 0 auto; }
+  .vc-root[data-vc] .vc-modo-op { padding: 5px 9px; font-size: 11px; }
+
+  /* gaveta (bottom sheet) respeitando safe-area inferior; conteúdo do catálogo rola por dentro */
+  .vc-root[data-vc] .vc-painel { padding-bottom: env(safe-area-inset-bottom); }
+  .vc-root[data-vc] .vc-grade { overflow-y: auto; }
+  /* alvos de toque ≥44px no mobile (apenas altura — sem risco de overflow horizontal) */
+  .vc-root[data-vc] .vc-gaveta-alca,
+  .vc-root[data-vc] .vc-catnav button,
+  .vc-root[data-vc] .vc-sub,
+  .vc-root[data-vc] .vc-filtro-btn,
+  .vc-root[data-vc] .vc-acao { min-height: 44px; }
+}
+
+/* ---- MOBILE landscape: trilho à esquerda + palco (restaura linhas 139-142) ---- */
+@media (max-width: 768px) and (orientation: landscape) {
+  .vc-root[data-vc] .vc-corpo { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 1fr; }
+  .vc-root[data-vc] .vc-trilho { flex-direction: column; align-items: center; border-bottom: 0; border-right: 1px solid var(--vc-linha); overflow-x: hidden; overflow-y: auto; }
+  .vc-root[data-vc] .vc-palco-wrap { width: min(56vw, 86vh); }
+}
+/* ==== fim VC-VEST-MOBILE ==== */
