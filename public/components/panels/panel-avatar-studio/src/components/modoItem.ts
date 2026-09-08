@@ -13,6 +13,9 @@ import { subcategoriaDoAsset } from '../workspace/acessorios';
 
 // gerado por scripts/avatar/medir-foco-item.mjs — revisar o diff no mesmo commit
 export const FOCO_ITEM_ASSET: Record<string, string> = {
+  // #57 bocas finas: override medido (getBBox) ~63-64% (preset unico nao serve a 24px e 36px juntos)
+  boc_neutra: '101 134 38 27',
+  boc_determinada: '98 134 44 31',
   // seed vestuario (#54): calcado do seed enquadra a regiao dos pes (como subcat 'calcados')
   ace_tenis_futuro: '60 290 120 120',
   // onda 1426 (#218 §7): peças premium (só render de busto) — enquadra gola/ombros

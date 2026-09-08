@@ -573,7 +573,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
                     {catalogoV2 && eq && <span className="vc-emuso" aria-hidden>Em uso</span>}
                     <span className="vc-card-nome">{it.nome}</span>
                   </button>
-                  <button type="button" className={`vc-fav ${fav ? 'vc-fav-on' : ''}`} aria-label={fav ? 'Desfavoritar' : 'Favoritar'} aria-pressed={fav} onClick={() => toggleFav(it.id)}><Heart size={13} aria-hidden /></button>
+                  <button type="button" className={`vc-fav ${fav ? 'vc-fav-on' : ''}`} aria-label={fav ? 'Desfavoritar' : 'Favoritar'} aria-pressed={fav} onClick={(e) => { e.stopPropagation(); toggleFav(it.id); }}><Heart size={13} aria-hidden /></button>
                 </div>
               );
             })}

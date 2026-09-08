@@ -70,3 +70,6 @@ main), então o portão é `SUITE_REGRESSION=PASS` = nenhum vermelho NOVO vs bas
 Commit 3 (separado, sem squash): `VisualComposer.tsx` (reuso do foco), `flags.ts` (flag),
 `visual-composer.css` (bloco `VC-CATALOGO-V2` escopado), `catalogo-contrato.mjs` +
 registro no `rodar-todos`. Sem push/deploy/rollout/flag real.
+
+## Rodada corretiva (decisão #57)
+Pós-auditoria humana: (a) gate de ocupação era rotulado GE_55 mas testava <40 — corrigido p/ fail-closed@55 REAL sobre ocupação VISÍVEL (paint dentro do viewBox); bocas finas (boc_neutra/determinada) receberam override MEDIDO em FOCO_ITEM_ASSET (preset único não serve 24px e 36px juntos). (b) Métrica de clipping reescrita: mede paint visível e CLASSIFICA por item (recorte intencional de região/corpo-inteiro vs corte destrutivo) — sem clip=0 por decreto. (c) Touch lot-scope: favorito com área efetiva 44×44 real (ícone 26 via ::before, rodapé reservado sob [data-catalogo-v2], zero sobreposição com asset/check), stopPropagation, auditor de hit-test real (elementFromPoint + disparo + isolamento fav↔card). Débito app-wide documentado em AVATAR_STUDIO_TOUCH_DEBT.md (não mascarado). (d) manifest-assets.json regenerado (itens do seed). Commit 4 em cima do C3, sem reescrever 1-3.
