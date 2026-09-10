@@ -723,3 +723,32 @@
    circulo compacto (::before). Escopado [data-catalogo-v2]. */
 [data-catalogo-v2] .vc-card .vc-fav{ border-radius:0; }
 /* fim VC-CAT-V2-A11Y-SQ */
+
+/* ==== AVST5 · C6 touch (#57/#58) — colisão .vc-sub + gesto do puxador ========================
+   Marcador VC-C6-TOUCH. Tudo em @media(max-width:768px), escopo .vc-root[data-vc] — desktop
+   byte-a-byte (nenhuma regra fora de @media). Não gateado por catalogo_v2 (é o layout mobile,
+   vale com a flag OFF também). Sem !important.
+
+   (1) PUXADOR ARRASTÁVEL: touch-action:none para o gesto de arrasto não rolar a página/gaveta
+       (o handler segue o dedo e faz snap; sem isto o browser consumiria o pointermove como scroll).
+   (2) COLISÃO .vc-sub: o chip de 44px estourava a banda das subcategorias e os cantos do alvo
+       caíam sobre a alça (acima) e a aba do catálogo (button.on, abaixo) — 4/5 pontos do hit-test.
+       Correção geométrica: a banda .vc-subs passa a CONTER o chip (min-height 52 + align-items:center)
+       e ganha folga (margin 8px) da alça e do catnav; o padding assimétrico da base (10/0) é
+       normalizado. Scroll horizontal preservado (overflow-x herdado :auto); chip ativo intacto;
+       sem overflow horizontal (só mexe na vertical). Vale 320/360/390/430. */
+@media (max-width: 768px) {
+  .vc-root[data-vc] .vc-gaveta-alca { touch-action: none; }
+
+  .vc-root[data-vc] .vc-subs {
+    margin: 8px 0;
+    padding: 0 12px;
+    min-height: 52px;
+    align-items: center;
+    overflow-y: visible;
+    position: relative;
+    z-index: 1;
+  }
+  .vc-root[data-vc] .vc-subs .vc-sub { min-height: 44px; align-self: center; }
+}
+/* ==== fim VC-C6-TOUCH ==== */

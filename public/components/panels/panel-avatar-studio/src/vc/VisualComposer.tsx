@@ -168,6 +168,51 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [painelRecolhido, setPainelRecolhido] = useState(false);
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
+  // C6 (#58): arrasto continuo do puxador do bottom-sheet (mobile). Fisica simples: segue o dedo,
+  // faz snap ao detent mais proximo. Mantem tap/teclado; nao sequestra o scroll da grade.
+  const gavetaPainelRef = useRef<HTMLElement | null>(null);
+  const gavetaDrag = useRef({ y0: 0, h0: 0, ativo: false, moveu: false, bloquearClique: false });
+  const gavetaDetentesPx = useCallback(() => {
+    const vh = (typeof window !== 'undefined' ? window.innerHeight : 800);
+    return { recolhida: 64, meio: Math.round(vh * 0.42), expandida: Math.round(vh * 0.82) } as Record<'recolhida' | 'meio' | 'expandida', number>;
+  }, []);
+  const gavetaCiclo = useCallback(() => setGaveta((s) => (s === 'expandida' ? 'meio' : s === 'meio' ? 'recolhida' : 'expandida')), []);
+  const gavetaPointerDown = useCallback((e: any) => {
+    if (!ehMobile()) return;
+    const el = gavetaPainelRef.current; if (!el) return;
+    gavetaDrag.current = { y0: e.clientY, h0: el.getBoundingClientRect().height, ativo: true, moveu: false, bloquearClique: false };
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* noop */ }
+    el.style.transition = 'none';
+  }, []);
+  const gavetaPointerMove = useCallback((e: any) => {
+    const d = gavetaDrag.current; if (!d.ativo) return;
+    const el = gavetaPainelRef.current; if (!el) return;
+    const dy = d.y0 - e.clientY;
+    if (Math.abs(dy) > 6) d.moveu = true;
+    const vh = window.innerHeight;
+    const h = Math.max(56, Math.min(Math.round(vh * 0.82), d.h0 + dy));
+    el.style.height = h + 'px';
+  }, []);
+  const gavetaFim = useCallback((e: any) => {
+    const d = gavetaDrag.current; if (!d.ativo) return; d.ativo = false;
+    const el = gavetaPainelRef.current; if (!el) return;
+    el.style.transition = '';
+    if (d.moveu) {
+      const h = el.getBoundingClientRect().height; const dts = gavetaDetentesPx();
+      const alvo = (['recolhida', 'meio', 'expandida'] as const).slice().sort((a, b) => Math.abs(dts[a] - h) - Math.abs(dts[b] - h))[0];
+      el.style.height = '';
+      d.bloquearClique = true;
+      setGaveta(alvo);
+    } else {
+      el.style.height = '';
+    }
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+  }, [gavetaDetentesPx]);
+  const gavetaClique = useCallback(() => {
+    const d = gavetaDrag.current;
+    if (d.bloquearClique) { d.bloquearClique = false; return; }
+    gavetaCiclo();
+  }, [gavetaCiclo]);
   const [mais, setMais] = useState(false);
   // Modo 3D (Briefing 2, flag as6.vc_3d) — histórico Config3D próprio (undo/redo do 3D),
   // levantado aqui para SOBREVIVER ao roundtrip 2D↔3D (decisão #54).
@@ -536,8 +581,8 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
           </button>
         </main>
 
-        <aside className="vc-painel" id="vc-painel-cat" aria-label={`Catálogo: ${grupo.nome}`}>
-          <button className="vc-gaveta-alca" aria-label={`Altura do catálogo: ${gaveta}. Toque para alternar (recolhida, meio, expandida).`} aria-expanded={gaveta === 'expandida'} onClick={() => setGaveta((s) => s === 'expandida' ? 'meio' : s === 'meio' ? 'recolhida' : 'expandida')}><span /></button>
+        <aside ref={gavetaPainelRef} className="vc-painel" id="vc-painel-cat" aria-label={`Catálogo: ${grupo.nome}`}>
+          <button className="vc-gaveta-alca" aria-label={`Altura do catálogo: ${gaveta}. Toque para alternar (recolhida, meio, expandida).`} aria-expanded={gaveta === 'expandida'} onPointerDown={gavetaPointerDown} onPointerMove={gavetaPointerMove} onPointerUp={gavetaFim} onPointerCancel={gavetaFim} onClick={gavetaClique}><span /></button>
           {subsVisiveis && subsVisiveis.length > 0 && (
             <div className="vc-subs" role="tablist" aria-label="Subcategorias">
               {subsVisiveis.map((s) => (
