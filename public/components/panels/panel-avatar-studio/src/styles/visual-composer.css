@@ -532,3 +532,266 @@
 [data-vc] .vc-palco-pulso { animation: vcPalcoPulso 2.2s ease-in-out 2; border-radius: 14px; }
 @media (prefers-reduced-motion: reduce) { [data-vc] .vc-palco-pulso { animation: none; } }
 /* ==== fim VC-ENQ-DINAMICO ==== */
+
+/* ==== AVST5 · VC mobile — restauração do bottom-sheet (decisão #53) =============
+   Append idempotente (marcador VC-VEST-MOBILE). SEM !important. Todo o escopo é
+   .vc-root[data-vc] dentro de @media (max-width:768px) / landscape — desktop (>=769px)
+   fica byte-a-byte idêntico (nenhuma regra fora de @media).
+
+   CAUSA-RAIZ (bug PRÉ-EXISTENTE, afeta inclusive flag OFF): a rodada "design overhaul"
+   adicionou regras .vc-root[data-vc] <el> SEM @media (linhas ~352/367/368) que vazam o
+   layout de DESKTOP para o mobile, com especificidade (0,3,0) maior que as regras mobile
+   originais (linhas 115-144, seletores nus 0,1,0). Isso reimpunha no celular: o grid de 3
+   colunas 64px/·/344px (=408 fixo) na .vc-corpo, o padding:16 do palco e a .vc-palco-wrap
+   com width:min(100%,78vh) (que, com aspect-ratio 1/1, força a coluna ~325px). Resultado:
+   conteúdo interno > viewport (overflow horizontal medido pelo audit).
+
+   CORREÇÃO: reafirmar a INTENÇÃO mobile original (linhas 118-121 portrait, 139-142
+   landscape) com a MESMA especificidade .vc-root[data-vc], depois no arquivo, vencendo
+   só dentro de @media. Elimina a causa geométrica — não mascara com overflow-x:hidden. */
+
+/* ---- MOBILE (retrato e default ≤768px): palco em cima, gaveta (bottom sheet) embaixo ---- */
+@media (max-width: 768px) {
+  /* trava a track do grid RAIZ à viewport (o .vc-root é grid sem colunas explícitas → a
+     coluna implícita 'auto' crescia até o max-content do trilho; minmax(0,1fr) a prende
+     à largura útil e deixa o trilho rolar por dentro). Correção geométrica, não máscara. */
+  .vc-root[data-vc] { grid-template-columns: minmax(0, 1fr); }
+  /* cabeçalho pode quebrar linha em telas estreitas em vez de estourar (min-content dos
+     controles > viewport em ≤390). Sem overflow/scroll no header — só reflow. */
+  .vc-root[data-vc] .vc-barra { flex-wrap: wrap; }
+  /* coluna única — desfaz o grid 3-col do overhaul (linha 367/368) */
+  .vc-root[data-vc] .vc-corpo { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .vc-root[data-vc].vc-painel-off .vc-corpo { grid-template-columns: 1fr; }
+
+  /* trilho de categorias: horizontal no topo, rolável por toque, contido (não empurra o doc) */
+  .vc-root[data-vc] .vc-trilho {
+    width: auto; flex-direction: row; align-items: center;
+    border-right: 0; border-bottom: 1px solid var(--vc-linha);
+    overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+    padding: 6px 8px; gap: 6px; scroll-snap-type: x proximity;
+  }
+  .vc-root[data-vc] .vc-cat { flex: 0 0 auto; scroll-snap-align: start; min-width: 48px; min-height: 48px; }
+
+  /* palco central dominante — desfaz padding:16 e width:min(100%,78vh) vazados (linha 368) */
+  .vc-root[data-vc] .vc-palco { padding: 8px 8px 0; place-items: start center; }
+  .vc-root[data-vc] .vc-palco-wrap { width: min(88vw, 46vh); }
+
+  /* deixa os filhos de flex/grid encolherem abaixo do min-content (correção, não máscara) */
+  .vc-root[data-vc] .vc-corpo,
+  .vc-root[data-vc] .vc-painel,
+  .vc-root[data-vc] .vc-grade,
+  .vc-root[data-vc] .vc-catnav,
+  .vc-root[data-vc] .vc-subs { min-width: 0; }
+
+  /* cabeçalho compacto: rótulos viram só ícone (aria-label preservado), título com elipse */
+  .vc-root[data-vc] .vc-barra { gap: 6px; padding: 8px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .vc-root[data-vc] .vc-barra .vc-lbl { display: none; }
+  .vc-root[data-vc] .vc-titulo { min-width: 0; flex: 0 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+  .vc-root[data-vc] .vc-globais { gap: 4px; min-width: 0; }
+  .vc-root[data-vc] .vc-modo-seg { margin: 0 4px; flex: 0 0 auto; }
+  .vc-root[data-vc] .vc-modo-op { padding: 5px 9px; font-size: 11px; }
+
+  /* gaveta (bottom sheet) respeitando safe-area inferior; conteúdo do catálogo rola por dentro */
+  .vc-root[data-vc] .vc-painel { padding-bottom: env(safe-area-inset-bottom); }
+  .vc-root[data-vc] .vc-grade { overflow-y: auto; }
+  /* alvos de toque ≥44px no mobile (apenas altura — sem risco de overflow horizontal) */
+  .vc-root[data-vc] .vc-gaveta-alca,
+  .vc-root[data-vc] .vc-catnav button,
+  .vc-root[data-vc] .vc-sub,
+  .vc-root[data-vc] .vc-filtro-btn,
+  .vc-root[data-vc] .vc-acao { min-height: 44px; }
+}
+
+/* ---- MOBILE landscape: trilho à esquerda + palco (restaura linhas 139-142) ---- */
+@media (max-width: 768px) and (orientation: landscape) {
+  .vc-root[data-vc] .vc-corpo { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 1fr; }
+  .vc-root[data-vc] .vc-trilho { flex-direction: column; align-items: center; border-bottom: 0; border-right: 1px solid var(--vc-linha); overflow-x: hidden; overflow-y: auto; }
+  .vc-root[data-vc] .vc-palco-wrap { width: min(56vw, 86vh); }
+}
+/* ==== fim VC-VEST-MOBILE ==== */
+
+/* ==== AVST5 · Catálogo visual V2 (decisão #54) — escopo .vc-root[data-catalogo-v2] ==========
+   Galeria: grid confortável 2-col, preview grande com foco canônico (focoItemDe/
+   FOCO_CARD_CATEGORIA), fundo translúcido adaptativo (sem bloco branco), equipado inequívoco,
+   favorito fora da geometria, estados claros. TODO o CSS abaixo é gated por [data-catalogo-v2]
+   (flag as6.catalogo_v2 ON) — com a flag OFF o atributo não existe e o caminho clássico é
+   byte-a-byte. Sem !important; usa as variáveis do tema (--vc-*). Marcador VC-CATALOGO-V2. */
+
+/* grade confortável: 2 colunas por padrão (desktop e mobile). 3-col fica só p/ o modo compacto. */
+.vc-root[data-catalogo-v2] .vc-grade {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px; padding: 12px; align-content: start;
+}
+.vc-root[data-catalogo-v2][data-grade="compacto"] .vc-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+
+/* card: superfície translúcida (não branca), borda sutil, área inteira clicável */
+.vc-root[data-catalogo-v2] .vc-card { position: relative; }
+.vc-root[data-catalogo-v2] .vc-card-btn {
+  gap: 8px; padding: 10px; border-radius: 14px;
+  background: color-mix(in srgb, var(--vc-surf2) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vc-linha) 60%, transparent);
+  transition: border-color .12s, box-shadow .12s, background .12s;
+}
+.vc-root[data-catalogo-v2] .vc-card-btn:hover { border-color: var(--vc-linha); background: var(--vc-surf2); }
+.vc-root[data-catalogo-v2] .vc-card-btn:focus-visible { outline: 2px solid var(--vc-acc); outline-offset: 2px; }
+
+/* thumbnail: fundo translúcido adaptativo + halo radial discreto atrás do asset (sem branco
+   sólido; não altera a cor percebida da peça). Preview grande (asset ~78% via foco canônico). */
+.vc-root[data-catalogo-v2] .vc-thumb {
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--vc-txt) 12%, transparent), transparent 68%),
+    color-mix(in srgb, var(--vc-surf) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vc-linha) 45%, transparent);
+}
+[data-light-v6] .vc-root[data-catalogo-v2] .vc-thumb {
+  background:
+    radial-gradient(circle at 50% 46%, #00000010, transparent 68%),
+    color-mix(in srgb, var(--vc-surf) 70%, transparent);
+}
+
+/* nome: informação secundária (uma linha, 2 no máximo, com tooltip via title do botão) */
+.vc-root[data-catalogo-v2] .vc-card-nome { font-size: 11px; color: var(--vc-txt2); -webkit-line-clamp: 2; }
+
+/* EQUIPADO inequívoco: halo roxo + check no canto sup. esquerdo + etiqueta "Em uso".
+   Hierarquia: TL=seleção/equipado · TR=favorito · centro=asset · rodapé=nome. */
+.vc-root[data-catalogo-v2] .vc-card-on .vc-card-btn {
+  border-color: var(--vc-acc);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vc-acc) 55%, transparent), 0 0 14px color-mix(in srgb, var(--vc-acc) 30%, transparent);
+  background: color-mix(in srgb, var(--vc-acc) 12%, var(--vc-surf2));
+}
+.vc-root[data-catalogo-v2] .vc-badge-eq {
+  left: 6px; right: auto; top: 6px; bottom: auto;
+  background: var(--vc-acc); color: #fff; border-radius: 999px; width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.vc-root[data-catalogo-v2] .vc-emuso {
+  position: absolute; left: 6px; top: 32px; z-index: 3;
+  background: color-mix(in srgb, var(--vc-acc) 90%, #000); color: #fff;
+  font-size: 9px; font-weight: 600; letter-spacing: .3px; line-height: 1;
+  padding: 3px 6px; border-radius: 999px; pointer-events: none;
+}
+
+/* FAVORITO no canto superior direito, fora da geometria útil (não cobre o asset) */
+.vc-root[data-catalogo-v2] .vc-fav {
+  top: 6px; right: 6px; bottom: auto;
+  background: color-mix(in srgb, #000 55%, transparent); width: 28px; height: 28px;
+}
+.vc-root[data-catalogo-v2] .vc-fav:hover { background: color-mix(in srgb, #000 72%, transparent); }
+.vc-root[data-catalogo-v2] .vc-fav-on { color: #ff5f8f; }
+
+/* bloqueado / indisponível */
+.vc-root[data-catalogo-v2] .vc-card-bl .vc-card-btn { opacity: .55; }
+.vc-root[data-catalogo-v2] .vc-badge-bl { left: 6px; top: 6px; right: auto; }
+
+/* estado vazio */
+.vc-root[data-catalogo-v2] .vc-vazio { padding: 28px 16px; color: var(--vc-txt2); }
+
+/* alvos de toque ≥44px no card (o botão já tem min-height; garante o favorito) */
+.vc-root[data-catalogo-v2] .vc-fav { min-width: 28px; min-height: 28px; }
+
+/* MOBILE: mantém 2 colunas (herda a restauração #53 sem overflow). */
+@media (max-width: 768px) {
+  .vc-root[data-catalogo-v2] .vc-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+  .vc-root[data-catalogo-v2][data-grade="compacto"] .vc-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* favorito e badges com alvo confortável no toque */
+  .vc-root[data-catalogo-v2] .vc-fav { width: 32px; height: 32px; }
+}
+/* ==== fim VC-CATALOGO-V2 ==== */
+/* marcador VC-CAT-V2-A11Y — #57 touch lot-scope: área de toque efetiva 44×44 do favorito,
+   ícone visual compacto (26), SEM sobrepor o asset (rodapé reservado abaixo do thumb) nem o
+   check de equipado (topo-esquerda). Escopado em [data-catalogo-v2] p/ preservar FLAG_OFF
+   byte-a-byte (o fix viaja com a feature, §651). Direção A / 2 colunas / densidade: +40px de
+   rodapé por card (reorg mínima autorizada; sem 3ª coluna, sem aumentar o ícone). */
+[data-catalogo-v2] .vc-card{ padding-bottom:40px; }
+[data-catalogo-v2] .vc-card .vc-fav{
+  position:absolute; right:4px; bottom:0; left:auto; top:auto;
+  width:44px; height:44px; min-width:44px; min-height:44px;
+  background:transparent; border-radius:999px; z-index:3;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+/* círculo visual compacto (26) centralizado — a área clicável real é o botão 44×44 */
+[data-catalogo-v2] .vc-card .vc-fav::before{
+  content:""; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:26px; height:26px; border-radius:999px; background:#0008; z-index:-1;
+}
+[data-catalogo-v2] .vc-card .vc-fav svg{ position:relative; z-index:1; }
+[data-catalogo-v2] .vc-card .vc-fav:focus-visible{ outline:2px solid var(--vc-acc,#7c3aed); outline-offset:2px; }
+/* fim VC-CAT-V2-A11Y */
+/* marcador VC-CAT-V2-A11Y-SQ — #57 refino pos hit-test: a AREA DE TOQUE do favorito e um
+   quadrado 44x44 real (todos os pontos, cantos inclusive, acionam o fav); o visual continua
+   circulo compacto (::before). Escopado [data-catalogo-v2]. */
+[data-catalogo-v2] .vc-card .vc-fav{ border-radius:0; }
+/* fim VC-CAT-V2-A11Y-SQ */
+
+/* ==== AVST5 · C6 touch (#57/#58) — colisão .vc-sub + gesto do puxador ========================
+   Marcador VC-C6-TOUCH. Tudo em @media(max-width:768px), escopo .vc-root[data-vc] — desktop
+   byte-a-byte (nenhuma regra fora de @media). Não gateado por catalogo_v2 (é o layout mobile,
+   vale com a flag OFF também). Sem !important.
+
+   (1) PUXADOR ARRASTÁVEL: touch-action:none para o gesto de arrasto não rolar a página/gaveta
+       (o handler segue o dedo e faz snap; sem isto o browser consumiria o pointermove como scroll).
+   (2) COLISÃO .vc-sub: o chip de 44px estourava a banda das subcategorias e os cantos do alvo
+       caíam sobre a alça (acima) e a aba do catálogo (button.on, abaixo) — 4/5 pontos do hit-test.
+       Correção geométrica: a banda .vc-subs passa a CONTER o chip (min-height 52 + align-items:center)
+       e ganha folga (margin 8px) da alça e do catnav; o padding assimétrico da base (10/0) é
+       normalizado. Scroll horizontal preservado (overflow-x herdado :auto); chip ativo intacto;
+       sem overflow horizontal (só mexe na vertical). Vale 320/360/390/430. */
+@media (max-width: 768px) {
+  .vc-root[data-vc] .vc-gaveta-alca { touch-action: none; }
+
+  .vc-root[data-vc] .vc-subs {
+    margin: 8px 0;
+    padding: 0 12px;
+    min-height: 52px;
+    align-items: center;
+    overflow-y: visible;
+    position: relative;
+    z-index: 1;
+  }
+  .vc-root[data-vc] .vc-subs .vc-sub { min-height: 44px; align-self: center; }
+}
+/* ==== fim VC-C6-TOUCH ==== */
+
+
+/* ===== C9A_TOUCH44 (§UX toque) — alvos de toque >=44x44 em telas de toque do VC =====
+   Escopo: .vc-root[data-vc][data-touch44] (flag as6.vc_touch44) + @media max-width:1024px.
+   1024px cobre TODOS os viewports nao-desktop do vc-mobile-audit (retrato 320-430, quebra
+   768/769, paisagem 844) sem tocar o DESKTOP (1280) — os rects do diff estrutural (que sao
+   medidos a 1280) ficam identicos. O icone interno mantem o tamanho; so a AREA DE TOQUE cresce
+   (inline-flex + center). Rollback: desligar a flag. */
+@media (max-width:1024px){
+  .vc-root[data-vc][data-touch44] .vc-acao,
+  .vc-root[data-vc][data-touch44] .vc-salvar,
+  .vc-root[data-vc][data-touch44] .vc-reframe,
+  .vc-root[data-vc][data-touch44] .vc-recolhe,
+  .vc-root[data-vc][data-touch44] .vc-catnav button,
+  .vc-root[data-vc][data-touch44] .vc-filtro-btn,
+  .vc-root[data-vc][data-touch44] .vc-icone-nav,
+  .vc-root[data-vc][data-touch44] .vc-subs .vc-sub,
+  .vc-root[data-vc][data-touch44] .vc-modo-op,
+  .vc-root[data-vc][data-touch44] .vc-fav,
+  .vc-root[data-vc][data-touch44] .vc3d-cam-btn{
+    min-height:44px; min-width:44px;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .vc-root[data-vc][data-touch44] .vc-buscabox input[type=text],
+  .vc-root[data-vc][data-touch44] .vc-buscabox input:not([type]){ min-height:44px; }
+}
+
+
+/* ===== C9B_HOTSPOTS (§UX hotspots) — regioes de corpo auditaveis/a11y do VC =====
+   A div .vc-hotspots so e renderizada com a flag as6.vc_hotspots. Botoes 44x44 (nao
+   contam como touch-debt), opacity:0 + pointer-events:none (o pointer real atravessa p/
+   o hit-test por coordenada do SVG; so click() sintetico e teclado os ativam). Rollback:
+   desligar a flag -> div some -> hit-test por coordenada segue funcionando. */
+.vc-root[data-vc] .vc-hotspots{ position:absolute; inset:0; pointer-events:none; z-index:2; }
+/* C9C_A11Y: hotspots acessiveis (corrige C9b) — discretos em repouso, visiveis no foco */
+.vc-root[data-vc] .vc-hotspot{ position:absolute; left:50%; transform:translateX(-50%); width:44px; height:44px; min-width:44px; min-height:44px; padding:0; margin:0; border:0; background:transparent; border-radius:12px; cursor:pointer;
+  pointer-events:auto; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--vc-acc) 22%, transparent); transition:box-shadow .12s ease, background .12s ease; }
+.vc-root[data-vc] .vc-hotspot:hover{ background:color-mix(in srgb, var(--vc-acc) 10%, transparent); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--vc-acc) 45%, transparent); }
+.vc-root[data-vc] .vc-hotspot:focus-visible{ outline:3px solid var(--vc-acc); outline-offset:2px; background:color-mix(in srgb, var(--vc-acc) 16%, transparent); }
+@media (prefers-reduced-motion:reduce){ .vc-root[data-vc] .vc-hotspot{ transition:none; } }
+.vc-root[data-vc] .vc-hotspot[data-hotspot="torso"]{ top:32%; }
+.vc-root[data-vc] .vc-hotspot[data-hotspot="pernas"]{ top:56%; }
+.vc-root[data-vc] .vc-hotspot[data-hotspot="pes"]{ top:80%; }

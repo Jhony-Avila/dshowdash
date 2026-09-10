@@ -6,7 +6,7 @@
 //     subdividido por slot com coverage ('Outros' derivado em runtime — nada some).
 //   - subs faciais e Calçados têm hotspot PRÓPRIO (clique direto olhos/boca/nariz/sobrancelha/
 //     barba/pés). Nenhuma caixa técnica visível; realce só em hover/foco/seleção.
-import { User, Scissors, Smile, Shirt, Glasses, Image as ImageIcon, Sparkles, MoreHorizontal } from 'lucide-react';
+import { User, Scissors, Smile, Shirt, Glasses, Image as ImageIcon, Sparkles, MoreHorizontal, PersonStanding, Footprints } from 'lucide-react';
 import type { CategoriaId } from '../domain/types';
 
 export interface Hotspot { top: string; left: string; width: string; height: string; }
@@ -16,6 +16,7 @@ export interface SubCat {
   slots?: string[];     // filtra itens por slot (acessórios / calçados)
   corpo?: boolean;      // usa render de CORPO INTEIRO; hotspot só aparece no modo corpo
   outros?: boolean;     // sub catch-all (Acessórios): itens de slot não coberto pelas demais
+  conjunto?: 'excluir' | 'apenas'; // decisão #52: filtra looks de corpo inteiro (roupa)
 }
 export interface GrupoVisual {
   id: string; nome: string; Icone: typeof User;
@@ -29,6 +30,7 @@ export interface GrupoVisual {
   dinamico?: boolean;    // só entra no trilho se tiver itens reais
   overflow?: boolean;    // NÃO aparece no trilho principal; acessível via "Mais"
   subsDerivadas?: 'acessorio'; // 'Outros' (coverage) computado em runtime
+  vestuario?: boolean;   // decisão #51: usa itensVestuario (inclui premium rin_/ace_px_)
 }
 
 // Slots de acessório expostos EM OUTRA categoria (não repetir em Acessórios):
@@ -86,6 +88,30 @@ export const GRUPOS: GrupoVisual[] = [
 
 // Ícone do botão "Mais" do trilho (overflow de categorias de baixa frequência).
 export const IconeMais = MoreHorizontal;
+
+// ── Vestuário separado (decisão #51/#52, flag as6.vestuario_separado) ────────
+// Três categorias de primeiro nível no lugar do grupo único "Roupa": Camisetas e
+// blusas (roupa, exceto looks completos) · Calças (roupa_inferior) · Calçados
+// (acessorio/slot pes). `vestuario:true` faz o VC usar itensVestuario (inclui a
+// arte premium rin_*/ace_px_* + seed, sem ligar o trilho premium inteiro).
+const GRUPOS_VESTUARIO: GrupoVisual[] = [
+  { id: 'superior', nome: 'Camisetas e blusas', Icone: Shirt, cats: ['roupa'], corpo: true, foco: '18 40 204 250', vestuario: true,
+    subs: [
+      { id: 'roupa', nome: 'Peças', cat: 'roupa', corpo: true, conjunto: 'excluir' },
+      { id: 'looks', nome: 'Looks completos', cat: 'roupa', corpo: true, conjunto: 'apenas' },
+    ] },
+  { id: 'calca', nome: 'Calças', Icone: PersonStanding, cats: ['roupa_inferior'], corpo: true, foco: '30 230 180 170', vestuario: true },
+  { id: 'calcado', nome: 'Calçados', Icone: Footprints, cats: ['acessorio'], slotsIn: ['pes'], corpo: true, foco: '40 315 160 85', vestuario: true },
+];
+
+/** Trilho efetivo: com a flag, "Roupa" vira três categorias (superior/calça/calçado);
+ *  sem a flag, o layout clássico byte a byte. */
+export function gruposVisuais(separado: boolean): GrupoVisual[] {
+  if (!separado) return GRUPOS;
+  const out: GrupoVisual[] = [];
+  for (const g of GRUPOS) { if (g.id === 'roupa') out.push(...GRUPOS_VESTUARIO); else out.push(g); }
+  return out;
+}
 
 export function grupoPorId(id: string, lista: GrupoVisual[] = GRUPOS): GrupoVisual { return lista.find((g) => g.id === id) ?? lista[0]; }
 

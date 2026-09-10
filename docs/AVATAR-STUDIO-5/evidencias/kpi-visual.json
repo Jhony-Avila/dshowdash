@@ -3,37 +3,37 @@
   "artBibleVersion": "1.0",
   "kpiPrincipal": {
     "nome": "Premium Coverage %",
-    "catalogo2d": 14.7,
+    "catalogo2d": 14.6,
     "assets3d": 0
   },
   "catalogo2d": {
     "geral": {
-      "total": 496,
+      "total": 499,
       "prototype": 0,
       "legacy": 7,
-      "production": 416,
+      "production": 419,
       "premium": 73,
       "hero": 0,
-      "premiumCoveragePct": 14.7,
+      "premiumCoveragePct": 14.6,
       "productionReadyPct": 98.6,
       "qaAprovadoPct": 0,
       "qa": {
-        "pending": 496
+        "pending": 499
       }
     },
     "porCategoria": {
       "acessorio": {
-        "total": 88,
+        "total": 89,
         "prototype": 0,
         "legacy": 0,
-        "production": 75,
+        "production": 76,
         "premium": 13,
         "hero": 0,
-        "premiumCoveragePct": 14.8,
+        "premiumCoveragePct": 14.6,
         "productionReadyPct": 100,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 88
+          "pending": 89
         }
       },
       "aura": {
@@ -219,17 +219,17 @@
         }
       },
       "roupa_inferior": {
-        "total": 3,
+        "total": 5,
         "prototype": 0,
         "legacy": 0,
-        "production": 3,
+        "production": 5,
         "premium": 0,
         "hero": 0,
         "premiumCoveragePct": 0,
         "productionReadyPct": 100,
         "qaAprovadoPct": 0,
         "qa": {
-          "pending": 3
+          "pending": 5
         }
       },
       "roupa_sobre": {
@@ -361,7 +361,7 @@
   },
   "visualDebt": {
     "catalogo2d": {
-      "acessorio": 75,
+      "acessorio": 76,
       "aura": 15,
       "banner": 15,
       "barba": 8,
@@ -375,7 +375,7 @@
       "nariz": 8,
       "olhos": 40,
       "roupa": 31,
-      "roupa_inferior": 3,
+      "roupa_inferior": 5,
       "roupa_sobre": 4,
       "sobrancelha": 10
     },

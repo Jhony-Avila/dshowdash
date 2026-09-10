@@ -1,7 +1,7 @@
 {
   "gerado_por": "scripts/avatar/inventario-visual.mjs",
   "catalogo2d": {
-    "total": 496,
+    "total": 499,
     "categorias": [
       "base",
       "cabelo",
@@ -252,29 +252,32 @@
         "semFoco": []
       },
       "roupa_inferior": {
-        "total": 3,
+        "total": 5,
         "temas": {
-          "casual": 1,
+          "casual": 2,
+          "cyberpunk": 1,
           "executivo": 1,
           "urbano": 1
         },
         "raridades": {
-          "comum": 3
+          "comum": 3,
+          "incomum": 1,
+          "raro": 1
         },
         "slots": {},
         "subcategorias": {},
-        "renderCorpo": 3,
+        "renderCorpo": 5,
         "atras": 0,
         "semFoco": []
       },
       "acessorio": {
-        "total": 88,
+        "total": 89,
         "temas": {
           "aventura": 2,
           "casual": 13,
           "clássico": 5,
           "conquista": 1,
-          "cyberpunk": 2,
+          "cyberpunk": 3,
           "esportivo": 1,
           "evento": 2,
           "executivo": 13,
@@ -291,7 +294,7 @@
           "exclusivo": 1,
           "incomum": 25,
           "lendario": 3,
-          "raro": 30
+          "raro": 31
         },
         "slots": {
           "cabeca": 25,
@@ -303,7 +306,7 @@
           "mao_e": 1,
           "orelha": 1,
           "pernas": 1,
-          "pes": 4,
+          "pes": 5,
           "pescoco": 11,
           "pulso_d": 1,
           "pulso_e": 2,
@@ -340,7 +343,7 @@
           "tapa-olhos": 1,
           "tornozeleiras": 1
         },
-        "renderCorpo": 12,
+        "renderCorpo": 13,
         "atras": 0,
         "semFoco": []
       },

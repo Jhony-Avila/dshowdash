@@ -7,6 +7,8 @@
 // (INVESTIGAR na F2 a integração com o panel-feature-flags-admin do dash).
 const PADROES: Record<string, boolean> = {
   'as6.vc_3d': false,             // Briefing 2 — modo 3D dentro do VC (motor 3D reusado); default OFF (§651); requer as6.visual_composer
+  'as6.vc_touch44': true,        // C9 (§UX toque) — alvos de toque >=44x44 no MOBILE do VC; §651 OFF = geometria atual byte a byte
+  'as6.vc_hotspots': true,       // C9b (§UX hotspots) — regioes de corpo [data-hotspot] focaveis/auditaveis no palco visual; §651 OFF = sem os botoes (hit-test por coordenada inalterado)
   'as6.shell_vc3d': false,        // rodada unificacao 3D (decisao #160) — o botao 3D do ShellStudio abre o VisualComposer3D COMPARTILHADO em tela cheia (2D desmontado), aposentando Palco3d/Estudio3D do caminho do usuario; default OFF (§651); requer as5.novo_shell
   'as6.visual_composer': false,   // frente VC — compositor visual (modos internos Visual/Guiado/Avancado); default OFF, fail-closed; OFF = shell atual byte a byte
   'as5.novo_shell': true,        // F2 — LIGADA no rollout §650 (2026-08-04, veredito visual do Jhony); rollback §651 = voltar p/ false
@@ -150,9 +152,11 @@ const PADROES: Record<string, boolean> = {
   'as6.corpo_grounding': false, // onda 1422 — GROUNDING (#211, §P2-E): re-ancora os pés no chão (Box3.min.y → 0) após escala/morfos; off = posição anterior byte a byte
   'as6.ux3d_simples': false,    // onda 1423 — UI 3D SIMPLIFICADA (BRIEFING_CORRETIVO_01 §52–§70, #213): controles técnicos (qualidade, pós, tinta, turntable/ficha, exposição, movimento de câmera, dev) saem do fluxo principal p/ "Avançado"; o palco vira Character Creator (§53); off = UI anterior byte a byte; entra no Candidate Mode
   'as6.thumb_item_v2': false,   // onda 1425 — ASSET CLARITY (BRIEFING_COMPLEMENTAR_02, #217): card = peça ISOLADA em TODA categoria (não só acessório), fundo=environment, camadas do cabelo montadas (back+front), card NÃO troca no hover (só o palco recebe o preview), DetalheAsset com hero isolado + "no seu avatar"; off = thumbs anteriores byte a byte; entra no Candidate Mode
+  'as6.catalogo_v2': false,      // #54 catalogo visual V2 do VC: grid 2-col, preview com foco canonico (focoItemDe), fundo translucido, equipado inequivoco. OFF = catalogo classico byte a byte.
   'as6.cp_foto': false,         // onda 1418 — PHOTO MODE 2D do avatar (#202, P10-G): export em framings (full/bust/portrait/square/vertical) PNG/WebP/transparente com toggles de fundo/moldura/efeito; off = sem UI de export, render intocado
   'as6.acess_2d_premium': false, // onda 1416 — ACESSÓRIOS PREMIUM 2D (#196, P10-E/P6-A/P6-E): contador + "Remover todos" + conflito nomeado (AcessoriosRegistry §617) + aviso de paridade na UI; catálogo ace_px_ já é gated por classico_premium; off = UI anterior byte a byte
   'as6.roupa_premium': false,   // onda 1415 — VESTUÁRIO PREMIUM (#191, P10-D/P5-B/P5-C): categoria roupa_inferior (rin_*) na sidebar, conjuntos premium O01+ e swatch de material na UI; off = seção/outfits ocultos, configs salvos seguem renderizando (dado > UI)
+  'as6.vestuario_separado': false, // decisao #51 — vestuario 2D separado (superior/calca/calcado) no VC; canario u75; off = grupo Roupa unico byte a byte
   'as6.face_v2': false,         // onda 1414 — ROSTO V2 (#162, Partes 3/5): categoria nariz na sidebar, expressão semântica + idade + assimetria determinística aplicadas por wrappers SÓ nas artes v2, canais coresFace.sobrancelha/barba/labios na paleta, Face Idle Profiles; off = render/UI byte a byte (dados salvos seguem aceitos)
   'as6.barba_slot': false,      // onda 1414 — categoria BARBA visível (artes brb_*; compat máscara/cachecol em engine/compat-rosto.ts); off = seção oculta, config salvo segue renderizando
   'as6.brow_slot': false,       // onda 1414 — categoria SOBRANCELHA visível (artes sbr_* como overlay sobre o traço cozido); off = seção oculta, config salvo segue renderizando
@@ -245,7 +249,7 @@ let _remotas: Record<string, boolean> | null = null;
 // A remota usa o endpoint EXISTENTE ?action=resolve&flag= (per-user, credentials
 // include). Erro/timeout/resposta inválida/não-autenticado => as três ficam OFF.
 // Funciona SEM qualquer valor no localStorage.
-export const FLAGS_REMOTAS = ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d'] as const;
+export const FLAGS_REMOTAS = ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d', 'as6.vestuario_separado'] as const;
 
 export async function carregarFlags(): Promise<void> {
   const ctrl = new AbortController();

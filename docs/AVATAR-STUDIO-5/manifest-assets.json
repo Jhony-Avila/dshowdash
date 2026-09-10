@@ -2,7 +2,7 @@
   "formato": "dshow-avatar-manifest",
   "versao": 1,
   "resumo": {
-    "itens2d": 496,
+    "itens2d": 499,
     "categorias": 17,
     "titulos": 30,
     "colecoes": 13,
@@ -449,6 +449,11 @@
     },
     {
       "id": "ace_tapa_olho",
+      "categoria": "acessorio",
+      "raridade": "raro"
+    },
+    {
+      "id": "ace_tenis_futuro",
       "categoria": "acessorio",
       "raridade": "raro"
     },
@@ -2218,6 +2223,11 @@
       "raridade": "comum"
     },
     {
+      "id": "rin_futurista",
+      "categoria": "roupa_inferior",
+      "raridade": "raro"
+    },
+    {
       "id": "rin_jeans",
       "categoria": "roupa_inferior",
       "raridade": "comum"
@@ -2226,6 +2236,11 @@
       "id": "rin_jogger",
       "categoria": "roupa_inferior",
       "raridade": "comum"
+    },
+    {
+      "id": "rin_shorts",
+      "categoria": "roupa_inferior",
+      "raridade": "incomum"
     },
     {
       "id": "rin_social",

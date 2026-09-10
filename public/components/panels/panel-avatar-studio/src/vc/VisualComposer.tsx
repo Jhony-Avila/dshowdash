@@ -11,8 +11,9 @@ import {
 import type { AvatarConfig, CategoriaId } from '../domain/types';
 import { AvatarStore } from '../nucleo/estado';
 import { deLegado2d, paraLegado2d } from '../nucleo/adaptadores';
-import { validarConfig, itensDe, svgItemIsolado } from '../services/AvatarCatalog';
+import { validarConfig, itensDe, itensVestuario, svgItemIsolado } from '../services/AvatarCatalog';
 import { comItem } from '../components/GradeItens';
+import { focoItemDe } from '../components/modoItem'; // #54 catalogo_v2: reuso do enquadramento medido
 import { AvatarSvg } from '../components/AvatarSvg';
 import { salvarAvatar } from '../services/AvatarService';
 import { favoritos, alternarFavorito } from '../services/Progresso';
@@ -21,8 +22,9 @@ import MaisPainel from './MaisPainel';
 import { slotsAtivos } from '../components/Cores';
 import { CORES_SUGERIDAS } from '../services/AvatarCatalog';
 import type { SlotCor } from '../domain/types';
-import { GRUPOS, grupoPorId, slotsCobertos, IconeMais } from './grupos';
+import { gruposVisuais, grupoPorId, slotsCobertos, IconeMais } from './grupos';
 import type { GrupoVisual, SubCat } from './grupos';
+import { ehConjunto } from './conjuntos2d';
 import { flag } from '../nucleo/flags';
 import * as EnqDin from './enquadramentoDinamico';
 import type { ParteId } from './enquadramentoDinamico';
@@ -52,7 +54,10 @@ interface ItemView { it: { id: string; nome: string; tema?: string; novo?: boole
 // Resolutor único de itens por slot/categoria — usado pelo catálogo visual E pela guiada.
 // Nunca mistura slots: honra grupo.slotsIn (só estes) e grupo.slotsOut (exclui estes).
 function itensPorCats(cats: CategoriaId[], grupo: GrupoVisual): ItemView[] {
-  let lista: ItemView[] = cats.flatMap((c) => itensDe(c).map((it) => ({ it: it as ItemView['it'], cat: c })));
+  // decisão #51: categorias de vestuário separado listam via itensVestuario (inclui
+  // a arte premium rin_*/ace_px_* + seed, sem ligar o trilho premium inteiro).
+  const fonte = grupo.vestuario ? itensVestuario : itensDe;
+  let lista: ItemView[] = cats.flatMap((c) => fonte(c).map((it) => ({ it: it as ItemView['it'], cat: c })));
   if (grupo.slotsIn && grupo.slotsIn.length) { const s = new Set(grupo.slotsIn); lista = lista.filter(({ it }) => !!it.slot && s.has(it.slot)); }
   if (grupo.slotsOut && grupo.slotsOut.length) { const s = new Set(grupo.slotsOut); lista = lista.filter(({ it }) => !it.slot || !s.has(it.slot)); }
   return lista;
@@ -63,6 +68,9 @@ function itensDaSub(grupo: GrupoVisual, sub: SubCat): ItemView[] {
   let lista = itensPorCats([sub.cat], grupo);
   if (sub.outros) { const cob = slotsCobertos(grupo); lista = lista.filter(({ it }) => !it.slot || !cob.has(it.slot)); }
   else if (sub.slots && sub.slots.length) { const s = new Set(sub.slots); lista = lista.filter(({ it }) => !!it.slot && s.has(it.slot)); }
+  // decisão #52: separa "Peças" (não-conjunto) de "Looks completos" (conjunto)
+  if (sub.conjunto === 'apenas') lista = lista.filter(({ it }) => ehConjunto(it.id));
+  else if (sub.conjunto === 'excluir') lista = lista.filter(({ it }) => !ehConjunto(it.id));
   return lista;
 }
 
@@ -129,9 +137,23 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   // Bloqueio: fonte única = lerBloqueios() (slots travados, §70.1) + disponibilidade por conquista (bloqueadoPor).
   const bloqSlots = useMemo(() => { try { return lerBloqueios(); } catch { return new Set<string>(); } }, []);
 
+  // Vestuário separado (decisão #51): com a flag as6.vestuario_separado, o grupo único
+  // "Roupa" vira 3 categorias de trilho (Camisetas e blusas / Calças / Calçados).
+  const vestSep = flag('as6.vestuario_separado');
+  const gruposAtivos = useMemo(() => gruposVisuais(vestSep), [vestSep]);
+  const touch44 = flag('as6.vc_touch44');
+  const hotspotsOn = flag('as6.vc_hotspots');
+  // #54 catalogo_v2: thumbnail do card reusa o foco MEDIDO (focoItemDe / FOCO_CARD_CATEGORIA,
+  // §12 ~78%). Flag OFF = svgItemIsolado cru (byte a byte). Sem hardcode de foco.
+  const catalogoV2 = flag('as6.catalogo_v2');
+  const thumbHtml = useCallback((id: string, cat: string): string => (
+    catalogoV2
+      ? svgItemIsolado(id, { foco: focoItemDe(id, cat), premium: flag('as6.classico_premium'), faceV2: flag('as6.face_v2') })
+      : svgItemIsolado(id)
+  ), [catalogoV2]);
   // Trilho curto (§3): categorias humanas no trilho; baixa frequência no overflow "Mais".
-  const gruposRail = useMemo(() => GRUPOS.filter((g) => !g.overflow), []);
-  const gruposOverflow = useMemo(() => GRUPOS.filter((g) => g.overflow), []);
+  const gruposRail = useMemo(() => gruposAtivos.filter((g) => !g.overflow), [gruposAtivos]);
+  const gruposOverflow = useMemo(() => gruposAtivos.filter((g) => g.overflow), [gruposAtivos]);
 
   const [modo, setModo] = useState<'visual' | 'guiado' | '3d'>(() => {
     // preview de revisão pode pedir abertura direta em 3D (sessionStorage; nunca setado no produto)
@@ -139,7 +161,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     return 'visual';
   });
   const [grupoId, setGrupoId] = useState('base');
-  const grupo = grupoPorId(grupoId, GRUPOS);
+  const grupo = grupoPorId(grupoId, gruposAtivos);
   const [subId, setSubId] = useState<string | null>(null);
   const [aba, setAba] = useState<'catalogo' | 'favoritos' | 'atual'>('catalogo');
   const [filtroNovos, setFiltroNovos] = useState(false);
@@ -148,6 +170,51 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [painelRecolhido, setPainelRecolhido] = useState(false);
   const [gaveta, setGaveta] = useState<'recolhida' | 'meio' | 'expandida'>('meio');
+  // C6 (#58): arrasto continuo do puxador do bottom-sheet (mobile). Fisica simples: segue o dedo,
+  // faz snap ao detent mais proximo. Mantem tap/teclado; nao sequestra o scroll da grade.
+  const gavetaPainelRef = useRef<HTMLElement | null>(null);
+  const gavetaDrag = useRef({ y0: 0, h0: 0, ativo: false, moveu: false, bloquearClique: false });
+  const gavetaDetentesPx = useCallback(() => {
+    const vh = (typeof window !== 'undefined' ? window.innerHeight : 800);
+    return { recolhida: 64, meio: Math.round(vh * 0.42), expandida: Math.round(vh * 0.82) } as Record<'recolhida' | 'meio' | 'expandida', number>;
+  }, []);
+  const gavetaCiclo = useCallback(() => setGaveta((s) => (s === 'expandida' ? 'meio' : s === 'meio' ? 'recolhida' : 'expandida')), []);
+  const gavetaPointerDown = useCallback((e: any) => {
+    if (!ehMobile()) return;
+    const el = gavetaPainelRef.current; if (!el) return;
+    gavetaDrag.current = { y0: e.clientY, h0: el.getBoundingClientRect().height, ativo: true, moveu: false, bloquearClique: false };
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* noop */ }
+    el.style.transition = 'none';
+  }, []);
+  const gavetaPointerMove = useCallback((e: any) => {
+    const d = gavetaDrag.current; if (!d.ativo) return;
+    const el = gavetaPainelRef.current; if (!el) return;
+    const dy = d.y0 - e.clientY;
+    if (Math.abs(dy) > 6) d.moveu = true;
+    const vh = window.innerHeight;
+    const h = Math.max(56, Math.min(Math.round(vh * 0.82), d.h0 + dy));
+    el.style.height = h + 'px';
+  }, []);
+  const gavetaFim = useCallback((e: any) => {
+    const d = gavetaDrag.current; if (!d.ativo) return; d.ativo = false;
+    const el = gavetaPainelRef.current; if (!el) return;
+    el.style.transition = '';
+    if (d.moveu) {
+      const h = el.getBoundingClientRect().height; const dts = gavetaDetentesPx();
+      const alvo = (['recolhida', 'meio', 'expandida'] as const).slice().sort((a, b) => Math.abs(dts[a] - h) - Math.abs(dts[b] - h))[0];
+      el.style.height = '';
+      d.bloquearClique = true;
+      setGaveta(alvo);
+    } else {
+      el.style.height = '';
+    }
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+  }, [gavetaDetentesPx]);
+  const gavetaClique = useCallback(() => {
+    const d = gavetaDrag.current;
+    if (d.bloquearClique) { d.bloquearClique = false; return; }
+    gavetaCiclo();
+  }, [gavetaCiclo]);
   const [mais, setMais] = useState(false);
   // Modo 3D (Briefing 2, flag as6.vc_3d) — histórico Config3D próprio (undo/redo do 3D),
   // levantado aqui para SOBREVIVER ao roundtrip 2D↔3D (decisão #54).
@@ -199,7 +266,14 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     return porSlot || porConquista;
   }
   const camadas = config.camadas as Record<string, string | undefined>;
-  function equipadoDe(cat: CategoriaId, id: string): boolean { return cat === 'base' ? config.base === id : camadas?.[cat] === id; }
+  function equipadoDe(cat: CategoriaId, id: string): boolean {
+    if (cat === 'base') return config.base === id;
+    // acessórios (inclui calçado/slot pes) são roteados por slot em camadas.acessorio_<slot>
+    // (validarConfig §41): casa por VALOR em qualquer slot de acessório. Demais categorias
+    // (roupa/roupa_inferior/…) usam a própria chave.
+    if (cat === 'acessorio') return Object.entries(camadas).some(([k, v]) => k.startsWith('acessorio') && v === id);
+    return camadas?.[cat] === id;
+  }
 
   const aplicar = useCallback((novo: AvatarConfig) => {
     const antes = store.estadoDraft;
@@ -207,6 +281,19 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     store.executar({ nome: 'vc:aplicar', executar: () => alvo, desfazer: () => antes });
     setSalv('idle');
   }, [store]);
+
+  // decisão #52: aplica uma peça respeitando CONJUNTOS (looks de corpo inteiro).
+  // Equipar um conjunto (superior) limpa a calça; equipar calça com conjunto ativo
+  // limpa o conjunto. Atômico — o command pattern restaura tudo no desfazer.
+  const aplicarPeca = useCallback((cat: CategoriaId, id: string) => {
+    let novo = comItem(config, cat, id) as AvatarConfig;
+    if (cat === 'roupa' && ehConjunto(id)) {
+      const cam = { ...novo.camadas }; delete cam.roupa_inferior; novo = { ...novo, camadas: cam };
+    } else if (cat === 'roupa_inferior' && ehConjunto(config.camadas.roupa)) {
+      const cam = { ...novo.camadas }; delete cam.roupa; novo = { ...novo, camadas: cam };
+    }
+    aplicar(validarConfig(novo));
+  }, [config, aplicar]);
 
   const salvar = useCallback(async () => {
     setSalv('salvando');
@@ -263,23 +350,29 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
 
   // ---------- ENQUADRAMENTO + HOTSPOTS DINAMICOS (decisao #48/#49) ----------
   const abrirParte = useCallback((pid: ParteId) => {
-    const g = (id: string) => grupoPorId(id, GRUPOS);
-    const sub = (gid: string, sid: string) => (grupoPorId(gid, GRUPOS).subs ?? []).find((s) => s.id === sid) ?? null;
+    const g = (id: string) => grupoPorId(id, gruposAtivos);
+    const sub = (gid: string, sid: string) => (grupoPorId(gid, gruposAtivos).subs ?? []).find((s) => s.id === sid) ?? null;
     switch (pid) {
       case 'cabelo': selecionarGrupo(g('cabelo')); break;
       case 'rosto': selecionarGrupo(g('rosto')); break;
-      case 'roupa': selecionarGrupo(g('roupa')); break;
       case 'olhos': { const s = sub('rosto', 'olhos'); if (s) selecionarSub(g('rosto'), s); else selecionarGrupo(g('rosto')); break; }
       case 'boca': { const s = sub('rosto', 'boca'); if (s) selecionarSub(g('rosto'), s); else selecionarGrupo(g('rosto')); break; }
-      case 'calcados': { const s = sub('roupa', 'calcados'); if (s) selecionarSub(g('roupa'), s); else selecionarGrupo(g('roupa')); break; }
+      // vestuário: com a flag, tronco/pernas/pés abrem categorias próprias; sem a
+      // flag, caem no grupo "Roupa" (sub inferior/calçados) — comportamento clássico.
+      case 'roupa': selecionarGrupo(g(vestSep ? 'superior' : 'roupa')); break;
+      case 'calca': if (vestSep) { selecionarGrupo(g('calca')); } else { const s = sub('roupa', 'roupa_inferior'); if (s) selecionarSub(g('roupa'), s); else selecionarGrupo(g('roupa')); } break;
+      case 'calcados': if (vestSep) { selecionarGrupo(g('calcado')); } else { const s = sub('roupa', 'calcados'); if (s) selecionarSub(g('roupa'), s); else selecionarGrupo(g('roupa')); } break;
       case 'acessorio_cabeca': { const s = sub('acessorios', 'a_cabeca'); if (s) selecionarSub(g('acessorios'), s); else selecionarGrupo(g('acessorios')); break; }
     }
-  }, [selecionarGrupo, selecionarSub]);
+  }, [selecionarGrupo, selecionarSub, gruposAtivos, vestSep]);
 
   const parteAtivaId = useCallback((): ParteId | null => {
     if (grupoId === 'cabelo') return 'cabelo';
     if (grupoId === 'rosto') return subId === 'olhos' ? 'olhos' : subId === 'boca' ? 'boca' : 'rosto';
-    if (grupoId === 'roupa') return subId === 'calcados' ? 'calcados' : 'roupa';
+    if (grupoId === 'superior') return 'roupa';
+    if (grupoId === 'calca') return 'calca';
+    if (grupoId === 'calcado') return 'calcados';
+    if (grupoId === 'roupa') return subId === 'calcados' ? 'calcados' : subId === 'roupa_inferior' ? 'calca' : 'roupa';
     if (grupoId === 'acessorios' && subId === 'a_cabeca') return 'acessorio_cabeca';
     return null;
   }, [grupoId, subId]);
@@ -341,6 +434,9 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     if (subAtiva) {
       if (subAtiva.outros) { const cob = slotsCobertos(grupo); lista = lista.filter(({ it }) => !it.slot || !cob.has(it.slot)); }
       else if (subAtiva.slots && subAtiva.slots.length) { const s = new Set(subAtiva.slots); lista = lista.filter(({ it }) => !!it.slot && s.has(it.slot)); }
+      // decisão #52: "Peças" (não-conjunto) vs "Looks completos" (conjunto)
+      if (subAtiva.conjunto === 'apenas') lista = lista.filter(({ it }) => ehConjunto(it.id));
+      else if (subAtiva.conjunto === 'excluir') lista = lista.filter(({ it }) => !ehConjunto(it.id));
     }
     if (aba === 'favoritos') lista = lista.filter(({ it }) => favs.has(it.id));
     if (aba === 'atual') lista = lista.filter(({ it, cat }) => equipadoDe(cat, it.id));
@@ -354,7 +450,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const toggleFav = useCallback((id: string) => { try { setFavs(new Set(alternarFavorito(id))); } catch { /* ok */ } }, []);
 
   // ---------- CRIAÇÃO GUIADA ----------
-  const passos = useMemo(() => GRUPOS.filter((g) => g.id !== 'estilo').concat(GRUPOS.filter((g) => g.id === 'estilo')), []);
+  const passos = useMemo(() => gruposAtivos.filter((g) => g.id !== 'estilo').concat(gruposAtivos.filter((g) => g.id === 'estilo')), [gruposAtivos]);
   const [passo, setPasso] = useState(0);
   const totalPassos = passos.length + 1; // +1 = revisar
   const emRevisao = passo >= passos.length;
@@ -376,7 +472,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     // Guiada: cada etapa consulta SOMENTE os slots compatíveis do grupo (mesmo resolutor do visual).
     const itensPasso = emRevisao ? [] : itensPorCats(g.cats, g);
     return (
-      <div className="vc-root" data-vc data-modo="guiado">
+      <div className="vc-root" data-vc data-modo="guiado" data-catalogo-v2={catalogoV2 ? '' : undefined} data-touch44={touch44 ? '' : undefined}>
         <header className="vc-barra">
           <button className="vc-acao" onClick={() => setModo('visual')} aria-label="Sair do passo a passo"><X size={18} aria-hidden /><span className="vc-lbl">Sair</span></button>
           <div className="vc-titulo">Criar passo a passo</div>
@@ -405,8 +501,8 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
                   <button key={`${cat}:${it.id}`} type="button" disabled={bl} data-slot={it.slot || undefined} data-cat={cat}
                     className={`vc-card-btn ${equipadoDe(cat, it.id) ? 'vc-card-on' : ''} ${bl ? 'vc-card-bl' : ''}`}
                     title={bl ? `${it.nome} — bloqueado` : it.nome}
-                    onClick={() => { if (!bl) aplicar(validarConfig(comItem(config, cat, it.id))); }}>
-                    <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: svgItemIsolado(it.id) }} />
+                    onClick={() => { if (!bl) aplicarPeca(cat, it.id); }}>
+                    <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: thumbHtml(it.id, cat) }} />
                     {bl && <span className="vc-badge vc-badge-bl" aria-hidden><Lock size={13} /></span>}
                     <span className="vc-card-nome">{it.nome}</span>
                   </button>
@@ -430,7 +526,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   // ---------- MODO VISUAL ----------
   const overflowAtivo = gruposOverflow.some((g) => g.id === grupoId);
   return (
-    <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta}>
+    <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta} data-catalogo-v2={catalogoV2 ? '' : undefined} data-touch44={touch44 ? '' : undefined}>
       <header className="vc-barra">
         <button className="vc-acao" onClick={sair} aria-label="Voltar"><ChevronLeft size={18} aria-hidden /><span className="vc-lbl">Voltar</span></button>
         <div className="vc-titulo">Avatar Studio</div>
@@ -469,6 +565,13 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
             {/* Palco SEM crop fixo: o enquadramento dinamico define o viewBox pelos
                 limites visuais reais (rosto/corpo NUNCA cortados). foco={undefined}. */}
             <AvatarSvg config={config} uid="vc-palco" palco={!corpoAtivo} corpo={corpoAtivo} estatico={reduzido()} />
+            {hotspotsOn && (
+              <div className="vc-hotspots">
+                <button type="button" className="vc-hotspot" data-hotspot="torso" aria-label="Torso — Camisetas e blusas" onClick={(e) => { e.stopPropagation(); abrirParte('roupa'); }} />
+                <button type="button" className="vc-hotspot" data-hotspot="pernas" aria-label="Pernas — Calças" onClick={(e) => { e.stopPropagation(); abrirParte('calca'); }} />
+                <button type="button" className="vc-hotspot" data-hotspot="pes" aria-label="Pés — Calçados" onClick={(e) => { e.stopPropagation(); abrirParte('calcados'); }} />
+              </div>
+            )}
             {/* Hotspots dinamicos: clique direto + realce sutil tratados pelo efeito
                 (getScreenCTM/getBBox) no proprio <svg>. Sem botoes de % fixo, sem retangulo tecnico. */}
             {onboard && (
@@ -487,8 +590,8 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
           </button>
         </main>
 
-        <aside className="vc-painel" id="vc-painel-cat" aria-label={`Catálogo: ${grupo.nome}`}>
-          <button className="vc-gaveta-alca" aria-label={`Altura do catálogo: ${gaveta}. Toque para alternar (recolhida, meio, expandida).`} aria-expanded={gaveta === 'expandida'} onClick={() => setGaveta((s) => s === 'expandida' ? 'meio' : s === 'meio' ? 'recolhida' : 'expandida')}><span /></button>
+        <aside ref={gavetaPainelRef} className="vc-painel" id="vc-painel-cat" aria-label={`Catálogo: ${grupo.nome}`}>
+          <button className="vc-gaveta-alca" aria-label={`Altura do catálogo: ${gaveta}. Toque para alternar (recolhida, meio, expandida).`} aria-expanded={gaveta === 'expandida'} onPointerDown={gavetaPointerDown} onPointerMove={gavetaPointerMove} onPointerUp={gavetaFim} onPointerCancel={gavetaFim} onClick={gavetaClique}><span /></button>
           {subsVisiveis && subsVisiveis.length > 0 && (
             <div className="vc-subs" role="tablist" aria-label="Subcategorias">
               {subsVisiveis.map((s) => (
@@ -515,15 +618,16 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
               const eq = equipadoDe(cat, it.id); const bl = bloqueado(it); const fav = favs.has(it.id);
               return (
                 <div key={`${cat}:${it.id}`} className={`vc-card ${eq ? 'vc-card-on' : ''} ${bl ? 'vc-card-bl' : ''}`}>
-                  <button type="button" className="vc-card-btn" aria-pressed={eq} data-slot={it.slot || undefined} data-cat={cat} title={bl ? `${it.nome} — bloqueado` : it.nome}
-                    onClick={() => { if (!bl) aplicar(validarConfig(comItem(config, cat, it.id))); }}>
-                    <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: svgItemIsolado(it.id) }} />
+                  <button type="button" className="vc-card-btn" aria-pressed={eq} aria-selected={catalogoV2 ? eq : undefined} data-slot={it.slot || undefined} data-cat={cat} title={bl ? `${it.nome} — bloqueado` : it.nome}
+                    onClick={() => { if (!bl) aplicarPeca(cat, it.id); }}>
+                    <span className="vc-thumb" aria-hidden dangerouslySetInnerHTML={{ __html: thumbHtml(it.id, cat) }} />
                     {eq && <span className="vc-badge vc-badge-eq" aria-hidden><Check size={13} /></span>}
                     {bl && <span className="vc-badge vc-badge-bl" aria-hidden><Lock size={13} /></span>}
                     {it.novo && !eq && !bl && <span className="vc-badge vc-badge-novo">novo</span>}
+                    {catalogoV2 && eq && <span className="vc-emuso" aria-hidden>Em uso</span>}
                     <span className="vc-card-nome">{it.nome}</span>
                   </button>
-                  <button type="button" className={`vc-fav ${fav ? 'vc-fav-on' : ''}`} aria-label={fav ? 'Desfavoritar' : 'Favoritar'} aria-pressed={fav} onClick={() => toggleFav(it.id)}><Heart size={13} aria-hidden /></button>
+                  <button type="button" className={`vc-fav ${fav ? 'vc-fav-on' : ''}`} aria-label={fav ? 'Desfavoritar' : 'Favoritar'} aria-pressed={fav} onClick={(e) => { e.stopPropagation(); toggleFav(it.id); }}><Heart size={13} aria-hidden /></button>
                 </div>
               );
             })}
