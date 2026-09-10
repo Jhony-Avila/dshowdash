@@ -567,9 +567,9 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
             <AvatarSvg config={config} uid="vc-palco" palco={!corpoAtivo} corpo={corpoAtivo} estatico={reduzido()} />
             {hotspotsOn && (
               <div className="vc-hotspots">
-                <button type="button" className="vc-hotspot" data-hotspot="torso" aria-label="Torso — Camisetas e blusas" onClick={() => abrirParte('roupa')} />
-                <button type="button" className="vc-hotspot" data-hotspot="pernas" aria-label="Pernas — Calças" onClick={() => abrirParte('calca')} />
-                <button type="button" className="vc-hotspot" data-hotspot="pes" aria-label="Pés — Calçados" onClick={() => abrirParte('calcados')} />
+                <button type="button" className="vc-hotspot" data-hotspot="torso" aria-label="Torso — Camisetas e blusas" onClick={(e) => { e.stopPropagation(); abrirParte('roupa'); }} />
+                <button type="button" className="vc-hotspot" data-hotspot="pernas" aria-label="Pernas — Calças" onClick={(e) => { e.stopPropagation(); abrirParte('calca'); }} />
+                <button type="button" className="vc-hotspot" data-hotspot="pes" aria-label="Pés — Calçados" onClick={(e) => { e.stopPropagation(); abrirParte('calcados'); }} />
               </div>
             )}
             {/* Hotspots dinamicos: clique direto + realce sutil tratados pelo efeito

@@ -786,7 +786,12 @@
    o hit-test por coordenada do SVG; so click() sintetico e teclado os ativam). Rollback:
    desligar a flag -> div some -> hit-test por coordenada segue funcionando. */
 .vc-root[data-vc] .vc-hotspots{ position:absolute; inset:0; pointer-events:none; z-index:2; }
-.vc-root[data-vc] .vc-hotspot{ position:absolute; left:50%; transform:translateX(-50%); width:44px; height:44px; min-width:44px; min-height:44px; padding:0; margin:0; border:0; background:transparent; opacity:0; pointer-events:none; }
+/* C9C_A11Y: hotspots acessiveis (corrige C9b) — discretos em repouso, visiveis no foco */
+.vc-root[data-vc] .vc-hotspot{ position:absolute; left:50%; transform:translateX(-50%); width:44px; height:44px; min-width:44px; min-height:44px; padding:0; margin:0; border:0; background:transparent; border-radius:12px; cursor:pointer;
+  pointer-events:auto; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--vc-acc) 22%, transparent); transition:box-shadow .12s ease, background .12s ease; }
+.vc-root[data-vc] .vc-hotspot:hover{ background:color-mix(in srgb, var(--vc-acc) 10%, transparent); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--vc-acc) 45%, transparent); }
+.vc-root[data-vc] .vc-hotspot:focus-visible{ outline:3px solid var(--vc-acc); outline-offset:2px; background:color-mix(in srgb, var(--vc-acc) 16%, transparent); }
+@media (prefers-reduced-motion:reduce){ .vc-root[data-vc] .vc-hotspot{ transition:none; } }
 .vc-root[data-vc] .vc-hotspot[data-hotspot="torso"]{ top:32%; }
 .vc-root[data-vc] .vc-hotspot[data-hotspot="pernas"]{ top:56%; }
 .vc-root[data-vc] .vc-hotspot[data-hotspot="pes"]{ top:80%; }
