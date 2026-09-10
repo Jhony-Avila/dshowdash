@@ -142,6 +142,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   const vestSep = flag('as6.vestuario_separado');
   const gruposAtivos = useMemo(() => gruposVisuais(vestSep), [vestSep]);
   const touch44 = flag('as6.vc_touch44');
+  const hotspotsOn = flag('as6.vc_hotspots');
   // #54 catalogo_v2: thumbnail do card reusa o foco MEDIDO (focoItemDe / FOCO_CARD_CATEGORIA,
   // §12 ~78%). Flag OFF = svgItemIsolado cru (byte a byte). Sem hardcode de foco.
   const catalogoV2 = flag('as6.catalogo_v2');
@@ -564,6 +565,13 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
             {/* Palco SEM crop fixo: o enquadramento dinamico define o viewBox pelos
                 limites visuais reais (rosto/corpo NUNCA cortados). foco={undefined}. */}
             <AvatarSvg config={config} uid="vc-palco" palco={!corpoAtivo} corpo={corpoAtivo} estatico={reduzido()} />
+            {hotspotsOn && (
+              <div className="vc-hotspots">
+                <button type="button" className="vc-hotspot" data-hotspot="torso" aria-label="Torso — Camisetas e blusas" onClick={() => abrirParte('roupa')} />
+                <button type="button" className="vc-hotspot" data-hotspot="pernas" aria-label="Pernas — Calças" onClick={() => abrirParte('calca')} />
+                <button type="button" className="vc-hotspot" data-hotspot="pes" aria-label="Pés — Calçados" onClick={() => abrirParte('calcados')} />
+              </div>
+            )}
             {/* Hotspots dinamicos: clique direto + realce sutil tratados pelo efeito
                 (getScreenCTM/getBBox) no proprio <svg>. Sem botoes de % fixo, sem retangulo tecnico. */}
             {onboard && (

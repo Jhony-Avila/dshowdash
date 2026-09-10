@@ -778,3 +778,15 @@
   .vc-root[data-vc][data-touch44] .vc-buscabox input[type=text],
   .vc-root[data-vc][data-touch44] .vc-buscabox input:not([type]){ min-height:44px; }
 }
+
+
+/* ===== C9B_HOTSPOTS (§UX hotspots) — regioes de corpo auditaveis/a11y do VC =====
+   A div .vc-hotspots so e renderizada com a flag as6.vc_hotspots. Botoes 44x44 (nao
+   contam como touch-debt), opacity:0 + pointer-events:none (o pointer real atravessa p/
+   o hit-test por coordenada do SVG; so click() sintetico e teclado os ativam). Rollback:
+   desligar a flag -> div some -> hit-test por coordenada segue funcionando. */
+.vc-root[data-vc] .vc-hotspots{ position:absolute; inset:0; pointer-events:none; z-index:2; }
+.vc-root[data-vc] .vc-hotspot{ position:absolute; left:50%; transform:translateX(-50%); width:44px; height:44px; min-width:44px; min-height:44px; padding:0; margin:0; border:0; background:transparent; opacity:0; pointer-events:none; }
+.vc-root[data-vc] .vc-hotspot[data-hotspot="torso"]{ top:32%; }
+.vc-root[data-vc] .vc-hotspot[data-hotspot="pernas"]{ top:56%; }
+.vc-root[data-vc] .vc-hotspot[data-hotspot="pes"]{ top:80%; }

@@ -8,6 +8,7 @@
 const PADROES: Record<string, boolean> = {
   'as6.vc_3d': false,             // Briefing 2 — modo 3D dentro do VC (motor 3D reusado); default OFF (§651); requer as6.visual_composer
   'as6.vc_touch44': true,        // C9 (§UX toque) — alvos de toque >=44x44 no MOBILE do VC; §651 OFF = geometria atual byte a byte
+  'as6.vc_hotspots': true,       // C9b (§UX hotspots) — regioes de corpo [data-hotspot] focaveis/auditaveis no palco visual; §651 OFF = sem os botoes (hit-test por coordenada inalterado)
   'as6.shell_vc3d': false,        // rodada unificacao 3D (decisao #160) — o botao 3D do ShellStudio abre o VisualComposer3D COMPARTILHADO em tela cheia (2D desmontado), aposentando Palco3d/Estudio3D do caminho do usuario; default OFF (§651); requer as5.novo_shell
   'as6.visual_composer': false,   // frente VC — compositor visual (modos internos Visual/Guiado/Avancado); default OFF, fail-closed; OFF = shell atual byte a byte
   'as5.novo_shell': true,        // F2 — LIGADA no rollout §650 (2026-08-04, veredito visual do Jhony); rollback §651 = voltar p/ false
