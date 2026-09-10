@@ -752,3 +752,29 @@
   .vc-root[data-vc] .vc-subs .vc-sub { min-height: 44px; align-self: center; }
 }
 /* ==== fim VC-C6-TOUCH ==== */
+
+
+/* ===== C9A_TOUCH44 (§UX toque) — alvos de toque >=44x44 em telas de toque do VC =====
+   Escopo: .vc-root[data-vc][data-touch44] (flag as6.vc_touch44) + @media max-width:1024px.
+   1024px cobre TODOS os viewports nao-desktop do vc-mobile-audit (retrato 320-430, quebra
+   768/769, paisagem 844) sem tocar o DESKTOP (1280) — os rects do diff estrutural (que sao
+   medidos a 1280) ficam identicos. O icone interno mantem o tamanho; so a AREA DE TOQUE cresce
+   (inline-flex + center). Rollback: desligar a flag. */
+@media (max-width:1024px){
+  .vc-root[data-vc][data-touch44] .vc-acao,
+  .vc-root[data-vc][data-touch44] .vc-salvar,
+  .vc-root[data-vc][data-touch44] .vc-reframe,
+  .vc-root[data-vc][data-touch44] .vc-recolhe,
+  .vc-root[data-vc][data-touch44] .vc-catnav button,
+  .vc-root[data-vc][data-touch44] .vc-filtro-btn,
+  .vc-root[data-vc][data-touch44] .vc-icone-nav,
+  .vc-root[data-vc][data-touch44] .vc-subs .vc-sub,
+  .vc-root[data-vc][data-touch44] .vc-modo-op,
+  .vc-root[data-vc][data-touch44] .vc-fav,
+  .vc-root[data-vc][data-touch44] .vc3d-cam-btn{
+    min-height:44px; min-width:44px;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .vc-root[data-vc][data-touch44] .vc-buscabox input[type=text],
+  .vc-root[data-vc][data-touch44] .vc-buscabox input:not([type]){ min-height:44px; }
+}

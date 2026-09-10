@@ -141,6 +141,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   // "Roupa" vira 3 categorias de trilho (Camisetas e blusas / Calças / Calçados).
   const vestSep = flag('as6.vestuario_separado');
   const gruposAtivos = useMemo(() => gruposVisuais(vestSep), [vestSep]);
+  const touch44 = flag('as6.vc_touch44');
   // #54 catalogo_v2: thumbnail do card reusa o foco MEDIDO (focoItemDe / FOCO_CARD_CATEGORIA,
   // §12 ~78%). Flag OFF = svgItemIsolado cru (byte a byte). Sem hardcode de foco.
   const catalogoV2 = flag('as6.catalogo_v2');
@@ -470,7 +471,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     // Guiada: cada etapa consulta SOMENTE os slots compatíveis do grupo (mesmo resolutor do visual).
     const itensPasso = emRevisao ? [] : itensPorCats(g.cats, g);
     return (
-      <div className="vc-root" data-vc data-modo="guiado" data-catalogo-v2={catalogoV2 ? '' : undefined}>
+      <div className="vc-root" data-vc data-modo="guiado" data-catalogo-v2={catalogoV2 ? '' : undefined} data-touch44={touch44 ? '' : undefined}>
         <header className="vc-barra">
           <button className="vc-acao" onClick={() => setModo('visual')} aria-label="Sair do passo a passo"><X size={18} aria-hidden /><span className="vc-lbl">Sair</span></button>
           <div className="vc-titulo">Criar passo a passo</div>
@@ -524,7 +525,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   // ---------- MODO VISUAL ----------
   const overflowAtivo = gruposOverflow.some((g) => g.id === grupoId);
   return (
-    <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta} data-catalogo-v2={catalogoV2 ? '' : undefined}>
+    <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta} data-catalogo-v2={catalogoV2 ? '' : undefined} data-touch44={touch44 ? '' : undefined}>
       <header className="vc-barra">
         <button className="vc-acao" onClick={sair} aria-label="Voltar"><ChevronLeft size={18} aria-hidden /><span className="vc-lbl">Voltar</span></button>
         <div className="vc-titulo">Avatar Studio</div>
