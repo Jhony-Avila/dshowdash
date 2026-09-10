@@ -249,7 +249,7 @@ let _remotas: Record<string, boolean> | null = null;
 // A remota usa o endpoint EXISTENTE ?action=resolve&flag= (per-user, credentials
 // include). Erro/timeout/resposta inválida/não-autenticado => as três ficam OFF.
 // Funciona SEM qualquer valor no localStorage.
-export const FLAGS_REMOTAS = ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d', 'as6.vestuario_separado'] as const;
+export const FLAGS_REMOTAS = ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d', 'as6.vestuario_separado', 'as6.catalogo_v2'] as const;
 
 export async function carregarFlags(): Promise<void> {
   const ctrl = new AbortController();
