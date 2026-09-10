@@ -8,7 +8,7 @@
 //   3. python3 -m http.server 8901                  (de public/, em background)
 //   4. npm i playwright-core (onde a suíte rodar) + Chromium (PW_CHROME)
 // Screenshots caem em testes/saida/ (fora do git).
-import { spawnSync } from 'node:child_process';
+import { spawnSync, spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { acharChromium } from './navegador.mjs';
@@ -61,13 +61,74 @@ const TESTES = ['palco-vivo.mjs', 'sockets-3d.mjs', 'retomada-3d.mjs', 'home-pes
   'v43-category-focus.mjs', /* V4.3 FINAL §7-10 (#67): prova SEMÂNTICA — Calçados deriva de FOCO_FINO.pes (fonte única), pés dominam o palco */
   'art-intake.mjs' /* V4.3 FINAL Track B (#68): ART INTAKE GATE — segurança P0 + contrato + motor real; veredito só FAIL/AWAITING_HUMAN */];
 let falhas = 0;
+if (process.env.SUITE_TESTS_JSON) { try { const _o = JSON.parse(process.env.SUITE_TESTS_JSON); if (Array.isArray(_o) && _o.length) { TESTES.length = 0; for (const x of _o) TESTES.push(x); } } catch (e) { console.error('SUITE_TESTS_JSON invalido'); process.exit(2); } }
+// ==== C8_RUNNER_HARDENED (#59 permanente) ==========================================
+// 2.1 validacao fail-closed do teto por-teste
+function _parseTeto() {
+  const DEFAULT = 300000, MIN = 1000, MAX = 1800000;
+  const raw = process.env.SUITE_PER_TEST_MS;
+  if (raw === undefined || raw === '') return DEFAULT;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < MIN || n > MAX) {
+    console.error(`✗ SUITE_PER_TEST_MS invalido: ${JSON.stringify(raw)} — exija inteiro em [${MIN},${MAX}]ms. ABORTANDO.`);
+    process.exit(2);
+  }
+  return n;
+}
+const SUITE_PER_TEST_MS = _parseTeto();
+const SUITE_GRACE_MS = 5000;
+const timeouts = [];
+const duracoes = []; // {t, classe, dur, code, signal}
+let _grupoAtivo = null; // pgid do teste em curso (para handlers de sinal)
+function _matarGrupo(pgid, sig) { if (!pgid) return; try { process.kill(-pgid, sig); } catch (e) {} }
+// 2.2/2.3/2.4 executa UM teste em grupo proprio, com timeout e kill de arvore
+function _rodarTeste(file) {
+  return new Promise((res) => {
+    const ini = Date.now();
+    let filho;
+    try { filho = spawn('node', [file], { stdio: 'inherit', detached: true }); }
+    catch (e) { res({ classe: 'SPAWN_ERROR', status: 1, dur: Date.now() - ini, code: null, signal: null, timedOut: false }); return; }
+    _grupoAtivo = filho.pid; // detached => pgid == filho.pid
+    let timedOut = false, killTimer = null;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      _matarGrupo(filho.pid, 'SIGTERM');                 // termino gracioso do GRUPO
+      killTimer = setTimeout(() => _matarGrupo(filho.pid, 'SIGKILL'), SUITE_GRACE_MS); // forca sobreviventes
+    }, SUITE_PER_TEST_MS);
+    filho.on('exit', (code, signal) => {
+      clearTimeout(timer); if (killTimer) clearTimeout(killTimer);
+      _matarGrupo(filho.pid, 'SIGKILL');                  // limpa netos/portas mesmo no exit normal
+      _grupoAtivo = null;
+      const dur = Date.now() - ini;
+      let classe;
+      if (timedOut) classe = 'TIMED_OUT';
+      else if (signal) classe = 'SIGNALLED';
+      else if (code !== 0) classe = 'EXIT_NONZERO';
+      else classe = 'PASS';
+      const status = classe === 'PASS' ? 0 : (timedOut ? 124 : (code == null ? 1 : code));
+      res({ classe, status, dur, code, signal, timedOut });
+    });
+    filho.on('error', () => { clearTimeout(timer); if (killTimer) clearTimeout(killTimer); _grupoAtivo = null; res({ classe: 'SPAWN_ERROR', status: 1, dur: Date.now() - ini, code: null, signal: null, timedOut: false }); });
+  });
+}
+// 2.5 handlers de sinal no proprio runner: nao deixa orfaos ao ser interrompido
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => { _matarGrupo(_grupoAtivo, 'SIGKILL'); console.error(`\n✗ runner interrompido por ${sig}; grupo do teste em curso morto.`); process.exit(130); });
+}
+// ==== fim C8_RUNNER_HARDENED ========================================================
 const vermelhos = []; // QA onda 1111: lista EXPLÍCITA no resumo — um red
 // que só estoura exceção (sem linha "FALHAS:") não passa mais batido
 for (const t of TESTES) {
   console.log(`\n━━ ${t} ━━`);
-  const r = spawnSync('node', [resolve(import.meta.dirname, t)], { stdio: 'inherit' });
-  if (r.status !== 0) { falhas += 1; vermelhos.push(t); }
+  const _p = t.startsWith('/') ? t : resolve(import.meta.dirname, t);
+  const r = await _rodarTeste(_p);
+  duracoes.push({ t, classe: r.classe, dur: r.dur, code: r.code, signal: r.signal });
+  console.log(`  [${r.classe}] dur=${(r.dur/1000).toFixed(1)}s code=${r.code} signal=${r.signal||'-'}`);
+  if (r.timedOut) { console.log(`\u23f1 TIMEOUT ${t} (> ${Math.round(SUITE_PER_TEST_MS/1000)}s) — grupo morto (TERM+KILL)`); timeouts.push(t); }
+  if (r.status !== 0) { falhas += 1; vermelhos.push(t + (r.timedOut ? ' [TIMEOUT]' : ` [${r.classe}]`)); }
 }
 console.log(`\n${TESTES.length - falhas}/${TESTES.length} testes verdes`);
 if (vermelhos.length) console.log(`VERMELHOS: ${vermelhos.join(' · ')}`);
+if (timeouts.length) console.log(`TIMEOUTS(${Math.round(SUITE_PER_TEST_MS/1000)}s): ${timeouts.join(' · ')}`);
+{ const lentos = duracoes.slice().sort((a,b)=>b.dur-a.dur).slice(0,10); console.log('DURACOES_TOP10_S: ' + lentos.map(d=>`${d.t}=${(d.dur/1000).toFixed(1)}`).join(' · ')); console.log('CLASSES: ' + JSON.stringify(duracoes.reduce((a,d)=>{a[d.classe]=(a[d.classe]||0)+1;return a;},{}))); }
 process.exit(falhas ? 1 : 0);
