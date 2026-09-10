@@ -68,9 +68,13 @@ export const CALCADOS_SEED: ParteDef[] = [
     render: () => '',
     renderCorpo: (p, u) => `
       <defs>${gradVert(u, 'cf', p.roupa.claro, p.roupa.base, p.roupa.profundo)}</defs>
-      <path d="M88 330 h30 v20 c0 6 -4 12 -12 12 h-24 c-8 0 -10 -9 -2 -13 l10 -5 z" fill="url(#${u}cf)"/>
-      <path d="M122 330 h30 l0 16 10 5 c8 4 6 13 -2 13 h-24 c-8 0 -12 -6 -12 -12 z" fill="url(#${u}cf)"/>
-      <path d="M82 360 h42 q2 6 -2 9 h-42 z M116 360 h42 q4 3 -2 9 h-42 z" fill="${p.destaque.base}"/>
-      <path d="M96 338 l14 4 M128 338 l14 4" stroke="${p.destaque.claro}" stroke-width="2.4" stroke-linecap="round"/>`,
+      <path d="M96 322 h20 v15 l8 5 q5 3 0 8 h-30 q-5 -2 -4 -8 l6 -4 z" fill="url(#${u}cf)"/>
+      <path d="M122 322 h20 l0 15 8 5 q5 3 0 8 h-30 q-5 -2 -4 -8 l6 -5 z" fill="url(#${u}cf)"/>
+      <path d="M92 349 h34 q2 0 2 2 v1 q0 2 -2 2 h-34 q-2 0 -2 -2 v-1 q0 -2 2 -2 z" fill="${p.destaque.profundo}"/>
+      <path d="M118 349 h34 q2 0 2 2 v1 q0 2 -2 2 h-34 q-2 0 -2 -2 v-1 q0 -2 2 -2 z" fill="${p.destaque.profundo}"/>
+      <path d="M100 330 l12 3 M126 330 l12 3" stroke="${p.destaque.claro}" stroke-width="2" stroke-linecap="round"/>
+      <ellipse cx="110" cy="360" rx="18" ry="3" fill="${p.destaque.base}" opacity="0.42"/>
+      <ellipse cx="136" cy="360" rx="18" ry="3" fill="${p.destaque.base}" opacity="0.42"/>
+      <path d="M94 360 h34 M120 360 h34" stroke="${p.destaque.claro}" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>`,
   },
 ];
