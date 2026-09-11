@@ -20,7 +20,7 @@ git ls-tree -r --name-only HEAD -- public/components/header/mobile-v2 scripts/he
   public/components/panels/panel-avatar-studio/src/nucleo/flags.ts public/components/panels/panel-avatar-studio/src/vc \
   public/components/panels/panel-avatar-studio/src/styles/visual-composer.css docs/AVATAR-STUDIO-5/23-MOBILE-HEADER-V2.md > "$OUT/arvore.txt"
 for d in "$AUD"/*/; do n="$(basename "$d")"; [ -f "$d/audit.json" ] && cp "$d/audit.json" "$OUT/evidencias/audit-$n.json"; done
-for f in GATES.txt METRICAS.txt consolidado.json vc-before.summary.txt vc-after.summary.txt vc-before-full.json vc-after.json; do [ -f "$AUD/$f" ] && cp "$AUD/$f" "$OUT/evidencias/$f"; done
+for f in GATES.txt METRICAS.txt consolidado.json vc-before.summary.txt vc-after.summary.txt vc-before-full.json vc-after.json canary.txt canary-resolver.txt; do [ -f "$AUD/$f" ] && cp "$AUD/$f" "$OUT/evidencias/$f"; done
 # REGRESSION_GATE do Avatar Studio (vc-mobile-audit): screenshots antes/depois
 for d in vc-before-full vc-after; do [ -d "$AUD/$d" ] && mkdir -p "$OUT/screenshots/avatar-studio/$d" && cp "$AUD/$d"/*.png "$OUT/screenshots/avatar-studio/$d/" 2>/dev/null || true; done
 # as 12 screenshots obrigatórias (§7 do briefing)
