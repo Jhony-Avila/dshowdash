@@ -31,6 +31,7 @@ import type {
   ArquetipoId, CameraId, CenarioId, ClimaId, Config3D, HoraId, IluminacaoId, SlotMaterial, VarianteHumanoId,
 } from '../poc3d/catalogo3d';
 import { Personagem3D } from '../poc3d/Personagem3D';
+import { flag } from '../nucleo/flags';
 import type { Gesto } from '../poc3d/Personagem3D';
 import { Cena3D } from '../poc3d/Cena3D';
 import { Clima3D } from '../poc3d/Clima3D';
@@ -392,7 +393,7 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
 
   if (!suportado.current) {
     return (
-      <div className="vc-root" data-vc data-modo="3d">
+      <div className="vc-root" data-vc data-modo="3d" data-shell-titlebar={flag('as6.mobile_header_v2') ? 'own' : undefined}>
         <header className="vc-barra">
           <button className="vc-acao" onClick={aoVoltar2D} aria-label="Voltar ao 2D"><ChevronLeft size={18} aria-hidden /><span className="vc-lbl">Voltar</span></button>
           <div className="vc-titulo">Avatar Studio</div>
@@ -421,7 +422,7 @@ export default function VisualComposer3D({ store, config3d, aoMudar3d, podeDesfa
   const ChipIcone = ICONE_CAT[chipCat];
 
   return (
-    <div className={`vc-root ${painelOff ? 'vc-painel-off' : ''}`} data-vc data-modo="3d" data-gaveta={gaveta} data-capturando={capturando ? '' : undefined}>
+    <div className={`vc-root ${painelOff ? 'vc-painel-off' : ''}`} data-vc data-modo="3d" data-gaveta={gaveta} data-capturando={capturando ? '' : undefined} data-shell-titlebar={flag('as6.mobile_header_v2') ? 'own' : undefined}>
       <header className="vc-barra">
         <button className="vc-acao vc-icone" onClick={aoVoltar2D} aria-label="Voltar ao 2D"><ChevronLeft size={18} aria-hidden /></button>
         <div className="vc-titulo">Avatar Studio</div>

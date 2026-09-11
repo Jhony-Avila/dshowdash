@@ -146,6 +146,9 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   // #54 catalogo_v2: thumbnail do card reusa o foco MEDIDO (focoItemDe / FOCO_CARD_CATEGORIA,
   // §12 ~78%). Flag OFF = svgItemIsolado cru (byte a byte). Sem hardcode de foco.
   const catalogoV2 = flag('as6.catalogo_v2');
+  // lote header mobile v2 (doc 23): o VC traz a própria barra → declara ao SHELL (capacidade genérica
+  // data-shell-titlebar="own") p/ o título externo compactar no mobile; OFF = atributo ausente (byte a byte)
+  const shellTitlebar = flag('as6.mobile_header_v2') ? 'own' : undefined;
   const thumbHtml = useCallback((id: string, cat: string): string => (
     catalogoV2
       ? svgItemIsolado(id, { foco: focoItemDe(id, cat), premium: flag('as6.classico_premium'), faceV2: flag('as6.face_v2') })
@@ -472,7 +475,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
     // Guiada: cada etapa consulta SOMENTE os slots compatíveis do grupo (mesmo resolutor do visual).
     const itensPasso = emRevisao ? [] : itensPorCats(g.cats, g);
     return (
-      <div className="vc-root" data-vc data-modo="guiado" data-catalogo-v2={catalogoV2 ? '' : undefined} data-touch44={touch44 ? '' : undefined}>
+      <div className="vc-root" data-vc data-modo="guiado" data-catalogo-v2={catalogoV2 ? '' : undefined} data-touch44={touch44 ? '' : undefined} data-shell-titlebar={shellTitlebar}>
         <header className="vc-barra">
           <button className="vc-acao" onClick={() => setModo('visual')} aria-label="Sair do passo a passo"><X size={18} aria-hidden /><span className="vc-lbl">Sair</span></button>
           <div className="vc-titulo">Criar passo a passo</div>
@@ -526,7 +529,7 @@ export default function VisualComposer({ store: storeProp, configInicial, versao
   // ---------- MODO VISUAL ----------
   const overflowAtivo = gruposOverflow.some((g) => g.id === grupoId);
   return (
-    <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta} data-catalogo-v2={catalogoV2 ? '' : undefined} data-touch44={touch44 ? '' : undefined}>
+    <div className={`vc-root ${painelRecolhido ? 'vc-painel-off' : ''}`} data-vc data-modo="visual" data-gaveta={gaveta} data-catalogo-v2={catalogoV2 ? '' : undefined} data-touch44={touch44 ? '' : undefined} data-shell-titlebar={shellTitlebar}>
       <header className="vc-barra">
         <button className="vc-acao" onClick={sair} aria-label="Voltar"><ChevronLeft size={18} aria-hidden /><span className="vc-lbl">Voltar</span></button>
         <div className="vc-titulo">Avatar Studio</div>

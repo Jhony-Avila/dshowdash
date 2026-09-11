@@ -200,6 +200,11 @@
   <script type="module" src="/components/traffic-monitor/header-indicator.js?v=20260729-2"></script>
   <!-- Avatar Sync — atualiza o avatar do header/menu em tempo real quando o Avatar Studio salva (CustomEvent + BroadcastChannel + storage). ADITIVO, age só após load. 2026-07-29 -->
   <script src="/components/avatar-sync/index.js?v=20260729-2"></script>
+  <!-- Header Mobile V2 (as6.mobile_header_v2) — composição canônica do topo mobile (safe area → header →
+       ticker → main), alvos 44px, menu "Mais". ADITIVO e FAIL-CLOSED: com a flag OFF (padrão) o módulo não
+       toca no DOM nem injeta CSS. Flag resolvida por usuário via /api/feature-flags?action=resolve.
+       Standalone porque o header.bundle.js não deve ser rebuildado. 2026-09-11 -->
+  <script type="module" src="/components/header/mobile-v2/index.js?v=20260911-1"></script>
   <!-- Google Calendar — estado do ícone (§8.3) + popover dos próximos (§9). NÃO intercepta o clique
        (que segue navegando para o painel); só hover/foco. Standalone porque o botão vem do
        header-components.bundle.js, cujo rebuild está desaconselhado. 2026-07-30 -->

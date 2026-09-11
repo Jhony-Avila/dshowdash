@@ -1,0 +1,255 @@
+/**
+ * Header Mobile V2 — contrato canônico de dimensões + composição compacta.
+ * @module  components/header/mobile-v2
+ * @version 1.0.0  @created 2026-09-11 (lote as6.mobile_header_v2)
+ *
+ * Injetado SÓ com a flag ON (html[data-mobile-header-v2="on"]). Tudo aqui é
+ * escopado a esse atributo: com a flag OFF nenhuma regra existe no documento.
+ *
+ * CONTRATO ÚNICO (fonte canônica — decisão #73):
+ *   --shell-safe-top              inset superior do sistema (env(), 0 sem suporte)
+ *   --shell-header-content-height altura VISUAL do conteúdo do header
+ *   --shell-header-total-height   = safe-top + conteúdo  (safe area contada UMA vez:
+ *                                   a região tem height=total e padding-top=safe)
+ *   --shell-ticker-height         altura do ticker EFETIVAMENTE visível (0 se oculto)
+ *   --shell-top-stack-height      = header total + ticker → consumido pelo main/sidebar/nav-rail
+ * ALIASES DE TRANSIÇÃO (consumidos pelo bundle atual do app-shell/header, não remover):
+ *   --shell-header-height → total · --shell-top-offset → stack · --hdr-height /
+ *   --hdr-height-mobile / --header-height → conteúdo · --hdr-total-height* → total
+ */
+
+html[data-mobile-header-v2="on"] {
+  --shell-safe-top: 0px;
+  --shell-safe-top: env(safe-area-inset-top, 0px);
+  --shell-safe-left: 0px;
+  --shell-safe-left: env(safe-area-inset-left, 0px);
+  --shell-safe-right: 0px;
+  --shell-safe-right: env(safe-area-inset-right, 0px);
+  --shell-header-content-height: 60px;
+  --shell-header-total-height: calc(var(--shell-safe-top) + var(--shell-header-content-height));
+  --shell-ticker-height: 40px;
+  --shell-top-stack-height: calc(var(--shell-header-total-height) + var(--shell-ticker-height));
+  /* aliases */
+  --shell-header-height: var(--shell-header-total-height);
+  --shell-top-offset: var(--shell-top-stack-height);
+  --hdr-height: var(--shell-header-content-height);
+  --hdr-total-height: var(--shell-header-total-height);
+}
+
+@media (max-width: 768px) {
+  html[data-mobile-header-v2="on"] {
+    --shell-header-content-height: 56px;
+    --shell-ticker-height: 36px;
+    --hdr-height-mobile: var(--shell-header-content-height);
+    --hdr-total-height-mobile: var(--shell-header-total-height);
+    --hdr-hit-area-mobile: 44px;
+    --header-height: var(--shell-header-content-height);
+  }
+}
+
+/* ticker oculto/vazio/desativado → o espaço desaparece (todas as larguras) */
+html[data-mobile-header-v2="on"][data-shell-ticker="off"] { --shell-ticker-height: 0px; }
+html[data-mobile-header-v2="on"][data-shell-ticker="off"] .dsd-shell__region--ticker { display: none; }
+
+/* safe area aplicada UMA vez, na região global do header (nunca no conteúdo) */
+html[data-mobile-header-v2="on"] .dsd-shell__region--header {
+  box-sizing: border-box;
+  padding-top: var(--shell-safe-top);
+  padding-left: var(--shell-safe-left);
+  padding-right: var(--shell-safe-right);
+  background: var(--hdr-bg, #000);
+}
+html[data-mobile-header-v2="on"] .dsd-shell__region--ticker {
+  box-sizing: border-box;
+  padding-left: var(--shell-safe-left);
+  padding-right: var(--shell-safe-right);
+}
+
+/* ═══════════════ composição COMPACTA (body[data-device] ∈ mobile*/tablet) ═══════════════ */
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header,
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-inner {
+  height: var(--shell-header-content-height);
+  min-height: var(--shell-header-content-height);
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-inner {
+  padding: 0 8px;
+  gap: 6px;
+  overflow: visible;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-left {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 8px;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-left::after { display: none; }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-right {
+  flex: 0 0 auto;
+  min-width: 0;
+  gap: 2px;
+  padding-right: 0;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-component-wrapper {
+  min-width: 0;
+  overflow: visible;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-component-wrapper > * { overflow: visible; }
+
+/* identidade (P1): avatar + nome truncado de verdade + chevron */
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-component { margin-left: 0; min-width: 0; max-width: 100%; }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger {
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
+  max-width: 100%;
+  padding: 2px 8px 2px 4px;
+  gap: 8px;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-chevron { flex: 0 0 auto; }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-avatar { flex: 0 0 auto; }
+/* P4: em telas muito estreitas o texto auxiliar sai; o nome acessível fica no aria-label do botão */
+@media (max-width: 360px) {
+  html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-name { display: none; }
+}
+
+/* alvos de toque ≥ 44×44 em TODO controle visível da barra (ícone segue 18–24px) */
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-right > button,
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-right > a,
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-right > [role="button"],
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-right > .header-component-wrapper > *,
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-left > .header-component-wrapper > :not(.user-menu-component) {
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-right > .header-component-wrapper > [role="button"] { cursor: pointer; }
+/* badge nunca intercepta o toque nem é cortado */
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header [class*="badge"] { pointer-events: none; }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .notifications-component .notifications-badge { top: 2px; right: 2px; }
+
+/* foco visível (teclado) em todos os controles do header */
+html[data-mobile-header-v2="on"] [data-region="header"] :is(button, a[href], [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--hdr-active, #6366f1);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* botão "Mais" (P1) */
+html[data-mobile-header-v2="on"] .mh2-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--hdr-text, rgba(255,255,255,.9));
+  cursor: pointer;
+}
+html[data-mobile-header-v2="on"] .mh2-more[aria-expanded="true"] { background: rgba(127, 127, 127, 0.16); }
+html[data-mobile-header-v2="on"] .mh2-more[hidden] { display: none; }
+
+/* menu "Mais": ancorado ao contrato (abaixo do header total), dentro do contexto z do header
+   (z-index do token de dropdown do header) → acima de main/ticker, abaixo de toast/modais */
+html[data-mobile-header-v2="on"] .mh2-more-menu {
+  position: fixed;
+  top: calc(var(--shell-header-total-height) + 4px);
+  left: max(8px, var(--shell-safe-left));
+  right: max(8px, var(--shell-safe-right));
+  max-height: calc(100vh - var(--shell-header-total-height) - 16px);
+  max-height: calc(100dvh - var(--shell-header-total-height) - 16px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  z-index: var(--z-header-dropdown, 101);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  padding: 10px;
+  box-sizing: border-box;
+  background: var(--hdr-bg, #000);
+  color: var(--hdr-text, rgba(255,255,255,.9));
+  border: 1px solid var(--hdr-border, rgba(255,255,255,.08));
+  border-radius: 14px;
+  box-shadow: var(--hdr-shadow-scrolled, 0 2px 8px rgba(0,0,0,.3));
+}
+html[data-mobile-header-v2="on"] .mh2-more-menu[hidden] { display: none; }
+html[data-mobile-header-v2="on"] .mh2-more-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  flex: 1 0 auto;
+  min-width: 72px;
+  max-width: 100%;
+  min-height: 64px;
+  padding: 4px;
+  border-radius: 12px;
+}
+html[data-mobile-header-v2="on"] .mh2-more-item > :first-child {
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  overflow: visible;
+}
+html[data-mobile-header-v2="on"] .mh2-more-item > .header-component-wrapper > * { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+html[data-mobile-header-v2="on"] .mh2-more-label {
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--hdr-text-muted, rgba(255,255,255,.6));
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* estado rolado: densidade visual (sombra/borda), altura INALTERADA — sem layout shift */
+html[data-mobile-header-v2="on"] .dsd-shell__region--header { transition: box-shadow var(--hdr-duration, 200ms) var(--hdr-easing, ease); }
+html[data-mobile-header-v2="on"][data-mh2-scrolled] .dsd-shell__region--header { box-shadow: var(--hdr-shadow-scrolled, 0 2px 8px rgba(0,0,0,.3)); }
+@media (prefers-reduced-motion: reduce) {
+  html[data-mobile-header-v2="on"] .dsd-shell__region--header,
+  html[data-mobile-header-v2="on"] .mh2-more,
+  html[data-mobile-header-v2="on"] .mh2-more-menu { transition: none !important; }
+}
+
+/* título externo do painel quando o painel traz a própria barra (data-shell-titlebar="own"):
+   compacto VISUALMENTE, mantido na árvore de acessibilidade (heading + nome) */
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .dsd-container[data-shell-titlebar="owned"] > .dsd-container__header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .dsd-container[data-shell-titlebar="owned"] > .dsd-container__header .dsd-container__controls,
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .dsd-container[data-shell-titlebar="owned"] > .dsd-container__header .features-toolbar { visibility: hidden; }
+
+/* tema claro: superfícies do menu seguem os tokens do header (já sobrescritos em :root[data-theme="light"]) */
+:root[data-theme="light"][data-mobile-header-v2="on"] .mh2-more[aria-expanded="true"] { background: rgba(0, 0, 0, 0.06); }

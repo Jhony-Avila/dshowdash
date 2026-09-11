@@ -63,6 +63,8 @@
 /scripts/*
 !/scripts/avatar/
 !/scripts/deploy/
+# tooling do lote header mobile v2 (build do módulo standalone, preview do shell real, auditoria)
+!/scripts/header/
 # scripts do programa Elevação Basal (docs/ELEVACAO-BASAL/)
 !/scripts/basal/
 # scripts de seguranca do programa Golden (preflight git, decisao A+ §30)

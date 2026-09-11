@@ -15,6 +15,7 @@
 
 /* barra global */
 .vc-barra{ display:flex; align-items:center; gap:12px; padding:10px 14px; padding-top:max(10px,env(safe-area-inset-top)); background:var(--vc-surf); border-bottom:1px solid var(--vc-linha); }
+html[data-mobile-header-v2="on"] .vc-root[data-vc] .vc-barra{ padding-top:10px; } /* doc 23: safe area é do shell (header global), não da barra interna */
 .vc-titulo{ font-weight:600; letter-spacing:.2px; }
 .vc-globais{ margin-left:auto; display:flex; align-items:center; gap:8px; }
 .vc-acao{ display:inline-flex; align-items:center; gap:6px; background:transparent; border:1px solid var(--vc-linha); border-radius:10px; padding:8px 12px; min-height:40px; min-width:40px; justify-content:center; }
@@ -585,6 +586,9 @@
 
   /* cabeçalho compacto: rótulos viram só ícone (aria-label preservado), título com elipse */
   .vc-root[data-vc] .vc-barra { gap: 6px; padding: 8px; padding-top: max(8px, env(safe-area-inset-top)); }
+  /* lote header mobile v2 (doc 23): com o shell canônico ligado a safe area superior já foi consumida
+     pela região global do header — a barra interna NÃO a soma de novo (sem padding duplicado) */
+  html[data-mobile-header-v2="on"] .vc-root[data-vc] .vc-barra { padding-top: 8px; }
   .vc-root[data-vc] .vc-barra .vc-lbl { display: none; }
   .vc-root[data-vc] .vc-titulo { min-width: 0; flex: 0 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
   .vc-root[data-vc] .vc-globais { gap: 4px; min-width: 0; }
