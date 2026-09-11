@@ -438,6 +438,20 @@ html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-shell__region--footer 
   padding-bottom: var(--shell-safe-bottom, 0px);
 }
 
+/* layout de REGIÕES fixas no compacto (painel `owned`, ex.: Avatar Studio — layout aprovado mantido):
+   o main termina onde o rodapé visível começa (altura MEDIDA da linha residente → --mh2-footer-h) e a barra
+   inferior vazia não reserva espaço — sem vão entre conteúdo e rodapé, sem px por aparelho. */
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"])[data-shell-navrail="off"] .dsd-shell__region--nav-rail { display: none !important; }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]) .dsd-shell__region--main {
+  bottom: calc(var(--mh2-footer-h, var(--shell-footer-height)) + var(--mh2-navrail-h, 0px)) !important;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]) .dsd-shell__region--footer {
+  bottom: var(--mh2-navrail-h, 0px) !important;
+  height: var(--mh2-footer-h, var(--shell-footer-height)) !important;
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]) .dsd-shell__region--footer .dsd-footer,
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]) .dsd-shell__region--footer .app-footer { bottom: var(--mh2-navrail-h, 0px); }
+
 /* ═══════════════ FAB de devtools (decisão #87) ═══════════════
    Ferramenta interna: só perfil admin (gate de perfil existente = data-role do user-menu, espelhado em
    html[data-mh2-role]); quando fica, respeita safe area e não cobre a linha do rodapé. */

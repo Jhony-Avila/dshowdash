@@ -318,7 +318,7 @@ function destravarFundo() {
   const lock = state.lock;
   state.lock = null;
   document.documentElement.removeAttribute("data-mh2-more-open");
-  document.documentElement.style.removeProperty("--mh2-lock-top");
+  for (const p of ["--mh2-lock-top", "--mh2-footer-h", "--mh2-navrail-h"]) document.documentElement.style.removeProperty(p);
   if (!lock) return;
   const main = q('[data-region="main"]');
   if (lock.flow) window.scrollTo({ top: lock.y, left: 0, behavior: "instant" });
@@ -542,6 +542,19 @@ function syncFlow() {
     }
   }
   setAttr(html, "data-shell-navrail", navVisivel ? "on" : "off");
+  const footer = q('[data-region="footer"]');
+  const linha = footer ? q(".dsd-footer__bottom", footer) || q(".dsd-footer, .app-footer", footer) : null;
+  const borda = footer ? parseFloat(getComputedStyle(q(".dsd-footer, .app-footer", footer) || footer).borderTopWidth) || 0 : 0;
+  const alturaRodape = linha ? Math.round(linha.getBoundingClientRect().height + borda) : 0;
+  const atual = parseFloat(html.style.getPropertyValue("--mh2-footer-h")) || 0;
+  if (alturaRodape > 0 && Math.abs(alturaRodape - atual) >= 1) html.style.setProperty("--mh2-footer-h", `${alturaRodape}px`);
+  else if (alturaRodape === 0 && atual) html.style.removeProperty("--mh2-footer-h");
+  const navAltura = navVisivel && nav ? Math.round(nav.getBoundingClientRect().height) : 0;
+  const navAtual = parseFloat(html.style.getPropertyValue("--mh2-navrail-h")) || 0;
+  if (navAltura !== navAtual) {
+    if (navAltura) html.style.setProperty("--mh2-navrail-h", `${navAltura}px`);
+    else html.style.removeProperty("--mh2-navrail-h");
+  }
 }
 const BADGE_SEL = '.site-header [class*="badge"]:not([class*="mh2"])';
 function syncBadges() {
@@ -679,7 +692,7 @@ function deactivate() {
   for (const t of Array.from(document.querySelectorAll("[data-mh2-dot]"))) t.removeAttribute("data-mh2-dot");
   restaurarViewport();
   document.getElementById(CSS_ID)?.remove();
-  document.documentElement.style.removeProperty("--mh2-lock-top");
+  for (const p of ["--mh2-lock-top", "--mh2-footer-h", "--mh2-navrail-h"]) document.documentElement.style.removeProperty(p);
   for (const a of ["data-mobile-header-v2", "data-shell-ticker", "data-shell-navrail", "data-mh2-mode", "data-mh2-scrolled", "data-mh2-more-open", "data-mh2-flow", "data-mh2-role"]) document.documentElement.removeAttribute(a);
   state.mode = "wide";
   state.tickerVisible = null;
