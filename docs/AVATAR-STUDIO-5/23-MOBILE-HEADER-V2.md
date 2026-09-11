@@ -168,6 +168,31 @@ durante × depois), barras de rolagem fora da gaveta, safe area, chevron (contra
 trânsito, ticker (overlap/máscara/animação), vão main→rodapé ao fim da página e rodapé no fundo, fluxo
 (posições computadas), FAB (overlap/a11y/oculto com gaveta), temas, overflow-x, erros de página.
 
+### Resultados da rodada 2 (2026-09-11, shell real autenticado, preview do worktree)
+Matriz `audit-r2-mobile-header.mjs`: 375×812 · 390×844 · 320×568 · 430×932, escuro e claro, dashboard
+(8 cenários) — **25/25 gates PASS** (`GATES-R2.txt`). Rota Avatar Studio (375/320, regiões fixas): vão
+main→rodapé 0px, rodapé no fundo, gaveta 3/2 colunas, 0 truncados. Auditoria da rodada 1 com a flag ON
+(375/320/844/768 × dashboard + Avatar Studio): 0 controles <44, 0 toques interceptados, 0 badge cortado,
+0 duplicidade de título, layout shift 0, menu "Mais" 19 itens/0 pequenos/0 errados, Esc+foco OK, barra do
+VC em y=92 (100 em landscape) sem somar inset. Leak/restauração: 13 listeners · 7 observers · 20 movidos
+antes = depois de 3 trocas de painel; `deactivate()` → 0/0/0, sem `data-mh2-*`, meta e CSS restaurados;
+`activate()`×2 → mesmos contadores. Flag OFF (375×812): rects, tokens, meta, atributos, conjunto de
+controles e de filhos do `.header-right` idênticos à evidência OFF da rodada 1 (só o índice de trânsito,
+dado vivo, difere).
+
+| medida (375×812, dashboard, flag ON) | rodada 1 | rodada 2 |
+|---|---|---|
+| badges visíveis com valor 0 | 5 (sino, WhatsApp, e-mail, Instagram, WeChat) | 0 |
+| Calendar com número + ponto | sim | não (ponto some com contagem) |
+| menu "Mais" | dropdown flutuante, itens em flex-wrap (até 4 por linha) | gaveta abaixo do header, 5 grupos, grade 3 col (2 em 320) |
+| rótulos cortados no menu | "Personalizar ordem dos compo" | 0 (≤ 2 linhas, sem quebra de palavra) |
+| rolagem do fundo com menu aberto | livre (main rolava) | travada; posição preservada/restaurada |
+| chevron do perfil | stroke 50%, 14px | `--hdr-text`, 18px (contraste 19,8:1 / 19,1:1) |
+| avatar | 32px | 40px (alvo 44px) |
+| vão entre conteúdo e rodapé (fim da página) | 107px (região do rodapé 76 + barra vazia 64 − linha 33) | 0px; rodapé no fluxo (dashboard) / no fundo medido (AS) |
+| FAB de devtools | visível p/ todos, `div` sem nome, cobria a linha do rodapé | só admin; `role=button` + nome; overlap com rodapé 0; some com a gaveta |
+| ticker | sem máscara nas bordas | fade de 28px; movimento e altura (36px) preservados |
+
 ## Arquivos
 - `public/components/header/mobile-v2/{index.ts,index.js,mobile-header-v2.css}` (novo; 1.1.0 na rodada 2)
 - `public/index.html` (1 `<script type="module">`)
