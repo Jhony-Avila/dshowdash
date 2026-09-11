@@ -11,13 +11,18 @@ AUD="${1:?dir das auditorias}"; OUT="${2:?dir de saida}"
 RAIZ="$(cd "$(dirname "$0")/../.." && pwd)"
 mkdir -p "$OUT/evidencias" "$OUT/screenshots/obrigatorias" "$OUT/screenshots/matriz"
 cd "$RAIZ"
-git log --format='%H %ci %s' origin/main..HEAD > "$OUT/commits.txt"
-git diff origin/main...HEAD > "$OUT/candidato.patch"
+# base do lote = commit de produção de onde a branch partiu (e825364b); depois do push p/ main
+# `origin/main..HEAD` ficaria vazio — por isso a base é explícita (BASE_REF sobrescreve)
+BASE_REF="${BASE_REF:-e825364b}"
+{ echo "# base=${BASE_REF} head=$(git rev-parse HEAD) branch=$(git branch --show-current)"; git log --format='%H %ci %s' "${BASE_REF}..HEAD"; } > "$OUT/commits.txt"
+git diff "${BASE_REF}...HEAD" > "$OUT/candidato.patch"
 git ls-tree -r --name-only HEAD -- public/components/header/mobile-v2 scripts/header public/index.html \
   public/components/panels/panel-avatar-studio/src/nucleo/flags.ts public/components/panels/panel-avatar-studio/src/vc \
   public/components/panels/panel-avatar-studio/src/styles/visual-composer.css docs/AVATAR-STUDIO-5/23-MOBILE-HEADER-V2.md > "$OUT/arvore.txt"
 for d in "$AUD"/*/; do n="$(basename "$d")"; [ -f "$d/audit.json" ] && cp "$d/audit.json" "$OUT/evidencias/audit-$n.json"; done
-for f in GATES.txt METRICAS.txt consolidado.json vc-before.summary.txt vc-after.summary.txt; do [ -f "$AUD/$f" ] && cp "$AUD/$f" "$OUT/evidencias/$f"; done
+for f in GATES.txt METRICAS.txt consolidado.json vc-before.summary.txt vc-after.summary.txt vc-before-full.json vc-after.json; do [ -f "$AUD/$f" ] && cp "$AUD/$f" "$OUT/evidencias/$f"; done
+# REGRESSION_GATE do Avatar Studio (vc-mobile-audit): screenshots antes/depois
+for d in vc-before-full vc-after; do [ -d "$AUD/$d" ] && mkdir -p "$OUT/screenshots/avatar-studio/$d" && cp "$AUD/$d"/*.png "$OUT/screenshots/avatar-studio/$d/" 2>/dev/null || true; done
 # as 12 screenshots obrigatórias (§7 do briefing)
 cp_if() { [ -f "$1" ] && cp "$1" "$OUT/screenshots/obrigatorias/$2" || echo "  (ausente: $1)"; }
 cp_if "$AUD/on/375x812-dash-dark.png"                 "01-dashboard-mobile-antes-de-abrir-painel.png"
