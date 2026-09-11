@@ -184,8 +184,10 @@ html[data-mobile-header-v2="on"] .mh2-more-menu {
   top: calc(var(--shell-header-total-height) + 4px);
   left: max(8px, var(--shell-safe-left));
   right: max(8px, var(--shell-safe-right));
-  max-height: calc(100vh - var(--shell-header-total-height) - 16px);
-  max-height: calc(100dvh - var(--shell-header-total-height) - 16px);
+  /* termina ACIMA do rodapé (token do shell): a FAB "Central do sistema" vive na faixa do footer e
+     cobria a última linha do menu em 320×568 (medido: 1 item com toque interceptado) */
+  max-height: calc(100vh - var(--shell-header-total-height) - var(--shell-footer-height, 76px) - 12px);
+  max-height: calc(100dvh - var(--shell-header-total-height) - var(--shell-footer-height, 76px) - 12px);
   overflow: auto;
   overscroll-behavior: contain;
   z-index: var(--z-header-dropdown, 101);

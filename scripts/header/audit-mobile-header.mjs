@@ -104,7 +104,7 @@ const MEDIR = ({ badgeSel }) => {
   document.querySelectorAll(badgeSel).forEach((bd) => { if (!vis(bd)) return; const br = bd.getBoundingClientRect(); badgeInfo = { w: Math.round(br.width), h: Math.round(br.height), text: bd.textContent.trim(), pe: getComputedStyle(bd).pointerEvents }; for (let a = bd.parentElement; a && a !== document.body; a = a.parentElement) { const o = getComputedStyle(a); if (/(hidden|clip|auto|scroll)/.test(o.overflow + o.overflowX + o.overflowY)) { const ar = a.getBoundingClientRect(); if (br.left < ar.left - 0.5 || br.right > ar.right + 0.5 || br.top < ar.top - 0.5 || br.bottom > ar.bottom + 0.5) { badgeClipped++; break; } } } });
   // títulos VISÍVEIS de painel/barra (o h1 visually-hidden do header e os headings de conteúdo não contam como "identidade do topo")
   const titles = [];
-  document.querySelectorAll('.dsd-container__title, .header-page-title, .vc-titulo, .vc-barra h1, .vc-barra h2, .vc-imersivo-barra .vc-titulo').forEach((el) => { if (!vis(el)) return; const t = (el.textContent || '').trim().replace(/\s+/g, ' '); if (t) titles.push({ t, sel: el.tagName.toLowerCase() + '.' + String(el.className || '').trim().split(/\s+/)[0] }); });
+  document.querySelectorAll('.dsd-container__title, .header-page-title, .vc-titulo, .vc-barra h1, .vc-barra h2, .vc-imersivo-barra .vc-titulo').forEach((el) => { if (!vis(el)) return; const er = el.getBoundingClientRect(); const t = (el.textContent || '').trim().replace(/\s+/g, ' '); const srOnly = er.width <= 2 && er.height <= 2; /* visually-hidden (sr-only) fica na a11y mas NÃO é título visível */ if (t && !srOnly) titles.push({ t, sel: el.tagName.toLowerCase() + '.' + String(el.className || '').trim().split(/\s+/)[0], w: Math.round(er.width), h: Math.round(er.height) }); });
   const seen = {}; let dup = 0; for (const { t } of titles) { const k = t.toLowerCase(); seen[k] = (seen[k] || 0) + 1; } for (const k in seen) if (seen[k] > 1) dup += seen[k] - 1;
   const unnamed = controls.filter((c) => !c.name).length;
   let v2 = null; try { v2 = window.__mobileHeaderV2 ? window.__mobileHeaderV2.info() : null; } catch (e) { v2 = { error: String(e) }; }
@@ -157,11 +157,18 @@ async function cenario({ vw, vh, route, theme }) {
   const out = { tag, vw, vh, route, theme, isMobile, ok: false };
   try {
     await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 45000 });
-    await page.waitForTimeout(1500);
-    const precisaLogar = async () => (await isLoginPage(page)) && await page.isVisible('input[type="password"]').catch(() => false);
+    // espera o que vier PRIMEIRO: shell montado ou formulário de login visível (a decisão por tempo fixo perdia a corrida)
+    const chegou = await Promise.race([
+      page.waitForSelector('.site-header', { timeout: 25000 }).then(() => 'shell').catch(() => null),
+      page.waitForSelector('input[type="password"]', { state: 'visible', timeout: 25000 }).then(() => 'login').catch(() => null),
+    ]);
+    const precisaLogar = async () => chegou === 'login' || ((await isLoginPage(page)) && await page.isVisible('input[type="password"]').catch(() => false));
     if (await precisaLogar()) { await loginViaPage(page); try { cookies = await ctx.cookies(); } catch {} } // sessão reutilizada nos próximos cenários (mesmo caminho do usuário; só evita relogar)
     await page.waitForSelector('.site-header', { timeout: 30000 });
     await page.waitForSelector('[data-region="main"]', { timeout: 30000 });
+    // o preloader do shell (z 9999) cobre o header por alguns segundos após o boot — medir com ele visível
+    // registraria toque interceptado em TODOS os controles (artefato de medição, não do candidato)
+    await page.waitForSelector('.preloader-container', { state: 'hidden', timeout: 20000 }).catch(() => {});
     await page.waitForTimeout(3000);
     out.themeGot = await garantirTema(page, theme);
     if (route !== 'dash') {
@@ -205,8 +212,8 @@ async function cenario({ vw, vh, route, theme }) {
         mais = await page.evaluate(() => {
           const m = document.querySelector('#mh2-more-menu'); if (!m || m.hidden) return { open: false };
           const r = m.getBoundingClientRect(); const cs = getComputedStyle(m);
-          const items = [...m.querySelectorAll('.mh2-more-item')].filter((it) => !it.hidden && getComputedStyle(it).display !== 'none').map((it) => { it.scrollIntoView({ block: 'nearest' }); const c = it.querySelector('button, a[href], [role="button"], [tabindex]') || it.firstElementChild; const cr = c.getBoundingClientRect(); const ir = it.getBoundingClientRect(); const center = document.elementFromPoint(cr.x + cr.width / 2, cr.y + cr.height / 2); return { label: it.querySelector('.mh2-more-label')?.textContent, w: Math.round(cr.width), h: Math.round(cr.height), hit: !!(center && (center === c || c.contains(center))), inViewport: ir.right <= innerWidth + 1 && ir.left >= -1 }; });
-          return { open: true, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), b: Math.round(r.bottom), inViewport: r.left >= -1 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1, z: cs.zIndex, items, small: items.filter((i) => i.w < 44 || i.h < 44).length, wrong: items.filter((i) => !i.hit).length, focusInside: m.contains(document.activeElement) };
+          const items = [...m.querySelectorAll('.mh2-more-item')].filter((it) => !it.hidden && getComputedStyle(it).display !== 'none').map((it) => { it.scrollIntoView({ block: 'nearest' }); const ctrl = it.querySelector('button, a[href], [role="button"], [tabindex]'); const c = ctrl || it.firstElementChild; const cr = c.getBoundingClientRect(); const ir = it.getBoundingClientRect(); const center = document.elementFromPoint(cr.x + cr.width / 2, cr.y + cr.height / 2); const cs = getComputedStyle(c); /* item informativo (ex.: relógio, pointer-events:none) não é alvo de toque */ const interactive = !!ctrl || cs.cursor === 'pointer' || (cs.pointerEvents !== 'none' && !!c.onclick); return { label: it.querySelector('.mh2-more-label')?.textContent, w: Math.round(cr.width), h: Math.round(cr.height), hit: !!(center && (center === c || c.contains(center))), interactive, inViewport: ir.right <= innerWidth + 1 && ir.left >= -1 }; });
+          return { open: true, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), b: Math.round(r.bottom), inViewport: r.left >= -1 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1, z: cs.zIndex, items, small: items.filter((i) => i.interactive && (i.w < 44 || i.h < 44)).length, wrong: items.filter((i) => i.interactive && !i.hit).length, informativos: items.filter((i) => !i.interactive).length, focusInside: m.contains(document.activeElement) };
         });
         await page.screenshot({ path: `${OUT}/${tag}-mais.png` });
         await page.keyboard.press('Escape'); await page.waitForTimeout(300);
