@@ -1,4 +1,4 @@
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const MODULE_ID = "header/mobile-v2";
 const FLAG = "as6.mobile_header_v2";
 const CSS_ID = "mh2-css";
@@ -13,6 +13,27 @@ const PRIORIDADE = {
   "traffic-indicator": 2
 };
 const MODOS_COMPACTOS = /* @__PURE__ */ new Set(["mobile-portrait", "mobile-landscape", "tablet"]);
+const GRUPOS = [
+  { id: "aparencia", titulo: "Apar\xEAncia", chaves: ["dsd-theme-toggle", "hie-trigger-btn", "hie-reset-btn", "hie-done-btn"] },
+  { id: "comunicacao", titulo: "Comunica\xE7\xE3o", chaves: ["whatsapp-integration", "email-integration", "instagram-messenger-integration", "wechat-integration"] },
+  { id: "negocios", titulo: "Neg\xF3cios", chaves: ["panel-pipedrive", "panel-bling", "panel-mercado-livre", "panel-loja-integrada", "panel-asaas"] },
+  { id: "google", titulo: "Google", chaves: ["panel-google-drive", "panel-calendar", "panel-adwords"] },
+  { id: "utilidades", titulo: "Utilidades", chaves: ["panel-chatgpt", "panel-maps", "currency-rotator", "weather-sp", "real-time-clock"] },
+  { id: "outros", titulo: "Outros", chaves: [] }
+];
+const CARDS = /* @__PURE__ */ new Set(["currency-rotator", "weather-sp", "real-time-clock"]);
+const ROTULOS = {
+  "hie-trigger-btn": "Personalizar componentes",
+  "hie-reset-btn": "Restaurar ordem",
+  "hie-done-btn": "Concluir edi\xE7\xE3o",
+  "currency-rotator": "Cota\xE7\xF5es",
+  "weather-sp": "Clima S\xE3o Paulo",
+  "real-time-clock": "Hor\xE1rio",
+  "email-integration": "E-mail",
+  "instagram-messenger-integration": "Instagram / Messenger",
+  "panel-calendar": "Google Calendar",
+  "panel-maps": "Mapas"
+};
 const state = {
   active: false,
   mode: "wide",
@@ -25,6 +46,10 @@ const state = {
   metaOriginal: null,
   more: null,
   menu: null,
+  scrim: null,
+  grupos: /* @__PURE__ */ new Map(),
+  lock: null,
+  fabObservado: null,
   raf: 0,
   tickerVisible: null,
   resolved: null,
@@ -42,17 +67,12 @@ const observe = (target, cb, init) => {
   state.observers.push(mo);
   return mo;
 };
-const visivel = (el) => {
-  if (!el) return false;
-  for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
-    const cs = getComputedStyle(n);
-    if (cs.display === "none" || cs.visibility === "hidden") return false;
-    if (n.hidden) return false;
-  }
-  const b = el.getBoundingClientRect();
-  return b.width > 0 && b.height > 0;
+const humanize = (s) => s.replace(/^panel-/, "").replace(/-integration$/, "").replace(/[-_]+/g, " ").replace(/\b\w/, (c) => c.toUpperCase());
+const setAttr = (el, nome, valor) => {
+  if (valor === null) {
+    if (el.hasAttribute(nome)) el.removeAttribute(nome);
+  } else if (el.getAttribute(nome) !== valor) el.setAttribute(nome, valor);
 };
-const humanize = (s) => s.replace(/^panel-/, "").replace(/-integration$/, "").replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 function overrideLocal() {
   try {
     const local = JSON.parse(localStorage.getItem(LOCAL_KEY) ?? "{}");
@@ -138,6 +158,13 @@ function modoAtual() {
   if (document.body.classList.contains("dsd-mobile") || document.body.classList.contains("dsd-tablet")) return "compact";
   return "wide";
 }
+function chaveDe(el) {
+  return el.getAttribute("data-component-key") || el.id || (el.classList.length ? el.classList[0] : el.tagName.toLowerCase());
+}
+function grupoDe(chave) {
+  for (const g of GRUPOS) if (g.chaves.includes(chave)) return g.id;
+  return "outros";
+}
 function prioridadeDe(el) {
   const decl = el.getAttribute("data-mh2-priority") || q("[data-mh2-priority]", el)?.getAttribute("data-mh2-priority");
   if (decl === "1" || decl === "2" || decl === "3") return Number(decl);
@@ -146,12 +173,16 @@ function prioridadeDe(el) {
   for (const cls of Array.from(el.classList)) if (PRIORIDADE[cls]) return PRIORIDADE[cls];
   return 3;
 }
-function rotuloDe(el) {
+function rotuloDe(el, chave) {
+  if (ROTULOS[chave]) return ROTULOS[chave];
   const alvo = (el.matches('button,a,[role="button"]') ? el : q('button,a,[role="button"],[aria-label],[title]', el)) || el;
-  const txt = alvo.getAttribute("aria-label") || alvo.getAttribute("title") || (alvo.textContent || "").trim().replace(/\s+/g, " ");
-  if (txt) return txt.replace(/^Abrir\s+/i, "").slice(0, 28);
-  const key = el.getAttribute("data-component-key");
-  return key ? humanize(key) : "A\xE7\xE3o";
+  let txt = alvo.getAttribute("aria-label") || alvo.getAttribute("title") || el.getAttribute("data-component-label") || "";
+  txt = txt.replace(/\s*[—–-]\s*clique.*$/i, "").replace(/^(Abrir|Mudar para|Ir para)\s+/i, "").trim().replace(/\s+/g, " ");
+  if (txt) return txt.charAt(0).toUpperCase() + txt.slice(1);
+  const label = el.getAttribute("data-component-label");
+  if (label) return label;
+  const t = (el.textContent || "").trim().replace(/\s+/g, " ");
+  return t || humanize(chave);
 }
 function criarMais(right) {
   if (state.more && state.more.isConnected) return;
@@ -159,35 +190,77 @@ function criarMais(right) {
   btn.type = "button";
   btn.className = "mh2-more";
   btn.setAttribute("aria-label", "Mais a\xE7\xF5es");
-  btn.setAttribute("aria-haspopup", "true");
+  btn.setAttribute("aria-haspopup", "dialog");
   btn.setAttribute("aria-expanded", "false");
   btn.setAttribute("aria-controls", "mh2-more-menu");
   btn.setAttribute("data-mh2-own", "");
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>';
+  const scrim = document.createElement("div");
+  scrim.className = "mh2-scrim";
+  scrim.setAttribute("data-mh2-own", "");
+  scrim.hidden = true;
   const menu = document.createElement("div");
   menu.id = "mh2-more-menu";
   menu.className = "mh2-more-menu";
-  menu.setAttribute("role", "group");
+  menu.setAttribute("role", "dialog");
+  menu.setAttribute("aria-modal", "true");
   menu.setAttribute("aria-label", "Mais a\xE7\xF5es");
   menu.setAttribute("data-mh2-own", "");
   menu.hidden = true;
+  const head = document.createElement("div");
+  head.className = "mh2-more-head";
+  const titulo = document.createElement("span");
+  titulo.className = "mh2-more-title";
+  titulo.id = "mh2-more-title";
+  titulo.textContent = "Mais";
+  const fechar = document.createElement("button");
+  fechar.type = "button";
+  fechar.className = "mh2-more-close";
+  fechar.setAttribute("aria-label", "Fechar menu");
+  fechar.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  head.appendChild(titulo);
+  head.appendChild(fechar);
+  menu.setAttribute("aria-labelledby", "mh2-more-title");
+  const corpo = document.createElement("div");
+  corpo.className = "mh2-more-body";
+  menu.appendChild(head);
+  menu.appendChild(corpo);
   right.appendChild(btn);
+  right.appendChild(scrim);
   right.appendChild(menu);
   state.more = btn;
   state.menu = menu;
+  state.scrim = scrim;
+  state.grupos = /* @__PURE__ */ new Map();
   on(btn, "click", (e) => {
     e.preventDefault();
     e.stopPropagation();
     alternarMais();
   });
-  on(menu, "click", () => {
-    setTimeout(() => fecharMais(false), 0);
+  on(fechar, "click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fecharMais(true);
+  });
+  on(scrim, "click", (e) => {
+    e.preventDefault();
+    fecharMais(true);
+  });
+  on(menu, "click", (e) => {
+    const t = e.target;
+    const item = t.closest(".mh2-more-item");
+    if (!item) return;
+    const ctrl = t.closest('button, a[href], [role="button"]');
+    if (ctrl && item.contains(ctrl)) setTimeout(() => fecharMais(false), 0);
   });
   on(menu, "keydown", (e) => {
-    if (e.key === "Escape") {
+    const ke = e;
+    if (ke.key === "Escape") {
       e.stopPropagation();
       fecharMais(true);
+      return;
     }
+    if (ke.key === "Tab") prenderFoco(ke);
   });
   on(btn, "keydown", (e) => {
     if (e.key === "Escape" && state.menu && !state.menu.hidden) {
@@ -195,55 +268,130 @@ function criarMais(right) {
       fecharMais(true);
     }
   });
-  on(document, "pointerdown", (e) => {
-    if (!state.menu || state.menu.hidden) return;
-    const t = e.target;
-    if (state.menu.contains(t) || btn.contains(t)) return;
-    fecharMais(false);
-  }, { capture: true });
   on(document, "focusin", (e) => {
     if (!state.menu || state.menu.hidden) return;
     const t = e.target;
     if (state.menu.contains(t) || btn.contains(t)) return;
     fecharMais(false);
   });
+  on(document, "touchmove", (e) => {
+    if (!state.menu || state.menu.hidden) return;
+    const t = e.target;
+    if (state.menu.contains(t)) return;
+    e.preventDefault();
+  }, { passive: false, capture: true });
+}
+function focaveis(root) {
+  return Array.from(root.querySelectorAll('button:not([disabled]),a[href],[role="button"],[tabindex]:not([tabindex="-1"])')).filter((el) => {
+    if (el.closest("[hidden]")) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  });
+}
+function prenderFoco(e) {
+  if (!state.menu) return;
+  const lista = focaveis(state.menu);
+  if (!lista.length) return;
+  const primeiro = lista[0], ultimo = lista[lista.length - 1];
+  const ativo = document.activeElement;
+  if (e.shiftKey && (ativo === primeiro || !state.menu.contains(ativo))) {
+    e.preventDefault();
+    ultimo.focus({ preventScroll: true });
+  } else if (!e.shiftKey && ativo === ultimo) {
+    e.preventDefault();
+    primeiro.focus({ preventScroll: true });
+  }
 }
 function alternarMais() {
   if (!state.menu) return;
   if (state.menu.hidden) abrirMais();
   else fecharMais(true);
 }
-function abrirMais() {
-  if (!state.menu || !state.more) return;
-  state.menu.hidden = false;
-  state.more.setAttribute("aria-expanded", "true");
+function travarFundo() {
+  const main = q('[data-region="main"]');
+  const flow = document.documentElement.getAttribute("data-mh2-flow") === "on";
+  state.lock = { y: window.scrollY, mainTop: main ? main.scrollTop : 0, flow };
+  document.documentElement.style.setProperty("--mh2-lock-top", `-${Math.round(state.lock.y)}px`);
   document.documentElement.setAttribute("data-mh2-more-open", "");
-  const primeiro = q('button:not([disabled]),a[href],[role="button"],[tabindex]:not([tabindex="-1"])', state.menu);
+}
+function destravarFundo() {
+  const lock = state.lock;
+  state.lock = null;
+  document.documentElement.removeAttribute("data-mh2-more-open");
+  document.documentElement.style.removeProperty("--mh2-lock-top");
+  if (!lock) return;
+  const main = q('[data-region="main"]');
+  if (lock.flow) window.scrollTo({ top: lock.y, left: 0, behavior: "instant" });
+  if (main && main.scrollTop !== lock.mainTop) main.scrollTop = lock.mainTop;
+}
+function abrirMais() {
+  if (!state.menu || !state.more || !state.scrim) return;
+  state.scrim.hidden = false;
+  state.menu.hidden = false;
+  state.menu.scrollTop = 0;
+  state.more.setAttribute("aria-expanded", "true");
+  travarFundo();
+  const primeiro = focaveis(state.menu).find((el) => !el.classList.contains("mh2-more-close")) || q(".mh2-more-close", state.menu);
   if (primeiro) primeiro.focus({ preventScroll: true });
 }
 function fecharMais(devolverFoco) {
   if (!state.menu || !state.more || state.menu.hidden) return;
   state.menu.hidden = true;
+  if (state.scrim) state.scrim.hidden = true;
   state.more.setAttribute("aria-expanded", "false");
-  document.documentElement.removeAttribute("data-mh2-more-open");
+  destravarFundo();
   if (devolverFoco) state.more.focus({ preventScroll: true });
+}
+function grupoEl(id) {
+  const existente = state.grupos.get(id);
+  if (existente && existente.isConnected) return existente;
+  const def = GRUPOS.find((g) => g.id === id) || GRUPOS[GRUPOS.length - 1];
+  const sec = document.createElement("section");
+  sec.className = "mh2-more-group";
+  sec.setAttribute("data-mh2-group", def.id);
+  sec.setAttribute("data-mh2-own", "");
+  sec.setAttribute("aria-labelledby", `mh2-more-group-${def.id}`);
+  const h = document.createElement("h3");
+  h.className = "mh2-more-group-title";
+  h.id = `mh2-more-group-${def.id}`;
+  h.textContent = def.titulo;
+  const grade = document.createElement("div");
+  grade.className = "mh2-more-grid";
+  grade.setAttribute("role", "group");
+  sec.appendChild(h);
+  sec.appendChild(grade);
+  const corpo = q(".mh2-more-body", state.menu);
+  const ordem = GRUPOS.map((g) => g.id);
+  const depois = Array.from(corpo.children).find((c) => ordem.indexOf(c.getAttribute("data-mh2-group") || "") > ordem.indexOf(def.id));
+  corpo.insertBefore(sec, depois || null);
+  state.grupos.set(def.id, sec);
+  return sec;
 }
 function moverParaMais(el) {
   if (!state.menu || state.moved.some((m) => m.el === el)) return;
+  const chave = chaveDe(el);
+  const grupo = grupoDe(chave);
   const wrap = document.createElement("div");
-  wrap.className = "mh2-more-item";
+  wrap.className = "mh2-more-item" + (CARDS.has(chave) ? " mh2-more-item--card" : "");
   wrap.setAttribute("data-mh2-own", "");
+  wrap.setAttribute("data-mh2-key", chave);
   const rot = document.createElement("span");
   rot.className = "mh2-more-label";
   rot.setAttribute("aria-hidden", "true");
-  rot.textContent = rotuloDe(el);
-  if (rot.textContent === (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 28)) rot.hidden = true;
+  rot.textContent = rotuloDe(el, chave);
   const parent = el.parentElement;
   const next = el.nextSibling;
-  wrap.appendChild(el);
-  wrap.appendChild(rot);
-  state.menu.appendChild(wrap);
-  state.moved.push({ el, parent, next, wrap });
+  if (CARDS.has(chave)) {
+    wrap.appendChild(rot);
+    wrap.appendChild(el);
+  } else {
+    wrap.appendChild(el);
+    wrap.appendChild(rot);
+  }
+  const grade = q(".mh2-more-grid", grupoEl(grupo));
+  grade.appendChild(wrap);
+  state.moved.push({ el, parent, next, wrap, chave, grupo });
+  if (el.matches(".header-component-wrapper")) garantirSemantica(el);
 }
 function devolverTodos() {
   for (const m of state.moved.slice().reverse()) {
@@ -252,24 +400,21 @@ function devolverTodos() {
     m.wrap.remove();
   }
   state.moved = [];
+  state.grupos = /* @__PURE__ */ new Map();
 }
 function garantirSemantica(wrapper) {
   const raiz = wrapper.firstElementChild;
   if (!raiz || raiz.matches('button,a[href],input,select,textarea,[role="button"],[tabindex]')) return;
   if (q('button,a[href],[role="button"],[tabindex]', raiz)) return;
   if (getComputedStyle(raiz).cursor !== "pointer") return;
-  const prev = { role: raiz.getAttribute("role"), tabindex: raiz.getAttribute("tabindex"), "aria-label": raiz.getAttribute("aria-label") };
-  raiz.setAttribute("role", "button");
-  raiz.setAttribute("tabindex", "0");
-  if (!raiz.getAttribute("aria-label")) raiz.setAttribute("aria-label", raiz.getAttribute("title") || humanize(wrapper.getAttribute("data-component-key") || "A\xE7\xE3o"));
-  on(raiz, "keydown", (e) => {
-    const k = e.key;
-    if (k === "Enter" || k === " ") {
-      e.preventDefault();
-      raiz.click();
-    }
-  });
-  state.a11y.push({ el: raiz, attrs: prev });
+  patchA11y(raiz, { role: "button", tabindex: "0", "aria-label": raiz.getAttribute("aria-label") || raiz.getAttribute("title") || humanize(wrapper.getAttribute("data-component-key") || "A\xE7\xE3o"), "data-mh2-a11y-btn": "" });
+}
+function patchA11y(el, attrs) {
+  if (state.a11y.some((p) => p.el === el)) return;
+  const prev = {};
+  for (const k of Object.keys(attrs)) prev[k] = el.getAttribute(k);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  state.a11y.push({ el, attrs: prev });
 }
 function desfazerSemantica() {
   for (const p of state.a11y) for (const [k, v] of Object.entries(p.attrs)) {
@@ -277,6 +422,14 @@ function desfazerSemantica() {
     else p.el.setAttribute(k, v);
   }
   state.a11y = [];
+}
+function teclaAtiva(e) {
+  const ke = e;
+  if (ke.key !== "Enter" && ke.key !== " ") return;
+  const t = ke.target;
+  if (!t || !t.matches || !t.matches("[data-mh2-a11y-btn]")) return;
+  ke.preventDefault();
+  t.click();
 }
 function comporCompacto() {
   const right = q(".site-header .header-right");
@@ -300,10 +453,10 @@ function comporCompacto() {
   if (left) for (const el of Array.from(left.querySelectorAll(".header-component-wrapper"))) garantirSemantica(el);
   if (state.more && right.lastElementChild !== state.menu) {
     right.appendChild(state.more);
+    right.appendChild(state.scrim);
     right.appendChild(state.menu);
   }
-  if (state.menu && state.menu.childElementCount === 0 && state.more) state.more.hidden = true;
-  else if (state.more) state.more.hidden = false;
+  if (state.more) state.more.hidden = state.moved.length === 0;
 }
 function desfazerCompacto() {
   fecharMais(false);
@@ -312,6 +465,10 @@ function desfazerCompacto() {
   if (state.more) {
     state.more.remove();
     state.more = null;
+  }
+  if (state.scrim) {
+    state.scrim.remove();
+    state.scrim = null;
   }
   if (state.menu) {
     state.menu.remove();
@@ -371,14 +528,77 @@ function desfazerTitulos() {
   }
   state.containers = [];
 }
+function syncFlow() {
+  const html = document.documentElement;
+  const flow = state.mode === "compact" && state.containers.length === 0 && !!q('[data-region="main"]') && !!q('[data-region="footer"]');
+  setAttr(html, "data-mh2-flow", flow ? "on" : null);
+  const nav = q('[data-region="nav-rail"]');
+  let navVisivel = false;
+  if (nav) for (const c of Array.from(nav.children)) {
+    const cs = getComputedStyle(c);
+    if (cs.display !== "none" && cs.visibility !== "hidden" && c.getBoundingClientRect().height > 0) {
+      navVisivel = true;
+      break;
+    }
+  }
+  setAttr(html, "data-shell-navrail", navVisivel ? "on" : "off");
+}
+const BADGE_SEL = '.site-header [class*="badge"]:not([class*="mh2"])';
+function syncBadges() {
+  const site = q(".site-header");
+  if (!site) return;
+  for (const b of Array.from(document.querySelectorAll(BADGE_SEL))) {
+    const n = parseInt((b.textContent || "").trim().replace(/\+$/, ""), 10);
+    const pos = Number.isFinite(n) && n > 0;
+    setAttr(b, "data-mh2-badge", pos ? "pos" : "zero");
+  }
+  for (const t of Array.from(site.querySelectorAll('[data-panel-trigger="panel-calendar"]'))) {
+    const badge = q(".gcal-badge", t);
+    const comContagem = !!badge && badge.getAttribute("data-mh2-badge") === "pos" && getComputedStyle(badge).display !== "none";
+    setAttr(t, "data-mh2-dot", comContagem ? "off" : null);
+  }
+}
+function syncPerfilEFab() {
+  const html = document.documentElement;
+  const role = q(".user-menu-component")?.getAttribute("data-role") || null;
+  setAttr(html, "data-mh2-role", role);
+  const fab = document.getElementById("cm-devtools");
+  if (!fab) return;
+  if (state.fabObservado !== fab) {
+    observe(fab, agendarSync, { childList: true });
+    state.fabObservado = fab;
+  }
+  const toggle = q(".cm-devtools-toggle", fab);
+  if (toggle && !toggle.hasAttribute("role")) patchA11y(toggle, { role: "button", tabindex: "0", "aria-label": "Ferramentas de desenvolvimento", title: "Ferramentas de desenvolvimento", "data-mh2-a11y-btn": "" });
+}
+function syncTooltips() {
+  for (const el of Array.from(document.querySelectorAll(".site-header .traffic-indicator[aria-label]"))) {
+    const nome = el.getAttribute("aria-label") || "";
+    if (!el.hasAttribute("data-mh2-title")) {
+      if (el.getAttribute("title")) continue;
+      patchA11y(el, { title: nome, "data-mh2-title": "" });
+    } else if (el.getAttribute("title") !== nome) el.setAttribute("title", nome);
+  }
+}
 function syncScroll() {
   const main = q('[data-region="main"]');
-  const rolado = !!main && main.scrollTop > 8;
+  const rolado = !!main && main.scrollTop > 8 || window.scrollY > 8;
   if (rolado) document.documentElement.setAttribute("data-mh2-scrolled", "");
   else document.documentElement.removeAttribute("data-mh2-scrolled");
 }
 function syncMovidos() {
-  for (const m of state.moved) m.wrap.hidden = getComputedStyle(m.el).display === "none";
+  for (const m of state.moved) {
+    m.wrap.hidden = getComputedStyle(m.el).display === "none";
+    const rot = q(".mh2-more-label", m.wrap);
+    if (rot) {
+      const t = rotuloDe(m.el, m.chave);
+      if (rot.textContent !== t) rot.textContent = t;
+    }
+  }
+  for (const sec of state.grupos.values()) {
+    const algum = Array.from(sec.querySelectorAll(".mh2-more-item")).some((it) => !it.hidden);
+    sec.hidden = !algum;
+  }
 }
 function agendarSync() {
   if (state.raf) return;
@@ -388,7 +608,11 @@ function agendarSync() {
     syncTicker();
     syncModo();
     syncTitulos();
+    syncFlow();
     syncMovidos();
+    syncBadges();
+    syncPerfilEFab();
+    syncTooltips();
   });
 }
 function activate() {
@@ -403,23 +627,34 @@ function activate() {
   syncTicker();
   syncModo();
   syncTitulos();
+  syncFlow();
   syncMovidos();
+  syncBadges();
+  syncPerfilEFab();
+  syncTooltips();
   syncScroll();
   const ticker = tickerRegiao();
   if (ticker) observe(ticker, agendarSync, { attributes: true, attributeFilter: ["class", "style", "hidden", "aria-hidden"], childList: true, subtree: true });
-  observe(document.body, agendarSync, { attributes: true, attributeFilter: ["data-device", "class"] });
+  observe(document.body, agendarSync, { attributes: true, attributeFilter: ["data-device", "class"], childList: true });
   const main = q('[data-region="main"]');
   if (main) {
     observe(main, agendarSync, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-shell-titlebar"] });
     on(main, "scroll", syncScroll, { passive: true });
   }
+  const nav = q('[data-region="nav-rail"]');
+  if (nav) observe(nav, agendarSync, { attributes: true, attributeFilter: ["class", "style", "hidden"], childList: true });
   const right = q(".site-header .header-right");
-  if (right) observe(right, agendarSync, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "hidden"] });
+  if (right) observe(right, agendarSync, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "style", "hidden", "data-count", "data-status", "aria-label", "data-role", "data-gcal-estado"] });
+  const left = q(".site-header .header-left");
+  if (left) observe(left, agendarSync, { subtree: true, attributes: true, attributeFilter: ["data-role"] });
   on(window, "resize", agendarSync, { passive: true });
+  on(window, "scroll", syncScroll, { passive: true });
   on(window, "hashchange", () => {
+    fecharMais(false);
     syncScroll();
     agendarSync();
   });
+  on(document, "keydown", teclaAtiva);
   return true;
 }
 function deactivate() {
@@ -431,18 +666,24 @@ function deactivate() {
   }
   for (const mo of state.observers) mo.disconnect();
   state.observers = [];
+  state.fabObservado = null;
   if (state.abort) {
     state.abort.abort();
     state.abort = null;
   }
   state.listeners = 0;
   desfazerCompacto();
+  desfazerSemantica();
   desfazerTitulos();
+  for (const b of Array.from(document.querySelectorAll("[data-mh2-badge]"))) b.removeAttribute("data-mh2-badge");
+  for (const t of Array.from(document.querySelectorAll("[data-mh2-dot]"))) t.removeAttribute("data-mh2-dot");
   restaurarViewport();
   document.getElementById(CSS_ID)?.remove();
-  for (const a of ["data-mobile-header-v2", "data-shell-ticker", "data-mh2-mode", "data-mh2-scrolled", "data-mh2-more-open"]) document.documentElement.removeAttribute(a);
+  document.documentElement.style.removeProperty("--mh2-lock-top");
+  for (const a of ["data-mobile-header-v2", "data-shell-ticker", "data-shell-navrail", "data-mh2-mode", "data-mh2-scrolled", "data-mh2-more-open", "data-mh2-flow", "data-mh2-role"]) document.documentElement.removeAttribute(a);
   state.mode = "wide";
   state.tickerVisible = null;
+  state.lock = null;
 }
 function info() {
   return {
@@ -454,12 +695,14 @@ function info() {
     source: state.source,
     mode: state.mode,
     tickerVisible: state.tickerVisible,
+    flow: document.documentElement.getAttribute("data-mh2-flow") === "on",
     listeners: state.listeners,
     observers: state.observers.length,
     moved: state.moved.length,
     a11yPatches: state.a11y.length,
     containersOwned: state.containers.length,
-    moreOpen: !!(state.menu && !state.menu.hidden)
+    moreOpen: !!(state.menu && !state.menu.hidden),
+    groups: state.grupos.size
   };
 }
 function esperarShell() {

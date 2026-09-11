@@ -1,7 +1,10 @@
 /**
  * Header Mobile V2 — contrato canônico de dimensões + composição compacta.
  * @module  components/header/mobile-v2
- * @version 1.0.0  @created 2026-09-11 (lote as6.mobile_header_v2)
+ * @version 1.1.0  @created 2026-09-11 (lote as6.mobile_header_v2)
+ * @changelog 1.1.0 (rodada 2, decisões #80–#87): gaveta "Mais" (grupos, grade 3/2, cards, fechar,
+ *          scroll do fundo travado), badges ≤0 ocultos, fluxo vertical no dashboard compacto,
+ *          FAB de devtools por perfil, chevron/avatar/ticker.
  *
  * Injetado SÓ com a flag ON (html[data-mobile-header-v2="on"]). Tudo aqui é
  * escopado a esse atributo: com a flag OFF nenhuma regra existe no documento.
@@ -124,8 +127,25 @@ html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-men
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-chevron { flex: 0 0 auto; }
-html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-avatar { flex: 0 0 auto; }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-chevron { flex: 0 0 auto; opacity: 1; }
+/* chevron com contraste real (era stroke a 50%): segue a cor do texto do header nos dois temas */
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-chevron svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--hdr-text, rgba(255,255,255,.9));
+  stroke-width: 2.4;
+}
+/* avatar 40px (alvo do botão segue 44px); brilho roxo contido no tema claro (decisão #83) */
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-avatar { flex: 0 0 auto; width: 40px; height: 40px; }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-avatar .avatar-initials { font-size: 14px; }
+:root[data-theme="light"][data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-avatar {
+  box-shadow: 0 0 0 2px #fff, 0 0 8px color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 35%, transparent);
+}
+:root[data-theme="light"][data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-avatar::before { opacity: .45; filter: blur(3px); inset: -4px; }
+:root[data-theme="light"][data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-avatar::after { opacity: .18; inset: -7px; }
+:root[data-theme="light"][data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger:hover .user-avatar {
+  box-shadow: 0 0 0 2px #fff, 0 0 10px color-mix(in srgb, var(--avst-aro-cor, #7c3aed) 45%, transparent);
+}
 /* P4: em telas muito estreitas o texto auxiliar sai; o nome acessível fica no aria-label do botão */
 @media (max-width: 360px) {
   html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .user-menu-trigger .user-name { display: none; }
@@ -150,6 +170,12 @@ html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .header-r
 /* badge nunca intercepta o toque nem é cortado */
 html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header [class*="badge"] { pointer-events: none; }
 html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .site-header .notifications-component .notifications-badge { top: 2px; right: 2px; }
+/* badge com contador ≤ 0 não renderiza (medido do texto pelo módulo; o componente segue dono do valor) —
+   vale para sino, WhatsApp, e-mail, Instagram/Messenger, WeChat, Calendar e qualquer integração (decisão #86) */
+html[data-mobile-header-v2="on"] .site-header [data-mh2-badge="zero"] { display: none !important; }
+/* Google Calendar: com contagem numérica o ponto de estado some (nunca os dois juntos) */
+html[data-mobile-header-v2="on"] .site-header [data-panel-trigger="panel-calendar"][data-mh2-dot="off"]::after { display: none !important; }
+html[data-mobile-header-v2="on"] .site-header [data-panel-trigger="panel-calendar"] .gcal-badge[data-mh2-badge="pos"] { display: inline-flex; }
 
 /* foco visível (teclado) em todos os controles do header */
 html[data-mobile-header-v2="on"] [data-region="header"] :is(button, a[href], [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
@@ -177,49 +203,115 @@ html[data-mobile-header-v2="on"] .mh2-more {
 html[data-mobile-header-v2="on"] .mh2-more[aria-expanded="true"] { background: rgba(127, 127, 127, 0.16); }
 html[data-mobile-header-v2="on"] .mh2-more[hidden] { display: none; }
 
-/* menu "Mais": ancorado ao contrato (abaixo do header total), dentro do contexto z do header
-   (z-index do token de dropdown do header) → acima de main/ticker, abaixo de toast/modais */
+/* ═══════════════ gaveta "Mais" (decisões #80–#84) ═══════════════
+   Painel próprio abaixo do header: largura = viewport, altura máx = 100dvh − header (viewport
+   dinâmico + safe areas, nunca px fixo), rolagem SÓ dentro da gaveta, scrim cobrindo o fundo,
+   botão de fechar explícito. Vive no contexto de empilhamento da região do header
+   (--shell-z-header 500) com o token de dropdown → acima de ticker/main, abaixo de toast/modais. */
+html[data-mobile-header-v2="on"] .mh2-scrim {
+  position: fixed;
+  top: var(--shell-header-total-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: auto;
+  z-index: var(--z-header-dropdown, 101);
+  background: rgba(0, 0, 0, 0.55);
+}
+html[data-mobile-header-v2="on"] .mh2-scrim[hidden] { display: none; }
 html[data-mobile-header-v2="on"] .mh2-more-menu {
   position: fixed;
-  top: calc(var(--shell-header-total-height) + 4px);
-  left: max(8px, var(--shell-safe-left));
-  right: max(8px, var(--shell-safe-right));
-  /* termina ACIMA do rodapé (token do shell): a FAB "Central do sistema" vive na faixa do footer e
-     cobria a última linha do menu em 320×568 (medido: 1 item com toque interceptado) */
-  max-height: calc(100vh - var(--shell-header-total-height) - var(--shell-footer-height, 76px) - 12px);
-  max-height: calc(100dvh - var(--shell-header-total-height) - var(--shell-footer-height, 76px) - 12px);
-  overflow: auto;
+  top: var(--shell-header-total-height);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100vw;
+  max-height: calc(100vh - var(--shell-header-total-height));
+  max-height: calc(100dvh - var(--shell-header-total-height));
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
-  z-index: var(--z-header-dropdown, 101);
+  -webkit-overflow-scrolling: touch;
+  z-index: calc(var(--z-header-dropdown, 101) + 1);
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 6px;
-  padding: 10px;
+  flex-direction: column;
   box-sizing: border-box;
-  background: var(--hdr-bg, #000);
+  padding: 0 0 max(12px, env(safe-area-inset-bottom, 0px)) 0;
+  background: var(--dsd-bg-primary, var(--hdr-bg, #000));
   color: var(--hdr-text, rgba(255,255,255,.9));
-  border: 1px solid var(--hdr-border, rgba(255,255,255,.08));
-  border-radius: 14px;
-  box-shadow: var(--hdr-shadow-scrolled, 0 2px 8px rgba(0,0,0,.3));
+  border-bottom: 1px solid var(--hdr-border, rgba(255,255,255,.08));
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.45);
+  isolation: isolate;
 }
 html[data-mobile-header-v2="on"] .mh2-more-menu[hidden] { display: none; }
+html[data-mobile-header-v2="on"] .mh2-more-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 48px;
+  padding: 2px 4px 2px 16px;
+  background: inherit;
+  border-bottom: 1px solid var(--hdr-border, rgba(255,255,255,.08));
+}
+html[data-mobile-header-v2="on"] .mh2-more-title { font-size: 15px; font-weight: 600; letter-spacing: .01em; }
+html[data-mobile-header-v2="on"] .mh2-more-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--hdr-text, rgba(255,255,255,.9));
+  cursor: pointer;
+}
+html[data-mobile-header-v2="on"] .mh2-more-body { padding: 4px 12px 0; }
+html[data-mobile-header-v2="on"] .mh2-more-group { margin: 0; padding: 8px 0 4px; }
+html[data-mobile-header-v2="on"] .mh2-more-group[hidden] { display: none; }
+html[data-mobile-header-v2="on"] .mh2-more-group-title {
+  margin: 0 4px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--hdr-text-muted, rgba(255,255,255,.6));
+}
+/* grade: 3 colunas no celular comum, 2 nas telas muito estreitas — nunca 4 (decisão #81) */
+html[data-mobile-header-v2="on"] .mh2-more-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+@media (max-width: 359px) {
+  html[data-mobile-header-v2="on"] .mh2-more-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 600px) {
+  html[data-mobile-header-v2="on"] .mh2-more-body { max-width: 560px; width: 100%; margin: 0 auto; }
+}
 html[data-mobile-header-v2="on"] .mh2-more-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 2px;
-  flex: 1 0 auto;
-  min-width: 72px;
-  max-width: 100%;
-  min-height: 64px;
-  padding: 4px;
+  gap: 4px;
+  min-width: 0;
+  min-height: 78px;
+  padding: 6px 4px 8px;
   border-radius: 12px;
+  box-sizing: border-box;
 }
 html[data-mobile-header-v2="on"] .mh2-more-item[hidden] { display: none; }
 /* o controle movido mantém o PRÓPRIO display (inclusive display:none dos auxiliares); só ganha área mínima */
-html[data-mobile-header-v2="on"] .mh2-more-item > :first-child {
+html[data-mobile-header-v2="on"] .mh2-more-item > :first-child:not(.mh2-more-label) {
   box-sizing: border-box;
   min-width: 44px;
   min-height: 44px;
@@ -230,18 +322,140 @@ html[data-mobile-header-v2="on"] .mh2-more-item > button:first-child,
 html[data-mobile-header-v2="on"] .mh2-more-item > a:first-child,
 html[data-mobile-header-v2="on"] .mh2-more-item > [role="button"]:first-child { align-items: center; justify-content: center; }
 html[data-mobile-header-v2="on"] .mh2-more-item > button:first-child { color: var(--hdr-text, rgba(255,255,255,.9)); }
-html[data-mobile-header-v2="on"] .mh2-more-label[hidden] { display: none; }
 html[data-mobile-header-v2="on"] .mh2-more-item > .header-component-wrapper > * { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+/* rótulo: até 2 linhas, quebra só entre palavras, sem reticências em ação principal (decisão #82) */
 html[data-mobile-header-v2="on"] .mh2-more-label {
-  font-size: 11px;
-  line-height: 1.2;
-  color: var(--hdr-text-muted, rgba(255,255,255,.6));
+  display: block;
+  width: 100%;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 11.5px;
+  line-height: 1.25;
   text-align: center;
+  color: var(--hdr-text, rgba(255,255,255,.9));
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: none;
+  overflow: visible;
+  text-overflow: clip;
 }
+html[data-mobile-header-v2="on"] .mh2-more-label[hidden] { display: none; }
+/* cards: item dinâmico (cotações/clima/horário) — linha inteira, rótulo à esquerda, valor vivo à direita */
+html[data-mobile-header-v2="on"] .mh2-more-item--card {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 60px;
+  padding: 6px 8px 6px 12px;
+  background: rgba(127, 127, 127, 0.10);
+  border: 1px solid var(--hdr-border, rgba(255,255,255,.08));
+}
+html[data-mobile-header-v2="on"] .mh2-more-item--card > .mh2-more-label { flex: 1 1 auto; width: auto; text-align: left; font-size: 13px; font-weight: 500; }
+html[data-mobile-header-v2="on"] .mh2-more-item--card > .header-component-wrapper { flex: 0 0 auto; max-width: 62%; }
+html[data-mobile-header-v2="on"] .mh2-more-item--card > .header-component-wrapper > * { min-height: 44px; }
+html[data-mobile-header-v2="on"] .mh2-more-item--card .currency-rotator-component { min-width: 0; }
+html[data-mobile-header-v2="on"] .mh2-more-item--card .real-time-clock-component .clock-time { font-size: 17px; }
+
+/* fundo travado com a gaveta aberta: posição preservada (fluxo: body fixo em −scrollY; regiões: main
+   sem rolagem — overflow:hidden mantém o scrollTop). Uma única barra de rolagem: a da gaveta. */
+html[data-mobile-header-v2="on"][data-mh2-more-open] body { overflow: hidden !important; }
+html[data-mobile-header-v2="on"][data-mh2-more-open][data-mh2-flow="on"] body {
+  position: fixed !important;
+  top: var(--mh2-lock-top, 0px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+}
+html[data-mobile-header-v2="on"][data-mh2-more-open]:not([data-mh2-flow="on"]) [data-region="main"] { overflow: hidden !important; }
+/* nada atravessa a gaveta: popovers do header e a FAB de devtools ficam por baixo/inertes enquanto aberta */
+html[data-mobile-header-v2="on"][data-mh2-more-open] #traffic-popover,
+html[data-mobile-header-v2="on"][data-mh2-more-open] .traffic-popover { display: none !important; }
+html[data-mobile-header-v2="on"][data-mh2-more-open] #cm-devtools { z-index: 1 !important; pointer-events: none; visibility: hidden; }
+
+/* ═══════════════ fluxo vertical real no dashboard compacto (decisão #85) ═══════════════
+   header e ticker seguem fixos no topo (contrato); main e rodapé entram no FLUXO: o documento rola,
+   o conteúdo ocupa o espaço e o rodapé vem depois do conteúdo — sem altura fixa por aparelho,
+   sem margem artificial, sem rodapé absoluto. */
+html[data-mobile-header-v2="on"][data-mh2-flow="on"],
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] body {
+  height: auto !important;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: visible !important;
+}
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] #app-shell,
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-app-shell {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: auto !important;
+  padding-top: var(--shell-top-stack-height);
+  padding-bottom: var(--shell-safe-bottom, 0px);
+  overflow: visible;
+}
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] { --shell-safe-bottom: 0px; --shell-safe-bottom: env(safe-area-inset-bottom, 0px); }
+html[data-mobile-header-v2="on"][data-mh2-flow="on"][data-shell-navrail="on"] #app-shell { padding-bottom: calc(64px + var(--shell-safe-bottom, 0px)); }
+html[data-mobile-header-v2="on"][data-mh2-flow="on"][data-shell-navrail="off"] .dsd-shell__region--nav-rail { display: none !important; }
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-shell__region--ticker {
+  position: fixed !important;
+  top: var(--shell-header-total-height) !important;
+  left: 0;
+  right: 0;
+}
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-shell__region--main {
+  position: static !important;
+  top: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  height: auto !important;
+  min-height: 0;
+  flex: 1 0 auto;
+  order: 1;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+  transition: none;
+}
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-shell__region--main > * { min-height: 0; }
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-shell__region--sidebar { display: none !important; }
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-shell__region--footer {
+  position: static !important;
+  top: auto !important;
+  bottom: auto !important;
+  height: auto !important;
+  min-height: 0;
+  flex: 0 0 auto;
+  order: 2;
+  overflow: hidden; /* como na região original: a barra de ações do rodapé é mais larga/alta que a linha residente e era recortada */
+}
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-shell__region--footer .dsd-footer,
+html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-shell__region--footer .app-footer {
+  position: static !important;
+  padding-bottom: var(--shell-safe-bottom, 0px);
+}
+
+/* ═══════════════ FAB de devtools (decisão #87) ═══════════════
+   Ferramenta interna: só perfil admin (gate de perfil existente = data-role do user-menu, espelhado em
+   html[data-mh2-role]); quando fica, respeita safe area e não cobre a linha do rodapé. */
+html[data-mobile-header-v2="on"][data-mh2-role]:not([data-mh2-role="admin"]) #cm-devtools { display: none !important; }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] #cm-devtools.bottom-right {
+  bottom: calc(44px + var(--shell-safe-bottom, 0px));
+  right: max(12px, var(--shell-safe-right, 0px));
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] #cm-devtools .cm-devtools-toggle:focus-visible { outline: 2px solid var(--hdr-active, #6366f1); outline-offset: 2px; }
+
+/* ═══════════════ ticker (decisão #84) ═══════════════
+   movimento preservado; máscara de fade nas bordas (transparência real, segue qualquer tema);
+   o track começa com padding ≥ largura do fade → nunca abre com palavra cortada estática. */
+html[data-mobile-header-v2="on"] .dsd-shell__region--ticker .ticker-content-container {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+}
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .dsd-shell__region--ticker .ticker-track { padding-left: 32px; padding-right: 32px; }
 
 /* estado rolado: densidade visual (sombra/borda), altura INALTERADA — sem layout shift */
 html[data-mobile-header-v2="on"] .dsd-shell__region--header { transition: box-shadow var(--hdr-duration, 200ms) var(--hdr-easing, ease); }
@@ -249,7 +463,8 @@ html[data-mobile-header-v2="on"][data-mh2-scrolled] .dsd-shell__region--header {
 @media (prefers-reduced-motion: reduce) {
   html[data-mobile-header-v2="on"] .dsd-shell__region--header,
   html[data-mobile-header-v2="on"] .mh2-more,
-  html[data-mobile-header-v2="on"] .mh2-more-menu { transition: none !important; }
+  html[data-mobile-header-v2="on"] .mh2-more-menu,
+  html[data-mobile-header-v2="on"] .mh2-scrim { transition: none !important; }
 }
 
 /* título externo do painel quando o painel traz a própria barra (data-shell-titlebar="own"):
@@ -287,3 +502,6 @@ html[data-mobile-header-v2="on"][data-mh2-mode="wide"] .dsd-container[data-shell
 
 /* tema claro: superfícies do menu seguem os tokens do header (já sobrescritos em :root[data-theme="light"]) */
 :root[data-theme="light"][data-mobile-header-v2="on"] .mh2-more[aria-expanded="true"] { background: rgba(0, 0, 0, 0.06); }
+:root[data-theme="light"][data-mobile-header-v2="on"] .mh2-more-menu { background: var(--dsd-bg-primary, var(--hdr-bg, #fff)); box-shadow: 0 12px 32px rgba(0,0,0,.18); }
+:root[data-theme="light"][data-mobile-header-v2="on"] .mh2-scrim { background: rgba(15, 23, 42, 0.45); }
+:root[data-theme="light"][data-mobile-header-v2="on"] .mh2-more-item--card { background: rgba(0, 0, 0, 0.04); }

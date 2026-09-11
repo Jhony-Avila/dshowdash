@@ -1,9 +1,15 @@
 /**
  * Header Mobile V2 — composição canônica do topo (safe area → header → ticker → main).
  * @module  components/header/mobile-v2
- * @version 1.0.0  — FONTE (TS). Irmão index.js é o shipado (transpile 1:1 via
+ * @version 1.1.0  — FONTE (TS). Irmão index.js é o shipado (transpile 1:1 via
  *          scripts/header/build-mobile-header-v2.sh — nunca editar o .js à mão).
  * @created 2026-09-11 (lote as6.mobile_header_v2 — docs/AVATAR-STUDIO-5/23-MOBILE-HEADER-V2.md)
+ * @changelog 1.1.0 (rodada 2 — decisões #80–#87): menu "Mais" vira GAVETA própria (grupos,
+ *          grade 3/2 colunas, cards p/ itens dinâmicos, fechar explícito, foco preso, scroll do
+ *          fundo travado com posição preservada); badges com contador ≤ 0 não renderizam e o
+ *          Google Calendar nunca mostra ponto + número ao mesmo tempo; fluxo vertical real no
+ *          dashboard compacto (main e rodapé no fluxo, sem vão); FAB de devtools atrás do gate
+ *          de perfil existente (data-role do user-menu) + nome acessível; chevron/avatar/tooltip.
  *
  * ADITIVO e FAIL-CLOSED (§651): com a flag `as6.mobile_header_v2` OFF este módulo
  * NÃO toca no DOM, NÃO injeta CSS e NÃO altera a meta viewport — o shell fica
@@ -12,29 +18,26 @@
  *      Avatar Studio)  2) `/api/feature-flags?action=resolve&flag=…` (por usuário,
  *      credentials include, timeout curto)  3) padrão OFF.
  *
- * O que faz com a flag ON (decisões #71–#78 no doc 23):
+ * O que faz com a flag ON (decisões #71–#87 no doc 23):
  *   - liga `html[data-mobile-header-v2="on"]` e injeta mobile-header-v2.css, que define o
  *     CONTRATO ÚNICO de dimensões (--shell-safe-top / --shell-header-content-height /
  *     --shell-header-total-height / --shell-ticker-height / --shell-top-stack-height) e
- *     remapeia os tokens antigos (--shell-header-height, --shell-top-offset, --hdr-height*,
- *     --header-height) como ALIASES de transição — o bundle atual do app-shell continua
- *     consumindo os aliases sem rebuild;
- *   - `viewport-fit=cover` na meta viewport (só com a flag ON — OFF não muda a serialização);
- *   - `html[data-shell-ticker="on|off"]` medido do ticker EFETIVAMENTE visível → o espaço
- *     do ticker some quando ele está oculto/vazio/desativado;
- *   - modo compacto derivado do DETECTOR CANÔNICO (`body[data-device]` do responsive
- *     adapter; nunca um segundo matchMedia): move ações secundárias (P3) do header para o
- *     menu "Mais", garante alvos 44×44, nome acessível/teclado nos controles que não tinham;
- *   - `data-shell-titlebar="own"` (capacidade GENÉRICA do shell): um painel que traz a própria
- *     barra de título declara o atributo e o shell compacta visualmente o título externo
- *     (mantido na árvore de acessibilidade como heading);
- *   - estado "rolado" do main → densidade visual (sombra), NUNCA mudança de altura (altura
- *     mudando = layout shift por definição — decisão #75).
+ *     remapeia os tokens antigos como ALIASES de transição;
+ *   - `viewport-fit=cover` na meta viewport (só com a flag ON);
+ *   - `html[data-shell-ticker="on|off"]` medido do ticker EFETIVAMENTE visível;
+ *   - modo compacto derivado do DETECTOR CANÔNICO (`body[data-device]`): move ações
+ *     secundárias (P3) do header para a gaveta "Mais", garante alvos 44×44, nome
+ *     acessível/teclado nos controles que não tinham;
+ *   - `data-shell-titlebar="own"` (capacidade GENÉRICA do shell) — título externo compacto;
+ *   - `data-mh2-flow="on"` no dashboard compacto: main/rodapé em fluxo (documento rola);
+ *   - badges: `data-mh2-badge="zero|pos"` medido do texto do contador (o componente é dono
+ *     do valor; o shell só decide render) e `data-mh2-dot="off"` no Calendar com contagem;
+ *   - `data-mh2-role` espelha o gate de perfil já existente (user-menu `data-role`);
  *   - Tudo idempotente, com cleanup total (`deactivate()`), sem observers acumulados.
  */
 'use strict';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 export const MODULE_ID = 'header/mobile-v2';
 export const FLAG = 'as6.mobile_header_v2';
 
@@ -49,9 +52,6 @@ const BOOT_TIMEOUT_MS = 90000;
  * Política de prioridade responsiva (§4.4). Chave = `data-component-key` do wrapper OU
  * token de classe do controle standalone. Ausente = P3 (secundário → menu "Mais"): o
  * padrão fail-safe é SAIR da barra, só quem é explicitamente P1/P2 fica.
- *   P1 = identidade (avatar/nome/menu) · P2 = status principal + notificações · P3 = ações
- *   secundárias · P4 = textos auxiliares (tratados por CSS).
- * Controles standalone podem declarar `data-mh2-priority="1|2|3"` e vencem esta tabela.
  */
 const PRIORIDADE: Record<string, 1 | 2 | 3> = {
   'user-menu': 1,
@@ -60,7 +60,32 @@ const PRIORIDADE: Record<string, 1 | 2 | 3> = {
 };
 const MODOS_COMPACTOS = new Set(['mobile-portrait', 'mobile-landscape', 'tablet']);
 
-type Movido = { el: HTMLElement; parent: HTMLElement; next: Node | null; wrap: HTMLElement };
+/** Grupos da gaveta (decisão #81) — ordem de exibição; chave = data-component-key / id / classe. */
+const GRUPOS: Array<{ id: string; titulo: string; chaves: string[] }> = [
+  { id: 'aparencia', titulo: 'Aparência', chaves: ['dsd-theme-toggle', 'hie-trigger-btn', 'hie-reset-btn', 'hie-done-btn'] },
+  { id: 'comunicacao', titulo: 'Comunicação', chaves: ['whatsapp-integration', 'email-integration', 'instagram-messenger-integration', 'wechat-integration'] },
+  { id: 'negocios', titulo: 'Negócios', chaves: ['panel-pipedrive', 'panel-bling', 'panel-mercado-livre', 'panel-loja-integrada', 'panel-asaas'] },
+  { id: 'google', titulo: 'Google', chaves: ['panel-google-drive', 'panel-calendar', 'panel-adwords'] },
+  { id: 'utilidades', titulo: 'Utilidades', chaves: ['panel-chatgpt', 'panel-maps', 'currency-rotator', 'weather-sp', 'real-time-clock'] },
+  { id: 'outros', titulo: 'Outros', chaves: [] },
+];
+/** Itens dinâmicos (valor vivo) viram CARD próprio, não atalho de app (decisão #81). */
+const CARDS = new Set(['currency-rotator', 'weather-sp', 'real-time-clock']);
+/** Rótulos curtos (≤ 2 linhas sem cortar palavra — decisão #82). Ausente = derivado do controle. */
+const ROTULOS: Record<string, string> = {
+  'hie-trigger-btn': 'Personalizar componentes',
+  'hie-reset-btn': 'Restaurar ordem',
+  'hie-done-btn': 'Concluir edição',
+  'currency-rotator': 'Cotações',
+  'weather-sp': 'Clima São Paulo',
+  'real-time-clock': 'Horário',
+  'email-integration': 'E-mail',
+  'instagram-messenger-integration': 'Instagram / Messenger',
+  'panel-calendar': 'Google Calendar',
+  'panel-maps': 'Mapas',
+};
+
+type Movido = { el: HTMLElement; parent: HTMLElement; next: Node | null; wrap: HTMLElement; chave: string; grupo: string };
 type PatchA11y = { el: HTMLElement; attrs: Record<string, string | null> };
 
 const state = {
@@ -75,6 +100,10 @@ const state = {
   metaOriginal: null as string | null,
   more: null as HTMLButtonElement | null,
   menu: null as HTMLElement | null,
+  scrim: null as HTMLElement | null,
+  grupos: new Map<string, HTMLElement>(),
+  lock: null as { y: number; mainTop: number; flow: boolean } | null,
+  fabObservado: null as HTMLElement | null,
   raf: 0,
   tickerVisible: null as boolean | null,
   resolved: null as boolean | null,
@@ -94,17 +123,11 @@ const observe = (target: Node, cb: MutationCallback, init: MutationObserverInit)
   state.observers.push(mo);
   return mo;
 };
-const visivel = (el: Element | null): boolean => {
-  if (!el) return false;
-  for (let n: Element | null = el; n && n.nodeType === 1; n = n.parentElement) {
-    const cs = getComputedStyle(n);
-    if (cs.display === 'none' || cs.visibility === 'hidden') return false;
-    if ((n as HTMLElement).hidden) return false;
-  }
-  const b = el.getBoundingClientRect();
-  return b.width > 0 && b.height > 0;
+const humanize = (s: string) => s.replace(/^panel-/, '').replace(/-integration$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/, (c) => c.toUpperCase());
+const setAttr = (el: Element, nome: string, valor: string | null) => {
+  if (valor === null) { if (el.hasAttribute(nome)) el.removeAttribute(nome); }
+  else if (el.getAttribute(nome) !== valor) el.setAttribute(nome, valor);
 };
-const humanize = (s: string) => s.replace(/^panel-/, '').replace(/-integration$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 // ───────────────────────── flag ─────────────────────────
 function overrideLocal(): boolean | null {
@@ -163,7 +186,6 @@ function tickerEfetivamenteVisivel(): boolean {
   const cs = getComputedStyle(r);
   if (cs.display === 'none' || cs.visibility === 'hidden') return false;
   if (/(^|\s)(ticker--disabled|ticker--hidden|is-empty|ticker--empty)(\s|$)/.test(r.className)) return false;
-  // montado e sem NENHUM item = vazio → sem espaço (antes de montar, o shell decide: mantém)
   const cont = q('.ticker-content-container, .ticker-wrapper', r);
   if (cont && r.classList.contains('news-ticker-component') && cont.childElementCount === 0) return false;
   return true;
@@ -180,11 +202,17 @@ function syncTicker() {
 function modoAtual(): 'wide' | 'compact' {
   const dev = document.body.getAttribute('data-device');
   if (dev) return MODOS_COMPACTOS.has(dev) ? 'compact' : 'wide';
-  // adapter ainda não marcou: cai nas classes que o MESMO adapter escreve
   if (document.body.classList.contains('dsd-mobile') || document.body.classList.contains('dsd-tablet')) return 'compact';
   return 'wide';
 }
 
+function chaveDe(el: HTMLElement): string {
+  return el.getAttribute('data-component-key') || el.id || (el.classList.length ? el.classList[0] : el.tagName.toLowerCase());
+}
+function grupoDe(chave: string): string {
+  for (const g of GRUPOS) if (g.chaves.includes(chave)) return g.id;
+  return 'outros';
+}
 function prioridadeDe(el: HTMLElement): 1 | 2 | 3 {
   const decl = el.getAttribute('data-mh2-priority') || q('[data-mh2-priority]', el)?.getAttribute('data-mh2-priority');
   if (decl === '1' || decl === '2' || decl === '3') return Number(decl) as 1 | 2 | 3;
@@ -193,105 +221,223 @@ function prioridadeDe(el: HTMLElement): 1 | 2 | 3 {
   for (const cls of Array.from(el.classList)) if (PRIORIDADE[cls]) return PRIORIDADE[cls];
   return 3;
 }
-function rotuloDe(el: HTMLElement): string {
+/** Rótulo curto e completo (nunca cortado no meio da palavra): tabela → nome acessível do
+ *  controle sem prefixos de ação ("Abrir", "Mudar para") nem legendas ("— clique para…"). */
+function rotuloDe(el: HTMLElement, chave: string): string {
+  if (ROTULOS[chave]) return ROTULOS[chave];
   const alvo = (el.matches('button,a,[role="button"]') ? el : q('button,a,[role="button"],[aria-label],[title]', el)) || el;
-  const txt = alvo.getAttribute('aria-label') || alvo.getAttribute('title') || (alvo.textContent || '').trim().replace(/\s+/g, ' ');
-  if (txt) return txt.replace(/^Abrir\s+/i, '').slice(0, 28);
-  const key = el.getAttribute('data-component-key');
-  return key ? humanize(key) : 'Ação';
+  let txt = alvo.getAttribute('aria-label') || alvo.getAttribute('title') || el.getAttribute('data-component-label') || '';
+  txt = txt.replace(/\s*[—–-]\s*clique.*$/i, '').replace(/^(Abrir|Mudar para|Ir para)\s+/i, '').trim().replace(/\s+/g, ' ');
+  if (txt) return txt.charAt(0).toUpperCase() + txt.slice(1);
+  const label = el.getAttribute('data-component-label');
+  if (label) return label;
+  const t = (el.textContent || '').trim().replace(/\s+/g, ' ');
+  return t || humanize(chave);
 }
 
-// ───────────────────────── menu "Mais" ─────────────────────────
+// ───────────────────────── gaveta "Mais" (decisões #80–#84) ─────────────────────────
 function criarMais(right: HTMLElement) {
   if (state.more && state.more.isConnected) return;
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'mh2-more';
   btn.setAttribute('aria-label', 'Mais ações');
-  btn.setAttribute('aria-haspopup', 'true');
+  btn.setAttribute('aria-haspopup', 'dialog');
   btn.setAttribute('aria-expanded', 'false');
   btn.setAttribute('aria-controls', 'mh2-more-menu');
   btn.setAttribute('data-mh2-own', '');
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>';
+  const scrim = document.createElement('div');
+  scrim.className = 'mh2-scrim';
+  scrim.setAttribute('data-mh2-own', '');
+  scrim.hidden = true;
   const menu = document.createElement('div');
   menu.id = 'mh2-more-menu';
   menu.className = 'mh2-more-menu';
-  menu.setAttribute('role', 'group');
+  menu.setAttribute('role', 'dialog');
+  menu.setAttribute('aria-modal', 'true');
   menu.setAttribute('aria-label', 'Mais ações');
   menu.setAttribute('data-mh2-own', '');
   menu.hidden = true;
+  const head = document.createElement('div');
+  head.className = 'mh2-more-head';
+  const titulo = document.createElement('span');
+  titulo.className = 'mh2-more-title';
+  titulo.id = 'mh2-more-title';
+  titulo.textContent = 'Mais';
+  const fechar = document.createElement('button');
+  fechar.type = 'button';
+  fechar.className = 'mh2-more-close';
+  fechar.setAttribute('aria-label', 'Fechar menu');
+  fechar.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  head.appendChild(titulo); head.appendChild(fechar);
+  menu.setAttribute('aria-labelledby', 'mh2-more-title');
+  const corpo = document.createElement('div');
+  corpo.className = 'mh2-more-body';
+  menu.appendChild(head); menu.appendChild(corpo);
   right.appendChild(btn);
+  right.appendChild(scrim);
   right.appendChild(menu);
-  state.more = btn; state.menu = menu;
+  state.more = btn; state.menu = menu; state.scrim = scrim;
+  state.grupos = new Map();
   on(btn, 'click', (e) => { e.preventDefault(); e.stopPropagation(); alternarMais(); });
-  on(menu, 'click', () => { setTimeout(() => fecharMais(false), 0); });
-  on(menu, 'keydown', (e) => { if ((e as KeyboardEvent).key === 'Escape') { e.stopPropagation(); fecharMais(true); } });
+  on(fechar, 'click', (e) => { e.preventDefault(); e.stopPropagation(); fecharMais(true); });
+  on(scrim, 'click', (e) => { e.preventDefault(); fecharMais(true); });
+  // ativar um CONTROLE da gaveta fecha a gaveta (o painel/ação abre por baixo); tocar em título,
+  // card informativo ou espaço vazio não fecha
+  on(menu, 'click', (e) => {
+    const t = e.target as Element;
+    const item = t.closest('.mh2-more-item');
+    if (!item) return;
+    const ctrl = t.closest('button, a[href], [role="button"]');
+    if (ctrl && item.contains(ctrl)) setTimeout(() => fecharMais(false), 0);
+  });
+  on(menu, 'keydown', (e) => {
+    const ke = e as KeyboardEvent;
+    if (ke.key === 'Escape') { e.stopPropagation(); fecharMais(true); return; }
+    if (ke.key === 'Tab') prenderFoco(ke);
+  });
   on(btn, 'keydown', (e) => { if ((e as KeyboardEvent).key === 'Escape' && state.menu && !state.menu.hidden) { e.stopPropagation(); fecharMais(true); } });
-  on(document, 'pointerdown', (e) => { if (!state.menu || state.menu.hidden) return; const t = e.target as Node; if (state.menu.contains(t) || btn.contains(t)) return; fecharMais(false); }, { capture: true });
   on(document, 'focusin', (e) => { if (!state.menu || state.menu.hidden) return; const t = e.target as Node; if (state.menu.contains(t) || btn.contains(t)) return; fecharMais(false); });
+  // fundo travado também no toque (iOS ignora overflow:hidden no body): só a gaveta rola
+  on(document, 'touchmove', (e) => { if (!state.menu || state.menu.hidden) return; const t = e.target as Node; if (state.menu.contains(t)) return; e.preventDefault(); }, { passive: false, capture: true });
+}
+function focaveis(root: HTMLElement): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],[role="button"],[tabindex]:not([tabindex="-1"])')).filter((el) => {
+    if (el.closest('[hidden]')) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  });
+}
+function prenderFoco(e: KeyboardEvent) {
+  if (!state.menu) return;
+  const lista = focaveis(state.menu);
+  if (!lista.length) return;
+  const primeiro = lista[0], ultimo = lista[lista.length - 1];
+  const ativo = document.activeElement as HTMLElement | null;
+  if (e.shiftKey && (ativo === primeiro || !state.menu.contains(ativo))) { e.preventDefault(); ultimo.focus({ preventScroll: true }); }
+  else if (!e.shiftKey && ativo === ultimo) { e.preventDefault(); primeiro.focus({ preventScroll: true }); }
 }
 function alternarMais() { if (!state.menu) return; if (state.menu.hidden) abrirMais(); else fecharMais(true); }
-function abrirMais() {
-  if (!state.menu || !state.more) return;
-  state.menu.hidden = false;
-  state.more.setAttribute('aria-expanded', 'true');
+function travarFundo() {
+  const main = q('[data-region="main"]');
+  const flow = document.documentElement.getAttribute('data-mh2-flow') === 'on';
+  state.lock = { y: window.scrollY, mainTop: main ? main.scrollTop : 0, flow };
+  document.documentElement.style.setProperty('--mh2-lock-top', `-${Math.round(state.lock.y)}px`);
   document.documentElement.setAttribute('data-mh2-more-open', '');
-  const primeiro = q<HTMLElement>('button:not([disabled]),a[href],[role="button"],[tabindex]:not([tabindex="-1"])', state.menu);
+}
+function destravarFundo() {
+  const lock = state.lock;
+  state.lock = null;
+  document.documentElement.removeAttribute('data-mh2-more-open');
+  document.documentElement.style.removeProperty('--mh2-lock-top');
+  if (!lock) return;
+  const main = q('[data-region="main"]');
+  if (lock.flow) window.scrollTo({ top: lock.y, left: 0, behavior: 'instant' as ScrollBehavior });
+  if (main && main.scrollTop !== lock.mainTop) main.scrollTop = lock.mainTop;
+}
+function abrirMais() {
+  if (!state.menu || !state.more || !state.scrim) return;
+  state.scrim.hidden = false;
+  state.menu.hidden = false;
+  state.menu.scrollTop = 0;
+  state.more.setAttribute('aria-expanded', 'true');
+  travarFundo();
+  const primeiro = focaveis(state.menu).find((el) => !el.classList.contains('mh2-more-close')) || q<HTMLElement>('.mh2-more-close', state.menu);
   if (primeiro) primeiro.focus({ preventScroll: true });
 }
 function fecharMais(devolverFoco: boolean) {
   if (!state.menu || !state.more || state.menu.hidden) return;
   state.menu.hidden = true;
+  if (state.scrim) state.scrim.hidden = true;
   state.more.setAttribute('aria-expanded', 'false');
-  document.documentElement.removeAttribute('data-mh2-more-open');
+  destravarFundo();
   if (devolverFoco) state.more.focus({ preventScroll: true });
 }
 
+function grupoEl(id: string): HTMLElement {
+  const existente = state.grupos.get(id);
+  if (existente && existente.isConnected) return existente;
+  const def = GRUPOS.find((g) => g.id === id) || GRUPOS[GRUPOS.length - 1];
+  const sec = document.createElement('section');
+  sec.className = 'mh2-more-group';
+  sec.setAttribute('data-mh2-group', def.id);
+  sec.setAttribute('data-mh2-own', '');
+  sec.setAttribute('aria-labelledby', `mh2-more-group-${def.id}`);
+  const h = document.createElement('h3');
+  h.className = 'mh2-more-group-title';
+  h.id = `mh2-more-group-${def.id}`;
+  h.textContent = def.titulo;
+  const grade = document.createElement('div');
+  grade.className = 'mh2-more-grid';
+  grade.setAttribute('role', 'group');
+  sec.appendChild(h); sec.appendChild(grade);
+  const corpo = q('.mh2-more-body', state.menu as HTMLElement) as HTMLElement;
+  // grupos sempre na ordem canônica, independente da ordem em que os controles chegam
+  const ordem = GRUPOS.map((g) => g.id);
+  const depois = Array.from(corpo.children).find((c) => ordem.indexOf(c.getAttribute('data-mh2-group') || '') > ordem.indexOf(def.id));
+  corpo.insertBefore(sec, depois || null);
+  state.grupos.set(def.id, sec);
+  return sec;
+}
 function moverParaMais(el: HTMLElement) {
   if (!state.menu || state.moved.some((m) => m.el === el)) return;
+  const chave = chaveDe(el);
+  const grupo = grupoDe(chave);
   const wrap = document.createElement('div');
-  wrap.className = 'mh2-more-item';
+  wrap.className = 'mh2-more-item' + (CARDS.has(chave) ? ' mh2-more-item--card' : '');
   wrap.setAttribute('data-mh2-own', '');
+  wrap.setAttribute('data-mh2-key', chave);
   const rot = document.createElement('span');
   rot.className = 'mh2-more-label';
   rot.setAttribute('aria-hidden', 'true');
-  rot.textContent = rotuloDe(el);
-  // sem rótulo redundante quando o controle já exibe o mesmo texto (ex.: relógio)
-  if (rot.textContent === (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 28)) rot.hidden = true;
+  rot.textContent = rotuloDe(el, chave);
   const parent = el.parentElement as HTMLElement;
   const next = el.nextSibling;
-  wrap.appendChild(el);
-  wrap.appendChild(rot);
-  state.menu.appendChild(wrap);
-  state.moved.push({ el, parent, next, wrap });
+  if (CARDS.has(chave)) { wrap.appendChild(rot); wrap.appendChild(el); } else { wrap.appendChild(el); wrap.appendChild(rot); }
+  const grade = q('.mh2-more-grid', grupoEl(grupo)) as HTMLElement;
+  grade.appendChild(wrap);
+  state.moved.push({ el, parent, next, wrap, chave, grupo });
+  if (el.matches('.header-component-wrapper')) garantirSemantica(el);
 }
 function devolverTodos() {
-  // devolve na ordem inversa p/ que `next` continue válido
   for (const m of state.moved.slice().reverse()) {
     if (m.next && m.next.parentNode === m.parent) m.parent.insertBefore(m.el, m.next);
     else m.parent.appendChild(m.el);
     m.wrap.remove();
   }
   state.moved = [];
+  state.grupos = new Map();
 }
 
 /** Controles de componente que são `div` clicável sem semântica: ganham role/tabindex/nome
- *  (genérico: raiz do wrapper com cursor:pointer e sem controle focável interno). */
+ *  (genérico: raiz do wrapper com cursor:pointer e sem controle focável interno). Teclado via
+ *  UM listener delegado (marcador data-mh2-a11y-btn) — nada por nó. */
 function garantirSemantica(wrapper: HTMLElement) {
   const raiz = wrapper.firstElementChild as HTMLElement | null;
   if (!raiz || raiz.matches('button,a[href],input,select,textarea,[role="button"],[tabindex]')) return;
   if (q('button,a[href],[role="button"],[tabindex]', raiz)) return;
   if (getComputedStyle(raiz).cursor !== 'pointer') return;
-  const prev: Record<string, string | null> = { role: raiz.getAttribute('role'), tabindex: raiz.getAttribute('tabindex'), 'aria-label': raiz.getAttribute('aria-label') };
-  raiz.setAttribute('role', 'button');
-  raiz.setAttribute('tabindex', '0');
-  if (!raiz.getAttribute('aria-label')) raiz.setAttribute('aria-label', raiz.getAttribute('title') || humanize(wrapper.getAttribute('data-component-key') || 'Ação'));
-  on(raiz, 'keydown', (e) => { const k = (e as KeyboardEvent).key; if (k === 'Enter' || k === ' ') { e.preventDefault(); raiz.click(); } });
-  state.a11y.push({ el: raiz, attrs: prev });
+  patchA11y(raiz, { role: 'button', tabindex: '0', 'aria-label': raiz.getAttribute('aria-label') || raiz.getAttribute('title') || humanize(wrapper.getAttribute('data-component-key') || 'Ação'), 'data-mh2-a11y-btn': '' });
+}
+function patchA11y(el: HTMLElement, attrs: Record<string, string>) {
+  if (state.a11y.some((p) => p.el === el)) return;
+  const prev: Record<string, string | null> = {};
+  for (const k of Object.keys(attrs)) prev[k] = el.getAttribute(k);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  state.a11y.push({ el, attrs: prev });
 }
 function desfazerSemantica() {
   for (const p of state.a11y) for (const [k, v] of Object.entries(p.attrs)) { if (v === null) p.el.removeAttribute(k); else p.el.setAttribute(k, v); }
   state.a11y = [];
+}
+function teclaAtiva(e: Event) {
+  const ke = e as KeyboardEvent;
+  if (ke.key !== 'Enter' && ke.key !== ' ') return;
+  const t = ke.target as HTMLElement | null;
+  if (!t || !t.matches || !t.matches('[data-mh2-a11y-btn]')) return;
+  ke.preventDefault();
+  t.click();
 }
 
 function comporCompacto() {
@@ -312,15 +458,16 @@ function comporCompacto() {
     else if (el.matches('.header-component-wrapper')) garantirSemantica(el);
   }
   if (left) for (const el of Array.from(left.querySelectorAll<HTMLElement>('.header-component-wrapper'))) garantirSemantica(el);
-  // o botão "Mais" e o menu sempre por último na barra
-  if (state.more && right.lastElementChild !== state.menu) { right.appendChild(state.more); right.appendChild(state.menu as HTMLElement); }
-  if (state.menu && state.menu.childElementCount === 0 && state.more) state.more.hidden = true; else if (state.more) state.more.hidden = false;
+  // o botão "Mais", o scrim e a gaveta sempre por último na barra
+  if (state.more && right.lastElementChild !== state.menu) { right.appendChild(state.more); right.appendChild(state.scrim as HTMLElement); right.appendChild(state.menu as HTMLElement); }
+  if (state.more) state.more.hidden = state.moved.length === 0;
 }
 function desfazerCompacto() {
   fecharMais(false);
   devolverTodos();
   desfazerSemantica();
   if (state.more) { state.more.remove(); state.more = null; }
+  if (state.scrim) { state.scrim.remove(); state.scrim = null; }
   if (state.menu) { state.menu.remove(); state.menu = null; }
 }
 
@@ -350,7 +497,6 @@ function syncTitulos() {
       state.containers = state.containers.filter((x) => x !== c);
     }
   }
-  // o container do main é REUTILIZADO entre painéis (mesmo nó, conteúdo trocado): só conta quem segue marcado
   state.containers = state.containers.filter((c) => c.isConnected && vistos.has(c) && c.getAttribute('data-shell-titlebar') === 'owned');
 }
 function desfazerTitulos() {
@@ -362,21 +508,81 @@ function desfazerTitulos() {
   state.containers = [];
 }
 
+// ───────────────────────── fluxo vertical (decisão #85) ─────────────────────────
+/** Dashboard compacto: main e rodapé entram no FLUXO (documento rola; rodapé no fim, sem vão).
+ *  Painel com barra própria (Avatar Studio, `owned`) mantém o layout de regiões fixas aprovado. */
+function syncFlow() {
+  const html = document.documentElement;
+  const flow = state.mode === 'compact' && state.containers.length === 0 && !!q('[data-region="main"]') && !!q('[data-region="footer"]');
+  setAttr(html, 'data-mh2-flow', flow ? 'on' : null);
+  // barra inferior de navegação (nav-rail mobile): só ocupa espaço se tiver conteúdo visível
+  const nav = q('[data-region="nav-rail"]');
+  let navVisivel = false;
+  if (nav) for (const c of Array.from(nav.children) as HTMLElement[]) { const cs = getComputedStyle(c); if (cs.display !== 'none' && cs.visibility !== 'hidden' && c.getBoundingClientRect().height > 0) { navVisivel = true; break; } }
+  setAttr(html, 'data-shell-navrail', navVisivel ? 'on' : 'off');
+}
+
+// ───────────────────────── badges (decisão #86) ─────────────────────────
+const BADGE_SEL = '.site-header [class*="badge"]:not([class*="mh2"])';
+function syncBadges() {
+  const site = q('.site-header');
+  if (!site) return;
+  for (const b of Array.from(document.querySelectorAll<HTMLElement>(BADGE_SEL))) {
+    const n = parseInt((b.textContent || '').trim().replace(/\+$/, ''), 10);
+    const pos = Number.isFinite(n) && n > 0;
+    setAttr(b, 'data-mh2-badge', pos ? 'pos' : 'zero');
+  }
+  // Google Calendar: contagem numérica E ponto de estado nunca juntos — com contagem, só o número
+  for (const t of Array.from(site.querySelectorAll<HTMLElement>('[data-panel-trigger="panel-calendar"]'))) {
+    const badge = q('.gcal-badge', t);
+    const comContagem = !!badge && badge.getAttribute('data-mh2-badge') === 'pos' && getComputedStyle(badge).display !== 'none';
+    setAttr(t, 'data-mh2-dot', comContagem ? 'off' : null);
+  }
+}
+
+// ───────────────────────── perfil / FAB de devtools (decisão #87) ─────────────────────────
+function syncPerfilEFab() {
+  const html = document.documentElement;
+  const role = q('.user-menu-component')?.getAttribute('data-role') || null;
+  setAttr(html, 'data-mh2-role', role);
+  const fab = document.getElementById('cm-devtools');
+  if (!fab) return;
+  if (state.fabObservado !== fab) { observe(fab, agendarSync, { childList: true }); state.fabObservado = fab; }
+  const toggle = q<HTMLElement>('.cm-devtools-toggle', fab);
+  if (toggle && !toggle.hasAttribute('role')) patchA11y(toggle, { role: 'button', tabindex: '0', 'aria-label': 'Ferramentas de desenvolvimento', title: 'Ferramentas de desenvolvimento', 'data-mh2-a11y-btn': '' });
+}
+/** Tooltip (title) espelhando o nome acessível em controles que só têm aria-label (ex.: trânsito). */
+function syncTooltips() {
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>('.site-header .traffic-indicator[aria-label]'))) {
+    const nome = el.getAttribute('aria-label') || '';
+    if (!el.hasAttribute('data-mh2-title')) { if (el.getAttribute('title')) continue; patchA11y(el, { title: nome, 'data-mh2-title': '' }); }
+    else if (el.getAttribute('title') !== nome) el.setAttribute('title', nome);
+  }
+}
+
 // ───────────────────────── scroll → densidade (nunca altura) ─────────────────────────
 function syncScroll() {
   const main = q('[data-region="main"]');
-  const rolado = !!main && main.scrollTop > 8;
+  const rolado = (!!main && main.scrollTop > 8) || window.scrollY > 8;
   if (rolado) document.documentElement.setAttribute('data-mh2-scrolled', ''); else document.documentElement.removeAttribute('data-mh2-scrolled');
 }
 
-/** Itens movidos p/ o menu seguem a visibilidade do PRÓPRIO controle (ex.: botões auxiliares
- *  que o componente mostra/esconde) — o invólucro nunca força display. */
+/** Itens movidos seguem a visibilidade do PRÓPRIO controle; rótulo acompanha o nome acessível
+ *  (ex.: "Tema claro" ↔ "Tema escuro"); grupo sem item visível some. */
 function syncMovidos() {
-  for (const m of state.moved) m.wrap.hidden = getComputedStyle(m.el).display === 'none';
+  for (const m of state.moved) {
+    m.wrap.hidden = getComputedStyle(m.el).display === 'none';
+    const rot = q('.mh2-more-label', m.wrap);
+    if (rot) { const t = rotuloDe(m.el, m.chave); if (rot.textContent !== t) rot.textContent = t; }
+  }
+  for (const sec of state.grupos.values()) {
+    const algum = Array.from(sec.querySelectorAll<HTMLElement>('.mh2-more-item')).some((it) => !it.hidden);
+    sec.hidden = !algum;
+  }
 }
 function agendarSync() {
   if (state.raf) return;
-  state.raf = requestAnimationFrame(() => { state.raf = 0; if (!state.active) return; syncTicker(); syncModo(); syncTitulos(); syncMovidos(); });
+  state.raf = requestAnimationFrame(() => { state.raf = 0; if (!state.active) return; syncTicker(); syncModo(); syncTitulos(); syncFlow(); syncMovidos(); syncBadges(); syncPerfilEFab(); syncTooltips(); });
 }
 
 // ───────────────────────── ciclo de vida ─────────────────────────
@@ -389,19 +595,25 @@ export function activate(): boolean {
   document.documentElement.setAttribute('data-mobile-header-v2', 'on');
   garantirCss();
   aplicarViewport();
-  syncTicker(); syncModo(); syncTitulos(); syncMovidos(); syncScroll();
+  syncTicker(); syncModo(); syncTitulos(); syncFlow(); syncMovidos(); syncBadges(); syncPerfilEFab(); syncTooltips(); syncScroll();
   const ticker = tickerRegiao();
   if (ticker) observe(ticker, agendarSync, { attributes: true, attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'], childList: true, subtree: true });
-  observe(document.body, agendarSync, { attributes: true, attributeFilter: ['data-device', 'class'] });
+  observe(document.body, agendarSync, { attributes: true, attributeFilter: ['data-device', 'class'], childList: true });
   const main = q('[data-region="main"]');
   if (main) {
     observe(main, agendarSync, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-shell-titlebar'] });
     on(main, 'scroll', syncScroll, { passive: true });
   }
+  const nav = q('[data-region="nav-rail"]');
+  if (nav) observe(nav, agendarSync, { attributes: true, attributeFilter: ['class', 'style', 'hidden'], childList: true });
   const right = q('.site-header .header-right');
-  if (right) observe(right, agendarSync, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+  if (right) observe(right, agendarSync, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'data-count', 'data-status', 'aria-label', 'data-role', 'data-gcal-estado'] });
+  const left = q('.site-header .header-left');
+  if (left) observe(left, agendarSync, { subtree: true, attributes: true, attributeFilter: ['data-role'] });
   on(window, 'resize', agendarSync, { passive: true });
-  on(window, 'hashchange', () => { syncScroll(); agendarSync(); });
+  on(window, 'scroll', syncScroll, { passive: true });
+  on(window, 'hashchange', () => { fecharMais(false); syncScroll(); agendarSync(); });
+  on(document, 'keydown', teclaAtiva);
   return true;
 }
 
@@ -411,22 +623,27 @@ export function deactivate(): void {
   if (state.raf) { cancelAnimationFrame(state.raf); state.raf = 0; }
   for (const mo of state.observers) mo.disconnect();
   state.observers = [];
+  state.fabObservado = null;
   if (state.abort) { state.abort.abort(); state.abort = null; }
   state.listeners = 0;
   desfazerCompacto();
+  desfazerSemantica();
   desfazerTitulos();
+  for (const b of Array.from(document.querySelectorAll('[data-mh2-badge]'))) b.removeAttribute('data-mh2-badge');
+  for (const t of Array.from(document.querySelectorAll('[data-mh2-dot]'))) t.removeAttribute('data-mh2-dot');
   restaurarViewport();
   document.getElementById(CSS_ID)?.remove();
-  for (const a of ['data-mobile-header-v2', 'data-shell-ticker', 'data-mh2-mode', 'data-mh2-scrolled', 'data-mh2-more-open']) document.documentElement.removeAttribute(a);
-  state.mode = 'wide'; state.tickerVisible = null;
+  document.documentElement.style.removeProperty('--mh2-lock-top');
+  for (const a of ['data-mobile-header-v2', 'data-shell-ticker', 'data-shell-navrail', 'data-mh2-mode', 'data-mh2-scrolled', 'data-mh2-more-open', 'data-mh2-flow', 'data-mh2-role']) document.documentElement.removeAttribute(a);
+  state.mode = 'wide'; state.tickerVisible = null; state.lock = null;
 }
 
 export function info() {
   return {
     version: VERSION, moduleId: MODULE_ID, flag: FLAG, active: state.active, resolved: state.resolved, source: state.source,
-    mode: state.mode, tickerVisible: state.tickerVisible,
+    mode: state.mode, tickerVisible: state.tickerVisible, flow: document.documentElement.getAttribute('data-mh2-flow') === 'on',
     listeners: state.listeners, observers: state.observers.length, moved: state.moved.length, a11yPatches: state.a11y.length,
-    containersOwned: state.containers.length, moreOpen: !!(state.menu && !state.menu.hidden),
+    containersOwned: state.containers.length, moreOpen: !!(state.menu && !state.menu.hidden), groups: state.grupos.size,
   };
 }
 
@@ -448,7 +665,6 @@ async function boot() {
   if (!pronto) return;
   const ligada = await resolve();
   if (!ligada) return; // OFF = zero efeito (byte a byte)
-  // o adapter/loader ainda podem estar montando componentes; ativa no próximo frame
   requestAnimationFrame(() => { activate(); });
 }
 
