@@ -1,5 +1,5 @@
 // scripts/header/audit-mobile-header.mjs — auditoria do HEADER MOBILE no shell REAL.
-// @version 1.1.0  @created 2026-09-11  (lote as6.mobile_header_v2 — doc 23)
+// @version 1.2.0  @created 2026-09-11  (lote as6.mobile_header_v2 — doc 23)
 //
 // Mede, em sessão AUTENTICADA (screenshot-bot, caminho sancionado de tools/screenshot/auth.mjs),
 // o empilhamento header → ticker → main, áreas EFETIVAS de toque (elementFromPoint no centro
@@ -50,7 +50,7 @@ const BADGE_SEL = '.notifications-badge, .gcal-badge, .header-badge, .ti-badge';
 mkdirSync(OUT, { recursive: true });
 
 const log = (...a) => console.log('[mh2]', ...a);
-const results = { version: '1.1.0', phase: PHASE, flag: FLAG, base: BASE, at: new Date().toISOString(), safeTop: SAFE_TOP, ticker: TICKER, rm: RM, zoom: ZOOM, longName: LONG_NAME, badge: BADGE, scenarios: [] };
+const results = { version: '1.2.0', phase: PHASE, flag: FLAG, base: BASE, at: new Date().toISOString(), safeTop: SAFE_TOP, ticker: TICKER, rm: RM, zoom: ZOOM, longName: LONG_NAME, badge: BADGE, scenarios: [] };
 
 const browser = await chromium.launch({
   headless: true,
@@ -159,7 +159,7 @@ async function cenario({ vw, vh, route, theme }) {
     await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(1500);
     const precisaLogar = async () => (await isLoginPage(page)) && await page.isVisible('input[type="password"]').catch(() => false);
-    if (await precisaLogar()) { await loginViaPage(page); }
+    if (await precisaLogar()) { await loginViaPage(page); try { cookies = await ctx.cookies(); } catch {} } // sessão reutilizada nos próximos cenários (mesmo caminho do usuário; só evita relogar)
     await page.waitForSelector('.site-header', { timeout: 30000 });
     await page.waitForSelector('[data-region="main"]', { timeout: 30000 });
     await page.waitForTimeout(3000);
@@ -205,7 +205,7 @@ async function cenario({ vw, vh, route, theme }) {
         mais = await page.evaluate(() => {
           const m = document.querySelector('#mh2-more-menu'); if (!m || m.hidden) return { open: false };
           const r = m.getBoundingClientRect(); const cs = getComputedStyle(m);
-          const items = [...m.querySelectorAll('.mh2-more-item')].filter((it) => !it.hidden && getComputedStyle(it).display !== 'none').map((it) => { const c = it.querySelector('button, a[href], [role="button"], [tabindex]') || it.firstElementChild; const cr = c.getBoundingClientRect(); const ir = it.getBoundingClientRect(); const center = document.elementFromPoint(cr.x + cr.width / 2, cr.y + cr.height / 2); return { label: it.querySelector('.mh2-more-label')?.textContent, w: Math.round(cr.width), h: Math.round(cr.height), hit: !!(center && (center === c || c.contains(center))), inViewport: ir.right <= innerWidth + 1 && ir.left >= -1 }; });
+          const items = [...m.querySelectorAll('.mh2-more-item')].filter((it) => !it.hidden && getComputedStyle(it).display !== 'none').map((it) => { it.scrollIntoView({ block: 'nearest' }); const c = it.querySelector('button, a[href], [role="button"], [tabindex]') || it.firstElementChild; const cr = c.getBoundingClientRect(); const ir = it.getBoundingClientRect(); const center = document.elementFromPoint(cr.x + cr.width / 2, cr.y + cr.height / 2); return { label: it.querySelector('.mh2-more-label')?.textContent, w: Math.round(cr.width), h: Math.round(cr.height), hit: !!(center && (center === c || c.contains(center))), inViewport: ir.right <= innerWidth + 1 && ir.left >= -1 }; });
           return { open: true, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), b: Math.round(r.bottom), inViewport: r.left >= -1 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1, z: cs.zIndex, items, small: items.filter((i) => i.w < 44 || i.h < 44).length, wrong: items.filter((i) => !i.hit).length, focusInside: m.contains(document.activeElement) };
         });
         await page.screenshot({ path: `${OUT}/${tag}-mais.png` });

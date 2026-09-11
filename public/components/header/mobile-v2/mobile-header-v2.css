@@ -13,9 +13,18 @@
  *                                   a região tem height=total e padding-top=safe)
  *   --shell-ticker-height         altura do ticker EFETIVAMENTE visível (0 se oculto)
  *   --shell-top-stack-height      = header total + ticker → consumido pelo main/sidebar/nav-rail
- * ALIASES DE TRANSIÇÃO (consumidos pelo bundle atual do app-shell/header, não remover):
- *   --shell-header-height → total · --shell-top-offset → stack · --hdr-height /
- *   --hdr-height-mobile / --header-height → conteúdo · --hdr-total-height* → total
+ * ALIASES DE TRANSIÇÃO (consumidos pelo bundle atual do app-shell/header, não remover
+ * enquanto algum consumidor ler o nome antigo — tabela canônico × alias, decisão #71):
+ *   canônico                        alias(es) de transição            consumidor vivo
+ *   --shell-header-total-height  ←  --shell-header-height             app-shell _regions.css (header height, ticker top)
+ *                                   --shell-header-height-mobile      app-shell _responsive.css (≤768)
+ *                                   --hdr-total-height(-mobile)       header-base.tokens.css
+ *   --shell-header-content-height ← --hdr-height / --hdr-height-mobile header-base.responsive.css (.header-inner)
+ *                                   --header-height                   header-base.layout.css (.site-header)
+ *   --shell-ticker-height        ←  --shell-ticker-height-mobile      app-shell _responsive.css (≤768)
+ *   --shell-top-stack-height     ←  --shell-top-offset                app-shell _regions.css (nav-rail/sidebar/main top), _overlays.css
+ *                                   --shell-top-offset-mobile         app-shell _responsive.css (≤768)
+ *   (os aliases apontam SEMPRE para o canônico; nunca o contrário; nenhum alias recebe literal)
  */
 
 html[data-mobile-header-v2="on"] {
@@ -31,17 +40,20 @@ html[data-mobile-header-v2="on"] {
   --shell-top-stack-height: calc(var(--shell-header-total-height) + var(--shell-ticker-height));
   /* aliases */
   --shell-header-height: var(--shell-header-total-height);
+  --shell-header-height-mobile: var(--shell-header-total-height);
   --shell-top-offset: var(--shell-top-stack-height);
+  --shell-top-offset-mobile: var(--shell-top-stack-height);
+  --shell-ticker-height-mobile: var(--shell-ticker-height);
   --hdr-height: var(--shell-header-content-height);
+  --hdr-height-mobile: var(--shell-header-content-height);
   --hdr-total-height: var(--shell-header-total-height);
+  --hdr-total-height-mobile: var(--shell-header-total-height);
 }
 
 @media (max-width: 768px) {
   html[data-mobile-header-v2="on"] {
     --shell-header-content-height: 56px;
     --shell-ticker-height: 36px;
-    --hdr-height-mobile: var(--shell-header-content-height);
-    --hdr-total-height-mobile: var(--shell-header-total-height);
     --hdr-hit-area-mobile: 44px;
     --header-height: var(--shell-header-content-height);
   }
@@ -254,6 +266,22 @@ html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .dsd-container[data-sh
 }
 html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .dsd-container[data-shell-titlebar="owned"] > .dsd-container__header .dsd-container__controls,
 html[data-mobile-header-v2="on"][data-mh2-mode="compact"] .dsd-container[data-shell-titlebar="owned"] > .dsd-container__header .features-toolbar { visibility: hidden; }
+
+/* modo WIDE (desktop): a barra externa do container permanece (LED + toolbar de features), mas o
+   TEXTO do título externo compacta visualmente — uma única identidade dominante é a da barra do
+   próprio painel ("Avatar Studio"); o heading segue na árvore de a11y (decisão #76). Na produção
+   o título aparece DUAS vezes em 1440 (medido: dup=1 no baseline). */
+html[data-mobile-header-v2="on"][data-mh2-mode="wide"] .dsd-container[data-shell-titlebar="owned"] > .dsd-container__header .dsd-container__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* tema claro: superfícies do menu seguem os tokens do header (já sobrescritos em :root[data-theme="light"]) */
 :root[data-theme="light"][data-mobile-header-v2="on"] .mh2-more[aria-expanded="true"] { background: rgba(0, 0, 0, 0.06); }

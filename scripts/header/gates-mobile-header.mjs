@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // scripts/header/gates-mobile-header.mjs — consolida os audit.json em MÉTRICAS + GATES do lote.
-// @version 1.0.0  @created 2026-09-11 (lote as6.mobile_header_v2 — doc 23)
+// @version 1.1.0  @created 2026-09-11 (lote as6.mobile_header_v2 — doc 23)
 //
 // Entrada: um diretório com subpastas de auditoria (cada uma com audit.json), nomeadas por cenário:
 //   before-prod/      produção, flag OFF (baseline)
@@ -82,11 +82,13 @@ gate('MENU_MAIS', maisOn.length > 0 && maisOn.every((m) => m.inViewport && m.clo
 gate('POPOVERS_NOT_CLIPPED', todosOn.every((s) => !s.menu || !s.menu.open || s.menu.inViewport), 'menu de perfil dentro do viewport em todos');
 // console/erros: NOVOS em relação ao baseline (a produção já tem erros de fetch pré-existentes, não deste lote)
 const assin = (s) => s.cerr.map((t) => t.replace(/\[cid-[a-z0-9]+\]/g, '').replace(/\d{1,2}\/\d{1,2}\/\d{4}, \d{2}:\d{2}:\d{2}/g, '').replace(/\[[\d :.-]+\]/g, '').trim().slice(0, 90));
-const baseAssin = new Set(cen(before).flatMap(assin));
+// baseline de console = produção OFF ∪ preview OFF (mesmo ambiente do candidato com o módulo INATIVO): um erro que
+// ocorre com a flag OFF é ruído do ambiente (ex.: 'Error loading user permissions' intermitente), não deste lote
+const baseAssin = new Set([...cen(before), ...(off ? cen(off) : [])].flatMap(assin));
 const novosCerr = todosOn.flatMap((s) => assin(s).filter((a) => ![...baseAssin].some((b) => a.startsWith(b.slice(0, 60)))));
 gate('CONSOLE_ERRORS', novosCerr.length === 0, `novos vs baseline=${novosCerr.length} (baseline total=${sum(cen(before).map((s) => s.cerr.length))}, candidato total=${sum(todosOn.map((s) => s.cerr.length))})${novosCerr.length ? ' :: ' + novosCerr.slice(0, 3).join(' | ') : ''}`);
 gate('PAGE_ERRORS', sum(todosOn.map((s) => s.perr.length)) === 0, `soma=${sum(todosOn.map((s) => s.perr.length))}`);
-const baseReq = new Set(cen(before).flatMap((s) => s.freq.map((u) => u.replace(/^https?:\/\/[^/]+/, ''))));
+const baseReq = new Set([...cen(before), ...(off ? cen(off) : [])].flatMap((s) => s.freq.map((u) => u.replace(/^https?:\/\/[^/]+/, ''))));
 const novosReq = todosOn.flatMap((s) => s.freq.map((u) => u.replace(/^https?:\/\/[^/]+/, '')).filter((u) => !baseReq.has(u)));
 gate('FAILED_REQUESTS_RELEVANT', novosReq.length === 0, `novas falhas vs baseline=${novosReq.length}${novosReq.length ? ' :: ' + [...new Set(novosReq)].slice(0, 4).join(' | ') : ''}`);
 // desktop parity (1440): geometria do topo idêntica com flag OFF (prod) e ON (candidato)
@@ -96,8 +98,12 @@ gate('DESKTOP_PARITY', parity, d0 && d1 ? `1440: regiões ${['headerRegion', 'ti
 // flag OFF identity: preview OFF == prod OFF (geometria, tokens, controles, meta, atributos)
 if (off) {
   const pares = cen(off).map((s) => [s, cen(before).find((b) => b.tag === s.tag)]).filter(([, b]) => b);
-  const iguais = pares.filter(([s, b]) => JSON.stringify(s.m1.rects) === JSON.stringify(b.m1.rects) && JSON.stringify(s.m1.tokens) === JSON.stringify(b.m1.tokens) && s.m1.meta === b.m1.meta && s.m1.html.v2attr === null && s.m1.v2 && s.m1.v2.active === false && JSON.stringify(s.m1.headerRightChildren) === JSON.stringify(b.m1.headerRightChildren) && s.m1.controls.length === b.m1.controls.length && s.m1.controls.every((c, i) => c.sel === b.m1.controls[i].sel && c.w === b.m1.controls[i].w && c.h === b.m1.controls[i].h));
-  gate('FLAG_OFF_IDENTITY', pares.length > 0 && iguais.length === pares.length, `${iguais.length}/${pares.length} cenários idênticos (rects+tokens+meta+atributos+ordem dos componentes+controles); módulo presente e inativo=${cen(off).every((s) => s.m1.v2 && s.m1.v2.active === false)}`);
+  // a ORDEM dos filhos de .header-right varia entre boots na própria produção (corrida entre header-components.bundle e os
+  // botões standalone hie-*/traffic — medido: 5/18 boots diferem com o módulo INATIVO) → comparação insensível à ordem
+  const multiset = (arr) => JSON.stringify(arr.slice().sort());
+  const ctrlSet = (cs) => multiset(cs.map((c) => `${c.sel}|${c.w}x${c.h}`));
+  const iguais = pares.filter(([s, b]) => JSON.stringify(s.m1.rects) === JSON.stringify(b.m1.rects) && JSON.stringify(s.m1.tokens) === JSON.stringify(b.m1.tokens) && s.m1.meta === b.m1.meta && s.m1.html.v2attr === null && s.m1.v2 && s.m1.v2.active === false && multiset(s.m1.headerRightChildren) === multiset(b.m1.headerRightChildren) && ctrlSet(s.m1.controls) === ctrlSet(b.m1.controls));
+  gate('FLAG_OFF_IDENTITY', pares.length > 0 && iguais.length === pares.length, `${iguais.length}/${pares.length} cenários idênticos (rects+tokens+meta+atributos+conjunto de componentes+controles c/ geometria; ordem dos filhos ignorada — corrida pré-existente); módulo presente e inativo=${cen(off).every((s) => s.m1.v2 && s.m1.v2.active === false)}`);
 } else gate('FLAG_OFF_IDENTITY', false, 'off/ ausente');
 // safe area
 const safe = ler('on-safe');
@@ -113,7 +119,7 @@ const tOff = ler('on-ticker-off');
 gate('TICKER_HIDDEN_COLLAPSES', !!tOff && cen(tOff).length > 0 && cen(tOff).every((s) => s.m1.tickerVisible === false && s.m1.html.tickerAttr === 'off' && s.m1.stackGap === 0 && s.m1.rects.main.y === s.m1.rects.headerRegion.b), tOff ? `main.y=${cen(tOff).map((s) => s.m1.rects.main.y).join(',')} header.b=${cen(tOff).map((s) => s.m1.rects.headerRegion.b).join(',')}` : 'on-ticker-off/ ausente');
 // Avatar Studio: uma identidade dominante + título externo na a11y + barra sem safe duplicada
 const av = todosOn.filter((s) => s.route === 'avatar' && s.m1.avatar);
-gate('AVATAR_STUDIO_INTEGRATION', av.length > 0 && av.filter((s) => s.m1.html.mode === 'compact').every((s) => s.m1.avatar.contAttr === 'owned' && s.m1.avatar.contHeaderVisible === false && s.m1.avatar.contTitleInA11y === true && s.m1.avatar.contTitleRole === 'heading' && s.m1.dupTitles === 0 && s.m1.avatar.barraPadTop === '8px') && av.filter((s) => s.m1.html.mode === 'wide').every((s) => s.m1.avatar.contAttr === 'owned' && s.m1.avatar.contHeaderVisible === true), `${av.length} cenários AS · compactos: ext oculto=${av.filter((s) => s.m1.html.mode === 'compact').every((s) => s.m1.avatar.contHeaderVisible === false)} heading=${av.filter((s) => s.m1.html.mode === 'compact').every((s) => s.m1.avatar.contTitleRole === 'heading')} padTop=${[...new Set(av.map((s) => s.m1.avatar.barraPadTop))].join('/')} · desktop: ext visível=${av.filter((s) => s.m1.html.mode === 'wide').every((s) => s.m1.avatar.contHeaderVisible === true)}`);
+gate('AVATAR_STUDIO_INTEGRATION', av.length > 0 && av.filter((s) => s.m1.html.mode === 'compact').every((s) => s.m1.avatar.contAttr === 'owned' && s.m1.avatar.contHeaderVisible === false && s.m1.avatar.contTitleInA11y === true && s.m1.avatar.contTitleRole === 'heading' && s.m1.dupTitles === 0 && (s.m1.avatar.barraPadTop === '8px' || s.m1.avatar.barraPadTop === '10px') /* 8px = media ≤767; 10px = base (landscape/tablet); nunca 8/10+safe */) && av.filter((s) => s.m1.html.mode === 'wide').every((s) => s.m1.avatar.contAttr === 'owned' && s.m1.avatar.contHeaderVisible === true), `${av.length} cenários AS · compactos: ext oculto=${av.filter((s) => s.m1.html.mode === 'compact').every((s) => s.m1.avatar.contHeaderVisible === false)} heading=${av.filter((s) => s.m1.html.mode === 'compact').every((s) => s.m1.avatar.contTitleRole === 'heading')} padTop=${[...new Set(av.map((s) => s.m1.avatar.barraPadTop))].join('/')} · desktop: ext visível=${av.filter((s) => s.m1.html.mode === 'wide').every((s) => s.m1.avatar.contHeaderVisible === true)}`);
 // leak / restauração
 const lk = ler('on-leak');
 const L = lk ? cen(lk).map((s) => s.leak).filter(Boolean) : [];
