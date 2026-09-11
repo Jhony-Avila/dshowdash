@@ -73,3 +73,45 @@ registro no `rodar-todos`. Sem push/deploy/rollout/flag real.
 
 ## Rodada corretiva (decisão #57)
 Pós-auditoria humana: (a) gate de ocupação era rotulado GE_55 mas testava <40 — corrigido p/ fail-closed@55 REAL sobre ocupação VISÍVEL (paint dentro do viewBox); bocas finas (boc_neutra/determinada) receberam override MEDIDO em FOCO_ITEM_ASSET (preset único não serve 24px e 36px juntos). (b) Métrica de clipping reescrita: mede paint visível e CLASSIFICA por item (recorte intencional de região/corpo-inteiro vs corte destrutivo) — sem clip=0 por decreto. (c) Touch lot-scope: favorito com área efetiva 44×44 real (ícone 26 via ::before, rodapé reservado sob [data-catalogo-v2], zero sobreposição com asset/check), stopPropagation, auditor de hit-test real (elementFromPoint + disparo + isolamento fav↔card). Débito app-wide documentado em AVATAR_STUDIO_TOUCH_DEBT.md (não mascarado). (d) manifest-assets.json regenerado (itens do seed). Commit 4 em cima do C3, sem reescrever 1-3.
+
+## FECHAMENTO — legibilidade + canário u75 (2026-09-10, decisões #67/#68/#69)
+Rodada final desta frente: acabamento translúcido **legível** (bloco `VC-CAT-V2-LEGIB` no
+`visual-composer.css`: contorno DUPLO no SVG do asset — glow claro descola peças escuras, borda
+escura suave descola peças claras; escopo `[data-catalogo-v2]` → **flag OFF byte-a-byte**) e
+`as6.catalogo_v2` no contrato remoto (`FLAGS_REMOTAS` em `nucleo/flags.ts`). 2 arquivos-fonte,
++22/−6 e +1. Nada de arte/motor/persistência/backend.
+
+**Commit:** `c8c9efaf8334faeae12cdeb97159ebcbba8708b5` em `origin/main` (patch sha256 `db32bce8…`).
+**Branch operacional de produção: `feat/pipedrive-modulo-completo`** — NÃO `main`. Cada deploy faz
+merge de `origin/main`; a incorporação se prova com `git merge-base --is-ancestor c8c9efaf HEAD`.
+`HEAD != origin/main` é o estado **normal** deste modelo (ver decisão #67).
+
+**Canário (2 linhas por flag, mecanismo oficial):** `as6.vestuario_separado` (flag 83 / override 23)
+e `as6.catalogo_v2` (flag 84 / override 24). A linha global fica `is_enabled=1` **com
+`rollout_percentage=0`** e o alcance vem do override por usuário — no `resolver.php` o override
+vence o rollout (passo 5) e `rollout<=0` devolve `rollout_excluded` (passo 6). Efeito medido:
+**u75 `enabled=true source=user_override` nas duas; todos os demais e o anônimo `enabled=false
+source=rollout_excluded`.** Ler `is_enabled` sozinho MENTE — o que decide é o par com o rollout.
+
+**Backup/rollback:** `/backup/canary-seed-20260910-215048/` (`estado-anterior.json`, `rollback.sql`).
+Rollback pelo `scripts/deploy/canary-user-flags.php` (statements SEPARADOS, sem linha global órfã).
+
+**Lições desta rodada**
+- **#67** — `deploy-as5.sh` imprime o bloco `ROLLBACK:` (a *receita* disponível) em **todo deploy
+  verde**; monitor que decide por `grep ROLLBACK|FALHA|FAILED` dá falso-positivo e quase provocou um
+  `git revert` sobre deploy são. Veredito oficial = `DEPLOY_AS5_OK` + exit code.
+  Monitor canônico versionado em `scripts/deploy/deploy-monitor-correto.sh`.
+- **#68** — GOLDEN V4.3 FINAL / `ART_INTAKE_TECHNICALLY_READY`: portão de intake de arte permanece
+  o da decisão #68; esta rodada não toca arte.
+- **#69** — `canary-user-flags.php` canônico (`scripts/deploy/`): não clona metadados da
+  flag-template, valida schema + UNIQUE reais (`uk_flag_key`, `uk_user_flag(user_id,flag_key)`),
+  aborta antes de escrever diante de estrutura inesperada, idempotente, sem credencial embutida.
+
+**Identidade servida (medida no fechamento):** `assets/visual-composer.DWraCCbv.css`, sha256
+`b4000907…`, byte-idêntico entre `dist/` e o que a borda serve; o manifest servido aponta esse
+mesmo arquivo e o hash anterior (`BtqjLdhy`) responde 404. O rótulo `VC-CAT-V2-LEGIB` é
+**comentário** e some na minificação — a prova é a presença das duas regras
+`[data-catalogo-v2] .vc-thumb svg{filter:drop-shadow(...)}`, não o texto do comentário.
+
+**Estado:** entrega funcional APROVADA (validação visual humana, sessão autenticada do u75,
+2026-09-10). Canário u75 ON nas duas flags; global sem alcance; demais usuários inalterados.
