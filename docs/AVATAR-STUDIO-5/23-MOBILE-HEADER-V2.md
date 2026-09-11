@@ -115,3 +115,35 @@ node scripts/header/preview-shell.mjs --root /root/mh2/wt/public --port 8902
 ## Rollback
 Desligar a flag (override do u75) — `rollback.sql` do canário; ou remover a linha do `<script>`
 no `index.html`. Nenhuma outra superfície muda com a flag OFF.
+
+## Resultados (2026-09-11, shell real autenticado, preview do worktree + baseline produção)
+Matriz: 320×568 · 375×812 · 390×844 · 393×852 · 430×932 · 768×1024 · 844×390 · 932×430 · 1440×900,
+rotas dashboard + Avatar Studio, escuro e claro (18 cenários por variante), + variantes safe-area 47px
+(portrait e landscape), ticker oculto, reduced-motion, zoom 200%, nome longo, badge 1 e 3 dígitos, leak
+(3 trocas de painel + deactivate/reactivate). **40/40 gates PASS** (`GATES.txt`).
+
+| métrica (16 cenários compactos) | antes (prod, OFF) | depois (candidato, ON) |
+|---|---|---|
+| controles visíveis na barra | 240 | 64 (P1/P2; o resto no menu "Mais") |
+| controles < 44px | 240 | 0 |
+| toque interceptado (elementFromPoint ≠ alvo) | 152 | 0 |
+| badge cortado | 30 | 0 |
+| títulos visíveis duplicados | 8 | 0 |
+| largura ocupada pela barra (máx) | 1072px | 924px (sem clipping: overflow vai p/ menu) |
+| faixas no topo do AS (375) | 4 (header+ticker+título externo+barra) | 3 |
+| barra do VC começa em y (375) | 124 | 92 |
+| erros de console (todos os cenários) | 29 | 5 (todos com assinatura já presente no baseline) |
+| overlap header/ticker/main · main escondido · overflow-x · layout shift no scroll | 0 | 0 |
+
+Safe area simulada 47px: região do header = 103 (56+47) portrait / 107 (60+47) landscape, conteúdo começa
+em y=47, barra do VC sem somar o inset (padding 8/10px). Ticker oculto: `main.y == header.bottom`.
+Desktop 1440: regiões e geometria de controles idênticas com flag OFF (prod) e ON. Flag OFF no preview =
+idêntico à produção em 18/18 cenários (rects, tokens, meta, atributos, conjunto de controles).
+REGRESSION_GATE do Avatar Studio (`vc-mobile-audit.mjs`, harness do candidato): OVERFLOW_FAILURES=0,
+touchBad=0, 9 viewports PASS, flag ON e OFF PASS.
+
+Intermitências medidas (não são do candidato): (a) `Error loading user permissions` também ocorre com a
+flag OFF; (b) o `traffic-indicator` re-renderiza o próprio DOM ao atualizar dados — em 1 hit-test de ~100
+(844×390 + safe) o ponto central caiu durante a troca de nós (todos os demais cenários 5/5); (c) o badge
+forçado a "128" pelo teste foi reescrito para "0" pelo componente em 1 de 6 cenários (o teste força texto;
+o componente é dono do valor) — `pointer-events:none` e sem corte em todos.
