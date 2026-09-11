@@ -1,0 +1,117 @@
+# AVST5 · Header mobile canônico do shell (`as6.mobile_header_v2`) — decisões #71–#79
+
+## Causa-raiz (medida no shell real, 375×812, produção, flag OFF — não é hipótese)
+| sintoma | medida |
+|---|---|
+| `.header-right` não cabe | **1004px** de conteúdo numa barra de 375px → 20 componentes clipados pelo `overflow:hidden !important` da região |
+| alvos de toque | **15 controles < 44px** (36×36, 23×36, 29×36…), `--hdr-hit-area-mobile: 32px` |
+| semântica | `.notifications-component` é `div` clicável **sem `role`/`tabindex`/nome** |
+| alturas conflitantes | `.site-header` = **64px** (`--header-height`) dentro de uma região de **56px** (`--shell-header-height-mobile`) → 8px cortados; `.header-inner` = 52px (`--hdr-height-mobile`) |
+| safe area | meta viewport **sem `viewport-fit=cover`**; nenhum `env(safe-area-inset-top)` no shell; a barra do Avatar Studio soma `env()` por conta própria (`padding-top:max(10px,env(...))`) → em aparelho com notch o inset seria consumido DUAS vezes se o shell passasse a tratá-lo |
+| tokens | 3 famílias independentes (`--shell-*`, `--hdr-*`, `--header-height`) sem relação entre si |
+
+## Arquitetura (aditiva, fail-closed — §651)
+Módulo standalone `public/components/header/mobile-v2/` (`index.ts` → `index.js` via
+`scripts/header/build-mobile-header-v2.sh`; **nunca editar o .js à mão**), carregado por
+`<script type="module">` no `index.html`. Com a flag OFF ele **não toca no DOM, não injeta CSS e
+não altera a meta viewport** (identidade comprovada pelo gate `FLAG_OFF_IDENTITY`). O bundle do
+header/app-shell NÃO é rebuildado (regra do repo).
+
+Flag resolvida pelo mecanismo oficial: override local (`localStorage['dshow.avst.flags.v1']`,
+mesma chave do Avatar Studio) → `/api/feature-flags?action=resolve&flag=as6.mobile_header_v2`
+(por usuário, `credentials:include`, timeout 1,5s) → padrão OFF. Erro/timeout/JSON inválido = OFF.
+
+### Contrato ÚNICO de offsets (decisão #71)
+Definido em `mobile-header-v2.css` sobre `html[data-mobile-header-v2="on"]`:
+```
+--shell-safe-top                = env(safe-area-inset-top, 0px)   (fallback 0px sem env())
+--shell-header-content-height   = 60px desktop · 56px ≤768px
+--shell-header-total-height     = safe-top + conteúdo   (safe area contada UMA vez)
+--shell-ticker-height           = 40px · 36px ≤768px · 0px quando data-shell-ticker="off"
+--shell-top-stack-height        = header total + ticker  → consumido por main/sidebar/nav-rail
+```
+Aliases de transição (tabela completa no cabeçalho do CSS): `--shell-header-height(-mobile)` e
+`--hdr-total-height(-mobile)` → total; `--hdr-height(-mobile)` e `--header-height` → conteúdo;
+`--shell-ticker-height-mobile` → ticker; `--shell-top-offset(-mobile)` → stack. Os aliases
+apontam sempre para o canônico (nunca literal), com especificidade `html[attr]` > `:root`, o que
+vence o remapeamento de `_responsive.css` sem rebuild.
+
+### Safe area (decisão #72)
+`viewport-fit=cover` é adicionado à meta viewport **só com a flag ON** (OFF = serialização
+original, restaurada no `deactivate()`). O inset é aplicado UMA vez como `padding-top` da região
+global do header (`.dsd-shell__region--header`, que tem `height = total`). A barra interna do
+Avatar Studio deixa de somar `env()` quando o shell canônico está ligado
+(`html[data-mobile-header-v2="on"] .vc-barra { padding-top: 8px|10px }`).
+
+### Toque e acessibilidade (decisão #73)
+Todo controle visível da barra em modo compacto tem 44×44 efetivos (ícone 18–24px visual),
+inclusive em 320px (a hit area não encolhe; o que sai é P4/texto). Badge com `pointer-events:none`
+e ancestrais `overflow:visible` (não intercepta nem é cortado). Wrapper `div` clicável sem
+semântica (notificações) ganha `role=button`, `tabindex=0`, nome acessível e Enter/Espaço — via
+regra GENÉRICA (raiz com `cursor:pointer` e sem controle focável interno), revertida no cleanup.
+Foco visível: `outline 2px` em `:focus-visible` para todo controle da região do header.
+
+### Prioridade responsiva (decisão #74)
+P1 identidade (avatar/nome/menu) e botão "Mais" · P2 status principal (tráfego) e notificações ·
+P3 ações secundárias → menu "Mais" (`role=group`, Esc fecha e devolve o foco, fecha em
+pointerdown/focus fora, itens seguem a visibilidade do PRÓPRIO controle) · P4 texto auxiliar
+(nome some ≤360px; fica no `aria-label`). Padrão fail-safe: quem não é explicitamente P1/P2 sai
+da barra. Controle pode declarar `data-mh2-priority="1|2|3"` e vencer a tabela. Sem scroll-x.
+
+### Empilhamento e scroll (decisão #75)
+safe → header → ticker → main, tudo por token. `data-shell-ticker="on|off"` é medido do ticker
+EFETIVAMENTE visível (oculto/vazio/desativado ⇒ 0px e a região some). Estado "rolado" do main
+muda só densidade visual (sombra) — **altura nunca muda** (altura mudando = layout shift por
+definição). `prefers-reduced-motion` desliga as transições.
+
+### Avatar Studio — uma identidade (decisão #76)
+Capacidade GENÉRICA do shell: o painel que traz a própria barra declara
+`data-shell-titlebar="own"`; o shell marca o container como `owned` e, no modo compacto,
+compacta VISUALMENTE o `.dsd-container__header` (sr-only; `role=heading aria-level=1` no título,
+que segue na árvore de a11y). No modo wide a barra externa permanece (LED + toolbar de features)
+e só o TEXTO do título vira sr-only — o baseline de produção mostra "Avatar Studio" duas vezes em
+1440×900 (dup=1 medido). O header global não tem lógica exclusiva do AS.
+
+### Z-index (decisão #77)
+Só tokens existentes: o menu "Mais" usa `--z-header-dropdown` (101) DENTRO do contexto de
+empilhamento da região do header (`--shell-z-header: 500` > ticker 400 > main 1), acima do
+ticker/main e abaixo de toast/login/preloader. Nenhum overlay cortado (gate `POPOVERS_NOT_CLIPPED`).
+
+### Idempotência e cleanup (decisão #78)
+`activate()` é idempotente (script duplicado/HMR não duplica); todos os listeners passam por um
+`AbortController` único e todos os observers por uma lista — `deactivate()` restaura DOM
+(controles devolvidos à posição original, atributos a11y revertidos), meta viewport, CSS e
+atributos do `<html>`. Gate `LISTENER_OR_OBSERVER_LEAKS`: 3 trocas de painel não alteram os
+contadores; após `deactivate()` = 0; `activate()` ×2 volta ao mesmo número.
+
+### Provas (decisão #79)
+`scripts/header/audit-mobile-header.mjs` mede no SHELL REAL autenticado (preview do worktree
+`scripts/header/preview-shell.mjs`: serve o candidato e faz proxy da API para o origin; ou
+`MH2_BASE=https://dshowdash.com.br` para o baseline). `gates-mobile-header.mjs` consolida
+métricas antes/depois e os gates (exit 1 se algum FAIL). Regras de honestidade:
+- baseline de console/rede = produção OFF ∪ preview OFF (o que ocorre com a flag OFF é ruído do
+  ambiente — ex.: `Error loading user permissions` intermitente, medido também com o módulo inativo);
+- `FLAG_OFF_IDENTITY` ignora a ORDEM dos filhos de `.header-right` porque ela varia entre boots
+  da própria produção (corrida entre `header-components.bundle` e os botões standalone; 5/18
+  boots diferiram com o módulo INATIVO) — geometria, tokens, meta, atributos e o CONJUNTO de
+  componentes/controles seguem exigidos idênticos;
+- nunca rotular regressão como cosmética sem prova: qualquer gate FAIL bloqueia canário.
+
+## Arquivos
+- `public/components/header/mobile-v2/{index.ts,index.js,mobile-header-v2.css}` (novo)
+- `public/index.html` (1 `<script type="module">`)
+- `public/components/panels/panel-avatar-studio/src/nucleo/flags.ts` (flag no contrato remoto `FLAGS_REMOTAS`, default OFF)
+- `.../src/vc/VisualComposer.tsx`, `VisualComposer3D.tsx` (`data-shell-titlebar="own"` só com a flag ON), `.../styles/visual-composer.css`
+- `scripts/header/{build-mobile-header-v2.sh,preview-shell.mjs,audit-mobile-header.mjs,gates-mobile-header.mjs,empacotar-entrega.sh}`
+- `.gitignore` (`!/scripts/header/`)
+
+## Preview (comando único)
+```
+node scripts/header/preview-shell.mjs --root /root/mh2/wt/public --port 8902
+# navegador: http://127.0.0.1:8902/  (login normal; flag via override local
+#   localStorage['dshow.avst.flags.v1'] = {"as6.mobile_header_v2":true}  ou canário u75)
+```
+
+## Rollback
+Desligar a flag (override do u75) — `rollback.sql` do canário; ou remover a linha do `<script>`
+no `index.html`. Nenhuma outra superfície muda com a flag OFF.
