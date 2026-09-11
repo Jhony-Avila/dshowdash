@@ -3,7 +3,7 @@
 # Uso: bash scripts/header/empacotar-entrega.sh <dir-das-auditorias> <dir-saida>
 #   <dir-das-auditorias> = pasta com before-prod/ off/ on/ on-*/ + GATES.txt/METRICAS.txt (gates-mobile-header.mjs)
 #   <dir-saida>          = ex.: /backup/entrega-mobile-header-v2-<ts>  (nada é apagado; tudo com timestamp)
-# Gera: evidencias/ (JSONs + gates + métricas), screenshots/ (as 12 obrigatórias + matriz), commits.txt,
+# Gera: evidencias/ (JSONs + gates + métricas; rodada 2 em <aud>/r2), screenshots/ (as 12 obrigatórias + matriz + rodada2), commits.txt,
 #       candidato.patch, arvore.txt e SHA256SUMS ESTRITAMENTE válido (`<hash>  <path>`, sem cabeçalho) —
 #       verificado com `sha256sum -c` antes de terminar (lição do lote anterior).
 set -euo pipefail
@@ -20,7 +20,13 @@ git ls-tree -r --name-only HEAD -- public/components/header/mobile-v2 scripts/he
   public/components/panels/panel-avatar-studio/src/nucleo/flags.ts public/components/panels/panel-avatar-studio/src/vc \
   public/components/panels/panel-avatar-studio/src/styles/visual-composer.css docs/AVATAR-STUDIO-5/23-MOBILE-HEADER-V2.md > "$OUT/arvore.txt"
 for d in "$AUD"/*/; do n="$(basename "$d")"; [ -f "$d/audit.json" ] && cp "$d/audit.json" "$OUT/evidencias/audit-$n.json"; done
-for f in GATES.txt METRICAS.txt consolidado.json vc-before.summary.txt vc-after.summary.txt vc-before-full.json vc-after.json canary.txt canary-resolver.txt; do [ -f "$AUD/$f" ] && cp "$AUD/$f" "$OUT/evidencias/$f"; done
+for f in GATES.txt METRICAS.txt consolidado.json vc-before.summary.txt vc-after.summary.txt vc-before-full.json vc-after.json canary.txt canary-resolver.txt GATES-R2.txt r2.json r1on.log r1on-leak.log r1off.log tsc.txt build.txt deploy.txt handoff.txt; do [ -f "$AUD/$f" ] && cp "$AUD/$f" "$OUT/evidencias/$f"; done
+# rodada 2 (audit-r2-mobile-header.mjs): gates + medições + capturas (fechado / gaveta aberta / fim da página)
+if [ -d "$AUD/r2" ]; then
+  [ -f "$AUD/r2/GATES-R2.txt" ] && cp "$AUD/r2/GATES-R2.txt" "$OUT/evidencias/GATES-R2.txt"
+  [ -f "$AUD/r2/r2.json" ] && cp "$AUD/r2/r2.json" "$OUT/evidencias/audit-r2.json"
+  mkdir -p "$OUT/screenshots/rodada2" && cp "$AUD/r2"/*.png "$OUT/screenshots/rodada2/" 2>/dev/null || true
+fi
 # REGRESSION_GATE do Avatar Studio (vc-mobile-audit): screenshots antes/depois
 for d in vc-before-full vc-after; do [ -d "$AUD/$d" ] && mkdir -p "$OUT/screenshots/avatar-studio/$d" && cp "$AUD/$d"/*.png "$OUT/screenshots/avatar-studio/$d/" 2>/dev/null || true; done
 # as 12 screenshots obrigatórias (§7 do briefing)
@@ -40,6 +46,12 @@ cp_if "$AUD/on/1440x900-dash-dark.png"                 "12-desktop-paridade.png"
 cp_if "$AUD/on/375x812-dash-dark-mais.png"             "13-menu-mais-aberto.png"
 cp_if "$AUD/before-prod/375x812-dash-dark.png"         "00-ANTES-producao-375-dashboard.png"
 cp_if "$AUD/before-prod/375x812-avatar-dark.png"       "00-ANTES-producao-375-avatar-studio.png"
+# rodada 2 — as 3 capturas exigidas (tema claro, tema escuro, viewport estreito) + fim da página (rodapé no fluxo)
+cp_if "$AUD/r2/375x812-dash-dark-aberto.png"           "R2-01-gaveta-mais-tema-escuro-375.png"
+cp_if "$AUD/r2/375x812-dash-light-aberto.png"          "R2-02-gaveta-mais-tema-claro-375.png"
+cp_if "$AUD/r2/320x568-dash-dark-aberto.png"           "R2-03-gaveta-mais-viewport-estreito-320.png"
+cp_if "$AUD/r2/375x812-dash-dark-fechado.png"          "R2-04-dashboard-fechado-escuro-375.png"
+cp_if "$AUD/r2/375x812-dash-light-fim.png"             "R2-05-fim-da-pagina-rodape-no-fluxo-claro-375.png"
 for d in on on-light before-prod off; do [ -d "$AUD/$d" ] && mkdir -p "$OUT/screenshots/matriz/$d" && cp "$AUD/$d"/*.png "$OUT/screenshots/matriz/$d/" 2>/dev/null || true; done
 cd "$OUT"
 find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
