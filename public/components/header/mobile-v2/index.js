@@ -237,6 +237,7 @@ function moverParaMais(el) {
   rot.className = "mh2-more-label";
   rot.setAttribute("aria-hidden", "true");
   rot.textContent = rotuloDe(el);
+  if (rot.textContent === (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 28)) rot.hidden = true;
   const parent = el.parentElement;
   const next = el.nextSibling;
   wrap.appendChild(el);
@@ -353,9 +354,10 @@ function syncTitulos() {
         titulo.removeAttribute("aria-level");
         titulo.removeAttribute("data-mh2-heading");
       }
+      state.containers = state.containers.filter((x) => x !== c);
     }
   }
-  state.containers = state.containers.filter((c) => c.isConnected && vistos.has(c));
+  state.containers = state.containers.filter((c) => c.isConnected && vistos.has(c) && c.getAttribute("data-shell-titlebar") === "owned");
 }
 function desfazerTitulos() {
   for (const c of state.containers) {
@@ -375,6 +377,9 @@ function syncScroll() {
   if (rolado) document.documentElement.setAttribute("data-mh2-scrolled", "");
   else document.documentElement.removeAttribute("data-mh2-scrolled");
 }
+function syncMovidos() {
+  for (const m of state.moved) m.wrap.hidden = getComputedStyle(m.el).display === "none";
+}
 function agendarSync() {
   if (state.raf) return;
   state.raf = requestAnimationFrame(() => {
@@ -383,6 +388,7 @@ function agendarSync() {
     syncTicker();
     syncModo();
     syncTitulos();
+    syncMovidos();
   });
 }
 function activate() {
@@ -397,6 +403,7 @@ function activate() {
   syncTicker();
   syncModo();
   syncTitulos();
+  syncMovidos();
   syncScroll();
   const ticker = tickerRegiao();
   if (ticker) observe(ticker, agendarSync, { attributes: true, attributeFilter: ["class", "style", "hidden", "aria-hidden"], childList: true, subtree: true });
@@ -407,7 +414,7 @@ function activate() {
     on(main, "scroll", syncScroll, { passive: true });
   }
   const right = q(".site-header .header-right");
-  if (right) observe(right, agendarSync, { childList: true });
+  if (right) observe(right, agendarSync, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "hidden"] });
   on(window, "resize", agendarSync, { passive: true });
   on(window, "hashchange", () => {
     syncScroll();

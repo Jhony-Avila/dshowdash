@@ -115,9 +115,12 @@ const MEDIR = ({ badgeSel }) => {
   const contHeader = cont ? cont.querySelector(':scope > .dsd-container__header') : null;
   const contTitle = contHeader ? contHeader.querySelector('.dsd-container__title') : null;
   const barra = vc ? vc.querySelector('.vc-barra') : null;
-  const avatar = vc ? { root: R(vc), barra: R(barra), barraPadTop: barra ? getComputedStyle(barra).paddingTop : null, titlebarAttr: vc.getAttribute('data-shell-titlebar'), contAttr: cont ? cont.getAttribute('data-shell-titlebar') : null, contHeaderVisible: contHeader ? vis(contHeader) : null, contHeaderRect: R(contHeader), contTitleText: contTitle ? contTitle.textContent.trim() : null, contTitleRole: contTitle ? contTitle.getAttribute('role') : null, contTitleInA11y: contTitle ? (getComputedStyle(contTitle).display !== 'none' && getComputedStyle(contTitle).visibility !== 'hidden' && !contTitle.closest('[aria-hidden="true"]')) : null, barraTop: barra ? Math.round(barra.getBoundingClientRect().top) : null } : null;
+  const avatar = vc ? { root: R(vc), barra: R(barra), barraPadTop: barra ? getComputedStyle(barra).paddingTop : null, titlebarAttr: vc.getAttribute('data-shell-titlebar'), contAttr: cont ? cont.getAttribute('data-shell-titlebar') : null, contHeaderVisible: contHeader ? (vis(contHeader) && contHeader.getBoundingClientRect().width > 2 && contHeader.getBoundingClientRect().height > 2) : null, contHeaderRect: R(contHeader), contTitleText: contTitle ? contTitle.textContent.trim() : null, contTitleRole: contTitle ? contTitle.getAttribute('role') : null, contTitleInA11y: contTitle ? (getComputedStyle(contTitle).display !== 'none' && getComputedStyle(contTitle).visibility !== 'hidden' && !contTitle.closest('[aria-hidden="true"]')) : null, barraTop: barra ? Math.round(barra.getBoundingClientRect().top) : null } : null;
+  const contAny = q('[data-region="main"] .dsd-container');
+  const contAnyHeader = contAny ? contAny.querySelector(':scope > .dsd-container__header') : null;
+  const container = contAny ? { attr: contAny.getAttribute('data-shell-titlebar'), headerVisible: contAnyHeader ? (vis(contAnyHeader) && contAnyHeader.getBoundingClientRect().height > 2) : null, title: contAnyHeader?.querySelector('.dsd-container__title')?.textContent.trim() || null } : null;
   const headerRightChildren = [...(q('.site-header .header-right')?.children || [])].map((el) => (el.getAttribute('data-component-key') || el.className.split(/\s+/)[0] || el.tagName.toLowerCase()));
-  return { vw: innerWidth, vh: innerHeight, html: { v2attr: document.documentElement.getAttribute('data-mobile-header-v2'), device: document.body.getAttribute('data-device'), bp: document.body.getAttribute('data-breakpoint'), theme: document.documentElement.getAttribute('data-theme'), mode: document.documentElement.getAttribute('data-mh2-mode'), tickerAttr: document.documentElement.getAttribute('data-shell-ticker') }, meta, tokens, rects: { headerRegion: hr, siteHeader: R(siteHeader), inner: R(inner), ticker: tr, main: mr }, tickerVisible, headerOverlap, tickerOverlap, stackGap, mainHidden, docOverflow, controls, collisions, underSafe, badgeClipped, badgeInfo, titles, dupTitles: dup, unnamed, v2, avatar, headerRightChildren, headerBg: headerRegion ? getComputedStyle(headerRegion).backgroundColor : null, siteHeaderBg: siteHeader ? getComputedStyle(siteHeader).backgroundColor : null };
+  return { vw: innerWidth, vh: innerHeight, html: { v2attr: document.documentElement.getAttribute('data-mobile-header-v2'), device: document.body.getAttribute('data-device'), bp: document.body.getAttribute('data-breakpoint'), theme: document.documentElement.getAttribute('data-theme'), mode: document.documentElement.getAttribute('data-mh2-mode'), tickerAttr: document.documentElement.getAttribute('data-shell-ticker') }, meta, tokens, rects: { headerRegion: hr, siteHeader: R(siteHeader), inner: R(inner), ticker: tr, main: mr }, tickerVisible, headerOverlap, tickerOverlap, stackGap, mainHidden, docOverflow, controls, collisions, underSafe, badgeClipped, badgeInfo, titles, dupTitles: dup, unnamed, v2, avatar, container, headerRightChildren, headerBg: headerRegion ? getComputedStyle(headerRegion).backgroundColor : null, siteHeaderBg: siteHeader ? getComputedStyle(siteHeader).backgroundColor : null };
 };
 
 async function garantirTema(page, theme) {
@@ -140,12 +143,15 @@ async function cenario({ vw, vh, route, theme }) {
   if (cookies) { try { await ctx.addCookies(cookies); } catch {} }
   await ctx.addInitScript(({ theme, flag }) => {
     try { localStorage.setItem('cm_theme', theme); localStorage.setItem('dshowdash_theme_prefs', JSON.stringify({ theme, density: 'comfortable' })); } catch {}
-    try { const k = 'dshow.avst.flags.v1'; const cur = JSON.parse(localStorage.getItem(k) || '{}'); cur['as6.mobile_header_v2'] = !!flag; localStorage.setItem(k, JSON.stringify(cur)); localStorage.setItem('avst.vc.onboarded', '1'); } catch {}
+    // override local = MESMA chave do Avatar Studio; espelha as flags que o u75 tem por override no banco
+    // (visual_composer/vc_3d/shell_vc3d/vestuario_separado/catalogo_v2) p/ o bot exercitar o MESMO caminho do canário
+    try { const k = 'dshow.avst.flags.v1'; const cur = JSON.parse(localStorage.getItem(k) || '{}'); for (const f of ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d', 'as6.vestuario_separado', 'as6.catalogo_v2']) cur[f] = true; cur['as6.mobile_header_v2'] = !!flag; localStorage.setItem(k, JSON.stringify(cur)); localStorage.setItem('avst.vc.onboarded', '1'); } catch {}
   }, { theme, flag: FLAG });
   const page = await ctx.newPage();
   const cerr = [], perr = [], freq = [];
   page.on('console', (m) => { if (m.type() === 'error') { const t = m.text(); if (!/favicon|net::ERR_ABORTED/i.test(t)) cerr.push(t.slice(0, 200)); } });
   page.on('pageerror', (e) => perr.push(String(e).slice(0, 200)));
+  page.on('response', (r) => { const st = r.status(); if (st >= 400 && !/favicon/.test(r.url())) freq.push(r.url().replace(/^https?:\/\/[^/]+/, '').slice(0, 120) + ' HTTP' + st); });
   page.on('requestfailed', (r) => { const u = r.url(); const f = r.failure()?.errorText || ''; if (/favicon|analytics|gtag|beacon|telemetry|\.map$/i.test(u)) return; if (/ERR_ABORTED/.test(f)) return; freq.push(u.slice(0, 160) + ' ' + f); });
   const tag = `${vw}x${vh}-${route}-${theme}${SAFE_TOP ? '-safe' + SAFE_TOP : ''}${TICKER !== 'on' ? '-ticker' + TICKER : ''}${RM ? '-rm' : ''}${ZOOM !== 1 ? '-zoom' + ZOOM : ''}${LONG_NAME ? '-long' : ''}${BADGE ? '-badge' + BADGE : ''}`;
   const out = { tag, vw, vh, route, theme, isMobile, ok: false };
@@ -161,7 +167,7 @@ async function cenario({ vw, vh, route, theme }) {
     if (route !== 'dash') {
       await page.evaluate((h) => { if (window.RouterGlobal && window.RouterGlobal.navigate) window.RouterGlobal.navigate(h.replace(/^#/, '')); else location.hash = h; }, ROUTE_HASH[route]);
       await page.waitForTimeout(4500);
-      await page.waitForSelector('[data-vc], [data-avst-react-root], .avst-root', { timeout: 25000 }).catch(() => { out.avatarMountTimeout = true; });
+      await page.waitForSelector('[data-vc], [data-avst-react-root], .avst-root', { timeout: 45000 }).catch(() => { out.avatarMountTimeout = true; });
       await page.waitForTimeout(1500);
     }
     // instrumentação de cenário (só teste — nunca entra no produto)
@@ -199,7 +205,7 @@ async function cenario({ vw, vh, route, theme }) {
         mais = await page.evaluate(() => {
           const m = document.querySelector('#mh2-more-menu'); if (!m || m.hidden) return { open: false };
           const r = m.getBoundingClientRect(); const cs = getComputedStyle(m);
-          const items = [...m.querySelectorAll('.mh2-more-item')].map((it) => { const c = it.querySelector('button, a[href], [role="button"], [tabindex]') || it.firstElementChild; const cr = c.getBoundingClientRect(); const ir = it.getBoundingClientRect(); const center = document.elementFromPoint(cr.x + cr.width / 2, cr.y + cr.height / 2); return { label: it.querySelector('.mh2-more-label')?.textContent, w: Math.round(cr.width), h: Math.round(cr.height), hit: !!(center && (center === c || c.contains(center))), inViewport: ir.right <= innerWidth + 1 && ir.left >= -1 }; });
+          const items = [...m.querySelectorAll('.mh2-more-item')].filter((it) => !it.hidden && getComputedStyle(it).display !== 'none').map((it) => { const c = it.querySelector('button, a[href], [role="button"], [tabindex]') || it.firstElementChild; const cr = c.getBoundingClientRect(); const ir = it.getBoundingClientRect(); const center = document.elementFromPoint(cr.x + cr.width / 2, cr.y + cr.height / 2); return { label: it.querySelector('.mh2-more-label')?.textContent, w: Math.round(cr.width), h: Math.round(cr.height), hit: !!(center && (center === c || c.contains(center))), inViewport: ir.right <= innerWidth + 1 && ir.left >= -1 }; });
           return { open: true, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), b: Math.round(r.bottom), inViewport: r.left >= -1 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1, z: cs.zIndex, items, small: items.filter((i) => i.w < 44 || i.h < 44).length, wrong: items.filter((i) => !i.hit).length, focusInside: m.contains(document.activeElement) };
         });
         await page.screenshot({ path: `${OUT}/${tag}-mais.png` });
@@ -211,7 +217,8 @@ async function cenario({ vw, vh, route, theme }) {
     // teclado REAL: Tab a partir do início do documento até percorrer os controles do header
     let focus = null;
     try {
-      await page.evaluate(() => { document.activeElement && document.activeElement.blur && document.activeElement.blur(); window.scrollTo(0, 0); });
+      // ponto de partida DETERMINÍSTICO: sentinela focável no início do body (Tab segue a ordem do DOM a partir dele)
+      await page.evaluate(() => { let s = document.getElementById('mh2-tab-sentinel'); if (!s) { s = document.createElement('span'); s.id = 'mh2-tab-sentinel'; s.tabIndex = -1; s.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0'; document.body.insertBefore(s, document.body.firstChild); } s.focus(); });
       const seen = []; let fail = 0; let inHeader = 0;
       for (let i = 0; i < 40; i++) {
         await page.keyboard.press('Tab');

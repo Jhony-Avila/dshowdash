@@ -203,16 +203,20 @@ html[data-mobile-header-v2="on"] .mh2-more-item {
   padding: 4px;
   border-radius: 12px;
 }
+html[data-mobile-header-v2="on"] .mh2-more-item[hidden] { display: none; }
+/* o controle movido mantém o PRÓPRIO display (inclusive display:none dos auxiliares); só ganha área mínima */
 html[data-mobile-header-v2="on"] .mh2-more-item > :first-child {
   box-sizing: border-box;
   min-width: 44px;
   min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   max-width: 100%;
   overflow: visible;
 }
+html[data-mobile-header-v2="on"] .mh2-more-item > button:first-child,
+html[data-mobile-header-v2="on"] .mh2-more-item > a:first-child,
+html[data-mobile-header-v2="on"] .mh2-more-item > [role="button"]:first-child { align-items: center; justify-content: center; }
+html[data-mobile-header-v2="on"] .mh2-more-item > button:first-child { color: var(--hdr-text, rgba(255,255,255,.9)); }
+html[data-mobile-header-v2="on"] .mh2-more-label[hidden] { display: none; }
 html[data-mobile-header-v2="on"] .mh2-more-item > .header-component-wrapper > * { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
 html[data-mobile-header-v2="on"] .mh2-more-label {
   font-size: 11px;

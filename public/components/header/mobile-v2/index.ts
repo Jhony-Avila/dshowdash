@@ -256,6 +256,8 @@ function moverParaMais(el: HTMLElement) {
   rot.className = 'mh2-more-label';
   rot.setAttribute('aria-hidden', 'true');
   rot.textContent = rotuloDe(el);
+  // sem rótulo redundante quando o controle já exibe o mesmo texto (ex.: relógio)
+  if (rot.textContent === (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 28)) rot.hidden = true;
   const parent = el.parentElement as HTMLElement;
   const next = el.nextSibling;
   wrap.appendChild(el);
@@ -345,9 +347,11 @@ function syncTitulos() {
     } else if (c.getAttribute('data-shell-titlebar') === 'owned') {
       c.removeAttribute('data-shell-titlebar');
       if (titulo && titulo.hasAttribute('data-mh2-heading')) { titulo.removeAttribute('role'); titulo.removeAttribute('aria-level'); titulo.removeAttribute('data-mh2-heading'); }
+      state.containers = state.containers.filter((x) => x !== c);
     }
   }
-  state.containers = state.containers.filter((c) => c.isConnected && vistos.has(c));
+  // o container do main é REUTILIZADO entre painéis (mesmo nó, conteúdo trocado): só conta quem segue marcado
+  state.containers = state.containers.filter((c) => c.isConnected && vistos.has(c) && c.getAttribute('data-shell-titlebar') === 'owned');
 }
 function desfazerTitulos() {
   for (const c of state.containers) {
@@ -365,9 +369,14 @@ function syncScroll() {
   if (rolado) document.documentElement.setAttribute('data-mh2-scrolled', ''); else document.documentElement.removeAttribute('data-mh2-scrolled');
 }
 
+/** Itens movidos p/ o menu seguem a visibilidade do PRÓPRIO controle (ex.: botões auxiliares
+ *  que o componente mostra/esconde) — o invólucro nunca força display. */
+function syncMovidos() {
+  for (const m of state.moved) m.wrap.hidden = getComputedStyle(m.el).display === 'none';
+}
 function agendarSync() {
   if (state.raf) return;
-  state.raf = requestAnimationFrame(() => { state.raf = 0; if (!state.active) return; syncTicker(); syncModo(); syncTitulos(); });
+  state.raf = requestAnimationFrame(() => { state.raf = 0; if (!state.active) return; syncTicker(); syncModo(); syncTitulos(); syncMovidos(); });
 }
 
 // ───────────────────────── ciclo de vida ─────────────────────────
@@ -380,7 +389,7 @@ export function activate(): boolean {
   document.documentElement.setAttribute('data-mobile-header-v2', 'on');
   garantirCss();
   aplicarViewport();
-  syncTicker(); syncModo(); syncTitulos(); syncScroll();
+  syncTicker(); syncModo(); syncTitulos(); syncMovidos(); syncScroll();
   const ticker = tickerRegiao();
   if (ticker) observe(ticker, agendarSync, { attributes: true, attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'], childList: true, subtree: true });
   observe(document.body, agendarSync, { attributes: true, attributeFilter: ['data-device', 'class'] });
@@ -390,7 +399,7 @@ export function activate(): boolean {
     on(main, 'scroll', syncScroll, { passive: true });
   }
   const right = q('.site-header .header-right');
-  if (right) observe(right, agendarSync, { childList: true });
+  if (right) observe(right, agendarSync, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
   on(window, 'resize', agendarSync, { passive: true });
   on(window, 'hashchange', () => { syncScroll(); agendarSync(); });
   return true;
