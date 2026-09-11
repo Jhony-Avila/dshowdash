@@ -1,4 +1,4 @@
-# AVST5 · Header mobile canônico do shell (`as6.mobile_header_v2`) — decisões #71–#79
+# AVST5 · Header mobile canônico do shell (`as6.mobile_header_v2`) — decisões #71–#87
 
 ## Causa-raiz (medida no shell real, 375×812, produção, flag OFF — não é hipótese)
 | sintoma | medida |
@@ -97,12 +97,83 @@ métricas antes/depois e os gates (exit 1 se algum FAIL). Regras de honestidade:
   componentes/controles seguem exigidos idênticos;
 - nunca rotular regressão como cosmética sem prova: qualquer gate FAIL bloqueia canário.
 
+## Rodada 2 — polimento mobile + gaveta "Mais" (decisões #80–#87, módulo 1.1.0)
+Tudo continua atrás da flag (OFF = byte a byte o clássico; nada muda fora de `activate()`).
+
+### Gaveta "Mais" (decisão #80)
+Deixa de ser dropdown flutuante: vira painel próprio abaixo do header — `role=dialog aria-modal`,
+largura = viewport, `top = --shell-header-total-height`, `max-height = 100dvh − header` (viewport
+dinâmico + `env(safe-area-inset-bottom)`, nunca px fixo), rolagem SÓ dentro dela (`overscroll-behavior:
+contain`), scrim cobrindo o fundo, cabeçalho fixo com título e botão **Fechar** (44×44), foco preso
+(Tab circula), Esc/scrim/fechar/ativar item fecham; foco volta ao botão "Mais". Superfície OPACA
+(`--dsd-bg-primary`): nada atravessa (medido por `elementFromPoint` no fundo → só scrim/gaveta).
+
+### Grupos, grade e cards (decisão #81)
+Grupos discretos em ordem canônica: Aparência · Comunicação · Negócios · Google · Utilidades (+ Outros
+fail-safe). Grade `repeat(3, minmax(0,1fr))`; ≤359px → 2 colunas; nunca 4. Itens dinâmicos
+(cotações, clima, horário) são **cards** de linha inteira (rótulo à esquerda, valor vivo à direita), não
+atalho de app. "Cotações" é item alinhado (o texto "— clique para abrir o painel" fica só no nome acessível).
+Grupo sem item visível some (itens seguem a visibilidade do próprio controle, como antes).
+
+### Rótulos (decisão #82)
+Tabela de rótulos curtos (`ROTULOS`) + derivação do nome acessível sem prefixos ("Abrir", "Mudar para") e
+sem legendas. CSS: até 2 linhas, `word-break: keep-all`, `hyphens: none`, `text-overflow: clip` (sem
+reticências em ação principal). O rótulo do tema acompanha o estado ("Tema claro"/"Tema escuro").
+
+### Identidade (decisão #83)
+Chevron do perfil com stroke = `--hdr-text` (contraste medido 19,8:1 escuro / 19,1:1 claro; era 50%),
+18px. Avatar 40px dentro do alvo de 44px, iniciais 14px. Nome em 1 linha, truncando só sem espaço (≤360px
+some — P4). No tema claro o brilho roxo do avatar é contido (sombra 8px a 35% + anel branco; halos a
+.45/.18). Ícone de trânsito: `title` espelha o `aria-label` (tooltip), sem mudar função.
+
+### Ticker (decisão #84)
+Movimento preservado; máscara de fade real (`mask-image`, 28px em cada borda — segue qualquer tema);
+track com padding ≥ largura do fade → nunca abre com palavra cortada estática; altura = token (36px);
+overlap com header/main = 0 (gate).
+
+### Fluxo vertical real no dashboard compacto (decisão #85)
+`html[data-mh2-flow="on"]` (compacto **e** sem painel `owned`): `#app-shell` vira `display:flex;
+flex-direction:column; min-height:100dvh; padding-top: --shell-top-stack-height`; header e ticker seguem
+FIXOS no topo (contrato); **main e rodapé entram no fluxo** (`position: static`), o documento rola, o
+conteúdo ocupa o espaço e o rodapé vem depois dele (`.dsd-footer` estático + `env(safe-area-inset-bottom)`).
+Barra inferior de navegação (nav-rail mobile) só ocupa espaço se tiver conteúdo visível
+(`data-shell-navrail="on|off"`, medido). Proibições respeitadas: sem altura fixa por aparelho, sem margem
+artificial, sem rodapé absoluto, sem compensação por viewport. O main recorta só no eixo x
+(`overflow-x: clip` — não cria scroll container) e o rodapé mantém `overflow:hidden` (a barra de ações é mais
+larga/alta que a linha residente, como na produção). Avatar Studio (container `owned`) mantém o layout de
+regiões fixas aprovado — comportamento atual preservado.
+Trava de rolagem com a gaveta aberta: fluxo → `body{position:fixed; top:-scrollY}` (posição preservada e
+restaurada com `scrollTo` instantâneo); regiões → `main{overflow:hidden}` (mantém `scrollTop`); `touchmove`
+fora da gaveta é cancelado (iOS). Uma única barra de rolagem: a da gaveta.
+
+### Badges (decisão #86)
+Regra global do header: contador ≤ 0 (ou não numérico) → `data-mh2-badge="zero"` → não renderiza; > 0 →
+`"pos"`. Medido do TEXTO do badge (o componente segue dono do valor; o shell só decide render) para sino,
+WhatsApp, e-mail, Instagram/Messenger, WeChat, Calendar e qualquer `[class*="badge"]` do header (barra e
+gaveta). Google Calendar: com contagem, `data-mh2-dot="off"` esconde o ponto de estado (`::after`) — nunca
+número e ponto juntos.
+
+### Perfil e FAB de devtools (decisão #87)
+`html[data-mh2-role]` espelha o gate de perfil já existente (`.user-menu-component[data-role]`, vindo de
+`state.user.role`); o FAB `#cm-devtools` (ferramenta interna do container-main) fica oculto para quem não é
+`admin` — sem tocar backend. Quando fica: `bottom = 44px + safe-bottom` (acima da linha do rodapé, medido
+overlap 0), `role=button`/`tabindex`/`aria-label`/`title` ("Ferramentas de desenvolvimento", Enter/Espaço por
+listener delegado), foco visível; com a gaveta aberta sai de cena (z-index rebaixado + `visibility:hidden`).
+
+### Provas da rodada 2
+`scripts/header/audit-r2-mobile-header.mjs` (shell real autenticado, preview do worktree): mede badges
+visíveis ≤0, número+ponto no Calendar, colunas por viewport, rótulos truncados/linhas, alvos 44 e hit-test na
+gaveta, geometria (largura/topo/fundo/opacidade/fechar), trava de rolagem (âncora visual do conteúdo antes ×
+durante × depois), barras de rolagem fora da gaveta, safe area, chevron (contraste), avatar/nome, tooltip do
+trânsito, ticker (overlap/máscara/animação), vão main→rodapé ao fim da página e rodapé no fundo, fluxo
+(posições computadas), FAB (overlap/a11y/oculto com gaveta), temas, overflow-x, erros de página.
+
 ## Arquivos
-- `public/components/header/mobile-v2/{index.ts,index.js,mobile-header-v2.css}` (novo)
+- `public/components/header/mobile-v2/{index.ts,index.js,mobile-header-v2.css}` (novo; 1.1.0 na rodada 2)
 - `public/index.html` (1 `<script type="module">`)
 - `public/components/panels/panel-avatar-studio/src/nucleo/flags.ts` (flag no contrato remoto `FLAGS_REMOTAS`, default OFF)
 - `.../src/vc/VisualComposer.tsx`, `VisualComposer3D.tsx` (`data-shell-titlebar="own"` só com a flag ON), `.../styles/visual-composer.css`
-- `scripts/header/{build-mobile-header-v2.sh,preview-shell.mjs,audit-mobile-header.mjs,gates-mobile-header.mjs,empacotar-entrega.sh}`
+- `scripts/header/{build-mobile-header-v2.sh,preview-shell.mjs,audit-mobile-header.mjs,gates-mobile-header.mjs,audit-r2-mobile-header.mjs,empacotar-entrega.sh}`
 - `.gitignore` (`!/scripts/header/`)
 
 ## Preview (comando único)
