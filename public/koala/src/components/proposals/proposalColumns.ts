@@ -6,7 +6,7 @@
 // - render   → CellSpec (dado puro, sem JSX; o grid o renderiza)
 import { STATUS_LABELS, STATUS_ORDER } from './status';
 import { money, dateBr, dateTimeBr } from '../../format';
-import type { ColumnDef, CellSpec } from '../dataGrid';
+import type { ColumnDef, CellSpec } from '../dataGridCore';
 
 // Status → variante de badge (cor por tokens de tema; NUNCA hardcode). Classes em styles.css.
 export const STATUS_VARIANT: Record<string, string> = {

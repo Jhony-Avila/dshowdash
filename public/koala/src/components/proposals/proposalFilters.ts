@@ -1,7 +1,7 @@
 // Estado + lógica de FILTROS de Propostas — genérico e dirigido pela config de colunas
 // (cada coluna declara `filter`; aqui só interpretamos). Sem duplicar lógica na UI.
 import { dateBr } from '../../format';
-import type { ColumnDef } from '../dataGrid';
+import type { ColumnDef } from '../dataGridCore';
 
 export type DateRange = { from?: string; to?: string };
 export type Filters = { q: string; byCol: Record<string, any> };

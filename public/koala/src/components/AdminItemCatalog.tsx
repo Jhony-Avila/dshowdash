@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { apiGet, apiSend } from '../api/client';
 import { money, dateTimeBr } from '../format';
 import { DataGrid, type BulkAction } from './DataGrid';
-import type { ColumnDef } from './dataGrid';
+import type { ColumnDef } from './dataGridCore';
 
 const byText = (f: (r: any) => any) => (a: any, b: any) => String(f(a) || '').localeCompare(String(f(b) || ''), 'pt-BR');
 const byNum = (f: (r: any) => any) => (a: any, b: any) => (Number(f(a)) || 0) - (Number(f(b)) || 0);

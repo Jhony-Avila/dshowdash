@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { apiGet, apiSend, apiUpload } from '../api/client';
 import { dateTimeBr } from '../format';
 import { DataGrid, type BulkAction } from './DataGrid';
-import type { ColumnDef } from './dataGrid';
+import type { ColumnDef } from './dataGridCore';
 
 function backendMsg(e: any): string { return e?.meta?.message || e?.message || 'Erro'; }
 function fmtSize(n: any): string { const b = Number(n) || 0; return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : (b / 1048576).toFixed(1) + ' MB'; }

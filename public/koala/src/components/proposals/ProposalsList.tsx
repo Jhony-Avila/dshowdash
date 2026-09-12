@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiGet, apiSend } from '../../api/client';
 import { STATUS_LABELS } from './status';
-import { useGridMultiSort, sortRowsMulti, comparatorsOf, trackTemplateW, useColumnState } from '../dataGrid';
+import { useGridMultiSort, sortRowsMulti, comparatorsOf, trackTemplateW, useColumnState } from '../dataGridCore';
 import { PROPOSAL_COLUMNS } from './proposalColumns';
 import { emptyFilters, rowPasses, activeChips, hasAnyFilter, type Filters } from './proposalFilters';
 import { buildCsv, downloadCsv } from './exportCsv';

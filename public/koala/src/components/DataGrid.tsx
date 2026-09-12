@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useGridMultiSort, sortRowsMulti, comparatorsOf, trackTemplateW, useColumnState, type ColumnDef, type GridSortItem } from './dataGrid';
+import { useGridMultiSort, sortRowsMulti, comparatorsOf, trackTemplateW, useColumnState, type ColumnDef, type GridSortItem } from './dataGridCore';
 import { emptyFilters, rowPasses, activeChips, hasAnyFilter, type Filters } from './proposals/proposalFilters';
 import { buildCsv, downloadCsv } from './proposals/exportCsv';
 
 // Grid de dados REUTILIZÁVEL (Itens, Seções). Mesma mecânica/estilos do grid de Propostas
-// (dataGrid.tsx + proposalFilters + exportCsv + classes .k-prop-grid), dirigido por config.
+// (dataGridCore.tsx + proposalFilters + exportCsv + classes .k-prop-grid), dirigido por config.
 const SEL_W = 40;
 
 export type BulkAction = {

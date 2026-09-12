@@ -1,6 +1,6 @@
 // Exportação CSV do resultado (já filtrado/ordenado), respeitando as colunas VISÍVEIS e o
 // formato pt-BR de cada célula (usa col.render().text). Abre direto no Excel (BOM UTF-8 + ';').
-import type { ColumnDef } from '../dataGrid';
+import type { ColumnDef } from '../dataGridCore';
 
 function esc(v: any): string {
   const s = v == null ? '' : String(v);
