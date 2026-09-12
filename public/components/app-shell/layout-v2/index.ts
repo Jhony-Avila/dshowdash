@@ -259,8 +259,17 @@ function abrirGaveta() {
   state.toggle?.setAttribute('aria-label', 'Fechar navegação');
   const sb = regiao('sidebar');
   if (sb) sb.scrollTop = 0;
-  const primeiro = focaveisGaveta().find((el) => !el.matches('input')) || focaveisGaveta()[0];
-  if (primeiro) primeiro.focus({ preventScroll: true });
+  // foco no primeiro item da gaveta no próximo frame (a visibilidade das regiões acaba de mudar)
+  let tentativas = 0;
+  const focar = () => {
+    if (!gavetaAberta()) return;
+    const lista = focaveisGaveta();
+    const primeiro = lista.find((el) => !el.matches('input')) || lista[0];
+    if (primeiro) primeiro.focus({ preventScroll: true });
+    // enquanto a visibilidade das regiões assenta (transição), o foco pode não pegar: tenta por alguns frames
+    if ((!primeiro || document.activeElement !== primeiro) && ++tentativas < 20) requestAnimationFrame(focar);
+  };
+  requestAnimationFrame(focar);
 }
 function fecharGaveta(devolverFoco: boolean) {
   if (!gavetaAberta()) return;
