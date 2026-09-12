@@ -428,3 +428,32 @@
 [data-geral-react-root] [data-densidade="compacto"] .ger-atalho { padding: 7px 10px; font-size: 11.5px; }
 [data-geral-react-root] [data-densidade="compacto"] .ger-notas { min-height: 96px; }
 [data-geral-react-root] [data-densidade="compacto"] .ger-integracoes { gap: 6px; }
+
+/* ── Shell layout v2 (lote as6.shell_layout_v2, decisão #88): polimento responsivo SÓ com a flag ON
+   (html[data-shell-layout-v2="on"]); com a flag OFF nenhuma regra abaixo se aplica. Sem largura fixa,
+   sem altura por aparelho: só reorganização e respiro. ── */
+html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-shell { min-width: 0; max-width: 100%; }
+html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-sec { min-width: 0; }
+html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-prev-det-info { min-width: 0; }
+@media (max-width: 1399px) {
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-shell { max-width: 100%; }
+}
+@media (max-width: 767px) {
+  /* barra de controles: título em linha própria; ações em grade que ocupa a largura útil (sem espremer) */
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-controles { flex-direction: column; align-items: stretch; gap: 8px; }
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-controles-tit { min-width: 0; }
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-controles-acoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: stretch; width: 100%; }
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-controles-acoes .ger-btn { width: 100%; justify-content: center; min-height: 40px; white-space: normal; }
+  /* respiro vertical proporcional ao celular (o hero imersivo reservava 34vh de céu) */
+  html[data-shell-layout-v2="on"] [data-geral-react-root] [data-imersivo="1"] .ger-hero { min-height: 22vh; padding: 12px 6px 8px; }
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-shell { gap: 12px; padding: 12px 12px 24px; }
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-hero-saudacao { font-size: 22px; }
+  /* grades de duas colunas viram uma quando falta espaço */
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-wg-metricas,
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-clima-grid { grid-template-columns: 1fr; }
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-barra-row { grid-template-columns: minmax(0, 1fr) 44px; }
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-barra-row > :first-child { grid-column: 1 / -1; }
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-sec-head { flex-direction: column; }
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-hero-frase,
+  html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-head-tit p { max-width: 100%; }
+}
