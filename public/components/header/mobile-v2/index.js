@@ -1,4 +1,4 @@
-const VERSION = "1.1.0";
+const VERSION = "1.1.1";
 const MODULE_ID = "header/mobile-v2";
 const FLAG = "as6.mobile_header_v2";
 const CSS_ID = "mh2-css";
@@ -309,7 +309,7 @@ function alternarMais() {
 }
 function travarFundo() {
   const main = q('[data-region="main"]');
-  const flow = document.documentElement.getAttribute("data-mh2-flow") === "on";
+  const flow = document.documentElement.getAttribute("data-mh2-flow") === "on" || document.documentElement.getAttribute("data-shell-layout-v2") === "on";
   state.lock = { y: window.scrollY, mainTop: main ? main.scrollTop : 0, flow };
   document.documentElement.style.setProperty("--mh2-lock-top", `-${Math.round(state.lock.y)}px`);
   document.documentElement.setAttribute("data-mh2-more-open", "");
@@ -326,6 +326,8 @@ function destravarFundo() {
 }
 function abrirMais() {
   if (!state.menu || !state.more || !state.scrim) return;
+  const lv2 = window.__shellLayoutV2;
+  if (lv2 && typeof lv2.closeDrawer === "function") lv2.closeDrawer();
   state.scrim.hidden = false;
   state.menu.hidden = false;
   state.menu.scrollTop = 0;
@@ -438,12 +440,12 @@ function comporCompacto() {
   criarMais(right);
   const candidatos = [];
   for (const el of Array.from(right.children)) {
-    if (el.hasAttribute("data-mh2-own")) continue;
+    if (el.hasAttribute("data-mh2-own") || el.hasAttribute("data-lv2-own")) continue;
     if (getComputedStyle(el).display === "none") continue;
     candidatos.push(el);
   }
   if (left) for (const el of Array.from(left.children)) {
-    if (!el.hasAttribute("data-mh2-own") && prioridadeDe(el) === 3 && getComputedStyle(el).display !== "none") candidatos.push(el);
+    if (!el.hasAttribute("data-mh2-own") && !el.hasAttribute("data-lv2-own") && prioridadeDe(el) === 3 && getComputedStyle(el).display !== "none") candidatos.push(el);
   }
   for (const el of candidatos) {
     const p = prioridadeDe(el);
@@ -530,8 +532,13 @@ function desfazerTitulos() {
 }
 function syncFlow() {
   const html = document.documentElement;
-  const flow = state.mode === "compact" && state.containers.length === 0 && !!q('[data-region="main"]') && !!q('[data-region="footer"]');
+  const layoutV2 = html.getAttribute("data-shell-layout-v2") === "on";
+  const flow = !layoutV2 && state.mode === "compact" && state.containers.length === 0 && !!q('[data-region="main"]') && !!q('[data-region="footer"]');
   setAttr(html, "data-mh2-flow", flow ? "on" : null);
+  if (layoutV2) {
+    for (const p of ["--mh2-footer-h", "--mh2-navrail-h"]) if (html.style.getPropertyValue(p)) html.style.removeProperty(p);
+    return;
+  }
   const nav = q('[data-region="nav-rail"]');
   let navVisivel = false;
   if (nav) for (const c of Array.from(nav.children)) {

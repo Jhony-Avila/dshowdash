@@ -1,7 +1,9 @@
 /**
  * Header Mobile V2 — contrato canônico de dimensões + composição compacta.
  * @module  components/header/mobile-v2
- * @version 1.1.0  @created 2026-09-11 (lote as6.mobile_header_v2)
+ * @version 1.1.1  @created 2026-09-11 (lote as6.mobile_header_v2)
+ * @changelog 1.1.1: guardas de composição com as6.shell_layout_v2 (#88) — regras de fluxo/regiões do main e do
+ *          rodapé só valem sem o layout v2; a trava de scroll do "Mais" também vale com o layout v2.
  * @changelog 1.1.0 (rodada 2, decisões #80–#87): gaveta "Mais" (grupos, grade 3/2, cards, fechar,
  *          scroll do fundo travado), badges ≤0 ocultos, fluxo vertical no dashboard compacto,
  *          FAB de devtools por perfil, chevron/avatar/ticker.
@@ -361,14 +363,15 @@ html[data-mobile-header-v2="on"] .mh2-more-item--card .real-time-clock-component
 /* fundo travado com a gaveta aberta: posição preservada (fluxo: body fixo em −scrollY; regiões: main
    sem rolagem — overflow:hidden mantém o scrollTop). Uma única barra de rolagem: a da gaveta. */
 html[data-mobile-header-v2="on"][data-mh2-more-open] body { overflow: hidden !important; }
-html[data-mobile-header-v2="on"][data-mh2-more-open][data-mh2-flow="on"] body {
+html[data-mobile-header-v2="on"][data-mh2-more-open][data-mh2-flow="on"] body,
+html[data-mobile-header-v2="on"][data-mh2-more-open][data-shell-layout-v2="on"] body {
   position: fixed !important;
   top: var(--mh2-lock-top, 0px) !important;
   left: 0 !important;
   right: 0 !important;
   width: 100% !important;
 }
-html[data-mobile-header-v2="on"][data-mh2-more-open]:not([data-mh2-flow="on"]) [data-region="main"] { overflow: hidden !important; }
+html[data-mobile-header-v2="on"][data-mh2-more-open]:not([data-mh2-flow="on"]):not([data-shell-layout-v2="on"]) [data-region="main"] { overflow: hidden !important; }
 /* nada atravessa a gaveta: popovers do header e a FAB de devtools ficam por baixo/inertes enquanto aberta */
 html[data-mobile-header-v2="on"][data-mh2-more-open] #traffic-popover,
 html[data-mobile-header-v2="on"][data-mh2-more-open] .traffic-popover { display: none !important; }
@@ -441,16 +444,16 @@ html[data-mobile-header-v2="on"][data-mh2-flow="on"] .dsd-shell__region--footer 
 /* layout de REGIÕES fixas no compacto (painel `owned`, ex.: Avatar Studio — layout aprovado mantido):
    o main termina onde o rodapé visível começa (altura MEDIDA da linha residente → --mh2-footer-h) e a barra
    inferior vazia não reserva espaço — sem vão entre conteúdo e rodapé, sem px por aparelho. */
-html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"])[data-shell-navrail="off"] .dsd-shell__region--nav-rail { display: none !important; }
-html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]) .dsd-shell__region--main {
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]):not([data-shell-layout-v2="on"])[data-shell-navrail="off"] .dsd-shell__region--nav-rail { display: none !important; }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]):not([data-shell-layout-v2="on"]) .dsd-shell__region--main {
   bottom: calc(var(--mh2-footer-h, var(--shell-footer-height)) + var(--mh2-navrail-h, 0px)) !important;
 }
-html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]) .dsd-shell__region--footer {
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]):not([data-shell-layout-v2="on"]) .dsd-shell__region--footer {
   bottom: var(--mh2-navrail-h, 0px) !important;
   height: var(--mh2-footer-h, var(--shell-footer-height)) !important;
 }
-html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]) .dsd-shell__region--footer .dsd-footer,
-html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]) .dsd-shell__region--footer .app-footer { bottom: var(--mh2-navrail-h, 0px); }
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]):not([data-shell-layout-v2="on"]) .dsd-shell__region--footer .dsd-footer,
+html[data-mobile-header-v2="on"][data-mh2-mode="compact"]:not([data-mh2-flow="on"]):not([data-shell-layout-v2="on"]) .dsd-shell__region--footer .app-footer { bottom: var(--mh2-navrail-h, 0px); }
 
 /* ═══════════════ FAB de devtools (decisão #87) ═══════════════
    Ferramenta interna: só perfil admin (gate de perfil existente = data-role do user-menu, espelhado em

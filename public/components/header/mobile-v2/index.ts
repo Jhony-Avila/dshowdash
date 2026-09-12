@@ -4,6 +4,9 @@
  * @version 1.1.0  — FONTE (TS). Irmão index.js é o shipado (transpile 1:1 via
  *          scripts/header/build-mobile-header-v2.sh — nunca editar o .js à mão).
  * @created 2026-09-11 (lote as6.mobile_header_v2 — docs/AVATAR-STUDIO-5/23-MOBILE-HEADER-V2.md)
+ * @changelog 1.1.1 (composição com as6.shell_layout_v2, decisão #88): com o layout v2 ON o shell é dele —
+ *          este módulo não liga o próprio fluxo nem mede o rodapé; a trava de scroll do menu "Mais" usa o
+ *          mesmo travamento de documento; abrir o "Mais" fecha a gaveta de navegação (e vice-versa).
  * @changelog 1.1.0 (rodada 2 — decisões #80–#87): menu "Mais" vira GAVETA própria (grupos,
  *          grade 3/2 colunas, cards p/ itens dinâmicos, fechar explícito, foco preso, scroll do
  *          fundo travado com posição preservada); badges com contador ≤ 0 não renderizam e o
@@ -37,7 +40,7 @@
  */
 'use strict';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.1.1';
 export const MODULE_ID = 'header/mobile-v2';
 export const FLAG = 'as6.mobile_header_v2';
 
@@ -321,7 +324,7 @@ function prenderFoco(e: KeyboardEvent) {
 function alternarMais() { if (!state.menu) return; if (state.menu.hidden) abrirMais(); else fecharMais(true); }
 function travarFundo() {
   const main = q('[data-region="main"]');
-  const flow = document.documentElement.getAttribute('data-mh2-flow') === 'on';
+  const flow = document.documentElement.getAttribute('data-mh2-flow') === 'on' || document.documentElement.getAttribute('data-shell-layout-v2') === 'on';
   state.lock = { y: window.scrollY, mainTop: main ? main.scrollTop : 0, flow };
   document.documentElement.style.setProperty('--mh2-lock-top', `-${Math.round(state.lock.y)}px`);
   document.documentElement.setAttribute('data-mh2-more-open', '');
@@ -338,6 +341,9 @@ function destravarFundo() {
 }
 function abrirMais() {
   if (!state.menu || !state.more || !state.scrim) return;
+  // composição com o layout v2 (#88): a gaveta de navegação e o "Mais" nunca abertos ao mesmo tempo
+  const lv2 = (window as unknown as { __shellLayoutV2?: { closeDrawer?: () => void } }).__shellLayoutV2;
+  if (lv2 && typeof lv2.closeDrawer === 'function') lv2.closeDrawer();
   state.scrim.hidden = false;
   state.menu.hidden = false;
   state.menu.scrollTop = 0;
@@ -447,11 +453,11 @@ function comporCompacto() {
   criarMais(right);
   const candidatos: HTMLElement[] = [];
   for (const el of Array.from(right.children) as HTMLElement[]) {
-    if (el.hasAttribute('data-mh2-own')) continue;
+    if (el.hasAttribute('data-mh2-own') || el.hasAttribute('data-lv2-own')) continue;
     if (getComputedStyle(el).display === 'none') continue; // botões auxiliares ocultos (ex.: hie-done) ficam onde estão
     candidatos.push(el);
   }
-  if (left) for (const el of Array.from(left.children) as HTMLElement[]) { if (!el.hasAttribute('data-mh2-own') && prioridadeDe(el) === 3 && getComputedStyle(el).display !== 'none') candidatos.push(el); }
+  if (left) for (const el of Array.from(left.children) as HTMLElement[]) { if (!el.hasAttribute('data-mh2-own') && !el.hasAttribute('data-lv2-own') && prioridadeDe(el) === 3 && getComputedStyle(el).display !== 'none') candidatos.push(el); }
   for (const el of candidatos) {
     const p = prioridadeDe(el);
     if (p === 3) moverParaMais(el);
@@ -513,8 +519,10 @@ function desfazerTitulos() {
  *  Painel com barra própria (Avatar Studio, `owned`) mantém o layout de regiões fixas aprovado. */
 function syncFlow() {
   const html = document.documentElement;
-  const flow = state.mode === 'compact' && state.containers.length === 0 && !!q('[data-region="main"]') && !!q('[data-region="footer"]');
+  const layoutV2 = html.getAttribute('data-shell-layout-v2') === 'on'; // #88: o shell é do layout v2 (main/rodapé/regiões)
+  const flow = !layoutV2 && state.mode === 'compact' && state.containers.length === 0 && !!q('[data-region="main"]') && !!q('[data-region="footer"]');
   setAttr(html, 'data-mh2-flow', flow ? 'on' : null);
+  if (layoutV2) { for (const p of ['--mh2-footer-h', '--mh2-navrail-h']) if (html.style.getPropertyValue(p)) html.style.removeProperty(p); return; }
   // barra inferior de navegação (nav-rail mobile): só ocupa espaço se tiver conteúdo visível
   const nav = q('[data-region="nav-rail"]');
   let navVisivel = false;
