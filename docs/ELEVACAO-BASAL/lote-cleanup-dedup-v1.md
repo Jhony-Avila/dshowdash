@@ -80,3 +80,48 @@ BUILD: `vite build` panel-ads, panel-google-analytics, koala OK · imports relat
 baseline (dists/assets só no servidor, `worker-manager` removido antes, `tools/` sem node_modules) e os mesmos 53 na
 branch (0 introduzidos) · 0 referências de runtime a arquivos removidos · assets 404: 0 (asset compartilhado e CSS
 canônicos 200 no preview do worktree) · smoke das rotas alteradas OK · worktree limpo.
+
+## Fechamento (briefing autônomo único, 2026-09-12) — itens A–D
+Backup desta rodada: `/backup/cleanup-dedup-v1/20260912-0001/` (evidências; nada foi movido para `removed/` — nenhum arquivo apagado).
+
+### A — `fixtures/invalidos/blazer_ruim.json` idêntico ao válido → **não alterar (é o manifesto válido do par)**
+O gate técnico (`scripts/avatar/art-intake.mjs:50-57`) descobre pacotes `<nome>.svg + <nome>.json`; sem o `.json` o
+pacote falha por "manifesto ausente" (`:103`) e não por causa da arte. O caso inválido de `fixtures/invalidos/` é o
+**SVG** `blazer_ruim.svg` (documentado em `docs/AVATAR-STUDIO-5/art-requests/ART_INTAKE_SAMPLE_REPORT.md:64`); o `.json`
+idêntico ao válido é intencional: garante que a única causa de falha seja a arte. Prova: `node scripts/avatar/art-intake.mjs
+fixtures/invalidos` → `blazer_ruim: TECHNICAL_FAIL (8 violações)`, todas com `arquivo: blazer_ruim.svg` (gates SECURITY_P0/
+CONTRACT), nenhuma sobre o manifesto; `node scripts/avatar/testes/art-intake.mjs` → "✓ art-intake verde". O teste consome só
+`fixtures/validos/` (`testes/art-intake.mjs:19`). Referências ao `.json` inválido: nenhuma além do CLI por convenção de par.
+
+### B — `core/lifecycle.js` ×3 (enterprise/observability/status) → **divergente por byte: não tocar**
+Os três `lifecycle.ts` diferem só nos comentários de cabeçalho (MODULE/PURPOSE); os três `.js` são idênticos (sha
+`0773fd03…`). Rebuild do `.ts` atual: esbuild transpile (`--format=esm`, targets es2017–esnext) DIFERE (24 linhas: o `.js`
+vivo tem `function …` + `export { … }` no fim — estilo Rollup/Vite lib, não transpile); esbuild `--bundle --external:./constants.js`
+DIFERE em 2 linhas (`var` vs `let`, comentário de origem). Ou seja: o `.js` é saída de outro toolchain (semanticamente
+igual, byte-diferente). Além disso o runtime **carrega o `.js` irmão diretamente** (`core/index.js:3 export * from
+"./lifecycle.js"`, sem `dist/`) — o padrão koala (remover o `.js` sombra) não se aplica: não há artefato de saída.
+Recomendação: quando esses painéis ganharem build em pasta de saída (M4), regerar do `.ts`; até lá o `.js` é o vivo.
+
+### C — `/profile` → Avatar Studio **[PARADO — origem de build]**
+Alvo canônico confirmado: painel `panel-avatar-studio`, rota `/panel-avatar-studio` (aliases `#/avatar-studio`, `#/avatar`;
+`routes-dashboard.ts:35`). A definição errada está em `routes-admin.ts:39` (`/profile` → `panel-user-preferences`).
+**Onde a rota vive em runtime:** (1) `public/components/main/dist/main.bundle.js` (954.342 bytes, 2026-07-30; o lote `main`
+de `vite.components.config.js:129-133` inlina `/components/router/registry/` via `keepInternal`) — contém
+`"/profile": je("profile","Meu Perfil","panel-user-preferences",…)`; (2) `public/app/router/dist/app-router.bundle.js`
+(2026-04-30, fora do git). **Prova de que o runtime não reconstrói a partir do `.ts`:** `scripts/deploy/deploy-as5.sh` não
+builda `components/main` (só panel-avatar-studio, panel-dashboard e footer); e o rebuild do lote `main` a partir das fontes
+atuais (`COMPONENT=main vite build`, ROOT apontado para o worktree) gera 903.411 bytes, sha `545b1533…` ≠ vivo `2777df85…`
+(com avisos de namespaces conflitantes) → o bundle vivo **não é reproduzível** das fontes de hoje. Editar `routes-admin.ts`
+seria drift sem efeito; editar o `.js`/bundle é proibido. Tripwire do briefing acionado: **parado neste item**. Pré-requisito
+para a correção: acertar a origem de build do lote `main` (reproduzir o bundle vivo ou assumir um novo baseline com
+validação) e incluir esse build no deploy. Evidência: `/backup/cleanup-dedup-v1/20260912-0001/evidencias/item-c-main-bundle/`.
+C1 (defs duplicadas mortas de `/preferencias`/`/meu-perfil` em `routes-dashboard.ts:40`) fica junto, pelo mesmo motivo.
+
+### D — registrar `panel-relogio-mundial` e `panel-criacao-botoes` → **não registrado (latente), documentado**
+`panel-criacao-botoes`: completo (`index.js` com `mount/unmount`, adapters, CSS), carrega por convenção `#/panel-criacao-botoes`.
+`panel-relogio-mundial`: React com `dist/` presente no servidor (manifest de 2026-07-30, marcado DEFASADO no baseline
+BASAL) e fallback vanilla via `world-clock-map`; já alcançado pelo clique no relógio do header. Nenhum dos dois em
+`panel_registry`, `ui_nav_items`, `navigation_items`, `navrail_items` (leitura). O registro explícito vive em
+`main/adapters/panel-loader/panel-paths.ts` → mesmo bundle `main` do Item C (não reproduzível, não rebuildado no deploy) →
+registrar na fonte não muda o runtime. Recomendação: registrar via banco/`ui_nav_items` (fora deste lote, exige decisão) ou
+junto com a reconciliação do lote `main`.
