@@ -208,9 +208,28 @@ node scripts/header/preview-shell.mjs --root /root/mh2/wt/public --port 8902
 #   localStorage['dshow.avst.flags.v1'] = {"as6.mobile_header_v2":true}  ou canário u75)
 ```
 
+## Rollout global (decisão #91 — 2026-09-12)
+`as6.mobile_header_v2` foi ligada GLOBAL (`is_enabled=1`, `rollout_percentage=100`) em 2026-09-12 01:22,
+antes do shell v2 (doc 24), pelo tooling `scripts/deploy/global-flag-rollout.php` (RUNBOOK, Anexo C):
+schema + `UNIQUE` validados, backup fiel + `rollback.sql`, escrita mínima idempotente, read-after-write na
+fonte + prova pelo `FeatureFlagResolver` com usuário-sonda sem override (u546 = `screenshot-bot`,
+`rollout_excluded` → `global`), auto-rollback em falha. Smoke pós-flip na produção servida **sem override
+local** (`scripts/deploy/smoke-flags-prod.mjs`, 10/10 PASS: health 200, resolve `source=global`,
+`html[data-mobile-header-v2="on"]`, overflow-x 0, sem erro de página, sem erro novo de console vs baseline OFF).
+Evidências: `/backup/rollout-global-u75-20260912-0113/` (`HANDOFF.md`, `flip-1-mobile-header-v2.txt`,
+`smoke-1-header-on/SMOKE.txt`).
+
 ## Rollback
-Desligar a flag (override do u75) — `rollback.sql` do canário; ou remover a linha do `<script>`
-no `index.html`. Nenhuma outra superfície muda com a flag OFF.
+**Global (alavanca de flag, sem redeploy — classic volta em segundos):**
+```bash
+ROLLOUT_BK=/backup/global-rollback-$(date +%Y%m%d-%H%M%S) ROLLOUT_FLAG=as6.mobile_header_v2 ROLLOUT_PCT=0 \
+  php /var/www/dshowdash/scripts/deploy/global-flag-rollout.php
+```
+(com o shell v2 também ON, reverter `as6.shell_layout_v2` **antes** — o shell compõe sobre o header;
+confirmar com `smoke-flags-prod.mjs --expect header=off,shell=off`). SQL equivalente já gravado em
+`/backup/rollout-global-u75-20260912-0113/flip-1-mobile-header-v2/rollback.sql`.
+**Por usuário:** override do u75 — `rollback.sql` do canário. **Último recurso:** remover a linha do
+`<script>` no `index.html`. Nenhuma outra superfície muda com a flag OFF.
 
 ## Resultados (2026-09-11, shell real autenticado, preview do worktree + baseline produção)
 Matriz: 320×568 · 375×812 · 390×844 · 393×852 · 430×932 · 768×1024 · 844×390 · 932×430 · 1440×900,
