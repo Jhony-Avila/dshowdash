@@ -3,20 +3,19 @@
 //
 // Molde: panel-ads/src/components/viz/d3/GeoMapaBrasil.tsx.
 //
-// ⚠️ O TopoJSON (154 KB) é **self-hosted no próprio painel** (`public/geo/br-uf.topo.json` →
-// `dist/geo/`), NÃO puxado de CDN e NÃO referenciado no dist do painel de Ads.
+// ⚠️ O TopoJSON (154 KB) é **self-hosted e COMPARTILHADO** em `/components/_shared/geo/br-uf.topo.json`
+// (versionado, fora de qualquer `dist/`), NÃO puxado de CDN.
 //   · CDN: o §83 proíbe o front depender de host externo, e um mapa que quebra quando a CDN
 //     cai é pior que uma tabela;
-//   · dist do Ads: `emptyOutDir: true` — um `vite build` daquele painel apagaria o asset e
-//     este mapa quebraria por causa de um build alheio. 154 KB duplicados compram
-//     independência entre painéis.
+//   · fora dos dists: `emptyOutDir: true` de um `vite build` alheio não alcança o asset —
+//     independência entre painéis SEM a cópia de 154 KB por painel (lote chore/dshow-cleanup-dedup-v1).
 //
 // ⚠️ O fetch é cacheado em nível de módulo: trocar de tela e voltar não baixa de novo.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usarPaleta } from '../../lib/paleta';
 import { fmtInt, fmtPct } from '../../lib/fmt';
 
-const TOPO_URL = '/components/panels/panel-google-analytics/dist/geo/br-uf.topo.json';
+const TOPO_URL = '/components/_shared/geo/br-uf.topo.json';
 
 interface Feature { type: string; properties: Record<string, unknown>; geometry: unknown }
 

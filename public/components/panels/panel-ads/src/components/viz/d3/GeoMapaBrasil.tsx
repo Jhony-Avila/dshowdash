@@ -3,12 +3,14 @@
 //
 // Por que D3 e não ECharts: mapa é o caso onde D3 dá liberdade total de projeção,
 // escala de cor e interação. Usa d3-geo (projeção/desenho), d3-scale (escala de cor),
-// topojson-client (decodifica o asset 154KB self-hosted em dist/geo/). Theme-aware,
+// topojson-client (decodifica o asset 154KB self-hosted em /components/_shared/geo/). Theme-aware,
 // tooltip no hover, clique seleciona a UF (filtro cruzado), legenda e resize.
 import { useEffect, useRef, useState } from 'react';
 import { useTokensAds, type PaletaAds } from '../../../shell/useShellTheme';
 
-const TOPO_URL = '/components/panels/panel-ads/dist/geo/br-uf.topo.json';
+// Asset COMPARTILHADO e versionado fora de qualquer dist/ (lote chore/dshow-cleanup-dedup-v1): nenhum `vite build`
+// (emptyOutDir) apaga o arquivo, e Ads e Analytics leem a MESMA fonte — sem cópia por painel.
+const TOPO_URL = '/components/_shared/geo/br-uf.topo.json';
 
 type GeoObj = import('d3-geo').GeoPermissibleObjects;
 
