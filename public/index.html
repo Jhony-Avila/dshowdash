@@ -217,6 +217,9 @@
        ADITIVO: age só se o boot caiu no home, uma vez, via RouterGlobal.navigate.
        Standalone porque quem carrega o painel no boot vive dentro do
        main.bundle.js, cujo rebuild está desaconselhado. 2026-07-30 -->
+  <!-- profile-redirect (decisões #89/#90, M1b): shim aditivo `#/profile` → Avatar Studio atrás da flag
+       as6.profile_redirect (OFF = no-op absoluto). Standalone porque a tabela de rotas vive em bundle congelado. -->
+  <script type="module" src="/components/router/profile-redirect/index.js?v=20260912-1"></script>
   <script type="module" src="/app/router/initial-route.js?v=20260730-1"></script>
 
   <!-- blackbar-watch (diagnóstico temporário 2026-07-08) REMOVIDO em 2026-07-29:
