@@ -31,7 +31,7 @@ policy do permissions-guard para `meu-perfil`/`my-profile`; skeleton para `panel
 `router/core/dynamic-route-provider` e `legacy-inference` removidos (0 importadores, ausentes dos bundles).
 Prova: `node scripts/router/check-routes-registry.mjs` (importa os mesmos `routes-*.js` que o bundle inlina; detecta colisão
 de chave entre módulos, alias × rota real, alias duplicado, alias circular, rota sem painel) — ANTES: 2 colisões de chave +
-3 alias×rota + 1 alias duplicado; DEPOIS: **148 rotas, TODOS PASS**.
+3 alias×rota + 1 alias duplicado; DEPOIS: **147 rotas, TODOS PASS** (após a remoção de `/termos`).
 **Limite conhecido (decisão #89):** os bundles `main`/`app-router` são congelados e não reproduzíveis; o runtime já resolvia
 para as definições admin (mesmo comportamento), logo a mudança é de fonte, sem efeito funcional até o rebuild do lote `main`.
 Os `.js` irmãos foram espelhados linha a linha (drift vs esbuild não cresceu: 50/8/18/14/24 linhas, só comentários/legado).
@@ -64,8 +64,11 @@ os que eram alvo de rotas de integração erradas ficaram com o "legado relacion
 `panel-orchestrator-manager`: os imports "ausentes" (`timeline-panel.js`, `metrics-dashboard.js`) são `import()` dinâmicos com
 `.catch` e os alvos EXISTEM em `/core/ui-orchestrator/components/` (servido do document root; `public/core` não é rastreado por
 design) — não ausentes; painel canônico ativo (rota no banco, API viva, screenshots diários).
-Integridade: BROKEN_ROUTES=1 pré-existente e fora do escopo (`/termos` → `panel-termos`, rota pública "Termos de Uso" sem painel
-em lugar nenhum; link no footer) · BROKEN_LOADERS=0 · BROKEN_NAVIGATION_ENTRIES=0 nas tabelas com consumidor
+Integridade: BROKEN_ROUTES=0 — a única rota quebrada era `/termos` → `panel-termos` (painel que NUNCA existiu: `git log` vazio;
+quebrada em produção desde sempre). "Termos de Uso" é um MODAL do ui-orchestrator (intent `footer.open.termos` → `overlay-adapter`
+`'termos'`), aberto pelo botão do footer via `ui:action footer:termos`; a rota foi removida do registro (`routes-dashboard.ts` + `.js`)
+e o fallback sem EventBus de `footer/_shared/event-helpers.ts` deixa de navegar para ela (retorna `null`, como `logout`; `.js`
+regenerado 1:1). Nenhuma funcionalidade válida removida: o modal continua igual. · BROKEN_LOADERS=0 · BROKEN_NAVIGATION_ENTRIES=0 nas tabelas com consumidor
 (`navigation_items` não tem consumidor em `api/`/`public/`: 2 linhas apontam para ids inexistentes — tabela morta, nota de dados).
 
 ## 6. Validação (executada; ver `/backup/cleanup-dedup-v2/<carimbo>/evidencias/`)

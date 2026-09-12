@@ -183,6 +183,9 @@ for (const p of Object.values(panels)) if (p.product) (families[p.product] ||= [
 const dupFamilies = Object.entries(families).filter(([, ps]) => ps.filter((p) => p.role === 'canonical').length !== 1).map(([f]) => f);
 
 // ── saída ────────────────────────────────────────────────────────────────────────────────────────────
+const ALLOWED = ['CANONICAL_ACTIVE', 'COMPATIBILITY_ALIAS', 'SHARED_LIBRARY', 'INTERNAL_UTILITY', 'DEV_ONLY', 'INCOMPLETE', 'ORPHAN_CONFIRMED', 'REMOVED'];
+const badStatus = Object.values(panels).filter((p) => p.inAudit && (typeof p.status !== 'string' || !ALLOWED.includes(p.status)));
+if (badStatus.length) { console.error('classificação inválida/ausente: ' + badStatus.map((p) => p.id + '=' + p.status).join(', ')); process.exit(1); }
 const counts = {}; for (const p of Object.values(panels)) counts[p.status] = (counts[p.status] || 0) + 1;
 const fam = (f) => Object.values(panels).filter((p) => p.family === f && p.inAudit);
 const esc = (s) => String(s ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
@@ -195,7 +198,8 @@ md.push('```\n');
 md.push('## Totais\n```ini');
 md.push(`PANELS_DISCOVERED=${current.length}\nPANELS_CLASSIFIED=${Object.values(panels).filter((p) => p.inAudit && p.status).length}\nPANELS_UNCLASSIFIED=${Object.values(panels).filter((p) => p.inAudit && !p.status).length}`);
 for (const [k, v] of [['NUMERIC', 'numeric'], ['FOOTER', 'footer'], ['INTEGRATION', 'integration'], ['STATUS', 'status'], ['OTHER_NAMED', 'other']]) md.push(`${k}_PANELS_MAPPED=${fam(v).length}/${AUDIT[v].length}`);
-for (const k of ['CANONICAL_ACTIVE', 'COMPATIBILITY_ALIAS', 'SHARED_LIBRARY', 'INTERNAL_UTILITY', 'DEV_ONLY', 'INCOMPLETE', 'ORPHAN_CONFIRMED', 'REMOVED']) md.push(`${k}=${counts[k] || 0}`);
+for (const k of ALLOWED) md.push(`${k}=${counts[k] || 0}`);
+md.push(`PRIMARY_CLASSIFICATION_UNIQUE=${badStatus.length === 0 && Object.values(panels).filter((p) => p.inAudit).every((p) => ALLOWED.filter((k) => k === p.status).length === 1) ? 'YES' : 'NO'} (1 status por painel, entre os 8 permitidos; soma=${ALLOWED.reduce((a, k) => a + (Object.values(panels).filter((p) => p.inAudit && p.status === k).length), 0)})`);
 md.push(`DUPLICATE_PRODUCT_FAMILIES_REMAINING=${dupFamilies.length}\nBROKEN_ROUTES=${brokenRoutes.length}\nBROKEN_LOADERS=${brokenLoaders.length}\nBROKEN_NAVIGATION_ENTRIES=${navBroken.length}`);
 md.push('```');
 if (brokenRoutes.length) md.push('\nRotas quebradas: ' + brokenRoutes.join('; '));

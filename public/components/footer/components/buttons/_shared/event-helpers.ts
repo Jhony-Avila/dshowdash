@@ -154,7 +154,7 @@ function extractRouteFromActionId(actionId: string) {
   if (buttonId === 'analytics') return '#/relatorios';
   if (buttonId === 'lgpd') return '#/lgpd';
   if (buttonId === 'privacidade') return '#/privacidade';
-  if (buttonId === 'termos') return '#/termos';
+  if (buttonId === 'termos') return null; // Termos de Uso é MODAL (intent footer.open.termos); não há rota — '#/termos' apontava para painel inexistente (lote cleanup-dedup-v2)
   if (buttonId === 'language') return '#/status-language';
   if (buttonId === 'trending-up') return '#/status-trending';
   return '#/status-' + buttonId;

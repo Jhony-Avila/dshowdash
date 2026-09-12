@@ -1,5 +1,5 @@
 # Inventário dos painéis (documentação derivada) — lote chore/dshow-cleanup-dedup-v2
-Gerado por `scripts/panels/inventario-paineis.mjs` em 2026-09-12T17:39:31.415Z a partir das fontes canônicas existentes: diretórios `public/components/panels/*`, registro de rotas (`router/registry/definitions/routes-*.js`), `panel-loader/panel-paths.js`, header/sidebar/nav-rail/dashboard/footer/index.html do repo, `sw.js` e `api/` do servidor (só leitura) e snapshot do banco (`docs/ELEVACAO-BASAL/evidencias/registros-nav-20260912.json`). **Não é um segundo registro**: mudanças de rota/painel devem ser feitas nas fontes acima e o inventário regenerado.
+Gerado por `scripts/panels/inventario-paineis.mjs` em 2026-09-12T20:01:49.957Z a partir das fontes canônicas existentes: diretórios `public/components/panels/*`, registro de rotas (`router/registry/definitions/routes-*.js`), `panel-loader/panel-paths.js`, header/sidebar/nav-rail/dashboard/footer/index.html do repo, `sw.js` e `api/` do servidor (só leitura) e snapshot do banco (`docs/ELEVACAO-BASAL/evidencias/registros-nav-20260912.json`). **Não é um segundo registro**: mudanças de rota/painel devem ser feitas nas fontes acima e o inventário regenerado.
 
 ## Reconciliação com a auditoria (101)
 ```ini
@@ -29,13 +29,12 @@ DEV_ONLY=0
 INCOMPLETE=1
 ORPHAN_CONFIRMED=0
 REMOVED=0
+PRIMARY_CLASSIFICATION_UNIQUE=YES (1 status por painel, entre os 8 permitidos; soma=101)
 DUPLICATE_PRODUCT_FAMILIES_REMAINING=0
-BROKEN_ROUTES=1
+BROKEN_ROUTES=0
 BROKEN_LOADERS=0
 BROKEN_NAVIGATION_ENTRIES=0
 ```
-
-Rotas quebradas: /termos → panel-termos
 
 Notas de dados (não contam como navegação quebrada): navigation_items usuarios → panel-users (tabela SEM consumidor em api/ e public/ — não é navegação viva); navigation_items config → panel-config (tabela SEM consumidor em api/ e public/ — não é navegação viva); navrail_items admin-settings → panelId panel-settings (informativo: o nav-rail navega por intent → navigation-map → rota #/admin-settings)
 

@@ -89,7 +89,7 @@ function extractRouteFromActionId(actionId) {
   if (buttonId === "analytics") return "#/relatorios";
   if (buttonId === "lgpd") return "#/lgpd";
   if (buttonId === "privacidade") return "#/privacidade";
-  if (buttonId === "termos") return "#/termos";
+  if (buttonId === "termos") return null;
   if (buttonId === "language") return "#/status-language";
   if (buttonId === "trending-up") return "#/status-trending";
   return "#/status-" + buttonId;

@@ -40,7 +40,9 @@ export const dashboardRoutes = Object.freeze({
   // Rotas de usuário (/meu-perfil, /preferencias, /seguranca, /sessoes) REMOVIDAS daqui (lote chore/dshow-cleanup-dedup-v2):
   // eram definições concorrentes das de routes-admin.ts (perdiam no spread de definitions/index.ts) apontando para ids
   // legados (panel-profile/panel-preferences) ou painéis inexistentes (panel-security/panel-sessions). Canônicas: routes-admin.ts.
-  '/termos': { id: 'termos', name: 'Termos', page: 'termos', title: 'Termos de Uso', public: true, requiresAuth: false, guardPolicy: GUARD_POLICIES.PUBLIC, permissions: [] as string[], featureFlags: [] as string[], layout: LAYOUTS.DEFAULT, defaultView: 'panel-termos', defaultHash: '#/termos', mountMain: true, domain: DOMAINS.SYSTEM, virtualDefaults: { view: 'panel-termos', tab: null as string | null, section: null as string | null, entity: null as string | null, mode: 'view' }, seo: { title: 'DshowDash - Termos de Uso', description: 'Termos de uso da plataforma DshowDash' }, aliases: ['#/termos'], tags: ['termos', 'legal', 'public'] }
+  // '/termos' REMOVIDA (lote cleanup-dedup-v2): apontava para 'panel-termos', painel que NUNCA existiu (git log vazio) — rota
+  // quebrada em produção. "Termos de Uso" é um MODAL do ui-orchestrator (intent footer.open.termos → overlay-adapter 'termos'),
+  // aberto pelo botão do footer via ui:action footer:termos; não há consumidor válido da rota.
 });
 export { MODULE_ID, VERSION };
 export default dashboardRoutes;
