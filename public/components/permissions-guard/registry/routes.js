@@ -34,7 +34,9 @@ const routePolicies = {
   "preferences": { public: false, roles: ["viewer", "editor", "manager", "admin", "super_admin"], minLevel: 20 },
   "user-preferences": { public: false, roles: ["viewer", "editor", "manager", "admin", "super_admin"], minLevel: 20 },
   "minha-conta": { public: false, roles: ["viewer", "editor", "manager", "admin", "super_admin"], minLevel: 20 },
-  "perfil": { public: false, roles: ["viewer", "editor", "manager", "admin", "super_admin"], minLevel: 20 }
+  "perfil": { public: false, roles: ["viewer", "editor", "manager", "admin", "super_admin"], minLevel: 20 },
+  "meu-perfil": { public: false, roles: ["viewer", "editor", "manager", "admin", "super_admin"], minLevel: 20 },
+  "my-profile": { public: false, roles: ["viewer", "editor", "manager", "admin", "super_admin"], minLevel: 20 }
 };
 function getRoutePolicy(routePath) {
   if (!routePath) return null;

@@ -41,7 +41,7 @@ export const adminRoutes = Object.freeze({
   '/meu-perfil': createUserRoute('meu-perfil', 'Meu Perfil', 'panel-user-profile', { permissions: [] as string[], tab: 'profile', mode: 'edit', description: 'Editar informações do perfil', aliases: ['/my-profile', '/perfil'], tags: ['profile', 'account'] }),
   '/seguranca-conta': createUserRoute('seguranca-conta', 'Segurança da Conta', 'panel-account-security', { permissions: [] as string[], tab: 'security', mode: 'edit', description: 'Configurações de segurança e senha', aliases: ['/account-security', '/seguranca'], tags: ['security', 'account', 'password'] }),
   '/notificacoes': createUserRoute('notificacoes', 'Notificações', 'panel-user-notifications', { permissions: [] as string[], tab: 'notifications', mode: 'edit', description: 'Preferências de notificações', aliases: ['/notifications', '/alertas'], tags: ['notifications', 'account'] }),
-  '/sessoes-ativas': createUserRoute('sessoes-ativas', 'Sessões Ativas', 'panel-user-sessions', { permissions: [] as string[], tab: 'sessions', mode: 'view', description: 'Gerenciar sessões ativas', aliases: ['/active-sessions', '/minhas-sessoes'], tags: ['sessions', 'account', 'security'] })
+  '/sessoes-ativas': createUserRoute('sessoes-ativas', 'Sessões Ativas', 'panel-user-sessions', { permissions: [] as string[], tab: 'sessions', mode: 'view', description: 'Gerenciar sessões ativas', aliases: ['/active-sessions', '/minhas-sessoes', '/sessoes'], tags: ['sessions', 'account', 'security'] })
 });
 export { MODULE_ID, VERSION };
 export default adminRoutes;

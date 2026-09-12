@@ -11,6 +11,7 @@ const PANEL_TYPE_MAP = {
   "panel-reports": SKELETON_TYPES.TABLE,
   "panel-settings": SKELETON_TYPES.FORM,
   "panel-profile": SKELETON_TYPES.PROFILE,
+  "panel-user-profile": SKELETON_TYPES.PROFILE,
   "panel-messages": SKELETON_TYPES.LIST,
   "panel-notifications": SKELETON_TYPES.LIST,
   "panel-media": SKELETON_TYPES.CARDS,

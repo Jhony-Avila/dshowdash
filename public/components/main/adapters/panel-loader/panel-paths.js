@@ -40,8 +40,8 @@ const PANEL_ID_PATHS = Object.freeze({
   "panel-user-preferences": "/components/panels/panel-user-preferences/index.js",
   "panel-orchestrator": "/components/panels/panel-orchestrator/index.js",
   "panel-status": "/components/panels/panel-status/index.js",
-  "panel-profile": "/components/panels/panel-user-profile/index.js",
-  "panel-preferences": "/components/panels/panel-user-preferences/index.js",
+  "panel-profile": "/components/panels/panel-user-profile/index.js",          // COMPATIBILIDADE: id legado → sucessor panel-user-profile
+  "panel-preferences": "/components/panels/panel-user-preferences/index.js",  // COMPATIBILIDADE: id legado → sucessor panel-user-preferences
   "panel-security": "/components/panels/panel-account-security/index.js",
   "panel-sessions": "/components/panels/panel-user-sessions/index.js",
   "panel-settings": "/components/panels/panel-footer-settings/index.js",
@@ -89,10 +89,10 @@ const ITEM_TO_PANEL = Object.freeze({
   "whatsapp": "panel-19",
   "servidores": "panel-health-dashboard",
   "status": "panel-status",
-  "meu-perfil": "panel-profile",
-  "preferencias": "panel-preferences",
-  "seguranca": "panel-security",
-  "sessoes": "panel-sessions",
+  "meu-perfil": "panel-user-profile",            // @cleanup-v2: era "panel-profile" (id legado)
+  "preferencias": "panel-user-preferences",      // @cleanup-v2: era "panel-preferences" (id legado)
+  "seguranca": "panel-account-security",         // @cleanup-v2: era "panel-security" (painel inexistente)
+  "sessoes": "panel-user-sessions",              // @cleanup-v2: era "panel-sessions" (painel inexistente)
   "folder": "panel-files",
   "panel-home": "panel-home",
   "panel-financeiro": "panel-09",

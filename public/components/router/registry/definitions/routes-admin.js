@@ -18,7 +18,7 @@ const adminRoutes = Object.freeze({
   "/meu-perfil": createUserRoute("meu-perfil", "Meu Perfil", "panel-user-profile", { permissions: [], tab: "profile", mode: "edit", description: "Editar informa\xE7\xF5es do perfil", aliases: ["/my-profile", "/perfil"], tags: ["profile", "account"] }),
   "/seguranca-conta": createUserRoute("seguranca-conta", "Seguran\xE7a da Conta", "panel-account-security", { permissions: [], tab: "security", mode: "edit", description: "Configura\xE7\xF5es de seguran\xE7a e senha", aliases: ["/account-security", "/seguranca"], tags: ["security", "account", "password"] }),
   "/notificacoes": createUserRoute("notificacoes", "Notifica\xE7\xF5es", "panel-user-notifications", { permissions: [], tab: "notifications", mode: "edit", description: "Prefer\xEAncias de notifica\xE7\xF5es", aliases: ["/notifications", "/alertas"], tags: ["notifications", "account"] }),
-  "/sessoes-ativas": createUserRoute("sessoes-ativas", "Sess\xF5es Ativas", "panel-user-sessions", { permissions: [], tab: "sessions", mode: "view", description: "Gerenciar sess\xF5es ativas", aliases: ["/active-sessions", "/minhas-sessoes"], tags: ["sessions", "account", "security"] })
+  "/sessoes-ativas": createUserRoute("sessoes-ativas", "Sess\xF5es Ativas", "panel-user-sessions", { permissions: [], tab: "sessions", mode: "view", description: "Gerenciar sess\xF5es ativas", aliases: ["/active-sessions", "/minhas-sessoes", "/sessoes"], tags: ["sessions", "account", "security"] })
 });
 var routes_admin_default = adminRoutes;
 export {

@@ -100,10 +100,6 @@ const dashboardRoutes = Object.freeze({
   "/status-trending": createStatusRoute("trending", "Performance", { tags: ["trending", "performance"] }),
   "/status-wifi": createStatusRoute("wifi", "Rede", { domain: DOMAINS.OPERACIONAL, tags: ["wifi", "network"] }),
   "/status-zap": createStatusRoute("zap", "Integra\xE7\xF5es", { domain: DOMAINS.INTEGRACOES, tags: ["zap", "integrations"] }),
-  "/meu-perfil": createNavRoute("meu-perfil", "Meu Perfil", "panel-profile", { tags: ["profile", "user"], aliases: ["#/meu-perfil"] }),
-  "/preferencias": createNavRoute("preferencias", "Prefer\xEAncias", "panel-preferences", { tags: ["preferences", "settings"], aliases: ["#/preferencias"] }),
-  "/seguranca": createNavRoute("seguranca", "Seguran\xE7a", "panel-security", { tags: ["security", "user"], aliases: ["#/seguranca"] }),
-  "/sessoes": createNavRoute("sessoes", "Sess\xF5es", "panel-sessions", { tags: ["sessions", "user"], aliases: ["#/sessoes"] }),
   "/termos": { id: "termos", name: "Termos", page: "termos", title: "Termos de Uso", public: true, requiresAuth: false, guardPolicy: GUARD_POLICIES.PUBLIC, permissions: [], featureFlags: [], layout: LAYOUTS.DEFAULT, defaultView: "panel-termos", defaultHash: "#/termos", mountMain: true, domain: DOMAINS.SYSTEM, virtualDefaults: { view: "panel-termos", tab: null, section: null, entity: null, mode: "view" }, seo: { title: "DshowDash - Termos de Uso", description: "Termos de uso da plataforma DshowDash" }, aliases: ["#/termos"], tags: ["termos", "legal", "public"] }
 });
 var routes_dashboard_default = dashboardRoutes;
