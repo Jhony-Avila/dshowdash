@@ -51,6 +51,26 @@ FAB de devtools: perfil admin (gate existente `data-role`), âncora acima da lin
 `scripts/shell/gates-shell-layout-v2.mjs` (consolida ON/OFF/prod-OFF + GATES-R2 do header). Regras de
 honestidade iguais às do doc 23 (baseline de console = produção OFF; qualquer FAIL bloqueia canário).
 
+## Rollout global (decisão #91 — 2026-09-12)
+Depois da validação visual do canário u75, `as6.mobile_header_v2` e `as6.shell_layout_v2` foram ligadas
+GLOBAL (`is_enabled=1`, `rollout_percentage=100`), **uma por vez** (header primeiro, shell depois), pelo
+tooling `scripts/deploy/global-flag-rollout.php` (RUNBOOK, Anexo C): schema + `UNIQUE` validados, backup
+fiel + `rollback.sql`, escrita mínima idempotente, read-after-write na fonte + prova pelo
+`FeatureFlagResolver` com usuário-sonda sem override (u546 = `screenshot-bot`, `rollout_excluded` → `global`),
+auto-rollback em falha de verificação. Smoke após cada flip na produção servida **sem override local**
+(`scripts/deploy/smoke-flags-prod.mjs`, 10/10 PASS: health 200, resolve `source=global`,
+`html[data-shell-layout-v2="on"]` em 390×844 e 1440×900, overflow-x 0, sem erro de página, sem erro novo de
+console vs baseline OFF). Deploy prévio só de tooling (6846297d, `DEPLOY_AS5_OK`); bundle preso intocado.
+Evidências: `/backup/rollout-global-u75-20260912-0113/` (`HANDOFF.md`, `flip-*.txt`, `smoke-*/SMOKE.txt`).
+
 ## Rollback
-Desligar a flag (override do u75 — `rollback.sql` do canário) ou remover a linha do `<script>` no
-`index.html`. Nenhuma outra superfície muda com a flag OFF.
+**Global (alavanca de flag, sem redeploy — classic volta em segundos):**
+```bash
+ROLLOUT_BK=/backup/global-rollback-$(date +%Y%m%d-%H%M%S) ROLLOUT_FLAG=as6.shell_layout_v2 ROLLOUT_PCT=0 \
+  php /var/www/dshowdash/scripts/deploy/global-flag-rollout.php
+```
+(se for reverter as duas: shell v2 primeiro, depois `as6.mobile_header_v2` — o shell compõe sobre o header;
+confirmar com `smoke-flags-prod.mjs --expect header=off,shell=off`). SQL equivalente já gravado em
+`/backup/rollout-global-u75-20260912-0113/flip-2-shell-layout-v2/rollback.sql`.
+**Por usuário:** override do u75 — `rollback.sql` do canário. **Último recurso:** remover a linha do
+`<script>` no `index.html`. Nenhuma outra superfície muda com a flag OFF.

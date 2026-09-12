@@ -85,3 +85,39 @@ cd /var/www/dshowdash && read -s -p "cole a ANTHROPIC_API_KEY (nova, gerada agor
 Esperado: `IA disponivel: SIM (anthropic)`. Lembrete: **revogue a chave
 antiga** no console da Anthropic (ela passou pelo chat em sessão anterior)
 e rotacione também o GitHub PAT "claude-decision-engine".
+
+---
+
+## ANEXO C — Alavanca GLOBAL de feature flag (`scripts/deploy/global-flag-rollout.php`) — decisão #91
+
+Flip global de **uma** flag em `app_feature_flags` pelo mecanismo oficial, sem redeploy e sem SQL
+improvisado. Irmão do `canary-user-flags.php` (decisão #69) com as mesmas garantias: descoberta e
+validação de schema + `UNIQUE(flag_key)` (aborta antes de escrever diante de estrutura inesperada),
+backup fiel do estado-anterior (`estado-anterior.json` + `rollback.sql`), escrita mínima e idempotente
+(só `is_enabled=1`, `rollout_percentage`, `updated_at` — os mesmos campos que o admin de flags escreve;
+`environment`/`starts_at`/`ends_at`/`payload_json` intocados), **read-after-write na fonte + prova pelo
+`FeatureFlagResolver`** (o mesmo código de `/api/feature-flags?action=resolve`) para um usuário-sonda
+**sem override** (padrão u546 = `screenshot-bot`), e **auto-rollback** se a verificação falhar.
+Nunca cria flag (ela precisa existir), nunca toca `app_user_feature_flags`, nunca toca outra flag,
+nunca imprime segredo. Exit 0 só com `ROLLOUT_STATUS=OK`.
+
+```bash
+# LIGAR para todos (rollout 100%)
+ROLLOUT_BK=/backup/global-rollout-$(date +%Y%m%d-%H%M%S) ROLLOUT_FLAG=as6.shell_layout_v2 ROLLOUT_PCT=100 \
+  php /var/www/dshowdash/scripts/deploy/global-flag-rollout.php
+
+# ROLLBACK INSTANTÂNEO (rollout 0% — classic volta em segundos; overrides por usuário continuam valendo)
+ROLLOUT_BK=/backup/global-rollback-$(date +%Y%m%d-%H%M%S) ROLLOUT_FLAG=as6.shell_layout_v2 ROLLOUT_PCT=0 \
+  php /var/www/dshowdash/scripts/deploy/global-flag-rollout.php
+```
+
+Regras de uso (mesmas do rollout de 2026-09-12, `/backup/rollout-global-u75-20260912-0113/HANDOFF.md`):
+1. **Uma flag por vez**; a próxima só depois do smoke da anterior.
+2. Smoke pós-flip **na produção servida, sem override local** (os audits forçam a flag por
+   `localStorage` e NÃO provam a decisão do servidor):
+   `node scripts/deploy/smoke-flags-prod.mjs --out /backup/<rodada>/smoke --expect header=on|off,shell=on|off --baseline <smoke.json da baseline OFF>`
+   (health 200, resolve `source=global`, atributo no `<html>`, overflow-x 0, sem erro de página, sem erro
+   novo de console vs baseline). FAIL ⇒ reverter **aquela** flag (`ROLLOUT_PCT=0`), confirmar por leitura, PARAR.
+3. Ordem de rollback quando há composição: `as6.shell_layout_v2` primeiro, depois `as6.mobile_header_v2`.
+4. `ROLLOUT_PCT` aceita só `0` ou `100`; outros valores bloqueiam (`BLOCKED_BAD_INPUT`).
+5. Sonda com override ⇒ bloqueia; escolha outra com `ROLLOUT_PROBE_USER=<id>`.
