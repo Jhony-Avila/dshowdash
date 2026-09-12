@@ -52,7 +52,7 @@ function _getPort(name: string) { return Ports.get(name); }
 export function injectPorts(p: Record<string, unknown>) { return Ports.inject(p); }
 export function getPorts() { return Ports.snapshot(); }
 
-const LOTTIES_BASE_PATH = '/components/animacoes/';
+const LOTTIES_BASE_PATH = '/assets/animacoes/'; // @cleanup-v2: era '/components/animacoes/' (diretório inexistente); os .json vivem em public/assets/animacoes (mesmo caminho do panel-lifecycle-controller)
 
 const AVAILABLE_LOTTIES = Object.freeze({
   'cards': { file: 'Lottie_Cards.json', name: 'Cards Animation', description: 'Animacao de cartoes para footer/brand' },

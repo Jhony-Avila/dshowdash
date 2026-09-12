@@ -17,7 +17,7 @@ function injectPorts(p) {
 function getPorts() {
   return Ports.snapshot();
 }
-const LOTTIES_BASE_PATH = "/components/animacoes/";
+const LOTTIES_BASE_PATH = "/assets/animacoes/";
 const AVAILABLE_LOTTIES = Object.freeze({
   "cards": { file: "Lottie_Cards.json", name: "Cards Animation", description: "Animacao de cartoes para footer/brand" },
   "graph-growth": { file: "Lottie_Graph_Growth.json", name: "Graph Growth", description: "Grafico com crescimento animado" },
