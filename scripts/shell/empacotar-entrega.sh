@@ -39,6 +39,8 @@ cp_if "$AUD/lv2on-rotas/390x844-avatar-dark-on.png"             "17-avatar-studi
 cp_if "$AUD/lv2on-rotas/1440x900-avatar-dark-on.png"            "18-avatar-studio-desktop.png"
 cp_if "$AUD/lv2on/curta-1440.png"                               "19-footer-pagina-curta-desktop.png"
 cp_if "$AUD/lv2on/curta-390.png"                                "20-footer-pagina-curta-mobile.png"
+cp_if "$AUD/lv2on/curta-1440-light.png"                         "21-footer-pagina-curta-desktop-claro.png"
+cp_if "$AUD/lv2on/curta-390-light.png"                          "22-footer-pagina-curta-mobile-claro.png"
 for d in lv2on lv2on-light lv2on-rotas lv2off lv2prod-off r2both; do [ -d "$AUD/$d" ] && mkdir -p "$OUT/screenshots/matriz/$d" && cp "$AUD/$d"/*.png "$OUT/screenshots/matriz/$d/" 2>/dev/null || true; done
 cd "$OUT"
 find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
