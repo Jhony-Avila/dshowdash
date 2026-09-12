@@ -36,6 +36,12 @@ export class Tracker {
   [key: string]: any;
     constructor(options: { moduleId?: string; enabled?: boolean; maxEvents?: number } = {}) { this.moduleId = options.moduleId || MODULE_ID; this.enabled = options.enabled !== false; this._events = []; this._maxEvents = 1000; _initPorts(); }
     track(event: string, data: Record<string, unknown> = {}) { if (!this.enabled) return; const entry = { event, data, moduleId: this.moduleId, timestamp: Date.now() }; this._events.push(entry); if (this._events.length > this._maxEvents) this._events.shift(); const eb = _getPort('eventBus'); eb?.emit?.(TELEMETRY_INTENTS.TRACK, entry); }
+    trackInit(phase: string) { this.track('init', { phase }); }
+    trackMount() { this.track('mount', {}); }
+    trackUnmount() { this.track('unmount', {}); }
+    trackPreview(lottieId: string) { this.track('preview', { lottieId }); }
+    trackAssign(componentId: string, lottieId: string) { this.track('assign', { componentId, lottieId }); }
+    trackCatalog(status: string, extra: Record<string, unknown> = {}) { this.track('catalog', { status, ...extra }); }
     getEvents() { return [...this._events]; }
     clear() { this._events.length = 0; }
     healthCheck() { const ps = Ports.snapshot(); return { status: 'healthy', enabled: this.enabled, eventCount: this._events.length, portsInitialized: ps._initialized, p18IntentsAvailable: true, version: VERSION, moduleId: MODULE_ID }; }

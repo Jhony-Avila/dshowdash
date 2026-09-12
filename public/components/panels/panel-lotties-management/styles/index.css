@@ -455,3 +455,32 @@
     --primary-bg-light: #312e81;
   }
 }
+
+/* ── v10.0.0 (lote fix/panel-lotties-management-completion): estados, origem, ausentes, tema do app, mobile ── */
+.lotties-panel__state { padding: 2rem 1rem; text-align: center; color: var(--text-secondary, #6b7280); border: 1px dashed var(--border-color, #e5e7eb); border-radius: 12px; }
+.lotties-panel__state h3 { margin: 0 0 .5rem; color: var(--text-primary, #111827); font-size: 1.05rem; }
+.lotties-panel__state p { margin: 0 0 1rem; }
+.lotties-panel__state.is-error { border-color: var(--danger-color, #ef4444); }
+.lotties-panel__state.is-loading .skeleton-grid { margin-bottom: 1rem; }
+.btn-reload { padding: .5rem 1rem; border-radius: 8px; border: 1px solid var(--primary-color, #6366f1); background: var(--primary-color, #6366f1); color: #fff; cursor: pointer; font: inherit; }
+.btn-reload:hover { filter: brightness(1.08); }
+.lotties-panel__origin code { font-size: .75rem; color: var(--text-tertiary, #9ca3af); }
+.lottie-card.is-missing { opacity: .7; }
+.badge-missing { color: var(--danger-color, #ef4444) !important; font-weight: 600; }
+.btn-preview[disabled] { opacity: .4; cursor: not-allowed; }
+.preview-error { color: var(--danger-color, #ef4444); padding: 1rem; margin: 0; }
+.preview-footer code { font-size: .75rem; color: var(--text-tertiary, #9ca3af); word-break: break-all; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+/* Tema do app (html[data-theme]) tem precedência sobre prefers-color-scheme */
+html[data-theme="light"] .lotties-panel { --card-bg: #ffffff; --text-primary: #111827; --text-secondary: #6b7280; --text-tertiary: #9ca3af; --border-color: #e5e7eb; --bg-secondary: #f3f4f6; --code-bg: #f3f4f6; --skeleton-bg: #e5e7eb; --primary-bg-light: #eef2ff; }
+html[data-theme="dark"] .lotties-panel { --card-bg: #1f2937; --text-primary: #f9fafb; --text-secondary: #9ca3af; --text-tertiary: #6b7280; --border-color: #374151; --bg-secondary: #374151; --code-bg: #374151; --skeleton-bg: #374151; --primary-bg-light: #312e81; }
+html[data-theme="dark"] .lotties-panel__state h3 { color: #f9fafb; }
+@media (max-width: 640px) {
+  .lotties-panel { padding: 1rem; }
+  .lotties-panel__header { flex-direction: column; align-items: flex-start; gap: .75rem; }
+  .lotties-panel__stats { flex-wrap: wrap; gap: .5rem; }
+  .lotties-grid { grid-template-columns: 1fr; }
+  .component-row { flex-direction: column; align-items: stretch; gap: .5rem; }
+  .component-row__actions { width: 100%; }
+  .lottie-select { width: 100%; }
+}

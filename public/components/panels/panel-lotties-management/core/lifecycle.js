@@ -18,13 +18,6 @@ function getPorts() {
   return Ports.snapshot();
 }
 const LOTTIES_BASE_PATH = "/assets/animacoes/";
-const AVAILABLE_LOTTIES = Object.freeze({
-  "cards": { file: "Lottie_Cards.json", name: "Cards Animation", description: "Animacao de cartoes para footer/brand" },
-  "graph-growth": { file: "Lottie_Graph_Growth.json", name: "Graph Growth", description: "Grafico com crescimento animado" },
-  "loading": { file: "TAVPl45E1F.json", name: "Loading Spinner", description: "Spinner de carregamento circular" },
-  "loader": { file: "Loader.json", name: "Loader", description: "Loader generico para preload" },
-  "loading-cube": { file: "Loading_Cube.json", name: "Loading Cube", description: "Cubo 3D animado para loading" }
-});
 const ASSIGNABLE_COMPONENTS = Object.freeze([
   { id: "footer-brand", name: "Footer Brand", slot: '[data-lottie="cards"]', current: "cards" },
   { id: "preloader", name: "Preloader", slot: "#preloader-animation", current: null },
@@ -71,19 +64,18 @@ function checkPanelAccess() {
   if (permissions && permissions.canAccess) return permissions.canAccess(PANEL_ID);
   return true;
 }
-function buildHealthCheck(isInitialized, container) {
-  const checks = { initialized: isInitialized, hasContainer: !!container, cssLoaded: _cssLoaded, lottiesAvailable: Object.keys(AVAILABLE_LOTTIES).length > 0, portsInitialized: Ports.isInitialized() };
+function buildHealthCheck(isInitialized, container, lottiesCount = 0) {
+  const checks = { initialized: isInitialized, hasContainer: !!container, cssLoaded: _cssLoaded, lottiesAvailable: lottiesCount > 0, portsInitialized: Ports.isInitialized() };
   const values = Object.values(checks);
   const score = values.filter(Boolean).length;
   return { status: score === 5 ? "HEALTHY" : score >= 3 ? "DEGRADED" : "UNHEALTHY", score: `${score}/5`, checks, version: VERSION, moduleId: MODULE_ID, timestamp: Date.now() };
 }
-function buildInfo(isInitialized, container, state, health) {
-  return { moduleId: MODULE_ID, version: VERSION, panelId: PANEL_ID, panelName: PANEL_NAME, initialized: isInitialized, hasContainer: !!container, lottiesCount: Object.keys(AVAILABLE_LOTTIES).length, componentsCount: ASSIGNABLE_COMPONENTS.length, state: state && state.getState ? state.getState() : {}, health, portsInitialized: Ports.isInitialized(), timestamp: Date.now() };
+function buildInfo(isInitialized, container, state, health, lottiesCount = 0) {
+  return { moduleId: MODULE_ID, version: VERSION, panelId: PANEL_ID, panelName: PANEL_NAME, initialized: isInitialized, hasContainer: !!container, lottiesCount, componentsCount: ASSIGNABLE_COMPONENTS.length, state: state && state.getState ? state.getState() : {}, health, portsInitialized: Ports.isInitialized(), timestamp: Date.now() };
 }
-var lifecycle_default = { VERSION, MODULE_ID, PANEL_ID, PANEL_NAME, LOTTIES_BASE_PATH, AVAILABLE_LOTTIES, ASSIGNABLE_COMPONENTS, metrics, loadCSS, isAuthenticated, ensureAuth, checkPanelAccess, buildHealthCheck, buildInfo, injectPorts, getPorts };
+var lifecycle_default = { VERSION, MODULE_ID, PANEL_ID, PANEL_NAME, LOTTIES_BASE_PATH, ASSIGNABLE_COMPONENTS, metrics, loadCSS, isAuthenticated, ensureAuth, checkPanelAccess, buildHealthCheck, buildInfo, injectPorts, getPorts };
 export {
   ASSIGNABLE_COMPONENTS,
-  AVAILABLE_LOTTIES,
   LOTTIES_BASE_PATH,
   MODULE_ID,
   PANEL_ID,

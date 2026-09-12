@@ -1,125 +1,99 @@
 // ═══════════════════════════════════════════════════════════════
-// DEPENDENCY CONTRACT (8.4.0-P17WI-AAA)
+// DEPENDENCY CONTRACT (10.0.0)
 // ═══════════════════════════════════════════════════════════════
 // MODULE: panel-lotties-management/events
-// PURPOSE: Panel Lotties Management - UI Events
-// ───────────────────────────────────────────────────────────────
-// IMPORTS:
-//   state from ../state/store.js
-//   tracker from ../telemetry/tracker.js
-//   AVAILABLE_LOTTIES, LOTTIES_BASE_PATH from ../core/lifecycle.js
-//
-// PROVIDES:
-//   VERSION — module constant
-//   MODULE_ID — module constant
-//   setupEventHandlers() — exported function
-//   cleanup() — exported function
-//   healthCheck() — exported function
-//   info() — exported function
-//
-// RECEIVES (via init/options): (see init function if present)
-// EMITS (eventos):
-//   (none)
-// LISTENS (eventos):
-//   'change'
-//   'click'
-// WINDOW ACCESS:
-//   (none)
+// PURPOSE: Interação do painel: preview (lottie-web garantida pelo módulo canônico, arquivo na origem válida),
+//          seleção, atribuição/remoção, recarga do catálogo, Esc fecha o preview. Todo listener é registrado
+//          com cleanup — cleanup() é obrigatório no unmount (sem vazamento em abrir/fechar/reabrir).
+// IMPORTS: state from ../state/store.js · tracker from ../telemetry/tracker.js · garantirLottie from ../core/catalogo.js
+// PROVIDES: setupEventHandlers(), cleanup(), healthCheck(), info(), VERSION, MODULE_ID
 // ═══════════════════════════════════════════════════════════════
 'use strict';
-
 import { state } from '../state/store.js';
-
-// @ts-expect-error TS migration - TS2724
 import { tracker } from '../telemetry/tracker.js';
-import { AVAILABLE_LOTTIES, LOTTIES_BASE_PATH } from '../core/lifecycle.js';
+import { garantirLottie } from '../core/catalogo.js';
+declare const lottie: { loadAnimation: (cfg: Record<string, unknown>) => { destroy: () => void } };
 
-declare const lottie: Record<string, any>;
-export const VERSION = '9.3.0-P2-ENTERPRISE';
+export const VERSION = '10.0.0';
 export const MODULE_ID = 'panel-lotties-management/events';
 
-let _lottieInstance: Record<string, any> | null = null;
+let _lottieInstance: { destroy: () => void } | null = null;
 let _cleanups: Array<() => void> = [];
+let _previewToken = 0;
 
-async function _loadLottieLib() {
-  if (typeof lottie !== 'undefined') return true;
-  return new Promise((resolve) => {
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.head.appendChild(script);
-  });
+function _destroyPreviewInstance() {
+  if (_lottieInstance) { try { _lottieInstance.destroy(); } catch { /* instância já destruída */ } _lottieInstance = null; }
 }
 
-async function _showPreview(lottieId: string, container: HTMLElement) {
-  const previewContainer = container.querySelector('[data-preview-container]');
-  if (!previewContainer) return;
-  if (_lottieInstance) { _lottieInstance.destroy(); _lottieInstance = null; }
-  const lottieData = (AVAILABLE_LOTTIES as Record<string, { file: string; name: string; description: string }>)[lottieId];
-  if (!lottieData) return;
-  await _loadLottieLib();
+async function _showPreview(lottieId: string, container: HTMLElement, onRender: (() => void) | null) {
+  const item = state.getState().lotties.find((l) => l.id === lottieId);
+  if (!item || item.disponivel === false) return;
+  const token = ++_previewToken;
+  _destroyPreviewInstance();
   state.setPreview(lottieId);
   tracker.trackPreview(lottieId);
-  setTimeout(() => {
-    const activeContainer = container.querySelector('[data-preview-container]');
-    if (activeContainer && typeof lottie !== 'undefined') {
-      activeContainer.innerHTML = '';
-      _lottieInstance = lottie.loadAnimation({ container: activeContainer, renderer: 'svg', loop: true, autoplay: true, path: LOTTIES_BASE_PATH + lottieData.file });
-    }
-  }, 100);
+  if (onRender) onRender();
+  const ok = await garantirLottie();
+  if (token !== _previewToken) return; // preview trocado/fechado enquanto a lib carregava
+  const alvo = container.querySelector('[data-preview-container]') as HTMLElement | null;
+  if (!alvo) return; // painel desmontado
+  if (!ok) { alvo.innerHTML = '<p class="preview-error" role="alert">Biblioteca lottie-web indisponível (CDN bloqueada?).</p>'; return; }
+  alvo.innerHTML = '';
+  try {
+    _lottieInstance = lottie.loadAnimation({ container: alvo, renderer: 'svg', loop: true, autoplay: true, path: item.url });
+  } catch (e) {
+    alvo.innerHTML = `<p class="preview-error" role="alert">Falha ao carregar a animação: ${String((e as Error).message || e)}</p>`;
+  }
 }
 
-function _closePreview() {
-  if (_lottieInstance) { _lottieInstance.destroy(); _lottieInstance = null; }
-  state.clearPreview();
-}
+function _closePreview() { _previewToken++; _destroyPreviewInstance(); state.clearPreview(); }
 
 function _handleSelect(lottieId: string) {
-  const currentSelected = state.getState().selectedLottie;
-  state.setSelectedLottie(currentSelected === lottieId ? null : lottieId);
+  const current = state.getState().selectedLottie;
+  state.setSelectedLottie(current === lottieId ? null : lottieId);
 }
-
 function _handleAssign(componentId: string, lottieId: string) {
   if (lottieId) { state.assignLottie(componentId, lottieId); tracker.trackAssign(componentId, lottieId); }
-  else { state.unassignLottie(componentId); }
+  else state.unassignLottie(componentId);
 }
 
-function _handleUnassign(componentId: string) { state.unassignLottie(componentId); }
-
-export function setupEventHandlers(container: HTMLElement, onRender: (() => void) | null) {
+export function setupEventHandlers(container: HTMLElement, onRender: (() => void) | null, onReload: (() => void) | null = null) {
   const handleClick = (e: MouseEvent) => {
     const target = e.target as Element | null;
-    const action = (target?.closest('[data-action]') as HTMLElement | null)?.dataset.action;
+    if (target?.closest('[data-close-preview]')) { _closePreview(); if (onRender) onRender(); return; }
+    const actionEl = target?.closest('[data-action]') as HTMLElement | null;
+    const action = actionEl?.dataset.action;
+    if (!action || actionEl?.tagName === 'SELECT') return;
     const lottieId = (target?.closest('[data-lottie]') as HTMLElement | null)?.dataset.lottie;
     const componentId = (target?.closest('[data-component]') as HTMLElement | null)?.dataset.component;
-    const closePreview = target?.closest('[data-close-preview]');
-    if (closePreview) { _closePreview(); if (onRender) onRender(); return; }
-    if (!action) return;
     switch (action) {
-      case 'preview': if (lottieId) _showPreview(lottieId, container); break;
+      case 'preview': if (lottieId) void _showPreview(lottieId, container, onRender); break;
       case 'select': if (lottieId) { _handleSelect(lottieId); if (onRender) onRender(); } break;
-      case 'unassign': if (componentId) { _handleUnassign(componentId); if (onRender) onRender(); } break;
+      case 'unassign': if (componentId) { state.unassignLottie(componentId); if (onRender) onRender(); } break;
+      case 'recarregar': if (onReload) onReload(); break;
     }
   };
   const handleChange = (e: Event) => {
-    const target = e.target as HTMLElement | null;
+    const target = e.target as HTMLSelectElement | null;
     const action = (target?.closest('[data-action]') as HTMLElement | null)?.dataset.action;
     const componentId = (target?.closest('[data-component]') as HTMLElement | null)?.dataset.component;
-    if (action === 'assign' && componentId) { _handleAssign(componentId, (e.target as HTMLSelectElement).value); if (onRender) onRender(); }
+    if (action === 'assign' && componentId && target) { _handleAssign(componentId, target.value); if (onRender) onRender(); }
   };
+  const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && state.getState().previewActive) { _closePreview(); if (onRender) onRender(); } };
   container.addEventListener('click', handleClick);
   container.addEventListener('change', handleChange);
-  _cleanups.push(() => container.removeEventListener('click', handleClick), () => container.removeEventListener('change', handleChange));
+  document.addEventListener('keydown', handleKey);
+  _cleanups.push(() => container.removeEventListener('click', handleClick), () => container.removeEventListener('change', handleChange), () => document.removeEventListener('keydown', handleKey));
   return _cleanups;
 }
 
 export function cleanup() {
-  if (_lottieInstance) { _lottieInstance.destroy(); _lottieInstance = null; }
-  _cleanups.forEach(fn => { try { fn(); } catch(e) {} });
+  _previewToken++;
+  _destroyPreviewInstance();
+  _cleanups.forEach((fn) => { try { fn(); } catch { /* listener já removido */ } });
   _cleanups = [];
 }
 
-export function healthCheck() { return { status: 'HEALTHY', version: VERSION, moduleId: MODULE_ID, hasInstance: !!_lottieInstance }; }
-export function info() { return { moduleId: MODULE_ID, version: VERSION, cleanupCount: _cleanups.length }; }
+export function healthCheck() { return { status: 'HEALTHY', version: VERSION, moduleId: MODULE_ID, hasInstance: !!_lottieInstance, listeners: _cleanups.length }; }
+export function info() { return { moduleId: MODULE_ID, version: VERSION, cleanupCount: _cleanups.length, hasInstance: !!_lottieInstance }; }
 export default { setupEventHandlers, cleanup, healthCheck, info, VERSION, MODULE_ID };

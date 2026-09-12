@@ -16,7 +16,6 @@
 //   PANEL_ID — exported value
 //   PANEL_NAME — exported value
 //   LOTTIES_BASE_PATH — exported value
-//   AVAILABLE_LOTTIES — exported value
 //   ASSIGNABLE_COMPONENTS — exported value
 //   metrics — exported value
 //   loadCSS() — exported function
@@ -54,13 +53,8 @@ export function getPorts() { return Ports.snapshot(); }
 
 const LOTTIES_BASE_PATH = '/assets/animacoes/'; // @cleanup-v2: era '/components/animacoes/' (diretório inexistente); os .json vivem em public/assets/animacoes (mesmo caminho do panel-lifecycle-controller)
 
-const AVAILABLE_LOTTIES = Object.freeze({
-  'cards': { file: 'Lottie_Cards.json', name: 'Cards Animation', description: 'Animacao de cartoes para footer/brand' },
-  'graph-growth': { file: 'Lottie_Graph_Growth.json', name: 'Graph Growth', description: 'Grafico com crescimento animado' },
-  'loading': { file: 'TAVPl45E1F.json', name: 'Loading Spinner', description: 'Spinner de carregamento circular' },
-  'loader': { file: 'Loader.json', name: 'Loader', description: 'Loader generico para preload' },
-  'loading-cube': { file: 'Loading_Cube.json', name: 'Loading Cube', description: 'Cubo 3D animado para loading' }
-});
+// Catálogo de animações: NÃO é definido aqui. Fonte única = módulo canônico /assets/animacoes/index.js, lido por
+// core/catalogo.ts em runtime (elimina a lista duplicada que existia neste arquivo até a v9.3.0).
 
 const ASSIGNABLE_COMPONENTS = Object.freeze([
   { id: 'footer-brand', name: 'Footer Brand', slot: '[data-lottie="cards"]', current: 'cards' },
@@ -111,16 +105,16 @@ function checkPanelAccess() {
   return true;
 }
 
-function buildHealthCheck(isInitialized: boolean, container: HTMLElement | null) {
-  const checks = { initialized: isInitialized, hasContainer: !!container, cssLoaded: _cssLoaded, lottiesAvailable: Object.keys(AVAILABLE_LOTTIES).length > 0, portsInitialized: Ports.isInitialized() };
+function buildHealthCheck(isInitialized: boolean, container: HTMLElement | null, lottiesCount = 0) {
+  const checks = { initialized: isInitialized, hasContainer: !!container, cssLoaded: _cssLoaded, lottiesAvailable: lottiesCount > 0, portsInitialized: Ports.isInitialized() };
   const values = Object.values(checks);
   const score = values.filter(Boolean).length;
   return { status: score === 5 ? 'HEALTHY' : score >= 3 ? 'DEGRADED' : 'UNHEALTHY', score: `${score}/5`, checks, version: VERSION, moduleId: MODULE_ID, timestamp: Date.now() };
 }
 
-function buildInfo(isInitialized: boolean, container: HTMLElement | null, state: { getState?: () => unknown } | null, health: Record<string, unknown>) {
-  return { moduleId: MODULE_ID, version: VERSION, panelId: PANEL_ID, panelName: PANEL_NAME, initialized: isInitialized, hasContainer: !!container, lottiesCount: Object.keys(AVAILABLE_LOTTIES).length, componentsCount: ASSIGNABLE_COMPONENTS.length, state: state && state.getState ? state.getState() : {}, health, portsInitialized: Ports.isInitialized(), timestamp: Date.now() };
+function buildInfo(isInitialized: boolean, container: HTMLElement | null, state: { getState?: () => unknown } | null, health: Record<string, unknown>, lottiesCount = 0) {
+  return { moduleId: MODULE_ID, version: VERSION, panelId: PANEL_ID, panelName: PANEL_NAME, initialized: isInitialized, hasContainer: !!container, lottiesCount, componentsCount: ASSIGNABLE_COMPONENTS.length, state: state && state.getState ? state.getState() : {}, health, portsInitialized: Ports.isInitialized(), timestamp: Date.now() };
 }
 
-export { VERSION, MODULE_ID, PANEL_ID, PANEL_NAME, LOTTIES_BASE_PATH, AVAILABLE_LOTTIES, ASSIGNABLE_COMPONENTS, metrics, loadCSS, isAuthenticated, ensureAuth, checkPanelAccess, buildHealthCheck, buildInfo };
-export default { VERSION, MODULE_ID, PANEL_ID, PANEL_NAME, LOTTIES_BASE_PATH, AVAILABLE_LOTTIES, ASSIGNABLE_COMPONENTS, metrics, loadCSS, isAuthenticated, ensureAuth, checkPanelAccess, buildHealthCheck, buildInfo, injectPorts, getPorts };
+export { VERSION, MODULE_ID, PANEL_ID, PANEL_NAME, LOTTIES_BASE_PATH, ASSIGNABLE_COMPONENTS, metrics, loadCSS, isAuthenticated, ensureAuth, checkPanelAccess, buildHealthCheck, buildInfo };
+export default { VERSION, MODULE_ID, PANEL_ID, PANEL_NAME, LOTTIES_BASE_PATH, ASSIGNABLE_COMPONENTS, metrics, loadCSS, isAuthenticated, ensureAuth, checkPanelAccess, buildHealthCheck, buildInfo, injectPorts, getPorts };

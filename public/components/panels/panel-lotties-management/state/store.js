@@ -25,6 +25,8 @@ const initialState = {
   previewLottie: null,
   loading: false,
   error: null,
+  catalogo: "carregando",
+  catalogoOrigem: null,
   lastUpdate: null
 };
 let _state = Object.assign({}, initialState);
@@ -96,6 +98,14 @@ const state = {
   },
   setLoading(loading) {
     _state.loading = loading;
+    _notify();
+  },
+  setCatalogo(status, origem = null, error = null) {
+    _state.catalogo = status;
+    _state.catalogoOrigem = origem;
+    _state.error = error;
+    _state.loading = status === "carregando";
+    _state.lastUpdate = Date.now();
     _notify();
   },
   setError(error) {

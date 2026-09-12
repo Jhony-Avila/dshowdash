@@ -25,6 +25,24 @@ class Tracker {
     const eb = _getPort("eventBus");
     eb?.emit?.(TELEMETRY_INTENTS.TRACK, entry);
   }
+  trackInit(phase) {
+    this.track("init", { phase });
+  }
+  trackMount() {
+    this.track("mount", {});
+  }
+  trackUnmount() {
+    this.track("unmount", {});
+  }
+  trackPreview(lottieId) {
+    this.track("preview", { lottieId });
+  }
+  trackAssign(componentId, lottieId) {
+    this.track("assign", { componentId, lottieId });
+  }
+  trackCatalog(status, extra = {}) {
+    this.track("catalog", { status, ...extra });
+  }
   getEvents() {
     return [...this._events];
   }

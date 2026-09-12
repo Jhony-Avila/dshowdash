@@ -4883,6 +4883,7 @@
   ],
   "extRefs": [
    "scripts/panels/classificacao-manual.json",
+   "scripts/panels/smoke-lotties.mjs",
    "scripts/panels/smoke-rotas-preview.mjs"
   ],
   "importedBy": [],
@@ -5994,16 +5995,36 @@
   "family": "other",
   "name": "Gestão de Lotties (animações)",
   "desc": "",
-  "files": 13,
-  "bytes": 70840,
+  "files": 15,
+  "bytes": 86866,
   "react": false,
   "hasIndex": true,
   "mount": true,
   "distInfo": null,
   "apis": [],
   "flags": [],
-  "routesFor": [],
-  "official": null,
+  "routesFor": [
+   {
+    "path": "/panel-lotties-management",
+    "aliases": [
+     "#/panel-lotties-management",
+     "#/lotties",
+     "#/animacoes"
+    ],
+    "mod": "routes-dashboard",
+    "title": "Gestão de Lotties"
+   }
+  ],
+  "official": {
+   "path": "/panel-lotties-management",
+   "aliases": [
+    "#/panel-lotties-management",
+    "#/lotties",
+    "#/animacoes"
+   ],
+   "mod": "routes-dashboard",
+   "title": "Gestão de Lotties"
+  },
   "convention": true,
   "inPanelPaths": [
    "panel-lotties-management"
@@ -6017,7 +6038,10 @@
   "extRefs": [
    "public/components/main/adapters/panel-loader/panel-paths.js",
    "public/components/main/adapters/panel-loader/panel-paths.ts",
+   "public/components/router/registry/definitions/routes-dashboard.js",
+   "public/components/router/registry/definitions/routes-dashboard.ts",
    "scripts/panels/classificacao-manual.json",
+   "scripts/panels/smoke-lotties.mjs",
    "scripts/panels/smoke-rotas-preview.mjs"
   ],
   "importedBy": [],
@@ -6027,9 +6051,9 @@
   "routePolicy": false,
   "broken": 0,
   "inAudit": true,
-  "status": "INCOMPLETE",
-  "why": "ferramenta de administração de animações Lottie: dados hard-coded (AVAILABLE_LOTTIES), sem API, sem rota no código, sem consumidor; registrada em panel-paths (aliases lotties/animacoes) e panel_registry ativo; screenshot parado em 2026-03-30. O mount FALHA em produção e no preview com o mesmo erro pré-existente (pageerror \"Cannot set properties of null (setting 'hidden')\", smoke-rotas prod/preview) — painel semi-quebrado. Não removido: tem loader carregável e registro persistido (regra do lote).",
-  "action": "LOTTIES_BASE_PATH corrigido para /assets/animacoes/ (era diretório inexistente; core/lifecycle.ts + .js regenerado 1:1); erro de mount pré-existente documentado — decisão consertar a UI ou remover (precisa do Jhony)",
+  "status": "CANONICAL_ACTIVE",
+  "why": "corrigido no lote fix/panel-lotties-management-completion: o mount lançava 'tracker.trackInit is not a function' (tracker só tinha track()) e o unmount 'cleanupEvents is not defined' (declaração ambient nunca importada) — o shell capturava o erro e não montava nada. Agora: mount assíncrono com estados carregando/pronto/vazio/erro, catálogo lido da FONTE CANÔNICA /assets/animacoes/index.js (sem lista hard-coded), arquivos na origem válida /assets/animacoes/ (verificados por HEAD), preview via lottie-web garantida pelo módulo canônico, auto-desmontagem quando o shell esvazia o container (o bundle congelado não chama unmount), remount limpo; rota canônica /panel-lotties-management registrada (aliases #/lotties, #/animacoes) e panel_registry ativo. Smoke real: 12/12 gates (desktop/mobile × claro/escuro, preview, unmount sem vazamento, remount, 0 erros).",
+  "action": "estrutura corrigida (7 fontes .ts + .js regenerados 1:1, CSS de estados/tema/mobile, rota canônica); ver docs/ELEVACAO-BASAL/panel-lotties-management-completion.md",
   "modern": "—",
   "legacy": "—",
   "product": "",

@@ -46,7 +46,8 @@ interface LottieItem {
   id: string;
   file: string;
   name: string;
-  description: string;
+  url: string;
+  disponivel: boolean | null;
 }
 
 interface ComponentItem {
@@ -66,6 +67,8 @@ interface StoreState {
   previewLottie: string | null;
   loading: boolean;
   error: string | null;
+  catalogo: 'carregando' | 'pronto' | 'vazio' | 'erro';
+  catalogoOrigem: string | null;
   lastUpdate: number | null;
 }
 
@@ -79,6 +82,8 @@ const initialState: StoreState = {
   previewLottie: null,
   loading: false,
   error: null,
+  catalogo: 'carregando',
+  catalogoOrigem: null,
   lastUpdate: null
 };
 
@@ -161,6 +166,14 @@ const state = {
     _notify();
   },
   
+  setCatalogo(status: 'carregando' | 'pronto' | 'vazio' | 'erro', origem: string | null = null, error: string | null = null) {
+    _state.catalogo = status;
+    _state.catalogoOrigem = origem;
+    _state.error = error;
+    _state.loading = status === 'carregando';
+    _state.lastUpdate = Date.now();
+    _notify();
+  },
   setError(error: string | null) {
     _state.error = error;
     _notify();
