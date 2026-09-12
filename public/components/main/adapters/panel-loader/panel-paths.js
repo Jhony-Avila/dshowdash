@@ -76,7 +76,7 @@ const ITEM_TO_PANEL = Object.freeze({
   "fornecedores": "panel-11",
   "google-ads": "panel-ads",
   "adwords": "panel-ads",
-  "google-drive": "panel-13",
+  "google-drive": "panel-integration-google-drive", // @cleanup-v2: era "panel-13" (SLA e Disponibilidade)
   "importacao": "panel-14",
   "instagram": "panel-15",
   "operacional": "panel-16",

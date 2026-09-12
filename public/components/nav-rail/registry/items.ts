@@ -72,7 +72,7 @@ const ITEMS = [
   { id: 'folder', icon: 'folder', label: 'Arquivos', group: 'data', intentId: 'navrail.open.folder', route: '#/folder', panelId: 'panel-files', order: 2, eager: false, componentPath: 'folder' },
   { id: 'docs', icon: 'book-open', label: 'Documentos', group: 'data', intentId: 'navrail.open.docs', route: '#/docs', panelId: 'panel-dashboard', order: 3, eager: false, componentPath: 'docs' },
   { id: 'api', icon: 'zap', label: 'API', group: 'integrations', intentId: 'navrail.open.api', route: '#/api', panelId: 'panel-observability', order: 1, eager: false, componentPath: 'api' },
-  { id: 'pipedrive', icon: 'target', label: 'Pipedrive', group: 'integrations', intentId: 'navrail.open.pipedrive', route: '#/pipedrive', panelId: 'panel-18', order: 2, eager: false, componentPath: 'pipedrive' },
+  { id: 'pipedrive', icon: 'target', label: 'Pipedrive', group: 'integrations', intentId: 'navrail.open.pipedrive', route: '#/panel-pipedrive', panelId: 'panel-pipedrive', order: 2, eager: false, componentPath: 'pipedrive' },
   { id: 'location', icon: 'map-pin', label: 'Localizações', group: 'integrations', intentId: 'navrail.open.location', route: '#/location', panelId: 'panel-location', order: 3, eager: false, componentPath: 'location' },
   { id: 'admin-users', icon: 'user-cog', label: 'Usuários', group: 'admin', intentId: 'navrail.open.admin-users', route: '#/admin-users', panelId: 'panel-user-management', order: 1, eager: false, componentPath: 'admin-users' },
   { id: 'admin-settings', icon: 'settings', label: 'Configurações', group: 'admin', intentId: 'navrail.open.admin-settings', route: '#/admin-settings', panelId: 'panel-footer-settings', order: 2, eager: false, componentPath: 'admin-settings' },

@@ -27,11 +27,15 @@ import { DOMAINS, LAYOUTS, GUARD_POLICIES } from './constants.js';
 const createIntegrationRoute = (id: string, title: string, panel: string, options: Record<string, any> = {}) => ({ id, name: title.replace(/\s+/g, ''), page: id, title, public: false, requiresAuth: true, guardPolicy: GUARD_POLICIES.PERMISSIONS, permissions: options.permissions || [], featureFlags: [] as string[], layout: LAYOUTS.DEFAULT, defaultView: panel, defaultHash: `#/${id}`, mountMain: true, domain: DOMAINS.INTEGRACOES, virtualDefaults: { view: panel, tab: (options.tab || 'overview') as string, section: null as string | null, entity: (options.entity || null) as string | null, mode: 'view' }, seo: { title: `DshowDash - ${title}`, description: options.description || title }, aliases: options.aliases || [], tags: ['integracoes', ...(options.tags || [])] });
 export const integrationRoutes = Object.freeze({
   '/automacoes': createIntegrationRoute('automacoes', 'Automações', 'panel-07', { permissions: ['cap:automacoes:view'], entity: 'automacao', tab: 'list', tags: ['automacoes'] }),
-  '/bling': createIntegrationRoute('bling', 'Bling ERP', 'panel-08', { permissions: ['cap:bling:view'], tags: ['bling', 'erp'] }),
-  '/google-ads': createIntegrationRoute('google-ads', 'Google Ads', 'panel-15', { permissions: ['cap:google-ads:view'], tags: ['google-ads', 'marketing'] }),
-  '/google-drive': createIntegrationRoute('google-drive', 'Google Drive', 'panel-16', { permissions: ['cap:google-drive:view'], entity: 'file', tab: 'files', tags: ['google-drive', 'storage'] }),
+  // COMPATIBILIDADE (lote cleanup-dedup-v2): rotas legadas /bling, /google-ads, /google-drive e /pipedrive apontavam para
+  // painéis numéricos com outro conteúdo (panel-08 'Alertas do Sistema', panel-15 'Overview Métricas', panel-16 'Fornecedores 360º',
+  // panel-12 'Gerenciamento de Jobs'). Passam a apontar para o SUCESSOR canônico de cada produto; as rotas oficiais são
+  // /panel-bling, /panel-ads, /integrations/google-drive e /panel-pipedrive (routes-dashboard.ts / abaixo).
+  '/bling': createIntegrationRoute('bling', 'Bling ERP', 'panel-bling', { permissions: ['cap:bling:view'], tags: ['bling', 'erp'] }),
+  '/google-ads': createIntegrationRoute('google-ads', 'Google Ads', 'panel-ads', { permissions: ['cap:google-ads:view'], tags: ['google-ads', 'marketing'] }),
+  '/google-drive': createIntegrationRoute('google-drive', 'Google Drive', 'panel-integration-google-drive', { permissions: ['cap:google-drive:view'], entity: 'file', tab: 'files', tags: ['google-drive', 'storage'] }),
   '/instagram': createIntegrationRoute('instagram', 'Instagram', 'panel-18', { permissions: ['cap:instagram:view'], tab: 'feed', tags: ['instagram', 'social'] }),
-  '/pipedrive': createIntegrationRoute('pipedrive', 'Pipedrive CRM', 'panel-12', { permissions: ['cap:pipedrive:view'], entity: 'deal', tab: 'deals', tags: ['pipedrive', 'crm'] }),
+  '/pipedrive': createIntegrationRoute('pipedrive', 'Pipedrive CRM', 'panel-pipedrive', { permissions: ['cap:pipedrive:view'], entity: 'deal', tab: 'deals', tags: ['pipedrive', 'crm'] }),
   '/integrations/adwords': createIntegrationRoute('integration-adwords', 'Google Ads', 'panel-integration-adwords', { tags: ['adwords', 'google', 'marketing'] }),
   '/integrations/alfinete': createIntegrationRoute('integration-alfinete', 'Alfinete', 'panel-integration-alfinete', { tags: ['alfinete'] }),
   '/integrations/asaas': createIntegrationRoute('integration-asaas', 'Asaas', 'panel-integration-asaas', { tags: ['asaas', 'payments'] }),
