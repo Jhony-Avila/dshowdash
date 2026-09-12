@@ -11,6 +11,7 @@ const PADROES: Record<string, boolean> = {
   'as6.vc_hotspots': true,       // C9b (§UX hotspots) — regioes de corpo [data-hotspot] focaveis/auditaveis no palco visual; §651 OFF = sem os botoes (hit-test por coordenada inalterado)
   'as6.shell_vc3d': false,        // rodada unificacao 3D (decisao #160) — o botao 3D do ShellStudio abre o VisualComposer3D COMPARTILHADO em tela cheia (2D desmontado), aposentando Palco3d/Estudio3D do caminho do usuario; default OFF (§651); requer as5.novo_shell
   'as6.mobile_header_v2': false,  // lote header mobile canônico (doc 23) — o VC declara data-shell-titlebar="own" e não duplica a safe area; default OFF, fail-closed; OFF = shell/VC byte a byte
+  'as6.shell_layout_v2': false,   // #88 shell responsivo (sidebar expandir/recolher + gaveta mobile, main fluido, footer no fluxo) — módulo app-shell/layout-v2; separada do header v2 e composta com ele; default OFF, fail-closed; OFF = shell byte a byte
   'as6.visual_composer': false,   // frente VC — compositor visual (modos internos Visual/Guiado/Avancado); default OFF, fail-closed; OFF = shell atual byte a byte
   'as5.novo_shell': true,        // F2 — LIGADA no rollout §650 (2026-08-04, veredito visual do Jhony); rollback §651 = voltar p/ false
   'as5.registry_api': false,     // F1 — catálogo servido pelo registry
@@ -250,7 +251,7 @@ let _remotas: Record<string, boolean> | null = null;
 // A remota usa o endpoint EXISTENTE ?action=resolve&flag= (per-user, credentials
 // include). Erro/timeout/resposta inválida/não-autenticado => as três ficam OFF.
 // Funciona SEM qualquer valor no localStorage.
-export const FLAGS_REMOTAS = ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d', 'as6.vestuario_separado', 'as6.catalogo_v2', 'as6.mobile_header_v2'] as const;
+export const FLAGS_REMOTAS = ['as6.visual_composer', 'as6.vc_3d', 'as6.shell_vc3d', 'as6.vestuario_separado', 'as6.catalogo_v2', 'as6.mobile_header_v2', 'as6.shell_layout_v2'] as const;
 
 export async function carregarFlags(): Promise<void> {
   const ctrl = new AbortController();

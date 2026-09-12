@@ -1,0 +1,319 @@
+/**
+ * Shell Layout V2 — composição responsiva do shell (lote as6.shell_layout_v2, decisão #88).
+ * @module  components/app-shell/layout-v2   @version 1.0.0   @created 2026-09-11
+ *
+ * Injetado SÓ com a flag ON (html[data-shell-layout-v2="on"]); tudo escopado a esse atributo — com a
+ * flag OFF nenhuma regra existe no documento. Consome os tokens já formalizados (app-shell _tokens.css e
+ * o contrato de offsets do header v2 quando ele está ON): nenhum valor novo de z-index, nenhuma altura
+ * por aparelho.
+ *
+ * Composição (uma só): header (fixo) → ticker (fixo) → área de trabalho em GRADE
+ *   colunas: nav-rail | sidebar | main (minmax(0,1fr))   linhas: main (1fr) | footer (auto)
+ *   nav-rail e sidebar são STICKY (acompanham o topo, altura = viewport − topo); main e footer estão no
+ *   FLUXO: o documento rola, o rodapé vem depois do conteúdo e, em página curta, fica no fim do viewport
+ *   por min-height:100dvh (estrutural; sem position:fixed nem altura artificial).
+ * Compacto (body[data-device]=mobile-*): grade de 1 coluna; nav-rail + sidebar viram gaveta off-canvas
+ *   (as MESMAS regiões, reposicionadas — nenhum item some), scrim, fundo travado.
+ */
+
+/* ───────── tokens do layout (derivados, nunca literais por aparelho) ───────── */
+html[data-shell-layout-v2="on"] {
+  --lv2-top: var(--shell-top-stack-height, var(--shell-top-offset));
+  --lv2-header-total: var(--shell-header-total-height, var(--shell-header-height));
+  --lv2-rail-w: var(--shell-nav-rail-width, 56px);
+  --lv2-side-w: var(--shell-sidebar-width, 240px);
+  --lv2-safe-bottom: 0px;
+  --lv2-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --lv2-safe-left: 0px;
+  --lv2-safe-left: env(safe-area-inset-left, 0px);
+  --lv2-safe-right: 0px;
+  --lv2-safe-right: env(safe-area-inset-right, 0px);
+  --lv2-z-scrim: calc(var(--shell-z-sidebar, 100) - 1);
+}
+html[data-shell-layout-v2="on"][data-lv2-rail="off"] { --lv2-rail-w: 0px; }
+html[data-shell-layout-v2="on"][data-lv2-sidebar="off"]:not([data-lv2-mode="tablet"]) { --lv2-side-w: 0px; }
+/* estado recolhido = o do PRÓPRIO componente (body.sidebar-collapsed, persistido por ele) */
+html[data-shell-layout-v2="on"] body.sidebar-collapsed { --lv2-side-w: var(--shell-sidebar-width-collapsed, 72px); }
+html[data-shell-layout-v2="on"][data-lv2-sidebar="off"]:not([data-lv2-mode="tablet"]) body.sidebar-collapsed { --lv2-side-w: 0px; }
+
+/* ───────── documento: um único fluxo vertical ───────── */
+html[data-shell-layout-v2="on"],
+html[data-shell-layout-v2="on"] body {
+  height: auto !important;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+}
+html[data-shell-layout-v2="on"] #app-shell {
+  display: grid;
+  grid-template-columns: var(--lv2-rail-w) var(--lv2-side-w) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "rail side main" "rail side foot";
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: auto !important;
+  padding-top: var(--lv2-top);
+  padding-bottom: 0;
+  overflow: visible;
+  transition: grid-template-columns var(--shell-transition, 300ms cubic-bezier(0.4, 0, 0.2, 1));
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-shell-layout-v2="on"] #app-shell { transition: none; }
+}
+
+/* ───────── topo: header e ticker seguem fixos (contrato do header v2 / tokens do shell) ───────── */
+html[data-shell-layout-v2="on"] .dsd-shell__region--ticker {
+  position: fixed !important;
+  top: var(--lv2-header-total) !important;
+  left: 0 !important;
+  right: 0 !important;
+  overflow: hidden;
+}
+
+/* ───────── trilho e sidebar: colunas sticky ───────── */
+html[data-shell-layout-v2="on"] .dsd-shell__region--nav-rail,
+html[data-shell-layout-v2="on"] .dsd-shell__region--sidebar {
+  position: sticky !important;
+  top: var(--lv2-top) !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: auto !important;
+  height: calc(100vh - var(--lv2-top)) !important;
+  height: calc(100dvh - var(--lv2-top)) !important;
+  align-self: start;
+  overflow: hidden;
+  transition: none;
+}
+html[data-shell-layout-v2="on"] .dsd-shell__region--nav-rail { grid-area: rail; z-index: var(--shell-z-nav-rail, 150); }
+html[data-shell-layout-v2="on"] .dsd-shell__region--sidebar { grid-area: side; z-index: var(--shell-z-sidebar, 100); }
+html[data-shell-layout-v2="on"][data-lv2-rail="off"] .dsd-shell__region--nav-rail { display: none !important; }
+/* a sidebar como componente (o CSS do bundle a tira do lugar em ≤768px): dentro da região, sempre no lugar */
+html[data-shell-layout-v2="on"] .dsd-shell__region--sidebar .dsd-sidebar {
+  position: static !important;
+  transform: none !important;
+  left: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  display: flex !important;
+}
+/* tablet: a região da sidebar existe (recolhida por padrão; expande com reflow do main) */
+html[data-shell-layout-v2="on"][data-lv2-mode="tablet"] .dsd-shell__region--sidebar {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+html[data-shell-layout-v2="on"][data-lv2-mode="tablet"] .dsd-shell__region--main,
+html[data-shell-layout-v2="on"][data-lv2-mode="wide"] .dsd-shell__region--main { margin-left: 0 !important; }
+
+/* ───────── main e footer no fluxo ───────── */
+html[data-shell-layout-v2="on"] .dsd-shell__region--main {
+  grid-area: main;
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+  transition: none;
+}
+html[data-shell-layout-v2="on"] .dsd-shell__region--main > * { height: auto !important; min-height: 0; min-width: 0; max-width: 100%; }
+html[data-shell-layout-v2="on"] .dsd-shell__region--main .dsd-container { min-width: 0; }
+html[data-shell-layout-v2="on"] .dsd-shell__region--main .dsd-container__body { min-width: 0; }
+html[data-shell-layout-v2="on"] .dsd-shell__region--footer {
+  grid-area: foot;
+  position: static !important;
+  top: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden; /* a barra de ações do rodapé é mais larga/alta que a linha residente (como na região original) */
+  z-index: auto;
+}
+html[data-shell-layout-v2="on"] .dsd-shell__region--footer .dsd-footer,
+html[data-shell-layout-v2="on"] .dsd-shell__region--footer .app-footer {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  padding-bottom: var(--lv2-safe-bottom);
+}
+html[data-shell-layout-v2="on"] .dsd-shell__region--footer .dsd-footer__bottom-inner { flex-wrap: wrap; height: auto; min-height: 32px; }
+
+/* painel imersivo (Avatar Studio: barra própria + palco que mede a própria altura): o main tem ao menos a
+   altura do viewport abaixo do topo e o corpo do container não recorta — a medição do painel encontra o
+   fundo real do viewport; o rodapé vem depois do palco. */
+html[data-shell-layout-v2="on"][data-lv2-immersive="on"] .dsd-shell__region--main { display: flex; flex-direction: column; min-height: calc(100vh - var(--lv2-top)); min-height: calc(100dvh - var(--lv2-top)); }
+html[data-shell-layout-v2="on"][data-lv2-immersive="on"] .dsd-shell__region--main > .dsd-container { flex: 1 1 auto; min-height: calc(100vh - var(--lv2-top)); min-height: calc(100dvh - var(--lv2-top)); }
+html[data-shell-layout-v2="on"][data-lv2-immersive="on"] .dsd-shell__region--main .dsd-container__body { overflow: visible !important; min-height: 0; }
+
+/* full-screen (modo existente do layout-manager): só o main */
+html[data-shell-layout-v2="on"] body.layout-full-screen #app-shell { display: block; padding: 0; }
+html[data-shell-layout-v2="on"] body.layout-full-screen .dsd-shell__region--main { position: static !important; }
+
+/* ───────── compacto: gaveta off-canvas com as mesmas regiões ───────── */
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] #app-shell {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "main" "foot";
+}
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--nav-rail,
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--sidebar {
+  grid-area: auto;
+  position: fixed !important;
+  top: var(--lv2-top) !important;
+  bottom: 0 !important;
+  right: auto !important;
+  height: auto !important;
+  max-height: calc(100vh - var(--lv2-top));
+  max-height: calc(100dvh - var(--lv2-top));
+  margin: 0 !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-110%);
+  transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 240ms;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--nav-rail {
+  left: 0 !important;
+  width: calc(var(--shell-nav-rail-width, 56px) + var(--lv2-safe-left)) !important;
+  padding-left: var(--lv2-safe-left);
+  z-index: var(--shell-z-nav-rail, 150);
+}
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"][data-lv2-rail="off"] .dsd-shell__region--nav-rail { display: none !important; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--sidebar {
+  left: var(--lv2-rail-w) !important;
+  width: min(280px, calc(88vw - var(--lv2-rail-w))) !important;
+  z-index: var(--shell-z-sidebar, 100);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: var(--lv2-safe-bottom);
+}
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"][data-lv2-drawer="open"] .dsd-shell__region--nav-rail,
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"][data-lv2-drawer="open"] .dsd-shell__region--sidebar {
+  transform: none;
+  visibility: visible;
+  pointer-events: auto;
+  transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"][data-lv2-drawer="open"] .dsd-shell__region--sidebar { box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35); }
+@media (prefers-reduced-motion: reduce) {
+  html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--nav-rail,
+  html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--sidebar { transition: none !important; }
+}
+/* dentro da gaveta: trilho e sidebar completos (o nav-rail esconde o desktop em ≤500px e a sidebar some
+   em ≤500px / vira overlay em ≤768px — aqui eles são a navegação) */
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--nav-rail .nav-rail--desktop { display: flex !important; height: 100%; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--nav-rail .nav-rail--mobile { display: none !important; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--nav-rail .navrail-btn { width: 44px; height: 44px; margin: 0 auto; }
+/* na gaveta o trilho é de ícones (como no desktop): o nome fica no aria-label/title; a coluna de 56px não
+   comporta rótulos ("Banco de Dados", "Localizações") sem cortar */
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--nav-rail .navrail-btn__label { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; margin: -1px !important; padding: 0 !important; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--nav-rail .nav-rail__main { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-shell__region--sidebar .dsd-sidebar { display: flex !important; }
+/* na gaveta a sidebar é sempre a versão completa (ícones + nomes), mesmo com preferência "recolhida" */
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar--collapsed .dsd-sidebar__item-text,
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar--collapsed .dsd-sidebar__group-title,
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar--collapsed .dsd-sidebar__section-title,
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar--collapsed .dsd-sidebar__brand-text { display: inline !important; opacity: 1 !important; width: auto !important; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar--collapsed .dsd-sidebar__group-chevron { display: inline-flex !important; opacity: 1 !important; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar--collapsed .dsd-sidebar__search { display: block !important; opacity: 1 !important; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar--collapsed .dsd-sidebar__section--collapsible .dsd-sidebar__section-items { display: block !important; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar .dsd-sidebar__toggle { display: none !important; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar .dsd-sidebar__link,
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .dsd-sidebar .dsd-sidebar__group-button { min-height: 44px; }
+/* scrim: acima do main, abaixo do trilho/sidebar/header (tokens do shell) */
+html[data-shell-layout-v2="on"] .lv2-scrim {
+  position: fixed;
+  top: var(--lv2-top);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--lv2-z-scrim);
+  background: rgba(0, 0, 0, 0.55);
+}
+html[data-shell-layout-v2="on"] .lv2-scrim[hidden] { display: none; }
+:root[data-theme="light"][data-shell-layout-v2="on"] .lv2-scrim { background: rgba(15, 23, 42, 0.45); }
+/* fundo travado com a gaveta aberta (posição preservada: body fixo em −scrollY; iOS: touchmove cancelado no JS) */
+html[data-shell-layout-v2="on"][data-lv2-drawer="open"] body {
+  position: fixed !important;
+  top: var(--lv2-lock-top, 0px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* ───────── botão de navegação no header (só compacto; P1 no contrato do header v2) ───────── */
+html[data-shell-layout-v2="on"] .lv2-nav-toggle { display: none; }
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"] .lv2-nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--hdr-text, rgba(255, 255, 255, 0.9));
+  cursor: pointer;
+}
+html[data-shell-layout-v2="on"] .lv2-nav-toggle[aria-expanded="true"] { background: rgba(127, 127, 127, 0.16); }
+html[data-shell-layout-v2="on"] .lv2-nav-toggle .lv2-ico-close { display: none; }
+html[data-shell-layout-v2="on"] .lv2-nav-toggle[aria-expanded="true"] .lv2-ico-open { display: none; }
+html[data-shell-layout-v2="on"] .lv2-nav-toggle[aria-expanded="true"] .lv2-ico-close { display: block; }
+html[data-shell-layout-v2="on"] .lv2-nav-toggle:focus-visible { outline: 2px solid var(--hdr-active, #6366f1); outline-offset: 2px; }
+/* header clássico (header v2 OFF): o botão precisa de espaço à esquerda do avatar */
+html[data-shell-layout-v2="on"][data-lv2-mode="compact"]:not([data-mobile-header-v2="on"]) .site-header .header-left { gap: 4px; }
+
+/* ───────── sidebar recolhida (desktop/tablet): item ativo e tooltip acessível ───────── */
+html[data-shell-layout-v2="on"] .lv2-tooltip {
+  position: fixed;
+  transform: translateY(-50%);
+  z-index: var(--shell-z-header, 500);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--sidebar-tooltip-bg, #1F2937);
+  color: var(--sidebar-tooltip-text, #F9FAFB);
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+html[data-shell-layout-v2="on"] .lv2-tooltip[hidden] { display: none; }
+html[data-shell-layout-v2="on"] body.sidebar-collapsed .dsd-sidebar__link:focus-visible,
+html[data-shell-layout-v2="on"] .dsd-sidebar__link:focus-visible,
+html[data-shell-layout-v2="on"] .dsd-sidebar__toggle:focus-visible,
+html[data-shell-layout-v2="on"] .navrail-btn:focus-visible { outline: 2px solid var(--hdr-active, #6366f1); outline-offset: -2px; }
+
+/* ───────── FAB de ferramentas (interna): perfil, âncora segura, fora do rodapé, some com gaveta ───────── */
+html[data-shell-layout-v2="on"][data-lv2-role]:not([data-lv2-role="admin"]) #cm-devtools { display: none !important; }
+html[data-shell-layout-v2="on"] #cm-devtools.bottom-right {
+  bottom: calc(var(--lv2-footer-h, 33px) + 12px + var(--lv2-safe-bottom));
+  right: max(12px, var(--lv2-safe-right));
+}
+html[data-shell-layout-v2="on"][data-lv2-drawer="open"] #cm-devtools { visibility: hidden; pointer-events: none; }
+html[data-shell-layout-v2="on"] #cm-devtools .cm-devtools-toggle:focus-visible { outline: 2px solid var(--hdr-active, #6366f1); outline-offset: 2px; }

@@ -204,7 +204,10 @@
        ticker → main), alvos 44px, menu "Mais". ADITIVO e FAIL-CLOSED: com a flag OFF (padrão) o módulo não
        toca no DOM nem injeta CSS. Flag resolvida por usuário via /api/feature-flags?action=resolve.
        Standalone porque o header.bundle.js não deve ser rebuildado. 2026-09-11 -->
-  <script type="module" src="/components/header/mobile-v2/index.js?v=20260911-1"></script>
+  <script type="module" src="/components/header/mobile-v2/index.js?v=20260911-2"></script>
+  <!-- Shell layout v2 (lote as6.shell_layout_v2, decisão #88): módulo standalone aditivo e fail-closed —
+       grade responsiva sidebar/main/footer atrás da flag; com a flag OFF não toca no DOM. -->
+  <script type="module" src="/components/app-shell/layout-v2/index.js?v=20260911-1"></script>
   <!-- Google Calendar — estado do ícone (§8.3) + popover dos próximos (§9). NÃO intercepta o clique
        (que segue navegando para o painel); só hover/foco. Standalone porque o botão vem do
        header-components.bundle.js, cujo rebuild está desaconselhado. 2026-07-30 -->
