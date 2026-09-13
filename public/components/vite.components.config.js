@@ -17,7 +17,8 @@
 // External: /core/*, /components/* (exceto o componente sendo bundlado), /assets/*, /boot/*, /platform/*, /app/*, /modules/*
 // ═══════════════════════════════════════════════════════════════
 
-var ROOT = '/var/www/dshowdash/public';
+// VITE_COMPONENTS_ROOT: raiz alternativa (ensaio em worktree, scripts/deploy/build-lote-main.sh); padrão = produção.
+var ROOT = process.env.VITE_COMPONENTS_ROOT || '/var/www/dshowdash/public';
 
 var COMPONENT = process.env.COMPONENT;
 if (!COMPONENT) {

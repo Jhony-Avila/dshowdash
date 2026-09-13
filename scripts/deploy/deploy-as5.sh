@@ -9,6 +9,8 @@
 #   • backup automático ANTES de qualquer alteração (→ /backup);
 #   • nada de migração automática de banco (runbook separado, com root);
 #   • tudo novo fica atrás de feature flag (as5.* — OFF por padrão);
+#   • lote main (router/registry inlinado) reconstruído a cada deploy com backup +
+#     gates + auto-restauração (decisão #89, 2026-09-12; scripts/deploy/build-lote-main.sh);
 #   • logs completos em /backup/deploy-logs/;
 #   • falha em qualquer etapa = aborta com resumo do ponto exato.
 #
@@ -69,6 +71,7 @@ tar -czf "${BACKUP}/pre-as5-${CARIMBO}-dist.tar.gz" \
   --ignore-failed-read \
   public/components/panels/panel-avatar-studio/dist \
   public/components/panels/panel-dashboard/dist \
+  public/components/main/dist \
   public/components/footer/dist \
   public/index.html api/avatar 2>/dev/null || falha "tar do backup de código"
 # Credenciais pela MESMA fonte que o app usa (config/db_connection.php →
@@ -161,6 +164,14 @@ for PAINEL in public/components/panels/panel-avatar-studio public/components/pan
     && if [ package-lock.json -nt node_modules/.package-lock.json ] 2>/dev/null; then npm install --no-audit --no-fund; fi \
     && npx vite build ) || falha "build de ${PAINEL}"
 done
+# 5b (decisão #89, 2026-09-12): lote `main` entra no deploy — inlina router/registry (rotas canônicas, aliases,
+# retargets). Backup do bundle vivo + gates + auto-restauração em scripts/deploy/build-lote-main.sh.
+# DEPLOY_LOTE_MAIN=0 pula a etapa (escape hatch); nunca é o padrão.
+if [ "${DEPLOY_LOTE_MAIN:-1}" != "0" ]; then
+  DEPLOY_RAIZ="${RAIZ}" DEPLOY_BACKUP="${BACKUP}" CARIMBO="${CARIMBO}" bash "${RAIZ}/scripts/deploy/build-lote-main.sh" || falha "build do lote main (bundle anterior restaurado pelo próprio passo)"
+else
+  echo "⚠ DEPLOY_LOTE_MAIN=0: lote main NÃO reconstruído (bundle atual preservado)"
+fi
 if [ -f public/components/footer/package.json ]; then
   echo "— build: footer (destrava a fase 2 do rodapé §35)"
   ( cd "${RAIZ}/public/components/footer" \
@@ -228,6 +239,7 @@ echo "  commit: ${COMMIT_ANTES} → ${COMMIT_DEPOIS}"
 echo "  backup: ${BACKUP}/pre-as5-${CARIMBO}-dist.tar.gz"
 echo "  log:    ${LOG}"
 echo "  ROLLBACK: git reset --hard ${COMMIT_ANTES} && tar -xzf ${BACKUP}/pre-as5-${CARIMBO}-dist.tar.gz -C ${RAIZ}"
+echo "  Lote main (decisão #89, 2026-09-12): reconstruído neste deploy — rollback do bundle: cp -p ${BACKUP}/main-bundle-${CARIMBO}.js ${RAIZ}/public/components/main/dist/main.bundle.js"
 echo "  Rollout §650 (2026-08-04): novo_shell + palco3d LIGADOS por padrão."
 echo "  Rollback §651 por usuário (console): localStorage.setItem('dshow.avst.flags.v1','{\"as5.novo_shell\":false}')"
 echo "  Flags dev (hud3d/telemetria_painel/estado_api) seguem OFF por padrão."
