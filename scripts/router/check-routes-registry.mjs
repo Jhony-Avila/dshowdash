@@ -33,6 +33,7 @@ for (const [path, cfg] of Object.entries(all)) {
     if (norm === path) { if (a !== '#' + path) fails.push(`ALIAS CIRCULAR ${a} → ${path}`); continue; } // '#/x' é a forma hash da própria rota (convenção do registro), não é alias
     if (paths.has(norm) && norm !== path) fails.push(`ALIAS × PATH ${a} (de ${path}) colide com a rota real ${norm}`);
     if (aliasOwner.has(norm) && aliasOwner.get(norm) !== path) fails.push(`ALIAS DUPLICADO ${a}: ${aliasOwner.get(norm)} × ${path}`);
+    for (const [p2, c2] of Object.entries(all)) if (p2 !== path && c2?.id && (c2.id === norm || c2.id === norm.replace(/^\//, ''))) fails.push(`ALIAS × ID ${a} (de ${path}) colide com o id da rota ${p2}`); // getRouteByIdOrPath tenta id antes do alias
     aliasOwner.set(norm, path);
   }
 }

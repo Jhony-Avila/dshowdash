@@ -1,4 +1,5 @@
 import { routes as definedRoutes } from "./definitions/index.js";
+import { aliasMap } from "./aliases.js";
 const VERSION = "2.4.0-AUTO-INIT";
 const MODULE_ID = "router:registry:helpers";
 let _routesRegistry = definedRoutes || null;
@@ -20,8 +21,20 @@ function getRouteById(id) {
   const routes = getAllRoutes();
   return routes.find((route) => route.id === id) || null;
 }
+function getRouteByAlias(alias) {
+  if (!alias) return null;
+  const formas = alias.charAt(0) === "#" ? [alias] : alias.charAt(0) === "/" ? ["#" + alias, alias] : ["#/" + alias, "/" + alias];
+  for (let i = 0; i < formas.length; i++) {
+    const path = aliasMap.get(formas[i]);
+    if (path && path !== alias) {
+      const r = getRouteByPath(path);
+      if (r) return r;
+    }
+  }
+  return null;
+}
 function getRouteByIdOrPath(idOrPath) {
-  return getRouteById(idOrPath) || getRouteByPath(idOrPath) || null;
+  return getRouteById(idOrPath) || getRouteByPath(idOrPath) || getRouteByAlias(idOrPath) || null;
 }
 function getRouteByPage(page) {
   const routes = getAllRoutes();
@@ -170,6 +183,7 @@ var helpers_default = {
   getAllRoutes,
   getRouteByPath,
   getRouteById,
+  getRouteByAlias,
   getRouteByIdOrPath,
   getRouteByPage,
   getRouteByPanel,
@@ -208,6 +222,7 @@ export {
   getNotFoundRoute,
   getProtectedRoutes,
   getPublicRoutes,
+  getRouteByAlias,
   getRouteById,
   getRouteByIdOrPath,
   getRouteByPage,

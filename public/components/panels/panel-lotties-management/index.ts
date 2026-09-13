@@ -11,7 +11,7 @@
 //   ui — from './ui/renderer.js'
 //   setupEventHandlers — from './ui/events.js'
 //   tracker — from './telemetry/tracker.js'
-//   MODULE_ID, PANEL_ID, PANEL_NAME, AVAILABLE_LOTTIES,
+//   MODULE_ID, PANEL_ID, PANEL_NAME,
 //     ASSIGNABLE_COMPONENTS, metrics, loadCSS, isAuthenticated,
 //     checkPanelAccess, buildHealthCheck, buildInfo — from './core/lifecycle.js'
 //
@@ -38,7 +38,6 @@ import { ui } from './ui/renderer.js';
 import { setupEventHandlers, cleanup as cleanupEvents } from './ui/events.js';
 import { carregarCatalogo } from './core/catalogo.js';
 
-// @ts-expect-error TS migration - TS2724
 import { tracker } from './telemetry/tracker.js';
 import { MODULE_ID as CONST_MODULE_ID, PANEL_ID, PANEL_NAME, ASSIGNABLE_COMPONENTS, metrics, loadCSS, isAuthenticated, checkPanelAccess, buildHealthCheck, buildInfo } from './core/lifecycle.js';
 

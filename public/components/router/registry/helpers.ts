@@ -49,6 +49,7 @@
 'use strict';
 
 import { routes as definedRoutes } from './definitions/index.js';
+import { aliasMap } from './aliases.js';
 
 export const VERSION = '2.4.0-AUTO-INIT';
 export const MODULE_ID = 'router:registry:helpers';
@@ -79,8 +80,21 @@ export function getRouteById(id: string) {
     return routes.find((route: Record<string, unknown>) => route.id === id) || null;
 }
 
+/** Resolve um ALIAS declarado nas definições (ex.: '#/lotties' → '/panel-lotties-management') para a rota canônica.
+ *  Aceita as três formas que o shell tenta ('/x', 'x', '#/x'); aliases são declarados na forma hash ('#/x'). */
+export function getRouteByAlias(alias: string) {
+    if (!alias) return null;
+    const formas = alias.charAt(0) === '#' ? [alias] : alias.charAt(0) === '/' ? ['#' + alias, alias] : ['#/' + alias, '/' + alias];
+    for (let i = 0; i < formas.length; i++) {
+        const path = aliasMap.get(formas[i]);
+        if (path && path !== alias) { const r = getRouteByPath(path); if (r) return r; }
+    }
+    return null;
+}
 export function getRouteByIdOrPath(idOrPath: string) {
-    return getRouteById(idOrPath) || getRouteByPath(idOrPath) || null;
+    // v5.5.0 (lote fix/panel-lotties-management-completion): aliases declarados passam a resolver aqui — antes só id e path,
+    // e os aliases do registro eram letra morta para o shell (extractPanelId → getRouteByIdOrPath).
+    return getRouteById(idOrPath) || getRouteByPath(idOrPath) || getRouteByAlias(idOrPath) || null;
 }
 
 export function getRouteByPage(page: string) {
@@ -243,7 +257,7 @@ export function healthCheck() {
 export function getVersion() { return VERSION; }
 
 export default {
-    VERSION, MODULE_ID, setRoutesRegistry, getAllRoutes, getRouteByPath, getRouteById, getRouteByIdOrPath,
+    VERSION, MODULE_ID, setRoutesRegistry, getAllRoutes, getRouteByPath, getRouteById, getRouteByAlias, getRouteByIdOrPath,
     getRouteByPage, getRouteByPanel, getRouteByView, getRoutesByTag, getRoutesByDomain,
     getRoutesByMinLevel, getRoutesByUARPS, getPublicRoutes, getProtectedRoutes, getEnterpriseRoutes,
     getDefaultRoute, getLoginRoute, getNotFoundRoute, getForbiddenRoute,

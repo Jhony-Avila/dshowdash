@@ -66,8 +66,13 @@ for (const [vp, theme] of SCEN) {
     await page.waitForSelector('.lotties-panel', { state: 'detached', timeout: 20000 }).catch(() => {});
     await page.waitForTimeout(1500);
     r.afterUnmount = await page.evaluate(async () => { const m = await import('/components/panels/panel-lotties-management/index.js'); const ev = await import('/components/panels/panel-lotties-management/ui/events.js'); const st = await import('/components/panels/panel-lotties-management/state/store.js'); const s = m.getStatus(); return { init: s.initialized, mountCount: s.metrics.mountCount, unmountCount: s.metrics.unmountCount, listeners: ev.info().cleanupCount, hasInstance: ev.info().hasInstance, subscribers: st.info().subscriberCount, domLeft: document.querySelectorAll('.lotties-panel, body [data-panel="panel-lotties-management"]').length /* o <link data-panel> do CSS no <head> permanece por design (cache do loadCSS) */ }; });
-    await page.evaluate(() => { location.hash = '#/lotties'; }); // alias: só resolve após rebuild do bundle main (registro na fonte) — informativo
-    r.aliasResolved = await page.waitForSelector('.lotties-panel[data-state="pronto"]', { timeout: 6000 }).then(() => true).catch(() => false);
+    // aliases declarados no registro (resolvidos por registry/helpers.getRouteByAlias, inlinado no bundle main da branch)
+    await page.evaluate(() => { location.hash = '#/lotties'; });
+    r.aliasLotties = await page.waitForSelector('.lotties-panel[data-state="pronto"]', { timeout: 30000 }).then(() => true).catch(() => false);
+    await page.evaluate(() => { location.hash = '#/panel-gestao-paineis'; }); await page.waitForSelector('.lotties-panel', { state: 'detached', timeout: 20000 }).catch(() => {}); await page.waitForTimeout(1000);
+    await page.evaluate(() => { location.hash = '#/animacoes'; });
+    r.aliasAnimacoes = await page.waitForSelector('.lotties-panel[data-state="pronto"]', { timeout: 30000 }).then(() => true).catch(() => false);
+    await page.evaluate(() => { location.hash = '#/panel-gestao-paineis'; }); await page.waitForSelector('.lotties-panel', { state: 'detached', timeout: 20000 }).catch(() => {}); await page.waitForTimeout(1000);
     await page.evaluate(() => { location.hash = '#/panel-lotties-management'; }); // rota canônica → remount
     r.remounted = await page.waitForSelector('.lotties-panel[data-state="pronto"]', { timeout: 30000 }).then(() => true).catch(() => false);
     r.status2 = await page.evaluate(async () => { const m = await import('/components/panels/panel-lotties-management/index.js'); const s = m.getStatus(); return { init: s.initialized, mountCount: s.metrics.mountCount, unmountCount: s.metrics.unmountCount }; });
@@ -87,11 +92,12 @@ G('FILES_AVAILABLE_AT_ASSETS_ANIMACOES', all((r) => r.missing === 0 && r.notFoun
 G('PREVIEW_OPENS_AND_CLOSES', all((r) => r.previewSvg && r.previewClosed), results.map((r) => `${r.vp}/${r.theme}: svg=${r.previewSvg} fechado=${r.previewClosed}`).join(' · '));
 G('ASSIGNMENT_PERSISTS', all((r) => r.assigned && r.assignmentKept), results.map((r) => `${r.vp}/${r.theme}: ${r.assigned}/${r.assignmentKept}`).join(' · '));
 G('UNMOUNT_NO_LEAKS', all((r) => r.afterUnmount && !r.afterUnmount.init && r.afterUnmount.listeners === 0 && !r.afterUnmount.hasInstance && r.afterUnmount.subscribers === 0 && r.afterUnmount.domLeft === 0), results.map((r) => `${r.vp}/${r.theme}: ${JSON.stringify(r.afterUnmount)}`).join(' · '));
-G('REMOUNT_OK', all((r) => r.remounted && r.status2 && r.status2.init && r.status2.mountCount >= 2), results.map((r) => `${r.vp}/${r.theme}: ${JSON.stringify(r.status2)}`).join(' · '));
+G('REMOUNT_OK', all((r) => r.remounted && r.status2 && r.status2.init && r.status2.mountCount >= 4), results.map((r) => `${r.vp}/${r.theme}: ${JSON.stringify(r.status2)}`).join(' · '));
 G('NO_PAGE_ERRORS', all((r) => r.perr.length === 0), results.map((r) => `${r.vp}/${r.theme}: ${r.perr.length}${r.perr.length ? ' ' + JSON.stringify(r.perr.slice(0, 2)) : ''}`).join(' · '));
 G('NO_PANEL_CONSOLE_ERRORS', all((r) => r.cerr.length === 0), results.map((r) => `${r.vp}/${r.theme}: ${r.cerr.length}${r.cerr.length ? ' ' + JSON.stringify(r.cerr.slice(0, 2)) : ''} (console total ${r.cerrAll})`).join(' · '));
 G('NO_HORIZONTAL_OVERFLOW', all((r) => (r.overflowX || 0) === 0), results.map((r) => `${r.vp}/${r.theme}: ${r.overflowX}`).join(' · '));
-gates.push('INFO ALIAS_#/lotties_RESOLVES_BEFORE_BUNDLE_REBUILD — ' + results.map((r) => `${r.vp}/${r.theme}: ${r.aliasResolved}`).join(' · ') + ' (esperado false até o rebuild do lote main — aliases vivem no registro da fonte)');
+G('LOTTIES_ALIAS_ROUTE', all((r) => r.aliasLotties), results.map((r) => `${r.vp}/${r.theme}: #/lotties → ${r.aliasLotties}`).join(' · '));
+G('ANIMACOES_ALIAS_ROUTE', all((r) => r.aliasAnimacoes), results.map((r) => `${r.vp}/${r.theme}: #/animacoes → ${r.aliasAnimacoes}`).join(' · '));
 G('THEME_APPLIED', all((r) => r.themeGot === r.theme), results.map((r) => `${r.vp}: pedido=${r.theme} html=${r.themeGot}`).join(' · '));
 const fails = gates.filter((g) => g.startsWith('FAIL')).length;
 const txt = `# SMOKE panel-lotties-management — ${new Date().toISOString()} — base=${BASE}\n` + gates.join('\n') + `\n# ${fails ? fails + ' FAIL' : 'TODOS PASS'} (${gates.length} gates)\n`;
