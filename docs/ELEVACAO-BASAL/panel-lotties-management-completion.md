@@ -10,7 +10,8 @@ Branch `fix/panel-lotties-management-completion` (base `origin/main` 1326f19b, 2
 2. **`unmount()` lançava `ReferenceError: cleanupEvents is not defined`** — `index.ts` declarava `declare const cleanupEvents` (ambient)
    e nunca importava `cleanup` de `ui/events.js`.
 3. **Catálogo duplicado e caminho inválido** — `core/lifecycle.ts` tinha uma lista fixa de 5 animações e apontava para
-   `/components/animacoes/` (diretório inexistente; corrigido para `/assets/animacoes/` no lote cleanup-v2). Existe fonte canônica:
+   `/components/animacoes/` (diretório inexistente; corrigido para `/assets/animacoes/` no lote cleanup-v2; o mesmo caminho errado existia no
+   módulo canônico do servidor e foi corrigido lá em 2026-09-14). Existe fonte canônica:
    `/assets/animacoes/index.js` (módulo do servidor consumido pelo footer/registry; expõe `info().availableAnimations`, `init()` que
    carrega a lottie-web e `loadAnimation()`).
 4. **Vazamentos** — segunda assinatura do store (persistência) nunca cancelada; nenhum tratamento para o fato de o shell congelado **não
@@ -54,8 +55,10 @@ diff são o mesmo erro com caminho do worktree); **0 erros em todos os `.ts` alt
 `@ts-expect-error` não usado removido. Builds `panel-dashboard`/`panel-avatar-studio`/lote `main` OK, imports relativos quebrados 130 → 130.
 
 ## Limites e pendências fora deste lote
-- O módulo canônico `/assets/animacoes/index.{ts,js}` vive em `public/assets` (não versionado) e resolve arquivos em
-  `/components/animacoes/` (404) — por isso o painel monta as URLs; a animação "cards" do footer (que usa `loadAnimation`) depende
-  desse módulo e continua 404 até o arquivo do servidor ser corrigido (fora do repo).
+- O módulo canônico `/assets/animacoes/index.{ts,js}` vive em `public/assets` (não versionado) e resolvia arquivos em
+  `/components/animacoes/` (404) — por isso o painel monta as URLs com `LOTTIES_BASE_PATH`. **Corrigido no servidor em 2026-09-14**
+  (`basePath = '/assets/animacoes/'` no `.ts` e no `.js`; backup em `/backup/animacoes-modulo-20260914-*/`): `loadAnimation('cards')`
+  busca `/assets/animacoes/Lottie_Cards.json` (200) e renderiza; o slot `[data-lottie="cards"]` do footer não existe no DOM atual, logo
+  não há consumidor quebrado. O painel continua montando as URLs por conta própria (independe do módulo para isso).
 - `panel-gestao-paineis` mostra conteúdo vazio ao voltar após outro painel (`Already mounted`: guarda própria + shell que não chama
   `unmount`) — pré-existente, mesmo contrato; candidato ao mesmo padrão de auto-desmontagem.

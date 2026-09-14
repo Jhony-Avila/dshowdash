@@ -5,9 +5,9 @@
 // PURPOSE: FONTE ÚNICA do catálogo de animações do painel. Não duplica lista alguma: lê o módulo canônico
 //          /assets/animacoes/index.js (o mesmo consumido pelo footer/registry) e normaliza os itens
 //          (id, arquivo, nome, URL válida, disponibilidade verificada por HEAD).
-// NOTA:    o módulo canônico ainda resolve os arquivos internamente em /components/animacoes/ (diretório
-//          inexistente — bug do módulo, que vive fora do repositório em public/assets); por isso o painel
-//          monta as URLs aqui com LOTTIES_BASE_PATH (/assets/animacoes/, origem válida).
+// NOTA:    o módulo canônico vive fora do repositório (public/assets) e, até 2026-09-14, resolvia os arquivos em
+//          /components/animacoes/ (diretório inexistente; corrigido no servidor). O painel monta as URLs aqui com
+//          LOTTIES_BASE_PATH (/assets/animacoes/, origem válida) e não depende do basePath interno do módulo.
 // IMPORTS: LOTTIES_BASE_PATH from ./lifecycle.js · /assets/animacoes/index.js (dinâmico, em runtime)
 // PROVIDES: carregarModulo(), carregarCatalogo(), garantirLottie(), reset(), MODULO_CANONICO, VERSION, MODULE_ID
 // ═══════════════════════════════════════════════════════════════
