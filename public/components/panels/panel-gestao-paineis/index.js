@@ -17,6 +17,15 @@ let _abortController = null;
 let _unsubscribes = [];
 let _refreshTimer = null;
 let _isInitialized = false;
+let _observer = null;
+function _observarDesmontagem() {
+  if (_observer || typeof MutationObserver === "undefined") return;
+  _observer = new MutationObserver(() => {
+    const vivo = !!(_container && _container.isConnected && _container.querySelector(`[data-panel="${PANEL_ID}"]`));
+    if (_isInitialized && !vivo) PanelGestaoPaineis.unmount();
+  });
+  _observer.observe(document.body, { childList: true, subtree: true });
+}
 let _ports = {};
 function _renderKPIs(state) {
   const total = state.pagination.total || state.panels.length;
@@ -48,9 +57,9 @@ function _renderPanel(state) {
     <div class="${CSS_PREFIX}-header">
       <h2 class="${CSS_PREFIX}-header__title">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        Gest\xE3o de Pain\xE9is
+        Gestão de Painéis
       </h2>
-      <p class="${CSS_PREFIX}-header__subtitle">Gerencie e monitore todos os pain\xE9is do sistema</p>
+      <p class="${CSS_PREFIX}-header__subtitle">Gerencie e monitore todos os painéis do sistema</p>
     </div>`;
   let content;
   if (state.loading && state.panels.length === 0) {
@@ -127,8 +136,12 @@ function _renderModalIfNeeded(state) {
 const PanelGestaoPaineis = /* @__PURE__ */ (() => {
   async function mount2(targetContainer, ports) {
     if (_isInitialized && _container) {
-      console.warn(`[${MODULE_ID}] Already mounted`);
-      return;
+      const vivo = _container.isConnected && !!_container.querySelector(`[data-panel="${PANEL_ID}"]`);
+      if (vivo && _container === targetContainer) {
+        console.warn(`[${MODULE_ID}] Already mounted`);
+        return;
+      }
+      unmount2();
     }
     markMountStart();
     _ports = ports || {};
@@ -143,6 +156,7 @@ const PanelGestaoPaineis = /* @__PURE__ */ (() => {
     store.setLoading(true);
     _container.innerHTML = _renderPanel(store.getState());
     setupEventListeners(_container, _abortController);
+    _observarDesmontagem();
     const unsub = store.subscribe(_onStateChange);
     _unsubscribes.push(unsub);
     const signal = _abortController.signal;
@@ -151,7 +165,6 @@ const PanelGestaoPaineis = /* @__PURE__ */ (() => {
       loadCategories(signal)
     ]);
     _refreshTimer = setInterval(() => {
-      // aba oculta: nao gasta requisicao (o painel nao esta a vista)
       if (typeof document !== "undefined" && document.hidden) return;
       loadPanels(_abortController?.signal);
     }, CONFIG.refreshInterval);
@@ -160,6 +173,10 @@ const PanelGestaoPaineis = /* @__PURE__ */ (() => {
   }
   function unmount2() {
     if (!_isInitialized) return;
+    if (_observer) {
+      _observer.disconnect();
+      _observer = null;
+    }
     if (_refreshTimer) {
       clearInterval(_refreshTimer);
       _refreshTimer = null;
@@ -211,12 +228,12 @@ const PanelGestaoPaineis = /* @__PURE__ */ (() => {
   };
 })();
 const { mount, unmount, refresh, getStatus, healthCheck, info, destroy } = PanelGestaoPaineis;
-var panel_gestao_paineis_default = PanelGestaoPaineis;
+var index_default = PanelGestaoPaineis;
 export {
   MODULE_ID,
   PanelGestaoPaineis,
   VERSION,
-  panel_gestao_paineis_default as default,
+  index_default as default,
   destroy,
   getStatus,
   healthCheck,

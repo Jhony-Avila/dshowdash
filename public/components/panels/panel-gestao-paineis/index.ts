@@ -52,6 +52,18 @@ let _abortController: AbortController | null = null;
 let _unsubscribes: Array<() => void> = [];
 let _refreshTimer: ReturnType<typeof setInterval> | null = null;
 let _isInitialized = false;
+// O shell (bundle main) NÃO chama unmount() ao trocar de painel: só esvazia o contentEl. Sem isto, o painel ficava
+// "montado" (timer de refresh, assinatura do store, listeners) e recusava o remount com "Already mounted" (tela vazia
+// ao voltar). Mesmo padrão do panel-lotties-management (lote fix/panel-lotties-management-completion).
+let _observer: MutationObserver | null = null;
+function _observarDesmontagem(): void {
+  if (_observer || typeof MutationObserver === 'undefined') return;
+  _observer = new MutationObserver(() => {
+    const vivo = !!(_container && _container.isConnected && _container.querySelector(`[data-panel="${PANEL_ID}"]`));
+    if (_isInitialized && !vivo) PanelGestaoPaineis.unmount();
+  });
+  _observer.observe(document.body, { childList: true, subtree: true });
+}
 let _ports: PanelPorts = {};
 
 // ─── KPI Rendering ───
@@ -185,8 +197,9 @@ function _renderModalIfNeeded(state: PanelGestaoState): void {
 const PanelGestaoPaineis = (() => {
   async function mount(targetContainer: HTMLElement, ports?: PanelPorts): Promise<void> {
     if (_isInitialized && _container) {
-      console.warn(`[${MODULE_ID}] Already mounted`);
-      return;
+      const vivo = _container.isConnected && !!_container.querySelector(`[data-panel="${PANEL_ID}"]`);
+      if (vivo && _container === targetContainer) { console.warn(`[${MODULE_ID}] Already mounted`); return; }
+      unmount(); // container anterior já foi esvaziado/descartado pelo shell: desmonta e monta de novo
     }
 
     markMountStart();
@@ -210,6 +223,7 @@ const PanelGestaoPaineis = (() => {
 
     // Setup event delegation
     setupEventListeners(_container, _abortController);
+    _observarDesmontagem();
 
     // Subscribe to store changes
     const unsub = store.subscribe(_onStateChange);
@@ -235,6 +249,7 @@ const PanelGestaoPaineis = (() => {
 
   function unmount(): void {
     if (!_isInitialized) return;
+    if (_observer) { _observer.disconnect(); _observer = null; }
 
     // Stop refresh
     if (_refreshTimer) {
