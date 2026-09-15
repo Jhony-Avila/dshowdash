@@ -121,3 +121,9 @@ Regras de uso (mesmas do rollout de 2026-09-12, `/backup/rollout-global-u75-2026
 3. Ordem de rollback quando há composição: `as6.shell_layout_v2` primeiro, depois `as6.mobile_header_v2`.
 4. `ROLLOUT_PCT` aceita só `0` ou `100`; outros valores bloqueiam (`BLOCKED_BAD_INPUT`).
 5. Sonda com override ⇒ bloqueia; escolha outra com `ROLLOUT_PROBE_USER=<id>`.
+6. **Leitura do console nos smokes** (`smoke-flags-prod`, `smoke-gestao-paineis`, `smoke-lotties`, `smoke-rotas-preview`;
+   fonte única `scripts/shell/console-texto.mjs`, desde 2026-09-15): o texto é limpo dos marcadores `%c`/estilos do logger
+   do shell e guardado até 600c (antes 160–200c cortavam a mensagem útil). A telemetria esporádica do bootstrap
+   `[container-main:bootstrap.config.states] Performance critical:` é relatada em `INFO SHELL_PERF_TELEMETRY`/`perfShell` e
+   **não conta** nos gates nem na comparação com a baseline (medida em 1531529e: 3 ocorrências em 10 execuções, sempre com
+   todos os gates funcionais PASS e 0 `pageerror`). **Qualquer outro `console.error` continua sendo FAIL.**

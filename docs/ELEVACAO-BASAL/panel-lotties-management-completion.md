@@ -48,6 +48,10 @@ módulo canônico; 0 arquivos ausentes e 0 respostas 4xx em `/assets/animacoes/`
 atribuição persiste (localStorage) e sobrevive ao remount; ao navegar para outro painel: `initialized=false`, 0 listeners, 0
 assinaturas, 0 instância lottie, 0 nós do painel no `body`; aliases `#/lotties` e `#/animacoes` montam o painel (rota canônica remonta depois: `mountCount=4`); 0 `pageerror`; 0 erro de console;
 overflow-x 0; `html[data-theme]` aplicado. Evidências: `/backup/lotties-fix/20260912/smoke-preview/` (PNGs + JSON + SMOKE-LOTTIES.txt).
+Leitura do console (2026-09-15, `scripts/shell/console-texto.mjs`, compartilhado com `smoke-gestao-paineis`, `smoke-rotas-preview` e
+`smoke-flags-prod`): texto limpo de `%c`/estilos do logger do shell e guardado até 600c; a telemetria esporádica do bootstrap
+`Performance critical:` é contada à parte (`perfShell`) e não entra em `cerr`/`cerrAll` — qualquer outro `console.error` segue
+valendo. Regra registrada no `scripts/deploy/RUNBOOK-BANCO.md` (item 6).
 Validação TypeScript com tipos REAIS: o tsconfig já mapeia `/core/*` → `public/core/*`, mas `public/core` é servido do document root e
 não versionado — no worktree limpo o `tsc` acusa TS2307 falsos. Com `public/core` presente (link para o runtime servido, ignorado pelo
 git, exatamente como no servidor): `tsc --noEmit -p tsconfig.json` → main 406 erros pré-existentes / branch 402 (0 novos; os 2 do

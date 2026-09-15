@@ -4,9 +4,12 @@
 // /assets/animacoes/, preview abre (svg do lottie-web) e fecha por Esc, unmount ao navegar para outro painel (sem
 // listeners/assinaturas/instância sobrando), remount, desktop × mobile, tema claro × escuro, 0 pageerror e 0 erro de
 // console do painel. Exit 1 se algum gate falhar.
+// Console: texto limpo de %c/estilos (scripts/shell/console-texto.mjs); a telemetria "Performance critical" do bootstrap do
+// shell é contada à parte (perfShell) e não entra em cerr/cerrAll.
 // Uso: PREVIEW_BASE=http://127.0.0.1:8904 node scripts/panels/smoke-lotties.mjs --out <dir>
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { classificarConsole } from '../shell/console-texto.mjs';
 const TOOLS = process.env.MH2_TOOLS || '/var/www/dshowdash/tools/screenshot';
 const pkg = (await import(TOOLS + '/node_modules/playwright/index.js')).default;
 const { isLoginPage, loginViaPage } = await import(TOOLS + '/auth.mjs');
@@ -27,9 +30,9 @@ for (const [vp, theme] of SCEN) {
   if (cookies) await ctx.addCookies(cookies);
   await ctx.addInitScript((theme) => { try { localStorage.setItem('cm_theme', theme); localStorage.setItem('dshowdash_theme_prefs', JSON.stringify({ theme, density: 'comfortable' })); localStorage.removeItem('lotties-assignments'); } catch {} }, theme);
   const page = await ctx.newPage();
-  const perr = []; const cerr = []; const notFound = [];
+  const perr = []; const cerr = []; const perfShell = []; const notFound = [];
   page.on('pageerror', (e) => perr.push(String(e && e.message || e).slice(0, 200)));
-  page.on('console', (m) => { if (m.type() === 'error') cerr.push(m.text().slice(0, 200)); });
+  page.on('console', (m) => { const c = classificarConsole(m); if (c.perfShell) perfShell.push(c.texto); else if (c.tipo === 'error') cerr.push(c.texto); });
   page.on('response', (r) => { if (r.status() >= 400 && /lotties|animacoes/.test(r.url())) notFound.push(r.status() + ' ' + r.url().replace(/^https?:\/\/[^/]+/, '')); });
   const r = { vp, theme };
   try {
@@ -37,7 +40,7 @@ for (const [vp, theme] of SCEN) {
     const chegou = await Promise.race([page.waitForSelector('.site-header', { timeout: 25000 }).then(() => 'shell').catch(() => null), page.waitForSelector('input[type="password"]', { state: 'visible', timeout: 25000 }).then(() => 'login').catch(() => null)]);
     if (chegou === 'login' || ((await isLoginPage(page)) && await page.isVisible('input[type="password"]').catch(() => false))) { await loginViaPage(page); try { cookies = await ctx.cookies(); } catch {} }
     await page.waitForSelector('[data-region="main"]', { timeout: 30000 }); await page.waitForSelector('.preloader-container', { state: 'hidden', timeout: 20000 }).catch(() => {});
-    await page.waitForTimeout(2000); perr.length = 0; cerr.length = 0;
+    await page.waitForTimeout(2000); perr.length = 0; cerr.length = 0; perfShell.length = 0;
     r.themeGot = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
     // catálogo canônico (verdade do servidor)
     r.catalogo = await page.evaluate(async () => { const m = await import('/assets/animacoes/index.js'); const i = (m.info ? m : m.default).info(); return Object.keys(i.availableAnimations || {}); });
@@ -79,7 +82,7 @@ for (const [vp, theme] of SCEN) {
     r.assignmentKept = await page.evaluate(() => !!document.querySelector('.component-row.has-lottie'));
     await page.evaluate(() => { location.hash = '#/panel-gestao-paineis'; }); await page.waitForTimeout(1500);
   } catch (e) { r.erro = String(e && e.message || e).slice(0, 300); }
-  r.perr = perr.slice(); r.cerr = cerr.filter((t) => /lotties|animacoes|lottie/i.test(t)); r.cerrAll = cerr.length; r.notFound = notFound.slice();
+  r.perr = perr.slice(); r.cerr = cerr.filter((t) => /lotties|animacoes|lottie/i.test(t)); r.cerrAll = cerr.length; r.perfShell = perfShell.length; r.notFound = notFound.slice();
   results.push(r);
   console.log(`[${vp} ${theme}] ` + JSON.stringify({ mounted: r.mounted, state: r.state, cards: r.cards, cat: r.catalogo && r.catalogo.length, missing: r.missing, preview: r.previewSvg, closed: r.previewClosed, after: r.afterUnmount, remounted: r.remounted, perr: r.perr.length, cerr: r.cerr.length, notFound: r.notFound.length, erro: r.erro }));
   await ctx.close();
@@ -94,7 +97,7 @@ G('ASSIGNMENT_PERSISTS', all((r) => r.assigned && r.assignmentKept), results.map
 G('UNMOUNT_NO_LEAKS', all((r) => r.afterUnmount && !r.afterUnmount.init && r.afterUnmount.listeners === 0 && !r.afterUnmount.hasInstance && r.afterUnmount.subscribers === 0 && r.afterUnmount.domLeft === 0), results.map((r) => `${r.vp}/${r.theme}: ${JSON.stringify(r.afterUnmount)}`).join(' · '));
 G('REMOUNT_OK', all((r) => r.remounted && r.status2 && r.status2.init && r.status2.mountCount >= 4), results.map((r) => `${r.vp}/${r.theme}: ${JSON.stringify(r.status2)}`).join(' · '));
 G('NO_PAGE_ERRORS', all((r) => r.perr.length === 0), results.map((r) => `${r.vp}/${r.theme}: ${r.perr.length}${r.perr.length ? ' ' + JSON.stringify(r.perr.slice(0, 2)) : ''}`).join(' · '));
-G('NO_PANEL_CONSOLE_ERRORS', all((r) => r.cerr.length === 0), results.map((r) => `${r.vp}/${r.theme}: ${r.cerr.length}${r.cerr.length ? ' ' + JSON.stringify(r.cerr.slice(0, 2)) : ''} (console total ${r.cerrAll})`).join(' · '));
+G('NO_PANEL_CONSOLE_ERRORS', all((r) => r.cerr.length === 0), results.map((r) => `${r.vp}/${r.theme}: ${r.cerr.length}${r.cerr.length ? ' ' + JSON.stringify(r.cerr.slice(0, 2)) : ''} (console total ${r.cerrAll}, perf-shell ${r.perfShell})`).join(' · '));
 G('NO_HORIZONTAL_OVERFLOW', all((r) => (r.overflowX || 0) === 0), results.map((r) => `${r.vp}/${r.theme}: ${r.overflowX}`).join(' · '));
 G('LOTTIES_ALIAS_ROUTE', all((r) => r.aliasLotties), results.map((r) => `${r.vp}/${r.theme}: #/lotties → ${r.aliasLotties}`).join(' · '));
 G('ANIMACOES_ALIAS_ROUTE', all((r) => r.aliasAnimacoes), results.map((r) => `${r.vp}/${r.theme}: #/animacoes → ${r.aliasAnimacoes}`).join(' · '));

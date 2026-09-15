@@ -3,9 +3,12 @@
 // navega, espera o main, mede se o painel esperado montou (data-panel-id / seletor), erros de página, erros de console
 // novos e requisições 404 de arquivos do repo. Também confere assets: /components/_shared/geo/br-uf.topo.json (200),
 // /assets/animacoes/<lottie>.json (200) e o antigo caminho /components/animacoes/ (404 esperado — comprova o bug corrigido).
+// Console: texto limpo de %c/estilos (scripts/shell/console-texto.mjs); a telemetria "Performance critical" do bootstrap do
+// shell é contada à parte (perfShell) e não entra em cerr.
 // Uso: PREVIEW_BASE=http://127.0.0.1:8904 node scripts/panels/smoke-rotas-preview.mjs --out <dir>
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { classificarConsole } from '../shell/console-texto.mjs';
 const TOOLS = process.env.MH2_TOOLS || '/var/www/dshowdash/tools/screenshot';
 const pkg = (await import(TOOLS + '/node_modules/playwright/index.js')).default;
 const { isLoginPage, loginViaPage } = await import(TOOLS + '/auth.mjs');
@@ -37,27 +40,27 @@ const ASSETS = [
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage', '--host-resolver-rules=MAP dshowdash.com.br 127.0.0.1, MAP www.dshowdash.com.br 127.0.0.1', '--ignore-certificate-errors'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true });
 const page = await ctx.newPage();
-const perr = []; const cerr = []; const notFound = [];
-page.on('pageerror', (e) => perr.push(String(e && e.message || e).slice(0, 160)));
-page.on('console', (m) => { if (m.type() === 'error') cerr.push(m.text().slice(0, 160)); });
+const perr = []; const cerr = []; const perfShell = []; const notFound = [];
+page.on('pageerror', (e) => perr.push(String(e && e.message || e).slice(0, 200)));
+page.on('console', (m) => { const c = classificarConsole(m); if (c.perfShell) perfShell.push(c.texto); else if (c.tipo === 'error') cerr.push(c.texto); });
 page.on('response', (r) => { if (r.status() === 404 && /\/components\/|\/app\/|\/assets\//.test(r.url())) notFound.push(r.url().replace(/^https?:\/\/[^/]+/, '')); });
 await page.goto(BASE + '/#/', { waitUntil: 'domcontentloaded', timeout: 60000 });
 const chegou = await Promise.race([page.waitForSelector('.site-header', { timeout: 25000 }).then(() => 'shell').catch(() => null), page.waitForSelector('input[type="password"]', { state: 'visible', timeout: 25000 }).then(() => 'login').catch(() => null)]);
 if (chegou === 'login' || ((await isLoginPage(page)) && await page.isVisible('input[type="password"]').catch(() => false))) await loginViaPage(page);
 await page.waitForSelector('[data-region="main"]', { timeout: 30000 });
 await page.waitForSelector('.preloader-container', { state: 'hidden', timeout: 20000 }).catch(() => {});
-const baseErr = { perr: perr.length, cerr: cerr.length };
+const baseErr = { perr: perr.length, cerr: cerr.length, perfShell: perfShell.length };
 const res = [];
 for (const [hash, pid, sel] of ROTAS) {
-  const p0 = perr.length, c0 = cerr.length, n0 = notFound.length;
+  const p0 = perr.length, c0 = cerr.length, f0 = perfShell.length, n0 = notFound.length;
   await page.evaluate((h) => { location.hash = h; }, hash);
   const ok = await page.waitForFunction(({ pid, sel }) => !!document.querySelector(sel) || !!document.querySelector(`[data-panel-id="${pid}"]`) || (document.querySelector('#main')?.innerHTML || '').includes(pid), { pid, sel }, { timeout: 30000 }).then(() => true).catch(() => false);
   await page.waitForTimeout(2500);
   const mounted = await page.evaluate(({ pid, sel }) => ({ bySel: !!document.querySelector(sel), byAttr: !!document.querySelector(`[data-panel-id="${pid}"]`), hash: location.hash, mainLen: (document.querySelector('#main')?.innerText || '').length, erroCard: !!document.querySelector('.panel-error, .pom-error, [data-panel-error]') }), { pid, sel });
-  const r = { hash, pid, ok, ...mounted, perr: perr.slice(p0), cerr: cerr.slice(c0), notFound: notFound.slice(n0) };
+  const r = { hash, pid, ok, ...mounted, perr: perr.slice(p0), cerr: cerr.slice(c0), perfShell: perfShell.slice(f0), notFound: notFound.slice(n0) };
   res.push(r);
   await page.screenshot({ path: resolve(OUT, pid + '.png') }).catch(() => {});
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${hash} → ${pid} montado=${ok} texto=${mounted.mainLen} perr=${r.perr.length} cerr=${r.cerr.length} 404=${r.notFound.length}${r.notFound.length ? ' ' + JSON.stringify(r.notFound.slice(0, 3)) : ''}`);
+  console.log(`${ok ? 'PASS' : 'FAIL'} ${hash} → ${pid} montado=${ok} texto=${mounted.mainLen} perr=${r.perr.length} cerr=${r.cerr.length} perf-shell=${r.perfShell.length} 404=${r.notFound.length}${r.notFound.length ? ' ' + JSON.stringify(r.notFound.slice(0, 3)) : ''}`);
 }
 const assets = [];
 for (const [u, exp] of ASSETS) { const st = await page.evaluate(async (u) => (await fetch(u, { cache: 'no-store' })).status, u); assets.push({ u, exp, st }); console.log(`${st === exp ? 'PASS' : 'FAIL'} asset ${u} → ${st} (esperado ${exp})`); }

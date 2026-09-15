@@ -6,8 +6,12 @@
 // overflow-x, erros de página (pageerror) e erros de console; health da API. Exit 1 se algo divergir do esperado.
 // Uso:  node scripts/deploy/smoke-flags-prod.mjs --out /backup/x/smoke --expect header=on,shell=off [--baseline <smoke.json>]
 //       --expect usa on|off|any por flag; --baseline compara cerr por cenário (novo erro de console = FAIL).
+// Console: texto limpo de %c/estilos (scripts/shell/console-texto.mjs); a telemetria "Performance critical" do bootstrap do
+// shell é contada à parte (perfShell) e NÃO entra em cerr — assim a comparação com a baseline não oscila com esse alerta
+// esporádico (só reduz cerr, nunca aumenta: baselines antigas continuam válidas).
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { classificarConsole } from '../shell/console-texto.mjs';
 
 const TOOLS = process.env.MH2_TOOLS || '/var/www/dshowdash/tools/screenshot';
 const pkg = (await import(TOOLS + '/node_modules/playwright/index.js')).default;
@@ -28,7 +32,7 @@ const health = await fetch(BASE + '/api/health').then((r) => r.status).catch(() 
 log('health', health);
 
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage', '--host-resolver-rules=MAP dshowdash.com.br 127.0.0.1, MAP www.dshowdash.com.br 127.0.0.1', '--ignore-certificate-errors'] });
-const result = { version: '1.0.0', base: BASE, at: new Date().toISOString(), health, expect: EXPECT, scenarios: [] };
+const result = { version: '1.1.0', base: BASE, at: new Date().toISOString(), health, expect: EXPECT, scenarios: [] };
 let cookies = null;
 for (const [vw, vh] of VIEWPORTS) {
   const ctx = await browser.newContext({ viewport: { width: vw, height: vh }, deviceScaleFactor: 1, ignoreHTTPSErrors: true, isMobile: vw < 700, hasTouch: vw < 700 });
@@ -36,9 +40,9 @@ for (const [vw, vh] of VIEWPORTS) {
   // SEM override local: garante que a decisão vem do servidor
   await ctx.addInitScript(() => { try { localStorage.removeItem('dshow.avst.flags.v1'); localStorage.setItem('avst.vc.onboarded', '1'); } catch {} });
   const page = await ctx.newPage();
-  const perr = [], cerr = [];
+  const perr = [], cerr = [], perfShell = [];
   page.on('pageerror', (e) => perr.push(String(e && e.message || e).slice(0, 200)));
-  page.on('console', (m) => { if (m.type() === 'error') cerr.push(m.text().slice(0, 200)); });
+  page.on('console', (m) => { const c = classificarConsole(m); if (c.perfShell) perfShell.push(c.texto); else if (c.tipo === 'error') cerr.push(c.texto); });
   const tag = `${vw}x${vh}`;
   const s = { tag, vw, vh, ok: false };
   try {
@@ -69,9 +73,9 @@ for (const [vw, vh] of VIEWPORTS) {
     await page.screenshot({ path: resolve(OUT, `${tag}.png`), fullPage: false }).catch(() => {});
     s.ok = true;
   } catch (e) { s.erro = String(e && e.message || e).slice(0, 300); }
-  s.perr = perr.length; s.cerr = cerr.length; s.perrList = perr.slice(0, 5); s.cerrList = cerr.slice(0, 8);
+  s.perr = perr.length; s.cerr = cerr.length; s.perfShell = perfShell.length; s.perrList = perr.slice(0, 5); s.cerrList = cerr.slice(0, 8); s.perfShellList = perfShell.slice(0, 2);
   result.scenarios.push(s);
-  log(tag, JSON.stringify({ ok: s.ok, header: s.headerAttr, shell: s.shellAttr, resolve: s.resolve, overflowX: s.overflowX, perr: s.perr, cerr: s.cerr, erro: s.erro }));
+  log(tag, JSON.stringify({ ok: s.ok, header: s.headerAttr, shell: s.shellAttr, resolve: s.resolve, overflowX: s.overflowX, perr: s.perr, cerr: s.cerr, perfShell: s.perfShell, erro: s.erro }));
   await ctx.close();
 }
 await browser.close();
@@ -104,6 +108,7 @@ if (BASELINE) {
 } else {
   gates.push('INFO CONSOLE_ERRORS (baseline) — ' + result.scenarios.map((s) => `${s.tag}: cerr=${s.cerr}`).join(' · '));
 }
+gates.push('INFO SHELL_PERF_TELEMETRY (não conta no gate) — ' + result.scenarios.map((s) => `${s.tag}: perfShell=${s.perfShell}`).join(' · '));
 const falhas = gates.filter((g) => g.startsWith('FAIL')).length;
 const txt = `# SMOKE flags prod — ${result.at} — base=${BASE} — expect=${JSON.stringify(EXPECT)}\n` + gates.join('\n') + `\n# ${falhas ? falhas + ' FAIL' : 'TODOS PASS'} (${gates.filter((g) => !g.startsWith('INFO')).length} gates)\n`;
 writeFileSync(resolve(OUT, 'smoke.json'), JSON.stringify(result, null, 2));
