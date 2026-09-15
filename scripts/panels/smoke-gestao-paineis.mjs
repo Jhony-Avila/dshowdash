@@ -19,8 +19,14 @@ const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true });
 const page = await ctx.newPage();
 const perr = []; const cerr = [];
+// O logger do shell usa console.error('%c…', 'color: …; font-weight: …', msg): o text() do Playwright concatena
+// os marcadores %c e os argumentos de estilo antes da mensagem real, e o truncamento antigo (200c) cortava
+// justamente a parte útil. Remove marcadores e declarações CSS antes de truncar, mantendo a mensagem inteira.
+const RE_ESTILO = /\b(?:color|background(?:-color)?|font(?:-weight|-style|-size|-family)?|padding|margin|border(?:-radius)?|text-decoration|display)\s*:[^;]*;?/g;
+const limparTextoConsole = (t) => String(t || '').replace(/%c/g, '').replace(RE_ESTILO, '').replace(/\s{2,}/g, ' ').trim();
+const LIMITE_CONSOLE = 600;
 page.on('pageerror', (e) => perr.push(String(e && e.message || e).slice(0, 200)));
-page.on('console', (m) => { if (m.type() === 'error' || /Already mounted/.test(m.text())) cerr.push(m.type() + ': ' + m.text().slice(0, 200)); });
+page.on('console', (m) => { if (m.type() === 'error' || /Already mounted/.test(m.text())) cerr.push(m.type() + ': ' + limparTextoConsole(m.text()).slice(0, LIMITE_CONSOLE)); });
 await page.goto(BASE + '/#/', { waitUntil: 'domcontentloaded', timeout: 60000 });
 const chegou = await Promise.race([page.waitForSelector('.site-header', { timeout: 25000 }).then(() => 'shell').catch(() => null), page.waitForSelector('input[type="password"]', { state: 'visible', timeout: 25000 }).then(() => 'login').catch(() => null)]);
 if (chegou === 'login' || ((await isLoginPage(page)) && await page.isVisible('input[type="password"]').catch(() => false))) await loginViaPage(page);
