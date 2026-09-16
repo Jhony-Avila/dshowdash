@@ -98,10 +98,12 @@ function _renderPagination() {
   const p = _pagination || {};
   const page = Number(p.page) || 1; const totalPages = Number(p.totalPages || p.total_pages) || 1; const total = Number(p.total) || 0;
   if (!total) { el.innerHTML = ''; return; }
-  el.innerHTML = `<span class="p05-pagination-info">Página ${page} de ${totalPages} · ${total.toLocaleString('pt-BR')} clientes</span>
+  // .p05-btn-page é botão de ícone (32×32, styles/_table.pagination.css): só setas + aria-label; texto no .p05-pagination-current
+  el.innerHTML = `<span class="p05-pagination-info">${total.toLocaleString('pt-BR')} clientes</span>
     <div class="p05-pagination-controls">
-      <button type="button" class="p05-btn-page" data-action="page" data-page="${page - 1}" ${page <= 1 ? 'disabled' : ''}>‹ Anterior</button>
-      <button type="button" class="p05-btn-page" data-action="page" data-page="${page + 1}" ${page >= totalPages ? 'disabled' : ''}>Próxima ›</button>
+      <button type="button" class="p05-btn-page" data-action="page" data-page="${page - 1}" title="Página anterior" aria-label="Página anterior" ${page <= 1 ? 'disabled' : ''}>&#8249;</button>
+      <span class="p05-pagination-current">Página ${page} de ${totalPages}</span>
+      <button type="button" class="p05-btn-page" data-action="page" data-page="${page + 1}" title="Próxima página" aria-label="Próxima página" ${page >= totalPages ? 'disabled' : ''}>&#8250;</button>
     </div>`;
 }
 

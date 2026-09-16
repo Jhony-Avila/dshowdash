@@ -56,6 +56,5 @@
 
 /* Retoques (2026-09-16): rótulos de valor não se amontoam com 12+ meses; botões da paginação não quebram linha */
 .p05-bar-value { font-size: 10px; line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.p05-pagination { display: flex; align-items: center; justify-content: space-between; gap: var(--p05-space-md); flex-wrap: wrap; }
-.p05-pagination-controls { display: flex; gap: var(--p05-space-xs); }
-.p05-btn-page { white-space: nowrap; }
+.p05-pagination-controls { align-items: center; }
+.p05-pagination-current { white-space: nowrap; color: var(--p05-text-secondary); font: var(--p05-font-body-sm); }

@@ -86,10 +86,11 @@ function _renderPagination() {
     el.innerHTML = "";
     return;
   }
-  el.innerHTML = `<span class="p05-pagination-info">P\xE1gina ${page} de ${totalPages} \xB7 ${total.toLocaleString("pt-BR")} clientes</span>
+  el.innerHTML = `<span class="p05-pagination-info">${total.toLocaleString("pt-BR")} clientes</span>
     <div class="p05-pagination-controls">
-      <button type="button" class="p05-btn-page" data-action="page" data-page="${page - 1}" ${page <= 1 ? "disabled" : ""}>\u2039 Anterior</button>
-      <button type="button" class="p05-btn-page" data-action="page" data-page="${page + 1}" ${page >= totalPages ? "disabled" : ""}>Pr\xF3xima \u203A</button>
+      <button type="button" class="p05-btn-page" data-action="page" data-page="${page - 1}" title="P\xE1gina anterior" aria-label="P\xE1gina anterior" ${page <= 1 ? "disabled" : ""}>&#8249;</button>
+      <span class="p05-pagination-current">P\xE1gina ${page} de ${totalPages}</span>
+      <button type="button" class="p05-btn-page" data-action="page" data-page="${page + 1}" title="Pr\xF3xima p\xE1gina" aria-label="Pr\xF3xima p\xE1gina" ${page >= totalPages ? "disabled" : ""}>&#8250;</button>
     </div>`;
 }
 function registerCallbacks(callbacks) {
