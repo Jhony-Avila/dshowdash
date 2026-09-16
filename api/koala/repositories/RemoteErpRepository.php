@@ -1,5 +1,9 @@
 <?php
 // /api/koala/repositories/RemoteErpRepository.php
+// 2026-09-16: reapontado ao schema NOVO do ERP (TypeORM, 14/08/2026; legado Orcamento/Orcamento_Item/Contato_Email dropado
+//   em 19–20/08): orc_orcamento(+sys_usuario = vendedor), orc_orcamento_item, ent_cliente_email+shr_contato. Shape dos
+//   resultados preservado (Id_Orc, Valor_Final, Id_Status, Nome_Vendedor, Qtd, Valor_Uni, Categoria…). Escopo por vendedor =
+//   sys_usuario.nome (antes Orcamento.Nome_Vendedor). Categoria dos itens = linha_papel (enum do ERP novo).
 // Leitura do ERP remoto (DSHOW_PROD). READ-ONLY POR CONSTRUÇÃO:
 //  - a credencial disponível (.env) tem GRANT ALL (NÃO é read-only) -> RISCO registrado;
 //  - defesa: (1) só métodos de SELECT preparado existem aqui; (2) SET SESSION TRANSACTION READ ONLY;
@@ -88,7 +92,7 @@ class RemoteErpRepository
         // Escopo por vendedor (BOLA): vendedor só vê clientes que ELE orçou (Orcamento.Nome_Vendedor).
         // null = gestor/admin (irrestrito). O EXISTS roda sobre o resultado já estreitado por cada branch
         // (id/doc/email/nome, todos indexados) — barato, diferente do EXISTS global que estourava timeout.
-        $ven = $vendor !== null ? ' AND EXISTS (SELECT 1 FROM Orcamento ov WHERE ov.id_cliente = c.id AND ov.Nome_Vendedor = :ven)' : '';
+        $ven = $vendor !== null ? ' AND EXISTS (SELECT 1 FROM orc_orcamento ov JOIN sys_usuario ou ON ou.id = ov.id_vendedor WHERE ov.id_cliente = c.id AND ov.deleted = 0 AND ou.nome = :ven)' : '';
         $venP = $vendor !== null ? [':ven' => $vendor] : [];
 
         $add = function (array $rows) use (&$found) {
@@ -111,16 +115,17 @@ class RemoteErpRepository
                            LEFT JOIN ent_organizacao o ON o.id_entidade = c.id_entidade
                            WHERE c.id = :qn AND (c.deleted = 0 OR c.deleted IS NULL)$ven LIMIT 5", [':qn' => (int) $q] + $venP));
                 // busca por id_orcamento: filtra direto pelo dono do orçamento (não pelo EXISTS de cliente).
-                $venOrc = $vendor !== null ? ' AND orc.Nome_Vendedor = :ven' : '';
+                $venOrc = $vendor !== null ? ' AND ou.nome = :ven' : '';
                 $add($run("SELECT c.id AS cliente_id, e.tipo,
                              COALESCE(o.razao_social, p.nome) AS nome, o.nome_fantasia AS fantasia,
                              COALESCE(o.cnpj, p.cpf) AS documento
-                           FROM Orcamento orc
+                           FROM orc_orcamento orc
+                           LEFT JOIN sys_usuario ou ON ou.id = orc.id_vendedor
                            JOIN ent_cliente c ON c.id = orc.id_cliente
                            JOIN ent_entidade e ON e.id = c.id_entidade
                            LEFT JOIN ent_pessoa p ON p.id_entidade = c.id_entidade
                            LEFT JOIN ent_organizacao o ON o.id_entidade = c.id_entidade
-                           WHERE orc.Id_Orc = :qn$venOrc LIMIT 5", [':qn' => (int) $q] + $venP));
+                           WHERE (orc.id = :qn OR orc.id_orcamento_legado = :qn2) AND orc.deleted = 0$venOrc LIMIT 5", [':qn' => (int) $q, ':qn2' => (int) $q] + $venP));
             }
             // (2) documento CNPJ/CPF (>= 4 dígitos)
             if (strlen($digits) >= 4) {
@@ -137,12 +142,13 @@ class RemoteErpRepository
                 $add($run("SELECT DISTINCT c.id AS cliente_id, e.tipo,
                              COALESCE(o.razao_social, p.nome) AS nome, o.nome_fantasia AS fantasia,
                              COALESCE(o.cnpj, p.cpf) AS documento
-                           FROM Contato_Email ce
-                           LEFT JOIN ent_pessoa p ON p.id = ce.Id_Pessoa
-                           LEFT JOIN ent_organizacao o ON o.id = ce.Id_Organizacao
-                           JOIN ent_cliente c ON c.id_entidade = COALESCE(p.id_entidade, o.id_entidade)
+                           FROM shr_contato ct
+                           JOIN ent_cliente_email cem ON cem.id_contato = ct.id
+                           JOIN ent_cliente c ON c.id = cem.id_cliente
                            JOIN ent_entidade e ON e.id = c.id_entidade
-                           WHERE ce.Email LIKE :like AND (c.deleted = 0 OR c.deleted IS NULL)$ven LIMIT $lim", [':like' => $like] + $venP));
+                           LEFT JOIN ent_pessoa p ON p.id_entidade = c.id_entidade
+                           LEFT JOIN ent_organizacao o ON o.id_entidade = c.id_entidade
+                           WHERE ct.identificador = 'EMAIL' AND ct.deleted = 0 AND ct.chave LIKE :like AND (c.deleted = 0 OR c.deleted IS NULL)$ven LIMIT $lim", [':like' => $like] + $venP));
             }
             // (4) nome (pessoa e organização, separados) — exige >=3 chars: freia enumeração ampla
             //     da base do ERP por termos curtos (id numérico e documento têm seus próprios branches).
@@ -167,7 +173,7 @@ class RemoteErpRepository
     /** Detalhe completo do cliente (para o snapshot). $vendor!=null exige que o vendedor tenha orçado o cliente. */
     public function getClientDetail(int $clientId, ?string $vendor = null): ?array
     {
-        $venSql = $vendor !== null ? ' AND EXISTS (SELECT 1 FROM Orcamento ov WHERE ov.id_cliente = c.id AND ov.Nome_Vendedor = ?)' : '';
+        $venSql = $vendor !== null ? ' AND EXISTS (SELECT 1 FROM orc_orcamento ov JOIN sys_usuario ou ON ou.id = ov.id_vendedor WHERE ov.id_cliente = c.id AND ov.deleted = 0 AND ou.nome = ?)' : '';
         $params = $vendor !== null ? [$clientId, $vendor] : [$clientId];
         $sql = 'SELECT c.id AS cliente_id, e.tipo,
                        p.cpf, p.nome AS pessoa_nome, p.primeiro_nome, p.sobrenome,
@@ -184,12 +190,10 @@ class RemoteErpRepository
             if (!$row) { return null; }
             // e-mail principal (best-effort)
             $em = $this->conn()->prepare(
-                'SELECT ce.Email FROM Contato_Email ce
-                 JOIN ent_cliente c ON c.id = ?
-                 LEFT JOIN ent_pessoa p ON p.id_entidade = c.id_entidade
-                 LEFT JOIN ent_organizacao o ON o.id_entidade = c.id_entidade
-                 WHERE (ce.Id_Pessoa = p.id OR ce.Id_Organizacao = o.id)
-                 ORDER BY ce.Principal DESC LIMIT 1'
+                'SELECT ct.chave AS Email FROM ent_cliente_email cem
+                 JOIN shr_contato ct ON ct.id = cem.id_contato AND ct.deleted = 0 AND ct.identificador = \'EMAIL\'
+                 WHERE cem.id_cliente = ?
+                 ORDER BY ct.padrao DESC, ct.id LIMIT 1'
             );
             $em->execute([$clientId]);
             $row['email'] = $em->fetchColumn() ?: null;
@@ -205,10 +209,20 @@ class RemoteErpRepository
     /** Orçamentos do cliente (cabeçalho). Sempre LIMIT. $vendor!=null restringe ao dono (BOLA). */
     public function getClientOrcamentos(int $clientId, ?string $vendor = null): array
     {
-        $venSql = $vendor !== null ? ' AND Nome_Vendedor = ?' : '';
+        $venSql = $vendor !== null ? ' AND ou.nome = ?' : '';
         $params = $vendor !== null ? [$clientId, $vendor] : [$clientId];
-        $sql = 'SELECT Id_Orc, id_cliente, Nome_Cliente, Valor_Final, Subtotal, Id_Status, Nome_Vendedor, Data_Criacao
-                FROM Orcamento WHERE id_cliente = ?' . $venSql . ' ORDER BY Data_Criacao DESC LIMIT ' . self::MAX_RESULTS;
+        // Shape legado preservado (Id_Orc, Valor_Final, Id_Status 3=ganho/4=perdido/1=andamento/2=reprovado, Nome_Vendedor…).
+        $sql = 'SELECT x.id AS Id_Orc, x.id_cliente,
+                       COALESCE(NULLIF(co.nome_fantasia, \'\'), NULLIF(co.razao_social, \'\'), cp.nome) AS Nome_Cliente,
+                       x.total AS Valor_Final, x.subtotal AS Subtotal,
+                       CASE x.status WHEN \'GANHO\' THEN 3 WHEN \'PERDIDO\' THEN 4 WHEN \'EM_ANDAMENTO\' THEN 1 ELSE 2 END AS Id_Status,
+                       x.status AS Status, x.tipo_negocio AS Tipo_Negocio, ou.nome AS Nome_Vendedor, x.created_at AS Data_Criacao
+                FROM orc_orcamento x
+                LEFT JOIN sys_usuario ou ON ou.id = x.id_vendedor
+                LEFT JOIN ent_cliente c ON c.id = x.id_cliente
+                LEFT JOIN ent_organizacao co ON co.id_entidade = c.id_entidade AND co.deleted = 0
+                LEFT JOIN ent_pessoa cp ON cp.id_entidade = c.id_entidade AND cp.deleted = 0
+                WHERE x.id_cliente = ? AND x.deleted = 0' . $venSql . ' ORDER BY x.created_at DESC LIMIT ' . self::MAX_RESULTS;
         try {
             $stmt = $this->conn()->prepare($sql);
             $stmt->execute($params);
@@ -226,13 +240,14 @@ class RemoteErpRepository
     public function getOrcamentoItems(int $orcId, ?string $vendor = null): array
     {
         if ($vendor !== null) {
-            $sql = 'SELECT oi.Id, oi.Id_Orc, oi.Id_Produto, oi.Descricao, oi.Qtd, oi.Valor_Uni, oi.Subtotal, oi.Categoria, oi.categoria_item, oi.Observacao
-                    FROM Orcamento_Item oi JOIN Orcamento o ON o.Id_Orc = oi.Id_Orc
-                    WHERE oi.Id_Orc = ? AND o.Nome_Vendedor = ? ORDER BY oi.Id LIMIT 500';
+            $sql = 'SELECT oi.id AS Id, oi.id_orcamento AS Id_Orc, oi.id_produto AS Id_Produto, COALESCE(NULLIF(oi.descricao, \'\'), lp.nome) AS Descricao, oi.qtd AS Qtd, oi.valor_unitario_snapshot AS Valor_Uni, oi.subtotal AS Subtotal, oi.linha_papel AS Categoria, oi.linha_papel AS categoria_item, oi.observacao AS Observacao
+                    FROM orc_orcamento_item oi JOIN orc_orcamento o ON o.id = oi.id_orcamento LEFT JOIN sys_usuario ou ON ou.id = o.id_vendedor LEFT JOIN log_produto lp ON lp.id = oi.id_produto
+                    WHERE oi.id_orcamento = ? AND oi.deleted = 0 AND o.deleted = 0 AND ou.nome = ? ORDER BY oi.id LIMIT 500';
             $params = [$orcId, $vendor];
         } else {
-            $sql = 'SELECT Id, Id_Orc, Id_Produto, Descricao, Qtd, Valor_Uni, Subtotal, Categoria, categoria_item, Observacao
-                    FROM Orcamento_Item WHERE Id_Orc = ? ORDER BY Id LIMIT 500';
+            $sql = 'SELECT oi.id AS Id, oi.id_orcamento AS Id_Orc, oi.id_produto AS Id_Produto, COALESCE(NULLIF(oi.descricao, \'\'), lp.nome) AS Descricao, oi.qtd AS Qtd, oi.valor_unitario_snapshot AS Valor_Uni, oi.subtotal AS Subtotal, oi.linha_papel AS Categoria, oi.linha_papel AS categoria_item, oi.observacao AS Observacao
+                    FROM orc_orcamento_item oi JOIN orc_orcamento o ON o.id = oi.id_orcamento LEFT JOIN log_produto lp ON lp.id = oi.id_produto
+                    WHERE oi.id_orcamento = ? AND oi.deleted = 0 AND o.deleted = 0 ORDER BY oi.id LIMIT 500';
             $params = [$orcId];
         }
         try {
