@@ -7,8 +7,6 @@ import { store } from "./state/store.js";
 import { apiClient } from "./services/api.js";
 import { updateCountdown } from "./renderer/status.js";
 import { clear as clearTable } from "./renderer/table.js";
-// `start` faltava no import: o mount chamava startScheduler(...) -> ReferenceError
-// -> painel 100% morto. scheduler/refresh.js exporta start(options) e stop().
 import { start as startScheduler, stop as stopScheduler } from "./scheduler/refresh.js";
 import * as Telemetry from "./telemetry/tracker.js";
 import { toastManager } from "./ui/toast.js";
@@ -75,7 +73,7 @@ const _getContext = () => ({ refs: _refs, moduleId: MODULE_ID, version: VERSION,
 const _initToast = () => {
   toastManager.init(_refs?.container ?? document.body);
   if (hasWindow) {
-    window.Toast = { show: (opts) => {
+    window.Toast = { __panel05Provider: true, show: (opts) => {
       const type = opts.type || "info";
       const message = opts.message || "";
       return toastManager[type] ? toastManager[type](message, opts) : toastManager.info(message, opts);
@@ -119,11 +117,6 @@ const mount = (container, config = {}) => {
     document.addEventListener("keydown", (e) => handleKeyboard(e, ctx), { signal: _abortController.signal });
     try {
       await loadAllData(MODULE_ID, VERSION);
-      // O scheduler so arranca DEPOIS da carga inicial dar certo. Se loadAllData lanca
-      // (hoje a API responde 500), o mount retorna false e o unmount NAO roda — um
-      // setInterval orfao ficaria disparando onTick/onRefresh num painel que nunca
-      // montou, estourando na rota SEGUINTE como "Mount failed {Maximum call stack}"
-      // atribuido a panel-05.
       startScheduler({ interval: config.refreshInterval || REFRESH_INTERVAL || 6e4, onTick: (seconds) => updateCountdown(_refs, seconds), onRefresh: () => loadClientes() });
       _initialized = true;
       _mountedAt = Date.now();
@@ -135,7 +128,7 @@ const mount = (container, config = {}) => {
       toastManager.success("Painel carregado");
       return true;
     } catch (err) {
-      stopScheduler();   // rede de seguranca: nada de timer sobrevivendo a um mount falho
+      stopScheduler();
       _log("error", "Mount failed", { error: err?.message });
       _emitLifecycle(PANEL_EVENTS.ERROR, { error: err?.message });
       return false;

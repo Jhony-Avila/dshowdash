@@ -29,13 +29,25 @@
 
 import { store } from '../state/store.js';
 import * as Cliente360View from '../managers/cliente360-view.js';
+import { updateTable, updatePagination, updateSort } from '../renderer/table.js';
+import { updateLoading, updateError, hideStatus } from '../renderer/status.js';
+import { updateFilters } from '../renderer/filters.js';
+import * as Favoritos from '../managers/favoritos.js';
 
-export const VERSION = '9.3.0-P2-ENTERPRISE';
+export const VERSION = '9.3.1-P2-ENTERPRISE';
 export const MODULE_ID = 'panel-05:handlers:subscriptions';
 
 let _unsubscribes: Array<() => void> = [];
 
 export const setup = (ctx: Record<string, unknown>) => {
+  // 2026-09-16 (rodada frontend 05/16): estas seis assinaturas só existiam em index/subscriptions.ts, módulo ÓRFÃO
+  // (ninguém importa) — no caminho vivo a tabela nunca era preenchida e loading/erro/filtros nunca chegavam ao DOM.
+  _unsubscribes.push(store.subscribe('clientes', (clientes: unknown) => { updateTable(ctx.refs as Record<string, unknown> | null, clientes, Favoritos.getAll()); hideStatus(ctx.refs as Record<string, unknown> | null); }));
+  _unsubscribes.push(store.subscribe('pagination', (pagination: unknown) => { updatePagination(ctx.refs, pagination); }));
+  _unsubscribes.push(store.subscribe('sort', (sort: unknown) => { updateSort(ctx.refs, sort as Record<string, unknown> | null); }));
+  _unsubscribes.push(store.subscribe('loading', (loading: unknown) => { updateLoading(ctx.refs as Record<string, unknown> | null, !!loading); }));
+  _unsubscribes.push(store.subscribe('error', (error: unknown) => { updateError(ctx.refs as Record<string, unknown> | null, error); }));
+  _unsubscribes.push(store.subscribe('filters', (filters: unknown) => { updateFilters(ctx.refs as Record<string, unknown> | null, filters as Record<string, unknown>); }));
   _unsubscribes.push(store.subscribe('cliente360', (data: unknown) => { if (data) Cliente360View.show(ctx.refs, data, ctx.moduleId, ctx.version); else Cliente360View.hide(ctx.refs, ctx.moduleId, ctx.version); }));
   _unsubscribes.push(store.subscribe('kpis', (data: unknown) => { if (data && ctx.renderKPIs) (ctx.renderKPIs as (d: unknown) => void)(data); }));
   _unsubscribes.push(store.subscribe('charts', (data: unknown) => { if (data && (ctx.refs as Record<string, unknown>)?.chartsArea && ((ctx.refs as Record<string, unknown>).chartsArea as HTMLElement)?.style.display !== 'none' && ctx.renderCharts) (ctx.renderCharts as (d: unknown) => void)(data); }));

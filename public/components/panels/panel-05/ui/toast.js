@@ -1,12 +1,12 @@
 import { recordViolation } from "/core/runtime/enterprise/strict-mode.js";
-const VERSION = "9.3.0-P2-ENTERPRISE";
+const VERSION = "9.3.1-P2-ENTERPRISE";
 const MODULE_ID = "panel-05:toast";
 function _getToast() {
   if (window.Core?.windowAdapter?.get) {
     const wt = window.Core.windowAdapter.get("Toast");
-    if (wt) return wt;
+    if (wt && !wt.__panel05Provider) return wt;
   }
-  if (window.Toast) {
+  if (window.Toast && !window.Toast.__panel05Provider) {
     recordViolation("WINDOW_TOAST_FALLBACK", { module: MODULE_ID });
     return window.Toast;
   }
@@ -45,20 +45,29 @@ class ToastManager {
   }
   _show(type, message, options = {}) {
     const { title, duration, action, actionLabel = "A\xE7\xE3o", persist = false } = options;
-    const toast = _getToast();
-    if (toast?.show) {
-      const toastOptions = {
-        type,
-        message,
-        title: title || void 0,
-        duration: persist ? 0 : duration,
-        actions: action ? [{ label: actionLabel, primary: true, onClick: action }] : []
-      };
-      return toast.show(toastOptions);
+    if (this._inShow) {
+      _getLogger()?.warn?.("[panel-05:toast] reentrada bloqueada", { type });
+      return null;
     }
-    const logger = _getLogger();
-    logger?.warn?.("[panel-05:toast] Toast Service not available");
-    return null;
+    this._inShow = true;
+    try {
+      const toast = _getToast();
+      if (toast?.show) {
+        const toastOptions = {
+          type,
+          message,
+          title: title || void 0,
+          duration: persist ? 0 : duration,
+          actions: action ? [{ label: actionLabel, primary: true, onClick: action }] : []
+        };
+        return toast.show(toastOptions);
+      }
+      const logger = _getLogger();
+      logger?.warn?.("[panel-05:toast] Toast Service not available");
+      return null;
+    } finally {
+      this._inShow = false;
+    }
   }
   dismiss(id) {
     const toast = _getToast();

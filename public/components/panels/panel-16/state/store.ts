@@ -37,7 +37,9 @@ export class StateStore {
   isLoading() { return this._state.loading; }
   getError() { return this._state.error; }
 
-  setData(data: unknown) { this._state.data = data; this._state.error = null; this._notify(); }
+  // 2026-09-16: dados chegaram = não está mais carregando. O assinante em index.ts testa `loading` ANTES de `data`;
+  // sem zerar aqui a UI ficava em "Carregando…" para sempre (loadData só chama setLoading(true) e setData()).
+  setData(data: unknown) { this._state.data = data; this._state.error = null; this._state.loading = false; this._notify(); }
   setLoading(loading: boolean) { this._state.loading = loading; this._notify(); }
   setError(error: string | null) { this._state.error = error; this._state.loading = false; this._notify(); }
   reset() { this._state = { data: null, loading: false, error: null }; this._notify(); }

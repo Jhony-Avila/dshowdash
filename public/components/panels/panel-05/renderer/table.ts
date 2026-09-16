@@ -1,134 +1,133 @@
 // ═══════════════════════════════════════════════════════════════
-// DEPENDENCY CONTRACT (8.4.0-P18EC-ES6-AAA)
+// DEPENDENCY CONTRACT (9.3.1-P2-ENTERPRISE)
 // ═══════════════════════════════════════════════════════════════
-// MODULE: panel-05.renderer.table
-// PURPOSE: Adapter entre Panel-05 e /components/table-engine
+// MODULE: panel-05/renderer/table
+// PURPOSE: Renderiza a tabela de clientes do painel 05 em refs.tableContainer (+ paginação em refs.pagination)
 // ───────────────────────────────────────────────────────────────
 // IMPORTS:
-//   createPanelPorts — from '/core/runtime/ports-profiles.js'
-//   create (as createTableEngine), TABLE_EVENTS — from '/components/table-engine/index.js'
+//   createPanelPorts from /core/runtime/ports-profiles.js
 //
-// PROVIDES:
-//   ensureInstance(refs) — cria/retorna instância table-engine
-//   registerCallbacks(callbacks) — registra callbacks de eventos
-//   updateTable(refs, clientes, favoritos) — atualiza dados da tabela
-//   normalize(c) — normaliza dados de cliente
-//   injectPorts(p) / getPorts() — ports API
-//   MODULE_ID, VERSION — constantes
+// PROVIDES (contrato mantido 1:1 com a versão anterior):
+//   updateTable(refs, clientes, favoritos) · updatePagination(refs, pagination) · updateSort(refs, sort)
+//   updateFavorito(refs, id, isFav) · updateSelection(refs, ids) · clear() · registerCallbacks(cb) · getInstance()
+//   info() · healthCheck() · VERSION · MODULE_ID · injectPorts() · getPorts()
 //
-// RECEIVES (via init/options): refs (com refs.tableContainer)
-// EMITS (eventos):
-//   view, edit, delete, context-action, selection-changed, sorted,
-//   page, exported — via table-engine callbacks
-// LISTENS (eventos): nenhum
-// WINDOW ACCESS: navigator.clipboard (copiar CNPJ)
+// HISTÓRICO:
+//   2026-09-16 (rodada frontend 05/16): a versão anterior delegava ao /components/table-engine (único consumidor era
+//   este painel) e o engine quebra internamente em ui/render.js:16 ("state.get is not a function") → a tabela nunca
+//   foi desenhada. Substituído por um renderizador local, declarativo, que usa as classes p05-table* do CSS do
+//   painel e os data-action que handlers/events.ts já trata: cliente360 (linha), sort (cabeçalho), page (paginação),
+//   toggle-fav (estrela). Sem seleção múltipla nem menu de contexto (o engine nunca os entregou de fato).
 // ═══════════════════════════════════════════════════════════════
 'use strict';
-
 import { createPanelPorts } from '/core/runtime/ports-profiles.js';
-import { create as createTableEngine, TABLE_EVENTS } from '/components/table-engine/index.js';
 
 const MODULE_ID = 'panel-05.renderer.table';
-const VERSION = '9.3.0-P2-ENTERPRISE';
-
+const VERSION = '9.3.1-P2-ENTERPRISE';
 const Ports = createPanelPorts({ moduleId: MODULE_ID });
-
 function _initPorts() { Ports.init(); }
 function _getPort(name: string) { return Ports.get(name); }
 export function injectPorts(p: Record<string, unknown>) { return Ports.inject(p); }
 export function getPorts() { return Ports.snapshot(); }
 
-type TableInstance = {
-  destroy: () => void;
-  on: (event: string, cb: (data: Record<string, unknown>) => void) => void;
-  setData: (items: Array<Record<string, unknown>>) => void;
-  getData: () => Array<Record<string, unknown>>;
-  clearSelection: () => void;
-  select: (id: string) => void;
-  sort: (field: unknown, dir: unknown) => void;
-  render?: () => void;
-  info?: () => unknown;
-  healthCheck?: () => { status: string };
-};
-
-let _tableInstance: TableInstance | null = null;
-let _currentRefs: Record<string, unknown> | null = null;
-let _eventCallbacks: Record<string, (...args: unknown[]) => void> = {};
+type Row = Record<string, unknown> & { id: string; nome: string; cidade: string; uf: string; receita: number; status: string; cnpj: string; _isFavorito?: boolean };
+type Sort = { field?: string; order?: string } | null;
 
 const PANEL05_COLUMNS = [
-  { id: 'nome', label: 'Empresa', sortable: true, searchable: true, exportable: true },
-  { id: 'cnpj', label: 'CNPJ', sortable: true, searchable: true, exportable: true, type: 'cnpj' },
-  { id: 'cidade', label: 'Cidade/UF', sortable: true, searchable: true, exportable: true },
-  { id: 'receita', label: 'Receita', sortable: true, exportable: true, type: 'currency' },
-  { id: 'status', label: 'Status', sortable: true, exportable: true, type: 'status' }
+  { id: 'nome', label: 'Empresa', sortable: true, sortField: 'Nome_Empresa' },
+  { id: 'cnpj', label: 'CNPJ', sortable: false },
+  { id: 'cidade', label: 'Cidade/UF', sortable: true, sortField: 'Municipio_Endereco' },
+  { id: 'receita', label: 'Receita', sortable: true, sortField: 'Receita_Gerada' },
+  { id: 'status', label: 'Status', sortable: true, sortField: 'Flag_Ativo' },
 ];
 
-function normalize(c: Record<string, unknown>) {
+let _currentRefs: Record<string, unknown> | null = null;
+let _rows: Row[] = [];
+let _sort: Sort = null;
+let _pagination: Record<string, unknown> | null = null;
+let _eventCallbacks: Record<string, (...args: unknown[]) => void> = {};
+
+const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+const fmtCurrency = (v: unknown) => { const n = Number(v); if (!isFinite(n)) return '—'; return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }); };
+const fmtCNPJ = (v: unknown) => { const d = String(v ?? '').replace(/\D/g, ''); if (d.length === 14) return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5'); if (d.length === 11) return d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4'); return String(v ?? '') || '—'; };
+
+function normalize(c: Record<string, unknown>): Row | null {
   if (!c) return null;
-  return { id: String(c.Id_Organizacao || c.id), nome: c.Nome_Empresa || c.nome || '', cidade: c.Municipio_Endereco || c.cidade || '', uf: c.Uf_Endereco || c.uf || '', receita: parseFloat(String(c.Receita_Gerada || c.receita || 0)), status: c.status || (c.Flag_Ativo === -1 ? 'ativo' : 'inativo'), cnpj: c.Cnpj || c.cnpj || '', telefone: c.Telefone || c.telefone || '', email: c.Email || c.email || '', porte: c.Porte_Empresa || c.porte || '', aReceber: parseFloat(String(c.A_Receber || c.aReceber || 0)), ultimaCompra: c.Ultima_Compra || c.ultimaCompra || null, risco: c.Risco || c.risco || '', cep: c.Cep_Endereco || c.cep || '', bairro: c.Bairro_Endereco || c.bairro || '' };
+  return { id: String(c.Id_Organizacao || c.id), nome: String(c.Nome_Empresa || c.nome || ''), cidade: String(c.Municipio_Endereco || c.cidade || ''), uf: String(c.Uf_Endereco || c.uf || ''), receita: parseFloat(String(c.Receita_Gerada || c.receita || 0)) || 0, status: String(c.status || (Number(c.Flag_Ativo) === -1 ? 'ativo' : 'inativo')), cnpj: String(c.Cnpj || c.cnpj || ''), telefone: c.Telefone || c.telefone || '', email: c.Email || c.email || '', porte: c.Porte_Empresa || c.porte || '', razaoSocial: c.Razao_Social || c.razao_social || '' };
 }
 
-function renderExpansion(item: Record<string, unknown>, opts: Record<string, unknown>) {
-  const p = opts.cssPrefix; const fmt = opts.formatters as Record<string, (v: unknown) => string>;
-  const esc = fmt.escapeHtml || ((v: unknown) => String(v));
-  const fmtCurrency = fmt.formatCurrency || ((v: unknown) => `R$ ${v}`);
-  const fmtDate = fmt.formatDate || ((v: unknown) => String(v));
-  const fmtCNPJ = fmt.formatCNPJ || ((v: unknown) => String(v));
-  const fmtPhone = fmt.formatPhone || ((v: unknown) => String(v));
-  const waLink = item.telefone ? `https://wa.me/55${String(item.telefone).replace(/\D/g, '')}` : null;
-  return `<div class="${p}expansion-content"><div class="${p}expansion-grid"><div class="${p}expansion-section"><h4>Dados Gerais</h4><div class="${p}expansion-item"><span class="${p}expansion-label">CNPJ</span><span class="${p}expansion-value">${item.cnpj ? fmtCNPJ(item.cnpj) : '—'}</span></div><div class="${p}expansion-item"><span class="${p}expansion-label">Telefone</span><span class="${p}expansion-value">${item.telefone ? fmtPhone(item.telefone) : '—'}</span></div><div class="${p}expansion-item"><span class="${p}expansion-label">Email</span><span class="${p}expansion-value">${esc(item.email) || '—'}</span></div><div class="${p}expansion-item"><span class="${p}expansion-label">Porte</span><span class="${p}expansion-value">${esc(item.porte) || '—'}</span></div></div><div class="${p}expansion-section"><h4>Financeiro</h4><div class="${p}expansion-item"><span class="${p}expansion-label">Receita</span><span class="${p}expansion-value">${fmtCurrency(item.receita)}</span></div><div class="${p}expansion-item"><span class="${p}expansion-label">A Receber</span><span class="${p}expansion-value">${fmtCurrency(item.aReceber || 0)}</span></div><div class="${p}expansion-item"><span class="${p}expansion-label">Última Compra</span><span class="${p}expansion-value">${item.ultimaCompra ? fmtDate(item.ultimaCompra) : '—'}</span></div><div class="${p}expansion-item"><span class="${p}expansion-label">Risco</span><span class="${p}expansion-value">${esc(item.risco) || '—'}</span></div></div><div class="${p}expansion-section"><h4>Endereço</h4><div class="${p}expansion-item"><span class="${p}expansion-label">Cidade/UF</span><span class="${p}expansion-value">${esc(item.cidade) || '—'}${item.uf ? `/${item.uf}` : ''}</span></div><div class="${p}expansion-item"><span class="${p}expansion-label">CEP</span><span class="${p}expansion-value">${esc(item.cep) || '—'}</span></div><div class="${p}expansion-item"><span class="${p}expansion-label">Bairro</span><span class="${p}expansion-value">${esc(item.bairro) || '—'}</span></div></div></div><div class="${p}expansion-actions"><button class="${p}expansion-btn ${p}expansion-btn-primary" data-action="view-cliente" data-id="${item.id}">👁 Ver Completo</button><button class="${p}expansion-btn" data-action="copy-cnpj" data-cnpj="${item.cnpj || ''}">📋 Copiar CNPJ</button>${waLink ? `<a href="${waLink}" target="_blank" class="${p}expansion-btn">💬 WhatsApp</a>` : ''}</div></div>`;
-}
-
-const PANEL05_CONTEXT_MENU = [
-  { action: 'ctx-view', label: 'Ver detalhes', icon: '👁', key: 'V' },
-  { action: 'ctx-edit', label: 'Editar', icon: '✏️', key: 'E' },
-  { action: 'ctx-expand', label: 'Expandir', icon: '⬇', key: 'X' },
-  { divider: true },
-  { action: 'ctx-fav', label: 'Favoritar', icon: '⭐', key: 'F' },
-  { action: 'ctx-copy', label: 'Copiar CNPJ', icon: '📋' },
-  { divider: true },
-  { action: 'ctx-delete', label: 'Excluir', icon: '🗑', key: 'D', danger: true }
-];
-
-function ensureInstance(refs: Record<string, unknown> | null) {
+function _host(refs: Record<string, unknown> | null): HTMLElement | null {
   if (!refs || !refs.tableContainer) return null;
-  if (_tableInstance && _currentRefs === refs) return _tableInstance;
-  if (_tableInstance) { try { _tableInstance.destroy(); } catch (e) {} _tableInstance = null; }
-  _currentRefs = refs; _initPorts();
-  _tableInstance = createTableEngine(refs.tableContainer as string | HTMLElement, { cssPrefix: 'p05-', columns: PANEL05_COLUMNS, pageSize: 25, virtualScroll: false, renderExpansion, contextMenuItems: PANEL05_CONTEXT_MENU, events: _getPort('eventBus') }) as unknown as TableInstance;
-  _tableInstance.on('view', (data: Record<string, unknown>) => { if (_eventCallbacks.onView) _eventCallbacks.onView(data); });
-  _tableInstance.on('edit', (data: Record<string, unknown>) => { if (_eventCallbacks.onEdit) _eventCallbacks.onEdit(data); });
-  _tableInstance.on('delete', (data: Record<string, unknown>) => { if (_eventCallbacks.onDelete) _eventCallbacks.onDelete(data); });
-  _tableInstance.on('context-action', (data: Record<string, unknown>) => { if (data.action === 'ctx-fav' && _eventCallbacks.onToggleFavorito) _eventCallbacks.onToggleFavorito({ id: data.id }); if (data.action === 'ctx-copy') { const items = _tableInstance!.getData(); for (let i = 0; i < items.length; i++) { if (String(items[i].id) === data.id && items[i].cnpj && navigator.clipboard) { navigator.clipboard.writeText(items[i].cnpj as string); break; } } } });
-  _tableInstance.on('selection-changed', (data: Record<string, unknown>) => { if (_eventCallbacks.onRowSelect) _eventCallbacks.onRowSelect(data); });
-  _tableInstance.on('sorted', (data: Record<string, unknown>) => { if (_eventCallbacks.onSort) _eventCallbacks.onSort(data); });
-  _tableInstance.on('page', (data: Record<string, unknown>) => { if (_eventCallbacks.onPage) _eventCallbacks.onPage(data); });
-  _tableInstance.on('exported', (data: Record<string, unknown>) => { if (_eventCallbacks.onExport) _eventCallbacks.onExport(data); });
-  return _tableInstance;
+  const t = refs.tableContainer;
+  return typeof t === 'string' ? (document.querySelector(t) as HTMLElement | null) : (t as HTMLElement);
+}
+
+function _renderHead(): string {
+  return '<thead><tr>' + PANEL05_COLUMNS.map((col) => {
+    const active = _sort && _sort.field === col.sortField;
+    const arrow = active ? (_sort!.order === 'asc' ? ' ▲' : ' ▼') : '';
+    return col.sortable
+      ? `<th class="p05-th p05-th-sortable${active ? ' p05-th-active' : ''}" data-action="sort" data-sort="${col.sortField}" role="button" tabindex="0">${esc(col.label)}${arrow}</th>`
+      : `<th class="p05-th">${esc(col.label)}</th>`;
+  }).join('') + '<th class="p05-th p05-th-actions" aria-label="Ações"></th></tr></thead>';
+}
+
+function _renderRow(r: Row): string {
+  const statusCls = r.status === 'ativo' ? 'p05-status-ativo' : 'p05-status-inativo';
+  const fav = r._isFavorito ? '★' : '☆';
+  return `<tr class="p05-row" data-id="${esc(r.id)}" data-action="cliente360" role="button" tabindex="0">
+    <td class="p05-td p05-td-nome"><strong>${esc(r.nome)}</strong>${r.razaoSocial && r.razaoSocial !== r.nome ? `<br><small class="p05-muted">${esc(r.razaoSocial)}</small>` : ''}</td>
+    <td class="p05-td p05-td-cnpj">${esc(fmtCNPJ(r.cnpj))}</td>
+    <td class="p05-td p05-td-cidade">${esc([r.cidade, r.uf].filter(Boolean).join('/') || '—')}</td>
+    <td class="p05-td p05-td-receita">${fmtCurrency(r.receita)}</td>
+    <td class="p05-td p05-td-status"><span class="p05-status-badge ${statusCls}">${r.status === 'ativo' ? 'Ativo' : 'Inativo'}</span></td>
+    <td class="p05-td p05-td-actions"><button type="button" class="p05-favorite-btn" data-action="toggle-fav" data-id="${esc(r.id)}" title="Favorito" aria-label="Favorito">${fav}</button></td>
+  </tr>`;
+}
+
+function _render() {
+  const host = _host(_currentRefs);
+  if (!host) return;
+  if (!_rows.length) { host.innerHTML = '<div class="p05-empty-state">Nenhum cliente encontrado.</div>'; return; }
+  host.innerHTML = `<table class="p05-table" role="grid">${_renderHead()}<tbody>${_rows.map(_renderRow).join('')}</tbody></table>`;
+}
+
+function _renderPagination() {
+  const el = _currentRefs?.pagination as HTMLElement | undefined;
+  if (!el) return;
+  const p = _pagination || {};
+  const page = Number(p.page) || 1; const totalPages = Number(p.totalPages || p.total_pages) || 1; const total = Number(p.total) || 0;
+  if (!total) { el.innerHTML = ''; return; }
+  el.innerHTML = `<span class="p05-pagination-info">Página ${page} de ${totalPages} · ${total.toLocaleString('pt-BR')} clientes</span>
+    <div class="p05-pagination-controls">
+      <button type="button" class="p05-btn-page" data-action="page" data-page="${page - 1}" ${page <= 1 ? 'disabled' : ''}>‹ Anterior</button>
+      <button type="button" class="p05-btn-page" data-action="page" data-page="${page + 1}" ${page >= totalPages ? 'disabled' : ''}>Próxima ›</button>
+    </div>`;
 }
 
 function registerCallbacks(callbacks: Record<string, (...args: unknown[]) => void>) { _eventCallbacks = Object.assign({}, _eventCallbacks, callbacks); }
 
 function updateTable(refs: Record<string, unknown> | null, clientes: unknown, favoritos: unknown) {
-  if (favoritos === undefined) favoritos = [];
-  const instance = ensureInstance(refs);
-  if (!instance) return;
-  const items: Array<Record<string, unknown>> = []; const arr = (clientes as Array<Record<string, unknown>>) || [];
-  for (let i = 0; i < arr.length; i++) { const n = normalize(arr[i]); if (n) items.push(n); }
-  const favSet: Record<string, boolean> = {}; const favArr = (favoritos as string[]); for (let j = 0; j < favArr.length; j++) { favSet[String(favArr[j])] = true; }
-  for (let k = 0; k < items.length; k++) { items[k]._isFavorito = !!favSet[items[k].id as string]; }
-  instance.setData(items);
+  if (!refs) return;
+  _initPorts();
+  _currentRefs = refs;
+  const favSet = new Set(((favoritos as unknown[]) || []).map((f) => String(f)));
+  const arr = (clientes as Array<Record<string, unknown>>) || [];
+  _rows = [];
+  for (const c of arr) { const n = normalize(c); if (n) { n._isFavorito = favSet.has(n.id); _rows.push(n); } }
+  _render();
+  _renderPagination();
 }
 
-function updatePagination(refs: unknown, pagination: unknown) {}
-function updateSort(refs: unknown, sort: Record<string, unknown> | null) { if (_tableInstance && sort && sort.field) { _tableInstance.sort(sort.field, sort.dir || 'asc'); } }
-function updateFavorito(refs: unknown, id: unknown, isFav: boolean) { if (!_tableInstance) return; const data = _tableInstance.getData(); for (let i = 0; i < data.length; i++) { if (String(data[i].id) === String(id)) { data[i]._isFavorito = isFav; if (_tableInstance.render) _tableInstance.render(); break; } } }
-function updateSelection(refs: unknown, selectedIds: unknown) { if (!_tableInstance) return; _tableInstance.clearSelection(); const ids = (selectedIds || []) as unknown[]; for (let i = 0; i < ids.length; i++) { _tableInstance.select(String(ids[i])); } }
-function clear() { if (_tableInstance) { try { _tableInstance.destroy(); } catch (e) {} _tableInstance = null; } _currentRefs = null; _eventCallbacks = {}; }
-function getInstance() { return _tableInstance; }
+function updatePagination(refs: unknown, pagination: unknown) { if (refs) _currentRefs = refs as Record<string, unknown>; _pagination = (pagination as Record<string, unknown>) || null; _renderPagination(); }
+function updateSort(refs: unknown, sort: Record<string, unknown> | null) { if (refs) _currentRefs = refs as Record<string, unknown>; _sort = sort as Sort; if (_rows.length) _render(); }
+function updateFavorito(refs: unknown, id: unknown, isFav: boolean) { const r = _rows.find((x) => x.id === String(id)); if (r) { r._isFavorito = !!isFav; _render(); } }
+function updateSelection(refs: unknown, selectedIds: unknown) { /* seleção múltipla não faz parte deste renderizador */ }
+function clear() { const host = _host(_currentRefs); if (host) host.innerHTML = ''; const pg = _currentRefs?.pagination as HTMLElement | undefined; if (pg) pg.innerHTML = ''; _rows = []; _sort = null; _pagination = null; _currentRefs = null; _eventCallbacks = {}; }
+function getInstance() { return _rows.length || _currentRefs ? { getData: () => _rows.slice(), rowCount: _rows.length } : null; }
 
-function info() { return { moduleId: MODULE_ID, version: VERSION, engine: 'table-engine-global', hasInstance: !!_tableInstance, rowCount: _tableInstance ? _tableInstance.getData().length : 0, tableEngineInfo: _tableInstance?.info ? _tableInstance.info() : null }; }
-function healthCheck() { const engineHealth = _tableInstance?.healthCheck ? _tableInstance.healthCheck() : { status: 'N/A' }; return { status: _tableInstance ? engineHealth.status : 'DEGRADED', moduleId: MODULE_ID, version: VERSION, checks: { adapterReady: true, hasInstance: !!_tableInstance, engineHealthy: engineHealth.status === 'HEALTHY' }, engineHealth }; }
+function info() { return { moduleId: MODULE_ID, version: VERSION, engine: 'local', rowCount: _rows.length, hasRefs: !!_currentRefs, callbacks: Object.keys(_eventCallbacks) }; }
+function healthCheck() { return { status: _currentRefs ? 'HEALTHY' : 'DEGRADED', moduleId: MODULE_ID, version: VERSION, checks: { hasRefs: !!_currentRefs, rows: _rows.length } }; }
 
 export { updateTable, updatePagination, updateSort, updateFavorito, updateSelection, clear, registerCallbacks, getInstance, info, healthCheck, VERSION, MODULE_ID };
-export default { updateTable, updatePagination, updateSort, updateFavorito, updateSelection, clear, registerCallbacks, getInstance, info, healthCheck, injectPorts, getPorts };
+export default { updateTable, updatePagination, updateSort, updateFavorito, updateSelection, clear, registerCallbacks, getInstance, info, healthCheck, VERSION, MODULE_ID, injectPorts, getPorts };

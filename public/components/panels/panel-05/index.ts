@@ -132,7 +132,11 @@ const _getContext = () => ({ refs: _refs, moduleId: MODULE_ID, version: VERSION,
 
 const _initToast = () => {
   toastManager.init((_refs?.container as HTMLElement | undefined) ?? document.body);
-  if (hasWindow) { window.Toast = { show: (opts: Record<string, unknown>) => { const type = (opts.type as string) || 'info'; const message = opts.message || ''; return toastManager[type] ? toastManager[type](message, opts) : toastManager.info(message, opts); }, success: (msg: unknown, opts: Record<string, unknown>) => toastManager.success(msg, opts), error: (msg: unknown, opts: Record<string, unknown>) => toastManager.error(msg, opts), warning: (msg: unknown, opts: Record<string, unknown>) => toastManager.warning(msg, opts), info: (msg: unknown, opts: Record<string, unknown>) => toastManager.info(msg, opts) }; }
+  // 2026-09-16 (rodada frontend 05/16): este wrapper delega ao toastManager, e ui/toast.ts caía de volta em
+  // window.Toast quando o Core não expõe 'Toast' → toastManager → window.Toast → … "Maximum call stack size
+  // exceeded" em TODO toast (o 'Painel carregado' do fim do mount derrubava o painel). O wrapper agora se
+  // identifica (__panel05Provider) e ui/toast.ts nunca o usa como destino.
+  if (hasWindow) { window.Toast = { __panel05Provider: true, show: (opts: Record<string, unknown>) => { const type = (opts.type as string) || 'info'; const message = opts.message || ''; return toastManager[type] ? toastManager[type](message, opts) : toastManager.info(message, opts); }, success: (msg: unknown, opts: Record<string, unknown>) => toastManager.success(msg, opts), error: (msg: unknown, opts: Record<string, unknown>) => toastManager.error(msg, opts), warning: (msg: unknown, opts: Record<string, unknown>) => toastManager.warning(msg, opts), info: (msg: unknown, opts: Record<string, unknown>) => toastManager.info(msg, opts) }; }
 };
 
 export const mount = (container: HTMLElement, config: Record<string, unknown> = {}) => {

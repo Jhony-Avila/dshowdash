@@ -18,9 +18,12 @@ class StateStore {
   getError() {
     return this._state.error;
   }
+  // 2026-09-16: dados chegaram = não está mais carregando. O assinante em index.ts testa `loading` ANTES de `data`;
+  // sem zerar aqui a UI ficava em "Carregando…" para sempre (loadData só chama setLoading(true) e setData()).
   setData(data) {
     this._state.data = data;
     this._state.error = null;
+    this._state.loading = false;
     this._notify();
   }
   setLoading(loading) {

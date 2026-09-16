@@ -1,9 +1,32 @@
 import { store } from "../state/store.js";
 import * as Cliente360View from "../managers/cliente360-view.js";
-const VERSION = "9.3.0-P2-ENTERPRISE";
+import { updateTable, updatePagination, updateSort } from "../renderer/table.js";
+import { updateLoading, updateError, hideStatus } from "../renderer/status.js";
+import { updateFilters } from "../renderer/filters.js";
+import * as Favoritos from "../managers/favoritos.js";
+const VERSION = "9.3.1-P2-ENTERPRISE";
 const MODULE_ID = "panel-05:handlers:subscriptions";
 let _unsubscribes = [];
 const setup = (ctx) => {
+  _unsubscribes.push(store.subscribe("clientes", (clientes) => {
+    updateTable(ctx.refs, clientes, Favoritos.getAll());
+    hideStatus(ctx.refs);
+  }));
+  _unsubscribes.push(store.subscribe("pagination", (pagination) => {
+    updatePagination(ctx.refs, pagination);
+  }));
+  _unsubscribes.push(store.subscribe("sort", (sort) => {
+    updateSort(ctx.refs, sort);
+  }));
+  _unsubscribes.push(store.subscribe("loading", (loading) => {
+    updateLoading(ctx.refs, !!loading);
+  }));
+  _unsubscribes.push(store.subscribe("error", (error) => {
+    updateError(ctx.refs, error);
+  }));
+  _unsubscribes.push(store.subscribe("filters", (filters) => {
+    updateFilters(ctx.refs, filters);
+  }));
   _unsubscribes.push(store.subscribe("cliente360", (data) => {
     if (data) Cliente360View.show(ctx.refs, data, ctx.moduleId, ctx.version);
     else Cliente360View.hide(ctx.refs, ctx.moduleId, ctx.version);

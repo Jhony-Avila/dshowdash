@@ -20,14 +20,20 @@ function formatPercent(v) {
 }
 function updateKPIs(refs, data) {
   if (!refs || !data) return;
+  const pick = (...keys) => {
+    for (const k of keys) {
+      if (data[k] !== void 0 && data[k] !== null) return data[k];
+    }
+    return void 0;
+  };
   const updates = [
-    { ref: refs.kpiReceita, value: formatCurrency(data.receita) },
-    { ref: refs.kpiClientes, value: formatNumber(data.clientes) },
-    { ref: refs.kpiConversao, value: formatPercent(data.conversao) },
-    { ref: refs.kpiOrcamentos, value: formatNumber(data.orcamentos) },
-    { ref: refs.kpiAReceber, value: formatCurrency(data.aReceber) },
-    { ref: refs.kpiContatos, value: formatNumber(data.contatos) },
-    { ref: refs.kpiCidades, value: formatNumber(data.cidades) }
+    { ref: refs.kpiReceita, value: formatCurrency(pick("receita", "receita_total")) },
+    { ref: refs.kpiClientes, value: formatNumber(pick("clientes", "clientes_ativos")) },
+    { ref: refs.kpiConversao, value: formatPercent(pick("conversao", "taxa_conversao")) },
+    { ref: refs.kpiOrcamentos, value: formatNumber(pick("orcamentos", "orcamentos_total")) },
+    { ref: refs.kpiAReceber, value: formatCurrency(pick("aReceber", "a_receber_aberto")) },
+    { ref: refs.kpiContatos, value: formatNumber(pick("contatos", "contatos_ativos")) },
+    { ref: refs.kpiCidades, value: formatNumber(pick("cidades")) }
   ];
   updates.forEach(({ ref, value }) => {
     const el = ref;

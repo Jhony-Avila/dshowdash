@@ -7,7 +7,7 @@ import { UIComponent } from "./ui/component.js";
 import { CircuitBreaker } from "./utils/circuit-breaker.js";
 import { PAINEL_ID, VERSION as PANEL_TITLE, REFRESH_INTERVAL_BASE, REFRESH_INTERVAL_DEGRADED, REQUEST_TIMEOUT, MAX_CONSECUTIVE_ERRORS, CIRCUIT_BREAKER_THRESHOLD, CIRCUIT_BREAKER_TIMEOUT, STATES } from "./core/constants.js";
 const MODULE_ID = "panel-16";
-const VERSION = "9.3.0-P2-ENTERPRISE";
+const VERSION = "9.3.1-P2-ENTERPRISE";
 const Ports = createPanelPorts({ moduleId: MODULE_ID });
 const _initPorts = () => Ports.init();
 const _getPort = (name) => Ports.get(name);
@@ -118,9 +118,6 @@ class Panel16 {
         this.uiComponent.init().then(() => {
           this.setupStateSubscription();
           this.setupEventListeners();
-          // `mounted` ANTES de loadData(): loadData() comeca com
-          // `if (!this.mounted || this.destroyed) return Promise.resolve();`, entao com a
-          // atribuicao depois a CARGA INICIAL era abortada e o painel montava vazio.
           this.mounted = true;
           return this.loadData();
         }).then(() => {
@@ -318,12 +315,34 @@ class Panel16 {
   }
 }
 let instance = null;
+let _observer = null;
+const _instanceViva = () => !!(instance?.mounted && instance.container && instance.container.isConnected);
+const _observarDesmontagem = () => {
+  if (_observer || typeof MutationObserver === "undefined" || typeof document === "undefined") return;
+  _observer = new MutationObserver(() => {
+    if (instance?.mounted && !_instanceViva()) {
+      _log("debug", "container descartado pelo shell \u2192 unmount autom\xE1tico");
+      unmount();
+    }
+  });
+  _observer.observe(document.body, { childList: true, subtree: true });
+};
 const mount = (container, deps = {}) => {
   if (instance?.mounted) {
-    _log("warn", "Instance exists");
-    return Promise.resolve();
+    if (_instanceViva() && instance.container === container) {
+      _log("warn", "Instance exists");
+      return Promise.resolve();
+    }
+    const anterior = instance;
+    instance = null;
+    return anterior.unmount().then(() => {
+      instance = new Panel16();
+      _observarDesmontagem();
+      return instance.mount(container, deps);
+    });
   }
   instance = new Panel16();
+  _observarDesmontagem();
   return instance.mount(container, deps);
 };
 const unmount = () => {

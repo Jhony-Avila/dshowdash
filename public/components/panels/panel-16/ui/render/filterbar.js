@@ -33,7 +33,7 @@ function renderFilterChips(filters, sortColumns, clientSearchTerm) {
   if (filters.tipo) chips.push(`<span class="p16-chip">Tipo: ${filters.tipo}</span>`);
   if (filters.uf) chips.push(`<span class="p16-chip">UF: ${filters.uf}</span>`);
   if (sortColumns && sortColumns.length > 0) {
-    sortColumns.forEach((sc) => chips.push(`<span class="p16-chip">Ord: ${sc.key}</span>`));
+    sortColumns.forEach((sc) => chips.push(`<span class="p16-chip">Ord: ${sc.column ?? sc.key}</span>`));
   }
   return chips.length > 0 ? `<div class="p16-filter-chips">${chips.join("")}</div>` : "";
 }

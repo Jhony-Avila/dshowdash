@@ -31,15 +31,18 @@
 
 import { isStrict, recordViolation } from '/core/runtime/enterprise/strict-mode.js';
 
-export const VERSION = '9.3.0-P2-ENTERPRISE';
+export const VERSION = '9.3.1-P2-ENTERPRISE';
 export const MODULE_ID = 'panel-05:toast';
 
 function _getToast() {
   if (window.Core?.windowAdapter?.get) {
     const wt = window.Core.windowAdapter.get('Toast');
-    if (wt) return wt;
+    // 2026-09-16: o adapter devolve window.Toast — que pode ser o wrapper deste próprio painel (ver abaixo)
+    if (wt && !(wt as Record<string, unknown>).__panel05Provider) return wt;
   }
-  if (window.Toast) {
+  // 2026-09-16: window.Toast pode ser o wrapper que o PRÓPRIO painel provê (index.ts _initToast) e que delega a
+  // este manager → usá-lo como destino recursava até estourar a pilha. Só aceita um window.Toast de terceiros.
+  if (window.Toast && !(window.Toast as Record<string, unknown>).__panel05Provider) {
     recordViolation('WINDOW_TOAST_FALLBACK', { module: MODULE_ID });
     return window.Toast;
   }
@@ -88,7 +91,10 @@ class ToastManager {
 
   _show(type: string, message: unknown, options: Record<string, unknown> = {}) {
     const { title, duration, action, actionLabel = 'Ação', persist = false } = options;
-
+    // guarda de reentrância (2026-09-16): um toast que delega a si mesmo não pode recursar
+    if (this._inShow) { _getLogger()?.warn?.('[panel-05:toast] reentrada bloqueada', { type }); return null; }
+    this._inShow = true;
+    try {
     const toast = _getToast();
     if (toast?.show) {
       const toastOptions = {
@@ -104,6 +110,7 @@ class ToastManager {
     const logger = _getLogger();
     logger?.warn?.('[panel-05:toast] Toast Service not available');
     return null;
+    } finally { this._inShow = false; }
   }
 
   dismiss(id: unknown) {

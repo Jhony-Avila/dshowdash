@@ -43,7 +43,7 @@ import { CircuitBreaker } from './utils/circuit-breaker.js';
 import { PAINEL_ID, VERSION as PANEL_TITLE, REFRESH_INTERVAL_BASE, REFRESH_INTERVAL_DEGRADED, REQUEST_TIMEOUT, MAX_CONSECUTIVE_ERRORS, CIRCUIT_BREAKER_THRESHOLD, CIRCUIT_BREAKER_TIMEOUT, STATES } from './core/constants.js';
 
 export const MODULE_ID = 'panel-16';
-export const VERSION = '9.3.0-P2-ENTERPRISE';
+export const VERSION = '9.3.1-P2-ENTERPRISE';
 
 const Ports = createPanelPorts({ moduleId: MODULE_ID });
 const _initPorts = () => Ports.init();
@@ -223,7 +223,25 @@ class Panel16 {
 }
 
 let instance: Panel16 | null = null;
-const mount = (container: HTMLElement, deps: Record<string, unknown> = {}) => { if (instance?.mounted) { _log('warn', 'Instance exists'); return Promise.resolve(); } instance = new Panel16(); return instance.mount(container, deps); };
+// 2026-09-16 (rodada frontend 05/16): o shell (bundle main) NÃO chama unmount() ao trocar de painel — só esvazia/troca o
+// container. A instância antiga ficava "mounted" e o remount era recusado ("Instance exists"): a carga chegava e as
+// linhas eram desenhadas num container já fora do DOM (tela ficava em "Nenhum fornecedor encontrado"). Mesmo padrão
+// já aplicado em panel-gestao-paineis e panel-lotties-management.
+let _observer: MutationObserver | null = null;
+const _instanceViva = () => !!(instance?.mounted && instance.container && instance.container.isConnected);
+const _observarDesmontagem = () => {
+  if (_observer || typeof MutationObserver === 'undefined' || typeof document === 'undefined') return;
+  _observer = new MutationObserver(() => { if (instance?.mounted && !_instanceViva()) { _log('debug', 'container descartado pelo shell → unmount automático'); unmount(); } });
+  _observer.observe(document.body, { childList: true, subtree: true });
+};
+const mount = (container: HTMLElement, deps: Record<string, unknown> = {}) => {
+  if (instance?.mounted) {
+    if (_instanceViva() && instance.container === container) { _log('warn', 'Instance exists'); return Promise.resolve(); }
+    const anterior = instance; instance = null;
+    return anterior.unmount().then(() => { instance = new Panel16(); _observarDesmontagem(); return instance.mount(container, deps); });
+  }
+  instance = new Panel16(); _observarDesmontagem(); return instance.mount(container, deps);
+};
 const unmount = () => { if (instance) return instance.unmount().then(() => { instance = null; }); return Promise.resolve(); };
 const getStatus = () => instance?.getStatus?.() ?? { panelId: PAINEL_ID, mounted: false, p22Compliant: true, timestamp: Date.now() };
 const getVersion = () => VERSION;

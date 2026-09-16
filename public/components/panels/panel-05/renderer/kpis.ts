@@ -55,14 +55,17 @@ function formatPercent(v: unknown) {
 export function updateKPIs(refs: Record<string, unknown> | null, data: Record<string, unknown> | null) {
     if (!refs || !data) return;
     
+    // 2026-09-16: a API (action=kpis) sempre devolveu receita_total/clientes_ativos/taxa_conversao/orcamentos_total/
+    // a_receber_aberto/contatos_ativos; este renderer lia só os nomes curtos → 6 de 7 KPIs mostravam "—". Aceita ambos.
+    const pick = (...keys: string[]) => { for (const k of keys) { if (data[k] !== undefined && data[k] !== null) return data[k]; } return undefined; };
     const updates = [
-        { ref: refs.kpiReceita, value: formatCurrency(data.receita) },
-        { ref: refs.kpiClientes, value: formatNumber(data.clientes) },
-        { ref: refs.kpiConversao, value: formatPercent(data.conversao) },
-        { ref: refs.kpiOrcamentos, value: formatNumber(data.orcamentos) },
-        { ref: refs.kpiAReceber, value: formatCurrency(data.aReceber) },
-        { ref: refs.kpiContatos, value: formatNumber(data.contatos) },
-        { ref: refs.kpiCidades, value: formatNumber(data.cidades) }
+        { ref: refs.kpiReceita, value: formatCurrency(pick('receita', 'receita_total')) },
+        { ref: refs.kpiClientes, value: formatNumber(pick('clientes', 'clientes_ativos')) },
+        { ref: refs.kpiConversao, value: formatPercent(pick('conversao', 'taxa_conversao')) },
+        { ref: refs.kpiOrcamentos, value: formatNumber(pick('orcamentos', 'orcamentos_total')) },
+        { ref: refs.kpiAReceber, value: formatCurrency(pick('aReceber', 'a_receber_aberto')) },
+        { ref: refs.kpiContatos, value: formatNumber(pick('contatos', 'contatos_ativos')) },
+        { ref: refs.kpiCidades, value: formatNumber(pick('cidades')) }
     ];
     
     updates.forEach(({ ref, value }) => {
