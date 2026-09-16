@@ -185,3 +185,28 @@ Notas de dados (não contam como navegação quebrada): navigation_items usuario
 ## Fora do universo de 101 (encontrados no diretório)
 
 - **koala-docs** — koala-docs · index.js · entradas: db:ui_nav_items ativo ×1 · refs ext.: 0 · **CANONICAL_ACTIVE** — index.js com mount, 0 imports quebrados; alcance: db:ui_nav_items ativo ×1
+
+## Adendo 2026-09-16 — rotas históricas de compatibilidade (`/instagram`, `/settings`, `/profile`)
+
+Medido em produção (Playwright autenticado, `RouterGlobal.navigate`), antes do lote `fix/rotas-compat-historicas`:
+
+| rota | código (registro) | `ITEM_TO_PANEL` (loader) | banco `ui_nav_items` (sidebar, `data-panel`) | montava |
+|---|---|---|---|---|
+| `#/instagram` | panel-18 "KPIs Taxa de Sucesso" | `instagram` → panel-15 "Overview Métricas" | `sidebar.instagram` → panel-17 "Top 10 Jobs" | panel-18 (por hash) · panel-17 (clique na sidebar) |
+| `#/settings` | panel-user-preferences | — | — | preferências (= `/preferencias`) |
+| `#/profile` | panel-user-preferences (flag OFF) | — | `app_nav_route` "Profile (Header)" (2025-12) | Avatar Studio via shim `profile-redirect` (hashchange); preferências por `navigate()` |
+
+Resolução no código (este lote): `/instagram` e `ITEM_TO_PANEL.instagram` → **panel-status-instagram-messenger** (único painel do
+produto, `app_nav_destination` 35, `sidebar_items.instagram`, rota oficial `/status/instagram`); `/settings` e `/profile` mantidos
+como estão, marcados `compatibilidade` (o header atual não passa por eles: "Meu Perfil" → `#/meu-perfil`, "Minhas Preferências" →
+painel por ação). Aposentar `as6.profile_redirect` + shim e retargetar `/profile` no registro = lote próprio com GO.
+**Pendência de DADOS (dono):** `ui_nav_items.id=18` (`sidebar.instagram`) `panel_id` panel-17 → panel-status-instagram-messenger —
+SQL com estado anterior e rollback em `/backup/rotas-compat-20260916/`. `app_nav_destination.15` (panel-15 titulado "Instagram") é
+resíduo de 2025-12. Fora do lote: `ITEM_TO_PANEL.whatsapp` → panel-19 ("Produtos") tem o mesmo cheiro — não medido.
+
+**Mecanismo descoberto neste lote (16/09):** o `RouterGlobal` (`app/router/dist/app-router.bundle.js`, congelado em 30/04, rebuild NO-GO
+#90) emite `virtualRoute.view` com o defaultView do registro DAQUELA época e o `main-engine/listeners.ts` dava prioridade a ela — por
+isso **nenhum retarget no registro valia para rotas que o congelado conhece**: `#/bling`, `#/google-ads`, `#/google-drive`, `#/pipedrive`
+(lote cleanup-dedup-v2) montavam panel-08/15/16/12 em produção até hoje, e `#/panel-bling` depois de `#/bling` reaproveitava a view stale.
+Corrigido em `main-engine/listeners.ts` 3.8.0-REGISTRY-FIRST (path resolvível manda; override explícito = view ≠ default congelado do
+mesmo path). Prova: `/backup/rotas-compat-20260916/RESUMO.md`.

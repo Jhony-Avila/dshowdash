@@ -4,7 +4,7 @@ import { NAV_EVENTS, NAV_INTENTS } from "/core/runtime/events/catalog/nav.events
 import { SIDEBAR_EVENTS } from "/core/runtime/events/catalog/sidebar.events.js";
 import { getRouteByIdOrPath } from "/components/router/registry/routes.js";
 const MODULE_ID = "components.main.domain.main-engine.listeners";
-const VERSION = "3.7.0-PANELID-PRIORITY";
+const VERSION = "3.8.0-REGISTRY-FIRST";
 const Ports = createCorePorts({ moduleId: MODULE_ID });
 let _injectedPorts = null;
 function _initPorts() {
@@ -30,6 +30,7 @@ const _metrics = {
   navigations: 0,
   extractionFailures: 0,
   routerLookups: 0,
+  staleViewCorrected: 0,
   navIntents: 0,
   navPathEvents: 0,
   navSuccess: 0,
@@ -93,11 +94,49 @@ function getListeners() {
     return { event: item.event, registeredAt: item.registeredAt };
   });
 }
+function _frozenDefaultViewFor(path) {
+  try {
+    const w = typeof window !== "undefined" ? window : null;
+    const cur = w && w.RouterGlobal && typeof w.RouterGlobal.getCurrentRoute === "function" ? w.RouterGlobal.getCurrentRoute() : null;
+    if (!cur || typeof cur.path !== "string" || cur.path !== path) return null;
+    const vd = cur.virtualDefaults;
+    const d = cur.defaultView || vd && vd.view || null;
+    return typeof d === "string" && d ? d : null;
+  } catch (e) {
+    return null;
+  }
+}
+function _panelFromPayloadPath(payload) {
+  try {
+    const r = payload.route && typeof payload.route === "object" ? payload.route : payload;
+    let path = r.path || r.hash || "";
+    if (typeof path !== "string" || !path) return null;
+    path = path.replace(/^#/, "");
+    if (path.charAt(0) !== "/") path = "/" + path;
+    const first = path.split("/").filter((x) => x)[0] || "";
+    if (!first) return null;
+    if (/^panel-[a-z0-9-]+$/i.test(first) || /^painel-[a-z-]+$/i.test(first)) return { path, panel: first };
+    _metrics.routerLookups++;
+    const def = getRouteByIdOrPath(path) || getRouteByIdOrPath("/" + first) || getRouteByIdOrPath(first) || getRouteByIdOrPath("#/" + first);
+    const v = def && def.defaultView;
+    return v ? { path, panel: v } : null;
+  } catch (e) {
+    return null;
+  }
+}
 function extractPanelId(route, globalsPort) {
   if (!route) return null;
   const routeObj = route;
   if (typeof route !== "string" && routeObj.virtualRoute && routeObj.virtualRoute.view) {
-    return routeObj.virtualRoute.view;
+    const view = routeObj.virtualRoute.view;
+    const byPath = _panelFromPayloadPath(routeObj);
+    if (byPath) {
+      const frozen = _frozenDefaultViewFor(byPath.path);
+      if (frozen && frozen !== view) return view;
+      if (byPath.panel !== view) _metrics.staleViewCorrected++;
+      return byPath.panel;
+    }
+    return view;
   }
   let routeResolved = route;
   if (typeof route === "object" && routeObj.route && typeof routeObj.route === "object" && routeObj.route.path) {

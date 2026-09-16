@@ -1,14 +1,23 @@
 const MODULE_ID = "router.registry.definitions.routes-integrations";
-const VERSION = "7.2.0-P17WI";
+const VERSION = "7.2.1-P17WI";
 import { DOMAINS, LAYOUTS, GUARD_POLICIES } from "./constants.js";
 const createIntegrationRoute = (id, title, panel, options = {}) => ({ id, name: title.replace(/\s+/g, ""), page: id, title, public: false, requiresAuth: true, guardPolicy: GUARD_POLICIES.PERMISSIONS, permissions: options.permissions || [], featureFlags: [], layout: LAYOUTS.DEFAULT, defaultView: panel, defaultHash: `#/${id}`, mountMain: true, domain: DOMAINS.INTEGRACOES, virtualDefaults: { view: panel, tab: options.tab || "overview", section: null, entity: options.entity || null, mode: "view" }, seo: { title: `DshowDash - ${title}`, description: options.description || title }, aliases: options.aliases || [], tags: ["integracoes", ...options.tags || []] });
 const integrationRoutes = Object.freeze({
   "/automacoes": createIntegrationRoute("automacoes", "Automa\xE7\xF5es", "panel-07", { permissions: ["cap:automacoes:view"], entity: "automacao", tab: "list", tags: ["automacoes"] }),
+  // COMPATIBILIDADE (2026-09-14): sub-rota registrada no banco (app_nav_route automacoes/mercado-livre → panel-mercadolivre) sem
+  // definição no código — a navegação por hash caía em /automacoes (1º segmento). Rota oficial do produto: /panel-mercadolivre.
   "/automacoes/mercado-livre": createIntegrationRoute("automacoes-mercado-livre", "Mercado Livre", "panel-mercadolivre", { permissions: [], tags: ["mercadolivre", "automacoes", "compatibilidade"] }),
+  // COMPATIBILIDADE (lote cleanup-dedup-v2): rotas legadas /bling, /google-ads, /google-drive e /pipedrive apontavam para
+  // painéis numéricos com outro conteúdo (panel-08 'Alertas do Sistema', panel-15 'Overview Métricas', panel-16 'Fornecedores 360º',
+  // panel-12 'Gerenciamento de Jobs'). Passam a apontar para o SUCESSOR canônico de cada produto; as rotas oficiais são
+  // /panel-bling, /panel-ads, /integrations/google-drive e /panel-pipedrive (routes-dashboard.ts / abaixo).
   "/bling": createIntegrationRoute("bling", "Bling ERP", "panel-bling", { permissions: ["cap:bling:view"], tags: ["bling", "erp"] }),
   "/google-ads": createIntegrationRoute("google-ads", "Google Ads", "panel-ads", { permissions: ["cap:google-ads:view"], tags: ["google-ads", "marketing"] }),
   "/google-drive": createIntegrationRoute("google-drive", "Google Drive", "panel-integration-google-drive", { permissions: ["cap:google-drive:view"], entity: "file", tab: "files", tags: ["google-drive", "storage"] }),
-  "/instagram": createIntegrationRoute("instagram", "Instagram", "panel-18", { permissions: ["cap:instagram:view"], tab: "feed", tags: ["instagram", "social"] }),
+  // COMPATIBILIDADE (2026-09-16, rotas históricas): /instagram apontava para panel-18 ('KPIs Taxa de Sucesso'); o painel do
+  // produto é panel-status-instagram-messenger (rota oficial /status/instagram; app_nav_destination 35). Mesmo padrão do lote
+  // cleanup-dedup-v2 (rota legada → sucessor canônico). O item de sidebar do banco (ui_nav_items 18) ainda grava panel-17 — dados.
+  "/instagram": createIntegrationRoute("instagram", "Instagram", "panel-status-instagram-messenger", { permissions: ["cap:instagram:view"], tab: "overview", tags: ["instagram", "social", "compatibilidade"] }),
   "/pipedrive": createIntegrationRoute("pipedrive", "Pipedrive CRM", "panel-pipedrive", { permissions: ["cap:pipedrive:view"], entity: "deal", tab: "deals", tags: ["pipedrive", "crm"] }),
   "/integrations/adwords": createIntegrationRoute("integration-adwords", "Google Ads", "panel-integration-adwords", { tags: ["adwords", "google", "marketing"] }),
   "/integrations/alfinete": createIntegrationRoute("integration-alfinete", "Alfinete", "panel-integration-alfinete", { tags: ["alfinete"] }),

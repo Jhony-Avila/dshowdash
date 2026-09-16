@@ -38,6 +38,7 @@
 //   event
 // WINDOW ACCESS:
 //   (window as any).SidebarRegistry
+// @changelog v3.8.0-REGISTRY-FIRST: extractPanelId prefere o registro VIVO quando virtualRoute.view é só o defaultView congelado do app-router (rotas compat retargetadas passam a valer)
 // @changelog v3.7.0-PANELID-AAA: Fix extractPanelId to support nested { route: { path } } format from applyRouteEffects + add virtualRoute.view priority extraction
 // @changelog v3.6.0-PANELID-AAA: Previous version
 // ═══════════════════════════════════════════════════════════════
@@ -50,7 +51,7 @@ import { SIDEBAR_EVENTS } from '/core/runtime/events/catalog/sidebar.events.js';
 import { getRouteByIdOrPath } from '/components/router/registry/routes.js';
 
 const MODULE_ID = 'components.main.domain.main-engine.listeners';
-const VERSION = '3.7.0-PANELID-PRIORITY';
+const VERSION = '3.8.0-REGISTRY-FIRST';
 
 const Ports = createCorePorts({ moduleId: MODULE_ID });
 
@@ -78,6 +79,7 @@ const _metrics = {
   navigations: 0,
   extractionFailures: 0,
   routerLookups: 0,
+  staleViewCorrected: 0,
   navIntents: 0,
   navPathEvents: 0,
   navSuccess: 0,
@@ -139,6 +141,34 @@ function getListeners() {
   });
 }
 
+// v3.8.0: default congelado do RouterGlobal para o path do payload (null se não for o mesmo path ou se não houver RouterGlobal)
+function _frozenDefaultViewFor(path: string): string | null {
+  try {
+    const w = typeof window !== 'undefined' ? (window as unknown as { RouterGlobal?: { getCurrentRoute?: () => Record<string, unknown> | null } }) : null;
+    const cur = w && w.RouterGlobal && typeof w.RouterGlobal.getCurrentRoute === 'function' ? w.RouterGlobal.getCurrentRoute() : null;
+    if (!cur || typeof cur.path !== 'string' || cur.path !== path) return null;
+    const vd = cur.virtualDefaults as Record<string, unknown> | undefined;
+    const d = (cur.defaultView as string | undefined) || (vd && (vd.view as string | undefined)) || null;
+    return typeof d === 'string' && d ? d : null;
+  } catch (e) { return null; }
+}
+// v3.8.0: painel que o PATH do payload resolve por si (segmento `panel-*` ou registro VIVO); null se o path não resolve.
+function _panelFromPayloadPath(payload: Record<string, unknown>): { path: string; panel: string } | null {
+  try {
+    const r = (payload.route && typeof payload.route === 'object' ? payload.route : payload) as Record<string, unknown>;
+    let path = (r.path || r.hash || '') as string;
+    if (typeof path !== 'string' || !path) return null;
+    path = path.replace(/^#/, ''); if (path.charAt(0) !== '/') path = '/' + path;
+    const first = path.split('/').filter((x) => x)[0] || '';
+    if (!first) return null;
+    if (/^panel-[a-z0-9-]+$/i.test(first) || /^painel-[a-z-]+$/i.test(first)) return { path, panel: first };
+    _metrics.routerLookups++;
+    const def = getRouteByIdOrPath(path) || getRouteByIdOrPath('/' + first) || getRouteByIdOrPath(first) || getRouteByIdOrPath('#/' + first);
+    const v = def && (def.defaultView as string | undefined);
+    return v ? { path, panel: v } : null;
+  } catch (e) { return null; }
+}
+
 // v3.7.0: extractPanelId - supports both flat { path } and nested { route: { path } } formats
 // Priority: 1) virtualRoute.view from event data, 2) route path resolution via registry
 function extractPanelId(route: string | Record<string, unknown> | null, globalsPort?: Record<string, unknown> | null) {
@@ -147,7 +177,22 @@ function extractPanelId(route: string | Record<string, unknown> | null, globalsP
 
   // v3.7.0: If data has virtualRoute.view, use it directly (highest priority - already resolved panelId)
   if (typeof route !== 'string' && routeObj.virtualRoute && (routeObj.virtualRoute as Record<string, unknown>).view) {
-    return (routeObj.virtualRoute as Record<string, unknown>).view;
+    const view = (routeObj.virtualRoute as Record<string, unknown>).view as string;
+    // v3.8.0-REGISTRY-FIRST: essa view vem do RouterGlobal (app/router/dist/app-router.bundle.js, congelado em 2026-04-30):
+    // (a) é o defaultView do registro DAQUELA época — retargets no registro vivo (inlinado no lote main, rebuildado a cada
+    //     deploy) nunca chegavam ao runtime (medido 16/09/2026: #/bling montava panel-08, #/instagram panel-18);
+    // (b) em rota que o registro congelado NÃO conhece o store mantém o virtualRoute ANTERIOR (ex.: /bling → panel-bling
+    //     troca o hash para #/panel-bling/visao/… e a view stale panel-08 remontava o painel errado).
+    // Regra: se o PATH do payload resolve por si (segmento panel-* ou registro vivo), ele manda — a view só prevalece
+    // quando é um override explícito, i.e. difere do default congelado do MESMO path (options.virtualRoute/navigateCanvas).
+    const byPath = _panelFromPayloadPath(routeObj);
+    if (byPath) {
+      const frozen = _frozenDefaultViewFor(byPath.path);
+      if (frozen && frozen !== view) return view;          // override explícito do chamador
+      if (byPath.panel !== view) _metrics.staleViewCorrected++;
+      return byPath.panel;
+    }
+    return view;
   }
 
   // v3.7.0: Support nested format from applyRouteEffects: { route: { path: ... } }

@@ -1,4 +1,4 @@
-const VERSION = "2.0.0-DATADRIVEN";
+const VERSION = "2.0.1-DATADRIVEN";
 const MODULE_ID = "panel-paths";
 const PANEL_ID_PATHS = Object.freeze({
   // Painéis numéricos (legacy)
@@ -40,8 +40,12 @@ const PANEL_ID_PATHS = Object.freeze({
   "panel-user-preferences": "/components/panels/panel-user-preferences/index.js",
   "panel-orchestrator": "/components/panels/panel-orchestrator/index.js",
   "panel-status": "/components/panels/panel-status/index.js",
-  "panel-profile": "/components/panels/panel-user-profile/index.js",          // COMPATIBILIDADE: id legado → sucessor panel-user-profile
-  "panel-preferences": "/components/panels/panel-user-preferences/index.js",  // COMPATIBILIDADE: id legado → sucessor panel-user-preferences
+  "panel-status-instagram-messenger": "/components/panels/panel-status-instagram-messenger/index.js",
+  // @rotas-compat 2026-09-16: alvo de /instagram e do item 'instagram'
+  "panel-profile": "/components/panels/panel-user-profile/index.js",
+  // COMPATIBILIDADE: id legado → sucessor panel-user-profile
+  "panel-preferences": "/components/panels/panel-user-preferences/index.js",
+  // COMPATIBILIDADE: id legado → sucessor panel-user-preferences
   "panel-security": "/components/panels/panel-account-security/index.js",
   "panel-sessions": "/components/panels/panel-user-sessions/index.js",
   "panel-settings": "/components/panels/panel-footer-settings/index.js",
@@ -63,7 +67,8 @@ const ITEM_TO_PANEL = Object.freeze({
   "principal": "panel-01",
   "geral": "panel-02",
   "automacoes": "panel-03",
-  "bling": "panel-bling",        // @2026-07-30: era "panel-04" (stub "Produtos/Bling")
+  "bling": "panel-bling",
+  // @2026-07-30: era 'panel-04' (stub 'Produtos/Bling')
   "clientes": "panel-03",
   "colaboradores": "panel-06",
   "rh-pessoas": "panel-06",
@@ -76,9 +81,11 @@ const ITEM_TO_PANEL = Object.freeze({
   "fornecedores": "panel-11",
   "google-ads": "panel-ads",
   "adwords": "panel-ads",
-  "google-drive": "panel-integration-google-drive", // @cleanup-v2: era "panel-13" (SLA e Disponibilidade)
+  "google-drive": "panel-integration-google-drive",
+  // @cleanup-v2: era 'panel-13' (SLA e Disponibilidade)
   "importacao": "panel-14",
-  "instagram": "panel-15",
+  "instagram": "panel-status-instagram-messenger",
+  // @rotas-compat 2026-09-16: era 'panel-15' (Overview Métricas)
   "operacional": "panel-16",
   "operacional-menu": "panel-16",
   "logistica": "panel-16",
@@ -89,10 +96,14 @@ const ITEM_TO_PANEL = Object.freeze({
   "whatsapp": "panel-19",
   "servidores": "panel-health-dashboard",
   "status": "panel-status",
-  "meu-perfil": "panel-user-profile",            // @cleanup-v2: era "panel-profile" (id legado)
-  "preferencias": "panel-user-preferences",      // @cleanup-v2: era "panel-preferences" (id legado)
-  "seguranca": "panel-account-security",         // @cleanup-v2: era "panel-security" (painel inexistente)
-  "sessoes": "panel-user-sessions",              // @cleanup-v2: era "panel-sessions" (painel inexistente)
+  "meu-perfil": "panel-user-profile",
+  // @cleanup-v2: era 'panel-profile' (id legado)
+  "preferencias": "panel-user-preferences",
+  // @cleanup-v2: era 'panel-preferences' (id legado)
+  "seguranca": "panel-account-security",
+  // @cleanup-v2: era 'panel-security' (painel inexistente)
+  "sessoes": "panel-user-sessions",
+  // @cleanup-v2: era 'panel-sessions' (painel inexistente)
   "folder": "panel-files",
   "panel-home": "panel-home",
   "panel-financeiro": "panel-09",

@@ -22,7 +22,7 @@
 // ═══════════════════════════════════════════════════════════════
 'use strict';
 const MODULE_ID = 'router.registry.definitions.routes-integrations';
-const VERSION = '7.2.0-P17WI';
+const VERSION = '7.2.1-P17WI';
 import { DOMAINS, LAYOUTS, GUARD_POLICIES } from './constants.js';
 const createIntegrationRoute = (id: string, title: string, panel: string, options: Record<string, any> = {}) => ({ id, name: title.replace(/\s+/g, ''), page: id, title, public: false, requiresAuth: true, guardPolicy: GUARD_POLICIES.PERMISSIONS, permissions: options.permissions || [], featureFlags: [] as string[], layout: LAYOUTS.DEFAULT, defaultView: panel, defaultHash: `#/${id}`, mountMain: true, domain: DOMAINS.INTEGRACOES, virtualDefaults: { view: panel, tab: (options.tab || 'overview') as string, section: null as string | null, entity: (options.entity || null) as string | null, mode: 'view' }, seo: { title: `DshowDash - ${title}`, description: options.description || title }, aliases: options.aliases || [], tags: ['integracoes', ...(options.tags || [])] });
 export const integrationRoutes = Object.freeze({
@@ -37,7 +37,10 @@ export const integrationRoutes = Object.freeze({
   '/bling': createIntegrationRoute('bling', 'Bling ERP', 'panel-bling', { permissions: ['cap:bling:view'], tags: ['bling', 'erp'] }),
   '/google-ads': createIntegrationRoute('google-ads', 'Google Ads', 'panel-ads', { permissions: ['cap:google-ads:view'], tags: ['google-ads', 'marketing'] }),
   '/google-drive': createIntegrationRoute('google-drive', 'Google Drive', 'panel-integration-google-drive', { permissions: ['cap:google-drive:view'], entity: 'file', tab: 'files', tags: ['google-drive', 'storage'] }),
-  '/instagram': createIntegrationRoute('instagram', 'Instagram', 'panel-18', { permissions: ['cap:instagram:view'], tab: 'feed', tags: ['instagram', 'social'] }),
+  // COMPATIBILIDADE (2026-09-16, rotas históricas): /instagram apontava para panel-18 ('KPIs Taxa de Sucesso'); o painel do
+  // produto é panel-status-instagram-messenger (rota oficial /status/instagram; app_nav_destination 35). Mesmo padrão do lote
+  // cleanup-dedup-v2 (rota legada → sucessor canônico). O item de sidebar do banco (ui_nav_items 18) ainda grava panel-17 — dados.
+  '/instagram': createIntegrationRoute('instagram', 'Instagram', 'panel-status-instagram-messenger', { permissions: ['cap:instagram:view'], tab: 'overview', tags: ['instagram', 'social', 'compatibilidade'] }),
   '/pipedrive': createIntegrationRoute('pipedrive', 'Pipedrive CRM', 'panel-pipedrive', { permissions: ['cap:pipedrive:view'], entity: 'deal', tab: 'deals', tags: ['pipedrive', 'crm'] }),
   '/integrations/adwords': createIntegrationRoute('integration-adwords', 'Google Ads', 'panel-integration-adwords', { tags: ['adwords', 'google', 'marketing'] }),
   '/integrations/alfinete': createIntegrationRoute('integration-alfinete', 'Alfinete', 'panel-integration-alfinete', { tags: ['alfinete'] }),

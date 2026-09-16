@@ -28,7 +28,7 @@
 // ═══════════════════════════════════════════════════════════════
 'use strict';
 
-export const VERSION = '2.0.0-DATADRIVEN';
+export const VERSION = '2.0.1-DATADRIVEN';
 export const MODULE_ID = 'panel-paths';
 
 export const PANEL_ID_PATHS = Object.freeze({
@@ -73,6 +73,7 @@ export const PANEL_ID_PATHS = Object.freeze({
   'panel-user-preferences': '/components/panels/panel-user-preferences/index.js',
   'panel-orchestrator': '/components/panels/panel-orchestrator/index.js',
   'panel-status': '/components/panels/panel-status/index.js',
+  'panel-status-instagram-messenger': '/components/panels/panel-status-instagram-messenger/index.js', // @rotas-compat 2026-09-16: alvo de /instagram e do item 'instagram'
   'panel-profile': '/components/panels/panel-user-profile/index.js',          // COMPATIBILIDADE: id legado → sucessor panel-user-profile
   'panel-preferences': '/components/panels/panel-user-preferences/index.js',  // COMPATIBILIDADE: id legado → sucessor panel-user-preferences
   'panel-security': '/components/panels/panel-account-security/index.js',
@@ -113,7 +114,7 @@ export const ITEM_TO_PANEL = Object.freeze({
   'adwords': 'panel-ads',
   'google-drive': 'panel-integration-google-drive', // @cleanup-v2: era 'panel-13' (SLA e Disponibilidade)
   'importacao': 'panel-14',
-  'instagram': 'panel-15',
+  'instagram': 'panel-status-instagram-messenger', // @rotas-compat 2026-09-16: era 'panel-15' (Overview Métricas)
   'operacional': 'panel-16',
   'operacional-menu': 'panel-16',
   'logistica': 'panel-16',
