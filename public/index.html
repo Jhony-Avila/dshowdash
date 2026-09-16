@@ -7,6 +7,14 @@
   <meta name="description" content="DshowDash v3.0 - Enterprise Business Intelligence Dashboard">
   <title>DshowDash v3.0 - Enterprise</title>
 
+  <!-- FOUC-D5 (Doc 41, 2026-09-16): rede de segurança global — SVG inline sem width/height (ícone dimensionado só
+       por CSS) nasce com 1em em vez de esticar à largura do container enquanto o CSS do componente ainda não
+       chegou. :where() = especificidade 0: qualquer regra de componente vence; SVG de gráfico com width/height
+       não é afetado. Medido: ícones do panel-13 a 1112px por ~7s em Fast 3G (prova-d5). -->
+  <style id="fouc-svg-guard">:where(svg:not([width]):not([height])){width:1em;height:1em}</style>
+  <!-- FOUC-D2a (Doc 41): fundo do boot antes de qualquer CSS externo (mesma cor do .preloader-root). -->
+  <style id="boot-bg">html{background:#0a0e27}</style>
+
   <!-- P0: HTTPS GUARD - DEVE SER O PRIMEIRO SCRIPT (antes de qualquer module import) -->
   <!-- OWNER_OK_P14: OwnerHTTPS — https guard (reason=https-enforcement, emits=none, scope=navigation-only) -->
   <script>
@@ -94,6 +102,11 @@
 
   <!-- Preloader CSS (unified AAA+Premium v3.0.0-ENTERPRISE) -->
   <link rel="stylesheet" href="/components/preloader/styles/index.css">
+  <!-- FOUC-D1 (Doc 41, 2026-09-16): CSS do login-modal no <head> (shell-level — evita FOUC). O mount() do
+       login-modal injeta o DOM ANTES de pedir este CSS (login-modal-class.ts: injectTemplate() → loadCSS()) e o
+       template pintava cru por ~120ms–1,2s (ícone SVG gigante, <video> 1280x720 preto, logo solto). Com o <link>
+       aqui, system-initializer.loadCSS() vira no-op porque já encontra o href. Sem rebuild de bundle. -->
+  <link rel="stylesheet" href="/components/login-modal/styles.css">
 
   <!-- App Shell CSS -->
   <!-- Sidebar V2 CSS (bundle P0 — single request, zero @import) -->
@@ -184,6 +197,28 @@
 </head>
 
 <body data-auth-ready="false" data-state="initializing">
+  <!-- FOUC-D2b (Doc 41, 2026-09-16): splash estático — mesmas classes/markup do preloader AAA (CSS já no <head>),
+       pinta no instante em que o CSS bloqueante termina, antes de qualquer JS (antes: tela branca de 0,9s a 25s).
+       Sem data-preloader-* para o dom-manager do preloader não o confundir com o root dele. Sai de cena por
+       evento de DOM (não por timeout): no instante em que o preloader real entra, ou se body[data-state] mudar. -->
+  <div id="boot-splash" class="preloader-root visible" aria-hidden="true" data-boot-splash>
+    <div class="preloader-container">
+      <div class="preloader-logo-container"><img src="/assets/icons/logo-square.png" alt="" class="preloader-logo" width="180" height="168" decoding="async" fetchpriority="high"></div>
+      <div class="preloader-text">Carregando</div>
+      <div class="preloader-progress-wrapper"><div class="preloader-progress"><div class="preloader-progress-bar"></div></div><div class="preloader-percentage">0%</div></div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var s = document.getElementById('boot-splash'); if (!s) return;
+      var mo = null;
+      var done = function () { if (s && s.parentNode) s.parentNode.removeChild(s); s = null; if (mo) mo.disconnect(); };
+      mo = new MutationObserver(function () {
+        if (document.querySelector('[data-preloader-root]') || document.body.getAttribute('data-state') !== 'initializing') done();
+      });
+      mo.observe(document.body, { childList: true, attributes: true, attributeFilter: ['data-state'] });
+    })();
+  </script>
   <div id="app"></div>
 
   <script src="/assets/js/core/header-scroll-guardian.js"></script>
