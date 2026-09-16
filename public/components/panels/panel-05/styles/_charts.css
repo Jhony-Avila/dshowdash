@@ -7,3 +7,4 @@
 @import '_charts.bar.css';
 @import '_charts.lists.css';
 @import '_charts.table.css';
+@import '_charts.renderer.css'; /* 2026-09-16: vocabulário do ui/charts.ts (p05-bar-*, p05-hbar-*, p05-ranking-*) */

@@ -31,6 +31,7 @@ function renderCharts(refs, data) {
   }
   const cards = chartsArea.querySelector(":scope > .p05-charts-cards") || document.createElement("div");
   cards.className = "p05-charts-cards";
+  cards.style.display = "contents";
   cards.innerHTML = html;
   if (!chartsArea.contains(cards)) chartsArea.prepend(cards);
   chartsArea.style.display = receitaMensal?.length || topClientes?.length ? "" : "none";

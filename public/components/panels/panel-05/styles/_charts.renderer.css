@@ -1,0 +1,61 @@
+/* Panel-05 Charts — vocabulário do renderer (ui/charts.ts)
+ * @version 1.0.0 — 2026-09-16 (backlog do painel 05)
+ * O CSS modular (_charts.bar/lists/table.css) descreve uma geração anterior de markup (.p05-bar, .p05-top-item,
+ * .p05-uf-item…); o renderer vivo emite .p05-bar-chart/.p05-bar-item/.p05-bar-track/.p05-bar-fill, .p05-hbar-*,
+ * .p05-ranking-*, .p05-chart-body/.p05-chart-title, .p05-td-*. Sem estas regras o gráfico de barras vira texto.
+ * Só tokens do painel (--p05-*).
+ */
+
+.p05-chart { display: flex; flex-direction: column; gap: var(--p05-space-sm); min-width: 0; }
+.p05-chart-title { margin: 0; font: var(--p05-font-title-sm); color: var(--p05-text-primary); }
+.p05-chart-body { position: relative; min-width: 0; }
+.p05-chart-empty { padding: var(--p05-space-lg); color: var(--p05-text-muted); text-align: center; }
+
+/* Barras verticais (Receita Mensal) */
+.p05-bar-chart { display: flex; align-items: stretch; gap: var(--p05-space-xs); height: 100%; }
+.p05-bar-item { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: var(--p05-space-2xs); }
+.p05-bar-value { font: var(--p05-font-meta); color: var(--p05-text-secondary); white-space: nowrap; }
+.p05-bar-track { flex: 1 1 auto; width: 70%; display: flex; align-items: flex-end; background: var(--p05-bg-surface-alt); border-radius: var(--p05-radius-xs) var(--p05-radius-xs) 0 0; overflow: hidden; }
+.p05-bar-fill { width: 100%; min-height: 2px; background: var(--p05-primary); border-radius: inherit; transition: height var(--p05-motion-normal); }
+.p05-bar-current .p05-bar-fill { background: var(--p05-accent); }
+.p05-bar-item .p05-bar-label { white-space: nowrap; }
+
+/* Barras horizontais (Receita por UF) */
+.p05-horizontal-bars { display: flex; flex-direction: column; gap: var(--p05-space-xs); }
+.p05-hbar-item { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: var(--p05-space-sm); }
+.p05-hbar-label { font: var(--p05-font-label); color: var(--p05-text-secondary); }
+.p05-hbar-track { height: 8px; background: var(--p05-bg-surface-alt); border-radius: var(--p05-radius-xs); overflow: hidden; }
+.p05-hbar-fill { height: 100%; background: var(--p05-cyan); border-radius: inherit; transition: width var(--p05-motion-normal); }
+.p05-hbar-value { font: var(--p05-font-body-sm); color: var(--p05-text-primary); white-space: nowrap; }
+
+/* Ranking (Top Clientes) */
+.p05-ranking-list { display: flex; flex-direction: column; gap: var(--p05-space-xs); }
+.p05-ranking-item { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: var(--p05-space-sm); padding: var(--p05-space-xs) var(--p05-space-sm); border-radius: var(--p05-radius-sm); background: var(--p05-bg-surface-alt); }
+.p05-ranking-item.p05-top-3 { border: 1px solid var(--p05-border-subtle); }
+.p05-rank-medal { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--p05-text-muted); }
+.p05-rank-medal svg { width: 16px; height: 16px; }
+.p05-medal-1 { color: var(--p05-warning); } .p05-medal-2 { color: var(--p05-text-secondary); } .p05-medal-3 { color: var(--p05-accent); }
+.p05-rank-num { font: var(--p05-font-meta); }
+.p05-rank-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.p05-rank-nome { font: var(--p05-font-body-sm); color: var(--p05-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p05-rank-bar-track { height: 4px; background: var(--p05-bg-surface); border-radius: 2px; overflow: hidden; }
+.p05-rank-bar-fill { height: 100%; background: var(--p05-info); border-radius: inherit; }
+.p05-rank-value { font: var(--p05-font-body-sm); font-weight: 600; color: var(--p05-success); white-space: nowrap; }
+
+/* Tabela de vendedores (células do renderer) */
+.p05-vendedores-table { width: 100%; border-collapse: collapse; }
+.p05-td-nome { color: var(--p05-text-primary); }
+.p05-td-value { text-align: right; color: var(--p05-text-secondary); white-space: nowrap; }
+
+/* Donut (por tipo) — mínimo para não quebrar quando usado */
+.p05-donut-container { position: relative; margin: 0 auto; }
+.p05-donut-svg { width: 100%; height: 100%; }
+.p05-donut-hole { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.p05-donut-total-value { font: var(--p05-font-title-md); color: var(--p05-text-primary); }
+.p05-donut-total-label { font: var(--p05-font-meta); color: var(--p05-text-muted); }
+
+/* Retoques (2026-09-16): rótulos de valor não se amontoam com 12+ meses; botões da paginação não quebram linha */
+.p05-bar-value { font-size: 10px; line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.p05-pagination { display: flex; align-items: center; justify-content: space-between; gap: var(--p05-space-md); flex-wrap: wrap; }
+.p05-pagination-controls { display: flex; gap: var(--p05-space-xs); }
+.p05-btn-page { white-space: nowrap; }

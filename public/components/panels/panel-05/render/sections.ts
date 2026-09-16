@@ -75,6 +75,7 @@ export function renderCharts(refs: Record<string, unknown> | null, data: Record<
 
   const cards = (chartsArea.querySelector(':scope > .p05-charts-cards') || document.createElement('div')) as HTMLElement;
   cards.className = 'p05-charts-cards';
+  cards.style.display = 'contents'; // os cards participam da grade da .p05-charts-section, não viram um item só
   cards.innerHTML = html;
   if (!chartsArea.contains(cards)) chartsArea.prepend(cards);
   chartsArea.style.display = receitaMensal?.length || topClientes?.length ? '' : 'none';
