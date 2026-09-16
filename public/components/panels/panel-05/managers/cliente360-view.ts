@@ -35,16 +35,17 @@ import { pause as pauseScheduler, resume as resumeScheduler } from '../scheduler
 import { emitLifecycle } from '../utils/lifecycle.js';
 import * as Favoritos from './favoritos.js';
 
-export const VERSION = '9.3.0-P2-ENTERPRISE';
+export const VERSION = '9.3.2-P2-ENTERPRISE';
 export const MODULE_ID = 'panel-05:managers:cliente360-view';
 
 let _instance: Record<string, unknown> | null = null;
 let _currentView = 'list';
 const REGIONS_TO_HIDE = ['kpis', 'filters', 'table-wrapper', 'pagination', 'charts'];
 
-const _hideRegions = (panel: HTMLElement) => { REGIONS_TO_HIDE.forEach(region => { const el = panel ? panel.querySelector(`[data-region="${region}"]`) : null; if (el) (el as HTMLElement).style.setProperty('display', 'none'); }); };
+let _chartsVisiveis = false; // 2026-09-16: a região 'charts' era escondida e nunca reexibida ao fechar o Cliente 360
+const _hideRegions = (panel: HTMLElement) => { const ch = panel ? panel.querySelector('[data-region="charts"]') as HTMLElement | null : null; _chartsVisiveis = !!ch && ch.style.display !== 'none'; REGIONS_TO_HIDE.forEach(region => { const el = panel ? panel.querySelector(`[data-region="${region}"]`) : null; if (el) (el as HTMLElement).style.setProperty('display', 'none'); }); };
 
-const _showRegions = (panel: HTMLElement) => { ['kpis', 'filters', 'table-wrapper', 'pagination'].forEach(region => { const el = panel ? panel.querySelector(`[data-region="${region}"]`) : null; if (el) (el as HTMLElement).style.setProperty('display', ''); }); };
+const _showRegions = (panel: HTMLElement) => { ['kpis', 'filters', 'table-wrapper', 'pagination'].concat(_chartsVisiveis ? ['charts'] : []).forEach(region => { const el = panel ? panel.querySelector(`[data-region="${region}"]`) : null; if (el) (el as HTMLElement).style.setProperty('display', ''); }); };
 
 export const init = (container: HTMLElement, refs: Record<string, unknown>, moduleId: string, version: string) => { if (!container) return null; _instance = new Cliente360(container, { onBack: () => { hide(refs, moduleId, version); }, onFavorito: (id: unknown) => { Favoritos.toggle(id, moduleId, version); } }) as unknown as Record<string, unknown>; return _instance; };
 

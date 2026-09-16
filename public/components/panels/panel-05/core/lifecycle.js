@@ -1,6 +1,6 @@
 import { PANEL_ID } from "./constants.js";
 import { renderCharts } from "../render/sections.js";
-const VERSION = "9.3.1-P2-ENTERPRISE";
+const VERSION = "9.3.2-P2-ENTERPRISE";
 const MODULE_ID = "panel-05/core/lifecycle";
 let _initialized = false;
 let _container = null;
@@ -29,15 +29,14 @@ function _template() {
         <h2 class="p05-title">Clientes 360\xB0</h2>
       </div>
       <div class="p05-header-left">
-        <div class="p05-view-toggle">
-          <button type="button" class="p05-view-btn p05-active" data-action="view-change" data-view="list" title="Lista">Lista</button>
-          <button type="button" class="p05-view-btn" data-action="toggle-charts" title="Gr\xE1ficos e insights (c)">Gr\xE1ficos</button>
-        </div>
+        <button type="button" class="p05-btn p05-btn-ghost p05-btn-sm" data-action="toggle-charts" title="Mostrar/ocultar gr\xE1ficos e insights (c)">Gr\xE1ficos</button>
+        <button type="button" class="p05-btn p05-btn-ghost p05-btn-sm" data-action="show-date-picker" title="Per\xEDodo de cadastro">Per\xEDodo</button>
+        <button type="button" class="p05-btn p05-btn-ghost p05-btn-sm" data-action="show-settings" title="Configura\xE7\xF5es (s)">Configura\xE7\xF5es</button>
       </div>
       <div class="p05-header-actions">
         <div class="p05-refresh-group">
           <span class="p05-countdown" data-ref="countdown">--</span>
-          <button type="button" class="p05-btn-refresh" data-action="refresh" title="Atualizar (r)">Atualizar</button>
+          <button type="button" class="p05-btn-refresh" data-action="refresh" title="Atualizar (r)" aria-label="Atualizar">&#8635;</button>
         </div>
         <button type="button" class="p05-btn p05-btn-ghost p05-btn-sm" data-action="export-csv" title="Exportar CSV (e)">CSV</button>
         <button type="button" class="p05-btn p05-btn-ghost p05-btn-sm" data-action="export-excel" title="Exportar Excel">Excel</button>
@@ -75,7 +74,7 @@ function _template() {
         <div class="p05-table-host" data-ref="tableContainer"></div>
       </div>
       <div class="p05-pagination" data-region="pagination" data-ref="pagination"></div>
-      <section class="p05-charts-section" data-region="charts" data-ref="chartsArea" style="display:none" aria-label="Gr\xE1ficos e insights"></section>
+      <section class="p05-charts-section" data-region="charts" data-ref="chartsArea" aria-label="Gr\xE1ficos e insights"></section>
       <section class="p05-cliente360" data-ref="cliente360" style="display:none" aria-label="Cliente 360"></section>
     </div>
 

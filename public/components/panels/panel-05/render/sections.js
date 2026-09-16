@@ -3,7 +3,7 @@ import { chartsRenderer } from "../ui/charts.js";
 import { insightsRenderer } from "../ui/insights.js";
 import { funilRenderer } from "../ui/funil.js";
 import { advancedRenderer } from "../ui/advanced.js";
-const VERSION = "9.3.0-P2-ENTERPRISE";
+const VERSION = "9.3.2-P2-ENTERPRISE";
 const MODULE_ID = "panel-05:render:sections";
 function renderKPIs(refs, data) {
   if (!refs || !data) return;
@@ -12,25 +12,27 @@ function renderKPIs(refs, data) {
 function renderCharts(refs, data) {
   if (!refs?.chartsArea || !data) return;
   const chartsArea = refs.chartsArea;
-  let html = '<div class="p05-charts-grid">';
+  let html = "";
   const receitaMensal = data.receitaMensal;
   const topClientes = data.topClientes;
   const porUF = data.porUF;
   const vendedores = data.vendedores;
   if (receitaMensal?.length) {
-    html += `<div class="p05-chart-card">${chartsRenderer.renderReceitaMensal(receitaMensal)}</div>`;
+    html += `<div class="p05-chart-container p05-chart-wide">${chartsRenderer.renderReceitaMensal(receitaMensal)}</div>`;
   }
   if (topClientes?.length) {
-    html += `<div class="p05-chart-card">${chartsRenderer.renderTopClientes(topClientes)}</div>`;
+    html += `<div class="p05-chart-container">${chartsRenderer.renderTopClientes(topClientes)}</div>`;
   }
   if (porUF?.length) {
-    html += `<div class="p05-chart-card">${chartsRenderer.renderPorUF(porUF)}</div>`;
+    html += `<div class="p05-chart-container">${chartsRenderer.renderPorUF(porUF)}</div>`;
   }
   if (vendedores?.length) {
-    html += `<div class="p05-chart-card">${chartsRenderer.renderVendedores(vendedores)}</div>`;
+    html += `<div class="p05-chart-container p05-chart-wide">${chartsRenderer.renderVendedores(vendedores)}</div>`;
   }
-  html += "</div>";
-  chartsArea.innerHTML = html;
+  const cards = chartsArea.querySelector(":scope > .p05-charts-cards") || document.createElement("div");
+  cards.className = "p05-charts-cards";
+  cards.innerHTML = html;
+  if (!chartsArea.contains(cards)) chartsArea.prepend(cards);
   chartsArea.style.display = receitaMensal?.length || topClientes?.length ? "" : "none";
 }
 function renderInsights(refs, data) {
@@ -38,7 +40,7 @@ function renderInsights(refs, data) {
   if (!refs?.chartsArea || !dataArr?.length) return;
   const chartsArea = refs.chartsArea;
   const container = chartsArea.querySelector(".p05-insights-container") || document.createElement("div");
-  container.className = "p05-insights-container";
+  container.className = "p05-insights-container p05-chart-container p05-chart-wide";
   container.innerHTML = insightsRenderer.renderInsightsPanel(dataArr);
   if (!chartsArea.contains(container)) {
     chartsArea.appendChild(container);
@@ -48,7 +50,7 @@ function renderComparativo(refs, data) {
   if (!refs?.chartsArea || !data) return;
   const chartsArea = refs.chartsArea;
   const container = chartsArea.querySelector(".p05-comparativo-container") || document.createElement("div");
-  container.className = "p05-comparativo-container";
+  container.className = "p05-comparativo-container p05-chart-container";
   container.innerHTML = insightsRenderer.renderComparativo(data);
   if (!chartsArea.contains(container)) {
     chartsArea.appendChild(container);
@@ -58,7 +60,7 @@ function renderFunil(refs, data) {
   if (!refs?.chartsArea || !data) return;
   const chartsArea = refs.chartsArea;
   const container = chartsArea.querySelector(".p05-funil-container") || document.createElement("div");
-  container.className = "p05-funil-container";
+  container.className = "p05-funil-container p05-chart-container p05-chart-wide";
   let html = "";
   const stages = data.stages;
   const motivosPerda = data.motivosPerda;
@@ -81,7 +83,7 @@ function renderChurn(refs, data) {
   if (!refs?.chartsArea || !dataArr?.length) return;
   const chartsArea = refs.chartsArea;
   const container = chartsArea.querySelector(".p05-churn-container") || document.createElement("div");
-  container.className = "p05-churn-container";
+  container.className = "p05-churn-container p05-chart-container p05-chart-wide";
   container.innerHTML = advancedRenderer.renderChurnRisk(dataArr);
   if (!chartsArea.contains(container)) {
     chartsArea.appendChild(container);

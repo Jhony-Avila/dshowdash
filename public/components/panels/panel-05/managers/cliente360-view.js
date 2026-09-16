@@ -3,19 +3,22 @@ import { Cliente360 } from "../cliente360/index.js";
 import { pause as pauseScheduler, resume as resumeScheduler } from "../scheduler/refresh.js";
 import { emitLifecycle } from "../utils/lifecycle.js";
 import * as Favoritos from "./favoritos.js";
-const VERSION = "9.3.0-P2-ENTERPRISE";
+const VERSION = "9.3.2-P2-ENTERPRISE";
 const MODULE_ID = "panel-05:managers:cliente360-view";
 let _instance = null;
 let _currentView = "list";
 const REGIONS_TO_HIDE = ["kpis", "filters", "table-wrapper", "pagination", "charts"];
+let _chartsVisiveis = false;
 const _hideRegions = (panel) => {
+  const ch = panel ? panel.querySelector('[data-region="charts"]') : null;
+  _chartsVisiveis = !!ch && ch.style.display !== "none";
   REGIONS_TO_HIDE.forEach((region) => {
     const el = panel ? panel.querySelector(`[data-region="${region}"]`) : null;
     if (el) el.style.setProperty("display", "none");
   });
 };
 const _showRegions = (panel) => {
-  ["kpis", "filters", "table-wrapper", "pagination"].forEach((region) => {
+  ["kpis", "filters", "table-wrapper", "pagination"].concat(_chartsVisiveis ? ["charts"] : []).forEach((region) => {
     const el = panel ? panel.querySelector(`[data-region="${region}"]`) : null;
     if (el) el.style.setProperty("display", "");
   });

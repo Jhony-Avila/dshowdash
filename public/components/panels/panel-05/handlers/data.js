@@ -4,7 +4,8 @@ import { apiClient } from "../services/api.js";
 import { toastManager } from "../ui/toast.js";
 import * as Telemetry from "../telemetry/tracker.js";
 import { emitLifecycle, log } from "../utils/lifecycle.js";
-const VERSION = "9.3.0-P2-ENTERPRISE";
+import { adaptAll } from "./erp-adapter.js";
+const VERSION = "9.3.2-P2-ENTERPRISE";
 const MODULE_ID = "panel-05:handlers:data";
 async function loadAllData(moduleId, version) {
   store.setLoading(true);
@@ -15,14 +16,15 @@ async function loadAllData(moduleId, version) {
     const response = await apiClient.fetchAllData(params);
     if (response.kpis) store.setKPIs(response.kpis);
     if (response.clientes) store.setClientes(response.clientes);
-    if (response.charts) store.setCharts(response.charts);
+    const adapted = adaptAll(response);
+    if (adapted.charts) store.setCharts(adapted.charts);
     if (response.topClientes) store.setTopClientes(response.topClientes);
     if (response.vendedores) store.setVendedores(response.vendedores);
     if (response.insights) store.setInsights(response.insights);
     if (response.comparativo) store.setComparativo(response.comparativo);
-    if (response.funil) store.setFunil(response.funil);
+    if (adapted.funil) store.setFunil(adapted.funil);
     if (response.metrics) store.setMetrics(response.metrics);
-    if (response.churn) store.setChurn(response.churn);
+    if (adapted.churn) store.setChurn(adapted.churn);
     if (response.ranking) store.setRanking(response.ranking);
     if (response.heatmap) store.setHeatmap(response.heatmap);
     store.setLoading(false);

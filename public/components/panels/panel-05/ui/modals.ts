@@ -24,7 +24,7 @@
 
 import { IconRegistry } from '/components/icon-registry/index.js';
 
-export const VERSION = '9.3.0-P2-ENTERPRISE';
+export const VERSION = '9.3.2-P2-ENTERPRISE';
 export const MODULE_ID = 'panel-05:modals';
 
 const icon = (name: string) => IconRegistry.get(name) || '';
@@ -63,8 +63,9 @@ class ModalsManager {
   renderDateRangePicker(options: Record<string, unknown> = {}) {
     const { startDate = null, endDate = null, selectedPreset = null } = options;
     const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
+    // 2026-09-16: prev-month/next-month reabrem o modal com month/year (antes o calendário era sempre o mês atual)
+    const currentMonth = Number.isInteger(options.month) ? (options.month as number) : today.getMonth();
+    const currentYear = Number.isInteger(options.year) ? (options.year as number) : today.getFullYear();
     return `<div class="p05-modal p05-modal-datepicker" role="dialog" aria-modal="true" aria-labelledby="modal-date-title"><div class="p05-modal-backdrop" data-action="close-modal"></div><div class="p05-modal-content p05-modal-lg"><div class="p05-modal-header"><div class="p05-modal-title-row"><span class="p05-modal-icon">${icon('business:calendar')}</span><h3 id="modal-date-title">Selecionar Periodo</h3></div><button class="p05-modal-close" data-action="close-modal" aria-label="Fechar">${icon('ui:x')}</button></div><div class="p05-modal-body p05-modal-body-flex"><div class="p05-date-presets"><h4 class="p05-date-presets-title">Periodos</h4><div class="p05-date-presets-list">${DATE_PRESETS.map(p => `<button class="p05-date-preset ${selectedPreset === p.id ? 'p05-active' : ''}" data-action="select-preset" data-preset="${p.id}">${p.label}</button>`).join('')}</div></div><div class="p05-date-calendars"><div class="p05-date-inputs"><div class="p05-date-input-group"><label>Data Inicial</label><input type="date" class="p05-input p05-date-input" data-type="start" value="${startDate || ''}"></div><span class="p05-date-separator">ate</span><div class="p05-date-input-group"><label>Data Final</label><input type="date" class="p05-input p05-date-input" data-type="end" value="${endDate || ''}"></div></div><div class="p05-calendars-grid">${this._renderCalendar(currentMonth - 1, currentYear, startDate, endDate)}${this._renderCalendar(currentMonth, currentYear, startDate, endDate)}</div></div></div><div class="p05-modal-footer"><button class="p05-btn p05-btn-ghost" data-action="clear-dates">Limpar</button><button class="p05-btn p05-btn-primary" data-action="apply-dates">${icon('ui:check')} Aplicar</button></div></div></div>`;
   }
 

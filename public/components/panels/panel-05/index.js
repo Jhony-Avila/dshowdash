@@ -18,13 +18,14 @@ import { modalsManager } from "./ui/modals.js";
 import { exportManager } from "./utils/export-manager.js";
 import * as Favoritos from "./managers/favoritos.js";
 import * as ModalController from "./managers/modal-controller.js";
+import * as ModalHandlers from "./handlers/modals.js";
 import * as Cliente360View from "./managers/cliente360-view.js";
 import { loadAllData, loadClientes } from "./handlers/data.js";
 import { handleClick, handleChange, handleInput, handleKeyboard, clearSearchTimeout } from "./handlers/events.js";
 import * as Subscriptions from "./handlers/subscriptions.js";
 import * as SectionRenderers from "./render/sections.js";
 const MODULE_ID = "panel-05";
-const VERSION = "9.3.0-P2-ENTERPRISE";
+const VERSION = "9.3.2-P2-ENTERPRISE";
 const getVersion = () => VERSION;
 const hasWindow = typeof window !== "undefined";
 const hasDocument = typeof document !== "undefined";
@@ -112,12 +113,21 @@ const mount = (container, config = {}) => {
     _refs.container.addEventListener("change", (e) => handleChange(e, ctx), { signal: _abortController.signal });
     _refs.container.addEventListener("input", handleInput, { signal: _abortController.signal });
     document.addEventListener("click", (e) => {
-      if (e.target.closest('[data-action="close-modal"]')) ModalController.close();
+      if (e.target.closest('[data-action="close-modal"]')) {
+        ModalController.close();
+        return;
+      }
+      ModalHandlers.handleClick(e, _refs);
     }, { signal: _abortController.signal });
+    document.addEventListener("change", (e) => {
+      ModalHandlers.handleChange(e);
+    }, { signal: _abortController.signal });
+    ModalHandlers.applySettings(modalsManager.getSettings(), _refs);
     document.addEventListener("keydown", (e) => handleKeyboard(e, ctx), { signal: _abortController.signal });
     try {
       await loadAllData(MODULE_ID, VERSION);
-      startScheduler({ interval: config.refreshInterval || REFRESH_INTERVAL || 6e4, onTick: (seconds) => updateCountdown(_refs, seconds), onRefresh: () => loadClientes() });
+      const _settings = modalsManager.getSettings();
+      startScheduler({ interval: config.refreshInterval || (_settings.autoRefresh !== false && Number(_settings.refreshInterval) > 0 ? Number(_settings.refreshInterval) * 1e3 : 0) || REFRESH_INTERVAL || 6e4, onTick: (seconds) => updateCountdown(_refs, seconds), onRefresh: () => loadClientes() });
       _initialized = true;
       _mountedAt = Date.now();
       const duration = Telemetry.endTimer("mount");
