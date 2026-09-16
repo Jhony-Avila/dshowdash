@@ -1,9 +1,14 @@
 /**
  * profile-redirect — shim ADITIVO: `#/profile` → módulo de avatares (`/panel-avatar-studio`).
  * @module  components/router/profile-redirect
- * @version 1.0.0  — FONTE (TS). Irmão index.js é o shipado (transpile 1:1 via
+ * @version 1.1.0  — FONTE (TS). Irmão index.js é o shipado (transpile 1:1 via
  *          scripts/shell/build-profile-redirect.sh — nunca editar o .js à mão).
  * @created 2026-09-12 (decisões #89/#90: M1b — GO; M3 rebuild do bundle — NO-GO)
+ * @changelog 1.1.0 (2026-09-16): a flag só é resolvida CEDO quando o boot cai em `/profile` (a decisão
+ *          precisa vir antes do initial-route). Nos demais boots espera o shell existir (`.site-header` +
+ *          `[data-region="main"]`, mesmo critério do header/mobile-v2): o shell só nasce autenticado, então a
+ *          tela de login deixa de chamar `/api/feature-flags` — era o único 401 do boot anônimo (medido
+ *          16/09: 127/dia, "Failed to load resource: 401" no console de todo visitante não logado e dos smokes).
  *
  * POR QUE UM MÓDULO STANDALONE: a tabela de rotas vive inlinada em bundles congelados
  * (`components/main/dist/main.bundle.js`, `app/router/dist/app-router.bundle.js`); o roteamento é
@@ -35,7 +40,7 @@
  */
 'use strict';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 export const MODULE_ID = 'router/profile-redirect';
 export const FLAG = 'as6.profile_redirect';
 export const ROTA_ORIGEM = '/profile';
@@ -107,6 +112,19 @@ export async function resolve(): Promise<boolean> {
   } finally { clearTimeout(t); }
 }
 
+// ───────────────────────── shell (só existe autenticado) ─────────────────────────
+const SEL_SHELL = ['.site-header', '[data-region="main"]'];
+function shellPresente(): boolean { return SEL_SHELL.every((sel) => !!document.querySelector(sel)); }
+/** Resolve quando o shell está no DOM. Sem prazo: na tela de login o observer fica quieto até o login
+ *  (custo = 2 querySelector por lote de mutações) e se desliga assim que o shell aparece. */
+function esperarShell(): Promise<void> {
+  return new Promise((res) => {
+    if (shellPresente()) { res(); return; }
+    const mo = new MutationObserver(() => { if (shellPresente()) { mo.disconnect(); res(); } });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+  });
+}
+
 // ───────────────────────── redirecionamento ─────────────────────────
 function reescreverHashSemEvento() {
   try { history.replaceState(history.state, '', `#${ROTA_ALVO}`); } catch { location.replace(`#${ROTA_ALVO}`); }
@@ -158,6 +176,9 @@ async function boot() {
   // registra ANTES de resolver a flag (o handler é no-op enquanto a flag não estiver ON)
   window.addEventListener('hashchange', aoMudarHash, { capture: true });
   const hashInicial = location.hash;
+  // v1.1.0: boot em `/profile` decide cedo (antes do initial-route); qualquer outro boot só consulta a API
+  // depois que o shell existe — sem shell (login/anônimo) não há o que redirecionar e a chamada dava 401.
+  if (!ehRotaOrigem(hashInicial)) await esperarShell();
   const ligada = await resolve();
   if (!ligada) return; // OFF = zero efeito
   if (ehRotaOrigem(hashInicial) && ehRotaOrigem(location.hash)) {

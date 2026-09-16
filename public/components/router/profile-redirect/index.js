@@ -1,4 +1,4 @@
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const MODULE_ID = "router/profile-redirect";
 const FLAG = "as6.profile_redirect";
 const ROTA_ORIGEM = "/profile";
@@ -77,6 +77,25 @@ async function resolve() {
     clearTimeout(t);
   }
 }
+const SEL_SHELL = [".site-header", '[data-region="main"]'];
+function shellPresente() {
+  return SEL_SHELL.every((sel) => !!document.querySelector(sel));
+}
+function esperarShell() {
+  return new Promise((res) => {
+    if (shellPresente()) {
+      res();
+      return;
+    }
+    const mo = new MutationObserver(() => {
+      if (shellPresente()) {
+        mo.disconnect();
+        res();
+      }
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+  });
+}
 function reescreverHashSemEvento() {
   try {
     history.replaceState(history.state, "", `#${ROTA_ALVO}`);
@@ -133,6 +152,7 @@ async function boot() {
   w.__profileRedirect = { VERSION, MODULE_ID, FLAG, info, resolve, ehRotaOrigem };
   window.addEventListener("hashchange", aoMudarHash, { capture: true });
   const hashInicial = location.hash;
+  if (!ehRotaOrigem(hashInicial)) await esperarShell();
   const ligada = await resolve();
   if (!ligada) return;
   if (ehRotaOrigem(hashInicial) && ehRotaOrigem(location.hash)) {
@@ -141,14 +161,14 @@ async function boot() {
   }
 }
 if (typeof window !== "undefined" && typeof document !== "undefined") void boot();
-var index_default = { VERSION, MODULE_ID, FLAG, info, resolve, ehRotaOrigem };
+var profile_redirect_default = { VERSION, MODULE_ID, FLAG, info, resolve, ehRotaOrigem };
 export {
   FLAG,
   MODULE_ID,
   ROTA_ALVO,
   ROTA_ORIGEM,
   VERSION,
-  index_default as default,
+  profile_redirect_default as default,
   ehRotaOrigem,
   info,
   resolve
