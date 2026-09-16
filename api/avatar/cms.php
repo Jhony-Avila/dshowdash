@@ -4,7 +4,8 @@ declare(strict_types=1);
 /**
  * api/avatar/cms.php — CMS READ-ONLY do catálogo (AS6 Parte 15,
  * lote 1061–1070, decisão #108, flag as6.cms_ro no front).
- * @version 1.1.0  @created 2026-08-09  @updated 2026-08-09 (lote
+ * @version 1.1.1  @created 2026-08-09  @updated 2026-09-15 (avatar_asset_files não tem asset_id: contagem de arquivos via avatar_asset_versions; detalhe dava 500)
+ * @updated 2026-08-09 (lote
  * 1181-1190, decisão #120, flag as6.cms_ro2 no front: busca sanitizada,
  * filtro por categoria e DETALHE de asset — segue GET-only/AdminGate)
  *
@@ -126,7 +127,7 @@ try {
         if ($asset === false) {
             ApiResponse::error('NAO_ENCONTRADO', 404);
         }
-        $arquivos = $pdo->prepare('SELECT COUNT(*) FROM avatar_asset_files WHERE asset_id = :id');
+        $arquivos = $pdo->prepare('SELECT COUNT(*) FROM avatar_asset_files f JOIN avatar_asset_versions v ON v.id = f.asset_version_id WHERE v.asset_id = :id');
         $arquivos->execute(['id' => $id]);
         $versoes = $pdo->prepare('SELECT COUNT(*) FROM avatar_asset_versions WHERE asset_id = :id');
         $versoes->execute(['id' => $id]);
