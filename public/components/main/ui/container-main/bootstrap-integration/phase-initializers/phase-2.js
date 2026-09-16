@@ -3,7 +3,7 @@ import { createFallbackSystem } from "../../resources/fallback-system.js";
 import { registerLoaded } from "../../core/dependency-map.js";
 import { LIMITS } from "../../config.js";
 import { BOOTSTRAP_EVENT_NAMES } from "/core/runtime/constants/event-names.js";
-const VERSION = "24.5.4-IMPORT-FIX";
+const VERSION = "24.6.0-PERF-TELEMETRY-WARN";
 const MODULE_ID = "main.ui.container-main.bootstrap-integration.phase-initializers.phase-2";
 async function initPhase2(context) {
   const config = context.config;
@@ -28,7 +28,7 @@ async function initPhase2(context) {
         config.onPerformanceWarning?.(alert);
       },
       onCritical: (alert) => {
-        logger?.error("Performance critical:", alert);
+        logger?.warn("Performance critical:", alert);
         config.onPerformanceCritical?.(alert);
         eventBus?.emit(BOOTSTRAP_EVENT_NAMES.PERFORMANCE_CRITICAL, alert);
       }

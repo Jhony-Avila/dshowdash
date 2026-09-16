@@ -1,5 +1,5 @@
 import { isStrict } from "/core/runtime/enterprise/strict-mode.js";
-const VERSION = "9.3.0-P2-ENTERPRISE";
+const VERSION = "9.3.1-P2-ENTERPRISE";
 const MODULE_ID = "container-main:config";
 const UARPS_REGION = "region:app:container-main";
 const MODE = Object.freeze({
@@ -57,8 +57,10 @@ const LIMITS = Object.freeze({
   MAX_CONCURRENT_LOADS: 5,
   MEMORY_WARNING_MB: 500,
   MEMORY_CRITICAL_MB: 1e3,
-  FPS_WARNING: 30,
-  FPS_CRITICAL: 20
+  // v24.6.0: alinhado ao resources/performance-monitor.ts 1.2.0-THRESHOLD-TUNING (warning 15 / critical 8).
+  // Os valores 30/20 sobrescreviam o ajuste do monitor e disparavam "FPS critical" a cada boot (medido: 9 fps).
+  FPS_WARNING: 15,
+  FPS_CRITICAL: 8
 });
 const INTERVALS = Object.freeze({
   HEALTH_CHECK: 6e4,

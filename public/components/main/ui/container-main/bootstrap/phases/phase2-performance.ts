@@ -31,7 +31,7 @@ import { registerLoaded } from '../../core/dependency-map.js';
 import { LIMITS } from '../../config.js';
 import { BOOTSTRAP_EVENT_NAMES } from '/core/runtime/constants/event-names.js';
 
-export const VERSION = '24.5.4-IMPORT-FIX';
+export const VERSION = '24.6.0-PERF-TELEMETRY-WARN';
 export const MODULE_ID = 'main.ui.container-main.bootstrap.phases.phase2-performance';
 
 export async function initPhase2(context: Record<string, unknown>) {
@@ -61,7 +61,10 @@ export async function initPhase2(context: Record<string, unknown>) {
         (config.onPerformanceWarning as ((...args: unknown[]) => void) | undefined)?.(alert);
       },
       onCritical: (alert: Record<string, unknown>) => {
-        logger?.error('Performance critical:', alert);
+        // v24.6.0: alerta de performance é TELEMETRIA (fps/memória amostrados durante boot e navegação pesada),
+        // não falha da aplicação: sai como WARN no console (antes ERROR — poluía smokes e o pipeline de erros).
+        // O evento PERFORMANCE_CRITICAL e o callback onPerformanceCritical seguem iguais (contrato preservado).
+        logger?.warn('Performance critical:', alert);
         (config.onPerformanceCritical as ((...args: unknown[]) => void) | undefined)?.(alert);
         eventBus?.emit(BOOTSTRAP_EVENT_NAMES.PERFORMANCE_CRITICAL, alert);
       }
