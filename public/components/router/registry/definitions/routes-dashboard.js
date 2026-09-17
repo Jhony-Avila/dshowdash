@@ -1,5 +1,5 @@
 const MODULE_ID = "router.registry.definitions.routes-dashboard";
-const VERSION = "8.2.0-P17WI";
+const VERSION = "8.2.1-P17WI";
 import { DOMAINS, LAYOUTS, GUARD_POLICIES } from "./constants.js";
 const createPanelRoute = (id, title, options = {}) => ({ id, name: title, page: id, title, public: false, requiresAuth: true, guardPolicy: GUARD_POLICIES.PERMISSIONS, permissions: options.permissions || [], featureFlags: options.featureFlags || [], layout: LAYOUTS.DEFAULT, defaultView: options.panel || id, defaultHash: `#/${id}`, mountMain: true, domain: options.domain || DOMAINS.DASHBOARD, virtualDefaults: { view: options.panel || id, tab: null, section: null, entity: null, mode: "view" }, seo: { title: `DshowDash - ${title}`, description: options.description || title }, aliases: options.aliases || [], tags: ["dashboard", "panel", ...options.tags || []] });
 const createFooterRoute = (id, title, panel, options = {}) => ({ id: `footer-${id}`, name: title.replace(/\s+/g, ""), page: `footer-${id}`, title, public: false, requiresAuth: true, guardPolicy: GUARD_POLICIES.PERMISSIONS, permissions: options.permissions || [], featureFlags: [], layout: LAYOUTS.DEFAULT, defaultView: panel, defaultHash: `#/footer/${id}`, mountMain: true, domain: options.domain || DOMAINS.DASHBOARD, virtualDefaults: { view: panel, tab: "overview", section: null, entity: null, mode: "view" }, seo: { title: `DshowDash - ${title}`, description: options.description || title }, aliases: options.aliases || [], tags: ["footer", id, ...options.tags || []] });
@@ -13,30 +13,24 @@ const dashboardRoutes = Object.freeze({
   "/panel-02": createPanelRoute("panel-02", "Painel 02", { aliases: ["#/panel-02"] }),
   "/panel-03": createPanelRoute("panel-03", "Painel 03", { aliases: ["#/panel-03"] }),
   "/panel-04": createPanelRoute("panel-04", "Painel 04", { aliases: ["#/panel-04"] }),
-  "/panel-05": createPanelRoute("panel-05", "Relat\xF3rios", { aliases: ["#/panel-05"], tags: ["reports"] }),
+  "/panel-05": createPanelRoute("panel-05", "Clientes 360\xBA", { aliases: ["#/panel-05"], tags: ["reports"] }),
   "/panel-06": createPanelRoute("panel-06", "Painel 06", { aliases: ["#/panel-06"] }),
   "/panel-07": createPanelRoute("panel-07", "Painel 07", { aliases: ["#/panel-07"] }),
   "/panel-08": createPanelRoute("panel-08", "Painel 08", { aliases: ["#/panel-08"] }),
-  // panel-datatables: registrado para o extractPanelId resolver a URL em SEGMENTOS
-  // da Fase 3 (#/panel-datatables/<grupo>/<tela>) pelo primeiro segmento. O painel
-  // em si e DB-driven (ui_nav_items); esta entrada existe so para o roteamento.
   "/panel-datatables": createPanelRoute("panel-datatables", "DataTables", { aliases: ["#/panel-datatables"], tags: ["datatables", "infra"], description: "Catalogo e monitoramento da infraestrutura de dados" }),
-  // panel-outlook: registrado para o extractPanelId resolver a URL em SEGMENTOS
-  // (#/panel-outlook/<aba>) pelo primeiro segmento. Modulo de e-mails (Integracao Outlook).
   "/panel-outlook": createPanelRoute("panel-outlook", "E-mails", { aliases: ["#/panel-outlook", "#/outlook"], tags: ["outlook", "email"], description: "Central de e-mails integrada ao Outlook / Microsoft 365" }),
-  // panel-pipedrive: registrado para o extractPanelId resolver a URL em SEGMENTOS
-  // (#/panel-pipedrive/<tela>) pelo primeiro segmento. Restrito (§7.3): level>=50.
   "/panel-pipedrive": createPanelRoute("panel-pipedrive", "Pipedrive Analytics", { aliases: ["#/panel-pipedrive"], tags: ["pipedrive", "crm"], permissions: ["level:50"], description: "Visualizacao e analise gerencial do Pipedrive CRM" }),
-  // panel-ads: registrado para o extractPanelId resolver a URL em SEGMENTOS
-  // (#/panel-ads/<area>) pelo primeiro segmento. Modulo Google Ads (Ads Intelligence).
   "/panel-ads": createPanelRoute("panel-ads", "Ads Intelligence", { aliases: ["#/panel-ads", "#/ads", "#/adwords"], tags: ["ads", "google-ads", "marketing"], description: "Gestao, analise e otimizacao de midia paga (Google Ads)" }),
-  // panel-anuncios: Consultor de Google Ads (Decision Engine — metodologia Dshow).
-  // Painel de perguntas/respostas; backend via proxy /api/anuncios/ask.php.
-  "/panel-anuncios": createPanelRoute("panel-anuncios", "An\xFAncios — Consultor", { aliases: ["#/panel-anuncios", "#/anuncios"], tags: ["anuncios", "google-ads", "ia", "decision-engine"], description: "Consultor de Google Ads fundamentado na metodologia Dshow (Decision Engine)" }),
-  // panel-mercadolivre: modulo Mercado Livre (Fase 1 — dados simulados).
-  // Navegacao interna por hash (#/panel-mercadolivre/<secao>).
-  "/panel-mercadolivre": createPanelRoute("panel-mercadolivre", "Mercado Livre", { aliases: ["#/panel-mercadolivre", "#/mercadolivre", "#/mercado-livre"], tags: ["mercadolivre", "marketplace", "canais-venda"], description: "Central de gestao do Mercado Livre (Fase 1 — dados simulados)" }),
-  "/panel-metaads": createPanelRoute("panel-metaads", "Meta Ads", { aliases: ["#/panel-metaads", "#/metaads", "#/meta-ads"], tags: ["metaads", "meta", "facebook", "instagram", "marketing"], description: "Central de gestao do Meta Ads (Fase 1 — dados simulados)" }), "/panel-avatar-studio": createPanelRoute("panel-avatar-studio", "Avatar Studio", { aliases: ["#/panel-avatar-studio", "#/avatar-studio", "#/avatar"], tags: ["avatar", "perfil", "personalizacao"], description: "Estudio de criacao de avatares em camadas (Sistema Gamer AAA)" }), "/panel-bling": createPanelRoute("panel-bling", "Bling", { aliases: ["#/panel-bling"], tags: ["bling", "erp"], description: "Modulo Bling ERP (React) - rota oficial; /bling e compatibilidade" }), "/panel-google-calendar": createPanelRoute("panel-google-calendar", "Google Calendar", { aliases: ["#/panel-google-calendar"], tags: ["google-calendar", "agenda"], description: "Modulo Google Calendar (React) - rota oficial; sub-rotas /hoje e /agenda resolvem pelo primeiro segmento" }), "/panel-google-analytics": createPanelRoute("panel-google-analytics", "Google Analytics", { aliases: ["#/panel-google-analytics"], tags: ["google-analytics", "analytics"], description: "Modulo Google Analytics (React) - rota oficial; /analytics (panel-analytics) e compatibilidade" }), "/panel-relogio-mundial": createPanelRoute("panel-relogio-mundial", "Rel\xF3gio Mundial", { aliases: ["#/panel-relogio-mundial", "#/relogio-mundial"], tags: ["relogio", "world-clock"], description: "Relogio Mundial (React; fallback vanilla world-clock-map) - rota oficial; aberto pelo relogio do header" }), "/panel-lotties-management": createPanelRoute("panel-lotties-management", "Gest\xE3o de Lotties", { aliases: ["#/panel-lotties-management", "#/lotties", "#/animacoes"], tags: ["lotties", "animacoes", "admin"], description: "Gestao das animacoes Lottie (catalogo canonico /assets/animacoes) - rota oficial" }), "/panel-09": createPanelRoute("panel-09", "Painel 09", { aliases: ["#/panel-09"] }),
+  "/panel-anuncios": createPanelRoute("panel-anuncios", "An\xFAncios \u2014 Consultor", { aliases: ["#/panel-anuncios", "#/anuncios"], tags: ["anuncios", "google-ads", "ia", "decision-engine"], description: "Consultor de Google Ads fundamentado na metodologia Dshow (Decision Engine)" }),
+  "/panel-mercadolivre": createPanelRoute("panel-mercadolivre", "Mercado Livre", { aliases: ["#/panel-mercadolivre", "#/mercadolivre", "#/mercado-livre"], tags: ["mercadolivre", "marketplace", "canais-venda"], description: "Central de gestao do Mercado Livre (Fase 1 \u2014 dados simulados)" }),
+  "/panel-metaads": createPanelRoute("panel-metaads", "Meta Ads", { aliases: ["#/panel-metaads", "#/metaads", "#/meta-ads"], tags: ["metaads", "meta", "facebook", "instagram", "marketing"], description: "Central de gestao do Meta Ads (Fase 1 \u2014 dados simulados)" }),
+  "/panel-avatar-studio": createPanelRoute("panel-avatar-studio", "Avatar Studio", { aliases: ["#/panel-avatar-studio", "#/avatar-studio", "#/avatar"], tags: ["avatar", "perfil", "personalizacao"], description: "Estudio de criacao de avatares em camadas (Sistema Gamer AAA)" }),
+  "/panel-bling": createPanelRoute("panel-bling", "Bling", { aliases: ["#/panel-bling"], tags: ["bling", "erp"], description: "Modulo Bling ERP (React) - rota oficial; /bling e compatibilidade" }),
+  "/panel-google-calendar": createPanelRoute("panel-google-calendar", "Google Calendar", { aliases: ["#/panel-google-calendar"], tags: ["google-calendar", "agenda"], description: "Modulo Google Calendar (React) - rota oficial; sub-rotas /hoje e /agenda resolvem pelo primeiro segmento" }),
+  "/panel-google-analytics": createPanelRoute("panel-google-analytics", "Google Analytics", { aliases: ["#/panel-google-analytics"], tags: ["google-analytics", "analytics"], description: "Modulo Google Analytics (React) - rota oficial; /analytics (panel-analytics) e compatibilidade" }),
+  "/panel-relogio-mundial": createPanelRoute("panel-relogio-mundial", "Rel\xF3gio Mundial", { aliases: ["#/panel-relogio-mundial", "#/relogio-mundial"], tags: ["relogio", "world-clock"], description: "Relogio Mundial (React; fallback vanilla world-clock-map) - rota oficial; aberto pelo relogio do header" }),
+  "/panel-lotties-management": createPanelRoute("panel-lotties-management", "Gest\xE3o de Lotties", { aliases: ["#/panel-lotties-management", "#/lotties", "#/animacoes"], tags: ["lotties", "animacoes", "admin"], description: "Gestao das animacoes Lottie (catalogo canonico /assets/animacoes) - rota oficial" }),
+  "/panel-09": createPanelRoute("panel-09", "Painel 09", { aliases: ["#/panel-09"] }),
   "/panel-10": createPanelRoute("panel-10", "Painel 10", { aliases: ["#/panel-10"] }),
   "/panel-11": createPanelRoute("panel-11", "Painel 11", { aliases: ["#/panel-11"] }),
   "/panel-12": createPanelRoute("panel-12", "Monitoramento de Jobs", { aliases: ["#/panel-12"], tags: ["monitoring"] }),
@@ -47,7 +41,7 @@ const dashboardRoutes = Object.freeze({
   "/panel-17": createPanelRoute("panel-17", "Painel 17", { aliases: ["#/panel-17"], permissions: ["level:80"] }),
   "/panel-18": createPanelRoute("panel-18", "Painel 18", { aliases: ["#/panel-18"], permissions: ["level:80"] }),
   "/panel-19": createPanelRoute("panel-19", "Painel 19", { aliases: ["#/panel-19"], permissions: ["level:100"] }),
-  "/panel-dashboard": createPanelRoute("panel-dashboard", "Visão Geral", { aliases: ["#/panel-dashboard"], tags: ["geral", "executivo"], description: "Resumo consolidado dos principais indicadores, operacoes e integracoes do Dshow Dash" }),
+  "/panel-dashboard": createPanelRoute("panel-dashboard", "Vis\xE3o Geral", { aliases: ["#/panel-dashboard"], tags: ["geral", "executivo"], description: "Resumo consolidado dos principais indicadores, operacoes e integracoes do Dshow Dash" }),
   "/panel-health-dashboard": createPanelRoute("panel-health-dashboard", "System Health", { aliases: ["#/panel-health-dashboard"], tags: ["admin", "health"], permissions: ["level:80"] }),
   "/panel-orchestrator": createPanelRoute("panel-orchestrator", "Core Orchestrator", { aliases: ["#/panel-orchestrator"], tags: ["system", "admin"], permissions: ["level:100"] }),
   "/panel-enterprise": createPanelRoute("panel-enterprise", "Enterprise Panel", { aliases: ["#/panel-enterprise"], tags: ["system"], permissions: ["level:100"] }),
@@ -99,7 +93,13 @@ const dashboardRoutes = Object.freeze({
   "/status-target": createStatusRoute("target", "Metas", { tags: ["target", "goals"] }),
   "/status-trending": createStatusRoute("trending", "Performance", { tags: ["trending", "performance"] }),
   "/status-wifi": createStatusRoute("wifi", "Rede", { domain: DOMAINS.OPERACIONAL, tags: ["wifi", "network"] }),
-  "/status-zap": createStatusRoute("zap", "Integra\xE7\xF5es", { domain: DOMAINS.INTEGRACOES, tags: ["zap", "integrations"] }),
+  "/status-zap": createStatusRoute("zap", "Integra\xE7\xF5es", { domain: DOMAINS.INTEGRACOES, tags: ["zap", "integrations"] })
+  // Rotas de usuário (/meu-perfil, /preferencias, /seguranca, /sessoes) REMOVIDAS daqui (lote chore/dshow-cleanup-dedup-v2):
+  // eram definições concorrentes das de routes-admin.ts (perdiam no spread de definitions/index.ts) apontando para ids
+  // legados (panel-profile/panel-preferences) ou painéis inexistentes (panel-security/panel-sessions). Canônicas: routes-admin.ts.
+  // '/termos' REMOVIDA (lote cleanup-dedup-v2): apontava para 'panel-termos', painel que NUNCA existiu (git log vazio) — rota
+  // quebrada em produção. "Termos de Uso" é um MODAL do ui-orchestrator (intent footer.open.termos → overlay-adapter 'termos'),
+  // aberto pelo botão do footer via ui:action footer:termos; não há consumidor válido da rota.
 });
 var routes_dashboard_default = dashboardRoutes;
 export {

@@ -1,4 +1,5 @@
-const VERSION = "9.3.0-TITLE-SYNC";
+import { getRouteByIdOrPath } from "/components/router/registry/routes.js";
+const VERSION = "9.4.0-ROUTE-TITLE";
 const MODULE_ID = "main-panel-lifecycle";
 const POLICY = { EPHEMERAL: "ephemeral", PERSISTENT: "persistent" };
 const LAYOUT_MODE = { INHERIT: "inherit", OVERRIDE: "override" };
@@ -119,6 +120,14 @@ function _resolvePanelTitle(panelId, config) {
     }
   } catch (e) {
   }
+  try {
+    const route = getRouteByIdOrPath("/" + panelId) || getRouteByIdOrPath(panelId);
+    const title = route && route.title;
+    if (typeof title === "string" && title.trim() && !/^painel\s+\d+$/i.test(title.trim())) return title.trim();
+  } catch (e) {
+  }
+  const numeric = panelId.match(/^panel-(\d+)$/i);
+  if (numeric) return "Painel " + numeric[1];
   return panelId.replace(/^panel-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 class PanelLifecycleController {

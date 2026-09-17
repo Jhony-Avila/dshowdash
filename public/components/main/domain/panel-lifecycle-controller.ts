@@ -1,7 +1,7 @@
 
 
 // ═══════════════════════════════════════════════════════════════
-// DEPENDENCY CONTRACT (9.3.0-TITLE-SYNC)
+// DEPENDENCY CONTRACT (9.4.0-ROUTE-TITLE)
 // ═══════════════════════════════════════════════════════════════
 // MODULE: main-panel-lifecycle
 // PURPOSE: PanelLifecycleController - Controle de ciclo de vida Enterprise
@@ -32,7 +32,9 @@
 // ═══════════════════════════════════════════════════════════════
 'use strict';
 
-export const VERSION = '9.3.0-TITLE-SYNC';
+import { getRouteByIdOrPath } from '/components/router/registry/routes.js';
+
+export const VERSION = '9.4.0-ROUTE-TITLE';
 export const MODULE_ID = 'main-panel-lifecycle';
 
 const POLICY = { EPHEMERAL: 'ephemeral', PERSISTENT: 'persistent' };
@@ -173,9 +175,22 @@ function _resolvePanelTitle(panelId: string, config: Record<string, unknown>) {
     // Silent — fall through to format
   }
 
+  // 2c. v9.4.0-ROUTE-TITLE (2026-09-16): título do registro de rotas (inlinado no lote main), desde que não seja o
+  //     genérico "Painel NN". Medido: painéis sem item na navegação (panel-03, panel-05, panel-12) mostravam "03"/"05"/"12".
+  try {
+    const route = getRouteByIdOrPath('/' + panelId) || getRouteByIdOrPath(panelId);
+    const title = route && (route.title as string | undefined);
+    if (typeof title === 'string' && title.trim() && !/^painel\s+\d+$/i.test(title.trim())) return title.trim();
+  } catch (e) {
+    // Silent — fall through to format
+  }
+
   // 3. Format panelId as readable title
+  // panel-05 → Painel 05 (v9.4.0: antes "05")
   // panel-dashboard → Dashboard
   // panel-user-management → User Management
+  const numeric = panelId.match(/^panel-(\d+)$/i);
+  if (numeric) return 'Painel ' + numeric[1];
   return panelId
     .replace(/^panel-/, '')
     .replace(/-/g, ' ')
