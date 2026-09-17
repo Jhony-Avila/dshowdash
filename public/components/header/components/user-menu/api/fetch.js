@@ -1,5 +1,5 @@
 import { createUiPorts } from "/core/runtime/ports-profiles.js";
-const VERSION = "7.7.0-ES6";
+const VERSION = "7.8.0-NONFATAL-WARN";
 const MODULE_ID = "header.user-menu.api.fetch";
 const Ports = createUiPorts({ moduleId: MODULE_ID });
 function _initPorts() {
@@ -65,7 +65,7 @@ FetchAdapter.prototype.fetchCurrentUser = function() {
     };
   }).catch((error) => {
     self._metrics.errorCount++;
-    _log("error", "fetchCurrentUser error:", error.message);
+    _log("warn", "fetchCurrentUser error:", error.message);
     return null;
   });
 };

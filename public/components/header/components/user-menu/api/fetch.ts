@@ -27,7 +27,7 @@
 
 import { createUiPorts } from '/core/runtime/ports-profiles.js';
 
-const VERSION = '7.7.0-ES6';
+const VERSION = '7.8.0-NONFATAL-WARN';
 const MODULE_ID = 'header.user-menu.api.fetch';
 
 const Ports = createUiPorts({ moduleId: MODULE_ID });
@@ -81,7 +81,9 @@ FetchAdapter.prototype.fetchCurrentUser = function() {
         departamento: user.departamento
       };
     })
-    .catch(error => { self._metrics.errorCount++; _log('error', 'fetchCurrentUser error:', error.message); return null; });
+    // 2026-09-16: devolve null (menu segue com fallback) — falha NÃO-fatal é WARN; o caso real é o fetch abortado pela
+    // recarga pós-login ("Failed to fetch"), que aparecia como ERROR no console e nos smokes.
+    .catch(error => { self._metrics.errorCount++; _log('warn', 'fetchCurrentUser error:', error.message); return null; });
 };
 
 FetchAdapter.prototype.logout = function() {
