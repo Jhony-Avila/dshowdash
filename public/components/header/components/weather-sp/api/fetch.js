@@ -1,5 +1,5 @@
 import { createUiPorts } from "/core/runtime/ports-profiles.js";
-const VERSION = "6.1.0-ES6";
+const VERSION = "6.2.0-NONFATAL-WARN";
 const MODULE_ID = "header.weather-sp.api.fetch";
 const Ports = createUiPorts({ moduleId: MODULE_ID });
 function _initPorts() {
@@ -71,7 +71,7 @@ WeatherAPI.prototype.fetchWeather = function() {
       _log("warn", "Fetch aborted (non-fatal)", { timeout: self.timeout });
       return _createFallback("timeout");
     }
-    _log("error", "Fetch failed (non-fatal)", { error: error.message });
+    _log("warn", "Fetch failed (non-fatal)", { error: error.message });
     return _createFallback("error");
   });
 };

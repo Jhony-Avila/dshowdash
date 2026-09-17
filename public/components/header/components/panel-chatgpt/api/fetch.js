@@ -1,5 +1,5 @@
 import { createUiPorts } from "/core/runtime/ports-profiles.js";
-const VERSION = "10.2.0-P2-ENTERPRISE";
+const VERSION = "10.3.0-NONFATAL-WARN";
 const MODULE_ID = "header.panel-chatgpt.api.fetch";
 const Ports = createUiPorts({ moduleId: MODULE_ID });
 function _getPort(name) {
@@ -53,7 +53,7 @@ class FetchAPI {
         _log("warn", "Fetch aborted (non-fatal)", { endpoint, timeout: this.timeout });
         return _createFallback("timeout", endpoint);
       }
-      _log("error", "Fetch failed (non-fatal)", { endpoint, error: error.message });
+      _log("warn", "Fetch failed (non-fatal)", { endpoint, error: error.message });
       return _createFallback("error", endpoint);
     }
   }

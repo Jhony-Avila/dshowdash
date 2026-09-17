@@ -21,7 +21,7 @@
 
 import { createUiPorts } from '/core/runtime/ports-profiles.js';
 
-const VERSION = '6.1.0-ES6';
+const VERSION = '6.2.0-NONFATAL-WARN';
 const MODULE_ID = 'header.instagram-messenger-integration.api.fetch';
 
 const Ports = createUiPorts({ moduleId: MODULE_ID });
@@ -98,7 +98,9 @@ IntegrationAPI.prototype.fetchStatus = function() {
         return _createFallback('timeout');
       }
 
-      _log('error', 'Fetch failed (non-fatal)', { error: error.message });
+      // 2026-09-16: falha NÃO-fatal é WARN, não ERROR — o fallback é devolvido e o boot segue. Medido: o caso real é o
+      // fetch abortado pela recarga pós-login ("Failed to fetch"), que poluía o console/smokes como erro sem sê-lo.
+      _log('warn', 'Fetch failed (non-fatal)', { error: error.message });
       return _createFallback('error');
     });
 };

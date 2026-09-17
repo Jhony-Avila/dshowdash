@@ -26,7 +26,7 @@
 import { createUiPorts } from '/core/runtime/ports-profiles.js';
 import { isStrict, recordViolation } from '/core/runtime/enterprise/strict-mode.js';
 
-export const VERSION = '10.2.0-P2-ENTERPRISE';
+export const VERSION = '10.3.0-NONFATAL-WARN';
 export const MODULE_ID = 'header.panel-asaas.api.fetch';
 
 const Ports = createUiPorts({ moduleId: MODULE_ID });
@@ -83,7 +83,9 @@ export class FetchAPI { [key: string]: any;
         _log('warn', 'Fetch aborted (non-fatal)', { endpoint, timeout: this.timeout });
         return _createFallback('timeout', endpoint);
       }
-      _log('error', 'Fetch failed (non-fatal)', { endpoint, error: error.message });
+      // 2026-09-16: falha NÃO-fatal é WARN, não ERROR — o fallback é devolvido e o boot segue. Medido: o caso real é o
+      // fetch abortado pela recarga pós-login ("Failed to fetch"), que poluía o console/smokes como erro sem sê-lo.
+      _log('warn', 'Fetch failed (non-fatal)', { endpoint, error: error.message });
       return _createFallback('error', endpoint);
     }
   }
