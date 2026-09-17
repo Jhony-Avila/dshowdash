@@ -1,4 +1,4 @@
-const VERSION = "2.0.1-DATADRIVEN";
+const VERSION = "2.0.2-DATADRIVEN";
 const MODULE_ID = "panel-paths";
 const PANEL_ID_PATHS = Object.freeze({
   // Painéis numéricos (legacy)
@@ -42,6 +42,8 @@ const PANEL_ID_PATHS = Object.freeze({
   "panel-status": "/components/panels/panel-status/index.js",
   "panel-status-instagram-messenger": "/components/panels/panel-status-instagram-messenger/index.js",
   // @rotas-compat 2026-09-16: alvo de /instagram e do item 'instagram'
+  "panel-status-whatsapp-integration": "/components/panels/panel-status-whatsapp-integration/index.js",
+  // @rotas-compat 2026-09-16: alvo do item 'whatsapp'
   "panel-profile": "/components/panels/panel-user-profile/index.js",
   // COMPATIBILIDADE: id legado → sucessor panel-user-profile
   "panel-preferences": "/components/panels/panel-user-preferences/index.js",
@@ -93,7 +95,8 @@ const ITEM_TO_PANEL = Object.freeze({
   "pipedrive": "panel-pipedrive",
   "produtos": "panel-19",
   "producao": "panel-19",
-  "whatsapp": "panel-19",
+  "whatsapp": "panel-status-whatsapp-integration",
+  // @rotas-compat 2026-09-16: era 'panel-19' (Gráfico Taxa de Sucesso); painel do produto = /status/whatsapp
   "servidores": "panel-health-dashboard",
   "status": "panel-status",
   "meu-perfil": "panel-user-profile",
