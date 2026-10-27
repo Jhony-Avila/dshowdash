@@ -22,7 +22,7 @@ import { join, resolve } from 'node:path';
 
 const RAIZ = resolve(import.meta.dirname, '..', '..', '..');
 const PAINEL = join(RAIZ, 'public', 'components', 'panels', 'panel-avatar-studio');
-const STUDIO_PHP = join(RAIZ, 'api', 'avatar', 'studio.php');
+const STUDIO_PHP = join(RAIZ, 'api', 'avatar', 'StudioLib.php'); // Onda 1 (Avatar nativo): avst_validar_config vive na StudioLib
 const RUNNER_PHP = join(import.meta.dirname, '_php-sanitize-runner.php');
 const tmp = mkdtempSync(join(tmpdir(), 'avst-fem-'));
 let falhas = 0;
