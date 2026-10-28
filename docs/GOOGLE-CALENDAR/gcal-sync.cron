@@ -1,0 +1,18 @@
+# Google Calendar — sincronizacao periodica (Fase 5, @created 2026-07-30)
+#
+# Instalar:  sudo cp docs/GOOGLE-CALENDAR/gcal-sync.cron /etc/cron.d/gcal-sync
+#
+# cron   : agenda o que esta devido, renova canais push, destrava worker morto,
+#          limpa jobs concluidos. Barato — roda sempre.
+# worker : drena a fila. Caro e pode travar; por isso e processo SEPARADO, com
+#          trava de arquivo. Se um job estiver lento, o agendamento continua.
+#
+# Enquanto GCAL_PROVIDER=mock os dois saem imediatamente com codigo 0.
+#
+# A saida vai para ARQUIVO, nunca /dev/null: dois crons de warm-cache deste
+# servidor ficaram quebrados por 14 dias justamente por descartar a saida.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+*/5 * * * * www-data /usr/bin/php /var/www/dshowdash/scripts/gcal-cron.php   >> /var/www/dshowdash/storage/logs/gcal-cron.log 2>&1
+*/2 * * * * www-data /usr/bin/php /var/www/dshowdash/scripts/gcal-worker.php >> /var/www/dshowdash/storage/logs/gcal-worker.log 2>&1

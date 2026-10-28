@@ -31,6 +31,9 @@
 !/api/home/
 # api/avatar/ — persistência do Avatar Studio (studio.php + SvgSanitizer)
 !/api/avatar/
+# api/google-calendar/ — módulo Google Calendar (OAuth PKCE, sync, filas). Versionado em 2026-10-28 (Q-GCAL.1 = B):
+# vivia em produção fora do git. Sem segredo: credenciais vêm de getenv() (.env fora do git).
+!/api/google-calendar/
 
 # api/pipedrive/ — backend do painel Pipedrive Analytics.
 # Sem segredo embutido: o token do CRM vive cifrado no banco e a chave vem de
@@ -62,6 +65,9 @@
 !/scripts/
 /scripts/*
 !/scripts/avatar/
+# testes, smoke, cron e worker do Google Calendar (2026-10-28)
+!/scripts/gcal-*.php
+!/scripts/gcal-*.sh
 !/scripts/deploy/
 # tooling do lote header mobile v2 (build do módulo standalone, preview do shell real, auditoria)
 !/scripts/header/
@@ -143,6 +149,8 @@ dist/
 /docs/*
 !/docs/AVATAR-STUDIO-5/
 !/docs/AVATAR-STUDIO-6/
+# docs do módulo Google Calendar (arquitetura, DDL GCAL_DSHOW com placeholder de senha, fases, go-live) — 2026-10-28
+!/docs/GOOGLE-CALENDAR/
 # docs do programa Elevação Basal (briefing Revisao_Dshowdash_01, 19 partes)
 !/docs/ELEVACAO-BASAL/
 
