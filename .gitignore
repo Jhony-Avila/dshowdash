@@ -86,6 +86,7 @@
 !/scripts/weather/
 # testes, smoke, cron e worker do Google Calendar (2026-10-28)
 !/scripts/gcal-*.php
+!/scripts/datatables-catalog-dsaudit.php
 !/scripts/gcal-*.sh
 !/scripts/deploy/
 # tooling do lote header mobile v2 (build do módulo standalone, preview do shell real, auditoria)
