@@ -16,7 +16,16 @@
 // (.../auth/calendar) da muito mais acesso do que ler uma agenda e so deve
 // aparecer se um fluxo administrativo provar necessidade.
 //
-// Fase 4 (leitura):  calendar.readonly + calendar.freebusy
+// Identidade (openid email profile): o callback le QUEM conectou em
+// https://www.googleapis.com/oauth2/v3/userinfo (GoogleCalendarClient::perfil —
+// sub/email/name/hd). Esse endpoint e do OpenID Connect e NAO aceita um token
+// que so tem escopos do Calendar: responde 401 invalid_request "Invalid
+// Credentials" e a conexao morre DEPOIS da troca do code (go-live 28/10/2026:
+// "[gcal] callback OAuth falhou: Nao foi possivel ler o perfil da conta
+// Google"). O molde (api/outlook GraphOAuth) ja pedia `openid profile email`.
+// Sao escopos nao-sensiveis; em app INTERNO do Workspace nao exigem revisao.
+//
+// Fase 4 (leitura):  openid email profile + calendar.readonly + calendar.freebusy
 // Fase 6 (escrita):  + calendar.events
 //
 // Nada aqui e chamado enquanto GCAL_PROVIDER=mock.
@@ -31,9 +40,12 @@ final class GoogleOAuth
     private const REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 
     /** Escopos por fase. A fase corrente vem do .env (GCAL_OAUTH_STAGE). */
+    /** Escopos de identidade exigidos pelo userinfo (perfil de quem conectou). */
+    public const ESCOPOS_IDENTIDADE = 'openid email profile';
+
     private const ESCOPOS = [
-        'read'  => 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.freebusy',
-        'write' => 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.freebusy https://www.googleapis.com/auth/calendar.events',
+        'read'  => self::ESCOPOS_IDENTIDADE . ' https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.freebusy',
+        'write' => self::ESCOPOS_IDENTIDADE . ' https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.freebusy https://www.googleapis.com/auth/calendar.events',
     ];
 
     /**

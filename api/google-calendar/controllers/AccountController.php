@@ -101,9 +101,14 @@ final class GcalAccountController
             self::voltar($r['redirect'] ?: $base,
                 ['gcal_auth' => 'ok', 'email' => $r['email']]);
         } catch (\Throwable $e) {
-            error_log('[gcal] callback OAuth falhou: ' . $e->getMessage());
+            // GcalApiException carrega o motivo curto do Google (ex.: invalid_request)
+            // e o HTTP: sem eles o log diz so "nao foi possivel ler o perfil" e a
+            // causa (escopo, token, rede) fica invisivel. Nunca o token nem o corpo.
+            $extra = $e instanceof GcalApiException
+                ? sprintf(' (google=%s http=%d)', $e->motivo, $e->status) : '';
+            error_log('[gcal] callback OAuth falhou: ' . $e->getMessage() . $extra);
             self::voltar($base, ['gcal_auth' => 'error', 'reason' => 'falha',
-                                 'detalhe' => mb_substr($e->getMessage(), 0, 180)]);
+                                 'detalhe' => mb_substr($e->getMessage() . $extra, 0, 180)]);
         }
     }
 

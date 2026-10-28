@@ -91,6 +91,10 @@ $check('access_type=offline + prompt=consent',
 $check('escopo é o de LEITURA na etapa read',
     !str_contains((string)($q['scope'] ?? ''), 'auth/calendar.events')
     && str_contains((string)($q['scope'] ?? ''), 'calendar.readonly'));
+$escopos = explode(' ', (string)($q['scope'] ?? ''));
+$check('escopos de identidade (openid email profile) — o userinfo do callback exige',
+    in_array('openid', $escopos, true) && in_array('email', $escopos, true) && in_array('profile', $escopos, true),
+    '(go-live 28/10/2026: sem eles, "Não foi possível ler o perfil da conta Google")');
 $check('state foi persistido', (bool)($q['state'] ?? null));
 
 $state = (string)$q['state'];

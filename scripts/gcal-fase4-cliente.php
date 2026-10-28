@@ -157,6 +157,13 @@ $p9 = (new GoogleCalendarClient($t9,'T'))->perfil();
 ok('hd presente = workspace', $p9['account_type']==='workspace' && $p9['organization']==='dshow.com.br');
 $t10 = new GcalTransportFake($R(200,['sub'=>'456','email'=>'b@gmail.com','name'=>'B']));
 ok('sem hd = pessoal', (new GoogleCalendarClient($t10,'T'))->perfil()['account_type']==='personal');
+// Go-live 28/10/2026: token SEM escopo de identidade → userinfo responde 401 invalid_request. O erro tem de
+// sair com motivo e HTTP (o controller os loga), nunca como 200 vazio.
+$t11 = new GcalTransportFake($R(401,['error'=>'invalid_request','error_description'=>'Invalid Credentials']));
+$err11 = null; try { (new GoogleCalendarClient($t11,'T'))->perfil(); } catch (GcalApiException $e) { $err11 = $e; }
+ok('perfil 401 lança GcalApiException', $err11 instanceof GcalApiException);
+ok('…com a mensagem do callback', $err11 && $err11->getMessage()==='Não foi possível ler o perfil da conta Google');
+ok('…com motivo invalid_request e HTTP 401', $err11 && $err11->motivo==='invalid_request' && $err11->status===401);
 
 echo "\n== Cliente: tipo de calendário deduzido do id ==\n";
 foreach ([['primary'=>true,'id'=>'x','esp'=>'personal'],
