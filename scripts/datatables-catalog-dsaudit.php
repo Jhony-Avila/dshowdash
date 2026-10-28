@@ -46,7 +46,8 @@ function dsauditCreds(): array
 
 // Nunca catalogados como negocio: internos do MySQL (o dono NAO listou estes) + os
 // ja catalogados por outra conexao (DSHOW_PROD/INTEGRACAO via dshow_ro).
-const SKIP = ['information_schema', 'mysql', 'performance_schema', 'DSHOW_PROD', 'INTEGRACAO'];
+// APP DSHOW Lote 30 (D3): + schemas administrativos do servidor (sys, phpMyAdmin, CyberPanel) — nao sao bancos de negocio e so geram ruido.
+const SKIP = ['information_schema', 'mysql', 'performance_schema', 'sys', 'phpmyadmin', 'cyberpanel', 'DSHOW_PROD', 'INTEGRACAO'];
 
 function log_(string $s): void { fwrite(STDOUT, '[' . date('H:i:s') . "] $s\n"); }
 

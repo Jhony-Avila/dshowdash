@@ -154,7 +154,7 @@ final class DtAlertService
             $st = $this->pdo->prepare(
                 'UPDATE DT_Alerta
                     SET status = "resolved", resolved_at = NOW()
-                  WHERE fingerprint = :fp AND status = "active"'
+                  WHERE fingerprint = :fp AND status IN ("active", "acknowledged")'   // APP DSHOW Lote 30 (D3): reconhecido tambem resolve quando a condicao acaba
             );
             $st->execute([':fp' => $fp]);
             return $st->rowCount() > 0;
@@ -221,7 +221,11 @@ final class DtAlertService
             $this->resolve('write_failed', 'connection', $connId);
         }
 
-        if (($res['read_ok'] ?? null) === 0) {
+        // APP DSHOW Lote 30 (D3, dados reais 28/10): sem conexao nao houve teste de leitura — o catch do HealthCheckService
+        // devolve read_ok=0 e cada banco fora do ar virava DOIS criticos (db_offline + read_failed). Leitura falha so conta
+        // quando a conexao abriu (status diferente de offline/credential_expired).
+        $readTested = !in_array($status, ['offline', 'credential_expired'], true);
+        if ($readTested && ($res['read_ok'] ?? null) === 0) {
             $raised[] = $this->raise('read_failed', 'connection', $connId,
                 "Falha no teste de leitura: {$connName}", $res['error'] ?? null, $connId) + ['type' => 'read_failed'];
         } else {
@@ -571,7 +575,8 @@ final class DtAlertService
     {
         $st = $this->pdo->prepare(
             'SELECT id, occurrences FROM DT_Alerta
-              WHERE fingerprint = :fp AND status = "active" LIMIT 1'
+              WHERE fingerprint = :fp AND status IN ("active", "acknowledged")
+              ORDER BY status = "active" DESC LIMIT 1'   // APP DSHOW Lote 30 (D3): a ocorrencia soma no reconhecido, em vez de abrir um 2o incidente
         );
         $st->execute([':fp' => $fingerprint]);
         return $st->fetch(PDO::FETCH_ASSOC) ?: null;
