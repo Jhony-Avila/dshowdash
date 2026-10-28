@@ -14,6 +14,9 @@ require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../core/CorsPolicy.php';
 require_once __DIR__ . '/../core/SessionGate.php';
 require_once __DIR__ . '/../core/helpers/InputValidator.php';
+// W1 do Programa PARIDADE TOTAL (2026-10-28): as três escritas (lida, todas, excluir) saíram para a lib compartilhada com a
+// Ponte v2 (api/ponte/libs/NotificacaoLib.php, movimento textual); este endpoint continua dono da sessão, do CSRF e das respostas.
+require_once __DIR__ . '/../ponte/libs/NotificacaoLib.php';
 
 CorsPolicy::setupApiEndpoint([
     'methods' => ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -133,14 +136,13 @@ if ($method === 'PATCH' && $action === 'read') {
     $notificationId = $notificationIdRaw === 'all' ? 'all' : ($validator->id('id', false) ?: null);
 
     if ($notificationIdRaw === 'all') {
-        $stmt = $pdo->prepare("UPDATE app_notifications SET is_read = 1, read_at = NOW(3) WHERE user_id = ? AND is_read = 0");
-        $stmt->execute([$userId]);
+        $r = notificacao_marcar_todas($pdo, $userId);
 
-        error_log("NOTIFICATIONS_MARKED_ALL_READ: user_id=$userId, count=" . $stmt->rowCount());
+        error_log("NOTIFICATIONS_MARKED_ALL_READ: user_id=$userId, count=" . $r['marked']);
 
         session_write_close();
 
-        ApiResponse::success(['marked' => $stmt->rowCount()], ['message' => 'Todas marcadas como lidas', 'timestamp' => date('c')]);
+        ApiResponse::success($r, ['message' => 'Todas marcadas como lidas', 'timestamp' => date('c')]);
     }
 
     if (!$notificationId) {
@@ -148,12 +150,11 @@ if ($method === 'PATCH' && $action === 'read') {
         ApiResponse::error('ID_REQUIRED', 400, ['message' => 'ID obrigatorio']);
     }
 
-    $stmt = $pdo->prepare("UPDATE app_notifications SET is_read = 1, read_at = NOW(3) WHERE id = ? AND user_id = ?");
-    $stmt->execute([$notificationId, $userId]);
+    $r = notificacao_marcar_lida($pdo, $userId, (int)$notificationId);
 
     session_write_close();
 
-    ApiResponse::success(['marked' => $stmt->rowCount() > 0], ['timestamp' => date('c')]);
+    ApiResponse::success($r, ['timestamp' => date('c')]);
 }
 
 // DELETE - Excluir notificacao
@@ -166,14 +167,13 @@ if ($method === 'DELETE') {
         ApiResponse::error('ID_REQUIRED', 400, ['message' => 'ID obrigatorio']);
     }
 
-    $stmt = $pdo->prepare("DELETE FROM app_notifications WHERE id = ? AND user_id = ?");
-    $stmt->execute([$notificationId, $userId]);
+    $r = notificacao_excluir($pdo, $userId, (int)$notificationId);
 
     error_log("NOTIFICATION_DELETED: user_id=$userId, notification_id=$notificationId");
 
     session_write_close();
 
-    ApiResponse::success(['deleted' => $stmt->rowCount() > 0], ['timestamp' => date('c')]);
+    ApiResponse::success($r, ['timestamp' => date('c')]);
 }
 
 session_write_close();

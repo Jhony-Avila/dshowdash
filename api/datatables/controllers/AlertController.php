@@ -5,6 +5,10 @@
 // @app DataTables
 declare(strict_types=1);
 
+// W1 do Programa PARIDADE TOTAL (2026-10-28): a regra de `resolve` saiu para a lib compartilhada com a Ponte v2
+// (api/ponte/libs/AlertaLib.php, movimento textual); este controller só responde HTTP. `acknowledge` já era DtAlertService.
+require_once __DIR__ . '/../../ponte/libs/AlertaLib.php';
+
 final class DtAlertController
 {
     public static function route(string $method, array $segments, PDO $pdo): void
@@ -83,23 +87,15 @@ final class DtAlertController
     {
         requireMethod(['POST']);
 
-        $sel = $pdo->prepare('SELECT alert_type, target_type, target_id, status FROM DT_Alerta WHERE id = :id');
-        $sel->execute([':id' => $id]);
-        $row = $sel->fetch(PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404, ['message' => 'Alerta nao encontrado']);
-        }
-        if ($row['status'] === 'resolved') {
-            ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 409, ['message' => 'Alerta ja resolvido']);
+        try {
+            $dados = alerta_resolver($pdo, $id);
+        } catch (PonteErro $e) {
+            ApiResponse::error($e->codigo, $e->status, $e->extra ?? []);
         }
 
-        $pdo->prepare('UPDATE DT_Alerta SET status = "resolved", resolved_at = NOW() WHERE id = :id')
-            ->execute([':id' => $id]);
-
-        ApiResponse::success(['id' => $id, 'resolved' => true], [
+        ApiResponse::success($dados, [
             'timestamp' => date('c'),
-            'message'   => 'Alerta resolvido manualmente. Se a condicao persistir, um novo incidente sera aberto no proximo ciclo.',
+            'message'   => ALERTA_MSG_RESOLVIDO,
         ]);
     }
 }

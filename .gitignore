@@ -48,6 +48,8 @@
 !/api/feature-flags/
 !/api/notifications/
 !/api/datatables/
+# api/ponte/ — Ponte v2 servidor-a-servidor do APP DSHOW (ADR-013); segredo = config/ponte-app.key (fora do git)
+!/api/ponte/
 
 # public/koala/ — só o código-fonte + configs de build (NÃO dist, NÃO node_modules)
 !/public/
@@ -74,6 +76,8 @@
 !/scripts/
 /scripts/*
 !/scripts/avatar/
+# scripts/ponte/ — testes da Ponte v2 (Programa PARIDADE TOTAL, W1)
+!/scripts/ponte/
 # testes, smoke, cron e worker do Google Calendar (2026-10-28)
 !/scripts/gcal-*.php
 !/scripts/gcal-*.sh
@@ -165,6 +169,8 @@ dist/
 
 # contexto versionado para sessões de IA (lote 221-230, decisão #45.6):
 # qualquer sessão futura se auto-abastece só de clonar
+# docs/PONTE/ — DDL/flags da Ponte v2 (Programa PARIDADE TOTAL, W1)
+!/docs/PONTE/
 !/claude/
 
 # suíte de testes headless: artefatos locais nunca entram
