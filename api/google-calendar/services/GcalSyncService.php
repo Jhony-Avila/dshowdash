@@ -58,7 +58,7 @@ final class GcalSyncService
             $r = $cliente->listarEventos($calendarId, [
                 'timeMin' => $de->format('c'), 'timeMax' => $ate->format('c'),
             ]);
-            $n = $this->gravar($accountId, $r['eventos'], $n);
+            $n = $this->gravar($accountId, $r['eventos'], $n, $calendarId, $run, $cid);
 
             $this->repo->salvarSyncState($accountId, $calendarId, [
                 'sync_token'  => $r['syncToken'],
@@ -109,7 +109,7 @@ final class GcalSyncService
         try {
             $cliente = $this->auth->clientePara($accountId);
             $r = $cliente->listarEventos($calendarId, ['syncToken' => $token]);
-            $n = $this->gravar($accountId, $r['eventos'], $n);
+            $n = $this->gravar($accountId, $r['eventos'], $n, $calendarId, $run, $cid);
 
             $this->repo->salvarSyncState($accountId, $calendarId, [
                 'sync_token'  => $r['syncToken'],
@@ -148,12 +148,37 @@ final class GcalSyncService
         return $n;
     }
 
-    /** Grava o lote em UMA transação: carga parcial é pior que carga nenhuma. */
-    private function gravar(int $accountId, array $eventos, array $n): array
+    /**
+     * Grava o lote em UMA transação (carga parcial é pior que carga nenhuma), mas a falha é POR EVENTO:
+     * cada evento roda dentro de um SAVEPOINT; se o banco recusar (ex.: 1265 "Data truncated for column
+     * 'event_type'" em 28/10/2026 — um único evento `fromGmail` derrubava a sincronização do calendário
+     * inteiro), só aquele evento é desfeito e registrado em gcal_sync_errors (event_id + mensagem curta,
+     * nunca conteúdo); os demais seguem e o calendário termina `ok`. `errors` conta os ignorados.
+     */
+    private function gravar(int $accountId, array $eventos, array $n, string $calendarId = '',
+                            ?int $run = null, ?string $cid = null): array
     {
-        return $this->repo->transacao(function (GcalRepository $r) use ($accountId, $eventos, $n): array {
+        return $this->repo->transacao(function (GcalRepository $r) use ($accountId, $eventos, $n, $calendarId, $run, $cid): array {
+            $pdo = $r->pdo();
             foreach ($eventos as $e) {
-                $res = $r->salvarEvento($accountId, $e);
+                $pdo->exec('SAVEPOINT gcal_evento');
+                try {
+                    $res = $r->salvarEvento($accountId, $e);
+                    $pdo->exec('RELEASE SAVEPOINT gcal_evento');
+                } catch (\Throwable $ex) {
+                    $pdo->exec('ROLLBACK TO SAVEPOINT gcal_evento');
+                    $n['processed']++;
+                    $n['errors']++;
+                    $msg = mb_substr($ex->getMessage(), 0, 200);
+                    error_log('[gcal] evento ignorado em ' . ($calendarId !== '' ? $calendarId : $e['calendar_id'] ?? '?')
+                        . ' (id ' . (string)($e['event_id'] ?? '?') . '): ' . $msg);
+                    $r->registrarErro($accountId, [
+                        'run_id' => $run, 'calendar_id' => $calendarId !== '' ? $calendarId : ($e['calendar_id'] ?? null),
+                        'event_id' => (string)($e['event_id'] ?? ''), 'error_code' => 'evento_invalido',
+                        'message' => 'evento ignorado na gravação: ' . $msg, 'correlation_id' => $cid,
+                    ]);
+                    continue;
+                }
                 $n['processed']++;
                 if ($res === 'inserido')        $n['created']++;
                 elseif ($res === 'atualizado')  $n['updated']++;

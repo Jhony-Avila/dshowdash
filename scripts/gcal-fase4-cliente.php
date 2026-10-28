@@ -61,6 +61,20 @@ ok('EXDATE separado do RRULE', str_contains((string)$full['recurrence']['exdate'
 ok('Meet + telefone', $full['conference']['uri']==='https://meet.google.com/abc' && !empty($full['conference']['phone']));
 ok('transparency/visibility/eventType', $full['transparency']==='transparent' && $full['visibility']==='private' && $full['event_type']==='focusTime');
 
+echo "\n== Normalizador: eventType — fromGmail aceito, desconhecido vira default (28/10/2026) ==\n";
+// Dados reais: a 1ª sincronização após o go-live morreu com 1265 "Data truncated for column 'event_type'" porque o Google
+// mandou eventType=fromGmail (voos/hotéis/reservas vindos do Gmail) e o ENUM não o tinha. Lista fechada + fallback seguro.
+GcalNormalizer::$tiposDesconhecidos = [];
+$base = ['id'=>'g1','status'=>'confirmed','summary'=>'Voo','start'=>['dateTime'=>'2026-10-30T08:00:00-03:00'],'end'=>['dateTime'=>'2026-10-30T09:00:00-03:00']];
+ok('TIPOS_EVENTO = lista oficial da API (default, focusTime, outOfOffice, workingLocation, birthday, fromGmail)',
+   GcalNormalizer::TIPOS_EVENTO === ['default','focusTime','outOfOffice','workingLocation','birthday','fromGmail']);
+ok('fromGmail passa como está', GcalNormalizer::evento($base + ['eventType'=>'fromGmail'], 'primary')['event_type'] === 'fromGmail');
+ok('birthday passa como está', GcalNormalizer::evento($base + ['eventType'=>'birthday'], 'primary')['event_type'] === 'birthday');
+ok('tipo desconhecido vira default (nunca derruba a gravação)', GcalNormalizer::evento($base + ['eventType'=>'algoNovoDoGoogle'], 'primary')['event_type'] === 'default');
+ok('…e é contado para o aviso (uma linha de log por tipo)', (GcalNormalizer::$tiposDesconhecidos['algoNovoDoGoogle'] ?? 0) === 1);
+ok('sem eventType = default', GcalNormalizer::evento($base, 'primary')['event_type'] === 'default');
+ok('eventType não-string (lixo) = default', GcalNormalizer::evento($base + ['eventType'=>['x']], 'primary')['event_type'] === 'default');
+
 echo "\n== useDefault não vira 'sem lembrete' ==\n";
 $ud = GcalNormalizer::evento(['id'=>'e4','status'=>'confirmed','start'=>['date'=>'2026-08-03'],
   'end'=>['date'=>'2026-08-04'],'reminders'=>['useDefault'=>true]], 'primary');

@@ -22,6 +22,37 @@ declare(strict_types=1);
 
 final class GcalNormalizer
 {
+    /**
+     * Tipos de evento que o BANCO aceita — espelho EXATO do ENUM `gcal_events.event_type`
+     * (docs/GOOGLE-CALENDAR/02-banco-GCAL_DSHOW.sql; migração 02d acrescentou `fromGmail`).
+     * Lista fechada de propósito: um valor fora dela truncaria no INSERT (sql_mode STRICT →
+     * 1265 "Data truncated for column 'event_type'") e, até 28/10/2026, derrubava a
+     * sincronização do calendário INTEIRO. Tipo desconhecido vira `default` + aviso no log.
+     * Documentação da API (events.eventType): default, outOfOffice, focusTime,
+     * workingLocation, fromGmail (eventos criados pelo Gmail — voos, hotéis, reservas), birthday.
+     * Acrescentar um tipo aqui EXIGE a migração do ENUM antes (ordem: banco → código).
+     */
+    public const TIPOS_EVENTO = ['default', 'focusTime', 'outOfOffice', 'workingLocation', 'birthday', 'fromGmail'];
+
+    /** Tipos desconhecidos vistos neste processo → contagem (para log/teste; nunca conteúdo de evento). */
+    public static array $tiposDesconhecidos = [];
+
+    /** Tipo seguro para o banco: conhecido passa; desconhecido/ausente → 'default' (avisando UMA vez por tipo). */
+    public static function tipoEvento(mixed $tipo, string $calendarId = ''): string
+    {
+        $t = is_string($tipo) ? trim($tipo) : '';
+        if ($t === '') return 'default';
+        if (in_array($t, self::TIPOS_EVENTO, true)) return $t;
+        $t = mb_substr($t, 0, 40);
+        if (!isset(self::$tiposDesconhecidos[$t])) {
+            error_log('[gcal] eventType desconhecido "' . $t . '" gravado como default'
+                . ($calendarId !== '' ? ' (calendário ' . $calendarId . ')' : '')
+                . ' — ampliar o ENUM (migração) e TIPOS_EVENTO');
+        }
+        self::$tiposDesconhecidos[$t] = (self::$tiposDesconhecidos[$t] ?? 0) + 1;
+        return 'default';
+    }
+
     /** Mapa dos papéis do Google para os nossos (§30). */
     private const ACESSO = [
         'owner' => 'owner', 'writer' => 'writer',
@@ -166,7 +197,7 @@ final class GcalNormalizer
             'event_time_zone'     => $inicio['timeZone'] ?? null,
             'transparency'        => ($e['transparency'] ?? 'opaque') === 'transparent' ? 'transparent' : 'opaque',
             'visibility'          => (string)($e['visibility'] ?? 'default'),
-            'event_type'          => (string)($e['eventType'] ?? 'default'),
+            'event_type'          => self::tipoEvento($e['eventType'] ?? null, $calendarId),
             'organizer_email'     => $e['organizer']['email'] ?? null,
             'organizer_name'      => $e['organizer']['displayName'] ?? null,
             'organizer_self'      => !empty($e['organizer']['self']),

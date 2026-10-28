@@ -110,6 +110,22 @@ $tot = (new GcalSyncService($repo,new GcalAuthService($repo,$t6)))->sincronizarC
 ok('processou os 2 calendários', $tot['calendarios']===2, json_encode($tot));
 ok('1 erro isolado, não abortou', $tot['errors']===1, json_encode($tot));
 
+echo "\n== Evento recusado pelo banco NÃO derruba o calendário (28/10/2026: 1265 em event_type) ==\n";
+// Reproduz a classe do erro real com um ENUM que o banco recusa (status inválido → 1265 Data truncated); antes, o lote
+// inteiro era desfeito e o calendário ficava em ERRO. Agora: SAVEPOINT por evento, erro registrado, calendário `ok`.
+$repo->salvarTokens($acc,['access_token'=>'AT3','refresh_token'=>'RT','expires_in'=>3600]);
+$ruim = ['id'=>'ruim1','status'=>'estranho','summary'=>'Ruim','etag'=>'"r"','sequence'=>0,
+         'start'=>['dateTime'=>'2026-08-06T11:00:00-03:00'],'end'=>['dateTime'=>'2026-08-06T12:00:00-03:00']];
+$t7 = new GcalTransportFake($R(200,['items'=>[$evGoogle('ok1','Bom 1','2026-08-06'), $ruim, $evGoogle('ok2','Bom 2','2026-08-07')],'nextSyncToken'=>'SYNC-7']));
+$r7 = (new GcalSyncService($repo,new GcalAuthService($repo,$t7)))->incremental($acc,'primary');
+ok('3 processados, 2 gravados, 1 ignorado', $r7['processed']===3 && $r7['created']===2 && $r7['errors']===1, json_encode($r7));
+ok('token rotacionado apesar do evento ruim', $repo->lerSyncToken($acc,'primary')==='SYNC-7');
+$estado = null; foreach ($repo->listarSyncState($USER) as $s7) { if (($s7['calendar_id'] ?? '')==='primary') $estado = $s7['status'] ?? null; }
+ok('calendário terminou ok (não error)', $estado==='ok', (string)$estado);
+ok('erro POR EVENTO registrado (evento_invalido, ruim1, sem conteúdo)', (int)$repo->pdo()->query("SELECT COUNT(*) FROM gcal_sync_errors WHERE account_id=$acc AND error_code='evento_invalido' AND event_id='ruim1' AND message NOT LIKE '%Ruim%'")->fetchColumn() >= 1);
+$bons = array_column($repo->eventosDaJanela($USER,'2026-08-06 00:00:00','2026-08-08 00:00:00'), 'event_id');
+ok('os dois bons estão no banco e o ruim não', in_array('ok1',$bons,true) && in_array('ok2',$bons,true) && !in_array('ruim1',$bons,true), json_encode($bons));
+
 // limpeza
 $repo->pdo()->prepare("DELETE FROM gcal_accounts WHERE user_id=?")->execute([$USER]);
 echo "\n" . ($f===0 ? "TODOS OS CHECKS PASSARAM\n" : "*** $f FALHA(S) ***\n");

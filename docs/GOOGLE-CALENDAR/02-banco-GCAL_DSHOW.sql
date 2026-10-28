@@ -137,7 +137,7 @@ CREATE TABLE gcal_events (
 
   transparency        ENUM('opaque','transparent') NOT NULL DEFAULT 'opaque',
   visibility          ENUM('default','public','private','confidential') NOT NULL DEFAULT 'default',
-  event_type          ENUM('default','focusTime','outOfOffice','workingLocation','birthday') NOT NULL DEFAULT 'default',
+  event_type          ENUM('default','focusTime','outOfOffice','workingLocation','birthday','fromGmail') NOT NULL DEFAULT 'default',  -- 02d (28/10/2026): +fromGmail
   organizer_email     VARCHAR(190) NULL,
   organizer_name      VARCHAR(190) NULL,
   organizer_self      TINYINT(1) NOT NULL DEFAULT 0,
