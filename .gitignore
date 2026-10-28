@@ -40,6 +40,15 @@
 # getenv('PIPEDRIVE_CRYPTO_KEY') — nada de credencial nestes 22 arquivos.
 !/api/pipedrive/
 
+# Programa PARIDADE TOTAL (ADR-013) — W1 (2026-10-28, Q-PAR.7): pastas que a Ponte v2 reutiliza, versionadas byte a byte
+# a partir da produção (viviam fora do git). Sem segredo: credenciais vêm de getenv()/config (fora do git); os únicos
+# "password/secret" nestes arquivos são chamadas DtCrypto::decrypt()/RedisConfig::getPassword().
+!/api/_helpers/
+!/api/core/
+!/api/feature-flags/
+!/api/notifications/
+!/api/datatables/
+
 # public/koala/ — só o código-fonte + configs de build (NÃO dist, NÃO node_modules)
 !/public/
 /public/*
