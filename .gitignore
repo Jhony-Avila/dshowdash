@@ -82,6 +82,8 @@
 !/scripts/avatar/
 # scripts/ponte/ — testes da Ponte v2 (Programa PARIDADE TOTAL, W1)
 !/scripts/ponte/
+# testes do forecast.php (clima da cidade atual do APP DSHOW, 2026-10-29)
+!/scripts/weather/
 # testes, smoke, cron e worker do Google Calendar (2026-10-28)
 !/scripts/gcal-*.php
 !/scripts/gcal-*.sh
