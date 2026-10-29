@@ -124,10 +124,48 @@ $ok($s === 500 && $e['error'] === 'ERRO_INTERNO' && $executou($p, '/^DELETE FROM
 $sv = $srv($c); $p = $pdoBase([$SQL_ACK => ['afetadas' => 1]]); [$s1] = $exec($p, $sv, $c); [$s2, $e2] = $exec($pdoBase([$SQL_ACK => ['afetadas' => 1]]), $sv, $c);
 $ok($s1 === 200 && $s2 === 403 && $e2['error'] === 'PONTE_RECUSADA', '[20] mesmo nonce duas vezes → 2ª recusada (replay de rede)');
 
-// allowlist: só os 7 handlers da W1 e todos existem
+// allowlist: os 7 handlers da W1 + 2 de metas (DC-2) e todos existem
 $total = 0; foreach (PV2_ALLOWLIST as $m => $as) { foreach ($as as $a => $d) { $total++; $ok(function_exists($d['handler']), "[21] handler $m.$a existe"); $ok(in_array($d['tipo'], ['leitura', 'escrita'], true) && is_int($d['nivel']), "[21] $m.$a declara tipo e nível"); } }
-$ok($total === 7, "[21] allowlist da W1 tem 7 ações (tem $total)");
+$ok($total === 9, "[21] allowlist tem 9 ações: 7 da W1 + metas.definir/remover (tem $total)");
+
+// metas (DASH-APP-V1 · DC-2): flag própria, nível 80, validação, criar, atualizar com versão, conflito, remover, 404
+$ambM = ['flagsModulo' => ['ponte.metas.escrita' => true]];
+$SQL_META_SEL = '/^SELECT id, valor_cents, versao FROM app_metas_comerciais WHERE ano = \? AND mes = \? AND escopo = \? AND owner_pd_id = \? FOR UPDATE/';
+$SQL_META_INS = '/^INSERT INTO app_metas_comerciais \(ano, mes, escopo, owner_pd_id, valor_cents, versao, criado_por, atualizado_por, created_at, updated_at\)/';
+$SQL_META_UPD = '/^UPDATE app_metas_comerciais SET valor_cents = \?, versao = \?, atualizado_por = \?, updated_at = NOW\(3\) WHERE id = \?/';
+$SQL_META_HIST = '/^INSERT INTO app_metas_comerciais_hist/';
+$SQL_META_BYID = '/^SELECT id, ano, mes, escopo, owner_pd_id, valor_cents, versao FROM app_metas_comerciais WHERE id = \? FOR UPDATE/';
+$SQL_META_DEL = '/^DELETE FROM app_metas_comerciais WHERE id = \?/';
+$cm = $pedido('metas', 'definir', ['ano' => 2026, 'mes' => 10, 'escopo' => 'global', 'valor_cents' => 350000000, 'request_id' => 'req-0123456789abcdef']);
+[$s, $e] = $exec($pdoBase(), $srv($cm), $cm); $ok($s === 404 && $e['error'] === 'MODULO_DESLIGADO', '[22] metas sem a flag ponte.metas.escrita → 404');
+$p = $pdoBase([], 50); [$s, $e] = $exec($p, $srv($cm), $cm, $ambM); $ok($s === 403 && $e['error'] === 'PERMISSAO_NEGADA' && ($e['meta']['nivel_minimo'] ?? 0) === 80, '[22] nível 50 em metas → 403 (mínimo 80)');
+$p = $pdoBase([$SQL_META_SEL => ['linhas' => []], $SQL_META_INS => ['afetadas' => 1], $SQL_META_HIST => ['afetadas' => 1]]);
+[$s, $e] = $exec($p, $srv($cm), $cm, $ambM);
+$ok($s === 200 && ($e['data']['id'] ?? 0) === 77 && $e['data']['versao'] === 1 && $e['data']['owner_pd_id'] === 0 && $e['data']['valor_anterior_cents'] === null, '[22a] definir global nova → INSERT, versao 1, owner_pd_id 0: ' . json_encode($e));
+$bi = $binds($p, $SQL_META_INS); $ok($bi === [2026, 10, 'global', 0, 350000000, 7, 7], '[22a] binds do INSERT (ano, mes, escopo, owner 0, valor, criado_por, atualizado_por): ' . json_encode($bi));
+$bh = $binds($p, $SQL_META_HIST); $ok($bh === [77, 1, null, 350000000, 7, 'app', 'req-0123456789abcdef'], '[22a] hist: meta 77, v1, antes NULL, depois valor, por 7, origem app, request_id: ' . json_encode($bh));
+$ok(in_array('begin', $p->eventos, true) && in_array('commit', $p->eventos, true), '[22a] transação aberta e confirmada');
+$cm2 = $pedido('metas', 'definir', ['ano' => 2026, 'mes' => 10, 'escopo' => 'vendedor', 'owner_pd_id' => 9409546, 'valor_cents' => 120000000, 'versao_esperada' => 3], ['request_id' => 'req-abcdef0123456789']);
+$p = $pdoBase([$SQL_META_SEL => ['linhas' => [['id' => 15, 'valor_cents' => 100000000, 'versao' => 3]]], $SQL_META_UPD => ['afetadas' => 1], $SQL_META_HIST => ['afetadas' => 1]]);
+[$s, $e] = $exec($p, $srv($cm2), $cm2, $ambM);
+$ok($s === 200 && $e['data']['id'] === 15 && $e['data']['versao'] === 4 && $e['data']['valor_anterior_cents'] === 100000000 && !$executou($p, $SQL_META_INS), '[22b] definir vendedor existente com versao_esperada certa → UPDATE v4: ' . json_encode($e));
+$bu = $binds($p, $SQL_META_UPD); $ok($bu === [120000000, 4, 7, 15], '[22b] binds do UPDATE: ' . json_encode($bu));
+$p = $pdoBase([$SQL_META_SEL => ['linhas' => [['id' => 15, 'valor_cents' => 100000000, 'versao' => 5]]]]);
+[$s, $e] = $exec($p, $srv($cm2), $cm2, $ambM);
+$ok($s === 409 && $e['error'] === 'CONFLITO' && ($e['data']['versao_atual'] ?? 0) === 5 && ($e['data']['valor_atual_cents'] ?? 0) === 100000000 && !$executou($p, $SQL_META_UPD) && in_array('rollback', $p->eventos, true), '[22c] versao_esperada 3 ≠ atual 5 → 409 CONFLITO com versão/valor atuais, nada gravado: ' . json_encode($e));
+$cm3 = $pedido('metas', 'definir', ['ano' => 2019, 'mes' => 13, 'escopo' => 'vendedor', 'valor_cents' => -1]);
+$p = $pdoBase(); [$s, $e] = $exec($p, $srv($cm3), $cm3, $ambM);
+$ok($s === 422 && $e['error'] === 'VALIDACAO' && array_keys($e['data']['campos'] ?? []) === ['ano', 'mes', 'owner_pd_id'] && !$executou($p, $SQL_META_SEL), '[22d] payload inválido → 422 com os campos, nada consultado: ' . json_encode($e));
+$cm4 = $pedido('metas', 'definir', ['ano' => 2026, 'mes' => 10, 'escopo' => 'global', 'valor_cents' => 1000000000000]);
+$p = $pdoBase(); [$s, $e] = $exec($p, $srv($cm4), $cm4, $ambM); $ok($s === 422 && isset($e['data']['campos']['valor_cents']), '[22e] valor acima do teto → 422');
+$cr = $pedido('metas', 'remover', ['id' => 15, 'versao_esperada' => 4]);
+$p = $pdoBase([$SQL_META_BYID => ['linhas' => [['id' => 15, 'ano' => 2026, 'mes' => 10, 'escopo' => 'vendedor', 'owner_pd_id' => 9409546, 'valor_cents' => 120000000, 'versao' => 4]]], $SQL_META_HIST => ['afetadas' => 1], $SQL_META_DEL => ['afetadas' => 1]]);
+[$s, $e] = $exec($p, $srv($cr), $cr, $ambM);
+$ok($s === 200 && $e['data']['removed'] === true && $e['data']['valor_anterior_cents'] === 120000000 && $executou($p, $SQL_META_DEL), '[22f] remover existente → hist (valor_novo NULL) + DELETE: ' . json_encode($e));
+$bh = $binds($p, $SQL_META_HIST); $ok($bh === [15, 5, 120000000, 7, 'app', null], '[22f] hist da remoção: meta 15, v5, antes 120000000, por 7, app, sem request_id: ' . json_encode($bh));
+$p = $pdoBase([$SQL_META_BYID => ['linhas' => []]]); [$s, $e] = $exec($p, $srv($cr), $cr, $ambM);
+$ok($s === 404 && $e['error'] === 'NAO_ENCONTRADO' && !$executou($p, $SQL_META_DEL), '[22g] remover inexistente → 404, nada apagado');
 
 exec('rm -rf ' . escapeshellarg($dir));
 if ($falhas) { echo "FALHAS (" . count($falhas) . "):\n - " . implode("\n - ", $falhas) . "\n"; exit(1); }
-echo "ponte-v2-core: OK (" . (21) . " grupos de casos)\n";
+echo "ponte-v2-core: OK (" . (22) . " grupos de casos)\n";

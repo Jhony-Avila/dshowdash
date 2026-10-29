@@ -9,10 +9,12 @@ declare(strict_types=1);
  *   handler função pv2h_* abaixo: recebe (PDO, user_id, payload) e devolve ['data'=>…, 'recurso'=>[tipo,id], 'antes'=>?, 'depois'=>?]
  * W1 (28/10/2026): alertas (reconhecer, resolver, silenciar, dessilenciar — nível 80, regra do app) e notificacoes
  * (marcar_lida, marcar_todas, excluir — posse por user_id). Ondas seguintes acrescentam módulos aqui, com teste.
+ * DASH-APP-V1 · DC-2 (29/10/2026): metas (definir, remover — nível 80; libs/MetaLib.php; flag `ponte.metas.escrita`).
  */
 require_once __DIR__ . '/PonteErro.php';
 require_once __DIR__ . '/libs/AlertaLib.php';
 require_once __DIR__ . '/libs/NotificacaoLib.php';
+require_once __DIR__ . '/libs/MetaLib.php';
 
 const PV2_ALLOWLIST = [
     'alertas' => [
@@ -25,6 +27,10 @@ const PV2_ALLOWLIST = [
         'marcar_lida'  => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_notificacoes_marcar_lida'],
         'marcar_todas' => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_notificacoes_marcar_todas'],
         'excluir'      => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_notificacoes_excluir'],
+    ],
+    'metas' => [   // DASH-APP-V1 · DC-2: metas comerciais mensais (Q-DASH.2 — dono = Dash; Q-DC.1 — nível 80)
+        'definir'      => ['tipo' => 'escrita', 'nivel' => 80, 'handler' => 'pv2h_metas_definir'],
+        'remover'      => ['tipo' => 'escrita', 'nivel' => 80, 'handler' => 'pv2h_metas_remover'],
     ],
 ];
 
@@ -72,4 +78,14 @@ function pv2h_notificacoes_excluir(PDO $pdo, int $userId, array $payload): array
 {
     $id = pv2_id($payload);
     return ['data' => notificacao_excluir($pdo, $userId, $id), 'recurso' => ['notificacao', $id], 'depois' => ['deleted' => 1]];
+}
+function pv2h_metas_definir(PDO $pdo, int $userId, array $payload): array
+{
+    $d = meta_definir($pdo, $userId, $payload, 'app');
+    return ['data' => $d, 'recurso' => ['meta', $d['id']], 'antes' => ['valor_cents' => $d['valor_anterior_cents']], 'depois' => ['valor_cents' => $d['valor_cents'], 'versao' => $d['versao']]];
+}
+function pv2h_metas_remover(PDO $pdo, int $userId, array $payload): array
+{
+    $d = meta_remover($pdo, $userId, $payload, 'app');
+    return ['data' => $d, 'recurso' => ['meta', $d['id']], 'antes' => ['valor_cents' => $d['valor_anterior_cents']], 'depois' => ['removed' => 1]];
 }
