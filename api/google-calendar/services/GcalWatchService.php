@@ -162,6 +162,38 @@ final class GcalWatchService
         return $out;
     }
 
+    /**
+     * Abre canal para todo calendário (conta ativa e conectada) que não tem NENHUM canal ativo
+     * (Q-V9.7 do APP DSHOW, 2026-10-29). Antes, canal só nascia pelo botão (POST /sync/watch): uma
+     * conta conectada sem clicar ficava "Canais ativos: 0" para sempre e sincronizava só pelo fallback.
+     *
+     * `freeBusyReader` já sai na consulta (sem acesso aos eventos o Google recusa events.watch).
+     * Falha em um calendário não impede os outros — mesma regra de renovarVencendo. `$abrir` existe
+     * para o teste sem Google (scripts/gcal-fase6-manutencao.php); o padrão é o `abrir()` real.
+     *
+     * @return array{abertos:int,falhas:int,detalhe:array}
+     */
+    public function abrirFaltantes(?callable $abrir = null): array
+    {
+        $out = ['abertos' => 0, 'falhas' => 0, 'detalhe' => []];
+        if (!self::configurado()) return $out;
+        $abrir ??= fn(int $a, string $c): array => $this->abrir($a, $c);
+
+        foreach ($this->repo->calendariosSemCanal() as $c) {
+            $acc = (int)$c['account_id']; $cal = (string)$c['calendar_id'];
+            try {
+                $novo = $abrir($acc, $cal);
+                $out['abertos']++;
+                $out['detalhe'][] = ['calendar_id' => $cal, 'ok' => true, 'expira' => $novo['expiration'] ?? null];
+            } catch (\Throwable $e) {
+                $out['falhas']++;
+                $out['detalhe'][] = ['calendar_id' => $cal, 'ok' => false, 'erro' => mb_substr($e->getMessage(), 0, 180)];
+                error_log('[gcal] abertura de canal falhou em ' . $cal . ': ' . $e->getMessage());
+            }
+        }
+        return $out;
+    }
+
     /** UUID v4 — o Google exige que o id do canal seja único e nosso. */
     private static function uuid(): string
     {

@@ -293,7 +293,7 @@ CREATE TABLE gcal_sync_jobs (
   account_id  BIGINT UNSIGNED NOT NULL,
   calendar_id VARCHAR(255) NULL,
   kind        ENUM('full','incremental','watch_renew','reconcile') NOT NULL,
-  status      ENUM('pending','running','done','failed','dead') NOT NULL DEFAULT 'pending',
+  status      ENUM('pending','running','done','failed','dead','cancelled') NOT NULL DEFAULT 'pending',  -- 02e (29/10/2026): +cancelled
   priority    TINYINT NOT NULL DEFAULT 5,
   attempts    SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   run_after   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

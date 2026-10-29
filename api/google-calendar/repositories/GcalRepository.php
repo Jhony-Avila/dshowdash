@@ -800,6 +800,90 @@ final class GcalRepository
         return $st->rowCount();
     }
 
+    // ── Manutenção dos `dead` (Q-V9.6 do APP DSHOW, 2026-10-29) — GcalManutencaoService ──
+
+    /**
+     * Jobs `dead` com o último `error_code` registrado para o mesmo (conta, calendário) depois do
+     * início do job. O motivo não fica no job (last_error é texto livre); fica em gcal_sync_errors.
+     */
+    public function jobsMortos(): array
+    {
+        return $this->pdo->query(
+            "SELECT j.id, j.account_id, j.calendar_id, j.kind, j.attempts, j.started_at, j.finished_at, j.last_error,
+                    (SELECT e.error_code FROM gcal_sync_errors e
+                      WHERE e.account_id = j.account_id
+                        AND ((j.calendar_id IS NULL AND e.calendar_id IS NULL) OR e.calendar_id = j.calendar_id)
+                        AND (j.started_at IS NULL OR e.occurred_at >= j.started_at)
+                      ORDER BY e.occurred_at DESC LIMIT 1) AS error_code
+               FROM gcal_sync_jobs j
+              WHERE j.status = 'dead'
+              ORDER BY j.id")->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** `dead` → `cancelled` (migração 02e), preservando o erro original. Só mexe se ainda estiver `dead`. */
+    public function cancelarJob(int $jobId, string $motivo): void
+    {
+        $this->pdo->prepare(
+            "UPDATE gcal_sync_jobs
+                SET status = 'cancelled', finished_at = UTC_TIMESTAMP(),
+                    last_error = CONCAT(:m, ' · ', LEFT(COALESCE(last_error, ''), 380))
+              WHERE id = :id AND status = 'dead'")
+            ->execute([':m' => mb_substr($motivo, 0, 100), ':id' => $jobId]);
+    }
+
+    /** `dead` → `pending` com attempts zerado (erro corrigido fora do Google). Só mexe se ainda estiver `dead`. */
+    public function reenfileirarJobMorto(int $jobId, string $nota): int
+    {
+        $st = $this->pdo->prepare(
+            "UPDATE gcal_sync_jobs
+                SET status = 'pending', attempts = 0, run_after = UTC_TIMESTAMP(), started_at = NULL, finished_at = NULL,
+                    last_error = CONCAT(:n, ' · ', LEFT(COALESCE(last_error, ''), 400))
+              WHERE id = :id AND status = 'dead'");
+        $st->execute([':n' => mb_substr($nota, 0, 80), ':id' => $jobId]);
+        return $st->rowCount();
+    }
+
+    /** Um calendário que o Google diz não existir mais: mesma marca de marcarCalendariosAusentes (NÃO deleta). */
+    public function marcarCalendarioApagado(int $accountId, string $calendarId): int
+    {
+        $st = $this->pdo->prepare(
+            "UPDATE gcal_calendars SET deleted = 1
+              WHERE account_id = :a AND calendar_id = :c AND deleted = 0");
+        $st->execute([':a' => $accountId, ':c' => $calendarId]);
+        return $st->rowCount();
+    }
+
+    // ── Canais push faltantes (Q-V9.7 do APP DSHOW, 2026-10-29) — GcalWatchService::abrirFaltantes ──
+
+    /**
+     * Calendários vivos de contas ativas e conectadas SEM canal push ativo. `freeBusyReader` fica de
+     * fora: sem acesso aos eventos o Google recusa events.watch, e a recusa se repetiria a cada hora.
+     */
+    public function calendariosSemCanal(): array
+    {
+        return $this->pdo->query(
+            "SELECT c.account_id, c.calendar_id, c.access_role
+               FROM gcal_calendars c
+               JOIN gcal_accounts a ON a.id = c.account_id AND a.is_active = 1 AND a.connection_status = 'connected'
+               LEFT JOIN gcal_watch_channels w
+                      ON w.account_id = c.account_id AND w.calendar_id = c.calendar_id AND w.stopped_at IS NULL
+              WHERE c.deleted = 0 AND c.access_role <> 'freeBusyReader' AND w.channel_id IS NULL
+              ORDER BY c.account_id, c.calendar_id")->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Houve `watch_renew` pendente/rodando ou concluído nos últimos N minutos? (freio da abertura automática) */
+    public function houveWatchRenewRecente(int $minutos = 60): bool
+    {
+        $st = $this->pdo->prepare(
+            "SELECT 1 FROM gcal_sync_jobs
+              WHERE kind = 'watch_renew'
+                AND (status IN ('pending','running')
+                     OR (finished_at IS NOT NULL AND finished_at >= UTC_TIMESTAMP() - INTERVAL :m MINUTE))
+              LIMIT 1");
+        $st->execute([':m' => $minutos]);
+        return $st->fetchColumn() !== false;
+    }
+
     // ═══════════════════════════════════════════════════════════════════
     // CANAIS PUSH (§50)
     // ═══════════════════════════════════════════════════════════════════

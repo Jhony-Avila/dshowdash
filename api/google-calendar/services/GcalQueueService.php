@@ -105,7 +105,10 @@ final class GcalQueueService
 
             case 'watch_renew':
                 $r = $this->watch->renovarVencendo();
-                return ['renovados' => $r['renovados'], 'falhas' => $r['falhas']];
+                // Q-V9.7 (2026-10-29): o mesmo job também ABRE canal onde não há nenhum (conta nova,
+                // canal vencido sem renovação, falha anterior). Antes a criação era só manual.
+                $f = $this->watch->abrirFaltantes();
+                return ['renovados' => $r['renovados'], 'abertos' => $f['abertos'], 'falhas' => $r['falhas'] + $f['falhas']];
 
             case 'reconcile':
                 return $this->reconciliar($acc, $cal);
@@ -177,12 +180,18 @@ final class GcalQueueService
 
         $n['destravados'] = $this->repo->destravarJobs(30);
 
+        // Q-V9.6 (2026-10-29): só calendários VIVOS (c.deleted = 0). Um calendário apagado no Google
+        // ficava com next_sync_at NULL e voltava à fila a cada rodada, morrendo de novo por notFound —
+        // 24 jobs `dead` do mesmo calendário em produção (DR-011).
         $st = $this->repo->pdo()->query(
             "SELECT s.account_id, s.calendar_id, s.status
                FROM gcal_sync_state s
                JOIN gcal_accounts a ON a.id = s.account_id
                                    AND a.is_active = 1
                                    AND a.connection_status = 'connected'
+               JOIN gcal_calendars c ON c.account_id = s.account_id
+                                    AND c.calendar_id = s.calendar_id
+                                    AND c.deleted = 0
               WHERE s.next_sync_at IS NULL OR s.next_sync_at <= UTC_TIMESTAMP()");
         foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $s) {
             // Quem pediu recarga completa recebe `full`; enfileirar
@@ -205,7 +214,14 @@ final class GcalQueueService
             $n['incremental']++;
         }
 
-        if ($this->repo->canaisAVencer(GcalWatchService::HORAS_ANTECEDENCIA)) {
+        // Q-V9.7 (2026-10-29): além de renovar o que vence, enfileira `watch_renew` quando há calendário
+        // SEM canal (a abertura era só manual — "Canais ativos: 0" para sempre). No máximo um por hora:
+        // um calendário que recusa watch falharia a cada rodada de 5 min e encheria o log.
+        $precisaWatch = $this->repo->canaisAVencer(GcalWatchService::HORAS_ANTECEDENCIA)
+            || (GcalWatchService::configurado()
+                && $this->repo->calendariosSemCanal()
+                && !$this->repo->houveWatchRenewRecente(60));
+        if ($precisaWatch) {
             $qualquer = $this->repo->pdo()->query(
                 "SELECT id FROM gcal_accounts WHERE is_active = 1 LIMIT 1")->fetchColumn();
             if ($qualquer !== false) {

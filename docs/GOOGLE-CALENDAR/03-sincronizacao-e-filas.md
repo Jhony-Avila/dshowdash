@@ -87,6 +87,13 @@ Reusamos a infra que já existe em `/opt/dshow_secure/jobs/` (`job_supervisor.ph
 
 Backoff exponencial com teto: 1 min, 2, 4, 8, 16, 32 → `dead` após 6 tentativas, com alerta técnico.
 
+**Manutenção dos `dead` (29/10/2026, Q-V9.6/Q-V9.7 do APP DSHOW).** `dead` por `notFound` (calendário apagado no Google)
+é fechado pelo próprio cron: `gcal_calendars.deleted = 1` + job `cancelled` (migração 02e), erro original em `last_error`;
+o agendador só enfileira calendários vivos (`c.deleted = 0`). Os demais `dead` esperam decisão humana:
+`php scripts/gcal-manutencao.php` lista; `--requeue=ID|all` reenfileira só os NÃO permanentes. Canais push: o job
+`watch_renew` também **abre** canal onde não há nenhum (`GcalWatchService::abrirFaltantes`, no máximo 1 job/hora),
+além de renovar os que vencem — antes a criação era só pelo botão "Religar canais". Nada é apagado em nenhum caso.
+
 ⚠️ **Cron HTTP nunca deve descartar a saída.** Neste servidor, dois crons de warm-cache deram 404/401
 por 14 dias sem ninguém notar — eram exatamente os que faziam `>/dev/null`. Todo cron deste módulo loga.
 

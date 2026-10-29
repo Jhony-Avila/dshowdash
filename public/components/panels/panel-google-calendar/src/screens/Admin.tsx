@@ -99,6 +99,12 @@ function ChecklistGoLive({ golive }: { golive: ResumoGoLive }) {
     // Já abre no primeiro passo pendente: é o que a pessoa veio fazer.
     golive.itens.find((i) => !i.ok)?.id ?? null
   );
+  // `pronto` ignora os passos não bloqueantes — e o provedor é um deles. O resumo antigo mandava
+  // "apontar GCAL_PROVIDER=google" mesmo com o passo 1 concluído (DR-004 / Q-V9.8 do APP DSHOW).
+  const provedorGoogle = golive.itens.find((i) => i.id === 'provider')?.ok ?? false;
+  const resumoPronto = provedorGoogle
+    ? 'Tudo pronto. Provedor Google ativo.'
+    : 'Tudo pronto. Falta apenas apontar GCAL_PROVIDER=google no .env.';
 
   const marca = (i: PassoGoLive) =>
     i.ok ? { icone: 'check', classe: 'is-ok', texto: 'concluído' }
@@ -111,7 +117,7 @@ function ChecklistGoLive({ golive }: { golive: ResumoGoLive }) {
       <div className="gc-golive-topo">
         <p className="gc-golive-resumo">
           {golive.pronto
-            ? 'Tudo pronto. Falta apenas apontar GCAL_PROVIDER=google no .env.'
+            ? resumoPronto
             : `${golive.concluidos} de ${golive.total} passos concluídos.`}
         </p>
         <div className="gc-golive-barra" role="progressbar"
