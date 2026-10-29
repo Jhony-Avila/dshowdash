@@ -29,6 +29,10 @@
 !/api/anuncios/
 # api/home/ — endpoints resumidos da Home Inteligente (clima etc.)
 !/api/home/
+# api/weather/ — clima (Open-Meteo, sem chave): get_sao_paulo/bulk vivem em produção fora do git desde 2025; versionados byte a byte em
+# 2026-10-29 (Paridade W-INT.1, Q-INT.2 = A) para receber o forecast.php. O cache em arquivo (.cache/) NÃO é código.
+!/api/weather/
+/api/weather/.cache/
 # api/avatar/ — persistência do Avatar Studio (studio.php + SvgSanitizer)
 !/api/avatar/
 # api/google-calendar/ — módulo Google Calendar (OAuth PKCE, sync, filas). Versionado em 2026-10-28 (Q-GCAL.1 = B):
