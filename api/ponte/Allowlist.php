@@ -10,11 +10,14 @@ declare(strict_types=1);
  * W1 (28/10/2026): alertas (reconhecer, resolver, silenciar, dessilenciar — nível 80, regra do app) e notificacoes
  * (marcar_lida, marcar_todas, excluir — posse por user_id). Ondas seguintes acrescentam módulos aqui, com teste.
  * DASH-APP-V1 · DC-2 (29/10/2026): metas (definir, remover — nível 80; libs/MetaLib.php; flag `ponte.metas.escrita`).
+ * Paridade W4 (29/10/2026): agenda (responder, criar, atualizar, excluir — nível 0, posse pela conta Google do usuário; libs/AgendaLib.php;
+ * flag `ponte.agenda.escrita`; exige GCAL_OAUTH_STAGE=write).
  */
 require_once __DIR__ . '/PonteErro.php';
 require_once __DIR__ . '/libs/AlertaLib.php';
 require_once __DIR__ . '/libs/NotificacaoLib.php';
 require_once __DIR__ . '/libs/MetaLib.php';
+require_once __DIR__ . '/libs/AgendaLib.php';
 
 const PV2_ALLOWLIST = [
     'alertas' => [
@@ -31,6 +34,12 @@ const PV2_ALLOWLIST = [
     'metas' => [   // DASH-APP-V1 · DC-2: metas comerciais mensais (Q-DASH.2 — dono = Dash; Q-DC.1 — nível 80)
         'definir'      => ['tipo' => 'escrita', 'nivel' => 80, 'handler' => 'pv2h_metas_definir'],
         'remover'      => ['tipo' => 'escrita', 'nivel' => 80, 'handler' => 'pv2h_metas_remover'],
+    ],
+    'agenda' => [   // Paridade W4: Google Calendar pelo pipeline do Dash (posse + papel do calendário na GcalDb; GCAL_OAUTH_STAGE=write)
+        'responder'    => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_agenda_responder'],
+        'criar'        => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_agenda_criar'],
+        'atualizar'    => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_agenda_atualizar'],
+        'excluir'      => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_agenda_excluir'],
     ],
 ];
 
@@ -88,4 +97,24 @@ function pv2h_metas_remover(PDO $pdo, int $userId, array $payload): array
 {
     $d = meta_remover($pdo, $userId, $payload, 'app');
     return ['data' => $d, 'recurso' => ['meta', $d['id']], 'antes' => ['valor_cents' => $d['valor_anterior_cents']], 'depois' => ['removed' => 1]];
+}
+function pv2h_agenda_responder(PDO $pdo, int $userId, array $payload): array
+{
+    $d = agenda_responder($userId, $payload);
+    return ['data' => $d, 'recurso' => ['evento', null], 'depois' => ['resposta' => $payload['resposta'] ?? null, 'event_id' => $payload['event_id'] ?? null]];
+}
+function pv2h_agenda_criar(PDO $pdo, int $userId, array $payload): array
+{
+    $d = agenda_criar($userId, $payload);
+    return ['data' => $d, 'recurso' => ['evento', null], 'depois' => ['event_id' => $d['event_id'] ?? ($d['id'] ?? null), 'calendar_id' => $payload['calendar_id'] ?? null]];
+}
+function pv2h_agenda_atualizar(PDO $pdo, int $userId, array $payload): array
+{
+    $d = agenda_atualizar($userId, $payload);
+    return ['data' => $d, 'recurso' => ['evento', null], 'depois' => ['event_id' => $payload['event_id'] ?? null, 'campos' => array_values(array_diff(array_keys($payload), ['calendar_id', 'event_id', 'escopo', 'notificar']))]];
+}
+function pv2h_agenda_excluir(PDO $pdo, int $userId, array $payload): array
+{
+    $d = agenda_excluir($userId, $payload);
+    return ['data' => $d, 'recurso' => ['evento', null], 'depois' => ['deleted' => 1, 'event_id' => $payload['event_id'] ?? null]];
 }

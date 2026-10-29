@@ -88,7 +88,7 @@ final class GcalEventController
     }
 
     /** Validacoes do §17.3 que dao para checar no servidor. */
-    private static function validar(array $b): array
+    public static function validar(array $b): array   // público desde a W4 (Ponte v2 valida com a MESMA regra)
     {
         $erros = [];
         if (trim((string)($b['summary'] ?? '')) === '') {
@@ -100,7 +100,7 @@ final class GcalEventController
         return $erros + self::validarPeriodo($b);
     }
 
-    private static function validarPeriodo(array $b): array
+    public static function validarPeriodo(array $b): array
     {
         $erros = [];
         if (empty($b['start']) || empty($b['end'])) return $erros;

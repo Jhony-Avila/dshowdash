@@ -126,7 +126,7 @@ $ok($s1 === 200 && $s2 === 403 && $e2['error'] === 'PONTE_RECUSADA', '[20] mesmo
 
 // allowlist: os 7 handlers da W1 + 2 de metas (DC-2) e todos existem
 $total = 0; foreach (PV2_ALLOWLIST as $m => $as) { foreach ($as as $a => $d) { $total++; $ok(function_exists($d['handler']), "[21] handler $m.$a existe"); $ok(in_array($d['tipo'], ['leitura', 'escrita'], true) && is_int($d['nivel']), "[21] $m.$a declara tipo e nível"); } }
-$ok($total === 9, "[21] allowlist tem 9 ações: 7 da W1 + metas.definir/remover (tem $total)");
+$ok($total === 13, "[21] allowlist tem 13 ações: 7 da W1 + 2 metas + 4 agenda (tem $total)");
 
 // metas (DASH-APP-V1 · DC-2): flag própria, nível 80, validação, criar, atualizar com versão, conflito, remover, 404
 $ambM = ['flagsModulo' => ['ponte.metas.escrita' => true]];
@@ -166,6 +166,47 @@ $bh = $binds($p, $SQL_META_HIST); $ok($bh === [15, 5, 120000000, 7, 'app', null]
 $p = $pdoBase([$SQL_META_BYID => ['linhas' => []]]); [$s, $e] = $exec($p, $srv($cr), $cr, $ambM);
 $ok($s === 404 && $e['error'] === 'NAO_ENCONTRADO' && !$executou($p, $SQL_META_DEL), '[22g] remover inexistente → 404, nada apagado');
 
+// agenda (Paridade W4): flag própria, estágio read → 409, validação, posse/papel (403/404 do provedor), criar/responder/atualizar/excluir com provedor FALSO, Google fora → 503
+$GLOBALS['PV2_AGENDA_SEM_MODULO'] = true;
+final class ProvedorAgendaFalso
+{
+    public array $chamadas = [];
+    public ?Throwable $lancar = null;
+    public function __construct(public int $userId) {}
+    private function reg(string $m, array $args): array { $this->chamadas[] = [$m, $args]; if ($this->lancar) { throw $this->lancar; } return ['event_id' => 'ev-1', 'summary' => $args[0]['summary'] ?? 'x', 'user' => $this->userId]; }
+    public function responderConvite(string $c, string $e, string $r, ?string $k): array { return $this->reg('responder', [$c, $e, $r, $k]); }
+    public function criarEvento(array $p): array { return $this->reg('criar', [$p]); }
+    public function atualizarEvento(string $c, string $e, array $p, string $esc = 'this'): array { return $this->reg('atualizar', [$c, $e, $p, $esc]); }
+    public function excluirEvento(string $c, string $e, bool $n, string $esc = 'this'): void { $this->reg('excluir', [$c, $e, $n, $esc]); }
+}
+$prov = new ProvedorAgendaFalso(7);
+$GLOBALS['PV2_AGENDA_PROVIDER'] = static fn(int $u) => $prov;
+$ambA = ['flagsModulo' => ['ponte.agenda.escrita' => true]];
+$ca = $pedido('agenda', 'responder', ['calendar_id' => 'cal@x', 'event_id' => 'ev-1', 'resposta' => 'accepted']);
+[$s, $e] = $exec($pdoBase(), $srv($ca), $ca); $ok($s === 404 && $e['error'] === 'MODULO_DESLIGADO', '[23] agenda sem a flag ponte.agenda.escrita → 404');
+putenv('GCAL_OAUTH_STAGE=read');
+[$s, $e] = $exec($pdoBase(), $srv($ca), $ca, $ambA); $ok($s === 409 && $e['error'] === 'CONFLITO' && ($e['data']['stage'] ?? '') === 'read' && $prov->chamadas === [], '[23a] estágio read → 409 CONFLITO com explicação, Google não é chamado: ' . json_encode($e));
+putenv('GCAL_OAUTH_STAGE=write');
+[$s, $e] = $exec($pdoBase(), $srv($ca), $ca, $ambA); $ok($s === 200 && $prov->chamadas === [['responder', ['cal@x', 'ev-1', 'accepted', null]]] && ($e['data']['event_id'] ?? '') === 'ev-1', '[23b] responder → GcalDb::responderConvite com o user_id do app: ' . json_encode($e));
+$cb = $pedido('agenda', 'responder', ['calendar_id' => 'cal@x', 'event_id' => 'ev-1', 'resposta' => 'maybe']);
+[$s, $e] = $exec($pdoBase(), $srv($cb), $cb, $ambA); $ok($s === 422 && isset($e['data']['campos']['resposta']), '[23c] resposta inválida → 422');
+$prov->chamadas = [];
+$cc = $pedido('agenda', 'criar', ['calendar_id' => 'cal@x', 'summary' => 'Reunião', 'start' => '2026-11-03T10:00:00-03:00', 'end' => '2026-11-03T11:00:00-03:00', 'attendees' => [['email' => 'a@b.com']], 'notificar' => true]);
+[$s, $e] = $exec($pdoBase(), $srv($cc), $cc, $ambA); $ok($s === 200 && ($prov->chamadas[0][0] ?? '') === 'criar' && ($prov->chamadas[0][1][0]['summary'] ?? '') === 'Reunião' && ($prov->chamadas[0][1][0]['notificar'] ?? false) === true, '[23d] criar → GcalDb::criarEvento com o corpo do painel: ' . json_encode($e));
+$cd = $pedido('agenda', 'criar', ['calendar_id' => 'cal@x', 'summary' => '', 'start' => '2026-11-03T11:00:00-03:00', 'end' => '2026-11-03T10:00:00-03:00']);
+[$s, $e] = $exec($pdoBase(), $srv($cd), $cd, $ambA); $ok($s === 422 && isset($e['data']['campos']['summary']) && isset($e['data']['campos']['end']), '[23e] validação do painel (título vazio, fim antes do início) → 422: ' . json_encode($e));
+$prov->chamadas = []; $prov->lancar = new RuntimeException('Sem permissão de escrita neste calendário.');
+$ce = $pedido('agenda', 'atualizar', ['calendar_id' => 'cal@x', 'event_id' => 'ev-1', 'summary' => 'Novo título']);
+[$s, $e] = $exec($pdoBase(), $srv($ce), $ce, $ambA); $ok($s === 403 && $e['error'] === 'PERMISSAO_NEGADA', '[23f] calendário sem papel de escrita → 403');
+$prov->lancar = new RuntimeException('Calendário não encontrado nesta conta.');
+[$s, $e] = $exec($pdoBase(), $srv($ce), $ce, $ambA); $ok($s === 404 && $e['error'] === 'NOT_FOUND', '[23g] calendário de outra conta → 404');
+$prov->lancar = null; $prov->chamadas = [];
+$cf = $pedido('agenda', 'excluir', ['calendar_id' => 'cal@x', 'event_id' => 'ev-1', 'notificar' => true]);
+[$s, $e] = $exec($pdoBase(), $srv($cf), $cf, $ambA); $ok($s === 200 && $prov->chamadas === [['excluir', ['cal@x', 'ev-1', true, 'this']]] && ($e['data']['deleted'] ?? false) === true, '[23h] excluir → GcalDb::excluirEvento(notificar) e deleted:true');
+$prov->lancar = new Exception('curl: timeout');
+[$s, $e] = $exec($pdoBase(), $srv($cf), $cf, $ambA); $ok($s === 503 && $e['error'] === 'ORIGEM_INDISPONIVEL', '[23i] Google fora → 503 ORIGEM_INDISPONIVEL');
+unset($GLOBALS['PV2_AGENDA_PROVIDER'], $GLOBALS['PV2_AGENDA_SEM_MODULO']); putenv('GCAL_OAUTH_STAGE');
+
 exec('rm -rf ' . escapeshellarg($dir));
 if ($falhas) { echo "FALHAS (" . count($falhas) . "):\n - " . implode("\n - ", $falhas) . "\n"; exit(1); }
-echo "ponte-v2-core: OK (" . (22) . " grupos de casos)\n";
+echo "ponte-v2-core: OK (" . (23) . " grupos de casos)\n";
