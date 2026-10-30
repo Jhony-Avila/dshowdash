@@ -42,9 +42,14 @@ CorsPolicy::setupApiEndpoint([
  * e gravar permissão em tabela que ninguém lê criaria a ilusão de controle. Enquanto a Fase 1
  * é mock e só lê, o gate é autenticação. A §71 entra junto com a Fase 4, sobre UARPS.
  */
+/** Nível mínimo do módulo (igual ao Pipedrive). */
+const GA_MIN_LEVEL = 50;
+
 function ga_require_access(): void
 {
-    AuthHelpers::requireAuth();
+    // 31/10/2026 (Q-GA.3, achado DR-016): /conversions, /insights e o resumo devolvem totais REAIS do Pipedrive (GaCrm) — o
+    // módulo exige o MESMO nível do painel do Pipedrive (`pipe_require_access`, 50). Abaixo disso: 403 INSUFFICIENT_LEVEL.
+    AuthHelpers::requireAuth(GA_MIN_LEVEL);
 }
 
 /** Modo de demonstração — ligado por GA_PROVIDER=mock (default). */
