@@ -19,7 +19,7 @@ import {
   LayoutDashboard, BellRing, Trophy, TrendingUp, GitBranch,
   BriefcaseBusiness, Columns3, Target, CalendarCheck2,
   UsersRound, Building2, Package, NotebookPen,
-  UserRoundCog, Activity, Settings2, ChevronsLeft, ChevronsRight, TrendingDown, Waypoints,
+  UserRoundCog, Activity, Settings2, ChevronsLeft, ChevronsRight, TrendingDown, Waypoints, Goal,
   type LucideIcon,
 } from 'lucide-react';
 import { queryClient, apiGet, chaves } from '../lib/api';
@@ -37,13 +37,14 @@ import { Previsao } from '../screens/Previsao';
 import { SaudeSync } from '../screens/SaudeSync';
 import { Perdas } from '../screens/Perdas';
 import { OrigemLeads } from '../screens/OrigemLeads';
+import { Metas } from '../screens/Metas';
 import '../styles/tokens.css';
 
 const HASH_BASE = '#/panel-pipedrive';
-const VERSAO = '2.3.0';
+const VERSAO = '2.4.0';
 
 type TelaId = 'geral' | 'alertas' | 'rankings' | 'previsao' | 'perdas' | 'origem' | 'negocios' | 'kanban' | 'pessoas'
-  | 'organizacoes' | 'atividades' | 'leads' | 'produtos' | 'notas' | 'funis' | 'usuarios' | 'saude' | 'config';
+  | 'organizacoes' | 'atividades' | 'leads' | 'produtos' | 'notas' | 'funis' | 'usuarios' | 'saude' | 'config' | 'metas';
 
 const TELAS: Record<TelaId, { label: string; Icon: LucideIcon }> = {
   geral:        { label: 'Visão Geral',   Icon: LayoutDashboard },
@@ -57,6 +58,7 @@ const TELAS: Record<TelaId, { label: string; Icon: LucideIcon }> = {
   kanban:       { label: 'Kanban',        Icon: Columns3 },
   leads:        { label: 'Leads',         Icon: Target },
   atividades:   { label: 'Atividades',    Icon: CalendarCheck2 },
+  metas:        { label: 'Metas',         Icon: Goal },
   pessoas:      { label: 'Pessoas',       Icon: UsersRound },
   organizacoes: { label: 'Organizações',  Icon: Building2 },
   produtos:     { label: 'Produtos',      Icon: Package },
@@ -69,7 +71,7 @@ const TELAS: Record<TelaId, { label: string; Icon: LucideIcon }> = {
 // Agrupamento da navegação (§6.3).
 const GRUPOS: { id: string; label: string; itens: TelaId[] }[] = [
   { id: 'analise',   label: 'Análise',        itens: ['geral', 'alertas', 'rankings', 'previsao', 'perdas', 'origem', 'funis'] },
-  { id: 'comercial', label: 'Comercial',      itens: ['negocios', 'kanban', 'leads', 'atividades'] },
+  { id: 'comercial', label: 'Comercial',      itens: ['negocios', 'kanban', 'leads', 'atividades', 'metas'] },
   { id: 'cadastros', label: 'Cadastros',      itens: ['pessoas', 'organizacoes', 'produtos', 'notas'] },
   { id: 'admin',     label: 'Administração',  itens: ['usuarios', 'saude', 'config'] },
 ];
@@ -219,6 +221,7 @@ function Shell() {
           : tela === 'pessoas' ? <Pessoas status={status} />
           : tela === 'organizacoes' ? <Organizacoes status={status} />
           : tela === 'atividades' ? <Atividades status={status} />
+          : tela === 'metas' ? <Metas />
           : tela === 'produtos' ? <Produtos status={status} />
           : tela === 'notas' ? <Notas status={status} />
           : tela === 'funis' ? <Funis status={status} />

@@ -33,6 +33,9 @@
 //   GET    /health               saude do sync: entidades/runs/fila/erros/uso API (modulo)
 //   POST   /deal-products        sincroniza produtos dos negocios — CARO (admin)
 //   POST   /reconcile            reconciliacao de exclusoes (deleted-scan/presence) (admin)
+//   GET    /metas                metas comerciais do mes + vendedores + historico (nivel 80; EC Fase 2)
+//   PUT    /metas                define meta global/vendedor (MetaLib, origem 'dash'; nivel 80)
+//   DELETE /metas/{id}           remove meta (MetaLib; nivel 80)
 declare(strict_types=1);
 
 @ini_set('display_errors', '0');   // nunca vazar stack/paths ao cliente
@@ -184,6 +187,10 @@ switch ($segments[0] ?? '') {
 
     case 'deal-products':
         PipeMetricsController::dealProducts($method, $pdo);
+        break;
+
+    case 'metas':
+        PipeMetasController::route($method, $segments, $pdo);
         break;
 
     default:
