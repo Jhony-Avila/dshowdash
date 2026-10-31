@@ -36,6 +36,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/_init.php';
 
 set_exception_handler(static function (\Throwable $e): void {
+    if ($e instanceof GaIndisponivel) {   // 31/10/2026: erro TIPADO do provedor real (configuração, credencial, cota, Google fora) → 503/400 estável
+        ApiResponse::error($e->codigo, $e->status, ['message' => $e->getMessage()] + $e->meta);
+    }
     error_log('[ga] uncaught ' . get_class($e) . ': ' . $e->getMessage()
         . ' @ ' . $e->getFile() . ':' . $e->getLine());
     ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, [

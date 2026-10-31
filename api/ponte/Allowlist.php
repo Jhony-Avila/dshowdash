@@ -12,12 +12,15 @@ declare(strict_types=1);
  * DASH-APP-V1 · DC-2 (29/10/2026): metas (definir, remover — nível 80; libs/MetaLib.php; flag `ponte.metas.escrita`).
  * Paridade W4 (29/10/2026): agenda (responder, criar, atualizar, excluir — nível 0, posse pela conta Google do usuário; libs/AgendaLib.php;
  * flag `ponte.agenda.escrita`; exige GCAL_OAUTH_STAGE=write).
+ * Noite 2 (31/10/2026): analytics — LEITURA do Google Analytics (provedor do módulo: mock ou GA4 real) para o app; nível 50 nos relatórios
+ * (Q-GA.2, o mesmo do Pipedrive) e 80 em status/propriedades/qualidade ("Status da integração"); flag `ponte.analytics.leitura` (ausente = OFF).
  */
 require_once __DIR__ . '/PonteErro.php';
 require_once __DIR__ . '/libs/AlertaLib.php';
 require_once __DIR__ . '/libs/NotificacaoLib.php';
 require_once __DIR__ . '/libs/MetaLib.php';
 require_once __DIR__ . '/libs/AgendaLib.php';
+require_once __DIR__ . '/libs/AnalyticsLib.php';
 
 const PV2_ALLOWLIST = [
     'alertas' => [
@@ -34,6 +37,24 @@ const PV2_ALLOWLIST = [
     'metas' => [   // DASH-APP-V1 · DC-2: metas comerciais mensais (Q-DASH.2 — dono = Dash; Q-DC.1 — nível 80)
         'definir'      => ['tipo' => 'escrita', 'nivel' => 80, 'handler' => 'pv2h_metas_definir'],
         'remover'      => ['tipo' => 'escrita', 'nivel' => 80, 'handler' => 'pv2h_metas_remover'],
+    ],
+    'analytics' => [   // Noite 2: leitura do Google Analytics (Q-GA.1/Q-GA.2); handler único por relatório
+        'visao_geral' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_visao_geral'],
+        'tempo_real' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_tempo_real'],
+        'aquisicao' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_aquisicao'],
+        'fluxo' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_fluxo'],
+        'paginas' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_paginas'],
+        'eventos' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_eventos'],
+        'conversoes' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_conversoes'],
+        'funil' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_funil'],
+        'jornada' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_jornada'],
+        'ecommerce' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_ecommerce'],
+        'usuarios' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_usuarios'],
+        'alertas' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_alertas'],
+        'insights' => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_analytics_insights'],
+        'status' => ['tipo' => 'leitura', 'nivel' => 80, 'handler' => 'pv2h_analytics_status'],
+        'propriedades' => ['tipo' => 'leitura', 'nivel' => 80, 'handler' => 'pv2h_analytics_propriedades'],
+        'qualidade' => ['tipo' => 'leitura', 'nivel' => 80, 'handler' => 'pv2h_analytics_qualidade'],
     ],
     'agenda' => [   // Paridade W4: Google Calendar pelo pipeline do Dash (posse + papel do calendário na GcalDb; GCAL_OAUTH_STAGE=write)
         'responder'    => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_agenda_responder'],
@@ -118,3 +139,21 @@ function pv2h_agenda_excluir(PDO $pdo, int $userId, array $payload): array
     $d = agenda_excluir($userId, $payload);
     return ['data' => $d, 'recurso' => ['evento', null], 'depois' => ['deleted' => 1, 'event_id' => $payload['event_id'] ?? null]];
 }
+
+// ── analytics (leitura) ──────────────────────────────────────────────
+function pv2h_analytics_visao_geral(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('visao_geral', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_tempo_real(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('tempo_real', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_aquisicao(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('aquisicao', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_fluxo(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('fluxo', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_paginas(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('paginas', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_eventos(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('eventos', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_conversoes(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('conversoes', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_funil(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('funil', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_jornada(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('jornada', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_ecommerce(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('ecommerce', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_usuarios(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('usuarios', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_alertas(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('alertas', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_insights(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('insights', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_status(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('status', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_propriedades(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('propriedades', $payload), 'recurso' => ['analytics', 0]]; }
+function pv2h_analytics_qualidade(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('qualidade', $payload), 'recurso' => ['analytics', 0]]; }

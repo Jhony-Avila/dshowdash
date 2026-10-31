@@ -26,8 +26,16 @@ final class GaStatusController
     public static function headerSummary(GaProvider $p): void
     {
         $f  = ga_filtros();
+        // 31/10/2026 (Noite 2): o estado vem PRIMEIRO — no provedor real sem configuração, "não configurado" sem chamar o Google
+        // (antes o tempo real respondia 503 e o badge nunca aparecia); "hoje" no fuso de São Paulo (antes date() do servidor).
+        $pronto = ga_is_mock() || ($p->status()['pronto'] ?? false);
+        if (!$pronto) {
+            ApiResponse::success(['ativos_agora' => null, 'sessoes_hoje' => null, 'conversoes_hoje' => null, 'taxa_conversao' => null, 'alertas' => 0, 'alertas_altos' => 0,
+                'badge' => ['tipo' => 'erro', 'texto' => 'não configurado'], 'estado' => 'nao_configurado'], ['ts' => date('c')]);
+            return;
+        }
         $rt = $p->tempoReal($f);
-        $ov = $p->overview(['periodo' => 'hoje', 'inicio' => date('Y-m-d'), 'fim' => date('Y-m-d')]);
+        $ov = $p->overview(ga_filtros_de(['periodo' => 'hoje']));
 
         $pega = static function (array $kpis, string $chave) {
             foreach ($kpis as $k) { if (($k['chave'] ?? '') === $chave) { return $k['valor']; } }
@@ -40,9 +48,7 @@ final class GaStatusController
 
         // Prioridade do badge (§9.3): falha de autenticação vem antes de tudo.
         $badge = null;
-        if (!($p->status()['pronto'] ?? false)) {
-            $badge = ['tipo' => 'erro', 'texto' => 'não configurado'];
-        } elseif ($altas > 0) {
+        if ($altas > 0) {
             $badge = ['tipo' => 'atencao', 'texto' => (string)$altas];
         } elseif (count($alertas) > 0) {
             $badge = ['tipo' => 'info', 'texto' => (string)count($alertas)];
@@ -56,7 +62,7 @@ final class GaStatusController
             'alertas'        => count($alertas),
             'alertas_altos'  => $altas,
             'badge'          => $badge,
-            'estado'         => ga_is_mock() ? 'mock' : (($p->status()['pronto'] ?? false) ? 'conectado' : 'nao_configurado'),
+            'estado'         => ga_is_mock() ? 'mock' : 'conectado',
         ], ($rt['meta'] ?? []) + ['ts' => date('c')]);
     }
 }

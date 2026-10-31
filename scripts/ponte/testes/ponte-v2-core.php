@@ -126,7 +126,7 @@ $ok($s1 === 200 && $s2 === 403 && $e2['error'] === 'PONTE_RECUSADA', '[20] mesmo
 
 // allowlist: os 7 handlers da W1 + 2 de metas (DC-2) e todos existem
 $total = 0; foreach (PV2_ALLOWLIST as $m => $as) { foreach ($as as $a => $d) { $total++; $ok(function_exists($d['handler']), "[21] handler $m.$a existe"); $ok(in_array($d['tipo'], ['leitura', 'escrita'], true) && is_int($d['nivel']), "[21] $m.$a declara tipo e nível"); } }
-$ok($total === 13, "[21] allowlist tem 13 ações: 7 da W1 + 2 metas + 4 agenda (tem $total)");
+$ok($total === 29, "[21] allowlist tem 29 ações: 7 da W1 + 2 metas + 4 agenda + 16 de leitura do analytics (tem $total)");
 
 // metas (DASH-APP-V1 · DC-2): flag própria, nível 80, validação, criar, atualizar com versão, conflito, remover, 404
 $ambM = ['flagsModulo' => ['ponte.metas.escrita' => true]];
