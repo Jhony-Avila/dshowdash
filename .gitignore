@@ -84,6 +84,8 @@
 !/scripts/ponte/
 # scripts/google-analytics/ — testes do módulo Google Analytics (nível de acesso, provedor real com Google FALSO)
 !/scripts/google-analytics/
+# scripts/datatables/ — testes do modulo DataTables (nivel de acesso, 31/10/2026)
+!/scripts/datatables/
 # testes do forecast.php (clima da cidade atual do APP DSHOW, 2026-10-29)
 !/scripts/weather/
 # testes, smoke, cron e worker do Google Calendar (2026-10-28)

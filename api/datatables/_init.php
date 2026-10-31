@@ -76,8 +76,13 @@ function dt_query(array $keys): array
     return $out;
 }
 
-/** Nivel minimo do modulo: equipe de desenvolvimento (§4). */
+/** Nivel minimo do modulo: equipe de desenvolvimento (§4) — o mesmo do app e da Ponte para alertas (80). */
+const DT_MIN_LEVEL = 80;
+
 function dt_require_access(): void
 {
-    AuthHelpers::requireAuth();
+    // 31/10/2026 (APP DSHOW, Mega V2 · P0 da Onda 0): antes so autenticacao — qualquer conta (nivel 0) lia a infraestrutura e ESCREVIA
+    // (conexoes com senha, segredos de canal, silencios, regras, descoberta, manutencao). Agora exige o nivel da equipe: abaixo → 403
+    // INSUFFICIENT_LEVEL, antes do CSRF e de qualquer acesso a banco. Scripts de CLI (monitor, smoke, catalogo) nao passam por aqui.
+    AuthHelpers::requireAuth(DT_MIN_LEVEL);
 }
