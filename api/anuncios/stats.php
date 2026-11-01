@@ -3,14 +3,18 @@
 // Painel de aprendizado (Fase 22 — aprendizado contínuo): agregados de uso
 // e avaliações do Consultor de Anúncios.
 // @module  anuncios.stats
-// @version 1.0.0
+// @version 1.1.0
 // @created 2026-07-28
 //
-//   GET → { totais, por_modo, dominios, sem_cobertura, negativas, recentes }
+//   GET [?escopo=meus] → { totais, por_modo, dominios, sem_cobertura, negativas, recentes, atividade, escopo }
 //
-// Escopo v1: agregados de TODOS os usuários (ferramenta interna da equipe;
-// as perguntas alimentam a evolução da metodologia). Se no futuro for
-// necessário restringir a administradores, o gate entra aqui (min_level).
+// 1.1.0 (31/10/2026 — isolamento por usuário, aprovado pelo Jhony): antes qualquer sessão via o TEXTO das
+// perguntas/respostas de todos. Agora:
+//   - listas com texto (negativas, sem_cobertura, recentes) = SEMPRE só das conversas do próprio usuário;
+//   - agregados (totais, por_modo, dominios, atividade) = do próprio usuário; gestão (nível ≥ 80) vê os
+//     agregados de TODOS (números, nunca texto de terceiros). `?escopo=meus` força o recorte pessoal.
+//   - `escopo` na resposta diz o que foi aplicado: { agregados: todos|meus, listas: meus }.
+// O formato dos demais campos não muda (painéis Anúncios e Geral seguem iguais).
 
 declare(strict_types=1);
 
@@ -20,39 +24,66 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     ApiResponse::error(ApiResponse::ERR_METHOD_NOT_ALLOWED, 405, ['message' => 'Use GET.']);
 }
 
-anuncios_user_id(); // exige sessão válida
+/** Nível da gestão: vê os agregados de todos os usuários (sem texto de terceiros). */
+const ANUNCIOS_STATS_GESTAO_MIN_LEVEL = 80;
+
+$userId = anuncios_user_id(); // exige sessão válida
+$nivel = (int) ((getCurrentUser() ?? [])['level'] ?? 0);
+$agregadosTodos = $nivel >= ANUNCIOS_STATS_GESTAO_MIN_LEVEL && ($_GET['escopo'] ?? '') !== 'meus';
 $pdo = anuncios_pdo();
 
-// ── Totais gerais ───────────────────────────────────────────────────────────
-$totais = $pdo->query(
-    'SELECT
-        (SELECT COUNT(*) FROM anuncios_conversas)                                  AS conversas,
-        (SELECT COUNT(*) FROM anuncios_mensagens WHERE role = "user")              AS perguntas,
-        (SELECT COUNT(*) FROM anuncios_mensagens WHERE feedback = 1)               AS positivas,
-        (SELECT COUNT(*) FROM anuncios_mensagens WHERE feedback = -1)              AS negativas,
-        (SELECT COUNT(*) FROM anuncios_mensagens
-          WHERE role = "assistant" AND (units_json IS NULL OR units_json = "[]"))  AS sem_cobertura'
-)->fetch(PDO::FETCH_ASSOC);
-$totais = array_map('intval', $totais ?: []);
+/**
+ * Filtro de posse sobre anuncios_mensagens (alias m). $todos = sem filtro (só agregados da gestão).
+ * Retorna [sql, params]; o sql começa com "AND".
+ */
+function anuncios_stats_posse(bool $todos, int $userId): array
+{
+    if ($todos) { return ['', []]; }
+    return [' AND m.conversa_id IN (SELECT c.id FROM anuncios_conversas c WHERE c.user_id = ?)', [$userId]];
+}
+
+[$posseAgr, $pAgr] = anuncios_stats_posse($agregadosTodos, $userId);
+[$posseMeus, $pMeus] = anuncios_stats_posse(false, $userId);
+
+function anuncios_stats_um(PDO $pdo, string $sql, array $params): int
+{
+    $st = $pdo->prepare($sql);
+    $st->execute($params);
+    return (int) $st->fetchColumn();
+}
+
+// ── Totais ──────────────────────────────────────────────────────────────────
+$totais = [
+    'conversas' => $agregadosTodos
+        ? anuncios_stats_um($pdo, 'SELECT COUNT(*) FROM anuncios_conversas', [])
+        : anuncios_stats_um($pdo, 'SELECT COUNT(*) FROM anuncios_conversas WHERE user_id = ?', [$userId]),
+    'perguntas'     => anuncios_stats_um($pdo, 'SELECT COUNT(*) FROM anuncios_mensagens m WHERE m.role = "user"' . $posseAgr, $pAgr),
+    'positivas'     => anuncios_stats_um($pdo, 'SELECT COUNT(*) FROM anuncios_mensagens m WHERE m.feedback = 1' . $posseAgr, $pAgr),
+    'negativas'     => anuncios_stats_um($pdo, 'SELECT COUNT(*) FROM anuncios_mensagens m WHERE m.feedback = -1' . $posseAgr, $pAgr),
+    'sem_cobertura' => anuncios_stats_um($pdo, 'SELECT COUNT(*) FROM anuncios_mensagens m
+          WHERE m.role = "assistant" AND (m.units_json IS NULL OR m.units_json = "[]")' . $posseAgr, $pAgr),
+];
 
 // ── Por modo (consultant × retrieval_only) ─────────────────────────────────
 $porModo = [];
-$st = $pdo->query(
-    'SELECT mode, COUNT(*) AS n FROM anuncios_mensagens
-     WHERE role = "assistant" AND mode IS NOT NULL AND mode <> ""
-     GROUP BY mode'
+$st = $pdo->prepare(
+    'SELECT m.mode, COUNT(*) AS n FROM anuncios_mensagens m
+     WHERE m.role = "assistant" AND m.mode IS NOT NULL AND m.mode <> ""' . $posseAgr . '
+     GROUP BY m.mode'
 );
+$st->execute($pAgr);
 foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
     $porModo[$r['mode']] = (int) $r['n'];
 }
 
 // ── Domínios mais consultados (decodifica units_json das últimas 500) ──────
 $dominios = [];
-$st = $pdo->query(
-    'SELECT units_json FROM anuncios_mensagens
-     WHERE role = "assistant" AND units_json IS NOT NULL AND units_json <> "[]"
-     ORDER BY id DESC LIMIT 500'
+$st = $pdo->prepare(
+    'SELECT m.units_json FROM anuncios_mensagens m
+     WHERE m.role = "assistant" AND m.units_json IS NOT NULL AND m.units_json <> "[]"' . $posseAgr . '
+     ORDER BY m.id DESC LIMIT 500'
 );
+$st->execute($pAgr);
 foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $json) {
     $units = json_decode((string) $json, true);
     if (!is_array($units)) { continue; }
@@ -71,8 +102,9 @@ foreach ($dominios as $dom => $n) {
 /**
  * Junta a pergunta (mensagem user imediatamente anterior) a cada resposta.
  * Retorna linhas: pergunta, resposta (trecho), mode, feedback, comment, data.
+ * SEMPRE recortado pelas conversas do usuário ($posse/$params de anuncios_stats_posse(false, …)).
  */
-function anuncios_stats_linhas(PDO $pdo, string $where, int $limite): array
+function anuncios_stats_linhas(PDO $pdo, string $where, string $posse, array $params, int $limite): array
 {
     $st = $pdo->prepare(
         "SELECT m.id, m.conversa_id, m.content, m.mode, m.feedback,
@@ -81,10 +113,10 @@ function anuncios_stats_linhas(PDO $pdo, string $where, int $limite): array
                   WHERE p.conversa_id = m.conversa_id AND p.role = 'user' AND p.id < m.id
                   ORDER BY p.id DESC LIMIT 1) AS pergunta
          FROM anuncios_mensagens m
-         WHERE m.role = 'assistant' AND $where
+         WHERE m.role = 'assistant' AND $where$posse
          ORDER BY m.id DESC LIMIT $limite"
     );
-    $st->execute();
+    $st->execute($params);
     $linhas = [];
     foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
         $resposta = (string) $r['content'];
@@ -104,26 +136,23 @@ function anuncios_stats_linhas(PDO $pdo, string $where, int $limite): array
     return $linhas;
 }
 
-// ── Respostas negativas (lacunas confirmadas por humano) ───────────────────
-$negativas = anuncios_stats_linhas($pdo, 'm.feedback = -1', 20);
+// ── Respostas negativas (lacunas confirmadas por humano) — só as do usuário ─
+$negativas = anuncios_stats_linhas($pdo, 'm.feedback = -1', $posseMeus, $pMeus, 20);
 
-// ── Perguntas sem cobertura (nenhuma unidade recuperada) ───────────────────
-$semCobertura = anuncios_stats_linhas(
-    $pdo,
-    '(m.units_json IS NULL OR m.units_json = "[]")',
-    20
-);
+// ── Perguntas sem cobertura (nenhuma unidade recuperada) — só as do usuário ─
+$semCobertura = anuncios_stats_linhas($pdo, '(m.units_json IS NULL OR m.units_json = "[]")', $posseMeus, $pMeus, 20);
 
-// ── Últimas perguntas (visão geral do uso) ─────────────────────────────────
-$recentes = anuncios_stats_linhas($pdo, '1=1', 20);
+// ── Últimas perguntas — só as do usuário ────────────────────────────────────
+$recentes = anuncios_stats_linhas($pdo, '1=1', $posseMeus, $pMeus, 20);
 
 // ── Atividade: perguntas por dia (últimos 30 dias) ─────────────────────────
 $atividade = [];
-$st = $pdo->query(
-    'SELECT DATE(created_at) AS dia, COUNT(*) AS n FROM anuncios_mensagens
-     WHERE role = "user" AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-     GROUP BY DATE(created_at) ORDER BY dia'
+$st = $pdo->prepare(
+    'SELECT DATE(m.created_at) AS dia, COUNT(*) AS n FROM anuncios_mensagens m
+     WHERE m.role = "user" AND m.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)' . $posseAgr . '
+     GROUP BY DATE(m.created_at) ORDER BY dia'
 );
+$st->execute($pAgr);
 foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
     $atividade[] = ['dia' => (string) $r['dia'], 'n' => (int) $r['n']];
 }
@@ -136,4 +165,5 @@ ApiResponse::success([
     'sem_cobertura' => $semCobertura,
     'recentes'      => $recentes,
     'atividade'     => $atividade,
+    'escopo'        => ['agregados' => $agregadosTodos ? 'todos' : 'meus', 'listas' => 'meus'],
 ]);
