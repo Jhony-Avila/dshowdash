@@ -1,0 +1,2 @@
+# cache-bust manifest — chave<TAB>token<TAB>sha256 do asset
+sidebar-bundle	20260720	cbcdc72fbfb9849e3b443c57b38574b2a5202ec7a5015b90d4478cb05ef44716

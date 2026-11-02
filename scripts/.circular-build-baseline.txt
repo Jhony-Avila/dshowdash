@@ -1,0 +1,31 @@
+# Alvos com cadeia de build circular — baseline aceito.
+# Gerado por detect-circular-build.sh --update em 2026-07-30 18:55 UTC
+# Consertar um alvo = removê-lo desta lista via --update.
+_shared-integration
+_shared-ui-feedback
+api-client
+app-shell
+asset-loader
+context-provider
+core-auth
+core-kernel
+core-runtime
+enterprise-loader
+environment-manager
+error-boundary
+event-bus
+events-catalog
+feature-flags
+footer
+global-state
+header
+layout-manager
+logger-global
+login-modal
+nav-rail
+overlay-layer
+preloader
+security
+session-manager
+ticker
+toast

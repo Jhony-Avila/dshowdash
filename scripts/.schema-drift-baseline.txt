@@ -1,0 +1,39 @@
+# .schema-drift-baseline.txt — PASSIVO CONHECIDO do detector 6/6 (schema drift)
+#
+# ATENCAO: estas linhas NAO sao "falso positivo aceito". Sao DEFEITOS REAIS ja
+# verificados no banco em 2026-07-27 (rev.2), congelados aqui para que o check-all volte a
+# ficar verde e um achado NOVO volte a ser sinal (mesma logica do detector 2/6).
+# Triagem e evidencia: /claude/docs/SCHEMA-DRIFT-TRIAGEM-2026-07-27 (rev.2).md
+#
+# Formato: arquivo:tabela  |  arquivo:tabela:coluna   (# comenta a linha)
+# Corrigiu um item? APAGUE a linha — ela volta a apitar se o defeito voltar.
+api/admin/orchestrator/flags.php:app_orchestrator_flags
+api/admin/orchestrator/index.php:app_orchestrator_flags
+api/admin/orchestrator/index.php:app_orchestrator_rules
+api/admin/orchestrator/rules.php:app_orchestrator_rules
+api/logs/index.php:app_logs
+api/permission-audit/index.php:app_permission_audit
+api/permissions/index.php:app_user_permissions
+api/permissions/migration-seed.php:roles
+api/saved-views/index.php:app_saved_views
+api/security-events/index.php:app_security_events
+api/status/financial.php:requisicoes
+api/users/security.php:app_user_security
+api/admin/panels/screenshot.php:panel_registry:route
+api/modules/footer/api.php:footer_items:uarps_trigger_id
+api/modules/panels/panel-05/api.php:orcamento:id_organizacao
+api/notification-rules/index.php:app_notification_rules:user_id
+api/notification-rules/index.php:app_notification_rules:event_type
+api/notification-rules/index.php:app_notification_rules:conditions
+api/notification-rules/index.php:app_notification_rules:actions
+api/notification-rules/index.php:app_notification_rules:channels
+api/notification-rules/index.php:app_notification_rules:is_active
+api/permissions/index.php:app_role_permissions:granted
+api/ui/header/index.php:header_components:created_by
+api/ui/header/index.php:header_groups:created_by
+api/users/notification-settings.php:app_user_preferences:email_notifications
+api/users/notification-settings.php:app_user_preferences:push_notifications
+api/users/notification-settings.php:app_user_preferences:sms_notifications
+api/users/notification-settings.php:app_user_preferences:notification_frequency
+api/users/notification-settings.php:app_user_preferences:quiet_hours_start
+api/users/notification-settings.php:app_user_preferences:quiet_hours_end
