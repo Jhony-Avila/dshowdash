@@ -1,0 +1,34 @@
+/* EDTS - Enterprise Dynamic Theming System
+ * @version 1.0.1
+ * @description Variáveis CSS derivadas do banco EDTS
+ * Tema: dark-default (valores ajustados para match visual atual)
+ * 
+ * NOTA: Valores calibrados para manter visual 100% idêntico
+ * durante migração piloto. Futuramente serão normalizados.
+ */
+
+:root {
+  /* === BACKGROUND === */
+  --edts-background-app: #0a0a0f;
+  --edts-background-surface: #12121a;
+  --edts-background-elevated: #16161f;
+
+  /* === TEXT === */
+  --edts-text-primary: #f0f0f5;
+  --edts-text-secondary: #a0a0b0;
+  --edts-text-muted: #606070;
+
+  /* === ACCENT === */
+  --edts-accent-primary: #7C3AED;
+
+  /* === STATUS === */
+  --edts-status-success: #22c55e;
+  --edts-status-warning: #f59e0b;
+  --edts-status-error: #ef4444;
+  --edts-status-info: #6366f1;
+  --edts-status-inactive: #64748B;
+
+  /* === BORDER === */
+  --edts-border-subtle: #2a2a3a;
+  --edts-border-default: #2a2a3a;
+}

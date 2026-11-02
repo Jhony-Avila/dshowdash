@@ -1,0 +1,6 @@
+; tests/api-navigation-test.config.example — formato do arquivo apontado por DSHOW_NAV_TEST_CONFIG.
+; Guardar FORA do webroot, modo 0600, dono = quem roda o teste. Nunca versionar o arquivo real.
+; Use a base da VALIDAÇÃO (http://127.0.0.1:<porta>) e um usuário sintético; nunca a produção.
+base_url = "http://127.0.0.1:PORTA"
+login_user = "USUARIO_SINTETICO"
+login_pass = "SENHA_DO_USUARIO_SINTETICO"

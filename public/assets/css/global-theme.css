@@ -1,0 +1,233 @@
+/* Global Theme & Density CSS v1.0.0 */
+/* Aplicado automaticamente pelo theme-applier.js */
+
+:root {
+  /* Cores base - Tema escuro (padrão) */
+  --bg-primary: #09090b;
+  --bg-secondary: #111113;
+  --bg-tertiary: #1a1a1d;
+  --bg-card: rgba(255,255,255,0.015);
+  --bg-card-hover: rgba(255,255,255,0.025);
+  --border-color: rgba(255,255,255,0.04);
+  --border-color-hover: rgba(255,255,255,0.08);
+  --text-primary: rgba(255,255,255,0.9);
+  --text-secondary: rgba(255,255,255,0.7);
+  --text-tertiary: rgba(255,255,255,0.5);
+  --text-muted: rgba(255,255,255,0.35);
+  --accent-primary: #7c3aed;
+  --accent-secondary: #a78bfa;
+  --accent-bg: rgba(139,92,246,0.1);
+  --success: #34d399;
+  --success-bg: rgba(16,185,129,0.1);
+  --warning: #fbbf24;
+  --warning-bg: rgba(245,158,11,0.1);
+  --error: #f87171;
+  --error-bg: rgba(239,68,68,0.1);
+  
+  /* Densidade - Confortável (padrão) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --font-size-xs: 10px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 14px;
+  --font-size-xl: 16px;
+  --line-height: 1.5;
+  --card-padding: 14px;
+  --button-padding: 8px 14px;
+  --border-radius-sm: 6px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 10px;
+  
+  /* Transições */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+/* Tema Claro */
+:root.theme-light, :root[data-theme="light"] {
+  --bg-primary: #fafafa;
+  --bg-secondary: #f4f4f5;
+  --bg-tertiary: #e4e4e7;
+  --bg-card: rgba(0,0,0,0.02);
+  --bg-card-hover: rgba(0,0,0,0.04);
+  --border-color: rgba(0,0,0,0.08);
+  --border-color-hover: rgba(0,0,0,0.12);
+  --text-primary: rgba(0,0,0,0.9);
+  --text-secondary: rgba(0,0,0,0.7);
+  --text-tertiary: rgba(0,0,0,0.5);
+  --text-muted: rgba(0,0,0,0.35);
+  --accent-primary: #7c3aed;
+  --accent-secondary: #6d28d9;
+  --accent-bg: rgba(124,58,237,0.08);
+  /* Status — tons ajustados para contraste em superfície CLARA (mantêm semântica verde/âmbar/vermelho).
+     No dark (:root) seguem #34d399/#fbbf24/#f87171, calibrados para fundo escuro. */
+  --success: #047857;
+  --success-bg: rgba(5,150,105,0.10);
+  --warning: #b45309;
+  --warning-bg: rgba(180,83,9,0.10);
+  --error: #dc2626;
+  --error-bg: rgba(220,38,38,0.09);
+}
+
+/* Densidade Compacta */
+:root.density-compact, :root[data-density="compact"] {
+  --spacing-xs: 2px;
+  --spacing-sm: 4px;
+  --spacing-md: 8px;
+  --spacing-lg: 12px;
+  --spacing-xl: 16px;
+  --font-size-xs: 9px;
+  --font-size-sm: 11px;
+  --font-size-md: 12px;
+  --font-size-lg: 13px;
+  --font-size-xl: 14px;
+  --line-height: 1.3;
+  --card-padding: 10px;
+  --button-padding: 6px 10px;
+}
+
+/* Densidade Espaçosa */
+:root.density-spacious, :root[data-density="spacious"] {
+  --spacing-xs: 6px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 15px;
+  --font-size-xl: 18px;
+  --line-height: 1.6;
+  --card-padding: 18px;
+  --button-padding: 10px 18px;
+}
+
+/* Classes utilitárias globais */
+.g-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--card-padding);
+  transition: all var(--transition-normal);
+}
+.g-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-color-hover);
+}
+.g-text-primary { color: var(--text-primary); }
+.g-text-secondary { color: var(--text-secondary); }
+.g-text-muted { color: var(--text-muted); }
+.g-bg-primary { background: var(--bg-primary); }
+.g-bg-secondary { background: var(--bg-secondary); }
+
+/* Melhoria #10: Toast Notifications Premium */
+.g-toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.g-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  pointer-events: auto;
+  animation: toastSlideIn 0.3s ease;
+  max-width: 360px;
+}
+.g-toast.success { border-left: 3px solid var(--success); }
+.g-toast.error { border-left: 3px solid var(--error); }
+.g-toast.warning { border-left: 3px solid var(--warning); }
+.g-toast.info { border-left: 3px solid var(--accent-primary); }
+.g-toast-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.g-toast.success .g-toast-icon { color: var(--success); }
+.g-toast.error .g-toast-icon { color: var(--error); }
+.g-toast.warning .g-toast-icon { color: var(--warning); }
+.g-toast.info .g-toast-icon { color: var(--accent-primary); }
+.g-toast-content { flex: 1; }
+.g-toast-close {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+}
+.g-toast-close:hover { opacity: 1; }
+.g-toast.hiding { animation: toastSlideOut 0.2s ease forwards; }
+
+@keyframes toastSlideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes toastSlideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Melhoria #12: Indicador de Sincronização */
+.g-sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.g-sync-indicator.online {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.g-sync-indicator.offline {
+  background: var(--error-bg);
+  color: var(--error);
+}
+.g-sync-indicator.syncing {
+  background: var(--accent-bg);
+  color: var(--accent-secondary);
+}
+.g-sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.g-sync-indicator.syncing .g-sync-dot {
+  animation: syncPulse 1s ease infinite;
+}
+@keyframes syncPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

@@ -1,0 +1,65 @@
+/**
+ * Animations - Utilities
+ * @version 2.0.0
+ * @description Transition utilities, delays, accessibility, no-anim
+ */
+
+.anim-transition-transform {
+  transition: transform var(--anim-duration-base) var(--anim-ease);
+}
+
+.anim-transition-opacity {
+  transition: opacity var(--anim-duration-base) var(--anim-ease);
+}
+
+.anim-transition-colors {
+  transition: color var(--anim-duration-base) var(--anim-ease),
+              background-color var(--anim-duration-base) var(--anim-ease),
+              border-color var(--anim-duration-base) var(--anim-ease);
+}
+
+.anim-transition-fast {
+  transition-duration: var(--anim-duration-fast);
+}
+
+.anim-transition-slow {
+  transition-duration: var(--anim-duration-slow);
+}
+
+.anim-delay-100 { animation-delay: 0.1s; }
+.anim-delay-200 { animation-delay: 0.2s; }
+.anim-delay-300 { animation-delay: 0.3s; }
+.anim-delay-500 { animation-delay: 0.5s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-in,
+  .anim-fade-in-up,
+  .anim-fade-in-down,
+  .anim-fade-in-left,
+  .anim-fade-in-right,
+  .anim-scale-in,
+  .anim-slide-in-right,
+  .anim-slide-in-left,
+  .anim-stagger-item,
+  .anim-hover-lift,
+  .anim-hover-scale,
+  .anim-hover-glow,
+  .anim-pulse,
+  .anim-bounce,
+  .anim-shake,
+  .anim-shimmer,
+  .anim-page-enter,
+  .anim-transition-transform,
+  .anim-transition-opacity,
+  .anim-transition-colors {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.no-anim *,
+.no-anim *::before,
+.no-anim *::after {
+  animation: none !important;
+  transition: none !important;
+}

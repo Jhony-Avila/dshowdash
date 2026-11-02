@@ -1,0 +1,92 @@
+{
+  "inputs": {
+    "components/panels/panel-criacao-botoes/index.ts": {
+      "bytes": 6206,
+      "imports": [],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "components/panels/panel-criacao-botoes/index.js": {
+      "imports": [
+        {
+          "path": "./core/constants.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./core/config.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./state/store.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./handlers/data.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./handlers/events.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./ui/list/group-list.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./ui/form/button-form.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./render/skeleton.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./render/empty-state.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./init/lifecycle.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./telemetry/tracker.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "MODULE_ID",
+        "VERSION",
+        "default",
+        "destroy",
+        "dispose",
+        "getPorts",
+        "getStatus",
+        "getVersion",
+        "healthCheck",
+        "info",
+        "injectPorts",
+        "mount",
+        "unmount"
+      ],
+      "entryPoint": "components/panels/panel-criacao-botoes/index.ts",
+      "inputs": {
+        "components/panels/panel-criacao-botoes/index.ts": {
+          "bytesInOutput": 3750
+        }
+      },
+      "bytes": 3947
+    }
+  }
+}

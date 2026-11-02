@@ -1,0 +1,72 @@
+{
+  "inputs": {
+    "public/components/accessibility-manager/index.ts": {
+      "bytes": 13765,
+      "imports": [],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "public/components/accessibility-manager/index.js": {
+      "imports": [
+        {
+          "path": "/core/runtime/ports-profiles.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "/core/runtime/enterprise/strict-mode.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./state/store.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./utils/helpers.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./core/applier.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./core/engine.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./core/lifecycle.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./telemetry/tracker.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "Accessibility",
+        "MODULE_ID",
+        "VERSION",
+        "default",
+        "getPorts",
+        "healthCheck",
+        "info",
+        "injectPorts"
+      ],
+      "entryPoint": "public/components/accessibility-manager/index.ts",
+      "inputs": {
+        "public/components/accessibility-manager/index.ts": {
+          "bytesInOutput": 9723
+        }
+      },
+      "bytes": 9869
+    }
+  }
+}

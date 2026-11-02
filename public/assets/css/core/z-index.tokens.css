@@ -1,0 +1,61 @@
+/* Z-Index Tokens - Enterprise System
+ * @version 1.2.0-ENTERPRISE
+ * @changelog v1.2.0: Sidebar abaixo de footer
+ * Hierarquia unificada de z-index para toda a aplicação
+ * 
+ * REGRA: Nenhum componente deve usar z-index hardcoded.
+ * Todos devem referenciar estas variáveis.
+ */
+
+:root {
+  /* ===== BASE LAYERS (0-99) ===== */
+  --z-base: 0;
+  --z-content: 1;
+  --z-elevated: 10;
+  
+  /* ===== LAYOUT LAYERS (100-500) ===== */
+  --z-sidebar: 100;
+  --z-footer: 200;
+  --z-nav-rail: 300;
+  --z-ticker: 400;
+  --z-header: 500;
+  --z-sticky: 500;
+  
+  /* ===== FLOATING LAYERS (1000-1999) ===== */
+  --z-dropdown: 1000;
+  --z-popover: 1100;
+  --z-tooltip: 1200;
+  --z-context-menu: 1300;
+  
+  /* ===== OVERLAY LAYERS (2000-6999) ===== */
+  --z-overlay-base: 2000;
+  --z-overlay-backdrop: 2100;
+  --z-overlay-content: 2200;
+  --z-drawer: 3000;
+  --z-sheet: 4000;
+  --z-notification: 5000;
+  --z-toast: 6000;
+  
+  /* ===== MODAL LAYERS (7000-8999) ===== */
+  --z-modal-backdrop: 7000;
+  --z-modal-base: 7500;
+  --z-modal-content: 8000;
+  --z-modal-nested: 8500;
+  
+  /* ===== CRITICAL LAYERS (9000-9999) ===== */
+  --z-login-modal: 9000;
+  --z-preloader: 9500;
+  --z-system-alert: 9800;
+  --z-max: 9999;
+  
+  /* ===== MODAL STACK INCREMENT ===== */
+  --z-modal-stack-increment: 10;
+}
+
+/* Utility classes */
+.z-base { z-index: var(--z-base); }
+.z-elevated { z-index: var(--z-elevated); }
+.z-dropdown { z-index: var(--z-dropdown); }
+.z-modal { z-index: var(--z-modal-base); }
+.z-toast { z-index: var(--z-toast); }
+.z-preloader { z-index: var(--z-preloader); }

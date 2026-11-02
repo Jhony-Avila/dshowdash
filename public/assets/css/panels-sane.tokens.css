@@ -1,0 +1,22 @@
+/**
+ * Panels Sane - Tokens
+ * @version 5.0.0
+ * @description Variáveis específicas de painéis
+ */
+
+:root {
+  --panel-bg: var(--glass-bg);
+  --panel-border: var(--glass-border);
+  --panel-hover-border: rgba(255, 255, 255, 0.2);
+  --panel-scrollbar-track: rgba(255, 255, 255, 0.05);
+  --panel-scrollbar: rgba(255, 255, 255, 0.15);
+  --panel-scrollbar-hover: rgba(255, 255, 255, 0.25);
+}
+
+/* Tema Claro — override ADITIVO. Parte 2 theming 2026-07-05. */
+:root.theme-light, :root[data-theme="light"] {
+  --panel-hover-border: rgba(0,0,0,0.15);
+  --panel-scrollbar-track: rgba(0,0,0,0.05);
+  --panel-scrollbar: rgba(0,0,0,0.15);
+  --panel-scrollbar-hover: rgba(0,0,0,0.25);
+}

@@ -1,0 +1,4 @@
+# Bloquear acesso ao diretorio tools
+# @version 1.0.0 - Security Fix
+Order Allow,Deny
+Deny from all

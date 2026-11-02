@@ -1,0 +1,442 @@
+/* Modal Manager Global - Design Tokens */
+/* @version 1.0.0-ENTERPRISE */
+
+:root {
+    --modal-backdrop-color: rgba(0, 0, 0, 0.5);
+    --modal-backdrop-blur: 4px;
+    --modal-z-base: 2000;
+    --modal-transition-duration: 0.3s;
+    --modal-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+    --modal-border-radius: 8px;
+    --modal-bg-color: #1a1a2e;
+    --modal-text-color: #ffffff;
+    --modal-header-bg: rgba(0, 0, 0, 0.2);
+    --modal-border-color: rgba(255, 255, 255, 0.1);
+}
+/* Modal Manager Global - Base Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+/* Root Container */
+.modal-manager-root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: var(--modal-z-base);
+}
+
+.modal-manager-root[aria-hidden="false"] {
+    pointer-events: auto;
+}
+
+/* Backdrop */
+.modal-manager-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--modal-backdrop-color);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--modal-transition-duration) var(--modal-transition-easing),
+                visibility var(--modal-transition-duration) var(--modal-transition-easing);
+    z-index: var(--modal-z-base);
+    pointer-events: none;
+}
+
+.modal-manager-backdrop.visible {
+    opacity: var(--modal-backdrop-opacity, 0.5);
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.modal-manager-backdrop.blur {
+    backdrop-filter: blur(var(--modal-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+}
+
+/* Stack Container */
+.modal-manager-stack {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: calc(var(--modal-z-base) + 1);
+}
+/* Modal Manager Global - Wrapper Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+/* Modal Wrapper */
+.modal-wrapper {
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--modal-transition-duration) var(--modal-transition-easing),
+                transform var(--modal-transition-duration) var(--modal-transition-easing),
+                visibility var(--modal-transition-duration) var(--modal-transition-easing);
+}
+
+.modal-wrapper.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.modal-wrapper.closing {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Modal Types */
+.modal--dialog,
+.modal--confirm,
+.modal--alert,
+.modal--prompt {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: scale(0.95);
+}
+
+.modal--dialog.visible,
+.modal--confirm.visible,
+.modal--alert.visible,
+.modal--prompt.visible {
+    transform: scale(1);
+}
+
+/* Drawer */
+.modal--drawer {
+    top: 0;
+    height: 100%;
+}
+
+.modal--drawer.modal--position-right {
+    right: 0;
+    transform: translateX(100%);
+}
+
+.modal--drawer.modal--position-left {
+    left: 0;
+    transform: translateX(-100%);
+}
+
+.modal--drawer.visible {
+    transform: translateX(0);
+}
+
+/* Sheet */
+.modal--sheet {
+    left: 0;
+    width: 100%;
+}
+
+.modal--sheet.modal--position-bottom {
+    bottom: 0;
+    transform: translateY(100%);
+}
+
+.modal--sheet.modal--position-top {
+    top: 0;
+    transform: translateY(-100%);
+}
+
+.modal--sheet.visible {
+    transform: translateY(0);
+}
+
+/* Full Screen */
+.modal--full-screen {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+/* Modal Manager Global - Content Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+/* Modal Content */
+.modal-content {
+    position: relative;
+    background: var(--modal-bg-color);
+    border-radius: var(--modal-border-radius);
+    border: 1px solid var(--modal-border-color);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    max-height: 90vh;
+    overflow: auto;
+    color: var(--modal-text-color);
+}
+
+/* Sizes */
+.modal--xs .modal-content { width: 300px; max-width: 90vw; }
+.modal--sm .modal-content { width: 400px; max-width: 90vw; }
+.modal--md .modal-content { width: 560px; max-width: 90vw; }
+.modal--lg .modal-content { width: 800px; max-width: 90vw; }
+.modal--xl .modal-content { width: 1140px; max-width: 95vw; }
+.modal--full .modal-content { width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0; }
+
+/* Drawer sizes */
+.modal--drawer .modal-content {
+    height: 100%;
+    border-radius: 0;
+    max-height: none;
+}
+
+.modal--drawer.modal--sm .modal-content { width: 320px; }
+.modal--drawer.modal--md .modal-content { width: 480px; }
+.modal--drawer.modal--lg .modal-content { width: 640px; }
+
+/* Sheet sizes */
+.modal--sheet .modal-content {
+    width: 100%;
+    border-radius: var(--modal-border-radius) var(--modal-border-radius) 0 0;
+}
+
+.modal--sheet.modal--position-top .modal-content {
+    border-radius: 0 0 var(--modal-border-radius) var(--modal-border-radius);
+}
+
+.modal--sheet.modal--sm .modal-content { max-height: 30vh; }
+.modal--sheet.modal--md .modal-content { max-height: 50vh; }
+.modal--sheet.modal--lg .modal-content { max-height: 70vh; }
+/* Modal Manager Global - Component Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+/* Close Button */
+.modal-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--modal-text-color);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    transition: background 0.2s;
+    z-index: 1;
+}
+
+.modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-close-btn:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Header */
+.modal-header {
+    padding: 16px 48px 16px 20px;
+    background: var(--modal-header-bg);
+    border-bottom: 1px solid var(--modal-border-color);
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--modal-text-color);
+}
+
+/* Body */
+.modal-body {
+    padding: 20px;
+}
+
+/* Footer */
+.modal-footer {
+    padding: 16px 20px;
+    background: var(--modal-header-bg);
+    border-top: 1px solid var(--modal-border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+/* Modal Manager Global - Button Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+.modal-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.modal-btn:active {
+    transform: scale(0.98);
+}
+
+.modal-btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.modal-btn-primary:hover {
+    background: #0056b3;
+}
+
+.modal-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--modal-text-color);
+}
+
+.modal-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+/* Modal Manager Global - Confirm API Styles */
+/* @version 1.0.0-ENTERPRISE */
+/* Estilos para modais de confirmação via ModalManager.confirm() */
+
+.modal-confirm-content,
+.modal-alert-content {
+  background: var(--surface-elevated, #1e1e2e);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  max-width: 420px;
+  width: 90vw;
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.modal-confirm-danger .modal-confirm-header {
+  border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.modal-confirm-header,
+.modal-alert-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.1));
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-confirm-title,
+.modal-alert-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.modal-danger-icon {
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.modal-confirm-body,
+.modal-alert-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-confirm-message,
+.modal-alert-message {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-secondary, rgba(255,255,255,0.8));
+}
+
+.modal-confirm-footer,
+.modal-alert-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.1));
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.modal-btn {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  outline: none;
+}
+
+.modal-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--surface-elevated, #1e1e2e), 0 0 0 4px var(--accent-primary, #3b82f6);
+}
+
+.modal-btn-primary {
+  background: var(--accent-primary, #3b82f6);
+  color: #fff;
+}
+
+.modal-btn-primary:hover {
+  background: var(--accent-primary-hover, #2563eb);
+}
+
+.modal-btn-secondary {
+  background: var(--surface-secondary, rgba(255,255,255,0.1));
+  color: var(--text-primary, #fff);
+}
+
+.modal-btn-secondary:hover {
+  background: var(--surface-secondary-hover, rgba(255,255,255,0.15));
+}
+
+.modal-btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.modal-btn-danger:hover {
+  background: #dc2626;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+/* Modal Manager Global - Utilities Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+/* Body scroll lock */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .modal-manager-backdrop,
+    .modal-wrapper {
+        transition-duration: 0.001ms !important;
+    }
+}
+
+/* Screen reader only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

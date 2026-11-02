@@ -1,0 +1,867 @@
+public/app/auth/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/events/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/pages/system-pages.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/circuit-breaker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/contracts.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/diagnostics.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/integrations.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/lifecycle.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/navigation-controller.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/navigation.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/ports.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/app/router/utils.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/animacoes/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/api-client/auth-adapter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/api-client/config.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/api-client/errors.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/api-client/http.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/api-client/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/_aggregator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/core/lifecycle.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/core/loader.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/core/merger.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/core/validator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/state/store.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/config-loader/telemetry/tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/utils/deepmerge.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/config-loader/utils/helpers.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/debug-logger/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/environment-manager/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/environment-manager/config.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/environment-manager/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/environment-manager/resolver.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/environment-manager/store.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/environment-manager/telemetry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/fonts-manager/core/contracts.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/fonts-manager/core/engine.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/fonts-manager/core/lifecycle.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/fonts-manager/core/loader.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/fonts-manager/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/fonts-manager/state/store.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/fonts-manager/telemetry/tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/fonts-manager/utils/helpers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/header-scroll-guardian.js	transpile .ts→.js	diferente	-
+public/assets/js/core/health-aggregator/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/health-aggregator/registry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/core/anomaly.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/logger-global/core/batch.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/logger-global/core/deduplication.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/core/formatter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/core/grouping.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/logger-global/core/levels.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/core/lifecycle.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/core/replay.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/core/spans.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/core/stack-trace.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/core/templates.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/logger-global/core/throttle.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/logger-global/core/worker-manager.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/logger-global/core/writer.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/state/buffer.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/logger-global/telemetry/forwarder.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/logger-global/transport/backend-sync.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/logger-global/transport/retry.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/logger-global/transport/send.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/ui/inspector.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/utils/helpers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/logger-global/workers/serializer.worker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/metrics-polling/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/smoke-test/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/telemetry-core/_aggregator.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/telemetry-core/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/telemetry-core/contracts.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/telemetry-core/core/aggregator.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/telemetry-core/core/emitter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/telemetry-core/core/lifecycle.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/telemetry-core/core/normalizer.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/telemetry-core/core/sampler.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/telemetry-core/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/telemetry-core/state/store.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/telemetry-core/transport/retry.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/telemetry-core/transport/send.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/telemetry-core/utils/helpers.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/telemetry-core/utils/uuid.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/theme-manager/_aggregator.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/assets/js/core/theme-manager/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/core/applier.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/core/detector.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/core/engine.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/core/lifecycle.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/state/store.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/telemetry/tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/themes/dark.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/themes/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/themes/light.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-manager/utils/helpers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-toggle-header/index.js	transpile .ts→.js	diferente	-
+public/assets/js/core/theme-tokens-loader/_aggregator.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/assets/js/core/theme-tokens-loader/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-tokens-loader/core/lifecycle.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-tokens-loader/core/loader.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-tokens-loader/core/registry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-tokens-loader/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-tokens-loader/state/store.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-tokens-loader/telemetry/tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-tokens-loader/utils/css-parser.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/assets/js/core/theme-tokens-loader/utils/helpers.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/boot/boot-guard.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/boot/error/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/adapters/EventBusAdapter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/adapters/LoggerAdapter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/adapters/OpenTelemetryAdapter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/adapters/ReadyFlagsAdapter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/adapters/TelemetryAdapter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/adapters/WindowAdapter.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/bootstrap-v2/adapters/environment-adapter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/adapters/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/boot-manifest/constants.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/bootstrap-v2/boot-manifest/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/boot-manifest/manifest-data.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/boot-manifest/phase-globals-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/boot-manifest/queries.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/bootstrap-v2/boot-manifest/validation.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/config.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/contracts/boot-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/contracts/decision-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/contracts/degradation-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/contracts/events-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/contracts/globals-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/contracts/health-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/contracts/resilience-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/boot-cancellation.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/boot-context.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/boot-errors.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/boot-events-catalog.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/boot-health-aggregator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/boot-metrics-summary.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/boot-orchestrator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/circuit-breaker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/context/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/context/feature-checker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/context/health-calculator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/context/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/context/phase-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/context/progress-tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/context/snapshot-builder.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/context/state-store.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/degradation-notifier.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/dependency-graph.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/lazy-loader.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/manifest-integrity.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/bootstrap-v2/domain/module-cache.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/module-events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/network-detector.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/degradation-handler.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/event-emitter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/api/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/api/public-api.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/circuit-breaker/breaker-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/circuit-breaker/execution-guard.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/circuit-breaker/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/execution/dependency-checker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/execution/error-handler.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/execution/error-outcome-resolver.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/execution/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/execution/phase-runner.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/execution/skip-handler.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/execution/success-handler.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/execution/suppression-handler.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/manifest/config-resolver.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/manifest/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/metrics/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/metrics/phase-metrics.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/rollback/executor.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/rollback/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/rollback/registry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/utils/helpers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/utils/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/phase-executor/utils/memory.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/orchestrator/retry-executor.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/partial-reinit.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/phase-rollback.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/phase-runner.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/root-cause-analyzer.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/domain/state-machine.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/https-guard.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/__tests__/test-runner.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/capability-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/circuit-breaker/api.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/circuit-breaker/handlers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/circuit-breaker/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/circuit-breaker/setup.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/constants-local.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/diagnostics/health-check.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/diagnostics/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/diagnostics/info.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/health/health-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/health/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/lifecycle/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/lifecycle/initialize.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/lifecycle/reset.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/mode/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/mode/manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/mode/queries.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/singleton/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/singleton/instance-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/state-machine-sync/api.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/state-machine-sync/handlers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/state-machine-sync/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/state-machine-sync/setup.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/state/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/state/snapshot.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/subscriptions/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/subscriptions/subscription-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/utils/emitter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/utils/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/utils/logger.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/module/utils/mode-history.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/kernel/runtime-context.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/api.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/global-api.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/helpers/events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/helpers/globals.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/helpers/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/helpers/logger.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/sequence.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/stages/bootstrap.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/stages/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/stages/panel-loading-transition.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/stages/post-boot.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/stages/pre-boot.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/loader/state.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/boot-loop/detector.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/boot-loop/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/boot-loop/status.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/boot-loop/tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/boot/executor.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/boot/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/boot/lifecycle.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/boot/mode-resolver.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/configs/boot-loop-config.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/configs/global-timeout-config.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/configs/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/configs/periodic-health-config.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/debug-mode.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/bootstrap-v2/module/diagnostics/health-check.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/diagnostics/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/diagnostics/info-reporter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/getters/context-getters.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/getters/core-getters.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/getters/health-getters.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/getters/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/getters/status-getters.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/getters/system-getters.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/global-timeout/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/global-timeout/timeout-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/lifecycle/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/lifecycle/reset.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/periodic-health/health-starter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/periodic-health/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/persistence/boot-persistence.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/bootstrap-v2/module/persistence/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/phases/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/phases/phase-map.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/phases/phase-registry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/singleton/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/singleton/state-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/utils/deep-clone.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/utils/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/module/utils/logger-helper.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-0-critical.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-1-core.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-2-auth.js	transpile .ts→.js	sem .ts de origem (no branch)	-
+public/bootstrap-v2/phases/phase-3-shell.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-4-main.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-4/auth-detector.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-4/auth-listener.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-4/bootstrap-boot.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-4/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-4/container-detector.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-4/container-mounter.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/bootstrap-v2/phases/phase-4/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-4/main-mounter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-4/ports-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-5-ui.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/phases/phase-6-platform.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/ports/BootstrapPort.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/ports/LoggerPort.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/ports/PhasePort.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/ports/ReadyFlagsPort.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/ports/TelemetryPort.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/ports/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/pre-boot/browser-check.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/pre-boot/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/pre-boot/pre-boot-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/pre-boot/pre-boot-orchestrator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/telemetry/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/telemetry/otel-exporter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/bootstrap-v2/types.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/config/app.config.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/config/config-validator-standalone.js	transpile .ts→.js	idêntico	v0215-es2022-inline
+public/config/config-validator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/config/features/feature-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/config/features/feature-validator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/contracts/feature.base.v1.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/contracts/feature.template.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/auth/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/auth/adapters/auth-adapter-enterprise.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/auth/auth-orchestrator/auth-orchestrator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/auth/bridges/auth-ready-dom-bridge.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/auth/bridges/auth-redirect-controller.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/auth/contracts/auth-contracts.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/auth/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/auth/permissions/permissions-guard-enterprise.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/auth/policies/security-policies-enterprise.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/index.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/js/AssetLoader.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/js/EnterpriseLoader.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/js/asset-loader/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/asset-loader/helpers.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/js/asset-loader/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/enterprise-loader/component-loader.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/js/enterprise-loader/component-registry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/enterprise-loader/constants.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/js/enterprise-loader/external-loaders.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/js/enterprise-loader/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/enterprise-loader/state.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/enterprise-loader/telemetry-helper.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/event-bus/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/event-bus/constants.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/js/event-bus/debug-helpers.js	transpile .ts→.js	idêntico	v0215-es2022-inline
+public/core/js/event-bus/emit.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/event-bus/helpers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/event-bus/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/js/event-bus/listener-registry.js	transpile .ts→.js	idêntico	v0215-es2022-inline
+public/core/js/event-bus/metrics-tracker.js	transpile .ts→.js	idêntico	v0215-es2022-inline
+public/core/js/event-bus/subscribe.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/js/event-bus/wildcard-matcher.js	transpile .ts→.js	idêntico	v0215-es2022-inline
+public/core/js/ready-flags/index.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/kernel/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/base-kernel.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/feature-definitions.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/feature-manifest.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/feature-registry.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/kernel/governance-guard.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/kernel/health-aggregator.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/kernel/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/runtime-consumer.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/telemetry-emitter.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/ui/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/ui/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/ui/kernel-governance-panel.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/kernel/ui/kernel-governance-panel/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/ui/kernel-governance-panel/data.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/ui/kernel-governance-panel/events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/ui/kernel-governance-panel/helpers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/ui/kernel-governance-panel/renderer.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/kernel/ui/kernel-governance-panel/state.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/navigation/command-registry.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/navigation/hard-nav-service.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/navigation/index.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/navigation/navigation-broker.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/navigation/navigation-intent.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/navigation/route-state-service.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/navigation/runtime-port.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/policies/eventbus-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/policies/globalstate-access-policy.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/policies/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/policies/input-policy-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/policies/input-policy-manager.js	transpile .ts→.js	idêntico	v0215-es2022-inline
+public/core/policies/navigation-access-policy.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/policies/navigation-contract.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/boot-ready-dom-bridge.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/capability-registry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/container-main-handler.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/devtools-helper.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/error-recovery.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/event-names.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/runtime/constants/event-throttle.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/event-timeout.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/handler-base.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/health-aggregator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/kernel-modes.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/mode-transition-rules.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/navrail-handler.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/payload-contracts.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/perf-marks.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/readiness-tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/runtime-context-tests.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/runtime-guard.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/snapshot-diff.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/snapshot-freeze.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/snapshot-persistence.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/structured-logger.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/constants/subscriber-tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/contracts/runtime-governance-rules.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/early-boot-logger.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/enterprise/governance-telemetry-bridge.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/runtime/enterprise/http-governance.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/runtime/enterprise/polling-governance.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/enterprise/strict-mode.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/accessibility.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/action.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/analytics.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/api.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/app.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/asset.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/audit-trail.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/auth.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/boot.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/cache.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/card.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/carousel.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/charts.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/command.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/component.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/container.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/core.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/degradation.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/device.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/error-boundary.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/error.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/external.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/feature-flags.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/footer.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/governance.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/header.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/kernel.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/layout.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/lifecycle.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/log.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/lottie.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/main.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/manifest.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/mf.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/nav.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/navigation.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/navrail.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/network.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/orchestrator.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/overlay.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/panel-loader.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/panel.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/panels.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/performance.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/permissions.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/persistence.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/plugin.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/preferences.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/preloader.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/router.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/saved-views.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/security.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/session-admin.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/session.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/settings.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/shell.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/sidebar.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/state.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/sw.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/system.events.js	transpile .ts→.js	sem .ts de origem (no branch)	-
+public/core/runtime/events/catalog/table.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/telemetry.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/theme.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/ticker.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/uarps.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/catalog/ui.events.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/listeners-registry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/namespaces.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/auth.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/governance.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/orchestrator.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/panels.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/permissions.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/router.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/security.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/session.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/system.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/telemetry.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/payloads/ui.payloads.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/events/validate.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/health/runtime-health-aggregator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/permissions/permission-resolver.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/ports-factory.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/ports-profiles.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/runtime/ports/storage.port.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/services/toast-service.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/types/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/adapters/execution-handler.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/adapters/intent-adapter.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/bridges/index.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/bridges/panel-bridge.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/bridges/router-bridge.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/bridges/ui-action-bridge.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/canvas/canvas-engine.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/canvas/event-timeline.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/canvas/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/metrics-dashboard.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/metrics-dashboard/collector.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/ui-orchestrator/components/metrics-dashboard/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/metrics-dashboard/handlers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/metrics-dashboard/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/metrics-dashboard/metrics-collector.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/components/metrics-dashboard/render.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/metrics-dashboard/styles.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/metrics-dashboard/template.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/mode-switcher.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/components/timeline-panel.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/timeline-panel/constants.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/timeline-panel/export.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/timeline-panel/handlers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/timeline-panel/helpers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/timeline-panel/index.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/components/timeline-panel/render.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/components/timeline-panel/state.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/ui-orchestrator/components/timeline-panel/styles.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/core/contracts.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/core/manifest-state.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/core/manifest-sync.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/core/resolver-permissions.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/core/resolver-state.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/ui-orchestrator/core/resolver-target.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/core/resolver.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/registry/manifest.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/ui-orchestrator/telemetry/tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/ui-orchestrator/utils/devtools.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/core/utils/html-sanitizer.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/core/validation/validate.js	transpile .ts→.js	idêntico	v0215-es2019-inline
+public/core/version.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/api/contracts.js	transpile .ts→.js	sem .ts de origem (no branch)	-
+public/modules/global-state/core/auth-integration.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/modules/global-state/core/diagnostics.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/core/environment.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/core/global-api.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/core/logger.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/state/actions.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/state/selectors.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/state/store-config.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/state/store-reducer.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/state/store-subscribers.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/state/store.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/telemetry/tracker.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/utils/middleware.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/modules/global-state/utils/validators.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/config/routes.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/automacoes-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/clientes-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/comercial-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/compras-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/dashboard-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/platform/domains/financeiro-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/integracoes-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/juridico-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/marketing-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/operacional-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/produtos-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/domains/rh-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/pages/forbidden-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/pages/login-mfe/core/controller.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/pages/login-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/platform/pages/login-mfe/events/contracts.js	transpile .ts→.js	sem .ts de origem (no branch)	-
+public/platform/pages/login-mfe/state/slice.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/platform/pages/login-mfe/ui/component.js	transpile .ts→.js	idêntico	v0215-es2020-inline
+public/platform/pages/logout-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/pages/maintenance-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/pages/notfound-mfe/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/panels/panel-01/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/panels/panel-03/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/panels/panel-04/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/panels/panel-05/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/panels/panel-06/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/panels/panel-07/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/panels/panel-08/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/panels/panel-10/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/panels/panel-12/entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/_aggregator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/error-boundary-global.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/event-domains.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/federation-loader.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/manifest-v3.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/microapp-registry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/performance-budget.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/platform-orchestrator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/region-manager.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/runtime/state-engine-v3.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/sdk/create-mfe.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/sdk/hooks.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/sdk/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/shell/_aggregator.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/shell/_entry.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/shell/footer-shell.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/shell/header-shell.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/shell/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/shell/layout-regions.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/platform/shell/sidebar-shell.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/tests/kernels/index.js	transpile .ts→.js	idêntico	v0215-es2017-inline
+public/.build-meta/accessibility-manager.meta.json	saída de build	não gerado	public/.build-meta
+public/.build-meta/panel-criacao-botoes.meta.json	saída de build	não gerado	public/.build-meta
+public/app/router/dist/app-router.bundle.js	saída de build	não gerado	public/app/router
+public/assets/avatars/motor/motor-90dc1a324341.js	saída de build	não gerado	public/assets/avatars/motor
+public/assets/avatars/motor/motor.json	saída de build	não gerado	public/assets/avatars/motor
+public/assets/css/design-system/dist/design-system.bundle.css	saída de build	não gerado	public/assets/css/design-system
+public/assets/css/dist/layout.bundle.css	saída de build	não gerado	public/assets/css
+public/assets/css/dist/panels-sane.bundle.css	saída de build	não gerado	public/assets/css
+public/assets/css/dist/theme.bundle.css	saída de build	não gerado	public/assets/css
+public/assets/js/core/api-client/dist/api-client.bundle.js	saída de build	não gerado	public/assets/js/core/api-client
+public/assets/js/core/config-loader/dist/config-loader.bundle.js	saída de build	não gerado	public/assets/js/core/config-loader
+public/assets/js/core/environment-manager/dist/environment-manager.bundle.js	saída de build	não gerado	public/assets/js/core/environment-manager
+public/assets/js/core/logger-global/dist/logger-global.bundle.js	saída de build	não gerado	public/assets/js/core/logger-global
+public/assets/js/core/telemetry-core/dist/telemetry-core.bundle.js	saída de build	não gerado	public/assets/js/core/telemetry-core
+public/assets/js/core/theme-manager/dist/theme-manager.bundle.js	saída de build	não gerado	public/assets/js/core/theme-manager
+public/assets/js/core/theme-tokens-loader/dist/theme-tokens-loader.bundle.js	saída de build	não gerado	public/assets/js/core/theme-tokens-loader
+public/assets/js/libs/chart.min.js	saída de build	não gerado	public/assets/js/libs
+public/assets/js/libs/leaflet/leaflet.markercluster.min.js	saída de build	não gerado	public/assets/js/libs/leaflet
+public/assets/js/libs/leaflet/leaflet.min.js	saída de build	não gerado	public/assets/js/libs/leaflet
+public/bootstrap-v2/dist/bootstrap.bundle.js	saída de build	não gerado	public/bootstrap-v2
+public/components/_shared/permissions/dist/integration.bundle.js	saída de build	não gerado	public/components/_shared/permissions
+public/components/_shared/permissions/dist/ui-feedback.bundle.js	saída de build	não gerado	public/components/_shared/permissions
+public/components/app-shell/dist/app-shell.bundle.js	saída de build	não gerado	public/components/app-shell
+public/components/app-shell/styles/dist/app-shell-styles.bundle.css	saída de build	não gerado	public/components/app-shell/styles
+public/components/context-provider/dist/context-provider.bundle.js	saída de build	não gerado	public/components/context-provider
+public/components/error-boundary/dist/error-boundary.bundle.js	saída de build	não gerado	public/components/error-boundary
+public/components/feature-flags/dist/feature-flags.bundle.js	saída de build	não gerado	public/components/feature-flags
+public/components/footer/dist/footer.bundle.js	saída de build	não gerado	public/components/footer
+public/components/footer/styles/dist/footer-styles.bundle.css	saída de build	não gerado	public/components/footer/styles
+public/components/header/components/dist/header-components.bundle.js	saída de build	não gerado	public/components/header/components
+public/components/header/dist/header.bundle.js	saída de build	idêntico	public/components/header
+public/components/layout-manager/dist/layout-manager.bundle.js	saída de build	não gerado	public/components/layout-manager
+public/components/login-modal/dist/login-modal-styles.bundle.css	saída de build	não gerado	public/components/login-modal
+public/components/login-modal/dist/login-modal.bundle.js	saída de build	não gerado	public/components/login-modal
+public/components/modal-manager-global/dist/modal-manager-global-styles.bundle.css	saída de build	não gerado	public/components/modal-manager-global
+public/components/nav-rail/dist/nav-rail.bundle.js	saída de build	não gerado	public/components/nav-rail
+public/components/nav-rail/styles/dist/nav-rail-styles.bundle.css	saída de build	não gerado	public/components/nav-rail/styles
+public/components/overlay-layer/dist/overlay-layer.bundle.js	saída de build	não gerado	public/components/overlay-layer
+public/components/panel-home/dist/panel-home.bundle.js	saída de build	diferente	public/components/panel-home
+public/components/panels/panel-ads/dist/.vite/manifest.json	saída de build	diferente	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/ads.DTBMnAoN.js	saída de build	não gerado	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/assets/entry.OKDLFokt.css	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/dispatch.kxCwF96_.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/echarts-core.I216Vn0f.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.5M-K9UUp.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.BnENo9bV.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.CzqJ-HXO.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.DIjPU4XZ.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.D_KQ6n3W.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.Dvfcn8lu.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.E_oIeYgv.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.PktN6EE5.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.XZVcuzkA.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.cZdXyZbA.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/index.f5y1jadj.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/nodrag.CLF29J-J.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/path.DKbKBQE1.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/pointer.TtlbD6dL.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/react-vendor.Ah1pgjPn.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/string.CvptbcKz.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/timer.CahdVGVn.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/chunks/vendor.DXW0OfDc.js	saída de build	idêntico	public/components/panels/panel-ads
+public/components/panels/panel-ads/dist/geo/br-uf.topo.json	saída de build	não gerado	public/components/panels/panel-ads
+public/components/panels/panel-anuncios/dist/.vite/manifest.json	saída de build	idêntico	public/components/panels/panel-anuncios
+public/components/panels/panel-anuncios/dist/anuncios.Dq9ZuU6p.js	saída de build	idêntico	public/components/panels/panel-anuncios
+public/components/panels/panel-anuncios/dist/assets/entry.Dv-2ErRU.css	saída de build	idêntico	public/components/panels/panel-anuncios
+public/components/panels/panel-anuncios/dist/chunks/echarts.BSXpmw5y.js	saída de build	idêntico	public/components/panels/panel-anuncios
+public/components/panels/panel-anuncios/dist/chunks/react-vendor.Ah1pgjPn.js	saída de build	idêntico	public/components/panels/panel-anuncios
+public/components/panels/panel-anuncios/dist/chunks/vendor.BTDkqWd3.js	saída de build	idêntico	public/components/panels/panel-anuncios
+public/components/panels/panel-bling/dist/.vite/manifest.json	saída de build	idêntico	public/components/panels/panel-bling
+public/components/panels/panel-bling/dist/assets/entry-CN4prDJs.css	saída de build	idêntico	public/components/panels/panel-bling
+public/components/panels/panel-bling/dist/assets/entry-p8bB2XnB.js	saída de build	idêntico	public/components/panels/panel-bling
+public/components/panels/panel-bling/dist/chunks/d3-CYsgINvx.js	saída de build	idêntico	public/components/panels/panel-bling
+public/components/panels/panel-bling/dist/chunks/echarts-ME5cyqEE.js	saída de build	idêntico	public/components/panels/panel-bling
+public/components/panels/panel-bling/dist/chunks/icones-5gSOBHQ_.js	saída de build	idêntico	public/components/panels/panel-bling
+public/components/panels/panel-bling/dist/chunks/react-CqOZpORl.js	saída de build	idêntico	public/components/panels/panel-bling
+public/components/panels/panel-bling/dist/chunks/tanstack-B21f7N6o.js	saída de build	idêntico	public/components/panels/panel-bling
+public/components/panels/panel-bling/dist/chunks/vendor-Cg4x8ZAA.js	saída de build	idêntico	public/components/panels/panel-bling
+public/components/panels/panel-datatables/dist/.vite/manifest.json	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Administracao.BaulbPt9.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Alertas.Cp_MRwuK.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Arvore.CRTKS7Kr.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Badge.Dl7sl5v6.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Bancos.Cg9G1n9-.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Busca.BQ3mUWv5.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Campo.DYDq9Hho.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Comparar.BEYwi6uZ.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Conexoes.bs4OAfHo.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/DataGrid.BEgOuOiV.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Dependencias.BxIp-u6-.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Descoberta.CrAdJmpa.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/FilterBar.CJddOqQw.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Gauge.CiaNgNJk.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Grafico.DPn-0PaX.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Integracoes.CllDyY2-.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Manutencoes.BNUcZ73c.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/MetricCard.CGfFZUaa.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Overview.EHBZyydf.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Qualidade.69_AZWJc.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Revelar.vu_h1-3q.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Sensiveis.DnyRgYhB.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Servidores.BOQg0Ndm.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/StatusBadge.C3duoSpC.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/TabelaDrawer.BZrInhvB.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/Tabelas.DguTAE0o.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/assets/entry.DwHy3gUB.css	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Administracao.DSzfjC5X.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Alertas.CAi4XbCl.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Arvore.vXBqCJPi.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Badge.Bu2pCdy7.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Bancos.ghoeFpXt.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Busca.CJdQpgWO.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Campo.BQA2YfUi.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Comparar.47JKtu6-.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/ConexaoForm.DpM_SoCc.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Conexoes.Ca2rCFB7.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/DataGrid.YyStca6l.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Dependencias.Dvu1WlJf.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Descoberta.BujCFEEj.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/FilterBar.AlwG-tvO.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Gauge.M-flj2Sq.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Grafico.Bfu2Blr3.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Integracoes.Bczycxva.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Manutencoes.CFcQu1Fh.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/MetricCard.D44guKty.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Overview.CSEZ7Mqy.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Qualidade.Douuah0F.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Revelar.DyIZJaz-.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Sensiveis.DuYoRLpc.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Servidores.NOcXdg1R.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/StatusBadge.DQ9mB92_.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/TabelaDrawer.BQmJBwUu.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/TabelaDrawer.module.C70ySWLu.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/Tabelas.C70d96vB.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/animacao.C6Iyhh2y.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/dispatch.kxCwF96_.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/entry.CL3dziM3.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/index.5M-K9UUp.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/index.CCP6Kd_U.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/index.CtkmreqC.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/index.DIjPU4XZ.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/index.PktN6EE5.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/nodrag.CLF29J-J.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/pointer.TtlbD6dL.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/react-vendor.DX-_bDaf.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/timer.CahdVGVn.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/useLookups.DQu83AYs.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/useOrdenacaoLocal.BUsQU0ek.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/chunks/vendor.ti9XMz-w.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-datatables/dist/datatables.8TEo_V6I.js	saída de build	idêntico	public/components/panels/panel-datatables
+public/components/panels/panel-google-analytics/dist/.vite/manifest.json	saída de build	diferente	public/components/panels/panel-google-analytics
+public/components/panels/panel-google-analytics/dist/assets/entry.DDHLlcmw.css	saída de build	idêntico	public/components/panels/panel-google-analytics
+public/components/panels/panel-google-analytics/dist/chunks/d3.C1uSse65.js	saída de build	idêntico	public/components/panels/panel-google-analytics
+public/components/panels/panel-google-analytics/dist/chunks/echarts.C3faeMLK.js	saída de build	idêntico	public/components/panels/panel-google-analytics
+public/components/panels/panel-google-analytics/dist/chunks/react-vendor.Ah1pgjPn.js	saída de build	idêntico	public/components/panels/panel-google-analytics
+public/components/panels/panel-google-analytics/dist/chunks/vendor.C01xgyXs.js	saída de build	idêntico	public/components/panels/panel-google-analytics
+public/components/panels/panel-google-analytics/dist/ga.COpqvm8s.js	saída de build	não gerado	public/components/panels/panel-google-analytics
+public/components/panels/panel-google-analytics/dist/geo/br-uf.topo.json	saída de build	não gerado	public/components/panels/panel-google-analytics
+public/components/panels/panel-google-calendar/dist/.vite/manifest.json	saída de build	diferente	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/assets/entry.BqJzQDy-.css	saída de build	idêntico	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/chunks/Agenda.CsS29c0n.js	saída de build	não gerado	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/chunks/Carga.ylvwrJhE.js	saída de build	não gerado	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/chunks/Relatorios.D-yAsSaQ.js	saída de build	não gerado	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/chunks/d3.Bhhv-xDr.js	saída de build	idêntico	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/chunks/echarts.DyUXRgP3.js	saída de build	não gerado	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/chunks/entry.BhwPruIC.js	saída de build	não gerado	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/chunks/fullcalendar.DVeRaRZZ.js	saída de build	não gerado	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/chunks/react-vendor.CgXjwx16.js	saída de build	não gerado	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/chunks/vendor.D104hGeS.js	saída de build	não gerado	public/components/panels/panel-google-calendar
+public/components/panels/panel-google-calendar/dist/gcal.DRAesHzq.js	saída de build	não gerado	public/components/panels/panel-google-calendar
+public/components/panels/panel-mercadolivre/dist/.vite/manifest.json	saída de build	idêntico	public/components/panels/panel-mercadolivre
+public/components/panels/panel-mercadolivre/dist/assets/entry.Dvk0BTZL.css	saída de build	idêntico	public/components/panels/panel-mercadolivre
+public/components/panels/panel-mercadolivre/dist/chunks/echarts.BzLi0I8E.js	saída de build	idêntico	public/components/panels/panel-mercadolivre
+public/components/panels/panel-mercadolivre/dist/chunks/react-vendor.Ah1pgjPn.js	saída de build	idêntico	public/components/panels/panel-mercadolivre
+public/components/panels/panel-mercadolivre/dist/chunks/vendor.BA-nFUrs.js	saída de build	idêntico	public/components/panels/panel-mercadolivre
+public/components/panels/panel-mercadolivre/dist/ml.Bztu2PJ2.js	saída de build	idêntico	public/components/panels/panel-mercadolivre
+public/components/panels/panel-metaads/dist/.vite/manifest.json	saída de build	idêntico	public/components/panels/panel-metaads
+public/components/panels/panel-metaads/dist/assets/entry.C0ExOmYI.css	saída de build	idêntico	public/components/panels/panel-metaads
+public/components/panels/panel-metaads/dist/chunks/echarts.COQMij_h.js	saída de build	idêntico	public/components/panels/panel-metaads
+public/components/panels/panel-metaads/dist/chunks/react-vendor.Ah1pgjPn.js	saída de build	idêntico	public/components/panels/panel-metaads
+public/components/panels/panel-metaads/dist/chunks/vendor.DEcJCk4L.js	saída de build	idêntico	public/components/panels/panel-metaads
+public/components/panels/panel-metaads/dist/mads.RPCJLpWj.js	saída de build	idêntico	public/components/panels/panel-metaads
+public/components/panels/panel-outlook/dist/.vite/manifest.json	saída de build	idêntico	public/components/panels/panel-outlook
+public/components/panels/panel-outlook/dist/assets/entry.cMgs8eId.css	saída de build	idêntico	public/components/panels/panel-outlook
+public/components/panels/panel-outlook/dist/chunks/react-vendor.Ah1pgjPn.js	saída de build	idêntico	public/components/panels/panel-outlook
+public/components/panels/panel-outlook/dist/chunks/vendor.Bf9_5v6o.js	saída de build	idêntico	public/components/panels/panel-outlook
+public/components/panels/panel-outlook/dist/outlook.Du-mjo23.js	saída de build	idêntico	public/components/panels/panel-outlook
+public/components/panels/panel-pipedrive/dist/.vite/manifest.json	saída de build	idêntico	public/components/panels/panel-pipedrive
+public/components/panels/panel-pipedrive/dist/assets/entry.YMggKkO1.css	saída de build	idêntico	public/components/panels/panel-pipedrive
+public/components/panels/panel-pipedrive/dist/chunks/Agenda.CUgsEPje.js	saída de build	idêntico	public/components/panels/panel-pipedrive
+public/components/panels/panel-pipedrive/dist/chunks/echarts-core.rLEAPkSo.js	saída de build	idêntico	public/components/panels/panel-pipedrive
+public/components/panels/panel-pipedrive/dist/chunks/entry.CK4mN8jl.js	saída de build	idêntico	public/components/panels/panel-pipedrive
+public/components/panels/panel-pipedrive/dist/chunks/react-vendor.Bq7tBSV7.js	saída de build	idêntico	public/components/panels/panel-pipedrive
+public/components/panels/panel-pipedrive/dist/chunks/vendor.Blr2Dj9x.js	saída de build	idêntico	public/components/panels/panel-pipedrive
+public/components/panels/panel-pipedrive/dist/pipedrive.DanqQYwR.js	saída de build	idêntico	public/components/panels/panel-pipedrive
+public/components/panels/panel-relogio-mundial/dist/.vite/manifest.json	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/assets/entry.tzchVVtn.css	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/assets/render.worker-COcw0DgK.js	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/chunks/geo-vendor.DXghU50m.js	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/chunks/react-vendor.DyvUWP44.js	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/chunks/vendor.BWQze8YT.js	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/fonts/inter.woff2	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/fonts/jetbrains-mono.woff2	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/geo/city-lights.json	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/geo/countries-110m.json	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/geo/countries-50m.json	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/panels/panel-relogio-mundial/dist/wcm.OYFvogn7.js	saída de build	idêntico	public/components/panels/panel-relogio-mundial
+public/components/preloader/dist/preloader.bundle.js	saída de build	não gerado	public/components/preloader
+public/components/preloader/styles/dist/preloader-styles.bundle.css	saída de build	não gerado	public/components/preloader/styles
+public/components/security/csrf-token-manager/dist/csrf-token-manager.bundle.js	saída de build	não gerado	public/components/security/csrf-token-manager
+public/components/session-manager/dist/session-manager.bundle.js	saída de build	não gerado	public/components/session-manager
+public/components/sidebar/dist/sidebar.bundle.js	saída de build	diferente	public/components/sidebar
+public/components/ticker/dist/ticker.bundle.js	saída de build	não gerado	public/components/ticker
+public/components/toast/service/dist/toast-service.bundle.js	saída de build	não gerado	public/components/toast/service
+public/core/auth/dist/auth.bundle.js	saída de build	não gerado	public/core/auth
+public/core/js/asset-loader/dist/asset-loader.bundle.js	saída de build	não gerado	public/core/js/asset-loader
+public/core/js/enterprise-loader/dist/enterprise-loader.bundle.js	saída de build	não gerado	public/core/js/enterprise-loader
+public/core/js/event-bus/dist/event-bus.bundle.js	saída de build	não gerado	public/core/js/event-bus
+public/core/kernel/dist/kernel.bundle.js	saída de build	não gerado	public/core/kernel
+public/core/kernel/ui/dist/kernel-ui.bundle.js	saída de build	não gerado	public/core/kernel/ui
+public/core/runtime/dist/runtime.bundle.js	saída de build	não gerado	public/core/runtime
+public/core/runtime/events/catalog/dist/events-catalog.bundle.js	saída de build	não gerado	public/core/runtime/events/catalog
+public/core/ui-orchestrator/dist/ui-orchestrator.bundle.js	saída de build	não gerado	public/core/ui-orchestrator
+public/koala/dist/assets/index-Bz_oppBd.css	saída de build	não gerado	public/koala
+public/koala/dist/assets/index-TI7deeGy.js	saída de build	não gerado	public/koala
+public/koala/dist/index.html	saída de build	diferente	public/koala
+public/modules/global-state/dist/global-state.bundle.js	saída de build	não gerado	public/modules/global-state
+public/platform/runtime/dist/platform-runtime.bundle.js	saída de build	não gerado	public/platform/runtime
+public/platform/shell/dist/platform-shell.bundle.js	saída de build	não gerado	public/platform/shell
+public/react/dist/assets/index-DbCiI_c8.js	saída de build	idêntico	public/react
+public/react/dist/index.html	saída de build	idêntico	public/react
+api/modules/panels/painel-12	symlink de runtime	recriar no deploy	-
+api/telemetry/collect.php	symlink de runtime	recriar no deploy	-
+public/api	symlink de runtime	recriar no deploy	-
+public/core/ui-orchestrator/registry/manifest-generated.js	gerado por job	regenerar por release	-
+public/koala/node_modules	symlink de runtime	recriar no deploy	-
+tools/koala-pdf/node_modules	symlink de runtime	recriar no deploy	-

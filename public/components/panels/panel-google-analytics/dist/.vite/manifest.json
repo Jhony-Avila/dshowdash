@@ -1,0 +1,46 @@
+{
+  "_d3.C1uSse65.js": {
+    "file": "chunks/d3.C1uSse65.js",
+    "name": "d3",
+    "isDynamicEntry": true
+  },
+  "_echarts.C3faeMLK.js": {
+    "file": "chunks/echarts.C3faeMLK.js",
+    "name": "echarts",
+    "imports": [
+      "_vendor.C01xgyXs.js"
+    ]
+  },
+  "_react-vendor.Ah1pgjPn.js": {
+    "file": "chunks/react-vendor.Ah1pgjPn.js",
+    "name": "react-vendor"
+  },
+  "_vendor.C01xgyXs.js": {
+    "file": "chunks/vendor.C01xgyXs.js",
+    "name": "vendor",
+    "imports": [
+      "_react-vendor.Ah1pgjPn.js"
+    ]
+  },
+  "src/entry.tsx": {
+    "file": "ga.COpqvm8s.js",
+    "name": "entry",
+    "src": "src/entry.tsx",
+    "isEntry": true,
+    "imports": [
+      "_react-vendor.Ah1pgjPn.js",
+      "_vendor.C01xgyXs.js",
+      "_echarts.C3faeMLK.js"
+    ],
+    "dynamicImports": [
+      "_d3.C1uSse65.js",
+      "_d3.C1uSse65.js",
+      "_d3.C1uSse65.js",
+      "_d3.C1uSse65.js",
+      "_d3.C1uSse65.js"
+    ],
+    "css": [
+      "assets/entry.DDHLlcmw.css"
+    ]
+  }
+}

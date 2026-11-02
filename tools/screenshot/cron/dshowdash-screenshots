@@ -1,0 +1,7 @@
+# Captura de screenshots dos paineis - diario as 03:00 (baixa carga)
+# Instalado por: FASE 3 - Sistema de Screenshots (BRF-GESTAO-PAINEIS)
+# Copiar para: /etc/cron.d/dshowdash-screenshots
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+0 3 * * * www-data cd /var/www/dshowdash/tools/screenshot && /usr/bin/node capture-all.mjs >> /var/www/dshowdash/storage/logs/screenshot-cron.log 2>&1

@@ -1,0 +1,42 @@
+/**
+ * Layout - Toasts
+ * @version 5.1.0
+ * @description Toast container e variantes
+ */
+
+#toast-container {
+  position: fixed;
+  top: calc(var(--hdr-height, 60px) + 16px);
+  right: var(--spacing-lg);
+  z-index: var(--z-toast);
+}
+
+.toast {
+  background: var(--dark-secondary);
+  color: var(--white);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  min-width: 280px;
+  box-shadow: var(--shadow-lg);
+  animation: slideIn var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.toast-success {
+  background: var(--success);
+}
+
+.toast-error {
+  background: var(--danger);
+}
+
+.toast-warning {
+  background: var(--warning);
+}
+
+.toast-info {
+  background: var(--info);
+}

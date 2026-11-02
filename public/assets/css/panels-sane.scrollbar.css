@@ -1,0 +1,45 @@
+/**
+ * Panels Sane - Scrollbar
+ * @version 5.0.0
+ * @description Scrollbar customizada
+ */
+
+.painel-item *::-webkit-scrollbar,
+.dashboard-card *::-webkit-scrollbar,
+.painel-content::-webkit-scrollbar,
+.card-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.painel-item *::-webkit-scrollbar-track,
+.dashboard-card *::-webkit-scrollbar-track,
+.painel-content::-webkit-scrollbar-track,
+.card-content::-webkit-scrollbar-track {
+  background: var(--panel-scrollbar-track);
+  border-radius: 3px;
+}
+
+.painel-item *::-webkit-scrollbar-thumb,
+.dashboard-card *::-webkit-scrollbar-thumb,
+.painel-content::-webkit-scrollbar-thumb,
+.card-content::-webkit-scrollbar-thumb {
+  background: var(--panel-scrollbar);
+  border-radius: 3px;
+  transition: background-color var(--transition-fast, 0.15s ease);
+}
+
+.painel-item *::-webkit-scrollbar-thumb:hover,
+.dashboard-card *::-webkit-scrollbar-thumb:hover,
+.painel-content::-webkit-scrollbar-thumb:hover,
+.card-content::-webkit-scrollbar-thumb:hover {
+  background: var(--panel-scrollbar-hover);
+}
+
+.painel-item *,
+.dashboard-card *,
+.painel-content,
+.card-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel-scrollbar) var(--panel-scrollbar-track);
+}

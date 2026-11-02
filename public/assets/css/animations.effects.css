@@ -1,0 +1,98 @@
+/**
+ * Animations - Effects
+ * @version 2.0.0
+ * @description Hover, pulse, bounce, shake, shimmer + keyframes
+ */
+
+@media (hover: hover) and (pointer: fine) {
+  .anim-hover-lift {
+    transition: transform 0.2s var(--anim-ease), box-shadow 0.2s var(--anim-ease);
+  }
+
+  .anim-hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .anim-hover-scale {
+    transition: transform 0.2s var(--anim-ease);
+  }
+
+  .anim-hover-scale:hover {
+    transform: scale(1.05);
+  }
+
+  .anim-hover-glow {
+    position: relative;
+    transition: box-shadow 0.3s var(--anim-ease);
+  }
+
+  .anim-hover-glow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0;
+    box-shadow: 0 0 20px rgba(129, 140, 248, 0.6);
+    transition: opacity 0.3s var(--anim-ease);
+    pointer-events: none;
+  }
+
+  .anim-hover-glow:hover::after {
+    opacity: 1;
+  }
+}
+
+.anim-pulse {
+  animation: dshPulse 2s var(--anim-ease-in-out) infinite;
+}
+
+@keyframes dshPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.anim-bounce {
+  animation: dshBounce 1s var(--anim-ease) infinite;
+}
+
+@keyframes dshBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.anim-shake {
+  animation: dshShake 0.5s ease-in-out both;
+}
+
+@keyframes dshShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.anim-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.anim-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: dshShimmerMove 2s linear infinite;
+}
+
+@keyframes dshShimmerMove {
+  to { transform: translateX(100%); }
+}

@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- harness LOCAL de validação (GERADO por scripts/avatar/gerar-harness.mjs — não vai para o git) -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>GER Harness</title>
+<link rel="stylesheet" href="/components/panels/panel-dashboard/dist/assets/vendor.P3eB-els.css">
+<link rel="stylesheet" href="/components/panels/panel-dashboard/dist/assets/entry.YJJQAyvF.css">
+<style>html,body{margin:0;height:100%;background:#0d1017}#host{min-height:100vh}</style>
+</head>
+<body>
+<div id="host"></div>
+<script>
+  const RESPOSTAS = [
+    [/\/api\/traffic\/summary\.php/, (u, opts) => ({ ok: true, data: { level: 'moderate', index: 44, updated_at: new Date().toISOString(), stale: false, message: 'Trânsito moderado' } })],
+    [/\/api\/ads\/status/, (u, opts) => ({ ok: true, data: { accounts: 1, active_campaigns: 6, provider_real: false } })],
+    [/\/api\/anuncios\/stats\.php/, (u, opts) => ({ ok: true, data: { total_perguntas: 128, feedback_util: 0.82 } })],
+    [/\/api\/home\/weather\.php/, (u, opts) => ({ ok: true, data: { atual: { grupo: 'limpo', temperatura: 24, sensacao: 25, descricao: 'Céu limpo', umidade: 48, ventoKmh: 9, chuvaMm: 0, uv: 6, visibilidadeKm: 10, nascer: '06:40', por: '17:45' }, dias: [], horas: [] } })],
+    [/\/api\/auth\/check\.php/, (u, opts) => ({ ok: true, data: { session: { user_name: 'Jhony', csrf_token: 'x' } } })],
+    [/\/api\//, (u, opts) => ({ ok: true, data: {} })],
+  ];
+  const fetchReal = window.fetch.bind(window);
+  window.fetch = (url, opts) => {
+    const u = String(url instanceof Request ? url.url : url);
+    for (const [re, gerar] of RESPOSTAS) {
+      if (re.test(u)) {
+        return Promise.resolve(new Response(JSON.stringify(gerar(u, opts)), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+      }
+    }
+    return fetchReal(url, opts);
+  };
+</script>
+<script type="module">
+  import { mountReact } from '/components/panels/panel-dashboard/dist/geral.BL6UVkVa.js';
+  await mountReact(document.getElementById('host'), {});
+  window.__pronto = true;
+</script>
+</body>
+</html>

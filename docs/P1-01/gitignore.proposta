@@ -1,0 +1,4 @@
+# SUPERADO (adendo 02/11): a proposta virou o 1º commit do branch p1-01/versionar-producao
+# (".gitignore re-inclui as fontes aprovadas"). Ver PROVA-GITIGNORE.md.
+# Decisão ainda pendente (Portão 2): os .js transpilados de .ts ficam FORA por padrão
+# ("/<área>/**/*.js"); alternativa (b) versioná-los enquanto o deploy não os gerar.

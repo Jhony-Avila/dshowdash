@@ -1,0 +1,330 @@
+/* DshowDash - Skeleton Loaders
+ * @version 1.0.0-ENTERPRISE
+ * Melhoria #47: Placeholders durante carregamento
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BASE SKELETON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--skeleton-base, #1a2234) 0%,
+        var(--skeleton-highlight, #243049) 50%,
+        var(--skeleton-base, #1a2234) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SKELETON VARIANTS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.skeleton-text--sm { height: 12px; }
+.skeleton-text--lg { height: 18px; }
+.skeleton-text--xl { height: 24px; }
+
+.skeleton-text--w25 { width: 25%; }
+.skeleton-text--w50 { width: 50%; }
+.skeleton-text--w75 { width: 75%; }
+.skeleton-text--w100 { width: 100%; }
+
+.skeleton-circle {
+    border-radius: 50%;
+}
+
+.skeleton-rect {
+    border-radius: 8px;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.skeleton-avatar--sm { width: 32px; height: 32px; }
+.skeleton-avatar--lg { width: 56px; height: 56px; }
+
+.skeleton-button {
+    height: 36px;
+    width: 100px;
+    border-radius: 6px;
+}
+
+.skeleton-card {
+    padding: 16px;
+    border-radius: 8px;
+    background: var(--skeleton-card-bg, #111827);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NAVRAIL SKELETON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton-navrail {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+}
+
+.skeleton-navrail__item {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR SKELETON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton-sidebar {
+    padding: 16px;
+}
+
+.skeleton-sidebar__section {
+    margin-bottom: 24px;
+}
+
+.skeleton-sidebar__title {
+    height: 12px;
+    width: 80px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+}
+
+.skeleton-sidebar__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.skeleton-sidebar__icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.skeleton-sidebar__text {
+    height: 14px;
+    flex: 1;
+    border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HEADER SKELETON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    height: 64px;
+}
+
+.skeleton-header__left,
+.skeleton-header__right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.skeleton-header__logo {
+    width: 120px;
+    height: 32px;
+    border-radius: 4px;
+}
+
+.skeleton-header__nav-item {
+    width: 80px;
+    height: 24px;
+    border-radius: 4px;
+}
+
+.skeleton-header__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PANEL/CARD SKELETON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton-panel {
+    padding: 24px;
+}
+
+.skeleton-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.skeleton-panel__title {
+    height: 28px;
+    width: 200px;
+    border-radius: 4px;
+}
+
+.skeleton-panel__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.skeleton-panel__content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.skeleton-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.skeleton-card-item {
+    padding: 16px;
+    background: var(--skeleton-card-bg, #111827);
+    border-radius: 8px;
+}
+
+.skeleton-card-item__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.skeleton-card-item__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TABLE SKELETON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton-table {
+    width: 100%;
+}
+
+.skeleton-table__header {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--skeleton-base, #1a2234);
+}
+
+.skeleton-table__header-cell {
+    height: 14px;
+    border-radius: 4px;
+}
+
+.skeleton-table__row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid var(--skeleton-base, #1a2234);
+}
+
+.skeleton-table__cell {
+    height: 16px;
+    border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FORM SKELETON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.skeleton-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skeleton-form__label {
+    height: 12px;
+    width: 100px;
+    border-radius: 4px;
+}
+
+.skeleton-form__input {
+    height: 40px;
+    border-radius: 6px;
+}
+
+.skeleton-form__actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CHART SKELETON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton-chart {
+    height: 300px;
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    padding: 20px;
+    gap: 12px;
+}
+
+.skeleton-chart__bar {
+    width: 30px;
+    border-radius: 4px 4px 0 0;
+}
+
+.skeleton-chart__bar:nth-child(1) { height: 60%; }
+.skeleton-chart__bar:nth-child(2) { height: 80%; }
+.skeleton-chart__bar:nth-child(3) { height: 45%; }
+.skeleton-chart__bar:nth-child(4) { height: 90%; }
+.skeleton-chart__bar:nth-child(5) { height: 70%; }
+.skeleton-chart__bar:nth-child(6) { height: 55%; }
+.skeleton-chart__bar:nth-child(7) { height: 75%; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.skeleton-hidden {
+    display: none !important;
+}
+
+.skeleton-wrapper {
+    position: relative;
+}
+
+.skeleton-wrapper--loading > *:not(.skeleton) {
+    visibility: hidden;
+}
+
+.skeleton-wrapper--loading > .skeleton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+}

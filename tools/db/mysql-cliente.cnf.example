@@ -1,0 +1,7 @@
+# tools/db/mysql-cliente.cnf.example — formato do arquivo apontado por DSHOW_MYSQL_CNF.
+# Guardar fora do repositório, modo 0600. Use um usuário com o MENOR privilégio que o script precisa
+# (nav_dryrun e validate_P14 só LEEM DSHOWDASH → SELECT basta). Nunca root.
+[client]
+user = USUARIO_SO_LEITURA
+password = SENHA_DO_USUARIO
+socket = /run/mysqld/mysqld.sock

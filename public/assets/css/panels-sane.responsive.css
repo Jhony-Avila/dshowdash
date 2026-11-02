@@ -1,0 +1,88 @@
+/**
+ * Panels Sane - Responsive
+ * @version 5.0.0
+ * @description Media queries e reduced motion
+ */
+
+@media (max-width: 1200px) {
+  #painel-13 .carousel-stats-container,
+  #painel-13 .carousel-stats-grid,
+  #painel-13 .stats-success-rate,
+  #painel-13 .kpi-grid {
+    grid-template-columns: 1fr !important;
+    grid-auto-rows: 120px !important;
+    max-width: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .panels-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+
+  .featured-panels.two-cols {
+    grid-template-columns: 1fr;
+  }
+
+  #topjobs-painel-01 > div {
+    grid-template-columns: 44px 1fr 70px !important;
+  }
+
+  #topjobs-painel-01 > div > div:last-child {
+    font-size: 13px !important;
+  }
+
+  #alerts-content-painel-08 > div {
+    grid-template-columns: auto minmax(0, 1fr) auto auto !important;
+    gap: 8px !important;
+  }
+
+  #alerts-content-painel-08 > div > div:nth-child(2) {
+    white-space: normal !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
+
+@media (max-width: 768px) {
+  .panels-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .painel-item,
+  #panels-container .painel-item {
+    min-height: 240px;
+    max-height: 400px;
+    min-block-size: 240px;
+  }
+
+  #charts-carousel .painel-item {
+    min-height: 280px;
+    max-height: 350px;
+    min-block-size: 280px;
+  }
+
+  .cards-section,
+  .charts-section,
+  .panels-section,
+  .featured-panels {
+    margin-bottom: var(--spacing-xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .painel-item *::-webkit-scrollbar,
+  .dashboard-card *::-webkit-scrollbar {
+    width: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .painel-item:empty::before,
+  .card:empty::before,
+  .is-loading::after {
+    animation: none !important;
+  }
+}

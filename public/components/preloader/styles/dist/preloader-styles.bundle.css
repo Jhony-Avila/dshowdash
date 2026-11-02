@@ -1,0 +1,659 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * PRELOADER DESIGN TOKENS v1.0.0-AAA
+ * Tokens centralizados para todo o Preloader
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * COLORS
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-bg: #0a0a0a;
+  --preloader-bg-overlay: rgba(0, 0, 0, 0.7);
+  --preloader-text-primary: #ffffff;
+  --preloader-text-secondary: rgba(255, 255, 255, 0.8);
+  --preloader-text-muted: rgba(255, 255, 255, 0.6);
+  
+  /* Progress bar */
+  --preloader-progress-bg: rgba(255, 255, 255, 0.1);
+  --preloader-progress-fill: linear-gradient(90deg, #3b82f6, #60a5fa);
+  --preloader-progress-glow: rgba(59, 130, 246, 0.5);
+  
+  /* Degraded mode */
+  --preloader-degraded-bg: rgba(251, 191, 36, 0.1);
+  --preloader-degraded-border: rgba(251, 191, 36, 0.3);
+  --preloader-degraded-text: #fbbf24;
+  
+  /* Error state */
+  --preloader-error-bg: rgba(239, 68, 68, 0.1);
+  --preloader-error-border: rgba(239, 68, 68, 0.3);
+  --preloader-error-text: #ef4444;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * SIZING
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-logo-width: 180px;
+  --preloader-logo-height: 168px;
+  --preloader-logo-width-mobile: 120px;
+  --preloader-logo-height-mobile: 112px;
+  
+  --preloader-progress-width: 300px;
+  --preloader-progress-width-mobile: 200px;
+  --preloader-progress-height: 4px;
+  --preloader-progress-radius: 2px;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * TYPOGRAPHY
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --preloader-font-size-text: 1.125rem;
+  --preloader-font-size-text-mobile: 0.875rem;
+  --preloader-font-size-percentage: 0.875rem;
+  --preloader-font-weight-normal: 400;
+  --preloader-font-weight-medium: 500;
+  --preloader-letter-spacing: 0.05em;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * SPACING
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-gap-sm: 0.5rem;
+  --preloader-gap-md: 1rem;
+  --preloader-gap-lg: 1.5rem;
+  --preloader-gap-xl: 2rem;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * ANIMATION
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-transition-fast: 150ms ease-out;
+  --preloader-transition-normal: 300ms ease-out;
+  --preloader-transition-slow: 500ms ease-out;
+  --preloader-fade-duration: 300ms;
+  --preloader-pulse-duration: 2s;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * Z-INDEX
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --preloader-z-base: 9999;
+  --preloader-z-video: 1;
+  --preloader-z-content: 10;
+  --preloader-z-overlay: 5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * REDUCED MOTION OVERRIDES
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --preloader-transition-fast: 0ms;
+    --preloader-transition-normal: 0ms;
+    --preloader-transition-slow: 0ms;
+    --preloader-fade-duration: 0ms;
+    --preloader-pulse-duration: 0ms;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * DARK/LIGHT MODE (future-proof)
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Light mode overrides se necessário */
+  }
+}
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * PRELOADER BASE + PREMIUM UNIFIED v3.2.0-ENTERPRISE
+ * Unificação: estrutura AAA + visuais Premium
+ * Seletores: .preloader-root, .preloader-video, [data-preloader-*]
+ *
+ * ESTRUTURA DOM:
+ *   .preloader-root [data-preloader-root]     (fixed fullscreen - DOM Manager)
+ *     └── .preloader-container [data-preloader-container]  (static - template)
+ *           ├── video.preloader-video [data-preloader-video]  (absolute ao root)
+ *           ├── .preloader-logo-container [data-preloader-logo]
+ *           ├── .preloader-text [data-preloader-text]
+ *           └── .preloader-progress-wrapper [data-preloader-progress-wrapper]
+ *
+ * CHANGELOG v3.2.0: Fix container structure - video escapa container via static
+ * CHANGELOG v3.1.0: Fix video fullscreen (wildcard exclusion)
+ * CHANGELOG v3.0.0: Unificação AAA + Premium
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * ROOT CONTAINER - Tela cheia fixa (positioning context para o vídeo)
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-root,
+[data-preloader-root] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: var(--preloader-z-base, 9999);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #0a0e27;
+  font-family: var(--preloader-font-family, system-ui, sans-serif);
+  overflow: hidden;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+/* Hidden / loaded state */
+.preloader-root.hidden,
+.preloader-root.loaded,
+[data-preloader-root].hidden,
+[data-preloader-root].loaded {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Parar animações quando hidden/loaded */
+.preloader-root.loaded .preloader-logo,
+.preloader-root.loaded .preloader-progress-bar,
+.preloader-root.hidden .preloader-logo,
+.preloader-root.hidden .preloader-progress-bar {
+  animation: none !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * INNER CONTAINER - Static para vídeo escapar; flex para centralizar conteúdo
+ * position: static garante que o vídeo (absolute) se ancore no .preloader-root
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-container,
+[data-preloader-container] {
+  position: static;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--preloader-gap-lg, 1.5rem);
+  padding: var(--preloader-gap-xl, 2rem);
+  text-align: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * VÍDEO DE FUNDO - Absolute ao .preloader-root (ancestor positioned)
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-video,
+[data-preloader-video] {
+  position: absolute !important;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  z-index: 1 !important;
+  opacity: 1;
+  filter: none;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * OVERLAY SUTIL - Radial gradient para melhor contraste sobre o vídeo
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-root::after,
+[data-preloader-root]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(ellipse at center,
+              rgba(0,0,0,.15) 0%,
+              rgba(0,0,0,.35) 100%);
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * LOGO CONTAINER - Com camada circular frosted glass
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-logo-container,
+[data-preloader-logo] {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 60px;
+  z-index: 3;
+}
+
+/* Camada circular frosted glass */
+.preloader-logo-container::before,
+[data-preloader-logo]::before {
+  content: '';
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.3) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 1;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Fallback para navegadores sem backdrop-filter */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .preloader-logo-container::before,
+  [data-preloader-logo]::before {
+    background: radial-gradient(circle, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 100%) !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * LOGO IMAGE - Com animação e glow
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-logo,
+[data-preloader-logo] img {
+  position: relative;
+  width: var(--preloader-logo-width, 180px);
+  height: auto;
+  object-fit: contain;
+  z-index: 2;
+  animation: preloaderLogoAnimation 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.6));
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * TEXTO "CARREGANDO"
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-text,
+[data-preloader-text] {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 32px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 1;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  z-index: 3;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * PROGRESS WRAPPER - Barra + Percentual lado a lado
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-progress-wrapper,
+[data-preloader-progress-wrapper] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  z-index: 3;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * BARRA DE PROGRESSO - Premium com shimmer
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-progress {
+  position: relative;
+  width: clamp(200px, 60vw, 600px);
+  max-width: 90vw;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.preloader-progress-bar,
+[data-preloader-progress-bar] {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg,
+    #3b82f6 0%,
+    #06b6d4 50%,
+    #3b82f6 100%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  transition: width 0.3s ease;
+  animation: preloaderShimmerBar 2s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * PERCENTUAL
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-percentage,
+[data-preloader-percentage] {
+  display: none;
+}
+
+.preloader-progress-wrapper .preloader-percentage,
+[data-preloader-progress-wrapper] [data-preloader-percentage] {
+  display: block !important;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+  min-width: 80px;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * DEGRADED MESSAGE
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-degraded-message,
+[data-preloader-degraded] {
+  margin-top: var(--preloader-gap-md, 1rem);
+  padding: var(--preloader-gap-sm, 0.5rem) var(--preloader-gap-md, 1rem);
+  background: var(--preloader-degraded-bg, rgba(251, 191, 36, 0.1));
+  border: 1px solid var(--preloader-degraded-border, rgba(251, 191, 36, 0.3));
+  border-radius: 4px;
+  color: var(--preloader-degraded-text, #fbbf24);
+  font-size: 0.875rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * ANIMAÇÕES PREMIUM
+ * ───────────────────────────────────────────────────────────────────────────── */
+@keyframes preloaderLogoAnimation {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.6));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 40px rgba(59, 130, 246, 0.9));
+  }
+}
+
+@keyframes preloaderShimmerBar {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * PERFORMANCE - will-change otimizado
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-root:not(.hidden):not(.loaded) .preloader-logo,
+.preloader-root:not(.hidden):not(.loaded) .preloader-video {
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.preloader-root.hidden .preloader-logo,
+.preloader-root.hidden .preloader-video,
+.preloader-root.loaded .preloader-logo,
+.preloader-root.loaded .preloader-video {
+  will-change: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * SCREEN READER ONLY
+ * ───────────────────────────────────────────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * PRELOADER STATES v2.0.0-AAA
+ * Estados visuais do preloader
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * VISIBILITY STATES
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-root.visible,
+[data-preloader-root].visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.preloader-root.hiding,
+[data-preloader-root].hiding {
+  opacity: 0;
+  transition: opacity var(--preloader-fade-duration, 300ms) ease-out;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MODE STATES
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* Minimal mode */
+.preloader-root.preloader--minimal [data-preloader-text],
+.preloader--minimal .preloader-text {
+  display: none;
+}
+
+.preloader-root.preloader--minimal [data-preloader-percentage],
+.preloader--minimal .preloader-percentage {
+  display: none;
+}
+
+/* Fast mode */
+.preloader-root.preloader--fast [data-preloader-logo],
+.preloader--fast .preloader-logo-container {
+  display: none;
+}
+
+.preloader-root.preloader--fast [data-preloader-text],
+.preloader--fast .preloader-text {
+  display: none;
+}
+
+/* Degraded mode */
+.preloader-root.preloader--degraded,
+[data-preloader-root].preloader--degraded {
+  --preloader-progress-fill: linear-gradient(90deg, #f59e0b, #fbbf24);
+  --preloader-progress-glow: rgba(251, 191, 36, 0.5);
+}
+
+/* Recovery mode */
+.preloader-root.preloader--recovery,
+.preloader--recovery {
+  --preloader-progress-fill: linear-gradient(90deg, #10b981, #34d399);
+  --preloader-progress-glow: rgba(16, 185, 129, 0.5);
+}
+
+/* Error state */
+.preloader-root.preloader--error,
+[data-preloader-root].preloader--error {
+  --preloader-progress-fill: linear-gradient(90deg, #ef4444, #f87171);
+  --preloader-progress-glow: rgba(239, 68, 68, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * PROGRESS BAR ANIMATIONS
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* Indeterminate progress (loading sem percentual) */
+.preloader-progress-bar--indeterminate,
+[data-preloader-progress-bar].indeterminate {
+  width: 30% !important;
+  animation: preloader-indeterminate var(--preloader-pulse-duration, 2s) ease-in-out infinite;
+}
+
+@keyframes preloader-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(200%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Pulse animation for logo */
+.preloader-logo--pulse,
+[data-preloader-logo].pulse img {
+  animation: preloader-pulse var(--preloader-pulse-duration, 2s) ease-in-out infinite;
+}
+
+@keyframes preloader-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * COMPLETE STATE
+ * ───────────────────────────────────────────────────────────────────────────── */
+.preloader-root.complete [data-preloader-progress-bar],
+.preloader-root.complete .preloader-progress-bar {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+}
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * PRELOADER RESPONSIVE v3.0.0-ENTERPRISE
+ * Media queries unificadas (AAA + Premium)
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * TABLET (max-width: 768px)
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .preloader-logo-container::before,
+  [data-preloader-logo]::before {
+    width: 200px;
+    height: 200px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .preloader-logo,
+  [data-preloader-logo] img {
+    width: 140px;
+    filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.4));
+  }
+
+  .preloader-text,
+  [data-preloader-text] {
+    font-size: 22px;
+    margin-bottom: 24px;
+  }
+
+  .preloader-progress {
+    height: 14px;
+  }
+
+  .preloader-progress-bar,
+  [data-preloader-progress-bar] {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+  }
+
+  .preloader-progress-wrapper .preloader-percentage,
+  [data-preloader-progress-wrapper] [data-preloader-percentage] {
+    font-size: 22px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MOBILE (max-width: 480px)
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .preloader-logo-container::before,
+  [data-preloader-logo]::before {
+    width: 160px;
+    height: 160px;
+  }
+
+  .preloader-logo,
+  [data-preloader-logo] img {
+    width: 100px;
+  }
+
+  .preloader-text,
+  [data-preloader-text] {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  .preloader-progress {
+    height: 12px;
+  }
+
+  .preloader-progress-wrapper .preloader-percentage,
+  [data-preloader-progress-wrapper] [data-preloader-percentage] {
+    font-size: 18px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * LANDSCAPE MOBILE
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .preloader-logo-container,
+  [data-preloader-logo] {
+    margin-bottom: 20px;
+  }
+
+  .preloader-logo-container::before,
+  [data-preloader-logo]::before {
+    width: 140px;
+    height: 140px;
+  }
+
+  .preloader-logo,
+  [data-preloader-logo] img {
+    width: 100px;
+  }
+
+  .preloader-text,
+  [data-preloader-text] {
+    display: none;
+  }
+
+  .preloader-progress {
+    height: 12px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * HIGH DPI SCREENS
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .preloader-progress {
+    height: 14px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * ACESSIBILIDADE - prefers-reduced-motion
+ * ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .preloader-logo,
+  [data-preloader-logo] img,
+  .preloader-progress-bar,
+  [data-preloader-progress-bar] {
+    animation: none;
+  }
+
+  .preloader-root,
+  [data-preloader-root],
+  .preloader-root.hidden,
+  .preloader-root.loaded {
+    transition: none;
+  }
+}

@@ -1,0 +1,77 @@
+/**
+ * DSD — Primitivos de cor unificados (--dsd-*)  [SEMÂNTICO]
+ * @version 2.0.0  (Campanha de Unificação 2026-07-06, L0/Fundação — reconciliado)
+ * @description ÚNICA fonte de verdade de cor de UI (marca DShow: charcoal + violet).
+ *   Reaproveita os nomes --dsd-* que command-palette/app-shell já consumiam via fallback
+ *   (paleta Catppuccin), agora com VALORES canônicos DShow (decisão Jhony: unificar tudo à marca).
+ *   Dark = valores consolidados (aprovado colapso de quase-dups). Light = [data-theme=light].
+ *   Exceções permanentes (weather-fx, Koala docs) NÃO usam estes tokens.
+ */
+
+:root {
+  /* ===== SUPERFÍCIE (charcoal consolidado) ===== */
+  --dsd-bg-primary: #0a0a0c;      /* base */
+  --dsd-bg-secondary: #0d0d0f;    /* sutil */
+  --dsd-bg-elevated: #121214;     /* card/elevado */
+  --dsd-bg-tertiary: #1a1a1e;     /* mais claro */
+  --dsd-bg-hover: rgba(255,255,255,0.08);
+  --dsd-bg-input: rgba(255,255,255,0.05);
+  --dsd-bg-kbd: rgba(255,255,255,0.05);
+  --dsd-bg-footer: rgba(0,0,0,0.20);
+  --dsd-overlay: rgba(0,0,0,0.50);           /* backdrop modal */
+  --dsd-layer-from: rgba(15,15,18,0.95);     /* gradiente header/thead */
+  --dsd-layer-to: rgba(15,15,18,0.75);
+
+  /* ===== TEXTO (branco consolidado) ===== */
+  --dsd-text-primary: rgba(255,255,255,0.92);
+  --dsd-text-secondary: rgba(255,255,255,0.70);
+  --dsd-text-tertiary: rgba(255,255,255,0.50);
+  --dsd-text-muted: rgba(255,255,255,0.45);
+  --dsd-text: var(--dsd-text-secondary);     /* alias legado (command-palette) */
+  --dsd-ink: 255,255,255;                     /* canal p/ rgba(var(--dsd-ink),α) */
+
+  /* ===== BORDA / FILL ===== */
+  --dsd-border: rgba(255,255,255,0.08);
+  --dsd-border-strong: rgba(255,255,255,0.12);
+  --dsd-fill-subtle: rgba(255,255,255,0.03);
+
+  /* ===== MARCA / DADO (matiz normalizado à marca DShow) ===== */
+  --dsd-accent: #7c3aed;  --dsd-accent-hover: #6d28d9;
+  --dsd-accent-soft: rgba(124,58,237,0.15);  --dsd-accent-rgb: 124,58,237;
+  --dsd-primary: #7c3aed;                     /* era Catppuccin #89b4fa -> violet marca */
+  --dsd-primary-alpha: rgba(124,58,237,0.15); /* era rgba(137,180,250,.15) */
+  --dsd-focus-color: #7c3aed;                 /* era #4a90e2 */
+
+  --dsd-success: #22c55e;  --dsd-success-rgb: 34,197,94;
+  --dsd-danger:  #ef4444;  --dsd-danger-rgb: 239,68,68;  --dsd-color-error: #ef4444;
+  --dsd-warning: #f59e0b;  --dsd-warning-rgb: 245,158,11;
+  --dsd-info:    #3b82f6;  --dsd-info-rgb: 59,130,246;
+  --dsd-cyan:    #06b6d4;  --dsd-cyan-rgb: 6,182,212;
+}
+
+/* ===================== LIGHT ===================== */
+:root[data-theme="light"] {
+  --dsd-bg-primary: #ffffff;
+  --dsd-bg-secondary: #fafafa;
+  --dsd-bg-elevated: #ffffff;
+  --dsd-bg-tertiary: #f4f4f5;
+  --dsd-bg-hover: rgba(0,0,0,0.04);
+  --dsd-bg-input: #ffffff;
+  --dsd-bg-kbd: rgba(0,0,0,0.05);
+  --dsd-bg-footer: rgba(0,0,0,0.04);
+  --dsd-overlay: rgba(0,0,0,0.35);
+  --dsd-layer-from: rgba(255,255,255,0.96);
+  --dsd-layer-to: rgba(250,250,250,0.86);
+
+  --dsd-text-primary: rgba(0,0,0,0.90);
+  --dsd-text-secondary: rgba(0,0,0,0.65);
+  --dsd-text-tertiary: rgba(0,0,0,0.50);
+  --dsd-text-muted: rgba(0,0,0,0.45);
+  --dsd-ink: 0,0,0;
+
+  --dsd-border: rgba(0,0,0,0.10);
+  --dsd-border-strong: rgba(0,0,0,0.16);
+  --dsd-fill-subtle: rgba(0,0,0,0.03);
+
+  /* DADO (accent/status) mantêm o matiz canônico no light */
+}

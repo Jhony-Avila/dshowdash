@@ -1,0 +1,718 @@
+/**
+ * theme.light-total.css — implementação incremental do LIGHT MODE (light total).
+ * @version fase0 (2026-07-06)
+ *
+ * ADITIVO e REVERSÍVEL: só define regras sob `:root[data-theme="light"]`. O tema DARK (default,
+ * sem data-theme=light) fica byte-idêntico — zero regressão. Remover o <link> reverte tudo.
+ * Padroniza nos tokens VIVOS de global-theme.css (--bg-*/--text-*/--border-color), que já têm
+ * bloco `[data-theme="light"]`. NÃO toca bundle. Carregado por ÚLTIMO no <head> (vence a cascata).
+ *
+ * Carregar com ?v=N e BUMPAR N a cada deploy (index.html é no-store; evita a armadilha immutable
+ * de /assets/css/, que não é coberta pelo no-cache do nginx nem pelo bustBundle do SW).
+ *
+ * ── FASE 0 — CASCO (superfícies estruturais) ──
+ * Painéis/itens de nav/conteúdo interno = "ilhas" das Fases 1-4 (cada um crava a própria cor).
+ */
+
+:root[data-theme="light"] { color-scheme: light; }
+
+/* Base */
+:root[data-theme="light"] html,
+:root[data-theme="light"] body {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Área de conteúdo */
+:root[data-theme="light"] .main-content,
+:root[data-theme="light"] [class*="container-main"] {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Header / topbar */
+:root[data-theme="light"] .site-header,
+:root[data-theme="light"] .main-header {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Sidebar / nav-rail (moldura) */
+:root[data-theme="light"] .navrail,
+:root[data-theme="light"] .nav-rail,
+:root[data-theme="light"] .sidebar {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Ticker (barra de notícias) */
+:root[data-theme="light"] .ticker {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── FASE 1a — TOKENS SEMÂNTICOS de superfície (alta alavanca) ──
+ * Muitos componentes usam var(--surface-*, #escuro)/var(--card-*, …)/var(--sidebar-*, …).
+ * Definir esses tokens CLAROS sob [data-theme=light] tematiza esses componentes de uma vez,
+ * SEM !important por seletor. Só as ilhas 100% hardcoded (sem var) sobram p/ Fases 1b+. */
+:root[data-theme="light"] {
+  --surface-primary: #ffffff;
+  --surface-secondary: #f4f4f5;
+  --surface-tertiary: #e8e8ea;
+  --surface-base: #fafafa;
+  --surface-elevated: #ffffff;
+  --surface-hover: #ececf0;
+  --surface-card: #ffffff;
+  --card-bg: #ffffff;
+  --card-color: rgba(0,0,0,0.9);
+  --bg-muted: #f0f0f2;
+  --bg-hover: rgba(0,0,0,0.04);
+  --bg-input: #ffffff;
+  --bg-surface: #ffffff;
+  --sidebar-bg: #f4f4f5;
+  --sidebar-text-primary: rgba(0,0,0,0.92);
+  --sidebar-text-secondary: rgba(0,0,0,0.70);
+  --sidebar-text-muted: rgba(0,0,0,0.50);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FASE 1b — A2 (áreas escuras restantes) + PASSE DE CONTRASTE (2026-07-06)
+   Aditivo, só sob [data-theme="light"]. Cores de DADO preservadas (cotações +/-,
+   categorias do ticker). Glows/neon -> acento escuro legível (não neon sobre branco).
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── A3 — Busca da sidebar + tokens escopados (vencem o dark local em .dsd-sidebar) ── */
+:root[data-theme="light"] .dsd-sidebar {
+  --sidebar-surface: #ffffff;
+  --sidebar-surface-hover: #f0f0f2;
+  --sidebar-bg: #f4f4f5;
+  --sidebar-text-primary: rgba(0,0,0,0.92);
+  --sidebar-text-secondary: rgba(0,0,0,0.70);
+  --sidebar-text-muted: rgba(0,0,0,0.50);
+  --sidebar-border: rgba(0,0,0,0.10);
+  --sidebar-icon-default: rgba(0,0,0,0.55);   /* itens: branco->escuro no light (valor da fonte 01-tokens:133) — bundle servido está stale */
+  --sidebar-icon-hover: rgba(0,0,0,0.75);
+}
+:root[data-theme="light"] .dsd-sidebar__search-input {
+  background: #ffffff !important; color: rgba(0,0,0,0.9) !important; border-color: rgba(0,0,0,0.12) !important;
+}
+:root[data-theme="light"] .dsd-sidebar__search-input::placeholder { color: rgba(0,0,0,0.45) !important; }
+:root[data-theme="light"] .dsd-sidebar__search-icon { color: rgba(0,0,0,0.45) !important; }
+
+/* ── B — Cabeçalhos de grupo (teal neon -> teal-700 legível) + varredura de contraste ── */
+:root[data-theme="light"] .dsd-sidebar__group-title { color: #0f766e !important; text-shadow: none !important; }
+:root[data-theme="light"] .dsd-sidebar__item-label,
+:root[data-theme="light"] .dsd-sidebar__link,
+:root[data-theme="light"] .dsd-sidebar__nav-label { color: rgba(0,0,0,0.88) !important; }
+
+/* ── A1 — HEADER widgets no LIGHT (refinado 2026-07-08) ──
+   ANTES: [class$="-component"] em bloco pintava fundo BRANCO em TODO widget e NUNCA tratava a
+   box-shadow escura hardcoded (rgba(0,0,0,0.45)) que os component.css cravam em :root (vale nos 2 temas).
+   Isso causava: (a) quadrado branco atrás dos botões SÓ-ÍCONE (email/whatsapp/instagram/wechat/
+   notificações/erros — que no próprio CSS são background:transparent) + logo/user-menu wrappers; e
+   (b) sombra PRETA vazando ao redor das PÍLULAS (cotações/clima/relógio) no fundo claro.
+   DECISÃO DO DONO (2026-07-08): as PÍLULAS NÃO devem ter fundo branco NEM sombra — devem ter o
+   MESMO efeito visual dos botões do header (flat/transparente). Então aqui elas ficam totalmente
+   FLAT: fundo transparente, sem borda, sem sombra (repouso E hover) — só bandeira/valor/%/temp/hora
+   sobre o header, com texto escuro herdado. A box-shadow escura e a borda colorida cravadas no
+   component.css (base :root) são neutralizadas SÓ no light; DARK intocado. Os botões só-ícone/
+   wrappers NÃO são tocados aqui -> já são transparentes pelo próprio component.css e herdam a cor
+   de ícone escura de .header-left/.header-center/.header-right (regra logo abaixo, mantida). */
+:root[data-theme="light"] .site-header .currency-rotator-component,
+:root[data-theme="light"] .site-header .weather-sp-component,
+:root[data-theme="light"] .site-header .real-time-clock-component,
+:root[data-theme="light"] .site-header .currency-rotator-component:hover,
+:root[data-theme="light"] .site-header .weather-sp-component:hover,
+:root[data-theme="light"] .site-header .real-time-clock-component:hover {
+  background: transparent !important; border-color: transparent !important;
+  box-shadow: none !important; color: rgba(0,0,0,0.85) !important;
+}
+:root[data-theme="light"] .site-header .header-left,
+:root[data-theme="light"] .site-header .header-center,
+:root[data-theme="light"] .site-header .header-right,
+:root[data-theme="light"] .site-header .header-breadcrumb,
+:root[data-theme="light"] .site-header .header-breadcrumb__item { color: rgba(0,0,0,0.85) !important; }
+
+/* ── A2 — TICKER ── */
+:root[data-theme="light"] .news-ticker-component,
+:root[data-theme="light"] .news-ticker-component[data-high-contrast="true"] {
+  background: #f4f4f5 !important;
+  border-top: 1px solid rgba(0,0,0,0.08) !important; border-bottom: 1px solid rgba(0,0,0,0.08) !important;
+}
+:root[data-theme="light"] {
+  --ticker-text-primary: rgba(0,0,0,0.90);
+  --ticker-text-secondary: rgba(0,0,0,0.65);
+  --ticker-text-muted: rgba(0,0,0,0.45);
+}
+:root[data-theme="light"] .ticker-title { color: rgba(0,0,0,0.88) !important; }
+
+/* ── A4 — RODAPÉ (tokens + containers) ── */
+:root[data-theme="light"] {
+  --footer-bg-top: #f4f4f5; --footer-bg-top-solid: #f4f4f5; --footer-bg-bottom: #ececf0; --footer-bg-glass: #ffffff;
+  --footer-text-primary: rgba(0,0,0,0.90); --footer-text-secondary: rgba(0,0,0,0.70); --footer-text-muted: rgba(0,0,0,0.50);
+  --footer-text-brand: #6d28d9;
+}
+:root[data-theme="light"] .site-footer,
+:root[data-theme="light"] [class*="footer-bottombar"],
+:root[data-theme="light"] [class*="footer-topbar"],
+:root[data-theme="light"] [class*="footer-status"] {
+  background: #f4f4f5 !important; color: rgba(0,0,0,0.85) !important; border-color: rgba(0,0,0,0.08) !important;
+}
+
+/* ── A5 — RAIL de ícones (coluna fina esquerda) ── */
+:root[data-theme="light"] .nav-rail,
+:root[data-theme="light"] .navrail { background: #f4f4f5 !important; border-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .navrail-btn,
+:root[data-theme="light"] .nav-rail__item { color: rgba(0,0,0,0.75) !important; }
+:root[data-theme="light"] .navrail-btn__icon svg,
+:root[data-theme="light"] .nav-rail__item svg { color: rgba(0,0,0,0.75) !important; }
+
+/* ══════════════ FASE 2 — Toolbar "Principal" + conteúdo (2026-07-06) ══════════════
+   A barra do container é translúcida -> na HOME o weather-fx escuro vaza por trás.
+   Torná-la OPACA clara sob light. Conteúdo: stubs/painéis token já claros (Fase 1a). */
+:root[data-theme="light"] .dsd-container__header {
+  background: var(--bg-secondary) !important;
+  color: rgba(0,0,0,0.85) !important;
+  border-bottom-color: rgba(0,0,0,0.08) !important;
+}
+/* backstop: conteúdo/painel claro (dados/token já herdam) */
+:root[data-theme="light"] .dsd-container__content,
+:root[data-theme="light"] .dsd-container__body { color: var(--text-primary) !important; }
+:root[data-theme="light"] [class*="panel-stub"] { color: rgba(0,0,0,0.75) !important; }
+
+/* ══════════════ RODADA 2 — CONTRASTE DE TEXTO (fundos já migraram) 2026-07-06 ══════════════
+   Elementos que cravam color:white próprio (vence herança) -> token escuro legível no light.
+   Cores de DADO preservadas com semântica (neon -> saturado escuro, WCAG AA). */
+
+/* A — HEADER: textos neutros dos widgets (nome/relógio/cotação/temp) -> escuro */
+:root[data-theme="light"] .site-header .clock-time,
+:root[data-theme="light"] .site-header .currency-value,
+:root[data-theme="light"] .site-header .weather-temp,
+:root[data-theme="light"] .site-header .user-name { color: rgba(0,0,0,0.85) !important; }
+:root[data-theme="light"] .site-header .currency-label { color: rgba(0,0,0,0.55) !important; }
+/* dados de cotação: neon -> saturado escuro legível (mantém verde=alta / vermelho=baixa) */
+:root[data-theme="light"] .site-header .currency-trend.positive { color: #059669 !important; }
+:root[data-theme="light"] .site-header .currency-trend.negative { color: #dc2626 !important; }
+
+/* B — Barra do painel: título "Principal" (era #f1f5f9 + glow) -> escuro sem glow */
+:root[data-theme="light"] .dsd-container__title { color: rgba(0,0,0,0.88) !important; text-shadow: none !important; }
+
+/* C — RODAPÉ: barras (dock dark hardcoded) + textos/ícones brancos */
+:root[data-theme="light"] .dsd-footer__dock { background: var(--bg-secondary) !important; border-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .dsd-footer__bottom,
+:root[data-theme="light"] .dsd-footer__bottom-inner { background: var(--bg-tertiary) !important; }
+:root[data-theme="light"] .dsd-footer,
+:root[data-theme="light"] .dsd-footer__brand-name,
+:root[data-theme="light"] .dsd-footer__link,
+:root[data-theme="light"] .dsd-footer__legal-link,
+:root[data-theme="light"] .dsd-footer__chip { color: rgba(0,0,0,0.80) !important; }
+:root[data-theme="light"] .dsd-footer .footer-icon-host svg,
+:root[data-theme="light"] .dsd-footer .dsd-icon__svg,
+:root[data-theme="light"] .dsd-footer__icon-btn svg,
+:root[data-theme="light"] .dsd-footer__control-btn svg { color: rgba(0,0,0,0.70) !important; }
+
+/* ══════════════ RODADA FINAL — varredura de contraste (zerar <3:1) 2026-07-06 ══════════════ */
+
+/* Ticker: sub-textos (symbol/price/time/tag/title/source) brancos -> escuro; +/- saturado legível */
+:root[data-theme="light"] .news-ticker-component .ticker-symbol,
+:root[data-theme="light"] .news-ticker-component .ticker-price,
+:root[data-theme="light"] .news-ticker-component .ticker-time,
+:root[data-theme="light"] .news-ticker-component .ticker-tag,
+:root[data-theme="light"] .news-ticker-component .ticker-title,
+:root[data-theme="light"] .news-ticker-component [class*="ticker-source"],
+:root[data-theme="light"] .news-ticker-component text {
+  color: rgba(0,0,0,0.82) !important; fill: rgba(0,0,0,0.82) !important;
+}
+:root[data-theme="light"] { --ticker-positive: #059669; --ticker-negative: #dc2626; }
+
+/* A1 — Rodapé: barra de ícones (top) -> clara + conteúdo escuro (sanduíche resolvido) */
+:root[data-theme="light"] .dsd-footer__top,
+:root[data-theme="light"] .dsd-footer__top-inner,
+:root[data-theme="light"] .dsd-footer__icons { background: var(--bg-secondary) !important; border-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .dsd-footer__top .dsd-footer__icon-btn svg,
+:root[data-theme="light"] .dsd-footer__icons svg,
+:root[data-theme="light"] .dsd-footer__brand-logo svg { color: rgba(0,0,0,0.72) !important; }
+
+/* A2 — Rodapé: relógio/status/textos -> escuro (varredura) */
+:root[data-theme="light"] .dsd-footer span,
+:root[data-theme="light"] .dsd-footer a,
+:root[data-theme="light"] .dsd-footer time,
+:root[data-theme="light"] .dsd-footer [class*="clock"],
+:root[data-theme="light"] .dsd-footer [class*="timer"],
+:root[data-theme="light"] .dsd-footer [class*="status"],
+:root[data-theme="light"] .dsd-footer__brand-name { color: rgba(0,0,0,0.80) !important; }
+
+/* A3 — Ícone do PRÓPRIO toggle de tema (branco -> escuro no light; visível nos dois temas) */
+:root[data-theme="light"] .dsd-theme-toggle { color: rgba(0,0,0,0.65) !important; }
+:root[data-theme="light"] .dsd-theme-toggle:hover { color: rgba(0,0,0,0.90) !important; }
+
+/* ── RODADA FINAL (2ª passada da varredura): resíduos de acento/dado ── */
+/* Ticker change (neon -> saturado escuro legível; mantém verde/vermelho) */
+:root[data-theme="light"] .news-ticker-component .ticker-change--positive { color: #059669 !important; }
+:root[data-theme="light"] .news-ticker-component .ticker-change--negative { color: #dc2626 !important; }
+/* Sidebar: item-text em âmbar ("Navegação") -> escuro legível */
+:root[data-theme="light"] .dsd-sidebar__item-text { color: rgba(0,0,0,0.85) !important; }
+/* Indicadores âmbar em SVG text ("1:1" zoom) -> legível */
+:root[data-theme="light"] .features-toolbar text,
+:root[data-theme="light"] .dsd-container__header text { color: rgba(0,0,0,0.75) !important; fill: rgba(0,0,0,0.75) !important; }
+/* Badges de notificação (branco sobre vermelho): escurece o vermelho p/ WCAG AA */
+:root[data-theme="light"] .integration-badge,
+:root[data-theme="light"] .notifications-badge { background-color: #dc2626 !important; }
+
+/* ── ticker-change: escurece mais (pílula verde/vermelha clara exige texto mais escuro p/ AA) ── */
+:root[data-theme="light"] .news-ticker-component .ticker-change--positive { color: #047857 !important; }
+:root[data-theme="light"] .news-ticker-component .ticker-change--negative { color: #b91c1c !important; }
+
+/* ══════════════ AJUSTE DO AVATAR — THEME-AGNOSTIC (aplica em DARK e LIGHT) ══════════════
+   Iniciais eram roxo-claro sobre o gradiente roxo do avatar (r=1.56 nos dois temas).
+   Brancas + sombra sutil = legível sobre qualquer cor do gradiente cônico. NOTA: única regra
+   deste arquivo SEM [data-theme=light] — muda o dark de propósito (pedido do dono). */
+.user-menu-component .user-avatar .avatar-initials,
+.user-menu-component[data-role="user"] .user-avatar .avatar-initials {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.45) !important;
+}
+
+/* ═══════════ RODADA 3 — SUPERFÍCIES SECUNDÁRIAS (interação) 2026-07-06 ═══════════ */
+
+/* A — FAMÍLIA popover/dropdown/menu/tooltip/modal -> superfície clara (cobre user-menu + genéricos) */
+:root[data-theme="light"] .user-menu-dropdown-portal,
+:root[data-theme="light"] [class*="dropdown-portal"],
+:root[data-theme="light"] [class*="dropdown-menu"],
+:root[data-theme="light"] [class*="-popover"],
+:root[data-theme="light"] [class*="context-menu"],
+:root[data-theme="light"] [class*="-flyout"],
+:root[data-theme="light"] [role="tooltip"],
+:root[data-theme="light"] [role="listbox"] {
+  background: #ffffff !important; color: rgba(0,0,0,0.85) !important;
+  border-color: rgba(0,0,0,0.10) !important; box-shadow: 0 10px 30px rgba(0,0,0,0.14) !important;
+}
+:root[data-theme="light"] .user-menu-dropdown-portal .dropdown-header { background: #f4f4f5 !important; }
+:root[data-theme="light"] .user-menu-dropdown-portal .dropdown-item,
+:root[data-theme="light"] .user-menu-dropdown-portal .dropdown-item *,
+:root[data-theme="light"] [role="menuitem"],
+:root[data-theme="light"] [class*="dropdown"] [class*="-item"] { color: rgba(0,0,0,0.85) !important; }
+:root[data-theme="light"] .user-menu-dropdown-portal .dropdown-item:hover,
+:root[data-theme="light"] [role="menuitem"]:hover { background: rgba(0,0,0,0.05) !important; }
+:root[data-theme="light"] .user-menu-dropdown-portal .dropdown-divider,
+:root[data-theme="light"] [class*="dropdown"] [class*="divider"] { background: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .user-menu-dropdown-portal svg { color: rgba(0,0,0,0.70) !important; }
+:root[data-theme="light"] { --modal-bg: #ffffff; --modal-header-bg: #f4f4f5; }
+
+/* B — RAIL inteiro (tokens :root) -> claro: topo + fade da BASE + ícones escuros */
+:root[data-theme="light"] {
+  --nav-rail-bg: #f4f4f5;
+  --nav-rail-bg-gradient: linear-gradient(180deg, #f4f4f5 0%, #ececf0 60%, #e4e4e7 100%);
+  --nav-rail-bottom-gradient: linear-gradient(180deg, transparent 0%, rgba(240,240,242,0.85) 40%, rgba(240,240,242,1) 100%);
+  --nav-rail-inner-border: rgba(0,0,0,0.08);
+}
+:root[data-theme="light"] .nav-rail__item svg,
+:root[data-theme="light"] .navrail-btn svg { color: rgba(0,0,0,0.72) !important; }
+
+/* C — RODAPÉ: chips circulares (footer-icon-host dark) -> claros + ícones escuros */
+:root[data-theme="light"] .footer-icon-host { background: var(--bg-tertiary) !important; border-color: rgba(0,0,0,0.10) !important; }
+:root[data-theme="light"] .footer-icon-host:hover { background: rgba(0,0,0,0.06) !important; }
+:root[data-theme="light"] .footer-icon-host svg,
+:root[data-theme="light"] .footer-icon-host .dsd-icon__svg { color: rgba(0,0,0,0.72) !important; }
+:root[data-theme="light"] .dsd-footer__icon-btn svg { color: rgba(0,0,0,0.60) !important; }
+:root[data-theme="light"] .dsd-footer__chip { background: var(--bg-tertiary) !important; }
+
+/* avatar grande do dropdown: iniciais brancas (theme-agnostic, igual ao pequeno) */
+.user-menu-dropdown-portal .user-avatar-large .avatar-initials { color: #ffffff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.45) !important; }
+
+/* R3 fix: cabeçalho do dropdown do usuário (nome/role/email brancos -> escuros; avatar intocado) */
+:root[data-theme="light"] .user-menu-dropdown-portal .user-name-full,
+:root[data-theme="light"] .user-menu-dropdown-portal .user-email,
+:root[data-theme="light"] .user-menu-dropdown-portal .dropdown-header .user-name { color: rgba(0,0,0,0.88) !important; }
+:root[data-theme="light"] .user-menu-dropdown-portal .user-role { color: rgba(0,0,0,0.55) !important; }
+
+/* ═══════════ RODADA SYNC — P1: scrims/fades das bordas do ticker (dark -> light) ═══════════
+   .ticker-content-container::before/::after são fades decorativos (rgba(15,15,22,.98)->transparent)
+   que viram manchas escuras no claro. Versão light: fade do bg do ticker (#f4f4f5) -> transparente. */
+:root[data-theme="light"] .ticker-content-container::before {
+  background: linear-gradient(to right, rgba(244,244,245,0.98), transparent) !important;
+}
+:root[data-theme="light"] .ticker-content-container::after {
+  background: linear-gradient(to left, rgba(244,244,245,0.98), transparent) !important;
+}
+
+/* ═══════════════ L1 — PAINÉIS DARK NO LIGHT (namespaces de token próprios) 2026-07-06 ═══════════════
+   Mesmo padrão da auditoria §6: cada painel admin define sua camada de tokens em :root/.classe com
+   valores DARK e SEM [data-theme=light]. Aqui só ADICIONAMOS o override light por namespace (dark intocado).
+   Accents/data (roxo, success/warning/danger tints, purple row-hover) preservados. */
+
+/* --- panel-nav-admin (+navrail-admin): --pna-* em .pna-panel --- */
+:root[data-theme="light"] .pna-panel {
+  --pna-bg: #ffffff; --pna-bg-secondary: #f4f4f5; --pna-bg-tertiary: #e8e8ea;
+  --pna-surface: rgba(0,0,0,0.03); --pna-surface-darker: rgba(0,0,0,0.06);
+  --pna-text: rgba(0,0,0,0.9); --pna-text-secondary: rgba(0,0,0,0.6); --pna-text-muted: rgba(0,0,0,0.45);
+  --pna-border: rgba(0,0,0,0.10); --pna-border-light: rgba(0,0,0,0.12); --pna-border-color: rgba(0,0,0,0.08);
+  --pna-primary: #7c3aed; --pna-primary-light: #8b5cf6; --pna-primary-dark: #6d28d9;
+}
+
+/* --- panel-audit-trail: --pat-* em :root --- */
+:root[data-theme="light"] {
+  --pat-bg-base: #ffffff; --pat-bg-surface: #fafafa; --pat-bg-elevated: #f4f4f5; --pat-bg-card: #ffffff;
+  --pat-bg-overlay: rgba(0,0,0,0.35); --pat-bg-backdrop: rgba(0,0,0,0.25); --pat-row-zebra: rgba(0,0,0,0.02);
+  --pat-layer-border: rgba(0,0,0,0.08); --pat-border-muted: rgba(0,0,0,0.10); --pat-border-subtle: rgba(0,0,0,0.06); --pat-border-strong: rgba(0,0,0,0.14);
+  --pat-text-primary: rgba(0,0,0,0.92); --pat-text-secondary: rgba(0,0,0,0.70); --pat-text-muted: rgba(0,0,0,0.58); --pat-text-disabled: rgba(0,0,0,0.38);
+}
+
+/* --- datagrid compartilhado: --edts-* em :root --- */
+:root[data-theme="light"] {
+  --edts-background-app: #ffffff; --edts-background-surface: #f4f4f5; --edts-background-elevated: #ffffff;
+  --edts-text-primary: rgba(0,0,0,0.9); --edts-text-secondary: rgba(0,0,0,0.6); --edts-text-muted: rgba(0,0,0,0.45);
+  --edts-border-subtle: rgba(0,0,0,0.08); --edts-border-default: rgba(0,0,0,0.10);
+}
+
+/* --- panel-06: redefine tokens globais com valor dark em .panel-settings -> remapear no light --- */
+:root[data-theme="light"] .panel-settings {
+  --bg-app: #ffffff; --bg-surface: #f4f4f5; --bg-elevated: #ffffff; --bg-card: #ffffff;
+  --border-subtle: rgba(0,0,0,0.06); --border-muted: rgba(0,0,0,0.08); --border-strong: rgba(0,0,0,0.12);
+  --text-primary: rgba(0,0,0,0.9); --text-secondary: rgba(0,0,0,0.65); --text-muted: rgba(0,0,0,0.45); --text-disabled: rgba(0,0,0,0.30);
+  --state-hover: rgba(0,0,0,0.03); --input-bg: #ffffff; --input-border: rgba(0,0,0,0.10);
+}
+
+/* ═══════════════ L2 — FAB de ferramentas (dev-tools do cache-manager) 2026-07-06 ═══════════════
+   Botão flutuante #cm-devtools (canto inf. dir.) tinha fundo preto rgb(30,30,30) no light. */
+:root[data-theme="light"] #cm-devtools,
+:root[data-theme="light"] .cm-devtools {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(0,0,0,0.12) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+}
+:root[data-theme="light"] #cm-devtools svg,
+:root[data-theme="light"] .cm-devtools svg,
+:root[data-theme="light"] #cm-devtools [class*="icon"],
+:root[data-theme="light"] .cm-devtools [class*="trigger"] { color: rgba(0,0,0,0.75) !important; }
+
+/* ═══ L3 nav-admin — canal de tinta p/ os 161 color:branco migrados (rgba(var(--pna-ink,255,255,255),X)) ═══
+   DARK: --pna-ink indefinido -> fallback 255,255,255 = PIXEL-IDÊNTICO. LIGHT: preto no mesmo alpha. */
+:root[data-theme="light"] { --pna-ink: 0, 0, 0; }
+
+/* nav-admin: tokens de texto no escopo GLOBAL (título/subtítulo vivem em .pna-header, FORA de .pna-panel) */
+:root[data-theme="light"] {
+  --pna-text: rgba(0,0,0,0.9);
+  --pna-text-secondary: rgba(0,0,0,0.6);
+  --pna-text-muted: rgba(0,0,0,0.45);
+  --pna-surface: rgba(0,0,0,0.03);
+  --pna-border: rgba(0,0,0,0.10);
+}
+
+/* ═══ Texto INLINE branco no conteúdo de painéis (panel-dashboard + resíduos inline) -> escuro ═══
+   Aditivo, escopado ao conteúdo; cores de DADO (rgba(59,130,246)/green/etc.) não casam. */
+:root[data-theme="light"] .dsd-container__content [style*="color: rgba(255,255,255"],
+:root[data-theme="light"] .dsd-container__content [style*="color:rgba(255,255,255"],
+:root[data-theme="light"] .dsd-container__content [style*="color: rgba(255, 255, 255"],
+:root[data-theme="light"] .dsd-container__content [style*="color: #fff"],
+:root[data-theme="light"] .dsd-container__content [style*="color:#fff"] { color: rgba(0,0,0,0.85) !important; }
+
+/* gestao-paineis: canal de tinta (52 color:branco migrados p/ rgba(var(--gp-ink,255,255,255),X)). Dark-safe por fallback. */
+:root[data-theme="light"] { --gp-ink: 0, 0, 0; }
+
+/* ════════════════════════════════ RODADA 2 — resíduos de painéis (2026-07-06) ════════════════════════════════
+   Todas as regras SÓ em [data-theme="light"] -> DARK pixel-idêntico. !important vence bytes CF-antigos
+   dos arquivos NÃO-versionados. Cores de DADO (badges/dots/result/card-icon/entity roxo) preservadas. */
+
+/* ── A) nav-admin: fundos dark HARDCODED nunca remapeados + textos brancos de _pna-header/_pna-kpis/_pna-list (fora do @import versionado) ── */
+:root[data-theme="light"] .pna-header { background: #ffffff !important; border-bottom-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pna-list-header { background: #f4f4f5 !important; border-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pna-list-header .pna-list-col { color: rgba(0,0,0,0.60) !important; } /* "Ordem/Ícone/Item": era escuro-sobre-escuro */
+:root[data-theme="light"] .pna-kpi-value { color: rgba(0,0,0,0.90) !important; }   /* "200/21/6" chips claros, texto era branco */
+:root[data-theme="light"] .pna-kpi-label { color: rgba(0,0,0,0.55) !important; }   /* "itens/seções/ativos" */
+:root[data-theme="light"] .pna-icon-name { color: rgba(0,0,0,0.70) !important; }   /* code do nome do ícone */
+:root[data-theme="light"] .pna-title-placeholder { color: rgba(0,0,0,0.90) !important; } /* coluna TÍTULO "Mesmo Item" */
+:root[data-theme="light"] .pna-tab:not(.pna-tab-active) { color: rgba(0,0,0,0.60) !important; }
+:root[data-theme="light"] .pna-tab.pna-tab-active { background: #7c3aed !important; color: #ffffff !important; } /* aba selecionada: roxo + branco (estado) */
+/* header title/subtitle/countdown eram brancos: com header agora branco ficariam invisíveis (par fundo+texto) */
+:root[data-theme="light"] .pna-title { color: rgba(0,0,0,0.90) !important; }
+:root[data-theme="light"] .pna-subtitle { color: rgba(0,0,0,0.60) !important; }
+:root[data-theme="light"] .pna-countdown { color: rgba(0,0,0,0.62) !important; }
+
+/* ── B) UARPS (panel-uarps-monitor): 100% dark hardcoded, zero token. Bloco light completo. Bot lvl90 não navega (min_level=100): aceite visual do dono pendente. ── */
+:root[data-theme="light"] .pum-container { color: rgba(0,0,0,0.85); }
+:root[data-theme="light"] .pum-title,
+:root[data-theme="light"] .pum-error h3 { color: rgba(0,0,0,0.90); }
+:root[data-theme="light"] .pum-card { background: #ffffff; border-color: rgba(0,0,0,0.10); }
+:root[data-theme="light"] .pum-card-success { background: linear-gradient(135deg, rgba(34,197,94,0.10), #ffffff); }
+:root[data-theme="light"] .pum-card-warning { background: linear-gradient(135deg, rgba(251,191,36,0.10), #ffffff); }
+:root[data-theme="light"] .pum-card-danger  { background: linear-gradient(135deg, rgba(239,68,68,0.10), #ffffff); }
+:root[data-theme="light"] .pum-card-value { color: rgba(0,0,0,0.90); }
+:root[data-theme="light"] .pum-card-label,
+:root[data-theme="light"] .pum-status-label,
+:root[data-theme="light"] .pum-section-count,
+:root[data-theme="light"] .pum-phase,
+:root[data-theme="light"] .pum-last-update { color: rgba(0,0,0,0.55); }
+:root[data-theme="light"] .pum-status-value { color: rgba(0,0,0,0.80); }
+:root[data-theme="light"] .pum-status-row { background: #f4f4f5; border-color: rgba(0,0,0,0.08); }
+:root[data-theme="light"] .pum-status-item { background: #ffffff; }
+:root[data-theme="light"] .pum-section { background: #ffffff; border-color: rgba(0,0,0,0.08); }
+:root[data-theme="light"] .pum-section-header { background: #fafafa; border-bottom-color: rgba(0,0,0,0.08); }
+:root[data-theme="light"] .pum-section-title { color: rgba(0,0,0,0.90); }
+:root[data-theme="light"] .pum-table th { color: rgba(0,0,0,0.55); background: #f4f4f5; border-bottom-color: rgba(0,0,0,0.08); }
+:root[data-theme="light"] .pum-table td { color: rgba(0,0,0,0.80); border-bottom-color: rgba(0,0,0,0.06); }
+:root[data-theme="light"] .pum-td-user { color: rgba(0,0,0,0.85); }
+:root[data-theme="light"] .pum-td-endpoint,
+:root[data-theme="light"] .pum-td-date,
+:root[data-theme="light"] .pum-td-level { color: rgba(0,0,0,0.50); }
+:root[data-theme="light"] .pum-table tr:hover td { background: rgba(59,130,246,0.06); }
+:root[data-theme="light"] .pum-empty { color: rgba(0,0,0,0.50); }
+:root[data-theme="light"] .pum-empty p { color: rgba(0,0,0,0.60); }
+
+/* ── B2) panel-user-management (Gestão de Usuários): a UI RICA foi religada em 2026-07-08
+   e os overrides .pum-* acima (template ANTIGO) NÃO cobriam o root .panel-user-management
+   nem os tokens --pum-* (charcoal), deixando o painel DARK no light (fundo #0B0D12/texto
+   branco). Remapeamos os tokens sob [data-theme=light] .panel-user-management -> cascateia
+   para todo o painel (base/cards/toolbar/stats/modais). Accent roxo + status/avatar mantidos. */
+:root[data-theme="light"] .panel-user-management {
+  --pum-bg-base: #f5f6f8;
+  --pum-bg-surface: #ffffff;
+  --pum-bg-elevated: #ffffff;
+  --pum-bg-card: #ffffff;
+  --pum-bg-hover: rgba(0,0,0,0.04);
+  --pum-border-subtle: rgba(0,0,0,0.06);
+  --pum-border-muted: rgba(0,0,0,0.09);
+  --pum-border-strong: rgba(0,0,0,0.14);
+  --pum-text-primary: rgba(0,0,0,0.90);
+  --pum-text-secondary: rgba(0,0,0,0.65);
+  --pum-text-muted: rgba(0,0,0,0.50);
+  --pum-text-disabled: rgba(0,0,0,0.32);
+  --pum-status-inactive: rgba(0,0,0,0.35);
+  --pum-status-inactive-bg: rgba(0,0,0,0.05);
+}
+
+/* ── C) audit-trail: header usa gradiente DARK via --pat-layer-from/-to (nunca definidos no light; scan não pega gradiente) + título/relógio brancos ── */
+:root[data-theme="light"] {
+  --pat-layer-from: rgba(255,255,255,0.95);
+  --pat-layer-to: rgba(255,255,255,0.75);
+  --pat-layer-border: rgba(0,0,0,0.08);
+}
+:root[data-theme="light"] .pat-title { color: rgba(0,0,0,0.92) !important; }
+:root[data-theme="light"] .pat-timestamp,
+:root[data-theme="light"] .pat-countdown,
+:root[data-theme="light"] .pat-countdown.active { color: rgba(0,0,0,0.85) !important; } /* >=4.5:1 (era 0.6 -> 3.8) */
+/* meta muted (paginação/footer/auto-refresh) usa --pat-text-muted; garantido >=4.5 via token 0.58 acima */
+:root[data-theme="light"] .pat-preset-btn:not(.pat-preset-active) { color: rgba(0,0,0,0.70) !important; }
+:root[data-theme="light"] .pat-preset-btn.pat-preset-active { background: #7c3aed !important; color: #ffffff !important; }
+/* C.2) fundos DARK hardcoded (gradientes, invisíveis ao scan) — provados ao vivo: só estes 5 estruturais */
+:root[data-theme="light"] .pat-header  { background: linear-gradient(to bottom, #ffffff, #fafafa) !important; border-bottom-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pat-filters { background: linear-gradient(to bottom, #fafafa, #f4f4f5) !important; border-bottom-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pat-footer  { background: linear-gradient(to top, #fafafa, #ffffff) !important; border-top-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pat-export-menu,
+:root[data-theme="light"] .pat-columns-menu { background: #ffffff !important; border-color: rgba(0,0,0,0.12) !important; }
+
+/* ════════════════ ETAPA 2 / L1 — panel-01 (Gestão de Requisições, #/compras) 2026-07-06 ════════════════
+   Mecanismo H5 provado: stylesheet própria /components/panels/panel-01/styles/index.css (58 _p01-*.css),
+   token-driven via _p01-tokens.css escopado em .p01-wrapper/.p01-panel (dark, ZERO [data-theme=light]).
+   header/thead/footer usam var(--p01-layer-from/-to); KPI/cards usam var(--p01-bg-elevated); linhas var(--p01-row-*).
+   => 1 bloco remapeando os tokens --p01-* clareia o painel INTEIRO por herança (mesmo padrão --pat-/--edts-/panel-06).
+   Acentos roxos (--p01-accent, --p01-row-hover/-active/-selected) + status/badges = DADO, preservados.
+   DARK pixel-idêntico: fonte define os tokens em .p01-* SEM [data-theme]; aqui só o light. */
+:root[data-theme="light"] .p01-wrapper,
+:root[data-theme="light"] .p01-panel {
+  --p01-bg-base: #ffffff; --p01-bg-surface: #fafafa; --p01-bg-elevated: #ffffff;
+  --bg-primary: #ffffff; --bg-card: #ffffff; --bg-muted: #f4f4f5;               /* aliases legados dark */
+  --p01-row-zebra: rgba(0,0,0,0.02);                                            /* zebra branco->preto sutil */
+  --p01-layer-from: rgba(255,255,255,0.96); --p01-layer-to: rgba(250,250,250,0.86); /* gradiente header/thead/footer */
+  --p01-layer-border: rgba(0,0,0,0.08);
+  --p01-border-muted: rgba(0,0,0,0.10); --p01-border-subtle: rgba(0,0,0,0.06); --border-color: rgba(0,0,0,0.10);
+  --p01-text-primary: rgba(0,0,0,0.90); --p01-text-secondary: rgba(0,0,0,0.65); --p01-text-muted: rgba(0,0,0,0.50);
+  --text-primary: rgba(0,0,0,0.90); --text-muted: rgba(0,0,0,0.50); --text-dim: rgba(0,0,0,0.40);
+}
+
+/* ════════════════ ETAPA 2 / L2 — headers dark de panel-09/financeiro (p03), panel-12/automacoes (p07),
+   panel-integration-adwords/google-ads (p15). 2026-07-06 ════════════════
+   Mesma arquitetura do p01: tokens.css em :root define --pXX-layer-from/-to (gradiente do header/footer/drawer, dark)
+   + --pXX-text-* (branco); ZERO [data-theme=light]. Sweep confirmou: SÓ o header estava dark nesses 3 (corpo já claro).
+   Tokens :root -> :root[data-theme=light] vence (0,2,0 > 0,1,0) e só afeta quem usa classes .pXX-*. Acentos/status = DADO.
+   DARK pixel-idêntico (fonte SEM [data-theme]; aqui só light). Namespaces isolados (0 aliases vazando, confirmado). */
+:root[data-theme="light"] {
+  --p03-bg-base: #ffffff; --p03-bg-surface: #fafafa; --p03-bg-elevated: #ffffff;
+  --p03-layer-from: rgba(255,255,255,0.96); --p03-layer-to: rgba(250,250,250,0.86); --p03-layer-border: rgba(0,0,0,0.08);
+  --p03-border-muted: rgba(0,0,0,0.10); --p03-border-subtle: rgba(0,0,0,0.06);
+  --p03-text-primary: rgba(0,0,0,0.90); --p03-text-secondary: rgba(0,0,0,0.65); --p03-text-muted: rgba(0,0,0,0.50);
+
+  --p07-bg-base: #ffffff; --p07-bg-surface: #fafafa; --p07-bg-elevated: #ffffff;
+  --p07-layer-from: rgba(255,255,255,0.96); --p07-layer-to: rgba(250,250,250,0.86); --p07-layer-border: rgba(0,0,0,0.08);
+  --p07-border-muted: rgba(0,0,0,0.10); --p07-border-subtle: rgba(0,0,0,0.06);
+  --p07-text-primary: rgba(0,0,0,0.90); --p07-text-secondary: rgba(0,0,0,0.65); --p07-text-muted: rgba(0,0,0,0.50);
+
+  --p15-bg-base: #ffffff; --p15-bg-surface: #fafafa; --p15-bg-elevated: #ffffff;
+  --p15-layer-from: rgba(255,255,255,0.96); --p15-layer-to: rgba(250,250,250,0.86); --p15-layer-border: rgba(0,0,0,0.08);
+  --p15-border-muted: rgba(0,0,0,0.10); --p15-border-subtle: rgba(0,0,0,0.06);
+  --p15-text-primary: rgba(0,0,0,0.90); --p15-text-secondary: rgba(0,0,0,0.65); --p15-text-muted: rgba(0,0,0,0.50);
+}
+
+/* ════════════════ ETAPA 2 / L3 — panel-03/clientes (namespace p02) 2026-07-06 ════════════════
+   p02 é HEAVILY-hardcoded (não token-driven como p01): footer/header usam var(--p02-layer-*) (cobertos pelo remap),
+   MAS ~12 superfícies interativas cravam background:#000 + 14 seletores cravam texto branco. Cobertura completa
+   (estrutural+interativo p/ não sobrar resíduo na interação); acentos/estados .active preservados. DARK só [data-theme=light]. */
+:root[data-theme="light"] {
+  --p02-bg-base: #ffffff; --p02-bg-surface: #fafafa; --p02-bg-elevated: #ffffff;
+  --p02-layer-from: rgba(255,255,255,0.96); --p02-layer-to: rgba(250,250,250,0.86); --p02-layer-border: rgba(0,0,0,0.08);
+  --p02-border-muted: rgba(0,0,0,0.10); --p02-border-subtle: rgba(0,0,0,0.06);
+  --p02-text-primary: rgba(0,0,0,0.90); --p02-text-secondary: rgba(0,0,0,0.65); --p02-text-muted: rgba(0,0,0,0.50);
+}
+/* fundos #000 hardcoded -> superfície clara (pills/clusters/filtros/inputs/dropdowns) */
+:root[data-theme="light"] :is(.p02-actions-cluster,.p02-control-cluster,.p02-density-cluster,.p02-filters,
+  .p02-filter-chip,.p02-filter-clear,.p02-filter-counter,.p02-auto-refresh,.p02-timestamp,.p02-group-select,.p02-page-size) {
+  background: #f4f4f5 !important; border-color: rgba(0,0,0,0.10) !important;
+}
+:root[data-theme="light"] :is(.p02-search-input,.p02-columns-menu) {
+  background: #ffffff !important; border-color: rgba(0,0,0,0.10) !important;
+}
+:root[data-theme="light"] .p02-identity-icon { background: rgba(124,58,237,0.12) !important; } /* container do ícone: acento suave */
+/* textos brancos hardcoded -> escuro */
+:root[data-theme="light"] :is(.p02-search-input,.p02-filter-chip,.p02-filter-counter,.p02-timestamp,.p02-countdown,
+  .p02-density-btn,.p02-group-select,.p02-page-size,.p02-search-shortcut,.p02-columns-item,.p02-columns-menu-header,
+  .p02-toast-close,.p02-footer-stat) { color: rgba(0,0,0,0.80) !important; }
+:root[data-theme="light"] .p02-search-input::placeholder { color: rgba(0,0,0,0.45) !important; }
+:root[data-theme="light"] .p02-footer-stat svg { color: rgba(0,0,0,0.45) !important; }
+
+/* ════════════════ ETAPA 2 / L4 — cards compartilhados (design-system) em panel-11/geral 2026-07-06 ════════════════
+   Causa: o bloco light (linha ~68) já punha --card-bg:#ffffff MAS esqueceu --card-text-primary/-secondary (o que os
+   cards de fato usam) -> fundo branco, texto branco. + textos base .card-* hardcoded brancos. Tokens vêm de
+   design-system/02-cards-tokens.css e do bundle dist/ (INTOCÁVEL) -> corrijo por token + override externo aditivo.
+   .card-status-indicator (dot de status) e trends coloridos = DADO, NÃO tocados. DARK só [data-theme=light]. */
+:root[data-theme="light"] {
+  --card-text-primary: rgba(0,0,0,0.90);
+  --card-text-secondary: rgba(0,0,0,0.65);
+}
+:root[data-theme="light"] .card-container :is(.card-label,.card-title) { color: rgba(0,0,0,0.60) !important; }
+:root[data-theme="light"] .card-container :is(.card-value,.value-number) { color: rgba(0,0,0,0.88) !important; }
+:root[data-theme="light"] .card-container :is(.card-label,.card-title,.card-value,.card-status,.card-meta,.card-header,.card-footer) :is(span,strong) { color: rgba(0,0,0,0.80) !important; }
+
+/* L4.1 — <option> de <select> nos painéis: texto branco no popup nativo -> escuro (geral, escopo conteúdo) */
+:root[data-theme="light"] .dsd-container__content option { color: rgba(0,0,0,0.85); }
+
+/* ════════════════ L5 — panel-gestao-paineis: FUNDO dos cards (2026-07-08) ════════════════
+   Provado ao vivo (audit-realpanels2): os cards ficavam #1a1a2e (azul-marinho) sobre o light -> blocos
+   escuros grandes na grade. O --gp-ink (canal de tinta) só tratou o TEXTO; os FUNDOS hardcoded em
+   _panel-card.css (:root, sem [data-theme]) nunca foram remapeados. Aqui só o LIGHT:
+   container/thumb/placeholder -> superfície clara; borda branca-fraca -> cinza-escuro-fraco.
+   Os thumbnails (<img>) são SCREENSHOTS reais (dark) = DADO, não tocados (cobrem o thumb quando carregam).
+   Footer usa rgba(255,255,255,.03) (~branco no card claro) e texto/version já herdam --gp-ink=0,0,0. DARK intocado. */
+:root[data-theme="light"] .pgp-card {
+  background: #ffffff !important;
+  border-color: rgba(0,0,0,0.10) !important;
+}
+:root[data-theme="light"] .pgp-card:hover {
+  box-shadow: 0 8px 28px rgba(124,58,237,0.16), 0 2px 8px rgba(0,0,0,0.10) !important;
+}
+/* fundo atrás do thumbnail (loading) + placeholder sem screenshot -> cinza claro (o <img> dark cobre quando há) */
+:root[data-theme="light"] .pgp-card__thumb { background: #e8e8ea !important; }
+:root[data-theme="light"] .pgp-card__thumb--placeholder { background: #f0f0f2 !important; }
+/* footer: leve superfície clara p/ separar do corpo do card (era rgba(255,255,255,.03) ~invisível no branco) */
+:root[data-theme="light"] .pgp-card__footer { background: rgba(0,0,0,0.03) !important; }
+
+/* ── L5.1 — MODAL de detalhe/edição do gestao-paineis (abre ao clicar no card) ──
+   _panel-modal.css crava fundo #1a1a2e/#0f0f1a/#2a2a3e E TEXTO #f1f5f9 HARDCODED (NÃO usa --gp-ink) —
+   no light seria fundo escuro + texto quase-branco (invisível ao clarear o fundo). Trato fundo E texto.
+   Scrims do overlay/viewer (rgba(0,0,0,.7/.9)) FICAM (dimam a página atrás; corretos nos 2 temas).
+   Acentos preservados: botão salvar (gradiente roxo), botão abrir-painel (azul), tags (roxo), link de campo. */
+:root[data-theme="light"] .pgp-modal {
+  background: #ffffff !important; border-color: rgba(0,0,0,0.10) !important;
+  color: rgba(0,0,0,0.88) !important; box-shadow: 0 24px 48px rgba(0,0,0,0.22) !important;
+}
+:root[data-theme="light"] .pgp-modal__title,
+:root[data-theme="light"] .pgp-modal__section h3,
+:root[data-theme="light"] .pgp-modal__field span,
+:root[data-theme="light"] .pgp-modal__close:hover { color: rgba(0,0,0,0.88) !important; }
+:root[data-theme="light"] .pgp-modal__header,
+:root[data-theme="light"] .pgp-modal__footer { border-color: rgba(0,0,0,0.10) !important; }
+:root[data-theme="light"] .pgp-modal__section h3 { border-bottom-color: rgba(0,0,0,0.10) !important; }
+:root[data-theme="light"] .pgp-modal__thumb-container { background: #e8e8ea !important; } /* atrás do screenshot (img cobre) */
+:root[data-theme="light"] .pgp-modal__input,
+:root[data-theme="light"] .pgp-modal__textarea,
+:root[data-theme="light"] .pgp-modal__select {
+  background: #ffffff !important; border-color: rgba(0,0,0,0.14) !important; color: rgba(0,0,0,0.88) !important;
+}
+:root[data-theme="light"] .pgp-modal__select option { background: #ffffff !important; color: rgba(0,0,0,0.88) !important; }
+:root[data-theme="light"] .pgp-tag-input { color: rgba(0,0,0,0.88) !important; }
+:root[data-theme="light"] .pgp-screenshot-history__item { border-bottom-color: rgba(0,0,0,0.08) !important; }
+
+/* ════════════════ L6 — resíduos dark provados em painéis TRATADOS (audit 2026-07-08) ════════════════
+   Audit de contraste ao vivo (audit-light-lote) achou superfícies que o tratamento por-token de cada painel
+   NÃO cobriu (fundos hardcoded sem [data-theme]). Só LIGHT; DARK intocado. */
+
+/* ── nav-admin: .pna-input/.pna-select tinham fundo dark hardcoded rgba(15,18,30,.6) + borda branca invisível.
+   Uso background-COLOR (o .pna-select tem background-image=chevron, não apagar). border-color base SEM !important
+   p/ não vencer .error (vermelho !important) nem :focus; re-afirmo a borda roxa de foco. Texto já é escuro (--pna-text). */
+:root[data-theme="light"] .pna-input,
+:root[data-theme="light"] .pna-select { background-color: #ffffff !important; border-color: rgba(0,0,0,0.14); }
+:root[data-theme="light"] .pna-input:hover,
+:root[data-theme="light"] .pna-select:hover { background-color: #f4f4f5 !important; }
+:root[data-theme="light"] .pna-input:focus,
+:root[data-theme="light"] .pna-select:focus { background-color: #ffffff !important; border-color: var(--pna-primary, #7c3aed); }
+
+/* ── audit-trail: .pat-health-summary e .pat-actions-cluster tinham rgba(0,0,0,.5) (barras escuras) no light.
+   -> superfície clara (analog do rgba(0,0,0,.5) semi-transparente). Texto/contagens usam tokens pat-* (já escuros). */
+:root[data-theme="light"] .pat-health-summary,
+:root[data-theme="light"] .pat-actions-cluster { background: #f4f4f5 !important; }
+
+/* ════════════════ L7 — panel-session-admin (Gestão de Sessões) no LIGHT (2026-07-08) ════════════════
+   O painel `.psa` é 100% token-driven (--psa-* em tokens.css :root + _variables.css .psa). Como `.psa` é
+   ancestral de todo o conteúdo, remapear os tokens aqui (escopo `.psa`, vence os 2 blocos-fonte por
+   especificidade) clareia fundos/texto/bordas do painel inteiro por herança. Acentos/status
+   (--psa-accent/-primary/-danger/-success/-warning/-info) = DADO, preservados. DARK intocado.
+   (O painel só passou a renderizar após o fix de mount+dados 2026-07-08, por isso o dark ficou exposto agora.) */
+:root[data-theme="light"] .psa {
+  --psa-bg-primary: #ffffff;
+  --psa-bg-secondary: #f4f4f5;
+  --psa-bg-tertiary: #e8e8ea;
+  --psa-bg-card: #ffffff;
+  --psa-bg-input: #ffffff;
+  --psa-bg-hover: rgba(0,0,0,0.04);
+  --psa-bg-active: rgba(0,0,0,0.08);
+  --psa-border: rgba(0,0,0,0.10);
+  --psa-border-hover: rgba(0,0,0,0.18);
+  --psa-text-primary: rgba(0,0,0,0.90);
+  --psa-text-secondary: rgba(0,0,0,0.65);
+  --psa-text-muted: rgba(0,0,0,0.50);
+  --psa-text-disabled: rgba(0,0,0,0.35);
+  --psa-shadow-sm: 0 1px 2px rgba(0,0,0,0.10);
+  --psa-shadow-md: 0 4px 6px rgba(0,0,0,0.10);
+  --psa-shadow-lg: 0 10px 15px rgba(0,0,0,0.12);
+  /* linhas do grid no light (zebra/atual/selecionada) — visíveis sobre fundo claro (Fase a) */
+  --psa-row-zebra: rgba(0,0,0,0.025);
+  --psa-row-current: rgba(124,58,237,0.10);
+  --psa-row-selected: rgba(124,58,237,0.14);
+}
+/* .psa__filters tem background hardcoded rgba(0,0,0,.2) (não-token) -> superfície clara no light */
+:root[data-theme="light"] .psa__filters { background: #f4f4f5 !important; }
+
+/* ─────────────────────────────────────────────────────────────
+   BLOCO L8 — panel-user-profile (.pup) no tema LIGHT — 2026-07-08
+   O painel "Meu Perfil" só passou a renderizar após a reconexão do orquestrador
+   (SW 9.3.16/9.3.17). Seu styles/index.css é DARK hardcoded (#0a0a0e + texto branco),
+   então no light aparecia como "ilha dark". Aqui remapeamos SUPERFÍCIES e TEXTO para o
+   claro. Acentos/status/ícones coloridos (roxo/azul/verde/âmbar/badges) = DADO, preservados.
+   DARK 100% intocado. ───────────────────────────────────────── */
+:root[data-theme="light"] .pup { background: #ffffff !important; color: rgba(0,0,0,0.9) !important; }
+:root[data-theme="light"] .pup-header { background: linear-gradient(135deg, rgba(124,58,237,0.05) 0%, rgba(244,244,245,0.9) 100%) !important; border-bottom-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pup-name { color: rgba(0,0,0,0.92) !important; }
+:root[data-theme="light"] .pup-email { color: rgba(0,0,0,0.5) !important; }
+:root[data-theme="light"] .pup-card { background: #ffffff !important; border-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pup-card:hover { background: #f4f4f5 !important; border-color: rgba(0,0,0,0.14) !important; }
+:root[data-theme="light"] .pup-card-label { color: rgba(0,0,0,0.5) !important; }
+:root[data-theme="light"] .pup-card-value { color: rgba(0,0,0,0.85) !important; }
+:root[data-theme="light"] .pup-section-title,
+:root[data-theme="light"] .pup-system-title { color: rgba(0,0,0,0.55) !important; border-bottom-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pup-system-title { border-top-color: rgba(0,0,0,0.06) !important; }
+:root[data-theme="light"] .pup-field-label { color: rgba(0,0,0,0.6) !important; }
+:root[data-theme="light"] .pup-field input { background: #ffffff !important; border-color: rgba(0,0,0,0.14) !important; color: rgba(0,0,0,0.9) !important; }
+:root[data-theme="light"] .pup-field input:disabled { background: #f4f4f5 !important; border-color: rgba(0,0,0,0.08) !important; color: rgba(0,0,0,0.4) !important; }
+:root[data-theme="light"] .pup-sys-key { color: rgba(0,0,0,0.5) !important; }
+:root[data-theme="light"] .pup-sys-val { color: rgba(0,0,0,0.85) !important; }
+:root[data-theme="light"] .pup-picker { background: #f4f4f5 !important; border-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pup-picker-title { color: rgba(0,0,0,0.85) !important; }
+:root[data-theme="light"] .pup-picker-close { color: rgba(0,0,0,0.5) !important; }
+:root[data-theme="light"] .pup-picker-close:hover { background: rgba(0,0,0,0.06) !important; color: rgba(0,0,0,0.8) !important; }
+:root[data-theme="light"] .pup-btn.sec { border-color: rgba(0,0,0,0.14) !important; color: rgba(0,0,0,0.65) !important; }
+:root[data-theme="light"] .pup-btn.sec:hover { background: rgba(0,0,0,0.04) !important; border-color: rgba(0,0,0,0.2) !important; }
+:root[data-theme="light"] .pup-footer { background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 30%) !important; border-top-color: rgba(0,0,0,0.08) !important; }
+:root[data-theme="light"] .pup-state-title { color: rgba(0,0,0,0.9) !important; }
+:root[data-theme="light"] .pup-state-desc { color: rgba(0,0,0,0.5) !important; }
+:root[data-theme="light"] .pup-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12) !important; }

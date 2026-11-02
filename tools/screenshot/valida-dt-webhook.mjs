@@ -1,0 +1,25 @@
+import pkg from './node_modules/playwright/index.js';
+const { chromium } = pkg;
+import { getSessionCookies, isLoginPage, loginViaPage } from './auth.mjs';
+const OUT='/tmp/claude-0/-root/700a9e7d-2830-4fec-a39f-5b02b7bd1074/scratchpad';
+const cookies=await getSessionCookies();
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--host-resolver-rules=MAP dshowdash.com.br 127.0.0.1']});
+const ctx=await browser.newContext({viewport:{width:1500,height:1000},colorScheme:'dark',serviceWorkers:'block',ignoreHTTPSErrors:true});
+await ctx.addCookies(cookies);
+const page=await ctx.newPage(); const errors=[],log=[];
+page.on('pageerror',e=>errors.push(String(e).slice(0,200)));
+await page.goto('https://dshowdash.com.br/#/panel-datatables',{waitUntil:'domcontentloaded',timeout:30000}).catch(()=>{});
+await page.waitForTimeout(3000);
+if(await isLoginPage(page)){await loginViaPage(page).catch(()=>{});await page.goto('https://dshowdash.com.br/#/panel-datatables').catch(()=>{});await page.waitForTimeout(3000);}
+await page.waitForSelector('.dt-root',{timeout:20000}).catch(()=>{});
+await page.click('.dt-tab[data-tab="admin"]').catch(()=>{});
+await page.waitForTimeout(2800);
+log.push('aviso: '+(await page.evaluate(()=>((document.querySelector('.dt-note strong')||{}).textContent||'').slice(0,110))));
+log.push('canais com entrega funcional: '+await page.evaluate(()=>[...document.querySelectorAll('tbody tr')].filter(r=>r.textContent.includes('funcional')).length));
+log.push('botao testar presente: '+await page.evaluate(()=>!!document.querySelector('[data-dt-testwh]')));
+await page.click('[data-dt-testwh]').catch(()=>{});
+await page.waitForTimeout(3200);
+log.push('toast do teste: '+(await page.evaluate(()=>((document.querySelector('[data-dt-toast]')||{}).textContent||'').trim().slice(0,80))));
+await page.screenshot({path:`${OUT}/dt-webhook-1.png`}).catch(()=>{});
+await ctx.close(); await browser.close();
+console.log(JSON.stringify({log,errors},null,2));

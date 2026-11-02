@@ -1,0 +1,152 @@
+/**
+ * Design System - Cards Premium Tokens
+ * @version 1.1.0 - CLEAN EDITION
+ * @description Tokens específicos para cards premium SEM 3D effects
+ */
+
+:root {
+  /* ==================== CARDS - DIMENSIONS ==================== */
+  --card-height: 160px;
+  --card-padding: 16px;
+  --card-border-radius: 12px;
+  --card-border-width: 1px;
+  --card-border-top-height: 3px;
+
+  /* ==================== CARDS - COLORS ==================== */
+  --card-bg: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%);
+  --card-bg-hover: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --card-border-hover: rgba(255, 255, 255, 0.2);
+
+  /* ==================== CARDS - TEXT ==================== */
+  --card-text-primary: #ffffff;
+  --card-text-secondary: rgba(255, 255, 255, 0.8);
+  --card-text-muted: rgba(255, 255, 255, 0.5);
+
+  /* ==================== CARDS - HEADER ==================== */
+  --card-header-height: 32px;
+  --card-header-font-size: 14px;
+  --card-header-font-weight: 600;
+  --card-header-margin-bottom: 12px;
+
+  /* ==================== CARDS - BODY ==================== */
+  --card-body-gap: 8px;
+  --card-body-min-height: 100px;
+
+  /* ==================== CARDS - VALUE ==================== */
+  --card-value-font-size: 32px;
+  --card-value-font-weight: 700;
+  --card-value-line-height: 1;
+
+  /* ==================== CARDS - LABEL ==================== */
+  --card-label-font-size: 12px;
+  --card-label-color: rgba(255, 255, 255, 0.7);
+
+  /* ==================== CARDS - FOOTER ==================== */
+  --card-footer-gap: 8px;
+  --card-footer-min-height: 30px;
+
+  /* ==================== CARDS - ICON ==================== */
+  --card-icon-size: 20px;
+  --card-icon-stroke: 2;
+  --card-icon-opacity: 0.7;
+
+  /* ==================== CARDS - META ==================== */
+  --card-meta-font-size: 11px;
+  --card-meta-color: rgba(255, 255, 255, 0.5);
+
+  /* ==================== CARDS - SHADOWS ==================== */
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  --card-shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+
+  /* ==================== CARDS - TRANSITIONS ==================== */
+  --card-transition-base: 300ms ease;
+  --card-transition-slow: 600ms ease;
+  --card-transition-premium: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --card-transition-bounce: all 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ==================== CARDS - SPACING ==================== */
+  --card-space-xs: 4px;
+  --card-space-sm: 8px;
+  --card-space-md: 12px;
+  --card-space-lg: 16px;
+  --card-space-xl: 24px;
+
+  /* ==================== CARDS - TYPOGRAPHY SCALE ==================== */
+  --card-text-xs: 11px;
+  --card-text-sm: 13px;
+  --card-text-base: 14px;
+  --card-text-lg: 16px;
+  --card-text-xl: 20px;
+  --card-text-2xl: 24px;
+  --card-text-3xl: 32px;
+  --card-text-4xl: 32px;
+
+  /* ==================== CARDS - FONT WEIGHTS ==================== */
+  --card-font-normal: 400;
+  --card-font-medium: 500;
+  --card-font-semibold: 600;
+  --card-font-bold: 700;
+
+  /* ==================== CARDS - STATUS COLORS ==================== */
+  --card-success: var(--green);
+  --card-success-dark: var(--green-dark);
+  --card-warning: var(--orange);
+  --card-warning-dark: var(--orange-dark);
+  --card-danger: var(--red);
+  --card-danger-dark: var(--red-dark);
+  --card-info: var(--blue);
+  --card-info-dark: var(--blue-dark);
+
+  /* ==================== CARDS - ACCENT COLORS ==================== */
+  --card-blue: var(--blue);
+  --card-blue-dark: var(--blue-dark);
+  --card-indigo: var(--indigo);
+  --card-indigo-dark: var(--indigo-dark);
+  --card-purple: var(--purple);
+  --card-purple-dark: var(--purple-dark);
+  --card-cyan: var(--cyan);
+  --card-cyan-dark: var(--cyan-dark);
+  --card-green: var(--green);
+  --card-green-dark: var(--green-dark);
+  --card-orange: var(--orange);
+  --card-orange-dark: var(--orange-dark);
+  --card-red: var(--red);
+  --card-red-dark: var(--red-dark);
+
+  /* ==================== CARDS - SKELETON LOADING ==================== */
+  --card-skeleton-bg-start: rgba(255, 255, 255, 0.03);
+  --card-skeleton-bg-middle: rgba(255, 255, 255, 0.08);
+
+  /* ==================== CARDS - GLASSMORPHISM CLEAN ==================== */
+  --card-glass-bg: rgba(30, 41, 59, 0.5);
+  --card-glass-border: rgba(255, 255, 255, 0.1);
+  --card-glass-blur: 10px;
+  --card-glass-saturate: 120%;
+}
+
+/* ==================== RESPONSIVE OVERRIDES ==================== */
+
+/* Tablet */
+@media (max-width: 768px) {
+  :root {
+    --card-height: 140px;
+    --card-padding: 14px;
+    --card-value-font-size: 32px;
+    --card-text-3xl: 32px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  :root {
+    --card-height: 120px;
+    --card-padding: 12px;
+    --card-value-font-size: 24px;
+    --card-text-3xl: 24px;
+    --card-text-2xl: 20px;
+    --card-text-xl: 18px;
+    --card-header-font-size: 13px;
+    --card-label-font-size: 11px;
+  }
+}

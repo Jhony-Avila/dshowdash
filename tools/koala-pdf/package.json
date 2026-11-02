@@ -1,0 +1,8 @@
+{
+  "name": "koala-pdf",
+  "version": "1.0.0-F3",
+  "private": true,
+  "type": "module",
+  "description": "Conversor HTML->PDF do Koala Docs (F3). Reusa Playwright/Chromium instalado via symlink node_modules -> ../screenshot/node_modules; NÃO instala dependências próprias.",
+  "bin": { "koala-pdf": "./generate.mjs" }
+}

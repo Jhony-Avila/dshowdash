@@ -1,0 +1,99 @@
+{
+  "_d3.Bhhv-xDr.js": {
+    "file": "chunks/d3.Bhhv-xDr.js",
+    "name": "d3"
+  },
+  "_echarts.DyUXRgP3.js": {
+    "file": "chunks/echarts.DyUXRgP3.js",
+    "name": "echarts",
+    "imports": [
+      "_vendor.D104hGeS.js"
+    ]
+  },
+  "_entry.BhwPruIC.js": {
+    "file": "chunks/entry.BhwPruIC.js",
+    "name": "entry",
+    "imports": [
+      "_react-vendor.CgXjwx16.js",
+      "_vendor.D104hGeS.js"
+    ],
+    "dynamicImports": [
+      "src/screens/Agenda.tsx",
+      "src/screens/Carga.tsx",
+      "src/screens/Relatorios.tsx"
+    ],
+    "css": [
+      "assets/entry.BqJzQDy-.css"
+    ]
+  },
+  "_entry.BqJzQDy-.css": {
+    "file": "assets/entry.BqJzQDy-.css",
+    "src": "_entry.BqJzQDy-.css"
+  },
+  "_fullcalendar.DVeRaRZZ.js": {
+    "file": "chunks/fullcalendar.DVeRaRZZ.js",
+    "name": "fullcalendar",
+    "imports": [
+      "_vendor.D104hGeS.js",
+      "_react-vendor.CgXjwx16.js"
+    ]
+  },
+  "_react-vendor.CgXjwx16.js": {
+    "file": "chunks/react-vendor.CgXjwx16.js",
+    "name": "react-vendor"
+  },
+  "_vendor.D104hGeS.js": {
+    "file": "chunks/vendor.D104hGeS.js",
+    "name": "vendor",
+    "imports": [
+      "_react-vendor.CgXjwx16.js"
+    ]
+  },
+  "src/entry.tsx": {
+    "file": "gcal.DRAesHzq.js",
+    "name": "entry",
+    "src": "src/entry.tsx",
+    "isEntry": true,
+    "imports": [
+      "_react-vendor.CgXjwx16.js",
+      "_entry.BhwPruIC.js",
+      "_vendor.D104hGeS.js"
+    ]
+  },
+  "src/screens/Agenda.tsx": {
+    "file": "chunks/Agenda.CsS29c0n.js",
+    "name": "Agenda",
+    "src": "src/screens/Agenda.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_react-vendor.CgXjwx16.js",
+      "_vendor.D104hGeS.js",
+      "_fullcalendar.DVeRaRZZ.js",
+      "_entry.BhwPruIC.js"
+    ]
+  },
+  "src/screens/Carga.tsx": {
+    "file": "chunks/Carga.ylvwrJhE.js",
+    "name": "Carga",
+    "src": "src/screens/Carga.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_react-vendor.CgXjwx16.js",
+      "_vendor.D104hGeS.js",
+      "_entry.BhwPruIC.js",
+      "_echarts.DyUXRgP3.js"
+    ]
+  },
+  "src/screens/Relatorios.tsx": {
+    "file": "chunks/Relatorios.D-yAsSaQ.js",
+    "name": "Relatorios",
+    "src": "src/screens/Relatorios.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_react-vendor.CgXjwx16.js",
+      "_vendor.D104hGeS.js",
+      "_entry.BhwPruIC.js",
+      "_d3.Bhhv-xDr.js"
+    ]
+  }
+}

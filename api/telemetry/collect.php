@@ -1,0 +1,1 @@
+/var/www/dshowdash/api/telemetry/index.php

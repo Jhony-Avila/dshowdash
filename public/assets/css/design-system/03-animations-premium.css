@@ -1,0 +1,165 @@
+/**
+ * Design System - Animations Clean
+ * @version 1.1.0 - CLEAN EDITION
+ * @description Keyframes essenciais SEM efeitos 3D excessivos
+ *
+ * CHANGES v1.1.0:
+ * - ✅ MANTIDO: valuePulse, shimmer, skeleton, fade-ins
+ * - ❌ REMOVIDO: glowPulse, borderScan, iconSpin (hover excessivos)
+ * - ✅ Simplificado animações para performance
+ */
+
+/* ==================== CARDS - VALUE ANIMATIONS ==================== */
+
+/* Value Pulse - Números pulsam no hover */
+@keyframes valuePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+/* Card Pulse - Card inteiro pulsa */
+@keyframes card-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ==================== LOADING ANIMATIONS ==================== */
+
+/* Shimmer - Efeito de brilho para loading */
+@keyframes shimmer {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+/* Skeleton Pulse - Pulse para skeleton screens */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; background-position: 0% 0%; }
+  50% { opacity: 0.6; background-position: 100% 0%; }
+}
+
+/* Card Shimmer - Shimmer específico para cards */
+@keyframes card-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ==================== FADE ANIMATIONS ==================== */
+
+/* Card Fade In Up - Card aparece de baixo */
+@keyframes cardFadeInUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Card Fade In - Card aparece com fade */
+@keyframes card-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Card Fade In Up (alternativo) */
+@keyframes card-fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================== ERROR STATES ==================== */
+
+/* Error Fade In - Erro aparece suavemente */
+@keyframes errorFadeIn {
+  0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Error Pulse - Erro pulsa */
+@keyframes errorPulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+/* ==================== STATUS INDICATORS ==================== */
+
+/* Status Pulse - Indicador de status pulsa */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+/* ==================== UPDATE EFFECTS ==================== */
+
+/* Update Flash - Flash quando atualiza */
+@keyframes updateFlash {
+  0% { background: rgba(102, 126, 234, 0); }
+  50% { background: rgba(102, 126, 234, 0.1); }
+  100% { background: rgba(102, 126, 234, 0); }
+}
+
+/* ==================== PANELS ANIMATIONS ==================== */
+
+/* Panel Slide In - Painel desliza para dentro */
+@keyframes panelSlideIn {
+  0% { opacity: 0; transform: translateX(-30px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* Panel Fade In - Painel aparece com fade */
+@keyframes panelFadeIn {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ==================== CHART ANIMATIONS ==================== */
+
+/* Chart Bar Grow - Barras de gráfico crescem */
+@keyframes chartBarGrow {
+  0% { transform: scaleY(0); transform-origin: bottom; }
+  100% { transform: scaleY(1); transform-origin: bottom; }
+}
+
+/* Chart Line Draw - Linhas de gráfico desenham */
+@keyframes chartLineDraw {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* ==================== SCALE ANIMATIONS ==================== */
+
+/* Scale In - Escala para dentro */
+@keyframes scaleInCard {
+  0% { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Scale Out - Escala para fora */
+@keyframes scaleOut {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+
+/* Classes para aplicar animações rapidamente */
+.animate-value-pulse { animation: valuePulse 1.5s ease-in-out infinite; }
+.animate-shimmer { animation: shimmer 2s infinite; }
+.animate-fade-in-up { animation: cardFadeInUp 0.4s ease-out; }
+.animate-status-pulse { animation: statusPulse 2s ease-in-out infinite; }
+.animate-error-pulse { animation: errorPulse 2s ease-in-out infinite; }
+
+/* ==================== ACCESSIBILITY ==================== */
+
+/* Desabilitar animações para usuários com prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .animate-value-pulse,
+  .animate-shimmer,
+  .animate-fade-in-up,
+  .animate-status-pulse,
+  .animate-error-pulse {
+    animation: none !important;
+  }
+}

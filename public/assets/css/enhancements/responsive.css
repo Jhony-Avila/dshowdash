@@ -1,0 +1,366 @@
+/* DshowDash - Responsive Breakpoints
+ * @version 1.2.0-ENTERPRISE
+ * @changelog v1.2.0: Sidebar posicionada entre ticker e footer (top/bottom corretos)
+ * @changelog v1.1.0: z-index alinhado com sistema global
+ * Melhoria #50: Otimização para todos devices
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BREAKPOINT VARIABLES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+:root {
+    --breakpoint-xs: 0;
+    --breakpoint-sm: 576px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
+    --breakpoint-xl: 1200px;
+    --breakpoint-xxl: 1400px;
+    
+    /* Component sizes */
+    --navrail-width: 56px;
+    --navrail-width-mobile: 0px;
+    --sidebar-width: 240px;
+    --sidebar-width-mini: 64px;
+    --sidebar-width-mobile: 280px;
+    --header-height: 64px;
+    --header-height-compact: 48px;
+    --ticker-height: 36px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MOBILE FIRST - BASE (< 576px)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.dsd-app-shell {
+    display: grid;
+    grid-template-areas:
+        "ticker"
+        "header"
+        "main"
+        "bottom-nav";
+    grid-template-rows: auto var(--header-height) 1fr auto;
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* NavRail - Hidden on mobile, bottom nav instead */
+.dsd-shell__region--nav-rail {
+    display: none;
+}
+
+/* Sidebar - Off-canvas on mobile - POSICIONADA ENTRE TICKER E FOOTER */
+.dsd-shell__region--sidebar {
+    position: fixed;
+    top: var(--shell-top-offset, 100px);
+    left: 0;
+    bottom: var(--shell-footer-height, 76px);
+    width: var(--sidebar-width-mobile);
+    transform: translateX(-100%);
+    z-index: var(--shell-z-sidebar, 100);
+    transition: transform 0.3s var(--ease-out-expo);
+}
+
+.dsd-shell__region--sidebar.is-open {
+    transform: translateX(0);
+}
+
+/* Sidebar overlay */
+.sidebar-overlay {
+    position: fixed;
+    top: var(--shell-top-offset, 100px);
+    left: 0;
+    right: 0;
+    bottom: var(--shell-footer-height, 76px);
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    z-index: calc(var(--shell-z-sidebar, 100) - 1);
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.sidebar-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Main content */
+.dsd-shell__region--main {
+    grid-area: main;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+/* Bottom Navigation (Mobile only) */
+.bottom-nav {
+    grid-area: bottom-nav;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 64px;
+    background: var(--bg-elevated, #111827);
+    border-top: 1px solid var(--border-color, #2d3748);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.bottom-nav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    color: var(--text-muted, #9ca3af);
+    text-decoration: none;
+    font-size: 10px;
+    transition: color 0.2s;
+}
+
+.bottom-nav__item--active {
+    color: var(--primary, #3b82f6);
+}
+
+.bottom-nav__item svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SMALL DEVICES (≥ 576px)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 576px) {
+    .dsd-shell__region--main {
+        padding: 20px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TABLETS (≥ 768px)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+    .dsd-app-shell {
+        grid-template-areas:
+            "ticker ticker"
+            "header header"
+            "sidebar main";
+        grid-template-rows: auto var(--header-height) 1fr;
+        grid-template-columns: var(--sidebar-width-mini) 1fr;
+    }
+    
+    /* NavRail still hidden on tablet */
+    .dsd-shell__region--nav-rail {
+        display: none;
+    }
+    
+    /* Sidebar - Mini mode on tablet - MANTÉM POSIÇÃO CORRETA */
+    .dsd-shell__region--sidebar {
+        position: fixed;
+        top: var(--shell-top-offset, 100px);
+        bottom: var(--shell-footer-height, 76px);
+        left: var(--shell-nav-rail-width, 0);
+        transform: none;
+        width: var(--sidebar-width-mini);
+        grid-area: sidebar;
+    }
+    
+    /* Sidebar in mini mode */
+    .dsd-sidebar--mini .dsd-sidebar__item-text,
+    .dsd-sidebar--mini .dsd-sidebar__group-title {
+        display: none;
+    }
+    
+    /* Hide bottom nav on tablet+ */
+    .bottom-nav {
+        display: none;
+    }
+    
+    .dsd-shell__region--main {
+        padding: 24px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DESKTOP (≥ 992px)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 992px) {
+    .dsd-app-shell {
+        grid-template-areas:
+            "ticker ticker ticker"
+            "header header header"
+            "navrail sidebar main";
+        grid-template-rows: auto var(--header-height) 1fr;
+        grid-template-columns: var(--navrail-width) var(--sidebar-width) 1fr;
+    }
+    
+    /* NavRail visible */
+    .dsd-shell__region--nav-rail {
+        display: flex;
+        grid-area: navrail;
+        width: var(--navrail-width);
+    }
+    
+    /* Sidebar full width - POSIÇÃO CORRETA MANTIDA */
+    .dsd-shell__region--sidebar {
+        width: var(--sidebar-width);
+        left: var(--shell-nav-rail-width, 56px);
+    }
+    
+    .dsd-sidebar__item-text,
+    .dsd-sidebar__group-title {
+        display: block;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LARGE DESKTOP (≥ 1200px)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1200px) {
+    .dsd-shell__region--main {
+        padding: 32px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   EXTRA LARGE (≥ 1400px)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1400px) {
+    :root {
+        --sidebar-width: 280px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HEADER COMPACT MODE
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.dsd-header--compact {
+    height: var(--header-height-compact);
+}
+
+.dsd-header--compact .dsd-header__logo {
+    transform: scale(0.85);
+}
+
+.dsd-header--compact .dsd-header__item {
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+}
+
+@media (max-width: 767px) {
+    .dsd-header {
+        height: var(--header-height-compact);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR MINI MODE
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.dsd-sidebar--mini {
+    width: var(--sidebar-width-mini) !important;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__header {
+    padding: 12px 8px;
+    justify-content: center;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__search {
+    display: none;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__link {
+    justify-content: center;
+    padding: 12px;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__item-text,
+.dsd-sidebar--mini .dsd-sidebar__group-title,
+.dsd-sidebar--mini .dsd-sidebar__group-chevron {
+    display: none;
+}
+
+.dsd-sidebar--mini .dsd-sidebar__item-icon {
+    margin-right: 0;
+}
+
+/* Tooltip on hover for mini mode */
+.dsd-sidebar--mini .dsd-sidebar__link[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-elevated, #111827);
+    color: var(--text, #f3f4f6);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    z-index: var(--z-tooltip, 1200);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dsd-sidebar--mini .dsd-sidebar__link:hover[data-tooltip]::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.hide-mobile { display: none !important; }
+.hide-tablet { display: block; }
+.hide-desktop { display: block; }
+
+@media (min-width: 768px) {
+    .hide-mobile { display: block !important; }
+    .hide-tablet { display: none !important; }
+    .show-mobile { display: none !important; }
+}
+
+@media (min-width: 992px) {
+    .hide-tablet { display: block !important; }
+    .hide-desktop { display: none !important; }
+    .show-tablet { display: none !important; }
+}
+
+/* Container queries support */
+@supports (container-type: inline-size) {
+    .panel-container {
+        container-type: inline-size;
+    }
+    
+    @container (max-width: 600px) {
+        .panel-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+}
+
+/* Touch-friendly targets */
+@media (pointer: coarse) {
+    .dsd-sidebar__link,
+    .navrail-btn,
+    .dsd-header__item,
+    .bottom-nav__item {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* Landscape phone adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+    .bottom-nav {
+        height: 48px;
+    }
+    
+    .bottom-nav__item {
+        flex-direction: row;
+        gap: 8px;
+    }
+    
+    .bottom-nav__item svg {
+        width: 20px;
+        height: 20px;
+    }
+}

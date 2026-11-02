@@ -1,0 +1,23 @@
+<?php
+// PROPOSTA (P1-01) — modelo de config/ do Dash. NENHUM arquivo de config/ foi aberto.
+// O conteúdo abaixo vem do que o CÓDIGO espera ao fazer require dos arquivos de config/.
+// Cada arquivo real fica fora do Git; o *.example correspondente entra, sem valores.
+//
+// config/db_connection.php   (168 requires) → expõe getConnection() / getDbConnection()
+//                              e o objeto $pdo / $conn usados pelos handlers.
+// config/database.php        (6)            → A CONFIRMAR (nome dos símbolos).
+// config/redis.php           (3)            → host/porta/senha do Redis (nomes A CONFIRMAR).
+// config/uarps.php           (4)            → UARPS_TRIGGER_* (NAV_READ, NAV_WRITE, PANELS_READ,
+//                              PANELS_WRITE, HEADER_ADMIN, HEADER_ADMIN_WRITE, HD, SCREENSHOT,
+//                              DENIED), UARPS_REGION_DENIED, UARPS_DENIED, UARPS_NO_REGION_ACCESS
+// config/uarps_*.json        (3)            → dados de regiões/gatilhos (sem segredo? A CONFIRMAR)
+// config/decision_engine.php (4)            → DECISION_ENGINE_AUTH_TOKEN
+// config/avatar_admin.php    (3)            → A CONFIRMAR
+// config/timezone.php                       → A CONFIRMAR
+// config/ponte-app.key       (2)            → segredo HMAC da ponte (arquivo 0600; nunca exemplo)
+// config/webhook-secret.txt  (1)            → segredo do webhook de deploy (nunca exemplo)
+// config/_shared_headers.php (1)            → A CONFIRMAR
+//
+// Exemplo de forma (sem valores):
+// define('DECISION_ENGINE_AUTH_TOKEN', getenv('DECISION_ENGINE_AUTH_TOKEN') ?: '');
+// function getConnection(): PDO { /* lê DB_DSHOWDASH_* do ambiente */ }

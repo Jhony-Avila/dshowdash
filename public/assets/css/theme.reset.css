@@ -1,0 +1,38 @@
+/**
+ * Theme - Reset & Base
+ * @version 3.5.0
+ * @description Reset CSS + HTML/Body + Particles canvas
+ */
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    height: 100%;
+    background: #000000;
+}
+
+body {
+    height: 100%;
+    font-family: var(--font-primary);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--white);
+    background: #000000;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+#particles-bg {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-bg);
+    pointer-events: none;
+    opacity: .28;
+}

@@ -1,0 +1,280 @@
+/* DshowDash - Global Animations & Transitions
+ * @version 1.0.0-ENTERPRISE
+ * Melhoria #04: Animações de Transição
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CSS VARIABLES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+:root {
+    /* Timing Functions */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    
+    /* Durations */
+    --duration-instant: 50ms;
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+    --duration-slow: 400ms;
+    --duration-slower: 600ms;
+    
+    /* Animation presets */
+    --transition-fast: var(--duration-fast) var(--ease-out-expo);
+    --transition-normal: var(--duration-normal) var(--ease-out-expo);
+    --transition-slow: var(--duration-slow) var(--ease-out-expo);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NAVRAIL ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.nav-rail__item-host {
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+.navrail-btn {
+    transition: 
+        transform var(--transition-fast),
+        background-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        color var(--transition-fast);
+    will-change: transform;
+}
+
+.navrail-btn:hover {
+    transform: scale(1.08);
+}
+
+.navrail-btn:active {
+    transform: scale(0.95);
+    transition-duration: var(--duration-instant);
+}
+
+.navrail-btn--active {
+    animation: navrail-pulse 0.4s var(--ease-out-expo);
+}
+
+@keyframes navrail-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+/* Ripple Effect */
+.navrail-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0);
+    transition: transform 0.5s var(--ease-out-expo), opacity 0.3s;
+    pointer-events: none;
+}
+
+.navrail-btn:active::after {
+    opacity: 1;
+    transform: scale(2);
+    transition-duration: 0s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.dsd-sidebar {
+    transition: width var(--transition-slow), transform var(--transition-slow);
+}
+
+.dsd-sidebar__link {
+    transition: 
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        padding-left var(--transition-fast),
+        transform var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.dsd-sidebar__link:hover {
+    transform: translateX(4px);
+}
+
+.dsd-sidebar__link:active {
+    transform: translateX(2px) scale(0.98);
+}
+
+/* Section collapse animation */
+.dsd-sidebar__section-items {
+    transition: height var(--transition-normal), opacity var(--transition-fast);
+    overflow: hidden;
+}
+
+.dsd-sidebar__section--collapsed .dsd-sidebar__section-items {
+    opacity: 0;
+}
+
+.dsd-sidebar__group-chevron {
+    transition: transform var(--transition-fast);
+}
+
+.dsd-sidebar__section--expanded .dsd-sidebar__group-chevron {
+    transform: rotate(180deg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HEADER ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.dsd-header {
+    transition: height var(--transition-normal), padding var(--transition-normal);
+}
+
+.dsd-header__item {
+    transition: 
+        opacity var(--transition-fast),
+        transform var(--transition-fast),
+        background-color var(--transition-fast);
+}
+
+.dsd-header__item:hover {
+    transform: translateY(-2px);
+}
+
+.dsd-header__item:active {
+    transform: translateY(0) scale(0.97);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PANEL ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.panel-enter {
+    animation: panel-slide-in var(--duration-normal) var(--ease-out-expo) forwards;
+}
+
+.panel-exit {
+    animation: panel-slide-out var(--duration-fast) var(--ease-in-out-quart) forwards;
+}
+
+@keyframes panel-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes panel-slide-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MODAL ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.modal-backdrop-enter {
+    animation: fade-in var(--duration-fast) var(--ease-out-expo) forwards;
+}
+
+.modal-content-enter {
+    animation: modal-pop-in var(--duration-normal) var(--ease-spring) forwards;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modal-pop-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BUTTON ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.btn, button, [role="button"] {
+    transition: 
+        transform var(--transition-fast),
+        background-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LOADING ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+    animation: pulse 2s var(--ease-in-out-quart) infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STAGGER ANIMATIONS (para listas)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.stagger-enter > * {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: stagger-in var(--duration-normal) var(--ease-out-expo) forwards;
+}
+
+.stagger-enter > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-enter > *:nth-child(2) { animation-delay: 30ms; }
+.stagger-enter > *:nth-child(3) { animation-delay: 60ms; }
+.stagger-enter > *:nth-child(4) { animation-delay: 90ms; }
+.stagger-enter > *:nth-child(5) { animation-delay: 120ms; }
+.stagger-enter > *:nth-child(6) { animation-delay: 150ms; }
+.stagger-enter > *:nth-child(7) { animation-delay: 180ms; }
+.stagger-enter > *:nth-child(8) { animation-delay: 210ms; }
+.stagger-enter > *:nth-child(9) { animation-delay: 240ms; }
+.stagger-enter > *:nth-child(10) { animation-delay: 270ms; }
+
+@keyframes stagger-in {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   REDUCED MOTION (Acessibilidade)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

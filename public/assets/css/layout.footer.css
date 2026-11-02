@@ -1,0 +1,70 @@
+/**
+ * Layout - Footer
+ * @version 5.2.0
+ * @changelog v5.2.0: Corrigido nome da variável para --sidebar-width-collapsed (padrão tokens)
+ * @description Site Footer completo
+ */
+
+.site-footer {
+  position: relative;
+  background: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px 40px;
+  text-align: center;
+  margin-top: var(--spacing-2xl);
+  margin-left: var(--sidebar-width, 0);
+  transition: margin-left var(--sidebar-duration, 0.3s) var(--sidebar-easing, ease);
+}
+
+body.sidebar-collapsed .site-footer {
+  margin-left: var(--sidebar-width-collapsed, 72px);
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.footer-left p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.footer-version {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}
+
+.footer-right {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.footer-link:hover,
+.footer-link:focus-visible {
+  color: var(--primary-light);
+}
+
+.footer-logo {
+  height: 30px;
+  opacity: .7;
+  margin-bottom: var(--spacing-md);
+}
+
+.footer-text {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}

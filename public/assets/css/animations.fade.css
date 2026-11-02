@@ -1,0 +1,74 @@
+/**
+ * Animations - Fade
+ * @version 2.0.0
+ * @description Fade in animations + keyframes
+ */
+
+.anim-fade-in {
+  animation: dshFadeIn var(--anim-duration-base) var(--anim-ease) both;
+}
+
+.anim-fade-in-up {
+  animation: dshFadeInUp var(--anim-duration-slow) var(--anim-ease) both;
+}
+
+.anim-fade-in-down {
+  animation: dshFadeInDown var(--anim-duration-slow) var(--anim-ease) both;
+}
+
+.anim-fade-in-left {
+  animation: dshFadeInLeft var(--anim-duration-slow) var(--anim-ease) both;
+}
+
+.anim-fade-in-right {
+  animation: dshFadeInRight var(--anim-duration-slow) var(--anim-ease) both;
+}
+
+@keyframes dshFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dshFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dshFadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dshFadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dshFadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "dshowdash-screenshot-service",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Servico de captura automatizada de screenshots dos paineis dshowdash",
+  "scripts": {
+    "capture": "node capture.mjs",
+    "capture-all": "node capture-all.mjs"
+  },
+  "keywords": [],
+  "author": "dshowdash",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "mysql2": "^3.20.0",
+    "playwright": "^1.58.2",
+    "sharp": "^0.34.5"
+  }
+}

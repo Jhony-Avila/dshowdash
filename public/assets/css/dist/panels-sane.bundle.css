@@ -1,0 +1,486 @@
+/**
+ * Panels Sane - Tokens
+ * @version 5.0.0
+ * @description Variáveis específicas de painéis
+ */
+
+:root {
+  --panel-bg: var(--glass-bg);
+  --panel-border: var(--glass-border);
+  --panel-hover-border: rgba(255, 255, 255, 0.2);
+  --panel-scrollbar-track: rgba(255, 255, 255, 0.05);
+  --panel-scrollbar: rgba(255, 255, 255, 0.15);
+  --panel-scrollbar-hover: rgba(255, 255, 255, 0.25);
+}
+/**
+ * Panels Sane - Base
+ * @version 5.0.0
+ * @description Grids, painéis base, containment
+ */
+
+/* Grids Específicos */
+.panels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.monitor-panel {
+  display: grid;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Painéis Base - CSS Containment */
+.painel-item {
+  contain: layout paint;
+  position: relative;
+  min-block-size: 400px;
+}
+
+/* Painéis Específicos */
+#panels-container .painel-item {
+  min-height: 300px;
+  max-height: 500px;
+  min-block-size: 300px;
+}
+
+#charts-carousel .painel-item {
+  min-height: 320px;
+  max-height: 420px;
+  min-block-size: 320px;
+}
+
+.featured-panels {
+  margin: var(--spacing-xl) 0;
+}
+
+.featured-panels .painel-featured {
+  width: 100%;
+  min-height: 400px;
+  min-block-size: 400px;
+}
+
+/* Conteúdo com Scroll */
+.painel-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+}
+
+.card-content,
+.card>*:not(.card-header) {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+}
+
+/* Seções */
+.cards-section,
+.charts-section,
+.panels-section,
+.featured-panels {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.cards-wrapper {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Grid 2 Colunas */
+.featured-panels.two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.featured-panels.two-cols .painel-item {
+  width: 100%;
+}
+/**
+ * Panels Sane - Scrollbar
+ * @version 5.0.0
+ * @description Scrollbar customizada
+ */
+
+.painel-item *::-webkit-scrollbar,
+.dashboard-card *::-webkit-scrollbar,
+.painel-content::-webkit-scrollbar,
+.card-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.painel-item *::-webkit-scrollbar-track,
+.dashboard-card *::-webkit-scrollbar-track,
+.painel-content::-webkit-scrollbar-track,
+.card-content::-webkit-scrollbar-track {
+  background: var(--panel-scrollbar-track);
+  border-radius: 3px;
+}
+
+.painel-item *::-webkit-scrollbar-thumb,
+.dashboard-card *::-webkit-scrollbar-thumb,
+.painel-content::-webkit-scrollbar-thumb,
+.card-content::-webkit-scrollbar-thumb {
+  background: var(--panel-scrollbar);
+  border-radius: 3px;
+  transition: background-color var(--transition-fast, 0.15s ease);
+}
+
+.painel-item *::-webkit-scrollbar-thumb:hover,
+.dashboard-card *::-webkit-scrollbar-thumb:hover,
+.painel-content::-webkit-scrollbar-thumb:hover,
+.card-content::-webkit-scrollbar-thumb:hover {
+  background: var(--panel-scrollbar-hover);
+}
+
+.painel-item *,
+.dashboard-card *,
+.painel-content,
+.card-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel-scrollbar) var(--panel-scrollbar-track);
+}
+/**
+ * Panels Sane - States
+ * @version 5.0.0
+ * @description Loading states e is-loading
+ */
+
+.painel-item:empty,
+.card:empty {
+  position: relative;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.painel-item:empty::before,
+.card:empty::before {
+  content: "";
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(102, 126, 234, 0.25);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.is-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  border: 3px solid rgba(102, 126, 234, 0.3);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  z-index: 10;
+}
+/**
+ * Panels Sane - Specifics
+ * @version 5.0.0
+ * @description Painéis 12, 13, 01, 08 específicos
+ */
+
+/* Painel-12 Específico */
+#painel-12.painel-featured {
+  background: rgba(0, 0, 0, 0.05) !important;
+  overflow: hidden;
+  min-block-size: 560px;
+}
+
+#painel-12 .painel-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+  padding-right: 8px;
+}
+
+/* Painel-13 Específico (Grid 2x2) - FLAT */
+#painel-13 .carousel-stats-container,
+#painel-13 .carousel-stats-grid,
+#painel-13 .stats-success-rate,
+#painel-13 .kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(280px, 1fr)) !important;
+  grid-auto-rows: 140px !important;
+  gap: 16px 24px !important;
+  align-items: stretch !important;
+  justify-items: stretch !important;
+  max-width: 1100px;
+}
+
+#painel-13 .carousel-stat-card,
+#painel-13 .kpi-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 255, 128, 0.25);
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.2));
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#painel-13 .carousel-stat-card:hover,
+#painel-13 .kpi-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(0, 255, 128, 0.45);
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.3));
+}
+
+#painel-13 .carousel-stat-card::before,
+#painel-13 .kpi-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  border-radius: 8px 0 0 8px;
+  background: var(--kpi-accent, rgba(255, 255, 255, 0.08));
+}
+
+#painel-13 .warning { --kpi-accent: #f59e0b; }
+#painel-13 .info { --kpi-accent: #3b82f6; }
+#painel-13 .success { --kpi-accent: #22c55e; }
+#painel-13 .error { --kpi-accent: #ef4444; }
+
+#painel-13 .carousel-stat-label {
+  font-size: 14px;
+  color: #a1a1aa;
+  margin-bottom: 8px;
+}
+
+#painel-13 .carousel-stat-value {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+#painel-13 .carousel-stat-meta {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 6px;
+}
+
+#painel-13 .carousel-chart-container-small {
+  grid-column: 1 / -1;
+  margin-top: 16px;
+}
+
+/* Painel-01 Específico (Top 10 Jobs) */
+#topjobs-painel-01 {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#topjobs-painel-01 > div {
+  display: grid !important;
+  grid-template-columns: 56px minmax(0, 1fr) 84px !important;
+  align-items: center !important;
+  padding: 8px 10px !important;
+  margin-bottom: 6px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-radius: 8px !important;
+}
+
+#topjobs-painel-01 > div > div:first-child {
+  display: grid !important;
+  grid-template-columns: auto 1fr !important;
+  align-items: center !important;
+  column-gap: 10px !important;
+  min-width: 0 !important;
+}
+
+#topjobs-painel-01 > div > div:first-child > div:nth-child(1) {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#topjobs-painel-01 > div > div:first-child > div:nth-child(2) {
+  font-size: 12px !important;
+  opacity: 0.75 !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
+#topjobs-painel-01 span[style*="opacity: 0.5"] {
+  display: inline-block !important;
+  min-width: 32px !important;
+  opacity: 0.6 !important;
+}
+
+#topjobs-painel-01 > div > div:last-child {
+  text-align: right !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #22c55e !important;
+}
+
+/* Painel-08 Específico (Alertas Recentes) */
+#alerts-content-painel-08 {
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 6px !important;
+}
+
+#alerts-content-painel-08 > div {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 8px 10px !important;
+  margin-bottom: 6px !important;
+  border-radius: 8px !important;
+}
+
+#alerts-content-painel-08 > div > div:first-child {
+  display: contents !important;
+  margin: 0 !important;
+}
+
+#alerts-content-painel-08 > div > div:first-child > div:first-child {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+#alerts-content-painel-08 > div > div:nth-child(2) {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+  color: #fff !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#alerts-content-painel-08 > div > div:nth-child(3) {
+  font-size: 11px !important;
+  opacity: 0.75 !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
+#alerts-content-painel-08 > div > div:first-child > div:last-child {
+  font-size: 11px !important;
+  opacity: 0.65 !important;
+  white-space: nowrap !important;
+  text-align: right !important;
+}
+
+#alerts-content-painel-08 > div:hover {
+  filter: brightness(1.05);
+}
+/**
+ * Panels Sane - Responsive
+ * @version 5.0.0
+ * @description Media queries e reduced motion
+ */
+
+@media (max-width: 1200px) {
+  #painel-13 .carousel-stats-container,
+  #painel-13 .carousel-stats-grid,
+  #painel-13 .stats-success-rate,
+  #painel-13 .kpi-grid {
+    grid-template-columns: 1fr !important;
+    grid-auto-rows: 120px !important;
+    max-width: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .panels-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+
+  .featured-panels.two-cols {
+    grid-template-columns: 1fr;
+  }
+
+  #topjobs-painel-01 > div {
+    grid-template-columns: 44px 1fr 70px !important;
+  }
+
+  #topjobs-painel-01 > div > div:last-child {
+    font-size: 13px !important;
+  }
+
+  #alerts-content-painel-08 > div {
+    grid-template-columns: auto minmax(0, 1fr) auto auto !important;
+    gap: 8px !important;
+  }
+
+  #alerts-content-painel-08 > div > div:nth-child(2) {
+    white-space: normal !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
+
+@media (max-width: 768px) {
+  .panels-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .painel-item,
+  #panels-container .painel-item {
+    min-height: 240px;
+    max-height: 400px;
+    min-block-size: 240px;
+  }
+
+  #charts-carousel .painel-item {
+    min-height: 280px;
+    max-height: 350px;
+    min-block-size: 280px;
+  }
+
+  .cards-section,
+  .charts-section,
+  .panels-section,
+  .featured-panels {
+    margin-bottom: var(--spacing-xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .painel-item *::-webkit-scrollbar,
+  .dashboard-card *::-webkit-scrollbar {
+    width: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .painel-item:empty::before,
+  .card:empty::before,
+  .is-loading::after {
+    animation: none !important;
+  }
+}

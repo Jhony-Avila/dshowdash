@@ -1,0 +1,21 @@
+import pkg from './node_modules/playwright/index.js';
+const { chromium } = pkg;
+import { getSessionCookies, isLoginPage, loginViaPage } from './auth.mjs';
+const OUT='/tmp/claude-0/-root/eae0bef0-6629-4ab1-8ef8-4e2b9338a6aa/scratchpad';
+const cookies=await getSessionCookies();
+const b=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--host-resolver-rules=MAP dshowdash.com.br 127.0.0.1']});
+const c=await b.newContext({viewport:{width:1500,height:1000},colorScheme:'dark',serviceWorkers:'block',ignoreHTTPSErrors:true});
+await c.addCookies(cookies);
+await c.addInitScript(()=>{try{localStorage.setItem('cm_theme','dark');localStorage.setItem('dt_force_impl','react');}catch(e){}});
+const p=await c.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,140)));
+await p.goto('https://dshowdash.com.br/#/panel-datatables/data/search',{waitUntil:'domcontentloaded'}).catch(()=>{});
+await p.waitForTimeout(2500);
+if(await isLoginPage(p)){await loginViaPage(p).catch(()=>{});await p.goto('https://dshowdash.com.br/#/panel-datatables/data/search').catch(()=>{});await p.waitForTimeout(2500);}
+await p.waitForSelector('[data-dt-react-root]',{timeout:20000}).catch(()=>{});
+await p.check('input[type="checkbox"]').catch(()=>{});
+await p.fill('input[type="search"]','user').catch(()=>{});
+await p.waitForTimeout(2500);
+const m=await p.evaluate(()=>{const r=document.querySelector('[data-dt-react-root]');return{grids:r.querySelectorAll('[role="table"]').length,rows:r.querySelectorAll('[role="row"]').length,titulos:[...r.querySelectorAll('h2')].map(h=>h.textContent.trim()).slice(0,6)};});
+await p.screenshot({path:`${OUT}/busca-contem-user.png`}).catch(()=>{});
+console.log(JSON.stringify({m,errs},null,2));
+await b.close();

@@ -1,0 +1,2282 @@
+/* App Shell - Design Tokens
+ * @version 3.1.0-MODULAR
+ * @changelog v3.1.0: Sidebar abaixo de footer
+ * FONTE ÚNICA DE VERDADE
+ */
+
+:root {
+  /* Header (sem ticker) */
+  --shell-header-height: 60px;
+  --shell-header-height-mobile: 56px;
+  
+  /* Ticker (separado) */
+  --shell-ticker-height: 40px;
+  --shell-ticker-height-mobile: 36px;
+  
+  /* Header + Ticker combinado */
+  --shell-top-offset: calc(var(--shell-header-height) + var(--shell-ticker-height));
+  --shell-top-offset-mobile: calc(var(--shell-header-height-mobile) + var(--shell-ticker-height-mobile));
+  
+  /* NavRail */
+  --shell-nav-rail-width: 56px;
+  
+  /* Sidebar */
+  --shell-sidebar-width: 240px;
+  --shell-sidebar-width-collapsed: 72px;
+  
+  /* Footer - ajustado para 76px (top:44px + bottom:32px) */
+  --shell-footer-height: 76px;
+  
+  /* Z-index Hierarchy - ÚNICO LUGAR DE DEFINIÇÃO */
+  --shell-z-base: 1;
+  --shell-z-sidebar: 100;
+  --shell-z-nav-rail: 150;
+  --shell-z-footer: 200;
+  --shell-z-ticker: 400;
+  --shell-z-header: 500;
+  --shell-z-toast: 600;
+  --shell-z-login: 9000;
+  --shell-z-preloader: 9999;
+  
+  /* Transitions */
+  --shell-transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* App Shell - Container
+ * @version 3.0.0-MODULAR
+ * Root Shell + Região Base
+ */
+
+.dsd-app-shell {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--dsd-bg-primary, #0a0a0a);
+  color: var(--dsd-text-primary, #ffffff);
+  overflow: hidden;
+}
+
+/* Região Base - Blindagem Universal */
+.dsd-shell__region {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+  contain: layout style;
+}
+
+.dsd-shell__region:not(.dsd-shell__region--main) > * {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+}
+/* App Shell - Overlays
+ * @version 3.0.0-MODULAR
+ * Preloader, Login, Toast
+ */
+
+.dsd-shell__region--preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--shell-z-preloader);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dsd-shell__region--login {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--shell-z-login);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dsd-shell__region--login.login-active {
+  pointer-events: auto;
+}
+
+.dsd-shell__region--toast {
+  position: fixed;
+  top: calc(var(--shell-top-offset) + 20px);
+  right: 20px;
+  width: auto;
+  height: auto;
+  z-index: var(--shell-z-toast);
+  pointer-events: none;
+  overflow: visible;
+}
+
+.dsd-shell__region--toast > * {
+  position: relative !important;
+  width: auto !important;
+  height: auto !important;
+}
+/* App Shell - Regions
+ * @version 4.0.0-FADE-TRANSITIONS
+ * @changelog v4.0.0-FADE-TRANSITIONS: Added base opacity for fade-in transitions
+ * @changelog v3.0.0-MODULAR: Initial modular version
+ * Header, Ticker, Nav, Sidebar, Main, Footer
+ */
+
+/* ============================================
+   HEADER REGION
+   ============================================ */
+.dsd-shell__region--header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--shell-header-height);
+  z-index: var(--shell-z-header);
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+.dsd-shell__region--header * {
+  scroll-behavior: auto;
+}
+
+/* ============================================
+   TICKER REGION
+   ============================================ */
+.dsd-shell__region--ticker {
+  position: fixed;
+  top: var(--shell-header-height);
+  left: 0;
+  right: 0;
+  height: var(--shell-ticker-height);
+  z-index: var(--shell-z-ticker);
+  overflow: hidden;
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   NAV-RAIL REGION
+   ============================================ */
+.dsd-shell__region--nav-rail {
+  position: fixed;
+  left: 0;
+  top: var(--shell-top-offset);
+  bottom: var(--shell-footer-height);
+  width: var(--shell-nav-rail-width);
+  z-index: var(--shell-z-nav-rail);
+  overflow: hidden;
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   SIDEBAR REGION
+   ============================================ */
+.dsd-shell__region--sidebar {
+  position: fixed;
+  left: var(--shell-nav-rail-width);
+  top: var(--shell-top-offset);
+  bottom: var(--shell-footer-height);
+  width: var(--shell-sidebar-width);
+  z-index: var(--shell-z-sidebar);
+  overflow: hidden;
+  transition: width var(--shell-transition);
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+body.sidebar-collapsed .dsd-shell__region--sidebar {
+  width: var(--shell-sidebar-width-collapsed);
+}
+
+/* ============================================
+   MAIN REGION
+   ============================================ */
+.dsd-shell__region--main {
+  position: fixed;
+  top: var(--shell-top-offset);
+  left: calc(var(--shell-nav-rail-width) + var(--shell-sidebar-width));
+  right: 0;
+  bottom: var(--shell-footer-height);
+  z-index: var(--shell-z-base);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  transition: left var(--shell-transition);
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+
+body.sidebar-collapsed .dsd-shell__region--main {
+  left: calc(var(--shell-nav-rail-width) + var(--shell-sidebar-width-collapsed));
+}
+
+.dsd-shell__region--main > * {
+  height: auto !important;
+  min-height: 100%;
+}
+
+/* ============================================
+   FOOTER REGION
+   ============================================ */
+.dsd-shell__region--footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--shell-footer-height);
+  z-index: var(--shell-z-footer);
+  overflow: hidden;
+  /* v4.0.0: Base for fade transition */
+  opacity: 1;
+  visibility: visible;
+}
+/* App Shell - States
+ * @version 4.0.0-REGION-TRANSITIONS
+ * @changelog v4.0.0-REGION-TRANSITIONS: Added unified region fade-in transitions
+ * @changelog v3.0.0-MODULAR: Initial modular version
+ * Full-screen + Transitions + Region Visibility
+ */
+
+/* ============================================
+   LAYOUT FULL-SCREEN MODE
+   ============================================ */
+body.layout-full-screen .dsd-shell__region--header,
+body.layout-full-screen .dsd-shell__region--ticker,
+body.layout-full-screen .dsd-shell__region--nav-rail,
+body.layout-full-screen .dsd-shell__region--sidebar,
+body.layout-full-screen .dsd-shell__region--footer {
+  display: none !important;
+}
+
+body.layout-full-screen .dsd-shell__region--main {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+/* ============================================
+   SHELL TRANSITION STATES
+   ============================================ */
+.dsd-shell--booting {
+  opacity: 0;
+}
+
+.dsd-shell--booted {
+  opacity: 1;
+  transition: opacity 0.3s ease-out;
+}
+
+.dsd-shell--ready {
+  opacity: 1;
+}
+
+.dsd-shell--loading {
+  cursor: wait;
+}
+
+.dsd-shell--error {
+  border: 2px solid var(--dsd-color-error, #ff4444);
+}
+
+/* ============================================
+   PRELOADER FADE-OUT
+   ============================================ */
+.dsd-shell__preloader--fade-out {
+  opacity: 0;
+  transition: opacity 500ms ease-out;
+  pointer-events: none;
+}
+
+/* ============================================
+   REGION VISIBILITY TRANSITIONS (v4.0.0)
+   Unified fade-in for all shell regions
+   ============================================ */
+
+/* Base hidden state - regions start invisible */
+.dsd-shell__region--hidden,
+.dsd-shell__region[data-visibility="hidden"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Visible state with transition */
+.dsd-shell__region--visible,
+.dsd-shell__region[data-visibility="visible"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Transition timing for each region (cascade effect) */
+.dsd-shell__region--header {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s;
+  transition-delay: 0ms;
+}
+
+.dsd-shell__region--ticker {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s;
+  transition-delay: 50ms;
+}
+
+.dsd-shell__region--nav-rail {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s;
+  transition-delay: 100ms;
+}
+
+.dsd-shell__region--sidebar {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s, width var(--shell-transition);
+  transition-delay: 150ms;
+}
+
+.dsd-shell__region--main {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s, left var(--shell-transition);
+  transition-delay: 200ms;
+}
+
+.dsd-shell__region--footer {
+  transition: opacity var(--shell-transition), visibility 0s linear 0s;
+  transition-delay: 250ms;
+}
+
+/* When becoming hidden, no delay and visibility hides immediately */
+.dsd-shell__region--hidden.dsd-shell__region--header,
+.dsd-shell__region--hidden.dsd-shell__region--ticker,
+.dsd-shell__region--hidden.dsd-shell__region--nav-rail,
+.dsd-shell__region--hidden.dsd-shell__region--sidebar,
+.dsd-shell__region--hidden.dsd-shell__region--main,
+.dsd-shell__region--hidden.dsd-shell__region--footer {
+  transition-delay: 0ms;
+  transition: opacity 200ms ease-out, visibility 0s linear 200ms;
+}
+
+/* ============================================
+   REDUCED MOTION SUPPORT
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .dsd-shell--booted,
+  .dsd-shell__preloader--fade-out,
+  .dsd-shell__region--header,
+  .dsd-shell__region--ticker,
+  .dsd-shell__region--nav-rail,
+  .dsd-shell__region--sidebar,
+  .dsd-shell__region--main,
+  .dsd-shell__region--footer {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+  
+  .dsd-shell__region--visible {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .dsd-shell__region--hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* ============================================
+   LEGACY COMPATIBILITY
+   Support for .hidden class (backward compat)
+   ============================================ */
+.dsd-shell__region.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+/* App Shell - Responsive
+ * @version 3.0.0-MODULAR
+ * Responsive + A11y + Debug
+ */
+
+/* Tablet (501px - 768px) */
+@media (max-width: 768px) {
+  :root {
+    --shell-header-height: var(--shell-header-height-mobile);
+    --shell-ticker-height: var(--shell-ticker-height-mobile);
+    --shell-top-offset: var(--shell-top-offset-mobile);
+  }
+}
+
+/* Mobile (< 500px) */
+@media (max-width: 500px) {
+  .dsd-shell__region--nav-rail {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 64px;
+    z-index: var(--shell-z-nav-rail);
+  }
+  
+  .dsd-shell__region--sidebar {
+    display: none !important;
+  }
+  
+  .dsd-shell__region--main {
+    left: 0 !important;
+    bottom: calc(var(--shell-footer-height) + 64px);
+  }
+  
+  .dsd-shell__region--footer {
+    bottom: 64px;
+  }
+}
+
+/* Accessibility */
+.dsd-app-shell:focus-visible {
+  outline: 2px solid var(--dsd-focus-color, #4a90e2);
+  outline-offset: -2px;
+}
+
+@media (prefers-contrast: high) {
+  .dsd-app-shell {
+    border: 1px solid currentColor;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsd-shell--booting,
+  .dsd-shell--booted,
+  .dsd-shell__preloader--fade-out,
+  .dsd-shell__region--sidebar,
+  .dsd-shell__region--main {
+    transition: none !important;
+  }
+
+  .dsd-shell__region--main {
+    scroll-behavior: auto;
+  }
+}
+
+/* Debug Mode */
+body.debug-layout .dsd-shell__region--header { background: rgba(255,0,0,0.2) !important; }
+body.debug-layout .dsd-shell__region--ticker { background: rgba(255,165,0,0.2) !important; }
+body.debug-layout .dsd-shell__region--nav-rail { background: rgba(0,255,0,0.2) !important; }
+body.debug-layout .dsd-shell__region--sidebar { background: rgba(0,0,255,0.2) !important; }
+body.debug-layout .dsd-shell__region--main { background: rgba(255,0,255,0.2) !important; }
+body.debug-layout .dsd-shell__region--footer { background: rgba(0,255,255,0.2) !important; }
+/* Panel UI - Tokens
+ * @module _tokens.css
+ * @version 1.0.0
+ * @description Variáveis CSS para Debug Panel e Command Palette
+ * @note Cores dark FORÇADAS (não herdam do tema global)
+ * @dependencies nenhuma
+ */
+
+.dsd-ui-panel,
+.dsd-ui-overlay {
+  /* Backgrounds - DARK FORÇADO */
+  --ui-bg-overlay: rgba(0, 0, 0, 0.85);
+  --ui-bg-panel: #09090b;
+  --ui-bg-surface: #111113;
+  --ui-bg-elevated: #1a1a1d;
+  --ui-bg-card: rgba(255, 255, 255, 0.03);
+  --ui-bg-hover: rgba(255, 255, 255, 0.05);
+  --ui-bg-active: rgba(255, 255, 255, 0.08);
+  --ui-bg-input: rgba(255, 255, 255, 0.03);
+  
+  /* Textos - CLAROS FORÇADOS */
+  --ui-text-primary: rgba(255, 255, 255, 0.92);
+  --ui-text-secondary: rgba(255, 255, 255, 0.7);
+  --ui-text-muted: rgba(255, 255, 255, 0.4);
+  --ui-text-label: rgba(255, 255, 255, 0.5);
+  
+  /* Bordas - SUTIS */
+  --ui-border: rgba(255, 255, 255, 0.06);
+  --ui-border-hover: rgba(255, 255, 255, 0.1);
+  --ui-border-active: rgba(255, 255, 255, 0.15);
+  
+  /* Status */
+  --ui-success: #34d399;
+  --ui-warning: #fbbf24;
+  --ui-error: #f87171;
+  --ui-accent: #7c3aed;
+  
+  /* Tipografia */
+  --ui-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ui-font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  --ui-text-xs: 11px;
+  --ui-text-sm: 13px;
+  --ui-text-base: 14px;
+  --ui-text-lg: 16px;
+  
+  /* Espaçamento */
+  --ui-space-xs: 4px;
+  --ui-space-sm: 8px;
+  --ui-space-md: 12px;
+  --ui-space-lg: 16px;
+  --ui-space-xl: 24px;
+  
+  /* Bordas arredondadas */
+  --ui-radius-sm: 6px;
+  --ui-radius-md: 8px;
+  --ui-radius-lg: 10px;
+  
+  /* Transições */
+  --ui-transition-fast: 0.15s ease;
+  --ui-transition-normal: 0.2s ease;
+  
+  /* Sombras */
+  --ui-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --ui-shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.6);
+}
+/* Panel UI - Overlay
+ * @module _overlay.css
+ * @version 1.0.0
+ * @description Overlay / Backdrop do painel
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ui-bg-overlay);
+  z-index: 99998;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--ui-transition-normal), visibility var(--ui-transition-normal);
+}
+
+.dsd-ui-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+/* Panel UI - Panel Container
+ * @module _panel.css
+ * @version 1.0.0
+ * @description Container principal do painel + variantes debug/command
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-panel {
+  position: fixed;
+  background: var(--ui-bg-panel);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  box-shadow: var(--ui-shadow-xl);
+  color: var(--ui-text-primary);
+  font-family: var(--ui-font);
+  font-size: var(--ui-text-sm);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Debug Panel - Bottom Right */
+.dsd-ui-panel--debug {
+  bottom: 0;
+  right: 0;
+  width: 480px;
+  max-height: 70vh;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Command Palette - Center */
+.dsd-ui-panel--command {
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 560px;
+  max-width: 90vw;
+  max-height: 70vh;
+}
+/* Panel UI - Header
+ * @module _header.css
+ * @version 1.0.0
+ * @description Header do painel: título, versão, ações
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--ui-space-md) var(--ui-space-lg);
+  background: var(--ui-bg-surface);
+  border-bottom: 1px solid var(--ui-border);
+  flex-shrink: 0;
+}
+
+.dsd-ui-header__title {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-sm);
+  font-weight: 600;
+  font-size: var(--ui-text-sm);
+  color: var(--ui-text-primary);
+}
+
+.dsd-ui-header__version {
+  font-size: var(--ui-text-xs);
+  font-weight: 400;
+  color: var(--ui-text-muted);
+  font-family: var(--ui-font-mono);
+}
+
+.dsd-ui-header__actions {
+  display: flex;
+  gap: var(--ui-space-xs);
+}
+/* Panel UI - Tabs
+ * @module _tabs.css
+ * @version 1.0.0
+ * @description Tabs de navegação do painel
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-tabs {
+  display: flex;
+  background: var(--ui-bg-surface);
+  border-bottom: 1px solid var(--ui-border);
+  padding: var(--ui-space-xs) var(--ui-space-sm);
+  gap: 2px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.dsd-ui-tabs::-webkit-scrollbar {
+  height: 0;
+}
+
+.dsd-ui-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--ui-text-muted);
+  padding: var(--ui-space-sm);
+  border-radius: var(--ui-radius-sm);
+  cursor: pointer;
+  transition: all var(--ui-transition-fast);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.dsd-ui-tab:hover {
+  color: var(--ui-text-secondary);
+  background: var(--ui-bg-card);
+}
+
+.dsd-ui-tab.active {
+  color: var(--ui-text-primary);
+  background: var(--ui-bg-active);
+}
+
+.dsd-ui-tab svg {
+  width: 18px;
+  height: 18px;
+}
+/* Panel UI - Content & Sections
+ * @module _content.css
+ * @version 1.0.0
+ * @description Área de conteúdo, scrollbar base e sections
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--ui-space-lg);
+  background: var(--ui-bg-panel);
+}
+
+.dsd-ui-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dsd-ui-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dsd-ui-content::-webkit-scrollbar-thumb {
+  background: var(--ui-border-hover);
+  border-radius: 3px;
+}
+
+/* Sections */
+.dsd-ui-section {
+  margin-bottom: var(--ui-space-xl);
+}
+
+.dsd-ui-section:last-child {
+  margin-bottom: 0;
+}
+
+.dsd-ui-section__title {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-sm);
+  margin: 0 0 var(--ui-space-md) 0;
+  font-size: var(--ui-text-xs);
+  font-weight: 600;
+  color: var(--ui-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dsd-ui-section__title svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+/* Panel UI - Inheritance Rules
+ * @module _inheritance.css
+ * @version 1.0.0
+ * @description Reset box-sizing, font inherit, background overrides
+ * @dependencies _tokens.css, _panel.css, _content.css
+ */
+
+.dsd-ui-panel *,
+.dsd-ui-overlay * {
+  box-sizing: border-box;
+}
+
+.dsd-ui-panel input,
+.dsd-ui-panel button,
+.dsd-ui-panel select,
+.dsd-ui-panel textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+.dsd-ui-panel .dsd-ui-header,
+.dsd-ui-panel .dsd-ui-tabs,
+.dsd-ui-panel .dsd-ui-content {
+  background: var(--ui-bg-surface);
+}
+
+.dsd-ui-panel .dsd-ui-content {
+  background: var(--ui-bg-panel);
+}
+/* Panel UI - Grid
+ * @module _grid.css
+ * @version 1.0.0
+ * @description Layouts de grid 2 e 4 colunas
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--ui-space-sm);
+}
+
+.dsd-ui-grid--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+/* Panel UI - Cards
+ * @module _cards.css
+ * @version 1.0.0
+ * @description Cards: base, label, value
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-card {
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-md);
+  transition: all var(--ui-transition-fast);
+}
+
+.dsd-ui-card__label {
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+
+.dsd-ui-card__value {
+  font-size: var(--ui-text-lg);
+  font-weight: 700;
+  font-family: var(--ui-font-mono);
+  color: var(--ui-text-primary);
+}
+
+.dsd-ui-card__value--sm {
+  font-size: var(--ui-text-base);
+}
+/* Panel UI - List
+ * @module _list.css
+ * @version 1.0.0
+ * @description List container e list items
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-list {
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  overflow: hidden;
+}
+
+.dsd-ui-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--ui-space-sm) var(--ui-space-md);
+  border-bottom: 1px solid var(--ui-border);
+  font-size: var(--ui-text-sm);
+}
+
+.dsd-ui-list-item:last-child {
+  border-bottom: none;
+}
+
+.dsd-ui-list-item__label {
+  color: var(--ui-text-secondary);
+}
+
+.dsd-ui-list-item__value {
+  color: var(--ui-text-primary);
+  font-family: var(--ui-font-mono);
+}
+/* Panel UI - Tags
+ * @module _tags.css
+ * @version 1.0.0
+ * @description Tags container e tag individual
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-xs);
+}
+
+.dsd-ui-tag {
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  padding: 2px var(--ui-space-sm);
+  border-radius: var(--ui-radius-sm);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-secondary);
+}
+/* Panel UI - Buttons
+ * @module _buttons.css
+ * @version 1.0.0
+ * @description Botões: base, hover, icon, primary, success, active
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-xs);
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text-secondary);
+  padding: var(--ui-space-xs) var(--ui-space-sm);
+  border-radius: var(--ui-radius-sm);
+  font-size: var(--ui-text-xs);
+  font-family: var(--ui-font);
+  cursor: pointer;
+  transition: all var(--ui-transition-fast);
+}
+
+.dsd-ui-btn:hover {
+  background: var(--ui-bg-hover);
+  border-color: var(--ui-border-hover);
+  color: var(--ui-text-primary);
+}
+
+.dsd-ui-btn--icon {
+  padding: var(--ui-space-xs);
+  position: relative;
+}
+
+.dsd-ui-btn--icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dsd-ui-btn--primary {
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+  color: #ffffff;
+}
+
+.dsd-ui-btn--primary:hover {
+  filter: brightness(1.1);
+}
+
+.dsd-ui-btn--success {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: var(--ui-success);
+  color: var(--ui-success);
+}
+
+.dsd-ui-btn.active {
+  background: var(--ui-bg-active);
+  border-color: var(--ui-border-active);
+  color: var(--ui-text-primary);
+}
+/* Panel UI - Forms
+ * @module _forms.css
+ * @version 1.0.0
+ * @description Toolbar, Input, Empty state, Keyboard shortcuts
+ * @dependencies _tokens.css
+ */
+
+/* Toolbar */
+.dsd-ui-toolbar {
+  display: flex;
+  gap: var(--ui-space-sm);
+  margin-bottom: var(--ui-space-md);
+  flex-wrap: wrap;
+}
+
+/* Input */
+.dsd-ui-input {
+  width: 100%;
+  background: var(--ui-bg-input);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-sm) var(--ui-space-md);
+  color: var(--ui-text-primary);
+  font-family: var(--ui-font);
+  font-size: var(--ui-text-sm);
+  outline: none;
+  transition: border-color var(--ui-transition-fast);
+}
+
+.dsd-ui-input::placeholder {
+  color: var(--ui-text-muted);
+}
+
+.dsd-ui-input:focus {
+  border-color: var(--ui-accent);
+}
+
+/* Empty State */
+.dsd-ui-empty {
+  color: var(--ui-text-muted);
+  padding: var(--ui-space-lg);
+  text-align: center;
+  font-style: italic;
+}
+
+/* Keyboard Shortcuts */
+.dsd-ui-kbd {
+  background: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--ui-font-mono);
+  font-size: 10px;
+  color: var(--ui-text-muted);
+}
+/* Panel UI - Log & JSON
+ * @module _log.css
+ * @version 1.0.0
+ * @description Log container, log items, timestamps e JSON viewer
+ * @dependencies _tokens.css
+ */
+
+/* Log */
+.dsd-ui-log {
+  background: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+}
+
+.dsd-ui-log-item {
+  display: flex;
+  gap: var(--ui-space-sm);
+  padding: var(--ui-space-xs) var(--ui-space-sm);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.dsd-ui-log-item:last-child {
+  border-bottom: none;
+}
+
+.dsd-ui-log-time {
+  color: var(--ui-text-muted);
+  min-width: 70px;
+}
+
+/* JSON Viewer */
+.dsd-ui-json {
+  background: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-md);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  overflow-x: auto;
+  max-height: 150px;
+  overflow-y: auto;
+  white-space: pre;
+  margin: 0;
+  color: var(--ui-text-primary);
+}
+/* Panel UI - Presets
+ * @module _presets.css
+ * @version 1.0.0
+ * @description Presets grid e preset buttons
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ui-space-sm);
+}
+
+.dsd-ui-preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-space-xs);
+  background: var(--ui-bg-card);
+  border: 2px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-md) var(--ui-space-sm);
+  cursor: pointer;
+  transition: all var(--ui-transition-fast);
+  position: relative;
+}
+
+.dsd-ui-preset-btn:hover {
+  background: var(--ui-bg-hover);
+  border-color: var(--ui-border-hover);
+}
+
+.dsd-ui-preset-btn.active {
+  border-color: var(--ui-success);
+  background: rgba(52, 211, 153, 0.08);
+}
+
+.dsd-ui-preset-btn__icon {
+  width: 24px;
+  height: 24px;
+  color: var(--ui-text-secondary);
+}
+
+.dsd-ui-preset-btn__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dsd-ui-preset-btn__name {
+  font-size: var(--ui-text-xs);
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.dsd-ui-preset-btn__check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  color: var(--ui-success);
+  width: 14px;
+  height: 14px;
+}
+/* Panel UI - Memory Bar
+ * @module _memory-bar.css
+ * @version 1.0.0
+ * @description Barra de memória com fill gradient e labels
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-memory-bar {
+  height: 20px;
+  background: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: var(--ui-space-sm);
+}
+
+.dsd-ui-memory-bar__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ui-success), var(--ui-warning), var(--ui-error));
+  transition: width 0.3s ease;
+}
+
+.dsd-ui-memory-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-muted);
+}
+/* Panel UI - Region Metrics
+ * @module _region-metrics.css
+ * @version 1.0.0
+ * @description Cards de métricas por região
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-region-metric {
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-md);
+  margin-bottom: var(--ui-space-sm);
+}
+
+.dsd-ui-region-metric.has-issue {
+  border-left: 3px solid var(--ui-warning);
+}
+
+.dsd-ui-region-metric__name {
+  font-weight: 500;
+  color: var(--ui-text-primary);
+  margin-bottom: var(--ui-space-xs);
+}
+
+.dsd-ui-region-metric__stats {
+  display: flex;
+  gap: var(--ui-space-md);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-muted);
+}
+/* Panel UI - Snapshots
+ * @module _snapshots.css
+ * @version 1.0.0
+ * @description Snapshot items com info, label, time e actions
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-snapshot-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-sm) var(--ui-space-md);
+  margin-bottom: var(--ui-space-sm);
+}
+
+.dsd-ui-snapshot-item__info {
+  flex: 1;
+}
+
+.dsd-ui-snapshot-item__label {
+  font-weight: 500;
+  color: var(--ui-text-primary);
+}
+
+.dsd-ui-snapshot-item__time {
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-muted);
+}
+
+.dsd-ui-snapshot-item__actions {
+  display: flex;
+  gap: var(--ui-space-xs);
+}
+/* Panel UI - Command Palette
+ * @module _command-palette.css
+ * @version 1.0.0
+ * @description Estilos específicos do Command Palette
+ * @dependencies _tokens.css
+ */
+
+.dsd-ui-command-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.dsd-ui-command-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-md);
+  padding: var(--ui-space-md);
+  cursor: pointer;
+  transition: background var(--ui-transition-fast);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.dsd-ui-command-item:last-child {
+  border-bottom: none;
+}
+
+.dsd-ui-command-item:hover,
+.dsd-ui-command-item.selected {
+  background: var(--ui-bg-hover);
+}
+
+.dsd-ui-command-item__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--ui-text-muted);
+  flex-shrink: 0;
+}
+
+.dsd-ui-command-item__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dsd-ui-command-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dsd-ui-command-item__title {
+  color: var(--ui-text-primary);
+  font-size: var(--ui-text-sm);
+}
+
+.dsd-ui-command-item__desc {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-text-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dsd-ui-command-item__shortcut {
+  display: flex;
+  gap: 4px;
+}
+/* Panel UI - Status & States
+ * @module _status.css
+ * @version 1.0.0
+ * @description Status colors, badges, card borders coloridas, hover states
+ * @dependencies _tokens.css, _cards.css, _list.css, _tags.css
+ */
+
+/* Status Colors */
+.dsd-ui-status--healthy { color: var(--ui-success); }
+.dsd-ui-status--degraded { color: var(--ui-warning); }
+.dsd-ui-status--unhealthy { color: var(--ui-error); }
+.dsd-ui-status--accent { color: var(--ui-accent); }
+
+/* Badges de Status com dot */
+.dsd-ui-status--healthy::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-success);
+  margin-right: 6px;
+  box-shadow: 0 0 6px var(--ui-success);
+}
+
+.dsd-ui-status--degraded::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-warning);
+  margin-right: 6px;
+  box-shadow: 0 0 6px var(--ui-warning);
+}
+
+.dsd-ui-status--unhealthy::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-error);
+  margin-right: 6px;
+  box-shadow: 0 0 6px var(--ui-error);
+}
+
+/* Cards com borda lateral colorida */
+.dsd-ui-card:has(.dsd-ui-status--healthy) {
+  border-left: 3px solid var(--ui-success);
+}
+
+.dsd-ui-card:has(.dsd-ui-status--degraded) {
+  border-left: 3px solid var(--ui-warning);
+}
+
+.dsd-ui-card:has(.dsd-ui-status--unhealthy) {
+  border-left: 3px solid var(--ui-error);
+}
+
+/* Fallback para browsers sem :has() */
+.dsd-ui-card--healthy {
+  border-left: 3px solid var(--ui-success);
+}
+
+.dsd-ui-card--degraded {
+  border-left: 3px solid var(--ui-warning);
+}
+
+.dsd-ui-card--unhealthy {
+  border-left: 3px solid var(--ui-error);
+}
+
+/* Hover States Melhorados */
+.dsd-ui-card:hover {
+  background: var(--ui-bg-hover);
+  border-color: var(--ui-accent);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.2);
+}
+
+.dsd-ui-list-item:hover {
+  background: var(--ui-bg-hover);
+}
+
+.dsd-ui-tag:hover {
+  background: var(--ui-bg-active);
+  border-color: var(--ui-border-hover);
+  cursor: default;
+}
+/* Panel UI - Tooltips
+ * @module _tooltips.css
+ * @version 1.0.0
+ * @description Tooltips customizados para tabs e botões de ação
+ * @dependencies _tokens.css, _tabs.css, _buttons.css
+ */
+
+/* Tooltip nas Tabs */
+.dsd-ui-tab::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text-primary);
+  padding: 6px 10px;
+  border-radius: var(--ui-radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--ui-border-hover);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+  pointer-events: none;
+  z-index: 100000;
+}
+
+.dsd-ui-tab::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  border: 6px solid transparent;
+  border-top-color: var(--ui-bg-elevated);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+  pointer-events: none;
+  z-index: 100000;
+}
+
+.dsd-ui-tab:hover::after,
+.dsd-ui-tab:hover::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
+}
+
+/* Tooltip nos botões de ação */
+.dsd-ui-btn--icon::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text-primary);
+  padding: 6px 10px;
+  border-radius: var(--ui-radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--ui-border-hover);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+  pointer-events: none;
+  z-index: 100000;
+}
+
+.dsd-ui-btn--icon:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
+}
+/* Panel UI - Icons & Tab Indicator
+ * @module _icons.css
+ * @version 1.0.0
+ * @description Cores de ícones por categoria e indicador de tab ativa
+ * @dependencies _tokens.css, _tabs.css
+ */
+
+/* Verde - Status/Health */
+.dsd-ui-tab[data-tab="overview"] svg,
+.dsd-ui-tab[data-tab="performance"] svg {
+  color: var(--ui-success);
+}
+
+/* Azul - Bootstrap/System */
+.dsd-ui-tab[data-tab="bootstrap"] svg {
+  color: #60a5fa;
+}
+
+/* Cyan - Data/Regions */
+.dsd-ui-tab[data-tab="regions"] svg,
+.dsd-ui-tab[data-tab="state"] svg,
+.dsd-ui-tab[data-tab="events"] svg {
+  color: #22d3ee;
+}
+
+/* Roxo - DevTools */
+.dsd-ui-tab[data-tab="snapshots"] svg,
+.dsd-ui-tab[data-tab="debugPresets"] svg,
+.dsd-ui-tab[data-tab="memory"] svg {
+  color: var(--ui-accent);
+}
+
+/* Amarelo/Laranja - Metrics */
+.dsd-ui-tab[data-tab="regionMetrics"] svg,
+.dsd-ui-tab[data-tab="apiMetrics"] svg {
+  color: var(--ui-warning);
+}
+
+/* Docs - Cyan claro */
+.dsd-ui-tab[data-tab="docs"] svg {
+  color: #67e8f9;
+}
+
+/* Tab ativa - manter cor mas com brilho */
+.dsd-ui-tab.active svg {
+  filter: brightness(1.2);
+}
+
+/* Hover - aumentar brilho */
+.dsd-ui-tab:hover svg {
+  filter: brightness(1.3);
+}
+
+/* Tab Ativa com Indicador Colorido */
+.dsd-ui-tab.active::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: -1px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 20px !important;
+  height: 3px !important;
+  background: var(--ui-accent) !important;
+  border-radius: 3px 3px 0 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 0 !important;
+}
+
+.dsd-ui-tab.active:hover::after {
+  content: '' !important;
+  width: 20px !important;
+  height: 3px !important;
+  background: var(--ui-accent) !important;
+  bottom: -1px !important;
+  padding: 0 !important;
+}
+/* Panel UI - Animations
+ * @module _animations.css
+ * @version 1.0.0
+ * @description Animações de entrada para painéis e keyframes globais
+ * @dependencies _panel.css
+ */
+
+/* Entrada do Debug Panel */
+.dsd-ui-panel--debug {
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Entrada do Command Palette */
+.dsd-ui-panel--command {
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+/* Panel UI - Visual Polish
+ * @module _polish.css
+ * @version 1.0.0
+ * @description Gradients, tags coloridas, hover SVG, log colors, scrollbar accent
+ * @dependencies _tokens.css, _content.css, _tags.css, _buttons.css, _log.css
+ */
+
+/* Gradients sutis nos section titles */
+.dsd-ui-section__title {
+  background: linear-gradient(90deg, var(--ui-bg-hover) 0%, transparent 100%);
+  padding: var(--ui-space-xs) var(--ui-space-sm);
+  margin-left: calc(-1 * var(--ui-space-sm));
+  margin-right: calc(-1 * var(--ui-space-sm));
+  padding-left: var(--ui-space-sm);
+  border-radius: var(--ui-radius-sm);
+}
+
+/* Tags com cores por tipo */
+.dsd-ui-tag[data-type="core"],
+.dsd-ui-tags .dsd-ui-tag:nth-child(6n+1) {
+  border-left: 2px solid var(--ui-success);
+}
+
+.dsd-ui-tag[data-type="ui"],
+.dsd-ui-tags .dsd-ui-tag:nth-child(6n+2) {
+  border-left: 2px solid #60a5fa;
+}
+
+.dsd-ui-tag[data-type="data"],
+.dsd-ui-tags .dsd-ui-tag:nth-child(6n+3) {
+  border-left: 2px solid #22d3ee;
+}
+
+.dsd-ui-tag[data-type="devtools"],
+.dsd-ui-tags .dsd-ui-tag:nth-child(6n+4) {
+  border-left: 2px solid var(--ui-accent);
+}
+
+.dsd-ui-tag[data-type="metrics"],
+.dsd-ui-tags .dsd-ui-tag:nth-child(6n+5) {
+  border-left: 2px solid var(--ui-warning);
+}
+
+.dsd-ui-tag[data-type="system"],
+.dsd-ui-tags .dsd-ui-tag:nth-child(6n+6) {
+  border-left: 2px solid var(--ui-error);
+}
+
+/* Botões com ícones animados no hover */
+.dsd-ui-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.dsd-ui-btn:hover svg {
+  transform: scale(1.15);
+}
+
+/* Rotação para refresh */
+.dsd-ui-btn:hover svg[data-icon="refresh"],
+#dsd-debug-refresh:hover svg {
+  transform: rotate(180deg);
+}
+
+/* Pulse para capture/snapshot */
+.dsd-ui-btn:hover svg[data-icon="camera"],
+#btn-capture-snapshot:hover svg {
+  animation: pulse 0.3s ease;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Log items com cores por nível */
+.dsd-ui-log-item[data-level="error"],
+.dsd-ui-log-item:has([class*="error"]) {
+  background: rgba(248, 113, 113, 0.08);
+  border-left: 2px solid var(--ui-error);
+}
+
+.dsd-ui-log-item[data-level="warning"],
+.dsd-ui-log-item:has([class*="warning"]) {
+  background: rgba(251, 191, 36, 0.08);
+  border-left: 2px solid var(--ui-warning);
+}
+
+.dsd-ui-log-item[data-level="success"],
+.dsd-ui-log-item:has([class*="success"]) {
+  background: rgba(52, 211, 153, 0.08);
+  border-left: 2px solid var(--ui-success);
+}
+
+.dsd-ui-log-item[data-level="info"] {
+  border-left: 2px solid var(--ui-accent);
+}
+
+/* Alternating subtle background */
+.dsd-ui-log-item:nth-child(odd) {
+  background: var(--ui-bg-card);
+}
+
+/* Scrollbar com cor accent */
+.dsd-ui-content::-webkit-scrollbar-thumb {
+  background: var(--ui-accent);
+  opacity: 0.5;
+}
+
+.dsd-ui-content::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-accent);
+  opacity: 0.8;
+}
+/* Panel UI - Interactions
+ * @module _interactions.css
+ * @version 1.0.0
+ * @description Efeito ripple em botões, preset buttons e tabs
+ * @dependencies _buttons.css, _presets.css, _tabs.css
+ */
+
+/* Ripple nos botões */
+.dsd-ui-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.dsd-ui-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dsd-ui-btn:active::after {
+  width: 200px;
+  height: 200px;
+  opacity: 1;
+  transition: width 0s, height 0s, opacity 0s;
+}
+
+/* Ripple nos preset buttons */
+.dsd-ui-preset-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.dsd-ui-preset-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(124, 58, 237, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dsd-ui-preset-btn:active::after {
+  width: 200px;
+  height: 200px;
+  opacity: 1;
+  transition: width 0s, height 0s, opacity 0s;
+}
+
+/* Ripple nas tabs */
+.dsd-ui-tab {
+  overflow: hidden;
+}
+/* Panel UI - Features
+ * @version 4.1.0
+ * @description Badge, compact, search, connection dots, tab dots, flash, pin, timestamp, highlight, theme, collapse, network, diff, indexeddb, resize
+ * @melhorias #8, #11, #14, #15, #16, #17, #24, #25, #26, #27, #29, #7, #14-diff, #18, #23
+ * @depends _variables.css (tokens)
+ * @depends _base.css (.dsd-ui-panel, .dsd-ui-header, .dsd-ui-content)
+ * @depends _components.css (cards, lists, tags, sections, grids)
+ */
+
+/* ============================================================================
+   MELHORIA #14 - BADGE DE ISSUES NO HEADER
+   ============================================================================ */
+
+.dsd-ui-header__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 8px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--ui-font-mono);
+  background: var(--ui-error);
+  color: #fff;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ============================================================================
+   MELHORIA #15 - MODO COMPACTO
+   ============================================================================ */
+
+.dsd-ui-panel--compact {
+  max-height: 50vh !important;
+}
+
+.dsd-ui-panel--compact .dsd-ui-content {
+  font-size: 11px;
+}
+
+.dsd-ui-panel--compact .dsd-ui-card {
+  padding: var(--ui-space-xs);
+}
+
+.dsd-ui-panel--compact .dsd-ui-card__value {
+  font-size: 16px;
+}
+
+.dsd-ui-panel--compact .dsd-ui-card__label {
+  font-size: 9px;
+}
+
+.dsd-ui-panel--compact .dsd-ui-section {
+  margin-bottom: var(--ui-space-xs);
+}
+
+.dsd-ui-panel--compact .dsd-ui-section__title {
+  font-size: 11px;
+  padding: 2px var(--ui-space-xs);
+}
+
+.dsd-ui-panel--compact .dsd-ui-grid {
+  gap: var(--ui-space-xs);
+}
+
+.dsd-ui-panel--compact .dsd-ui-list-item {
+  padding: 4px var(--ui-space-xs);
+  font-size: 11px;
+}
+
+.dsd-ui-panel--compact .dsd-ui-tag {
+  font-size: 9px;
+  padding: 1px 5px;
+}
+
+.dsd-ui-panel--compact .dsd-ui-json {
+  font-size: 10px;
+  max-height: 120px;
+}
+
+/* ============================================================================
+   MELHORIA #17 - BUSCA/FILTRO
+   ============================================================================ */
+
+.dsd-ui-search {
+  padding: 4px var(--ui-space-sm);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.dsd-ui-search__input {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text);
+  font-family: var(--ui-font-mono);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.dsd-ui-search__input:focus {
+  border-color: var(--ui-accent);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
+}
+
+.dsd-ui-search__input::placeholder {
+  color: var(--ui-text-muted);
+  opacity: 0.6;
+}
+
+/* ============================================================================
+   FASE 2 #16 - Connection Indicator Dots
+   ============================================================================ */
+
+.dsd-ui-header__conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.dsd-ui-conn-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.dsd-ui-conn-dot--on {
+  background-color: var(--ui-success);
+  box-shadow: 0 0 4px var(--ui-success);
+}
+
+.dsd-ui-conn-dot--off {
+  background-color: var(--ui-error);
+  box-shadow: 0 0 4px var(--ui-error);
+  opacity: 0.7;
+}
+
+/* ============================================================================
+   BLOCO 3 #8 - TAB ISSUE DOTS
+   ============================================================================ */
+
+.dsd-ui-tab {
+  position: relative;
+}
+
+.dsd-ui-tab__dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-error);
+  box-shadow: 0 0 4px var(--ui-error);
+}
+
+.dsd-ui-tab.has-issue {
+  border-color: var(--ui-error);
+}
+
+/* ============================================================================
+   BLOCO 3 #27 - PIN TAB INDICATOR
+   ============================================================================ */
+
+.dsd-ui-tab__pin {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ui-accent);
+}
+
+.dsd-ui-tab.pinned {
+  box-shadow: inset 0 -2px 0 var(--ui-accent);
+}
+
+/* ============================================================================
+   BLOCO 3 #11 - STATUS FLASH NOTIFICATIONS
+   ============================================================================ */
+
+.dsd-ui-flash--healthy {
+  animation: flash-healthy 2s ease-out;
+}
+
+.dsd-ui-flash--degraded {
+  animation: flash-degraded 2s ease-out;
+}
+
+.dsd-ui-flash--unhealthy {
+  animation: flash-unhealthy 2s ease-out;
+}
+
+@keyframes flash-healthy {
+  0% { box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.4); }
+  100% { box-shadow: none; }
+}
+
+@keyframes flash-degraded {
+  0% { box-shadow: inset 0 0 20px rgba(245, 158, 11, 0.4); }
+  100% { box-shadow: none; }
+}
+
+@keyframes flash-unhealthy {
+  0% { box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.4); }
+  100% { box-shadow: none; }
+}
+
+/* ============================================================================
+   BLOCO 3 #24 - LAST UPDATE TIMESTAMP
+   ============================================================================ */
+
+.dsd-ui-header__ts {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 10px;
+  font-family: var(--ui-font-mono);
+  color: var(--ui-text-muted);
+  opacity: 0.7;
+  vertical-align: middle;
+}
+
+/* ============================================================================
+   BLOCO 4A #25 - SEARCH HIGHLIGHT
+   ============================================================================ */
+
+.dsd-ui-highlight {
+  background: rgba(124, 58, 237, 0.35);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.2);
+}
+
+/* ============================================================================
+   BLOCO 4A #26 - LIGHT MODE
+   ============================================================================ */
+
+.dsd-ui-panel--light {
+  --ui-bg: #f8f9fa;
+  --ui-bg-card: #ffffff;
+  --ui-bg-hover: #e9ecef;
+  --ui-text: #1a1a2e;
+  --ui-text-muted: #6c757d;
+  --ui-border: #dee2e6;
+  --ui-accent: #7c3aed;
+  --ui-success: #059669;
+  --ui-warning: #d97706;
+  --ui-error: #dc2626;
+}
+
+.dsd-ui-panel--light .dsd-ui-header {
+  background: #e9ecef;
+  border-bottom-color: #dee2e6;
+}
+
+.dsd-ui-panel--light .dsd-ui-tabs {
+  background: #f1f3f5;
+  border-bottom-color: #dee2e6;
+}
+
+.dsd-ui-panel--light .dsd-ui-tab.active {
+  background: #ffffff;
+  color: var(--ui-accent);
+}
+
+.dsd-ui-panel--light .dsd-ui-search__input {
+  background: #ffffff;
+  border-color: #ced4da;
+  color: #1a1a2e;
+}
+
+.dsd-ui-panel--light .dsd-ui-section__title {
+  background: #e9ecef;
+  color: #1a1a2e;
+}
+
+.dsd-ui-panel--light .dsd-ui-card {
+  background: #ffffff;
+  border-color: #dee2e6;
+}
+
+.dsd-ui-panel--light .dsd-ui-list-item {
+  border-bottom-color: #e9ecef;
+}
+
+.dsd-ui-panel--light .dsd-ui-highlight {
+  background: rgba(124, 58, 237, 0.2);
+}
+
+.dsd-ui-panel--light .dsd-ui-btn {
+  color: #495057;
+}
+
+.dsd-ui-panel--light .dsd-ui-btn:hover {
+  background: #dee2e6;
+  color: #1a1a2e;
+}
+
+.dsd-ui-panel--light .dsd-ui-select {
+  background: #ffffff;
+  border-color: #ced4da;
+  color: #1a1a2e;
+}
+
+/* ============================================================================
+   BLOCO 4A #29 - COLLAPSIBLE SECTIONS
+   ============================================================================ */
+
+.dsd-ui-section__title--collapsible {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s ease;
+}
+
+.dsd-ui-section__title--collapsible:hover {
+  background: var(--ui-bg-hover, rgba(255,255,255,0.08));
+}
+
+.dsd-ui-section__chevron {
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dsd-ui-section.collapsed .dsd-ui-section__chevron {
+  transform: rotate(0deg);
+}
+
+.dsd-ui-section__body {
+  transition: max-height 0.2s ease;
+}
+
+/* ============================================================================
+   BLOCO 4A #7 - NETWORK TAB STYLES
+   ============================================================================ */
+
+.dsd-ui-net-url {
+  font-family: var(--ui-font-mono);
+  font-size: 11px;
+  color: var(--ui-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+  display: inline-block;
+}
+
+.dsd-ui-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 6px 0;
+  align-items: center;
+}
+
+/* ============================================================================
+   BLOCO 4B #14 - DIFF VIEWER
+   ============================================================================ */
+
+.dsd-ui-diff-selector {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 0;
+  flex-wrap: wrap;
+}
+
+.dsd-ui-diff-selector__col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.dsd-ui-diff-selector__col label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ui-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dsd-ui-diff-selector__arrow {
+  display: flex;
+  align-items: center;
+  padding-bottom: 4px;
+  color: var(--ui-text-muted);
+}
+
+.dsd-ui-select {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--ui-bg-card);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text);
+  font-family: var(--ui-font-mono);
+  font-size: 11px;
+  outline: none;
+}
+
+.dsd-ui-select:focus {
+  border-color: var(--ui-accent);
+}
+
+.dsd-ui-diff--added {
+  border-left: 3px solid var(--ui-success) !important;
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.dsd-ui-diff--removed {
+  border-left: 3px solid var(--ui-error) !important;
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.dsd-ui-diff--modified {
+  border-left: 3px solid var(--ui-warning) !important;
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.dsd-ui-diff__type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.dsd-ui-diff--added .dsd-ui-diff__type {
+  background: var(--ui-success);
+  color: #fff;
+}
+
+.dsd-ui-diff--removed .dsd-ui-diff__type {
+  background: var(--ui-error);
+  color: #fff;
+}
+
+.dsd-ui-diff--modified .dsd-ui-diff__type {
+  background: var(--ui-warning);
+  color: #fff;
+}
+
+.dsd-ui-diff__path {
+  font-family: var(--ui-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dsd-ui-diff__val {
+  font-family: var(--ui-font-mono);
+  font-size: 10px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsd-ui-diff__val--old {
+  color: var(--ui-error);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.dsd-ui-diff__val--new {
+  color: var(--ui-success);
+}
+
+/* ============================================================================
+   BLOCO 4B #23 - RESIZE DRAG HANDLE
+   ============================================================================ */
+
+.dsd-ui-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  cursor: ns-resize;
+  background: transparent;
+  z-index: 10001;
+  transition: background 0.15s ease;
+  touch-action: none;
+}
+
+.dsd-ui-resize-handle:hover {
+  background: var(--ui-accent);
+  opacity: 0.5;
+}
+
+.dsd-ui-resize-handle:active {
+  background: var(--ui-accent);
+  opacity: 0.8;
+}
+
+.dsd-ui-panel--resizing {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: ns-resize;
+  transition: none !important;
+}
+
+.dsd-ui-panel--resizing .dsd-ui-resize-handle {
+  background: var(--ui-accent);
+  opacity: 0.6;
+}
+
+/* ============================================================================
+   BLOCO 4B #18 - LIGHT MODE OVERRIDES (diff, select)
+   ============================================================================ */
+
+.dsd-ui-panel--light .dsd-ui-diff--added {
+  background: rgba(5, 150, 105, 0.08);
+}
+
+.dsd-ui-panel--light .dsd-ui-diff--removed {
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.dsd-ui-panel--light .dsd-ui-diff--modified {
+  background: rgba(217, 119, 6, 0.08);
+}

@@ -1,0 +1,48 @@
+/**
+ * Layout - Base Structure
+ * @version 5.1.0
+ * @description Container, Header Container Fix, Main Content, Sections
+ */
+
+/* Header Container Fix */
+#header-container {
+  position: relative;
+  min-height: var(--hdr-height, 60px);
+  z-index: var(--z-header, 100);
+}
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: var(--container-2xl);
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* Main Content */
+.main-content {
+  padding-top: calc(var(--hdr-height, 60px) + 16px);
+  min-height: 100vh;
+  padding-bottom: var(--spacing-2xl);
+}
+
+/* Sections */
+.section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}

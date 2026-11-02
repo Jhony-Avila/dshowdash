@@ -1,0 +1,175 @@
+/**
+ * Design System - Tokens Estendidos
+ * @version 1.0.0
+ * @description Paleta de cores completa + tokens adicionais
+ *
+ * IMPORTANTE: Carregar APÓS theme.css
+ * Extends tokens definidos em theme.css com cores premium dos cards
+ */
+
+:root {
+  /* ==================== CORES COMPLETAS ==================== */
+
+  /* Blues */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+
+  /* Indigos */
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e7ff;
+  --color-indigo-200: #c7d2fe;
+  --color-indigo-300: #a5b4fc;
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #667eea;
+  --color-indigo-600: #5a67d8;
+  --color-indigo-700: #4c51bf;
+  --color-indigo-800: #434190;
+  --color-indigo-900: #3c366b;
+
+  /* Purples */
+  --color-purple-50: #faf5ff;
+  --color-purple-100: #f3e8ff;
+  --color-purple-200: #e9d5ff;
+  --color-purple-300: #d8b4fe;
+  --color-purple-400: #c084fc;
+  --color-purple-500: #8b5cf6;
+  --color-purple-600: #6d28d9;
+  --color-purple-700: #5b21b6;
+  --color-purple-800: #4c1d95;
+  --color-purple-900: #3b0764;
+
+  /* Cyans */
+  --color-cyan-50: #ecfeff;
+  --color-cyan-100: #cffafe;
+  --color-cyan-200: #a5f3fc;
+  --color-cyan-300: #67e8f9;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  --color-cyan-700: #0e7490;
+  --color-cyan-800: #155e75;
+  --color-cyan-900: #164e63;
+
+  /* Greens */
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-200: #bbf7d0;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #10b981;
+  --color-green-600: #059669;
+  --color-green-700: #047857;
+  --color-green-800: #065f46;
+  --color-green-900: #064e3b;
+
+  /* Oranges */
+  --color-orange-50: #fff7ed;
+  --color-orange-100: #ffedd5;
+  --color-orange-200: #fed7aa;
+  --color-orange-300: #fdba74;
+  --color-orange-400: #fb923c;
+  --color-orange-500: #f59e0b;
+  --color-orange-600: #d97706;
+  --color-orange-700: #b45309;
+  --color-orange-800: #92400e;
+  --color-orange-900: #78350f;
+
+  /* Reds */
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+
+  /* Grays */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* ==================== ALIASES SEMÂNTICOS ==================== */
+  --blue: var(--color-blue-500);
+  --blue-dark: var(--color-blue-700);
+  --blue-light: var(--color-blue-400);
+
+  --indigo: var(--color-indigo-500);
+  --indigo-dark: var(--color-indigo-700);
+  --indigo-light: var(--color-indigo-400);
+
+  --purple: var(--color-purple-500);
+  --purple-dark: var(--color-purple-700);
+  --purple-light: var(--color-purple-400);
+
+  --cyan: var(--color-cyan-500);
+  --cyan-dark: var(--color-cyan-700);
+  --cyan-light: var(--color-cyan-400);
+
+  --green: var(--color-green-500);
+  --green-dark: var(--color-green-700);
+  --green-light: var(--color-green-400);
+
+  --orange: var(--color-orange-500);
+  --orange-dark: var(--color-orange-700);
+  --orange-light: var(--color-orange-400);
+
+  --red: var(--color-red-500);
+  --red-dark: var(--color-red-700);
+  --red-light: var(--color-red-400);
+
+  /* ==================== GRADIENTES PREMIUM ==================== */
+  --gradient-blue: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+  --gradient-indigo: linear-gradient(135deg, var(--indigo) 0%, var(--indigo-dark) 100%);
+  --gradient-purple: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+  --gradient-cyan: linear-gradient(135deg, var(--cyan) 0%, var(--cyan-dark) 100%);
+  --gradient-green: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+  --gradient-orange: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+  --gradient-red: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
+
+  /* ==================== SOMBRAS COLORIDAS ==================== */
+  --shadow-blue: 0 8px 24px rgba(59, 130, 246, 0.3);
+  --shadow-indigo: 0 8px 24px rgba(102, 126, 234, 0.3);
+  --shadow-purple: 0 8px 24px rgba(139, 92, 246, 0.3);
+  --shadow-cyan: 0 8px 24px rgba(6, 182, 212, 0.3);
+  --shadow-green: 0 8px 24px rgba(16, 185, 129, 0.3);
+  --shadow-orange: 0 8px 24px rgba(245, 158, 11, 0.3);
+  --shadow-red: 0 8px 24px rgba(239, 68, 68, 0.3);
+
+  /* ==================== GLOWS ==================== */
+  --glow-blue: rgba(59, 130, 246, 0.4);
+  --glow-indigo: rgba(102, 126, 234, 0.4);
+  --glow-purple: rgba(139, 92, 246, 0.4);
+  --glow-cyan: rgba(6, 182, 212, 0.4);
+  --glow-green: rgba(16, 185, 129, 0.4);
+  --glow-orange: rgba(245, 158, 11, 0.4);
+  --glow-red: rgba(239, 68, 68, 0.4);
+
+  /* ==================== BACKDROP BLUR LEVELS ==================== */
+  --blur-sm: 8px;
+  --blur-md: 12px;
+  --blur-lg: 16px;
+  --blur-xl: 24px;
+
+  /* ==================== CUBIC BEZIERS ==================== */
+  --ease-premium: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}

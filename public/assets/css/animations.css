@@ -1,0 +1,11 @@
+/**
+ * Animations - Smooth Transitions
+ * @version 2.1.0-MODULAR
+ * @description Agregador modular
+ */
+
+@import url('./animations.tokens.css');
+@import url('./animations.fade.css');
+@import url('./animations.transform.css');
+@import url('./animations.effects.css');
+@import url('./animations.utilities.css');

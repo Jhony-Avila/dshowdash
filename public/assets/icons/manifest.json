@@ -1,0 +1,21 @@
+{
+  "name": "DSHOW Dashboard Monitor",
+  "short_name": "DSHOW Monitor",
+  "description": "Sistema Robusto de Monitoramento - DSHOW",
+  "start_url": "/monitor.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/assets/dshow_icons_pack/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/dshow_icons_pack/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+/**
+ * Panels Sane - Base
+ * @version 5.0.0
+ * @description Grids, painéis base, containment
+ */
+
+/* Grids Específicos */
+.panels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.monitor-panel {
+  display: grid;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Painéis Base - CSS Containment */
+.painel-item {
+  contain: layout paint;
+  position: relative;
+  min-block-size: 400px;
+}
+
+/* Painéis Específicos */
+#panels-container .painel-item {
+  min-height: 300px;
+  max-height: 500px;
+  min-block-size: 300px;
+}
+
+#charts-carousel .painel-item {
+  min-height: 320px;
+  max-height: 420px;
+  min-block-size: 320px;
+}
+
+.featured-panels {
+  margin: var(--spacing-xl) 0;
+}
+
+.featured-panels .painel-featured {
+  width: 100%;
+  min-height: 400px;
+  min-block-size: 400px;
+}
+
+/* Conteúdo com Scroll */
+.painel-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+}
+
+.card-content,
+.card>*:not(.card-header) {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+}
+
+/* Seções */
+.cards-section,
+.charts-section,
+.panels-section,
+.featured-panels {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.cards-wrapper {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Grid 2 Colunas */
+.featured-panels.two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.featured-panels.two-cols .painel-item {
+  width: 100%;
+}
