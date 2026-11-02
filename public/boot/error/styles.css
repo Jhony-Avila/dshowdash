@@ -1,0 +1,206 @@
+/* Boot Error Screen - Premium Video Styles */
+/* @version 2.4.0-VIDEO-PURE */
+/* Totalmente isolado - não depende do app */
+@import './tokens.css';
+
+.boot-error-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--boot-font-family);
+  overflow: hidden;
+  background: transparent;
+}
+
+.boot-error-screen * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.boot-error__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  filter: none;
+}
+
+.boot-error__overlay {
+  display: none;
+}
+
+.boot-error__content {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+  padding: 48px;
+  background: rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 100px rgba(239, 68, 68, 0.1);
+  text-align: center;
+  animation: boot-error-fade-in 0.6s ease-out;
+}
+
+@keyframes boot-error-fade-in {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.boot-error__icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 28px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: boot-error-pulse 2s ease-in-out infinite;
+}
+
+@keyframes boot-error-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+}
+
+.boot-error__icon svg {
+  width: 40px;
+  height: 40px;
+  stroke: #EF4444;
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.boot-error__title {
+  font-size: 1.625rem;
+  font-weight: 600;
+  color: #F8FAFC;
+  margin-bottom: 16px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.boot-error__description {
+  font-size: 0.9375rem;
+  color: rgba(248, 250, 252, 0.7);
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+
+.boot-error__subdesc {
+  font-size: 0.8125rem;
+  color: rgba(248, 250, 252, 0.5);
+  margin-bottom: 36px;
+}
+
+.boot-error__actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.boot-error__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  font-family: var(--boot-font-family);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.boot-error__btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.boot-error__btn--primary {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+
+.boot-error__btn--primary:hover {
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+.boot-error__btn--primary:active {
+  transform: translateY(0);
+}
+
+.boot-error__btn--secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.boot-error__btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #F8FAFC;
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.boot-error__footer {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.boot-error__meta {
+  font-size: 0.6875rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: rgba(248, 250, 252, 0.4);
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 600px) {
+  .boot-error__content {
+    margin: 16px;
+    padding: 36px 24px;
+    border-radius: 16px;
+  }
+  .boot-error__title {
+    font-size: 1.375rem;
+  }
+  .boot-error__actions {
+    flex-direction: column;
+  }
+  .boot-error__btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

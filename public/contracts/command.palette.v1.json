@@ -1,0 +1,19 @@
+{
+  "$id": "dsd.contracts/command.palette.v1.json",
+  "type": "object",
+  "description": "Command Palette Enterprise contract",
+  "properties": {
+    "init": { "type": "string", "const": "function(ctx): Envelope" },
+    "registerCommand": { "type": "string", "const": "function(command): Envelope" },
+    "unregisterCommand": { "type": "string", "const": "function(commandId): Envelope" },
+    "listCommands": { "type": "string", "const": "function(filter): Envelope" },
+    "execute": { "type": "string", "const": "function(commandId, ctx): Envelope" },
+    "show": { "type": "string", "const": "function(): void" },
+    "hide": { "type": "string", "const": "function(): void" },
+    "toggle": { "type": "string", "const": "function(): void" },
+    "healthCheck": { "type": "string", "const": "function(): Health" },
+    "info": { "type": "string", "const": "function(): Envelope" },
+    "cleanup": { "type": "string", "const": "function(): Envelope" }
+  },
+  "required": ["init", "registerCommand", "listCommands", "execute", "show", "hide", "healthCheck", "info"]
+}

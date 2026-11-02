@@ -1,0 +1,310 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://dshowdash.com.br/schemas/app-config.json",
+  "title": "DshowDash App Configuration",
+  "description": "Schema de validação para app.config.js",
+  "type": "object",
+  "required": ["app", "modules", "paths", "timeouts", "network", "refresh"],
+  "properties": {
+    "app": {
+      "type": "object",
+      "required": ["name", "version", "build", "assetsVersion", "debug", "apiUrl"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Nome da aplicação"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Versão semântica (X.Y.Z)"
+        },
+        "build": {
+          "type": "string",
+          "pattern": "^\\d{8}$",
+          "description": "Build date (YYYYMMDD)"
+        },
+        "assetsVersion": {
+          "type": "string",
+          "description": "Versão dos assets (cache busting)"
+        },
+        "assetQuery": {
+          "type": "string",
+          "pattern": "^\\?v=",
+          "description": "Query string para assets (?v=...)"
+        },
+        "debug": {
+          "type": "boolean",
+          "description": "Modo debug ativado"
+        },
+        "apiUrl": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "URL base da API"
+        },
+        "authEndpoint": {
+          "type": "string",
+          "description": "Endpoint de autenticação"
+        }
+      }
+    },
+    "retryAttempts": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Número de tentativas de retry"
+    },
+    "retryDelay": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 10000,
+      "description": "Delay entre retries (ms)"
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "useRemoteCardsPanel": {
+          "type": "boolean",
+          "description": "Usar MFE remoto para cards panel"
+        }
+      }
+    },
+    "timeouts": {
+      "type": "object",
+      "required": [
+        "readyTimeoutMs",
+        "componentTimeoutMs",
+        "cardsReadyTimeoutMs",
+        "apiDefaultMs",
+        "configLoadMs"
+      ],
+      "properties": {
+        "readyTimeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 30000,
+          "description": "Timeout geral de boot"
+        },
+        "componentTimeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 20000,
+          "description": "Timeout de componentes individuais"
+        },
+        "cardsReadyTimeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 20000,
+          "description": "Timeout para cards:ready"
+        },
+        "mfContainerPollMs": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 500,
+          "description": "Intervalo de polling MFE"
+        },
+        "mfContainerMaxMs": {
+          "type": "integer",
+          "minimum": 5000,
+          "maximum": 60000,
+          "description": "Timeout máximo container MFE"
+        },
+        "apiDefaultMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000,
+          "description": "Timeout padrão de API"
+        },
+        "apiHealthMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 30000,
+          "description": "Timeout de health checks"
+        },
+        "apiAlertsMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 30000,
+          "description": "Timeout de alerts polling"
+        },
+        "configLoadMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 15000,
+          "description": "Timeout de config.json"
+        },
+        "refreshOperationMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 30000,
+          "description": "Timeout de operação de refresh"
+        },
+        "refreshThrottleMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 30000,
+          "description": "Throttle entre refreshes"
+        },
+        "refreshFallbackMs": {
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 10000,
+          "description": "Fallback de refresh manual"
+        }
+      },
+      "additionalProperties": false
+    },
+    "microFrontends": {
+      "type": "object",
+      "properties": {
+        "cardsPanel": {
+          "type": "object",
+          "required": ["url", "scope", "module"],
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^/",
+              "description": "URL do remoteEntry.js"
+            },
+            "scope": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Scope do MFE"
+            },
+            "module": {
+              "type": "string",
+              "pattern": "^\\./",
+              "description": "Módulo exposto"
+            },
+            "version": {
+              "type": "string",
+              "description": "Versão do MFE"
+            }
+          }
+        }
+      }
+    },
+    "api": {
+      "type": "object",
+      "properties": {
+        "cardsBaseUrl": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "Base URL dos cards"
+        }
+      }
+    },
+    "modules": {
+      "type": "object",
+      "required": ["cards", "charts", "panels"],
+      "properties": {
+        "cards": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^card-\\d{2}$"
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Lista de cards disponíveis"
+        },
+        "charts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "Lista de charts disponíveis"
+        },
+        "panels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "Lista de painéis disponíveis"
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "required": ["modules", "assets"],
+      "properties": {
+        "modules": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "Caminho base dos módulos"
+        },
+        "assets": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "Caminho base dos assets"
+        },
+        "mf": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "Caminho base dos MFEs"
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "required": ["defaultTimeoutMs", "retryAttempts", "backoffMs"],
+      "properties": {
+        "defaultTimeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000,
+          "description": "Timeout padrão de rede"
+        },
+        "retryAttempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Tentativas de retry"
+        },
+        "backoffMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000,
+          "description": "Backoff entre retries"
+        }
+      }
+    },
+    "refresh": {
+      "type": "object",
+      "required": ["global", "cards", "panels"],
+      "properties": {
+        "global": {
+          "type": "integer",
+          "minimum": 10000,
+          "maximum": 300000,
+          "description": "Intervalo de refresh global (ms)"
+        },
+        "cards": {
+          "type": "integer",
+          "minimum": 10000,
+          "maximum": 300000,
+          "description": "Intervalo de refresh dos cards (ms)"
+        },
+        "panels": {
+          "type": "integer",
+          "minimum": 10000,
+          "maximum": 300000,
+          "description": "Intervalo de refresh dos painéis (ms)"
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Telemetria ativada"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

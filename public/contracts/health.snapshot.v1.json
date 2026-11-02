@@ -1,0 +1,52 @@
+{
+  "$id": "dsd.contracts/health.snapshot.v1.json",
+  "type": "object",
+  "description": "Contract for health snapshots (module and aggregated)",
+  "properties": {
+    "snapshotId": { "type": "string" },
+    "timestamp": { "type": "integer" },
+    "isoTime": { "type": "string" },
+    "global": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["HEALTHY", "DEGRADED", "UNHEALTHY"] },
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "modulesTotal": { "type": "integer" },
+        "modulesHealthy": { "type": "integer" },
+        "modulesDegraded": { "type": "integer" },
+        "modulesUnhealthy": { "type": "integer" }
+      },
+      "required": ["status", "score"]
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "moduleId": { "type": "string" },
+          "version": { "type": "string" },
+          "status": { "type": "string", "enum": ["HEALTHY", "DEGRADED", "UNHEALTHY", "UNKNOWN"] },
+          "score": { "type": "integer" },
+          "checks": { "type": "object" },
+          "issues": { "type": "array" }
+        },
+        "required": ["moduleId", "status", "score"]
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "moduleId": { "type": "string" },
+          "code": { "type": "string" },
+          "severity": { "type": "string", "enum": ["info", "warn", "crit"] },
+          "message": { "type": "string" },
+          "evidence": { "type": ["object", "null"] }
+        },
+        "required": ["moduleId", "code", "severity", "message"]
+      }
+    }
+  },
+  "required": ["snapshotId", "timestamp", "global"]
+}

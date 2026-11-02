@@ -1,0 +1,298 @@
+/* UI Orchestrator - Multi-Canvas Styles */
+/* @version 1.0.0-ENTERPRISE */
+
+/* ══════════════════════════════════════════════════════════════
+   MODO SINGLE (padrão)
+   ══════════════════════════════════════════════════════════════ */
+.canvas-single {
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-single .main-panel-container {
+  flex: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MODO SPLIT
+   ══════════════════════════════════════════════════════════════ */
+.canvas-split {
+  display: flex;
+  gap: 4px;
+}
+
+.canvas-split-h {
+  flex-direction: row;
+}
+
+.canvas-split-v {
+  flex-direction: column;
+}
+
+.canvas-split .canvas-pane {
+  overflow: auto;
+  background: var(--bg-primary, #0d1117);
+  border-radius: 8px;
+}
+
+.canvas-split-h .canvas-pane:first-child {
+  width: var(--canvas-split-ratio, 50%);
+}
+
+.canvas-split-h .canvas-pane:last-child {
+  flex: 1;
+}
+
+.canvas-split-v .canvas-pane:first-child {
+  height: var(--canvas-split-ratio, 50%);
+}
+
+.canvas-split-v .canvas-pane:last-child {
+  flex: 1;
+}
+
+/* Resizer */
+.canvas-split-resizer {
+  flex-shrink: 0;
+  background: var(--border-color, #30363d);
+  transition: background 0.2s;
+  cursor: col-resize;
+}
+
+.canvas-split-h .canvas-split-resizer {
+  width: 4px;
+  cursor: col-resize;
+}
+
+.canvas-split-v .canvas-split-resizer {
+  height: 4px;
+  cursor: row-resize;
+}
+
+.canvas-split-resizer:hover {
+  background: var(--accent-color, #58a6ff);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MODO GRID
+   ══════════════════════════════════════════════════════════════ */
+.canvas-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--canvas-grid-cols, 2), 1fr);
+  grid-template-rows: repeat(var(--canvas-grid-rows, 2), 1fr);
+  gap: 4px;
+}
+
+.canvas-grid .canvas-cell {
+  overflow: auto;
+  background: var(--bg-primary, #0d1117);
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #30363d);
+}
+
+.canvas-grid .canvas-cell[data-active="true"] {
+  border-color: var(--accent-color, #58a6ff);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+.canvas-grid .canvas-cell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary, #161b22);
+  border-bottom: 1px solid var(--border-color, #30363d);
+  font-size: 0.75rem;
+  color: var(--text-secondary, #8b949e);
+}
+
+.canvas-grid .canvas-cell-content {
+  height: calc(100% - 32px);
+  overflow: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MODO STACK (Tabs)
+   ══════════════════════════════════════════════════════════════ */
+.canvas-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-stack-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0.5rem;
+  background: var(--bg-secondary, #161b22);
+  border-bottom: 1px solid var(--border-color, #30363d);
+  overflow-x: auto;
+}
+
+.canvas-stack-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px 6px 0 0;
+  color: var(--text-secondary, #8b949e);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.canvas-stack-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #e6edf3);
+}
+
+.canvas-stack-tab[data-active="true"] {
+  background: var(--bg-primary, #0d1117);
+  border-color: var(--border-color, #30363d);
+  border-bottom-color: var(--bg-primary, #0d1117);
+  color: var(--text-primary, #e6edf3);
+}
+
+.canvas-stack-tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.canvas-stack-tab-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+
+.canvas-stack-content {
+  flex: 1;
+  overflow: auto;
+}
+
+.canvas-stack-pane {
+  display: none;
+  height: 100%;
+}
+
+.canvas-stack-pane[data-active="true"] {
+  display: block;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MODO FLOAT
+   ══════════════════════════════════════════════════════════════ */
+.canvas-float {
+  position: relative;
+}
+
+.canvas-float-panel {
+  position: absolute;
+  min-width: 300px;
+  min-height: 200px;
+  background: var(--bg-primary, #0d1117);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  resize: both;
+}
+
+.canvas-float-panel[data-active="true"] {
+  border-color: var(--accent-color, #58a6ff);
+  z-index: 100;
+}
+
+.canvas-float-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary, #161b22);
+  border-bottom: 1px solid var(--border-color, #30363d);
+  cursor: move;
+}
+
+.canvas-float-panel-title {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.canvas-float-panel-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.canvas-float-panel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary, #8b949e);
+  cursor: pointer;
+}
+
+.canvas-float-panel-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #e6edf3);
+}
+
+.canvas-float-panel-content {
+  height: calc(100% - 40px);
+  overflow: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MODE SWITCHER (UI Control)
+   ══════════════════════════════════════════════════════════════ */
+.canvas-mode-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 6px;
+}
+
+.canvas-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary, #8b949e);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.canvas-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #e6edf3);
+}
+
+.canvas-mode-btn[data-active="true"] {
+  background: var(--accent-color, #58a6ff);
+  color: #fff;
+}
+
+.canvas-mode-btn svg {
+  width: 16px;
+  height: 16px;
+}

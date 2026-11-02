@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Runtime Envelope Contract v2",
+  "version": "2.0.0",
+  "description": "Envelope padrão de resposta para módulos runtime",
+  "type": "object",
+  "properties": {
+    "ok": { "type": "boolean", "description": "Sucesso da operação" },
+    "data": { "type": ["object", "null"], "description": "Dados retornados" },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "moduleId": { "type": "string" },
+        "version": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["moduleId", "version", "timestamp"]
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "severity": { "type": "string", "enum": ["info", "warn", "error", "crit"] }
+        },
+        "required": ["code", "message"]
+      }
+    }
+  },
+  "required": ["ok", "meta", "errors"]
+}

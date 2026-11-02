@@ -1,0 +1,52 @@
+/* Global State Manager - Styles */
+/* Estilos mínimos para debug UI (opcional) */
+
+.global-state-debug {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #00ff00;
+    padding: 10px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 11px;
+    max-width: 400px;
+    max-height: 300px;
+    overflow: auto;
+    z-index: 99999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.global-state-debug-header {
+    font-weight: bold;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #00ff00;
+}
+
+.global-state-debug-item {
+    margin: 4px 0;
+    padding: 2px 0;
+}
+
+.global-state-debug-key {
+    color: #ffcc00;
+}
+
+.global-state-debug-value {
+    color: #ffffff;
+}
+
+.global-state-debug-close {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    cursor: pointer;
+    color: #ff6666;
+    font-weight: bold;
+}
+
+.global-state-debug-close:hover {
+    color: #ff0000;
+}

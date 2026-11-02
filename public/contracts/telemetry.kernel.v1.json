@@ -1,0 +1,19 @@
+{
+  "$id": "dsd.contracts/telemetry.kernel.v1.json",
+  "type": "object",
+  "description": "TelemetryKernel contract for enterprise observability",
+  "properties": {
+    "init": { "type": "string", "const": "function(ctx): Envelope" },
+    "register": { "type": "string", "const": "function(moduleDescriptor): Envelope" },
+    "unregister": { "type": "string", "const": "function(moduleId): Envelope" },
+    "track": { "type": "string", "const": "function(eventName, payload): Envelope" },
+    "collect": { "type": "string", "const": "function(): Envelope" },
+    "summary": { "type": "string", "const": "function(): Envelope" },
+    "getEvents": { "type": "string", "const": "function(limit): Envelope" },
+    "listModules": { "type": "string", "const": "function(): Envelope" },
+    "healthCheck": { "type": "string", "const": "function(): Health" },
+    "info": { "type": "string", "const": "function(): Envelope" },
+    "cleanup": { "type": "string", "const": "function(): Envelope" }
+  },
+  "required": ["init", "register", "track", "collect", "summary", "healthCheck", "info"]
+}

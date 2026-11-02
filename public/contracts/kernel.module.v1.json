@@ -1,0 +1,38 @@
+{
+  "$id": "dsd.contracts/kernel.module.v1.json",
+  "type": "object",
+  "description": "Base contract for Kernel modules (SidebarKernel, OverlayKernel)",
+  "properties": {
+    "id": { "type": "string", "minLength": 3 },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+.*$" },
+    "status": { "type": "string", "enum": ["idle", "initializing", "ready", "degraded", "shutdown", "error"] },
+    "api": {
+      "type": "object",
+      "properties": {
+        "init": { "const": "function(ctx): Envelope" },
+        "shutdown": { "const": "function(reason?): Envelope" },
+        "registerFeature": { "const": "function(featureDef): Envelope" },
+        "enableFeature": { "const": "function(featureId, opts?): Envelope" },
+        "disableFeature": { "const": "function(featureId, reason?): Envelope" },
+        "listFeatures": { "const": "function(): Envelope" },
+        "getFeatureStatus": { "const": "function(featureId): Envelope" },
+        "healthCheck": { "const": "function(): Health" },
+        "info": { "const": "function(): Envelope" },
+        "metrics": { "const": "function(): Envelope" },
+        "injectPorts": { "const": "function(ports): void" },
+        "getPorts": { "const": "function(): object" }
+      },
+      "required": ["init", "shutdown", "registerFeature", "listFeatures", "healthCheck", "info"]
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "supportsFeatures": { "type": "boolean" },
+        "supportsAdapters": { "type": "boolean" },
+        "supportsDegradedMode": { "type": "boolean" },
+        "supportsHotReload": { "type": "boolean" }
+      }
+    }
+  },
+  "required": ["id", "version", "api"]
+}

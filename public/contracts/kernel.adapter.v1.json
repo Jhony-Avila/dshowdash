@@ -1,0 +1,23 @@
+{
+  "$id": "dsd.contracts/kernel.adapter.v1.json",
+  "type": "object",
+  "description": "Contract for Overlay adapters",
+  "properties": {
+    "id": { "type": "string", "minLength": 3 },
+    "version": { "type": "string" },
+    "type": { "type": "string", "enum": ["modal", "drawer", "toast", "confirm", "loading", "custom"] },
+    "priority": { "type": "string", "enum": ["critical", "high", "normal", "low"] },
+    "api": {
+      "type": "object",
+      "properties": {
+        "open": { "const": "function(payload, handle): Envelope" },
+        "close": { "const": "function(handle): Envelope" },
+        "update": { "const": "function(handle, payload): Envelope" },
+        "healthCheck": { "const": "function(): Health" },
+        "info": { "const": "function(): Envelope" }
+      },
+      "required": ["open", "close", "healthCheck", "info"]
+    }
+  },
+  "required": ["id", "version", "type", "api"]
+}

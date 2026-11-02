@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Runtime Ports Contract v2",
+  "version": "2.0.0",
+  "description": "Contrato de ports para módulos runtime - dependency injection pattern",
+  "type": "object",
+  "properties": {
+    "telemetry": { "type": ["object", "null"], "description": "TelemetryKernel port" },
+    "healthRegistry": { "type": ["object", "null"], "description": "HealthRegistry port" },
+    "eventBus": { "type": ["object", "null"], "description": "EventBus port" },
+    "globalState": { "type": ["object", "null"], "description": "GlobalState port" },
+    "router": { "type": ["object", "null"], "description": "Router port" },
+    "sidebarKernel": { "type": ["object", "null"], "description": "SidebarKernel port" },
+    "overlayKernel": { "type": ["object", "null"], "description": "OverlayKernel port" },
+    "commandPalette": { "type": ["object", "null"], "description": "CommandPalette port" },
+    "circuitBreaker": { "type": ["object", "null"], "description": "CircuitBreaker port" },
+    "featureRegistry": { "type": ["object", "null"], "description": "FeatureRegistry port" },
+    "permissionsGuard": { "type": ["object", "null"], "description": "PermissionsGuard port" },
+    "diagnosticsRouter": { "type": ["object", "null"], "description": "DiagnosticsRouter port" },
+    "scheduler": { "type": ["object", "null"], "description": "SchedulerEnterprise port" },
+    "tenantContext": { "type": ["object", "null"], "description": "TenantContext port" },
+    "apiGateway": { "type": ["object", "null"], "description": "APIGateway port" },
+    "bootOrchestrator": { "type": ["object", "null"], "description": "BootOrchestrator port" },
+    "sidebarBridge": { "type": ["object", "null"], "description": "SidebarBridge port" },
+    "overlayBridge": { "type": ["object", "null"], "description": "OverlayBridge port" },
+    "uxIntelligence": { "type": ["object", "null"], "description": "UXIntelligence port" }
+  },
+  "additionalProperties": true
+}

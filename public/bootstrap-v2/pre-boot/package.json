@@ -1,0 +1,50 @@
+{
+  "name": "@dshowdash/pre-boot",
+  "version": "1.3.0",
+  "description": "Pre-Boot module for DshowDash Bootstrap-V2 - Browser detection, feature checking, and boot orchestration",
+  "main": "index.js",
+  "module": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./browser-check": "./browser-check.js",
+    "./contract": "./pre-boot-contract.js",
+    "./orchestrator": "./pre-boot-orchestrator.js"
+  },
+  "files": [
+    "index.js",
+    "browser-check.js",
+    "pre-boot-contract.js",
+    "pre-boot-orchestrator.js",
+    "README.md"
+  ],
+  "keywords": [
+    "bootstrap",
+    "pre-boot",
+    "browser-check",
+    "feature-detection",
+    "dshowdash"
+  ],
+  "author": "DshowDash Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dshowdash/bootstrap-v2.git",
+    "directory": "pre-boot"
+  },
+  "bugs": {
+    "url": "https://github.com/dshowdash/bootstrap-v2/issues"
+  },
+  "homepage": "https://github.com/dshowdash/bootstrap-v2#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "scripts": {
+    "test": "echo \"No tests yet\"",
+    "lint": "eslint *.js",
+    "build": "echo \"No build required - ES modules\""
+  },
+  "peerDependencies": {},
+  "dependencies": {},
+  "devDependencies": {}
+}

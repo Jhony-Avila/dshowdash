@@ -1,0 +1,22 @@
+{
+  "$id": "dsd.contracts/context.v1.json",
+  "type": "object",
+  "properties": {
+    "ports": {
+      "type": "object",
+      "properties": {
+        "eventBus": { "type": ["object", "null"] },
+        "globalState": { "type": ["object", "null"] },
+        "telemetry": { "type": ["object", "null"] },
+        "router": { "type": ["object", "null"] },
+        "layout": { "type": ["object", "null"] },
+        "appShell": { "type": ["object", "null"] },
+        "permissions": { "type": ["object", "null"] }
+      }
+    },
+    "config": { "type": ["object", "null"] },
+    "utils": { "type": ["object", "null"] },
+    "emit": { "type": ["object", "null"] }
+  },
+  "required": ["ports"]
+}

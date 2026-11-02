@@ -1,0 +1,111 @@
+{
+  "$id": "dsd.contracts/navigation.item.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NavigationItem",
+  "description": "Item de navegação canônico - Navigation Contract v1",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identificador único do item"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Texto de exibição"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descrição opcional do item"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Identificador do ícone"
+    },
+    "route": {
+      "type": "string",
+      "description": "Rota de navegação (quando mode=link)"
+    },
+    "section": {
+      "type": "string",
+      "description": "ID da seção pai"
+    },
+    "order": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Ordem de exibição"
+    },
+    "navigation": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["link", "action", "custom"],
+          "description": "Modo de navegação"
+        },
+        "action": {
+          "type": "string",
+          "description": "Ação a executar (quando mode=action)"
+        }
+      },
+      "required": ["mode"]
+    },
+    "uarps": {
+      "type": "object",
+      "properties": {
+        "trigger_id": {
+          "type": "string",
+          "pattern": "^trigger:navigation:item:.+$",
+          "description": "Trigger UARPS unificado"
+        },
+        "region_id": {
+          "type": "string",
+          "pattern": "^region:app:.+$",
+          "description": "Região UARPS"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["show", "hide", "disable"],
+          "default": "show"
+        }
+      },
+      "required": ["trigger_id", "region_id"]
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "disabled": { "type": "boolean", "default": false },
+        "hidden": { "type": "boolean", "default": false },
+        "active": { "type": "boolean", "default": false }
+      }
+    },
+    "badge": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["count", "dot", "text"]
+        },
+        "value": {
+          "type": ["string", "integer"]
+        },
+        "pulse": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "enum": ["legacy", "ncs", "admin"],
+      "description": "Origem do item"
+    },
+    "version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Versão do contrato"
+    }
+  },
+  "required": ["id", "label", "uarps", "version"]
+}

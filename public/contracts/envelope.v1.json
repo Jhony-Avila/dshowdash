@@ -1,0 +1,30 @@
+{
+  "$id": "dsd.contracts/envelope.v1.json",
+  "type": "object",
+  "properties": {
+    "ok": { "type": "boolean" },
+    "data": { "type": ["object", "array", "null"] },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "moduleId": { "type": "string" },
+        "version": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "traceId": { "type": "string" },
+        "durationMs": { "type": "number" }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        },
+        "required": ["code", "message"]
+      }
+    }
+  },
+  "required": ["ok"]
+}

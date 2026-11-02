@@ -1,0 +1,35 @@
+{
+  "$id": "dsd.contracts/command.definition.v1.json",
+  "type": "object",
+  "description": "Contract for command definitions",
+  "properties": {
+    "id": { "type": "string", "minLength": 3 },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "category": { "type": "string" },
+    "keywords": { "type": "array", "items": { "type": "string" } },
+    "priority": { "type": "string", "enum": ["critical", "high", "normal", "low"] },
+    "shortcuts": { "type": "array", "items": { "type": "string" } },
+    "icon": { "type": "string" },
+    "capabilitiesRequired": { "type": "array", "items": { "type": "string" } },
+    "permissionPolicy": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "array", "items": { "type": "string" } },
+        "fallback": { "type": "string", "enum": ["deny", "allow", "degrade"] }
+      }
+    },
+    "sideEffects": { "type": "array", "items": { "type": "string" } },
+    "api": {
+      "type": "object",
+      "properties": {
+        "canExecute": { "const": "function(ctx): boolean" },
+        "run": { "const": "function(ctx, input): Envelope" },
+        "healthCheck": { "const": "function(): Health" },
+        "info": { "const": "function(): Envelope" }
+      },
+      "required": ["run"]
+    }
+  },
+  "required": ["id", "title", "category", "api"]
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Runtime Context Contract v2",
+  "version": "2.0.0",
+  "description": "Contrato de contexto para inicialização de módulos runtime",
+  "type": "object",
+  "properties": {
+    "ports": { "$ref": "runtime.ports.v2.json", "description": "Ports injetados" },
+    "mode": { "type": "string", "enum": ["strict", "compat"], "default": "compat", "description": "strict=falha se port ausente, compat=fallback window" },
+    "config": { "type": "object", "description": "Configurações específicas do módulo" },
+    "tenantId": { "type": ["string", "null"], "description": "Tenant atual se multi-tenant" }
+  },
+  "required": ["ports"]
+}

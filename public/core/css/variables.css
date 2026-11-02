@@ -1,0 +1,49 @@
+/* ==========================================================================
+   DESIGN TOKENS - DshowDash v3.0
+   Variáveis CSS centralizadas (Enterprise Dark Glass)
+   ========================================================================== */
+
+:root {
+  /* Colors - Background */
+  --color-bg-primary: #12121A;
+  --color-bg-secondary: #1E1E28;
+  --color-bg-tertiary: #2C2C38;
+
+  /* Colors - Text */
+  --color-text-primary: rgba(255, 255, 255, 0.95);
+  --color-text-secondary: rgba(255, 255, 255, 0.75);
+  --color-text-tertiary: rgba(255, 255, 255, 0.55);
+  --color-text-disabled: rgba(255, 255, 255, 0.40);
+
+  /* Colors - States */
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* Colors - Neutral */
+  --color-neutral: #A1A1AA;
+  --color-border: rgba(255, 255, 255, 0.12);
+
+  /* Spacing (8pt grid) */
+  --space-2: 0.5rem;   /* 8px */
+  --space-4: 1rem;     /* 16px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;  /* 6px */
+  --radius-md: 0.5rem;    /* 8px */
+
+  /* Effects */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --blur-glass: blur(12px);
+
+  /* Timing */
+  --transition-fast: 200ms ease;
+  --transition-normal: 300ms ease;
+
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}

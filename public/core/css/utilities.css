@@ -1,0 +1,41 @@
+/* ==========================================================================
+   UTILITY CLASSES - DshowDash v3.0
+   Classes utilitárias para uso rápido
+   ========================================================================== */
+
+/* Display */
+.flex { display: flex; }
+.inline-flex { display: inline-flex; }
+.grid { display: grid; }
+.hidden { display: none; }
+
+/* Flex */
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }
+
+/* Spacing */
+.p-2 { padding: var(--space-2); }
+.p-4 { padding: var(--space-4); }
+.m-2 { margin: var(--space-2); }
+.m-4 { margin: var(--space-4); }
+
+/* Text */
+.text-center { text-align: center; }
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+
+/* Background */
+.bg-primary { background-color: var(--color-bg-primary); }
+.bg-secondary { background-color: var(--color-bg-secondary); }
+
+/* Border */
+.rounded { border-radius: var(--radius-md); }
+.border { border: 1px solid var(--color-border); }
+
+/* Effects */
+.transition { transition: var(--transition-fast); }

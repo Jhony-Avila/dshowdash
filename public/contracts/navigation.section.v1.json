@@ -1,0 +1,79 @@
+{
+  "$id": "dsd.contracts/navigation.section.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NavigationSection",
+  "description": "Seção de navegação canônica - Navigation Contract v1.1 (3-segment compliant)",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identificador único da seção"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Texto de exibição"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descrição opcional da seção"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Identificador do ícone"
+    },
+    "order": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Ordem de exibição"
+    },
+    "uarps": {
+      "type": "object",
+      "properties": {
+        "trigger_id": {
+          "type": "string",
+          "pattern": "^trigger:navigation:section-.+$",
+          "description": "Trigger UARPS da seção (3 segmentos)"
+        },
+        "region_id": {
+          "type": "string",
+          "pattern": "^region:app:.+$",
+          "description": "Região UARPS"
+        }
+      }
+    },
+    "accordion": {
+      "type": "object",
+      "properties": {
+        "collapsible": {
+          "type": "boolean",
+          "default": true,
+          "description": "Seção pode ser colapsada"
+        },
+        "default_open": {
+          "type": "boolean",
+          "default": false,
+          "description": "Estado inicial expandido"
+        },
+        "allow_multiple": {
+          "type": "boolean",
+          "default": true,
+          "description": "Permite múltiplas seções abertas"
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "navigation.item.v1.json"
+      },
+      "description": "Itens da seção"
+    },
+    "visible": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": ["id", "label"]
+}

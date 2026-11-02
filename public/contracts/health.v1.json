@@ -1,0 +1,15 @@
+{
+  "$id": "dsd.contracts/health.v1.json",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string", "enum": ["ok", "degraded", "error"] },
+    "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "moduleId": { "type": "string" },
+    "version": { "type": "string" },
+    "checks": { "type": "object" },
+    "issues": { "type": "array" },
+    "metrics": { "type": "object" },
+    "timestamp": { "type": "string" }
+  },
+  "required": ["status", "score", "moduleId", "version", "timestamp"]
+}

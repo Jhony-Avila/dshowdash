@@ -1,0 +1,28 @@
+/* 404 Page - Design Tokens */
+/* @version 1.0.0-ENTERPRISE */
+:root {
+  --p404-bg-primary: #080a10;
+  --p404-bg-secondary: #0f172a;
+  --p404-bg-card: rgba(15, 23, 42, 0.6);
+  --p404-bg-gradient: linear-gradient(135deg, #080a10 0%, #0f172a 50%, #1e1b4b 100%);
+  --p404-text-primary: rgba(255, 255, 255, 0.95);
+  --p404-text-secondary: rgba(255, 255, 255, 0.70);
+  --p404-text-muted: rgba(255, 255, 255, 0.45);
+  --p404-text-code: #a78bfa;
+  --p404-brand-primary: #6366f1;
+  --p404-brand-hover: #818cf8;
+  --p404-brand-glow: rgba(99, 102, 241, 0.25);
+  --p404-accent-warning: #f59e0b;
+  --p404-accent-error: #ef4444;
+  --p404-border: rgba(255, 255, 255, 0.08);
+  --p404-border-accent: rgba(99, 102, 241, 0.3);
+  --p404-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --p404-shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+  --p404-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --p404-font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  --p404-radius: 16px;
+  --p404-radius-sm: 8px;
+  --p404-radius-badge: 6px;
+  --p404-transition: 0.2s ease;
+  --p404-transition-slow: 0.4s ease;
+}

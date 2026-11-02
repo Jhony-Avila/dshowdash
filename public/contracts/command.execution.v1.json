@@ -1,0 +1,39 @@
+{
+  "$id": "dsd.contracts/command.execution.v1.json",
+  "type": "object",
+  "description": "Contract for command execution results",
+  "properties": {
+    "executionId": { "type": "string" },
+    "commandId": { "type": "string" },
+    "status": { "type": "string", "enum": ["pending", "running", "success", "error", "cancelled", "denied"] },
+    "startTime": { "type": "integer" },
+    "endTime": { "type": ["integer", "null"] },
+    "durationMs": { "type": ["integer", "null"] },
+    "input": { "type": ["object", "null"] },
+    "result": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean" },
+        "data": { "type": ["object", "array", "null"] },
+        "errors": { "type": "array" }
+      },
+      "required": ["ok"]
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "userId": { "type": ["string", "null"] },
+        "sessionId": { "type": ["string", "null"] },
+        "correlationId": { "type": ["string", "null"] }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "properties": {
+        "tracked": { "type": "boolean" },
+        "eventId": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "required": ["executionId", "commandId", "status", "startTime"]
+}

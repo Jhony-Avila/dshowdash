@@ -1,0 +1,37 @@
+{
+  "_version": "1.0.0",
+  "_description": "Configuração do MainKernel Enterprise",
+  "_updated": "2026-01-29",
+  
+  "kernel": {
+    "enableConsoleCommands": true,
+    "enableCircuitBreaker": true,
+    "enableHealthMonitor": true,
+    "enableHotReload": true,
+    "autoEnableMaxPriority": 1,
+    "logLevel": "info"
+  },
+  
+  "circuitBreaker": {
+    "failureThreshold": 5,
+    "successThreshold": 3,
+    "timeout": 30000
+  },
+  
+  "healthMonitor": {
+    "intervalMs": 30000,
+    "autoRecover": true,
+    "maxRecoveryAttempts": 3
+  },
+  
+  "features": {
+    "error-boundary": { "enabled": true },
+    "observability-hooks": { "enabled": true },
+    "navigation-hooks": { "enabled": true },
+    "persistence-sync": { "enabled": true },
+    "ux-feedback": { "enabled": true },
+    "analytics-tracker": { "enabled": true },
+    "preload-manager": { "enabled": true },
+    "session-sync": { "enabled": true }
+  }
+}

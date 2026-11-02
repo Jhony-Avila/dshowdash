@@ -1,0 +1,43 @@
+{
+  "$id": "dsd.contracts/kernel.feature.v1.json",
+  "type": "object",
+  "description": "Contract for Kernel-managed features",
+  "properties": {
+    "id": { "type": "string", "minLength": 3 },
+    "version": { "type": "string" },
+    "category": { "type": "string" },
+    "priority": { "type": "string", "enum": ["critical", "high", "normal", "low"] },
+    "dependencies": { "type": "array", "items": { "type": "string" } },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "singleton": { "type": "boolean" },
+        "rendersUI": { "type": "boolean" },
+        "requiresAuth": { "type": "boolean" },
+        "hotReloadable": { "type": "boolean" }
+      }
+    },
+    "api": {
+      "type": "object",
+      "properties": {
+        "init": { "const": "function(ctx): Envelope" },
+        "cleanup": { "const": "function(): Envelope" },
+        "enable": { "const": "function(): Envelope" },
+        "disable": { "const": "function(): Envelope" },
+        "healthCheck": { "const": "function(): Health" },
+        "info": { "const": "function(): Envelope" }
+      },
+      "required": ["init", "cleanup", "healthCheck", "info"]
+    },
+    "status": {
+      "type": "object",
+      "properties": {
+        "state": { "type": "string", "enum": ["registered", "enabled", "disabled", "degraded", "error"] },
+        "lastError": { "type": ["object", "null"] },
+        "errorCount": { "type": "integer" },
+        "uptime": { "type": "integer" }
+      }
+    }
+  },
+  "required": ["id", "version", "api"]
+}

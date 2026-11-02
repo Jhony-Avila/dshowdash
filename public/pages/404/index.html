@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>404 - Página não encontrada | DshowDash</title>
+  <link rel="stylesheet" href="/pages/404/styles.css">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+  <main class="p404">
+    <div class="p404__bg-pattern"></div>
+    <div class="p404__grid"></div>
+    
+    <div class="p404__container">
+      <article class="p404__card">
+        <div class="p404__badges">
+          <span class="p404__badge p404__badge--error">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Erro
+          </span>
+          <span class="p404__badge p404__badge--routing">
+            <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            Navegação
+          </span>
+          <span class="p404__badge p404__badge--client">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Client-side
+          </span>
+        </div>
+        
+        <div class="p404__code">404</div>
+        
+        <h1 class="p404__title">Página não encontrada</h1>
+        
+        <p class="p404__description">
+          A rota solicitada não existe ou foi movida. Isso pode ocorrer por um link desatualizado ou digitação incorreta na URL.
+        </p>
+        
+        <div class="p404__actions">
+          <a href="/" class="p404__btn p404__btn--primary">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Ir para o Dashboard
+          </a>
+          <button class="p404__btn p404__btn--secondary" data-action="back" id="p404-back-btn">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Voltar
+          </button>
+        </div>
+        
+        <footer class="p404__meta">
+          <div class="p404__meta-row">
+            <div class="p404__meta-item">
+              <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+              <span>Rota:</span>
+              <span class="p404__meta-value" id="p404-route">/unknown</span>
+            </div>
+            <div class="p404__meta-item">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Timestamp:</span>
+              <span class="p404__meta-value" id="p404-timestamp">--</span>
+            </div>
+          </div>
+        </footer>
+      </article>
+    </div>
+  </main>
+  
+  <script>
+    // OWNER_OK_P16: 404PageOwner — navigation intent handler (reason=page-owner, emits=nav:intent, scope=navigation-only)
+    // P16: Execução passa por policy/guard via nav:intent canônico
+    // @version 1.1.0-P1-ENTERPRISE
+    // @changelog v1.1.0-P1-ENTERPRISE: Prioriza window.location para rota (NR-FULL roadmap P1)
+    (function() {
+      'use strict';
+
+      // P1 FIX: Obter rota preferindo window.location (read-only, sempre disponível)
+      // Páginas estáticas não devem depender de RouterGlobal como requisito
+      function getCurrentPath() {
+        // 1. Primary: window.location (sempre disponível, read-only) - CONTRACT_OK_P16
+        if (window.location) {
+          var path = window.location.pathname || '/';
+          var hash = window.location.hash || '';
+          if (hash && hash !== '#') return hash.replace(/^#\/?/, '/') || path;
+          if (path && path !== '/') return path;
+        }
+
+        // 2. Enrichment: RouterGlobal (se disponível, pode ter mais contexto)
+        if (window.RouterGlobal && window.RouterGlobal.getCurrentRoute) {
+          try { var r = window.RouterGlobal.getCurrentRoute(); if (r) return r.path || r.pathname || r.hash || '/unknown'; } catch(e) {}
+        }
+
+        // 3. Fallback: RouteStateService
+        if (window.RouteStateService && window.RouteStateService.getCurrentRoute) {
+          try { var r = window.RouteStateService.getCurrentRoute(); if (r) return r.path || '/unknown'; } catch(e) {}
+        }
+
+        return '/unknown';
+      }
+      
+      // Exibir rota e timestamp
+      document.getElementById('p404-route').textContent = getCurrentPath();
+      document.getElementById('p404-timestamp').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      
+      // P16: Handler para botão voltar - emite intent via EventBus (pipeline canônico)
+      var backBtn = document.getElementById('p404-back-btn');
+      if (backBtn) {
+        backBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // 1. Emitir nav:intent via EventBus (P15 canônico - NavigationBroker escuta)
+          if (window.EventBus && window.EventBus.emit) {
+            window.EventBus.emit('nav:intent', {
+              intentId: 'BACK',
+              target: { type: 'back' },
+              meta: { source: 'page-404', reason: 'user-back-button', timestamp: Date.now() }
+            });
+            return; // P16: Intent emitido, broker processa
+          }
+          
+          // 2. Fallback: Tentar NavigationBroker.processIntent diretamente
+          if (window.NavigationBroker && window.NavigationBroker.processIntent) {
+            window.NavigationBroker.processIntent({
+              target: { type: 'back' },
+              meta: { source: 'page-404', reason: 'user-back-button' }
+            });
+            return;
+          }
+
+          // 3. Fallback: HardNavService (P1: prioridade sobre RouterGlobal)
+          if (window.HardNavService && window.HardNavService.historyBack) {
+            window.HardNavService.historyBack('page-404', 'user-back-button');
+            return;
+          }
+
+          // 4. Fallback: history.back() nativo (P1: prioridade sobre RouterGlobal)
+          if (window.history && window.history.length > 1) { // CONTRACT_OK_P16: FallbackHardNav
+            window.history.back(); // OWNER_OK_P16: 404PageOwner — history.back
+            return;
+          }
+
+          // 5. Fallback: RouterGlobal.back (P1: último recurso antes de redirect)
+          if (window.RouterGlobal && window.RouterGlobal.back) {
+            window.RouterGlobal.back();
+            return;
+          }
+
+          // 6. Owner fallback final: redirect home
+          window.location.href = '/'; // OWNER_OK_P16: 404PageOwner — redirect home (reason=no-history)
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

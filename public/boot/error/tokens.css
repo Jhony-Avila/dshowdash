@@ -1,0 +1,21 @@
+/* Boot Error Screen - Design Tokens */
+/* @version 1.0.0-ENTERPRISE */
+:root {
+  --boot-bg-overlay: rgba(8, 10, 16, 0.85);
+  --boot-bg-gradient: linear-gradient(135deg, rgba(8, 10, 16, 0.95) 0%, rgba(15, 23, 42, 0.90) 100%);
+  --boot-text-primary: rgba(255, 255, 255, 0.95);
+  --boot-text-secondary: rgba(255, 255, 255, 0.70);
+  --boot-text-muted: rgba(255, 255, 255, 0.45);
+  --boot-brand-primary: #6366f1;
+  --boot-brand-hover: #818cf8;
+  --boot-danger: #ef4444;
+  --boot-danger-soft: rgba(239, 68, 68, 0.15);
+  --boot-border: rgba(255, 255, 255, 0.08);
+  --boot-border-accent: rgba(99, 102, 241, 0.3);
+  --boot-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --boot-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --boot-font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  --boot-radius: 12px;
+  --boot-radius-sm: 8px;
+  --boot-transition: 0.2s ease;
+}

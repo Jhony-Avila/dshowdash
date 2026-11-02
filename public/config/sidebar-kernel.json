@@ -1,0 +1,100 @@
+{
+  "_version": "1.0.0",
+  "_description": "Configuração do SidebarKernel Enterprise",
+  "_updated": "2026-01-29",
+  
+  "kernel": {
+    "enableConsoleCommands": true,
+    "enableCircuitBreaker": true,
+    "enableHealthMonitor": true,
+    "enableHotReload": true,
+    "autoEnableMaxPriority": 1,
+    "featureEnableTimeoutMs": 5000,
+    "logLevel": "info"
+  },
+  
+  "circuitBreaker": {
+    "failureThreshold": 5,
+    "successThreshold": 3,
+    "timeout": 30000,
+    "halfOpenMaxAttempts": 3
+  },
+  
+  "healthMonitor": {
+    "intervalMs": 30000,
+    "degradedThreshold": 0.8,
+    "unhealthyThreshold": 0.5,
+    "autoRecover": true,
+    "maxRecoveryAttempts": 3
+  },
+  
+  "features": {
+    "accordion-ncs": {
+      "enabled": true,
+      "autoExpand": false
+    },
+    "command-palette": {
+      "enabled": true,
+      "shortcut": "Ctrl+K"
+    },
+    "realtime-notifications": {
+      "enabled": true,
+      "autoConnect": false,
+      "reconnectDelay": 1000,
+      "maxReconnectAttempts": 5
+    },
+    "debug-panel": {
+      "enabled": false
+    },
+    "storybook-components": {
+      "enabled": false
+    },
+    "voice-commands": {
+      "enabled": false
+    },
+    "confetti": {
+      "enabled": false
+    },
+    "parallax": {
+      "enabled": false
+    },
+    "glassmorphism": {
+      "enabled": false
+    },
+    "custom-cursors": {
+      "enabled": false
+    }
+  },
+  
+  "featureTiers": {
+    "CORE": [
+      "preload-critical-css",
+      "bundle-splitting",
+      "recent-history",
+      "favorites-handler",
+      "navigation-cache",
+      "memory-optimization",
+      "submenu-handler",
+      "fuzzy-search"
+    ],
+    "POST_READY": [
+      "command-palette",
+      "feature-flags",
+      "i18n",
+      "theme-handler",
+      "accessibility-landmarks",
+      "screen-reader"
+    ],
+    "OPT_IN": [
+      "debug-panel",
+      "storybook-components",
+      "voice-commands",
+      "confetti",
+      "parallax",
+      "glassmorphism",
+      "custom-cursors"
+    ]
+  },
+  
+  "safeMode": false
+}

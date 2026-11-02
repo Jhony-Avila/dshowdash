@@ -1,0 +1,24 @@
+{
+  "$id": "dsd.contracts/telemetry.event.v1.json",
+  "type": "object",
+  "description": "Contract for telemetry events",
+  "properties": {
+    "eventId": { "type": "string" },
+    "eventName": { "type": "string" },
+    "severity": { "type": "string", "enum": ["debug", "info", "warn", "error", "critical"] },
+    "source": {
+      "type": "object",
+      "properties": {
+        "moduleId": { "type": "string" },
+        "version": { "type": "string" }
+      },
+      "required": ["moduleId"]
+    },
+    "payload": { "type": ["object", "null"] },
+    "timestamp": { "type": "integer" },
+    "isoTime": { "type": "string" },
+    "correlationId": { "type": ["string", "null"] },
+    "runId": { "type": ["string", "null"] }
+  },
+  "required": ["eventId", "eventName", "severity", "source", "timestamp"]
+}

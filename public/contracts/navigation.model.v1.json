@@ -1,0 +1,89 @@
+{
+  "$id": "dsd.contracts/navigation.model.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NavigationModel",
+  "description": "Modelo completo de navegação - Navigation Contract v1.1 (3-segment compliant)",
+  "type": "object",
+  "properties": {
+    "schema_id": {
+      "type": "string",
+      "const": "dsd.contracts/navigation.model.v1.json",
+      "description": "Identificador do schema"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Versão do modelo"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp de geração"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["admin", "registry", "cache", "legacy", "embedded"],
+      "description": "Origem dos dados"
+    },
+    "etag": {
+      "type": "string",
+      "description": "Hash para cache validation"
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "$ref": "navigation.section.v1.json"
+      },
+      "description": "Seções de navegação"
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["single", "multi"],
+          "default": "multi",
+          "description": "Modo do accordion"
+        },
+        "persist": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "scope": { "type": "string", "enum": ["user", "session", "none"] }
+          }
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "trigger_pattern": {
+          "type": "string",
+          "const": "trigger:navigation:item-{id}",
+          "description": "Padrão de triggers (3 segmentos)"
+        },
+        "section_trigger_pattern": {
+          "type": "string",
+          "const": "trigger:navigation:section-{id}",
+          "description": "Padrão de triggers de seção (3 segmentos)"
+        },
+        "region": {
+          "type": "string",
+          "description": "Região UARPS padrão"
+        },
+        "phase": {
+          "type": "string",
+          "description": "Fase de migração atual"
+        },
+        "compatibility": {
+          "type": "object",
+          "properties": {
+            "legacy_triggers": { "type": "boolean", "default": true },
+            "legacy_events": { "type": "boolean", "default": true }
+          }
+        }
+      }
+    }
+  },
+  "required": ["schema_id", "version", "sections"]
+}

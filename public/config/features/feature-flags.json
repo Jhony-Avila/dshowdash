@@ -1,0 +1,243 @@
+{
+  "$schema": "./feature-flags.schema.json",
+  "version": "1.0.0",
+  "lastUpdated": "2025-11-06T19:00:00Z",
+  "environment": "production",
+
+  "features": {
+    "useRemoteCardsPanel": {
+      "enabled": false,
+      "version": "1.0.0",
+      "description": "Usar Cards Panel como Micro-Frontend remoto",
+      "rollout": {
+        "percentage": 0,
+        "strategy": "gradual"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": false,
+        "production": false
+      },
+      "dependencies": [],
+      "owner": "frontend-team",
+      "jiraTicket": "DASH-123"
+    },
+
+    "enableTelemetry": {
+      "enabled": true,
+      "version": "1.0.0",
+      "description": "Sistema de telemetria e analytics",
+      "rollout": {
+        "percentage": 100,
+        "strategy": "all"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": true,
+        "production": true
+      },
+      "dependencies": [],
+      "owner": "platform-team",
+      "jiraTicket": "DASH-456"
+    },
+
+    "enableBootTracker": {
+      "enabled": true,
+      "version": "1.0.0",
+      "description": "Rastreamento detalhado de boot",
+      "rollout": {
+        "percentage": 100,
+        "strategy": "all"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": true,
+        "production": true
+      },
+      "dependencies": ["enableTelemetry"],
+      "owner": "platform-team",
+      "jiraTicket": "DASH-789"
+    },
+
+    "enableStrictEventValidation": {
+      "enabled": false,
+      "version": "1.0.0",
+      "description": "Validação estrita de eventos contra contracts.js",
+      "rollout": {
+        "percentage": 0,
+        "strategy": "opt-in"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": false,
+        "production": false
+      },
+      "dependencies": [],
+      "owner": "platform-team",
+      "jiraTicket": "DASH-101"
+    },
+
+    "enableConfigValidation": {
+      "enabled": true,
+      "version": "1.0.0",
+      "description": "Validação de AppConfig com JSON Schema",
+      "rollout": {
+        "percentage": 100,
+        "strategy": "all"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": true,
+        "production": false
+      },
+      "dependencies": [],
+      "owner": "platform-team",
+      "jiraTicket": "DASH-202"
+    },
+
+    "enableSidebarTemplateInline": {
+      "enabled": true,
+      "version": "2.2.0",
+      "description": "Sidebar com template inline (sem component-loader)",
+      "rollout": {
+        "percentage": 100,
+        "strategy": "all"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": true,
+        "production": true
+      },
+      "dependencies": [],
+      "owner": "frontend-team",
+      "jiraTicket": "DASH-303"
+    },
+
+    "enableAdvancedRefresh": {
+      "enabled": true,
+      "version": "4.0.0",
+      "description": "Sistema avançado de refresh com coordenação",
+      "rollout": {
+        "percentage": 100,
+        "strategy": "all"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": true,
+        "production": true
+      },
+      "dependencies": [],
+      "owner": "frontend-team",
+      "jiraTicket": "DASH-404"
+    },
+
+    "enablePanelAutoRefresh": {
+      "enabled": true,
+      "version": "1.0.0",
+      "description": "Auto-refresh de painéis individuais",
+      "rollout": {
+        "percentage": 100,
+        "strategy": "all"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": true,
+        "production": true
+      },
+      "dependencies": ["enableAdvancedRefresh"],
+      "owner": "frontend-team",
+      "jiraTicket": "DASH-505"
+    },
+
+    "enablePerformanceMonitoring": {
+      "enabled": true,
+      "version": "1.0.0",
+      "description": "Monitoramento de performance (Web Vitals)",
+      "rollout": {
+        "percentage": 10,
+        "strategy": "sampling"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": true,
+        "production": true
+      },
+      "dependencies": ["enableTelemetry"],
+      "owner": "platform-team",
+      "jiraTicket": "DASH-606"
+    },
+
+    "enableDarkMode": {
+      "enabled": true,
+      "version": "5.0.0",
+      "description": "Tema dark mode (flat-dark enterprise)",
+      "rollout": {
+        "percentage": 100,
+        "strategy": "all"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": true,
+        "production": true
+      },
+      "dependencies": [],
+      "owner": "design-team",
+      "jiraTicket": "DASH-707"
+    },
+
+    "enableExperimentalFeatures": {
+      "enabled": false,
+      "version": "0.1.0",
+      "description": "Features experimentais (beta)",
+      "rollout": {
+        "percentage": 0,
+        "strategy": "opt-in"
+      },
+      "environments": {
+        "dev": true,
+        "test": false,
+        "staging": false,
+        "production": false
+      },
+      "dependencies": [],
+      "owner": "r&d-team",
+      "jiraTicket": "DASH-808"
+    },
+
+    "enableA11yEnhancements": {
+      "enabled": true,
+      "version": "2.2.0",
+      "description": "Melhorias de acessibilidade WCAG 2.1 AA",
+      "rollout": {
+        "percentage": 100,
+        "strategy": "all"
+      },
+      "environments": {
+        "dev": true,
+        "test": true,
+        "staging": true,
+        "production": true
+      },
+      "dependencies": [],
+      "owner": "a11y-team",
+      "jiraTicket": "DASH-909"
+    }
+  },
+
+  "metadata": {
+    "totalFeatures": 12,
+    "enabledInProduction": 7,
+    "inDevelopment": 3,
+    "deprecated": 0
+  }
+}

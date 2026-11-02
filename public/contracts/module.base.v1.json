@@ -1,0 +1,39 @@
+{
+  "$id": "dsd.contracts/module.base.v1.json",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "minLength": 3 },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+.*$" },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "singleton": { "type": "boolean" },
+        "critical": { "type": "boolean" },
+        "rendersUI": { "type": "boolean" },
+        "category": { "type": "string" },
+        "priority": { "type": "string", "enum": ["critical", "high", "normal", "low"] }
+      }
+    },
+    "mantraCompliance": {
+      "type": "object",
+      "properties": {
+        "autocontained": { "type": "boolean" },
+        "independent": { "type": "boolean" },
+        "idempotent": { "type": "boolean" },
+        "decoupled": { "type": "boolean" },
+        "async": { "type": "boolean" },
+        "resilient": { "type": "boolean" },
+        "autonomous": { "type": "boolean" },
+        "observable": { "type": "boolean" },
+        "reentrant": { "type": "boolean" },
+        "faultTolerant": { "type": "boolean" },
+        "scalable": { "type": "boolean" },
+        "stateless": { "type": "boolean" },
+        "transactional": { "type": "boolean" },
+        "versioned": { "type": "boolean" },
+        "selfRecoverable": { "type": "boolean" }
+      }
+    }
+  },
+  "required": ["id", "version"]
+}
