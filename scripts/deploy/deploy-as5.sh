@@ -27,9 +27,17 @@ set -euo pipefail
 if [ -z "${DEPLOY_AS5_REEXEC:-}" ]; then
   _COPIA="$(mktemp /tmp/deploy-as5-run.XXXXXX.sh)"
   cp "${BASH_SOURCE[0]}" "${_COPIA}"
-  DEPLOY_AS5_REEXEC=1 exec bash "${_COPIA}" "$@"
+  DEPLOY_AS5_REEXEC=1 DEPLOY_AS5_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" exec bash "${_COPIA}" "$@"
 fi
-trap 'rm -f "${BASH_SOURCE[0]}"' EXIT # a cópia efêmera se limpa ao sair
+# a cópia efêmera se limpa ao sair. Etapa 5: o caminho é FIXADO aqui — com expansão adiada, uma saída dentro de função de um
+# arquivo carregado por `source` (ex.: lock-publicacao.sh) faria o trap apagar ESSE arquivo. Só apaga a própria cópia em /tmp.
+_DEPLOY_AS5_COPIA="${BASH_SOURCE[0]}"
+trap 'case "${_DEPLOY_AS5_COPIA}" in /tmp/deploy-as5-run.*) rm -f "${_DEPLOY_AS5_COPIA}";; esac' EXIT
+
+# LOCK ÚNICO DE PUBLICAÇÃO (P1-04a, Etapa 5): o mesmo de todos os publicadores; ANTES de qualquer log ou ação.
+# shellcheck source=lock-publicacao.sh
+source "${DEPLOY_AS5_DIR:?deploy-as5: diretório de origem desconhecido}/lock-publicacao.sh"
+dshow_pub_lock deploy-as5
 
 # Overrides por env = testabilidade (ensaio local) + reuso em outros hosts.
 # Em produção NADA precisa ser passado: os padrões são os do servidor.

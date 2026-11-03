@@ -15,9 +15,9 @@
 # INTERRUPTOR: touch config/auto-deploy.off desliga · rm religa.
 # =====================================================================
 set -u
-RAIZ=/var/www/dshowdash
+RAIZ="${RUNNER_RAIZ:-/var/www/dshowdash}"   # override só para ensaio
 FILA="$RAIZ/storage/deploy-fila"
-LOG=/backup/deploy-logs/auto-deploy.log
+LOG="${RUNNER_LOG:-/backup/deploy-logs/auto-deploy.log}"
 [ -f "$RAIZ/config/auto-deploy.off" ] && exit 0
 [ -d "$FILA" ] || exit 0
 PEDIDO=$(ls -1 "$FILA" 2>/dev/null | head -1)
@@ -30,6 +30,11 @@ LOCK_DIR=/run; [ -d /run ] || LOCK_DIR=/var/lock
 umask 077
 exec 9>"$LOCK_DIR/dshow-auto-deploy.lock"
 flock -n 9 || exit 0
+# LOCK ÚNICO DE PUBLICAÇÃO (P1-04a, Etapa 5): obtido ANTES de consumir o pedido — ocupado → o pedido fica para o próximo
+# minuto. O deploy-as5 chamado abaixo herda o fd 8 (reentrante, mesmo dono).
+# shellcheck source=lock-publicacao.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lock-publicacao.sh"
+DSHOW_PUB_LOCK_RETORNAR=1 dshow_pub_lock auto-deploy-runner >> "$LOG" 2>&1 || { echo "[$(date '+%F %T')] lock de publicação ocupado — pedido $PEDIDO mantido" >> "$LOG"; exit 0; }
 echo "[$(date '+%F %T')] pedido=$PEDIDO" >> "$LOG"
 rm -f "$FILA"/pedido-*
 cd "$RAIZ" && bash scripts/deploy/deploy-as5.sh >> "$LOG" 2>&1
