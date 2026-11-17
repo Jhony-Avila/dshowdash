@@ -116,7 +116,7 @@ final class BlingQueueService
 
         $payload = $item['payload'] === null ? [] : (json_decode((string) $item['payload'], true) ?: []);
 
-        match ((string) $item['tipo']) {
+        $resultado = match ((string) $item['tipo']) {
             // Webhook avisa QUE mudou, não O QUE mudou. Buscar o recurso é
             // deliberado (§46 passo 7): o payload do webhook é resumido e
             // confiar nele deixaria o banco com meia verdade.
@@ -127,6 +127,11 @@ final class BlingQueueService
                 (string) ($payload['estrategia'] ?? 'incremental'), $item['correlation_id']),
             default => throw new RuntimeException('Tipo de item desconhecido: ' . $item['tipo']),
         };
+        // 17/11/2026: sincronizar() captura a falha (ex.: HTTP 403 do Bling), grava estado 'erro' + job 'falhou' e DEVOLVE em vez de
+        // lançar — sem isto o item ia para "concluído". Agora vira reagendamento/DLQ pelas tentativas normais da fila.
+        if (($resultado['situacao'] ?? null) === 'erro') {
+            throw new RuntimeException('Sincronização de ' . $item['recurso'] . ' falhou (ver bling_sync_errors / job "falhou").');
+        }
     }
 
     /** Recoloca itens da DLQ na fila. Ação manual, auditada. */

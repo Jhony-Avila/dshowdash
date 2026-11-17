@@ -137,9 +137,11 @@ try {
                 break;
             }
             $r = $fila->drenar($limite, $segundos);
-            dizer(sprintf('fila: %d processado(s), %d concluído(s), %d falha(s) em %.1fs',
-                $r['processados'], $r['concluidos'], $r['falhas'], microtime(true) - $inicio));
-            if ($r['falhas'] > 0) { $saida = 1; }
+            // drenar() devolve reagendados + dlq (não existe 'falhas' — era o "Undefined array key" do log)
+            $falhas = (int) ($r['reagendados'] ?? 0) + (int) ($r['dlq'] ?? 0);
+            dizer(sprintf('fila: %d processado(s), %d concluído(s), %d falha(s) (%d reagendada(s), %d na DLQ) em %.1fs',
+                $r['processados'], $r['concluidos'], $falhas, $r['reagendados'] ?? 0, $r['dlq'] ?? 0, microtime(true) - $inicio));
+            if ($falhas > 0) { $saida = 1; }
             break;
         }
 

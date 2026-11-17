@@ -20,8 +20,23 @@ if (!defined('BLING_ENTRADA')) { http_response_code(404); exit; }
 
 final class BlingOAuth
 {
-    private const URL_AUTORIZAR = 'https://www.bling.com.br/Api/v3/oauth/authorize';
-    private const URL_TOKEN     = 'https://www.bling.com.br/Api/v3/oauth/token';
+    /**
+     * 17/11/2026: a autorização continua no navegador em www.bling.com.br (funciona); o TOKEN (troca do code e renovação) vai para o
+     * host da API, api.bling.com.br, porque o Bling passou a recusar a API em www (403 "use api.bling.com.br"). As duas URLs aceitam
+     * sobrescrita por BLING_OAUTH_AUTHORIZE_URL / BLING_OAUTH_TOKEN_URL no .env (só https em *.bling.com.br) — se o token em
+     * api.bling.com.br falhar na prova controlada, volta-se para www pelo .env, SEM deploy.
+     */
+    private const URL_AUTORIZAR_PADRAO = 'https://www.bling.com.br/Api/v3/oauth/authorize';
+    private const URL_TOKEN_PADRAO     = 'https://api.bling.com.br/Api/v3/oauth/token';
+
+    private static function urlDoEnv(string $chave, string $padrao): string
+    {
+        $v = trim((string) (getenv($chave) ?: ($_ENV[$chave] ?? '')));
+        return preg_match('#^https://[a-z0-9.-]+\.bling\.com\.br/#i', $v) ? $v : $padrao;
+    }
+
+    public static function urlAutorizar(): string { return self::urlDoEnv('BLING_OAUTH_AUTHORIZE_URL', self::URL_AUTORIZAR_PADRAO); }
+    public static function urlToken(): string { return self::urlDoEnv('BLING_OAUTH_TOKEN_URL', self::URL_TOKEN_PADRAO); }
 
     /** Renova com folga: token que expira em menos de 5 min já é renovado. */
     public const FOLGA_RENOVACAO_SEG = 300;
@@ -69,7 +84,7 @@ final class BlingOAuth
                 'OAuth do Bling não configurado: faltam BLING_CLIENT_ID, BLING_CLIENT_SECRET ou BLING_REDIRECT_URI.'
             );
         }
-        return self::URL_AUTORIZAR . '?' . http_build_query([
+        return self::urlAutorizar() . '?' . http_build_query([
             'response_type' => 'code',
             'client_id'     => self::clientId(),
             'redirect_uri'  => self::redirectUri(),
@@ -125,7 +140,7 @@ final class BlingOAuth
         // Mandar no corpo devolve 401 sem explicar por quê.
         $basic = base64_encode(self::clientId() . ':' . self::clientSecret());
 
-        $r = $this->transporte->enviar('POST', self::URL_TOKEN, [
+        $r = $this->transporte->enviar('POST', self::urlToken(), [
             'headers' => ['Authorization: Basic ' . $basic],
             'form'    => $form,
             'timeout' => 20,

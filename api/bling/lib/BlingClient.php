@@ -23,7 +23,17 @@ if (!defined('BLING_ENTRADA')) { http_response_code(404); exit; }
 
 final class BlingClient
 {
-    private const BASE = 'https://www.bling.com.br/Api/v3';
+    /**
+     * Base da API v3. 17/11/2026: o Bling passou a recusar a API em www.bling.com.br (403 "use api.bling.com.br").
+     * Padrão = host oficial da API; sobrescrevível por BLING_API_BASE no .env (próxima mudança do Bling sem deploy).
+     */
+    private const BASE_PADRAO = 'https://api.bling.com.br/Api/v3';
+
+    public static function base(): string
+    {
+        $v = trim((string) (getenv('BLING_API_BASE') ?: ($_ENV['BLING_API_BASE'] ?? '')));
+        return rtrim(preg_match('#^https://[a-z0-9.-]+\.bling\.com\.br/#i', $v . '/') ? $v : self::BASE_PADRAO, '/');
+    }
 
     /** Limites documentados pelo Bling. Conservadores de propósito. */
     private const LIMITE_POR_SEGUNDO = 3;
@@ -134,7 +144,7 @@ final class BlingClient
 
     private function requisitar(string $metodo, string $caminho, array $opcoes): BlingResposta
     {
-        $url = self::BASE . '/' . ltrim($caminho, '/');
+        $url = self::base() . '/' . ltrim($caminho, '/');
         if (!empty($opcoes['query'])) {
             $url .= '?' . http_build_query($opcoes['query']);
         }
