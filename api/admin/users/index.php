@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../_helpers/ApiResponse.php';
 require_once __DIR__ . '/../../_helpers/AuthHelpers.php';
+require_once __DIR__ . '/../../_helpers/GuardaDono.php';   // UARPS-DONO (P0 17/11/2026)
 require_once __DIR__ . '/../../core/CorsPolicy.php';
 require_once __DIR__ . '/../../core/SessionGate.php';
 require_once __DIR__ . '/../../core/UARPSGate.php';
@@ -31,6 +32,11 @@ $user = getCurrentUser();
 $userId = (int)($user['id'] ?? 0);
 
 UARPSGate::enforceTrigger($userId, 'gate:admin:users');
+// UARPS-DONO (P0 17/11/2026): nível de antes da P3 (requireAdmin = 80) + nenhuma escrita sobre o dono (75) por terceiros.
+dshow_exigir_nivel($userId, 80, 'admin/users');
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+    dshow_proteger_dono($userId, ['id', 'user_id', 'user_ids', 'ids', 'target_user_id'], 'admin/users');
+}
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';

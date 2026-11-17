@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../_helpers/ApiResponse.php';
 require_once __DIR__ . '/../_helpers/AuthHelpers.php';
+require_once __DIR__ . '/../_helpers/GuardaDono.php';   // UARPS-DONO (P0 17/11/2026)
 require_once __DIR__ . '/../core/CorsPolicy.php';
 require_once __DIR__ . '/../core/SessionGate.php';
 require_once __DIR__ . '/../core/UARPSGate.php';
@@ -45,11 +46,13 @@ switch ($method) {
     case 'PUT':
     case 'PATCH':
         UARPSGate::enforceTrigger($userId, 'gate:admin:feature-flags');
+        dshow_exigir_nivel($userId, 80, 'feature-flags');   // UARPS-DONO: nível de antes da P3 (requireAdmin = 80)
         AuthHelpers::requireCsrf();
         handleUpdateFlag();
         break;
     case 'DELETE':
         UARPSGate::enforceTrigger($userId, 'gate:admin:feature-flags');
+        dshow_exigir_nivel($userId, 80, 'feature-flags');   // UARPS-DONO: nível de antes da P3 (requireAdmin = 80)
         AuthHelpers::requireCsrf();
         handleDeleteFlag();
         break;

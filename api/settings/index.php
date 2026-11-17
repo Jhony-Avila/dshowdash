@@ -15,6 +15,7 @@ require_once __DIR__ . '/_init.php';
 require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../_helpers/ApiResponse.php';
 require_once __DIR__ . '/../_helpers/AuthHelpers.php';
+require_once __DIR__ . '/../_helpers/GuardaDono.php';   // UARPS-DONO (P0 17/11/2026)
 require_once __DIR__ . '/../core/UARPSGate.php';
 require_once __DIR__ . '/../core/AuditLogger.php';
 
@@ -29,10 +30,12 @@ $action = $input->enum('action', 'list', $allowedActions);
 // P3.4: Padronizado triggers para gate:admin:*
 function enforceSettingsAdmin(int $userId): void {
     UARPSGate::enforceTrigger($userId, 'gate:admin:settings');
+    dshow_exigir_nivel($userId, 80, 'settings');    // UARPS-DONO: como requireAdmin antes da P3
 }
 
 function enforceSettingsSuperAdmin(int $userId): void {
     UARPSGate::enforceTrigger($userId, 'gate:admin:settings:super');
+    dshow_exigir_nivel($userId, 100, 'settings:super');   // UARPS-DONO: como requireSuperAdmin antes da P3
 }
 
 // v2.5.0: getClientIp() removida — função canônica fornecida por AuthHelpers.php (require_once acima)

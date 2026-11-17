@@ -14,6 +14,7 @@ require_once __DIR__ . '/_init.php';
 require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../_helpers/ApiResponse.php';
 require_once __DIR__ . '/../_helpers/AuthHelpers.php';
+require_once __DIR__ . '/../_helpers/GuardaDono.php';   // UARPS-DONO (P0 17/11/2026)
 require_once __DIR__ . '/../core/UARPSGate.php';
 require_once __DIR__ . '/services/UarpsService.php';
 
@@ -26,6 +27,11 @@ $action = $validator->string('action', 'check', ['maxLength' => 50]);
 function enforceUarpsAdmin(int $userId): void
 {
     UARPSGate::enforceTrigger($userId, 'gate:admin:permissions');
+    // UARPS-DONO (P0 17/11/2026): nível de antes da P3 (requireAdmin = 80) + nenhuma escrita sobre o dono (75) por terceiros.
+    dshow_exigir_nivel($userId, 80, 'permissions/uarps');
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+        dshow_proteger_dono($userId, ['user_id', 'user_ids', 'target_user_id'], 'permissions/uarps');
+    }
 }
 
 function getClientIp(): string
