@@ -84,6 +84,10 @@ final class BlingNormalizer
         if ($v === null) {
             return null;
         }
+        // 17/11/2026: o Bling devolve "0000-00-00" para data não preenchida (ex.: dataPrevista de compras) → nulo, sem recusar o item.
+        if (preg_match('/^0000-00-00/', $v) || preg_match('#^00/00/0000#', $v)) {
+            return null;
+        }
         if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $v, $m)) {
             return "$m[1]-$m[2]-$m[3]";
         }
@@ -102,7 +106,7 @@ final class BlingNormalizer
     private static function dataHoraUtc(array $p, string ...$c): ?string
     {
         $v = self::texto($p, ...$c);
-        if ($v === null) {
+        if ($v === null || preg_match('/^0000-00-00/', $v)) {
             return null;
         }
         try {

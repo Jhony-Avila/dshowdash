@@ -35,7 +35,9 @@ final class BlingSyncService
         'depositos'    => ['endpoint' => 'depositos',           'tabela' => 'bling_warehouses'],
         'canais'       => ['endpoint' => 'canais-venda',        'tabela' => 'bling_sales_channels'],
         'contatos'     => ['endpoint' => 'contatos',            'tabela' => 'bling_contacts'],
-        'fornecedores' => ['endpoint' => 'contatos/fornecedores','tabela' => 'bling_suppliers'],
+        // 17/11/2026: /contatos/fornecedores não existe no v3 (404). Fornecedor = GET /contatos?idTipoContato=<id do tipo
+        // "Fornecedor">, id descoberto em GET /contatos/tipos (OpenAPI oficial, build/assets/openapi-CR5QY_N1.json).
+        'fornecedores' => ['endpoint' => 'contatos',            'tabela' => 'bling_suppliers'],
         'produtos'     => ['endpoint' => 'produtos',            'tabela' => 'bling_products'],
         'estoque'      => ['endpoint' => 'estoques/saldos',     'tabela' => 'bling_inventory'],
         'pedidos'      => ['endpoint' => 'pedidos/vendas',      'tabela' => 'bling_sales_orders'],
@@ -74,15 +76,16 @@ final class BlingSyncService
         try {
             $cliente = $this->auth->cliente($accountId);
             $query = $this->montarQuery($recurso, $estrategia, $estadoAnterior);
+            if ($recurso === 'fornecedores') {
+                $query['idTipoContato'] = $this->idTipoFornecedor($cliente);
+            }
 
             // Carga interrompida retoma da página gravada — não recomeça.
             $paginaInicial = ($estrategia === 'carga_inicial' && $estadoAnterior
                               && $estadoAnterior['situacao'] === 'parcial')
                 ? max(1, (int) $estadoAnterior['pagina_atual']) : 1;
 
-            $resultado = $cliente->paginar(
-                $cfg['endpoint'],
-                $query + ($paginaInicial > 1 ? ['pagina' => $paginaInicial] : []),
+            $aCadaPagina =
                 function (array $itens, int $pagina) use ($accountId, $recurso, &$contagem, $correlationId) {
                     // ⚠️ UMA TRANSAÇÃO POR PÁGINA.
                     // Em autocommit, cada INSERT paga um fsync próprio: a carga
@@ -140,8 +143,16 @@ final class BlingSyncService
                             'NORMALIZACAO', $mensagem, null, 1, $correlationId);
                     }
                     return true;
-                },
-            );
+                };
+
+            // 17/11/2026: /estoques/saldos EXIGE idsProdutos[] (400 sem ele) — consulta em lotes de 100 produtos já sincronizados.
+            $resultado = $recurso === 'estoque'
+                ? $this->paginarEstoque($cliente, $accountId, $aCadaPagina)
+                : $cliente->paginar(
+                    $cfg['endpoint'],
+                    $query + ($paginaInicial > 1 ? ['pagina' => $paginaInicial] : []),
+                    $aCadaPagina,
+                );
 
             $situacao = $contagem['erros'] === 0 ? 'ok'
                 : ($contagem['erros'] < $contagem['consultados'] * 0.1 ? 'atencao' : 'parcial');
@@ -219,13 +230,105 @@ final class BlingSyncService
         if ($estrategia === 'incremental' && !empty($estado['watermark'])) {
             $desde = date('Y-m-d', strtotime($estado['watermark'] . ' -1 day'));
             return match ($recurso) {
-                'pedidos', 'compras' => ['dataAlteracaoInicial' => $desde],
+                'pedidos'            => ['dataAlteracaoInicial' => $desde],
+                // 17/11/2026: /pedidos/compras não tem dataAlteracaoInicial (era ignorado); filtra por data do pedido.
+                'compras'            => ['dataInicial' => $desde],
                 'notas'              => ['dataEmissaoInicial'   => $desde],
-                'receber', 'pagar'   => ['dataVencimentoInicial'=> $desde],
+                'pagar'              => ['dataVencimentoInicial'=> $desde],
+                // 17/11/2026: /contas/receber não tem dataVencimentoInicial (era ignorado → caía no padrão do Bling:
+                // emissão nos últimos 12 meses). Incremental = emitidas desde o watermark; mudanças de situação ficam
+                // com a reconciliação diária (janela ampla, abaixo).
+                'receber'            => ['tipoFiltroData' => 'E', 'dataInicial' => $desde, 'dataFinal' => date('Y-m-d')],
                 default              => ['dataAlteracaoInicial' => $desde],
             };
         }
+        if ($recurso === 'receber') {
+            // Sem filtro o Bling devolve só EMISSÃO nos últimos 12 meses (padrão documentado de dataInicial/dataFinal).
+            // Carga/reconciliação: por VENCIMENTO, de 2 anos atrás a 2 anos à frente (parcelas futuras incluídas).
+            return ['tipoFiltroData' => 'V',
+                    'dataInicial' => date('Y-m-d', strtotime('-2 years')),
+                    'dataFinal'   => date('Y-m-d', strtotime('+2 years'))];
+        }
         return [];
+    }
+
+    /** Id do tipo de contato "Fornecedor" (GET /contatos/tipos). Sem ele, a sincronização falha com motivo claro. */
+    private function idTipoFornecedor(BlingClient $cliente): int
+    {
+        $r = $cliente->get('contatos/tipos');
+        if (!$r->ok()) {
+            throw new RuntimeException(sprintf('Falha ao obter tipos de contato (HTTP %d).', $r->status));
+        }
+        foreach (($r->corpo['data'] ?? []) as $t) {
+            if (preg_match('/fornecedor/i', (string) ($t['descricao'] ?? '')) && (int) ($t['id'] ?? 0) > 0) {
+                return (int) $t['id'];
+            }
+        }
+        throw new RuntimeException('Tipo de contato "Fornecedor" não existe nesta conta do Bling.');
+    }
+
+    /**
+     * Saldos de estoque: /estoques/saldos exige idsProdutos[] (máx. 100 por requisição com multiempresa).
+     * Percorre os produtos JÁ sincronizados em lotes de 100 e entrega ao callback um item por produto×depósito.
+     * @return array{paginas:int,itens:int,interrompido:bool}
+     */
+    private function paginarEstoque(BlingClient $cliente, int $accountId, callable $aCadaPagina): array
+    {
+        $st = $this->repo->pdo()->prepare('SELECT bling_id FROM bling_products WHERE account_id = ? ORDER BY id');
+        $st->execute([$accountId]);
+        $ids = array_values(array_filter(array_map('strval', $st->fetchAll(PDO::FETCH_COLUMN)), 'ctype_digit'));
+
+        $pagina = 0; $total = 0;
+        foreach (array_chunk($ids, 100) as $lote) {
+            $pagina++;
+            // Montado à mão: http_build_query geraria idsProdutos[0]=…; o formato documentado é idsProdutos[]=…
+            $qs = implode('&', array_map(static fn($id) => 'idsProdutos%5B%5D=' . $id, $lote));
+            $r = $cliente->get('estoques/saldos?' . $qs);
+            if (!$r->ok()) {
+                throw new RuntimeException(sprintf('Falha ao obter saldos (lote %d, HTTP %d): %s', $pagina, $r->status,
+                    substr(json_encode($r->corpo, JSON_UNESCAPED_UNICODE) ?: '', 0, 300)));
+            }
+            $itens = [];
+            foreach (($r->corpo['data'] ?? []) as $s) {
+                $prod = ['id' => $s['produto']['id'] ?? null];
+                $deps = is_array($s['depositos'] ?? null) ? $s['depositos'] : [];
+                if ($deps === []) {
+                    $itens[] = ['produto' => $prod, 'saldoFisico' => $s['saldoFisicoTotal'] ?? 0,
+                                'reservado' => max(0, (float) ($s['saldoFisicoTotal'] ?? 0) - (float) ($s['saldoVirtualTotal'] ?? 0))];
+                    continue;
+                }
+                foreach ($deps as $d) {
+                    $itens[] = ['produto' => $prod, 'deposito' => ['id' => $d['id'] ?? null],
+                                'saldoFisico' => $d['saldoFisico'] ?? 0,
+                                'reservado' => max(0, (float) ($d['saldoFisico'] ?? 0) - (float) ($d['saldoVirtual'] ?? 0))];
+                }
+            }
+            $total += count($itens);
+            if ($itens !== [] && $aCadaPagina($itens, $pagina) === false) {
+                return ['paginas' => $pagina, 'itens' => $total, 'interrompido' => true];
+            }
+        }
+        return ['paginas' => $pagina, 'itens' => $total, 'interrompido' => false];
+    }
+
+    /**
+     * Diagnóstico SÓ DE LEITURA: conta quantos registros o Bling devolve para um endpoint+filtro, sem gravar nada.
+     * Usado pelo worker (--modo=diagnostico). Teto de páginas para não gastar o limite diário.
+     * @return array{registros:int,paginas:int,truncado:bool,http:int}
+     */
+    public function contarSemGravar(int $accountId, string $endpoint, array $query, int $maxPaginas = 30): array
+    {
+        $cliente = $this->auth->cliente($accountId);
+        $n = 0; $pag = 0; $http = 200;
+        for ($pag = 1; $pag <= $maxPaginas; $pag++) {
+            $r = $cliente->get($endpoint, $query + ['pagina' => $pag, 'limite' => 100]);
+            $http = $r->status;
+            if (!$r->ok()) { break; }
+            $k = count($r->corpo['data'] ?? []);
+            $n += $k;
+            if ($k < 100) { return ['registros' => $n, 'paginas' => $pag, 'truncado' => false, 'http' => $http]; }
+        }
+        return ['registros' => $n, 'paginas' => min($pag, $maxPaginas), 'truncado' => $http === 200, 'http' => $http];
     }
 
     /** @return 'criado'|'atualizado'|'ignorado' */

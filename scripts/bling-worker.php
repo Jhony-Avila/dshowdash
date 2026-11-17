@@ -7,6 +7,8 @@
 //     php scripts/bling-worker.php --modo=reconciliacao varredura completa
 //     php scripts/bling-worker.php --modo=dlq           reprocessa a DLQ
 //     php scripts/bling-worker.php --modo=limpeza       expurga o que venceu
+//     php scripts/bling-worker.php --modo=diagnostico --conta=ID [--recurso=receber]
+//                                  SÓ LEITURA: conta o que o Bling devolve em janelas de filtro, sem gravar nada
 //
 // Opções: --conta=ID (padrão: todas ativas) · --limite=N · --segundos=N · --seco
 //
@@ -44,7 +46,7 @@ require_once $raiz . '/api/bling/services/BlingSyncService.php';
 require_once $raiz . '/api/bling/services/BlingQueueService.php';
 
 // ── argumentos ────────────────────────────────────────────────
-$opt = getopt('', ['modo:', 'conta:', 'limite:', 'segundos:', 'seco', 'ajuda']);
+$opt = getopt('', ['modo:', 'conta:', 'limite:', 'segundos:', 'seco', 'ajuda', 'recurso:']);
 if (isset($opt['ajuda'])) {
     echo file_get_contents(__FILE__, false, null, 0, 900); exit(0);
 }
@@ -209,8 +211,35 @@ try {
             break;
         }
 
+        // ── diagnóstico só de leitura (17/11/2026, BLING-FIX) ──
+        // Nada é gravado em tabela de dados/fila/estado. Única escrita possível: a renovação normal do token,
+        // se ele estiver a < 5 min de vencer (mesmo caminho do cron).
+        case 'diagnostico': {
+            if ($contaOpt === null) { reclamar('diagnostico exige --conta=ID'); $saida = 2; break; }
+            $rec = (string) ($opt['recurso'] ?? 'receber');
+            $hoje = date('Y-m-d');
+            $janelas = match ($rec) {
+                'receber' => [
+                    'padrão do Bling (emissão, últimos 12 meses)' => [],
+                    'emissão, últimos 5 anos'                     => ['tipoFiltroData' => 'E', 'dataInicial' => date('Y-m-d', strtotime('-5 years')), 'dataFinal' => $hoje],
+                    'vencimento, -2 a +2 anos'                    => ['tipoFiltroData' => 'V', 'dataInicial' => date('Y-m-d', strtotime('-2 years')), 'dataFinal' => date('Y-m-d', strtotime('+2 years'))],
+                    'recebimento, últimos 5 anos'                 => ['tipoFiltroData' => 'R', 'dataInicial' => date('Y-m-d', strtotime('-5 years')), 'dataFinal' => $hoje],
+                ],
+                'pagar' => ['sem filtro' => []],
+                default => null,
+            };
+            if ($janelas === null) { reclamar("diagnostico: recurso não suportado: $rec (receber|pagar)"); $saida = 2; break; }
+            $endpoint = BlingSyncService::RECURSOS[$rec]['endpoint'];
+            foreach ($janelas as $rotulo => $q) {
+                $r = $sync->contarSemGravar($contaOpt, $endpoint, $q);
+                dizer(sprintf('diagnostico %s [%s]: HTTP %d, %d registro(s)%s em %d página(s)',
+                    $rec, $rotulo, $r['http'], $r['registros'], $r['truncado'] ? '+ (truncado)' : '', $r['paginas']));
+            }
+            break;
+        }
+
         default:
-            reclamar("modo desconhecido: $modo (fila|incremental|reconciliacao|dlq|limpeza)");
+            reclamar("modo desconhecido: $modo (fila|incremental|reconciliacao|dlq|limpeza|diagnostico)");
             $saida = 2;
     }
 
