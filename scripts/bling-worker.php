@@ -152,6 +152,7 @@ try {
             $agendados = 0;
             foreach ($contas as $conta) {
                 foreach (array_keys(BlingSyncService::RECURSOS) as $recurso) {
+                    if (BlingSyncService::desativado((int) $conta, $recurso) !== null) { continue; }   // BLING-SEM-RECEBER
                     $estado = $repo->estadoSync($conta, $recurso);
 
                     // Recurso nunca sincronizado espera a carga inicial, que é
@@ -178,6 +179,7 @@ try {
             $agendados = 0;
             foreach ($contas as $conta) {
                 foreach (array_keys(BlingSyncService::RECURSOS) as $recurso) {
+                    if (BlingSyncService::desativado((int) $conta, $recurso) !== null) { continue; }   // BLING-SEM-RECEBER
                     if ($seco) { $agendados++; continue; }
                     // Prioridade 60: é a mais baixa de propósito. Reconciliação
                     // nunca deve atrasar webhook nem incremental.
@@ -229,6 +231,8 @@ try {
                 default => null,
             };
             if ($janelas === null) { reclamar("diagnostico: recurso não suportado: $rec (receber|pagar)"); $saida = 2; break; }
+            $motivoOff = BlingSyncService::desativado((int) $contaOpt, $rec);
+            if ($motivoOff !== null) { dizer("diagnostico $rec: recurso DESATIVADO para a conta $contaOpt ($motivoOff) — nada consultado"); break; }
             $endpoint = BlingSyncService::RECURSOS[$rec]['endpoint'];
             foreach ($janelas as $rotulo => $q) {
                 $r = $sync->contarSemGravar($contaOpt, $endpoint, $q);

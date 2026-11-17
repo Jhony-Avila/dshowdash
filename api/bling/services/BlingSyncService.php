@@ -47,6 +47,22 @@ final class BlingSyncService
         'pagar'        => ['endpoint' => 'contas/pagar',        'tabela' => 'bling_accounts_payable'],
     ];
 
+    /**
+     * Recursos DESATIVADOS por conta (configuração, não código apagado: o recurso continua em RECURSOS).
+     * Reativar = tirar a linha. O worker não agenda (incremental/reconciliação), o diagnóstico recusa e
+     * sincronizar() devolve 'desativado' sem chamar o Bling nem mexer no estado.
+     */
+    public const RECURSOS_DESATIVADOS = [
+        // BLING-SEM-RECEBER (17/11/2026, Jhony): as contas a receber da DSHOW ficam no Asaas, não no Bling.
+        44 => ['receber' => 'recebíveis no Asaas'],
+    ];
+
+    /** Motivo da desativação, ou null se o recurso está ativo para a conta. */
+    public static function desativado(int $accountId, string $recurso): ?string
+    {
+        return self::RECURSOS_DESATIVADOS[$accountId][$recurso] ?? null;
+    }
+
     public function __construct(
         private readonly BlingRepository $repo,
         private readonly BlingAuthService $auth,
@@ -63,6 +79,13 @@ final class BlingSyncService
     {
         if (!isset(self::RECURSOS[$recurso])) {
             throw new InvalidArgumentException("Recurso desconhecido: $recurso");
+        }
+
+        $motivo = self::desativado($accountId, $recurso);
+        if ($motivo !== null) {
+            // BLING-SEM-RECEBER: nada de chamada ao Bling nem de job/estado; a fila trata como concluído.
+            return ['recurso' => $recurso, 'situacao' => 'desativado', 'motivo' => $motivo,
+                    'consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'erros' => 0];
         }
 
         $cfg = self::RECURSOS[$recurso];
