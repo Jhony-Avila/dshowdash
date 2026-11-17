@@ -116,6 +116,10 @@ if ($rota === 'oauth/callback') {
 // Gate de acesso: nivel minimo, aplicado a TODAS as rotas do modulo.
 // Decisao 8.3 — nivel na Fase 1, permissoes granulares bling.* na Fase 6.
 bling_require_access();
+// E1a-CSRF (17/11/2026): gate central de CSRF para POST/PUT/PATCH/DELETE — mesmo molde do GCal
+// (google-calendar/index.php:97). Cobre /oauth/connect, /oauth/disconnect e /sync/run. O webhook e o
+// /oauth/callback já encerraram ANTES deste ponto, então não são afetados.
+AuthHelpers::requireCsrfForWrite();
 
 // ── GET ─────────────────────────────────────────────────────────
 if ($metodo === 'GET') {
@@ -247,8 +251,8 @@ if ($metodo === 'POST') {
             SyncController::executar();
             break;
 
-        // OAuth. `connect` e `disconnect` são escrita: passam pelo CSRF do
-        // módulo como qualquer POST. `callback` NÃO está aqui — é GET e foi
+        // OAuth. `connect` e `disconnect` são escrita: passam pelo CSRF central
+        // (AuthHelpers::requireCsrfForWrite, acima) como qualquer POST. `callback` NÃO está aqui — é GET e foi
         // tratado antes do gate, porque vem do bling.com.br.
         case $rota === 'oauth/connect':
             BlingOAuthController::conectar();
