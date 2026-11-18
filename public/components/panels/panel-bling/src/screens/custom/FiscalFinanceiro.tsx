@@ -296,11 +296,11 @@ function Campo({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
   );
 }
 
-function kpi(id: string, rotulo: string, valor: number, formato: string,
-  semantica: 'ok' | 'atencao' | 'critico' = 'ok'): Kpi {
+function kpi(id: string, rotulo: string, valor: number | null, formato: string,
+  semantica: 'ok' | 'atencao' | 'critico' = 'ok', tooltip: string | null = null): Kpi {
   return {
     id, rotulo, valor, formato: formato as any, variacao: null, tendencia: 'estavel',
-    sparkline: null, drilldown: null, semantica, tooltip: null,
+    sparkline: null, drilldown: null, semantica, tooltip,
   };
 }
 
@@ -319,6 +319,10 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
 
   const pontos: any[] = carga.dados?.pontos ?? [];
   const r = carga.dados?.resumo ?? {};
+  // DSHOW-012 (origem: Codex DSHOW-011): disponibilidade da fonte vinda da API (zero legítimo ≠ sem dados ≠ indisponível)
+  const disp = carga.dados?.disponibilidade ?? null;
+  const dispEntradas: string = disp?.entradas?.estado ?? 'ok';
+  const dicaEntradas = dispEntradas === 'ok' ? null : (dispEntradas === 'indisponivel' ? 'Indisponível nesta fonte' : 'Sem dados nesta fonte');
 
   // ⚠️ useMemo ACIMA dos returns condicionais — ver nota em NotasFiscais.
   const opcao = React.useMemo(() => ({
@@ -399,13 +403,22 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
         </div>
       </div>
 
+      {dispEntradas !== 'ok' && (
+        <div role="status" style={{ margin: '0 0 10px', padding: '8px 12px', borderRadius: 8,
+          background: 'var(--bl-fundo-2)', color: 'var(--bl-texto-2)', fontSize: 13 }}>
+          {dispEntradas === 'indisponivel'
+            ? <>Entradas indisponíveis nesta fonte: {disp?.entradas?.motivo ?? 'contas a receber desativadas'}{disp?.entradas?.fonte ? <> (fonte oficial: {disp.entradas.fonte})</> : null}. O saldo fica incompleto; as saídas continuam reais.</>
+            : <>Entradas ainda sem dados nesta fonte (nunca sincronizadas). O saldo fica incompleto; as saídas continuam reais.</>}
+        </div>
+      )}
       <GradeKpis kpis={[
-        kpi('e_real', 'Entradas realizadas', r.entradas_realizado ?? 0, 'moeda'),
-        kpi('e_prev', 'Entradas previstas', r.entradas_previsto ?? 0, 'moeda'),
+        kpi('e_real', 'Entradas realizadas', r.entradas_realizado ?? null, 'moeda', 'ok', dicaEntradas),
+        kpi('e_prev', 'Entradas previstas', r.entradas_previsto ?? null, 'moeda', 'ok', dicaEntradas),
         kpi('s_real', 'Saídas realizadas', r.saidas_realizado ?? 0, 'moeda'),
         kpi('s_prev', 'Saídas previstas', r.saidas_previsto ?? 0, 'moeda'),
-        kpi('saldo', 'Saldo final do período', r.saldo_final ?? 0, 'moeda',
-          (r.saldo_final ?? 0) < 0 ? 'critico' : 'ok'),
+        kpi('saldo', 'Saldo final do período', r.saldo_final ?? null, 'moeda',
+          r.saldo_final == null ? 'atencao' : (r.saldo_final < 0 ? 'critico' : 'ok'),
+          r.saldo_final == null ? 'Incompleto: as entradas não estão disponíveis nesta fonte.' : null),
       ]} />
 
       <Secao titulo="Entradas, saídas e saldo"

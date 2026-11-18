@@ -52,6 +52,20 @@ final class BlingReal extends BlingProviderBase
         return $v === false || $v === null ? null : gmdate('c', strtotime($v . ' UTC'));
     }
 
+    /** DSHOW-012: recurso desativado para a conta → indisponível; nunca sincronizado → sem dados; senão ok. */
+    public function disponibilidade(string $recurso): array
+    {
+        if (!class_exists('BlingSyncService', false)) require_once __DIR__ . '/../services/BlingSyncService.php';
+        $conta = $this->conta();
+        $motivo = BlingSyncService::desativado($conta, $recurso);
+        if ($motivo !== null) {
+            return ['estado' => 'indisponivel', 'motivo' => 'sincronização de ' . $recurso . ' desativada para esta conta', 'fonte' => stripos($motivo, 'asaas') !== false ? 'Asaas' : $motivo];
+        }
+        $v = $this->repo->valor('SELECT MAX(ultima_execucao_em) FROM bling_sync_state WHERE account_id = ? AND recurso = ?', [$conta, $recurso]);
+        if ($v === false || $v === null) return ['estado' => 'sem_dados', 'motivo' => 'recurso ainda não sincronizado'];
+        return ['estado' => 'ok'];
+    }
+
     /** Conta ativa. Sem conta conectada, o módulo não tem o que mostrar. */
     private function conta(): int
     {
