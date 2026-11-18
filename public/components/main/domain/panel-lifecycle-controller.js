@@ -124,9 +124,7 @@ function _resolvePanelTitle(panelId, config) {
   if (config && config.title) return config.title;
   const compartilhado = PAINEIS_COMPARTILHADOS.has(panelId);
   try {
-    const activeNavItem = compartilhado ? _navItemDaNavegacao(panelId, config) : document.querySelector(
-      `[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`
-    );
+    const activeNavItem = compartilhado ? _navItemDaNavegacao(panelId, config) : document.querySelector(`[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`);
     if (activeNavItem) {
       const displayTitle = activeNavItem.getAttribute("data-display-title");
       if (displayTitle) return displayTitle;

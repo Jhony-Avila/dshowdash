@@ -51,8 +51,8 @@ function info() {
   return { moduleId: MODULE_ID, version: VERSION, hasInjectedRegistry: !!_injectedSidebarRegistry, diStrict: true };
 }
 export {
-  PAINEIS_COMPARTILHADOS,
   MODULE_ID,
+  PAINEIS_COMPARTILHADOS,
   VERSION,
   createLabelResolver,
   getInjectedSidebarRegistry,
