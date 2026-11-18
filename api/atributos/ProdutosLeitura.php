@@ -173,16 +173,28 @@ final class ProdutosLeitura
         ];
     }
 
-    private function unidadesPara(array $item, array $unidades, array $extras): array
+    /**
+     * Unidades do campo (regra A8) + DSHOW-079 P2: `gravavel` em CADA unidade pela MESMA regra que dá 422 na gravação
+     * (AtributosService::unidadeNaoGravavel) e `motivo_nao_gravavel` (desativada | nao_permitida | outra_grandeza). A unidade do VALOR salvo
+     * que já não está na lista (histórica) entra só para leitura, com `historica: true` e `gravavel: false`. O servidor continua a autoridade.
+     */
+    private function unidadesPara(array $item, array $unidades, array $extras, ?int $unidadeDoValor = null): array
     {
         $padrao = Aplicabilidade::unidadeEfetiva($item, null);
         $g = $padrao !== null ? ($unidades[$padrao]['grandeza'] ?? null) : null;
         $ex = array_flip($extras[(int) $item['def']['id']] ?? []);
-        $out = [];
+        $vig = $padrao !== null ? ($unidades[$padrao] ?? null) : null;
+        $mk = static function (int $id, array $u, bool $permitida) use ($padrao, $vig): array {
+            $nao = AtributosService::unidadeNaoGravavel($u + ['ativo' => 1], $permitida, $id === $padrao ? null : $vig);
+            return ['id' => $id, 'simbolo' => $u['simbolo'], 'nome' => $u['nome'], 'padrao' => $id === $padrao, 'fator_base' => $u['fator_base'],
+                'gravavel' => $nao === null, 'motivo_nao_gravavel' => $nao['motivo'] ?? null];
+        };
+        $out = []; $vistos = [];
         foreach ($unidades as $id => $u) {
             if (!(int) $u['ativo'] && $id !== $padrao) continue;
-            if ($id === $padrao || ($g !== null && $g !== '' && $u['grandeza'] === $g) || isset($ex[$id])) $out[] = ['id' => $id, 'simbolo' => $u['simbolo'], 'nome' => $u['nome'], 'padrao' => $id === $padrao, 'fator_base' => $u['fator_base']];
+            if ($id === $padrao || ($g !== null && $g !== '' && $u['grandeza'] === $g) || isset($ex[$id])) { $out[] = $mk((int) $id, $u, true); $vistos[(int) $id] = true; }
         }
+        if ($unidadeDoValor !== null && !isset($vistos[$unidadeDoValor]) && isset($unidades[$unidadeDoValor])) $out[] = $mk($unidadeDoValor, $unidades[$unidadeDoValor], false) + ['historica' => true];
         return $out;
     }
 
@@ -249,7 +261,7 @@ final class ProdutosLeitura
                 'origens' => $it['origens'] ?? [],
                 'unidade_efetiva' => $efet !== null && isset($unid[$efet]) ? ['id' => $efet, 'simbolo' => $unid[$efet]['simbolo']] : null,
                 'unidade_produto_id' => $base['unidade_produto_id'] ?? null,
-                'unidades' => in_array($a['tipo'], ['numero', 'inteiro'], true) ? $this->unidadesPara($base, $unid, $extras) : [],
+                'unidades' => in_array($a['tipo'], ['numero', 'inteiro'], true) ? $this->unidadesPara($base, $unid, $extras, $valor['unidade_id'] ?? null) : [],
                 'opcoes' => in_array($a['tipo'], ['opcao', 'multiopcao'], true) ? ($opc[$aid] ?? []) : [],
                 'valor' => $valor,
                 'versao_conjunto' => $vc,   // DSHOW-049/050: contador monotônico, também no item SEM valor
@@ -277,19 +289,37 @@ final class ProdutosLeitura
         ];
     }
 
-    public function historicoProduto(int $productId): array
+    public const LIMITE_HISTORICO = 300;
+
+    /**
+     * Histórico do produto. DSHOW-066 (servidor): com $atributoId o FILTRO é aplicado NO BANCO antes do limite de 300 (antes: os 300 mais
+     * recentes do produto inteiro e o filtro na tela — o atributo podia sumir). Falha de leitura = 503 HISTORY_UNAVAILABLE (distinguível de
+     * "sem histórico", que é 200 com lista vazia). `truncado` = a lista bateu no limite.
+     */
+    public function historicoProduto(int $productId, ?int $atributoId = null): array
     {
         $this->exigir();
-        $atr = $this->atr();
+        if ($atributoId !== null && $atributoId <= 0) throw new AtributosErro('VALIDATION_ERROR', 422, 'Atributo inválido.', ['atributo_id']);
+        try {
+            $atr = $this->atr();
+            $linhas = $atributoId === null ? $this->l->historico($productId, self::LIMITE_HISTORICO)
+                : (method_exists($this->l, 'historicoDoAtributo') ? $this->l->historicoDoAtributo($productId, $atributoId, self::LIMITE_HISTORICO)
+                    : throw new RuntimeException('leitura sem filtro por atributo'));
+        } catch (AtributosErro $e) { throw $e; }
+        catch (Throwable $t) {
+            error_log('[atributos] historico: ' . get_class($t) . ': ' . $t->getMessage());
+            throw new AtributosErro('HISTORY_UNAVAILABLE', 503, $atributoId === null ? 'Não foi possível carregar o histórico deste produto.' : 'Não foi possível carregar o histórico deste atributo.');
+        }
         $comAntesDepois = $this->nivel >= AtributosService::NIVEL_ADMIN;   // decisão do Jhony (18/11): antes/depois só para nível ≥ 80
-        return ['historico' => array_map(static function ($h) use ($atr, $comAntesDepois) {
+        return ['product_id' => $productId, 'atributo_id' => $atributoId, 'limite' => self::LIMITE_HISTORICO, 'truncado' => count($linhas) >= self::LIMITE_HISTORICO,
+            'historico' => array_map(static function ($h) use ($atr, $comAntesDepois) {
             $p = explode(':', (string) $h['entidade_id']);
             $aid = in_array($h['entidade'], ['valor', 'produto_atributo'], true) ? (int) ($p[1] ?? 0) : null;
             return ['id' => (int) $h['id'], 'quando' => $h['criado_em'], 'quem' => $h['usuario'], 'acao' => $h['acao'], 'entidade' => $h['entidade'],
                 'atributo' => $aid ? ($atr[$aid]['rotulo'] ?? "#$aid") : null, 'atributo_id' => $aid,
                 'antes' => !$comAntesDepois ? null : (is_string($h['antes']) ? json_decode($h['antes'], true) : $h['antes']),
                 'depois' => !$comAntesDepois ? null : (is_string($h['depois']) ? json_decode($h['depois'], true) : $h['depois']), 'motivo' => $h['motivo']];
-        }, $this->l->historico($productId, 300))];
+        }, $linhas)];
     }
 
     /** Lista de kits (§11.5) com escopo, itens e alcance real (produtos ativos que recebem o kit). */
