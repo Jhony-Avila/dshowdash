@@ -168,6 +168,7 @@ final class PipedriveClient
                 $tokenCost += $listCost;
                 $lastStatus = (int)($res['status'] ?? 0);
                 if ($lastStatus !== 429) { break; }
+                if ($tent >= 3) { break; } // DSHOW-003b: sem espera depois da ÚLTIMA tentativa (backoff só antes de nova tentativa)
                 // 429: sem Retry-After -> usar reset (janela 2s) + jitter
                 $reset = (int)($res['meta']['ratelimit_reset'] ?? 2);
                 $this->pause(min(max($reset, 1), 10) + (mt_rand(0, 400) / 1000));
