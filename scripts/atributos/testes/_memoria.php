@@ -9,6 +9,9 @@ final class RepoMemoria implements AtributosRepositorio
     public array $a = [], $o = [], $u = [], $g = [], $ge = [], $ga = [], $v = [], $aud = [], $vin = [];
     /** ATRIBUTOS-WEB (missão §9): kits diretos (pid => [gid]) e ajustes por produto (pid => aid => [modo, unidade_id, posicao, motivo]). */
     public array $gp = [], $pa = [];
+    public array $au = [];
+    public function unidadesExtras(int $aid): array { return $this->au[$aid] ?? []; }
+    public function definirUnidadesExtras(int $aid, array $u, string $quem): void { $this->au[$aid] = $u; }
     public bool $falharAuditoria = false;
     /** V5 Lote 3: gancho executado ao ABRIR a transação (simula outra conexão que gravou entre a validação e a transação — ATR-06). */
     public ?Closure $aoAbrirTransacao = null;

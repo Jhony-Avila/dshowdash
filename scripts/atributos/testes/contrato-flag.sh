@@ -3,7 +3,7 @@
 # Raiz temporária: endpoint, AtributosService, ApiResponse, AuthHelpers e CorsPolicy REAIS; stubs: resolvedor de flags
 # (fonte controlada por T_FLAGS), SessionGate (sessão na pasta do teste), UARPSGate, conexão e repositório (memória).
 set -u
-CL="$(cd "$(dirname "$0")/../../.." && pwd)"; T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+CL="$(cd "$(dirname "$0")/../../.." && pwd)"; T="$(mktemp -d)"; trap '[ -n "${MANTER:-}" ] || rm -rf "$T"' EXIT
 mkdir -p $T/api/atributos $T/api/_helpers $T/api/core $T/api/feature-flags $T/config $T/scripts/atributos/testes $T/tmp $T/sess
 for f in $CL/api/atributos/*.php; do case "$(basename $f)" in AtributosRepo.php|LeituraVitrinePdo.php) ;; *) cp "$f" $T/api/atributos/;; esac; done   # todos os arquivos do módulo, menos os 2 substituídos por stub
 cp $CL/api/_helpers/ApiResponse.php $CL/api/_helpers/AuthHelpers.php $T/api/_helpers/
@@ -21,9 +21,12 @@ require_once __DIR__ . '/ProdutosLeitura.php';
 final class LeituraVitrinePdo implements LeituraVitrine {
   public function __construct($pdo = null, $a = '', $b = '') {}
   public function catalogo(): array { return []; } public function fotosResumo(): array { return []; } public function fotos(int $p): array { return []; }
-  public function familiasPrecifica(): array { return []; } public function specs(int $p): ?array { return null; } public function valoresResumo(): array { return []; }
-  public function valoresDetalhe(int $p): array { return []; } public function legadoResumo(): array { return []; } public function legadoDoItem(int $i): array { return []; }
-  public function vinculos(): array { return []; } public function atributos(): array { return []; } public function modelos(): array { return []; }
+  public function fotoElegivel(int $m): bool { return false; } public function familiasPrecifica(): array { return []; } public function specs(int $p): ?array { return null; }
+  public function estadosValores(): array { return []; } public function valoresDetalhe(int $p): array { return []; } public function legadoResumo(): array { return []; }
+  public function legadoDoItem(int $i): array { return []; } public function vinculos(): array { return []; } public function atributos(): array { return []; }
+  public function opcoes(array $ids): array { return []; } public function unidades(): array { return []; } public function unidadesExtras(): array { return []; }
+  public function sugestoes(?int $p, ?string $f = null, ?string $t = null, int $l = 500): array { return []; } public function sugestoesPendentesPorProduto(): array { return []; }
+  public function historico(int $p, int $l): array { return []; } public function usoAtributos(): array { return []; } public function usoUnidades(): array { return []; }
 }
 PHP
 cat > $T/api/core/SessionGate.php <<'PHP'
@@ -72,11 +75,15 @@ caso "H rollout parcial, sem sessão → 401" 401 "$ROLL" GET atributos sem-sess
 caso "H2 rollout parcial, pessoa fora do rollout → 404" 404 "$ROLL" GET atributos 80
 caso "I escrita ausente, POST nível 100 → 404" 404 "$ON" POST atributo 100
 caso "J escrita ausente, GET valores nível 50 → 404" 404 "$ON" GET valores 50
-# E1 (ATRIBUTOS-WEB 18/11): API só leitura — POST e GET valores respondem 404 mesmo com a escrita ligada (ATR_ESCRITA_LIBERADA=false)
-caso "K E1: escrita LIGADA, POST nível 100 → 404 (só leitura)" 404 "$ONW" POST atributo 100
-caso "K2 E1: escrita LIGADA, POST valor nível 100 → 404" 404 "$ONW" POST valor 100
-caso "K3 E1: escrita LIGADA, GET valores nível 80 → 404" 404 "$ONW" GET valores 80
-caso "L E1: escrita ilegível, POST → 404 (nem lê a flag)" 404 "$ONWERR" POST atributo 100
+# missão 18/11: escrita liberada atrás da flag de escrita + CSRF (ATR_ESCRITA_LIBERADA=true)
+caso "K escrita ligada, POST sem CSRF → 403" 403 "$ONW" POST atributo 100
+caso "K2 escrita ligada, POST valor sem CSRF → 403" 403 "$ONW" POST valor 100
+caso "K3 escrita ligada, POST kit sem CSRF → 403" 403 "$ONW" POST kit 100
+caso "L escrita ilegível, POST → 500" 500 "$ONWERR" POST atributo 100
+caso "V6 visão geral, nível 50 → 200" 200 "$ON" GET visao_geral 50
+caso "V7 kits, nível 50 → 200" 200 "$ON" GET kits 50
+caso "V8 conferência, nível 49 → 403" 403 "$ON" GET conferencia 49
+caso "V9 foto inexistente → 404" 404 "$ON" GET foto 50
 # ATR-VAL-E1: padrão "ligada só para o 75" = rollout 0 (anônimo → rollout_excluded) + override do usuário
 caso "S só o 75: quem tem override, nível 80 → 200" 200 "$SO75" GET vitrine 80
 caso "S2 só o 75: sem sessão → 401 (não esconde de quem tem override)" 401 "$SO75FORA" GET vitrine sem-sessao

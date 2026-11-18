@@ -36,6 +36,8 @@ require_once __DIR__ . '/AtributosRepo.php';
 require_once __DIR__ . '/CatalogoPdo.php';
 require_once __DIR__ . '/ProdutosLeitura.php';
 require_once __DIR__ . '/LeituraVitrinePdo.php';
+require_once __DIR__ . '/KitsService.php';
+require_once __DIR__ . '/SugestoesService.php';
 
 // ATRIBUTOS-WEB (18/11): rota por PATH_INFO (/api/atributos/<rota>, padrão do Bling); ?r=<rota> segue aceito (compatível com o ramo de origem).
 // Conexão PRÓPRIA "EQUIPAMENTOS" (usuário dedicado equipamentos_app: SELECT/INSERT/UPDATE no DSHOW_EQUIPAMENTOS + SELECT coluna a coluna
@@ -48,7 +50,7 @@ function eqRota(): string {
 
 const EQ_FLAG = 'panel_atributos_enabled';           // E1: mesma chave do painel (ligada só para o usuário 75 em produção)
 const EQ_FLAG_ESCRITA = 'panel_atributos_escrita';   // escrita (E3); desligada
-const ATR_ESCRITA_LIBERADA = false;                  // E1 = só leitura: nenhuma rota de escrita responde, com qualquer flag
+const ATR_ESCRITA_LIBERADA = true;                   // missão 18/11: escrita existe, atrás da flag panel_atributos_escrita + CSRF + nível no serviço
 // Fontes do resolvedor que significam "piloto desligado para todos" (→ 404 antes da sessão).
 // ATR-VAL-E1 (18/11): 'rollout_excluded' SAIU desta lista. Sem identidade, rollout 0 + override por usuário (o padrão "ligada só para o 75")
 // resolve como rollout_excluded e escondia a rota de TODOS, inclusive de quem tem override. O rollout é decidido depois da sessão (passo 3).
@@ -97,11 +99,27 @@ try {
     // 4) CSRF em toda escrita, depois das flags (escrita desligada responde 404 sem revelar a rota)
     AuthHelpers::requireCsrfForWrite();
     $pdoEq = getConnection('EQUIPAMENTOS');   // sem a entrada no config compartilhado → exceção → 500 (registrado), nunca cai na conexão do Dash
-    $svc = new AtributosService(new AtributosRepoPdo($pdoEq, (string) (getenv('DSHOW_EQUIPAMENTOS_SCHEMA') ?: 'DSHOW_EQUIPAMENTOS')), (int) ($user['level'] ?? 0), (string) ($user['email'] ?: ('usuario:' . ($user['id'] ?? '?'))),
-        new CatalogoPdo($pdoEq, (string) (getenv('DSHOW_CATALOGO_SCHEMA') ?: 'APP_DSHOW')));
-    $leitura = new ProdutosLeitura(new LeituraVitrinePdo($pdoEq, (string) (getenv('DSHOW_EQUIPAMENTOS_SCHEMA') ?: 'DSHOW_EQUIPAMENTOS'), (string) (getenv('DSHOW_CATALOGO_SCHEMA') ?: 'APP_DSHOW')), $svc, (int) ($user['level'] ?? 0));
+    $schemaEq = (string) (getenv('DSHOW_EQUIPAMENTOS_SCHEMA') ?: 'DSHOW_EQUIPAMENTOS');
+    $schemaCat = (string) (getenv('DSHOW_CATALOGO_SCHEMA') ?: 'APP_DSHOW');
+    $nivel = (int) ($user['level'] ?? 0);
+    $quem = (string) ($user['email'] ?: ('usuario:' . ($user['id'] ?? '?')));
+    $repo = new AtributosRepoPdo($pdoEq, $schemaEq);
+    $catalogo = new CatalogoPdo($pdoEq, $schemaCat);
+    $svc = new AtributosService($repo, $nivel, $quem, $catalogo);
+    $leitura = fn() => new ProdutosLeitura(new LeituraVitrinePdo($pdoEq, $schemaEq, $schemaCat), $repo, $nivel, getenv('ATRWEB_MINIATURAS') ?: (getenv('DSHOW_ATRIBUTOS_MINIATURAS') ?: null));
+    $kits = fn() => new KitsService($repo, $nivel, $quem, $catalogo);
+    $sugestoes = fn() => new SugestoesService($repo, $svc, $nivel >= AtributosService::NIVEL_ADMIN ? $kits() : null, $nivel, $quem);
     $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $r = eqRota();
+    // Miniatura (A6): resposta binária com cache privado e ETag; nunca expõe caminho nem storage_key. Sem arquivo → 404.
+    if ($metodo === 'GET' && $r === 'foto') {
+        $f = $leitura()->arquivoMiniatura((int) ($_GET['id'] ?? 0), (int) ($_GET['t'] ?? 480));
+        if ($f === null) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
+        header('Cache-Control: private, max-age=86400'); header('ETag: ' . $f['etag']); header('X-Content-Type-Options: nosniff');
+        if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $f['etag']) { http_response_code(304); exit; }
+        header('Content-Type: image/jpeg'); header('Content-Length: ' . filesize($f['caminho']));
+        readfile($f['caminho']); exit;
+    }
     $corpo = [];
     if ($metodo === 'POST') {
         $raw = file_get_contents('php://input');
@@ -109,30 +127,57 @@ try {
         if (!is_array($corpo)) ApiResponse::error(ApiResponse::ERR_INVALID_JSON, 400);
     }
     $out = match ("$metodo $r") {
-        'GET vitrine' => $leitura->vitrine(),
-        'GET ficha_produto' => $leitura->fichaProduto((int) ($_GET['product_id'] ?? 0)),
+        // ---- leitura (nível ≥ 50) ----
+        'GET visao_geral' => $leitura()->visaoGeral(),
+        'GET vitrine' => $leitura()->vitrine(),
+        'GET ficha_produto' => $leitura()->fichaProduto((int) ($_GET['product_id'] ?? 0)),
+        'GET historico_produto' => $leitura()->historicoProduto((int) ($_GET['product_id'] ?? 0)),
+        'GET kits' => $leitura()->kits(),
+        'GET kit' => $leitura()->kit((int) ($_GET['id'] ?? 0)),
+        'GET dicionario' => $leitura()->dicionario(),
+        'GET unidades' => $leitura()->unidadesComUso(),
+        'GET conferencia' => $leitura()->conferencia(),
         'GET atributos' => $svc->listar($_GET),
         'GET atributo' => $svc->detalhe((int) ($_GET['id'] ?? 0)),
-        'GET unidades' => $svc->unidades(),
         'GET grupos' => $svc->grupos(),
         'GET valores' => $svc->valoresDoProduto((int) ($_GET['product_id'] ?? 0)),
         'GET ficha' => $svc->ficha((int) ($_GET['product_id'] ?? 0), eqFlagOuFalha($resolver->resolve(EQ_FLAG_ESCRITA, (int) ($user['id'] ?? 0)))),
+        'GET produtos' => $svc->buscarProdutos(isset($_GET['q']) ? (string) $_GET['q'] : null),
+        'GET categorias' => $svc->categoriasCatalogo(),
+        'GET auditoria' => $svc->auditoria((string) ($_GET['entidade'] ?? ''), (string) ($_GET['id'] ?? '')),
+        // ---- valores (nível ≥ 80, A1) ----
+        'POST valor' => $svc->gravarValor($corpo),
+        'POST valor_limpar' => $svc->limparValor($corpo),
+        'POST valor_unidade' => $svc->converterUnidade($corpo),
+        'POST valor_opcao_remover' => $svc->removerOpcaoDoValor($corpo),
+        // ---- vínculos e kits (nível ≥ 80) ----
+        'POST kit' => $kits()->salvarKit($corpo),
+        'POST kit_duplicar' => $kits()->duplicarKit($corpo),
+        'POST kit_ativo' => $kits()->definirAtivo($corpo),
+        'POST kit_itens' => $kits()->definirItens($corpo),
+        'POST kit_escopos' => $kits()->definirEscopos($corpo),
+        'POST kit_produtos' => $kits()->definirProdutosDoKit($corpo),
+        'POST produto_kit' => $kits()->definirKitDoProduto($corpo),
+        'POST produto_atributo' => $kits()->definirAjuste($corpo),
+        'POST massa_previa' => $kits()->previaMassa($corpo),
+        'POST massa_aplicar' => $kits()->aplicarMassa($corpo),
+        // ---- dicionário e unidades (nível ≥ 80) ----
         'POST atributo' => $svc->salvarAtributo($corpo),
         'POST atributo_ativo' => $svc->definirAtivo((int) ($corpo['id'] ?? 0), !empty($corpo['ativo']), (int) ($corpo['versao'] ?? 0), isset($corpo['motivo']) ? (string) $corpo['motivo'] : null),
+        'POST atributo_unidades' => $svc->definirUnidadesPermitidas($corpo),
         'POST opcao' => $svc->adicionarOpcao((int) ($corpo['atributo_id'] ?? 0), $corpo['rotulo'] ?? null),
         'POST opcao_renomear' => $svc->renomearOpcao((int) ($corpo['id'] ?? 0), $corpo['rotulo'] ?? null, $corpo['rotulo_atual'] ?? null),
         'POST opcao_reordenar' => $svc->reordenarOpcoes((int) ($corpo['atributo_id'] ?? 0), $corpo['ordem'] ?? null),
         'POST opcao_ativa' => $svc->definirOpcaoAtiva((int) ($corpo['id'] ?? 0), !empty($corpo['ativo'])),
         'POST unidade' => isset($corpo['id']) ? $svc->salvarUnidade($corpo) : $svc->criarUnidade($corpo),
         'POST unidade_ativa' => $svc->definirUnidadeAtiva((int) ($corpo['id'] ?? 0), !empty($corpo['ativo'])),
-        'POST grupo_ativo' => $svc->definirGrupoAtivo((int) ($corpo['id'] ?? 0), !empty($corpo['ativo']), (int) ($corpo['versao'] ?? 0)),
-        'POST valor_opcao_remover' => $svc->removerOpcaoDoValor($corpo),
-        'POST ficha_revisar' => $svc->revisarFicha($corpo),
-        'GET produtos' => $svc->buscarProdutos(isset($_GET['q']) ? (string) $_GET['q'] : null),
-        'GET categorias' => $svc->categoriasCatalogo(),
-        'GET auditoria' => $svc->auditoria((string) ($_GET['entidade'] ?? ''), (string) ($_GET['id'] ?? '')),
+        // ---- sugestões e conferência (nível ≥ 80) ----
+        'POST sugestao' => $sugestoes()->decidir($corpo),
+        'POST sugestoes_lote' => $sugestoes()->aceitarLote($corpo),
+        // ---- legado da etapa 8 (mantidas) ----
         'POST grupo' => $svc->salvarGrupo($corpo),
-        'POST valor' => $svc->gravarValor($corpo),
+        'POST grupo_ativo' => $svc->definirGrupoAtivo((int) ($corpo['id'] ?? 0), !empty($corpo['ativo']), (int) ($corpo['versao'] ?? 0)),
+        'POST ficha_revisar' => $svc->revisarFicha($corpo),
         default => null,
     };
     if ($out === null) ApiResponse::error(ApiResponse::ERR_INVALID_ACTION, 400);

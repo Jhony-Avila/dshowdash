@@ -75,6 +75,7 @@ interface AtributosRepositorio
     public function retratoModelo(?int $productId = null): RetratoModelo;
     /** A8: ids das unidades permitidas além da regra da grandeza. */
     public function unidadesExtras(int $atributoId): array;
+    public function definirUnidadesExtras(int $atributoId, array $unidades, string $usuario): void;
     public function valoresDoProduto(int $productId): array;
     public function valor(int $productId, int $atributoId, int $opcaoChave): ?array;
     public function gravarValor(array $d, ?int $versaoEsperada): bool;
@@ -173,8 +174,13 @@ final class AtributosService
         $erros = [];
         $id = isset($b['id']) ? (int) $b['id'] : 0;
         $rotulo = self::texto($b['rotulo'] ?? null, 128, 'rotulo', $id === 0, $erros);
-        $codigo = self::texto($b['codigo'] ?? null, 64, 'codigo', $id === 0, $erros);
+        // Regra 13 (missão): o código é CONTRATO com o app — gerado na criação (se não vier) e NUNCA alterado na edição.
+        if ($id === 0 && (!isset($b['codigo']) || $b['codigo'] === '' || $b['codigo'] === null) && is_string($b['rotulo'] ?? null)) $b['codigo'] = $this->gerarCodigo((string) $b['rotulo']);
+        if ($id !== 0 && isset($b['codigo']) && ($atualCod = $this->repo->atributo($id)) && $b['codigo'] !== $atualCod['codigo']) $erros[] = 'codigo';
+        $codigo = $id === 0 ? self::texto($b['codigo'] ?? null, 64, 'codigo', true, $erros) : null;
         if ($codigo !== null && !preg_match('/^[a-z][a-z0-9_]{1,63}$/', $codigo)) $erros[] = 'codigo';
+        $imp = array_key_exists('importancia_padrao', $b) ? ($b['importancia_padrao'] === '' ? null : $b['importancia_padrao']) : false;   // A3
+        if ($imp !== false && $imp !== null && !in_array($imp, Aplicabilidade::IMPORTANCIAS, true)) $erros[] = 'importancia_padrao';
         $tipo = $b['tipo'] ?? null;
         if (($id === 0 || $tipo !== null) && !in_array($tipo, self::TIPOS, true)) $erros[] = 'tipo';
         $casas = isset($b['casas']) && $b['casas'] !== '' && $b['casas'] !== null ? (int) $b['casas'] : null;
@@ -203,6 +209,7 @@ final class AtributosService
         $dados = array_filter(['rotulo' => $rotulo, 'codigo' => $codigo, 'tipo' => $tipo, 'casas' => $casas, 'minimo' => $min, 'maximo' => $max, 'descricao' => $descricao, 'unidade_id' => $unidade,
             'autoridade' => $autoridade, 'precifica_ref' => $ref, 'aceita_nao_se_aplica' => $aceita === null ? null : ((bool) (int) $aceita ? 1 : 0)], static fn($v) => $v !== null);
         foreach ($limpar as $k) $dados[$k] = null;
+        if ($imp !== false) $dados['importancia_padrao'] = $imp;
         if ($id === 0) {
             $novo = $this->repo->transacao(function () use ($dados, $b) {
                 $novo = $this->repo->criarAtributo($dados);
@@ -234,6 +241,34 @@ final class AtributosService
             $this->repo->auditar($this->usuario, 'editar', 'atributo', (string) $id, $antes, $dados, $b['motivo'] ?? null);
         });
         return ['atributo' => $this->repo->atributo($id)];
+    }
+
+    /** Código estável gerado do rótulo: slug_sem_acento + sufixo numérico único (padrão do legado: <slug>_<n>). */
+    private function gerarCodigo(string $rotulo): string
+    {
+        $slug = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '_', (string) iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $rotulo)), '_')) ?: 'atributo';
+        if (!preg_match('/^[a-z]/', $slug)) $slug = 'a_' . $slug;
+        $slug = substr($slug, 0, 52);
+        for ($n = 1; $n < 100000; $n++) { $c = $slug . '_n' . $n; if (!$this->repo->codigoExiste($c, null)) return $c; }
+        throw new AtributosErro('VALIDATION_ERROR', 422, 'Não foi possível gerar o código.', ['codigo']);
+    }
+
+    /** A8: unidades permitidas além da regra da grandeza (diferença, exclusão lógica). */
+    public function definirUnidadesPermitidas(array $b): array
+    {
+        $this->exigir(self::NIVEL_ADMIN);
+        $aid = (int) ($b['atributo_id'] ?? 0);
+        $a = $this->repo->atributo($aid) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
+        if (!in_array($a['tipo'], ['numero', 'inteiro'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Só atributos numéricos têm unidade.', ['atributo_id']);
+        $quero = array_values(array_unique(array_map('intval', (array) ($b['unidades'] ?? []))));
+        foreach ($quero as $u) if (!$this->repo->unidade($u)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inexistente.', ['unidades']);
+        $antes = $this->repo->unidadesExtras($aid);
+        if ($quero == $antes) return ['unidades' => $antes, 'sem_mudanca' => true];
+        $this->repo->transacao(function () use ($aid, $quero, $antes, $b) {
+            $this->repo->definirUnidadesExtras($aid, $quero, $this->usuario);
+            $this->repo->auditar($this->usuario, 'unidades_permitidas', 'atributo', (string) $aid, ['unidades' => $antes], ['unidades' => $quero], $b['motivo'] ?? null);
+        });
+        return ['unidades' => $this->repo->unidadesExtras($aid)];
     }
 
     public function definirAtivo(int $id, bool $ativo, int $versao, ?string $motivo): array
@@ -336,6 +371,7 @@ final class AtributosService
         $s = self::texto($b['simbolo'] ?? null, 20, 'simbolo', true, $erros);
         $n = self::texto($b['nome'] ?? null, 80, 'nome', true, $erros);
         $g = self::texto($b['grandeza'] ?? null, 40, 'grandeza', false, $erros);
+        $fator = self::fatorDe($b, $erros);
         if ($erros) throw new AtributosErro('VALIDATION_ERROR', 422, 'Campos inválidos.', $erros);
         // BR-02: "tentar de novo" depois de uma gravação que deu certo NÃO grava outra vez — mesma unidade (símbolo, nome, grandeza) = sucesso idempotente
         foreach ($this->repo->unidades() as $u) {
@@ -343,9 +379,10 @@ final class AtributosService
             if ((string) $u['nome'] === (string) $n && (string) ($u['grandeza'] ?? '') === (string) ($g ?? '')) return $this->respostaUnidades(['ja_existia' => true, 'id' => (int) $u['id']]);
             throw new AtributosErro('VALIDATION_ERROR', 422, 'Símbolo já existe com outro nome ou grandeza.', ['simbolo']);
         }
-        $id = $this->repo->transacao(function () use ($s, $n, $g) {
+        $id = $this->repo->transacao(function () use ($s, $n, $g, $fator) {
             $id = $this->repo->criarUnidade((string) $s, (string) $n, $g);
-            $this->repo->auditar($this->usuario, 'criar', 'unidade', (string) $id, null, ['simbolo' => $s, 'nome' => $n, 'grandeza' => $g], null);
+            if ($fator !== false && $fator !== null) $this->repo->atualizarUnidade($id, ['fator_base' => $fator]);
+            $this->repo->auditar($this->usuario, 'criar', 'unidade', (string) $id, null, ['simbolo' => $s, 'nome' => $n, 'grandeza' => $g, 'fator_base' => $fator === false ? null : $fator], null);
             return $id;
         });
         return $this->respostaUnidades(['ja_existia' => false, 'id' => (int) $id]);
@@ -361,13 +398,26 @@ final class AtributosService
         $n = self::texto($b['nome'] ?? null, 80, 'nome', true, $erros);
         $g = self::texto($b['grandeza'] ?? null, 40, 'grandeza', false, $erros);
         if (isset($b['simbolo']) && $b['simbolo'] !== $antes['simbolo']) $erros[] = 'simbolo';
+        $fator = self::fatorDe($b, $erros);
         if ($erros) throw new AtributosErro('VALIDATION_ERROR', 422, 'Campos inválidos (o símbolo não muda).', array_values(array_unique($erros)));
-        if ((string) $antes['nome'] === (string) $n && (string) ($antes['grandeza'] ?? '') === (string) ($g ?? '')) return $this->respostaUnidades(['sem_mudanca' => true]);   // BR-02: repetir não grava nem audita de novo
-        $this->repo->transacao(function () use ($id, $n, $g, $antes) {
-            $this->repo->atualizarUnidade($id, ['nome' => $n, 'grandeza' => $g]);
-            $this->repo->auditar($this->usuario, 'editar', 'unidade', (string) $id, $antes, ['nome' => $n, 'grandeza' => $g], null);
+        $mudaFator = $fator !== false && (string) ($antes['fator_base'] ?? '') !== (string) ($fator ?? '') && !($fator !== null && $antes['fator_base'] !== null && self::comparar((string) $fator, self::decimalCanonico((string) $antes['fator_base'])) === 0);
+        if ((string) $antes['nome'] === (string) $n && (string) ($antes['grandeza'] ?? '') === (string) ($g ?? '') && !$mudaFator) return $this->respostaUnidades(['sem_mudanca' => true]);   // BR-02: repetir não grava nem audita de novo
+        $this->repo->transacao(function () use ($id, $n, $g, $antes, $mudaFator, $fator) {
+            $novo = ['nome' => $n, 'grandeza' => $g] + ($mudaFator ? ['fator_base' => $fator] : []);
+            $this->repo->atualizarUnidade($id, $novo);
+            $this->repo->auditar($this->usuario, 'editar', 'unidade', (string) $id, $antes, $novo, null);
         });
         return $this->respostaUnidades();
+    }
+
+    /** D3: fator para a unidade base da grandeza (decimal > 0); '' ou null explícito limpa; ausente = não mexe (false). */
+    private static function fatorDe(array $b, array &$erros): string|null|false
+    {
+        if (!array_key_exists('fator_base', $b)) return false;
+        if ($b['fator_base'] === null || $b['fator_base'] === '') return null;
+        $f = self::decimalCanonico($b['fator_base']);
+        if ($f === null || self::comparar($f, '0') <= 0) { $erros[] = 'fator_base'; return false; }
+        return $f;
     }
 
     public function definirUnidadeAtiva(int $id, bool $ativo): array

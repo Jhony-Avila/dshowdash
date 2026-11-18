@@ -7,8 +7,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/AtributosService.php';
 require_once __DIR__ . '/KitsService.php';
+require_once __DIR__ . '/SugestoesService.php';
 
-final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio
+final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio
 {
     private string $p;
 
@@ -97,7 +98,7 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio
         return (int) $this->pdo->lastInsertId();
     }
 
-    private const EDITAVEIS_ATRIBUTO = ['rotulo', 'codigo', 'tipo', 'unidade_id', 'casas', 'minimo', 'maximo', 'descricao', 'ativo', 'autoridade', 'precifica_ref', 'aceita_nao_se_aplica'];
+    private const EDITAVEIS_ATRIBUTO = ['rotulo', 'codigo', 'tipo', 'unidade_id', 'casas', 'minimo', 'maximo', 'descricao', 'ativo', 'autoridade', 'precifica_ref', 'aceita_nao_se_aplica', 'importancia_padrao'];
 
     public function atualizarAtributo(int $id, int $versao, array $d): bool
     {
@@ -306,6 +307,17 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio
         return $this->q('SELECT id, simbolo, nome, grandeza, fator_base, ativo FROM ' . $this->t('eq_unidade') . ' WHERE id = ?', [$id])[0] ?? null;
     }
 
+    public function definirUnidadesExtras(int $atributoId, array $unidades, string $usuario): void
+    {
+        $atuais = [];
+        foreach ($this->q('SELECT unidade_id, excluido_em FROM ' . $this->t('eq_atributo_unidade') . ' WHERE atributo_id = ? FOR UPDATE', [$atributoId]) as $x) $atuais[(int) $x['unidade_id']] = $x['excluido_em'];
+        foreach ($unidades as $u) {
+            if (!array_key_exists($u, $atuais)) $this->exec('INSERT INTO ' . $this->t('eq_atributo_unidade') . ' (atributo_id, unidade_id, criado_por) VALUES (?, ?, ?)', [$atributoId, $u, $usuario]);
+            elseif ($atuais[$u] !== null) $this->exec('UPDATE ' . $this->t('eq_atributo_unidade') . ' SET excluido_em = NULL WHERE atributo_id = ? AND unidade_id = ?', [$atributoId, $u]);
+        }
+        foreach ($atuais as $u => $exc) if ($exc === null && !in_array($u, $unidades, true)) $this->exec('UPDATE ' . $this->t('eq_atributo_unidade') . ' SET excluido_em = CURRENT_TIMESTAMP(3) WHERE atributo_id = ? AND unidade_id = ?', [$atributoId, $u]);
+    }
+
     /** A8: unidades permitidas além da regra da grandeza (008). */
     public function unidadesExtras(int $atributoId): array
     {
@@ -315,7 +327,7 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio
     public function atualizarUnidade(int $id, array $d): bool
     {
         $sets = []; $p = [];
-        foreach ($d as $k => $v) { if (!in_array($k, ['nome', 'grandeza', 'ativo'], true)) continue; $sets[] = "$k = ?"; $p[] = $v; }
+        foreach ($d as $k => $v) { if (!in_array($k, ['nome', 'grandeza', 'ativo', 'fator_base'], true)) continue; $sets[] = "$k = ?"; $p[] = $v; }
         if (!$sets) return true;
         $p[] = $id;
         return $this->exec('UPDATE ' . $this->t('eq_unidade') . ' SET ' . implode(', ', $sets) . ' WHERE id = ?', $p) >= 0;
@@ -396,5 +408,17 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio
     public function auditoriaPorChave(string $entidade, string $entidadeId): ?array
     {
         return $this->q('SELECT id, usuario, acao, antes, depois, criado_em FROM ' . $this->t('eq_auditoria') . ' WHERE entidade = ? AND entidade_id = ? ORDER BY id DESC LIMIT 1', [$entidade, $entidadeId])[0] ?? null;
+    }
+
+    // ---- SugestoesRepositorio (009) ------------------------------------------------------------------------------------------------------
+    public function sugestao(int $id, bool $travar = false): ?array
+    {
+        return $this->q('SELECT * FROM ' . $this->t('eq_sugestao') . ' WHERE id = ?' . ($travar ? ' FOR UPDATE' : ''), [$id])[0] ?? null;
+    }
+
+    public function decidirSugestao(int $id, int $versao, string $estado, string $usuario, ?string $motivo): bool
+    {
+        return $this->exec('UPDATE ' . $this->t('eq_sugestao') . " SET estado = ?, decidido_por = ?, decidido_em = CURRENT_TIMESTAMP(3), motivo = ?, versao = versao + 1 WHERE id = ? AND versao = ? AND estado = 'pendente'",
+            [$estado, $usuario, $motivo, $id, $versao]) === 1;
     }
 }
