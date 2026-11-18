@@ -19,7 +19,8 @@ final class Cargas
 {
     public const LOTES = ['C2' => 'carga C2 · kit geral (missão 18/11)', 'C3' => 'carga C3 · kits do legado (missão 18/11)', 'C4' => 'carga C4 · dicionário (missão 18/11)',
         'C5' => 'legado-2025-07-31', 'C6' => 'carga C6 · sugestões pelo nome (missão 18/11)',
-        'C8' => 'carga C8 · Totens e Esferas (ETAPA B: T-3 a T-7)'];
+        'C8' => 'carga C8 · Totens e Esferas (ETAPA B: T-3 a T-7)',
+        'C9' => 'carga C9 · unidade efetiva nos valores antigos (DSHOW-048)'];
     /** Kits do legado → subcategorias atuais (D2; escopo pedido na missão §12-C3). */
     public const ESCOPOS = ['controladoras' => ['PROCESSOR', 'RECEIVING_CARD', 'SENDING_CARD', 'CONTROLLER'], 'cabos' => ['CABLE'], 'fontes' => ['POWER_SUPPLY']];
     public const NOMES = ['controladoras' => 'Controladoras', 'cabos' => 'Cabos', 'fontes' => 'Fontes'];
@@ -505,6 +506,40 @@ final class Cargas
         return $mud;
     }
 
+    // ---- C9 · unidade efetiva nos valores numéricos antigos sem unidade (DSHOW-048, decisão do Jhony 18/11) ---------------------------
+    /**
+     * Grava em cada valor numérico VIVO e "informado" com unidade_id NULO a unidade EFETIVA de agora (ajuste do produto → item do kit da
+     * 1ª ocorrência → padrão do atributo; mesma regra do Dash e do app). O que o app mostra NÃO muda (tripwire: foto com diferença 0).
+     * Não sobe a versão (o significado exibido é o mesmo; a reversão por lote da C5 continua valendo); UPDATE guardado por versão e por
+     * unidade_id IS NULL (edição concorrente ganha). Auditoria por linha com o lote; reversão: --reverter --lote <id>.
+     */
+    public function c9(): array
+    {
+        $repo = new AtributosRepoPdo($this->pdo, $this->schema);
+        $lote = $this->lote('C9', ['regra' => 'unidade efetiva = ajuste do produto → item do kit (1ª ocorrência) → padrão do atributo']);
+        $m = $repo->retratoModelo(null);
+        $cat = []; foreach ($this->q("SELECT id, category, subcategory, active FROM {$this->cs}product_catalog WHERE deleted = 0") as $p) $cat[(int) $p['id']] = ['id' => (int) $p['id'], 'categoria' => $p['category'], 'subcategoria' => $p['subcategory'], 'ativo' => (bool) $p['active']];
+        $rows = $this->q("SELECT v.id, v.product_id, v.atributo_id, v.versao FROM {$this->s}eq_valor v JOIN {$this->s}eq_atributo a ON a.id = v.atributo_id
+            WHERE v.excluido_em IS NULL AND v.estado = 'informado' AND v.unidade_id IS NULL AND v.opcao_chave = 0 AND a.tipo IN ('numero', 'inteiro')");
+        $n = ['candidatos' => count($rows), 'gravados' => 0, 'sem_unidade_definida' => 0, 'concorrentes' => 0, 'por_unidade' => []];
+        $fichas = [];
+        foreach ($rows as $r) {
+            $pid = (int) $r['product_id']; $aid = (int) $r['atributo_id'];
+            $u = null;
+            if (isset($cat[$pid])) { $fichas[$pid] ??= Aplicabilidade::ficha($m, $cat[$pid]); if (isset($fichas[$pid][$aid])) $u = Aplicabilidade::unidadeEfetiva($fichas[$pid][$aid], null); }
+            $u ??= isset($m->atributos[$aid]['unidade_id']) && $m->atributos[$aid]['unidade_id'] !== null ? (int) $m->atributos[$aid]['unidade_id'] : null;
+            if ($u === null) { $n['sem_unidade_definida']++; continue; }
+            $n['por_unidade'][$u] = ($n['por_unidade'][$u] ?? 0) + 1;
+            if ($this->seco) { $n['gravados']++; continue; }
+            if ($this->x("UPDATE {$this->s}eq_valor SET unidade_id = ? WHERE id = ? AND versao = ? AND unidade_id IS NULL AND excluido_em IS NULL", [$u, (int) $r['id'], (int) $r['versao']]) === 1) {
+                $n['gravados']++;
+                $repo->auditar('carga:C9', 'carimbar_unidade', 'valor', "$pid:$aid:0", ['unidade_id' => null], ['unidade_id' => $u, 'valor_id' => (int) $r['id'], 'versao' => (int) $r['versao'], 'lote' => $lote], 'DSHOW-048: unidade efetiva gravada no valor (exibição inalterada)');
+            } else $n['concorrentes']++;
+        }
+        $this->fecharLote($lote, $n);
+        return $n;
+    }
+
     // ---- C7 --------------------------------------------------------------------------------------------------------------------------
     /** Prova de cobertura (só leitura): das atribuições do legado (item × atributo) dos produtos atuais, quantas a regra da §9 reproduz. */
     public function c7(): array
@@ -552,9 +587,14 @@ final class Cargas
             // Só desfaz o que a carga gravou e ninguém tocou depois (versao = 1); valor editado à mão fica (D10).
             $v += $this->x("UPDATE {$this->s}eq_valor SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1 WHERE lote_id = ? AND origem = 'importado' AND versao = 1 AND excluido_em IS NULL", [$l['id']]);
             $s += $this->x("UPDATE {$this->s}eq_sugestao SET estado = 'recusada', motivo = 'reversão da carga', versao = versao + 1 WHERE lote_id = ? AND estado = 'pendente'", [$l['id']]);
+            if ($c === 'C9') foreach ($this->q("SELECT entidade_id, JSON_EXTRACT(depois, '$.valor_id') AS vid, JSON_EXTRACT(depois, '$.unidade_id') AS u, JSON_EXTRACT(depois, '$.versao') AS ver
+                    FROM {$this->s}eq_auditoria WHERE acao = 'carimbar_unidade' AND usuario = 'carga:C9' AND CAST(JSON_EXTRACT(depois, '$.lote') AS UNSIGNED) = ?", [(int) $l['id']]) as $a) {
+                // só onde ninguém mexeu depois: mesma unidade gravada pela C9 e mesma versão
+                $desc = ($desc ?? 0) + $this->x("UPDATE {$this->s}eq_valor SET unidade_id = NULL WHERE id = ? AND unidade_id = ? AND versao = ? AND excluido_em IS NULL", [(int) $a['vid'], (int) $a['u'], (int) $a['ver']]);
+            }
             $this->x("UPDATE {$this->s}eq_importacao_lote SET estado = 'descartado' WHERE id = ?", [$l['id']]);
         }
-        return ['lotes' => array_map(static fn($l) => (int) $l['id'], $lotes), 'valores_excluidos' => $v, 'sugestoes_encerradas' => $s];
+        return ['lotes' => array_map(static fn($l) => (int) $l['id'], $lotes), 'valores_excluidos' => $v, 'sugestoes_encerradas' => $s] + (isset($desc) ? ['unidades_desfeitas' => $desc] : []);
     }
 }
 
@@ -566,7 +606,7 @@ if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
         Migrador::validarSchema($schema, isset($o['modo-producao']), getenv('ATR_MIGRAR_PRODUCAO') ?: null);
         $c = strtoupper((string) ($o['carga'] ?? ''));
         $cg = new Cargas(migrador_conectar((string) ($o['credenciais'] ?? '')), $schema, isset($o['dry-run']), $log, isset($o['catalogo']) && preg_match('/^[A-Za-z0-9_]{1,64}$/', (string) $o['catalogo']) ? (string) $o['catalogo'] : null);
-        $r = isset($o['reverter']) ? $cg->reverter($c, isset($o['lote']) ? (string) $o['lote'] : null) : match ($c) { 'C2' => $cg->c2(), 'C3' => $cg->c3(), 'C4' => $cg->c4(), 'C5' => $cg->c5((string) ($o['fonte'] ?? '')), 'C6' => $cg->c6(), 'C7' => $cg->c7(), 'C8' => $cg->c8(), default => throw new RuntimeException("carga desconhecida: $c") };
+        $r = isset($o['reverter']) ? $cg->reverter($c, isset($o['lote']) ? (string) $o['lote'] : null) : match ($c) { 'C2' => $cg->c2(), 'C3' => $cg->c3(), 'C4' => $cg->c4(), 'C5' => $cg->c5((string) ($o['fonte'] ?? '')), 'C6' => $cg->c6(), 'C7' => $cg->c7(), 'C8' => $cg->c8(), 'C9' => $cg->c9(), default => throw new RuntimeException("carga desconhecida: $c") };
         $j = json_encode(['carga' => $c, 'seco' => isset($o['dry-run']), 'lote' => $cg->loteAtual, 'quando' => date('c'), 'resultado' => $r], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         if (!empty($o['relatorio'])) file_put_contents(rtrim((string) $o['relatorio'], '/') . "/$c" . (isset($o['dry-run']) ? '-seco' : '') . (isset($o['reverter']) ? '-reverter' : '') . '.json', $j);
         echo $j, "\nCARGA_OK $c\n";
