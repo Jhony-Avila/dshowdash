@@ -52,6 +52,13 @@ for _l in "${DSHOW_PUB_LOCK_LIB:-}" "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
   [ -n "${_l}" ] && [ -f "${_l}" ] && { source "${_l}"; break; }
 done
 declare -F dshow_pub_lock >/dev/null || { echo "recusado: lock-publicacao.sh não encontrado"; exit 2; }
+# LEITURA PELO RUNTIME (INCIDENTE-DIA-B-20261110): mesmo laço de busca; sem ela, recusa (falha fechada).
+for _l in "${DSHOW_LEITURA_LIB:-}" "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../leitura-runtime.sh" /usr/local/lib/dshow/leitura-runtime.sh; do
+  [ -n "${_l}" ] && [ -f "${_l}" ] && { source "${_l}"; break; }
+done
+declare -F leitura_runtime >/dev/null || { echo "recusado: leitura-runtime.sh não encontrado"; exit 2; }
+# mkdir sob umask 022 (o script roda com umask 077: pastas novas dentro da release sairiam 0700 → www-data sem leitura)
+mkd() { if [ "${DRY}" -eq 1 ]; then printf '[dry-run] mkdir -p (umask 022) %s\n' "$*"; else (umask 022; mkdir -p "$@"); fi; }
 dshow_pub_lock publicar-sha
 
 # ── 1. o SHA existe e é do main remoto ───────────────────────────────
@@ -69,6 +76,7 @@ TMP="${RELS}/.montando-${SHA:0:12}-${CARIMBO}"
 # ── 2. materializa a árvore FORA da pasta servida ────────────────────
 log "2/8 materializando em ${TMP}"
 run mkdir -p "${TMP}"
+run chmod 0755 "${TMP}"   # 10/11 (INCIDENTE-DIA-B): com umask 077 a RAIZ da release nascia 0700 → 404 para o www-data
 if [ "${DRY}" -eq 0 ]; then
   # Etapa 3 (ensaio): com umask 077 a release saía 600/700 e o servidor web não lia nada → extrair com 022
   git -C "${REPO}" archive --format=tar "${SHA}" | (umask 022; tar --no-same-owner --no-same-permissions -x -C "${TMP}")
@@ -96,7 +104,7 @@ run find "${TMP}" -xdev -exec chown -h root:root {} +
 # preserva chunks com hash da release anterior (clientes com a página antiga aberta), sem sobrescrever
 ANT="$(readlink -f "${SERVIDO}" 2>/dev/null || true)"
 if [ -n "${ANT}" ] && [ -d "${ANT}" ]; then
-  while IFS= read -r -d '' d; do rel="${d#${ANT}/}"; run mkdir -p "${TMP}/${rel}"; run cp -an "${d}/." "${TMP}/${rel}/"; done \
+  while IFS= read -r -d '' d; do rel="${d#${ANT}/}"; mkd "${TMP}/${rel}"; run cp -an "${d}/." "${TMP}/${rel}/"; done \
     < <(find "${ANT}/public" -xdev -type d -path '*/dist/assets' -print0 2>/dev/null)
 fi
 
@@ -105,7 +113,7 @@ log "4/8 symlinks para ${SHARED}"
 for p in "${COMPARTILHADOS[@]}"; do
   [ "${DRY}" -eq 0 ] && [ ! -e "${SHARED}/${p}" ] && falha "compartilhado ausente: ${SHARED}/${p}"
   [ "${DRY}" -eq 0 ] && [ -e "${TMP}/${p}" ] && ! [ -L "${TMP}/${p}" ] && falha "${p} veio no Git (deveria estar ignorado)"
-  run mkdir -p "$(dirname "${TMP}/${p}")"
+  mkd "$(dirname "${TMP}/${p}")"
   run ln -sfn "${SHARED}/${p}" "${TMP}/${p}"
 done
 # symlinks hoje absolutos dentro da árvore viram relativos (public/api, telemetry)
@@ -118,6 +126,8 @@ if [ "${DRY}" -eq 0 ]; then
   while IFS= read -r -d '' f; do php -l "$f" >/dev/null 2>&1 || { echo "✗ $f"; ERR=$((ERR+1)); }; done \
     < <(find "${TMP}/api" -name '*.php' -type f -print0)
   [ "${ERR}" -eq 0 ] || falha "${ERR} arquivo(s) PHP com erro"
+  # o runtime precisa ler a release ANTES da troca (travessia de toda a cadeia + nada ilegível) — INCIDENTE-DIA-B-20261110
+  leitura_runtime "${TMP}" || falha "o runtime (www-data) não lê ${TMP} — nada foi trocado"
 fi
 run mv -T "${TMP}" "${REL}"
 
