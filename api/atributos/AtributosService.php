@@ -957,8 +957,22 @@ final class AtributosService
         if (!array_key_exists('unidade_id', $b) || $b['unidade_id'] === null || $b['unidade_id'] === '') return null;
         if (!in_array($a['tipo'], ['numero', 'inteiro'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Este atributo não tem unidade de medida.', ['unidade_id']);
         $uid = is_int($b['unidade_id']) ? $b['unidade_id'] : (is_string($b['unidade_id']) && ctype_digit($b['unidade_id']) ? (int) $b['unidade_id'] : 0);
-        foreach ($this->unidadesPermitidas($produto, $a) as $u) if ((int) $u['id'] === $uid) return $uid;
-        throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade não permitida para este atributo.', ['unidade_id']);
+        // DSHOW-079: a unidade do PEDIDO é a que o operador via ao digitar o número. Grava NELA (nunca troca pela vigente nem converte) ou
+        // recusa: existe, ATIVA, permitida (regra A8: grandeza da efetiva + extras) e da MESMA grandeza da unidade vigente agora.
+        $u = $uid > 0 ? $this->repo->unidade($uid) : null;
+        if (!$u) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inexistente. Recarregue a ficha: o número não foi gravado.', ['unidade_id']);
+        $nao = 'Recarregue a ficha e confira a unidade: o número não foi gravado nem convertido.';
+        if (!(int) ($u['ativo'] ?? 1)) throw new AtributosErro('VALIDATION_ERROR', 422, 'A unidade "' . $u['simbolo'] . '" foi desativada. ' . $nao, ['unidade_id']);
+        $permitida = false;
+        foreach ($this->unidadesPermitidas($produto, $a) as $p) if ((int) $p['id'] === $uid) $permitida = true;
+        $aplic = $this->aplicaveis($produto)[(int) $a['id']]['aplic'] ?? null;
+        $vig = $aplic !== null ? Aplicabilidade::unidadeEfetiva($aplic, null) : (isset($a['unidade_id']) ? (int) $a['unidade_id'] : null);
+        $v = $vig !== null && $vig !== $uid ? $this->repo->unidade($vig) : null;
+        $gU = (string) ($u['grandeza'] ?? ''); $gV = (string) ($v['grandeza'] ?? '');
+        if (!$permitida || ($v !== null && $gU !== '' && $gV !== '' && $gU !== $gV)) {
+            throw new AtributosErro('VALIDATION_ERROR', 422, 'A unidade "' . $u['simbolo'] . '" não vale mais para este campo' . ($v !== null ? ' (a unidade em uso agora é "' . $v['simbolo'] . '")' : '') . '. ' . $nao, ['unidade_id']);
+        }
+        return $uid;
     }
 
     /** A8: unidades ativas da MESMA grandeza da unidade efetiva (produto → kit → padrão) + as incluídas explicitamente no atributo. */

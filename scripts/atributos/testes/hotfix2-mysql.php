@@ -110,6 +110,68 @@ $tN = $trilha(101, $nu); $aN = $aud(101, $nu);
 $eN = $erro(fn() => $adm->gravarValor($pA));
 $ok('034 inteiro: POST antigo do vazio após 9 → limpo → 409, trilha e auditoria intactas', $eN?->http === 409 && $trilha(101, $nu) === $tN && $aud(101, $nu) === $aN && $vivo(101, $nu) === null);
 
+// =========================================================================================================================================
+// DSHOW-079 · número gravado na unidade do PEDIDO (a que o operador via), nunca na vigente resolvida de novo; unidade que deixou de valer → 422
+// =========================================================================================================================================
+$adm->criarUnidade(['simbolo' => 'm', 'nome' => 'metro', 'grandeza' => 'comprimento', 'fator_base' => '1']);
+$adm->criarUnidade(['simbolo' => 'cm', 'nome' => 'centímetro', 'grandeza' => 'comprimento', 'fator_base' => '0.01']);
+$adm->criarUnidade(['simbolo' => 'mi079', 'nome' => 'milha (teste)', 'grandeza' => 'comprimento', 'fator_base' => '1609.344']);
+$adm->criarUnidade(['simbolo' => 'kg', 'nome' => 'quilograma', 'grandeza' => 'massa', 'fator_base' => '1']);
+$us = $adm->criarUnidade(['simbolo' => 'lb079', 'nome' => 'libra (teste)', 'grandeza' => 'massa', 'fator_base' => '0.45359237']);
+$uid = array_column($us['unidades'], 'id', 'simbolo'); [$uM, $uCm, $uMi, $uKg, $uLb] = [(int) $uid['m'], (int) $uid['cm'], (int) $uid['mi079'], (int) $uid['kg'], (int) $uid['lb079']];
+$alt = (int) $adm->salvarAtributo(['rotulo' => 'Altura HF2-079', 'tipo' => 'numero', 'unidade_id' => $uCm, 'casas' => 2])['atributo']['id'];
+$adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => [$uKg], 'unidades_antes' => []]);   // extra EXPLÍCITA de outra grandeza
+$vincU = fn(int $pid) => $um('SELECT unidade_id FROM eq_produto_atributo WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pid, $alt]);
+$num = fn($x) => $x === null ? null : (float) $x;
+$ultAud = fn(int $pid) => ($l = $aud($pid, $alt)) ? ['acao' => end($l)['acao'], 'depois' => json_decode((string) end($l)['depois'], true)] : null;
+$semNada = fn(int $pid) => $trilha($pid, $alt) === [] && $aud($pid, $alt) === [];
+$corpo = fn(int $pid, string $v, ?int $u, array $x = []) => ['product_id' => $pid, 'atributo_id' => $alt, 'versao_conjunto' => $vc($pid, $alt), 'valor' => $v, 'estado' => 'informado'] + ($u !== null ? ['unidade_id' => $u] : []) + $x;
+
+// cenário do DSHOW-077 §G: campo vazio exibindo "m" (vínculo do produto) → POST retido com unidade m → o vínculo vira "cm" → o POST chega
+$aj(['product_id' => 102, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uM]);
+$p079 = $corpo(102, '1', $uM);
+$aj(['product_id' => 102, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uCm]);
+$ok('079: PAYLOAD leva a unidade exibida (m); o vínculo mudou para cm antes de o POST chegar', $p079['unidade_id'] === $uM && (int) $vincU(102) === $uCm, json_encode($p079));
+$e = $erro(fn() => $adm->gravarValor($p079));
+$v = $vivo(102, $alt);
+$ok('079: PERSISTIDO 1 m (a unidade do pedido), não 1 cm nem número convertido', $e === null && $num($v['valor_num'] ?? null) === 1.0 && (int) ($v['unidade_id'] ?? 0) === $uM, $e ? $e->getMessage() : json_encode($v));
+$ok('079: AUDITORIA "preencher" com depois = 1 m', ($x = $ultAud(102)) !== null && count($aud(102, $alt)) === 1 && $x['acao'] === 'preencher' && (int) $x['depois']['unidade_id'] === $uM && $num($x['depois']['valor_num']) === 1.0, json_encode($ultAud(102)));
+// controle: sem unidade_id → comportamento atual (DSHOW-048: grava a unidade EFETIVA de agora)
+$aj(['product_id' => 103, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uM]);
+$aj(['product_id' => 103, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uCm]);
+$adm->gravarValor($corpo(103, '5', null));
+$ok('079 controle: pedido SEM unidade_id → grava a vigente (cm), como hoje', (int) ($vivo(103, $alt)['unidade_id'] ?? 0) === $uCm && $num($vivo(103, $alt)['valor_num']) === 5.0 && count($aud(103, $alt)) === 1);
+// controle: escolha EXPLÍCITA de outra unidade da mesma grandeza na edição → grava nela, sem converter
+$adm->gravarValor($corpo(103, '2', $uM, ['versao' => (int) $vivo(103, $alt)['versao']]));
+$ok('079 controle: edição com unidade explícita m (vigente cm) → PERSISTIDO 2 m, AUDITORIA "editar"', (int) $vivo(103, $alt)['unidade_id'] === $uM && $num($vivo(103, $alt)['valor_num']) === 2.0 && $ultAud(103)['acao'] === 'editar' && (int) $ultAud(103)['depois']['unidade_id'] === $uM);
+
+// unidade que deixou de valer: era a extra kg (outra grandeza), o vínculo voltou para cm → 422 unidade_id, nada gravado nem auditado
+$aj(['product_id' => 104, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uKg]);
+$pKg = $corpo(104, '3', $uKg);
+$aj(['product_id' => 104, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uCm]);
+$e = $erro(fn() => $adm->gravarValor($pKg));
+$ok('079: unidade de OUTRA grandeza que a vigente (kg × cm), mesmo sendo extra → 422 unidade_id com mensagem clara', $e?->http === 422 && $e->campos === ['unidade_id'] && str_contains($e->getMessage(), '"kg"') && str_contains($e->getMessage(), '"cm"') && str_contains($e->getMessage(), 'não foi gravado'), $e ? $e->getMessage() : 'aceito; vivo=' . json_encode($vivo(104, $alt)));
+$ok('079: PERSISTIDO/AUDITORIA — nada (nenhuma linha em eq_valor, nenhuma auditoria)', $semNada(104), json_encode([$trilha(104, $alt), $aud(104, $alt)]));
+// unidade desativada depois de exibida (era a vigente do vínculo) → 422, nada gravado
+$aj(['product_id' => 105, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uMi]);
+$pMi = $corpo(105, '4', $uMi);
+$adm->definirUnidadeAtiva($uMi, false);
+$e = $erro(fn() => $adm->gravarValor($pMi));
+$ok('079: unidade DESATIVADA depois de exibida → 422 unidade_id ("desativada"), nada gravado nem auditado', $e?->http === 422 && $e->campos === ['unidade_id'] && str_contains($e->getMessage(), 'desativada') && $semNada(105), $e ? $e->getMessage() : 'aceito; vivo=' . json_encode($vivo(105, $alt)));
+// não permitida (lb não é extra; grandeza massa ≠ comprimento) e inexistente → 422, nada gravado
+$e = $erro(fn() => $adm->gravarValor($corpo(104, '3', $uLb)));
+$ok('079: unidade não permitida → 422 unidade_id, nada gravado', $e?->http === 422 && $e->campos === ['unidade_id'] && $semNada(104));
+$e = $erro(fn() => $adm->gravarValor($corpo(104, '3', 999999)));
+$ok('079: unidade inexistente → 422 unidade_id, nada gravado', $e?->http === 422 && $e->campos === ['unidade_id'] && str_contains($e->getMessage(), 'inexistente') && $semNada(104));
+// controles: zero na unidade do pedido; conversão explícita pelo diálogo continua convertendo (1 m → 100 cm)
+$adm->gravarValor($corpo(104, '0', $uCm));
+$ok('079 controle: zero com unidade explícita → PERSISTIDO 0 cm, AUDITORIA "preencher"', ($v = $vivo(104, $alt)) !== null && $num($v['valor_num']) === 0.0 && (int) $v['unidade_id'] === $uCm && $ultAud(104)['acao'] === 'preencher' && $num($ultAud(104)['depois']['valor_num']) === 0.0);
+$adm->converterUnidade(['product_id' => 102, 'atributo_id' => $alt, 'unidade_id' => $uCm, 'converter' => true, 'versao' => (int) $vivo(102, $alt)['versao']]);
+$ok('079 controle: conversão explícita 1 m → 100 cm (PERSISTIDO e AUDITORIA "editar" com motivo)', $num($vivo(102, $alt)['valor_num']) === 100.0 && (int) $vivo(102, $alt)['unidade_id'] === $uCm
+    && $ultAud(102)['acao'] === 'editar' && (string) $um("SELECT motivo FROM eq_auditoria WHERE entidade = 'valor' AND entidade_id = ? ORDER BY id DESC LIMIT 1", ["102:$alt:0"]) === 'unidade convertida');
+$adm->converterUnidade(['product_id' => 102, 'atributo_id' => $alt, 'unidade_id' => $uM, 'converter' => false, 'versao' => (int) $vivo(102, $alt)['versao']]);
+$ok('079 controle: "só trocar a unidade" mantém o número (100 m), sem converter', $num($vivo(102, $alt)['valor_num']) === 100.0 && (int) $vivo(102, $alt)['unidade_id'] === $uM);
+
 // @@FIM@@
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " hotfix2-mysql (034 escalar do vazio · 079 unidade do pedido): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);
