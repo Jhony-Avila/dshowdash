@@ -38,13 +38,20 @@ export const FAMILIAS_PRECIFICA: Record<string, { titulo: string; campos: Record
 
 export const tituloFamilia = (k: string) => FAMILIAS_PRECIFICA[k]?.titulo ?? k;
 
-/** Cor fixa por kit do legado (tokens de série do design system). */
-export const COR_KIT: Record<string, string> = {
-  'Base (8)': 'var(--bl-serie-7)', Gabinete: 'var(--bl-serie-2)', 'Módulo': 'var(--bl-serie-4)', Parafusos: 'var(--bl-serie-8)',
-  Controladoras: 'var(--bl-serie-3)', Cabos: 'var(--bl-serie-5)', Fontes: 'var(--bl-serie-6)',
-};
+/** Cor estável por kit (pelo nome), da série do design system. */
+const SERIE = ['var(--bl-serie-2)', 'var(--bl-serie-4)', 'var(--bl-serie-3)', 'var(--bl-serie-5)', 'var(--bl-serie-6)', 'var(--bl-serie-7)', 'var(--bl-serie-8)', 'var(--bl-serie-1)'];
+export function corKit(nome: string | null | undefined): string {
+  if (!nome) return 'var(--bl-neutro)';
+  if (nome.startsWith('Base')) return 'var(--bl-serie-7)';
+  let h = 0; for (const c of nome) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return SERIE[h % SERIE.length];
+}
 
-export const IMPORTANCIA_CURTA: Record<string, string> = {
-  'Campos Obrigatórios': 'Obrigatório', 'Campos Importantes': 'Importante', 'Campos Básicos': 'Básico',
-  'Campos Complementares': 'Complementar', 'Campos Opcionais': 'Opcional', 'Campos Sem Importância': 'Sem importância',
+export const IMPORTANCIA: Record<string, string> = {
+  obrigatorio: 'Obrigatório', importante: 'Importante', basico: 'Básico', complementar: 'Complementar', opcional: 'Opcional', sem_importancia: 'Sem importância',
 };
+export const IMPORTANCIAS = ['obrigatorio', 'importante', 'basico', 'complementar', 'opcional', 'sem_importancia'] as const;
+export const ESTADO: Record<string, string> = { informado: 'Informado', nao_se_aplica: 'Não se aplica', desconhecido: 'Desconhecido' };
+export const TIPO: Record<string, string> = { texto: 'Texto', numero: 'Número', inteiro: 'Inteiro', booleano: 'Sim/Não', opcao: 'Opção', multiopcao: 'Várias opções', data: 'Data' };
+export const MOTIVO_KIT: Record<string, string> = { escopo: 'pela subcategoria', todos: 'todos os produtos', direto: 'direto neste produto', kit: 'kit', avulso: 'avulso' };
+export const FONTE_SUGESTAO: Record<string, string> = { legado_2025: 'legado 2025', nome_produto: 'nome do produto', precifica: 'Precifica' };

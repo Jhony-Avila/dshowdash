@@ -1,34 +1,34 @@
-// panel-atributos/src/ui/Comuns.tsx — peças visuais da linguagem do app iOS: foto com cápsula "ID: 154", chip de kit, barra de preenchimento.
+// panel-atributos/src/ui/Comuns.tsx — peças visuais comuns (linguagem do app iOS sobre os tokens do Dash).
 import React from 'react';
-import { COR_KIT } from '../lib/rotulos';
-import { pct } from '../lib/formatar';
+import { corKit } from '../lib/rotulos';
+import { urlFoto } from '../lib/api';
 
-/** Cor média (#rrggbb) → texto legível por cima (claro/escuro). */
+/** Texto legível sobre a cor média (#rrggbb). */
 function contraste(hex: string | null): string {
   if (!hex || !/^[0-9a-f]{6}$/i.test(hex)) return 'var(--bl-texto-3)';
   const n = parseInt(hex, 16); const l = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
   return l > 0.6 ? 'rgba(20,25,40,.55)' : 'rgba(255,255,255,.7)';
 }
 
-/**
- * Foto do produto. E1: o binário ainda não chega ao Dash (proposta de fotos pendente) → PLACEHOLDER com a cor média REAL da foto
- * (product_media.avg_color), ícone e "foto no app". Sem foto → moldura tracejada "sem foto".
- */
-export function Foto({ cor, temFoto, proporcao = '4 / 3', idCapsula, compacta = false, rotulo }: {
-  cor: string | null; temFoto: boolean; proporcao?: string; idCapsula?: number; compacta?: boolean; rotulo?: string;
+/** Foto do produto: miniatura autenticada (A6) sobre a cor média; sem foto → moldura tracejada. */
+export function Foto({ mediaId, cor, proporcao = '4 / 3', idCapsula, lado = 480, compacta = false, ajuste = 'contain' }: {
+  mediaId: number | null; cor: string | null; proporcao?: string; idCapsula?: number; lado?: 480 | 1280; compacta?: boolean; ajuste?: 'contain' | 'cover';
 }) {
-  const fundo = temFoto ? (cor ? `#${cor}` : 'var(--bl-superficie-2)') : 'transparent';
+  const [falhou, setFalhou] = React.useState(false);
+  React.useEffect(() => setFalhou(false), [mediaId]);
+  const tem = mediaId !== null;
   return (
-    <div className={`at-foto ${temFoto ? '' : 'at-foto--vazia'}`} style={{ aspectRatio: proporcao, background: fundo }}
-      role="img" aria-label={temFoto ? 'Foto do produto (prévia: disponível no app)' : 'Produto sem foto'}>
+    <div className={`at-foto ${tem ? '' : 'at-foto--vazia'}`} style={{ aspectRatio: proporcao, background: tem ? (cor ? `#${cor}` : 'var(--bl-superficie-2)') : undefined }}>
+      {tem && !falhou && <img src={urlFoto(mediaId, lado)} alt="" loading="lazy" decoding="async" style={{ objectFit: ajuste }} onError={() => setFalhou(true)} />}
+      {(!tem || falhou) && (
+        <div className="at-foto__miolo" style={{ color: tem ? contraste(cor) : 'var(--bl-texto-3)' }} role="img" aria-label={tem ? 'Foto indisponível' : 'Produto sem foto'}>
+          <svg width={compacta ? 18 : 26} height={compacta ? 18 : 26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+            <rect x="3" y="5" width="18" height="14" rx="2.5" /><circle cx="9" cy="10" r="1.8" /><path d="M21 16l-5-5-8 8" />{!tem && <path d="M4 4l16 16" />}
+          </svg>
+          {!compacta && <span>{tem ? 'foto indisponível' : 'sem foto'}</span>}
+        </div>
+      )}
       {idCapsula !== undefined && <CapsulaId id={idCapsula} />}
-      <div className="at-foto__miolo" style={{ color: temFoto ? contraste(cor) : 'var(--bl-texto-3)' }}>
-        <svg width={compacta ? 18 : 26} height={compacta ? 18 : 26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-          <rect x="3" y="5" width="18" height="14" rx="2.5" /><circle cx="9" cy="10" r="1.8" /><path d="M21 16l-5-5-8 8" />
-          {!temFoto && <path d="M4 4l16 16" />}
-        </svg>
-        {!compacta && <span>{rotulo ?? (temFoto ? 'foto no app' : 'sem foto')}</span>}
-      </div>
     </div>
   );
 }
@@ -37,29 +37,84 @@ export function CapsulaId({ id, flutuante = true }: { id: number; flutuante?: bo
   return <span className={`at-capsula ${flutuante ? 'at-capsula--sobre' : ''}`}>ID: {id}</span>;
 }
 
-export function ChipKit({ nome, prefixo = 'Kit' }: { nome: string | null; prefixo?: string }) {
-  if (!nome) return null;
-  const cor = COR_KIT[nome] ?? 'var(--bl-neutro)';
+export function ChipKit({ nome, titulo, pequeno }: { nome: string; titulo?: string; pequeno?: boolean }) {
+  const cor = corKit(nome);
   return (
-    <span className="at-chip" style={{ color: cor, borderColor: `color-mix(in srgb, ${cor} 45%, transparent)`, background: `color-mix(in srgb, ${cor} 13%, transparent)` }}
-      title={`${prefixo} do legado: ${nome}`}>
-      <span className="at-chip__ponto" style={{ background: cor }} />{prefixo ? `${prefixo} ${nome}` : nome}
+    <span className={`at-chip ${pequeno ? 'at-chip--p' : ''}`} title={titulo ?? `Kit ${nome}`}
+      style={{ color: cor, borderColor: `color-mix(in srgb, ${cor} 45%, transparent)`, background: `color-mix(in srgb, ${cor} 13%, transparent)` }}>
+      <span className="at-chip__ponto" style={{ background: cor }} />{nome}
     </span>
   );
 }
 
-export function Etiqueta({ children, tom = 'neutro', titulo }: { children: React.ReactNode; tom?: 'neutro' | 'info' | 'aviso' | 'sucesso' | 'erro' | 'verde'; titulo?: string }) {
+export type Tom = 'neutro' | 'info' | 'aviso' | 'sucesso' | 'erro' | 'verde';
+export function Etiqueta({ children, tom = 'neutro', titulo }: { children: React.ReactNode; tom?: Tom; titulo?: string }) {
   return <span className={`at-etiqueta at-etiqueta--${tom}`} title={titulo}>{children}</span>;
 }
 
-/** Preenchimento: preenchidos / universo (atributos atribuídos no legado ∪ modelo ∪ preenchidos; só atributos ativos). */
-export function BarraPreenchimento({ preenchidos, universo, compacta = false }: { preenchidos: number; universo: number; compacta?: boolean }) {
-  const p = pct(preenchidos, universo);
-  const cor = universo === 0 ? 'var(--bl-neutro)' : p >= 70 ? 'var(--bl-sucesso)' : p >= 25 ? 'var(--bl-aviso)' : 'var(--bl-erro)';
+/** Barra de preenchimento "12 de 27" (A3: essencial por padrão). */
+export function Barra({ feitos, total, rotulo, compacta = false }: { feitos: number; total: number; rotulo?: string; compacta?: boolean }) {
+  const p = total > 0 ? Math.round((feitos / total) * 100) : 0;
+  const cor = total === 0 ? 'var(--bl-neutro)' : p >= 80 ? 'var(--bl-sucesso)' : p >= 35 ? 'var(--bl-aviso)' : 'var(--bl-erro)';
   return (
-    <div className="at-barra" title={universo ? `${preenchidos} de ${universo} atributos preenchidos (${p}%)` : 'Sem atributos atribuídos nem modelo'}>
-      <div className="at-barra__trilho"><div className="at-barra__valor" style={{ width: `${universo ? Math.max(p, preenchidos ? 3 : 0) : 0}%`, background: cor }} /></div>
-      <span className="at-barra__texto">{universo ? `${preenchidos}/${universo}` : 'sem ficha'}{!compacta && universo ? ` · ${p}%` : ''}</span>
+    <div className="at-barra" title={total ? `${rotulo ?? 'Preenchimento'}: ${feitos} de ${total} (${p}%)` : 'Sem atributos nesta medida'}>
+      {rotulo && <span className="at-barra__rot">{rotulo}</span>}
+      <div className="at-barra__trilho" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={feitos} aria-label={rotulo ?? 'Preenchimento'}>
+        <div className="at-barra__valor" style={{ width: `${total ? Math.max(p, feitos ? 3 : 0) : 0}%`, background: cor }} />
+      </div>
+      <span className="at-barra__texto">{total ? `${feitos} de ${total}` : '—'}{!compacta && total ? ` · ${p}%` : ''}</span>
     </div>
+  );
+}
+
+export function Carregando({ rotulo = 'Carregando' }: { rotulo?: string }) {
+  return <div className="at-carregando" role="status" aria-live="polite"><span className="at-giro" aria-hidden />{rotulo}…</div>;
+}
+
+export function Vazio({ titulo, children, acao }: { titulo: string; children?: React.ReactNode; acao?: React.ReactNode }) {
+  return <div className="at-vazio-bloco"><strong>{titulo}</strong>{children && <p>{children}</p>}{acao}</div>;
+}
+
+export function Erro({ mensagem, aoTentar }: { mensagem: string; aoTentar?: () => void }) {
+  return (
+    <div className="at-erro-bloco" role="alert">
+      <strong>Não foi possível carregar.</strong><p>{mensagem}</p>
+      {aoTentar && <button type="button" className="bl-botao" onClick={aoTentar}>Tentar de novo</button>}
+    </div>
+  );
+}
+
+/** Diálogo modal acessível (foco inicial, Esc fecha, fundo opaco). */
+export function Dialogo({ titulo, aberto, aoFechar, children, rodape, largura = 520 }: { titulo: string; aberto: boolean; aoFechar: () => void; children: React.ReactNode; rodape?: React.ReactNode; largura?: number }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (!aberto) return;
+    const ant = document.activeElement as HTMLElement | null;
+    const foco = ref.current?.querySelector<HTMLElement>('input, select, textarea, button:not([data-fechar])');
+    (foco ?? ref.current)?.focus();
+    const tecla = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); aoFechar(); } };
+    window.addEventListener('keydown', tecla, true);
+    return () => { window.removeEventListener('keydown', tecla, true); ant?.focus?.(); };
+  }, [aberto, aoFechar]);
+  if (!aberto) return null;
+  return (
+    <div className="at-modal-fundo" onMouseDown={(e) => { if (e.target === e.currentTarget) aoFechar(); }}>
+      <div className="at-modal" role="dialog" aria-modal="true" aria-label={titulo} ref={ref} tabIndex={-1} style={{ width: `min(${largura}px, calc(100vw - 32px))` }}>
+        <div className="at-modal__cabeca"><h2>{titulo}</h2><button type="button" className="bl-botao bl-botao--icone" data-fechar aria-label="Fechar" onClick={aoFechar}>✕</button></div>
+        <div className="at-modal__corpo">{children}</div>
+        {rodape && <div className="at-modal__rodape">{rodape}</div>}
+      </div>
+    </div>
+  );
+}
+
+/** Botão com estado de trabalho. */
+export function Botao({ children, aoClicar, primario, perigo, desligado, trabalhando, titulo, tipo = 'button' }: {
+  children: React.ReactNode; aoClicar?: () => void; primario?: boolean; perigo?: boolean; desligado?: boolean; trabalhando?: boolean; titulo?: string; tipo?: 'button' | 'submit';
+}) {
+  return (
+    <button type={tipo} className={`bl-botao ${primario ? 'bl-botao--primario' : ''} ${perigo ? 'at-botao--perigo' : ''}`} onClick={aoClicar} disabled={desligado || trabalhando} title={titulo} aria-busy={trabalhando}>
+      {trabalhando && <span className="at-giro at-giro--p" aria-hidden />}{children}
+    </button>
   );
 }

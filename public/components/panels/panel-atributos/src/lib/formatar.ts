@@ -1,5 +1,5 @@
 // panel-atributos/src/lib/formatar.ts — formatação pt-BR dos valores (mesma regra do app: decimal exato, sem float).
-import type { ValorPreenchido } from './tipos';
+import type { Valor } from './tipos';
 import { FAMILIAS_PRECIFICA } from './rotulos';
 
 /** "1000.000000" → "1.000"; "2.500000" → "2,5"; casas definidas fixam o número de casas (sem arredondar por float). */
@@ -12,15 +12,30 @@ export function decimal(raw: string, casas: number | null = null): string {
   return `${neg ? '-' : ''}${int}${frac ? ',' + frac : ''}`;
 }
 
-export function valor(v: ValorPreenchido, unidade: string | null): string {
+export function valor(v: Valor, unidade: string | null): string {
   if (v.estado === 'nao_se_aplica') return 'Não se aplica';
   if (v.estado === 'desconhecido') return 'Desconhecido';
   if (v.opcoes.length) return v.opcoes.join(', ');
-  if (v.numero !== null) return decimal(v.numero, v.casas) + (unidade ? ` ${unidade}` : '');
+  if (v.numero !== null) return decimal(v.numero) + (unidade ? ` ${unidade}` : '');
   if (v.booleano !== null) return v.booleano ? 'Sim' : 'Não';
   if (v.data) return dataCurta(v.data);
   return v.texto ?? '—';
 }
+
+/** Texto do usuário (vírgula decimal) → texto canônico para a API ("1.234,5" → "1234.5"; "2,5" → "2.5"). */
+export function numeroParaApi(t: string): string {
+  const s = t.trim().replace(/\s/g, '');
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) return s.replace(/\./g, '').replace(',', '.');
+  return s.replace(',', '.');
+}
+
+export function dataHora(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : dataCurta(iso);
+}
+
+export const pctDe = (c: { feitos: number; total: number }) => (c.total > 0 ? Math.round((c.feitos / c.total) * 100) : null);
 
 export function precifica(chave: string, bruto: unknown): string {
   const [familia, campo] = chave.split('.');

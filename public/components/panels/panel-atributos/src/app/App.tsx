@@ -1,68 +1,63 @@
-// panel-atributos/src/app/App.tsx — casca do painel: lista ⇄ ficha, carregamento e erros. Só leitura (E1).
+// panel-atributos/src/app/App.tsx — casca do módulo: navegação (Visão geral · Produtos · Vincular · Preencher · Kits · Atributos · Unidades ·
+// Conferência), ficha do produto por cima da aba atual, avisos. Cada tela carrega os próprios dados (estados carregando/vazio/erro).
 import React from 'react';
-import type { FichaProduto, Vitrine } from '../lib/tipos';
-import { ErroApi, FonteDados, fonteApi } from '../services/fonte';
-import { FILTROS_INICIAIS, FiltrosLista, Lista } from '../screens/Lista';
+import { ABAS, Aba, Contexto, FiltroProdutos, Navegar } from './contexto';
+import { VisaoGeral } from '../screens/VisaoGeral';
+import { Produtos } from '../screens/Produtos';
 import { Ficha } from '../screens/Ficha';
-import { BlocoCarregando, EstadoErro } from '@shared';
+import { Vincular } from '../screens/Vincular';
+import { Preencher } from '../screens/Preencher';
+import { Kits } from '../screens/Kits';
+import { Dicionario } from '../screens/Dicionario';
+import { Unidades } from '../screens/Unidades';
+import { Conferencia } from '../screens/Conferencia';
 
-type Estado<T> = { situacao: 'carregando' } | { situacao: 'ok'; dados: T } | { situacao: 'erro'; erro: string; http?: number };
+export function App() {
+  const [aba, setAba] = React.useState<Aba>('produtos');
+  const [produto, setProduto] = React.useState<number | null>(null);
+  const [kit, setKit] = React.useState<number | null>(null);
+  const [filtro, setFiltro] = React.useState<FiltroProdutos>({});
+  const [selecao, setSelecao] = React.useState<number[]>([]);
+  const [preencher, setPreencher] = React.useState<{ kit?: number; subcategoria?: string }>({});
+  const [avisos, setAvisos] = React.useState<{ id: number; texto: string; tom: string }[]>([]);
+  const [versao, setVersao] = React.useState(0);
+  const raiz = React.useRef<HTMLDivElement>(null);
 
-export interface PropsApp { fonte?: FonteDados; produtoInicial?: number | null; filtrosIniciais?: Partial<FiltrosLista> }
+  const nav: Navegar = React.useMemo(() => ({
+    aba, produto, kit, filtroInicial: filtro, selecao, setSelecao, preencher, versao,
+    recarregar: () => setVersao((v) => v + 1),
+    ir: (a, o = {}) => {
+      setAba(a); setProduto(o.produto ?? null); if (o.kit !== undefined) setKit(o.kit);
+      if (o.filtro) setFiltro(o.filtro); if (o.selecao) setSelecao(o.selecao); if (o.preencher) setPreencher(o.preencher);
+      raiz.current?.scrollTo({ top: 0 });
+    },
+    abrirProduto: (id) => { setProduto(id); raiz.current?.scrollTo({ top: 0 }); },
+    fecharProduto: () => setProduto(null),
+    aviso: (texto, tom = 'sucesso') => { const id = Date.now() + Math.random(); setAvisos((a) => [...a, { id, texto, tom }]); window.setTimeout(() => setAvisos((a) => a.filter((x) => x.id !== id)), 4500); },
+  }), [aba, produto, kit, filtro, selecao, preencher, versao]);
 
-const CHAVE_PREF = 'dshow.atributos.lista';
-function lerPreferencia(): Partial<FiltrosLista> {
-  try { const p = JSON.parse(localStorage.getItem(CHAVE_PREF) || '{}'); return p && (p.modo === 'grade' || p.modo === 'tabela') ? { modo: p.modo } : {}; } catch { return {}; }
-}
-
-export function App({ fonte = fonteApi, produtoInicial = null, filtrosIniciais = {} }: PropsApp) {
-  const [vitrine, setVitrine] = React.useState<Estado<Vitrine>>({ situacao: 'carregando' });
-  const [aberto, setAberto] = React.useState<number | null>(produtoInicial);
-  const [ficha, setFicha] = React.useState<Estado<FichaProduto> | null>(null);
-  const [filtros, setFiltros] = React.useState<FiltrosLista>({ ...FILTROS_INICIAIS, ...lerPreferencia(), ...filtrosIniciais });
-  const [tentativa, setTentativa] = React.useState(0);
-
-  React.useEffect(() => {
-    const ctrl = new AbortController();
-    setVitrine({ situacao: 'carregando' });
-    fonte.vitrine(ctrl.signal).then((d) => setVitrine({ situacao: 'ok', dados: d }))
-      .catch((e) => { if (!ctrl.signal.aborted) setVitrine({ situacao: 'erro', erro: e instanceof Error ? e.message : String(e), http: e instanceof ErroApi ? e.http : undefined }); });
-    return () => ctrl.abort();
-  }, [fonte, tentativa]);
-
-  React.useEffect(() => {
-    if (aberto === null) { setFicha(null); return; }
-    const ctrl = new AbortController();
-    setFicha({ situacao: 'carregando' });
-    fonte.ficha(aberto, ctrl.signal).then((d) => setFicha({ situacao: 'ok', dados: d }))
-      .catch((e) => { if (!ctrl.signal.aborted) setFicha({ situacao: 'erro', erro: e instanceof Error ? e.message : String(e) }); });
-    return () => ctrl.abort();
-  }, [fonte, aberto]);
-
-  const mudar = (p: Partial<FiltrosLista>) => setFiltros((f) => {
-    const n = { ...f, ...p };
-    if (p.modo) { try { localStorage.setItem(CHAVE_PREF, JSON.stringify({ modo: p.modo })); } catch { /* sem armazenamento: só não lembra */ } }
-    return n;
-  });
+  const tela = produto !== null ? <Ficha id={produto} />
+    : aba === 'visao' ? <VisaoGeral /> : aba === 'produtos' ? <Produtos /> : aba === 'vincular' ? <Vincular /> : aba === 'preencher' ? <Preencher />
+    : aba === 'kits' ? <Kits /> : aba === 'atributos' ? <Dicionario /> : aba === 'unidades' ? <Unidades /> : <Conferencia />;
 
   return (
-    <div data-bl-root className="at-raiz">
-      <header className="at-cabecalho">
-        <div>
-          <h1>Produtos &amp; Atributos</h1>
-          <p>Especificação técnica dos produtos (banco de atributos DSHOW) ao lado da ficha do Precifica · somente leitura</p>
-        </div>
-        <span className="at-piloto" title="Piloto atrás da flag panel_atributos_enabled">piloto</span>
-      </header>
-      <main className="at-conteudo">
-        {aberto !== null ? (
-          ficha === null || ficha.situacao === 'carregando' ? <div className="bl-cartao" style={{ padding: 16 }}><BlocoCarregando linhas={8} rotulo="Carregando a ficha" /></div>
-            : ficha.situacao === 'erro' ? <div className="bl-cartao"><EstadoErro erro={ficha.erro} aoTentarNovamente={() => setAberto((x) => x)} /><div style={{ padding: '0 16px 16px' }}><button type="button" className="bl-botao" onClick={() => setAberto(null)}>Voltar à lista</button></div></div>
-            : <Ficha ficha={ficha.dados} aoVoltar={() => setAberto(null)} />
-        ) : vitrine.situacao === 'carregando' ? <div className="bl-cartao" style={{ padding: 16 }}><BlocoCarregando linhas={10} rotulo="Carregando produtos" /></div>
-          : vitrine.situacao === 'erro' ? <div className="bl-cartao"><EstadoErro erro={vitrine.erro} aoTentarNovamente={() => setTentativa((t) => t + 1)} /></div>
-          : <Lista dados={vitrine.dados} filtros={filtros} aoMudar={mudar} aoAbrir={setAberto} />}
-      </main>
-    </div>
+    <Contexto.Provider value={nav}>
+      <div data-bl-root className="at-raiz" ref={raiz}>
+        <header className="at-cabecalho">
+          <div className="at-cabecalho__titulo">
+            <h1>Produtos &amp; Atributos</h1>
+            <p>Especificação técnica (banco de atributos DSHOW) · preço e valores comerciais vêm do Precifica</p>
+          </div>
+          <nav className="at-nav" aria-label="Seções do módulo">
+            {ABAS.map((a) => (
+              <button key={a.id} type="button" className={`at-nav__item ${aba === a.id && produto === null ? 'ativo' : ''}`} aria-current={aba === a.id && produto === null ? 'page' : undefined}
+                onClick={() => nav.ir(a.id)}>{a.rotulo}</button>
+            ))}
+          </nav>
+        </header>
+        <main className="at-conteudo">{tela}</main>
+        <div className="at-avisos" aria-live="polite">{avisos.map((a) => <div key={a.id} className={`at-aviso at-aviso--${a.tom}`}>{a.texto}</div>)}</div>
+      </div>
+    </Contexto.Provider>
   );
 }
