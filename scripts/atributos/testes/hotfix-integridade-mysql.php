@@ -210,6 +210,19 @@ $pvC = $kits->previaMassa($okCtl);
 $rC = $kits->aplicarMassa($okCtl + ['chave' => 'controle-opostos-01', 'versao_previa' => $pvC['versao_previa']]);
 $ok('vincular: controle — aplicar K + excluir atributo de K grava (1 kit, 1 exceção)', ($rC['gravado']['kits_aplicados'] ?? -1) === 1 && ($rC['gravado']['exclusoes'] ?? -1) === 1
     && (int) $um('SELECT COUNT(*) FROM eq_grupo_produto WHERE grupo_id = ? AND product_id = 102 AND excluido_em IS NULL', [$kT]) === 1, json_encode($rC));
+// DSHOW-084 (i): segunda tentativa contraditória com OUTRA chave nova (K2) depois da K1 → 422, nada gravado
+// (fotografia nova: depois do recibo antigo e do controle o banco mudou de propósito; $v0 vale só até ali)
+$v1 = $fotoV();
+$eAp2 = $erro(fn() => $kits->aplicarMassa($amb + ['chave' => 'opostos-kit-0002', 'versao_previa' => $hexFalso]));
+$ok('084: K2 (chave nova) com o kit nos dois lados depois de K1 → 422', $eAp2?->http === 422 && $eAp2->campos === ['kits_aplicar', 'kits_remover'], $eAp2 ? $eAp2->getMessage() : 'sem erro');
+$ok('084: K2 não gravou nada (vínculos, ajustes, pedidos em massa, auditoria, versões)', $fotoV() === $v1, json_encode([$fotoV(), $v1]));
+$ok('084: nenhuma linha em eq_pedido_massa para opostos-kit-0001 nem opostos-kit-0002', (int) $um("SELECT COUNT(*) FROM eq_pedido_massa WHERE chave IN ('opostos-kit-0001', 'opostos-kit-0002')") === 0);
+// DSHOW-084 (ii): replay do recibo LEGÍTIMO do controle → "repetido", mesma resposta, nenhuma gravação nova
+$v2 = $fotoV();
+$rC2 = $kits->aplicarMassa($okCtl + ['chave' => 'controle-opostos-01', 'versao_previa' => $pvC['versao_previa']]);
+$ordena = function (array $a) use (&$ordena): array { ksort($a); foreach ($a as $k => $v) if (is_array($v)) $a[$k] = $ordena($v); return $a; };   // o recibo vem de coluna JSON (MySQL reordena as chaves)
+$ok('084: replay do controle → repetido com a mesma resposta (gravado/resumo/assinatura)', !empty($rC2['repetido']) && $ordena(array_diff_key($rC2, ['repetido' => 1])) === $ordena($rC), json_encode([$rC2, $rC]));
+$ok('084: replay do controle não grava (auditoria, vínculos, ajustes, pedidos em massa, versões iguais)', $fotoV() === $v2, json_encode([$fotoV(), $v2]));
 
 // @@FIM@@
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " hotfix-integridade-mysql (071 unidades · 064 itens · 070 opção · 065 escopo · vincular opostos): $n casos, $falhas falha(s)\n";
