@@ -142,6 +142,40 @@ $ok('070: rotulo_atual X com o gravado Y → 409', $e70?->http === 409 && $e70->
 $ok('070: banco continua com Y', (string) $um('SELECT rotulo FROM eq_opcao WHERE id = ?', [$opId]) === 'Grafite');
 $ok('070: nenhuma auditoria "renomear" nova', $audit('opcao', (string) $opId, 'renomear') === $audRen && $audRen === 1);
 
+// =========================================================================================================================================
+// DSHOW-065 · Escopo + "aplica a todos" numa ÚNICA transação: falha na 2ª parte (trava REAL de outra conexão → 1205) não deixa nada
+// =========================================================================================================================================
+$k65 = (int) $kits->salvarKit(['nome' => 'Kit 065'])['kit']['id'];
+$kits->definirEscopos(['id' => $k65, 'versao' => (int) $repo->grupo($k65)['versao'], 'escopos' => [['categoria' => 'LED_PANEL', 'subcategoria' => 'CABLE']]]);
+$g65 = fn() => $linha('SELECT aplica_a_todos, versao FROM eq_grupo WHERE id = ?', [$k65]);
+$esc65 = fn() => (string) $um("SELECT GROUP_CONCAT(CONCAT(categoria, '|', subcategoria) ORDER BY categoria, subcategoria) FROM eq_grupo_escopo WHERE grupo_id = ? AND excluido_em IS NULL", [$k65]);
+$ini65 = [$g65(), $esc65(), $auditTotal()];
+$v65 = (int) $ini65[0]['versao'];
+$pedido65 = ['id' => $k65, 'versao' => $v65, 'escopos' => [['categoria' => 'LED_PANEL', 'subcategoria' => 'CABLE'], ['categoria' => 'LED_PANEL', 'subcategoria' => 'POWER_SUPPLY']], 'aplica_a_todos' => 1];
+$pdo2 = $conectar();
+$pdo2->beginTransaction();
+$st2 = $pdo2->prepare('SELECT grupo_id, categoria, subcategoria FROM eq_grupo_escopo WHERE grupo_id = ? FOR UPDATE'); $st2->execute([$k65]); $st2->fetchAll();   // conexão 2 segura o escopo
+$pdo->exec('SET SESSION innodb_lock_wait_timeout = 1');
+$t0 = microtime(true);
+$e65 = $erro(fn() => $kits->definirEscopos($pedido65));
+$pdo->exec('SET SESSION innodb_lock_wait_timeout = 50');
+$pdo2->rollBack(); $pdo2 = null;
+$ok('065: flag + lista com o escopo travado por outra conexão → 1205 → 409', $e65?->http === 409 && microtime(true) - $t0 >= 0.9, $e65 ? $e65->getMessage() : 'sem erro');
+$ok('065: nada gravado — "aplica a todos", versão e escopo IGUAIS ao inicial', $g65() == $ini65[0] && $esc65() === $ini65[1], json_encode([$g65(), $esc65()]));
+$ok('065: contagem de eq_auditoria IGUAL à inicial', $auditTotal() === $ini65[2]);
+// controle: os dois juntos, sem trava → versão +1 (UMA vez), UMA auditoria com antes/depois {aplica_a_todos, escopos}
+$kits->definirEscopos($pedido65);
+$ok('065: controle — flag e escopo gravados juntos, versão +1', (int) $g65()['aplica_a_todos'] === 1 && (int) $g65()['versao'] === $v65 + 1 && $esc65() === 'LED_PANEL|CABLE,LED_PANEL|POWER_SUPPLY', json_encode([$g65(), $esc65()]));
+$a65 = $linha("SELECT antes, depois FROM eq_auditoria WHERE entidade = 'kit' AND entidade_id = ? AND acao = 'escopos' ORDER BY id DESC LIMIT 1", [(string) $k65]);
+$ok('065: controle — UMA auditoria "escopos" com {aplica_a_todos, escopos}', $auditTotal() === $ini65[2] + 1
+    && json_decode((string) $a65['antes'], true)['aplica_a_todos'] === 0 && json_decode((string) $a65['depois'], true)['aplica_a_todos'] === 1 && count(json_decode((string) $a65['depois'], true)['escopos']) === 2);
+$ok('065: versão velha → 409 antes de tocar o escopo', fn() => $erro(fn() => $kits->definirEscopos(['versao' => $v65] + $pedido65))?->http === 409 && $esc65() === 'LED_PANEL|CABLE,LED_PANEL|POWER_SUPPLY');
+// forma antiga (sem a flag): continua aceita e não mexe no "aplica a todos"
+$kits->definirEscopos(['id' => $k65, 'versao' => (int) $g65()['versao'], 'escopos' => [['categoria' => 'LED_PANEL', 'subcategoria' => 'CABLE']]]);
+$ok('065: forma antiga sem a flag → grava o escopo, "aplica a todos" intacto, versão +1', (int) $g65()['aplica_a_todos'] === 1 && (int) $g65()['versao'] === $v65 + 2 && $esc65() === 'LED_PANEL|CABLE');
+$dup = $kits->duplicarKit(['id' => $k65, 'nome' => 'Kit 065 (cópia)', 'com_escopos' => 1])['kit'];
+$ok('065: duplicarKit com escopos continua funcionando', count($dup['escopos']) === 1);
+
 // @@FIM@@
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " hotfix-integridade-mysql (071 unidades · 064 itens · 070 opção · 065 escopo · vincular opostos): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);

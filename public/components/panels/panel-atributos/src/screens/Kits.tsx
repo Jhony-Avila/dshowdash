@@ -289,8 +289,6 @@ function EditorKit({ id, aoVoltar, aoAbrir }: { id: number; aoVoltar: () => void
   const pode = det.pode_editar;
   const sujoDados = nome.trim() !== k.nome || descricao.trim() !== (k.descricao ?? '').trim();
   const sujoItens = assinaturaItens(itens) !== baseItens.current.assinatura;
-  const escoposSalvos = new Set(k.escopos.map(chaveEscopo));
-  const mudouEscopos = escopos.size !== escoposSalvos.size || [...escopos].some((x) => !escoposSalvos.has(x));
   const sujoEscopo = assinaturaEscopo(todos, escopos) !== baseEscopo.current.assinatura;
   const algoSujo = sujoDados || sujoItens || sujoEscopo;
 
@@ -346,22 +344,16 @@ function EditorKit({ id, aoVoltar, aoAbrir }: { id: number; aoVoltar: () => void
     gravandoRef.current = true; setGravando('escopo'); limparErro('escopo');
     const antes = det.alcance.filter((p) => p.ativo).length;
     try {
-      let versao = k.versao;
-      if (todos !== !!k.aplica_a_todos) {
-        const r = await enviar<{ kit: { versao: number } }>('kit', { id: k.id, versao, aplica_a_todos: todos ? 1 : 0 });
-        versao = Number(r.kit.versao);
-      }
-      if (mudouEscopos) {
-        const lista = [...escopos].map((c) => { const [categoria, subcategoria = ''] = c.split('|'); return { categoria, subcategoria }; });
-        await enviar('kit_escopos', { id: k.id, versao, escopos: lista });
-      }
+      // DSHOW-065: UM POST (escopo + "aplica a todos" numa transação no servidor) com a versão da BASE do rascunho (DSHOW-064)
+      if (baseMudou.escopo) { nav.aviso('O escopo do kit mudou desde que você começou. Recarregue o escopo.', 'erro'); return; }
+      const lista = [...escopos].map((c) => { const [categoria, subcategoria = ''] = c.split('|'); return { categoria, subcategoria }; });
+      await enviar('kit_escopos', { id: k.id, versao: baseEscopo.current.versao, escopos: lista, aplica_a_todos: todos ? 1 : 0 });
       const d = await carregar(['escopo']);
       setAlcanceAntes(antes);
       const depois = d ? d.alcance.filter((p) => p.ativo).length : null;
       nav.aviso(depois !== null ? `Escopo salvo: o kit vale para ${plural(depois, 'produto ativo', 'produtos ativos')}.` : 'Escopo salvo.');
     } catch (e) {
       falhar('escopo', e);
-      await carregar([]); // "aplica a todos" pode ter gravado antes do escopo falhar: atualiza a versão sem perder o rascunho
     } finally { gravandoRef.current = false; setGravando(null); }
   };
 

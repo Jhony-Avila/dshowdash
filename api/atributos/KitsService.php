@@ -217,7 +217,10 @@ final class KitsService
         });
     }
 
-    /** Escopo por categoria/subcategoria ('' = toda a categoria). */
+    /**
+     * Escopo por categoria/subcategoria ('' = toda a categoria). DSHOW-065: aceita `aplica_a_todos` opcional e grava os DOIS numa única
+     * transação — primeiro a versão do kit (0 linhas → 409; sobe UMA vez), depois o escopo, depois UMA auditoria. Sem a flag = forma antiga.
+     */
     public function definirEscopos(array $b): array
     {
         $this->exigir();
@@ -228,10 +231,12 @@ final class KitsService
             if (!preg_match('/^[A-Z][A-Z0-9_]{1,39}$/', $c) || ($s !== '' && !preg_match('/^[A-Z][A-Z0-9_]{1,59}$/', $s))) throw new AtributosErro('VALIDATION_ERROR', 422, 'Escopo inválido.', ['escopos']);
             $esc["$c|$s"] = ['categoria' => $c, 'subcategoria' => $s];
         }
-        return $this->repo->transacao(function () use ($antes, $esc, $b) {
+        $todos = array_key_exists('aplica_a_todos', $b) ? (!empty($b['aplica_a_todos']) ? 1 : 0) : null;
+        return $this->repo->transacao(function () use ($antes, $esc, $b, $todos) {
+            if (!$this->repo->atualizarGrupo((int) $antes['id'], (int) $antes['versao'], $todos === null ? [] : ['aplica_a_todos' => $todos])) throw new AtributosErro('CONFLICT', 409, 'Este kit foi alterado por outra pessoa.');
             $this->repo->definirEscopo((int) $antes['id'], array_values($esc), $this->usuario);
-            if (!$this->repo->atualizarGrupo((int) $antes['id'], (int) $antes['versao'], [])) throw new AtributosErro('CONFLICT', 409, 'Este kit foi alterado por outra pessoa.');
-            $this->repo->auditar($this->usuario, 'escopos', 'kit', (string) $antes['id'], ['escopos' => $antes['escopos']], ['escopos' => array_values($esc)], $b['motivo'] ?? null);
+            $todosAntes = (int) ($antes['aplica_a_todos'] ?? 0);
+            $this->repo->auditar($this->usuario, 'escopos', 'kit', (string) $antes['id'], ['aplica_a_todos' => $todosAntes, 'escopos' => $antes['escopos']], ['aplica_a_todos' => $todos ?? $todosAntes, 'escopos' => array_values($esc)], $b['motivo'] ?? null);
             return ['kit' => $this->kit((int) $antes['id'])];
         });
     }
