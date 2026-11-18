@@ -110,6 +110,25 @@ $mem = new RepoMemoria(); $memSvc = new AtributosService($mem, 80, 'admin@exempl
 $mid = (int) $memSvc->criarUnidade(['simbolo' => 'kg', 'nome' => 'quilo', 'grandeza' => 'massa'])['id'];
 $ok('071: RepoMemoria (sem UnidadesComTrava) com "antes" segue o caminho antigo', fn() => empty($memSvc->salvarUnidade(['id' => $mid, 'nome' => 'quilograma', 'grandeza' => 'massa', 'antes' => ['nome' => 'velho', 'grandeza' => 'x', 'fator_base' => null]])['sem_mudanca']) && $mem->unidade($mid)['nome'] === 'quilograma');
 
+// =========================================================================================================================================
+// DSHOW-064 · Itens do kit (regressão do servidor): kit_itens com a versão R1 depois de B gravar R2 → 409, Y vivo, sem auditoria de A
+// =========================================================================================================================================
+$kitsB = new KitsService($repo, 80, 'outra@exemplo.invalid', $cat);
+$atr = [];
+foreach (['Comprimento', 'Cor', 'Vias', 'Malha'] as $rot) $atr[$rot] = (int) $adm->salvarAtributo(['rotulo' => $rot, 'tipo' => 'texto'])['atributo']['id'];
+$it = fn(array $ids) => array_map(fn($i, $aid) => ['atributo_id' => $aid, 'posicao' => $i + 1, 'obrigatorio' => 0, 'visivel' => 1, 'destaque' => 0, 'importancia' => null, 'unidade_id' => null], array_keys($ids), $ids);
+$k64 = (int) $kits->salvarKit(['nome' => 'Kit 064'])['kit']['id'];
+$kits->definirItens(['id' => $k64, 'versao' => (int) $repo->grupo($k64)['versao'], 'itens' => $it([$atr['Comprimento']])]);
+$r1 = (int) $repo->grupo($k64)['versao'];
+$kitsB->definirItens(['id' => $k64, 'versao' => $r1, 'itens' => $it([$atr['Comprimento'], $atr['Cor']])]);   // B acrescenta Y (Cor) → R2
+$r2 = (int) $repo->grupo($k64)['versao'];
+$audItens = $audit('kit', (string) $k64, 'itens');
+$e64 = $erro(fn() => $kits->definirItens(['id' => $k64, 'versao' => $r1, 'itens' => $it([$atr['Comprimento'], $atr['Vias']])]));
+$ok('064: A com a versão R1 depois de B gravar R2 → 409', $e64?->http === 409);
+$ok('064: Y (de B) continua vivo e o item de A não entrou', (int) $um('SELECT COUNT(*) FROM eq_grupo_atributo WHERE grupo_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$k64, $atr['Cor']]) === 1
+    && (int) $um('SELECT COUNT(*) FROM eq_grupo_atributo WHERE grupo_id = ? AND atributo_id = ?', [$k64, $atr['Vias']]) === 0);
+$ok('064: nenhuma auditoria "itens" de A; versão do kit igual a R2', $audit('kit', (string) $k64, 'itens') === $audItens && (int) $repo->grupo($k64)['versao'] === $r2 && $r2 === $r1 + 1);
+
 // @@FIM@@
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " hotfix-integridade-mysql (071 unidades · 064 itens · 070 opção · 065 escopo · vincular opostos): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);

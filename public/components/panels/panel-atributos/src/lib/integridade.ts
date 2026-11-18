@@ -16,3 +16,35 @@ export interface FotografiaUnidade { nome: string; grandeza: string | null; fato
 /** O que a tela viu ao abrir o editor (enviado como `antes`; o servidor compara com a linha travada). */
 export const fotografiaUnidade = (u: { nome: string; grandeza: string | null; fator_base: string | null }): FotografiaUnidade =>
   ({ nome: u.nome, grandeza: u.grandeza ?? null, fator_base: u.fator_base ?? null });
+
+// ── DSHOW-064 · Kits: rascunho de seção × base em que foi começado ───────────────────────────────────────────────────────────
+/** Base de um rascunho: versão do kit e assinatura do que estava PERSISTIDO naquela seção quando o rascunho começou. */
+export interface BaseSecao { versao: number; assinatura: string }
+export interface AvancoBase { base: BaseSecao; reiniciar: boolean; mudou: boolean }
+/**
+ * Depois de ler o kit de novo: seção incluída na recarga → reinicia rascunho e base; seção não incluída → a base só avança de versão se
+ * o persistido daquela seção continua igual (mudança só de nome/outra seção não é conflito); senão marca "mudou" e preserva o rascunho.
+ */
+export function avancarBase(base: BaseSecao, fresco: BaseSecao, incluida: boolean): AvancoBase {
+  if (incluida) return { base: fresco, reiniciar: true, mudou: false };
+  if (fresco.assinatura === base.assinatura) return { base: { versao: fresco.versao, assinatura: base.assinatura }, reiniciar: false, mudou: false };
+  return { base, reiniciar: false, mudou: true };
+}
+
+export type DecisaoEnvio = { acao: 'enviar'; versao: number } | { acao: 'conflito'; motivo: 'pendente' | 'base_mudou' | 'persistido_mudou' };
+/** Antes de gravar a seção, com o kit lido AGORA: persistido ≠ base → conflito local (não envia); senão envia com a versão fresca. */
+export function decidirEnvio(base: BaseSecao, fresco: BaseSecao, estado: { pendente?: boolean; baseMudou?: boolean } = {}): DecisaoEnvio {
+  if (estado.pendente) return { acao: 'conflito', motivo: 'pendente' };
+  if (estado.baseMudou) return { acao: 'conflito', motivo: 'base_mudou' };
+  if (fresco.assinatura !== base.assinatura) return { acao: 'conflito', motivo: 'persistido_mudou' };
+  return { acao: 'enviar', versao: fresco.versao };
+}
+
+/** Assinatura do escopo do kit ("aplica a todos" + chaves categoria|subcategoria, sem ordem). */
+export const assinaturaEscopo = (todos: boolean, chaves: Iterable<string>): string => JSON.stringify([todos ? 1 : 0, [...chaves].sort()]);
+
+/** Recarga de itens preserva os itens NOVOS do rascunho que ainda não estão no persistido. */
+export function manterNovos<T extends { atributo_id: number; novo?: boolean }>(frescos: T[], rascunho: T[]): T[] {
+  const ids = new Set(frescos.map((i) => i.atributo_id));
+  return [...frescos, ...rascunho.filter((i) => i.novo && !ids.has(i.atributo_id))];
+}
