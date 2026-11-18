@@ -146,7 +146,7 @@ abstract class BlingProviderBase
         $ticketAnt = count($noAnt) > 0 ? $fatAnt / count($noAnt) : 0.0;
         $margem = $fatLiquido > 0 ? (($fatLiquido - $custo) / $fatLiquido) * 100 : 0.0;
 
-        return [
+        return $this->aplicarDisponibilidadeReceber([
             $this->kpi('faturamento_bruto', 'Faturamento bruto', $fatBruto, 'moeda',
                 $this->variacao($fatBruto, $fatAnt), $this->serieDiaria($noPer, 'data', 'total', $f), 'pedidos-venda'),
             $this->kpi('faturamento_liquido', 'Faturamento líquido', $fatLiquido, 'moeda',
@@ -179,7 +179,38 @@ abstract class BlingProviderBase
                 'ok', 'Estimativa: receita menos custo de produto. Não inclui composição contábil completa.'),
             $this->kpi('integracoes_falha', 'Integrações com falha', $integracoesFalha, 'inteiro', null, null, 'sincronizacao',
                 $integracoesFalha > 0 ? 'critico' : 'ok'),
-        ];
+        ]);
+    }
+
+    /**
+     * DSHOW-012 (origem: Codex DSHOW-011; 18/11/2026): disponibilidade da FONTE de um recurso, propagada até a tela.
+     *   ['estado' => 'ok']                                         → número é real (zero também é real)
+     *   ['estado' => 'sem_dados', 'motivo' => …]                   → recurso ativo mas nunca sincronizado: não há número
+     *   ['estado' => 'indisponivel', 'motivo' => …, 'fonte' => …]  → recurso desativado para a conta (ex.: recebíveis no Asaas)
+     * Padrão: 'ok' (o mock já é sinalizado pelo meta.simulado + tarja). O provedor real sobrescreve.
+     */
+    public function disponibilidade(string $recurso): array
+    {
+        return ['estado' => 'ok'];
+    }
+
+    /** Aplica a disponibilidade de RECEBER aos KPIs que dependem dela (contas a pagar não muda). */
+    protected function aplicarDisponibilidadeReceber(array $kpis): array
+    {
+        $d = $this->disponibilidade('receber');
+        if (($d['estado'] ?? 'ok') === 'ok') return $kpis;
+        foreach ($kpis as &$k) {
+            if (in_array($k['id'], ['contas_receber', 'contas_vencidas'], true)) {
+                $k['valor'] = null; $k['variacao'] = null; $k['semantica'] = 'atencao'; $k['disponibilidade'] = $d;
+                $k['tooltip'] = 'Indisponível: ' . ($d['motivo'] ?? 'fonte sem dados') . (isset($d['fonte']) ? ' (fonte: ' . $d['fonte'] . ')' : '');
+            } elseif ($k['id'] === 'saldo_projetado') {
+                $k['valor'] = null; $k['variacao'] = null; $k['semantica'] = 'atencao';
+                $k['disponibilidade'] = ['estado' => 'incompleto', 'motivo' => 'entradas indisponíveis; só as saídas são conhecidas', 'depende' => $d];
+                $k['tooltip'] = 'Incompleto: as entradas (contas a receber) não estão disponíveis nesta fonte.';
+            }
+        }
+        unset($k);
+        return $kpis;
     }
 
     /** Monta um card de KPI no formato que o front-end espera (§14.1). */

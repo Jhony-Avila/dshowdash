@@ -1,0 +1,66 @@
+/* panel-atributos/src/styles/dicionario.css — telas "Atributos" (dicionário) e "Unidades" (missão 18/11, §11.6/§11.7).
+   Tudo escopado em [data-bl-root] .at-dic-…; cores só por tokens var(--bl-…). */
+
+/* ── Barra de filtros ─────────────────────────────────────────────────── */
+[data-bl-root] .at-dic-filtros { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
+[data-bl-root] .at-dic-filtros .at-busca { flex: 1 1 240px; min-width: 200px; }
+[data-bl-root] .at-dic-filtro { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--bl-texto-3); font-weight: 600; }
+[data-bl-root] .at-dic-filtro .at-select { min-width: 130px; }
+[data-bl-root] .at-dic-contagem { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; font-size: 12px; color: var(--bl-texto-3); font-variant-numeric: tabular-nums; }
+
+/* ── Tabelas ──────────────────────────────────────────────────────────── */
+[data-bl-root] .at-dic-moldura { background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio); }
+[data-bl-root] .at-dic-tabela td { overflow-wrap: anywhere; }
+[data-bl-root] .at-dic-tabela .at-dic-rotulo { font-weight: 600; min-width: 200px; }
+[data-bl-root] .at-dic-tabela .at-dic-rotulo small { display: block; font-weight: 400; color: var(--bl-texto-3); font-size: 11px; margin-top: 1px; }
+[data-bl-root] .at-dic-codigo { font-family: var(--bl-fonte-mono); font-size: 11px; color: var(--bl-texto-2); overflow-wrap: anywhere; }
+[data-bl-root] .at-dic-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+[data-bl-root] .at-dic-tabela th.at-dic-num { text-align: right; }
+[data-bl-root] .at-dic-zero { color: var(--bl-texto-3); }
+[data-bl-root] .at-dic-tabela--estatica tbody tr { cursor: default; }
+[data-bl-root] .at-dic-tabela--estatica tbody tr:hover { background: transparent; }
+[data-bl-root] .at-dic-tabela tr.at-dic-grupo th { position: static; height: auto; padding: 12px 10px 6px; background: var(--bl-superficie); color: var(--bl-texto); font-size: 12.5px; font-weight: 650; white-space: normal; border-bottom: 1px solid var(--bl-borda); }
+[data-bl-root] .at-dic-tabela tr.at-dic-grupo th span { color: var(--bl-texto-3); font-weight: 500; margin-left: 6px; }
+[data-bl-root] .at-dic-tabela .at-dic-simbolo { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+[data-bl-root] .at-dic-auxiliar { display: block; font-size: 11px; color: var(--bl-texto-3); }
+[data-bl-root] .at-dic-acoes-linha { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+[data-bl-root] .at-dic-mais { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 12px; border-top: 1px solid var(--bl-borda); }
+
+/* ── Editor (diálogo largo) ───────────────────────────────────────────── */
+[data-bl-root] .at-dic-editor { display: flex; flex-direction: column; gap: 16px; }
+[data-bl-root] .at-dic-secao { display: flex; flex-direction: column; gap: 10px; }
+[data-bl-root] .at-dic-secao h3 { margin: 0; font-size: 12px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--bl-texto-3); }
+[data-bl-root] .at-dic-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+[data-bl-root] .at-dic-form--largo { grid-column: 1 / -1; }
+[data-bl-root] .at-dic-form .at-campo { width: 100%; }
+[data-bl-root] .at-dic-dica { font-size: 11.5px; font-weight: 400; color: var(--bl-texto-3); line-height: 1.35; }
+[data-bl-root] .at-dic-caixa { padding: 10px 12px; border-radius: var(--bl-raio-sm); font-size: 12.5px; line-height: 1.4; border: 1px solid var(--bl-borda); background: var(--bl-superficie-2); }
+[data-bl-root] .at-dic-caixa--aviso { border-color: color-mix(in srgb, var(--bl-aviso) 45%, transparent); background: var(--bl-aviso-bg); }
+[data-bl-root] .at-dic-caixa--erro { border-color: color-mix(in srgb, var(--bl-erro) 45%, transparent); background: var(--bl-erro-bg); }
+[data-bl-root] .at-dic-caixa--info { border-color: color-mix(in srgb, var(--bl-info) 40%, transparent); background: var(--bl-info-bg); }
+[data-bl-root] .at-dic-caixa p { margin: 0 0 8px; }
+[data-bl-root] .at-dic-caixa p:last-child { margin-bottom: 0; }
+[data-bl-root] .at-dic-caixa .at-campo { width: 100%; }
+[data-bl-root] .at-campo[aria-invalid=true] { border-color: var(--bl-erro); }
+
+/* Unidades permitidas (checkboxes agrupados por grandeza) */
+[data-bl-root] .at-dic-unidades { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px 16px; }
+[data-bl-root] .at-dic-unidades fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+[data-bl-root] .at-dic-unidades legend { padding: 0; margin-bottom: 2px; font-size: 11.5px; font-weight: 650; color: var(--bl-texto-2); }
+[data-bl-root] .at-dic-unidades .at-check { align-items: flex-start; line-height: 1.35; }
+[data-bl-root] .at-dic-unidades .at-check input { margin-top: 2px; }
+
+/* Lista de opções */
+[data-bl-root] .at-dic-opcoes { list-style: none; margin: 0; padding: 0; border: 1px solid var(--bl-borda); border-radius: var(--bl-raio-sm); }
+[data-bl-root] .at-dic-opcao { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--bl-borda); }
+[data-bl-root] .at-dic-opcao:last-child { border-bottom: 0; }
+[data-bl-root] .at-dic-opcao:focus-within { background: var(--bl-superficie-2); }
+[data-bl-root] .at-dic-opcao__pos { width: 26px; flex: none; text-align: right; color: var(--bl-texto-3); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-dic-opcao__rotulo { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
+[data-bl-root] .at-dic-opcao--inativa .at-dic-opcao__rotulo { color: var(--bl-texto-3); text-decoration: line-through; }
+[data-bl-root] .at-dic-opcao__acoes { display: flex; flex-wrap: wrap; gap: 4px; }
+[data-bl-root] .at-dic-opcao .at-campo { flex: 1 1 180px; }
+[data-bl-root] .at-dic-nova-opcao { display: flex; flex-wrap: wrap; gap: 8px; }
+[data-bl-root] .at-dic-nova-opcao .at-campo { flex: 1 1 220px; }
+[data-bl-root] .at-dic-rodape { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; align-items: center; }
+[data-bl-root] .at-dic-rodape__esq { margin-right: auto; display: flex; flex-wrap: wrap; gap: 8px; }

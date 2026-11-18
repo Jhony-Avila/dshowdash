@@ -140,7 +140,7 @@ final class PipedriveClient
      */
     public function paginate(string $path, array $opts, callable $onBatch): array
     {
-        $version  = in_array($opts['version'] ?? 'v2', ['v1', 'v1root', 'v2'], true) ? $opts['version'] : 'v2';
+        $version  = self::resolverVersao($opts); // DSHOW-003: resolve UMA vez (ausente/inválida -> v2)
         $isV2     = $version === 'v2'; // cursor vs offset (v1/v1root usam start/limit)
         $limit    = (int)($opts['limit'] ?? 500);
         $maxPages = (int)($opts['maxPages'] ?? 0);
@@ -168,6 +168,7 @@ final class PipedriveClient
                 $tokenCost += $listCost;
                 $lastStatus = (int)($res['status'] ?? 0);
                 if ($lastStatus !== 429) { break; }
+                if ($tent >= 3) { break; } // DSHOW-003b: sem espera depois da ÚLTIMA tentativa (backoff só antes de nova tentativa)
                 // 429: sem Retry-After -> usar reset (janela 2s) + jitter
                 $reset = (int)($res['meta']['ratelimit_reset'] ?? 2);
                 $this->pause(min(max($reset, 1), 10) + (mt_rand(0, 400) / 1000));
@@ -219,6 +220,24 @@ final class PipedriveClient
     }
 
     /** Pausa (segundos, aceita fracao). Isolada para nao dormir em teste unitario. */
+    /**
+     * DSHOW-003 (18/11/2026): versão da API para paginate().
+     * Ausente -> 'v2' (padrão documentado). Inválida -> 'v2' + error_log (mantém o contrato anterior,
+     * que já caía em v2, mas agora sem "Undefined array key" e com registro).
+     */
+    public static function resolverVersao(array $opts): string
+    {
+        if (!array_key_exists('version', $opts) || $opts['version'] === null) {
+            return 'v2';
+        }
+        $v = $opts['version'];
+        if (is_string($v) && in_array($v, ['v1', 'v1root', 'v2'], true)) {
+            return $v;
+        }
+        error_log('[PipedriveClient] paginate: versao invalida ' . json_encode($v) . ' -> v2');
+        return 'v2';
+    }
+
     private function pause(float $seconds): void
     {
         if ($seconds > 0) { usleep((int)round($seconds * 1_000_000)); }

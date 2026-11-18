@@ -65,47 +65,81 @@ class UserRolesRepository
         }
     }
 
-    public function assignRole(int $userId, int $roleId, int $assignedBy): bool
+    /**
+     * AUDITORIA-PERMISSOES (18/11): toda mudança de papel grava 1 linha em app_permission_audit_log NA MESMA transação
+     * (reentrante: se já houver transação aberta, ela decide o COMMIT). Falha na auditoria = exceção = nada aplicado.
+     */
+    private function emTransacao(callable $f): mixed
+    {
+        if ($this->pdo->inTransaction()) return $f();
+        $this->pdo->beginTransaction();
+        try { $r = $f(); $this->pdo->commit(); return $r; }
+        catch (Throwable $e) { if ($this->pdo->inTransaction()) $this->pdo->rollBack(); throw $e; }
+    }
+
+    private function auditarPapel(string $operacao, string $acao, int $userId, ?int $roleId, ?int $autor, mixed $antes, mixed $depois, ?string $motivo): void
+    {
+        if (!class_exists('PermissaoAuditoria')) require_once __DIR__ . '/../PermissaoAuditoria.php';
+        $chave = 'role:' . ($roleId === null ? '*' : (string) ($this->pdo->query('SELECT role_key FROM app_roles WHERE id = ' . (int) $roleId)->fetchColumn() ?: $roleId));
+        PermissaoAuditoria::registrar($this->pdo, ['autor' => $autor ?? PermissaoAuditoria::autorDaSessao(), 'chave' => $chave, 'acao' => $acao,
+            'operacao' => $operacao, 'origem' => 'tela:usuarios', 'tipo' => 'user_role', 'id' => $userId . ':' . ($roleId ?? '*'),
+            'alvo' => ['user_id' => $userId, 'role_id' => $roleId], 'antes' => $antes, 'depois' => $depois, 'motivo' => $motivo]);
+    }
+
+    public function assignRole(int $userId, int $roleId, int $assignedBy, ?string $motivo = null): bool
     {
         try {
-            if ($this->userHasRole($userId, $roleId)) {
-                return false;
-            }
-
-            $stmt = $this->pdo->prepare("
-                INSERT INTO app_user_roles (user_id, role_id, assigned_by, assigned_at, created_at)
-                VALUES (?, ?, ?, NOW(3), NOW(3))
-            ");
-            return $stmt->execute([$userId, $roleId, $assignedBy]);
+            return $this->emTransacao(function () use ($userId, $roleId, $assignedBy, $motivo) {
+                if ($this->userHasRole($userId, $roleId)) {
+                    return false;
+                }
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO app_user_roles (user_id, role_id, assigned_by, assigned_at, created_at)
+                    VALUES (?, ?, ?, NOW(3), NOW(3))
+                ");
+                $ok = $stmt->execute([$userId, $roleId, $assignedBy]);
+                $this->auditarPapel('atribuir_papel', 'elevated', $userId, $roleId, $assignedBy, ['papel' => 'ausente'], ['papel' => 'ativo', 'assigned_by' => $assignedBy], $motivo);
+                return $ok;
+            });
         } catch (PDOException $e) {
             throw RepositoryException::fromPDOException($e, 'assignRole');
         }
     }
 
-    public function removeRole(int $userId, int $roleId): bool
+    public function removeRole(int $userId, int $roleId, ?int $autor = null, ?string $motivo = null): bool
     {
         try {
-            $stmt = $this->pdo->prepare("
-                UPDATE app_user_roles
-                SET deleted_at = NOW(3)
-                WHERE user_id = ? AND role_id = ? AND deleted_at IS NULL
-            ");
-            return $stmt->execute([$userId, $roleId]) && $stmt->rowCount() > 0;
+            return $this->emTransacao(function () use ($userId, $roleId, $autor, $motivo) {
+                $stmt = $this->pdo->prepare("
+                    UPDATE app_user_roles
+                    SET deleted_at = NOW(3)
+                    WHERE user_id = ? AND role_id = ? AND deleted_at IS NULL
+                ");
+                $ok = $stmt->execute([$userId, $roleId]) && $stmt->rowCount() > 0;
+                if ($ok) $this->auditarPapel('revogar_papel', 'revoked', $userId, $roleId, $autor, ['papel' => 'ativo'], ['papel' => 'revogado'], $motivo);
+                return $ok;
+            });
         } catch (PDOException $e) {
             throw RepositoryException::fromPDOException($e, 'removeRole');
         }
     }
 
-    public function removeAllUserRoles(int $userId): int
+    public function removeAllUserRoles(int $userId, ?int $autor = null, ?string $motivo = null): int
     {
         try {
-            $stmt = $this->pdo->prepare("
-                UPDATE app_user_roles
-                SET deleted_at = NOW(3)
-                WHERE user_id = ? AND deleted_at IS NULL
-            ");
-            $stmt->execute([$userId]);
-            return $stmt->rowCount();
+            return $this->emTransacao(function () use ($userId, $autor, $motivo) {
+                $ant = $this->pdo->prepare('SELECT role_id FROM app_user_roles WHERE user_id = ? AND deleted_at IS NULL');
+                $ant->execute([$userId]); $papeis = array_map('intval', $ant->fetchAll(PDO::FETCH_COLUMN));
+                $stmt = $this->pdo->prepare("
+                    UPDATE app_user_roles
+                    SET deleted_at = NOW(3)
+                    WHERE user_id = ? AND deleted_at IS NULL
+                ");
+                $stmt->execute([$userId]);
+                $n = $stmt->rowCount();
+                if ($n > 0) $this->auditarPapel('revogar_todos_papeis', 'revoked', $userId, null, $autor, ['papeis' => $papeis], ['papeis' => []], $motivo);
+                return $n;
+            });
         } catch (PDOException $e) {
             throw RepositoryException::fromPDOException($e, 'removeAllUserRoles');
         }

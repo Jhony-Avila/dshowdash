@@ -52,6 +52,29 @@ final class BlingReal extends BlingProviderBase
         return $v === false || $v === null ? null : gmdate('c', strtotime($v . ' UTC'));
     }
 
+    /** DSHOW-012: recurso desativado para a conta → indisponível; nunca sincronizado → sem dados; senão ok. */
+    public function disponibilidade(string $recurso): array
+    {
+        // DSHOW-012 complemento (Codex DSHOW-016, 18/11): por recurso — fonte desativada, última tentativa, último sucesso
+        // e cobertura (completa/parcial). bling_sync_state guarda só a ÚLTIMA execução e a situação dela: "último sucesso"
+        // é conhecido quando a última execução foi ok/atencao; senão fica null (coluna própria = migração futura).
+        if (!class_exists('BlingSyncService', false)) require_once __DIR__ . '/../services/BlingSyncService.php';
+        $conta = $this->conta();
+        $motivo = BlingSyncService::desativado($conta, $recurso);
+        $st = $this->repo->consultar('SELECT situacao, ultima_execucao_em FROM bling_sync_state WHERE account_id = ? AND recurso = ? ORDER BY ultima_execucao_em DESC LIMIT 1', [$conta, $recurso]);
+        $sit = $st[0]['situacao'] ?? null; $ult = $st[0]['ultima_execucao_em'] ?? null;
+        $iso = static fn($v) => $v === null ? null : gmdate('c', strtotime($v . ' UTC'));
+        $base = ['fonte_desativada' => $motivo !== null, 'ultima_tentativa' => $iso($ult),
+                 'ultimo_sucesso' => in_array($sit, ['ok', 'atencao'], true) ? $iso($ult) : null,
+                 'cobertura' => in_array($sit, ['ok', 'atencao'], true) ? 'completa' : ($sit === null || $sit === 'nunca_executado' ? 'nenhuma' : 'parcial')];
+        if ($motivo !== null) {
+            return ['estado' => 'indisponivel', 'motivo' => 'sincronização de ' . $recurso . ' desativada para esta conta', 'fonte' => stripos($motivo, 'asaas') !== false ? 'Asaas' : $motivo] + $base;
+        }
+        if ($ult === null || $sit === 'nunca_executado') return ['estado' => 'sem_dados', 'motivo' => 'recurso ainda não sincronizado'] + $base;
+        if ($base['cobertura'] === 'parcial') return ['estado' => 'parcial', 'motivo' => 'última coleta ' . $sit . '; dados podem estar incompletos'] + $base;
+        return ['estado' => 'ok'] + $base;
+    }
+
     /** Conta ativa. Sem conta conectada, o módulo não tem o que mostrar. */
     private function conta(): int
     {
