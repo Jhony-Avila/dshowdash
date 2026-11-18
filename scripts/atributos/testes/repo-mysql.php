@@ -115,17 +115,19 @@ $linha = function (int $pid, int $aid, int $k) use ($pdo): ?array {
 [$sid, $gid, $did, $mid, $pid8] = [(int) $sel['id'], (int) $grande['id'], (int) $data['id'], (int) $modelo['id'], (int) $pot['id']];
 
 // P1-07 (multiopção, estado único) — ATR-04
-$ok('ATR-04 MySQL: marcar opção depois de "desconhecido" exclui logicamente a chave 0', function () use ($ven, $sid, $oA, $linha) {
-    $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'estado' => 'desconhecido']);
-    $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'valor' => $oA]);
+// DSHOW-034: trocar o estado do CONJUNTO (multiopção) exige a versão do conjunto, lida antes (como a tela faz)
+$conj = fn(int $pid, int $aid) => AtributosService::versaoConjunto($pdo->query("SELECT opcao_chave, versao FROM eq_valor WHERE product_id = $pid AND atributo_id = $aid AND excluido_em IS NULL")->fetchAll(PDO::FETCH_ASSOC));
+$ok('ATR-04 MySQL: marcar opção depois de "desconhecido" exclui logicamente a chave 0', function () use ($ven, $sid, $oA, $linha, $conj) {
+    $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'estado' => 'desconhecido', 'versao_conjunto' => $conj(7, $sid)]);
+    $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'valor' => $oA, 'versao_conjunto' => $conj(7, $sid)]);
     return $linha(7, $sid, 0)['excluido_em'] !== null && $linha(7, $sid, $oA)['excluido_em'] === null;
 });
 $ok('ATR-04 MySQL: remarcar a mesma opção é "sem mudança" (versão igual)', function () use ($ven, $sid, $oA, $linha) {
     $v0 = $linha(7, $sid, $oA)['versao']; $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'valor' => $oA]); return $linha(7, $sid, $oA)['versao'] === $v0;
 });
-$ok('P1-07 MySQL: estado ≠ informado exclui logicamente as opções vivas', function () use ($ven, $sid, $oA, $oB, $linha) {
+$ok('P1-07 MySQL: estado ≠ informado exclui logicamente as opções vivas', function () use ($ven, $sid, $oA, $oB, $linha, $conj) {
     $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'valor' => $oB]);
-    $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'estado' => 'nao_se_aplica']);
+    $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'estado' => 'nao_se_aplica', 'versao_conjunto' => $conj(7, $sid)]);
     return $linha(7, $sid, $oA)['excluido_em'] !== null && $linha(7, $sid, $oB)['excluido_em'] !== null && $linha(7, $sid, 0)['estado'] === 'nao_se_aplica';
 });
 $ok('nada apagado: as 3 linhas continuam na tabela', fn() => (int) $pdo->query("SELECT COUNT(*) FROM eq_valor WHERE product_id = 7 AND atributo_id = $sid")->fetchColumn() === 3);
