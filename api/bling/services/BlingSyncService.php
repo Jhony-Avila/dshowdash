@@ -104,8 +104,8 @@ final class BlingSyncService
             }
 
             // Carga interrompida retoma da página gravada — não recomeça.
-            $paginaInicial = ($estrategia === 'carga_inicial' && $estadoAnterior
-                              && $estadoAnterior['situacao'] === 'parcial')
+            $paginaInicial = ($estadoAnterior && $estadoAnterior['situacao'] === 'parcial'
+                              && in_array($estrategia, ['carga_inicial', 'incremental'], true))   // DSHOW-017: retomar também o incremental parcial
                 ? max(1, (int) $estadoAnterior['pagina_atual']) : 1;
 
             $aCadaPagina =
@@ -173,19 +173,29 @@ final class BlingSyncService
                 ? $this->paginarEstoque($cliente, $accountId, $aCadaPagina)
                 : $cliente->paginar(
                     $cfg['endpoint'],
-                    $query + ($paginaInicial > 1 ? ['pagina' => $paginaInicial] : []),
+                    $query,
                     $aCadaPagina,
+                    100, 500, $paginaInicial,   // DSHOW-017: página inicial como parâmetro (não pela união de arrays)
                 );
 
-            $situacao = $contagem['erros'] === 0 ? 'ok'
-                : ($contagem['erros'] < $contagem['consultados'] * 0.1 ? 'atencao' : 'parcial');
+            // DSHOW-017: só uma coleta CONCLUÍDA avança o watermark e zera a página; parcial/interrompida/inválida
+            // guardam a página para retomar e mantêm o watermark anterior (nada de "ok" sem cobertura).
+            $estadoColeta = $resultado['estado'] ?? 'concluida';
+            $concluida = $estadoColeta === 'concluida';
+            $situacao = !$concluida ? ($estadoColeta === 'invalida' ? 'erro' : 'parcial')
+                : ($contagem['erros'] === 0 ? 'ok'
+                : ($contagem['erros'] < $contagem['consultados'] * 0.1 ? 'atencao' : 'parcial'));
+            if (!$concluida) {
+                $this->repo->registrarErroSync($accountId, $recurso, null, 'COLETA_' . strtoupper($estadoColeta),
+                    sprintf('coleta %s (página %d)', $estadoColeta, (int) ($resultado['ultima_pagina'] ?? 0)), null, 1, $correlationId);
+            }
 
             $this->repo->salvarEstadoSync($accountId, $recurso, [
                 'estrategia' => $estrategia,
                 'situacao'   => $situacao,
-                'pagina_atual' => 1,
+                'pagina_atual' => $concluida ? 1 : max(1, (int) ($resultado['ultima_pagina'] ?? 0) + ($estadoColeta === 'invalida' ? 0 : 1)),
                 'cursor_atual' => null,
-                'watermark'  => $watermarkNovo,
+                'watermark'  => $concluida ? $watermarkNovo : ($estadoAnterior['watermark'] ?? null),
                 'ultima_execucao_em'  => gmdate('Y-m-d H:i:s'),
                 'proxima_execucao_em' => gmdate('Y-m-d H:i:s', time() + 900),
                 'duracao_ms' => (int) ((microtime(true) - $inicio) * 1000),
@@ -198,8 +208,8 @@ final class BlingSyncService
                 'limite_consumido_pct' => $cliente->consumo()['consumido_pct'],
             ]);
 
-            $this->repo->fecharJob($jobId, 'concluido', $contagem,
-                sprintf('%d páginas, %d itens', $resultado['paginas'], $resultado['itens']));
+            $this->repo->fecharJob($jobId, $estadoColeta === 'invalida' ? 'falhou' : 'concluido', $contagem,   // enum do job não tem 'parcial': o estado vai na mensagem
+                sprintf('%d páginas, %d itens, coleta %s', $resultado['paginas'], $resultado['itens'], $estadoColeta));
 
             // Solta o mapa de ids: o worker é processo longo e sincroniza
             // recurso atrás de recurso — segurar tudo em memória não tem volta.
