@@ -94,11 +94,16 @@ run find "${TMP}" -xdev -exec chown -h "${BUILD_USER}:${BUILD_USER}" {} +   # s�
 # HOME real do usuário de build (passwd), não /home/<user>: o dshow-build mora em /srv/dshow-work/build e o npm precisa do cache (~/.npm)
 BUILD_HOME="$(getent passwd "${BUILD_USER}" | cut -d: -f6)"; [ -n "${BUILD_HOME}" ] || BUILD_HOME="/home/${BUILD_USER}"
 B() { run runuser -u "${BUILD_USER}" -- env -i HOME="${BUILD_HOME}" PATH=/usr/local/bin:/usr/bin:/bin "$@"; }
-# 18/11: o build passa a ser a MESMA receita do montador oficial (scripts/build/receita-release.sh: npm ci da raiz e de
-# public/react, 13 painéis, public/react, lote main/componentes, restauração dos versionados). O laço antigo (3 painéis +
-# build-lote-main) estava defasado: falhava com "vite ausente" (17/11 18:28) e não gerava os manifests de 2 painéis.
-B env npm_config_cache="${BUILD_HOME}/.npm" npm_config_registry=https://registry.npmjs.org/ npm_config_update_notifier=false CI=1 \
-  bash "${TMP}/scripts/build/receita-release.sh" "${TMP}"
+for PAINEL in public/components/panels/panel-avatar-studio public/components/panels/panel-dashboard public/components/footer; do
+  [ "${DRY}" -eq 0 ] && [ ! -f "${TMP}/${PAINEL}/package.json" ] && continue
+  B bash -c "cd '${TMP}/${PAINEL}' && npm ci --no-audit --no-fund && npx vite build"
+done
+# toolchain de public/react (vite) usada pelo build-lote-main.sh — 18/11: sem isto o passo 3/8 falhava com "vite ausente"
+# (tentativa de 17/11 18:28). Lockfile versionado → npm ci reprodutível, como os painéis acima. Sem lockfile: falha fechada.
+if [ "${DRY}" -eq 0 ] && [ ! -f "${TMP}/public/react/package-lock.json" ]; then falha "public/react sem package-lock.json (npm ci exige lockfile)"; fi
+B bash -c "cd '${TMP}/public/react' && npm ci --no-audit --no-fund"
+BBAK="${RELS}/.build-bak-${SHA:0:12}-${CARIMBO}"; run mkdir -m 0700 "${BBAK}"; run chown "${BUILD_USER}:${BUILD_USER}" "${BBAK}"
+B env DEPLOY_RAIZ="${TMP}" DEPLOY_BACKUP="${BBAK}" CARIMBO="${CARIMBO}" bash "${TMP}/scripts/deploy/build-lote-main.sh"
 B node "${TMP}/scripts/deploy/smoke-dist.mjs"
 # devolve a montagem ao root (somente leitura para o runtime) antes de ligar estado e publicar
 run find "${TMP}" -xdev -exec chown -h root:root {} +
