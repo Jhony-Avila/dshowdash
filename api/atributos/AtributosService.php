@@ -102,7 +102,18 @@ final class AtributosService
     /** Famílias da ficha do Precifica no app (produtos.md v1.1, specs.ts FAMILIES) — alvo de precifica_ref (D3.6). */
     public const FAMILIAS_PRECIFICA = ['led_module', 'panel_mounted', 'processor', 'sending_card', 'player', 'metal_work'];
 
-    public function __construct(private readonly AtributosRepositorio $repo, private readonly int $nivel, private readonly string $usuario, private readonly ?CatalogoProdutos $catalogo = null) {}
+    /** $administra (decisão do Jhony 18/11; AtributosPermissoes): null = só pelo nível (cargas e testes antigos); a API passa o valor real. */
+    public function __construct(private readonly AtributosRepositorio $repo, private readonly int $nivel, private readonly string $usuario, private readonly ?CatalogoProdutos $catalogo = null,
+        private readonly ?bool $administra = null) {}
+
+    /** Administra o catálogo (kits, dicionário, unidades, vínculos, massa)? Nível ≥ 80 E (75 ou permissão explícita). */
+    public function podeAdministrar(): bool { return $this->nivel >= self::NIVEL_ADMIN && ($this->administra ?? true); }
+
+    private function exigirAdmin(): void
+    {
+        $this->exigir(self::NIVEL_ADMIN);
+        if (!$this->podeAdministrar()) throw new AtributosErro('NOT_CATALOG_ADMIN', 403, 'Só quem administra o catálogo de atributos pode fazer isto. Você pode preencher valores.');
+    }
 
     /** Produto do catálogo (null = inexistente). Catálogo ausente/ilegível → 503 (nunca disfarçado de "não encontrado"). */
     private function produtoDoCatalogo(int $pid): ?array
@@ -155,7 +166,7 @@ final class AtributosService
         $this->exigir(self::NIVEL_CONSULTA);
         $tipo = isset($q['tipo']) && in_array($q['tipo'], self::TIPOS, true) ? $q['tipo'] : null;
         $busca = isset($q['q']) && is_string($q['q']) && trim($q['q']) !== '' ? mb_substr(trim($q['q']), 0, 80) : null;
-        return ['atributos' => $this->repo->listarAtributos($busca, $tipo, ($q['inativos'] ?? '') === '1'), 'pode_administrar' => $this->nivel >= self::NIVEL_ADMIN];
+        return ['atributos' => $this->repo->listarAtributos($busca, $tipo, ($q['inativos'] ?? '') === '1'), 'pode_administrar' => $this->podeAdministrar()];
     }
 
     public function detalhe(int $id): array
@@ -163,14 +174,14 @@ final class AtributosService
         $this->exigir(self::NIVEL_CONSULTA);
         $a = $this->repo->atributo($id) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
         if (array_key_exists('legado_id', $a) && $a['legado_id'] !== null) $a['legado_id'] = (string) $a['legado_id'];   // P2-01: BIGINT legado sempre texto no JSON
-        return ['atributo' => $a, 'opcoes' => $this->repo->opcoes($id), 'valores_preenchidos' => $this->repo->contarValores($id), 'pode_administrar' => $this->nivel >= self::NIVEL_ADMIN,
+        return ['atributo' => $a, 'opcoes' => $this->repo->opcoes($id), 'valores_preenchidos' => $this->repo->contarValores($id), 'pode_administrar' => $this->podeAdministrar(),
             'auditoria' => $this->nivel >= self::NIVEL_ADMIN ? $this->repo->auditoria('atributo', (string) $id, 20) : []];
     }
 
     // ---- definição --------------------------------------------------------------------------------------------------------
     public function salvarAtributo(array $b): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $erros = [];
         $id = isset($b['id']) ? (int) $b['id'] : 0;
         $rotulo = self::texto($b['rotulo'] ?? null, 128, 'rotulo', $id === 0, $erros);
@@ -261,7 +272,7 @@ final class AtributosService
     /** A8: unidades permitidas além da regra da grandeza (diferença, exclusão lógica). */
     public function definirUnidadesPermitidas(array $b): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $aid = (int) ($b['atributo_id'] ?? 0);
         $a = $this->repo->atributo($aid) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
         if (!in_array($a['tipo'], ['numero', 'inteiro'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Só atributos numéricos têm unidade.', ['atributo_id']);
@@ -278,7 +289,7 @@ final class AtributosService
 
     public function definirAtivo(int $id, bool $ativo, int $versao, ?string $motivo): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $antes = $this->repo->atributo($id) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
         $this->repo->transacao(function () use ($id, $versao, $ativo, $antes, $motivo) {
             if (!$this->repo->atualizarAtributo($id, $versao, ['ativo' => $ativo ? 1 : 0])) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este atributo. Recarregue e tente de novo.');
@@ -289,7 +300,7 @@ final class AtributosService
 
     public function adicionarOpcao(int $atributoId, mixed $rotulo): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $a = $this->repo->atributo($atributoId) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
         if (!in_array($a['tipo'], ['opcao', 'multiopcao'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Só atributos de opção têm lista.', ['tipo']);
         $erros = [];
@@ -310,7 +321,7 @@ final class AtributosService
      */
     public function renomearOpcao(int $opcaoId, mixed $rotulo, mixed $rotuloAtual): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $o = $this->repo->opcao($opcaoId) ?? throw new AtributosErro('NOT_FOUND', 404, 'Opção não encontrada.');
         $erros = [];
         $r = self::texto($rotulo, 160, 'rotulo', true, $erros);
@@ -332,7 +343,7 @@ final class AtributosService
      */
     public function reordenarOpcoes(int $atributoId, mixed $ordem): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $a = $this->repo->atributo($atributoId) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
         if (!in_array($a['tipo'], ['opcao', 'multiopcao'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Só atributos de opção têm lista.', ['tipo']);
         if (!is_array($ordem) || !array_is_list($ordem) || count($ordem) > 500) throw new AtributosErro('VALIDATION_ERROR', 422, 'Ordem inválida.', ['ordem']);
@@ -352,7 +363,7 @@ final class AtributosService
 
     public function definirOpcaoAtiva(int $opcaoId, bool $ativo): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $o = $this->repo->opcao($opcaoId) ?? throw new AtributosErro('NOT_FOUND', 404, 'Opção não encontrada.');
         $this->repo->transacao(function () use ($opcaoId, $ativo, $o) {
             $this->repo->definirOpcaoAtiva($opcaoId, $ativo);
@@ -366,12 +377,12 @@ final class AtributosService
     /** BR-02 (18/11): toda resposta de unidade traz o mesmo contrato das outras telas (pode_administrar); o cliente não trata mais como erro. */
     private function respostaUnidades(array $extra = []): array
     {
-        return ['unidades' => $this->repo->unidades(), 'pode_administrar' => $this->nivel >= self::NIVEL_ADMIN] + $extra;
+        return ['unidades' => $this->repo->unidades(), 'pode_administrar' => $this->podeAdministrar()] + $extra;
     }
 
     public function criarUnidade(array $b): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $erros = [];
         $s = self::texto($b['simbolo'] ?? null, 20, 'simbolo', true, $erros);
         $n = self::texto($b['nome'] ?? null, 80, 'nome', true, $erros);
@@ -396,7 +407,7 @@ final class AtributosService
     /** Edita nome/grandeza de uma unidade (o símbolo é a identidade e não muda). */
     public function salvarUnidade(array $b): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $id = (int) ($b['id'] ?? 0);
         $antes = $this->repo->unidade($id) ?? throw new AtributosErro('NOT_FOUND', 404, 'Unidade não encontrada.');
         $erros = [];
@@ -427,7 +438,7 @@ final class AtributosService
 
     public function definirUnidadeAtiva(int $id, bool $ativo): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $antes = $this->repo->unidade($id) ?? throw new AtributosErro('NOT_FOUND', 404, 'Unidade não encontrada.');
         if ((int) $antes['ativo'] === ($ativo ? 1 : 0)) return $this->respostaUnidades(['sem_mudanca' => true]);   // BR-02: idempotente
         $this->repo->transacao(function () use ($id, $ativo, $antes) {
@@ -475,12 +486,12 @@ final class AtributosService
             try { foreach ($g['escopos'] as $e) $n += $this->catalogo ? $this->catalogo->contar((string) $e['categoria'], (string) $e['subcategoria']) : 0; $g['produtos_no_escopo'] = $this->catalogo ? $n : null; }
             catch (CatalogoIndisponivel $e) { $g['produtos_no_escopo'] = null; }
         }
-        return ['grupos' => $gs, 'pode_administrar' => $this->nivel >= self::NIVEL_ADMIN];
+        return ['grupos' => $gs, 'pode_administrar' => $this->podeAdministrar()];
     }
 
     public function definirGrupoAtivo(int $id, bool $ativo, int $versao): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $antes = $this->repo->grupo($id) ?? throw new AtributosErro('NOT_FOUND', 404, 'Grupo não encontrado.');
         $this->repo->transacao(function () use ($id, $ativo, $versao, $antes) {
             if (!$this->repo->atualizarGrupo($id, $versao, ['ativo' => $ativo ? 1 : 0])) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este grupo. Recarregue e tente de novo.');
@@ -491,7 +502,7 @@ final class AtributosService
 
     public function salvarGrupo(array $b): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $erros = [];
         $id = isset($b['id']) ? (int) $b['id'] : 0;
         $nome = self::texto($b['nome'] ?? null, 160, 'nome', $id === 0, $erros);
@@ -576,7 +587,7 @@ final class AtributosService
             'produto' => ['id' => (int) $p['id'], 'nome' => $p['nome'], 'categoria' => $p['categoria'], 'subcategoria' => $p['subcategoria'], 'ativo' => (bool) $p['ativo'], 'catalogo_sincronizado_em' => $p['sincronizado_em']],
             'somente_leitura' => $somenteLeitura, 'pode_preencher' => !$somenteLeitura,
             'completude' => $completude, 'revisao' => $revisao,
-            'pode_revisar' => $p['ativo'] && $escritaLigada && $this->nivel >= self::NIVEL_ADMIN,
+            'pode_revisar' => $p['ativo'] && $escritaLigada && $this->podeAdministrar(),
             'grupos' => array_values($grupos), 'valores_fora_da_ficha' => $fora,
             'vinculos_legado' => array_map(static fn($l) => ['origem_ns' => $l['origem_ns'], 'chave_antiga' => (string) $l['chave_antiga'], 'estado' => $l['estado']], $this->repo->vinculosLegado($productId)),
         ];
@@ -619,7 +630,7 @@ final class AtributosService
     /** V4/R1 — marca a ficha como REVISADA (nível 80): só com todos os obrigatórios resolvidos; vale até a próxima gravação na ficha. */
     public function revisarFicha(array $b): array
     {
-        $this->exigir(self::NIVEL_ADMIN);
+        $this->exigirAdmin();
         $pid = (int) ($b['product_id'] ?? 0);
         if ($pid <= 0) throw new AtributosErro('VALIDATION_ERROR', 422, 'Produto inválido.', ['product_id']);
         $f = $this->ficha($pid, true);
@@ -729,13 +740,23 @@ final class AtributosService
                     if (strlen(ltrim(explode('.', $n)[0], '-')) > 14) throw new AtributosErro('VALIDATION_ERROR', 422, 'Número grande demais para a ficha.', ['valor']);
                     $mn = $a['minimo'] === null ? null : self::decimalCanonico($a['minimo']);
                     $mx = $a['maximo'] === null ? null : self::decimalCanonico($a['maximo']);
-                    // limites estão na unidade padrão do atributo: compara o número convertido quando o valor vem em outra unidade (D3)
+                    // DSHOW-033: os limites estão na unidade PADRÃO do atributo. O número está na unidade EFETIVA do valor: a explícita do pedido
+                    // ou, sem ela, a herdada (ajuste do produto → item do kit → padrão do atributo). Converte com decimal exato ANTES de comparar.
+                    // Unidade sem fator (ou de outra grandeza) com limites definidos → 422 claro (antes: os limites eram ignorados).
                     $nCmp = $n;
                     $uvId = isset($b['unidade_id']) && $b['unidade_id'] !== '' && $b['unidade_id'] !== null ? (int) $b['unidade_id'] : null;
-                    if (($mn !== null || $mx !== null) && $uvId !== null && $a['unidade_id'] !== null && $uvId !== (int) $a['unidade_id']) {
-                        $uv = $this->repo->unidade($uvId); $up = $this->repo->unidade((int) $a['unidade_id']);
-                        if ($uv && $up && $uv['fator_base'] !== null && $up['fator_base'] !== null && ($uv['grandeza'] ?? null) === ($up['grandeza'] ?? null)) $nCmp = DecimalExato::mulDiv($n, (string) $uv['fator_base'], (string) $up['fator_base'], 6);
-                        else { $mn = null; $mx = null; }   // sem fator conhecido não há como comparar com segurança
+                    if ($mn !== null || $mx !== null) {
+                        $aplicU = $this->aplicaveis($produto)[$aid]['aplic'] ?? null;
+                        $uEf = $uvId ?? ($aplicU !== null ? Aplicabilidade::unidadeEfetiva($aplicU, null) : ($a['unidade_id'] !== null ? (int) $a['unidade_id'] : null));
+                        $uPad = $a['unidade_id'] !== null ? (int) $a['unidade_id'] : null;
+                        if ($uEf !== null && $uPad !== null && $uEf !== $uPad) {
+                            $uv = $this->repo->unidade($uEf); $up = $this->repo->unidade($uPad);
+                            if (!$uv || !$up || $uv['fator_base'] === null || $up['fator_base'] === null || ($uv['grandeza'] ?? null) !== ($up['grandeza'] ?? null)) {
+                                throw new AtributosErro('UNIT_WITHOUT_FACTOR', 422, 'Não é possível conferir os limites deste atributo: a unidade "' . ($uv['simbolo'] ?? '?') . '" não tem fator de conversão para "'
+                                    . ($up['simbolo'] ?? '?') . '". Informe o valor em ' . ($up['simbolo'] ?? 'unidade padrão') . ' ou peça o fator na aba Unidades.', ['unidade_id']);
+                            }
+                            $nCmp = DecimalExato::mulDiv($n, (string) $uv['fator_base'], (string) $up['fator_base'], 6);
+                        }
                     }
                     if (($mn !== null && self::comparar($nCmp, $mn) < 0) || ($mx !== null && self::comparar($nCmp, $mx) > 0)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fora dos limites do atributo.', ['valor']);
                     $d['valor_num'] = $n;
@@ -773,6 +794,13 @@ final class AtributosService
             }
             // P1-07: todas as linhas do (produto, atributo) travadas → UM estado só por (produto, atributo)
             $linhas = $this->repo->travarValores($pid, $aid);
+            // DSHOW-034: na multiopção, mudar o ESTADO (≠ informado) ou trocar um estado por opção substitui o conjunto inteiro →
+            // exige a versão do CONJUNTO, conferida aqui, sob trava. Acrescentar opção a opções já marcadas continua por opção.
+            if ($a['tipo'] === 'multiopcao') {
+                $vivosM = array_values(array_filter($linhas, static fn($r) => empty($r['excluido_em'])));
+                $temEstado = (bool) array_filter($vivosM, static fn($r) => (int) $r['opcao_chave'] === 0);
+                if ($vivosM && ($d['estado'] !== 'informado' || $temEstado)) self::conferirConjunto($b, $vivosM);
+            }
             $antes = null;
             foreach ($linhas as $l) if ((int) $l['opcao_chave'] === (int) $d['opcao_chave']) $antes = $l;
             $vivo = $antes !== null && empty($antes['excluido_em']);
@@ -854,16 +882,37 @@ final class AtributosService
         if ($produto === null || $produto['excluido']) throw new AtributosErro('PRODUCT_NOT_FOUND', 422, 'Produto não encontrado no catálogo.', ['product_id']);
         if (!$produto['ativo']) throw new AtributosErro('PRODUCT_INACTIVE', 422, 'Produto inativo: a ficha é somente leitura.', ['product_id']);
         // sob trava (FOR UPDATE): versão conferida dentro da transação; multiopção limpa todas as opções marcadas
-        return $this->repo->transacao(function () use ($pid, $aid, $b) {
+        $multi = (($this->repo->atributo($aid) ?? [])['tipo'] ?? null) === 'multiopcao';
+        return $this->repo->transacao(function () use ($pid, $aid, $b, $multi) {
             $vivos = array_values(array_filter($this->repo->travarValores($pid, $aid), static fn($r) => empty($r['excluido_em'])));
             if (!$vivos) return ['limpo' => true, 'sem_mudanca' => true];
-            if ((int) ($b['versao'] ?? -1) !== (int) $vivos[0]['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+            if ($multi) self::conferirConjunto($b, $vivos);   // DSHOW-034: limpar a multiopção inteira = versão do CONJUNTO
+            elseif ((int) ($b['versao'] ?? -1) !== (int) $vivos[0]['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
             foreach ($vivos as $r) {
                 if (!$this->repo->excluirValor($pid, $aid, (int) $r['opcao_chave'])) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
                 $this->repo->auditar($this->usuario, 'limpar', 'valor', "$pid:$aid:" . (int) $r['opcao_chave'], $r, null, $b['motivo'] ?? null);
             }
             return ['limpo' => true];
         });
+    }
+
+    /**
+     * DSHOW-034: versão do CONJUNTO de linhas vivas de um (produto, atributo) — impressão digital por (chave, versão). Na multiopção a
+     * versão da 1ª linha não muda quando outra pessoa acrescenta uma opção; esta muda. Mesma fórmula na leitura (ProdutosLeitura).
+     */
+    public static function versaoConjunto(array $vivos): string
+    {
+        $p = array_map(static fn($r) => (int) ($r['opcao_chave'] ?? ($r['opcao_id'] ?? 0)) . ':' . (int) $r['versao'], $vivos);
+        sort($p, SORT_STRING);
+        return substr(hash('sha256', implode(',', $p)), 0, 16);
+    }
+
+    /** DSHOW-034: operação sobre o conjunto inteiro (limpar, mudar estado) exige versao_conjunto, conferida sob trava. */
+    private static function conferirConjunto(array $b, array $vivos): void
+    {
+        $vc = $b['versao_conjunto'] ?? null;
+        if (!is_string($vc) || !preg_match('/^[0-9a-f]{16}$/', $vc)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão do conjunto de opções. Recarregue a ficha.', ['versao_conjunto']);
+        if ($vc !== self::versaoConjunto($vivos)) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou as opções deste campo. Recarregue e tente de novo.');
     }
 
     private static function mesmoValor(array $antes, array $d): bool

@@ -52,9 +52,11 @@ require_once __DIR__ . '/../feature-flags/resolver.php';
 require_once __DIR__ . '/AtributosRepo.php';
 require_once __DIR__ . '/CatalogoPdo.php';
 require_once __DIR__ . '/ProdutosLeitura.php';
+require_once __DIR__ . '/MiniaturasDir.php';
 require_once __DIR__ . '/LeituraVitrinePdo.php';
 require_once __DIR__ . '/KitsService.php';
 require_once __DIR__ . '/SugestoesService.php';
+require_once __DIR__ . '/Permissoes.php';
 
 // ATRIBUTOS-WEB (18/11): rota por PATH_INFO (/api/atributos/<rota>, padrão do Bling); ?r=<rota> segue aceito (compatível com o ramo de origem).
 // Conexão PRÓPRIA "EQUIPAMENTOS" (usuário dedicado equipamentos_app: SELECT/INSERT/UPDATE no DSHOW_EQUIPAMENTOS + SELECT coluna a coluna
@@ -122,11 +124,14 @@ try {
     $quem = (string) ($user['email'] ?: ('usuario:' . ($user['id'] ?? '?')));
     $repo = new AtributosRepoPdo($pdoEq, $schemaEq);
     $catalogo = new CatalogoPdo($pdoEq, $schemaCat);
-    $svc = new AtributosService($repo, $nivel, $quem, $catalogo);
-    $leitura = fn() => new ProdutosLeitura(new LeituraVitrinePdo($pdoEq, $schemaEq, $schemaCat), $repo, $nivel, getenv('ATRWEB_MINIATURAS') ?: (getenv('DSHOW_ATRIBUTOS_MINIATURAS') ?: null),
-        ATR_ESCRITA_LIBERADA && eqFlagOuFalha($resolver->resolve(EQ_FLAG_ESCRITA, (int) ($user['id'] ?? 0))));
-    $kits = fn() => new KitsService($repo, $nivel, $quem, $catalogo);
-    $sugestoes = fn() => new SugestoesService($repo, $svc, $nivel >= AtributosService::NIVEL_ADMIN ? $kits() : null, $nivel, $quem);
+    // Decisão do Jhony (18/11): nível ≥ 80 em geral só PREENCHE; administrar o catálogo = usuário 75 ou permissão explícita (UARPS 'allow').
+    $administra = AtributosPermissoes::administra((int) ($user['id'] ?? 0), $nivel,
+        method_exists('UARPSGate', 'checkTrigger') ? static fn(int $u, string $t) => UARPSGate::checkTrigger($u, $t) : null);
+    $svc = new AtributosService($repo, $nivel, $quem, $catalogo, $administra);
+    $leitura = fn() => new ProdutosLeitura(new LeituraVitrinePdo($pdoEq, $schemaEq, $schemaCat), $repo, $nivel, atrDirMiniaturas(),   // P4: env (validação/sobreposição) ou padrão fixo; sem pasta → cor média
+        ATR_ESCRITA_LIBERADA && eqFlagOuFalha($resolver->resolve(EQ_FLAG_ESCRITA, (int) ($user['id'] ?? 0))), $administra);
+    $kits = fn() => new KitsService($repo, $nivel, $quem, $catalogo, $administra);
+    $sugestoes = fn() => new SugestoesService($repo, $svc, $administra ? $kits() : null, $nivel, $quem);
     $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $r = eqRota();
     // Miniatura (A6): resposta binária com cache privado e ETag; nunca expõe caminho nem storage_key. Sem arquivo → 404.

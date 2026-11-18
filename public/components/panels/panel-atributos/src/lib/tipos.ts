@@ -27,6 +27,7 @@ export interface Sugestao { id: number; fonte: 'legado_2025' | 'nome_produto' | 
 export interface Valor {
   estado: Estado; texto: string | null; numero: string | null; booleano: boolean | null; data: string | null; opcao_ids: number[]; opcoes: string[];
   unidade_id: number | null; origem: 'importado' | 'manual'; lote_id: number | null; atualizado_em: string; atualizado_por: string | null; versao: number; legado_bruto: string | null;
+  /** DSHOW-034: versão do conjunto de opções (multiopção) */ versao_conjunto?: string;
 }
 export interface Origem { tipo: 'kit' | 'avulso'; grupo_id?: number; grupo_nome?: string; motivos?: { tipo: 'escopo' | 'todos' | 'direto'; categoria?: string; subcategoria?: string }[] }
 export interface ItemFicha {

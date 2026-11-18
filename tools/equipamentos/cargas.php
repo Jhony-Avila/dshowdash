@@ -18,7 +18,8 @@ require_once __DIR__ . '/../../api/atributos/KitsLegado.php';
 final class Cargas
 {
     public const LOTES = ['C2' => 'carga C2 · kit geral (missão 18/11)', 'C3' => 'carga C3 · kits do legado (missão 18/11)', 'C4' => 'carga C4 · dicionário (missão 18/11)',
-        'C5' => 'legado-2025-07-31', 'C6' => 'carga C6 · sugestões pelo nome (missão 18/11)'];
+        'C5' => 'legado-2025-07-31', 'C6' => 'carga C6 · sugestões pelo nome (missão 18/11)',
+        'C8' => 'carga C8 · Totens e Esferas (ETAPA B: T-3 a T-7)'];
     /** Kits do legado → subcategorias atuais (D2; escopo pedido na missão §12-C3). */
     public const ESCOPOS = ['controladoras' => ['PROCESSOR', 'RECEIVING_CARD', 'SENDING_CARD', 'CONTROLLER'], 'cabos' => ['CABLE'], 'fontes' => ['POWER_SUPPLY']];
     public const NOMES = ['controladoras' => 'Controladoras', 'cabos' => 'Cabos', 'fontes' => 'Fontes'];
@@ -38,6 +39,7 @@ final class Cargas
     private function x(string $sql, array $p = []): int { if ($this->seco) return 0; $st = $this->pdo->prepare($sql); $st->execute($p); return $st->rowCount(); }
     private function n(string $t, string $w = '1', array $p = []): int { return (int) $this->q("SELECT COUNT(*) AS n FROM {$this->s}`$t` WHERE $w", $p)[0]['n']; }
     private function porLegado(): array { $o = []; foreach ($this->q("SELECT id, legado_id FROM {$this->s}eq_atributo WHERE legado_ns = 'Led_Lovers_PROD.mm_atributos'") as $r) $o[(int) $r['legado_id']] = (int) $r['id']; return $o; }
+    private function temColunaExcluido(): bool { return (bool) $this->q("SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'eq_grupo_atributo' AND column_name = 'excluido_em'", [$this->schema]); }
     private function kitPorNome(string $nome): ?array { return $this->q("SELECT * FROM {$this->s}eq_grupo WHERE nome = ?", [$nome])[0] ?? null; }
 
     private function servicos(string $usuario): array
@@ -51,13 +53,14 @@ final class Cargas
     private function lote(string $c, array $regras): int
     {
         $origem = self::LOTES[$c];
-        $sha = hash('sha256', $c . '|' . json_encode($regras) . '|' . hash_file('sha256', __FILE__));
-        $r = $this->q("SELECT id FROM {$this->s}eq_importacao_lote WHERE origem = ? ORDER BY id DESC LIMIT 1", [$origem])[0] ?? null;
-        if ($r) return (int) $r['id'];
+        $regra = hash('sha256', $c . '|' . json_encode($regras) . '|' . hash_file('sha256', __FILE__));
+        $sha = hash('sha256', $regra . '|' . microtime(true) . '|' . bin2hex(random_bytes(8)));   // índice único: 1 por EXECUÇÃO; a regra fica no relatório
+        // Um lote POR EXECUÇÃO (ETAPA B): a reversão desfaz só o que AQUELA execução gravou (ex.: a C6 do P3b não toca nas sugestões da ETAPA A).
         if ($this->seco) return 0;
-        $this->x("INSERT INTO {$this->s}eq_importacao_lote (origem, arquivo_sha256, estado, relatorio, criado_por) VALUES (?, ?, 'ensaio', ?, ?)", [$origem, $sha, json_encode(['regras' => $regras]), "carga:$c"]);
-        return (int) $this->pdo->lastInsertId();
+        $this->x("INSERT INTO {$this->s}eq_importacao_lote (origem, arquivo_sha256, estado, relatorio, criado_por) VALUES (?, ?, 'ensaio', ?, ?)", [$origem, $sha, json_encode(['regras' => $regras, 'regra_sha256' => $regra]), "carga:$c"]);
+        return $this->loteAtual = (int) $this->pdo->lastInsertId();
     }
+    public ?int $loteAtual = null;
     private function fecharLote(int $lote, array $rel): void
     {
         if ($this->seco || !$lote) return;
@@ -100,6 +103,18 @@ final class Cargas
             $mud['descricoes_reativadas']++;
             if (!$this->seco) (new AtributosService($repo, 80, 'carga:C2', new CatalogoPdo($this->pdo, $this->catalogo ?? $this->schema)))->definirAtivo($aid, true, (int) $a['versao'], 'D1: as 8 da base valem para todos os itens (carga C2)');
         }
+        // A5 também nos grupos ANTIGOS: lá as 6 descrições estão marcadas visíveis no app (inofensivo enquanto inativas). Reativadas (D1),
+        // a Descrição Interna/Fornecedor iriam para o app do cliente. Ficam visivel = 0 em todo kit (auditado, pelo serviço); o resto não muda.
+        $mud['a5_grupos_antigos'] = [];
+        foreach ($this->q("SELECT DISTINCT ga.grupo_id FROM {$this->s}eq_grupo_atributo ga WHERE ga.visivel = 1 AND ga.atributo_id IN (" . implode(',', $desc) . ")" . ($this->temColunaExcluido() ? ' AND ga.excluido_em IS NULL' : '')) as $r) {
+            $g = $repo->grupo((int) $r['grupo_id']); if (!$g) continue;
+            $mud['a5_grupos_antigos'][] = $g['nome'];
+            if ($this->seco) continue;
+            $it = array_map(static fn($x) => ['atributo_id' => (int) $x['atributo_id'], 'posicao' => $x['posicao'], 'obrigatorio' => (int) $x['obrigatorio'],
+                'visivel' => in_array((int) $x['atributo_id'], $desc, true) ? 0 : (int) $x['visivel'], 'destaque' => (int) ($x['destaque'] ?? 0),
+                'importancia' => $x['importancia'] ?? null, 'unidade_id' => $x['unidade_id'] ?? null], $g['atributos']);
+            $kits->definirItens(['id' => (int) $g['id'], 'versao' => (int) $g['versao'], 'itens' => $it, 'motivo' => 'A5: descrições não visíveis no app (carga C2)']);
+        }
         $k = $this->kitPorNome(self::BASE_NOME);
         if (!$k && !$this->seco) { $k = $kits->salvarKit(['nome' => self::BASE_NOME, 'descricao' => 'Os 8 atributos que o legado atribuía a TODOS os itens (D1). As 6 descrições ficam fora do app (A5).', 'aplica_a_todos' => 1, 'ordem' => -100])['kit']; $mud['kit_criado'] = true; }
         if ($k && !$this->seco) {
@@ -111,6 +126,18 @@ final class Cargas
                 // §9 compatibilidade: também como escopo de categoria — o app atual já vê o kit geral sem mudança
                 $cats = array_column($this->q("SELECT DISTINCT category FROM {$this->cs}product_catalog WHERE deleted = 0 ORDER BY category"), 'category');
                 $kits->definirEscopos(['id' => $k['id'], 'versao' => $k['versao'], 'escopos' => array_map(static fn($c) => ['categoria' => $c, 'subcategoria' => ''], $cats)]);
+            }
+        }
+        // Q-N2 (Jhony, 18/11): "Descrição Interna" deixa de ser obrigatória no kit Base e vira "Importante" (o indicador mede o que falta de verdade)
+        $kb = $this->kitPorNome(self::BASE_NOME); $interna = $leg[3] ?? null;
+        if ($kb && $interna) {
+            $kb = $repo->grupo((int) $kb['id']);
+            $it = null; foreach ($kb['atributos'] as $x) if ((int) $x['atributo_id'] === $interna) $it = $x;
+            if ($it && ((int) $it['obrigatorio'] === 1 || $it['importancia'] !== 'importante')) {
+                $mud['qn2_interna_importante'] = 1;
+                if (!$this->seco) $kits->definirItens(['id' => (int) $kb['id'], 'versao' => (int) $kb['versao'], 'motivo' => 'Q-N2: Descrição Interna = Importante (carga C2)', 'itens' => array_map(static fn($x) => ['atributo_id' => (int) $x['atributo_id'], 'posicao' => $x['posicao'],
+                    'obrigatorio' => (int) $x['atributo_id'] === $interna ? 0 : (int) $x['obrigatorio'], 'visivel' => (int) $x['visivel'], 'destaque' => (int) $x['atributo_id'] === $interna ? 0 : (int) ($x['destaque'] ?? 0),
+                    'importancia' => (int) $x['atributo_id'] === $interna ? 'importante' : ($x['importancia'] ?? null), 'unidade_id' => $x['unidade_id'] ?? null], $kb['atributos'])]);
             }
         }
         $rel = ['antes' => $antes, 'mudancas' => $mud, 'depois' => ['descricoes_ativas' => $this->n('eq_atributo', 'id IN (' . implode(',', $desc) . ') AND ativo = 1'), 'kit' => (bool) $this->kitPorNome(self::BASE_NOME)]];
@@ -170,7 +197,7 @@ final class Cargas
     public function c4(): array
     {
         [$repo, $kits, $svc] = $this->servicos('carga:C4');
-        $lote = $this->lote('C4', ['D4' => 'Potência em W', 'D6' => ['Novo', 'Não especificado'], 'fatores' => 'comprimento/massa', 'A9' => self::INTEGRACOES]);
+        $lote = $this->lote('C4', ['D4' => 'Potência em W', 'D6' => ['Novo', 'Não especificado'], 'T1' => 'Semi-outdoor', 'fatores' => 'comprimento/massa', 'A9' => self::INTEGRACOES]);
         $mud = ['potencia_w' => false, 'opcoes_condicoes' => 0, 'fatores' => 0, 'integracoes_criadas' => 0, 'kit_integracoes' => false];
         $uni = []; foreach ($repo->unidades() as $u) $uni[$u['simbolo']] = $u;
         // D4: Potência em W (a unidade A estava errada; Amperagem é outro atributo)
@@ -185,6 +212,12 @@ final class Cargas
             if ($this->q("SELECT 1 FROM {$this->s}eq_opcao WHERE atributo_id = ? AND rotulo = ?", [$cu, $rot])) continue;
             $mud['opcoes_condicoes']++;
             if (!$this->seco) $svc->adicionarOpcao($cu, $rot);
+        }
+        // T-1 (Jhony, 18/11): opção "Semi-outdoor" em Tipo do Led (os totens Semi-Outdoor deixam de virar "outdoor"; a C6 revisa as sugestões)
+        $tl = (int) ($this->q("SELECT id FROM {$this->s}eq_atributo WHERE codigo = 'tipo_do_led_87'")[0]['id'] ?? 0);
+        if ($tl && !$this->q("SELECT 1 FROM {$this->s}eq_opcao WHERE atributo_id = ? AND LOWER(rotulo) = 'semi-outdoor'", [$tl])) {
+            $mud['opcao_semi_outdoor'] = 1;
+            if (!$this->seco) $svc->adicionarOpcao($tl, 'Semi-outdoor');
         }
         // D3: fatores para a unidade base da grandeza (exatos); unidade única da grandeza = fator 1; tempo sem conversão exata fica sem fator
         $fat = ['m' => '1', 'cm' => '0.01', 'mm' => '0.001', 'kg' => '1', 'g' => '0.001', 'h' => '1'];
@@ -353,6 +386,122 @@ final class Cargas
         return $n;
     }
 
+    // ---- C8 · Totens e Esferas (ETAPA B; respostas do Jhony T-3 a T-7, 18/11) ----------------------------------------------------------
+    public const C8_KITS = [
+        'Totens' => ['legado' => 'Totem de Led | Totem', 'escopos' => ['TOTEM', 'EASEL'],   // T-3: cavaletes no mesmo kit
+            'obrigatorio' => ['pitch_138', 'tipo_do_led_87', 'altura_122', 'largura_409'],
+            'importante' => ['taxa_de_atualizacao_refresh_rate_93', 'tipo_do_pixel_139', 'peso_399', 'potencia_549', 'tensao_de_entrada_548', 'resolucao_de_largura_152', 'resolucao_de_altura_101', 'brilho_77', 'tipo_do_parafuso_para_fixacao_95', 'condicoes_de_uso_15'],
+            'basico' => ['profundidade_397', 'ip_rating_24', 'material_da_estrutura_116', 'angulo_maximo_de_visualizacao_horizontal_143', 'angulo_maximo_de_visualizacao_vertical_111', 'tipos_de_montagem_464', '@faces'],
+            'destaques' => ['pitch_138', 'tipo_do_led_87', 'altura_122', 'largura_409'],   // T-5
+            'descricao' => 'Totens de LED e estruturas de totem (T-3: inclui os cavaletes). Altura × Largura por face (T-6).'],
+        'Esferas' => ['legado' => 'Painel Led | Esfera', 'escopos' => ['SPHERE'],
+            'obrigatorio' => ['diametro_541', 'pitch_138', 'tipo_do_led_87'],
+            'importante' => ['taxa_de_atualizacao_refresh_rate_93', 'tipo_do_pixel_139', 'peso_399', 'potencia_549', 'tensao_de_entrada_548', 'brilho_77', 'condicoes_de_uso_15'],
+            'basico' => ['ip_rating_24', 'angulo_maximo_de_visualizacao_horizontal_143', 'tipos_de_montagem_464'],
+            'destaques' => ['diametro_541', 'pitch_138', 'tipo_do_led_87', 'taxa_de_atualizacao_refresh_rate_93'],
+            'descricao' => 'Esferas de LED. Diâmetro em cm (T-7).'],
+    ];
+    /** T-4: estruturas de totem sem LED ficam em Totens, com exceção (motivo) dos campos de LED. */
+    public const C8_SEM_LED = [256, 476, 521, 558, 591, 1067];
+    public const C8_SEM_LED_EXC = ['pitch_138', 'tipo_do_led_87', 'taxa_de_atualizacao_refresh_rate_93'];
+    /** T-7: ficha do Precifica (panel_mounted) → SUGESTÃO (nunca valor direto). */
+    public const C8_PRECIFICA = ['fixation' => ['tipo_do_parafuso_para_fixacao_95', ['MAGNETIC' => 'Imantado']], 'material' => ['material_da_estrutura_116', ['ALUMINUM' => 'Alumínio']]];
+
+    /** Leitura pura do nome (testável): faces (T-6) e diâmetro da esfera em cm (T-7). */
+    public static function lerNomeC8(string $nome): array
+    {
+        $r = [];
+        if (preg_match('/\bdupla[\s-]*face\b/iu', $nome)) $r['faces'] = '2';
+        if (preg_match('/(\d+(?:[.,]\d+)?)\s*metros?\s*(?:de\s*)?di[âa]metro/iu', $nome, $m)) {
+            [$i, $f] = array_pad(explode('.', str_replace(',', '.', $m[1])), 2, '');
+            $f = str_pad(substr($f, 0, 2), 2, '0'); $cm = ltrim($i . $f, '0'); $r['diametro_cm'] = $cm === '' ? '0' : $cm;   // metros → cm sem float
+        }
+        return $r;
+    }
+
+    public function c8(): array
+    {
+        [$repo, $kits, $svc] = $this->servicos('carga:C8');
+        $lote = $this->lote('C8', ['kits' => array_keys(self::C8_KITS), 'T-3' => 'EASEL', 'T-4' => self::C8_SEM_LED, 'T-6' => 'Número de faces', 'T-7' => 'Precifica como sugestão; diâmetro em cm']);
+        $mud = ['atributo_faces' => 0, 'opcoes' => [], 'kits' => [], 'excecoes' => 0, 'sugestoes' => ['faces' => 0, 'diametro' => 0, 'precifica' => 0], 'ja_existiam' => 0];
+        $cod = []; foreach ($this->q("SELECT id, codigo, rotulo FROM {$this->s}eq_atributo") as $a) $cod[$a['codigo']] = (int) $a['id'];
+        $uni = []; foreach ($this->q("SELECT id, simbolo FROM {$this->s}eq_unidade") as $u) $uni[$u['simbolo']] = (int) $u['id'];
+        // T-6: atributo "Número de faces" (inteiro)
+        $faces = (int) ($this->q("SELECT id FROM {$this->s}eq_atributo WHERE rotulo = 'Número de faces'")[0]['id'] ?? 0);
+        if (!$faces) { $mud['atributo_faces'] = 1; if (!$this->seco) $faces = (int) $svc->salvarAtributo(['rotulo' => 'Número de faces', 'tipo' => 'inteiro', 'descricao' => 'Faces com LED (Dupla Face = 2). Altura × Largura são por face (T-6).'])['atributo']['id']; }
+        // T-7: opções que faltam
+        foreach (self::C8_PRECIFICA as [$c, $map]) foreach ($map as $rot) {
+            $aid = $cod[$c] ?? 0; if (!$aid) continue;
+            if ($this->q("SELECT 1 FROM {$this->s}eq_opcao WHERE atributo_id = ? AND rotulo = ?", [$aid, $rot])) continue;
+            $mud['opcoes'][] = "$c: $rot"; if (!$this->seco) $svc->adicionarOpcao($aid, $rot);
+        }
+        // kits: reaproveita o grupo antigo (renomeia), itens, escopos, ativa
+        foreach (self::C8_KITS as $nome => $def) {
+            $k = $this->kitPorNome($nome) ?? $this->kitPorNome($def['legado']);
+            $acoes = [];
+            if (!$k) { $acoes[] = 'criar'; if ($this->seco) { $mud['kits'][$nome] = $acoes; continue; } $k = $kits->salvarKit(['nome' => $nome, 'descricao' => $def['descricao']])['kit']; }
+            $k = $repo->grupo((int) $k['id']);
+            if ($k['nome'] !== $nome) { $acoes[] = "renomear '{$k['nome']}'"; if (!$this->seco) $kits->salvarKit(['id' => (int) $k['id'], 'versao' => (int) $k['versao'], 'nome' => $nome, 'descricao' => $def['descricao'], 'motivo' => 'C8: kit de ' . $nome]); }
+            $itens = []; $pos = 0;
+            foreach (['obrigatorio', 'importante', 'basico'] as $imp) foreach ($def[$imp] as $c) {
+                $aid = $c === '@faces' ? $faces : ($cod[$c] ?? 0); if (!$aid) continue;
+                $itens[] = ['atributo_id' => $aid, 'posicao' => ++$pos, 'obrigatorio' => $imp === 'obrigatorio' ? 1 : 0, 'visivel' => 1, 'destaque' => in_array($c, $def['destaques'], true) ? 1 : 0, 'importancia' => $imp, 'unidade_id' => null];
+            }
+            $k = $repo->grupo((int) $k['id']);
+            $norm = static fn(array $xs) => array_map(static fn($x) => implode('|', [(int) $x['atributo_id'], (int) $x['obrigatorio'], (int) $x['visivel'], (int) ($x['destaque'] ?? 0), (string) ($x['importancia'] ?? '')]), $xs);
+            $atual = $norm($k['atributos']); $novo = $norm($itens); sort($atual); sort($novo);
+            if ($atual !== $novo) { $acoes[] = 'itens ' . count($itens); if (!$this->seco) $kits->definirItens(['id' => (int) $k['id'], 'versao' => (int) $repo->grupo((int) $k['id'])['versao'], 'itens' => $itens, 'motivo' => "C8: itens do kit $nome"]); }
+            $esc = array_map(static fn($sub) => ['categoria' => 'LED_PANEL', 'subcategoria' => $sub], $def['escopos']);
+            $k = $repo->grupo((int) $k['id']);
+            $ea = array_map(static fn($e) => $e['categoria'] . '|' . $e['subcategoria'], $k['escopos']); $en = array_map(static fn($e) => $e['categoria'] . '|' . $e['subcategoria'], $esc); sort($ea); sort($en);
+            if ($ea !== $en) { $acoes[] = 'escopos ' . implode(',', $def['escopos']); if (!$this->seco) $kits->definirEscopos(['id' => (int) $k['id'], 'versao' => (int) $k['versao'], 'escopos' => $esc, 'motivo' => "C8: escopo do kit $nome"]); }
+            $k = $repo->grupo((int) $k['id']);
+            if ((int) $k['ativo'] !== 1) { $acoes[] = 'ativar'; if (!$this->seco) $kits->definirAtivo(['id' => (int) $k['id'], 'versao' => (int) $k['versao'], 'ativo' => 1, 'motivo' => "C8: kit $nome em uso"]); }
+            $mud['kits'][$nome] = $acoes ?: ['sem mudança'];
+        }
+        // T-4: exceções nas estruturas sem LED
+        $ativos = []; foreach ($this->q("SELECT id, name, subcategory FROM {$this->cs}product_catalog WHERE deleted = 0 AND active = 1 AND category = 'LED_PANEL' AND subcategory IN ('TOTEM', 'EASEL', 'SPHERE')") as $p) $ativos[(int) $p['id']] = $p;
+        foreach (self::C8_SEM_LED as $pid) {
+            if (!isset($ativos[$pid])) continue;
+            foreach (self::C8_SEM_LED_EXC as $c) {
+                $aid = $cod[$c] ?? 0; if (!$aid) continue;
+                $aj = $repo->ajusteProduto($pid, $aid);
+                if ($aj && $aj['excluido_em'] === null && $aj['modo'] === 'excluir') continue;
+                $mud['excecoes']++;
+                if (!$this->seco) $kits->definirAjuste(['product_id' => $pid, 'atributo_id' => $aid, 'modo' => 'excluir', 'motivo' => 'T-4: estrutura de totem sem LED', 'versao_vinculos' => $kits->versaoVinculosAtual($pid)]);
+            }
+        }
+        // sugestões (lote desta execução; D10: nunca onde já há valor; idempotente pela chave)
+        $tem = []; foreach ($this->q("SELECT product_id, atributo_id FROM {$this->s}eq_valor WHERE excluido_em IS NULL") as $v) $tem[(int) $v['product_id'] . ':' . (int) $v['atributo_id']] = true;
+        $sug = function (string $fonte, int $pid, int $aid, ?string $val, ?int $opc, ?int $u, string $conf, string $evid, string $tipo) use (&$mud, $tem, $lote) {
+            if (!$aid || isset($tem["$pid:$aid"])) return;
+            $chave = "$fonte|$pid|$aid";
+            if ($this->q("SELECT 1 FROM {$this->s}eq_sugestao WHERE chave = ?", [$chave])) { $mud['ja_existiam']++; return; }
+            $mud['sugestoes'][$tipo]++;
+            $this->x("INSERT INTO {$this->s}eq_sugestao (chave, product_id, atributo_id, fonte, tipo, valor_proposto, opcao_id, unidade_id, confianca, evidencia, lote_id) VALUES (?, ?, ?, ?, 'valor', ?, ?, ?, ?, ?, ?)",
+                [$chave, $pid, $aid, $fonte, $val, $opc, $u, $conf, mb_substr($evid, 0, 500), $lote ?: null]);
+        };
+        foreach ($ativos as $pid => $p) {
+            $l = self::lerNomeC8((string) $p['name']);
+            if (isset($l['faces']) && in_array($p['subcategory'], ['TOTEM', 'EASEL'], true) && $faces) $sug('nome_produto', $pid, $faces, $l['faces'], null, null, 'alta', "Do nome: \"{$p['name']}\" (T-6)", 'faces');
+            if (isset($l['diametro_cm']) && $p['subcategory'] === 'SPHERE') $sug('nome_produto', $pid, $cod['diametro_541'] ?? 0, $l['diametro_cm'], null, $uni['cm'] ?? null, 'alta', "Do nome: \"{$p['name']}\" (T-7: metros → cm)", 'diametro');
+        }
+        $op = function (int $aid, string $rot): ?int { $r = $this->q("SELECT id FROM {$this->s}eq_opcao WHERE atributo_id = ? AND rotulo = ? AND ativo = 1", [$aid, $rot])[0]['id'] ?? null; return $r === null ? null : (int) $r; };
+        $specs = $this->q("SELECT product_id, attrs_json FROM {$this->cs}product_specs WHERE kind = 'panel_mounted' AND deleted_at IS NULL");
+        foreach ($specs as $sp) {
+            $pid = (int) $sp['product_id']; if (!isset($ativos[$pid])) continue;
+            $j = json_decode((string) $sp['attrs_json'], true) ?: [];
+            if (isset($j['weight_kg']) && is_numeric($j['weight_kg'])) { $w = rtrim(rtrim((string) $j['weight_kg'], '0'), '.'); $sug('precifica', $pid, $cod['peso_399'] ?? 0, $w, null, $uni['kg'] ?? null, 'alta', "Precifica (panel_mounted.weight_kg = {$j['weight_kg']})", 'precifica'); }
+            foreach (self::C8_PRECIFICA as $campo => [$c, $map]) {
+                $v = $j[$campo] ?? null; if (!is_string($v) || !isset($map[$v]) || !isset($cod[$c])) continue;
+                $o = $op($cod[$c], $map[$v]); if ($o === null && !$this->seco) continue;
+                $sug('precifica', $pid, $cod[$c], $map[$v], $o, null, 'alta', "Precifica (panel_mounted.$campo = $v)", 'precifica');
+            }
+        }
+        $this->fecharLote($lote, $mud);
+        return $mud;
+    }
+
     // ---- C7 --------------------------------------------------------------------------------------------------------------------------
     /** Prova de cobertura (só leitura): das atribuições do legado (item × atributo) dos produtos atuais, quantas a regra da §9 reproduz. */
     public function c7(): array
@@ -383,10 +532,18 @@ final class Cargas
     }
 
     /** Reversão por exclusão lógica: valores do lote (versão 1, origem importado) e sugestões pendentes do lote; definições ficam na auditoria. */
-    public function reverter(string $c): array
+    /** $lote = id de UM lote da carga (o do relatório da execução), 'ultimo', ou 'todos' (explícito). Sem $lote: recusa. */
+    public function reverter(string $c, ?string $lote = null): array
     {
-        // Todos os lotes da carga (uma carga ganha lote novo quando a regra muda, ex.: C6 → C6b), não só o primeiro.
-        $lotes = $this->q("SELECT id FROM {$this->s}eq_importacao_lote WHERE origem = ? AND estado <> 'descartado'", [self::LOTES[$c] ?? '']);
+        $origem = self::LOTES[$c] ?? throw new RuntimeException("carga desconhecida: $c");
+        if ($lote === null || $lote === '') throw new RuntimeException('informe --lote <id> (o da execução a desfazer), --lote ultimo ou --lote todos');
+        $lotes = match (true) {
+            $lote === 'todos' => $this->q("SELECT id FROM {$this->s}eq_importacao_lote WHERE origem = ? AND estado <> 'descartado'", [$origem]),
+            $lote === 'ultimo' => $this->q("SELECT id FROM {$this->s}eq_importacao_lote WHERE origem = ? AND estado <> 'descartado' ORDER BY id DESC LIMIT 1", [$origem]),
+            ctype_digit($lote) => $this->q("SELECT id FROM {$this->s}eq_importacao_lote WHERE origem = ? AND id = ? AND estado <> 'descartado'", [$origem, (int) $lote]),
+            default => throw new RuntimeException('--lote inválido'),
+        };
+        if (!$lotes) throw new RuntimeException("nenhum lote '$lote' ativo da carga $c");
         $v = 0; $s = 0;
         foreach ($lotes as $l) {
             // Só desfaz o que a carga gravou e ninguém tocou depois (versao = 1); valor editado à mão fica (D10).
@@ -394,20 +551,20 @@ final class Cargas
             $s += $this->x("UPDATE {$this->s}eq_sugestao SET estado = 'recusada', motivo = 'reversão da carga', versao = versao + 1 WHERE lote_id = ? AND estado = 'pendente'", [$l['id']]);
             $this->x("UPDATE {$this->s}eq_importacao_lote SET estado = 'descartado' WHERE id = ?", [$l['id']]);
         }
-        return ['lotes' => count($lotes), 'valores_excluidos' => $v, 'sugestoes_encerradas' => $s];
+        return ['lotes' => array_map(static fn($l) => (int) $l['id'], $lotes), 'valores_excluidos' => $v, 'sugestoes_encerradas' => $s];
     }
 }
 
 if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
-    $o = getopt('', ['carga:', 'schema:', 'credenciais:', 'dry-run', 'reverter', 'fonte:', 'relatorio:', 'modo-producao', 'catalogo:']);
+    $o = getopt('', ['carga:', 'schema:', 'credenciais:', 'dry-run', 'reverter', 'fonte:', 'relatorio:', 'modo-producao', 'catalogo:', 'lote:']);
     $log = static function (string $m): void { fwrite(STDOUT, '[' . date('H:i:s') . "] $m\n"); };
     try {
         $schema = (string) ($o['schema'] ?? '');
         Migrador::validarSchema($schema, isset($o['modo-producao']), getenv('ATR_MIGRAR_PRODUCAO') ?: null);
         $c = strtoupper((string) ($o['carga'] ?? ''));
         $cg = new Cargas(migrador_conectar((string) ($o['credenciais'] ?? '')), $schema, isset($o['dry-run']), $log, isset($o['catalogo']) && preg_match('/^[A-Za-z0-9_]{1,64}$/', (string) $o['catalogo']) ? (string) $o['catalogo'] : null);
-        $r = isset($o['reverter']) ? $cg->reverter($c) : match ($c) { 'C2' => $cg->c2(), 'C3' => $cg->c3(), 'C4' => $cg->c4(), 'C5' => $cg->c5((string) ($o['fonte'] ?? '')), 'C6' => $cg->c6(), 'C7' => $cg->c7(), default => throw new RuntimeException("carga desconhecida: $c") };
-        $j = json_encode(['carga' => $c, 'seco' => isset($o['dry-run']), 'quando' => date('c'), 'resultado' => $r], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $r = isset($o['reverter']) ? $cg->reverter($c, isset($o['lote']) ? (string) $o['lote'] : null) : match ($c) { 'C2' => $cg->c2(), 'C3' => $cg->c3(), 'C4' => $cg->c4(), 'C5' => $cg->c5((string) ($o['fonte'] ?? '')), 'C6' => $cg->c6(), 'C7' => $cg->c7(), 'C8' => $cg->c8(), default => throw new RuntimeException("carga desconhecida: $c") };
+        $j = json_encode(['carga' => $c, 'seco' => isset($o['dry-run']), 'lote' => $cg->loteAtual, 'quando' => date('c'), 'resultado' => $r], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         if (!empty($o['relatorio'])) file_put_contents(rtrim((string) $o['relatorio'], '/') . "/$c" . (isset($o['dry-run']) ? '-seco' : '') . (isset($o['reverter']) ? '-reverter' : '') . '.json', $j);
         echo $j, "\nCARGA_OK $c\n";
     } catch (Throwable $e) { fwrite(STDERR, 'CARGA_FALHOU: ' . get_class($e) . ': ' . $e->getMessage() . "\n"); exit(1); }

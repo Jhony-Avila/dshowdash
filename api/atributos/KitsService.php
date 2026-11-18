@@ -32,6 +32,7 @@ final class KitsService
         private readonly int $nivel,
         private readonly string $usuario,
         private readonly CatalogoProdutos $catalogo,
+        private readonly ?bool $administra = null,   // AtributosPermissoes (18/11): null = só pelo nível
     ) {}
 
     /** A8: unidade aceitável para o atributo: existe, está ativa e é da mesma grandeza da unidade padrão (ou é extra explícita). */
@@ -56,6 +57,7 @@ final class KitsService
     private function exigir(): void
     {
         if ($this->nivel < AtributosService::NIVEL_ADMIN) throw new AtributosErro('INSUFFICIENT_LEVEL', 403, 'Seu nível não permite esta ação.');
+        if ($this->administra === false) throw new AtributosErro('NOT_CATALOG_ADMIN', 403, 'Só quem administra o catálogo de atributos pode mexer em kits, vínculos e massa. Você pode preencher valores.');
     }
 
     private function kit(int $id): array

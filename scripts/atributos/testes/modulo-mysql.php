@@ -9,6 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../../api/atributos/AtributosRepo.php';
 require_once __DIR__ . '/../../../api/atributos/KitsService.php';
 require_once __DIR__ . '/../../../api/atributos/SugestoesService.php';
+require_once __DIR__ . '/../../../api/atributos/Permissoes.php';
 require_once __DIR__ . '/_memoria.php';
 
 [$cnf, $db] = [(string) (getenv('EQ_TEST_CNF') ?: ''), (string) (getenv('EQ_TEST_DB') ?: '')];
@@ -174,8 +175,9 @@ $ok('D10 multiopção: continua só HDMI', (int) $um('SELECT COUNT(*) FROM eq_va
 // limpar multiopção limpa todas as opções (antes: "sem mudança")
 $adm->gravarValor(['product_id' => 105, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id']]);
 $v0 = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);
-$ok('limpar com versão velha → 409', fn() => $erro(fn() => $adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao' => $v0 + 9]))?->http === 409);
-$ok('limpar multiopção remove as 2 opções', fn() => !empty($adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao' => $v0])['limpo'])
+$vc105 = AtributosService::versaoConjunto($pdo->query("SELECT opcao_chave, versao FROM eq_valor WHERE product_id = 105 AND atributo_id = $moId AND excluido_em IS NULL")->fetchAll(PDO::FETCH_ASSOC));
+$ok('limpar com versão do conjunto velha → 409', fn() => $erro(fn() => $adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao_conjunto' => 'ffffffffffffffff']))?->http === 409);
+$ok('limpar multiopção remove as 2 opções', fn() => !empty($adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao_conjunto' => $vc105])['limpo'])
     && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 0);
 $ok('limpar em produto inativo → 422', fn() => $erro(fn() => $adm->limparValor(['product_id' => 199, 'atributo_id' => $atr['Cor'], 'versao' => 1]))?->http === 422);
 // desmarcar a 2ª opção com a versão do VALOR (a que a tela conhece)
@@ -273,6 +275,101 @@ stream_get_contents($pp2[1]); stream_get_contents($pp2[2]); $st2 = proc_close($p
 $ok('corrida (a outra desiste): esta espera e aplica uma vez só', $st2 === 0 && $dt > 0.8 && empty($rD['repetido']) && ($rD['gravado']['kits_aplicados'] ?? -1) === 1
     && $um("SELECT usuario FROM eq_pedido_massa WHERE chave = 'corrida-0002'") === 'admin@exemplo.invalid', json_encode($rD) . " dt=$dt st=$st2");
 $ok('auditoria "massa" uma por chave aplicada', (int) $um("SELECT COUNT(*) FROM eq_auditoria WHERE entidade = 'massa' AND entidade_id IN ('corrida-0001', 'corrida-0002')") === 1);
+
+// ---- DSHOW-033: limites com unidade HERDADA (produto, kit, padrão) e explícita; sem mutação na recusa ------------------------------
+$alt = (int) $adm->salvarAtributo(['rotulo' => 'Altura com limite (teste 033)', 'tipo' => 'numero', 'unidade_id' => $uCm, 'maximo' => '100'])['atributo']['id'];
+$linhas = function (string $sql, array $p) use ($pdo) { $st = $pdo->prepare($sql); $st->execute($p); return $st->fetchAll(PDO::FETCH_ASSOC); };
+$foto = fn(int $pid) => json_encode([$linhas('SELECT valor_num, unidade_id, versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pid, $alt]),
+    (int) $um('SELECT COUNT(*) FROM eq_auditoria')]);
+$semMutacao = function (string $nome, int $pid, array $b) use ($adm, $erro, $foto, $ok, $alt) {
+    $antes = $foto($pid);
+    $e = $erro(fn() => $adm->gravarValor(['product_id' => $pid, 'atributo_id' => $alt] + $b));
+    $ok("$nome → 422 e nada muda (valor, versão, auditoria)", $e?->http === 422 && $foto($pid) === $antes, ($e ? $e->getMessage() : 'sem erro') . " | $antes → " . $foto($pid));
+};
+$verAlt = fn(int $pid) => ($r = $um('SELECT versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL LIMIT 1', [$pid, $alt])) === false ? null : (int) $r;
+$grava = fn(int $pid, string $v, ?int $u = null) => $adm->gravarValor(['product_id' => $pid, 'atributo_id' => $alt, 'valor' => $v] + ($u ? ['unidade_id' => $u] : []) + (($x = $verAlt($pid)) !== null ? ['versao' => $x] : []));
+// explícita: 201 (avulso, sem unidade de produto) com unidade m no pedido
+$aj(['product_id' => 201, 'atributo_id' => $alt, 'modo' => 'incluir']);
+$ok('033 explícita: 1 m (= 100 cm) aceito', fn() => (bool) $grava(201, '1', $uM));
+$semMutacao('033 explícita: 2 m (= 200 cm)', 201, ['valor' => '2', 'unidade_id' => $uM, 'versao' => $verAlt(201)]);
+// produto: 202 com ajuste de unidade m; o pedido não manda unidade (herda m)
+$aj(['product_id' => 202, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uM]);
+$ok('033 produto: 1 (herda m) aceito', fn() => (bool) $grava(202, '1'));
+$semMutacao('033 produto: 2 (herda m = 200 cm)', 202, ['valor' => '2', 'versao' => $verAlt(202)]);
+// kit: kit com o item em m, aplicado direto ao 105; o pedido não manda unidade (herda m do kit)
+$kU = (int) $kits->salvarKit(['nome' => 'Kit unidade m (teste 033)'])['kit']['id'];
+$kits->definirItens(['id' => $kU, 'versao' => (int) $repo->grupo($kU)['versao'], 'itens' => [['atributo_id' => $alt, 'posicao' => 1, 'obrigatorio' => 0, 'visivel' => 1, 'destaque' => 0, 'importancia' => null, 'unidade_id' => $uM]]]);
+$kp(['product_id' => 105, 'grupo_id' => $kU, 'ativo' => 1]);
+$ok('033 kit: 1 (herda m do kit) aceito', fn() => (bool) $grava(105, '1'));
+$semMutacao('033 kit: 2 (herda m do kit = 200 cm)', 105, ['valor' => '2', 'versao' => $verAlt(105)]);
+// padrão: 104 avulso sem unidade nenhuma → cm (padrão do atributo): 100 aceito, 101 recusado
+$aj(['product_id' => 104, 'atributo_id' => $alt, 'modo' => 'incluir']);
+$ok('033 padrão: 100 (cm) aceito', fn() => (bool) $grava(104, '100'));
+$semMutacao('033 padrão: 101 cm', 104, ['valor' => '101', 'versao' => $verAlt(104)]);
+// conversão exata: 0.5 m = 50 cm aceito; 1.000001 m recusado
+$ok('033 exato: 0,5 m aceito', fn() => (bool) $grava(201, '0.5', $uM));
+$semMutacao('033 exato: 1,000001 m', 201, ['valor' => '1.000001', 'unidade_id' => $uM, 'versao' => $verAlt(201)]);
+// unidade extra SEM fator → 422 claro (antes: os limites eram ignorados)
+$uPe = (int) $adm->criarUnidade(['simbolo' => 'pe033', 'nome' => 'pé sem fator (teste)', 'grandeza' => 'comprimento'])['id'];
+$adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => [$uPe]]);
+$e033 = $erro(fn() => $adm->gravarValor(['product_id' => 201, 'atributo_id' => $alt, 'valor' => '1', 'unidade_id' => $uPe, 'versao' => $verAlt(201)]));
+$ok('033 unidade sem fator → 422 UNIT_WITHOUT_FACTOR com mensagem clara', $e033?->http === 422 && str_contains($e033->getMessage(), 'fator de conversão'), $e033 ? $e033->getMessage() : 'sem erro');
+
+// ---- DSHOW-034: multiopção — limpar / mudar estado exigem a versão do CONJUNTO, conferida sob trava -------------------------------
+$aj(['product_id' => 104, 'atributo_id' => $moId, 'modo' => 'incluir']);
+$vc = fn(int $pid) => AtributosService::versaoConjunto($linhas('SELECT opcao_chave, versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pid, $moId]));
+$conj = fn(int $pid) => json_encode([$linhas('SELECT opcao_chave, estado, versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave', [$pid, $moId]), (int) $um('SELECT COUNT(*) FROM eq_auditoria')]);
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id']]);
+$vA = $vc(104);                                                  // aba A lê o conjunto
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id']]);   // aba B acrescenta outra opção (por opção)
+$ok('034: aba B acrescentou a 2ª opção (por opção, sem versão do conjunto)', (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 2);
+$antes = $conj(104);
+$v1a = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);   // versão da 1ª linha: NÃO mudou com a opção de B (o defeito)
+$e1 = $erro(fn() => $adm->limparValor(['product_id' => 104, 'atributo_id' => $moId, 'versao' => $v1a, 'versao_conjunto' => $vA]));
+$ok('034: aba A limpa com a versão anterior → 409; a opção de B continua; auditoria sem registro', $e1?->http === 409 && $conj(104) === $antes, ($e1 ? $e1->getMessage() : 'sem erro'));
+$e2 = $erro(fn() => $adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'estado' => 'nao_se_aplica', 'versao_conjunto' => $vA]));
+$ok('034: aba A muda o estado com a versão anterior → 409; nada muda', $e2?->http === 409 && $conj(104) === $antes, ($e2 ? $e2->getMessage() : 'sem erro'));
+$ok('034: limpar a multiopção sem versão do conjunto → 422', fn() => $erro(fn() => $adm->limparValor(['product_id' => 104, 'atributo_id' => $moId, 'versao' => 1]))?->http === 422 && $conj(104) === $antes);
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'estado' => 'nao_se_aplica', 'versao_conjunto' => $vc(104)]);
+$ok('034: com a versão atual, mudar o estado funciona (as 2 opções saem, fica "não se aplica")', $linhas('SELECT opcao_chave, estado FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === [['opcao_chave' => 0, 'estado' => 'nao_se_aplica']]);
+$ok('034: trocar o estado por uma opção com versão velha → 409', fn() => $erro(fn() => $adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id'], 'versao_conjunto' => $vA]))?->http === 409);
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id'], 'versao_conjunto' => $vc(104)]);
+$r034 = $adm->limparValor(['product_id' => 104, 'atributo_id' => $moId, 'versao_conjunto' => $vc(104)]);
+$ok('034: com a versão atual, limpar funciona', !empty($r034['limpo']) && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 0);
+
+// ---- Decisão do Jhony (18/11): outros nível 80 só PREENCHEM; administrar = 75 ou permissão explícita (UARPS 'allow') --------------
+$P = 'AtributosPermissoes';
+$ok('perm: 75 nível 80 administra', $P::administra(75, 80, null, [75]));
+$ok('perm: 75 nível 50 não administra', !$P::administra(75, 50, null, [75]));
+$ok('perm: outro nível 80 sem UARPS não administra', !$P::administra(12, 80, null, [75]));
+$ok('perm: UARPS state allow → administra', $P::administra(12, 80, fn($u, $t) => ['allowed' => true, 'state' => 'allow'], [75]));
+$ok('perm: UARPS inherit (allowed=true!) → NÃO administra (precisa de permissão explícita)', !$P::administra(12, 80, fn($u, $t) => ['allowed' => true, 'state' => 'inherit'], [75]));
+$ok('perm: UARPS deny → não', !$P::administra(12, 80, fn($u, $t) => ['allowed' => false, 'state' => 'deny'], [75]));
+$ok('perm: UARPS com erro/fallback → não (fail-closed)', !$P::administra(12, 80, fn($u, $t) => ['allowed' => true, 'state' => 'error', 'source' => 'fallback'], [75])
+    && !$P::administra(12, 80, function ($u, $t) { throw new RuntimeException('x'); }, [75]));
+$admX = new AtributosService($repo, 80, 'jhony.admin@exemplo.invalid', $cat, true);
+$kitsX = new KitsService($repo, 80, 'jhony.admin@exemplo.invalid', $cat, true);
+$admO = new AtributosService($repo, 80, 'outro80@exemplo.invalid', $cat, false);
+$kitsO = new KitsService($repo, 80, 'outro80@exemplo.invalid', $cat, false);
+$aud = fn() => (int) $um('SELECT COUNT(*) FROM eq_auditoria');
+$kO = (int) $kitsX->salvarKit(['nome' => 'Kit do administrador (perm)'])['kit']['id'];
+$ok('perm: quem administra cria kit e a auditoria registra o ator certo', $um("SELECT usuario FROM eq_auditoria WHERE entidade = 'kit' AND entidade_id = ? AND acao = 'criar'", [(string) $kO]) === 'jhony.admin@exemplo.invalid');
+$gK = $repo->grupo($kO); $a0 = $aud();
+$nega = function (string $nome, callable $f, callable $intacto) use ($ok, $erro, $aud, &$a0) {
+    $a0 = $aud(); $e = $erro($f);
+    $ok("perm: outro nível 80 · $nome → 403, nada muda", $e?->http === 403 && $e->codigo === 'NOT_CATALOG_ADMIN' && $aud() === $a0 && $intacto(), $e ? "{$e->codigo} {$e->getMessage()}" : 'sem erro');
+};
+$nega('salvar kit', fn() => $kitsO->salvarKit(['id' => $kO, 'versao' => (int) $gK['versao'], 'nome' => 'invadido']), fn() => $repo->grupo($kO)['nome'] === 'Kit do administrador (perm)' && (int) $repo->grupo($kO)['versao'] === (int) $gK['versao']);
+$nega('itens do kit', fn() => $kitsO->definirItens(['id' => $kO, 'versao' => (int) $gK['versao'], 'itens' => $itens([$atr['Cor']])]), fn() => (int) $repo->grupo($kO)['versao'] === (int) $gK['versao']);
+$nega('criar atributo (dicionário)', fn() => $admO->salvarAtributo(['rotulo' => 'Invasor', 'tipo' => 'texto']), fn() => (int) $um("SELECT COUNT(*) FROM eq_atributo WHERE rotulo = 'Invasor'") === 0);
+$nega('criar unidade', fn() => $admO->criarUnidade(['simbolo' => 'inv', 'nome' => 'invasora', 'grandeza' => 'comprimento', 'fator_base' => '1']), fn() => (int) $um("SELECT COUNT(*) FROM eq_unidade WHERE simbolo = 'inv'") === 0);
+$vvO = $verVinc(101);
+$nega('vínculo por produto', fn() => $kitsO->definirAjuste(['product_id' => 101, 'atributo_id' => $atr['Cor'], 'modo' => 'excluir', 'motivo' => 'x', 'versao_vinculos' => $vvO]), fn() => $verVinc(101) === $vvO);
+$pM2 = ['produtos' => [101], 'kits_aplicar' => [$kO], 'chave' => 'perm-outro-0001'];
+$nega('aplicar em massa', fn() => $kitsO->aplicarMassa($pM2 + ['versao_previa' => str_repeat('0', 64)]), fn() => (int) $um("SELECT COUNT(*) FROM eq_pedido_massa WHERE chave = 'perm-outro-0001'") === 0);
+$ok('perm: outro nível 80 PREENCHE valor e a auditoria registra ele', fn() => (bool) $admO->gravarValor(['product_id' => 102, 'atributo_id' => $peso, 'valor' => '3', 'versao' => (int) $um('SELECT versao FROM eq_valor WHERE product_id = 102 AND atributo_id = ? AND excluido_em IS NULL', [$peso])])
+    && $um("SELECT usuario FROM eq_auditoria WHERE entidade = 'valor' AND entidade_id = ? ORDER BY id DESC LIMIT 1", ["102:$peso:0"]) === 'outro80@exemplo.invalid');
+$ok('perm: pode_administrar = false para o outro nível 80; true para quem administra', $admO->podeAdministrar() === false && $admX->podeAdministrar() === true);
 
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " modulo-mysql (kits, vínculos, massa, sugestões, unidade): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);

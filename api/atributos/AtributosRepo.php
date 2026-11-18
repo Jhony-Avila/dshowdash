@@ -257,7 +257,8 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
     public function retratoModelo(?int $productId = null): RetratoModelo
     {
         $grupos = [];
-        foreach ($this->q('SELECT id, nome, descricao, ordem, aplica_a_todos, ativo, versao FROM ' . $this->t('eq_grupo')) as $g) $grupos[(int) $g['id']] = $g;
+        // DSHOW-035 #1: a ordem (nome, id) dos kits vem do MySQL — mesma colação (sem caixa/acento) que o app usa no ORDER BY g.nome, g.id
+        $r = 0; foreach ($this->q('SELECT id, nome, descricao, ordem, aplica_a_todos, ativo, versao FROM ' . $this->t('eq_grupo') . ' ORDER BY nome, id') as $g) $grupos[(int) $g['id']] = $g + ['ordem_nome' => $r++];
         $escopos = $this->q('SELECT grupo_id, categoria, subcategoria FROM ' . $this->t('eq_grupo_escopo') . ' WHERE excluido_em IS NULL');
         $itens = [];
         foreach ($this->q('SELECT grupo_id, atributo_id, posicao, obrigatorio, visivel, destaque, importancia, unidade_id, legado_id FROM ' . $this->t('eq_grupo_atributo') . ' WHERE excluido_em IS NULL') as $i) $itens[(int) $i['grupo_id']][] = $i;
