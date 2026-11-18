@@ -81,7 +81,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   } else {
     campo = (
       <input id={id} className={`at-campo ${numerico ? 'at-campo--num' : ''}`} type={item.tipo === 'data' ? 'date' : 'text'} inputMode={numerico ? 'decimal' : undefined}
-        value={txt} readOnly={ro} aria-label={item.rotulo} autoFocus={autoFoco} placeholder={ro ? '' : numerico ? '0' : item.tipo === 'data' ? '' : 'Digite…'}
+        value={txt} readOnly={ro} aria-label={item.rotulo} autoFocus={autoFoco} placeholder={ro ? '' : numerico ? '—' : item.tipo === 'data' ? '' : 'Digite…'}
         onChange={(e) => setTxt(e.target.value)} onBlur={confirmarTexto}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmarTexto(); } if (e.key === 'Escape') setTxt(original.current); }} />);
   }
