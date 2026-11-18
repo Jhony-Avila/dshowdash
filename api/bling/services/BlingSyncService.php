@@ -418,7 +418,7 @@ final class BlingSyncService
      * a limitação que a Fase 3 teve que declarar.
      */
     private function gravarPreco(int $accountId, int $productId, float $preco,
-                                 ?float $promo, float $custo): void
+                                 ?float $promo, ?float $custo): void   // DSHOW-018: null = custo não informado pelo Bling
     {
         $atual = $this->repo->consultar(
             'SELECT preco, preco_promocional, custo FROM bling_prices
@@ -428,7 +428,7 @@ final class BlingSyncService
 
         $mudou = $antes === null
             || abs((float) $antes['preco'] - $preco) > 0.001
-            || abs((float) ($antes['custo'] ?? 0) - $custo) > 0.001
+            || ($custo !== null && ($antes['custo'] === null || abs((float) $antes['custo'] - $custo) > 0.001))   // DSHOW-018: omitido não é mudança
             || (float) ($antes['preco_promocional'] ?? 0) !== (float) ($promo ?? 0);
 
         // ⚠️ `canal_key` NÃO é redundância: o UNIQUE original era
@@ -442,7 +442,7 @@ final class BlingSyncService
                                        preco, preco_promocional, custo, sincronizado_em)
              VALUES (?, ?, NULL, 0, ?, ?, ?, UTC_TIMESTAMP())
              ON DUPLICATE KEY UPDATE preco = VALUES(preco),
-               preco_promocional = VALUES(preco_promocional), custo = VALUES(custo),
+               preco_promocional = VALUES(preco_promocional), custo = COALESCE(VALUES(custo), custo),   /* DSHOW-018: omitido não apaga custo conhecido */
                sincronizado_em = UTC_TIMESTAMP()'
         )->execute([$accountId, $productId, $preco, $promo, $custo]);
 

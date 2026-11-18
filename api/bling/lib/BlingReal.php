@@ -299,7 +299,7 @@ final class BlingReal extends BlingProviderBase
             "SELECT p.id, p.bling_id, p.sku, p.gtin, p.nome, p.tipo, p.category_id,
                     p.marca, p.unidade, p.ncm, p.origem, p.peso_kg, p.dimensoes,
                     p.tem_imagem, p.descricao_ok, p.supplier_id, p.is_ativo, p.qualidade_score,
-                    COALESCE(pr.preco, 0) preco, pr.preco_promocional, COALESCE(pr.custo, 0) custo,
+                    COALESCE(pr.preco, 0) preco, pr.preco_promocional, pr.custo custo,   /* DSHOW-018: custo desconhecido segue NULL */
                     COALESCE(v.unidades, 0) unidades, COALESCE(v.receita, 0) receita,
                     v.ultima_venda, COALESCE(e.disponivel, 0) estoque_total
                FROM bling_products p
@@ -323,7 +323,7 @@ final class BlingReal extends BlingProviderBase
 
         return array_map(static function ($p) use ($canaisPorProduto) {
             $preco = (float) ($p['preco_promocional'] ?? 0) ?: (float) $p['preco'];
-            $custo = (float) $p['custo'];
+            $custo = $p['custo'] === null ? null : (float) $p['custo'];   // DSHOW-018: null = desconhecido (não é zero)
             return [
                 'id' => (string) $p['id'], 'bling_id' => (int) $p['bling_id'],
                 'sku' => $p['sku'] ?? '', 'gtin' => $p['gtin'],
@@ -340,7 +340,7 @@ final class BlingReal extends BlingProviderBase
                 'ativo' => (bool) $p['is_ativo'], 'variacoes' => 0,
                 'canais' => $canaisPorProduto[$p['id']] ?? [],
                 // Derivados — mesmos nomes do mock (BlingMock::enriquecerProdutos)
-                'margem_pct' => $preco > 0 ? round((($preco - $custo) / $preco) * 100, 1) : 0.0,
+                'margem_pct' => ($preco > 0 && $custo !== null) ? round((($preco - $custo) / $preco) * 100, 1) : null,   // DSHOW-018: sem custo, margem desconhecida (não 100%)
                 'ultima_venda' => $p['ultima_venda'],
                 'unidades_vendidas' => (int) $p['unidades'],
                 'receita' => round((float) $p['receita'], 2),
