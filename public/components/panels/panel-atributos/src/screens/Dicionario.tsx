@@ -9,6 +9,7 @@ import { IMPORTANCIA, IMPORTANCIAS, TIPO } from '../lib/rotulos';
 import { decimal, numeroParaApi } from '../lib/formatar';
 import { Botao, Dialogo, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
 import { useModulo } from '../app/contexto';
+import { precondicaoRenomear, type RascunhoRenomear } from '../lib/integridade';
 import '../styles/dicionario.css';
 
 interface RespDicionario { atributos: AtributoDicionario[]; unidades: Unidade[]; pode_administrar: boolean }
@@ -523,7 +524,7 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode, focarNova = false }:
   const refNova = React.useRef<HTMLInputElement>(null);
   React.useEffect(() => { if (focarNova && refNova.current) { refNova.current.scrollIntoView({ block: 'center' }); refNova.current.focus(); } }, [focarNova]);
   const [ocupado, setOcupado] = React.useState<string | null>(null);
-  const [renomeando, setRenomeando] = React.useState<{ id: number; texto: string } | null>(null);
+  const [renomeando, setRenomeando] = React.useState<RascunhoRenomear | null>(null);   // DSHOW-070: `original` fixado ao clicar Renomear
   const lista = React.useRef<HTMLUListElement>(null);
   const focoDepois = React.useRef<{ id: number; acao: string } | null>(null);
 
@@ -553,9 +554,16 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode, focarNova = false }:
   };
   const renomear = async (o: OpcaoApi) => {
     if (!renomeando) return;
-    const r = renomeando.texto.trim();
-    if (!r || r === o.rotulo) { setRenomeando(null); return; }
-    if (await executar(`ren${o.id}`, () => enviar('opcao_renomear', { id: o.id, rotulo: r, rotulo_atual: o.rotulo }), 'Opção renomeada (vale para todos os produtos).', { id: o.id, acao: 'renomear' })) setRenomeando(null);
+    const p = precondicaoRenomear(renomeando);
+    if (p.acao === 'nada') { setRenomeando(null); return; }
+    const st = { conflito: false };
+    const enviarRenomear = () => enviar<{ opcoes: OpcaoApi[] }>('opcao_renomear', { id: p.id, rotulo: p.rotulo, rotulo_atual: p.rotulo_atual })
+      .catch((e: unknown) => { st.conflito = e instanceof ErroApi && e.conflito; throw e; });
+    if (await executar(`ren${o.id}`, enviarRenomear, 'Opção renomeada (vale para todos os produtos).', { id: o.id, acao: 'renomear' })) { setRenomeando(null); return; }
+    if (!st.conflito) return;
+    // DSHOW-070: 409 = alguém renomeou antes; a mensagem já foi mostrada — fecha o rascunho e relê as opções
+    setRenomeando(null);
+    try { setOpcoes((await obter<RespDetalhe>('atributo', { id: atributoId })).opcoes); } catch { /* a lista fica como estava; o aviso do 409 já orienta */ }
   };
 
   return (
@@ -571,7 +579,7 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode, focarNova = false }:
                 <span className="at-dic-opcao__pos" aria-hidden>{i + 1}.</span>
                 {editando && renomeando ? (
                   <input className="at-campo" data-esc-local aria-label={`Novo rótulo para ${o.rotulo}`} autoFocus maxLength={160} value={renomeando.texto}
-                    onChange={(e) => setRenomeando({ id: o.id, texto: e.target.value })}
+                    onChange={(e) => { const texto = e.target.value; setRenomeando((r) => (r ? { ...r, texto } : r)); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void renomear(o); } else if (e.key === 'Escape') { e.preventDefault(); setRenomeando(null); } }} />
                 ) : (
                   <span className="at-dic-opcao__rotulo">{o.rotulo}{!at && <> <Etiqueta>Inativa</Etiqueta></>}</span>
@@ -587,7 +595,7 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode, focarNova = false }:
                       <>
                         <button type="button" className="bl-botao bl-botao--icone" data-op={o.id} data-acao="subir" aria-label={`Subir ${o.rotulo}`} title="Subir (Alt+↑)" disabled={i === 0 || !!ocupado} onClick={() => mover(i, -1)}>↑</button>
                         <button type="button" className="bl-botao bl-botao--icone" data-op={o.id} data-acao="descer" aria-label={`Descer ${o.rotulo}`} title="Descer (Alt+↓)" disabled={i === opcoes.length - 1 || !!ocupado} onClick={() => mover(i, 1)}>↓</button>
-                        <button type="button" className="bl-botao" data-op={o.id} data-acao="renomear" disabled={!!ocupado} onClick={() => setRenomeando({ id: o.id, texto: o.rotulo })}>Renomear</button>
+                        <button type="button" className="bl-botao" data-op={o.id} data-acao="renomear" disabled={!!ocupado} onClick={() => setRenomeando({ id: o.id, texto: o.rotulo, original: o.rotulo })}>Renomear</button>
                         <button type="button" className={`bl-botao ${at ? 'at-botao--perigo' : ''}`} data-op={o.id} data-acao="ativa" disabled={!!ocupado}
                           onClick={() => void executar(`at${o.id}`, () => enviar('opcao_ativa', { id: o.id, ativo: !at }), at ? 'Opção desativada.' : 'Opção reativada.', { id: o.id, acao: 'ativa' })}>
                           {at ? 'Desativar' : 'Reativar'}

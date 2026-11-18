@@ -93,6 +93,18 @@ interface AtributosRepositorio
     public function definirPosicaoOpcao(int $opcaoId, int $atributoId, int $posicao): bool;
 }
 
+/**
+ * DSHOW-071 (hotfix 18/11): edição de unidade com TRAVA da linha e condição no UPDATE. Interface SEPARADA (o RepoMemoria dos testes não
+ * a implementa e segue o caminho antigo); só o AtributosRepoPdo a implementa. Chamar dentro de transacao().
+ */
+interface UnidadesComTrava
+{
+    /** SELECT … FOR UPDATE da unidade (id, simbolo, nome, grandeza, fator_base, ativo) ou null. */
+    public function travarUnidade(int $id): ?array;
+    /** UPDATE só se a linha ainda for $atual (nome, grandeza, fator_base); a decisão de conflito é do serviço, com a linha travada. */
+    public function atualizarUnidadeSe(int $id, array $atual, array $d): void;
+}
+
 final class AtributosService
 {
     public const NIVEL_CONSULTA = 50;
@@ -412,8 +424,8 @@ final class AtributosService
         $s = self::texto($b['simbolo'] ?? null, 20, 'simbolo', true, $erros);
         $n = self::texto($b['nome'] ?? null, 80, 'nome', true, $erros);
         $g = self::texto($b['grandeza'] ?? null, 40, 'grandeza', false, $erros);
-        $fator = self::fatorDe($b, $erros);
-        if ($erros) throw new AtributosErro('VALIDATION_ERROR', 422, 'Campos inválidos.', $erros);
+        $fator = self::fatorDe($b, $erros, $msgFator);
+        if ($erros) throw new AtributosErro('VALIDATION_ERROR', 422, $msgFator ?? 'Campos inválidos.', $erros);
         // BR-02: "tentar de novo" depois de uma gravação que deu certo NÃO grava outra vez — mesma unidade (símbolo, nome, grandeza) = sucesso idempotente
         foreach ($this->repo->unidades() as $u) {
             if ($u['simbolo'] !== $s) continue;
@@ -439,9 +451,11 @@ final class AtributosService
         $n = self::texto($b['nome'] ?? null, 80, 'nome', true, $erros);
         $g = self::texto($b['grandeza'] ?? null, 40, 'grandeza', false, $erros);
         if (isset($b['simbolo']) && $b['simbolo'] !== $antes['simbolo']) $erros[] = 'simbolo';
-        $fator = self::fatorDe($b, $erros);
-        if ($erros) throw new AtributosErro('VALIDATION_ERROR', 422, 'Campos inválidos (o símbolo não muda).', array_values(array_unique($erros)));
-        $mudaFator = $fator !== false && (string) ($antes['fator_base'] ?? '') !== (string) ($fator ?? '') && !($fator !== null && $antes['fator_base'] !== null && self::comparar((string) $fator, self::decimalCanonico((string) $antes['fator_base'])) === 0);
+        $fator = self::fatorDe($b, $erros, $msgFator);
+        if ($erros) throw new AtributosErro('VALIDATION_ERROR', 422, $msgFator ?? 'Campos inválidos (o símbolo não muda).', array_values(array_unique($erros)));
+        // DSHOW-071: com a fotografia do que a tela abriu (`antes`), a decisão é feita com a linha TRAVADA. Sem `antes` (cargas.php, bundle antigo) → caminho antigo.
+        if (array_key_exists('antes', $b) && $this->repo instanceof UnidadesComTrava) return $this->salvarUnidadeComTrava($this->repo, $id, (string) $n, $g, $fator, self::fotografiaUnidade($b['antes']));
+        $mudaFator = $fator !== false && (string) ($antes['fator_base'] ?? '') !== (string) ($fator ?? '') && !($fator !== null && $antes['fator_base'] !== null && self::comparar((string) $fator, (string) self::fatorExato((string) $antes['fator_base'])) === 0);
         if ((string) $antes['nome'] === (string) $n && (string) ($antes['grandeza'] ?? '') === (string) ($g ?? '') && !$mudaFator) return $this->respostaUnidades(['sem_mudanca' => true]);   // BR-02: repetir não grava nem audita de novo
         $this->repo->transacao(function () use ($id, $n, $g, $antes, $mudaFator, $fator) {
             $novo = ['nome' => $n, 'grandeza' => $g] + ($mudaFator ? ['fator_base' => $fator] : []);
@@ -451,14 +465,109 @@ final class AtributosService
         return $this->respostaUnidades();
     }
 
-    /** D3: fator para a unidade base da grandeza (decimal > 0); '' ou null explícito limpa; ausente = não mexe (false). */
-    private static function fatorDe(array $b, array &$erros): string|null|false
+    /** DSHOW-071: fotografia {nome, grandeza, fator_base} enviada pela tela, normalizada (grandeza null ≡ ''; fator canônico; vírgula aceita). */
+    private static function fotografiaUnidade(mixed $f): array
+    {
+        if (!is_array($f) || !array_key_exists('nome', $f) || !is_string($f['nome'])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fotografia da unidade inválida. Recarregue.', ['antes']);
+        $g = $f['grandeza'] ?? null;
+        if ($g !== null && !is_string($g)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fotografia da unidade inválida. Recarregue.', ['antes']);
+        $fb = $f['fator_base'] ?? null;
+        if ($fb !== null && $fb !== '') {
+            if (is_string($fb) && str_contains($fb, ',')) $fb = str_replace(',', '.', str_replace('.', '', $fb));   // "0,01" (pt-BR) = 0.01
+            $fb = self::fatorExato($fb);   // DSHOW-089: mesma forma canônica do pedido e da linha gravada
+            if ($fb === null) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fotografia da unidade inválida. Recarregue.', ['antes']);
+        } else $fb = null;
+        return ['nome' => $f['nome'], 'grandeza' => trim($g ?? ''), 'fator_base' => $fb];
+    }
+
+    /** DSHOW-071: estado normalizado de uma linha de eq_unidade (mesma forma da fotografia). */
+    private static function estadoUnidade(array $u): array
+    {
+        return ['nome' => (string) $u['nome'], 'grandeza' => (string) ($u['grandeza'] ?? ''), 'fator_base' => $u['fator_base'] === null ? null : self::fatorExato((string) $u['fator_base'])];
+    }
+
+    /** DSHOW-071: campos que diferem entre dois estados normalizados (nome exato; grandeza null ≡ ''; fator por valor decimal). */
+    private static function camposDiferentes(array $a, array $b): array
+    {
+        $d = [];
+        if ($a['nome'] !== $b['nome']) $d[] = 'nome';
+        if ($a['grandeza'] !== $b['grandeza']) $d[] = 'grandeza';
+        if (($a['fator_base'] === null) !== ($b['fator_base'] === null) || ($a['fator_base'] !== null && self::comparar($a['fator_base'], (string) $b['fator_base']) !== 0)) $d[] = 'fator_base';
+        return $d;
+    }
+
+    /**
+     * DSHOW-071: trava a linha, compara fotografia × atual × pedido e só então grava (UPDATE condicionado ao atual travado) + auditoria.
+     * Fotografia ≠ atual: se o atual já é o pedido → sem_mudanca (repetição), senão 409 sem gravar nem auditar.
+     */
+    private function salvarUnidadeComTrava(UnidadesComTrava $trava, int $id, string $n, ?string $g, string|null|false $fator, array $foto): array
+    {
+        $r = $this->repo->transacao(function () use ($trava, $id, $n, $g, $fator, $foto) {
+            $atual = $trava->travarUnidade($id) ?? throw new AtributosErro('NOT_FOUND', 404, 'Unidade não encontrada.');
+            $estado = self::estadoUnidade($atual);
+            $pedido = ['nome' => $n, 'grandeza' => (string) ($g ?? ''), 'fator_base' => $fator === false ? $estado['fator_base'] : $fator];
+            $mudou = self::camposDiferentes($foto, $estado);
+            if ($mudou) {
+                if (!self::camposDiferentes($estado, $pedido)) return 'sem_mudanca';
+                $nomes = ['nome' => 'nome', 'grandeza' => 'grandeza', 'fator_base' => 'fator'];
+                throw new AtributosErro('CONFLICT', 409, 'A unidade foi alterada desde que você abriu: ' . implode(', ', array_map(static fn($c) => $nomes[$c], $mudou)) . '. Feche e reabra para ver a versão atual.', $mudou);
+            }
+            $difs = self::camposDiferentes($estado, $pedido);
+            if (!$difs) return 'sem_mudanca';
+            $novo = ['nome' => $n, 'grandeza' => $g] + (in_array('fator_base', $difs, true) ? ['fator_base' => $fator] : []);
+            $trava->atualizarUnidadeSe($id, $atual, $novo);
+            $this->repo->auditar($this->usuario, 'editar', 'unidade', (string) $id, $atual, $novo, null);
+            return 'gravado';
+        });
+        return $r === 'sem_mudanca' ? $this->respostaUnidades(['sem_mudanca' => true]) : $this->respostaUnidades();
+    }
+
+    /**
+     * D3: fator para a unidade base da grandeza (decimal > 0); '' ou null explícito limpa; ausente = não mexe (false).
+     * DSHOW-089: devolve a forma canônica EXATA que eq_unidade.fator_base (DECIMAL(30,12)) guarda; o que o banco teria de arredondar
+     * (mais de 12 casas significativas) ou não cabe (mais de 18 dígitos inteiros) é recusado aqui — antes da trava, da gravação e da auditoria.
+     */
+    private static function fatorDe(array $b, array &$erros, ?string &$msg = null): string|null|false
     {
         if (!array_key_exists('fator_base', $b)) return false;
         if ($b['fator_base'] === null || $b['fator_base'] === '') return null;
-        $f = self::decimalCanonico($b['fator_base']);
+        $f = self::fatorExato($b['fator_base'], $motivo);
+        if ($motivo !== null) {
+            $txt = str_replace('.', ',', (string) self::decimalTexto($b['fator_base']));
+            $msg = $motivo === 'casas'
+                ? 'O fator aceita no máximo ' . self::FATOR_CASAS . " casas decimais; $txt não pode ser gravado sem arredondar."
+                : 'O fator aceita no máximo ' . self::FATOR_INTEIROS . " dígitos antes da vírgula; $txt não cabe.";
+        }
         if ($f === null || self::comparar($f, '0') <= 0) { $erros[] = 'fator_base'; return false; }
         return $f;
+    }
+
+    /** DSHOW-089: limites de eq_unidade.fator_base DECIMAL(30,12). */
+    private const FATOR_CASAS = 12, FATOR_INTEIROS = 18;
+
+    /** DSHOW-089: o valor recebido como texto decimal (sinal, inteiro, fração) ou null; float pela menor representação exata (como decimalCanonico). */
+    private static function decimalTexto(mixed $v): ?string
+    {
+        if (is_int($v)) return (string) $v;
+        if (is_float($v)) { if (!is_finite($v)) return null; $v = json_encode($v); }
+        return is_string($v) && preg_match('/^-?[0-9]+(?:\.[0-9]+)?$/', trim($v)) ? trim($v) : null;
+    }
+
+    /**
+     * DSHOW-089: fator em decimal EXATO na forma canônica (sem zeros à esquerda nem finais; "0.1234567890120" ≡ "0.123456789012"), sem float.
+     * null = não é decimal, ou não cabe em DECIMAL(30,12) sem arredondar ($motivo 'casas') / sem estourar ($motivo 'inteiros').
+     */
+    private static function fatorExato(mixed $v, ?string &$motivo = null): ?string
+    {
+        $motivo = null;
+        $t = self::decimalTexto($v);
+        if ($t === null || !preg_match('/^(-?)([0-9]+)(?:\.([0-9]+))?$/', $t, $m)) return null;
+        $int = ltrim($m[2], '0'); if ($int === '') $int = '0';
+        $frac = rtrim($m[3] ?? '', '0');
+        if (strlen($frac) > self::FATOR_CASAS) { $motivo = 'casas'; return null; }
+        if (strlen($int) > self::FATOR_INTEIROS) { $motivo = 'inteiros'; return null; }
+        $zero = $int === '0' && $frac === '';
+        return ($m[1] === '-' && !$zero ? '-' : '') . $int . ($frac !== '' ? '.' . $frac : '');
     }
 
     public function definirUnidadeAtiva(int $id, bool $ativo): array
@@ -817,14 +926,8 @@ final class AtributosService
             && ($d['valor_data'] === null || $d['valor_data'] === '') && $d['opcao_id'] === null) {
             throw new AtributosErro('VALUE_EMPTY', 422, 'Valor vazio: preencha o campo, ou escolha "Não se aplica" ou "Desconhecido".', ['valor']);
         }
-        $d['unidade_id'] = $estado === 'informado' ? $this->validarUnidade($produto, $a, $b) : null;   // D3: unidade por valor
-        // DSHOW-048: valor numérico novo/editado NUNCA fica com unidade nula — grava a unidade EFETIVA de agora (produto → kit → padrão).
-        // Assim, mudar depois o kit (ou somar outro kit com outra unidade) não reinterpreta o número em silêncio.
-        if ($estado === 'informado' && $d['unidade_id'] === null && in_array($a['tipo'], ['numero', 'inteiro'], true)) {
-            $apl = $this->aplicaveis($produto)[$aid]['aplic'] ?? null;
-            $d['unidade_id'] = $apl !== null ? Aplicabilidade::unidadeEfetiva($apl, null) : ($a['unidade_id'] !== null ? (int) $a['unidade_id'] : null);
-        }
-        $this->repo->transacao(function () use ($pid, $aid, $d, $b, $a) {
+        $d['unidade_id'] = null;   // D3: unidade por valor — decidida DENTRO da transação, depois da trava (HOTFIX-2, janela fechada)
+        $this->repo->transacao(function () use ($pid, $aid, $d, $b, $a, $produto) {
             // P1-09: a definição é relida COM TRAVA COMPARTILHADA e conferida — se o tipo/limites/estado mudaram entre a validação e aqui
             // (versão diferente), conflito visível; a mudança de tipo (trava exclusiva + contagem com trava) espera esta transação.
             $atual = $this->repo->travarAtributo($aid, false);
@@ -833,6 +936,17 @@ final class AtributosService
             }
             // P1-07: todas as linhas do (produto, atributo) travadas → UM estado só por (produto, atributo)
             $linhas = $this->repo->travarValores($pid, $aid);
+            // HOTFIX-2 (janela, Jhony 18/11): a unidade é conferida AQUI, sob a trava, relendo a unidade (travada) e o vínculo/unidade
+            // efetiva — uma desativação ou troca de vínculo entre a validação e a gravação é vista (422 unidade_id, nada gravado nem auditado).
+            if ($d['estado'] === 'informado') {
+                $d['unidade_id'] = $this->validarUnidade($produto, $a, $b);
+                // DSHOW-048: valor numérico novo/editado NUNCA fica com unidade nula — grava a unidade EFETIVA de agora (produto → kit → padrão).
+                // Assim, mudar depois o kit (ou somar outro kit com outra unidade) não reinterpreta o número em silêncio.
+                if ($d['unidade_id'] === null && in_array($a['tipo'], ['numero', 'inteiro'], true)) {
+                    $apl = $this->aplicaveis($produto)[$aid]['aplic'] ?? null;
+                    $d['unidade_id'] = $apl !== null ? Aplicabilidade::unidadeEfetiva($apl, null) : ($a['unidade_id'] !== null ? (int) $a['unidade_id'] : null);
+                }
+            }
             // DSHOW-034: na multiopção, mudar o ESTADO (≠ informado) ou trocar um estado por opção substitui o conjunto inteiro →
             // exige a versão do CONJUNTO, conferida aqui, sob trava. Acrescentar opção a opções já marcadas continua por opção.
             if ($a['tipo'] === 'multiopcao') {
@@ -861,7 +975,11 @@ final class AtributosService
             if ($antes && !$vivo && $a['tipo'] !== 'multiopcao' && isset($b['versao']) && $b['versao'] !== '' && (int) $b['versao'] !== (int) $antes['versao']) {
                 throw new AtributosErro('CONFLICT', 409, 'Outra pessoa limpou este valor. Recarregue e tente de novo.');
             }
-            $versao = $antes ? (!$vivo ? (int) $antes['versao'] : (int) ($b['versao'] ?? 0)) : null;
+            // DSHOW-034 (resíduo escalar, DSHOW-077): pedido que saiu do campo VAZIO não traz versão de linha, mas traz a revisão do conjunto
+            // (soma das versões vivas + tombstones). Sem linha viva, confere-a aqui, sob a mesma trava: vazio → preenchido → vazio mudou a
+            // revisão → 409 (não reativa nem audita). Chamador legado que OMITE a revisão segue como antes.
+            if (!$vivo && $a['tipo'] !== 'multiopcao' && isset($b['versao_conjunto']) && $b['versao_conjunto'] !== '') self::conferirConjunto($b, $linhas);
+            $versao =$antes ? (!$vivo ? (int) $antes['versao'] : (int) ($b['versao'] ?? 0)) : null;
             if (!$this->repo->gravarValor($d, $versao)) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
             $excluidas = [];
             if ($a['tipo'] === 'multiopcao') foreach ($linhas as $l) {
@@ -882,8 +1000,28 @@ final class AtributosService
         if (!array_key_exists('unidade_id', $b) || $b['unidade_id'] === null || $b['unidade_id'] === '') return null;
         if (!in_array($a['tipo'], ['numero', 'inteiro'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Este atributo não tem unidade de medida.', ['unidade_id']);
         $uid = is_int($b['unidade_id']) ? $b['unidade_id'] : (is_string($b['unidade_id']) && ctype_digit($b['unidade_id']) ? (int) $b['unidade_id'] : 0);
-        foreach ($this->unidadesPermitidas($produto, $a) as $u) if ((int) $u['id'] === $uid) return $uid;
-        throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade não permitida para este atributo.', ['unidade_id']);
+        // DSHOW-079: a unidade do PEDIDO é a que o operador via ao digitar o número. Grava NELA (nunca troca pela vigente nem converte) ou
+        // recusa: existe, ATIVA, permitida (regra A8: grandeza da efetiva + extras) e da MESMA grandeza da unidade vigente agora.
+        $u = $uid > 0 ? $this->unidadeSobTrava($uid) : null;
+        if (!$u) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inexistente. Recarregue a ficha: o número não foi gravado.', ['unidade_id']);
+        $nao = 'Recarregue a ficha e confira a unidade: o número não foi gravado nem convertido.';
+        if (!(int) ($u['ativo'] ?? 1)) throw new AtributosErro('VALIDATION_ERROR', 422, 'A unidade "' . $u['simbolo'] . '" está desativada. Escolha outra unidade para este campo. O número não foi gravado.', ['unidade_id']);
+        $permitida = false;
+        foreach ($this->unidadesPermitidas($produto, $a) as $p) if ((int) $p['id'] === $uid) $permitida = true;
+        $aplic = $this->aplicaveis($produto)[(int) $a['id']]['aplic'] ?? null;
+        $vig = $aplic !== null ? Aplicabilidade::unidadeEfetiva($aplic, null) : (isset($a['unidade_id']) ? (int) $a['unidade_id'] : null);
+        $v = $vig !== null && $vig !== $uid ? $this->unidadeSobTrava($vig) : null;
+        $gU = (string) ($u['grandeza'] ?? ''); $gV = (string) ($v['grandeza'] ?? '');
+        if (!$permitida || ($v !== null && $gU !== '' && $gV !== '' && $gU !== $gV)) {
+            throw new AtributosErro('VALIDATION_ERROR', 422, 'A unidade "' . $u['simbolo'] . '" não vale mais para este campo' . ($v !== null ? ' (a unidade em uso agora é "' . $v['simbolo'] . '")' : '') . '. ' . $nao, ['unidade_id']);
+        }
+        return $uid;
+    }
+
+    /** HOTFIX-2: unidade relida com trava (FOR UPDATE) quando o repositório a oferece; senão, leitura simples (RepoMemoria dos testes). */
+    private function unidadeSobTrava(int $id): ?array
+    {
+        return $this->repo instanceof UnidadesComTrava ? $this->repo->travarUnidade($id) : $this->repo->unidade($id);
     }
 
     /** A8: unidades ativas da MESMA grandeza da unidade efetiva (produto → kit → padrão) + as incluídas explicitamente no atributo. */
@@ -922,7 +1060,7 @@ final class AtributosService
         if (!empty($b['converter'])) {
             $o = $origemId !== null ? $this->repo->unidade($origemId) : null; $dd = $perm[$destino];
             if (!$o || $o['fator_base'] === null || $dd['fator_base'] === null || (string) $o['grandeza'] !== (string) $dd['grandeza']) throw new AtributosErro('UNIT_NO_CONVERSION', 422, 'Sem fator de conversão entre estas unidades: use "só trocar a unidade".', ['unidade_id']);
-            $num = DecimalExato::mulDiv($num, self::decimalCanonico((string) $o['fator_base']), self::decimalCanonico((string) $dd['fator_base']), 6);   // exato, sem float
+            $num = DecimalExato::mulDiv($num, (string) self::fatorExato((string) $o['fator_base']), (string) self::fatorExato((string) $dd['fator_base']), 6);   // exato, sem float
         }
         return $this->gravarValor(['product_id' => $pid, 'atributo_id' => $aid, 'valor' => $num, 'unidade_id' => $destino, 'versao' => (int) $atual['versao'],
             'motivo' => !empty($b['converter']) ? 'unidade convertida' : 'unidade trocada (sem converter)']);

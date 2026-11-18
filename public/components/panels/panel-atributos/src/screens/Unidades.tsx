@@ -7,6 +7,7 @@ import type { Unidade } from '../lib/tipos';
 import { decimal, numeroParaApi } from '../lib/formatar';
 import { Botao, Dialogo, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
 import { useModulo } from '../app/contexto';
+import { decidirFechar, fotografiaUnidade, iniciarGravacao } from '../lib/integridade';
 import '../styles/dicionario.css';
 
 type UnidadeUso = Unidade & { atributos: number; valores: number };
@@ -40,13 +41,20 @@ export function Unidades() {
 
   const carregar = React.useCallback(async (sinal?: AbortSignal) => {
     setErro(null);
-    try { setDados(await obter<RespUnidades>('unidades', {}, sinal)); }
-    catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) setErro(mensagemErro(e)); }
+    try { const r = await obter<RespUnidades>('unidades', {}, sinal); setDados(r); return r; }
+    catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) setErro(mensagemErro(e)); return null; }
   }, []);
   React.useEffect(() => { const c = new AbortController(); void carregar(c.signal); return () => c.abort(); }, [carregar]);
   const fecharEditor = React.useCallback(() => setEditor(null), []);
   const fecharConfirmar = React.useCallback(() => setConfirmar(null), []);
-  const recarregar = React.useCallback(() => carregar(), [carregar]);
+  const recarregar = React.useCallback(async () => { await carregar(); }, [carregar]);
+  // DSHOW-071: "Fechar e reabrir" depois de um 409 — fecha, relê e abre o editor com a unidade atual (nova fotografia)
+  const reabrir = React.useCallback(async (id: number) => {
+    setEditor(null);
+    const r = await carregar();
+    const u = r?.unidades.find((x) => x.id === id);
+    if (u) setEditor({ modo: 'editar', u });
+  }, [carregar]);
 
   const grandezas = React.useMemo(() => [...new Set((dados?.unidades ?? []).map((u) => u.grandeza).filter((g): g is string => !!g))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [dados]);
   const grupos = React.useMemo(() => {
@@ -154,7 +162,7 @@ export function Unidades() {
         </div>
       )}
 
-      {editor && <EditorUnidade key={editor.modo === 'novo' ? 'novo' : `e${editor.u.id}`} unidade={editor.modo === 'editar' ? editor.u : null} grandezas={grandezas} aoFechar={fecharEditor} aoRecarregar={recarregar} />}
+      {editor && <EditorUnidade key={editor.modo === 'novo' ? 'novo' : `e${editor.u.id}`} unidade={editor.modo === 'editar' ? editor.u : null} grandezas={grandezas} aoFechar={fecharEditor} aoRecarregar={recarregar} aoReabrir={reabrir} />}
 
       {confirmar && (
         <Dialogo titulo={ligado(confirmar.ativo) ? `Desativar a unidade ${confirmar.simbolo}?` : `Reativar a unidade ${confirmar.simbolo}?`} aberto aoFechar={fecharConfirmar}
@@ -177,7 +185,7 @@ export function Unidades() {
 }
 
 // ── Editor de unidade ────────────────────────────────────────────────────────────────────────────────────────────────────────
-function EditorUnidade({ unidade, grandezas, aoFechar, aoRecarregar }: { unidade: UnidadeUso | null; grandezas: string[]; aoFechar: () => void; aoRecarregar: () => Promise<void> }) {
+function EditorUnidade({ unidade, grandezas, aoFechar, aoRecarregar, aoReabrir }: { unidade: UnidadeUso | null; grandezas: string[]; aoFechar: () => void; aoRecarregar: () => Promise<void>; aoReabrir: (id: number) => Promise<void> }) {
   const { aviso } = useModulo();
   const fatorInicial = unidade?.fator_base ? decimal(unidade.fator_base) : '';
   const [simbolo, setSimbolo] = React.useState(unidade?.simbolo ?? '');
@@ -185,15 +193,21 @@ function EditorUnidade({ unidade, grandezas, aoFechar, aoRecarregar }: { unidade
   const [grandeza, setGrandeza] = React.useState(unidade?.grandeza ?? '');
   const [fator, setFator] = React.useState(fatorInicial);
   const [salvando, setSalvando] = React.useState(false);
-  const [erro, setErro] = React.useState<{ texto: string; campos: string[] } | null>(null);
+  const [erro, setErro] = React.useState<{ texto: string; campos: string[]; conflito?: boolean } | null>(null);
+  // DSHOW-071: trava síncrona da gravação (Enter/duplo clique) e fotografia do que foi aberto (o servidor compara com a linha travada)
+  const salvandoRef = React.useRef(false);
+  const fotografia = React.useRef(unidade ? fotografiaUnidade(unidade) : null);
+  const aoFecharSeguro = React.useCallback(() => { if (decidirFechar(salvandoRef.current)) aoFechar(); }, [aoFechar]);
   const idLista = React.useId();
   const invalido = (c: string) => (erro?.campos.includes(c) ? true : undefined);
   const fatorApi = fator.trim() ? numeroParaApi(fator) : '';
 
   async function salvar() {
+    if (salvandoRef.current) return;
     if (!simbolo.trim()) { setErro({ texto: 'Informe o símbolo.', campos: ['simbolo'] }); return; }
     if (!nome.trim()) { setErro({ texto: 'Informe o nome.', campos: ['nome'] }); return; }
     if (fatorApi && (!/^\d+(\.\d+)?$/.test(fatorApi) || !/[1-9]/.test(fatorApi))) { setErro({ texto: 'Fator: número maior que zero (use vírgula para decimais).', campos: ['fator_base'] }); return; }
+    if (!iniciarGravacao(salvandoRef)) return;
     setSalvando(true); setErro(null);
     try {
       let r: RespGravacao;
@@ -203,7 +217,7 @@ function EditorUnidade({ unidade, grandezas, aoFechar, aoRecarregar }: { unidade
         r = await enviar<RespGravacao>('unidade', corpo);
         aviso(r.ja_existia ? `A unidade "${simbolo.trim()}" já existia com esses dados.` : `Unidade "${simbolo.trim()}" criada.`, r.ja_existia ? 'info' : 'sucesso');
       } else {
-        const corpo: Record<string, unknown> = { id: unidade.id, nome: nome.trim(), grandeza: grandeza.trim() || null };
+        const corpo: Record<string, unknown> = { id: unidade.id, nome: nome.trim(), grandeza: grandeza.trim() || null, antes: fotografia.current };
         if (fator.trim() !== fatorInicial) corpo.fator_base = fatorApi || null;
         r = await enviar<RespGravacao>('unidade', corpo);
         aviso(r.sem_mudanca ? 'Nada mudou.' : `Unidade "${unidade.simbolo}" salva.`, r.sem_mudanca ? 'info' : 'sucesso');
@@ -211,18 +225,22 @@ function EditorUnidade({ unidade, grandezas, aoFechar, aoRecarregar }: { unidade
       await aoRecarregar();
       aoFechar();
     } catch (e) {
-      setErro({ texto: mensagemErro(e), campos: e instanceof ErroApi ? e.campos : [] });
-    } finally { setSalvando(false); }
+      // DSHOW-071: 409 = alguém mudou a unidade; o editor fica aberto com a mensagem, a lista é relida e há "Fechar e reabrir". Rede/5xx: fica aberto.
+      const conflito = e instanceof ErroApi && e.http === 409;
+      setErro({ texto: conflito ? (e as ErroApi).message : mensagemErro(e), campos: e instanceof ErroApi ? e.campos : [], conflito });
+      if (conflito) void aoRecarregar();
+    } finally { salvandoRef.current = false; setSalvando(false); }
   }
 
   return (
-    <Dialogo titulo={unidade ? `Editar unidade ${unidade.simbolo}` : 'Nova unidade'} aberto aoFechar={aoFechar} largura={600}
+    <Dialogo titulo={unidade ? `Editar unidade ${unidade.simbolo}` : 'Nova unidade'} aberto aoFechar={aoFecharSeguro} largura={600}
       rodape={<>
-        <Botao aoClicar={aoFechar} desligado={salvando}>Cancelar</Botao>
+        <Botao aoClicar={aoFecharSeguro} desligado={salvando}>Cancelar</Botao>
         <Botao primario trabalhando={salvando} aoClicar={() => void salvar()}>{unidade ? 'Salvar' : 'Criar unidade'}</Botao>
       </>}>
       <form className="at-dic-editor" onSubmit={(e) => { e.preventDefault(); void salvar(); }}>
-        {erro && <div className="at-dic-caixa at-dic-caixa--erro" role="alert"><p>{erro.texto}</p></div>}
+        {erro && <div className="at-dic-caixa at-dic-caixa--erro" role="alert"><p>{erro.texto}</p>
+          {erro.conflito && unidade && <Botao aoClicar={() => void aoReabrir(unidade.id)}>Fechar e reabrir</Botao>}</div>}
         <div className="at-dic-form">
           <label className="at-rotulo-campo">Símbolo
             <input className="at-campo" value={simbolo} maxLength={20} readOnly={unidade !== null} aria-readonly={unidade !== null} aria-invalid={invalido('simbolo')} onChange={(e) => { setSimbolo(e.target.value); setErro(null); }} />
