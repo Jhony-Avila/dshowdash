@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../core/repositories/UARPSRepository.php';
 require_once __DIR__ . '/../validators/UarpsValidator.php';
+require_once __DIR__ . '/../../core/UARPSGate.php';   // UARPS-INHERIT: mesma decisão do gate
 
 use Permissions\Validators\UarpsValidator;
 
@@ -30,17 +31,20 @@ class UarpsService
 
     public function checkTrigger(int $userId, string $triggerId): array
     {
-        $perm = $this->repository->getTriggerPermission($userId, $triggerId);
-        $state = $perm['state'] ?? 'inherit';
-        $allowed = ($state === 'allow' || $state === 'inherit');
+        // UARPS-INHERIT: decisão vinda do UARPSGate (inherit => padrão do perfil; erro => nega)
+        $r = \UARPSGate::checkTrigger($userId, $triggerId);
 
-        return [
+        $out = [
             'trigger_id' => $triggerId,
             'user_id' => $userId,
-            'state' => $state,
-            'allowed' => $allowed,
-            'expires_at' => $perm['expires_at'] ?? null
+            'state' => $r['state'] ?? 'error',
+            'allowed' => (bool) ($r['allowed'] ?? false),
+            'expires_at' => $r['expires_at'] ?? null
         ];
+        if (isset($r['padrao'])) {
+            $out['padrao'] = $r['padrao'];
+        }
+        return $out;
     }
 
     public function checkRegion(int $userId, string $regionId): array
@@ -64,11 +68,13 @@ class UarpsService
 
         foreach ($entityIds as $entityId) {
             $entityId = trim($entityId);
-            if (strpos($entityId, 'trigger:') === 0) {
-                $perm = $this->repository->getTriggerPermission($userId, $entityId);
-            } else {
-                $perm = $this->repository->getRegionPermission($userId, $entityId);
+            if (strpos($entityId, 'trigger:') === 0 || strpos($entityId, 'gate:') === 0 || strpos($entityId, 'api:') === 0) {
+                // UARPS-INHERIT: triggers pela mesma decisão do gate
+                $r = \UARPSGate::checkTrigger($userId, $entityId);
+                $results[$entityId] = ['state' => $r['state'] ?? 'error', 'allowed' => (bool) ($r['allowed'] ?? false)];
+                continue;
             }
+            $perm = $this->repository->getRegionPermission($userId, $entityId);
 
             $state = $perm['state'] ?? 'inherit';
             $results[$entityId] = [
