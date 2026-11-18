@@ -26,32 +26,43 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   const [sit, setSit] = React.useState<Situacao>({ tipo: 'parado' });
   const [trocaUnidade, setTrocaUnidade] = React.useState<number | null>(null);
   const original = React.useRef(rascunhoDe(item));
-  React.useEffect(() => { const r = rascunhoDe(item); setTxt(r); original.current = r; }, [item.valor?.versao, item.valor?.estado, item.atributo_id]);
+  const ocupado = React.useRef(false);                                   // uma gravação por vez (Enter + sair do campo não grava 2×)
+  const ultimo = React.useRef<{ rota: string; corpo: Record<string, unknown>; texto?: string } | null>(null);   // "Tentar de novo" repete esta
+  const [esperando, setEsperando] = React.useState(false);              // gravou; aguardando a recarga trazer a versão nova
+  React.useEffect(() => { const r = rascunhoDe(item); setTxt(r); original.current = r; setEsperando(false); }, [item.valor?.versao, item.valor?.estado, item.atributo_id]);
+  React.useEffect(() => { if (!esperando) return; const t = window.setTimeout(() => setEsperando(false), 3000); return () => window.clearTimeout(t); }, [esperando]);
   const estado = item.valor?.estado ?? null;
   const unidadeAtual = item.valor?.unidade_id ?? item.unidade_efetiva?.id ?? null;
   const numerico = item.tipo === 'numero' || item.tipo === 'inteiro';
   const ro = !podeEditar || item.autoridade === 'precifica';
   const id = `campo-${productId}-${item.atributo_id}`;
 
-  const chamar = async (rota: string, corpo: Record<string, unknown>) => {
+  const chamar = async (rota: string, corpo: Record<string, unknown>, texto?: string) => {
+    if (ocupado.current || esperando) return;
+    ocupado.current = true; ultimo.current = { rota, corpo, texto };
     setSit({ tipo: 'salvando' });
-    try { await enviar(rota, { product_id: productId, atributo_id: item.atributo_id, ...corpo }); setSit({ tipo: 'salvo' }); aoGravar(); window.setTimeout(() => setSit((s) => (s.tipo === 'salvo' ? { tipo: 'parado' } : s)), 2500); }
-    catch (e) {
+    try {
+      await enviar(rota, { product_id: productId, atributo_id: item.atributo_id, ...corpo });
+      if (texto !== undefined) original.current = texto;                  // já gravado: sair do campo não reenvia
+      setSit({ tipo: 'salvo' }); setEsperando(true); aoGravar(); window.setTimeout(() => setSit((s) => (s.tipo === 'salvo' ? { tipo: 'parado' } : s)), 2500);
+    } catch (e) {
       if (e instanceof ErroApi && e.conflito) setSit({ tipo: 'conflito' });
       else setSit({ tipo: 'erro', msg: e instanceof ErroApi ? e.message : 'Falha de rede.' });
-    }
+    } finally { ocupado.current = false; }
   };
+  const tentarDeNovo = () => { const u = ultimo.current; if (u) chamar(u.rota, u.corpo, u.texto); };
+  const travado = sit.tipo === 'salvando' || esperando;
   const versao = item.valor?.versao;
-  const gravar = (valor: unknown, extra: Record<string, unknown> = {}) => chamar('valor', { valor, estado: 'informado', versao, ...(numerico && unidadeAtual ? { unidade_id: item.valor?.unidade_id ?? null } : {}), ...extra });
+  const gravar = (valor: unknown, extra: Record<string, unknown> = {}, texto?: string) => chamar('valor', { valor, estado: 'informado', versao, ...(numerico && unidadeAtual ? { unidade_id: item.valor?.unidade_id ?? null } : {}), ...extra }, texto);
   const confirmarTexto = () => {
-    if (ro || txt === original.current) return;
-    if (txt.trim() === '') { if (item.valor) chamar('valor_limpar', { versao }); return; }
-    gravar(numerico ? numeroParaApi(txt) : txt);
+    if (ro || txt === original.current || ocupado.current || esperando) return;
+    if (txt.trim() === '') { if (item.valor) chamar('valor_limpar', { versao }, ''); return; }
+    gravar(numerico ? numeroParaApi(txt) : txt, {}, txt);
   };
 
   const status = sit.tipo === 'salvando' ? <span className="at-salvo at-salvo--andando" role="status">Salvando…</span>
     : sit.tipo === 'salvo' ? <span className="at-salvo at-salvo--ok" role="status">Salvo</span>
-    : sit.tipo === 'erro' ? <span className="at-salvo at-salvo--erro" role="alert">{compacto ? '!' : 'Não foi possível salvar.'} <button type="button" className="at-link" onClick={confirmarTexto}>Tentar de novo</button>{!compacto && <em> {sit.msg}</em>}</span>
+    : sit.tipo === 'erro' ? <span className="at-salvo at-salvo--erro" role="alert">{compacto ? '!' : 'Não foi possível salvar.'} <button type="button" className="at-link" onClick={tentarDeNovo}>Tentar de novo</button>{!compacto && <em> {sit.msg}</em>}</span>
     : sit.tipo === 'conflito' ? <span className="at-salvo at-salvo--erro" role="alert">Alguém alterou este campo. <button type="button" className="at-link" onClick={() => { setSit({ tipo: 'parado' }); aoRecarregar(); }}>Recarregar</button></span>
     : null;
 
@@ -62,12 +73,12 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     campo = (
       <div className="at-segmentado" role="radiogroup" aria-label={item.rotulo}>
         {[['1', 'Sim'], ['0', 'Não'], ['', 'Sem resposta']].map(([v, r]) => (
-          <button key={r} type="button" role="radio" aria-checked={txt === v} disabled={ro} className={txt === v ? 'ativo' : ''}
+          <button key={r} type="button" role="radio" aria-checked={txt === v} disabled={ro || travado} className={txt === v ? 'ativo' : ''}
             onClick={() => { if (v === txt) return; setTxt(v); if (v === '') { if (item.valor) chamar('valor_limpar', { versao }); } else gravar(v === '1'); }}>{r}</button>))}
       </div>);
   } else if (item.tipo === 'opcao') {
     campo = (
-      <select id={id} className="at-campo" value={txt} disabled={ro} aria-label={item.rotulo} autoFocus={autoFoco}
+      <select id={id} className="at-campo" value={txt} disabled={ro || travado} aria-label={item.rotulo} autoFocus={autoFoco}
         onChange={(e) => { setTxt(e.target.value); if (e.target.value === '') { if (item.valor) chamar('valor_limpar', { versao }); } else gravar(Number(e.target.value)); }}>
         <option value="">—</option>
         {item.opcoes.filter((o) => o.ativo || String(o.id) === txt).map((o) => <option key={o.id} value={o.id}>{o.rotulo}{o.ativo ? '' : ' (desativada)'}</option>)}
@@ -76,7 +87,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     const marcadas = new Set(item.valor?.opcao_ids ?? []);
     campo = (
       <div className="at-multi">{item.opcoes.filter((o) => o.ativo || marcadas.has(o.id)).map((o) => (
-        <label key={o.id} className="at-check"><input type="checkbox" checked={marcadas.has(o.id)} disabled={ro}
+        <label key={o.id} className="at-check"><input type="checkbox" checked={marcadas.has(o.id)} disabled={ro || travado}
           onChange={(e) => e.target.checked ? gravar(o.id) : chamar('valor_opcao_remover', { opcao_id: o.id, versao })} />{o.rotulo}</label>))}</div>);
   } else {
     campo = (
@@ -91,17 +102,17 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
       <div className="at-editor__linha">
         {campo}
         {numerico && item.unidades.length > 0 && (
-          <select className="at-campo at-campo--unid" aria-label={`Unidade de ${item.rotulo}`} disabled={ro || (estado !== null && estado !== 'informado')} value={unidadeAtual ?? ''}
+          <select className="at-campo at-campo--unid" aria-label={`Unidade de ${item.rotulo}`} disabled={ro || travado || (estado !== null && estado !== 'informado')} value={unidadeAtual ?? ''}
             onChange={(e) => {
               const u = Number(e.target.value);
               if (item.valor?.numero != null && item.valor.estado === 'informado') setTrocaUnidade(u);   // H5: pergunta converter × só trocar
-              else if (txt.trim() !== '') gravar(numeroParaApi(txt), { unidade_id: u });
+              else if (txt.trim() !== '') gravar(numeroParaApi(txt), { unidade_id: u }, txt);
             }}>
             {item.unidades.map((u) => <option key={u.id} value={u.id}>{u.simbolo}</option>)}
           </select>)}
         {numerico && item.unidades.length === 0 && item.unidade_efetiva && <span className="at-unid-fixa">{item.unidade_efetiva.simbolo}</span>}
         {!ro && !compacto && (
-          <select className="at-campo at-campo--estado" aria-label={`Estado de ${item.rotulo}`} value={estado ?? ''}
+          <select className="at-campo at-campo--estado" aria-label={`Estado de ${item.rotulo}`} value={estado ?? ''} disabled={travado}
             onChange={(e) => { const v = e.target.value; if (v === 'informado' || v === '') { if (estado && estado !== 'informado') chamar('valor_limpar', { versao }); return; } chamar('valor', { estado: v, versao }); }}>
             <option value="">{estado === 'informado' ? 'Informado' : 'Sem valor'}</option>
             {item.aceita_nao_se_aplica && <option value="nao_se_aplica">Não se aplica</option>}

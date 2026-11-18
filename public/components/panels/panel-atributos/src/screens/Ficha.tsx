@@ -18,10 +18,12 @@ export function Ficha({ id }: { id: number }) {
   const [aba, setAba] = React.useState<AbaFicha>('atributos');
   const [detalhes, setDetalhes] = React.useState(false);
   const [foto, setFoto] = React.useState(0);
+  const seq = React.useRef(0);   // recargas fora de ordem: só a mais recente vale (senão um campo volta ao valor antigo)
   const carregar = React.useCallback((silencioso = false) => {
     if (!silencioso) setF(null);
     setErro(null);
-    obter<TFicha>('ficha_produto', { product_id: id }).then(setF).catch((e) => setErro(e.message));
+    const n = ++seq.current;
+    obter<TFicha>('ficha_produto', { product_id: id }).then((d) => { if (n === seq.current) setF(d); }).catch((e) => { if (n === seq.current) setErro(e.message); });
   }, [id]);
   React.useEffect(() => { carregar(); setAba('atributos'); setFoto(0); }, [carregar]);
   if (erro) return <div><button type="button" className="bl-botao" onClick={m.fecharProduto}>← Voltar</button><Erro mensagem={erro} aoTentar={() => carregar()} /></div>;

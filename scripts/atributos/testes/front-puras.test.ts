@@ -30,6 +30,10 @@ igual('milhar com vírgula', numeroParaApi('1.234,5'), '1234.5');
 igual('milhar sem fração', numeroParaApi('1.500'), '1500');
 igual('espaços', numeroParaApi(' 80 '), '80');
 igual('ponto decimal isolado', numeroParaApi('0.5'), '0.5');
+igual('0.001 é decimal (fator de mm), não 1', numeroParaApi('0.001'), '0.001');
+igual('0.250 é decimal, não 250', numeroParaApi('0.250'), '0.250');
+igual('-0.500 é decimal', numeroParaApi('-0.500'), '-0.500');
+igual('12.345.678 é milhar', numeroParaApi('12.345.678'), '12345678');
 // busca
 igual('busca vazia casa tudo', casaBusca('  ', 1, 'x'), true);
 igual('busca por ID exato', casaBusca('154', 154, 'Cabo Flat'), true);

@@ -66,6 +66,6 @@ export interface ItemConferencia { id: number; product_id: number; produto: stri
 export interface Conferencia {
   filas: { legado: ItemConferencia[]; nome: ItemConferencia[]; fora_da_ficha: { product_id: number; produto: string; atributo_id: number; atributo: string; estado: string }[];
     obrigatorios_vazios: { product_id: number; produto: string; atributo_id: number; atributo: string }[]; sem_kit: { product_id: number; produto: string; subcategoria: string | null; legado: string | null }[] };
-  totais: { obrigatorios_vazios: number }; pode_decidir: boolean;
+  totais: { obrigatorios_vazios: number }; pode_decidir: boolean; pode_vincular: boolean;
 }
 export interface Previa { resumo: { produtos: number; produtos_afetados: number; atributos_acrescentados: number; atributos_removidos: number; ja_tinham: number; kits_ja_aplicados: number }; produtos: { product_id: number; nome: string; acrescenta: number; remove: number; antes: number; depois: number }[] }

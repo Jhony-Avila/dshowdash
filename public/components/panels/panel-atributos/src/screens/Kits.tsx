@@ -248,6 +248,7 @@ function EditorKit({ id, aoVoltar, aoAbrir }: { id: number; aoVoltar: () => void
   const [erroCarga, setErroCarga] = React.useState<string | null>(null);
   const [erros, setErros] = React.useState<Partial<Record<Secao, { msg: string; conflito: boolean }>>>({});
   const [gravando, setGravando] = React.useState<Secao | null>(null);
+  const gravandoRef = React.useRef(false);
   // rascunhos locais por seção (só gravam no botão da seção)
   const [nome, setNome] = React.useState('');
   const [descricao, setDescricao] = React.useState('');
@@ -300,16 +301,18 @@ function EditorKit({ id, aoVoltar, aoAbrir }: { id: number; aoVoltar: () => void
   // ── gravações ──
   const salvarDados = async () => {
     if (!nome.trim()) { setErros((x) => ({ ...x, dados: { msg: 'O nome não pode ficar vazio.', conflito: false } })); return; }
-    setGravando('dados'); limparErro('dados');
+    if (gravandoRef.current) return;   // uma seção por vez: cada gravação sobe a versão do kit
+    gravandoRef.current = true; setGravando('dados'); limparErro('dados');
     try {
       await enviar('kit', { id: k.id, versao: k.versao, nome: nome.trim(), descricao: descricao.trim() || null });
       await carregar(['dados']); nav.aviso('Nome e descrição salvos.');
-    } catch (e) { falhar('dados', e); } finally { setGravando(null); }
+    } catch (e) { falhar('dados', e); } finally { gravandoRef.current = false; setGravando(null); }
   };
 
   const salvarItens = async () => {
     if (itens.filter((i) => +i.destaque).length > MAX_DESTAQUES) { setErros((x) => ({ ...x, itens: { msg: `No máximo ${MAX_DESTAQUES} destaques por kit.`, conflito: false } })); return; }
-    setGravando('itens'); limparErro('itens');
+    if (gravandoRef.current) return;   // uma seção por vez: cada gravação sobe a versão do kit
+    gravandoRef.current = true; setGravando('itens'); limparErro('itens');
     try {
       await enviar('kit_itens', {
         id: k.id, versao: k.versao,
@@ -317,11 +320,12 @@ function EditorKit({ id, aoVoltar, aoAbrir }: { id: number; aoVoltar: () => void
           importancia: i.importancia ?? null, unidade_id: i.unidade_id ?? null })),
       });
       await carregar(['itens']); nav.aviso('Itens do kit salvos.');
-    } catch (e) { falhar('itens', e); } finally { setGravando(null); }
+    } catch (e) { falhar('itens', e); } finally { gravandoRef.current = false; setGravando(null); }
   };
 
   const salvarEscopo = async () => {
-    setGravando('escopo'); limparErro('escopo');
+    if (gravandoRef.current) return;   // uma seção por vez: cada gravação sobe a versão do kit
+    gravandoRef.current = true; setGravando('escopo'); limparErro('escopo');
     const antes = det.alcance.filter((p) => p.ativo).length;
     try {
       let versao = k.versao;
@@ -340,18 +344,19 @@ function EditorKit({ id, aoVoltar, aoAbrir }: { id: number; aoVoltar: () => void
     } catch (e) {
       falhar('escopo', e);
       await carregar([]); // "aplica a todos" pode ter gravado antes do escopo falhar: atualiza a versão sem perder o rascunho
-    } finally { setGravando(null); }
+    } finally { gravandoRef.current = false; setGravando(null); }
   };
 
   const mudarAvulsos = async (adicionar: number[], remover: number[]): Promise<boolean> => {
-    setGravando('avulsos'); limparErro('avulsos');
+    if (gravandoRef.current) return false;   // uma seção por vez: cada gravação sobe a versão do kit
+    gravandoRef.current = true; setGravando('avulsos'); limparErro('avulsos');
     try {
       const r = await enviar<{ adicionados: number; removidos: number }>('kit_produtos', { id: k.id, adicionar, remover });
       await carregar([]);
       nav.aviso(r.adicionados ? `${plural(r.adicionados, 'produto avulso adicionado', 'produtos avulsos adicionados')}.`
         : r.removidos ? `${plural(r.removidos, 'produto avulso removido', 'produtos avulsos removidos')}.` : 'Nada mudou.');
       return true;
-    } catch (e) { falhar('avulsos', e); return false; } finally { setGravando(null); }
+    } catch (e) { falhar('avulsos', e); return false; } finally { gravandoRef.current = false; setGravando(null); }
   };
 
   const erroSecao = (s: Secao, recarregarSecoes: Secao[]) => {

@@ -31,6 +31,8 @@ export function Preencher() {
   const [aceitarCol, setAceitarCol] = React.useState<{ id: number; rotulo: string; ids: number[] } | null>(null);
   const [trab, setTrab] = React.useState(false);
   const tabela = React.useRef<HTMLTableElement>(null);
+  const seqGrade = React.useRef(0);                              // trocar de kit no meio da carga: só a última grade vale
+  const seqLinha = React.useRef<Record<number, number>>({});    // recarga de linha fora de ordem: só a mais recente vale
 
   React.useEffect(() => { Promise.all([obter<Vitrine>('vitrine'), obter<{ kits: KitResumo[] }>('kits')]).then(([v, k]) => { setVit(v); setKits(k.kits.filter((x) => x.ativo && x.itens > 0 && !x.aplica_a_todos)); }).catch((e) => setErro(e.message)); }, []);
 
@@ -45,10 +47,12 @@ export function Preencher() {
 
   const carregarFichas = React.useCallback(async (silencioso = false) => {
     const alvo = produtos.slice(0, MAX_LINHAS);
+    const n = ++seqGrade.current;
     if (!alvo.length) { setFichas(null); setColunas([]); return; }
     if (!silencioso) { setCarregando(true); setFichas(null); }
     try {
       const fs = await emLotes(alvo, 6, (p) => obter<Ficha>('ficha_produto', { product_id: p.id }));
+      if (n !== seqGrade.current) return;
       const cols = new Map<number, { id: number; rotulo: string; importancia: string | null; obrigatorio: boolean; ordem: number }>();
       let ordem = 0;
       for (const f of fs) for (const i of f.itens) {
@@ -58,12 +62,13 @@ export function Preencher() {
       }
       setColunas([...cols.values()].sort((a, b) => a.ordem - b.ordem));
       setFichas(fs);
-    } catch (e) { setErro(e instanceof ErroApi ? e.message : 'Falha.'); } finally { setCarregando(false); }
+    } catch (e) { if (n === seqGrade.current) setErro(e instanceof ErroApi ? e.message : 'Falha.'); } finally { if (n === seqGrade.current) setCarregando(false); }
   }, [produtos, kit]);
   React.useEffect(() => { carregarFichas(); }, [carregarFichas]);
 
   const recarregarLinha = async (pid: number) => {
-    try { const f = await obter<Ficha>('ficha_produto', { product_id: pid }); setFichas((fs) => fs?.map((x) => (x.produto.id === pid ? f : x)) ?? null); } catch { /* a célula mostra o erro */ }
+    const n = (seqLinha.current[pid] ?? 0) + 1; seqLinha.current[pid] = n;
+    try { const f = await obter<Ficha>('ficha_produto', { product_id: pid }); if (n === seqLinha.current[pid]) setFichas((fs) => fs?.map((x) => (x.produto.id === pid ? f : x)) ?? null); } catch { /* a célula mostra o erro */ }
   };
   const mover = (e: React.KeyboardEvent) => {
     if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) return;

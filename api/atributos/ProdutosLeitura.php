@@ -379,7 +379,7 @@ final class ProdutosLeitura
             'legado' => array_map($sug, $this->l->sugestoes(null, 'legado_2025', null, 3000)),
             'nome' => array_map($sug, $this->l->sugestoes(null, 'nome_produto', null, 3000)),
             'fora_da_ficha' => $fora, 'obrigatorios_vazios' => array_slice($obr, 0, 1000), 'sem_kit' => $sem,
-        ], 'totais' => ['obrigatorios_vazios' => count($obr)], 'pode_decidir' => $this->pode(AtributosService::NIVEL_VALORES)];
+        ], 'totais' => ['obrigatorios_vazios' => count($obr)], 'pode_decidir' => $this->pode(AtributosService::NIVEL_VALORES), 'pode_vincular' => $this->pode(AtributosService::NIVEL_ADMIN)];
     }
 
     // ---- miniaturas (A6) ---------------------------------------------------------------------------------------------------------------

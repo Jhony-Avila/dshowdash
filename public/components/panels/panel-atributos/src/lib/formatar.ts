@@ -25,7 +25,8 @@ export function valor(v: Valor, unidade: string | null): string {
 /** Texto do usuário (vírgula decimal) → texto canônico para a API ("1.234,5" → "1234.5"; "2,5" → "2.5"). */
 export function numeroParaApi(t: string): string {
   const s = t.trim().replace(/\s/g, '');
-  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) return s.replace(/\./g, '').replace(',', '.');
+  // milhar nunca começa com 0: "0.001" e "0.250" são decimais, não 1 e 250
+  if (/^-?[1-9]\d{0,2}(\.\d{3})+(,\d+)?$/.test(s)) return s.replace(/\./g, '').replace(',', '.');
   return s.replace(',', '.');
 }
 
