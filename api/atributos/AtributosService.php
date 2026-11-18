@@ -20,6 +20,8 @@ final class AtributosErro extends RuntimeException
 }
 
 /** Catálogo de produtos (projeção do Precifica no app; GRANT N1 = 7 colunas). Lança CatalogoIndisponivel se não puder ler. */
+require_once __DIR__ . '/Aplicabilidade.php';
+
 interface CatalogoProdutos
 {
     /** @return array{id:int,nome:string,categoria:string,subcategoria:?string,ativo:bool,excluido:bool,sincronizado_em:?string}|null */
@@ -68,6 +70,8 @@ interface AtributosRepositorio
     public function atualizarGrupo(int $id, int $versao, array $d): bool;
     public function definirEscopo(int $grupoId, array $escopos): void;
     public function definirAtributosDoGrupo(int $grupoId, array $itens): void;
+    /** Retrato do modelo para a regra da ficha (§9, Aplicabilidade). */
+    public function retratoModelo(?int $productId = null): RetratoModelo;
     public function valoresDoProduto(int $productId): array;
     public function valor(int $productId, int $atributoId, int $opcaoChave): ?array;
     public function gravarValor(array $d, ?int $versaoEsperada): bool;
@@ -111,20 +115,18 @@ final class AtributosService
      */
     private function aplicaveis(array $produto): array
     {
+        // Missão §9: regra única em Aplicabilidade (escopo + aplica_a_todos + kit direto + avulsos − exclusões). Mantém o formato antigo.
         $out = [];
-        foreach ($this->repo->gruposAplicaveis((string) $produto['categoria'], $produto['subcategoria'] ?? null) as $g) {
-            $det = $this->repo->grupo((int) $g['id']) ?? ['atributos' => []];
-            foreach ($det['atributos'] as $it) {
-                $aid = (int) $it['atributo_id'];
-                $def = $this->repo->atributo($aid);
-                if (!$def || (int) $def['ativo'] !== 1) continue;
-                if (isset($out[$aid])) {
-                    $out[$aid]['item']['obrigatorio'] = (int) ($out[$aid]['item']['obrigatorio'] || $it['obrigatorio']);
-                    $out[$aid]['item']['visivel'] = (int) ($out[$aid]['item']['visivel'] || $it['visivel']);
-                    continue;
-                }
-                $out[$aid] = ['grupo' => $g, 'item' => $it, 'def' => $def];
-            }
+        foreach (Aplicabilidade::ficha($this->repo->retratoModelo((int) $produto['id']), $produto) as $aid => $x) {
+            $def = $this->repo->atributo($aid);
+            if (!$def) continue;
+            $escopo = null;
+            foreach ($x['origens'] as $o) foreach ($o['motivos'] ?? [] as $mt) if ($mt['tipo'] === 'escopo' && $escopo === null) $escopo = $mt;
+            $out[$aid] = [
+                'grupo' => ['id' => $x['grupo_id'], 'nome' => $x['grupo_nome'], 'escopo_categoria' => $escopo['categoria'] ?? null, 'escopo_subcategoria' => $escopo['subcategoria'] ?? null],
+                'item' => ['obrigatorio' => (int) $x['obrigatorio'], 'visivel' => (int) $x['visivel'], 'posicao' => $x['posicao']],
+                'def' => $def, 'aplic' => $x,
+            ];
         }
         return $out;
     }
@@ -458,8 +460,8 @@ final class AtributosService
                 if (!$this->repo->atualizarGrupo($id, (int) ($b['versao'] ?? 0), array_filter(['nome' => $nome], static fn($v) => $v !== null))) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este grupo. Recarregue e tente de novo.');
                 $this->repo->auditar($this->usuario, 'editar', 'grupo', (string) $id, $antes, ['nome' => $nome, 'escopos' => $escopos, 'atributos' => $itens], $b['motivo'] ?? null);
             }
-            if (array_key_exists('escopos', $b)) $this->repo->definirEscopo($id, $escopos);
-            if (array_key_exists('atributos', $b)) $this->repo->definirAtributosDoGrupo($id, $itens);
+            if (array_key_exists('escopos', $b)) $this->repo->definirEscopo($id, $escopos, $this->usuario);
+            if (array_key_exists('atributos', $b)) $this->repo->definirAtributosDoGrupo($id, $itens, $this->usuario);
             return $id;
         });
         return ['grupo' => $this->repo->grupo($id)];

@@ -52,7 +52,7 @@ final class AtributosRepoPdo implements AtributosRepositorio
     {
         $rs = $this->q('SELECT g.id, g.nome, e.categoria AS escopo_categoria, e.subcategoria AS escopo_subcategoria
              FROM ' . $this->t('eq_grupo') . ' g JOIN ' . $this->t('eq_grupo_escopo') . ' e ON e.grupo_id = g.id
-            WHERE g.ativo = 1 AND e.categoria = ? AND (e.subcategoria = \'\' OR e.subcategoria = ?)
+            WHERE g.ativo = 1 AND e.excluido_em IS NULL AND e.categoria = ? AND (e.subcategoria = \'\' OR e.subcategoria = ?)
             ORDER BY g.nome ASC, g.id ASC, e.subcategoria DESC', [$categoria, (string) ($subcategoria ?? '')]);
         $vistos = []; $out = [];
         foreach ($rs as $r) { if (isset($vistos[$r['id']])) continue; $vistos[$r['id']] = true; $out[] = $r; }   // um grupo uma vez (escopo mais específico)
@@ -175,21 +175,23 @@ final class AtributosRepoPdo implements AtributosRepositorio
 
     public function grupos(): array
     {
-        $gs = $this->q('SELECT id, nome, ativo, versao FROM ' . $this->t('eq_grupo') . ' ORDER BY nome ASC');
+        $gs = $this->q('SELECT id, nome, descricao, ordem, aplica_a_todos, ativo, versao FROM ' . $this->t('eq_grupo') . ' ORDER BY nome ASC');
         foreach ($gs as &$g) $g = $this->comDetalhes($g);
         return $gs;
     }
 
+    /** 004: só vínculos VIVOS (excluido_em IS NULL). */
     private function comDetalhes(array $g): array
     {
-        $g['escopos'] = $this->q('SELECT categoria, subcategoria FROM ' . $this->t('eq_grupo_escopo') . ' WHERE grupo_id = ? ORDER BY categoria, subcategoria', [$g['id']]);
-        $g['atributos'] = $this->q('SELECT ga.atributo_id, a.rotulo, ga.posicao, ga.obrigatorio, ga.visivel FROM ' . $this->t('eq_grupo_atributo') . ' ga JOIN ' . $this->t('eq_atributo') . ' a ON a.id = ga.atributo_id WHERE ga.grupo_id = ? ORDER BY ga.posicao, ga.atributo_id', [$g['id']]);
+        $g['escopos'] = $this->q('SELECT categoria, subcategoria FROM ' . $this->t('eq_grupo_escopo') . ' WHERE grupo_id = ? AND excluido_em IS NULL ORDER BY categoria, subcategoria', [$g['id']]);
+        $g['atributos'] = $this->q('SELECT ga.atributo_id, a.rotulo, a.codigo, a.tipo, a.ativo AS atributo_ativo, ga.posicao, ga.obrigatorio, ga.visivel, ga.destaque, ga.importancia, ga.unidade_id, ga.legado_id, ga.versao
+             FROM ' . $this->t('eq_grupo_atributo') . ' ga JOIN ' . $this->t('eq_atributo') . ' a ON a.id = ga.atributo_id WHERE ga.grupo_id = ? AND ga.excluido_em IS NULL ORDER BY ga.posicao, ga.atributo_id', [$g['id']]);
         return $g;
     }
 
     public function grupo(int $id): ?array
     {
-        $r = $this->q('SELECT id, nome, ativo, versao FROM ' . $this->t('eq_grupo') . ' WHERE id = ?', [$id]);
+        $r = $this->q('SELECT id, nome, descricao, ordem, aplica_a_todos, ativo, versao FROM ' . $this->t('eq_grupo') . ' WHERE id = ?', [$id]);
         return $r ? $this->comDetalhes($r[0]) : null;
     }
 
@@ -202,26 +204,69 @@ final class AtributosRepoPdo implements AtributosRepositorio
     public function atualizarGrupo(int $id, int $versao, array $d): bool
     {
         $sets = ['versao = versao + 1']; $p = [];
-        foreach ($d as $k => $v) { if (!in_array($k, ['nome', 'ativo'], true)) continue; array_unshift($sets, "$k = ?"); array_unshift($p, $v); }
+        foreach ($d as $k => $v) { if (!in_array($k, ['nome', 'ativo', 'descricao', 'ordem', 'aplica_a_todos'], true)) continue; array_unshift($sets, "$k = ?"); array_unshift($p, $v); }
         $p[] = $id; $p[] = $versao;
         return $this->exec('UPDATE ' . $this->t('eq_grupo') . ' SET ' . implode(', ', $sets) . ' WHERE id = ? AND versao = ?', $p) === 1;
     }
 
-    /** Substitui o escopo do grupo (tabela de vínculo pura — sem dados históricos; o antes fica na auditoria). */
-    public function definirEscopo(int $grupoId, array $escopos): void
+    /** ATR-M1 (004): grava só o que mudou — insere o novo, revive o que voltou, exclui LOGICAMENTE o que saiu. Sem DELETE. */
+    public function definirEscopo(int $grupoId, array $escopos, ?string $usuario = null): void
     {
-        $this->transacao(function () use ($grupoId, $escopos) {
-            $this->exec('DELETE FROM ' . $this->t('eq_grupo_escopo') . ' WHERE grupo_id = ?', [$grupoId]);
-            foreach ($escopos as $e) $this->exec('INSERT INTO ' . $this->t('eq_grupo_escopo') . ' (grupo_id, categoria, subcategoria) VALUES (?, ?, ?)', [$grupoId, $e['categoria'], $e['subcategoria']]);
+        $this->transacao(function () use ($grupoId, $escopos, $usuario) {
+            $atuais = [];
+            foreach ($this->q('SELECT categoria, subcategoria, excluido_em FROM ' . $this->t('eq_grupo_escopo') . ' WHERE grupo_id = ? FOR UPDATE', [$grupoId]) as $r) $atuais[$r['categoria'] . '|' . $r['subcategoria']] = $r;
+            $quero = [];
+            foreach ($escopos as $e) $quero[$e['categoria'] . '|' . $e['subcategoria']] = $e;
+            foreach ($quero as $k => $e) {
+                if (!isset($atuais[$k])) $this->exec('INSERT INTO ' . $this->t('eq_grupo_escopo') . ' (grupo_id, categoria, subcategoria, atualizado_por) VALUES (?, ?, ?, ?)', [$grupoId, $e['categoria'], $e['subcategoria'], $usuario]);
+                elseif ($atuais[$k]['excluido_em'] !== null) $this->exec('UPDATE ' . $this->t('eq_grupo_escopo') . ' SET excluido_em = NULL, versao = versao + 1, atualizado_por = ? WHERE grupo_id = ? AND categoria = ? AND subcategoria = ?', [$usuario, $grupoId, $e['categoria'], $e['subcategoria']]);
+            }
+            foreach ($atuais as $k => $r) if ($r['excluido_em'] === null && !isset($quero[$k])) $this->exec('UPDATE ' . $this->t('eq_grupo_escopo') . ' SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1, atualizado_por = ? WHERE grupo_id = ? AND categoria = ? AND subcategoria = ?', [$usuario, $grupoId, $r['categoria'], $r['subcategoria']]);
         });
     }
 
-    public function definirAtributosDoGrupo(int $grupoId, array $itens): void
+    /** ATR-M1 (004): idem para os itens do kit; preserva legado_id; atualiza só os campos que mudaram. */
+    public function definirAtributosDoGrupo(int $grupoId, array $itens, ?string $usuario = null): void
     {
-        $this->transacao(function () use ($grupoId, $itens) {
-            $this->exec('DELETE FROM ' . $this->t('eq_grupo_atributo') . ' WHERE grupo_id = ?', [$grupoId]);
-            foreach ($itens as $i) $this->exec('INSERT INTO ' . $this->t('eq_grupo_atributo') . ' (grupo_id, atributo_id, posicao, obrigatorio, visivel) VALUES (?, ?, ?, ?, ?)', [$grupoId, $i['atributo_id'], $i['posicao'], $i['obrigatorio'], $i['visivel']]);
+        $campos = ['posicao', 'obrigatorio', 'visivel', 'destaque', 'importancia', 'unidade_id'];
+        $this->transacao(function () use ($grupoId, $itens, $usuario, $campos) {
+            $atuais = [];
+            foreach ($this->q('SELECT atributo_id, posicao, obrigatorio, visivel, destaque, importancia, unidade_id, excluido_em FROM ' . $this->t('eq_grupo_atributo') . ' WHERE grupo_id = ? FOR UPDATE', [$grupoId]) as $r) $atuais[(int) $r['atributo_id']] = $r;
+            $quero = [];
+            foreach ($itens as $i) $quero[(int) $i['atributo_id']] = $i + ['destaque' => 0, 'importancia' => null, 'unidade_id' => null, 'visivel' => 1, 'obrigatorio' => 0, 'posicao' => 0];
+            foreach ($quero as $aid => $i) {
+                if (!isset($atuais[$aid])) {
+                    $this->exec('INSERT INTO ' . $this->t('eq_grupo_atributo') . ' (grupo_id, atributo_id, posicao, obrigatorio, visivel, destaque, importancia, unidade_id, atualizado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        [$grupoId, $aid, (int) $i['posicao'], (int) $i['obrigatorio'], (int) $i['visivel'], (int) $i['destaque'], $i['importancia'], $i['unidade_id'], $usuario]);
+                    continue;
+                }
+                $a = $atuais[$aid]; $sets = []; $p = [];
+                foreach ($campos as $c) if ((string) ($a[$c] ?? '') !== (string) ($i[$c] ?? '')) { $sets[] = "$c = ?"; $p[] = $i[$c]; }
+                if ($a['excluido_em'] !== null) $sets[] = 'excluido_em = NULL';
+                if (!$sets) continue;
+                $p[] = $usuario; $p[] = $grupoId; $p[] = $aid;
+                $this->exec('UPDATE ' . $this->t('eq_grupo_atributo') . ' SET ' . implode(', ', $sets) . ', versao = versao + 1, atualizado_por = ? WHERE grupo_id = ? AND atributo_id = ?', $p);
+            }
+            foreach ($atuais as $aid => $a) if ($a['excluido_em'] === null && !isset($quero[$aid])) $this->exec('UPDATE ' . $this->t('eq_grupo_atributo') . ' SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1, atualizado_por = ? WHERE grupo_id = ? AND atributo_id = ?', [$usuario, $grupoId, $aid]);
         });
+    }
+
+    /** Retrato do modelo para a regra da ficha (Aplicabilidade). $productId = só os vínculos diretos/ajustes desse produto; null = todos. */
+    public function retratoModelo(?int $productId = null): RetratoModelo
+    {
+        $grupos = [];
+        foreach ($this->q('SELECT id, nome, descricao, ordem, aplica_a_todos, ativo, versao FROM ' . $this->t('eq_grupo')) as $g) $grupos[(int) $g['id']] = $g;
+        $escopos = $this->q('SELECT grupo_id, categoria, subcategoria FROM ' . $this->t('eq_grupo_escopo') . ' WHERE excluido_em IS NULL');
+        $itens = [];
+        foreach ($this->q('SELECT grupo_id, atributo_id, posicao, obrigatorio, visivel, destaque, importancia, unidade_id, legado_id FROM ' . $this->t('eq_grupo_atributo') . ' WHERE excluido_em IS NULL') as $i) $itens[(int) $i['grupo_id']][] = $i;
+        $f = $productId === null ? '' : ' AND product_id = ' . (int) $productId;
+        $diretos = [];
+        foreach ($this->q('SELECT grupo_id, product_id FROM ' . $this->t('eq_grupo_produto') . ' WHERE excluido_em IS NULL' . $f) as $d) $diretos[(int) $d['product_id']][] = (int) $d['grupo_id'];
+        $ajustes = [];
+        foreach ($this->q('SELECT product_id, atributo_id, modo, unidade_id, posicao, motivo FROM ' . $this->t('eq_produto_atributo') . ' WHERE excluido_em IS NULL' . $f) as $a) $ajustes[(int) $a['product_id']][(int) $a['atributo_id']] = $a;
+        $atributos = [];
+        foreach ($this->q('SELECT id, codigo, rotulo, tipo, ativo, unidade_id, importancia_padrao, legado_id, casas, autoridade, precifica_ref, aceita_nao_se_aplica FROM ' . $this->t('eq_atributo')) as $a) $atributos[(int) $a['id']] = $a;
+        return new RetratoModelo($grupos, $escopos, $itens, $diretos, $ajustes, $atributos);
     }
 
     public function valoresDoProduto(int $productId): array

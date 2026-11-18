@@ -7,6 +7,8 @@ require_once __DIR__ . '/../../../api/atributos/AtributosService.php';
 final class RepoMemoria implements AtributosRepositorio
 {
     public array $a = [], $o = [], $u = [], $g = [], $ge = [], $ga = [], $v = [], $aud = [], $vin = [];
+    /** ATRIBUTOS-WEB (missão §9): kits diretos (pid => [gid]) e ajustes por produto (pid => aid => [modo, unidade_id, posicao, motivo]). */
+    public array $gp = [], $pa = [];
     public bool $falharAuditoria = false;
     /** V5 Lote 3: gancho executado ao ABRIR a transação (simula outra conexão que gravou entre a validação e a transação — ATR-06). */
     public ?Closure $aoAbrirTransacao = null;
@@ -38,8 +40,15 @@ final class RepoMemoria implements AtributosRepositorio
     public function grupo(int $id): ?array { return isset($this->g[$id]) ? $this->g[$id] + ['escopos' => $this->ge[$id] ?? [], 'atributos' => $this->ga[$id] ?? []] : null; }
     public function criarGrupo(string $n): int { $id = $this->id(); $this->g[$id] = ['id' => $id, 'nome' => $n, 'ativo' => 1, 'versao' => 1]; return $id; }
     public function atualizarGrupo(int $id, int $versao, array $d): bool { if ($this->g[$id]['versao'] !== $versao) return false; $this->g[$id] = $d + $this->g[$id]; $this->g[$id]['versao']++; return true; }
-    public function definirEscopo(int $gid, array $e): void { $this->ge[$gid] = $e; }
-    public function definirAtributosDoGrupo(int $gid, array $i): void { $this->ga[$gid] = $i; }
+    public function definirEscopo(int $gid, array $e, ?string $u = null): void { $this->ge[$gid] = $e; }
+    public function retratoModelo(?int $pid = null): RetratoModelo
+    {
+        $esc = []; foreach ($this->ge as $gid => $es) foreach ($es as $e) $esc[] = ['grupo_id' => $gid, 'categoria' => $e['categoria'], 'subcategoria' => (string) ($e['subcategoria'] ?? '')];
+        $gs = []; foreach ($this->g as $id => $g) $gs[$id] = $g + ['aplica_a_todos' => 0, 'ordem' => 0, 'descricao' => null];
+        $at = []; foreach ($this->a as $id => $x) $at[$id] = $x + ['importancia_padrao' => null];
+        return new RetratoModelo($gs, $esc, $this->ga, $pid === null ? $this->gp : array_intersect_key($this->gp, [$pid => 1]), $pid === null ? $this->pa : array_intersect_key($this->pa, [$pid => 1]), $at);
+    }
+    public function definirAtributosDoGrupo(int $gid, array $i, ?string $u = null): void { $this->ga[$gid] = $i; }
     public function valoresDoProduto(int $pid): array { return array_values(array_filter($this->v, fn($x) => $x['product_id'] === $pid && empty($x['excluido_em']))); }
     public function valor(int $pid, int $aid, int $k): ?array { return $this->v["$pid:$aid:$k"] ?? null; }
     public function gravarValor(array $d, ?int $versao): bool { $k = "{$d['product_id']}:{$d['atributo_id']}:{$d['opcao_chave']}"; if ($versao === null) { if (isset($this->v[$k])) return false; $this->v[$k] = $d + ['versao' => 1]; return true; } if (($this->v[$k]['versao'] ?? -1) !== $versao) return false; $this->v[$k] = $d + ['versao' => $versao + 1, 'excluido_em' => null]; return true; }

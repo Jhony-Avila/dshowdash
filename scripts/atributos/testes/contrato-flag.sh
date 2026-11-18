@@ -5,7 +5,7 @@
 set -u
 CL="$(cd "$(dirname "$0")/../../.." && pwd)"; T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 mkdir -p $T/api/atributos $T/api/_helpers $T/api/core $T/api/feature-flags $T/config $T/scripts/atributos/testes $T/tmp $T/sess
-cp $CL/api/atributos/index.php $CL/api/atributos/AtributosService.php $CL/api/atributos/CatalogoPdo.php $CL/api/atributos/ProdutosLeitura.php $CL/api/atributos/KitsLegado.php $T/api/atributos/   # Etapa 7: + leitor do catálogo; E1: + leitura rica
+for f in $CL/api/atributos/*.php; do case "$(basename $f)" in AtributosRepo.php|LeituraVitrinePdo.php) ;; *) cp "$f" $T/api/atributos/;; esac; done   # todos os arquivos do módulo, menos os 2 substituídos por stub
 cp $CL/api/_helpers/ApiResponse.php $CL/api/_helpers/AuthHelpers.php $T/api/_helpers/
 cp $CL/api/core/*.php $T/api/core/   # todas as dependências do core (CorsPolicy → BaseUrl etc.); os stubs abaixo sobrescrevem SessionGate e UARPSGate
 cp $CL/scripts/atributos/testes/_executar-rota.php $T/scripts/atributos/testes/
