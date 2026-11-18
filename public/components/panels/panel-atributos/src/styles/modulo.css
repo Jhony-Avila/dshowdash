@@ -440,3 +440,64 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
   --bl-fonte: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --bl-fonte-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
+
+/* ── UX-1b: diálogo em portal no <body>, acima da barra do shell ── */
+[data-bl-root].at-portal-modal { position: relative; z-index: 2147483000; font-family: inherit; font-size: 13px; color: var(--bl-texto); }
+[data-bl-root].at-portal-modal .at-modal-fundo { z-index: 2147483000; }
+
+/* ── UX-1b: Ficha — bloco do produto que encolhe, sub-abas com ícones, carrossel, completude acionável, cadeado, tabela ── */
+[data-bl-root] .at-heroi-fixo { transition: none; }
+[data-bl-root] .at-heroi-fixo .at-heroi { margin-top: 8px; }
+[data-bl-root] .at-heroi-compacto { display: flex; align-items: center; gap: 12px; height: 56px; padding: 6px 10px; margin-top: 6px; border: 1px solid var(--bl-borda); border-radius: 10px; background: var(--bl-superficie); }
+[data-bl-root] .at-heroi-compacto__foto { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 6px; overflow: hidden; }
+[data-bl-root] .at-heroi-compacto__nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+[data-bl-root] .at-heroi-compacto__barras { display: flex; gap: 16px; margin-left: auto; min-width: 260px; }
+[data-bl-root] .at-heroi-compacto__barras > * { flex: 1 1 120px; }
+[data-bl-root] .at-abas--icones button { display: inline-flex; align-items: center; gap: 6px; }
+[data-bl-root] .at-completude { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; }
+[data-bl-root] .at-carrossel { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
+[data-bl-root] .at-carrossel__trilho { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; flex: 1 1 auto; min-width: 0; }
+[data-bl-root] .at-carrossel__item { flex: 0 0 96px; padding: 0; border: 1px solid var(--bl-borda); border-radius: 8px; overflow: hidden; background: transparent; cursor: zoom-in; scroll-snap-align: start; }
+[data-bl-root] .at-carrossel__item:hover, [data-bl-root] .at-carrossel__item:focus-visible { border-color: var(--bl-verde); }
+[data-bl-root] .at-carrossel__seta { flex: 0 0 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--bl-borda); border-radius: 50%; background: var(--bl-superficie-2); color: var(--bl-texto); cursor: pointer; }
+[data-bl-root] .at-origem--kit { display: inline-flex; align-items: center; gap: 4px; }
+[data-bl-root] .at-origem--kit .at-icone, [data-bl-root] .at-cadeado .at-icone { color: var(--bl-texto-3); }
+[data-bl-root] .at-cadeado { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--bl-texto-3); margin-bottom: 4px; }
+[data-bl-root] .at-ficha__filtros { flex-wrap: wrap; gap: 8px 14px; }
+[data-bl-root] .at-painel--ficha { overflow: visible; }
+[data-bl-root] .at-tabela-ficha td { vertical-align: top; }
+[data-bl-root] .at-tabela-ficha td:nth-child(1) { width: 34%; }
+[data-bl-root] .at-tabela-ficha td:nth-child(2) { width: 26%; }
+[data-bl-root] .at-tabela-ficha td:nth-child(3) { width: 22%; }
+[data-bl-root] .at-tabela-ficha .at-attr__nome { display: flex; gap: 8px; }
+[data-bl-root] .at-tabela-ficha tr.at-linha--pendente td:first-child { box-shadow: inset 3px 0 0 var(--bl-aviso); }
+[data-bl-root] .at-tabela-ficha tr.at-linha--preenchida td:first-child { box-shadow: inset 3px 0 0 var(--bl-sucesso); }
+/* UX-1b: Ficha — área fixa enxuta (a regra dos 40% conta o bloco do produto já encolhido) */
+[data-bl-root] .at-ficha__filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 0 2px; }
+[data-bl-root] .at-ficha__filtros h3 { margin: 0 4px 0 0; font-size: 14px; }
+[data-bl-root] .at-heroi-fixo .at-heroi { grid-template-columns: 220px minmax(0, 1fr); gap: 14px; align-items: start; }
+[data-bl-root] .at-heroi-fixo .at-galeria { width: 220px; }
+[data-bl-root] .at-heroi-fixo .at-ident { padding: 12px 14px; }
+[data-bl-root] .at-heroi-fixo .at-ident__nome { font-size: 17px; margin: 2px 0 6px; }
+[data-bl-root] .at-heroi-fixo .at-fontes { margin: 8px 0 0; font-size: 12px; }
+[data-bl-root] .at-fixo .at-ficha__topo { padding: 4px 0; }
+[data-bl-root] .at-fixo .at-abas--icones { margin-top: 8px; }
+[data-bl-root] .at-ficha__abas-linha { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 6px 16px; border-bottom: 1px solid var(--bl-borda); margin-top: 6px; }
+[data-bl-root] .at-ficha__abas-linha .at-abas { border-bottom: 0; margin: 0; }
+[data-bl-root] .at-ficha__filtros-slot:empty { display: none; }
+[data-bl-root] .at-ficha__filtros-slot .at-ficha__filtros { padding: 0 0 6px; }
+[data-bl-root] .at-ficha__titulo-tabela { margin: 10px 0 6px; font-size: 14px; }
+[data-bl-root] .at-heroi-compacto { margin-top: 2px; }
+[data-bl-root].at-raiz .at-cabecalho { padding-top: 10px; }
+[data-bl-root] .at-faixa-fixa { padding-top: 4px; }
+[data-bl-root] .at-faixa-fixa__bloco:last-child { padding-bottom: 4px; }
+[data-bl-root] .at-ficha__filtros .at-alternador button { padding-left: 9px; padding-right: 9px; }
+/* UX-1b: na ficha (sem descrição), título "Produtos" e abas do módulo na MESMA linha */
+[data-bl-root] .at-cabecalho--uma-linha { flex-wrap: nowrap; align-items: flex-end; }
+[data-bl-root] .at-cabecalho--uma-linha .at-cabecalho__titulo { flex: 0 0 auto; padding-bottom: 8px; }
+[data-bl-root] .at-cabecalho--uma-linha .at-nav { width: auto; flex: 1 1 auto; justify-content: flex-end; }
+@media (max-width: 1100px) { [data-bl-root] .at-cabecalho--uma-linha { flex-wrap: wrap; } [data-bl-root] .at-cabecalho--uma-linha .at-nav { width: 100%; justify-content: flex-start; } }
+/* UX-1b: o sticky respeita o padding do contêiner que rola → padding superior 0 (o cabeçalho das tabelas gruda rente à área fixa);
+   o respiro do topo vira margem do 1º filho */
+[data-bl-root].at-raiz--fixa > .at-conteudo { padding-top: 0; }
+[data-bl-root].at-raiz--fixa > .at-conteudo > :first-child { margin-top: 12px; }

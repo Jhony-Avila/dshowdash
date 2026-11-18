@@ -99,7 +99,10 @@ export function Dialogo({ titulo, aberto, aoFechar, children, rodape, largura = 
     return () => { window.removeEventListener('keydown', tecla, true); ant?.focus?.(); };
   }, [aberto, aoFechar]);
   if (!aberto) return null;
-  return (
+  // UX-1b: o diálogo vai para um PORTAL no <body> (com o próprio [data-bl-root], para os tokens valerem). Dentro do painel, os
+  // ancestrais do shell criam contexto de empilhamento e o diálogo ficava cortado por baixo da barra do Dash (achado da ESQUERDA, Vincular).
+  return createPortal(
+    <div data-bl-root className="at-portal-modal">
     <div className="at-modal-fundo" onMouseDown={(e) => { if (e.target === e.currentTarget) aoFechar(); }}>
       <div className="at-modal" role="dialog" aria-modal="true" aria-label={titulo} ref={ref} tabIndex={-1} style={{ width: `min(${largura}px, calc(100vw - 32px))` }}>
         <div className="at-modal__cabeca"><h2>{titulo}</h2><button type="button" className="bl-botao bl-botao--icone" data-fechar aria-label="Fechar" onClick={aoFechar}>✕</button></div>
@@ -107,7 +110,7 @@ export function Dialogo({ titulo, aberto, aoFechar, children, rodape, largura = 
         {rodape && <div className="at-modal__rodape">{rodape}</div>}
       </div>
     </div>
-  );
+    </div>, document.body);
 }
 
 /** Botão com estado de trabalho. */

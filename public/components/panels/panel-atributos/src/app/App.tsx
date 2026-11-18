@@ -130,7 +130,7 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
     <Contexto.Provider value={nav}>
       <div data-bl-root className={`at-raiz ${tudoRola ? 'at-raiz--tudo-rola' : 'at-raiz--fixa'}`} ref={raiz} style={altura ? { height: altura } : undefined}>
         <div className="at-fixo" ref={fixo}>
-          <header className="at-cabecalho">
+          <header className={`at-cabecalho ${produto !== null ? 'at-cabecalho--uma-linha' : ''}`}>
             <div className="at-cabecalho__titulo">
               <h1>{produto !== null ? 'Produtos' : TELAS[aba].titulo}</h1>
               {produto === null && <p>{TELAS[aba].descricao}</p>}

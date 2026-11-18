@@ -1,15 +1,23 @@
 // panel-atributos/src/screens/Ficha.tsx — ficha do produto (§11.3): ver e editar. Cabeçalho com galeria, identificação e preenchimento;
 // abas Atributos · Vínculos · Fotos · Precifica · Histórico. Briefing §5: especificação técnica (DSHOW) × Precifica (só leitura) × preço.
 import React from 'react';
+import { createPortal } from 'react-dom';
 import type { AtributoDicionario, EventoHistorico, Ficha as TFicha, ItemFicha, KitResumo, Sugestao } from '../lib/tipos';
 import { enviar, ErroApi, obter } from '../lib/api';
 import { campoPrecifica, dataHora, decimal, precifica as fmtPrecifica, pctDe, sugestaoTexto, valor as fmtValor } from '../lib/formatar';
 import { ESTADO, FAMILIAS_PRECIFICA, FONTE_SUGESTAO, IMPORTANCIA, MOTIVO_KIT, rotuloCategoria, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
-import { Barra, Botao, CapsulaId, ChipKit, Carregando, Dialogo, Erro, Etiqueta, Foto, Vazio } from '../ui/Comuns';
+import { Barra, Botao, CapsulaId, ChipKit, Carregando, Dialogo, Erro, Etiqueta, FaixaFixa, Foto, Vazio } from '../ui/Comuns';
+import { Icone, type NomeIcone } from '../ui/Icones';
+import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
+import type { Ordenacao } from '../lib/ordenar';
 import { EditorValor } from '../ui/EditorValor';
 
 type AbaFicha = 'atributos' | 'vinculos' | 'fotos' | 'precifica' | 'historico';
+
+type FiltroAtr = 'todos' | 'obrigatorios' | 'sugestoes';
+/** UX-1b: altura da faixa fina do produto (bloco encolhido), usada também na regra dos 40% da área fixa. */
+const ALTURA_COMPACTA = 56;
 
 export function Ficha({ id }: { id: number }) {
   const m = useModulo();
@@ -18,7 +26,25 @@ export function Ficha({ id }: { id: number }) {
   const [aba, setAba] = React.useState<AbaFicha>('atributos');
   React.useEffect(() => { if (m.atributoFoco !== null) setAba('atributos'); }, [m.atributoFoco]);   // UX-1: abrir num atributo = aba Atributos
   const [detalhes, setDetalhes] = React.useState(false);
-  const [foto, setFoto] = React.useState(0);
+  const [ampliar, setAmpliar] = React.useState<number | null>(null);   // UX-1b: foto ampliada (carrossel / aba Fotos)
+  // UX-1 (b) + UX-1b: o filtro da aba Atributos vive aqui para "Ver N pendentes" (bloco do produto) aplicá-lo
+  const [filtro, setFiltro] = React.useState<FiltroAtr>('todos');
+  // UX-1b: ao rolar, o bloco do produto encolhe para uma faixa fina; no topo, reabre. Só com a área fixa ligada (não em "tudo rola").
+  const [compacto, setCompacto] = React.useState(false);
+  const [slotFiltros, setSlotFiltros] = React.useState<HTMLDivElement | null>(null);   // UX-1b: filtros da aba na linha das sub-abas
+  const heroi = React.useRef<HTMLDivElement>(null); const alturaCheia = React.useRef(0); const trilho = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const r = m.rolador; if (!r || m.tudoRola) { setCompacto(false); return; }
+    const aoRolar = () => setCompacto((c) => {
+      if (!c && heroi.current) alturaCheia.current = heroi.current.offsetHeight;
+      const delta = Math.max(0, alturaCheia.current - ALTURA_COMPACTA);
+      // só encolhe se, depois de encolher, ainda sobrar rolagem (senão o navegador volta ao topo e o bloco abre e fecha sem parar)
+      if (!c && r.scrollTop > 40 && r.scrollHeight - r.clientHeight > delta + 40) return true;
+      if (c && r.scrollTop < 4) return false;
+      return c;
+    });
+    r.addEventListener('scroll', aoRolar, { passive: true }); return () => r.removeEventListener('scroll', aoRolar);
+  }, [m.rolador, m.tudoRola]);
   const seq = React.useRef(0);   // recargas fora de ordem: só a mais recente vale (senão um campo volta ao valor antigo)
   const carregar = React.useCallback((silencioso = false) => {
     if (!silencioso) setF(null);
@@ -26,16 +52,21 @@ export function Ficha({ id }: { id: number }) {
     const n = ++seq.current;
     obter<TFicha>('ficha_produto', { product_id: id }).then((d) => { if (n === seq.current) setF(d); }).catch((e) => { if (n === seq.current) setErro(e.message); });
   }, [id]);
-  React.useEffect(() => { carregar(); setAba('atributos'); setFoto(0); }, [carregar]);
+  React.useEffect(() => { carregar(); setAba('atributos'); setAmpliar(null); setFiltro('todos'); setCompacto(false); }, [carregar]);
   if (erro) return <div><button type="button" className="bl-botao" onClick={m.fecharProduto}>← Voltar</button><Erro mensagem={erro} aoTentar={() => carregar()} /></div>;
   if (!f) return <Carregando rotulo="Carregando a ficha" />;
-  const p = f.produto; const fs = f.fotos[foto] ?? null;
+  const p = f.produto; const capa = f.fotos.find((x) => x.capa) ?? f.fotos[0] ?? null;
+  const ess = f.completude.essencial; const nPend = f.completude.obrigatorios_vazios.length;
+  const verPendentes = () => { setAba('atributos'); setFiltro('obrigatorios'); m.rolador?.scrollTo({ top: 0 }); };
   const pend = f.itens.filter((i) => i.sugestoes.length).length;
 
   return (
     <div className="at-ficha">
-      {/* UX-1 (wireframe): "← Produtos · nome · Cód. · categoria/subcategoria · Detalhes" */}
-      <div className="at-ficha__topo at-ficha__topo--linha">
+      {/* UX-1b: tudo até a linha das colunas fica FIXO (FaixaFixa); o bloco do produto encolhe ao rolar */}
+      <FaixaFixa>
+        {!compacto && (<div data-encolhivel data-altura-compacta={0}>
+        {/* UX-1 (wireframe): "← Produtos · nome · Cód. · categoria/subcategoria · Detalhes" */}
+        <div className="at-ficha__topo at-ficha__topo--linha">
         <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
         <strong className="at-ficha__nome" title={p.nome}>{p.nome}</strong>
         <span className="at-fraco">Cód. {p.id}</span>
@@ -43,49 +74,81 @@ export function Ficha({ id }: { id: number }) {
         {!f.pode_editar && <Etiqueta>somente leitura</Etiqueta>}
         <Botao aoClicar={() => setDetalhes(true)}>Detalhes</Botao>
       </div>
-      <div className="at-heroi">
-        <div className="at-galeria">
-          <Foto mediaId={fs?.id ?? null} cor={fs?.cor ?? null} proporcao={fs ? `${fs.largura} / ${fs.altura}` : '16 / 9'} lado={1280} idCapsula={p.id} />
-          {f.fotos.length > 1 && (
-            <div className="at-miniaturas" role="listbox" aria-label="Fotos do produto">
-              {f.fotos.map((x, i) => (
-                <button key={x.id} type="button" role="option" aria-selected={i === foto} className={`at-miniatura ${i === foto ? 'ativa' : ''}`} onClick={() => setFoto(i)} title={x.capa ? 'Capa' : `Foto ${i + 1}`}>
-                  <Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" compacta ajuste="cover" />
-                </button>))}
-            </div>)}
+        </div>)}
+        <div ref={heroi} className={`at-heroi-fixo ${compacto ? 'at-heroi-fixo--compacto' : ''}`} data-encolhivel data-altura-compacta={ALTURA_COMPACTA}>
+          {compacto ? (
+            <div className="at-heroi-compacto">
+              <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
+              <div className="at-heroi-compacto__foto"><Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="1 / 1" compacta ajuste="cover" /></div>
+              <strong className="at-heroi-compacto__nome" title={p.nome}>{p.nome}</strong>
+              <CapsulaId id={p.id} flutuante={false} />
+              <div className="at-heroi-compacto__barras">
+                <Barra rotulo="Essencial" feitos={ess.feitos} total={ess.total} compacta />
+                <Barra rotulo="Completo" feitos={f.completude.completo.feitos} total={f.completude.completo.total} compacta />
+              </div>
+              <Botao aoClicar={() => setDetalhes(true)}>Detalhes</Botao>
+            </div>
+          ) : (
+          <div className="at-heroi">
+            <div className="at-galeria">
+              <Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="4 / 3" lado={480} idCapsula={p.id} />
+            </div>
+            <div className="at-ident bl-cartao">
+              <div className="at-ident__classe">{rotuloCategoria(p.categoria)} · {rotuloSubcategoria(p.subcategoria)}</div>
+              <h1 className="at-ident__nome">{p.nome}</h1>
+              <div className="at-ident__chips">
+                <CapsulaId id={p.id} flutuante={false} />
+                {p.ativo ? <Etiqueta tom="sucesso">Ativo</Etiqueta> : <Etiqueta tom="aviso">Inativo no catálogo</Etiqueta>}
+                {f.kits.map((k) => <ChipKit key={k.id} nome={k.nome} titulo={`Kit ${k.nome} — ${k.motivos.map((x) => MOTIVO_KIT[x.tipo]).join(', ')}`} />)}
+                {f.precifica.familias.map((k) => <Etiqueta key={k} tom="info">Precifica: {tituloFamilia(k)}</Etiqueta>)}
+              </div>
+              <div className="at-ident__barras">
+                <Barra rotulo="Essencial" feitos={f.completude.essencial.feitos} total={f.completude.essencial.total} />
+                <Barra rotulo="Completo" feitos={f.completude.completo.feitos} total={f.completude.completo.total} />
+              </div>
+              <dl className="at-fontes">
+                <div><dt><span className="at-ponto at-ponto--dshow" />Especificação técnica</dt><dd>Banco de atributos DSHOW (esta tela). {f.legado ? `Legado do Jhony: item ${f.legado.item}, kit ${f.legado.kit_nome ?? '—'}.` : 'Sem atribuição no legado.'}</dd></div>
+                <div><dt><span className="at-ponto at-ponto--precifica" />Ficha do Precifica</dt><dd>{f.precifica.familias.length ? 'Somente leitura, ao lado de cada atributo com par e na aba Precifica.' : 'Este produto não tem ficha técnica no Precifica.'}</dd></div>
+              </dl>
+              {/* UX-1b (ajuste 1): completude acionável — o clique aplica o filtro "Obrigatórios pendentes" (a mesma regra do contador) */}
+              <div className="at-completude">
+                {ess.total === 0 ? <span className="at-fraco">Sem essenciais definidos</span> : <span>{ess.feitos} de {ess.total} essenciais preenchidos</span>}
+                {nPend > 0 && <> · <button type="button" className="at-link" onClick={verPendentes}>Ver {nPend} pendente{nPend === 1 ? '' : 's'}</button></>}
+                {pend > 0 && <Etiqueta tom="info">{pend} sugest{pend === 1 ? 'ão' : 'ões'} para conferir</Etiqueta>}
+              </div>
+              {/* UX-1b: carrossel de fotos (a capa continua à esquerda); sem fotos, não aparece */}
+              {f.fotos.length > 0 && (
+                <div className="at-carrossel" role="group" aria-label="Fotos do produto">
+                  <button type="button" className="at-carrossel__seta" aria-label="Fotos anteriores" onClick={() => trilho.current?.scrollBy({ left: -240, behavior: 'smooth' })}><Icone nome="chevron-left" /></button>
+                  <div className="at-carrossel__trilho" ref={trilho}>
+                    {f.fotos.map((x, k) => (
+                      <button key={x.id} type="button" className="at-carrossel__item" onClick={() => setAmpliar(k)} aria-label={`Ampliar foto ${k + 1} de ${f.fotos.length}`} title={x.capa ? 'Capa' : `Foto ${k + 1}`}>
+                        <Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" compacta ajuste="cover" />
+                      </button>))}
+                  </div>
+                  <button type="button" className="at-carrossel__seta" aria-label="Próximas fotos" onClick={() => trilho.current?.scrollBy({ left: 240, behavior: 'smooth' })}><Icone nome="chevron-right" /></button>
+                </div>)}
+            </div>
+          </div>
+          )}
         </div>
-        <div className="at-ident bl-cartao">
-          <div className="at-ident__classe">{rotuloCategoria(p.categoria)} · {rotuloSubcategoria(p.subcategoria)}</div>
-          <h1 className="at-ident__nome">{p.nome}</h1>
-          <div className="at-ident__chips">
-            <CapsulaId id={p.id} flutuante={false} />
-            {p.ativo ? <Etiqueta tom="sucesso">Ativo</Etiqueta> : <Etiqueta tom="aviso">Inativo no catálogo</Etiqueta>}
-            {f.kits.map((k) => <ChipKit key={k.id} nome={k.nome} titulo={`Kit ${k.nome} — ${k.motivos.map((x) => MOTIVO_KIT[x.tipo]).join(', ')}`} />)}
-            {f.precifica.familias.map((k) => <Etiqueta key={k} tom="info">Precifica: {tituloFamilia(k)}</Etiqueta>)}
-          </div>
-          <div className="at-ident__barras">
-            <Barra rotulo="Essencial" feitos={f.completude.essencial.feitos} total={f.completude.essencial.total} />
-            <Barra rotulo="Completo" feitos={f.completude.completo.feitos} total={f.completude.completo.total} />
-          </div>
-          <dl className="at-fontes">
-            <div><dt><span className="at-ponto at-ponto--dshow" />Especificação técnica</dt><dd>Banco de atributos DSHOW (esta tela). {f.legado ? `Legado do Jhony: item ${f.legado.item}, kit ${f.legado.kit_nome ?? '—'}.` : 'Sem atribuição no legado.'}</dd></div>
-            <div><dt><span className="at-ponto at-ponto--precifica" />Ficha do Precifica</dt><dd>{f.precifica.familias.length ? 'Somente leitura, ao lado de cada atributo com par e na aba Precifica.' : 'Este produto não tem ficha técnica no Precifica.'}</dd></div>
-          </dl>
-          <div className="at-acoes">
-            {pend > 0 && <Etiqueta tom="info">{pend} sugest{pend === 1 ? 'ão' : 'ões'} para conferir</Etiqueta>}
-            {f.completude.obrigatorios_vazios.length > 0 && <Etiqueta tom="aviso">{f.completude.obrigatorios_vazios.length} obrigatório(s) vazio(s)</Etiqueta>}
-          </div>
+        <div className="at-ficha__abas-linha">
+        <div className="at-abas at-abas--icones" role="tablist" aria-label="Seções da ficha">
+          {([['atributos', `Atributos (${f.itens.length})`, 'list'], ['vinculos', 'Vínculos', 'link'], ['fotos', `Fotos (${f.fotos.length})`, 'image'], ['precifica', 'Precifica', 'tag'], ['historico', 'Histórico', 'clock']] as [AbaFicha, string, NomeIcone][]).map(([a, r, ic]) => (
+            <button key={a} type="button" role="tab" aria-selected={aba === a} className={aba === a ? 'ativo' : ''} onClick={() => setAba(a)}><Icone nome={ic} />{r}</button>))}
         </div>
-      </div>
-      <div className="at-abas" role="tablist" aria-label="Seções da ficha">
-        {([['atributos', `Atributos (${f.itens.length})`], ['vinculos', 'Vínculos'], ['fotos', `Fotos (${f.fotos.length})`], ['precifica', 'Precifica'], ['historico', 'Histórico']] as [AbaFicha, string][]).map(([a, r]) => (
-          <button key={a} type="button" role="tab" aria-selected={aba === a} className={aba === a ? 'ativo' : ''} onClick={() => setAba(a)}>{r}</button>))}
-      </div>
-      {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} />}
+        <div className="at-ficha__filtros-slot" ref={setSlotFiltros} />
+        </div>
+      </FaixaFixa>
+      {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} filtro={filtro} setFiltro={setFiltro} slotFiltros={slotFiltros} />}
       {aba === 'vinculos' && <AbaVinculos f={f} recarregar={() => carregar(true)} />}
-      {aba === 'fotos' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => { setFoto(i); window.scrollTo({ top: 0 }); }}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
+      {aba === 'fotos' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => setAmpliar(i)}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
       {aba === 'precifica' && <AbaPrecifica f={f} />}
       {aba === 'historico' && <AbaHistorico id={p.id} />}
+      <Dialogo titulo={ampliar !== null ? `Foto ${ampliar + 1} de ${f.fotos.length}` : 'Foto'} aberto={ampliar !== null && !!f.fotos[ampliar]} aoFechar={() => setAmpliar(null)} largura={900}
+        rodape={f.fotos.length > 1 ? <><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + f.fotos.length - 1) % f.fotos.length))}>‹ Anterior</Botao><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + 1) % f.fotos.length))}>Próxima ›</Botao></> : undefined}>
+        {ampliar !== null && f.fotos[ampliar] && <Foto mediaId={f.fotos[ampliar].id} cor={f.fotos[ampliar].cor} proporcao={`${f.fotos[ampliar].largura} / ${f.fotos[ampliar].altura}`} lado={1280} />}
+      </Dialogo>
       <Dialogo titulo="Detalhes do produto · dados cadastrais" aberto={detalhes} aoFechar={() => setDetalhes(false)} largura={620}>
         <dl className="at-detalhes">
           <dt>ID</dt><dd>{p.id}</dd><dt>Nome (catálogo)</dt><dd>{p.nome}</dd><dt>Categoria</dt><dd>{rotuloCategoria(p.categoria)} ({p.categoria})</dd>
@@ -102,10 +165,10 @@ export function Ficha({ id }: { id: number }) {
 }
 
 // ---- Aba Atributos -------------------------------------------------------------------------------------------------------------------
-function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco }: { f: TFicha; recarregar: () => void; focoInicial?: number | null; aoConsumirFoco?: () => void }) {
+function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtro, setFiltro, slotFiltros = null }: { f: TFicha; recarregar: () => void; focoInicial?: number | null; aoConsumirFoco?: () => void; filtro: FiltroAtr; setFiltro: (v: FiltroAtr) => void; slotFiltros?: HTMLElement | null }) {
   const m = useModulo();
-  const [agrup, setAgrup] = React.useState<'kit' | 'grupo'>('kit');
-  const [filtro, setFiltro] = React.useState<'todos' | 'obrigatorios' | 'sugestoes'>('todos');
+  const [agrup, setAgrup] = React.useState<'kit' | 'grupo' | 'nenhum'>('kit');
+  const [ordenacao, setOrdenacao] = React.useState<Ordenacao | null>(null);   // null = ordem da ficha (posição no kit)
   const pendentes = React.useMemo(() => new Set(f.completude.obrigatorios_vazios), [f]);   // UX-1: a MESMA lista do contador (servidor)
   const [hist, setHist] = React.useState<ItemFicha | null>(null);
   const [adicionar, setAdicionar] = React.useState(false);
@@ -122,44 +185,53 @@ function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco }: { f
     if (!focar) return;
     const alvo = focar.atributo ?? f.itens.find((i) => !i.valor && (i.kit_id === focar.kit || i.origens.some((o) => o.grupo_id === focar.kit)))?.atributo_id;
     if (alvo === undefined) return;
-    const linha = document.querySelector<HTMLElement>(`[data-atributo="${alvo}"]`); if (!linha) return;
+    const celula = document.querySelector<HTMLElement>(`[data-atributo="${alvo}"]`); if (!celula) return;
+    const linha = celula.closest<HTMLElement>('tr') ?? celula;   // UX-1b: a linha é a <tr> da TabelaDados (cada célula marca data-atributo)
     linha.scrollIntoView({ block: 'center' });
     linha.querySelector<HTMLElement>('input:not([type=checkbox]):not([readonly]), select, button[role=radio], input[type=checkbox]')?.focus();
     setFocar(null);
   }, [focar, f]);
   const itens = f.itens.filter((i) => filtro === 'todos' || (filtro === 'obrigatorios' && pendentes.has(i.atributo_id)) || (filtro === 'sugestoes' && i.sugestoes.length > 0));
-  const grupos = new Map<string, ItemFicha[]>();
-  for (const i of itens) { const k = agrup === 'kit' ? (i.kit ?? 'Sem kit') : (i.grupo_atributos ?? 'Sem grupo de atributos'); grupos.set(k, [...(grupos.get(k) ?? []), i]); }
-  const blocos = [...grupos.entries()].sort((a, b) => (agrup === 'grupo' ? a[0].localeCompare(b[0], 'pt-BR') : 0));
+  // UX-1b: tabela de dados (TabelaDados da ESQUERDA). "Por kit"/"Por grupo": a ordenação vale DENTRO de cada grupo (os grupos mantêm a
+  // ordem); "Todos juntos": a lista inteira. A ordem congela enquanto um campo da tabela tem o foco (o editor grava na célula).
+  const chaveGrupo = (i: ItemFicha) => (agrup === 'kit' ? (i.kit ?? 'Sem kit') : agrup === 'grupo' ? (i.grupo_atributos ?? 'Sem grupo de atributos') : null);
+  const nomesGrupos = agrup === 'nenhum' ? [] : [...new Set(itens.map((i) => chaveGrupo(i) as string))];
+  if (agrup === 'grupo') nomesGrupos.sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const grupos = nomesGrupos.map((k) => ({ chave: k, titulo: k }));   // a TabelaDados já mostra a contagem
+  const colunas: ColunaTabela<ItemFicha>[] = [
+    { chave: 'atributo', titulo: 'Atributo e origem do vínculo', tipo: 'texto', valor: (i) => i.rotulo, render: (i) => <CelAtributo i={i} aoHistorico={() => setHist(i)} /> },
+    { chave: 'valor', titulo: 'Valor DSHOW', tipo: 'texto', valor: (i) => textoDoValor(i), render: (i) => <CelValor i={i} f={f} recarregar={recarregar} /> },
+    { chave: 'estado', titulo: 'Estado e sugestão', tipo: 'texto', valor: (i) => estadoDe(i, pendentes.has(i.atributo_id)),
+      render: (i) => <CelEstado i={i} f={f} pendente={pendentes.has(i.atributo_id)} recarregar={recarregar} /> },
+    { chave: 'precifica', titulo: 'Referência do Precifica · somente leitura', tipo: 'texto', valor: (i) => (i.precifica ? fmtPrecifica(i.precifica.chave, i.precifica.valor) : null),
+      render: (i) => <div data-atributo={i.atributo_id} className="at-attr__precifica">{i.precifica ? <><span className="at-fonte-mini">Precifica</span> {fmtPrecifica(i.precifica.chave, i.precifica.valor)}</> : <span className="at-fraco">—</span>}</div> },
+  ];
   return (
-    <section className="at-painel" aria-label="Atributos do produto">
-      <div className="at-painel__cabeca">
-        <h3>Atributos deste produto</h3>
-        <div className="at-acoes">
+    <section className="at-painel at-painel--ficha" aria-label="Atributos do produto">
+      {/* UX-1b: filtros na MESMA linha das sub-abas (área fixa enxuta); o título fica logo acima da tabela */}
+      {(() => { const filtros = (
+      <div className="at-ficha__filtros" title={f.pode_editar ? 'Cada campo grava sozinho (Enter ou ao sair do campo). Clique no título da coluna para ordenar.' : undefined}>
+        {!f.pode_editar && <Etiqueta>somente leitura</Etiqueta>}
           <div className="at-alternador" role="group" aria-label="Agrupar por">
-            <button type="button" className={agrup === 'kit' ? 'ativo' : ''} aria-pressed={agrup === 'kit'} onClick={() => setAgrup('kit')}>Por kit</button>
-            <button type="button" className={agrup === 'grupo' ? 'ativo' : ''} aria-pressed={agrup === 'grupo'} onClick={() => setAgrup('grupo')}>Por grupo de atributos</button>
+            {([['kit', 'Por kit'], ['grupo', 'Por grupo'], ['nenhum', 'Todos juntos']] as ['kit' | 'grupo' | 'nenhum', string][]).map(([v, r]) => (
+              <button key={v} type="button" className={agrup === v ? 'ativo' : ''} aria-pressed={agrup === v} onClick={() => setAgrup(v)}>{r}</button>))}
           </div>
           <div className="at-alternador" role="group" aria-label="Mostrar">
-            {([['todos', `Todos (${f.itens.length})`], ['obrigatorios', `Obrigatórios pendentes (${pendentes.size})`], ['sugestoes', `Com sugestão (${f.itens.filter((i) => i.sugestoes.length).length})`]] as [typeof filtro, string][]).map(([v, r]) => (
+            {([['todos', `Todos (${f.itens.length})`], ['obrigatorios', `Obrigatórios pendentes (${pendentes.size})`], ['sugestoes', `Com sugestão (${f.itens.filter((i) => i.sugestoes.length).length})`]] as [FiltroAtr, string][]).map(([v, r]) => (
               <button key={v} type="button" className={filtro === v ? 'ativo' : ''} aria-pressed={filtro === v} onClick={() => setFiltro(v)}>{r}</button>))}
           </div>
-        </div>
-        <div className="at-acoes">
           {f.pode_vincular && <Botao primario aoClicar={() => setAdicionar(true)}>Adicionar atributo a este produto</Botao>}
-          <span className="at-fraco">{f.pode_editar ? 'Cada campo grava sozinho (Enter ou ao sair do campo).' : 'Somente leitura para o seu nível.'}</span>
-        </div>
       </div>
+      ); return slotFiltros ? createPortal(filtros, slotFiltros) : <FaixaFixa>{filtros}</FaixaFixa>; })()}
+      <h3 className="at-ficha__titulo-tabela">Atributos deste produto</h3>
       <Dialogo titulo="Adicionar atributo a este produto" aberto={adicionar} aoFechar={() => setAdicionar(false)} largura={640}>
         <SeletorAdicionar f={f} aoFeito={(alvo) => { setAdicionar(false); setFocar(alvo); recarregar(); }} />
       </Dialogo>
-      <div className="at-attr at-attr--cabecalho" aria-hidden><div>Atributo e origem do vínculo</div><div>Valor DSHOW</div><div>Estado e sugestão</div><div>Referência do Precifica · somente leitura</div></div>
-      {blocos.length === 0 && <div className="at-bloco__vazio">Nada neste filtro.</div>}
-      {blocos.map(([nome, xs]) => (
-        <div key={nome} className="at-bloco">
-          <div className="at-bloco__titulo">{agrup === 'kit' && nome !== 'Sem kit' ? <ChipKit nome={nome} /> : <strong>{nome}</strong>}<span className="at-filtro__n">{xs.length}</span></div>
-          {xs.map((i) => <LinhaAtributo key={i.atributo_id} i={i} f={f} pendente={pendentes.has(i.atributo_id)} recarregar={recarregar} aoHistorico={() => setHist(i)} />)}
-        </div>))}
+      {itens.length === 0 ? <div className="at-bloco__vazio">Nada neste filtro.</div> : (
+        <TabelaDados<ItemFicha> colunas={colunas} linhas={itens} chaveLinha={(i) => i.atributo_id} rolagem="container" className="at-tabela-ficha"
+          ordenacao={ordenacao} aoOrdenar={setOrdenacao} legenda="Atributos deste produto"
+          {...(agrup === 'nenhum' ? {} : { grupos, grupoDaLinha: (i: ItemFicha) => chaveGrupo(i) })}
+          classeLinha={(i) => (pendentes.has(i.atributo_id) ? 'at-linha--pendente' : i.valor ? 'at-linha--preenchida' : undefined)} />)}
       {f.fora_da_ficha.length > 0 && <SecaoFora f={f} recarregar={recarregar} />}
       {f.legado_nao_vinculado.length > 0 && (
         <div className="at-bloco at-bloco--legado">
@@ -182,39 +254,60 @@ function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco }: { f
   );
 }
 
-function LinhaAtributo({ i, f, pendente = false, recarregar, aoHistorico }: { i: ItemFicha; f: TFicha; pendente?: boolean; recarregar: () => void; aoHistorico: () => void }) {
-  // UX-1: estado em palavras (coluna "Estado e sugestão")
-  const estadoTxt = pendente ? 'Pendente' : !i.valor ? 'Sem valor' : i.valor.estado === 'nao_se_aplica' ? 'Não se aplica' : i.valor.estado === 'desconhecido' ? 'Desconhecido' : 'Preenchido';
+/** UX-1b: estado em palavras (coluna "Estado e sugestão"; também a chave de ordenação). */
+function estadoDe(i: ItemFicha, pendente: boolean): string {
+  return pendente ? 'Pendente' : !i.valor ? 'Sem valor' : i.valor.estado === 'nao_se_aplica' ? 'Não se aplica' : i.valor.estado === 'desconhecido' ? 'Desconhecido' : 'Preenchido';
+}
+/** UX-1b: texto do valor DSHOW para ordenar (vazio = sem valor → vai para o fim). */
+function textoDoValor(i: ItemFicha): string | null {
+  if (!i.valor) return null;
+  if (i.valor.estado !== 'informado') return ESTADO[i.valor.estado] ?? i.valor.estado;
+  const un = i.valor.unidade_id ? i.unidades.find((u) => u.id === i.valor?.unidade_id)?.simbolo ?? null : i.unidade_efetiva?.simbolo ?? null;
+  return fmtValor(i.valor, un);
+}
+
+function CelAtributo({ i, aoHistorico }: { i: ItemFicha; aoHistorico: () => void }) {
   const imp = i.importancia ? IMPORTANCIA[i.importancia] : null;
-  const unidade = i.valor?.unidade_id ? i.unidades.find((u) => u.id === i.valor?.unidade_id)?.simbolo ?? i.unidade_efetiva?.simbolo ?? null : i.unidade_efetiva?.simbolo ?? null;
   return (
-    <div data-atributo={i.atributo_id} className={`at-attr ${i.valor ? 'at-attr--preenchido' : i.obrigatorio ? 'at-attr--obrigatorio' : 'at-attr--modelo'}`}>
-      <div className="at-attr__nome">
-        <span className="at-attr__marca" aria-hidden />
-        <div>
-          <div className="at-attr__rotulo">{i.rotulo}{i.obrigatorio && <span className="at-obrig" title="Obrigatório">*</span>}{i.destaque && <span className="at-destaque" title="Destaque no app">★</span>}</div>
-          <div className="at-attr__meta">
-            {imp && <span className={`at-imp at-imp--${['Obrigatório', 'Importante'].includes(imp) ? 'forte' : 'fraca'}`}>{imp}</span>}
-            {!i.visivel_app && <Etiqueta titulo="Não aparece no app (A5)">só na web</Etiqueta>}
-            {i.codigo && <code className="at-codigo" title="Código estável (contrato com o app)">{i.codigo}</code>}
-          </div>
-          <div className="at-attr__origem">
-        {i.valor && <Etiqueta tom={i.valor.origem === 'manual' ? 'verde' : 'neutro'} titulo={i.valor.legado_bruto ?? undefined}>{i.valor.origem === 'manual' ? 'manual' : 'importado'} · {dataHora(i.valor.atualizado_em)}{i.valor.atualizado_por ? ` · ${i.valor.atualizado_por.replace(/@.*/, '')}` : ''}</Etiqueta>}
-        {i.origens.map((o, k) => <span key={k} className="at-origem">{o.tipo === 'avulso' ? 'avulso' : `${o.grupo_nome} · ${(o.motivos ?? []).map((x) => MOTIVO_KIT[x.tipo]).join(', ')}`}</span>)}
-        {i.legado?.tp_unit && <span className="at-fraco" title="Unidade escrita no legado">legado: {i.legado.tp_unit}</span>}
-        <button type="button" className="at-link" onClick={aoHistorico}>histórico</button>
-        {unidade === null && null}
-          </div>
+    <div data-atributo={i.atributo_id} className={`at-attr__nome ${i.valor ? 'at-attr--preenchido' : i.obrigatorio ? 'at-attr--obrigatorio' : 'at-attr--modelo'}`}>
+      <span className="at-attr__marca" aria-hidden />
+      <div>
+        <div className="at-attr__rotulo">{i.rotulo}{i.obrigatorio && <span className="at-obrig" title="Obrigatório">*</span>}{i.destaque && <span className="at-destaque" title="Destaque no app">★</span>}</div>
+        <div className="at-attr__meta">
+          {imp && <span className={`at-imp at-imp--${['Obrigatório', 'Importante'].includes(imp) ? 'forte' : 'fraca'}`}>{imp}</span>}
+          {!i.visivel_app && <Etiqueta titulo="Não aparece no app (A5)">só na web</Etiqueta>}
+          {i.codigo && <code className="at-codigo" title="Código estável (contrato com o app)">{i.codigo}</code>}
+        </div>
+        <div className="at-attr__origem">
+          {i.valor && <Etiqueta tom={i.valor.origem === 'manual' ? 'verde' : 'neutro'} titulo={i.valor.legado_bruto ?? undefined}>{i.valor.origem === 'manual' ? 'manual' : 'importado'} · {dataHora(i.valor.atualizado_em)}{i.valor.atualizado_por ? ` · ${i.valor.atualizado_por.replace(/@.*/, '')}` : ''}</Etiqueta>}
+          {/* UX-1b (ajuste 2): cadeado com explicação — o vínculo vem do kit (não se remove aqui), mas o valor DSHOW é editável */}
+          {i.origens.map((o, k) => o.tipo === 'avulso'
+            ? <span key={k} className="at-origem">avulso</span>
+            : <span key={k} className="at-origem at-origem--kit" title={`Vínculo pelo kit ${o.grupo_nome}. Você pode preencher o valor DSHOW.`}>
+                <Icone nome="lock" /><span className="bl-so-leitor">Vínculo pelo kit {o.grupo_nome}. Você pode preencher o valor DSHOW. </span>{o.grupo_nome} · {(o.motivos ?? []).map((x) => MOTIVO_KIT[x.tipo]).join(', ')}
+              </span>)}
+          {i.legado?.tp_unit && <span className="at-fraco" title="Unidade escrita no legado">legado: {i.legado.tp_unit}</span>}
+          <button type="button" className="at-link" onClick={aoHistorico}>histórico</button>
         </div>
       </div>
-      <div className="at-attr__valor">
-        <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} aoGravar={recarregar} aoRecarregar={recarregar} />
-      </div>
-      <div className="at-attr__estado">
-        <span className={`at-estado-txt ${pendente ? 'at-estado-txt--pendente' : ''}`}>{estadoTxt}</span>
-        {i.sugestoes.map((s) => <SugestaoLinha key={s.id} s={s} i={i} f={f} recarregar={recarregar} />)}
-      </div>
-      <div className="at-attr__precifica">{i.precifica ? <><span className="at-fonte-mini">Precifica</span> {fmtPrecifica(i.precifica.chave, i.precifica.valor)}</> : <span className="at-fraco">—</span>}</div>
+    </div>
+  );
+}
+
+function CelValor({ i, f, recarregar }: { i: ItemFicha; f: TFicha; recarregar: () => void }) {
+  return (
+    <div data-atributo={i.atributo_id} className="at-attr__valor">
+      {i.autoridade === 'precifica' && <span className="at-cadeado" title="Referência do Precifica · somente leitura"><Icone nome="lock" /> Referência do Precifica · somente leitura</span>}
+      <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} aoGravar={recarregar} aoRecarregar={recarregar} />
+    </div>
+  );
+}
+
+function CelEstado({ i, f, pendente, recarregar }: { i: ItemFicha; f: TFicha; pendente: boolean; recarregar: () => void }) {
+  return (
+    <div data-atributo={i.atributo_id} className="at-attr__estado">
+      <span className={`at-estado-txt ${pendente ? 'at-estado-txt--pendente' : ''}`}>{estadoDe(i, pendente)}</span>
+      {i.sugestoes.map((s) => <SugestaoLinha key={s.id} s={s} i={i} f={f} recarregar={recarregar} />)}
     </div>
   );
 }
