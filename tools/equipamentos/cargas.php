@@ -38,6 +38,7 @@ final class Cargas
     private function x(string $sql, array $p = []): int { if ($this->seco) return 0; $st = $this->pdo->prepare($sql); $st->execute($p); return $st->rowCount(); }
     private function n(string $t, string $w = '1', array $p = []): int { return (int) $this->q("SELECT COUNT(*) AS n FROM {$this->s}`$t` WHERE $w", $p)[0]['n']; }
     private function porLegado(): array { $o = []; foreach ($this->q("SELECT id, legado_id FROM {$this->s}eq_atributo WHERE legado_ns = 'Led_Lovers_PROD.mm_atributos'") as $r) $o[(int) $r['legado_id']] = (int) $r['id']; return $o; }
+    private function temColunaExcluido(): bool { return (bool) $this->q("SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'eq_grupo_atributo' AND column_name = 'excluido_em'", [$this->schema]); }
     private function kitPorNome(string $nome): ?array { return $this->q("SELECT * FROM {$this->s}eq_grupo WHERE nome = ?", [$nome])[0] ?? null; }
 
     private function servicos(string $usuario): array
@@ -99,6 +100,18 @@ final class Cargas
             if ((int) $a['ativo'] === 1) continue;
             $mud['descricoes_reativadas']++;
             if (!$this->seco) (new AtributosService($repo, 80, 'carga:C2', new CatalogoPdo($this->pdo, $this->catalogo ?? $this->schema)))->definirAtivo($aid, true, (int) $a['versao'], 'D1: as 8 da base valem para todos os itens (carga C2)');
+        }
+        // A5 também nos grupos ANTIGOS: lá as 6 descrições estão marcadas visíveis no app (inofensivo enquanto inativas). Reativadas (D1),
+        // a Descrição Interna/Fornecedor iriam para o app do cliente. Ficam visivel = 0 em todo kit (auditado, pelo serviço); o resto não muda.
+        $mud['a5_grupos_antigos'] = [];
+        foreach ($this->q("SELECT DISTINCT ga.grupo_id FROM {$this->s}eq_grupo_atributo ga WHERE ga.visivel = 1 AND ga.atributo_id IN (" . implode(',', $desc) . ")" . ($this->temColunaExcluido() ? ' AND ga.excluido_em IS NULL' : '')) as $r) {
+            $g = $repo->grupo((int) $r['grupo_id']); if (!$g) continue;
+            $mud['a5_grupos_antigos'][] = $g['nome'];
+            if ($this->seco) continue;
+            $it = array_map(static fn($x) => ['atributo_id' => (int) $x['atributo_id'], 'posicao' => $x['posicao'], 'obrigatorio' => (int) $x['obrigatorio'],
+                'visivel' => in_array((int) $x['atributo_id'], $desc, true) ? 0 : (int) $x['visivel'], 'destaque' => (int) ($x['destaque'] ?? 0),
+                'importancia' => $x['importancia'] ?? null, 'unidade_id' => $x['unidade_id'] ?? null], $g['atributos']);
+            $kits->definirItens(['id' => (int) $g['id'], 'versao' => (int) $g['versao'], 'itens' => $it, 'motivo' => 'A5: descrições não visíveis no app (carga C2)']);
         }
         $k = $this->kitPorNome(self::BASE_NOME);
         if (!$k && !$this->seco) { $k = $kits->salvarKit(['nome' => self::BASE_NOME, 'descricao' => 'Os 8 atributos que o legado atribuía a TODOS os itens (D1). As 6 descrições ficam fora do app (A5).', 'aplica_a_todos' => 1, 'ordem' => -100])['kit']; $mud['kit_criado'] = true; }
@@ -170,7 +183,7 @@ final class Cargas
     public function c4(): array
     {
         [$repo, $kits, $svc] = $this->servicos('carga:C4');
-        $lote = $this->lote('C4', ['D4' => 'Potência em W', 'D6' => ['Novo', 'Não especificado'], 'fatores' => 'comprimento/massa', 'A9' => self::INTEGRACOES]);
+        $lote = $this->lote('C4', ['D4' => 'Potência em W', 'D6' => ['Novo', 'Não especificado'], 'T1' => 'Semi-outdoor', 'fatores' => 'comprimento/massa', 'A9' => self::INTEGRACOES]);
         $mud = ['potencia_w' => false, 'opcoes_condicoes' => 0, 'fatores' => 0, 'integracoes_criadas' => 0, 'kit_integracoes' => false];
         $uni = []; foreach ($repo->unidades() as $u) $uni[$u['simbolo']] = $u;
         // D4: Potência em W (a unidade A estava errada; Amperagem é outro atributo)
@@ -185,6 +198,12 @@ final class Cargas
             if ($this->q("SELECT 1 FROM {$this->s}eq_opcao WHERE atributo_id = ? AND rotulo = ?", [$cu, $rot])) continue;
             $mud['opcoes_condicoes']++;
             if (!$this->seco) $svc->adicionarOpcao($cu, $rot);
+        }
+        // T-1 (Jhony, 18/11): opção "Semi-outdoor" em Tipo do Led (os totens Semi-Outdoor deixam de virar "outdoor"; a C6 revisa as sugestões)
+        $tl = (int) ($this->q("SELECT id FROM {$this->s}eq_atributo WHERE codigo = 'tipo_do_led_87'")[0]['id'] ?? 0);
+        if ($tl && !$this->q("SELECT 1 FROM {$this->s}eq_opcao WHERE atributo_id = ? AND LOWER(rotulo) = 'semi-outdoor'", [$tl])) {
+            $mud['opcao_semi_outdoor'] = 1;
+            if (!$this->seco) $svc->adicionarOpcao($tl, 'Semi-outdoor');
         }
         // D3: fatores para a unidade base da grandeza (exatos); unidade única da grandeza = fator 1; tempo sem conversão exata fica sem fator
         $fat = ['m' => '1', 'cm' => '0.01', 'mm' => '0.001', 'kg' => '1', 'g' => '0.001', 'h' => '1'];
