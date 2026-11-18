@@ -29,6 +29,25 @@ final class KitsService
         private readonly CatalogoProdutos $catalogo,
     ) {}
 
+    /** A8: unidade aceitável para o atributo: existe, está ativa e é da mesma grandeza da unidade padrão (ou é extra explícita). */
+    private function unidadeValida(array $a, ?int $uid): bool
+    {
+        if ($uid === null) return true;
+        if (!in_array($a['tipo'], ['numero', 'inteiro'], true)) return false;
+        $u = $this->repo->unidade($uid);
+        if (!$u || !(int) ($u['ativo'] ?? 1)) return false;
+        if ($a['unidade_id'] === null || (int) $a['unidade_id'] === $uid || in_array($uid, array_map('intval', $this->repo->unidadesExtras((int) $a['id'])), true)) return true;
+        $p = $this->repo->unidade((int) $a['unidade_id']);
+        return $p && ($p['grandeza'] ?? '') !== '' && ($p['grandeza'] ?? null) === ($u['grandeza'] ?? null);
+    }
+
+    private static function posicao(mixed $v, string $campo): ?int
+    {
+        if ($v === null || $v === '') return null;
+        if (!is_numeric($v) || (int) $v < 0 || (int) $v > 65535) throw new AtributosErro('VALIDATION_ERROR', 422, 'Posição inválida (0 a 65535).', [$campo]);
+        return (int) $v;
+    }
+
     private function exigir(): void
     {
         if ($this->nivel < AtributosService::NIVEL_ADMIN) throw new AtributosErro('INSUFFICIENT_LEVEL', 403, 'Seu nível não permite esta ação.');
@@ -96,6 +115,7 @@ final class KitsService
     {
         $this->exigir();
         $orig = $this->kit((int) ($b['id'] ?? 0));
+        return $this->repo->transacao(function () use ($b, $orig) {   // atômico: falha nos itens/escopos não deixa "cópia" vazia
         $r = $this->salvarKit(['nome' => $b['nome'] ?? ($orig['nome'] . ' (cópia)'), 'descricao' => $orig['descricao'] ?? null]);
         $novo = $r['kit'];
         $itens = array_map(static fn($i) => ['atributo_id' => (int) $i['atributo_id'], 'posicao' => (int) $i['posicao'], 'obrigatorio' => (int) $i['obrigatorio'], 'visivel' => (int) $i['visivel'],
@@ -103,6 +123,7 @@ final class KitsService
         $novo = $this->definirItens(['id' => $novo['id'], 'versao' => $novo['versao'], 'itens' => $itens])['kit'];
         if (!empty($b['com_escopos']) && $orig['escopos']) $novo = $this->definirEscopos(['id' => $novo['id'], 'versao' => $novo['versao'], 'escopos' => $orig['escopos']])['kit'];
         return ['kit' => $novo, 'origem_id' => (int) $orig['id']];
+        });
     }
 
     public function definirAtivo(array $b): array
@@ -134,9 +155,9 @@ final class KitsService
             $imp = $i['importancia'] ?? null;
             if ($imp !== null && $imp !== '' && !in_array($imp, Aplicabilidade::IMPORTANCIAS, true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Importância inválida.', ['itens']);
             $uid = isset($i['unidade_id']) && $i['unidade_id'] !== '' && $i['unidade_id'] !== null ? (int) $i['unidade_id'] : null;
-            if ($uid !== null && (!in_array($a['tipo'], ['numero', 'inteiro'], true) || !$this->repo->unidade($uid))) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade do kit inválida para "' . $a['rotulo'] . '".', ['itens']);
+            if (!$this->unidadeValida($a, $uid)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade do kit inválida para "' . $a['rotulo'] . '".', ['itens']);
             $dest = !empty($i['destaque']) ? 1 : 0; $destaques += $dest;
-            $itens[] = ['atributo_id' => $aid, 'posicao' => isset($i['posicao']) ? (int) $i['posicao'] : $k + 1, 'obrigatorio' => !empty($i['obrigatorio']) ? 1 : 0,
+            $itens[] = ['atributo_id' => $aid, 'posicao' => self::posicao($i['posicao'] ?? null, 'itens') ?? $k + 1, 'obrigatorio' => !empty($i['obrigatorio']) ? 1 : 0,
                 'visivel' => array_key_exists('visivel', $i) ? (!empty($i['visivel']) ? 1 : 0) : 1, 'destaque' => $dest, 'importancia' => ($imp === '' ? null : $imp), 'unidade_id' => $uid];
         }
         if ($destaques > self::MAX_DESTAQUES) throw new AtributosErro('VALIDATION_ERROR', 422, 'No máximo ' . self::MAX_DESTAQUES . ' destaques por kit.', ['itens']);
@@ -215,12 +236,18 @@ final class KitsService
         if ($modo === 'incluir' && (int) $a['ativo'] !== 1) throw new AtributosErro('VALIDATION_ERROR', 422, 'Atributo desativado não pode ser vinculado.', ['atributo_id']);
         $motivo = self::texto($b['motivo'] ?? null, 255, 'motivo', $modo === 'excluir');
         $uid = isset($b['unidade_id']) && $b['unidade_id'] !== '' && $b['unidade_id'] !== null ? (int) $b['unidade_id'] : null;
-        if ($uid !== null && (!in_array($a['tipo'], ['numero', 'inteiro'], true) || !$this->repo->unidade($uid))) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inválida para este atributo.', ['unidade_id']);
+        if (!$this->unidadeValida($a, $uid)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inválida para este atributo.', ['unidade_id']);
+        $pos = self::posicao($b['posicao'] ?? null, 'posicao');
         if ($modo === 'ajustar' && $uid === null && !isset($b['posicao'])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Informe a unidade (ou a posição) a ajustar.', ['unidade_id']);
         $antes = $this->repo->ajusteProduto($pid, $aid);
         $vivo = $antes && $antes['excluido_em'] === null ? $antes : null;
         if ($vivo && isset($b['versao']) && (int) $b['versao'] !== (int) $vivo['versao']) throw new AtributosErro('CONFLICT', 409, 'Este vínculo foi alterado por outra pessoa. Recarregue e tente de novo.');
-        $dados = $modo === null ? null : ['modo' => $modo, 'unidade_id' => $uid, 'posicao' => isset($b['posicao']) ? (int) $b['posicao'] : null, 'motivo' => $motivo];
+        // incluir/ajustar sem unidade/posição explícitas mantém as do ajuste vivo (não apaga a unidade do produto sem querer)
+        if ($vivo && in_array($modo, ['incluir', 'ajustar'], true) && in_array($vivo['modo'], ['incluir', 'ajustar'], true)) {
+            if (!array_key_exists('unidade_id', $b)) $uid = $vivo['unidade_id'] === null ? null : (int) $vivo['unidade_id'];
+            if (!array_key_exists('posicao', $b)) $pos = $vivo['posicao'] === null ? null : (int) $vivo['posicao'];
+        }
+        $dados = $modo === null ? null : ['modo' => $modo, 'unidade_id' => $uid, 'posicao' => $pos, 'motivo' => $motivo];
         return $this->repo->transacao(function () use ($pid, $aid, $dados, $vivo, $b) {
             $mudou = $this->repo->definirAjusteProduto($pid, $aid, $dados, $this->usuario);
             if ($mudou) $this->repo->auditar($this->usuario, $dados === null ? 'remover_ajuste' : $dados['modo'], 'produto_atributo', "$pid:$aid", $vivo, $dados, $b['motivo'] ?? null);
@@ -240,8 +267,13 @@ final class KitsService
         $aE = []; foreach ((array) ($b['atributos_excluir'] ?? []) as $x) { $id = (int) (is_array($x) ? ($x['atributo_id'] ?? 0) : $x); if ($id > 0) $aE[$id] = is_array($x) ? (string) ($x['motivo'] ?? '') : ''; }
         if (!$kA && !$kR && !$aI && !$aE) throw new AtributosErro('VALIDATION_ERROR', 422, 'Escolha o que aplicar ou remover.', ['kits_aplicar']);
         foreach (array_merge($kA, $kR) as $g) $this->kit($g);
-        foreach (array_keys($aI + $aE) as $aid) { $a = $this->repo->atributo($aid); if (!$a || ((int) $a['ativo'] !== 1 && isset($aI[$aid]))) throw new AtributosErro('VALIDATION_ERROR', 422, "Atributo $aid inválido.", ['atributos_incluir']); }
-        foreach ($aE as $aid => $mot) if (trim($mot) === '') throw new AtributosErro('VALIDATION_ERROR', 422, 'Informe o motivo de cada exclusão.', ['atributos_excluir']);
+        foreach (array_keys($aI + $aE) as $aid) {
+            $a = $this->repo->atributo($aid);
+            if (!$a || ((int) $a['ativo'] !== 1 && isset($aI[$aid]))) throw new AtributosErro('VALIDATION_ERROR', 422, "Atributo $aid inválido.", ['atributos_incluir']);
+            if (isset($aI[$aid]) && !$this->unidadeValida($a, $aI[$aid])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inválida para "' . $a['rotulo'] . '".', ['atributos_incluir']);
+        }
+        foreach ($aE as $aid => $mot) { if (trim($mot) === '') throw new AtributosErro('VALIDATION_ERROR', 422, 'Informe o motivo de cada exclusão.', ['atributos_excluir']);
+            if (mb_strlen($mot) > 255) throw new AtributosErro('VALIDATION_ERROR', 422, 'Motivo com mais de 255 caracteres.', ['atributos_excluir']); }
         $prods = []; foreach ($pids as $pid) $prods[$pid] = $this->produtoValido($pid);
         return [$prods, $kA, $kR, $aI, $aE];
     }
@@ -278,19 +310,26 @@ final class KitsService
         $this->exigir();
         $chave = (string) ($b['chave'] ?? '');
         if (!preg_match('/^[A-Za-z0-9_-]{8,64}$/', $chave)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Chave de idempotência inválida.', ['chave']);
+        [$p0, $k0, $r0, $i0, $e0] = $this->pedidoMassa($b);
+        $assinatura = hash('sha256', json_encode([array_keys($p0), $k0, $r0, $i0, $e0]));
         $ja = $this->repo->auditoriaPorChave('massa', $chave);
-        if ($ja) return ['repetido' => true] + (is_array($ja['depois']) ? $ja['depois'] : (json_decode((string) $ja['depois'], true) ?: []));
+        if ($ja) {
+            $dep = is_array($ja['depois']) ? $ja['depois'] : (json_decode((string) $ja['depois'], true) ?: []);
+            if (isset($dep['assinatura']) && $dep['assinatura'] !== $assinatura) throw new AtributosErro('CONFLICT', 409, 'Esta chave já foi usada para outro pedido. Gere a prévia de novo.');
+            return ['repetido' => true] + $dep;
+        }
         $previa = $this->previaMassa($b);
         [$prods, $kA, $kR, $aI, $aE] = $this->pedidoMassa($b);
-        return $this->repo->transacao(function () use ($prods, $kA, $kR, $aI, $aE, $previa, $chave, $b) {
+        return $this->repo->transacao(function () use ($prods, $kA, $kR, $aI, $aE, $previa, $chave, $b, $assinatura) {
             $n = ['kits_aplicados' => 0, 'kits_removidos' => 0, 'inclusoes' => 0, 'exclusoes' => 0];
             foreach ($prods as $pid => $_) {
                 foreach ($kA as $g) if ($this->repo->definirKitProduto($g, $pid, true, $this->usuario)) { $n['kits_aplicados']++; $this->repo->auditar($this->usuario, 'aplicar_kit', 'produto_kit', "$pid:$g", null, ['grupo_id' => $g, 'massa' => $chave], null); }
                 foreach ($kR as $g) if ($this->repo->definirKitProduto($g, $pid, false, $this->usuario)) { $n['kits_removidos']++; $this->repo->auditar($this->usuario, 'remover_kit', 'produto_kit', "$pid:$g", ['grupo_id' => $g], ['massa' => $chave], null); }
-                foreach ($aI as $aid => $u) { $d = ['modo' => 'incluir', 'unidade_id' => $u, 'posicao' => null, 'motivo' => null]; if ($this->repo->definirAjusteProduto($pid, $aid, $d, $this->usuario)) { $n['inclusoes']++; $this->repo->auditar($this->usuario, 'incluir', 'produto_atributo', "$pid:$aid", null, $d + ['massa' => $chave], null); } }
+                foreach ($aI as $aid => $u) { $ex = $this->repo->ajusteProduto($pid, $aid); $ex = $ex && $ex['excluido_em'] === null && in_array($ex['modo'], ['incluir', 'ajustar'], true) ? $ex : null;
+                    $d = ['modo' => 'incluir', 'unidade_id' => $u ?? ($ex ? ($ex['unidade_id'] === null ? null : (int) $ex['unidade_id']) : null), 'posicao' => $ex && $ex['posicao'] !== null ? (int) $ex['posicao'] : null, 'motivo' => null]; if ($this->repo->definirAjusteProduto($pid, $aid, $d, $this->usuario)) { $n['inclusoes']++; $this->repo->auditar($this->usuario, 'incluir', 'produto_atributo', "$pid:$aid", null, $d + ['massa' => $chave], null); } }
                 foreach ($aE as $aid => $mot) { $d = ['modo' => 'excluir', 'unidade_id' => null, 'posicao' => null, 'motivo' => $mot]; if ($this->repo->definirAjusteProduto($pid, $aid, $d, $this->usuario)) { $n['exclusoes']++; $this->repo->auditar($this->usuario, 'excluir', 'produto_atributo', "$pid:$aid", null, $d + ['massa' => $chave], null); } }
             }
-            $res = ['gravado' => $n, 'resumo' => $previa['resumo']];
+            $res = ['gravado' => $n, 'resumo' => $previa['resumo'], 'assinatura' => $assinatura];
             $this->repo->auditar($this->usuario, 'aplicar', 'massa', $chave, null, $res, $b['motivo'] ?? null);
             return $res;
         });

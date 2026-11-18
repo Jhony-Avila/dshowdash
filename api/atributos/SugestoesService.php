@@ -38,13 +38,15 @@ final class SugestoesService
             if ($decisao === 'aceitar') {
                 $destino = (int) ($b['atributo_id'] ?? $s['atributo_id']);
                 if ($destino !== (int) $s['atributo_id'] && $destino !== (int) ($s['atributo_alternativo_id'] ?? 0)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Destino fora das opções desta sugestão.', ['atributo_id']);
-                if (!empty($b['vincular']) && $this->kits) {
+                $aj = $this->repo instanceof ModuloRepositorio ? $this->repo->ajusteProduto($pid, $destino) : null;
+                $jaIncluido = $aj && $aj['excluido_em'] === null && in_array($aj['modo'], ['incluir', 'ajustar'], true);
+                if (!empty($b['vincular']) && $this->kits && !$jaIncluido) {   // já vinculado/ajustado: não regrava (não perde a unidade do produto)
                     try { $this->kits->definirAjuste(['product_id' => $pid, 'atributo_id' => $destino, 'modo' => 'incluir']); } catch (AtributosErro $e) { if ($e->http !== 422) throw $e; }
                 }
                 $valor = array_key_exists('valor', $b) ? $b['valor'] : ($s['opcao_id'] !== null ? (int) $s['opcao_id'] : $s['valor_proposto']);
-                $atual = $this->repo->valor($pid, $destino, 0);
-                // D10: sugestão nunca sobrescreve valor existente (manual ou importado). Para trocar, edita-se na ficha.
-                if ($atual && empty($atual['excluido_em'])) throw new AtributosErro('VALUE_EXISTS', 409, 'Este campo já tem valor neste produto. A sugestão não sobrescreve: edite na ficha ou recuse a sugestão.', ['atributo_id']);
+                // D10: sugestão nunca sobrescreve valor existente (manual ou importado), em NENHUMA chave (multiopção inclusive).
+                $vivos = array_filter($this->repo->travarValores($pid, $destino), static fn($r) => empty($r['excluido_em']));
+                if ($vivos) throw new AtributosErro('VALUE_EXISTS', 409, 'Este campo já tem valor neste produto. A sugestão não sobrescreve: edite na ficha ou recuse a sugestão.', ['atributo_id']);
                 $req = ['product_id' => $pid, 'atributo_id' => $destino, 'valor' => $valor, 'motivo' => "sugestão #$id ({$s['fonte']})"];
                 if (array_key_exists('unidade_id', $b)) $req['unidade_id'] = $b['unidade_id']; elseif ($s['unidade_id'] !== null) $req['unidade_id'] = (int) $s['unidade_id'];
                 $gravado = $this->atributos->gravarValor($req);

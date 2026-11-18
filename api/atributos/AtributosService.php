@@ -194,6 +194,11 @@ final class AtributosService
         if ($id !== 0) foreach (['casas', 'minimo', 'maximo', 'descricao', 'unidade_id'] as $k) if (array_key_exists($k, $b) && ($b[$k] === null || $b[$k] === '')) $limpar[] = $k;
         $descricao = self::texto($b['descricao'] ?? null, 500, 'descricao', false, $erros);
         $unidade = isset($b['unidade_id']) && $b['unidade_id'] !== '' && $b['unidade_id'] !== null ? (int) $b['unidade_id'] : null;
+        if ($unidade !== null) {   // unidade padrão só em número/inteiro, e só unidade existente e ativa
+            $tipoEf = $tipo ?? ($id !== 0 ? ($this->repo->atributo($id)['tipo'] ?? null) : null);
+            $uRow = $this->repo->unidade($unidade);
+            if (!in_array($tipoEf, ['numero', 'inteiro'], true) || !$uRow || !(int) ($uRow['ativo'] ?? 1)) $erros[] = 'unidade_id';
+        }
         // D3.6 — autoridade: 'local' (padrão) ou 'precifica' (o valor vale da ficha do Precifica; o local fica só leitura).
         $autoridade = $b['autoridade'] ?? null;
         if ($autoridade !== null && !in_array($autoridade, ['local', 'precifica'], true)) $erros[] = 'autoridade';
@@ -675,10 +680,14 @@ final class AtributosService
         if (!$produto['ativo']) throw new AtributosErro('PRODUCT_INACTIVE', 422, 'Produto inativo: a ficha é somente leitura.', ['product_id']);
         $a = $this->repo->atributo($aid) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
         if ($a['tipo'] !== 'multiopcao') throw new AtributosErro('VALIDATION_ERROR', 422, 'Só atributos de várias opções desmarcam uma opção.', ['atributo_id']);
-        $antes = $this->repo->valor($pid, $aid, $oid);
-        if (!$antes || !empty($antes['excluido_em'])) throw new AtributosErro('NOT_FOUND', 404, 'Esta opção não está marcada.');
-        $this->repo->transacao(function () use ($pid, $aid, $oid, $b, $antes) {
-            if (!$this->repo->removerValorOpcao($pid, $aid, $oid, (int) ($b['versao'] ?? 0))) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+        $this->repo->transacao(function () use ($pid, $aid, $oid, $b) {
+            // a tela conhece a versão do VALOR (1ª opção viva); aceita essa ou a da própria opção, conferida sob trava
+            $vivos = array_values(array_filter($this->repo->travarValores($pid, $aid), static fn($r) => empty($r['excluido_em'])));
+            $antes = null; foreach ($vivos as $r) if ((int) $r['opcao_chave'] === $oid) $antes = $r;
+            if (!$antes) throw new AtributosErro('NOT_FOUND', 404, 'Esta opção não está marcada.');
+            $v = (int) ($b['versao'] ?? -1);
+            if ($v !== (int) $antes['versao'] && $v !== (int) $vivos[0]['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+            if (!$this->repo->removerValorOpcao($pid, $aid, $oid, (int) $antes['versao'])) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
             $this->repo->auditar($this->usuario, 'desmarcar', 'valor', "$pid:$aid:$oid", $antes, null, $b['motivo'] ?? null);
         });
         return ['ok' => true];
@@ -720,7 +729,15 @@ final class AtributosService
                     if (strlen(ltrim(explode('.', $n)[0], '-')) > 14) throw new AtributosErro('VALIDATION_ERROR', 422, 'Número grande demais para a ficha.', ['valor']);
                     $mn = $a['minimo'] === null ? null : self::decimalCanonico($a['minimo']);
                     $mx = $a['maximo'] === null ? null : self::decimalCanonico($a['maximo']);
-                    if (($mn !== null && self::comparar($n, $mn) < 0) || ($mx !== null && self::comparar($n, $mx) > 0)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fora dos limites do atributo.', ['valor']);
+                    // limites estão na unidade padrão do atributo: compara o número convertido quando o valor vem em outra unidade (D3)
+                    $nCmp = $n;
+                    $uvId = isset($b['unidade_id']) && $b['unidade_id'] !== '' && $b['unidade_id'] !== null ? (int) $b['unidade_id'] : null;
+                    if (($mn !== null || $mx !== null) && $uvId !== null && $a['unidade_id'] !== null && $uvId !== (int) $a['unidade_id']) {
+                        $uv = $this->repo->unidade($uvId); $up = $this->repo->unidade((int) $a['unidade_id']);
+                        if ($uv && $up && $uv['fator_base'] !== null && $up['fator_base'] !== null && ($uv['grandeza'] ?? null) === ($up['grandeza'] ?? null)) $nCmp = DecimalExato::mulDiv($n, (string) $uv['fator_base'], (string) $up['fator_base'], 6);
+                        else { $mn = null; $mx = null; }   // sem fator conhecido não há como comparar com segurança
+                    }
+                    if (($mn !== null && self::comparar($nCmp, $mn) < 0) || ($mx !== null && self::comparar($nCmp, $mx) > 0)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fora dos limites do atributo.', ['valor']);
                     $d['valor_num'] = $n;
                     break;
                 case 'booleano':
@@ -833,14 +850,20 @@ final class AtributosService
     {
         $this->exigir(self::NIVEL_VALORES);
         $pid = (int) ($b['product_id'] ?? 0); $aid = (int) ($b['atributo_id'] ?? 0);
-        $atual = $this->repo->valor($pid, $aid, 0);
-        if (!$atual || !empty($atual['excluido_em'])) return ['limpo' => true, 'sem_mudanca' => true];
-        if ((int) ($b['versao'] ?? -1) !== (int) $atual['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
-        $this->repo->transacao(function () use ($pid, $aid, $atual, $b) {
-            if (!$this->repo->excluirValor($pid, $aid, 0)) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
-            $this->repo->auditar($this->usuario, 'limpar', 'valor', "$pid:$aid:0", $atual, null, $b['motivo'] ?? null);
+        $produto = $pid > 0 ? $this->produtoDoCatalogo($pid) : null;
+        if ($produto === null || $produto['excluido']) throw new AtributosErro('PRODUCT_NOT_FOUND', 422, 'Produto não encontrado no catálogo.', ['product_id']);
+        if (!$produto['ativo']) throw new AtributosErro('PRODUCT_INACTIVE', 422, 'Produto inativo: a ficha é somente leitura.', ['product_id']);
+        // sob trava (FOR UPDATE): versão conferida dentro da transação; multiopção limpa todas as opções marcadas
+        return $this->repo->transacao(function () use ($pid, $aid, $b) {
+            $vivos = array_values(array_filter($this->repo->travarValores($pid, $aid), static fn($r) => empty($r['excluido_em'])));
+            if (!$vivos) return ['limpo' => true, 'sem_mudanca' => true];
+            if ((int) ($b['versao'] ?? -1) !== (int) $vivos[0]['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+            foreach ($vivos as $r) {
+                if (!$this->repo->excluirValor($pid, $aid, (int) $r['opcao_chave'])) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+                $this->repo->auditar($this->usuario, 'limpar', 'valor', "$pid:$aid:" . (int) $r['opcao_chave'], $r, null, $b['motivo'] ?? null);
+            }
+            return ['limpo' => true];
         });
-        return ['limpo' => true];
     }
 
     private static function mesmoValor(array $antes, array $d): bool

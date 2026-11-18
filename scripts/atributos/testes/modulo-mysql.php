@@ -156,5 +156,53 @@ $lt = $sug->aceitarLote(['ids' => [$s3, $s4, $s2], 'confirmar' => true]);
 $ok('lote: aceita as 2 pendentes e ignora a já decidida', $lt['aceitas'] === 2 && $lt['falhas'] === [], json_encode($lt));
 $ok('nível 50 não decide → 403', fn() => $erro(fn() => (new SugestoesService($repo, $adm, null, 50, 'x@exemplo.invalid'))->decidir(['id' => $s3, 'versao' => 1, 'decisao' => 'aceitar']))?->http === 403);
 
+// ---- correções da revisão independente (18/11 ~06:10) ----------------------------------------------------------------------------------
+// D10 em multiopção: sugestão de outra opção não acrescenta ao valor existente
+$mo = $adm->salvarAtributo(['rotulo' => 'Conectores (multi)', 'tipo' => 'multiopcao'])['atributo']; $moId = (int) $mo['id'];
+$adm->adicionarOpcao($moId, 'HDMI'); $adm->adicionarOpcao($moId, 'DP'); $opsMo = $adm->adicionarOpcao($moId, 'SDI')['opcoes'];
+$kits->definirAjuste(['product_id' => 105, 'atributo_id' => $moId, 'modo' => 'incluir']);
+$adm->gravarValor(['product_id' => 105, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id']]);
+$pdo->prepare("INSERT INTO eq_sugestao (chave, product_id, atributo_id, fonte, tipo, valor_proposto, opcao_id) VALUES ('t|105|mo', 105, ?, 'nome_produto', 'valor', 'SDI', ?)")->execute([$moId, (int) $opsMo[2]['id']]);
+$sMo = (int) $pdo->lastInsertId();
+$ok('D10 multiopção: sugestão de outra opção → 409 VALUE_EXISTS', fn() => $erro(fn() => $sug->decidir(['id' => $sMo, 'versao' => 1, 'decisao' => 'aceitar']))?->codigo === 'VALUE_EXISTS');
+$ok('D10 multiopção: continua só HDMI', (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 1);
+// limpar multiopção limpa todas as opções (antes: "sem mudança")
+$adm->gravarValor(['product_id' => 105, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id']]);
+$v0 = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);
+$ok('limpar com versão velha → 409', fn() => $erro(fn() => $adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao' => $v0 + 9]))?->http === 409);
+$ok('limpar multiopção remove as 2 opções', fn() => !empty($adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao' => $v0])['limpo'])
+    && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 0);
+$ok('limpar em produto inativo → 422', fn() => $erro(fn() => $adm->limparValor(['product_id' => 199, 'atributo_id' => $atr['Cor'], 'versao' => 1]))?->http === 422);
+// desmarcar a 2ª opção com a versão do VALOR (a que a tela conhece)
+$kits->definirAjuste(['product_id' => 106, 'atributo_id' => $moId, 'modo' => 'incluir']);
+$adm->gravarValor(['product_id' => 106, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id']]);
+$adm->gravarValor(['product_id' => 106, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id']]);
+$vv = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 106 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);
+$ok('desmarcar a 2ª opção com a versão do valor funciona', fn() => $adm->removerOpcaoDoValor(['product_id' => 106, 'atributo_id' => $moId, 'opcao_id' => (int) $opsMo[1]['id'], 'versao' => $vv])['ok'] === true);
+// incluir em massa não apaga a unidade do produto (ajuste); chave amarrada ao conteúdo
+$kits->definirAjuste(['product_id' => 104, 'atributo_id' => $atr['Comprimento'], 'modo' => 'ajustar', 'unidade_id' => $uMm]);
+$kits->aplicarMassa(['produtos' => [104], 'atributos_incluir' => [['atributo_id' => $atr['Comprimento']]], 'chave' => 'teste-massa-0002']);
+$ok('massa incluir mantém a unidade do produto (mm)', (int) $um('SELECT unidade_id FROM eq_produto_atributo WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$atr['Comprimento']]) === $uMm);
+$ok('mesma chave com outro pedido → 409', fn() => $erro(fn() => $kits->aplicarMassa(['produtos' => [105], 'kits_aplicar' => [$k2], 'chave' => 'teste-massa-0002']))?->http === 409);
+$ok('massa: unidade em atributo sem unidade de comprimento → 422', fn() => $erro(fn() => $kits->previaMassa(['produtos' => [101], 'atributos_incluir' => [['atributo_id' => $atr['Cor'], 'unidade_id' => $uMm]]]))?->http === 422);
+$ok('massa: motivo > 255 → 422', fn() => $erro(fn() => $kits->previaMassa(['produtos' => [101], 'atributos_excluir' => [['atributo_id' => $atr['Cor'], 'motivo' => str_repeat('x', 300)]]]))?->http === 422);
+$ok('ajuste: posição fora do limite → 422', fn() => $erro(fn() => $kits->definirAjuste(['product_id' => 101, 'atributo_id' => $atr['Cor'], 'modo' => 'ajustar', 'posicao' => 70000]))?->http === 422);
+$adm->criarUnidade(['simbolo' => 'kg', 'nome' => 'quilograma', 'grandeza' => 'massa', 'fator_base' => '1']);
+$um2 = array_column($adm->criarUnidade(['simbolo' => 'g', 'nome' => 'grama', 'grandeza' => 'massa', 'fator_base' => '0.001'])['unidades'], 'id', 'simbolo');
+[$uKg, $uG] = [(int) $um2['kg'], (int) $um2['g']];
+$ok('ajuste: kg num atributo de comprimento → 422 (A8)', fn() => $erro(fn() => $kits->definirAjuste(['product_id' => 101, 'atributo_id' => $atr['Comprimento'], 'modo' => 'ajustar', 'unidade_id' => $uKg]))?->http === 422);
+$ok('atributo de texto com unidade → 422', fn() => $erro(fn() => $adm->salvarAtributo(['rotulo' => 'Texto com unidade', 'tipo' => 'texto', 'unidade_id' => $uCm]))?->http === 422);
+// limites na unidade padrão: máximo 500 kg; 2000 g (= 2 kg) passa; 600 kg não
+$peso = (int) $adm->salvarAtributo(['rotulo' => 'Peso (teste)', 'tipo' => 'numero', 'unidade_id' => $uKg, 'maximo' => '500'])['atributo']['id'];
+$kits->definirAjuste(['product_id' => 102, 'atributo_id' => $peso, 'modo' => 'incluir']); $kits->definirAjuste(['product_id' => 103, 'atributo_id' => $peso, 'modo' => 'incluir']);
+$ok('limite: 2000 g (= 2 kg) com máximo 500 kg passa', fn() => (bool) $adm->gravarValor(['product_id' => 102, 'atributo_id' => $peso, 'valor' => '2000', 'unidade_id' => $uG]));
+$ok('limite: 600 kg passa do máximo → 422', fn() => $erro(fn() => $adm->gravarValor(['product_id' => 103, 'atributo_id' => $peso, 'valor' => '600', 'unidade_id' => $uKg]))?->http === 422);
+// duplicar atômico: origem com 5 destaques (dado do legado) não deixa "cópia" vazia
+$k3 = (int) $kits->salvarKit(['nome' => 'Legado 5 destaques'])['kit']['id'];
+$kits->definirItens(['id' => $k3, 'versao' => (int) $repo->grupo($k3)['versao'], 'itens' => $itens([$atr['Cor'], $atr['Vias'], $atr['Conector'], $atr['Malha'], $atr['Potência']], 4)]);
+$pdo->prepare('UPDATE eq_grupo_atributo SET destaque = 1 WHERE grupo_id = ?')->execute([$k3]);
+$ok('duplicar com erro nos itens → 422', fn() => $erro(fn() => $kits->duplicarKit(['id' => $k3, 'nome' => 'Cópia que falha']))?->http === 422);
+$ok('duplicar atômico: não sobrou kit "Cópia que falha"', (int) $um("SELECT COUNT(*) FROM eq_grupo WHERE nome = 'Cópia que falha'") === 0);
+
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " modulo-mysql (kits, vínculos, massa, sugestões, unidade): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);

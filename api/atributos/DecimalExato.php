@@ -60,7 +60,7 @@ final class DecimalExato
         if ($ultimo >= 5) $q = self::somaUm($q);
         $q = str_pad($q, $escala + 1, '0', STR_PAD_LEFT);
         $int = ltrim(substr($q, 0, -$escala), '0') ?: '0'; $frac = rtrim(substr($q, -$escala), '0');
-        $neg = ($sa === '-') xor ($s1 === '-') xor ($s2 === '-');
+        $neg = (($sa === '-') xor ($s1 === '-') xor ($s2 === '-'));   // parênteses: '=' tem precedência maior que xor
         $r = $int . ($frac !== '' ? ".$frac" : '');
         return ($neg && $r !== '0') ? "-$r" : $r;
     }
