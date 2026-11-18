@@ -91,7 +91,9 @@ log "3/8 build em ${TMP} como ${BUILD_USER} (sem .env/config/storage na montagem
 [ "${DRY}" -eq 0 ] && { id -nG "${BUILD_USER}" | tr ' ' '\n' | grep -qx www-data && falha "${BUILD_USER} não pode estar no grupo www-data"; }
 run chown -h "${BUILD_USER}:${BUILD_USER}" "${TMP}"
 run find "${TMP}" -xdev -exec chown -h "${BUILD_USER}:${BUILD_USER}" {} +   # só a montagem recém-extraída (mapa = git archive do SHA)
-B() { run runuser -u "${BUILD_USER}" -- env -i HOME="/home/${BUILD_USER}" PATH=/usr/local/bin:/usr/bin:/bin "$@"; }
+# HOME real do usuário de build (passwd), não /home/<user>: o dshow-build mora em /srv/dshow-work/build e o npm precisa do cache (~/.npm)
+BUILD_HOME="$(getent passwd "${BUILD_USER}" | cut -d: -f6)"; [ -n "${BUILD_HOME}" ] || BUILD_HOME="/home/${BUILD_USER}"
+B() { run runuser -u "${BUILD_USER}" -- env -i HOME="${BUILD_HOME}" PATH=/usr/local/bin:/usr/bin:/bin "$@"; }
 for PAINEL in public/components/panels/panel-avatar-studio public/components/panels/panel-dashboard public/components/footer; do
   [ "${DRY}" -eq 0 ] && [ ! -f "${TMP}/${PAINEL}/package.json" ] && continue
   B bash -c "cd '${TMP}/${PAINEL}' && npm ci --no-audit --no-fund && npx vite build"
