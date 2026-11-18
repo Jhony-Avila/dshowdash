@@ -37,8 +37,11 @@ export function Produtos() {
       && (!f.obrigatorios || p.obrigatorios_vazios > 0) && (!f.fora || p.fora_da_ficha > 0) && (!f.precifica || p.precifica.length > 0)
       && casaBusca(q, p.id, p.nome));
     const pct = (p: ProdutoResumo) => pctDe(p.essencial) ?? -1;
+    const semEssencial = (p: ProdutoResumo) => p.essencial.total === 0;
     out.sort((a, b) => (idQ !== null ? Number(b.id === idQ) - Number(a.id === idQ) : 0)
-      || (f.ordem === 'id' ? a.id - b.id : f.ordem === 'preenchimento' ? pct(a) - pct(b) || a.id - b.id : a.nome.localeCompare(b.nome, 'pt-BR')));
+      || (f.ordem === 'id' ? a.id - b.id
+        : f.ordem === 'preenchimento' ? (Number(semEssencial(a)) - Number(semEssencial(b))) || pct(a) - pct(b) || a.id - b.id   // UX-1: 0/0 vão para o fim
+        : a.nome.localeCompare(b.nome, 'pt-BR')));
     return out;
   }, [dados, f]);
 
@@ -48,6 +51,8 @@ export function Produtos() {
   const subcats = dados.facetas.filter((x) => (!f.categoria || x.categoria === f.categoria) && conta(x) > 0)
     .sort((a, b) => rotuloSubcategoria(a.subcategoria).localeCompare(rotuloSubcategoria(b.subcategoria), 'pt-BR'));
   const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
+  // UX-1: na ordem "menos preenchidos", os produtos sem essenciais (0/0) formam um grupo próprio no fim
+  const grupoSemEssencial = (k: number) => f.ordem === 'preenchimento' && vis[k]?.essencial.total === 0 && (k === 0 ? (pagina === 0 || lista[pagina * POR_PAGINA - 1]?.essencial.total !== 0) : vis[k - 1].essencial.total !== 0);
   const vis = lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
   const alternar = (id: number) => m.setSelecao(sel.has(id) ? m.selecao.filter((x) => x !== id) : [...m.selecao, id]);
   const marcarPagina = () => { const ids = vis.map((p) => p.id); const todos = ids.every((i) => sel.has(i)); m.setSelecao(todos ? m.selecao.filter((x) => !ids.includes(x)) : [...new Set([...m.selecao, ...ids])]); };
@@ -95,7 +100,8 @@ export function Produtos() {
       </div>
       <div className="at-filtros">
         {chip('semFoto', 'Sem foto')}{chip('semKit', 'Sem kit', 'Produtos que só têm o kit Base (todos os produtos): nenhum kit específico')}{chip('obrigatorios', 'Com obrigatórios vazios')}{chip('fora', 'Com valores fora da ficha')}{chip('precifica', 'Com ficha do Precifica')}
-        <span className="at-filtros__total">{lista.length} produto{lista.length === 1 ? '' : 's'}</span>
+        <span className="at-filtros__total">{lista.length} produto{lista.length === 1 ? '' : 's'} encontrado{lista.length === 1 ? '' : 's'}</span>
+        {m.selecao.length > 0 && <span className="at-filtros__sel">{m.selecao.length} selecionado{m.selecao.length === 1 ? '' : 's'}</span>}
         {algumFiltro && <button type="button" className="bl-botao" onClick={() => setF({ ...f, busca: '', categoria: '', subcategoria: '', kit: '', situacao: 'ativos', semFoto: false, semKit: false, obrigatorios: false, fora: false, precifica: false })}>Limpar filtros</button>}
         {dados.pode_vincular && vis.length > 0 && <button type="button" className="bl-botao" onClick={marcarPagina}>{vis.every((p) => sel.has(p.id)) ? 'Desmarcar a página' : 'Selecionar a página'}</button>}
       </div>
@@ -109,7 +115,8 @@ export function Produtos() {
           : <Vazio titulo="Nenhum produto encontrado">{f.situacao === 'todos' ? 'Nenhum produto, ativo ou inativo, tem este nome ou código.' : 'Ajuste a busca.'}</Vazio>)
         : f.modo === 'grade' ? (
           <div className="at-grade">
-            {vis.map((p) => (
+            {vis.map((p, k) => (<React.Fragment key={p.id}>
+              {grupoSemEssencial(k) && <div className="at-grade__grupo" role="separator">Sem atributos essenciais definidos</div>}
               <article key={p.id} className={`at-cartao ${p.ativo ? '' : 'at-cartao--inativo'} ${sel.has(p.id) ? 'at-cartao--sel' : ''}`}>
                 <button type="button" className="at-cartao__abrir" onClick={() => m.abrirProduto(p.id)} aria-label={`Abrir ficha: ${p.nome}`}>
                   <Foto mediaId={p.capa_id} cor={p.capa_cor} idCapsula={p.id} />
@@ -126,7 +133,7 @@ export function Produtos() {
                   </div>
                 </button>
                 {dados.pode_vincular && <label className="at-cartao__marcar"><input type="checkbox" checked={sel.has(p.id)} onChange={() => alternar(p.id)} aria-label={`Selecionar ${p.nome}`} />{sel.has(p.id) ? 'Selecionado' : 'Selecionar'}</label>}
-              </article>
+              </article></React.Fragment>
             ))}
           </div>
         ) : (
@@ -134,21 +141,21 @@ export function Produtos() {
             <table className="at-tabela">
               <thead><tr>
                 {dados.pode_vincular && <th><span className="bl-so-leitor">Selecionar</span></th>}
-                <th>ID</th><th>Produto</th><th>Subcategoria</th><th>Kits</th><th>Fotos</th><th>Precifica</th><th>Essencial</th><th>Obrig. vazios</th>
+                <th>ID e nome</th><th>Subcategoria</th><th>Kit específico</th><th>Essenciais (feitos/total)</th><th>Obrigatórios pendentes</th><th>Fotos</th><th>Precifica</th>
               </tr></thead>
               <tbody>
-                {vis.map((p) => (
+                {vis.map((p, k) => (<React.Fragment key={p.id}>
+                  {grupoSemEssencial(k) && <tr className="at-tabela__grupo"><td colSpan={dados.pode_vincular ? 8 : 7}>Sem atributos essenciais definidos</td></tr>}
                   <tr key={p.id} className={`${p.ativo ? '' : 'at-linha--inativa'} ${sel.has(p.id) ? 'selecionada' : ''}`}>
                     {dados.pode_vincular && <td><input type="checkbox" checked={sel.has(p.id)} onChange={() => alternar(p.id)} aria-label={`Selecionar ${p.nome}`} /></td>}
-                    <td><CapsulaId id={p.id} flutuante={false} /></td>
-                    <td className="at-tabela__nome"><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(p.id)}>{p.nome}</button></td>
+                    <td className="at-tabela__nome"><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(p.id)}><CapsulaId id={p.id} flutuante={false} /> {p.nome}</button></td>
                     <td>{rotuloSubcategoria(p.subcategoria)}</td>
-                    <td><div className="at-cartao__chips">{especificos(p).map((k) => <ChipKit key={k.id} nome={k.nome} pequeno />)}{p.kits_especificos === 0 && <KitBase />}</div></td>
+                    <td><div className="at-cartao__chips">{especificos(p).map((x) => <ChipKit key={x.id} nome={x.nome} pequeno />)}{p.kits_especificos === 0 && <span className="at-fraco">nenhum</span>}</div></td>
+                    <td style={{ minWidth: 150 }}>{p.essencial.total === 0 ? <span className="at-fraco">0/0</span> : <Barra feitos={p.essencial.feitos} total={p.essencial.total} compacta />}</td>
+                    <td>{p.obrigatorios_vazios || <span className="at-fraco">0</span>}</td>
                     <td>{p.fotos || <span className="at-alerta">0</span>}</td>
                     <td>{p.precifica.length ? p.precifica.map(tituloFamilia).join(', ') : <span className="at-fraco">—</span>}</td>
-                    <td style={{ minWidth: 150 }}><Barra feitos={p.essencial.feitos} total={p.essencial.total} compacta /></td>
-                    <td>{p.obrigatorios_vazios || <span className="at-fraco">0</span>}</td>
-                  </tr>))}
+                  </tr></React.Fragment>))}
               </tbody>
             </table>
           </div>
@@ -162,8 +169,8 @@ export function Produtos() {
       {m.selecao.length > 0 && (
         <div className="at-barra-selecao" role="region" aria-label="Ações para os produtos selecionados">
           <strong>{m.selecao.length} selecionado{m.selecao.length === 1 ? '' : 's'}</strong>
-          <Botao primario aoClicar={() => m.ir('vincular', { selecao: m.selecao })}>Aplicar kit</Botao>
-          <Botao aoClicar={() => m.ir('vincular', { selecao: m.selecao })}>Adicionar atributo</Botao>
+          <Botao primario aoClicar={() => m.ir('vincular', { selecao: m.selecao, intencao: 'kit' })}>Aplicar kit</Botao>
+          <Botao aoClicar={() => m.ir('vincular', { selecao: m.selecao, intencao: 'atributo' })}>Adicionar atributo</Botao>
           <Botao aoClicar={() => m.ir('preencher', { selecao: m.selecao, preencher: {} })}>Abrir na grade</Botao>
           <Botao aoClicar={() => m.setSelecao([])}>Limpar seleção</Botao>
         </div>)}

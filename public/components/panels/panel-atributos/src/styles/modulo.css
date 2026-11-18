@@ -366,3 +366,8 @@
 [data-bl-root] .at-ficha__topo--linha { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 [data-bl-root] .at-ficha__nome { font-size: 15px; max-width: 46ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) { [data-bl-root] .at-attr:not(.at-attr--legado) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+/* UX-1 (Produtos): contadores separados; grupo "Sem atributos essenciais definidos" */
+[data-bl-root] .at-filtros__sel { font-size: 12.5px; font-weight: 600; color: var(--bl-verde, #059669); }
+[data-bl-root] .at-grade__grupo { grid-column: 1 / -1; margin-top: 8px; padding: 8px 2px; border-top: 1px solid var(--bl-borda, #e5e7eb); font-weight: 600; color: var(--bl-texto-2); }
+[data-bl-root] .at-tabela__grupo td { font-weight: 600; color: var(--bl-texto-2); background: var(--bl-superficie-2, #f8fafc); }

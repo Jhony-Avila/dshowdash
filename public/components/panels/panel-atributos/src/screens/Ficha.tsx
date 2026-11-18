@@ -80,7 +80,7 @@ export function Ficha({ id }: { id: number }) {
         {([['atributos', `Atributos (${f.itens.length})`], ['vinculos', 'Vínculos'], ['fotos', `Fotos (${f.fotos.length})`], ['precifica', 'Precifica'], ['historico', 'Histórico']] as [AbaFicha, string][]).map(([a, r]) => (
           <button key={a} type="button" role="tab" aria-selected={aba === a} className={aba === a ? 'ativo' : ''} onClick={() => setAba(a)}>{r}</button>))}
       </div>
-      {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} />}
+      {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} />}
       {aba === 'vinculos' && <AbaVinculos f={f} recarregar={() => carregar(true)} />}
       {aba === 'fotos' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => { setFoto(i); window.scrollTo({ top: 0 }); }}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
       {aba === 'precifica' && <AbaPrecifica f={f} />}
@@ -101,7 +101,7 @@ export function Ficha({ id }: { id: number }) {
 }
 
 // ---- Aba Atributos -------------------------------------------------------------------------------------------------------------------
-function AbaAtributos({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
+function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco }: { f: TFicha; recarregar: () => void; focoInicial?: number | null; aoConsumirFoco?: () => void }) {
   const m = useModulo();
   const [agrup, setAgrup] = React.useState<'kit' | 'grupo'>('kit');
   const [filtro, setFiltro] = React.useState<'todos' | 'obrigatorios' | 'sugestoes'>('todos');
@@ -110,6 +110,13 @@ function AbaAtributos({ f, recarregar }: { f: TFicha; recarregar: () => void }) 
   const [adicionar, setAdicionar] = React.useState(false);
   // UX-1: depois de adicionar, o campo novo recebe o foco (avulso: o atributo escolhido; kit: o 1º campo vazio que o kit trouxe)
   const [focar, setFocar] = React.useState<{ atributo?: number; kit?: number } | null>(null);
+  // UX-1: abrir a ficha já num atributo (pelo ID). Fora da ficha → aviso; a ficha abre normalmente.
+  React.useEffect(() => {
+    if (focoInicial === null) return;
+    aoConsumirFoco?.();
+    if (f.itens.some((i) => i.atributo_id === focoInicial)) setFocar({ atributo: focoInicial });
+    else m.aviso('Este atributo já não faz parte da ficha. Os dados foram atualizados.', 'info');
+  }, [focoInicial]);   // eslint-disable-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (!focar) return;
     const alvo = focar.atributo ?? f.itens.find((i) => !i.valor && (i.kit_id === focar.kit || i.origens.some((o) => o.grupo_id === focar.kit)))?.atributo_id;

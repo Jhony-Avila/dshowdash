@@ -21,6 +21,9 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
   const [produto, setProduto] = React.useState<number | null>(inicial.produto);
   const [kit, setKit] = React.useState<number | null>(inicial.kit);
   const [filtro, setFiltro] = React.useState<FiltroProdutos>({});
+  const [intencaoVincular, setIntencaoVincular] = React.useState<'kit' | 'atributo' | null>(null);
+  // UX-1: atributo a focar na ficha — de m.abrirProduto(id, { atributo }) ou do endereço #/panel-atributos/produto/<id>?atributo=<id>
+  const [atributoFoco, setAtributoFoco] = React.useState<number | null>(() => { const m = /[?&]atributo=([1-9][0-9]{0,9})\b/.exec(window.location.hash); return m ? Number(m[1]) : null; });
   const [selecao, setSelecao] = React.useState<number[]>([]);
   const [preencher, setPreencher] = React.useState<{ kit?: number; subcategoria?: string }>({});
   const [avisos, setAvisos] = React.useState<{ id: number; texto: string; tom: string }[]>([]);
@@ -58,12 +61,14 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
     ir: (a, o = {}) => {
       setAba(a); setProduto(o.produto ?? null); setKit(o.kit ?? null);   // clicar na aba volta à lista (sem kit aberto)
       if (o.filtro) setFiltro(o.filtro); if (o.selecao) setSelecao(o.selecao); if (o.preencher) setPreencher(o.preencher);
+      setIntencaoVincular(a === 'vincular' ? o.intencao ?? null : null);
       raiz.current?.scrollTo({ top: 0 });
     },
-    abrirProduto: (id) => { setProduto(id); raiz.current?.scrollTo({ top: 0 }); },
+    abrirProduto: (id, opc) => { setAtributoFoco(opc?.atributo ?? null); setProduto(id); raiz.current?.scrollTo({ top: 0 }); },
+    atributoFoco, limparAtributoFoco: () => setAtributoFoco(null), intencaoVincular,
     fecharProduto: () => setProduto(null),
     aviso: (texto, tom = 'sucesso') => { const id = Date.now() + Math.random(); setAvisos((a) => [...a, { id, texto, tom }]); window.setTimeout(() => setAvisos((a) => a.filter((x) => x.id !== id)), 4500); },
-  }), [aba, produto, kit, filtro, selecao, preencher, versao]);
+  }), [aba, produto, kit, filtro, selecao, preencher, versao, atributoFoco, intencaoVincular]);
 
   const tela = produto !== null ? <Ficha id={produto} />
     : aba === 'visao' ? <VisaoGeral /> : aba === 'produtos' ? <Produtos /> : aba === 'vincular' ? <Vincular /> : aba === 'preencher' ? <Preencher />
