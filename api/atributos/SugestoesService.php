@@ -43,9 +43,10 @@ final class SugestoesService
                 }
                 $valor = array_key_exists('valor', $b) ? $b['valor'] : ($s['opcao_id'] !== null ? (int) $s['opcao_id'] : $s['valor_proposto']);
                 $atual = $this->repo->valor($pid, $destino, 0);
+                // D10: sugestão nunca sobrescreve valor existente (manual ou importado). Para trocar, edita-se na ficha.
+                if ($atual && empty($atual['excluido_em'])) throw new AtributosErro('VALUE_EXISTS', 409, 'Este campo já tem valor neste produto. A sugestão não sobrescreve: edite na ficha ou recuse a sugestão.', ['atributo_id']);
                 $req = ['product_id' => $pid, 'atributo_id' => $destino, 'valor' => $valor, 'motivo' => "sugestão #$id ({$s['fonte']})"];
                 if (array_key_exists('unidade_id', $b)) $req['unidade_id'] = $b['unidade_id']; elseif ($s['unidade_id'] !== null) $req['unidade_id'] = (int) $s['unidade_id'];
-                if ($atual && empty($atual['excluido_em'])) $req['versao'] = (int) $atual['versao'];
                 $gravado = $this->atributos->gravarValor($req);
             }
             if (!$this->repo->decidirSugestao($id, (int) $s['versao'], $decisao === 'aceitar' ? 'aceita' : 'recusada', $this->usuario, $motivo)) throw new AtributosErro('CONFLICT', 409, 'Esta sugestão já foi decidida. Recarregue.');

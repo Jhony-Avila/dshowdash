@@ -4,7 +4,7 @@
 
 export class ErroApi extends Error {
   constructor(public readonly http: number, public readonly codigo: string, mensagem: string, public readonly campos: string[] = []) { super(mensagem); }
-  get conflito() { return this.http === 409; }
+  get conflito() { return this.http === 409 && this.codigo !== 'VALUE_EXISTS'; }   // VALUE_EXISTS (D10) não é conflito de versão
 }
 
 function csrfDoDom(): string {

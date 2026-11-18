@@ -56,7 +56,7 @@ export function Conferencia() {
         <div className="at-painel__cabeca"><span className="at-fraco">{atual.desc}</span>
           {(fila === 'legado' || fila === 'nome') && <div className="at-acoes">
             <select className="at-campo" aria-label="Filtrar por atributo" value={filtroAtr} onChange={(e) => setFiltroAtr(e.target.value)}><option value="">Todos os atributos</option>{atrs.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-            {fila === 'nome' && d.pode_decidir && sugs.length > 0 && <Botao aoClicar={() => setLote(sugs.map((x) => x.id))}>Aceitar as {Math.min(sugs.length, 200)} visíveis…</Botao>}
+            {fila === 'nome' && d.pode_decidir && sugs.length > 0 && <Botao aoClicar={() => setLote(sugs.filter((x) => !x.ja_tem_valor).map((x) => x.id))}>Aceitar as {Math.min(sugs.filter((x) => !x.ja_tem_valor).length, 200)} visíveis sem valor…</Botao>}
           </div>}
         </div>
         {(fila === 'legado' || fila === 'nome') && (sugs.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Fila vazia">Nada pendente aqui.</Vazio></div> : (
@@ -71,9 +71,9 @@ export function Conferencia() {
                 <td>{d.pode_decidir ? (
                   <div className="at-acoes">
                     {it.atributo_alternativo_id ? <>
-                      <Botao trabalhando={trab === it.id} aoClicar={() => decidir(it, 'aceitar', it.atributo_id)}>Gravar em {it.atributo}</Botao>
-                      <Botao primario trabalhando={trab === it.id} aoClicar={() => decidir(it, 'aceitar', it.atributo_alternativo_id!)}>Gravar em {it.atributo_alternativo}</Botao>
-                    </> : <Botao primario trabalhando={trab === it.id} aoClicar={() => decidir(it, 'aceitar')}>Aceitar</Botao>}
+                      {it.ja_tem_valor ? <Etiqueta titulo="Sugestão não sobrescreve (D10)">{it.atributo} já tem valor</Etiqueta> : <Botao trabalhando={trab === it.id} aoClicar={() => decidir(it, 'aceitar', it.atributo_id)}>Gravar em {it.atributo}</Botao>}
+                      {it.alternativo_ja_tem_valor ? <Etiqueta titulo="Sugestão não sobrescreve (D10)">{it.atributo_alternativo} já tem valor</Etiqueta> : <Botao primario trabalhando={trab === it.id} aoClicar={() => decidir(it, 'aceitar', it.atributo_alternativo_id!)}>Gravar em {it.atributo_alternativo}</Botao>}
+                    </> : it.ja_tem_valor ? <Etiqueta titulo="Sugestão não sobrescreve (D10)">já tem valor</Etiqueta> : <Botao primario trabalhando={trab === it.id} aoClicar={() => decidir(it, 'aceitar')}>Aceitar</Botao>}
                     <Botao trabalhando={trab === it.id} aoClicar={() => decidir(it, 'recusar')}>Recusar</Botao>
                   </div>) : <span className="at-fraco">só leitura</span>}</td>
               </tr>))}</tbody>

@@ -353,9 +353,13 @@ final class ProdutosLeitura
     public function conferencia(): array
     {
         $this->exigir();
-        $res = array_filter($this->resumos(), static fn($p) => $p['ativo']);
+        $todos = $this->resumos(); $res = array_filter($todos, static fn($p) => $p['ativo']);
         $atr = $this->atr(); $cat = $this->cat();
-        $sug = static fn($s) => ['id' => (int) $s['id'], 'product_id' => (int) $s['product_id'], 'produto' => $cat[(int) $s['product_id']]['nome'] ?? '#' . $s['product_id'], 'atributo_id' => (int) $s['atributo_id'],
+        // D10: diz em quais destinos o produto já tem valor (a tela não oferece "aceitar" ali; o serviço recusa com VALUE_EXISTS).
+        $tem = static fn(int $pid, ?int $aid): bool => $aid !== null && isset($todos[$pid]['_estados'][$aid]);
+        $sug = static fn($s) => ['ja_tem_valor' => $tem((int) $s['product_id'], (int) $s['atributo_id']),
+            'alternativo_ja_tem_valor' => $tem((int) $s['product_id'], $s['atributo_alternativo_id'] === null ? null : (int) $s['atributo_alternativo_id']),
+            'id' => (int) $s['id'], 'product_id' => (int) $s['product_id'], 'produto' => $cat[(int) $s['product_id']]['nome'] ?? '#' . $s['product_id'], 'atributo_id' => (int) $s['atributo_id'],
             'atributo' => $atr[(int) $s['atributo_id']]['rotulo'] ?? null, 'tipo_atributo' => $atr[(int) $s['atributo_id']]['tipo'] ?? null,
             'atributo_alternativo_id' => $s['atributo_alternativo_id'] === null ? null : (int) $s['atributo_alternativo_id'],
             'atributo_alternativo' => $s['atributo_alternativo_id'] !== null ? ($atr[(int) $s['atributo_alternativo_id']]['rotulo'] ?? null) : null,

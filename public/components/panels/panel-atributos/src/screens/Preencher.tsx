@@ -107,7 +107,7 @@ export function Preencher() {
               <thead><tr>
                 <th className="at-fixa at-fixa--1">Foto</th><th className="at-fixa at-fixa--2">ID</th><th className="at-fixa at-fixa--3">Produto</th>
                 {colunas.map((c) => {
-                  const ids = fichas.flatMap((f) => item(f, c.id)?.sugestoes.filter((s) => s.tipo === 'valor').map((s) => s.id) ?? []);
+                  const ids = fichas.flatMap((f) => { const it = item(f, c.id); return it && !it.valor ? it.sugestoes.filter((s) => s.tipo === 'valor').map((s) => s.id) : []; });   // D10: só células vazias
                   return (<th key={c.id}><div className="at-grade-col"><span>{c.rotulo}{c.obrigatorio && <span className="at-obrig">*</span>}</span>
                     {c.importancia && <span className="at-imp at-imp--fraca">{IMPORTANCIA[c.importancia]}</span>}
                     {ids.length > 0 && fichas[0]?.pode_editar && <button type="button" className="at-link" onClick={() => setAceitarCol({ id: c.id, rotulo: c.rotulo, ids })}>aceitar {ids.length} sugest{ids.length === 1 ? 'ão' : 'ões'}</button>}</div></th>);

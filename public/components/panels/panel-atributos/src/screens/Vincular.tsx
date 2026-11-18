@@ -15,7 +15,7 @@ export function Vincular() {
   const [kits, setKits] = React.useState<KitResumo[] | null>(null);
   const [dic, setDic] = React.useState<AtributoDicionario[] | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
-  const [passo, setPasso] = React.useState(1);
+  const [passo, setPasso] = React.useState(m.selecao.length ? 2 : 1);   // vindo de Produtos com seleção: direto ao passo 2
   const [busca, setBusca] = React.useState(''); const [sub, setSub] = React.useState('');
   const [kA, setKA] = React.useState<number[]>([]); const [kR, setKR] = React.useState<number[]>([]);
   const [aI, setAI] = React.useState<number[]>([]); const [aE, setAE] = React.useState<{ id: number; motivo: string }[]>([]);

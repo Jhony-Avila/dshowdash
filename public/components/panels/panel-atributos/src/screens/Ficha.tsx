@@ -194,7 +194,7 @@ function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: 
   return (
     <div className="at-sugestao" title={s.evidencia ?? ''}>
       <span className="at-sugestao__rot">sugestão ({FONTE_SUGESTAO[s.fonte]}):</span> <span className="at-sugestao__val">{rotOp ?? (s.valor_proposto && /^-?\d+(\.\d+)?$/.test(s.valor_proposto) ? decimal(s.valor_proposto) : s.valor_proposto)} {un}</span>
-      {f.pode_editar && <><button type="button" className="at-link" disabled={trab} onClick={() => decidir('aceitar')}>Aceitar</button> <button type="button" className="at-link at-link--fraco" disabled={trab} onClick={() => decidir('recusar')}>Recusar</button></>}
+      {f.pode_editar && <>{i.valor ? <span className="at-fraco" title="Sugestão não sobrescreve (D10)"> campo já preenchido</span> : <button type="button" className="at-link" disabled={trab} onClick={() => decidir('aceitar')}>Aceitar</button>} <button type="button" className="at-link at-link--fraco" disabled={trab} onClick={() => decidir('recusar')}>Recusar</button></>}
     </div>);
 }
 

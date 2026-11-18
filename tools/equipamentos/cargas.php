@@ -281,10 +281,12 @@ final class Cargas
     }
 
     // ---- C6 --------------------------------------------------------------------------------------------------------------------------
-    public const C6_SUBCATEGORIAS = ['CABINET', 'LED_MODULE', 'TOTEM', 'SPHERE', 'CAN', 'LED_BAG', 'AUTONOMOUS_TV', 'EASEL', 'BACKPACK'];   // bloqueado: acessórios e serviços
+    public const C6_SUBCATEGORIAS = ['CABINET', 'LED_MODULE', 'TOTEM', 'SPHERE', 'CAN', 'LED_BAG', 'AUTONOMOUS_TV', 'EASEL', 'BACKPACK', 'POWER_SUPPLY'];   // bloqueado: acessórios e serviços
+    /** Fontes: só a Potência (NNNW) é inequívoca no nome; V/A podem ser entrada/saída e medidas "NNNmm x NNNmm" são do gabinete. */
+    public const C6_SO_POTENCIA = ['POWER_SUPPLY'];
     public function c6(): array
     {
-        $lote = $this->lote('C6', ['subcategorias' => self::C6_SUBCATEGORIAS, 'regras' => 'NNNmm x NNNmm; P.x; NNNN Hz; Indoor/Outdoor']);
+        $lote = $this->lote('C6', ['subcategorias' => self::C6_SUBCATEGORIAS, 'regras' => 'NNNmm x NNNmm; P.x; NNNN Hz; Indoor/Outdoor; Fontes: NNNW → Potência']);
         $cod = []; foreach ($this->q("SELECT id, codigo FROM {$this->s}eq_atributo") as $a) $cod[$a['codigo']] = (int) $a['id'];
         $uni = []; foreach ($this->q("SELECT id, simbolo FROM {$this->s}eq_unidade") as $u) $uni[$u['simbolo']] = (int) $u['id'];
         $opLed = []; foreach ($this->q("SELECT id, rotulo FROM {$this->s}eq_opcao WHERE atributo_id = ? AND ativo = 1", [$cod['tipo_do_led_87']]) as $o) $opLed[strtolower($o['rotulo'])] = (int) $o['id'];
@@ -294,10 +296,14 @@ final class Cargas
         foreach ($this->q("SELECT id, name, subcategory FROM {$this->s}product_catalog WHERE deleted = 0 AND active = 1 AND category = 'LED_PANEL'") as $p) {
             if (!in_array($p['subcategory'], self::C6_SUBCATEGORIAS, true)) { $n['bloqueados']++; continue; }
             $pid = (int) $p['id']; $nome = (string) $p['name']; $props = [];
+            if (in_array($p['subcategory'], self::C6_SO_POTENCIA, true)) {
+                if (preg_match('/\b(\d{2,4})\s*W\b/iu', $nome, $m) && isset($uni['W'])) $props['potencia_549'] = [$m[1], $uni['W'], null];
+            } else {
             if (preg_match('/(\d{2,5})\s*mm\s*[xX×]\s*(\d{2,5})\s*mm/u', $nome, $m)) { $props['largura_409'] = [$m[1], $uni['mm'], null]; $props['altura_122'] = [$m[2], $uni['mm'], null]; }
             if (preg_match('/\bP\s*\.?\s*(\d{1,2}(?:[.,]\d{1,3})?)\b/u', $nome, $m)) $props['pitch_138'] = [str_replace(',', '.', $m[1]), $uni['mm'], null];
             if (preg_match('/(\d{3,4})\s*Hz/u', $nome, $m) && isset($cod['taxa_de_atualizacao_refresh_rate_93'])) $props['taxa_de_atualizacao_refresh_rate_93'] = [$m[1], $uni['Hz'], null];
             if (preg_match('/\b(Indoor|Outdoor)\b/iu', $nome, $m) && isset($opLed[strtolower($m[1])])) $props['tipo_do_led_87'] = [null, null, $opLed[strtolower($m[1])]];
+            }
             if ($props) $n['produtos']++;
             foreach ($props as $c => [$val, $u, $opc]) {
                 $aid = $cod[$c] ?? null; if (!$aid || isset($tem["$pid:$aid"])) continue;

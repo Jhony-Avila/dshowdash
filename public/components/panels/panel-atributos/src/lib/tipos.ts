@@ -62,7 +62,7 @@ export interface AtributoDicionario {
   descricao: string | null; ativo: number; versao: number; autoridade: string; aceita_nao_se_aplica: number; importancia_padrao: Importancia | null; importancia_legado: string | null;
   grupo_atributos: string | null; em_kits: number; produtos_com_valor: number; unidades_extras: number[];
 }
-export interface ItemConferencia { id: number; product_id: number; produto: string; atributo_id: number; atributo: string | null; tipo_atributo: TipoAtributo | null; atributo_alternativo_id: number | null; atributo_alternativo: string | null; fonte: string; tipo: string; valor_proposto: string | null; unidade_id: number | null; unidade: string | null; confianca: string; evidencia: string | null; versao: number }
+export interface ItemConferencia { id: number; product_id: number; produto: string; atributo_id: number; atributo: string | null; tipo_atributo: TipoAtributo | null; atributo_alternativo_id: number | null; atributo_alternativo: string | null; fonte: string; tipo: string; valor_proposto: string | null; unidade_id: number | null; unidade: string | null; confianca: string; evidencia: string | null; versao: number; ja_tem_valor: boolean; alternativo_ja_tem_valor: boolean }
 export interface Conferencia {
   filas: { legado: ItemConferencia[]; nome: ItemConferencia[]; fora_da_ficha: { product_id: number; produto: string; atributo_id: number; atributo: string; estado: string }[];
     obrigatorios_vazios: { product_id: number; produto: string; atributo_id: number; atributo: string }[]; sem_kit: { product_id: number; produto: string; subcategoria: string | null; legado: string | null }[] };
