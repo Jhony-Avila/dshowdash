@@ -143,7 +143,9 @@ function migrador_conectar(string $credenciais): PDO
     if ((fileperms($credenciais) & 0077) !== 0) throw new MigradorErro('credenciais com permissão aberta (exige 600)');
     $c = parse_ini_file($credenciais, false, INI_SCANNER_RAW);
     if (!$c || empty($c['user'])) throw new MigradorErro('credenciais ilegíveis');
-    $dsn = !empty($c['socket']) ? 'mysql:unix_socket=' . $c['socket'] . ';charset=utf8mb4' : 'mysql:host=' . ($c['host'] ?? '127.0.0.1') . ';port=' . ($c['port'] ?? '3306') . ';charset=utf8mb4';
+    // sem host nem socket no arquivo (ex.: cnf do root): o cliente mysql usa o socket local; aqui também (TCP 127.0.0.1 negaria o root@localhost)
+    $sock = !empty($c['socket']) ? (string) $c['socket'] : (empty($c['host']) && is_readable('/var/run/mysqld/mysqld.sock') ? '/var/run/mysqld/mysqld.sock' : '');
+    $dsn = $sock !== '' ? 'mysql:unix_socket=' . $sock . ';charset=utf8mb4' : 'mysql:host=' . ($c['host'] ?? '127.0.0.1') . ';port=' . ($c['port'] ?? '3306') . ';charset=utf8mb4';
     return new PDO($dsn, (string) $c['user'], (string) ($c['password'] ?? ''), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 }
 

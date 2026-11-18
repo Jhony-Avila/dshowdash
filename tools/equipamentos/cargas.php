@@ -27,10 +27,12 @@ final class Cargas
     /** A9: campos de integração do dicionário de 2025 (Atributos_Itens.Atributos), fora do mm_atributos. */
     public const INTEGRACOES = [12 => 'Id Bling', 13 => 'Código Bling', 14 => 'Id Mercado Livre', 577 => 'Cod_Pai_Bling'];
 
-    private string $s; private array $rel = [];
-    public function __construct(private readonly PDO $pdo, private readonly string $schema, private readonly bool $seco, private $log)
+    private string $s; private string $cs; private array $rel = [];
+    /** $catalogo = schema do catálogo do app (produção: APP_DSHOW; validação: o próprio schema, com o retrato C1). */
+    public function __construct(private readonly PDO $pdo, private readonly string $schema, private readonly bool $seco, private $log, private readonly ?string $catalogo = null)
     {
         $this->s = "`$schema`.";
+        $this->cs = '`' . ($catalogo ?? $schema) . '`.';
     }
     private function q(string $sql, array $p = []): array { $st = $this->pdo->prepare($sql); $st->execute($p); return $st->fetchAll(PDO::FETCH_ASSOC); }
     private function x(string $sql, array $p = []): int { if ($this->seco) return 0; $st = $this->pdo->prepare($sql); $st->execute($p); return $st->rowCount(); }
@@ -41,7 +43,7 @@ final class Cargas
     private function servicos(string $usuario): array
     {
         $repo = new AtributosRepoPdo($this->pdo, $this->schema);
-        $cat = new CatalogoPdo($this->pdo, $this->schema);   // validação: retrato C1 no mesmo schema; produção: APP_DSHOW (P3)
+        $cat = new CatalogoPdo($this->pdo, $this->catalogo ?? $this->schema);   // validação: retrato C1 no mesmo schema; produção: APP_DSHOW (P3)
         return [$repo, new KitsService($repo, 80, $usuario, $cat), new AtributosService($repo, 80, $usuario, $cat)];
     }
 
@@ -96,7 +98,7 @@ final class Cargas
             $a = $repo->atributo($aid);
             if ((int) $a['ativo'] === 1) continue;
             $mud['descricoes_reativadas']++;
-            if (!$this->seco) (new AtributosService($repo, 80, 'carga:C2', new CatalogoPdo($this->pdo, $this->schema)))->definirAtivo($aid, true, (int) $a['versao'], 'D1: as 8 da base valem para todos os itens (carga C2)');
+            if (!$this->seco) (new AtributosService($repo, 80, 'carga:C2', new CatalogoPdo($this->pdo, $this->catalogo ?? $this->schema)))->definirAtivo($aid, true, (int) $a['versao'], 'D1: as 8 da base valem para todos os itens (carga C2)');
         }
         $k = $this->kitPorNome(self::BASE_NOME);
         if (!$k && !$this->seco) { $k = $kits->salvarKit(['nome' => self::BASE_NOME, 'descricao' => 'Os 8 atributos que o legado atribuía a TODOS os itens (D1). As 6 descrições ficam fora do app (A5).', 'aplica_a_todos' => 1, 'ordem' => -100])['kit']; $mud['kit_criado'] = true; }
@@ -107,7 +109,7 @@ final class Cargas
                 foreach ($base as $pos => $aid) $itens[] = ['atributo_id' => $aid, 'posicao' => $pos + 1, 'obrigatorio' => ($imp[$aid] ?? null) === 'obrigatorio' ? 1 : 0, 'visivel' => in_array($aid, $desc, true) ? 0 : 1, 'importancia' => $imp[$aid] ?? null, 'unidade_id' => null];
                 $k = $kits->definirItens(['id' => $k['id'], 'versao' => $k['versao'], 'itens' => self::destaques($itens, $imp)])['kit']; $mud['itens'] = count($itens);
                 // §9 compatibilidade: também como escopo de categoria — o app atual já vê o kit geral sem mudança
-                $cats = array_column($this->q("SELECT DISTINCT category FROM {$this->s}product_catalog WHERE deleted = 0 ORDER BY category"), 'category');
+                $cats = array_column($this->q("SELECT DISTINCT category FROM {$this->cs}product_catalog WHERE deleted = 0 ORDER BY category"), 'category');
                 $kits->definirEscopos(['id' => $k['id'], 'versao' => $k['versao'], 'escopos' => array_map(static fn($c) => ['categoria' => $c, 'subcategoria' => ''], $cats)]);
             }
         }
@@ -310,7 +312,7 @@ final class Cargas
         $tem = []; foreach ($this->q("SELECT product_id, atributo_id FROM {$this->s}eq_valor WHERE excluido_em IS NULL") as $v) $tem[(int) $v['product_id'] . ':' . (int) $v['atributo_id']] = true;
         $n = ['produtos' => 0, 'sugestoes' => 0, 'ja_existiam' => 0, 'bloqueados' => 0, 'por_atributo' => []];
         $in = implode(',', array_fill(0, count(self::C6_SUBCATEGORIAS), '?'));
-        foreach ($this->q("SELECT id, name, subcategory FROM {$this->s}product_catalog WHERE deleted = 0 AND active = 1 AND category = 'LED_PANEL'") as $p) {
+        foreach ($this->q("SELECT id, name, subcategory FROM {$this->cs}product_catalog WHERE deleted = 0 AND active = 1 AND category = 'LED_PANEL'") as $p) {
             if (!in_array($p['subcategory'], self::C6_SUBCATEGORIAS, true)) { $n['bloqueados']++; continue; }
             $pid = (int) $p['id']; $nome = (string) $p['name']; $props = [];
             if (in_array($p['subcategory'], self::C6_SO_POTENCIA, true)) {
@@ -357,7 +359,7 @@ final class Cargas
     {
         $repo = new AtributosRepoPdo($this->pdo, $this->schema);
         $m = $repo->retratoModelo(null);
-        $cat = []; foreach ($this->q("SELECT id, category, subcategory, active FROM {$this->s}product_catalog WHERE deleted = 0") as $p) $cat[(int) $p['id']] = ['id' => (int) $p['id'], 'categoria' => $p['category'], 'subcategoria' => $p['subcategory'], 'ativo' => (int) $p['active']];
+        $cat = []; foreach ($this->q("SELECT id, category, subcategory, active FROM {$this->cs}product_catalog WHERE deleted = 0") as $p) $cat[(int) $p['id']] = ['id' => (int) $p['id'], 'categoria' => $p['category'], 'subcategoria' => $p['subcategory'], 'ativo' => (int) $p['active']];
         $vin = []; foreach ($this->q("SELECT chave_antiga, product_id FROM {$this->s}eq_legado_vinculo WHERE estado = 'inequivoca' AND product_id > 0") as $r) $vin[(int) $r['chave_antiga']] = (int) $r['product_id'];
         $leg = $this->porLegado();
         $tot = ['atribuicoes' => 0, 'reproduzidas' => 0, 'excecoes' => 0, 'ativos' => ['atribuicoes' => 0, 'reproduzidas' => 0]];
@@ -397,13 +399,13 @@ final class Cargas
 }
 
 if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
-    $o = getopt('', ['carga:', 'schema:', 'credenciais:', 'dry-run', 'reverter', 'fonte:', 'relatorio:', 'modo-producao']);
+    $o = getopt('', ['carga:', 'schema:', 'credenciais:', 'dry-run', 'reverter', 'fonte:', 'relatorio:', 'modo-producao', 'catalogo:']);
     $log = static function (string $m): void { fwrite(STDOUT, '[' . date('H:i:s') . "] $m\n"); };
     try {
         $schema = (string) ($o['schema'] ?? '');
         Migrador::validarSchema($schema, isset($o['modo-producao']), getenv('ATR_MIGRAR_PRODUCAO') ?: null);
         $c = strtoupper((string) ($o['carga'] ?? ''));
-        $cg = new Cargas(migrador_conectar((string) ($o['credenciais'] ?? '')), $schema, isset($o['dry-run']), $log);
+        $cg = new Cargas(migrador_conectar((string) ($o['credenciais'] ?? '')), $schema, isset($o['dry-run']), $log, isset($o['catalogo']) && preg_match('/^[A-Za-z0-9_]{1,64}$/', (string) $o['catalogo']) ? (string) $o['catalogo'] : null);
         $r = isset($o['reverter']) ? $cg->reverter($c) : match ($c) { 'C2' => $cg->c2(), 'C3' => $cg->c3(), 'C4' => $cg->c4(), 'C5' => $cg->c5((string) ($o['fonte'] ?? '')), 'C6' => $cg->c6(), 'C7' => $cg->c7(), default => throw new RuntimeException("carga desconhecida: $c") };
         $j = json_encode(['carga' => $c, 'seco' => isset($o['dry-run']), 'quando' => date('c'), 'resultado' => $r], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         if (!empty($o['relatorio'])) file_put_contents(rtrim((string) $o['relatorio'], '/') . "/$c" . (isset($o['dry-run']) ? '-seco' : '') . (isset($o['reverter']) ? '-reverter' : '') . '.json', $j);
