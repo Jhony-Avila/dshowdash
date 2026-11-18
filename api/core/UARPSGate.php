@@ -56,6 +56,11 @@ class UARPSGate {
                 $allowed = true;
             } elseif ($state === 'deny') {
                 $allowed = false;
+            } elseif (UARPSPadrao::exigeExplicito($triggerId)) {
+                // DSHOW-032: gate:admin:* só com allow explícito; inherit/sem linha = negado (em qualquer nível)
+                $padrao = ['allowed' => false, 'nivel' => null, 'minimo' => null, 'regra' => 'gate-admin-explicito', 'modo' => 'aplicar'];
+                $allowed = false;
+                self::registrarPadraoNegaria($userId, $triggerId, $padrao);
             } else {
                 // UARPS-INHERIT: inherit/sem linha => padrão do perfil
                 $padrao = self::resolverPadrao($userId, $triggerId);

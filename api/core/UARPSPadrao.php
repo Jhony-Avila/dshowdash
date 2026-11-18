@@ -57,6 +57,15 @@ final class UARPSPadrao
         return [self::PADRAO_UI, 'ui-padrao'];
     }
 
+    /**
+     * DSHOW-032 (origem: Codex DSHOW-032; decisão do Jhony 18/11): gate:admin:* (e trigger:gate:admin) NÃO é liberado por
+     * nível nem por inherit — exige permissão EXPLÍCITA (state = allow) dada pelo dono. Sem allow: negado, em qualquer nível.
+     */
+    public static function exigeExplicito(string $triggerId): bool
+    {
+        return preg_match('/^(trigger:)?gate:admin(:|$)/', $triggerId) === 1;
+    }
+
     public static function ehGateApi(string $triggerId): bool
     {
         return preg_match('/^(gate:|trigger:gate:|api:)/', $triggerId) === 1;
