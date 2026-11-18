@@ -92,7 +92,7 @@ export function Dialogo({ titulo, aberto, aoFechar, children, rodape, largura = 
     const ant = document.activeElement as HTMLElement | null;
     const foco = ref.current?.querySelector<HTMLElement>('input, select, textarea, button:not([data-fechar])');
     (foco ?? ref.current)?.focus();
-    const tecla = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); aoFechar(); } };
+    const tecla = (e: KeyboardEvent) => { if (e.key !== 'Escape') return; if ((e.target as HTMLElement | null)?.closest?.('[data-esc-local]')) return; /* campo interno trata o próprio Esc */ e.stopPropagation(); aoFechar(); };
     window.addEventListener('keydown', tecla, true);
     return () => { window.removeEventListener('keydown', tecla, true); ant?.focus?.(); };
   }, [aberto, aoFechar]);

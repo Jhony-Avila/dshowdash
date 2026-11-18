@@ -27,7 +27,7 @@ export function App() {
     aba, produto, kit, filtroInicial: filtro, selecao, setSelecao, preencher, versao,
     recarregar: () => setVersao((v) => v + 1),
     ir: (a, o = {}) => {
-      setAba(a); setProduto(o.produto ?? null); if (o.kit !== undefined) setKit(o.kit);
+      setAba(a); setProduto(o.produto ?? null); setKit(o.kit ?? null);   // clicar na aba volta à lista (sem kit aberto)
       if (o.filtro) setFiltro(o.filtro); if (o.selecao) setSelecao(o.selecao); if (o.preencher) setPreencher(o.preencher);
       raiz.current?.scrollTo({ top: 0 });
     },
