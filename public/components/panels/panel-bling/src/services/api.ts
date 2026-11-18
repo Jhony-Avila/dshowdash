@@ -137,7 +137,8 @@ export interface RespostaRecurso {
 }
 
 export interface KpiApi {
-  id: string; rotulo: string; valor: number; formato: string;
+  id: string; rotulo: string; valor: number | null; formato: string;   // null = fonte indisponível (DSHOW-012)
+  disponibilidade?: { estado: string; motivo?: string; fonte?: string } | null;
   variacao: number | null; tendencia: string;
   sparkline: { data: string; valor: number }[] | null;
   drilldown: string | null; semantica: 'ok' | 'atencao' | 'critico';

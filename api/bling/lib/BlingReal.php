@@ -52,6 +52,29 @@ final class BlingReal extends BlingProviderBase
         return $v === false || $v === null ? null : gmdate('c', strtotime($v . ' UTC'));
     }
 
+    /** DSHOW-012: recurso desativado para a conta → indisponível; nunca sincronizado → sem dados; senão ok. */
+    public function disponibilidade(string $recurso): array
+    {
+        // DSHOW-012 complemento (Codex DSHOW-016, 18/11): por recurso — fonte desativada, última tentativa, último sucesso
+        // e cobertura (completa/parcial). bling_sync_state guarda só a ÚLTIMA execução e a situação dela: "último sucesso"
+        // é conhecido quando a última execução foi ok/atencao; senão fica null (coluna própria = migração futura).
+        if (!class_exists('BlingSyncService', false)) require_once __DIR__ . '/../services/BlingSyncService.php';
+        $conta = $this->conta();
+        $motivo = BlingSyncService::desativado($conta, $recurso);
+        $st = $this->repo->consultar('SELECT situacao, ultima_execucao_em FROM bling_sync_state WHERE account_id = ? AND recurso = ? ORDER BY ultima_execucao_em DESC LIMIT 1', [$conta, $recurso]);
+        $sit = $st[0]['situacao'] ?? null; $ult = $st[0]['ultima_execucao_em'] ?? null;
+        $iso = static fn($v) => $v === null ? null : gmdate('c', strtotime($v . ' UTC'));
+        $base = ['fonte_desativada' => $motivo !== null, 'ultima_tentativa' => $iso($ult),
+                 'ultimo_sucesso' => in_array($sit, ['ok', 'atencao'], true) ? $iso($ult) : null,
+                 'cobertura' => in_array($sit, ['ok', 'atencao'], true) ? 'completa' : ($sit === null || $sit === 'nunca_executado' ? 'nenhuma' : 'parcial')];
+        if ($motivo !== null) {
+            return ['estado' => 'indisponivel', 'motivo' => 'sincronização de ' . $recurso . ' desativada para esta conta', 'fonte' => stripos($motivo, 'asaas') !== false ? 'Asaas' : $motivo] + $base;
+        }
+        if ($ult === null || $sit === 'nunca_executado') return ['estado' => 'sem_dados', 'motivo' => 'recurso ainda não sincronizado'] + $base;
+        if ($base['cobertura'] === 'parcial') return ['estado' => 'parcial', 'motivo' => 'última coleta ' . $sit . '; dados podem estar incompletos'] + $base;
+        return ['estado' => 'ok'] + $base;
+    }
+
     /** Conta ativa. Sem conta conectada, o módulo não tem o que mostrar. */
     private function conta(): int
     {
@@ -299,7 +322,7 @@ final class BlingReal extends BlingProviderBase
             "SELECT p.id, p.bling_id, p.sku, p.gtin, p.nome, p.tipo, p.category_id,
                     p.marca, p.unidade, p.ncm, p.origem, p.peso_kg, p.dimensoes,
                     p.tem_imagem, p.descricao_ok, p.supplier_id, p.is_ativo, p.qualidade_score,
-                    COALESCE(pr.preco, 0) preco, pr.preco_promocional, COALESCE(pr.custo, 0) custo,
+                    COALESCE(pr.preco, 0) preco, pr.preco_promocional, pr.custo custo,   /* DSHOW-018: custo desconhecido segue NULL */
                     COALESCE(v.unidades, 0) unidades, COALESCE(v.receita, 0) receita,
                     v.ultima_venda, COALESCE(e.disponivel, 0) estoque_total
                FROM bling_products p
@@ -323,7 +346,7 @@ final class BlingReal extends BlingProviderBase
 
         return array_map(static function ($p) use ($canaisPorProduto) {
             $preco = (float) ($p['preco_promocional'] ?? 0) ?: (float) $p['preco'];
-            $custo = (float) $p['custo'];
+            $custo = $p['custo'] === null ? null : (float) $p['custo'];   // DSHOW-018: null = desconhecido (não é zero)
             return [
                 'id' => (string) $p['id'], 'bling_id' => (int) $p['bling_id'],
                 'sku' => $p['sku'] ?? '', 'gtin' => $p['gtin'],
@@ -340,7 +363,7 @@ final class BlingReal extends BlingProviderBase
                 'ativo' => (bool) $p['is_ativo'], 'variacoes' => 0,
                 'canais' => $canaisPorProduto[$p['id']] ?? [],
                 // Derivados — mesmos nomes do mock (BlingMock::enriquecerProdutos)
-                'margem_pct' => $preco > 0 ? round((($preco - $custo) / $preco) * 100, 1) : 0.0,
+                'margem_pct' => ($preco > 0 && $custo !== null) ? round((($preco - $custo) / $preco) * 100, 1) : null,   // DSHOW-018: sem custo, margem desconhecida (não 100%)
                 'ultima_venda' => $p['ultima_venda'],
                 'unidades_vendidas' => (int) $p['unidades'],
                 'receita' => round((float) $p['receita'], 2),

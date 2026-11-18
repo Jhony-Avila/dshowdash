@@ -9,6 +9,9 @@
 // Aqui ficam as duas operacoes; o AGENDAMENTO (cron/fila) e da Fase 5.
 declare(strict_types=1);
 
+/** Lote com falha transitória: o token não avançou; o job deve ser tentado de novo. */
+final class GcalLoteParcial extends \RuntimeException {}
+
 final class GcalSyncService
 {
     /** Janela da carga inicial (§49.1): nunca "tudo". */
@@ -59,18 +62,10 @@ final class GcalSyncService
                 'timeMin' => $de->format('c'), 'timeMax' => $ate->format('c'),
             ]);
             $n = $this->gravar($accountId, $r['eventos'], $n, $calendarId, $run, $cid);
-
-            $this->repo->salvarSyncState($accountId, $calendarId, [
-                'sync_token'  => $r['syncToken'],
-                'status'      => 'ok',
-                'processed'   => $n['processed'],
-                'duration_ms' => (int)round((microtime(true) - $t0) * 1000),
-                'attempt'     => 0,
-                'window_from' => $de->format('Y-m-d'),
-                'window_to'   => $ate->format('Y-m-d'),
-                'next_sync_at' => (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
-                    ->modify('+15 minutes')->format('Y-m-d H:i:s'),
-            ]);
+            $this->fecharLote($accountId, $calendarId, (string)$r['syncToken'], $n, $t0,
+                ['window_from' => $de->format('Y-m-d'), 'window_to' => $ate->format('Y-m-d')]);
+        } catch (GcalLoteParcial $e) {
+            throw $e;   // estado já gravado como 'stale' (parcial) pelo fecharLote; o job vai para nova tentativa
         } catch (\Throwable $e) {
             $n['errors']++;
             $this->repo->registrarErro($accountId, [
@@ -110,16 +105,9 @@ final class GcalSyncService
             $cliente = $this->auth->clientePara($accountId);
             $r = $cliente->listarEventos($calendarId, ['syncToken' => $token]);
             $n = $this->gravar($accountId, $r['eventos'], $n, $calendarId, $run, $cid);
-
-            $this->repo->salvarSyncState($accountId, $calendarId, [
-                'sync_token'  => $r['syncToken'],
-                'status'      => 'ok',
-                'processed'   => $n['processed'],
-                'duration_ms' => (int)round((microtime(true) - $t0) * 1000),
-                'attempt'     => 0,
-                'next_sync_at' => (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
-                    ->modify('+15 minutes')->format('Y-m-d H:i:s'),
-            ]);
+            $this->fecharLote($accountId, $calendarId, (string)$r['syncToken'], $n, $t0, []);
+        } catch (GcalLoteParcial $e) {
+            throw $e;
         } catch (GcalSyncTokenInvalido $e) {
             // §49.3: NÃO apaga nada. Marca para recarga e refaz a carga
             // completa; a reconciliação acontece dentro dela, por upsert.
@@ -169,12 +157,14 @@ final class GcalSyncService
                     $pdo->exec('ROLLBACK TO SAVEPOINT gcal_evento');
                     $n['processed']++;
                     $n['errors']++;
+                    $transitorio = self::falhaTransitoria($ex);
+                    $n[$transitorio ? 'transitorios' : 'permanentes'] = ($n[$transitorio ? 'transitorios' : 'permanentes'] ?? 0) + 1;
                     $msg = mb_substr($ex->getMessage(), 0, 200);
                     error_log('[gcal] evento ignorado em ' . ($calendarId !== '' ? $calendarId : $e['calendar_id'] ?? '?')
                         . ' (id ' . (string)($e['event_id'] ?? '?') . '): ' . $msg);
                     $r->registrarErro($accountId, [
                         'run_id' => $run, 'calendar_id' => $calendarId !== '' ? $calendarId : ($e['calendar_id'] ?? null),
-                        'event_id' => (string)($e['event_id'] ?? ''), 'error_code' => 'evento_invalido',
+                        'event_id' => (string)($e['event_id'] ?? ''), 'error_code' => $transitorio ? 'evento_transitorio' : 'evento_invalido',
                         'message' => 'evento ignorado na gravação: ' . $msg, 'correlation_id' => $cid,
                     ]);
                     continue;
@@ -186,6 +176,45 @@ final class GcalSyncService
             }
             return $n;
         });
+    }
+
+    /**
+     * DSHOW-024 (origem: Codex DSHOW-023, 18/11/2026). O token só avança quando o lote está ÍNTEGRO ou quando as
+     * únicas falhas são PERMANENTES (dado que o banco recusa e que repetir não conserta):
+     *  - falha TRANSITÓRIA (deadlock, lock wait, conexão) → o token NÃO avança, estado 'stale', e o job falha para
+     *    nova tentativa com o MESMO token (a regravação é upsert: idempotente). A fila limita as tentativas;
+     *  - falha PERMANENTE → o token avança (para não repetir sem fim), o evento fica na lista durável de rejeitados
+     *    (gcal_sync_errors, error_code 'evento_invalido', com event_id) e o calendário fica 'stale' (PARCIAL, visível)
+     *    enquanto houver rejeitado sem gravação posterior. 'stale' também tira o calendário da reconciliação
+     *    (que só age em 'ok'), então um evento rejeitado nunca é marcado como apagado por engano.
+     */
+    private function fecharLote(int $accountId, string $calendarId, string $token, array $n, float $t0, array $janela): void
+    {
+        $ms = (int)round((microtime(true) - $t0) * 1000);
+        $agora = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        if (($n['transitorios'] ?? 0) > 0) {
+            $this->repo->salvarSyncState($accountId, $calendarId, [
+                'status' => 'stale', 'processed' => $n['processed'], 'duration_ms' => $ms, 'attempt' => 1,
+                'next_sync_at' => $agora->modify('+2 minutes')->format('Y-m-d H:i:s'),
+            ] + $janela);   // sem 'sync_token' → o COALESCE do repositório mantém o token anterior
+            throw new GcalLoteParcial('lote parcial: ' . $n['transitorios'] . ' evento(s) com falha transitória; token mantido');
+        }
+        $pendentes = $this->repo->rejeitadosPendentes($accountId, $calendarId);
+        $this->repo->salvarSyncState($accountId, $calendarId, [
+            'sync_token' => $token, 'status' => $pendentes > 0 ? 'stale' : 'ok',
+            'processed' => $n['processed'], 'duration_ms' => $ms, 'attempt' => 0,
+            'next_sync_at' => $agora->modify('+15 minutes')->format('Y-m-d H:i:s'),
+        ] + $janela);
+    }
+
+    /** Falha que tende a passar sozinha: deadlock/lock wait (1213/1205), conexão (2006/2013, SQLSTATE 08xxx/40001). */
+    private static function falhaTransitoria(\Throwable $ex): bool
+    {
+        if (!$ex instanceof \PDOException) return false;
+        $info = $ex->errorInfo ?? [];
+        $sqlstate = (string)($info[0] ?? $ex->getCode());
+        $codigo = (int)($info[1] ?? 0);
+        return in_array($codigo, [1205, 1213, 2006, 2013], true) || $sqlstate === '40001' || str_starts_with($sqlstate, '08');
     }
 
     /** Sincroniza todos os calendários selecionados de uma conta. */

@@ -14,6 +14,7 @@ require_once __DIR__ . '/../_helpers/GuardaDono.php';   // UARPS-DONO (P0 17/11/
 require_once __DIR__ . '/../core/CorsPolicy.php';
 require_once __DIR__ . '/../core/SessionGate.php';
 require_once __DIR__ . '/../core/UARPSGate.php';
+require_once __DIR__ . '/../core/PermissaoAuditoria.php';   // AUDITORIA-PERMISSOES (18/11): 1 linha por mudança, na mesma transação
 require_once __DIR__ . '/../../config/db_connection.php';
 
 CorsPolicy::apply();
@@ -165,6 +166,7 @@ function handleCreatePermission(): void {
             return;
         }
 
+        $pdo->beginTransaction();
         $stmt = $pdo->prepare("
             INSERT INTO app_permissions (permission_key, permission_name, resource, action, description, created_at)
             VALUES (?, ?, ?, ?, ?, NOW())
@@ -177,13 +179,20 @@ function handleCreatePermission(): void {
             $action,
             $input['description'] ?? null
         ]);
+        $novoId = $pdo->lastInsertId();
+        PermissaoAuditoria::registrar($pdo, ['autor' => PermissaoAuditoria::autorDaSessao(), 'chave' => (string) $permissionKey, 'acao' => 'allowed',
+            'operacao' => 'criar_permissao', 'origem' => 'tela:permissions', 'tipo' => 'permission', 'id' => (string) $novoId, 'antes' => null,
+            'depois' => ['permission_key' => $permissionKey, 'permission_name' => $permissionName, 'resource' => $resource, 'action' => $action, 'description' => $input['description'] ?? null],
+            'motivo' => isset($input['motivo']) ? (string) $input['motivo'] : null]);
+        $pdo->commit();
 
         ApiResponse::success([
             'message' => 'Permissão criada com sucesso',
-            'permission_id' => $pdo->lastInsertId()
+            'permission_id' => $novoId
         ]);
 
     } catch (Exception $e) {
+        if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();   // AUDITORIA-PERMISSOES: falha na auditoria desfaz a mudança
         error_log("Permissions POST error: " . $e->getMessage());
         ApiResponse::error('DATABASE_ERROR', 500);
     }
@@ -219,6 +228,11 @@ function handleUpdatePermission(): void {
                 ]);
                 return;
             } elseif ($roleId) {
+                $pdo->beginTransaction();
+                $chave = (string) ($pdo->query('SELECT permission_key FROM app_permissions WHERE id = ' . (int) $permissionId)->fetchColumn() ?: ('permission:' . (int) $permissionId));
+                $ant = $pdo->prepare('SELECT deleted_at FROM app_role_permissions WHERE role_id = ? AND permission_id = ?');
+                $ant->execute([$roleId, $permissionId]); $linhaAntes = $ant->fetch(PDO::FETCH_ASSOC);
+                $antes = $linhaAntes === false ? ['vinculo' => 'inexistente'] : ['vinculo' => $linhaAntes['deleted_at'] === null ? 'ativo' : 'revogado'];
                 if ($action === 'grant') {
                     // Sem coluna `granted`: a concessão É a linha. O
                     // `ON DUPLICATE KEY` limpa o `deleted_at` para o caso de a
@@ -241,11 +255,18 @@ function handleUpdatePermission(): void {
                     ");
                     $stmt->execute([$roleId, $permissionId]);
                 }
+                PermissaoAuditoria::registrar($pdo, ['autor' => PermissaoAuditoria::autorDaSessao(), 'chave' => $chave, 'acao' => $action === 'grant' ? 'allowed' : 'revoked',
+                    'operacao' => $action === 'grant' ? 'ligar_permissao_papel' : 'desligar_permissao_papel', 'origem' => 'tela:permissions',
+                    'tipo' => 'role_permission', 'id' => (int) $roleId . ':' . (int) $permissionId, 'alvo' => ['role_id' => (int) $roleId, 'permission_id' => (int) $permissionId],
+                    'antes' => $antes, 'depois' => ['vinculo' => $action === 'grant' ? 'ativo' : ($linhaAntes === false ? 'inexistente' : 'revogado')],
+                    'motivo' => isset($input['motivo']) ? (string) $input['motivo'] : null]);
+                $pdo->commit();
             }
 
             ApiResponse::success(['message' => "Permissão {$action}ed com sucesso"]);
 
         } catch (Exception $e) {
+            if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();   // AUDITORIA-PERMISSOES
             error_log("Permissions GRANT/REVOKE error: " . $e->getMessage());
             ApiResponse::error('DATABASE_ERROR', 500);
         }
@@ -282,13 +303,26 @@ function handleUpdatePermission(): void {
 
         $params[] = $permissionId;
 
+        $pdo->beginTransaction();
+        $ant = $pdo->prepare('SELECT permission_key, permission_name, description FROM app_permissions WHERE id = ?');
+        $ant->execute([$permissionId]); $antes = $ant->fetch(PDO::FETCH_ASSOC) ?: null;
         $sql = "UPDATE app_permissions SET " . implode(', ', $updates) . " WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
+        if ($antes !== null) {
+            $depois = $antes;
+            if (isset($input['permission_name'])) $depois['permission_name'] = $input['permission_name'];
+            if (isset($input['description'])) $depois['description'] = $input['description'];
+            PermissaoAuditoria::registrar($pdo, ['autor' => PermissaoAuditoria::autorDaSessao(), 'chave' => (string) $antes['permission_key'], 'acao' => 'allowed',
+                'operacao' => 'editar_permissao', 'origem' => 'tela:permissions', 'tipo' => 'permission', 'id' => (string) $permissionId,
+                'antes' => $antes, 'depois' => $depois, 'motivo' => isset($input['motivo']) ? (string) $input['motivo'] : null]);
+        }
+        $pdo->commit();
 
         ApiResponse::success(['message' => 'Permissão atualizada com sucesso']);
 
     } catch (Exception $e) {
+        if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();   // AUDITORIA-PERMISSOES
         error_log("Permissions UPDATE error: " . $e->getMessage());
         ApiResponse::error('DATABASE_ERROR', 500);
     }
@@ -307,6 +341,10 @@ function handleDeletePermission(): void {
         $pdo = getConnection('DSHOWDASH');
 
         $pdo->beginTransaction();
+        $ant = $pdo->prepare('SELECT id, permission_key, permission_name, resource, action, description FROM app_permissions WHERE id = ?');
+        $ant->execute([$permissionId]); $antesPerm = $ant->fetch(PDO::FETCH_ASSOC) ?: null;
+        $vp = $pdo->prepare('SELECT role_id FROM app_role_permissions WHERE permission_id = ? AND deleted_at IS NULL');
+        $vp->execute([$permissionId]); $papeisAntes = array_map('intval', $vp->fetchAll(PDO::FETCH_COLUMN));
 
         $pdo->prepare("DELETE FROM app_user_permissions WHERE permission_id = ?")->execute([$permissionId]);
         $pdo->prepare("DELETE FROM app_role_permissions WHERE permission_id = ?")->execute([$permissionId]);
@@ -319,6 +357,9 @@ function handleDeletePermission(): void {
             ApiResponse::error('PERMISSION_NOT_FOUND', 404);
             return;
         }
+        PermissaoAuditoria::registrar($pdo, ['autor' => PermissaoAuditoria::autorDaSessao(), 'chave' => (string) ($antesPerm['permission_key'] ?? ('permission:' . (int) $permissionId)), 'acao' => 'revoked',
+            'operacao' => 'apagar_permissao', 'origem' => 'tela:permissions', 'tipo' => 'permission', 'id' => (string) $permissionId,
+            'antes' => ['permissao' => $antesPerm, 'papeis' => $papeisAntes], 'depois' => null, 'motivo' => isset($input['motivo']) ? (string) $input['motivo'] : null]);
 
         $pdo->commit();
 

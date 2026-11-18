@@ -898,9 +898,9 @@ final class ResourceController
                 'desconto_pct' => $prod['preco_promocional'] !== null && $prod['preco'] > 0
                     ? round((1 - $prod['preco_promocional'] / $prod['preco']) * 100, 1) : 0.0,
                 'custo'     => $prod['custo'],
-                'margem_pct'=> $preco > 0 ? round((($preco - $prod['custo']) / $preco) * 100, 1) : 0.0,
-                'markup'    => $prod['custo'] > 0 ? round($preco / $prod['custo'], 2) : 0.0,
-                'abaixo_custo' => $preco < $prod['custo'],
+                'margem_pct'=> ($preco > 0 && $prod['custo'] !== null) ? round((($preco - $prod['custo']) / $preco) * 100, 1) : null,   // DSHOW-018
+                'markup'    => ($prod['custo'] ?? 0) > 0 ? round($preco / $prod['custo'], 2) : null,
+                'abaixo_custo' => $prod['custo'] === null ? null : $preco < $prod['custo'],
             ];
         }
 

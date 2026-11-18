@@ -198,16 +198,33 @@ final class AnalyticsController
             $pontos = array_values($mapa);
         }
 
+        $resumo = [
+            'entradas_previsto'  => round(array_sum(array_column($pontos, 'entradas_previsto')), 2),
+            'entradas_realizado' => round(array_sum(array_column($pontos, 'entradas_realizado')), 2),
+            'saidas_previsto'    => round(array_sum(array_column($pontos, 'saidas_previsto')), 2),
+            'saidas_realizado'   => round(array_sum(array_column($pontos, 'saidas_realizado')), 2),
+            'saldo_final'        => $pontos === [] ? 0.0 : end($pontos)['saldo_acumulado'],
+        ];
+        // DSHOW-012 (origem: Codex DSHOW-011): sem fonte de recebíveis, entrada NÃO é zero — é indisponível; o saldo fica incompleto.
+        $dRec = $p->disponibilidade('receber');
+        // Decisão do Jhony (18/11): REALIZADO = data de liquidação; PREVISTO = vencimento. O espelho atual NÃO guarda a data de
+        // liquidação (só data_vencimento + valor_recebido/valor_pago) → o realizado vem AGRUPADO PELO VENCIMENTO e é marcado
+        // como 'aproximado' até a migração que captura a liquidação (proposta no PORTAO-DSHOW-012). O mock segue igual.
+        $temLiquidacao = method_exists($p, 'temDataLiquidacao') && $p->temDataLiquidacao();
+        $realizado = $p->ehSimulado() || $temLiquidacao ? ['estado' => 'ok', 'base' => $temLiquidacao ? 'liquidacao' : 'vencimento (simulado)']
+            : ['estado' => 'aproximado', 'base' => 'vencimento', 'motivo' => 'o espelho do Bling não guarda a data de liquidação; o realizado está agrupado pelo vencimento'];
+        $disp = ['entradas' => $dRec, 'saidas' => $p->disponibilidade('pagar'), 'saldo' => ['estado' => 'ok'], 'realizado' => $realizado];
+        if (($dRec['estado'] ?? 'ok') !== 'ok') {
+            foreach (['entradas_previsto', 'entradas_realizado', 'saldo_final'] as $c) $resumo[$c] = null;
+            foreach ($pontos as &$pt) { foreach (['entradas_previsto', 'entradas_realizado', 'entradas_vencido', 'saldo_dia', 'saldo_acumulado'] as $c) $pt[$c] = null; }
+            unset($pt);
+            $disp['saldo'] = ['estado' => 'incompleto', 'motivo' => ($dRec['estado'] ?? '') === 'parcial' ? 'entradas parciais' : 'entradas indisponíveis; só as saídas são conhecidas'];
+        }
         ApiResponse::success([
             'granularidade' => $g,
             'pontos' => $pontos,
-            'resumo' => [
-                'entradas_previsto'  => round(array_sum(array_column($pontos, 'entradas_previsto')), 2),
-                'entradas_realizado' => round(array_sum(array_column($pontos, 'entradas_realizado')), 2),
-                'saidas_previsto'    => round(array_sum(array_column($pontos, 'saidas_previsto')), 2),
-                'saidas_realizado'   => round(array_sum(array_column($pontos, 'saidas_realizado')), 2),
-                'saldo_final'        => $pontos === [] ? 0.0 : end($pontos)['saldo_acumulado'],
-            ],
+            'resumo' => $resumo,
+            'disponibilidade' => $disp,
         ], bling_meta(['filtros' => $f]));
     }
 
