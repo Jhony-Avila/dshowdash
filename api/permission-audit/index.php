@@ -58,60 +58,53 @@ function handleGetAudit(): void {
     try {
         $pdo = getConnection('DSHOWDASH');
 
-        // DSHOW-009 opção A (18/11): lê a tabela REAL app_permission_audit_log (a app_permission_audit nunca existiu).
-        // Mapa explícito: resource ← resource_type · resource_id ← resource_id · old_value/new_value ← NULL (sem equivalente; context_json não é exposto).
-        $where = ['pa.deleted_at IS NULL'];
-        $params = [];
+        // AUDITORIA-PERMISSOES (18/11): a tela lê AS DUAS fontes, unidas e ordenadas por data, com a coluna `fonte`:
+        //   'permissoes' = app_permission_audit_log (permissions/index.php, UserRolesRepository, scripts de portão)
+        //   'uarps'      = app_uarps_audit_log (tela UARPS: UarpsService::setTrigger → insertAuditLog)
+        // Mapa explícito (nada inventado): resource ← resource_type | entity_type · resource_id ← resource_id | entity_id ·
+        // old_value/new_value ← context_json.antes/.depois | old_state/new_state · user_agent da fonte UARPS = NULL (não existe lá).
+        $fp = ['pa.deleted_at IS NULL']; $fu = ['1=1']; $pp = []; $pu = [];
+        if ($userId)   { $fp[] = 'pa.user_id = ?';       $pp[] = $userId;           $fu[] = 'ua.user_id = ?';       $pu[] = $userId; }
+        if ($action)   { $fp[] = 'pa.action = ?';        $pp[] = $action;           $fu[] = 'ua.action = ?';        $pu[] = $action; }
+        if ($dateFrom) { $fp[] = 'pa.created_at >= ?';   $pp[] = $dateFrom;         $fu[] = 'ua.created_at >= ?';   $pu[] = $dateFrom; }
+        if ($dateTo)   { $fp[] = 'pa.created_at <= ?';   $pp[] = $dateTo . ' 23:59:59'; $fu[] = 'ua.created_at <= ?'; $pu[] = $dateTo . ' 23:59:59'; }
+        $wp = implode(' AND ', $fp); $wu = implode(' AND ', $fu);
 
-        if ($userId) {
-            $where[] = "pa.user_id = ?";
-            $params[] = $userId;
-        }
-
-        if ($action) {
-            $where[] = "pa.action = ?";
-            $params[] = $action;
-        }
-
-        if ($dateFrom) {
-            $where[] = "pa.created_at >= ?";
-            $params[] = $dateFrom;
-        }
-
-        if ($dateTo) {
-            $where[] = "pa.created_at <= ?";
-            $params[] = $dateTo . ' 23:59:59';
-        }
-
-        $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
-
-        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM app_permission_audit_log pa {$whereClause}");
-        $countStmt->execute($params);
-        $total = (int)$countStmt->fetchColumn();
+        $c1 = $pdo->prepare("SELECT COUNT(*) FROM app_permission_audit_log pa WHERE {$wp}"); $c1->execute($pp);
+        $c2 = $pdo->prepare("SELECT COUNT(*) FROM app_uarps_audit_log ua WHERE {$wu}");     $c2->execute($pu);
+        $total = (int) $c1->fetchColumn() + (int) $c2->fetchColumn();
 
         $sql = "
-            SELECT 
-                pa.id,
-                pa.user_id,
-                u.username AS user_name   /* app_users sem coluna name (DSHOW-009) */,
-                u.email as user_email,
-                pa.action,
-                pa.resource_type AS resource,
-                pa.resource_id,
-                NULL AS old_value,
-                NULL AS new_value,
-                pa.ip_address,
-                pa.user_agent,
-                pa.created_at
-            FROM app_permission_audit_log pa
-            LEFT JOIN app_users u ON pa.user_id = u.id
-            {$whereClause}
-            ORDER BY pa.created_at DESC
-            LIMIT {$limit} OFFSET {$offset}
+            SELECT t.fonte, t.id, t.user_id, u.username AS user_name, u.email AS user_email, t.action, t.resource, t.resource_id,
+                   t.old_value, t.new_value, t.ip_address, t.user_agent, t.created_at
+              FROM (
+                SELECT CONVERT('permissoes' USING utf8mb4) COLLATE utf8mb4_unicode_ci AS fonte, pa.id, pa.user_id,
+                       CONVERT(pa.action USING utf8mb4) COLLATE utf8mb4_unicode_ci AS action,
+                       CONVERT(pa.resource_type USING utf8mb4) COLLATE utf8mb4_unicode_ci AS resource,
+                       CONVERT(pa.resource_id USING utf8mb4) COLLATE utf8mb4_unicode_ci AS resource_id,
+                       CONVERT(JSON_UNQUOTE(JSON_EXTRACT(pa.context_json, '$.antes')) USING utf8mb4) COLLATE utf8mb4_unicode_ci AS old_value,
+                       CONVERT(JSON_UNQUOTE(JSON_EXTRACT(pa.context_json, '$.depois')) USING utf8mb4) COLLATE utf8mb4_unicode_ci AS new_value,
+                       CONVERT(pa.ip_address USING utf8mb4) COLLATE utf8mb4_unicode_ci AS ip_address,
+                       CONVERT(pa.user_agent USING utf8mb4) COLLATE utf8mb4_unicode_ci AS user_agent, pa.created_at
+                  FROM app_permission_audit_log pa WHERE {$wp}
+                UNION ALL
+                SELECT CONVERT('uarps' USING utf8mb4) COLLATE utf8mb4_unicode_ci, ua.id, ua.user_id,
+                       CONVERT(ua.action USING utf8mb4) COLLATE utf8mb4_unicode_ci,
+                       CONVERT(ua.entity_type USING utf8mb4) COLLATE utf8mb4_unicode_ci,
+                       CONVERT(ua.entity_id USING utf8mb4) COLLATE utf8mb4_unicode_ci,
+                       CONVERT(ua.old_state USING utf8mb4) COLLATE utf8mb4_unicode_ci,
+                       CONVERT(ua.new_state USING utf8mb4) COLLATE utf8mb4_unicode_ci,
+                       CONVERT(ua.ip_address USING utf8mb4) COLLATE utf8mb4_unicode_ci,
+                       NULL, ua.created_at
+                  FROM app_uarps_audit_log ua WHERE {$wu}
+              ) t
+              LEFT JOIN app_users u ON t.user_id = u.id
+             ORDER BY t.created_at DESC, t.fonte ASC, t.id DESC
+             LIMIT {$limit} OFFSET {$offset}
         ";
 
         $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute(array_merge($pp, $pu));
         $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         ApiResponse::success([
