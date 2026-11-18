@@ -48,3 +48,13 @@ export function manterNovos<T extends { atributo_id: number; novo?: boolean }>(f
   const ids = new Set(frescos.map((i) => i.atributo_id));
   return [...frescos, ...rascunho.filter((i) => i.novo && !ids.has(i.atributo_id))];
 }
+
+// ── DSHOW-070 · Dicionário: renomear opção pelo rótulo ORIGINAL (o que estava na tela quando "Renomear" foi clicado) ───────────
+export interface RascunhoRenomear { id: number; texto: string; original: string }
+export type PrecondicaoRenomear = { acao: 'nada' } | { acao: 'enviar'; id: number; rotulo: string; rotulo_atual: string };
+/** "Nada mudou" e `rotulo_atual` usam o original imutável do rascunho, nunca o rótulo da lista relida depois. */
+export function precondicaoRenomear(r: RascunhoRenomear): PrecondicaoRenomear {
+  const rotulo = r.texto.trim();
+  if (!rotulo || rotulo === r.original) return { acao: 'nada' };
+  return { acao: 'enviar', id: r.id, rotulo, rotulo_atual: r.original };
+}

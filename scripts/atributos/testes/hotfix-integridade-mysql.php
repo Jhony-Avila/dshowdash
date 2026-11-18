@@ -129,6 +129,19 @@ $ok('064: Y (de B) continua vivo e o item de A não entrou', (int) $um('SELECT C
     && (int) $um('SELECT COUNT(*) FROM eq_grupo_atributo WHERE grupo_id = ? AND atributo_id = ?', [$k64, $atr['Vias']]) === 0);
 $ok('064: nenhuma auditoria "itens" de A; versão do kit igual a R2', $audit('kit', (string) $k64, 'itens') === $audItens && (int) $repo->grupo($k64)['versao'] === $r2 && $r2 === $r1 + 1);
 
+// =========================================================================================================================================
+// DSHOW-070 · Renomear opção com o rótulo velho: rotulo_atual X quando o gravado é Y → 409, Y no banco, sem auditoria "renomear" nova
+// =========================================================================================================================================
+$aOp = (int) $adm->salvarAtributo(['rotulo' => 'Acabamento', 'tipo' => 'opcao'])['atributo']['id'];
+$ops = $adm->adicionarOpcao($aOp, 'Preto')['opcoes'];
+$opId = (int) array_column($ops, 'id', 'rotulo')['Preto'];
+$admB->renomearOpcao($opId, 'Grafite', 'Preto');                                       // B renomeia X → Y
+$audRen = $audit('opcao', (string) $opId, 'renomear');
+$e70 = $erro(fn() => $adm->renomearOpcao($opId, 'Preto fosco', 'Preto'));               // A, com o rascunho aberto antes, manda rotulo_atual X
+$ok('070: rotulo_atual X com o gravado Y → 409', $e70?->http === 409 && $e70->codigo === 'CONFLICT');
+$ok('070: banco continua com Y', (string) $um('SELECT rotulo FROM eq_opcao WHERE id = ?', [$opId]) === 'Grafite');
+$ok('070: nenhuma auditoria "renomear" nova', $audit('opcao', (string) $opId, 'renomear') === $audRen && $audRen === 1);
+
 // @@FIM@@
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " hotfix-integridade-mysql (071 unidades · 064 itens · 070 opção · 065 escopo · vincular opostos): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);

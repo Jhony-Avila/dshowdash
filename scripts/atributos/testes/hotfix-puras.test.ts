@@ -56,6 +56,15 @@ async function principal() {
     igual('064: "aplica a todos" muda a assinatura do escopo', I.assinaturaEscopo(true, ['A|X']) === I.assinaturaEscopo(false, ['A|X']), false);
   }
 
+  // ── DSHOW-070 · Dicionário: o rótulo que vale é o ORIGINAL do rascunho ──
+  {
+    const r = { id: 7, texto: 'Preto fosco', original: 'Preto' };
+    igual('070: lista relida mostra outro rótulo, mas rotulo_atual = original do clique', I.precondicaoRenomear(r), { acao: 'enviar', id: 7, rotulo: 'Preto fosco', rotulo_atual: 'Preto' });
+    igual('070: texto igual ao original → nada mudou (não envia)', I.precondicaoRenomear({ id: 7, texto: ' Preto ', original: 'Preto' }), { acao: 'nada' });
+    igual('070: texto igual ao rótulo NOVO da lista (≠ original) → envia com o original (o servidor decide 409)', I.precondicaoRenomear({ id: 7, texto: 'Grafite', original: 'Preto' }), { acao: 'enviar', id: 7, rotulo: 'Grafite', rotulo_atual: 'Preto' });
+    igual('070: vazio → nada', I.precondicaoRenomear({ id: 7, texto: '   ', original: 'Preto' }), { acao: 'nada' });
+  }
+
   console.log(`${falhas === 0 ? '[OK]  ' : '[FALHA]'} hotfix-puras (integridade: unidades, kits, dicionário, vincular): ${n} casos, ${falhas} falha(s)`);
   process.exitCode = falhas === 0 ? 0 : 1;
 }
