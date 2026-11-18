@@ -251,7 +251,7 @@ final class ProdutosLeitura
         };
         $itens = []; foreach ($ficha as $aid => $it) $itens[] = $mk((int) $aid, $it);
         $fora = []; foreach (array_diff_key($vals, $ficha) as $aid => $_) $fora[] = $mk((int) $aid, null);
-        $legNao = []; foreach (array_diff_key($leg, $ficha, $vals) as $aid => $_) $legNao[] = $mk((int) $aid, null);
+        $legNao = []; foreach (array_diff_key($leg, $ficha, $vals, $excl) as $aid => $_) $legNao[] = $mk((int) $aid, null);   // exceção (excluído aqui) não volta como "legado sem vínculo"
         $estados = []; foreach ($vals as $aid => $vs) $estados[$aid] = $vs[0]['estado'];
         $exc = []; foreach ($excl as $aid => $e) $exc[] = ['atributo_id' => (int) $aid, 'rotulo' => $atr[$aid]['rotulo'] ?? "#$aid", 'motivo' => $e['motivo'], 'kits' => $e['grupos']];
         return [
