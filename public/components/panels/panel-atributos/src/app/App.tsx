@@ -30,16 +30,16 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
   // estado → endereço: troca de tela = NOVA entrada no histórico (pushState; Voltar funciona); só normalizar o mesmo estado
   // (#/panel-atributos → #/panel-atributos/produtos) usa replaceState. pushState não dispara evento: nem o shell nem este painel
   // reagem ao próprio registro. O shell trata Voltar/Avançar dentro do MESMO painel sem remontar (guarda do mesmo painel).
-  const montado = React.useRef(false);
-  React.useEffect(() => { const t = window.setTimeout(() => { montado.current = true; }, 0); return () => window.clearTimeout(t); }, []);
   React.useEffect(() => {
     const alvo = rotaDe({ aba, produto, kit });
     if (window.location.hash === alvo) return;
     const atual = lerRota(window.location.hash);
     const url = window.location.pathname + window.location.search + alvo;
     if (atual && atual.aba === aba && atual.produto === produto && atual.kit === kit) window.history.replaceState(window.history.state, '', url);
-    else if (!montado.current) window.history.pushState(window.history.state, '', url);   // na MONTAGEM: sem evento (um evento aqui faria o shell remontar)
-    else window.location.hash = alvo;   // troca de tela DEPOIS de montado: nova entrada + hashchange/popstate → o destaque do menu acompanha (mesmo painel: o shell não remonta)
+    // SEMPRE pushState (sem evento). Medido: qualquer evento de endereço (location.hash → hashchange/popstate) faz o shell REMONTAR o
+    // painel e o estado se perde (filtro vindo da Visão geral, seleção de produtos). Efeito aceito: trocar de aba DENTRO do módulo não
+    // muda o destaque do menu lateral (o clique no menu continua destacando o item).
+    else window.history.pushState(window.history.state, '', url);
   }, [aba, produto, kit]);
   // endereço → estado: Voltar/Avançar (popstate), link colado ou hash editado (hashchange)
   React.useEffect(() => {
