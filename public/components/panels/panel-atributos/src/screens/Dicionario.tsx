@@ -301,7 +301,7 @@ function EditorAtributo({ atributo, recemCriado, unidades, pode, aoFechar, aoRec
         const r = await enviar<{ atributo: { id: number } }>('atributo', corpo);
         const extras = form.extras.filter((u) => String(u) !== form.unidade_id);
         if (numerico && extras.length) {
-          try { await enviar('atributo_unidades', { atributo_id: r.atributo.id, unidades: extras }); }
+          try { await enviar('atributo_unidades', { atributo_id: r.atributo.id, unidades: extras, unidades_antes: [] }); }
           catch (e) { aviso(`Atributo criado, mas as unidades permitidas não foram gravadas: ${mensagemErro(e)}`, 'erro'); }
         }
         aviso(`Atributo "${form.rotulo.trim()}" criado.`);
@@ -334,7 +334,7 @@ function EditorAtributo({ atributo, recemCriado, unidades, pode, aoFechar, aoRec
         }
       }
       if (mudouExtras) {
-        try { await enviar('atributo_unidades', { atributo_id: atributo.id, unidades: extrasAlvo }); }
+        try { await enviar('atributo_unidades', { atributo_id: atributo.id, unidades: extrasAlvo, unidades_antes: inicial.extras }); }   // DSHOW-045: unidades_antes = a lista que esta tela viu
         catch (e) {
           if (!mudouCampos) throw e;
           aviso(`Atributo salvo, mas as unidades permitidas não foram gravadas: ${mensagemErro(e)}`, 'erro');
@@ -545,7 +545,7 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode }: { atributoId: numb
   const mover = (i: number, d: -1 | 1) => {
     const j = i + d; if (j < 0 || j >= opcoes.length || ocupado) return;
     const ordem = opcoes.map((o) => o.id); [ordem[i], ordem[j]] = [ordem[j], ordem[i]];
-    void executar(`ordem${opcoes[i].id}`, () => enviar('opcao_reordenar', { atributo_id: atributoId, ordem }), 'Ordem salva.', { id: opcoes[i].id, acao: d < 0 ? 'subir' : 'descer' });
+    void executar(`ordem${opcoes[i].id}`, () => enviar('opcao_reordenar', { atributo_id: atributoId, ordem, ordem_antes: opcoes.map((o) => o.id) }), 'Ordem salva.', { id: opcoes[i].id, acao: d < 0 ? 'subir' : 'descer' });
   };
   const renomear = async (o: OpcaoApi) => {
     if (!renomeando) return;

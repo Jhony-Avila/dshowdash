@@ -311,7 +311,7 @@ $ok('033 exato: 0,5 m aceito', fn() => (bool) $grava(201, '0.5', $uM));
 $semMutacao('033 exato: 1,000001 m', 201, ['valor' => '1.000001', 'unidade_id' => $uM, 'versao' => $verAlt(201)]);
 // unidade extra SEM fator → 422 claro (antes: os limites eram ignorados)
 $uPe = (int) $adm->criarUnidade(['simbolo' => 'pe033', 'nome' => 'pé sem fator (teste)', 'grandeza' => 'comprimento'])['id'];
-$adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => [$uPe]]);
+$adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => [$uPe], 'unidades_antes' => []]);
 $e033 = $erro(fn() => $adm->gravarValor(['product_id' => 201, 'atributo_id' => $alt, 'valor' => '1', 'unidade_id' => $uPe, 'versao' => $verAlt(201)]));
 $ok('033 unidade sem fator → 422 UNIT_WITHOUT_FACTOR com mensagem clara', $e033?->http === 422 && str_contains($e033->getMessage(), 'fator de conversão'), $e033 ? $e033->getMessage() : 'sem erro');
 
@@ -380,6 +380,28 @@ foreach (['' => 'texto vazio', '   ' => 'só espaços'] as $v => $nome)
         && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 103 AND atributo_id = ?', [$txt]) === 0 && (int) $um('SELECT COUNT(*) FROM eq_auditoria') === $a4);
 $ok('#4: número vazio → 422', fn() => $erro(fn() => $adm->gravarValor(['product_id' => 104, 'atributo_id' => $alt, 'valor' => '']))?->http === 422);
 $ok('#4: "não se aplica" sem valor continua permitido', fn() => (bool) $adm->gravarValor(['product_id' => 103, 'atributo_id' => $txt, 'estado' => 'nao_se_aplica']));
+
+// ---- DSHOW-045: unidades extras e ordem das opções exigem a lista ANTERIOR (versão do conjunto), conferida sob trava -------------
+$ex = fn() => array_map('intval', $repo->unidadesExtras($alt));
+$ult = fn(string $acao) => $linhas("SELECT antes, depois, usuario FROM eq_auditoria WHERE entidade = 'atributo' AND entidade_id = ? AND acao = ? ORDER BY id DESC LIMIT 1", [(string) ($acao === 'reordenar_opcoes' ? $moId : $alt), $acao])[0] ?? null;
+$vistoA = $ex(); $vistoB = $ex(); sort($vistoA); sort($vistoB);                 // as duas abas leram a mesma lista
+$adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => array_merge($vistoA, [$uMm]), 'unidades_antes' => $vistoA]);   // aba A inclui U2 (mm)
+$a045 = (int) $um('SELECT COUNT(*) FROM eq_auditoria');
+$e045 = $erro(fn() => $adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => $vistoB, 'unidades_antes' => $vistoB]));   // aba B envia a lista antiga
+$ok('045 unidades: aba B com a lista antiga → 409; U2 preservada; auditoria sem linha nova', $e045?->http === 409 && in_array($uMm, $ex(), true) && (int) $um('SELECT COUNT(*) FROM eq_auditoria') === $a045, $e045 ? $e045->getMessage() : 'sem erro');
+$h = $ult('unidades_permitidas');
+$ok('045 unidades: histórico antes/depois corretos', $h && json_decode($h['antes'], true)['unidades'] === $vistoA && in_array($uMm, json_decode($h['depois'], true)['unidades'], true), json_encode($h));
+$ok('045 unidades: sem a lista anterior → 422', fn() => $erro(fn() => $adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => [$uPe]]))?->http === 422 && in_array($uMm, $ex(), true));
+$ord = fn() => array_map(static fn($o) => (int) $o['id'], $repo->opcoes($moId));
+$O = $ord(); $X = array_reverse($O); $Y = array_merge(array_slice($O, 1), [$O[0]]);
+$adm->reordenarOpcoes($moId, $X, $O);                                             // aba A reordena (viu O)
+$a045 = (int) $um('SELECT COUNT(*) FROM eq_auditoria');
+$e045b = $erro(fn() => $adm->reordenarOpcoes($moId, $Y, $O));                     // aba B reordena com a ordem velha
+$ok('045 opções: 2ª reordenação concorrente → 409; a ordem da aba A fica; auditoria sem linha nova', $e045b?->http === 409 && $ord() === $X && (int) $um('SELECT COUNT(*) FROM eq_auditoria') === $a045, $e045b ? $e045b->getMessage() : 'sem erro');
+$h = $ult('reordenar_opcoes');
+$ok('045 opções: histórico antes/depois corretos', $h && json_decode($h['antes'], true)['ordem'] === $O && json_decode($h['depois'], true)['ordem'] === $X, json_encode($h));
+$ok('045 opções: com a ordem atual a aba B consegue', fn() => (bool) $adm->reordenarOpcoes($moId, $Y, $X) && $ord() === $Y);
+$ok('045 opções: sem a ordem anterior → 422', fn() => $erro(fn() => $adm->reordenarOpcoes($moId, $O))?->http === 422 && $ord() === $Y);
 
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " modulo-mysql (kits, vínculos, massa, sugestões, unidade): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);

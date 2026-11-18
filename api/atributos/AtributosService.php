@@ -278,9 +278,14 @@ final class AtributosService
         if (!in_array($a['tipo'], ['numero', 'inteiro'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Só atributos numéricos têm unidade.', ['atributo_id']);
         $quero = array_values(array_unique(array_map('intval', (array) ($b['unidades'] ?? []))));
         foreach ($quero as $u) if (!$this->repo->unidade($u)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inexistente.', ['unidades']);
-        $antes = $this->repo->unidadesExtras($aid);
-        if ($quero == $antes) return ['unidades' => $antes, 'sem_mudanca' => true];
-        $this->repo->transacao(function () use ($aid, $quero, $antes, $b) {
+        // DSHOW-045: substituir a lista inteira exige a lista ANTERIOR que a tela viu (versão do conjunto), conferida sob trava
+        $esperado = self::listaIds($b['unidades_antes'] ?? null, 'unidades_antes'); sort($esperado);
+        $this->repo->transacao(function () use ($aid, $quero, $esperado, $b) {
+            if (!$this->repo->travarAtributo($aid, true)) throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
+            $antes = array_map('intval', $this->repo->unidadesExtras($aid)); sort($antes);
+            if ($antes !== $esperado) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou as unidades permitidas deste atributo. Recarregue e tente de novo.');
+            $q = $quero; sort($q);
+            if ($q === $antes) return;   // sem mudança: nem gravação nem auditoria
             $this->repo->definirUnidadesExtras($aid, $quero, $this->usuario);
             $this->repo->auditar($this->usuario, 'unidades_permitidas', 'atributo', (string) $aid, ['unidades' => $antes], ['unidades' => $quero], $b['motivo'] ?? null);
         });
@@ -341,7 +346,16 @@ final class AtributosService
      * Atributos no app (04/11, B6 Etapa 2): REORDENA as opções de um atributo (eq_opcao.posicao). `ordem` = TODOS os ids das opções do
      * atributo (ativas e inativas), cada um uma vez; conjunto diferente do atual (alguém criou/removeu opção) → 409. Auditoria antes/depois.
      */
-    public function reordenarOpcoes(int $atributoId, mixed $ordem): array
+    /** DSHOW-045: lista de ids inteiros positivos (a "versão do conjunto" enviada pela tela). Ausente → 422. */
+    private static function listaIds(mixed $v, string $campo): array
+    {
+        if (!is_array($v) || !array_is_list($v) || count($v) > 500) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a lista anterior (versão do conjunto). Recarregue.', [$campo]);
+        $out = [];
+        foreach ($v as $x) { $i = is_int($x) ? $x : (is_string($x) && preg_match('/^[1-9][0-9]{0,9}$/', $x) ? (int) $x : 0); if ($i <= 0) throw new AtributosErro('VALIDATION_ERROR', 422, 'Lista anterior inválida.', [$campo]); $out[] = $i; }
+        return $out;
+    }
+
+    public function reordenarOpcoes(int $atributoId, mixed $ordem, mixed $ordemAntes = null): array
     {
         $this->exigirAdmin();
         $a = $this->repo->atributo($atributoId) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
@@ -350,11 +364,15 @@ final class AtributosService
         $ids = [];
         foreach ($ordem as $x) { $i = is_int($x) ? $x : (is_string($x) && preg_match('/^[1-9][0-9]{0,9}$/', $x) ? (int) $x : 0); if ($i <= 0) throw new AtributosErro('VALIDATION_ERROR', 422, 'Ordem inválida.', ['ordem']); $ids[] = $i; }
         if (count(array_unique($ids)) !== count($ids)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Opção repetida na ordem.', ['ordem']);
-        $antes = array_map(static fn($o) => (int) $o['id'], $this->repo->opcoes($atributoId));
-        $a1 = $antes; $b1 = $ids; sort($a1); sort($b1);
-        if ($a1 !== $b1) throw new AtributosErro('CONFLICT', 409, 'A lista de opções mudou. Recarregue e tente de novo.');
-        if ($antes === $ids) return ['opcoes' => $this->repo->opcoes($atributoId)];
-        $this->repo->transacao(function () use ($atributoId, $ids, $antes) {
+        // DSHOW-045: a ordem ANTERIOR que a tela viu (versão do conjunto, sensível à ordem) é obrigatória e conferida sob trava
+        $esperado = self::listaIds($ordemAntes, 'ordem_antes');
+        $this->repo->transacao(function () use ($atributoId, $ids, $esperado) {
+            if (!$this->repo->travarAtributo($atributoId, true)) throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
+            $antes = array_map(static fn($o) => (int) $o['id'], $this->repo->opcoes($atributoId));
+            if ($antes !== $esperado) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou as opções deste atributo. Recarregue e tente de novo.');
+            $a1 = $antes; $b1 = $ids; sort($a1); sort($b1);
+            if ($a1 !== $b1) throw new AtributosErro('CONFLICT', 409, 'A lista de opções mudou. Recarregue e tente de novo.');
+            if ($antes === $ids) return;
             foreach ($ids as $pos => $id) $this->repo->definirPosicaoOpcao($id, $atributoId, $pos);
             $this->repo->auditar($this->usuario, 'reordenar_opcoes', 'atributo', (string) $atributoId, ['ordem' => $antes], ['ordem' => $ids], null);
         });

@@ -190,7 +190,7 @@ try {
         'POST atributo_unidades' => $svc->definirUnidadesPermitidas($corpo),
         'POST opcao' => $svc->adicionarOpcao((int) ($corpo['atributo_id'] ?? 0), $corpo['rotulo'] ?? null),
         'POST opcao_renomear' => $svc->renomearOpcao((int) ($corpo['id'] ?? 0), $corpo['rotulo'] ?? null, $corpo['rotulo_atual'] ?? null),
-        'POST opcao_reordenar' => $svc->reordenarOpcoes((int) ($corpo['atributo_id'] ?? 0), $corpo['ordem'] ?? null),
+        'POST opcao_reordenar' => $svc->reordenarOpcoes((int) ($corpo['atributo_id'] ?? 0), $corpo['ordem'] ?? null, $corpo['ordem_antes'] ?? null),
         'POST opcao_ativa' => $svc->definirOpcaoAtiva((int) ($corpo['id'] ?? 0), !empty($corpo['ativo'])),
         'POST unidade' => isset($corpo['id']) ? $svc->salvarUnidade($corpo) : $svc->criarUnidade($corpo),
         'POST unidade_ativa' => $svc->definirUnidadeAtiva((int) ($corpo['id'] ?? 0), !empty($corpo['ativo'])),
