@@ -378,7 +378,7 @@ function EditorAtributo({ atributo, recemCriado, unidades, pode, aoFechar, aoRec
         {atributo !== null && pode && <Botao perigo={ativo} desligado={salvando} aoClicar={() => { setConfirmarAtivo(true); setMotivoAtivo(''); }}>{ativo ? 'Desativar atributo' : 'Reativar atributo'}</Botao>}
       </span>
       <Botao aoClicar={aoFechar} desligado={salvando}>{somenteLeitura ? 'Fechar' : 'Cancelar'}</Botao>
-      {pode && !pedidoMotivo && <Botao primario trabalhando={salvando} aoClicar={() => void salvar()}>{atributo === null ? 'Criar atributo' : 'Salvar'}</Botao>}
+      {pode && !pedidoMotivo && <Botao primario trabalhando={salvando} aoClicar={() => void salvar()}>{atributo === null ? (COM_OPCOES.includes(form.tipo) ? 'Criar e cadastrar opções' : 'Criar atributo') : 'Salvar'}</Botao>}
       {pode && pedidoMotivo && <Botao primario trabalhando={salvando} desligado={motivo.trim().length < 5} aoClicar={() => void salvar(motivo.trim())}>Salvar com motivo</Botao>}
     </div>
   );
@@ -415,14 +415,15 @@ function EditorAtributo({ atributo, recemCriado, unidades, pode, aoFechar, aoRec
         <section className="at-dic-secao" aria-labelledby="dic-sec-ident">
           <h3 id="dic-sec-ident">Identificação</h3>
           <div className="at-dic-form">
-            <label className="at-rotulo-campo at-dic-form--largo">Rótulo
+            <label className="at-rotulo-campo at-dic-form--largo">Nome do atributo
               <input className="at-campo" value={form.rotulo} maxLength={128} readOnly={somenteLeitura} aria-invalid={invalido('rotulo')} required onChange={(e) => set({ rotulo: e.target.value })} />
             </label>
-            <label className="at-rotulo-campo">Código
-              <input className="at-campo at-dic-codigo" value={atributo?.codigo ?? ''} placeholder={atributo === null ? 'gerado ao criar' : ''} readOnly aria-readonly />
-              <span className="at-dic-dica">Gerado pelo sistema; nunca muda.</span>
-            </label>
-            <label className="at-rotulo-campo">Tipo
+            <div className="at-rotulo-campo">Código
+              {atributo === null
+                ? <span className="at-dic-dica">Código gerado automaticamente</span>
+                : <span><code className="at-codigo">{atributo.codigo}</code> <span className="at-dic-dica">gerado automaticamente; nunca muda</span></span>}
+            </div>
+            <label className="at-rotulo-campo">Como será preenchido?
               <select className="at-campo" value={form.tipo} disabled={somenteLeitura || tipoTravado} aria-invalid={invalido('tipo')} aria-describedby={tipoTravado ? 'dic-tipo-trava' : undefined}
                 onChange={(e) => set({ tipo: e.target.value as TipoAtributo })}>
                 {TIPOS.map((t) => <option key={t} value={t}>{TIPO[t]}</option>)}
@@ -506,7 +507,7 @@ function EditorAtributo({ atributo, recemCriado, unidades, pode, aoFechar, aoRec
               : !COM_OPCOES.includes(atributo.tipo) ? <p className="at-dic-dica">Salve o atributo como "{TIPO[form.tipo]}" para cadastrar as opções.</p>
               : erroDetalhe ? <Erro mensagem={erroDetalhe} aoTentar={() => void carregarDetalhe()} />
               : !detalhe ? <Carregando rotulo="Carregando as opções" />
-              : <ListaOpcoes atributoId={atributo.id} opcoes={opcoes} setOpcoes={setOpcoes} pode={pode} />}
+              : <ListaOpcoes atributoId={atributo.id} opcoes={opcoes} setOpcoes={setOpcoes} pode={pode} focarNova={recemCriado} />}
           </section>
         )}
       </div>
@@ -515,9 +516,12 @@ function EditorAtributo({ atributo, recemCriado, unidades, pode, aoFechar, aoRec
 }
 
 // ── Opções (criar, renomear inline, reordenar por botões/teclado, desativar/reativar) ─────────────────────────────────────────
-function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode }: { atributoId: number; opcoes: OpcaoApi[]; setOpcoes: (o: OpcaoApi[]) => void; pode: boolean }) {
+function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode, focarNova = false }: { atributoId: number; opcoes: OpcaoApi[]; setOpcoes: (o: OpcaoApi[]) => void; pode: boolean; focarNova?: boolean }) {
   const { aviso } = useModulo();
   const [nova, setNova] = React.useState('');
+  // UX-1: atributo recém-criado com opções → o foco vai direto para "Nova opção"
+  const refNova = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => { if (focarNova && refNova.current) { refNova.current.scrollIntoView({ block: 'center' }); refNova.current.focus(); } }, [focarNova]);
   const [ocupado, setOcupado] = React.useState<string | null>(null);
   const [renomeando, setRenomeando] = React.useState<{ id: number; texto: string } | null>(null);
   const lista = React.useRef<HTMLUListElement>(null);
@@ -601,7 +605,7 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode }: { atributoId: numb
         <>
           <span className="at-dic-dica">Renomear vale para todos os produtos que usam a opção. Reordene com os botões ↑ ↓ ou Alt+↑ / Alt+↓.</span>
           <div className="at-dic-nova-opcao">
-            <input className="at-campo" aria-label="Nova opção" placeholder="Nova opção" maxLength={160} value={nova} onChange={(e) => setNova(e.target.value)}
+            <input ref={refNova} className="at-campo" aria-label="Nova opção" placeholder="Nova opção" maxLength={160} value={nova} onChange={(e) => setNova(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void adicionar(); } }} />
             <Botao trabalhando={ocupado === 'nova'} desligado={!nova.trim()} aoClicar={() => void adicionar()}>Adicionar opção</Botao>
           </div>

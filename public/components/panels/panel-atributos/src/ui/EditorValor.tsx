@@ -19,8 +19,9 @@ function rascunhoDe(it: ItemFicha): string {
   return v.texto ?? '';
 }
 
-export function EditorValor({ item, productId, podeEditar, compacto = false, aoGravar, aoRecarregar, autoFoco = false }: {
+export function EditorValor({ item, productId, podeEditar, compacto = false, aoGravar, aoRecarregar, autoFoco = false, rotuloVazio }: {
   item: ItemFicha; productId: number; podeEditar: boolean; compacto?: boolean; aoGravar: () => void; aoRecarregar: () => void; autoFoco?: boolean;
+  /** UX-1: texto do campo vazio editável (a grade do Preencher usa "Preencher"); sem ele, o de sempre */ rotuloVazio?: string;
 }) {
   const [txt, setTxt] = React.useState(() => rascunhoDe(item));
   const [sit, setSit] = React.useState<Situacao>({ tipo: 'parado' });
@@ -85,7 +86,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     campo = (
       <select id={id} className="at-campo" value={txt} disabled={ro || travado} aria-label={item.rotulo} autoFocus={autoFoco}
         onChange={(e) => { setTxt(e.target.value); if (e.target.value === '') { if (item.valor) chamar('valor_limpar', { versao }); } else gravar(Number(e.target.value)); }}>
-        <option value="">—</option>
+        <option value="">{rotuloVazio ?? '—'}</option>
         {item.opcoes.filter((o) => o.ativo || String(o.id) === txt).map((o) => <option key={o.id} value={o.id}>{o.rotulo}{o.ativo ? '' : ' (desativada)'}</option>)}
       </select>);
   } else if (item.tipo === 'multiopcao') {
@@ -97,7 +98,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   } else {
     campo = (
       <input id={id} className={`at-campo ${numerico ? 'at-campo--num' : ''}`} type={item.tipo === 'data' ? 'date' : 'text'} inputMode={numerico ? 'decimal' : undefined}
-        value={txt} readOnly={ro} aria-label={item.rotulo} autoFocus={autoFoco} placeholder={ro ? '' : numerico ? '—' : item.tipo === 'data' ? '' : 'Digite…'}
+        value={txt} readOnly={ro} aria-label={item.rotulo} autoFocus={autoFoco} placeholder={ro ? '' : rotuloVazio ?? (numerico ? '—' : item.tipo === 'data' ? '' : 'Digite…')}
         onChange={(e) => setTxt(e.target.value)} onBlur={confirmarTexto}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmarTexto(); } if (e.key === 'Escape') { setTxt(original.current); setUnidRascunho(null); } }} />);   // Esc cancela o rascunho inteiro (texto e unidade)
   }

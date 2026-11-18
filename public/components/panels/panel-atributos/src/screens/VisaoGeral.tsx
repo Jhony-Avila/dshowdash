@@ -19,7 +19,8 @@ export function VisaoGeral() {
   const c = d.cartoes;
   const cartoes: { n: string; rot: string; det: string; tom?: string; ir: () => void }[] = [
     { n: String(c.ativos), rot: 'produtos ativos', det: 'no catálogo do Precifica', ir: () => m.ir('produtos', { filtro: {} }) },
-    { n: String(c.com_kit), rot: 'com kit específico', det: `${c.sem_kit} só com o kit Base`, ir: () => m.ir('produtos', { filtro: { semKit: true } }) },
+    // UX-1: o número do cartão = o total da lista que o clique abre (antes: mostrava com_kit e abria "sem kit")
+    { n: String(c.sem_kit), rot: 'sem kit específico', det: `${c.com_kit} com kit específico`, tom: c.sem_kit ? 'aviso' : undefined, ir: () => m.ir('produtos', { filtro: { semKit: true } }) },
     { n: c.essencial_medio === null ? '—' : `${decimal(String(c.essencial_medio))}%`, rot: 'preenchimento essencial médio', det: 'obrigatórios + importantes', tom: (c.essencial_medio ?? 0) < 35 ? 'aviso' : undefined, ir: () => m.ir('produtos', { filtro: { obrigatoriosVazios: true } }) },
     { n: String(c.sem_foto), rot: 'produtos sem foto', det: 'fotos são cuidadas no app', tom: c.sem_foto ? 'aviso' : undefined, ir: () => m.ir('produtos', { filtro: { semFoto: true } }) },
     { n: String(c.pendencias), rot: 'pendências de conferência', det: `${c.sugestoes} sugestões · ${c.fora_da_ficha} fora da ficha`, tom: c.pendencias ? 'info' : undefined, ir: () => m.ir('conferencia') },

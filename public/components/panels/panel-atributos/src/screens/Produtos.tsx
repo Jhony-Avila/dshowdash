@@ -54,13 +54,16 @@ export function Produtos() {
   type Chave = 'semFoto' | 'semKit' | 'obrigatorios' | 'fora' | 'precifica';
   const chip = (k: Chave, rot: string, dica?: string) => (
     <button type="button" className={`at-filtro ${f[k] ? 'at-filtro--ativo' : ''}`} aria-pressed={f[k]} title={dica} onClick={() => setF({ ...f, [k]: !f[k] })}>{rot}</button>);
+  // UX-1: filtros além da busca (a busca sozinha sem resultado não oferece "todo o catálogo": já é a busca em tudo o que está visível)
+  const filtrosAlemDaBusca = !!(f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.situacao !== 'ativos');
+  const buscarEmTudo = () => setF({ ...f, categoria: '', subcategoria: '', kit: '', situacao: 'todos', semFoto: false, semKit: false, obrigatorios: false, fora: false, precifica: false });
   const algumFiltro = f.busca || f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.situacao !== 'ativos';
   const especificos = (p: ProdutoResumo) => p.kits.filter((k) => !k.motivos.includes('todos'));
 
   return (
     <div className="at-produtos">
       <div className="at-titulo-tela">
-        <div><h2>Produtos</h2><p>Todos os produtos do catálogo com foto, kits aplicados e o preenchimento essencial (obrigatórios + importantes). Clique num produto para abrir a ficha.</p></div>
+        <div><h2>Produtos</h2><p>Busque pelo nome ou código. Clique no produto para abrir a ficha.</p></div>
       </div>
       <div className="at-barra-ferramentas">
         <label className="at-busca">
@@ -97,7 +100,13 @@ export function Produtos() {
         {dados.pode_vincular && vis.length > 0 && <button type="button" className="bl-botao" onClick={marcarPagina}>{vis.every((p) => sel.has(p.id)) ? 'Desmarcar a página' : 'Selecionar a página'}</button>}
       </div>
 
-      {lista.length === 0 ? <Vazio titulo="Nenhum produto encontrado">Ajuste a busca ou os filtros.</Vazio>
+      {lista.length === 0 ? (filtrosAlemDaBusca
+          ? <Vazio titulo="Nenhum produto encontrado com estes filtros.">
+              {f.busca.trim()
+                ? <><Botao primario aoClicar={buscarEmTudo}>{`Buscar ‘${f.busca.trim()}’ em todo o catálogo`}</Botao><span className="at-fraco"> inclui produtos inativos; tira os outros filtros e mantém o termo</span></>
+                : 'Ajuste ou limpe os filtros.'}
+            </Vazio>
+          : <Vazio titulo="Nenhum produto encontrado">{f.situacao === 'todos' ? 'Nenhum produto, ativo ou inativo, tem este nome ou código.' : 'Ajuste a busca.'}</Vazio>)
         : f.modo === 'grade' ? (
           <div className="at-grade">
             {vis.map((p) => (
@@ -116,7 +125,7 @@ export function Produtos() {
                     <Barra feitos={p.essencial.feitos} total={p.essencial.total} compacta />
                   </div>
                 </button>
-                {dados.pode_vincular && <label className="at-cartao__sel" title="Selecionar"><input type="checkbox" checked={sel.has(p.id)} onChange={() => alternar(p.id)} aria-label={`Selecionar ${p.nome}`} /></label>}
+                {dados.pode_vincular && <label className="at-cartao__marcar"><input type="checkbox" checked={sel.has(p.id)} onChange={() => alternar(p.id)} aria-label={`Selecionar ${p.nome}`} />{sel.has(p.id) ? 'Selecionado' : 'Selecionar'}</label>}
               </article>
             ))}
           </div>

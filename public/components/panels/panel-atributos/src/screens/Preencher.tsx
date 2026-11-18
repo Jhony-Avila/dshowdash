@@ -113,7 +113,7 @@ export function Preencher() {
                 <th className="at-fixa at-fixa--1">Foto</th><th className="at-fixa at-fixa--2">ID</th><th className="at-fixa at-fixa--3">Produto</th>
                 {colunas.map((c) => {
                   const ids = fichas.flatMap((f) => { const it = item(f, c.id); return it && !it.valor ? it.sugestoes.filter((s) => s.tipo === 'valor').map((s) => s.id) : []; });   // D10: só células vazias
-                  return (<th key={c.id}><div className="at-grade-col"><span>{c.rotulo}{c.obrigatorio && <span className="at-obrig">*</span>}</span>
+                  return (<th key={c.id}><div className="at-grade-col"><span>{c.rotulo}</span>
                     {c.importancia && <span className="at-imp at-imp--fraca">{IMPORTANCIA[c.importancia]}</span>}
                     {ids.length > 0 && fichas[0]?.pode_editar && <button type="button" className="at-link" onClick={() => setAceitarCol({ id: c.id, rotulo: c.rotulo, ids })}>aceitar {ids.length} sugest{ids.length === 1 ? 'ão' : 'ões'}</button>}</div></th>);
                 })}
@@ -125,7 +125,7 @@ export function Preencher() {
                   <td className="at-fixa at-fixa--3"><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(f.produto.id)} title={f.produto.nome}>{f.produto.nome}</button></td>
                   {colunas.map((c) => { const i = item(f, c.id); return (
                     <td key={c.id} data-l={l} data-c={c.id} className="at-grade-cel">
-                      {i ? <CelulaGrade i={i} f={f} aoGravar={() => recarregarLinha(f.produto.id)} /> : <span className="at-fraco" title="Não se aplica a este produto">—</span>}
+                      {i ? <CelulaGrade i={i} f={f} aoGravar={() => recarregarLinha(f.produto.id)} /> : <span className="at-fora-ficha" title="Este atributo não está na ficha deste produto (nenhum kit nem vínculo avulso). Diferente de “Não se aplica”, que é uma resposta gravada.">Fora da ficha</span>}
                     </td>); })}
                 </tr>))}</tbody>
             </table>
@@ -143,10 +143,9 @@ function CelulaGrade({ i, f, aoGravar }: { i: ItemFicha; f: Ficha; aoGravar: () 
   const rot = s ? (s.opcao_id ? i.opcoes.find((o) => o.id === s.opcao_id)?.rotulo : s.valor_proposto && /^-?\d+(\.\d+)?$/.test(s.valor_proposto) ? decimal(s.valor_proposto) : s.valor_proposto) : null;
   return (
     <div className="at-grade-celula">
-      <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} compacto aoGravar={aoGravar} aoRecarregar={aoGravar} />
-      {s && !i.valor && <span className="at-sugestao at-sugestao--cel" title={s.evidencia ?? ''}>{rot} {s.unidade_id ? i.unidades.find((u) => u.id === s.unidade_id)?.simbolo : ''}
-        {f.pode_editar && <> <button type="button" className="at-link" onClick={() => enviar('sugestao', { id: s.id, versao: s.versao, decisao: 'aceitar' }).then(() => { m.aviso('Sugestão aceita.'); aoGravar(); }).catch((e) => m.aviso(e.message, 'erro'))}>aceitar</button></>}</span>}
-      {i.obrigatorio && !i.valor && !s && <Etiqueta tom="aviso">obrigatório</Etiqueta>}
+      <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} compacto aoGravar={aoGravar} aoRecarregar={aoGravar} rotuloVazio={f.pode_editar ? 'Preencher' : undefined} />
+      {s && !i.valor && <span className="at-sugestao at-sugestao--cel" title={s.evidencia ?? ''}>Sugestão: {rot}{s.unidade_id ? ` ${i.unidades.find((u) => u.id === s.unidade_id)?.simbolo ?? ''}` : ''}
+        {f.pode_editar && <> · <button type="button" className="at-link" onClick={() => enviar('sugestao', { id: s.id, versao: s.versao, decisao: 'aceitar' }).then(() => { m.aviso('Sugestão usada.'); aoGravar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Usar</button></>}</span>}
       {false && <ChipKit nome="" />}
     </div>);
 }
