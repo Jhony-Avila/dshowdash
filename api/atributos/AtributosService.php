@@ -729,13 +729,23 @@ final class AtributosService
                     if (strlen(ltrim(explode('.', $n)[0], '-')) > 14) throw new AtributosErro('VALIDATION_ERROR', 422, 'Número grande demais para a ficha.', ['valor']);
                     $mn = $a['minimo'] === null ? null : self::decimalCanonico($a['minimo']);
                     $mx = $a['maximo'] === null ? null : self::decimalCanonico($a['maximo']);
-                    // limites estão na unidade padrão do atributo: compara o número convertido quando o valor vem em outra unidade (D3)
+                    // DSHOW-033: os limites estão na unidade PADRÃO do atributo. O número está na unidade EFETIVA do valor: a explícita do pedido
+                    // ou, sem ela, a herdada (ajuste do produto → item do kit → padrão do atributo). Converte com decimal exato ANTES de comparar.
+                    // Unidade sem fator (ou de outra grandeza) com limites definidos → 422 claro (antes: os limites eram ignorados).
                     $nCmp = $n;
                     $uvId = isset($b['unidade_id']) && $b['unidade_id'] !== '' && $b['unidade_id'] !== null ? (int) $b['unidade_id'] : null;
-                    if (($mn !== null || $mx !== null) && $uvId !== null && $a['unidade_id'] !== null && $uvId !== (int) $a['unidade_id']) {
-                        $uv = $this->repo->unidade($uvId); $up = $this->repo->unidade((int) $a['unidade_id']);
-                        if ($uv && $up && $uv['fator_base'] !== null && $up['fator_base'] !== null && ($uv['grandeza'] ?? null) === ($up['grandeza'] ?? null)) $nCmp = DecimalExato::mulDiv($n, (string) $uv['fator_base'], (string) $up['fator_base'], 6);
-                        else { $mn = null; $mx = null; }   // sem fator conhecido não há como comparar com segurança
+                    if ($mn !== null || $mx !== null) {
+                        $aplicU = $this->aplicaveis($produto)[$aid]['aplic'] ?? null;
+                        $uEf = $uvId ?? ($aplicU !== null ? Aplicabilidade::unidadeEfetiva($aplicU, null) : ($a['unidade_id'] !== null ? (int) $a['unidade_id'] : null));
+                        $uPad = $a['unidade_id'] !== null ? (int) $a['unidade_id'] : null;
+                        if ($uEf !== null && $uPad !== null && $uEf !== $uPad) {
+                            $uv = $this->repo->unidade($uEf); $up = $this->repo->unidade($uPad);
+                            if (!$uv || !$up || $uv['fator_base'] === null || $up['fator_base'] === null || ($uv['grandeza'] ?? null) !== ($up['grandeza'] ?? null)) {
+                                throw new AtributosErro('UNIT_WITHOUT_FACTOR', 422, 'Não é possível conferir os limites deste atributo: a unidade "' . ($uv['simbolo'] ?? '?') . '" não tem fator de conversão para "'
+                                    . ($up['simbolo'] ?? '?') . '". Informe o valor em ' . ($up['simbolo'] ?? 'unidade padrão') . ' ou peça o fator na aba Unidades.', ['unidade_id']);
+                            }
+                            $nCmp = DecimalExato::mulDiv($n, (string) $uv['fator_base'], (string) $up['fator_base'], 6);
+                        }
                     }
                     if (($mn !== null && self::comparar($nCmp, $mn) < 0) || ($mx !== null && self::comparar($nCmp, $mx) > 0)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fora dos limites do atributo.', ['valor']);
                     $d['valor_num'] = $n;

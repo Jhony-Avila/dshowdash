@@ -274,5 +274,44 @@ $ok('corrida (a outra desiste): esta espera e aplica uma vez só', $st2 === 0 &&
     && $um("SELECT usuario FROM eq_pedido_massa WHERE chave = 'corrida-0002'") === 'admin@exemplo.invalid', json_encode($rD) . " dt=$dt st=$st2");
 $ok('auditoria "massa" uma por chave aplicada', (int) $um("SELECT COUNT(*) FROM eq_auditoria WHERE entidade = 'massa' AND entidade_id IN ('corrida-0001', 'corrida-0002')") === 1);
 
+// ---- DSHOW-033: limites com unidade HERDADA (produto, kit, padrão) e explícita; sem mutação na recusa ------------------------------
+$alt = (int) $adm->salvarAtributo(['rotulo' => 'Altura com limite (teste 033)', 'tipo' => 'numero', 'unidade_id' => $uCm, 'maximo' => '100'])['atributo']['id'];
+$linhas = function (string $sql, array $p) use ($pdo) { $st = $pdo->prepare($sql); $st->execute($p); return $st->fetchAll(PDO::FETCH_ASSOC); };
+$foto = fn(int $pid) => json_encode([$linhas('SELECT valor_num, unidade_id, versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pid, $alt]),
+    (int) $um('SELECT COUNT(*) FROM eq_auditoria')]);
+$semMutacao = function (string $nome, int $pid, array $b) use ($adm, $erro, $foto, $ok, $alt) {
+    $antes = $foto($pid);
+    $e = $erro(fn() => $adm->gravarValor(['product_id' => $pid, 'atributo_id' => $alt] + $b));
+    $ok("$nome → 422 e nada muda (valor, versão, auditoria)", $e?->http === 422 && $foto($pid) === $antes, ($e ? $e->getMessage() : 'sem erro') . " | $antes → " . $foto($pid));
+};
+$verAlt = fn(int $pid) => ($r = $um('SELECT versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL LIMIT 1', [$pid, $alt])) === false ? null : (int) $r;
+$grava = fn(int $pid, string $v, ?int $u = null) => $adm->gravarValor(['product_id' => $pid, 'atributo_id' => $alt, 'valor' => $v] + ($u ? ['unidade_id' => $u] : []) + (($x = $verAlt($pid)) !== null ? ['versao' => $x] : []));
+// explícita: 201 (avulso, sem unidade de produto) com unidade m no pedido
+$aj(['product_id' => 201, 'atributo_id' => $alt, 'modo' => 'incluir']);
+$ok('033 explícita: 1 m (= 100 cm) aceito', fn() => (bool) $grava(201, '1', $uM));
+$semMutacao('033 explícita: 2 m (= 200 cm)', 201, ['valor' => '2', 'unidade_id' => $uM, 'versao' => $verAlt(201)]);
+// produto: 202 com ajuste de unidade m; o pedido não manda unidade (herda m)
+$aj(['product_id' => 202, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uM]);
+$ok('033 produto: 1 (herda m) aceito', fn() => (bool) $grava(202, '1'));
+$semMutacao('033 produto: 2 (herda m = 200 cm)', 202, ['valor' => '2', 'versao' => $verAlt(202)]);
+// kit: kit com o item em m, aplicado direto ao 105; o pedido não manda unidade (herda m do kit)
+$kU = (int) $kits->salvarKit(['nome' => 'Kit unidade m (teste 033)'])['kit']['id'];
+$kits->definirItens(['id' => $kU, 'versao' => (int) $repo->grupo($kU)['versao'], 'itens' => [['atributo_id' => $alt, 'posicao' => 1, 'obrigatorio' => 0, 'visivel' => 1, 'destaque' => 0, 'importancia' => null, 'unidade_id' => $uM]]]);
+$kp(['product_id' => 105, 'grupo_id' => $kU, 'ativo' => 1]);
+$ok('033 kit: 1 (herda m do kit) aceito', fn() => (bool) $grava(105, '1'));
+$semMutacao('033 kit: 2 (herda m do kit = 200 cm)', 105, ['valor' => '2', 'versao' => $verAlt(105)]);
+// padrão: 104 avulso sem unidade nenhuma → cm (padrão do atributo): 100 aceito, 101 recusado
+$aj(['product_id' => 104, 'atributo_id' => $alt, 'modo' => 'incluir']);
+$ok('033 padrão: 100 (cm) aceito', fn() => (bool) $grava(104, '100'));
+$semMutacao('033 padrão: 101 cm', 104, ['valor' => '101', 'versao' => $verAlt(104)]);
+// conversão exata: 0.5 m = 50 cm aceito; 1.000001 m recusado
+$ok('033 exato: 0,5 m aceito', fn() => (bool) $grava(201, '0.5', $uM));
+$semMutacao('033 exato: 1,000001 m', 201, ['valor' => '1.000001', 'unidade_id' => $uM, 'versao' => $verAlt(201)]);
+// unidade extra SEM fator → 422 claro (antes: os limites eram ignorados)
+$uPe = (int) $adm->criarUnidade(['simbolo' => 'pe033', 'nome' => 'pé sem fator (teste)', 'grandeza' => 'comprimento'])['id'];
+$adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => [$uPe]]);
+$e033 = $erro(fn() => $adm->gravarValor(['product_id' => 201, 'atributo_id' => $alt, 'valor' => '1', 'unidade_id' => $uPe, 'versao' => $verAlt(201)]));
+$ok('033 unidade sem fator → 422 UNIT_WITHOUT_FACTOR com mensagem clara', $e033?->http === 422 && str_contains($e033->getMessage(), 'fator de conversão'), $e033 ? $e033->getMessage() : 'sem erro');
+
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " modulo-mysql (kits, vínculos, massa, sugestões, unidade): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);
