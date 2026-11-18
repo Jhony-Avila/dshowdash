@@ -13,9 +13,10 @@ import { Dicionario } from '../screens/Dicionario';
 import { Unidades } from '../screens/Unidades';
 import { Conferencia } from '../screens/Conferencia';
 
-export function App() {
+export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
   // Endereço próprio por tela (18/11): o estado inicial vem do hash (#/panel-atributos/<tela> · /produto/<id> · /kits/<id>)
-  const inicial = React.useMemo(() => lerRota(window.location.hash) ?? { aba: 'produtos' as Aba, produto: null, kit: null }, []);
+  // tela inicial: a rota que o menu lateral mandou (config.route) > o endereço atual > Produtos
+  const inicial = React.useMemo(() => lerRota(rotaInicial ?? '') ?? lerRota(window.location.hash) ?? { aba: 'produtos' as Aba, produto: null, kit: null }, [rotaInicial]);
   const [aba, setAba] = React.useState<Aba>(inicial.aba);
   const [produto, setProduto] = React.useState<number | null>(inicial.produto);
   const [kit, setKit] = React.useState<number | null>(inicial.kit);
@@ -26,22 +27,26 @@ export function App() {
   const [versao, setVersao] = React.useState(0);
   const raiz = React.useRef<HTMLDivElement>(null);
 
-  // estado → hash: cada troca de tela vira uma entrada no histórico (Voltar funciona); só normalizar o mesmo estado usa replaceState
+  // estado → endereço: troca de tela = NOVA entrada no histórico (pushState; Voltar funciona); só normalizar o mesmo estado
+  // (#/panel-atributos → #/panel-atributos/produtos) usa replaceState. pushState não dispara evento: nem o shell nem este painel
+  // reagem ao próprio registro. O shell trata Voltar/Avançar dentro do MESMO painel sem remontar (guarda do mesmo painel).
   React.useEffect(() => {
     const alvo = rotaDe({ aba, produto, kit });
     if (window.location.hash === alvo) return;
     const atual = lerRota(window.location.hash);
-    if (atual && atual.aba === aba && atual.produto === produto && atual.kit === kit) window.history.replaceState(window.history.state, '', alvo);
-    else window.location.hash = alvo;   // mesmo padrão do panel-bling; o shell trata o popstate do mesmo painel sem remontar
+    const url = window.location.pathname + window.location.search + alvo;
+    if (atual && atual.aba === aba && atual.produto === produto && atual.kit === kit) window.history.replaceState(window.history.state, '', url);
+    else window.history.pushState(window.history.state, '', url);
   }, [aba, produto, kit]);
-  // hash → estado: Voltar/Avançar, link colado, clique no menu lateral
+  // endereço → estado: Voltar/Avançar (popstate), link colado ou hash editado (hashchange)
   React.useEffect(() => {
     const aoMudar = () => {
       const r = lerRota(window.location.hash); if (!r) return;
       setAba(r.aba); setProduto(r.produto); setKit(r.kit);
     };
     window.addEventListener('hashchange', aoMudar);
-    return () => window.removeEventListener('hashchange', aoMudar);
+    window.addEventListener('popstate', aoMudar);
+    return () => { window.removeEventListener('hashchange', aoMudar); window.removeEventListener('popstate', aoMudar); };
   }, []);
 
   const nav: Navegar = React.useMemo(() => ({

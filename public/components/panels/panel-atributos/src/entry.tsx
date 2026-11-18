@@ -39,7 +39,10 @@ export async function mountReact(container: HTMLElement, config: Record<string, 
   _hospedeiro = hospedeiro;
 
   _root = createRoot(hospedeiro);
-  _root.render(<App />);
+  // A rota do item clicado no menu lateral chega em config.route (o shell remonta o painel, mas NÃO muda o endereço quando o
+  // painel é o mesmo — medido no harness shell 8112, 18/11). O App usa essa rota como tela inicial e grava o endereço.
+  const rota = typeof (config as { route?: unknown } | undefined)?.route === 'string' ? (config as { route: string }).route : undefined;
+  _root.render(<App rotaInicial={rota} />);
 
   return { moduleId: MODULE_ID, version: VERSION, config };
 }
