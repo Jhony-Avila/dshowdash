@@ -9,7 +9,8 @@ import { porTipo, TipoFormato, percentual, haQuantoTempo } from '../lib/formato'
 export interface Kpi {
   id: string;
   rotulo: string;
-  valor: number;
+  /** null = fonte indisponível/sem dados (DSHOW-012): mostra "Indisponível", nunca zero. */
+  valor: number | null;
   formato: TipoFormato;
   variacao?: number | null;
   tendencia?: 'alta' | 'baixa' | 'estavel';
@@ -94,7 +95,9 @@ export function CartaoKpi({ kpi, aoAbrir }: {
         fontVariantNumeric: 'tabular-nums',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
-        {porTipo(kpi.valor, kpi.formato, true)}
+        {kpi.valor === null
+          ? <span style={{ color: 'var(--bl-texto-3)', fontWeight: 550 }} title={kpi.tooltip ?? undefined}>Indisponível</span>
+          : porTipo(kpi.valor, kpi.formato, true)}
       </div>
 
       {/* Linha de comparação: só aparece quando HÁ comparação.
