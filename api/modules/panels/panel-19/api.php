@@ -6,6 +6,11 @@
 // @changelog v3.3.0-P06: Migrado para ApiResponse
 
 require_once __DIR__ . '/../_init.php';
+// PAINEIS-SESSAO-14 (18/11/2026): contenção — exigir sessão antes de qualquer cache/dado (mesmo mecanismo do panel-01/16).
+require_once __DIR__ . '/../../../_helpers/AuthHelpers.php';
+require_once __DIR__ . '/../../../core/SessionGate.php';
+SessionGate::start();
+AuthHelpers::requireAuth();
 
 $validator = InputValidator::fromGet();
 $days = $validator->int('days', 30, ['min' => 1, 'max' => 90]);

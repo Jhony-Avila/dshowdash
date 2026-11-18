@@ -5,6 +5,11 @@
 // @changelog v2.6.0-BOOT-SAFE: Timeout guardrail + fallback rápido
 
 require_once __DIR__ . '/../_init.php';
+// PAINEIS-SESSAO-14 (18/11/2026): contenção — exigir sessão antes de qualquer cache/dado (mesmo mecanismo do panel-01/16).
+require_once __DIR__ . '/../../../_helpers/AuthHelpers.php';
+require_once __DIR__ . '/../../../core/SessionGate.php';
+SessionGate::start();
+AuthHelpers::requireAuth();
 
 $validator = InputValidator::fromGet();
 define('MAX_HOURS_ALLOWED', 168);
