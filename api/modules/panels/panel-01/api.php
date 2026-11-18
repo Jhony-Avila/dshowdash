@@ -17,6 +17,12 @@ require_once __DIR__ . '/../../../../config/db_connection.php';
 require_once __DIR__ . '/../_erp-compat.php'; // tabelas derivadas: schema novo do ERP → shape legado (2026-09-16)
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
+// PAINEIS-SESSAO (17/11/2026): contenção — exigir sessão (mesmo mecanismo do painel-12/panel-05).
+// Antes, o painel respondia SEM login (dados do ERP: requisições financeiras, reembolsos, anexos). Reverter: release anterior.
+require_once __DIR__ . '/../../../_helpers/AuthHelpers.php';
+require_once __DIR__ . '/../../../core/SessionGate.php';
+SessionGate::start();
+AuthHelpers::requireAuth();
 
 $validator = InputValidator::fromGet();
 $allowedActions = ['default', 'kpis', 'list', 'situacoes', 'centros', 'categorias', 'fornecedores', 'search', 'export', 'resumo-mensal', 'top-fornecedores', 'top-categorias'];
