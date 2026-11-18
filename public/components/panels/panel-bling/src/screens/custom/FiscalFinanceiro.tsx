@@ -322,7 +322,7 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
   // DSHOW-012 (origem: Codex DSHOW-011): disponibilidade da fonte vinda da API (zero legítimo ≠ sem dados ≠ indisponível)
   const disp = carga.dados?.disponibilidade ?? null;
   const dispEntradas: string = disp?.entradas?.estado ?? 'ok';
-  const dicaEntradas = dispEntradas === 'ok' ? null : (dispEntradas === 'indisponivel' ? 'Indisponível nesta fonte' : 'Sem dados nesta fonte');
+  const dicaEntradas = dispEntradas === 'ok' ? null : (dispEntradas === 'indisponivel' ? 'Indisponível nesta fonte' : dispEntradas === 'parcial' ? 'Coleta parcial' : 'Sem dados nesta fonte');
 
   // ⚠️ useMemo ACIMA dos returns condicionais — ver nota em NotasFiscais.
   const opcao = React.useMemo(() => ({
@@ -408,7 +408,14 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
           background: 'var(--bl-fundo-2)', color: 'var(--bl-texto-2)', fontSize: 13 }}>
           {dispEntradas === 'indisponivel'
             ? <>Entradas indisponíveis nesta fonte: {disp?.entradas?.motivo ?? 'contas a receber desativadas'}{disp?.entradas?.fonte ? <> (fonte oficial: {disp.entradas.fonte})</> : null}. O saldo fica incompleto; as saídas continuam reais.</>
-            : <>Entradas ainda sem dados nesta fonte (nunca sincronizadas). O saldo fica incompleto; as saídas continuam reais.</>}
+            : dispEntradas === 'parcial'
+              ? <>Entradas parciais: a última coleta de contas a receber não foi concluída. O saldo fica incompleto; as saídas continuam reais.</>
+              : <>Entradas ainda sem dados nesta fonte (nunca sincronizadas). O saldo fica incompleto; as saídas continuam reais.</>}
+        </div>
+      )}
+      {disp?.realizado?.estado === 'aproximado' && (
+        <div role="note" style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--bl-texto-3)' }}>
+          Realizado agrupado pelo vencimento: o espelho do Bling ainda não guarda a data de liquidação. Previsto = vencimento.
         </div>
       )}
       <GradeKpis kpis={[
