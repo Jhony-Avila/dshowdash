@@ -15,6 +15,11 @@ interface ModuloRepositorio
     /** $dados null = exclui logicamente o ajuste. @return bool se mudou */
     public function definirAjusteProduto(int $productId, int $atributoId, ?array $dados, string $usuario): bool;
     public function auditoriaPorChave(string $entidade, string $entidadeId): ?array;
+    /** @param int[] $productIds @return array<int,string> versão dos vínculos por produto (kit direto + ajustes) */
+    public function versoesVinculos(array $productIds, bool $travar = false): array;
+    public function registrarPedidoMassa(string $chave, string $assinatura, string $usuario, int $produtos): bool;
+    public function pedidoMassa(string $chave): ?array;
+    public function concluirPedidoMassa(string $chave, array $resultado): void;
 }
 
 final class KitsService
@@ -61,6 +66,33 @@ final class KitsService
     private function conferirVersao(array $g, mixed $versao): void
     {
         if ((int) $versao !== (int) $g['versao']) throw new AtributosErro('CONFLICT', 409, 'Este kit foi alterado por outra pessoa. Recarregue e tente de novo.');
+    }
+
+    /** Risco residual 5: a versão dos vínculos do produto é OBRIGATÓRIA em toda mudança de vínculo feita pela ficha/conferência. */
+    private static function versaoVinculosInformada(array $b): string
+    {
+        $v = $b['versao_vinculos'] ?? null;
+        if (!is_string($v) || !preg_match('/^[0-9a-f]{16}$/', $v)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão dos vínculos deste produto. Recarregue a ficha.', ['versao_vinculos']);
+        return $v;
+    }
+
+    /** Confere a versão SOB TRAVA (dentro da transação): quem mudou os vínculos do produto depois da leitura recebe 409. */
+    private function conferirVinculos(int $pid, string $v): void
+    {
+        if (($this->repo->versoesVinculos([$pid], true)[$pid] ?? '') !== $v) throw new AtributosErro('CONFLICT', 409, 'Os vínculos deste produto foram alterados por outra pessoa. Recarregue e tente de novo.');
+    }
+
+    private function versaoVinculos(int $pid): string { return $this->repo->versoesVinculos([$pid])[$pid]; }
+
+    /** Para chamadas internas (aceitar sugestão + vincular) que já estão na mesma transação: a versão vigente, lida agora. */
+    public function versaoVinculosAtual(int $pid): string { return $this->versaoVinculos($pid); }
+
+    /** Versão da prévia em massa: vínculos de cada produto + versão de cada kit envolvido. Muda se qualquer um mudar depois da prévia. */
+    private function versaoMassa(array $prods, array $kA, array $kR, bool $travar): string
+    {
+        $vs = $this->repo->versoesVinculos(array_keys($prods), $travar); ksort($vs);
+        $ks = []; foreach (array_unique(array_merge($kA, $kR)) as $g) $ks[$g] = (int) $this->kit($g)['versao']; ksort($ks);
+        return hash('sha256', json_encode([$vs, $ks]));
     }
 
     private static function texto(mixed $v, int $max, string $campo, bool $obrig): ?string
@@ -193,15 +225,19 @@ final class KitsService
     {
         $this->exigir();
         $g = $this->kit((int) ($b['id'] ?? 0));
+        if (!isset($b['versao'])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão do kit. Recarregue.', ['versao']);
+        $this->conferirVersao($g, $b['versao']);
         $add = array_values(array_unique(array_map('intval', (array) ($b['adicionar'] ?? []))));
         $rem = array_values(array_unique(array_map('intval', (array) ($b['remover'] ?? []))));
         if (count($add) + count($rem) > self::MAX_PRODUTOS_MASSA) throw new AtributosErro('VALIDATION_ERROR', 422, 'Produtos demais numa chamada.', ['adicionar']);
         foreach ($add as $pid) $this->produtoValido($pid);
         return $this->repo->transacao(function () use ($g, $add, $rem) {
+            // risco 5: a versão do kit sobe junto (quem leu o kit antes recebe 409), conferida no próprio UPDATE
+            if (!$this->repo->atualizarGrupo((int) $g['id'], (int) $g['versao'], [])) throw new AtributosErro('CONFLICT', 409, 'Este kit foi alterado por outra pessoa. Recarregue e tente de novo.');
             $n = ['adicionados' => 0, 'removidos' => 0];
             foreach ($add as $pid) if ($this->repo->definirKitProduto((int) $g['id'], $pid, true, $this->usuario)) { $n['adicionados']++; $this->repo->auditar($this->usuario, 'aplicar_kit', 'produto_kit', "$pid:{$g['id']}", null, ['grupo_id' => (int) $g['id']], null); }
             foreach ($rem as $pid) if ($this->repo->definirKitProduto((int) $g['id'], $pid, false, $this->usuario)) { $n['removidos']++; $this->repo->auditar($this->usuario, 'remover_kit', 'produto_kit', "$pid:{$g['id']}", ['grupo_id' => (int) $g['id']], null, null); }
-            return $n + ['produtos' => $this->repo->produtosDiretosDoKit((int) $g['id'])];
+            return $n + ['produtos' => $this->repo->produtosDiretosDoKit((int) $g['id']), 'versao' => (int) $this->kit((int) $g['id'])['versao']];
         });
     }
 
@@ -213,10 +249,12 @@ final class KitsService
         $pid = (int) ($b['product_id'] ?? 0); $this->produtoValido($pid);
         $g = $this->kit((int) ($b['grupo_id'] ?? 0));
         $ativo = !array_key_exists('ativo', $b) || !empty($b['ativo']);
-        return $this->repo->transacao(function () use ($pid, $g, $ativo, $b) {
+        $vv = self::versaoVinculosInformada($b);
+        return $this->repo->transacao(function () use ($pid, $g, $ativo, $b, $vv) {
+            $this->conferirVinculos($pid, $vv);
             $mudou = $this->repo->definirKitProduto((int) $g['id'], $pid, $ativo, $this->usuario);
             if ($mudou) $this->repo->auditar($this->usuario, $ativo ? 'aplicar_kit' : 'remover_kit', 'produto_kit', "$pid:{$g['id']}", $ativo ? null : ['grupo_id' => (int) $g['id']], $ativo ? ['grupo_id' => (int) $g['id']] : null, $b['motivo'] ?? null);
-            return ['mudou' => $mudou];
+            return ['mudou' => $mudou, 'versao_vinculos' => $this->versaoVinculos($pid)];
         });
     }
 
@@ -248,10 +286,12 @@ final class KitsService
             if (!array_key_exists('posicao', $b)) $pos = $vivo['posicao'] === null ? null : (int) $vivo['posicao'];
         }
         $dados = $modo === null ? null : ['modo' => $modo, 'unidade_id' => $uid, 'posicao' => $pos, 'motivo' => $motivo];
-        return $this->repo->transacao(function () use ($pid, $aid, $dados, $vivo, $b) {
+        $vv = self::versaoVinculosInformada($b);
+        return $this->repo->transacao(function () use ($pid, $aid, $dados, $vivo, $b, $vv) {
+            $this->conferirVinculos($pid, $vv);   // risco 5: versão obrigatória, conferida sob trava (o UPDATE do repo também exige a versão da linha)
             $mudou = $this->repo->definirAjusteProduto($pid, $aid, $dados, $this->usuario);
             if ($mudou) $this->repo->auditar($this->usuario, $dados === null ? 'remover_ajuste' : $dados['modo'], 'produto_atributo', "$pid:$aid", $vivo, $dados, $b['motivo'] ?? null);
-            return ['mudou' => $mudou, 'ajuste' => $this->repo->ajusteProduto($pid, $aid)];
+            return ['mudou' => $mudou, 'ajuste' => $this->repo->ajusteProduto($pid, $aid), 'versao_vinculos' => $this->versaoVinculos($pid)];
         });
     }
 
@@ -301,26 +341,33 @@ final class KitsService
             $tot['atributos_acrescentados'] += count($mais); $tot['atributos_removidos'] += count($menos); $tot['ja_tinham'] += $ja;
             $por[] = ['product_id' => $pid, 'nome' => $p['nome'], 'acrescenta' => count($mais), 'remove' => count($menos), 'antes' => count($antes), 'depois' => count($depois)];
         }
-        return ['resumo' => $tot, 'produtos' => $por];
+        return ['resumo' => $tot, 'produtos' => $por, 'versao_previa' => $this->versaoMassa($prods, $kA, $kR, false)];
     }
 
-    /** Aplica em massa, idempotente pela chave (repetir a mesma chave devolve o resultado da 1ª vez, sem gravar de novo). */
+    /**
+     * Aplica em massa, idempotente pela chave (risco residual 1): a chave entra em eq_pedido_massa (índice ÚNICO) na MESMA transação que
+     * grava. Dois envios simultâneos com a mesma chave ficam em fila no índice: só um aplica; o outro devolve o resultado do primeiro
+     * ("repetido") ou 409 se o pedido for outro. Risco 5: a versão da prévia é obrigatória e conferida sob trava → 409 se algo mudou.
+     */
     public function aplicarMassa(array $b): array
     {
         $this->exigir();
         $chave = (string) ($b['chave'] ?? '');
         if (!preg_match('/^[A-Za-z0-9_-]{8,64}$/', $chave)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Chave de idempotência inválida.', ['chave']);
+        $vp = $b['versao_previa'] ?? null;
+        if (!is_string($vp) || !preg_match('/^[0-9a-f]{64}$/', $vp)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão da prévia. Gere a prévia de novo.', ['versao_previa']);
         [$p0, $k0, $r0, $i0, $e0] = $this->pedidoMassa($b);
         $assinatura = hash('sha256', json_encode([array_keys($p0), $k0, $r0, $i0, $e0]));
-        $ja = $this->repo->auditoriaPorChave('massa', $chave);
-        if ($ja) {
-            $dep = is_array($ja['depois']) ? $ja['depois'] : (json_decode((string) $ja['depois'], true) ?: []);
-            if (isset($dep['assinatura']) && $dep['assinatura'] !== $assinatura) throw new AtributosErro('CONFLICT', 409, 'Esta chave já foi usada para outro pedido. Gere a prévia de novo.');
-            return ['repetido' => true] + $dep;
-        }
+        $repetido = static function (array $ped) use ($assinatura): array {
+            if ($ped['assinatura'] !== $assinatura) throw new AtributosErro('CONFLICT', 409, 'Esta chave já foi usada para outro pedido. Gere a prévia de novo.');
+            return ['repetido' => true] + (is_array($ped['resultado']) ? $ped['resultado'] : []);
+        };
+        if ($ja = $this->repo->pedidoMassa($chave)) return $repetido($ja);
         $previa = $this->previaMassa($b);
-        [$prods, $kA, $kR, $aI, $aE] = $this->pedidoMassa($b);
-        return $this->repo->transacao(function () use ($prods, $kA, $kR, $aI, $aE, $previa, $chave, $b, $assinatura) {
+        [$prods, $kA, $kR, $aI, $aE] = [$p0, $k0, $r0, $i0, $e0];
+        $res = $this->repo->transacao(function () use ($prods, $kA, $kR, $aI, $aE, $previa, $chave, $b, $assinatura, $vp) {
+            if (!$this->repo->registrarPedidoMassa($chave, $assinatura, $this->usuario, count($prods))) return null;   // outro envio com a mesma chave já gravou
+            if ($this->versaoMassa($prods, $kA, $kR, true) !== $vp) throw new AtributosErro('CONFLICT', 409, 'Os vínculos mudaram desde a prévia. Gere a prévia de novo.');
             $n = ['kits_aplicados' => 0, 'kits_removidos' => 0, 'inclusoes' => 0, 'exclusoes' => 0];
             foreach ($prods as $pid => $_) {
                 foreach ($kA as $g) if ($this->repo->definirKitProduto($g, $pid, true, $this->usuario)) { $n['kits_aplicados']++; $this->repo->auditar($this->usuario, 'aplicar_kit', 'produto_kit', "$pid:$g", null, ['grupo_id' => $g, 'massa' => $chave], null); }
@@ -330,8 +377,13 @@ final class KitsService
                 foreach ($aE as $aid => $mot) { $d = ['modo' => 'excluir', 'unidade_id' => null, 'posicao' => null, 'motivo' => $mot]; if ($this->repo->definirAjusteProduto($pid, $aid, $d, $this->usuario)) { $n['exclusoes']++; $this->repo->auditar($this->usuario, 'excluir', 'produto_atributo', "$pid:$aid", null, $d + ['massa' => $chave], null); } }
             }
             $res = ['gravado' => $n, 'resumo' => $previa['resumo'], 'assinatura' => $assinatura];
+            $this->repo->concluirPedidoMassa($chave, $res);
             $this->repo->auditar($this->usuario, 'aplicar', 'massa', $chave, null, $res, $b['motivo'] ?? null);
             return $res;
         });
+        if ($res !== null) return $res;
+        $ped = $this->repo->pedidoMassa($chave);
+        if ($ped === null) throw new AtributosErro('CONFLICT', 409, 'Outro envio com esta chave está em andamento. Recarregue e confira.');
+        return $repetido($ped);
     }
 }

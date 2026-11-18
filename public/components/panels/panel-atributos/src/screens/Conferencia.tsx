@@ -85,7 +85,7 @@ export function Conferencia() {
               <tr key={`${x.product_id}-${x.atributo_id}`}>
                 <td><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(x.product_id)}><CapsulaId id={x.product_id} flutuante={false} /> {x.produto}</button></td>
                 <td>{x.atributo}</td>
-                <td><div className="at-acoes">{d.pode_vincular && <Botao aoClicar={() => enviar('produto_atributo', { product_id: x.product_id, atributo_id: x.atributo_id, modo: 'incluir' }).then(() => { m.aviso('Vinculado a este produto.'); carregar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Vincular a este produto</Botao>}
+                <td><div className="at-acoes">{d.pode_vincular && <Botao aoClicar={() => enviar('produto_atributo', { product_id: x.product_id, versao_vinculos: x.versao_vinculos, atributo_id: x.atributo_id, modo: 'incluir' }).then(() => { m.aviso('Vinculado a este produto.'); carregar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Vincular a este produto</Botao>}
                   <button type="button" className="at-link" onClick={() => m.abrirProduto(x.product_id)}>abrir ficha</button></div></td>
               </tr>))}</tbody>
           </table></div>))}
@@ -101,7 +101,7 @@ export function Conferencia() {
             <tbody>{d.filas.sem_kit.map((x) => (
               <tr key={x.product_id}><td><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(x.product_id)}><CapsulaId id={x.product_id} flutuante={false} /> {x.produto}</button></td>
                 <td>{rotuloSubcategoria(x.subcategoria)}</td><td>{x.legado ?? '—'}</td>
-                <td>{d.pode_vincular ? <select className="at-campo" aria-label={`Aplicar kit em ${x.produto}`} value="" onChange={(e) => { const g = Number(e.target.value); if (g) enviar('produto_kit', { product_id: x.product_id, grupo_id: g, ativo: 1 }).then(() => { m.aviso('Kit aplicado.'); carregar(); }).catch((er) => m.aviso(er.message, 'erro')); }}>
+                <td>{d.pode_vincular ? <select className="at-campo" aria-label={`Aplicar kit em ${x.produto}`} value="" onChange={(e) => { const g = Number(e.target.value); if (g) enviar('produto_kit', { product_id: x.product_id, versao_vinculos: x.versao_vinculos, grupo_id: g, ativo: 1 }).then(() => { m.aviso('Kit aplicado.'); carregar(); }).catch((er) => m.aviso(er.message, 'erro')); }}>
                   <option value="">Escolha um kit…</option>{kits.map((k) => <option key={k.id} value={k.id}>{k.nome}</option>)}</select> : '—'}</td></tr>))}</tbody>
           </table></div>))}
       </section>

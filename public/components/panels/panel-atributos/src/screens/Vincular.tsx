@@ -46,7 +46,7 @@ export function Vincular() {
   const aplicar = async () => {
     setTrab(true);
     try {
-      const r = await enviar<{ gravado: Record<string, number>; repetido?: boolean }>('massa_aplicar', { ...corpo(), chave });
+      const r = await enviar<{ gravado: Record<string, number>; repetido?: boolean }>('massa_aplicar', { ...corpo(), chave, versao_previa: previa?.versao_previa });
       m.aviso(r.repetido ? 'Esta aplicação já tinha sido gravada (nada repetido).' : `Gravado: ${r.gravado.kits_aplicados} kit(s) aplicados, ${r.gravado.inclusoes} atributo(s) incluídos, ${r.gravado.exclusoes} exceção(ões), ${r.gravado.kits_removidos} kit(s) removidos.`);
       setPasso(1); setPrevia(null); setKA([]); setKR([]); setAI([]); setAE([]); m.recarregar();
     } catch (e) { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(false); }

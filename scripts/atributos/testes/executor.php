@@ -36,28 +36,29 @@ $ok('divisor: aspas, comentários e ; dentro de texto', Migrador::comandos("-- x
 $recria();
 $m = new Migrador($pdo, $schema, $dir, $silencio);
 $seco = $m->executar(true);
-$ok('dry-run lista as 9 e não cria nada', count($seco['aplicadas']) === 9 && $m->aplicadas() === []);
+$ok('dry-run lista as 10 e não cria nada', count($seco['aplicadas']) === 10 && $m->aplicadas() === []);
 $r1 = $m->executar(false);
 $ap = $m->aplicadas();
-$ok('do zero: aplica 001–009', count($r1['aplicadas']) === 9 && count($ap) === 9);
-$ok('todas com checksum = sha256 do arquivo', count(array_filter($m->arquivos(), fn($f, $v) => ($ap[$v] ?? null) === hash_file('sha256', $f), ARRAY_FILTER_USE_BOTH)) === 9);
+$ok('do zero: aplica 001–010', count($r1['aplicadas']) === 10 && count($ap) === 10);
+$ok('todas com checksum = sha256 do arquivo', count(array_filter($m->arquivos(), fn($f, $v) => ($ap[$v] ?? null) === hash_file('sha256', $f), ARRAY_FILTER_USE_BOTH)) === 10);
 $r2 = $m->executar(false);
-$ok('reaplicar não muda nada', $r2['aplicadas'] === [] && count($r2['conferidas']) === 9);
+$ok('reaplicar não muda nada', $r2['aplicadas'] === [] && count($r2['conferidas']) === 10);
 // checksum divergente aborta (cópia adulterada da pasta)
 $tmp = sys_get_temp_dir() . '/atr-mig-' . getmypid(); @mkdir($tmp, 0700);
 foreach (glob("$dir/*.sql") as $f) copy($f, "$tmp/" . basename($f));
 file_put_contents("$tmp/005_kits.sql", "\n-- adulterado\n", FILE_APPEND);
 $e = null; try { (new Migrador($pdo, $schema, $tmp, $silencio))->executar(false); } catch (MigradorErro $x) { $e = $x; }
 $ok('checksum divergente aborta sem alterar', $e !== null && str_contains($e->getMessage(), '005_kits') && $m->aplicadas() === $ap);
-// retomar: faltando a 009 no banco, aplica só ela
+// retomar: reverte 010→004 e reaplica só elas
+$m->reverter('010_pedido_massa');
 $m->reverter('009_sugestao');
 $ok('reverter só a última (004 recusada)', (function () use ($m) { try { $m->reverter('004_vinculos_exclusao_logica'); return false; } catch (MigradorErro $x) { return true; } })());
 foreach (['008_unidade_por_valor', '007_produto_atributo', '006_kit_produto', '005_kits', '004_vinculos_exclusao_logica'] as $v) $m->reverter($v);
 $colsGA = $pdo->query("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = '$schema' AND table_name = 'eq_grupo_atributo'")->fetchColumn();
-$ok('reversões 009→004 voltam a estrutura da 003 (eq_grupo_atributo com 6 colunas, sem eq_sugestao)', (int) $colsGA === 6
-    && (int) $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$schema' AND table_name IN ('eq_sugestao','eq_grupo_produto','eq_produto_atributo','eq_atributo_unidade')")->fetchColumn() === 0);
+$ok('reversões 010→004 voltam a estrutura da 003 (eq_grupo_atributo com 6 colunas, sem eq_sugestao)', (int) $colsGA === 6
+    && (int) $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$schema' AND table_name IN ('eq_pedido_massa','eq_sugestao','eq_grupo_produto','eq_produto_atributo','eq_atributo_unidade')")->fetchColumn() === 0);
 $r3 = $m->executar(false);
-$ok('retoma: reaplica só 004–009', $r3['aplicadas'] === ['004_vinculos_exclusao_logica', '005_kits', '006_kit_produto', '007_produto_atributo', '008_unidade_por_valor', '009_sugestao']);
+$ok('retoma: reaplica só 004–010', $r3['aplicadas'] === ['004_vinculos_exclusao_logica', '005_kits', '006_kit_produto', '007_produto_atributo', '008_unidade_por_valor', '009_sugestao', '010_pedido_massa']);
 array_map('unlink', glob("$tmp/*")); @rmdir($tmp);
 
 echo ($falhas ? '[ERRO]' : '[OK]  ') . " executor ($schema): $n casos, $falhas falha(s)\n";

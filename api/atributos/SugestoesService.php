@@ -41,7 +41,7 @@ final class SugestoesService
                 $aj = $this->repo instanceof ModuloRepositorio ? $this->repo->ajusteProduto($pid, $destino) : null;
                 $jaIncluido = $aj && $aj['excluido_em'] === null && in_array($aj['modo'], ['incluir', 'ajustar'], true);
                 if (!empty($b['vincular']) && $this->kits && !$jaIncluido) {   // já vinculado/ajustado: não regrava (não perde a unidade do produto)
-                    try { $this->kits->definirAjuste(['product_id' => $pid, 'atributo_id' => $destino, 'modo' => 'incluir']); } catch (AtributosErro $e) { if ($e->http !== 422) throw $e; }
+                    try { $this->kits->definirAjuste(['product_id' => $pid, 'atributo_id' => $destino, 'modo' => 'incluir', 'versao_vinculos' => $this->kits->versaoVinculosAtual($pid)]); } catch (AtributosErro $e) { if ($e->http !== 422) throw $e; }
                 }
                 $valor = array_key_exists('valor', $b) ? $b['valor'] : ($s['opcao_id'] !== null ? (int) $s['opcao_id'] : $s['valor_proposto']);
                 // D10: sugestão nunca sobrescreve valor existente (manual ou importado), em NENHUMA chave (multiopção inclusive).

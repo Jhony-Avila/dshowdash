@@ -70,6 +70,9 @@ final class ProdutosLeitura
     /** pode_* das respostas: nível E escrita ligada (com a flag desligada as rotas de escrita somem com 404; a tela não pode oferecê-las). */
     private function pode(int $min): bool { return $this->escrita && $this->nivel >= $min; }
 
+    /** Versão dos vínculos por produto (risco 5), quando o repositório a oferece (o de memória dos testes de serviço não oferece). */
+    private function versoesVinculos(array $pids): array { return method_exists($this->repo, 'versoesVinculos') ? $this->repo->versoesVinculos($pids) : []; }
+
     private function exigir(): void
     {
         if ($this->nivel < AtributosService::NIVEL_CONSULTA) throw new AtributosErro('INSUFFICIENT_LEVEL', 403, 'Seu nível não permite esta ação.');
@@ -262,6 +265,7 @@ final class ProdutosLeitura
             'legado' => $item === null ? null : ['item' => $item, 'kit' => $kitLeg, 'kit_nome' => $kitLeg ? KitsLegado::KITS[$kitLeg]['nome'] : null, 'atribuidos' => count($linhasLeg)],
             'precifica' => ['familias' => $specs === null ? [] : array_keys($specs), 'ficha' => $specs ?? [], 'disponivel' => $specs !== null],
             'pode_editar' => $this->pode(AtributosService::NIVEL_VALORES) && $p['ativo'], 'pode_vincular' => $this->pode(AtributosService::NIVEL_ADMIN),
+            'versao_vinculos' => $this->versoesVinculos([$productId])[$productId] ?? null,   // risco 5: obrigatória em produto_kit / produto_atributo
         ];
     }
 
@@ -370,10 +374,11 @@ final class ProdutosLeitura
             'fonte' => $s['fonte'], 'tipo' => $s['tipo'], 'valor_proposto' => $s['valor_proposto'], 'unidade_id' => $s['unidade_id'] === null ? null : (int) $s['unidade_id'],
             'unidade' => $s['unidade'] ?? null, 'confianca' => $s['confianca'], 'evidencia' => $s['evidencia'], 'versao' => (int) $s['versao']];
         $fora = []; $obr = []; $sem = [];
+        $vv = $this->versoesVinculos(array_keys($res));   // risco 5: as ações de vínculo da Conferência mandam a versão do produto
         foreach ($res as $pid => $p) {
-            foreach (array_diff_key($p['_estados'], $p['_ficha']) as $aid => $est) $fora[] = ['product_id' => $pid, 'produto' => $p['nome'], 'atributo_id' => (int) $aid, 'atributo' => $atr[$aid]['rotulo'] ?? "#$aid", 'estado' => $est];
+            foreach (array_diff_key($p['_estados'], $p['_ficha']) as $aid => $est) $fora[] = ['product_id' => $pid, 'produto' => $p['nome'], 'atributo_id' => (int) $aid, 'atributo' => $atr[$aid]['rotulo'] ?? "#$aid", 'estado' => $est, 'versao_vinculos' => $vv[$pid] ?? null];
             foreach ($p['_obrigatorios'] as $aid) $obr[] = ['product_id' => $pid, 'produto' => $p['nome'], 'atributo_id' => (int) $aid, 'atributo' => $atr[$aid]['rotulo'] ?? "#$aid"];
-            if ($p['kits_especificos'] === 0) $sem[] = ['product_id' => $pid, 'produto' => $p['nome'], 'subcategoria' => $p['subcategoria'], 'legado' => $p['legado']['kit_nome'] ?? null];
+            if ($p['kits_especificos'] === 0) $sem[] = ['product_id' => $pid, 'produto' => $p['nome'], 'subcategoria' => $p['subcategoria'], 'legado' => $p['legado']['kit_nome'] ?? null, 'versao_vinculos' => $vv[$pid] ?? null];
         }
         return ['filas' => [
             'legado' => array_map($sug, $this->l->sugestoes(null, 'legado_2025', null, 3000)),

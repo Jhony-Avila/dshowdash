@@ -135,7 +135,7 @@ function AbaAtributos({ f, recarregar }: { f: TFicha; recarregar: () => void }) 
           {f.legado_nao_vinculado.map((i) => (
             <div key={i.atributo_id} className="at-attr at-attr--legado">
               <div className="at-attr__nome"><span className="at-attr__marca" aria-hidden /><div><div className="at-attr__rotulo">{i.rotulo}</div><div className="at-attr__meta">{!i.atributo_ativo && <Etiqueta tom="aviso">inativo</Etiqueta>}{i.legado?.kit_origem && <ChipKit nome={`Legado: ${i.legado.kit_origem}`} pequeno />}</div></div></div>
-              <div className="at-vazio">sem valor</div><div /><div>{f.pode_vincular && i.atributo_ativo && <Botao aoClicar={() => enviar('produto_atributo', { product_id: f.produto.id, atributo_id: i.atributo_id, modo: 'incluir' }).then(() => { m.aviso('Atributo vinculado a este produto.'); recarregar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Vincular a este produto</Botao>}</div>
+              <div className="at-vazio">sem valor</div><div /><div>{f.pode_vincular && i.atributo_ativo && <Botao aoClicar={() => enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: 'incluir' }).then(() => { m.aviso('Atributo vinculado a este produto.'); recarregar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Vincular a este produto</Botao>}</div>
             </div>))}
         </div>)}
       {f.excecoes.length > 0 && (
@@ -143,7 +143,7 @@ function AbaAtributos({ f, recarregar }: { f: TFicha; recarregar: () => void }) 
           <div className="at-bloco__titulo"><strong>Exceções deste produto</strong><span className="at-filtro__n">{f.excecoes.length}</span><span className="at-fraco at-bloco__desc">Atributos de kit excluídos só neste produto.</span></div>
           {f.excecoes.map((e) => (
             <div key={e.atributo_id} className="at-attr"><div className="at-attr__nome"><div><div className="at-attr__rotulo">{e.rotulo}</div><div className="at-attr__meta">motivo: {e.motivo ?? '—'}</div></div></div><div /><div />
-              <div>{f.pode_vincular && <Botao aoClicar={() => enviar('produto_atributo', { product_id: f.produto.id, atributo_id: e.atributo_id, modo: null }).then(() => { m.aviso('Exceção desfeita.'); recarregar(); }).catch((x) => m.aviso(x.message, 'erro'))}>Desfazer exceção</Botao>}</div></div>))}
+              <div>{f.pode_vincular && <Botao aoClicar={() => enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: e.atributo_id, modo: null }).then(() => { m.aviso('Exceção desfeita.'); recarregar(); }).catch((x) => m.aviso(x.message, 'erro'))}>Desfazer exceção</Botao>}</div></div>))}
         </div>)}
       <HistoricoCampo produto={f.produto.id} item={hist} aoFechar={() => setHist(null)} />
     </section>
@@ -212,7 +212,7 @@ function SecaoFora({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
           <div className="at-attr__valor"><strong>{i.valor ? fmtValor(i.valor, i.unidades.find((u) => u.id === i.valor?.unidade_id)?.simbolo ?? i.unidade_efetiva?.simbolo ?? null) : '—'}</strong></div>
           <div className="at-attr__precifica">{i.precifica ? fmtPrecifica(i.precifica.chave, i.precifica.valor) : <span className="at-fraco">—</span>}</div>
           <div className="at-attr__origem">{f.pode_vincular && i.atributo_ativo && <>
-            <Botao aoClicar={() => enviar('produto_atributo', { product_id: f.produto.id, atributo_id: i.atributo_id, modo: 'incluir' }).then(() => { m.aviso('Vinculado a este produto.'); recarregar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Vincular a este produto</Botao>
+            <Botao aoClicar={() => enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: 'incluir' }).then(() => { m.aviso('Vinculado a este produto.'); recarregar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Vincular a este produto</Botao>
             <Botao aoClicar={() => setParaKit(i)}>Adicionar ao kit…</Botao></>}</div>
         </div>))}
       <AdicionarAoKit f={f} item={paraKit} aoFechar={() => setParaKit(null)} aoFeito={() => { setParaKit(null); recarregar(); }} />
@@ -311,14 +311,14 @@ function AbaVinculos({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
           {f.kits.length === 0 ? <p className="at-fraco">Nenhum kit vale para este produto.</p> : (
             <ul className="at-kits-produto">{f.kits.map((k) => (
               <li key={k.id}><ChipKit nome={k.nome} /><span>{k.motivos.map((x) => x.tipo === 'escopo' ? `pela subcategoria ${rotuloSubcategoria(x.subcategoria || null)}${x.subcategoria ? '' : ' (categoria inteira)'}` : MOTIVO_KIT[x.tipo]).join(' · ')}</span>
-                {pode && k.motivos.some((x) => x.tipo === 'direto') && <Botao aoClicar={() => chamar('produto_kit', { product_id: pid, grupo_id: k.id, ativo: 0 }, 'Kit removido deste produto.')}>Remover kit direto</Botao>}
+                {pode && k.motivos.some((x) => x.tipo === 'direto') && <Botao aoClicar={() => chamar('produto_kit', { product_id: pid, versao_vinculos: f.versao_vinculos, grupo_id: k.id, ativo: 0 }, 'Kit removido deste produto.')}>Remover kit direto</Botao>}
                 <button type="button" className="at-link" onClick={() => m.ir('kits', { kit: k.id })}>abrir kit</button></li>))}</ul>)}
           {pode && (
             <div className="at-acoes" style={{ marginTop: 12 }}>
               <select className="at-campo" aria-label="Kit para aplicar" value={kitNovo} onChange={(e) => setKitNovo(e.target.value ? Number(e.target.value) : '')}>
                 <option value="">Aplicar um kit a este produto…</option>{kits.filter((k) => !f.kits.some((x) => x.id === k.id)).map((k) => <option key={k.id} value={k.id}>{k.nome} ({k.itens} atributos)</option>)}
               </select>
-              <Botao primario desligado={kitNovo === ''} aoClicar={() => { if (kitNovo !== '') chamar('produto_kit', { product_id: pid, grupo_id: kitNovo, ativo: 1 }, 'Kit aplicado a este produto.').then(() => setKitNovo('')); }}>Aplicar kit</Botao>
+              <Botao primario desligado={kitNovo === ''} aoClicar={() => { if (kitNovo !== '') chamar('produto_kit', { product_id: pid, versao_vinculos: f.versao_vinculos, grupo_id: kitNovo, ativo: 1 }, 'Kit aplicado a este produto.').then(() => setKitNovo('')); }}>Aplicar kit</Botao>
               <Botao aoClicar={() => setAvulso(true)}>Adicionar atributo avulso</Botao>
             </div>)}
         </div>
@@ -335,19 +335,19 @@ function AbaVinculos({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
                 <td>{(i.tipo === 'numero' || i.tipo === 'inteiro') && i.unidades.length > 0 ? (
                   <select className="at-campo at-campo--unid" aria-label={`Unidade deste produto para ${i.rotulo}`} disabled={!pode} value={i.unidade_produto_id ?? ''}
                     onChange={(e) => { const u = e.target.value ? Number(e.target.value) : null; const avul = i.origens.some((o) => o.tipo === 'avulso');
-                      chamar('produto_atributo', { product_id: pid, atributo_id: i.atributo_id, modo: u === null ? (avul ? 'incluir' : null) : (avul ? 'incluir' : 'ajustar'), unidade_id: u }, 'Unidade deste produto definida.'); }}>
+                      chamar('produto_atributo', { product_id: pid, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: u === null ? (avul ? 'incluir' : null) : (avul ? 'incluir' : 'ajustar'), unidade_id: u }, 'Unidade deste produto definida.'); }}>
                     <option value="">padrão ({i.unidades.find((u) => u.padrao)?.simbolo ?? i.unidade_efetiva?.simbolo ?? '—'})</option>
                     {i.unidades.map((u) => <option key={u.id} value={u.id}>{u.simbolo}</option>)}
                   </select>) : <span className="at-fraco">—</span>}</td>
                 <td>{pode && (i.origens.every((o) => o.tipo === 'avulso')
-                  ? <Botao aoClicar={() => chamar('produto_atributo', { product_id: pid, atributo_id: i.atributo_id, modo: null }, 'Atributo avulso removido.')}>Remover avulso</Botao>
+                  ? <Botao aoClicar={() => chamar('produto_atributo', { product_id: pid, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: null }, 'Atributo avulso removido.')}>Remover avulso</Botao>
                   : <Botao aoClicar={() => { setExcluir(i); setMotivo(''); }}>Excluir só neste produto</Botao>)}</td>
               </tr>))}</tbody>
           </table>
         </div>
       </section>
       <Dialogo titulo={`Excluir "${excluir?.rotulo ?? ''}" só neste produto`} aberto={excluir !== null} aoFechar={() => setExcluir(null)}
-        rodape={<><Botao aoClicar={() => setExcluir(null)}>Cancelar</Botao><Botao primario desligado={motivo.trim().length < 3} aoClicar={() => { if (excluir) chamar('produto_atributo', { product_id: pid, atributo_id: excluir.atributo_id, modo: 'excluir', motivo }, 'Exceção registrada: o atributo some só neste produto.'); setExcluir(null); }}>Excluir neste produto</Botao></>}>
+        rodape={<><Botao aoClicar={() => setExcluir(null)}>Cancelar</Botao><Botao primario desligado={motivo.trim().length < 3} aoClicar={() => { if (excluir) chamar('produto_atributo', { product_id: pid, versao_vinculos: f.versao_vinculos, atributo_id: excluir.atributo_id, modo: 'excluir', motivo }, 'Exceção registrada: o atributo some só neste produto.'); setExcluir(null); }}>Excluir neste produto</Botao></>}>
         <p>O atributo continua no kit para os outros produtos. Aqui ele deixa de aparecer (o valor, se houver, vai para "Fora da ficha").</p>
         <label className="at-rotulo-campo">Motivo (obrigatório)<input className="at-campo" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex.: este modelo não tem esse componente" /></label>
       </Dialogo>
@@ -364,7 +364,7 @@ function BuscaAvulso({ aberto, f, aoFechar, aoFeito }: { aberto: boolean; f: TFi
   const ja = new Set(f.itens.map((i) => i.atributo_id));
   const n = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const lista = (dic ?? []).filter((a) => a.ativo && !ja.has(a.id) && (!tipo || a.tipo === tipo) && (!q || n(a.rotulo + ' ' + a.codigo).includes(n(q)))).slice(0, 60);
-  const confirmar = () => { if (esc === null) return; setTrab(true); enviar('produto_atributo', { product_id: f.produto.id, atributo_id: esc, modo: 'incluir' }).then(() => { m.aviso('Atributo avulso adicionado.'); aoFeito(); }).catch((e) => m.aviso(e.message, 'erro')).finally(() => setTrab(false)); };
+  const confirmar = () => { if (esc === null) return; setTrab(true); enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: esc, modo: 'incluir' }).then(() => { m.aviso('Atributo avulso adicionado.'); aoFeito(); }).catch((e) => m.aviso(e.message, 'erro')).finally(() => setTrab(false)); };
   return (
     <Dialogo titulo="Adicionar atributo avulso a este produto" aberto={aberto} aoFechar={aoFechar} largura={640}
       rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><Botao primario desligado={esc === null} trabalhando={trab} aoClicar={confirmar}>Adicionar</Botao></>}>

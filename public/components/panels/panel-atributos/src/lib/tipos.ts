@@ -46,6 +46,8 @@ export interface Ficha {
   legado: { item: number; kit: string | null; kit_nome: string | null; atribuidos: number } | null;
   precifica: { familias: string[]; ficha: Record<string, Record<string, unknown>>; disponivel: boolean };
   pode_editar: boolean; pode_vincular: boolean;
+  /** versão dos vínculos deste produto: obrigatória em produto_kit / produto_atributo (409 se outra pessoa mudou) */
+  versao_vinculos: string | null;
 }
 export interface EventoHistorico { id: number; quando: string; quem: string; acao: string; entidade: string; atributo: string | null; atributo_id: number | null; antes: Record<string, unknown> | null; depois: Record<string, unknown> | null; motivo: string | null }
 
@@ -64,8 +66,8 @@ export interface AtributoDicionario {
 }
 export interface ItemConferencia { id: number; product_id: number; produto: string; atributo_id: number; atributo: string | null; tipo_atributo: TipoAtributo | null; atributo_alternativo_id: number | null; atributo_alternativo: string | null; fonte: string; tipo: string; valor_proposto: string | null; unidade_id: number | null; unidade: string | null; confianca: string; evidencia: string | null; versao: number; ja_tem_valor: boolean; alternativo_ja_tem_valor: boolean }
 export interface Conferencia {
-  filas: { legado: ItemConferencia[]; nome: ItemConferencia[]; fora_da_ficha: { product_id: number; produto: string; atributo_id: number; atributo: string; estado: string }[];
-    obrigatorios_vazios: { product_id: number; produto: string; atributo_id: number; atributo: string }[]; sem_kit: { product_id: number; produto: string; subcategoria: string | null; legado: string | null }[] };
+  filas: { legado: ItemConferencia[]; nome: ItemConferencia[]; fora_da_ficha: { product_id: number; produto: string; atributo_id: number; atributo: string; estado: string; versao_vinculos: string | null }[];
+    obrigatorios_vazios: { product_id: number; produto: string; atributo_id: number; atributo: string }[]; sem_kit: { product_id: number; produto: string; subcategoria: string | null; legado: string | null; versao_vinculos: string | null }[] };
   totais: { obrigatorios_vazios: number }; pode_decidir: boolean; pode_vincular: boolean;
 }
-export interface Previa { resumo: { produtos: number; produtos_afetados: number; atributos_acrescentados: number; atributos_removidos: number; ja_tinham: number; kits_ja_aplicados: number }; produtos: { product_id: number; nome: string; acrescenta: number; remove: number; antes: number; depois: number }[] }
+export interface Previa { resumo: { produtos: number; produtos_afetados: number; atributos_acrescentados: number; atributos_removidos: number; ja_tinham: number; kits_ja_aplicados: number }; produtos: { product_id: number; nome: string; acrescenta: number; remove: number; antes: number; depois: number }[]; versao_previa: string }

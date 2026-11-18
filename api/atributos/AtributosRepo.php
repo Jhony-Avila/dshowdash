@@ -372,14 +372,14 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
 
     public function definirKitProduto(int $grupoId, int $productId, bool $ativo, string $usuario, string $origem = 'manual'): bool
     {
-        $r = $this->q('SELECT id, excluido_em FROM ' . $this->t('eq_grupo_produto') . ' WHERE grupo_id = ? AND product_id = ? FOR UPDATE', [$grupoId, $productId])[0] ?? null;
+        $r = $this->q('SELECT id, excluido_em, versao FROM ' . $this->t('eq_grupo_produto') . ' WHERE grupo_id = ? AND product_id = ? FOR UPDATE', [$grupoId, $productId])[0] ?? null;
         if ($ativo) {
             if ($r === null) { $this->exec('INSERT INTO ' . $this->t('eq_grupo_produto') . ' (grupo_id, product_id, origem, criado_por, atualizado_por) VALUES (?, ?, ?, ?, ?)', [$grupoId, $productId, $origem, $usuario, $usuario]); return true; }
             if ($r['excluido_em'] === null) return false;
-            return $this->exec('UPDATE ' . $this->t('eq_grupo_produto') . ' SET excluido_em = NULL, versao = versao + 1, atualizado_por = ? WHERE id = ?', [$usuario, $r['id']]) === 1;
+            return $this->exec('UPDATE ' . $this->t('eq_grupo_produto') . ' SET excluido_em = NULL, versao = versao + 1, atualizado_por = ? WHERE id = ? AND versao = ?', [$usuario, $r['id'], $r['versao']]) === 1;
         }
         if ($r === null || $r['excluido_em'] !== null) return false;
-        return $this->exec('UPDATE ' . $this->t('eq_grupo_produto') . ' SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1, atualizado_por = ? WHERE id = ?', [$usuario, $r['id']]) === 1;
+        return $this->exec('UPDATE ' . $this->t('eq_grupo_produto') . ' SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1, atualizado_por = ? WHERE id = ? AND versao = ?', [$usuario, $r['id'], $r['versao']]) === 1;
     }
 
     public function ajusteProduto(int $productId, int $atributoId): ?array
@@ -389,10 +389,10 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
 
     public function definirAjusteProduto(int $productId, int $atributoId, ?array $dados, string $usuario): bool
     {
-        $r = $this->q('SELECT id, modo, unidade_id, posicao, motivo, excluido_em FROM ' . $this->t('eq_produto_atributo') . ' WHERE product_id = ? AND atributo_id = ? FOR UPDATE', [$productId, $atributoId])[0] ?? null;
+        $r = $this->q('SELECT id, modo, unidade_id, posicao, motivo, excluido_em, versao FROM ' . $this->t('eq_produto_atributo') . ' WHERE product_id = ? AND atributo_id = ? FOR UPDATE', [$productId, $atributoId])[0] ?? null;
         if ($dados === null) {
             if ($r === null || $r['excluido_em'] !== null) return false;
-            return $this->exec('UPDATE ' . $this->t('eq_produto_atributo') . ' SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1, atualizado_por = ? WHERE id = ?', [$usuario, $r['id']]) === 1;
+            return $this->exec('UPDATE ' . $this->t('eq_produto_atributo') . ' SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1, atualizado_por = ? WHERE id = ? AND versao = ?', [$usuario, $r['id'], $r['versao']]) === 1;
         }
         if ($r === null) {
             $this->exec('INSERT INTO ' . $this->t('eq_produto_atributo') . ' (product_id, atributo_id, modo, unidade_id, posicao, motivo, criado_por, atualizado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -401,8 +401,51 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
         }
         $igual = $r['excluido_em'] === null && $r['modo'] === $dados['modo'] && (string) $r['unidade_id'] === (string) $dados['unidade_id'] && (string) $r['posicao'] === (string) $dados['posicao'] && (string) $r['motivo'] === (string) $dados['motivo'];
         if ($igual) return false;
-        return $this->exec('UPDATE ' . $this->t('eq_produto_atributo') . ' SET modo = ?, unidade_id = ?, posicao = ?, motivo = ?, excluido_em = NULL, versao = versao + 1, atualizado_por = ? WHERE id = ?',
-            [$dados['modo'], $dados['unidade_id'], $dados['posicao'], $dados['motivo'], $usuario, $r['id']]) === 1;
+        return $this->exec('UPDATE ' . $this->t('eq_produto_atributo') . ' SET modo = ?, unidade_id = ?, posicao = ?, motivo = ?, excluido_em = NULL, versao = versao + 1, atualizado_por = ? WHERE id = ? AND versao = ?',
+            [$dados['modo'], $dados['unidade_id'], $dados['posicao'], $dados['motivo'], $usuario, $r['id'], $r['versao']]) === 1;
+    }
+
+    /**
+     * Versão dos VÍNCULOS de cada produto (risco residual 5): impressão digital das linhas de kit direto (eq_grupo_produto) e de ajuste
+     * (eq_produto_atributo) do produto, vivas ou excluídas, por (id, versao). Toda mudança de vínculo sobe a `versao` de uma linha ou cria
+     * uma linha nova, então a impressão muda. $travar = FOR UPDATE (com trava de intervalo no índice por produto: segura também inserções).
+     * @param int[] $productIds  @return array<int,string> product_id => 16 hex (produto sem linha nenhuma também tem versão)
+     */
+    public function versoesVinculos(array $productIds, bool $travar = false): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $productIds))); if (!$ids) return [];
+        $partes = array_fill_keys($ids, ['gp' => [], 'pa' => []]);
+        foreach (array_chunk($ids, 500) as $lote) {
+            $in = implode(',', array_fill(0, count($lote), '?')); $fu = $travar ? ' FOR UPDATE' : '';
+            foreach ($this->q('SELECT id, product_id, versao FROM ' . $this->t('eq_grupo_produto') . " WHERE product_id IN ($in) ORDER BY id$fu", $lote) as $r) $partes[(int) $r['product_id']]['gp'][] = $r['id'] . ':' . $r['versao'];
+            foreach ($this->q('SELECT id, product_id, versao FROM ' . $this->t('eq_produto_atributo') . " WHERE product_id IN ($in) ORDER BY id$fu", $lote) as $r) $partes[(int) $r['product_id']]['pa'][] = $r['id'] . ':' . $r['versao'];
+        }
+        $out = []; foreach ($partes as $pid => $x) $out[$pid] = substr(hash('sha256', 'gp=' . implode(',', $x['gp']) . '|pa=' . implode(',', $x['pa'])), 0, 16);
+        return $out;
+    }
+
+    /** Pedido de massa (010): insere a chave na transação corrente. false = a chave já existe (outro pedido aplicou ou está aplicando). */
+    public function registrarPedidoMassa(string $chave, string $assinatura, string $usuario, int $produtos): bool
+    {
+        try {
+            $this->exec('INSERT INTO ' . $this->t('eq_pedido_massa') . ' (chave, assinatura, usuario, produtos) VALUES (?, ?, ?, ?)', [$chave, $assinatura, mb_substr($usuario, 0, 100), $produtos]);
+            return true;
+        } catch (PDOException $e) {
+            if ((int) ($e->errorInfo[1] ?? 0) === 1062) return false;   // chave única: duplicada
+            throw $e;
+        }
+    }
+
+    public function pedidoMassa(string $chave): ?array
+    {
+        $r = $this->q('SELECT chave, assinatura, usuario, produtos, resultado, criado_em, concluido_em FROM ' . $this->t('eq_pedido_massa') . ' WHERE chave = ?', [$chave])[0] ?? null;
+        if ($r !== null) $r['resultado'] = $r['resultado'] === null ? null : json_decode((string) $r['resultado'], true);
+        return $r;
+    }
+
+    public function concluirPedidoMassa(string $chave, array $resultado): void
+    {
+        $this->exec('UPDATE ' . $this->t('eq_pedido_massa') . ' SET resultado = ?, concluido_em = CURRENT_TIMESTAMP(3) WHERE chave = ?', [json_encode($resultado, JSON_UNESCAPED_UNICODE), $chave]);
     }
 
     public function auditoriaPorChave(string $entidade, string $entidadeId): ?array

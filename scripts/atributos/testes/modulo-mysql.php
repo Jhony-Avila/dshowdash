@@ -1,6 +1,6 @@
 <?php
 // Produtos & Atributos (missão 18/11) — teste de BANCO REAL do módulo: KitsService, SugestoesService e AtributosService (unidade por valor)
-// sobre AtributosRepoPdo, num schema ATRWEB_VAL_T_* VAZIO com as migrações 001–009 aplicadas. Catálogo falso em memória.
+// sobre AtributosRepoPdo, num schema ATRWEB_VAL_T_* VAZIO com as migrações 001–010 aplicadas. Catálogo falso em memória.
 // Cobre: kit (criar, itens, ≤4 destaques, escopos por diferença sem DELETE — ATR-M1, versão 409), kit direto, exceção com motivo (D-§9),
 // avulso, prévia × aplicação em massa (idempotente pela chave, limite), sugestões (aceitar, repetir, D10 nunca sobrescreve, lote só com
 // confirmação), conversão de unidade exata (DecimalExato) e a ficha da §9 lida do banco.
@@ -39,7 +39,7 @@ $ok = function (string $nome, bool|Closure $cond, string $det = '') use (&$falha
 $erro = function (callable $f): ?AtributosErro { try { $f(); } catch (AtributosErro $e) { return $e; } return null; };
 $um = fn(string $sql, array $p = []) => (function () use ($pdo, $sql, $p) { $s = $pdo->prepare($sql); $s->execute($p); return $s->fetchColumn(); })();
 
-$ok('migrações 001–009 aplicadas', (int) $um('SELECT COUNT(*) FROM eq_schema_migrations') === count($arqs));
+$ok('migrações 001–010 aplicadas', (int) $um('SELECT COUNT(*) FROM eq_schema_migrations') === count($arqs));
 
 // ---- catálogo falso: 6 cabos, 2 fontes, 1 inativo -------------------------------------------------------------------------------------
 $cat = new CatalogoMemoria();
@@ -52,6 +52,11 @@ $adm = new AtributosService($repo, 80, 'admin@exemplo.invalid', $cat);
 $kits = new KitsService($repo, 80, 'admin@exemplo.invalid', $cat);
 $kit50 = new KitsService($repo, 50, 'equipe@exemplo.invalid', $cat);
 $sug = new SugestoesService($repo, $adm, $kits, 80, 'admin@exemplo.invalid');
+// risco 5: vínculo exige a versão dos vínculos do produto; massa exige a versão da prévia. Os casos antigos usam a versão vigente.
+$verVinc = fn(int $pid): string => $repo->versoesVinculos([$pid])[$pid];
+$aj = fn(array $b) => $kits->definirAjuste($b + ['versao_vinculos' => $verVinc((int) $b['product_id'])]);
+$kp = fn(array $b) => $kits->definirKitDoProduto($b + ['versao_vinculos' => $verVinc((int) $b['product_id'])]);
+$ms = fn(array $b) => $kits->aplicarMassa($b + ['versao_previa' => $kits->previaMassa($b)['versao_previa']]);
 
 $u = fn(array $r) => (int) array_column($r['unidades'], 'id', 'simbolo')[array_key_last(array_column($r['unidades'], 'id', 'simbolo'))];
 $adm->criarUnidade(['simbolo' => 'm', 'nome' => 'metro', 'grandeza' => 'comprimento', 'fator_base' => '1']);
@@ -92,17 +97,17 @@ $ok('escopo inválido → 422', fn() => $erro(fn() => $kits->definirEscopos(['id
 $ficha = fn(int $pid) => Aplicabilidade::ficha($repo->retratoModelo(null), $cat->p[$pid]);
 $ok('§9: cabo recebe os 4 atributos do kit pela subcategoria', count($ficha(101)) === 4);
 $ok('§9: fonte não recebe o kit de cabos', count($ficha(201)) === 0);
-$kits->definirKitDoProduto(['product_id' => 201, 'grupo_id' => $kid, 'ativo' => 1]);
+$kp(['product_id' => 201, 'grupo_id' => $kid, 'ativo' => 1]);
 $ok('kit direto: fonte 201 passa a ter os 4', count($ficha(201)) === 4);
-$kits->definirKitDoProduto(['product_id' => 201, 'grupo_id' => $kid, 'ativo' => 0]);
+$kp(['product_id' => 201, 'grupo_id' => $kid, 'ativo' => 0]);
 $ok('remover kit direto: volta a 0', count($ficha(201)) === 0);
-$ok('produto fora do catálogo → 404/422', fn() => in_array($erro(fn() => $kits->definirKitDoProduto(['product_id' => 999999, 'grupo_id' => $kid]))?->http, [404, 422], true));
-$ok('excluir sem motivo → 422', fn() => $erro(fn() => $kits->definirAjuste(['product_id' => 102, 'atributo_id' => $atr['Vias'], 'modo' => 'excluir']))?->http === 422);
-$kits->definirAjuste(['product_id' => 102, 'atributo_id' => $atr['Vias'], 'modo' => 'excluir', 'motivo' => 'cabo sem vias contáveis']);
+$ok('produto fora do catálogo → 404/422', fn() => in_array($erro(fn() => $kp(['product_id' => 999999, 'grupo_id' => $kid]))?->http, [404, 422], true));
+$ok('excluir sem motivo → 422', fn() => $erro(fn() => $aj(['product_id' => 102, 'atributo_id' => $atr['Vias'], 'modo' => 'excluir']))?->http === 422);
+$aj(['product_id' => 102, 'atributo_id' => $atr['Vias'], 'modo' => 'excluir', 'motivo' => 'cabo sem vias contáveis']);
 $ok('exceção: 102 perde "Vias" só nele', !isset($ficha(102)[$atr['Vias']]) && isset($ficha(103)[$atr['Vias']]));
-$kits->definirAjuste(['product_id' => 102, 'atributo_id' => $atr['Vias'], 'modo' => null]);
+$aj(['product_id' => 102, 'atributo_id' => $atr['Vias'], 'modo' => null]);
 $ok('desfazer exceção devolve "Vias"', isset($ficha(102)[$atr['Vias']]));
-$kits->definirAjuste(['product_id' => 103, 'atributo_id' => $atr['Potência'], 'modo' => 'incluir']);
+$aj(['product_id' => 103, 'atributo_id' => $atr['Potência'], 'modo' => 'incluir']);
 $ok('avulso: 103 ganha "Potência"', isset($ficha(103)[$atr['Potência']]) && !isset($ficha(104)[$atr['Potência']]));
 
 // ---- massa: prévia = aplicação; idempotente pela chave --------------------------------------------------------------------------------
@@ -112,10 +117,10 @@ $pedido = ['produtos' => [101, 102, 103, 104, 105], 'kits_aplicar' => [$k2]];
 $pv = $kits->previaMassa($pedido)['resumo'];
 $ok('prévia: 5 produtos, +1 atributo cada (Cor e Vias já vinham do kit)', $pv['produtos'] === 5 && $pv['atributos_acrescentados'] === 5 && $pv['atributos_removidos'] === 0, json_encode($pv));
 $ok('prévia não grava nada', (int) $um('SELECT COUNT(*) FROM eq_grupo_produto WHERE grupo_id = ?', [$k2]) === 0);
-$ok('massa sem chave → 422', fn() => $erro(fn() => $kits->aplicarMassa($pedido))?->http === 422);
-$r1 = $kits->aplicarMassa($pedido + ['chave' => 'teste-massa-0001']);
+$ok('massa sem chave → 422', fn() => $erro(fn() => $ms($pedido))?->http === 422);
+$r1 = $ms($pedido + ['chave' => 'teste-massa-0001']);
 $ok('aplicar: 5 kits aplicados', ($r1['gravado']['kits_aplicados'] ?? -1) === 5, json_encode($r1));
-$r2 = $kits->aplicarMassa($pedido + ['chave' => 'teste-massa-0001']);
+$r2 = $ms($pedido + ['chave' => 'teste-massa-0001']);
 $ok('mesma chave: repetido, nada gravado de novo', !empty($r2['repetido']) && (int) $um('SELECT COUNT(*) FROM eq_grupo_produto WHERE grupo_id = ?', [$k2]) === 5);
 $ok('ficha após massa = prévia (5 atributos no 101)', count($ficha(101)) === 5);
 $ok('massa > 1000 produtos → 422', fn() => $erro(fn() => $kits->previaMassa(['produtos' => range(1, 1001), 'kits_aplicar' => [$k2]]))?->http === 422);
@@ -160,7 +165,7 @@ $ok('nível 50 não decide → 403', fn() => $erro(fn() => (new SugestoesService
 // D10 em multiopção: sugestão de outra opção não acrescenta ao valor existente
 $mo = $adm->salvarAtributo(['rotulo' => 'Conectores (multi)', 'tipo' => 'multiopcao'])['atributo']; $moId = (int) $mo['id'];
 $adm->adicionarOpcao($moId, 'HDMI'); $adm->adicionarOpcao($moId, 'DP'); $opsMo = $adm->adicionarOpcao($moId, 'SDI')['opcoes'];
-$kits->definirAjuste(['product_id' => 105, 'atributo_id' => $moId, 'modo' => 'incluir']);
+$aj(['product_id' => 105, 'atributo_id' => $moId, 'modo' => 'incluir']);
 $adm->gravarValor(['product_id' => 105, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id']]);
 $pdo->prepare("INSERT INTO eq_sugestao (chave, product_id, atributo_id, fonte, tipo, valor_proposto, opcao_id) VALUES ('t|105|mo', 105, ?, 'nome_produto', 'valor', 'SDI', ?)")->execute([$moId, (int) $opsMo[2]['id']]);
 $sMo = (int) $pdo->lastInsertId();
@@ -174,27 +179,27 @@ $ok('limpar multiopção remove as 2 opções', fn() => !empty($adm->limparValor
     && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 0);
 $ok('limpar em produto inativo → 422', fn() => $erro(fn() => $adm->limparValor(['product_id' => 199, 'atributo_id' => $atr['Cor'], 'versao' => 1]))?->http === 422);
 // desmarcar a 2ª opção com a versão do VALOR (a que a tela conhece)
-$kits->definirAjuste(['product_id' => 106, 'atributo_id' => $moId, 'modo' => 'incluir']);
+$aj(['product_id' => 106, 'atributo_id' => $moId, 'modo' => 'incluir']);
 $adm->gravarValor(['product_id' => 106, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id']]);
 $adm->gravarValor(['product_id' => 106, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id']]);
-$vv = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 106 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);
-$ok('desmarcar a 2ª opção com a versão do valor funciona', fn() => $adm->removerOpcaoDoValor(['product_id' => 106, 'atributo_id' => $moId, 'opcao_id' => (int) $opsMo[1]['id'], 'versao' => $vv])['ok'] === true);
+$verVal = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 106 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);
+$ok('desmarcar a 2ª opção com a versão do valor funciona', fn() => $adm->removerOpcaoDoValor(['product_id' => 106, 'atributo_id' => $moId, 'opcao_id' => (int) $opsMo[1]['id'], 'versao' => $verVal])['ok'] === true);
 // incluir em massa não apaga a unidade do produto (ajuste); chave amarrada ao conteúdo
-$kits->definirAjuste(['product_id' => 104, 'atributo_id' => $atr['Comprimento'], 'modo' => 'ajustar', 'unidade_id' => $uMm]);
-$kits->aplicarMassa(['produtos' => [104], 'atributos_incluir' => [['atributo_id' => $atr['Comprimento']]], 'chave' => 'teste-massa-0002']);
+$aj(['product_id' => 104, 'atributo_id' => $atr['Comprimento'], 'modo' => 'ajustar', 'unidade_id' => $uMm]);
+$ms(['produtos' => [104], 'atributos_incluir' => [['atributo_id' => $atr['Comprimento']]], 'chave' => 'teste-massa-0002']);
 $ok('massa incluir mantém a unidade do produto (mm)', (int) $um('SELECT unidade_id FROM eq_produto_atributo WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$atr['Comprimento']]) === $uMm);
-$ok('mesma chave com outro pedido → 409', fn() => $erro(fn() => $kits->aplicarMassa(['produtos' => [105], 'kits_aplicar' => [$k2], 'chave' => 'teste-massa-0002']))?->http === 409);
+$ok('mesma chave com outro pedido → 409', fn() => $erro(fn() => $ms(['produtos' => [105], 'kits_aplicar' => [$k2], 'chave' => 'teste-massa-0002']))?->http === 409);
 $ok('massa: unidade em atributo sem unidade de comprimento → 422', fn() => $erro(fn() => $kits->previaMassa(['produtos' => [101], 'atributos_incluir' => [['atributo_id' => $atr['Cor'], 'unidade_id' => $uMm]]]))?->http === 422);
 $ok('massa: motivo > 255 → 422', fn() => $erro(fn() => $kits->previaMassa(['produtos' => [101], 'atributos_excluir' => [['atributo_id' => $atr['Cor'], 'motivo' => str_repeat('x', 300)]]]))?->http === 422);
-$ok('ajuste: posição fora do limite → 422', fn() => $erro(fn() => $kits->definirAjuste(['product_id' => 101, 'atributo_id' => $atr['Cor'], 'modo' => 'ajustar', 'posicao' => 70000]))?->http === 422);
+$ok('ajuste: posição fora do limite → 422', fn() => $erro(fn() => $aj(['product_id' => 101, 'atributo_id' => $atr['Cor'], 'modo' => 'ajustar', 'posicao' => 70000]))?->http === 422);
 $adm->criarUnidade(['simbolo' => 'kg', 'nome' => 'quilograma', 'grandeza' => 'massa', 'fator_base' => '1']);
 $um2 = array_column($adm->criarUnidade(['simbolo' => 'g', 'nome' => 'grama', 'grandeza' => 'massa', 'fator_base' => '0.001'])['unidades'], 'id', 'simbolo');
 [$uKg, $uG] = [(int) $um2['kg'], (int) $um2['g']];
-$ok('ajuste: kg num atributo de comprimento → 422 (A8)', fn() => $erro(fn() => $kits->definirAjuste(['product_id' => 101, 'atributo_id' => $atr['Comprimento'], 'modo' => 'ajustar', 'unidade_id' => $uKg]))?->http === 422);
+$ok('ajuste: kg num atributo de comprimento → 422 (A8)', fn() => $erro(fn() => $aj(['product_id' => 101, 'atributo_id' => $atr['Comprimento'], 'modo' => 'ajustar', 'unidade_id' => $uKg]))?->http === 422);
 $ok('atributo de texto com unidade → 422', fn() => $erro(fn() => $adm->salvarAtributo(['rotulo' => 'Texto com unidade', 'tipo' => 'texto', 'unidade_id' => $uCm]))?->http === 422);
 // limites na unidade padrão: máximo 500 kg; 2000 g (= 2 kg) passa; 600 kg não
 $peso = (int) $adm->salvarAtributo(['rotulo' => 'Peso (teste)', 'tipo' => 'numero', 'unidade_id' => $uKg, 'maximo' => '500'])['atributo']['id'];
-$kits->definirAjuste(['product_id' => 102, 'atributo_id' => $peso, 'modo' => 'incluir']); $kits->definirAjuste(['product_id' => 103, 'atributo_id' => $peso, 'modo' => 'incluir']);
+$aj(['product_id' => 102, 'atributo_id' => $peso, 'modo' => 'incluir']); $aj(['product_id' => 103, 'atributo_id' => $peso, 'modo' => 'incluir']);
 $ok('limite: 2000 g (= 2 kg) com máximo 500 kg passa', fn() => (bool) $adm->gravarValor(['product_id' => 102, 'atributo_id' => $peso, 'valor' => '2000', 'unidade_id' => $uG]));
 $ok('limite: 600 kg passa do máximo → 422', fn() => $erro(fn() => $adm->gravarValor(['product_id' => 103, 'atributo_id' => $peso, 'valor' => '600', 'unidade_id' => $uKg]))?->http === 422);
 // duplicar atômico: origem com 5 destaques (dado do legado) não deixa "cópia" vazia
@@ -203,6 +208,71 @@ $kits->definirItens(['id' => $k3, 'versao' => (int) $repo->grupo($k3)['versao'],
 $pdo->prepare('UPDATE eq_grupo_atributo SET destaque = 1 WHERE grupo_id = ?')->execute([$k3]);
 $ok('duplicar com erro nos itens → 422', fn() => $erro(fn() => $kits->duplicarKit(['id' => $k3, 'nome' => 'Cópia que falha']))?->http === 422);
 $ok('duplicar atômico: não sobrou kit "Cópia que falha"', (int) $um("SELECT COUNT(*) FROM eq_grupo WHERE nome = 'Cópia que falha'") === 0);
+
+// ---- risco residual 5: versão OBRIGATÓRIA nos ajustes e vínculos (conferida sob trava) ------------------------------------------------
+$ok('ajuste sem versao_vinculos → 422', fn() => $erro(fn() => $kits->definirAjuste(['product_id' => 104, 'atributo_id' => $atr['Malha'], 'modo' => 'incluir']))?->http === 422);
+$ok('kit direto sem versao_vinculos → 422', fn() => $erro(fn() => $kits->definirKitDoProduto(['product_id' => 202, 'grupo_id' => $k2, 'ativo' => 1]))?->http === 422);
+$v0 = $verVinc(104);
+$rA = $kits->definirAjuste(['product_id' => 104, 'atributo_id' => $atr['Malha'], 'modo' => 'incluir', 'versao_vinculos' => $v0]);
+$ok('ajuste com a versão certa grava e devolve a versão nova', $rA['mudou'] === true && $rA['versao_vinculos'] === $verVinc(104) && $rA['versao_vinculos'] !== $v0);
+$ok('ajuste com versão velha (outra pessoa mudou) → 409, nada gravado', fn() => $erro(fn() => $kits->definirAjuste(['product_id' => 104, 'atributo_id' => $atr['Malha'], 'modo' => 'ajustar', 'posicao' => 3, 'versao_vinculos' => $v0]))?->http === 409
+    && $um('SELECT posicao FROM eq_produto_atributo WHERE product_id = 104 AND atributo_id = ?', [$atr['Malha']]) === null);
+$ok('duas pessoas criando o mesmo vínculo: a segunda (versão de antes) → 409', function () use ($kits, $verVinc, $erro, $atr) {
+    $v = $verVinc(202);
+    $kits->definirAjuste(['product_id' => 202, 'atributo_id' => $atr['Cor'], 'modo' => 'incluir', 'versao_vinculos' => $v]);
+    return $erro(fn() => $kits->definirAjuste(['product_id' => 202, 'atributo_id' => $atr['Cor'], 'modo' => 'excluir', 'motivo' => 'outra pessoa', 'versao_vinculos' => $v]))?->http === 409;
+});
+$v1 = $verVinc(202);
+$kits->definirKitDoProduto(['product_id' => 202, 'grupo_id' => $k2, 'ativo' => 1, 'versao_vinculos' => $v1]);
+$ok('kit direto com versão velha → 409 (o kit continua aplicado)', fn() => $erro(fn() => $kits->definirKitDoProduto(['product_id' => 202, 'grupo_id' => $k2, 'ativo' => 0, 'versao_vinculos' => $v1]))?->http === 409
+    && (int) $um('SELECT COUNT(*) FROM eq_grupo_produto WHERE product_id = 202 AND grupo_id = ? AND excluido_em IS NULL', [$k2]) === 1);
+$ok('versão por produto: mudar o 202 não muda a versão do 201', (function () use ($verVinc, $kp, $k2) { $a = $verVinc(201); $kp(['product_id' => 202, 'grupo_id' => $k2, 'ativo' => 0]); return $verVinc(201) === $a; })());
+$ok('kit_produtos sem versão do kit → 422', fn() => $erro(fn() => $kits->definirProdutosDoKit(['id' => $k2, 'adicionar' => [106]]))?->http === 422);
+$vk = (int) $repo->grupo($k2)['versao'];
+$rk = $kits->definirProdutosDoKit(['id' => $k2, 'versao' => $vk, 'adicionar' => [201]]);
+$ok('kit_produtos com a versão certa grava e sobe a versão do kit', $rk['adicionados'] === 1 && $rk['versao'] === $vk + 1);
+$ok('kit_produtos com versão velha → 409', fn() => $erro(fn() => $kits->definirProdutosDoKit(['id' => $k2, 'versao' => $vk, 'remover' => [201]]))?->http === 409
+    && (int) $um('SELECT COUNT(*) FROM eq_grupo_produto WHERE product_id = 201 AND grupo_id = ? AND excluido_em IS NULL', [$k2]) === 1);
+$sv = $insSug('t|202|comp', 202, $atr['Comprimento'], null, '100', $uCm);
+$sug->decidir(['id' => $sv, 'versao' => 1, 'decisao' => 'aceitar', 'vincular' => 1]);
+$ok('aceitar sugestão + vincular continua vinculando (versão lida na mesma transação)', $um("SELECT modo FROM eq_produto_atributo WHERE product_id = 202 AND atributo_id = ? AND excluido_em IS NULL", [$atr['Comprimento']]) === 'incluir');
+
+// ---- risco residual 1 + 5 na massa: tabela de pedidos com chave ÚNICA e versão da prévia ----------------------------------------------
+$pM = ['produtos' => [105], 'atributos_incluir' => [$atr['Malha']]];
+$ok('massa sem versao_previa → 422', fn() => $erro(fn() => $kits->aplicarMassa($pM + ['chave' => 'sem-versao-01']))?->http === 422);
+$vp = $kits->previaMassa($pM)['versao_previa'];
+$aj(['product_id' => 105, 'atributo_id' => $atr['Potência'], 'modo' => 'incluir']);   // outra pessoa mexe no 105 depois da prévia
+$ok('massa com prévia velha → 409', fn() => $erro(fn() => $kits->aplicarMassa($pM + ['chave' => 'previa-velha-01', 'versao_previa' => $vp]))?->http === 409);
+$ok('409 desfaz o pedido: a chave não fica registrada', (int) $um("SELECT COUNT(*) FROM eq_pedido_massa WHERE chave = 'previa-velha-01'") === 0
+    && $um('SELECT COUNT(*) FROM eq_produto_atributo WHERE product_id = 105 AND atributo_id = ?', [$atr['Malha']]) === 0);
+$rM = $kits->aplicarMassa($pM + ['chave' => 'previa-velha-01', 'versao_previa' => $kits->previaMassa($pM)['versao_previa']]);
+$ok('com a prévia nova, a mesma chave aplica', ($rM['gravado']['inclusoes'] ?? -1) === 1 && empty($rM['repetido']));
+$ok('pedido registrado com assinatura e resultado', $um("SELECT CONCAT(LENGTH(assinatura), '|', produtos, '|', JSON_EXTRACT(resultado, '$.gravado.inclusoes'), '|', concluido_em IS NOT NULL) FROM eq_pedido_massa WHERE chave = 'previa-velha-01'") === '64|1|1|1');
+$vpk = $kits->previaMassa(['produtos' => [106], 'kits_aplicar' => [$k2]])['versao_previa'];
+$kits->definirItens(['id' => $k2, 'versao' => (int) $repo->grupo($k2)['versao'], 'itens' => $itens([$atr['Conector'], $atr['Cor']])]);
+$ok('kit mudou depois da prévia → 409', fn() => $erro(fn() => $kits->aplicarMassa(['produtos' => [106], 'kits_aplicar' => [$k2], 'chave' => 'kit-mudou-01', 'versao_previa' => $vpk]))?->http === 409);
+$ok('índice único na chave (010)', (int) $um("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'eq_pedido_massa' AND INDEX_NAME = 'uq_eq_pedido_massa_chave' AND NON_UNIQUE = 0") === 1);
+
+// corrida real com DUAS conexões: outra sessão segura a mesma chave numa transação aberta; esta espera no índice único
+$pC = ['produtos' => [106], 'kits_aplicar' => [$k2]];
+$assin = hash('sha256', json_encode([[106], [$k2], [], [], []]));
+$outra = function (string $chave, string $fim) use ($cnf, $db, $assin) {
+    $sql = "START TRANSACTION; INSERT INTO eq_pedido_massa (chave, assinatura, usuario, produtos, resultado, concluido_em) VALUES ('$chave', '$assin', 'outra-sessao', 1, '{\"gravado\": {\"kits_aplicados\": 1}, \"marca\": \"outra\"}', NOW(3)); DO SLEEP(2); $fim;";
+    $p = proc_open(['mysql', "--defaults-extra-file=$cnf", $db, '-e', $sql], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    usleep(800000);   // a outra sessão já inseriu (sem COMMIT) quando esta começa
+    return [$p, $pipes];
+};
+[$p1, $pp1] = $outra('corrida-0001', 'COMMIT');
+$t0 = microtime(true); $rC = $ms($pC + ['chave' => 'corrida-0001']); $dt = microtime(true) - $t0;
+stream_get_contents($pp1[1]); stream_get_contents($pp1[2]); $st1 = proc_close($p1);
+$ok('corrida (a outra confirma): esta esperou no índice e devolveu o resultado da outra, sem aplicar', $st1 === 0 && $dt > 0.8 && !empty($rC['repetido']) && ($rC['marca'] ?? '') === 'outra'
+    && (int) $um('SELECT COUNT(*) FROM eq_grupo_produto WHERE product_id = 106 AND grupo_id = ? AND excluido_em IS NULL', [$k2]) === 0, json_encode($rC) . " dt=$dt st=$st1");
+[$p2, $pp2] = $outra('corrida-0002', 'ROLLBACK');
+$t0 = microtime(true); $rD = $ms($pC + ['chave' => 'corrida-0002']); $dt = microtime(true) - $t0;
+stream_get_contents($pp2[1]); stream_get_contents($pp2[2]); $st2 = proc_close($p2);
+$ok('corrida (a outra desiste): esta espera e aplica uma vez só', $st2 === 0 && $dt > 0.8 && empty($rD['repetido']) && ($rD['gravado']['kits_aplicados'] ?? -1) === 1
+    && $um("SELECT usuario FROM eq_pedido_massa WHERE chave = 'corrida-0002'") === 'admin@exemplo.invalid', json_encode($rD) . " dt=$dt st=$st2");
+$ok('auditoria "massa" uma por chave aplicada', (int) $um("SELECT COUNT(*) FROM eq_auditoria WHERE entidade = 'massa' AND entidade_id IN ('corrida-0001', 'corrida-0002')") === 1);
 
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " modulo-mysql (kits, vínculos, massa, sugestões, unidade): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);

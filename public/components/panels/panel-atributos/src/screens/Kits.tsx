@@ -351,7 +351,7 @@ function EditorKit({ id, aoVoltar, aoAbrir }: { id: number; aoVoltar: () => void
     if (gravandoRef.current) return false;   // uma seção por vez: cada gravação sobe a versão do kit
     gravandoRef.current = true; setGravando('avulsos'); limparErro('avulsos');
     try {
-      const r = await enviar<{ adicionados: number; removidos: number }>('kit_produtos', { id: k.id, adicionar, remover });
+      const r = await enviar<{ adicionados: number; removidos: number }>('kit_produtos', { id: k.id, versao: k.versao, adicionar, remover });
       await carregar([]);
       nav.aviso(r.adicionados ? `${plural(r.adicionados, 'produto avulso adicionado', 'produtos avulsos adicionados')}.`
         : r.removidos ? `${plural(r.removidos, 'produto avulso removido', 'produtos avulsos removidos')}.` : 'Nada mudou.');
