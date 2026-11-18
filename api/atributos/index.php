@@ -1,0 +1,119 @@
+<?php
+// /api/equipamentos/atributos.php — API da web Equipamentos › Atributos (Fase B PREPARADA no clone, 31/10/2026; app-dshow DP-AUTO.37).
+// SEMPRE atrás da flag do Dash `equipamentos.atributos` (ausente/desligada → 404, como se a rota não existisse). Sessão do Dash
+// (SessionGate), CSRF em toda escrita, nível do usuário decidido aqui (regras em AtributosService). Uma rota por `r`:
+//   GET  ?r=atributos[&q=&tipo=&inativos=1] · ?r=atributo&id= · ?r=unidades · ?r=grupos · ?r=valores&product_id=
+//   GET  ?r=ficha&product_id= (Etapa 7: ficha APLICÁVEL — só a flag de leitura; produto validado no catálogo DSHOW_CATALOGO_SCHEMA)
+//   Etapa 8 (módulo web): GET ?r=produtos&q= · ?r=categorias (80) · ?r=auditoria&entidade=&id= (80);
+//        POST ?r=unidade (com id = editar) · ?r=unidade_ativa · ?r=grupo_ativo · ?r=valor_opcao_remover · ?r=ficha_revisar (V4/R1, nível 80)
+//   POST ?r=atributo (cria/edita com versao) · ?r=atributo_ativo {id, ativo, versao} · ?r=opcao {atributo_id, rotulo}
+//        ?r=opcao_ativa {id, ativo} · ?r=unidade {simbolo, nome, grandeza} · ?r=grupo (cria/edita, escopos, atributos) · ?r=valor
+// Erros: 403 INSUFFICIENT_LEVEL · 404 NOT_FOUND · 409 CONFLICT/TYPE_CHANGE_BLOCKED · 422 VALIDATION_ERROR (meta.campos).
+// Schema: DSHOW_EQUIPAMENTOS_SCHEMA (padrão = DSHOW_EQUIPAMENTOS, idêntico à produção; a validação usa DSHOW_EQUIPAMENTOS_VALIDACAO).
+// Contrato da flag (Etapa 5, Bloco 3.2 — FICHA-PILOTO-ATRIBUTOS §1 e cabeçalho acima):
+//   piloto desligado (flag ausente, OFF, fora da janela, outro ambiente, rollout 0) → 404 PARA TODOS, antes da sessão
+//     (a rota "não existe": sem sessão também é 404, nunca 401 — não revela o recurso);
+//   piloto ativo + sem sessão → 401 (política vigente do requireAuth);
+//   piloto ativo + sessão fora do rollout/override OFF → 404 (para essa pessoa o recurso não existe);
+//   autenticado sem nível → 403 (AtributosService);
+//   flag ilegível (banco/consulta falhou: source=error) ou configuração defeituosa → 500 real, nunca 404.
+//   Escrita e preenchimento (todo POST e GET ?r=valores) exigem também `equipamentos.atributos.escrita` (DP-F1.F1);
+//   desligada → 404 nessas rotas.
+declare(strict_types=1);
+
+@ini_set('display_errors', '0');
+require_once __DIR__ . '/../_helpers/ApiResponse.php';
+require_once __DIR__ . '/../_helpers/AuthHelpers.php';
+require_once __DIR__ . '/../core/CorsPolicy.php';
+require_once __DIR__ . '/../core/SessionGate.php';
+require_once __DIR__ . '/../../config/db_connection.php';
+require_once __DIR__ . '/../feature-flags/resolver.php';
+require_once __DIR__ . '/AtributosRepo.php';
+require_once __DIR__ . '/CatalogoPdo.php';
+
+const EQ_FLAG = 'equipamentos.atributos';
+const EQ_FLAG_ESCRITA = 'equipamentos.atributos.escrita';
+// Fontes do resolvedor que significam "piloto desligado para todos" (→ 404 antes da sessão).
+const EQ_DESLIGADO = ['not_found', 'disabled', 'not_started', 'expired', 'environment_mismatch', 'rollout_excluded'];
+
+/** Decide pela fonte do resolvedor: erro de leitura nunca vira ausência. */
+function eqFlagOuFalha(array $f): bool {
+    $src = (string) ($f['source'] ?? 'error');
+    if ($src === 'error') {
+        error_log('[equipamentos/atributos] flag ilegível (' . (string) ($f['key'] ?? '?') . ')');
+        ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Configuração do recurso indisponível.']);
+    }
+    return ($f['enabled'] ?? false) === true;
+}
+
+CorsPolicy::apply();
+SessionGate::start();
+
+try {
+    $pdo = getConnection('DSHOWDASH');
+    $resolver = new FeatureFlagResolver($pdo);
+    // 1) antes da sessão: desligado para todos → 404 (a rota não existe)
+    $pre = $resolver->resolve(EQ_FLAG, null);
+    eqFlagOuFalha($pre);
+    if (in_array((string) $pre['source'], EQ_DESLIGADO, true)) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
+} catch (Throwable $e) {
+    error_log('[equipamentos/atributos] ' . get_class($e) . ': ' . $e->getMessage());
+    ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Erro interno.']);
+}
+
+// 2) piloto ativo: política de autenticação vigente (401)
+$user = AuthHelpers::requireAuth();
+
+try {
+    // 3) a pessoa está no piloto? (rollout/override) — fora → 404 só para ela
+    if (!eqFlagOuFalha($resolver->resolve(EQ_FLAG, (int) ($user['id'] ?? 0)))) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
+    $metodoReq = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $rReq = (string) ($_GET['r'] ?? '');
+    if ($metodoReq === 'POST' || $rReq === 'valores') {
+        if (!eqFlagOuFalha($resolver->resolve(EQ_FLAG_ESCRITA, (int) ($user['id'] ?? 0)))) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
+    }
+    // 4) CSRF em toda escrita, depois das flags (escrita desligada responde 404 sem revelar a rota)
+    AuthHelpers::requireCsrfForWrite();
+    $svc = new AtributosService(new AtributosRepoPdo($pdo, (string) (getenv('DSHOW_EQUIPAMENTOS_SCHEMA') ?: 'DSHOW_EQUIPAMENTOS')), (int) ($user['level'] ?? 0), (string) ($user['email'] ?: ('usuario:' . ($user['id'] ?? '?'))),
+        new CatalogoPdo($pdo, (string) (getenv('DSHOW_CATALOGO_SCHEMA') ?: 'APP_DSHOW')));
+    $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $r = (string) ($_GET['r'] ?? '');
+    $corpo = [];
+    if ($metodo === 'POST') {
+        $raw = file_get_contents('php://input');
+        $corpo = $raw === '' || $raw === false ? [] : json_decode($raw, true);
+        if (!is_array($corpo)) ApiResponse::error(ApiResponse::ERR_INVALID_JSON, 400);
+    }
+    $out = match ("$metodo $r") {
+        'GET atributos' => $svc->listar($_GET),
+        'GET atributo' => $svc->detalhe((int) ($_GET['id'] ?? 0)),
+        'GET unidades' => $svc->unidades(),
+        'GET grupos' => $svc->grupos(),
+        'GET valores' => $svc->valoresDoProduto((int) ($_GET['product_id'] ?? 0)),
+        'GET ficha' => $svc->ficha((int) ($_GET['product_id'] ?? 0), eqFlagOuFalha($resolver->resolve(EQ_FLAG_ESCRITA, (int) ($user['id'] ?? 0)))),
+        'POST atributo' => $svc->salvarAtributo($corpo),
+        'POST atributo_ativo' => $svc->definirAtivo((int) ($corpo['id'] ?? 0), !empty($corpo['ativo']), (int) ($corpo['versao'] ?? 0), isset($corpo['motivo']) ? (string) $corpo['motivo'] : null),
+        'POST opcao' => $svc->adicionarOpcao((int) ($corpo['atributo_id'] ?? 0), $corpo['rotulo'] ?? null),
+        'POST opcao_renomear' => $svc->renomearOpcao((int) ($corpo['id'] ?? 0), $corpo['rotulo'] ?? null, $corpo['rotulo_atual'] ?? null),
+        'POST opcao_reordenar' => $svc->reordenarOpcoes((int) ($corpo['atributo_id'] ?? 0), $corpo['ordem'] ?? null),
+        'POST opcao_ativa' => $svc->definirOpcaoAtiva((int) ($corpo['id'] ?? 0), !empty($corpo['ativo'])),
+        'POST unidade' => isset($corpo['id']) ? $svc->salvarUnidade($corpo) : $svc->criarUnidade($corpo),
+        'POST unidade_ativa' => $svc->definirUnidadeAtiva((int) ($corpo['id'] ?? 0), !empty($corpo['ativo'])),
+        'POST grupo_ativo' => $svc->definirGrupoAtivo((int) ($corpo['id'] ?? 0), !empty($corpo['ativo']), (int) ($corpo['versao'] ?? 0)),
+        'POST valor_opcao_remover' => $svc->removerOpcaoDoValor($corpo),
+        'POST ficha_revisar' => $svc->revisarFicha($corpo),
+        'GET produtos' => $svc->buscarProdutos(isset($_GET['q']) ? (string) $_GET['q'] : null),
+        'GET categorias' => $svc->categoriasCatalogo(),
+        'GET auditoria' => $svc->auditoria((string) ($_GET['entidade'] ?? ''), (string) ($_GET['id'] ?? '')),
+        'POST grupo' => $svc->salvarGrupo($corpo),
+        'POST valor' => $svc->gravarValor($corpo),
+        default => null,
+    };
+    if ($out === null) ApiResponse::error(ApiResponse::ERR_INVALID_ACTION, 400);
+    ApiResponse::success($out);
+} catch (AtributosErro $e) {
+    ApiResponse::error($e->codigo, $e->http, ['message' => $e->getMessage()] + ($e->campos ? ['campos' => $e->campos] : []));
+} catch (Throwable $e) {
+    error_log('[equipamentos/atributos] ' . get_class($e) . ': ' . $e->getMessage());
+    ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Erro interno.']);
+}

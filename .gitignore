@@ -2304,3 +2304,12 @@ dist/
 !/public/assets/avatars/motor/motor-90dc1a324341.js
 !/public/assets/avatars/motor/motor.json
 !/public/assets/avatars/secret-agent.svg
+
+# ATRIBUTOS-WEB (18/11/2026): módulo web de atributos (porte de atr/ponte-app 693c70c6) + migrações do DSHOW_EQUIPAMENTOS
+!/api/atributos/
+!/api/atributos/**
+!/scripts/atributos/
+!/scripts/atributos/**
+!/db/
+!/db/equipamentos/
+!/db/equipamentos/**
