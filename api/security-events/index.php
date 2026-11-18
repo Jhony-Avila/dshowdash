@@ -58,12 +58,14 @@ function handleGetEvents(): void {
     $allowedSeverities = ['critical', 'high', 'medium', 'low', 'info'];
     $severity = $validator->enum('severity', '', $allowedSeverities) ?: null;
     $eventType = $validator->string('event_type', '', ['maxLength' => 100]) ?: null;
-    $userId = $validator->id('user_id', false);
+    $userId = $validator->id('user_id', 0);
     $dateFrom = $validator->string('date_from', '', ['maxLength' => 20]) ?: null;
     $dateTo = $validator->string('date_to', '', ['maxLength' => 20]) ?: null;
     $resolved = $validator->string('resolved', '', ['maxLength' => 1]) ?: null;
 
     $offset = $pagination['offset'];
+    // DSHOW-009 (18/11): filtro opcional — ausente/vazio = sem filtro (0); não numérico = 400 VALIDATION_ERROR (padrão do settings) (antes: TypeError por passar false no parâmetro int)
+    if ($validator->hasErrors()) { ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['message' => 'Parâmetros inválidos.', 'details' => $validator->getErrors()]); return; }
 
     try {
         $pdo = getConnection('DSHOWDASH');
@@ -223,7 +225,7 @@ function handleCreateEvent(): void {
 function handleUpdateEvent(): void {
     $validator = InputValidator::fromGet();
     $input = json_decode(file_get_contents('php://input'), true);
-    $eventId = $input['id'] ?? $validator->id('id', false);
+    $eventId = (int) ($input['id'] ?? $validator->id('id', 0));   // DSHOW-009: 0 = ausente → MISSING_EVENT_ID abaixo (antes: TypeError)
 
     if (!$eventId) {
         ApiResponse::error('MISSING_EVENT_ID', 400);

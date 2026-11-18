@@ -46,12 +46,14 @@ function handleGetAudit(): void {
     $pagination = $validator->pagination(50, 100);
     $page = $pagination['page'];
     $limit = $pagination['limit'];
-    $userId = $validator->id('user_id', false);
+    $userId = $validator->id('user_id', 0);
     $action = $validator->string('action', '', ['maxLength' => 100]) ?: null;
     $dateFrom = $validator->string('date_from', '', ['maxLength' => 20]) ?: null;
     $dateTo = $validator->string('date_to', '', ['maxLength' => 20]) ?: null;
 
     $offset = $pagination['offset'];
+    // DSHOW-009 (18/11): filtro opcional — ausente/vazio = sem filtro (0); não numérico = 400 VALIDATION_ERROR (padrão do settings) (antes: TypeError por passar false no parâmetro int)
+    if ($validator->hasErrors()) { ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['message' => 'Parâmetros inválidos.', 'details' => $validator->getErrors()]); return; }
 
     try {
         $pdo = getConnection('DSHOWDASH');
