@@ -3,7 +3,7 @@
 import React from 'react';
 import type { AtributoDicionario, EventoHistorico, Ficha as TFicha, ItemFicha, KitResumo, Sugestao } from '../lib/tipos';
 import { enviar, ErroApi, obter } from '../lib/api';
-import { campoPrecifica, dataHora, decimal, precifica as fmtPrecifica, pctDe, valor as fmtValor } from '../lib/formatar';
+import { campoPrecifica, dataHora, decimal, precifica as fmtPrecifica, pctDe, sugestaoTexto, valor as fmtValor } from '../lib/formatar';
 import { ESTADO, FAMILIAS_PRECIFICA, FONTE_SUGESTAO, IMPORTANCIA, MOTIVO_KIT, rotuloCategoria, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
 import { Barra, Botao, CapsulaId, ChipKit, Carregando, Dialogo, Erro, Etiqueta, Foto, Vazio } from '../ui/Comuns';
@@ -33,9 +33,14 @@ export function Ficha({ id }: { id: number }) {
 
   return (
     <div className="at-ficha">
-      <div className="at-ficha__topo">
-        <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Voltar</button>
-        <span className="at-fraco">Ficha do produto{f.pode_editar ? '' : ' · somente leitura'}</span>
+      {/* UX-1 (wireframe): "← Produtos · nome · Cód. · categoria/subcategoria · Detalhes" */}
+      <div className="at-ficha__topo at-ficha__topo--linha">
+        <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
+        <strong className="at-ficha__nome" title={p.nome}>{p.nome}</strong>
+        <span className="at-fraco">Cód. {p.id}</span>
+        <span className="at-fraco">{rotuloCategoria(p.categoria)} / {rotuloSubcategoria(p.subcategoria)}</span>
+        {!f.pode_editar && <Etiqueta>somente leitura</Etiqueta>}
+        <Botao aoClicar={() => setDetalhes(true)}>Detalhes</Botao>
       </div>
       <div className="at-heroi">
         <div className="at-galeria">
@@ -64,10 +69,8 @@ export function Ficha({ id }: { id: number }) {
           <dl className="at-fontes">
             <div><dt><span className="at-ponto at-ponto--dshow" />Especificação técnica</dt><dd>Banco de atributos DSHOW (esta tela). {f.legado ? `Legado do Jhony: item ${f.legado.item}, kit ${f.legado.kit_nome ?? '—'}.` : 'Sem atribuição no legado.'}</dd></div>
             <div><dt><span className="at-ponto at-ponto--precifica" />Ficha do Precifica</dt><dd>{f.precifica.familias.length ? 'Somente leitura, ao lado de cada atributo com par e na aba Precifica.' : 'Este produto não tem ficha técnica no Precifica.'}</dd></div>
-            <div><dt><span className="at-ponto at-ponto--preco" />Preço (Precifica)</dt><dd>Reservado. Preço e valores comerciais não entram na web nesta etapa (A7).</dd></div>
           </dl>
           <div className="at-acoes">
-            <Botao aoClicar={() => setDetalhes(true)}>Detalhes</Botao>
             {pend > 0 && <Etiqueta tom="info">{pend} sugest{pend === 1 ? 'ão' : 'ões'} para conferir</Etiqueta>}
             {f.completude.obrigatorios_vazios.length > 0 && <Etiqueta tom="aviso">{f.completude.obrigatorios_vazios.length} obrigatório(s) vazio(s)</Etiqueta>}
           </div>
@@ -77,18 +80,19 @@ export function Ficha({ id }: { id: number }) {
         {([['atributos', `Atributos (${f.itens.length})`], ['vinculos', 'Vínculos'], ['fotos', `Fotos (${f.fotos.length})`], ['precifica', 'Precifica'], ['historico', 'Histórico']] as [AbaFicha, string][]).map(([a, r]) => (
           <button key={a} type="button" role="tab" aria-selected={aba === a} className={aba === a ? 'ativo' : ''} onClick={() => setAba(a)}>{r}</button>))}
       </div>
-      {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} />}
+      {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} />}
       {aba === 'vinculos' && <AbaVinculos f={f} recarregar={() => carregar(true)} />}
       {aba === 'fotos' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => { setFoto(i); window.scrollTo({ top: 0 }); }}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
       {aba === 'precifica' && <AbaPrecifica f={f} />}
       {aba === 'historico' && <AbaHistorico id={p.id} />}
-      <Dialogo titulo="Detalhes do produto" aberto={detalhes} aoFechar={() => setDetalhes(false)} largura={620}>
+      <Dialogo titulo="Detalhes do produto · dados cadastrais" aberto={detalhes} aoFechar={() => setDetalhes(false)} largura={620}>
         <dl className="at-detalhes">
           <dt>ID</dt><dd>{p.id}</dd><dt>Nome (catálogo)</dt><dd>{p.nome}</dd><dt>Categoria</dt><dd>{rotuloCategoria(p.categoria)} ({p.categoria})</dd>
           <dt>Subcategoria</dt><dd>{rotuloSubcategoria(p.subcategoria)} ({p.subcategoria ?? '—'})</dd><dt>Situação</dt><dd>{p.ativo ? 'Ativo' : 'Inativo'}</dd>
           <dt>Kits</dt><dd>{f.kits.map((k) => `${k.nome} (${k.motivos.map((x) => MOTIVO_KIT[x.tipo]).join(', ')})`).join(' · ') || '—'}</dd>
           <dt>Legado</dt><dd>{f.legado ? `item ${f.legado.item} · kit ${f.legado.kit_nome ?? '—'} · ${f.legado.atribuidos} atribuições` : '—'}</dd>
           <dt>Precifica</dt><dd>{f.precifica.familias.map(tituloFamilia).join(', ') || '—'}</dd>
+          <dt>Preço</dt><dd>Reservado. Preço e valores comerciais vêm do Precifica e não entram na web nesta etapa (A7).</dd>
           <dt>Completude</dt><dd>essencial {f.completude.essencial.feitos}/{f.completude.essencial.total} · completo {f.completude.completo.feitos}/{f.completude.completo.total} · geral {f.completude.geral.feitos}/{f.completude.geral.total}</dd>
         </dl>
       </Dialogo>
@@ -97,36 +101,63 @@ export function Ficha({ id }: { id: number }) {
 }
 
 // ---- Aba Atributos -------------------------------------------------------------------------------------------------------------------
-function AbaAtributos({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
+function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco }: { f: TFicha; recarregar: () => void; focoInicial?: number | null; aoConsumirFoco?: () => void }) {
   const m = useModulo();
   const [agrup, setAgrup] = React.useState<'kit' | 'grupo'>('kit');
-  const [filtro, setFiltro] = React.useState<'todos' | 'vazios' | 'obrigatorios' | 'sugestoes'>('todos');
+  const [filtro, setFiltro] = React.useState<'todos' | 'obrigatorios' | 'sugestoes'>('todos');
+  const pendentes = React.useMemo(() => new Set(f.completude.obrigatorios_vazios), [f]);   // UX-1: a MESMA lista do contador (servidor)
   const [hist, setHist] = React.useState<ItemFicha | null>(null);
-  const itens = f.itens.filter((i) => filtro === 'todos' || (filtro === 'vazios' && !i.valor) || (filtro === 'obrigatorios' && i.obrigatorio && !i.valor) || (filtro === 'sugestoes' && i.sugestoes.length > 0));
+  const [adicionar, setAdicionar] = React.useState(false);
+  // UX-1: depois de adicionar, o campo novo recebe o foco (avulso: o atributo escolhido; kit: o 1º campo vazio que o kit trouxe)
+  const [focar, setFocar] = React.useState<{ atributo?: number; kit?: number } | null>(null);
+  // UX-1: abrir a ficha já num atributo (pelo ID). Fora da ficha → aviso; a ficha abre normalmente.
+  React.useEffect(() => {
+    if (focoInicial === null) return;
+    aoConsumirFoco?.();
+    if (f.itens.some((i) => i.atributo_id === focoInicial)) setFocar({ atributo: focoInicial });
+    else m.aviso('Este atributo já não faz parte da ficha. Os dados foram atualizados.', 'info');
+  }, [focoInicial]);   // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => {
+    if (!focar) return;
+    const alvo = focar.atributo ?? f.itens.find((i) => !i.valor && (i.kit_id === focar.kit || i.origens.some((o) => o.grupo_id === focar.kit)))?.atributo_id;
+    if (alvo === undefined) return;
+    const linha = document.querySelector<HTMLElement>(`[data-atributo="${alvo}"]`); if (!linha) return;
+    linha.scrollIntoView({ block: 'center' });
+    linha.querySelector<HTMLElement>('input:not([type=checkbox]):not([readonly]), select, button[role=radio], input[type=checkbox]')?.focus();
+    setFocar(null);
+  }, [focar, f]);
+  const itens = f.itens.filter((i) => filtro === 'todos' || (filtro === 'obrigatorios' && pendentes.has(i.atributo_id)) || (filtro === 'sugestoes' && i.sugestoes.length > 0));
   const grupos = new Map<string, ItemFicha[]>();
   for (const i of itens) { const k = agrup === 'kit' ? (i.kit ?? 'Sem kit') : (i.grupo_atributos ?? 'Sem grupo de atributos'); grupos.set(k, [...(grupos.get(k) ?? []), i]); }
   const blocos = [...grupos.entries()].sort((a, b) => (agrup === 'grupo' ? a[0].localeCompare(b[0], 'pt-BR') : 0));
   return (
     <section className="at-painel" aria-label="Atributos do produto">
       <div className="at-painel__cabeca">
+        <h3>Atributos deste produto</h3>
         <div className="at-acoes">
           <div className="at-alternador" role="group" aria-label="Agrupar por">
             <button type="button" className={agrup === 'kit' ? 'ativo' : ''} aria-pressed={agrup === 'kit'} onClick={() => setAgrup('kit')}>Por kit</button>
             <button type="button" className={agrup === 'grupo' ? 'ativo' : ''} aria-pressed={agrup === 'grupo'} onClick={() => setAgrup('grupo')}>Por grupo de atributos</button>
           </div>
-          <select className="at-select" aria-label="Mostrar" value={filtro} onChange={(e) => setFiltro(e.target.value as typeof filtro)}>
-            <option value="todos">Todos ({f.itens.length})</option><option value="vazios">Sem valor ({f.itens.filter((i) => !i.valor).length})</option>
-            <option value="obrigatorios">Obrigatórios vazios ({f.completude.obrigatorios_vazios.length})</option><option value="sugestoes">Com sugestão ({f.itens.filter((i) => i.sugestoes.length).length})</option>
-          </select>
+          <div className="at-alternador" role="group" aria-label="Mostrar">
+            {([['todos', `Todos (${f.itens.length})`], ['obrigatorios', `Obrigatórios pendentes (${pendentes.size})`], ['sugestoes', `Com sugestão (${f.itens.filter((i) => i.sugestoes.length).length})`]] as [typeof filtro, string][]).map(([v, r]) => (
+              <button key={v} type="button" className={filtro === v ? 'ativo' : ''} aria-pressed={filtro === v} onClick={() => setFiltro(v)}>{r}</button>))}
+          </div>
         </div>
-        <span className="at-fraco">{f.pode_editar ? 'Cada campo grava sozinho (Enter ou ao sair do campo).' : 'Somente leitura para o seu nível.'}</span>
+        <div className="at-acoes">
+          {f.pode_vincular && <Botao primario aoClicar={() => setAdicionar(true)}>Adicionar atributo a este produto</Botao>}
+          <span className="at-fraco">{f.pode_editar ? 'Cada campo grava sozinho (Enter ou ao sair do campo).' : 'Somente leitura para o seu nível.'}</span>
+        </div>
       </div>
-      <div className="at-attr at-attr--cabecalho" aria-hidden><div>Atributo</div><div>Valor</div><div>Precifica</div><div>Origem</div></div>
+      <Dialogo titulo="Adicionar atributo a este produto" aberto={adicionar} aoFechar={() => setAdicionar(false)} largura={640}>
+        <SeletorAdicionar f={f} aoFeito={(alvo) => { setAdicionar(false); setFocar(alvo); recarregar(); }} />
+      </Dialogo>
+      <div className="at-attr at-attr--cabecalho" aria-hidden><div>Atributo e origem do vínculo</div><div>Valor DSHOW</div><div>Estado e sugestão</div><div>Referência do Precifica · somente leitura</div></div>
       {blocos.length === 0 && <div className="at-bloco__vazio">Nada neste filtro.</div>}
       {blocos.map(([nome, xs]) => (
         <div key={nome} className="at-bloco">
           <div className="at-bloco__titulo">{agrup === 'kit' && nome !== 'Sem kit' ? <ChipKit nome={nome} /> : <strong>{nome}</strong>}<span className="at-filtro__n">{xs.length}</span></div>
-          {xs.map((i) => <LinhaAtributo key={i.atributo_id} i={i} f={f} recarregar={recarregar} aoHistorico={() => setHist(i)} />)}
+          {xs.map((i) => <LinhaAtributo key={i.atributo_id} i={i} f={f} pendente={pendentes.has(i.atributo_id)} recarregar={recarregar} aoHistorico={() => setHist(i)} />)}
         </div>))}
       {f.fora_da_ficha.length > 0 && <SecaoFora f={f} recarregar={recarregar} />}
       {f.legado_nao_vinculado.length > 0 && (
@@ -150,11 +181,13 @@ function AbaAtributos({ f, recarregar }: { f: TFicha; recarregar: () => void }) 
   );
 }
 
-function LinhaAtributo({ i, f, recarregar, aoHistorico }: { i: ItemFicha; f: TFicha; recarregar: () => void; aoHistorico: () => void }) {
+function LinhaAtributo({ i, f, pendente = false, recarregar, aoHistorico }: { i: ItemFicha; f: TFicha; pendente?: boolean; recarregar: () => void; aoHistorico: () => void }) {
+  // UX-1: estado em palavras (coluna "Estado e sugestão")
+  const estadoTxt = pendente ? 'Pendente' : !i.valor ? 'Sem valor' : i.valor.estado === 'nao_se_aplica' ? 'Não se aplica' : i.valor.estado === 'desconhecido' ? 'Desconhecido' : 'Preenchido';
   const imp = i.importancia ? IMPORTANCIA[i.importancia] : null;
   const unidade = i.valor?.unidade_id ? i.unidades.find((u) => u.id === i.valor?.unidade_id)?.simbolo ?? i.unidade_efetiva?.simbolo ?? null : i.unidade_efetiva?.simbolo ?? null;
   return (
-    <div className={`at-attr ${i.valor ? 'at-attr--preenchido' : i.obrigatorio ? 'at-attr--obrigatorio' : 'at-attr--modelo'}`}>
+    <div data-atributo={i.atributo_id} className={`at-attr ${i.valor ? 'at-attr--preenchido' : i.obrigatorio ? 'at-attr--obrigatorio' : 'at-attr--modelo'}`}>
       <div className="at-attr__nome">
         <span className="at-attr__marca" aria-hidden />
         <div>
@@ -164,20 +197,23 @@ function LinhaAtributo({ i, f, recarregar, aoHistorico }: { i: ItemFicha; f: TFi
             {!i.visivel_app && <Etiqueta titulo="Não aparece no app (A5)">só na web</Etiqueta>}
             {i.codigo && <code className="at-codigo" title="Código estável (contrato com o app)">{i.codigo}</code>}
           </div>
-        </div>
-      </div>
-      <div className="at-attr__valor">
-        <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} aoGravar={recarregar} aoRecarregar={recarregar} />
-        {i.sugestoes.map((s) => <SugestaoLinha key={s.id} s={s} i={i} f={f} recarregar={recarregar} />)}
-      </div>
-      <div className="at-attr__precifica">{i.precifica ? <><span className="at-fonte-mini">Precifica</span> {fmtPrecifica(i.precifica.chave, i.precifica.valor)}</> : <span className="at-fraco">—</span>}</div>
-      <div className="at-attr__origem">
+          <div className="at-attr__origem">
         {i.valor && <Etiqueta tom={i.valor.origem === 'manual' ? 'verde' : 'neutro'} titulo={i.valor.legado_bruto ?? undefined}>{i.valor.origem === 'manual' ? 'manual' : 'importado'} · {dataHora(i.valor.atualizado_em)}{i.valor.atualizado_por ? ` · ${i.valor.atualizado_por.replace(/@.*/, '')}` : ''}</Etiqueta>}
         {i.origens.map((o, k) => <span key={k} className="at-origem">{o.tipo === 'avulso' ? 'avulso' : `${o.grupo_nome} · ${(o.motivos ?? []).map((x) => MOTIVO_KIT[x.tipo]).join(', ')}`}</span>)}
         {i.legado?.tp_unit && <span className="at-fraco" title="Unidade escrita no legado">legado: {i.legado.tp_unit}</span>}
         <button type="button" className="at-link" onClick={aoHistorico}>histórico</button>
         {unidade === null && null}
+          </div>
+        </div>
       </div>
+      <div className="at-attr__valor">
+        <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} aoGravar={recarregar} aoRecarregar={recarregar} />
+      </div>
+      <div className="at-attr__estado">
+        <span className={`at-estado-txt ${pendente ? 'at-estado-txt--pendente' : ''}`}>{estadoTxt}</span>
+        {i.sugestoes.map((s) => <SugestaoLinha key={s.id} s={s} i={i} f={f} recarregar={recarregar} />)}
+      </div>
+      <div className="at-attr__precifica">{i.precifica ? <><span className="at-fonte-mini">Precifica</span> {fmtPrecifica(i.precifica.chave, i.precifica.valor)}</> : <span className="at-fraco">—</span>}</div>
     </div>
   );
 }
@@ -185,7 +221,6 @@ function LinhaAtributo({ i, f, recarregar, aoHistorico }: { i: ItemFicha; f: TFi
 function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: TFicha; recarregar: () => void }) {
   const m = useModulo();
   const [trab, setTrab] = React.useState(false);
-  const rotOp = s.opcao_id ? i.opcoes.find((o) => o.id === s.opcao_id)?.rotulo : null;
   const un = s.unidade_id ? i.unidades.find((u) => u.id === s.unidade_id)?.simbolo ?? '' : '';
   const decidir = (decisao: 'aceitar' | 'recusar') => {
     setTrab(true);
@@ -195,8 +230,8 @@ function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: 
   if (s.tipo === 'conferencia') return <div className="at-sugestao" title={s.evidencia ?? ''}><span className="at-sugestao__rot">conferir ({FONTE_SUGESTAO[s.fonte]}):</span> {s.valor_proposto} {un} <button type="button" className="at-link" onClick={() => m.ir('conferencia')}>resolver na Conferência</button></div>;
   return (
     <div className="at-sugestao" title={s.evidencia ?? ''}>
-      <span className="at-sugestao__rot">sugestão ({FONTE_SUGESTAO[s.fonte]}):</span> <span className="at-sugestao__val">{rotOp ?? (s.valor_proposto && /^-?\d+(\.\d+)?$/.test(s.valor_proposto) ? decimal(s.valor_proposto) : s.valor_proposto)} {un}</span>
-      {f.pode_editar && <>{i.valor ? <span className="at-fraco" title="Sugestão não sobrescreve (D10)"> campo já preenchido</span> : <button type="button" className="at-link" disabled={trab} onClick={() => decidir('aceitar')}>Aceitar</button>} <button type="button" className="at-link at-link--fraco" disabled={trab} onClick={() => decidir('recusar')}>Recusar</button></>}
+      <span className="at-sugestao__rot" title={`Fonte: ${FONTE_SUGESTAO[s.fonte]}`}>Sugestão:</span> <span className="at-sugestao__val">{sugestaoTexto(s, i)}</span>
+      {f.pode_editar && <>{i.valor ? <span className="at-fraco" title="Sugestão não sobrescreve (D10)"> campo já preenchido</span> : <button type="button" className="at-link" disabled={trab} onClick={() => decidir('aceitar')}>· Usar</button>} <button type="button" className="at-link at-link--fraco" disabled={trab} onClick={() => decidir('recusar')}>Recusar</button></>}
     </div>);
 }
 
@@ -294,12 +329,8 @@ function AbaPrecifica({ f }: { f: TFicha }) {
 // ---- Aba Vínculos (H6) ---------------------------------------------------------------------------------------------------------------
 function AbaVinculos({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
   const m = useModulo();
-  const [kits, setKits] = React.useState<KitResumo[]>([]);
-  const [kitNovo, setKitNovo] = React.useState<number | ''>('');
-  const [avulso, setAvulso] = React.useState(false);
   const [excluir, setExcluir] = React.useState<ItemFicha | null>(null);
   const [motivo, setMotivo] = React.useState('');
-  React.useEffect(() => { obter<{ kits: KitResumo[] }>('kits').then((d) => setKits(d.kits.filter((k) => k.ativo && k.itens > 0))).catch(() => setKits([])); }, []);
   const pid = f.produto.id;
   const chamar = (rota: string, corpo: Record<string, unknown>, ok: string) => enviar(rota, corpo).then(() => { m.aviso(ok); recarregar(); }).catch((e) => m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'));
   const pode = f.pode_vincular;
@@ -313,14 +344,7 @@ function AbaVinculos({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
               <li key={k.id}><ChipKit nome={k.nome} /><span>{k.motivos.map((x) => x.tipo === 'escopo' ? `pela subcategoria ${rotuloSubcategoria(x.subcategoria || null)}${x.subcategoria ? '' : ' (categoria inteira)'}` : MOTIVO_KIT[x.tipo]).join(' · ')}</span>
                 {pode && k.motivos.some((x) => x.tipo === 'direto') && <Botao aoClicar={() => chamar('produto_kit', { product_id: pid, versao_vinculos: f.versao_vinculos, grupo_id: k.id, ativo: 0 }, 'Kit removido deste produto.')}>Remover kit direto</Botao>}
                 <button type="button" className="at-link" onClick={() => m.ir('kits', { kit: k.id })}>abrir kit</button></li>))}</ul>)}
-          {pode && (
-            <div className="at-acoes" style={{ marginTop: 12 }}>
-              <select className="at-campo" aria-label="Kit para aplicar" value={kitNovo} onChange={(e) => setKitNovo(e.target.value ? Number(e.target.value) : '')}>
-                <option value="">Aplicar um kit a este produto…</option>{kits.filter((k) => !f.kits.some((x) => x.id === k.id)).map((k) => <option key={k.id} value={k.id}>{k.nome} ({k.itens} atributos)</option>)}
-              </select>
-              <Botao primario desligado={kitNovo === ''} aoClicar={() => { if (kitNovo !== '') chamar('produto_kit', { product_id: pid, versao_vinculos: f.versao_vinculos, grupo_id: kitNovo, ativo: 1 }, 'Kit aplicado a este produto.').then(() => setKitNovo('')); }}>Aplicar kit</Botao>
-              <Botao aoClicar={() => setAvulso(true)}>Adicionar atributo avulso</Botao>
-            </div>)}
+          {pode && <div style={{ marginTop: 12 }}><SeletorAdicionar f={f} aoFeito={() => recarregar()} /></div>}
         </div>
       </section>
       <section className="at-painel">
@@ -351,12 +375,36 @@ function AbaVinculos({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
         <p>O atributo continua no kit para os outros produtos. Aqui ele deixa de aparecer (o valor, se houver, vai para "Fora da ficha").</p>
         <label className="at-rotulo-campo">Motivo (obrigatório)<input className="at-campo" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex.: este modelo não tem esse componente" /></label>
       </Dialogo>
-      <BuscaAvulso aberto={avulso} f={f} aoFechar={() => setAvulso(false)} aoFeito={() => { setAvulso(false); recarregar(); }} />
+    </div>);
+}
+
+/** UX-1: o seletor de "adicionar ao produto" — o MESMO na aba Vínculos e no botão da aba Atributos: aplicar um kit ou um atributo avulso. */
+function SeletorAdicionar({ f, aoFeito }: { f: TFicha; aoFeito: (alvo: { atributo?: number; kit?: number }) => void }) {
+  const m = useModulo();
+  const [kits, setKits] = React.useState<KitResumo[]>([]);
+  const [kitNovo, setKitNovo] = React.useState<number | ''>('');
+  const [avulso, setAvulso] = React.useState(false);
+  const [trab, setTrab] = React.useState(false);
+  React.useEffect(() => { obter<{ kits: KitResumo[] }>('kits').then((d) => setKits(d.kits.filter((k) => k.ativo && k.itens > 0))).catch(() => setKits([])); }, []);
+  const aplicarKit = () => {
+    if (kitNovo === '') return; const k = kitNovo; setTrab(true);
+    enviar('produto_kit', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, grupo_id: k, ativo: 1 })
+      .then(() => { m.aviso('Kit aplicado a este produto.'); setKitNovo(''); aoFeito({ kit: k }); })
+      .catch((e) => m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro')).finally(() => setTrab(false));
+  };
+  return (
+    <div className="at-acoes">
+      <select className="at-campo" aria-label="Kit para aplicar" value={kitNovo} onChange={(e) => setKitNovo(e.target.value ? Number(e.target.value) : '')}>
+        <option value="">Aplicar um kit a este produto…</option>{kits.filter((k) => !f.kits.some((x) => x.id === k.id)).map((k) => <option key={k.id} value={k.id}>{k.nome} ({k.itens} atributos)</option>)}
+      </select>
+      <Botao primario desligado={kitNovo === ''} trabalhando={trab} aoClicar={aplicarKit}>Aplicar kit</Botao>
+      <Botao aoClicar={() => setAvulso(true)}>Adicionar atributo avulso</Botao>
+      <BuscaAvulso aberto={avulso} f={f} aoFechar={() => setAvulso(false)} aoFeito={(aid) => { setAvulso(false); aoFeito({ atributo: aid }); }} />
     </div>);
 }
 
 /** Adicionar atributo avulso (H4): busca no dicionário com filtros. */
-function BuscaAvulso({ aberto, f, aoFechar, aoFeito }: { aberto: boolean; f: TFicha; aoFechar: () => void; aoFeito: () => void }) {
+function BuscaAvulso({ aberto, f, aoFechar, aoFeito }: { aberto: boolean; f: TFicha; aoFechar: () => void; aoFeito: (atributoId: number) => void }) {
   const m = useModulo();
   const [dic, setDic] = React.useState<AtributoDicionario[] | null>(null);
   const [q, setQ] = React.useState(''); const [tipo, setTipo] = React.useState(''); const [esc, setEsc] = React.useState<number | null>(null); const [trab, setTrab] = React.useState(false);
@@ -364,7 +412,7 @@ function BuscaAvulso({ aberto, f, aoFechar, aoFeito }: { aberto: boolean; f: TFi
   const ja = new Set(f.itens.map((i) => i.atributo_id));
   const n = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const lista = (dic ?? []).filter((a) => a.ativo && !ja.has(a.id) && (!tipo || a.tipo === tipo) && (!q || n(a.rotulo + ' ' + a.codigo).includes(n(q)))).slice(0, 60);
-  const confirmar = () => { if (esc === null) return; setTrab(true); enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: esc, modo: 'incluir' }).then(() => { m.aviso('Atributo avulso adicionado.'); aoFeito(); }).catch((e) => m.aviso(e.message, 'erro')).finally(() => setTrab(false)); };
+  const confirmar = () => { if (esc === null) return; setTrab(true); enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: esc, modo: 'incluir' }).then(() => { m.aviso('Atributo avulso adicionado.'); aoFeito(esc); }).catch((e) => m.aviso(e.message, 'erro')).finally(() => setTrab(false)); };
   return (
     <Dialogo titulo="Adicionar atributo avulso a este produto" aberto={aberto} aoFechar={aoFechar} largura={640}
       rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><Botao primario desligado={esc === null} trabalhando={trab} aoClicar={confirmar}>Adicionar</Botao></>}>

@@ -1,6 +1,6 @@
 // Produtos & Atributos — testes das funções puras do painel (formatação pt-BR, entrada numérica, busca, rótulos, cor do kit).
 // Rodar: bash scripts/atributos/testes/front-puras.sh (empacota com o esbuild do Vite e executa no Node; sem dependência nova).
-import { campoPrecifica, casaBusca, dataCurta, dataHora, decimal, numeroParaApi, pct, pctDe, valor } from '../../../public/components/panels/panel-atributos/src/lib/formatar';
+import { campoPrecifica, casaBusca, dataCurta, dataHora, decimal, numeroParaApi, pct, pctDe, valor, sugestaoTexto } from '../../../public/components/panels/panel-atributos/src/lib/formatar';
 import { corKit, rotuloSubcategoria } from '../../../public/components/panels/panel-atributos/src/lib/rotulos';
 import { lerRota, rotaDe } from '../../../public/components/panels/panel-atributos/src/lib/rota';
 
@@ -75,6 +75,13 @@ igual('id inválido na ficha → lista', lerRota('#/panel-atributos/produto/abc'
 igual('rotaDe ficha', rotaDe({ aba: 'kits', produto: 154, kit: 3 }), '#/panel-atributos/produto/154');
 igual('rotaDe kit', rotaDe({ aba: 'kits', produto: null, kit: 3 }), '#/panel-atributos/kits/3');
 igual('rotaDe atributos', rotaDe({ aba: 'atributos', produto: null, kit: null }), '#/panel-atributos/atributos');
+// UX-1: sugestão formatada pelo TIPO do atributo (igual na Ficha e na grade)
+const itT = (tipo: string) => ({ tipo, opcoes: [{ id: 7, rotulo: 'Azul', ativo: true, posicao: 1 }], unidades: [{ id: 3, simbolo: 'mm' }] }) as never;
+igual('sugestão de TEXTO preserva "00154"', sugestaoTexto({ valor_proposto: '00154', opcao_id: null, unidade_id: null }, itT('texto')), '00154');
+igual('sugestão de NÚMERO em formato brasileiro com unidade', sugestaoTexto({ valor_proposto: '1234.50', opcao_id: null, unidade_id: 3 }, itT('numero')), '1.234,5 mm');
+igual('sugestão de OPÇÃO mostra o rótulo', sugestaoTexto({ valor_proposto: 'azul', opcao_id: 7, unidade_id: null }, itT('opcao')), 'Azul');
+igual('sugestão de SIM/NÃO', sugestaoTexto({ valor_proposto: '1', opcao_id: null, unidade_id: null }, itT('booleano')), 'Sim');
+igual('número em atributo de TEXTO não vira número ("0012,5" fica igual)', sugestaoTexto({ valor_proposto: '0012.5', opcao_id: null, unidade_id: null }, itT('texto')), '0012.5');
 igual('rotaDe produtos = endereço do item "Geral Produtos" (#/panel-atributos)', rotaDe({ aba: 'produtos', produto: null, kit: null }), '#/panel-atributos');
 igual('lerRota /produtos (endereço antigo) continua abrindo a lista', JSON.stringify(lerRota('#/panel-atributos/produtos')), JSON.stringify({ aba: 'produtos', produto: null, kit: null }));
 igual('ida e volta de todas as telas', (['visao', 'produtos', 'vincular', 'preencher', 'kits', 'atributos', 'unidades', 'conferencia'] as const).every((a) => lerRota(rotaDe({ aba: a, produto: null, kit: null }))?.aba === a), true);

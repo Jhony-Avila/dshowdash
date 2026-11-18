@@ -35,11 +35,13 @@ export function Kits(_: Record<string, unknown> = {}) {
   const nav = useModulo();
   const id = nav.aba === 'kits' ? nav.kit : null;
   const abrir = (k: number | null) => nav.ir('kits', { kit: k });
-  return id ? <EditorKit key={id} id={id} aoVoltar={() => abrir(null)} aoAbrir={abrir} /> : <ListaKits aoAbrir={abrir} />;
+  const [recemCriado, setRecemCriado] = React.useState<number | null>(null);   // UX-1: destaque "Kit criado. Escolha os atributos…"
+  return id ? <EditorKit key={id} id={id} recemCriado={recemCriado === id} aoVoltar={() => abrir(null)} aoAbrir={abrir} />
+    : <ListaKits aoAbrir={abrir} aoCriado={(k) => { setRecemCriado(k); abrir(k); }} />;
 }
 
 // ── Lista ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-function ListaKits({ aoAbrir }: { aoAbrir: (id: number) => void }) {
+function ListaKits({ aoAbrir, aoCriado }: { aoAbrir: (id: number) => void; aoCriado: (id: number) => void }) {
   const nav = useModulo();
   const [dados, setDados] = React.useState<RespKits | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
@@ -130,7 +132,7 @@ function ListaKits({ aoAbrir }: { aoAbrir: (id: number) => void }) {
         </div>
       )}
 
-      <DialogoCriar aberto={criando} aoFechar={() => setCriando(false)} aoCriar={(novo) => { setCriando(false); nav.aviso(`Kit "${novo.nome}" criado.`); aoAbrir(novo.id); }} />
+      <DialogoCriar aberto={criando} aoFechar={() => setCriando(false)} aoCriar={(novo) => { setCriando(false); nav.aviso(`Kit "${novo.nome}" criado.`); aoCriado(novo.id); }} />
       <DialogoDuplicar kit={duplicando} aoFechar={() => setDuplicando(null)}
         aoDuplicar={(novo) => { setDuplicando(null); nav.aviso(`Kit "${novo.nome}" criado a partir de outro.`); aoAbrir(novo.id); }} />
       <DialogoAtivo kit={mudandoAtivo} aoFechar={() => setMudandoAtivo(null)}
@@ -145,15 +147,14 @@ type KitBasico = { id: number; nome: string; versao: number; ativo: boolean };
 function DialogoCriar({ aberto, aoFechar, aoCriar }: { aberto: boolean; aoFechar: () => void; aoCriar: (k: KitBasico) => void }) {
   const [nome, setNome] = React.useState('');
   const [descricao, setDescricao] = React.useState('');
-  const [todos, setTodos] = React.useState(false);
   const [gravando, setGravando] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
-  React.useEffect(() => { if (aberto) { setNome(''); setDescricao(''); setTodos(false); setErro(null); } }, [aberto]);
+  React.useEffect(() => { if (aberto) { setNome(''); setDescricao(''); setErro(null); } }, [aberto]);
   const criar = async () => {
     if (!nome.trim()) { setErro('Informe o nome do kit.'); return; }
     setGravando(true); setErro(null);
     try {
-      const r = await enviar<{ kit: KitBasico }>('kit', { nome: nome.trim(), descricao: descricao.trim() || null, aplica_a_todos: todos ? 1 : 0 });
+      const r = await enviar<{ kit: KitBasico }>('kit', { nome: nome.trim(), descricao: descricao.trim() || null, aplica_a_todos: 0 });   // UX-1: "aplica a todos" fica na configuração do kit
       aoCriar(r.kit);
     } catch (e) { setErro(msgErro(e)); } finally { setGravando(false); }
   };
@@ -168,8 +169,7 @@ function DialogoCriar({ aberto, aoFechar, aoCriar }: { aberto: boolean; aoFechar
         <label className="at-rotulo-campo">Descrição (opcional)
           <textarea className="at-campo" rows={3} value={descricao} maxLength={500} onChange={(e) => setDescricao(e.target.value)} />
         </label>
-        <label className="at-check"><input type="checkbox" checked={todos} onChange={(e) => setTodos(e.target.checked)} /> Aplica a todos os produtos</label>
-        <p className="at-kits-dica">Depois de criar, você escolhe os atributos, o escopo e os produtos avulsos.</p>
+        <p className="at-kits-dica">Depois de criar, você escolhe os atributos, onde o kit vale (inclusive "aplica a todos os produtos") e os produtos avulsos.</p>
       </form>
     </Dialogo>
   );
@@ -243,7 +243,7 @@ type ItemRascunho = ItemKit & { novo?: boolean };
 const ordenarItens = (l: ItemKit[]) => [...l].sort((a, b) => a.posicao - b.posicao);
 const assinaturaItens = (l: ItemKit[]) => JSON.stringify(l.map((i) => [i.atributo_id, +i.obrigatorio, +i.visivel, +i.destaque, i.importancia ?? null, i.unidade_id ?? null]));
 
-function EditorKit({ id, aoVoltar, aoAbrir }: { id: number; aoVoltar: () => void; aoAbrir: (id: number) => void }) {
+function EditorKit({ id, recemCriado = false, aoVoltar, aoAbrir }: { id: number; recemCriado?: boolean; aoVoltar: () => void; aoAbrir: (id: number) => void }) {
   const nav = useModulo();
   const [det, setDet] = React.useState<KitDetalhe | null>(null);
   const [erroCarga, setErroCarga] = React.useState<string | null>(null);
@@ -428,7 +428,7 @@ function EditorKit({ id, aoVoltar, aoAbrir }: { id: number; aoVoltar: () => void
         </div>
       </section>
 
-      <PainelItens itens={itens} setItens={setItens} unidades={det.unidades} pode={pode} sujo={sujoItens} gravando={gravando === 'itens'}
+      <PainelItens itens={itens} setItens={setItens} unidades={det.unidades} pode={pode} sujo={sujoItens} gravando={gravando === 'itens'} recemCriado={recemCriado}
         erro={erroSecao('itens', ['itens'])} aoSalvar={salvarItens} aoDescartar={() => iniciar(det, ['itens'])} />
 
       <div className="at-kits-duas">
@@ -454,8 +454,8 @@ function BotaoVoltar({ aoVoltar }: { aoVoltar: () => void }) {
 }
 
 // ── Itens ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-function PainelItens({ itens, setItens, unidades, pode, sujo, gravando, erro, aoSalvar, aoDescartar }: {
-  itens: ItemRascunho[]; setItens: React.Dispatch<React.SetStateAction<ItemRascunho[]>>; unidades: Unidade[]; pode: boolean; sujo: boolean; gravando: boolean;
+function PainelItens({ itens, setItens, unidades, pode, sujo, gravando, erro, aoSalvar, aoDescartar, recemCriado = false }: {
+  itens: ItemRascunho[]; setItens: React.Dispatch<React.SetStateAction<ItemRascunho[]>>; unidades: Unidade[]; pode: boolean; sujo: boolean; gravando: boolean; recemCriado?: boolean;
   erro: React.ReactNode; aoSalvar: () => void; aoDescartar: () => void;
 }) {
   const [adicionando, setAdicionando] = React.useState(false);
@@ -501,21 +501,26 @@ function PainelItens({ itens, setItens, unidades, pode, sujo, gravando, erro, ao
         <div>
           <h3 id="kit-itens">Atributos do kit <span className="at-fraco">({itens.length})</span></h3>
           <p className="at-kits-dica">
-            Destaques: {nDest} de {MAX_DESTAQUES}.{pode ? ' Reordene com os botões ▲ ▼ (ou arrastando a linha). As mudanças só valem depois de "Salvar itens".' : ''}
+            Destaques: {nDest} de {MAX_DESTAQUES}.{pode ? ' Reordene com os botões ▲ ▼ (ou arrastando a linha). As mudanças só valem depois de "Salvar atributos do kit".' : ''}
           </p>
         </div>
         <div className="at-acoes">
           {sujo && <span className="at-kits-pendente" role="status">Alterações não salvas</span>}
           {pode && <Botao aoClicar={() => setAdicionando(true)}>+ Adicionar atributos</Botao>}
           {pode && sujo && <Botao aoClicar={aoDescartar}>Descartar</Botao>}
-          {pode && <Botao primario desligado={!sujo} trabalhando={gravando} aoClicar={aoSalvar}>Salvar itens</Botao>}
+          {pode && <Botao primario desligado={!sujo} trabalhando={gravando} aoClicar={aoSalvar}>Salvar atributos do kit</Botao>}
         </div>
       </div>
       <div className="at-painel__corpo">
         {erro}
         <span className="bl-so-leitor" aria-live="polite">{anuncio}</span>
         {itens.length === 0 ? (
-          <Vazio titulo="Este kit ainda não tem atributos.">{pode ? 'Use "Adicionar atributos" para escolher no dicionário.' : null}</Vazio>
+          pode ? (
+            <div className={`at-kits-vazio-novo ${recemCriado ? 'at-kits-vazio-novo--destaque' : ''}`} role="status">
+              <strong>{recemCriado ? 'Kit criado. Escolha os atributos que ele terá.' : 'Este kit ainda não tem atributos.'}</strong>
+              <Botao primario aoClicar={() => setAdicionando(true)}>Escolher atributos</Botao>
+            </div>
+          ) : <Vazio titulo="Este kit ainda não tem atributos.">{null}</Vazio>
         ) : (
           <div className="bl-rola-x">
             <table className="at-tabela at-kits-itens">
@@ -644,7 +649,7 @@ function DialogoAdicionar({ aberto, aoFechar, jaNoKit, aoAdicionar }: { aberto: 
       rodape={<>
         <span className="at-kits-dic-rodape">{plural(marcados.size, 'selecionado', 'selecionados')}</span>
         <Botao aoClicar={aoFechar}>Cancelar</Botao>
-        <Botao primario desligado={marcados.size === 0} aoClicar={() => dic && aoAdicionar(dic.filter((a) => marcados.has(a.id)))}>Adicionar ao kit</Botao>
+        <Botao primario desligado={marcados.size === 0} aoClicar={() => dic && aoAdicionar(dic.filter((a) => marcados.has(a.id)))}>{`Usar seleção (${marcados.size})`}</Botao>
       </>}>
       {erro ? <Erro mensagem={erro} aoTentar={carregar} /> : !dic ? <Carregando rotulo="Carregando dicionário" /> : (
         <>
