@@ -96,6 +96,10 @@ for PAINEL in public/components/panels/panel-avatar-studio public/components/pan
   [ "${DRY}" -eq 0 ] && [ ! -f "${TMP}/${PAINEL}/package.json" ] && continue
   B bash -c "cd '${TMP}/${PAINEL}' && npm ci --no-audit --no-fund && npx vite build"
 done
+# toolchain de public/react (vite) usada pelo build-lote-main.sh — 18/11: sem isto o passo 3/8 falhava com "vite ausente"
+# (tentativa de 17/11 18:28). Lockfile versionado → npm ci reprodutível, como os painéis acima. Sem lockfile: falha fechada.
+if [ "${DRY}" -eq 0 ] && [ ! -f "${TMP}/public/react/package-lock.json" ]; then falha "public/react sem package-lock.json (npm ci exige lockfile)"; fi
+B bash -c "cd '${TMP}/public/react' && npm ci --no-audit --no-fund"
 BBAK="${RELS}/.build-bak-${SHA:0:12}-${CARIMBO}"; run mkdir -m 0700 "${BBAK}"; run chown "${BUILD_USER}:${BUILD_USER}" "${BBAK}"
 B env DEPLOY_RAIZ="${TMP}" DEPLOY_BACKUP="${BBAK}" CARIMBO="${CARIMBO}" bash "${TMP}/scripts/deploy/build-lote-main.sh"
 B node "${TMP}/scripts/deploy/smoke-dist.mjs"
