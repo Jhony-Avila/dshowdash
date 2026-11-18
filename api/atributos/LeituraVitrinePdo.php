@@ -94,7 +94,7 @@ final class LeituraVitrinePdo implements LeituraVitrine
         return $this->q('SELECT v.atributo_id, v.opcao_id, o.rotulo AS opcao, v.valor_texto, v.valor_num, v.valor_bool, v.valor_data, v.unidade_id, v.estado, v.origem, v.versao, v.lote_id,
                 v.legado_bruto, v.atualizado_por, v.criado_em, v.atualizado_em
              FROM ' . $this->eq . '`eq_valor` v LEFT JOIN ' . $this->eq . '`eq_opcao` o ON o.id = v.opcao_id
-            WHERE v.product_id = ? AND v.excluido_em IS NULL ORDER BY v.atributo_id, v.opcao_chave, v.id', [$productId]);
+            WHERE v.product_id = ? AND v.excluido_em IS NULL ORDER BY v.atributo_id, o.posicao, o.id, v.id', [$productId]);   // DSHOW-035 #5: opções na ordem do dicionário, como o app
     }
 
     /** Chave do bruto = "P<item>A<atributo legado>" (nas 450 órfãs o Id_atributo do JSON é NULL e a chave o recupera). */

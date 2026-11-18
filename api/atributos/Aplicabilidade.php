@@ -55,7 +55,10 @@ final class Aplicabilidade
             $g = $m->grupos[(int) $gid] ?? null;
             if ($g && (int) $g['ativo']) { $out[(int) $gid]['grupo'] = $g; $out[(int) $gid]['motivos'][] = ['tipo' => 'direto']; }
         }
-        uasort($out, static fn($a, $b) => [(string) $a['grupo']['nome'], (int) $a['grupo']['id']] <=> [(string) $b['grupo']['nome'], (int) $b['grupo']['id']]);
+        // DSHOW-035 #1: com 'ordem_nome' (posição dada pelo MySQL, mesma colação do app) ela manda; sem ela (repositório em memória), nome e id
+        uasort($out, static fn($a, $b) => isset($a['grupo']['ordem_nome'], $b['grupo']['ordem_nome'])
+            ? (int) $a['grupo']['ordem_nome'] <=> (int) $b['grupo']['ordem_nome']
+            : [(string) $a['grupo']['nome'], (int) $a['grupo']['id']] <=> [(string) $b['grupo']['nome'], (int) $b['grupo']['id']]);
         return $out;
     }
 
