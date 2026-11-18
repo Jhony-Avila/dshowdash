@@ -9,6 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../../api/atributos/AtributosRepo.php';
 require_once __DIR__ . '/../../../api/atributos/KitsService.php';
 require_once __DIR__ . '/../../../api/atributos/SugestoesService.php';
+require_once __DIR__ . '/../../../api/atributos/Permissoes.php';
 require_once __DIR__ . '/_memoria.php';
 
 [$cnf, $db] = [(string) (getenv('EQ_TEST_CNF') ?: ''), (string) (getenv('EQ_TEST_DB') ?: '')];
@@ -335,6 +336,40 @@ $ok('034: trocar o estado por uma opção com versão velha → 409', fn() => $e
 $adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id'], 'versao_conjunto' => $vc(104)]);
 $r034 = $adm->limparValor(['product_id' => 104, 'atributo_id' => $moId, 'versao_conjunto' => $vc(104)]);
 $ok('034: com a versão atual, limpar funciona', !empty($r034['limpo']) && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 0);
+
+// ---- Decisão do Jhony (18/11): outros nível 80 só PREENCHEM; administrar = 75 ou permissão explícita (UARPS 'allow') --------------
+$P = 'AtributosPermissoes';
+$ok('perm: 75 nível 80 administra', $P::administra(75, 80, null, [75]));
+$ok('perm: 75 nível 50 não administra', !$P::administra(75, 50, null, [75]));
+$ok('perm: outro nível 80 sem UARPS não administra', !$P::administra(12, 80, null, [75]));
+$ok('perm: UARPS state allow → administra', $P::administra(12, 80, fn($u, $t) => ['allowed' => true, 'state' => 'allow'], [75]));
+$ok('perm: UARPS inherit (allowed=true!) → NÃO administra (precisa de permissão explícita)', !$P::administra(12, 80, fn($u, $t) => ['allowed' => true, 'state' => 'inherit'], [75]));
+$ok('perm: UARPS deny → não', !$P::administra(12, 80, fn($u, $t) => ['allowed' => false, 'state' => 'deny'], [75]));
+$ok('perm: UARPS com erro/fallback → não (fail-closed)', !$P::administra(12, 80, fn($u, $t) => ['allowed' => true, 'state' => 'error', 'source' => 'fallback'], [75])
+    && !$P::administra(12, 80, function ($u, $t) { throw new RuntimeException('x'); }, [75]));
+$admX = new AtributosService($repo, 80, 'jhony.admin@exemplo.invalid', $cat, true);
+$kitsX = new KitsService($repo, 80, 'jhony.admin@exemplo.invalid', $cat, true);
+$admO = new AtributosService($repo, 80, 'outro80@exemplo.invalid', $cat, false);
+$kitsO = new KitsService($repo, 80, 'outro80@exemplo.invalid', $cat, false);
+$aud = fn() => (int) $um('SELECT COUNT(*) FROM eq_auditoria');
+$kO = (int) $kitsX->salvarKit(['nome' => 'Kit do administrador (perm)'])['kit']['id'];
+$ok('perm: quem administra cria kit e a auditoria registra o ator certo', $um("SELECT usuario FROM eq_auditoria WHERE entidade = 'kit' AND entidade_id = ? AND acao = 'criar'", [(string) $kO]) === 'jhony.admin@exemplo.invalid');
+$gK = $repo->grupo($kO); $a0 = $aud();
+$nega = function (string $nome, callable $f, callable $intacto) use ($ok, $erro, $aud, &$a0) {
+    $a0 = $aud(); $e = $erro($f);
+    $ok("perm: outro nível 80 · $nome → 403, nada muda", $e?->http === 403 && $e->codigo === 'NOT_CATALOG_ADMIN' && $aud() === $a0 && $intacto(), $e ? "{$e->codigo} {$e->getMessage()}" : 'sem erro');
+};
+$nega('salvar kit', fn() => $kitsO->salvarKit(['id' => $kO, 'versao' => (int) $gK['versao'], 'nome' => 'invadido']), fn() => $repo->grupo($kO)['nome'] === 'Kit do administrador (perm)' && (int) $repo->grupo($kO)['versao'] === (int) $gK['versao']);
+$nega('itens do kit', fn() => $kitsO->definirItens(['id' => $kO, 'versao' => (int) $gK['versao'], 'itens' => $itens([$atr['Cor']])]), fn() => (int) $repo->grupo($kO)['versao'] === (int) $gK['versao']);
+$nega('criar atributo (dicionário)', fn() => $admO->salvarAtributo(['rotulo' => 'Invasor', 'tipo' => 'texto']), fn() => (int) $um("SELECT COUNT(*) FROM eq_atributo WHERE rotulo = 'Invasor'") === 0);
+$nega('criar unidade', fn() => $admO->criarUnidade(['simbolo' => 'inv', 'nome' => 'invasora', 'grandeza' => 'comprimento', 'fator_base' => '1']), fn() => (int) $um("SELECT COUNT(*) FROM eq_unidade WHERE simbolo = 'inv'") === 0);
+$vvO = $verVinc(101);
+$nega('vínculo por produto', fn() => $kitsO->definirAjuste(['product_id' => 101, 'atributo_id' => $atr['Cor'], 'modo' => 'excluir', 'motivo' => 'x', 'versao_vinculos' => $vvO]), fn() => $verVinc(101) === $vvO);
+$pM2 = ['produtos' => [101], 'kits_aplicar' => [$kO], 'chave' => 'perm-outro-0001'];
+$nega('aplicar em massa', fn() => $kitsO->aplicarMassa($pM2 + ['versao_previa' => str_repeat('0', 64)]), fn() => (int) $um("SELECT COUNT(*) FROM eq_pedido_massa WHERE chave = 'perm-outro-0001'") === 0);
+$ok('perm: outro nível 80 PREENCHE valor e a auditoria registra ele', fn() => (bool) $admO->gravarValor(['product_id' => 102, 'atributo_id' => $peso, 'valor' => '3', 'versao' => (int) $um('SELECT versao FROM eq_valor WHERE product_id = 102 AND atributo_id = ? AND excluido_em IS NULL', [$peso])])
+    && $um("SELECT usuario FROM eq_auditoria WHERE entidade = 'valor' AND entidade_id = ? ORDER BY id DESC LIMIT 1", ["102:$peso:0"]) === 'outro80@exemplo.invalid');
+$ok('perm: pode_administrar = false para o outro nível 80; true para quem administra', $admO->podeAdministrar() === false && $admX->podeAdministrar() === true);
 
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " modulo-mysql (kits, vínculos, massa, sugestões, unidade): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);
