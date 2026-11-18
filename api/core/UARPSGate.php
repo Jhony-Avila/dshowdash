@@ -234,6 +234,22 @@ class UARPSGate {
         return $result['allowed'];
     }
     
+    /**
+     * UARPS-INHERIT v2 (18/11, decisão do Jhony 00:55): MODO SOMBRA para endpoints que consultavam o UARPS e ignoravam o
+     * resultado (admin/panels GET, admin/navigation GET, admin/health-dashboard). Decide como o enforceTrigger, mas NÃO bloqueia:
+     * quando negaria, registra "[UARPS] SOMBRA-NEGARIA enforce" (+ app_uarps_divergence_log via padrão). Virar para
+     * enforceTrigger = portão próprio, depois de ler o log por alguns dias.
+     */
+    public static function sombraTrigger(int $userId, string $triggerId, string $endpoint = ''): bool {
+        $result = self::checkTrigger($userId, $triggerId);
+        if (!$result['allowed']) {
+            error_log(sprintf('[UARPS] SOMBRA-NEGARIA enforce user=%d trigger=%s state=%s rota=%s metodo=%s ip=%s',
+                $userId, $triggerId, (string) ($result['state'] ?? '-'), $endpoint ?: ($_SERVER['REQUEST_URI'] ?? '-'),
+                $_SERVER['REQUEST_METHOD'] ?? '-', $_SERVER['REMOTE_ADDR'] ?? '-'));
+        }
+        return true;   // sombra: nunca bloqueia
+    }
+
     // Verifica e bloqueia region se não permitido
     public static function enforceRegion(int $userId, string $regionId, string $endpoint = ''): bool {
         $result = self::checkRegion($userId, $regionId);

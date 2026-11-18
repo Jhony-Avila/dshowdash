@@ -27,7 +27,7 @@ function enforcePanelsRead(): array {
     $session = SessionGate::requireAuth();
     $userId = (int)($session['user_id'] ?? $session['id'] ?? 0);
     if ($userId > 0) {
-        UARPSGate::checkTrigger($userId, UARPS_TRIGGER_PANELS_READ);
+        UARPSGate::sombraTrigger($userId, UARPS_TRIGGER_PANELS_READ, 'api/admin/panels GET');   // UARPS-INHERIT v2: sombra (antes: consultado e ignorado)
     }
     return $session;
 }

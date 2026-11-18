@@ -57,7 +57,7 @@ function enforceNavReadAccess(): array {
     $session = SessionGate::requireAuth();
     $userId = (int)($session['user_id'] ?? $session['id'] ?? 0);
     if ($userId > 0) {
-        UARPSGate::checkTrigger($userId, UARPS_TRIGGER_NAV_READ);
+        UARPSGate::sombraTrigger($userId, UARPS_TRIGGER_NAV_READ, 'api/admin/navigation GET');   // UARPS-INHERIT v2: sombra
     }
     return $session;
 }
