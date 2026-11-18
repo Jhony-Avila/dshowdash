@@ -357,3 +357,12 @@
 /* UX-1 (grade): motivo do erro ao lado do valor; obrigatório marcado na célula quando a coluna varia entre produtos */
 [data-bl-root] .at-salvo__motivo { font-style: normal; margin-right: 6px; }
 [data-bl-root] .at-cel-obrig { display: inline-block; margin-top: 4px; }
+/* UX-1 (wireframe da Ficha): colunas "Atributo e origem do vínculo" | "Valor DSHOW" | "Estado e sugestão" | "Referência do Precifica" */
+[data-bl-root] .at-attr:not(.at-attr--legado):not(.at-bloco__vazio) { grid-template-columns: minmax(220px, 1.6fr) minmax(170px, 1.2fr) minmax(150px, 1fr) minmax(110px, .8fr); }
+[data-bl-root] .at-attr__nome .at-attr__origem { margin-top: 4px; font-size: 11.5px; }
+[data-bl-root] .at-attr__estado { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 12.5px; }
+[data-bl-root] .at-estado-txt { color: var(--bl-texto-2); }
+[data-bl-root] .at-estado-txt--pendente { color: var(--bl-aviso, #b45309); font-weight: 600; }
+[data-bl-root] .at-ficha__topo--linha { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+[data-bl-root] .at-ficha__nome { font-size: 15px; max-width: 46ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 900px) { [data-bl-root] .at-attr:not(.at-attr--legado) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }

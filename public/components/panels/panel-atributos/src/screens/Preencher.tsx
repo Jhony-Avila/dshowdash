@@ -60,7 +60,10 @@ export function Preencher() {
       let ordem = 0;
       for (const f of fs) for (const i of f.itens) {
         if (kit !== '' && i.kit_id !== kit && !i.origens.some((o) => o.grupo_id === kit)) continue;
-        if (kit === '' && i.origens.some((o) => (o.motivos ?? []).some((x) => x.tipo === 'todos')) && !i.obrigatorio) continue;   // grade sem o kit geral (descrições), salvo obrigatórios
+        // UX-1: omitir um opcional SÓ quando TODAS as origens forem exclusivamente do kit geral ("aplica a todos"); com origem específica
+        // (escopo/kit direto) ou avulsa, a coluna aparece — pelo kit e por "Usar selecionados"
+        const soGeral = i.origens.length > 0 && i.origens.every((o) => o.tipo === 'kit' && (o.motivos ?? []).length > 0 && (o.motivos ?? []).every((x) => x.tipo === 'todos'));
+        if (kit === '' && soGeral && !i.obrigatorio) continue;
         if (!cols.has(i.atributo_id)) cols.set(i.atributo_id, { id: i.atributo_id, rotulo: i.rotulo, importancia: i.importancia, obrigatorio: i.obrigatorio, ordem: ordem++ });
       }
       setColunas([...cols.values()].sort((a, b) => a.ordem - b.ordem));
