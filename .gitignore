@@ -1799,6 +1799,7 @@ tools-golden/
 !/tools/equipamentos/
 /tools/equipamentos/*
 !/tools/equipamentos/miniaturas.php
+!/tools/equipamentos/cargas.php
 !/tools/db/nav_audit_ddl.sql
 !/tools/db/nav_export.sql
 !/tools/db/nav_schema_ddl.sql
