@@ -230,6 +230,7 @@
 [data-bl-root] .at-aviso--erro { border-left: 4px solid var(--bl-erro); }
 [data-bl-root] .at-aviso--info { border-left: 4px solid var(--bl-info); }
 [data-bl-root] .at-chip--p { height: 19px; font-size: 10.5px; padding: 0 7px; }
+[data-bl-root] .at-chip--base { color: var(--bl-texto-3); border-color: var(--bl-borda); background: transparent; font-weight: 500; }
 [data-bl-root] .at-foto img { position: absolute; inset: 0; width: 100%; height: 100%; }
 [data-bl-root] .at-barra__rot { font-size: 11px; color: var(--bl-texto-3); white-space: nowrap; min-width: 62px; }
 [data-bl-root] .at-painel { background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio); box-shadow: var(--bl-sombra-sm); }

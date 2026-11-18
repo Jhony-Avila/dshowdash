@@ -14,7 +14,7 @@ const FILAS: { id: Fila; rotulo: string; desc: string }[] = [
   { id: 'nome', rotulo: 'Sugestões do nome', desc: 'Tiradas do nome do produto (largura, altura, pitch, taxa, tipo de LED). Nunca viram valor sem aceite.' },
   { id: 'fora_da_ficha', rotulo: 'Fora da ficha', desc: 'Há valor gravado, mas o atributo não está vinculado ao produto.' },
   { id: 'obrigatorios_vazios', rotulo: 'Obrigatórios vazios', desc: 'Atributos obrigatórios sem valor em produtos ativos.' },
-  { id: 'sem_kit', rotulo: 'Sem kit', desc: 'Produtos ativos que só têm o kit geral.' },
+  { id: 'sem_kit', rotulo: 'Sem kit', desc: 'Produtos ativos que só têm o kit Base (nenhum kit específico).' },
 ];
 const valorTxt = (v: string | null) => (v && /^-?\d+(\.\d+)?$/.test(v) ? decimal(v) : v ?? '—');
 

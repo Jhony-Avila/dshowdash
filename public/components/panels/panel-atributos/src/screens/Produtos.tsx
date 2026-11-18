@@ -52,8 +52,8 @@ export function Produtos() {
   const alternar = (id: number) => m.setSelecao(sel.has(id) ? m.selecao.filter((x) => x !== id) : [...m.selecao, id]);
   const marcarPagina = () => { const ids = vis.map((p) => p.id); const todos = ids.every((i) => sel.has(i)); m.setSelecao(todos ? m.selecao.filter((x) => !ids.includes(x)) : [...new Set([...m.selecao, ...ids])]); };
   type Chave = 'semFoto' | 'semKit' | 'obrigatorios' | 'fora' | 'precifica';
-  const chip = (k: Chave, rot: string) => (
-    <button type="button" className={`at-filtro ${f[k] ? 'at-filtro--ativo' : ''}`} aria-pressed={f[k]} onClick={() => setF({ ...f, [k]: !f[k] })}>{rot}</button>);
+  const chip = (k: Chave, rot: string, dica?: string) => (
+    <button type="button" className={`at-filtro ${f[k] ? 'at-filtro--ativo' : ''}`} aria-pressed={f[k]} title={dica} onClick={() => setF({ ...f, [k]: !f[k] })}>{rot}</button>);
   const algumFiltro = f.busca || f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.situacao !== 'ativos';
   const especificos = (p: ProdutoResumo) => p.kits.filter((k) => !k.motivos.includes('todos'));
 
@@ -91,7 +91,7 @@ export function Produtos() {
         </div>
       </div>
       <div className="at-filtros">
-        {chip('semFoto', 'Sem foto')}{chip('semKit', 'Sem kit')}{chip('obrigatorios', 'Com obrigatórios vazios')}{chip('fora', 'Com valores fora da ficha')}{chip('precifica', 'Com ficha do Precifica')}
+        {chip('semFoto', 'Sem foto')}{chip('semKit', 'Sem kit', 'Produtos que só têm o kit Base (todos os produtos): nenhum kit específico')}{chip('obrigatorios', 'Com obrigatórios vazios')}{chip('fora', 'Com valores fora da ficha')}{chip('precifica', 'Com ficha do Precifica')}
         <span className="at-filtros__total">{lista.length} produto{lista.length === 1 ? '' : 's'}</span>
         {algumFiltro && <button type="button" className="bl-botao" onClick={() => setF({ ...f, busca: '', categoria: '', subcategoria: '', kit: '', situacao: 'ativos', semFoto: false, semKit: false, obrigatorios: false, fora: false, precifica: false })}>Limpar filtros</button>}
         {dados.pode_vincular && vis.length > 0 && <button type="button" className="bl-botao" onClick={marcarPagina}>{vis.every((p) => sel.has(p.id)) ? 'Desmarcar a página' : 'Selecionar a página'}</button>}
@@ -110,7 +110,7 @@ export function Produtos() {
                     <div className="at-cartao__chips">
                       {especificos(p).slice(0, 2).map((k) => <ChipKit key={k.id} nome={k.nome} pequeno />)}
                       {especificos(p).length > 2 && <Etiqueta>+{especificos(p).length - 2}</Etiqueta>}
-                      {p.kits_especificos === 0 && <Etiqueta tom="aviso">sem kit</Etiqueta>}
+                      {p.kits_especificos === 0 && <KitBase />}
                       {!p.ativo && <Etiqueta tom="aviso">Inativo</Etiqueta>}
                     </div>
                     <Barra feitos={p.essencial.feitos} total={p.essencial.total} compacta />
@@ -134,7 +134,7 @@ export function Produtos() {
                     <td><CapsulaId id={p.id} flutuante={false} /></td>
                     <td className="at-tabela__nome"><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(p.id)}>{p.nome}</button></td>
                     <td>{rotuloSubcategoria(p.subcategoria)}</td>
-                    <td><div className="at-cartao__chips">{especificos(p).map((k) => <ChipKit key={k.id} nome={k.nome} pequeno />)}{p.kits_especificos === 0 && <span className="at-fraco">—</span>}</div></td>
+                    <td><div className="at-cartao__chips">{especificos(p).map((k) => <ChipKit key={k.id} nome={k.nome} pequeno />)}{p.kits_especificos === 0 && <KitBase />}</div></td>
                     <td>{p.fotos || <span className="at-alerta">0</span>}</td>
                     <td>{p.precifica.length ? p.precifica.map(tituloFamilia).join(', ') : <span className="at-fraco">—</span>}</td>
                     <td style={{ minWidth: 150 }}><Barra feitos={p.essencial.feitos} total={p.essencial.total} compacta /></td>
@@ -160,4 +160,9 @@ export function Produtos() {
         </div>)}
     </div>
   );
+}
+
+/** Produto só com o kit Base (vale para todos): chip discreto, não alerta. "Sem kit" = nenhum kit além do Base (feedback do Jhony, 18/11). */
+function KitBase() {
+  return <span className="at-chip at-chip--p at-chip--base" title="Só o kit Base (todos os produtos): nenhum kit específico ainda">Base</span>;
 }
