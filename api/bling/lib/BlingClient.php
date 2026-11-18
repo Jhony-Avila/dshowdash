@@ -82,15 +82,25 @@ final class BlingClient
      * @param callable(array $itens, int $pagina): (bool|null) $aCadaPagina
      * @return array{paginas:int,itens:int,interrompido:bool}
      */
+    /**
+     * DSHOW-017 (Codex DSHOW-016, 18/11/2026): a coleta devolve o ESTADO, e não só contagens:
+     *   concluida   = fim natural (página vazia ou incompleta)            → pode avançar o watermark
+     *   parcial     = parou no limite de páginas com a última CHEIA       → há mais dados; NÃO avança
+     *   interrompida= o callback pediu parada (false)                     → NÃO avança
+     *   invalida    = 2xx com corpo que não é JSON/lista conhecida        → NÃO avança (antes virava "lista vazia" = fim)
+     * A página inicial é PARÂMETRO (a retomada pela união de arrays fixava a página inicial em todas as voltas).
+     */
     public function paginar(string $caminho, array $query, callable $aCadaPagina,
-                            int $limitePorPagina = 100, int $maxPaginas = 500): array
+                            int $limitePorPagina = 100, int $maxPaginas = 500, int $paginaInicial = 1): array
     {
-        $pagina = 1;
+        unset($query['pagina'], $query['limite']);   // nunca deixar a query fixar a página
+        $pagina = max(1, $paginaInicial);
+        $ultimaPagina = $pagina - 1;
         $totalItens = 0;
-        $interrompido = false;
+        $estado = null;
 
-        while ($pagina <= $maxPaginas) {
-            $r = $this->get($caminho, $query + ['pagina' => $pagina, 'limite' => $limitePorPagina]);
+        while ($pagina < $paginaInicial + $maxPaginas) {
+            $r = $this->get($caminho, ['pagina' => $pagina, 'limite' => $limitePorPagina] + $query);
 
             if (!$r->ok()) {
                 throw new RuntimeException(sprintf(
@@ -99,28 +109,47 @@ final class BlingClient
                     substr(json_encode($r->corpo, JSON_UNESCAPED_UNICODE) ?: '', 0, 300),
                 ));
             }
+            if (!self::corpoValido($r->corpo)) {
+                $estado = 'invalida';
+                break;
+            }
 
             $itens = self::extrairItens($r->corpo);
             $totalItens += count($itens);
 
             if ($itens === []) {
-                break;   // fim natural: página vazia
+                $estado = 'concluida';   // fim natural: página vazia
+                break;
             }
+            $ultimaPagina = $pagina;
 
             if ($aCadaPagina($itens, $pagina) === false) {
-                $interrompido = true;
+                $estado = 'interrompida';
                 break;
             }
 
             // Página incompleta = última página. Pedir a próxima só para
             // receber vazio gasta uma chamada do limite diário à toa.
             if (count($itens) < $limitePorPagina) {
+                $estado = 'concluida';
                 break;
             }
             $pagina++;
         }
+        $estado ??= 'parcial';   // saiu pelo limite com a última página cheia: há mais dados
 
-        return ['paginas' => $pagina, 'itens' => $totalItens, 'interrompido' => $interrompido];
+        return ['paginas' => max(0, $ultimaPagina - $paginaInicial + 1), 'ultima_pagina' => $ultimaPagina, 'itens' => $totalItens,
+                'interrompido' => $estado === 'interrompida', 'estado' => $estado];
+    }
+
+    /** Corpo 2xx utilizável: JSON (array) com lista em data/retorno/itens/items OU lista na raiz. `bruto` = não era JSON. */
+    public static function corpoValido(array $corpo): bool
+    {
+        if (array_key_exists('bruto', $corpo) && count($corpo) === 1) return false;
+        foreach (['data', 'retorno', 'itens', 'items'] as $chave) {
+            if (isset($corpo[$chave]) && is_array($corpo[$chave])) return true;
+        }
+        return array_is_list($corpo);
     }
 
     /**

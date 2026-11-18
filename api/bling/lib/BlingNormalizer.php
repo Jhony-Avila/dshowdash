@@ -58,6 +58,14 @@ final class BlingNormalizer
         return $v === null ? null : (is_scalar($v) ? trim((string) $v) : null);
     }
 
+    /** DSHOW-018 (Codex DSHOW-016): número OPCIONAL — campo omitido ou vazio = null (desconhecido); "0" explícito = 0.0. */
+    private static function numeroOpcional(array $p, string ...$c): ?float
+    {
+        $v = self::campo($p, ...$c);
+        if ($v === null || (is_string($v) && trim($v) === '')) return null;
+        return self::numero($p, ...$c);
+    }
+
     private static function numero(array $p, string ...$c): float
     {
         $v = self::campo($p, ...$c);
@@ -198,7 +206,7 @@ final class BlingNormalizer
             'is_ativo' => self::situacaoAtiva($p),
             'preco'    => self::numero($p, 'preco'),
             'preco_promocional' => self::numero($p, 'precoPromocional') ?: null,
-            'custo'    => self::numero($p, 'precoCusto', 'custo'),
+            'custo'    => self::numeroOpcional($p, 'precoCusto', 'custo'),   // DSHOW-018: omitido ≠ zero
             'payload_hash' => self::hash($p),
         ];
     }

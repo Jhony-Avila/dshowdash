@@ -43,7 +43,7 @@ if ($method !== 'GET') {
 $session = SessionGate::requireAuth();
 $userId = (int)($session['user_id'] ?? $session['id'] ?? 0);
 if ($userId > 0) {
-    UARPSGate::checkTrigger($userId, UARPS_TRIGGER_HD);
+    UARPSGate::sombraTrigger($userId, UARPS_TRIGGER_HD, 'api/admin/health-dashboard');   // UARPS-INHERIT v2: sombra
 }
 
 // ─── Cache check ───
