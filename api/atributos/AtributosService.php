@@ -933,9 +933,13 @@ final class AtributosService
         return $this->repo->transacao(function () use ($pid, $aid, $b, $multi) {
             $todas = $this->repo->travarValores($pid, $aid);
             $vivos = array_values(array_filter($todas, static fn($r) => empty($r['excluido_em'])));
+            // DSHOW-053: na multiopção a revisão do conjunto é conferida SEMPRE, sob a trava, ANTES de qualquer retorno — inclusive o
+            // "sem mudança" do conjunto vazio (revisão antiga → 409; omitida/malformada → 422; atual → sem_mudanca, sem auditoria).
+            if ($multi) self::conferirConjunto($b, $todas);
             if (!$vivos) return ['limpo' => true, 'sem_mudanca' => true];
-            if ($multi) self::conferirConjunto($b, $todas);   // DSHOW-034/049: limpar a multiopção inteira = versão do CONJUNTO (trilha toda)
-            elseif ((int) ($b['versao'] ?? -1) !== (int) $vivos[0]['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+            if ($multi) {
+                // já conferida acima (DSHOW-034/049/050: limpar a multiopção inteira = versão do CONJUNTO, trilha toda)
+            } elseif ((int) ($b['versao'] ?? -1) !== (int) $vivos[0]['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
             foreach ($vivos as $r) {
                 if (!$this->repo->excluirValor($pid, $aid, (int) $r['opcao_chave'])) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
                 $this->repo->auditar($this->usuario, 'limpar', 'valor', "$pid:$aid:" . (int) $r['opcao_chave'], $r, null, $b['motivo'] ?? null);
@@ -945,8 +949,8 @@ final class AtributosService
     }
 
     /**
-     * DSHOW-034: versão do CONJUNTO de linhas vivas de um (produto, atributo) — impressão digital por (chave, versão). Na multiopção a
-     * versão da 1ª linha não muda quando outra pessoa acrescenta uma opção; esta muda. Mesma fórmula na leitura (ProdutosLeitura).
+     * DSHOW-034/050: versão do CONJUNTO de um (produto, atributo) — contador monotônico sobre a trilha inteira (ver abaixo). Na multiopção
+     * a versão da 1ª linha não muda quando outra pessoa acrescenta uma opção; esta muda. Mesma fórmula na leitura (ProdutosLeitura).
      */
     public static function versaoConjunto(array $linhas): string
     {

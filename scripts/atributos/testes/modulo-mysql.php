@@ -507,6 +507,54 @@ $a1 = $erro(fn() => $adm->gravarValor(['product_id' => 103, 'atributo_id' => $mo
 $ok('050 (+): acrescentar opção a conjunto não vazio continua por opção → aceita, XLR e P10 marcados', $a1 === null
     && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 103 AND atributo_id = ? AND excluido_em IS NULL', [$mo2]) === 2);
 
+// ---- DSHOW-053: limparValor da multiopção confere a revisão do conjunto ANTES do "sem mudança" (conjunto vazio) ----------------------
+$mo3 = (int) $adm->salvarAtributo(['rotulo' => 'Entradas (multi 053)', 'tipo' => 'multiopcao'])['atributo']['id'];
+$adm->adicionarOpcao($mo3, 'DVI'); $ops3 = $adm->adicionarOpcao($mo3, 'VGA')['opcoes'];
+$aj(['product_id' => 101, 'atributo_id' => $mo3, 'modo' => 'incluir']);
+$vc3 = fn() => AtributosService::versaoConjunto($linhas('SELECT versao FROM eq_valor WHERE product_id = 101 AND atributo_id = ?', [$mo3]));
+$est3 = fn() => json_encode([$linhas('SELECT id, opcao_chave, estado, versao, excluido_em, atualizado_por FROM eq_valor WHERE product_id = 101 AND atributo_id = ? ORDER BY opcao_chave', [$mo3]),
+    $linhas("SELECT id, acao, entidade_id, antes, depois FROM eq_auditoria WHERE entidade = 'valor' AND entidade_id LIKE ? ORDER BY id", ["101:$mo3:%"])]);
+$lim = fn(array $x) => $erro(fn() => $adm->limparValor(['product_id' => 101, 'atributo_id' => $mo3] + $x));
+$r0 = $vc3(); $e0 = $est3();
+$res = $adm->limparValor(['product_id' => 101, 'atributo_id' => $mo3, 'versao_conjunto' => $r0]);
+$ok('053: limpar o VAZIO (nunca teve linha) com a revisão atual "0" → sem_mudanca, sem auditoria', !empty($res['sem_mudanca']) && $est3() === $e0 && $r0 === '0');
+$ok('053: limpar o vazio SEM revisão → 422 (contrato), nada muda', $lim([])?->http === 422 && $est3() === $e0);
+$ok('053: limpar o vazio com revisão MALFORMADA → 422, nada muda', $lim(['versao_conjunto' => 'abc'])?->http === 422 && $lim(['versao_conjunto' => '01'])?->http === 422 && $est3() === $e0);
+$ok('053: limpar o vazio com revisão bem formada mas errada → 409, nada muda', $lim(['versao_conjunto' => '5'])?->http === 409 && $est3() === $e0);
+// 1º preenchimento preservado; ciclo vazio → preenchido → vazio
+$ok('053: 1º preenchimento preservado (sem revisão, campo nunca teve linha)', fn() => (bool) $adm->gravarValor(['product_id' => 101, 'atributo_id' => $mo3, 'valor' => (int) $ops3[0]['id']]));
+$rCheio = $vc3();
+$adm->limparValor(['product_id' => 101, 'atributo_id' => $mo3, 'versao_conjunto' => $rCheio]);
+$eVazio = $est3(); $rVazio = $vc3();
+$ok('053: ciclo vazio → preenchido → vazio + limpar com a revisão INICIAL ("0") → 409, nada muda', $lim(['versao_conjunto' => $r0])?->http === 409 && $est3() === $eVazio);
+$ok('053: limpar o vazio (depois do ciclo) com a revisão de quando estava CHEIO → 409, nada muda', $lim(['versao_conjunto' => $rCheio])?->http === 409 && $est3() === $eVazio);
+$res2 = $adm->limparValor(['product_id' => 101, 'atributo_id' => $mo3, 'versao_conjunto' => $rVazio]);
+$ok('053: limpar o vazio (depois do ciclo) com a revisão ATUAL → sem_mudanca, sem auditoria, tombstone intacto', !empty($res2['sem_mudanca']) && $est3() === $eVazio);
+// reativação preservada
+$ok('053: reativação com a revisão atual → a MESMA linha revive', fn() => (bool) $adm->gravarValor(['product_id' => 101, 'atributo_id' => $mo3, 'valor' => (int) $ops3[0]['id'], 'versao_conjunto' => $vc3()])
+    && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 101 AND atributo_id = ?', [$mo3]) === 1);
+// dois escritores com a MESMA leitura: o 1º limpa, o 2º recebe 409 (não um "sem mudança" silencioso)
+$lida = $vc3();
+$w1 = $lim(['versao_conjunto' => $lida]); $eDepois1 = $est3();
+$w2 = $lim(['versao_conjunto' => $lida]);
+$ok('053: dois escritores, mesma leitura: o 1º limpa; o 2º → 409 e nada muda', $w1 === null && $w2?->http === 409 && $est3() === $eDepois1);
+// rollback quando a auditoria falha (só neste banco de teste a tabela de auditoria fica indisponível durante a limpeza)
+$adm->gravarValor(['product_id' => 101, 'atributo_id' => $mo3, 'valor' => (int) $ops3[0]['id'], 'versao_conjunto' => $vc3()]);
+$adm->gravarValor(['product_id' => 101, 'atributo_id' => $mo3, 'valor' => (int) $ops3[1]['id']]);
+$antesRb = $est3(); $rAntesRb = $vc3();
+$pdo->exec('RENAME TABLE eq_auditoria TO eq_auditoria_t053');   // só neste banco de teste: a auditoria fica indisponível durante a limpeza
+$falhou = false; try { $adm->limparValor(['product_id' => 101, 'atributo_id' => $mo3, 'versao_conjunto' => $rAntesRb]); } catch (Throwable $e) { $falhou = true; }
+$pdo->exec('RENAME TABLE eq_auditoria_t053 TO eq_auditoria');
+$ok('053: auditoria falha no meio da limpeza (2 opções) → erro e ROLLBACK total (as 2 linhas vivas, mesmas versões, revisão igual)', $falhou && $est3() === $antesRb && $vc3() === $rAntesRb);
+$ok('053: depois do rollback, a mesma revisão limpa normalmente', $lim(['versao_conjunto' => $rAntesRb]) === null && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 101 AND atributo_id = ? AND excluido_em IS NULL', [$mo3]) === 0);
+// nenhum caminho apaga tombstone fisicamente nem faz a revisão regredir
+$src = ''; foreach (array_merge(glob(__DIR__ . '/../../../api/atributos/*.php'), glob(__DIR__ . '/../../../tools/equipamentos/*.php')) as $arq) $src .= file_get_contents($arq);
+$ok('053: nenhum DELETE físico em eq_valor no código (api/atributos, tools/equipamentos)', !preg_match('/DELETE\s+FROM[^;]{0,80}eq_valor/i', $src) && !preg_match('/TRUNCATE[^;]{0,40}eq_valor/i', $src));
+preg_match_all('/UPDATE[^;]{0,80}eq_valor[^;]*?\bSET\b(.*?)\bWHERE\b/is', $src, $mm);
+$setsRuins = array_filter($mm[1], static fn($set) => (bool) preg_match('/\bversao\s*=(?!\s*versao\s*\+\s*1\b)/i', $set));
+$ok('053: nenhum UPDATE de eq_valor faz a versão regredir (no SET: só "versao = versao + 1" ou não toca na versão; ' . count($mm[1]) . ' UPDATEs lidos)', count($mm[1]) >= 5 && !$setsRuins, implode(' | ', array_map(static fn($x) => substr(trim($x), 0, 80), $setsRuins)));
+$ok('053: total de linhas de eq_valor deste teste: nenhuma sumiu (tombstones preservados)', (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 101 AND atributo_id = ?', [$mo3]) === 2);
+
 // DSHOW-049 × sugestão: aceitar sugestão num campo multiopção que JÁ TEVE valor e foi limpo continua funcionando (D10 confere o vazio sob trava)
 $adm->limparValor(['product_id' => 103, 'atributo_id' => $moId, 'versao_conjunto' => $vc(103)]);
 $sMo = $insSug('t|103|mo049', 103, $moId, null, (string) $opsMo[1]['id'], null);
