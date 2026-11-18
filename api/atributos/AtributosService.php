@@ -932,7 +932,11 @@ final class AtributosService
             if ($antes && !$vivo && $a['tipo'] !== 'multiopcao' && isset($b['versao']) && $b['versao'] !== '' && (int) $b['versao'] !== (int) $antes['versao']) {
                 throw new AtributosErro('CONFLICT', 409, 'Outra pessoa limpou este valor. Recarregue e tente de novo.');
             }
-            $versao = $antes ? (!$vivo ? (int) $antes['versao'] : (int) ($b['versao'] ?? 0)) : null;
+            // DSHOW-034 (resíduo escalar, DSHOW-077): pedido que saiu do campo VAZIO não traz versão de linha, mas traz a revisão do conjunto
+            // (soma das versões vivas + tombstones). Sem linha viva, confere-a aqui, sob a mesma trava: vazio → preenchido → vazio mudou a
+            // revisão → 409 (não reativa nem audita). Chamador legado que OMITE a revisão segue como antes.
+            if (!$vivo && $a['tipo'] !== 'multiopcao' && isset($b['versao_conjunto']) && $b['versao_conjunto'] !== '') self::conferirConjunto($b, $linhas);
+            $versao =$antes ? (!$vivo ? (int) $antes['versao'] : (int) ($b['versao'] ?? 0)) : null;
             if (!$this->repo->gravarValor($d, $versao)) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
             $excluidas = [];
             if ($a['tipo'] === 'multiopcao') foreach ($linhas as $l) {
