@@ -19,8 +19,10 @@ function rascunhoDe(it: ItemFicha): string {
   return v.texto ?? '';
 }
 
-export function EditorValor({ item, productId, podeEditar, compacto = false, aoGravar, aoRecarregar, autoFoco = false }: {
+export function EditorValor({ item, productId, podeEditar, compacto = false, aoGravar, aoRecarregar, autoFoco = false, rotuloVazio, aoConfirmarEnter }: {
   item: ItemFicha; productId: number; podeEditar: boolean; compacto?: boolean; aoGravar: () => void; aoRecarregar: () => void; autoFoco?: boolean;
+  /** UX-1: texto do campo vazio editável (a grade do Preencher usa "Preencher"); sem ele, o de sempre */ rotuloVazio?: string;
+  /** UX-1: Enter num campo de texto — chamado SÓ quando a gravação confirmou (ou quando não havia nada para gravar). Erro/conflito: o foco fica. */ aoConfirmarEnter?: () => void;
 }) {
   const [txt, setTxt] = React.useState(() => rascunhoDe(item));
   const [sit, setSit] = React.useState<Situacao>({ tipo: 'parado' });
@@ -30,8 +32,11 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   // apagar o texto de um campo PREENCHIDO não limpa sozinho: pede confirmação mostrando o valor salvo (Cima, 18/11); Esc/Cancelar restaura
   const [confirmarLimpar, setConfirmarLimpar] = React.useState(false);
   const original = React.useRef(rascunhoDe(item));
-  const ocupado = React.useRef(false);                                   // uma gravação por vez (Enter + sair do campo não grava 2×)
-  const ultimo = React.useRef<{ rota: string; corpo: Record<string, unknown>; texto?: string } | null>(null);   // "Tentar de novo" repete esta
+  const ocupado = React.useRef(false);
+  const pelaTecla = React.useRef(false);                                // a gravação em curso veio de um Enter (desce só se confirmar)                                   // uma gravação por vez (Enter + sair do campo não grava 2×)
+  // DSHOW-078: "Tentar de novo" reenvia EXATAMENTE este envelope (capturado na 1ª tentativa: produto, atributo, valor/estado,
+  // unidade, versão da linha, revisão do conjunto). Nada é recalculado; se os dados mudaram, o servidor responde 409.
+  const ultimo = React.useRef<{ rota: string; envelope: Readonly<Record<string, unknown>>; texto?: string } | null>(null);   // "Tentar de novo" repete esta
   const [esperando, setEsperando] = React.useState(false);              // gravou; aguardando a recarga trazer a versão nova
   React.useEffect(() => { const r = rascunhoDe(item); setTxt(r); original.current = r; setEsperando(false); setUnidRascunho(null); }, [item.valor?.versao, item.versao_conjunto, item.valor?.versao_conjunto, item.valor?.estado, item.atributo_id]);
   React.useEffect(() => { if (!esperando) return; const t = window.setTimeout(() => setEsperando(false), 3000); return () => window.clearTimeout(t); }, [esperando]);
@@ -41,24 +46,32 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   const ro = !podeEditar || item.autoridade === 'precifica';
   const id = `campo-${productId}-${item.atributo_id}`;
 
-  const chamar = async (rota: string, corpo: Record<string, unknown>, texto?: string) => {
+  const chamar = (rota: string, corpo: Record<string, unknown>, texto?: string) => {
     if (ocupado.current || esperando) return;
-    ocupado.current = true; ultimo.current = { rota, corpo, texto };
+    // DSHOW-034: a versão do CONJUNTO vai em toda gravação (limpar/mudar estado da multiopção a exigem; o servidor ignora nos demais)
+    const envelope = Object.freeze({ product_id: productId, atributo_id: item.atributo_id, versao_conjunto: item.versao_conjunto ?? item.valor?.versao_conjunto, ...corpo });
+    return executar({ rota, envelope, texto });
+  };
+  const executar = async (u: { rota: string; envelope: Readonly<Record<string, unknown>>; texto?: string }) => {
+    if (ocupado.current) return;
+    ocupado.current = true; ultimo.current = u;
+    const { rota, envelope, texto } = u;
     setSit({ tipo: 'salvando' });
     try {
-      // DSHOW-034: a versão do CONJUNTO vai em toda gravação (limpar/mudar estado da multiopção a exigem; o servidor ignora nos demais)
-      await enviar(rota, { product_id: productId, atributo_id: item.atributo_id, versao_conjunto: item.versao_conjunto ?? item.valor?.versao_conjunto, ...corpo });
+      await enviar(rota, envelope);
       if (texto !== undefined) original.current = texto;                  // já gravado: sair do campo não reenvia
-      setSit({ tipo: 'salvo' }); setEsperando(true); aoGravar(); window.setTimeout(() => setSit((s) => (s.tipo === 'salvo' ? { tipo: 'parado' } : s)), 2500);
+      setSit({ tipo: 'salvo' }); setEsperando(true); aoGravar();
+      if (pelaTecla.current) { pelaTecla.current = false; aoConfirmarEnter?.(); } window.setTimeout(() => setSit((s) => (s.tipo === 'salvo' ? { tipo: 'parado' } : s)), 2500);
     } catch (e) {
+      pelaTecla.current = false;   // erro/conflito: o foco fica no valor digitado
       if (e instanceof ErroApi && e.conflito) setSit({ tipo: 'conflito' });
       else setSit({ tipo: 'erro', msg: e instanceof ErroApi ? e.message : 'Falha de rede.' });
     } finally { ocupado.current = false; }
   };
-  const tentarDeNovo = () => { const u = ultimo.current; if (u) chamar(u.rota, u.corpo, u.texto); };
+  const tentarDeNovo = () => { const u = ultimo.current; if (u) executar(u); };   // DSHOW-078: mesmo envelope, sem reconstruir
   const travado = sit.tipo === 'salvando' || esperando;
   const versao = item.valor?.versao;
-  const gravar = (valor: unknown, extra: Record<string, unknown> = {}, texto?: string) => chamar('valor', { valor, estado: 'informado', versao, ...(numerico && unidadeAtual ? { unidade_id: unidRascunho ?? item.valor?.unidade_id ?? null } : {}), ...extra }, texto);
+  const gravar = (valor: unknown, extra: Record<string, unknown> = {}, texto?: string) => chamar('valor', { valor, estado: 'informado', versao, ...(numerico && unidadeAtual ? { unidade_id: unidadeAtual } : {}), ...extra }, texto);
   const confirmarTexto = () => {
     if (ro || txt === original.current || ocupado.current || esperando || confirmarLimpar) return;
     if (txt.trim() === '') { if (item.valor && !confirmarLimpar) setConfirmarLimpar(true); return; }
@@ -67,7 +80,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
 
   const status = sit.tipo === 'salvando' ? <span className="at-salvo at-salvo--andando" role="status">Salvando…</span>
     : sit.tipo === 'salvo' ? <span className="at-salvo at-salvo--ok" role="status">Salvo</span>
-    : sit.tipo === 'erro' ? <span className="at-salvo at-salvo--erro" role="alert">{compacto ? '!' : 'Não foi possível salvar.'} <button type="button" className="at-link" onClick={tentarDeNovo}>Tentar de novo</button>{!compacto && <em> {sit.msg}</em>}</span>
+    : sit.tipo === 'erro' ? <span className="at-salvo at-salvo--erro" role="alert">{compacto ? <em className="at-salvo__motivo">{sit.msg}</em> : <>Não foi possível salvar. </>}<button type="button" className="at-link" onClick={tentarDeNovo}>Tentar de novo</button>{!compacto && <em> {sit.msg}</em>}</span>
     : sit.tipo === 'conflito' ? <span className="at-salvo at-salvo--erro" role="alert">Alguém alterou este campo. <button type="button" className="at-link" onClick={() => { setSit({ tipo: 'parado' }); aoRecarregar(); }}>Recarregar</button></span>
     : null;
 
@@ -85,7 +98,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     campo = (
       <select id={id} className="at-campo" value={txt} disabled={ro || travado} aria-label={item.rotulo} autoFocus={autoFoco}
         onChange={(e) => { setTxt(e.target.value); if (e.target.value === '') { if (item.valor) chamar('valor_limpar', { versao }); } else gravar(Number(e.target.value)); }}>
-        <option value="">—</option>
+        <option value="">{rotuloVazio ?? '—'}</option>
         {item.opcoes.filter((o) => o.ativo || String(o.id) === txt).map((o) => <option key={o.id} value={o.id}>{o.rotulo}{o.ativo ? '' : ' (desativada)'}</option>)}
       </select>);
   } else if (item.tipo === 'multiopcao') {
@@ -97,9 +110,9 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   } else {
     campo = (
       <input id={id} className={`at-campo ${numerico ? 'at-campo--num' : ''}`} type={item.tipo === 'data' ? 'date' : 'text'} inputMode={numerico ? 'decimal' : undefined}
-        value={txt} readOnly={ro} aria-label={item.rotulo} autoFocus={autoFoco} placeholder={ro ? '' : numerico ? '—' : item.tipo === 'data' ? '' : 'Digite…'}
+        value={txt} readOnly={ro} aria-label={item.rotulo} autoFocus={autoFoco} placeholder={ro ? '' : rotuloVazio ?? (numerico ? '—' : item.tipo === 'data' ? '' : 'Digite…')}
         onChange={(e) => setTxt(e.target.value)} onBlur={confirmarTexto}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmarTexto(); } if (e.key === 'Escape') { setTxt(original.current); setUnidRascunho(null); } }} />);   // Esc cancela o rascunho inteiro (texto e unidade)
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (txt === original.current) { aoConfirmarEnter?.(); return; } pelaTecla.current = true; confirmarTexto(); if (!ocupado.current) pelaTecla.current = false; } if (e.key === 'Escape') { setTxt(original.current); setUnidRascunho(null); } }} />);   // Esc cancela o rascunho inteiro (texto e unidade)
   }
 
   return (

@@ -1,5 +1,5 @@
 // panel-atributos/src/lib/formatar.ts — formatação pt-BR dos valores (mesma regra do app: decimal exato, sem float).
-import type { Valor } from './tipos';
+import type { ItemFicha, Sugestao, Valor } from './tipos';
 import { FAMILIAS_PRECIFICA } from './rotulos';
 
 /** "1000.000000" → "1.000"; "2.500000" → "2,5"; casas definidas fixam o número de casas (sem arredondar por float). */
@@ -37,6 +37,9 @@ export function dataHora(iso: string | null | undefined): string {
 }
 
 export const pctDe = (c: { feitos: number; total: number }) => (c.total > 0 ? Math.round((c.feitos / c.total) * 100) : null);
+/** UX-1 "menos preenchidos": primeiro quem TEM essenciais aplicáveis (menor % primeiro; empate pelo ID); os 0/0 vão para o fim. */
+export const comparaMenosPreenchidos = (a: { id: number; essencial: { feitos: number; total: number } }, b: { id: number; essencial: { feitos: number; total: number } }) =>
+  (Number(a.essencial.total === 0) - Number(b.essencial.total === 0)) || ((pctDe(a.essencial) ?? 0) - (pctDe(b.essencial) ?? 0)) || a.id - b.id;
 
 export function precifica(chave: string, bruto: unknown): string {
   const [familia, campo] = chave.split('.');
@@ -68,4 +71,16 @@ export function casaBusca(q: string, id: number, nome: string): boolean {
   if (/^\d+$/.test(t)) return String(id) === t.replace(/^0+(?=\d)/, '') || String(id).startsWith(t.replace(/^0+(?=\d)/, ''));
   const n = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   return n(t).split(/\s+/).every((p) => n(nome).includes(p));
+}
+
+/** UX-1: texto de uma sugestão segundo o TIPO do atributo — igual na Ficha e na grade do Preencher. Texto preserva os caracteres
+ *  ("00154" continua "00154"); número/inteiro em formato brasileiro; opção mostra o rótulo; sim/não. A unidade vai junto quando houver. */
+export function sugestaoTexto(s: Pick<Sugestao, 'valor_proposto' | 'opcao_id' | 'unidade_id'>, i: Pick<ItemFicha, 'tipo' | 'opcoes' | 'unidades'>): string {
+  const un = s.unidade_id ? i.unidades.find((u) => u.id === s.unidade_id)?.simbolo ?? '' : '';
+  let t: string;
+  if ((i.tipo === 'opcao' || i.tipo === 'multiopcao') && s.opcao_id) t = i.opcoes.find((o) => o.id === s.opcao_id)?.rotulo ?? s.valor_proposto ?? '';
+  else if ((i.tipo === 'numero' || i.tipo === 'inteiro') && s.valor_proposto && /^-?\d+(\.\d+)?$/.test(s.valor_proposto)) t = decimal(s.valor_proposto);
+  else if (i.tipo === 'booleano' && s.valor_proposto !== null) t = ['1', 'true', 'sim', 's'].includes(s.valor_proposto.trim().toLowerCase()) ? 'Sim' : ['0', 'false', 'nao', 'não', 'n'].includes(s.valor_proposto.trim().toLowerCase()) ? 'Não' : s.valor_proposto;
+  else t = s.valor_proposto ?? '';
+  return un ? `${t} ${un}` : t;
 }

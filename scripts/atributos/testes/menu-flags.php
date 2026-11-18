@@ -46,7 +46,10 @@ if ($cnf && $db) {
     $ok('dados: subitens do módulo no 75, cada um com a própria rota', array_column(array_values(array_filter($p75, static fn($i) => $i['panel_id'] === 'panel-atributos')), 'route_path') === ['#/panel-atributos', '#/panel-atributos/visao-geral', '#/panel-atributos/vincular', '#/panel-atributos/preencher', '#/panel-atributos/kits', '#/panel-atributos/atributos', '#/panel-atributos/unidades', '#/panel-atributos/conferencia']);
     $antigos = static fn(array $xs) => array_map(static fn($i) => [$i['item_key'], $i['label'], $i['route_path'], $i['panel_id'], (int) $i['order_index']], array_values(array_filter($xs, static fn($i) => in_array($i['item_key'], ['sidebar.produtos.cadastro', 'sidebar.produtos.categorias', 'sidebar.produtos.precificacao', 'sidebar.produtos.custos'], true))));
     $ok('dados: Cadastro, Categorias, Precificação e Custos e Margens idênticos para o 75 e para quem não tem a flag', count($antigos($m75)) === 4 && $antigos($m75) === $antigos($mSem));
-    $hoje = array_values(array_filter($todos, static fn($i) => !str_starts_with((string) $i['item_key'], 'sidebar.produtos.atributos.')));
+    // Itens do módulo = os 8 'sidebar.produtos.atributos.*' + o favorito do Jhony 'sidebar.favoritos.produtos-atributos' (criado em produção
+    // depois do pacote; exige a mesma flag). Antes, o favorito contava como "menu de hoje" e as 2 asserções abaixo davam falso alarme.
+    $doModulo = static fn(array $i) => str_starts_with((string) $i['item_key'], 'sidebar.produtos.atributos.') || (string) $i['item_key'] === 'sidebar.favoritos.produtos-atributos';
+    $hoje = array_values(array_filter($todos, static fn($i) => !$doModulo($i)));
     $ok('dados: sem a flag, o menu INTEIRO é o de hoje (o mesmo conjunto, mesma ordem, sem os itens do módulo)', $chaves($mSem) === $chaves($hoje));
     $ok('dados: sem a flag, seção Produtos = Geral/Cadastro/Categorias Produtos, Precificação, Custos e Margens', $rot($pSem) === ['Geral Produtos', 'Cadastro Produtos', 'Categorias Produtos', 'Precificacao', 'Custos e Margens'], json_encode($rot($pSem), JSON_UNESCAPED_UNICODE));
     // caminho Compras → Produtos: o shell resolve o título do cabeçalho pelo 1º item do menu com o MESMO panel_id (_resolvePanelTitle).
@@ -55,7 +58,7 @@ if ($cnf && $db) {
     $compras = array_values(array_filter($m75, static fn($i) => $i['item_key'] === 'sidebar.compras.visao-geral'))[0] ?? null;
     $ok('dados: Compras → Geral Compras mostra "Geral Compras" no cabeçalho', $compras !== null && $titulo($m75, $compras['panel_id']) === 'Geral Compras');
     $ok('dados: Compras → Produtos → Geral Produtos mostra o título do MÓDULO, não "Geral Compras" (painel próprio, sem colisão)', $titulo($m75, $geral[0]['panel_id']) === 'Produtos & Atributos'
-        && !in_array('panel-atributos', array_column(array_filter($m75, static fn($i) => !str_starts_with((string) $i['item_key'], 'sidebar.produtos.atributos.')), 'panel_id'), true));
+        && !in_array('panel-atributos', array_column(array_filter($m75, static fn($i) => !$doModulo($i)), 'panel_id'), true));
     $ok('dados: diagnóstico do defeito de hoje — sem a flag, o Geral Produtos provisório resolveria o título "Geral Compras" (painel compartilhado; não muda aqui)', $titulo($mSem, 'panel-stub-dev') === 'Geral Compras');
 } else {
     echo "[info] parte 2 (dados reais) não executada: defina NAV_TEST_CNF e NAV_TEST_DB=ATRWEB_VAL_*\n";
