@@ -22,6 +22,16 @@ export function Vincular() {
   const [qAtr, setQAtr] = React.useState('');
   const [previa, setPrevia] = React.useState<Previa | null>(null); const [chave, setChave] = React.useState('');
   const [trab, setTrab] = React.useState(false);
+  // DSHOW-056: RETRATO imutável do pedido que gerou a prévia; a confirmação envia só ele. Mudou a intenção → a prévia cai (volta ao passo 2).
+  const corpoAtual = () => ({ produtos: m.selecao, kits_aplicar: kA, kits_remover: kR, atributos_incluir: aI.map((id) => ({ atributo_id: id })), atributos_excluir: aE.map((x) => ({ atributo_id: x.id, motivo: x.motivo })) });
+  const intencao = JSON.stringify(corpoAtual());
+  const intencaoRef = React.useRef(intencao); intencaoRef.current = intencao;
+  const [pedidoPrevia, setPedidoPrevia] = React.useState<string | null>(null);
+  const pedidoSeq = React.useRef(0);                                           // ignora resposta de prévia atrasada
+  const incerta = React.useRef<{ pedido: string; chave: string } | null>(null); // tentativa sem resposta: a mesma intenção reusa a MESMA chave
+  React.useEffect(() => {
+    if (pedidoPrevia !== null && pedidoPrevia !== intencao) { pedidoSeq.current++; setPrevia(null); setPedidoPrevia(null); setPasso((p) => (p === 3 ? 2 : p)); }
+  }, [intencao, pedidoPrevia]);
   const carregar = React.useCallback(() => {
     setErro(null);
     Promise.all([obter<Vitrine>('vitrine'), obter<{ kits: KitResumo[] }>('kits'), obter<{ atributos: AtributoDicionario[] }>('dicionario')])
@@ -37,19 +47,28 @@ export function Vincular() {
   const subcats = [...new Set(ativos.map((p) => p.subcategoria ?? ''))].sort((a, b) => rotuloSubcategoria(a || null).localeCompare(rotuloSubcategoria(b || null), 'pt-BR'));
   const alternar = (arr: number[], set: (x: number[]) => void, id: number) => set(arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
   const nada = !kA.length && !kR.length && !aI.length && !aE.length;
-  const corpo = () => ({ produtos: m.selecao, kits_aplicar: kA, kits_remover: kR, atributos_incluir: aI.map((id) => ({ atributo_id: id })), atributos_excluir: aE.map((x) => ({ atributo_id: x.id, motivo: x.motivo })) });
   const verPrevia = async () => {
-    setTrab(true);
-    try { setPrevia(await enviar<Previa>('massa_previa', corpo())); setChave(novaChave()); setPasso(3); }
-    catch (e) { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(false); }
+    const pedido = intencao; const seq = ++pedidoSeq.current;
+    setTrab(true); setPrevia(null); setPedidoPrevia(null);
+    try {
+      const r = await enviar<Previa>('massa_previa', JSON.parse(pedido));
+      if (seq !== pedidoSeq.current || pedido !== intencaoRef.current) return;   // atrasada ou a intenção mudou no meio: ignora
+      setPrevia(r); setPedidoPrevia(pedido); setChave(incerta.current?.pedido === pedido ? incerta.current.chave : novaChave()); setPasso(3);
+    } catch (e) { if (seq === pedidoSeq.current) m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(false); }
   };
   const aplicar = async () => {
+    if (!previa || pedidoPrevia === null || pedidoPrevia !== intencaoRef.current || trab) return;   // só confirma o RETRATO da prévia vigente
+    const pedido = pedidoPrevia;
     setTrab(true);
     try {
-      const r = await enviar<{ gravado: Record<string, number>; repetido?: boolean }>('massa_aplicar', { ...corpo(), chave, versao_previa: previa?.versao_previa });
+      const r = await enviar<{ gravado: Record<string, number>; repetido?: boolean }>('massa_aplicar', { ...JSON.parse(pedido), chave, versao_previa: previa.versao_previa });
+      incerta.current = null;
       m.aviso(r.repetido ? 'Esta aplicação já tinha sido gravada (nada repetido).' : `Gravado: ${r.gravado.kits_aplicados} kit(s) aplicados, ${r.gravado.inclusoes} atributo(s) incluídos, ${r.gravado.exclusoes} exceção(ões), ${r.gravado.kits_removidos} kit(s) removidos.`);
-      setPasso(1); setPrevia(null); setKA([]); setKR([]); setAI([]); setAE([]); m.recarregar();
-    } catch (e) { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(false); }
+      setPasso(1); setPrevia(null); setPedidoPrevia(null); setKA([]); setKR([]); setAI([]); setAE([]); m.recarregar();
+    } catch (e) {
+      if (!(e instanceof ErroApi) || e.http >= 500) incerta.current = { pedido, chave };   // resultado incerto: a próxima tentativa usa a mesma chave
+      m.aviso(e instanceof ErroApi ? e.message : 'Sem resposta do servidor. Confira e tente de novo: a mesma chave evita gravar duas vezes.', 'erro');
+    } finally { setTrab(false); }
   };
   const n = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const atrFiltrados = qAtr.trim().length < 2 ? [] : dic.filter((a) => n(a.rotulo + ' ' + a.codigo).includes(n(qAtr))).slice(0, 30);
@@ -126,7 +145,7 @@ export function Vincular() {
         {passo === 3 && previa && (
           <section className="at-painel">
             <div className="at-painel__cabeca"><h3>3. Prévia</h3>
-              <div className="at-acoes"><Botao aoClicar={() => setPasso(2)}>Voltar</Botao><Botao primario trabalhando={trab} desligado={aE.some((x) => x.motivo.trim().length < 3)} aoClicar={aplicar}>Confirmar e gravar</Botao></div></div>
+              <div className="at-acoes"><Botao aoClicar={() => setPasso(2)}>Voltar</Botao><Botao primario trabalhando={trab} desligado={trab || !pedidoPrevia || pedidoPrevia !== intencao || aE.some((x) => x.motivo.trim().length < 3)} aoClicar={aplicar}>Confirmar e gravar</Botao></div></div>
             <div className="at-painel__corpo">
               <p className="at-previa-frase" role="status">{frase}</p>
               <div className="bl-rola-x"><table className="at-tabela">

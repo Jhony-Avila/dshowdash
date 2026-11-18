@@ -90,11 +90,25 @@ final class KitsService
     public function versaoVinculosAtual(int $pid): string { return $this->versaoVinculos($pid); }
 
     /** Versão da prévia em massa: vínculos de cada produto + versão de cada kit envolvido. Muda se qualquer um mudar depois da prévia. */
-    private function versaoMassa(array $prods, array $kA, array $kR, bool $travar): string
+    /**
+     * DSHOW-056: a INTENÇÃO completa, canônica (a ordem de chegada dos IDs não importa): produtos, kits a aplicar e a remover (inteiros
+     * ordenados), atributos a incluir como pares [id, unidade|null] e a excluir como pares [id, motivo], ordenados por id. Estruturas reais
+     * (pedidoMassa): $prods = [pid => produto], $kA/$kR = listas de int, $aI = [aid => unidade|null], $aE = [aid => motivo].
+     */
+    private static function intencaoMassa(array $prods, array $kA, array $kR, array $aI, array $aE): array
+    {
+        $ids = static function (array $xs): array { $xs = array_values(array_unique(array_map('intval', $xs))); sort($xs, SORT_NUMERIC); return $xs; };
+        $pares = static function (array $m, callable $v): array { ksort($m, SORT_NUMERIC); $o = []; foreach ($m as $k => $x) $o[] = [(int) $k, $v($x)]; return $o; };
+        return ['produtos' => $ids(array_keys($prods)), 'kits_aplicar' => $ids($kA), 'kits_remover' => $ids($kR),
+            'atributos_incluir' => $pares($aI, static fn($u) => $u === null ? null : (int) $u), 'atributos_excluir' => $pares($aE, static fn($m) => (string) $m)];
+    }
+
+    /** Versão da prévia = intenção canônica + estado dos vínculos e dos kits envolvidos (DSHOW-056: a prévia de X não confirma Y). */
+    private function versaoMassa(array $prods, array $kA, array $kR, array $aI, array $aE, bool $travar): string
     {
         $vs = $this->repo->versoesVinculos(array_keys($prods), $travar); ksort($vs);
         $ks = []; foreach (array_unique(array_merge($kA, $kR)) as $g) $ks[$g] = (int) $this->kit($g)['versao']; ksort($ks);
-        return hash('sha256', json_encode([$vs, $ks]));
+        return hash('sha256', json_encode([self::intencaoMassa($prods, $kA, $kR, $aI, $aE), $vs, $ks]));
     }
 
     private static function texto(mixed $v, int $max, string $campo, bool $obrig): ?string
@@ -343,7 +357,7 @@ final class KitsService
             $tot['atributos_acrescentados'] += count($mais); $tot['atributos_removidos'] += count($menos); $tot['ja_tinham'] += $ja;
             $por[] = ['product_id' => $pid, 'nome' => $p['nome'], 'acrescenta' => count($mais), 'remove' => count($menos), 'antes' => count($antes), 'depois' => count($depois)];
         }
-        return ['resumo' => $tot, 'produtos' => $por, 'versao_previa' => $this->versaoMassa($prods, $kA, $kR, false)];
+        return ['resumo' => $tot, 'produtos' => $por, 'versao_previa' => $this->versaoMassa($prods, $kA, $kR, $aI, $aE, false)];
     }
 
     /**
@@ -359,9 +373,10 @@ final class KitsService
         $vp = $b['versao_previa'] ?? null;
         if (!is_string($vp) || !preg_match('/^[0-9a-f]{64}$/', $vp)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão da prévia. Gere a prévia de novo.', ['versao_previa']);
         [$p0, $k0, $r0, $i0, $e0] = $this->pedidoMassa($b);
-        $assinatura = hash('sha256', json_encode([array_keys($p0), $k0, $r0, $i0, $e0]));
-        $repetido = static function (array $ped) use ($assinatura): array {
-            if ($ped['assinatura'] !== $assinatura) throw new AtributosErro('CONFLICT', 409, 'Esta chave já foi usada para outro pedido. Gere a prévia de novo.');
+        $assinatura = hash('sha256', json_encode(self::intencaoMassa($p0, $k0, $r0, $i0, $e0)));   // DSHOW-056: canônica (ordem não importa)
+        $assinaturaLegada = hash('sha256', json_encode([array_keys($p0), $k0, $r0, $i0, $e0]));     // recibos gravados antes continuam válidos
+        $repetido = static function (array $ped) use ($assinatura, $assinaturaLegada): array {
+            if ($ped['assinatura'] !== $assinatura && $ped['assinatura'] !== $assinaturaLegada) throw new AtributosErro('CONFLICT', 409, 'Esta chave já foi usada para outro pedido. Gere a prévia de novo.');
             return ['repetido' => true] + (is_array($ped['resultado']) ? $ped['resultado'] : []);
         };
         if ($ja = $this->repo->pedidoMassa($chave)) return $repetido($ja);
@@ -369,7 +384,7 @@ final class KitsService
         [$prods, $kA, $kR, $aI, $aE] = [$p0, $k0, $r0, $i0, $e0];
         $res = $this->repo->transacao(function () use ($prods, $kA, $kR, $aI, $aE, $previa, $chave, $b, $assinatura, $vp) {
             if (!$this->repo->registrarPedidoMassa($chave, $assinatura, $this->usuario, count($prods))) return null;   // outro envio com a mesma chave já gravou
-            if ($this->versaoMassa($prods, $kA, $kR, true) !== $vp) throw new AtributosErro('CONFLICT', 409, 'Os vínculos mudaram desde a prévia. Gere a prévia de novo.');
+            if ($this->versaoMassa($prods, $kA, $kR, $aI, $aE, true) !== $vp) throw new AtributosErro('CONFLICT', 409, 'O pedido ou os vínculos mudaram desde a prévia. Gere a prévia de novo.');
             $n = ['kits_aplicados' => 0, 'kits_removidos' => 0, 'inclusoes' => 0, 'exclusoes' => 0];
             foreach ($prods as $pid => $_) {
                 foreach ($kA as $g) if ($this->repo->definirKitProduto($g, $pid, true, $this->usuario)) { $n['kits_aplicados']++; $this->repo->auditar($this->usuario, 'aplicar_kit', 'produto_kit', "$pid:$g", null, ['grupo_id' => $g, 'massa' => $chave], null); }

@@ -255,6 +255,50 @@ $kits->definirItens(['id' => $k2, 'versao' => (int) $repo->grupo($k2)['versao'],
 $ok('kit mudou depois da prévia → 409', fn() => $erro(fn() => $kits->aplicarMassa(['produtos' => [106], 'kits_aplicar' => [$k2], 'chave' => 'kit-mudou-01', 'versao_previa' => $vpk]))?->http === 409);
 $ok('índice único na chave (010)', (int) $um("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'eq_pedido_massa' AND INDEX_NAME = 'uq_eq_pedido_massa_chave' AND NON_UNIQUE = 0") === 1);
 
+// ---- DSHOW-056: a versão da prévia identifica a INTENÇÃO completa (canônica); prévia de X não confirma Y ----------------------------------
+$L56 = fn(string $sql) => $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+$foto56 = fn() => json_encode([$L56('SELECT grupo_id, product_id, excluido_em FROM eq_grupo_produto WHERE product_id IN (201, 202) ORDER BY grupo_id, product_id'),
+    $L56('SELECT product_id, atributo_id, modo, unidade_id, motivo, excluido_em FROM eq_produto_atributo WHERE product_id IN (201, 202) ORDER BY product_id, atributo_id'),
+    (int) $um('SELECT COUNT(*) FROM eq_auditoria'), (int) $um('SELECT COUNT(*) FROM eq_pedido_massa')]);
+$X = ['produtos' => [201], 'kits_aplicar' => [$k2]];
+$vX = $kits->previaMassa($X)['versao_previa']; $f0 = $foto56();
+$trocas = [
+    'kit aplicar → kit remover' => ['produtos' => [201], 'kits_remover' => [$k2]],
+    'troca de kit' => ['produtos' => [201], 'kits_aplicar' => [$k3]],
+    'troca de produtos' => ['produtos' => [201, 202], 'kits_aplicar' => [$k2]],
+    'acrescenta atributo' => ['produtos' => [201], 'kits_aplicar' => [$k2], 'atributos_incluir' => [$atr['Vias']]],
+];
+foreach ($trocas as $nome => $Y) {
+    $e = $erro(fn() => $kits->aplicarMassa($Y + ['chave' => 'p056-' . substr(md5($nome), 0, 10), 'versao_previa' => $vX]));
+    $ok("056: prévia de X, confirmação direta com Y ($nome) → 409, zero alterações e zero auditoria", $e?->http === 409 && $foto56() === $f0, $e ? $e->getMessage() : 'aceito (defeito)');
+}
+$Xm = ['produtos' => [202], 'atributos_excluir' => [['atributo_id' => $atr['Cor'], 'motivo' => 'motivo A do teste 056']]];
+$vXm = $kits->previaMassa($Xm)['versao_previa'];
+$e = $erro(fn() => $kits->aplicarMassa(['produtos' => [202], 'atributos_excluir' => [['atributo_id' => $atr['Cor'], 'motivo' => 'motivo B do teste 056']], 'chave' => 'p056-motivo-01', 'versao_previa' => $vXm]));
+$ok('056: troca de MOTIVO depois da prévia → 409, nada muda', $e?->http === 409 && $foto56() === $f0);
+$Xu = ['produtos' => [202], 'atributos_incluir' => [['atributo_id' => $atr['Comprimento'], 'unidade_id' => $uCm]]];
+$vXu = $kits->previaMassa($Xu)['versao_previa'];
+$e = $erro(fn() => $kits->aplicarMassa(['produtos' => [202], 'atributos_incluir' => [['atributo_id' => $atr['Comprimento'], 'unidade_id' => $uMm]], 'chave' => 'p056-unid-01', 'versao_previa' => $vXu]));
+$ok('056: troca de UNIDADE do atributo incluído depois da prévia → 409, nada muda', $e?->http === 409 && $foto56() === $f0);
+// mesma intenção em outra ordem = aceita (e a chave repetida devolve o recibo, sem duplicar)
+$Xo = ['produtos' => [202, 201], 'atributos_incluir' => [$atr['Conector'], $atr['Vias']]];
+$vXo = $kits->previaMassa($Xo)['versao_previa'];
+$r1 = $kits->aplicarMassa(['produtos' => [201, 202], 'atributos_incluir' => [$atr['Vias'], $atr['Conector']], 'chave' => 'p056-ordem-01', 'versao_previa' => $vXo]);
+$ok('056: mesma intenção com os IDs em OUTRA ordem → aceita', empty($r1['repetido']) && ($r1['gravado']['inclusoes'] ?? 0) >= 1, json_encode($r1['gravado'] ?? null));
+$fDepois = $foto56();
+$r2 = $kits->aplicarMassa(['produtos' => [201, 202], 'atributos_incluir' => [$atr['Vias'], $atr['Conector']], 'chave' => 'p056-ordem-01', 'versao_previa' => $vXo]);
+$ok('056: resposta perdida depois do commit → reenvio com a MESMA chave devolve o recibo, sem duplicar (prévia agora velha, não importa)', !empty($r2['repetido']) && $r2['gravado'] == $r1['gravado'] && $foto56() === $fDepois, json_encode([$r2['repetido'] ?? null, $r1['gravado'], $r2['gravado'] ?? null, $foto56() === $fDepois]));
+$r3 = $kits->aplicarMassa(['produtos' => [202, 201], 'atributos_incluir' => [$atr['Conector'], $atr['Vias']], 'chave' => 'p056-ordem-01', 'versao_previa' => $vXo]);
+$ok('056: mesma chave, mesma intenção em outra ordem → recibo, sem duplicar', !empty($r3['repetido']) && $foto56() === $fDepois);
+$e = $erro(fn() => $kits->aplicarMassa(['produtos' => [201], 'atributos_incluir' => [$atr['Malha']], 'chave' => 'p056-ordem-01', 'versao_previa' => $vXo]));
+$ok('056: mesma chave com OUTRA intenção → 409, nada muda', $e?->http === 409 && $foto56() === $fDepois);
+// recibo gravado ANTES desta versão (assinatura antiga, dependente da ordem) continua válido
+$leg = hash('sha256', json_encode([[201], [$k3], [], [], []]));
+$repo->transacao(function () use ($repo, $leg) { $repo->registrarPedidoMassa('p056-legado-01', $leg, 'admin@exemplo.invalid', 1); $repo->concluirPedidoMassa('p056-legado-01', ['gravado' => ['kits_aplicados' => 1, 'kits_removidos' => 0, 'inclusoes' => 0, 'exclusoes' => 0]]); });
+$fLeg = $foto56();
+$r4 = $kits->aplicarMassa(['produtos' => [201], 'kits_aplicar' => [$k3], 'chave' => 'p056-legado-01', 'versao_previa' => str_repeat('a', 64)]);
+$ok('056: recibo idempotente gravado com a assinatura ANTIGA continua válido (reenvio → recibo, nada aplicado)', !empty($r4['repetido']) && ($r4['gravado']['kits_aplicados'] ?? -1) === 1 && $foto56() === $fLeg);
+
 // corrida real com DUAS conexões: outra sessão segura a mesma chave numa transação aberta; esta espera no índice único
 $pC = ['produtos' => [106], 'kits_aplicar' => [$k2]];
 $assin = hash('sha256', json_encode([[106], [$k2], [], [], []]));
