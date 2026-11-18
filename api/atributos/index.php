@@ -50,7 +50,9 @@ const EQ_FLAG = 'panel_atributos_enabled';           // E1: mesma chave do paine
 const EQ_FLAG_ESCRITA = 'panel_atributos_escrita';   // escrita (E3); desligada
 const ATR_ESCRITA_LIBERADA = false;                  // E1 = só leitura: nenhuma rota de escrita responde, com qualquer flag
 // Fontes do resolvedor que significam "piloto desligado para todos" (→ 404 antes da sessão).
-const EQ_DESLIGADO = ['not_found', 'disabled', 'not_started', 'expired', 'environment_mismatch', 'rollout_excluded'];
+// ATR-VAL-E1 (18/11): 'rollout_excluded' SAIU desta lista. Sem identidade, rollout 0 + override por usuário (o padrão "ligada só para o 75")
+// resolve como rollout_excluded e escondia a rota de TODOS, inclusive de quem tem override. O rollout é decidido depois da sessão (passo 3).
+const EQ_DESLIGADO = ['not_found', 'disabled', 'not_started', 'expired', 'environment_mismatch'];
 
 /** Decide pela fonte do resolvedor: erro de leitura nunca vira ausência. */
 function eqFlagOuFalha(array $f): bool {

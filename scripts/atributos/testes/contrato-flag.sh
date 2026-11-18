@@ -55,6 +55,8 @@ ON='{"panel_atributos_enabled":{"anon":"global","user":"global"},"panel_atributo
 ONW='{"panel_atributos_enabled":{"anon":"global","user":"global"},"panel_atributos_escrita":{"user":"global"}}'
 ONWERR='{"panel_atributos_enabled":{"anon":"global","user":"global"},"panel_atributos_escrita":{"user":"error"}}'
 ROLL='{"panel_atributos_enabled":{"anon":"rollout_no_identity","user":"rollout_excluded"}}'
+SO75='{"panel_atributos_enabled":{"anon":"rollout_excluded","user":"user_override"}}'
+SO75FORA='{"panel_atributos_enabled":{"anon":"rollout_excluded","user":"rollout_excluded"}}'
 UERR='{"panel_atributos_enabled":{"anon":"global","user":"error"}}'
 caso "A desligado, sem sessão → 404 (oculto, não 401)" 404 "$OFF" GET atributos sem-sessao
 caso "B desligado, nível 100 → 404" 404 "$OFF" GET atributos 100
@@ -75,6 +77,10 @@ caso "K E1: escrita LIGADA, POST nível 100 → 404 (só leitura)" 404 "$ONW" PO
 caso "K2 E1: escrita LIGADA, POST valor nível 100 → 404" 404 "$ONW" POST valor 100
 caso "K3 E1: escrita LIGADA, GET valores nível 80 → 404" 404 "$ONW" GET valores 80
 caso "L E1: escrita ilegível, POST → 404 (nem lê a flag)" 404 "$ONWERR" POST atributo 100
+# ATR-VAL-E1: padrão "ligada só para o 75" = rollout 0 (anônimo → rollout_excluded) + override do usuário
+caso "S só o 75: quem tem override, nível 80 → 200" 200 "$SO75" GET vitrine 80
+caso "S2 só o 75: sem sessão → 401 (não esconde de quem tem override)" 401 "$SO75FORA" GET vitrine sem-sessao
+caso "S3 só o 75: outra pessoa (sem override) → 404" 404 "$SO75FORA" GET vitrine 80
 caso "V vitrine, nível 50 → 200" 200 "$ON" GET vitrine 50
 caso "V2 vitrine, nível 49 → 403" 403 "$ON" GET vitrine 49
 caso "V3 vitrine, sem sessão → 401" 401 "$ON" GET vitrine sem-sessao
