@@ -16,6 +16,7 @@ export function Ficha({ id }: { id: number }) {
   const [f, setF] = React.useState<TFicha | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
   const [aba, setAba] = React.useState<AbaFicha>('atributos');
+  React.useEffect(() => { if (m.atributoFoco !== null) setAba('atributos'); }, [m.atributoFoco]);   // UX-1: abrir num atributo = aba Atributos
   const [detalhes, setDetalhes] = React.useState(false);
   const [foto, setFoto] = React.useState(0);
   const seq = React.useRef(0);   // recargas fora de ordem: só a mais recente vale (senão um campo volta ao valor antigo)
@@ -114,7 +115,7 @@ function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco }: { f
   React.useEffect(() => {
     if (focoInicial === null) return;
     aoConsumirFoco?.();
-    if (f.itens.some((i) => i.atributo_id === focoInicial)) setFocar({ atributo: focoInicial });
+    if (f.itens.some((i) => i.atributo_id === focoInicial)) { setFiltro('todos'); setFocar({ atributo: focoInicial }); }   // filtro não pode esconder a linha
     else m.aviso('Este atributo já não faz parte da ficha. Os dados foram atualizados.', 'info');
   }, [focoInicial]);   // eslint-disable-line react-hooks/exhaustive-deps
   React.useEffect(() => {

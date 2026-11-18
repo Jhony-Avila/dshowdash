@@ -37,6 +37,9 @@ export function dataHora(iso: string | null | undefined): string {
 }
 
 export const pctDe = (c: { feitos: number; total: number }) => (c.total > 0 ? Math.round((c.feitos / c.total) * 100) : null);
+/** UX-1 "menos preenchidos": primeiro quem TEM essenciais aplicáveis (menor % primeiro; empate pelo ID); os 0/0 vão para o fim. */
+export const comparaMenosPreenchidos = (a: { id: number; essencial: { feitos: number; total: number } }, b: { id: number; essencial: { feitos: number; total: number } }) =>
+  (Number(a.essencial.total === 0) - Number(b.essencial.total === 0)) || ((pctDe(a.essencial) ?? 0) - (pctDe(b.essencial) ?? 0)) || a.id - b.id;
 
 export function precifica(chave: string, bruto: unknown): string {
   const [familia, campo] = chave.split('.');

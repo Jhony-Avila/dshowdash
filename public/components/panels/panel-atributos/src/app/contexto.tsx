@@ -7,7 +7,8 @@ export const ABAS: { id: Aba; rotulo: string }[] = [
   { id: 'kits', rotulo: 'Kits' }, { id: 'atributos', rotulo: 'Atributos' }, { id: 'unidades', rotulo: 'Unidades' }, { id: 'conferencia', rotulo: 'Conferência' },
 ];
 
-export interface FiltroProdutos { busca?: string; subcategoria?: string; kit?: string; semFoto?: boolean; semKit?: boolean; obrigatoriosVazios?: boolean; foraDaFicha?: boolean; comPrecifica?: boolean }
+export interface FiltroProdutos { busca?: string; subcategoria?: string; kit?: string; semFoto?: boolean; semKit?: boolean; obrigatoriosVazios?: boolean; foraDaFicha?: boolean; comPrecifica?: boolean;
+  /** Visão geral (DIREITA §25): */ categoria?: string; semSubcategoria?: boolean; essencialIncompleto?: boolean; ordem?: 'preenchimento' | 'nome' | 'id' }
 export interface Navegar {
   aba: Aba; produto: number | null; kit: number | null;
   ir: (aba: Aba, opc?: { produto?: number | null; kit?: number | null; filtro?: FiltroProdutos; selecao?: number[]; preencher?: { kit?: number; subcategoria?: string }; intencao?: 'kit' | 'atributo' }) => void;

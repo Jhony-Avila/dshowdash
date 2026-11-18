@@ -3,21 +3,23 @@
 import React from 'react';
 import type { ProdutoResumo, Vitrine } from '../lib/tipos';
 import { obter } from '../lib/api';
-import { casaBusca, pctDe } from '../lib/formatar';
+import { casaBusca, pctDe, comparaMenosPreenchidos } from '../lib/formatar';
 import { rotuloCategoria, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
 import { Barra, CapsulaId, ChipKit, Carregando, Erro, Etiqueta, Foto, Vazio, Botao } from '../ui/Comuns';
 
 const POR_PAGINA = 48;
 type Ordem = 'nome' | 'id' | 'preenchimento';
+const SEM_SUB = '__sem__';   // "Sem subcategoria" (subcategoria nula) — diferente de "Todas"
 
 export function Produtos() {
   const m = useModulo();
   const [dados, setDados] = React.useState<Vitrine | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
-  const [f, setF] = React.useState({ busca: m.filtroInicial.busca ?? '', categoria: '', subcategoria: m.filtroInicial.subcategoria ?? '', kit: m.filtroInicial.kit ?? '', situacao: 'ativos',
+  // UX-1: filtros da Visão geral (categoria, "Sem subcategoria" = '__sem__' ≠ Todas, essencial incompleto, ordem) → o número do cartão = o total da lista
+  const [f, setF] = React.useState({ busca: m.filtroInicial.busca ?? '', categoria: m.filtroInicial.categoria ?? '', subcategoria: m.filtroInicial.semSubcategoria ? SEM_SUB : (m.filtroInicial.subcategoria ?? ''), kit: m.filtroInicial.kit ?? '', situacao: 'ativos',
     semFoto: !!m.filtroInicial.semFoto, semKit: !!m.filtroInicial.semKit, obrigatorios: !!m.filtroInicial.obrigatoriosVazios, fora: !!m.filtroInicial.foraDaFicha,
-    precifica: !!m.filtroInicial.comPrecifica, ordem: 'nome' as Ordem, modo: 'grade' as 'grade' | 'tabela' });
+    precifica: !!m.filtroInicial.comPrecifica, essencial: !!m.filtroInicial.essencialIncompleto, ordem: (m.filtroInicial.ordem ?? 'nome') as Ordem, modo: 'grade' as 'grade' | 'tabela' });
   const [pagina, setPagina] = React.useState(0);
   const sel = React.useMemo(() => new Set(m.selecao), [m.selecao]);
 
@@ -32,15 +34,13 @@ export function Produtos() {
     if (!dados) return [];
     const q = f.busca.trim(); const idQ = /^\d+$/.test(q) ? Number(q.replace(/^0+(?=\d)/, '')) : null;
     const out = dados.produtos.filter((p) => (f.situacao === 'todos' || (f.situacao === 'ativos') === p.ativo)
-      && (!f.categoria || p.categoria === f.categoria) && (!f.subcategoria || (p.subcategoria ?? '') === f.subcategoria)
+      && (!f.categoria || p.categoria === f.categoria) && (!f.subcategoria || (f.subcategoria === SEM_SUB ? p.subcategoria === null : (p.subcategoria ?? '') === f.subcategoria))
       && (!f.kit || p.kits.some((k) => String(k.id) === f.kit)) && (!f.semFoto || p.fotos === 0) && (!f.semKit || p.kits_especificos === 0)
-      && (!f.obrigatorios || p.obrigatorios_vazios > 0) && (!f.fora || p.fora_da_ficha > 0) && (!f.precifica || p.precifica.length > 0)
+      && (!f.obrigatorios || p.obrigatorios_vazios > 0) && (!f.fora || p.fora_da_ficha > 0) && (!f.precifica || p.precifica.length > 0) && (!f.essencial || (p.essencial.total > 0 && p.essencial.feitos < p.essencial.total))
       && casaBusca(q, p.id, p.nome));
-    const pct = (p: ProdutoResumo) => pctDe(p.essencial) ?? -1;
-    const semEssencial = (p: ProdutoResumo) => p.essencial.total === 0;
     out.sort((a, b) => (idQ !== null ? Number(b.id === idQ) - Number(a.id === idQ) : 0)
       || (f.ordem === 'id' ? a.id - b.id
-        : f.ordem === 'preenchimento' ? (Number(semEssencial(a)) - Number(semEssencial(b))) || pct(a) - pct(b) || a.id - b.id   // UX-1: 0/0 vão para o fim
+        : f.ordem === 'preenchimento' ? comparaMenosPreenchidos(a, b)   // UX-1: 0/0 vão para o fim (lib/formatar, testado em front-puras)
         : a.nome.localeCompare(b.nome, 'pt-BR')));
     return out;
   }, [dados, f]);
@@ -48,7 +48,7 @@ export function Produtos() {
   if (erro) return <Erro mensagem={erro} aoTentar={carregar} />;
   if (!dados) return <Carregando rotulo="Carregando produtos" />;
   const conta = (s: { produtos: number; ativos: number }) => (f.situacao === 'inativos' ? s.produtos - s.ativos : f.situacao === 'todos' ? s.produtos : s.ativos);
-  const subcats = dados.facetas.filter((x) => (!f.categoria || x.categoria === f.categoria) && conta(x) > 0)
+  const subcats = dados.facetas.filter((x) => x.subcategoria !== null && (!f.categoria || x.categoria === f.categoria) && conta(x) > 0)   // nula = opção "Sem subcategoria"
     .sort((a, b) => rotuloSubcategoria(a.subcategoria).localeCompare(rotuloSubcategoria(b.subcategoria), 'pt-BR'));
   const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
   // UX-1: na ordem "menos preenchidos", os produtos sem essenciais (0/0) formam um grupo próprio no fim
@@ -56,13 +56,13 @@ export function Produtos() {
   const vis = lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
   const alternar = (id: number) => m.setSelecao(sel.has(id) ? m.selecao.filter((x) => x !== id) : [...m.selecao, id]);
   const marcarPagina = () => { const ids = vis.map((p) => p.id); const todos = ids.every((i) => sel.has(i)); m.setSelecao(todos ? m.selecao.filter((x) => !ids.includes(x)) : [...new Set([...m.selecao, ...ids])]); };
-  type Chave = 'semFoto' | 'semKit' | 'obrigatorios' | 'fora' | 'precifica';
+  type Chave = 'semFoto' | 'semKit' | 'obrigatorios' | 'fora' | 'precifica' | 'essencial';
   const chip = (k: Chave, rot: string, dica?: string) => (
     <button type="button" className={`at-filtro ${f[k] ? 'at-filtro--ativo' : ''}`} aria-pressed={f[k]} title={dica} onClick={() => setF({ ...f, [k]: !f[k] })}>{rot}</button>);
   // UX-1: filtros além da busca (a busca sozinha sem resultado não oferece "todo o catálogo": já é a busca em tudo o que está visível)
-  const filtrosAlemDaBusca = !!(f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.situacao !== 'ativos');
-  const buscarEmTudo = () => setF({ ...f, categoria: '', subcategoria: '', kit: '', situacao: 'todos', semFoto: false, semKit: false, obrigatorios: false, fora: false, precifica: false });
-  const algumFiltro = f.busca || f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.situacao !== 'ativos';
+  const filtrosAlemDaBusca = !!(f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.essencial || f.situacao !== 'ativos');
+  const buscarEmTudo = () => setF({ ...f, categoria: '', subcategoria: '', kit: '', situacao: 'todos', semFoto: false, semKit: false, obrigatorios: false, fora: false, precifica: false, essencial: false });
+  const algumFiltro = f.busca || f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.essencial || f.situacao !== 'ativos';
   const especificos = (p: ProdutoResumo) => p.kits.filter((k) => !k.motivos.includes('todos'));
 
   return (
@@ -81,6 +81,7 @@ export function Produtos() {
         </select>
         <select className="at-select" aria-label="Subcategoria" value={f.subcategoria} onChange={(e) => setF({ ...f, subcategoria: e.target.value })}>
           <option value="">Todas as subcategorias</option>
+          <option value={SEM_SUB}>Sem subcategoria</option>
           {subcats.map((s) => <option key={`${s.categoria}|${s.subcategoria}`} value={s.subcategoria ?? ''}>{rotuloSubcategoria(s.subcategoria)} ({conta(s)})</option>)}
         </select>
         <select className="at-select" aria-label="Kit" value={f.kit} onChange={(e) => setF({ ...f, kit: e.target.value })}>
@@ -99,10 +100,10 @@ export function Produtos() {
         </div>
       </div>
       <div className="at-filtros">
-        {chip('semFoto', 'Sem foto')}{chip('semKit', 'Sem kit', 'Produtos que só têm o kit Base (todos os produtos): nenhum kit específico')}{chip('obrigatorios', 'Com obrigatórios vazios')}{chip('fora', 'Com valores fora da ficha')}{chip('precifica', 'Com ficha do Precifica')}
+        {chip('essencial', 'Essencial incompleto', 'Produtos com atributos essenciais aplicáveis ainda não preenchidos (os 0/0 ficam fora)')}{chip('semFoto', 'Sem foto')}{chip('semKit', 'Sem kit', 'Produtos que só têm o kit Base (todos os produtos): nenhum kit específico')}{chip('obrigatorios', 'Com obrigatórios vazios')}{chip('fora', 'Com valores fora da ficha')}{chip('precifica', 'Com ficha do Precifica')}
         <span className="at-filtros__total">{lista.length} produto{lista.length === 1 ? '' : 's'} encontrado{lista.length === 1 ? '' : 's'}</span>
         {m.selecao.length > 0 && <span className="at-filtros__sel">{m.selecao.length} selecionado{m.selecao.length === 1 ? '' : 's'}</span>}
-        {algumFiltro && <button type="button" className="bl-botao" onClick={() => setF({ ...f, busca: '', categoria: '', subcategoria: '', kit: '', situacao: 'ativos', semFoto: false, semKit: false, obrigatorios: false, fora: false, precifica: false })}>Limpar filtros</button>}
+        {algumFiltro && <button type="button" className="bl-botao" onClick={() => setF({ ...f, busca: '', categoria: '', subcategoria: '', kit: '', situacao: 'ativos', semFoto: false, semKit: false, obrigatorios: false, fora: false, precifica: false, essencial: false })}>Limpar filtros</button>}
         {dados.pode_vincular && vis.length > 0 && <button type="button" className="bl-botao" onClick={marcarPagina}>{vis.every((p) => sel.has(p.id)) ? 'Desmarcar a página' : 'Selecionar a página'}</button>}
       </div>
 
