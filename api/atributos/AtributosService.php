@@ -784,6 +784,11 @@ final class AtributosService
                     $d['valor_texto'] = trim($v);
             }
         }
+        // DSHOW-035 #4 (Jhony 18/11): "informado" exige CONTEÚDO — nenhum caminho grava valor informado vazio (o app o esconderia e o Dash o contaria)
+        if ($estado === 'informado' && ($d['valor_texto'] === null || trim((string) $d['valor_texto']) === '') && $d['valor_num'] === null && $d['valor_bool'] === null
+            && ($d['valor_data'] === null || $d['valor_data'] === '') && $d['opcao_id'] === null) {
+            throw new AtributosErro('VALUE_EMPTY', 422, 'Valor vazio: preencha o campo, ou escolha "Não se aplica" ou "Desconhecido".', ['valor']);
+        }
         $d['unidade_id'] = $estado === 'informado' ? $this->validarUnidade($produto, $a, $b) : null;   // D3: unidade por valor
         $this->repo->transacao(function () use ($pid, $aid, $d, $b, $a) {
             // P1-09: a definição é relida COM TRAVA COMPARTILHADA e conferida — se o tipo/limites/estado mudaram entre a validação e aqui

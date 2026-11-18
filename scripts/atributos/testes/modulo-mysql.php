@@ -371,5 +371,15 @@ $ok('perm: outro nível 80 PREENCHE valor e a auditoria registra ele', fn() => (
     && $um("SELECT usuario FROM eq_auditoria WHERE entidade = 'valor' AND entidade_id = ? ORDER BY id DESC LIMIT 1", ["102:$peso:0"]) === 'outro80@exemplo.invalid');
 $ok('perm: pode_administrar = false para o outro nível 80; true para quem administra', $admO->podeAdministrar() === false && $admX->podeAdministrar() === true);
 
+// ---- DSHOW-035 #4: "informado" vazio é recusado (422), sem mutação -------------------------------------------------------------
+$txt = (int) $adm->salvarAtributo(['rotulo' => 'Observação (teste #4)', 'tipo' => 'texto'])['atributo']['id'];
+$aj(['product_id' => 103, 'atributo_id' => $txt, 'modo' => 'incluir']);
+$a4 = (int) $um('SELECT COUNT(*) FROM eq_auditoria');
+foreach (['' => 'texto vazio', '   ' => 'só espaços'] as $v => $nome)
+    $ok("#4: $nome → 422 e nada gravado", fn() => in_array($erro(fn() => $adm->gravarValor(['product_id' => 103, 'atributo_id' => $txt, 'valor' => $v]))?->http, [422], true)
+        && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 103 AND atributo_id = ?', [$txt]) === 0 && (int) $um('SELECT COUNT(*) FROM eq_auditoria') === $a4);
+$ok('#4: número vazio → 422', fn() => $erro(fn() => $adm->gravarValor(['product_id' => 104, 'atributo_id' => $alt, 'valor' => '']))?->http === 422);
+$ok('#4: "não se aplica" sem valor continua permitido', fn() => (bool) $adm->gravarValor(['product_id' => 103, 'atributo_id' => $txt, 'estado' => 'nao_se_aplica']));
+
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " modulo-mysql (kits, vínculos, massa, sugestões, unidade): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);

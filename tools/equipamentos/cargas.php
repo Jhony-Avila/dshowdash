@@ -294,7 +294,10 @@ final class Cargas
                 $alvo = self::norm(['NOVO' => 'Novo', 'NAO ESPECIFICADO' => 'Não especificado'][strtoupper(self::norm($valor))] ?? $valor);
                 $d['opcao_id'] = $op[$aid][$alvo] ?? null;
                 if ($d['opcao_id'] === null) { $n['sem_opcao']++; continue; }
-            } else $d['valor_texto'] = mb_substr(trim($valor), 0, 500);
+            } else {
+                $d['valor_texto'] = mb_substr(trim($valor), 0, 500);
+                if ($d['valor_texto'] === '') { $n['nao_carregados']++; continue; }   // DSHOW-035 #4: nunca "informado" vazio
+            }
             $n['valores_inseridos']++;
             $this->x("INSERT INTO {$this->s}eq_valor (product_id, atributo_id, opcao_id, opcao_chave, valor_texto, valor_num, unidade_id, estado, origem, legado_bruto, lote_id, atualizado_por)
                       VALUES (?, ?, ?, 0, ?, ?, ?, 'informado', 'importado', ?, ?, 'carga:C5')",
