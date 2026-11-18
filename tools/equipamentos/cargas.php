@@ -350,12 +350,16 @@ final class Cargas
     /** Reversão por exclusão lógica: valores do lote (versão 1, origem importado) e sugestões pendentes do lote; definições ficam na auditoria. */
     public function reverter(string $c): array
     {
-        $l = $this->q("SELECT id FROM {$this->s}eq_importacao_lote WHERE origem = ?", [self::LOTES[$c] ?? ''])[0] ?? null;
-        if (!$l) return ['revertido' => 0];
-        $v = $this->x("UPDATE {$this->s}eq_valor SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1 WHERE lote_id = ? AND origem = 'importado' AND versao = 1 AND excluido_em IS NULL", [$l['id']]);
-        $s = $this->x("UPDATE {$this->s}eq_sugestao SET estado = 'recusada', motivo = 'reversão da carga', versao = versao + 1 WHERE lote_id = ? AND estado = 'pendente'", [$l['id']]);
-        $this->x("UPDATE {$this->s}eq_importacao_lote SET estado = 'descartado' WHERE id = ?", [$l['id']]);
-        return ['valores_excluidos' => $v, 'sugestoes_encerradas' => $s];
+        // Todos os lotes da carga (uma carga ganha lote novo quando a regra muda, ex.: C6 → C6b), não só o primeiro.
+        $lotes = $this->q("SELECT id FROM {$this->s}eq_importacao_lote WHERE origem = ? AND estado <> 'descartado'", [self::LOTES[$c] ?? '']);
+        $v = 0; $s = 0;
+        foreach ($lotes as $l) {
+            // Só desfaz o que a carga gravou e ninguém tocou depois (versao = 1); valor editado à mão fica (D10).
+            $v += $this->x("UPDATE {$this->s}eq_valor SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1 WHERE lote_id = ? AND origem = 'importado' AND versao = 1 AND excluido_em IS NULL", [$l['id']]);
+            $s += $this->x("UPDATE {$this->s}eq_sugestao SET estado = 'recusada', motivo = 'reversão da carga', versao = versao + 1 WHERE lote_id = ? AND estado = 'pendente'", [$l['id']]);
+            $this->x("UPDATE {$this->s}eq_importacao_lote SET estado = 'descartado' WHERE id = ?", [$l['id']]);
+        }
+        return ['lotes' => count($lotes), 'valores_excluidos' => $v, 'sugestoes_encerradas' => $s];
     }
 }
 
