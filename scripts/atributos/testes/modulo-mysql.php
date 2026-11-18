@@ -315,6 +315,13 @@ $adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => [$uPe], 'u
 $e033 = $erro(fn() => $adm->gravarValor(['product_id' => 201, 'atributo_id' => $alt, 'valor' => '1', 'unidade_id' => $uPe, 'versao' => $verAlt(201)]));
 $ok('033 unidade sem fator → 422 UNIT_WITHOUT_FACTOR com mensagem clara', $e033?->http === 422 && str_contains($e033->getMessage(), 'fator de conversão'), $e033 ? $e033->getMessage() : 'sem erro');
 
+// ---- DSHOW-048: valor numérico gravado sem unidade guarda a unidade EFETIVA (produto/kit/padrão), nunca nulo
+$uDe = fn(int $pid) => $um('SELECT unidade_id FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pid, $alt]);
+$ok('048: herdada do produto (m) fica gravada no valor', (int) $uDe(202) === $uM);
+$ok('048: herdada do kit (m) fica gravada no valor', (int) $uDe(105) === $uM);
+$ok('048: padrão do atributo (cm) fica gravada no valor', (int) $uDe(104) === $uCm);
+$ok('048: unidade explícita continua a explícita (m)', (int) $uDe(201) === $uM);
+
 // ---- DSHOW-034: multiopção — limpar / mudar estado exigem a versão do CONJUNTO, conferida sob trava -------------------------------
 $aj(['product_id' => 104, 'atributo_id' => $moId, 'modo' => 'incluir']);
 $vc = fn(int $pid) => AtributosService::versaoConjunto($linhas('SELECT opcao_chave, versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pid, $moId]));

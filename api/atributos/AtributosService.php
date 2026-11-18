@@ -808,6 +808,12 @@ final class AtributosService
             throw new AtributosErro('VALUE_EMPTY', 422, 'Valor vazio: preencha o campo, ou escolha "Não se aplica" ou "Desconhecido".', ['valor']);
         }
         $d['unidade_id'] = $estado === 'informado' ? $this->validarUnidade($produto, $a, $b) : null;   // D3: unidade por valor
+        // DSHOW-048: valor numérico novo/editado NUNCA fica com unidade nula — grava a unidade EFETIVA de agora (produto → kit → padrão).
+        // Assim, mudar depois o kit (ou somar outro kit com outra unidade) não reinterpreta o número em silêncio.
+        if ($estado === 'informado' && $d['unidade_id'] === null && in_array($a['tipo'], ['numero', 'inteiro'], true)) {
+            $apl = $this->aplicaveis($produto)[$aid]['aplic'] ?? null;
+            $d['unidade_id'] = $apl !== null ? Aplicabilidade::unidadeEfetiva($apl, null) : ($a['unidade_id'] !== null ? (int) $a['unidade_id'] : null);
+        }
         $this->repo->transacao(function () use ($pid, $aid, $d, $b, $a) {
             // P1-09: a definição é relida COM TRAVA COMPARTILHADA e conferida — se o tipo/limites/estado mudaram entre a validação e aqui
             // (versão diferente), conflito visível; a mudança de tipo (trava exclusiva + contagem com trava) espera esta transação.
