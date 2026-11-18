@@ -157,7 +157,8 @@ $aj(['product_id' => 105, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_i
 $pMi = $corpo(105, '4', $uMi);
 $adm->definirUnidadeAtiva($uMi, false);
 $e = $erro(fn() => $adm->gravarValor($pMi));
-$ok('079: unidade DESATIVADA depois de exibida → 422 unidade_id ("desativada"), nada gravado nem auditado', $e?->http === 422 && $e->campos === ['unidade_id'] && str_contains($e->getMessage(), 'desativada') && $semNada(105), $e ? $e->getMessage() : 'aceito; vivo=' . json_encode($vivo(105, $alt)));
+$ok('079: unidade DESATIVADA depois de exibida → 422 unidade_id com o que fazer, nada gravado nem auditado', $e?->http === 422 && $e->campos === ['unidade_id']
+    && $e->getMessage() === 'A unidade "mi079" está desativada. Escolha outra unidade para este campo. O número não foi gravado.' && $semNada(105), $e ? $e->getMessage() : 'aceito; vivo=' . json_encode($vivo(105, $alt)));
 // não permitida (lb não é extra; grandeza massa ≠ comprimento) e inexistente → 422, nada gravado
 $e = $erro(fn() => $adm->gravarValor($corpo(104, '3', $uLb)));
 $ok('079: unidade não permitida → 422 unidade_id, nada gravado', $e?->http === 422 && $e->campos === ['unidade_id'] && $semNada(104));
@@ -171,6 +172,70 @@ $ok('079 controle: conversão explícita 1 m → 100 cm (PERSISTIDO e AUDITORIA 
     && $ultAud(102)['acao'] === 'editar' && (string) $um("SELECT motivo FROM eq_auditoria WHERE entidade = 'valor' AND entidade_id = ? ORDER BY id DESC LIMIT 1", ["102:$alt:0"]) === 'unidade convertida');
 $adm->converterUnidade(['product_id' => 102, 'atributo_id' => $alt, 'unidade_id' => $uM, 'converter' => false, 'versao' => (int) $vivo(102, $alt)['versao']]);
 $ok('079 controle: "só trocar a unidade" mantém o número (100 m), sem converter', $num($vivo(102, $alt)['valor_num']) === 100.0 && (int) $vivo(102, $alt)['unidade_id'] === $uM);
+
+// =========================================================================================================================================
+// HOTFIX-2 · janela fechada: a unidade é conferida DENTRO da transação, sob a trava. DUAS CONEXÕES (pcntl_fork + GET_LOCK, molde do
+// DSHOW-034 do modulo-mysql.php): o filho (conexão 1) para logo depois de travar as linhas do valor; o pai (conexão 2) desativa a unidade
+// ou troca o vínculo para outra grandeza nesse intervalo e só então solta o filho → 422 unidade_id, nada gravado, sem auditoria.
+// =========================================================================================================================================
+$pdo->exec('CREATE TABLE thf2_janela (k VARCHAR(20) PRIMARY KEY, res VARCHAR(300)) ENGINE=InnoDB');   // o filho responde por aqui
+$janela = function (string $k, array $corpoPedido, ?callable $noIntervalo) use ($dsn, $tira, $c, $cat, $pdo, $um): array {
+    $pdo->query("SELECT GET_LOCK('hf2-barreira', 10)")->fetchColumn();   // o pai segura a barreira: o filho espera nela DENTRO da transação
+    $pid = pcntl_fork();
+    if ($pid === 0) {   // FILHO = conexão 1 (PDO próprio; sai por SIGKILL, sem destrutores)
+        $res = 'erro';
+        try {
+            // pausa no 1º comando DEPOIS de travarValores (eq_valor … FOR UPDATE): é o ponto entre a trava e a conferência/gravação
+            $pk = new class($dsn, $tira($c['user'] ?? ''), $tira($c['password'] ?? ''), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]) extends PDO {
+                public int $fase = 0;
+                public function prepare(string $q, array $o = []): PDOStatement|false
+                {
+                    if ($this->fase === 1) {
+                        $this->fase = 2;
+                        parent::query("SELECT GET_LOCK('hf2-dentro', 10)")->fetchColumn();                     // avisa o pai: está no intervalo
+                        parent::query("SELECT GET_LOCK('hf2-barreira', 30)")->fetchColumn(); parent::query("SELECT RELEASE_LOCK('hf2-barreira')")->fetchColumn();
+                        parent::query("SELECT RELEASE_LOCK('hf2-dentro')")->fetchColumn();
+                    }
+                    if ($this->fase === 0 && str_contains($q, '`eq_valor`') && str_contains($q, 'ORDER BY opcao_chave FOR UPDATE') && $this->inTransaction()) $this->fase = 1;
+                    return parent::prepare($q, $o);
+                }
+            };
+            $svk = new AtributosService(new AtributosRepoPdo($pk, ''), 80, 'janela@exemplo.invalid', $cat);
+            try { $svk->gravarValor($corpoPedido); $res = 'ok'; }
+            catch (AtributosErro $e) { $res = $e->http . '|' . implode(',', $e->campos) . '|' . $e->getMessage(); }
+            $res = ($pk->fase === 2 ? 'pausou|' : 'sem-pausa|') . $res;
+        } catch (Throwable $e) { $res = 'erro ' . get_class($e) . ' ' . $e->getMessage(); }
+        try { $pk->prepare('INSERT INTO thf2_janela (k, res) VALUES (?, ?)')->execute([$k, mb_substr($res, 0, 300)]); } catch (Throwable $e) { }
+        posix_kill(posix_getpid(), SIGKILL);
+    }
+    $t = microtime(true); $dentro = false;
+    while (microtime(true) - $t < 10) { if ($um("SELECT IS_USED_LOCK('hf2-dentro')") !== null) { $dentro = true; break; } usleep(20000); }
+    if ($dentro && $noIntervalo !== null) $noIntervalo();   // conexão 2 age com a conexão 1 parada entre a trava e a gravação
+    $pdo->query("SELECT RELEASE_LOCK('hf2-barreira')")->fetchColumn();
+    pcntl_waitpid($pid, $st);
+    return [$dentro, explode('|', (string) $um('SELECT res FROM thf2_janela WHERE k = ?', [$k]), 4)];
+};
+$adm->criarUnidade(['simbolo' => 'pe079', 'nome' => 'pé (teste)', 'grandeza' => 'comprimento', 'fator_base' => '0.3048']);
+$uPe = (int) array_column($repo->unidades(), 'id', 'simbolo')['pe079'];
+foreach ([106, 107, 108] as $pj) $cat->p[$pj] = ['id' => $pj, 'nome' => "Produto $pj (sintético)", 'categoria' => 'LED_PANEL', 'subcategoria' => 'CABLE', 'ativo' => true, 'excluido' => false, 'sincronizado_em' => null];
+// (a) conexão 2 DESATIVA a unidade do pedido no intervalo
+$aj(['product_id' => 106, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uPe]);
+[$dentro, $r] = $janela('desativa', $corpo(106, '4', $uPe), fn() => (new AtributosService(new AtributosRepoPdo($pdo, ''), 80, 'outra@exemplo.invalid', $cat))->definirUnidadeAtiva($uPe, false));
+$ok('janela: conexão 1 parou entre a trava e a gravação; conexão 2 DESATIVOU a unidade → 422 unidade_id com a mensagem nova', $dentro && $r[0] === 'pausou' && ($r[1] ?? '') === '422' && ($r[2] ?? '') === 'unidade_id'
+    && ($r[3] ?? '') === 'A unidade "pe079" está desativada. Escolha outra unidade para este campo. O número não foi gravado.', json_encode([$dentro, $r]));
+$ok('janela (desativa): PERSISTIDO/AUDITORIA — nada (nenhuma linha em eq_valor, nenhuma auditoria do valor)', $semNada(106), json_encode([$trilha(106, $alt), $aud(106, $alt)]));
+$adm->definirUnidadeAtiva($uPe, true);
+// (b) conexão 2 TROCA o vínculo (unidade efetiva) para OUTRA grandeza (kg, extra explícita) no intervalo
+$aj(['product_id' => 107, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uM]);
+[$dentro, $r] = $janela('grandeza', $corpo(107, '6', $uM), fn() => $aj(['product_id' => 107, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uKg]));
+$ok('janela: conexão 2 trocou o vínculo para outra grandeza (m → kg) no intervalo → 422 unidade_id, nada gravado nem auditado', $dentro && $r[0] === 'pausou' && ($r[1] ?? '') === '422' && ($r[2] ?? '') === 'unidade_id'
+    && str_contains($r[3] ?? '', '"kg"') && (int) $vincU(107) === $uKg && $semNada(107), json_encode([$dentro, $r, $trilha(107, $alt)]));
+// (c) controle: mesmo caminho com pausa, SEM concorrência → grava normalmente na unidade do pedido, UMA auditoria
+$aj(['product_id' => 108, 'atributo_id' => $alt, 'modo' => 'incluir', 'unidade_id' => $uPe]);
+[$dentro, $r] = $janela('controle', $corpo(108, '8', $uPe), null);
+$ok('janela controle: com a pausa e sem concorrência → grava (PERSISTIDO 8 pe079, AUDITORIA "preencher")', $dentro && $r[0] === 'pausou' && ($r[1] ?? '') === 'ok'
+    && ($v = $vivo(108, $alt)) !== null && $num($v['valor_num']) === 8.0 && (int) $v['unidade_id'] === $uPe && array_column($aud(108, $alt), 'acao') === ['preencher'], json_encode([$dentro, $r, $vivo(108, $alt)]));
+$ok('janela: a conexão do pai continua viva depois dos filhos', (int) $um('SELECT 1') === 1);
 
 // @@FIM@@
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " hotfix2-mysql (034 escalar do vazio · 079 unidade do pedido): $n casos, $falhas falha(s)\n";

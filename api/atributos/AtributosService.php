@@ -888,14 +888,8 @@ final class AtributosService
             && ($d['valor_data'] === null || $d['valor_data'] === '') && $d['opcao_id'] === null) {
             throw new AtributosErro('VALUE_EMPTY', 422, 'Valor vazio: preencha o campo, ou escolha "Não se aplica" ou "Desconhecido".', ['valor']);
         }
-        $d['unidade_id'] = $estado === 'informado' ? $this->validarUnidade($produto, $a, $b) : null;   // D3: unidade por valor
-        // DSHOW-048: valor numérico novo/editado NUNCA fica com unidade nula — grava a unidade EFETIVA de agora (produto → kit → padrão).
-        // Assim, mudar depois o kit (ou somar outro kit com outra unidade) não reinterpreta o número em silêncio.
-        if ($estado === 'informado' && $d['unidade_id'] === null && in_array($a['tipo'], ['numero', 'inteiro'], true)) {
-            $apl = $this->aplicaveis($produto)[$aid]['aplic'] ?? null;
-            $d['unidade_id'] = $apl !== null ? Aplicabilidade::unidadeEfetiva($apl, null) : ($a['unidade_id'] !== null ? (int) $a['unidade_id'] : null);
-        }
-        $this->repo->transacao(function () use ($pid, $aid, $d, $b, $a) {
+        $d['unidade_id'] = null;   // D3: unidade por valor — decidida DENTRO da transação, depois da trava (HOTFIX-2, janela fechada)
+        $this->repo->transacao(function () use ($pid, $aid, $d, $b, $a, $produto) {
             // P1-09: a definição é relida COM TRAVA COMPARTILHADA e conferida — se o tipo/limites/estado mudaram entre a validação e aqui
             // (versão diferente), conflito visível; a mudança de tipo (trava exclusiva + contagem com trava) espera esta transação.
             $atual = $this->repo->travarAtributo($aid, false);
@@ -904,6 +898,17 @@ final class AtributosService
             }
             // P1-07: todas as linhas do (produto, atributo) travadas → UM estado só por (produto, atributo)
             $linhas = $this->repo->travarValores($pid, $aid);
+            // HOTFIX-2 (janela, Jhony 18/11): a unidade é conferida AQUI, sob a trava, relendo a unidade (travada) e o vínculo/unidade
+            // efetiva — uma desativação ou troca de vínculo entre a validação e a gravação é vista (422 unidade_id, nada gravado nem auditado).
+            if ($d['estado'] === 'informado') {
+                $d['unidade_id'] = $this->validarUnidade($produto, $a, $b);
+                // DSHOW-048: valor numérico novo/editado NUNCA fica com unidade nula — grava a unidade EFETIVA de agora (produto → kit → padrão).
+                // Assim, mudar depois o kit (ou somar outro kit com outra unidade) não reinterpreta o número em silêncio.
+                if ($d['unidade_id'] === null && in_array($a['tipo'], ['numero', 'inteiro'], true)) {
+                    $apl = $this->aplicaveis($produto)[$aid]['aplic'] ?? null;
+                    $d['unidade_id'] = $apl !== null ? Aplicabilidade::unidadeEfetiva($apl, null) : ($a['unidade_id'] !== null ? (int) $a['unidade_id'] : null);
+                }
+            }
             // DSHOW-034: na multiopção, mudar o ESTADO (≠ informado) ou trocar um estado por opção substitui o conjunto inteiro →
             // exige a versão do CONJUNTO, conferida aqui, sob trava. Acrescentar opção a opções já marcadas continua por opção.
             if ($a['tipo'] === 'multiopcao') {
@@ -959,20 +964,26 @@ final class AtributosService
         $uid = is_int($b['unidade_id']) ? $b['unidade_id'] : (is_string($b['unidade_id']) && ctype_digit($b['unidade_id']) ? (int) $b['unidade_id'] : 0);
         // DSHOW-079: a unidade do PEDIDO é a que o operador via ao digitar o número. Grava NELA (nunca troca pela vigente nem converte) ou
         // recusa: existe, ATIVA, permitida (regra A8: grandeza da efetiva + extras) e da MESMA grandeza da unidade vigente agora.
-        $u = $uid > 0 ? $this->repo->unidade($uid) : null;
+        $u = $uid > 0 ? $this->unidadeSobTrava($uid) : null;
         if (!$u) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inexistente. Recarregue a ficha: o número não foi gravado.', ['unidade_id']);
         $nao = 'Recarregue a ficha e confira a unidade: o número não foi gravado nem convertido.';
-        if (!(int) ($u['ativo'] ?? 1)) throw new AtributosErro('VALIDATION_ERROR', 422, 'A unidade "' . $u['simbolo'] . '" foi desativada. ' . $nao, ['unidade_id']);
+        if (!(int) ($u['ativo'] ?? 1)) throw new AtributosErro('VALIDATION_ERROR', 422, 'A unidade "' . $u['simbolo'] . '" está desativada. Escolha outra unidade para este campo. O número não foi gravado.', ['unidade_id']);
         $permitida = false;
         foreach ($this->unidadesPermitidas($produto, $a) as $p) if ((int) $p['id'] === $uid) $permitida = true;
         $aplic = $this->aplicaveis($produto)[(int) $a['id']]['aplic'] ?? null;
         $vig = $aplic !== null ? Aplicabilidade::unidadeEfetiva($aplic, null) : (isset($a['unidade_id']) ? (int) $a['unidade_id'] : null);
-        $v = $vig !== null && $vig !== $uid ? $this->repo->unidade($vig) : null;
+        $v = $vig !== null && $vig !== $uid ? $this->unidadeSobTrava($vig) : null;
         $gU = (string) ($u['grandeza'] ?? ''); $gV = (string) ($v['grandeza'] ?? '');
         if (!$permitida || ($v !== null && $gU !== '' && $gV !== '' && $gU !== $gV)) {
             throw new AtributosErro('VALIDATION_ERROR', 422, 'A unidade "' . $u['simbolo'] . '" não vale mais para este campo' . ($v !== null ? ' (a unidade em uso agora é "' . $v['simbolo'] . '")' : '') . '. ' . $nao, ['unidade_id']);
         }
         return $uid;
+    }
+
+    /** HOTFIX-2: unidade relida com trava (FOR UPDATE) quando o repositório a oferece; senão, leitura simples (RepoMemoria dos testes). */
+    private function unidadeSobTrava(int $id): ?array
+    {
+        return $this->repo instanceof UnidadesComTrava ? $this->repo->travarUnidade($id) : $this->repo->unidade($id);
     }
 
     /** A8: unidades ativas da MESMA grandeza da unidade efetiva (produto → kit → padrão) + as incluídas explicitamente no atributo. */
