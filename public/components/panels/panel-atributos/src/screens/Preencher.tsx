@@ -4,7 +4,7 @@
 import React from 'react';
 import type { Ficha, ItemFicha, KitResumo, Vitrine } from '../lib/tipos';
 import { enviar, ErroApi, obter } from '../lib/api';
-import { decimal } from '../lib/formatar';
+import { sugestaoTexto } from '../lib/formatar';
 import { rotuloSubcategoria, IMPORTANCIA } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
 import { Botao, Carregando, ChipKit, Dialogo, Erro, Etiqueta, Foto, Vazio } from '../ui/Comuns';
@@ -34,7 +34,9 @@ export function Preencher() {
   const seqGrade = React.useRef(0);                              // trocar de kit no meio da carga: só a última grade vale
   const seqLinha = React.useRef<Record<number, number>>({});    // recarga de linha fora de ordem: só a mais recente vale
 
-  React.useEffect(() => { Promise.all([obter<Vitrine>('vitrine'), obter<{ kits: KitResumo[] }>('kits')]).then(([v, k]) => { setVit(v); setKits(k.kits.filter((x) => x.ativo && x.itens > 0 && !x.aplica_a_todos)); }).catch((e) => setErro(e.message)); }, []);
+  const carregarBase = React.useCallback(() => { setErro(null); Promise.all([obter<Vitrine>('vitrine'), obter<{ kits: KitResumo[] }>('kits')]).then(([v, k]) => { setVit(v); setKits(k.kits.filter((x) => x.ativo && x.itens > 0 && !x.aplica_a_todos)); }).catch((e) => setErro(e.message)); }, []);
+  React.useEffect(carregarBase, [carregarBase]);
+  const [erroGrade, setErroGrade] = React.useState<string | null>(null);   // DSHOW-067: erro da grade com "Tentar novamente", sem perder kit/subcategoria/seleção
 
   const produtos = React.useMemo(() => {
     if (!vit) return [];
@@ -48,7 +50,8 @@ export function Preencher() {
   const carregarFichas = React.useCallback(async (silencioso = false) => {
     const alvo = produtos.slice(0, MAX_LINHAS);
     const n = ++seqGrade.current;
-    if (!alvo.length) { setFichas(null); setColunas([]); return; }
+    if (!alvo.length) { setFichas(null); setColunas([]); setErroGrade(null); setCarregando(false); return; }
+    setErroGrade(null);
     if (!silencioso) { setCarregando(true); setFichas(null); }
     try {
       const fs = await emLotes(alvo, 6, (p) => obter<Ficha>('ficha_produto', { product_id: p.id }));
@@ -62,7 +65,7 @@ export function Preencher() {
       }
       setColunas([...cols.values()].sort((a, b) => a.ordem - b.ordem));
       setFichas(fs);
-    } catch (e) { if (n === seqGrade.current) setErro(e instanceof ErroApi ? e.message : 'Falha.'); } finally { if (n === seqGrade.current) setCarregando(false); }
+    } catch (e) { if (n === seqGrade.current) setErroGrade(e instanceof ErroApi ? e.message : 'Falha de rede.'); } finally { if (n === seqGrade.current) setCarregando(false); }
   }, [produtos, kit]);
   React.useEffect(() => { carregarFichas(); }, [carregarFichas]);
 
@@ -70,12 +73,18 @@ export function Preencher() {
     const n = (seqLinha.current[pid] ?? 0) + 1; seqLinha.current[pid] = n;
     try { const f = await obter<Ficha>('ficha_produto', { product_id: pid }); if (n === seqLinha.current[pid]) setFichas((fs) => fs?.map((x) => (x.produto.id === pid ? f : x)) ?? null); } catch { /* a célula mostra o erro */ }
   };
+  // UX-1: foco no mesmo atributo de outra linha (campo de digitar primeiro; senão o seletor)
+  const focar = (l: number, c: string | number) => {
+    const sel = `td[data-l="${l}"][data-c="${c}"]`;
+    tabela.current?.querySelector<HTMLElement>(`${sel} input:not([type=checkbox]):not([type=radio]), ${sel} select`)?.focus();
+  };
+  // ↑/↓ mudam de linha SÓ num campo de digitar; num seletor (unidade/opção) as setas são dele. Enter: o EditorValor desce depois de confirmar.
   const mover = (e: React.KeyboardEvent) => {
-    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) return;
-    const td = (e.target as HTMLElement).closest('td[data-l]') as HTMLElement | null; if (!td) return;
-    const l = Number(td.dataset.l) + (e.key === 'ArrowUp' ? -1 : 1); const c = td.dataset.c;
-    const alvo = tabela.current?.querySelector<HTMLElement>(`td[data-l="${l}"][data-c="${c}"] input, td[data-l="${l}"][data-c="${c}"] select`);
-    if (alvo) { if (e.key !== 'Enter') e.preventDefault(); window.setTimeout(() => alvo.focus(), e.key === 'Enter' ? 60 : 0); }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const el = e.target as HTMLElement;
+    if (!(el instanceof HTMLInputElement) || el.type === 'checkbox' || el.type === 'radio') return;
+    const td = el.closest('td[data-l]') as HTMLElement | null; if (!td) return;
+    e.preventDefault(); focar(Number(td.dataset.l) + (e.key === 'ArrowUp' ? -1 : 1), td.dataset.c ?? '');
   };
   const confirmarColuna = async () => {
     if (!aceitarCol) return; setTrab(true);
@@ -84,7 +93,7 @@ export function Preencher() {
     catch (e) { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(false); }
   };
 
-  if (erro) return <Erro mensagem={erro} />;
+  if (erro) return <Erro mensagem={erro} aoTentar={carregarBase} />;
   if (!vit) return <Carregando />;
   const subcats = [...new Set(vit.produtos.filter((p) => p.ativo).map((p) => p.subcategoria ?? ''))].sort((a, b) => rotuloSubcategoria(a || null).localeCompare(rotuloSubcategoria(b || null), 'pt-BR'));
   const item = (f: Ficha, aid: number) => f.itens.find((i) => i.atributo_id === aid) ?? null;
@@ -104,6 +113,7 @@ export function Preencher() {
         </div>
       </div>
       {produtos.length === 0 ? <Vazio titulo="Escolha o que preencher">Selecione um kit (ex.: Fontes) ou uma subcategoria para montar a grade.</Vazio>
+        : erroGrade ? <Erro mensagem={erroGrade} aoTentar={() => void carregarFichas()} />
         : carregando || !fichas ? <Carregando rotulo={`Montando a grade (${Math.min(produtos.length, MAX_LINHAS)} produtos)`} />
         : colunas.length === 0 ? <Vazio titulo="Nenhum atributo para preencher">Estes produtos ainda não têm kit com atributos. Aplique um kit em Vincular.</Vazio> : (<>
           {produtos.length > MAX_LINHAS && <p className="at-fraco">Mostrando os primeiros {MAX_LINHAS} de {produtos.length} produtos.</p>}
@@ -113,8 +123,13 @@ export function Preencher() {
                 <th className="at-fixa at-fixa--1">Foto</th><th className="at-fixa at-fixa--2">ID</th><th className="at-fixa at-fixa--3">Produto</th>
                 {colunas.map((c) => {
                   const ids = fichas.flatMap((f) => { const it = item(f, c.id); return it && !it.valor ? it.sugestoes.filter((s) => s.tipo === 'valor').map((s) => s.id) : []; });   // D10: só células vazias
+                  // UX-1: "Obrigatório" no cabeçalho só quando vale para TODOS os produtos em que o atributo se aplica; senão, na célula
+                  const aplic = fichas.map((f) => item(f, c.id)).filter((x): x is ItemFicha => x !== null);
+                  const obrigTodos = aplic.length > 0 && aplic.every((x) => x.obrigatorio);
+                  const impNaoObrig = aplic.find((x) => !x.obrigatorio)?.importancia ?? null;
+                  const rotImp = obrigTodos ? IMPORTANCIA.obrigatorio : impNaoObrig && impNaoObrig !== 'obrigatorio' ? IMPORTANCIA[impNaoObrig] : null;
                   return (<th key={c.id}><div className="at-grade-col"><span>{c.rotulo}</span>
-                    {c.importancia && <span className="at-imp at-imp--fraca">{IMPORTANCIA[c.importancia]}</span>}
+                    {rotImp && <span className={`at-imp ${obrigTodos ? 'at-imp--forte' : 'at-imp--fraca'}`}>{rotImp}</span>}
                     {ids.length > 0 && fichas[0]?.pode_editar && <button type="button" className="at-link" onClick={() => setAceitarCol({ id: c.id, rotulo: c.rotulo, ids })}>aceitar {ids.length} sugest{ids.length === 1 ? 'ão' : 'ões'}</button>}</div></th>);
                 })}
               </tr></thead>
@@ -123,9 +138,11 @@ export function Preencher() {
                   <td className="at-fixa at-fixa--1"><div className="at-grade-foto"><Foto mediaId={f.fotos[0]?.id ?? null} cor={f.fotos[0]?.cor ?? null} compacta ajuste="cover" /></div></td>
                   <td className="at-fixa at-fixa--2">{f.produto.id}</td>
                   <td className="at-fixa at-fixa--3"><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(f.produto.id)} title={f.produto.nome}>{f.produto.nome}</button></td>
-                  {colunas.map((c) => { const i = item(f, c.id); return (
+                  {colunas.map((c) => { const i = item(f, c.id);
+                    const obrigTodos = fichas.every((g) => { const x = item(g, c.id); return !x || x.obrigatorio; });
+                    return (
                     <td key={c.id} data-l={l} data-c={c.id} className="at-grade-cel">
-                      {i ? <CelulaGrade i={i} f={f} aoGravar={() => recarregarLinha(f.produto.id)} /> : <span className="at-fora-ficha" title="Este atributo não está na ficha deste produto (nenhum kit nem vínculo avulso). Diferente de “Não se aplica”, que é uma resposta gravada.">Fora da ficha</span>}
+                      {i ? <CelulaGrade i={i} f={f} aoGravar={() => recarregarLinha(f.produto.id)} marcarObrigatorio={i.obrigatorio && !obrigTodos} aoDescer={() => focar(l + 1, c.id)} /> : <span className="at-fora-ficha" title="Este atributo não está na ficha deste produto (nenhum kit nem vínculo avulso). Diferente de “Não se aplica”, que é uma resposta gravada.">Fora da ficha</span>}
                     </td>); })}
                 </tr>))}</tbody>
             </table>
@@ -137,14 +154,15 @@ export function Preencher() {
     </div>);
 }
 
-function CelulaGrade({ i, f, aoGravar }: { i: ItemFicha; f: Ficha; aoGravar: () => void }) {
+function CelulaGrade({ i, f, aoGravar, marcarObrigatorio = false, aoDescer }: { i: ItemFicha; f: Ficha; aoGravar: () => void; marcarObrigatorio?: boolean; aoDescer?: () => void }) {
   const m = useModulo();
   const s = i.sugestoes.find((x) => x.tipo === 'valor');
-  const rot = s ? (s.opcao_id ? i.opcoes.find((o) => o.id === s.opcao_id)?.rotulo : s.valor_proposto && /^-?\d+(\.\d+)?$/.test(s.valor_proposto) ? decimal(s.valor_proposto) : s.valor_proposto) : null;
+  const rot = s ? sugestaoTexto(s, i) : null;   // UX-1: pelo TIPO do atributo, igual na Ficha
   return (
     <div className="at-grade-celula">
-      <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} compacto aoGravar={aoGravar} aoRecarregar={aoGravar} rotuloVazio={f.pode_editar ? 'Preencher' : undefined} />
-      {s && !i.valor && <span className="at-sugestao at-sugestao--cel" title={s.evidencia ?? ''}>Sugestão: {rot}{s.unidade_id ? ` ${i.unidades.find((u) => u.id === s.unidade_id)?.simbolo ?? ''}` : ''}
+      <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} compacto aoGravar={aoGravar} aoRecarregar={aoGravar} rotuloVazio={f.pode_editar ? 'Preencher' : undefined} aoConfirmarEnter={aoDescer} />
+      {marcarObrigatorio && <span className="at-imp at-imp--forte at-cel-obrig" title="Obrigatório neste produto">Obrigatório</span>}
+      {s && !i.valor && <span className="at-sugestao at-sugestao--cel" title={s.evidencia ?? ''}>Sugestão: {rot}
         {f.pode_editar && <> · <button type="button" className="at-link" onClick={() => enviar('sugestao', { id: s.id, versao: s.versao, decisao: 'aceitar' }).then(() => { m.aviso('Sugestão usada.'); aoGravar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Usar</button></>}</span>}
       {false && <ChipKit nome="" />}
     </div>);

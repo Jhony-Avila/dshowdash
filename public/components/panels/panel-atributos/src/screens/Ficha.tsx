@@ -3,7 +3,7 @@
 import React from 'react';
 import type { AtributoDicionario, EventoHistorico, Ficha as TFicha, ItemFicha, KitResumo, Sugestao } from '../lib/tipos';
 import { enviar, ErroApi, obter } from '../lib/api';
-import { campoPrecifica, dataHora, decimal, precifica as fmtPrecifica, pctDe, valor as fmtValor } from '../lib/formatar';
+import { campoPrecifica, dataHora, decimal, precifica as fmtPrecifica, pctDe, sugestaoTexto, valor as fmtValor } from '../lib/formatar';
 import { ESTADO, FAMILIAS_PRECIFICA, FONTE_SUGESTAO, IMPORTANCIA, MOTIVO_KIT, rotuloCategoria, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
 import { Barra, Botao, CapsulaId, ChipKit, Carregando, Dialogo, Erro, Etiqueta, Foto, Vazio } from '../ui/Comuns';
@@ -203,7 +203,6 @@ function LinhaAtributo({ i, f, recarregar, aoHistorico }: { i: ItemFicha; f: TFi
 function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: TFicha; recarregar: () => void }) {
   const m = useModulo();
   const [trab, setTrab] = React.useState(false);
-  const rotOp = s.opcao_id ? i.opcoes.find((o) => o.id === s.opcao_id)?.rotulo : null;
   const un = s.unidade_id ? i.unidades.find((u) => u.id === s.unidade_id)?.simbolo ?? '' : '';
   const decidir = (decisao: 'aceitar' | 'recusar') => {
     setTrab(true);
@@ -213,7 +212,7 @@ function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: 
   if (s.tipo === 'conferencia') return <div className="at-sugestao" title={s.evidencia ?? ''}><span className="at-sugestao__rot">conferir ({FONTE_SUGESTAO[s.fonte]}):</span> {s.valor_proposto} {un} <button type="button" className="at-link" onClick={() => m.ir('conferencia')}>resolver na Conferência</button></div>;
   return (
     <div className="at-sugestao" title={s.evidencia ?? ''}>
-      <span className="at-sugestao__rot">sugestão ({FONTE_SUGESTAO[s.fonte]}):</span> <span className="at-sugestao__val">{rotOp ?? (s.valor_proposto && /^-?\d+(\.\d+)?$/.test(s.valor_proposto) ? decimal(s.valor_proposto) : s.valor_proposto)} {un}</span>
+      <span className="at-sugestao__rot">sugestão ({FONTE_SUGESTAO[s.fonte]}):</span> <span className="at-sugestao__val">{sugestaoTexto(s, i)}</span>
       {f.pode_editar && <>{i.valor ? <span className="at-fraco" title="Sugestão não sobrescreve (D10)"> campo já preenchido</span> : <button type="button" className="at-link" disabled={trab} onClick={() => decidir('aceitar')}>Aceitar</button>} <button type="button" className="at-link at-link--fraco" disabled={trab} onClick={() => decidir('recusar')}>Recusar</button></>}
     </div>);
 }

@@ -354,3 +354,6 @@
 /* UX-1 (Kits): kit vazio — chamada para escolher os atributos; destaque quando acabou de ser criado */
 [data-bl-root] .at-kits-vazio-novo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border: 1px dashed var(--bl-borda, #d1d5db); border-radius: 12px; }
 [data-bl-root] .at-kits-vazio-novo--destaque { border: 1px solid var(--bl-verde-borda, #6ee7b7); background: var(--bl-verde-suave, #ecfdf5); }
+/* UX-1 (grade): motivo do erro ao lado do valor; obrigatório marcado na célula quando a coluna varia entre produtos */
+[data-bl-root] .at-salvo__motivo { font-style: normal; margin-right: 6px; }
+[data-bl-root] .at-cel-obrig { display: inline-block; margin-top: 4px; }
