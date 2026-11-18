@@ -29,7 +29,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   const ocupado = React.useRef(false);                                   // uma gravação por vez (Enter + sair do campo não grava 2×)
   const ultimo = React.useRef<{ rota: string; corpo: Record<string, unknown>; texto?: string } | null>(null);   // "Tentar de novo" repete esta
   const [esperando, setEsperando] = React.useState(false);              // gravou; aguardando a recarga trazer a versão nova
-  React.useEffect(() => { const r = rascunhoDe(item); setTxt(r); original.current = r; setEsperando(false); }, [item.valor?.versao, item.valor?.estado, item.atributo_id]);
+  React.useEffect(() => { const r = rascunhoDe(item); setTxt(r); original.current = r; setEsperando(false); }, [item.valor?.versao, item.valor?.versao_conjunto, item.valor?.estado, item.atributo_id]);
   React.useEffect(() => { if (!esperando) return; const t = window.setTimeout(() => setEsperando(false), 3000); return () => window.clearTimeout(t); }, [esperando]);
   const estado = item.valor?.estado ?? null;
   const unidadeAtual = item.valor?.unidade_id ?? item.unidade_efetiva?.id ?? null;
@@ -42,7 +42,8 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     ocupado.current = true; ultimo.current = { rota, corpo, texto };
     setSit({ tipo: 'salvando' });
     try {
-      await enviar(rota, { product_id: productId, atributo_id: item.atributo_id, ...corpo });
+      // DSHOW-034: a versão do CONJUNTO vai em toda gravação (limpar/mudar estado da multiopção a exigem; o servidor ignora nos demais)
+      await enviar(rota, { product_id: productId, atributo_id: item.atributo_id, versao_conjunto: item.valor?.versao_conjunto, ...corpo });
       if (texto !== undefined) original.current = texto;                  // já gravado: sair do campo não reenvia
       setSit({ tipo: 'salvo' }); setEsperando(true); aoGravar(); window.setTimeout(() => setSit((s) => (s.tipo === 'salvo' ? { tipo: 'parado' } : s)), 2500);
     } catch (e) {

@@ -783,6 +783,13 @@ final class AtributosService
             }
             // P1-07: todas as linhas do (produto, atributo) travadas → UM estado só por (produto, atributo)
             $linhas = $this->repo->travarValores($pid, $aid);
+            // DSHOW-034: na multiopção, mudar o ESTADO (≠ informado) ou trocar um estado por opção substitui o conjunto inteiro →
+            // exige a versão do CONJUNTO, conferida aqui, sob trava. Acrescentar opção a opções já marcadas continua por opção.
+            if ($a['tipo'] === 'multiopcao') {
+                $vivosM = array_values(array_filter($linhas, static fn($r) => empty($r['excluido_em'])));
+                $temEstado = (bool) array_filter($vivosM, static fn($r) => (int) $r['opcao_chave'] === 0);
+                if ($vivosM && ($d['estado'] !== 'informado' || $temEstado)) self::conferirConjunto($b, $vivosM);
+            }
             $antes = null;
             foreach ($linhas as $l) if ((int) $l['opcao_chave'] === (int) $d['opcao_chave']) $antes = $l;
             $vivo = $antes !== null && empty($antes['excluido_em']);
@@ -864,16 +871,37 @@ final class AtributosService
         if ($produto === null || $produto['excluido']) throw new AtributosErro('PRODUCT_NOT_FOUND', 422, 'Produto não encontrado no catálogo.', ['product_id']);
         if (!$produto['ativo']) throw new AtributosErro('PRODUCT_INACTIVE', 422, 'Produto inativo: a ficha é somente leitura.', ['product_id']);
         // sob trava (FOR UPDATE): versão conferida dentro da transação; multiopção limpa todas as opções marcadas
-        return $this->repo->transacao(function () use ($pid, $aid, $b) {
+        $multi = (($this->repo->atributo($aid) ?? [])['tipo'] ?? null) === 'multiopcao';
+        return $this->repo->transacao(function () use ($pid, $aid, $b, $multi) {
             $vivos = array_values(array_filter($this->repo->travarValores($pid, $aid), static fn($r) => empty($r['excluido_em'])));
             if (!$vivos) return ['limpo' => true, 'sem_mudanca' => true];
-            if ((int) ($b['versao'] ?? -1) !== (int) $vivos[0]['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+            if ($multi) self::conferirConjunto($b, $vivos);   // DSHOW-034: limpar a multiopção inteira = versão do CONJUNTO
+            elseif ((int) ($b['versao'] ?? -1) !== (int) $vivos[0]['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
             foreach ($vivos as $r) {
                 if (!$this->repo->excluirValor($pid, $aid, (int) $r['opcao_chave'])) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
                 $this->repo->auditar($this->usuario, 'limpar', 'valor', "$pid:$aid:" . (int) $r['opcao_chave'], $r, null, $b['motivo'] ?? null);
             }
             return ['limpo' => true];
         });
+    }
+
+    /**
+     * DSHOW-034: versão do CONJUNTO de linhas vivas de um (produto, atributo) — impressão digital por (chave, versão). Na multiopção a
+     * versão da 1ª linha não muda quando outra pessoa acrescenta uma opção; esta muda. Mesma fórmula na leitura (ProdutosLeitura).
+     */
+    public static function versaoConjunto(array $vivos): string
+    {
+        $p = array_map(static fn($r) => (int) ($r['opcao_chave'] ?? ($r['opcao_id'] ?? 0)) . ':' . (int) $r['versao'], $vivos);
+        sort($p, SORT_STRING);
+        return substr(hash('sha256', implode(',', $p)), 0, 16);
+    }
+
+    /** DSHOW-034: operação sobre o conjunto inteiro (limpar, mudar estado) exige versao_conjunto, conferida sob trava. */
+    private static function conferirConjunto(array $b, array $vivos): void
+    {
+        $vc = $b['versao_conjunto'] ?? null;
+        if (!is_string($vc) || !preg_match('/^[0-9a-f]{16}$/', $vc)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão do conjunto de opções. Recarregue a ficha.', ['versao_conjunto']);
+        if ($vc !== self::versaoConjunto($vivos)) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou as opções deste campo. Recarregue e tente de novo.');
     }
 
     private static function mesmoValor(array $antes, array $d): bool

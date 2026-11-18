@@ -201,7 +201,8 @@ final class ProdutosLeitura
             'opcao_ids' => array_values(array_filter(array_map(static fn($v) => $v['opcao_id'] === null ? null : (int) $v['opcao_id'], $vs))),
             'opcoes' => array_values(array_filter(array_map(static fn($v) => $v['opcao'], $vs))),
             'unidade_id' => $v0['unidade_id'] === null ? null : (int) $v0['unidade_id'], 'origem' => $v0['origem'], 'lote_id' => $v0['lote_id'] === null ? null : (int) $v0['lote_id'],
-            'atualizado_em' => $v0['atualizado_em'], 'atualizado_por' => $v0['atualizado_por'], 'versao' => (int) $v0['versao'], 'legado_bruto' => $v0['legado_bruto']];
+            'atualizado_em' => $v0['atualizado_em'], 'atualizado_por' => $v0['atualizado_por'], 'versao' => (int) $v0['versao'], 'legado_bruto' => $v0['legado_bruto'],
+            'versao_conjunto' => AtributosService::versaoConjunto($vs)];   // DSHOW-034: limpar/mudar estado da multiopção exige esta
     }
 
     /** Ficha do produto (§11.3): itens aplicáveis com valor/unidade/origem, Precifica ao lado, sugestões, legado; fora da ficha; exceções. */

@@ -174,8 +174,9 @@ $ok('D10 multiopção: continua só HDMI', (int) $um('SELECT COUNT(*) FROM eq_va
 // limpar multiopção limpa todas as opções (antes: "sem mudança")
 $adm->gravarValor(['product_id' => 105, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id']]);
 $v0 = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);
-$ok('limpar com versão velha → 409', fn() => $erro(fn() => $adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao' => $v0 + 9]))?->http === 409);
-$ok('limpar multiopção remove as 2 opções', fn() => !empty($adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao' => $v0])['limpo'])
+$vc105 = AtributosService::versaoConjunto($pdo->query("SELECT opcao_chave, versao FROM eq_valor WHERE product_id = 105 AND atributo_id = $moId AND excluido_em IS NULL")->fetchAll(PDO::FETCH_ASSOC));
+$ok('limpar com versão do conjunto velha → 409', fn() => $erro(fn() => $adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao_conjunto' => 'ffffffffffffffff']))?->http === 409);
+$ok('limpar multiopção remove as 2 opções', fn() => !empty($adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao_conjunto' => $vc105])['limpo'])
     && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 0);
 $ok('limpar em produto inativo → 422', fn() => $erro(fn() => $adm->limparValor(['product_id' => 199, 'atributo_id' => $atr['Cor'], 'versao' => 1]))?->http === 422);
 // desmarcar a 2ª opção com a versão do VALOR (a que a tela conhece)
@@ -312,6 +313,28 @@ $uPe = (int) $adm->criarUnidade(['simbolo' => 'pe033', 'nome' => 'pé sem fator 
 $adm->definirUnidadesPermitidas(['atributo_id' => $alt, 'unidades' => [$uPe]]);
 $e033 = $erro(fn() => $adm->gravarValor(['product_id' => 201, 'atributo_id' => $alt, 'valor' => '1', 'unidade_id' => $uPe, 'versao' => $verAlt(201)]));
 $ok('033 unidade sem fator → 422 UNIT_WITHOUT_FACTOR com mensagem clara', $e033?->http === 422 && str_contains($e033->getMessage(), 'fator de conversão'), $e033 ? $e033->getMessage() : 'sem erro');
+
+// ---- DSHOW-034: multiopção — limpar / mudar estado exigem a versão do CONJUNTO, conferida sob trava -------------------------------
+$aj(['product_id' => 104, 'atributo_id' => $moId, 'modo' => 'incluir']);
+$vc = fn(int $pid) => AtributosService::versaoConjunto($linhas('SELECT opcao_chave, versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pid, $moId]));
+$conj = fn(int $pid) => json_encode([$linhas('SELECT opcao_chave, estado, versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave', [$pid, $moId]), (int) $um('SELECT COUNT(*) FROM eq_auditoria')]);
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id']]);
+$vA = $vc(104);                                                  // aba A lê o conjunto
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id']]);   // aba B acrescenta outra opção (por opção)
+$ok('034: aba B acrescentou a 2ª opção (por opção, sem versão do conjunto)', (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 2);
+$antes = $conj(104);
+$v1a = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);   // versão da 1ª linha: NÃO mudou com a opção de B (o defeito)
+$e1 = $erro(fn() => $adm->limparValor(['product_id' => 104, 'atributo_id' => $moId, 'versao' => $v1a, 'versao_conjunto' => $vA]));
+$ok('034: aba A limpa com a versão anterior → 409; a opção de B continua; auditoria sem registro', $e1?->http === 409 && $conj(104) === $antes, ($e1 ? $e1->getMessage() : 'sem erro'));
+$e2 = $erro(fn() => $adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'estado' => 'nao_se_aplica', 'versao_conjunto' => $vA]));
+$ok('034: aba A muda o estado com a versão anterior → 409; nada muda', $e2?->http === 409 && $conj(104) === $antes, ($e2 ? $e2->getMessage() : 'sem erro'));
+$ok('034: limpar a multiopção sem versão do conjunto → 422', fn() => $erro(fn() => $adm->limparValor(['product_id' => 104, 'atributo_id' => $moId, 'versao' => 1]))?->http === 422 && $conj(104) === $antes);
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'estado' => 'nao_se_aplica', 'versao_conjunto' => $vc(104)]);
+$ok('034: com a versão atual, mudar o estado funciona (as 2 opções saem, fica "não se aplica")', $linhas('SELECT opcao_chave, estado FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === [['opcao_chave' => 0, 'estado' => 'nao_se_aplica']]);
+$ok('034: trocar o estado por uma opção com versão velha → 409', fn() => $erro(fn() => $adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id'], 'versao_conjunto' => $vA]))?->http === 409);
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id'], 'versao_conjunto' => $vc(104)]);
+$r034 = $adm->limparValor(['product_id' => 104, 'atributo_id' => $moId, 'versao_conjunto' => $vc(104)]);
+$ok('034: com a versão atual, limpar funciona', !empty($r034['limpo']) && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 0);
 
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " modulo-mysql (kits, vínculos, massa, sugestões, unidade): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);
