@@ -2,6 +2,7 @@
 // Rodar: bash scripts/atributos/testes/front-puras.sh (empacota com o esbuild do Vite e executa no Node; sem dependência nova).
 import { campoPrecifica, casaBusca, dataCurta, dataHora, decimal, numeroParaApi, pct, pctDe, valor } from '../../../public/components/panels/panel-atributos/src/lib/formatar';
 import { corKit, rotuloSubcategoria } from '../../../public/components/panels/panel-atributos/src/lib/rotulos';
+import { lerRota, rotaDe } from '../../../public/components/panels/panel-atributos/src/lib/rota';
 
 let n = 0; let falhas = 0;
 function igual(nome: string, obtido: unknown, esperado: unknown) {
@@ -59,6 +60,22 @@ igual('subcategoria desconhecida mantém o código', rotuloSubcategoria('XYZ_NOV
 igual('cor do kit estável', corKit('Cabos'), corKit('Cabos'));
 igual('cor do kit base', corKit('Base (todos os produtos)'), 'var(--bl-serie-7)');
 igual('cor sem kit', corKit(null), 'var(--bl-neutro)');
+
+// rotas do módulo (endereço próprio por tela; recarregar/Voltar/compartilhar)
+igual('rota base → produtos', lerRota('#/panel-atributos'), { aba: 'produtos', produto: null, kit: null });
+igual('rota visão geral', lerRota('#/panel-atributos/visao-geral'), { aba: 'visao', produto: null, kit: null });
+igual('rota kits', lerRota('#/panel-atributos/kits'), { aba: 'kits', produto: null, kit: null });
+igual('rota kit aberto', lerRota('#/panel-atributos/kits/42'), { aba: 'kits', produto: null, kit: 42 });
+igual('rota ficha 154', lerRota('#/panel-atributos/produto/154'), { aba: 'produtos', produto: 154, kit: null });
+igual('rota com barra no fim', lerRota('#/panel-atributos/conferencia/'), { aba: 'conferencia', produto: null, kit: null });
+igual('rota de outro painel → null', lerRota('#/panel-bling/kits'), null);
+igual('rota prefixo parecido → null', lerRota('#/panel-atributosX'), null);
+igual('rota desconhecida → produtos', lerRota('#/panel-atributos/xyz'), { aba: 'produtos', produto: null, kit: null });
+igual('id inválido na ficha → lista', lerRota('#/panel-atributos/produto/abc'), { aba: 'produtos', produto: null, kit: null });
+igual('rotaDe ficha', rotaDe({ aba: 'kits', produto: 154, kit: 3 }), '#/panel-atributos/produto/154');
+igual('rotaDe kit', rotaDe({ aba: 'kits', produto: null, kit: 3 }), '#/panel-atributos/kits/3');
+igual('rotaDe atributos', rotaDe({ aba: 'atributos', produto: null, kit: null }), '#/panel-atributos/atributos');
+igual('ida e volta de todas as telas', (['visao', 'produtos', 'vincular', 'preencher', 'kits', 'atributos', 'unidades', 'conferencia'] as const).every((a) => lerRota(rotaDe({ aba: a, produto: null, kit: null }))?.aba === a), true);
 
 console.log(`${falhas === 0 ? '[OK]  ' : '[FALHA]'} front-puras (formatação, entrada, busca, rótulos): ${n} casos, ${falhas} falha(s)`);
 process.exitCode = falhas === 0 ? 0 : 1;

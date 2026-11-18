@@ -2,6 +2,7 @@
 // Conferência), ficha do produto por cima da aba atual, avisos. Cada tela carrega os próprios dados (estados carregando/vazio/erro).
 import React from 'react';
 import { ABAS, Aba, Contexto, FiltroProdutos, Navegar } from './contexto';
+import { lerRota, rotaDe } from '../lib/rota';
 import { VisaoGeral } from '../screens/VisaoGeral';
 import { Produtos } from '../screens/Produtos';
 import { Ficha } from '../screens/Ficha';
@@ -13,15 +14,35 @@ import { Unidades } from '../screens/Unidades';
 import { Conferencia } from '../screens/Conferencia';
 
 export function App() {
-  const [aba, setAba] = React.useState<Aba>('produtos');
-  const [produto, setProduto] = React.useState<number | null>(null);
-  const [kit, setKit] = React.useState<number | null>(null);
+  // Endereço próprio por tela (18/11): o estado inicial vem do hash (#/panel-atributos/<tela> · /produto/<id> · /kits/<id>)
+  const inicial = React.useMemo(() => lerRota(window.location.hash) ?? { aba: 'produtos' as Aba, produto: null, kit: null }, []);
+  const [aba, setAba] = React.useState<Aba>(inicial.aba);
+  const [produto, setProduto] = React.useState<number | null>(inicial.produto);
+  const [kit, setKit] = React.useState<number | null>(inicial.kit);
   const [filtro, setFiltro] = React.useState<FiltroProdutos>({});
   const [selecao, setSelecao] = React.useState<number[]>([]);
   const [preencher, setPreencher] = React.useState<{ kit?: number; subcategoria?: string }>({});
   const [avisos, setAvisos] = React.useState<{ id: number; texto: string; tom: string }[]>([]);
   const [versao, setVersao] = React.useState(0);
   const raiz = React.useRef<HTMLDivElement>(null);
+
+  // estado → hash: cada troca de tela vira uma entrada no histórico (Voltar funciona); só normalizar o mesmo estado usa replaceState
+  React.useEffect(() => {
+    const alvo = rotaDe({ aba, produto, kit });
+    if (window.location.hash === alvo) return;
+    const atual = lerRota(window.location.hash);
+    if (atual && atual.aba === aba && atual.produto === produto && atual.kit === kit) window.history.replaceState(window.history.state, '', alvo);
+    else window.location.hash = alvo;   // mesmo padrão do panel-bling; o shell trata o popstate do mesmo painel sem remontar
+  }, [aba, produto, kit]);
+  // hash → estado: Voltar/Avançar, link colado, clique no menu lateral
+  React.useEffect(() => {
+    const aoMudar = () => {
+      const r = lerRota(window.location.hash); if (!r) return;
+      setAba(r.aba); setProduto(r.produto); setKit(r.kit);
+    };
+    window.addEventListener('hashchange', aoMudar);
+    return () => window.removeEventListener('hashchange', aoMudar);
+  }, []);
 
   const nav: Navegar = React.useMemo(() => ({
     aba, produto, kit, filtroInicial: filtro, selecao, setSelecao, preencher, versao,
