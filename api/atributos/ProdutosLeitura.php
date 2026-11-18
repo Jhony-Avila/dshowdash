@@ -64,7 +64,11 @@ final class ProdutosLeitura
 
     public function __construct(
         private readonly LeituraVitrine $l, private readonly AtributosRepositorio $repo, private readonly int $nivel, private readonly ?string $dirMiniaturas = null,
+        private readonly bool $escrita = true,   // flag panel_atributos_escrita: desligada → toda permissão de escrita (pode_*) volta false
     ) {}
+
+    /** pode_* das respostas: nível E escrita ligada (com a flag desligada as rotas de escrita somem com 404; a tela não pode oferecê-las). */
+    private function pode(int $min): bool { return $this->escrita && $this->nivel >= $min; }
 
     private function exigir(): void
     {
@@ -123,7 +127,7 @@ final class ProdutosLeitura
         usort($kits, static fn($a, $b) => strcmp($a['nome'], $b['nome']));
         $legados = []; foreach (KitsLegado::KITS as $c => $k) $legados[] = ['codigo' => $c, 'nome' => $k['nome'], 'tamanho' => count($k['ids'])];
         return ['produtos' => array_values(array_map([self::class, 'publico'], $res)), 'facetas' => array_values($facetas), 'kits' => $kits, 'kits_legado' => $legados,
-            'pode_vincular' => $this->nivel >= AtributosService::NIVEL_ADMIN];
+            'pode_vincular' => $this->pode(AtributosService::NIVEL_ADMIN)];
     }
 
     public function visaoGeral(): array
@@ -257,7 +261,7 @@ final class ProdutosLeitura
             'completude' => Aplicabilidade::completude($ficha, $estados),
             'legado' => $item === null ? null : ['item' => $item, 'kit' => $kitLeg, 'kit_nome' => $kitLeg ? KitsLegado::KITS[$kitLeg]['nome'] : null, 'atribuidos' => count($linhasLeg)],
             'precifica' => ['familias' => $specs === null ? [] : array_keys($specs), 'ficha' => $specs ?? [], 'disponivel' => $specs !== null],
-            'pode_editar' => $this->nivel >= AtributosService::NIVEL_VALORES && $p['ativo'], 'pode_vincular' => $this->nivel >= AtributosService::NIVEL_ADMIN,
+            'pode_editar' => $this->pode(AtributosService::NIVEL_VALORES) && $p['ativo'], 'pode_vincular' => $this->pode(AtributosService::NIVEL_ADMIN),
         ];
     }
 
@@ -291,7 +295,7 @@ final class ProdutosLeitura
                 'diretos' => count(array_filter($m->diretos, static fn($gs) => in_array((int) $gid, $gs, true))), 'alcance' => $alc[$gid] ?? 0];
         }
         usort($out, static fn($a, $b) => [$b['ativo'], $b['itens'] > 0, mb_strtolower($a['nome'])] <=> [$a['ativo'], $a['itens'] > 0, mb_strtolower($b['nome'])]);
-        return ['kits' => $out, 'subcategorias' => $this->subcategorias(), 'pode_editar' => $this->nivel >= AtributosService::NIVEL_ADMIN];
+        return ['kits' => $out, 'subcategorias' => $this->subcategorias(), 'pode_editar' => $this->pode(AtributosService::NIVEL_ADMIN)];
     }
 
     private function contarAtivos(string $cat, string $sub): int
@@ -327,7 +331,7 @@ final class ProdutosLeitura
         $g['escopos'] = array_map(fn($e) => $e + ['produtos' => $this->contarAtivos($e['categoria'], $e['subcategoria'])], $g['escopos']);
         $g['aplica_a_todos'] = (bool) (int) ($g['aplica_a_todos'] ?? 0); $g['ativo'] = (bool) (int) $g['ativo'];
         return ['kit' => $g, 'produtos_diretos' => $dir, 'alcance' => $alc, 'subcategorias' => $this->subcategorias(), 'unidades' => array_values($unid),
-            'pode_editar' => $this->nivel >= AtributosService::NIVEL_ADMIN];
+            'pode_editar' => $this->pode(AtributosService::NIVEL_ADMIN)];
     }
 
     /** Dicionário (§11.6): os atributos com uso (kits, produtos com valor), importância e grupo de atributos. */
@@ -338,7 +342,7 @@ final class ProdutosLeitura
         $out = [];
         foreach ($this->atr() as $aid => $a) $out[] = $a + ['em_kits' => (int) ($uso[$aid]['kits'] ?? 0), 'produtos_com_valor' => (int) ($uso[$aid]['valores'] ?? 0), 'unidades_extras' => $extras[$aid] ?? []];
         usort($out, static fn($x, $y) => strcmp(mb_strtolower($x['rotulo']), mb_strtolower($y['rotulo'])));
-        return ['atributos' => $out, 'unidades' => array_values($this->l->unidades()), 'pode_administrar' => $this->nivel >= AtributosService::NIVEL_ADMIN];
+        return ['atributos' => $out, 'unidades' => array_values($this->l->unidades()), 'pode_administrar' => $this->pode(AtributosService::NIVEL_ADMIN)];
     }
 
     public function unidadesComUso(): array
@@ -346,7 +350,7 @@ final class ProdutosLeitura
         $this->exigir();
         $uso = $this->l->usoUnidades();
         return ['unidades' => array_values(array_map(static fn($u) => $u + ['atributos' => (int) ($uso[(int) $u['id']]['atributos'] ?? 0), 'valores' => (int) ($uso[(int) $u['id']]['valores'] ?? 0)], $this->l->unidades())),
-            'pode_administrar' => $this->nivel >= AtributosService::NIVEL_ADMIN];
+            'pode_administrar' => $this->pode(AtributosService::NIVEL_ADMIN)];
     }
 
     /** Conferência (§11.9): 5 filas com ação direta. */
@@ -375,7 +379,7 @@ final class ProdutosLeitura
             'legado' => array_map($sug, $this->l->sugestoes(null, 'legado_2025', null, 3000)),
             'nome' => array_map($sug, $this->l->sugestoes(null, 'nome_produto', null, 3000)),
             'fora_da_ficha' => $fora, 'obrigatorios_vazios' => array_slice($obr, 0, 1000), 'sem_kit' => $sem,
-        ], 'totais' => ['obrigatorios_vazios' => count($obr)], 'pode_decidir' => $this->nivel >= AtributosService::NIVEL_VALORES];
+        ], 'totais' => ['obrigatorios_vazios' => count($obr)], 'pode_decidir' => $this->pode(AtributosService::NIVEL_VALORES)];
     }
 
     // ---- miniaturas (A6) ---------------------------------------------------------------------------------------------------------------

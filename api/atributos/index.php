@@ -106,7 +106,8 @@ try {
     $repo = new AtributosRepoPdo($pdoEq, $schemaEq);
     $catalogo = new CatalogoPdo($pdoEq, $schemaCat);
     $svc = new AtributosService($repo, $nivel, $quem, $catalogo);
-    $leitura = fn() => new ProdutosLeitura(new LeituraVitrinePdo($pdoEq, $schemaEq, $schemaCat), $repo, $nivel, getenv('ATRWEB_MINIATURAS') ?: (getenv('DSHOW_ATRIBUTOS_MINIATURAS') ?: null));
+    $leitura = fn() => new ProdutosLeitura(new LeituraVitrinePdo($pdoEq, $schemaEq, $schemaCat), $repo, $nivel, getenv('ATRWEB_MINIATURAS') ?: (getenv('DSHOW_ATRIBUTOS_MINIATURAS') ?: null),
+        ATR_ESCRITA_LIBERADA && eqFlagOuFalha($resolver->resolve(EQ_FLAG_ESCRITA, (int) ($user['id'] ?? 0))));
     $kits = fn() => new KitsService($repo, $nivel, $quem, $catalogo);
     $sugestoes = fn() => new SugestoesService($repo, $svc, $nivel >= AtributosService::NIVEL_ADMIN ? $kits() : null, $nivel, $quem);
     $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
