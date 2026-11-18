@@ -4,6 +4,9 @@
 // 1280), com nome pelo sha256 da origem, e um manifesto mídia → arquivo. Idempotente (arquivo existente com o mesmo sha é mantido).
 // Entrada: --lista <tsv>  (media_id, product_id, sha256, storage_key, is_cover, position) — só mídias publicadas, visíveis, não excluídas
 //          e não suprimidas (quem gera a lista aplica o filtro);  --origem <raiz do armazenamento>;  --destino <pasta>;  [--limite-mb 500]
+//          [--modo 0640]  (P4: permissão dos arquivos gravados; padrão 0600, como na validação; o grupo vem da pasta com setgid)
+//          [--sincronizar] (P4: o manifesto passa a ter SÓ as mídias da lista — mídia que deixou de ser elegível sai do manifesto;
+//                           os JPEGs não são apagados, só contados como órfãos)
 // Saída: <destino>/<sha>-480.jpg, <sha>-1280.jpg e <destino>/manifesto.json. Nunca grava storage_key nem caminho de origem no manifesto.
 declare(strict_types=1);
 
@@ -21,7 +24,7 @@ final class Miniaturas
     }
 
     /** Reencoda para JPEG com o lado maior = $lado (nunca amplia). GD não copia metadados: EXIF/GPS saem. */
-    public static function gerar(string $origem, string $destino, int $lado): array
+    public static function gerar(string $origem, string $destino, int $lado, int $modo = 0600): array
     {
         $info = @getimagesize($origem);
         if (!$info) throw new RuntimeException('origem ilegível');
@@ -34,34 +37,42 @@ final class Miniaturas
         imagecopyresampled($out, $img, 0, 0, 0, 0, $nw, $nh, $w, $h);
         $tmp = $destino . '.tmp' . getmypid();
         if (!imagejpeg($out, $tmp, 82)) throw new RuntimeException('falha ao gravar');
-        chmod($tmp, 0600); rename($tmp, $destino);
+        chmod($tmp, $modo); rename($tmp, $destino);
         return [$nw, $nh];
     }
 }
 
 if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
-    $o = getopt('', ['lista:', 'origem:', 'destino:', 'limite-mb:']);
+    $o = getopt('', ['lista:', 'origem:', 'destino:', 'limite-mb:', 'modo:', 'sincronizar']);
+    $modo = isset($o['modo']) ? (preg_match('/^0?[0-7]{3}$/', (string) $o['modo']) ? octdec((string) $o['modo']) : -1) : 0600;
+    if ($modo < 0 || ($modo & 0007) !== 0) { fwrite(STDERR, "--modo inválido (octal, sem permissão para outros)\n"); exit(2); }
     $dest = rtrim((string) ($o['destino'] ?? ''), '/'); $raiz = rtrim((string) ($o['origem'] ?? ''), '/');
     $limite = (int) ($o['limite-mb'] ?? 500) * 1024 * 1024;
     if (!is_dir($dest) || !is_dir($raiz) || !is_file((string) ($o['lista'] ?? ''))) { fwrite(STDERR, "uso: --lista <tsv> --origem <dir> --destino <dir>\n"); exit(2); }
     $man = is_file("$dest/manifesto.json") ? (json_decode((string) file_get_contents("$dest/manifesto.json"), true) ?: []) : [];
-    $n = ['geradas' => 0, 'mantidas' => 0, 'sem_origem' => 0, 'falhas' => 0];
+    $n = ['geradas' => 0, 'mantidas' => 0, 'sem_origem' => 0, 'falhas' => 0]; $vistos = []; $parou = false;
     foreach (file((string) $o['lista'], FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $l) {
         [$mid, $pid, $sha, $chave, $capa, $pos] = explode("\t", $l) + [null, null, null, null, 0, 0];
         if (!ctype_digit((string) $mid) || !preg_match('/^[0-9a-f]{64}$/', (string) $sha) || !preg_match('#^[0-9A-Za-z/_-]{1,80}$#', (string) $chave) || str_contains((string) $chave, '..')) { $n['falhas']++; continue; }
-        $dir = "$raiz/$chave"; $reg = ['product_id' => (int) $pid, 'sha' => $sha, 'capa' => (int) $capa === 1, 'posicao' => (int) $pos];
+        $vistos[(string) $mid] = true; $dir = "$raiz/$chave"; $reg = ['product_id' => (int) $pid, 'sha' => $sha, 'capa' => (int) $capa === 1, 'posicao' => (int) $pos];
         foreach (Miniaturas::MEDIDAS as $lado) {
             $arq = "$sha-$lado.jpg";
             if (is_file("$dest/$arq")) { $n['mantidas']++; $reg["p$lado"] = $arq; continue; }
             $src = Miniaturas::origemPara($dir, $lado);
             if ($src === null) { $n['sem_origem']++; continue; }
             $usado = array_sum(array_map('filesize', glob("$dest/*.jpg") ?: []));
-            if ($usado > $limite) { fwrite(STDERR, "limite de disco atingido\n"); break 2; }
-            try { [$w, $h] = Miniaturas::gerar($src, "$dest/$arq", $lado); $reg["p$lado"] = $arq; $reg["d$lado"] = [$w, $h]; $n['geradas']++; }
+            if ($usado > $limite) { fwrite(STDERR, "limite de disco atingido\n"); $parou = true; break 2; }
+            try { [$w, $h] = Miniaturas::gerar($src, "$dest/$arq", $lado, $modo); $reg["p$lado"] = $arq; $reg["d$lado"] = [$w, $h]; $n['geradas']++; }
             catch (Throwable $e) { $n['falhas']++; }
         }
         $man[(string) $mid] = array_merge($man[(string) $mid] ?? [], $reg);
     }
-    $tmp = "$dest/manifesto.json.tmp"; file_put_contents($tmp, json_encode($man, JSON_PRETTY_PRINT)); chmod($tmp, 0600); rename($tmp, "$dest/manifesto.json");
-    echo 'MINIATURAS_OK ' . json_encode($n + ['midias' => count($man)]) . "\n";
+    if (isset($o['sincronizar']) && !$parou) {   // lista lida até o fim: só então o que não veio sai do manifesto
+        $n['retiradas'] = count(array_diff_key($man, $vistos)); $man = array_intersect_key($man, $vistos);
+        $usados = []; foreach ($man as $r) foreach (Miniaturas::MEDIDAS as $l) if (isset($r["p$l"])) $usados[$r["p$l"]] = true;
+        $n['orfas'] = count(array_diff_key(array_flip(array_map('basename', glob("$dest/*.jpg") ?: [])), $usados));
+    }
+    $tmp = "$dest/manifesto.json.tmp"; file_put_contents($tmp, json_encode($man, JSON_PRETTY_PRINT)); chmod($tmp, $modo); rename($tmp, "$dest/manifesto.json");
+    echo ($parou ? 'MINIATURAS_PARCIAL ' : 'MINIATURAS_OK ') . json_encode($n + ['midias' => count($man)]) . "\n";
+    exit($parou ? 3 : 0);
 }
