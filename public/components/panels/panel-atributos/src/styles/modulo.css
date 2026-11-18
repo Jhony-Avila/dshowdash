@@ -391,7 +391,7 @@
 /* Transição: telas que ainda desenham o próprio título (h2 + descrição) não o mostram — o título vem do cabeçalho do módulo.
    Os donos removem o bloco quando puderem (aviso no PARA-STATUS §40); esta regra sai depois. */
 [data-bl-root] .at-conteudo .at-titulo-tela > div:first-child:has(> h2) { display: none; }
-[data-bl-root] .at-conteudo .at-titulo-tela:not(:has(> :not(div:first-child))) { display: none; }
+[data-bl-root] .at-conteudo .at-titulo-tela:has(> div:first-child > h2):not(:has(> :nth-child(2))) { display: none; }   /* só quando o ÚNICO filho é o título (antes: escondia o seletor de kit do Preencher) */
 
 /* ── UX-1b: tema escuro pelo MESMO sinal do botão de tema do Dash (html[data-theme="dark"]), sem depender do body ──────────
    O tokens.css compartilhado acende o claro com html[data-theme=light] OU body.theme-light; a lua do Dash troca só o html e deixa

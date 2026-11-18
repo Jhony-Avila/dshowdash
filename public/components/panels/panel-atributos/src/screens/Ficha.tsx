@@ -506,10 +506,14 @@ function BuscaAvulso({ aberto, f, aoFechar, aoFeito }: { aberto: boolean; f: TFi
   const ja = new Set(f.itens.map((i) => i.atributo_id));
   const n = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const lista = (dic ?? []).filter((a) => a.ativo && !ja.has(a.id) && (!tipo || a.tipo === tipo) && (!q || n(a.rotulo + ' ' + a.codigo).includes(n(q)))).slice(0, 60);
-  const confirmar = () => { if (esc === null) return; setTrab(true); enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: esc, modo: 'incluir' }).then(() => { m.aviso('Atributo avulso adicionado.'); aoFeito(esc); }).catch((e) => m.aviso(e.message, 'erro')).finally(() => setTrab(false)); };
+  // Revisão UX-1 (P1): nenhuma ação confirma algo que não está visível. A seleção só vale se o item ainda está na lista exibida;
+  // ao sair dos resultados (busca/filtro), ela é limpa. O botão e a confirmação conferem de novo.
+  const escolhido = esc === null ? null : lista.find((a) => a.id === esc) ?? null;
+  React.useEffect(() => { if (esc !== null && !escolhido) setEsc(null); }, [esc, escolhido]);
+  const confirmar = () => { if (esc === null || !escolhido) return; setTrab(true); enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: esc, modo: 'incluir' }).then(() => { m.aviso('Atributo avulso adicionado.'); aoFeito(esc); }).catch((e) => m.aviso(e.message, 'erro')).finally(() => setTrab(false)); };
   return (
     <Dialogo titulo="Adicionar atributo avulso a este produto" aberto={aberto} aoFechar={aoFechar} largura={640}
-      rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><Botao primario desligado={esc === null} trabalhando={trab} aoClicar={confirmar}>Adicionar</Botao></>}>
+      rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><Botao primario desligado={!escolhido} trabalhando={trab} aoClicar={confirmar}>{escolhido ? `Adicionar ${escolhido.rotulo}` : 'Adicionar'}</Botao></>}>
       <div className="at-acoes" style={{ marginBottom: 10 }}>
         <input className="at-campo" style={{ flex: 1 }} type="search" placeholder="Buscar no dicionário (rótulo ou código)" aria-label="Buscar atributo" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="at-campo" aria-label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos os tipos</option><option value="numero">Número</option><option value="inteiro">Inteiro</option><option value="texto">Texto</option><option value="opcao">Opção</option><option value="booleano">Sim/Não</option><option value="data">Data</option></select>
