@@ -537,6 +537,17 @@ final class GcalRepository
         ]);
     }
 
+    /** DSHOW-024: eventos rejeitados de forma permanente que ainda não foram gravados depois (lista durável = gcal_sync_errors). */
+    public function rejeitadosPendentes(int $accountId, string $calendarId): int
+    {
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(DISTINCT x.event_id) FROM gcal_sync_errors x
+              WHERE x.account_id = :a AND x.calendar_id = :c AND x.error_code = 'evento_invalido' AND x.event_id <> ''
+                AND NOT EXISTS (SELECT 1 FROM gcal_events g WHERE g.account_id = x.account_id AND g.event_id = x.event_id)");
+        $st->execute([':a' => $accountId, ':c' => $calendarId]);
+        return (int)$st->fetchColumn();
+    }
+
     /** Token de sync invalidado (HTTP 410): marca para recarga, NÃO apaga dado (§49.3). */
     public function exigirCargaCompleta(int $accountId, string $calendarId): void
     {
