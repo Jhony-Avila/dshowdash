@@ -9,6 +9,8 @@ REPO=${MONTAR_REPO:-/srv/dshow-work/dia-a/clone-entrega}; RELS=/srv/dshow-releas
 SHA=$(git -C "$REPO" rev-parse --verify "$BR^{commit}"); NOVA="$RELS/$SHA"; ANT=$(readlink -f "$SERV")
 git -C "$REPO" fetch -q origin main 2>/dev/null || true
 git -C "$REPO" merge-base --is-ancestor "$SHA" origin/main || { echo "recusado: $SHA não está na main (fazer o push guardado antes)"; exit 2; }
+echo "$BR" | grep -qE '^[0-9a-f]{7,40}$' && { echo "recusado: passe o NOME do ramo (o montador não aceita SHA puro)"; exit 2; }
+git -C "$REPO" merge-base --is-ancestor "$(basename "$ANT")" "$SHA" || { echo "recusado: $SHA não descende da release servida $(basename "$ANT") (seria regressão)"; exit 2; }
 echo "publicar $BR = $SHA · atual $(basename "$ANT")"
 [ -d "$NOVA" ] && { echo "recusado: $NOVA já existe"; exit 2; }
 if [ $AP = 0 ]; then
