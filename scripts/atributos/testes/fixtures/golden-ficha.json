@@ -1,0 +1,142 @@
+{
+  "nome": "golden-ficha (V5 Lote 3, ATR-01..05/09/10) — massa SINTÉTICA única para o PHP (AtributosService::ficha, Dash) e o Node (attributes.ts, app)",
+  "regra_completude": "3.7 (04/11): obrigatório resolvido = informado (multiopção com ≥ 1 opção) ou nao_se_aplica SÓ quando o atributo aceita (aceita_nao_se_aplica, padrão 1; o atributo 4 não aceita e tem linha legada nao_se_aplica no produto 100 → pendente); desconhecido e nao_informado = pendentes. esperado_completude cobre só autoridade local (a do Precifica depende do cache do app).",
+  "regra": "D4 (produtos.md v1.4.1): grupos ativos cujo escopo casa (categoria, subcategoria '' ou igual), ordem nome, id; dentro do grupo posicao, atributo_id; atributo ativo; 1ª ocorrência define grupo e posição; obrigatorio e visivel = OU entre TODAS as ocorrências aplicáveis. Multiopção (P1-07): informado se há opção viva; senão o estado da chave 0; senão nao_informado.",
+  "copias": ["app-dshow: backend/api/test/fixtures/atributos/golden-ficha.json", "dshowdash: scripts/equipamentos/testes/fixtures/golden-ficha.json (byte a byte; sha256 conferido nos dois testes)"],
+  "grupos": [
+    { "id": 1, "nome": "Bravo", "ativo": 1, "escopos": [{ "categoria": "LED_PANEL", "subcategoria": "LED_MODULE" }] },
+    { "id": 2, "nome": "Alfa", "ativo": 1, "escopos": [{ "categoria": "LED_PANEL", "subcategoria": "" }] },
+    { "id": 3, "nome": "Charlie", "ativo": 0, "escopos": [{ "categoria": "LED_PANEL", "subcategoria": "" }] },
+    { "id": 4, "nome": "Delta", "ativo": 1, "escopos": [{ "categoria": "LED_PANEL", "subcategoria": "" }, { "categoria": "LED_PANEL", "subcategoria": "LED_MODULE" }] }
+  ],
+  "atributos": [
+    { "id": 1, "codigo": "pitch", "rotulo": "Pitch", "tipo": "numero", "casas": 2, "unidade": "mm", "ativo": 1, "autoridade": "local" },
+    { "id": 2, "codigo": "brilho", "rotulo": "Brilho", "tipo": "inteiro", "casas": null, "unidade": "nits", "ativo": 1, "autoridade": "local" },
+    { "id": 3, "codigo": "cor_interna", "rotulo": "Cor interna", "tipo": "texto", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local" },
+    { "id": 4, "codigo": "observacao", "rotulo": "Observação", "tipo": "texto", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local", "aceita_nao_se_aplica": 0 },
+    { "id": 5, "codigo": "certs", "rotulo": "Certificações", "tipo": "multiopcao", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local" },
+    { "id": 6, "codigo": "uso", "rotulo": "Uso", "tipo": "opcao", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local" },
+    { "id": 7, "codigo": "vidro", "rotulo": "Vidro", "tipo": "booleano", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local" },
+    { "id": 8, "codigo": "fabricacao", "rotulo": "Fabricado em", "tipo": "data", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local" },
+    { "id": 9, "codigo": "desativado", "rotulo": "Desativado", "tipo": "texto", "casas": null, "unidade": null, "ativo": 0, "autoridade": "local" },
+    { "id": 10, "codigo": "pitch_rds", "rotulo": "Pitch (Precifica)", "tipo": "numero", "casas": null, "unidade": null, "ativo": 1, "autoridade": "precifica" },
+    { "id": 11, "codigo": "interno", "rotulo": "Uso interno", "tipo": "texto", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local" },
+    { "id": 12, "codigo": "so_inativo", "rotulo": "Só no grupo inativo", "tipo": "texto", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local" },
+    { "id": 13, "codigo": "obs_extra", "rotulo": "Obs. extra", "tipo": "texto", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local" },
+    { "id": 14, "codigo": "selos", "rotulo": "Selos", "tipo": "multiopcao", "casas": null, "unidade": null, "ativo": 1, "autoridade": "local" }
+  ],
+  "itens": [
+    { "grupo_id": 2, "atributo_id": 4, "posicao": 0, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 2, "atributo_id": 3, "posicao": 1, "obrigatorio": 0, "visivel": 0 },
+    { "grupo_id": 2, "atributo_id": 1, "posicao": 2, "obrigatorio": 1, "visivel": 1 },
+    { "grupo_id": 2, "atributo_id": 9, "posicao": 3, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 2, "atributo_id": 6, "posicao": 4, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 2, "atributo_id": 14, "posicao": 5, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 1, "atributo_id": 3, "posicao": 0, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 1, "atributo_id": 4, "posicao": 1, "obrigatorio": 1, "visivel": 1 },
+    { "grupo_id": 1, "atributo_id": 2, "posicao": 2, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 1, "atributo_id": 5, "posicao": 3, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 1, "atributo_id": 10, "posicao": 4, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 1, "atributo_id": 11, "posicao": 5, "obrigatorio": 0, "visivel": 0 },
+    { "grupo_id": 1, "atributo_id": 1, "posicao": 6, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 1, "atributo_id": 7, "posicao": 7, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 1, "atributo_id": 8, "posicao": 8, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 3, "atributo_id": 12, "posicao": 0, "obrigatorio": 1, "visivel": 1 },
+    { "grupo_id": 3, "atributo_id": 2, "posicao": 1, "obrigatorio": 1, "visivel": 1 },
+    { "grupo_id": 4, "atributo_id": 13, "posicao": 0, "obrigatorio": 0, "visivel": 1 },
+    { "grupo_id": 4, "atributo_id": 11, "posicao": 1, "obrigatorio": 0, "visivel": 0 },
+    { "grupo_id": 4, "atributo_id": 2, "posicao": 2, "obrigatorio": 1, "visivel": 1 }
+  ],
+  "opcoes": [
+    { "id": 51, "atributo_id": 5, "rotulo": "CE", "posicao": 0, "ativo": 1 },
+    { "id": 52, "atributo_id": 5, "rotulo": "RoHS", "posicao": 1, "ativo": 1 },
+    { "id": 61, "atributo_id": 6, "rotulo": "Indoor", "posicao": 0, "ativo": 1 },
+    { "id": 62, "atributo_id": 6, "rotulo": "Outdoor", "posicao": 1, "ativo": 0 },
+    { "id": 141, "atributo_id": 14, "rotulo": "Selo A", "posicao": 0, "ativo": 1 },
+    { "id": 142, "atributo_id": 14, "rotulo": "Selo B", "posicao": 1, "ativo": 1 }
+  ],
+  "produtos": [
+    { "id": 100, "categoria": "LED_PANEL", "subcategoria": "LED_MODULE" },
+    { "id": 101, "categoria": "LED_PANEL", "subcategoria": "LED_MODULE" },
+    { "id": 102, "categoria": "LED_PANEL", "subcategoria": "PROCESSOR" },
+    { "id": 103, "categoria": "SERVICE", "subcategoria": "INSTALLATION" }
+  ],
+  "valores": [
+    { "product_id": 100, "atributo_id": 1, "opcao_id": null, "opcao_chave": 0, "estado": "informado", "valor_texto": null, "valor_num": "2.500000", "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 2, "opcao_id": null, "opcao_chave": 0, "estado": "informado", "valor_texto": null, "valor_num": "0.000000", "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 3, "opcao_id": null, "opcao_chave": 0, "estado": "informado", "valor_texto": "azul", "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 4, "opcao_id": null, "opcao_chave": 0, "estado": "nao_se_aplica", "valor_texto": null, "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 5, "opcao_id": 51, "opcao_chave": 51, "estado": "informado", "valor_texto": null, "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 5, "opcao_id": 52, "opcao_chave": 52, "estado": "informado", "valor_texto": null, "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 6, "opcao_id": 62, "opcao_chave": 0, "estado": "informado", "valor_texto": null, "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 7, "opcao_id": null, "opcao_chave": 0, "estado": "informado", "valor_texto": null, "valor_num": null, "valor_bool": 0, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 8, "opcao_id": null, "opcao_chave": 0, "estado": "desconhecido", "valor_texto": null, "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 14, "opcao_id": null, "opcao_chave": 0, "estado": "desconhecido", "valor_texto": null, "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 14, "opcao_id": 141, "opcao_chave": 141, "estado": "informado", "valor_texto": null, "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 100, "atributo_id": 12, "opcao_id": null, "opcao_chave": 0, "estado": "informado", "valor_texto": "fora da ficha", "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 101, "atributo_id": 1, "opcao_id": null, "opcao_chave": 0, "estado": "informado", "valor_texto": null, "valor_num": "3.000000", "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 101, "atributo_id": 4, "opcao_id": null, "opcao_chave": 0, "estado": "informado", "valor_texto": "abc", "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 101, "atributo_id": 5, "opcao_id": null, "opcao_chave": 0, "estado": "desconhecido", "valor_texto": null, "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": false },
+    { "product_id": 101, "atributo_id": 5, "opcao_id": 51, "opcao_chave": 51, "estado": "informado", "valor_texto": null, "valor_num": null, "valor_bool": null, "valor_data": null, "excluido": true }
+  ],
+  "esperado_ficha": {
+    "100": [
+      { "grupo_id": 2, "atributo_id": 4, "posicao": 0, "obrigatorio": true, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_se_aplica" } },
+      { "grupo_id": 2, "atributo_id": 3, "posicao": 1, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "informado", "texto": "azul" } },
+      { "grupo_id": 2, "atributo_id": 1, "posicao": 2, "obrigatorio": true, "visivel": true, "autoridade": "local", "valor": { "estado": "informado", "num": "2.5" } },
+      { "grupo_id": 2, "atributo_id": 6, "posicao": 4, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "informado", "opcoes": [62] } },
+      { "grupo_id": 2, "atributo_id": 14, "posicao": 5, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "informado", "opcoes": [141] } },
+      { "grupo_id": 1, "atributo_id": 2, "posicao": 2, "obrigatorio": true, "visivel": true, "autoridade": "local", "valor": { "estado": "informado", "num": "0" } },
+      { "grupo_id": 1, "atributo_id": 5, "posicao": 3, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "informado", "opcoes": [51, 52] } },
+      { "grupo_id": 1, "atributo_id": 10, "posicao": 4, "obrigatorio": false, "visivel": true, "autoridade": "precifica", "valor": null },
+      { "grupo_id": 1, "atributo_id": 11, "posicao": 5, "obrigatorio": false, "visivel": false, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 1, "atributo_id": 7, "posicao": 7, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "informado", "bool": false } },
+      { "grupo_id": 1, "atributo_id": 8, "posicao": 8, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "desconhecido" } },
+      { "grupo_id": 4, "atributo_id": 13, "posicao": 0, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } }
+    ],
+    "101": [
+      { "grupo_id": 2, "atributo_id": 4, "posicao": 0, "obrigatorio": true, "visivel": true, "autoridade": "local", "valor": { "estado": "informado", "texto": "abc" } },
+      { "grupo_id": 2, "atributo_id": 3, "posicao": 1, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 2, "atributo_id": 1, "posicao": 2, "obrigatorio": true, "visivel": true, "autoridade": "local", "valor": { "estado": "informado", "num": "3" } },
+      { "grupo_id": 2, "atributo_id": 6, "posicao": 4, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 2, "atributo_id": 14, "posicao": 5, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 1, "atributo_id": 2, "posicao": 2, "obrigatorio": true, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 1, "atributo_id": 5, "posicao": 3, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "desconhecido" } },
+      { "grupo_id": 1, "atributo_id": 10, "posicao": 4, "obrigatorio": false, "visivel": true, "autoridade": "precifica", "valor": null },
+      { "grupo_id": 1, "atributo_id": 11, "posicao": 5, "obrigatorio": false, "visivel": false, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 1, "atributo_id": 7, "posicao": 7, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 1, "atributo_id": 8, "posicao": 8, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 4, "atributo_id": 13, "posicao": 0, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } }
+    ],
+    "102": [
+      { "grupo_id": 2, "atributo_id": 4, "posicao": 0, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 2, "atributo_id": 3, "posicao": 1, "obrigatorio": false, "visivel": false, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 2, "atributo_id": 1, "posicao": 2, "obrigatorio": true, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 2, "atributo_id": 6, "posicao": 4, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 2, "atributo_id": 14, "posicao": 5, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 4, "atributo_id": 13, "posicao": 0, "obrigatorio": false, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 4, "atributo_id": 11, "posicao": 1, "obrigatorio": false, "visivel": false, "autoridade": "local", "valor": { "estado": "nao_informado" } },
+      { "grupo_id": 4, "atributo_id": 2, "posicao": 2, "obrigatorio": true, "visivel": true, "autoridade": "local", "valor": { "estado": "nao_informado" } }
+    ],
+    "103": []
+  },
+  "esperado_app": {
+    "100": [
+      { "kind": "dshow_2", "items": [["observacao", "Não se aplica", true], ["cor_interna", "azul", false], ["pitch", "2,5 mm", true], ["uso", "Outdoor", false], ["selos", "Selo A", false]] },
+      { "kind": "dshow_1", "items": [["brilho", "0 nits", true], ["certs", "CE, RoHS", false], ["vidro", "Não", false], ["fabricacao", "Desconhecido", false]] },
+      { "kind": "dshow_4", "items": [["obs_extra", "Não informado", false]] }
+    ],
+    "102": [
+      { "kind": "dshow_2", "items": [["observacao", "Não informado", false], ["pitch", "Não informado", true], ["uso", "Não informado", false], ["selos", "Não informado", false]] },
+      { "kind": "dshow_4", "items": [["obs_extra", "Não informado", false], ["brilho", "Não informado", true]] }
+    ],
+    "103": []
+  }
+,
+  "esperado_completude": {
+    "100": { "obrigatorios": 3, "resolvidos": 2, "pendentes": [4] },
+    "101": { "obrigatorios": 3, "resolvidos": 2, "pendentes": [2] },
+    "102": { "obrigatorios": 2, "resolvidos": 0, "pendentes": [1, 2] },
+    "103": { "obrigatorios": 0, "resolvidos": 0, "pendentes": [] }
+  }
+}

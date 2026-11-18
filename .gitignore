@@ -1794,6 +1794,12 @@ tools-golden/
 /tools/db/*
 !/tools/db/migrations/
 !/tools/db/migrations/**
+# ATRIBUTOS-WEB (18/11): executor de migrações do DSHOW_EQUIPAMENTOS
+!/tools/db/equipamentos-migrar.php
+!/tools/equipamentos/
+/tools/equipamentos/*
+!/tools/equipamentos/miniaturas.php
+!/tools/equipamentos/cargas.php
 !/tools/db/nav_audit_ddl.sql
 !/tools/db/nav_export.sql
 !/tools/db/nav_schema_ddl.sql
@@ -2304,3 +2310,12 @@ dist/
 !/public/assets/avatars/motor/motor-90dc1a324341.js
 !/public/assets/avatars/motor/motor.json
 !/public/assets/avatars/secret-agent.svg
+
+# ATRIBUTOS-WEB (18/11/2026): módulo web de atributos (porte de atr/ponte-app 693c70c6) + migrações do DSHOW_EQUIPAMENTOS
+!/api/atributos/
+!/api/atributos/**
+!/scripts/atributos/
+!/scripts/atributos/**
+!/db/
+!/db/equipamentos/
+!/db/equipamentos/**
