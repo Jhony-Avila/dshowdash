@@ -9,7 +9,7 @@ require_once __DIR__ . '/AtributosService.php';
 require_once __DIR__ . '/KitsService.php';
 require_once __DIR__ . '/SugestoesService.php';
 
-final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio
+final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava
 {
     private string $p;
 
@@ -332,6 +332,22 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
         if (!$sets) return true;
         $p[] = $id;
         return $this->exec('UPDATE ' . $this->t('eq_unidade') . ' SET ' . implode(', ', $sets) . ' WHERE id = ?', $p) >= 0;
+    }
+
+    /** DSHOW-071: trava a linha da unidade (dentro de transacao()). */
+    public function travarUnidade(int $id): ?array
+    {
+        return $this->q('SELECT id, simbolo, nome, grandeza, fator_base, ativo FROM ' . $this->t('eq_unidade') . ' WHERE id = ? FOR UPDATE', [$id])[0] ?? null;
+    }
+
+    /** DSHOW-071: UPDATE condicionado ao estado travado (defesa extra; quem decide o conflito é o serviço, pela linha travada). */
+    public function atualizarUnidadeSe(int $id, array $atual, array $d): void
+    {
+        $sets = []; $p = [];
+        foreach ($d as $k => $v) { if (!in_array($k, ['nome', 'grandeza', 'fator_base'], true)) continue; $sets[] = "$k = ?"; $p[] = $v; }
+        if (!$sets) return;
+        array_push($p, $id, $atual['nome'], $atual['grandeza'], $atual['fator_base']);
+        $this->exec('UPDATE ' . $this->t('eq_unidade') . ' SET ' . implode(', ', $sets) . ' WHERE id = ? AND nome = ? AND grandeza <=> ? AND fator_base <=> ?', $p);
     }
 
     public function precificaRefExiste(string $ref, ?int $excetoId): bool

@@ -93,6 +93,18 @@ interface AtributosRepositorio
     public function definirPosicaoOpcao(int $opcaoId, int $atributoId, int $posicao): bool;
 }
 
+/**
+ * DSHOW-071 (hotfix 18/11): edição de unidade com TRAVA da linha e condição no UPDATE. Interface SEPARADA (o RepoMemoria dos testes não
+ * a implementa e segue o caminho antigo); só o AtributosRepoPdo a implementa. Chamar dentro de transacao().
+ */
+interface UnidadesComTrava
+{
+    /** SELECT … FOR UPDATE da unidade (id, simbolo, nome, grandeza, fator_base, ativo) ou null. */
+    public function travarUnidade(int $id): ?array;
+    /** UPDATE só se a linha ainda for $atual (nome, grandeza, fator_base); a decisão de conflito é do serviço, com a linha travada. */
+    public function atualizarUnidadeSe(int $id, array $atual, array $d): void;
+}
+
 final class AtributosService
 {
     public const NIVEL_CONSULTA = 50;
@@ -441,6 +453,8 @@ final class AtributosService
         if (isset($b['simbolo']) && $b['simbolo'] !== $antes['simbolo']) $erros[] = 'simbolo';
         $fator = self::fatorDe($b, $erros);
         if ($erros) throw new AtributosErro('VALIDATION_ERROR', 422, 'Campos inválidos (o símbolo não muda).', array_values(array_unique($erros)));
+        // DSHOW-071: com a fotografia do que a tela abriu (`antes`), a decisão é feita com a linha TRAVADA. Sem `antes` (cargas.php, bundle antigo) → caminho antigo.
+        if (array_key_exists('antes', $b) && $this->repo instanceof UnidadesComTrava) return $this->salvarUnidadeComTrava($this->repo, $id, (string) $n, $g, $fator, self::fotografiaUnidade($b['antes']));
         $mudaFator = $fator !== false && (string) ($antes['fator_base'] ?? '') !== (string) ($fator ?? '') && !($fator !== null && $antes['fator_base'] !== null && self::comparar((string) $fator, self::decimalCanonico((string) $antes['fator_base'])) === 0);
         if ((string) $antes['nome'] === (string) $n && (string) ($antes['grandeza'] ?? '') === (string) ($g ?? '') && !$mudaFator) return $this->respostaUnidades(['sem_mudanca' => true]);   // BR-02: repetir não grava nem audita de novo
         $this->repo->transacao(function () use ($id, $n, $g, $antes, $mudaFator, $fator) {
@@ -449,6 +463,63 @@ final class AtributosService
             $this->repo->auditar($this->usuario, 'editar', 'unidade', (string) $id, $antes, $novo, null);
         });
         return $this->respostaUnidades();
+    }
+
+    /** DSHOW-071: fotografia {nome, grandeza, fator_base} enviada pela tela, normalizada (grandeza null ≡ ''; fator canônico; vírgula aceita). */
+    private static function fotografiaUnidade(mixed $f): array
+    {
+        if (!is_array($f) || !array_key_exists('nome', $f) || !is_string($f['nome'])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fotografia da unidade inválida. Recarregue.', ['antes']);
+        $g = $f['grandeza'] ?? null;
+        if ($g !== null && !is_string($g)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fotografia da unidade inválida. Recarregue.', ['antes']);
+        $fb = $f['fator_base'] ?? null;
+        if ($fb !== null && $fb !== '') {
+            if (is_string($fb) && str_contains($fb, ',')) $fb = str_replace(',', '.', str_replace('.', '', $fb));   // "0,01" (pt-BR) = 0.01
+            $fb = self::decimalCanonico($fb);
+            if ($fb === null) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fotografia da unidade inválida. Recarregue.', ['antes']);
+        } else $fb = null;
+        return ['nome' => $f['nome'], 'grandeza' => trim($g ?? ''), 'fator_base' => $fb];
+    }
+
+    /** DSHOW-071: estado normalizado de uma linha de eq_unidade (mesma forma da fotografia). */
+    private static function estadoUnidade(array $u): array
+    {
+        return ['nome' => (string) $u['nome'], 'grandeza' => (string) ($u['grandeza'] ?? ''), 'fator_base' => $u['fator_base'] === null ? null : self::decimalCanonico((string) $u['fator_base'])];
+    }
+
+    /** DSHOW-071: campos que diferem entre dois estados normalizados (nome exato; grandeza null ≡ ''; fator por valor decimal). */
+    private static function camposDiferentes(array $a, array $b): array
+    {
+        $d = [];
+        if ($a['nome'] !== $b['nome']) $d[] = 'nome';
+        if ($a['grandeza'] !== $b['grandeza']) $d[] = 'grandeza';
+        if (($a['fator_base'] === null) !== ($b['fator_base'] === null) || ($a['fator_base'] !== null && self::comparar($a['fator_base'], (string) $b['fator_base']) !== 0)) $d[] = 'fator_base';
+        return $d;
+    }
+
+    /**
+     * DSHOW-071: trava a linha, compara fotografia × atual × pedido e só então grava (UPDATE condicionado ao atual travado) + auditoria.
+     * Fotografia ≠ atual: se o atual já é o pedido → sem_mudanca (repetição), senão 409 sem gravar nem auditar.
+     */
+    private function salvarUnidadeComTrava(UnidadesComTrava $trava, int $id, string $n, ?string $g, string|null|false $fator, array $foto): array
+    {
+        $r = $this->repo->transacao(function () use ($trava, $id, $n, $g, $fator, $foto) {
+            $atual = $trava->travarUnidade($id) ?? throw new AtributosErro('NOT_FOUND', 404, 'Unidade não encontrada.');
+            $estado = self::estadoUnidade($atual);
+            $pedido = ['nome' => $n, 'grandeza' => (string) ($g ?? ''), 'fator_base' => $fator === false ? $estado['fator_base'] : $fator];
+            $mudou = self::camposDiferentes($foto, $estado);
+            if ($mudou) {
+                if (!self::camposDiferentes($estado, $pedido)) return 'sem_mudanca';
+                $nomes = ['nome' => 'nome', 'grandeza' => 'grandeza', 'fator_base' => 'fator'];
+                throw new AtributosErro('CONFLICT', 409, 'A unidade foi alterada desde que você abriu: ' . implode(', ', array_map(static fn($c) => $nomes[$c], $mudou)) . '. Feche e reabra para ver a versão atual.', $mudou);
+            }
+            $difs = self::camposDiferentes($estado, $pedido);
+            if (!$difs) return 'sem_mudanca';
+            $novo = ['nome' => $n, 'grandeza' => $g] + (in_array('fator_base', $difs, true) ? ['fator_base' => $fator] : []);
+            $trava->atualizarUnidadeSe($id, $atual, $novo);
+            $this->repo->auditar($this->usuario, 'editar', 'unidade', (string) $id, $atual, $novo, null);
+            return 'gravado';
+        });
+        return $r === 'sem_mudanca' ? $this->respostaUnidades(['sem_mudanca' => true]) : $this->respostaUnidades();
     }
 
     /** D3: fator para a unidade base da grandeza (decimal > 0); '' ou null explícito limpa; ausente = não mexe (false). */
