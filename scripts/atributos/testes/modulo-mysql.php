@@ -272,6 +272,10 @@ foreach ($trocas as $nome => $Y) {
     $e = $erro(fn() => $kits->aplicarMassa($Y + ['chave' => 'p056-' . substr(md5($nome), 0, 10), 'versao_previa' => $vX]));
     $ok("056: prévia de X, confirmação direta com Y ($nome) → 409, zero alterações e zero auditoria", $e?->http === 409 && $foto56() === $f0, $e ? $e->getMessage() : 'aceito (defeito)');
 }
+$Xi = ['produtos' => [202], 'atributos_incluir' => [$atr['Vias']]];
+$vXi = $kits->previaMassa($Xi)['versao_previa'];
+$e = $erro(fn() => $kits->aplicarMassa(['produtos' => [202], 'atributos_excluir' => [['atributo_id' => $atr['Vias'], 'motivo' => 'virou exclusão no teste 056']], 'chave' => 'p056-incl-excl', 'versao_previa' => $vXi]));
+$ok('056: INCLUSÃO de atributo transformada em EXCLUSÃO depois da prévia → 409, nada muda', $e?->http === 409 && $foto56() === $f0);
 $Xm = ['produtos' => [202], 'atributos_excluir' => [['atributo_id' => $atr['Cor'], 'motivo' => 'motivo A do teste 056']]];
 $vXm = $kits->previaMassa($Xm)['versao_previa'];
 $e = $erro(fn() => $kits->aplicarMassa(['produtos' => [202], 'atributos_excluir' => [['atributo_id' => $atr['Cor'], 'motivo' => 'motivo B do teste 056']], 'chave' => 'p056-motivo-01', 'versao_previa' => $vXm]));
@@ -631,6 +635,46 @@ $ok('034 controle: duas sessões acrescentando opções diferentes → as duas g
     && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$mB]) === 4, ($c1?->getMessage() ?? '') . ' ' . ($c2?->getMessage() ?? ''));
 $ok('034-B: com a versão ATUAL do conjunto, desmarcar B funciona', fn() => (bool) $adm->removerOpcaoDoValor(['product_id' => 104, 'atributo_id' => $mB, 'opcao_id' => $oB, 'versao' => (int) $um('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = ?', [$mB, $oB]), 'versao_conjunto' => $vcB()])
     && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = ? AND excluido_em IS NULL', [$mB, $oB]) === 0);
+
+// ---- DSHOW-034 · DUAS CONEXÕES REALMENTE CONCORRENTES (pcntl_fork): dois escritores com a MESMA versão lida, liberados juntos ----------
+$txc = (int) $adm->salvarAtributo(['rotulo' => 'Observação 034C', 'tipo' => 'texto'])['atributo']['id'];
+$aj(['product_id' => 104, 'atributo_id' => $txc, 'modo' => 'incluir']);
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $txc, 'valor' => 'Original']);
+$vC = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = 0', [$txc]);
+$audC0 = (int) $um("SELECT COUNT(*) FROM eq_auditoria WHERE entidade = 'valor' AND entidade_id = ?", ["104:$txc:0"]);
+$pdo->exec('CREATE TABLE t034c_resultado (k INT PRIMARY KEY, res VARCHAR(80)) ENGINE=InnoDB');   // os filhos respondem por aqui (sem arquivos)
+$pdo->query("SELECT GET_LOCK('m034c-barreira', 10)")->fetchColumn();   // o pai segura a barreira: os dois filhos esperam nela
+$filhos = [];
+foreach ([1, 2] as $k) {
+    $pid = pcntl_fork();
+    if ($pid === 0) {   // FILHO: conexão PRÓPRIA (a do pai não é tocada; sai por SIGKILL, sem destrutores)
+        $res = 'erro';
+        try {
+            $pk = new PDO($dsn, $tira($c['user'] ?? ''), $tira($c['password'] ?? ''), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+            $pk->query("SELECT GET_LOCK('m034c-barreira', 20)")->fetchColumn(); $pk->query("SELECT RELEASE_LOCK('m034c-barreira')")->fetchColumn();
+            $svk = new AtributosService(new AtributosRepoPdo($pk, ''), 80, "escritor$k@exemplo.invalid", $cat);
+            $t = microtime(true);
+            try { $svk->gravarValor(['product_id' => 104, 'atributo_id' => $txc, 'valor' => "Escritor $k", 'versao' => $vC]); $res = 'ok'; }
+            catch (AtributosErro $e) { $res = $e->http === 409 ? '409' : 'http' . $e->http; }
+            $res .= sprintf(' %.3f', $t);
+        } catch (Throwable $e) { $res = 'erro ' . get_class($e); }
+        try { $pk->prepare('INSERT INTO t034c_resultado (k, res) VALUES (?, ?)')->execute([$k, $res]); } catch (Throwable $e) { }
+        posix_kill(posix_getpid(), SIGKILL);
+    }
+    $filhos[$k] = $pid;
+}
+usleep(400000); $pdo->query("SELECT RELEASE_LOCK('m034c-barreira')")->fetchColumn();   // solta os dois ao mesmo tempo
+foreach ($filhos as $pid) pcntl_waitpid($pid, $st);
+$r = []; foreach ([1, 2] as $k) $r[$k] = explode(' ', (string) $um('SELECT res FROM t034c_resultado WHERE k = ?', [$k]));
+$sts = [$r[1][0], $r[2][0]]; sort($sts);
+$venc = $r[1][0] === 'ok' ? 1 : 2;
+$t1 = (float) ($r[1][1] ?? 0); $t2 = (float) ($r[2][1] ?? 0);
+$ok('034 concorrente: os dois escritores começaram juntos (diferença < 50 ms) e só UM grava; o outro recebe 409', $sts === ['409', 'ok'] && abs($t1 - $t2) < 0.05, json_encode($r));
+$ok('034 concorrente: valor = o do vencedor; versão subiu UMA vez; auditoria com UMA linha nova (a do vencedor)', $um('SELECT valor_texto FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = 0 AND excluido_em IS NULL', [$txc]) === "Escritor $venc"
+    && (int) $um('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = 0', [$txc]) === $vC + 1
+    && (int) $um("SELECT COUNT(*) FROM eq_auditoria WHERE entidade = 'valor' AND entidade_id = ?", ["104:$txc:0"]) === $audC0 + 1
+    && $um("SELECT usuario FROM eq_auditoria WHERE entidade = 'valor' AND entidade_id = ? ORDER BY id DESC LIMIT 1", ["104:$txc:0"]) === "escritor$venc@exemplo.invalid");
+$ok('034 concorrente: a conexão do pai continua viva depois dos filhos', (int) $um('SELECT 1') === 1);
 
 // DSHOW-049 × sugestão: aceitar sugestão num campo multiopção que JÁ TEVE valor e foi limpo continua funcionando (D10 confere o vazio sob trava)
 $adm->limparValor(['product_id' => 103, 'atributo_id' => $moId, 'versao_conjunto' => $vc(103)]);

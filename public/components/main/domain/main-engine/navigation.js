@@ -34,18 +34,12 @@ function _setTimeout(fn, ms) {
   if (timerPort && timerPort.setTimeout) return timerPort.setTimeout(fn, ms);
   return setTimeout(fn, ms);
 }
-function _chaveDoItem(options) {
-  const it = options && options.originalData && options.originalData.item;
-  const k = it && (it.key || it.itemKey || it.item_key);
-  return typeof k === "string" && k ? k : null;
-}
-function _emitNavigationSync(panelId, route, previousPanel, itemKey = null) {
+function _emitNavigationSync(panelId, route, previousPanel) {
   _metrics.syncsEmitted++;
   _emit(NAVIGATION_SYNC_EVENT, {
     panelId,
     route: route || _state.currentRoute || `#/${panelId}`,
     previousPanel: previousPanel || _state.previousPanel,
-    itemKey,
     timestamp: Date.now()
   });
   _track("main:navigation:sync", { panelId, route });
@@ -63,7 +57,7 @@ function navigateToPanel(panelId, options) {
     _setTimeout(() => {
       _state.isNavigating = false;
       _emit(MAIN_EVENTS.NAVIGATION_COMPLETE, { panelId });
-      _emitNavigationSync(panelId, _state.currentRoute, _state.previousPanel, _chaveDoItem(options));
+      _emitNavigationSync(panelId, _state.currentRoute, _state.previousPanel);
       resolve({ ok: true, panelId });
     }, 0);
   });
@@ -104,7 +98,7 @@ async function performNavigate(engine, panelId, options) {
       _state.currentPanel = panelId;
       _state.currentRoute = route;
       _state.previousPanel = previousPanel;
-      _emitNavigationSync(panelId, route, previousPanel, _chaveDoItem(options));
+      _emitNavigationSync(panelId, route, previousPanel);
       return result;
     } catch (error) {
       _metrics.errors++;

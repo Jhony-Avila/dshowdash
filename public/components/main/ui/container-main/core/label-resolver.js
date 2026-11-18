@@ -13,29 +13,31 @@ function getSidebarRegistry(context) {
   if (_injectedSidebarRegistry) return _injectedSidebarRegistry;
   return null;
 }
+const PAINEIS_COMPARTILHADOS = /* @__PURE__ */ new Set(["panel-stub-dev"]);
 function createLabelResolver(sidebarRegistry) {
   return function resolvePanelLabel(panelId, origem = {}) {
     if (!panelId) return "Principal";
+    const compartilhado = PAINEIS_COMPARTILHADOS.has(panelId);
     try {
       if (sidebarRegistry && typeof sidebarRegistry.getItems === "function") {
         const items = sidebarRegistry.getItems();
-        const rot = (it) => it.label || it.title || panelId;
-        const doPainel = (it) => !it.panelId || it.panelId === panelId;
-        if (origem.itemKey) {
-          const it = items.find((x) => x.key === origem.itemKey && doPainel(x));
-          if (it) return rot(it);
+        if (compartilhado) {
+          for (const r of [origem.route, typeof window !== "undefined" ? window.location.hash : null]) {
+            if (!r) continue;
+            const it = items.find((x) => x.panelId === panelId && x.route === r);
+            if (it) return it.label || it.title || "Painel";
+          }
+          return "Painel";
         }
-        for (const r of [origem.route, typeof window !== "undefined" ? window.location.hash : null]) {
-          if (!r) continue;
-          const it = items.find((x) => x.route === r && doPainel(x));
-          if (it) return rot(it);
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].panelId === panelId || items[i].id === panelId) {
+            return items[i].label || items[i].title || panelId;
+          }
         }
-        const mesmos = items.filter((x) => x.panelId === panelId || x.id === panelId);
-        if (mesmos.length === 1) return rot(mesmos[0]);
-        if (mesmos.length > 1) return "Painel";
       }
     } catch (e) {
     }
+    if (compartilhado) return "Painel";
     return panelId.replace(/^panel-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   };
 }
@@ -49,6 +51,7 @@ function info() {
   return { moduleId: MODULE_ID, version: VERSION, hasInjectedRegistry: !!_injectedSidebarRegistry, diStrict: true };
 }
 export {
+  PAINEIS_COMPARTILHADOS,
   MODULE_ID,
   VERSION,
   createLabelResolver,

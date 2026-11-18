@@ -43,26 +43,35 @@ export function getSidebarRegistry(context: Record<string, unknown>) {
   return null;
 }
 
+/** DSHOW-062: painéis que vários itens do menu dividem (o provisório dos "Geral X"). */
+export const PAINEIS_COMPARTILHADOS = new Set(['panel-stub-dev']);
+
 export function createLabelResolver(sidebarRegistry: { getItems?: () => Array<Record<string, unknown>> } | null) {
-  // 18/11: resolve pelo item de ORIGEM — item_key completo, depois rota exata (a da navegação; no Voltar, o endereço atual). Por panelId
-  // só se houver UMA correspondência; mais de uma (ex.: os 12 "Geral X" no panel-stub-dev) → título neutro, nunca o 1º da lista.
-  return function resolvePanelLabel(panelId: string, origem: { itemKey?: string | null; route?: string | null } = {}) {
+  // DSHOW-062: painel COMPARTILHADO (panel-stub-dev: os "Geral X") só tem título com IDENTIDADE — rota exata do item (a da navegação ou,
+  // no Voltar/endereço direto, o endereço atual). Sem ela → "Painel": a quantidade de itens visíveis NÃO prova identidade, e nunca o nome
+  // técnico nem o rótulo de outro item. Painéis EXCLUSIVOS continuam como antes (1ª correspondência por panelId).
+  return function resolvePanelLabel(panelId: string, origem: { route?: string | null } = {}) {
     if (!panelId) return 'Principal';
+    const compartilhado = PAINEIS_COMPARTILHADOS.has(panelId);
     try {
       if (sidebarRegistry && typeof sidebarRegistry.getItems === 'function') {
         const items = sidebarRegistry.getItems();
-        const rot = (it: Record<string, unknown>) => (it.label || it.title || panelId) as string;
-        const doPainel = (it: Record<string, unknown>) => !it.panelId || it.panelId === panelId;
-        if (origem.itemKey) { const it = items.find((x) => x.key === origem.itemKey && doPainel(x)); if (it) return rot(it); }
-        for (const r of [origem.route, typeof window !== 'undefined' ? window.location.hash : null]) {
-          if (!r) continue;
-          const it = items.find((x) => x.route === r && doPainel(x)); if (it) return rot(it);
+        if (compartilhado) {
+          for (const r of [origem.route, typeof window !== 'undefined' ? window.location.hash : null]) {
+            if (!r) continue;
+            const it = items.find((x) => x.panelId === panelId && x.route === r);
+            if (it) return (it.label || it.title || 'Painel') as string;
+          }
+          return 'Painel';
         }
-        const mesmos = items.filter((x) => x.panelId === panelId || x.id === panelId);
-        if (mesmos.length === 1) return rot(mesmos[0]);
-        if (mesmos.length > 1) return 'Painel';
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].panelId === panelId || items[i].id === panelId) {
+            return items[i].label || items[i].title || panelId;
+          }
+        }
       }
     } catch (e) { }
+    if (compartilhado) return 'Painel';
     return panelId.replace(/^panel-/, '').replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
   };
 }

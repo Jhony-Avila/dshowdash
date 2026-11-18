@@ -151,9 +151,10 @@ function _hideLottieLoading(contentEl: HTMLElement) {
 
 // ─── Panel Title Resolution ────────────────────────────────────
 // v9.3.0-TITLE-SYNC: Resolves human-readable label for a panelId
-// 18/11 (menu Produtos): item do menu DESTA navegação — pelo item_key COMPLETO (clique no menu: originalData.item.key) ou pela ROTA
-// EXATA (config.route; no Voltar/endereço direto, o hash atual). Nunca pelo panel_id compartilhado: os 12 "Geral X" usam o mesmo
-// panel-stub-dev e o 1º no DOM ("Geral Compras", em Favoritos) dava o título de todos.
+// DSHOW-062: painéis que vários itens do menu dividem (o provisório dos 12 "Geral X"). Neles, o título só vem da IDENTIDADE do item desta
+// navegação — item_key COMPLETO (clique no menu: originalData.item.key) ou ROTA EXATA (config.route; no Voltar/endereço direto, o hash atual).
+// Sem identidade → "Painel" (a quantidade de itens visíveis não prova identidade). Painéis EXCLUSIVOS: como antes.
+const PAINEIS_COMPARTILHADOS = new Set(['panel-stub-dev']);
 function _navItemDaNavegacao(panelId: string, config: Record<string, unknown>): Element | null {
   const od = config && (config.originalData as Record<string, unknown> | undefined);
   const it = od && (od.item as Record<string, unknown> | undefined);
@@ -176,10 +177,11 @@ function _resolvePanelTitle(panelId: string, config: Record<string, unknown>) {
   if (config && config.title) return config.title;
 
   // 2. Try display_title from navigation DOM (user-defined override)
+  const compartilhado = PAINEIS_COMPARTILHADOS.has(panelId);
   try {
-    // 18/11: o item desta navegação (item_key/rota exata); por panel_id SÓ se o painel for de um único item do menu
-    const doPainel = document.querySelectorAll(`[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`);
-    const activeNavItem = _navItemDaNavegacao(panelId, config) || (doPainel.length === 1 ? doPainel[0] : null);
+    const activeNavItem = compartilhado
+      ? _navItemDaNavegacao(panelId, config)
+      : document.querySelector(`[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`);
     if (activeNavItem) {
       // 2a. Prioritize display_title (user-customized title for header)
       const displayTitle = activeNavItem.getAttribute('data-display-title');
@@ -194,6 +196,8 @@ function _resolvePanelTitle(panelId: string, config: Record<string, unknown>) {
   } catch (e) {
     // Silent — fall through to format
   }
+
+  if (compartilhado) return 'Painel';   // DSHOW-062: sem identidade, nunca o nome técnico nem o de outro item
 
   // 2c. v9.4.0-ROUTE-TITLE (2026-09-16): título do registro de rotas (inlinado no lote main), desde que não seja o
   //     genérico "Painel NN". Medido: painéis sem item na navegação (panel-03, panel-05, panel-12) mostravam "03"/"05"/"12".

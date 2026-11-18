@@ -106,6 +106,7 @@ function _hideLottieLoading(contentEl) {
     if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
   }, 320);
 }
+const PAINEIS_COMPARTILHADOS = /* @__PURE__ */ new Set(["panel-stub-dev"]);
 function _navItemDaNavegacao(panelId, config) {
   const od = config && config.originalData;
   const it = od && od.item;
@@ -121,9 +122,11 @@ function _navItemDaNavegacao(panelId, config) {
 }
 function _resolvePanelTitle(panelId, config) {
   if (config && config.title) return config.title;
+  const compartilhado = PAINEIS_COMPARTILHADOS.has(panelId);
   try {
-    const doPainel = document.querySelectorAll(`[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`);
-    const activeNavItem = _navItemDaNavegacao(panelId, config) || (doPainel.length === 1 ? doPainel[0] : null);
+    const activeNavItem = compartilhado ? _navItemDaNavegacao(panelId, config) : document.querySelector(
+      `[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`
+    );
     if (activeNavItem) {
       const displayTitle = activeNavItem.getAttribute("data-display-title");
       if (displayTitle) return displayTitle;
@@ -132,6 +135,7 @@ function _resolvePanelTitle(panelId, config) {
     }
   } catch (e) {
   }
+  if (compartilhado) return "Painel";
   try {
     const route = getRouteByIdOrPath("/" + panelId) || getRouteByIdOrPath(panelId);
     const title = route && route.title;
