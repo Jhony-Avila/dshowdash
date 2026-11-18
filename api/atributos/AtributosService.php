@@ -717,8 +717,11 @@ final class AtributosService
         $a = $this->repo->atributo($aid) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
         if ($a['tipo'] !== 'multiopcao') throw new AtributosErro('VALIDATION_ERROR', 422, 'Só atributos de várias opções desmarcam uma opção.', ['atributo_id']);
         $this->repo->transacao(function () use ($pid, $aid, $oid, $b) {
-            // a tela conhece a versão do VALOR (1ª opção viva); aceita essa ou a da própria opção, conferida sob trava
-            $vivos = array_values(array_filter($this->repo->travarValores($pid, $aid), static fn($r) => empty($r['excluido_em'])));
+            // DSHOW-034 (B, 18/11): desmarcar confere a versão do CONJUNTO que o usuário viu (contador monotônico), sob a trava — a versão da
+            // 1ª opção viva sozinha não percebe "desmarcou e remarcou" outra opção. Depois, a da opção/1ª viva como antes.
+            $todas = $this->repo->travarValores($pid, $aid);
+            self::conferirConjunto($b, $todas);
+            $vivos = array_values(array_filter($todas, static fn($r) => empty($r['excluido_em'])));
             $antes = null; foreach ($vivos as $r) if ((int) $r['opcao_chave'] === $oid) $antes = $r;
             if (!$antes) throw new AtributosErro('NOT_FOUND', 404, 'Esta opção não está marcada.');
             $v = (int) ($b['versao'] ?? -1);
@@ -852,7 +855,12 @@ final class AtributosService
             foreach ($linhas as $l) if ((int) $l['opcao_chave'] === (int) $d['opcao_chave']) $antes = $l;
             $vivo = $antes !== null && empty($antes['excluido_em']);
             if ($vivo && self::mesmoValor($antes, $d)) return;   // salvar sem mudança: nem versão nem auditoria
-            // linha excluída antes (excluido_em) volta sem exigir versão: não há valor vivo a sobrescrever
+            // linha excluída antes (excluido_em) volta sem exigir versão: não há valor vivo a sobrescrever.
+            // DSHOW-034 (A, 18/11): mas, num campo de valor ÚNICO, quem manda a versão de um valor que ele viu e que depois foi LIMPO é uma
+            // aba antiga → 409 (não recria). Quem relê vê o campo vazio, não manda versão de valor e preenche normalmente.
+            if ($antes && !$vivo && $a['tipo'] !== 'multiopcao' && isset($b['versao']) && $b['versao'] !== '' && (int) $b['versao'] !== (int) $antes['versao']) {
+                throw new AtributosErro('CONFLICT', 409, 'Outra pessoa limpou este valor. Recarregue e tente de novo.');
+            }
             $versao = $antes ? (!$vivo ? (int) $antes['versao'] : (int) ($b['versao'] ?? 0)) : null;
             if (!$this->repo->gravarValor($d, $versao)) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
             $excluidas = [];

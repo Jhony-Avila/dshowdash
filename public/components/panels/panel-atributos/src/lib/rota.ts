@@ -1,6 +1,6 @@
 // panel-atributos/src/lib/rota.ts — endereço próprio de cada tela do módulo (pedido do Jhony, 18/11): recarregar mantém a tela,
 // Voltar do navegador funciona e a ficha de um produto pode ser aberta e compartilhada pelo endereço.
-//   #/panel-atributos                     → Produtos (padrão)
+//   #/panel-atributos                     → Produtos (lista; item "Geral Produtos" do menu; /produtos é aceito e normalizado para cá)
 //   #/panel-atributos/<tela>              → visao-geral · produtos · vincular · preencher · kits · atributos · unidades · conferencia
 //   #/panel-atributos/kits/<id>           → um kit aberto
 //   #/panel-atributos/produto/<id>        → ficha do produto
@@ -31,5 +31,6 @@ export function lerRota(hash: string): EstadoRota | null {
 export function rotaDe(e: EstadoRota): string {
   if (e.produto !== null) return `${BASE_ROTA}/produto/${e.produto}`;
   if (e.aba === 'kits' && e.kit !== null) return `${BASE_ROTA}/kits/${e.kit}`;
+  if (e.aba === 'produtos') return BASE_ROTA;   // lista de produtos = endereço do item "Geral Produtos" do menu (destaque exato do menu)
   return `${BASE_ROTA}/${SLUG[e.aba]}`;
 }

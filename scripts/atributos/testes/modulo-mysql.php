@@ -185,7 +185,7 @@ $aj(['product_id' => 106, 'atributo_id' => $moId, 'modo' => 'incluir']);
 $adm->gravarValor(['product_id' => 106, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id']]);
 $adm->gravarValor(['product_id' => 106, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id']]);
 $verVal = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 106 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);
-$ok('desmarcar a 2ª opção com a versão do valor funciona', fn() => $adm->removerOpcaoDoValor(['product_id' => 106, 'atributo_id' => $moId, 'opcao_id' => (int) $opsMo[1]['id'], 'versao' => $verVal])['ok'] === true);
+$ok('desmarcar a 2ª opção com a versão do valor funciona', fn() => $adm->removerOpcaoDoValor(['product_id' => 106, 'atributo_id' => $moId, 'opcao_id' => (int) $opsMo[1]['id'], 'versao' => $verVal, 'versao_conjunto' => AtributosService::versaoConjunto($pdo->query("SELECT versao FROM eq_valor WHERE product_id = 106 AND atributo_id = $moId")->fetchAll(PDO::FETCH_ASSOC))])['ok'] === true);
 // incluir em massa não apaga a unidade do produto (ajuste); chave amarrada ao conteúdo
 $aj(['product_id' => 104, 'atributo_id' => $atr['Comprimento'], 'modo' => 'ajustar', 'unidade_id' => $uMm]);
 $ms(['produtos' => [104], 'atributos_incluir' => [['atributo_id' => $atr['Comprimento']]], 'chave' => 'teste-massa-0002']);
@@ -554,6 +554,39 @@ preg_match_all('/UPDATE[^;]{0,80}eq_valor[^;]*?\bSET\b(.*?)\bWHERE\b/is', $src, 
 $setsRuins = array_filter($mm[1], static fn($set) => (bool) preg_match('/\bversao\s*=(?!\s*versao\s*\+\s*1\b)/i', $set));
 $ok('053: nenhum UPDATE de eq_valor faz a versão regredir (no SET: só "versao = versao + 1" ou não toca na versão; ' . count($mm[1]) . ' UPDATEs lidos)', count($mm[1]) >= 5 && !$setsRuins, implode(' | ', array_map(static fn($x) => substr(trim($x), 0, 80), $setsRuins)));
 $ok('053: total de linhas de eq_valor deste teste: nenhuma sumiu (tombstones preservados)', (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 101 AND atributo_id = ?', [$mo3]) === 2);
+
+// ---- DSHOW-034 (concorrência, Cima 18/11): A) valor limpo recriado por aba antiga; B) opção remarcada desmarcada por aba antiga ----------
+$tx = (int) $adm->salvarAtributo(['rotulo' => 'Observação 034A', 'tipo' => 'texto'])['atributo']['id'];
+$aj(['product_id' => 104, 'atributo_id' => $tx, 'modo' => 'incluir']);
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $tx, 'valor' => 'Original']);
+$vB = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = 0', [$tx]);   // a sessão B lê "Original"
+$adm->limparValor(['product_id' => 104, 'atributo_id' => $tx, 'versao' => $vB]);                                          // a sessão A limpa
+$eA = $erro(fn() => $adm->gravarValor(['product_id' => 104, 'atributo_id' => $tx, 'valor' => 'Revisado', 'versao' => $vB]));   // B salva com a versão antiga
+$vivoA = $um('SELECT valor_texto FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = 0 AND excluido_em IS NULL', [$tx]);
+$ok('034-A: aba antiga (versão de "Original") salva "Revisado" depois da limpeza → 409 e o campo fica VAZIO', $eA?->http === 409 && ($vivoA === null || $vivoA === false), $eA ? $eA->getMessage() : 'aceito; valor=' . var_export($vivoA, true));
+$ok('034-A: B relê (vazio, sem versão de valor) e preenche normalmente', fn() => (bool) $adm->gravarValor(['product_id' => 104, 'atributo_id' => $tx, 'valor' => 'Revisado'])
+    && $um('SELECT valor_texto FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$tx]) === 'Revisado');
+$mB = (int) $adm->salvarAtributo(['rotulo' => 'Saídas 034B', 'tipo' => 'multiopcao'])['atributo']['id'];
+$adm->adicionarOpcao($mB, 'A'); $adm->adicionarOpcao($mB, 'B'); $adm->adicionarOpcao($mB, 'C'); $opsB = $adm->adicionarOpcao($mB, 'D')['opcoes'];
+[$oA, $oB, $oC, $oD] = array_map(static fn($o) => (int) $o['id'], $opsB);
+$aj(['product_id' => 104, 'atributo_id' => $mB, 'modo' => 'incluir']);
+$vcB = fn() => AtributosService::versaoConjunto($linhas('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ?', [$mB]));
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $mB, 'valor' => $oA, 'versao_conjunto' => $vcB()]); $adm->gravarValor(['product_id' => 104, 'atributo_id' => $mB, 'valor' => $oB]);
+// a sessão antiga lê: A e B marcadas (a tela manda a versão do VALOR = 1ª opção viva e a versão do conjunto)
+$velhaVersao = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$mB]); $velhoConj = $vcB();
+// a sessão A desmarca B e remarca B
+$adm->removerOpcaoDoValor(['product_id' => 104, 'atributo_id' => $mB, 'opcao_id' => $oB, 'versao' => (int) $um('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = ?', [$mB, $oB]), 'versao_conjunto' => $vcB()]);
+$adm->gravarValor(['product_id' => 104, 'atributo_id' => $mB, 'valor' => $oB, 'versao_conjunto' => $vcB()]);
+$eB = $erro(fn() => $adm->removerOpcaoDoValor(['product_id' => 104, 'atributo_id' => $mB, 'opcao_id' => $oB, 'versao' => $velhaVersao, 'versao_conjunto' => $velhoConj]));
+$bMarcada = (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = ? AND excluido_em IS NULL', [$mB, $oB]) === 1;
+$ok('034-B: aba antiga desmarca B depois de A desmarcar e remarcar B → 409 e B continua marcada', $eB?->http === 409 && $bMarcada, $eB ? $eB->getMessage() : 'aceito; B marcada=' . var_export($bMarcada, true));
+// controle: duas sessões acrescentando opções diferentes (mesma leitura) continuam funcionando
+$c1 = $erro(fn() => $adm->gravarValor(['product_id' => 104, 'atributo_id' => $mB, 'valor' => $oC, 'versao_conjunto' => $vcB()]));
+$c2 = $erro(fn() => $adm->gravarValor(['product_id' => 104, 'atributo_id' => $mB, 'valor' => $oD, 'versao_conjunto' => $velhoConj]));
+$ok('034 controle: duas sessões acrescentando opções diferentes → as duas gravam (A, B, C, D marcadas)', $c1 === null && $c2 === null
+    && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND excluido_em IS NULL', [$mB]) === 4, ($c1?->getMessage() ?? '') . ' ' . ($c2?->getMessage() ?? ''));
+$ok('034-B: com a versão ATUAL do conjunto, desmarcar B funciona', fn() => (bool) $adm->removerOpcaoDoValor(['product_id' => 104, 'atributo_id' => $mB, 'opcao_id' => $oB, 'versao' => (int) $um('SELECT versao FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = ?', [$mB, $oB]), 'versao_conjunto' => $vcB()])
+    && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 104 AND atributo_id = ? AND opcao_chave = ? AND excluido_em IS NULL', [$mB, $oB]) === 0);
 
 // DSHOW-049 × sugestão: aceitar sugestão num campo multiopção que JÁ TEVE valor e foi limpo continua funcionando (D10 confere o vazio sob trava)
 $adm->limparValor(['product_id' => 103, 'atributo_id' => $moId, 'versao_conjunto' => $vc(103)]);

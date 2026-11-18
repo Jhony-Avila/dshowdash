@@ -25,14 +25,18 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   const [txt, setTxt] = React.useState(() => rascunhoDe(item));
   const [sit, setSit] = React.useState<Situacao>({ tipo: 'parado' });
   const [trocaUnidade, setTrocaUnidade] = React.useState<number | null>(null);
+  // unidade escolhida ANTES do número num campo vazio: faz parte do RASCUNHO da célula e vai junto na 1ª gravação (Cima, 18/11)
+  const [unidRascunho, setUnidRascunho] = React.useState<number | null>(null);
+  // apagar o texto de um campo PREENCHIDO não limpa sozinho: pede confirmação mostrando o valor salvo (Cima, 18/11); Esc/Cancelar restaura
+  const [confirmarLimpar, setConfirmarLimpar] = React.useState(false);
   const original = React.useRef(rascunhoDe(item));
   const ocupado = React.useRef(false);                                   // uma gravação por vez (Enter + sair do campo não grava 2×)
   const ultimo = React.useRef<{ rota: string; corpo: Record<string, unknown>; texto?: string } | null>(null);   // "Tentar de novo" repete esta
   const [esperando, setEsperando] = React.useState(false);              // gravou; aguardando a recarga trazer a versão nova
-  React.useEffect(() => { const r = rascunhoDe(item); setTxt(r); original.current = r; setEsperando(false); }, [item.valor?.versao, item.versao_conjunto, item.valor?.versao_conjunto, item.valor?.estado, item.atributo_id]);
+  React.useEffect(() => { const r = rascunhoDe(item); setTxt(r); original.current = r; setEsperando(false); setUnidRascunho(null); }, [item.valor?.versao, item.versao_conjunto, item.valor?.versao_conjunto, item.valor?.estado, item.atributo_id]);
   React.useEffect(() => { if (!esperando) return; const t = window.setTimeout(() => setEsperando(false), 3000); return () => window.clearTimeout(t); }, [esperando]);
   const estado = item.valor?.estado ?? null;
-  const unidadeAtual = item.valor?.unidade_id ?? item.unidade_efetiva?.id ?? null;
+  const unidadeAtual = unidRascunho ?? item.valor?.unidade_id ?? item.unidade_efetiva?.id ?? null;
   const numerico = item.tipo === 'numero' || item.tipo === 'inteiro';
   const ro = !podeEditar || item.autoridade === 'precifica';
   const id = `campo-${productId}-${item.atributo_id}`;
@@ -54,10 +58,10 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   const tentarDeNovo = () => { const u = ultimo.current; if (u) chamar(u.rota, u.corpo, u.texto); };
   const travado = sit.tipo === 'salvando' || esperando;
   const versao = item.valor?.versao;
-  const gravar = (valor: unknown, extra: Record<string, unknown> = {}, texto?: string) => chamar('valor', { valor, estado: 'informado', versao, ...(numerico && unidadeAtual ? { unidade_id: item.valor?.unidade_id ?? null } : {}), ...extra }, texto);
+  const gravar = (valor: unknown, extra: Record<string, unknown> = {}, texto?: string) => chamar('valor', { valor, estado: 'informado', versao, ...(numerico && unidadeAtual ? { unidade_id: unidRascunho ?? item.valor?.unidade_id ?? null } : {}), ...extra }, texto);
   const confirmarTexto = () => {
-    if (ro || txt === original.current || ocupado.current || esperando) return;
-    if (txt.trim() === '') { if (item.valor) chamar('valor_limpar', { versao }, ''); return; }
+    if (ro || txt === original.current || ocupado.current || esperando || confirmarLimpar) return;
+    if (txt.trim() === '') { if (item.valor && !confirmarLimpar) setConfirmarLimpar(true); return; }
     gravar(numerico ? numeroParaApi(txt) : txt, {}, txt);
   };
 
@@ -108,6 +112,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
               const u = Number(e.target.value);
               if (item.valor?.numero != null && item.valor.estado === 'informado') setTrocaUnidade(u);   // H5: pergunta converter × só trocar
               else if (txt.trim() !== '') gravar(numeroParaApi(txt), { unidade_id: u }, txt);
+              else setUnidRascunho(u);   // campo vazio: guarda a escolha; vai junto com o número na 1ª gravação
             }}>
             {item.unidades.map((u) => <option key={u.id} value={u.id}>{u.simbolo}</option>)}
           </select>)}
@@ -121,6 +126,13 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
           </select>)}
       </div>
       {status}
+      <Dialogo titulo="Limpar o valor?" aberto={confirmarLimpar} aoFechar={() => { setConfirmarLimpar(false); setTxt(original.current); }}
+        rodape={<>
+          <Botao aoClicar={() => { setConfirmarLimpar(false); setTxt(original.current); }}>Cancelar</Botao>
+          <Botao perigo aoClicar={() => { setConfirmarLimpar(false); chamar('valor_limpar', { versao }, ''); }}>Limpar valor</Botao>
+        </>}>
+        <p>O valor salvo de <strong>{item.rotulo}</strong> é <strong>{original.current}{numerico && unidadeAtual ? ` ${item.unidades.find((u) => u.id === unidadeAtual)?.simbolo ?? item.unidade_efetiva?.simbolo ?? ''}` : ''}</strong>. Limpar apaga o valor (fica no histórico).</p>
+      </Dialogo>
       <Dialogo titulo="Trocar a unidade" aberto={trocaUnidade !== null} aoFechar={() => setTrocaUnidade(null)}
         rodape={<>
           <Botao aoClicar={() => setTrocaUnidade(null)}>Cancelar</Botao>

@@ -151,15 +151,35 @@ function _hideLottieLoading(contentEl: HTMLElement) {
 
 // ─── Panel Title Resolution ────────────────────────────────────
 // v9.3.0-TITLE-SYNC: Resolves human-readable label for a panelId
+// 18/11 (menu Produtos): item do menu DESTA navegação — pelo item_key COMPLETO (clique no menu: originalData.item.key) ou pela ROTA
+// EXATA (config.route; no Voltar/endereço direto, o hash atual). Nunca pelo panel_id compartilhado: os 12 "Geral X" usam o mesmo
+// panel-stub-dev e o 1º no DOM ("Geral Compras", em Favoritos) dava o título de todos.
+function _navItemDaNavegacao(panelId: string, config: Record<string, unknown>): Element | null {
+  const od = config && (config.originalData as Record<string, unknown> | undefined);
+  const it = od && (od.item as Record<string, unknown> | undefined);
+  const chave = it && (it.key || it.itemKey || it.item_key);
+  if (typeof chave === 'string' && chave) {
+    const porChave = document.querySelector(`[data-item-id="${CSS.escape(chave)}"]`);
+    if (porChave) return porChave;
+  }
+  const rota = typeof config?.route === 'string' && config.route ? config.route : window.location.hash;
+  if (!rota) return null;
+  const itens = Array.from(document.querySelectorAll('[data-item-id] a[href]'))
+    .filter((a) => a.getAttribute('href') === rota)
+    .map((a) => a.closest('[data-item-id]'))
+    .filter((li): li is Element => !!li && (!li.getAttribute('data-panel-id') || li.getAttribute('data-panel-id') === panelId));
+  return itens[0] || null;
+}
+
 function _resolvePanelTitle(panelId: string, config: Record<string, unknown>) {
   // 1. Explicit title from config
   if (config && config.title) return config.title;
 
   // 2. Try display_title from navigation DOM (user-defined override)
   try {
-    const activeNavItem = document.querySelector(
-      `[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`
-    );
+    // 18/11: o item desta navegação (item_key/rota exata); por panel_id SÓ se o painel for de um único item do menu
+    const doPainel = document.querySelectorAll(`[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`);
+    const activeNavItem = _navItemDaNavegacao(panelId, config) || (doPainel.length === 1 ? doPainel[0] : null);
     if (activeNavItem) {
       // 2a. Prioritize display_title (user-customized title for header)
       const displayTitle = activeNavItem.getAttribute('data-display-title');

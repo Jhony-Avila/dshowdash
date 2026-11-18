@@ -38,7 +38,7 @@ function createContainerCore(config) {
     const panelId = data.panelId;
     const route = data.route;
     _currentPanelId = panelId;
-    const label = labelResolver(panelId);
+    const label = labelResolver(panelId, { itemKey: data.itemKey ?? null, route });
     if (_api && typeof _api.setTitle === "function") {
       _api.setTitle(label);
     }

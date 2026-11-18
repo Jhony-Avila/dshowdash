@@ -44,16 +44,23 @@ export function getSidebarRegistry(context: Record<string, unknown>) {
 }
 
 export function createLabelResolver(sidebarRegistry: { getItems?: () => Array<Record<string, unknown>> } | null) {
-  return function resolvePanelLabel(panelId: string) {
+  // 18/11: resolve pelo item de ORIGEM — item_key completo, depois rota exata (a da navegação; no Voltar, o endereço atual). Por panelId
+  // só se houver UMA correspondência; mais de uma (ex.: os 12 "Geral X" no panel-stub-dev) → título neutro, nunca o 1º da lista.
+  return function resolvePanelLabel(panelId: string, origem: { itemKey?: string | null; route?: string | null } = {}) {
     if (!panelId) return 'Principal';
     try {
       if (sidebarRegistry && typeof sidebarRegistry.getItems === 'function') {
         const items = sidebarRegistry.getItems();
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].panelId === panelId || items[i].id === panelId) {
-            return items[i].label || items[i].title || panelId;
-          }
+        const rot = (it: Record<string, unknown>) => (it.label || it.title || panelId) as string;
+        const doPainel = (it: Record<string, unknown>) => !it.panelId || it.panelId === panelId;
+        if (origem.itemKey) { const it = items.find((x) => x.key === origem.itemKey && doPainel(x)); if (it) return rot(it); }
+        for (const r of [origem.route, typeof window !== 'undefined' ? window.location.hash : null]) {
+          if (!r) continue;
+          const it = items.find((x) => x.route === r && doPainel(x)); if (it) return rot(it);
         }
+        const mesmos = items.filter((x) => x.panelId === panelId || x.id === panelId);
+        if (mesmos.length === 1) return rot(mesmos[0]);
+        if (mesmos.length > 1) return 'Painel';
       }
     } catch (e) { }
     return panelId.replace(/^panel-/, '').replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());

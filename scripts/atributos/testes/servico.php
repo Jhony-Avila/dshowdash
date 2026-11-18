@@ -119,8 +119,11 @@ $pre->gravarValor(['product_id' => 8, 'atributo_id' => $cert['id'], 'valor' => $
 $pre->gravarValor(['product_id' => 8, 'atributo_id' => $cert['id'], 'valor' => $oc[1]['id']]);
 $fc = array_column($ven->ficha(8, true)['grupos'][0]['atributos'], null, 'codigo')['certs']['valor'];
 $ok('multiopção: 2 opções marcadas', count($fc['opcoes']) === 2);
-$ok('desmarcar com versão antiga → 409', $erro(fn() => $pre->removerOpcaoDoValor(['product_id' => 8, 'atributo_id' => $cert['id'], 'opcao_id' => $oc[0]['id'], 'versao' => 99]))?->http === 409);
-$pre->removerOpcaoDoValor(['product_id' => 8, 'atributo_id' => $cert['id'], 'opcao_id' => $oc[0]['id'], 'versao' => $fc['opcoes_versao'][0]['versao']]);
+$vcCert = AtributosService::versaoConjunto($repo->travarValores(8, (int) $cert['id']));   // DSHOW-034 (B): a tela manda a versão do conjunto
+$ok('desmarcar com versão antiga → 409', $erro(fn() => $pre->removerOpcaoDoValor(['product_id' => 8, 'atributo_id' => $cert['id'], 'opcao_id' => $oc[0]['id'], 'versao' => 99, 'versao_conjunto' => $vcCert]))?->http === 409);
+$ok('desmarcar com versão de CONJUNTO antiga → 409; sem ela → 422', $erro(fn() => $pre->removerOpcaoDoValor(['product_id' => 8, 'atributo_id' => $cert['id'], 'opcao_id' => $oc[0]['id'], 'versao' => $fc['opcoes_versao'][0]['versao'], 'versao_conjunto' => (string) ((int) $vcCert - 1)]))?->http === 409
+    && $erro(fn() => $pre->removerOpcaoDoValor(['product_id' => 8, 'atributo_id' => $cert['id'], 'opcao_id' => $oc[0]['id'], 'versao' => $fc['opcoes_versao'][0]['versao']]))?->http === 422);
+$pre->removerOpcaoDoValor(['product_id' => 8, 'atributo_id' => $cert['id'], 'opcao_id' => $oc[0]['id'], 'versao' => $fc['opcoes_versao'][0]['versao'], 'versao_conjunto' => $vcCert]);
 $ok('desmarcar: fica 1 opção (a outra preservada na tabela)', count(array_column($ven->ficha(8, true)['grupos'][0]['atributos'], null, 'codigo')['certs']['valor']['opcoes']) === 1 && isset($repo->v["8:{$cert['id']}:{$oc[0]['id']}"]));
 $pre->gravarValor(['product_id' => 8, 'atributo_id' => $cert['id'], 'valor' => $oc[0]['id']]);
 $ok('remarcar opção desmarcada sem versão (não sobrescreve valor vivo)', count(array_column($ven->ficha(8, true)['grupos'][0]['atributos'], null, 'codigo')['certs']['valor']['opcoes']) === 2);

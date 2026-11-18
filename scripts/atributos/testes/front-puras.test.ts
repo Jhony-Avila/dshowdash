@@ -75,6 +75,8 @@ igual('id inválido na ficha → lista', lerRota('#/panel-atributos/produto/abc'
 igual('rotaDe ficha', rotaDe({ aba: 'kits', produto: 154, kit: 3 }), '#/panel-atributos/produto/154');
 igual('rotaDe kit', rotaDe({ aba: 'kits', produto: null, kit: 3 }), '#/panel-atributos/kits/3');
 igual('rotaDe atributos', rotaDe({ aba: 'atributos', produto: null, kit: null }), '#/panel-atributos/atributos');
+igual('rotaDe produtos = endereço do item "Geral Produtos" (#/panel-atributos)', rotaDe({ aba: 'produtos', produto: null, kit: null }), '#/panel-atributos');
+igual('lerRota /produtos (endereço antigo) continua abrindo a lista', JSON.stringify(lerRota('#/panel-atributos/produtos')), JSON.stringify({ aba: 'produtos', produto: null, kit: null }));
 igual('ida e volta de todas as telas', (['visao', 'produtos', 'vincular', 'preencher', 'kits', 'atributos', 'unidades', 'conferencia'] as const).every((a) => lerRota(rotaDe({ aba: a, produto: null, kit: null }))?.aba === a), true);
 
 console.log(`${falhas === 0 ? '[OK]  ' : '[FALHA]'} front-puras (formatação, entrada, busca, rótulos): ${n} casos, ${falhas} falha(s)`);

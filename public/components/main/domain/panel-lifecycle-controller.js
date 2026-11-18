@@ -106,12 +106,24 @@ function _hideLottieLoading(contentEl) {
     if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
   }, 320);
 }
+function _navItemDaNavegacao(panelId, config) {
+  const od = config && config.originalData;
+  const it = od && od.item;
+  const chave = it && (it.key || it.itemKey || it.item_key);
+  if (typeof chave === "string" && chave) {
+    const porChave = document.querySelector(`[data-item-id="${CSS.escape(chave)}"]`);
+    if (porChave) return porChave;
+  }
+  const rota = typeof config?.route === "string" && config.route ? config.route : window.location.hash;
+  if (!rota) return null;
+  const itens = Array.from(document.querySelectorAll("[data-item-id] a[href]")).filter((a) => a.getAttribute("href") === rota).map((a) => a.closest("[data-item-id]")).filter((li) => !!li && (!li.getAttribute("data-panel-id") || li.getAttribute("data-panel-id") === panelId));
+  return itens[0] || null;
+}
 function _resolvePanelTitle(panelId, config) {
   if (config && config.title) return config.title;
   try {
-    const activeNavItem = document.querySelector(
-      `[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`
-    );
+    const doPainel = document.querySelectorAll(`[data-panel-id="${panelId}"], [data-nav-panel="${panelId}"]`);
+    const activeNavItem = _navItemDaNavegacao(panelId, config) || (doPainel.length === 1 ? doPainel[0] : null);
     if (activeNavItem) {
       const displayTitle = activeNavItem.getAttribute("data-display-title");
       if (displayTitle) return displayTitle;

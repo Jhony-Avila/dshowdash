@@ -14,16 +14,25 @@ function getSidebarRegistry(context) {
   return null;
 }
 function createLabelResolver(sidebarRegistry) {
-  return function resolvePanelLabel(panelId) {
+  return function resolvePanelLabel(panelId, origem = {}) {
     if (!panelId) return "Principal";
     try {
       if (sidebarRegistry && typeof sidebarRegistry.getItems === "function") {
         const items = sidebarRegistry.getItems();
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].panelId === panelId || items[i].id === panelId) {
-            return items[i].label || items[i].title || panelId;
-          }
+        const rot = (it) => it.label || it.title || panelId;
+        const doPainel = (it) => !it.panelId || it.panelId === panelId;
+        if (origem.itemKey) {
+          const it = items.find((x) => x.key === origem.itemKey && doPainel(x));
+          if (it) return rot(it);
         }
+        for (const r of [origem.route, typeof window !== "undefined" ? window.location.hash : null]) {
+          if (!r) continue;
+          const it = items.find((x) => x.route === r && doPainel(x));
+          if (it) return rot(it);
+        }
+        const mesmos = items.filter((x) => x.panelId === panelId || x.id === panelId);
+        if (mesmos.length === 1) return rot(mesmos[0]);
+        if (mesmos.length > 1) return "Painel";
       }
     } catch (e) {
     }

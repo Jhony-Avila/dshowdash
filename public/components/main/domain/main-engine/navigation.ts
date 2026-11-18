@@ -62,12 +62,20 @@ function _setTimeout(fn: (...args: unknown[]) => unknown, ms: number) {
   return setTimeout(fn, ms);
 }
 
-function _emitNavigationSync(panelId: string, route: string, previousPanel: unknown) {
+// 18/11: item_key COMPLETO do item clicado no menu (originalData.item.key) — o cabeçalho e o caminho resolvem por ele/pela rota exata
+function _chaveDoItem(options: Record<string, unknown> | undefined): string | null {
+  const it = ((options && options.originalData) as Record<string, unknown> | undefined)?.item as Record<string, unknown> | undefined;
+  const k = it && (it.key || it.itemKey || it.item_key);
+  return typeof k === 'string' && k ? k : null;
+}
+
+function _emitNavigationSync(panelId: string, route: string, previousPanel: unknown, itemKey: string | null = null) {
   _metrics.syncsEmitted++;
   _emit(NAVIGATION_SYNC_EVENT, {
     panelId,
     route: route || _state.currentRoute || `#/${panelId}`,
     previousPanel: previousPanel || _state.previousPanel,
+    itemKey,
     timestamp: Date.now()
   });
   _track('main:navigation:sync', { panelId, route });
@@ -88,7 +96,7 @@ function navigateToPanel(panelId: string, options: Record<string, unknown>) {
       _state.isNavigating = false;
       _emit(MAIN_EVENTS.NAVIGATION_COMPLETE, { panelId });
       // @ts-expect-error strict migration — TS2345
-      _emitNavigationSync(panelId, _state.currentRoute, _state.previousPanel);
+      _emitNavigationSync(panelId, _state.currentRoute, _state.previousPanel, _chaveDoItem(options));
       resolve({ ok: true, panelId });
     }, 0);
   });
@@ -124,7 +132,7 @@ export async function performNavigate(engine: Record<string, unknown>, panelId: 
       _state.currentPanel = panelId;
       _state.currentRoute = route as string;
       _state.previousPanel = previousPanel;
-      _emitNavigationSync(panelId, route as string, previousPanel);
+      _emitNavigationSync(panelId, route as string, previousPanel, _chaveDoItem(options));
       return result;
     } catch (error) {
       _metrics.errors++;

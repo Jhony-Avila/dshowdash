@@ -42,7 +42,7 @@ export function createContainerCore(config: Record<string, unknown>) {
       options: Record<string, unknown> & { onReady?: (api: unknown) => void };
       isAttachMode: boolean;
       eventBridge: { subscribe: (event: string, handler: (data: Record<string, unknown>) => void) => () => void; emit: (event: string, data: Record<string, unknown>) => void };
-      labelResolver: (panelId: string) => string;
+      labelResolver: (panelId: string, origem?: { itemKey?: string | null; route?: string | null }) => string;
       eventBus: Record<string, unknown> | null;
       mode: string;
     };
@@ -87,7 +87,7 @@ export function createContainerCore(config: Record<string, unknown>) {
         const panelId = data.panelId as string;
         const route = data.route as string;
         _currentPanelId = panelId;
-        const label = labelResolver(panelId);
+        const label = labelResolver(panelId, { itemKey: (data.itemKey as string | null) ?? null, route });   // 18/11: item de origem, não o 1º do panelId
         if (_api && typeof _api.setTitle === 'function') {
             (_api.setTitle as (label: string) => void)(label);
         }
