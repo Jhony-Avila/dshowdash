@@ -1,5 +1,9 @@
 <?php
 // /api/atributos/index.php (porte 18/11 de /api/equipamentos/atributos.php, atr/ponte-app 693c70c6) — API da web Equipamentos › Atributos (Fase B PREPARADA no clone, 31/10/2026; app-dshow DP-AUTO.37).
+// ATRIBUTOS-WEB E1 (18/11): flags novas `panel_atributos_enabled` (leitura; mesma flag do painel React) e `panel_atributos_escrita`
+// (escrita). Nesta etapa a API é SÓ LEITURA: ATR_ESCRITA_LIBERADA=false → todo POST e GET valores respondem 404 antes do CSRF,
+// mesmo com a flag de escrita ligada. Rotas novas (nível ≥ 50): GET vitrine · GET ficha_produto&product_id= (ProdutosLeitura).
+// Rota: /api/atributos/<rota> (PATH_INFO; a validação usa /api/atributos/index.php/<rota>) ou ?r=<rota>.
 // SEMPRE atrás da flag do Dash `equipamentos.atributos` (ausente/desligada → 404, como se a rota não existisse). Sessão do Dash
 // (SessionGate), CSRF em toda escrita, nível do usuário decidido aqui (regras em AtributosService). Uma rota por `r`:
 //   GET  ?r=atributos[&q=&tipo=&inativos=1] · ?r=atributo&id= · ?r=unidades · ?r=grupos · ?r=valores&product_id=
@@ -30,6 +34,8 @@ require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../feature-flags/resolver.php';
 require_once __DIR__ . '/AtributosRepo.php';
 require_once __DIR__ . '/CatalogoPdo.php';
+require_once __DIR__ . '/ProdutosLeitura.php';
+require_once __DIR__ . '/LeituraVitrinePdo.php';
 
 // ATRIBUTOS-WEB (18/11): rota por PATH_INFO (/api/atributos/<rota>, padrão do Bling); ?r=<rota> segue aceito (compatível com o ramo de origem).
 // Conexão PRÓPRIA "EQUIPAMENTOS" (usuário dedicado equipamentos_app: SELECT/INSERT/UPDATE no DSHOW_EQUIPAMENTOS + SELECT coluna a coluna
@@ -40,8 +46,9 @@ function eqRota(): string {
     return (string) ($_GET['r'] ?? '');
 }
 
-const EQ_FLAG = 'equipamentos.atributos';
-const EQ_FLAG_ESCRITA = 'equipamentos.atributos.escrita';
+const EQ_FLAG = 'panel_atributos_enabled';           // E1: mesma chave do painel (ligada só para o usuário 75 em produção)
+const EQ_FLAG_ESCRITA = 'panel_atributos_escrita';   // escrita (E3); desligada
+const ATR_ESCRITA_LIBERADA = false;                  // E1 = só leitura: nenhuma rota de escrita responde, com qualquer flag
 // Fontes do resolvedor que significam "piloto desligado para todos" (→ 404 antes da sessão).
 const EQ_DESLIGADO = ['not_found', 'disabled', 'not_started', 'expired', 'environment_mismatch', 'rollout_excluded'];
 
@@ -78,6 +85,10 @@ try {
     if (!eqFlagOuFalha($resolver->resolve(EQ_FLAG, (int) ($user['id'] ?? 0)))) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
     $metodoReq = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $rReq = eqRota();
+    if ($metodoReq !== 'GET' && $metodoReq !== 'HEAD') {
+        if (!ATR_ESCRITA_LIBERADA) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);   // E1: escrita não existe nesta etapa
+    }
+    if ($rReq === 'valores' && !ATR_ESCRITA_LIBERADA) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
     if ($metodoReq === 'POST' || $rReq === 'valores') {
         if (!eqFlagOuFalha($resolver->resolve(EQ_FLAG_ESCRITA, (int) ($user['id'] ?? 0)))) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
     }
@@ -86,6 +97,7 @@ try {
     $pdoEq = getConnection('EQUIPAMENTOS');   // sem a entrada no config compartilhado → exceção → 500 (registrado), nunca cai na conexão do Dash
     $svc = new AtributosService(new AtributosRepoPdo($pdoEq, (string) (getenv('DSHOW_EQUIPAMENTOS_SCHEMA') ?: 'DSHOW_EQUIPAMENTOS')), (int) ($user['level'] ?? 0), (string) ($user['email'] ?: ('usuario:' . ($user['id'] ?? '?'))),
         new CatalogoPdo($pdoEq, (string) (getenv('DSHOW_CATALOGO_SCHEMA') ?: 'APP_DSHOW')));
+    $leitura = new ProdutosLeitura(new LeituraVitrinePdo($pdoEq, (string) (getenv('DSHOW_EQUIPAMENTOS_SCHEMA') ?: 'DSHOW_EQUIPAMENTOS'), (string) (getenv('DSHOW_CATALOGO_SCHEMA') ?: 'APP_DSHOW')), $svc, (int) ($user['level'] ?? 0));
     $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $r = eqRota();
     $corpo = [];
@@ -95,6 +107,8 @@ try {
         if (!is_array($corpo)) ApiResponse::error(ApiResponse::ERR_INVALID_JSON, 400);
     }
     $out = match ("$metodo $r") {
+        'GET vitrine' => $leitura->vitrine(),
+        'GET ficha_produto' => $leitura->fichaProduto((int) ($_GET['product_id'] ?? 0)),
         'GET atributos' => $svc->listar($_GET),
         'GET atributo' => $svc->detalhe((int) ($_GET['id'] ?? 0)),
         'GET unidades' => $svc->unidades(),
@@ -121,6 +135,8 @@ try {
     };
     if ($out === null) ApiResponse::error(ApiResponse::ERR_INVALID_ACTION, 400);
     ApiResponse::success($out);
+} catch (CatalogoIndisponivel $e) {
+    ApiResponse::error('CATALOG_UNAVAILABLE', 503, ['message' => 'Catálogo de produtos indisponível.']);
 } catch (AtributosErro $e) {
     ApiResponse::error($e->codigo, $e->http, ['message' => $e->getMessage()] + ($e->campos ? ['campos' => $e->campos] : []));
 } catch (Throwable $e) {
