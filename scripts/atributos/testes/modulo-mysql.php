@@ -321,6 +321,12 @@ $ok('048: herdada do produto (m) fica gravada no valor', (int) $uDe(202) === $uM
 $ok('048: herdada do kit (m) fica gravada no valor', (int) $uDe(105) === $uM);
 $ok('048: padrão do atributo (cm) fica gravada no valor', (int) $uDe(104) === $uCm);
 $ok('048: unidade explícita continua a explícita (m)', (int) $uDe(201) === $uM);
+// DSHOW-049 (4): atributo que LEGITIMAMENTE não tem unidade (sem padrão, sem kit, sem ajuste) continua sem unidade na gravação
+$semU = (int) $adm->salvarAtributo(['rotulo' => 'Quantidade de portas (sem unidade)', 'tipo' => 'inteiro'])['atributo']['id'];
+$aj(['product_id' => 201, 'atributo_id' => $semU, 'modo' => 'incluir']);
+$adm->gravarValor(['product_id' => 201, 'atributo_id' => $semU, 'valor' => 4]);
+$ok('049: atributo sem unidade nenhuma → valor gravado SEM unidade (regra não muda)', $um('SELECT unidade_id FROM eq_valor WHERE product_id = 201 AND atributo_id = ? AND excluido_em IS NULL', [$semU]) === null
+    && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 201 AND atributo_id = ? AND excluido_em IS NULL', [$semU]) === 1);
 
 // ---- DSHOW-034: multiopção — limpar / mudar estado exigem a versão do CONJUNTO, conferida sob trava -------------------------------
 $aj(['product_id' => 104, 'atributo_id' => $moId, 'modo' => 'incluir']);
@@ -358,6 +364,29 @@ $admX = new AtributosService($repo, 80, 'jhony.admin@exemplo.invalid', $cat, tru
 $kitsX = new KitsService($repo, 80, 'jhony.admin@exemplo.invalid', $cat, true);
 $admO = new AtributosService($repo, 80, 'outro80@exemplo.invalid', $cat, false);
 $kitsO = new KitsService($repo, 80, 'outro80@exemplo.invalid', $cat, false);
+// DSHOW-049 (3): sugestão com VÍNCULO administrativo embutido, por quem NÃO administra → recusada inteira (nem vínculo, nem valor, sugestão segue pendente)
+$sugO = new SugestoesService($repo, $admO, $kitsO, 80, 'outro80@exemplo.invalid');
+$aV = (int) $adm->salvarAtributo(['rotulo' => 'Largura 049 (fora de kit)', 'tipo' => 'numero', 'unidade_id' => $uCm, 'casas' => 2])['atributo']['id'];
+$sVinc = $insSug('t|202|larg049', 202, $aV, null, '55', $uCm);
+$fotoV = fn() => json_encode([$linhas('SELECT modo, excluido_em FROM eq_produto_atributo WHERE product_id = 202 AND atributo_id = ?', [$aV]),
+    $linhas('SELECT id, excluido_em FROM eq_valor WHERE product_id = 202 AND atributo_id = ?', [$aV]), $um('SELECT estado FROM eq_sugestao WHERE id = ?', [$sVinc])]);
+$antesV = $fotoV();
+$eV = $erro(fn() => $sugO->decidir(['id' => $sVinc, 'versao' => 1, 'decisao' => 'aceitar', 'vincular' => 1]));
+$ok('049: outro80 aceitar sugestão COM vincular → 403; vínculo, valor e sugestão intactos', $eV?->http === 403 && $fotoV() === $antesV, $eV ? $eV->getMessage() : 'aceito (defeito)');
+// a rota HTTP monta o serviço SEM kits para quem não administra (index.php) — mesmo resultado
+$eV2 = $erro(fn() => (new SugestoesService($repo, $admO, null, 80, 'outro80@exemplo.invalid'))->decidir(['id' => $sVinc, 'versao' => 1, 'decisao' => 'aceitar', 'vincular' => 1]));
+$ok('049: idem com o serviço SEM kits (como a rota HTTP monta) → 403 NOT_CATALOG_ADMIN, nada muda', $eV2?->http === 403 && $eV2->codigo === 'NOT_CATALOG_ADMIN' && $fotoV() === $antesV, $eV2 ? $eV2->getMessage() : 'aceito (defeito)');
+$ok('049: SEM vincular e fora da ficha → 422 (regra antiga: valor só em atributo da ficha), nada muda', $erro(fn() => $sugO->decidir(['id' => $sVinc, 'versao' => 1, 'decisao' => 'aceitar']))?->http === 422 && $fotoV() === $antesV);
+// atributo JÁ na ficha por kit: o "vincular" da Conferência não exige administração (nada administrativo acontece) → preencher segue
+$pKit = null; $aKit = null;
+foreach ([101, 102, 103, 104, 105, 106, 201, 202] as $pp) foreach ([$atr['Comprimento'], $atr['Profundidade'], $atr['Cor'], $atr['Vias']] as $aa)
+    if ($pKit === null && $adm->naFicha($pp, $aa) && !$um('SELECT COUNT(*) FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pp, $aa])
+        && !$um('SELECT COUNT(*) FROM eq_produto_atributo WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pp, $aa])) { $pKit = $pp; $aKit = $aa; }
+$sKit = $insSug("t|$pKit|kit049", (int) $pKit, (int) $aKit, null, 'x', null);
+$rKit = $erro(fn() => (new SugestoesService($repo, $admO, null, 80, 'outro80@exemplo.invalid'))->decidir(['id' => $sKit, 'versao' => 1, 'decisao' => 'aceitar', 'vincular' => 1, 'valor' => $aKit === $atr['Cor'] ? 'azul' : 12]));
+$ok('049: outro80 com vincular num atributo JÁ na ficha (kit) → aceito como preenchimento, sem criar vínculo', $pKit !== null && $rKit === null
+    && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pKit, $aKit]) >= 1
+    && !$um('SELECT COUNT(*) FROM eq_produto_atributo WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pKit, $aKit]), $rKit ? $rKit->getMessage() : "produto $pKit atributo $aKit");
 $aud = fn() => (int) $um('SELECT COUNT(*) FROM eq_auditoria');
 $kO = (int) $kitsX->salvarKit(['nome' => 'Kit do administrador (perm)'])['kit']['id'];
 $ok('perm: quem administra cria kit e a auditoria registra o ator certo', $um("SELECT usuario FROM eq_auditoria WHERE entidade = 'kit' AND entidade_id = ? AND acao = 'criar'", [(string) $kO]) === 'jhony.admin@exemplo.invalid');

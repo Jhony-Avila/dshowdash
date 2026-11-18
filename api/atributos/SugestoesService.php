@@ -40,6 +40,9 @@ final class SugestoesService
                 if ($destino !== (int) $s['atributo_id'] && $destino !== (int) ($s['atributo_alternativo_id'] ?? 0)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Destino fora das opções desta sugestão.', ['atributo_id']);
                 $aj = $this->repo instanceof ModuloRepositorio ? $this->repo->ajusteProduto($pid, $destino) : null;
                 $jaIncluido = $aj && $aj['excluido_em'] === null && in_array($aj['modo'], ['incluir', 'ajustar'], true);
+                // DSHOW-049 (3): vínculo administrativo embutido pedido por quem NÃO administra o catálogo → recusa INTEIRA (antes: o vínculo
+                // era descartado em silêncio). Já na ficha (kit/escopo/avulso) = nada administrativo a fazer → segue como preenchimento.
+                if (!empty($b['vincular']) && !$jaIncluido && !$this->kits && !$this->atributos->naFicha($pid, $destino)) throw new AtributosErro('NOT_CATALOG_ADMIN', 403, 'Vincular o atributo ao produto é só para quem administra o catálogo. Peça a quem administra ou grave em um atributo que já está na ficha.', ['vincular']);
                 if (!empty($b['vincular']) && $this->kits && !$jaIncluido) {   // já vinculado/ajustado: não regrava (não perde a unidade do produto)
                     try { $this->kits->definirAjuste(['product_id' => $pid, 'atributo_id' => $destino, 'modo' => 'incluir', 'versao_vinculos' => $this->kits->versaoVinculosAtual($pid)]); } catch (AtributosErro $e) { if ($e->http !== 422) throw $e; }
                 }

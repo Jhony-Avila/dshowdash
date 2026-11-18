@@ -123,6 +123,13 @@ final class AtributosService
         catch (CatalogoIndisponivel $e) { throw new AtributosErro('CATALOG_UNAVAILABLE', 503, 'Catálogo de produtos indisponível.'); }
     }
 
+    /** DSHOW-049 (3): o atributo já está na ficha aplicável do produto (kit, escopo, avulso)? Produto fora do catálogo → false. */
+    public function naFicha(int $pid, int $aid): bool
+    {
+        $produto = $this->produtoDoCatalogo($pid);
+        return $produto !== null && empty($produto['excluido']) && isset($this->aplicaveis($produto)[$aid]);
+    }
+
     /**
      * D4 (V5; app-dshow produtos.md v1.4.1 — o Node reproduz exatamente, provado pela massa dourada golden-ficha): atributos da ficha
      * aplicável [atributo_id => [grupo, item do grupo, definição]]. Grupos na ordem nome, id; itens na ordem posicao, atributo_id; só
