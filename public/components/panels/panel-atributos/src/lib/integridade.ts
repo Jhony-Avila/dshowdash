@@ -58,3 +58,21 @@ export function precondicaoRenomear(r: RascunhoRenomear): PrecondicaoRenomear {
   if (!rotulo || rotulo === r.original) return { acao: 'nada' };
   return { acao: 'enviar', id: r.id, rotulo, rotulo_atual: r.original };
 }
+
+// ── Vincular · ações opostas: o mesmo kit (ou atributo) nunca fica nos dois lados ────────────────────────────────────────────
+export interface Lados { a: number[]; b: number[] }
+/**
+ * Marca/desmarca `id` no lado escolhido ('a' = aplicar/incluir, 'b' = remover/excluir). Marcar num lado TIRA do oposto (trocou = true,
+ * para a tela avisar "passou de Aplicar para Remover"); clicar de novo no mesmo lado desmarca.
+ */
+export function alternarLado(estado: Lados, id: number, lado: 'a' | 'b'): { estado: Lados; trocou: boolean } {
+  const mesmo = lado === 'a' ? estado.a : estado.b;
+  const oposto = lado === 'a' ? estado.b : estado.a;
+  if (mesmo.includes(id)) {
+    const novo = mesmo.filter((x) => x !== id);
+    return { estado: lado === 'a' ? { a: novo, b: oposto } : { a: oposto, b: novo }, trocou: false };
+  }
+  const trocou = oposto.includes(id);
+  const op = oposto.filter((x) => x !== id);
+  return { estado: lado === 'a' ? { a: [...mesmo, id], b: op } : { a: op, b: [...mesmo, id] }, trocou };
+}

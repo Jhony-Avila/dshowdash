@@ -7,6 +7,7 @@ import { casaBusca } from '../lib/formatar';
 import { rotuloSubcategoria } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
 import { Botao, CapsulaId, Carregando, ChipKit, Erro, Etiqueta, Vazio } from '../ui/Comuns';
+import { alternarLado } from '../lib/integridade';
 
 export function Vincular() {
   const m = useModulo();
@@ -45,7 +46,19 @@ export function Vincular() {
   const ativos = vit.produtos.filter((p) => p.ativo);
   const filtrados = ativos.filter((p) => (!sub || (p.subcategoria ?? '') === sub) && casaBusca(busca, p.id, p.nome));
   const subcats = [...new Set(ativos.map((p) => p.subcategoria ?? ''))].sort((a, b) => rotuloSubcategoria(a || null).localeCompare(rotuloSubcategoria(b || null), 'pt-BR'));
-  const alternar = (arr: number[], set: (x: number[]) => void, id: number) => set(arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
+  // Ações opostas: marcar um kit/atributo num lado tira do outro e avisa (o servidor também recusa os dois lados com 422)
+  const ladoKit = (id: number, lado: 'a' | 'b') => {
+    const r = alternarLado({ a: kA, b: kR }, id, lado);
+    setKA(r.estado.a); setKR(r.estado.b);
+    if (r.trocou) m.aviso(`Kit ${kits.find((k) => k.id === id)?.nome ?? `#${id}`} passou de ${lado === 'a' ? 'Remover para Aplicar' : 'Aplicar para Remover'}.`, 'info');
+  };
+  const ladoAtr = (id: number, lado: 'a' | 'b') => {
+    if ((lado === 'a' ? aI.includes(id) : aE.some((x) => x.id === id))) return;   // os links só acrescentam; o ✕ tira
+    const r = alternarLado({ a: aI, b: aE.map((x) => x.id) }, id, lado);
+    setAI(r.estado.a);
+    setAE(r.estado.b.map((x) => aE.find((y) => y.id === x) ?? { id: x, motivo: '' }));
+    if (r.trocou) m.aviso(`Atributo ${rotAtr(id)} passou de ${lado === 'a' ? 'Excluir para Incluir' : 'Incluir para Excluir'}.`, 'info');
+  };
   const nada = !kA.length && !kR.length && !aI.length && !aE.length;
   const verPrevia = async () => {
     const pedido = intencao; const seq = ++pedidoSeq.current;
@@ -121,19 +134,19 @@ export function Vincular() {
               <div>
                 <h4>Aplicar kits</h4>
                 <ul className="at-escolha">{kits.map((k) => (
-                  <li key={k.id}><label className={kA.includes(k.id) ? 'ativo' : ''}><input type="checkbox" checked={kA.includes(k.id)} onChange={() => alternar(kA, setKA, k.id)} />
+                  <li key={k.id}><label className={kA.includes(k.id) ? 'ativo' : ''}><input type="checkbox" checked={kA.includes(k.id)} onChange={() => ladoKit(k.id, 'a')} />
                     <span><ChipKit nome={k.nome} pequeno /> <span className="at-fraco">{k.itens} atributos · alcança {k.alcance}</span></span></label></li>))}</ul>
                 <h4>Remover kit aplicado direto</h4>
                 <p className="at-fraco">Só desfaz vínculo direto. Kit que vale pela subcategoria não sai por aqui (use "excluir atributo").</p>
                 <ul className="at-escolha">{kits.filter((k) => k.diretos > 0).map((k) => (
-                  <li key={k.id}><label className={kR.includes(k.id) ? 'ativo' : ''}><input type="checkbox" checked={kR.includes(k.id)} onChange={() => alternar(kR, setKR, k.id)} /><span>{k.nome} <span className="at-fraco">({k.diretos} direto(s))</span></span></label></li>))}</ul>
+                  <li key={k.id}><label className={kR.includes(k.id) ? 'ativo' : ''}><input type="checkbox" checked={kR.includes(k.id)} onChange={() => ladoKit(k.id, 'b')} /><span>{k.nome} <span className="at-fraco">({k.diretos} direto(s))</span></span></label></li>))}</ul>
               </div>
               <div>
                 <h4>Atributos avulsos</h4>
                 <input className="at-campo" style={{ width: '100%' }} type="search" placeholder="Buscar no dicionário (2+ letras)" aria-label="Buscar atributo" value={qAtr} onChange={(e) => setQAtr(e.target.value)} />
                 <ul className="at-escolha at-escolha--curta">{atrFiltrados.map((a) => (
                   <li key={a.id}><span className="at-escolha__linha"><span><strong>{a.rotulo}</strong> <span className="at-fraco">{a.unidade ?? ''} {a.grupo_atributos ?? ''}</span></span>
-                    <span><button type="button" className="at-link" onClick={() => !aI.includes(a.id) && setAI([...aI, a.id])}>incluir</button> · <button type="button" className="at-link" onClick={() => !aE.some((x) => x.id === a.id) && setAE([...aE, { id: a.id, motivo: '' }])}>excluir</button></span></span></li>))}</ul>
+                    <span><button type="button" className="at-link" onClick={() => ladoAtr(a.id, 'a')}>incluir</button> · <button type="button" className="at-link" onClick={() => ladoAtr(a.id, 'b')}>excluir</button></span></span></li>))}</ul>
                 {aI.length > 0 && <><h4>Incluir</h4><ul className="at-tags">{aI.map((id) => <li key={id}>{rotAtr(id)} <button type="button" className="at-link" aria-label={`Tirar ${rotAtr(id)}`} onClick={() => setAI(aI.filter((x) => x !== id))}>✕</button></li>)}</ul></>}
                 {aE.length > 0 && <><h4>Excluir (exceção nos produtos escolhidos)</h4>{aE.map((x, k) => (
                   <div key={x.id} className="at-acoes" style={{ marginBottom: 6 }}><span style={{ minWidth: 160 }}>{rotAtr(x.id)}</span>

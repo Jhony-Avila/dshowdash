@@ -339,11 +339,21 @@ final class KitsService
         return [$prods, $kA, $kR, $aI, $aE];
     }
 
+    /** Ações opostas (hotfix 18/11): o mesmo kit em aplicar E remover, ou o mesmo atributo em incluir E excluir → 422, nada é gravado. */
+    private function recusarAmbiguo(array $kA, array $kR, array $aI, array $aE): void
+    {
+        if ($k = array_values(array_intersect($kA, $kR)))
+            throw new AtributosErro('VALIDATION_ERROR', 422, 'O kit ' . $this->kit((int) $k[0])['nome'] . ' está marcado para aplicar e remover. Escolha uma ação.', ['kits_aplicar', 'kits_remover']);
+        if ($a = array_values(array_intersect(array_keys($aI), array_keys($aE))))
+            throw new AtributosErro('VALIDATION_ERROR', 422, 'O atributo ' . ($this->repo->atributo((int) $a[0])['rotulo'] ?? '#' . $a[0]) . ' está marcado para incluir e excluir. Escolha uma ação.', ['atributos_incluir', 'atributos_excluir']);
+    }
+
     /** Prévia obrigatória (§11.4): efeito por produto antes de gravar. Simula sobre o retrato do modelo, sem gravar nada. */
     public function previaMassa(array $b): array
     {
         $this->exigir();
         [$prods, $kA, $kR, $aI, $aE] = $this->pedidoMassa($b);
+        $this->recusarAmbiguo($kA, $kR, $aI, $aE);
         $m = $this->repo->retratoModelo(null);
         $dir = $m->diretos; $aj = $m->ajustes;
         $tot = ['produtos' => count($prods), 'produtos_afetados' => 0, 'atributos_acrescentados' => 0, 'atributos_removidos' => 0, 'ja_tinham' => 0, 'kits_ja_aplicados' => 0];
@@ -385,6 +395,7 @@ final class KitsService
             return ['repetido' => true] + (is_array($ped['resultado']) ? $ped['resultado'] : []);
         };
         if ($ja = $this->repo->pedidoMassa($chave)) return $repetido($ja);
+        $this->recusarAmbiguo($k0, $r0, $i0, $e0);   // depois do recibo (chave já gravada continua "repetido"), antes de prévia/registro/gravação
         $previa = $this->previaMassa($b);
         [$prods, $kA, $kR, $aI, $aE] = [$p0, $k0, $r0, $i0, $e0];
         $res = $this->repo->transacao(function () use ($prods, $kA, $kR, $aI, $aE, $previa, $chave, $b, $assinatura, $vp) {

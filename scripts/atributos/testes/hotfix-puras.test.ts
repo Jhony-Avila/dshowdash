@@ -65,6 +65,19 @@ async function principal() {
     igual('070: vazio → nada', I.precondicaoRenomear({ id: 7, texto: '   ', original: 'Preto' }), { acao: 'nada' });
   }
 
+  // ── Vincular · ações opostas ──
+  {
+    const r1 = I.alternarLado({ a: [5], b: [] }, 5, 'b');
+    igual('vincular: kit em Aplicar marcado em Remover → sai de Aplicar e avisa', r1, { estado: { a: [], b: [5] }, trocou: true });
+    igual('vincular: Remover → Aplicar idem', I.alternarLado({ a: [], b: [5, 6] }, 5, 'a'), { estado: { a: [5], b: [6] }, trocou: true });
+    igual('vincular: clicar de novo no mesmo lado desmarca, sem aviso', I.alternarLado({ a: [5, 7], b: [] }, 5, 'a'), { estado: { a: [7], b: [] }, trocou: false });
+    igual('vincular: marcar sem conflito não avisa', I.alternarLado({ a: [7], b: [] }, 5, 'a'), { estado: { a: [7, 5], b: [] }, trocou: false });
+    const r2 = I.alternarLado({ a: [11], b: [] }, 11, 'b');
+    igual('vincular: atributo incluído marcado para excluir → só em Excluir', [r2.estado.a.includes(11), r2.estado.b.includes(11), r2.trocou], [false, true, true]);
+    const nunca = [[1], [2], [1, 2]].every((a) => [1, 2, 3].every((id) => (['a', 'b'] as const).every((l) => { const e = I.alternarLado({ a, b: a.includes(3) ? [] : [3] }, id, l).estado; return !e.a.some((x) => e.b.includes(x)); })));
+    igual('vincular: nenhum id fica nos dois lados (varredura)', nunca, true);
+  }
+
   console.log(`${falhas === 0 ? '[OK]  ' : '[FALHA]'} hotfix-puras (integridade: unidades, kits, dicionário, vincular): ${n} casos, ${falhas} falha(s)`);
   process.exitCode = falhas === 0 ? 0 : 1;
 }

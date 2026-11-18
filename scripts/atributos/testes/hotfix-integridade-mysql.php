@@ -176,6 +176,41 @@ $ok('065: forma antiga sem a flag → grava o escopo, "aplica a todos" intacto, 
 $dup = $kits->duplicarKit(['id' => $k65, 'nome' => 'Kit 065 (cópia)', 'com_escopos' => 1])['kit'];
 $ok('065: duplicarKit com escopos continua funcionando', count($dup['escopos']) === 1);
 
+// =========================================================================================================================================
+// Vincular · ações opostas: kit em aplicar E remover (ou atributo em incluir E excluir) → 422 na prévia e no aplicar, nada gravado
+// =========================================================================================================================================
+$kT = (int) $kits->salvarKit(['nome' => 'Totens'])['kit']['id'];
+$kits->definirItens(['id' => $kT, 'versao' => (int) $repo->grupo($kT)['versao'], 'itens' => $it([$atr['Cor'], $atr['Malha']])]);
+$kits->definirKitDoProduto(['product_id' => 101, 'grupo_id' => $kT, 'ativo' => 1, 'versao_vinculos' => $repo->versoesVinculos([101])[101]]);
+$fotoV = fn() => [(int) $um('SELECT COUNT(*) FROM eq_grupo_produto'), (string) $um("SELECT COALESCE(GROUP_CONCAT(CONCAT(grupo_id, ':', product_id, ':', excluido_em IS NULL, ':', versao) ORDER BY id), '') FROM eq_grupo_produto"),
+    (int) $um('SELECT COUNT(*) FROM eq_produto_atributo'), (int) $um('SELECT COUNT(*) FROM eq_pedido_massa'), $auditTotal(), $repo->versoesVinculos([101, 102])];
+$v0 = $fotoV();
+$hexFalso = str_repeat('a', 64);
+$amb = ['produtos' => [101, 102], 'kits_aplicar' => [$kT], 'kits_remover' => [$kT]];
+$ePv = $erro(fn() => $kits->previaMassa($amb));
+$ok('vincular: prévia com o kit nos dois lados → 422 com os campos e o nome do kit', $ePv?->http === 422 && $ePv->codigo === 'VALIDATION_ERROR' && $ePv->campos === ['kits_aplicar', 'kits_remover']
+    && $ePv->getMessage() === 'O kit Totens está marcado para aplicar e remover. Escolha uma ação.', $ePv ? $ePv->getMessage() . ' ' . json_encode($ePv->campos) : 'sem erro');
+$eAp = $erro(fn() => $kits->aplicarMassa($amb + ['chave' => 'opostos-kit-0001', 'versao_previa' => $hexFalso]));
+$ok('vincular: aplicar com o kit nos dois lados → 422', $eAp?->http === 422 && $eAp->campos === ['kits_aplicar', 'kits_remover']);
+$ok('vincular: nada mudou (vínculos, ajustes, pedidos em massa, auditoria, versões)', $fotoV() === $v0, json_encode([$fotoV(), $v0]));
+$ambA = ['produtos' => [101], 'atributos_incluir' => [['atributo_id' => $atr['Vias']]], 'atributos_excluir' => [['atributo_id' => $atr['Vias'], 'motivo' => 'teste de oposto']]];
+$ePa = $erro(fn() => $kits->previaMassa($ambA));
+$ok('vincular: prévia com o atributo em incluir e excluir → 422 com o rótulo', $ePa?->http === 422 && $ePa->campos === ['atributos_incluir', 'atributos_excluir'] && $ePa->getMessage() === 'O atributo Vias está marcado para incluir e excluir. Escolha uma ação.', $ePa ? $ePa->getMessage() : 'sem erro');
+$ok('vincular: aplicar com o atributo nos dois lados → 422', fn() => $erro(fn() => $kits->aplicarMassa($ambA + ['chave' => 'opostos-atr-0001', 'versao_previa' => $hexFalso]))?->http === 422);
+$ok('vincular: nada mudou depois dos atributos opostos', $fotoV() === $v0);
+// chave já gravada (recibo anterior ao hotfix com o pedido ambíguo) continua "repetido" — o recibo é consultado antes da recusa
+$intAmb = ['produtos' => [101, 102], 'kits_aplicar' => [$kT], 'kits_remover' => [$kT], 'atributos_incluir' => [], 'atributos_excluir' => []];
+$repo->registrarPedidoMassa('recibo-antigo-0001', hash('sha256', json_encode($intAmb)), 'admin@exemplo.invalid', 2);
+$repo->concluirPedidoMassa('recibo-antigo-0001', ['gravado' => ['kits_aplicados' => 0, 'kits_removidos' => 0, 'inclusoes' => 0, 'exclusoes' => 0]]);
+$rRep = $kits->aplicarMassa($amb + ['chave' => 'recibo-antigo-0001', 'versao_previa' => $hexFalso]);
+$ok('vincular: chave já gravada continua "repetido" (sem 422, sem gravar)', !empty($rRep['repetido']) && $auditTotal() === $v0[4], json_encode($rRep));
+// controle: aplicar o kit K E excluir um atributo DE K nos mesmos produtos continua permitido
+$okCtl = ['produtos' => [102], 'kits_aplicar' => [$kT], 'atributos_excluir' => [['atributo_id' => $atr['Malha'], 'motivo' => 'sem malha neste produto']]];
+$pvC = $kits->previaMassa($okCtl);
+$rC = $kits->aplicarMassa($okCtl + ['chave' => 'controle-opostos-01', 'versao_previa' => $pvC['versao_previa']]);
+$ok('vincular: controle — aplicar K + excluir atributo de K grava (1 kit, 1 exceção)', ($rC['gravado']['kits_aplicados'] ?? -1) === 1 && ($rC['gravado']['exclusoes'] ?? -1) === 1
+    && (int) $um('SELECT COUNT(*) FROM eq_grupo_produto WHERE grupo_id = ? AND product_id = 102 AND excluido_em IS NULL', [$kT]) === 1, json_encode($rC));
+
 // @@FIM@@
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " hotfix-integridade-mysql (071 unidades · 064 itens · 070 opção · 065 escopo · vincular opostos): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);
