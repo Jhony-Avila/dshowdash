@@ -89,6 +89,13 @@ final class LeituraVitrinePdo implements LeituraVitrine
         return $out;
     }
 
+    /** DSHOW-049: a trilha de cada atributo do produto (linhas vivas E excluídas) para a versão do conjunto. @return array<int,list<array>> */
+    public function trilhaConjuntos(int $productId): array
+    {
+        $out = []; foreach ($this->q('SELECT atributo_id, opcao_chave, versao, excluido_em FROM ' . $this->eq . '`eq_valor` WHERE product_id = ?', [$productId]) as $r) $out[(int) $r['atributo_id']][] = $r;
+        return $out;
+    }
+
     public function valoresDetalhe(int $productId): array
     {
         return $this->q('SELECT v.atributo_id, v.opcao_id, o.rotulo AS opcao, v.valor_texto, v.valor_num, v.valor_bool, v.valor_data, v.unidade_id, v.estado, v.origem, v.versao, v.lote_id,

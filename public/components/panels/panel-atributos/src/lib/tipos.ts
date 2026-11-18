@@ -31,6 +31,7 @@ export interface Valor {
 }
 export interface Origem { tipo: 'kit' | 'avulso'; grupo_id?: number; grupo_nome?: string; motivos?: { tipo: 'escopo' | 'todos' | 'direto'; categoria?: string; subcategoria?: string }[] }
 export interface ItemFicha {
+  /** DSHOW-049: versão do conjunto (trilha inteira), também sem valor */ versao_conjunto?: string;
   atributo_id: number; codigo: string | null; rotulo: string; tipo: TipoAtributo; descricao: string | null; casas: number | null; minimo: string | null; maximo: string | null;
   aceita_nao_se_aplica: boolean; autoridade: string; atributo_ativo: boolean; grupo_atributos: string | null;
   kit_id: number | null; kit: string | null; posicao: number | null; obrigatorio: boolean; visivel_app: boolean; destaque: boolean; importancia: Importancia | null;

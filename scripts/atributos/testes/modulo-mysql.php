@@ -175,7 +175,7 @@ $ok('D10 multiopção: continua só HDMI', (int) $um('SELECT COUNT(*) FROM eq_va
 // limpar multiopção limpa todas as opções (antes: "sem mudança")
 $adm->gravarValor(['product_id' => 105, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id']]);
 $v0 = (int) $um('SELECT versao FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave LIMIT 1', [$moId]);
-$vc105 = AtributosService::versaoConjunto($pdo->query("SELECT opcao_chave, versao FROM eq_valor WHERE product_id = 105 AND atributo_id = $moId AND excluido_em IS NULL")->fetchAll(PDO::FETCH_ASSOC));
+$vc105 = AtributosService::versaoConjunto($pdo->query("SELECT opcao_chave, versao, excluido_em FROM eq_valor WHERE product_id = 105 AND atributo_id = $moId")->fetchAll(PDO::FETCH_ASSOC));
 $ok('limpar com versão do conjunto velha → 409', fn() => $erro(fn() => $adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao_conjunto' => 'ffffffffffffffff']))?->http === 409);
 $ok('limpar multiopção remove as 2 opções', fn() => !empty($adm->limparValor(['product_id' => 105, 'atributo_id' => $moId, 'versao_conjunto' => $vc105])['limpo'])
     && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 105 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 0);
@@ -324,7 +324,7 @@ $ok('048: unidade explícita continua a explícita (m)', (int) $uDe(201) === $uM
 
 // ---- DSHOW-034: multiopção — limpar / mudar estado exigem a versão do CONJUNTO, conferida sob trava -------------------------------
 $aj(['product_id' => 104, 'atributo_id' => $moId, 'modo' => 'incluir']);
-$vc = fn(int $pid) => AtributosService::versaoConjunto($linhas('SELECT opcao_chave, versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL', [$pid, $moId]));
+$vc = fn(int $pid) => AtributosService::versaoConjunto($linhas('SELECT opcao_chave, versao, excluido_em FROM eq_valor WHERE product_id = ? AND atributo_id = ?', [$pid, $moId]));   // DSHOW-049: trilha inteira
 $conj = fn(int $pid) => json_encode([$linhas('SELECT opcao_chave, estado, versao FROM eq_valor WHERE product_id = ? AND atributo_id = ? AND excluido_em IS NULL ORDER BY opcao_chave', [$pid, $moId]), (int) $um('SELECT COUNT(*) FROM eq_auditoria')]);
 $adm->gravarValor(['product_id' => 104, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id']]);
 $vA = $vc(104);                                                  // aba A lê o conjunto
@@ -409,6 +409,37 @@ $h = $ult('reordenar_opcoes');
 $ok('045 opções: histórico antes/depois corretos', $h && json_decode($h['antes'], true)['ordem'] === $O && json_decode($h['depois'], true)['ordem'] === $X, json_encode($h));
 $ok('045 opções: com a ordem atual a aba B consegue', fn() => (bool) $adm->reordenarOpcoes($moId, $Y, $X) && $ord() === $Y);
 $ok('045 opções: sem a ordem anterior → 422', fn() => $erro(fn() => $adm->reordenarOpcoes($moId, $O))?->http === 422 && $ord() === $Y);
+
+// ---- DSHOW-049: conjunto VAZIO também confere a versão (trilha inteira); sem versão só no campo que nunca teve linha ---------------
+$aj(['product_id' => 103, 'atributo_id' => $moId, 'modo' => 'incluir']);
+$tri = fn() => json_encode([$linhas('SELECT opcao_chave, estado, versao, excluido_em IS NOT NULL AS exc FROM eq_valor WHERE product_id = 103 AND atributo_id = ? ORDER BY opcao_chave', [$moId]), (int) $um('SELECT COUNT(*) FROM eq_auditoria')]);
+$nunca = (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 103 AND atributo_id = ?', [$moId]);
+$v0 = $vc(103);                                                                             // aba A lê o campo: vazio DE SEMPRE
+$ok('049: 1º preenchimento legítimo sem versão (campo nunca teve linha) → aceito', $nunca === 0 && (bool) $adm->gravarValor(['product_id' => 103, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id']]));
+$vA = $vc(103);                                                                             // aba A lê o conjunto preenchido
+$adm->limparValor(['product_id' => 103, 'atributo_id' => $moId, 'versao_conjunto' => $vc(103)]);   // aba B limpa
+$antes = $tri();
+$e1 = $erro(fn() => $adm->gravarValor(['product_id' => 103, 'atributo_id' => $moId, 'estado' => 'nao_se_aplica', 'versao_conjunto' => $vA]));
+$ok('049: revisão ANTIGA depois da limpeza → 409; dados como a limpeza deixou; trilha/auditoria sem linha nova', $e1?->http === 409 && $tri() === $antes, $e1 ? $e1->getMessage() : 'aceito (defeito)');
+$e2 = $erro(fn() => $adm->gravarValor(['product_id' => 103, 'atributo_id' => $moId, 'valor' => (int) $opsMo[1]['id'], 'versao_conjunto' => $vA]));
+$ok('049: acrescentar opção com versão antiga no vazio → 409, nada muda', $e2?->http === 409 && $tri() === $antes);
+$e3 = $erro(fn() => $adm->gravarValor(['product_id' => 103, 'atributo_id' => $moId, 'estado' => 'nao_se_aplica', 'versao_conjunto' => $v0]));
+$ok('049: ciclo vazio → preenchido → vazio: a versão do vazio de ANTES → 409 (ABA detectado)', $e3?->http === 409 && $tri() === $antes);
+$e4 = $erro(fn() => $adm->gravarValor(['product_id' => 103, 'atributo_id' => $moId, 'estado' => 'nao_se_aplica']));
+$ok('049: revisão OMITIDA no vazio com trilha → 422, nada muda', $e4?->http === 422 && $tri() === $antes);
+$e5 = $erro(fn() => $adm->gravarValor(['product_id' => 103, 'atributo_id' => $moId, 'estado' => 'nao_se_aplica', 'versao_conjunto' => 'xyz']));
+$ok('049: versão INVÁLIDA → 422, nada muda', $e5?->http === 422 && $tri() === $antes);
+$ok('049: revisão ATUAL do vazio → aceita ("não se aplica")', fn() => (bool) $adm->gravarValor(['product_id' => 103, 'atributo_id' => $moId, 'estado' => 'nao_se_aplica', 'versao_conjunto' => $vc(103)])
+    && $um('SELECT estado FROM eq_valor WHERE product_id = 103 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 'nao_se_aplica');
+$adm->limparValor(['product_id' => 103, 'atributo_id' => $moId, 'versao_conjunto' => $vc(103)]);
+$ok('049: REATIVAÇÃO (linha excluída volta) com a versão atual → aceita e a mesma linha revive', fn() => (bool) $adm->gravarValor(['product_id' => 103, 'atributo_id' => $moId, 'valor' => (int) $opsMo[0]['id'], 'versao_conjunto' => $vc(103)])
+    && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 103 AND atributo_id = ? AND opcao_chave = ?', [$moId, (int) $opsMo[0]['id']]) === 1);
+
+// DSHOW-049 × sugestão: aceitar sugestão num campo multiopção que JÁ TEVE valor e foi limpo continua funcionando (D10 confere o vazio sob trava)
+$adm->limparValor(['product_id' => 103, 'atributo_id' => $moId, 'versao_conjunto' => $vc(103)]);
+$sMo = $insSug('t|103|mo049', 103, $moId, null, (string) $opsMo[1]['id'], null);
+$ok('049: sugestão aceita no vazio COM trilha (sem versão do cliente) → grava', fn() => (bool) $sug->decidir(['id' => $sMo, 'decisao' => 'aceitar', 'versao' => 1, 'valor' => (int) $opsMo[1]['id']])
+    && (int) $um('SELECT COUNT(*) FROM eq_valor WHERE product_id = 103 AND atributo_id = ? AND excluido_em IS NULL', [$moId]) === 1);
 
 echo ($falhas === 0 ? '[OK]  ' : '[FALHA]') . " modulo-mysql (kits, vínculos, massa, sugestões, unidade): $n casos, $falhas falha(s)\n";
 exit($falhas === 0 ? 0 : 1);

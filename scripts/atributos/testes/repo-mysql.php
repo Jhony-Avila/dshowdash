@@ -116,7 +116,7 @@ $linha = function (int $pid, int $aid, int $k) use ($pdo): ?array {
 
 // P1-07 (multiopção, estado único) — ATR-04
 // DSHOW-034: trocar o estado do CONJUNTO (multiopção) exige a versão do conjunto, lida antes (como a tela faz)
-$conj = fn(int $pid, int $aid) => AtributosService::versaoConjunto($pdo->query("SELECT opcao_chave, versao FROM eq_valor WHERE product_id = $pid AND atributo_id = $aid AND excluido_em IS NULL")->fetchAll(PDO::FETCH_ASSOC));
+$conj = fn(int $pid, int $aid) => AtributosService::versaoConjunto($pdo->query("SELECT opcao_chave, versao, excluido_em FROM eq_valor WHERE product_id = $pid AND atributo_id = $aid")->fetchAll(PDO::FETCH_ASSOC));   // DSHOW-049: trilha
 $ok('ATR-04 MySQL: marcar opção depois de "desconhecido" exclui logicamente a chave 0', function () use ($ven, $sid, $oA, $linha, $conj) {
     $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'estado' => 'desconhecido', 'versao_conjunto' => $conj(7, $sid)]);
     $ven->gravarValor(['product_id' => 7, 'atributo_id' => $sid, 'valor' => $oA, 'versao_conjunto' => $conj(7, $sid)]);

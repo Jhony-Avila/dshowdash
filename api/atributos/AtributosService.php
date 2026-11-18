@@ -828,7 +828,18 @@ final class AtributosService
             if ($a['tipo'] === 'multiopcao') {
                 $vivosM = array_values(array_filter($linhas, static fn($r) => empty($r['excluido_em'])));
                 $temEstado = (bool) array_filter($vivosM, static fn($r) => (int) $r['opcao_chave'] === 0);
-                if ($vivosM && ($d['estado'] !== 'informado' || $temEstado)) self::conferirConjunto($b, $vivosM);
+                $vcPedido = $b['versao_conjunto'] ?? null;
+                if ($vivosM) {
+                    // substitui o conjunto (estado ≠ informado, ou troca um estado por opção) → versão obrigatória e conferida
+                    if ($d['estado'] !== 'informado' || $temEstado) self::conferirConjunto($b, $linhas);
+                    // acrescentar opção a opções já marcadas continua por opção (DSHOW-034)
+                } elseif ($vcPedido !== null && $vcPedido !== '') {
+                    self::conferirConjunto($b, $linhas);   // DSHOW-049: conjunto VAZIO também confere (revisão antiga depois da limpeza → 409)
+                } elseif ($linhas) {
+                    // DSHOW-049: vazio COM trilha (o campo já teve valor) e pedido sem versão → recusa explícita
+                    throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão do conjunto de opções (o campo já teve valor). Recarregue a ficha.', ['versao_conjunto']);
+                }
+                // vazio SEM trilha nenhuma e sem versão = 1º preenchimento legítimo
             }
             $antes = null;
             foreach ($linhas as $l) if ((int) $l['opcao_chave'] === (int) $d['opcao_chave']) $antes = $l;
@@ -913,9 +924,10 @@ final class AtributosService
         // sob trava (FOR UPDATE): versão conferida dentro da transação; multiopção limpa todas as opções marcadas
         $multi = (($this->repo->atributo($aid) ?? [])['tipo'] ?? null) === 'multiopcao';
         return $this->repo->transacao(function () use ($pid, $aid, $b, $multi) {
-            $vivos = array_values(array_filter($this->repo->travarValores($pid, $aid), static fn($r) => empty($r['excluido_em'])));
+            $todas = $this->repo->travarValores($pid, $aid);
+            $vivos = array_values(array_filter($todas, static fn($r) => empty($r['excluido_em'])));
             if (!$vivos) return ['limpo' => true, 'sem_mudanca' => true];
-            if ($multi) self::conferirConjunto($b, $vivos);   // DSHOW-034: limpar a multiopção inteira = versão do CONJUNTO
+            if ($multi) self::conferirConjunto($b, $todas);   // DSHOW-034/049: limpar a multiopção inteira = versão do CONJUNTO (trilha toda)
             elseif ((int) ($b['versao'] ?? -1) !== (int) $vivos[0]['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
             foreach ($vivos as $r) {
                 if (!$this->repo->excluirValor($pid, $aid, (int) $r['opcao_chave'])) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
@@ -929,9 +941,11 @@ final class AtributosService
      * DSHOW-034: versão do CONJUNTO de linhas vivas de um (produto, atributo) — impressão digital por (chave, versão). Na multiopção a
      * versão da 1ª linha não muda quando outra pessoa acrescenta uma opção; esta muda. Mesma fórmula na leitura (ProdutosLeitura).
      */
-    public static function versaoConjunto(array $vivos): string
+    public static function versaoConjunto(array $linhas): string
     {
-        $p = array_map(static fn($r) => (int) ($r['opcao_chave'] ?? ($r['opcao_id'] ?? 0)) . ':' . (int) $r['versao'], $vivos);
+        // DSHOW-049: a TRILHA inteira do (produto, atributo) — linhas vivas E excluídas, cada uma com a versão e se está viva. Toda limpeza
+        // muda a impressão (a versão da linha sobe), então "vazio de sempre" ≠ "vazio depois de preencher e limpar" (ciclo ABA).
+        $p = array_map(static fn($r) => (int) ($r['opcao_chave'] ?? ($r['opcao_id'] ?? 0)) . ':' . (int) $r['versao'] . ':' . (empty($r['excluido_em'] ?? null) ? 'v' : 'x'), $linhas);
         sort($p, SORT_STRING);
         return substr(hash('sha256', implode(',', $p)), 0, 16);
     }

@@ -45,9 +45,12 @@ final class SugestoesService
                 }
                 $valor = array_key_exists('valor', $b) ? $b['valor'] : ($s['opcao_id'] !== null ? (int) $s['opcao_id'] : $s['valor_proposto']);
                 // D10: sugestão nunca sobrescreve valor existente (manual ou importado), em NENHUMA chave (multiopção inclusive).
-                $vivos = array_filter($this->repo->travarValores($pid, $destino), static fn($r) => empty($r['excluido_em']));
+                $trilha = $this->repo->travarValores($pid, $destino);
+                $vivos = array_filter($trilha, static fn($r) => empty($r['excluido_em']));
                 if ($vivos) throw new AtributosErro('VALUE_EXISTS', 409, 'Este campo já tem valor neste produto. A sugestão não sobrescreve: edite na ficha ou recuse a sugestão.', ['atributo_id']);
                 $req = ['product_id' => $pid, 'atributo_id' => $destino, 'valor' => $valor, 'motivo' => "sugestão #$id ({$s['fonte']})"];
+                // DSHOW-049: o campo vazio foi conferido AQUI, sob a mesma trava (D10) → a versão do conjunto é a da trilha lida agora
+                $req['versao_conjunto'] = AtributosService::versaoConjunto($trilha);
                 if (array_key_exists('unidade_id', $b)) $req['unidade_id'] = $b['unidade_id']; elseif ($s['unidade_id'] !== null) $req['unidade_id'] = (int) $s['unidade_id'];
                 $gravado = $this->atributos->gravarValor($req);
             }

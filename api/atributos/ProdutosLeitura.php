@@ -221,6 +221,7 @@ final class ProdutosLeitura
         $kits = Aplicabilidade::kits($m, $p);
         $atr = $this->atr(); $unid = $this->l->unidades(); $extras = $this->l->unidadesExtras();
         $vals = []; foreach ($this->l->valoresDetalhe($productId) as $v) $vals[(int) $v['atributo_id']][] = $v;
+        $trilha = method_exists($this->l, 'trilhaConjuntos') ? $this->l->trilhaConjuntos($productId) : null;   // DSHOW-049
         $specs = $this->l->specs($productId);
         $sug = []; foreach ($this->l->sugestoes($productId) as $s) $sug[(int) $s['atributo_id']][] = $s;
         $item = null; foreach ($this->l->vinculos() as $it => $pid) if ((int) $pid === $productId) { $item = (int) $it; break; }
@@ -229,10 +230,12 @@ final class ProdutosLeitura
         $porLeg = []; foreach ($atr as $a) if ($a['legado_id'] !== null) $porLeg[(int) $a['legado_id']] = (int) $a['id'];
         $leg = []; foreach ($linhasLeg as $ln) if (isset($porLeg[(int) $ln['id_legado']])) $leg[$porLeg[(int) $ln['id_legado']]] = $ln;
         $opc = $this->l->opcoes(array_keys($ficha + $vals + $leg));
-        $mk = function (int $aid, ?array $it) use ($atr, $unid, $extras, $vals, $specs, $sug, $leg, $kitLeg, $opc): array {
+        $mk = function (int $aid, ?array $it) use ($atr, $unid, $extras, $vals, $specs, $sug, $leg, $kitLeg, $opc, $trilha): array {
             $a = $atr[$aid] ?? ['id' => $aid, 'rotulo' => "#$aid", 'codigo' => null, 'tipo' => 'texto', 'unidade_id' => null, 'ativo' => 0];
             $base = ($it ?? ['unidade_produto_id' => null, 'unidade_kit_id' => null]) + ['def' => $a];
             $valor = isset($vals[$aid]) ? self::valorPublico($vals[$aid]) : null;
+            $vc = $trilha !== null ? AtributosService::versaoConjunto($trilha[$aid] ?? []) : ($valor['versao_conjunto'] ?? AtributosService::versaoConjunto([]));
+            if ($valor !== null) $valor['versao_conjunto'] = $vc;
             $efet = Aplicabilidade::unidadeEfetiva($base, $valor['unidade_id'] ?? null);
             $ln = $leg[$aid] ?? null;
             return [
@@ -249,6 +252,7 @@ final class ProdutosLeitura
                 'unidades' => in_array($a['tipo'], ['numero', 'inteiro'], true) ? $this->unidadesPara($base, $unid, $extras) : [],
                 'opcoes' => in_array($a['tipo'], ['opcao', 'multiopcao'], true) ? ($opc[$aid] ?? []) : [],
                 'valor' => $valor,
+                'versao_conjunto' => $vc,   // DSHOW-049: também no item SEM valor (vazio com trilha ≠ vazio de sempre)
                 'precifica' => $this->parPrecifica($a['codigo'] ?? null, $specs),
                 'sugestoes' => array_map(static fn($s) => ['id' => (int) $s['id'], 'fonte' => $s['fonte'], 'tipo' => $s['tipo'], 'valor_proposto' => $s['valor_proposto'], 'opcao_id' => $s['opcao_id'] === null ? null : (int) $s['opcao_id'],
                     'unidade_id' => $s['unidade_id'] === null ? null : (int) $s['unidade_id'], 'confianca' => $s['confianca'], 'evidencia' => $s['evidencia'],
