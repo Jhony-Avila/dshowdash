@@ -371,3 +371,72 @@
 [data-bl-root] .at-filtros__sel { font-size: 12.5px; font-weight: 600; color: var(--bl-verde, #059669); }
 [data-bl-root] .at-grade__grupo { grid-column: 1 / -1; margin-top: 8px; padding: 8px 2px; border-top: 1px solid var(--bl-borda, #e5e7eb); font-weight: 600; color: var(--bl-texto-2); }
 [data-bl-root] .at-tabela__grupo td { font-weight: 600; color: var(--bl-texto-2); background: var(--bl-superficie-2, #f8fafc); }
+
+/* ── UX-1b: layout do módulo — cabeçalho FIXO e só o conteúdo rola ─────────────────────────────────────────────────────────
+   .at-raiz tem a altura medida pelo App (espaço livre no ancestral que rola: main#main do shell). Coluna flex:
+   .at-fixo (título + descrição + abas + .at-faixa-fixa) parado; .at-conteudo é a ÚNICA área de rolagem (overflow auto).
+   .at-raiz--tudo-rola (área fixa > 40% da altura): a raiz rola inteira, nada fica fixo. */
+[data-bl-root].at-raiz { display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--bl-bg); }
+[data-bl-root].at-raiz--fixa > .at-fixo { flex: 0 0 auto; z-index: 3; background: var(--bl-bg); box-shadow: 0 1px 0 var(--bl-borda); }
+[data-bl-root].at-raiz--fixa > .at-conteudo { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+[data-bl-root].at-raiz--tudo-rola { overflow: auto; }
+[data-bl-root].at-raiz--tudo-rola > .at-conteudo { overflow: visible; }
+[data-bl-root] .at-faixa-fixa:empty { display: none; }
+[data-bl-root] .at-faixa-fixa { padding: 8px 22px 0; }
+[data-bl-root] .at-faixa-fixa__bloco + .at-faixa-fixa__bloco { margin-top: 8px; }
+[data-bl-root] .at-faixa-fixa__bloco:last-child { padding-bottom: 8px; }
+/* ícones das abas: os mesmos do menu lateral, tamanho e cor do texto da aba */
+[data-bl-root] .at-icone { width: 1.1em; height: 1.1em; flex: 0 0 auto; vertical-align: -0.18em; }
+[data-bl-root] .at-nav__item { display: inline-flex; align-items: center; gap: 6px; }
+/* Transição: telas que ainda desenham o próprio título (h2 + descrição) não o mostram — o título vem do cabeçalho do módulo.
+   Os donos removem o bloco quando puderem (aviso no PARA-STATUS §40); esta regra sai depois. */
+[data-bl-root] .at-conteudo .at-titulo-tela > div:first-child:has(> h2) { display: none; }
+[data-bl-root] .at-conteudo .at-titulo-tela:not(:has(> :not(div:first-child))) { display: none; }
+
+/* ── UX-1b: tema escuro pelo MESMO sinal do botão de tema do Dash (html[data-theme="dark"]), sem depender do body ──────────
+   O tokens.css compartilhado acende o claro com html[data-theme=light] OU body.theme-light; a lua do Dash troca só o html e deixa
+   body.theme-light (achado no PARA-STATUS §41, para a DIREITA). Aqui, com html[data-theme=dark], o módulo volta aos tokens ESCUROS.
+   ESPELHO EXATO do bloco padrão [data-bl-root] do tokens.css — conferido por scripts/atributos/testes/tema-espelho.sh. */
+html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-light [data-bl-root] (0,2,1); vale também para diálogos do módulo */
+  --bl-bg: #0f1117;
+  --bl-bg-elevado: #161923;
+  --bl-superficie: #1a1e2a;
+  --bl-superficie-2: #212636;
+  --bl-overlay: #12151d;
+  --bl-borda: #2a3042;
+  --bl-borda-forte: #3a4258;
+  --bl-texto: #e8eaf2;
+  --bl-texto-2: #a4abbd;
+  --bl-texto-3: #6f7789;
+  --bl-verde: #6fbe44;
+  --bl-verde-forte: #58a233;
+  --bl-verde-suave: rgba(111, 190, 68, 0.14);
+  --bl-verde-borda: rgba(111, 190, 68, 0.38);
+  --bl-sucesso: #3ecf8e;
+  --bl-sucesso-bg: rgba(62, 207, 142, 0.13);
+  --bl-aviso: #f0b429;
+  --bl-aviso-bg: rgba(240, 180, 41, 0.13);
+  --bl-erro: #f2555a;
+  --bl-erro-bg: rgba(242, 85, 90, 0.13);
+  --bl-info: #4aa3ff;
+  --bl-info-bg: rgba(74, 163, 255, 0.13);
+  --bl-neutro: #8b93a7;
+  --bl-neutro-bg: rgba(139, 147, 167, 0.13);
+  --bl-serie-1: #6fbe44;
+  --bl-serie-2: #4aa3ff;
+  --bl-serie-3: #f0b429;
+  --bl-serie-4: #b07cf5;
+  --bl-serie-5: #3ecf8e;
+  --bl-serie-6: #f2555a;
+  --bl-serie-7: #34c6d3;
+  --bl-serie-8: #f58b4a;
+  --bl-raio: 10px;
+  --bl-raio-sm: 6px;
+  --bl-sombra: 0 1px 2px rgba(0,0,0,.28), 0 4px 14px rgba(0,0,0,.22);
+  --bl-sombra-sm: 0 1px 2px rgba(0,0,0,.24);
+  --bl-sidebar-larga: 240px;
+  --bl-sidebar-estreita: 72px;
+  --bl-linha: 38px;
+  --bl-fonte: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --bl-fonte-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}

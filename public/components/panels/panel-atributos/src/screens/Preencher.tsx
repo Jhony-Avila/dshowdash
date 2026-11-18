@@ -103,7 +103,7 @@ export function Preencher() {
   return (
     <div className="at-preencher">
       <div className="at-titulo-tela">
-        <div><h2>Preencher em massa</h2><p>Escolha um kit ou uma subcategoria. Setas ↑↓ mudam de linha, Tab muda de coluna, Enter grava e desce. Sugestões aparecem apagadas na célula.</p></div>
+        {/* UX-1b: título e descrição vêm do cabeçalho do módulo */}
         <div className="at-acoes">
           <select className="at-campo" aria-label="Kit" value={kit} onChange={(e) => { setKit(e.target.value ? Number(e.target.value) : ''); setSub(''); setUsarSelecao(false); }}>
             <option value="">Escolha um kit…</option>{kits.map((k) => <option key={k.id} value={k.id}>{k.nome} ({k.alcance} produtos)</option>)}

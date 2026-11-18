@@ -19,6 +19,8 @@ export interface Navegar {
   filtroInicial: FiltroProdutos; selecao: number[]; setSelecao: (ids: number[]) => void;
   preencher: { kit?: number; subcategoria?: string }; aviso: (texto: string, tom?: 'sucesso' | 'erro' | 'info') => void;
   versao: number; recarregar: () => void;
+  /** UX-1b: onde a <FaixaFixa> desenha (área fixa do módulo) e quem rola o conteúdo (.at-conteudo, ou .at-raiz quando tudo rola junto). */
+  faixaFixa: HTMLElement | null; rolador: HTMLElement | null; tudoRola: boolean;
 }
 export const Contexto = React.createContext<Navegar | null>(null);
 export function useModulo(): Navegar { const c = React.useContext(Contexto); if (!c) throw new Error('fora do módulo'); return c; }
