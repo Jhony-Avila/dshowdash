@@ -24,8 +24,10 @@ fi
 LIGAR_ESTADO=/srv/dshow-shared/dash MONTAR_REPO="$REPO" /usr/local/sbin/dshow-montar-release.sh "$BR" "$NOVA"
 # pré-checagens (iguais às do dia): só os arquivos do diff git podem diferir; php -l como www-data; symlinks iguais
 mapfile -t MUD < <(git -C "$REPO" diff --name-only "$(basename "$ANT")" "$SHA")
-DIF=$(diff -rq --no-dereference -x RELEASE_SHA -x RELEASE_MANIFEST -x SHA256SUMS "$ANT" "$NOVA" | sed "s#$ANT/##;s#$NOVA/##" | grep -o -E '^(Files|Only in) [^ ]+' | awk '{print $2}' | sort -u)
-for f in $DIF; do printf '%s\n' "${MUD[@]}" | grep -qx "$f" || printf '%s\n' "${MUD[@]}" | grep -q "^public/api/${f#public/api/}" || { echo "⛔ diferença fora do diff git: $f"; exit 3; }; done
+# "Files A/x and B/x differ" → x ; "Only in A/dir: nome" ou "Only in B/dir: nome" → dir/nome (arquivo NOVO ou removido)
+DIF=$({ diff -rq --no-dereference -x RELEASE_SHA -x RELEASE_MANIFEST -x SHA256SUMS "$ANT" "$NOVA" || true; } \
+  | sed -E "s#^Files $ANT/([^ ]+) and .*#\1#; s#^Only in ($ANT|$NOVA)/?([^:]*): (.*)#\2/\3#; s#^/##" | sort -u)
+for f in $DIF; do printf '%s\n' "${MUD[@]}" | grep -qx "$f" || printf '%s\n' "${MUD[@]}" | grep -q "^$f/" || { echo "⛔ diferença fora do diff git: $f"; exit 3; }; done
 for f in "${MUD[@]}"; do case "$f" in *.php) [ -f "$NOVA/$f" ] && runuser -u www-data -- php -l "$NOVA/$f" >/dev/null || { echo "⛔ php -l: $f"; exit 3; };; esac; done
 diff <(cd "$ANT" && find . -maxdepth 3 -type l -printf '%p -> %l\n' | sort) <(cd "$NOVA" && find . -maxdepth 3 -type l -printf '%p -> %l\n' | sort) >/dev/null || { echo "⛔ symlinks diferentes"; exit 3; }
 source /usr/local/lib/dshow/leitura-runtime.sh; leitura_runtime "$NOVA" || { echo "⛔ www-data não lê $NOVA"; exit 3; }
