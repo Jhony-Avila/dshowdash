@@ -23,6 +23,8 @@ const afirma = (nome, cond, extra = '') => { if (cond) { ok++; console.log('ok  
   const livres = (tipo) => dic.filter((a) => a.tipo === tipo && !naFicha.has(a.id));
   const [T1, T2, T3] = livres('texto'); const N1 = livres('numero')[0]; const BO = livres('booleano')[0];
   // kit de teste: X (opcional, também no kit geral) + 5 obrigatórios para o item (b)
+  // rede de segurança: kits "UX-1 teste" que uma rodada interrompida deixou ativos são desativados (nada é apagado)
+  for (const k of ((await api('GET', 'kits')).j.data.kits || []).filter((k) => k.ativo && /^UX-1 teste/.test(k.nome))) { const v = (await api('GET', 'kit', null, { id: k.id })).j.data.kit.versao; await api('POST', 'kit_ativo', { id: k.id, versao: v, ativo: 0, motivo: 'sobra de rodada interrompida do teste UX-1' }); }
   const kid = (await api('POST', 'kit', { nome: `UX-1 teste ${Date.now() % 100000}`, aplica_a_todos: 0 })).j.data.kit.id;
   let kv = (await api('GET', 'kit', null, { id: kid })).j.data.kit.versao;
   const itens = [{ atributo_id: X.atributo_id, obrigatorio: 0 }, ...[T1, T2, T3, N1, BO].map((a) => ({ atributo_id: a.id, obrigatorio: 1 }))];
@@ -33,7 +35,7 @@ const afirma = (nome, cond, extra = '') => { if (cond) { ok++; console.log('ok  
   // (a) origem mista aparece pelo kit E por "Usar selecionados"; opcional só do kit geral não aparece por "Usar selecionados"
   const colunas = () => pg.$$eval('table.at-tabela--grade thead th', (ths) => ths.map((t) => t.textContent));
   await ir('#/panel-atributos/preencher', 'select[aria-label="Kit"]');
-  const opt = await pg.$$eval('select[aria-label="Kit"] option', (os) => os.find((o) => o.textContent.startsWith('UX-1 teste'))?.value);
+  const opt = String(kid);   // o kit criado AGORA (pelo ID, não pelo nome)
   await pg.selectOption('select[aria-label="Kit"]', opt); await pg.waitForSelector('table.at-tabela--grade', { timeout: 40000 }); await pg.waitForTimeout(800);
   afirma(`(a) pelo kit de teste: a coluna "${X.rotulo}" (origem mista) aparece`, (await colunas()).some((c) => c.includes(X.rotulo)));
   await ir('#/panel-atributos', 'label.at-cartao__marcar');
