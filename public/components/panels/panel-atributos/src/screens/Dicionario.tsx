@@ -1,5 +1,6 @@
 // panel-atributos/src/screens/Dicionario.tsx — tela "Atributos" (dicionário, missão 18/11 §11.6).
-// Tabela dos atributos com filtros e paginação no cliente; editor em diálogo largo (criar/editar, unidades permitidas, opções).
+// Tabela dos atributos (TabelaDados: todos os filtrados, ordenados antes de exibir; ordem padrão Rótulo ▲, mantida ao mudar
+// busca/filtros) com filtros no cliente; título e descrição da tela ficam no cabeçalho do módulo; editor em diálogo largo (criar/editar, unidades permitidas, opções).
 // Regras do servidor respeitadas: o código é GERADO na criação e nunca muda; tipo travado com valores (409 TYPE_CHANGE_BLOCKED);
 // trocar unidade com valores exige motivo (422 UNIT_CHANGE_REQUIRES_REASON → a tela pede o motivo e reenvia). Sem interface otimista.
 import React from 'react';
@@ -9,13 +10,15 @@ import { IMPORTANCIA, IMPORTANCIAS, TIPO } from '../lib/rotulos';
 import { decimal, numeroParaApi } from '../lib/formatar';
 import { Botao, Dialogo, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
 import { useModulo } from '../app/contexto';
+import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
+import { comparadorPorLista, type Ordenacao } from '../lib/ordenar';
+import { precondicaoRenomear, type RascunhoRenomear } from '../lib/integridade';
 import '../styles/dicionario.css';
 
 interface RespDicionario { atributos: AtributoDicionario[]; unidades: Unidade[]; pode_administrar: boolean }
 interface OpcaoApi { id: number; rotulo: string; posicao: number; ativo: number | boolean }
 interface RespDetalhe { atributo: { id: number; versao: number; tipo: TipoAtributo }; opcoes: OpcaoApi[]; valores_preenchidos: number }
 
-const POR_PAGINA = 50;
 const TIPOS: TipoAtributo[] = ['texto', 'numero', 'inteiro', 'booleano', 'opcao', 'multiopcao', 'data'];
 const NUMERICOS: TipoAtributo[] = ['numero', 'inteiro'];
 const COM_OPCOES: TipoAtributo[] = ['opcao', 'multiopcao'];
@@ -43,13 +46,30 @@ const FILTROS_PADRAO: Filtros = { busca: '', tipo: '', grupo: '', importancia: '
 const SEM_GRUPO = '__sem_grupo';
 const SEM_IMPORTANCIA = '__sem_importancia';
 
+// Colunas da tabela (ordem lógica da importância: Obrigatório → … → Opcional → Sem importância; sem padrão = vazio, no fim).
+const ORDENACAO_PADRAO: Ordenacao = { chave: 'rotulo', direcao: 'asc' };
+const COLUNAS: ColunaTabela<AtributoDicionario>[] = [
+  { chave: 'rotulo', titulo: 'Rótulo', tipo: 'texto', classe: 'at-dic-rotulo', render: (a) => <>{a.rotulo}{a.descricao && <small>{a.descricao}</small>}</> },
+  { chave: 'codigo', titulo: 'Código', tipo: 'texto', render: (a) => <span className="at-dic-codigo">{a.codigo}</span> },
+  { chave: 'tipo', titulo: 'Tipo', tipo: 'texto', classe: 'at-td--curta', valor: (a) => TIPO[a.tipo] ?? a.tipo },
+  { chave: 'unidade', titulo: 'Unidade padrão', tipo: 'texto',
+    render: (a) => <>{a.unidade ?? <span className="at-dic-zero">—</span>}{a.unidades_extras.length > 0 && <span className="at-dic-auxiliar">+{a.unidades_extras.length} permitida{a.unidades_extras.length > 1 ? 's' : ''}</span>}</> },
+  { chave: 'grupo_atributos', titulo: 'Grupo', tipo: 'texto', classe: 'at-td--palavras', render: (a) => a.grupo_atributos ?? <span className="at-dic-zero">—</span> },
+  { chave: 'importancia_padrao', titulo: 'Importância padrão', tipo: 'texto', comparador: comparadorPorLista(IMPORTANCIAS),
+    render: (a) => (a.importancia_padrao ? IMPORTANCIA[a.importancia_padrao] : <span className="at-dic-zero">—</span>) },
+  { chave: 'em_kits', titulo: 'Em kits', tipo: 'numero', render: (a) => <span className={a.em_kits ? '' : 'at-dic-zero'}>{n(a.em_kits)}</span> },
+  { chave: 'produtos_com_valor', titulo: 'Produtos com valor', tipo: 'numero', render: (a) => <span className={a.produtos_com_valor ? '' : 'at-dic-zero'}>{n(a.produtos_com_valor)}</span> },
+  { chave: 'situacao', titulo: 'Situação', tipo: 'texto', classe: 'at-td--curta', valor: (a) => (ligado(a.ativo) ? 'Ativo' : 'Inativo'),
+    render: (a) => (ligado(a.ativo) ? <Etiqueta tom="sucesso">Ativo</Etiqueta> : <Etiqueta>Inativo</Etiqueta>) },
+];
+
 type EstadoEditor = null | { modo: 'novo' } | { modo: 'editar'; id: number; recemCriado?: boolean };
 
 export function Dicionario() {
   const [dados, setDados] = React.useState<RespDicionario | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
   const [filtros, setFiltros] = React.useState<Filtros>(FILTROS_PADRAO);
-  const [limite, setLimite] = React.useState(POR_PAGINA);
+  const [ordenacao, setOrdenacao] = React.useState<Ordenacao>(ORDENACAO_PADRAO);   // aqui (não na tabela): sobrevive à lista vazia por filtro
   const [editor, setEditor] = React.useState<EstadoEditor>(null);
   const busca = React.useDeferredValue(filtros.busca);
 
@@ -63,7 +83,7 @@ export function Dicionario() {
   const fecharEditor = React.useCallback(() => setEditor(null), []);
   const recarregar = React.useCallback(() => carregar(), [carregar]);
   const criado = React.useCallback((id: number, comOpcoes: boolean) => setEditor(comOpcoes ? { modo: 'editar', id, recemCriado: true } : null), []);
-  const mudar = (p: Partial<Filtros>) => { setFiltros((f) => ({ ...f, ...p })); setLimite(POR_PAGINA); };
+  const mudar = (p: Partial<Filtros>) => { setFiltros((f) => ({ ...f, ...p })); };
 
   const grupos = React.useMemo(() => {
     const s = new Set<string>(); let semGrupo = false;
@@ -91,22 +111,12 @@ export function Dicionario() {
   if (!dados) return <Carregando rotulo="Carregando o dicionário" />;
 
   const pode = dados.pode_administrar;
-  const visiveis = filtrados.slice(0, limite);
-  const restam = filtrados.length - visiveis.length;
   const filtrando = JSON.stringify(filtros) !== JSON.stringify(FILTROS_PADRAO);
   const atual = editor?.modo === 'editar' ? dados.atributos.find((a) => a.id === editor.id) ?? null : null;
   const abrir = (id: number) => setEditor({ modo: 'editar', id });
 
   return (
     <div>
-      <div className="at-titulo-tela">
-        <div>
-          <h2>Atributos</h2>
-          <p>Dicionário de características dos produtos. O código é gerado pelo sistema na criação e nunca muda (é o contrato com o app).{!pode && ' Seu nível permite apenas consultar.'}</p>
-        </div>
-        {pode && <div className="at-acoes"><Botao primario aoClicar={() => setEditor({ modo: 'novo' })}>Novo atributo</Botao></div>}
-      </div>
-
       <div className="at-dic-filtros" role="search">
         <label className="at-busca">
           <span className="bl-so-leitor">Buscar por rótulo ou código</span>
@@ -148,10 +158,11 @@ export function Dicionario() {
           </select>
         </label>
         {filtrando && <Botao aoClicar={() => mudar(FILTROS_PADRAO)}>Limpar filtros</Botao>}
+        {pode && <div className="at-acoes" style={{ marginLeft: 'auto' }}><Botao primario aoClicar={() => setEditor({ modo: 'novo' })}>Novo atributo</Botao></div>}
       </div>
 
       <div className="at-dic-contagem" aria-live="polite">
-        <span>{n(filtrados.length)} de {n(dados.atributos.length)} atributos{filtrados.length > visiveis.length ? ` · mostrando ${n(visiveis.length)}` : ''}</span>
+        <span>{n(filtrados.length)} de {n(dados.atributos.length)} atributos{!pode && <span className="at-fraco"> · seu nível permite apenas consultar</span>}</span>
         {erro && <span className="at-alerta" role="alert">{erro}</span>}
       </div>
 
@@ -161,38 +172,9 @@ export function Dicionario() {
         </Vazio>
       ) : (
         <div className="at-dic-moldura">
-          <div className="bl-rola-x">
-            <table className="at-tabela at-dic-tabela">
-              <thead>
-                <tr>
-                  <th scope="col">Rótulo</th><th scope="col">Código</th><th scope="col">Tipo</th><th scope="col">Unidade padrão</th><th scope="col">Grupo</th>
-                  <th scope="col">Importância padrão</th><th scope="col" className="at-dic-num">Em kits</th><th scope="col" className="at-dic-num">Produtos com valor</th><th scope="col">Situação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visiveis.map((a) => (
-                  <tr key={a.id} tabIndex={0} className={ligado(a.ativo) ? '' : 'at-linha--inativa'} aria-label={`Abrir ${a.rotulo}`}
-                    onClick={() => abrir(a.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(a.id); } }}>
-                    <td className="at-dic-rotulo">{a.rotulo}{a.descricao && <small>{a.descricao}</small>}</td>
-                    <td><span className="at-dic-codigo">{a.codigo}</span></td>
-                    <td>{TIPO[a.tipo] ?? a.tipo}</td>
-                    <td>{a.unidade ?? <span className="at-dic-zero">—</span>}{a.unidades_extras.length > 0 && <span className="at-dic-auxiliar">+{a.unidades_extras.length} permitida{a.unidades_extras.length > 1 ? 's' : ''}</span>}</td>
-                    <td>{a.grupo_atributos ?? <span className="at-dic-zero">—</span>}</td>
-                    <td>{a.importancia_padrao ? IMPORTANCIA[a.importancia_padrao] : <span className="at-dic-zero">—</span>}</td>
-                    <td className={`at-dic-num ${a.em_kits ? '' : 'at-dic-zero'}`}>{n(a.em_kits)}</td>
-                    <td className={`at-dic-num ${a.produtos_com_valor ? '' : 'at-dic-zero'}`}>{n(a.produtos_com_valor)}</td>
-                    <td>{ligado(a.ativo) ? <Etiqueta tom="sucesso">Ativo</Etiqueta> : <Etiqueta>Inativo</Etiqueta>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {restam > 0 && (
-            <div className="at-dic-mais">
-              <Botao aoClicar={() => setLimite((l) => l + POR_PAGINA)}>Mostrar mais {n(Math.min(POR_PAGINA, restam))}</Botao>
-              <Botao aoClicar={() => setLimite(filtrados.length)}>Mostrar todos ({n(filtrados.length)})</Botao>
-            </div>
-          )}
+          <TabelaDados className="at-dic-tabela" legenda="Atributos do dicionário" colunas={COLUNAS} linhas={filtrados} chaveLinha={(a) => a.id}
+            ordenacao={ordenacao} aoOrdenar={setOrdenacao} aoClicarLinha={(a) => abrir(a.id)} rotuloLinha={(a) => `Abrir ${a.rotulo}`}
+            classeLinha={(a) => (ligado(a.ativo) ? undefined : 'at-linha--inativa')} />
         </div>
       )}
 
@@ -523,7 +505,7 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode, focarNova = false }:
   const refNova = React.useRef<HTMLInputElement>(null);
   React.useEffect(() => { if (focarNova && refNova.current) { refNova.current.scrollIntoView({ block: 'center' }); refNova.current.focus(); } }, [focarNova]);
   const [ocupado, setOcupado] = React.useState<string | null>(null);
-  const [renomeando, setRenomeando] = React.useState<{ id: number; texto: string } | null>(null);
+  const [renomeando, setRenomeando] = React.useState<RascunhoRenomear | null>(null);   // DSHOW-070: `original` fixado ao clicar Renomear
   const lista = React.useRef<HTMLUListElement>(null);
   const focoDepois = React.useRef<{ id: number; acao: string } | null>(null);
 
@@ -553,9 +535,16 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode, focarNova = false }:
   };
   const renomear = async (o: OpcaoApi) => {
     if (!renomeando) return;
-    const r = renomeando.texto.trim();
-    if (!r || r === o.rotulo) { setRenomeando(null); return; }
-    if (await executar(`ren${o.id}`, () => enviar('opcao_renomear', { id: o.id, rotulo: r, rotulo_atual: o.rotulo }), 'Opção renomeada (vale para todos os produtos).', { id: o.id, acao: 'renomear' })) setRenomeando(null);
+    const p = precondicaoRenomear(renomeando);
+    if (p.acao === 'nada') { setRenomeando(null); return; }
+    const st = { conflito: false };
+    const enviarRenomear = () => enviar<{ opcoes: OpcaoApi[] }>('opcao_renomear', { id: p.id, rotulo: p.rotulo, rotulo_atual: p.rotulo_atual })
+      .catch((e: unknown) => { st.conflito = e instanceof ErroApi && e.conflito; throw e; });
+    if (await executar(`ren${o.id}`, enviarRenomear, 'Opção renomeada (vale para todos os produtos).', { id: o.id, acao: 'renomear' })) { setRenomeando(null); return; }
+    if (!st.conflito) return;
+    // DSHOW-070: 409 = alguém renomeou antes; a mensagem já foi mostrada — fecha o rascunho e relê as opções
+    setRenomeando(null);
+    try { setOpcoes((await obter<RespDetalhe>('atributo', { id: atributoId })).opcoes); } catch { /* a lista fica como estava; o aviso do 409 já orienta */ }
   };
 
   return (
@@ -571,7 +560,7 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode, focarNova = false }:
                 <span className="at-dic-opcao__pos" aria-hidden>{i + 1}.</span>
                 {editando && renomeando ? (
                   <input className="at-campo" data-esc-local aria-label={`Novo rótulo para ${o.rotulo}`} autoFocus maxLength={160} value={renomeando.texto}
-                    onChange={(e) => setRenomeando({ id: o.id, texto: e.target.value })}
+                    onChange={(e) => { const texto = e.target.value; setRenomeando((r) => (r ? { ...r, texto } : r)); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void renomear(o); } else if (e.key === 'Escape') { e.preventDefault(); setRenomeando(null); } }} />
                 ) : (
                   <span className="at-dic-opcao__rotulo">{o.rotulo}{!at && <> <Etiqueta>Inativa</Etiqueta></>}</span>
@@ -587,7 +576,7 @@ function ListaOpcoes({ atributoId, opcoes, setOpcoes, pode, focarNova = false }:
                       <>
                         <button type="button" className="bl-botao bl-botao--icone" data-op={o.id} data-acao="subir" aria-label={`Subir ${o.rotulo}`} title="Subir (Alt+↑)" disabled={i === 0 || !!ocupado} onClick={() => mover(i, -1)}>↑</button>
                         <button type="button" className="bl-botao bl-botao--icone" data-op={o.id} data-acao="descer" aria-label={`Descer ${o.rotulo}`} title="Descer (Alt+↓)" disabled={i === opcoes.length - 1 || !!ocupado} onClick={() => mover(i, 1)}>↓</button>
-                        <button type="button" className="bl-botao" data-op={o.id} data-acao="renomear" disabled={!!ocupado} onClick={() => setRenomeando({ id: o.id, texto: o.rotulo })}>Renomear</button>
+                        <button type="button" className="bl-botao" data-op={o.id} data-acao="renomear" disabled={!!ocupado} onClick={() => setRenomeando({ id: o.id, texto: o.rotulo, original: o.rotulo })}>Renomear</button>
                         <button type="button" className={`bl-botao ${at ? 'at-botao--perigo' : ''}`} data-op={o.id} data-acao="ativa" disabled={!!ocupado}
                           onClick={() => void executar(`at${o.id}`, () => enviar('opcao_ativa', { id: o.id, ativo: !at }), at ? 'Opção desativada.' : 'Opção reativada.', { id: o.id, acao: 'ativa' })}>
                           {at ? 'Desativar' : 'Reativar'}

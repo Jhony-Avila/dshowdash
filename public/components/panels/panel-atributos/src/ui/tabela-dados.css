@@ -1,0 +1,63 @@
+/* panel-atributos/src/ui/tabela-dados.css — TabelaDados (padrão das tabelas do módulo).
+   Escopo [data-bl-root] .at-td…; cores só por tokens var(--bl-…) (claro e escuro vêm de _shared-react/styles/tokens.css).
+   Sticky: o <th> gruda no topo do ancestral rolável mais próximo.
+   · data-rolagem="propria" (padrão): a própria moldura rola (a .at-raiz do módulo não tem altura limitada; quem rola é o
+     <main> do app-shell — ver TabelaDados.tsx). Ajuste da altura: --at-td-altura-max.
+   · data-rolagem="container": sem overflow na moldura (gruda no ancestral rolável); rolagem horizontal só com data-larga="1". */
+
+[data-bl-root] .at-td { position: relative; min-width: 0; }
+[data-bl-root] .at-td[data-rolagem="propria"] { overflow: auto; max-height: var(--at-td-altura-max, max(320px, calc(100dvh - 240px))); }
+[data-bl-root] .at-td[data-rolagem="container"][data-larga="1"] { overflow-x: auto; }
+
+[data-bl-root] .at-td__tabela { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+
+/* Cabeçalho fixo com fundo próprio (opaco nos dois temas) e sombra leve quando há rolagem */
+[data-bl-root] .at-td__th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--bl-superficie-2); color: var(--bl-texto-2);
+  font-size: 11.5px; font-weight: 600; text-align: left; white-space: nowrap;
+  height: 34px; padding: 0 10px; border-bottom: 1px solid var(--bl-borda);
+  transition: box-shadow .12s ease;
+}
+[data-bl-root] .at-td[data-rolando="1"] .at-td__th { box-shadow: var(--bl-sombra-sm); }
+[data-bl-root] .at-td__th:first-child { border-top-left-radius: var(--bl-raio); }
+[data-bl-root] .at-td__th:last-child { border-top-right-radius: var(--bl-raio); }
+[data-bl-root] .at-td[data-rolando="1"] .at-td__th { border-radius: 0; }
+
+/* Título = botão (Enter/Espaço nativos) */
+[data-bl-root] .at-td__ordenar {
+  display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
+  margin: 0 -4px; padding: 3px 4px; border: 0; border-radius: 4px; background: transparent;
+  color: inherit; font: inherit; cursor: pointer; white-space: nowrap;
+}
+[data-bl-root] .at-td__ordenar:hover { color: var(--bl-texto); background: var(--bl-borda); }
+[data-bl-root] .at-td__th[aria-sort="ascending"], [data-bl-root] .at-td__th[aria-sort="descending"] { color: var(--bl-texto); }
+[data-bl-root] .at-td__seta { font-size: 9.5px; line-height: 1; color: var(--bl-verde); }
+[data-bl-root] .at-td__seta--inativa { color: var(--bl-texto-3); opacity: .55; }
+[data-bl-root] .at-td--direita .at-td__ordenar { flex-direction: row-reverse; }
+
+/* Células */
+[data-bl-root] .at-td__tabela td { padding: 7px 10px; border-bottom: 1px solid var(--bl-borda); vertical-align: middle; }
+[data-bl-root] .at-td__tabela tbody:last-child tr:last-child td { border-bottom: 0; }
+[data-bl-root] .at-td--direita { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Célula curta (ex.: tipo, situação): não quebra no meio da palavra */
+[data-bl-root] .at-td__tabela td.at-td--curta { white-space: nowrap; overflow-wrap: normal; }
+/* Texto em palavras (ex.: grupo): quebra entre palavras, nunca no meio */
+[data-bl-root] .at-td__tabela td.at-td--palavras { overflow-wrap: normal; min-width: 120px; }
+[data-bl-root] .at-td__th.at-td--direita { text-align: right; }
+[data-bl-root] .at-td--centro { text-align: center; }
+[data-bl-root] .at-td__th.at-td--centro { text-align: center; }
+
+/* Zebra bem suave + hover (tokens; nada de cor fixa) */
+[data-bl-root] .at-td__linha--par { background: color-mix(in srgb, var(--bl-superficie-2) 45%, transparent); }
+[data-bl-root] .at-td__linha:hover { background: color-mix(in srgb, var(--bl-verde-suave) 55%, var(--bl-superficie-2)); }
+[data-bl-root] .at-td__linha--clicavel { cursor: pointer; }
+[data-bl-root] .at-td__linha--clicavel:focus-visible { outline: 2px solid var(--bl-verde-borda); outline-offset: -2px; background: var(--bl-superficie-2); }
+
+/* Grupos: linha de cabeçalho do grupo (título + contagem), não gruda */
+[data-bl-root] .at-td__grupo th {
+  padding: 12px 10px 6px; text-align: left; background: var(--bl-superficie); color: var(--bl-texto);
+  font-size: 12.5px; font-weight: 650; border-bottom: 1px solid var(--bl-borda); white-space: normal;
+}
+[data-bl-root] .at-td__grupo-n { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--bl-superficie-2); color: var(--bl-texto-2); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-td__vazio { color: var(--bl-texto-3); font-style: italic; }

@@ -8,6 +8,7 @@ import type { KitResumo, KitDetalhe, ItemKit, Importancia, Unidade, AtributoDici
 import { IMPORTANCIA, IMPORTANCIAS, TIPO, rotuloCategoria, rotuloSubcategoria } from '../lib/rotulos';
 import { Botao, Dialogo, ChipKit, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
 import { useModulo } from '../app/contexto';
+import { assinaturaEscopo, avancarBase, decidirEnvio, manterNovos, type BaseSecao } from '../lib/integridade';
 
 const MAX_DESTAQUES = 4;
 interface Escopo { categoria: string; subcategoria: string }
@@ -258,17 +259,25 @@ function EditorKit({ id, recemCriado = false, aoVoltar, aoAbrir }: { id: number;
   const [alcanceAntes, setAlcanceAntes] = React.useState<number | null>(null);
   const [duplicando, setDuplicando] = React.useState(false);
   const [mudandoAtivo, setMudandoAtivo] = React.useState(false);
+  // DSHOW-064: base (versão + assinatura do persistido) em que cada rascunho começou; "mudou" = o persistido mudou por baixo do rascunho
+  const baseItens = React.useRef<BaseSecao>({ versao: -1, assinatura: '' });
+  const baseEscopo = React.useRef<BaseSecao>({ versao: -1, assinatura: '' });
+  const [baseMudou, setBaseMudou] = React.useState<{ itens?: boolean; escopo?: boolean }>({});
 
-  const iniciar = React.useCallback((d: KitDetalhe, secoes: Secao[]) => {
+  const iniciar = React.useCallback((d: KitDetalhe, secoes: Secao[], preservarNovos = false) => {
     if (secoes.includes('dados')) { setNome(d.kit.nome); setDescricao(d.kit.descricao ?? ''); }
-    if (secoes.includes('itens')) setItens(ordenarItens(d.kit.atributos));
-    if (secoes.includes('escopo')) { setTodos(!!d.kit.aplica_a_todos); setEscopos(new Set(d.kit.escopos.map(chaveEscopo))); }
+    const ai = avancarBase(baseItens.current, { versao: d.kit.versao, assinatura: assinaturaItens(ordenarItens(d.kit.atributos)) }, secoes.includes('itens'));
+    const ae = avancarBase(baseEscopo.current, { versao: d.kit.versao, assinatura: assinaturaEscopo(!!d.kit.aplica_a_todos, d.kit.escopos.map(chaveEscopo)) }, secoes.includes('escopo'));
+    baseItens.current = ai.base; baseEscopo.current = ae.base;
+    setBaseMudou({ itens: ai.mudou, escopo: ae.mudou });
+    if (ai.reiniciar) setItens((r) => (preservarNovos ? manterNovos<ItemRascunho>(ordenarItens(d.kit.atributos), r) : ordenarItens(d.kit.atributos)));
+    if (ae.reiniciar) { setTodos(!!d.kit.aplica_a_todos); setEscopos(new Set(d.kit.escopos.map(chaveEscopo))); }
   }, []);
 
-  /** Busca o kit (sempre depois de gravar: a versão muda) e reinicia só os rascunhos das seções indicadas. */
+  /** Busca o kit (sempre depois de gravar: a versão muda), reinicia só os rascunhos das seções indicadas e reconcilia a base das outras. */
   const carregar = React.useCallback(async (secoes: Secao[] = ['dados', 'itens', 'escopo']): Promise<KitDetalhe | null> => {
     setErroCarga(null);
-    try { const d = await obter<KitDetalhe>('kit', { id }); setDet(d); iniciar(d, secoes); return d; }
+    try { const d = await obter<KitDetalhe>('kit', { id }); setDet(d); iniciar(d, secoes, true); return d; }
     catch (e) { setErroCarga(msgErro(e)); return null; }
   }, [id, iniciar]);
   React.useEffect(() => { void carregar(); }, [carregar]);
@@ -279,10 +288,8 @@ function EditorKit({ id, recemCriado = false, aoVoltar, aoAbrir }: { id: number;
   const k = det.kit;
   const pode = det.pode_editar;
   const sujoDados = nome.trim() !== k.nome || descricao.trim() !== (k.descricao ?? '').trim();
-  const sujoItens = assinaturaItens(itens) !== assinaturaItens(ordenarItens(k.atributos));
-  const escoposSalvos = new Set(k.escopos.map(chaveEscopo));
-  const mudouEscopos = escopos.size !== escoposSalvos.size || [...escopos].some((x) => !escoposSalvos.has(x));
-  const sujoEscopo = todos !== !!k.aplica_a_todos || mudouEscopos;
+  const sujoItens = assinaturaItens(itens) !== baseItens.current.assinatura;
+  const sujoEscopo = assinaturaEscopo(todos, escopos) !== baseEscopo.current.assinatura;
   const algoSujo = sujoDados || sujoItens || sujoEscopo;
 
   const falhar = (s: Secao, e: unknown) => {
@@ -314,8 +321,17 @@ function EditorKit({ id, recemCriado = false, aoVoltar, aoAbrir }: { id: number;
     if (gravandoRef.current) return;   // uma seção por vez: cada gravação sobe a versão do kit
     gravandoRef.current = true; setGravando('itens'); limparErro('itens');
     try {
+      // DSHOW-064: relê o kit; se os itens persistidos mudaram desde a base do rascunho → conflito local, sem enviar (rascunho preservado)
+      const fresco = await obter<KitDetalhe>('kit', { id: k.id });
+      const dec = decidirEnvio(baseItens.current, { versao: fresco.kit.versao, assinatura: assinaturaItens(ordenarItens(fresco.kit.atributos)) }, { baseMudou: !!baseMudou.itens });
+      if (dec.acao === 'conflito') {
+        setDet(fresco); iniciar(fresco, []);
+        setBaseMudou((x) => ({ ...x, itens: true }));
+        nav.aviso('Os atributos do kit mudaram desde que você começou. Recarregue os atributos.', 'erro');
+        return;
+      }
       await enviar('kit_itens', {
-        id: k.id, versao: k.versao,
+        id: k.id, versao: dec.versao,
         itens: itens.map((i, n) => ({ atributo_id: i.atributo_id, posicao: n + 1, obrigatorio: +i.obrigatorio ? 1 : 0, visivel: +i.visivel ? 1 : 0, destaque: +i.destaque ? 1 : 0,
           importancia: i.importancia ?? null, unidade_id: i.unidade_id ?? null })),
       });
@@ -328,22 +344,16 @@ function EditorKit({ id, recemCriado = false, aoVoltar, aoAbrir }: { id: number;
     gravandoRef.current = true; setGravando('escopo'); limparErro('escopo');
     const antes = det.alcance.filter((p) => p.ativo).length;
     try {
-      let versao = k.versao;
-      if (todos !== !!k.aplica_a_todos) {
-        const r = await enviar<{ kit: { versao: number } }>('kit', { id: k.id, versao, aplica_a_todos: todos ? 1 : 0 });
-        versao = Number(r.kit.versao);
-      }
-      if (mudouEscopos) {
-        const lista = [...escopos].map((c) => { const [categoria, subcategoria = ''] = c.split('|'); return { categoria, subcategoria }; });
-        await enviar('kit_escopos', { id: k.id, versao, escopos: lista });
-      }
+      // DSHOW-065: UM POST (escopo + "aplica a todos" numa transação no servidor) com a versão da BASE do rascunho (DSHOW-064)
+      if (baseMudou.escopo) { nav.aviso('O escopo do kit mudou desde que você começou. Recarregue o escopo.', 'erro'); return; }
+      const lista = [...escopos].map((c) => { const [categoria, subcategoria = ''] = c.split('|'); return { categoria, subcategoria }; });
+      await enviar('kit_escopos', { id: k.id, versao: baseEscopo.current.versao, escopos: lista, aplica_a_todos: todos ? 1 : 0 });
       const d = await carregar(['escopo']);
       setAlcanceAntes(antes);
       const depois = d ? d.alcance.filter((p) => p.ativo).length : null;
       nav.aviso(depois !== null ? `Escopo salvo: o kit vale para ${plural(depois, 'produto ativo', 'produtos ativos')}.` : 'Escopo salvo.');
     } catch (e) {
       falhar('escopo', e);
-      await carregar([]); // "aplica a todos" pode ter gravado antes do escopo falhar: atualiza a versão sem perder o rascunho
     } finally { gravandoRef.current = false; setGravando(null); }
   };
 
@@ -361,6 +371,12 @@ function EditorKit({ id, recemCriado = false, aoVoltar, aoAbrir }: { id: number;
 
   const erroSecao = (s: Secao, recarregarSecoes: Secao[]) => {
     const e = erros[s];
+    if (!e && (s === 'itens' || s === 'escopo') && baseMudou[s]) return (   // DSHOW-064: o persistido mudou por baixo do rascunho
+      <p className="at-kits-erro" role="alert">
+        {s === 'itens' ? 'Os atributos do kit mudaram desde que você começou.' : 'O escopo do kit mudou desde que você começou.'}
+        <Botao aoClicar={() => void carregar([s])}>{s === 'itens' ? 'Recarregar atributos' : 'Recarregar escopo'}</Botao>
+      </p>
+    );
     if (!e) return null;
     return (
       <p className="at-kits-erro" role="alert">
