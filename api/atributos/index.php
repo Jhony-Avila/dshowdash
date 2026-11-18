@@ -31,6 +31,23 @@ require_once __DIR__ . '/../_helpers/AuthHelpers.php';
 require_once __DIR__ . '/../core/CorsPolicy.php';
 require_once __DIR__ . '/../core/SessionGate.php';
 require_once __DIR__ . '/../../config/db_connection.php';
+
+/**
+ * Conexão do módulo (ETAPA A, P2): usuário próprio `equipamentos_app` (SELECT/INSERT/UPDATE em DSHOW_EQUIPAMENTOS + SELECT coluna a coluna
+ * no catálogo do app). Credencial em config/equipamentos_app.ini (root:www-data 0640, ao lado do db_connection.php), FORA do .env.
+ * Sem o arquivo (validação): entrada EQUIPAMENTOS do config. Nenhum dos dois → exceção → 500 registrado; nunca cai na conexão do Dash.
+ */
+function eqConexao(): ?PDO
+{
+    $ini = __DIR__ . '/../../config/equipamentos_app.ini';
+    if (!is_file($ini)) return getConnection('EQUIPAMENTOS');
+    $c = (parse_ini_file($ini, true, INI_SCANNER_RAW) ?: [])['client'] ?? [];
+    $t = static fn($v): string => trim((string) $v, " \t\"'");
+    if ($t($c['user'] ?? '') === '') throw new RuntimeException('equipamentos_app.ini sem usuário');
+    $dsn = 'mysql:host=' . ($t($c['host'] ?? '') ?: '127.0.0.1') . ';port=' . ((int) ($c['port'] ?? 3306) ?: 3306) . ';dbname=DSHOW_EQUIPAMENTOS;charset=utf8mb4';
+    return new PDO($dsn, $t($c['user']), $t($c['password'] ?? ''), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false, PDO::ATTR_TIMEOUT => 10]);
+}
 require_once __DIR__ . '/../feature-flags/resolver.php';
 require_once __DIR__ . '/AtributosRepo.php';
 require_once __DIR__ . '/CatalogoPdo.php';
@@ -98,7 +115,7 @@ try {
     }
     // 4) CSRF em toda escrita, depois das flags (escrita desligada responde 404 sem revelar a rota)
     AuthHelpers::requireCsrfForWrite();
-    $pdoEq = getConnection('EQUIPAMENTOS');   // sem a entrada no config compartilhado → exceção → 500 (registrado), nunca cai na conexão do Dash
+    $pdoEq = eqConexao();   // credencial própria (P2) ou entrada EQUIPAMENTOS do config; nunca cai na conexão do Dash
     $schemaEq = (string) (getenv('DSHOW_EQUIPAMENTOS_SCHEMA') ?: 'DSHOW_EQUIPAMENTOS');
     $schemaCat = (string) (getenv('DSHOW_CATALOGO_SCHEMA') ?: 'APP_DSHOW');
     $nivel = (int) ($user['level'] ?? 0);
