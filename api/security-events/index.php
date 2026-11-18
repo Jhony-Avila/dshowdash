@@ -27,6 +27,9 @@ $userId = (int)($user['id'] ?? 0);
 UARPSGate::enforceTrigger($userId, 'gate:admin:security-events');
 dshow_exigir_nivel($userId, 80, 'security-events');   // UARPS-DONO (P0 17/11/2026): nível de antes da P3 (requireAdmin = 80)
 
+// DSHOW-009: chaves de event_context_json que a tela pode ver (lista fechada; session_token e chaves desconhecidas nunca saem)
+const SE_CHAVES_DETALHE = ['device', 'username', 'request_id', 'endpoint', 'reason', 'source'];
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
@@ -39,8 +42,9 @@ switch ($method) {
         break;
     case 'PUT':
     case 'PATCH':
+        // DSHOW-009 opção B (18/11): "resolver evento" não tem onde gravar (sem campo de resolução; sem DDL) → 501, nada é gravado.
         AuthHelpers::requireCsrf();
-        handleUpdateEvent();
+        ApiResponse::error('NOT_IMPLEMENTED', 501, ['message' => 'Recurso não implantado: resolver evento de segurança ainda não tem armazenamento.']);
         break;
     case 'DELETE':
         AuthHelpers::requireCsrf();
@@ -55,7 +59,7 @@ function handleGetEvents(): void {
     $pagination = $validator->pagination(50, 100);
     $page = $pagination['page'];
     $limit = $pagination['limit'];
-    $allowedSeverities = ['critical', 'high', 'medium', 'low', 'info'];
+    $allowedSeverities = ['critical', 'high', 'medium', 'low', 'info', 'warning'];   // + warning: valor real em app_user_security_events.event_severity
     $severity = $validator->enum('severity', '', $allowedSeverities) ?: null;
     $eventType = $validator->string('event_type', '', ['maxLength' => 100]) ?: null;
     $userId = $validator->id('user_id', 0);
@@ -66,15 +70,19 @@ function handleGetEvents(): void {
     $offset = $pagination['offset'];
     // DSHOW-009 (18/11): filtro opcional — ausente/vazio = sem filtro (0); não numérico = 400 VALIDATION_ERROR (padrão do settings) (antes: TypeError por passar false no parâmetro int)
     if ($validator->hasErrors()) { ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['message' => 'Parâmetros inválidos.', 'details' => $validator->getErrors()]); return; }
+    if (isset($_GET['resolved']) && (string) $_GET['resolved'] !== '') { ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['message' => 'Filtro "resolved" indisponível: a tabela de eventos não tem campo de resolução.']); return; }
 
     try {
         $pdo = getConnection('DSHOWDASH');
 
-        $where = [];
+        // DSHOW-009 opção A (18/11): lê a tabela REAL app_user_security_events (a app_security_events nunca existiu).
+        // Mapa explícito: severity ← event_severity · details ← event_context_json SÓ com as chaves da lista SE_CHAVES_DETALHE
+        // (nunca session_token nem chave desconhecida) · message, is_resolved, resolved_by, resolved_at ← NULL (sem equivalente).
+        $where = ['se.deleted_at IS NULL'];
         $params = [];
 
         if ($severity) {
-            $where[] = "se.severity = ?";
+            $where[] = "se.event_severity = ?";
             $params[] = $severity;
         }
 
@@ -98,14 +106,9 @@ function handleGetEvents(): void {
             $params[] = $dateTo . ' 23:59:59';
         }
 
-        if ($resolved !== null) {
-            $where[] = "se.is_resolved = ?";
-            $params[] = (int)$resolved;
-        }
-
         $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
-        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM app_security_events se {$whereClause}");
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM app_user_security_events se {$whereClause}");
         $countStmt->execute($params);
         $total = (int)$countStmt->fetchColumn();
 
@@ -113,19 +116,19 @@ function handleGetEvents(): void {
             SELECT 
                 se.id,
                 se.event_type,
-                se.severity,
-                se.message,
-                se.details,
+                se.event_severity AS severity,
+                NULL AS message,
+                se.event_context_json AS details,
                 se.user_id,
-                u.name as user_name,
+                u.username AS user_name   /* app_users sem coluna name (DSHOW-009) */,
                 u.email as user_email,
                 se.ip_address,
                 se.user_agent,
-                se.is_resolved,
-                se.resolved_by,
-                se.resolved_at,
+                NULL AS is_resolved,
+                NULL AS resolved_by,
+                NULL AS resolved_at,
                 se.created_at
-            FROM app_security_events se
+            FROM app_user_security_events se
             LEFT JOIN app_users u ON se.user_id = u.id
             {$whereClause}
             ORDER BY se.created_at DESC
@@ -137,19 +140,20 @@ function handleGetEvents(): void {
         $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($events as &$event) {
-            $event['is_resolved'] = (bool)$event['is_resolved'];
-            if ($event['details']) {
-                $event['details'] = json_decode($event['details'], true);
-            }
+            $event['is_resolved'] = null;   // sem campo de resolução na tabela real (nunca inventado)
+            $ctx = $event['details'] ? json_decode((string) $event['details'], true) : null;
+            $event['details'] = is_array($ctx) ? array_intersect_key($ctx, array_flip(SE_CHAVES_DETALHE)) : null;
         }
+        unset($event);
 
+        // stats: sem campo de resolução, conta TODOS os eventos não excluídos por severidade (stats_escopo informa isso à tela)
         $statsStmt = $pdo->query("
             SELECT 
-                severity,
+                event_severity,
                 COUNT(*) as count
-            FROM app_security_events
-            WHERE is_resolved = 0
-            GROUP BY severity
+            FROM app_user_security_events
+            WHERE deleted_at IS NULL
+            GROUP BY event_severity
         ");
         $stats = $statsStmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
@@ -160,8 +164,10 @@ function handleGetEvents(): void {
                 'high' => (int)($stats['high'] ?? 0),
                 'medium' => (int)($stats['medium'] ?? 0),
                 'low' => (int)($stats['low'] ?? 0),
-                'info' => (int)($stats['info'] ?? 0)
+                'info' => (int)($stats['info'] ?? 0),
+                'warning' => (int)($stats['warning'] ?? 0)
             ],
+            'stats_escopo' => 'todos (a tabela não registra resolução)',
             'pagination' => [
                 'page' => $page,
                 'limit' => $limit,

@@ -58,7 +58,9 @@ function handleGetAudit(): void {
     try {
         $pdo = getConnection('DSHOWDASH');
 
-        $where = [];
+        // DSHOW-009 opção A (18/11): lê a tabela REAL app_permission_audit_log (a app_permission_audit nunca existiu).
+        // Mapa explícito: resource ← resource_type · resource_id ← resource_id · old_value/new_value ← NULL (sem equivalente; context_json não é exposto).
+        $where = ['pa.deleted_at IS NULL'];
         $params = [];
 
         if ($userId) {
@@ -83,7 +85,7 @@ function handleGetAudit(): void {
 
         $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
-        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM app_permission_audit pa {$whereClause}");
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM app_permission_audit_log pa {$whereClause}");
         $countStmt->execute($params);
         $total = (int)$countStmt->fetchColumn();
 
@@ -91,17 +93,17 @@ function handleGetAudit(): void {
             SELECT 
                 pa.id,
                 pa.user_id,
-                u.name as user_name,
+                u.username AS user_name   /* app_users sem coluna name (DSHOW-009) */,
                 u.email as user_email,
                 pa.action,
-                pa.resource,
+                pa.resource_type AS resource,
                 pa.resource_id,
-                pa.old_value,
-                pa.new_value,
+                NULL AS old_value,
+                NULL AS new_value,
                 pa.ip_address,
                 pa.user_agent,
                 pa.created_at
-            FROM app_permission_audit pa
+            FROM app_permission_audit_log pa
             LEFT JOIN app_users u ON pa.user_id = u.id
             {$whereClause}
             ORDER BY pa.created_at DESC
