@@ -284,9 +284,26 @@ final class Cargas
     public const C6_SUBCATEGORIAS = ['CABINET', 'LED_MODULE', 'TOTEM', 'SPHERE', 'CAN', 'LED_BAG', 'AUTONOMOUS_TV', 'EASEL', 'BACKPACK', 'POWER_SUPPLY'];   // bloqueado: acessórios e serviços
     /** Fontes: só a Potência (NNNW) é inequívoca no nome; V/A podem ser entrada/saída e medidas "NNNmm x NNNmm" são do gabinete. */
     public const C6_SO_POTENCIA = ['POWER_SUPPLY'];
+    /** Correções aprovadas pelo Jhony para nomes com erro na ORIGEM. O catálogo não muda: o pedido de correção vai para a fonte
+     *  (atributos-web/entrega/CORRECOES-NA-FONTE.md). Aqui só a SUGESTÃO sai certa. */
+    public const C6_CORRECOES = [
+        283 => ['taxa_de_atualizacao_refresh_rate_93' => ['3840', 'correção aprovada pelo Jhony em 18/11: 3840 Hz (o nome traz "38040Hz", erro de digitação na origem)']],
+    ];
+
+    /** Leitura pura do nome (testável): medidas, pitch, Hz e ambiente. Hz só com 3–4 dígitos inteiros ("38040Hz" não vira 8040). */
+    public static function lerNome(string $nome): array
+    {
+        $r = [];
+        if (preg_match('/(\d{2,5})\s*mm\s*[xX×]\s*(\d{2,5})\s*mm/u', $nome, $m)) { $r['largura'] = $m[1]; $r['altura'] = $m[2]; }
+        if (preg_match('/\bP\s*\.?\s*(\d{1,2}(?:[.,]\d{1,3})?)\b/u', $nome, $m)) $r['pitch'] = str_replace(',', '.', $m[1]);
+        if (preg_match('/(?<![\d.,])(\d{3,4})\s*Hz/u', $nome, $m)) $r['hz'] = $m[1];
+        if (preg_match('/\bSemi[\s-]*Outdoor\b/iu', $nome)) $r['ambiente'] = 'semi-outdoor';    // T-1 (Jhony, 18/11): antes virava "outdoor"
+        elseif (preg_match('/\b(Indoor|Outdoor)\b/iu', $nome, $m)) $r['ambiente'] = strtolower($m[1]);
+        return $r;
+    }
     public function c6(): array
     {
-        $lote = $this->lote('C6', ['subcategorias' => self::C6_SUBCATEGORIAS, 'regras' => 'NNNmm x NNNmm; P.x; NNNN Hz; Indoor/Outdoor; Fontes: NNNW → Potência']);
+        $lote = $this->lote('C6', ['subcategorias' => self::C6_SUBCATEGORIAS, 'regras' => 'NNNmm x NNNmm; P.x; NNNN Hz (3–4 dígitos); Semi-outdoor/Indoor/Outdoor; correções aprovadas; Fontes: NNNW → Potência']);
         $cod = []; foreach ($this->q("SELECT id, codigo FROM {$this->s}eq_atributo") as $a) $cod[$a['codigo']] = (int) $a['id'];
         $uni = []; foreach ($this->q("SELECT id, simbolo FROM {$this->s}eq_unidade") as $u) $uni[$u['simbolo']] = (int) $u['id'];
         $opLed = []; foreach ($this->q("SELECT id, rotulo FROM {$this->s}eq_opcao WHERE atributo_id = ? AND ativo = 1", [$cod['tipo_do_led_87']]) as $o) $opLed[strtolower($o['rotulo'])] = (int) $o['id'];
@@ -299,19 +316,35 @@ final class Cargas
             if (in_array($p['subcategory'], self::C6_SO_POTENCIA, true)) {
                 if (preg_match('/\b(\d{2,4})\s*W\b/iu', $nome, $m) && isset($uni['W'])) $props['potencia_549'] = [$m[1], $uni['W'], null];
             } else {
-            if (preg_match('/(\d{2,5})\s*mm\s*[xX×]\s*(\d{2,5})\s*mm/u', $nome, $m)) { $props['largura_409'] = [$m[1], $uni['mm'], null]; $props['altura_122'] = [$m[2], $uni['mm'], null]; }
-            if (preg_match('/\bP\s*\.?\s*(\d{1,2}(?:[.,]\d{1,3})?)\b/u', $nome, $m)) $props['pitch_138'] = [str_replace(',', '.', $m[1]), $uni['mm'], null];
-            if (preg_match('/(\d{3,4})\s*Hz/u', $nome, $m) && isset($cod['taxa_de_atualizacao_refresh_rate_93'])) $props['taxa_de_atualizacao_refresh_rate_93'] = [$m[1], $uni['Hz'], null];
-            if (preg_match('/\b(Indoor|Outdoor)\b/iu', $nome, $m) && isset($opLed[strtolower($m[1])])) $props['tipo_do_led_87'] = [null, null, $opLed[strtolower($m[1])]];
+            $l = self::lerNome($nome);
+            if (isset($l['largura'])) { $props['largura_409'] = [$l['largura'], $uni['mm'], null]; $props['altura_122'] = [$l['altura'], $uni['mm'], null]; }
+            if (isset($l['pitch'])) $props['pitch_138'] = [$l['pitch'], $uni['mm'], null];
+            if (isset($l['hz']) && isset($cod['taxa_de_atualizacao_refresh_rate_93'])) $props['taxa_de_atualizacao_refresh_rate_93'] = [$l['hz'], $uni['Hz'], null];
+            if (isset($l['ambiente']) && isset($opLed[$l['ambiente']])) $props['tipo_do_led_87'] = [null, null, $opLed[$l['ambiente']]];
             }
+            $nota = [];
+            foreach (self::C6_CORRECOES[$pid] ?? [] as $c => [$v, $por]) { if (isset($cod[$c])) { $props[$c] = [$v, $c === 'taxa_de_atualizacao_refresh_rate_93' ? $uni['Hz'] : ($props[$c][1] ?? null), null]; $nota[$c] = $por; } }
             if ($props) $n['produtos']++;
             foreach ($props as $c => [$val, $u, $opc]) {
                 $aid = $cod[$c] ?? null; if (!$aid || isset($tem["$pid:$aid"])) continue;
                 $chave = "nome_produto|$pid|$aid";
-                if ($this->q("SELECT 1 FROM {$this->s}eq_sugestao WHERE chave = ?", [$chave])) { $n['ja_existiam']++; continue; }
+                $prop = $val ?? ($opc !== null ? array_search($opc, $opLed, true) : null);
+                $evid = mb_substr("Do nome: \"$nome\"" . (isset($nota[$c]) ? ' · ' . $nota[$c] : ''), 0, 500);
+                $ex = $this->q("SELECT id, valor_proposto, opcao_id, estado, versao FROM {$this->s}eq_sugestao WHERE chave = ?", [$chave])[0] ?? null;
+                if ($ex) {
+                    // C6c: regra revista (Semi-outdoor, Hz) → atualiza só sugestão AINDA PENDENTE e não tocada desde a leitura (versao); decidida fica.
+                    if ($ex['estado'] === 'pendente' && ((string) $ex['valor_proposto'] !== (string) $prop || (int) $ex['opcao_id'] !== (int) $opc)) {
+                        $antes = ['valor_proposto' => $ex['valor_proposto'], 'opcao_id' => $ex['opcao_id'] === null ? null : (int) $ex['opcao_id']];
+                        if ($this->seco || $this->x("UPDATE {$this->s}eq_sugestao SET valor_proposto = ?, opcao_id = ?, evidencia = ?, versao = versao + 1 WHERE id = ? AND versao = ? AND estado = 'pendente'", [$prop, $opc, $evid, $ex['id'], $ex['versao']]) === 1) {
+                            $n['revistas'] = ($n['revistas'] ?? 0) + 1; $n['revistas_ids'][] = (int) $ex['id'];
+                            if (!$this->seco) (new AtributosRepoPdo($this->pdo, $this->schema))->auditar('carga:C6', 'revisar_sugestao', 'sugestao', (string) $ex['id'], $antes, ['valor_proposto' => $prop, 'opcao_id' => $opc], 'C6c: regra do nome revista (Semi-outdoor; Hz com 3–4 dígitos; correções aprovadas)');
+                        }
+                    } else $n['ja_existiam']++;
+                    continue;
+                }
                 $n['sugestoes']++; $n['por_atributo'][$c] = ($n['por_atributo'][$c] ?? 0) + 1;
                 $this->x("INSERT INTO {$this->s}eq_sugestao (chave, product_id, atributo_id, fonte, tipo, valor_proposto, opcao_id, unidade_id, confianca, evidencia, lote_id) VALUES (?, ?, ?, 'nome_produto', 'valor', ?, ?, ?, 'media', ?, ?)",
-                    [$chave, $pid, $aid, $val ?? ($opc !== null ? array_search($opc, $opLed, true) : null), $opc, $u, mb_substr("Do nome: \"$nome\"", 0, 500), $lote ?: null]);
+                    [$chave, $pid, $aid, $prop, $opc, $u, $evid, $lote ?: null]);
             }
         }
         $this->fecharLote($lote, $n);
