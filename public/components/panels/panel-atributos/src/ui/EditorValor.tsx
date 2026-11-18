@@ -34,7 +34,9 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   const original = React.useRef(rascunhoDe(item));
   const ocupado = React.useRef(false);
   const pelaTecla = React.useRef(false);                                // a gravação em curso veio de um Enter (desce só se confirmar)                                   // uma gravação por vez (Enter + sair do campo não grava 2×)
-  const ultimo = React.useRef<{ rota: string; corpo: Record<string, unknown>; texto?: string } | null>(null);   // "Tentar de novo" repete esta
+  // DSHOW-078: "Tentar de novo" reenvia EXATAMENTE este envelope (capturado na 1ª tentativa: produto, atributo, valor/estado,
+  // unidade, versão da linha, revisão do conjunto). Nada é recalculado; se os dados mudaram, o servidor responde 409.
+  const ultimo = React.useRef<{ rota: string; envelope: Readonly<Record<string, unknown>>; texto?: string } | null>(null);   // "Tentar de novo" repete esta
   const [esperando, setEsperando] = React.useState(false);              // gravou; aguardando a recarga trazer a versão nova
   React.useEffect(() => { const r = rascunhoDe(item); setTxt(r); original.current = r; setEsperando(false); setUnidRascunho(null); }, [item.valor?.versao, item.versao_conjunto, item.valor?.versao_conjunto, item.valor?.estado, item.atributo_id]);
   React.useEffect(() => { if (!esperando) return; const t = window.setTimeout(() => setEsperando(false), 3000); return () => window.clearTimeout(t); }, [esperando]);
@@ -44,13 +46,19 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   const ro = !podeEditar || item.autoridade === 'precifica';
   const id = `campo-${productId}-${item.atributo_id}`;
 
-  const chamar = async (rota: string, corpo: Record<string, unknown>, texto?: string) => {
+  const chamar = (rota: string, corpo: Record<string, unknown>, texto?: string) => {
     if (ocupado.current || esperando) return;
-    ocupado.current = true; ultimo.current = { rota, corpo, texto };
+    // DSHOW-034: a versão do CONJUNTO vai em toda gravação (limpar/mudar estado da multiopção a exigem; o servidor ignora nos demais)
+    const envelope = Object.freeze({ product_id: productId, atributo_id: item.atributo_id, versao_conjunto: item.versao_conjunto ?? item.valor?.versao_conjunto, ...corpo });
+    return executar({ rota, envelope, texto });
+  };
+  const executar = async (u: { rota: string; envelope: Readonly<Record<string, unknown>>; texto?: string }) => {
+    if (ocupado.current) return;
+    ocupado.current = true; ultimo.current = u;
+    const { rota, envelope, texto } = u;
     setSit({ tipo: 'salvando' });
     try {
-      // DSHOW-034: a versão do CONJUNTO vai em toda gravação (limpar/mudar estado da multiopção a exigem; o servidor ignora nos demais)
-      await enviar(rota, { product_id: productId, atributo_id: item.atributo_id, versao_conjunto: item.versao_conjunto ?? item.valor?.versao_conjunto, ...corpo });
+      await enviar(rota, envelope);
       if (texto !== undefined) original.current = texto;                  // já gravado: sair do campo não reenvia
       setSit({ tipo: 'salvo' }); setEsperando(true); aoGravar();
       if (pelaTecla.current) { pelaTecla.current = false; aoConfirmarEnter?.(); } window.setTimeout(() => setSit((s) => (s.tipo === 'salvo' ? { tipo: 'parado' } : s)), 2500);
@@ -60,10 +68,10 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
       else setSit({ tipo: 'erro', msg: e instanceof ErroApi ? e.message : 'Falha de rede.' });
     } finally { ocupado.current = false; }
   };
-  const tentarDeNovo = () => { const u = ultimo.current; if (u) chamar(u.rota, u.corpo, u.texto); };
+  const tentarDeNovo = () => { const u = ultimo.current; if (u) executar(u); };   // DSHOW-078: mesmo envelope, sem reconstruir
   const travado = sit.tipo === 'salvando' || esperando;
   const versao = item.valor?.versao;
-  const gravar = (valor: unknown, extra: Record<string, unknown> = {}, texto?: string) => chamar('valor', { valor, estado: 'informado', versao, ...(numerico && unidadeAtual ? { unidade_id: unidRascunho ?? item.valor?.unidade_id ?? null } : {}), ...extra }, texto);
+  const gravar = (valor: unknown, extra: Record<string, unknown> = {}, texto?: string) => chamar('valor', { valor, estado: 'informado', versao, ...(numerico && unidadeAtual ? { unidade_id: unidadeAtual } : {}), ...extra }, texto);
   const confirmarTexto = () => {
     if (ro || txt === original.current || ocupado.current || esperando || confirmarLimpar) return;
     if (txt.trim() === '') { if (item.valor && !confirmarLimpar) setConfirmarLimpar(true); return; }
