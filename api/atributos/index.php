@@ -1,5 +1,5 @@
 <?php
-// /api/equipamentos/atributos.php — API da web Equipamentos › Atributos (Fase B PREPARADA no clone, 31/10/2026; app-dshow DP-AUTO.37).
+// /api/atributos/index.php (porte 18/11 de /api/equipamentos/atributos.php, atr/ponte-app 693c70c6) — API da web Equipamentos › Atributos (Fase B PREPARADA no clone, 31/10/2026; app-dshow DP-AUTO.37).
 // SEMPRE atrás da flag do Dash `equipamentos.atributos` (ausente/desligada → 404, como se a rota não existisse). Sessão do Dash
 // (SessionGate), CSRF em toda escrita, nível do usuário decidido aqui (regras em AtributosService). Uma rota por `r`:
 //   GET  ?r=atributos[&q=&tipo=&inativos=1] · ?r=atributo&id= · ?r=unidades · ?r=grupos · ?r=valores&product_id=
@@ -31,6 +31,15 @@ require_once __DIR__ . '/../feature-flags/resolver.php';
 require_once __DIR__ . '/AtributosRepo.php';
 require_once __DIR__ . '/CatalogoPdo.php';
 
+// ATRIBUTOS-WEB (18/11): rota por PATH_INFO (/api/atributos/<rota>, padrão do Bling); ?r=<rota> segue aceito (compatível com o ramo de origem).
+// Conexão PRÓPRIA "EQUIPAMENTOS" (usuário dedicado equipamentos_app: SELECT/INSERT/UPDATE no DSHOW_EQUIPAMENTOS + SELECT coluna a coluna
+// no catálogo do app), lida do config compartilhado (config/db_connection.php, fora do Git). As flags continuam na conexão do Dash.
+function eqRota(): string {
+    $p = trim((string) ($_SERVER['PATH_INFO'] ?? ''), '/');
+    if ($p !== '') return preg_match('/^[a-z_]{1,40}$/', $p) ? $p : '__invalida__';
+    return (string) ($_GET['r'] ?? '');
+}
+
 const EQ_FLAG = 'equipamentos.atributos';
 const EQ_FLAG_ESCRITA = 'equipamentos.atributos.escrita';
 // Fontes do resolvedor que significam "piloto desligado para todos" (→ 404 antes da sessão).
@@ -40,7 +49,7 @@ const EQ_DESLIGADO = ['not_found', 'disabled', 'not_started', 'expired', 'enviro
 function eqFlagOuFalha(array $f): bool {
     $src = (string) ($f['source'] ?? 'error');
     if ($src === 'error') {
-        error_log('[equipamentos/atributos] flag ilegível (' . (string) ($f['key'] ?? '?') . ')');
+        error_log('[atributos] flag ilegível (' . (string) ($f['key'] ?? '?') . ')');
         ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Configuração do recurso indisponível.']);
     }
     return ($f['enabled'] ?? false) === true;
@@ -57,7 +66,7 @@ try {
     eqFlagOuFalha($pre);
     if (in_array((string) $pre['source'], EQ_DESLIGADO, true)) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
 } catch (Throwable $e) {
-    error_log('[equipamentos/atributos] ' . get_class($e) . ': ' . $e->getMessage());
+    error_log('[atributos] ' . get_class($e) . ': ' . $e->getMessage());
     ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Erro interno.']);
 }
 
@@ -68,16 +77,17 @@ try {
     // 3) a pessoa está no piloto? (rollout/override) — fora → 404 só para ela
     if (!eqFlagOuFalha($resolver->resolve(EQ_FLAG, (int) ($user['id'] ?? 0)))) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
     $metodoReq = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    $rReq = (string) ($_GET['r'] ?? '');
+    $rReq = eqRota();
     if ($metodoReq === 'POST' || $rReq === 'valores') {
         if (!eqFlagOuFalha($resolver->resolve(EQ_FLAG_ESCRITA, (int) ($user['id'] ?? 0)))) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
     }
     // 4) CSRF em toda escrita, depois das flags (escrita desligada responde 404 sem revelar a rota)
     AuthHelpers::requireCsrfForWrite();
-    $svc = new AtributosService(new AtributosRepoPdo($pdo, (string) (getenv('DSHOW_EQUIPAMENTOS_SCHEMA') ?: 'DSHOW_EQUIPAMENTOS')), (int) ($user['level'] ?? 0), (string) ($user['email'] ?: ('usuario:' . ($user['id'] ?? '?'))),
-        new CatalogoPdo($pdo, (string) (getenv('DSHOW_CATALOGO_SCHEMA') ?: 'APP_DSHOW')));
+    $pdoEq = getConnection('EQUIPAMENTOS');   // sem a entrada no config compartilhado → exceção → 500 (registrado), nunca cai na conexão do Dash
+    $svc = new AtributosService(new AtributosRepoPdo($pdoEq, (string) (getenv('DSHOW_EQUIPAMENTOS_SCHEMA') ?: 'DSHOW_EQUIPAMENTOS')), (int) ($user['level'] ?? 0), (string) ($user['email'] ?: ('usuario:' . ($user['id'] ?? '?'))),
+        new CatalogoPdo($pdoEq, (string) (getenv('DSHOW_CATALOGO_SCHEMA') ?: 'APP_DSHOW')));
     $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    $r = (string) ($_GET['r'] ?? '');
+    $r = eqRota();
     $corpo = [];
     if ($metodo === 'POST') {
         $raw = file_get_contents('php://input');
@@ -114,6 +124,6 @@ try {
 } catch (AtributosErro $e) {
     ApiResponse::error($e->codigo, $e->http, ['message' => $e->getMessage()] + ($e->campos ? ['campos' => $e->campos] : []));
 } catch (Throwable $e) {
-    error_log('[equipamentos/atributos] ' . get_class($e) . ': ' . $e->getMessage());
+    error_log('[atributos] ' . get_class($e) . ': ' . $e->getMessage());
     ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Erro interno.']);
 }

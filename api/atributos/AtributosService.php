@@ -1,5 +1,5 @@
 <?php
-// /api/equipamentos/AtributosService.php — Equipamentos › Atributos (Fase B PREPARADA no clone, 31/10/2026; app-dshow DP-AUTO.37).
+// /api/atributos/AtributosService.php (porte 18/11 de atr/ponte-app 693c70c6) — Equipamentos › Atributos (Fase B PREPARADA no clone, 31/10/2026; app-dshow DP-AUTO.37).
 // Regras do domínio, independentes de HTTP e de banco (testáveis com repositório em memória):
 //  - permissões: CONSULTAR nível ≥ 50 · PREENCHER VALORES nível ≥ 50 · ADMINISTRAR definições/grupos/opções/unidades nível ≥ 80;
 //  - versão de edição (`versao`): editar com versão antiga → 409 CONFLICT (ninguém sobrescreve o trabalho do outro em silêncio);
@@ -88,7 +88,7 @@ interface AtributosRepositorio
 final class AtributosService
 {
     public const NIVEL_CONSULTA = 50;
-    public const NIVEL_VALORES = 50;
+    public const NIVEL_VALORES = 80;   // ATRIBUTOS-WEB 18/11 (Jhony): preencher/editar valores só com nível ≥ 80 (era 50 no ramo de origem)
     public const NIVEL_ADMIN = 80;
     public const TIPOS = ['texto', 'numero', 'inteiro', 'booleano', 'opcao', 'multiopcao', 'data'];
     /** Famílias da ficha do Precifica no app (produtos.md v1.1, specs.ts FAMILIES) — alvo de precifica_ref (D3.6). */
@@ -316,7 +316,13 @@ final class AtributosService
         return ['opcoes' => $this->repo->opcoes((int) $o['atributo_id'])];
     }
 
-    public function unidades(): array { $this->exigir(self::NIVEL_CONSULTA); return ['unidades' => $this->repo->unidades()]; }
+    public function unidades(): array { $this->exigir(self::NIVEL_CONSULTA); return $this->respostaUnidades(); }
+
+    /** BR-02 (18/11): toda resposta de unidade traz o mesmo contrato das outras telas (pode_administrar); o cliente não trata mais como erro. */
+    private function respostaUnidades(array $extra = []): array
+    {
+        return ['unidades' => $this->repo->unidades(), 'pode_administrar' => $this->nivel >= self::NIVEL_ADMIN] + $extra;
+    }
 
     public function criarUnidade(array $b): array
     {
@@ -326,12 +332,18 @@ final class AtributosService
         $n = self::texto($b['nome'] ?? null, 80, 'nome', true, $erros);
         $g = self::texto($b['grandeza'] ?? null, 40, 'grandeza', false, $erros);
         if ($erros) throw new AtributosErro('VALIDATION_ERROR', 422, 'Campos inválidos.', $erros);
-        foreach ($this->repo->unidades() as $u) if ($u['simbolo'] === $s) throw new AtributosErro('VALIDATION_ERROR', 422, 'Símbolo já existe.', ['simbolo']);
-        $this->repo->transacao(function () use ($s, $n, $g) {
+        // BR-02: "tentar de novo" depois de uma gravação que deu certo NÃO grava outra vez — mesma unidade (símbolo, nome, grandeza) = sucesso idempotente
+        foreach ($this->repo->unidades() as $u) {
+            if ($u['simbolo'] !== $s) continue;
+            if ((string) $u['nome'] === (string) $n && (string) ($u['grandeza'] ?? '') === (string) ($g ?? '')) return $this->respostaUnidades(['ja_existia' => true, 'id' => (int) $u['id']]);
+            throw new AtributosErro('VALIDATION_ERROR', 422, 'Símbolo já existe com outro nome ou grandeza.', ['simbolo']);
+        }
+        $id = $this->repo->transacao(function () use ($s, $n, $g) {
             $id = $this->repo->criarUnidade((string) $s, (string) $n, $g);
             $this->repo->auditar($this->usuario, 'criar', 'unidade', (string) $id, null, ['simbolo' => $s, 'nome' => $n, 'grandeza' => $g], null);
+            return $id;
         });
-        return ['unidades' => $this->repo->unidades()];
+        return $this->respostaUnidades(['ja_existia' => false, 'id' => (int) $id]);
     }
 
     /** Edita nome/grandeza de uma unidade (o símbolo é a identidade e não muda). */
@@ -345,17 +357,19 @@ final class AtributosService
         $g = self::texto($b['grandeza'] ?? null, 40, 'grandeza', false, $erros);
         if (isset($b['simbolo']) && $b['simbolo'] !== $antes['simbolo']) $erros[] = 'simbolo';
         if ($erros) throw new AtributosErro('VALIDATION_ERROR', 422, 'Campos inválidos (o símbolo não muda).', array_values(array_unique($erros)));
+        if ((string) $antes['nome'] === (string) $n && (string) ($antes['grandeza'] ?? '') === (string) ($g ?? '')) return $this->respostaUnidades(['sem_mudanca' => true]);   // BR-02: repetir não grava nem audita de novo
         $this->repo->transacao(function () use ($id, $n, $g, $antes) {
             $this->repo->atualizarUnidade($id, ['nome' => $n, 'grandeza' => $g]);
             $this->repo->auditar($this->usuario, 'editar', 'unidade', (string) $id, $antes, ['nome' => $n, 'grandeza' => $g], null);
         });
-        return ['unidades' => $this->repo->unidades()];
+        return $this->respostaUnidades();
     }
 
     public function definirUnidadeAtiva(int $id, bool $ativo): array
     {
         $this->exigir(self::NIVEL_ADMIN);
         $antes = $this->repo->unidade($id) ?? throw new AtributosErro('NOT_FOUND', 404, 'Unidade não encontrada.');
+        if ((int) $antes['ativo'] === ($ativo ? 1 : 0)) return $this->respostaUnidades(['sem_mudanca' => true]);   // BR-02: idempotente
         $this->repo->transacao(function () use ($id, $ativo, $antes) {
             $this->repo->atualizarUnidade($id, ['ativo' => $ativo ? 1 : 0]);
             $this->repo->auditar($this->usuario, $ativo ? 'reativar' : 'desativar', 'unidade', (string) $id, ['ativo' => $antes['ativo']], ['ativo' => $ativo ? 1 : 0], null);
