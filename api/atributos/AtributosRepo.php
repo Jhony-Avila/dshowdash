@@ -6,8 +6,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/AtributosService.php';
+require_once __DIR__ . '/KitsService.php';
 
-final class AtributosRepoPdo implements AtributosRepositorio
+final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio
 {
     private string $p;
 
@@ -121,7 +122,7 @@ final class AtributosRepoPdo implements AtributosRepositorio
 
     public function travarValores(int $productId, int $atributoId): array
     {
-        return $this->q('SELECT id, product_id, atributo_id, opcao_id, opcao_chave, valor_texto, valor_num, valor_bool, valor_data, estado, origem, versao, excluido_em FROM ' . $this->t('eq_valor')
+        return $this->q('SELECT id, product_id, atributo_id, opcao_id, opcao_chave, valor_texto, valor_num, valor_bool, valor_data, unidade_id, estado, origem, versao, excluido_em FROM ' . $this->t('eq_valor')
             . ' WHERE product_id = ? AND atributo_id = ? ORDER BY opcao_chave FOR UPDATE', [$productId, $atributoId]);
     }
 
@@ -164,7 +165,7 @@ final class AtributosRepoPdo implements AtributosRepositorio
 
     public function unidades(): array
     {
-        return $this->q('SELECT id, simbolo, nome, grandeza, ativo FROM ' . $this->t('eq_unidade') . ' ORDER BY simbolo ASC');
+        return $this->q('SELECT id, simbolo, nome, grandeza, fator_base, ativo FROM ' . $this->t('eq_unidade') . ' ORDER BY simbolo ASC');
     }
 
     public function criarUnidade(string $simbolo, string $nome, ?string $grandeza): int
@@ -280,29 +281,35 @@ final class AtributosRepoPdo implements AtributosRepositorio
 
     public function valor(int $productId, int $atributoId, int $opcaoChave): ?array
     {
-        return $this->q('SELECT id, product_id, atributo_id, opcao_id, opcao_chave, valor_texto, valor_num, valor_bool, valor_data, estado, origem, versao, excluido_em FROM ' . $this->t('eq_valor') . ' WHERE product_id = ? AND atributo_id = ? AND opcao_chave = ?', [$productId, $atributoId, $opcaoChave])[0] ?? null;
+        return $this->q('SELECT id, product_id, atributo_id, opcao_id, opcao_chave, valor_texto, valor_num, valor_bool, valor_data, unidade_id, estado, origem, versao, excluido_em FROM ' . $this->t('eq_valor') . ' WHERE product_id = ? AND atributo_id = ? AND opcao_chave = ?', [$productId, $atributoId, $opcaoChave])[0] ?? null;
     }
 
     public function gravarValor(array $d, ?int $versaoEsperada): bool
     {
         if ($versaoEsperada === null) {
-            $cols = ['product_id', 'atributo_id', 'opcao_id', 'opcao_chave', 'valor_texto', 'valor_num', 'valor_bool', 'valor_data', 'estado', 'origem', 'atualizado_por'];
+            $cols = ['product_id', 'atributo_id', 'opcao_id', 'opcao_chave', 'valor_texto', 'valor_num', 'valor_bool', 'valor_data', 'unidade_id', 'estado', 'origem', 'atualizado_por'];
             try {
-                $this->exec('INSERT INTO ' . $this->t('eq_valor') . ' (' . implode(', ', $cols) . ') VALUES (' . implode(', ', array_fill(0, count($cols), '?')) . ')', array_map(static fn($c) => $d[$c], $cols));
+                $this->exec('INSERT INTO ' . $this->t('eq_valor') . ' (' . implode(', ', $cols) . ') VALUES (' . implode(', ', array_fill(0, count($cols), '?')) . ')', array_map(static fn($c) => $d[$c] ?? null, $cols));
                 return true;
             } catch (PDOException $e) {
                 if (($e->errorInfo[1] ?? 0) === 1062) return false;   // outra pessoa gravou primeiro → conflito
                 throw $e;
             }
         }
-        return $this->exec('UPDATE ' . $this->t('eq_valor') . ' SET opcao_id = ?, valor_texto = ?, valor_num = ?, valor_bool = ?, valor_data = ?, estado = ?, origem = ?, atualizado_por = ?, excluido_em = NULL, versao = versao + 1
+        return $this->exec('UPDATE ' . $this->t('eq_valor') . ' SET opcao_id = ?, valor_texto = ?, valor_num = ?, valor_bool = ?, valor_data = ?, unidade_id = ?, estado = ?, origem = ?, atualizado_por = ?, excluido_em = NULL, versao = versao + 1
             WHERE product_id = ? AND atributo_id = ? AND opcao_chave = ? AND versao = ?',
-            [$d['opcao_id'], $d['valor_texto'], $d['valor_num'], $d['valor_bool'], $d['valor_data'], $d['estado'], $d['origem'], $d['atualizado_por'], $d['product_id'], $d['atributo_id'], $d['opcao_chave'], $versaoEsperada]) === 1;
+            [$d['opcao_id'], $d['valor_texto'], $d['valor_num'], $d['valor_bool'], $d['valor_data'], $d['unidade_id'] ?? null, $d['estado'], $d['origem'], $d['atualizado_por'], $d['product_id'], $d['atributo_id'], $d['opcao_chave'], $versaoEsperada]) === 1;
     }
 
     public function unidade(int $id): ?array
     {
-        return $this->q('SELECT id, simbolo, nome, grandeza, ativo FROM ' . $this->t('eq_unidade') . ' WHERE id = ?', [$id])[0] ?? null;
+        return $this->q('SELECT id, simbolo, nome, grandeza, fator_base, ativo FROM ' . $this->t('eq_unidade') . ' WHERE id = ?', [$id])[0] ?? null;
+    }
+
+    /** A8: unidades permitidas além da regra da grandeza (008). */
+    public function unidadesExtras(int $atributoId): array
+    {
+        return array_map('intval', array_column($this->q('SELECT unidade_id FROM ' . $this->t('eq_atributo_unidade') . ' WHERE atributo_id = ? AND excluido_em IS NULL', [$atributoId]), 'unidade_id'));
     }
 
     public function atualizarUnidade(int $id, array $d): bool
@@ -343,5 +350,51 @@ final class AtributosRepoPdo implements AtributosRepositorio
     {
         $this->exec('INSERT INTO ' . $this->t('eq_auditoria') . ' (usuario, acao, entidade, entidade_id, antes, depois, motivo) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [mb_substr($usuario, 0, 100), $acao, $entidade, mb_substr($entidadeId, 0, 64), $antes === null ? null : json_encode($antes, JSON_UNESCAPED_UNICODE), $depois === null ? null : json_encode($depois, JSON_UNESCAPED_UNICODE), $motivo === null ? null : mb_substr($motivo, 0, 255)]);
+    }
+
+    // ---- ModuloRepositorio (missão §8: 006/007; nada é apagado) -------------------------------------------------------------------
+    public function produtosDiretosDoKit(int $grupoId): array
+    {
+        return array_map('intval', array_column($this->q('SELECT product_id FROM ' . $this->t('eq_grupo_produto') . ' WHERE grupo_id = ? AND excluido_em IS NULL ORDER BY product_id', [$grupoId]), 'product_id'));
+    }
+
+    public function definirKitProduto(int $grupoId, int $productId, bool $ativo, string $usuario, string $origem = 'manual'): bool
+    {
+        $r = $this->q('SELECT id, excluido_em FROM ' . $this->t('eq_grupo_produto') . ' WHERE grupo_id = ? AND product_id = ? FOR UPDATE', [$grupoId, $productId])[0] ?? null;
+        if ($ativo) {
+            if ($r === null) { $this->exec('INSERT INTO ' . $this->t('eq_grupo_produto') . ' (grupo_id, product_id, origem, criado_por, atualizado_por) VALUES (?, ?, ?, ?, ?)', [$grupoId, $productId, $origem, $usuario, $usuario]); return true; }
+            if ($r['excluido_em'] === null) return false;
+            return $this->exec('UPDATE ' . $this->t('eq_grupo_produto') . ' SET excluido_em = NULL, versao = versao + 1, atualizado_por = ? WHERE id = ?', [$usuario, $r['id']]) === 1;
+        }
+        if ($r === null || $r['excluido_em'] !== null) return false;
+        return $this->exec('UPDATE ' . $this->t('eq_grupo_produto') . ' SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1, atualizado_por = ? WHERE id = ?', [$usuario, $r['id']]) === 1;
+    }
+
+    public function ajusteProduto(int $productId, int $atributoId): ?array
+    {
+        return $this->q('SELECT id, product_id, atributo_id, modo, unidade_id, posicao, motivo, versao, excluido_em, atualizado_por, atualizado_em FROM ' . $this->t('eq_produto_atributo') . ' WHERE product_id = ? AND atributo_id = ?', [$productId, $atributoId])[0] ?? null;
+    }
+
+    public function definirAjusteProduto(int $productId, int $atributoId, ?array $dados, string $usuario): bool
+    {
+        $r = $this->q('SELECT id, modo, unidade_id, posicao, motivo, excluido_em FROM ' . $this->t('eq_produto_atributo') . ' WHERE product_id = ? AND atributo_id = ? FOR UPDATE', [$productId, $atributoId])[0] ?? null;
+        if ($dados === null) {
+            if ($r === null || $r['excluido_em'] !== null) return false;
+            return $this->exec('UPDATE ' . $this->t('eq_produto_atributo') . ' SET excluido_em = CURRENT_TIMESTAMP(3), versao = versao + 1, atualizado_por = ? WHERE id = ?', [$usuario, $r['id']]) === 1;
+        }
+        if ($r === null) {
+            $this->exec('INSERT INTO ' . $this->t('eq_produto_atributo') . ' (product_id, atributo_id, modo, unidade_id, posicao, motivo, criado_por, atualizado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [$productId, $atributoId, $dados['modo'], $dados['unidade_id'], $dados['posicao'], $dados['motivo'], $usuario, $usuario]);
+            return true;
+        }
+        $igual = $r['excluido_em'] === null && $r['modo'] === $dados['modo'] && (string) $r['unidade_id'] === (string) $dados['unidade_id'] && (string) $r['posicao'] === (string) $dados['posicao'] && (string) $r['motivo'] === (string) $dados['motivo'];
+        if ($igual) return false;
+        return $this->exec('UPDATE ' . $this->t('eq_produto_atributo') . ' SET modo = ?, unidade_id = ?, posicao = ?, motivo = ?, excluido_em = NULL, versao = versao + 1, atualizado_por = ? WHERE id = ?',
+            [$dados['modo'], $dados['unidade_id'], $dados['posicao'], $dados['motivo'], $usuario, $r['id']]) === 1;
+    }
+
+    public function auditoriaPorChave(string $entidade, string $entidadeId): ?array
+    {
+        return $this->q('SELECT id, usuario, acao, antes, depois, criado_em FROM ' . $this->t('eq_auditoria') . ' WHERE entidade = ? AND entidade_id = ? ORDER BY id DESC LIMIT 1', [$entidade, $entidadeId])[0] ?? null;
     }
 }

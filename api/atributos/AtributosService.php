@@ -21,6 +21,7 @@ final class AtributosErro extends RuntimeException
 
 /** Catálogo de produtos (projeção do Precifica no app; GRANT N1 = 7 colunas). Lança CatalogoIndisponivel se não puder ler. */
 require_once __DIR__ . '/Aplicabilidade.php';
+require_once __DIR__ . '/DecimalExato.php';
 
 interface CatalogoProdutos
 {
@@ -72,6 +73,8 @@ interface AtributosRepositorio
     public function definirAtributosDoGrupo(int $grupoId, array $itens): void;
     /** Retrato do modelo para a regra da ficha (§9, Aplicabilidade). */
     public function retratoModelo(?int $productId = null): RetratoModelo;
+    /** A8: ids das unidades permitidas além da regra da grandeza. */
+    public function unidadesExtras(int $atributoId): array;
     public function valoresDoProduto(int $productId): array;
     public function valor(int $productId, int $atributoId, int $opcaoChave): ?array;
     public function gravarValor(array $d, ?int $versaoEsperada): bool;
@@ -693,6 +696,7 @@ final class AtributosService
                     $d['valor_texto'] = trim($v);
             }
         }
+        $d['unidade_id'] = $estado === 'informado' ? $this->validarUnidade($produto, $a, $b) : null;   // D3: unidade por valor
         $this->repo->transacao(function () use ($pid, $aid, $d, $b, $a) {
             // P1-09: a definição é relida COM TRAVA COMPARTILHADA e conferida — se o tipo/limites/estado mudaram entre a validação e aqui
             // (versão diferente), conflito visível; a mudança de tipo (trava exclusiva + contagem com trava) espera esta transação.
@@ -722,6 +726,73 @@ final class AtributosService
     }
 
     /** P1-07: a linha viva já tem exatamente este conteúdo? (decimal comparado como número; bool/ids como inteiros) */
+    /** D3/A8: unidade do valor — só para número/inteiro; precisa estar entre as permitidas. Ausente = NULL (herda a efetiva). */
+    private function validarUnidade(array $produto, array $a, array $b): ?int
+    {
+        if (!array_key_exists('unidade_id', $b) || $b['unidade_id'] === null || $b['unidade_id'] === '') return null;
+        if (!in_array($a['tipo'], ['numero', 'inteiro'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Este atributo não tem unidade de medida.', ['unidade_id']);
+        $uid = is_int($b['unidade_id']) ? $b['unidade_id'] : (is_string($b['unidade_id']) && ctype_digit($b['unidade_id']) ? (int) $b['unidade_id'] : 0);
+        foreach ($this->unidadesPermitidas($produto, $a) as $u) if ((int) $u['id'] === $uid) return $uid;
+        throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade não permitida para este atributo.', ['unidade_id']);
+    }
+
+    /** A8: unidades ativas da MESMA grandeza da unidade efetiva (produto → kit → padrão) + as incluídas explicitamente no atributo. */
+    public function unidadesPermitidas(array $produto, array $a): array
+    {
+        $aplic = $this->aplicaveis($produto)[(int) $a['id']]['aplic'] ?? null;
+        $padrao = $aplic !== null ? Aplicabilidade::unidadeEfetiva($aplic, null) : (isset($a['unidade_id']) ? (int) $a['unidade_id'] : null);
+        $todas = []; foreach ($this->repo->unidades() as $u) $todas[(int) $u['id']] = $u;
+        $g = $padrao !== null ? ($todas[$padrao]['grandeza'] ?? null) : null;
+        $extras = array_flip($this->repo->unidadesExtras((int) $a['id']));
+        $out = [];
+        foreach ($todas as $id => $u) {
+            if (!(int) $u['ativo'] && $id !== $padrao) continue;
+            if ($id === $padrao || ($g !== null && $g !== '' && $u['grandeza'] === $g) || isset($extras[$id])) $out[] = $u + ['padrao' => $id === $padrao];
+        }
+        return $out;
+    }
+
+    /** H5: troca a unidade de um valor; converter=true multiplica pelos fatores (mesma grandeza, fatores definidos, bcmath exato). */
+    public function converterUnidade(array $b): array
+    {
+        $this->exigir(self::NIVEL_VALORES);
+        $pid = (int) ($b['product_id'] ?? 0); $aid = (int) ($b['atributo_id'] ?? 0);
+        $produto = $pid > 0 ? $this->produtoDoCatalogo($pid) : null;
+        if ($produto === null || $produto['excluido']) throw new AtributosErro('PRODUCT_NOT_FOUND', 422, 'Produto não encontrado no catálogo.', ['product_id']);
+        $a = $this->repo->atributo($aid) ?? throw new AtributosErro('NOT_FOUND', 404, 'Atributo não encontrado.');
+        $atual = $this->repo->valor($pid, $aid, 0);
+        if (!$atual || !empty($atual['excluido_em']) || $atual['estado'] !== 'informado' || $atual['valor_num'] === null) throw new AtributosErro('VALIDATION_ERROR', 422, 'Não há número informado para converter.', ['valor']);
+        if ((int) ($b['versao'] ?? -1) !== (int) $atual['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+        $destino = (int) ($b['unidade_id'] ?? 0);
+        $perm = []; foreach ($this->unidadesPermitidas($produto, $a) as $u) $perm[(int) $u['id']] = $u;
+        if (!isset($perm[$destino])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade não permitida para este atributo.', ['unidade_id']);
+        $aplic = $this->aplicaveis($produto)[$aid]['aplic'] ?? null;
+        $origemId = $atual['unidade_id'] !== null ? (int) $atual['unidade_id'] : ($aplic ? Aplicabilidade::unidadeEfetiva($aplic, null) : null);
+        $num = self::decimalCanonico($atual['valor_num']);
+        if (!empty($b['converter'])) {
+            $o = $origemId !== null ? $this->repo->unidade($origemId) : null; $dd = $perm[$destino];
+            if (!$o || $o['fator_base'] === null || $dd['fator_base'] === null || (string) $o['grandeza'] !== (string) $dd['grandeza']) throw new AtributosErro('UNIT_NO_CONVERSION', 422, 'Sem fator de conversão entre estas unidades: use "só trocar a unidade".', ['unidade_id']);
+            $num = DecimalExato::mulDiv($num, self::decimalCanonico((string) $o['fator_base']), self::decimalCanonico((string) $dd['fator_base']), 6);   // exato, sem float
+        }
+        return $this->gravarValor(['product_id' => $pid, 'atributo_id' => $aid, 'valor' => $num, 'unidade_id' => $destino, 'versao' => (int) $atual['versao'],
+            'motivo' => !empty($b['converter']) ? 'unidade convertida' : 'unidade trocada (sem converter)']);
+    }
+
+    /** Limpa o valor de um campo (exclusão lógica, com versão e auditoria). */
+    public function limparValor(array $b): array
+    {
+        $this->exigir(self::NIVEL_VALORES);
+        $pid = (int) ($b['product_id'] ?? 0); $aid = (int) ($b['atributo_id'] ?? 0);
+        $atual = $this->repo->valor($pid, $aid, 0);
+        if (!$atual || !empty($atual['excluido_em'])) return ['limpo' => true, 'sem_mudanca' => true];
+        if ((int) ($b['versao'] ?? -1) !== (int) $atual['versao']) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+        $this->repo->transacao(function () use ($pid, $aid, $atual, $b) {
+            if (!$this->repo->excluirValor($pid, $aid, 0)) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou este valor. Recarregue e tente de novo.');
+            $this->repo->auditar($this->usuario, 'limpar', 'valor', "$pid:$aid:0", $atual, null, $b['motivo'] ?? null);
+        });
+        return ['limpo' => true];
+    }
+
     private static function mesmoValor(array $antes, array $d): bool
     {
         $num = static fn($x) => $x === null ? null : self::decimalCanonico($x);
@@ -731,6 +802,7 @@ final class AtributosService
             && ($antes['valor_texto'] ?? null) === $d['valor_texto']
             && (($na === null || $nd === null) ? $na === $nd : self::comparar($na, $nd) === 0)
             && (($antes['valor_bool'] ?? null) === null ? null : (int) $antes['valor_bool']) === ($d['valor_bool'] === null ? null : (int) $d['valor_bool'])
+            && (($antes['unidade_id'] ?? null) === null ? null : (int) $antes['unidade_id']) === (($d['unidade_id'] ?? null) === null ? null : (int) $d['unidade_id'])
             && (($antes['valor_data'] ?? null) === null ? null : substr((string) $antes['valor_data'], 0, 10)) === $d['valor_data'];
     }
 
