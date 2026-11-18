@@ -950,19 +950,20 @@ final class AtributosService
      */
     public static function versaoConjunto(array $linhas): string
     {
-        // DSHOW-049: a TRILHA inteira do (produto, atributo) — linhas vivas E excluídas, cada uma com a versão e se está viva. Toda limpeza
-        // muda a impressão (a versão da linha sobe), então "vazio de sempre" ≠ "vazio depois de preencher e limpar" (ciclo ABA).
-        $p = array_map(static fn($r) => (int) ($r['opcao_chave'] ?? ($r['opcao_id'] ?? 0)) . ':' . (int) $r['versao'] . ':' . (empty($r['excluido_em'] ?? null) ? 'v' : 'x'), $linhas);
-        sort($p, SORT_STRING);
-        return substr(hash('sha256', implode(',', $p)), 0, 16);
+        // DSHOW-050: CONTADOR MONOTÔNICO por (produto, atributo) = soma das versões de TODAS as linhas, vivas e excluídas (tombstones).
+        // Toda mudança em eq_valor sobe a versão de uma linha (editar, limpar/excluir, reativar) ou insere uma linha nova com versão 1, e
+        // nada é apagado fisicamente → a soma SÓ SOBE. Nunca volta a um valor anterior (vazio → preenchido → vazio = outro número).
+        // Campo que nunca teve linha = "0".
+        $n = 0; foreach ($linhas as $r) $n += (int) $r['versao'];
+        return (string) $n;
     }
 
     /** DSHOW-034: operação sobre o conjunto inteiro (limpar, mudar estado) exige versao_conjunto, conferida sob trava. */
-    private static function conferirConjunto(array $b, array $vivos): void
+    private static function conferirConjunto(array $b, array $trilha): void
     {
         $vc = $b['versao_conjunto'] ?? null;
-        if (!is_string($vc) || !preg_match('/^[0-9a-f]{16}$/', $vc)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão do conjunto de opções. Recarregue a ficha.', ['versao_conjunto']);
-        if ($vc !== self::versaoConjunto($vivos)) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou as opções deste campo. Recarregue e tente de novo.');
+        if (!is_string($vc) || !preg_match('/^(0|[1-9][0-9]{0,15})$/', $vc)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão do conjunto de opções. Recarregue a ficha.', ['versao_conjunto']);
+        if ($vc !== self::versaoConjunto($trilha)) throw new AtributosErro('CONFLICT', 409, 'Outra pessoa alterou as opções deste campo. Recarregue e tente de novo.');
     }
 
     private static function mesmoValor(array $antes, array $d): bool

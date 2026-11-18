@@ -205,7 +205,7 @@ final class ProdutosLeitura
             'opcoes' => array_values(array_filter(array_map(static fn($v) => $v['opcao'], $vs))),
             'unidade_id' => $v0['unidade_id'] === null ? null : (int) $v0['unidade_id'], 'origem' => $v0['origem'], 'lote_id' => $v0['lote_id'] === null ? null : (int) $v0['lote_id'],
             'atualizado_em' => $v0['atualizado_em'], 'atualizado_por' => $v0['atualizado_por'], 'versao' => (int) $v0['versao'], 'legado_bruto' => $v0['legado_bruto'],
-            'versao_conjunto' => AtributosService::versaoConjunto($vs)];   // DSHOW-034: limpar/mudar estado da multiopção exige esta
+            'versao_conjunto' => null];   // DSHOW-050: preenchida pela ficha com o contador da trilha (nunca só das linhas vivas)
     }
 
     /** Ficha do produto (§11.3): itens aplicáveis com valor/unidade/origem, Precifica ao lado, sugestões, legado; fora da ficha; exceções. */
@@ -234,7 +234,7 @@ final class ProdutosLeitura
             $a = $atr[$aid] ?? ['id' => $aid, 'rotulo' => "#$aid", 'codigo' => null, 'tipo' => 'texto', 'unidade_id' => null, 'ativo' => 0];
             $base = ($it ?? ['unidade_produto_id' => null, 'unidade_kit_id' => null]) + ['def' => $a];
             $valor = isset($vals[$aid]) ? self::valorPublico($vals[$aid]) : null;
-            $vc = $trilha !== null ? AtributosService::versaoConjunto($trilha[$aid] ?? []) : ($valor['versao_conjunto'] ?? AtributosService::versaoConjunto([]));
+            $vc = $trilha !== null ? AtributosService::versaoConjunto($trilha[$aid] ?? []) : null;   // sem trilha → sem versão (fail-closed: o serviço recusa)
             if ($valor !== null) $valor['versao_conjunto'] = $vc;
             $efet = Aplicabilidade::unidadeEfetiva($base, $valor['unidade_id'] ?? null);
             $ln = $leg[$aid] ?? null;
@@ -252,7 +252,7 @@ final class ProdutosLeitura
                 'unidades' => in_array($a['tipo'], ['numero', 'inteiro'], true) ? $this->unidadesPara($base, $unid, $extras) : [],
                 'opcoes' => in_array($a['tipo'], ['opcao', 'multiopcao'], true) ? ($opc[$aid] ?? []) : [],
                 'valor' => $valor,
-                'versao_conjunto' => $vc,   // DSHOW-049: também no item SEM valor (vazio com trilha ≠ vazio de sempre)
+                'versao_conjunto' => $vc,   // DSHOW-049/050: contador monotônico, também no item SEM valor
                 'precifica' => $this->parPrecifica($a['codigo'] ?? null, $specs),
                 'sugestoes' => array_map(static fn($s) => ['id' => (int) $s['id'], 'fonte' => $s['fonte'], 'tipo' => $s['tipo'], 'valor_proposto' => $s['valor_proposto'], 'opcao_id' => $s['opcao_id'] === null ? null : (int) $s['opcao_id'],
                     'unidade_id' => $s['unidade_id'] === null ? null : (int) $s['unidade_id'], 'confianca' => $s['confianca'], 'evidencia' => $s['evidencia'],
