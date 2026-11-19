@@ -13,15 +13,16 @@ function contraste(hex: string | null): string {
 }
 
 /** Foto do produto: miniatura autenticada (A6) sobre a cor média; sem foto → moldura tracejada. */
-export function Foto({ mediaId, cor, proporcao = '4 / 3', idCapsula, lado = 480, compacta = false, ajuste = 'contain' }: {
+export function Foto({ mediaId, cor, proporcao = '4 / 3', idCapsula, lado = 480, compacta = false, ajuste = 'contain', url }: {
   mediaId: number | null; cor: string | null; proporcao?: string; idCapsula?: number; lado?: 480 | 1280; compacta?: boolean; ajuste?: 'contain' | 'cover';
+  /** FOTOS: URL própria (variantes do app pelo proxy /api/midia); sem ela, a miniatura de sempre */ url?: string;
 }) {
   const [falhou, setFalhou] = React.useState(false);
   React.useEffect(() => setFalhou(false), [mediaId]);
   const tem = mediaId !== null;
   return (
     <div className={`at-foto ${tem ? '' : 'at-foto--vazia'}`} style={{ aspectRatio: proporcao, background: tem ? (cor ? `#${cor}` : 'var(--bl-superficie-2)') : undefined }}>
-      {tem && !falhou && <img src={urlFoto(mediaId, lado)} alt="" loading="lazy" decoding="async" style={{ objectFit: ajuste }} onError={() => setFalhou(true)} />}
+      {tem && !falhou && <img src={url ?? urlFoto(mediaId, lado)} alt="" loading="lazy" decoding="async" style={{ objectFit: ajuste }} onError={() => setFalhou(true)} />}
       {(!tem || falhou) && (
         <div className="at-foto__miolo" style={{ color: tem ? contraste(cor) : 'var(--bl-texto-3)' }} role="img" aria-label={tem ? 'Foto indisponível' : 'Produto sem foto'}>
           <svg width={compacta ? 18 : 26} height={compacta ? 18 : 26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
