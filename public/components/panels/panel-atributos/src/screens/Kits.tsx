@@ -6,7 +6,7 @@ import '../styles/kits.css';
 import { obter, enviar, ErroApi } from '../lib/api';
 import type { KitResumo, KitDetalhe, ItemKit, Importancia, Unidade, AtributoDicionario, TipoAtributo } from '../lib/tipos';
 import { IMPORTANCIA, IMPORTANCIAS, TIPO, rotuloCategoria, rotuloSubcategoria } from '../lib/rotulos';
-import { Botao, Dialogo, ChipKit, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
+import { Botao, CabecalhoTravado, Dialogo, ChipKit, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
 import { useModulo } from '../app/contexto';
 import { assinaturaEscopo, avancarBase, decidirEnvio, manterNovos, type BaseSecao } from '../lib/integridade';
 
@@ -67,6 +67,7 @@ function ListaKits({ aoAbrir, aoCriado }: { aoAbrir: (id: number) => void; aoCri
 
   return (
     <div className="at-kits-pilha">
+      <CabecalhoTravado>{/* CABEÇALHO TRAVADO (exceção do Jhony, 19/11): só envolve; nada de lógica */}
       <div className="at-titulo-tela">
         <div>
           <h2>Kits de atributos</h2>
@@ -85,6 +86,7 @@ function ListaKits({ aoAbrir, aoCriado }: { aoAbrir: (id: number) => void; aoCri
         </button>
         <span className="at-filtros__total">{plural(visiveis.length, 'kit', 'kits')}</span>
       </div>
+      </CabecalhoTravado>
 
       {visiveis.length === 0 ? (
         <Vazio titulo={termo ? 'Nenhum kit com esse nome.' : 'Nenhum kit ativo.'}>

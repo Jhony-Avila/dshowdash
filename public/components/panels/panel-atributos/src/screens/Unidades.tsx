@@ -5,7 +5,7 @@ import React from 'react';
 import { obter, enviar, ErroApi } from '../lib/api';
 import type { Unidade } from '../lib/tipos';
 import { decimal, numeroParaApi } from '../lib/formatar';
-import { Botao, Dialogo, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
+import { Botao, CabecalhoTravado, Dialogo, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
 import { useModulo } from '../app/contexto';
 import { decidirFechar, fotografiaUnidade, iniciarGravacao } from '../lib/integridade';
 import '../styles/dicionario.css';
@@ -91,6 +91,7 @@ export function Unidades() {
 
   return (
     <div>
+      <CabecalhoTravado>{/* CABEÇALHO TRAVADO (exceção do Jhony, 19/11): só envolve; nada de lógica */}
       <div className="at-titulo-tela">
         <div>
           <h2>Unidades</h2>
@@ -110,6 +111,7 @@ export function Unidades() {
         <span>{n(total)} de {n(dados.unidades.length)} unidades · {n(grupos.length)} grandeza{grupos.length === 1 ? '' : 's'}</span>
         {erro && <span className="at-alerta" role="alert">{erro}</span>}
       </div>
+      </CabecalhoTravado>
 
       {total === 0 ? (
         <Vazio titulo={busca ? 'Nenhuma unidade encontrada' : 'Nenhuma unidade cadastrada'} acao={busca ? <Botao aoClicar={() => setBusca('')}>Limpar busca</Botao> : undefined}>

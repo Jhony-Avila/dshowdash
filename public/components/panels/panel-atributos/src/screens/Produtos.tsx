@@ -124,16 +124,20 @@ export function Produtos() {
                   <div className="at-cartao__corpo">
                     <div className="at-cartao__classe">{rotuloSubcategoria(p.subcategoria)}</div>
                     <div className="at-cartao__nome" title={p.nome}>{p.nome}</div>
-                    <div className="at-cartao__chips">
-                      {especificos(p).slice(0, 2).map((k) => <ChipKit key={k.id} nome={k.nome} pequeno />)}
-                      {especificos(p).length > 2 && <Etiqueta>+{especificos(p).length - 2}</Etiqueta>}
-                      {p.kits_especificos === 0 && <KitBase />}
-                      {!p.ativo && <Etiqueta tom="aviso">Inativo</Etiqueta>}
+                    {/* rodapé numa linha só (mockup do Jhony, 19/11): selo do kit + barra de preenchimento + "N de M" */}
+                    <div className="at-cartao__rodape">
+                      <div className="at-cartao__chips">
+                        {especificos(p).slice(0, 1).map((k) => <ChipKit key={k.id} nome={k.nome} pequeno />)}
+                        {especificos(p).length > 1 && <Etiqueta>+{especificos(p).length - 1}</Etiqueta>}
+                        {p.kits_especificos === 0 && <KitBase />}
+                        {!p.ativo && <Etiqueta tom="aviso">Inativo</Etiqueta>}
+                      </div>
+                      <Barra feitos={p.essencial.feitos} total={p.essencial.total} compacta />
                     </div>
-                    <Barra feitos={p.essencial.feitos} total={p.essencial.total} compacta />
                   </div>
                 </button>
-                {dados.pode_vincular && <label className="at-cartao__marcar"><input type="checkbox" checked={sel.has(p.id)} onChange={() => alternar(p.id)} aria-label={`Selecionar ${p.nome}`} />{sel.has(p.id) ? 'Selecionado' : 'Selecionar'}</label>}
+                {/* seleção: caixa no canto superior direito da foto, sempre visível, área de clique de 28 px; fora do botão que abre a ficha */}
+                {dados.pode_vincular && <label className="at-cartao__sel" title={sel.has(p.id) ? 'Selecionado' : 'Selecionar'}><input type="checkbox" checked={sel.has(p.id)} onChange={() => alternar(p.id)} aria-label={`Selecionar ${p.nome}`} /></label>}
               </article></React.Fragment>
             ))}
           </div>

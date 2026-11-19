@@ -8,7 +8,7 @@ import { obter, enviar, ErroApi } from '../lib/api';
 import type { AtributoDicionario, Unidade, TipoAtributo } from '../lib/tipos';
 import { IMPORTANCIA, IMPORTANCIAS, TIPO } from '../lib/rotulos';
 import { decimal, numeroParaApi } from '../lib/formatar';
-import { Botao, Dialogo, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
+import { Botao, CabecalhoTravado, Dialogo, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
 import { useModulo } from '../app/contexto';
 import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
 import { comparadorPorLista, type Ordenacao } from '../lib/ordenar';
@@ -117,6 +117,7 @@ export function Dicionario() {
 
   return (
     <div>
+      <CabecalhoTravado>{/* CABEÇALHO TRAVADO (exceção do Jhony, 19/11): só envolve; nada de lógica */}
       <div className="at-dic-filtros" role="search">
         <label className="at-busca">
           <span className="bl-so-leitor">Buscar por rótulo ou código</span>
@@ -165,6 +166,7 @@ export function Dicionario() {
         <span>{n(filtrados.length)} de {n(dados.atributos.length)} atributos{!pode && <span className="at-fraco"> · seu nível permite apenas consultar</span>}</span>
         {erro && <span className="at-alerta" role="alert">{erro}</span>}
       </div>
+      </CabecalhoTravado>
 
       {filtrados.length === 0 ? (
         <Vazio titulo="Nenhum atributo encontrado" acao={filtrando ? <Botao aoClicar={() => mudar(FILTROS_PADRAO)}>Limpar filtros</Botao> : undefined}>

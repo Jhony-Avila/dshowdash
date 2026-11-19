@@ -6,7 +6,7 @@ import { enviar, ErroApi, novaChave, obter } from '../lib/api';
 import { casaBusca } from '../lib/formatar';
 import { rotuloSubcategoria } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
-import { Botao, CapsulaId, Carregando, ChipKit, Erro, Etiqueta, Vazio } from '../ui/Comuns';
+import { Botao, CabecalhoTravado, CapsulaId, Carregando, ChipKit, Erro, Etiqueta, Vazio } from '../ui/Comuns';
 import { alternarLado } from '../lib/integridade';
 
 export function Vincular() {
@@ -92,20 +92,23 @@ export function Vincular() {
 
   return (
     <div className="at-vincular">
+      <CabecalhoTravado>{/* CABEÇALHO TRAVADO (exceção do Jhony, 19/11): só envolve; nada de lógica */}
       <div className="at-titulo-tela">
         <div><h2>Vincular</h2><p>Aplique kits ou atributos avulsos a vários produtos de uma vez. Nada é gravado antes da prévia.</p></div>
         <div className="at-alternador" role="group" aria-label="Visão">
           <button type="button" className={modo === 'passos' ? 'ativo' : ''} aria-pressed={modo === 'passos'} onClick={() => setModo('passos')}>Aplicar</button>
           <button type="button" className={modo === 'matriz' ? 'ativo' : ''} aria-pressed={modo === 'matriz'} onClick={() => setModo('matriz')}>Matriz</button>
         </div>
-      </div>
+      </div></CabecalhoTravado>
       {modo === 'matriz' ? <Matriz vit={vit} kits={kits} sel={sel} /> : (<>
+        <CabecalhoTravado>
         <ol className="at-passos" aria-label="Passos">
           {['Produtos', 'O que aplicar', 'Prévia e confirmação'].map((r, i) => (
             <li key={r} className={passo === i + 1 ? 'ativo' : passo > i + 1 ? 'feito' : ''}><button type="button" disabled={i + 1 > passo && !(i === 1 && m.selecao.length)} onClick={() => setPasso(i + 1)}><span>{i + 1}</span>{r}</button></li>))}
-        </ol>
+        </ol></CabecalhoTravado>
         {passo === 1 && (
           <section className="at-painel">
+            <CabecalhoTravado>
             <div className="at-painel__cabeca">
               <h3>1. Escolha os produtos <Etiqueta tom={m.selecao.length ? 'verde' : 'neutro'}>{m.selecao.length} selecionado(s)</Etiqueta></h3>
               <div className="at-acoes">
@@ -115,7 +118,7 @@ export function Vincular() {
                 <Botao aoClicar={() => m.setSelecao([])} desligado={!m.selecao.length}>Limpar</Botao>
                 <Botao primario desligado={!m.selecao.length} aoClicar={() => setPasso(2)}>Continuar</Botao>
               </div>
-            </div>
+            </div></CabecalhoTravado>
             <div className="at-lista-produtos bl-rola-x">
               {filtrados.slice(0, 200).map((p) => (
                 <label key={p.id} className={`at-lista-produtos__item ${sel.has(p.id) ? 'ativo' : ''}`}>
@@ -181,9 +184,9 @@ function Matriz({ vit, kits, sel }: { vit: Vitrine; kits: KitResumo[]; sel: Set<
   const simb: Record<string, string> = { escopo: '●', direto: '◆', todos: '○' };
   return (
     <section className="at-painel">
-      <div className="at-painel__cabeca"><h3>Matriz produtos × kits {sel.size ? <Etiqueta tom="verde">{sel.size} selecionado(s)</Etiqueta> : null}</h3>
+      <CabecalhoTravado>      <div className="at-painel__cabeca"><h3>Matriz produtos × kits {sel.size ? <Etiqueta tom="verde">{sel.size} selecionado(s)</Etiqueta> : null}</h3>
         <div className="at-acoes"><select className="at-campo" aria-label="Subcategoria" value={sub} onChange={(e) => setSub(e.target.value)}><option value="">Todas as subcategorias</option>{subcats.map((s) => <option key={s} value={s}>{rotuloSubcategoria(s || null)}</option>)}</select>
-          <span className="at-fraco">● pela subcategoria · ◆ direto · ○ todos os produtos</span></div></div>
+          <span className="at-fraco">● pela subcategoria · ◆ direto · ○ todos os produtos</span></div></div></CabecalhoTravado>
       <div className="bl-rola-x at-matriz">
         <table className="at-tabela">
           <thead><tr><th>Produto</th>{kits.map((k) => <th key={k.id} title={k.nome}><span className="at-matriz__kit">{k.nome}</span></th>)}</tr></thead>

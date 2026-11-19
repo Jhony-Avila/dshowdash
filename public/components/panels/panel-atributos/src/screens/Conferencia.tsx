@@ -6,7 +6,7 @@ import { enviar, ErroApi, obter } from '../lib/api';
 import { decimal } from '../lib/formatar';
 import { FONTE_SUGESTAO, rotuloSubcategoria } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
-import { Botao, CapsulaId, Carregando, Dialogo, Erro, Etiqueta, Vazio } from '../ui/Comuns';
+import { Botao, CabecalhoTravado, CapsulaId, Carregando, Dialogo, Erro, Etiqueta, Vazio } from '../ui/Comuns';
 
 type Fila = 'legado' | 'nome' | 'fora_da_ficha' | 'obrigatorios_vazios' | 'sem_kit';
 const FILAS: { id: Fila; rotulo: string; desc: string }[] = [
@@ -49,16 +49,17 @@ export function Conferencia() {
   return (
     <div className="at-conferencia">
       <div className="at-titulo-tela"><div><h2>Conferência</h2><p>Filas com ação direta. Nada vira valor sem decisão; cada decisão fica no histórico do produto.</p></div></div>
+      <CabecalhoTravado>{/* CABEÇALHO TRAVADO (exceção do Jhony, 19/11): só envolve; nada de lógica */}
       <div className="at-abas" role="tablist" aria-label="Filas">
         {FILAS.map((x) => <button key={x.id} type="button" role="tab" aria-selected={fila === x.id} className={fila === x.id ? 'ativo' : ''} onClick={() => { setFila(x.id); setFiltroAtr(''); }}>{x.rotulo} <span className="at-filtro__n">{total(x.id)}</span></button>)}
       </div>
-      <section className="at-painel">
         <div className="at-painel__cabeca"><span className="at-fraco">{atual.desc}</span>
           {(fila === 'legado' || fila === 'nome') && <div className="at-acoes">
             <select className="at-campo" aria-label="Filtrar por atributo" value={filtroAtr} onChange={(e) => setFiltroAtr(e.target.value)}><option value="">Todos os atributos</option>{atrs.map((a) => <option key={a} value={a}>{a}</option>)}</select>
             {fila === 'nome' && d.pode_decidir && sugs.length > 0 && <Botao aoClicar={() => setLote(sugs.filter((x) => !x.ja_tem_valor).map((x) => x.id))}>Aceitar as {Math.min(sugs.filter((x) => !x.ja_tem_valor).length, 200)} visíveis sem valor…</Botao>}
           </div>}
-        </div>
+        </div></CabecalhoTravado>
+      <section className="at-painel">
         {(fila === 'legado' || fila === 'nome') && (sugs.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Fila vazia">Nada pendente aqui.</Vazio></div> : (
           <div className="bl-rola-x"><table className="at-tabela">
             <thead><tr><th>Produto</th><th>Atributo</th><th>Proposto</th><th>Evidência</th><th>Decisão</th></tr></thead>

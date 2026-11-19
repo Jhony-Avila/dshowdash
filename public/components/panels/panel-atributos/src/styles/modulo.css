@@ -526,3 +526,21 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
    na página). Em tela larga a tabela cabe → sem rolagem horizontal, e o cabeçalho gruda logo abaixo do bloco fixo. Em tela estreita a
    rolagem horizontal volta (o cabeçalho das colunas não gruda; o bloco fixo continua). */
 @media (min-width: 1200px) { [data-bl-root] .at-produtos .bl-rola-x { overflow: visible; } }
+
+/* ── PRODUTOS · CARDS (mockup do Jhony, 19/11) ──────────────────────────────────────────────────────────────────────────────────────
+   Seleção no canto superior direito da foto (área de clique 28 px, rótulo acessível "Selecionar <nome>"); rodapé numa linha só
+   (selo do kit + barra + "N de M"); cartão mais baixo; espaço entre linhas = espaço entre colunas (16 px). */
+[data-bl-root] .at-grade { gap: 16px; align-items: start; }
+[data-bl-root] .at-cartao__abrir { gap: 6px; }
+[data-bl-root] .at-cartao__corpo { gap: 4px; padding: 0 2px 2px; }
+[data-bl-root] .at-cartao__rodape { display: flex; align-items: center; gap: 8px; min-width: 0; margin-top: 2px; }
+[data-bl-root] .at-cartao__rodape .at-cartao__chips { flex: 0 1 auto; flex-wrap: nowrap; min-width: 0; max-width: 55%; min-height: 0; overflow: hidden; }
+[data-bl-root] .at-cartao__rodape .at-cartao__chips > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-bl-root] .at-cartao__rodape .at-barra { flex: 1 1 auto; min-width: 70px; }
+[data-bl-root] .at-cartao__sel { top: 14px; right: 14px; width: 28px; height: 28px; background: rgba(255,255,255,.92); border: 1px solid var(--bl-borda-forte, rgba(0,0,0,.2)); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+[data-bl-root] .at-cartao--sel .at-cartao__sel { background: var(--bl-verde, #059669); border-color: var(--bl-verde, #059669); }
+[data-bl-root] .at-cartao__sel input { width: 16px; height: 16px; margin: 0; accent-color: var(--bl-verde, #059669); }
+[data-bl-root] .at-cartao__sel:focus-within { outline: 2px solid var(--bl-verde); outline-offset: 2px; }
+/* CABEÇALHO TRAVADO: o h2 + descrição antigos das telas (Kits, Unidades, Vincular) não aparecem no bloco travado; os botões ficam */
+[data-bl-root] .at-fixo .at-titulo-tela > div:first-child:has(> h2) { display: none; }
+[data-bl-root] .at-fixo .at-titulo-tela { margin: 0 0 6px; }
