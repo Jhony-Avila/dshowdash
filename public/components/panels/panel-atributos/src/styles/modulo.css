@@ -804,3 +804,12 @@ html[data-theme="dark"] body [data-bl-root] .pv2-corpo__fixo > .pv2-linha--fixa:
 [data-bl-root] .at-fotos-ger__barra { display: flex; gap: 2px; justify-content: center; }
 [data-bl-root] .at-fotos-ger__selo { font-size: 11.5px; color: var(--bl-texto-2); font-weight: 400; text-align: center; }
 [data-bl-root] .at-fotos-ger__removidas { margin-top: 12px; }
+/* FOTOS (roteiro aprovado): resumo do lote, prévia HEIC, progresso, reordenar */
+.at-fotos-add__resumo { margin: 10px 0 0; font-size: 13px; font-weight: 500; }
+.at-fotos-add__det { font-size: 11.5px; }
+.at-fotos-fila__previa--heic { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--bl-texto-2); text-align: center; line-height: 1.1; }
+.at-fotos-fila__previa--heic small { font-size: 9.5px; font-weight: 400; }
+.at-fotos-fila__estado progress { width: 120px; height: 6px; }
+.at-fotos-fila__item--duplicada { border-color: var(--bl-info); }
+[data-bl-root] .at-fotos-ger__grade--ordenando .at-fotos-ger__item { cursor: grab; }
+[data-bl-root] .at-fotos-ger__principal { font-size: 12px; font-weight: 500; color: var(--bl-info); padding: 4px 6px; }

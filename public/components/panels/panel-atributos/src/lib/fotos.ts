@@ -1,11 +1,12 @@
-// FOTOS NA FICHA (CIMA, 19/11; tela passou da DIREITA para a CIMA). Cliente das rotas do PROXY DO DASH para o app (/api/midia), conforme o
-// levantamento da DIREITA (dash/20261118-fotos/LEVANTAMENTO.md §P.2/P.3) e o contrato do app (app/20261119-fotos1/CONTRATO-ROTAS-FOTOS1.md).
-// O proxy (PHP) ainda NÃO existe: a tela foi feita e testada com essas rotas SIMULADAS (Playwright). Contrato da tela: portoes/FOTOS-FICHA/CONTRATO-TELA.md.
-// Envelope do Dash: {ok, data, error, meta:{message, desfecho}}. Escritas: X-Chave-Operacao (uma por intenção) + recibo obrigatório ("foi salvo").
-import { enviarPara, ErroApi, novaChaveOperacao, obterDe } from './api';
+// FOTOS NA FICHA (CIMA, 19/11) — cliente do PROXY DE FOTOS DO DASH, conforme o contrato v1.0 da DIREITA:
+// /srv/dshow-docs/briefings/CONTRATO-PROXY-MIDIA.md (ramo feat/fotos1-dash = d572b279). A tela só fala com /api/midia; o proxy fala com o app.
+// Envelope do Dash {ok, data, error, meta}. Escritas: X-Chave-Operacao (uma por intenção; 16–64 [A-Za-z0-9_-]) + X-CSRF-Token; "Publicada/Salvo"
+// SÓ com recibo (data.recibo). Erros → desfecho pelo tratarEscrita do api.ts (5xx/502/504 = desconhecido; 4xx com meta.desfecho).
+import { ErroApi, MSG_DESCONHECIDO, novaChaveOperacao, obterDe, tokenCsrf, tratarRespostaEscrita, enviarPara } from './api';
 
 const BASE = '/api/midia/index.php';
 
+/** Foto da galeria (contrato §3.1). O nome do autor a tela resolve pelo cadastro do Dash (aqui: autor_nome opcional). */
 export interface FotoGaleria {
   id: number; capa: boolean; posicao: number; origem: 'precifica' | 'dshow'; autor_user_id: number | null; autor_nome?: string | null;
   criado_em: string | null; largura: number; altura: number; cor: string | null; versao_arquivo?: number;
@@ -14,51 +15,66 @@ export interface Galeria {
   produto: { id: number; nome: string; ativo: boolean; pode_receber_foto: boolean };
   versao_galeria: number; limite_fotos: number; fotos: FotoGaleria[]; removidas: (FotoGaleria & { removida_em: string; motivo: string | null })[];
 }
-/** A tela só mostra os botões de escrita com `ok`. Flag do app desligada (404) ou usuário fora da lista de publicação (403) = sem botões. */
-export type EstadoGaleria = { tipo: 'carregando' } | { tipo: 'ok'; g: Galeria } | { tipo: 'desligado' } | { tipo: 'sem_permissao' } | { tipo: 'erro'; msg: string };
+/** Escrita só com `ok`. 403 NOT_AUTHORIZED (piloto: só o 75) e 404 (flag/rota) = sem botões; 503 APP_UNAVAILABLE = indisponível (sem botões). */
+export type EstadoGaleria = { tipo: 'carregando' } | { tipo: 'ok'; g: Galeria } | { tipo: 'desligado' } | { tipo: 'sem_permissao' } | { tipo: 'indisponivel'; msg: string } | { tipo: 'erro'; msg: string };
 
 export async function carregarGaleria(productId: number, sinal?: AbortSignal): Promise<EstadoGaleria> {
-  try { return { tipo: 'ok', g: await obterDe<Galeria>(`${BASE}?r=fotos&product_id=${productId}`, sinal) }; }
+  try { return { tipo: 'ok', g: await obterDe<Galeria>(`${BASE}?r=galeria&product_id=${productId}`, sinal) }; }
   catch (e) {
-    if (e instanceof ErroApi && e.http === 404) return { tipo: 'desligado' };
-    if (e instanceof ErroApi && (e.http === 403 || e.http === 401)) return { tipo: 'sem_permissao' };
+    const er = e instanceof ErroApi ? e : null;
+    if (er?.http === 404) return { tipo: 'desligado' };
+    if (er?.http === 403 || er?.http === 401) return { tipo: 'sem_permissao' };
+    if (er?.http === 503) return { tipo: 'indisponivel', msg: er.message };
     return { tipo: 'erro', msg: e instanceof Error ? e.message : 'Falha ao ler as fotos.' };
   }
 }
 
-export const urlFotoMidia = (id: number, t: 256 | 768 | 1536 = 256, removida = false) => `${BASE}?r=foto&id=${id}&t=${t}${removida ? '&removida=1' : ''}`;
+/** Bytes da variante (§3.2): 256 | 768 | 1536 | 2048; removida só com removida=1. */
+export const urlImagem = (id: number, t: 256 | 768 | 1536 | 2048 = 256, removida = false) => `${BASE}?r=imagem&id=${id}&t=${t}${removida ? '&removida=1' : ''}`;
 
-/** Recibo do proxy (= recibo do app, §3.1 do contrato). "Salvo" na tela SÓ com ele. */
-export interface ReciboFoto { operacao: 'publicar' | 'capa' | 'ordem' | 'remover' | 'restaurar'; chave: string; desfecho: 'aplicada' | 'sem_mudanca'; confirmado_em: string; foto_id: number | null; produto_id: number; versao_nova: number; duplicada?: boolean; [k: string]: unknown }
-export type RespostaFoto = { desfecho: 'aplicada' | 'sem_mudanca'; recibo: ReciboFoto };
+/** Recibo (§4): chaves do app em ordem alfabética, operacao prefixada. */
+export interface ReciboFoto { canal?: string; chave: string; confirmado_em: string; desfecho: 'aplicada' | 'sem_mudanca'; duplicada?: boolean; foto_id: number | null; operacao: 'foto_publicar' | 'foto_capa' | 'foto_ordem' | 'foto_remover' | 'foto_restaurar'; produto_id: number; versao_nova: number; ordem?: number[] }
+export type RespostaFoto = { desfecho: 'aplicada' | 'sem_mudanca'; recibo: ReciboFoto; repetido?: boolean };
 
-export const publicarFoto = (productId: number, arquivo: Blob, chave: string) =>
-  enviarPara<RespostaFoto>(`${BASE}?r=foto_enviar&product_id=${productId}`, arquivo, { chave, contentType: 'application/octet-stream' });
-export const marcarCapa = (productId: number, fotoId: number, versao: number, chave = novaChaveOperacao()) =>
-  enviarPara<RespostaFoto>(`${BASE}?r=foto_capa`, { product_id: productId, foto_id: fotoId, versao }, { chave });
-export const ordenarFotos = (productId: number, ordem: number[], versao: number, chave = novaChaveOperacao()) =>
-  enviarPara<RespostaFoto>(`${BASE}?r=foto_ordem`, { product_id: productId, ordem, versao }, { chave });
-export const removerFoto = (productId: number, fotoId: number, versao: number, chave = novaChaveOperacao()) =>
-  enviarPara<RespostaFoto>(`${BASE}?r=foto_remover`, { product_id: productId, foto_id: fotoId, versao }, { chave });
-export const restaurarFoto = (productId: number, fotoId: number, versao: number, chave = novaChaveOperacao()) =>
-  enviarPara<RespostaFoto>(`${BASE}?r=foto_restaurar`, { product_id: productId, foto_id: fotoId, versao }, { chave });
+/** Publicar UMA foto (§3.4): corpo = bytes, octet-stream. XHR para ter o progresso da TRANSFERÊNCIA (enviando %) e saber quando o
+ *  servidor passa a PROCESSAR (upload terminou, resposta ainda não veio). Resposta pelo MESMO tratamento do "foi salvo". */
+export function publicarFoto(productId: number, arquivo: Blob, chave: string, aoProgresso?: (fase: 'enviando' | 'processando', pct: number) => void): Promise<RespostaFoto> {
+  return tokenCsrf().then((token) => new Promise<RespostaFoto>((ok, falha) => {
+    const x = new XMLHttpRequest();
+    x.open('POST', `${BASE}?r=publicar&product_id=${productId}`); x.withCredentials = true;
+    x.setRequestHeader('Accept', 'application/json'); x.setRequestHeader('Content-Type', 'application/octet-stream');
+    x.setRequestHeader('X-CSRF-Token', token); x.setRequestHeader('X-Chave-Operacao', chave);
+    x.upload.onprogress = (e) => { if (e.lengthComputable) aoProgresso?.('enviando', Math.round((100 * e.loaded) / e.total)); };
+    x.upload.onload = () => aoProgresso?.('processando', 100);
+    x.onerror = x.ontimeout = x.onabort = () => falha(new ErroApi(0, 'RESULTADO_DESCONHECIDO', MSG_DESCONHECIDO, [], { desfecho: 'desconhecido', chave }));
+    x.onload = () => { tratarRespostaEscrita<RespostaFoto>(new Response(x.responseText, { status: x.status, headers: { 'Content-Type': 'application/json' } }), chave).then(ok, falha); };
+    x.send(arquivo);
+  }));
+}
+export const marcarCapa = (fotoId: number, versao: number, chave = novaChaveOperacao()) => enviarPara<RespostaFoto>(`${BASE}?r=capa`, { id: fotoId, versao }, { chave });
+export const ordenarFotos = (productId: number, ordem: number[], versao: number, chave = novaChaveOperacao()) => enviarPara<RespostaFoto>(`${BASE}?r=ordem`, { product_id: productId, versao, ordem }, { chave });
+export const removerFoto = (fotoId: number, versao: number, chave = novaChaveOperacao()) => enviarPara<RespostaFoto>(`${BASE}?r=remover`, { id: fotoId, versao }, { chave });
+export const restaurarFoto = (fotoId: number, versao: number, chave = novaChaveOperacao()) => enviarPara<RespostaFoto>(`${BASE}?r=restaurar`, { id: fotoId, versao }, { chave });
 
-/** Conferir gravação (§4.1 do contrato): só leitura. */
+/** Conferir gravação (§3.3): só leitura, nunca reexecuta; formato do `Conferencia` do api.ts. */
 export type Conferido = { tipo: 'salvo'; recibo: ReciboFoto } | { tipo: 'andando'; demorando: boolean } | { tipo: 'nao_aplicada'; msg: string } | { tipo: 'nao_encontrada' };
 export async function conferirFoto(chave: string): Promise<Conferido> {
-  const c = await obterDe<{ estado: string; recibo?: ReciboFoto; erro?: { message?: string } }>(`${BASE}?r=conferir_gravacao&chave=${encodeURIComponent(chave)}`);
-  if ((c.estado === 'aplicada' || c.estado === 'sem_mudanca') && c.recibo) return { tipo: 'salvo', recibo: c.recibo };
-  if (c.estado === 'em_andamento' || c.estado === 'pode_estar_demorando') return { tipo: 'andando', demorando: c.estado === 'pode_estar_demorando' };
-  if (c.estado === 'nao_aplicada') return { tipo: 'nao_aplicada', msg: c.erro?.message ?? 'O servidor recusou esta foto.' };
+  const c = await obterDe<{ resultado: string; recibo?: ReciboFoto; erro?: { mensagem?: string }; sinal?: string; reenvio_seguro?: boolean }>(`${BASE}?r=conferir&chave=${encodeURIComponent(chave)}`);
+  if ((c.resultado === 'aplicada' || c.resultado === 'sem_mudanca') && c.recibo) return { tipo: 'salvo', recibo: c.recibo };
+  if (c.resultado === 'em_andamento') return { tipo: 'andando', demorando: c.sinal === 'pode_estar_demorando' };
+  if (c.resultado === 'nao_aplicada') return { tipo: 'nao_aplicada', msg: c.erro?.mensagem ?? 'O servidor recusou esta foto.' };
   return { tipo: 'nao_encontrada' };
 }
 
-/** HEIC vai sem redimensionar (o Chrome de desktop não decodifica HEIC em canvas; o app converte). */
-export const ehHeic = (f: File) => /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
+/** Formatos e limites do canal (contrato do proxy §3.4 e do app §1). Vagas restantes vêm da galeria (limite_fotos − fotos ativas). */
+export const FORMATOS_TEXTO = 'JPEG, PNG, WebP ou HEIC · até 15 MB por foto';
+export const DETALHES_LIMITES = 'Até 40 megapixels; lado menor com pelo menos 64 px.';
 export const LIMITE_BYTES = 15 * 1024 * 1024;
 export const ACEITOS = /^image\/(jpeg|png|webp|heic|heif)$/i;
+/** HEIC vai sem redimensionar (o Chrome de desktop não decodifica HEIC em canvas; o app converte) e sem prévia no navegador. */
+export const ehHeic = (f: File) => /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
 
-/** No navegador: reduz para ≤ 2560 px no lado maior SÓ se passar disso (a deduplicação do app compara os bytes; não recomprimir à toa). */
+/** Reduz para ≤ 2560 px no lado maior SÓ se passar disso (a deduplicação do app compara os bytes; não recomprimir à toa). */
 export async function prepararArquivo(f: File): Promise<Blob> {
   if (ehHeic(f) || typeof createImageBitmap === 'undefined') return f;
   let bmp: ImageBitmap;

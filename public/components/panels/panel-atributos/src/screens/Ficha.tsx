@@ -12,8 +12,8 @@ import { Icone, type NomeIcone } from '../ui/Icones';
 import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
 import type { Ordenacao } from '../lib/ordenar';
 import { EditorValor, type ControleEditor } from '../ui/EditorValor';
-import { AdicionarFotos, filtrarImagens, GerenciarFotos } from '../ui/fotos/GaleriaFotos';
-import { carregarGaleria, urlFotoMidia, type EstadoGaleria } from '../lib/fotos';
+import { AdicionarFotos, GerenciarFotos } from '../ui/fotos/GaleriaFotos';
+import { carregarGaleria, urlImagem, type EstadoGaleria } from '../lib/fotos';
 import { ROTULO_SITUACAO, situacaoDe } from '../lib/situacao';
 
 type AbaFicha = 'atributos' | 'vinculos' | 'fotos' | 'precifica' | 'historico';
@@ -35,21 +35,11 @@ export function Ficha({ id }: { id: number }) {
   const [fotoSel, setFotoSel] = React.useState(0);                                        // FICHA V3: foto mostrada no resumo compacto
   // FOTOS NA FICHA: galeria pelo proxy do Dash. Só com ela (flag do app ligada + usuário que publica) aparecem os botões de escrita.
   const [galeria, setGaleria] = React.useState<EstadoGaleria>({ tipo: 'carregando' });
-  const [addFotos, setAddFotos] = React.useState<{ iniciais: File[] } | null>(null);
-  const [soltando, setSoltando] = React.useState(false);
+  const [addFotos, setAddFotos] = React.useState(false);
   const recarregarGaleria = React.useCallback(() => { carregarGaleria(id).then(setGaleria); }, [id]);
   React.useEffect(() => { setGaleria({ tipo: 'carregando' }); recarregarGaleria(); }, [recarregarGaleria]);
   const podeAdicionar = galeria.tipo === 'ok' && galeria.g.produto.pode_receber_foto;
-  // colar (Ctrl+V) na Ficha: só imagens, e só fora de campos de texto (colar texto num campo continua normal)
-  React.useEffect(() => {
-    if (!podeAdicionar) return;
-    const aoColar = (e: ClipboardEvent) => {
-      const alvo = e.target as HTMLElement | null; if (alvo?.closest('input, textarea, [contenteditable="true"], [role="dialog"]')) return;
-      const { ok } = filtrarImagens(Array.from(e.clipboardData?.files ?? [])); if (!ok.length) return;
-      e.preventDefault(); setAddFotos({ iniciais: ok });
-    };
-    document.addEventListener('paste', aoColar); return () => document.removeEventListener('paste', aoColar);
-  }, [podeAdicionar]);
+  // colar (Ctrl+V/⌘V) SÓ dentro do diálogo "Adicionar fotos" (roteiro aprovado): a Ficha não intercepta colar (preserva o teclado na tabela)
   const trilho = React.useRef<HTMLDivElement>(null);
   const seq = React.useRef(0);   // recargas fora de ordem: só a mais recente vale (senão um campo volta ao valor antigo)
   // "foi salvo ou não" (item 3): a releitura SILENCIOSA (depois de gravar) não troca a ficha por uma tela de erro — devolve false e quem
@@ -67,7 +57,7 @@ export function Ficha({ id }: { id: number }) {
   const p = f.produto; const capa = f.fotos.find((x) => x.capa) ?? f.fotos[0] ?? null;
 
   const fotosGal = galeria.tipo === 'ok' ? [...galeria.g.fotos].sort((a, b) => a.posicao - b.posicao) : null;
-  const listaFotos: { id: number; cor: string | null; url?: string }[] = fotosGal ? fotosGal.map((x) => ({ id: x.id, cor: x.cor, url: urlFotoMidia(x.id, 768) })) : f.fotos.map((x) => ({ id: x.id, cor: x.cor }));
+  const listaFotos: { id: number; cor: string | null; url?: string }[] = fotosGal ? fotosGal.map((x) => ({ id: x.id, cor: x.cor, url: urlImagem(x.id, 768) })) : f.fotos.map((x) => ({ id: x.id, cor: x.cor }));
   const nFotos = listaFotos.length; const fotoAtual = nFotos ? listaFotos[Math.min(fotoSel, nFotos - 1)] : (capa ? { id: capa.id, cor: capa.cor } : null);
   const aoMudarFotos = () => { recarregarGaleria(); carregar(true); };
   const irFoto = (k: number) => { if (!nFotos) return; const alvo = (k + nFotos) % nFotos; setFotoSel(alvo); trilho.current?.querySelectorAll<HTMLElement>('.at-resumo-v3__mini')[alvo]?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); };
@@ -93,9 +83,7 @@ export function Ficha({ id }: { id: number }) {
         <div className="at-ficha__filtros-slot" ref={setSlotFiltros} />
         </div>
         {/* RESUMO COMPACTO: foto (ampliável), categoria, nome e carrossel de miniaturas com contador */}
-        <div className={`at-resumo-v3 ${soltando ? 'at-resumo-v3--soltando' : ''}`}
-          {...(podeAdicionar ? { onDragOver: (e: React.DragEvent) => { if (Array.from(e.dataTransfer.types).includes('Files')) { e.preventDefault(); setSoltando(true); } }, onDragLeave: () => setSoltando(false),
-            onDrop: (e: React.DragEvent) => { e.preventDefault(); setSoltando(false); const { ok } = filtrarImagens(e.dataTransfer.files); setAddFotos({ iniciais: ok }); } } : {})}>
+        <div className="at-resumo-v3">
           <button type="button" className="at-resumo-v3__foto" onClick={() => nFotos && setAmpliar(Math.min(fotoSel, nFotos - 1))} disabled={!nFotos} aria-label={nFotos ? `Ampliar foto ${Math.min(fotoSel, nFotos - 1) + 1} de ${nFotos}` : 'Produto sem foto'}>
             <Foto mediaId={fotoAtual?.id ?? null} cor={fotoAtual?.cor ?? null} proporcao="4 / 3" compacta ajuste="contain" url={(fotoAtual as { url?: string } | null)?.url} />
             {nFotos > 0 && <span className="at-resumo-v3__ampliar" aria-hidden><Icone nome="maximize-2" /></span>}
@@ -113,16 +101,15 @@ export function Ficha({ id }: { id: number }) {
               </div>
               <span className="at-resumo-v3__contador" aria-live="polite">{nFotos ? `${Math.min(fotoSel, nFotos - 1) + 1} de ${nFotos}` : 'Sem fotos'}</span>
               <button type="button" className="at-resumo-v3__seta" aria-label="Próxima foto" disabled={nFotos <= 1} onClick={() => irFoto(fotoSel + 1)}><Icone nome="chevron-right" /></button>
-              {podeAdicionar && <button type="button" className="bl-botao at-v3-btn-add at-resumo-v3__add" onClick={() => setAddFotos({ iniciais: [] })}><Icone nome="plus" />Adicionar fotos</button>}
+              {podeAdicionar && <button type="button" className="bl-botao at-v3-btn-add at-resumo-v3__add" onClick={() => setAddFotos(true)}><Icone nome="plus" />{nFotos ? 'Adicionar fotos' : 'Adicionar primeira foto'}</button>}
             </div>
-            {podeAdicionar && <span className="at-resumo-v3__dica">{soltando ? 'Solte as fotos para adicionar' : 'Arraste fotos para cá ou cole com Ctrl+V'}</span>}
           </div>
         </div>
         <div className="at-ficha__titulo-slot" ref={setSlotTitulo} />
       </CabecalhoTravado>
       {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} filtro={filtro} setFiltro={setFiltro} slotFiltros={slotFiltros} slotTitulo={slotTitulo} />}
       {aba === 'vinculos' && <AbaVinculos f={f} recarregar={() => carregar(true)} />}
-      {aba === 'fotos' && galeria.tipo === 'ok' && <GerenciarFotos estado={galeria} productId={p.id} aoMudou={aoMudarFotos} aoAdicionar={() => setAddFotos({ iniciais: [] })} />}
+      {aba === 'fotos' && galeria.tipo === 'ok' && <GerenciarFotos estado={galeria} productId={p.id} aoMudou={aoMudarFotos} aoAdicionar={() => setAddFotos(true)} />}
       {aba === 'fotos' && galeria.tipo !== 'ok' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => setAmpliar(i)}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
       {aba === 'precifica' && <AbaPrecifica f={f} />}
       {aba === 'historico' && <AbaHistorico id={p.id} />}
@@ -132,10 +119,12 @@ export function Ficha({ id }: { id: number }) {
       <Dialogo titulo={ampliar !== null ? `Foto ${ampliar + 1} de ${nFotos}` : 'Foto'} aberto={ampliar !== null && !!listaFotos[ampliar]} aoFechar={() => setAmpliar(null)} largura={900}
         rodape={nFotos > 1 ? <><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + nFotos - 1) % nFotos))}>‹ Anterior</Botao><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + 1) % nFotos))}>Próxima ›</Botao></> : undefined}>
         {ampliar !== null && listaFotos[ampliar] && <Foto mediaId={listaFotos[ampliar].id} cor={listaFotos[ampliar].cor} proporcao={`${tam(ampliar)?.largura || 4} / ${tam(ampliar)?.altura || 3}`} lado={1280}
-          url={listaFotos[ampliar].url ? urlFotoMidia(listaFotos[ampliar].id, 1536) : undefined} />}
+          url={listaFotos[ampliar].url ? urlImagem(listaFotos[ampliar].id, 1536) : undefined} />}
       </Dialogo>); })()}
-      {addFotos && <AdicionarFotos produto={{ id: p.id, nome: p.nome }} aberto iniciais={addFotos.iniciais} versaoInicial={galeria.tipo === 'ok' ? galeria.g.versao_galeria : 0}
-        aoFechar={() => setAddFotos(null)} aoMudou={aoMudarFotos} />}
+      {galeria.tipo === 'ok' && <AdicionarFotos produto={{ id: p.id, nome: p.nome }} aberto={addFotos} versaoGaleria={galeria.g.versao_galeria}
+        vagas={galeria.g.limite_fotos ? Math.max(0, galeria.g.limite_fotos - galeria.g.fotos.length) : null}
+        aoFechar={() => setAddFotos(false)} aoMudou={aoMudarFotos}
+        aoVerFoto={(fotoId) => { const k = (fotosGal ?? []).findIndex((x) => x.id === fotoId); setAddFotos(false); if (k >= 0) { setFotoSel(k); setAmpliar(k); } }} />}
       <Dialogo titulo="Detalhes do produto · dados cadastrais" aberto={detalhes} aoFechar={() => setDetalhes(false)} largura={620}>
         <dl className="at-detalhes">
           <dt>ID</dt><dd>{p.id}</dd><dt>Nome (catálogo)</dt><dd>{p.nome}</dd><dt>Categoria</dt><dd>{rotuloCategoria(p.categoria)} ({p.categoria})</dd>

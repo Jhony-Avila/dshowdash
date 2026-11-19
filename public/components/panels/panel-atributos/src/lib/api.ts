@@ -115,6 +115,10 @@ export async function enviarPara<T>(url: string, corpo: BodyInit | Record<string
   catch { throw new ErroApi(0, 'RESULTADO_DESCONHECIDO', MSG_DESCONHECIDO, [], { desfecho: 'desconhecido', chave: opc.chave }); }
   return tratarEscrita<T>('foto', res, opc.chave);
 }
+/** FOTOS: mesmo tratamento de resposta das escritas ("Salvo" só com recibo), para quem já tem a Response (ex.: upload por XHR com progresso). */
+/** CSRF para quem monta a própria requisição (upload por XHR). */
+export const tokenCsrf = () => csrf();
+export const tratarRespostaEscrita = <T,>(res: Response, chave: string) => tratarEscrita<T>('foto', res, chave);
 /** GET genérico com o envelope do Dash (para rotas fora de /api/atributos). Erros mantêm o status (404 = desligado, 403 = sem permissão). */
 export async function obterDe<T>(url: string, sinal?: AbortSignal): Promise<T> {
   return tratar<T>(await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: sinal }));
