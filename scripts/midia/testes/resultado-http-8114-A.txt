@@ -1,0 +1,24 @@
+ok    A sem sessão → 401
+ok    A pessoa fora da flag (semflag 990070) → 404
+ok    A usuário que não é publicador (equipe 990050) → 403 (ou 404 se fora da flag) e nada vai ao app
+ok    A rota desconhecida → 404
+ok    A galeria 200 com a galeria do app
+ok    A o app recebeu em 127.0.0.1, caminho /internal/dash/v1/products/550/gallery, user_id=990080, assinatura CONFERIDA
+ok    A POST sem CSRF → 403 e nada vai ao app
+ok    A POST com CSRF inválido → 403 e nada vai ao app
+ok    A capa → 200 aplicada com recibo (foto_capa, mesma chave, versao_nova)
+ok    A o app recebeu POST /cover com corpo VAZIO, request_id = chave, versao=7, assinatura conferida
+ok    A publicar → 201 aplicada com recibo foto_publicar
+ok    A o app recebeu os MESMOS bytes (tamanho e sha256) com a assinatura conferida
+ok    A publicar PDF → 415 recusada, nada vai ao app
+ok    A app 503 → 502 RESULTADO_DESCONHECIDO, desfecho desconhecido, MESMA chave
+ok    A app 409 → 409 VERSION_CONFLICT, conflito, versao_atual 9
+ok    A ordem com 101 IDs → 422, nada vai ao app
+ok    A imagem 200 image/webp com Cache-Control private e ETag do app
+ok    A If-None-Match → 304 sem corpo
+ok    A conferir → 200 resultado aplicada com o recibo (foto_capa)
+ok    A conferir chegou ao app como UM GET /operacoes/<chave>, sem corpo e sem request_id
+ok    A o segredo não aparece em nenhuma resposta, cabeçalho, no log do app falso nem no php.log do harness
+ok    A todos os pedidos que chegaram ao app tinham assinatura válida (nenhum 401 de assinatura)
+22 ok, 0 falhas
+rc=0
