@@ -64,8 +64,12 @@ final class SugestoesService
         });
     }
 
-    /** "Aceitar todas" (coluna/fila) — só com confirmação explícita; cada item é decidido isolado (um erro não desfaz os outros). */
-    public function aceitarLote(array $b): array
+    /**
+     * "Aceitar todas" (coluna/fila) — só com confirmação explícita; cada item é decidido isolado (um erro não desfaz os outros).
+     * P1-1: com chave de operação ($lote), o desfecho de CADA item é gravado na MESMA transação da decisão do item (ou numa transação só
+     * dele, quando nada é gravado); reenvio da mesma chave reaproveita os desfechos já gravados — o item não é refeito nem auditado de novo.
+     */
+    public function aceitarLote(array $b, ?LoteDaOperacao $lote = null): array
     {
         if ($this->nivel < AtributosService::NIVEL_VALORES) throw new AtributosErro('INSUFFICIENT_LEVEL', 403, 'Seu nível não permite esta ação.');
         if (($b['confirmar'] ?? null) !== true) throw new AtributosErro('VALIDATION_ERROR', 422, 'Confirme a aceitação em lote.', ['confirmar']);
@@ -73,18 +77,43 @@ final class SugestoesService
         if (!$ids || count($ids) > self::MAX_LOTE) throw new AtributosErro('VALIDATION_ERROR', 422, 'Escolha de 1 a ' . self::MAX_LOTE . ' sugestões.', ['ids']);
         // DSHOW-087: conta SÓ as decisões EFETIVADAS nesta execução; separa aceitas / ignoradas / falhas com IDs e motivos; mantém "aceitas"
         $aceitas = []; $ignoradas = []; $falhas = [];
+        $ja = $lote ? $lote->abrir($ids) : [];
         foreach ($ids as $id) {
-            $s = $this->repo->sugestao($id);
-            if (!$s) { $ignoradas[] = ['id' => $id, 'motivo' => 'nao_encontrada']; continue; }
-            if ($s['estado'] !== 'pendente') { $ignoradas[] = ['id' => $id, 'motivo' => 'ja_decidida', 'estado' => $s['estado']]; continue; }
-            try {
-                $r = $this->decidir(['id' => $id, 'versao' => (int) $s['versao'], 'decisao' => 'aceitar', 'motivo' => 'aceitação em lote']);
-                if (!empty($r['sem_mudanca'])) $ignoradas[] = ['id' => $id, 'motivo' => 'ja_decidida', 'estado' => $r['sugestao']['estado'] ?? null];   // decidida por outro entre a leitura e aqui
-                else $aceitas[] = ['id' => $id, 'valor' => $r['valor'] ?? null];
-            }
-            catch (AtributosErro $e) { $falhas[] = ['id' => $id, 'codigo' => $e->codigo, 'erro' => $e->getMessage(), 'campos' => $e->campos]; }
+            if (isset($ja[(string) $id])) { self::acumular($id, $ja[(string) $id]['desfecho'], $ja[(string) $id]['detalhe'] ?? [], $aceitas, $ignoradas, $falhas); continue; }
+            [$desfecho, $detalhe] = $this->umItem($id, $lote);
+            self::acumular($id, $desfecho, $detalhe, $aceitas, $ignoradas, $falhas);
         }
         return ['aceitas' => count($aceitas), 'aceitas_ids' => array_column($aceitas, 'id'), 'aceitas_detalhe' => $aceitas,
             'ignoradas' => $ignoradas, 'falhas' => $falhas, 'pedidas' => count($ids)];
+    }
+
+    /** @return array{0:string,1:array} [aceita|ignorada|falha, detalhe] */
+    private function umItem(int $id, ?LoteDaOperacao $lote): array
+    {
+        $s = $this->repo->sugestao($id);
+        $ignorar = !$s ? ['motivo' => 'nao_encontrada'] : ($s['estado'] !== 'pendente' ? ['motivo' => 'ja_decidida', 'estado' => $s['estado']] : null);
+        if ($ignorar !== null) { $lote?->registrarSozinho($id, 'ignorada', $ignorar); return ['ignorada', $ignorar]; }
+        $decidir = function () use ($id, $s): array {
+            $r = $this->decidir(['id' => $id, 'versao' => (int) $s['versao'], 'decisao' => 'aceitar', 'motivo' => 'aceitação em lote']);
+            return !empty($r['sem_mudanca'])   // decidida por outro entre a leitura e aqui
+                ? ['ignorada', ['motivo' => 'ja_decidida', 'estado' => $r['sugestao']['estado'] ?? null]]
+                : ['aceita', ['valor' => $r['valor'] ?? null]];
+        };
+        try { return $lote ? $lote->item($id, $decidir) : $decidir(); }
+        catch (AtributosErro $e) {
+            if (OperacoesGravacao::ehTomada($e)) throw $e;   // outra tentativa assumiu a chave: para o lote, sem efeito
+            $falha = ['codigo' => $e->codigo, 'erro' => $e->getMessage(), 'campos' => $e->campos];
+            $lote?->registrarSozinho($id, 'falha', $falha);
+            return ['falha', $falha];
+        }
+    }
+
+    private static function acumular(int $id, string $desfecho, array $detalhe, array &$aceitas, array &$ignoradas, array &$falhas): void
+    {
+        match ($desfecho) {
+            'aceita' => $aceitas[] = ['id' => $id, 'valor' => $detalhe['valor'] ?? null],
+            'ignorada' => $ignoradas[] = ['id' => $id] + $detalhe,
+            default => $falhas[] = ['id' => $id] + $detalhe,
+        };
     }
 }
