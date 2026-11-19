@@ -2316,6 +2316,11 @@ dist/
 !/api/atributos/**
 !/scripts/atributos/
 !/scripts/atributos/**
+# FOTOS-1 (DIREITA, 19/11): proxy de fotos do Dash → app (api/midia) e os testes dele
+!/api/midia/
+!/api/midia/**
+!/scripts/midia/
+!/scripts/midia/**
 !/db/
 !/db/equipamentos/
 !/db/equipamentos/**
