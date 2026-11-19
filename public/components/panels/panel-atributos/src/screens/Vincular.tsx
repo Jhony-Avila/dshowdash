@@ -2,7 +2,7 @@
 // remover, passo 3 PRÉVIA obrigatória e confirmação (idempotente pela chave). Visão em matriz produtos × kits.
 import React from 'react';
 import type { AtributoDicionario, KitResumo, Previa, Vitrine } from '../lib/tipos';
-import { enviar, ErroApi, novaChave, obter } from '../lib/api';
+import { conferirGravacao, enviar, ErroApi, MSG_DESCONHECIDO, novaChave, obter } from '../lib/api';
 import { casaBusca } from '../lib/formatar';
 import { rotuloSubcategoria } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
@@ -30,6 +30,9 @@ export function Vincular() {
   const [pedidoPrevia, setPedidoPrevia] = React.useState<string | null>(null);
   const pedidoSeq = React.useRef(0);                                           // ignora resposta de prévia atrasada
   const incerta = React.useRef<{ pedido: string; chave: string } | null>(null); // tentativa sem resposta: a mesma intenção reusa a MESMA chave
+  // "foi salvo ou não": resultado de uma confirmação que NÃO sabemos se gravou (resposta perdida, 2xx sem recibo, 5xx, em andamento).
+  // Enquanto existir, a mesma intenção reusa a MESMA chave; chave nova só depois de recusa definitiva (4xx/409 de conflito real).
+  const [incerto, setIncerto] = React.useState<{ tipo: 'desconhecido' | 'emAndamento' | 'conferindo' | 'semRegistro'; msg?: string } | null>(null);
   React.useEffect(() => {
     if (pedidoPrevia !== null && pedidoPrevia !== intencao) { pedidoSeq.current++; setPrevia(null); setPedidoPrevia(null); setPasso((p) => (p === 3 ? 2 : p)); }
   }, [intencao, pedidoPrevia]);
@@ -69,19 +72,44 @@ export function Vincular() {
       setPrevia(r); setPedidoPrevia(pedido); setChave(incerta.current?.pedido === pedido ? incerta.current.chave : novaChave()); setPasso(3);
     } catch (e) { if (seq === pedidoSeq.current) m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(false); }
   };
+  /** Recibo confirmado (pela resposta ou pelo "Conferir gravação"): limpa a incerteza; volta ao passo 1 se a intenção ainda é a gravada. */
+  const gravou = (pedido: string, g: Record<string, number> | null | undefined, repetido: boolean) => {
+    incerta.current = null; setIncerto(null);
+    m.aviso(repetido ? 'Esta aplicação já tinha sido gravada (nada repetido).' : g ? `Gravado: ${g.kits_aplicados} kit(s) aplicados, ${g.inclusoes} atributo(s) incluídos, ${g.exclusoes} exceção(ões), ${g.kits_removidos} kit(s) removidos.` : 'Gravado.');
+    if (pedido === intencaoRef.current) { setPasso(1); setPrevia(null); setPedidoPrevia(null); setKA([]); setKR([]); setAI([]); setAE([]); }
+    m.recarregar();
+  };
+  /** Recusa definitiva provada pelo servidor: nada foi gravado por esta chave → a próxima tentativa usa chave NOVA. */
+  const recusou = (msg: string) => { incerta.current = null; setIncerto(null); setChave(novaChave()); m.aviso(msg, 'erro'); };
   const aplicar = async () => {
-    if (!previa || pedidoPrevia === null || pedidoPrevia !== intencaoRef.current || trab) return;   // só confirma o RETRATO da prévia vigente
+    if (!previa || pedidoPrevia === null || pedidoPrevia !== intencaoRef.current || trab || incerto?.tipo === 'conferindo') return;   // só confirma o RETRATO da prévia vigente
     const pedido = pedidoPrevia;
     setTrab(true);
     try {
       const r = await enviar<{ gravado: Record<string, number>; repetido?: boolean }>('massa_aplicar', { ...JSON.parse(pedido), chave, versao_previa: previa.versao_previa });
-      incerta.current = null;
-      m.aviso(r.repetido ? 'Esta aplicação já tinha sido gravada (nada repetido).' : `Gravado: ${r.gravado.kits_aplicados} kit(s) aplicados, ${r.gravado.inclusoes} atributo(s) incluídos, ${r.gravado.exclusoes} exceção(ões), ${r.gravado.kits_removidos} kit(s) removidos.`);
-      setPasso(1); setPrevia(null); setPedidoPrevia(null); setKA([]); setKR([]); setAI([]); setAE([]); m.recarregar();
+      gravou(pedido, r.gravado, !!r.repetido);
     } catch (e) {
-      if (!(e instanceof ErroApi) || e.http >= 500) incerta.current = { pedido, chave };   // resultado incerto: a próxima tentativa usa a mesma chave
-      m.aviso(e instanceof ErroApi ? e.message : 'Sem resposta do servidor. Confira e tente de novo: a mesma chave evita gravar duas vezes.', 'erro');
+      if (e instanceof ErroApi && !e.desconhecido && !e.emAndamento && e.http < 500 && (e.recusada || e.conflito)) { recusou(e.message); return; }
+      // resultado DESCONHECIDO (resposta perdida, 2xx sem recibo, corpo ilegível, 5xx, em andamento): a MESMA chave fica guardada
+      incerta.current = { pedido, chave };
+      const andamento = e instanceof ErroApi && e.emAndamento;
+      setIncerto({ tipo: andamento ? 'emAndamento' : 'desconhecido' });
+      m.aviso(andamento ? 'A gravação ainda está em andamento.' : MSG_DESCONHECIDO, 'erro');
     } finally { setTrab(false); }
+  };
+  /** Conferir gravação (GET, não grava nada): pergunta ao servidor o que aconteceu com a chave da tentativa incerta. */
+  const conferir = async () => {
+    const t = incerta.current; if (!t || incerto?.tipo === 'conferindo' || trab) return;
+    setIncerto({ tipo: 'conferindo' });
+    try {
+      const c = await conferirGravacao(t.chave);
+      if (incerta.current?.chave !== t.chave) return;   // outra tentativa resolveu no meio
+      if (c.resultado === 'aplicada' || c.resultado === 'sem_mudanca') { gravou(t.pedido, (c.recibo?.gravado as Record<string, number> | null | undefined) ?? null, false); return; }
+      if (c.resultado === 'em_andamento') { setIncerto({ tipo: 'emAndamento' }); return; }
+      if (c.resultado === 'nao_aplicada') { recusou(c.erro?.mensagem ?? 'O servidor não aplicou esta gravação. Nada foi gravado.'); return; }
+      // sem registro (ou interrompida): nada gravado POR ELA até agora — o reenvio continua com a MESMA chave (seguro se ela ainda chegar)
+      setIncerto({ tipo: 'semRegistro' });
+    } catch { setIncerto({ tipo: 'desconhecido', msg: 'Não foi possível conferir agora.' }); }
   };
   const n = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const atrFiltrados = qAtr.trim().length < 2 ? [] : dic.filter((a) => n(a.rotulo + ' ' + a.codigo).includes(n(qAtr))).slice(0, 30);
@@ -99,6 +127,14 @@ export function Vincular() {
           <button type="button" className={modo === 'matriz' ? 'ativo' : ''} aria-pressed={modo === 'matriz'} onClick={() => setModo('matriz')}>Matriz</button>
         </div>
       </div>
+      {incerto && (
+        <div className={`at-salvo ${incerto.tipo === 'semRegistro' || incerto.tipo === 'emAndamento' ? 'at-salvo--aviso' : 'at-salvo--erro'} at-vinc-incerto`} role="alert">
+          {incerto.tipo === 'desconhecido' && <>{MSG_DESCONHECIDO}{incerto.msg ? ` ${incerto.msg}` : ''} Um novo envio usa a mesma chave e não grava duas vezes. </>}
+          {incerto.tipo === 'emAndamento' && <>A gravação ainda está em andamento. </>}
+          {incerto.tipo === 'conferindo' && <>Conferindo a gravação… </>}
+          {incerto.tipo === 'semRegistro' && <>O servidor não tem registro desta gravação: nada foi gravado por ela até agora. Pode enviar de novo (mesma chave). </>}
+          {incerto.tipo !== 'conferindo' && <button type="button" className="at-link" onClick={conferir}>Conferir gravação</button>}
+        </div>)}
       {modo === 'matriz' ? <Matriz vit={vit} kits={kits} sel={sel} /> : (<>
         <ol className="at-passos" aria-label="Passos">
           {['Produtos', 'O que aplicar', 'Prévia e confirmação'].map((r, i) => (
@@ -158,7 +194,7 @@ export function Vincular() {
         {passo === 3 && previa && (
           <section className="at-painel">
             <div className="at-painel__cabeca"><h3>3. Prévia</h3>
-              <div className="at-acoes"><Botao aoClicar={() => setPasso(2)}>Voltar</Botao><Botao primario trabalhando={trab} desligado={trab || !pedidoPrevia || pedidoPrevia !== intencao || aE.some((x) => x.motivo.trim().length < 3)} aoClicar={aplicar}>Confirmar e gravar</Botao></div></div>
+              <div className="at-acoes"><Botao aoClicar={() => setPasso(2)}>Voltar</Botao><Botao primario trabalhando={trab} desligado={trab || incerto?.tipo === 'conferindo' || !pedidoPrevia || pedidoPrevia !== intencao || aE.some((x) => x.motivo.trim().length < 3)} aoClicar={aplicar}>Confirmar e gravar</Botao></div></div>
             <div className="at-painel__corpo">
               <p className="at-previa-frase" role="status">{frase}</p>
               <div className="bl-rola-x"><table className="at-tabela">
