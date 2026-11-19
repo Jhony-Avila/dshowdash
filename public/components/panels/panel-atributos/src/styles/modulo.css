@@ -502,8 +502,12 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
    Cabeçalho das colunas: gruda logo abaixo do bloco fixo (top = --at-topo-fixo, medido por ResizeObserver; sem a medição, top 0). */
 [data-bl-root].at-raiz { overflow: visible; display: block; }
 [data-bl-root] .at-fixo { position: sticky; top: 0; z-index: 20; background: var(--bl-bg); box-shadow: 0 1px 0 var(--bl-borda); }
-[data-bl-root] .at-td[data-rolagem="container"] .at-td__th { top: var(--at-topo-fixo, 0px); }
-[data-bl-root] .at-produtos .at-tabela th { top: var(--at-topo-fixo, 0px); z-index: 2; }
+/* Só desconta o bloco fixo quando quem rola é a PÁGINA. Se a moldura da tabela tem rolagem horizontal (tabela mais larga que a tela:
+   .at-td com data-larga="1"; .bl-rola-x de Produtos abaixo de 1200px), ela vira o contêiner do sticky e o top = altura do bloco
+   empurrava o cabeçalho das colunas para baixo, por cima das linhas (achado da ESQUERDA em 430 px; também em 1024 px). Ali: top 0. */
+[data-bl-root] .at-td[data-rolagem="container"]:not([data-larga="1"]) .at-td__th { top: var(--at-topo-fixo, 0px); }
+[data-bl-root] .at-produtos .at-tabela th { top: 0; z-index: 2; }
+@media (min-width: 1200px) { [data-bl-root] .at-produtos .at-tabela th { top: var(--at-topo-fixo, 0px); } }
 [data-bl-root] .at-ficha__faixa { margin-top: 0; }
 [data-bl-root] .at-ficha__classe { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 28ch; }
 [data-bl-root] .at-heroi-fixo { margin-top: 12px; }
