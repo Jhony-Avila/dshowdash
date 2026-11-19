@@ -59,10 +59,12 @@ $ate = static fn(string $ultima) => array_values(array_filter($todas, static fn(
 $recria();
 $m = new Migrador($pdo, $schema, $dir, $silencio);
 $pf = $m->preflight();
-$ok('schema vazio: as 10 pendentes estão "limpo"', count(array_filter($pf, static fn($r) => $r['estado'] === 'limpo')) === 10);
+$N = count($todas);   // 18/11 (012_kit_prioridade): contagens pelo número de arquivos, não fixas em 10
+$depoisDe = static fn(string $v) => array_values(array_filter($todas, static fn($x) => strcmp($x, $v) > 0));
+$ok("schema vazio: as $N pendentes estão \"limpo\"", count(array_filter($pf, static fn($r) => $r['estado'] === 'limpo')) === $N);
 $m->executar(false);
 $pf = $m->preflight();
-$ok('depois de aplicar: as 10 "ok" (ledger e físico conferem)', count(array_filter($pf, static fn($r) => $r['estado'] === 'ok')) === 10, json_encode(array_column($pf, 'estado')));
+$ok("depois de aplicar: as $N \"ok\" (ledger e físico conferem)", count(array_filter($pf, static fn($r) => $r['estado'] === 'ok')) === $N, json_encode(array_column($pf, 'estado')));
 
 // 2.2 ledger sem objeto físico (o contrário)
 $pdo->exec("ALTER TABLE `$schema`.`eq_pedido_massa` DROP COLUMN `concluido_em`");
@@ -90,7 +92,7 @@ $ok('004 interrompida: --registrar-se-completo recusado (não está completa)', 
 $pdo->exec(Migrador::comandos((string) file_get_contents("$dir/004_vinculos_exclusao_logica.revert.sql"))[0]);
 $ok('recuperação A (reverter a parcial): volta a "limpo"', $m->preflight()['004_vinculos_exclusao_logica']['estado'] === 'limpo');
 $r = $m->executar(false);
-$ok('recuperação A: executor aplica 004–010 e tudo "ok"', count($r['aplicadas']) === 7 && !array_filter($m->preflight(), static fn($x) => $x['estado'] !== 'ok'));
+$ok('recuperação A: executor aplica da 004 em diante e tudo "ok"', $r['aplicadas'] === $depoisDe('003_aceita_nao_se_aplica') && !array_filter($m->preflight(), static fn($x) => $x['estado'] !== 'ok'));
 
 // 2.4 interrupção depois do 1º DDL da 008 (001–007 pelo executor; 1º ALTER da 008 à mão)
 $recria();
@@ -111,33 +113,33 @@ $r = $m->executar(true, ['008_unidade_por_valor']);
 $ok('--dry-run com a flag: só anuncia (registradas=[008]), não grava', $r['registradas'] === ['008_unidade_por_valor'] && !array_key_exists('008_unidade_por_valor', $m->aplicadas()));
 $r = $m->executar(false, ['008_unidade_por_valor']);
 $ap = $m->aplicadas();
-$ok('recuperação B: 008 registrada com o sha256 do arquivo, SEM DDL da 008; 009–010 aplicadas', $r['registradas'] === ['008_unidade_por_valor'] && $r['aplicadas'] === ['009_sugestao', '010_pedido_massa']
+$ok('recuperação B: 008 registrada com o sha256 do arquivo, SEM DDL da 008; as seguintes aplicadas', $r['registradas'] === ['008_unidade_por_valor'] && $r['aplicadas'] === $depoisDe('008_unidade_por_valor')
     && ($ap['008_unidade_por_valor'] ?? null) === hash_file('sha256', "$dir/008_unidade_por_valor.sql"));
 $ok('recuperação B: tudo "ok" no fim', !array_filter($m->preflight(), static fn($x) => $x['estado'] !== 'ok'));
 $ok('--registrar-se-completo de migração já no ledger é recusado', str_contains((string) $erro(fn() => $m->executar(false, ['008_unidade_por_valor'])), 'recusado: estado é ok'));
 
 // 2.5 migrações FUTURAS: DDL não suportado recusa; pendentes encadeadas usam o estado virtual
-$limpaPastas[] = $p = $pasta($todas, ['011_futura_modify' => "ALTER TABLE `eq_valor` MODIFY COLUMN `valor_texto` VARCHAR(900) NULL;\nINSERT INTO `eq_schema_migrations` (`version`, `checksum`) VALUES ('011_futura_modify', NULL);"]);
+$limpaPastas[] = $p = $pasta($todas, ['901_futura_modify' => "ALTER TABLE `eq_valor` MODIFY COLUMN `valor_texto` VARCHAR(900) NULL;\nINSERT INTO `eq_schema_migrations` (`version`, `checksum`) VALUES ('901_futura_modify', NULL);"]);
 $f0 = $foto();
 $e = $erro(fn() => (new Migrador($pdo, $schema, $p, $silencio))->executar(false));
-$ok('futura com DDL que o preflight não lê: recusa sem aplicar', $e !== null && str_contains($e, '011_futura_modify: preflight não sabe verificar') && $foto() === $f0, (string) $e);
+$ok('futura com DDL que o preflight não lê: recusa sem aplicar', $e !== null && str_contains($e, '901_futura_modify: preflight não sabe verificar') && $foto() === $f0, (string) $e);
 $limpaPastas[] = $p = $pasta($todas, [
-    '011_futura_add'  => "ALTER TABLE `eq_unidade` ADD COLUMN `tmp_pf` INT NULL, ADD KEY `idx_tmp_pf` (`tmp_pf`);\nINSERT INTO `eq_schema_migrations` (`version`, `checksum`) VALUES ('011_futura_add', NULL);",
-    '012_futura_drop' => "ALTER TABLE `eq_unidade` DROP KEY `idx_tmp_pf`, DROP COLUMN `tmp_pf`;\nINSERT INTO `eq_schema_migrations` (`version`, `checksum`) VALUES ('012_futura_drop', NULL);",
+    '901_futura_add'  => "ALTER TABLE `eq_unidade` ADD COLUMN `tmp_pf` INT NULL, ADD KEY `idx_tmp_pf` (`tmp_pf`);\nINSERT INTO `eq_schema_migrations` (`version`, `checksum`) VALUES ('901_futura_add', NULL);",
+    '902_futura_drop' => "ALTER TABLE `eq_unidade` DROP KEY `idx_tmp_pf`, DROP COLUMN `tmp_pf`;\nINSERT INTO `eq_schema_migrations` (`version`, `checksum`) VALUES ('902_futura_drop', NULL);",
 ]);
 $mf = new Migrador($pdo, $schema, $p, $silencio);
 $pf = $mf->preflight();
-$ok('futuras 011 (cria) + 012 (remove) pendentes: ambas "limpo" pelo estado virtual', $pf['011_futura_add']['estado'] === 'limpo' && $pf['012_futura_drop']['estado'] === 'limpo', json_encode([$pf['011_futura_add']['estado'], $pf['012_futura_drop']['estado']]));
+$ok('futuras 901 (cria) + 902 (remove) pendentes: ambas "limpo" pelo estado virtual', $pf['901_futura_add']['estado'] === 'limpo' && $pf['902_futura_drop']['estado'] === 'limpo', json_encode([$pf['901_futura_add']['estado'], $pf['902_futura_drop']['estado']]));
 $r = $mf->executar(false);
 $pf = $mf->preflight();
-$ok('futuras aplicadas e conferidas no ledger (012 removeu o que a 011 criou; ambas "ok")', $r['aplicadas'] === ['011_futura_add', '012_futura_drop'] && $pf['011_futura_add']['estado'] === 'ok' && $pf['012_futura_drop']['estado'] === 'ok');
+$ok('futuras aplicadas e conferidas no ledger (902 removeu o que a 901 criou; ambas "ok")', $r['aplicadas'] === ['901_futura_add', '902_futura_drop'] && $pf['901_futura_add']['estado'] === 'ok' && $pf['902_futura_drop']['estado'] === 'ok');
 // já aplicada fisicamente sem ledger numa futura (ex.: alguém rodou o ALTER à mão)
-$limpaPastas[] = $p = $pasta($todas, ['011_futura_add' => "ALTER TABLE `eq_unidade` ADD COLUMN `tmp_pf2` INT NULL;\nINSERT INTO `eq_schema_migrations` (`version`, `checksum`) VALUES ('011_futura_add', NULL);"]);
-$pdo->exec("DELETE FROM `$schema`.`eq_schema_migrations` WHERE version IN ('011_futura_add', '012_futura_drop')");
+$limpaPastas[] = $p = $pasta($todas, ['901_futura_add' => "ALTER TABLE `eq_unidade` ADD COLUMN `tmp_pf2` INT NULL;\nINSERT INTO `eq_schema_migrations` (`version`, `checksum`) VALUES ('901_futura_add', NULL);"]);
+$pdo->exec("DELETE FROM `$schema`.`eq_schema_migrations` WHERE version IN ('901_futura_add', '902_futura_drop')");
 $pdo->exec("ALTER TABLE `$schema`.`eq_unidade` ADD COLUMN `tmp_pf2` INT NULL");
 $e = $erro(fn() => (new Migrador($pdo, $schema, $p, $silencio))->executar(false));
-$ok('futura com ALTER já aplicado à mão (sem ledger): recusa "COMPLETA"', $e !== null && str_contains($e, '011_futura_add já está fisicamente COMPLETA'), (string) $e);
-$e = $erro(fn() => (new Migrador($pdo, $schema, $pasta($todas, ['011_futura_dados' => "ALTER TABLE `eq_unidade` ADD COLUMN `tmp_pf2` INT NULL;\nUPDATE `eq_unidade` SET `tmp_pf2` = 1;"]), $silencio))->executar(false, ['011_futura_dados']));
+$ok('futura com ALTER já aplicado à mão (sem ledger): recusa "COMPLETA"', $e !== null && str_contains($e, '901_futura_add já está fisicamente COMPLETA'), (string) $e);
+$e = $erro(fn() => (new Migrador($pdo, $schema, $pasta($todas, ['901_futura_dados' => "ALTER TABLE `eq_unidade` ADD COLUMN `tmp_pf2` INT NULL;\nUPDATE `eq_unidade` SET `tmp_pf2` = 1;"]), $silencio))->executar(false, ['901_futura_dados']));
 $ok('--registrar-se-completo recusado quando a migração tem comandos de dados', $e !== null && str_contains($e, 'tem comandos de dados'), (string) $e);
 $pdo->exec("ALTER TABLE `$schema`.`eq_unidade` DROP COLUMN `tmp_pf2`");
 
