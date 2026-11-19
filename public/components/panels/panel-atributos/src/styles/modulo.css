@@ -501,3 +501,9 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
    o respiro do topo vira margem do 1º filho */
 [data-bl-root].at-raiz--fixa > .at-conteudo { padding-top: 0; }
 [data-bl-root].at-raiz--fixa > .at-conteudo > :first-child { margin-top: 12px; }
+
+/* ── "FOI SALVO OU NÃO": estados por campo ── */
+[data-bl-root] .at-salvo--aviso { color: var(--bl-aviso); }
+[data-bl-root] .at-conflito { display: block; }
+[data-bl-root] .at-conflito__linhas { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; color: var(--bl-texto); font-size: 12px; }
+[data-bl-root] .at-conflito__linhas strong { font-weight: 650; }

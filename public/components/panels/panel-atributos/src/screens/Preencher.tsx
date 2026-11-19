@@ -72,9 +72,12 @@ export function Preencher() {
   }, [produtos, kit]);
   React.useEffect(() => { carregarFichas(); }, [carregarFichas]);
 
-  const recarregarLinha = async (pid: number) => {
+  // "foi salvo ou não" (item 3): a releitura da linha NÃO engole o erro — devolve false e a célula mostra
+  // "Salvo. Não foi possível atualizar o valor na tela." + [Atualizar valor] (só leitura). Resposta antiga não sobrescreve a mais nova.
+  const recarregarLinha = async (pid: number): Promise<boolean> => {
     const n = (seqLinha.current[pid] ?? 0) + 1; seqLinha.current[pid] = n;
-    try { const f = await obter<Ficha>('ficha_produto', { product_id: pid }); if (n === seqLinha.current[pid]) setFichas((fs) => fs?.map((x) => (x.produto.id === pid ? f : x)) ?? null); } catch { /* a célula mostra o erro */ }
+    try { const f = await obter<Ficha>('ficha_produto', { product_id: pid }); if (n === seqLinha.current[pid]) setFichas((fs) => fs?.map((x) => (x.produto.id === pid ? f : x)) ?? null); return true; }
+    catch { return false; }
   };
   // UX-1: foco no mesmo atributo de outra linha (campo de digitar primeiro; senão o seletor)
   const focar = (l: number, c: string | number) => {
@@ -157,7 +160,7 @@ export function Preencher() {
     </div>);
 }
 
-function CelulaGrade({ i, f, aoGravar, marcarObrigatorio = false, aoDescer }: { i: ItemFicha; f: Ficha; aoGravar: () => void; marcarObrigatorio?: boolean; aoDescer?: () => void }) {
+function CelulaGrade({ i, f, aoGravar, marcarObrigatorio = false, aoDescer }: { i: ItemFicha; f: Ficha; aoGravar: () => Promise<boolean> | void; marcarObrigatorio?: boolean; aoDescer?: () => void }) {
   const m = useModulo();
   const s = i.sugestoes.find((x) => x.tipo === 'valor');
   const rot = s ? sugestaoTexto(s, i) : null;   // UX-1: pelo TIPO do atributo, igual na Ficha

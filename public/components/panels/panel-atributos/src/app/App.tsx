@@ -43,6 +43,7 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
   const [preencher, setPreencher] = React.useState<{ kit?: number; subcategoria?: string }>({});
   const [avisos, setAvisos] = React.useState<{ id: number; texto: string; tom: string }[]>([]);
   const [versao, setVersao] = React.useState(0);
+  const [anuncio, setAnuncio] = React.useState('');   // região role="status" (item 4)
   // UX-1b: cabeçalho fixo. A raiz mede o espaço livre no ancestral que rola (o shell: main#main) e fixa a própria altura;
   // dentro dela só .at-conteudo rola. Área fixa > 40% da altura → tudo rola junto (telas baixas).
   const fixo = React.useRef<HTMLDivElement>(null);
@@ -120,6 +121,7 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
     fecharProduto: () => setProduto(null),
     aviso: (texto, tom = 'sucesso') => { const id = Date.now() + Math.random(); setAvisos((a) => [...a, { id, texto, tom }]); window.setTimeout(() => setAvisos((a) => a.filter((x) => x.id !== id)), 4500); },
     faixaFixa: slot, rolador: tudoRola ? raiz.current : conteudo, tudoRola,
+    anunciar: (t) => { setAnuncio(''); window.setTimeout(() => setAnuncio(t), 30); },   // limpar antes faz o leitor repetir o mesmo texto
   }), [aba, produto, kit, filtro, selecao, preencher, versao, atributoFoco, intencaoVincular, slot, conteudo, tudoRola]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   const tela = produto !== null ? <Ficha id={produto} />
@@ -145,6 +147,7 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
           <div className="at-faixa-fixa" ref={setSlot} />
         </div>
         <main className="at-conteudo" ref={setConteudo}>{tela}</main>
+        <div className="bl-so-leitor" role="status" aria-live="polite" aria-atomic="true" data-at-anuncio>{anuncio}</div>
         <div className="at-avisos" aria-live="polite">{avisos.map((a) => <div key={a.id} className={`at-aviso at-aviso--${a.tom}`}>{a.texto}</div>)}</div>
       </div>
     </Contexto.Provider>

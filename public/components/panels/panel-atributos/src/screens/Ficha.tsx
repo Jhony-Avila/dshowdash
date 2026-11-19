@@ -46,11 +46,14 @@ export function Ficha({ id }: { id: number }) {
     r.addEventListener('scroll', aoRolar, { passive: true }); return () => r.removeEventListener('scroll', aoRolar);
   }, [m.rolador, m.tudoRola]);
   const seq = React.useRef(0);   // recargas fora de ordem: só a mais recente vale (senão um campo volta ao valor antigo)
-  const carregar = React.useCallback((silencioso = false) => {
-    if (!silencioso) setF(null);
-    setErro(null);
+  // "foi salvo ou não" (item 3): a releitura SILENCIOSA (depois de gravar) não troca a ficha por uma tela de erro — devolve false e quem
+  // gravou mostra "Salvo. Não foi possível atualizar o valor na tela." junto ao campo. Só a carga inicial mostra o erro da ficha.
+  const carregar = React.useCallback((silencioso = false): Promise<boolean> => {
+    if (!silencioso) { setF(null); setErro(null); }
     const n = ++seq.current;
-    obter<TFicha>('ficha_produto', { product_id: id }).then((d) => { if (n === seq.current) setF(d); }).catch((e) => { if (n === seq.current) setErro(e.message); });
+    return obter<TFicha>('ficha_produto', { product_id: id })
+      .then((d) => { if (n === seq.current) { setF(d); setErro(null); } return true; })
+      .catch((e) => { if (n === seq.current && !silencioso) setErro(e.message); return false; });
   }, [id]);
   React.useEffect(() => { carregar(); setAba('atributos'); setAmpliar(null); setFiltro('todos'); setCompacto(false); }, [carregar]);
   if (erro) return <div><button type="button" className="bl-botao" onClick={m.fecharProduto}>← Voltar</button><Erro mensagem={erro} aoTentar={() => carregar()} /></div>;
@@ -165,7 +168,7 @@ export function Ficha({ id }: { id: number }) {
 }
 
 // ---- Aba Atributos -------------------------------------------------------------------------------------------------------------------
-function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtro, setFiltro, slotFiltros = null }: { f: TFicha; recarregar: () => void; focoInicial?: number | null; aoConsumirFoco?: () => void; filtro: FiltroAtr; setFiltro: (v: FiltroAtr) => void; slotFiltros?: HTMLElement | null }) {
+function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtro, setFiltro, slotFiltros = null }: { f: TFicha; recarregar: () => Promise<boolean> | void; focoInicial?: number | null; aoConsumirFoco?: () => void; filtro: FiltroAtr; setFiltro: (v: FiltroAtr) => void; slotFiltros?: HTMLElement | null }) {
   const m = useModulo();
   const [agrup, setAgrup] = React.useState<'kit' | 'grupo' | 'nenhum'>('kit');
   const [ordenacao, setOrdenacao] = React.useState<Ordenacao | null>(null);   // null = ordem da ficha (posição no kit)
@@ -294,7 +297,7 @@ function CelAtributo({ i, aoHistorico }: { i: ItemFicha; aoHistorico: () => void
   );
 }
 
-function CelValor({ i, f, recarregar }: { i: ItemFicha; f: TFicha; recarregar: () => void }) {
+function CelValor({ i, f, recarregar }: { i: ItemFicha; f: TFicha; recarregar: () => Promise<boolean> | void }) {
   return (
     <div data-atributo={i.atributo_id} className="at-attr__valor">
       {i.autoridade === 'precifica' && <span className="at-cadeado" title="Referência do Precifica · somente leitura"><Icone nome="lock" /> Referência do Precifica · somente leitura</span>}
@@ -303,7 +306,7 @@ function CelValor({ i, f, recarregar }: { i: ItemFicha; f: TFicha; recarregar: (
   );
 }
 
-function CelEstado({ i, f, pendente, recarregar }: { i: ItemFicha; f: TFicha; pendente: boolean; recarregar: () => void }) {
+function CelEstado({ i, f, pendente, recarregar }: { i: ItemFicha; f: TFicha; pendente: boolean; recarregar: () => Promise<boolean> | void }) {
   return (
     <div data-atributo={i.atributo_id} className="at-attr__estado">
       <span className={`at-estado-txt ${pendente ? 'at-estado-txt--pendente' : ''}`}>{estadoDe(i, pendente)}</span>
@@ -312,7 +315,7 @@ function CelEstado({ i, f, pendente, recarregar }: { i: ItemFicha; f: TFicha; pe
   );
 }
 
-function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: TFicha; recarregar: () => void }) {
+function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: TFicha; recarregar: () => Promise<boolean> | void }) {
   const m = useModulo();
   const [trab, setTrab] = React.useState(false);
   const un = s.unidade_id ? i.unidades.find((u) => u.id === s.unidade_id)?.simbolo ?? '' : '';
@@ -329,7 +332,7 @@ function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: 
     </div>);
 }
 
-function SecaoFora({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
+function SecaoFora({ f, recarregar }: { f: TFicha; recarregar: () => Promise<boolean> | void }) {
   const m = useModulo();
   const [paraKit, setParaKit] = React.useState<ItemFicha | null>(null);
   return (
@@ -421,7 +424,7 @@ function AbaPrecifica({ f }: { f: TFicha }) {
 }
 
 // ---- Aba Vínculos (H6) ---------------------------------------------------------------------------------------------------------------
-function AbaVinculos({ f, recarregar }: { f: TFicha; recarregar: () => void }) {
+function AbaVinculos({ f, recarregar }: { f: TFicha; recarregar: () => Promise<boolean> | void }) {
   const m = useModulo();
   const [excluir, setExcluir] = React.useState<ItemFicha | null>(null);
   const [motivo, setMotivo] = React.useState('');

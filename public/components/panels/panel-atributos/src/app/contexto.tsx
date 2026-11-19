@@ -21,6 +21,8 @@ export interface Navegar {
   versao: number; recarregar: () => void;
   /** UX-1b: onde a <FaixaFixa> desenha (área fixa do módulo) e quem rola o conteúdo (.at-conteudo, ou .at-raiz quando tudo rola junto). */
   faixaFixa: HTMLElement | null; rolador: HTMLElement | null; tudoRola: boolean;
+  /** "foi salvo ou não" (item 4): anuncia na região role="status" (aria-live polite), sem mover o foco. Ex.: "Produto 550, Comprimento salvo". */
+  anunciar: (texto: string) => void;
 }
 export const Contexto = React.createContext<Navegar | null>(null);
 export function useModulo(): Navegar { const c = React.useContext(Contexto); if (!c) throw new Error('fora do módulo'); return c; }
