@@ -304,7 +304,7 @@ final class ProdutosLeitura
             $itens = array_filter($m->itens[$gid] ?? [], static fn($i) => (int) ($atr[(int) $i['atributo_id']]['ativo'] ?? 0) === 1);
             $esc = array_values(array_filter($m->escopos, static fn($e) => (int) $e['grupo_id'] === (int) $gid));
             $out[] = ['id' => (int) $gid, 'nome' => $g['nome'], 'descricao' => $g['descricao'] ?? null, 'ativo' => (bool) (int) $g['ativo'], 'aplica_a_todos' => (bool) (int) ($g['aplica_a_todos'] ?? 0),
-                'ordem' => (int) ($g['ordem'] ?? 0), 'versao' => (int) ($g['versao'] ?? 1), 'itens' => count($itens),
+                'ordem' => (int) ($g['ordem'] ?? 0), 'prioridade' => isset($g['prioridade']) ? (int) $g['prioridade'] : null, 'versao' => (int) ($g['versao'] ?? 1), 'itens' => count($itens),
                 'escopos' => array_map(fn($e) => ['categoria' => $e['categoria'], 'subcategoria' => $e['subcategoria'], 'produtos' => $this->contarAtivos($e['categoria'], $e['subcategoria'])], $esc),
                 'diretos' => count(array_filter($m->diretos, static fn($gs) => in_array((int) $gid, $gs, true))), 'alcance' => $alc[$gid] ?? 0];
         }
