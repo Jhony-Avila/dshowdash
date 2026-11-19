@@ -9,7 +9,7 @@ require_once __DIR__ . '/AtributosService.php';
 require_once __DIR__ . '/KitsService.php';
 require_once __DIR__ . '/SugestoesService.php';
 
-final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava, OperacoesRepositorio
+final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava, OperacoesRepositorio, KitsPrioridade
 {
     private string $p;
     /** "FOI SALVO OU NÃO": ganchos executados DENTRO da transação, antes do COMMIT (recibo atômico com a gravação) e contador de COMMITs. */
@@ -44,6 +44,24 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
     public function temPrioridadeKit(): bool
     {
         return $this->temPrioridadeKit ??= (bool) $this->q('SHOW COLUMNS FROM ' . $this->t('eq_grupo') . " LIKE 'prioridade'");
+    }
+
+    /**
+     * P1 kit-prioridade (ação kit_prioridade): trava a fila INTEIRA de eq_grupo (todas as linhas: a reescrita 1..N pode tocar qualquer uma;
+     * em REPEATABLE READ o FOR UPDATE sem WHERE também segura a criação de kit simultânea, que lê MAX(prioridade)). `ordem_nome` = posição de
+     * (nome, id) na colação do MySQL, a mesma do retratoModelo (regra antiga para kit com prioridade NULL).
+     */
+    public function travarFilaKits(): array
+    {
+        $r = 0; $out = [];
+        foreach ($this->q('SELECT id, nome, ativo, prioridade FROM ' . $this->t('eq_grupo') . ' ORDER BY nome, id FOR UPDATE') as $g) $out[] = $g + ['ordem_nome' => $r++];
+        return $out;
+    }
+
+    public function definirPrioridadeKit(int $grupoId, int $prioridade): bool
+    {
+        // atualizado_em = atualizado_em: o ON UPDATE não dispara (mesma regra do preenchimento da 012); versao não muda
+        return $this->exec('UPDATE ' . $this->t('eq_grupo') . ' SET prioridade = ?, atualizado_em = atualizado_em WHERE id = ? AND NOT (prioridade <=> ?)', [$prioridade, $grupoId, $prioridade]) > 0;
     }
 
     /** Colunas lidas de eq_grupo (com `prioridade` só se a 012 estiver aplicada). */

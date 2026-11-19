@@ -628,7 +628,7 @@ final class AtributosService
     public function auditoria(string $entidade, string $entidadeId): array
     {
         $this->exigir(self::NIVEL_ADMIN);
-        if (!in_array($entidade, ['atributo', 'opcao', 'unidade', 'grupo', 'valor', 'ficha'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Entidade inválida.', ['entidade']);
+        if (!in_array($entidade, ['atributo', 'opcao', 'unidade', 'grupo', 'valor', 'ficha', 'kit_prioridade'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Entidade inválida.', ['entidade']);
         return ['auditoria' => $this->repo->auditoria($entidade, mb_substr($entidadeId, 0, 64), 50)];
     }
 
@@ -1436,7 +1436,7 @@ final class OperacoesGravacao
 
     /** Rotas de valor/sugestão: nível ≥ NIVEL_VALORES. Demais escritas conhecidas: administrar o catálogo (nível ≥ NIVEL_ADMIN e permissão). */
     private const ROTAS_PREENCHER = ['valor', 'valor_limpar', 'valor_unidade', 'valor_opcao_remover', 'sugestao', 'sugestoes_lote'];
-    private const ROTAS_ADMIN = ['kit', 'kit_duplicar', 'kit_ativo', 'kit_itens', 'kit_escopos', 'kit_produtos', 'produto_kit', 'produto_atributo', 'massa_previa', 'massa_aplicar',
+    private const ROTAS_ADMIN = ['kit', 'kit_duplicar', 'kit_ativo', 'kit_prioridade', 'kit_itens', 'kit_escopos', 'kit_produtos', 'produto_kit', 'produto_atributo', 'massa_previa', 'massa_aplicar',
         'atributo', 'atributo_ativo', 'atributo_unidades', 'opcao', 'opcao_renomear', 'opcao_reordenar', 'opcao_ativa', 'unidade', 'unidade_ativa', 'grupo', 'grupo_ativo', 'ficha_revisar'];
 
     /** DSHOW-093 D: a MESMA porta dos serviços, antes do reenvio (consultar resultado ≠ executar). Sem nível informado = sem porta (testes antigos). */
@@ -1502,6 +1502,8 @@ final class OperacoesGravacao
                 'campos_gravados' => $desfecho === 'aplicada' ? ['excluido_em'] : [], 'valor' => null, 'unidade_id' => null];
         if ($rota === 'ficha_revisar')
             return $r + ['product_id' => (int) ($corpo['product_id'] ?? 0), 'campos_gravados' => ['revisao'], 'versao_nova' => null, 'revisao' => $out['revisao_gravada'] ?? null];
+        if ($rota === 'kit_prioridade')   // P1 kit-prioridade: eco da ordem lida NA transação que gravou; versão = a da fila
+            return $r + ['versao_nova' => $out['versao_prioridade'] ?? null, 'campos_gravados' => $desfecho === 'aplicada' ? ['prioridade'] : [], 'ordem' => $out['ordem'] ?? null];
         if ($rota === 'massa_aplicar') {   // recibo da massa = o do resultado guardado (resposta = reenvio = conferir); o desfecho é o do lote
             $m = KitsService::reciboMassa((string) ($corpo['chave'] ?? $chave ?? ''), $out);
             return $out === [] ? array_replace($m, ['desfecho' => $desfecho, 'confirmado_em' => $r['confirmado_em'], 'campos_gravados' => $desfecho === 'aplicada' ? ['vinculos'] : []]) : $m;

@@ -12,7 +12,7 @@ Teste de banco real: `scripts/atributos/testes/foi-salvo-mysql.php`, nas bases A
 Vale para todas as escritas (`POST`) de `api/atributos/index.php`. Todas passam por uma camada única, `OperacoesGravacao::executar` (`api/atributos/AtributosService.php`):
 
 - valores: `valor`, `valor_limpar`, `valor_unidade`, `valor_opcao_remover`;
-- vínculos e kits: `kit`, `kit_duplicar`, `kit_ativo`, `kit_itens`, `kit_escopos`, `kit_produtos`, `produto_kit`, `produto_atributo`, `massa_aplicar` (a prévia `massa_previa` não grava nada e fica FORA da camada: nunca traz recibo);
+- vínculos e kits: `kit`, `kit_duplicar`, `kit_ativo`, `kit_prioridade` (reordenar a precedência; ramo `feat/kit-prioridade-acao-esq`, `PORTAO-012-KIT-PRIORIDADE.md` §9), `kit_itens`, `kit_escopos`, `kit_produtos`, `produto_kit`, `produto_atributo`, `massa_aplicar` (a prévia `massa_previa` não grava nada e fica FORA da camada: nunca traz recibo);
 - dicionário, opções e unidades: `atributo`, `atributo_ativo`, `atributo_unidades`, `opcao`, `opcao_renomear`, `opcao_reordenar`, `opcao_ativa`, `unidade`, `unidade_ativa`;
 - sugestões: `sugestao`, `sugestoes_lote`;
 - legado: `grupo`, `grupo_ativo`, `ficha_revisar`.
@@ -44,6 +44,7 @@ O recibo existe sempre que a escrita terminou. Os campos comuns são `operacao` 
 | `valor`, `valor_unidade` | `product_id`, `atributo_id`, `versao_nova` (versão da linha gravada), `campos_gravados` (por exemplo `["estado","valor_num","unidade_id"]`), `valor` (eco: estado, texto, número, booleano, data, opção, unidade, versão), `unidade_id` |
 | `valor_limpar`, `valor_opcao_remover` | `product_id`, `atributo_id`, `versao_nova: null`, `campos_gravados: ["excluido_em"]` (ou `[]` quando `sem_mudanca`), `valor: null` |
 | `ficha_revisar` | `product_id`, `campos_gravados: ["revisao"]`, `revisao` (o evento gravado: `usuario`, `criado_em` e a impressão), lido na mesma transação |
+| `kit_prioridade` | `versao_nova` (= `versao_prioridade`, sha256 curto da fila), `campos_gravados` (`["prioridade"]` ou `[]` quando `sem_mudanca`), `ordem` (os ativos na precedência gravada, lida na mesma transação). Conflito: 409 com `meta.atual = {ordem, kits}` |
 | `massa_aplicar` | `chave` (a da massa), `gravado` (`kits_aplicados`, `kits_removidos`, `inclusoes`, `exclusoes`), `resumo` da prévia |
 | as demais | `versao_nova` (`versao_vinculos` ou `versao` do objeto gravado) e `campos_gravados` (os campos de dados do pedido; os de controle, como versão, chave e fotografia, ficam de fora) |
 

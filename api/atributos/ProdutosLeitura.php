@@ -339,7 +339,10 @@ final class ProdutosLeitura
                 'diretos' => count(array_filter($m->diretos, static fn($gs) => in_array((int) $gid, $gs, true))), 'alcance' => $alc[$gid] ?? 0];
         }
         usort($out, static fn($a, $b) => [$b['ativo'], $b['itens'] > 0, mb_strtolower($a['nome'])] <=> [$a['ativo'], $a['itens'] > 0, mb_strtolower($b['nome'])]);
-        return ['kits' => $out, 'subcategorias' => $this->subcategorias(), 'pode_editar' => $this->podeAdmin()];
+        // P1 kit-prioridade (aditivo): os ATIVOS na precedência efetiva (Aplicabilidade::compararKits) = o `ordem_antes` do POST kit_prioridade
+        $fila = array_values($m->grupos); usort($fila, [Aplicabilidade::class, 'compararKits']);
+        $ordemPrio = array_values(array_map(static fn($g) => (int) $g['id'], array_filter($fila, static fn($g) => (int) $g['ativo'] === 1)));
+        return ['kits' => $out, 'subcategorias' => $this->subcategorias(), 'pode_editar' => $this->podeAdmin(), 'ordem_prioridade' => $ordemPrio];
     }
 
     private function contarAtivos(string $cat, string $sub): int

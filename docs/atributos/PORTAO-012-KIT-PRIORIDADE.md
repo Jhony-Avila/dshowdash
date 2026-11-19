@@ -115,14 +115,48 @@ Com a 012 aplicada, as duas regras dão o mesmo resultado **até o primeiro reno
 e estender a `golden-ficha` com um caso de kit renomeado. Antes disso, **não renomear kits nem criar kit que dispute atributo com outro**.
 Também é preciso o grant `SELECT` na coluna nova, se o grant do app for por coluna.
 
-## 9. Pedido de tela aos donos (DIREITA, `Kits.tsx`)
+## 9. Ação de reordenar (`POST kit_prioridade`) e pedido de tela
 
-- **Mostrar** a prioridade: `GET kits` já traz `prioridade` (número ou `null`). Sugestão: coluna "Precedência" e a lista ordenável por ela.
-- **Editar** (pedido em aberto, **não feito neste ramo**): a ação de reordenar kits precisa seguir o padrão completo (nível admin, trava, 422 antes de mutar,
-  auditoria e **recibo**). O recibo (`OperacoesGravacao`, chave de operação) só existe no ramo `feat/foi-salvo-esq`. Por isso a ação vem depois da integração
-  com ele, no molde de `opcao_reordenar`: `POST kit_prioridade {ordem: [todos os ids na nova precedência], ordem_antes: [como a tela viu]}`, 409 se o conjunto
-  ou a ordem anterior mudou, valores 1..N reescritos sob trava `FOR UPDATE` em `eq_grupo`, auditoria `reordenar_kits` antes/depois e recibo.
-  A tela precisa avisar que reordenar **muda a ficha** dos produtos em que os kits disputam atributo. Sugestão: prévia com o impacto, mesma regra da `kit_impacto`.
+Ramo `feat/kit-prioridade-acao-esq`: servidor do foi-salvo (`246d01b0`) + este ramo (`e66ff036`) + a ação. Implementada em
+`KitsService::reordenarPrioridade`, no molde de `opcao_reordenar`, pela camada `OperacoesGravacao` (recibo, chave de operação, `conferir_gravacao`).
+
+### 9.1 Contrato
+
+`POST ?r=kit_prioridade` · corpo `{ordem: [ids], ordem_antes: [ids], motivo?: texto}` · cabeçalho opcional `X-Chave-Operacao`.
+
+- **Forma escolhida: a lista completa.** `ordem` traz TODOS os kits ATIVOS, cada um uma vez, na nova precedência (o primeiro vence).
+  Descartei "mover o kit X para a posição N" porque o resultado dele depende da posição atual, e um reenvio sem chave moveria de novo.
+  A lista completa diz o resultado inteiro, a tela confere o que vai gravar e repetir o pedido nunca "empurra" duas vezes.
+- `ordem_antes` (obrigatória) é a ordem dos ativos que a tela viu, e a ordem importa. `GET kits` passa a trazer `ordem_prioridade` (aditivo),
+  que é exatamente esse valor: os ativos na precedência efetiva (`Aplicabilidade::compararKits`). Inclui os kits com prioridade NULL.
+- **Porta:** administrar o catálogo (`ROTAS_ADMIN`). Nível < 80 → 403 `INSUFFICIENT_LEVEL`; sem administrar → 403 `NOT_CATALOG_ADMIN`. Essa conferência vem antes do reenvio de recibo.
+- **422 `VALIDATION_ERROR`, sempre antes de mutar:** `ordem` ou `ordem_antes` malformada, vazia ou com mais de 1000 ids (campo `ordem`/`ordem_antes`); kit repetido;
+  `ordem` com conjunto diferente de `ordem_antes` (lista incompleta ou com kit a mais); kit que não existe em `eq_grupo`.
+- **409 `CONFLICT`, só em conflito real**, com `meta.atual = {ordem: [ativos atuais], kits: [{id, nome, ativo, prioridade}]}` e `meta.desfecho = conflito`. Acontece quando
+  `ordem_antes` difere da ordem atual dos ativos. Exemplos: outra pessoa reordenou, um kit foi ativado ou desativado, ou a tela mandou um kit inativo.
+  Também dá 409 (sem `meta.atual`) quando a espera pela trava se esgota, porque outra gravação está segurando linhas de `eq_grupo`.
+- **`sem_mudanca`:** quando `ordem` é igual à ordem atual, nada é gravado nem auditado (`recibo.campos_gravados: []`).
+- **Gravação:** tudo sob `SELECT … FOR UPDATE` de TODAS as linhas de `eq_grupo`. Essa trava também segura uma criação de kit simultânea (`MAX(prioridade)`).
+  A fila inteira é reescrita de 1 a N. Os ativos ocupam, na nova ordem, as vagas que os ativos já ocupavam. Os inativos ficam onde estavam e não entram na ficha.
+  Prioridade NULL é normalizada. Só a coluna `prioridade` muda: `versao` e `atualizado_em` do kit ficam iguais, então nenhuma tela de kit recebe 409 por causa disso.
+  A auditoria `reordenar_kits` (entidade `kit_prioridade`, id `fila`, com `{ordem, prioridade}` antes e depois, e o motivo) é gravada na mesma transação.
+  Ela pode ser lida por `GET auditoria&entidade=kit_prioridade&id=fila`.
+- **Resposta** (lida DENTRO da transação que gravou): `{ordem, kits: [{id, nome, ativo, prioridade}] na precedência, versao_prioridade, desfecho, recibo}`.
+  O recibo traz `operacao: kit_prioridade`, `versao_nova = versao_prioridade` (sha256 curto da fila), `campos_gravados: ["prioridade"]` e `ordem`.
+  Com chave, o recibo fica guardado byte a byte e é igual no reenvio e no `conferir_gravacao`.
+- **Sem a 012** (coluna ausente): 503 `KIT_PRIORITY_UNAVAILABLE`, sem mutar.
+- **Efeito:** nenhum VALOR muda. A ficha efetiva muda só onde kits disputam o mesmo atributo, porque a precedência decide o dono do item, a posição, a importância e a unidade do kit (D3).
+  O teste prova isso: a ficha depois de reordenar é igual a `Aplicabilidade::ficha` calculada sobre o retrato com as prioridades novas.
+
+### 9.2 Pedido de tela aos donos (DIREITA, `Kits.tsx`): não feito por mim
+
+- **Mostrar:** coluna "Precedência", com a lista dos ativos na ordem de `ordem_prioridade` e os inativos à parte.
+- **Editar:** modo "Ordenar precedência" (arrastar, ou botões subir/descer com teclado) sobre os ATIVOS. Ao salvar, enviar
+  `{ordem: <nova>, ordem_antes: <ordem_prioridade lida>}` com UMA chave de operação por intenção (reaproveitar a chave quando o resultado for incerto).
+- **Aviso antes de salvar:** "Reordenar muda a ficha dos produtos em que estes kits têm o mesmo atributo (qual kit define posição, importância e unidade). Nenhum valor é apagado."
+  Uma prévia de impacto (no mesmo molde da `kit_impacto`) fica como melhoria. O servidor ainda não tem prévia para a reordenação.
+- **Desfechos:** `aplicada` → "Precedência salva" e a lista vem da resposta. `sem_mudanca` → "Nada mudou". 409 com `meta.atual` → mostrar a ordem atual e oferecer "Recarregar".
+  422 → mensagem junto da lista. Resposta sem recibo → "Não conseguimos confirmar se foi salvo" + `conferir_gravacao`.
 
 ## 10. Testes deste ramo
 
@@ -133,3 +167,13 @@ Também é preciso o grant `SELECT` na coluna nova, se o grant do app for por co
 | `modulo-mysql` / `hotfix-integridade-mysql` / `hotfix2-mysql` / `hotfix3-mysql` / `repo-mysql` | T_7 | 188/0 · 45/0 · 33/0 · 45/0 · 25/0 |
 | `executor` / `executor-preflight` | T_9 | 13/0 · 31/0 |
 | `aplicabilidade` / `golden-ficha` / `servico` / `cargas-nome` | sem banco | 24/0 · 10/0 · 81/0 · 16/0 |
+
+### 10.1 Testes do ramo da ação (`feat/kit-prioridade-acao-esq`, base T_9, 18/11)
+
+| Teste | Código | Resultado |
+|---|---|---|
+| `kit-prioridade-acao-mysql.php` (novo; 2 conexões para a concorrência) | ação | 64 casos, 0 falhas |
+| contraprova: o mesmo teste no merge sem a ação (`d179df5a`) | merge | 55 de 64 falham (`reordenarPrioridade` inexistente) |
+| `foi-salvo-mysql` / `kit-prioridade-mysql` logo depois do merge (`d179df5a`) | merge | 99/0 · 42/0 |
+| `foi-salvo-mysql` / `kit-prioridade-mysql` / `modulo-mysql` / `hotfix-integridade-mysql` / `hotfix2-mysql` / `hotfix3-mysql` / `repo-mysql` | ação | 99/0 · 42/0 · 188/0 · 45/0 · 33/0 · 45/0 · 25/0 |
+| `servico` / `aplicabilidade` / `golden-ficha` | ação (sem banco) | 81/0 · 24/0 · 10/0 |
