@@ -33,7 +33,18 @@ final class KitsService
         private readonly string $usuario,
         private readonly CatalogoProdutos $catalogo,
         private readonly ?bool $administra = null,   // AtributosPermissoes (18/11): null = só pelo nível
+        private readonly ?int $titularId = null,     // DSHOW-086: identidade ESTÁVEL do usuário (id do Dash) para o recibo da massa
     ) {}
+
+    /**
+     * DSHOW-086: o recibo da massa é do TITULAR. Com titular_id gravado (011), confere pelo id estável; recibo antigo (sem titular_id),
+     * pelo `usuario` gravado. Quem não é o titular não recebe o resultado (o gate de admin continua antes).
+     */
+    public static function titularDoPedido(array $ped, ?int $titularId, string $usuario): bool
+    {
+        if (isset($ped['titular_id']) && $ped['titular_id'] !== null && $titularId !== null) return (int) $ped['titular_id'] === $titularId;
+        return (string) ($ped['usuario'] ?? '') === mb_substr($usuario, 0, 100);
+    }
 
     /** A8: unidade aceitável para o atributo: existe, está ativa e é da mesma grandeza da unidade padrão (ou é extra explícita). */
     private function unidadeValida(array $a, ?int $uid): bool
@@ -317,6 +328,17 @@ final class KitsService
     }
 
     // ---- em massa --------------------------------------------------------------------------------------------------------------------
+    /** Pedido normalizado SEM validar contra o estado atual (só formato) — base da assinatura do recibo (DSHOW-085). */
+    private static function pedidoBruto(array $b): array
+    {
+        $pids = array_values(array_unique(array_map('intval', (array) ($b['produtos'] ?? []))));
+        $kA = array_values(array_unique(array_map('intval', (array) ($b['kits_aplicar'] ?? []))));
+        $kR = array_values(array_unique(array_map('intval', (array) ($b['kits_remover'] ?? []))));
+        $aI = []; foreach ((array) ($b['atributos_incluir'] ?? []) as $x) { $id = (int) (is_array($x) ? ($x['atributo_id'] ?? 0) : $x); if ($id > 0) $aI[$id] = is_array($x) && isset($x['unidade_id']) && $x['unidade_id'] !== '' ? (int) $x['unidade_id'] : null; }
+        $aE = []; foreach ((array) ($b['atributos_excluir'] ?? []) as $x) { $id = (int) (is_array($x) ? ($x['atributo_id'] ?? 0) : $x); if ($id > 0) $aE[$id] = is_array($x) ? (string) ($x['motivo'] ?? '') : ''; }
+        return [array_fill_keys($pids, true), $kA, $kR, $aI, $aE];
+    }
+
     private function pedidoMassa(array $b): array
     {
         $pids = array_values(array_unique(array_map('intval', (array) ($b['produtos'] ?? []))));
@@ -387,10 +409,20 @@ final class KitsService
         if (!preg_match('/^[A-Za-z0-9_-]{8,64}$/', $chave)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Chave de idempotência inválida.', ['chave']);
         $vp = $b['versao_previa'] ?? null;
         if (!is_string($vp) || !preg_match('/^[0-9a-f]{64}$/', $vp)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Falta a versão da prévia. Gere a prévia de novo.', ['versao_previa']);
+        // DSHOW-085: lote INCERTO reenviado com a mesma chave = devolve o recibo, sem revalidar contra o estado de agora (um produto que saiu
+        // do catálogo depois não transforma "já gravado" em 422) e sem criar operação nova. Assinatura pelo pedido bruto canônico (= a gravada).
+        if ($ja = $this->repo->pedidoMassa($chave)) {
+            [$pb, $kb, $rb, $ib, $eb] = self::pedidoBruto($b);
+            $ab = hash('sha256', json_encode(self::intencaoMassa($pb, $kb, $rb, $ib, $eb)));
+            if (!self::titularDoPedido($ja, $this->titularId, $this->usuario)) throw new AtributosErro('CONFLICT', 409, 'Esta chave já foi usada para outro pedido. Gere a prévia de novo.');   // DSHOW-086
+            if ($ja['assinatura'] === $ab) return ['repetido' => true] + (is_array($ja['resultado']) ? $ja['resultado'] : []);
+            // assinatura legada (pré-DSHOW-056) ou pedido diferente: o caminho completo abaixo decide (repetido legado × 409)
+        }
         [$p0, $k0, $r0, $i0, $e0] = $this->pedidoMassa($b);
         $assinatura = hash('sha256', json_encode(self::intencaoMassa($p0, $k0, $r0, $i0, $e0)));   // DSHOW-056: canônica (ordem não importa)
         $assinaturaLegada = hash('sha256', json_encode([array_keys($p0), $k0, $r0, $i0, $e0]));     // recibos gravados antes continuam válidos
-        $repetido = static function (array $ped) use ($assinatura, $assinaturaLegada): array {
+        $repetido = function (array $ped) use ($assinatura, $assinaturaLegada): array {
+            if (!self::titularDoPedido($ped, $this->titularId, $this->usuario)) throw new AtributosErro('CONFLICT', 409, 'Esta chave já foi usada para outro pedido. Gere a prévia de novo.');   // DSHOW-086: mesma resposta, sem revelar o titular
             if ($ped['assinatura'] !== $assinatura && $ped['assinatura'] !== $assinaturaLegada) throw new AtributosErro('CONFLICT', 409, 'Esta chave já foi usada para outro pedido. Gere a prévia de novo.');
             return ['repetido' => true] + (is_array($ped['resultado']) ? $ped['resultado'] : []);
         };
@@ -400,6 +432,8 @@ final class KitsService
         [$prods, $kA, $kR, $aI, $aE] = [$p0, $k0, $r0, $i0, $e0];
         $res = $this->repo->transacao(function () use ($prods, $kA, $kR, $aI, $aE, $previa, $chave, $b, $assinatura, $vp) {
             if (!$this->repo->registrarPedidoMassa($chave, $assinatura, $this->usuario, count($prods))) return null;   // outro envio com a mesma chave já gravou
+            if ($this->titularId !== null && $this->repo instanceof OperacoesRepositorio && method_exists($this->repo, 'temTitularMassa') && $this->repo->temTitularMassa())
+                $this->repo->titularPedidoMassa($chave, $this->titularId);   // DSHOW-086: titular estável, na MESMA transação
             if ($this->versaoMassa($prods, $kA, $kR, $aI, $aE, true) !== $vp) throw new AtributosErro('CONFLICT', 409, 'O pedido ou os vínculos mudaram desde a prévia. Gere a prévia de novo.');
             $n = ['kits_aplicados' => 0, 'kits_removidos' => 0, 'inclusoes' => 0, 'exclusoes' => 0];
             foreach ($prods as $pid => $_) {

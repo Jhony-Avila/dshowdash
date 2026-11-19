@@ -515,3 +515,9 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
    na página). Em tela larga a tabela cabe → sem rolagem horizontal, e o cabeçalho gruda logo abaixo do bloco fixo. Em tela estreita a
    rolagem horizontal volta (o cabeçalho das colunas não gruda; o bloco fixo continua). */
 @media (min-width: 1200px) { [data-bl-root] .at-produtos .bl-rola-x { overflow: visible; } }
+
+/* ── "FOI SALVO OU NÃO": estados por campo ── */
+[data-bl-root] .at-salvo--aviso { color: var(--bl-aviso); }
+[data-bl-root] .at-conflito { display: block; }
+[data-bl-root] .at-conflito__linhas { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; color: var(--bl-texto); font-size: 12px; }
+[data-bl-root] .at-conflito__linhas strong { font-weight: 650; }

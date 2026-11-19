@@ -304,10 +304,11 @@ $r4 = $kits->aplicarMassa(['produtos' => [201], 'kits_aplicar' => [$k3], 'chave'
 $ok('056: recibo idempotente gravado com a assinatura ANTIGA continua válido (reenvio → recibo, nada aplicado)', !empty($r4['repetido']) && ($r4['gravado']['kits_aplicados'] ?? -1) === 1 && $foto56() === $fLeg);
 
 // corrida real com DUAS conexões: outra sessão segura a mesma chave numa transação aberta; esta espera no índice único
+// (DSHOW-086, 18/11: a outra sessão é do MESMO titular — duas abas/clique duplo; recibo de outro titular não é devolvido, ver foi-salvo-mysql.php)
 $pC = ['produtos' => [106], 'kits_aplicar' => [$k2]];
 $assin = hash('sha256', json_encode([[106], [$k2], [], [], []]));
 $outra = function (string $chave, string $fim) use ($cnf, $db, $assin) {
-    $sql = "START TRANSACTION; INSERT INTO eq_pedido_massa (chave, assinatura, usuario, produtos, resultado, concluido_em) VALUES ('$chave', '$assin', 'outra-sessao', 1, '{\"gravado\": {\"kits_aplicados\": 1}, \"marca\": \"outra\"}', NOW(3)); DO SLEEP(2); $fim;";
+    $sql = "START TRANSACTION; INSERT INTO eq_pedido_massa (chave, assinatura, usuario, produtos, resultado, concluido_em) VALUES ('$chave', '$assin', 'admin@exemplo.invalid', 1, '{\"gravado\": {\"kits_aplicados\": 1}, \"marca\": \"outra\"}', NOW(3)); DO SLEEP(2); $fim;";
     $p = proc_open(['mysql', "--defaults-extra-file=$cnf", $db, '-e', $sql], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
     usleep(800000);   // a outra sessão já inseriu (sem COMMIT) quando esta começa
     return [$p, $pipes];
