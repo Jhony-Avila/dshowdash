@@ -1369,6 +1369,7 @@ final class OperacoesGravacao
         }
         $desfecho = self::semMudanca($out) ? 'sem_mudanca' : 'aplicada';
         $recibo = $this->recibo($rota, $chave, $desfecho, $out, $corpo);
+        if ($rota === 'massa_aplicar') $desfecho = $recibo['desfecho'];   // reenvio = desfecho ORIGINAL do lote (como o reservar das demais rotas)
         if ($ops === null) return $out + ['desfecho' => $desfecho, 'recibo' => self::normalizar($recibo)];
         // um item: recibo COMPLETO + posse no MESMO COMMIT da gravação · lote: conclusão com totais e IDs, sob trava e só se ainda é desta tentativa
         $recibo = $this->confirmar($ops, $chave, $tentativa, $desfecho, $recibo, null, $adiado);
@@ -1501,8 +1502,10 @@ final class OperacoesGravacao
                 'campos_gravados' => $desfecho === 'aplicada' ? ['excluido_em'] : [], 'valor' => null, 'unidade_id' => null];
         if ($rota === 'ficha_revisar')
             return $r + ['product_id' => (int) ($corpo['product_id'] ?? 0), 'campos_gravados' => ['revisao'], 'versao_nova' => null, 'revisao' => $out['revisao_gravada'] ?? null];
-        if ($rota === 'massa_aplicar')
-            return array_replace($r, ['chave' => $corpo['chave'] ?? $chave]) + ['gravado' => $out['gravado'] ?? null, 'resumo' => $out['resumo'] ?? null, 'versao_nova' => null, 'campos_gravados' => ['vinculos']];
+        if ($rota === 'massa_aplicar') {   // recibo da massa = o do resultado guardado (resposta = reenvio = conferir); o desfecho é o do lote
+            $m = KitsService::reciboMassa((string) ($corpo['chave'] ?? $chave ?? ''), $out);
+            return $out === [] ? array_replace($m, ['desfecho' => $desfecho, 'confirmado_em' => $r['confirmado_em'], 'campos_gravados' => $desfecho === 'aplicada' ? ['vinculos'] : []]) : $m;
+        }
         $versao = null;
         foreach ([$out, ...array_filter($out, 'is_array')] as $x) foreach (['versao_vinculos', 'versao'] as $k) if ($versao === null && isset($x[$k]) && is_scalar($x[$k])) $versao = $x[$k];
         $campos = array_values(array_diff(array_keys($corpo), self::CONTROLE, ['id', 'product_id', 'atributo_id', 'motivo']));
@@ -1543,9 +1546,8 @@ final class OperacoesGravacao
         if ($this->repo instanceof ModuloRepositorio) {
             $ped = $this->repo->pedidoMassa($chave);
             if ($ped !== null && KitsService::titularDoPedido($ped, $this->titularId, $this->titular)) {
-                $res = is_array($ped['resultado']) ? 'aplicada' : 'em_andamento';
-                return ['chave' => $chave, 'resultado' => $res, 'operacao' => 'massa_aplicar', 'recibo' => $res === 'aplicada'
-                    ? ['operacao' => 'massa_aplicar', 'chave' => $chave, 'desfecho' => 'aplicada', 'gravado' => $ped['resultado']['gravado'] ?? null, 'resumo' => $ped['resultado']['resumo'] ?? null, 'versao_nova' => null, 'campos_gravados' => ['vinculos']] : null,
+                $recibo = is_array($ped['resultado']) ? KitsService::reciboMassa($chave, $ped['resultado']) : null;   // o MESMO recibo da resposta e do reenvio
+                return ['chave' => $chave, 'resultado' => $recibo['desfecho'] ?? 'em_andamento', 'operacao' => 'massa_aplicar', 'recibo' => $recibo,
                     'erro' => null, 'criado_em' => $ped['criado_em'], 'concluido_em' => $ped['concluido_em']];
             }
         }

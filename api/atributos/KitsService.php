@@ -46,6 +46,21 @@ final class KitsService
         return (string) ($ped['usuario'] ?? '') === mb_substr($usuario, 0, 100);
     }
 
+    /**
+     * Recibo da massa — UMA função para a resposta, o reenvio e o "conferir gravação" (DSHOW-093 A: byte a byte iguais). Derivado só do
+     * resultado guardado em eq_pedido_massa: desfecho `sem_mudanca` quando o lote teve 0 efeitos (campos_gravados []), senão `aplicada`
+     * (['vinculos']). confirmado_em = o carimbo gravado no MESMO COMMIT (null em recibos antigos, gravados antes dele).
+     */
+    public static function reciboMassa(string $chave, array $resultado): array
+    {
+        $sem = ($resultado['sem_mudanca'] ?? false) === true;
+        // a coluna JSON do MySQL reordena as chaves dos objetos: ordem canônica (alfabética) nos aninhados, para a resposta sair igual ao guardado
+        $canon = static function ($v) use (&$canon) { if (!is_array($v)) return $v; if (!array_is_list($v)) ksort($v, SORT_STRING); return array_map($canon, $v); };
+        $r = ['operacao' => 'massa_aplicar', 'chave' => $chave, 'desfecho' => $sem ? 'sem_mudanca' : 'aplicada', 'confirmado_em' => $resultado['confirmado_em'] ?? null,
+            'gravado' => $canon($resultado['gravado'] ?? null), 'resumo' => $canon($resultado['resumo'] ?? null), 'versao_nova' => null, 'campos_gravados' => $sem ? [] : ['vinculos']];
+        return json_decode(json_encode($r, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), true);   // a mesma forma do texto guardado
+    }
+
     /** A8: unidade aceitável para o atributo: existe, está ativa e é da mesma grandeza da unidade padrão (ou é extra explícita). */
     private function unidadeValida(array $a, ?int $uid): bool
     {
@@ -443,7 +458,8 @@ final class KitsService
                     $d = ['modo' => 'incluir', 'unidade_id' => $u ?? ($ex ? ($ex['unidade_id'] === null ? null : (int) $ex['unidade_id']) : null), 'posicao' => $ex && $ex['posicao'] !== null ? (int) $ex['posicao'] : null, 'motivo' => null]; if ($this->repo->definirAjusteProduto($pid, $aid, $d, $this->usuario)) { $n['inclusoes']++; $this->repo->auditar($this->usuario, 'incluir', 'produto_atributo', "$pid:$aid", null, $d + ['massa' => $chave], null); } }
                 foreach ($aE as $aid => $mot) { $d = ['modo' => 'excluir', 'unidade_id' => null, 'posicao' => null, 'motivo' => $mot]; if ($this->repo->definirAjusteProduto($pid, $aid, $d, $this->usuario)) { $n['exclusoes']++; $this->repo->auditar($this->usuario, 'excluir', 'produto_atributo', "$pid:$aid", null, $d + ['massa' => $chave], null); } }
             }
-            $res = ['gravado' => $n, 'resumo' => $previa['resumo'], 'assinatura' => $assinatura];
+            $res = ['gravado' => $n, 'resumo' => $previa['resumo'], 'assinatura' => $assinatura] + (array_sum($n) === 0 ? ['sem_mudanca' => true] : [])   // 0 efeitos = desfecho sem_mudanca
+                + ['confirmado_em' => (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d\\TH:i:s.v\\Z')];   // carimbo do recibo, no MESMO COMMIT
             $this->repo->concluirPedidoMassa($chave, $res);
             $this->repo->auditar($this->usuario, 'aplicar', 'massa', $chave, null, $res, $b['motivo'] ?? null);
             return $res;

@@ -220,6 +220,32 @@ $ok('086 recibo antigo (titular_id NULL): A pelo usuario recebe; B não', fn() =
     && $erro(fn() => $kitsDe($B)->aplicarMassa($ped + ['chave' => 'massa-fs-0001', 'versao_previa' => str_repeat('0', 64)]))?->http === 409);
 $ok('massa pela camada única: recibo com gravado e chave do corpo', fn() => ($r = $opsA->executar('massa_aplicar', ['produtos' => [103], 'kits_aplicar' => [$k2], 'chave' => 'massa-fs-0002', 'versao_previa' => $kits->previaMassa(['produtos' => [103], 'kits_aplicar' => [$k2]])['versao_previa']], null, fn(array $c) => $kits->aplicarMassa($c)))['recibo']['chave'] === 'massa-fs-0002'
     && $r['recibo']['gravado']['kits_aplicados'] === 1 && $r['desfecho'] === 'aplicada');
+// recibo ÚNICO da massa (093 A): resposta = reenvio = conferir, byte a byte; desfecho do reenvio = o ORIGINAL; 0 efeitos = sem_mudanca, campos_gravados []
+$cat->p[120] = ['id' => 120, 'nome' => 'Produto 120 (sintético)', 'categoria' => 'LED_PANEL', 'subcategoria' => 'CABLE', 'ativo' => true, 'excluido' => false, 'sincronizado_em' => null];
+$tx = fn($r) => is_array($r) ? OperacoesGravacao::textoRecibo($r) : 'null';
+$pedR = ['produtos' => [120], 'kits_aplicar' => [$k2]];
+$exM = fn(array $b, string $chave, ?string $vp = null) => $opsA->executar('massa_aplicar', $b + ['chave' => $chave, 'versao_previa' => $vp ?? $kits->previaMassa($b)['versao_previa']], null, fn(array $c) => $kits->aplicarMassa($c));
+$rR1 = $exM($pedR, 'massa-fs-rec-01');
+$cfR1 = $opsA->conferir('massa-fs-rec-01');
+$audR = (int) $um("SELECT COUNT(*) FROM eq_auditoria WHERE entidade = 'massa'");
+$rR2 = $exM($pedR, 'massa-fs-rec-01', str_repeat('0', 64));
+$ok('093A massa aplicada: desfecho aplicada, recibo [vinculos] com confirmado_em; conferir aplicada', ($rR1['desfecho'] ?? null) === 'aplicada' && ($rR1['recibo']['desfecho'] ?? null) === 'aplicada'
+    && ($rR1['recibo']['campos_gravados'] ?? null) === ['vinculos'] && is_string($rR1['recibo']['confirmado_em'] ?? null) && $cfR1['resultado'] === 'aplicada', json_encode([$rR1, $cfR1]));
+$ok('093A massa aplicada: carimbo confirmado_em guardado no resultado (mesmo COMMIT) = o do recibo', fn() => (json_decode((string) $um("SELECT resultado FROM eq_pedido_massa WHERE chave = 'massa-fs-rec-01'"), true)['confirmado_em'] ?? null) === $rR1['recibo']['confirmado_em']);
+$ok('093A reenvio (mesma chave) de lote aplicado: repetido, desfecho ORIGINAL aplicada, mesmo confirmado_em, sem efeito novo', ($rR2['repetido'] ?? false) === true && ($rR2['desfecho'] ?? null) === 'aplicada'
+    && ($rR2['recibo']['confirmado_em'] ?? 'x') === $rR1['recibo']['confirmado_em'] && (int) $um("SELECT COUNT(*) FROM eq_auditoria WHERE entidade = 'massa'") === $audR, json_encode($rR2));
+$ok('093A massa aplicada: resposta = conferir = reenvio, byte a byte', $tx($rR1['recibo'] ?? null) === $tx($cfR1['recibo']) && $tx($rR1['recibo'] ?? null) === $tx($rR2['recibo'] ?? null),
+    $tx($rR1['recibo'] ?? null) . "\n       " . $tx($cfR1['recibo']) . "\n       " . $tx($rR2['recibo'] ?? null));
+$rS1 = $exM($pedR, 'massa-fs-rec-02');   // mesmo pedido: o kit já está no 120 → 0 efeitos
+$cfS1 = $opsA->conferir('massa-fs-rec-02');
+$rS2 = $exM($pedR, 'massa-fs-rec-02', str_repeat('0', 64));
+$ok('093A massa sem efeito: 0 gravados, desfecho sem_mudanca, recibo sem_mudanca com campos_gravados []', array_sum($rS1['gravado'] ?? [1]) === 0 && ($rS1['desfecho'] ?? null) === 'sem_mudanca'
+    && ($rS1['recibo']['desfecho'] ?? null) === 'sem_mudanca' && ($rS1['recibo']['campos_gravados'] ?? null) === [], json_encode($rS1));
+$ok('093A massa sem efeito: guardado com sem_mudanca e carimbo', fn() => ($g = json_decode((string) $um("SELECT resultado FROM eq_pedido_massa WHERE chave = 'massa-fs-rec-02'"), true))['sem_mudanca'] === true && is_string($g['confirmado_em'] ?? null));
+$ok('093A massa sem efeito: conferir sem_mudanca, recibo campos_gravados []', $cfS1['resultado'] === 'sem_mudanca' && ($cfS1['recibo']['desfecho'] ?? null) === 'sem_mudanca' && ($cfS1['recibo']['campos_gravados'] ?? null) === [], json_encode($cfS1));
+$ok('093A massa sem efeito: reenvio repetido, desfecho sem_mudanca; resposta = conferir = reenvio, byte a byte', ($rS2['repetido'] ?? false) === true && ($rS2['desfecho'] ?? null) === 'sem_mudanca'
+    && $tx($rS1['recibo'] ?? null) === $tx($cfS1['recibo']) && $tx($rS1['recibo'] ?? null) === $tx($rS2['recibo'] ?? null),
+    $tx($rS1['recibo'] ?? null) . "\n       " . $tx($cfS1['recibo']) . "\n       " . $tx($rS2['recibo'] ?? null));
 
 // =========================================================================================================================================
 // DSHOW-079 P2 · `gravavel` em cada unidade da leitura pela MESMA regra da gravação; unidade histórica na lista só para leitura
