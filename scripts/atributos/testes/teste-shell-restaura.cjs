@@ -15,7 +15,8 @@ const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } e
   const outro = async () => { await pg.click('a.dsd-sidebar__link:has-text("Geral Compras")'); await pg.waitForTimeout(2500); };
   // 1) referência: outro painel, sem o módulo nunca ter rolado
   await pg.evaluate(() => { try { sessionStorage.removeItem('__BOOT_LOOP_TRACKER__'); } catch {} }); await pg.reload({ waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
-  await outro(); const ref = await estilo(); await pg.mouse.move(10, 10); await pg.screenshot({ path: `${CAP}/outro-painel-antes.png` });
+  const geo = () => pg.evaluate(() => ['#container-main', '.dsd-container__body', '.dsd-container__content'].map((q) => { const e = document.querySelector(q); if (!e) return q + ' ausente'; const r = e.getBoundingClientRect(); return `${q} ${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}×${Math.round(r.height)} sh=${e.scrollHeight}`; }));
+  await outro(); const ref = await estilo(); const geoRef = await geo(); await pg.mouse.move(10, 10); await pg.screenshot({ path: `${CAP}/outro-painel-antes.png` });
   // 2) módulo: rola a página → a troca acontece
   await pg.click('a.dsd-sidebar__link[href="#/panel-atributos/produtos"], a.dsd-sidebar__link:has-text("Geral Produtos")').catch(async () => { await pg.goto(`${B}/#/panel-atributos`); });
   await pg.waitForSelector('[data-at-host] .at-raiz', { timeout: 40000 }); await pg.waitForTimeout(1500);
@@ -25,13 +26,14 @@ const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } e
   const fixo = await pg.evaluate(() => { const f = document.querySelector('.at-fixo').getBoundingClientRect(); const m = document.querySelector('main#main'); return { f: Math.round(f.top), m: Math.round(m.getBoundingClientRect().top), s: m.scrollTop }; });
   afirma(`e o cabeçalho do módulo está grudado (fixo ${fixo.f} = topo da área ${fixo.m}, scroll ${fixo.s})`, fixo.s > 100 && Math.abs(fixo.f - fixo.m) <= 2, JSON.stringify(fixo));
   // 3) troca de painel: tudo volta ao original
-  await outro(); const depois = await estilo(); await pg.mouse.move(10, 10);
+  await outro(); const depois = await estilo(); const geoDepois = await geo(); await pg.mouse.move(10, 10);
+  afirma('o outro painel tem a MESMA geometria antes e depois (posição, tamanho e altura de rolagem do contêiner e do corpo)', JSON.stringify(geoDepois) === JSON.stringify(geoRef), `ref=${geoRef.join(' | ')} · depois=${geoDepois.join(' | ')}`);
   afirma('depois de ir para outro painel: estilo inline e overflow calculado idênticos à referência', JSON.stringify(depois) === JSON.stringify(ref), `ref=${ref.join(' | ')} · depois=${depois.join(' | ')}`);
   await pg.evaluate(() => { const m = document.querySelector('main#main'); if (m) m.scrollTo({ top: 0, behavior: 'instant' }); }); await pg.waitForTimeout(300);
   await pg.screenshot({ path: `${CAP}/outro-painel-depois.png` });
   let pix = 'n/d'; try { pix = execFileSync('compare', ['-metric', 'AE', `${CAP}/outro-painel-antes.png`, `${CAP}/outro-painel-depois.png`, '/dev/null'], { stdio: ['ignore', 'pipe', 'pipe'] }).toString(); } catch (e) { pix = (e.stderr || '').toString().trim(); }
   console.log(`info  pixels diferentes entre as capturas do outro painel (antes × depois): ${pix} (o relógio/ticker do topo muda sozinho)`);
-  afirma('a área do painel (abaixo da barra de notícias) é idêntica antes e depois', (() => { try { execFileSync('convert', [`${CAP}/outro-painel-antes.png`, '-crop', '1140x700+300+120', `${CAP}/_a.png`]); execFileSync('convert', [`${CAP}/outro-painel-depois.png`, '-crop', '1140x700+300+120', `${CAP}/_b.png`]); let r = ''; try { r = execFileSync('compare', ['-metric', 'AE', `${CAP}/_a.png`, `${CAP}/_b.png`, '/dev/null'], { stdio: ['ignore', 'pipe', 'pipe'] }).toString(); } catch (e) { r = (e.stderr || '').toString(); } console.log(`info  pixels diferentes na área do painel: ${r.trim()}`); return Number(r.trim()) === 0; } catch { return false; } })());
+  try { execFileSync('convert', [`${CAP}/outro-painel-antes.png`, '-crop', '1140x700+300+120', `${CAP}/_a.png`]); execFileSync('convert', [`${CAP}/outro-painel-depois.png`, '-crop', '1140x700+300+120', `${CAP}/_b.png`]); let r = ''; try { r = execFileSync('compare', ['-metric', 'AE', `${CAP}/_a.png`, `${CAP}/_b.png`, '/dev/null'], { stdio: ['ignore', 'pipe', 'pipe'] }).toString(); } catch (e) { r = (e.stderr || '').toString(); } console.log(`info  pixels diferentes na área do painel: ${r.trim()} (o painel "Em desenvolvimento" imprime o horário e tem um ponto animado)`); } catch {}
   // 4) volta ao módulo: a troca acontece de novo e o cabeçalho gruda
   await pg.goto(`${B}/#/panel-atributos`); await pg.waitForSelector('[data-at-host] .at-raiz', { timeout: 40000 }); await pg.waitForTimeout(1200);
   await pg.mouse.move(720, 700); for (let k = 0; k < 6; k++) { await pg.mouse.wheel(0, 300); await pg.waitForTimeout(80); } await pg.waitForTimeout(500);
