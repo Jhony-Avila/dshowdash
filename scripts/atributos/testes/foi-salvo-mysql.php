@@ -236,6 +236,8 @@ $ok('093A reenvio (mesma chave) de lote aplicado: repetido, desfecho ORIGINAL ap
     && ($rR2['recibo']['confirmado_em'] ?? 'x') === $rR1['recibo']['confirmado_em'] && (int) $um("SELECT COUNT(*) FROM eq_auditoria WHERE entidade = 'massa'") === $audR, json_encode($rR2));
 $ok('093A massa aplicada: resposta = conferir = reenvio, byte a byte', $tx($rR1['recibo'] ?? null) === $tx($cfR1['recibo']) && $tx($rR1['recibo'] ?? null) === $tx($rR2['recibo'] ?? null),
     $tx($rR1['recibo'] ?? null) . "\n       " . $tx($cfR1['recibo']) . "\n       " . $tx($rR2['recibo'] ?? null));
+$semRec = fn($r) => json_encode(array_diff_key(is_array($r) ? $r : [], ['recibo' => 1, 'repetido' => 1, 'desfecho' => 1]), JSON_UNESCAPED_UNICODE);
+$ok('pacote 8113: data.gravado/resumo da 1ª resposta = do reenvio, byte a byte (mesma ordem de chaves)', $semRec($rR1) === $semRec($rR2), $semRec($rR1) . "\n       " . $semRec($rR2));
 $rS1 = $exM($pedR, 'massa-fs-rec-02');   // mesmo pedido: o kit já está no 120 → 0 efeitos
 $cfS1 = $opsA->conferir('massa-fs-rec-02');
 $rS2 = $exM($pedR, 'massa-fs-rec-02', str_repeat('0', 64));
