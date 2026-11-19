@@ -97,7 +97,7 @@ $ok('galeria 403 do app', ($e = $erro(fn() => $canal(['status' => 403, 'corpo' =
 require_once __DIR__ . '/../../../api/midia/FotosPortas.php';
 // portas (função pura usada pelo index.php)
 foreach (FotosPortas::DESLIGADO as $fonte) $ok("100 flag OFF para todos ($fonte) → 404 antes da sessão", FotosPortas::antesDaSessao($fonte) === [404, 'NOT_FOUND']);
-$ok('100 flag ilegível → 500 (nunca 404)', FotosPortas::antesDaSessao('error') === [500, 'INTERNAL_ERROR']);
+$ok('100 flag ilegível = OFF → 404 (DSHOW-103 §1: inválido = OFF; nunca liga)', FotosPortas::antesDaSessao('error') === [404, 'NOT_FOUND']);
 $ok('100 flag ligada (override/rollout) → segue para a sessão', FotosPortas::antesDaSessao('override') === null && FotosPortas::antesDaSessao('rollout') === null);
 $ok('100 rota desconhecida → 404', FotosPortas::rotaEFlags('GET', 'publicar', true, true) === [404, 'NOT_FOUND'] && FotosPortas::rotaEFlags('POST', 'galeria', true, true) === [404, 'NOT_FOUND'] && FotosPortas::rotaEFlags('DELETE', 'remover', true, true) === [404, 'NOT_FOUND']);
 $ok('100 pessoa fora da flag → 404', FotosPortas::rotaEFlags('GET', 'galeria', false, true) === [404, 'NOT_FOUND']);

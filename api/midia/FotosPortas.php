@@ -5,7 +5,7 @@ declare(strict_types=1);
  * /api/midia/FotosPortas.php — FOTOS-1 (DSHOW-100): decisões PURAS de porta do proxy de fotos (testáveis sem banco, sessão ou flags reais).
  * DSHOW-103 (19/11): a ordem completa mora em FotosProxy::atender; as flags são as EXCLUSIVAS de fotos (`panel_fotos_enabled` /
  * `panel_fotos_escrita`, ausentes = desligadas), nunca as de atributos.
- *   1) antes da sessão: flag de fotos desligada para todos → 404; ilegível (source=error) → 500
+ *   1) antes da sessão: flag de fotos ausente, desligada ou ilegível/inválida (source=error) → 404 (= OFF, DSHOW-103 §1)
  *   2) [sessão completa: FotosSessao → 401/503]
  *   3) rota desconhecida para o método → 404
  *   4) pessoa fora da flag de fotos → 404 · POST com `panel_fotos_escrita` desligada para a pessoa → 404
@@ -20,7 +20,8 @@ final class FotosPortas
     /** @return array{0:int,1:string}|null null = segue para a sessão */
     public static function antesDaSessao(string $fonteFlag): ?array
     {
-        if ($fonteFlag === 'error') return [500, 'INTERNAL_ERROR'];
+        // DSHOW-103 §1: valor ausente OU inválido = OFF → 404 (nunca liga; nunca chama o app). Ilegível (source=error) também é OFF.
+        if ($fonteFlag === 'error') { error_log('[midia] flag de fotos ilegível — tratada como OFF'); return [404, 'NOT_FOUND']; }
         return in_array($fonteFlag, self::DESLIGADO, true) ? [404, 'NOT_FOUND'] : null;
     }
 

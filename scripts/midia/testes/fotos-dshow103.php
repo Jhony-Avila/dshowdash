@@ -59,9 +59,15 @@ $ok('P1-1 flag de fotos AUSENTE (padrão) → 404, 0 app', $r->http === 404 && $
 $a = $amb(); $a->flags = ['panel_atributos_enabled' => ['enabled' => true, 'source' => 'global'], 'panel_atributos_escrita' => ['enabled' => true, 'source' => 'global']];
 $r = $req($a, 'GET', ['r' => 'galeria', 'product_id' => '550']);
 $ok('P1-1 EXCLUSIVA: atributos ligada, fotos ausente → 404 (a flag de atributos não abre fotos)', $r->http === 404 && $nada($a) && !in_array('panel_atributos_enabled', array_column($a->flagsLidas, 0), true));
-$a = $amb(); $a->flags['panel_fotos_enabled'] = ['enabled' => false, 'source' => 'error'];
-$r = $req($a, 'GET', ['r' => 'galeria', 'product_id' => '550']);
-$ok('P1-1 flag ilegível → 500 (nunca liga), 0 app', $r->http === 500 && $nada($a));
+foreach (['GET' => ['r' => 'galeria', 'product_id' => '550'], 'POST' => ['r' => 'publicar', 'product_id' => '550']] as $met => $get) {
+  // DSHOW-103 §1 (teste bloqueante): atributos LIGADA para o 75 + flag de fotos INVÁLIDA/ilegível + segredo sintético VÁLIDO presente → 404
+  $a = $amb(); $a->flags = ['panel_atributos_enabled' => ['enabled' => true, 'source' => 'global'], 'panel_fotos_enabled' => ['enabled' => true, 'source' => 'error']]; $a->corpoBytes = $JPG;
+  $r = $req($a, $met, $get, ['tamanho' => (string) strlen($JPG)]);
+  $ok("P1-1 $met: flag de fotos ilegível/inválida (mesmo com enabled=true no lixo) = OFF → 404, 0 app, corpo não lido, com segredo válido presente", $r->http === 404 && $nada($a) && is_file($seg));
+  $a = $amb(); $a->flags['panel_fotos_escrita'] = ['enabled' => true, 'source' => 'error']; $a->corpoBytes = $JPG;
+  $r = $req($a, 'POST', ['r' => 'publicar', 'product_id' => '550'], ['tamanho' => (string) strlen($JPG)]);
+  if ($met === 'POST') $ok('P1-1 flag de ESCRITA ilegível = OFF → 404, corpo não lido', $r->http === 404 && $nada($a));
+}
 $a = $amb(); $a->flags['panel_fotos_enabled'] = ['enabled' => true, 'source' => 'rollout']; $a->flags['panel_fotos_enabled_pessoa'] = null;
 $a->flags = ['panel_fotos_enabled' => ['enabled' => true, 'source' => 'global']];   // pessoa: mesma chave; escrita ausente
 $a->corpoBytes = $JPG;
@@ -123,6 +129,22 @@ $pdoFalso = new class extends PDO { public array $sql = []; public array $linhas
 $st = (new FotosSessaoPdo($pdoFalso))->situacao('tok-x', 75);
 $ok('P1-2 FotosSessaoPdo (PDO falso): sessão ativa + usuário sem linha → usuario_ativo false; parâmetros token/uid', $st === ['sessao_ativa' => true, 'usuario_ativo' => false] && $pdoFalso->params === [['tok-x', 75], [75]]);
 
+// DSHOW-103 §2 (testes dirigidos): outro usuário "informando" o ID 75 — a identidade é SEMPRE a da sessão
+$a = $amb(); $a->sess = ['user_id' => 76]; $a->publicadores = [75, 76];
+$a->resp = fn($m, $url, $c) => ['status' => 200, 'corpo' => json_encode(['produto' => ['id' => 550], 'versao_galeria' => 7, 'fotos' => [], 'removidas' => []]), 'tipo' => 'application/json', 'erro' => null];
+$r = $req($a, 'GET', ['r' => 'galeria', 'product_id' => '550', 'user_id' => '75']);
+$ok('P1-2 sessão 76 com ?user_id=75 na URL → o app recebe user_id=76 (o da URL é ignorado)', $r->http === 200 && str_contains($a->urls[0], 'user_id=76') && !str_contains($a->urls[0], 'user_id=75'));
+$a = $amb(); $a->sess = ['user_id' => 76]; $a->publicadores = [75, 76]; $a->corpoBytes = json_encode(['id' => 812, 'versao' => 7, 'user_id' => 75, 'titular_user_id' => 75]);
+$a->resp = fn($m, $url, $c) => $ok200(['desfecho' => 'aplicada', 'recibo' => $rec('capa', ['titular_user_id' => 76])]);
+$r = $req($a, 'POST', ['r' => 'capa', 'user_id' => '75']);
+$ok('P1-2 sessão 76 com user_id=75 na URL e no corpo → o app recebe user_id=76; recibo do titular 76', $r->http === 200 && str_contains($a->urls[0], 'user_id=76') && !str_contains($a->urls[0], 'user_id=75') && $r->dados['recibo']['titular_user_id'] === 76);
+foreach (['imagem' => ['r' => 'imagem', 'id' => '812', 't' => '256'], 'conferir' => ['r' => 'conferir', 'chave' => $CH]] as $nome => $get) {
+  foreach (['sessão expirada/encerrada' => ['sessao_ativa' => false, 'usuario_ativo' => true], 'usuário revogado/desativado' => ['sessao_ativa' => true, 'usuario_ativo' => false]] as $caso => $sit) {
+    $a = $amb(); $a->situacao = $sit;
+    $ok("P1-2 GET $nome depois de $caso → 401, 0 app", $req($a, 'GET', $get)->http === 401 && $nada($a));
+  }
+}
+
 // ── P1-3: imagem com Cache-Control: private, no-store ───────────────────────────────────────────────────────────────────────
 $a = $amb(); $a->resp = fn($m, $url, $c) => ['status' => 200, 'corpo' => 'RIFF0000WEBP', 'tipo' => 'image/webp', 'erro' => null, 'etag' => '"v1-812-256"'];
 $r = $req($a, 'GET', ['r' => 'imagem', 'id' => '812', 't' => '256']);
@@ -157,6 +179,14 @@ $a = $amb(); $a->resp = fn($m, $url, $c) => $ok200(['estado' => 'aplicada', 'ope
 $ok('A conferir com recibo de OUTRA chave → desconhecido', ($r = $req($a, 'GET', ['r' => 'conferir', 'chave' => $CH]))->tipo === 'erro' && $r->meta['desfecho'] === 'desconhecido');
 $a = $amb(); $a->resp = fn($m, $url, $c) => $ok200(['estado' => 'aplicada', 'operacao' => 'publicar', 'desfecho' => 'aplicada', 'recibo' => $rec('publicar')]);
 $ok('A conferir correlacionado → aplicada + recibo com titular', ($r = $req($a, 'GET', ['r' => 'conferir', 'chave' => $CH]))->http === 200 && $r->dados['recibo']['titular_user_id'] === 75);
+$a = $amb(); $a->resp = fn($m, $url, $c) => $ok200(['estado' => 'aplicada', 'operacao' => 'publicar', 'desfecho' => 'aplicada', 'recibo' => null]);
+$ok('A conferir "aplicada" com recibo NULO → desconhecido (nunca confirma sem recibo utilizável)', ($r = $req($a, 'GET', ['r' => 'conferir', 'chave' => $CH]))->tipo === 'erro' && $r->meta['desfecho'] === 'desconhecido');
+$a = $amb(); $a->resp = fn($m, $url, $c) => $ok200(['estado' => 'nao_encontrada']);
+$r = $req($a, 'GET', ['r' => 'conferir', 'chave' => $CH]);
+$ok('A conferir nao_encontrada → reenvio só com a MESMA chave (com_a_mesma_chave=true; nunca chave nova)', $r->http === 200 && $r->dados['resultado'] === 'nao_encontrada' && $r->dados['com_a_mesma_chave'] === true && $r->dados['chave'] === $CH);
+$a = $amb(); $a->resp = fn($m, $url, $c) => $ok200(['estado' => 'pode_estar_demorando', 'operacao' => 'publicar', 'desde' => 'x']);
+$r = $req($a, 'GET', ['r' => 'conferir', 'chave' => $CH]);
+$ok('A conferir sem resultado conclusivo → em_andamento + sinal, sem recibo (não declara aplicada)', $r->dados['resultado'] === 'em_andamento' && $r->dados['recibo'] === null);
 
 // ── B: IDs ESTRITOS (≤ 100 na ordem), nada sai para o app ───────────────────────────────────────────────────────────────────
 foreach (['12abc', '012', '1.5', '', '-3', '0', ' 12', '1e3', '99999999999999999999'] as $v) {
@@ -206,6 +236,9 @@ $a = $amb(); $a->publicadores = @FotosPermissoes::publicadores('*');
 $ok('C pelo proxy: "*" → 403 recusada para o 75, 0 app', ($r = $req($a, 'GET', ['r' => 'galeria', 'product_id' => '550']))->http === 403 && $a->app === 0);
 
 // ── D: 201 só para publicar aplicada; sem_mudanca = 200 (contraprova na mutação) ─────────────────────────────────────────
+$a = $amb(); $a->corpoBytes = $JPG; $a->resp = fn($m, $url, $c) => $ok200(['desfecho' => 'sem_mudanca', 'recibo' => $rec('publicar', ['desfecho' => 'sem_mudanca', 'duplicada' => true])], 201);
+$r = $req($a, 'POST', ['r' => 'publicar', 'product_id' => '550'], ['tamanho' => (string) strlen($JPG)]);
+$ok('D (DSHOW-103 §4/§5-D) app responde HTTP 201 com recibo sem_mudanca → proxy 200, desfecho sem_mudanca, titular preservado', $r->http === 200 && $r->dados['desfecho'] === 'sem_mudanca' && $r->dados['recibo']['titular_user_id'] === 75, (string) $r->http);
 $a = $amb(); $a->corpoBytes = $JPG;
 $ok('D publicar aplicada → 201', $req($a, 'POST', ['r' => 'publicar', 'product_id' => '550'], ['tamanho' => (string) strlen($JPG)])->http === 201);
 $a = $amb(); $a->corpoBytes = $JPG; $a->resp = fn($m, $url, $c) => $ok200(['desfecho' => 'sem_mudanca', 'recibo' => $rec('publicar', ['desfecho' => 'sem_mudanca', 'duplicada' => true])]);

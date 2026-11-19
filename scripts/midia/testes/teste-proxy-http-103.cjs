@@ -41,6 +41,12 @@ async function pronto(porta) { for (let i = 0; i < 50; i++) { try { await fetch(
     afirma('P1-1 flag de fotos AUSENTE → 404; 0 pedidos ao app; corpo NÃO lido', r.st === 404 && app().length === 0 && corposLidos() === 0, `${r.st} app=${app().length} corpo=${corposLidos()}`);
     r = await post({ flags: { panel_atributos_enabled: { enabled: true, source: 'global' }, panel_atributos_escrita: { enabled: true, source: 'global' } } }, { r: 'publicar', product_id: '550' }, JPG);
     afirma('P1-1 EXCLUSIVA: atributos ligada não abre fotos → 404, 0 app', r.st === 404 && app().length === 0 && corposLidos() === 0);
+    for (const m of ['GET', 'POST']) {   // DSHOW-103 §1 teste bloqueante: atributos ON + fotos INVÁLIDA + segredo sintético válido configurado
+      const est = { flags: { panel_atributos_enabled: { enabled: true, source: 'global' }, panel_fotos_enabled: { enabled: true, source: 'error' } } };
+      r = m === 'GET' ? await pedir(est, 'GET', { r: 'galeria', product_id: '550' }) : await post(est, { r: 'publicar', product_id: '550' }, JPG);
+      afirma(`P1-1 ${m}: flag de fotos inválida = OFF → 404 (atributos ON, segredo válido), 0 app, corpo não lido`, r.st === 404 && app().length === 0 && corposLidos() === 0);
+      afirma(`P1-3 ${m}: resposta de erro também "private, no-store"`, r.h.get('cache-control') === 'private, no-store');
+    }
     r = await post({ flags: { panel_fotos_enabled: { enabled: true, source: 'global' } } }, { r: 'publicar', product_id: '550' }, JPG);
     afirma('P1-1 escrita ausente → 404, corpo não lido', r.st === 404 && app().length === 0 && corposLidos() === 0);
     r = await post({ flags: LIGADO, csrf: false }, { r: 'publicar', product_id: '550' }, JPG);
@@ -77,6 +83,8 @@ async function pronto(porta) { for (let i = 0; i < 50; i++) { try { await fetch(
     afirma('app recebeu 1 pedido assinado com os bytes exatos; corpo lido 1 vez', app().length === 1 && a1.assinaturaOk && a1.sha256 === crypto.createHash('sha256').update(JPG).digest('hex') && a1.query.user_id === '75' && a1.query.request_id === ch1 && corposLidos() === lidosAntes + 1);
     r = await post({ flags: LIGADO }, { r: 'publicar', product_id: '551' }, JPG);
     afirma('D publicar sem_mudanca → 200 (nunca 201)', r.st === 200 && r.j?.data?.desfecho === 'sem_mudanca');
+    r = await pedir({ flags: LIGADO }, 'GET', { r: 'galeria', product_id: '550' });
+    afirma('P1-3 JSON 200 (galeria) também "private, no-store"', r.st === 200 && r.h.get('cache-control') === 'private, no-store');
     // P1-3
     r = await pedir({ flags: LIGADO }, 'GET', { r: 'imagem', id: '812', t: '256' });
     afirma('P1-3 imagem: Cache-Control "private, no-store", sem max-age, webp', r.st === 200 && r.h.get('cache-control') === 'private, no-store' && r.h.get('content-type') === 'image/webp' && r.buf.subarray(0, 4).toString() === 'RIFF', `${r.st} ${r.h.get('cache-control')}`);

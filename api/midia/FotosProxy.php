@@ -7,7 +7,7 @@ declare(strict_types=1);
  * reais e emite a resposta.
  *
  * Ordem (nada abaixo de uma porta recusada acontece — nem chamada ao app, nem leitura do corpo):
- *   1) flag EXCLUSIVA de fotos `panel_fotos_enabled` (P1-1; nunca a de atributos), global: ausente/desligada → 404; ilegível → 500
+ *   1) flag EXCLUSIVA de fotos `panel_fotos_enabled` (P1-1; nunca a de atributos), global: ausente/desligada/ilegível = OFF → 404
  *   2) SESSÃO COMPLETA (P1-2): SessionGate::validate + sessão ativa em app_user_sessions + usuário ativo (FotosSessao) → 401/503
  *   3) rota desconhecida para o método → 404
  *   4) flag de fotos para a PESSOA → 404 · POST: `panel_fotos_escrita` para a pessoa → 404
@@ -75,8 +75,7 @@ final class FotosProxy
             // 1) flag EXCLUSIVA de fotos, global, ANTES de tudo
             $g = ($d->flag)(self::FLAG, null);
             if (($p = FotosPortas::antesDaSessao((string) ($g['source'] ?? 'error'))) !== null) {
-                if ($p[0] === 500) error_log('[midia] flag de fotos ilegível');
-                return FotosResposta::erro($p[1], $p[0], $p[0] === 500 ? ['message' => 'Configuração do recurso indisponível.'] : null);
+                return FotosResposta::erro($p[1], $p[0]);
             }
             // 2) sessão completa
             $uid = FotosSessao::exigir(($d->sessao)(), (string) ($d->tokenSessao)(), $d->repo);
@@ -100,10 +99,10 @@ final class FotosProxy
         }
     }
 
-    /** flag da pessoa: só `enabled === true` liga; `source = error` → 500 (nunca "ilegível = liga") */
+    /** flag da pessoa: só `enabled === true` liga; ausente, desligada ou ilegível (`source = error`) = OFF → 404 (DSHOW-103 §1) */
     private static function ligada(array $f): bool
     {
-        if ((string) ($f['source'] ?? 'error') === 'error') throw new FotosErro('INTERNAL_ERROR', 500, 'Configuração do recurso indisponível.');
+        if ((string) ($f['source'] ?? 'error') === 'error') { error_log('[midia] flag de fotos ilegível para a pessoa — tratada como OFF'); return false; }
         return ($f['enabled'] ?? false) === true;
     }
 
@@ -156,6 +155,8 @@ final class FotosProxyEmissor
 {
     public static function emitir(FotosResposta $r): void
     {
+        // DSHOW-103 §3 (coerência): NENHUMA resposta do proxy (JSON, erro, imagem, 304) é guardada por cache — o conteúdo passa por sessão
+        if (!headers_sent()) { header('Cache-Control: private, no-store'); header('X-Content-Type-Options: nosniff'); }
         if ($r->tipo === 'ok') ApiResponse::success($r->dados, null, $r->http);
         if ($r->tipo === 'erro') ApiResponse::error($r->codigo, $r->http, $r->meta);
         foreach ($r->cabecalhos as $k => $v) header($k . ': ' . $v);

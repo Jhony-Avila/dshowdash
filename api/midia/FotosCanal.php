@@ -137,7 +137,9 @@ final class FotosCanal
             'pode_estar_demorando' => array_merge($base, ['resultado' => 'em_andamento', 'sinal' => 'pode_estar_demorando', 'desde' => $j['desde'] ?? null]),
             'nao_aplicada' => array_merge($base, ['resultado' => 'nao_aplicada', 'erro' => ['codigo' => (string) ($j['erro']['code'] ?? 'recusada'),
                 'http' => (int) ($j['http_status'] ?? 0), 'mensagem' => (string) ($j['erro']['message'] ?? 'Não foi salvo.')]]),
-            'nao_encontrada' => array_merge($base, ['resultado' => 'nao_encontrada', 'reenvio_seguro' => true]),
+            // DSHOW-103 §5-A: "não encontrada" NÃO autoriza chave nova — um POST ainda em trânsito pode chegar depois. Reenviar só com a
+            // MESMA chave (idempotente: se o primeiro chegar, o app devolve o recibo dele ou "em andamento"). Campo aditivo.
+            'nao_encontrada' => array_merge($base, ['resultado' => 'nao_encontrada', 'reenvio_seguro' => true, 'com_a_mesma_chave' => true]),
             default => throw new FotosErro('RESULTADO_DESCONHECIDO', 502, 'Resposta do app sem estado conhecido.', ['desfecho' => 'desconhecido', 'chave' => $chave]),
         };
     }
