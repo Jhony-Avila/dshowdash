@@ -16,8 +16,6 @@ import { EditorValor } from '../ui/EditorValor';
 type AbaFicha = 'atributos' | 'vinculos' | 'fotos' | 'precifica' | 'historico';
 
 type FiltroAtr = 'todos' | 'obrigatorios' | 'sugestoes';
-/** UX-1b: altura da faixa fina do produto (bloco encolhido), usada também na regra dos 40% da área fixa. */
-const ALTURA_COMPACTA = 56;
 
 export function Ficha({ id }: { id: number }) {
   const m = useModulo();
@@ -29,22 +27,8 @@ export function Ficha({ id }: { id: number }) {
   const [ampliar, setAmpliar] = React.useState<number | null>(null);   // UX-1b: foto ampliada (carrossel / aba Fotos)
   // UX-1 (b) + UX-1b: o filtro da aba Atributos vive aqui para "Ver N pendentes" (bloco do produto) aplicá-lo
   const [filtro, setFiltro] = React.useState<FiltroAtr>('todos');
-  // UX-1b: ao rolar, o bloco do produto encolhe para uma faixa fina; no topo, reabre. Só com a área fixa ligada (não em "tudo rola").
-  const [compacto, setCompacto] = React.useState(false);
   const [slotFiltros, setSlotFiltros] = React.useState<HTMLDivElement | null>(null);   // UX-1b: filtros da aba na linha das sub-abas
-  const heroi = React.useRef<HTMLDivElement>(null); const alturaCheia = React.useRef(0); const trilho = React.useRef<HTMLDivElement>(null);
-  React.useEffect(() => {
-    const r = m.rolador; if (!r || m.tudoRola) { setCompacto(false); return; }
-    const aoRolar = () => setCompacto((c) => {
-      if (!c && heroi.current) alturaCheia.current = heroi.current.offsetHeight;
-      const delta = Math.max(0, alturaCheia.current - ALTURA_COMPACTA);
-      // só encolhe se, depois de encolher, ainda sobrar rolagem (senão o navegador volta ao topo e o bloco abre e fecha sem parar)
-      if (!c && r.scrollTop > 40 && r.scrollHeight - r.clientHeight > delta + 40) return true;
-      if (c && r.scrollTop < 4) return false;
-      return c;
-    });
-    r.addEventListener('scroll', aoRolar, { passive: true }); return () => r.removeEventListener('scroll', aoRolar);
-  }, [m.rolador, m.tudoRola]);
+  const trilho = React.useRef<HTMLDivElement>(null);
   const seq = React.useRef(0);   // recargas fora de ordem: só a mais recente vale (senão um campo volta ao valor antigo)
   const carregar = React.useCallback((silencioso = false) => {
     if (!silencioso) setF(null);
@@ -52,43 +36,41 @@ export function Ficha({ id }: { id: number }) {
     const n = ++seq.current;
     obter<TFicha>('ficha_produto', { product_id: id }).then((d) => { if (n === seq.current) setF(d); }).catch((e) => { if (n === seq.current) setErro(e.message); });
   }, [id]);
-  React.useEffect(() => { carregar(); setAba('atributos'); setAmpliar(null); setFiltro('todos'); setCompacto(false); }, [carregar]);
+  React.useEffect(() => { carregar(); setAba('atributos'); setAmpliar(null); setFiltro('todos'); }, [carregar]);
   if (erro) return <div><button type="button" className="bl-botao" onClick={m.fecharProduto}>← Voltar</button><Erro mensagem={erro} aoTentar={() => carregar()} /></div>;
   if (!f) return <Carregando rotulo="Carregando a ficha" />;
   const p = f.produto; const capa = f.fotos.find((x) => x.capa) ?? f.fotos[0] ?? null;
   const ess = f.completude.essencial; const nPend = f.completude.obrigatorios_vazios.length;
-  const verPendentes = () => { setAba('atributos'); setFiltro('obrigatorios'); m.rolador?.scrollTo({ top: 0 }); };
+  const verPendentes = () => { setAba('atributos'); setFiltro('obrigatorios'); };
   const pend = f.itens.filter((i) => i.sugestoes.length).length;
 
   return (
     <div className="at-ficha">
-      {/* UX-1b: tudo até a linha das colunas fica FIXO (FaixaFixa); o bloco do produto encolhe ao rolar */}
+      {/* UX-1b (refeito): a FAIXA do produto + sub-abas + filtros ficam no bloco fixo (sticky) do topo; o bloco grande do produto rola
+          com a página (sem cálculo de altura: o "encolher" é o bloco grande sair de vista enquanto a faixa fina fica). */}
       <FaixaFixa>
-        {!compacto && (<div data-encolhivel data-altura-compacta={0}>
-        {/* UX-1 (wireframe): "← Produtos · nome · Cód. · categoria/subcategoria · Detalhes" */}
-        <div className="at-ficha__topo at-ficha__topo--linha">
-        <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
-        <strong className="at-ficha__nome" title={p.nome}>{p.nome}</strong>
-        <span className="at-fraco">Cód. {p.id}</span>
-        <span className="at-fraco">{rotuloCategoria(p.categoria)} / {rotuloSubcategoria(p.subcategoria)}</span>
-        {!f.pode_editar && <Etiqueta>somente leitura</Etiqueta>}
-        <Botao aoClicar={() => setDetalhes(true)}>Detalhes</Botao>
-      </div>
-        </div>)}
-        <div ref={heroi} className={`at-heroi-fixo ${compacto ? 'at-heroi-fixo--compacto' : ''}`} data-encolhivel data-altura-compacta={ALTURA_COMPACTA}>
-          {compacto ? (
-            <div className="at-heroi-compacto">
-              <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
-              <div className="at-heroi-compacto__foto"><Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="1 / 1" compacta ajuste="cover" /></div>
-              <strong className="at-heroi-compacto__nome" title={p.nome}>{p.nome}</strong>
-              <CapsulaId id={p.id} flutuante={false} />
-              <div className="at-heroi-compacto__barras">
-                <Barra rotulo="Essencial" feitos={ess.feitos} total={ess.total} compacta />
-                <Barra rotulo="Completo" feitos={f.completude.completo.feitos} total={f.completude.completo.total} compacta />
-              </div>
-              <Botao aoClicar={() => setDetalhes(true)}>Detalhes</Botao>
-            </div>
-          ) : (
+        <div className="at-heroi-compacto at-ficha__faixa">
+          <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
+          <div className="at-heroi-compacto__foto"><Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="1 / 1" compacta ajuste="cover" /></div>
+          <strong className="at-heroi-compacto__nome" title={p.nome}>{p.nome}</strong>
+          <CapsulaId id={p.id} flutuante={false} />
+          <span className="at-fraco at-ficha__classe">{rotuloCategoria(p.categoria)} / {rotuloSubcategoria(p.subcategoria)}</span>
+          {!f.pode_editar && <Etiqueta>somente leitura</Etiqueta>}
+          <div className="at-heroi-compacto__barras">
+            <Barra rotulo="Essencial" feitos={ess.feitos} total={ess.total} compacta />
+            <Barra rotulo="Completo" feitos={f.completude.completo.feitos} total={f.completude.completo.total} compacta />
+          </div>
+          <Botao aoClicar={() => setDetalhes(true)}>Detalhes</Botao>
+        </div>
+        <div className="at-ficha__abas-linha">
+        <div className="at-abas at-abas--icones" role="tablist" aria-label="Seções da ficha">
+          {([['atributos', `Atributos (${f.itens.length})`, 'list'], ['vinculos', 'Vínculos', 'link'], ['fotos', `Fotos (${f.fotos.length})`, 'image'], ['precifica', 'Precifica', 'tag'], ['historico', 'Histórico', 'clock']] as [AbaFicha, string, NomeIcone][]).map(([a, r, ic]) => (
+            <button key={a} type="button" role="tab" aria-selected={aba === a} className={aba === a ? 'ativo' : ''} onClick={() => setAba(a)}><Icone nome={ic} />{r}</button>))}
+        </div>
+        <div className="at-ficha__filtros-slot" ref={setSlotFiltros} />
+        </div>
+      </FaixaFixa>
+      <div className="at-heroi-fixo">
           <div className="at-heroi">
             <div className="at-galeria">
               <Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="4 / 3" lado={480} idCapsula={p.id} />
@@ -130,16 +112,7 @@ export function Ficha({ id }: { id: number }) {
                 </div>)}
             </div>
           </div>
-          )}
-        </div>
-        <div className="at-ficha__abas-linha">
-        <div className="at-abas at-abas--icones" role="tablist" aria-label="Seções da ficha">
-          {([['atributos', `Atributos (${f.itens.length})`, 'list'], ['vinculos', 'Vínculos', 'link'], ['fotos', `Fotos (${f.fotos.length})`, 'image'], ['precifica', 'Precifica', 'tag'], ['historico', 'Histórico', 'clock']] as [AbaFicha, string, NomeIcone][]).map(([a, r, ic]) => (
-            <button key={a} type="button" role="tab" aria-selected={aba === a} className={aba === a ? 'ativo' : ''} onClick={() => setAba(a)}><Icone nome={ic} />{r}</button>))}
-        </div>
-        <div className="at-ficha__filtros-slot" ref={setSlotFiltros} />
-        </div>
-      </FaixaFixa>
+      </div>
       {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} filtro={filtro} setFiltro={setFiltro} slotFiltros={slotFiltros} />}
       {aba === 'vinculos' && <AbaVinculos f={f} recarregar={() => carregar(true)} />}
       {aba === 'fotos' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => setAmpliar(i)}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}

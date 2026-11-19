@@ -125,8 +125,8 @@ export function Botao({ children, aoClicar, primario, perigo, desligado, trabalh
 }
 
 /** UX-1b: bloco que fica FIXO junto do título e das abas (só o resto da tela rola). Ex.: big numbers, busca e filtros.
- *  Uso: <FaixaFixa>…</FaixaFixa> em qualquer lugar da tela. Um bloco que encolhe ao rolar marca data-encolhivel e
- *  data-altura-compacta="56" (a regra dos 40% conta a altura compacta). Sem área fixa (fora do módulo), desenha no lugar. */
+ *  Uso: <FaixaFixa>…</FaixaFixa> em qualquer lugar da tela. O bloco fixo é sticky (a página rola); mantenha-o BAIXO, porque ele
+ *  fica sempre visível. Sem área fixa (fora do módulo), desenha no lugar. */
 export function FaixaFixa({ children }: { children: React.ReactNode }) {
   const m = React.useContext(Contexto);
   const alvo = m?.faixaFixa ?? null;

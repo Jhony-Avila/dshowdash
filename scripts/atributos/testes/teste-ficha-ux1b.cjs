@@ -2,7 +2,7 @@
 // inteira), editor na célula, sub-abas com ícones, carrossel + ampliar, completude acionável, cadeado, diálogo acima do shell.
 // Harness 8112. Grava 1 valor de texto e o LIMPA no fim. Uso: flock /srv/dshow-modularizacao/locks/navegador.lock nice -n 10 node teste-ficha-ux1b.cjs
 const { chromium } = require('/srv/dshow-work/atributos-web-wt/node_modules/playwright-core');
-const B = 'http://127.0.0.1:8112'; const CAP = 'capturas-ux1b';
+const B = `http://127.0.0.1:${process.env.PORTA || 8112}`; const CAP = 'capturas-ux1b';
 let ok = 0, falhas = 0;
 const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } else { falhas++; console.log('FALHA ' + n + (x ? ' · ' + x : '')); } };
 (async () => {
@@ -25,18 +25,20 @@ const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } e
   afirma('área fixa contém: topo (← Produtos), bloco do produto, sub-abas e filtros', fixos.every(Boolean), JSON.stringify(fixos));
   await pg.screenshot({ path: `${CAP}/depois-ficha-topo-claro.png` });
 
-  // rolar: encolhe; cabeçalho da tabela grudado logo abaixo da área fixa; topo: reabre
-  await pg.evaluate(() => { const c = document.querySelector('.at-conteudo'); c.scrollTop = 600; c.dispatchEvent(new Event('scroll')); });
-  await pg.waitForTimeout(500);
-  const rol = await pg.evaluate(() => { const f = document.querySelector('.at-fixo').getBoundingClientRect(); const th = document.querySelector('.at-tabela-ficha thead th')?.getBoundingClientRect();
-    return { compacto: !!document.querySelector('.at-heroi-compacto'), abas: !!document.querySelector('.at-fixo .at-abas--icones'), filtros: !!document.querySelector('.at-fixo .at-ficha__filtros'), fixoBase: Math.round(f.bottom), thTopo: th && Math.round(th.top), altFixo: Math.round(f.height) }; });
-  afirma(`ao rolar: o bloco do produto vira faixa fina (área fixa ${rol.altFixo}px), sub-abas e filtros continuam fixos`, rol.compacto && rol.abas && rol.filtros, JSON.stringify(rol));
-  afirma(`cabeçalho das colunas grudado logo abaixo da área fixa (th ${rol.thTopo} ≈ base ${rol.fixoBase})`, rol.thTopo !== undefined && Math.abs(rol.thTopo - rol.fixoBase) <= 3, JSON.stringify(rol));
-  const faixa = await pg.evaluate(() => { const c = document.querySelector('.at-heroi-compacto'); return c && { nome: !!c.querySelector('.at-heroi-compacto__nome'), id: /ID/.test(c.textContent), foto: !!c.querySelector('.at-heroi-compacto__foto'), barras: c.querySelectorAll('.at-heroi-compacto__barras > *').length }; });
-  afirma('faixa fina: miniatura, nome, ID e as 2 barras (Essencial/Completo)', faixa && faixa.nome && faixa.id && faixa.foto && faixa.barras === 2, JSON.stringify(faixa));
+  // rolar a PÁGINA (roda do mouse): a faixa do produto + sub-abas + filtros ficam parados no topo; o bloco grande sai de vista;
+  // o cabeçalho das colunas gruda logo abaixo do bloco fixo
+  const rolador = () => pg.evaluate(() => { const r = document.querySelector('.at-raiz'); for (let e = r.parentElement; e; e = e.parentElement) { const s = getComputedStyle(e); if (/(auto|scroll)/.test(s.overflowY) && e.scrollHeight > e.clientHeight + 2) return e.id || e.className.toString().slice(0, 30); } return 'documento'; });
+  await pg.mouse.move(720, 800); for (let k = 0; k < 6; k++) { await pg.mouse.wheel(0, 300); await pg.waitForTimeout(80); } await pg.waitForTimeout(500);
+  const rol = await pg.evaluate(() => { const f = document.querySelector('.at-fixo').getBoundingClientRect(); const th = document.querySelector('.at-tabela-ficha thead th')?.getBoundingClientRect(); const h = document.querySelector('.at-heroi-fixo')?.getBoundingClientRect();
+    const main = document.querySelector('main#main'); const mt = main ? main.getBoundingClientRect().top : 0;
+    return { faixa: !!document.querySelector('.at-fixo .at-ficha__faixa'), abas: !!document.querySelector('.at-fixo .at-abas--icones'), filtros: !!document.querySelector('.at-fixo .at-ficha__filtros'), fixoTopo: Math.round(f.top), mainTopo: Math.round(mt), fixoBase: Math.round(f.bottom), thTopo: th && Math.round(th.top), heroiBase: h && Math.round(h.bottom), scroll: main ? main.scrollTop : -1 }; });
+  afirma(`rolando a página (${await rolador()}): faixa do produto, sub-abas e filtros parados no topo (fixo ${rol.fixoTopo} ≈ ${rol.mainTopo})`, rol.scroll > 200 && rol.faixa && rol.abas && rol.filtros && Math.abs(rol.fixoTopo - rol.mainTopo) <= 2, JSON.stringify(rol));
+  afirma(`cabeçalho das colunas grudado logo abaixo do bloco fixo (th ${rol.thTopo} ≈ base ${rol.fixoBase})`, rol.thTopo !== undefined && Math.abs(rol.thTopo - rol.fixoBase) <= 3, JSON.stringify(rol));
+  afirma('o bloco grande do produto saiu de vista (rolou com a página); a faixa fina tem ← Produtos, miniatura, nome, ID, 2 barras e Detalhes', rol.heroiBase !== undefined && rol.heroiBase <= rol.fixoBase
+    && await pg.evaluate(() => { const c = document.querySelector('.at-ficha__faixa'); return !!c && /← Produtos/.test(c.textContent) && !!c.querySelector('.at-heroi-compacto__foto') && !!c.querySelector('.at-heroi-compacto__nome') && /ID/.test(c.textContent) && c.querySelectorAll('.at-heroi-compacto__barras > *').length === 2 && /Detalhes/.test(c.textContent); }), JSON.stringify(rol));
   await pg.screenshot({ path: `${CAP}/depois-ficha-rolada-claro.png` });
-  await pg.evaluate(() => { const c = document.querySelector('.at-conteudo'); c.scrollTop = 0; c.dispatchEvent(new Event('scroll')); }); await pg.waitForTimeout(400);
-  afirma('de volta ao topo: o bloco do produto reabre', !(await pg.$('.at-heroi-compacto')) && !!(await pg.$('.at-heroi')));
+  await pg.evaluate(() => { const m = document.querySelector('main#main'); if (m) m.scrollTop = 0; }); await pg.waitForTimeout(400);
+  afirma('de volta ao topo: o bloco grande do produto aparece de novo', await pg.evaluate(() => { const h = document.querySelector('.at-heroi-fixo').getBoundingClientRect(); const f = document.querySelector('.at-fixo').getBoundingClientRect(); return h.top >= f.bottom - 1; }));
 
   // ordenação: dentro de cada grupo (grupos na mesma ordem); "Todos juntos" = lista inteira
   const grupos = () => pg.$$eval('.at-tabela-ficha tbody tr', (trs) => { const out = []; for (const tr of trs) { const g = tr.querySelector('th[colspan], td[colspan]'); if (g) out.push({ g: g.textContent.trim(), xs: [] }); else if (out.length) out[out.length - 1].xs.push(tr.querySelector('.at-attr__rotulo')?.textContent.replace(/[*★]/g, '').trim()); else out.push({ g: '', xs: [tr.querySelector('.at-attr__rotulo')?.textContent.replace(/[*★]/g, '').trim()] }); } return out; });
@@ -96,11 +98,11 @@ const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } e
   // escuro (lua do topo) + 700 px (tudo rola: sem encolher)
   if ((await pg.evaluate(() => document.documentElement.getAttribute('data-theme'))) !== 'dark') await pg.click('button.dsd-theme-toggle');
   await pg.waitForTimeout(500); await pg.screenshot({ path: `${CAP}/depois-ficha-topo-escuro.png` });
-  await pg.evaluate(() => { const c = document.querySelector('.at-conteudo'); c.scrollTop = 600; c.dispatchEvent(new Event('scroll')); }); await pg.waitForTimeout(400);
+  await pg.mouse.move(720, 800); for (let k = 0; k < 5; k++) { await pg.mouse.wheel(0, 300); await pg.waitForTimeout(80); } await pg.waitForTimeout(400);
   await pg.screenshot({ path: `${CAP}/depois-ficha-rolada-escuro.png` });
   await pg.click('button.dsd-theme-toggle'); await pg.waitForTimeout(300);
   await pg.setViewportSize({ width: 1440, height: 700 }); await ir(`#/panel-atributos/produto/${P}`, '.at-tabela-ficha'); await pg.waitForTimeout(600);
-  const baixa = await pg.evaluate(() => { const r = document.querySelector('.at-raiz'); return { modo: r.className, fr: +(document.querySelector('.at-fixo').offsetHeight / r.offsetHeight).toFixed(2) }; });
-  afirma(`700px: proteção de tela baixa respeitada (modo ${/tudo-rola/.test(baixa.modo) ? 'tudo rola' : 'fixa'}, área fixa contada pela faixa compacta)`, /tudo-rola/.test(baixa.modo) || baixa.fr <= 0.6, JSON.stringify(baixa));
+  const baixa = await pg.evaluate(() => { const r = document.querySelector('.at-raiz'); return { altura: r.style.height || null, pos: getComputedStyle(document.querySelector('.at-fixo')).position, fixo: document.querySelector('.at-fixo').offsetHeight }; });
+  afirma(`700px: sem altura fixada; bloco do topo sticky (${baixa.fixo}px)`, !baixa.altura && baixa.pos === 'sticky', JSON.stringify(baixa));
   console.log(`FICHA (UX-1b): ${ok} ok, ${falhas} falhas`); await b.close(); process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('ERRO', e.message, e.stack?.split('\n')[1]); process.exit(2); });

@@ -374,13 +374,7 @@
 
 /* ── UX-1b: layout do módulo — cabeçalho FIXO e só o conteúdo rola ─────────────────────────────────────────────────────────
    .at-raiz tem a altura medida pelo App (espaço livre no ancestral que rola: main#main do shell). Coluna flex:
-   .at-fixo (título + descrição + abas + .at-faixa-fixa) parado; .at-conteudo é a ÚNICA área de rolagem (overflow auto).
-   .at-raiz--tudo-rola (área fixa > 40% da altura): a raiz rola inteira, nada fica fixo. */
-[data-bl-root].at-raiz { display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--bl-bg); }
-[data-bl-root].at-raiz--fixa > .at-fixo { flex: 0 0 auto; z-index: 3; background: var(--bl-bg); box-shadow: 0 1px 0 var(--bl-borda); }
-[data-bl-root].at-raiz--fixa > .at-conteudo { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-[data-bl-root].at-raiz--tudo-rola { overflow: auto; }
-[data-bl-root].at-raiz--tudo-rola > .at-conteudo { overflow: visible; }
+   (substituído no refeito: ver o bloco "UX-1b refeito" no fim do arquivo) */
 [data-bl-root] .at-faixa-fixa:empty { display: none; }
 [data-bl-root] .at-faixa-fixa { padding: 8px 22px 0; }
 [data-bl-root] .at-faixa-fixa__bloco + .at-faixa-fixa__bloco { margin-top: 8px; }
@@ -499,5 +493,21 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
 @media (max-width: 1100px) { [data-bl-root] .at-cabecalho--uma-linha { flex-wrap: wrap; } [data-bl-root] .at-cabecalho--uma-linha .at-nav { width: 100%; justify-content: flex-start; } }
 /* UX-1b: o sticky respeita o padding do contêiner que rola → padding superior 0 (o cabeçalho das tabelas gruda rente à área fixa);
    o respiro do topo vira margem do 1º filho */
-[data-bl-root].at-raiz--fixa > .at-conteudo { padding-top: 0; }
-[data-bl-root].at-raiz--fixa > .at-conteudo > :first-child { margin-top: 12px; }
+
+
+/* ── UX-1b REFEITO (18/11 à noite): SEM altura em JS. Quem rola é a PÁGINA (main#main do shell). ──────────────────────────────────────
+   .at-fixo (título + descrição + abas + .at-faixa-fixa) = position: sticky; top: 0, fundo opaco, acima do conteúdo.
+   A .at-raiz NÃO pode ser contêiner de rolagem (senão o sticky gruda nela, que não rola): overflow visible.
+   Os ancestrais do shell que quebrariam o sticky (overflow auto/hidden) viram overflow: clip quando o 1º scroll revela quem rola (App.tsx).
+   Cabeçalho das colunas: gruda logo abaixo do bloco fixo (top = --at-topo-fixo, medido por ResizeObserver; sem a medição, top 0). */
+[data-bl-root].at-raiz { overflow: visible; display: block; }
+[data-bl-root] .at-fixo { position: sticky; top: 0; z-index: 20; background: var(--bl-bg); box-shadow: 0 1px 0 var(--bl-borda); }
+[data-bl-root] .at-td[data-rolagem="container"] .at-td__th { top: var(--at-topo-fixo, 0px); }
+[data-bl-root] .at-produtos .at-tabela th { top: var(--at-topo-fixo, 0px); z-index: 2; }
+[data-bl-root] .at-ficha__faixa { margin-top: 0; }
+[data-bl-root] .at-ficha__classe { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 28ch; }
+[data-bl-root] .at-heroi-fixo { margin-top: 12px; }
+/* Produtos (Tabela): o envoltório .bl-rola-x tem overflow-x:auto (vira contêiner de rolagem e o cabeçalho das colunas gruda NELE, não
+   na página). Em tela larga a tabela cabe → sem rolagem horizontal, e o cabeçalho gruda logo abaixo do bloco fixo. Em tela estreita a
+   rolagem horizontal volta (o cabeçalho das colunas não gruda; o bloco fixo continua). */
+@media (min-width: 1200px) { [data-bl-root] .at-produtos .bl-rola-x { overflow: visible; } }
