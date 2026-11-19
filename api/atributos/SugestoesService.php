@@ -71,13 +71,20 @@ final class SugestoesService
         if (($b['confirmar'] ?? null) !== true) throw new AtributosErro('VALIDATION_ERROR', 422, 'Confirme a aceitação em lote.', ['confirmar']);
         $ids = array_values(array_unique(array_map('intval', (array) ($b['ids'] ?? []))));
         if (!$ids || count($ids) > self::MAX_LOTE) throw new AtributosErro('VALIDATION_ERROR', 422, 'Escolha de 1 a ' . self::MAX_LOTE . ' sugestões.', ['ids']);
-        $ok = 0; $falhas = [];
+        // DSHOW-087: conta SÓ as decisões EFETIVADAS nesta execução; separa aceitas / ignoradas / falhas com IDs e motivos; mantém "aceitas"
+        $aceitas = []; $ignoradas = []; $falhas = [];
         foreach ($ids as $id) {
             $s = $this->repo->sugestao($id);
-            if (!$s || $s['estado'] !== 'pendente') continue;
-            try { $this->decidir(['id' => $id, 'versao' => (int) $s['versao'], 'decisao' => 'aceitar', 'motivo' => 'aceitação em lote']); $ok++; }
-            catch (AtributosErro $e) { $falhas[] = ['id' => $id, 'erro' => $e->getMessage()]; }
+            if (!$s) { $ignoradas[] = ['id' => $id, 'motivo' => 'nao_encontrada']; continue; }
+            if ($s['estado'] !== 'pendente') { $ignoradas[] = ['id' => $id, 'motivo' => 'ja_decidida', 'estado' => $s['estado']]; continue; }
+            try {
+                $r = $this->decidir(['id' => $id, 'versao' => (int) $s['versao'], 'decisao' => 'aceitar', 'motivo' => 'aceitação em lote']);
+                if (!empty($r['sem_mudanca'])) $ignoradas[] = ['id' => $id, 'motivo' => 'ja_decidida', 'estado' => $r['sugestao']['estado'] ?? null];   // decidida por outro entre a leitura e aqui
+                else $aceitas[] = ['id' => $id, 'valor' => $r['valor'] ?? null];
+            }
+            catch (AtributosErro $e) { $falhas[] = ['id' => $id, 'codigo' => $e->codigo, 'erro' => $e->getMessage(), 'campos' => $e->campos]; }
         }
-        return ['aceitas' => $ok, 'falhas' => $falhas];
+        return ['aceitas' => count($aceitas), 'aceitas_ids' => array_column($aceitas, 'id'), 'aceitas_detalhe' => $aceitas,
+            'ignoradas' => $ignoradas, 'falhas' => $falhas, 'pedidas' => count($ids)];
     }
 }

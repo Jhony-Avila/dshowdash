@@ -3,7 +3,7 @@
 // Para cada item: PAYLOAD (o que a rota devolve) + PERSISTIDO (o banco) + AUDITORIA. Itens: recibo/desfechos/chave de operação/conferir
 // (confirmação válida + DSHOW-068 servidor), gravado×releitura falhou (DSHOW-090 e genérico), DSHOW-066 (histórico filtrado antes do limite),
 // DSHOW-085 (lote incerto: mesma chave devolve o recibo sem revalidar; conferir), DSHOW-086 (recibo por titular estável), DSHOW-079 P2
-// (gravavel pela MESMA regra da gravação). Schema ATRWEB_VAL_T_7/_8/_9 VAZIO com as migrações 001–011 aplicadas (molde do
+// (gravavel pela MESMA regra da gravação), DSHOW-087 (sugestoes_lote conta só as decisões efetivadas). Schema ATRWEB_VAL_T_7/_8/_9 VAZIO com as migrações 001–011 aplicadas (molde do
 // hotfix-integridade-mysql.php). Catálogo falso em memória. Entradas: EQ_TEST_CNF e EQ_TEST_DB. Saída: 0 verde · 1 falha · 2 não executado · 3 recusado.
 // Contraprova: o MESMO arquivo rodado num worktree de 6738adb3 (com a 011 copiada) falha nos itens (o código anterior não tem o contrato).
 declare(strict_types=1);
@@ -12,6 +12,7 @@ require_once __DIR__ . '/../../../api/atributos/KitsService.php';
 require_once __DIR__ . '/../../../api/atributos/ProdutosLeitura.php';
 require_once __DIR__ . '/../../../api/atributos/LeituraVitrinePdo.php';
 require_once __DIR__ . '/../../../api/atributos/CatalogoPdo.php';
+require_once __DIR__ . '/../../../api/atributos/SugestoesService.php';
 require_once __DIR__ . '/_memoria.php';
 
 [$cnf, $db] = [(string) (getenv('EQ_TEST_CNF') ?: ''), (string) (getenv('EQ_TEST_DB') ?: '')];
@@ -245,5 +246,74 @@ foreach (['m', 'cm', 'mm', 'pol', 'kg'] as $s) {
 $ok('079 MESMA regra: gravavel na leitura ⇔ a gravação aceita (senão 422)', $coerente, implode(' · ', $det));
 $ok('079 só leitura: o valor salvo em pol não muda', $valorRow(104, $atr['Largura']) == $antes104);
 
-echo ($falhas ? '[ERRO]' : '[OK]  ') . " foi-salvo-mysql (recibo/desfechos/chave/conferir, 090, 066, 085, 086, 079 P2): $n casos, $falhas falha(s)\n";
+// =========================================================================================================================================
+// DSHOW-087 · sugestoes_lote: conta SÓ as decisões EFETIVADAS; aceitas_ids / ignoradas (motivo) / falhas (codigo); corrida entre a leitura
+// do lote e o decidir (outra pessoa decide antes) NÃO conta como aceita; recibo da rota: aceitas = 0 → sem_mudanca
+// =========================================================================================================================================
+foreach ([105, 106] as $id) $cat->p[$id] = ['id' => $id, 'nome' => "Produto $id (sintético)", 'categoria' => 'LED_PANEL', 'subcategoria' => 'CABLE', 'ativo' => true, 'excluido' => false, 'sincronizado_em' => null];
+$insSug = function (string $chave, int $pid, int $aid, string $val) use ($pdo): int {
+    $pdo->prepare("INSERT INTO eq_sugestao (chave, product_id, atributo_id, atributo_alternativo_id, fonte, tipo, valor_proposto, unidade_id, evidencia) VALUES (?, ?, ?, NULL, 'legado_2025', 'valor', ?, NULL, 'teste')")
+        ->execute([$chave, $pid, $aid, $val]);
+    return (int) $pdo->lastInsertId();
+};
+$sug = new SugestoesService($repo, $adm, $kits, 80, $A['email']);
+$sugOutra = new SugestoesService($repo, $adm, $kits, 80, $B['email']);
+$sugEst = fn(int $id) => $linha('SELECT estado, decidido_por, versao FROM eq_sugestao WHERE id = ?', [$id]);
+$audSug = fn(int $id, string $acao) => (int) $um("SELECT COUNT(*) FROM eq_auditoria WHERE entidade = 'sugestao' AND entidade_id LIKE ? AND acao = ?", ["%:$id", $acao]);
+$sV = $insSug('t087|105|vias', 105, $atr['Vias'], '4');                 // pendente e válida (campo vazio)
+$sR = $insSug('t087|106|vias', 106, $atr['Vias'], '8');                 // já recusada
+$sugOutra->decidir(['id' => $sR, 'versao' => 1, 'decisao' => 'recusar', 'motivo' => 'teste 087']);
+$antes101 = $valorRow(101, $atr['Largura']);
+$sX = $insSug('t087|101|larg', 101, $atr['Largura'], '77');             // campo com valor → VALUE_EXISTS (D10)
+$audL0 = $audit('valor', "101:{$atr['Largura']}:%");
+$corpoL = ['ids' => [$sV, $sR, $sX], 'confirmar' => true];
+$rl = null; $el = $erro(function () use (&$rl, $ex, $opsA, $sug, $corpoL) { $rl = $ex($opsA, 'sugestoes_lote', $corpoL, 'k-lote-087-01', fn(array $c) => $sug->aceitarLote($c)); });
+$ok('087 payload: aceitas = 1, aceitas_ids = [a válida], pedidas = 3', $el === null && ($rl['aceitas'] ?? null) === 1 && ($rl['aceitas_ids'] ?? null) === [$sV] && ($rl['pedidas'] ?? null) === 3
+    && array_column($rl['aceitas_detalhe'] ?? [], 'id') === [$sV], json_encode($rl) . ' ' . ($el?->getMessage() ?? ''));
+$ok('087 payload: ignoradas = [a recusada, motivo ja_decidida, estado recusada]', ($rl['ignoradas'] ?? null) === [['id' => $sR, 'motivo' => 'ja_decidida', 'estado' => 'recusada']], json_encode($rl['ignoradas'] ?? null));
+$ok('087 payload: falhas = [VALUE_EXISTS com codigo, erro e campos]', count($rl['falhas'] ?? []) === 1 && ($rl['falhas'][0]['id'] ?? null) === $sX && ($rl['falhas'][0]['codigo'] ?? null) === 'VALUE_EXISTS'
+    && is_string($rl['falhas'][0]['erro'] ?? null) && ($rl['falhas'][0]['campos'] ?? null) === ['atributo_id'], json_encode($rl['falhas'] ?? null));
+$ok('087 recibo da rota: desfecho aplicada; eq_operacao aplicada', ($rl['desfecho'] ?? null) === 'aplicada' && ($rl['recibo']['operacao'] ?? null) === 'sugestoes_lote' && ($op('k-lote-087-01')['estado'] ?? null) === 'aplicada', json_encode($rl['recibo'] ?? null));
+$ok('087 persistido: a válida "aceita" por A e eq_valor 105/Vias = 4', ($sugEst($sV)['estado'] ?? null) === 'aceita' && ($sugEst($sV)['decidido_por'] ?? null) === $A['email'] && (int) ($valorRow(105, $atr['Vias'])['valor_num'] ?? -1) === 4);
+$ok('087 persistido: a recusada continua recusada (por B); a de VALUE_EXISTS continua pendente e o valor de 101 não mudou', ($sugEst($sR)['estado'] ?? null) === 'recusada' && ($sugEst($sR)['decidido_por'] ?? null) === $B['email']
+    && ($sugEst($sX)['estado'] ?? null) === 'pendente' && $valorRow(101, $atr['Largura']) == $antes101);
+$ok('087 auditoria: 1 aceitar_sugestao (a válida) + 1 preencher em 105/Vias; nada para a recusada nem para a de VALUE_EXISTS', $audSug($sV, 'aceitar_sugestao') === 1 && $audit('valor', "105:{$atr['Vias']}:%") === 1
+    && $audSug($sR, 'aceitar_sugestao') === 0 && $audSug($sX, 'aceitar_sugestao') === 0 && $audit('valor', "101:{$atr['Largura']}:%") === $audL0);
+// corrida: o lote lê 'pendente' e, ANTES do decidir, outra pessoa decide (PDO com gancho: dispara depois do SELECT da 1ª leitura, já bufferizada)
+class StmtGancho087 extends PDOStatement
+{
+    public static ?Closure $aposLer = null;
+    protected function __construct() {}
+    public function execute(?array $params = null): bool
+    {
+        $r = parent::execute($params);
+        if (self::$aposLer !== null && preg_match('/FROM\s+`eq_sugestao`\s+WHERE id = \?$/', $this->queryString)) (self::$aposLer)((int) ($params[0] ?? 0));
+        return $r;
+    }
+}
+$pdoG = new PDO($dsn, $tira($c['user'] ?? ''), $tira($c['password'] ?? ''), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_STATEMENT_CLASS => [StmtGancho087::class, []]]);
+$repoG = new AtributosRepoPdo($pdoG, '');
+$sugG = new SugestoesService($repoG, new AtributosService($repoG, 80, $A['email'], $cat), null, 80, $A['email']);
+$sC = $insSug('t087|106|cor', 106, $atr['Cor'], 'azul');
+$disparou = false;
+StmtGancho087::$aposLer = function (int $id) use (&$disparou, $sC, $sugOutra): void {
+    if ($id !== $sC || $disparou) return;
+    $disparou = true; StmtGancho087::$aposLer = null;
+    $sugOutra->decidir(['id' => $sC, 'versao' => 1, 'decisao' => 'recusar', 'motivo' => 'corrida 087']);   // outra conexão, COMMIT antes do decidir do lote
+};
+$rc = null; $ec = $erro(function () use (&$rc, $sugG, $sC) { $rc = $sugG->aceitarLote(['ids' => [$sC], 'confirmar' => true]); });
+StmtGancho087::$aposLer = null;
+$ok('087 corrida: a outra decisão aconteceu entre a leitura do lote e o decidir', $disparou && ($sugEst($sC)['estado'] ?? null) === 'recusada');
+$ok('087 corrida: NÃO conta como aceita (aceitas 0, aceitas_ids []) e vai para ignoradas (ja_decidida, recusada)', $ec === null && ($rc['aceitas'] ?? null) === 0 && ($rc['aceitas_ids'] ?? null) === []
+    && ($rc['ignoradas'] ?? null) === [['id' => $sC, 'motivo' => 'ja_decidida', 'estado' => 'recusada']] && ($rc['falhas'] ?? null) === [], json_encode($rc) . ' ' . ($ec?->getMessage() ?? ''));
+$ok('087 corrida persistido/auditoria: recusada por B, sem eq_valor em 106/Cor, 1 recusar e 0 aceitar', ($sugEst($sC)['decidido_por'] ?? null) === $B['email'] && $valorRow(106, $atr['Cor']) === false
+    && $audSug($sC, 'recusar_sugestao') === 1 && $audSug($sC, 'aceitar_sugestao') === 0);
+// rota com nada efetivado: aceitas = 0 → desfecho sem_mudanca (inexistente = nao_encontrada)
+$r0 = null; $e0 = $erro(function () use (&$r0, $ex, $opsA, $sug, $sR) { $r0 = $ex($opsA, 'sugestoes_lote', ['ids' => [$sR, 999999], 'confirmar' => true], 'k-lote-087-02', fn(array $c) => $sug->aceitarLote($c)); });
+$ok('087 rota sem decisão efetivada: aceitas 0 → desfecho sem_mudanca; ignoradas com ja_decidida e nao_encontrada; eq_operacao sem_mudanca', $e0 === null && ($r0['aceitas'] ?? null) === 0 && ($r0['desfecho'] ?? null) === 'sem_mudanca'
+    && ($r0['recibo']['desfecho'] ?? null) === 'sem_mudanca' && ($r0['recibo']['campos_gravados'] ?? null) === []
+    && ($r0['ignoradas'] ?? null) === [['id' => $sR, 'motivo' => 'ja_decidida', 'estado' => 'recusada'], ['id' => 999999, 'motivo' => 'nao_encontrada']] && ($op('k-lote-087-02')['estado'] ?? null) === 'sem_mudanca',
+    json_encode($r0) . ' ' . ($e0?->getMessage() ?? ''));
+
+echo ($falhas ? '[ERRO]' : '[OK]  ') . " foi-salvo-mysql (recibo/desfechos/chave/conferir, 090, 066, 085, 086, 079 P2, 087): $n casos, $falhas falha(s)\n";
 exit($falhas ? 1 : 0);

@@ -119,6 +119,28 @@ Em `GET ficha_produto`, cada item numérico tem `unidades[]`, e cada unidade ago
 - A unidade do VALOR salvo que saiu da lista, porque foi desativada ou por outro motivo, continua listada só para leitura, com `historica: true` e `gravavel: false`.
 - O servidor continua sendo a autoridade final: a gravação confere de novo, sob trava. Uma unidade marcada `gravavel: true` ainda pode receber 422 se mudar entre a leitura e a gravação.
 
+## 10-A. Aceitar sugestões em lote: só as decisões efetivadas (DSHOW-087)
+
+`POST sugestoes_lote` com `{ids: [...], confirmar: true}` (de 1 a 200 ids). Cada item é decidido isolado, e um erro não desfaz os outros. A resposta conta **só as decisões efetivadas nesta execução**:
+```json
+{
+  "aceitas": 1,
+  "aceitas_ids": [11],
+  "aceitas_detalhe": [{"id": 11, "valor": {"product_id": 105, "atributo_id": 3, "valor_num": 4, "versao": 1}}],
+  "ignoradas": [{"id": 12, "motivo": "ja_decidida", "estado": "recusada"}, {"id": 999, "motivo": "nao_encontrada"}],
+  "falhas": [{"id": 13, "codigo": "VALUE_EXISTS", "erro": "Este campo já tem valor neste produto…", "campos": ["atributo_id"]}],
+  "pedidas": 4,
+  "desfecho": "aplicada",
+  "recibo": {"operacao": "sugestoes_lote", "chave": "…", "desfecho": "aplicada", "campos_gravados": ["ids"]}
+}
+```
+- `aceitas` continua sendo um **número** (compatível com quem já lia o campo) e é igual a `aceitas_ids.length`.
+- `ignoradas[].motivo` vale `nao_encontrada` ou `ja_decidida`. `ja_decidida` traz o `estado` atual da sugestão. Também cai aqui a sugestão que outra pessoa decidiu **entre a leitura do lote e a decisão**: o `decidir` devolve `sem_mudanca`, e o item **não** conta como aceito.
+- `falhas[]` traz `codigo` estável (`VALUE_EXISTS`, `CONFLICT`, `VALIDATION_ERROR`, `NOT_CATALOG_ADMIN`…), `erro` (mensagem legível) e `campos`. A sugestão continua pendente.
+- `pedidas` é o número de ids distintos recebidos.
+- Desfecho da camada (seção 2): `aceitas = 0` → **`sem_mudanca`**, porque nada foi gravado, mesmo que haja ignoradas ou falhas. Com `aceitas ≥ 1` → `aplicada`. A tela só mostra "N aceitas" pelo número devolvido, nunca pelo número pedido, e lista as ignoradas e as falhas com o motivo.
+- Prova em banco real: `scripts/atributos/testes/foi-salvo-mysql.php`, bloco 087 (payload, estado das sugestões, `eq_valor`, `eq_auditoria`, corrida simulada por gancho no PDO, recibo da rota).
+
 ## 11. Migração 011 — PORTÃO
 
 `db/equipamentos/migrations/011_operacao.sql` (+ `.revert.sql`) é ADITIVA:
