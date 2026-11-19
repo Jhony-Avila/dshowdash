@@ -152,8 +152,8 @@ export function Conferencia() {
         rodape={<>
           <Botao aoClicar={fecharLote} desligado={ocupadoLote}>{estLote.fase === 'confirmar' ? 'Cancelar' : 'Fechar'}</Botao>
           {estLote.fase === 'confirmar' && <Botao primario trabalhando={trabLote} aoClicar={aceitarLote}>Aceitar {lote?.length ?? 0}</Botao>}
-          {(estLote.fase === 'desconhecido' || estLote.fase === 'em_andamento' || estLote.fase === 'conferindo') && <Botao primario={estLote.fase !== 'em_andamento' || !estLote.reenvioSeguro} trabalhando={estLote.fase === 'conferindo'} aoClicar={conferirLote}>Conferir gravação</Botao>}
-          {(estLote.fase === 'interrompida' || estLote.fase === 'nao_encontrada' || (estLote.fase === 'em_andamento' && estLote.reenvioSeguro)) && <Botao primario trabalhando={trabLote} aoClicar={aceitarLote}>{estLote.fase === 'nao_encontrada' ? 'Enviar de novo' : 'Retomar os pendentes'}</Botao>}
+          {(estLote.fase === 'desconhecido' || estLote.fase === 'em_andamento' || estLote.fase === 'conferindo' || estLote.fase === 'nao_encontrada') && <Botao primario={estLote.fase !== 'em_andamento' && estLote.fase !== 'nao_encontrada' || (estLote.fase === 'em_andamento' && !estLote.reenvioSeguro)} trabalhando={estLote.fase === 'conferindo'} aoClicar={conferirLote}>{estLote.fase === 'nao_encontrada' ? 'Consultar de novo' : 'Conferir gravação'}</Botao>}
+          {(estLote.fase === 'interrompida' || estLote.fase === 'nao_encontrada' || (estLote.fase === 'em_andamento' && estLote.reenvioSeguro)) && <Botao primario trabalhando={trabLote} aoClicar={aceitarLote}>{estLote.fase === 'nao_encontrada' ? 'Tentar de novo com segurança' : 'Retomar os pendentes'}</Botao>}
         </>}>
         <div data-at-lote={estLote.fase} data-at-chave={estLote.intencao?.chave ?? ''}>
           {estLote.fase === 'confirmar' && <p>Cada sugestão vira valor do produto, com histórico ("sugestão #id"). Só atinge campos sem valor; nada cadastrado à mão é sobrescrito.</p>}
@@ -164,7 +164,7 @@ export function Conferencia() {
             {estLote.fase === 'desconhecido' && <p className="at-salvo--aviso"><strong>{MSG_DESCONHECIDO}</strong> Nada será reenviado sem você pedir. Use “Conferir gravação”.{estLote.msg ? ` ${estLote.msg}` : ''}</p>}
             {estLote.fase === 'em_andamento' && <p className="at-salvo--aviso"><strong>Ainda em andamento no servidor.</strong> {estLote.reenvioSeguro ? 'Está demorando; retomar com o mesmo pedido é seguro (nada é duplicado).' : 'Confira de novo em instantes.'}</p>}
             {estLote.fase === 'interrompida' && <p className="at-salvo--aviso"><strong>O lote parou no meio.</strong> As aceitas já estão salvas; as pendentes não. “Retomar os pendentes” reenvia o MESMO pedido: nada é duplicado.</p>}
-            {estLote.fase === 'nao_encontrada' && <p className="at-salvo--aviso"><strong>O servidor não recebeu este pedido.</strong> Nada foi salvo. Você pode enviar de novo (o mesmo pedido).</p>}
+            {estLote.fase === 'nao_encontrada' && <p className="at-salvo--aviso"><strong>Ainda não encontramos o resultado desta gravação.</strong> Você pode consultar de novo ou tentar de novo com segurança: o reenvio usa o MESMO pedido (mesma chave), então nada é duplicado.</p>}
             {estLote.fase === 'recusada' && <p className="at-alerta"><strong>Não foi salvo.</strong> {estLote.msg}</p>}
           </div>
           {estLote.resumo && <ResumoLoteConferencia r={estLote.resumo} />}
