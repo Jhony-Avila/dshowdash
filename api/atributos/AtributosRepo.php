@@ -9,9 +9,12 @@ require_once __DIR__ . '/AtributosService.php';
 require_once __DIR__ . '/KitsService.php';
 require_once __DIR__ . '/SugestoesService.php';
 
-final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava
+final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava, OperacoesRepositorio
 {
     private string $p;
+    /** "FOI SALVO OU NÃO": ganchos executados DENTRO da transação, antes do COMMIT (recibo atômico com a gravação) e contador de COMMITs. */
+    private array $antesDoCommit = [];
+    private int $commits = 0;
 
     public function __construct(private readonly PDO $pdo, string $schema = 'DSHOW_EQUIPAMENTOS')
     {
@@ -39,7 +42,7 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
     {
         if ($this->pdo->inTransaction()) return $f();   // reentrante: a transação de fora decide o COMMIT/ROLLBACK
         $this->pdo->beginTransaction();
-        try { $r = $f(); $this->pdo->commit(); return $r; }
+        try { $r = $f(); foreach ($this->antesDoCommit as $g) $g(); $this->pdo->commit(); $this->commits++; return $r; }
         catch (Throwable $t) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
             // V5 Lote 3 (P1-09): impasse (1213) ou espera de trava esgotada (1205) com outra gravação simultânea = conflito visível, nunca 500
@@ -455,9 +458,17 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
 
     public function pedidoMassa(string $chave): ?array
     {
-        $r = $this->q('SELECT chave, assinatura, usuario, produtos, resultado, criado_em, concluido_em FROM ' . $this->t('eq_pedido_massa') . ' WHERE chave = ?', [$chave])[0] ?? null;
+        $r = $this->q('SELECT chave, assinatura, usuario, ' . ($this->temTitularMassa() ? 'titular_id' : 'NULL AS titular_id') . ', produtos, resultado, criado_em, concluido_em FROM ' . $this->t('eq_pedido_massa') . ' WHERE chave = ?', [$chave])[0] ?? null;
         if ($r !== null) $r['resultado'] = $r['resultado'] === null ? null : json_decode((string) $r['resultado'], true);
         return $r;
+    }
+
+    /** 011 aplicada? (a coluna titular_id é aditiva; antes dela, o recibo da massa confere pelo `usuario`) */
+    private ?bool $titularMassa = null;
+    public function temTitularMassa(): bool
+    {
+        return $this->titularMassa ??= (bool) $this->q("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = " . ($this->p === '' ? 'DATABASE()' : '?') . " AND TABLE_NAME = 'eq_pedido_massa' AND COLUMN_NAME = 'titular_id'",
+            $this->p === '' ? [] : [trim($this->p, '`.')])[0]['n'];
     }
 
     public function concluirPedidoMassa(string $chave, array $resultado): void
@@ -480,5 +491,46 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
     {
         return $this->exec('UPDATE ' . $this->t('eq_sugestao') . " SET estado = ?, decidido_por = ?, decidido_em = CURRENT_TIMESTAMP(3), motivo = ?, versao = versao + 1 WHERE id = ? AND versao = ? AND estado = 'pendente'",
             [$estado, $usuario, $motivo, $id, $versao]) === 1;
+    }
+
+    // ---- "FOI SALVO OU NÃO" (011): recibos por chave de operação --------------------------------------------------------------------
+    public function aoConfirmar(?callable $gancho): void { $this->antesDoCommit = $gancho ? [$gancho] : []; }
+    public function confirmacoes(): int { return $this->commits; }
+
+    public function operacao(string $chave): ?array
+    {
+        $r = $this->q('SELECT chave, titular_id, titular, rota, assinatura, estado, recibo, erro, tentativas, criado_em, concluido_em, TIMESTAMPDIFF(SECOND, atualizado_em, CURRENT_TIMESTAMP(3)) AS idade_s FROM '
+            . $this->t('eq_operacao') . ' WHERE chave = ?', [$chave])[0] ?? null;
+        if ($r === null) return null;
+        foreach (['recibo', 'erro'] as $k) $r[$k] = $r[$k] === null ? null : json_decode((string) $r[$k], true);
+        return $r;
+    }
+
+    public function reservarOperacao(string $chave, int $titularId, string $titular, string $rota, string $assinatura): bool
+    {
+        try {
+            $this->exec('INSERT INTO ' . $this->t('eq_operacao') . ' (chave, titular_id, titular, rota, assinatura) VALUES (?, ?, ?, ?, ?)', [$chave, $titularId, mb_substr($titular, 0, 100), $rota, $assinatura]);
+            return true;
+        } catch (PDOException $e) {
+            if ((int) ($e->errorInfo[1] ?? 0) === 1062) return false;
+            throw $e;
+        }
+    }
+
+    /** Reenvio depois de recusa/conflito/falha: volta a em_andamento SÓ se o estado ainda é o lido (dois reenvios simultâneos: um só reabre). */
+    public function reabrirOperacao(string $chave, string $estadoLido): bool
+    {
+        return $this->exec('UPDATE ' . $this->t('eq_operacao') . " SET estado = 'em_andamento', recibo = NULL, erro = NULL, concluido_em = NULL, tentativas = tentativas + 1 WHERE chave = ? AND estado = ?", [$chave, $estadoLido]) === 1;
+    }
+
+    public function marcarOperacao(string $chave, string $estado, ?array $recibo, ?array $erro): void
+    {
+        $this->exec('UPDATE ' . $this->t('eq_operacao') . ' SET estado = ?, recibo = COALESCE(?, recibo), erro = ?, concluido_em = CURRENT_TIMESTAMP(3) WHERE chave = ?',
+            [$estado, $recibo === null ? null : json_encode($recibo, JSON_UNESCAPED_UNICODE), $erro === null ? null : json_encode($erro, JSON_UNESCAPED_UNICODE), $chave]);
+    }
+
+    public function titularPedidoMassa(string $chave, int $titularId): void
+    {
+        $this->exec('UPDATE ' . $this->t('eq_pedido_massa') . ' SET titular_id = ? WHERE chave = ? AND titular_id IS NULL', [$titularId, $chave]);
     }
 }
