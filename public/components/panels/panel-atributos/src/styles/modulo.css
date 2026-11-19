@@ -780,13 +780,15 @@ html[data-theme="dark"] body [data-bl-root] .pv2-corpo__fixo > .pv2-linha--fixa:
 .at-fotos-add__acoes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .at-fotos-fila { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow: auto; }
 .at-fotos-fila__item { display: grid; grid-template-columns: 72px 1fr auto; gap: 10px; align-items: center; padding: 6px; border: 1px solid var(--bl-borda); border-radius: 8px; }
-.at-fotos-fila__item--recusada, .at-fotos-fila__item--desconhecido { border-color: var(--bl-erro); }
+.at-fotos-fila__item--recusada { border-color: var(--bl-erro); }
+.at-fotos-fila__item--desconhecido, .at-fotos-fila__item--andando, .at-fotos-fila__item--conferindo { border-color: var(--bl-aviso); background: var(--bl-aviso-bg); }   /* a conferir = atenção, nunca erro */
 .at-fotos-fila__item--salvo, .at-fotos-fila__item--ja_existia { border-color: var(--bl-sucesso); }
 .at-fotos-fila__previa { width: 72px; height: 54px; object-fit: cover; border-radius: 6px; background: var(--bl-superficie-2); }
 .at-fotos-fila__info { min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; font-weight: 400; }
 .at-fotos-fila__nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .at-fotos-fila__estado { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; color: var(--bl-texto-2); }
-.at-fotos-fila__item--recusada .at-fotos-fila__estado, .at-fotos-fila__item--desconhecido .at-fotos-fila__estado { color: var(--bl-erro); }
+.at-fotos-fila__item--recusada .at-fotos-fila__estado { color: var(--bl-erro); }
+.at-fotos-fila__item--desconhecido .at-fotos-fila__estado, .at-fotos-fila__item--andando .at-fotos-fila__estado { color: var(--bl-texto); }
 .at-fotos-fila__principal { font-size: 12px; color: var(--bl-texto-2); display: inline-flex; gap: 6px; align-items: center; }
 .at-fotos-fila__ordem { display: flex; gap: 2px; }
 .at-webcam { display: flex; flex-direction: column; gap: 8px; }

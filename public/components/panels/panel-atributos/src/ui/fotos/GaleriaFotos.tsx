@@ -7,7 +7,7 @@
 import React from 'react';
 import { ErroApi, novaChaveOperacao } from '../../lib/api';
 import { ACEITOS, conferirFoto, DETALHES_LIMITES, ehHeic, FORMATOS_TEXTO, LIMITE_BYTES, marcarCapa, ordenarFotos, prepararArquivo, publicarFoto, removerFoto, restaurarFoto,
-  urlImagem, type EstadoGaleria, type FotoGaleria, type ReciboFoto, type RespostaFoto } from '../../lib/fotos';
+  urlImagem, type EstadoGaleria, type FotoGaleria, type ReciboFoto, type RespostaFoto, classificarErroFoto } from '../../lib/fotos';
 import { marcarPendencia } from '../../lib/pendencias';
 import { Botao, Dialogo, Foto } from '../Comuns';
 import { Icone } from '../Icones';
@@ -78,9 +78,10 @@ export function AdicionarFotos({ produto, aberto, aoFechar, aoMudou, versaoGaler
       mudar(P, it.id, { estado: r.recibo.duplicada ? 'duplicada' : 'publicada', recibo: r.recibo });
       return r.recibo;
     } catch (e) {
-      const er = e instanceof ErroApi ? e : null;
-      if (er?.emAndamento) mudar(P, it.id, { estado: 'andando' });
-      else if (er && (er.recusada || er.conflito)) mudar(P, it.id, { estado: 'recusada', msg: er.message, chave: undefined });   // recusa comprovada: nova tentativa = chave nova
+      const c = classificarErroFoto(e instanceof ErroApi ? e : null);
+      if (c.tipo === 'andando') mudar(P, it.id, { estado: 'andando' });
+      else if (c.tipo === 'recusada') mudar(P, it.id, { estado: 'recusada', msg: c.msg, chave: undefined });   // recusa comprovada (inclui sessão e canal): nova tentativa = chave nova
+      else if (c.tipo === 'conflito') mudar(P, it.id, { estado: 'recusada', msg: (e as Error).message, chave: undefined });
       else mudar(P, it.id, { estado: 'desconhecido' });
       return null;
     }
@@ -103,7 +104,7 @@ export function AdicionarFotos({ produto, aberto, aoFechar, aoMudou, versaoGaler
       if (c.tipo === 'salvo' && reciboValido(c.recibo, it.chave, P)) { versao.current = Math.max(versao.current, c.recibo.versao_nova); mudar(P, it.id, { estado: c.recibo.duplicada ? 'duplicada' : 'publicada', recibo: c.recibo, msg: undefined }); aoMudou(); }
       else if (c.tipo === 'andando') mudar(P, it.id, { estado: 'andando', msg: c.demorando ? 'Está demorando; reenviar com a mesma chave é seguro.' : undefined });
       else if (c.tipo === 'nao_aplicada') mudar(P, it.id, { estado: 'recusada', msg: c.msg, chave: undefined });
-      else mudar(P, it.id, { estado: 'desconhecido', msg: 'Ainda não encontramos o resultado deste envio. Reenviar usa a MESMA chave e os mesmos bytes, sem duplicar.' });
+      else mudar(P, it.id, { estado: 'desconhecido', msg: 'Ainda não encontramos o resultado desta gravação. Tentar de novo usa a MESMA chave e os mesmos bytes, sem duplicar.' });
     } catch { mudar(P, it.id, { estado: 'desconhecido', msg: 'Não foi possível conferir agora.' }); }
   };
   const reenviar = async (it: Item) => { if (await publicarUm(it)) aoMudou(); };
@@ -231,8 +232,9 @@ export function GerenciarFotos({ estado, productId, aoMudou, aoAdicionar }: { es
     const tentar = async () => {
       try { const r = await f(chave); setOp({ fase: 'ok', msg: r.desfecho === 'sem_mudanca' ? `${descricao}: nada mudou` : `${descricao}: salvo` }); depois?.(r); aoMudou(); }
       catch (e) {
-        const er = e instanceof ErroApi ? e : null;
-        if (er?.conflito) { setOp({ fase: 'erro', msg: 'As fotos deste produto mudaram (talvez em outra aba). Atualizei a galeria; confira e refaça.' }); setOrdem(null); aoMudou(); }
+        const er = e instanceof ErroApi ? e : null; const cl = classificarErroFoto(er);
+        if (cl.tipo === 'recusada' && (er?.http === 401 || er?.http === 503)) setOp({ fase: 'erro', msg: `${descricao}: ${cl.msg}` });
+        else if (er?.conflito) { setOp({ fase: 'erro', msg: 'As fotos deste produto mudaram (talvez em outra aba). Atualizei a galeria; confira e refaça.' }); setOrdem(null); aoMudou(); }
         else if (er?.recusada) setOp({ fase: 'erro', msg: `${descricao}: não foi salvo (${er.message})` });
         else setOp({ fase: 'incerto', msg: `${descricao}: não conseguimos confirmar.`, chave, refazer: tentar });
       }
@@ -241,9 +243,9 @@ export function GerenciarFotos({ estado, productId, aoMudou, aoAdicionar }: { es
   };
   const conferirOp = async () => {
     if (!op?.chave) return; const c = await conferirFoto(op.chave).catch(() => null);
-    if (c?.tipo === 'salvo') { setOp({ fase: 'ok', msg: 'Conferido: salvo' }); aoMudou(); }
+    if (c?.tipo === 'salvo' && c.recibo?.chave === op.chave) { setOp({ fase: 'ok', msg: 'Conferido: salvo' }); aoMudou(); }   // recibo sem titular (chave de outra intenção) = desconhecido
     else if (c?.tipo === 'nao_aplicada') setOp({ fase: 'erro', msg: `Não foi salvo (${c.msg})` });
-    else setOp({ ...op, msg: c?.tipo === 'nao_encontrada' ? 'Ainda não encontramos o resultado; reenviar usa a mesma chave.' : 'Ainda sem confirmação.' });
+    else setOp({ ...op, msg: c?.tipo === 'nao_encontrada' ? 'Ainda não encontramos o resultado desta gravação. Tentar de novo usa a mesma chave, com segurança.' : 'Ainda sem confirmação.' });
   };
   const selo = (f: FotoGaleria) => (f.origem === 'precifica' ? 'Precifica' : `Enviada por ${f.autor_nome ?? (f.autor_user_id ? `usuário ${f.autor_user_id}` : '—')}${f.criado_em ? ` em ${new Date(f.criado_em).toLocaleDateString('pt-BR')}` : ''}`);
   const lista = ordem ? ordem.map((id) => porId.get(id)).filter((x): x is FotoGaleria => !!x) : fotos;

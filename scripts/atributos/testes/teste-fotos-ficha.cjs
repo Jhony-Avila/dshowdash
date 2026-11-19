@@ -5,7 +5,7 @@
 // HEIC sem prévia; câmera (fake) sem microfone e desligada ao usar; câmera bloqueada com a fila intacta; aba Fotos (principal, reordenar, remover+Desfazer, conflito).
 // Nada vai ao app. Uso: PORTA=8112 flock … nice -n 10 node teste-fotos-ficha.cjs
 const { chromium } = require('/srv/dshow-work/atributos-web-wt/node_modules/playwright-core');
-const B = `http://127.0.0.1:${process.env.PORTA || 8112}`; const CAP = 'capturas-fotos'; require('fs').mkdirSync(CAP, { recursive: true });
+const B = `http://127.0.0.1:${process.env.PORTA || 8112}`; const CAP = 'capturas-fotos' + (process.env.W ? '-' + process.env.W : ''); require('fs').mkdirSync(CAP, { recursive: true });
 let ok = 0, falhas = 0; const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } else { falhas++; console.log('FALHA ' + n + (x ? ' · ' + x : '')); } };
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 const png = (n) => Buffer.concat([PNG, Buffer.alloc(n, 7)]);
@@ -14,7 +14,7 @@ const ok200 = (data, status = 200) => ({ status, contentType: 'application/json'
 const erro = (status, code, meta) => ({ status, contentType: 'application/json', body: JSON.stringify({ ok: false, data: null, error: code, meta }) });
 (async () => {
   const b = await chromium.launch({ executablePath: '/root/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell', args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
-  const nova = async (init) => { const ctx = await b.newContext({ viewport: { width: 2200, height: 1470 }, deviceScaleFactor: 1, permissions: ['camera'] }); if (init) await ctx.addInitScript(init); const pg = await ctx.newPage();
+  const nova = async (init) => { const ctx = await b.newContext({ viewport: { width: Number(process.env.W || 2200), height: Number(process.env.H || 1470) }, deviceScaleFactor: 1, permissions: ['camera'] }); if (init) await ctx.addInitScript(init); const pg = await ctx.newPage();
     await pg.goto(`${B}/__entrar?perfil=admin&ir=%2F`, { waitUntil: 'networkidle', timeout: 60000 }); return pg; };
   const abrir = async (pg) => { await pg.evaluate(() => { try { sessionStorage.removeItem('__BOOT_LOOP_TRACKER__'); } catch {} }); await pg.goto(`${B}/#/panel-atributos/produto/${P}`); await pg.reload({ waitUntil: 'networkidle' }); await pg.waitForSelector('.at-resumo-v3', { timeout: 40000 }); await pg.waitForTimeout(1200); };
   // ── proxy simulado (contrato v1.0)
@@ -26,14 +26,19 @@ const erro = (status, code, meta) => ({ status, contentType: 'application/json',
       const u = new URL(route.request().url()); const r = u.searchParams.get('r'); const h = route.request().headers(); const m = route.request().method();
       if (r === 'imagem') return route.fulfill({ status: 200, contentType: 'image/png', body: PNG, headers: { ETag: '"x"', 'Cache-Control': 'private, max-age=86400' } });
       if (r === 'galeria') { if (modo === 'desligado') return route.fulfill(erro(404, 'NOT_FOUND', { message: 'Recurso não disponível.' }));
+        if (modo === 'revogada') return route.fulfill(erro(401, 'SESSION_REVOKED', { message: 'Sessão revogada.' }));
+        if (modo === 'desativado') return route.fulfill(erro(401, 'USER_DISABLED', { message: 'Usuário desativado.' }));
         if (modo === 'sem75') return route.fulfill(erro(403, 'NOT_AUTHORIZED', { message: 'Você não tem permissão para gerenciar as fotos.' }));
         return route.fulfill(ok200({ produto: { id: P, nome: 'Produto 550', ativo: true, pode_receber_foto: true }, versao_galeria: s.versao, limite_fotos: 30, fotos: s.fotos, removidas: s.removidas })); }
       if (r === 'conferir') { const ch = u.searchParams.get('chave'); s.gets.push(ch); const rec = s.porChave.get(ch);
+        if (s.reciboAlheio) return route.fulfill(ok200({ resultado: 'aplicada', operacao: 'foto_publicar', recibo: { ...(rec || {}), chave: 'op-de-outra-intencao-xyz', operacao: 'foto_publicar', produto_id: P, versao_nova: s.versao, foto_id: 999, desfecho: 'aplicada', confirmado_em: 'x' } }));   // recibo SEM titular (chave de outra intenção)
         return route.fulfill(ok200(rec ? { resultado: 'aplicada', operacao: rec.operacao, recibo: rec } : { resultado: 'nao_encontrada', reenvio_seguro: true })); }
       if (m !== 'POST') return route.continue();
       const chave = h['x-chave-operacao']; const corpo = route.request().postDataBuffer(); const reg = { r, chave, bytes: corpo ? corpo.length : 0, json: r !== 'publicar' ? JSON.parse(route.request().postData() || '{}') : null, ct: h['content-type'] }; s.posts.push(reg);
       if (s.porChave.has(chave)) return route.fulfill(ok200({ desfecho: 'aplicada', recibo: s.porChave.get(chave), repetido: true }, r === 'publicar' ? 201 : 200));   // reenvio da mesma chave
       const acao = s.plano.length ? s.plano.shift() : 'ok';
+      if (acao === 'canal') return route.fulfill(erro(503, 'APP_UNAVAILABLE', { message: 'Não foi salvo. O app de fotos recusou a assinatura do canal. Nada foi enviado.', desfecho: 'recusada', gravado: false, chave }));   // proxy 35f037cd
+      if (acao === 'revogada') return route.fulfill(erro(401, 'SESSION_REVOKED', { message: 'Sessão revogada.' }));
       if (acao === 'conflito') return route.fulfill(erro(409, 'VERSION_CONFLICT', { message: 'As fotos deste produto mudaram desde que você abriu.', desfecho: 'conflito', gravado: false, chave, versao_atual: s.versao }));
       if (acao === 'duplicada') { const rec = recibo('foto_publicar', chave, { desfecho: 'sem_mudanca', duplicada: true, foto_id: 802 }); s.porChave.set(chave, rec); return route.fulfill(ok200({ desfecho: 'sem_mudanca', recibo: rec, repetido: false })); }
       s.versao++; let rec;
@@ -130,5 +135,27 @@ const erro = (status, code, meta) => ({ status, contentType: 'application/json',
   await p2.click(`${dlg} button:has-text("Voltar e escolher arquivos")`); await p2.waitForTimeout(300);
   afirma('câmera bloqueada: mensagem do cadeado; volta ao diálogo com a foto já escolhida na fila e "Escolher arquivos" disponível', /bloqueou a câmera/.test(tErro) && JSON.stringify(await nomes(p2)) === '["antes.png"]' && !!(await p2.$(`${dlg} button:has-text("Escolher arquivos")`)));
   await p2.context().close();
+  // (4) PROXY CORRIGIDO (35f037cd): 401 de sessão na leitura → mensagem de sessão, sem botões de escrita
+  for (const [modo, re] of [['revogada', /sessão foi encerrada/], ['desativado', /usuário está desativado/]]) {
+    const pz = await nova(); await simular(pz, modo); await abrir(pz);
+    await pz.click('.at-fixo button[role="tab"]:has-text("Fotos")'); await pz.waitForTimeout(300);
+    const av = await pz.textContent('[data-fotos-aviso="sessao"]').catch(() => '');
+    afirma(`401 ${modo === 'revogada' ? 'SESSION_REVOKED' : 'USER_DISABLED'} na galeria: mensagem de SESSÃO ("${av}"), sem "Adicionar fotos" e sem gerenciar`, re.test(av) && !(await pz.$('.at-resumo-v3__add')) && !(await pz.$('.at-fotos-ger')));
+    if (modo === 'revogada') await pz.screenshot({ path: `${CAP}/sessao-revogada.png` });
+    await pz.context().close();
+  }
+  // (5) escrita: 503 "canal recusou a assinatura" → "não foi possível enviar agora" (nunca Publicada nem "a conferir"); 401 na escrita → sessão;
+  //     resposta perdida + conferir com recibo SEM titular → continua desconhecido (nunca "Publicada")
+  { const pw = await nova(); const sw = await simular(pw, 'ok'); await abrir(pw);
+    sw.plano = ['canal', 'revogada', 'perdida'];
+    await pw.click('.at-resumo-v3__add'); await pw.setInputFiles('input[data-at-fotos-input]', [{ name: 'c1.png', mimeType: 'image/png', buffer: png(21) }, { name: 'c2.png', mimeType: 'image/png', buffer: png(22) }, { name: 'c3.png', mimeType: 'image/png', buffer: png(23) }]);
+    await pw.click(`${dlg} button:has-text("Publicar 3 fotos")`); await pw.waitForFunction(() => [...document.querySelectorAll('.at-fotos-fila__item')].every((x) => !['pronta', 'enviando', 'processando'].includes(x.dataset.atFotoFila)), null, { timeout: 20000 });
+    const est = await estados(pw); const txt = await pw.$$eval('.at-fotos-fila__item', (xs) => xs.map((x) => x.textContent));
+    afirma('503 canal recusou → "Não foi possível enviar agora" (recusada, sem "Publicada"); 401 → mensagem de sessão; perdida → a conferir', JSON.stringify(est) === '["recusada","recusada","desconhecido"]' && /Não foi possível enviar agora/.test(txt[0]) && /Não foi publicada/.test(txt[0]) && !/Salvo/.test(txt[0]) && /sessão foi encerrada/.test(txt[1]), JSON.stringify({ est, txt }));
+    sw.reciboAlheio = true; await pw.click(`${dlg} .at-fotos-fila__item[data-at-foto-fila="desconhecido"] button:has-text("Conferir gravação")`); await pw.waitForTimeout(800);
+    const depois = await estados(pw);
+    afirma('conferir com recibo SEM titular (chave de outra intenção) → continua "a conferir", nunca "Publicada"', depois[2] === 'desconhecido', JSON.stringify(depois));
+    await pw.screenshot({ path: `${CAP}/canal-sessao-titular.png` });
+    await pw.context().close(); }
   console.log(`FOTOS NA FICHA (contrato CONTRATO-PROXY-MIDIA v1.0, rotas simuladas): ${ok} ok, ${falhas} falhas`); await b.close(); process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('ERRO', e.message, e.stack?.split('\n')[1]); process.exit(2); });

@@ -78,7 +78,7 @@ export function Ficha({ id }: { id: number }) {
         </div>
         <div className="at-ficha__abas-linha">
         <div className="at-abas at-abas--icones" role="tablist" aria-label="Seções da ficha">
-          {([['atributos', `Atributos (${f.itens.length})`, 'list'], ['vinculos', 'Vínculos', 'link'], ['fotos', `Fotos (${f.fotos.length})`, 'image'], ['precifica', 'Precifica', 'tag'], ['historico', 'Histórico', 'clock']] as [AbaFicha, string, NomeIcone][]).map(([a, r, ic]) => (
+          {([['atributos', `Atributos (${f.itens.length})`, 'list'], ['vinculos', 'Vínculos', 'link'], ['fotos', `Fotos (${fotosGal ? fotosGal.length : f.fotos.length})`, 'image'], ['precifica', 'Precifica', 'tag'], ['historico', 'Histórico', 'clock']] as [AbaFicha, string, NomeIcone][]).map(([a, r, ic]) => (
             <button key={a} type="button" role="tab" aria-selected={aba === a} className={aba === a ? 'ativo' : ''} onClick={() => setAba(a)}><Icone nome={ic} />{r}</button>))}
         </div>
         <div className="at-ficha__filtros-slot" ref={setSlotFiltros} />
@@ -111,6 +111,7 @@ export function Ficha({ id }: { id: number }) {
       {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} filtro={filtro} setFiltro={setFiltro} slotFiltros={slotFiltros} slotTitulo={slotTitulo} />}
       {aba === 'vinculos' && <AbaVinculos f={f} recarregar={() => carregar(true)} />}
       {aba === 'fotos' && galeria.tipo === 'ok' && <GerenciarFotos estado={galeria} productId={p.id} aoMudou={aoMudarFotos} aoAdicionar={() => setAddFotos(true)} />}
+      {aba === 'fotos' && (galeria.tipo === 'sessao' || galeria.tipo === 'indisponivel') && <div className={`at-aviso ${galeria.tipo === 'sessao' ? 'at-aviso--erro' : 'at-aviso--info'}`} role="status" data-fotos-aviso={galeria.tipo}>{galeria.tipo === 'sessao' ? galeria.msg : 'As fotos estão indisponíveis agora. Tente de novo mais tarde.'}</div>}
       {aba === 'fotos' && galeria.tipo !== 'ok' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => setAmpliar(i)}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
       {aba === 'precifica' && <AbaPrecifica f={f} />}
       {aba === 'historico' && <AbaHistorico id={p.id} />}
