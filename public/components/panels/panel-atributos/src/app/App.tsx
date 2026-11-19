@@ -56,9 +56,15 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
       if (!(t instanceof Element) || !t.contains(r)) return;   // rolagem de dentro do módulo (carrossel, tabela larga): não é a página
       window.removeEventListener('scroll', aoRolar, true);
       rolador.current = t; setRoladorEl(t);
-      liberarSticky(r, t);   // lib/shellSticky.ts: só os intermediários; restaurado ao desmontar
+      const regiao = r.closest('main#main, [data-region="main"]');
+      liberarSticky(r, regiao && t !== regiao && t.contains(regiao) ? regiao : t);   // documento rolando (v2): libera até a região main   // lib/shellSticky.ts: só os intermediários; restaurado ao desmontar
     };
     window.addEventListener('scroll', aoRolar, true);
+    // Trava já na MONTAGEM (não só no 1º scroll): antes disso o .dsd-container__body ainda é contêiner de rolagem e o bloco, com
+    // top = topo da área visível, ficava deslocado dentro dele (medido: 100 px abaixo com o Shell Layout v2). Libera tudo até a região
+    // main do shell (com o v2 quem rola é o documento; sem ele, o próprio main#main). O 1º scroll só confirma quem rola (idempotente).
+    const regiaoMain = r.closest('main#main, [data-region="main"]');
+    if (regiaoMain) liberarSticky(r, regiaoMain);
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (fixo.current) r.style.setProperty('--at-topo-fixo', `${fixo.current.offsetHeight}px`); });
     if (ro && fixo.current) ro.observe(fixo.current);
     return () => { window.removeEventListener('scroll', aoRolar, true); ro?.disconnect(); restaurarShell(); };

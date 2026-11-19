@@ -6,7 +6,7 @@ import { obter } from '../lib/api';
 import { casaBusca, pctDe, comparaMenosPreenchidos } from '../lib/formatar';
 import { rotuloCategoria, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
-import { Barra, CapsulaId, ChipKit, Carregando, Erro, Etiqueta, Foto, Vazio, Botao, FaixaFixa } from '../ui/Comuns';
+import { Barra, CapsulaId, ChipKit, Carregando, Erro, Etiqueta, Foto, Vazio, Botao, CabecalhoTravado } from '../ui/Comuns';
 
 const POR_PAGINA = 48;
 type Ordem = 'nome' | 'id' | 'preenchimento';
@@ -68,7 +68,7 @@ export function Produtos() {
   return (
     <div className="at-produtos">
       {/* UX-1b: título e descrição vêm do cabeçalho do módulo; busca e filtros ficam FIXOS (FaixaFixa) */}
-      <FaixaFixa>
+      <CabecalhoTravado>
       <div className="at-barra-ferramentas">
         <label className="at-busca">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
@@ -105,7 +105,7 @@ export function Produtos() {
         {algumFiltro && <button type="button" className="bl-botao" onClick={() => setF({ ...f, busca: '', categoria: '', subcategoria: '', kit: '', situacao: 'ativos', semFoto: false, semKit: false, obrigatorios: false, fora: false, precifica: false, essencial: false })}>Limpar filtros</button>}
         {dados.pode_vincular && vis.length > 0 && <button type="button" className="bl-botao" onClick={marcarPagina}>{vis.every((p) => sel.has(p.id)) ? 'Desmarcar a página' : 'Selecionar a página'}</button>}
       </div>
-      </FaixaFixa>
+      </CabecalhoTravado>
 
       {lista.length === 0 ? (filtrosAlemDaBusca
           ? <Vazio titulo="Nenhum produto encontrado com estes filtros.">

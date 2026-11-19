@@ -501,13 +501,24 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
    Os ancestrais do shell que quebrariam o sticky (overflow auto/hidden) viram overflow: clip quando o 1º scroll revela quem rola (App.tsx).
    Cabeçalho das colunas: gruda logo abaixo do bloco fixo (top = --at-topo-fixo, medido por ResizeObserver; sem a medição, top 0). */
 [data-bl-root].at-raiz { overflow: visible; display: block; }
-[data-bl-root] .at-fixo { position: sticky; top: 0; z-index: 20; background: var(--bl-bg); box-shadow: 0 1px 0 var(--bl-borda); }
+[data-bl-root] .at-fixo { position: sticky; top: var(--at-topo-tela, 0px); z-index: 20; background: var(--bl-bg); box-shadow: 0 1px 0 var(--bl-borda); }
+/* CABEÇALHO TRAVADO (19/11): onde o bloco gruda = topo da ÁREA VISÍVEL, só por tokens do shell (sem medir nada por JS).
+   · Shell Layout v2 (flag as6.shell_layout_v2, ligada na produção): o DOCUMENTO rola por baixo do header + ticker fixos, que medem
+     --lv2-top. Antes, o bloco grudava em top 0 da janela e ficava ESCONDIDO atrás deles (só a última linha aparecia: prints do Jhony).
+   · Sem o v2, quem rola é o main#main, que já começa abaixo do header: --lv2-top não existe → 0.
+   · Com a barra do painel travada pelo módulo (shellSticky.ts marca data-barra-travada), soma a altura da barra (token --cm-header-height). */
+[data-bl-root].at-raiz { --at-topo-tela: var(--lv2-top, 0px); }
+[data-bl-root].at-raiz[data-barra-travada] { --at-topo-tela: calc(var(--lv2-top, 0px) + var(--cm-header-height, 32px)); }
+/* O respiro entre a barra do painel e o módulo (padding do .dsd-container__content = --cm-spacing-lg) passa para DENTRO do bloco
+   travado: na posição de descanso nada muda, e ao rolar o bloco não "sobe" esses 16 px antes de grudar (o topo de tudo fica parado). */
+[data-bl-root].at-raiz { margin-top: calc(-1 * var(--cm-spacing-lg, 16px)); }
+[data-bl-root] .at-fixo { padding-top: var(--cm-spacing-lg, 16px); }
 /* Só desconta o bloco fixo quando quem rola é a PÁGINA. Se a moldura da tabela tem rolagem horizontal (tabela mais larga que a tela:
    .at-td com data-larga="1"; .bl-rola-x de Produtos abaixo de 1200px), ela vira o contêiner do sticky e o top = altura do bloco
    empurrava o cabeçalho das colunas para baixo, por cima das linhas (achado da ESQUERDA em 430 px; também em 1024 px). Ali: top 0. */
-[data-bl-root] .at-td[data-rolagem="container"]:not([data-larga="1"]) .at-td__th { top: var(--at-topo-fixo, 0px); }
+[data-bl-root] .at-td[data-rolagem="container"]:not([data-larga="1"]) .at-td__th { top: calc(var(--at-topo-tela, 0px) + var(--at-topo-fixo, 0px)); }
 [data-bl-root] .at-produtos .at-tabela th { top: 0; z-index: 2; }
-@media (min-width: 1200px) { [data-bl-root] .at-produtos .at-tabela th { top: var(--at-topo-fixo, 0px); } }
+@media (min-width: 1200px) { [data-bl-root] .at-produtos .at-tabela th { top: calc(var(--at-topo-tela, 0px) + var(--at-topo-fixo, 0px)); } }
 [data-bl-root] .at-ficha__faixa { margin-top: 0; }
 [data-bl-root] .at-ficha__classe { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 28ch; }
 [data-bl-root] .at-heroi-fixo { margin-top: 12px; }

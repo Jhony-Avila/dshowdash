@@ -124,11 +124,17 @@ export function Botao({ children, aoClicar, primario, perigo, desligado, trabalh
   );
 }
 
-/** UX-1b: bloco que fica FIXO junto do título e das abas (só o resto da tela rola). Ex.: big numbers, busca e filtros.
- *  Uso: <FaixaFixa>…</FaixaFixa> em qualquer lugar da tela. O bloco fixo é sticky (a página rola); mantenha-o BAIXO, porque ele
- *  fica sempre visível. Sem área fixa (fora do módulo), desenha no lugar. */
-export function FaixaFixa({ children }: { children: React.ReactNode }) {
+/** CABEÇALHO TRAVADO (componente compartilhado de TODAS as abas). Tudo que você puser aqui entra no bloco travado ÚNICO do módulo, logo
+ *  abaixo do título e das abas: busca, selects, filtros rápidos, contagem, faixa do produto, sub-abas. Só o resto da tela rola.
+ *  - Um bloco só por aba: vários <CabecalhoTravado> na mesma tela são empilhados na ordem em que aparecem (todos no mesmo bloco).
+ *  - O cabeçalho das colunas de uma <TabelaDados rolagem="container"> gruda sozinho logo abaixo do bloco (nada a fazer na tela).
+ *  - Mantenha-o BAIXO: ele fica sempre visível.
+ *  - Fora do módulo (sem a área travada), desenha no lugar.
+ *  Uso: <CabecalhoTravado><div className="at-acoes">…busca e filtros…</div></CabecalhoTravado> */
+export function CabecalhoTravado({ children }: { children: React.ReactNode }) {
   const m = React.useContext(Contexto);
   const alvo = m?.faixaFixa ?? null;
   return alvo ? createPortal(<div className="at-faixa-fixa__bloco">{children}</div>, alvo) : <>{children}</>;
 }
+/** Nome antigo (UX-1b), mantido para compatibilidade. Use <CabecalhoTravado>. */
+export const FaixaFixa = CabecalhoTravado;

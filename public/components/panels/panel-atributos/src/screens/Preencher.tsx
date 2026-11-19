@@ -7,7 +7,7 @@ import { enviar, ErroApi, obter } from '../lib/api';
 import { sugestaoTexto } from '../lib/formatar';
 import { rotuloSubcategoria, IMPORTANCIA } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
-import { Botao, Carregando, ChipKit, Dialogo, Erro, Etiqueta, Foto, Vazio } from '../ui/Comuns';
+import { Botao, CabecalhoTravado, Carregando, ChipKit, Dialogo, Erro, Etiqueta, Foto, Vazio } from '../ui/Comuns';
 import { EditorValor } from '../ui/EditorValor';
 
 const MAX_LINHAS = 60;
@@ -102,8 +102,8 @@ export function Preencher() {
   const item = (f: Ficha, aid: number) => f.itens.find((i) => i.atributo_id === aid) ?? null;
   return (
     <div className="at-preencher">
-      <div className="at-titulo-tela">
-        {/* UX-1b: título e descrição vêm do cabeçalho do módulo */}
+      <CabecalhoTravado><div className="at-titulo-tela">
+        {/* título vem do cabeçalho do módulo; kit, subcategoria e seleção ficam no bloco travado */}
         <div className="at-acoes">
           <select className="at-campo" aria-label="Kit" value={kit} onChange={(e) => { setKit(e.target.value ? Number(e.target.value) : ''); setSub(''); setUsarSelecao(false); }}>
             <option value="">Escolha um kit…</option>{kits.map((k) => <option key={k.id} value={k.id}>{k.nome} ({k.alcance} produtos)</option>)}
@@ -114,7 +114,7 @@ export function Preencher() {
           </select>
           {m.selecao.length > 0 && <Botao aoClicar={() => { setUsarSelecao(true); setKit(''); setSub(''); }}>Usar os {m.selecao.length} selecionados</Botao>}
         </div>
-      </div>
+      </div></CabecalhoTravado>
       {produtos.length === 0 ? <Vazio titulo="Escolha o que preencher">Selecione um kit (ex.: Fontes) ou uma subcategoria para montar a grade.</Vazio>
         : erroGrade ? <Erro mensagem={erroGrade} aoTentar={() => void carregarFichas()} />
         : carregando || !fichas ? <Carregando rotulo={`Montando a grade (${Math.min(produtos.length, MAX_LINHAS)} produtos)`} />

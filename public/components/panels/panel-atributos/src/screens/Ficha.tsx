@@ -7,7 +7,7 @@ import { enviar, ErroApi, obter } from '../lib/api';
 import { campoPrecifica, dataHora, decimal, precifica as fmtPrecifica, pctDe, sugestaoTexto, valor as fmtValor } from '../lib/formatar';
 import { ESTADO, FAMILIAS_PRECIFICA, FONTE_SUGESTAO, IMPORTANCIA, MOTIVO_KIT, rotuloCategoria, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
-import { Barra, Botao, CapsulaId, ChipKit, Carregando, Dialogo, Erro, Etiqueta, FaixaFixa, Foto, Vazio } from '../ui/Comuns';
+import { Barra, Botao, CapsulaId, ChipKit, Carregando, Dialogo, Erro, Etiqueta, CabecalhoTravado, Foto, Vazio } from '../ui/Comuns';
 import { Icone, type NomeIcone } from '../ui/Icones';
 import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
 import type { Ordenacao } from '../lib/ordenar';
@@ -48,7 +48,7 @@ export function Ficha({ id }: { id: number }) {
     <div className="at-ficha">
       {/* UX-1b (refeito): a FAIXA do produto + sub-abas + filtros ficam no bloco fixo (sticky) do topo; o bloco grande do produto rola
           com a página (sem cálculo de altura: o "encolher" é o bloco grande sair de vista enquanto a faixa fina fica). */}
-      <FaixaFixa>
+      <CabecalhoTravado>
         <div className="at-heroi-compacto at-ficha__faixa">
           <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
           <div className="at-heroi-compacto__foto"><Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="1 / 1" compacta ajuste="cover" /></div>
@@ -69,7 +69,7 @@ export function Ficha({ id }: { id: number }) {
         </div>
         <div className="at-ficha__filtros-slot" ref={setSlotFiltros} />
         </div>
-      </FaixaFixa>
+      </CabecalhoTravado>
       <div className="at-heroi-fixo">
           <div className="at-heroi">
             <div className="at-galeria">
@@ -195,7 +195,7 @@ function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtr
           </div>
           {f.pode_vincular && <Botao primario aoClicar={() => setAdicionar(true)}>Adicionar atributo a este produto</Botao>}
       </div>
-      ); return slotFiltros ? createPortal(filtros, slotFiltros) : <FaixaFixa>{filtros}</FaixaFixa>; })()}
+      ); return slotFiltros ? createPortal(filtros, slotFiltros) : <CabecalhoTravado>{filtros}</CabecalhoTravado>; })()}
       <h3 className="at-ficha__titulo-tabela">Atributos deste produto</h3>
       <Dialogo titulo="Adicionar atributo a este produto" aberto={adicionar} aoFechar={() => setAdicionar(false)} largura={640}>
         <SeletorAdicionar f={f} aoFeito={(alvo) => { setAdicionar(false); setFocar(alvo); recarregar(); }} />
