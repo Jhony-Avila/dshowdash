@@ -68,7 +68,8 @@ export function Ficha({ id }: { id: number }) {
       <CabecalhoTravado>
         <div className="at-heroi-compacto at-ficha__faixa">
           <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
-          <div className="at-heroi-compacto__foto"><Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="1 / 1" compacta ajuste="cover" /></div>
+          {/* roteiro das fotos: a miniatura da faixa fixa abre a galeria (aba Fotos: principal em destaque, demais miniaturas, Adicionar) */}
+          <button type="button" className="at-heroi-compacto__foto at-heroi-compacto__foto--botao" onClick={() => setAba('fotos')} aria-label="Abrir a galeria de fotos" title="Abrir a galeria de fotos"><Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="1 / 1" compacta ajuste="cover" /></button>
           <strong className="at-heroi-compacto__nome" title={p.nome}>{p.nome}</strong>
           <CapsulaId id={p.id} flutuante={false} />
           <span className="at-fraco at-ficha__classe">{rotuloCategoria(p.categoria)} / {rotuloSubcategoria(p.subcategoria)}</span>
@@ -119,7 +120,7 @@ export function Ficha({ id }: { id: number }) {
       <Dialogo titulo={ampliar !== null ? `Foto ${ampliar + 1} de ${nFotos}` : 'Foto'} aberto={ampliar !== null && !!listaFotos[ampliar]} aoFechar={() => setAmpliar(null)} largura={900}
         rodape={nFotos > 1 ? <><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + nFotos - 1) % nFotos))}>‹ Anterior</Botao><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + 1) % nFotos))}>Próxima ›</Botao></> : undefined}>
         {ampliar !== null && listaFotos[ampliar] && <Foto mediaId={listaFotos[ampliar].id} cor={listaFotos[ampliar].cor} proporcao={`${tam(ampliar)?.largura || 4} / ${tam(ampliar)?.altura || 3}`} lado={1280}
-          url={listaFotos[ampliar].url ? urlImagem(listaFotos[ampliar].id, 1536) : undefined} />}
+          url={listaFotos[ampliar].url ? urlImagem(listaFotos[ampliar].id, 1536) : undefined} tentarDeNovo />}
       </Dialogo>); })()}
       {galeria.tipo === 'ok' && <AdicionarFotos produto={{ id: p.id, nome: p.nome }} aberto={addFotos} versaoGaleria={galeria.g.versao_galeria}
         vagas={galeria.g.limite_fotos ? Math.max(0, galeria.g.limite_fotos - galeria.g.fotos.length) : null}

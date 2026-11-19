@@ -13,22 +13,25 @@ function contraste(hex: string | null): string {
 }
 
 /** Foto do produto: miniatura autenticada (A6) sobre a cor média; sem foto → moldura tracejada. */
-export function Foto({ mediaId, cor, proporcao = '4 / 3', idCapsula, lado = 480, compacta = false, ajuste = 'contain', url }: {
+export function Foto({ mediaId, cor, proporcao = '4 / 3', idCapsula, lado = 480, compacta = false, ajuste = 'contain', url, tentarDeNovo = false }: {
   mediaId: number | null; cor: string | null; proporcao?: string; idCapsula?: number; lado?: 480 | 1280; compacta?: boolean; ajuste?: 'contain' | 'cover';
   /** FOTOS: URL própria (variantes do app pelo proxy /api/midia); sem ela, a miniatura de sempre */ url?: string;
+  /** roteiro das fotos: falhou ao carregar → botão "Tentar carregar foto" (só onde a foto NÃO está dentro de outro botão) */ tentarDeNovo?: boolean;
 }) {
   const [falhou, setFalhou] = React.useState(false);
-  React.useEffect(() => setFalhou(false), [mediaId]);
+  const [tentativa, setTentativa] = React.useState(0);   // roteiro das fotos: "Tentar carregar foto" pede a imagem de novo
+  React.useEffect(() => { setFalhou(false); setTentativa(0); }, [mediaId]);
   const tem = mediaId !== null;
   return (
     <div className={`at-foto ${tem ? '' : 'at-foto--vazia'}`} style={{ aspectRatio: proporcao, background: tem ? (cor ? `#${cor}` : 'var(--bl-superficie-2)') : undefined }}>
-      {tem && !falhou && <img src={url ?? urlFoto(mediaId, lado)} alt="" loading="lazy" decoding="async" style={{ objectFit: ajuste }} onError={() => setFalhou(true)} />}
+      {tem && !falhou && <img src={`${url ?? urlFoto(mediaId, lado)}${tentativa ? `&tentativa=${tentativa}` : ''}`} alt="" loading="lazy" decoding="async" style={{ objectFit: ajuste }} onError={() => setFalhou(true)} />}
       {(!tem || falhou) && (
         <div className="at-foto__miolo" style={{ color: tem ? contraste(cor) : 'var(--bl-texto-3)' }} role="img" aria-label={tem ? 'Foto indisponível' : 'Produto sem foto'}>
           <svg width={compacta ? 18 : 26} height={compacta ? 18 : 26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
             <rect x="3" y="5" width="18" height="14" rx="2.5" /><circle cx="9" cy="10" r="1.8" /><path d="M21 16l-5-5-8 8" />{!tem && <path d="M4 4l16 16" />}
           </svg>
           {!compacta && <span>{tem ? 'foto indisponível' : 'sem foto'}</span>}
+          {tem && falhou && tentarDeNovo && <button type="button" className="at-foto__tentar" onClick={(e) => { e.stopPropagation(); setFalhou(false); setTentativa((t) => t + 1); }}>Tentar carregar foto</button>}
         </div>
       )}
       {idCapsula !== undefined && <CapsulaId id={idCapsula} />}

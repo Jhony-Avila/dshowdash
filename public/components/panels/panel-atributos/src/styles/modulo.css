@@ -813,3 +813,7 @@ html[data-theme="dark"] body [data-bl-root] .pv2-corpo__fixo > .pv2-linha--fixa:
 .at-fotos-fila__item--duplicada { border-color: var(--bl-info); }
 [data-bl-root] .at-fotos-ger__grade--ordenando .at-fotos-ger__item { cursor: grab; }
 [data-bl-root] .at-fotos-ger__principal { font-size: 12px; font-weight: 500; color: var(--bl-info); padding: 4px 6px; }
+/* roteiro das fotos: miniatura da faixa abre a galeria; "Tentar carregar foto" */
+[data-bl-root] .at-heroi-compacto__foto--botao { all: unset; cursor: pointer; display: block; width: 42px; height: 42px; flex: 0 0 42px; border-radius: 6px; overflow: hidden; }
+[data-bl-root] .at-heroi-compacto__foto--botao:focus-visible { outline: 2px solid var(--bl-info); outline-offset: 2px; }
+.at-foto__tentar { margin-top: 6px; padding: 3px 8px; font: inherit; font-size: 12px; border: 1px solid var(--bl-borda-forte); border-radius: 6px; background: var(--bl-superficie); color: var(--bl-texto); cursor: pointer; }

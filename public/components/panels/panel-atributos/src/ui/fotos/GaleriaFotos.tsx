@@ -266,7 +266,7 @@ export function GerenciarFotos({ estado, productId, aoMudou, aoAdicionar }: { es
         {lista.map((f, k) => (
           <li key={f.id} className={`at-fotos-ger__item ${(ordem ? k === 0 : f.capa) ? 'at-fotos-ger__item--capa' : ''}`} data-foto={f.id}
             draggable={!!ordem} onDragStart={() => { arrastado.current = f.id; }} onDragOver={(e) => { if (ordem) e.preventDefault(); }} onDrop={() => soltarEm(f.id)}>
-            <Foto mediaId={f.id} cor={f.cor} proporcao="4 / 3" ajuste="contain" url={urlImagem(f.id, 768)} />
+            <Foto mediaId={f.id} cor={f.cor} proporcao="4 / 3" ajuste="contain" url={urlImagem(f.id, 768)} tentarDeNovo />
             <div className="at-fotos-ger__barra">
               {ordem ? <>
                 <button type="button" className="at-v3-menu__botao" aria-label={`Mover a foto ${k + 1} para a esquerda`} disabled={k === 0} onClick={() => moverEm(f.id, -1)}>←</button>
