@@ -25,6 +25,28 @@ CREATE TABLE IF NOT EXISTS `eq_operacao` (
   UNIQUE KEY `uq_eq_operacao_chave` (`chave`),
   KEY `ix_eq_operacao_titular` (`titular_id`, `criado_em`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+-- P1 (18/11, parecer externo) — ADITIVO à 011 ainda não aplicada em produção: TENTATIVA dona da chave e DESFECHO POR ITEM dos lotes.
+-- eq_operacao.tentativa: token da tentativa que detém a chave (gravado na reserva/reabertura); o COMMIT de cada gravação confere, sob
+--   trava, que a operação ainda é desta tentativa (retomada após 5 min nunca reabre uma tentativa viva). NULL = linha anterior a este ajuste.
+-- eq_operacao_item: um desfecho por item de rota multi-item (sugestoes_lote): 'pendente' na abertura e o desfecho final gravado NA MESMA
+--   transação da gravação do item. Reenvio da mesma chave retoma só os pendentes; conferir_gravacao mostra o estado por item.
+-- eq_operacao.recibo_texto: o recibo EXATO (texto JSON) gravado na MESMA transação da escrita; resposta, reenvio e conferir_gravacao
+--   devolvem este mesmo texto (a coluna JSON `recibo` reordena chaves e fica para consulta).
+ALTER TABLE `eq_operacao`
+  ADD COLUMN `tentativa` CHAR(32) NULL COMMENT 'token da tentativa dona da chave (P1-2)' AFTER `estado`,
+  ADD COLUMN `recibo_texto` MEDIUMTEXT NULL COMMENT 'recibo exato em texto (DSHOW-093 A)' AFTER `recibo`;
+CREATE TABLE IF NOT EXISTS `eq_operacao_item` (
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `chave`         VARCHAR(64)     NOT NULL COMMENT 'eq_operacao.chave',
+  `item`          VARCHAR(64)     NOT NULL COMMENT 'identificador do item na rota (ex.: id da sugestão)',
+  `posicao`       INT UNSIGNED    NOT NULL COMMENT 'ordem do item no pedido',
+  `desfecho`      VARCHAR(16)     NOT NULL DEFAULT 'pendente' COMMENT 'pendente | aceita | ignorada | falha',
+  `detalhe`       JSON            NULL,
+  `criado_em`     DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `atualizado_em` DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_eq_operacao_item` (`chave`, `item`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ALTER TABLE `eq_pedido_massa`
   ADD COLUMN `titular_id` BIGINT NULL COMMENT 'id estável do titular (DSHOW-086); NULL = recibo anterior à 011' AFTER `usuario`;
 INSERT INTO `eq_schema_migrations` (`version`, `checksum`) VALUES ('011_operacao', NULL);
