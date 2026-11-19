@@ -194,8 +194,8 @@ export function Preencher() {
         rodape={<>
           <Botao aoClicar={fecharLote}>{lote.fase === 'confirmar' ? 'Cancelar' : 'Fechar'}</Botao>
           {lote.fase === 'confirmar' && <Botao primario trabalhando={trab} aoClicar={confirmarColuna}>Aceitar {aceitarCol?.ids.length}</Botao>}
-          {(lote.fase === 'desconhecido' || lote.fase === 'em_andamento' || lote.fase === 'conferindo') && <Botao primario={lote.fase !== 'em_andamento' || !lote.reenvioSeguro} trabalhando={lote.fase === 'conferindo'} aoClicar={conferirLote}>Conferir gravação</Botao>}
-          {(lote.fase === 'interrompida' || lote.fase === 'nao_encontrada' || (lote.fase === 'em_andamento' && lote.reenvioSeguro)) && <Botao primario trabalhando={trab} aoClicar={confirmarColuna}>{lote.fase === 'nao_encontrada' ? 'Enviar de novo' : 'Retomar os pendentes'}</Botao>}
+          {(lote.fase === 'desconhecido' || lote.fase === 'em_andamento' || lote.fase === 'conferindo' || lote.fase === 'nao_encontrada') && <Botao primario={lote.fase !== 'nao_encontrada' && (lote.fase !== 'em_andamento' || !lote.reenvioSeguro)} trabalhando={lote.fase === 'conferindo'} aoClicar={conferirLote}>{lote.fase === 'nao_encontrada' ? 'Consultar de novo' : 'Conferir gravação'}</Botao>}
+          {(lote.fase === 'interrompida' || lote.fase === 'nao_encontrada' || (lote.fase === 'em_andamento' && lote.reenvioSeguro)) && <Botao primario trabalhando={trab} aoClicar={confirmarColuna}>{lote.fase === 'nao_encontrada' ? 'Tentar de novo com segurança' : 'Retomar os pendentes'}</Botao>}
         </>}>
         <div data-at-lote={lote.fase} data-at-chave={lote.intencao?.chave ?? ''}>
           {lote.fase === 'confirmar' && <p>Cada sugestão vira valor <strong>manual</strong> deste campo, com histórico. Valores já preenchidos à mão não são afetados (só células vazias têm sugestão).</p>}
@@ -206,7 +206,7 @@ export function Preencher() {
             {lote.fase === 'desconhecido' && <p className="at-salvo--aviso"><strong>{MSG_DESCONHECIDO}</strong> Nada será reenviado sem você pedir. Use “Conferir gravação”.{lote.msg ? ` ${lote.msg}` : ''}</p>}
             {lote.fase === 'em_andamento' && <p className="at-salvo--aviso"><strong>Ainda em andamento no servidor.</strong> {lote.reenvioSeguro ? 'Está demorando; retomar com o mesmo pedido é seguro (nada é duplicado).' : 'Confira de novo em instantes.'}</p>}
             {lote.fase === 'interrompida' && <p className="at-salvo--aviso"><strong>O lote parou no meio.</strong> As aceitas já estão salvas; as pendentes não. “Retomar os pendentes” reenvia o MESMO pedido: nada é duplicado.</p>}
-            {lote.fase === 'nao_encontrada' && <p className="at-salvo--aviso"><strong>O servidor não recebeu este pedido.</strong> Nada foi salvo. Você pode enviar de novo (o mesmo pedido).</p>}
+            {lote.fase === 'nao_encontrada' && <p className="at-salvo--aviso"><strong>Ainda não encontramos o resultado desta gravação.</strong> Você pode consultar de novo ou tentar de novo com segurança: o mesmo pedido vai com a MESMA chave e não grava duas vezes.</p>}
             {lote.fase === 'recusada' && <p className="at-alerta"><strong>Não foi salvo.</strong> {lote.msg}</p>}
           </div>
           {lote.resumo && <ResumoDoLote r={lote.resumo} />}

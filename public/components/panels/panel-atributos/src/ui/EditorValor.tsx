@@ -14,7 +14,7 @@ type Situacao = { tipo: 'parado' } | { tipo: 'salvando'; reenvio?: boolean } | {
   | { tipo: 'salvoSemTela' }                                   // recibo válido, mas a releitura falhou → [Atualizar valor] (só leitura)
   | { tipo: 'recusada'; msg: string; podeRepetir?: boolean }   // recusa COMPROVADA: nada foi gravado; o rascunho fica
   | { tipo: 'conflito'; aoAbrir: string; rascunho: string; atual: string | null }
-  | { tipo: 'desconhecido'; msg?: string }                     // a requisição saiu e não sabemos o resultado → [Conferir gravação]
+  | { tipo: 'desconhecido'; msg?: string; podeRepetir?: boolean }   // não sabemos o resultado → [Conferir gravação] (+ [Tentar de novo] com a MESMA chave)
   | { tipo: 'conferindo' } | { tipo: 'emAndamento' };
 
 function rascunhoDe(it: ItemFicha): string {
@@ -107,7 +107,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
       if (c.resultado === 'em_andamento') setSit({ tipo: 'emAndamento' });
       else if (c.resultado === 'nao_aplicada') setSit({ tipo: 'recusada', msg: c.erro?.mensagem ?? 'O servidor não aplicou esta alteração.' });
       else if (c.resultado === 'interrompida') setSit({ tipo: 'recusada', msg: 'A gravação foi interrompida antes de concluir. Nada foi gravado.', podeRepetir: true });
-      else setSit({ tipo: 'recusada', msg: 'O servidor não tem registro desta tentativa (ela pode não ter chegado). Nada foi gravado por ela.', podeRepetir: true });
+      else setSit({ tipo: 'desconhecido', msg: 'Ainda não encontramos o resultado desta gravação.', podeRepetir: true });   // DSHOW-099: nao_encontrada NÃO prova "não salvo"
     } catch { setSit({ tipo: 'desconhecido', msg: 'Não foi possível conferir agora.' }); } finally { ocupado.current = false; }
   };
   const atualizarValor = () => { Promise.resolve(aoRecarregar()).then((r) => { if (r !== false) setSit({ tipo: 'parado' }); }, () => undefined); };
@@ -130,7 +130,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     : sit.tipo === 'salvo' ? <span className="at-salvo at-salvo--ok">{sit.semMudanca ? 'Nada mudou' : 'Salvo'}</span>
     : sit.tipo === 'salvoSemTela' ? <span className="at-salvo at-salvo--aviso" role="alert">Salvo. Não foi possível atualizar o valor na tela. {link('Atualizar valor', atualizarValor)}</span>
     : sit.tipo === 'recusada' ? <span className="at-salvo at-salvo--erro" role="alert">Não foi salvo. <em className="at-salvo__motivo">{sit.msg}</em>{sit.podeRepetir && <> {link('Tentar de novo', tentarDeNovo)}</>}</span>
-    : sit.tipo === 'desconhecido' ? <span className="at-salvo at-salvo--erro" role="alert">{MSG_DESCONHECIDO}{sit.msg ? ` ${sit.msg}` : ''} {link('Conferir gravação', conferir)}</span>
+    : sit.tipo === 'desconhecido' ? <span className="at-salvo at-salvo--erro" role="alert">{MSG_DESCONHECIDO}{sit.msg ? ` ${sit.msg}` : ''} {link(sit.podeRepetir ? 'Consultar de novo' : 'Conferir gravação', conferir)}{sit.podeRepetir && <> · {link('Tentar de novo com segurança', tentarDeNovo)}</>}</span>
     : sit.tipo === 'emAndamento' ? <span className="at-salvo at-salvo--aviso" role="alert">A gravação ainda está em andamento. {link('Conferir gravação', conferir)}</span>
     : sit.tipo === 'conflito' ? (
       <span className="at-salvo at-salvo--erro at-conflito" role="alert">
