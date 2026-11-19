@@ -11,7 +11,7 @@ $ult = null;
 $fake = function (array $resp) use (&$ult) { return function (string $m, string $url, array $cab, string $corpo, int $t) use ($resp, &$ult) { $ult = compact('m', 'url', 'cab', 'corpo'); return $resp + ['status' => 0, 'corpo' => '', 'tipo' => '', 'erro' => null]; }; };
 $canal = fn(array $resp, string $s = '') => new FotosCanal(new FotosAppCliente(3100, $s ?: $seg, $fake($resp)), 75);
 $CH = 'op-teste-0123456789ab';
-$rec = ['canal' => 'dash', 'chave' => $CH, 'confirmado_em' => '2026-11-19T12:00:00.000Z', 'desfecho' => 'aplicada', 'duplicada' => false, 'foto_id' => 812, 'operacao' => 'publicar', 'produto_id' => 550, 'versao_nova' => 7];
+$rec = ['canal' => 'dash', 'chave' => $CH, 'confirmado_em' => '2026-11-19T12:00:00.000Z', 'desfecho' => 'aplicada', 'duplicada' => false, 'foto_id' => 812, 'operacao' => 'publicar', 'produto_id' => 550, 'titular_user_id' => 75, 'versao_nova' => 7];   // DSHOW-103: recibo do app ≥ ea77d74 traz o titular
 $JPG = "\xFF\xD8\xFF\xE0" . str_repeat('x', 100);
 $erro = function (callable $fn) { try { $fn(); return null; } catch (FotosErro $e) { return $e; } };
 
@@ -67,7 +67,7 @@ $e = $erro(fn() => $canal(['status' => 201], $aberto)->capa(812, $CH, 7));
 $ok('segredo com permissão aberta = ausente', $e && $e->codigo === 'APP_UNAVAILABLE');
 
 // ordem / versão
-$canal(['status' => 200, 'corpo' => json_encode(['desfecho' => 'aplicada', 'recibo' => array_merge($rec, ['operacao' => 'ordem', 'foto_id' => null])])])->ordem(550, $CH, 7, [12, 9, 31]);
+$canal(['status' => 200, 'corpo' => json_encode(['desfecho' => 'aplicada', 'recibo' => array_merge($rec, ['operacao' => 'ordem', 'foto_id' => null, 'ordem' => [12, 9, 31]])])])->ordem(550, $CH, 7, [12, 9, 31]);
 $ok('ordem vai na query (12,9,31) com versao', str_contains($ult['url'], 'ordem=12%2C9%2C31') && str_contains($ult['url'], 'versao=7') && $ult['corpo'] === '');
 $ok('ordem com repetição → 422', ($e = $erro(fn() => $canal([])->ordem(550, $CH, 7, [12, 12]))) && $e->http === 422);
 $ok('versão ausente → 422', ($e = $erro(fn() => $canal([])->capa(812, $CH, 0))) && $e->http === 422);
@@ -133,7 +133,7 @@ $cv = new FotosCanal(new FotosAppCliente(3100, $seg, $appVerifica), 75);
 $cv->publicar(550, $CH, $JPG);
 $ok('100 publicar: o app recalcula o HMAC (ts, nonce, método, caminho+query, sha256 do corpo) e confere', $recebido['ok'] === true);
 $ok('100 publicar: corpo recebido = bytes enviados (byte a byte)', $recebido['corpo'] === $JPG && $recebido['m'] === 'POST' && in_array('Content-Type: application/octet-stream', $recebido['cab'], true));
-$cv->capa(812, $CH, 7);
+$erro(fn() => $cv->capa(812, $CH, 7));   // só a assinatura importa aqui (o recibo de publicar não correlaciona com capa → desconhecido, de propósito)
 $ok('100 capa (POST sem corpo): assinatura confere com sha256("")', $recebido['ok'] === true && $recebido['corpo'] === '');
 $cv2 = new FotosCanal(new FotosAppCliente(3100, $seg, function ($m, $url, $cab, $corpo, $t) use ($verifica, &$recebido) { $cab2 = array_map(fn($c) => str_starts_with($c, 'X-Dash-Sig: ') ? 'X-Dash-Sig: ' . str_repeat('0', 64) : $c, $cab);
   $recebido = ['ok' => $verifica($m, $url, $cab2, $corpo)]; return ['status' => 401, 'corpo' => '{"error":{"code":"assinatura_invalida","message":"x"}}', 'tipo' => 'application/json', 'erro' => null]; }), 75);
@@ -166,7 +166,7 @@ $e = $erro(fn() => $canal(['status' => 503, 'corpo' => ''])->galeria(550));
 $ok('100 leitura: 503 do app → 503 APP_UNAVAILABLE', $e && $e->http === 503);
 $e = $erro(fn() => $canal([])->ordem(550, $CH, 7, range(1, 101)));
 $ok('100 ordem com 101 IDs → 422, nada enviado (limite do app = 100)', $e && $e->http === 422 && FotosCanal::MAX_ORDEM === 100);
-$ult = null; $canal(['status' => 200, 'corpo' => json_encode(['desfecho' => 'aplicada', 'recibo' => array_merge($rec, ['operacao' => 'ordem', 'foto_id' => null])])])->ordem(550, $CH, 7, range(1, 100));
+$ult = null; $canal(['status' => 200, 'corpo' => json_encode(['desfecho' => 'aplicada', 'recibo' => array_merge($rec, ['operacao' => 'ordem', 'foto_id' => null, 'ordem' => range(1, 100)])])])->ordem(550, $CH, 7, range(1, 100));
 $ok('100 ordem com exatamente 100 IDs passa', $ult !== null);
 
 // GET de recibo (conferir) sem efeito: só GET, corpo vazio, nenhum request_id de escrita

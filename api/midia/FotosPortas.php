@@ -2,15 +2,15 @@
 declare(strict_types=1);
 
 /**
- * /api/midia/FotosPortas.php — FOTOS-1 (DSHOW-100): a ORDEM das portas do proxy de fotos, como função pura (testável sem banco, sem
- * sessão e sem flags reais). O index.php usa exatamente estas decisões; a sessão (401) e o CSRF (403) continuam nos helpers do Dash
- * (AuthHelpers), chamados pelo index.php no ponto indicado.
- *   1) antes da sessão: flag `panel_atributos_enabled` desligada para todos → 404; ilegível (source=error) → 500
- *   2) [sessão: AuthHelpers::requireAuth → 401]
+ * /api/midia/FotosPortas.php — FOTOS-1 (DSHOW-100): decisões PURAS de porta do proxy de fotos (testáveis sem banco, sessão ou flags reais).
+ * DSHOW-103 (19/11): a ordem completa mora em FotosProxy::atender; as flags são as EXCLUSIVAS de fotos (`panel_fotos_enabled` /
+ * `panel_fotos_escrita`, ausentes = desligadas), nunca as de atributos.
+ *   1) antes da sessão: flag de fotos desligada para todos → 404; ilegível (source=error) → 500
+ *   2) [sessão completa: FotosSessao → 401/503]
  *   3) rota desconhecida para o método → 404
- *   4) pessoa fora da flag → 404 · POST com `panel_atributos_escrita` desligada para a pessoa → 404
- *   5) [CSRF em POST: AuthHelpers::requireCsrfForWrite → 403]
- *   6) não é publicador (piloto: SÓ o 75) → 403 NOT_AUTHORIZED (desfecho recusada)
+ *   4) pessoa fora da flag de fotos → 404 · POST com `panel_fotos_escrita` desligada para a pessoa → 404
+ *   5) [CSRF em POST → 403]
+ *   6) não é publicador (configuração explícita do piloto: SÓ o 75) → 403 NOT_AUTHORIZED (desfecho recusada)
  */
 final class FotosPortas
 {
