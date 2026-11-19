@@ -92,6 +92,96 @@ $g = $canal(['status' => 200, 'corpo' => json_encode(['produto' => ['id' => 550]
 $ok('galeria 200', $g['versao_galeria'] === 7);
 $ok('galeria 403 do app', ($e = $erro(fn() => $canal(['status' => 403, 'corpo' => '{"error":{"code":"sem_permissao","message":"x"}}'])->galeria(550))) && $e->http === 403);
 
+
+// ── DSHOW-100 (Codex): casos novos — os 38 acima continuam ────────────────────────────────────────────────────────────────
+require_once __DIR__ . '/../../../api/midia/FotosPortas.php';
+// portas (função pura usada pelo index.php)
+foreach (FotosPortas::DESLIGADO as $fonte) $ok("100 flag OFF para todos ($fonte) → 404 antes da sessão", FotosPortas::antesDaSessao($fonte) === [404, 'NOT_FOUND']);
+$ok('100 flag ilegível → 500 (nunca 404)', FotosPortas::antesDaSessao('error') === [500, 'INTERNAL_ERROR']);
+$ok('100 flag ligada (override/rollout) → segue para a sessão', FotosPortas::antesDaSessao('override') === null && FotosPortas::antesDaSessao('rollout') === null);
+$ok('100 rota desconhecida → 404', FotosPortas::rotaEFlags('GET', 'publicar', true, true) === [404, 'NOT_FOUND'] && FotosPortas::rotaEFlags('POST', 'galeria', true, true) === [404, 'NOT_FOUND'] && FotosPortas::rotaEFlags('DELETE', 'remover', true, true) === [404, 'NOT_FOUND']);
+$ok('100 pessoa fora da flag → 404', FotosPortas::rotaEFlags('GET', 'galeria', false, true) === [404, 'NOT_FOUND']);
+$ok('100 POST com escrita desligada → 404; GET não depende da escrita', FotosPortas::rotaEFlags('POST', 'capa', true, false) === [404, 'NOT_FOUND'] && FotosPortas::rotaEFlags('GET', 'galeria', true, false) === null);
+$ok('100 usuário diferente do 75 → 403 NOT_AUTHORIZED; o 75 passa', FotosPortas::publicador(990080, [75]) === [403, 'NOT_AUTHORIZED'] && FotosPortas::publicador(80, [75]) === [403, 'NOT_AUTHORIZED'] && FotosPortas::publicador(75, [75]) === null);
+
+// destino fixo: host e prefixo constantes; porta só da configuração; caminho validado
+$ult = null; $canal(['status' => 200, 'corpo' => '{"estado":"nao_encontrada"}'])->conferir($CH);
+$ok('100 destino fixo: http://127.0.0.1:3100/internal/dash/v1/operacoes/<chave>', str_starts_with($ult['url'], 'http://127.0.0.1:3100/internal/dash/v1/operacoes/' . $CH . '?'));
+$porta = new FotosCanal(new FotosAppCliente(3199, $seg, $fake(['status' => 200, 'corpo' => '{"estado":"nao_encontrada"}'])), 75); $porta->conferir($CH);
+$ok('100 porta vem só da configuração (3199) e o host continua 127.0.0.1', str_starts_with($ult['url'], 'http://127.0.0.1:3199/internal/dash/v1/'));
+$ok('100 porta fora da faixa recusada', (function () { try { new FotosAppCliente(80); return false; } catch (InvalidArgumentException) { return true; } })());
+$cli = new FotosAppCliente(3100, $seg, $fake([]));
+foreach (['/../etc/passwd', '/products/1?x=y', 'products', '/products/1#a', '//evil'] as $mau) {
+  $ok("100 caminho inválido recusado ($mau)", (function () use ($cli, $mau) { try { $cli->pedir('GET', $mau, []); return false; } catch (InvalidArgumentException) { return true; } })());
+}
+$ok('100 cURL real: sem redirecionamento, só HTTP, sem proxy (código)', (function () { $src = file_get_contents(__DIR__ . '/../../../api/midia/FotosAppCliente.php');
+  return str_contains($src, 'CURLOPT_FOLLOWLOCATION => false') && str_contains($src, 'CURLOPT_PROTOCOLS => CURLPROTO_HTTP') && str_contains($src, "CURLOPT_NOPROXY => '*'") && str_contains($src, "public const HOST = '127.0.0.1';"); })());
+
+// assinatura e corpo idênticos nas duas pontas: o "app" falso refaz o HMAC com o mesmo segredo e confere o corpo
+$verifica = function (string $m, string $url, array $cab, string $corpo) use ($seg) {
+  $h = []; foreach ($cab as $c) { [$k, $v] = array_map('trim', explode(':', $c, 2)) + [1 => '']; $h[strtolower($k)] = $v; }
+  $u = parse_url($url); $cq = $u['path'] . (isset($u['query']) ? '?' . $u['query'] : '');
+  $base = $h['x-dash-ts'] . "\n" . $h['x-dash-nonce'] . "\n" . $m . "\n" . $cq . "\n" . hash('sha256', $corpo);
+  return hash_equals(hash_hmac('sha256', $base, trim((string) file_get_contents($seg))), $h['x-dash-sig'] ?? '') && ctype_digit($h['x-dash-ts']) && abs(time() - (int) $h['x-dash-ts']) < 5 && strlen($h['x-dash-nonce']) >= 24;
+};
+$recebido = null;
+$appVerifica = function (string $m, string $url, array $cab, string $corpo, int $t) use ($verifica, &$recebido, $rec) {
+  $recebido = ['ok' => $verifica($m, $url, $cab, $corpo), 'corpo' => $corpo, 'm' => $m, 'cab' => $cab];
+  return ['status' => $recebido['ok'] ? 201 : 401, 'corpo' => $recebido['ok'] ? json_encode(['desfecho' => 'aplicada', 'recibo' => $rec]) : '{}', 'tipo' => 'application/json', 'erro' => null];
+};
+$cv = new FotosCanal(new FotosAppCliente(3100, $seg, $appVerifica), 75);
+$cv->publicar(550, $CH, $JPG);
+$ok('100 publicar: o app recalcula o HMAC (ts, nonce, método, caminho+query, sha256 do corpo) e confere', $recebido['ok'] === true);
+$ok('100 publicar: corpo recebido = bytes enviados (byte a byte)', $recebido['corpo'] === $JPG && $recebido['m'] === 'POST' && in_array('Content-Type: application/octet-stream', $recebido['cab'], true));
+$cv->capa(812, $CH, 7);
+$ok('100 capa (POST sem corpo): assinatura confere com sha256("")', $recebido['ok'] === true && $recebido['corpo'] === '');
+$cv2 = new FotosCanal(new FotosAppCliente(3100, $seg, function ($m, $url, $cab, $corpo, $t) use ($verifica, &$recebido) { $cab2 = array_map(fn($c) => str_starts_with($c, 'X-Dash-Sig: ') ? 'X-Dash-Sig: ' . str_repeat('0', 64) : $c, $cab);
+  $recebido = ['ok' => $verifica($m, $url, $cab2, $corpo)]; return ['status' => 401, 'corpo' => '{"error":{"code":"assinatura_invalida","message":"x"}}', 'tipo' => 'application/json', 'erro' => null]; }), 75);
+$e = $erro(fn() => $cv2->publicar(550, $CH, $JPG));
+$ok('100 assinatura adulterada não confere no app; 401 do app → 503 recusada (nada gravado)', $recebido['ok'] === false && $e && $e->http === 503 && $e->meta['desfecho'] === 'recusada' && $e->meta['gravado'] === false);
+
+// timeout em todas as escritas → desconhecido com a MESMA chave; leitura → 503 sem desfecho
+foreach (['capa' => fn($c) => $c->capa(812, $CH, 7), 'ordem' => fn($c) => $c->ordem(550, $CH, 7, [1, 2]), 'remover' => fn($c) => $c->remover(812, $CH, 7), 'restaurar' => fn($c) => $c->restaurar(812, $CH, 7)] as $op => $fn) {
+  $e = $erro(fn() => $fn($canal(['erro' => 'timeout'])));
+  $ok("100 timeout em $op → 504 desconhecido, mesma chave", $e && $e->http === 504 && $e->meta['desfecho'] === 'desconhecido' && $e->meta['chave'] === $CH);
+}
+$e = $erro(fn() => $canal(['erro' => 'timeout'])->galeria(550));
+$ok('100 timeout na leitura → 503 APP_UNAVAILABLE sem desfecho de escrita', $e && $e->http === 503 && !isset($e->meta['desfecho']));
+$e = $erro(fn() => $canal(['erro' => 'timeout'])->conferir($CH));
+$ok('100 timeout no conferir → 503 (o conferir nunca vira "desconhecido de escrita")', $e && $e->http === 503 && !isset($e->meta['desfecho']));
+
+// 401 / 403 / 409 / 422 / 503 do app
+$env = fn(int $st, string $code, string $des) => ['status' => $st, 'corpo' => json_encode(['error' => ['code' => $code, 'message' => "msg $code"], 'desfecho' => $des, 'gravado' => $des === 'desconhecido' ? null : false])];
+$e = $erro(fn() => $canal(['status' => 401, 'corpo' => '{"error":{"code":"assinatura_invalida"}}'])->galeria(550));
+$ok('100 leitura: 401 do app → 503 APP_UNAVAILABLE', $e && $e->http === 503 && $e->codigo === 'APP_UNAVAILABLE');
+$e = $erro(fn() => $canal($env(403, 'sem_permissao', 'recusada'))->remover(812, $CH, 7));
+$ok('100 escrita: 403 do app → 403 recusada, gravado false', $e && $e->http === 403 && $e->codigo === 'SEM_PERMISSAO' && $e->meta['desfecho'] === 'recusada' && $e->meta['gravado'] === false);
+$e = $erro(fn() => $canal($env(409, 'photo_limit', 'conflito'))->publicar(550, $CH, $JPG));
+$ok('100 escrita: 409 photo_limit → conflito', $e && $e->http === 409 && $e->meta['desfecho'] === 'conflito');
+$e = $erro(fn() => $canal($env(422, 'invalid_image', 'recusada'))->publicar(550, $CH, $JPG));
+$ok('100 escrita: 422 → recusada com a mensagem do app', $e && $e->http === 422 && $e->getMessage() === 'msg invalid_image');
+$e = $erro(fn() => $canal($env(503, 'indisponivel', 'desconhecido'))->restaurar(812, $CH, 7));
+$ok('100 escrita: 503 do app → desconhecido (pode ter gravado), mesma chave', $e && $e->meta['desfecho'] === 'desconhecido' && $e->meta['chave'] === $CH);
+$e = $erro(fn() => $canal(['status' => 503, 'corpo' => ''])->galeria(550));
+$ok('100 leitura: 503 do app → 503 APP_UNAVAILABLE', $e && $e->http === 503);
+$e = $erro(fn() => $canal([])->ordem(550, $CH, 7, range(1, 101)));
+$ok('100 ordem com 101 IDs → 422, nada enviado (limite do app = 100)', $e && $e->http === 422 && FotosCanal::MAX_ORDEM === 100);
+$ult = null; $canal(['status' => 200, 'corpo' => json_encode(['desfecho' => 'aplicada', 'recibo' => array_merge($rec, ['operacao' => 'ordem', 'foto_id' => null])])])->ordem(550, $CH, 7, range(1, 100));
+$ok('100 ordem com exatamente 100 IDs passa', $ult !== null);
+
+// GET de recibo (conferir) sem efeito: só GET, corpo vazio, nenhum request_id de escrita
+$ult = null; $canal(['status' => 200, 'corpo' => json_encode(['estado' => 'aplicada', 'operacao' => 'publicar', 'desfecho' => 'aplicada', 'recibo' => $rec])])->conferir($CH);
+$ok('100 conferir = GET sem corpo, sem request_id (não reexecuta)', $ult['m'] === 'GET' && $ult['corpo'] === '' && !str_contains($ult['url'], 'request_id='));
+
+// nenhum vazamento do segredo: em nenhuma URL, cabeçalho, mensagem ou meta de erro, nem nas respostas
+$segredo = trim((string) file_get_contents($seg)); $vaz = [];
+$capt = function (string $m, string $url, array $cab, string $corpo, int $t) use (&$vaz, $segredo) { if (str_contains($url . implode("\n", $cab) . $corpo, $segredo)) $vaz[] = $url; return ['status' => 500, 'corpo' => '', 'tipo' => '', 'erro' => null]; };
+$cs = new FotosCanal(new FotosAppCliente(3100, $seg, $capt), 75);
+$saidas = [];
+foreach ([fn() => $cs->publicar(550, $CH, $JPG), fn() => $cs->capa(1, $CH, 1), fn() => $cs->galeria(1), fn() => $cs->conferir($CH), fn() => $cs->imagem(1, 256, false, null)] as $fn) { $x = $erro($fn); $saidas[] = $x ? json_encode([$x->getMessage(), $x->meta, $x->codigo]) : ''; }
+$ok('100 segredo nunca sai em URL/cabeçalho/corpo para o app nem em mensagem/meta de erro', $vaz === [] && !str_contains(implode('', $saidas), $segredo));
+$ok('100 segredo nunca é logado pelo cliente (código não passa o segredo ao error_log)', !preg_match('/error_log\([^;]*\$s(egredo)?\b/', (string) file_get_contents(__DIR__ . '/../../../api/midia/FotosAppCliente.php')));
+
 foreach ([$seg, $vazio, $aberto] as $x) @unlink($x);
 echo ($f ? '[ERRO]' : '[OK]  ') . " fotos-canal (proxy de fotos do Dash, transporte falso): $n casos, $f falha(s)\n";
 exit($f ? 1 : 0);

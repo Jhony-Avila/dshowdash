@@ -20,10 +20,10 @@ require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../feature-flags/resolver.php';
 require_once __DIR__ . '/FotosAppCliente.php';
 require_once __DIR__ . '/FotosCanal.php';
+require_once __DIR__ . '/FotosPortas.php';
 
 const MD_FLAG = 'panel_atributos_enabled';
 const MD_FLAG_ESCRITA = 'panel_atributos_escrita';
-const MD_DESLIGADO = ['not_found', 'disabled', 'not_started', 'expired', 'environment_mismatch'];
 
 function mdFlag(array $f): bool
 {
@@ -46,7 +46,7 @@ try {
     $resolver = new FeatureFlagResolver(getConnection('DSHOWDASH'));
     $pre = $resolver->resolve(MD_FLAG, null);
     mdFlag($pre);
-    if (in_array((string) $pre['source'], MD_DESLIGADO, true)) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
+    if ($p = FotosPortas::antesDaSessao((string) $pre['source'])) ApiResponse::error($p[1], $p[0]);
 } catch (Throwable $e) {
     error_log('[midia] ' . get_class($e) . ': ' . $e->getMessage());
     ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Erro interno.']);
@@ -56,14 +56,14 @@ $user = AuthHelpers::requireAuth();
 $uid = (int) ($user['id'] ?? 0);
 $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $rota = (string) ($_GET['r'] ?? '');
-$ROTAS = ['GET' => ['galeria', 'imagem', 'conferir'], 'POST' => ['publicar', 'capa', 'ordem', 'remover', 'restaurar']];
-if (!in_array($rota, $ROTAS[$metodo] ?? [], true)) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
+if (!in_array($rota, FotosPortas::ROTAS[$metodo] ?? [], true)) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
 
 try {
-    if (!mdFlag($resolver->resolve(MD_FLAG, $uid))) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
-    if ($metodo === 'POST' && !mdFlag($resolver->resolve(MD_FLAG_ESCRITA, $uid))) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
+    $flagPessoa = mdFlag($resolver->resolve(MD_FLAG, $uid));
+    $flagEscrita = $metodo === 'POST' ? mdFlag($resolver->resolve(MD_FLAG_ESCRITA, $uid)) : false;
+    if ($p = FotosPortas::rotaEFlags($metodo, $rota, $flagPessoa, $flagEscrita)) ApiResponse::error($p[1], $p[0]);
     AuthHelpers::requireCsrfForWrite();
-    if (!FotosPermissoes::publica($uid)) ApiResponse::error(ApiResponse::ERR_NOT_AUTHORIZED, 403, ['message' => 'Você não tem permissão para gerenciar as fotos.', 'desfecho' => 'recusada']);
+    if (FotosPortas::publicador($uid)) ApiResponse::error(ApiResponse::ERR_NOT_AUTHORIZED, 403, ['message' => 'Você não tem permissão para gerenciar as fotos.', 'desfecho' => 'recusada']);
 
     $porta = getenv('DSHOW_FOTOS_APP_PORTA');
     $canal = new FotosCanal(new FotosAppCliente(is_string($porta) && ctype_digit($porta) ? (int) $porta : null), $uid);

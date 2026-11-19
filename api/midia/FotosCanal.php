@@ -46,6 +46,7 @@ final class FotosCanal
 {
     public const MAX_BYTES = 15 * 1024 * 1024;   // o mesmo teto do app (15 MB)
     public const TAMANHOS = [256, 768, 1536, 2048];
+    public const MAX_ORDEM = 100;                 // o limite do app (DSHOW-100)
     private const OPERACOES = ['publicar', 'capa', 'ordem', 'remover', 'restaurar'];
 
     public function __construct(private readonly FotosAppCliente $app, private readonly int $userId) {}
@@ -133,7 +134,7 @@ final class FotosCanal
     public function ordem(int $produtoId, string $chave, int $versao, array $ordem): array
     {
         $ids = array_values(array_unique(array_map('intval', $ordem)));
-        if (!$ids || count($ids) !== count($ordem) || min($ids) <= 0 || count($ids) > 200) throw new FotosErro('VALIDATION_ERROR', 422, 'Ordem inválida.', ['desfecho' => 'recusada', 'campos' => ['ordem']]);
+        if (!$ids || count($ids) !== count($ordem) || min($ids) <= 0 || count($ids) > self::MAX_ORDEM) throw new FotosErro('VALIDATION_ERROR', 422, 'Ordem inválida.', ['desfecho' => 'recusada', 'campos' => ['ordem']]);
         return $this->escrita('ordem', '/products/' . self::id($produtoId) . '/media/order', $this->q(self::chave($chave), $versao) + ['ordem' => implode(',', $ids)], '', $chave);
     }
 
@@ -178,6 +179,9 @@ final class FotosCanal
             return ['desfecho' => $des, 'recibo' => $rec, 'repetido' => !empty($r['replay'])];
         }
         $env = is_array($j) ? $j : [];
+        if ($r['status'] === 401) {   // o app recusou a ASSINATURA (segredo diferente/ausente lá): nada foi gravado; é configuração do canal
+            throw new FotosErro('APP_UNAVAILABLE', 503, 'O app de fotos recusou a assinatura do canal. Nada foi gravado.', ['desfecho' => 'recusada', 'gravado' => false, 'chave' => $chave]);
+        }
         $des = (string) ($env['desfecho'] ?? '');
         $msg = (string) ($env['error']['message'] ?? '');
         $codigo = (string) ($env['error']['code'] ?? '');
@@ -213,6 +217,7 @@ final class FotosCanal
     {
         $msg = is_array($j) ? (string) ($j['error']['message'] ?? '') : '';
         return match (true) {
+            $status === 401 => new FotosErro('APP_UNAVAILABLE', 503, 'O app de fotos recusou a assinatura do canal.'),
             $status === 403 => new FotosErro('NOT_AUTHORIZED', 403, $msg ?: 'Você não tem permissão para gerenciar as fotos.'),
             $status === 404 => new FotosErro('NOT_FOUND', 404, $msg ?: 'Não encontrado.'),
             $status === 429 => new FotosErro('RATE_LIMITED', 429, $msg ?: 'Muitos pedidos seguidos. Espere um pouco.'),

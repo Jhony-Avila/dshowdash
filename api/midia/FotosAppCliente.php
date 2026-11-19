@@ -88,7 +88,7 @@ final class FotosAppCliente
      */
     public function pedir(string $metodo, string $caminho, array $query, string $corpo = '', string $tipo = 'application/octet-stream', ?int $agora = null, ?string $seNaoBater = null): array
     {
-        if (!preg_match('#^/[A-Za-z0-9/_-]{1,200}$#', $caminho)) {
+        if (!preg_match('#^(/[A-Za-z0-9_-]{1,64}){1,8}$#', $caminho)) {   // segmentos não vazios (sem //, ., ?, #)
             throw new InvalidArgumentException('caminho inválido');
         }
         $segredo = self::segredo($this->caminhoSegredo);
