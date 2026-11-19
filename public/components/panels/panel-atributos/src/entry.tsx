@@ -7,6 +7,7 @@
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { App } from './app/App';
+import { restaurarShell } from './lib/shellSticky';
 import '../../../_shared-react/styles/tokens.css';
 import './styles/modulo.css';
 
@@ -63,6 +64,9 @@ export async function unmountReact() {
       console.warn(`[${MODULE_ID}] unmount ignorado (container já limpo):`, e);
     }
   }
+  // UX-1b: devolve o overflow original dos elementos do shell (lib/shellSticky.ts) em QUALQUER desmontagem — mesmo se o unmount do React
+  // falhou acima. O efeito do App já restaura; aqui é a garantia.
+  restaurarShell();
   if (_hospedeiro && _hospedeiro.parentNode) {
     _hospedeiro.parentNode.removeChild(_hospedeiro);
   }

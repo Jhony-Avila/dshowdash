@@ -13,6 +13,7 @@ import { Dicionario } from '../screens/Dicionario';
 import { Unidades } from '../screens/Unidades';
 import { Conferencia } from '../screens/Conferencia';
 import { Icone, ICONE_ABA } from '../ui/Icones';
+import { liberarSticky, restaurarShell } from '../lib/shellSticky';
 
 /** UX-1b: título e descrição de cada tela (mapa ÚNICO; as telas não desenham mais o próprio título/descrição). Na ficha: "Produtos", sem descrição. */
 export const TELAS: Record<Aba, { titulo: string; descricao: string }> = {
@@ -55,21 +56,17 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
   const [roladorEl, setRoladorEl] = React.useState<Element | null>(null);
   React.useEffect(() => {
     const r = raiz.current; if (!r) return;
-    const trocados: [HTMLElement, string][] = [];
     const aoRolar = (ev: Event) => {
       const t = ev.target === document ? document.scrollingElement : ev.target;
       if (!(t instanceof Element) || !t.contains(r)) return;   // rolagem de dentro do módulo (carrossel, tabela larga): não é a página
       window.removeEventListener('scroll', aoRolar, true);
       rolador.current = t; setRoladorEl(t);
-      for (let e = r.parentElement; e && e !== t; e = e.parentElement) {
-        const c = getComputedStyle(e);
-        if (!/^(visible|clip)$/.test(c.overflowY) || !/^(visible|clip)$/.test(c.overflowX)) { trocados.push([e, e.style.overflow]); e.style.overflow = 'clip'; }
-      }
+      liberarSticky(r, t);   // lib/shellSticky.ts: só os intermediários; restaurado ao desmontar
     };
     window.addEventListener('scroll', aoRolar, true);
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (fixo.current) r.style.setProperty('--at-topo-fixo', `${fixo.current.offsetHeight}px`); });
     if (ro && fixo.current) ro.observe(fixo.current);
-    return () => { window.removeEventListener('scroll', aoRolar, true); ro?.disconnect(); for (const [e, v] of trocados) e.style.overflow = v; };
+    return () => { window.removeEventListener('scroll', aoRolar, true); ro?.disconnect(); restaurarShell(); };
   }, []);
   const topo = () => { const t = rolador.current; if (t) t.scrollTo({ top: 0 }); };
   const raiz = React.useRef<HTMLDivElement>(null);

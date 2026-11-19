@@ -172,7 +172,7 @@ export function Dicionario() {
         </Vazio>
       ) : (
         <div className="at-dic-moldura">
-          <TabelaDados className="at-dic-tabela" legenda="Atributos do dicionário" colunas={COLUNAS} linhas={filtrados} chaveLinha={(a) => a.id}
+          <TabelaDados rolagem="container" className="at-dic-tabela" legenda="Atributos do dicionário" colunas={COLUNAS} linhas={filtrados} chaveLinha={(a) => a.id}
             ordenacao={ordenacao} aoOrdenar={setOrdenacao} aoClicarLinha={(a) => abrir(a.id)} rotuloLinha={(a) => `Abrir ${a.rotulo}`}
             classeLinha={(a) => (ligado(a.ativo) ? undefined : 'at-linha--inativa')} />
         </div>

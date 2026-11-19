@@ -21,8 +21,8 @@ const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } e
   // título e sub-abas
   const cab = await pg.evaluate(() => ({ h1: document.querySelector('.at-cabecalho h1')?.textContent, p: !!document.querySelector('.at-cabecalho p'), icones: document.querySelectorAll('.at-abas--icones button svg.at-icone').length }));
   afirma('ficha: título do módulo "Produtos", SEM descrição; 5 sub-abas com ícone', cab.h1 === 'Produtos' && !cab.p && cab.icones === 5, JSON.stringify(cab));
-  const fixos = await pg.evaluate(() => { const f = document.querySelector('.at-fixo'); return ['.at-ficha__topo', '.at-heroi-fixo', '.at-abas--icones', '.at-ficha__filtros'].map((s) => !!f.querySelector(s)); });
-  afirma('área fixa contém: topo (← Produtos), bloco do produto, sub-abas e filtros', fixos.every(Boolean), JSON.stringify(fixos));
+  const fixos = await pg.evaluate(() => { const f = document.querySelector('.at-fixo'); return { faixa: !!f.querySelector('.at-ficha__faixa'), abas: !!f.querySelector('.at-abas--icones'), filtros: !!f.querySelector('.at-ficha__filtros'), heroiFora: !f.querySelector('.at-heroi') && !!document.querySelector('.at-heroi') }; });
+  afirma('bloco fixo contém: faixa do produto (← Produtos), sub-abas e filtros; o bloco grande do produto fica FORA (rola com a página)', fixos.faixa && fixos.abas && fixos.filtros && fixos.heroiFora, JSON.stringify(fixos));
   await pg.screenshot({ path: `${CAP}/depois-ficha-topo-claro.png` });
 
   // rolar a PÁGINA (roda do mouse): a faixa do produto + sub-abas + filtros ficam parados no topo; o bloco grande sai de vista;
@@ -37,7 +37,8 @@ const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } e
   afirma('o bloco grande do produto saiu de vista (rolou com a página); a faixa fina tem ← Produtos, miniatura, nome, ID, 2 barras e Detalhes', rol.heroiBase !== undefined && rol.heroiBase <= rol.fixoBase
     && await pg.evaluate(() => { const c = document.querySelector('.at-ficha__faixa'); return !!c && /← Produtos/.test(c.textContent) && !!c.querySelector('.at-heroi-compacto__foto') && !!c.querySelector('.at-heroi-compacto__nome') && /ID/.test(c.textContent) && c.querySelectorAll('.at-heroi-compacto__barras > *').length === 2 && /Detalhes/.test(c.textContent); }), JSON.stringify(rol));
   await pg.screenshot({ path: `${CAP}/depois-ficha-rolada-claro.png` });
-  await pg.evaluate(() => { const m = document.querySelector('main#main'); if (m) m.scrollTop = 0; }); await pg.waitForTimeout(400);
+  await pg.evaluate(() => { const m = document.querySelector('main#main'); if (m) m.scrollTo({ top: 0, behavior: 'instant' }); });
+  for (let k = 0; k < 30 && (await pg.evaluate(() => document.querySelector('main#main')?.scrollTop ?? 0)) > 0; k++) await pg.waitForTimeout(100);
   afirma('de volta ao topo: o bloco grande do produto aparece de novo', await pg.evaluate(() => { const h = document.querySelector('.at-heroi-fixo').getBoundingClientRect(); const f = document.querySelector('.at-fixo').getBoundingClientRect(); return h.top >= f.bottom - 1; }));
 
   // ordenação: dentro de cada grupo (grupos na mesma ordem); "Todos juntos" = lista inteira
@@ -91,7 +92,7 @@ const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } e
   const semFoto = (await api('GET', 'vitrine')).j.data.produtos.find((x) => x.ativo && x.fotos === 0);
   if (semFoto) { await ir(`#/panel-atributos/produto/${semFoto.id}`, '.at-heroi'); afirma(`produto sem fotos (${semFoto.id}): o carrossel não aparece`, !(await pg.$('.at-carrossel'))); }
   // diálogo "Detalhes" também por cima do shell
-  await ir(`#/panel-atributos/produto/${P}`, '.at-ficha__topo'); await pg.click('.at-ficha__topo button:has-text("Detalhes")'); await pg.waitForSelector('.at-portal-modal [role="dialog"]');
+  await ir(`#/panel-atributos/produto/${P}`, '.at-ficha__faixa'); await pg.click('.at-ficha__faixa button:has-text("Detalhes")'); await pg.waitForSelector('.at-portal-modal [role="dialog"]');
   const det = await pg.evaluate(() => { const d = document.querySelector('.at-portal-modal [role="dialog"]'); const r = d.querySelector('.at-modal__cabeca').getBoundingClientRect(); return d.contains(document.elementFromPoint(r.left + 20, r.top + r.height / 2)) && r.top >= 0; });
   afirma('diálogo "Detalhes" inteiro visível, por cima da barra do shell', det); await pg.keyboard.press('Escape');
 
