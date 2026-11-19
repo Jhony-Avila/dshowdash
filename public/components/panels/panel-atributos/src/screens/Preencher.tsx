@@ -3,7 +3,8 @@
 // e "Aceitar todas desta coluna" (só com confirmação). Primeiras colunas fixas.
 import React from 'react';
 import type { Ficha, ItemFicha, KitResumo, Vitrine } from '../lib/tipos';
-import { enviar, ErroApi, obter } from '../lib/api';
+import { conferirGravacao, enviar, enviarLoteSugestoes, ErroApi, MSG_DESCONHECIDO, novaIntencaoLote, obter, resumoDaConferencia, resumoDoErroLote, resumoDoLote, type IntencaoLote, type ResumoLote } from '../lib/api';
+import { marcarPendencia } from '../lib/pendencias';
 import { sugestaoTexto } from '../lib/formatar';
 import { rotuloSubcategoria, IMPORTANCIA } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
@@ -30,6 +31,10 @@ export function Preencher() {
   const [carregando, setCarregando] = React.useState(false);
   const [aceitarCol, setAceitarCol] = React.useState<{ id: number; rotulo: string; ids: number[] } | null>(null);
   const [trab, setTrab] = React.useState(false);
+  // DSHOW-096: aceitar a coluna em LOTE com chave por intenção (gerada ao confirmar; corpo e IDs congelados; a mesma chave em todo reenvio).
+  type FaseLote = 'confirmar' | 'enviando' | 'concluido' | 'desconhecido' | 'conferindo' | 'em_andamento' | 'interrompida' | 'nao_encontrada' | 'recusada';
+  const [lote, setLote] = React.useState<{ fase: FaseLote; intencao: IntencaoLote | null; resumo: ResumoLote | null; msg: string | null; reenvioSeguro: boolean }>({ fase: 'confirmar', intencao: null, resumo: null, msg: null, reenvioSeguro: false });
+  const geracaoLote = React.useRef(0);   // cada abertura/fechamento do diálogo = nova geração: resposta antiga não mexe no diálogo nem na grade novos
   const tabela = React.useRef<HTMLTableElement>(null);
   const seqGrade = React.useRef(0);                              // trocar de kit no meio da carga: só a última grade vale
   const seqLinha = React.useRef<Record<number, number>>({});    // recarga de linha fora de ordem: só a mais recente vale
@@ -92,11 +97,43 @@ export function Preencher() {
     const td = el.closest('td[data-l]') as HTMLElement | null; if (!td) return;
     e.preventDefault(); focar(Number(td.dataset.l) + (e.key === 'ArrowUp' ? -1 : 1), td.dataset.c ?? '');
   };
+  const abrirLote = (x: { id: number; rotulo: string; ids: number[] }) => { geracaoLote.current++; setTrab(false); setLote({ fase: 'confirmar', intencao: null, resumo: null, msg: null, reenvioSeguro: false }); setAceitarCol(x); };
+  const fecharLote = () => { geracaoLote.current++; setTrab(false); if (lote.intencao) marcarPendencia(lote.intencao.chave, false); setAceitarCol(null); };
+  const terminar = (i: IntencaoLote, g: number, resumo: ResumoLote | null) => {
+    marcarPendencia(i.chave, false); if (g !== geracaoLote.current) return;
+    setLote((l) => ({ ...l, fase: 'concluido', resumo, msg: null }));
+    if (resumo) m.aviso(`${resumo.aceitas.length} sugestão(ões) aceita(s)${resumo.rejeitadas.length ? `; ${resumo.rejeitadas.length} rejeitada(s)` : ''}${resumo.ignoradas.length ? `; ${resumo.ignoradas.length} ignorada(s)` : ''}.`, resumo.rejeitadas.length ? 'info' : 'sucesso');
+    carregarFichas(true);
+  };
+  /** Envia (1ª vez: cria a intenção) ou RETOMA com a MESMA intenção. */
   const confirmarColuna = async () => {
-    if (!aceitarCol) return; setTrab(true);
-    try { const r = await enviar<{ aceitas: number; falhas: { id: number; erro: string }[] }>('sugestoes_lote', { ids: aceitarCol.ids, confirmar: true });
-      m.aviso(`${r.aceitas} sugestão(ões) aceitas${r.falhas.length ? `; ${r.falhas.length} com erro` : ''}.`, r.falhas.length ? 'info' : 'sucesso'); setAceitarCol(null); carregarFichas(true); }
-    catch (e) { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(false); }
+    if (!aceitarCol || trab) return;
+    const g = geracaoLote.current; const i = lote.intencao ?? novaIntencaoLote(aceitarCol.ids);
+    marcarPendencia(i.chave, true); setTrab(true); setLote((l) => ({ ...l, fase: 'enviando', intencao: i, msg: null }));
+    try { const r = await enviarLoteSugestoes(i); terminar(i, g, resumoDoLote(r)); }
+    catch (e) {
+      if (g !== geracaoLote.current) return;
+      const er = e instanceof ErroApi ? e : null;
+      if (er?.interrompida) setLote((l) => ({ ...l, fase: 'interrompida', resumo: resumoDoErroLote(er, i.ids), msg: null }));
+      else if (er?.emAndamento) setLote((l) => ({ ...l, fase: 'em_andamento', resumo: resumoDoErroLote(er, i.ids), msg: null, reenvioSeguro: false }));
+      else if (er && (er.recusada || er.conflito)) { marcarPendencia(i.chave, false); setLote((l) => ({ ...l, fase: 'recusada', intencao: null, msg: er.message })); }
+      else setLote((l) => ({ ...l, fase: 'desconhecido', msg: null }));   // resposta perdida, 5xx, 2xx sem recibo: NUNCA "salvo" nem "não salvo"
+    } finally { if (g === geracaoLote.current) setTrab(false); }
+  };
+  /** Conferir gravação: só GET; nada é reenviado. */
+  const conferirLote = async () => {
+    const i = lote.intencao; if (!i || trab) return; const g = geracaoLote.current;
+    setTrab(true); setLote((l) => ({ ...l, fase: 'conferindo' }));
+    try {
+      const c = await conferirGravacao(i.chave); if (g !== geracaoLote.current) return;
+      const resumo = resumoDaConferencia(c, i.ids);
+      if (c.resultado === 'aplicada' || c.resultado === 'sem_mudanca') terminar(i, g, resumo);
+      else if (c.resultado === 'interrompida') setLote((l) => ({ ...l, fase: 'interrompida', resumo }));
+      else if (c.resultado === 'em_andamento') setLote((l) => ({ ...l, fase: 'em_andamento', resumo, reenvioSeguro: !!c.reenvio_seguro }));
+      else if (c.resultado === 'nao_aplicada') { marcarPendencia(i.chave, false); setLote((l) => ({ ...l, fase: 'recusada', intencao: null, msg: c.erro?.mensagem ?? 'O servidor recusou o pedido. Nada foi salvo.' })); }
+      else setLote((l) => ({ ...l, fase: 'nao_encontrada', resumo: null }));
+    } catch { if (g === geracaoLote.current) setLote((l) => ({ ...l, fase: 'desconhecido', msg: 'Não foi possível conferir agora. Tente de novo.' })); }
+    finally { if (g === geracaoLote.current) setTrab(false); }
   };
 
   if (erro) return <Erro mensagem={erro} aoTentar={carregarBase} />;
@@ -136,7 +173,7 @@ export function Preencher() {
                   const rotImp = obrigTodos ? IMPORTANCIA.obrigatorio : impNaoObrig && impNaoObrig !== 'obrigatorio' ? IMPORTANCIA[impNaoObrig] : null;
                   return (<th key={c.id}><div className="at-grade-col"><span>{c.rotulo}</span>
                     {rotImp && <span className={`at-imp ${obrigTodos ? 'at-imp--forte' : 'at-imp--fraca'}`}>{rotImp}</span>}
-                    {ids.length > 0 && fichas[0]?.pode_editar && <button type="button" className="at-link" onClick={() => setAceitarCol({ id: c.id, rotulo: c.rotulo, ids })}>aceitar {ids.length} sugest{ids.length === 1 ? 'ão' : 'ões'}</button>}</div></th>);
+                    {ids.length > 0 && fichas[0]?.pode_editar && <button type="button" className="at-link" onClick={() => abrirLote({ id: c.id, rotulo: c.rotulo, ids })}>aceitar {ids.length} sugest{ids.length === 1 ? 'ão' : 'ões'}</button>}</div></th>);
                 })}
               </tr></thead>
               <tbody>{fichas.map((f, l) => (
@@ -153,9 +190,27 @@ export function Preencher() {
                 </tr>))}</tbody>
             </table>
           </div></>)}
-      <Dialogo titulo={`Aceitar todas as sugestões de "${aceitarCol?.rotulo ?? ''}"?`} aberto={aceitarCol !== null} aoFechar={() => setAceitarCol(null)}
-        rodape={<><Botao aoClicar={() => setAceitarCol(null)}>Cancelar</Botao><Botao primario trabalhando={trab} aoClicar={confirmarColuna}>Aceitar {aceitarCol?.ids.length}</Botao></>}>
-        <p>Cada sugestão vira valor <strong>manual</strong> deste campo, com histórico. Valores já preenchidos à mão não são afetados (só células vazias têm sugestão).</p>
+      <Dialogo titulo={`Aceitar todas as sugestões de "${aceitarCol?.rotulo ?? ''}"?`} aberto={aceitarCol !== null} aoFechar={fecharLote}
+        rodape={<>
+          <Botao aoClicar={fecharLote}>{lote.fase === 'confirmar' ? 'Cancelar' : 'Fechar'}</Botao>
+          {lote.fase === 'confirmar' && <Botao primario trabalhando={trab} aoClicar={confirmarColuna}>Aceitar {aceitarCol?.ids.length}</Botao>}
+          {(lote.fase === 'desconhecido' || lote.fase === 'em_andamento' || lote.fase === 'conferindo') && <Botao primario={lote.fase !== 'em_andamento' || !lote.reenvioSeguro} trabalhando={lote.fase === 'conferindo'} aoClicar={conferirLote}>Conferir gravação</Botao>}
+          {(lote.fase === 'interrompida' || lote.fase === 'nao_encontrada' || (lote.fase === 'em_andamento' && lote.reenvioSeguro)) && <Botao primario trabalhando={trab} aoClicar={confirmarColuna}>{lote.fase === 'nao_encontrada' ? 'Enviar de novo' : 'Retomar os pendentes'}</Botao>}
+        </>}>
+        <div data-at-lote={lote.fase} data-at-chave={lote.intencao?.chave ?? ''}>
+          {lote.fase === 'confirmar' && <p>Cada sugestão vira valor <strong>manual</strong> deste campo, com histórico. Valores já preenchidos à mão não são afetados (só células vazias têm sugestão).</p>}
+          <div role="status" aria-live="polite">
+            {lote.fase === 'enviando' && <p>Aceitando {lote.intencao?.ids.length} sugestões…</p>}
+            {lote.fase === 'conferindo' && <p>Conferindo no servidor…</p>}
+            {lote.fase === 'concluido' && <p className="at-salvo">Pronto. Confirmado pelo servidor.</p>}
+            {lote.fase === 'desconhecido' && <p className="at-salvo--aviso"><strong>{MSG_DESCONHECIDO}</strong> Nada será reenviado sem você pedir. Use “Conferir gravação”.{lote.msg ? ` ${lote.msg}` : ''}</p>}
+            {lote.fase === 'em_andamento' && <p className="at-salvo--aviso"><strong>Ainda em andamento no servidor.</strong> {lote.reenvioSeguro ? 'Está demorando; retomar com o mesmo pedido é seguro (nada é duplicado).' : 'Confira de novo em instantes.'}</p>}
+            {lote.fase === 'interrompida' && <p className="at-salvo--aviso"><strong>O lote parou no meio.</strong> As aceitas já estão salvas; as pendentes não. “Retomar os pendentes” reenvia o MESMO pedido: nada é duplicado.</p>}
+            {lote.fase === 'nao_encontrada' && <p className="at-salvo--aviso"><strong>O servidor não recebeu este pedido.</strong> Nada foi salvo. Você pode enviar de novo (o mesmo pedido).</p>}
+            {lote.fase === 'recusada' && <p className="at-alerta"><strong>Não foi salvo.</strong> {lote.msg}</p>}
+          </div>
+          {lote.resumo && <ResumoDoLote r={lote.resumo} />}
+        </div>
       </Dialogo>
     </div>);
 }
@@ -171,5 +226,17 @@ function CelulaGrade({ i, f, aoGravar, marcarObrigatorio = false, aoDescer }: { 
       {s && !i.valor && <span className="at-sugestao at-sugestao--cel" title={s.evidencia ?? ''}>Sugestão: {rot}
         {f.pode_editar && <> · <button type="button" className="at-link" onClick={() => enviar('sugestao', { id: s.id, versao: s.versao, decisao: 'aceitar' }).then(() => { m.aviso('Sugestão usada.'); aoGravar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Usar</button></>}</span>}
       {false && <ChipKit nome="" />}
+    </div>);
+}
+
+/** Desfecho POR ITEM do lote (aceitas · rejeitadas · ignoradas · pendentes). */
+function ResumoDoLote({ r }: { r: ResumoLote }) {
+  const lista = (xs: { id: number; motivo: string }[]) => xs.slice(0, 8).map((x) => <li key={x.id}>Sugestão {x.id}{x.motivo ? `: ${x.motivo}` : ''}</li>);
+  return (
+    <div className="at-lote-resumo" data-at-lote-resumo>
+      <p><strong data-n="aceitas">{r.aceitas.length}</strong> aceita(s) · <strong data-n="rejeitadas">{r.rejeitadas.length}</strong> rejeitada(s) · <strong data-n="ignoradas">{r.ignoradas.length}</strong> ignorada(s) · <strong data-n="pendentes">{r.pendentes.length}</strong> pendente(s)</p>
+      {r.rejeitadas.length > 0 && <><p className="at-fraco">Rejeitadas (continuam como sugestão):</p><ul>{lista(r.rejeitadas)}</ul></>}
+      {r.ignoradas.length > 0 && <><p className="at-fraco">Ignoradas:</p><ul>{lista(r.ignoradas)}</ul></>}
+      {r.pendentes.length > 0 && <p className="at-fraco">Pendentes (ainda não decididas): {r.pendentes.slice(0, 12).join(', ')}{r.pendentes.length > 12 ? '…' : ''}</p>}
     </div>);
 }
