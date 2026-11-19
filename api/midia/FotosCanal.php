@@ -235,7 +235,7 @@ final class FotosCanal
             return ['desfecho' => $des, 'recibo' => $rec, 'repetido' => !empty($r['replay'])];
         }
         $env = is_array($j) ? $j : [];
-        if ($r['status'] === 401) {   // o app recusou a ASSINATURA (segredo diferente/ausente lá): nada foi gravado; é configuração do canal
+        if (self::assinaturaRecusada($r['status'], $env)) {   // o app recusou a ASSINATURA (segredo diferente/ausente lá): nada foi gravado; é configuração do canal
             throw new FotosErro('APP_UNAVAILABLE', 503, 'O app de fotos recusou a assinatura do canal. Nada foi gravado.', ['desfecho' => 'recusada', 'gravado' => false, 'chave' => $chave]);
         }
         $des = (string) ($env['desfecho'] ?? '');
@@ -282,11 +282,21 @@ final class FotosCanal
         return new FotosErro('APP_UNAVAILABLE', 503, $erro === 'timeout' ? 'O app de fotos demorou para responder.' : 'O app de fotos não respondeu.', $escrita ? ['desfecho' => 'desconhecido'] : []);
     }
 
+    /**
+     * Integração DSHOW-100 §6 (19/11): o app responde **403 `assinatura_invalida`** quando a assinatura não confere (contrato
+     * fotos-navegador.md §6 / web-channel-routes.ts), não 401. Os dois são "o canal recusou a assinatura" — configuração, nada gravado —
+     * e NUNCA "sem permissão" do usuário.
+     */
+    private static function assinaturaRecusada(int $status, mixed $j): bool
+    {
+        return $status === 401 || ($status === 403 && is_array($j) && (($j['error']['code'] ?? null) === 'assinatura_invalida'));
+    }
+
     private static function erroLeitura(int $status, mixed $j): FotosErro
     {
         $msg = is_array($j) ? (string) ($j['error']['message'] ?? '') : '';
         return match (true) {
-            $status === 401 => new FotosErro('APP_UNAVAILABLE', 503, 'O app de fotos recusou a assinatura do canal.'),
+            self::assinaturaRecusada($status, $j) => new FotosErro('APP_UNAVAILABLE', 503, 'O app de fotos recusou a assinatura do canal.'),
             $status === 403 => new FotosErro('NOT_AUTHORIZED', 403, $msg ?: 'Você não tem permissão para gerenciar as fotos.'),
             $status === 404 => new FotosErro('NOT_FOUND', 404, $msg ?: 'Não encontrado.'),
             $status === 429 => new FotosErro('RATE_LIMITED', 429, $msg ?: 'Muitos pedidos seguidos. Espere um pouco.'),

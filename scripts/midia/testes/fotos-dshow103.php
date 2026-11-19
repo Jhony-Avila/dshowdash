@@ -227,6 +227,18 @@ $a->resp = fn($m, $url, $c) => ['status' => 409, 'corpo' => json_encode(['error'
 $r = $req($a, 'POST', ['r' => 'capa']);
 $ok('ea77d74 409 conflito continua gravado false + versao_atual', $r->http === 409 && $r->meta['gravado'] === false && $r->meta['versao_atual'] === 9);
 
+// ── integração (DSHOW-100 §6): o app recusa assinatura com 403 assinatura_invalida (não 401) ─────────────────────────────────
+$sig403 = fn($m, $url, $c) => ['status' => 403, 'corpo' => json_encode(['error' => ['code' => 'assinatura_invalida', 'message' => 'Acesso negado.'], 'desfecho' => 'recusada', 'gravado' => false]), 'tipo' => 'application/json', 'erro' => null];
+$a = $amb(); $a->corpoBytes = $JPG; $a->resp = $sig403;
+$r = $req($a, 'POST', ['r' => 'publicar', 'product_id' => '550'], ['tamanho' => (string) strlen($JPG)]);
+$ok('integração: escrita com 403 assinatura_invalida → 503 APP_UNAVAILABLE recusada, gravado false (canal, não permissão)', $r->http === 503 && $r->codigo === 'APP_UNAVAILABLE' && $r->meta['desfecho'] === 'recusada' && $r->meta['gravado'] === false, json_encode([$r->http, $r->codigo]));
+$a = $amb(); $a->resp = $sig403;
+$r = $req($a, 'GET', ['r' => 'galeria', 'product_id' => '550']);
+$ok('integração: leitura com 403 assinatura_invalida → 503 APP_UNAVAILABLE', $r->http === 503 && $r->codigo === 'APP_UNAVAILABLE');
+$a = $amb(); $a->corpoBytes = $JPG; $a->resp = fn($m, $url, $c) => ['status' => 403, 'corpo' => json_encode(['error' => ['code' => 'sem_permissao', 'message' => 'Sem permissão.'], 'desfecho' => 'recusada', 'gravado' => false]), 'tipo' => 'application/json', 'erro' => null];
+$r = $req($a, 'POST', ['r' => 'publicar', 'product_id' => '550'], ['tamanho' => (string) strlen($JPG)]);
+$ok('integração: 403 sem_permissao continua 403 recusada (permissão do usuário)', $r->http === 403 && $r->codigo === 'SEM_PERMISSAO');
+
 @unlink($seg);
 echo ($f ? '[ERRO]' : '[OK]  ') . " fotos-dshow103 (P1-1/2/3 + A–D + ea77d74, dependências falsas): $n casos, $f falha(s)\n";
 exit($f ? 1 : 0);
