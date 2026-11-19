@@ -85,7 +85,7 @@ Se o cliente ENVIOU chave e a consulta ao livro de recibos falhar por qualquer m
 - `nao_aplicada` significa que o pedido foi recusado, deu conflito ou falhou. Nada foi gravado, e `erro` traz o motivo.
 - `em_andamento` significa que o pedido ainda não concluiu. Nada foi gravado em rota de um item (recibo e gravação estão no mesmo COMMIT); no lote, `itens` diz o que já foi. Com 5 minutos ou mais sem sinal de vida vem `sinal: "pode_estar_demorando"` e `reenvio_seguro: true` — o prazo NÃO prova que morreu; reenviar a mesma chave é seguro (seção 4).
 - `interrompida` só existe no lote: a própria tentativa registrou que parou no meio (seção 10-B); os itens com desfecho estão gravados, os `pendente` não.
-- `nao_encontrada` cobre três casos: a chave nunca chegou ao servidor, é de outra pessoa ou a 011 está ausente.
+- `nao_encontrada` cobre dois casos: a chave nunca chegou ao servidor, ou é de outra pessoa. **Sem a 011** (ou com o livro de recibos fora por qualquer motivo), `conferir_gravacao` responde **503 `OPERATION_LEDGER_UNAVAILABLE`**, nunca `nao_encontrada` (seção 4-A), salvo chave de massa achada em `eq_pedido_massa`.
 - Para a massa (DSHOW-085), quando a chave não está em `eq_operacao`, a busca vai a `eq_pedido_massa`, conferida pelo titular. O resultado é `aplicada`, com `gravado` e `resumo`.
 
 ## 6. Gravado, mas a leitura seguinte falhou (DSHOW-090 e regra geral)
