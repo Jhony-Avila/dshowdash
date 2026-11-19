@@ -38,6 +38,7 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
   const [preencher, setPreencher] = React.useState<{ kit?: number; subcategoria?: string }>({});
   const [avisos, setAvisos] = React.useState<{ id: number; texto: string; tom: string }[]>([]);
   const [versao, setVersao] = React.useState(0);
+  const [anuncio, setAnuncio] = React.useState('');   // região role="status" ("foi salvo ou não", item 4)
   // UX-1b (refeito, 18/11 à noite): SEM cálculo de altura em JS. Quem rola é a PÁGINA (no shell: main#main). O bloco do topo
   // (título + abas + faixa fixa) é position: sticky; top: 0. O sticky só funciona se nenhum ancestral entre o módulo e o elemento que
   // rola for "contêiner de rolagem" (overflow ≠ visible/clip). Medido no harness: .dsd-container__body (auto) e #container-main
@@ -111,6 +112,7 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
     fecharProduto: () => setProduto(null),
     aviso: (texto, tom = 'sucesso') => { const id = Date.now() + Math.random(); setAvisos((a) => [...a, { id, texto, tom }]); window.setTimeout(() => setAvisos((a) => a.filter((x) => x.id !== id)), 4500); },
     faixaFixa: slot, rolador: roladorEl,
+    anunciar: (t) => { setAnuncio(''); window.setTimeout(() => setAnuncio(t), 30); },   // limpar antes faz o leitor repetir o mesmo texto
   }), [aba, produto, kit, filtro, selecao, preencher, versao, atributoFoco, intencaoVincular, slot, roladorEl]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   const tela = produto !== null ? <Ficha id={produto} />
@@ -135,6 +137,7 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
           <div className="at-faixa-fixa" ref={setSlot} />
         </div>
         <main className="at-conteudo">{tela}</main>
+        <div className="bl-so-leitor" role="status" aria-live="polite" aria-atomic="true" data-at-anuncio>{anuncio}</div>
         <div className="at-avisos" aria-live="polite">{avisos.map((a) => <div key={a.id} className={`at-aviso at-aviso--${a.tom}`}>{a.texto}</div>)}</div>
       </div>
     </Contexto.Provider>

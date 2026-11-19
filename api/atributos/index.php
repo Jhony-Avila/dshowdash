@@ -130,7 +130,9 @@ try {
     $svc = new AtributosService($repo, $nivel, $quem, $catalogo, $administra);
     $leitura = fn() => new ProdutosLeitura(new LeituraVitrinePdo($pdoEq, $schemaEq, $schemaCat), $repo, $nivel, atrDirMiniaturas(),   // P4: env (validação/sobreposição) ou padrão fixo; sem pasta → cor média
         ATR_ESCRITA_LIBERADA && eqFlagOuFalha($resolver->resolve(EQ_FLAG_ESCRITA, (int) ($user['id'] ?? 0))), $administra);
-    $kits = fn() => new KitsService($repo, $nivel, $quem, $catalogo, $administra);
+    $kits = fn() => new KitsService($repo, $nivel, $quem, $catalogo, $administra, (int) ($user['id'] ?? 0));   // DSHOW-086: titular estável
+    // "FOI SALVO OU NÃO" (docs/atributos/CONTRATO-FOI-SALVO.md): toda escrita passa por OperacoesGravacao (recibo, desfecho, chave de operação)
+    $operacoes = new OperacoesGravacao($repo, (int) ($user['id'] ?? 0), $quem, $nivel, $administra);   // DSHOW-093 D: porta antes do reenvio
     $sugestoes = fn() => new SugestoesService($repo, $svc, $administra ? $kits() : null, $nivel, $quem);
     $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $r = eqRota();
@@ -149,12 +151,14 @@ try {
         $corpo = $raw === '' || $raw === false ? [] : json_decode($raw, true);
         if (!is_array($corpo)) ApiResponse::error(ApiResponse::ERR_INVALID_JSON, 400);
     }
-    $out = match ("$metodo $r") {
+    $chaveOp = $metodo === 'POST' ? OperacoesGravacao::chaveDoPedido($corpo, isset($_SERVER['HTTP_X_CHAVE_OPERACAO']) ? (string) $_SERVER['HTTP_X_CHAVE_OPERACAO'] : null) : null;
+    $rotear = fn(array $corpo, ?LoteDaOperacao $lote = null) => match ("$metodo $r") {
         // ---- leitura (nível ≥ 50) ----
+        'GET conferir_gravacao' => $operacoes->conferir((string) ($_GET['chave'] ?? '')),   // SÓ leitura: resultado de uma operação pela chave
         'GET visao_geral' => $leitura()->visaoGeral(),
         'GET vitrine' => $leitura()->vitrine(),
         'GET ficha_produto' => $leitura()->fichaProduto((int) ($_GET['product_id'] ?? 0)),
-        'GET historico_produto' => $leitura()->historicoProduto((int) ($_GET['product_id'] ?? 0)),
+        'GET historico_produto' => $leitura()->historicoProduto((int) ($_GET['product_id'] ?? 0), isset($_GET['atributo_id']) && $_GET['atributo_id'] !== '' ? (int) $_GET['atributo_id'] : null),
         'GET kits' => $leitura()->kits(),
         'GET kit' => $leitura()->kit((int) ($_GET['id'] ?? 0)),
         'GET dicionario' => $leitura()->dicionario(),
@@ -196,19 +200,22 @@ try {
         'POST unidade_ativa' => $svc->definirUnidadeAtiva((int) ($corpo['id'] ?? 0), !empty($corpo['ativo'])),
         // ---- sugestões e conferência (nível ≥ 80) ----
         'POST sugestao' => $sugestoes()->decidir($corpo),
-        'POST sugestoes_lote' => $sugestoes()->aceitarLote($corpo),
+        'POST sugestoes_lote' => $sugestoes()->aceitarLote($corpo, $lote),   // P1-1: desfecho por item com chave
         // ---- legado da etapa 8 (mantidas) ----
         'POST grupo' => $svc->salvarGrupo($corpo),
         'POST grupo_ativo' => $svc->definirGrupoAtivo((int) ($corpo['id'] ?? 0), !empty($corpo['ativo']), (int) ($corpo['versao'] ?? 0)),
         'POST ficha_revisar' => $svc->revisarFicha($corpo),
         default => null,
     };
+    // massa_aplicar tem a PRÓPRIA chave (eq_pedido_massa, no corpo `chave`); as demais escritas usam a chave de operação genérica.
+    // massa_previa é POST mas NÃO grava: fica fora da camada (sem recibo — prévia nunca é "Salvo").
+    $out = $metodo === 'POST' && $r !== 'massa_previa' ? $operacoes->executar($r, $corpo, $r === 'massa_aplicar' ? null : $chaveOp, $rotear) : $rotear($corpo);
     if ($out === null) ApiResponse::error(ApiResponse::ERR_INVALID_ACTION, 400);
     ApiResponse::success($out);
 } catch (CatalogoIndisponivel $e) {
     ApiResponse::error('CATALOG_UNAVAILABLE', 503, ['message' => 'Catálogo de produtos indisponível.']);
 } catch (AtributosErro $e) {
-    ApiResponse::error($e->codigo, $e->http, ['message' => $e->getMessage()] + ($e->campos ? ['campos' => $e->campos] : []));
+    ApiResponse::error($e->codigo, $e->http, ['message' => $e->getMessage()] + ($e->campos ? ['campos' => $e->campos] : []) + $e->meta);
 } catch (Throwable $e) {
     error_log('[atributos] ' . get_class($e) . ': ' . $e->getMessage());
     ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500, ['message' => 'Erro interno.']);

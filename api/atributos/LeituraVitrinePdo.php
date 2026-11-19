@@ -199,6 +199,18 @@ final class LeituraVitrinePdo implements LeituraVitrine
             WHERE entidade IN ('valor', 'produto_kit', 'produto_atributo', 'sugestao') AND entidade_id LIKE ? ORDER BY id DESC LIMIT " . max(1, min(1000, $limite)), [$productId . ':%']);
     }
 
+    /**
+     * DSHOW-066: histórico de UM atributo do produto, filtrado no banco ANTES do limite: valor ("pid:aid:chave"), vínculo avulso/exceção
+     * ("pid:aid") e decisões de sugestão cujo destino é o atributo (depois.atributo_id). Vínculo de kit (produto_kit) não é de um atributo.
+     */
+    public function historicoDoAtributo(int $productId, int $atributoId, int $limite): array
+    {
+        return $this->q("SELECT id, usuario, acao, entidade, entidade_id, antes, depois, motivo, criado_em FROM " . $this->eq . "`eq_auditoria`
+            WHERE (entidade = 'valor' AND entidade_id LIKE ?) OR (entidade = 'produto_atributo' AND entidade_id = ?)
+               OR (entidade = 'sugestao' AND entidade_id LIKE ? AND JSON_EXTRACT(depois, '$.atributo_id') = ?)
+            ORDER BY id DESC LIMIT " . max(1, min(1000, $limite)), [$productId . ':' . $atributoId . ':%', $productId . ':' . $atributoId, $productId . ':%', $atributoId]);
+    }
+
     public function usoAtributos(): array
     {
         $out = [];

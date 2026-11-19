@@ -9,9 +9,23 @@ require_once __DIR__ . '/AtributosService.php';
 require_once __DIR__ . '/KitsService.php';
 require_once __DIR__ . '/SugestoesService.php';
 
-final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava
+final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava, OperacoesRepositorio
 {
     private string $p;
+    /** "FOI SALVO OU NÃO": ganchos executados DENTRO da transação, antes do COMMIT (recibo atômico com a gravação) e contador de COMMITs. */
+    private array $antesDoCommit = [];
+    private int $commits = 0;
+    /**
+     * DSHOW-093 A / P1-2 b · COMMIT ADIADO (só escrita COM chave em rota de um item): a 1ª transação lógica do serviço abre a transação
+     * física (conferindo a tentativa dona SOB TRAVA logo no início — `aoIniciar`) e NÃO faz COMMIT; blocos seguintes viram SAVEPOINT. O
+     * COMMIT único acontece em `confirmarAdiada`, depois que o recibo COMPLETO foi gravado na mesma transação. Sem chave: nada muda.
+     */
+    private bool $adiar = false;
+    private bool $adiada = false;
+    private array $aoIniciar = [];
+    private int $commitsAntesAdiar = 0;
+    private int $profundidade = 0;
+    private int $savepoints = 0;
 
     public function __construct(private readonly PDO $pdo, string $schema = 'DSHOW_EQUIPAMENTOS')
     {
@@ -37,17 +51,70 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
 
     public function transacao(callable $f): mixed
     {
+        if ($this->adiada && $this->profundidade === 0) return $this->blocoAdiado($f);   // novo bloco lógico dentro da transação adiada
         if ($this->pdo->inTransaction()) return $f();   // reentrante: a transação de fora decide o COMMIT/ROLLBACK
         $this->pdo->beginTransaction();
-        try { $r = $f(); $this->pdo->commit(); return $r; }
-        catch (Throwable $t) {
-            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            // V5 Lote 3 (P1-09): impasse (1213) ou espera de trava esgotada (1205) com outra gravação simultânea = conflito visível, nunca 500
-            if ($t instanceof PDOException && in_array((int) ($t->errorInfo[1] ?? 0), [1205, 1213], true)) {
-                throw new AtributosErro('CONFLICT', 409, 'Outra gravação simultânea neste atributo. Recarregue e tente de novo.');
-            }
-            throw $t;
+        $this->profundidade++;
+        try {
+            if ($this->adiar) foreach ($this->aoIniciar as $g) $g();   // posse da operação conferida ANTES de qualquer efeito
+            $r = $f();
+            if ($this->adiar) { $this->profundidade--; $this->adiada = true; $this->commits++; return $r; }   // COMMIT fica para confirmarAdiada
+            foreach ($this->antesDoCommit as $g) $g();
+            $this->pdo->commit(); $this->profundidade--; $this->commits++; return $r;
         }
+        catch (Throwable $t) {
+            if ($this->profundidade > 0) $this->profundidade--;
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            throw self::traduzir($t);
+        }
+    }
+
+    /** V5 Lote 3 (P1-09): impasse (1213) ou espera de trava esgotada (1205) com outra gravação simultânea = conflito visível, nunca 500 */
+    private static function traduzir(Throwable $t): Throwable
+    {
+        if ($t instanceof PDOException && in_array((int) ($t->errorInfo[1] ?? 0), [1205, 1213], true))
+            return new AtributosErro('CONFLICT', 409, 'Outra gravação simultânea neste atributo. Recarregue e tente de novo.');
+        return $t;
+    }
+
+    private function blocoAdiado(callable $f): mixed
+    {
+        $sp = 'atr_sp_' . (++$this->savepoints);
+        $this->pdo->exec("SAVEPOINT $sp");
+        $this->profundidade++;
+        try { $r = $f(); $this->profundidade--; $this->pdo->exec("RELEASE SAVEPOINT $sp"); $this->commits++; return $r; }
+        catch (Throwable $t) {
+            $this->profundidade--;
+            // impasse desfaz a transação INTEIRA no InnoDB → descarta tudo (nada do adiado sobrevive; ninguém o confirma por engano)
+            if ($t instanceof PDOException && (int) ($t->errorInfo[1] ?? 0) === 1213) $this->descartarAdiada();
+            else { try { $this->pdo->exec("ROLLBACK TO SAVEPOINT $sp"); } catch (Throwable $x) { $this->descartarAdiada(); } }
+            throw self::traduzir($t);
+        }
+    }
+
+    public function adiarConfirmacao(?callable $aoIniciar): void
+    {
+        $this->adiar = true; $this->adiada = false; $this->aoIniciar = $aoIniciar ? [$aoIniciar] : []; $this->commitsAntesAdiar = $this->commits;
+    }
+
+    public function temGravacaoAdiada(): bool { return $this->adiada; }
+
+    /** Roda $antesDoCommit DENTRO da transação adiada (recibo completo + posse) e faz o COMMIT único. Sem gravação adiada: só desliga o modo. */
+    public function confirmarAdiada(callable $antesDoCommit): bool
+    {
+        $this->adiar = false; $this->aoIniciar = [];
+        if (!$this->adiada) return false;
+        try { $antesDoCommit(); $this->pdo->commit(); $this->adiada = false; return true; }
+        catch (Throwable $t) { $this->descartarAdiada(); throw self::traduzir($t); }
+    }
+
+    /** Desfaz a transação adiada (se houver) e volta o contador: para a camada, nada foi gravado. */
+    public function descartarAdiada(): void
+    {
+        $this->adiar = false; $this->aoIniciar = [];
+        if (!$this->adiada) return;
+        $this->adiada = false; $this->commits = $this->commitsAntesAdiar;
+        if ($this->pdo->inTransaction()) { try { $this->pdo->rollBack(); } catch (Throwable $t) {} }
     }
 
     public function gruposAplicaveis(string $categoria, ?string $subcategoria): array
@@ -455,9 +522,17 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
 
     public function pedidoMassa(string $chave): ?array
     {
-        $r = $this->q('SELECT chave, assinatura, usuario, produtos, resultado, criado_em, concluido_em FROM ' . $this->t('eq_pedido_massa') . ' WHERE chave = ?', [$chave])[0] ?? null;
+        $r = $this->q('SELECT chave, assinatura, usuario, ' . ($this->temTitularMassa() ? 'titular_id' : 'NULL AS titular_id') . ', produtos, resultado, criado_em, concluido_em FROM ' . $this->t('eq_pedido_massa') . ' WHERE chave = ?', [$chave])[0] ?? null;
         if ($r !== null) $r['resultado'] = $r['resultado'] === null ? null : json_decode((string) $r['resultado'], true);
         return $r;
+    }
+
+    /** 011 aplicada? (a coluna titular_id é aditiva; antes dela, o recibo da massa confere pelo `usuario`) */
+    private ?bool $titularMassa = null;
+    public function temTitularMassa(): bool
+    {
+        return $this->titularMassa ??= (bool) $this->q("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = " . ($this->p === '' ? 'DATABASE()' : '?') . " AND TABLE_NAME = 'eq_pedido_massa' AND COLUMN_NAME = 'titular_id'",
+            $this->p === '' ? [] : [trim($this->p, '`.')])[0]['n'];
     }
 
     public function concluirPedidoMassa(string $chave, array $resultado): void
@@ -480,5 +555,100 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
     {
         return $this->exec('UPDATE ' . $this->t('eq_sugestao') . " SET estado = ?, decidido_por = ?, decidido_em = CURRENT_TIMESTAMP(3), motivo = ?, versao = versao + 1 WHERE id = ? AND versao = ? AND estado = 'pendente'",
             [$estado, $usuario, $motivo, $id, $versao]) === 1;
+    }
+
+    // ---- "FOI SALVO OU NÃO" (011): recibos por chave de operação --------------------------------------------------------------------
+    public function aoConfirmar(?callable $gancho): void { $this->antesDoCommit = $gancho ? [$gancho] : []; }
+    public function confirmacoes(): int { return $this->commits; }
+
+    public function operacao(string $chave): ?array
+    {
+        $r = $this->q('SELECT chave, titular_id, titular, rota, assinatura, estado, tentativa, recibo, recibo_texto, erro, tentativas, criado_em, concluido_em, TIMESTAMPDIFF(SECOND, atualizado_em, CURRENT_TIMESTAMP(3)) AS idade_s FROM '
+            . $this->t('eq_operacao') . ' WHERE chave = ?', [$chave])[0] ?? null;
+        if ($r === null) return null;
+        foreach (['recibo', 'erro'] as $k) $r[$k] = $r[$k] === null ? null : json_decode((string) $r[$k], true);
+        if ($r['recibo_texto'] !== null) $r['recibo'] = json_decode((string) $r['recibo_texto'], true);   // DSHOW-093 A: o MESMO texto da resposta
+        return $r;
+    }
+
+    public function reservarOperacao(string $chave, int $titularId, string $titular, string $rota, string $assinatura, string $tentativa): bool
+    {
+        try {
+            $this->exec('INSERT INTO ' . $this->t('eq_operacao') . ' (chave, titular_id, titular, rota, assinatura, tentativa) VALUES (?, ?, ?, ?, ?, ?)', [$chave, $titularId, mb_substr($titular, 0, 100), $rota, $assinatura, $tentativa]);
+            return true;
+        } catch (PDOException $e) {
+            if ((int) ($e->errorInfo[1] ?? 0) === 1062) return false;
+            throw $e;
+        }
+    }
+
+    /**
+     * Uma NOVA tentativa assume a chave (reenvio depois de recusa/conflito/falha/interrupção, ou em_andamento sem sinal de vida) SÓ se:
+     * a linha da operação não está travada por ninguém (FOR UPDATE NOWAIT — uma tentativa viva no meio da gravação segura essa trava do
+     * início ao COMMIT) E estado/tentativa ainda são os lidos (comparação-e-troca). true = assumiu · false = mudou · null = travada (viva).
+     */
+    public function assumirOperacao(string $chave, string $estadoLido, ?string $tentativaLida, string $novaTentativa): ?bool
+    {
+        if ($this->pdo->inTransaction()) throw new LogicException('assumirOperacao fora de transação');
+        $this->pdo->beginTransaction();
+        try {
+            $r = $this->q('SELECT estado, tentativa FROM ' . $this->t('eq_operacao') . ' WHERE chave = ? FOR UPDATE NOWAIT', [$chave])[0] ?? null;
+            if ($r === null || $r['estado'] !== $estadoLido || $r['tentativa'] !== $tentativaLida) { $this->pdo->rollBack(); return false; }
+            $this->exec('UPDATE ' . $this->t('eq_operacao') . " SET estado = 'em_andamento', tentativa = ?, recibo = NULL, recibo_texto = NULL, erro = NULL, concluido_em = NULL, tentativas = tentativas + 1 WHERE chave = ?", [$novaTentativa, $chave]);
+            $this->pdo->commit();
+            return true;
+        } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            if (in_array((int) ($e->errorInfo[1] ?? 0), [3572, 1205, 1213], true)) return null;   // 3572 = NOWAIT: travada por uma tentativa viva
+            throw $e;
+        }
+    }
+
+    /** Marca o desfecho SÓ se a operação ainda é desta tentativa (false = outra tentativa assumiu: nada muda). */
+    public function marcarOperacao(string $chave, string $tentativa, string $estado, ?array $recibo, ?array $erro): bool
+    {
+        $texto = $recibo === null ? null : OperacoesGravacao::textoRecibo($recibo);
+        return $this->exec('UPDATE ' . $this->t('eq_operacao') . ' SET estado = ?, recibo = COALESCE(?, recibo), recibo_texto = COALESCE(?, recibo_texto), erro = ?, concluido_em = ' . ($estado === 'em_andamento' || $estado === 'interrompida' ? 'NULL' : 'CURRENT_TIMESTAMP(3)') . ' WHERE chave = ? AND tentativa = ?',
+            [$estado, $texto, $texto, $erro === null ? null : json_encode($erro, JSON_UNESCAPED_UNICODE), $chave, $tentativa]) === 1;
+    }
+
+    /** P1-2 b: dentro da transação, TRAVA a linha da operação e confere que ela ainda pertence a esta tentativa; toca `atualizado_em` (sinal de vida). */
+    public function donoDaOperacao(string $chave, string $tentativa): bool
+    {
+        $atual = $this->q('SELECT tentativa FROM ' . $this->t('eq_operacao') . ' WHERE chave = ? FOR UPDATE', [$chave])[0]['tentativa'] ?? null;
+        if ($atual !== $tentativa) return false;
+        $this->exec('UPDATE ' . $this->t('eq_operacao') . ' SET atualizado_em = CURRENT_TIMESTAMP(3) WHERE chave = ?', [$chave]);
+        return true;
+    }
+
+    /** P1-1: itens do lote como 'pendente' (os que já existem, de tentativa anterior, ficam como estão). */
+    public function abrirItensOperacao(string $chave, array $itens): void
+    {
+        foreach (array_chunk(array_values($itens), 200, true) as $parte) {
+            $vals = []; $ps = [];
+            foreach ($parte as $pos => $item) { $vals[] = '(?, ?, ?)'; array_push($ps, $chave, (string) $item, (int) $pos); }
+            $this->exec('INSERT IGNORE INTO ' . $this->t('eq_operacao_item') . ' (chave, item, posicao) VALUES ' . implode(', ', $vals), $ps);
+        }
+    }
+
+    /** @return list<array{item:string,posicao:int,desfecho:string,detalhe:?array,atualizado_em:string}> na ordem do pedido */
+    public function itensOperacao(string $chave): array
+    {
+        $out = [];
+        foreach ($this->q('SELECT item, posicao, desfecho, detalhe, atualizado_em FROM ' . $this->t('eq_operacao_item') . ' WHERE chave = ? ORDER BY posicao, id', [$chave]) as $r)
+            $out[] = ['item' => (string) $r['item'], 'posicao' => (int) $r['posicao'], 'desfecho' => (string) $r['desfecho'], 'detalhe' => $r['detalhe'] === null ? null : json_decode((string) $r['detalhe'], true), 'atualizado_em' => $r['atualizado_em']];
+        return $out;
+    }
+
+    /** P1-1: grava o desfecho de UM item (só de 'pendente'): false = o item já tinha desfecho (outra tentativa o fez). */
+    public function decidirItemOperacao(string $chave, string $item, string $desfecho, ?array $detalhe): bool
+    {
+        return $this->exec('UPDATE ' . $this->t('eq_operacao_item') . " SET desfecho = ?, detalhe = ? WHERE chave = ? AND item = ? AND desfecho = 'pendente'",
+            [$desfecho, $detalhe === null ? null : json_encode($detalhe, JSON_UNESCAPED_UNICODE), $chave, $item]) === 1;
+    }
+
+    public function titularPedidoMassa(string $chave, int $titularId): void
+    {
+        $this->exec('UPDATE ' . $this->t('eq_pedido_massa') . ' SET titular_id = ? WHERE chave = ? AND titular_id IS NULL', [$titularId, $chave]);
     }
 }

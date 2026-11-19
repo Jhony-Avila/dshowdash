@@ -13,10 +13,37 @@ declare(strict_types=1);
 
 final class AtributosErro extends RuntimeException
 {
+    /** "FOI SALVO OU NÃO": dados extras da resposta de erro (ex.: `atual` no conflito, `desfecho`), somados ao meta pelo index.php. */
+    public array $meta = [];
+
     public function __construct(public readonly string $codigo, public readonly int $http, string $mensagem, public readonly array $campos = [])
     {
         parent::__construct($mensagem);
     }
+}
+
+/** "FOI SALVO OU NÃO" (011): recibos por chave de operação + gancho dentro da transação (antes do COMMIT). Ver OperacoesGravacao. */
+interface OperacoesRepositorio
+{
+    public function aoConfirmar(?callable $gancho): void;
+    public function confirmacoes(): int;
+    public function operacao(string $chave): ?array;
+    public function reservarOperacao(string $chave, int $titularId, string $titular, string $rota, string $assinatura, string $tentativa): bool;
+    /** true = assumiu · false = estado/tentativa mudaram · null = linha travada por uma tentativa viva (NOWAIT). */
+    public function assumirOperacao(string $chave, string $estadoLido, ?string $tentativaLida, string $novaTentativa): ?bool;
+    /** DSHOW-093 A: COMMIT adiado até o recibo completo (ver AtributosRepoPdo). */
+    public function adiarConfirmacao(?callable $aoIniciar): void;
+    public function temGravacaoAdiada(): bool;
+    public function confirmarAdiada(callable $antesDoCommit): bool;
+    public function descartarAdiada(): void;
+    public function marcarOperacao(string $chave, string $tentativa, string $estado, ?array $recibo, ?array $erro): bool;
+    /** P1-2 b: trava a linha e confere a tentativa dona (chamar DENTRO da transação). */
+    public function donoDaOperacao(string $chave, string $tentativa): bool;
+    /** P1-1: desfecho por item das rotas multi-item. */
+    public function abrirItensOperacao(string $chave, array $itens): void;
+    public function itensOperacao(string $chave): array;
+    public function decidirItemOperacao(string $chave, string $item, string $desfecho, ?array $detalhe): bool;
+    public function titularPedidoMassa(string $chave, int $titularId): void;
 }
 
 /** Catálogo de produtos (projeção do Precifica no app; GRANT N1 = 7 colunas). Lança CatalogoIndisponivel se não puder ler. */
@@ -772,9 +799,20 @@ final class AtributosService
         if (!$f['completude']['completa']) throw new AtributosErro('FICHA_INCOMPLETA', 422, 'Há atributos obrigatórios sem valor: ' . implode(', ', array_column($f['completude']['pendentes'], 'rotulo')) . '.',
             array_map(static fn($p) => 'atributo_' . $p['atributo_id'], $f['completude']['pendentes']));
         $motivo = isset($b['motivo']) && trim((string) $b['motivo']) !== '' ? mb_substr(trim((string) $b['motivo']), 0, 255) : null;
-        $this->repo->transacao(fn() => $this->repo->auditar($this->usuario, 'revisar', 'ficha', (string) $pid, null,
-            ['impressao' => self::impressao($f['grupos']), 'obrigatorios' => $f['completude']['obrigatorios'], 'resolvidos' => $f['completude']['resolvidos']], $motivo));
-        return $this->ficha($pid, true);
+        $revisao = $this->repo->transacao(function () use ($pid, $f, $motivo) {
+            $this->repo->auditar($this->usuario, 'revisar', 'ficha', (string) $pid, null,
+                ['impressao' => self::impressao($f['grupos']), 'obrigatorios' => $f['completude']['obrigatorios'], 'resolvidos' => $f['completude']['resolvidos']], $motivo);
+            return $this->repo->ultimaRevisao($pid);   // o evento GRAVADO, lido na mesma transação (vai no recibo)
+        });
+        // DSHOW-090: a releitura da ficha vem DEPOIS do COMMIT. Se ela falhar, a revisão JÁ ESTÁ gravada: responde "gravado, releitura
+        // falhou" (200, gravado:true, releitura:'falhou', com o evento) — nunca um erro que pareça "não gravado".
+        try { $ficha = $this->ficha($pid, true); }
+        catch (Throwable $t) {
+            error_log('[atributos] ficha_revisar: revisão gravada, releitura falhou: ' . get_class($t) . ': ' . $t->getMessage());
+            return ['gravado' => true, 'releitura' => 'falhou', 'revisao_gravada' => $revisao, 'product_id' => $pid,
+                'mensagem' => 'Revisão salva, mas não foi possível reler a ficha. Recarregue para ver a ficha atualizada.'];
+        }
+        return $ficha + ['gravado' => true, 'releitura' => 'ok', 'revisao_gravada' => $revisao];
     }
 
     /** D3.6: atributo cuja autoridade é o Precifica — o valor exibido vem da ficha do Precifica (cache do app); o local não vale. */
@@ -927,7 +965,9 @@ final class AtributosService
             throw new AtributosErro('VALUE_EMPTY', 422, 'Valor vazio: preencha o campo, ou escolha "Não se aplica" ou "Desconhecido".', ['valor']);
         }
         $d['unidade_id'] = null;   // D3: unidade por valor — decidida DENTRO da transação, depois da trava (HOTFIX-2, janela fechada)
-        $this->repo->transacao(function () use ($pid, $aid, $d, $b, $a, $produto) {
+        // "FOI SALVO OU NÃO": a releitura do valor gravado acontece DENTRO da transação (mesma trava): a resposta e o recibo nunca dependem de
+        // uma leitura depois do COMMIT (antes, uma falha nessa releitura virava erro com o valor já gravado).
+        $res = $this->repo->transacao(function () use ($pid, $aid, $d, $b, $a, $produto) {
             // P1-09: a definição é relida COM TRAVA COMPARTILHADA e conferida — se o tipo/limites/estado mudaram entre a validação e aqui
             // (versão diferente), conflito visível; a mudança de tipo (trava exclusiva + contagem com trava) espera esta transação.
             $atual = $this->repo->travarAtributo($aid, false);
@@ -968,7 +1008,7 @@ final class AtributosService
             $antes = null;
             foreach ($linhas as $l) if ((int) $l['opcao_chave'] === (int) $d['opcao_chave']) $antes = $l;
             $vivo = $antes !== null && empty($antes['excluido_em']);
-            if ($vivo && self::mesmoValor($antes, $d)) return;   // salvar sem mudança: nem versão nem auditoria
+            if ($vivo && self::mesmoValor($antes, $d)) return ['mudou' => false, 'valor' => $this->repo->valor($pid, $aid, (int) $d['opcao_chave'])];   // sem mudança: nem versão nem auditoria
             // linha excluída antes (excluido_em) volta sem exigir versão: não há valor vivo a sobrescrever.
             // DSHOW-034 (A, 18/11): mas, num campo de valor ÚNICO, quem manda a versão de um valor que ele viu e que depois foi LIMPO é uma
             // aba antiga → 409 (não recria). Quem relê vê o campo vazio, não manda versão de valor e preenche normalmente.
@@ -989,8 +1029,9 @@ final class AtributosService
                 if (((int) $d['opcao_chave'] === 0 && $k > 0) || ((int) $d['opcao_chave'] > 0 && $k === 0)) { if ($this->repo->excluirValor($pid, $aid, $k)) $excluidas[] = $k; }
             }
             $this->repo->auditar($this->usuario, $antes ? 'editar' : 'preencher', 'valor', "$pid:$aid:{$d['opcao_chave']}", $antes, $excluidas ? $d + ['excluidas_chaves' => $excluidas] : $d, $b['motivo'] ?? null);
+            return ['mudou' => true, 'valor' => $this->repo->valor($pid, $aid, (int) $d['opcao_chave'])];
         });
-        return ['valor' => $this->repo->valor($pid, $aid, (int) $d['opcao_chave'])];
+        return ['valor' => $res['valor']] + ($res['mudou'] ? [] : ['sem_mudanca' => true]);
     }
 
     /** P1-07: a linha viva já tem exatamente este conteúdo? (decimal comparado como número; bool/ids como inteiros) */
@@ -1004,18 +1045,29 @@ final class AtributosService
         // recusa: existe, ATIVA, permitida (regra A8: grandeza da efetiva + extras) e da MESMA grandeza da unidade vigente agora.
         $u = $uid > 0 ? $this->unidadeSobTrava($uid) : null;
         if (!$u) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inexistente. Recarregue a ficha: o número não foi gravado.', ['unidade_id']);
-        $nao = 'Recarregue a ficha e confira a unidade: o número não foi gravado nem convertido.';
-        if (!(int) ($u['ativo'] ?? 1)) throw new AtributosErro('VALIDATION_ERROR', 422, 'A unidade "' . $u['simbolo'] . '" está desativada. Escolha outra unidade para este campo. O número não foi gravado.', ['unidade_id']);
         $permitida = false;
         foreach ($this->unidadesPermitidas($produto, $a) as $p) if ((int) $p['id'] === $uid) $permitida = true;
         $aplic = $this->aplicaveis($produto)[(int) $a['id']]['aplic'] ?? null;
         $vig = $aplic !== null ? Aplicabilidade::unidadeEfetiva($aplic, null) : (isset($a['unidade_id']) ? (int) $a['unidade_id'] : null);
         $v = $vig !== null && $vig !== $uid ? $this->unidadeSobTrava($vig) : null;
-        $gU = (string) ($u['grandeza'] ?? ''); $gV = (string) ($v['grandeza'] ?? '');
-        if (!$permitida || ($v !== null && $gU !== '' && $gV !== '' && $gU !== $gV)) {
-            throw new AtributosErro('VALIDATION_ERROR', 422, 'A unidade "' . $u['simbolo'] . '" não vale mais para este campo' . ($v !== null ? ' (a unidade em uso agora é "' . $v['simbolo'] . '")' : '') . '. ' . $nao, ['unidade_id']);
-        }
+        $m = self::unidadeNaoGravavel($u, $permitida, $v);
+        if ($m !== null) throw new AtributosErro('VALIDATION_ERROR', 422, $m['mensagem'], ['unidade_id']);
         return $uid;
+    }
+
+    /**
+     * Regra ÚNICA de "unidade gravável" para um valor (DSHOW-079): a MESMA que dá 422 em validarUnidade e a que a leitura usa para marcar
+     * `gravavel` em cada unidade da ficha (ProdutosLeitura::unidadesPara). $permitida = regra A8 (grandeza da efetiva + extras + a efetiva);
+     * $vigente = a unidade efetiva de agora (null quando é a própria). @return null (gravável) | ['motivo' => código, 'mensagem' => texto]
+     */
+    public static function unidadeNaoGravavel(array $u, bool $permitida, ?array $vigente): ?array
+    {
+        if (!(int) ($u['ativo'] ?? 1)) return ['motivo' => 'desativada', 'mensagem' => 'A unidade "' . $u['simbolo'] . '" está desativada. Escolha outra unidade para este campo. O número não foi gravado.'];
+        $gU = (string) ($u['grandeza'] ?? ''); $gV = (string) ($vigente['grandeza'] ?? '');
+        $outra = $vigente !== null && $gU !== '' && $gV !== '' && $gU !== $gV;
+        if (!$permitida || $outra) return ['motivo' => $outra ? 'outra_grandeza' : 'nao_permitida',
+            'mensagem' => 'A unidade "' . $u['simbolo'] . '" não vale mais para este campo' . ($vigente !== null ? ' (a unidade em uso agora é "' . $vigente['simbolo'] . '")' : '') . '. Recarregue a ficha e confira a unidade: o número não foi gravado nem convertido.'];
+        return null;
     }
 
     /** HOTFIX-2: unidade relida com trava (FOR UPDATE) quando o repositório a oferece; senão, leitura simples (RepoMemoria dos testes). */
@@ -1179,5 +1231,385 @@ final class AtributosService
         if ($na !== $nb) return $na ? -1 : 1;
         $c = (strlen($ai) <=> strlen($bi)) ?: (strcmp($ai, $bi) <=> 0) ?: (strcmp($af, $bf) <=> 0);
         return $na ? -$c : $c;
+    }
+}
+
+/**
+ * "FOI SALVO OU NÃO" (18/11, ESQUERDA) — camada única de TODA escrita do módulo (index.php chama `executar` em cada POST). Contrato:
+ * docs/atributos/CONTRATO-FOI-SALVO.md. O que garante, para qualquer rota:
+ *  1. RECIBO: toda escrita que chegou ao fim devolve `recibo` {operacao, chave, desfecho, versao_nova, campos_gravados, …}; sem recibo o
+ *     cliente nunca trata como "Salvo". `desfecho` ∈ aplicada | sem_mudanca (sucesso) · recusada | conflito (erro, no meta da resposta).
+ *  2. Chave de operação OPCIONAL (cabeçalho X-Chave-Operacao ou corpo `chave_operacao`, [A-Za-z0-9_-]{8,64}); sem chave, o chamador antigo
+ *     funciona como antes (só ganha recibo/desfecho). Com chave: livro de recibos fora → 503 OPERATION_LEDGER_UNAVAILABLE ANTES de escrever
+ *     (P1-2 a); o recibo COMPLETO é guardado por TITULAR (id estável) DENTRO da transação que grava (COMMIT adiado, DSHOW-093 A), com a
+ *     posse da tentativa conferida sob trava antes de qualquer efeito e no COMMIT (P1-2 b / 093 C); lote = desfecho POR ITEM (P1-1).
+ *     Reenvio da MESMA chave = o recibo ORIGINAL (depois da porta de nível/admin, 093 D); chave de outro pedido/titular = 422;
+ *     em andamento = 409 OPERATION_IN_PROGRESS; depois de recusa/conflito/falha/interrupção = nova tentativa.
+ *  3. conferir(): leitura SÓ do resultado pela chave (aplicada | sem_mudanca | em_andamento | nao_aplicada | interrompida | nao_encontrada).
+ *  4. Gravado e erro DEPOIS do COMMIT (releitura): 200 {gravado: true, releitura: 'falhou', recibo} — nunca um erro que pareça "não gravado".
+ */
+final class OperacoesGravacao
+{
+    public const PADRAO_CHAVE = '/^[A-Za-z0-9_-]{8,64}$/';
+    /** em_andamento sem sinal de vida há mais que isto (s): conferir SINALIZA "pode estar demorando" e um reenvio PODE tentar assumir — só assume
+     *  com a linha destravada (NOWAIT) e comparação-e-troca do token; a tentativa antiga, se viva, é barrada na conferência de posse (DSHOW-093 C). */
+    public const INTERROMPIDA_APOS_S = 300;
+    private const CONTROLE = ['chave_operacao', 'versao', 'versao_vinculos', 'versao_conjunto', 'versao_previa', 'chave', 'antes', 'rotulo_atual', 'ordem_antes', 'confirmar'];
+    private const ROTAS_VALOR = ['valor', 'valor_limpar', 'valor_unidade', 'valor_opcao_remover'];
+
+    public function __construct(private readonly AtributosRepositorio $repo, private readonly int $titularId, private readonly string $titular,
+        private readonly ?int $nivel = null, private readonly ?bool $administra = null) {}
+
+    /** Rotas que gravam VÁRIOS itens, cada um no seu COMMIT (P1-1): desfecho por item em eq_operacao_item. massa_aplicar é UMA transação. */
+    public const ROTAS_LOTE = ['sugestoes_lote'];
+
+    /**
+     * Só é chamada quando o cliente ENVIOU chave. P1-2 a: se o livro de recibos não responde (011 ausente, tabela fora, sem permissão,
+     * banco caído), PARA antes de escrever — 503 OPERATION_LEDGER_UNAVAILABLE, nada gravado. Antes engolia a PDOException e gravava sem
+     * guarda (risco de dupla execução no reenvio). Sem chave, a camada nem consulta o livro (comportamento antigo).
+     */
+    private function guarda(): ?OperacoesRepositorio
+    {
+        if (!$this->repo instanceof OperacoesRepositorio) return null;
+        try { $this->repo->operacao('__sonda_011__'); return $this->repo; }
+        catch (PDOException $e) {
+            error_log('[atributos] livro de recibos indisponível (chave enviada; nada gravado): ' . $e->getMessage());
+            $err = new AtributosErro('OPERATION_LEDGER_UNAVAILABLE', 503, 'Não foi possível conferir o registro de gravações agora. Nada foi gravado; tente de novo em instantes.');
+            $err->meta = ['desfecho' => 'falhou', 'gravado' => false];
+            throw $err;
+        }
+    }
+
+    /** P1-2 b: a operação passou para outra tentativa (retomada depois do prazo) — esta aborta sem efeito. */
+    public static function tomada(): AtributosErro
+    {
+        $e = new AtributosErro('OPERATION_IN_PROGRESS', 409, 'Outra tentativa com esta chave assumiu a operação; nada foi gravado por esta. Use "Conferir gravação".');
+        $e->meta = ['desfecho' => 'em_andamento', 'motivo' => 'outra_tentativa'];
+        return $e;
+    }
+
+    public static function ehTomada(Throwable $t): bool { return $t instanceof AtributosErro && ($t->meta['motivo'] ?? null) === 'outra_tentativa'; }
+
+    public static function chaveDoPedido(array &$corpo, ?string $cabecalho): ?string
+    {
+        $c = $cabecalho !== null && $cabecalho !== '' ? $cabecalho : ($corpo['chave_operacao'] ?? null);
+        unset($corpo['chave_operacao']);
+        if ($c === null || $c === '') return null;
+        if (!is_string($c) || !preg_match(self::PADRAO_CHAVE, $c)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Chave de operação inválida (8 a 64 letras, números, - ou _).', ['chave_operacao']);
+        return $c;
+    }
+
+    public static function assinatura(string $rota, array $corpo): string
+    {
+        $canon = static function ($v) use (&$canon) { if (!is_array($v)) return $v; if (!array_is_list($v)) ksort($v); return array_map($canon, $v); };
+        return hash('sha256', $rota . '|' . json_encode($canon($corpo), JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION));
+    }
+
+    /**
+     * @param callable(array, ?LoteDaOperacao):?array $servico  (null = rota inexistente: devolve null, o index responde 400). O 2º argumento
+     *        só vem preenchido nas ROTAS_LOTE com chave: o serviço registra o desfecho de cada item NA transação do item (P1-1).
+     */
+    public function executar(string $rota, array $corpo, ?string $chave, callable $servico): ?array
+    {
+        $this->porta($rota);   // DSHOW-093 D: o gate de nível/admin da rota roda ANTES de qualquer reenvio de recibo
+        $ops = $chave !== null ? $this->guarda() : null;
+        $assin = self::assinatura($rota, $corpo);
+        $tentativa = null; $lote = null;
+        if ($ops !== null) {
+            $tentativa = bin2hex(random_bytes(16));   // P1-2 b: token da tentativa dona da chave (fencing)
+            $rep = $this->reservar($ops, $chave, $rota, $assin, $tentativa);
+            if ($rep !== null) return $rep;
+            if (in_array($rota, self::ROTAS_LOTE, true)) $lote = new LoteDaOperacao($this->repo, $ops, $chave, $tentativa);
+        }
+        $adiado = $ops !== null && $lote === null;
+        $antes = $this->repo instanceof OperacoesRepositorio ? $this->repo->confirmacoes() : null;
+        // Rota de UM item com chave: COMMIT adiado. A 1ª transação confere a posse SOB TRAVA antes de qualquer efeito; o recibo COMPLETO é
+        // gravado na MESMA transação e só então há COMMIT (DSHOW-093 A). Lote: cada item tem o próprio COMMIT com o próprio desfecho.
+        if ($adiado) $ops->adiarConfirmacao(function () use ($ops, $chave, $tentativa): void { if (!$ops->donoDaOperacao($chave, $tentativa)) throw self::tomada(); });
+        try {
+            $out = $servico($corpo, $lote);
+        } catch (Throwable $t) {
+            if (self::ehTomada($t)) { if ($adiado) $ops->descartarAdiada(); throw $t; }   // outra tentativa é a dona: não marca nada
+            if ($adiado && $ops->temGravacaoAdiada()) {
+                // gravado (logicamente) e erro DEPOIS: confirma com o recibo parcial no MESMO COMMIT — nunca "não gravado"
+                error_log('[atributos] ' . $rota . ': gravado, erro depois da gravação: ' . get_class($t) . ': ' . $t->getMessage());
+                $recibo = $this->recibo($rota, $chave, 'aplicada', [], $corpo) + ['parcial' => true];
+                $recibo = $this->confirmar($ops, $chave, $tentativa, 'aplicada', $recibo, $t);
+                return ['gravado' => true, 'releitura' => 'falhou', 'desfecho' => 'aplicada', 'recibo' => $recibo,
+                    'mensagem' => 'Gravado, mas não foi possível reler o resultado. Recarregue para conferir.'];
+            }
+            if ($adiado) $ops->descartarAdiada();
+            $commitou = !$adiado && $antes !== null && $this->repo->confirmacoes() > $antes;
+            if ($commitou && $lote !== null) {
+                // P1-1: lote parado no meio — os itens com desfecho estão gravados (com o desfecho), os demais seguem 'pendente'.
+                error_log('[atributos] ' . $rota . ': lote interrompido depois de COMMIT(s): ' . get_class($t) . ': ' . $t->getMessage());
+                $this->marcarSemFalhar($ops, $chave, $tentativa, 'interrompida', null, ['codigo' => $t instanceof AtributosErro ? $t->codigo : 'INTERNAL_ERROR', 'http' => $t instanceof AtributosErro ? $t->http : 500,
+                    'mensagem' => 'Lote interrompido no meio.', 'campos' => []]);
+                $e = new AtributosErro('OPERATION_INTERRUPTED', 503, 'O lote parou no meio: parte já foi gravada. Reenvie com a mesma chave para concluir só os pendentes, ou use "Conferir gravação".');
+                $e->meta = ['desfecho' => 'interrompida', 'gravado' => 'parcial', 'itens' => $lote->itens()];
+                throw $e;
+            }
+            if (!$commitou) {
+                $desfecho = $t instanceof AtributosErro ? ($t->http === 409 ? 'conflito' : 'recusada') : 'falhou';
+                if ($t instanceof AtributosErro) $this->detalharErro($t, $rota, $corpo, $desfecho);
+                if ($ops !== null) $this->marcarSemFalhar($ops, $chave, $tentativa, $desfecho, null, ['codigo' => $t instanceof AtributosErro ? $t->codigo : 'INTERNAL_ERROR',
+                    'http' => $t instanceof AtributosErro ? $t->http : 500, 'mensagem' => $t instanceof AtributosErro ? $t->getMessage() : 'Erro interno.', 'campos' => $t instanceof AtributosErro ? $t->campos : []]);
+                throw $t;
+            }
+            // sem chave: gravado (COMMIT feito) e erro DEPOIS: nunca "não gravado"
+            error_log('[atributos] ' . $rota . ': gravado, erro depois do COMMIT: ' . get_class($t) . ': ' . $t->getMessage());
+            $recibo = self::normalizar($this->recibo($rota, $chave, 'aplicada', [], $corpo) + ['parcial' => true]);
+            return ['gravado' => true, 'releitura' => 'falhou', 'desfecho' => 'aplicada', 'recibo' => $recibo,
+                'mensagem' => 'Gravado, mas não foi possível reler o resultado. Recarregue para conferir.'];
+        }
+        if ($out === null) {
+            if ($adiado) $ops->descartarAdiada();
+            if ($ops !== null) $this->marcarSemFalhar($ops, $chave, $tentativa, 'recusada', null, ['codigo' => 'INVALID_ACTION', 'http' => 400, 'mensagem' => 'Rota inexistente.', 'campos' => []]);
+            return null;
+        }
+        $desfecho = self::semMudanca($out) ? 'sem_mudanca' : 'aplicada';
+        $recibo = $this->recibo($rota, $chave, $desfecho, $out, $corpo);
+        if ($rota === 'massa_aplicar') $desfecho = $recibo['desfecho'];   // reenvio = desfecho ORIGINAL do lote (como o reservar das demais rotas)
+        if ($ops === null) return $out + ['desfecho' => $desfecho, 'recibo' => self::normalizar($recibo)];
+        // um item: recibo COMPLETO + posse no MESMO COMMIT da gravação · lote: conclusão com totais e IDs, sob trava e só se ainda é desta tentativa
+        $recibo = $this->confirmar($ops, $chave, $tentativa, $desfecho, $recibo, null, $adiado);
+        return $out + ['desfecho' => $desfecho, 'recibo' => $recibo];
+    }
+
+    /** Recibo exatamente como fica guardado (texto) — a resposta devolve o MESMO que o reenvio e o conferir (DSHOW-093 A). */
+    public static function textoRecibo(array $recibo): string { return json_encode($recibo, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR); }
+    private static function normalizar(array $recibo): array { return json_decode(self::textoRecibo($recibo), true); }
+
+    /**
+     * Grava o recibo final. Com COMMIT adiado: dentro da transação da gravação (posse conferida sob trava) e COMMIT único. Sem gravação adiada
+     * (nada mudou no banco, ou lote): numa transação própria, também sob trava e condicionada à tentativa. Devolve o recibo normalizado.
+     */
+    private function confirmar(OperacoesRepositorio $ops, string $chave, string $tentativa, string $estado, array $recibo, ?Throwable $original, bool $adiado = true): array
+    {
+        $recibo = self::normalizar($recibo);
+        $gravar = function () use ($ops, $chave, $tentativa, $estado, $recibo): void {
+            if (!$ops->donoDaOperacao($chave, $tentativa)) throw self::tomada();
+            $ops->marcarOperacao($chave, $tentativa, $estado, $recibo, null);
+        };
+        if ($adiado && $ops->confirmarAdiada($gravar)) return $recibo;
+        try { $this->repo->transacao($gravar); }
+        catch (Throwable $t) {
+            if (self::ehTomada($t)) throw $t;
+            error_log('[atributos] recibo ' . $chave . ' não gravado: ' . $t->getMessage());
+            if ($original !== null) throw $original;
+            throw $t;
+        }
+        return $recibo;
+    }
+
+    /** null = seguir executando; array = resposta do reenvio (recibo original). */
+    private function reservar(OperacoesRepositorio $ops, string $chave, string $rota, string $assin, string $tentativa): ?array
+    {
+        for ($i = 0; $i < 2; $i++) {
+            // lê ANTES de inserir: o INSERT duplicado esperaria a trava de uma tentativa viva (a leitura simples não espera)
+            $ex = $ops->operacao($chave);
+            if ($ex === null) {
+                if ($ops->reservarOperacao($chave, $this->titularId, $this->titular, $rota, $assin, $tentativa)) return null;
+                $ex = $ops->operacao($chave);
+                if ($ex === null) continue;
+            }
+            if ((int) $ex['titular_id'] !== $this->titularId || $ex['rota'] !== $rota || $ex['assinatura'] !== $assin)
+                throw new AtributosErro('IDEMPOTENCY_KEY_REUSED', 422, 'Esta chave de operação já foi usada para outro pedido. Gere uma chave nova.', ['chave_operacao']);
+            if (in_array($ex['estado'], ['aplicada', 'sem_mudanca'], true))
+                return ['repetido' => true, 'desfecho' => $ex['estado'], 'recibo' => $ex['recibo'] ?? ['operacao' => $rota, 'chave' => $chave, 'desfecho' => $ex['estado'], 'parcial' => true]];
+            // DSHOW-093 C: os 5 min NÃO provam interrupção; só a partir deles uma nova tentativa PODE tentar assumir — e só assume se a linha
+            // não está travada (uma tentativa viva no meio da gravação segura a trava até o COMMIT) e com comparação-e-troca do token.
+            if ($ex['estado'] === 'em_andamento' && (int) $ex['idade_s'] < self::INTERROMPIDA_APOS_S) throw self::emAndamento();
+            $assumiu = $ops->assumirOperacao($chave, $ex['estado'], $ex['tentativa'] ?? null, $tentativa);
+            if ($assumiu === true) return null;   // recusada | conflito | falhou | interrompida | em_andamento sem sinal de vida → executa de novo
+            if ($assumiu === null) throw self::emAndamento();   // travada: a tentativa anterior está viva, gravando
+        }
+        throw self::emAndamento();
+    }
+
+    private static function emAndamento(): AtributosErro
+    {
+        $e = new AtributosErro('OPERATION_IN_PROGRESS', 409, 'Esta operação ainda está em andamento. Use "Conferir gravação" antes de repetir.');
+        $e->meta = ['desfecho' => 'em_andamento'];
+        return $e;
+    }
+
+    /** Rotas de valor/sugestão: nível ≥ NIVEL_VALORES. Demais escritas conhecidas: administrar o catálogo (nível ≥ NIVEL_ADMIN e permissão). */
+    private const ROTAS_PREENCHER = ['valor', 'valor_limpar', 'valor_unidade', 'valor_opcao_remover', 'sugestao', 'sugestoes_lote'];
+    private const ROTAS_ADMIN = ['kit', 'kit_duplicar', 'kit_ativo', 'kit_itens', 'kit_escopos', 'kit_produtos', 'produto_kit', 'produto_atributo', 'massa_previa', 'massa_aplicar',
+        'atributo', 'atributo_ativo', 'atributo_unidades', 'opcao', 'opcao_renomear', 'opcao_reordenar', 'opcao_ativa', 'unidade', 'unidade_ativa', 'grupo', 'grupo_ativo', 'ficha_revisar'];
+
+    /** DSHOW-093 D: a MESMA porta dos serviços, antes do reenvio (consultar resultado ≠ executar). Sem nível informado = sem porta (testes antigos). */
+    private function porta(string $rota): void
+    {
+        if ($this->nivel === null) return;
+        if (in_array($rota, self::ROTAS_PREENCHER, true) && $this->nivel < AtributosService::NIVEL_VALORES) throw new AtributosErro('INSUFFICIENT_LEVEL', 403, 'Seu nível não permite esta ação.');
+        if (in_array($rota, self::ROTAS_ADMIN, true)) {
+            if ($this->nivel < AtributosService::NIVEL_ADMIN) throw new AtributosErro('INSUFFICIENT_LEVEL', 403, 'Seu nível não permite esta ação.');
+            if ($this->administra === false) throw new AtributosErro('NOT_CATALOG_ADMIN', 403, 'Só quem administra o catálogo de atributos pode fazer isto. Você pode preencher valores.');
+        }
+    }
+
+    private function marcarSemFalhar(OperacoesRepositorio $ops, string $chave, string $tentativa, string $estado, ?array $recibo, ?array $erro): void
+    {
+        try { if (!$ops->marcarOperacao($chave, $tentativa, $estado, $recibo, $erro)) error_log('[atributos] recibo ' . $chave . ' não marcado: a operação é de outra tentativa'); }
+        catch (Throwable $t) { error_log('[atributos] recibo ' . $chave . ' não atualizado: ' . $t->getMessage()); }   // 'aplicada' já foi no COMMIT
+    }
+
+    private static function semMudanca(array $out): bool
+    {
+        return ($out['sem_mudanca'] ?? false) === true || ($out['mudou'] ?? null) === false || ($out['repetido'] ?? false) === true || ($out['aceitas'] ?? null) === 0;
+    }
+
+    /** Conflito com o estado ATUAL (valor/versão/unidade) e motivo legível POR CAMPO; desfecho no meta. */
+    private function detalharErro(AtributosErro $e, string $rota, array $corpo, string $desfecho): void
+    {
+        $e->meta += ['desfecho' => $desfecho];
+        if ($e->campos) $e->meta += ['motivos' => array_fill_keys($e->campos, $e->getMessage())];
+        if ($desfecho === 'conflito' && in_array($rota, self::ROTAS_VALOR, true)) {
+            $pid = (int) ($corpo['product_id'] ?? 0); $aid = (int) ($corpo['atributo_id'] ?? 0);
+            try {
+                $todas = $pid > 0 && $aid > 0 ? $this->repo->travarValores($pid, $aid) : [];   // fora de transação: leitura atual, sem segurar trava
+                $vivos = array_values(array_filter($todas, static fn($r) => empty($r['excluido_em'])));
+                $e->meta += ['atual' => ['versao' => $vivos ? (int) $vivos[0]['versao'] : null, 'versao_conjunto' => AtributosService::versaoConjunto($todas),
+                    'valores' => array_map(static fn($r) => self::ecoValor($r), $vivos)]];
+            } catch (Throwable $t) { $e->meta += ['atual' => null]; }
+        }
+    }
+
+    private static function ecoValor(?array $r): ?array
+    {
+        if ($r === null) return null;
+        return ['estado' => $r['estado'] ?? null, 'valor_texto' => $r['valor_texto'] ?? null, 'valor_num' => isset($r['valor_num']) ? (string) $r['valor_num'] : null,
+            'valor_bool' => isset($r['valor_bool']) ? (bool) (int) $r['valor_bool'] : null, 'valor_data' => $r['valor_data'] ?? null,
+            'opcao_id' => isset($r['opcao_id']) ? (int) $r['opcao_id'] : null, 'opcao_chave' => (int) ($r['opcao_chave'] ?? 0),
+            'unidade_id' => isset($r['unidade_id']) ? (int) $r['unidade_id'] : null, 'versao' => isset($r['versao']) ? (int) $r['versao'] : null,
+            'excluido' => !empty($r['excluido_em'])];
+    }
+
+    /** Recibo verificável: versão nova + eco do que foi gravado (lido na MESMA transação, quando a rota o devolve). */
+    private function recibo(string $rota, ?string $chave, string $desfecho, array $out, array $corpo): array
+    {
+        $r = ['operacao' => $rota, 'chave' => $chave, 'desfecho' => $desfecho, 'confirmado_em' => (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.v\Z')];
+        if (isset($out['valor']) && is_array($out['valor'])) {
+            $v = self::ecoValor($out['valor']);
+            return $r + ['product_id' => (int) ($out['valor']['product_id'] ?? $corpo['product_id'] ?? 0), 'atributo_id' => (int) ($out['valor']['atributo_id'] ?? $corpo['atributo_id'] ?? 0), 'versao_nova' => $v['versao'],
+                'campos_gravados' => array_keys(array_filter(array_intersect_key($v, array_flip(['estado', 'valor_texto', 'valor_num', 'valor_bool', 'valor_data', 'opcao_id', 'unidade_id'])), static fn($x) => $x !== null)),
+                'valor' => $v, 'unidade_id' => $v['unidade_id']];
+        }
+        if (in_array($rota, ['valor_limpar', 'valor_opcao_remover'], true))
+            return $r + ['product_id' => (int) ($corpo['product_id'] ?? 0), 'atributo_id' => (int) ($corpo['atributo_id'] ?? 0), 'versao_nova' => null,
+                'campos_gravados' => $desfecho === 'aplicada' ? ['excluido_em'] : [], 'valor' => null, 'unidade_id' => null];
+        if ($rota === 'ficha_revisar')
+            return $r + ['product_id' => (int) ($corpo['product_id'] ?? 0), 'campos_gravados' => ['revisao'], 'versao_nova' => null, 'revisao' => $out['revisao_gravada'] ?? null];
+        if ($rota === 'massa_aplicar') {   // recibo da massa = o do resultado guardado (resposta = reenvio = conferir); o desfecho é o do lote
+            $m = KitsService::reciboMassa((string) ($corpo['chave'] ?? $chave ?? ''), $out);
+            return $out === [] ? array_replace($m, ['desfecho' => $desfecho, 'confirmado_em' => $r['confirmado_em'], 'campos_gravados' => $desfecho === 'aplicada' ? ['vinculos'] : []]) : $m;
+        }
+        $versao = null;
+        foreach ([$out, ...array_filter($out, 'is_array')] as $x) foreach (['versao_vinculos', 'versao'] as $k) if ($versao === null && isset($x[$k]) && is_scalar($x[$k])) $versao = $x[$k];
+        $campos = array_values(array_diff(array_keys($corpo), self::CONTROLE, ['id', 'product_id', 'atributo_id', 'motivo']));
+        $r += ['versao_nova' => $versao, 'campos_gravados' => $desfecho === 'aplicada' ? $campos : []];
+        // P1-1: o recibo do lote leva totais e IDs (o reenvio da mesma chave devolve este recibo COMPLETO)
+        if (in_array($rota, self::ROTAS_LOTE, true)) $r += array_intersect_key($out, array_flip(['aceitas', 'aceitas_ids', 'ignoradas', 'falhas', 'pedidas']));
+        return $r;
+    }
+
+    /** CONFERIR GRAVAÇÃO (só leitura): o resultado de uma operação pela chave, só para o titular. Nunca grava. */
+    public function conferir(string $chave): array
+    {
+        if (!preg_match(self::PADRAO_CHAVE, $chave)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Chave de operação inválida.', ['chave']);
+        $nao = ['chave' => $chave, 'resultado' => 'nao_encontrada', 'recibo' => null];
+        // livro indisponível: nunca responde "não encontrada" (seria mentira); a massa tem livro próprio e ainda pode responder
+        $falhaLivro = null;
+        try { $ops = $this->guarda(); $ex = $ops?->operacao($chave); } catch (AtributosErro $e) { $falhaLivro = $e; $ops = null; $ex = null; }
+        if ($ex !== null) {
+            if ((int) $ex['titular_id'] !== $this->titularId) return $nao;   // de outra pessoa = não existe para quem pergunta
+            $res = match ($ex['estado']) {
+                'aplicada', 'sem_mudanca' => $ex['estado'],
+                'em_andamento' => 'em_andamento',   // DSHOW-093 C: o prazo só SINALIZA (abaixo); não prova interrupção
+                'interrompida' => 'interrompida',   // registrada pela PRÓPRIA tentativa (lote parado no meio)
+                default => 'nao_aplicada',
+            };
+            $out = ['chave' => $chave, 'resultado' => $res, 'operacao' => $ex['rota'], 'recibo' => in_array($res, ['aplicada', 'sem_mudanca'], true) ? $ex['recibo'] : null,
+                'erro' => $res === 'nao_aplicada' ? $ex['erro'] : null, 'tentativas' => (int) $ex['tentativas'], 'criado_em' => $ex['criado_em'], 'concluido_em' => $ex['concluido_em']];
+            if ($res === 'em_andamento' && (int) $ex['idade_s'] >= self::INTERROMPIDA_APOS_S) $out += ['sinal' => 'pode_estar_demorando', 'reenvio_seguro' => true];
+            // P1-1: estado POR ITEM das rotas de lote (aceita | ignorada | falha | pendente) + contagem
+            if (in_array($ex['rota'], self::ROTAS_LOTE, true)) {
+                $itens = array_map(static fn($i) => ['item' => $i['item'], 'desfecho' => $i['desfecho'], 'detalhe' => $i['detalhe']], $ops->itensOperacao($chave));
+                $out['itens'] = $itens;
+                $out['itens_resumo'] = array_count_values(array_column($itens, 'desfecho')) + ['pendente' => 0];
+            }
+            return $out;
+        }
+        // massa (DSHOW-085): o recibo próprio da massa (eq_pedido_massa), conferido pelo titular
+        if ($this->repo instanceof ModuloRepositorio) {
+            $ped = $this->repo->pedidoMassa($chave);
+            if ($ped !== null && KitsService::titularDoPedido($ped, $this->titularId, $this->titular)) {
+                $recibo = is_array($ped['resultado']) ? KitsService::reciboMassa($chave, $ped['resultado']) : null;   // o MESMO recibo da resposta e do reenvio
+                return ['chave' => $chave, 'resultado' => $recibo['desfecho'] ?? 'em_andamento', 'operacao' => 'massa_aplicar', 'recibo' => $recibo,
+                    'erro' => null, 'criado_em' => $ped['criado_em'], 'concluido_em' => $ped['concluido_em']];
+            }
+        }
+        if ($falhaLivro !== null) throw $falhaLivro;
+        return $nao;
+    }
+}
+
+/**
+ * P1-1 · desfecho POR ITEM de uma rota de lote com chave (sugestoes_lote). Cada item grava o desfecho NA MESMA transação da gravação do
+ * item (aceita) ou numa transação só dele (ignorada | falha, que não gravam nada); toda transação confere, sob trava, que a operação ainda
+ * é desta tentativa (P1-2 b). Reenvio da mesma chave: `abrir` devolve os desfechos já gravados — esses itens não são refeitos nem auditados.
+ */
+final class LoteDaOperacao
+{
+    public function __construct(private readonly AtributosRepositorio $repo, private readonly OperacoesRepositorio $ops, public readonly string $chave, private readonly string $tentativa) {}
+
+    /** @param list<int|string> $itens  @return array<string,array{desfecho:string,detalhe:?array}> desfechos já gravados (tentativas anteriores) */
+    public function abrir(array $itens): array
+    {
+        return $this->repo->transacao(function () use ($itens): array {
+            $this->exigirDono();
+            $this->ops->abrirItensOperacao($this->chave, array_map('strval', array_values($itens)));
+            $ja = [];
+            foreach ($this->ops->itensOperacao($this->chave) as $i) if ($i['desfecho'] !== 'pendente') $ja[$i['item']] = ['desfecho' => $i['desfecho'], 'detalhe' => $i['detalhe']];
+            return $ja;
+        });
+    }
+
+    /** Transação de UM item: posse conferida SOB TRAVA antes de qualquer efeito; $grava devolve [desfecho, detalhe], gravado no MESMO COMMIT. */
+    public function item(int|string $item, callable $grava): array
+    {
+        return $this->repo->transacao(function () use ($item, $grava): array {
+            $this->exigirDono();
+            [$desfecho, $detalhe] = $grava();
+            $this->registrar($item, $desfecho, $detalhe);
+            return [$desfecho, $detalhe];
+        });
+    }
+
+    /** DENTRO da transação do item (antes do COMMIT): desfecho do item + posse da operação. Lança tomada() se outra tentativa assumiu. */
+    public function registrar(int|string $item, string $desfecho, array $detalhe): void
+    {
+        $this->exigirDono();
+        if (!$this->ops->decidirItemOperacao($this->chave, (string) $item, $desfecho, $detalhe)) throw OperacoesGravacao::tomada();
+    }
+
+    /** Desfecho de item que não grava nada (ignorada | falha): transação própria, com a mesma conferência de posse. */
+    public function registrarSozinho(int|string $item, string $desfecho, array $detalhe): void
+    {
+        $this->repo->transacao(function () use ($item, $desfecho, $detalhe): void { $this->registrar($item, $desfecho, $detalhe); });
+    }
+
+    /** Estado por item (para a resposta de lote interrompido); nunca lança. */
+    public function itens(): array
+    {
+        try { return array_map(static fn($i) => ['item' => $i['item'], 'desfecho' => $i['desfecho']], $this->ops->itensOperacao($this->chave)); }
+        catch (Throwable $t) { return []; }
+    }
+
+    private function exigirDono(): void
+    {
+        if (!$this->ops->donoDaOperacao($this->chave, $this->tentativa)) throw OperacoesGravacao::tomada();
     }
 }

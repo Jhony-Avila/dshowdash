@@ -544,3 +544,13 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
 /* CABEÇALHO TRAVADO: o h2 + descrição antigos das telas (Kits, Unidades, Vincular) não aparecem no bloco travado; os botões ficam */
 [data-bl-root] .at-fixo .at-titulo-tela > div:first-child:has(> h2) { display: none; }
 [data-bl-root] .at-fixo .at-titulo-tela { margin: 0 0 6px; }
+
+/* ── "FOI SALVO OU NÃO": estados por campo ── */
+[data-bl-root] .at-salvo--aviso { color: var(--bl-aviso); }
+[data-bl-root] .at-conflito { display: block; }
+[data-bl-root] .at-conflito__linhas { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; color: var(--bl-texto); font-size: 12px; }
+[data-bl-root] .at-conflito__linhas strong { font-weight: 650; }
+
+/* DSHOW-096: resumo por item do lote */
+[data-bl-root] .at-lote-resumo { margin-top: 8px; font-size: 12.5px; }
+[data-bl-root] .at-lote-resumo ul { margin: 2px 0 6px 18px; padding: 0; }
