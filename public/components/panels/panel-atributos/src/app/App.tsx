@@ -15,16 +15,11 @@ import { Conferencia } from '../screens/Conferencia';
 import { Icone, ICONE_ABA } from '../ui/Icones';
 import { liberarSticky, restaurarShell } from '../lib/shellSticky';
 
-/** UX-1b: título e descrição de cada tela (mapa ÚNICO; as telas não desenham mais o próprio título/descrição). Na ficha: "Produtos", sem descrição. */
-export const TELAS: Record<Aba, { titulo: string; descricao: string }> = {
-  visao: { titulo: 'Visão geral', descricao: 'Como está a especificação técnica dos produtos ativos. Cada número leva à lista correspondente.' },
-  produtos: { titulo: 'Produtos', descricao: 'Busque pelo nome ou código. Clique no produto para abrir a ficha.' },
-  vincular: { titulo: 'Vincular', descricao: 'Aplique kits ou atributos avulsos a vários produtos de uma vez. Nada é gravado antes da prévia.' },
-  preencher: { titulo: 'Preencher', descricao: 'Escolha um kit ou uma subcategoria. Setas ↑↓ mudam de linha, Tab muda de coluna, Enter grava e desce. Sugestões aparecem apagadas na célula.' },
-  kits: { titulo: 'Kits', descricao: 'Cada kit é um conjunto de atributos que vale para as subcategorias escolhidas, para produtos avulsos ou para todos os produtos. Kits não são apagados: só desativados.' },
-  atributos: { titulo: 'Atributos', descricao: 'Dicionário de características dos produtos. O código é gerado pelo sistema na criação e nunca muda (é o contrato com o app).' },
-  unidades: { titulo: 'Unidades', descricao: 'Unidades de medida usadas nos atributos numéricos, agrupadas por grandeza. Fator: valor × fator = valor na unidade base da grandeza.' },
-  conferencia: { titulo: 'Conferência', descricao: 'Filas com ação direta. Nada vira valor sem decisão; cada decisão fica no histórico do produto.' },
+/** UX-1b: título de cada tela = nome da aba (mapa ÚNICO; as telas não desenham mais o próprio título). Na ficha: "Produtos".
+ *  Sem frase de descrição embaixo do título (aprovação do Jhony e do Cima, 18/11). */
+export const TELAS: Record<Aba, { titulo: string }> = {
+  visao: { titulo: 'Visão geral' }, produtos: { titulo: 'Produtos' }, vincular: { titulo: 'Vincular' }, preencher: { titulo: 'Preencher' },
+  kits: { titulo: 'Kits' }, atributos: { titulo: 'Atributos' }, unidades: { titulo: 'Unidades' }, conferencia: { titulo: 'Conferência' },
 };
 
 
@@ -120,10 +115,9 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
     <Contexto.Provider value={nav}>
       <div data-bl-root className="at-raiz" ref={raiz}>
         <div className="at-fixo" ref={fixo}>
-          <header className={`at-cabecalho ${produto !== null ? 'at-cabecalho--uma-linha' : ''}`}>
+          <header className="at-cabecalho at-cabecalho--uma-linha">
             <div className="at-cabecalho__titulo">
               <h1>{produto !== null ? 'Produtos' : TELAS[aba].titulo}</h1>
-              {produto === null && <p>{TELAS[aba].descricao}</p>}
             </div>
             <nav className="at-nav" aria-label="Seções do módulo">
               {ABAS.map((a) => (

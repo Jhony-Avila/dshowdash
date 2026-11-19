@@ -1,7 +1,7 @@
 // Aceite do PACOTE UX-1 (só tela) no harness 8112, banco de validação. 1 navegador, 1 aba. Desfaz o que cria (vínculo avulso removido,
 // atributo e kit de teste DESATIVADOS — nada é apagado). Uso: nice -n 10 node teste-ux1.cjs
 const { chromium } = require('/srv/dshow-work/atributos-web-wt/node_modules/playwright-core');
-const B = 'http://127.0.0.1:8112';
+const B = `http://127.0.0.1:${process.env.PORTA || 8112}`;
 let ok = 0, falhas = 0;
 const afirma = (nome, cond, extra = '') => { if (cond) { ok++; console.log('ok    ' + nome); } else { falhas++; console.log('FALHA ' + nome + (extra ? ' · ' + extra : '')); } };
 (async () => {
@@ -38,7 +38,7 @@ const afirma = (nome, cond, extra = '') => { if (cond) { ok++; console.log('ok  
 
   // 2. PRODUTOS
   await ir('#/panel-atributos', 'input[type="search"]');
-  afirma('Produtos: texto de abertura novo', (await pg.$eval('.at-cabecalho p', (e) => e.textContent.trim())) === 'Busque pelo nome ou código. Clique no produto para abrir a ficha.');
+  afirma('Produtos: título "Produtos" e SEM frase de descrição embaixo (decisão do Jhony, 18/11)', (await pg.$eval('.at-cabecalho h1', (e) => e.textContent.trim())) === 'Produtos' && !(await pg.$('.at-cabecalho p')));
   await pg.click('button.at-filtro:has-text("Sem foto")'); await pg.fill('input[type="search"]', 'zzqx tubo'); await pg.waitForTimeout(700);
   const bt = await pg.$('button:has-text("em todo o catálogo")');
   afirma('Produtos: busca vazia com filtros → "Nenhum produto encontrado com estes filtros." + "Buscar ‘termo’ em todo o catálogo" (inclui inativos)', !!(await pg.$('text=Nenhum produto encontrado com estes filtros.')) && !!bt && (await bt.textContent()).includes('‘zzqx tubo’') && !!(await pg.$('text=inclui produtos inativos')));
