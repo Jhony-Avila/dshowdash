@@ -10,6 +10,9 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) !== '/api/midia/index
 $e = json_decode(base64_decode((string) ($_SERVER['HTTP_X_HARNESS_ESTADO'] ?? '')), true);
 $e = is_array($e) ? $e : [];
 $log = (string) getenv('HARNESS_LOG');
+// regra de 23/11: só grava no registro DENTRO do temporário do teste (nunca caminho vazio ou fora do tmp do sistema)
+$tmpBase = realpath(sys_get_temp_dir());
+if ($log === '' || $tmpBase === false || !str_starts_with($log, $tmpBase . '/') || str_contains($log, '..') || !is_dir(dirname($log))) { http_response_code(500); echo 'HARNESS_LOG inválido'; exit; }
 $flags = $e['flags'] ?? [];
 $sit = $e['situacao'] ?? ['sessao_ativa' => true, 'usuario_ativo' => true];
 $repo = new class($sit, !empty($e['repoFalha'])) implements FotosSessaoRepositorio {

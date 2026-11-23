@@ -7,7 +7,13 @@ declare(strict_types=1);
 foreach (['FotosAppCliente', 'FotosCanal', 'FotosPortas', 'FotosSessao', 'FotosProxy'] as $c) require_once __DIR__ . "/../../../api/midia/$c.php";
 $n = 0; $f = 0;
 $ok = function (string $nome, bool $c, string $x = '') use (&$n, &$f) { $n++; if (!$c) { $f++; echo "[ERRO] $nome" . ($x !== '' ? " · $x" : '') . "\n"; } };
-$seg = tempnam(sys_get_temp_dir(), 'm103'); file_put_contents($seg, str_repeat('s', 40) . "\n"); chmod($seg, 0600);   // sintético
+// REGRA PERMANENTE (23/11): o teste só escreve num diretório PRIVADO criado e VERIFICADO por ele mesmo — nada fora dele; falhou → aborta.
+$tmpBase = realpath(sys_get_temp_dir());
+if ($tmpBase === false || $tmpBase === '' || $tmpBase === '/') { echo "[ERRO] tmp do sistema inválido — ABORTADO\n"; exit(2); }
+$TMP = $tmpBase . '/m103-' . bin2hex(random_bytes(8));
+if (!@mkdir($TMP, 0700) || !is_dir($TMP) || realpath($TMP) !== $TMP || (fileperms($TMP) & 0777) !== 0700) { echo "[ERRO] diretório temporário não criado/verificado — ABORTADO\n"; exit(2); }
+$arq = function (string $nome) use ($TMP): string { if ($nome === '' || str_contains($nome, '/') || str_contains($nome, '..')) { echo "[ERRO] nome inválido — ABORTADO\n"; exit(2); } return $TMP . '/' . $nome; };
+$seg = $arq('segredo-sintetico.key'); file_put_contents($seg, str_repeat('s', 40) . "\n"); chmod($seg, 0600);   // sintético
 $CH = 'op-teste103-0123456789';
 $JPG = "\xFF\xD8\xFF\xE0" . str_repeat('x', 100);
 $rec = fn(string $op, array $x = []) => array_merge(['canal' => 'dash', 'chave' => $CH, 'confirmado_em' => '2026-11-19T12:00:00.000Z', 'desfecho' => 'aplicada', 'foto_id' => 812, 'operacao' => $op, 'produto_id' => 550, 'titular_user_id' => 75, 'versao_nova' => 8], $x);
@@ -272,6 +278,5 @@ $a = $amb(); $a->corpoBytes = $JPG; $a->resp = fn($m, $url, $c) => ['status' => 
 $r = $req($a, 'POST', ['r' => 'publicar', 'product_id' => '550'], ['tamanho' => (string) strlen($JPG)]);
 $ok('integração: 403 sem_permissao continua 403 recusada (permissão do usuário)', $r->http === 403 && $r->codigo === 'SEM_PERMISSAO');
 
-@unlink($seg);
 echo ($f ? '[ERRO]' : '[OK]  ') . " fotos-dshow103 (P1-1/2/3 + A–D + ea77d74, dependências falsas): $n casos, $f falha(s)\n";
 exit($f ? 1 : 0);

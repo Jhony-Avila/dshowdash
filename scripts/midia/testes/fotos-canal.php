@@ -6,7 +6,13 @@ require __DIR__ . '/../../../api/midia/FotosAppCliente.php';
 require __DIR__ . '/../../../api/midia/FotosCanal.php';
 $n = 0; $f = 0;
 $ok = function (string $nome, bool $c, string $x = '') use (&$n, &$f) { $n++; if (!$c) { $f++; echo "[ERRO] $nome" . ($x ? " · $x" : '') . "\n"; } };
-$seg = tempnam(sys_get_temp_dir(), 'midia'); file_put_contents($seg, str_repeat('s', 40) . "\n"); chmod($seg, 0600);   // sintético
+// REGRA PERMANENTE (23/11): o teste só escreve num diretório PRIVADO criado e VERIFICADO por ele mesmo — nada fora dele; falhou → aborta.
+$tmpBase = realpath(sys_get_temp_dir());
+if ($tmpBase === false || $tmpBase === '' || $tmpBase === '/') { echo "[ERRO] tmp do sistema inválido — ABORTADO\n"; exit(2); }
+$TMP = $tmpBase . '/midia-canal-' . bin2hex(random_bytes(8));
+if (!@mkdir($TMP, 0700) || !is_dir($TMP) || realpath($TMP) !== $TMP || (fileperms($TMP) & 0777) !== 0700) { echo "[ERRO] diretório temporário não criado/verificado — ABORTADO\n"; exit(2); }
+$arq = function (string $nome) use ($TMP): string { if ($nome === '' || str_contains($nome, '/') || str_contains($nome, '..')) { echo "[ERRO] nome inválido — ABORTADO\n"; exit(2); } return $TMP . '/' . $nome; };
+$seg = $arq('segredo-sintetico.key'); file_put_contents($seg, str_repeat('s', 40) . "\n"); chmod($seg, 0600);   // sintético
 $ult = null;
 $fake = function (array $resp) use (&$ult) { return function (string $m, string $url, array $cab, string $corpo, int $t) use ($resp, &$ult) { $ult = compact('m', 'url', 'cab', 'corpo'); return $resp + ['status' => 0, 'corpo' => '', 'tipo' => '', 'erro' => null]; }; };
 $canal = fn(array $resp, string $s = '') => new FotosCanal(new FotosAppCliente(3100, $s ?: $seg, $fake($resp)), 75);
@@ -59,10 +65,10 @@ $ok('400 recusada com a mensagem do app', $e && $e->meta['desfecho'] === 'recusa
 $e = $erro(fn() => $canal(['status' => 429, 'corpo' => json_encode(['error' => ['code' => 'rate_limited', 'message' => 'Devagar.'], 'desfecho' => 'recusada']), 'retry_after' => '20'])->restaurar(812, $CH, 7));
 $ok('429 com retry_after', $e && $e->http === 429 && $e->meta['retry_after'] === '20');
 // sem segredo → recusada (nada saiu)
-$vazio = tempnam(sys_get_temp_dir(), 'midia'); file_put_contents($vazio, 'curto'); chmod($vazio, 0600); $ult = null;
+$vazio = $arq('segredo-curto.key'); file_put_contents($vazio, 'curto'); chmod($vazio, 0600); $ult = null;
 $e = $erro(fn() => $canal(['status' => 201], $vazio)->publicar(550, $CH, $JPG));
 $ok('sem segredo → 503 recusada, nada enviado', $e && $e->http === 503 && $e->meta['desfecho'] === 'recusada' && $ult === null);
-$aberto = tempnam(sys_get_temp_dir(), 'midia'); file_put_contents($aberto, str_repeat('s', 40)); chmod($aberto, 0644);
+$aberto = $arq('segredo-aberto.key'); file_put_contents($aberto, str_repeat('s', 40)); chmod($aberto, 0644);
 $e = $erro(fn() => $canal(['status' => 201], $aberto)->capa(812, $CH, 7));
 $ok('segredo com permissão aberta = ausente', $e && $e->codigo === 'APP_UNAVAILABLE');
 
@@ -182,6 +188,5 @@ foreach ([fn() => $cs->publicar(550, $CH, $JPG), fn() => $cs->capa(1, $CH, 1), f
 $ok('100 segredo nunca sai em URL/cabeçalho/corpo para o app nem em mensagem/meta de erro', $vaz === [] && !str_contains(implode('', $saidas), $segredo));
 $ok('100 segredo nunca é logado pelo cliente (código não passa o segredo ao error_log)', !preg_match('/error_log\([^;]*\$s(egredo)?\b/', (string) file_get_contents(__DIR__ . '/../../../api/midia/FotosAppCliente.php')));
 
-foreach ([$seg, $vazio, $aberto] as $x) @unlink($x);
 echo ($f ? '[ERRO]' : '[OK]  ') . " fotos-canal (proxy de fotos do Dash, transporte falso): $n casos, $f falha(s)\n";
 exit($f ? 1 : 0);

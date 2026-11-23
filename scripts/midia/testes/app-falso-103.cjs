@@ -5,6 +5,9 @@
 // Uso: node app-falso-103.cjs <porta> <arquivo-segredo-teste> <log.jsonl>
 const http = require('http'); const crypto = require('crypto'); const fs = require('fs');
 const [porta, arqSeg, log] = [Number(process.argv[2]), process.argv[3], process.argv[4]];
+// regra de 23/11: o registro só pode ficar DENTRO do temporário do teste (nunca vazio nem fora do tmp do sistema)
+const TMPB = fs.realpathSync(require('os').tmpdir());
+if (!log || !require('path').isAbsolute(log) || !log.startsWith(TMPB + '/') || log.includes('..') || !fs.existsSync(require('path').dirname(log))) { console.error('[ERRO] caminho do registro inválido — ABORTADO'); process.exit(2); }
 const segredo = fs.readFileSync(arqSeg, 'utf8').trim();
 const WEBP = Buffer.from('52494646240000005745425056503820180000003001009d012a0100010002003425a400037000fefb94000000', 'hex');
 http.createServer((req, res) => {

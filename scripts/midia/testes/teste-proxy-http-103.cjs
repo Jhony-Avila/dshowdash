@@ -6,7 +6,10 @@
 'use strict';
 const { spawn } = require('child_process'); const fs = require('fs'); const os = require('os'); const path = require('path'); const crypto = require('crypto');
 const PORTA = Number(process.env.PORTA || 8131); const PORTA_APP = Number(process.env.PORTA_APP || 3191);
-const DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dshow103-'));
+// regra de 23/11: diretório PRIVADO desta execução, VERIFICADO antes de qualquer escrita (mkdtemp lança se falhar)
+const TMPB = fs.realpathSync(os.tmpdir());
+const DIR = fs.realpathSync(fs.mkdtempSync(path.join(TMPB, 'dshow103-')));
+if (!DIR.startsWith(TMPB + path.sep) || !fs.statSync(DIR).isDirectory() || (fs.statSync(DIR).mode & 0o777) !== 0o700) { console.log('[ERRO] diretório temporário não verificado — ABORTADO'); process.exit(2); }
 const SEG = path.join(DIR, 'segredo-sintetico.key'); const SEGREDO = 'segredo-SINTETICO-dshow103-'.padEnd(48, 'q');
 fs.writeFileSync(SEG, SEGREDO + '\n', { mode: 0o600 });
 const LOG_APP = path.join(DIR, 'app.jsonl'); const LOG_H = path.join(DIR, 'harness.log');
