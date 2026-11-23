@@ -239,6 +239,13 @@ final class BlingSyncService
                 'limite_consumido_pct' => $cliente->consumo()['consumido_pct'],
             ]);
 
+            // RELEITURA DOS PEDIDOS (23/11): canais sincronizaram com sucesso pela 1ª vez depois de falha/escopo ausente/nunca →
+            // agenda UMA reconciliação completa de pedidos (prioridade 60, a mais baixa) para os pedidos já gravados ganharem o canal.
+            if ($recurso === 'canais' && $concluida && ($estadoAnterior['situacao'] ?? null) !== 'ok') {
+                $this->repo->enfileirar($accountId, 'sync', 'pedidos', null,
+                    ['estrategia' => 'reconciliacao', 'correlation_id' => $correlationId, 'motivo' => 'canais-disponiveis'], 60);
+            }
+
             $this->repo->fecharJob($jobId, $estadoColeta === 'invalida' ? 'falhou' : 'concluido', $contagem,   // enum do job não tem 'parcial': o estado vai na mensagem
                 sprintf('%d páginas, %d itens, coleta %s', $resultado['paginas'], $resultado['itens'], $estadoColeta));
 
@@ -586,13 +593,11 @@ final class BlingSyncService
             [$accountId, $d['bling_id']]
         );
 
+        // CORREÇÃO DO HASH (23/11): o hash era só do JSON cru → um pedido igual era 'ignorado' e NUNCA ganhava o canal (ou o contato)
+        // resolvido depois. Agora o hash inclui as referências RESOLVIDAS: quando o canal/contato passa a existir, o pedido é regravado
+        // normalmente. Efeito único após a entrega: a 1ª releitura regrava cada pedido uma vez (hash novo).
+        $d['payload_hash'] = md5($d['payload_hash'] . '|canal=' . ($d['sales_channel_id'] ?? '') . '|contato=' . ($d['contact_id'] ?? ''));
         $r = $this->repo->upsert('bling_sales_orders', $accountId, $d);
-        if ($r === 'ignorado' && $d['sales_channel_id'] !== null) {
-            // BLING-ESCOPO-AUSENTE (23/11): o hash é do JSON cru → pedido igual não é regravado. Sem isto, os pedidos lidos ANTES de os
-            // canais sincronizarem ficariam sem canal para sempre. Só preenche o que está vazio; nunca troca um canal já gravado.
-            $this->repo->pdo()->prepare('UPDATE bling_sales_orders SET sales_channel_id = ? WHERE account_id = ? AND bling_id = ? AND sales_channel_id IS NULL')
-                ->execute([$d['sales_channel_id'], $accountId, $d['bling_id']]);
-        }
         $pedidoId = $this->repo->idPorBlingId('bling_sales_orders', $accountId, $d['bling_id']);
 
         if ($pedidoId !== null) {

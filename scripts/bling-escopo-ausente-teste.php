@@ -145,6 +145,8 @@ try {
     $r = $sync->sincronizar($conta, 'canais', 'incremental', 'teste-5');
     ok('sincroniza OK com o escopo', $r['situacao'] === 'ok' && $chamadas() === 3, $r['situacao']);
     ok('sem nova marca', $erros('ESCOPO_AUSENTE') === 2 && $repo->estadoSync($conta, 'canais')['situacao'] === 'ok');
+    ok('reautorizou + canais OK → releitura dos pedidos agendada (1)', (int) $pdo->query("SELECT COUNT(*) FROM bling_queue WHERE recurso = 'pedidos' AND situacao = 'pendente'")->fetchColumn() === 1);
+    $pdo->exec('DELETE FROM bling_queue');   // a seção 6 olha só a fila dela
 
     echo "== 6. 403 que NÃO é de escopo mantém o comportamento antigo\n";
     $api->responder('pedidos/vendas', new BlingResposta(403, ['error' => ['type' => 'forbidden', 'message' => 'use api.bling.com.br']]));
@@ -180,22 +182,27 @@ try {
     $r = $sync->sincronizar($conta, 'notas', 'incremental', 'teste-9');
     ok('429 → espera 7 s (do servidor) e conclui', $r['situacao'] === 'ok' && $SONOS === [7000], json_encode($SONOS));
 
-    echo "== 10. pedido IGUAL lido antes dos canais ganha o canal depois (sem trocar canal já gravado)\n";
+    echo "== 10. canais disponíveis → releitura dos pedidos agendada; pedido IGUAL ganha o canal (hash com as referências resolvidas)\n";
     $pedido = ['id' => 9001, 'numero' => '1', 'data' => '2026-11-20', 'situacao' => ['id' => 6], 'loja' => ['id' => 777], 'total' => 10, 'itens' => []];
     $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$pedido]]));
+    $pdo->exec("UPDATE bling_sync_state SET situacao = 'atencao', proxima_execucao_em = UTC_TIMESTAMP() - INTERVAL 1 MINUTE WHERE recurso = 'canais'");
+    $pdo->exec("DELETE FROM bling_sales_channels");
     $sync->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-10a');
     $canal = static fn() => $pdo->query("SELECT sales_channel_id FROM bling_sales_orders WHERE bling_id = '9001'")->fetchColumn();
-    ok('sem canais sincronizados: pedido sem canal', $canal() === null);
+    ok('sem canais: pedido gravado sem canal', $canal() === null);
+    $pdo->exec("DELETE FROM bling_queue");
     $api->responder('canais-venda', new BlingResposta(200, ['data' => [['id' => 777, 'descricao' => 'Mercado Livre (teste)']]]));
-    $sync->sincronizar($conta, 'canais', 'reconciliacao', 'teste-10b');
-    $sync->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-10c');
+    $sync->sincronizar($conta, 'canais', 'incremental', 'teste-10b');
+    $agendada = $pdo->query("SELECT COUNT(*) FROM bling_queue WHERE recurso = 'pedidos' AND situacao = 'pendente' AND payload LIKE '%reconciliacao%'")->fetchColumn();
+    ok('1ª sincronização OK dos canais AGENDA a releitura dos pedidos', (int) $agendada === 1);
+    $sync->sincronizar($conta, 'canais', 'incremental', 'teste-10b2');
+    ok('canais já OK: não reagenda de novo', (int) $pdo->query("SELECT COUNT(*) FROM bling_queue WHERE recurso = 'pedidos'")->fetchColumn() === 1);
+    $d = $fila->drenar(10, 30);
     $idCanal = (int) $pdo->query("SELECT id FROM bling_sales_channels WHERE bling_id = '777'")->fetchColumn();
-    ok('mesmo pedido (hash igual) agora COM o canal', $idCanal > 0 && (int) $canal() === $idCanal, (string) $canal());
-    $pdo->exec("INSERT INTO bling_sales_channels (account_id, bling_id, nome, integrado) VALUES ($conta, '888', 'Outro', 1)");
-    $pedido['loja']['id'] = 888; $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$pedido]]));
-    $pdo->exec("UPDATE bling_sales_orders SET payload_hash = 'x' WHERE bling_id = '9001'");   // força regravação normal (pedido mudou)
-    $sync->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-10d');
-    ok('pedido que MUDOU regrava normalmente (canal novo)', (int) $canal() !== $idCanal);
+    ok('a releitura regrava o pedido IGUAL com o canal', $idCanal > 0 && (int) $canal() === $idCanal, json_encode($d) . ' canal=' . $canal());
+    $sync->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-10c');
+    ok('releitura seguinte: nada a regravar (ignorado)', (int) $canal() === $idCanal
+        && (int) $pdo->query("SELECT registros_ignorados FROM bling_sync_state WHERE recurso = 'pedidos'")->fetchColumn() === 1);
 
     echo "== 11. painel: a última sincronização CONCLUÍDA não some depois de uma falha\n";
     $real = new BlingReal($repo);
