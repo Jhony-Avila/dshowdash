@@ -42,12 +42,14 @@ $sh = function (array $args) use ($cnf, $raiz): array {
     exec($cmd, $out, $rc);
     return [$rc, implode("\n", $out)];
 };
-$migrar = fn(string ...$extra) => $sh(array_merge([PHP_BINARY, "$raiz/tools/db/equipamentos-migrar.php", '--schema', $db, '--credenciais', $cnf], $extra));
+// 013 (Parte C): o executor recusa LACUNA e há migrações depois da 012 no diretório — as chamadas que aplicam vão só até a 012 (--ate)
+$migrar = fn(string ...$extra) => $sh(array_merge([PHP_BINARY, "$raiz/tools/db/equipamentos-migrar.php", '--schema', $db, '--credenciais', $cnf], $extra,
+    array_intersect($extra, ['--reverter', '--verificar']) ? [] : ['--ate', '012_kit_prioridade']));
 $prova = fn() => $sh([PHP_BINARY, "$raiz/scripts/atributos/kit-prioridade-prova.php", '--schema', $db, '--credenciais', $cnf, '--json']);
 $resMigrar = function (string $saida): ?array { return preg_match('/^MIGRAR_OK (.+)$/m', $saida, $m) ? json_decode($m[1], true) : null; };
 
 // ---- 001–011 pelo carregador dos testes (sem a 012), como os demais *-mysql.php ------------------------------------------------------
-$arqs = array_values(array_filter(glob("$dir/[0-9][0-9][0-9]_*.sql") ?: [], static fn($f) => !str_ends_with($f, '.revert.sql') && !str_contains(basename($f), '012_kit_prioridade'))); sort($arqs, SORT_STRING);
+$arqs = array_values(array_filter(glob("$dir/[0-9][0-9][0-9]_*.sql") ?: [], static fn($f) => !str_ends_with($f, '.revert.sql') && strcmp(basename($f), '012') < 0)); sort($arqs, SORT_STRING);   // só 001–011 (013: sem lacuna)
 foreach ($arqs as $arq) foreach (preg_split('/;\s*\n/', (string) preg_replace('/^--.*$/m', '', (string) file_get_contents($arq))) ?: [] as $st) {
     $st = trim($st); if ($st === '') continue;
     if (!preg_match('/^(CREATE TABLE IF NOT EXISTS|ALTER TABLE|INSERT (IGNORE )?INTO|UPDATE) `eq_[a-z_]+`/i', $st)) { echo '[RECUSADO] kit-prioridade-mysql: comando fora da lista em ' . basename($arq) . "\n"; exit(3); }

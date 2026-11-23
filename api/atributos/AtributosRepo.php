@@ -9,7 +9,7 @@ require_once __DIR__ . '/AtributosService.php';
 require_once __DIR__ . '/KitsService.php';
 require_once __DIR__ . '/SugestoesService.php';
 
-final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava, OperacoesRepositorio, KitsPrioridade
+final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, SugestoesDecisoes, UnidadesComTrava, OperacoesRepositorio, KitsPrioridade
 {
     private string $p;
     /** "FOI SALVO OU NÃO": ganchos executados DENTRO da transação, antes do COMMIT (recibo atômico com a gravação) e contador de COMMITs. */
@@ -590,6 +590,42 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
     public function sugestao(int $id, bool $travar = false): ?array
     {
         return $this->q('SELECT * FROM ' . $this->t('eq_sugestao') . ' WHERE id = ?' . ($travar ? ' FOR UPDATE' : ''), [$id])[0] ?? null;
+    }
+
+    // ---- SugestoesDecisoes (013, Parte C) -----------------------------------------------------------------------------------------------
+    private ?bool $tem013 = null;
+    public function temEstadosSugestao(): bool
+    {
+        $schema = $this->p === '' ? null : substr($this->p, 1, -2);   // "`SCHEMA`." → SCHEMA (sem prefixo = o banco da conexão)
+        return $this->tem013 ??= (bool) $this->q("SELECT 1 FROM information_schema.columns WHERE table_schema = " . ($schema === null ? 'DATABASE()' : '?')
+            . " AND table_name = 'eq_sugestao' AND column_name = 'substitui_id' LIMIT 1", $schema === null ? [] : [$schema]);
+    }
+
+    /** Transição com trava otimista (versão + estado de origem). Devolver/Reabrir limpam o decisor. 1062 = já há pendente da identidade. */
+    public function transicionarSugestao(int $id, int $versao, string $de, string $para, string $usuario, ?int $usuarioId, ?string $motivo, bool $limparDecisor): bool
+    {
+        $sets = $limparDecisor ? 'decidido_por = NULL, decidido_por_id = NULL, decidido_em = NULL' : 'decidido_por = ?, decidido_por_id = ?, decidido_em = CURRENT_TIMESTAMP(3)';
+        $p = $limparDecisor ? [$para, $motivo, $id, $versao, $de] : [$para, $motivo, $usuario, $usuarioId, $id, $versao, $de];
+        try {
+            return $this->exec('UPDATE ' . $this->t('eq_sugestao') . " SET estado = ?, motivo = ?, $sets, versao = versao + 1 WHERE id = ? AND versao = ? AND estado = ?", $p) === 1;
+        } catch (PDOException $e) {
+            if ((int) ($e->errorInfo[1] ?? 0) !== 1062) throw $e;
+            $err = new AtributosErro('CONFLICT', 409, 'Já existe uma sugestão mais nova em aberto para este campo deste produto.');
+            $err->meta = ['motivo' => 'pendente_existente'];
+            throw $err;
+        }
+    }
+
+    public function temSucessora(int $id): bool
+    {
+        return (bool) $this->q('SELECT 1 FROM ' . $this->t('eq_sugestao') . ' WHERE substitui_id = ? LIMIT 1', [$id]);
+    }
+
+    /** Titular estável de quem decidiu (aceitar/recusar pelo caminho antigo): só preenche, nunca troca. */
+    public function carimbarDecisor(int $id, int $usuarioId): void
+    {
+        if (!$this->temEstadosSugestao()) return;
+        $this->exec('UPDATE ' . $this->t('eq_sugestao') . ' SET decidido_por_id = ? WHERE id = ? AND decidido_por_id IS NULL AND estado IN (\'aceita\', \'recusada\')', [$usuarioId, $id]);
     }
 
     public function decidirSugestao(int $id, int $versao, string $estado, string $usuario, ?string $motivo): bool

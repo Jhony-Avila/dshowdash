@@ -50,6 +50,15 @@ interface LeituraVitrine
     public function usoUnidades(): array;
 }
 
+/** Parte C (013): página por cursor, total real, valores por par e "a conferir" — só SELECT. Interface à parte (dublês antigos não mudam). */
+interface LeituraConferencia
+{
+    public function contarSugestoes(string $fonte, string $estado, ?int $atributoId = null, ?array $pids = null): int;
+    public function sugestoesPagina(string $fonte, string $estado, ?int $atributoId, ?array $pids, ?array $depois, int $limite): array;
+    public function valoresDosPares(array $pares): array;
+    public function sugestoesAConferir(int $titularId, array $ids): array;
+}
+
 final class ProdutosLeitura
 {
     /** Espelho do PRECIFICA_PAR do app (backend/api/src/modules/products/attributes.ts:76). Contrato: códigos estáveis. */
@@ -408,26 +417,139 @@ final class ProdutosLeitura
         $atr = $this->atr(); $cat = $this->cat();
         // D10: diz em quais destinos o produto já tem valor (a tela não oferece "aceitar" ali; o serviço recusa com VALUE_EXISTS).
         $tem = static fn(int $pid, ?int $aid): bool => $aid !== null && isset($todos[$pid]['_estados'][$aid]);
-        $sug = static fn($s) => ['ja_tem_valor' => $tem((int) $s['product_id'], (int) $s['atributo_id']),
-            'alternativo_ja_tem_valor' => $tem((int) $s['product_id'], $s['atributo_alternativo_id'] === null ? null : (int) $s['atributo_alternativo_id']),
-            'id' => (int) $s['id'], 'product_id' => (int) $s['product_id'], 'produto' => $cat[(int) $s['product_id']]['nome'] ?? '#' . $s['product_id'], 'atributo_id' => (int) $s['atributo_id'],
-            'atributo' => $atr[(int) $s['atributo_id']]['rotulo'] ?? null, 'tipo_atributo' => $atr[(int) $s['atributo_id']]['tipo'] ?? null,
-            'atributo_alternativo_id' => $s['atributo_alternativo_id'] === null ? null : (int) $s['atributo_alternativo_id'],
-            'atributo_alternativo' => $s['atributo_alternativo_id'] !== null ? ($atr[(int) $s['atributo_alternativo_id']]['rotulo'] ?? null) : null,
-            'fonte' => $s['fonte'], 'tipo' => $s['tipo'], 'valor_proposto' => $s['valor_proposto'], 'unidade_id' => $s['unidade_id'] === null ? null : (int) $s['unidade_id'],
-            'unidade' => $s['unidade'] ?? null, 'confianca' => $s['confianca'], 'evidencia' => $s['evidencia'], 'versao' => (int) $s['versao']];
-        $fora = []; $obr = []; $sem = [];
+        $sug = fn($s) => ['ja_tem_valor' => $tem((int) $s['product_id'], (int) $s['atributo_id']),
+            'alternativo_ja_tem_valor' => $tem((int) $s['product_id'], $s['atributo_alternativo_id'] === null ? null : (int) $s['atributo_alternativo_id'])] + $this->itemSugestao($s);
+        ['fora_da_ficha' => $fora, 'obrigatorios_vazios' => $obr, 'sem_kit' => $sem] = $this->filasDerivadas($res);
+        return ['filas' => [
+            'legado' => array_map($sug, $this->l->sugestoes(null, 'legado_2025', null, 3000)),
+            'nome' => array_map($sug, $this->l->sugestoes(null, 'nome_produto', null, 3000)),
+            'fora_da_ficha' => $fora, 'obrigatorios_vazios' => array_slice($obr, 0, 1000), 'sem_kit' => $sem,
+        ], 'totais' => $this->totaisConferencia() + ['obrigatorios_vazios' => count($obr), 'fora_da_ficha' => count($fora), 'sem_kit' => count($sem)],
+            'pode_decidir' => $this->pode(AtributosService::NIVEL_VALORES), 'pode_vincular' => $this->podeAdmin()];
+    }
+
+    /** As três filas DERIVADAS da Conferência (listas inteiras), a partir dos resumos dos produtos ATIVOS. */
+    private function filasDerivadas(array $res): array
+    {
+        $atr = $this->atr(); $fora = []; $obr = []; $sem = [];
         $vv = $this->versoesVinculos(array_keys($res));   // risco 5: as ações de vínculo da Conferência mandam a versão do produto
         foreach ($res as $pid => $p) {
             foreach (array_diff_key($p['_estados'], $p['_ficha']) as $aid => $est) $fora[] = ['product_id' => $pid, 'produto' => $p['nome'], 'atributo_id' => (int) $aid, 'atributo' => $atr[$aid]['rotulo'] ?? "#$aid", 'estado' => $est, 'versao_vinculos' => $vv[$pid] ?? null];
             foreach ($p['_obrigatorios'] as $aid) $obr[] = ['product_id' => $pid, 'produto' => $p['nome'], 'atributo_id' => (int) $aid, 'atributo' => $atr[$aid]['rotulo'] ?? "#$aid"];
             if ($p['kits_especificos'] === 0) $sem[] = ['product_id' => $pid, 'produto' => $p['nome'], 'subcategoria' => $p['subcategoria'], 'legado' => $p['legado']['kit_nome'] ?? null, 'versao_vinculos' => $vv[$pid] ?? null];
         }
-        return ['filas' => [
-            'legado' => array_map($sug, $this->l->sugestoes(null, 'legado_2025', null, 3000)),
-            'nome' => array_map($sug, $this->l->sugestoes(null, 'nome_produto', null, 3000)),
-            'fora_da_ficha' => $fora, 'obrigatorios_vazios' => array_slice($obr, 0, 1000), 'sem_kit' => $sem,
-        ], 'totais' => ['obrigatorios_vazios' => count($obr)], 'pode_decidir' => $this->pode(AtributosService::NIVEL_VALORES), 'pode_vincular' => $this->podeAdmin()];
+        return ['fora_da_ficha' => $fora, 'obrigatorios_vazios' => $obr, 'sem_kit' => $sem];
+    }
+
+    /** Parte C (D-1): contagem REAL das filas de sugestão (COUNT), nunca o tamanho de uma lista cortada. Sem a interface = sem a chave. */
+    private function totaisConferencia(): array
+    {
+        if (!$this->l instanceof LeituraConferencia) return [];
+        return ['legado' => $this->l->contarSugestoes('legado_2025', 'pendente'), 'nome' => $this->l->contarSugestoes('nome_produto', 'pendente')];
+    }
+
+    /** Campos públicos de UMA sugestão (os mesmos no GET conferencia e no GET conferencia_fila). */
+    private function itemSugestao(array $s): array
+    {
+        $atr = $this->atr(); $cat = $this->cat(); $alt = $s['atributo_alternativo_id'] === null ? null : (int) $s['atributo_alternativo_id'];
+        return ['id' => (int) $s['id'], 'product_id' => (int) $s['product_id'], 'produto' => $cat[(int) $s['product_id']]['nome'] ?? '#' . $s['product_id'], 'atributo_id' => (int) $s['atributo_id'],
+            'atributo' => $atr[(int) $s['atributo_id']]['rotulo'] ?? null, 'tipo_atributo' => $atr[(int) $s['atributo_id']]['tipo'] ?? null,
+            'atributo_alternativo_id' => $alt, 'atributo_alternativo' => $alt !== null ? ($atr[$alt]['rotulo'] ?? null) : null,
+            'fonte' => $s['fonte'], 'tipo' => $s['tipo'], 'valor_proposto' => $s['valor_proposto'], 'unidade_id' => $s['unidade_id'] === null ? null : (int) $s['unidade_id'],
+            'unidade' => $s['unidade'] ?? null, 'confianca' => $s['confianca'], 'evidencia' => $s['evidencia'], 'versao' => (int) $s['versao']];
+    }
+
+    // ===================================================================================================== PARTE C — GET conferencia_fila
+    public const FILA_POR_PAGINA = 50;   // Q-SUG.4
+    private const FILAS = ['nome' => 'nome_produto', 'legado' => 'legado_2025', 'fora_da_ficha' => null, 'obrigatorios_vazios' => null, 'sem_kit' => null];
+    private const ESTADOS_FILA = ['pendente', 'ignorada', 'recusada', 'aceita'];
+
+    private static function cursorLer(mixed $c, int $partes): ?array
+    {
+        if ($c === null || $c === '') return null;
+        $d = is_string($c) && strlen($c) <= 200 ? json_decode((string) base64_decode(strtr($c, '-_', '+/'), true), true) : null;
+        if (!is_array($d) || count($d) !== $partes || array_filter($d, static fn($x) => !is_int($x) || $x < 0)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Cursor inválido. Recarregue a fila.', ['cursor']);
+        return array_values($d);
+    }
+    private static function cursorEscrever(array $k): string { return rtrim(strtr(base64_encode(json_encode(array_values($k))), '+/', '-_'), '='); }
+
+    /** "q" (produto ou ID) → ids do catálogo; null = sem filtro. */
+    private function pidsDaBusca(mixed $q): ?array
+    {
+        $q = is_string($q) ? trim($q) : '';
+        if ($q === '') return null;
+        $q = mb_substr($q, 0, 80); $out = [];
+        foreach ($this->cat() as $pid => $p) if ((ctype_digit($q) && (int) $q === $pid) || mb_stripos($p['nome'], $q) !== false) $out[] = $pid;
+        return $out;
+    }
+
+    /** Estado do destino para a coluna "Atual" (o mesmo formato do valor da Ficha) + unidade legível. */
+    private function destinoAtual(?array $linhas): array
+    {
+        if (!$linhas) return ['estado' => 'vazio'];
+        $v = self::valorPublico($linhas); $u = $v['unidade_id'] !== null ? ($this->unidadesCache()[$v['unidade_id']]['simbolo'] ?? null) : null;
+        return array_intersect_key($v, array_flip(['estado', 'texto', 'numero', 'booleano', 'data', 'opcoes', 'unidade_id', 'versao'])) + ['unidade' => $u];
+    }
+    private ?array $cacheUnid = null;
+    private function unidadesCache(): array { return $this->cacheUnid ??= $this->l->unidades(); }
+
+    /**
+     * GET conferencia_fila (contrato PROPOSTA v2 §6): fila=nome|legado|fora_da_ficha|obrigatorios_vazios|sem_kit, estado (só sugestões),
+     * atributo_id, q, cursor. 50 por página; total REAL; cursor por CHAVE (nunca posição): (produto, atributo, id) nas sugestões,
+     * (produto, atributo) em fora_da_ficha/obrigatorios_vazios e (produto) em sem_kit. Falha de consulta = erro (nunca lista vazia).
+     */
+    public function conferenciaFila(array $g, int $titularId): array
+    {
+        $this->exigir();
+        $fila = (string) ($g['fila'] ?? '');
+        if (!array_key_exists($fila, self::FILAS)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Fila inválida.', ['fila']);
+        if (!$this->l instanceof LeituraConferencia) throw new AtributosErro('QUEUE_UNAVAILABLE', 503, 'A fila paginada não está disponível agora.');
+        $aid = isset($g['atributo_id']) && $g['atributo_id'] !== '' ? (ctype_digit((string) $g['atributo_id']) ? (int) $g['atributo_id'] : throw new AtributosErro('VALIDATION_ERROR', 422, 'atributo_id inválido.', ['atributo_id'])) : null;
+        $pids = $this->pidsDaBusca($g['q'] ?? null);
+        $n = self::FILA_POR_PAGINA; $atr = $this->atr();
+        $base = ['fila' => $fila, 'por_pagina' => $n, 'gerado_em' => (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.v\Z')];
+        if (($fonte = self::FILAS[$fila]) !== null) {
+            $estado = (string) ($g['estado'] ?? 'pendente');
+            if (!in_array($estado, self::ESTADOS_FILA, true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Situação inválida.', ['estado']);
+            $depois = self::cursorLer($g['cursor'] ?? null, 3);
+            $total = $this->l->contarSugestoes($fonte, $estado, $aid, $pids);
+            $rs = $this->l->sugestoesPagina($fonte, $estado, $aid, $pids, $depois, $n + 1);
+            $mais = count($rs) > $n; $rs = array_slice($rs, 0, $n);
+            $pares = []; foreach ($rs as $s) { $pares[] = [(int) $s['product_id'], (int) $s['atributo_id']]; if ($s['atributo_alternativo_id'] !== null) $pares[] = [(int) $s['product_id'], (int) $s['atributo_alternativo_id']]; }
+            $vals = $this->l->valoresDosPares($pares);
+            $conferir = $estado === 'pendente' ? $this->l->sugestoesAConferir($titularId, array_map(static fn($s) => (int) $s['id'], $rs)) : [];
+            $podeDecidir = $this->pode(AtributosService::NIVEL_VALORES);
+            $itens = [];
+            foreach ($rs as $s) {
+                $pid = (int) $s['product_id']; $dest = $this->destinoAtual($vals["$pid:" . (int) $s['atributo_id']] ?? null);
+                $alt = $s['atributo_alternativo_id'] === null ? null : $this->destinoAtual($vals["$pid:" . (int) $s['atributo_alternativo_id']] ?? null);
+                $bloq = $dest['estado'] !== 'vazio' ? 'COM_VALOR' : (empty($atr[(int) $s['atributo_id']]['ativo']) ? 'ATRIBUTO_INATIVO' : (!$podeDecidir ? 'SEM_PERMISSAO' : null));
+                $itens[] = $this->itemSugestao($s) + ['estado' => $s['estado'], 'decidido_por' => $s['decidido_por'] ?? null, 'decidido_em' => $s['decidido_em'] ?? null, 'motivo' => $s['motivo'] ?? null,
+                    'substitui_id' => isset($s['substitui_id']) ? ($s['substitui_id'] === null ? null : (int) $s['substitui_id']) : null,
+                    'destino_atual' => $dest, 'alternativo_atual' => $alt, 'aceite_bloqueado' => $bloq,
+                    'a_conferir' => isset($conferir[(int) $s['id']]) ? ['chave' => $conferir[(int) $s['id']]] : null];
+            }
+            $ult = end($rs);
+            return $base + ['estado' => $estado, 'itens' => $itens, 'total' => $total,
+                'proximo_cursor' => $mais && $ult ? self::cursorEscrever([(int) $ult['product_id'], (int) $ult['atributo_id'], (int) $ult['id']]) : null];
+        }
+        // filas DERIVADAS: calculadas como no GET conferencia, ordenadas pela CHAVE e cortadas pelo cursor (chave > última vista)
+        $c = $this->filasDerivadas(array_filter($this->resumos(), static fn($p) => $p['ativo']))[$fila];   // lista INTEIRA (sem o corte de 1000)
+        $partes = $fila === 'sem_kit' ? 1 : 2;
+        $chave = static fn($x) => $partes === 1 ? [(int) $x['product_id']] : [(int) $x['product_id'], (int) $x['atributo_id']];
+        $c = array_values(array_filter($c, static fn($x) => ($pids === null || in_array((int) $x['product_id'], $pids, true)) && ($aid === null || $partes === 1 || (int) $x['atributo_id'] === $aid)));
+        usort($c, static fn($a, $b) => $chave($a) <=> $chave($b));
+        $total = count($c);
+        $depois = self::cursorLer($g['cursor'] ?? null, $partes);
+        if ($depois !== null) $c = array_values(array_filter($c, static fn($x) => $chave($x) > $depois));
+        $mais = count($c) > $n; $c = array_slice($c, 0, $n);
+        if ($fila === 'fora_da_ficha') {   // valor gravado (Parte B: coluna "Valor gravado")
+            $vals = $this->l->valoresDosPares(array_map(static fn($x) => [(int) $x['product_id'], (int) $x['atributo_id']], $c));
+            foreach ($c as &$x) $x['valor'] = $this->destinoAtual($vals[$x['product_id'] . ':' . $x['atributo_id']] ?? null);
+            unset($x);
+        }
+        $ult = end($c);
+        return $base + ['itens' => $c, 'total' => $total, 'proximo_cursor' => $mais && $ult ? self::cursorEscrever($chave($ult)) : null];
     }
 
     // ---- miniaturas (A6) ---------------------------------------------------------------------------------------------------------------

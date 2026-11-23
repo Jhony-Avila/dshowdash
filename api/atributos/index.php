@@ -133,7 +133,7 @@ try {
     $kits = fn() => new KitsService($repo, $nivel, $quem, $catalogo, $administra, (int) ($user['id'] ?? 0));   // DSHOW-086: titular estável
     // "FOI SALVO OU NÃO" (docs/atributos/CONTRATO-FOI-SALVO.md): toda escrita passa por OperacoesGravacao (recibo, desfecho, chave de operação)
     $operacoes = new OperacoesGravacao($repo, (int) ($user['id'] ?? 0), $quem, $nivel, $administra);   // DSHOW-093 D: porta antes do reenvio
-    $sugestoes = fn() => new SugestoesService($repo, $svc, $administra ? $kits() : null, $nivel, $quem);
+    $sugestoes = fn() => new SugestoesService($repo, $svc, $administra ? $kits() : null, $nivel, $quem, (int) ($user['id'] ?? 0));   // Parte C: decisor estável
     $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $r = eqRota();
     // Miniatura (A6): resposta binária com cache privado e ETag; nunca expõe caminho nem storage_key. Sem arquivo → 404.
@@ -164,6 +164,7 @@ try {
         'GET dicionario' => $leitura()->dicionario(),
         'GET unidades' => $leitura()->unidadesComUso(),
         'GET conferencia' => $leitura()->conferencia(),
+        'GET conferencia_fila' => $leitura()->conferenciaFila($_GET, (int) ($user['id'] ?? 0)),   // Parte C: total real + cursor (50 por página)
         'GET atributos' => $svc->listar($_GET),
         'GET atributo' => $svc->detalhe((int) ($_GET['id'] ?? 0)),
         'GET grupos' => $svc->grupos(),
@@ -202,6 +203,7 @@ try {
         // ---- sugestões e conferência (nível ≥ 80) ----
         'POST sugestao' => $sugestoes()->decidir($corpo),
         'POST sugestoes_lote' => $sugestoes()->aceitarLote($corpo, $lote),   // P1-1: desfecho por item com chave
+        'POST sugestoes_decidir' => $sugestoes()->decidirLote($corpo, $lote),   // Parte C: aceitar|recusar|ignorar|devolver|reabrir, chave obrigatória
         // ---- legado da etapa 8 (mantidas) ----
         'POST grupo' => $svc->salvarGrupo($corpo),
         'POST grupo_ativo' => $svc->definirGrupoAtivo((int) ($corpo['id'] ?? 0), !empty($corpo['ativo']), (int) ($corpo['versao'] ?? 0)),
@@ -210,6 +212,8 @@ try {
     };
     // massa_aplicar tem a PRÓPRIA chave (eq_pedido_massa, no corpo `chave`); as demais escritas usam a chave de operação genérica.
     // massa_previa é POST mas NÃO grava: fica fora da camada (sem recibo — prévia nunca é "Salvo").
+    // Parte C (Q-SUG.3): chave obrigatória antes de qualquer efeito (sugestoes_decidir sempre; X-Origem: conferencia nas rotas da Conferência)
+    if ($metodo === 'POST') OperacoesGravacao::exigirChave($r, $chaveOp, isset($_SERVER['HTTP_X_ORIGEM']) ? strtolower(trim((string) $_SERVER['HTTP_X_ORIGEM'])) : null);
     $out = $metodo === 'POST' && $r !== 'massa_previa' ? $operacoes->executar($r, $corpo, $r === 'massa_aplicar' ? null : $chaveOp, $rotear) : $rotear($corpo);
     if ($out === null) ApiResponse::error(ApiResponse::ERR_INVALID_ACTION, 400);
     ApiResponse::success($out);

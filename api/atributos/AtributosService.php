@@ -1261,7 +1261,21 @@ final class OperacoesGravacao
         private readonly ?int $nivel = null, private readonly ?bool $administra = null) {}
 
     /** Rotas que gravam VÁRIOS itens, cada um no seu COMMIT (P1-1): desfecho por item em eq_operacao_item. massa_aplicar é UMA transação. */
-    public const ROTAS_LOTE = ['sugestoes_lote'];
+    public const ROTAS_LOTE = ['sugestoes_lote', 'sugestoes_decidir'];
+
+    /**
+     * Parte C (Q-SUG.3, TRANSIÇÃO): chave OBRIGATÓRIA em sugestoes_decidir sempre e, quando o pedido vem da Conferência (X-Origem:
+     * conferencia), também em produto_atributo, produto_kit e sugestao. As outras telas (Ficha) seguem sem exigir até adotarem a chave.
+     * O cabeçalho é mandado pela própria tela; a garantia da tela é o teste estático do revisor (PROPOSTA v2 §5.2).
+     */
+    public const ROTAS_CHAVE_SEMPRE = ['sugestoes_decidir'];
+    public const ROTAS_CHAVE_CONFERENCIA = ['produto_atributo', 'produto_kit', 'sugestao'];
+    public static function exigirChave(string $rota, ?string $chave, ?string $origem): void
+    {
+        if ($chave !== null) return;
+        if (in_array($rota, self::ROTAS_CHAVE_SEMPRE, true) || ($origem === 'conferencia' && in_array($rota, self::ROTAS_CHAVE_CONFERENCIA, true)))
+            throw new AtributosErro('CHAVE_OBRIGATORIA', 422, 'Esta ação exige a chave de operação (X-Chave-Operacao). Nada foi gravado.', ['chave_operacao']);
+    }
 
     /**
      * Só é chamada quando o cliente ENVIOU chave. P1-2 a: se o livro de recibos não responde (011 ausente, tabela fora, sem permissão,
@@ -1435,7 +1449,7 @@ final class OperacoesGravacao
     }
 
     /** Rotas de valor/sugestão: nível ≥ NIVEL_VALORES. Demais escritas conhecidas: administrar o catálogo (nível ≥ NIVEL_ADMIN e permissão). */
-    private const ROTAS_PREENCHER = ['valor', 'valor_limpar', 'valor_unidade', 'valor_opcao_remover', 'sugestao', 'sugestoes_lote'];
+    private const ROTAS_PREENCHER = ['valor', 'valor_limpar', 'valor_unidade', 'valor_opcao_remover', 'sugestao', 'sugestoes_lote', 'sugestoes_decidir'];
     private const ROTAS_ADMIN = ['kit', 'kit_duplicar', 'kit_ativo', 'kit_prioridade', 'kit_itens', 'kit_escopos', 'kit_produtos', 'produto_kit', 'produto_atributo', 'massa_previa', 'massa_aplicar',
         'atributo', 'atributo_ativo', 'atributo_unidades', 'opcao', 'opcao_renomear', 'opcao_reordenar', 'opcao_ativa', 'unidade', 'unidade_ativa', 'grupo', 'grupo_ativo', 'ficha_revisar'];
 
@@ -1513,7 +1527,7 @@ final class OperacoesGravacao
         $campos = array_values(array_diff(array_keys($corpo), self::CONTROLE, ['id', 'product_id', 'atributo_id', 'motivo']));
         $r += ['versao_nova' => $versao, 'campos_gravados' => $desfecho === 'aplicada' ? $campos : []];
         // P1-1: o recibo do lote leva totais e IDs (o reenvio da mesma chave devolve este recibo COMPLETO)
-        if (in_array($rota, self::ROTAS_LOTE, true)) $r += array_intersect_key($out, array_flip(['aceitas', 'aceitas_ids', 'ignoradas', 'falhas', 'pedidas']));
+        if (in_array($rota, self::ROTAS_LOTE, true)) $r += array_intersect_key($out, array_flip(['aceitas', 'aceitas_ids', 'ignoradas', 'falhas', 'pedidas', 'acao', 'resumo', 'itens']));
         return $r;
     }
 
