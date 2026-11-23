@@ -198,11 +198,14 @@ class AuthService
             $expiresAt = time() + 604800;
             $_SESSION['expire_time'] = $expiresAt;
 
-            // #21: Persistir com retry
-            $this->persistSessionWithRetry($sessionToken, $userId, $newCsrf, $expiresAt);
-
+            // Regenera ANTES de gravar e troca o token da linha (antigo → novo); antes gravava o antigo e regenerava depois,
+            // deixando app_user_sessions com um id que não existe mais (proxy das fotos 401; revogação sem efeito).
+            $tokenAntigo = session_id() !== '' ? session_id() : $sessionToken;
             session_regenerate_id(true);
             $newSessionToken = session_id();
+
+            // #21: Persistir com retry
+            $this->persistSessionWithRetry($tokenAntigo, $newSessionToken, $userId, $newCsrf, $expiresAt);
 
             $this->logEvent($userId, 'session_refresh', $ip, [
                 'username' => $username,
@@ -244,13 +247,13 @@ class AuthService
     // #21: RETRY COM BACKOFF
     // ════════════════════════════════════════════════════════════
 
-    private function persistSessionWithRetry(string $token, int $userId, string $csrf, int $expiresAt): bool
+    private function persistSessionWithRetry(string $token, string $newToken, int $userId, string $csrf, int $expiresAt): bool
     {
         $lastException = null;
-        
+
         for ($attempt = 1; $attempt <= self::MAX_RETRY_ATTEMPTS; $attempt++) {
             try {
-                $result = $this->repository->refreshSessionActivity($token, $userId, $csrf, $expiresAt);
+                $result = $this->repository->rotateSessionToken($token, $newToken, $userId, $csrf, $expiresAt);
                 
                 if ($result) {
                     if ($attempt > 1) {

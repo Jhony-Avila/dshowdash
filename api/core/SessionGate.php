@@ -386,17 +386,63 @@ class SessionGate {
     
     public static function refresh(): void {
         self::start();
-        
+
         $sessionData = $_SESSION;
-        
+        $tokenAntigo = session_id();
+
         session_regenerate_id(true);
-        
+
         $_SESSION = $sessionData;
         $_SESSION['last_activity'] = time();
         $_SESSION['expires_at'] = time() + self::SESSION_LIFETIME;
-        
+
+        // A linha de app_user_sessions acompanha o id novo (senão o proxy das fotos recusa com SESSION_REVOKED
+        // e a revogação pela tela de Sessões deixa de alcançar esta sessão). Só linha ATIVA: sessão revogada continua revogada.
+        self::acompanharTokenNoBanco($tokenAntigo, session_id(), (int) ($sessionData['user_id'] ?? 0));
+
         self::$_sessionCache = null;
         self::$_readOnlyCache = [];
+    }
+
+    /** @var null|callable(): PDO  fornecedor da conexão DSHOWDASH (testes injetam; null = getConnection('DSHOWDASH')) */
+    private static $_pdoSessoes = null;
+
+    public static function definirConexaoSessoes(?callable $fornecedor): void {
+        self::$_pdoSessoes = $fornecedor;
+    }
+
+    /** Troca session_token antigo → novo na linha ATIVA do mesmo usuário. Nunca lança: falha vira log de segurança. */
+    private static function acompanharTokenNoBanco(string $antigo, string $novo, int $userId): void {
+        if ($antigo === '' || $novo === '' || $antigo === $novo || $userId <= 0) {
+            return;
+        }
+        try {
+            if (self::$_pdoSessoes !== null) {
+                $pdo = (self::$_pdoSessoes)();
+            } else {
+                if (!function_exists('getConnection')) {
+                    $arquivo = __DIR__ . '/../../config/db_connection.php';
+                    if (!is_file($arquivo)) {
+                        throw new \RuntimeException('config/db_connection.php ausente');
+                    }
+                    require_once $arquivo;
+                }
+                $pdo = getConnection('DSHOWDASH');
+            }
+            $st = $pdo->prepare('UPDATE app_user_sessions SET session_token = ?, last_activity_at = NOW(3) WHERE session_token = ? AND user_id = ? AND is_active = 1');
+            $st->execute([$novo, $antigo, $userId]);
+            self::logInfo('SessionGate', 'session_token_rotated', [
+                'user_id' => $userId,
+                'linhas' => $st->rowCount(),
+                'request_id' => self::getRequestId()
+            ]);
+        } catch (\Throwable $e) {
+            self::logSecurity('SessionGate', 'session_token_rotation_failed', [
+                'user_id' => $userId,
+                'erro' => substr($e->getMessage(), 0, 200),
+                'request_id' => self::getRequestId()
+            ]);
+        }
     }
     
     public static function create(array $userData): bool {

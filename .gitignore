@@ -2329,3 +2329,5 @@ dist/
 !/db/
 !/db/equipamentos/
 !/db/equipamentos/**
+!/scripts/sessao/
+!/scripts/sessao/**
