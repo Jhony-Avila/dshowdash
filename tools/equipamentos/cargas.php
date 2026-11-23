@@ -256,6 +256,83 @@ final class Cargas
     // ---- C5 --------------------------------------------------------------------------------------------------------------------------
     /** Valores do legado 2025 (E0B §3b, decisões D1–D6): A1–A4 e B1 viram valor 'importado' (lote próprio, só onde não existe); C1/C2 viram
      *  sugestão de CONFERÊNCIA (D5); X não entra. Integração (Código Bling, Id ML) entra no kit Integrações (A9). */
+    // ===================================================================================================== PARTE C (013) — uma regra só
+    /** Normalização decimal da 013 (espelho exato da coluna gerada): só quando o valor (TRIM, vírgula→ponto) é ^-?\d+(\.\d+)?$. */
+    public static function normalizarValor(?string $v): ?string
+    {
+        if ($v === null) return null;
+        $d = str_replace(',', '.', trim($v, ' '));
+        if (!preg_match('/^-?[0-9]+(\.[0-9]+)?$/', $d)) return $v;
+        if (str_contains($d, '.')) $d = rtrim(rtrim($d, '0'), '.');
+        return (string) preg_replace('/^(-?)0+([0-9])/', '$1$2', $d);
+    }
+
+    /** O MESMO conteúdo canônico da coluna gerada eq_sugestao.conteudo_hash (013, DSHOW-105 A): 'N' ou 'S<n>:<texto>' por campo, sem separador. */
+    public static function hashConteudo(mixed $alt, mixed $valor, mixed $opcao, mixed $unidade): string
+    {
+        $f = static fn($x) => $x === null ? 'N' : 'S' . mb_strlen((string) $x, 'UTF-8') . ':' . (string) $x;
+        return hash('sha256', $f($alt) . $f(self::normalizarValor($valor === null ? null : (string) $valor)) . $f($opcao) . $f($unidade));
+    }
+
+    private ?bool $tem013 = null;
+    private function tem013(): bool
+    {
+        return $this->tem013 ??= (bool) $this->q("SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'eq_sugestao' AND column_name = 'substitui_id'", [$this->schema]);
+    }
+
+    /**
+     * Propõe UMA sugestão pela regra da PROPOSTA-CONTRATO-SUGESTOES v2 §2, com as linhas da identidade (fonte, tipo, produto, atributo)
+     * travadas: conteúdo igual ao da linha mais recente ou ao de QUALQUER recusada → nada (recusada não volta igual); mais recente pendente →
+     * revisa no lugar; recusada/ignorada → SUCESSORA pendente (chave "<base>|r:<id anterior>", substitui_id) e a ignorada vira 'substituida'
+     * na MESMA transação; aceita → nada. Sem a 013: só cria a original ou revisa a pendente (regra antiga). O chamador já excluiu o par com valor.
+     * @param array{fonte:string,tipo:string,product_id:int,atributo_id:int,alt:?int,valor:?string,opcao:?int,unidade:?int,confianca:string,evidencia:string,lote:?int,usuario:string,motivo:string} $d
+     * @return 'criada'|'revista'|'sucessora'|'ja_existia'|'recusada_igual'
+     */
+    public function proporSugestao(array $d): string
+    {
+        $base = "{$d['fonte']}|{$d['product_id']}|{$d['atributo_id']}" . ($d['tipo'] === 'conferencia' ? '|conferencia' : '');
+        $hash = self::hashConteudo($d['alt'], $d['valor'], $d['opcao'], $d['unidade']);
+        $evid = mb_substr($d['evidencia'], 0, 500);
+        $faz = function () use ($d, $base, $hash, $evid): string {
+            $rows = $this->q("SELECT id, estado, versao, atributo_alternativo_id, valor_proposto, opcao_id, unidade_id FROM {$this->s}eq_sugestao
+                WHERE fonte = ? AND tipo = ? AND product_id = ? AND atributo_id = ? ORDER BY id" . ($this->seco ? '' : ' FOR UPDATE'), [$d['fonte'], $d['tipo'], $d['product_id'], $d['atributo_id']]);
+            $ins = fn(string $chave, ?int $substitui) => $this->x("INSERT INTO {$this->s}eq_sugestao (chave, product_id, atributo_id, atributo_alternativo_id, fonte, tipo, valor_proposto, opcao_id, unidade_id, confianca, evidencia, lote_id"
+                . ($substitui !== null ? ', substitui_id' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?' . ($substitui !== null ? ', ?' : '') . ')',
+                array_merge([$chave, $d['product_id'], $d['atributo_id'], $d['alt'], $d['fonte'], $d['tipo'], $d['valor'], $d['opcao'], $d['unidade'], $d['confianca'], $evid, $d['lote'] ?: null], $substitui !== null ? [$substitui] : []));
+            if (!$rows) { $ins($base, null); return 'criada'; }
+            $h = static fn(array $r) => self::hashConteudo($r['atributo_alternativo_id'], $r['valor_proposto'], $r['opcao_id'], $r['unidade_id']);
+            $ult = end($rows);
+            if ($h($ult) === $hash) return 'ja_existia';
+            if (in_array($hash, array_map($h, array_filter($rows, static fn($r) => $r['estado'] === 'recusada')), true)) return 'recusada_igual';
+            $repo = fn() => new AtributosRepoPdo($this->pdo, $this->schema);
+            $antes = ['valor_proposto' => $ult['valor_proposto'], 'opcao_id' => $ult['opcao_id'] === null ? null : (int) $ult['opcao_id'], 'unidade_id' => $ult['unidade_id'] === null ? null : (int) $ult['unidade_id']];
+            $depois = ['valor_proposto' => $d['valor'], 'opcao_id' => $d['opcao'], 'unidade_id' => $d['unidade']];
+            if ($ult['estado'] === 'pendente') {
+                if (!$this->seco && $this->x("UPDATE {$this->s}eq_sugestao SET atributo_alternativo_id = ?, valor_proposto = ?, opcao_id = ?, unidade_id = ?, evidencia = ?, versao = versao + 1 WHERE id = ? AND versao = ? AND estado = 'pendente'",
+                        [$d['alt'], $d['valor'], $d['opcao'], $d['unidade'], $evid, $ult['id'], $ult['versao']]) !== 1) return 'ja_existia';   // mexeram nela agora: fica como está
+                if (!$this->seco) $repo()->auditar($d['usuario'], 'revisar_sugestao', 'sugestao', (string) $ult['id'], $antes, $depois, $d['motivo']);
+                return 'revista';
+            }
+            if (!in_array($ult['estado'], ['recusada', 'ignorada'], true) || !$this->tem013()) return 'ja_existia';   // aceita (ou sem a 013): nada
+            $ins("$base|r:{$ult['id']}", (int) $ult['id']);
+            if ($ult['estado'] === 'ignorada' && !$this->seco
+                && $this->x("UPDATE {$this->s}eq_sugestao SET estado = 'substituida', versao = versao + 1 WHERE id = ? AND versao = ? AND estado = 'ignorada'", [$ult['id'], $ult['versao']]) !== 1)
+                throw new RuntimeException("sugestão {$ult['id']} mudou durante a carga; nada foi gravado para esta identidade");
+            if (!$this->seco) $repo()->auditar($d['usuario'], 'substituir_sugestao', 'sugestao', (string) $ult['id'], $antes + ['estado' => $ult['estado']], $depois + ['sucessora_de' => (int) $ult['id']], $d['motivo']);
+            return 'sucessora';
+        };
+        if ($this->seco || $this->pdo->inTransaction()) return $faz();
+        $this->pdo->beginTransaction();
+        try { $r = $faz(); $this->pdo->commit(); return $r; } catch (Throwable $t) { $this->pdo->rollBack(); throw $t; }
+    }
+
+    /** Contadores das cargas a partir do resultado de proporSugestao (os nomes antigos continuam). */
+    private static function contarProposta(array &$n, string $r, string $chaveCriada): void
+    {
+        match ($r) { 'criada' => $n[$chaveCriada] = ($n[$chaveCriada] ?? 0) + 1, 'revista' => $n['revistas'] = ($n['revistas'] ?? 0) + 1,
+            'sucessora' => $n['sucessoras'] = ($n['sucessoras'] ?? 0) + 1, default => $n['ja_existiam'] = ($n['ja_existiam'] ?? 0) + 1 };
+    }
+
     public function c5(string $fonte): array
     {
         if (!is_file($fonte)) throw new RuntimeException('fonte da C5 ausente (ANEXO-E0B-B-classificacao-carga.tsv)');
@@ -274,12 +351,10 @@ final class Cargas
             if (str_starts_with($faixa, 'C')) {   // conferência (D5 e frequência de módulo): nunca muda de campo sozinho
                 $alt = $faixa === 'C1' ? ($porCod['comprimento_' . self::legadoDe($porCod, 'Comprimento')] ?? null) : ($porCod['taxa_de_atualizacao_refresh_rate_93'] ?? null);
                 $num = self::numero($valor);
-                $chave = "legado_2025|$pid|$aid|conferencia";
-                if ($this->q("SELECT 1 FROM {$this->s}eq_sugestao WHERE chave = ?", [$chave])) { $n['ja_existiam']++; continue; }
-                $n['sugestoes_conferencia']++;
-                $this->x("INSERT INTO {$this->s}eq_sugestao (chave, product_id, atributo_id, atributo_alternativo_id, fonte, tipo, valor_proposto, unidade_id, confianca, evidencia, lote_id)
-                          VALUES (?, ?, ?, ?, 'legado_2025', 'conferencia', ?, ?, 'media', ?, ?)",
-                    [$chave, $pid, $aid, $alt ? (int) $alt['id'] : null, $num ?? $valor, $faixa === 'C1' ? $uni['mm'] : $uni['Hz'], "Atributos_Itens 31/07/2025: \"$rotulo\" = $valor" . ($faixa === 'C1' ? ' (cabo: Profundidade ou Comprimento? D5)' : ' (módulo: frequência ou taxa de atualização?)'), $lote ?: null]);
+                self::contarProposta($n, $this->proporSugestao(['fonte' => 'legado_2025', 'tipo' => 'conferencia', 'product_id' => $pid, 'atributo_id' => $aid, 'alt' => $alt ? (int) $alt['id'] : null,
+                    'valor' => $num ?? $valor, 'opcao' => null, 'unidade' => $faixa === 'C1' ? $uni['mm'] : $uni['Hz'], 'confianca' => 'media',
+                    'evidencia' => "Atributos_Itens 31/07/2025: \"$rotulo\" = $valor" . ($faixa === 'C1' ? ' (cabo: Profundidade ou Comprimento? D5)' : ' (módulo: frequência ou taxa de atualização?)'),
+                    'lote' => $lote, 'usuario' => 'carga:C5', 'motivo' => 'C5: legado 2025 (Parte C: conteúdo novo)']), 'sugestoes_conferencia');
                 continue;
             }
             // valor (A1–A4, B1): só onde não existe valor vivo nem excluído (nunca sobrescreve; D10)
@@ -366,24 +441,13 @@ final class Cargas
             if ($props) $n['produtos']++;
             foreach ($props as $c => [$val, $u, $opc]) {
                 $aid = $cod[$c] ?? null; if (!$aid || isset($tem["$pid:$aid"])) continue;
-                $chave = "nome_produto|$pid|$aid";
                 $prop = $val ?? ($opc !== null ? array_search($opc, $opLed, true) : null);
-                $evid = mb_substr("Do nome: \"$nome\"" . (isset($nota[$c]) ? ' · ' . $nota[$c] : ''), 0, 500);
-                $ex = $this->q("SELECT id, valor_proposto, opcao_id, estado, versao FROM {$this->s}eq_sugestao WHERE chave = ?", [$chave])[0] ?? null;
-                if ($ex) {
-                    // C6c: regra revista (Semi-outdoor, Hz) → atualiza só sugestão AINDA PENDENTE e não tocada desde a leitura (versao); decidida fica.
-                    if ($ex['estado'] === 'pendente' && ((string) $ex['valor_proposto'] !== (string) $prop || (int) $ex['opcao_id'] !== (int) $opc)) {
-                        $antes = ['valor_proposto' => $ex['valor_proposto'], 'opcao_id' => $ex['opcao_id'] === null ? null : (int) $ex['opcao_id']];
-                        if ($this->seco || $this->x("UPDATE {$this->s}eq_sugestao SET valor_proposto = ?, opcao_id = ?, evidencia = ?, versao = versao + 1 WHERE id = ? AND versao = ? AND estado = 'pendente'", [$prop, $opc, $evid, $ex['id'], $ex['versao']]) === 1) {
-                            $n['revistas'] = ($n['revistas'] ?? 0) + 1; $n['revistas_ids'][] = (int) $ex['id'];
-                            if (!$this->seco) (new AtributosRepoPdo($this->pdo, $this->schema))->auditar('carga:C6', 'revisar_sugestao', 'sugestao', (string) $ex['id'], $antes, ['valor_proposto' => $prop, 'opcao_id' => $opc], 'C6c: regra do nome revista (Semi-outdoor; Hz com 3–4 dígitos; correções aprovadas)');
-                        }
-                    } else $n['ja_existiam']++;
-                    continue;
-                }
-                $n['sugestoes']++; $n['por_atributo'][$c] = ($n['por_atributo'][$c] ?? 0) + 1;
-                $this->x("INSERT INTO {$this->s}eq_sugestao (chave, product_id, atributo_id, fonte, tipo, valor_proposto, opcao_id, unidade_id, confianca, evidencia, lote_id) VALUES (?, ?, ?, 'nome_produto', 'valor', ?, ?, ?, 'media', ?, ?)",
-                    [$chave, $pid, $aid, $prop, $opc, $u, $evid, $lote ?: null]);
+                // C6c + Parte C: pendente com conteúdo novo é revista no lugar; recusada/ignorada ganha sucessora; recusada igual nunca volta
+                $r = $this->proporSugestao(['fonte' => 'nome_produto', 'tipo' => 'valor', 'product_id' => $pid, 'atributo_id' => $aid, 'alt' => null, 'valor' => $prop === null ? null : ($prop === false ? '' : (string) $prop),   // false (sem opção) = '' como a C6 antiga gravava
+                    'opcao' => $opc, 'unidade' => $u, 'confianca' => 'media', 'evidencia' => "Do nome: \"$nome\"" . (isset($nota[$c]) ? ' · ' . $nota[$c] : ''), 'lote' => $lote,
+                    'usuario' => 'carga:C6', 'motivo' => 'C6c: regra do nome revista (Semi-outdoor; Hz com 3–4 dígitos; correções aprovadas)']);
+                self::contarProposta($n, $r, 'sugestoes');
+                if ($r === 'criada') $n['por_atributo'][$c] = ($n['por_atributo'][$c] ?? 0) + 1;
             }
         }
         $this->fecharLote($lote, $n);
@@ -479,11 +543,9 @@ final class Cargas
         $tem = []; foreach ($this->q("SELECT product_id, atributo_id FROM {$this->s}eq_valor WHERE excluido_em IS NULL") as $v) $tem[(int) $v['product_id'] . ':' . (int) $v['atributo_id']] = true;
         $sug = function (string $fonte, int $pid, int $aid, ?string $val, ?int $opc, ?int $u, string $conf, string $evid, string $tipo) use (&$mud, $tem, $lote) {
             if (!$aid || isset($tem["$pid:$aid"])) return;
-            $chave = "$fonte|$pid|$aid";
-            if ($this->q("SELECT 1 FROM {$this->s}eq_sugestao WHERE chave = ?", [$chave])) { $mud['ja_existiam']++; return; }
-            $mud['sugestoes'][$tipo]++;
-            $this->x("INSERT INTO {$this->s}eq_sugestao (chave, product_id, atributo_id, fonte, tipo, valor_proposto, opcao_id, unidade_id, confianca, evidencia, lote_id) VALUES (?, ?, ?, ?, 'valor', ?, ?, ?, ?, ?, ?)",
-                [$chave, $pid, $aid, $fonte, $val, $opc, $u, $conf, mb_substr($evid, 0, 500), $lote ?: null]);
+            $r = $this->proporSugestao(['fonte' => $fonte, 'tipo' => 'valor', 'product_id' => $pid, 'atributo_id' => $aid, 'alt' => null, 'valor' => $val, 'opcao' => $opc, 'unidade' => $u,
+                'confianca' => $conf, 'evidencia' => $evid, 'lote' => $lote, 'usuario' => 'carga:C8', 'motivo' => 'C8: nome do produto (Parte C: conteúdo novo)']);
+            if ($r === 'criada') $mud['sugestoes'][$tipo]++; elseif ($r === 'revista' || $r === 'sucessora') $mud[$r === 'revista' ? 'revistas' : 'sucessoras'] = ($mud[$r === 'revista' ? 'revistas' : 'sucessoras'] ?? 0) + 1; else $mud['ja_existiam']++;
         };
         foreach ($ativos as $pid => $p) {
             $l = self::lerNomeC8((string) $p['name']);

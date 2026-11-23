@@ -10,6 +10,8 @@
 //   - schema obrigatório por parâmetro e só `ATRWEB_VAL_*` (validação). Qualquer outro nome exige --modo-producao E a variável
 //     ATR_MIGRAR_PRODUCAO=APLICAR-NO-PORTAO (fluxo do portão P1; não usado na missão de 18/11).
 //   - --reverter <versao>: roda o <versao>.revert.sql (só validação) se ela for a ÚLTIMA aplicada.
+//   - LACUNA (013, 23/11): RECUSA aplicar se existe migração PENDENTE com número MENOR que uma já aplicada (ex.: 012 pendente com 013
+//     aplicada) — fora de ordem o --reverter (que vai pelo nome) e o preflight virtual deixam de valer. --ate <versao> aplica só até ela.
 //   - PREFLIGHT POR OBJETO (DSHOW-036): antes de QUALQUER DDL (inclusive no --dry-run), cada comando das migrações é lido e vira objetos
 //     esperados (tabela/coluna/índice/FK, "existe depois" ou "não existe depois" para DROP), conferidos no information_schema:
 //       · migração pendente "limpa" (nenhum objeto já no estado final) → aplica;
@@ -19,7 +21,7 @@
 //       · comando DDL que o preflight não sabe ler → RECUSA (estenda o preflight; nada de aplicar às cegas).
 //     --verificar: só imprime o relatório do preflight (somente SELECT no information_schema), sem aplicar nada.
 // Uso: php tools/db/equipamentos-migrar.php --schema ATRWEB_VAL_EQ --credenciais /caminho/arquivo.ini [--dry-run | --verificar]
-//        [--reverter 009_sugestao] [--registrar-se-completo 004_vinculos_exclusao_logica]
+//        [--reverter 009_sugestao] [--registrar-se-completo 004_vinculos_exclusao_logica] [--ate 012_kit_prioridade]
 //   credenciais (600): user=…  password=…  socket=… (ou host=… port=…)
 declare(strict_types=1);
 
@@ -152,6 +154,10 @@ final class Migrador
                 elseif (preg_match("/^ADD CONSTRAINT $I FOREIGN KEY/i", $cl, $k)) $obj[] = ['tipo' => 'fk', 'tabela' => $t, 'nome' => self::nomeId($k, 1), 'depois' => true];
                 elseif (preg_match("/^ADD CONSTRAINT $I UNIQUE/i", $cl, $k)) $obj[] = ['tipo' => 'indice', 'tabela' => $t, 'nome' => self::nomeId($k, 1), 'depois' => true];
                 elseif (preg_match("/^ADD (?:COLUMN )?$I /i", $cl, $k) && !preg_match('/^ADD (CONSTRAINT|PRIMARY|CHECK|FOREIGN|PARTITION)\b/i', $cl)) $obj[] = ['tipo' => 'coluna', 'tabela' => $t, 'nome' => self::nomeId($k, 1), 'depois' => true];
+                elseif (preg_match("/^MODIFY (?:COLUMN )?$I ENUM\\s*\\((.*)\\)/is", $cl, $k) && preg_match_all("/'((?:[^']|'')*)'/", $k[3], $vs))   // 013: só ampliar ENUM
+                    $obj[] = ['tipo' => 'enum', 'tabela' => $t, 'nome' => self::nomeId($k, 1), 'valores' => array_map(static fn($x) => str_replace("''", "'", $x), $vs[1]), 'depois' => true];
+                elseif (preg_match("/^ADD CONSTRAINT $I CHECK\\b/i", $cl, $k)) $obj[] = ['tipo' => 'check', 'tabela' => $t, 'nome' => self::nomeId($k, 1), 'depois' => true];   // 013: trava do revert
+                elseif (preg_match("/^DROP CHECK $I$/i", $cl, $k)) $obj[] = ['tipo' => 'check', 'tabela' => $t, 'nome' => self::nomeId($k, 1), 'depois' => false];
                 elseif (preg_match("/^DROP FOREIGN KEY $I/i", $cl, $k)) $obj[] = ['tipo' => 'fk', 'tabela' => $t, 'nome' => self::nomeId($k, 1), 'depois' => false];
                 elseif (preg_match("/^DROP (?:KEY|INDEX) $I/i", $cl, $k)) $obj[] = ['tipo' => 'indice', 'tabela' => $t, 'nome' => self::nomeId($k, 1), 'depois' => false];
                 elseif (preg_match("/^DROP (?:COLUMN )?$I$/i", $cl, $k) && !preg_match('/^DROP (PRIMARY|CONSTRAINT|CHECK|PARTITION)\b/i', $cl)) $obj[] = ['tipo' => 'coluna', 'tabela' => $t, 'nome' => self::nomeId($k, 1), 'depois' => false];
@@ -186,14 +192,24 @@ final class Migrador
             'coluna' => $this->temColuna($o['tabela'], $o['nome']),
             'indice' => (bool) $this->q('SELECT 1 FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ? LIMIT 1', [$this->schema, $o['tabela'], $o['nome']]),
             'fk'     => (bool) $this->q("SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = ? AND table_name = ? AND constraint_name = ? AND constraint_type = 'FOREIGN KEY'", [$this->schema, $o['tabela'], $o['nome']]),
+            'check'  => (bool) $this->q("SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = ? AND table_name = ? AND constraint_name = ? AND constraint_type = 'CHECK'", [$this->schema, $o['tabela'], $o['nome']]),
+            'enum'   => self::enumContem($this->q('SELECT column_type AS t FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name = ?', [$this->schema, $o['tabela'], $o['nome']])[0]['t'] ?? null, $o['valores']),
         };
     }
 
-    private static function chave(array $o): string { return "{$o['tipo']}:{$o['tabela']}.{$o['nome']}"; }
+    /** 013: a coluna ENUM existe e contém TODOS os valores pedidos (ampliar é aditivo; a ordem dos antigos é a do arquivo). */
+    public static function enumContem(?string $tipoColuna, array $valores): bool
+    {
+        if ($tipoColuna === null || !preg_match('/^enum\((.*)\)$/is', $tipoColuna, $m) || !preg_match_all("/'((?:[^']|'')*)'/", $m[1], $vs)) return false;
+        $tem = array_map(static fn($x) => str_replace("''", "'", $x), $vs[1]);
+        return !array_diff($valores, $tem);
+    }
+
+    private static function chave(array $o): string { return "{$o['tipo']}:{$o['tabela']}.{$o['nome']}" . ($o['tipo'] === 'enum' ? '=' . implode(',', $o['valores']) : ''); }
 
     public static function rotulo(array $o): string
     {
-        return ($o['depois'] ? '' : 'remoção de ') . match ($o['tipo']) { 'tabela' => "tabela {$o['tabela']}", 'coluna' => "coluna {$o['tabela']}.{$o['nome']}", 'indice' => "índice {$o['tabela']}.{$o['nome']}", 'fk' => "FK {$o['tabela']}.{$o['nome']}" };
+        return ($o['depois'] ? '' : 'remoção de ') . match ($o['tipo']) { 'tabela' => "tabela {$o['tabela']}", 'coluna' => "coluna {$o['tabela']}.{$o['nome']}", 'indice' => "índice {$o['tabela']}.{$o['nome']}", 'fk' => "FK {$o['tabela']}.{$o['nome']}", 'check' => "CHECK {$o['tabela']}.{$o['nome']}", 'enum' => "valores do ENUM {$o['tabela']}.{$o['nome']} (" . implode(', ', $o['valores']) . ')' };
     }
 
     /**
@@ -271,10 +287,16 @@ final class Migrador
     }
 
     /** @return array{aplicadas:string[], conferidas:string[], checksum_preenchido:string[], registradas:string[]} */
-    public function executar(bool $seco, array $registrarSeCompleto = []): array
+    public function executar(bool $seco, array $registrarSeCompleto = [], ?string $ate = null): array
     {
         $res = ['aplicadas' => [], 'conferidas' => [], 'checksum_preenchido' => [], 'registradas' => []];
         $feitas = $this->aplicadas();
+        if ($ate !== null && !isset($this->arquivos()[$ate])) throw new MigradorErro("--ate $ate: não existe esse arquivo de migração; nada foi alterado");
+        // 013: LACUNA — pendente com número menor que uma aplicada (o ledger ficaria fora de ordem). Nada é aplicado.
+        $aplicadasComArquivo = array_values(array_filter(array_keys($feitas), fn($v) => isset($this->arquivos()[$v])));
+        $maior = $aplicadasComArquivo ? max($aplicadasComArquivo) : null;
+        $lacunas = $maior === null ? [] : array_values(array_filter(array_keys($this->arquivos()), static fn($v) => !array_key_exists($v, $feitas) && strcmp($v, $maior) < 0));
+        if ($lacunas) throw new MigradorErro('LACUNA: ' . implode(', ', $lacunas) . " pendente(s) abaixo de $maior já aplicada — fora de ordem; nada foi alterado. Resolva a ordem (ou reverta $maior na validação) antes de migrar");
         // 1) conferência de TUDO antes de aplicar qualquer coisa (checksum divergente aborta sem efeito)
         foreach ($this->arquivos() as $v => $f) {
             if (!array_key_exists($v, $feitas)) continue;
@@ -287,8 +309,9 @@ final class Migrador
         $pf = $this->preflight();
         $recusas = self::recusasDoPreflight($pf, $registrarSeCompleto);
         if ($recusas) throw new MigradorErro("preflight recusou — nenhum DDL executado:\n  - " . implode("\n  - ", $recusas));
-        // 2) aplica as que faltam, em ordem
+        // 2) aplica as que faltam, em ordem (com --ate, só até ela)
         foreach ($this->arquivos() as $v => $f) {
+            if ($ate !== null && strcmp($v, $ate) > 0) break;
             $sha = hash_file('sha256', $f);
             if (array_key_exists($v, $feitas)) {
                 if ($feitas[$v] === null || $feitas[$v] === '') {
@@ -345,7 +368,7 @@ function migrador_conectar(string $credenciais): PDO
 }
 
 if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
-    $o = getopt('', ['schema:', 'credenciais:', 'dry-run', 'reverter:', 'modo-producao', 'dir:', 'verificar', 'registrar-se-completo:']);
+    $o = getopt('', ['schema:', 'credenciais:', 'dry-run', 'reverter:', 'modo-producao', 'dir:', 'verificar', 'registrar-se-completo:', 'ate:']);
     $log = static function (string $m): void { fwrite(STDOUT, '[' . date('H:i:s') . "] $m\n"); };
     try {
         $schema = (string) ($o['schema'] ?? '');
@@ -364,7 +387,7 @@ if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
             echo ($rec ? "PREFLIGHT_RECUSA\n  - " . implode("\n  - ", $rec) : 'PREFLIGHT_OK') . "\n";
             exit($rec ? 3 : 0);
         }
-        $r = $m->executar(isset($o['dry-run']), $reg);
+        $r = $m->executar(isset($o['dry-run']), $reg, isset($o['ate']) ? (string) $o['ate'] : null);
         $log((isset($o['dry-run']) ? 'SECO' : 'OK') . ' aplicadas=' . count($r['aplicadas']) . ' conferidas=' . count($r['conferidas']) . ' checksum_preenchido=' . count($r['checksum_preenchido']) . ' registradas=' . count($r['registradas']));
         echo 'MIGRAR_OK ' . json_encode($r) . "\n";
     } catch (Throwable $e) {

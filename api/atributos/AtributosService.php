@@ -628,7 +628,7 @@ final class AtributosService
     public function auditoria(string $entidade, string $entidadeId): array
     {
         $this->exigir(self::NIVEL_ADMIN);
-        if (!in_array($entidade, ['atributo', 'opcao', 'unidade', 'grupo', 'valor', 'ficha'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Entidade inválida.', ['entidade']);
+        if (!in_array($entidade, ['atributo', 'opcao', 'unidade', 'grupo', 'valor', 'ficha', 'kit_prioridade'], true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Entidade inválida.', ['entidade']);
         return ['auditoria' => $this->repo->auditoria($entidade, mb_substr($entidadeId, 0, 64), 50)];
     }
 
@@ -1261,7 +1261,21 @@ final class OperacoesGravacao
         private readonly ?int $nivel = null, private readonly ?bool $administra = null) {}
 
     /** Rotas que gravam VÁRIOS itens, cada um no seu COMMIT (P1-1): desfecho por item em eq_operacao_item. massa_aplicar é UMA transação. */
-    public const ROTAS_LOTE = ['sugestoes_lote'];
+    public const ROTAS_LOTE = ['sugestoes_lote', 'sugestoes_decidir'];
+
+    /**
+     * Parte C (Q-SUG.3, TRANSIÇÃO): chave OBRIGATÓRIA em sugestoes_decidir sempre e, quando o pedido vem da Conferência (X-Origem:
+     * conferencia), também em produto_atributo, produto_kit e sugestao. As outras telas (Ficha) seguem sem exigir até adotarem a chave.
+     * O cabeçalho é mandado pela própria tela; a garantia da tela é o teste estático do revisor (PROPOSTA v2 §5.2).
+     */
+    public const ROTAS_CHAVE_SEMPRE = ['sugestoes_decidir'];
+    public const ROTAS_CHAVE_CONFERENCIA = ['produto_atributo', 'produto_kit', 'sugestao'];
+    public static function exigirChave(string $rota, ?string $chave, ?string $origem): void
+    {
+        if ($chave !== null) return;
+        if (in_array($rota, self::ROTAS_CHAVE_SEMPRE, true) || ($origem === 'conferencia' && in_array($rota, self::ROTAS_CHAVE_CONFERENCIA, true)))
+            throw new AtributosErro('CHAVE_OBRIGATORIA', 422, 'Esta ação exige a chave de operação (X-Chave-Operacao). Nada foi gravado.', ['chave_operacao']);
+    }
 
     /**
      * Só é chamada quando o cliente ENVIOU chave. P1-2 a: se o livro de recibos não responde (011 ausente, tabela fora, sem permissão,
@@ -1340,11 +1354,14 @@ final class OperacoesGravacao
             }
             if ($adiado) $ops->descartarAdiada();
             $commitou = !$adiado && $antes !== null && $this->repo->confirmacoes() > $antes;
-            if ($commitou && $lote !== null) {
+            // DSHOW-105 C: o serviço de lote pode encerrar como INTERROMPIDO mesmo sem COMMIT (itens com erro técnico ficaram 'pendente')
+            $interrompidoPeloServico = $t instanceof AtributosErro && $t->codigo === 'OPERATION_INTERRUPTED';
+            if (($commitou || $interrompidoPeloServico) && $lote !== null) {
                 // P1-1: lote parado no meio — os itens com desfecho estão gravados (com o desfecho), os demais seguem 'pendente'.
                 error_log('[atributos] ' . $rota . ': lote interrompido depois de COMMIT(s): ' . get_class($t) . ': ' . $t->getMessage());
                 $this->marcarSemFalhar($ops, $chave, $tentativa, 'interrompida', null, ['codigo' => $t instanceof AtributosErro ? $t->codigo : 'INTERNAL_ERROR', 'http' => $t instanceof AtributosErro ? $t->http : 500,
                     'mensagem' => 'Lote interrompido no meio.', 'campos' => []]);
+                if ($interrompidoPeloServico) throw $t;   // a mensagem e o resumo por item vêm do serviço
                 $e = new AtributosErro('OPERATION_INTERRUPTED', 503, 'O lote parou no meio: parte já foi gravada. Reenvie com a mesma chave para concluir só os pendentes, ou use "Conferir gravação".');
                 $e->meta = ['desfecho' => 'interrompida', 'gravado' => 'parcial', 'itens' => $lote->itens()];
                 throw $e;
@@ -1435,8 +1452,8 @@ final class OperacoesGravacao
     }
 
     /** Rotas de valor/sugestão: nível ≥ NIVEL_VALORES. Demais escritas conhecidas: administrar o catálogo (nível ≥ NIVEL_ADMIN e permissão). */
-    private const ROTAS_PREENCHER = ['valor', 'valor_limpar', 'valor_unidade', 'valor_opcao_remover', 'sugestao', 'sugestoes_lote'];
-    private const ROTAS_ADMIN = ['kit', 'kit_duplicar', 'kit_ativo', 'kit_itens', 'kit_escopos', 'kit_produtos', 'produto_kit', 'produto_atributo', 'massa_previa', 'massa_aplicar',
+    private const ROTAS_PREENCHER = ['valor', 'valor_limpar', 'valor_unidade', 'valor_opcao_remover', 'sugestao', 'sugestoes_lote', 'sugestoes_decidir'];
+    private const ROTAS_ADMIN = ['kit', 'kit_duplicar', 'kit_ativo', 'kit_prioridade', 'kit_itens', 'kit_escopos', 'kit_produtos', 'produto_kit', 'produto_atributo', 'massa_previa', 'massa_aplicar',
         'atributo', 'atributo_ativo', 'atributo_unidades', 'opcao', 'opcao_renomear', 'opcao_reordenar', 'opcao_ativa', 'unidade', 'unidade_ativa', 'grupo', 'grupo_ativo', 'ficha_revisar'];
 
     /** DSHOW-093 D: a MESMA porta dos serviços, antes do reenvio (consultar resultado ≠ executar). Sem nível informado = sem porta (testes antigos). */
@@ -1502,6 +1519,8 @@ final class OperacoesGravacao
                 'campos_gravados' => $desfecho === 'aplicada' ? ['excluido_em'] : [], 'valor' => null, 'unidade_id' => null];
         if ($rota === 'ficha_revisar')
             return $r + ['product_id' => (int) ($corpo['product_id'] ?? 0), 'campos_gravados' => ['revisao'], 'versao_nova' => null, 'revisao' => $out['revisao_gravada'] ?? null];
+        if ($rota === 'kit_prioridade')   // P1 kit-prioridade: eco da ordem lida NA transação que gravou; versão = a da fila
+            return $r + ['versao_nova' => $out['versao_prioridade'] ?? null, 'campos_gravados' => $desfecho === 'aplicada' ? ['prioridade'] : [], 'ordem' => $out['ordem'] ?? null];
         if ($rota === 'massa_aplicar') {   // recibo da massa = o do resultado guardado (resposta = reenvio = conferir); o desfecho é o do lote
             $m = KitsService::reciboMassa((string) ($corpo['chave'] ?? $chave ?? ''), $out);
             return $out === [] ? array_replace($m, ['desfecho' => $desfecho, 'confirmado_em' => $r['confirmado_em'], 'campos_gravados' => $desfecho === 'aplicada' ? ['vinculos'] : []]) : $m;
@@ -1511,7 +1530,7 @@ final class OperacoesGravacao
         $campos = array_values(array_diff(array_keys($corpo), self::CONTROLE, ['id', 'product_id', 'atributo_id', 'motivo']));
         $r += ['versao_nova' => $versao, 'campos_gravados' => $desfecho === 'aplicada' ? $campos : []];
         // P1-1: o recibo do lote leva totais e IDs (o reenvio da mesma chave devolve este recibo COMPLETO)
-        if (in_array($rota, self::ROTAS_LOTE, true)) $r += array_intersect_key($out, array_flip(['aceitas', 'aceitas_ids', 'ignoradas', 'falhas', 'pedidas']));
+        if (in_array($rota, self::ROTAS_LOTE, true)) $r += array_intersect_key($out, array_flip(['aceitas', 'aceitas_ids', 'ignoradas', 'falhas', 'pedidas', 'acao', 'resumo', 'itens']));
         return $r;
     }
 

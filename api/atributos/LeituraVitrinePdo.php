@@ -6,7 +6,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/ProdutosLeitura.php';
 require_once __DIR__ . '/CatalogoPdo.php';
 
-final class LeituraVitrinePdo implements LeituraVitrine
+final class LeituraVitrinePdo implements LeituraVitrine, LeituraConferencia
 {
     private string $eq; private string $ap; private string $schemaApp; private ?bool $temSuprimida = null;
 
@@ -184,6 +184,60 @@ final class LeituraVitrinePdo implements LeituraVitrine
         if ($tipo !== null) { $w[] = 's.tipo = ?'; $p[] = $tipo; }
         return $this->q('SELECT s.*, u.simbolo AS unidade FROM ' . $this->eq . '`eq_sugestao` s LEFT JOIN ' . $this->eq . '`eq_unidade` u ON u.id = s.unidade_id WHERE ' . implode(' AND ', $w)
             . ' ORDER BY s.product_id, s.atributo_id, s.id LIMIT ' . max(1, min(100000, $limite)), $p);
+    }
+
+    // ---- Parte C (conferencia_fila): total real e página por CURSOR (keyset), só SELECT ------------------------------------------------
+    private function filtroSugestoes(string $fonte, string $estado, ?int $atributoId, ?array $pids): array
+    {
+        $w = ['s.fonte = ?', 's.estado = ?']; $p = [$fonte, $estado];
+        if ($atributoId !== null) { $w[] = 's.atributo_id = ?'; $p[] = $atributoId; }
+        if ($pids !== null) { if (!$pids) $w[] = '1 = 0'; else { $w[] = 's.product_id IN (' . implode(',', array_fill(0, count($pids), '?')) . ')'; array_push($p, ...array_values($pids)); } }
+        return [$w, $p];
+    }
+
+    public function contarSugestoes(string $fonte, string $estado, ?int $atributoId = null, ?array $pids = null): int
+    {
+        [$w, $p] = $this->filtroSugestoes($fonte, $estado, $atributoId, $pids);
+        return (int) ($this->q('SELECT COUNT(*) AS n FROM ' . $this->eq . '`eq_sugestao` s WHERE ' . implode(' AND ', $w), $p)[0]['n'] ?? 0);
+    }
+
+    /** @param ?array{0:int,1:int,2:int} $depois cursor (product_id, atributo_id, id) da última linha vista */
+    public function sugestoesPagina(string $fonte, string $estado, ?int $atributoId, ?array $pids, ?array $depois, int $limite): array
+    {
+        [$w, $p] = $this->filtroSugestoes($fonte, $estado, $atributoId, $pids);
+        if ($depois !== null) { $w[] = '(s.product_id, s.atributo_id, s.id) > (?, ?, ?)'; array_push($p, ...$depois); }
+        return $this->q('SELECT s.*, u.simbolo AS unidade FROM ' . $this->eq . '`eq_sugestao` s LEFT JOIN ' . $this->eq . '`eq_unidade` u ON u.id = s.unidade_id WHERE '
+            . implode(' AND ', $w) . ' ORDER BY s.product_id, s.atributo_id, s.id LIMIT ' . max(1, min(101, $limite)), $p);
+    }
+
+    /** Valores VIVOS por par (produto, atributo) — uma consulta para a página inteira. @return array<string,list<array>> "pid:aid" => linhas */
+    public function valoresDosPares(array $pares): array
+    {
+        $out = []; $pares = array_values(array_unique(array_map(static fn($x) => (int) $x[0] . ':' . (int) $x[1], $pares)));
+        if (!$pares) return $out;
+        $p = []; foreach ($pares as $k) { [$a, $b] = explode(':', $k); $p[] = (int) $a; $p[] = (int) $b; }
+        foreach ($this->q('SELECT v.product_id, v.atributo_id, v.opcao_id, o.rotulo AS opcao, v.valor_texto, v.valor_num, v.valor_bool, v.valor_data, v.unidade_id, v.estado, v.origem, v.versao,
+                v.lote_id, v.legado_bruto, v.atualizado_por, v.atualizado_em FROM ' . $this->eq . '`eq_valor` v LEFT JOIN ' . $this->eq . '`eq_opcao` o ON o.id = v.opcao_id
+                WHERE v.excluido_em IS NULL AND (v.product_id, v.atributo_id) IN (' . implode(',', array_fill(0, count($pares), '(?, ?)')) . ')
+                ORDER BY v.product_id, v.atributo_id, o.posicao, o.id, v.id', $p) as $r) $out[(int) $r['product_id'] . ':' . (int) $r['atributo_id']][] = $r;
+        return $out;
+    }
+
+    /**
+     * Sugestões com gravação "A conferir" DESTE titular: item 'pendente' de lote cuja operação não terminou (em_andamento|interrompida),
+     * dentro da retenção de 30 dias. Sem a 011 (tabela ausente, 42S02) = nenhuma; qualquer outra falha SOBE (nunca esconde "A conferir").
+     */
+    public function sugestoesAConferir(int $titularId, array $ids): array
+    {
+        if (!$ids || $titularId <= 0) return [];
+        try {
+            $rs = $this->q('SELECT i.item, i.chave FROM ' . $this->eq . '`eq_operacao_item` i JOIN ' . $this->eq . '`eq_operacao` o ON o.chave = i.chave
+                WHERE o.titular_id = ? AND o.rota IN (\'sugestoes_lote\', \'sugestoes_decidir\') AND o.estado IN (\'em_andamento\', \'interrompida\')
+                  AND o.criado_em > CURRENT_TIMESTAMP(3) - INTERVAL 30 DAY AND i.desfecho = \'pendente\' AND i.item IN (' . implode(',', array_fill(0, count($ids), '?')) . ')',
+                [$titularId, ...array_map('strval', $ids)]);
+        } catch (PDOException $e) { if (($e->errorInfo[0] ?? '') === '42S02') return []; throw $e; }   // só "sem a 011" vira nenhuma; falha real sobe
+        $out = []; foreach ($rs as $r) $out[(int) $r['item']] ??= (string) $r['chave'];
+        return $out;
     }
 
     public function sugestoesPendentesPorProduto(): array
