@@ -12,7 +12,7 @@ import { Icone, type NomeIcone } from '../ui/Icones';
 import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
 import type { Ordenacao } from '../lib/ordenar';
 import { EditorValor, type ControleEditor } from '../ui/EditorValor';
-import { AdicionarFotos, GerenciarFotos } from '../ui/fotos/GaleriaFotos';
+import { AdicionarFotos, EntrarNovamente, GerenciarFotos } from '../ui/fotos/GaleriaFotos';
 import { carregarGaleria, urlImagem, type EstadoGaleria } from '../lib/fotos';
 import { ROTULO_SITUACAO, situacaoDe } from '../lib/situacao';
 
@@ -111,7 +111,7 @@ export function Ficha({ id }: { id: number }) {
       {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} filtro={filtro} setFiltro={setFiltro} slotFiltros={slotFiltros} slotTitulo={slotTitulo} />}
       {aba === 'vinculos' && <AbaVinculos f={f} recarregar={() => carregar(true)} />}
       {aba === 'fotos' && galeria.tipo === 'ok' && <GerenciarFotos estado={galeria} productId={p.id} aoMudou={aoMudarFotos} aoAdicionar={() => setAddFotos(true)} />}
-      {aba === 'fotos' && (galeria.tipo === 'sessao' || galeria.tipo === 'indisponivel') && <div className={`at-aviso ${galeria.tipo === 'sessao' ? 'at-aviso--erro' : 'at-aviso--info'}`} role="status" data-fotos-aviso={galeria.tipo}>{galeria.tipo === 'sessao' ? galeria.msg : 'As fotos estão indisponíveis agora. Tente de novo mais tarde.'}</div>}
+      {aba === 'fotos' && (galeria.tipo === 'sessao' || galeria.tipo === 'indisponivel') && <div className={`at-aviso ${galeria.tipo === 'sessao' ? 'at-aviso--erro' : 'at-aviso--info'}`} role="status" data-fotos-aviso={galeria.tipo}>{galeria.tipo === 'sessao' ? <>{galeria.msg}{galeria.reentrar && <> <EntrarNovamente aoContinuar={recarregarGaleria} /></>}</> : 'As fotos estão indisponíveis agora. Tente de novo mais tarde.'}</div>}
       {aba === 'fotos' && galeria.tipo !== 'ok' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => setAmpliar(i)}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
       {aba === 'precifica' && <AbaPrecifica f={f} />}
       {aba === 'historico' && <AbaHistorico id={p.id} />}

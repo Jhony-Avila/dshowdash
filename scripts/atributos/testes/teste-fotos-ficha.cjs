@@ -20,12 +20,12 @@ const erro = (status, code, meta) => ({ status, contentType: 'application/json',
   // ── proxy simulado (contrato v1.0)
   const simular = async (pg, modo) => {
     const s = { versao: 7, fotos: [{ id: 801, capa: true, posicao: 1, origem: 'precifica', autor_user_id: null, criado_em: '2026-10-01T10:00:00Z', largura: 800, altura: 600, cor: '#dddddd', versao_arquivo: 1 },
-      { id: 802, capa: false, posicao: 2, origem: 'dshow', autor_user_id: 75, criado_em: '2026-11-10T10:00:00Z', largura: 800, altura: 600, cor: null, versao_arquivo: 1 }], removidas: [], posts: [], gets: [], proxId: 900, plano: [], porChave: new Map() };
+      { id: 802, capa: false, posicao: 2, origem: 'dshow', autor_user_id: 75, criado_em: '2026-11-10T10:00:00Z', largura: 800, altura: 600, cor: null, versao_arquivo: 1 }], removidas: [], posts: [], gets: [], leituras: 0, proxId: 900, plano: [], porChave: new Map() };
     const recibo = (op, chave, extra) => ({ canal: 'dash', chave, confirmado_em: new Date().toISOString(), desfecho: 'aplicada', duplicada: false, foto_id: null, operacao: op, produto_id: P, versao_nova: s.versao, ...extra });
     await pg.route('**/api/midia/index.php?**', async (route) => {
       const u = new URL(route.request().url()); const r = u.searchParams.get('r'); const h = route.request().headers(); const m = route.request().method();
       if (r === 'imagem') return route.fulfill({ status: 200, contentType: 'image/png', body: PNG, headers: { ETag: '"x"', 'Cache-Control': 'private, max-age=86400' } });
-      if (r === 'galeria') { if (modo === 'desligado') return route.fulfill(erro(404, 'NOT_FOUND', { message: 'Recurso não disponível.' }));
+      if (r === 'galeria') { s.leituras++; if (modo === 'desligado') return route.fulfill(erro(404, 'NOT_FOUND', { message: 'Recurso não disponível.' }));
         if (modo === 'revogada') return route.fulfill(erro(401, 'SESSION_REVOKED', { message: 'Sessão revogada.' }));
         if (modo === 'desativado') return route.fulfill(erro(401, 'USER_DISABLED', { message: 'Usuário desativado.' }));
         if (modo === 'sem75') return route.fulfill(erro(403, 'NOT_AUTHORIZED', { message: 'Você não tem permissão para gerenciar as fotos.' }));
@@ -81,8 +81,9 @@ const erro = (status, code, meta) => ({ status, contentType: 'application/json',
   await pg.click(`${dlg} button:has-text("Publicar 3 fotos")`); await pg.waitForTimeout(1500);
   const pub = s.posts.filter((p) => p.r === 'publicar');
   afirma('3 envios em bytes (octet-stream), uma chave por foto (16–64), na ordem', pub.length === 3 && pub.every((p) => /octet-stream/.test(p.ct) && /^[A-Za-z0-9_-]{16,64}$/.test(p.chave)) && new Set(pub.map((p) => p.chave)).size === 3 && pub.map((p) => p.bytes).join() === [png(10).length, png(20).length, png(30).length].join(), JSON.stringify(pub.map((p) => [p.ct, p.chave, p.bytes])));
-  afirma('estados: Publicada · "Esta foto já está na galeria" (+ Ver foto) · "Não conseguimos confirmar o envio" (+ Conferir gravação)', JSON.stringify(await estados(pg)) === '["publicada","duplicada","desconhecido"]'
-    && !!(await pg.$('.at-fotos-fila__item--duplicada button:has-text("Ver foto")')) && (await pg.textContent('.at-fotos-fila__item--desconhecido')).includes('Não conseguimos confirmar o envio'), JSON.stringify(await estados(pg)));
+  afirma('estados: Publicada · "Esta foto já está na galeria" (+ Ver foto) · "Ainda não conseguimos confirmar o envio desta foto." (+ Conferir gravação · Reenviar com segurança)', JSON.stringify(await estados(pg)) === '["publicada","duplicada","desconhecido"]'
+    && !!(await pg.$('.at-fotos-fila__item--duplicada button:has-text("Ver foto")')) && (await pg.textContent('.at-fotos-fila__item--desconhecido')).includes('Ainda não conseguimos confirmar o envio desta foto.')
+    && !!(await pg.$('.at-fotos-fila__item--desconhecido button:has-text("Conferir gravação")')) && !!(await pg.$('.at-fotos-fila__item--desconhecido button:has-text("Reenviar com segurança")')), JSON.stringify(await estados(pg)));
   afirma('resumo do lote: "1 publicada · 1 já existente · 1 a conferir"', (await pg.textContent('[data-at-fotos-resumo]')) === '1 publicada · 1 já existente · 1 a conferir', await pg.textContent('[data-at-fotos-resumo]').catch(() => ''));
   await pg.screenshot({ path: `${CAP}/aceite-1-lote.png` });
   await pg.click(`${dlg} button:has-text("Fechar")`); await pg.waitForTimeout(400);
@@ -136,26 +137,53 @@ const erro = (status, code, meta) => ({ status, contentType: 'application/json',
   afirma('câmera bloqueada: mensagem do cadeado; volta ao diálogo com a foto já escolhida na fila e "Escolher arquivos" disponível', /bloqueou a câmera/.test(tErro) && JSON.stringify(await nomes(p2)) === '["antes.png"]' && !!(await p2.$(`${dlg} button:has-text("Escolher arquivos")`)));
   await p2.context().close();
   // (4) PROXY CORRIGIDO (35f037cd): 401 de sessão na leitura → mensagem de sessão, sem botões de escrita
+  const ABRIR = `window.__abertos = []; window.open = (u, t, f) => { window.__abertos.push([String(u), String(t), String(f)]); return null; };`;   // "Entrar novamente" abre OUTRA aba: só registramos
+  const SESSAO = 'Sua sessão foi encerrada. Entre novamente para continuar enviando e gerenciando fotos.';
   for (const [modo, re] of [['revogada', /sessão foi encerrada/], ['desativado', /usuário está desativado/]]) {
-    const pz = await nova(); await simular(pz, modo); await abrir(pz);
+    const pz = await nova(ABRIR); const sz = await simular(pz, modo); await abrir(pz);
     await pz.click('.at-fixo button[role="tab"]:has-text("Fotos")'); await pz.waitForTimeout(300);
     const av = await pz.textContent('[data-fotos-aviso="sessao"]').catch(() => '');
     afirma(`401 ${modo === 'revogada' ? 'SESSION_REVOKED' : 'USER_DISABLED'} na galeria: mensagem de SESSÃO ("${av}"), sem "Adicionar fotos" e sem gerenciar`, re.test(av) && !(await pz.$('.at-resumo-v3__add')) && !(await pz.$('.at-fotos-ger')));
-    if (modo === 'revogada') await pz.screenshot({ path: `${CAP}/sessao-revogada.png` });
+    if (modo === 'revogada') {
+      afirma('aviso da página (parecer 23/11): texto exato + ação "Entrar novamente"; as fotos atuais continuam visíveis', av.startsWith(SESSAO) && !!(await pz.$('[data-fotos-aviso="sessao"] button:has-text("Entrar novamente")')) && !!(await pz.$('.at-fotos-grade, .at-vazio, [class*="vazio"]')), av);
+      await pz.click('[data-fotos-aviso="sessao"] button:has-text("Entrar novamente")'); await pz.waitForTimeout(300);
+      const ab = await pz.evaluate(() => window.__abertos); const dica = await pz.textContent('[data-fotos-aviso="sessao"] [data-at-entrar-retomar]').catch(() => '');
+      afirma('"Entrar novamente" abre /login em OUTRA aba (a ficha fica) e orienta a retomada ("volte aqui e clique em Continuar")', ab.length === 1 && ab[0][0] === '/login' && ab[0][1] === '_blank' && /volte aqui e clique em “Continuar”/.test(dica), JSON.stringify({ ab, dica }));
+      await pz.screenshot({ path: `${CAP}/sessao-revogada.png` });
+      const g0 = sz.leituras;
+      await pz.click('[data-fotos-aviso="sessao"] button:has-text("Continuar")'); await pz.waitForTimeout(600);
+      const g1 = sz.leituras;
+      afirma('"Continuar" relê a galeria (nenhuma escrita)', g1 > g0 && sz.posts.length === 0, JSON.stringify({ g0, g1, posts: sz.posts.length }));
+    } else afirma('usuário desativado: SEM "Entrar novamente" (entrar de novo não resolve)', !(await pz.$('[data-fotos-aviso="sessao"] button:has-text("Entrar novamente")')));
     await pz.context().close();
   }
   // (5) escrita: 503 "canal recusou a assinatura" → "não foi possível enviar agora" (nunca Publicada nem "a conferir"); 401 na escrita → sessão;
   //     resposta perdida + conferir com recibo SEM titular → continua desconhecido (nunca "Publicada")
-  { const pw = await nova(); const sw = await simular(pw, 'ok'); await abrir(pw);
+  { const pw = await nova(ABRIR); const sw = await simular(pw, 'ok'); await abrir(pw);
     sw.plano = ['canal', 'revogada', 'perdida'];
     await pw.click('.at-resumo-v3__add'); await pw.setInputFiles('input[data-at-fotos-input]', [{ name: 'c1.png', mimeType: 'image/png', buffer: png(21) }, { name: 'c2.png', mimeType: 'image/png', buffer: png(22) }, { name: 'c3.png', mimeType: 'image/png', buffer: png(23) }]);
     await pw.click(`${dlg} button:has-text("Publicar 3 fotos")`); await pw.waitForFunction(() => [...document.querySelectorAll('.at-fotos-fila__item')].every((x) => !['pronta', 'enviando', 'processando'].includes(x.dataset.atFotoFila)), null, { timeout: 20000 });
     const est = await estados(pw); const txt = await pw.$$eval('.at-fotos-fila__item', (xs) => xs.map((x) => x.textContent));
     afirma('503 canal recusou → "Não foi possível enviar agora" (recusada, sem "Publicada"); 401 → mensagem de sessão; perdida → a conferir', JSON.stringify(est) === '["recusada","recusada","desconhecido"]' && /Não foi possível enviar agora/.test(txt[0]) && /Não foi publicada/.test(txt[0]) && !/Salvo/.test(txt[0]) && /sessão foi encerrada/.test(txt[1]), JSON.stringify({ est, txt }));
+    const linha2 = `${dlg} .at-fotos-fila__item:nth-child(2)`;
+    afirma('linha da foto com sessão encerrada (parecer 23/11): texto exato + "Entrar novamente"; sem "Escolher outro arquivo" nem "Tentar de novo"', txt[1].includes(SESSAO) && !!(await pw.$(`${linha2} button:has-text("Entrar novamente")`)) && !(await pw.$(`${linha2} button:has-text("Escolher outro arquivo")`)) && !(await pw.$(`${linha2} button:has-text("Tentar de novo")`)), txt[1]);
+    afirma('canal recusado (não é sessão) mantém "Escolher outro arquivo" · "Tentar de novo" e não oferece "Entrar novamente"', !!(await pw.$(`${dlg} .at-fotos-fila__item:nth-child(1) button:has-text("Tentar de novo")`)) && !(await pw.$(`${dlg} .at-fotos-fila__item:nth-child(1) button:has-text("Entrar novamente")`)));
+    await pw.click(`${linha2} button:has-text("Entrar novamente")`); await pw.waitForTimeout(300);
+    const abw = await pw.evaluate(() => window.__abertos);
+    afirma('linha: "Entrar novamente" abre /login em outra aba (o diálogo e a fila ficam) e orienta "Continuar envio"', abw.length === 1 && abw[0][0] === '/login' && !!(await pw.$(dlg)) && /volte aqui e clique em “Continuar envio”/.test(await pw.textContent(`${linha2} [data-at-entrar-retomar]`).catch(() => '')), JSON.stringify(abw));
     sw.reciboAlheio = true; await pw.click(`${dlg} .at-fotos-fila__item[data-at-foto-fila="desconhecido"] button:has-text("Conferir gravação")`); await pw.waitForTimeout(800);
-    const depois = await estados(pw);
+    const depois = await estados(pw); const t3 = await pw.textContent(`${dlg} .at-fotos-fila__item:nth-child(3)`);
     afirma('conferir com recibo SEM titular (chave de outra intenção) → continua "a conferir", nunca "Publicada"', depois[2] === 'desconhecido', JSON.stringify(depois));
+    afirma('envio incerto sem linguagem técnica: "Ainda não conseguimos confirmar o envio desta foto." + Conferir gravação · Reenviar com segurança (sem "chave"/"bytes")', t3.includes('Ainda não conseguimos confirmar o envio desta foto.') && !/chave|bytes/i.test(t3)
+      && !!(await pw.$(`${dlg} .at-fotos-fila__item:nth-child(3) button:has-text("Conferir gravação")`)) && !!(await pw.$(`${dlg} .at-fotos-fila__item:nth-child(3) button:has-text("Reenviar com segurança")`)), t3);
     await pw.screenshot({ path: `${CAP}/canal-sessao-titular.png` });
+    const antes = sw.posts.filter((p) => p.r === 'publicar'); sw.reciboAlheio = false;
+    await pw.click(`${linha2} button:has-text("Continuar envio")`); await pw.waitForFunction(() => document.querySelectorAll('.at-fotos-fila__item')[1]?.dataset.atFotoFila === 'publicada', null, { timeout: 8000 }).catch(() => {});
+    const dep = sw.posts.filter((p) => p.r === 'publicar').at(-1);
+    afirma('"Continuar envio" depois de entrar: reenvia a foto (chave NOVA, porque a recusa por sessão é comprovada) e ela vira "Publicada"', (await estados(pw))[1] === 'publicada' && dep.chave !== antes[1].chave && dep.bytes === png(22).length, JSON.stringify(await estados(pw)));
+    await pw.click(`${dlg} .at-fotos-fila__item:nth-child(3) button:has-text("Reenviar com segurança")`); await pw.waitForTimeout(800);
+    const r3 = sw.posts.filter((p) => p.r === 'publicar').at(-1);
+    afirma('"Reenviar com segurança" na incerta reusa a chave dela e não duplica (vira "Publicada" pelo recibo original)', r3.chave === antes[2].chave && (await estados(pw))[2] === 'publicada' && sw.fotos.length === 4, JSON.stringify({ e: await estados(pw), n: sw.fotos.length }));
     await pw.context().close(); }
   console.log(`FOTOS NA FICHA (contrato CONTRATO-PROXY-MIDIA v1.0, rotas simuladas): ${ok} ok, ${falhas} falhas`); await b.close(); process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('ERRO', e.message, e.stack?.split('\n')[1]); process.exit(2); });

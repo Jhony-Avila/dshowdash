@@ -16,21 +16,28 @@ export interface Galeria {
   versao_galeria: number; limite_fotos: number; fotos: FotoGaleria[]; removidas: (FotoGaleria & { removida_em: string; motivo: string | null })[];
 }
 /** Escrita só com `ok`. 403 NOT_AUTHORIZED (piloto: só o 75) e 404 (flag/rota) = sem botões; 503 APP_UNAVAILABLE = indisponível (sem botões). */
-export type EstadoGaleria = { tipo: 'carregando' } | { tipo: 'ok'; g: Galeria } | { tipo: 'desligado' } | { tipo: 'sem_permissao' } | { tipo: 'sessao'; msg: string } | { tipo: 'indisponivel'; msg: string } | { tipo: 'erro'; msg: string };
+export type EstadoGaleria = { tipo: 'carregando' } | { tipo: 'ok'; g: Galeria } | { tipo: 'desligado' } | { tipo: 'sem_permissao' } | { tipo: 'sessao'; msg: string; reentrar: boolean } | { tipo: 'indisponivel'; msg: string } | { tipo: 'erro'; msg: string };
 
-/** 401 do Dash (sessão revogada / usuário desativado / expirada): mensagem de SESSÃO, nunca "sem permissão" nem "não salvo por erro do app". */
+/** 401 do Dash (sessão revogada / usuário desativado / expirada): mensagem de SESSÃO, nunca "sem permissão" nem "não salvo por erro do app".
+ *  Parecer do Jhony (23/11, P2): sessão encerrada/expirada = texto único + ação "Entrar novamente" (ver `entrarNovamente`). Usuário desativado
+ *  não tem como resolver entrando de novo: fica só a mensagem. */
+export const MSG_SESSAO_ENCERRADA = 'Sua sessão foi encerrada. Entre novamente para continuar enviando e gerenciando fotos.';
 export function mensagemSessao(codigo: string): string {
-  if (codigo === 'SESSION_REVOKED') return 'Sua sessão foi encerrada. Entre de novo para ver e enviar fotos.';
   if (codigo === 'USER_DISABLED') return 'Seu usuário está desativado. Fale com o administrador do Dash.';
-  return 'Sua sessão expirou. Entre de novo para ver e enviar fotos.';
+  return MSG_SESSAO_ENCERRADA;
 }
+/** Entrar de novo resolve? (sim para sessão revogada/expirada; não para usuário desativado). */
+export const sessaoReentravel = (codigo: string) => codigo !== 'USER_DISABLED';
+/** "Entrar novamente": abre a entrada do Dash (/login, rota pública do shell) em OUTRA aba, para não perder a fila de fotos nem a ficha
+ *  aberta nesta. O cookie de sessão é o mesmo; depois de entrar, a pessoa volta a esta aba e clica em "Continuar". */
+export function entrarNovamente(): void { window.open('/login', '_blank', 'noopener'); }
 /** Proxy corrigido (35f037cd): o canal recusou a assinatura (401 ou 403 assinatura_invalida do app) → 503 APP_UNAVAILABLE com desfecho
  *  "recusada" e gravado false. A tela diz só "não foi possível enviar agora" (não afirma salvo; não culpa o usuário). */
 export const MSG_CANAL_RECUSOU = 'Não foi possível enviar agora. Tente de novo mais tarde.';
 /** Como a tela trata o erro de UMA escrita de foto: sessão (401) e canal recusado (503 recusada) são recusas comprovadas; o resto segue o "foi salvo". */
-export function classificarErroFoto(er: ErroApi | null): { tipo: 'recusada'; msg: string } | { tipo: 'conflito' } | { tipo: 'andando' } | { tipo: 'desconhecido' } {
+export function classificarErroFoto(er: ErroApi | null): { tipo: 'recusada'; msg: string; sessao?: boolean } | { tipo: 'conflito' } | { tipo: 'andando' } | { tipo: 'desconhecido' } {
   if (!er || er.desconhecido) return { tipo: 'desconhecido' };
-  if (er.http === 401) return { tipo: 'recusada', msg: mensagemSessao(er.codigo) };
+  if (er.http === 401) return { tipo: 'recusada', msg: mensagemSessao(er.codigo), sessao: sessaoReentravel(er.codigo) };
   if (er.http === 503 && er.extra.desfecho === 'recusada') return { tipo: 'recusada', msg: MSG_CANAL_RECUSOU };
   if (er.emAndamento) return { tipo: 'andando' };
   if (er.conflito) return { tipo: 'conflito' };
@@ -43,7 +50,7 @@ export async function carregarGaleria(productId: number, sinal?: AbortSignal): P
   catch (e) {
     const er = e instanceof ErroApi ? e : null;
     if (er?.http === 404) return { tipo: 'desligado' };
-    if (er?.http === 401) return { tipo: 'sessao', msg: mensagemSessao(er.codigo) };
+    if (er?.http === 401) return { tipo: 'sessao', msg: mensagemSessao(er.codigo), reentrar: sessaoReentravel(er.codigo) };
     if (er?.http === 403) return { tipo: 'sem_permissao' };
     if (er?.http === 503) return { tipo: 'indisponivel', msg: er.message };
     return { tipo: 'erro', msg: e instanceof Error ? e.message : 'Falha ao ler as fotos.' };

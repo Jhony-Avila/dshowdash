@@ -789,6 +789,9 @@ html[data-theme="dark"] body [data-bl-root] .pv2-corpo__fixo > .pv2-linha--fixa:
 .at-fotos-fila__estado { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; color: var(--bl-texto-2); }
 .at-fotos-fila__item--recusada .at-fotos-fila__estado { color: var(--bl-erro); }
 .at-fotos-fila__item--desconhecido .at-fotos-fila__estado, .at-fotos-fila__item--andando .at-fotos-fila__estado { color: var(--bl-texto); }
+/* Sessão encerrada (parecer 23/11): "Entrar novamente" → orientação de retomada (texto neutro, mesmo dentro da linha em vermelho ou do aviso) */
+[data-bl-root] .at-entrar-novamente { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+[data-bl-root] .at-entrar-novamente__dica { color: var(--bl-texto-2); font-weight: 400; }
 .at-fotos-fila__principal { font-size: 12px; color: var(--bl-texto-2); display: inline-flex; gap: 6px; align-items: center; }
 .at-fotos-fila__ordem { display: flex; gap: 2px; }
 .at-webcam { display: flex; flex-direction: column; gap: 8px; }

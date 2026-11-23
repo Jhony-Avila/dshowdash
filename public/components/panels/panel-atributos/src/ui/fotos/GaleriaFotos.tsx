@@ -1,12 +1,12 @@
 // FOTOS NA FICHA (CIMA, 19/11) — roteiro aprovado (PESQUISA-FOTOS-UX-chatgpt-2026-11-19.md) sobre o contrato do proxy (CONTRATO-PROXY-MIDIA.md v1.0).
 // UM diálogo "Adicionar fotos · <código> — <nome>": arquivo, arrastar, colar (Ctrl+V/⌘V SÓ aqui dentro) e câmera alimentam a MESMA fila de prévias;
 // cada prévia sai antes de "Publicar N fotos". Por foto: Pronta para publicar → Enviando (% da transferência) → Processando → Publicada (SÓ com recibo
-// daquela chave, operação e produto). Duplicada = "Esta foto já está na galeria" + "Ver foto". Resposta perdida = "Não conseguimos confirmar o envio" +
-// "Conferir gravação". A fila (com as chaves e os resultados) vive FORA do diálogo: fechar e reabrir mantém tudo, e um envio em curso continua.
+// daquela chave, operação e produto). Duplicada = "Esta foto já está na galeria" + "Ver foto". Resposta perdida = "Ainda não conseguimos confirmar o envio desta foto." +
+// "Conferir gravação" / "Reenviar com segurança". Sessão encerrada (401) = "Entrar novamente" (outra aba) → "Continuar envio" (parecer 23/11). A fila (com as chaves e os resultados) vive FORA do diálogo: fechar e reabrir mantém tudo, e um envio em curso continua.
 // Aba Fotos: "Definir como principal", Reordenar (arrastar ou setas; "A primeira foto será a principal"; Salvar ordem / Cancelar), remover com Desfazer, restaurar.
 import React from 'react';
 import { ErroApi, novaChaveOperacao } from '../../lib/api';
-import { ACEITOS, conferirFoto, DETALHES_LIMITES, ehHeic, FORMATOS_TEXTO, LIMITE_BYTES, marcarCapa, ordenarFotos, prepararArquivo, publicarFoto, removerFoto, restaurarFoto,
+import { ACEITOS, conferirFoto, DETALHES_LIMITES, ehHeic, entrarNovamente, FORMATOS_TEXTO, LIMITE_BYTES, marcarCapa, ordenarFotos, prepararArquivo, publicarFoto, removerFoto, restaurarFoto,
   urlImagem, type EstadoGaleria, type FotoGaleria, type ReciboFoto, type RespostaFoto, classificarErroFoto } from '../../lib/fotos';
 import { marcarPendencia } from '../../lib/pendencias';
 import { Botao, Dialogo, Foto } from '../Comuns';
@@ -14,7 +14,7 @@ import { Icone } from '../Icones';
 
 // ── fila por produto, fora do React (sobrevive a fechar/reabrir o diálogo e ao fim de um envio com o diálogo fechado) ──────────────────
 export type EstadoItem = 'pronta' | 'enviando' | 'processando' | 'publicada' | 'duplicada' | 'recusada' | 'desconhecido' | 'conferindo' | 'andando';
-export interface Item { id: number; arquivo: File; preview: string | null; estado: EstadoItem; pct?: number; msg?: string; chave?: string; recibo?: ReciboFoto; principal?: boolean }
+export interface Item { id: number; arquivo: File; preview: string | null; estado: EstadoItem; pct?: number; msg?: string; chave?: string; recibo?: ReciboFoto; principal?: boolean; sessao?: boolean; demorando?: boolean }
 let seqItem = 0;
 const filas = new Map<number, Item[]>();
 const ouvintes = new Map<number, Set<() => void>>();
@@ -28,7 +28,20 @@ function useFila(p: number): Item[] {
 const INCERTO: EstadoItem[] = ['enviando', 'processando', 'desconhecido', 'conferindo', 'andando'];
 const FIM: EstadoItem[] = ['publicada', 'duplicada'];
 const TEXTO: Record<EstadoItem, string> = { pronta: 'Pronta para publicar', enviando: 'Enviando', processando: 'Processando…', publicada: 'Publicada', duplicada: 'Esta foto já está na galeria',
-  recusada: 'Não foi publicada', desconhecido: 'Não conseguimos confirmar o envio', conferindo: 'Conferindo a gravação…', andando: 'Ainda em processamento no servidor' };
+  recusada: 'Não foi publicada', desconhecido: 'Ainda não conseguimos confirmar o envio desta foto.', conferindo: 'Conferindo a gravação…', andando: 'Ainda em processamento no servidor' };
+
+/** Sessão encerrada (401, parecer do Jhony 23/11): "Entrar novamente" abre a entrada do Dash em outra aba (a fila e a ficha ficam aqui);
+ *  depois aparece a orientação de retomada e o botão de continuar. Usado na linha da foto, no aviso da página e na aba Fotos. */
+export function EntrarNovamente({ aoContinuar, rotulo = 'Continuar' }: { aoContinuar: () => void; rotulo?: string }) {
+  const [abriu, setAbriu] = React.useState(false);
+  return (
+    <span className="at-entrar-novamente" data-at-entrar>
+      <button type="button" className="at-link" onClick={() => { entrarNovamente(); setAbriu(true); }}>Entrar novamente</button>
+      {abriu && <> <span className="at-entrar-novamente__dica" data-at-entrar-retomar>Depois de entrar na nova aba, volte aqui e clique em “{rotulo}”.</span>
+        <button type="button" className="at-link" onClick={aoContinuar}>{rotulo}</button></>}
+    </span>
+  );
+}
 
 /** Separa o que é imagem aceitável do resto (com o motivo). */
 export function filtrarImagens(lista: FileList | File[] | null | undefined): { ok: File[]; recusados: string[] } {
@@ -69,7 +82,7 @@ export function AdicionarFotos({ produto, aberto, aoFechar, aoMudou, versaoGaler
 
   const publicarUm = async (it: Item): Promise<ReciboFoto | null> => {
     const chave = it.chave ?? novaChaveOperacao();   // mesma chave (e mesmos bytes) em qualquer reenvio desta foto
-    mudar(P, it.id, { estado: 'enviando', pct: 0, chave, msg: undefined });
+    mudar(P, it.id, { estado: 'enviando', pct: 0, chave, msg: undefined, sessao: undefined, demorando: undefined });
     try {
       const corpo = await prepararArquivo(it.arquivo);
       const r: RespostaFoto = await publicarFoto(P, corpo, chave, (fase, pct) => mudar(P, it.id, { estado: fase, pct }));
@@ -80,7 +93,7 @@ export function AdicionarFotos({ produto, aberto, aoFechar, aoMudou, versaoGaler
     } catch (e) {
       const c = classificarErroFoto(e instanceof ErroApi ? e : null);
       if (c.tipo === 'andando') mudar(P, it.id, { estado: 'andando' });
-      else if (c.tipo === 'recusada') mudar(P, it.id, { estado: 'recusada', msg: c.msg, chave: undefined });   // recusa comprovada (inclui sessão e canal): nova tentativa = chave nova
+      else if (c.tipo === 'recusada') mudar(P, it.id, { estado: 'recusada', msg: c.msg, sessao: c.sessao, chave: undefined });   // recusa comprovada (inclui sessão e canal): nova tentativa = chave nova
       else if (c.tipo === 'conflito') mudar(P, it.id, { estado: 'recusada', msg: (e as Error).message, chave: undefined });
       else mudar(P, it.id, { estado: 'desconhecido' });
       return null;
@@ -102,9 +115,9 @@ export function AdicionarFotos({ produto, aberto, aoFechar, aoMudou, versaoGaler
     try {
       const c = await conferirFoto(it.chave);
       if (c.tipo === 'salvo' && reciboValido(c.recibo, it.chave, P)) { versao.current = Math.max(versao.current, c.recibo.versao_nova); mudar(P, it.id, { estado: c.recibo.duplicada ? 'duplicada' : 'publicada', recibo: c.recibo, msg: undefined }); aoMudou(); }
-      else if (c.tipo === 'andando') mudar(P, it.id, { estado: 'andando', msg: c.demorando ? 'Está demorando; reenviar com a mesma chave é seguro.' : undefined });
+      else if (c.tipo === 'andando') mudar(P, it.id, { estado: 'andando', demorando: !!c.demorando, msg: c.demorando ? 'Está demorando mais que o normal.' : undefined });
       else if (c.tipo === 'nao_aplicada') mudar(P, it.id, { estado: 'recusada', msg: c.msg, chave: undefined });
-      else mudar(P, it.id, { estado: 'desconhecido', msg: 'Ainda não encontramos o resultado desta gravação. Tentar de novo usa a MESMA chave e os mesmos bytes, sem duplicar.' });
+      else mudar(P, it.id, { estado: 'desconhecido', msg: undefined });   // o texto do estado já diz tudo (sem linguagem técnica, parecer 23/11)
     } catch { mudar(P, it.id, { estado: 'desconhecido', msg: 'Não foi possível conferir agora.' }); }
   };
   const reenviar = async (it: Item) => { if (await publicarUm(it)) aoMudou(); };
@@ -149,8 +162,9 @@ export function AdicionarFotos({ produto, aberto, aoFechar, aoMudou, versaoGaler
                       {it.estado === 'enviando' && <progress max={100} value={it.pct ?? 0} aria-label={`Transferência de ${it.arquivo.name}`} />}
                       {it.estado === 'duplicada' && it.recibo?.foto_id && <> <button type="button" className="at-link" onClick={() => aoVerFoto(it.recibo!.foto_id!)}>Ver foto</button></>}
                       {(it.estado === 'desconhecido' || it.estado === 'andando') && <> <button type="button" className="at-link" onClick={() => conferir(it)}>Conferir gravação</button>
-                        {it.msg && /mesma chave/i.test(it.msg) && <> · <button type="button" className="at-link" onClick={() => reenviar(it)}>Reenviar com segurança</button></>}</>}
-                      {it.estado === 'recusada' && <> <button type="button" className="at-link" onClick={() => { tirar(it.id); input.current?.click(); }}>Escolher outro arquivo</button> · <button type="button" className="at-link" onClick={() => mudar(P, it.id, { estado: 'pronta', msg: undefined })}>Tentar de novo</button></>}
+                        {(it.estado === 'desconhecido' || it.demorando) && <> · <button type="button" className="at-link" onClick={() => reenviar(it)}>Reenviar com segurança</button></>}</>}
+                      {it.estado === 'recusada' && it.sessao && <> <EntrarNovamente rotulo="Continuar envio" aoContinuar={() => reenviar(it)} /></>}
+                      {it.estado === 'recusada' && !it.sessao && <> <button type="button" className="at-link" onClick={() => { tirar(it.id); input.current?.click(); }}>Escolher outro arquivo</button> · <button type="button" className="at-link" onClick={() => mudar(P, it.id, { estado: 'pronta', msg: undefined })}>Tentar de novo</button></>}
                     </div>
                     {it.estado === 'pronta' && <label className="at-fotos-fila__principal"><input type="radio" name={`principal-${P}`} checked={!!it.principal} onChange={() => principal(it.id)} /> Definir como principal</label>}
                   </div>
@@ -219,7 +233,7 @@ export function Camera({ aoFechar, aoUsar }: { aoFechar: () => void; aoUsar: (f:
 
 /** Aba Fotos: "Definir como principal", Reordenar (arrastar ou setas, Salvar ordem / Cancelar), remover com Desfazer, restaurar. */
 export function GerenciarFotos({ estado, productId, aoMudou, aoAdicionar }: { estado: EstadoGaleria; productId: number; aoMudou: () => void; aoAdicionar: () => void }) {
-  const [op, setOp] = React.useState<{ fase: 'andando' | 'ok' | 'erro' | 'incerto'; msg: string; chave?: string; refazer?: () => void } | null>(null);
+  const [op, setOp] = React.useState<{ fase: 'andando' | 'ok' | 'erro' | 'incerto'; msg: string; chave?: string; refazer?: () => void; sessao?: boolean } | null>(null);
   const [desfazer, setDesfazer] = React.useState<{ fotoId: number; versao: number } | null>(null);
   const [verRemovidas, setVerRemovidas] = React.useState(false);
   const [ordem, setOrdem] = React.useState<number[] | null>(null);   // modo Reordenar
@@ -233,7 +247,7 @@ export function GerenciarFotos({ estado, productId, aoMudou, aoAdicionar }: { es
       try { const r = await f(chave); setOp({ fase: 'ok', msg: r.desfecho === 'sem_mudanca' ? `${descricao}: nada mudou` : `${descricao}: salvo` }); depois?.(r); aoMudou(); }
       catch (e) {
         const er = e instanceof ErroApi ? e : null; const cl = classificarErroFoto(er);
-        if (cl.tipo === 'recusada' && (er?.http === 401 || er?.http === 503)) setOp({ fase: 'erro', msg: `${descricao}: ${cl.msg}` });
+        if (cl.tipo === 'recusada' && (er?.http === 401 || er?.http === 503)) setOp({ fase: 'erro', msg: `${descricao}: ${cl.msg}`, sessao: !!cl.sessao, refazer: cl.sessao ? tentar : undefined });
         else if (er?.conflito) { setOp({ fase: 'erro', msg: 'As fotos deste produto mudaram (talvez em outra aba). Atualizei a galeria; confira e refaça.' }); setOrdem(null); aoMudou(); }
         else if (er?.recusada) setOp({ fase: 'erro', msg: `${descricao}: não foi salvo (${er.message})` });
         else setOp({ fase: 'incerto', msg: `${descricao}: não conseguimos confirmar.`, chave, refazer: tentar });
@@ -245,7 +259,7 @@ export function GerenciarFotos({ estado, productId, aoMudou, aoAdicionar }: { es
     if (!op?.chave) return; const c = await conferirFoto(op.chave).catch(() => null);
     if (c?.tipo === 'salvo' && c.recibo?.chave === op.chave) { setOp({ fase: 'ok', msg: 'Conferido: salvo' }); aoMudou(); }   // recibo sem titular (chave de outra intenção) = desconhecido
     else if (c?.tipo === 'nao_aplicada') setOp({ fase: 'erro', msg: `Não foi salvo (${c.msg})` });
-    else setOp({ ...op, msg: c?.tipo === 'nao_encontrada' ? 'Ainda não encontramos o resultado desta gravação. Tentar de novo usa a mesma chave, com segurança.' : 'Ainda sem confirmação.' });
+    else setOp({ ...op, msg: c?.tipo === 'nao_encontrada' ? 'Ainda não conseguimos confirmar esta alteração.' : 'Ainda sem confirmação.' });
   };
   const selo = (f: FotoGaleria) => (f.origem === 'precifica' ? 'Precifica' : `Enviada por ${f.autor_nome ?? (f.autor_user_id ? `usuário ${f.autor_user_id}` : '—')}${f.criado_em ? ` em ${new Date(f.criado_em).toLocaleDateString('pt-BR')}` : ''}`);
   const lista = ordem ? ordem.map((id) => porId.get(id)).filter((x): x is FotoGaleria => !!x) : fotos;
@@ -261,7 +275,8 @@ export function GerenciarFotos({ estado, productId, aoMudou, aoAdicionar }: { es
           <Botao aoClicar={() => setOrdem(null)}>Cancelar</Botao>
           <Botao primario desligado={JSON.stringify(ordem) === JSON.stringify(fotos.map((f) => f.id))} aoClicar={() => rodar('Ordem', (ch) => ordenarFotos(productId, ordem, g.versao_galeria, ch), () => setOrdem(null))}>Salvar ordem</Botao></>}
         {op && <span className={`at-fotos-ger__op at-fotos-ger__op--${op.fase}`} role={op.fase === 'erro' || op.fase === 'incerto' ? 'alert' : 'status'}>{op.msg}
-          {op.fase === 'incerto' && <> <button type="button" className="at-link" onClick={conferirOp}>Conferir gravação</button> · <button type="button" className="at-link" onClick={() => op.refazer?.()}>Reenviar com segurança</button></>}</span>}
+          {op.fase === 'incerto' && <> <button type="button" className="at-link" onClick={conferirOp}>Conferir gravação</button> · <button type="button" className="at-link" onClick={() => op.refazer?.()}>Reenviar com segurança</button></>}
+          {op.fase === 'erro' && op.sessao && <> <EntrarNovamente aoContinuar={() => op.refazer?.()} /></>}</span>}
         {desfazer && <span className="at-fotos-ger__op" role="status">Foto removida. <button type="button" className="at-link" onClick={() => { const d = desfazer; setDesfazer(null); rodar('Restaurar', (ch) => restaurarFoto(d.fotoId, d.versao, ch)); }}>Desfazer</button></span>}
       </div>
       <ul className={`at-fotos-ger__grade ${ordem ? 'at-fotos-ger__grade--ordenando' : ''}`}>
