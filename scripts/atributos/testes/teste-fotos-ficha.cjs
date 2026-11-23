@@ -137,7 +137,13 @@ const erro = (status, code, meta) => ({ status, contentType: 'application/json',
   afirma('câmera bloqueada: mensagem do cadeado; volta ao diálogo com a foto já escolhida na fila e "Escolher arquivos" disponível', /bloqueou a câmera/.test(tErro) && JSON.stringify(await nomes(p2)) === '["antes.png"]' && !!(await p2.$(`${dlg} button:has-text("Escolher arquivos")`)));
   await p2.context().close();
   // (4) PROXY CORRIGIDO (35f037cd): 401 de sessão na leitura → mensagem de sessão, sem botões de escrita
-  const ABRIR = `window.__abertos = []; window.open = (u, t, f) => { window.__abertos.push([String(u), String(t), String(f)]); return null; };`;   // "Entrar novamente" abre OUTRA aba: só registramos
+  // "Entrar novamente" (§114): encerra a sessão (check.php → POST logout.php com o CSRF, como o menu → Sair) e abre OUTRA aba em /login.
+  //  A aba é falsa: registramos [url inicial, alvo, recursos, para onde foi depois do logout].
+  const ABRIR = `window.__abertos = []; window.open = (u, t, f) => { const reg = [String(u), String(t), String(f), null]; window.__abertos.push(reg); return { closed: false, opener: window, location: { set href(v) { reg[3] = String(v); }, get href() { return reg[3] || String(u); } } }; };`;
+  const espiarSaida = (pg) => { const reg = { logout: [], ordem: [] }; pg.on('request', (rq) => { const u = rq.url(); if (/\/api\/auth\/(check|logout)\.php/.test(u)) reg.ordem.push(u.match(/(check|logout)\.php/)[1] + ':' + rq.method()); if (/\/api\/auth\/logout\.php/.test(u)) reg.logout.push({ metodo: rq.method(), csrf: rq.headers()['x-csrf-token'] || '' }); });
+    pg.on('response', (rs) => { if (/\/api\/auth\/logout\.php/.test(rs.url())) reg.status = rs.status(); }); return reg; };
+  const sessao = (pg) => pg.evaluate(async () => { const j = await (await fetch('/api/auth/check.php', { cache: 'no-store' })).json().catch(() => ({})); return { autenticado: !!(j?.data?.authenticated ?? j?.authenticated ?? j?.data?.user), csrf: j?.data?.session?.csrf_token ?? '' }; });
+  const entrarDeNovo = async (pg) => { const o = await pg.context().newPage(); await o.goto(`${B}/__entrar?perfil=admin&ir=%2F`, { waitUntil: 'domcontentloaded', timeout: 60000 }); await o.close(); };   // "a outra aba": a pessoa entra com a senha
   const SESSAO = 'Sua sessão foi encerrada. Entre novamente para continuar enviando e gerenciando fotos.';
   for (const [modo, re] of [['revogada', /sessão foi encerrada/], ['desativado', /usuário está desativado/]]) {
     const pz = await nova(ABRIR); const sz = await simular(pz, modo); await abrir(pz);
@@ -145,16 +151,25 @@ const erro = (status, code, meta) => ({ status, contentType: 'application/json',
     const av = await pz.textContent('[data-fotos-aviso="sessao"]').catch(() => '');
     afirma(`401 ${modo === 'revogada' ? 'SESSION_REVOKED' : 'USER_DISABLED'} na galeria: mensagem de SESSÃO ("${av}"), sem "Adicionar fotos" e sem gerenciar`, re.test(av) && !(await pz.$('.at-resumo-v3__add')) && !(await pz.$('.at-fotos-ger')));
     if (modo === 'revogada') {
-      afirma('aviso da página (parecer 23/11): texto exato + ação "Entrar novamente"; as fotos atuais continuam visíveis', av.startsWith(SESSAO) && !!(await pz.$('[data-fotos-aviso="sessao"] button:has-text("Entrar novamente")')) && !!(await pz.$('.at-fotos-grade, .at-vazio, [class*="vazio"]')), av);
-      await pz.click('[data-fotos-aviso="sessao"] button:has-text("Entrar novamente")'); await pz.waitForTimeout(300);
+      afirma('aviso da página (parecer 23/11): texto exato + ação "Entrar novamente"', av.startsWith(SESSAO) && !!(await pz.$('[data-fotos-aviso="sessao"] button:has-text("Entrar novamente")')), av);
+      const s0 = await sessao(pz); const espia = espiarSaida(pz);
+      await pz.click('[data-fotos-aviso="sessao"] button:has-text("Entrar novamente")'); await pz.waitForSelector('[data-fotos-aviso="sessao"] [data-at-entrar-retomar]', { timeout: 10000 }).catch(() => {});
       const ab = await pz.evaluate(() => window.__abertos); const dica = await pz.textContent('[data-fotos-aviso="sessao"] [data-at-entrar-retomar]').catch(() => '');
-      afirma('"Entrar novamente" abre /login em OUTRA aba (a ficha fica) e orienta a retomada ("volte aqui e clique em Continuar")', ab.length === 1 && ab[0][0] === '/login' && ab[0][1] === '_blank' && /volte aqui e clique em “Continuar”/.test(dica), JSON.stringify({ ab, dica }));
+      afirma('§114: "Entrar novamente" ENCERRA a sessão como o menu → Sair (check.php → POST logout.php com o CSRF da sessão → 200)', s0.autenticado && espia.logout.length === 1 && espia.logout[0].metodo === 'POST' && espia.logout[0].csrf === s0.csrf && espia.status === 200 && espia.ordem.indexOf('check:GET') > -1 && espia.ordem.indexOf('check:GET') < espia.ordem.indexOf('logout:POST'), JSON.stringify({ s0: s0.autenticado, espia }));
+      const s1 = await sessao(pz);
+      afirma('§114: depois do clique a sessão PHP acabou de verdade (check.php = não autenticado) → /login vai pedir a senha', !s1.autenticado, JSON.stringify(s1));
+      afirma('a aba nova abre NO CLIQUE (sem bloqueio de pop-up) e só vai a /login DEPOIS do logout; a ficha fica nesta aba e orienta a retomada', ab.length === 1 && ab[0][0] === 'about:blank' && ab[0][1] === '_blank' && ab[0][3] === '/login' && /volte aqui e clique em “Continuar”/.test(dica), JSON.stringify({ ab, dica }));
+      await pz.waitForTimeout(2500);
+      afirma('a ficha continua aberta nesta aba depois do logout (o shell não tirou a pessoa da ficha)', /panel-atributos\/produto\/550/.test(pz.url()) && !!(await pz.$('.at-resumo-v3')) && !!(await pz.$('[data-fotos-aviso="sessao"]')), pz.url());
       await pz.screenshot({ path: `${CAP}/sessao-revogada.png` });
+      await entrarDeNovo(pz);
       const g0 = sz.leituras;
       await pz.click('[data-fotos-aviso="sessao"] button:has-text("Continuar")'); await pz.waitForTimeout(600);
       const g1 = sz.leituras;
       afirma('"Continuar" relê a galeria (nenhuma escrita)', g1 > g0 && sz.posts.length === 0, JSON.stringify({ g0, g1, posts: sz.posts.length }));
     } else afirma('usuário desativado: SEM "Entrar novamente" (entrar de novo não resolve)', !(await pz.$('[data-fotos-aviso="sessao"] button:has-text("Entrar novamente")')));
+    if (modo === 'desativado') { const tz = await pz.textContent('.at-ficha, main').catch(() => '');   // §114 item 2: no 401 basta a faixa de sessão
+      afirma('§114: no 401 a aba Fotos mostra SÓ a faixa de sessão (sem "Esta tela é só leitura")', !/só leitura/.test(tz) && !!(await pz.$('[data-fotos-aviso="sessao"]')), tz.slice(0, 160)); }
     await pz.context().close();
   }
   // (5) escrita: 503 "canal recusou a assinatura" → "não foi possível enviar agora" (nunca Publicada nem "a conferir"); 401 na escrita → sessão;
@@ -168,9 +183,11 @@ const erro = (status, code, meta) => ({ status, contentType: 'application/json',
     const linha2 = `${dlg} .at-fotos-fila__item:nth-child(2)`;
     afirma('linha da foto com sessão encerrada (parecer 23/11): texto exato + "Entrar novamente"; sem "Escolher outro arquivo" nem "Tentar de novo"', txt[1].includes(SESSAO) && !!(await pw.$(`${linha2} button:has-text("Entrar novamente")`)) && !(await pw.$(`${linha2} button:has-text("Escolher outro arquivo")`)) && !(await pw.$(`${linha2} button:has-text("Tentar de novo")`)), txt[1]);
     afirma('canal recusado (não é sessão) mantém "Escolher outro arquivo" · "Tentar de novo" e não oferece "Entrar novamente"', !!(await pw.$(`${dlg} .at-fotos-fila__item:nth-child(1) button:has-text("Tentar de novo")`)) && !(await pw.$(`${dlg} .at-fotos-fila__item:nth-child(1) button:has-text("Entrar novamente")`)));
-    await pw.click(`${linha2} button:has-text("Entrar novamente")`); await pw.waitForTimeout(300);
+    const espw = espiarSaida(pw);
+    await pw.click(`${linha2} button:has-text("Entrar novamente")`); await pw.waitForSelector(`${linha2} [data-at-entrar-retomar]`, { timeout: 10000 }).catch(() => {});
     const abw = await pw.evaluate(() => window.__abertos);
-    afirma('linha: "Entrar novamente" abre /login em outra aba (o diálogo e a fila ficam) e orienta "Continuar envio"', abw.length === 1 && abw[0][0] === '/login' && !!(await pw.$(dlg)) && /volte aqui e clique em “Continuar envio”/.test(await pw.textContent(`${linha2} [data-at-entrar-retomar]`).catch(() => '')), JSON.stringify(abw));
+    afirma('linha: "Entrar novamente" encerra a sessão (POST logout.php) e abre /login em outra aba (o diálogo e a fila ficam) e orienta "Continuar envio"', espw.logout.length === 1 && espw.status === 200 && !(await sessao(pw)).autenticado && abw.length === 1 && abw[0][3] === '/login' && !!(await pw.$(dlg)) && /volte aqui e clique em “Continuar envio”/.test(await pw.textContent(`${linha2} [data-at-entrar-retomar]`).catch(() => '')), JSON.stringify({ abw, espw }));
+    await entrarDeNovo(pw);
     sw.reciboAlheio = true; await pw.click(`${dlg} .at-fotos-fila__item[data-at-foto-fila="desconhecido"] button:has-text("Conferir gravação")`); await pw.waitForTimeout(800);
     const depois = await estados(pw); const t3 = await pw.textContent(`${dlg} .at-fotos-fila__item:nth-child(3)`);
     afirma('conferir com recibo SEM titular (chave de outra intenção) → continua "a conferir", nunca "Publicada"', depois[2] === 'desconhecido', JSON.stringify(depois));

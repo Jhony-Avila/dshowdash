@@ -30,13 +30,16 @@ const FIM: EstadoItem[] = ['publicada', 'duplicada'];
 const TEXTO: Record<EstadoItem, string> = { pronta: 'Pronta para publicar', enviando: 'Enviando', processando: 'Processando…', publicada: 'Publicada', duplicada: 'Esta foto já está na galeria',
   recusada: 'Não foi publicada', desconhecido: 'Ainda não conseguimos confirmar o envio desta foto.', conferindo: 'Conferindo a gravação…', andando: 'Ainda em processamento no servidor' };
 
-/** Sessão encerrada (401, parecer do Jhony 23/11): "Entrar novamente" abre a entrada do Dash em outra aba (a fila e a ficha ficam aqui);
- *  depois aparece a orientação de retomada e o botão de continuar. Usado na linha da foto, no aviso da página e na aba Fotos. */
+/** Sessão encerrada (401, parecer do Jhony 23/11): "Entrar novamente" ENCERRA a sessão do Dash (como o menu → Sair; §114) e abre a tela de
+ *  senha em outra aba (a fila e a ficha ficam aqui); depois aparece a orientação de retomada e o botão de continuar.
+ *  Usado na linha da foto, no aviso da página e na aba Fotos. */
 export function EntrarNovamente({ aoContinuar, rotulo = 'Continuar' }: { aoContinuar: () => void; rotulo?: string }) {
   const [abriu, setAbriu] = React.useState(false);
+  const [saindo, setSaindo] = React.useState(false);
+  const clicar = () => { if (saindo) return; setSaindo(true); void entrarNovamente().finally(() => { setSaindo(false); setAbriu(true); }); };
   return (
     <span className="at-entrar-novamente" data-at-entrar>
-      <button type="button" className="at-link" onClick={() => { entrarNovamente(); setAbriu(true); }}>Entrar novamente</button>
+      <button type="button" className="at-link" onClick={clicar} disabled={saindo} aria-busy={saindo}>{saindo ? 'Encerrando a sessão…' : 'Entrar novamente'}</button>
       {abriu && <> <span className="at-entrar-novamente__dica" data-at-entrar-retomar>Depois de entrar na nova aba, volte aqui e clique em “{rotulo}”.</span>
         <button type="button" className="at-link" onClick={aoContinuar}>{rotulo}</button></>}
     </span>

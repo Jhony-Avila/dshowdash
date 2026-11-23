@@ -28,9 +28,28 @@ export function mensagemSessao(codigo: string): string {
 }
 /** Entrar de novo resolve? (sim para sessão revogada/expirada; não para usuário desativado). */
 export const sessaoReentravel = (codigo: string) => codigo !== 'USER_DISABLED';
-/** "Entrar novamente": abre a entrada do Dash (/login, rota pública do shell) em OUTRA aba, para não perder a fila de fotos nem a ficha
- *  aberta nesta. O cookie de sessão é o mesmo; depois de entrar, a pessoa volta a esta aba e clica em "Continuar". */
-export function entrarNovamente(): void { window.open('/login', '_blank', 'noopener'); }
+/** Encerra a sessão do Dash DE VERDADE, pelo mesmo caminho do menu → Sair (user-menu: check.php para o CSRF → POST /api/auth/logout.php).
+ *  Pedido da DIREITA (§114, 23/11): no 401 SESSION_REVOKED do proxy a sessão PHP pode continuar viva, e /login com sessão viva não pede senha
+ *  (nem chega ao servidor). Sem sessão (403/401 do logout) ou sem rede: segue assim mesmo — /login sem sessão mostra a senha. */
+export async function encerrarSessaoDoDash(): Promise<boolean> {
+  try {
+    const r = await fetch('/api/auth/check.php', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
+    const j = r.ok ? await r.json().catch(() => null) : null;
+    const token: string = j?.data?.session?.csrf_token ?? j?.session?.csrf_token ?? '';
+    const s = await fetch('/api/auth/logout.php', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', ...(token ? { 'X-CSRF-Token': token } : {}) } });
+    return s.ok;
+  } catch { return false; }
+}
+/** "Entrar novamente": encerra a sessão (acima) e abre a entrada do Dash (/login → tela de senha) em OUTRA aba, para não perder a fila de
+ *  fotos nem a ficha aberta nesta. A aba nova abre JÁ no clique (senão o navegador a bloqueia como pop-up) e só vai a /login depois do logout.
+ *  O cookie de sessão é o mesmo; depois de entrar, a pessoa volta a esta aba e clica em "Continuar". Pop-up bloqueado: vai a /login nesta aba. */
+export function entrarNovamente(): Promise<void> {
+  const aba = window.open('about:blank', '_blank');
+  return encerrarSessaoDoDash().then(() => {
+    if (aba && !aba.closed) { try { aba.opener = null; } catch { /* ignora */ } aba.location.href = '/login'; }
+    else window.location.assign('/login');
+  });
+}
 /** Proxy corrigido (35f037cd): o canal recusou a assinatura (401 ou 403 assinatura_invalida do app) → 503 APP_UNAVAILABLE com desfecho
  *  "recusada" e gravado false. A tela diz só "não foi possível enviar agora" (não afirma salvo; não culpa o usuário). */
 export const MSG_CANAL_RECUSOU = 'Não foi possível enviar agora. Tente de novo mais tarde.';
