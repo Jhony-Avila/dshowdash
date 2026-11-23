@@ -1,43 +1,70 @@
-// panel-atributos/src/screens/Unidades.tsx — tela "Unidades" (missão 18/11 §11.7).
-// Lista agrupada por grandeza com fator de conversão e uso; criar (idempotente no servidor), editar (o símbolo não muda),
-// desativar/reativar com confirmação. Fator: valor × fator = valor na unidade base da grandeza. Sem interface otimista.
+// panel-atributos/src/screens/Unidades.tsx — tela "Unidades" (missão 18/11 §11.7; UX-2 da DIREITA; UNIDADES V2 de 19/11).
+// UNIDADES V2 (Jhony, 19/11 — /srv/dshow-docs/briefings/BRIEFING-UNIDADES-V2.md + MOCKUP-UNIDADES-V2.png; substitui a parte de Unidades
+// do UX-2b): datagrid compacto e contínuo (sem linhas de grupo na apresentação inicial; "Agrupar" = Sem agrupamento | Por tipo de medida),
+// barra de ferramentas numa linha só (Nova unidade → Busca → contadores → Agrupar → Colunas), colunas separadas (Símbolo, Nome, Tipo de
+// medida, Base, Fator, Atributos, Valores gravados, Situação, Ações), linhas de 32 px, 13 px/400 sem negrito, situação em pílula, ações
+// por ícone (lápis = editar NA LINHA; energia = desativar com confirmação NA LINHA mostrando o uso; nunca excluir).
+// Edição na célula com o recibo do "foi salvo" (como o UX-2b): o nome grava direto (Enter/sair salva, Esc cancela); tipo de medida e
+// fator mudam a CONVERSÃO → confirmação na linha com "antes → depois" e o uso. O símbolo é a identidade e não muda.
+// "Tipo de medida" é só o RÓTULO da grandeza; nada muda no banco. Base = referência já cadastrada na grandeza (nunca deduzida); ausente = "—".
+// Mantido do UX-2: equivalência pelo GRUPO inteiro antes da busca; o servidor compara a fotografia do que foi aberto (DSHOW-071).
 import React from 'react';
-import { obter, enviar, ErroApi } from '../lib/api';
+import { obter, ErroApi } from '../lib/api';
 import type { Unidade } from '../lib/tipos';
 import { decimal, numeroParaApi } from '../lib/formatar';
-import { Botao, CabecalhoTravado, Dialogo, Etiqueta, Carregando, Vazio, Erro } from '../ui/Comuns';
-import { useModulo } from '../app/contexto';
-import { decidirFechar, fotografiaUnidade, iniciarGravacao } from '../lib/integridade';
+import { Carregando, Vazio, Erro, CabecalhoTravado, Botao } from '../ui/Comuns';
+import { fotografiaUnidade } from '../lib/integridade';
+import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
+import type { DefGrupo, Ordenacao } from '../lib/ordenar';
+import { corpoEdicaoUnidade, equivalencias, filtrarUnidades, mudaInterpretacao, mudancasUnidade, usoUnidade } from '../ui/admin-ux2';
+import { AntesDepois } from '../ui/AdminUx2';
+import { BarraConfirmacao, CelulaTexto, IconeEstado, useGravacoes, type EstadoCelula } from '../ui/CelulaEditavel';
+import { MenuColunas, MenuEscolha } from '../ui/MenuBarra';
+import '../ui/celula.css';
 import '../styles/dicionario.css';
 
-type UnidadeUso = Unidade & { atributos: number; valores: number };
+type UnidadeUso = Unidade & { atributos: number; valores: number; itens_kit?: number; configuracoes_produto?: number };
 interface RespUnidades { unidades: UnidadeUso[]; pode_administrar: boolean }
-interface RespGravacao { ja_existia?: boolean; sem_mudanca?: boolean; id?: number }
 
-const SEM_GRANDEZA = 'Sem grandeza';
-const CAMPOS: Record<string, string> = { simbolo: 'Símbolo', nome: 'Nome', grandeza: 'Grandeza', fator_base: 'Fator' };
+const SEM_TIPO = 'Sem tipo de medida';
+const CAMPOS: Record<string, string> = { simbolo: 'Símbolo', nome: 'Nome', grandeza: 'Tipo de medida', fator_base: 'Fator' };
 const ligado = (v: unknown) => v === true || Number(v) === 1;
 const n = (x: number) => x.toLocaleString('pt-BR');
-const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const ehBase = (u: Unidade) => u.fator_base !== null && /^1(\.0*)?$/.test(u.fator_base);
+const ok = (f: { fase: string }) => f.fase === 'salvo' || f.fase === 'sem_mudanca';
+const kc = (id: number | string, campo: string) => `${id}:${campo}`;
+const pt = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
 function mensagemErro(e: unknown): string {
-  if (e instanceof ErroApi) {
-    const c = e.campos.map((k) => CAMPOS[k] ?? k);
-    return c.length ? `${e.message} (${c.join(', ')})` : e.message;
-  }
+  if (e instanceof ErroApi) { const c = e.campos.map((k) => CAMPOS[k] ?? k); return c.length ? `${e.message} (${c.join(', ')})` : e.message; }
   return 'Falha de comunicação com o servidor.';
 }
+const fatorValido = (v: string) => { const t = v.trim(); if (!t) return null; const a = numeroParaApi(t); return /^\d+(\.\d+)?$/.test(a) && /[1-9]/.test(a) ? null : 'Fator: número maior que zero (use vírgula para decimais).'; };
 
-type EstadoEditor = null | { modo: 'novo' } | { modo: 'editar'; u: UnidadeUso };
+type Agrupar = 'nenhum' | 'tipo';
+/** Situação: a tela antiga (UX-2) abria em "Ativas e inativas" — mesmo padrão aqui (parecer do Jhony, 19/11: o filtro sumiu na V2 = regressão). */
+type Situacao = 'todas' | 'ativas' | 'inativas';
+const SITUACOES = [{ valor: 'todas', rotulo: 'Todas' }, { valor: 'ativas', rotulo: 'Ativas' }, { valor: 'inativas', rotulo: 'Inativas' }] as const;
+/** Colunas que a pessoa pode ocultar (Símbolo e Ações ficam sempre). */
+const OPCIONAIS: { chave: string; titulo: string }[] = [
+  { chave: 'nome', titulo: 'Nome' }, { chave: 'grandeza', titulo: 'Tipo de medida' }, { chave: 'base', titulo: 'Base' }, { chave: 'fator', titulo: 'Fator' },
+  { chave: 'atributos', titulo: 'Atributos' }, { chave: 'valores', titulo: 'Valores gravados' }, { chave: 'situacao', titulo: 'Situação' },
+];
+const PREF = 'at-unidades-v2-colunas';
+const lerOcultas = (): string[] => { try { const v = JSON.parse(localStorage.getItem(PREF) ?? '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []; } catch { return []; } };
+const ORDEM_PADRAO: Ordenacao = { chave: 'grandeza', direcao: 'asc' };   // por Tipo de medida; o símbolo é o critério secundário (pré-ordem estável)
+type Pedido = { id: number; campo: 'grandeza' | 'fator' | 'ativo'; valor: string; erro: string | null };
 
 export function Unidades() {
-  const { aviso } = useModulo();
   const [dados, setDados] = React.useState<RespUnidades | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
   const [busca, setBusca] = React.useState('');
-  const [editor, setEditor] = React.useState<EstadoEditor>(null);
-  const [confirmar, setConfirmar] = React.useState<UnidadeUso | null>(null);
-  const [alternando, setAlternando] = React.useState(false);
+  const [ordenacao, setOrdenacao] = React.useState<Ordenacao>(ORDEM_PADRAO);
+  const [agrupar, setAgrupar] = React.useState<Agrupar>('nenhum');
+  const [ocultas, setOcultas] = React.useState<string[]>(lerOcultas);
+  const [situacao, setSituacao] = React.useState<Situacao>('todas');
+  const [pedido, setPedido] = React.useState<Pedido | null>(null);
+  const [novaLinha, setNovaLinha] = React.useState(false);
+  const moldura = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => { try { localStorage.setItem(PREF, JSON.stringify(ocultas)); } catch { /* preferência só deste navegador */ } }, [ocultas]);
 
   const carregar = React.useCallback(async (sinal?: AbortSignal) => {
     setErro(null);
@@ -45,227 +72,183 @@ export function Unidades() {
     catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) setErro(mensagemErro(e)); return null; }
   }, []);
   React.useEffect(() => { const c = new AbortController(); void carregar(c.signal); return () => c.abort(); }, [carregar]);
-  const fecharEditor = React.useCallback(() => setEditor(null), []);
-  const fecharConfirmar = React.useCallback(() => setConfirmar(null), []);
-  const recarregar = React.useCallback(async () => { await carregar(); }, [carregar]);
-  // DSHOW-071: "Fechar e reabrir" depois de um 409 — fecha, relê e abre o editor com a unidade atual (nova fotografia)
-  const reabrir = React.useCallback(async (id: number) => {
-    setEditor(null);
-    const r = await carregar();
-    const u = r?.unidades.find((x) => x.id === id);
-    if (u) setEditor({ modo: 'editar', u });
-  }, [carregar]);
+  const recarregar = React.useCallback(() => carregar(), [carregar]);
+  const g = useGravacoes(recarregar);
 
-  const grandezas = React.useMemo(() => [...new Set((dados?.unidades ?? []).map((u) => u.grandeza).filter((g): g is string => !!g))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [dados]);
-  const grupos = React.useMemo(() => {
-    const t = semAcento(busca.trim());
-    const m = new Map<string, UnidadeUso[]>();
-    for (const u of dados?.unidades ?? []) {
-      if (t && !semAcento(`${u.simbolo} ${u.nome} ${u.grandeza ?? ''}`).includes(t)) continue;
-      const g = u.grandeza ?? SEM_GRANDEZA;
-      m.set(g, [...(m.get(g) ?? []), u]);
-    }
-    const ordemFator = (u: Unidade) => (u.fator_base === null ? Number.POSITIVE_INFINITY : Number(u.fator_base));
-    return [...m.entries()]
-      .sort(([a], [b]) => (a === SEM_GRANDEZA ? 1 : b === SEM_GRANDEZA ? -1 : a.localeCompare(b, 'pt-BR')))
-      .map(([g, lista]) => ({ g, lista: lista.sort((a, b) => ordemFator(a) - ordemFator(b) || a.simbolo.localeCompare(b.simbolo, 'pt-BR')), base: lista.find(ehBase) ?? null }));
-  }, [dados, busca]);
+  const todas = React.useMemo(() => dados?.unidades ?? [], [dados]);
+  const equiv = React.useMemo(() => equivalencias(todas), [todas]);   // pelo GRUPO inteiro, ANTES da busca
+  const tipos = React.useMemo(() => [...new Set(todas.map((u) => u.grandeza).filter((x): x is string => !!x))].sort(pt.compare), [todas]);
+  // pré-ordem por símbolo: a ordenação da TabelaDados é estável → símbolo vira o critério secundário de qualquer coluna
+  const filtradas = React.useMemo(() => [...filtrarUnidades(todas, busca)].filter((u) => situacao === 'todas' || (situacao === 'ativas') === ligado(u.ativo))
+    .sort((a, b) => pt.compare(a.simbolo, b.simbolo)), [todas, busca, situacao]);
+  const tiposVisiveis = React.useMemo(() => new Set(filtradas.map((u) => u.grandeza ?? SEM_TIPO)).size, [filtradas]);
+  const grupos: DefGrupo[] = React.useMemo(() => [...tipos.map((x) => ({ chave: x, titulo: x })), { chave: SEM_TIPO, titulo: SEM_TIPO }], [tipos]);
 
-  async function alternar() {
-    if (!confirmar) return;
-    const at = ligado(confirmar.ativo);
-    setAlternando(true);
-    try {
-      await enviar('unidade_ativa', { id: confirmar.id, ativo: !at });
-      aviso(at ? `Unidade "${confirmar.simbolo}" desativada.` : `Unidade "${confirmar.simbolo}" reativada.`);
-      await carregar();
-      setConfirmar(null);
-    } catch (e) { aviso(mensagemErro(e), 'erro'); }
-    finally { setAlternando(false); }
-  }
+  const pode = !!dados?.pode_administrar;
+  const gravarEdicao = React.useCallback((u: UnidadeUso, campo: 'nome' | 'grandeza' | 'fator', valor: string) => {
+    const fatorInicial = u.fator_base ? decimal(u.fator_base) : '';
+    const form = {
+      nome: campo === 'nome' ? valor : u.nome, grandeza: campo === 'grandeza' ? valor : u.grandeza ?? '',
+      fatorApi: campo === 'fator' ? (valor.trim() ? numeroParaApi(valor) : '') : u.fator_base ?? '', fatorMudou: campo === 'fator' && valor.trim() !== fatorInicial,
+    };
+    return g.gravar(kc(u.id, campo), 'unidade', corpoEdicaoUnidade(u, form, fotografiaUnidade(u)), campo === 'fator' ? 'fator_base' : campo);
+  }, [g]);
+  /** Lápis = editar na linha: abre o Nome dessa linha (Tab segue para Tipo de medida e Fator, que também editam na célula). */
+  const editarLinha = (u: UnidadeUso) => { moldura.current?.querySelector<HTMLButtonElement>(`tr[data-chave="${u.id}"] .at-und-nome .at-cel__valor`)?.click(); };
+
+  const todasColunas = React.useMemo<ColunaTabela<UnidadeUso>[]>(() => {
+    const est = (u: UnidadeUso, c: string) => g.estadoDe(kc(u.id, c));
+    const conf = (u: UnidadeUso, c: string) => () => void g.conferir(kc(u.id, c));
+    const emPedido = (u: UnidadeUso, c: Pedido['campo']) => (pedido && pedido.id === u.id && pedido.campo === c ? pedido.valor : null);
+    const base = (u: UnidadeUso) => equiv.get(u.id)?.referencia?.simbolo ?? null;
+    return [
+      { chave: 'simbolo', titulo: 'Símbolo', tipo: 'texto', classe: 'at-und-simbolo', render: (u) => <span className="at-und-txt" title={u.simbolo}>{u.simbolo}</span> },
+      { chave: 'nome', titulo: 'Nome', tipo: 'texto', classe: 'at-und-nome',
+        render: (u) => <CelulaTexto valor={u.nome} rotulo={`Nome de ${u.simbolo}`} pode={pode} validar={(v) => (v.trim() ? null : 'Informe o nome.')}
+          aoSalvar={async (v) => ok(await gravarEdicao(u, 'nome', v))} estado={est(u, 'nome')} aoConferir={conf(u, 'nome')} /> },
+      { chave: 'grandeza', titulo: 'Tipo de medida', tipo: 'texto', valor: (u) => u.grandeza ?? '', classe: 'at-und-tipo',
+        render: (u) => <CelulaTexto valor={emPedido(u, 'grandeza') ?? u.grandeza} rotulo={`Tipo de medida de ${u.simbolo}`} pode={pode}
+          aoSalvar={async (v) => { setPedido({ id: u.id, campo: 'grandeza', valor: v.trim(), erro: null }); return true; }} estado={est(u, 'grandeza')} aoConferir={conf(u, 'grandeza')} /> },
+      { chave: 'base', titulo: 'Base', tipo: 'texto', valor: (u) => base(u) ?? '', render: (u) => base(u) ?? <span className="at-und-vazio">—</span> },
+      { chave: 'fator', titulo: 'Fator', tipo: 'numero', valor: (u) => u.fator_base,
+        render: (u) => <CelulaTexto valor={emPedido(u, 'fator') ?? (u.fator_base === null ? null : decimal(u.fator_base))} rotulo={`Fator de ${u.simbolo}`} pode={pode}
+          validar={fatorValido} aoSalvar={async (v) => { setPedido({ id: u.id, campo: 'fator', valor: v.trim(), erro: null }); return true; }} estado={est(u, 'fator')} aoConferir={conf(u, 'fator')} classe="at-cel--direita" /> },
+      { chave: 'atributos', titulo: 'Atributos', tipo: 'numero', valor: (u) => Number(u.atributos ?? 0), render: (u) => n(Number(u.atributos ?? 0)) },
+      { chave: 'valores', titulo: 'Valores gravados', tipo: 'numero', valor: (u) => Number(u.valores ?? 0), render: (u) => n(Number(u.valores ?? 0)) },
+      { chave: 'situacao', titulo: 'Situação', tipo: 'texto', valor: (u) => (ligado(u.ativo) ? 'Ativa' : 'Inativa'),
+        render: (u) => <span className={`at-und-pilula ${ligado(u.ativo) ? 'at-und-pilula--ativa' : ''}`}>{ligado(u.ativo) ? 'Ativa' : 'Inativa'}</span> },
+      { chave: 'acoes', titulo: 'Ações', tipo: 'texto', ordenavel: false, cabecalho: <span className="at-und-th-acoes">Ações</span>, classe: 'at-und-acoes-cel',
+        render: (u) => (
+          <span className="at-und-acoes">
+            {pode && <button type="button" className="at-icone-acao at-icone-acao--editar" aria-label="Editar unidade" title="Editar unidade" onClick={(e) => { e.stopPropagation(); editarLinha(u); }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+            </button>}
+            {pode && <button type="button" className={`at-icone-acao at-icone-acao--energia ${ligado(u.ativo) ? '' : 'at-icone-acao--desligada'}`}
+              aria-label={ligado(u.ativo) ? 'Desativar unidade' : 'Reativar unidade'} title={ligado(u.ativo) ? 'Desativar unidade' : 'Reativar unidade'}
+              onClick={(e) => { e.stopPropagation(); setPedido({ id: u.id, campo: 'ativo', valor: ligado(u.ativo) ? '0' : '1', erro: null }); }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><path d="M12 3v9" /><path d="M6.4 6.6a8 8 0 1 0 11.2 0" /></svg>
+            </button>}
+            <IconeEstado estado={est(u, 'ativo')} aoConferir={conf(u, 'ativo')} />
+          </span>) },
+    ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [g, pode, pedido, equiv, gravarEdicao]);
+  const colunas = todasColunas.filter((c) => !ocultas.includes(c.chave));
 
   if (erro && !dados) return <Erro mensagem={erro} aoTentar={() => void carregar()} />;
   if (!dados) return <Carregando rotulo="Carregando as unidades" />;
-  const pode = dados.pode_administrar;
-  const total = grupos.reduce((s, x) => s + x.lista.length, 0);
 
   return (
-    <div>
-      <CabecalhoTravado>{/* CABEÇALHO TRAVADO (exceção do Jhony, 19/11): só envolve; nada de lógica */}
-      <div className="at-titulo-tela">
-        <div>
-          <h2>Unidades</h2>
-          <p>Unidades de medida usadas nos atributos numéricos, agrupadas por grandeza. <strong>Fator:</strong> valor × fator = valor na unidade base da grandeza (ex.: 25 cm × 0,01 = 0,25 m).{!pode && ' Seu nível permite apenas consultar.'}</p>
+    <div className="at-und-v2">
+      <CabecalhoTravado>
+        <div className="at-und-barra-ferr" role="search">
+          {pode && <button type="button" className="at-und-nova-btn" disabled={novaLinha} onClick={() => setNovaLinha(true)}><span aria-hidden>+</span> Nova unidade</button>}
+          <label className="at-und-busca">
+            <span className="bl-so-leitor">Buscar símbolo, nome ou tipo</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+            <input type="search" placeholder="Buscar símbolo, nome ou tipo" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          </label>
+          <span className="at-und-contagem" aria-live="polite">{n(filtradas.length)} de {n(todas.length)} unidades · {n(tiposVisiveis)} tipo{tiposVisiveis === 1 ? '' : 's'} de medida
+            {!pode && ' · só consulta'}{erro && <span className="at-alerta" role="alert"> · {erro}</span>}</span>
+          <span className="at-und-direita">
+            <MenuEscolha rotulo="Situação" valor={situacao} opcoes={SITUACOES} aoEscolher={setSituacao} />
+            <MenuEscolha rotulo="Agrupar" valor={agrupar} mostrarValor={false} aoEscolher={setAgrupar}
+              opcoes={[{ valor: 'nenhum', rotulo: 'Sem agrupamento' }, { valor: 'tipo', rotulo: 'Por tipo de medida' }]}
+              icone={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><path d="M12 3 3 8l9 5 9-5-9-5z" /><path d="m3 13 9 5 9-5" /></svg>} />
+            <MenuColunas opcionais={OPCIONAIS} ocultas={ocultas} aoMudar={setOcultas} />
+          </span>
         </div>
-        {pode && <div className="at-acoes"><Botao primario aoClicar={() => setEditor({ modo: 'novo' })}>Nova unidade</Botao></div>}
-      </div>
-
-      <div className="at-dic-filtros" role="search">
-        <label className="at-busca">
-          <span className="bl-so-leitor">Buscar unidade</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-          <input type="search" placeholder="Buscar por símbolo, nome ou grandeza" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </label>
-      </div>
-      <div className="at-dic-contagem" aria-live="polite">
-        <span>{n(total)} de {n(dados.unidades.length)} unidades · {n(grupos.length)} grandeza{grupos.length === 1 ? '' : 's'}</span>
-        {erro && <span className="at-alerta" role="alert">{erro}</span>}
-      </div>
       </CabecalhoTravado>
 
-      {total === 0 ? (
+      {novaLinha && <NovaUnidade tipos={tipos} gravar={g.gravar} estado={g.estadoDe('novo:unidade')} aoConferir={() => void g.conferir('novo:unidade')}
+        aoFechar={() => { g.limpar('novo:unidade'); setNovaLinha(false); }} />}
+
+      {filtradas.length === 0 ? (
         <Vazio titulo={busca ? 'Nenhuma unidade encontrada' : 'Nenhuma unidade cadastrada'} acao={busca ? <Botao aoClicar={() => setBusca('')}>Limpar busca</Botao> : undefined}>
           {busca ? 'Nenhuma unidade corresponde à busca.' : 'Cadastre a primeira unidade de medida.'}
         </Vazio>
       ) : (
-        <div className="at-dic-moldura">
-          <div className="bl-rola-x">
-            <table className="at-tabela at-dic-tabela at-dic-tabela--estatica">
-              <thead>
-                <tr>
-                  <th scope="col">Símbolo</th><th scope="col">Nome</th><th scope="col">Grandeza</th><th scope="col" className="at-dic-num">Fator</th>
-                  <th scope="col">Onde é usada</th><th scope="col">Situação</th>{pode && <th scope="col"><span className="bl-so-leitor">Ações</span></th>}
-                </tr>
-              </thead>
-              {grupos.map(({ g, lista, base }) => (
-                <tbody key={g}>
-                  <tr className="at-dic-grupo"><th scope="rowgroup" colSpan={pode ? 7 : 6}>{g}<span>{n(lista.length)} unidade{lista.length === 1 ? '' : 's'}{base ? ` · base: ${base.simbolo}` : ''}</span></th></tr>
-                  {lista.map((u) => {
-                    const at = ligado(u.ativo);
-                    return (
-                      <tr key={u.id} className={at ? '' : 'at-linha--inativa'}>
-                        <td className="at-dic-simbolo">{u.simbolo}</td>
-                        <td>{u.nome}</td>
-                        <td>{u.grandeza ?? <span className="at-dic-zero">—</span>}</td>
-                        <td className="at-dic-num">
-                          {u.fator_base === null ? <span className="at-dic-zero" title="Sem fator: não converte">—</span> : decimal(u.fator_base)}
-                          {u.fator_base !== null && base && base.id !== u.id && <span className="at-dic-auxiliar">1 {u.simbolo} = {decimal(u.fator_base)} {base.simbolo}</span>}
-                        </td>
-                        <td>
-                          <span className={u.atributos ? '' : 'at-dic-zero'}>{n(u.atributos)} atributo{u.atributos === 1 ? '' : 's'}</span>
-                          <span className="at-dic-auxiliar">{n(u.valores)} valor{u.valores === 1 ? '' : 'es'} gravado{u.valores === 1 ? '' : 's'}</span>
-                        </td>
-                        <td>{at ? <Etiqueta tom="sucesso">Ativa</Etiqueta> : <Etiqueta>Inativa</Etiqueta>}</td>
-                        {pode && (
-                          <td>
-                            <span className="at-dic-acoes-linha">
-                              <button type="button" className="bl-botao" aria-label={`Editar ${u.simbolo}`} onClick={() => setEditor({ modo: 'editar', u })}>Editar</button>
-                              <button type="button" className={`bl-botao ${at ? 'at-botao--perigo' : ''}`} aria-label={`${at ? 'Desativar' : 'Reativar'} ${u.simbolo}`} onClick={() => setConfirmar(u)}>{at ? 'Desativar' : 'Reativar'}</button>
-                            </span>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              ))}
-            </table>
-          </div>
+        <div className="at-dic-moldura" ref={moldura}>
+          <TabelaDados rolagem="container" className="at-und-grid2" legenda="Unidades de medida" colunas={colunas} linhas={filtradas} chaveLinha={(u) => u.id}
+            ordenacao={ordenacao} aoOrdenar={setOrdenacao} congelarOrdem={pedido !== null}
+            grupos={agrupar === 'tipo' ? grupos : undefined} grupoDaLinha={agrupar === 'tipo' ? (u) => u.grandeza ?? SEM_TIPO : undefined}
+            expandida={(u) => pedido?.id === u.id}
+            renderExpansao={(u) => pedido?.id === u.id ? (
+              <BarraUnidade u={u} p={pedido} estado={g.estadoDe(kc(u.id, pedido.campo))} aoMudar={(x) => setPedido((p) => (p && p.id === u.id ? { ...p, ...x } : p))}
+                aoFechar={() => setPedido(null)}
+                confirmar={(p) => (p.campo === 'ativo' ? g.gravar(kc(u.id, 'ativo'), 'unidade_ativa', { id: u.id, ativo: p.valor === '1' }) : gravarEdicao(u, p.campo, p.valor))} />) : null}
+            classeLinha={(u) => [ligado(u.ativo) ? '' : 'at-linha--inativa', pedido?.id === u.id ? 'at-linha--pedido' : ''].join(' ').trim() || undefined} />
         </div>
-      )}
-
-      {editor && <EditorUnidade key={editor.modo === 'novo' ? 'novo' : `e${editor.u.id}`} unidade={editor.modo === 'editar' ? editor.u : null} grandezas={grandezas} aoFechar={fecharEditor} aoRecarregar={recarregar} aoReabrir={reabrir} />}
-
-      {confirmar && (
-        <Dialogo titulo={ligado(confirmar.ativo) ? `Desativar a unidade ${confirmar.simbolo}?` : `Reativar a unidade ${confirmar.simbolo}?`} aberto aoFechar={fecharConfirmar}
-          rodape={<>
-            <Botao aoClicar={fecharConfirmar} desligado={alternando}>Cancelar</Botao>
-            <Botao perigo={ligado(confirmar.ativo)} primario={!ligado(confirmar.ativo)} trabalhando={alternando} aoClicar={() => void alternar()}>{ligado(confirmar.ativo) ? 'Desativar' : 'Reativar'}</Botao>
-          </>}>
-          {ligado(confirmar.ativo) ? (
-            <p style={{ margin: 0 }}>
-              <strong>{confirmar.simbolo}</strong> ({confirmar.nome}) deixa de ser oferecida em novas escolhas.
-              {confirmar.atributos || confirmar.valores
-                ? ` Hoje ela é usada em ${n(confirmar.atributos)} atributo${confirmar.atributos === 1 ? '' : 's'} e ${n(confirmar.valores)} valor${confirmar.valores === 1 ? '' : 'es'}; nada disso é apagado nem convertido.`
-                : ' Nenhum atributo ou valor a usa hoje.'}
-            </p>
-          ) : <p style={{ margin: 0 }}><strong>{confirmar.simbolo}</strong> ({confirmar.nome}) volta a ser oferecida nas escolhas de unidade.</p>}
-        </Dialogo>
       )}
     </div>
   );
 }
 
-// ── Editor de unidade ────────────────────────────────────────────────────────────────────────────────────────────────────────
-function EditorUnidade({ unidade, grandezas, aoFechar, aoRecarregar, aoReabrir }: { unidade: UnidadeUso | null; grandezas: string[]; aoFechar: () => void; aoRecarregar: () => Promise<void>; aoReabrir: (id: number) => Promise<void> }) {
-  const { aviso } = useModulo();
-  const fatorInicial = unidade?.fator_base ? decimal(unidade.fator_base) : '';
-  const [simbolo, setSimbolo] = React.useState(unidade?.simbolo ?? '');
-  const [nome, setNome] = React.useState(unidade?.nome ?? '');
-  const [grandeza, setGrandeza] = React.useState(unidade?.grandeza ?? '');
-  const [fator, setFator] = React.useState(fatorInicial);
-  const [salvando, setSalvando] = React.useState(false);
-  const [erro, setErro] = React.useState<{ texto: string; campos: string[]; conflito?: boolean } | null>(null);
-  // DSHOW-071: trava síncrona da gravação (Enter/duplo clique) e fotografia do que foi aberto (o servidor compara com a linha travada)
-  const salvandoRef = React.useRef(false);
-  const fotografia = React.useRef(unidade ? fotografiaUnidade(unidade) : null);
-  const aoFecharSeguro = React.useCallback(() => { if (decidirFechar(salvandoRef.current)) aoFechar(); }, [aoFechar]);
-  const idLista = React.useId();
-  const invalido = (c: string) => (erro?.campos.includes(c) ? true : undefined);
-  const fatorApi = fator.trim() ? numeroParaApi(fator) : '';
-
-  async function salvar() {
-    if (salvandoRef.current) return;
-    if (!simbolo.trim()) { setErro({ texto: 'Informe o símbolo.', campos: ['simbolo'] }); return; }
-    if (!nome.trim()) { setErro({ texto: 'Informe o nome.', campos: ['nome'] }); return; }
-    if (fatorApi && (!/^\d+(\.\d+)?$/.test(fatorApi) || !/[1-9]/.test(fatorApi))) { setErro({ texto: 'Fator: número maior que zero (use vírgula para decimais).', campos: ['fator_base'] }); return; }
-    if (!iniciarGravacao(salvandoRef)) return;
-    setSalvando(true); setErro(null);
-    try {
-      let r: RespGravacao;
-      if (unidade === null) {
-        const corpo: Record<string, unknown> = { simbolo: simbolo.trim(), nome: nome.trim(), grandeza: grandeza.trim() || null };
-        if (fatorApi) corpo.fator_base = fatorApi;
-        r = await enviar<RespGravacao>('unidade', corpo);
-        aviso(r.ja_existia ? `A unidade "${simbolo.trim()}" já existia com esses dados.` : `Unidade "${simbolo.trim()}" criada.`, r.ja_existia ? 'info' : 'sucesso');
-      } else {
-        const corpo: Record<string, unknown> = { id: unidade.id, nome: nome.trim(), grandeza: grandeza.trim() || null, antes: fotografia.current };
-        if (fator.trim() !== fatorInicial) corpo.fator_base = fatorApi || null;
-        r = await enviar<RespGravacao>('unidade', corpo);
-        aviso(r.sem_mudanca ? 'Nada mudou.' : `Unidade "${unidade.simbolo}" salva.`, r.sem_mudanca ? 'info' : 'sucesso');
-      }
-      await aoRecarregar();
-      aoFechar();
-    } catch (e) {
-      // DSHOW-071: 409 = alguém mudou a unidade; o editor fica aberto com a mensagem, a lista é relida e há "Fechar e reabrir". Rede/5xx: fica aberto.
-      const conflito = e instanceof ErroApi && e.http === 409;
-      setErro({ texto: conflito ? (e as ErroApi).message : mensagemErro(e), campos: e instanceof ErroApi ? e.campos : [], conflito });
-      if (conflito) void aoRecarregar();
-    } finally { salvandoRef.current = false; setSalvando(false); }
+/** Barra amarela NA LINHA: tipo de medida/fator (antes → depois + uso) ou desativar/reativar (uso). */
+function BarraUnidade({ u, p, estado, aoMudar, aoFechar, confirmar }: {
+  u: UnidadeUso; p: Pedido; estado: EstadoCelula; aoMudar: (x: Partial<Pedido>) => void; aoFechar: () => void; confirmar: (p: Pedido) => Promise<EstadoCelula>;
+}) {
+  const uso = usoUnidade(u);
+  let texto: string; let extra: React.ReactNode = null;
+  if (p.campo === 'ativo') {
+    texto = p.valor === '1' ? `Reativar ${u.simbolo} (${u.nome})? Volta a ser oferecida nas escolhas de unidade.`
+      : `Desativar ${u.simbolo} (${u.nome})? Deixa de ser oferecida em novas escolhas; nada é apagado nem convertido. Uso hoje: ${uso.linhas.join(' · ')}.`;
+  } else {
+    const fatorInicial = u.fator_base ? decimal(u.fator_base) : '';
+    const corpo = corpoEdicaoUnidade(u, { nome: u.nome, grandeza: p.campo === 'grandeza' ? p.valor : u.grandeza ?? '',
+      fatorApi: p.campo === 'fator' ? (p.valor ? numeroParaApi(p.valor) : '') : u.fator_base ?? '', fatorMudou: p.campo === 'fator' && p.valor !== fatorInicial }, null);
+    const mud = mudancasUnidade(u, corpo).map((m) => (m.campo === 'Grandeza' ? { ...m, campo: 'Tipo de medida' } : m));
+    texto = mud.length === 0 ? 'Nada muda.' : mudaInterpretacao(mudancasUnidade(u, corpo))
+      ? `Isto muda como as medidas de ${u.simbolo} são convertidas daqui em diante; os valores gravados não são convertidos. Uso hoje: ${uso.linhas.join(' · ')}.`
+      : `Confirmar a mudança em ${u.simbolo}?`;
+    extra = mud.length > 0 ? <AntesDepois mudancas={mud} /> : null;
   }
-
+  const ir = async () => { const st = await confirmar(p); if (ok(st)) aoFechar(); else aoMudar({ erro: st.mensagem }); };
   return (
-    <Dialogo titulo={unidade ? `Editar unidade ${unidade.simbolo}` : 'Nova unidade'} aberto aoFechar={aoFecharSeguro} largura={600}
-      rodape={<>
-        <Botao aoClicar={aoFecharSeguro} desligado={salvando}>Cancelar</Botao>
-        <Botao primario trabalhando={salvando} aoClicar={() => void salvar()}>{unidade ? 'Salvar' : 'Criar unidade'}</Botao>
-      </>}>
-      <form className="at-dic-editor" onSubmit={(e) => { e.preventDefault(); void salvar(); }}>
-        {erro && <div className="at-dic-caixa at-dic-caixa--erro" role="alert"><p>{erro.texto}</p>
-          {erro.conflito && unidade && <Botao aoClicar={() => void aoReabrir(unidade.id)}>Fechar e reabrir</Botao>}</div>}
-        <div className="at-dic-form">
-          <label className="at-rotulo-campo">Símbolo
-            <input className="at-campo" value={simbolo} maxLength={20} readOnly={unidade !== null} aria-readonly={unidade !== null} aria-invalid={invalido('simbolo')} onChange={(e) => { setSimbolo(e.target.value); setErro(null); }} />
-            <span className="at-dic-dica">{unidade ? 'O símbolo é a identidade da unidade e não muda.' : 'Ex.: mm, kg, W. Não poderá ser mudado depois.'}</span>
-          </label>
-          <label className="at-rotulo-campo">Nome
-            <input className="at-campo" value={nome} maxLength={80} aria-invalid={invalido('nome')} onChange={(e) => { setNome(e.target.value); setErro(null); }} />
-          </label>
-          <label className="at-rotulo-campo">Grandeza
-            <input className="at-campo" value={grandeza} maxLength={40} list={idLista} aria-invalid={invalido('grandeza')} placeholder="ex.: comprimento" onChange={(e) => { setGrandeza(e.target.value); setErro(null); }} />
-            <datalist id={idLista}>{grandezas.map((g) => <option key={g} value={g} />)}</datalist>
-            <span className="at-dic-dica">Escolha uma existente para converter entre unidades da mesma grandeza.</span>
-          </label>
-          <label className="at-rotulo-campo">Fator para a unidade base
-            <input className="at-campo" inputMode="decimal" value={fator} aria-invalid={invalido('fator_base')} placeholder="sem fator" onChange={(e) => { setFator(e.target.value); setErro(null); }} />
-            <span className="at-dic-dica">Valor × fator = valor na unidade base (ex.: m = 1; cm = 0,01; mm = 0,001). Vazio = não converte.</span>
-          </label>
-        </div>
-        {unidade && (unidade.atributos > 0 || unidade.valores > 0) && fator.trim() !== fatorInicial && (
-          <div className="at-dic-caixa at-dic-caixa--aviso">Esta unidade é usada em {n(unidade.atributos)} atributo{unidade.atributos === 1 ? '' : 's'} e {n(unidade.valores)} valor{unidade.valores === 1 ? '' : 'es'}. Mudar o fator altera as conversões futuras; os valores gravados não mudam.</div>
-        )}
-        <button type="submit" hidden aria-hidden tabIndex={-1} />
-      </form>
-    </Dialogo>
+    <div className="at-und-barra">
+      {extra}
+      <BarraConfirmacao texto={texto} erro={p.erro} trabalhando={estado.fase === 'salvando'}
+        rotuloConfirmar={p.campo === 'ativo' ? (p.valor === '1' ? 'Reativar' : 'Desativar') : 'Confirmar'} aoConfirmar={() => void ir()} aoCancelar={aoFechar} />
+    </div>
+  );
+}
+
+/** Linha nova no topo: símbolo (não muda depois), nome, tipo de medida e fator. Só grava ao confirmar. */
+function NovaUnidade({ tipos, gravar, estado, aoConferir, aoFechar }: {
+  tipos: string[]; gravar: ReturnType<typeof useGravacoes>['gravar']; estado: EstadoCelula; aoConferir: () => void; aoFechar: () => void;
+}) {
+  const [f, setF] = React.useState({ simbolo: '', nome: '', grandeza: '', fator: '' });
+  const [erroLocal, setErroLocal] = React.useState<string | null>(null);
+  const [aviso, setAviso] = React.useState<string | null>(null);
+  const idLista = React.useId();
+  const confirmar = async () => {
+    if (!f.simbolo.trim()) { setErroLocal('Informe o símbolo.'); return; }
+    if (!f.nome.trim()) { setErroLocal('Informe o nome.'); return; }
+    const ef = fatorValido(f.fator); if (ef) { setErroLocal(ef); return; }
+    const corpo: Record<string, unknown> = { simbolo: f.simbolo.trim(), nome: f.nome.trim(), grandeza: f.grandeza.trim() || null };
+    if (f.fator.trim()) corpo.fator_base = numeroParaApi(f.fator);
+    const st = await gravar('novo:unidade', 'unidade', corpo, 'simbolo');
+    if (!ok(st)) return;
+    if ((st.dados as { ja_existia?: boolean } | undefined)?.ja_existia) { setAviso(`A unidade "${f.simbolo.trim()}" já existia com esse símbolo, nome e tipo de medida; o cadastro existente foi mantido.`); return; }
+    aoFechar();
+  };
+  return (
+    <div className="at-dic-nova at-und-nova" role="group" aria-label="Nova unidade" data-at-nova-linha
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); aoFechar(); } else if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') { e.preventDefault(); void confirmar(); } }}>
+      <input className="at-cel__campo" aria-label="Símbolo da nova unidade" placeholder="Símbolo * (não muda depois)" autoFocus maxLength={20} value={f.simbolo} onChange={(e) => { setF({ ...f, simbolo: e.target.value }); setErroLocal(null); }} />
+      <input className="at-cel__campo" aria-label="Nome da nova unidade" placeholder="Nome *" maxLength={80} value={f.nome} onChange={(e) => { setF({ ...f, nome: e.target.value }); setErroLocal(null); }} />
+      <input className="at-cel__campo" aria-label="Tipo de medida da nova unidade" placeholder="Tipo de medida (ex.: comprimento)" maxLength={40} list={idLista} value={f.grandeza} onChange={(e) => setF({ ...f, grandeza: e.target.value })} />
+      <datalist id={idLista}>{tipos.map((x) => <option key={x} value={x} />)}</datalist>
+      <input className="at-cel__campo" aria-label="Fator da nova unidade" placeholder="Fator (vazio = não converte)" inputMode="decimal" value={f.fator} onChange={(e) => { setF({ ...f, fator: e.target.value }); setErroLocal(null); }} />
+      <span />
+      <span className="at-dic-nova__acoes">
+        <button type="button" className="bl-botao bl-botao--primario" disabled={estado.fase === 'salvando'} aria-busy={estado.fase === 'salvando'} onClick={() => void confirmar()}>Confirmar</button>
+        <button type="button" className="bl-botao" disabled={estado.fase === 'salvando'} onClick={aoFechar}>{aviso ? 'Fechar' : 'Cancelar'}</button>
+        <IconeEstado estado={estado} aoConferir={aoConferir} />
+      </span>
+      {(erroLocal || aviso || (estado.fase !== 'ocioso' && estado.fase !== 'salvando' && estado.fase !== 'salvo' && estado.mensagem)) &&
+        <span className={`at-cel__aviso ${erroLocal || estado.fase === 'recusada' ? 'at-cel__aviso--erro' : ''}`} role={erroLocal ? 'alert' : 'status'}>{erroLocal ?? aviso ?? estado.mensagem}</span>}
+      <span className="at-dic-dica">Fator: valor × fator = valor na unidade base do tipo de medida (ex.: m = 1; cm = 0,01; mm = 0,001).</span>
+    </div>
   );
 }

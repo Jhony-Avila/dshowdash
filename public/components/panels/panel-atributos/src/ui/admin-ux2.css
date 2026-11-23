@@ -1,0 +1,22 @@
+/* panel-atributos/src/ui/admin-ux2.css — UX-2 (DIREITA): linha expandida, antes → depois. Só tokens var(--bl-…). */
+[data-bl-root] .at-ux2-detalhe { margin-top: 10px; background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-left: 3px solid var(--bl-info); border-radius: var(--bl-raio); }
+[data-bl-root] .at-ux2-detalhe__cabeca { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--bl-borda); }
+[data-bl-root] .at-ux2-detalhe__cabeca h3 { margin: 0; font-size: 14px; }
+[data-bl-root] .at-ux2-detalhe__corpo { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 18px; padding: 10px 12px 12px; }
+[data-bl-root] .at-ux2-bloco h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--bl-texto-3); }
+[data-bl-root] .at-ux2-bloco ul { margin: 0; padding-left: 16px; }
+[data-bl-root] .at-ux2-bloco p { margin: 0 0 6px; }
+[data-bl-root] .at-ux2-nao-conferido { color: var(--bl-texto-3); font-style: italic; }
+[data-bl-root] .at-ux2-antes-depois { border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+[data-bl-root] .at-ux2-antes-depois th, [data-bl-root] .at-ux2-antes-depois td { padding: 3px 8px; text-align: left; border-bottom: 1px solid var(--bl-borda); }
+[data-bl-root] .at-ux2-ids summary { cursor: pointer; padding: 2px 0; }
+[data-bl-root] .at-ux2-ids ul { margin: 4px 0; padding-left: 16px; max-height: 180px; overflow: auto; }
+[data-bl-root] .at-ux2-n { font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-ux2-id { font-family: var(--bl-fonte-mono); font-size: 11px; color: var(--bl-texto-3); }
+[data-bl-root] .at-ux2-alcance { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: flex-start; }
+[data-bl-root] .at-ux2-alcance > strong { flex: 1 0 100%; }
+[data-bl-root] .at-ux2-linha--aberta > td { background: var(--bl-superficie-2) !important; }
+[data-bl-root] .at-ux2-salvo-agora { font-size: 12px; color: var(--bl-texto-2); }
+[data-bl-root] .at-ux2-historico { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+[data-bl-root] .at-ux2-historico li { padding: 4px 0; border-bottom: 1px solid var(--bl-borda); }
+[data-bl-root] .at-ux2-historico li:last-child { border-bottom: 0; }

@@ -1,0 +1,137 @@
+/* panel-atributos/src/ui/celula.css — UX-2b (DIREITA, 19/11): edição na célula, liga/desliga, barra de confirmação na linha,
+   linha nova no topo e o data grid de Unidades. Só tokens do módulo (--bl-*); claro e escuro vêm deles. */
+
+/* Célula editável */
+[data-bl-root] .at-cel { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+[data-bl-root] .at-cel__valor { all: unset; box-sizing: border-box; cursor: text; min-width: 3ch; max-width: 100%; padding: 3px 6px; margin: -3px -6px;
+  border-radius: var(--bl-raio-sm, 4px); border: 1px solid transparent; color: inherit; }
+[data-bl-root] .at-cel__valor:hover { border-color: var(--bl-borda); background: var(--bl-superficie-2, transparent); }
+[data-bl-root] .at-cel__valor:focus-visible { outline: 2px solid var(--bl-info); outline-offset: 1px; }
+[data-bl-root] .at-cel__valor:disabled { cursor: progress; opacity: .7; }
+[data-bl-root] .at-cel__texto { overflow: hidden; text-overflow: ellipsis; }
+[data-bl-root] .at-cel__campo, [data-bl-root] .at-cel__select { font: inherit; color: var(--bl-texto); background: var(--bl-superficie);
+  border: 1px solid var(--bl-borda-forte); border-radius: var(--bl-raio-sm, 4px); padding: 3px 6px; min-width: 0; max-width: 100%; }
+[data-bl-root] .at-cel__campo { width: 100%; }
+[data-bl-root] textarea.at-cel__campo { resize: vertical; min-height: 44px; }
+[data-bl-root] .at-cel__campo:focus, [data-bl-root] .at-cel__select:focus { outline: 2px solid var(--bl-info); outline-offset: 0; border-color: var(--bl-info); }
+[data-bl-root] .at-cel__campo[aria-invalid="true"] { border-color: var(--bl-erro); }
+[data-bl-root] .at-cel--editando { flex-wrap: wrap; }
+
+/* Ícone pequeno do desfecho */
+[data-bl-root] .at-cel__estado { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 3px;
+  border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 1; flex: none; }
+[data-bl-root] .at-cel__estado--sucesso { color: var(--bl-sucesso); background: var(--bl-sucesso-bg); }
+[data-bl-root] .at-cel__estado--neutro { color: var(--bl-texto-2, var(--bl-texto)); background: var(--bl-superficie-2, transparent); }
+[data-bl-root] .at-cel__estado--aviso { color: var(--bl-aviso); background: var(--bl-aviso-bg); }
+[data-bl-root] .at-cel__estado--erro { color: var(--bl-erro); background: var(--bl-erro-bg, transparent); }
+[data-bl-root] .at-cel__conferir { cursor: pointer; border: 1px solid var(--bl-aviso); font-size: 11px; font-weight: 600; height: auto; padding: 2px 8px; gap: 4px; }
+[data-bl-root] .at-cel__aviso { flex-basis: 100%; font-size: 12px; color: var(--bl-aviso); }
+[data-bl-root] .at-cel__aviso--erro { color: var(--bl-erro); }
+
+/* Liga/desliga */
+[data-bl-root] .at-liga { all: unset; cursor: pointer; display: inline-flex; align-items: center; padding: 2px; border-radius: 999px; }
+[data-bl-root] .at-liga:focus-visible { outline: 2px solid var(--bl-info); outline-offset: 2px; }
+[data-bl-root] .at-liga:disabled { cursor: default; opacity: .6; }
+[data-bl-root] .at-liga__trilho { position: relative; width: 30px; height: 16px; border-radius: 999px; background: var(--bl-borda-forte); transition: background .15s; }
+[data-bl-root] .at-liga__botao { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--bl-superficie); transition: left .15s; }
+[data-bl-root] .at-liga--on .at-liga__trilho { background: var(--bl-sucesso); }
+[data-bl-root] .at-liga--on .at-liga__botao { left: 16px; }
+
+/* Barra amarela de confirmação NA LINHA (vai na linha expansível da TabelaDados) */
+[data-bl-root] .at-barra-conf { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; margin: 2px 0;
+  background: var(--bl-aviso-bg); border: 1px solid var(--bl-aviso); border-left-width: 4px; border-radius: var(--bl-raio-sm, 4px); color: var(--bl-texto); }
+[data-bl-root] .at-barra-conf__texto { flex: 1 1 360px; }
+[data-bl-root] .at-barra-conf__motivo { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+[data-bl-root] .at-barra-conf__motivo .at-cel__campo { width: 260px; font-weight: 400; }
+[data-bl-root] .at-barra-conf__acoes { display: inline-flex; gap: 6px; }
+[data-bl-root] .at-barra-conf__erro { flex-basis: 100%; color: var(--bl-erro); font-weight: 600; }
+[data-bl-root] .at-linha--pedido > td { background: var(--bl-aviso-bg); }
+
+/* Unidades — data grid limpo: linhas de mesma altura, "onde é usada" numa linha, bolinha de status, ações com ícones */
+[data-bl-root] .at-und-grid .at-td__linha > td { height: 40px; padding-top: 0; padding-bottom: 0; vertical-align: middle; }
+[data-bl-root] .at-und-grid .at-td__linha > td .at-cel { flex-wrap: nowrap; }
+[data-bl-root] .at-und-uso { display: block; max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-bl-root] .at-und-uso__mais { margin-left: 4px; font-size: 11px; font-weight: 600; color: var(--bl-texto-2, var(--bl-texto)); background: var(--bl-superficie-2, transparent);
+  border: 1px solid var(--bl-borda); border-radius: 999px; padding: 0 6px; }
+[data-bl-root] .at-bolinha { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+[data-bl-root] .at-bolinha::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--bl-neutro, var(--bl-borda-forte)); }
+[data-bl-root] .at-bolinha--sucesso::before { background: var(--bl-sucesso); }
+[data-bl-root] .at-und-acoes { display: inline-flex; gap: 4px; align-items: center; }
+[data-bl-root] .at-icone-acao { all: unset; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: var(--bl-raio-sm, 4px); color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-icone-acao:hover { background: var(--bl-superficie-2, transparent); color: var(--bl-texto); }
+[data-bl-root] .at-icone-acao:focus-visible { outline: 2px solid var(--bl-info); }
+[data-bl-root] .at-icone-acao:disabled { opacity: .5; cursor: default; }
+[data-bl-root] .at-icone-acao[aria-pressed="true"] { color: var(--bl-info); background: var(--bl-info-bg); }
+[data-bl-root] .at-und-barra { display: flex; flex-direction: column; gap: 6px; }
+[data-bl-root] .at-und-nova { grid-template-columns: 150px minmax(160px, 1.2fr) minmax(160px, 1fr) 170px 0 auto; }
+
+/* ── UNIDADES V2 (19/11, BRIEFING-UNIDADES-V2): datagrid compacto — 13 px/400, linhas de 32 px, cabeçalho de 36 px, sem negrito ── */
+[data-bl-root] .at-und-barra-ferr { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; min-height: 32px; padding: 2px 0 10px; font-size: 13px; }
+[data-bl-root] .at-und-nova-btn { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--bl-raio-sm, 4px);
+  border: 1px solid var(--bl-verde-borda); background: var(--bl-verde-suave); color: var(--bl-verde); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+[data-bl-root] .at-und-nova-btn:hover { filter: brightness(.97); }
+[data-bl-root] .at-und-nova-btn:focus-visible { outline: 2px solid var(--bl-info); outline-offset: 1px; }
+[data-bl-root] .at-und-nova-btn:disabled { opacity: .6; cursor: default; }
+[data-bl-root] .at-und-busca { display: inline-flex; align-items: center; gap: 6px; width: 320px; flex: 0 1 320px; height: 30px; padding: 0 10px; box-sizing: border-box;
+  border: 1px solid var(--bl-borda); border-radius: var(--bl-raio-sm, 4px); background: var(--bl-superficie); color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-und-busca input { all: unset; flex: 1; min-width: 0; font-size: 13px; color: var(--bl-texto); }
+[data-bl-root] .at-und-busca:focus-within { outline: 2px solid var(--bl-info); outline-offset: 0; }
+[data-bl-root] .at-und-contagem { color: var(--bl-texto-2, var(--bl-texto)); white-space: nowrap; font-size: 13px; }
+[data-bl-root] .at-und-direita { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+[data-bl-root] .at-und-ctrl, [data-bl-root] .at-und-ctrl select { font-size: 13px; font-weight: 400; color: var(--bl-texto); }
+[data-bl-root] .at-und-ctrl select, [data-bl-root] .at-und-ctrl--botao { height: 30px; padding: 0 10px; box-sizing: border-box; border: 1px solid var(--bl-borda);
+  border-radius: var(--bl-raio-sm, 4px); background: var(--bl-superficie); cursor: pointer; }
+[data-bl-root] .at-und-ctrl--botao { display: inline-flex; align-items: center; gap: 6px; }
+[data-bl-root] .at-und-colunas { position: relative; }
+[data-bl-root] .at-und-menu { position: absolute; right: 0; top: 34px; z-index: 30; display: flex; flex-direction: column; gap: 6px; min-width: 190px; padding: 10px 12px;
+  background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio, 6px); box-shadow: var(--bl-sombra); font-size: 13px; }
+[data-bl-root] .at-und-menu label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+/* tabela: 13 px/400, linhas 32 px, cabeçalho 36 px, zebra suave, sem negrito */
+[data-bl-root] .at-und-grid2 { font-size: 13px; }
+[data-bl-root] .at-und-grid2 .at-td__th { height: 36px; font-size: 13px; font-weight: 500; }
+[data-bl-root] .at-und-grid2 .at-td__th .at-td__ordenar { font-weight: 500; }
+[data-bl-root] .at-und-grid2 tr.at-td__linha > td { height: 32px; padding-top: 0; padding-bottom: 0; font-size: 13px; font-weight: 400; vertical-align: middle; white-space: nowrap; }
+[data-bl-root] .at-und-grid2 tr.at-td__linha > td * { font-weight: 400; }
+[data-bl-root] .at-und-grid2 .at-cel { flex-wrap: nowrap; }
+[data-bl-root] .at-und-grid2 .at-cel__valor { padding: 1px 6px; margin: -1px -6px; }
+[data-bl-root] .at-und-grid2 .at-cel__aviso { display: none; }   /* a mensagem fica no title do ícone e na barra da linha: a linha não cresce */
+[data-bl-root] .at-und-grid2 .at-cel__campo { height: 24px; padding: 0 6px; font-size: 13px; }
+[data-bl-root] .at-und-grid2 .at-cel--direita { justify-content: flex-end; }
+[data-bl-root] .at-und-txt, [data-bl-root] .at-und-grid2 .at-cel__texto { display: inline-block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+[data-bl-root] .at-und-vazio { color: var(--bl-texto-3, var(--bl-texto-2)); }
+[data-bl-root] .at-und-grid2 .at-td__grupo th { padding: 6px 10px 4px; font-size: 13px; font-weight: 500; }
+[data-bl-root] .at-und-pilula { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 400 !important;
+  background: var(--bl-neutro-bg); color: var(--bl-neutro); }
+[data-bl-root] .at-und-pilula--ativa { background: var(--bl-sucesso-bg); color: var(--bl-sucesso); }
+[data-bl-root] .at-und-acoes-cel { width: 1%; }
+[data-bl-root] .at-und-th-acoes { font-weight: 500; }
+[data-bl-root] .at-icone-acao--editar { color: var(--bl-info); }
+[data-bl-root] .at-icone-acao--energia { color: var(--bl-aviso); }
+[data-bl-root] .at-icone-acao--desligada { color: var(--bl-sucesso); }
+[data-bl-root] .at-und-v2 .at-icone-acao { width: 28px; height: 28px; }
+
+/* SEM EMENDA entre o bloco travado e o cabeçalho das colunas (mesma correção da ESQUERDA na Visão geral, 135d3741): o bloco da CIMA tem 4 px
+   de respiro embaixo (.at-faixa-fixa__bloco) e o conteúdo do módulo 16 px em cima (.at-conteudo) + 1 px da borda da moldura. A barra de
+   ferramentas desce os 4 px, a tela sobe os 16 px e a moldura não tem borda de cima: o cabeçalho das colunas já nasce onde gruda. Só nesta tela. */
+[data-bl-root] .at-und-v2 { margin-top: -16px; }
+[data-bl-root] .at-und-barra-ferr { width: 100%; box-sizing: border-box; margin-bottom: -4px; padding-bottom: 14px; }
+[data-bl-root] .at-und-v2 .at-dic-moldura { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+[data-bl-root] .at-und-v2 .at-und-grid2 .at-td__th:first-child, [data-bl-root] .at-und-v2 .at-und-grid2 .at-td__th:last-child { border-radius: 0; }
+[data-bl-root] .at-und-menu__opcao { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: var(--bl-raio-sm, 4px); cursor: pointer; font-size: 13px; color: var(--bl-texto); }
+[data-bl-root] .at-und-menu__opcao:hover, [data-bl-root] .at-und-menu__opcao:focus-visible { background: var(--bl-superficie-2, var(--bl-info-bg)); }
+[data-bl-root] .at-und-menu__opcao--ativa { color: var(--bl-verde); }
+[data-bl-root] .at-und-menu__marca { display: inline-block; width: 14px; text-align: center; }
+
+/* Parecer do Jhony (19/11): linha inativa SEM opacidade na linha inteira — texto cinza legível, pílula "Inativa" como diferença
+   principal e o ícone de reativar bem visível. Vale para Unidades e Atributos (as duas tabelas da DIREITA). Pílula "Ativa" com texto
+   mais escuro (contraste ≥ 4,5:1 sobre o fundo verde suave, medido no teste). */
+[data-bl-root] .at-und-grid2 tr.at-linha--inativa, [data-bl-root] .at-dic-tabela--edicao tr.at-linha--inativa { opacity: 1; }
+[data-bl-root] .at-und-grid2 tr.at-linha--inativa > td, [data-bl-root] .at-dic-tabela--edicao tr.at-linha--inativa > td { color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-und-pilula { border: 1px solid transparent; }
+[data-bl-root] .at-und-pilula--ativa { color: color-mix(in srgb, var(--bl-sucesso) 62%, var(--bl-texto)); }
+[data-bl-root] .at-und-pilula:not(.at-und-pilula--ativa) { background: var(--bl-superficie-2, var(--bl-neutro-bg)); color: var(--bl-texto); border-color: var(--bl-borda-forte); }
+[data-bl-root] .at-und-v2 .at-icone-acao--desligada, [data-bl-root] .at-icone-acao--desligada { color: var(--bl-sucesso); opacity: 1; }
+[data-bl-root] .at-und-ctrl--ativo { border-color: var(--bl-verde-borda) !important; background: var(--bl-verde-suave) !important; color: var(--bl-verde) !important; }
+[data-bl-root] .at-und-ctrl__valor { font-weight: 500; }
+
