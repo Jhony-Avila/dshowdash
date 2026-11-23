@@ -13,7 +13,7 @@ import { Botao, CabecalhoTravado, Erro, Vazio } from '../../ui/Comuns';
 import { MenuEscolha } from '../../ui/MenuBarra';
 import { TabelaDados, type ColunaTabela } from '../../ui/TabelaDados';
 import { aConferir, anterior, concluida, contar, elegiveis, faixa, motivoLegivel, PAGINAS0, paginasTotais, POR_PAGINA, proxima, resultadoDaConferencia, resultadoDoLote,
-  situacao, textoAtual, textoFora, textoSugerido, type Acao, type EstadoSugestao, type ItemFila, type Paginas, type RespFila, type ResultadoItem } from './fila';
+  situacao, textoAtual, textoFora, textoSugerido, DICA_FORA_DA_FICHA, type Acao, type EstadoSugestao, type ItemFila, type Paginas, type RespFila, type ResultadoItem } from './fila';
 import './conferencia.css';
 
 const SITUACOES: { valor: EstadoSugestao; rotulo: string }[] = [
@@ -65,7 +65,13 @@ export function FilaSugestoes({ atributos, podeDecidir, administra, aoMudarTotai
   }, [estado, atr, q, pags]);
   React.useEffect(ler, [ler, m.versao]);
   // filtro mudou = volta à 1ª página, limpa seleção e resultados (o "Último lote" fica até a próxima leitura)
-  const mudarFiltro = (f: () => void) => { f(); setPags(PAGINAS0); setPedido(null); setUltimos({}); setOcultas(new Set()); };
+  // filtro mudou: 1ª página; um lote já TERMINADO sai da faixa (e seus resultados com ele); lote sem desfecho final continua (A conferir/Parado)
+  const mudarFiltro = (f: () => void) => {
+    f(); setPags(PAGINAS0); setPedido(null); setOcultas(new Set());
+    const aberto = lote && lote.fase !== 'concluido' && lote.fase !== 'recusado';
+    if (!aberto) { setLote(null); setUltimos({}); }
+    else { const manter = new Set(lote!.intencao.enviados); setUltimos((u) => Object.fromEntries(Object.entries(u).filter(([id]) => manter.has(Number(id))))); }
+  };
 
   const linhas = (resp?.itens ?? []).filter((x) => !ocultas.has(x.id));
   const selecionados = linhas.filter((x) => sel.has(x.id));
@@ -143,7 +149,7 @@ export function FilaSugestoes({ atributos, podeDecidir, administra, aoMudarTotai
     ...(larga ? [{ chave: 'evidencia', titulo: 'Evidência', tipo: 'texto' as const, ordenavel: false, classe: 'cf-col-evid',
       render: (it: ItemFila) => <span className="cf-1l cf-fraco" title={it.evidencia ?? ''}>{it.evidencia ?? '—'}</span> }] : []),
     { chave: 'situacao', titulo: 'Situação', tipo: 'texto', ordenavel: false, classe: 'cf-col-sit',
-      render: (it) => { const s = situacao(it, ultimos[it.id]); return <span className={`cf-pilula cf-pilula--${s.tom}`} data-situacao={s.rotulo}>{s.rotulo}</span>; } },
+      render: (it) => { const s = situacao(it, ultimos[it.id]); return <span className={`cf-pilula cf-pilula--${s.tom}`} data-situacao={s.rotulo} title={s.dica} {...(s.dica ? { tabIndex: 0, 'aria-label': `${s.rotulo}. ${s.dica}` } : {})}>{s.rotulo}</span>; } },
     { chave: 'acoes', titulo: 'Ações', tipo: 'texto', ordenavel: false, classe: 'cf-col-acoes',
       render: (it) => <AcoesLinha it={it} ultimo={ultimos[it.id]} estado={estado} pode={podeDecidir} administra={administra} bloqueado={loteAberto || ocupado}
         aoAcao={(a) => pedir(a, [it])} aoConferir={() => void conferir(it.a_conferir?.chave ?? (lote?.intencao.enviados.includes(it.id) ? lote.intencao.chave : undefined))}
@@ -151,7 +157,7 @@ export function FilaSugestoes({ atributos, podeDecidir, administra, aoMudarTotai
   ];
 
   const filtrando = estado !== 'pendente' || atr !== 'todos' || !!q;
-  const c = contar(ultimos);
+  const c = contar(ultimos, lote ? [...lote.intencao.enviados, ...lote.intencao.naoEnviados] : []);   // só o lote ATUAL
   return (
     <>
       <CabecalhoTravado>
@@ -233,7 +239,7 @@ function AcoesLinha({ it, ultimo, estado, pode, administra, bloqueado, aoAcao, a
   if (estado === 'pendente') return (
     <span className="cf-acoes">
       <button type="button" className="bl-botao bl-botao--primario cf-btn" disabled={bloqueado || !!it.aceite_bloqueado}
-        title={it.aceite_bloqueado === 'COM_VALOR' ? 'O campo já tem valor: a sugestão não sobrescreve' : it.aceite_bloqueado === 'FORA_DA_FICHA' ? 'O atributo não faz parte da ficha deste produto: vincule antes' : it.aceite_bloqueado ? 'Aceite indisponível' : undefined} onClick={() => aoAcao('aceitar')}>Aceitar</button>
+        title={it.aceite_bloqueado === 'COM_VALOR' ? 'O campo já tem valor: a sugestão não sobrescreve' : it.aceite_bloqueado === 'FORA_DA_FICHA' ? DICA_FORA_DA_FICHA : it.aceite_bloqueado ? 'Aceite indisponível' : undefined} onClick={() => aoAcao('aceitar')}>Aceitar</button>
       <button type="button" className="bl-botao cf-btn" disabled={bloqueado} onClick={() => aoAcao('recusar')}>Recusar</button>
       <button type="button" className="bl-botao cf-btn" disabled={bloqueado} onClick={() => aoAcao('ignorar')}>Ignorar</button>
     </span>);

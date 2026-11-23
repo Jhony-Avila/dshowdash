@@ -44,7 +44,9 @@ export function textoAtual(a: Atual | null | undefined): string {
 /** "Sugerido" da linha. */
 export const textoSugerido = (it: Pick<ItemFila, 'valor_proposto' | 'unidade'>) => `${num(it.valor_proposto) || '—'}${it.unidade ? ` ${it.unidade}` : ''}`;
 
-export type Situacao = { rotulo: string; tom: 'pendente' | 'aviso' | 'ativa' | 'neutro' | 'erro' };
+export type Situacao = { rotulo: string; tom: 'pendente' | 'aviso' | 'ativa' | 'neutro' | 'erro'; dica?: string };
+/** Q-CONF.1 (Jhony, 23/11): texto da pílula "Fora da ficha" (mouse e foco). */
+export const DICA_FORA_DA_FICHA = 'Este atributo não está na ficha do produto. Vincule na fila Fora da ficha.';
 /** Pílula de situação: primeiro o desfecho recém-confirmado nesta tela, depois o "a conferir" do servidor, depois o estado da linha. */
 export function situacao(it: ItemFila, ultimo: ResultadoItem | undefined): Situacao {
   if (ultimo) {
@@ -57,6 +59,7 @@ export function situacao(it: ItemFila, ultimo: ResultadoItem | undefined): Situa
   if (it.estado === 'recusada') return { rotulo: 'Recusada', tom: 'neutro' };
   if (it.estado === 'aceita') return { rotulo: 'Aceita', tom: 'ativa' };
   if (it.aceite_bloqueado === 'COM_VALOR') return { rotulo: 'Com valor', tom: 'aviso' };
+  if (it.aceite_bloqueado === 'FORA_DA_FICHA') return { rotulo: 'Fora da ficha', tom: 'neutro', dica: DICA_FORA_DA_FICHA };   // Q-CONF.1: só na tela, do que o endpoint já devolve
   return { rotulo: 'Pendente', tom: 'pendente' };
 }
 
@@ -123,9 +126,10 @@ export function resultadoDaConferencia(itens: readonly { item: string; desfecho:
   return resultadoDoLote(srv, enviados, []);
 }
 
-export function contar(r: Readonly<Record<number, ResultadoItem>>) {
+/** Contagem do lote. `ids` = só os itens DESTE lote (resultados de lotes anteriores não entram na faixa). */
+export function contar(r: Readonly<Record<number, ResultadoItem>>, ids?: readonly number[]) {
   const c = { aplicadas: 0, nao_aplicadas: 0, a_conferir: 0, nao_enviadas: 0 };
-  for (const x of Object.values(r)) {
+  for (const x of ids ? ids.map((id) => r[id]).filter((v): v is ResultadoItem => !!v) : Object.values(r)) {
     if (x.desfecho === 'aplicada') c.aplicadas++; else if (x.desfecho === 'nao_aplicada') c.nao_aplicadas++;
     else if (x.desfecho === 'nao_enviada') c.nao_enviadas++; else c.a_conferir++;
   }

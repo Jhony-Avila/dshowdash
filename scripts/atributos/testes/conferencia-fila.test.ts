@@ -25,6 +25,10 @@ igual('aplicada aceita', situacao(it({}), { id: 1, desfecho: 'aplicada', estado_
 igual('não aplicada NUNCA vira "Recusada"', situacao(it({}), { id: 1, desfecho: 'nao_aplicada', motivo: 'CONFLICT' }).rotulo, 'Não aplicada');
 igual('erro técnico pendente = A conferir', situacao(it({}), { id: 1, desfecho: 'pendente', motivo: 'erro_tecnico' }).rotulo, 'A conferir');
 igual('ignorada', situacao(it({ estado: 'ignorada' }), undefined).rotulo, 'Ignorada');
+igual('Q-CONF.1: fora da ficha → pílula "Fora da ficha" com a dica', [situacao(it({ aceite_bloqueado: 'FORA_DA_FICHA' }), undefined).rotulo, situacao(it({ aceite_bloqueado: 'FORA_DA_FICHA' }), undefined).dica],
+  ['Fora da ficha', 'Este atributo não está na ficha do produto. Vincule na fila Fora da ficha.']);
+igual('Q-CONF.1: fora da ficha fica fora do Aceitar, mas entra em Recusar e Ignorar', [elegiveis('aceitar', [it({ id: 20, aceite_bloqueado: 'FORA_DA_FICHA' })], {}).fora[0]?.motivo,
+  elegiveis('recusar', [it({ id: 20, aceite_bloqueado: 'FORA_DA_FICHA' })], {}).vao.length, elegiveis('ignorar', [it({ id: 20, aceite_bloqueado: 'FORA_DA_FICHA' })], {}).vao.length], ['fora da ficha', 1, 1]);
 
 // elegibilidade da seleção (prancha 05: 6 selecionadas · 4 aceitas · 1 com valor e 1 a conferir fora)
 const sel = [it({ id: 1 }), it({ id: 2 }), it({ id: 3 }), it({ id: 4 }), it({ id: 5, aceite_bloqueado: 'COM_VALOR' }), it({ id: 6, a_conferir: { chave: 'k' } })];
@@ -40,6 +44,7 @@ igual('reabrir só recusadas', elegiveis('reabrir', [it({ id: 10, estado: 'recus
 const r = resultadoDoLote([{ id: 1, desfecho: 'aplicada', estado_atual: 'aceita' }, { id: 2, desfecho: 'nao_aplicada', motivo: 'VALUE_EXISTS' }, { id: 3, desfecho: 'pendente', motivo: 'erro_tecnico' }], [1, 2, 3, 4], [5, 6]);
 igual('resultado por item', [r[1].desfecho, r[2].desfecho, r[3].desfecho, r[4].desfecho, r[5].desfecho], ['aplicada', 'nao_aplicada', 'pendente', 'a_conferir', 'nao_enviada']);
 igual('contar', contar(r), { aplicadas: 1, nao_aplicadas: 1, a_conferir: 2, nao_enviadas: 2 });
+igual('contar só o lote atual (ids)', contar(r, [3, 4]), { aplicadas: 0, nao_aplicadas: 0, a_conferir: 2, nao_enviadas: 0 });
 igual('conferir (itens do livro)', resultadoDaConferencia([{ item: '1', desfecho: 'aplicada', detalhe: { estado_atual: 'ignorada' } }, { item: '2', desfecho: 'pendente' }], [1, 2])[1].estado_atual, 'ignorada');
 igual('motivo legível VALUE_EXISTS', motivoLegivel({ motivo: 'VALUE_EXISTS' }).startsWith('O campo já tem valor'), true);
 igual('motivo legível pendente_existente', motivoLegivel({ motivo: 'CONFLICT', detalhe: 'pendente_existente' }).includes('mais nova em aberto'), true);
