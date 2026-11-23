@@ -7,7 +7,7 @@
 // integração Outlook/Calendário. Insights: motor de REGRAS sobre os resumos.
 
 import type {
-  AgendaItem, ClimaCompleto, Insight, ResumoEmails, Saudacao,
+  ClimaCompleto, Insight, Saudacao,
 } from '../domain/types';
 import { getAds, getAnuncios, getTransito } from './GeralService';
 
@@ -79,28 +79,6 @@ export async function getSaudacao(totalAlertas: number | null): Promise<Saudacao
   return { saudacao, nome, frases: frases.slice(0, 2) };
 }
 
-// ── Agenda (simulada marcada — integração Calendário/Outlook depois) ─
-
-export function getAgenda(): Promise<AgendaItem[]> {
-  const diaSemana = new Date().getDay();
-  if (diaSemana === 0 || diaSemana === 6) return Promise.resolve([]); // fim de semana sem compromissos
-  const agora = new Date().getHours() + new Date().getMinutes() / 60;
-  const itens: AgendaItem[] = [
-    { id: 'ag1', hora: '10:00', titulo: 'Reunião comercial', tipo: 'reuniao', atrasado: agora > 10.5, simulado: true },
-    { id: 'ag2', hora: '14:30', titulo: 'Follow-up fornecedor LED', tipo: 'tarefa', atrasado: agora > 15, simulado: true },
-    { id: 'ag3', hora: '17:00', titulo: 'Revisão de campanhas', tipo: 'reuniao', atrasado: false, simulado: true },
-  ];
-  return Promise.resolve(itens);
-}
-
-// ── E-mails (simulado marcado) ──────────────────────────────────────
-
-export function getEmails(): Promise<ResumoEmails> {
-  return Promise.resolve({
-    naoLidos: 23, importantes: 4, aguardandoResposta: 7, recebidosHoje: 61, simulado: true,
-  });
-}
-
 // ── Insights por regras (briefing §22) — nunca afirmar sem dado ─────
 
 export async function getInsights(): Promise<Insight[]> {
@@ -157,7 +135,7 @@ export async function getInsights(): Promise<Insight[]> {
   // Regra 4 — campanhas Google (real quando conectado)
   try {
     const g = await getAds();
-    if (g.campanhasAtivas === 0 && g.contas > 0) {
+    if (g.provedorReal && g.campanhasAtivas === 0 && g.contas > 0) {   // 23/11/2026: só com provedor REAL (mock não é dado)
       insights.push({
         id: 'in-ads-parado', tom: 'atencao', modulo: 'Ads Intelligence', rota: '#/panel-ads',
         conclusao: 'Nenhuma campanha ativa no Google Ads',
@@ -168,34 +146,6 @@ export async function getInsights(): Promise<Insight[]> {
       });
     }
   } catch { /* segue */ }
-
-  // Regras sobre módulos em demonstração (marcadas como simuladas)
-  insights.push(
-    {
-      id: 'in-cpl-meta', tom: 'atencao', modulo: 'Meta Ads', rota: '#/panel-metaads',
-      conclusao: 'CPL do Meta Ads subiu na última semana',
-      evidencia: 'CPL +18% nos últimos 7 dias vs semana anterior.',
-      impacto: 'Custo de aquisição pressiona a margem das campanhas de leads.',
-      recomendacao: 'Trocar criativos fatigados e revisar públicos saturados.',
-      simulado: true,
-    },
-    {
-      id: 'in-vencidos', tom: 'critico', modulo: 'Financeiro', rota: null,
-      conclusao: 'Pagamentos vencidos em aberto',
-      evidencia: 'R$ 24,6 mil vencidos aguardando cobrança.',
-      impacto: 'Fluxo de caixa do mês comprometido se não tratado.',
-      recomendacao: 'Priorizar régua de cobrança dos 5 maiores títulos.',
-      simulado: true,
-    },
-    {
-      id: 'in-pd-parados', tom: 'atencao', modulo: 'Pipedrive', rota: '#/panel-pipedrive',
-      conclusao: 'Negócios parados no funil',
-      evidencia: '4 negócios sem atividade há mais de 10 dias.',
-      impacto: 'Oportunidades esfriam e a previsão do mês perde confiança.',
-      recomendacao: 'Agendar follow-up ou marcar como perdido com motivo.',
-      simulado: true,
-    },
-  );
 
   return insights.slice(0, 6);
 }

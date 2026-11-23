@@ -46,7 +46,7 @@ export interface ResumoAnuncios {
 
 export type ModuloId =
   | 'transito' | 'ads' | 'anuncios' | 'metaads' | 'mercadolivre'
-  | 'pipedrive' | 'outlook' | 'ecommerce' | 'compras' | 'financeiro' | 'datatables'
+  | 'pipedrive' | 'ecommerce' | 'compras' | 'financeiro' | 'datatables'
   | 'google-calendar';
 
 export interface MetricaWidget {
