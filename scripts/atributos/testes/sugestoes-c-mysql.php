@@ -333,7 +333,17 @@ do {
 $restam = array_map(fn($r) => $r['product_id'] . ':' . $r['atributo_id'], $todas('SELECT product_id, atributo_id FROM eq_valor WHERE atributo_id = ? AND excluido_em IS NULL', [$A['extra']]));
 $ok('fila derivada: sem repetição e sem buraco quando uma pendência some no meio', count($vistos) === count(array_unique($vistos)) && !array_diff($restam, $vistos) && !in_array("$sumiu:{$A['extra']}", $vistos, true));
 $ok('obrigatórios vazios: lista inteira paginada, total coerente', ($o = $leit->conferenciaFila(['fila' => 'obrigatorios_vazios'], $ADM['id']))['total'] >= 700 && count($o['itens']) === 50 && $o['proximo_cursor'] !== null);
-$ok('sem kit: cursor de 1 parte (produto)', ($sk = $leit->conferenciaFila(['fila' => 'sem_kit'], $ADM['id']))['total'] === 800 && count(json_decode((string) base64_decode(strtr($sk['proximo_cursor'], '-_', '+/')), true)) === 1);
+$ok('sem kit: cursor de 1 parte (produto)', ($sk = $leit->conferenciaFila(['fila' => 'sem_kit'], $ADM['id']))['total'] === 800 && count(json_decode((string) base64_decode(strtr($sk['proximo_cursor'], '-_', '+/')), true)['k']) === 1);
+// DSHOW-108 (B): o cursor carrega a identidade da consulta — filtro mudou = 422 CURSOR_CONTEXT_MISMATCH (a tela volta ao início)
+$c1 = $leit->conferenciaFila(['fila' => 'nome'], $ADM['id'])['proximo_cursor'];
+$mis = fn(array $g) => ($e = $erro(fn() => $leit->conferenciaFila($g + ['cursor' => $c1], $ADM['id']))) instanceof AtributosErro && $e->codigo === 'CURSOR_CONTEXT_MISMATCH';
+$ok('108B: mesmo contexto → aceita o cursor', count($leit->conferenciaFila(['fila' => 'nome', 'cursor' => $c1], $ADM['id'])['itens']) > 0);
+$ok('108B: situação mudou → CURSOR_CONTEXT_MISMATCH', $mis(['fila' => 'nome', 'estado' => 'ignorada']));
+$ok('108B: atributo mudou → CURSOR_CONTEXT_MISMATCH', $mis(['fila' => 'nome', 'atributo_id' => (string) $P]));
+$ok('108B: busca mudou → CURSOR_CONTEXT_MISMATCH', $mis(['fila' => 'nome', 'q' => '92']));
+$ok('108B: fila mudou (cursor de sugestão numa derivada) → recusado', ($e = $erro(fn() => $leit->conferenciaFila(['fila' => 'fora_da_ficha', 'cursor' => $c1], $ADM['id']))) instanceof AtributosErro && $e->http === 422);
+$cf = $leit->conferenciaFila(['fila' => 'fora_da_ficha'], $ADM['id'])['proximo_cursor'];
+$ok('108B: derivada com busca nova → CURSOR_CONTEXT_MISMATCH', ($e = $erro(fn() => $leit->conferenciaFila(['fila' => 'fora_da_ficha', 'q' => '94', 'cursor' => $cf], $ADM['id']))) instanceof AtributosErro && $e->codigo === 'CURSOR_CONTEXT_MISMATCH');
 
 // ===================================== (9) DESTINO ATUAL / ACEITE BLOQUEADO ===========================================================
 $sCom = $nova(9501, $P, '2.5');
@@ -374,8 +384,14 @@ $e = $erro(fn() => $decidir(['acao' => 'ignorar', 'itens' => $it($sVaz)], 'k-c-v
 $ok('validação: sem confirmar → 422', $e instanceof AtributosErro && $e->http === 422);
 $e = $erro(fn() => $decidir(['acao' => 'apagar', 'itens' => $it($sVaz), 'confirmar' => true], 'k-c-val-0003'));
 $ok('validação: ação desconhecida → 422', $e instanceof AtributosErro && $e->http === 422);
-$e = $erro(fn() => $decidir(['acao' => 'ignorar', 'itens' => array_map(fn($i) => ['id' => $i, 'versao' => 1], range(1, 201)), 'confirmar' => true], 'k-c-val-0004'));
-$ok('validação: mais de 200 itens → 422', $e instanceof AtributosErro && $e->http === 422);
+// DSHOW-108 (A): limite próprio de 50 (a página), validado ANTES de reservar a chave — 51 = 422 e NENHUMA escrita
+$r50 = $decidir(['acao' => 'ignorar', 'itens' => array_map(fn($i) => ['id' => 800000 + $i, 'versao' => 1], range(1, 50)), 'confirmar' => true], 'k-c-108-050');
+$ok('108A: 50 itens aceitos (processados; inexistentes = NOT_FOUND)', ($r50['resumo']['nao_aplicadas'] ?? 0) === 50);
+$aud51 = (int) $um('SELECT COUNT(*) FROM eq_auditoria');
+$e = $erro(fn() => $decidir(['acao' => 'ignorar', 'itens' => array_map(fn($i) => ['id' => 800000 + $i, 'versao' => 1], range(1, 51)), 'confirmar' => true], 'k-c-108-051'));
+$ok('108A: 51 itens → 422 VALIDATION_ERROR', $e instanceof AtributosErro && $e->http === 422 && $e->codigo === 'VALIDATION_ERROR');
+$ok('108A: 51 itens → nenhuma escrita (sem eq_operacao, sem itens, sem auditoria)', (int) $um("SELECT COUNT(*) FROM eq_operacao WHERE chave = 'k-c-108-051'") === 0
+    && (int) $um("SELECT COUNT(*) FROM eq_operacao_item WHERE chave = 'k-c-108-051'") === 0 && (int) $um('SELECT COUNT(*) FROM eq_auditoria') === $aud51);
 
 echo ($falhas === 0 ? '[OK]  ' : '[ERRO]') . " sugestoes-c-mysql (Parte C: transições, D10, corrida, lote/Concluir/fencing, erro técnico, carga/ciclo, total/cursor, destino, permissões): $n casos, $falhas falha(s) ($db)\n";
 exit($falhas === 0 ? 0 : 1);

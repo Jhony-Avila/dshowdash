@@ -24,6 +24,8 @@ interface SugestoesDecisoes
 final class SugestoesService
 {
     public const MAX_LOTE = 200;
+    /** DSHOW-108 (A): o lote da Conferência é a PÁGINA (contrato: 50). Limite próprio, validado ANTES de reservar a chave (nada é escrito). */
+    public const MAX_LOTE_DECIDIR = 50;
     /** Parte C: ação → [estado de origem, estado de destino, ação de auditoria]. Aceitar usa o caminho de sempre (decidir). */
     public const ACOES = [
         'aceitar'  => ['pendente', 'aceita', 'aceitar_sugestao'],
@@ -199,15 +201,7 @@ final class SugestoesService
         $acao = (string) ($b['acao'] ?? ''); $motivo = self::motivo($b);
         $this->portaParteC($acao, $motivo);
         if (($b['confirmar'] ?? null) !== true) throw new AtributosErro('VALIDATION_ERROR', 422, 'Confirme a decisão em lote.', ['confirmar']);
-        $itens = $b['itens'] ?? null;
-        if (!is_array($itens) || !array_is_list($itens) || !$itens || count($itens) > self::MAX_LOTE) throw new AtributosErro('VALIDATION_ERROR', 422, 'Escolha de 1 a ' . self::MAX_LOTE . ' sugestões.', ['itens']);
-        $versoes = [];
-        foreach ($itens as $k => $it) {
-            $id = is_array($it) ? ($it['id'] ?? null) : null; $v = is_array($it) ? ($it['versao'] ?? null) : null;
-            if (!is_int($id) || $id <= 0 || !is_int($v) || $v < 0) throw new AtributosErro('VALIDATION_ERROR', 422, 'Item ' . ($k + 1) . ' inválido: informe id e versao inteiros.', ['itens']);
-            if (isset($versoes[$id])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Sugestão repetida no lote.', ['itens']);
-            $versoes[$id] = $v;
-        }
+        $versoes = self::validarCorpoLote($b);
         $ja = $lote->abrir(array_keys($versoes));
         $saida = [];
         foreach ($versoes as $id => $v) {
@@ -228,6 +222,25 @@ final class SugestoesService
     private static function itemPendente(): array
     {
         return ['pendente', ['motivo' => 'erro_tecnico', 'mensagem' => 'Erro técnico momentâneo; nada foi gravado neste item. Use "Concluir este lote".']];
+    }
+
+    /**
+     * DSHOW-108 (A): validação do CORPO do sugestoes_decidir (pares id/versão, 1..MAX_LOTE_DECIDIR, sem repetição). Pura: a camada de gravação
+     * chama ANTES de reservar a chave de operação (51 itens = 422 sem nenhuma escrita) e o serviço repete. @return array<int,int> id => versão
+     */
+    public static function validarCorpoLote(array $b): array
+    {
+        $itens = $b['itens'] ?? null;
+        if (!is_array($itens) || !array_is_list($itens) || !$itens || count($itens) > self::MAX_LOTE_DECIDIR)
+            throw new AtributosErro('VALIDATION_ERROR', 422, 'Escolha de 1 a ' . self::MAX_LOTE_DECIDIR . ' sugestões (uma página).', ['itens']);
+        $versoes = [];
+        foreach ($itens as $k => $it) {
+            $id = is_array($it) ? ($it['id'] ?? null) : null; $v = is_array($it) ? ($it['versao'] ?? null) : null;
+            if (!is_int($id) || $id <= 0 || !is_int($v) || $v < 0) throw new AtributosErro('VALIDATION_ERROR', 422, 'Item ' . ($k + 1) . ' inválido: informe id e versao inteiros.', ['itens']);
+            if (isset($versoes[$id])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Sugestão repetida no lote.', ['itens']);
+            $versoes[$id] = $v;
+        }
+        return $versoes;
     }
 
     /** @return array{0:string,1:array} um item do lote: 'aplicada', 'nao_aplicada' (negócio) ou 'pendente' (técnico; NÃO registrado). */
