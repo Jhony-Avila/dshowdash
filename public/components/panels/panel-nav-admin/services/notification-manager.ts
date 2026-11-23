@@ -148,7 +148,7 @@ export function NotificationManager(options: Record<string, unknown> = {}) {
     try {
       const notification = new Notification(title, {
         body: body,
-        icon: icon || '/assets/icons/nav-admin.png',
+        icon: icon || '/assets/brand/dshow-simbolo-192.png',
         tag: tag || `pna_${Date.now()}`,
         silent: true
       });

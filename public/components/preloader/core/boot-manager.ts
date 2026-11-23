@@ -277,8 +277,9 @@ BootManager.prototype.startBoot = function() {
 
   const videoEl = hasDocument ? document.querySelector('#loading-video') : null;
   const videoControlledExternally = videoEl && (videoEl as any).dataset.controlledBy;
-  const shouldLoadVideo = !videoControlledExternally && self._decideShouldLoadVideo(config);
-  const videoPromise = shouldLoadVideo ? carregarVideo(config.timeoutVideo) : Promise.resolve({ loaded: false, reason: videoControlledExternally ? 'external-control' : 'network-policy' });
+  // IDENTIDADE (23/11): sem elemento de vídeo (o vídeo de fundo saiu — arquivo inexistente, 404) não há o que carregar
+  const shouldLoadVideo = !!videoEl && !videoControlledExternally && self._decideShouldLoadVideo(config);
+  const videoPromise = shouldLoadVideo ? carregarVideo(config.timeoutVideo) : Promise.resolve({ loaded: false, reason: videoControlledExternally ? 'external-control' : (videoEl ? 'network-policy' : 'no-video') });
 
   return Promise.all([videoPromise, waitForAuthDecision(10000)]).then((results: any[]) => {
     const videoResult = results[0];

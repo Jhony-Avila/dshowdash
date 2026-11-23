@@ -64,7 +64,8 @@ export function getLoginModalTemplate(config: Record<string, any> = {}) {
   _metrics.renders++;
   injectPreconnects();
 
-  const videoSrc = config.video?.src || config.videoSrc || '/assets/videos/video_background_site_web.mp4';
+  const videoSrc = config.video?.src || config.videoSrc || '';
+  const showVideo = config.video?.enabled !== false && !!videoSrc;   // IDENTIDADE (23/11): vídeo de fundo desligado (404)
   const idPrefix = config.idPrefix || 'login';
   const showRememberMe = config.ui?.showRememberMe !== false;
   const showForgotPassword = config.ui?.showForgotPassword !== false;
@@ -83,7 +84,7 @@ export function getLoginModalTemplate(config: Record<string, any> = {}) {
 
       <div class="login-backdrop lm-backdrop" data-backdrop></div>
 
-      <video
+      ${showVideo ? `      <video
         id="${idPrefix}-video"
         class="login-video lm-video"
         autoplay
@@ -97,7 +98,7 @@ export function getLoginModalTemplate(config: Record<string, any> = {}) {
         data-testid="login-video"
         data-video-src="${videoSrc}">
         ${lazyLoadVideo ? '' : `<source src="${videoSrc}" type="video/mp4">`}
-      </video>
+      </video>` : ''}
 
       <div class="login-container-wrapper lm-wrapper">
         ${showLanguageSelector ? '<div class="lm-language-container" data-language-container></div>' : ''}
@@ -106,7 +107,7 @@ export function getLoginModalTemplate(config: Record<string, any> = {}) {
           <div class="login-container-inner lm-inner">
 
             <div class="login-brand lm-brand" aria-hidden="true">
-              <img src="/assets/icons/logo-horizontal.png" alt="DSHOW DASH" class="lm-logo" loading="lazy" decoding="async" width="120" height="40">
+              <img src="/assets/brand/dshow-logo-branco.svg" alt="DShow" class="lm-logo dsd-marca-logo" loading="lazy" decoding="async" width="120" height="41">
               <h2 id="${idPrefix}-title" class="visually-hidden lm-visually-hidden">Login DSHOW DASH</h2>
             </div>
 

@@ -444,6 +444,8 @@ tools-golden/
 /public/assets/*
 !/public/assets/animacoes/
 !/public/assets/animacoes/**
+!/public/assets/brand/
+!/public/assets/brand/**
 !/public/assets/avatars/
 /public/assets/avatars/*
 !/public/assets/avatars/001-courthouse.svg
@@ -1397,6 +1399,7 @@ tools-golden/
 !/public/docs/
 !/public/docs/**
 !/public/favicon.ico
+!/public/site.webmanifest
 !/public/ger-harness.html
 !/public/index.html
 !/public/koala/

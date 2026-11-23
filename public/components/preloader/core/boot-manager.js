@@ -225,8 +225,8 @@ BootManager.prototype.startBoot = function() {
   }, timeoutGlobal);
   const videoEl = hasDocument ? document.querySelector("#loading-video") : null;
   const videoControlledExternally = videoEl && videoEl.dataset.controlledBy;
-  const shouldLoadVideo = !videoControlledExternally && self._decideShouldLoadVideo(config);
-  const videoPromise = shouldLoadVideo ? carregarVideo(config.timeoutVideo) : Promise.resolve({ loaded: false, reason: videoControlledExternally ? "external-control" : "network-policy" });
+  const shouldLoadVideo = !!videoEl && !videoControlledExternally && self._decideShouldLoadVideo(config);
+  const videoPromise = shouldLoadVideo ? carregarVideo(config.timeoutVideo) : Promise.resolve({ loaded: false, reason: videoControlledExternally ? "external-control" : videoEl ? "network-policy" : "no-video" });
   return Promise.all([videoPromise, waitForAuthDecision(1e4)]).then((results) => {
     const videoResult = results[0];
     const authResult = results[1];

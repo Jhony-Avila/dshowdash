@@ -43,7 +43,7 @@ const _metrics = { renders: 0 };
 export function getPreloaderTemplate() {
   _initPorts();
   _metrics.renders++;
-  return '<div id="loading-screen" role="status" aria-live="polite" aria-label="Carregando" aria-busy="true"><video id="loading-video" autoplay loop muted playsinline preload="metadata"><source src="/assets/videos/video_background_site_web.mp4" type="video/mp4">Seu navegador não suporta vídeo HTML5.</video><div class="loading-logo-container"><img src="/assets/icons/logo-square.png" alt="DshowDash Logo" class="loading-logo" width="180" height="168" decoding="async" fetchpriority="high"></div><div class="loading-text">Carregando</div><div class="loading-progress-wrapper"><div class="loading-progress"><div class="loading-progress-bar" id="loading-progress-bar"></div></div><div class="loading-percentage">0%</div></div></div>';
+  return '<div id="loading-screen" role="status" aria-live="polite" aria-label="Carregando" aria-busy="true"><div class="loading-logo-container dsd-marca-area"><img src="/assets/brand/dshow-logo-branco.svg" alt="DShow" class="loading-logo dsd-marca-logo" width="240" height="81" decoding="async" fetchpriority="high"></div><div class="loading-text">Carregando</div><div class="loading-progress-wrapper"><div class="loading-progress"><div class="loading-progress-bar" id="loading-progress-bar"></div></div><div class="loading-percentage">0%</div></div></div>';
 }
 
 export function getMetrics() { return Object.assign({}, _metrics); }

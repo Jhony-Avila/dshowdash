@@ -29,7 +29,7 @@ const LEVEL_LABELS = {
 async function exportPDF(data, options = {}) {
   await _loadJsPDF();
   const title = options.title || "Relat\xF3rio de Navega\xE7\xE3o - Admin";
-  const company = options.company || "DShowDash";
+  const company = options.company || "DShow Dash";
   const filename = options.filename;
   const columns = options.columns || _defaultColumns();
   const { jsPDF } = window.jspdf;
@@ -123,7 +123,7 @@ async function exportSingleItemPDF(item, options = {}) {
   y += 10;
   doc.setFontSize(8);
   doc.setTextColor(128);
-  doc.text(`Gerado em: ${(/* @__PURE__ */ new Date()).toLocaleString("pt-BR")} | DShowDash`, margin, y);
+  doc.text(`Gerado em: ${(/* @__PURE__ */ new Date()).toLocaleString("pt-BR")} | DShow Dash`, margin, y);
   const fname = options.filename || `nav-item_${item.id}_${_dateStamp()}`;
   doc.save(`${fname}.pdf`);
 }

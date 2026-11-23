@@ -142,7 +142,8 @@ export class SystemInitializer {
     const config = this.modal.config;
     let logger = this.modal.logger;
     this.modal.errorHandler = new (ErrorHandler as any)({ logger: logger, security: config.security, debug: !!(config.debug && config.debug.enabled) });
-    this.modal.videoManager = new (VideoManager as any)(video, { video: config.video, logger: logger });
+    // IDENTIDADE (23/11): sem vídeo de fundo (desligado na config) não há gerenciador; os usos já aceitam ausência
+    this.modal.videoManager = (video && !(config.video && config.video.enabled === false)) ? new (VideoManager as any)(video, { video: config.video, logger: logger }) : null;
     this._initialized.managers = true;
     if (logger && logger.info) logger.info('Core Managers inicializados');
   }

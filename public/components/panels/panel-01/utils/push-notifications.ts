@@ -49,8 +49,8 @@ export function showNotification(title: string, options: Record<string, unknown>
     if (!isPermissionGranted()) return null;
     
     return new Notification(title, {
-        icon: '/assets/icons/notification-icon.png',
-        badge: '/assets/icons/badge-icon.png',
+        icon: '/assets/brand/dshow-simbolo-192.png',
+        badge: '/assets/brand/dshow-simbolo-48.png',
         ...options
     });
 }

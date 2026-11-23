@@ -1,0 +1,10 @@
+7024a676567fbe70e12edbb707b8563c54fb85a27f871709e7740543c714efe7  dshow-logo-branco.svg  <-  Logo_DShow/Logo Monocromia/Logo Monocromia branco/dshow_logo.svg
+745e41756c408fc5a8aa778bfea8f5e6bfb10bd4ded4befd79e6bf48ed2689e7  dshow-logo.svg  <-  Logo_DShow/Versão oficial/Logo RGB/dshow_logo.svg
+1055093fe433bccbc6a2b0755410df817a61e8a7c2305c554cd20fca10d01b5f  dshow-simbolo-16.png  <-  Logo_DShow/Favicon/dshow_favicon_16.png
+1b0489be7c918d36c87831ed7bbd321c39ff486bc4b952c16008dcb178b50a29  dshow-simbolo-180.png  <-  Logo_DShow/Favicon/dshow_favicon_180.png
+31ad377480e18350c600027240213d41f0b67ee0cbe190742c70f0c845e33c4b  dshow-simbolo-192.png  <-  Logo_DShow/Favicon/dshow_favicon_192.png
+a7a9573702e4ebf84c3de2612d14e3efcdb6f4b503f3e90156cfe151adbb9023  dshow-simbolo-32.png  <-  Logo_DShow/Favicon/dshow_favicon_32.png
+c2342c186462a7242dce36e0597bdc5ae8707dd094b642436c75289f3e357fba  dshow-simbolo-48.png  <-  Logo_DShow/Favicon/dshow_favicon_48.png
+71958ac3ab17ec87b349227b7806b5a377d0bce59bb7cfe1c1db49b194b37547  dshow-simbolo-512.png  <-  Logo_DShow/Favicon/dshow_favicon_512.png
+bb4edeaa04597ac14ad702d6fa6a3ccd806dac084b2e64d7adc85921d6f6d8f8  dshow-simbolo.svg  <-  Logo_DShow/Favicon/dshow_favicon.svg
+87daf58e862d7119822e26258c19650563f49708b551284abfc7af0be059edaf  favicon.ico  <-  Logo_DShow/Favicon/favicon.ico

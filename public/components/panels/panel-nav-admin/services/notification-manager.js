@@ -75,7 +75,7 @@ function NotificationManager(options = {}) {
     try {
       const notification = new Notification(title, {
         body,
-        icon: icon || "/assets/icons/nav-admin.png",
+        icon: icon || "/assets/brand/dshow-simbolo-192.png",
         tag: tag || `pna_${Date.now()}`,
         silent: true
       });

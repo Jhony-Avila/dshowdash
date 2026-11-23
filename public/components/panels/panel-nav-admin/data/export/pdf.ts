@@ -69,7 +69,7 @@ const LEVEL_LABELS = {
  * @param {Array<Object>} data — Items to export
  * @param {Object} [options]
  * @param {string} [options.title='Relatório de Navegação - Admin']
- * @param {string} [options.company='DShowDash']
+ * @param {string} [options.company='DShow Dash']
  * @param {string} [options.filename] — Download filename (without .pdf)
  * @param {Array<{label: string, field: string, width?: number, formatter?: Function}>} [options.columns]
  * @returns {Promise<void>}
@@ -79,7 +79,7 @@ export async function exportPDF(data: Record<string, unknown>[], options: Record
   await _loadJsPDF();
 
   const title = (options.title as string) || 'Relatório de Navegação - Admin';
-  const company = (options.company as string) || 'DShowDash';
+  const company = (options.company as string) || 'DShow Dash';
   const filename = options.filename as string | undefined;
   const columns = (options.columns as PdfColumn[]) || _defaultColumns();
 
@@ -206,7 +206,7 @@ export async function exportSingleItemPDF(item: Record<string, unknown>, options
   y += 10;
   doc.setFontSize(8);
   doc.setTextColor(128);
-  doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')} | DShowDash`, margin, y);
+  doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')} | DShow Dash`, margin, y);
 
   const fname = options.filename || `nav-item_${item.id}_${_dateStamp()}`;
   doc.save(`${fname}.pdf`);
