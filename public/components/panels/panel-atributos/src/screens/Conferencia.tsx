@@ -15,6 +15,7 @@ import { IconeEstado, useGravacoes } from '../ui/CelulaEditavel';
 import { podeConferir } from '../ui/celula';
 import { PAGINA_SUGESTOES, type ConfirmacaoLote } from '../ui/conferencia-lote';
 import { FilaSugestoes } from './conferencia/FilaSugestoes';
+import { FilaDerivada } from './conferencia/FilaDerivada';
 import { livre } from '../ui/celula';
 import '../ui/celula.css';
 
@@ -26,6 +27,10 @@ const FILAS: { id: Fila; rotulo: string; desc: string }[] = [
   { id: 'obrigatorios_vazios', rotulo: 'Obrigatórios vazios', desc: 'Atributos obrigatórios sem valor em produtos ativos.' },
   { id: 'sem_kit', rotulo: 'Sem kit', desc: 'Produtos ativos que só têm o kit Base (nenhum kit específico).' },
 ];
+// textos da linha de explicação (pranchas 04, 08, 09 e 10)
+const DESC_V2: Partial<Record<Fila, string>> = { nome: 'Valores extraídos do nome do produto. Só são gravados após aceite.',
+  fora_da_ficha: 'Valores gravados em atributos que ainda não fazem parte da ficha destes produtos.', obrigatorios_vazios: 'Campos obrigatórios ainda sem valor em produtos ativos.',
+  sem_kit: 'Produtos ativos sem kit específico. O kit Base continua aplicado.' };
 const valorTxt = (v: string | null) => (v && /^-?\d+(\.\d+)?$/.test(v) ? decimal(v) : v ?? '—');
 
 export function Conferencia() {
@@ -109,36 +114,13 @@ export function Conferencia() {
       <div className="at-abas" role="tablist" aria-label="Filas">
         {FILAS.map((x) => <button key={x.id} type="button" role="tab" aria-selected={fila === x.id} className={fila === x.id ? 'ativo' : ''} onClick={() => setFila(x.id)}>{x.rotulo} <span className="at-filtro__n" data-total-fila={x.id}>{total(x.id).toLocaleString('pt-BR')}</span></button>)}
       </div>
-        {fila !== 'legado' && <div className="at-painel__cabeca"><span className="at-fraco">{fila === 'nome' ? 'Valores extraídos do nome do produto. Só são gravados após aceite.' : atual.desc}</span></div>}</CabecalhoTravado>
+        {fila !== 'legado' && <div className="at-painel__cabeca"><span className="at-fraco">{DESC_V2[fila] ?? atual.desc}</span></div>}</CabecalhoTravado>
       <section className="at-painel">
         {fila === 'legado' && <LegadoGrade itens={d.filas.legado} pode={!!d.pode_decidir} aoRecarregar={async () => { carregar(); }} aoLote={abrirLote} abrirProduto={m.abrirProduto} />}
         {fila === 'nome' && <FilaSugestoes atributos={atributosNome} podeDecidir={!!d.pode_decidir} administra={!!d.pode_vincular} aoMudarTotais={carregar} />}
-        {fila === 'fora_da_ficha' && (d.filas.fora_da_ficha.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Nada fora da ficha" /></div> : (
-          <div className="bl-rola-x"><table className="at-tabela">
-            <thead><tr><th>Produto</th><th>Atributo com valor</th><th>Ação</th></tr></thead>
-            <tbody>{d.filas.fora_da_ficha.slice(0, 400).map((x) => (
-              <tr key={`${x.product_id}-${x.atributo_id}`}>
-                <td><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(x.product_id)}><CapsulaId id={x.product_id} flutuante={false} /> {x.produto}</button></td>
-                <td>{x.atributo}</td>
-                <td><div className="at-acoes">{d.pode_vincular && <Botao aoClicar={() => enviar('produto_atributo', { product_id: x.product_id, versao_vinculos: x.versao_vinculos, atributo_id: x.atributo_id, modo: 'incluir' }).then(() => { m.aviso('Vinculado a este produto.'); carregar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Vincular a este produto</Botao>}
-                  <button type="button" className="at-link" onClick={() => m.abrirProduto(x.product_id)}>abrir ficha</button></div></td>
-              </tr>))}</tbody>
-          </table></div>))}
-        {fila === 'obrigatorios_vazios' && (d.filas.obrigatorios_vazios.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Nenhum obrigatório vazio" /></div> : (
-          <div className="bl-rola-x"><table className="at-tabela">
-            <thead><tr><th>Produto</th><th>Obrigatório vazio</th><th /></tr></thead>
-            <tbody>{d.filas.obrigatorios_vazios.slice(0, 400).map((x) => (
-              <tr key={`${x.product_id}-${x.atributo_id}`}><td><CapsulaId id={x.product_id} flutuante={false} /> {x.produto}</td><td>{x.atributo}</td><td><button type="button" className="at-link" onClick={() => m.abrirProduto(x.product_id)}>preencher na ficha</button></td></tr>))}</tbody>
-          </table>{d.totais.obrigatorios_vazios > 400 && <p className="at-fraco" style={{ padding: 12 }}>Mostrando 400 de {d.totais.obrigatorios_vazios}. Use a grade (Preencher) para resolver em massa.</p>}</div>))}
-        {fila === 'sem_kit' && (d.filas.sem_kit.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Todos os produtos têm kit" /></div> : (
-          <div className="bl-rola-x"><table className="at-tabela">
-            <thead><tr><th>Produto</th><th>Subcategoria</th><th>Kit no legado</th><th>Aplicar kit</th></tr></thead>
-            <tbody>{d.filas.sem_kit.map((x) => (
-              <tr key={x.product_id}><td><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(x.product_id)}><CapsulaId id={x.product_id} flutuante={false} /> {x.produto}</button></td>
-                <td>{rotuloSubcategoria(x.subcategoria)}</td><td>{x.legado ?? '—'}</td>
-                <td>{d.pode_vincular ? <select className="at-campo" aria-label={`Aplicar kit em ${x.produto}`} value="" onChange={(e) => { const g = Number(e.target.value); if (g) enviar('produto_kit', { product_id: x.product_id, versao_vinculos: x.versao_vinculos, grupo_id: g, ativo: 1 }).then(() => { m.aviso('Kit aplicado.'); carregar(); }).catch((er) => m.aviso(er.message, 'erro')); }}>
-                  <option value="">Escolha um kit…</option>{kits.map((k) => <option key={k.id} value={k.id}>{k.nome}</option>)}</select> : '—'}</td></tr>))}</tbody>
-          </table></div>))}
+        {(fila === 'fora_da_ficha' || fila === 'obrigatorios_vazios' || fila === 'sem_kit') && <FilaDerivada key={fila} fila={fila} kits={kits} podeVincular={!!d.pode_vincular} aoMudarTotais={carregar}
+          atributos={[...new Map((fila === 'fora_da_ficha' ? d.filas.fora_da_ficha : d.filas.obrigatorios_vazios).map((x) => [x.atributo_id, x.atributo])).entries()].map(([id, rotulo]) => ({ id, rotulo })).sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'))}
+          subcategorias={[...new Set(d.filas.sem_kit.map((x) => x.subcategoria).filter((x): x is string => !!x))].sort()} />}
       </section>
       <Dialogo titulo="Aceitar sugestões em lote?" aberto={lote !== null} aoFechar={fecharLote}
         rodape={<>

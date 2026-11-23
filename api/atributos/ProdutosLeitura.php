@@ -541,7 +541,9 @@ final class ProdutosLeitura
         $c = $this->filasDerivadas(array_filter($this->resumos(), static fn($p) => $p['ativo']))[$fila];   // lista INTEIRA (sem o corte de 1000)
         $partes = $fila === 'sem_kit' ? 1 : 2;
         $chave = static fn($x) => $partes === 1 ? [(int) $x['product_id']] : [(int) $x['product_id'], (int) $x['atributo_id']];
-        $c = array_values(array_filter($c, static fn($x) => ($pids === null || in_array((int) $x['product_id'], $pids, true)) && ($aid === null || $partes === 1 || (int) $x['atributo_id'] === $aid)));
+        $sub = isset($g['subcategoria']) && is_string($g['subcategoria']) && $g['subcategoria'] !== '' ? $g['subcategoria'] : null;   // sem_kit: filtro da prancha 10
+        $c = array_values(array_filter($c, static fn($x) => ($pids === null || in_array((int) $x['product_id'], $pids, true)) && ($aid === null || $partes === 1 || (int) $x['atributo_id'] === $aid)
+            && ($sub === null || ($x['subcategoria'] ?? null) === $sub)));
         usort($c, static fn($a, $b) => $chave($a) <=> $chave($b));
         $total = count($c);
         $depois = self::cursorLer($g['cursor'] ?? null, $partes);

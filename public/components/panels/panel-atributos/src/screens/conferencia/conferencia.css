@@ -64,3 +64,17 @@
 [data-bl-root] .cf-rodape { display: flex; align-items: center; gap: 16px; justify-content: space-between; padding: 10px 4px; font-size: 13px; }
 [data-bl-root] .cf-rodape__pag { display: inline-flex; align-items: center; gap: 10px; }
 [data-bl-root] .cf-lendo { padding: 24px; color: var(--bl-texto-2, #5b6470); }
+
+/* Parte B — larguras de 1440 (briefing): Fora da ficha 28·56·300·210·160·96·246 · Obrigatórios 56·576·280·184 · Sem kit 28·56·254·158·116·230·254 */
+[data-bl-root] .cf-grade--fora_da_ficha td.cf-col-prod { min-width: 300px; }
+[data-bl-root] .cf-grade td.cf-col-atr2 { width: 210px; min-width: 210px; max-width: 210px; }
+[data-bl-root] .cf-grade td.cf-col-valor { width: 160px; min-width: 160px; max-width: 220px; }
+[data-bl-root] .cf-grade td.cf-col-acoes2 { width: 246px; min-width: 246px; }
+[data-bl-root] .cf-grade--obrigatorios_vazios td.cf-col-prod { min-width: 576px; }
+[data-bl-root] .cf-grade td.cf-col-obr { width: 280px; min-width: 280px; max-width: 280px; }
+[data-bl-root] .cf-grade td.cf-col-acao1 { width: 184px; min-width: 184px; }
+[data-bl-root] .cf-grade td.cf-col-sub { width: 158px; min-width: 158px; max-width: 158px; }
+[data-bl-root] .cf-grade td.cf-col-leg { width: 116px; min-width: 116px; max-width: 116px; }
+[data-bl-root] .cf-grade td.cf-col-kit { width: 230px; min-width: 230px; }
+[data-bl-root] .cf-kit { width: 214px; height: 28px; }
+[data-bl-root] .cf-evid__titulo { display: block; font-weight: 500; }
