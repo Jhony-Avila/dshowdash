@@ -4,7 +4,9 @@
 //   kits ATIVOS cujo escopo vivo cobre a categoria/subcategoria do produto ('' = toda a categoria)
 //   + kits ativos marcados aplica_a_todos + kits ativos vinculados direto ao produto (eq_grupo_produto vivo)
 //   + inclusões avulsas do produto (eq_produto_atributo modo 'incluir')  − exclusões do produto (modo 'excluir').
-// Só atributos ATIVOS. Atributo em vários kits aparece UMA vez: kits na ordem (nome, id) — regra D4 existente —, a 1ª ocorrência
+// Só atributos ATIVOS. Atributo em vários kits aparece UMA vez: kits na ordem de PRECEDÊNCIA (P1 kit-prioridade, migração 012:
+// eq_grupo.prioridade crescente, desempate id; kit sem prioridade vai para o fim na ordem antiga; sem a coluna = regra antiga D4,
+// posição de (nome, id) no MySQL — ver Aplicabilidade::compararKits), a 1ª ocorrência
 // define kit e posição; obrigatório, visível e destaque = OU entre as ocorrências (extensão documentada da D4); importância = a do 1º
 // item que a tiver, senão a importância padrão do atributo (A3). Avulsos entram depois dos kits (posição, id).
 // Unidade efetiva (D3) = a do valor → a do produto (eq_produto_atributo, qualquer modo vivo) → a do kit (1ª ocorrência com unidade)
@@ -16,7 +18,7 @@ declare(strict_types=1);
 final class RetratoModelo
 {
     /**
-     * @param array<int,array> $grupos   id => [id, nome, ativo, aplica_a_todos, ordem, descricao]
+     * @param array<int,array> $grupos   id => [id, nome, ativo, aplica_a_todos, ordem, descricao, prioridade? (012), ordem_nome? (MySQL)]
      * @param array<int,array> $escopos  lista [grupo_id, categoria, subcategoria]
      * @param array<int,array> $itens    grupo_id => lista [atributo_id, posicao, obrigatorio, visivel, destaque, importancia, unidade_id, legado_id]
      * @param array<int,array> $diretos  product_id => [grupo_id, …]
@@ -39,7 +41,26 @@ final class Aplicabilidade
     public const COMPLETOS = ['obrigatorio', 'importante', 'basico'];
     public const AVULSO = 0;   // "kit" virtual dos atributos avulsos do produto
 
-    /** Kits que valem para o produto, na ordem (nome, id), com o motivo de cada um. @return array<int,array{grupo:array,motivos:array}> */
+    /**
+     * PRECEDÊNCIA entre kits (P1 kit-prioridade, 18/11). Ordem total e determinística:
+     *   1. os dois com `prioridade` (coluna da 012, preenchida pela migração com a posição antiga) → prioridade crescente, desempate id;
+     *   2. só um com `prioridade` → ele vem antes (kit sem prioridade = criado pelo código anterior depois da 012 → fim da fila);
+     *   3. nenhum com `prioridade` (coluna ausente = 012 não aplicada, ou NULL) → REGRA ANTIGA: `ordem_nome` (posição de (nome, id) dada pelo
+     *      MySQL, DSHOW-035 #1) quando os dois a têm; senão (nome, id) no PHP (repositório em memória).
+     * Com a 012 aplicada e preenchida, o NOME não participa mais: renomear um kit não muda a ficha.
+     */
+    public static function compararKits(array $a, array $b): int
+    {
+        $pa = isset($a['prioridade']) && $a['prioridade'] !== '' ? (int) $a['prioridade'] : null;
+        $pb = isset($b['prioridade']) && $b['prioridade'] !== '' ? (int) $b['prioridade'] : null;
+        if ($pa !== null && $pb !== null) return [$pa, (int) $a['id']] <=> [$pb, (int) $b['id']];
+        if ($pa !== null || $pb !== null) return $pa !== null ? -1 : 1;
+        return isset($a['ordem_nome'], $b['ordem_nome'])
+            ? (int) $a['ordem_nome'] <=> (int) $b['ordem_nome']
+            : [(string) $a['nome'], (int) $a['id']] <=> [(string) $b['nome'], (int) $b['id']];
+    }
+
+    /** Kits que valem para o produto, na ordem de PRECEDÊNCIA (compararKits), com o motivo de cada um. @return array<int,array{grupo:array,motivos:array}> */
     public static function kits(RetratoModelo $m, array $produto): array
     {
         $cat = (string) $produto['categoria']; $sub = (string) ($produto['subcategoria'] ?? ''); $pid = (int) $produto['id'];
@@ -55,10 +76,8 @@ final class Aplicabilidade
             $g = $m->grupos[(int) $gid] ?? null;
             if ($g && (int) $g['ativo']) { $out[(int) $gid]['grupo'] = $g; $out[(int) $gid]['motivos'][] = ['tipo' => 'direto']; }
         }
-        // DSHOW-035 #1: com 'ordem_nome' (posição dada pelo MySQL, mesma colação do app) ela manda; sem ela (repositório em memória), nome e id
-        uasort($out, static fn($a, $b) => isset($a['grupo']['ordem_nome'], $b['grupo']['ordem_nome'])
-            ? (int) $a['grupo']['ordem_nome'] <=> (int) $b['grupo']['ordem_nome']
-            : [(string) $a['grupo']['nome'], (int) $a['grupo']['id']] <=> [(string) $b['grupo']['nome'], (int) $b['grupo']['id']]);
+        // P1 kit-prioridade: prioridade explícita (012) manda; sem ela, a regra antiga (DSHOW-035 #1: ordem_nome do MySQL; em memória, nome e id)
+        uasort($out, static fn($a, $b) => self::compararKits($a['grupo'], $b['grupo']));
         return $out;
     }
 
