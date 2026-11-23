@@ -1,0 +1,24 @@
+/* panel-atributos/src/screens/vincular.css — VINCULAR v4 (ESQUERDA). Regras que estavam acrescentadas no modulo.css (arquivo da CIMA)
+   e saíram de lá em 19/11 para o pacote do trem tocar SÓ arquivos da ESQUERDA. Conteúdo idêntico ao bloco movido. */
+/* ── VINCULAR v4 (19/11, pedido do Jhony com print): a tabela é um DATA GRID na área inteira, não uma caixa no meio da tela ──────────────
+   Quem rola é a PÁGINA (TabelaDados rolagem="container"); a faixa de busca/filtros/ações está no <CabecalhoTravado> e o cabeçalho das
+   colunas gruda logo abaixo dele (regras do cabeçalho travado, acima). Aqui: altura de linha padrão, nada quebra linha, zebra visível,
+   linha marcada e hover acima da zebra. A linha de DETALHE (expansão) não entra na altura fixa. */
+[data-bl-root] .at-vincular { --at-vincular-linha: 40px; }
+[data-bl-root] .at-vincular .at-td__tabela > tbody > tr.at-td__linha > td { height: var(--at-vincular-linha); padding-top: 0; padding-bottom: 0; white-space: nowrap; }
+[data-bl-root] .at-vincular td.at-vincular__nome { width: 100%; max-width: 0; }   /* a coluna Produto absorve a sobra e corta com reticências */
+[data-bl-root] .at-vincular td.at-vincular__nome .at-td__gatilho { display: flex; align-items: center; }
+[data-bl-root] .at-vincular td.at-vincular__nome .at-td__gatilho > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-bl-root] .at-vincular__kits-lista { display: inline-flex; align-items: center; gap: 4px; max-width: 300px; overflow: hidden; vertical-align: middle; }
+[data-bl-root] .at-vincular .at-td__linha--par { background: var(--bl-superficie-2); }
+[data-bl-root] .at-vincular .at-td__linha--marcada { background: color-mix(in srgb, var(--bl-verde-suave) 55%, var(--bl-superficie)); }
+[data-bl-root] .at-vincular .at-td__linha:hover { background: color-mix(in srgb, var(--bl-verde-suave) 70%, var(--bl-superficie-2)); }
+/* A MOLDURA da tabela vai até o rodapé mesmo com poucas linhas (filtro/busca): nada de "caixa no meio da tela" com o vazio embaixo.
+   Altura mínima = janela − topo da área visível (--at-topo-tela: header + ticker + barra do painel) − bloco travado (--at-topo-fixo,
+   medido pelo módulo) − folga: 16 px entre o bloco e a tabela + 40 px do padding-bottom do .at-conteudo (módulo) + 16 px do
+   padding do .dsd-container__content (--cm-spacing-lg) + 33 px do rodapé estático do shell (medido em 19/11 na 8113, 2200×1470) = 105 px.
+   Só CSS (tokens do shell e do módulo); sem linhas (0 resultados) a moldura volta ao tamanho natural para a mensagem ficar à vista. */
+[data-bl-root] .at-vincular { --at-vincular-folga: 105px; }
+[data-bl-root] .at-vincular .at-td { box-sizing: border-box; min-height: max(240px, calc(100dvh - var(--at-topo-tela, 0px) - var(--at-topo-fixo, 0px) - var(--at-vincular-folga)));
+  background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio); }
+[data-bl-root] .at-vincular .at-td:not(:has(tr.at-td__linha)) { min-height: 0; }

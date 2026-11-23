@@ -1,5 +1,5 @@
 // panel-atributos/src/ui/TabelaDados.tsx — tabela padrão do módulo Produtos & Atributos.
-// Cabeçalho fixo (sticky top 0 na área de rolagem do módulo), ordenação por clique no título (▲ crescente / ▼ decrescente,
+// Cabeçalho fixo (sticky top 0 na área de rolagem do módulo), ordenação por clique no título (ícone ↑ crescente / ↓ decrescente / ↑↓ não ativa,
 // aria-sort, título é <button>), linhas zebradas com hover, colunas numéricas à direita, linha clicável acessível.
 // A ordenação é pura (lib/ordenar.ts). Estado da ordenação: INTERNO por padrão (ordenacaoPadrao) ou CONTROLADO
 // (ordenacao + aoOrdenar) — use o controlado quando a tabela pode desmontar (ex.: lista vazia por filtro) e a ordem
@@ -24,6 +24,13 @@
 // a ORDEM FICA CONGELADA: os valores atualizam, mas nenhuma linha muda de lugar; a ordem nova (de um clique no título, de dados
 // novos ou de uma ordenação controlada) se aplica quando o foco sai dos campos da tabela. Ir de um campo para outro da tabela
 // (Tab, inclusive para uma linha clicável) mantém congelado; descongela quando o foco sai do <tbody>. Clique/Enter/Espaço num campo da linha não dispara aoClicarLinha.
+//
+// Linha expansível (opcional): `expandida(linha)` diz se a linha está aberta e `renderExpansao(linha)` desenha o detalhe, numa <tr>
+// logo abaixo com uma única <td colSpan=total>. O estado é da TELA, pela chave estável (chaveLinha) — reordenar, filtrar ou recarregar
+// não fecha nem troca a expansão de linha. O gatilho (ex.: o nome) vem no 2º argumento de `render`: `ctx.gatilho` = { aria-expanded,
+// aria-controls, onClick } para espalhar num <button>; o clique chama `aoAlternarExpansao(linha)`. id da linha de detalhe = idExpansao().
+// Compat (pedido da DIREITA §31.4, 18/11): também aceita `expandida` como a CHAVE da linha aberta (React.Key | null — uma linha por vez)
+// e `detalheLinha(linha)` no lugar de `renderExpansao` (sinônimo). As duas formas convivem; função continua valendo (várias abertas).
 import React from 'react';
 import { agruparOrdenado, alternarOrdenacao, ariaSort, manterOrdem, ordenarLinhas, type DefGrupo, type GrupoLinhas, type Ordenacao, type TipoColuna } from '../lib/ordenar';
 import './tabela-dados.css';
@@ -34,8 +41,10 @@ export interface ColunaTabela<T> {
   tipo: TipoColuna;
   /** Padrão: 'direita' para 'numero', 'esquerda' para 'texto'. */
   alinhamento?: 'esquerda' | 'direita' | 'centro';
-  /** Conteúdo da célula. Padrão: o valor. */
-  render?: (linha: T) => React.ReactNode;
+  /** Conteúdo da célula. Padrão: o valor. O 2º argumento traz o estado/gatilho da linha expansível. */
+  render?: (linha: T, ctx: ContextoLinha) => React.ReactNode;
+  /** Conteúdo do <th> quando a coluna NÃO é ordenável (ex.: caixa "marcar todos"). Padrão: o título. */
+  cabecalho?: React.ReactNode;
   /** Compara dois valores NÃO vazios em ordem crescente (vazios vão para o fim sem passar por ele). */
   comparador?: (a: any, b: any) => number;
   /** Valor usado na ordenação. Padrão: linha[chave]. */
@@ -45,6 +54,16 @@ export interface ColunaTabela<T> {
   /** false = título sem botão de ordenar. */
   ordenavel?: boolean;
 }
+
+/** Estado da linha passado ao `render` das colunas. */
+export interface ContextoLinha {
+  expandida: boolean;
+  /** Para espalhar no <button> que abre/fecha a linha (aria-expanded + aria-controls + onClick). Vazio sem aoAlternarExpansao. */
+  gatilho: { 'aria-expanded'?: boolean; 'aria-controls'?: string; onClick?: () => void };
+}
+
+/** id da <tr> de detalhe de uma linha (para aria-controls fora do render). */
+export const idExpansao = (idTabela: string, chave: React.Key) => `${idTabela}-exp-${String(chave).replace(/[^A-Za-z0-9_-]/g, '_')}`;
 
 export interface TabelaDadosProps<T> {
   colunas: ColunaTabela<T>[];
@@ -74,6 +93,34 @@ export interface TabelaDadosProps<T> {
   mostrarVazios?: boolean;
   /** Congela a ordem atual (além do congelamento automático por foco num campo do <tbody>). */
   congelarOrdem?: boolean;
+  /**
+   * Linha expansível (estado da tela, pela chave estável). Duas formas: função `(linha) => boolean` (várias abertas) OU a chave da
+   * ÚNICA linha aberta (`React.Key | null`, compat DIREITA §31.4 — compara com `chaveLinha(linha)`).
+   */
+  expandida?: ((linha: T) => boolean) | React.Key | null;
+  /** Conteúdo da linha de detalhe (uma <td colSpan=total>). */
+  renderExpansao?: (linha: T) => React.ReactNode;
+  /** Sinônimo de `renderExpansao` (compat DIREITA §31.4). Se os dois vierem, vale `renderExpansao`. */
+  detalheLinha?: (linha: T) => React.ReactNode;
+  /** Chamado pelo gatilho (ctx.gatilho.onClick) para abrir/fechar a linha. */
+  aoAlternarExpansao?: (linha: T) => void;
+  /** Prefixo estável dos ids (linhas de detalhe). Padrão: React.useId(). */
+  idTabela?: string;
+}
+
+/**
+ * Indicador de ordenação (19/11, parecer do Jhony: as setas antigas ▲ ▼ ↕ pareciam pontuação). Família Lucide (a do módulo), 13 px, traço 2:
+ * coluna NÃO ativa = duas setas (↑↓) em cinza legível; ativa = UMA seta (↑ crescente / ↓ decrescente) na cor de destaque. Exportado para as telas
+ * que desenham o próprio cabeçalho (ex.: Matriz do Vincular) usarem o MESMO ícone.
+ */
+export function IconeOrdenacao({ estado }: { estado: 'ascending' | 'descending' | 'none' }) {
+  const p = { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  return (
+    <span className={`at-td__seta ${estado === 'none' ? 'at-td__seta--inativa' : 'at-td__seta--ativa'}`} aria-hidden data-ordem={estado}>
+      <svg {...p} focusable="false">{estado === 'ascending' ? <><path d="m5 11 7-7 7 7" /><path d="M12 20V4" /></>
+        : estado === 'descending' ? <><path d="M12 4v16" /><path d="m19 13-7 7-7-7" /></>
+        : <><path d="m21 16-4 4-4-4" /><path d="M17 20V4" /><path d="m3 8 4-4 4 4" /><path d="M7 4v16" /></>}</svg>
+    </span>);
 }
 
 const CAMPO = 'input, select, textarea, [contenteditable=""], [contenteditable="true"]';
@@ -93,7 +140,9 @@ function rolavel(el: HTMLElement | null): HTMLElement | null {
 }
 
 export function TabelaDados<T>({ colunas, linhas, chaveLinha, ordenacaoPadrao = null, ordenacao, aoOrdenar, aoClicarLinha, rotuloLinha, classeLinha, className, legenda, rolagem = 'propria',
-  grupos, grupoDaLinha, mostrarVazios = false, congelarOrdem = false }: TabelaDadosProps<T>) {
+  grupos, grupoDaLinha, mostrarVazios = false, congelarOrdem = false, expandida, renderExpansao: renderExpansaoProp, detalheLinha, aoAlternarExpansao, idTabela }: TabelaDadosProps<T>) {
+  const renderExpansao = renderExpansaoProp ?? detalheLinha;
+  const estaAberta = (l: T, chave: React.Key): boolean => typeof expandida === 'function' ? !!expandida(l) : expandida !== undefined && expandida !== null && String(expandida) === String(chave);
   const controlado = ordenacao !== undefined;
   const [interna, setInterna] = React.useState<Ordenacao | null>(ordenacaoPadrao);
   const atual = controlado ? ordenacao : interna;
@@ -116,6 +165,7 @@ export function TabelaDados<T>({ colunas, linhas, chaveLinha, ordenacaoPadrao = 
     [congelar, calculado]);
   React.useEffect(() => { anterior.current = exibido; });
   const uid = React.useId();
+  const idBase = idTabela ?? `td${uid.replace(/[^A-Za-z0-9_-]/g, '')}`;
 
   // Sombra do cabeçalho quando a tabela já rolou para baixo do topo do container; rolagem horizontal só se não couber.
   const moldura = React.useRef<HTMLDivElement>(null);
@@ -144,18 +194,35 @@ export function TabelaDados<T>({ colunas, linhas, chaveLinha, ordenacaoPadrao = 
 
   const alinhar = (c: ColunaTabela<T>) => c.alinhamento ?? (c.tipo === 'numero' ? 'direita' : 'esquerda');
   const clicavel = !!aoClicarLinha;
-  const linha = (l: T, par: boolean) => (
-    <tr key={chaveLinha(l)} data-chave={String(chaveLinha(l))} className={`at-td__linha ${par ? 'at-td__linha--par' : ''} ${clicavel ? 'at-td__linha--clicavel' : ''} ${classeLinha?.(l) ?? ''}`}
-      tabIndex={clicavel ? 0 : undefined} aria-label={clicavel ? rotuloLinha?.(l) : undefined}
-      onClick={clicavel ? (e) => { if (!(e.target instanceof Element && e.target !== e.currentTarget && e.target.closest(INTERATIVO))) aoClicarLinha!(l); } : undefined}
-      onKeyDown={clicavel ? (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); aoClicarLinha!(l); } } : undefined}>
-      {colunas.map((c) => (
-        <td key={c.chave} className={`at-td--${alinhar(c)} ${c.classe ?? ''}`}>
-          {c.render ? c.render(l) : String((c.valor ?? valorPadrao(c.chave))(l) ?? '')}
-        </td>
-      ))}
-    </tr>
-  );
+  const linha = (l: T, par: boolean) => {
+    const chave = chaveLinha(l);
+    const aberta = estaAberta(l, chave) && !!renderExpansao;
+    const idExp = idExpansao(idBase, chave);
+    const ctx: ContextoLinha = {
+      expandida: aberta,
+      gatilho: aoAlternarExpansao ? { 'aria-expanded': aberta, 'aria-controls': idExp, onClick: () => aoAlternarExpansao(l) } : {},
+    };
+    const classeZebra = par ? 'at-td__linha--par' : '';
+    return (
+      <React.Fragment key={chave}>
+        <tr data-chave={String(chave)} data-expandida={aberta ? '1' : undefined} className={`at-td__linha ${classeZebra} ${clicavel ? 'at-td__linha--clicavel' : ''} ${aberta ? 'at-td__linha--aberta' : ''} ${classeLinha?.(l) ?? ''}`}
+          tabIndex={clicavel ? 0 : undefined} aria-label={clicavel ? rotuloLinha?.(l) : undefined}
+          onClick={clicavel ? (e) => { if (!(e.target instanceof Element && e.target !== e.currentTarget && e.target.closest(INTERATIVO))) aoClicarLinha!(l); } : undefined}
+          onKeyDown={clicavel ? (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); aoClicarLinha!(l); } } : undefined}>
+          {colunas.map((c) => (
+            <td key={c.chave} className={`at-td--${alinhar(c)} ${c.classe ?? ''}`}>
+              {c.render ? c.render(l, ctx) : String((c.valor ?? valorPadrao(c.chave))(l) ?? '')}
+            </td>
+          ))}
+        </tr>
+        {aberta && (
+          <tr id={idExp} data-detalhe-de={String(chave)} className={`at-td__expansao ${classeZebra}`}>
+            <td colSpan={colunas.length} className="at-td__expansao-cel">{renderExpansao!(l)}</td>
+          </tr>
+        )}
+      </React.Fragment>
+    );
+  };
 
   return (
     <div ref={moldura} className="at-td" data-rolagem={rolagem} data-rolando={rolando ? '1' : '0'} data-larga={larga ? '1' : '0'}>
@@ -173,9 +240,9 @@ export function TabelaDados<T>({ colunas, linhas, chaveLinha, ordenacaoPadrao = 
                   {ordenavel ? (
                     <button type="button" className="at-td__ordenar" onClick={() => ordenar(c.chave)}>
                       <span>{c.titulo}</span>
-                      <span className={`at-td__seta ${sort === 'none' ? 'at-td__seta--inativa' : ''}`} aria-hidden>{sort === 'ascending' ? '▲' : sort === 'descending' ? '▼' : '↕'}</span>
+                      <IconeOrdenacao estado={sort} />
                     </button>
-                  ) : c.titulo}
+                  ) : (c.cabecalho ?? c.titulo)}
                 </th>
               );
             })}

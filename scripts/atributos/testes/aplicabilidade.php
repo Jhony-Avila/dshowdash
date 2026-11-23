@@ -49,6 +49,11 @@ $ok('unidade: kit vence padrão', Aplicabilidade::unidadeEfetiva(Aplicabilidade:
 $ok('unidade: padrão do atributo', Aplicabilidade::unidadeEfetiva($f[18], null) === 3);
 $ok('unidade: avulso com unidade do produto', Aplicabilidade::unidadeEfetiva($f[70], null) === 11);
 $ok('unidade: nenhuma → null', Aplicabilidade::unidadeEfetiva($f[19], null) === null);
+// unidade sem o ajuste do produto (Vincular: efeito de remover o avulso na unidade)
+$ok('sem ajuste: kit vence padrão (30: produto 12 → kit 7)', Aplicabilidade::unidadeSemAjuste($f[30]) === 7);
+$ok('sem ajuste: avulso só (70: produto 11 → padrão 9)', Aplicabilidade::unidadeSemAjuste($f[70]) === 9);
+$ok('sem ajuste: sem unidade nenhuma → null', Aplicabilidade::unidadeSemAjuste($f[19]) === null);
+$ok('sem ajuste: não depende do valor (a do valor continua vencendo na efetiva)', Aplicabilidade::unidadeSemAjuste($f[18]) === 3 && Aplicabilidade::unidadeEfetiva(['unidade_produto_id' => null] + $f[30], 99) === 99);
 // completude
 $c = Aplicabilidade::completude($f, [18 => 'informado', 30 => 'desconhecido', 70 => 'nao_se_aplica', 60 => 'informado']);
 $ok('completude: "desconhecido" não conta, "não se aplica" conta', $c['geral'] === ['feitos' => 3, 'total' => 6]);

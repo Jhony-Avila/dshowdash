@@ -1,16 +1,16 @@
 # TabelaDados — tabela padrão do módulo Produtos & Atributos
 
 Arquivos: `src/ui/TabelaDados.tsx` (componente), `src/ui/tabela-dados.css` (estilo, só tokens `var(--bl-…)`), `src/lib/ordenar.ts` (ordenação pura).
-Primeiro uso: tela Atributos (`src/screens/Dicionario.tsx`).
+Usos: tela Atributos (`src/screens/Dicionario.tsx`) e tela Vincular (`src/screens/Vincular.tsx`: linha expansível, caixa "marcar todos" no cabeçalho, faixa).
 
 ## O que ela faz
 
 - **Cabeçalho fixo**: `<th>` com `position: sticky; top: 0`, fundo próprio (`--bl-superficie-2`) e sombra leve (`--bl-sombra-sm`) quando a tabela já rolou (`data-rolando="1"` na moldura).
-- **Ordenação por clique no título**: o título é um `<button>` (Enter/Espaço nativos). 1º clique ▲ crescente, 2º ▼ decrescente, 3º volta a ▲; outra coluna começa em ▲. `aria-sort` = `ascending`/`descending`/`none`. Colunas não ordenadas mostram ↕ apagado.
+- **Ordenação por clique no título**: o título é um `<button>` (Enter/Espaço nativos). 1º clique crescente (ícone ↑), 2º decrescente (↓), 3º volta a crescente; outra coluna começa crescente. `aria-sort` = `ascending`/`descending`/`none`. Colunas não ordenadas mostram o ícone de duas setas (↑↓) em cinza legível (`IconeOrdenacao`, exportado; 19/11).
 - **Regras de ordem** (`lib/ordenar.ts`): `numero` ordena como número; `texto` com `localeCompare(…, 'pt-BR', { sensitivity: 'base', numeric: true })`; **vazios (`null`, `undefined`, `''`, só espaços; em coluna numérica, o que não vira número) sempre no fim, nos dois sentidos**; **estável** (empate mantém a ordem de entrada, também em ▼); comparador opcional por coluna (recebe só valores não vazios).
 - **Linhas**: zebra bem suave + destaque no hover, por tokens (claro e escuro). Colunas `numero` alinhadas à direita.
 - **Linha clicável** (opcional): `tabIndex=0`, Enter/Espaço, `aria-label` próprio. Clique/tecla dentro de campo, botão, link ou label da linha **não** abre a linha.
-- **Grupos** (opcional) e **células editáveis** (ver abaixo).
+- **Grupos** (opcional), **células editáveis** e **linha expansível** (ver abaixo).
 
 ## Props
 
@@ -31,6 +31,11 @@ Primeiro uso: tela Atributos (`src/screens/Dicionario.tsx`).
 | `grupoDaLinha` | `(l: T) => string \| null \| undefined` | — | obrigatório com `grupos` |
 | `mostrarVazios` | `boolean` | `false` | grupo sem linhas aparece com "Nenhum item." |
 | `congelarOrdem` | `boolean` | `false` | congela a ordem atual além do congelamento automático por foco |
+| `expandida` | `(l: T) => boolean` \| `React.Key \| null` | — | linha expansível: função = a linha está aberta? (várias abertas) · chave = a ÚNICA linha aberta (compat §31.4; `null` = nenhuma). Estado da TELA, pela chave estável |
+| `renderExpansao` | `(l: T) => ReactNode` | — | conteúdo da linha de detalhe |
+| `detalheLinha` | `(l: T) => ReactNode` | — | sinônimo de `renderExpansao` (compat §31.4); se vierem os dois, vale `renderExpansao` |
+| `aoAlternarExpansao` | `(l: T) => void` | — | chamado pelo gatilho (`ctx.gatilho.onClick`) |
+| `idTabela` | `string` | `useId()` | prefixo estável dos ids das linhas de detalhe (`idExpansao(idTabela, chave)`) |
 
 `ColunaTabela<T>`:
 
@@ -40,7 +45,8 @@ Primeiro uso: tela Atributos (`src/screens/Dicionario.tsx`).
 | `titulo` | `string` | texto do botão de ordenar |
 | `tipo` | `'texto' \| 'numero'` | regra de ordem e alinhamento padrão |
 | `alinhamento?` | `'esquerda' \| 'direita' \| 'centro'` | padrão: `direita` para `numero` |
-| `render?` | `(l: T) => ReactNode` | conteúdo da célula (pode ser input/select) |
+| `render?` | `(l: T, ctx: ContextoLinha) => ReactNode` | conteúdo da célula (pode ser input/select); `ctx` = `{ expandida, gatilho }` da linha expansível |
+| `cabecalho?` | `ReactNode` | conteúdo do `<th>` quando `ordenavel: false` (ex.: caixa "marcar todos"); padrão: o título |
 | `valor?` | `(l: T) => unknown` | valor usado na ordenação; padrão `linha[chave]` |
 | `comparador?` | `(a, b) => number` | compara dois valores **não vazios** em ordem crescente |
 | `classe?` | `string` | classe da `<td>`; utilitárias: `at-td--curta` (não quebra), `at-td--palavras` (quebra só entre palavras) |
@@ -93,6 +99,38 @@ const colunas = React.useMemo<ColunaTabela<Item>[]>(() => [
 - Clicar num título durante a edição: o foco vai para o botão do título (comportamento normal), o texto digitado fica e a ordem nova aparece nesse momento.
 - `congelarOrdem` força o congelamento (ex.: enquanto uma gravação está pendente).
 
+## Linha expansível
+
+```tsx
+const [abertos, setAbertos] = React.useState<number[]>([]);
+const colunas: ColunaTabela<Produto>[] = [
+  { chave: 'nome', titulo: 'Produto', tipo: 'texto',
+    render: (p, ctx) => <button type="button" className="at-td__gatilho" {...ctx.gatilho}>
+      <span className="at-td__gatilho-seta" aria-hidden>▶</span>{p.nome}</button> },
+];
+<TabelaDados colunas={colunas} linhas={filtrados} chaveLinha={(p) => p.id} idTabela="vinc-produtos"
+  expandida={(p) => abertos.includes(p.id)}
+  aoAlternarExpansao={(p) => setAbertos((a) => a.includes(p.id) ? a.filter((x) => x !== p.id) : [...a, p.id])}
+  renderExpansao={(p) => <Detalhe produto={p} />} />
+```
+
+- **Forma compacta (compat DIREITA §31.4)** — uma linha aberta por vez, pela chave:
+  ```tsx
+  const [aberta, setAberta] = React.useState<number | null>(null);
+  <TabelaDados … expandida={aberta} aoAlternarExpansao={(p) => setAberta((a) => (a === p.id ? null : p.id))} detalheLinha={(p) => <Detalhe produto={p} />} />
+  ```
+  A chave é comparada com `chaveLinha(linha)` como texto (`7` e `'7'` são a mesma linha). As duas formas convivem: o Vincular continua com `expandida(linha)` + `renderExpansao`.
+- A linha aberta ganha, logo abaixo, uma `<tr class="at-td__expansao" id={idExpansao(idTabela, chave)} data-detalhe-de="<chave>">` com **uma** `<td colSpan={nº de colunas}>`. A linha de detalhe herda a zebra da linha dona e não tem hover.
+- **Acessível**: o gatilho é um `<button>` (Enter/Espaço nativos) que recebe de `ctx.gatilho` o `aria-expanded` e o `aria-controls` (id da linha de detalhe) e o `onClick` que chama `aoAlternarExpansao`. Classes prontas: `at-td__gatilho` (+ `at-td__gatilho-seta`, gira 90° quando aberta).
+- O estado é da tela, **pela chave estável**: ordenar, filtrar ou receber dados novos mantém a expansão na mesma linha (a `<tr>` de detalhe vem sempre logo depois da sua linha, também com ordem congelada e em grupos).
+- Campos dentro do detalhe contam como campos do `<tbody>`: com o foco neles a ordem fica congelada (as linhas não pulam enquanto se digita).
+- Carregar sob demanda é com a tela (ex.: Vincular lê `ficha_produto` ao abrir e descarta resposta atrasada por sequência — `lib/vincular.ts`).
+
+## Faixa da tabela (busca, filtros, contagem e ações)
+
+Classes em `tabela-dados.css`: `at-td-faixa` (coluna), `at-td-faixa__linha` (busca + selects + contagem), `at-td-faixa__contagem`, `at-td-faixa__acoes` (barra de ações da seleção), `at-td__caixa` (caixas de seleção), `at-td__linha--marcada` (linha selecionada).
+**Faixa fixa (v3, sobre o UX-1b-v2 da CIMA):** a tela Vincular põe a faixa no slot `<FaixaFixa>` (sticky, junto do título e das abas) e usa `rolagem="container"`: quem rola é a PÁGINA (o `<main>` do app-shell), como em Produtos/Ficha/Atributos; o cabeçalho das colunas gruda logo abaixo do bloco fixo (`--at-topo-fixo`, medido pela CIMA). Nenhuma altura é calculada em JS pela tela (a medição do v2 saiu).
+
 ## Container do sticky (medido no harness 8113, 18/11)
 
 O `<th>` gruda no topo do **ancestral rolável mais próximo**. A raiz do módulo `[data-bl-root].at-raiz` tem `overflow: auto` (modulo.css) **mas não tem altura limitada** (scrollHeight = clientHeight); quem rola de verdade é o `<main class="dsd-shell__region--main">` do app-shell. Como o overflow da `.at-raiz` a torna o container do sticky, um cabeçalho "fixo na página" não gruda em lugar nenhum. Por isso:
@@ -102,5 +140,5 @@ O `<th>` gruda no topo do **ancestral rolável mais próximo**. A raiz do módul
 
 ## Testes
 
-- Puros: `bash scripts/atributos/testes/tabela-dados.sh` (ordenação, vazios, estabilidade, 9 colunas da tela Atributos, filtro × ordem, grupos, ordem congelada).
-- Navegador (harness 8113): `validacao/shell-esquerda/teste-tabela-dados.cjs` (tela Atributos) e `teste-tabela-dados-demo.cjs` (página de demonstração só de teste com 2 grupos e célula editável; monta com `scripts/atributos/testes/tabela-dados-demo/montar.sh <pasta>`).
+- Puros: `bash scripts/atributos/testes/tabela-dados.sh` e, da tela Vincular, `bash scripts/atributos/testes/vincular-puras.sh` (ordenação, vazios, estabilidade, 9 colunas da tela Atributos, filtro × ordem, grupos, ordem congelada).
+- Navegador (harness 8113): `validacao/shell-esquerda/teste-tabela-dados.cjs` (tela Atributos) `teste-vincular.cjs` (tela Vincular: linha expansível, seleção, gravação com desfazimento) e `teste-tabela-dados-demo.cjs` (página de demonstração só de teste com 2 grupos e célula editável; monta com `scripts/atributos/testes/tabela-dados-demo/montar.sh <pasta>`).

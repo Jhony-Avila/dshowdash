@@ -495,6 +495,17 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
      * uma linha nova, então a impressão muda. $travar = FOR UPDATE (com trava de intervalo no índice por produto: segura também inserções).
      * @param int[] $productIds  @return array<int,string> product_id => 16 hex (produto sem linha nenhuma também tem versão)
      */
+    /**
+     * DSHOW-096 (Codex P1): versão de TODOS os kits (eq_grupo). $travar = FOR SHARE: enquanto a massa não termina, nenhum kit muda (itens, escopos,
+     * "todos", ativo e produtos do kit sobem eq_grupo.versao com UPDATE … WHERE versao = ?, que precisa de trava exclusiva na linha).
+     * @return array<int,int> grupo_id => versao
+     */
+    public function versoesGrupos(bool $travar = false): array
+    {
+        $out = []; foreach ($this->q('SELECT id, versao FROM ' . $this->t('eq_grupo') . ' ORDER BY id' . ($travar ? ' FOR SHARE' : '')) as $r) $out[(int) $r['id']] = (int) $r['versao'];
+        return $out;
+    }
+
     public function versoesVinculos(array $productIds, bool $travar = false): array
     {
         $ids = array_values(array_unique(array_map('intval', $productIds))); if (!$ids) return [];

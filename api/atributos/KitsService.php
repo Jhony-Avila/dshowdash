@@ -17,6 +17,8 @@ interface ModuloRepositorio
     public function auditoriaPorChave(string $entidade, string $entidadeId): ?array;
     /** @param int[] $productIds @return array<int,string> versão dos vínculos por produto (kit direto + ajustes) */
     public function versoesVinculos(array $productIds, bool $travar = false): array;
+    /** DSHOW-096: versão de cada kit; $travar = FOR SHARE em todos (nenhum kit muda até o COMMIT). @return array<int,int> */
+    public function versoesGrupos(bool $travar = false): array;
     public function registrarPedidoMassa(string $chave, string $assinatura, string $usuario, int $produtos): bool;
     public function pedidoMassa(string $chave): ?array;
     public function concluirPedidoMassa(string $chave, array $resultado): void;
@@ -137,12 +139,48 @@ final class KitsService
             'atributos_incluir' => $pares($aI, static fn($u) => $u === null ? null : (int) $u), 'atributos_excluir' => $pares($aE, static fn($m) => (string) $m)];
     }
 
-    /** Versão da prévia = intenção canônica + estado dos vínculos e dos kits envolvidos (DSHOW-056: a prévia de X não confirma Y). */
-    private function versaoMassa(array $prods, array $kA, array $kR, array $aI, array $aE, bool $travar): string
+    /**
+     * DSHOW-096 (Codex P1): PLANO determinístico da massa — a MESMA função na prévia e na gravação, sobre o retrato do modelo de cada momento.
+     * Por produto: o efeito em CADA atributo tocado (ficha antes ∪ depois ∪ pedido) = incluir | remover | sem_mudanca; os avulsos que entram;
+     * e os KITS DE ORIGEM — todo kit que vale para o produto antes ou depois (por escopo, "todos" ou direto: origem INDIRETA incluída).
+     * @return array{produtos: array<int,array{efeito: array<int,string>, entram: array<int,?int>, kits_origem: int[], antes: int, depois: int, kits_ja: int}>, kits_origem: int[]}
+     */
+    public static function planoMassa(RetratoModelo $m, array $prods, array $kA, array $kR, array $aI, array $aE): array
+    {
+        $ints = static function (array $xs): array { $xs = array_values(array_unique(array_map('intval', $xs))); sort($xs, SORT_NUMERIC); return $xs; };
+        $plano = []; $todosKits = array_merge($kA, $kR);
+        foreach ($prods as $pid => $p) {
+            $pid = (int) $pid;
+            $antes = Aplicabilidade::ficha($m, $p);
+            $d2 = $m->diretos; $a2 = $m->ajustes; $kitsJa = 0;
+            foreach ($kA as $g) { if (in_array($g, $d2[$pid] ?? [], true)) $kitsJa++; $d2[$pid] = array_values(array_unique(array_merge($d2[$pid] ?? [], [$g]))); }
+            foreach ($kR as $g) $d2[$pid] = array_values(array_diff($d2[$pid] ?? [], [$g]));
+            $entram = self::inclusoesQueEntram($antes, $aI); ksort($entram, SORT_NUMERIC);
+            foreach ($entram as $aid => $u) $a2[$pid][$aid] = ['modo' => 'incluir', 'unidade_id' => $u, 'posicao' => null, 'motivo' => null];
+            foreach ($aE as $aid => $mot) $a2[$pid][$aid] = ['modo' => 'excluir', 'unidade_id' => null, 'posicao' => null, 'motivo' => $mot];
+            $m2 = new RetratoModelo($m->grupos, $m->escopos, $m->itens, $d2, $a2, $m->atributos);
+            $depois = Aplicabilidade::ficha($m2, $p);
+            $efeito = [];
+            foreach ($ints(array_merge(array_keys($antes), array_keys($depois), array_keys($aI), array_keys($aE))) as $aid)
+                $efeito[$aid] = isset($depois[$aid]) && !isset($antes[$aid]) ? 'incluir' : (isset($antes[$aid]) && !isset($depois[$aid]) ? 'remover' : 'sem_mudanca');
+            $origem = $ints(array_merge(array_keys(Aplicabilidade::kits($m, $p)), array_keys(Aplicabilidade::kits($m2, $p))));
+            $todosKits = array_merge($todosKits, $origem);
+            $plano[$pid] = ['efeito' => $efeito, 'entram' => $entram, 'kits_origem' => $origem, 'antes' => count($antes), 'depois' => count($depois), 'kits_ja' => $kitsJa];
+        }
+        ksort($plano, SORT_NUMERIC);
+        return ['produtos' => $plano, 'kits_origem' => $ints($todosKits)];
+    }
+
+    /**
+     * Versão da prévia = intenção canônica + vínculos dos produtos + versão de CADA kit de origem (inclusive indireta) + o PLANO inteiro
+     * (DSHOW-056: a prévia de X não confirma Y; DSHOW-096: um kit de origem que mudou, ou um efeito diferente, não confirma a prévia).
+     * $gv = versoesGrupos() (na gravação: lida SOB TRAVA, FOR SHARE).
+     */
+    private function versaoMassa(array $prods, array $kA, array $kR, array $aI, array $aE, array $plano, array $gv, bool $travar): string
     {
         $vs = $this->repo->versoesVinculos(array_keys($prods), $travar); ksort($vs);
-        $ks = []; foreach (array_unique(array_merge($kA, $kR)) as $g) $ks[$g] = (int) $this->kit($g)['versao']; ksort($ks);
-        return hash('sha256', json_encode([self::intencaoMassa($prods, $kA, $kR, $aI, $aE), $vs, $ks]));
+        $ks = []; foreach ($plano['kits_origem'] as $g) $ks[$g] = $gv[$g] ?? null; ksort($ks);
+        return hash('sha256', json_encode([self::intencaoMassa($prods, $kA, $kR, $aI, $aE), $vs, $ks, $plano['produtos']]));
     }
 
     private static function texto(mixed $v, int $max, string $campo, bool $obrig): ?string
@@ -344,6 +382,7 @@ final class KitsService
         $vv = self::versaoVinculosInformada($b);
         return $this->repo->transacao(function () use ($pid, $aid, $dados, $vivo, $b, $vv) {
             $this->conferirVinculos($pid, $vv);   // risco 5: versão obrigatória, conferida sob trava (o UPDATE do repo também exige a versão da linha)
+            if ($dados !== null && $dados['modo'] === 'incluir') { $at = $this->repo->travarAtributo($aid, false); if (!$at || (int) $at['ativo'] !== 1) throw new AtributosErro('VALIDATION_ERROR', 422, 'O atributo foi desativado. Atualize a seleção.', ['atributo_id']); }   // P1 (18/11)
             $mudou = $this->repo->definirAjusteProduto($pid, $aid, $dados, $this->usuario);
             if ($mudou) $this->repo->auditar($this->usuario, $dados === null ? 'remover_ajuste' : $dados['modo'], 'produto_atributo', "$pid:$aid", $vivo, $dados, $b['motivo'] ?? null);
             return ['mudou' => $mudou, 'ajuste' => $this->repo->ajusteProduto($pid, $aid), 'versao_vinculos' => $this->versaoVinculos($pid)];
@@ -375,13 +414,33 @@ final class KitsService
         foreach (array_merge($kA, $kR) as $g) $this->kit($g);
         foreach (array_keys($aI + $aE) as $aid) {
             $a = $this->repo->atributo($aid);
-            if (!$a || ((int) $a['ativo'] !== 1 && isset($aI[$aid]))) throw new AtributosErro('VALIDATION_ERROR', 422, "Atributo $aid inválido.", ['atributos_incluir']);
-            if (isset($aI[$aid]) && !$this->unidadeValida($a, $aI[$aid])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inválida para "' . $a['rotulo'] . '".', ['atributos_incluir']);
+            if (!$a) throw new AtributosErro('VALIDATION_ERROR', 422, "Atributo $aid inválido.", ['atributos_incluir']);
+            // P1 (18/11): $aI é [id => unidade|null] — isset() é falso para [id => null] e deixava passar o atributo DESATIVADO
+            $incluir = array_key_exists($aid, $aI);
+            if ($incluir && (int) $a['ativo'] !== 1) throw self::erroDesativado();
+            if ($incluir && !$this->unidadeValida($a, $aI[$aid])) throw new AtributosErro('VALIDATION_ERROR', 422, 'Unidade inválida para "' . $a['rotulo'] . '".', ['atributos_incluir']);
         }
         foreach ($aE as $aid => $mot) { if (trim($mot) === '') throw new AtributosErro('VALIDATION_ERROR', 422, 'Informe o motivo de cada exclusão.', ['atributos_excluir']);
             if (mb_strlen($mot) > 255) throw new AtributosErro('VALIDATION_ERROR', 422, 'Motivo com mais de 255 caracteres.', ['atributos_excluir']); }
         $prods = []; foreach ($pids as $pid) $prods[$pid] = $this->produtoValido($pid);
         return [$prods, $kA, $kR, $aI, $aE];
+    }
+
+    /** P1 (18/11): atributo desativado entre a escolha (ou a prévia) e a confirmação — nada é gravado. */
+    private static function erroDesativado(): AtributosErro
+    {
+        return new AtributosErro('VALIDATION_ERROR', 422, 'O atributo foi desativado. Atualize a seleção.', ['atributos_incluir']);
+    }
+
+    /**
+     * P1 (18/11, prévia × gravação): UMA regra, usada pela prévia E pela gravação, para decidir se incluir o atributo $aid no produto muda
+     * algo. Já presente na ficha por QUALQUER origem (kit geral, por escopo, direto ou avulso) = sem mudança: nenhum avulso é criado.
+     * Ausente (inclusive excluído do produto por exceção) = entra na ficha como avulso. $fichaAntes = Aplicabilidade::ficha ANTES do pedido.
+     * @param array<int,mixed> $fichaAntes  @param array<int,?int> $aI  @return array<int,?int> só os atributos que ENTRAM
+     */
+    public static function inclusoesQueEntram(array $fichaAntes, array $aI): array
+    {
+        return array_diff_key($aI, $fichaAntes);
     }
 
     /** Ações opostas (hotfix 18/11): o mesmo kit em aplicar E remover, ou o mesmo atributo em incluir E excluir → 422, nada é gravado. */
@@ -399,25 +458,31 @@ final class KitsService
         $this->exigir();
         [$prods, $kA, $kR, $aI, $aE] = $this->pedidoMassa($b);
         $this->recusarAmbiguo($kA, $kR, $aI, $aE);
+        $gv = $this->repo->versoesGrupos(false);
         $m = $this->repo->retratoModelo(null);
-        $dir = $m->diretos; $aj = $m->ajustes;
-        $tot = ['produtos' => count($prods), 'produtos_afetados' => 0, 'atributos_acrescentados' => 0, 'atributos_removidos' => 0, 'ja_tinham' => 0, 'kits_ja_aplicados' => 0];
+        $plano = self::planoMassa($m, $prods, $kA, $kR, $aI, $aE);   // DSHOW-096: o MESMO plano que a gravação recalcula e confere sob trava
+        [$tot, $por] = self::resumoDoPlano($plano, $prods, $aI, $aE);
+        return ['resumo' => $tot, 'produtos' => $por, 'versao_previa' => $this->versaoMassa($prods, $kA, $kR, $aI, $aE, $plano, $gv, false)];
+    }
+
+    /** Resumo e linhas por produto de UM plano (a prévia mostra; a gravação grava o mesmo resumo no recibo). @return array{0: array, 1: array} */
+    private static function resumoDoPlano(array $plano, array $prods, array $aI, array $aE): array
+    {
+        $tot = ['produtos' => count($prods), 'produtos_afetados' => 0, 'atributos_acrescentados' => 0, 'atributos_removidos' => 0, 'ja_tinham' => 0, 'kits_ja_aplicados' => 0, 'vinculos_novos' => 0];
         $por = [];
         foreach ($prods as $pid => $p) {
-            $antes = Aplicabilidade::ficha($m, $p);
-            $d2 = $dir; $a2 = $aj;
-            foreach ($kA as $g) { if (in_array($g, $d2[$pid] ?? [], true)) $tot['kits_ja_aplicados']++; $d2[$pid] = array_values(array_unique(array_merge($d2[$pid] ?? [], [$g]))); }
-            foreach ($kR as $g) $d2[$pid] = array_values(array_diff($d2[$pid] ?? [], [$g]));
-            foreach ($aI as $aid => $u) $a2[$pid][$aid] = ['modo' => 'incluir', 'unidade_id' => $u, 'posicao' => null, 'motivo' => null];
-            foreach ($aE as $aid => $mot) $a2[$pid][$aid] = ['modo' => 'excluir', 'unidade_id' => null, 'posicao' => null, 'motivo' => $mot];
-            $depois = Aplicabilidade::ficha(new RetratoModelo($m->grupos, $m->escopos, $m->itens, $d2, $a2, $m->atributos), $p);
-            $mais = array_diff_key($depois, $antes); $menos = array_diff_key($antes, $depois);
-            $ja = 0; foreach ($aI as $aid => $_) if (isset($antes[$aid])) $ja++;
+            $pl = $plano['produtos'][(int) $pid];
+            $mais = array_keys($pl['efeito'], 'incluir', true); $menos = array_keys($pl['efeito'], 'remover', true);
             if ($mais || $menos) $tot['produtos_afetados']++;
-            $tot['atributos_acrescentados'] += count($mais); $tot['atributos_removidos'] += count($menos); $tot['ja_tinham'] += $ja;
-            $por[] = ['product_id' => $pid, 'nome' => $p['nome'], 'acrescenta' => count($mais), 'remove' => count($menos), 'antes' => count($antes), 'depois' => count($depois)];
+            $tot['atributos_acrescentados'] += count($mais); $tot['atributos_removidos'] += count($menos); $tot['ja_tinham'] += count($aI) - count($pl['entram']);
+            $tot['vinculos_novos'] += count($pl['entram']); $tot['kits_ja_aplicados'] += $pl['kits_ja'];
+            // efeitos mostrados: o que muda + o que foi pedido (array_key_exists: $aI é [id => unidade|null] e isset seria falso para null)
+            $efeitos = []; foreach ($pl['efeito'] as $aid => $ef) if ($ef !== 'sem_mudanca' || array_key_exists($aid, $aI) || array_key_exists($aid, $aE)) $efeitos[] = ['atributo_id' => $aid, 'efeito' => $ef];
+            $por[] = ['product_id' => $pid, 'nome' => $p['nome'], 'acrescenta' => count($mais), 'remove' => count($menos), 'antes' => $pl['antes'], 'depois' => $pl['depois'],
+                'entram' => array_map('intval', array_keys($pl['entram'])), 'ja_aplicaveis' => array_map('intval', array_keys(array_diff_key($aI, $pl['entram']))),
+                'efeitos' => $efeitos, 'kits_origem' => $pl['kits_origem']];
         }
-        return ['resumo' => $tot, 'produtos' => $por, 'versao_previa' => $this->versaoMassa($prods, $kA, $kR, $aI, $aE, false)];
+        return [$tot, $por];
     }
 
     /**
@@ -451,22 +516,33 @@ final class KitsService
         };
         if ($ja = $this->repo->pedidoMassa($chave)) return $repetido($ja);
         $this->recusarAmbiguo($k0, $r0, $i0, $e0);   // depois do recibo (chave já gravada continua "repetido"), antes de prévia/registro/gravação
-        $previa = $this->previaMassa($b);
         [$prods, $kA, $kR, $aI, $aE] = [$p0, $k0, $r0, $i0, $e0];
-        $res = $this->repo->transacao(function () use ($prods, $kA, $kR, $aI, $aE, $previa, $chave, $b, $assinatura, $vp) {
+        $res = $this->repo->transacao(function () use ($prods, $kA, $kR, $aI, $aE, $chave, $b, $assinatura, $vp) {
             if (!$this->repo->registrarPedidoMassa($chave, $assinatura, $this->usuario, count($prods))) return null;   // outro envio com a mesma chave já gravou
             if ($this->titularId !== null && $this->repo instanceof OperacoesRepositorio && method_exists($this->repo, 'temTitularMassa') && $this->repo->temTitularMassa())
                 $this->repo->titularPedidoMassa($chave, $this->titularId);   // DSHOW-086: titular estável, na MESMA transação
-            if ($this->versaoMassa($prods, $kA, $kR, $aI, $aE, true) !== $vp) throw new AtributosErro('CONFLICT', 409, 'O pedido ou os vínculos mudaram desde a prévia. Gere a prévia de novo.');
+            // DSHOW-096 (Codex P1): TRAVAS antes de ler o modelo — todos os kits (FOR SHARE: nenhum kit muda até o COMMIT) e os vínculos dos
+            // produtos (FOR UPDATE). P1 (18/11): o atributo continua ATIVO? (trava compartilhada; desativado = 422, antes da conferência do plano).
+            $gv = $this->repo->versoesGrupos(true);
+            $this->repo->versoesVinculos(array_keys($prods), true);
+            foreach ($aI as $aid => $_) { $at = $this->repo->travarAtributo((int) $aid, false); if (!$at || (int) $at['ativo'] !== 1) throw self::erroDesativado(); }
+            // o PLANO é recalculado aqui, com o modelo lido DEPOIS das travas, e tem de ser IGUAL ao da prévia (efeito por produto×atributo,
+            // kits de origem — inclusive indireta — e suas versões). Divergiu = 409 e o ROLLBACK leva junto o registro da chave: nenhum avulso,
+            // nenhuma auditoria de inclusão, nenhum recibo de sucesso.
+            $m = $this->repo->retratoModelo(null);
+            $plano = self::planoMassa($m, $prods, $kA, $kR, $aI, $aE);
+            if ($this->versaoMassa($prods, $kA, $kR, $aI, $aE, $plano, $gv, true) !== $vp)
+                throw new AtributosErro('CONFLICT', 409, 'O pedido, os vínculos ou um kit de origem mudaram desde a prévia. Gere a prévia de novo.');
             $n = ['kits_aplicados' => 0, 'kits_removidos' => 0, 'inclusoes' => 0, 'exclusoes' => 0];
-            foreach ($prods as $pid => $_) {
+            foreach ($prods as $pid => $p) {
+                $entram = $plano['produtos'][(int) $pid]['entram'];   // exatamente o que a prévia mostrou
                 foreach ($kA as $g) if ($this->repo->definirKitProduto($g, $pid, true, $this->usuario)) { $n['kits_aplicados']++; $this->repo->auditar($this->usuario, 'aplicar_kit', 'produto_kit', "$pid:$g", null, ['grupo_id' => $g, 'massa' => $chave], null); }
                 foreach ($kR as $g) if ($this->repo->definirKitProduto($g, $pid, false, $this->usuario)) { $n['kits_removidos']++; $this->repo->auditar($this->usuario, 'remover_kit', 'produto_kit', "$pid:$g", ['grupo_id' => $g], ['massa' => $chave], null); }
-                foreach ($aI as $aid => $u) { $ex = $this->repo->ajusteProduto($pid, $aid); $ex = $ex && $ex['excluido_em'] === null && in_array($ex['modo'], ['incluir', 'ajustar'], true) ? $ex : null;
+                foreach ($entram as $aid => $u) { $ex = $this->repo->ajusteProduto($pid, $aid); $ex = $ex && $ex['excluido_em'] === null && in_array($ex['modo'], ['incluir', 'ajustar'], true) ? $ex : null;
                     $d = ['modo' => 'incluir', 'unidade_id' => $u ?? ($ex ? ($ex['unidade_id'] === null ? null : (int) $ex['unidade_id']) : null), 'posicao' => $ex && $ex['posicao'] !== null ? (int) $ex['posicao'] : null, 'motivo' => null]; if ($this->repo->definirAjusteProduto($pid, $aid, $d, $this->usuario)) { $n['inclusoes']++; $this->repo->auditar($this->usuario, 'incluir', 'produto_atributo', "$pid:$aid", null, $d + ['massa' => $chave], null); } }
                 foreach ($aE as $aid => $mot) { $d = ['modo' => 'excluir', 'unidade_id' => null, 'posicao' => null, 'motivo' => $mot]; if ($this->repo->definirAjusteProduto($pid, $aid, $d, $this->usuario)) { $n['exclusoes']++; $this->repo->auditar($this->usuario, 'excluir', 'produto_atributo', "$pid:$aid", null, $d + ['massa' => $chave], null); } }
             }
-            $res = ['gravado' => $n, 'resumo' => $previa['resumo'], 'assinatura' => $assinatura] + (array_sum($n) === 0 ? ['sem_mudanca' => true] : [])   // 0 efeitos = desfecho sem_mudanca
+            $res = ['gravado' => $n, 'resumo' => self::resumoDoPlano($plano, $prods, $aI, $aE)[0], 'assinatura' => $assinatura] + (array_sum($n) === 0 ? ['sem_mudanca' => true] : [])   // 0 efeitos = desfecho sem_mudanca
                 + ['confirmado_em' => (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d\\TH:i:s.v\\Z')];   // carimbo do recibo, no MESMO COMMIT
             $res = self::canonMassa($res);   // ordem canônica: a 1ª resposta sai igual ao reenvio (a coluna JSON do MySQL reordena as chaves)
             $this->repo->concluirPedidoMassa($chave, $res);

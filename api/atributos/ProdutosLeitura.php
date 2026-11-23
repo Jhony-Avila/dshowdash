@@ -261,6 +261,10 @@ final class ProdutosLeitura
                 'origens' => $it['origens'] ?? [],
                 'unidade_efetiva' => $efet !== null && isset($unid[$efet]) ? ['id' => $efet, 'simbolo' => $unid[$efet]['simbolo']] : null,
                 'unidade_produto_id' => $base['unidade_produto_id'] ?? null,
+                // Vincular (18/11): o efeito de remover o avulso na unidade — a unidade própria do produto (ajuste) e a que passa a valer sem ela
+                // (Aplicabilidade::unidadeSemAjuste: kit → padrão do atributo). Campos ADITIVOS, só leitura.
+                'unidade_produto' => ($up = $base['unidade_produto_id'] ?? null) !== null && isset($unid[(int) $up]) ? ['id' => (int) $up, 'simbolo' => $unid[(int) $up]['simbolo']] : null,
+                'unidade_sem_ajuste' => ($us = Aplicabilidade::unidadeSemAjuste($base)) !== null && isset($unid[$us]) ? ['id' => $us, 'simbolo' => $unid[$us]['simbolo']] : null,
                 'unidades' => in_array($a['tipo'], ['numero', 'inteiro'], true) ? $this->unidadesPara($base, $unid, $extras, $valor['unidade_id'] ?? null) : [],
                 'opcoes' => in_array($a['tipo'], ['opcao', 'multiopcao'], true) ? ($opc[$aid] ?? []) : [],
                 'valor' => $valor,

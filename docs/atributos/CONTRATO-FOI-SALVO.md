@@ -119,6 +119,30 @@ Resposta: `{product_id, atributo_id, limite: 300, truncado, historico: […]}`.
 - **DSHOW-085:** o reenvio da massa com a mesma `chave` e o mesmo pedido devolve o recibo (`repetido: true`) ANTES de revalidar contra o estado atual. Um produto que saiu do catálogo depois do lote não transforma "já gravado" em 422, e nenhuma operação nova é criada. Também é possível conferir pela seção 5, sem POST nenhum. Do lado da tela, nada fica guardado depois de logout ou troca de usuário, e o servidor reforça isso porque o recibo é do titular.
 - **DSHOW-086:** o recibo da massa guarda `titular_id`, o id estável do usuário (011). O reenvio por outra identidade recebe 409 "Esta chave já foi usada para outro pedido", mesmo que o e-mail seja igual, e não recebe o resultado. O gate de administrador continua antes. Recibos antigos, sem `titular_id`, são conferidos pelo `usuario` gravado.
 
+## 9-A. Prévia da massa = plano determinístico (DSHOW-096)
+
+- A prévia (`massa_previa`) e a gravação (`massa_aplicar`) usam o MESMO **plano**, calculado por `KitsService::planoMassa`. Para cada produto, o plano tem:
+  - o efeito em cada atributo tocado (ficha antes ∪ depois ∪ pedido): `incluir`, `remover` ou `sem_mudanca`;
+  - os avulsos que entram;
+  - os **kits de origem**: todo kit que vale para o produto antes ou depois, por escopo, por "todos" ou direto. A origem **indireta** está incluída.
+- A `versao_previa` cobre a intenção, os vínculos dos produtos, **a versão de cada kit de origem** e o plano inteiro.
+- Na gravação, dentro da transação, nesta ordem:
+  1. trava **todos os kits** (`FOR SHARE`: nenhum kit muda até o COMMIT);
+  2. trava os vínculos dos produtos (`FOR UPDATE`);
+  3. confere se os atributos pedidos seguem ativos (422);
+  4. relê o modelo e **recalcula o plano**.
+- **Se divergir da prévia: 409** "O pedido, os vínculos ou um kit de origem mudaram desde a prévia. Gere a prévia de novo." O ROLLBACK leva
+  junto o registro da chave: nenhum avulso, nenhuma auditoria de inclusão e nenhum recibo de sucesso.
+- Com o plano igual, a gravação faz **exatamente** os avulsos do plano. O resumo do recibo sai do mesmo plano.
+- A resposta da prévia ganha, por produto, `efeitos` (`[{atributo_id, efeito}]`: o que muda e o que foi pedido) e `kits_origem`. Os campos anteriores não mudam.
+- A mudança de um kit que **não** é origem dos produtos do pedido não invalida a prévia.
+- Teste: `vincular-p1-mysql.php` §(c).
+  - Kit de origem indireta muda depois da prévia, nos dois sentidos → 409 e nada gravado.
+  - A mudança acontece dentro da transação → 409.
+  - Com os kits travados, a edição do kit por outra conexão espera e desiste.
+  - Controles positivos.
+  - Clique duplo: mesma chave = um efeito e o mesmo recibo; chave nova com a prévia velha = 409.
+
 ## 10. Unidades graváveis na leitura do valor (DSHOW-079 P2)
 
 Em `GET ficha_produto`, cada item numérico tem `unidades[]`, e cada unidade agora traz:

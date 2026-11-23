@@ -128,6 +128,19 @@ final class Aplicabilidade
         return null;
     }
 
+    /**
+     * Unidade que passa a valer se o AJUSTE do produto (eq_produto_atributo.unidade_id) deixar de existir — ex.: ao remover o vínculo
+     * avulso (KitsService::definirAjuste, modo null → AtributosRepo::definirAjusteProduto marca excluido_em na linha inteira, com a
+     * unidade). Mesma cascata de unidadeEfetiva SEM o degrau do produto e SEM o do valor: kit (1ª ocorrência com unidade) → padrão do
+     * atributo. Atributo só avulso (sem kit) sai da ficha; o valor salvo vai para "fora da ficha", onde a unidade é a do valor → a padrão
+     * do atributo (ProdutosLeitura::fichaProduto, item sem aplicabilidade) — o mesmo resultado, porque unidade_kit_id é null.
+     * A unidade própria do VALOR (eq_valor.unidade_id), se houver, continua vencendo: não muda com a remoção.
+     */
+    public static function unidadeSemAjuste(array $item): ?int
+    {
+        return self::unidadeEfetiva(['unidade_produto_id' => null] + $item, null);
+    }
+
     /** "informado" e "não se aplica" contam; "desconhecido" não (§9). */
     public static function contaComoPreenchido(?string $estado): bool { return $estado === 'informado' || $estado === 'nao_se_aplica'; }
 
