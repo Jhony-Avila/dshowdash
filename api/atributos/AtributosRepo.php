@@ -9,7 +9,7 @@ require_once __DIR__ . '/AtributosService.php';
 require_once __DIR__ . '/KitsService.php';
 require_once __DIR__ . '/SugestoesService.php';
 
-final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava, OperacoesRepositorio
+final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio, SugestoesRepositorio, UnidadesComTrava, OperacoesRepositorio, KitsPrioridade
 {
     private string $p;
     /** "FOI SALVO OU NÃO": ganchos executados DENTRO da transação, antes do COMMIT (recibo atômico com a gravação) e contador de COMMITs. */
@@ -34,6 +34,41 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
     }
 
     private function t(string $tabela): string { return $this->p . "`$tabela`"; }
+
+    private ?bool $temPrioridadeKit = null;
+
+    /**
+     * P1 kit-prioridade: a coluna eq_grupo.prioridade (migração 012) existe? Lido uma vez por instância (SHOW COLUMNS: só SELECT; enxerga
+     * também tabela TEMPORÁRIA dos testes). Sem a coluna o código segue a regra antiga, sem erro.
+     */
+    public function temPrioridadeKit(): bool
+    {
+        return $this->temPrioridadeKit ??= (bool) $this->q('SHOW COLUMNS FROM ' . $this->t('eq_grupo') . " LIKE 'prioridade'");
+    }
+
+    /**
+     * P1 kit-prioridade (ação kit_prioridade): trava a fila INTEIRA de eq_grupo (todas as linhas: a reescrita 1..N pode tocar qualquer uma;
+     * em REPEATABLE READ o FOR UPDATE sem WHERE também segura a criação de kit simultânea, que lê MAX(prioridade)). `ordem_nome` = posição de
+     * (nome, id) na colação do MySQL, a mesma do retratoModelo (regra antiga para kit com prioridade NULL).
+     */
+    public function travarFilaKits(): array
+    {
+        $r = 0; $out = [];
+        foreach ($this->q('SELECT id, nome, ativo, prioridade FROM ' . $this->t('eq_grupo') . ' ORDER BY nome, id FOR UPDATE') as $g) $out[] = $g + ['ordem_nome' => $r++];
+        return $out;
+    }
+
+    public function definirPrioridadeKit(int $grupoId, int $prioridade): bool
+    {
+        // atualizado_em = atualizado_em: o ON UPDATE não dispara (mesma regra do preenchimento da 012); versao não muda
+        return $this->exec('UPDATE ' . $this->t('eq_grupo') . ' SET prioridade = ?, atualizado_em = atualizado_em WHERE id = ? AND NOT (prioridade <=> ?)', [$prioridade, $grupoId, $prioridade]) > 0;
+    }
+
+    /** Colunas lidas de eq_grupo (com `prioridade` só se a 012 estiver aplicada). */
+    private function colunasGrupo(): string
+    {
+        return 'id, nome, descricao, ordem, aplica_a_todos, ativo, versao' . ($this->temPrioridadeKit() ? ', prioridade' : '');
+    }
 
     private function q(string $sql, array $params = []): array
     {
@@ -244,7 +279,7 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
 
     public function grupos(): array
     {
-        $gs = $this->q('SELECT id, nome, descricao, ordem, aplica_a_todos, ativo, versao FROM ' . $this->t('eq_grupo') . ' ORDER BY nome ASC');
+        $gs = $this->q('SELECT ' . $this->colunasGrupo() . ' FROM ' . $this->t('eq_grupo') . ' ORDER BY nome ASC');
         foreach ($gs as &$g) $g = $this->comDetalhes($g);
         return $gs;
     }
@@ -260,13 +295,18 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
 
     public function grupo(int $id): ?array
     {
-        $r = $this->q('SELECT id, nome, descricao, ordem, aplica_a_todos, ativo, versao FROM ' . $this->t('eq_grupo') . ' WHERE id = ?', [$id]);
+        $r = $this->q('SELECT ' . $this->colunasGrupo() . ' FROM ' . $this->t('eq_grupo') . ' WHERE id = ?', [$id]);
         return $r ? $this->comDetalhes($r[0]) : null;
     }
 
+    /**
+     * P1 kit-prioridade: com a 012, kit NOVO entra no FIM da fila de precedência (MAX(prioridade) + 1) — nunca muda a ficha dos produtos
+     * que já tinham kits. Duas criações simultâneas podem empatar: o desempate é o id (o mais novo perde). Sem a 012: como antes.
+     */
     public function criarGrupo(string $nome): int
     {
-        $this->exec('INSERT INTO ' . $this->t('eq_grupo') . ' (nome) VALUES (?)', [$nome]);
+        if ($this->temPrioridadeKit()) $this->exec('INSERT INTO ' . $this->t('eq_grupo') . ' (nome, prioridade) SELECT ?, COALESCE(MAX(prioridade), 0) + 1 FROM ' . $this->t('eq_grupo'), [$nome]);
+        else $this->exec('INSERT INTO ' . $this->t('eq_grupo') . ' (nome) VALUES (?)', [$nome]);
         return (int) $this->pdo->lastInsertId();
     }
 
@@ -324,8 +364,9 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
     public function retratoModelo(?int $productId = null): RetratoModelo
     {
         $grupos = [];
-        // DSHOW-035 #1: a ordem (nome, id) dos kits vem do MySQL — mesma colação (sem caixa/acento) que o app usa no ORDER BY g.nome, g.id
-        $r = 0; foreach ($this->q('SELECT id, nome, descricao, ordem, aplica_a_todos, ativo, versao FROM ' . $this->t('eq_grupo') . ' ORDER BY nome, id') as $g) $grupos[(int) $g['id']] = $g + ['ordem_nome' => $r++];
+        // DSHOW-035 #1: a ordem (nome, id) dos kits vem do MySQL — mesma colação (sem caixa/acento) que o app usa no ORDER BY g.nome, g.id.
+        // P1 kit-prioridade: com a 012, `prioridade` também vem e manda (Aplicabilidade::compararKits); ordem_nome fica como regra antiga/fim da fila.
+        $r = 0; foreach ($this->q('SELECT ' . $this->colunasGrupo() . ' FROM ' . $this->t('eq_grupo') . ' ORDER BY nome, id') as $g) $grupos[(int) $g['id']] = $g + ['ordem_nome' => $r++];
         $escopos = $this->q('SELECT grupo_id, categoria, subcategoria FROM ' . $this->t('eq_grupo_escopo') . ' WHERE excluido_em IS NULL');
         $itens = [];
         foreach ($this->q('SELECT grupo_id, atributo_id, posicao, obrigatorio, visivel, destaque, importancia, unidade_id, legado_id FROM ' . $this->t('eq_grupo_atributo') . ' WHERE excluido_em IS NULL') as $i) $itens[(int) $i['grupo_id']][] = $i;

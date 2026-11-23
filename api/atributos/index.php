@@ -181,6 +181,7 @@ try {
         'POST kit' => $kits()->salvarKit($corpo),
         'POST kit_duplicar' => $kits()->duplicarKit($corpo),
         'POST kit_ativo' => $kits()->definirAtivo($corpo),
+        'POST kit_prioridade' => $kits()->reordenarPrioridade($corpo),   // P1 kit-prioridade: reordenar a fila de precedência (recibo pela camada)
         'POST kit_itens' => $kits()->definirItens($corpo),
         'POST kit_escopos' => $kits()->definirEscopos($corpo),
         'POST kit_produtos' => $kits()->definirProdutosDoKit($corpo),
